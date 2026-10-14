@@ -1,7 +1,7 @@
 // Options may be absent until their owning startup step supplies a default.
 // A closed list keeps misspelled configuration names out of saved game state.
 export type GameBooleanFlag =
-    | 'accessiblemsg' | 'acoustics' | 'armorstatus' | 'autodescribe'
+    | 'accessiblemsg' | 'acoustics' | 'armorstatus'
     | 'autodig' | 'autoopen' | 'pickup' | 'autoquiver' | 'checkpoint'
     | 'cmdassist' | 'color' | 'confirm' | 'customcolors' | 'customsymbols'
     | 'dark_room' | 'dropped_nopick' | 'extmenu'
@@ -15,7 +15,7 @@ export type GameBooleanFlag =
     | 'showdamage' | 'showexp' | 'showrace' | 'showvers' | 'silent'
     | 'sortpack' | 'sparkle' | 'spot_monsters' | 'standout' | 'terrainstatus'
     | 'time' | 'tips' | 'tombstone' | 'travel' | 'use_inverse' | 'verbose'
-    | 'weaponstatus' | 'whatis_menu' | 'whatis_moveskip'
+    | 'weaponstatus'
     | 'beginner' | 'blind' | 'bones' | 'deaf' | 'debug' | 'explore' | 'female'
     | 'friday13' | 'legacy' | 'made_fruit' | 'nudist' | 'pauper' | 'reroll'
     | 'safe_dog' | 'tutorial';
@@ -60,6 +60,10 @@ export interface InterfaceFlags {
     getdir_click?: number;
     remember_getpos?: boolean;
     getloc_travelmode?: boolean;
+    getpos_coords?: 'n' | 'm' | 's' | 'c' | 'f';
+    getloc_filter?: 0 | 1 | 2;
+    getloc_usemenu?: boolean;
+    getloc_moveskip?: boolean;
     in_lava_effects?: number;
     menu_requested?: boolean;
     menu_headings?: { attr: number; color: number };

@@ -80,8 +80,7 @@ export interface SelectableMenuItem<T> extends PageLocalMenuItem<T> {
     key: string;
 }
 
-export interface MenuLabel {
-    text: string;
+export interface MenuLabel extends TextMenuLine {
     selectable: false;
 }
 
@@ -469,7 +468,8 @@ export async function showMultiSelectWindow<T>({
             }
             for (const item of section.items) {
                 if (item.selectable === false) {
-                    tty_add_menu(window, { identifier: null, text: item.text });
+                    tty_add_menu(window, { identifier: null, text: item.text,
+                        attr: item.attr ?? ATR_NONE, color: item.color ?? NO_COLOR });
                     continue;
                 }
                 if (!pageLocalKeys && !item.key) throw new TypeError('The menu item requires a selector');
@@ -491,22 +491,33 @@ export async function showMultiSelectWindow<T>({
 
 // C tty_putstr(NHW_TEXT) buffers rows, including empty rows, and flushes at
 // terminal height minus its footer. A trailing blank can therefore own a page.
-export async function showTextWindow(lines: readonly string[]): Promise<number> {
+export async function showTextWindow(lines: Iterable<string> | AsyncIterable<string>): Promise<number> {
     const d = display();
     if (!d) return 27;
     if (d.rows < 2 || d.cols < 2)
         throw new RangeError('A text window requires a content row and a pager row');
 
-    const rows = lines.flatMap(line => textWindowRows(line, d.cols));
     const pageSize = d.rows - 1;
-    const pages: TextPage[] = [];
-    for (let first = 0; first < Math.max(1, rows.length); first += pageSize) {
-        const page = rows.slice(first, first + pageSize);
+    let page: string[] = [];
+    let key = 32;
+    const displayPage = async () => {
         while (page.length < pageSize) page.push('');
-        page.push('--More--');
-        pages.push({ lines: page, cursor: [8, pageSize] });
+        key = await showTextPages([{ lines: [...page, '--More--'], cursor: [8, pageSize] }]);
+        page = [];
+    };
+    for await (const line of lines) {
+        for (const row of textWindowRows(line, d.cols)) {
+            // tty_putstr flushes a full page before buffering the new row.
+            // Its caller has already computed this line at that boundary.
+            if (key === 27) continue;
+            if (page.length === pageSize) await displayPage();
+            if (key !== 27) page.push(row);
+        }
     }
-    return showTextPages(pages, { validKeys: [27, 32, 10, 13] });
+    // A cancelled window ignores more rows, but the producer still runs:
+    // pager.c's look lists continue applying observation side effects.
+    if (key !== 27) await displayPage();
+    return key;
 }
 
 function textWindowRows(text: string, columns: number): string[] {

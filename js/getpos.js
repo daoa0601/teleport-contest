@@ -1,7 +1,7 @@
 // C refs: getpos.c:getpos(), drawing.c:defsyms[], symbols.c:gs.showsyms[],
 // display.c:tmp_at() for the valid-location marking overlay.
-import { COLNO, D_ISOPEN, DOOR, HI_ZAP, LOOK_ONCE, LOOK_QUICK, LOOK_TRADITIONAL, LOOK_VERBOSE, ROWNO, VIBRATING_SQUARE, WEB, } from './const.js';
-import { bot, clearMessageWindow, redrawMap, flush_screen, glyphAt, lastDirtyMapCursor, newsym_force, pline, show_glyph_cell, terrain_glyph, } from './display.js';
+import { COLNO, D_ISOPEN, DOOR, HI_ZAP, LOOK_ONCE, LOOK_QUICK, LOOK_TRADITIONAL, LOOK_VERBOSE, NHW_MENU, PICK_ONE, ROWNO, VIBRATING_SQUARE, WEB, IS_WALL, TREE, } from './const.js';
+import { bot, clearMessageWindow, redrawMap, flush_screen, glyphAt, lastDirtyMapCursor, newsym_force, pline, plineWithContinuation, show_glyph_cell, terrain_glyph, } from './display.js';
 import { game } from './gstate.js';
 import { nhgetch, readchar } from './input.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
@@ -11,8 +11,10 @@ import { CmapSymbol, GlyphOffset } from './glyph_numbers.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import { NO_COLOR } from './terminal.js';
 import { cansee } from './vision.js';
-import { NHW_MENU, PICK_ONE } from './const.js';
-import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu } from './tty_menu.js';
+import { coordinateDescription } from './pager_lists.js';
+import { screenDescription } from './pager_description.js';
+import { farlookLocationDescription } from './cmd.js';
+import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu, } from './tty_menu.js';
 import { rememberCommandKey, takeRepeatCommand } from './command_repeat.js';
 // defsym.h S_goodpos: the dollar sign doubles as the default getpos key
 // which toggles valid-position marking, so the mark glyph shares it.
@@ -252,6 +254,43 @@ export async function getposHelpUntilDismissed(goal, { hasValidLocations = false
 async function describeSelectedPosition(describe, cursor, fallback) {
     return await describe?.(cursor.x, cursor.y) || fallback;
 }
+async function selectGetposMenu(spots, kind) {
+    const names = { mon: 'monster', obj: 'item', door: 'door', unexplored: 'unexplored area', all: 'interesting thing', valid: 'valid location' };
+    const name = names[kind];
+    const article = ['item', 'unexplored area', 'interesting thing'].includes(name) ? 'an' : 'a';
+    const filter = game.iflags.getloc_filter === 1 ? ' in view' : game.iflags.getloc_filter === 2 ? ' in this area' : '';
+    const window = tty_create_nhwindow(NHW_MENU);
+    try {
+        await tty_start_menu(window);
+        for (const spot of spots) {
+            const text = await describeMenuPosition(spot);
+            if (text === null)
+                continue;
+            const coordinates = coordinateDescription(spot.x, spot.y, game.iflags.getpos_coords ?? 'n');
+            tty_add_menu(window, { identifier: spot,
+                text: text + (coordinates ? ` ${coordinates}` : '') });
+        }
+        // getpos_menu() supplies an end_menu prompt, so the tty owner applies
+        // the configured prompt attributes and color while items stay plain.
+        tty_end_menu(window, `Pick ${article} ${name}${filter}`);
+        const result = await tty_select_menu(window, PICK_ONE);
+        if (result.cancelled)
+            return null;
+        return result.selections[0]?.identifier ?? null;
+    }
+    finally {
+        await tty_destroy_nhwindow(window);
+    }
+}
+// getpos_menu() describes the displayed glyph even when the caller only
+// supplied a validity rule, such as spell or polearm targeting.
+async function describeMenuPosition({ x, y }) {
+    const screen = screenDescription(x, y, '');
+    if (!screen.count)
+        return null;
+    return screen.needsDetail
+        ? await farlookLocationDescription(x, y) || screen.firstMatch : screen.firstMatch;
+}
 // selection_force_newsyms() redraws by column, then row. Hallucinated glyphs
 // consume display randomness in that order, independently of target cycling.
 function validMapSquares(isValidLocation) {
@@ -270,7 +309,11 @@ function validMapSquares(isValidLocation) {
 // squares stay eligible for cycling; only the '$' marking is gated.
 function gatherValidLocations(isValidLocation, state = game) {
     const ux = state.u.ux, uy = state.u.uy;
-    const spots = validMapSquares(isValidLocation);
+    const inArea = getposArea(state);
+    const spots = validMapSquares((x, y) => isValidLocation(x, y)
+        && (state.iflags.getloc_filter !== 1 || cansee(x, y))
+        && (state.iflags.getloc_filter !== 2 || [[0, 0], [-1, 0], [1, 0], [0, -1], [0, 1]]
+            .some(([dx = 0, dy = 0]) => inArea.has((y + dy) * COLNO + x + dx))));
     spots.sort((a, b) => {
         const distA = Math.max(Math.abs(ux - a.x), Math.abs(uy - a.y));
         const distB = Math.max(Math.abs(ux - b.x), Math.abs(uy - b.y));
@@ -282,15 +325,68 @@ function gatherValidLocations(isValidLocation, state = game) {
     });
     return spots;
 }
+// C gloc_filter_init()/gloc_filter_floodfill(): target areas follow known
+// terrain classes. From a doorway, use the side of the last movement.
+function getposArea(state) {
+    const area = new Set();
+    if (state.iflags.getloc_filter !== 2)
+        return area;
+    let x = state.u.ux, y = state.u.uy;
+    if (state.level?.at(x, y)?.typ === DOOR) {
+        if (!state.u.dx && !state.u.dy)
+            return area;
+        x += state.u.dx ?? 0;
+        y += state.u.dy ?? 0;
+    }
+    const classify = (tx, ty) => {
+        const location = state.level?.at(tx, ty);
+        if (!location?.seenv || tx < 1 || tx >= COLNO || ty < 0 || ty >= ROWNO)
+            return null;
+        if (IS_WALL(location.typ) || location.typ === TREE)
+            return 2;
+        const symbol = getposGlyphSymbol(terrain_glyph(location, tx, ty).glyph);
+        if (symbol === null)
+            return 0;
+        if (symbol >= CmapSymbol.room && symbol <= CmapSymbol.darkroom
+            || symbol >= CmapSymbol.upstair && symbol <= CmapSymbol.fountain)
+            return 1;
+        if (symbol >= CmapSymbol.vwall && symbol <= CmapSymbol.trwall || symbol === CmapSymbol.tree)
+            return 2;
+        if (symbol === CmapSymbol.corr || symbol === CmapSymbol.litcorr)
+            return 3;
+        if (symbol === CmapSymbol.pool || symbol === CmapSymbol.water)
+            return 4;
+        if (symbol === CmapSymbol.lava || symbol === CmapSymbol.lavawall)
+            return 5;
+        return 0;
+    };
+    const category = classify(x, y);
+    if (category === null)
+        return area;
+    const pending = [{ x, y }];
+    for (let index = 0; index < pending.length; index++) {
+        const spot = pending[index];
+        if (!spot || classify(spot.x, spot.y) !== category)
+            continue;
+        const key = spot.y * COLNO + spot.x;
+        if (area.has(key))
+            continue;
+        area.add(key);
+        pending.push({ x: spot.x - 1, y: spot.y }, { x: spot.x + 1, y: spot.y }, { x: spot.x, y: spot.y - 1 }, { x: spot.x, y: spot.y + 1 });
+    }
+    return area;
+}
 // C getpos.c:getpos_sethilite(). Install after the caller's question and
 // before getpos's tutorial or instructions can flush these forced redraws.
 export function prepareMapPositionHighlights(isValidLocation) {
     for (const { x, y } of validMapSquares(isValidLocation))
         newsym_force(x, y);
 }
-function getposCycleKind(key) {
-    const kinds = ['mon', 'obj', 'door', 'unexplored', 'all'];
+function getposCycleKind(key, hasValidLocations) {
+    const kinds = ['mon', 'obj', 'door', 'unexplored', 'all', 'valid'];
     for (const kind of kinds) {
+        if (kind === 'valid' && !hasValidLocations)
+            continue;
         if (key === game.commandBindings.specialKey(`getpos.${kind}.next`))
             return { kind, step: 1 };
         if (key === game.commandBindings.specialKey(`getpos.${kind}.prev`))
@@ -305,7 +401,7 @@ function matchesGetposCycle(kind, x, y) {
             && glyph.mnum !== MONSTER_NAME.indexOf('long worm tail');
     if (kind === 'obj')
         return glyph?.kind === 'object'
-            && ![BOULDER, ROCK].includes(glyph.otyp);
+            && glyph.glyph !== GlyphOffset.object + BOULDER && glyph.glyph !== GlyphOffset.object + ROCK;
     const terrain = glyph?.kind === 'terrain' ? glyph.terrainName : null;
     const door = terrain && (terrain.includes('door') || terrain.includes('drawbridge'));
     if (kind === 'door')
@@ -359,19 +455,20 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
     const validity = { cycle: null };
     let markValid = false;
     const targetCycles = new Map();
+    const autoDescription = () => game.iflags.autodescribe ?? true;
+    const movementMessage = async () => autoDescription()
+        ? await describeSelectedPosition(describe, cursor, movePrompt) : movePrompt;
     const validLocations = () => {
         if (!validity.cycle) {
             if (!isValidLocation)
                 throw new Error('Valid-location selection requires a location predicate');
-            const marked = gatherValidLocations(isValidLocation);
+            const spots = gatherValidLocations(isValidLocation);
             const atHero = ({ x, y }) => x === game.u.ux && y === game.u.uy;
             validity.cycle = {
                 // gather_locs() injects the hero square so the cycle is
-                // never empty and wraps visibly back to the hero; the
-                // marking list stays predicate-only.
-                spots: marked.some(atHero)
-                    ? marked : [{ x: game.u.ux, y: game.u.uy }, ...marked],
-                marked,
+                // never empty and wraps visibly back to the hero.
+                spots: spots.some(atHero)
+                    ? spots : [{ x: game.u.ux, y: game.u.uy }, ...spots],
                 index: 0,
             };
         }
@@ -384,8 +481,9 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
             // bgcolors off (this port's default): '$' alternates between no
             // marking and the S_goodpos overlay.  The cycle-only hero
             // injection never paints unless the predicate accepts the hero.
+            // apply.c's hilite callbacks ignore the target gathering filter.
             const paintedSpots = isValidLocation && markValid
-                ? validLocations().marked.filter(({ x, y }) => cansee(x, y)
+                ? validMapSquares(isValidLocation).filter(({ x, y }) => cansee(x, y)
                     && (highlightHero || x !== game.u.ux || y !== game.u.uy))
                 : null;
             await paintGetposCursor(cursor, message, paintedSpots, preserveMap);
@@ -418,9 +516,21 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
             if (movement && movement.direction < 8) {
                 game.u.dx = movement.dx;
                 game.u.dy = movement.dy;
-                const distance = fast || movement.mode !== 0 ? 8 : 1;
+                const fastMove = fast || movement.mode !== 0;
+                let distance = fastMove ? 8 : 1;
+                if (fastMove && game.iflags.getloc_moveskip) {
+                    const glyph = glyphAt(cursor.x, cursor.y)?.glyph;
+                    distance = 1;
+                    const sameTerrain = (step) => {
+                        const x = cursor.x + movement.dx * step, y = cursor.y + movement.dy * step;
+                        return x >= 1 && x < COLNO && y >= 0 && y < ROWNO
+                            && glyphAt(x, y)?.glyph === glyph;
+                    };
+                    while (sameTerrain(distance) && sameTerrain(distance + 1))
+                        distance++;
+                }
                 moveGetposCursor(cursor, movement.dx * distance, movement.dy * distance);
-                message = await describeSelectedPosition(describe, cursor, movePrompt);
+                message = await movementMessage();
                 continue;
             }
             if (key === 18) {
@@ -444,13 +554,42 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
                 return null;
             }
             if (ch === ' ') {
-                message = await describeSelectedPosition(describe, cursor, movePrompt);
+                message = await movementMessage();
                 continue;
             }
             if (key === game.commandBindings.specialKey('getpos.valid')) {
                 if (isValidLocation)
                     markValid = !markValid;
                 message = movePrompt;
+                continue;
+            }
+            if (key === game.commandBindings.specialKey('getpos.autodescribe')) {
+                game.iflags.autodescribe = !autoDescription();
+                message = `Automatic description ${game.flags.verbose ? 'of features under cursor ' : ''}is ${autoDescription() ? 'on' : 'off'}.`;
+                if (!autoDescription()) {
+                    await pline(message);
+                    await flush_screen(1);
+                    message = movePrompt;
+                }
+                continue;
+            }
+            if (key === game.commandBindings.specialKey('getpos.filter')) {
+                const previous = game.iflags.getloc_filter ?? 0;
+                game.iflags.getloc_filter = previous === 0 ? 1 : previous === 1 ? 2 : 0;
+                targetCycles.clear();
+                validity.cycle = null;
+                message = ['Not limiting targets.', 'Limiting targets to those in sight.',
+                    'Limiting targets to those in same area.'][game.iflags.getloc_filter] ?? movePrompt;
+                continue;
+            }
+            if (key === game.commandBindings.specialKey('getpos.menu')) {
+                game.iflags.getloc_usemenu = !game.iflags.getloc_usemenu;
+                message = `${game.iflags.getloc_usemenu ? 'Using' : 'Not using'} a menu to show possible targets${game.iflags.getloc_usemenu ? " for 'm|M', 'o|O', 'd|D', and 'x|X'" : ''}.`;
+                continue;
+            }
+            if (key === game.commandBindings.specialKey('getpos.moveskip')) {
+                game.iflags.getloc_moveskip = !game.iflags.getloc_moveskip;
+                message = `${game.iflags.getloc_moveskip ? 'S' : 'Not s'}kipping over similar terrain when fastmoving the cursor.`;
                 continue;
             }
             if (key === game.commandBindings.specialKey('getpos.self')) {
@@ -461,36 +600,38 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
                     validity.cycle.index = 0;
                 for (const cycle of targetCycles.values())
                     cycle.index = 0;
-                message = await describeSelectedPosition(describe, cursor, movePrompt);
+                message = await movementMessage();
                 continue;
             }
-            if (isValidLocation && (key === game.commandBindings.specialKey('getpos.valid.next')
-                || key === game.commandBindings.specialKey('getpos.valid.prev'))) {
-                // mMoOdDxX cycling precedes the feature-symbol search while
-                // a validity rule is installed (cmd.c defaults 'z'/'Z').
-                const cycle = validLocations();
-                cycle.index = key === game.commandBindings.specialKey('getpos.valid.next')
-                    ? (cycle.index + 1) % cycle.spots.length
-                    : cycle.index > 0
-                        ? cycle.index - 1 : cycle.spots.length - 1;
-                const spot = cycle.spots[cycle.index];
-                if (!spot)
-                    throw new Error('The selected valid location is missing');
-                cursor.x = spot.x;
-                cursor.y = spot.y;
-                message = await describeSelectedPosition(describe, cursor, movePrompt);
-                continue;
-            }
-            const target = getposCycleKind(key);
+            const target = getposCycleKind(key, !!isValidLocation);
             if (target) {
-                let cycle = targetCycles.get(target.kind);
+                const kind = target.kind;
+                const gatherTargets = () => gatherValidLocations((x, y) => (x !== game.u.ux || y !== game.u.uy)
+                    && (kind === 'valid' ? isValidLocation?.(x, y) ?? false
+                        : matchesGetposCycle(kind, x, y)));
+                if (game.iflags.getloc_usemenu) {
+                    // getpos_menu gathers each time; a doorway's area
+                    // follows the direction of the latest cursor movement.
+                    const spots = gatherTargets();
+                    if (!spots.length) {
+                        const things = { mon: 'any monsters', obj: 'any items', door: 'any doors', unexplored: 'any unexplored areas', all: 'anything interesting', valid: 'any valid locations' };
+                        message = `You cannot ${game.iflags.getloc_filter === 1 ? 'see' : 'detect'} ${things[target.kind]}.`;
+                        continue;
+                    }
+                    const spot = await selectGetposMenu(spots, kind);
+                    if (spot) {
+                        cursor.x = spot.x;
+                        cursor.y = spot.y;
+                    }
+                    message = await movementMessage();
+                    continue;
+                }
+                let cycle = kind === 'valid' ? validLocations() : targetCycles.get(kind);
                 if (!cycle) {
-                    const spots = gatherValidLocations((x, y) => (x !== game.u.ux || y !== game.u.uy)
-                        && matchesGetposCycle(target.kind, x, y));
                     cycle = {
-                        spots: [{ x: game.u.ux, y: game.u.uy }, ...spots], index: 0,
+                        spots: [{ x: game.u.ux, y: game.u.uy }, ...gatherTargets()], index: 0,
                     };
-                    targetCycles.set(target.kind, cycle);
+                    targetCycles.set(kind, cycle);
                 }
                 cycle.index = (cycle.index + target.step + cycle.spots.length)
                     % cycle.spots.length;
@@ -499,20 +640,20 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
                     throw new Error('The selected target location is missing');
                 cursor.x = spot.x;
                 cursor.y = spot.y;
-                message = await describeSelectedPosition(describe, cursor, movePrompt);
+                message = await movementMessage();
                 continue;
             }
             const feature = nextGetposFeature(cursor, ch);
             if (feature) {
                 cursor.x = feature.x;
                 cursor.y = feature.y;
-                message = await describeSelectedPosition(describe, cursor, movePrompt);
+                message = await movementMessage();
                 continue;
             }
             message = getposFeatureMissMessage(ch);
             if (!force && !isGetposFeatureSymbol(ch, game.symset)) {
                 await pline(message.replace(/\(use .*\)/, '(aborted)'));
-                await pline('Done.');
+                await plineWithContinuation('Done.');
                 return null;
             }
         }

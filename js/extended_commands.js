@@ -5,6 +5,7 @@ import { NATIVE_COMMAND_FLAGS as flags, NATIVE_COMMANDS } from './command_data.j
 import { visibleCommandKey } from './command_keys.js';
 import { game } from './gstate.js';
 import { getLine } from './query.js';
+import { NO_COLOR } from './terminal.js';
 import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu, } from './tty_menu.js';
 export function availableExtendedCommands() {
     return NATIVE_COMMANDS.filter(command => command.name !== null
@@ -81,7 +82,7 @@ export async function showExtendedCommandList() {
     for (;;) {
         const window = tty_create_nhwindow(NHW_MENU);
         await tty_start_menu(window);
-        const label = (text, attr = 0) => tty_add_menu(window, { identifier: null, text, attr });
+        const label = (text, attr = 0, color = NO_COLOR) => tty_add_menu(window, { identifier: null, text, attr, color });
         const option = (key, text, group = '') => tty_add_menu(window, { identifier: key, selector: key, group, text });
         label('Extended Commands List');
         label('');
@@ -105,7 +106,7 @@ export async function showExtendedCommandList() {
                     || matchesSearch(description, search)));
             if (!entries.length)
                 continue;
-            label(wizardSection ? 'Debugging Extended Commands' : 'Extended commands', game.iflags.menu_headings?.attr ?? 1);
+            label(wizardSection ? 'Debugging Extended Commands' : 'Extended commands', game.program_state.gameover ? 0 : game.iflags.menu_headings?.attr ?? 1, game.program_state.gameover ? NO_COLOR : game.iflags.menu_headings?.color ?? NO_COLOR);
             for (const { command, description } of entries) {
                 const markers = `${command.flags & flags.CMD_M_PREFIX ? 'm' : ''}${command.flags & flags.AUTOCOMPLETE ? 'A' : ''}`;
                 label(` ${(command.name ?? '').padEnd(14)} ${(markers ? `[${markers}]` : '').padStart(4)} ${description}`);

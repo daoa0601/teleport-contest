@@ -31,6 +31,10 @@ export function formatSeenMessage(text, state = game) {
         return `You sense ${text}`;
     return `You see ${text}`;
 }
+// C pline.c:You_feel(). Sensations reach an unaware hero as dreams.
+export function formatFeltMessage(text, state = game) {
+    return `${heroIsUnaware(state) ? 'You dream that you feel' : 'You feel'} ${text}`;
+}
 export function heroCanChant(state = game) {
     const hero = state.u;
     if (hero.strangled || (hero.strangledTurns ?? 0) > 0)

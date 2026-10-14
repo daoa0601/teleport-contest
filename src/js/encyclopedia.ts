@@ -81,7 +81,8 @@ function entryMatches(entry: EncyclopediaEntry, name: string): boolean {
     return false;
 }
 
-function patternMatches(pattern: string, name: string): boolean {
+// C strutil.c:pmatch(), also used by extended-command searches.
+export function patternMatches(pattern: string, name: string): boolean {
     let patternIndex = 0;
     let nameIndex = 0;
     let starIndex = -1;

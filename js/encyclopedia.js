@@ -78,7 +78,8 @@ function entryMatches(entry, name) {
     }
     return false;
 }
-function patternMatches(pattern, name) {
+// C strutil.c:pmatch(), also used by extended-command searches.
+export function patternMatches(pattern, name) {
     let patternIndex = 0;
     let nameIndex = 0;
     let starIndex = -1;

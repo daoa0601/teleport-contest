@@ -5,7 +5,7 @@ import { NEED_AXE, NEED_HTH_WEAPON, NEED_PICK_AXE, NEED_PICK_OR_AXE, NEED_RANGED
 import { objectName, observeObjectForNaming, observeDistantObjectForNaming, ownedObjectName, } from './objnam.js';
 import { artifactById, artifactEmitsLight, monsterCanTouchArtifact } from './artifacts.js';
 import { monsterHandName } from './body_parts.js';
-import { canSeeMonster, newsym, plineWithContinuation } from './display.js';
+import { canSeeMonster, monsterVisible, newsym, plineWithContinuation } from './display.js';
 import { applyFloorEffects } from './floor_effects.js';
 import { placeObject, stack_object } from './floor_object.js';
 import { game } from './gstate.js';
@@ -39,7 +39,7 @@ const PM_BALROG = MONSTER_NAME.indexOf('balrog');
 // C mhitu.c:mswings() and mhitm.c:mswingsm().
 export async function swingMonsterWeapon(monster, weapon, state = game, { defender = null, publish = plineWithContinuation, random = rn2, } = {}) {
     if (!state.flags.verbose || heroIsBlind(state)
-        || !canSeeMonster(monster))
+        || !(defender ? monsterVisible(monster) : canSeeMonster(monster)))
         return;
     weapon.dknown = true;
     recordObjectEncounter(weapon.otyp, state);
@@ -48,17 +48,13 @@ export async function swingMonsterWeapon(monster, weapon, state = game, { defend
     const bash = isPolearm(weapon)
         && artifactById(weapon.oartifact, state)?.name !== 'Snickersnee'
         && (monster.mx - x) ** 2 + (monster.my - y) ** 2 <= 2;
+    const subject = monsterName(monster, { state, capitalized: true });
     const verb = monsterWeaponSwingVerb(weapon, bash, random);
-    const name = meleeWeaponName(weapon, state);
     const quantity = weapon.quan > 1 ? 'one of ' : '';
     const possessive = perceivedPossessivePronoun(monster, { state, random });
-    let target = '';
-    if (defender) {
-        const targetName = canSeeMonster(defender)
-            ? monsterSentenceSubject(defender).replace(/^The /, 'the ') : 'it';
-        target = ` at ${targetName}`;
-    }
-    await publish(`${monsterSentenceSubject(monster)} ${verb} ${quantity}${possessive} ${name}${target}.`);
+    const name = meleeWeaponName(weapon, state);
+    const target = defender ? ` at ${monsterName(defender, { state })}` : '';
+    await publish(`${subject} ${verb} ${quantity}${possessive} ${name}${target}.`);
 }
 // mswings uses xname(), so it does not show BUC or enchantment.
 function meleeWeaponName(weapon, state) {

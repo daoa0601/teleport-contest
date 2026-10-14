@@ -657,8 +657,8 @@ const REQUEST_MENU_BOOLEAN_OPTIONS = [
     ['use_inverse', 'use_inverse', true],
     ['verbose', 'verbose', true],
     ['weaponstatus', 'weaponstatus', false],
-    ['whatis_menu', 'whatis_menu', false],
-    ['whatis_moveskip', 'whatis_moveskip', false],
+    ['whatis_menu', 'getloc_usemenu', false],
+    ['whatis_moveskip', 'getloc_moveskip', false],
 ];
 const requestBooleanByName = new Map(REQUEST_MENU_BOOLEAN_OPTIONS.map(option => [option[0].toLowerCase(), option]));
 function requestBooleanValue(name) {
@@ -669,7 +669,8 @@ function requestBooleanValue(name) {
     if (property === '_monTelecontrol')
         return game._monTelecontrol ?? fallback;
     if (property === 'altmeta' || property === 'toptenwin' || property === 'menu_tab_sep'
-        || property === 'wc_eight_bit_input')
+        || property === 'wc_eight_bit_input' || property === 'autodescribe'
+        || property === 'getloc_usemenu' || property === 'getloc_moveskip')
         return game.iflags[property] ?? fallback;
     return game.flags[property] ?? fallback;
 }
@@ -678,7 +679,8 @@ function setConfigurationBoolean(settings, option, value) {
     if (property === '_monTelecontrol')
         settings.monTelecontrol = value;
     else if (property === 'altmeta' || property === 'toptenwin' || property === 'menu_tab_sep'
-        || property === 'wc_eight_bit_input')
+        || property === 'wc_eight_bit_input' || property === 'autodescribe'
+        || property === 'getloc_usemenu' || property === 'getloc_moveskip')
         settings.iflags[property] = value;
     else
         settings.flags[property] = value;
@@ -688,7 +690,8 @@ function setRequestBoolean(option, value) {
     if (property === '_monTelecontrol')
         game._monTelecontrol = value;
     else if (property === 'altmeta' || property === 'toptenwin' || property === 'menu_tab_sep'
-        || property === 'wc_eight_bit_input')
+        || property === 'wc_eight_bit_input' || property === 'autodescribe'
+        || property === 'getloc_usemenu' || property === 'getloc_moveskip')
         game.iflags[property] = value;
     else
         game.flags[property] = value;

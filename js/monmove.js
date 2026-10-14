@@ -66,7 +66,7 @@ import { monsterWieldedWeapon, selectMonsterRangedWeapon, swingMonsterWeapon, up
 import { attackHeroWithPolearm } from './monster_polearm.js';
 import { summonMonsterAttackHelp } from './minion.js';
 import { releaseMonsterLeash } from './monster_leash.js';
-import { ammunitionMatchesLauncher, isPolearm, returningWeaponRangeSquared, willWeld, } from './weapon_type.js';
+import { ammunitionMatchesLauncher, isPick, isPolearm, returningWeaponRangeSquared, willWeld, } from './weapon_type.js';
 import { growMonster } from './monster_growth.js';
 import { monsterLocomotion } from './monster_locomotion.js';
 import { verbForSubject } from './object_grammar.js';
@@ -163,6 +163,9 @@ import { monsterCanFog, setMonsterApparentHeroPosition, } from './monster_percep
 import { adjustMonsterSpeed, monsterSpeedMessage } from './monster_speed.js';
 import { setMonsterPermanentInvisibility } from './monster_invisibility.js';
 import { msummon } from './minion.js';
+import { talkToDemon } from './demon_talk.js';
+import { stashLeprechaunGold } from './leprechaun_stash.js';
+import { MONSTER_SOUND } from './monster_data.js';
 import { MONSTER_DIFFICULTY } from './monster_data.js';
 import { depth } from './hacklib.js';
 import { objectMaterial } from './object_material.js';
@@ -452,10 +455,9 @@ function monsterHasAvailableDistanceAttack(monster, random) {
 // C monmove.c:dochug() phase two.  A close weapon attacker may spend its
 // whole action readying carried equipment before phase-three movement.  This
 // transition is deliberately RNG-free but changes every later actor's stream.
-async function readyCloseMonsterWeapon(monster, state) {
-    if (monster?.mpeaceful ||
-        monster?.pet ||
-        monster?.mtame ||
+async function readyCloseMonsterWeapon(monster, state, range) {
+    if ((monster.mpeaceful && !heroHasConflict(state)) ||
+        !range.inRange ||
         !speciesHasWeaponAttack(monster.mnum) ||
         monster.weaponCheck !== NEED_WEAPON)
         return null;
@@ -464,6 +466,10 @@ async function readyCloseMonsterWeapon(monster, state) {
     if (!isFiniteNumber(apparentX) ||
         !isFiniteNumber(apparentY) ||
         dist2(monster.mx, monster.my, apparentX, apparentY) > 8)
+        return null;
+    const weapon = monsterWieldedWeapon(monster);
+    if ((range.scared && weapon && isPick(weapon))
+        || (monster.mtrapped && !range.nearby && selectMonsterRangedWeapon(monster, state)))
         return null;
     monster.weaponCheck = NEED_HTH_WEAPON;
     return wieldMonsterWeapon(monster, state);
@@ -1988,7 +1994,8 @@ export async function attackMonsterWithMonster(aggressor, defender, { state, ran
                 await updateMonsterWeaponAfterPolymorph(aggressor, state);
             weapon = attack.attackType === AT_WEAP ? monsterWieldedWeapon(aggressor) ?? null : null;
             if (weapon) {
-                await swingMonsterWeapon(aggressor, weapon, state, { defender, random });
+                if (visible)
+                    await swingMonsterWeapon(aggressor, weapon, state, { defender, random });
                 threshold += weaponHitBonus(weapon, defender, { state, random, rollOne });
             }
             const attackThreshold = threshold;
@@ -5024,25 +5031,6 @@ async function beginHeroAttackSlot(sequence, slot, state, random, rollOne, rollD
         // earlier hit line through tty.
         const armorProtection = magicNegation(state.u, state);
         const negated = !!monster.mcan || recordRandom(random, calls, 10) < 3 * armorProtection;
-        let drainedObject = null;
-        if (!negated) {
-            const target = selectHeroDisenchantmentTarget(state, random, calls);
-            if (await drainObjectEnchantment(target, {
-                state,
-                random: (range) => recordRandom(random, calls, range),
-            }))
-                drainedObject = target;
-        }
-        const quantity = drainedObject?.quantity ?? drainedObject?.quan ?? 1;
-        const drainTypeKnown = drainedObject &&
-            (drainedObject.typeKnown || state?._knownObjectTypes?.has(drainedObject.otyp));
-        const drainObjectClass = drainedObject?.oclass ?? drainedObject?.class;
-        const drainObjectName = drainedObject && drainTypeKnown && drainObjectClass === RING_CLASS
-            ? `ring of ${OBJECT_NAMES[drainedObject.otyp]}`
-            : drainedObject?.name || OBJECT_NAMES[drainedObject?.otyp ?? -1] || 'item';
-        const drainMessage = drainedObject
-            ? `Your ${drainObjectName} ${quantity === 1 ? 'seems' : 'seem'} less effective.`
-            : null;
         return {
             kind: 'hero-attack',
             roll,
@@ -5052,8 +5040,7 @@ async function beginHeroAttackSlot(sequence, slot, state, random, rollOne, rollD
             attackType,
             damageType,
             effect: negated ? 'cancelled-enchantment-natural' : 'enchantment-natural',
-            drainedObject,
-            drainMessage,
+            deferredEnchantment: !negated,
             deferredPostHit: true,
             oldFormMnum,
         };
@@ -5278,6 +5265,25 @@ export function resumeDeferredHeroElectricSpecial(action, state, random = rn2) {
     attack.deferredPostHit = true;
     attack.deferredElectricNegation = false;
     return action;
+}
+// C mhitm_ad_ench(): hitmsg() completes before armor selection and draining.
+export async function resumeDeferredHeroEnchantment(action, state, random = rn2) {
+    const attack = action.movement.heroAttackSequence?.current;
+    if (attack?.kind !== 'hero-attack' || !attack.deferredEnchantment)
+        return;
+    attack.deferredEnchantment = false;
+    const target = selectHeroDisenchantmentTarget(state, random, action.calls);
+    if (!await drainObjectEnchantment(target, { state,
+        random: range => recordRandom(random, action.calls, range),
+    }) || !target)
+        return;
+    attack.drainedObject = target;
+    const quantity = target.quan;
+    const known = target.typeKnown || state._knownObjectTypes?.has(target.otyp);
+    const name = known && target.oclass === RING_CLASS
+        ? `ring of ${OBJECT_NAMES[target.otyp]}`
+        : target.name || OBJECT_NAMES[target.otyp] || 'item';
+    attack.drainMessage = `Your ${name} ${quantity === 1 ? 'seems' : 'seem'} less effective.`;
 }
 // Resume mhitm_ad_drli() after hitmsg().  A selected level loss and its
 // message precede shared knockback and the touch's ordinary HP damage.
@@ -6130,22 +6136,15 @@ export async function resumeDeferredMovementSpell(action, state, random = rn2, r
         };
     }
     else if (spellCast.spell === 'disappear') {
-        // C mcastu.c:mcast_disappear() makes invisibility permanent, repaints
-        // the actor square, and leaves an invisible marker when the hero saw
-        // the square but can no longer spot the caster.
         const monster = action.monster;
-        const blind = !!state?.blind || (state?.u?.blindTurns ?? 0) > 0;
-        const inSight = !blind && !!((state?.viz_array?.[monster.my]?.[monster.mx] ?? 0) & 0x2);
-        const canSeeInvisible = !!state?.u?.seeInvisible;
-        const wasVisible = inSight && !monster.mundetected && (!monster.minvis || canSeeInvisible);
+        if (canSeeMonster(monster)) {
+            const canSeeInvisible = state.u.seeInvisible || (state.u.seeInvisibleTurns ?? 0) > 0;
+            await publish(`${canonicalMonsterName(monster, { state, capitalized: true })} suddenly ${canSeeInvisible ? 'becomes transparent' : 'disappears'}!`);
+        }
         setMonsterPermanentInvisibility(monster);
         newsym(monster.mx, monster.my);
-        const stillVisible = inSight && !monster.mundetected && (!monster.minvis || canSeeInvisible);
-        if (inSight && !stillVisible)
+        if (cansee(monster.mx, monster.my) && !canSpotMonster(monster))
             map_invisible(monster.mx, monster.my);
-        if (wasVisible) {
-            effect.message = `The ${MONSTER_NAME[monster.mnum]} suddenly ${canSeeInvisible ? 'becomes transparent' : 'disappears'}!`;
-        }
     }
     else {
         throw new Error(`Directed spell ${spellCast.spell} reached the undirected spell effect`);
@@ -6689,6 +6688,8 @@ export async function takeMonsterTurn(monster, state, random = rn2, rollDice = d
                     rollOne,
                     flags: RLOC_MSG,
                 });
+                if (relocation)
+                    await stashLeprechaunGold(monster, state, limit => recordRandom(random, calls, limit));
                 return {
                     calls,
                     dochugContext,
@@ -6826,6 +6827,15 @@ export async function takeMonsterTurn(monster, state, random = rn2, rollDice = d
             },
         };
     }
+    if (range.nearby && MONSTER_SOUND[dochugContext.entryMnum] === 33
+        && monster.mpeaceful && !monster.mtame && !state.u.uswallow
+        && await talkToDemon(monster, state, limit => recordRandom(random, calls, limit), sides => { calls.push(`rnd(${sides})`); return rollOne(sides); })) {
+        return { calls, dochugContext, movement: {
+                oldx: monster.mx, oldy: monster.my, x: monster.mx, y: monster.my,
+                moved: false, actionCompleted: true, postMoveStatus: MMOVE_DONE,
+                actorLeftLevel: !monsterHasMapPosition(monster, state),
+            } };
+    }
     await watchOnDuty(monster, state, random, calls);
     if (monsterIsMindFlayer(dochugContext.entryMnum) && recordRandom(random, calls, 20) === 0) {
         const heroDied = await useMonsterMindBlast(monster, state, {
@@ -6848,7 +6858,7 @@ export async function takeMonsterTurn(monster, state, random = rn2, rollDice = d
         range = await checkMonsterHeroRange(monster, { state, random, rollOne });
         dochugContext.range = range;
     }
-    if (await readyCloseMonsterWeapon(monster, state)) {
+    if (await readyCloseMonsterWeapon(monster, state, range)) {
         return {
             calls,
             dochugContext,

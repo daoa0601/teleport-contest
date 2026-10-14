@@ -4,7 +4,6 @@ import { waterDamageObject } from './trap.js';
 import { dip, dipInto } from './potion_dip.js';
 import { AKLYS, BOOMERANG, CRYSTAL_BALL } from './object_data.js';
 import { useCrystalBall } from './crystal_ball.js';
-import { monsterHiddenConditions } from './monster_status.js';
 import { visibleRegionAt } from './regions.js';
 import { wizIntrinsic } from './wizard_intrinsics.js';
 import { wizFuzzer, wizPanic } from './wizard_debug_commands.js';
@@ -47,7 +46,11 @@ import { waterbodyName } from './terrain_name.js';
 import { def_warnsyms } from './const.js';
 import { iceDescriptionAt } from './dungeon_feature.js';
 import { CmapSymbol, GlyphOffset, cmapToGlyph } from './glyph_numbers.js';
-import { MAP_SYMBOLS } from './map_symbols.js';
+import { lookAtMonster, monsterSeenDescription, offerMonsterSupplement, selfLookDetails, selfTrapDescription } from './pager_monsters.js';
+import { identifyTrap } from './pager_traps.js';
+import { showLookList } from './pager_lists.js';
+import { screenDescription } from './pager_description.js';
+import { lookGlyphAt, mapFeatureDescription } from './pager_features.js';
 import { typedSymbolDescription } from './look_symbols.js';
 import { isGrayStone, isWeaponTool } from './object_properties.js';
 import { applySuggestion } from './apply_selection.js';
@@ -120,7 +123,7 @@ import { confusePromptDirection, promptDirection, promptKey, readDirectionKey, r
 import { getLine, paranoidQuery, promptYesNo, promptYesNoQuit, } from './query.js';
 export { getLine, promptYesNo, promptYesNoQuit } from './query.js';
 import { objectTypeCallNoun, } from './object_call.js';
-import { displayLiquidName, displayMessageWindow, newsym, feel_newsym, flushPendingTopline, flush_screen, pline, plineWithContinuation, moreUntilDismissed, docrt, bot, terrain_glyph, cmapSymbolAppearance, glyphAt, canSeeMonster, canSpotMonster, canSenseMonster, canSpotHeroSelf, unblindTelepathyRange, monsterHasWarningProjection, see_nearby_objects, show_glyph_cell, swallowed, randomDisplayMonsterName, randomDisplayMonsterSubject, see_monsters, see_objects, see_traps, transientObjectGlyph, map_invisible, unmap_invisible, map_object, unmapObject, } from './display.js';
+import { displayLiquidName, displayMessageWindow, newsym, feel_newsym, flushPendingTopline, flush_screen, pline, plineWithContinuation, moreUntilDismissed, docrt, bot, terrain_glyph, glyphAt, canSeeMonster, canSpotMonster, canSenseMonster, canSpotHeroSelf, unblindTelepathyRange, monsterHasWarningProjection, see_nearby_objects, show_glyph_cell, swallowed, randomDisplayMonsterName, randomDisplayMonsterSubject, see_monsters, see_objects, see_traps, transientObjectGlyph, map_invisible, unmap_invisible, map_object, unmapObject, } from './display.js';
 import { cansee, couldsee, vision_note_blocker_change, vision_recalc, vision_reset } from './vision.js';
 import { lightWieldedArtifact, transformMagicLampToOilLamp, } from './light.js';
 import { dozap, } from './zap.js';
@@ -151,7 +154,8 @@ import { continueTinOpening, useTinOpener } from './tin.js';
 import { PLAYABLE_INSTRUMENTS, playInstrument } from './music.js';
 import { dodiscovered } from './o_init.js';
 import { doattributes, doconduct } from './insight.js';
-import { doextversion } from './extversion.js';
+import { contactHelp, displayHelpFile, menuControlsHelp, setOptionsCommand } from './pager_help.js';
+import { doextversion, NATIVE_VERSION } from './extversion.js';
 import { dosearch, findit } from './detect.js';
 import { detectMonsters } from './magic_detection.js';
 import { abusePetAfterHeroHit } from './dog.js';
@@ -184,7 +188,7 @@ import { invokeArtifactPower, } from './artifact_invoke.js';
 import { touchArtifactByHero } from './artifact_touch.js';
 import { SLING, BULLWHIP, GRAPPLING_HOOK, CREAM_PIE, EGG, LUMP_OF_ROYAL_JELLY, LOCK_PICK, CREDIT_CARD, STETHOSCOPE, LOADSTONE, GOLD_PIECE, BOULDER, ROCK, DILITHIUM_CRYSTAL, LUCKSTONE, TOUCHSTONE, LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK, BAG_OF_HOLDING, BAG_OF_TRICKS, BRASS_LANTERN, OIL_LAMP, MAGIC_LAMP, STATUE, RIN_PROTECTION, BANANA, MIRROR, TIN_WHISTLE, MAGIC_WHISTLE, EUCALYPTUS_LEAF, BELL, BELL_OF_OPENING, EXPENSIVE_CAMERA, TIN_OPENER, FIGURINE, LEASH, CAN_OF_GREASE, SADDLE, HORN_OF_PLENTY, TINNING_KIT, LAND_MINE, BEARTRAP, TALLOW_CANDLE, WAX_CANDLE, CANDELABRUM_OF_INVOCATION, POT_OIL, RIN_CONFLICT, MEAT_RING, OBJECT_BIMANUAL, HELM_OF_OPPOSITE_ALIGNMENT, GRAY_DRAGON_SCALES, LENSES, BLINDFOLD, TOWEL, FUMBLE_BOOTS, KICKING_BOOTS, MAGIC_MARKER, UNICORN_HORN, SHIELD_OF_REFLECTION, AMULET_OF_YENDOR, AMULET_OF_STRANGULATION, FAKE_AMULET_OF_YENDOR, SPE_NOVEL, OBJECT_DELAY, OBJECT_UNIQUE, OBJECT_DESCRIPTIONS, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_WEIGHT, OBJECT_SUBTYPE, } from './object_data.js';
 import { CLR_WHITE, NO_COLOR, } from './terminal.js';
-import { MONSTER_COLOR, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, MONSTER_SOUND, MONSTER_ALIGNMENT, MONSTER_ATTACKS, MONSTER_CLASS_EXPLAIN, requireMonsterData, monsterTypeName, monsterClassSymbol, monsterIsHumanoid, } from './monster_data.js';
+import { MONSTER_COLOR, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, MONSTER_SOUND, MONSTER_ALIGNMENT, MONSTER_ATTACKS, requireMonsterData, monsterTypeName, monsterClassSymbol, monsterIsHumanoid, } from './monster_data.js';
 import { createParticularMonster } from './read_creation.js';
 import { addExperience, checkExperienceLevel, gainExperienceLevel, loseHeroExperience, } from './exper.js';
 import { removeHeroAccessory, wearHeroAccessory, } from './accessory.js';
@@ -1402,6 +1406,12 @@ async function runCommandHandler(binding, { cannedCommand = null, } = {}) {
     }
     else if (ch === ':') {
         await dolook();
+    }
+    else if (ch === 'V') {
+        await doversion();
+    }
+    else if (ch === '&') {
+        await whatDoesCommand();
     }
     else if (ch === '?') {
         await dohelp();
@@ -3135,6 +3145,11 @@ const EXTENDED_COMMAND_HANDLERS = new Map([
     ['?', showExtendedCommandList],
     ['whatdoes', whatDoesCommand],
     ['whatis', dowhatis],
+    ['help', dohelp],
+    ['glance', doFarlook],
+    ['history', () => displayHelpFile('history')],
+    ['showtrap', identifyTrap],
+    ['versionshort', doversion],
     ['takeoffall', takeOffAll],
     ['conduct', doconduct],
     ['chronicle', doChronicle],
@@ -4323,7 +4338,7 @@ async function wizardPositionDescription(x, y) {
         // self_lookat() includes invisibility while blind only when sensed.
         const prefix = invisible && (!blind || telepathy || detection)
             ? 'invisible ' : '';
-        const description = `${prefix}${form} called ${game.plname || 'player'}${punishment}`;
+        const description = `${prefix}${form} called ${game.plname || 'player'}${await selfLookDetails()}${punishment}${selfTrapDescription()}`;
         const unseen = invisible && !game.u.seeInvisible
             && (game.u.seeInvisibleTurns ?? 0) === 0;
         // lookat() treats touch while blind or swallowed as normal vision.
@@ -4510,7 +4525,9 @@ function farlookDescribesHero(x, y) {
 export async function farlookLocationDescription(x, y) {
     if (farlookDescribesHero(x, y))
         return wizardPositionDescription(x, y);
-    const glyph = glyphAt(x, y);
+    if (game.u.uswallow && game.u.ustuck)
+        return `interior of ${monsterName(game.u.ustuck)}`;
+    const glyph = lookGlyphAt(x, y);
     if (!glyph || glyph.kind === 'unexplored') {
         if ((game.u.uinwater || game.underwater) && !Is_waterlevel(game.u.uz))
             return dist2(x, y, game.u.ux, game.u.uy) <= 2 ? 'land' : 'unknown';
@@ -4528,172 +4545,24 @@ export async function farlookLocationDescription(x, y) {
         return 'dark part of a room';
     const monster = game.level ? monsterAtPosition(game.level, x, y) : null;
     if (monster && glyph?.kind === 'monster') {
-        const hallucinating = heroIsHallucinating(game);
-        const prefix = hallucinating ? ''
-            : monster.mtame ? 'tame '
-                : monster.mpeaceful ? 'peaceful ' : '';
-        const name = distantMonsterName(monster);
-        let condition = '';
-        if (!hallucinating) {
-            if ((monster.mfrozen ?? 0) > 0)
-                condition = ", can't move (paralyzed or sleeping or busy)";
-            else if (monster.msleeping)
-                condition = ', asleep';
-            else if ((monster.mstrategy ?? 0) & STRAT_WAITMASK)
-                condition = ', meditating';
-        }
-        const tail = monster.mx !== x || monster.my !== y;
-        // look_at_monster() gates hidden details on the selected square,
-        // which can be a worm tail outside the head's cloud.
-        const hidden = monster.mundetected || M_AP_TYPE(monster) || visibleRegionAt(game, x, y)
-            ? await monsterHiddenConditions(monster, game, { showAlternateMonster: false })
-            : [];
-        const hiddenText = hidden.length ? `, ${hidden.join(', ')}` : '';
-        return `${tail ? 'tail of a ' : ''}${prefix}${name}${condition}${hiddenText}`;
+        return lookAtMonster(monster, x, y);
     }
     if (glyph.kind === 'object')
         return objectAtMapDescription(x, y, glyph);
     // Hallucinated statues project monster glyphs without a live monster.
     if (glyph?.kind === 'monster' && heroIsHallucinating(game))
         return randomDisplayMonsterName();
-    const trap = game.level?.traps?.find(candidate => candidate.tx === x && candidate.ty === y && candidate.tseen);
-    if (trap?.ttyp === DART_TRAP)
-        return 'dart trap';
-    if (trap?.ttyp === BEAR_TRAP)
-        return 'bear trap';
-    const loc = game.level?.at(x, y);
-    if (!loc)
-        return '';
-    // pager.c:lookat() recognizes liquid cmap glyphs, including memory,
-    // then waterbody_name() describes the current surface at that square.
-    if (glyph?.kind === 'terrain' && [
-        CmapSymbol.pool, CmapSymbol.water, CmapSymbol.lava,
-        CmapSymbol.lavawall, CmapSymbol.ice,
-    ].some(symbol => glyph.glyph === cmapToGlyph(symbol))) {
-        const description = waterbodyName(x, y);
-        // do_screen_description() adds strength only to plain "ice";
-        // hallucinated frozen liquids retain their waterbody_name().
-        return description === 'ice' ? iceDescriptionAt(x, y) : description;
-    }
-    // do_screen_description() applies the Quest gate to the glyph's stair
-    // description, whether the stair is visible now or remembered.
-    if (glyph?.kind === 'terrain' && glyph.terrainName === 'staircase down'
-        && onQuestStart(game) && !okToQuest(game))
+    const description = mapFeatureDescription(x, y, glyph);
+    if (description === 'ice')
+        return iceDescriptionAt(x, y);
+    if (description === 'staircase down' && onQuestStart(game) && !okToQuest(game))
         return 'blocked staircase down';
-    // pager.c:do_screen_description() recognizes the concrete S_cloud glyph
-    // before the generic '#' ambiguity list.  Moving elemental bubbles can
-    // therefore be "fog/vapor cloud" even though their tty character is the
-    // same as a remembered corridor.
-    if (loc.typ === CLOUD)
-        return Is_airlevel(game.u?.uz) ? 'cloudy area' : 'fog/vapor cloud';
-    // display.c:reglyph_darkroom() keeps an explored but never-lit room as
-    // GLYPH_NOTHING once it leaves sight.  The physical tty cell can still
-    // contain the DECgraphics floor character from an earlier getpos paint,
-    // but pager.c describes glyph_at(), hence "dark part of a room".
-    if (!cansee(x, y) && loc.typ === ROOM && loc.seenv && !loc.waslit)
-        return 'dark part of a room';
-    // pager.c describes the projected screen glyph.  A blind hero can retain
-    // a stone/blank memory over real corridor terrain, so consulting `typ`
-    // first leaks topology and produces the wrong automatic getpos label.
-    if (!cansee(x, y) && loc.remembered_glyph?.kind === 'terrain') {
-        const remembered = loc.remembered_glyph.ch;
-        if (remembered === ' ')
-            return 'stone';
-        if (remembered === '#')
-            return 'corridor';
-        if (remembered === '.')
-            return 'floor of a room';
-        if (remembered === '<' || remembered === '>')
-            return loc.remembered_glyph.terrainName;
-        if (remembered === '{')
-            return 'fountain';
-        if (remembered === '+') {
-            return loc.typ === DOOR && loc.doormask === D_ISOPEN
-                ? 'open door' : 'closed door';
-        }
-        return loc.remembered_glyph.terrainName;
-    }
-    if (loc.typ === FOUNTAIN)
-        return 'fountain';
-    if (loc.typ === SINK)
-        return 'sink';
-    if (loc.typ === STONE)
-        return 'stone';
-    if (IS_WALL(loc.typ))
-        return 'wall';
-    if (loc.typ === DOOR)
-        return loc.doormask === D_ISOPEN ? 'open door' : 'closed door';
-    if (loc.typ === ROOM)
-        return 'floor of a room';
-    if (loc.typ === CORR)
-        return 'corridor';
-    return glyph?.kind === 'terrain' ? glyph.terrainName : travelLocationDescription(x, y);
+    return description;
 }
 // C apply.c:dojump(): the physical command shares the spell's jump owner.
 async function dojump() {
     const result = await jumpHero(0);
     game.context.move = result.spentTime ? 1 : 0;
-}
-function verboseFarlookDescription(x, y, description) {
-    const glyph = glyphAt(x, y);
-    if (glyph?.kind === 'terrain'
-        && (glyph.terrainName.includes('staircase') || glyph.terrainName.includes('ladder'))) {
-        const symbolIndex = MAP_SYMBOLS.findIndex((_definition, index) => index >= CmapSymbol.upstair && index <= CmapSymbol.brdnladder
-            && glyph.glyph === cmapToGlyph(index));
-        if (symbolIndex < 0)
-            throw new Error(`Stair glyph ${glyph.glyph} has no dungeon symbol`);
-        const displayed = cmapSymbolAppearance(symbolIndex);
-        const descriptions = [];
-        // do_screen_description() lists meanings of the displayed symbol
-        // in defsyms[] order, then lookat() identifies the selected stairs.
-        for (let index = CmapSymbol.upstair; index <= CmapSymbol.brdnladder; index++) {
-            const candidate = cmapSymbolAppearance(index);
-            const definition = MAP_SYMBOLS[index];
-            if (definition && candidate.ch === displayed.ch && candidate.dec === displayed.dec)
-                descriptions.push(withIndefiniteArticle(definition.name));
-        }
-        const symbol = displayed.dec ? `\x0e${displayed.ch}\x0f` : displayed.ch;
-        return `${symbol}\x1b[8C${descriptions.join(' or ')} (${description})`;
-    }
-    if (farlookDescribesHero(x, y) && glyph?.kind === 'monster'
-        && glyph.mnum !== undefined) {
-        // C do_screen_description() classifies the displayed glyph. With
-        // showrace, that can differ from the role named by self_lookat().
-        const species = glyph.mnum;
-        const symbol = monsterClassSymbol(species);
-        const explanation = MONSTER_CLASS_EXPLAIN[MONSTER_SYMBOL[species] ?? 0];
-        if (!explanation)
-            throw new Error(`Displayed species ${species} has no monster class description`);
-        const includesHero = symbol === '@' && !heroIsPolymorphed(game) && game.urace
-            && game.urace.name !== 'human' && game.urace.name !== 'elf';
-        // A blank also denotes stone, air, darkness, and unexplored squares.
-        // C collapses more than four meanings before appending self_lookat().
-        const classDescription = symbol === ' ' ? 'can be many things'
-            : withIndefiniteArticle(explanation) + (includesHero ? ' or you' : '');
-        return `${symbol}\x1b[8C${classDescription} (${description})`;
-    }
-    if (!glyph)
-        return description;
-    const loc = game.level?.at(x, y);
-    const appearance = loc?.disp_glyph
-        ? { ch: loc.disp_ch, dec: loc.disp_decgfx }
-        : loc?.remembered_glyph;
-    if (!appearance)
-        return description;
-    const symbol = appearance.dec ? `\x0e${appearance.ch}\x0f` : appearance.ch;
-    if (glyph.kind === 'unexplored' || glyph.kind === 'nothing'
-        || glyph.kind === 'terrain' && ['stone', 'corridor', 'lit corridor'].includes(glyph.terrainName)) {
-        return `${symbol}\x1b[8Ccan be many things (${description})`;
-    }
-    if (glyph.kind === 'terrain' && glyph.terrainName === 'wall')
-        return `${symbol}\x1b[8Cthe interior of a monster or a wall (${description})`;
-    if (glyph.kind === 'terrain' && glyph.terrainName === 'floor of a room') {
-        if (appearance.dec && appearance.ch === '~') {
-            return '\x0e~\x0f\x1b[8Ca doorway or the floor of a room'
-                + ` or the dark part of a room or ice (${description})`;
-        }
-    }
-    return description;
 }
 // C refs: cmd.c dotravel(), getpos.c getpos(), hack.c handle_tip(), and
 // dat/nhcore.lua show_getpos_tip().  The tty message window and the Lua text
@@ -4784,44 +4653,69 @@ async function dotravelTarget() {
 // Farlook spends no game time. Ordinary look retains its cursor between
 // selections; quick look returns after describing one selection.
 async function doFarlook(quick = true) {
-    let verbose = !!game.flags.verbose && !quick;
+    const savedVerbose = game.flags.verbose;
+    game.flags.verbose = !!savedVerbose && !quick;
+    let verbose = !!game.flags.verbose;
     let position = { x: game.u.ux, y: game.u.uy };
-    for (;;) {
-        await plineWithContinuation(verbose
-            ? 'Please move the cursor to a monster, object or location.'
-            : 'Pick a monster, object or location.');
-        const firstUse = shouldShowGetposTip();
-        if (firstUse)
-            await showGetposTip();
-        if (verbose) {
-            const helpKey = game.commandBindings.specialKey('getpos.help');
-            if (helpKey === undefined)
-                throw new Error('Map selection requires a getpos.help binding');
-            await plineWithContinuation(`(For instructions type a '${visibleCommandKey(helpKey)}')`);
+    try {
+        for (;;) {
+            await plineWithContinuation(verbose
+                ? 'Please move the cursor to a monster, object or location.'
+                : 'Pick a monster, object or location.');
+            const firstUse = shouldShowGetposTip();
+            if (firstUse)
+                await showGetposTip();
+            if (verbose) {
+                const helpKey = game.commandBindings.specialKey('getpos.help');
+                if (helpKey === undefined)
+                    throw new Error('Map selection requires a getpos.help binding');
+                await plineWithContinuation(`(For instructions type a '${visibleCommandKey(helpKey)}')`);
+            }
+            if (firstUse)
+                await plineWithContinuation('Move cursor to a monster, object or location:');
+            const cursor = await selectMapPosition({
+                start: position, force: quick,
+                prompt: game._pending_message || game._retained_message,
+                goal: 'a monster, object or location',
+                describe: async (x, y) => {
+                    const screen = screenDescription(x, y, '');
+                    return screen.needsDetail ? await farlookLocationDescription(x, y) || screen.firstMatch : screen.firstMatch;
+                },
+            });
+            if (!cursor)
+                break;
+            position = { x: cursor.x, y: cursor.y };
+            verbose = false;
+            game.flags.verbose = false;
+            // putmixed() returns the description to WIN_MESSAGE. A later
+            // checkfile() question or the next picker acknowledges that prose.
+            game._pending_message = '';
+            game._retained_message = '';
+            const basic = screenDescription(cursor.x, cursor.y, '');
+            const description = basic.needsDetail ? await farlookLocationDescription(cursor.x, cursor.y) : '';
+            const glyph = glyphAt(cursor.x, cursor.y);
+            const monster = basic.needsDetail && glyph?.kind === 'monster' && game.level
+                && !farlookDescribesHero(cursor.x, cursor.y)
+                ? monsterAtPosition(game.level, cursor.x, cursor.y) : null;
+            const seen = monster ? monsterSeenDescription(monster) : '';
+            const screen = basic.needsDetail ? screenDescription(cursor.x, cursor.y, description) : basic;
+            await plineWithContinuation(screen.count ? screen.text
+                + (seen ? ` [seen: ${seen}]` : '') : "I've never heard of such things.");
+            if (screen.count === 1 && cursor.pickType !== LOOK_QUICK && cursor.pickType !== LOOK_ONCE
+                && (cursor.pickType === LOOK_VERBOSE || !quick && game.flags.help !== false)) {
+                await offerFarlookInformation(screen.firstMatch, cursor.pickType === LOOK_VERBOSE);
+                if (monster)
+                    await offerMonsterSupplement(monster, cursor.pickType === LOOK_VERBOSE);
+            }
+            if (quick || cursor.pickType === LOOK_ONCE)
+                break;
         }
-        if (firstUse)
-            await plineWithContinuation('Move cursor to a monster, object or location:');
-        const cursor = await selectMapPosition({
-            start: position,
-            prompt: game._pending_message || game._retained_message,
-            goal: 'a monster, object or location',
-            describe: farlookLocationDescription,
-        });
-        if (!cursor)
-            break;
-        position = { x: cursor.x, y: cursor.y };
-        verbose = false;
-        // putmixed() returns the description to WIN_MESSAGE. A later
-        // checkfile() question or the next picker acknowledges that prose.
-        game._pending_message = '';
-        game._retained_message = '';
-        const description = await farlookLocationDescription(cursor.x, cursor.y);
-        await plineWithContinuation(verboseFarlookDescription(cursor.x, cursor.y, description));
-        if (cursor.pickType !== LOOK_QUICK && cursor.pickType !== LOOK_ONCE
-            && (cursor.pickType === LOOK_VERBOSE || !quick && game.flags.help !== false))
-            await offerFarlookInformation(description, cursor.pickType === LOOK_VERBOSE);
-        if (quick || cursor.pickType === LOOK_ONCE)
-            break;
+    }
+    finally {
+        if (savedVerbose === undefined)
+            delete game.flags.verbose;
+        else
+            game.flags.verbose = savedVerbose;
     }
     game.context.move = 0;
 }
@@ -4845,33 +4739,44 @@ async function restoreHelpMap() {
 // the map entry destroys it, restores the map, then hands input ownership to
 // the shared getpos/farlook transaction above.
 async function dowhatis() {
-    const entries = [
-        { key: '/', text: 'something on the map' },
-        { key: 'i', text: "something you're carrying" },
-        { key: '?', text: 'something else (by symbol or name)' },
-        '',
-        { key: 'm', text: 'nearby monsters' },
-        { key: 'M', text: 'all monsters shown on map' },
-        { key: 'o', text: 'nearby objects' },
-        { key: 'O', text: 'all objects shown on map' },
-        { key: 't', text: 'nearby traps' },
-        { key: 'T', text: 'all seen or remembered traps' },
-        { key: 'e', text: 'nearby engravings' },
-        { key: 'E', text: 'all seen or remembered engravings' },
+    const choices = [
+        { key: '/', alias: 'y', text: 'something on the map' },
+        { key: 'i', alias: '', text: "something you're carrying" },
+        { key: '?', alias: 'n', text: 'something else (by symbol or name)' },
     ];
-    const validKeys = [
-        27, 32, 10, 13,
-        ...'/i?mMoOtTeE'.split('').map(char => char.charCodeAt(0)),
-    ];
+    if (!game.u.uswallow && !heroIsHallucinating(game))
+        choices.push({ key: 'm', alias: '', text: 'nearby monsters' }, { key: 'M', alias: '', text: 'all monsters shown on map' }, { key: 'o', alias: '', text: 'nearby objects' }, { key: 'O', alias: '', text: 'all objects shown on map' }, { key: 't', alias: '^', text: 'nearby traps' }, { key: 'T', alias: '"', text: 'all seen or remembered traps' }, { key: 'e', alias: '`', text: 'nearby engravings' }, { key: 'E', alias: '|', text: 'all seen or remembered engravings' });
     const queuedKey = takeCommandKey();
-    const key = queuedKey ?? await showChoiceWindow({
-        title: 'What do you want to look at:',
-        entries,
-        validKeys,
-    });
-    if (queuedKey === undefined)
+    let choice = queuedKey === undefined ? '' : String.fromCharCode(queuedKey);
+    if (queuedKey === undefined) {
+        const lootabc = !!game.flags.lootabc;
+        const items = [];
+        for (const [index, entry] of choices.entries()) {
+            if (index === 3)
+                items.push({ selectable: false, text: '' });
+            items.push({ text: entry.text, value: entry.key,
+                ...(lootabc ? {} : { key: entry.key }),
+                groupAccelerator: lootabc ? ['i', 'e'].includes(entry.key) ? '' : entry.key : entry.alias });
+        }
+        const result = await showMultiSelectWindow({
+            title: 'What do you want to look at:', omitHeadings: true,
+            pickOne: true, pageLocalKeys: true,
+            sections: [{ items }],
+        });
+        choice = result[0] ?? '';
         await restoreHelpMap();
-    const choice = String.fromCharCode(key);
+    }
+    if (choice === 'y')
+        choice = '/';
+    const listKind = 'mM'.includes(choice) && choice ? 'monsters'
+        : 'oO'.includes(choice) && choice ? 'objects'
+            : 'tT'.includes(choice) && choice ? 'traps'
+                : 'eE'.includes(choice) && choice ? 'engravings' : null;
+    if (listKind) {
+        await showLookList(listKind, choice === choice.toLowerCase(), () => wizardPositionDescription(game.u.ux, game.u.uy));
+        game.context.move = 0;
+        return;
+    }
     if (choice === '/') {
         await doFarlook(false);
         return;
@@ -4915,6 +4820,13 @@ async function showEncyclopediaInformation(name) {
     if (!entries.length)
         await pline("You don't have any information on those things.");
 }
+async function doversion() {
+    if (game.iflags.menu_requested)
+        await doextversion();
+    else
+        await pline(NATIVE_VERSION);
+    game.context.move = 0;
+}
 // C pager.c:dohelp().
 async function dohelp() {
     const entries = [
@@ -4926,18 +4838,18 @@ async function dohelp() {
         { key: 'f', text: 'Info on what a given key does.' },
         { key: 'g', text: 'List of game options.' },
         { key: 'h', text: 'Longer explanation of game options.' },
-        { key: 'i', text: "Using the '#optionsfull' or 'm O' command to set options." },
+        { key: 'i', text: `Using the ${setOptionsCommand()} command to set options.` },
         { key: 'j', text: 'Full list of keyboard commands.' },
         { key: 'k', text: 'List of extended commands.' },
         { key: 'l', text: 'List menu control keys.' },
         { key: 'm', text: "Description of NetHack's command line." },
         { key: 'n', text: 'The NetHack license.' },
         { key: 'o', text: 'Support information.' },
-        { key: 'p', text: 'List of wizard-mode commands.' },
+        ...(game.flags.debug ? [{ key: 'p', text: 'List of wizard-mode commands.' }] : []),
     ];
     const validKeys = [
         27, 32, 10, 13,
-        ...'abcdefghijklmnop'.split('').map(char => char.charCodeAt(0)),
+        ...entries.map(entry => entry.key.charCodeAt(0)),
     ];
     const key = await showChoiceWindow({
         title: 'Select one item:',
@@ -4945,17 +4857,27 @@ async function dohelp() {
         validKeys,
     });
     await restoreHelpMap();
-    if (String.fromCharCode(key) === 'e') {
+    const choice = String.fromCharCode(key);
+    if (choice === 'a')
+        await doextversion();
+    else if (choice === 'e')
         await dowhatis();
-        return;
-    }
-    if (String.fromCharCode(key) === 'j') {
+    else if (choice === 'f')
+        await whatDoesCommand();
+    else if (choice === 'j')
         await showKeyBindings();
-        return;
-    }
-    if (String.fromCharCode(key) === 'k') {
+    else if (choice === 'k')
         await showExtendedCommandList();
-        return;
+    else if (choice === 'l')
+        await menuControlsHelp();
+    else if (choice === 'o')
+        await contactHelp();
+    else {
+        const file = new Map([['b', 'help'], ['c', 'hh'], ['d', 'history'],
+            ['h', 'opthelp'], ['i', 'optmenu'], ['m', 'usagehlp'],
+            ['n', 'license'], ['p', 'wizhelp']]).get(choice);
+        if (file)
+            await displayHelpFile(file);
     }
     game.context.move = 0;
 }
@@ -5520,11 +5442,18 @@ async function doclose() {
         game.context.move = 1;
         return;
     }
+    if (!isok(x, y)) {
+        await pline(`You ${heroIsBlind(game) ? 'feel' : 'see'} no door there.`);
+        game.context.move = 0;
+        return;
+    }
     const loc = game.level?.at(x, y);
     if (await stumbleOnDoorMimic(x, y)) {
         game.context.move = 1;
         return;
     }
+    game.context.move = game.u.confused || game.u.confusionTurns
+        || game.u.stunned || game.u.stunnedTurns ? 1 : 0;
     if (loc?.typ !== DOOR)
         await pline('You see no door there.');
     else if (loc.doormask === D_NODOOR)
@@ -5540,8 +5469,6 @@ async function doclose() {
         game.context.move = 1;
         return;
     }
-    game.context.move = game.u.confused || game.u.confusionTurns
-        || game.u.stunned || game.u.stunnedTurns ? 1 : 0;
 }
 // C refs: lock.c doopen(); cmd.c get_adjacent_loc()/getdir().  Direction
 // validation is owned by the same modal assistance transaction as close;
@@ -5560,10 +5487,13 @@ async function doopen() {
     }
     const x = game.u.ux + direction.dx;
     const y = game.u.uy + direction.dy;
-    const here = game.level?.at(game.u.ux, game.u.uy);
+    if (!isok(x, y)) {
+        game.context.move = 0;
+        return;
+    }
+    const loc = game.level?.at(x, y);
     if (x === game.u.ux && y === game.u.uy
-        && (direction.dz > 0 || here?.typ !== DOOR
-            || !(here.doormask & (D_CLOSED | D_LOCKED)))) {
+        && (direction.dz > 0 || loc?.typ !== DOOR || !(loc.doormask & (D_CLOSED | D_LOCKED)))) {
         await doloot();
         return;
     }
@@ -5572,7 +5502,6 @@ async function doopen() {
         game.context.move = 0;
         return;
     }
-    const loc = game.level?.at(x, y);
     if (await stumbleOnDoorMimic(x, y)) {
         game.context.move = 1;
         return;

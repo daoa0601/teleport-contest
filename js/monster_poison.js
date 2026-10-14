@@ -7,7 +7,6 @@ import { AD_DRCO, AD_DRDX, AD_DRST, AT_BITE, AT_GAZE, AT_TUCH, AT_WEAP, } from '
 import { monsterName, possessiveName } from './monster_name.js';
 import { monsterTypeName } from './monster_data.js';
 import { monsterHasPoisonResistance } from './monster_resistance.js';
-import { monsterSentenceSubject } from './monster_sound.js';
 import { monsterWieldedWeapon } from './monster_weapon.js';
 import { poisonHero } from './poison.js';
 import { rn2 } from './rng.js';
@@ -24,7 +23,7 @@ export async function poisonHeroFromMonster(monster, attackType, { attribute = A
     if (chance > 1 && random(chance) !== 0)
         return { died: false };
     const subject = canSpotMonster(monster)
-        ? possessive(monsterSentenceSubject(monster)) : 'Its';
+        ? possessiveName(monsterName(monster, { state, capitalized: true })) : 'Its';
     return poisonHero({
         ...options, state, random, publish, attribute, fatal,
         reason: `${subject} ${poisonAttackNoun(monster, attackType)}`,
@@ -57,8 +56,5 @@ function poisonAttackNoun(monster, attackType) {
     if (attackType === AT_GAZE)
         return 'gaze';
     return attackType === AT_BITE ? 'bite' : 'sting';
-}
-function possessive(name) {
-    return name.endsWith('s') ? `${name}'` : `${name}'s`;
 }
 //# sourceMappingURL=monster_poison.js.map

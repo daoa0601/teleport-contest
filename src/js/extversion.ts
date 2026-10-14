@@ -9,8 +9,10 @@ import { bot, docrt, flush_screen } from './display.js';
 import { rn2 } from './rng.js';
 import { showTextPages } from './windows.js';
 
+export const NATIVE_VERSION = 'MacOS NetHack Version 5.0.0 - last build May  2 2026 12:00:00.';
+
 const VERSION_PAGE_1 = [
-    'MacOS NetHack Version 5.0.0 - last build May  2 2026 12:00:00.',
+    NATIVE_VERSION,
     '',
     'Options compiled into this edition:',
     '    I32LP64 data model, color, data file compression, deferred handling of',
