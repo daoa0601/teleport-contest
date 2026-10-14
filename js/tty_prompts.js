@@ -33,6 +33,10 @@ export async function promptKey(message, cursorOffset = 0) {
 // C cmd.c:getdir() removes its query immediately after receiving a key,
 // before interpreting that key as a direction, cancellation, or help.
 export async function readDirectionKey(message = 'In what direction? ') {
+    // C getdir() consumes CMDQ_KEY before entering tty_yn_function().
+    const queuedKey = takeCommandKey();
+    if (queuedKey !== undefined)
+        return queuedKey;
     // tty_yn_function() skips an unread topline stopped by Escape, then
     // clears WIN_STOP before painting its question.
     if (game._suppressMessagesUntilInput)

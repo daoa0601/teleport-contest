@@ -124,7 +124,7 @@ export async function kickFloorObject(x, y, { state = game, dx = state.u?.dx ?? 
     const isGold = object.oclass === 12;
     observeObjectForNaming(object, { state });
     await publish(`You kick ${objectDescription(isGold ? object
-        : { ...object, quan: 1, quantity: 1 }, { state })}.`);
+        : { ...object, quan: 1, quantity: 1 }, { state })}.`, { noRepeat: true });
     const source = state.level?.at(x, y);
     const heroSquare = state.level?.at(state.u.ux, state.u.uy);
     if (source && (IS_OBSTRUCTED(source.typ) || closedDoor(source))) {
