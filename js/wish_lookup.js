@@ -80,6 +80,11 @@ export function lookupWishType(parsed, { wizardWish = false, state = game, } = {
     const callName = parsed.callName;
     let description = parsed.description;
     const result = (type, oclass = 0) => ({ name, type, oclass: type === null ? oclass : objectClassForType(type) });
+    if (/^glob of /i.test(name)) {
+        const type = randomTypeByDescription(name, FOOD_CLASS, 1, state)
+            ?? randomTypeByDescription(callName, FOOD_CLASS, 1, state);
+        return result(type, FOOD_CLASS);
+    }
     const callRange = callName ? ranges.find(([range]) => range === name.toLowerCase()) : null;
     if (callRange) {
         const calledType = randomTypeByDescription(callName, callRange[1], 1, state);

@@ -6,10 +6,17 @@ import { addFruit } from '../js/fruit.js';
 import { game, requireGameLevel } from '../js/gstate.js';
 import { mayDig } from '../js/hero_digging.js';
 import { mksobj } from '../js/mklev.js';
-import { BAG_OF_TRICKS, LAND_MINE, POT_HEALING, RED_DRAGON_SCALES, SACK, SCR_LIGHT, SPEED_BOOTS, } from '../js/object_data.js';
+import { BAG_OF_TRICKS, GLOB_OF_GRAY_OOZE, LAND_MINE, POT_HEALING, RED_DRAGON_SCALES, SACK, SCR_LIGHT, SPEED_BOOTS, } from '../js/object_data.js';
 import { recordObjectCall } from '../js/object_knowledge.js';
 import { readObjectName } from '../js/objnam.js';
 import { freshObjectRoom } from './support/object-room.js';
+void test('a glob wish excludes matching call names from other object classes', async () => {
+    freshObjectRoom({ gameplaySeed: 1 });
+    recordObjectCall(POT_HEALING, 'glob of gray ooze');
+    const result = await readObjectName('glob of gray ooze', { wizardWish: true });
+    assert.ok(result && !result.noWish);
+    assert.equal(result.object.otyp, GLOB_OF_GRAY_OOZE);
+});
 void test('a potion call name is not interpreted as holy water', async () => {
     freshObjectRoom();
     recordObjectCall(POT_HEALING, 'holy water');
