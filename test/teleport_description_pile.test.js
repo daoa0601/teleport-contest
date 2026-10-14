@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { askTeleportDestination } from '../js/cmd.js';
+import { askMonsterTeleportDestination, askTeleportDestination } from '../js/cmd.js';
 import { STAIRS } from '../js/const.js';
 import { flush_screen } from '../js/display.js';
 import { showFloorPile } from '../js/floor_object_display.js';
@@ -8,8 +8,35 @@ import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { APPLE, DAGGER } from '../js/object_data.js';
 import { floorObject } from './support/game-objects.js';
+import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';
+for (const subject of ['hero', 'monster']) {
+    for (const verbose of [false, true]) {
+        void test(`accepting a ${subject} teleport clears its prompt with autodescribe off and verbose ${verbose}`, async () => {
+            freshObjectRoom({
+                flags: { tips: false, verbose }, iflags: { autodescribe: false },
+            });
+            const monster = subject === 'monster'
+                ? await createMonsterAt('kitten', 11, 10) : null;
+            const input = resetInputState();
+            const selection = monster
+                ? askMonsterTeleportDestination(monster, { x: 12, y: 10 })
+                : askTeleportDestination();
+            await input.waitUntilBlocked();
+            try {
+                const prompt = requireScreenRow(0).map(cell => cell.ch).join('');
+                assert.match(prompt, verbose ? /For instructions/ : /[Tt]eleport/);
+            }
+            finally {
+                input.feed('.');
+                await selection;
+            }
+            await flush_screen(1);
+            assert.equal(requireScreenRow(0).map(cell => cell.ch).join('').trim(), '');
+        });
+    }
+}
 void test('a chosen teleport description remains visible beside a corner floor-pile window', async () => {
     const level = freshObjectRoom({ flags: { tips: false, verbose: false } });
     const location = level.requireAt(11, 10);
