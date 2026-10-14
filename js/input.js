@@ -2,7 +2,8 @@
 // C refs: win/tty/wintty.c:tty_nhgetch(), win/tty/getline.c.
 import { KEY_BINDINGS } from './terminal.js';
 import { game } from './gstate.js';
-import { NATIVE_COMMAND_PROFILE } from './command_data.js';
+import { NATIVE_COMMAND_CONSTANTS, NATIVE_COMMAND_PROFILE, NATIVE_COMMANDS } from './command_data.js';
+import { rn1, rn2, rnd } from './rng.js';
 function keyCode(key) {
     if (typeof key === 'number')
         return key;
@@ -17,6 +18,8 @@ export class InputGate {
     commandKeys;
     pendingRead;
     blockedWaiters;
+    fuzzerCommandIndex = 0;
+    lastFuzzerCommand = 0;
     constructor({ beforeRead = null, display = null } = {}) {
         this.beforeRead = beforeRead;
         this.display = display;
@@ -53,10 +56,12 @@ export class InputGate {
     takeCommandKey() {
         return this.commandKeys.shift();
     }
-    async readKey() {
+    async readKey(inputState = 'other') {
         // tty input belongs to the player. Command owners consume canned
         // choices explicitly so message pagers cannot steal item letters.
         await this.beforeRead?.();
+        if (game.iflags.debug_fuzzer)
+            return this.randomKey(inputState);
         const queued = this.queue.shift();
         if (queued !== undefined)
             return queued;
@@ -68,6 +73,60 @@ export class InputGate {
             this.pendingRead = resolve;
         });
         this.notifyBlocked();
+        return key;
+    }
+    // C cmd.c:randomkey(). The table index and repeat key survive prompts.
+    randomKey(inputState) {
+        if (inputState === 'command' && (this.lastFuzzerCommand === 1 || this.lastFuzzerCommand === 16)
+            && rn2(5))
+            return this.lastFuzzerCommand;
+        let key;
+        switch (rn2(16)) {
+            case 0:
+                key = 10;
+                break;
+            case 1:
+            case 2:
+            case 3:
+            case 4:
+                key = rn1(95, 32);
+                break;
+            case 5:
+                key = rn2(2) ? 9 : 32;
+                break;
+            case 6:
+                key = rn1(26, 97);
+                break;
+            case 7:
+                key = rn1(26, 65);
+                break;
+            case 8:
+                key = NATIVE_COMMANDS[this.fuzzerCommandIndex++ % NATIVE_COMMANDS.length]?.key ?? 0;
+                break;
+            case 9:
+                key = 35;
+                break;
+            case 10:
+            case 11:
+            case 12: {
+                const direction = rn2(NATIVE_COMMAND_CONSTANTS.N_DIRS);
+                const mode = rn2(7) ? 0 : !rn2(3) ? 2 : 1;
+                key = game.commandBindings.keyForDirection(direction, mode);
+                break;
+            }
+            case 13:
+                key = rn1(10, 48);
+                break;
+            case 14:
+                key = rnd(game.iflags.wc_eight_bit_input ? 255 : 127);
+                break;
+            default:
+                key = 27;
+                break;
+        }
+        key = nativeChar(key);
+        if (inputState === 'command')
+            this.lastFuzzerCommand = key;
         return key;
     }
     waitUntilBlocked() {
@@ -110,11 +169,11 @@ export function clearCommandKeys() {
 export function takeCommandKey() {
     return activeInputGate.takeCommandKey();
 }
-export async function nhgetch() {
+export async function nhgetch(inputState = 'other') {
     // tty_nhgetch() clears WIN_STOP before reading any key, including a
     // target selection made by an action resumed from the command queue.
     game._suppressMessagesUntilInput = false;
-    const key = await activeInputGate.readKey();
+    const key = await activeInputGate.readKey(inputState);
     // tty_nhgetch() marks the displayed topline as seen after any key.
     // Keep its text visible, but a later screen reset must not page it again.
     if (game._pending_message) {
@@ -127,13 +186,16 @@ export async function nhgetch() {
 // C cmd.c:readchar_core(). Escape prefixes only have meaning in command,
 // direction, and position input. Ordinary prompts keep a literal Escape.
 export async function readchar(inputState = 'other') {
-    let key = await nhgetch();
+    // Native fuzzer input skips the keyboard's NUL, EOF, and Escape decoding.
+    if (game.iflags.debug_fuzzer)
+        return activeInputGate.readKey(inputState);
+    let key = await nhgetch(inputState);
     if (key === -1) {
         key = 27;
     }
     else if (key === 27 && game.iflags?.altmeta && inputState !== 'other') {
         // pgetchar() returns char, unlike the first nh_poskey() int.
-        const next = nativeChar(await nhgetch());
+        const next = nativeChar(await nhgetch(inputState));
         key = next === -1 || next === 0 || next === 27 ? 27 : next | 128;
     }
     return nativeChar(key);

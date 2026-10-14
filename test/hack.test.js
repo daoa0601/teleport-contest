@@ -12,6 +12,7 @@ import { AMULET_OF_LIFE_SAVING, LEASH, LEATHER_ARMOR, LOADSTONE, POT_ACID, WATER
 import { vision_reset } from '../js/vision.js';
 import { pushKeys } from '../js/input.js';
 import { initRng } from '../js/rng.js';
+import { grantIntrinsicProperty } from '../js/properties.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { createMonsterAt, createSaddledSteed } from './support/monsters.js';
 import { runExtendedCommand } from './support/commands.js';
@@ -206,7 +207,7 @@ void test('a hero can teleport out before trying to crawl', async () => {
     const level = poolAtHero();
     requireFixtureGame(game);
     level.requireAt(20, 5).typ = ROOM;
-    game.u.teleporting = true;
+    grantIntrinsicProperty('teleportation', 'outside');
     game.u.ulevel = 12;
     game.u.uen = 50;
     game.u.uhunger = 900;
@@ -232,7 +233,7 @@ void test('teleport control chooses where a drowning hero lands', async () => {
     const level = poolAtHero();
     requireFixtureGame(game);
     level.requireAt(24, 6).typ = ROOM;
-    game.u.teleporting = true;
+    grantIntrinsicProperty('teleportation', 'outside');
     game.u.teleportControl = true;
     game.u.ulevel = 12;
     game.u.uen = 50;
@@ -256,7 +257,7 @@ void test('a no-teleport level blocks escape without spending power', async () =
     poolAtHero();
     requireFixtureGame(game);
     game.level.flags.noteleport = true;
-    game.u.teleporting = true;
+    grantIntrinsicProperty('teleportation', 'outside');
     game.u.ulevel = 12;
     game.u.uen = 50;
     game.u.uhunger = 900;
