@@ -807,7 +807,8 @@ function terrainGlyphAppearance(loc: MapLocation, x: number, y: number): GlyphAp
         : In_sokoban(game.u?.uz)
         ? (dec ? CLR_BLUE : NO_COLOR)
         : inMines ? CLR_BROWN
-            : inHell ? CLR_RED : NO_COLOR;
+            : inHell ? CLR_RED
+                : Is_knox_level(game.u.uz) ? CLR_YELLOW : NO_COLOR;
     switch (typ) {
     case STONE:     return { ch: ' ', color: NO_COLOR, dec: false };
     case SCORR:     return { ch: ' ', color: NO_COLOR, dec: false };

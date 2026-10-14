@@ -1,12 +1,22 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { M_AP_FURNITURE } from '../js/const.js';
+import { HWALL, M_AP_FURNITURE } from '../js/const.js';
 import { CmapSymbol, GlyphOffset, cmapToGlyph } from '../js/glyph_numbers.js';
 import { flush_screen, glyphAt, newsym } from '../js/display.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { CLR_BLUE, CLR_BROWN, CLR_GRAY, CLR_RED, CLR_YELLOW, NO_COLOR } from '../js/terminal.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createDungeon, createSpecialLevel } from './support/topology.js';
+void test('real Fort Ludios walls use the yellow DECgraphics color', async () => {
+    const level = freshObjectRoom();
+    requirePlayingGame(game);
+    game.symset = 'DECgraphics';
+    game.knox_level = createSpecialLevel(game.u.uz);
+    level.requireAt(10, 9).typ = HWALL;
+    newsym(10, 9);
+    await flush_screen(1);
+    assert.equal(requireGameDisplay().grid[10]?.[9]?.color, CLR_YELLOW);
+});
 for (const { branch, offset, color } of [
     { branch: 'The Gnomish Mines', offset: GlyphOffset.cmapMines, color: CLR_BROWN },
     { branch: 'Gehennom', offset: GlyphOffset.cmapGehennom, color: CLR_RED },
