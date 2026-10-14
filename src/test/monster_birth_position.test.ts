@@ -84,3 +84,18 @@ void test('random birth on a scare scroll selects a species that does not fear i
         assert.equal(monster.my, 10);
     }
 });
+
+void test('random birth prefers a stairway when every usable square is visible', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    game.viz_array = Array.from({ length: 21 }, () => new Uint8Array(80).fill(2));
+    game.stairs = { sx: 16, sy: 14, up: true, isladder: false, u_traversed: false,
+        tolev: { dnum: game.u.uz.dnum, dlevel: 7 }, next: null };
+    initRng(1n);
+
+    const rat = await makemonAt(RAT, 0, 0, BIRTH_FLAGS);
+
+    assert.ok(rat);
+    assert.equal(rat.mx, 16);
+    assert.equal(rat.my, 14);
+});

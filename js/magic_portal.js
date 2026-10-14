@@ -4,6 +4,7 @@ import { In_endgame } from './const.js';
 import { plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
 import { makeStunned } from './hero_mental_status.js';
+import { scheduleLevelChange } from './level_change.js';
 import { bringLeashedFollowers } from './teleport.js';
 function dungeonName(level) {
     return level ? game.dungeons[level.dnum]?.dname ?? '' : '';
@@ -21,12 +22,12 @@ async function addPortalStun() {
 export async function activateMagicPortal(trap, gotoLevel) {
     if (!await bringLeashedFollowers()) {
         await plineWithContinuation('You shudder for a moment.');
-        return true;
+        return;
     }
     await plineWithContinuation('You activated a magic portal!');
     if (In_endgame(game.u?.uz) && !game.u?.uhave?.amulet) {
         await plineWithContinuation('You feel dizzy for a moment, but nothing happens...');
-        return true;
+        return;
     }
     if (typeof gotoLevel !== 'function')
         throw new Error('magic portal needs the level-change function');
@@ -34,14 +35,12 @@ export async function activateMagicPortal(trap, gotoLevel) {
         throw new Error('Magic portal has no destination.');
     const leavingTutorial = isTutorialLevel(game.u?.uz)
         && !isTutorialLevel(trap.dst);
-    // domagicportal() schedules this as deferred_goto()'s pre-message. Its
-    // pline flushes the activation before any destination generation.
+    // domove() still needs the departure level to wear its engravings.
+    // deferred_goto() prints dizziness after that movement tail finishes.
     const preMessage = leavingTutorial ? 'Resuming regular play.' : await addPortalStun();
-    await plineWithContinuation(preMessage);
-    await gotoLevel(trap.dst, {
-        arrival: leavingTutorial ? 'stairs' : 'portal',
-    });
+    scheduleLevelChange([trap.dst, {
+            arrival: leavingTutorial ? 'stairs' : 'portal',
+        }], gotoLevel, preMessage);
     game.context.move = 1;
-    return true;
 }
 //# sourceMappingURL=magic_portal.js.map

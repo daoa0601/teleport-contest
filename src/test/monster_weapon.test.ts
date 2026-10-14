@@ -7,6 +7,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { initRng } from '../js/rng.js';
 import { monsterCanCarryObject, monsterCanTouchObject } from '../js/monster_carry.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
+import { monsterName } from '../js/monster_name.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { selectHandToHandWeapon, swingMonsterWeapon, updateMonsterWeaponAfterPolymorph, wieldMonsterWeapon } from '../js/monster_weapon.js';
 import {
@@ -18,6 +19,25 @@ import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 const SILVER_SABER = OBJECT_NAMES.indexOf('silver saber');
+
+void test('hallucinated weapon swings assign the first identity to the attacker and the second to the defender', async () => {
+    freshObjectRoom({ flags: { verbose: true }, hero: { hallucinationTurns: 10 } });
+    const attacker = await createMonsterAt('balrog', 11, 10, NO_MINVENT);
+    const defender = await createMonsterAt('goblin', 12, 10, NO_MINVENT);
+    const weapon = await knownObject(BULLWHIP);
+    initRng(83n);
+    const attackerName = monsterName(attacker, { state: game, capitalized: true });
+    const defenderName = monsterName(defender, { state: game });
+    initRng(83n);
+    const messages: string[] = [];
+
+    await swingMonsterWeapon(attacker, weapon, game, {
+        defender, publish: async message => { messages.push(message); },
+    });
+
+    assert.ok(messages[0]?.startsWith(`${attackerName} lashes `), `Attacker identity: ${messages[0]}`);
+    assert.ok(messages[0]?.endsWith(` at ${defenderName}.`), `Defender identity: ${messages[0]}`);
+});
 
 for (const targetsMonster of [false, true]) {
     void test(`a balrog lashes its bullwhip at ${targetsMonster ? 'another monster' : 'the hero'} with the perceived possessive pronoun`, async () => {

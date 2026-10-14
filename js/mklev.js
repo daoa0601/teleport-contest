@@ -12,8 +12,11 @@ import { monsterHasMapPosition, monsterAtPosition, monsterOccupiesPosition } fro
 import { finishMonsterBirth } from './monster_birth.js';
 import { createParticularMonster } from './read_creation.js';
 import { setMonsterPermanentInvisibility } from './monster_invisibility.js';
+import { setMonsterSpecies } from './monster_species.js';
+import { monsterIsVampireShifter } from './monster_data.js';
 import { nameObjectFromTopten } from './topten.js';
 import { normalDemon } from './minion.js';
+import { ismnum } from './const.js';
 import { randomMonsterRelocation } from './teleport.js';
 import { sendMonsterToLimbo } from './monster_migration.js';
 import { monsterHasStoneResistance } from './monster_resistance.js';
@@ -61,7 +64,7 @@ import { getObjectClassBounds, getObjectDefinition, requireObjectData, OBJECT_BA
 import { MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_DIFFICULTY, MONSTER_GENO, MONSTER_ALIGNMENT, MONSTER_LEVEL, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_FLAGS3, MONSTER_SYMBOL, MONSTER_SIZE, MONSTER_MOVE, MONSTER_SOUND, MONSTER_HAS_WEAPON_ATTACK, MONSTER_COLOR, MONSTER_NAME, MONSTER_RESISTS, SPECIAL_PM, monsterClassSymbol, monsterIsPlayerMonster, requireMonsterData, } from './monster_data.js';
 import { isReviver, isRider, zombieForm, } from './corpse_species.js';
 import { adjustedMonsterLevel, newMonsterHitPoints, } from './monster_hit_points.js';
-import { changeMonsterForm, initialShapechangedBirth, pickNastyShape, } from './monster_polymorph.js';
+import { changeMonsterForm, initialShapechangedBirth, pickNastyShape, shapechangerGender, } from './monster_polymorph.js';
 import { initializeMonsterWormBody, restoreMonsterWormHeads, validMonsterWormBodies, } from './monster_worm.js';
 import { monsterAlignmentType, setMonsterMalign } from './monster_alignment.js';
 import { saveMonsterTraits } from './monster_traits.js';
@@ -89,7 +92,7 @@ import { objectWeight } from './weight.js';
 import { curseObjectState, objectResistsDestruction, } from './object_state.js';
 import { isMultiGeneratedWeapon, isPoisonableObject, } from './object_properties.js';
 import { addCreatedObjectToContainer, addObjectToContainer } from './object_container.js';
-import { vision_note_blocker_change } from './vision.js';
+import { monsterEmitsLight, vision_note_blocker_change } from './vision.js';
 import { goodPosition } from './teleport_rules.js';
 import { randomDefensiveMonsterItem, randomMiscMonsterItem, randomOffensiveMonsterItem, } from './muse.js';
 import { SpecialSelection, match_maptyps, mapCharacterType, specialSelectionFillRect, specialSelectionMatch, } from './selvar.js';
@@ -1410,6 +1413,7 @@ const M2_GNOME = 0x00000040;
 const M2_ORC = 0x00000080;
 const M2_DEMON = 0x00000100;
 const M2_JEWELS = 0x20000000;
+const M2_SHAPESHIFTER = 0x00004000;
 const M2_LORD = 0x00000400;
 const M2_PRINCE = 0x00000800;
 const M2_MINION = 0x00001000;
@@ -1537,11 +1541,15 @@ function randomMonsterPosition(mndx) {
     // scan.  Runtime callers first scan unseen squares; the compact vision
     // bit mirrors cansee() without introducing a level-generation cycle.
     const firstPass = game.in_mklev || game.blind ? 1 : 0;
+    const xOffset = x;
+    const yOffset = y;
     for (let visiblePass = firstPass; visiblePass < 2; visiblePass++) {
         for (let dx = 0; dx < COLNO; dx++) {
             for (let dy = 0; dy < ROWNO; dy++) {
-                const candidateX = ((dx + x) % (COLNO - 1)) + 1;
-                const candidateY = ((dy + y) % (ROWNO - 1)) + 1;
+                const candidateX = ((dx + xOffset) % (COLNO - 1)) + 1;
+                const candidateY = ((dy + yOffset) % (ROWNO - 1)) + 1;
+                x = candidateX;
+                y = candidateY;
                 if (!visiblePass
                     && !!((game.viz_array?.[candidateY]?.[candidateX] ?? 0) & 0x02)) {
                     continue;
@@ -1549,6 +1557,17 @@ function randomMonsterPosition(mndx) {
                 if (goodPosition(candidateX, candidateY, subject, { gpflags: GP_AVOID_MONPOS }))
                     return { x: candidateX, y: candidateY };
             }
+        }
+        if (!visiblePass && (mndx === null || MONSTER_MOVE[mndx])) {
+            for (let stair = game.stairs; stair; stair = stair.next) {
+                if (stair.tolev.dnum === game.u.uz?.dnum && !rn2(2)) {
+                    x = stair.sx;
+                    y = stair.sy;
+                    break;
+                }
+            }
+            if (goodPosition(x, y, subject, { gpflags: GP_AVOID_MONPOS }))
+                return { x, y };
         }
     }
     return null;
@@ -3130,6 +3149,7 @@ export async function maketrap(x, y, typ) {
             statueMonster = rndmonnumAdj(3, 6);
         } while (--tryCount > 0
             && MONSTER_SYMBOL[statueMonster] === 21
+            && ((MONSTER_FLAGS2[statueMonster] ?? 0) & M2_JEWELS)
             && Math.sign(game.u?.ualign?.type ?? 0)
                 === Math.sign(MONSTER_ALIGNMENT[statueMonster] ?? 0));
         const statue = await createCorpstatAt(STATUE, null, statueMonster, x, y, 0);
@@ -6138,14 +6158,50 @@ async function createLuaObject(context, options, parentContainer, parentMonster,
 function applyLuaMonsterAppearance(monster, appearance) {
     if (!monster || !appearance)
         return;
+    const mimic = MONSTER_SYMBOL[monster.mnum] === S_MIMIC;
+    if (game.u.protectionFromShapeChangers || game.protectionFromShapeChangers
+        || !(mimic || (ismnum(monster.cham) && appearance.kind === 'monster')))
+        return;
     if (appearance.kind === 'object') {
         monster.m_ap_type = M_AP_OBJECT;
         monster.mappearance = appearance.type;
         return;
     }
     if (appearance.kind === 'monster') {
-        monster.m_ap_type = M_AP_MONSTER;
-        monster.mappearance = appearance.type;
+        let type = appearance.type;
+        if (monsterIsVampireShifter(monster)) {
+            const base = monster.cham;
+            if (base === PM_VLAD_THE_IMPALER
+                && monster.minvent?.some(object => object.otyp === CANDELABRUM_OF_INVOCATION)) {
+                type = base;
+            }
+            else if ((MONSTER_FLAGS2[type] ?? 0) & M2_SHAPESHIFTER) {
+                if (!ismnum(base))
+                    throw new Error('A vampire shape needs its natural species');
+                type = base;
+            }
+            else if (!(type === PM_VAMPIRE_BAT
+                || type === MONSTER_NAME.indexOf('fog cloud')
+                || (type === MONSTER_NAME.indexOf('wolf') && base !== PM_VAMPIRE)))
+                return;
+        }
+        if (type === monster.mnum) {
+            monster.m_ap_type = M_AP_NOTHING;
+            monster.mappearance = 0;
+        }
+        else if (mimic || monster.iswiz) {
+            monster.m_ap_type = M_AP_MONSTER;
+            monster.mappearance = type;
+        }
+        else {
+            const oldForm = monster.mnum;
+            monster.female = shapechangerGender(monster.cham ?? oldForm, type, !!monster.female);
+            setMonsterSpecies(monster, type);
+            if (monsterEmitsLight(oldForm) !== monsterEmitsLight(type))
+                game.vision_full_recalc = 1;
+            if (!monster.perminvis || oldForm === PM_STALKER || oldForm === PM_BLACK_LIGHT)
+                monster.perminvis = type === PM_STALKER || type === PM_BLACK_LIGHT;
+        }
         return;
     }
     // C sp_lev.c:create_monster() stores the matching defsyms index,
@@ -6229,10 +6285,10 @@ async function createLuaMonster(context, options) {
     if (monster && options.waiting) {
         monster.mstrategy = (monster.mstrategy ?? 0) | STRAT_WAITFORU;
         monster.waiting = true;
-        if (monster.cham === PM_VAMPIRE_LEADER
-            && monster.mnum !== PM_VAMPIRE_LEADER
+        if (monsterIsVampireShifter(monster)
+            && monster.mnum !== monster.cham
             && options.appearance?.kind !== 'monster') {
-            await changeMonsterForm(monster, PM_VAMPIRE_LEADER);
+            await changeMonsterForm(monster, monster.cham ?? null);
         }
     }
     if (monster && options.seentraps)
@@ -7383,6 +7439,7 @@ function vibratingSquarePoint() {
     }
     if (!point)
         throw new Error('Vibrating square placement did not choose a position.');
+    level.invocationPosition = { ...point };
     return point;
 }
 async function populateRandomMaze() {

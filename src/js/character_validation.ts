@@ -74,6 +74,10 @@ export function validSavedAlignment(value: unknown): value is Alignment {
 
 export function validSavedGameFlags(value: unknown): value is GameFlags {
     return closedFieldsMatch<GameFlags>(value, {
+        statusConditionMask: optional((entry): entry is number =>
+            typeof entry === 'number' && Number.isInteger(entry) && entry >= 0 && entry < 2 ** 30),
+        versinfo: optional((entry): entry is number =>
+            typeof entry === 'number' && Number.isInteger(entry) && entry >= 1 && entry <= 7),
         accessiblemsg: optional(boolean),
         acoustics: optional(boolean),
         armorstatus: optional(boolean),

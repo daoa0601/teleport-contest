@@ -16,7 +16,6 @@ import { dryFountainAt } from './fountain.js';
 import {
     canSeeMonster, displayLiquidName, newsym, plineWithContinuation,
 } from './display.js';
-import { preventMonsterDeath } from './mondeath.js';
 import { splitMonster } from './monster_clone.js';
 import {
     MONSTER_FLAGS1, MONSTER_NAME,
@@ -54,6 +53,7 @@ const S_EEL = 57;
 export interface MonsterLiquidDeathContext {
     state: GameState;
     random: (limit: number) => number;
+    rollOne: (sides: number) => number;
     leaveCorpse: boolean;
     cause: 'rust' | 'drowning' | 'lava-scorch' | 'lava-burning';
     // mondead() and xkilled() announce grief on opposite sides of cleanup.
@@ -241,20 +241,6 @@ export function monsterLavaReaction(monster: Monster, state: GameState = game): 
     return { kind: fireResistant ? 'scorch' : 'burn' };
 }
 
-async function recoverMonsterFromLiquid(
-    monster: Monster, state: GameState, {
-        announce, random, rollOne,
-    }: { announce: MessagePublisher; random: (limit: number) => number; rollOne: (sides: number) => number },
-) {
-    monster.mhp = 0;
-    return preventMonsterDeath(monster, {
-        state,
-        publish: announce,
-        random,
-        rollOne,
-    });
-}
-
 export async function resolveMonsterLiquid<DeathResult = MonsterLiquidDeathResult>(
     monster: Monster | null | undefined,
     state: GameState = game,
@@ -279,7 +265,9 @@ export async function resolveMonsterLiquid<DeathResult = MonsterLiquidDeathResul
     }
     const sadFeeling = !!monster.mtame && !canSeeMonster(monster);
     const finishFatalLiquid = async (cause: MonsterLiquidDeathContext['cause'], leaveCorpse: boolean) => {
-        return finishDeath(monster, { state, random, leaveCorpse, cause, sadFeeling, publish: announce });
+        // mondead()/xkilled() own recovery. In particular, xkilled records
+        // conduct and pet responsibility before an amulet can save the victim.
+        return finishDeath(monster, { state, random, rollOne, leaveCorpse, cause, sadFeeling, publish: announce });
     };
 
     const waterLevel = levelIsWaterLevel(state);
@@ -321,15 +309,8 @@ export async function resolveMonsterLiquid<DeathResult = MonsterLiquidDeathResul
             if (monster.mhpmax > reaction.damage)
                 monster.mhpmax -= reaction.damage;
             if (monster.mhp <= 0) {
-                const recovery = await recoverMonsterFromLiquid(
-                    monster, state, {
-                        announce, random, rollOne,
-                    },
-                );
-                if (recovery.heroDied) return { heroDied: true };
-                if (!recovery.survived) {
-                    return finishFatalLiquid('rust', true);
-                }
+                const death = await finishFatalLiquid('rust', true);
+                if (state.program_state.gameover || monster.dead || monster.mhp <= 0) return death;
             }
             await waterDamageChain(
                 monster.minvent || monster.inventory || [], [], state,
@@ -352,15 +333,8 @@ export async function resolveMonsterLiquid<DeathResult = MonsterLiquidDeathResul
                 await announce(`${name} sinks as ${displayLiquidName('water', state)} rushes in and flushes you out.`);
             }
             monster.mhp = 0;
-            const recovery = await recoverMonsterFromLiquid(
-                monster, state, {
-                    announce, random, rollOne,
-                },
-            );
-            if (recovery.heroDied) return { heroDied: true };
-            if (!recovery.survived) {
-                return finishFatalLiquid('drowning', true);
-            }
+            const death = await finishFatalLiquid('drowning', true);
+            if (state.program_state.gameover || monster.dead || monster.mhp <= 0) return death;
             if (monsterInAir(monster, state)) return { survived: true };
             await waterDamageChain(
                 monster.minvent || monster.inventory || [], [], state,
@@ -406,16 +380,9 @@ export async function resolveMonsterLiquid<DeathResult = MonsterLiquidDeathResul
             }
 
             if (monster.mhp <= 0) {
-                const recovery = await recoverMonsterFromLiquid(
-                    monster, state, {
-                        announce, random, rollOne,
-                    },
-                );
-                if (recovery.heroDied) return { heroDied: true };
-                if (!recovery.survived) {
-                    return finishFatalLiquid(lava.kind === 'scorch'
-                        ? 'lava-scorch' : 'lava-burning', false);
-                }
+                const death = await finishFatalLiquid(lava.kind === 'scorch'
+                    ? 'lava-scorch' : 'lava-burning', false);
+                if (state.program_state.gameover || monster.dead || monster.mhp <= 0) return death;
             }
             if (monsterInAir(monster, state) || monsterLikesLava(monster))
                 return { survived: true };

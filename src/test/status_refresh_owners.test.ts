@@ -70,7 +70,8 @@ void test('a map flush preserves status rows erased by line input until a status
     assert.equal(requireScreenRow(22).map(cell => cell.ch).join('').trim(), '');
     assert.equal(requireScreenRow(23).map(cell => cell.ch).join('').trim(), '');
     await bot();
-    assert.match(requireScreenRow(23).map(cell => cell.ch).join(''), /^Dlvl:/);
+    // The six-column tty shrinks Dlvl to Dl before restoring this row.
+    assert.match(requireScreenRow(23).map(cell => cell.ch).join(''), /^Dl:8/);
 });
 
 void test('the save sentinel skips status drawing and consumes the redraw request', async () => {

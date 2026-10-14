@@ -73,15 +73,16 @@ export interface LevelChangeOptions {
 export interface ScheduledLevelChange {
     args: Parameters<typeof gotoLevel>;
     changeLevel: typeof gotoLevel;
+    preMessage: string;
 }
 
 // C do.c:schedule_goto(). The current command or monster finishes using
 // the departure level; utotype stops the next monster from moving.
 export function scheduleLevelChange(
-    args: Parameters<typeof gotoLevel>, changeLevel = gotoLevel,
+    args: Parameters<typeof gotoLevel>, changeLevel = gotoLevel, preMessage = '',
 ): void {
     requirePlayingGame(game);
-    game._scheduledLevelChange = { args, changeLevel };
+    game._scheduledLevelChange = { args, changeLevel, preMessage };
     game.u.utolev = { ...game.u.uz, ...args[0] };
     game.u.utotype = UTOTYPE_DEFERRED;
 }
@@ -95,8 +96,10 @@ export async function finishScheduledLevelChange(): Promise<void> {
     delete game._scheduledLevelChange;
     // C do.c:deferred_goto() preserves the topline when travel stays here.
     if (game.u.uz.dnum !== destination.dnum
-        || game.u.uz.dlevel !== destination.dlevel)
+        || game.u.uz.dlevel !== destination.dlevel) {
+        if (travel.preMessage) await plineWithContinuation(travel.preMessage);
         await travel.changeLevel(...travel.args);
+    }
     game.u.utotype = 0;
 }
 

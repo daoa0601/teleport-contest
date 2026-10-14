@@ -9,6 +9,7 @@ import { remove_object, updateIceObjectTimersAt } from './floor_object.js';
 import { game, requireGameLevel } from './gstate.js';
 import { resolveMonsterLiquid } from './mon.js';
 import { finishMonsterLiquidDeath } from './monster_death.js';
+import { finishHeroLiquidMonsterDeath } from './hero_monster_death.js';
 import { monsterAtPosition } from './monster_location.js';
 import { BEARTRAP, BOULDER, LAND_MINE } from './object_data.js';
 import { withIndefiniteArticle } from './object_grammar.js';
@@ -67,11 +68,13 @@ export async function meltIce(x, y, { announce = plineWithContinuation, message 
     }
     else if (isPoolAt(x, y)) {
         const monster = monsterAtPosition(requireGameLevel(game), x, y);
-        if (monster)
+        if (monster) {
             await resolveMonsterLiquid(monster, game, {
-                announce, finishDeath: finishMonsterLiquidDeath,
+                announce, finishDeath: game.context.mon_moving
+                    ? finishMonsterLiquidDeath : finishHeroLiquidMonsterDeath,
                 monsterMoving: !!game.context.mon_moving,
             });
+        }
     }
 }
 function floorBoulderAt(x, y) {

@@ -1,5 +1,6 @@
 import { monsterHasMapPosition } from './monster_location.js';
 import { isPoolAt } from './terrain_properties.js';
+import { classifyStatusTerrain } from './status_terrain.js';
 // C hack.c:switch_terrain(), trap.c:float_up()/reset_utrap().
 
 import {
@@ -351,6 +352,14 @@ export async function resetHeroTrap(message = true, state: GameState = game): Pr
     }
 }
 
+// hack.c:set_uinwater(). Entering or leaving water also changes terrain
+// properties and the optional terrain status, even on the same square.
+export async function setHeroInWater(inWater: boolean, state: GameState = game): Promise<void> {
+    if (!!state.u.uinwater === inWater) return;
+    state.u.uinwater = inWater ? 1 : 0;
+    await switchHeroTerrain(state);
+}
+
 export async function switchHeroTerrain(state: GameState = game): Promise<void> {
     const wasLevitating = propertyIsActive('levitation', state);
     const wasFlying = propertyIsActive('flying', state);
@@ -381,4 +390,5 @@ export async function switchHeroTerrain(state: GameState = game): Promise<void> 
     }
     if (wasLevitating !== propertyIsActive('levitation', state)
         || wasFlying !== propertyIsActive('flying', state)) state.context.botl = true;
+    if (state.flags.terrainstatus) classifyStatusTerrain(state);
 }

@@ -255,7 +255,7 @@ function selectSandestinForm() {
     }
     return null;
 }
-function shapechangerGender(baseMnum, targetMnum, female) {
+export function shapechangerGender(baseMnum, targetMnum, female) {
     const flags = MONSTER_FLAGS2[targetMnum] ?? 0;
     if (flags & M2_MALE)
         return false;

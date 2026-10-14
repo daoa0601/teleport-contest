@@ -70,7 +70,7 @@ export function questIntermed(g: GameState = game): string {
 
 // C botl.c:rank_of(). The level picks the rank slot; a female hero reads
 // the female title when the table has one.
-function rankOf(level: number, g: GameState): string {
+export function rankOf(level: number, g: GameState): string {
     const titles = g.urole?.title ?? [];
     for (let index = experienceRankIndex(level); index >= 0; index--) {
         const title = titles[index];

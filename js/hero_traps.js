@@ -720,7 +720,8 @@ async function triggerProjectileTrap(trap) {
 }
 // C teleport.c:level_tele_trap(). The level prompt acknowledges the trap
 // announcement before accepting its first character.
-async function triggerLevelTeleportTrap(trap, gotoLevel, intentional) {
+export async function triggerLevelTeleportTrap(trap, gotoLevel, intentional) {
+    requirePlayingGame(game);
     revealTrap(trap);
     const hero = game.u;
     // C hack.c:u_locomotion() gives the hero's active movement properties
@@ -1188,7 +1189,7 @@ export async function triggerHeroTrap(trap, { finishTeleport = null, gotoLevel =
             trap.tseen = true;
             if (game.u.utraptype === TT_BURIEDBALL)
                 await buriedBallToPunishment();
-            shortCircuited = await activateMagicPortal(trap, gotoLevel);
+            await activateMagicPortal(trap, gotoLevel);
             break;
         case MAGIC_TRAP:
             await triggerMagicTrap(trap);

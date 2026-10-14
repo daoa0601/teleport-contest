@@ -121,8 +121,6 @@ import {
     see_traps,
     show_glyph_cell,
     swallowed,
-    _statusLine1,
-    _statusLine2,
     canSeeMonster, monsterVisible,
     shieldeff,
 } from './display.js';
@@ -181,7 +179,7 @@ import {
     resumeDeferredHeroColdSpecial, resumeDeferredHeroContact,
     resumeDeferredHeroFireSpecial,
     resumeDeferredHeroElectricSpecial,
-    resumeDeferredHeroLifeDrain, resumeDeferredHeroStun,
+    resumeDeferredHeroLifeDrain, resumeDeferredHeroStun, resumeDeferredHeroEnchantment,
     resumeDeferredHeroSticking,
     resumeDeferredHeroEngulf, resumeDeferredHeroBlindness,
     resumeDeferredHeroLegs,
@@ -294,8 +292,6 @@ import { restartMonsterShapechanging } from './monster_polymorph.js';
 import { msummon } from './minion.js';
 import { captureRunmodeDelay } from './runmode.js';
 
-type StatusSnapshot = readonly [string, string];
-
 interface TurnMaintenance {
     sourceTurn: number;
     moveAmount: number;
@@ -338,17 +334,9 @@ function putLine(col: number, row: number, text: string, attr = 0): void {
         display.setCell(col + i, row, text.charAt(i), NO_COLOR, attr);
 }
 
-function putStatusLines(snapshot: StatusSnapshot | null = null): void {
-    const line1 = snapshot?.[0] || _statusLine1();
-    const line2 = snapshot?.[1] || _statusLine2();
-    putLine(0, 22, line1.replace(/\x1b\[(\d+)C/g,
-        (_match, count) => ' '.repeat(Number(count))));
-    putLine(0, 23, line2);
-}
-
 // C ref: com_pager("legacy") and dat/quest.lua.  The role-independent
 // creation story is laid out by the tty pager; role, rank, and god are live.
-async function showLegacy(statusSnapshot: StatusSnapshot | null = null): Promise<void> {
+async function showLegacy(): Promise<void> {
     const game = requireInitializedGame();
     // com_pager() creates a fresh Lua state, which loads nhlib.lua before
     // quest.lua and consumes the alignment shuffle from CORE.
@@ -407,7 +395,6 @@ async function showLegacy(statusSnapshot: StatusSnapshot | null = null): Promise
     putLine(left, 15, outerLines[6]);
     putLine(left, 16, outerLines[7]);
     putLine(left, 17, outerLines[8]);
-    putStatusLines(statusSnapshot);
     d.setCursor(left + 8, 17);
     await nhgetch();
 }
@@ -2980,6 +2967,8 @@ async function presentMonsterAttackEffects(
                     heroAttack.deferredDecayArmor = false;
                     heroAttack.deferredPostHit = true;
                 }
+                if (heroAttack.deferredEnchantment)
+                    await resumeDeferredHeroEnchantment(action, game, random);
                 if (heroAttack.drainMessage) {
                     const drainDismissal = await plineWithContinuation(
                         heroAttack.drainMessage,
@@ -3682,15 +3671,13 @@ export async function newgame() {
         await uInitInventoryAttrs();
         await bot();
     }
-    const preSkillsStatus: StatusSnapshot = [_statusLine1(), _statusLine2()];
-
     // C applies equipment, spells, discoveries, skills, spell-power minimum,
     // and AC only after the final candidate has been accepted.  It does not
     // redraw bot() here, so the legacy overlay still retains the pre-skill
     // status row underneath it.
     await finishStartingDiscoveries();
 
-    if (g.flags?.legacy) await showLegacy(preSkillsStatus);
+    if (g.flags?.legacy) await showLegacy();
     g.program_state.something_worth_saving
         = Number(g.program_state.something_worth_saving || 0) + 1;
 

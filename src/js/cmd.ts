@@ -9,6 +9,12 @@ import { visibleRegionAt } from './regions.js';
 import type { PageLocalMultiSelectItem } from './windows.js';
 import type { ChoiceMenuItem } from './windows.js';
 import { wizIntrinsic } from './wizard_intrinsics.js';
+import { wizFuzzer, wizPanic } from './wizard_debug_commands.js';
+import { wizSmell } from './wizard_smell.js';
+import { wizBury } from './wizard_bury.js';
+import { wizMigrateMonsters } from './wizard_migration.js';
+import { prepareWizardTeleportAtWill, wizardTeleportCommand } from './wizard_teleport.js';
+import { hurtleMonster } from './monster_hurtle.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
@@ -40,6 +46,22 @@ import { fruitName } from './fruit.js';
 import { encyclopediaEntries, encyclopediaMatches } from './encyclopedia.js';
 import { objectAtMapDescription } from './map_object_description.js';
 import { objectNeedsFullIdentification } from './invent.js';
+import { identifyPack } from './invent.js';
+import { DIED, KILLED_BY, MENU_ITEMFLAGS_SKIPINVERT, MGIVENNAME, NHW_MENU, PICK_ANY } from './const.js';
+import { AD_PHYS } from './monster_attack_types.js';
+import { finishMonsterKilled, finishMonsterLiquidDeath } from './monster_death.js';
+import { monsterIsNonliving } from './monster_data.js';
+import { Invocation_lev, Is_earthlevel, Is_firelevel, Is_knox_level, MAGIC_PORTAL, VIBRATING_SQUARE } from './const.js';
+import { map_engraving, map_trap } from './display.js';
+import { VAULT } from './const.js';
+import { somexyspace } from './mkroom.js';
+import { deleteTrap } from './trap_lifecycle.js';
+import { teleportHero } from './teleport.js';
+import { mapMagicLevel } from './magic_mapping.js';
+import {
+    tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow,
+    tty_end_menu, tty_select_menu, tty_start_menu,
+} from './tty_menu.js';
 import { LOOK_ONCE, LOOK_QUICK, LOOK_VERBOSE } from './const.js';
 import { waterbodyName } from './terrain_name.js';
 import { def_warnsyms } from './const.js';
@@ -204,7 +226,7 @@ import { doattributes, doconduct } from './insight.js';
 import { extendedCommandsHelp, keyBindingsHelp } from './command_help.js';
 import { contactHelp, displayHelpFile, menuControlsHelp, setOptionsCommand, whatdoes } from './pager_help.js';
 import { doextversion, NATIVE_VERSION } from './extversion.js';
-import { dosearch, mapLevel } from './detect.js';
+import { dosearch, findit } from './detect.js';
 import { detectMonsters } from './magic_detection.js';
 import { abusePetAfterHeroHit } from './dog.js';
 import {
@@ -323,7 +345,7 @@ import {
 } from './monster_anger.js';
 import { publishMonsterNoise } from './monster_sound.js';
 import { doride, moveSteedWithHero, ridingPreventsMovement, stuckSteed } from './steed.js';
-import { currentAttribute, currentStrength, exerciseAttribute, exerciseWisdom } from './attrib.js';
+import { currentAttribute, currentStrength, exerciseAttribute, exerciseWisdom, reportHeroEncumbrance } from './attrib.js';
 import { spendHeroNutrition, updateHeroHunger } from './hunger.js';
 
 import { continueForceLock, doforce } from './lock.js';
@@ -331,7 +353,7 @@ import { doUntrap } from './untrap.js';
 import { dosit } from './sit.js';
 import { continueEngraving, doengrave } from './engrave_command.js';
 
-import { heroCanMoveFromTrap, triggerHeroTrapAt } from './hero_traps.js';
+import { heroCanMoveFromTrap, triggerHeroTrapAt, triggerLevelTeleportTrap } from './hero_traps.js';
 import { activateStatueTrapAt } from './statue_trap.js';
 import {
     applyDippedCoinFate, applyFountainDemonActor,
@@ -444,7 +466,7 @@ import { kickFloorObject } from './object_kick.js';
 import { kickWithMonsterForm } from './hero_form_kick.js';
 import {
     bringLeashedFollowers, heroTeleportDestinationOk, moveHeroByTeleport,
-    randomMonsterRelocation, safeTeleportDestination,
+    randomMonsterRelocation,
 } from './teleport.js';
 import { goodPosition, monsterTeleportRestricted } from './teleport_rules.js';
 import { removeWishGrantingMonster } from './monster_departure.js';
@@ -1284,7 +1306,7 @@ async function runCommandHandler(binding: CommandBinding, {
         return;
     }
     if (key === 20 && game.flags?.debug) { // Ctrl-T: wiztele()
-        await wizTeleportPosition();
+        await wizardTeleportCommand(wizTeleportPosition);
         return;
     }
     if (key === 6 && game.flags?.debug) { // Ctrl-F: wiz_map()
@@ -1361,6 +1383,10 @@ async function runCommandHandler(binding: CommandBinding, {
             // cmd_safety_prevention(); `m.` deliberately spends the turn.
             prepareTimedCommand(nextCommand);
             await performWaitCommand(true);
+        } else if (nextCommand.command?.handler === 'doextcmd'
+            || nextCommand.command && (nextCommand.command.flags & NATIVE_COMMAND_FLAGS.CMD_M_PREFIX)) {
+            prepareTimedCommand(nextCommand);
+            await executeCommandAction(nextCommand);
         } else {
             await pline("The 'm' prefix should be followed by a movement command.");
             game.context.move = 0;
@@ -2770,7 +2796,15 @@ async function dochat() {
 }
 
 async function wizWish() {
-    return makeWish();
+    const verbose = game.flags.verbose;
+    game.flags.verbose = false;
+    try {
+        await makeWish();
+    } finally {
+        if (verbose === undefined) delete game.flags.verbose;
+        else game.flags.verbose = verbose;
+    }
+    await reportHeroEncumbrance();
 }
 
 // C refs: cmd.c Ctrl-G/wizgenesis, wizcmds.c wiz_genesis(), and read.c
@@ -2786,48 +2820,147 @@ async function wizGenesis() {
     game.context.move = 0;
 }
 
+async function wizDetect() {
+    await findit();
+    game.context.move = 0;
+}
+
 async function wizKill() {
-    if (!game.flags?.debug) {
-        await pline('#wizkill: unknown extended command.');
-        game.context.move = 0;
-        return;
+    requirePlayingGame(game);
+    const level = requireGameLevel();
+    const here = { ...game.u.uz };
+    let cursor: Position = { x: game.u.ux, y: game.u.uy };
+    let prompt = 'Pick first monster to slay';
+    for (;;) {
+        await plineWithContinuation(`${prompt}:`);
+        prompt = 'Next monster';
+        const verbose = game.flags.verbose;
+        const autodescribe = game.iflags.autodescribe;
+        game.flags.verbose = false;
+        game.iflags.autodescribe = true;
+        let target;
+        try {
+            const tipShown = await showGetposTip();
+            target = await selectMapPosition({
+                start: cursor, prompt: tipShown ? 'Move cursor to a monster:' : game._pending_message,
+                goal: 'a monster', describe: farlookLocationDescription,
+            });
+        } finally {
+            if (verbose === undefined) delete game.flags.verbose;
+            else game.flags.verbose = verbose;
+            if (autodescribe === undefined) delete game.iflags.autodescribe;
+            else game.iflags.autodescribe = autodescribe;
+        }
+        if (!target) break;
+        cursor = target;
+        const monster = await wizardKillTarget(cursor);
+        if (monster === 'quit') break;
+        unmap_invisible(cursor.x, cursor.y);
+        if (!monster) {
+            await pline('There is no monster there.');
+            break;
+        }
+        const tame = !!monster.mtame;
+        const seen = canSpotMonster(monster) || !!game.u.uswallow && monster === game.u.ustuck;
+        const name = monsterName(monster, {
+            article: tame ? 'your' : seen ? 'the' : 'a',
+            ...(tame ? { adjective: seen ? 'poor' : 'poor, unseen' }
+                : seen ? {} : { adjective: 'unseen' }),
+            suppressIt: true, suppressHallucination: true,
+            suppressSaddle: tame && !!MGIVENNAME(monster),
+        });
+        const destroyed = monsterIsNonliving(monster.mnum);
+        if (game.iflags.menu_requested) {
+            game.context.mon_moving = true;
+            try {
+                await plineWithContinuation(`${name.charAt(0).toUpperCase()}${name.slice(1)} is ${destroyed ? 'destroyed' : 'killed'}.`);
+                await finishMonsterKilled(monster, game, { damageType: AD_PHYS, cause: null });
+            } finally {
+                game.context.mon_moving = false;
+            }
+        } else {
+            await plineWithContinuation(`You ${destroyed ? 'destroy' : 'kill'} ${name}!`);
+            await finishHeroMonsterKill(monster, monster.mx, monster.my, { showKillMessage: false });
+        }
+        if (game.program_state.gameover || game.u.utotype
+            || game.u.uz.dnum !== here.dnum || game.u.uz.dlevel !== here.dlevel) break;
     }
+    level.monsters = level.monsters.filter(monster => !monster.dead);
+    game.context.move = 0;
+}
 
-    const firstUse = shouldShowGetposTip();
-    if (firstUse) {
-        await pline('Pick first monster to slay:');
-        await showGetposTip();
+async function wizardKillTarget(cursor: Position): Promise<Monster | 'quit' | null> {
+    if (cursor.x === game.u.ux && cursor.y === game.u.uy) {
+        const steed = game.u.usteed;
+        if (steed) {
+            const answer = await promptYesNoQuit(`Kill ${monsterName(steed)}?`);
+            if (answer === 'q') return 'quit';
+            if (answer === 'y') return steed;
+        }
+        const question = game.urole?.key === 'samurai' ? 'Perform seppuku?' : 'Commit suicide?';
+        if (await paranoidQuery(true, question))
+            await finishHeroDeath({
+                killer: `${game.flags.female ? 'her' : 'his'} own player`,
+                killerFormat: KILLED_BY, deathType: DIED, deathLineShown: true,
+            });
+        return 'quit';
     }
+    if (game.u.uswallow)
+        return Math.abs(cursor.x - game.u.ux) <= 1 && Math.abs(cursor.y - game.u.uy) <= 1
+            ? game.u.ustuck ?? null : null;
+    return requireGameLevel().monsters.find(monster => monsterHasMapPosition(monster, game)
+        && (monster.mx === cursor.x && monster.my === cursor.y
+            || monster.wormSegments?.some(segment => segment.x === cursor.x && segment.y === cursor.y))
+        && !monster.dead && monster.mhp > 0) ?? null;
+}
 
-    const cursor = await selectMapPosition({
-        start: { x: game.u.ux, y: game.u.uy },
-        prompt: firstUse ? 'Move cursor to a monster:'
-            : 'Pick first monster to slay.',
-        goal: 'a monster',
-        describe: farlookLocationDescription,
-    });
-    if (!cursor) {
-        game.context.move = 0;
-        return;
-    }
-
-    game._pending_message = '';
-    game._retained_message = '';
-    const monster = requireGameLevel().monsters.find(candidate => monsterHasMapPosition(candidate, game) &&
-        candidate.mx === cursor.x && candidate.my === cursor.y
-        && !candidate.dead && (candidate.mhp ?? 1) > 0);
-    if (!monster) {
-        await pline('There is no monster there.');
-        game.context.move = 0;
-        return;
-    }
-
-    monster.mhp = 0;
-    const killed = await finishHeroMonsterKill(
-        monster, monster.mx, monster.my,
-    );
-    if (!killed)
-        game._cursorOverride = [monster.mx - 1, monster.my + 1];
+// C wizcmds.c:wiz_telekinesis(). The command keeps the cursor on a hurtled
+// actor and takes no time. rhack's reset_cmd_vars() clears hurtle's delay.
+async function wizTelekinesis(): Promise<void> {
+    requirePlayingGame(game);
+    let cursor: Position = { x: game.u.ux, y: game.u.uy };
+    await plineWithContinuation('Pick a monster to hurtle.');
+    do {
+        const tipShown = await showGetposTip();
+        if (game.flags.verbose) {
+            const helpKey = game.commandBindings.specialKey('getpos.help') ?? 63;
+            await plineWithContinuation(`(For instructions type a '${visibleCommandKey(helpKey)}')`);
+        }
+        if (tipShown) await plineWithContinuation('Move cursor to a monster:');
+        const target = await selectMapPosition({
+            start: cursor, goal: 'a monster', describe: farlookLocationDescription,
+            prompt: game._pending_message,
+        });
+        if (!target) break;
+        cursor = target;
+        const monster = monsterAtPosition(game.level, cursor.x, cursor.y);
+        const atHero = cursor.x === game.u.ux && cursor.y === game.u.uy;
+        if (!(monster && canSpotMonster(monster)) && !atHero) continue;
+        const direction = await promptDirection(() => readDirectionKey('which direction? '));
+        if (!direction) break;
+        if (monster) {
+            await hurtleMonster(monster, direction.dx, direction.dy, 6, {
+                finishMonsterDeath: finishHurtleMonsterDeath,
+                // minliquid() credits drowning and lava burning to the hero;
+                // rust and fatal damage to a fire-resistant monster use mondied().
+                finishLiquidDeath: (target, death) =>
+                    death.cause === 'drowning' || death.cause === 'lava-burning'
+                        ? finishHeroMonsterKillOutcome(target, target.mx, target.my, { showKillMessage: false })
+                        : finishMonsterLiquidDeath(target, death),
+            });
+            if (!monster.dead && monster.mhp > 0 && canSpotMonster(monster))
+                cursor = { x: monster.mx, y: monster.my };
+        } else {
+            await hurtleHero(direction.dx, direction.dy, 6, {
+                finishTeleport: finishTeleportArrival,
+                gotoLevel, chooseTeleportDestination: askTeleportDestination,
+                finishMonsterDeath: finishHurtleMonsterDeath,
+            });
+            cursor = { x: game.u.ux, y: game.u.uy };
+        }
+        if (game.program_state.gameover) break;
+    } while (!game.u.utotype);
+    if (game._helplessReason === 'moving through the air') game._helplessTurns = 0;
     game.context.move = 0;
 }
 
@@ -2870,15 +3003,18 @@ function branchKind(branch: DungeonBranch) {
 function branchMenuLabel(branch: DungeonBranch) {
     const child = game.dungeons?.[branch.end2.dnum];
     if (!child) return null;
-    const prefix = {
+    return `${branchTypeDescription(branch)} to ${child.dname}: ${dungeonDepth(
+        branch.end1.dnum, branch.end1.dlevel,
+    )}`;
+}
+
+function branchTypeDescription(branch: DungeonBranch) {
+    return {
         portal: 'Portal',
         no_end1: 'Connection',
         no_end2: 'One way stair',
         stair: 'Stair',
-    }[branchKind(branch)] || 'Stair';
-    return `${prefix} to ${child.dname}: ${dungeonDepth(
-        branch.end1.dnum, branch.end1.dlevel,
-    )}`;
+    }[branchKind(branch)];
 }
 
 function dungeonLayoutEvents(dnum: number): DungeonLayoutEvent[] {
@@ -2895,7 +3031,7 @@ function dungeonLayoutEvents(dnum: number): DungeonLayoutEvent[] {
         });
     }
     events.sort((a, b) => a.dlevel - b.dlevel
-        || (a.kind === 'branch' ? -1 : 1));
+        || Number(a.kind === 'special') - Number(b.kind === 'special'));
     return events;
 }
 
@@ -2948,6 +3084,7 @@ function wizardLevelMenu() {
     let choiceIndex = 0;
 
     for (let dnum = 0; dnum < (game.dungeons?.length || 0); dnum++) {
+        if (In_endgame(game.u.uz) && dnum !== game.astral_level?.dnum) continue;
         rows.push({ text: dungeonHeading(dnum), attr: ATR_INVERSE });
 
         for (const event of dungeonLayoutEvents(dnum)) {
@@ -2986,8 +3123,8 @@ function wizardLevelMenu() {
     return { rows, choices };
 }
 
-function wizardWherePages() {
-    const lines = [];
+function wizardWhereLines(): string[] {
+    const lines: string[] = [];
     for (let dnum = 0; dnum < (game.dungeons?.length || 0); dnum++) {
         lines.push(dungeonHeading(dnum));
         for (const event of dungeonLayoutEvents(dnum)) {
@@ -3001,20 +3138,39 @@ function wizardWherePages() {
                 if (event.name === 'castle')
                     label += ` (tune ${game.castleTune || ''})`;
             }
-            if (label) lines.push(`  ${label}`);
+            const current = event.kind === 'special'
+                && game.u.uz?.dnum === event.dnum && game.u.uz.dlevel === event.dlevel;
+            if (label) lines.push(`${current ? '*' : ' '} ${label}`);
         }
     }
-
-    const pages: TextPage[] = [];
-    for (let offset = 0; offset < lines.length; offset += 23) {
-        const pageLines = lines.slice(offset, offset + 23);
-        pageLines.push(' --More--');
-        pages.push({
-            lines: pageLines,
-            cursor: [9, pageLines.length - 1],
-        });
+    const floating = game.branches.filter(branch => branch.end1.dnum === game.dungeons.length);
+    if (floating.length) {
+        lines.push('', 'Floating branches');
+        for (const branch of floating) {
+            const child = game.dungeons[branch.end2.dnum];
+            if (!child) throw new Error(`Floating branch has no dungeon ${branch.end2.dnum}`);
+            lines.push(`   ${branchTypeDescription(branch)} to ${child.dname}`);
+        }
     }
-    return pages;
+    const hero = game.u;
+    if (Invocation_lev(hero.uz)) {
+        const position = game.level?.invocationPosition ?? { x: 0, y: 0 };
+        lines.push('', `Invocation position @ (${position.x},${position.y}), hero @ (${hero.ux},${hero.uy})`);
+    } else {
+        const portal = game.level?.traps.find(trap => trap.ttyp === MAGIC_PORTAL);
+        if (portal) lines.push('', `Portal @ (${portal.tx},${portal.ty}), hero @ (${hero.ux},${hero.uy})`);
+        else if (wizardLevelExpectsPortal()) lines.push('', 'No portal found.');
+    }
+    return lines;
+}
+
+function wizardLevelExpectsPortal(): boolean {
+    const here = game.u.uz;
+    return Is_earthlevel(here) || Is_airlevel(here) || Is_firelevel(here)
+        || Is_waterlevel(here) || Is_knox_level(here)
+        || !!here && (here.dnum === game.quest_dnum && here.dlevel === 1
+            || game.branches.some(branch => branch.end2.dnum === game.quest_dnum
+                && branch.end1.dnum === here.dnum && branch.end1.dlevel === here.dlevel));
 }
 
 // C refs: wizcmds.c:wiz_where() and dungeon.c:print_dungeon(FALSE).
@@ -3023,9 +3179,7 @@ function wizardWherePages() {
 async function wizWhere() {
     game._pending_message = '';
     game._retained_message = '';
-    await showTextPages(wizardWherePages(), {
-        validKeys: [27, 32, 10, 13],
-    });
+    await showDisclosureOverlay(wizardWhereLines(), { restoreUnderlay: true });
     await docrt();
     game.context.move = 0;
 }
@@ -3039,7 +3193,7 @@ export async function chooseWizardLevelDestination() {
     return { destination };
 }
 
-async function wizLevelTeleport({ menuRequested = false } = {}) {
+async function wizLevelTeleport({ menuRequested = !!game.iflags.menu_requested } = {}) {
     game.context.move = 0;
     await levelTeleport({ menuRequested });
 }
@@ -3198,6 +3352,8 @@ const EXTENDED_COMMAND_HANDLERS = new Map<string, () => Promise<unknown>>([
     ['wipe', dowipe],
     ['monster', domonability],
     ['polyself', wizPolyself],
+    ['panic', wizPanic],
+    ['debugfuzzer', wizFuzzer],
     ['annotate', doannotate],
     ['herecmdmenu', doherecmdmenu],
     ['adjust', doadjust],
@@ -3206,6 +3362,11 @@ const EXTENDED_COMMAND_HANDLERS = new Map<string, () => Promise<unknown>>([
     ['wizwhere', wizWhere],
     ['wizwish', wizWish],
     ['wizgenesis', wizGenesis],
+    ['wizdetect', wizDetect],
+    ['wizsmell', () => wizSmell(farlookLocationDescription)],
+    ['wizbury', wizBury],
+    ['wiztelekinesis', wizTelekinesis],
+    ['migratemons', wizMigrateMonsters],
     ['wizkill', wizKill],
     ['wizidentify', wizIdentify],
     ['wizintrinsic', wizIntrinsic],
@@ -3223,6 +3384,11 @@ async function runExtendedCommand(name: string): Promise<boolean> {
         // doextcmd() returns ECMD_OK; rhack clears queues only for a delay.
         resetCommandVariables(game.multi < 0);
         return false;
+    }
+    if (game.iflags.menu_requested && !(command.flags & NATIVE_COMMAND_FLAGS.CMD_M_PREFIX)) {
+        const prefix = visibleCommandKey(game.commandBindings.keyForCommand('reqmenu'));
+        await plineWithContinuation(`'${prefix}' prefix has no effect for the ${name} command.`);
+        game.iflags.menu_requested = false;
     }
     const key = commandExecutionKey(command.name)?.charCodeAt(0) ?? null;
     const binding = { key, command, parameter: null };
@@ -3501,13 +3667,17 @@ async function wizMap() {
 
     const savedConfusion = game.u?.confusionTurns ?? 0;
     const savedHallucination = game.u?.hallucinationTurns ?? 0;
-    if (game.u) {
-        game.u.confusionTurns = 0;
-        game.u.hallucinationTurns = 0;
-    }
-
-    mapLevel({ confused: false, revealAllTraps: true });
-    if (game.u) {
+    game.u.confusionTurns = 0;
+    game.u.hallucinationTurns = 0;
+    try {
+        for (const trap of requireGameLevel().traps) {
+            trap.tseen = true;
+            map_trap(trap, true);
+        }
+        for (const engraving of requireGameLevel().engravings ?? [])
+            map_engraving(engraving, true);
+        await mapMagicLevel({ confused: false });
+    } finally {
         game.u.confusionTurns = savedConfusion;
         game.u.hallucinationTurns = savedHallucination;
     }
@@ -4166,6 +4336,11 @@ function wizardIdentifyDescription(item: GameObject, primaryHandDetail: string |
 // iflags.override_ID set.  Fully identified inventories still open a short
 // PICK_NONE menu; the command does not collapse into a topline message.
 async function wizIdentify(): Promise<void> {
+    if (!game.inventory.length) {
+        await pline('Not carrying anything.');
+        game.context.move = 0;
+        return;
+    }
     const unidentified = game.inventory.filter(objectNeedsFullIdentification);
     if (!unidentified.length) {
         await showTextMenuOverlay([
@@ -4191,23 +4366,42 @@ async function wizIdentify(): Promise<void> {
                 };
             }),
     })).filter(section => section.items.length);
-    game._pending_message = '';
-    game.nhDisplay?.clearRow(0);
-    const selected = await showMultiSelectWindow({
-        title: `Debug Identify -- unidentified or partially identified item${
-            unidentified.length === 1 ? '' : 's'
-        }`,
-        introLines: [
-            `_ - select ${unidentified.length === 1
+    const allKey = game.commandBindings.keyForCommand('wizidentify') || 9;
+    const window = tty_create_nhwindow<GameObject | 'all'>(NHW_MENU);
+    let selected: (GameObject | 'all')[];
+    try {
+        await tty_start_menu(window);
+        tty_add_menu(window, {
+            identifier: null,
+            text: `Debug Identify -- unidentified or partially identified item${
+                unidentified.length === 1 ? '' : 's'}`,
+        });
+        tty_add_menu(window, {
+            identifier: 'all', selector: '_', group: String.fromCharCode(allKey),
+            itemflags: MENU_ITEMFLAGS_SKIPINVERT,
+            text: `select ${unidentified.length === 1
                 ? 'it' : 'any or all of them'} to permanently identify${
-                unidentified.length === 1 ? '' : ' (^I for all)'}`,
-        ],
-        sections,
-        blankAfterTitle: false,
-        titleAttr: ATR_NONE,
-    });
+                unidentified.length === 1 ? '' : ` (${visibleCommandKey(allKey)} for all)`}`,
+        });
+        for (const section of sections) {
+            tty_add_menu(window, { identifier: null, text: section.heading, attr: ATR_INVERSE });
+            for (const item of section.items)
+                tty_add_menu(window, { identifier: item.value, selector: item.key, text: item.text });
+        }
+        tty_end_menu(window);
+        const result = await tty_select_menu(window, PICK_ANY);
+        selected = result.selections.map(selection => selection.identifier);
+    } finally {
+        await tty_destroy_nhwindow(window);
+    }
     game._pending_message = '';
+    if (selected.includes('all')) {
+        await identifyPack(0);
+        game.context.move = 0;
+        return;
+    }
     for (const item of selected) {
+        if (item === 'all') continue;
         const learnedType = !objectTypeKnown(item);
         fullyIdentifyObject(item);
         if (learnedType) await exerciseAttribute(A_WIS, true);
@@ -4436,69 +4630,61 @@ export async function askTeleportDestination({ onPrompt = null }: {
 // and priest.c intemple().  A successful Wizard position teleport returns
 // ECMD_TIME.  Its first getpos use still owns the shared Lua tutorial, while
 // the destination room separately owns entry effects after relocation.
-async function wizTeleportPosition(): Promise<void> {
-    const trap = game.level?.traps.find(candidate =>
+async function wizTeleportPosition(ignoreRestrictions: boolean): Promise<void> {
+    requirePlayingGame(game);
+    let trap = game.level.traps.find(candidate =>
         candidate.tx === game.u.ux && candidate.ty === game.u.uy);
-    if (trap?.tseen && trap.ttyp === TELEP_TRAP && !trap.once
-        && trap.teledest && isok(trap.teledest.x, trap.teledest.y)) {
+    if (!trap?.tseen) trap = undefined;
+    if (trap?.ttyp === LEVEL_TELEP) {
+        if (await promptYesNo('There is a level teleporter here. Trigger it?') === 'y') {
+            await triggerLevelTeleportTrap(trap, gotoLevel, true);
+            game.context.move = 1;
+            return;
+        }
+        trap = undefined;
+    } else if (trap?.ttyp === TELEP_TRAP) {
+        if (trap.once) {
+            await plineWithContinuation('This is a vault teleport, usable once only.');
+            if (await promptYesNo('Jump in?') === 'n') trap = undefined;
+            else {
+                deleteTrap(trap);
+                newsym(game.u.ux, game.u.uy);
+            }
+        }
+    } else trap = undefined;
+    if (trap) {
         const locomotion = propertyIsActive('levitation') ? 'float'
             : propertyIsActive('flying') ? 'fly'
                 : monsterLocomotion(heroSpecies(), 'jump');
         await plineWithContinuation(`You ${locomotion} onto the teleportation trap.`);
-        if (!await bringLeashedFollowers()) {
-            await plineWithContinuation('You shudder for a moment.');
-            game.context.move = 0;
-            return;
-        }
-        // dotele() calls teleds() directly for a fixed trap destination:
-        // no location prompt, travel-target clear, or nutrition cost.
-        const movement = await moveHeroByTeleport(trap.teledest.x, trap.teledest.y);
-        await finishTeleportArrival(movement);
-        if (game.program_state.gameover) return;
-        await bringLeashedFollowers();
-        game.context.move = 1;
-        return;
     }
-
+    if (!trap && !ignoreRestrictions && !await prepareWizardTeleportAtWill()) return;
     if (!await bringLeashedFollowers()) {
         await plineWithContinuation('You shudder for a moment.');
         game.context.move = 0;
         return;
     }
-    // dotele() clears travelcc only after next_to_u() allows tele().
-    game._travelTarget = null;
-    let destination = await askTeleportDestination();
-    if (!destination) {
-        // dotele(TRUE) still reaches morehungry(100) and returns a timed
-        // command when scrolltele()'s controlled getpos was cancelled.
+    if (trap?.once) {
+        const vault = game.level.rooms.find((room): room is Room => isRoom(room) && room.rtype === VAULT);
+        const point = { x: 0, y: 0 };
+        if (vault && somexyspace(vault, point)
+            && heroTeleportDestinationOk(point.x, point.y)) {
+            await finishTeleportArrival(await moveHeroByTeleport(point.x, point.y));
+        } else await teleportHero({ chooseDestination: askTeleportDestination });
+    } else if (trap?.teledest && isok(trap.teledest.x, trap.teledest.y)) {
+        // Native dotele() uses the fixed location directly, preserving travelcc.
+        await finishTeleportArrival(await moveHeroByTeleport(trap.teledest.x, trap.teledest.y));
+    } else {
+        // Travel suggestions are cleared only after next_to_u() succeeds.
+        game._travelTarget = null;
+        await teleportHero({ chooseDestination: askTeleportDestination });
+    }
+    if (game.program_state.gameover) return;
+    await bringLeashedFollowers();
+    if (!trap) {
         await spendHeroNutrition(100);
         if (game.program_state.gameover) return;
-        game.context.move = 1;
-        return;
     }
-
-    const acceptedChoice = heroTeleportDestinationOk(destination.x, destination.y);
-    if (!acceptedChoice) {
-        // teleport.c:scrolltele() rejects the controlled location before
-        // entering safe_teleds().  Keep "Sorry..." pending while the random
-        // selector and teleds() update the map; a destination floor pager can
-        // then suspend this line at the same tty boundary as C.
-        await pline('Sorry...');
-        destination = safeTeleportDestination();
-        if (!destination) {
-            await spendHeroNutrition(100);
-            if (game.program_state.gameover) return;
-            game.context.move = 1;
-            return;
-        }
-    }
-
-    const movement = await moveHeroByTeleport(destination.x, destination.y);
-    await finishTeleportArrival(movement);
-    if (game.program_state.gameover) return;
-    // C dotele() spends nutrition only after teleds() finishes its effects.
-    await spendHeroNutrition(100);
-    if (game.program_state.gameover) return;
     game.context.move = 1;
 }
 
@@ -5468,30 +5654,31 @@ async function doclose(): Promise<void> {
         game.context.move = 0;
         return;
     }
-    const key = await readDirectionKey();
-    const direction = promptedDirectionKey(key, game.commandBindings);
-    if (!isMovementKey(direction)) {
-        const quitDirection = [27, 32, 10, 13].includes(key);
-        if (!quitDirection && game.flags?.cmdassist !== false) {
-            await showTextPages([directionAssistPage()], {
-                validKeys: [27, 32, 10, 13],
-            });
-            game._pending_message = '';
-            await restoreCommandMap();
-        } else if (!quitDirection) {
-            await pline('What a strange direction!');
-        }
+    const direction = await promptDirection();
+    if (!direction) {
         game.context.move = 0;
         return;
     }
 
-    const x = game.u.ux + DIR_DX[direction];
-    const y = game.u.uy + DIR_DY[direction];
+    const x = game.u.ux + direction.dx;
+    const y = game.u.uy + direction.dy;
+    if (x === game.u.ux && y === game.u.uy && !heroPassesWalls(game)) {
+        await pline('You are in the way!');
+        game.context.move = 1;
+        return;
+    }
+    if (!isok(x, y)) {
+        await pline(`You ${heroIsBlind(game) ? 'feel' : 'see'} no door there.`);
+        game.context.move = 0;
+        return;
+    }
     const loc = game.level?.at(x, y);
     if (await stumbleOnDoorMimic(x, y)) {
         game.context.move = 1;
         return;
     }
+    game.context.move = game.u.confused || game.u.confusionTurns
+        || game.u.stunned || game.u.stunnedTurns ? 1 : 0;
     if (loc?.typ !== DOOR) await pline('You see no door there.');
     else if (loc.doormask === D_NODOOR)
         await pline('This doorway has no door.');
@@ -5506,7 +5693,6 @@ async function doclose(): Promise<void> {
         game.context.move = 1;
         return;
     }
-    game.context.move = 0;
 }
 
 // C refs: lock.c doopen(); cmd.c get_adjacent_loc()/getdir().  Direction
@@ -5518,35 +5704,30 @@ async function doopen(): Promise<void> {
         game.context.move = 0;
         return;
     }
-    const key = await readDirectionKey();
-    const direction = promptedDirectionKey(key, game.commandBindings);
-    if (!isMovementKey(direction)) {
-        const quitDirection = [27, 32, 10, 13].includes(key);
-        if (!quitDirection && game.flags?.cmdassist !== false) {
-            await showTextPages([directionAssistPage()], {
-                validKeys: [27, 32, 10, 13],
-            });
-            game._pending_message = '';
-            await restoreCommandMap();
-        } else if (!quitDirection) {
-            await pline('What a strange direction!');
-        }
-        // lock.c:doopen_indir() uses cmd.c:get_adjacent_loc(), whose caller
-        // projection always follows a failed getdir() with Never_mind.
+    const direction = await promptDirection();
+    if (!direction) {
         await pline('Never mind.');
         game.context.move = 0;
         return;
     }
 
+    const x = game.u.ux + direction.dx;
+    const y = game.u.uy + direction.dy;
+    if (!isok(x, y)) {
+        game.context.move = 0;
+        return;
+    }
+    const loc = game.level?.at(x, y);
+    if (x === game.u.ux && y === game.u.uy
+        && (direction.dz > 0 || loc?.typ !== DOOR || !(loc.doormask & (D_CLOSED | D_LOCKED)))) {
+        await doloot();
+        return;
+    }
     if (game.u.utrap && game.u.utraptype === TT_PIT) {
         await pline("You can't reach over the edge of the pit.");
         game.context.move = 0;
         return;
     }
-
-    const x = game.u.ux + DIR_DX[direction];
-    const y = game.u.uy + DIR_DY[direction];
-    const loc = game.level?.at(x, y);
     if (await stumbleOnDoorMimic(x, y)) {
         game.context.move = 1;
         return;

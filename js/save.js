@@ -17,6 +17,8 @@ import { restoreMonsterInventoryOwnership } from './monster_inventory.js';
 import { FULL_MOON, LUCKMAX, LUCKMIN } from './const.js';
 import { vision_reset_new_level } from './vision.js';
 import { rewindEngravingsForSave, restoreEngravingPointers } from './engrave.js';
+import { weaponNeedsBashingMessage } from './weapon_type.js';
+import { GRAPPLING_HOOK, PICK_AXE } from './object_data.js';
 const SAVE_PREFIX = 'teleport-save:';
 const ERROR_SAVE_PREFIX = 'teleport-error-save:';
 function saveKey(name, prefix = SAVE_PREFIX) {
@@ -166,6 +168,11 @@ export function restoreGame(name, storage = game.storage) {
         restoreSavedMonsters(snapshot.state);
         restorePersistentState(game, snapshot.state);
         resolveDungeonIdentities(game);
+        // restgamestate() rebuilds the first-use reminder from the restored
+        // weapon, treating applied tools conservatively as improvised weapons.
+        const weapon = game.uwep || game.u.uwep;
+        game._unweapon = weaponNeedsBashingMessage(weapon, game)
+            || weapon?.otyp === PICK_AXE || weapon?.otyp === GRAPPLING_HOOK;
         game.multi = 0;
         game.warn_obj_cnt = 0;
         game._magicKeyTrapWarningCount = 0;

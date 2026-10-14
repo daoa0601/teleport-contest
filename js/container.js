@@ -637,7 +637,9 @@ async function putSelectedObjects(container, stashOne = false) {
         const object = choice.gold ? heroGoldObject(game) : choice.object;
         if (choice.cancelled || !object)
             return { results: [], spentTime: false };
-        const count = object.otyp === LOADSTONE && object.cursed ? -1 : choice.count ?? -1;
+        // getobj() leaves unsplittable objects whole for in_container's refusal.
+        const unsplittable = (object.otyp === LOADSTONE && object.cursed) || weldedPrimary(object, game);
+        const count = unsplittable ? -1 : choice.count ?? -1;
         selected = [{ value: object, count }];
     }
     else {
