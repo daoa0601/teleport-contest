@@ -5,12 +5,13 @@ const capacityText = [
 ];
 // wintty.c:make_things_fit() tries all condition abbreviations, then both
 // encumbrance abbreviations, then Dlvl -> Dl, before truncating at cols-1.
-export function renderStatusLine2(fields, columns) {
+export function renderStatusLine2(fields, columns, capacityBlank = false) {
     const attempts = [
         [0, 0, false], [1, 0, false], [2, 0, false],
         [2, 1, false], [2, 2, false], [2, 2, true],
     ];
     let line = '';
+    let emptyCapacitySpace = fields.capacity === 0 && capacityBlank;
     for (const [conditionSize, capacitySize, shortLevel] of attempts) {
         const location = shortLevel ? fields.location.replace(/^[^:]+:/, 'Dl:') : fields.location;
         line = `${location} ${fields.gold} ${fields.health} ${fields.experience}`;
@@ -19,7 +20,11 @@ export function renderStatusLine2(fields, columns) {
         if (fields.hunger)
             line += ` ${fields.hunger}`;
         const load = capacityText[capacitySize]?.[fields.capacity] ?? '';
-        if (load || capacitySize > 0)
+        // shrink_enc() leaves a blank even for an unencumbered hero.
+        // Restoring the full label on later flushes preserves that blank.
+        if (fields.capacity === 0 && capacitySize > 0)
+            emptyCapacitySpace = true;
+        if (load || emptyCapacitySpace)
             line += ` ${load}`;
         for (const condition of fields.conditions)
             line += ` ${condition[conditionSize]}`;
@@ -32,8 +37,8 @@ export function renderStatusLine2(fields, columns) {
             line += ' '.repeat(gap) + fields.version;
         }
         if (line.length <= columns - 1)
-            return line;
+            return { text: line, capacityBlank: emptyCapacitySpace };
     }
-    return line.slice(0, Math.max(0, columns - 1));
+    return { text: line.slice(0, Math.max(0, columns - 1)), capacityBlank: emptyCapacitySpace };
 }
 //# sourceMappingURL=status_layout.js.map

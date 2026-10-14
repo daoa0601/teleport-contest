@@ -15,6 +15,11 @@ export interface StatusLine2Fields {
     version: string;
 }
 
+export interface StatusLine2Layout {
+    text: string;
+    capacityBlank: boolean;
+}
+
 const capacityText: readonly (readonly string[])[] = [
     ['', 'Burdened', 'Stressed', 'Strained', 'Overtaxed', 'Overloaded'],
     ['', 'Burden', 'Stress', 'Strain', 'Overtax', 'Overload'],
@@ -23,19 +28,27 @@ const capacityText: readonly (readonly string[])[] = [
 
 // wintty.c:make_things_fit() tries all condition abbreviations, then both
 // encumbrance abbreviations, then Dlvl -> Dl, before truncating at cols-1.
-export function renderStatusLine2(fields: StatusLine2Fields, columns: number): string {
+export function renderStatusLine2(
+    fields: StatusLine2Fields,
+    columns: number,
+    capacityBlank = false,
+): StatusLine2Layout {
     const attempts: readonly (readonly [0 | 1 | 2, 0 | 1 | 2, boolean])[] = [
         [0, 0, false], [1, 0, false], [2, 0, false],
         [2, 1, false], [2, 2, false], [2, 2, true],
     ];
     let line = '';
+    let emptyCapacitySpace = fields.capacity === 0 && capacityBlank;
     for (const [conditionSize, capacitySize, shortLevel] of attempts) {
         const location = shortLevel ? fields.location.replace(/^[^:]+:/, 'Dl:') : fields.location;
         line = `${location} ${fields.gold} ${fields.health} ${fields.experience}`;
         if (fields.moves !== null) line += ` T:${fields.moves}`;
         if (fields.hunger) line += ` ${fields.hunger}`;
         const load = capacityText[capacitySize]?.[fields.capacity] ?? '';
-        if (load || capacitySize > 0) line += ` ${load}`;
+        // shrink_enc() leaves a blank even for an unencumbered hero.
+        // Restoring the full label on later flushes preserves that blank.
+        if (fields.capacity === 0 && capacitySize > 0) emptyCapacitySpace = true;
+        if (load || emptyCapacitySpace) line += ` ${load}`;
         for (const condition of fields.conditions) line += ` ${condition[conditionSize]}`;
         for (const equipment of fields.equipment) line += ` ${equipment}`;
         if (fields.version) {
@@ -44,7 +57,7 @@ export function renderStatusLine2(fields: StatusLine2Fields, columns: number): s
             const gap = Math.max(1, columns - 1 - line.length - fields.version.length);
             line += ' '.repeat(gap) + fields.version;
         }
-        if (line.length <= columns - 1) return line;
+        if (line.length <= columns - 1) return { text: line, capacityBlank: emptyCapacitySpace };
     }
-    return line.slice(0, Math.max(0, columns - 1));
+    return { text: line.slice(0, Math.max(0, columns - 1)), capacityBlank: emptyCapacitySpace };
 }

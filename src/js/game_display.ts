@@ -28,6 +28,7 @@ export class GameDisplay {
     // WIN_STATUS retains its fields independently of map and message redraws.
     statusLines: readonly [string, string] | null = null;
     statusLine2Fields: StatusLine2Fields | null = null;
+    statusCapacityBlank = false;
     statusVisible = true;
 
     constructor(terminalOrContainerId: Terminal | string | HTMLElement | null = null) {

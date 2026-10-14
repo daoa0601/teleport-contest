@@ -27,6 +27,23 @@ void test('tty shortens encumbrance after the conditions reach their shortest fo
     await bot();
     assert.match(status(), /Overload Bl Cf/);
 });
+void test('tty keeps an empty capacity separator after shortening until capacity changes', async () => {
+    freshObjectRoom({ moves: 10000, flags: { time: true }, hero: { blindTurns: 5, uhs: 1 } });
+    game.nhDisplay = new GameDisplay(new Terminal(null, { cols: 50, rows: 24 }));
+    await bot();
+    assert.match(status(), /T:10000  Bl/);
+    game.moves = 9;
+    await bot();
+    assert.match(status(), /T:9  Blnd/, 'an unchanged capacity keeps its blank during a full status refresh');
+    game.moves = 8;
+    timebot();
+    assert.match(status(), /T:8  Blnd/, 'a time-only refresh also keeps the capacity blank');
+    setHeroGoldAmount(game, 1234567);
+    await bot();
+    setHeroGoldAmount(game, 0);
+    await bot();
+    assert.match(status(), /T:8 Blind/, 'becoming unencumbered resets the empty capacity field');
+});
 void test('a time-only update refits the row while retaining earlier health', async () => {
     freshObjectRoom({ moves: 9, flags: { time: true }, hero: { blindTurns: 5, uhs: 1 } });
     requirePlayingGame(game);

@@ -2268,7 +2268,7 @@ export function formatStrength(value: number | null | undefined) {
 
 export function _statusLine2() {
     const fields = statusLine2Fields(nearCapacity(game));
-    return fields ? renderStatusLine2(fields, game.nhDisplay?.cols ?? COLNO) : '';
+    return fields ? renderStatusLine2(fields, game.nhDisplay?.cols ?? COLNO).text : '';
 }
 
 function statusLine2Fields(capacity: number): StatusLine2Fields | null {
@@ -2527,9 +2527,15 @@ function refreshStatusLines(): void {
     }
     const capacity = nearCapacity(game);
     game.u._encumbrance = encumbranceLabel(capacity);
+    // botl.c notifies BL_CAP when its value changes; tty_status_update()
+    // then clears any blank left by earlier encumbrance shortening.
+    const capacityBlank = display.statusLine2Fields?.capacity === capacity
+        && display.statusCapacityBlank;
     display.statusLine2Fields = statusLine2Fields(capacity);
-    display.statusLines = [_statusLine1(), display.statusLine2Fields
-        ? renderStatusLine2(display.statusLine2Fields, display.cols) : ''];
+    const layout = display.statusLine2Fields
+        ? renderStatusLine2(display.statusLine2Fields, display.cols, capacityBlank) : null;
+    display.statusCapacityBlank = layout?.capacityBlank ?? false;
+    display.statusLines = [_statusLine1(), layout?.text ?? ''];
     display.statusVisible = true;
     writeStatusLines(display, display.statusLines);
     game.context.botl = false;
@@ -2547,7 +2553,9 @@ export function timebot(): void {
         || game._suppressMapStatusForFlush) return;
     const [first] = display.statusLines;
     display.statusLine2Fields = { ...display.statusLine2Fields, moves: game.moves };
-    display.statusLines = [first, renderStatusLine2(display.statusLine2Fields, display.cols)];
+    const layout = renderStatusLine2(display.statusLine2Fields, display.cols, display.statusCapacityBlank);
+    display.statusCapacityBlank = layout.capacityBlank;
+    display.statusLines = [first, layout.text];
     display.statusVisible = true;
     writeStatusLines(display, display.statusLines);
 }
