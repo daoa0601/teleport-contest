@@ -28,4 +28,22 @@ void test('a cursed saddle refusal gives the hallucinated steed a new perceived 
     assert.equal(horse.minvent.includes(saddle), true);
     assert.equal(game.context.move, 1);
 });
+void test('saddle removal uses its simple name while preserving its personal name', async () => {
+    freshPlayableRoom();
+    const horse = await createSaddledSteed('horse', { saddle: { oname: 'Comfy' } });
+    const saddle = horse.minvent.find(object => object.otyp === SADDLE);
+    assert.ok(saddle);
+    const input = resetInputState();
+    let messages = '';
+    input.beforeRead = () => {
+        messages += requireGameDisplay().grid[0]?.map(cell => cell.ch).join('') ?? '';
+    };
+    await runExtendedCommand('loot', `ly${' '.repeat(5)}`);
+    assert.match(messages, /You take the saddle off of the horse\./);
+    assert.doesNotMatch(messages, /You take the saddle named Comfy/);
+    assert.equal(saddle.oname, 'Comfy');
+    assert.equal(game.inventory.includes(saddle), true);
+    assert.equal(horse.minvent.includes(saddle), false);
+    assert.equal(game.context.move, 1);
+});
 //# sourceMappingURL=container_saddle_hallucination.test.js.map
