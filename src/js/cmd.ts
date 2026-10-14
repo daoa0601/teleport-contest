@@ -269,7 +269,7 @@ import {
 } from './terminal.js';
 import {
     MONSTER_COLOR, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME,
-    MONSTER_SIZE, MONSTER_SYMBOL, MONSTER_ALIGNMENT, MONSTER_ATTACKS, MONSTER_CLASS_EXPLAIN,
+    MONSTER_SIZE, MONSTER_SYMBOL, MONSTER_SOUND, MONSTER_ALIGNMENT, MONSTER_ATTACKS, MONSTER_CLASS_EXPLAIN,
     requireMonsterData, monsterTypeName, monsterClassSymbol,
 } from './monster_data.js';
 import { monsterStatusLine } from './monster_status.js';
@@ -2668,6 +2668,18 @@ async function doswapweapon() {
 }
 
 async function dochat() {
+    const species = heroSpecies(game);
+    let refusal: string | null = null;
+    if (MONSTER_SOUND[species] === 0)
+        refusal = `As ${withIndefiniteArticle(monsterTypeName(species, !!game.flags.female))}, you cannot speak.`;
+    else if (propertyIsActive('strangled', game)) refusal = "You can't speak.  You're choking!";
+    else if (game.u.uswallow) refusal = "They won't hear you out there.";
+    else if (game.underwater) refusal = 'Your speech is unintelligible underwater.';
+    if (refusal) {
+        await plineWithContinuation(refusal);
+        game.context.move = 0;
+        return;
+    }
     if (await quoteShopGoods()) {
         game.context.move = 1;
         return;

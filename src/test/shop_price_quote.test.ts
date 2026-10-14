@@ -25,3 +25,17 @@ for (const noCharge of [false, true]) {
         assert.equal(daggers.unpaid ?? false, false);
     });
 }
+
+void test('a choking customer cannot ask for a floor merchandise quote', async () => {
+    freshObjectRoom();
+    await createStaffedShop();
+    await floorObject(DAGGER, 10, 10);
+    game.u.strangledTurns = 3;
+    const input = resetInputState();
+    input.feed('chat\n.');
+
+    await rhack('#'.charCodeAt(0));
+
+    assert.match(game._pending_message, /You can't speak\.  You're choking!/);
+    assert.equal(game.context.move, 0);
+});
