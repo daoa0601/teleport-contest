@@ -441,8 +441,11 @@ export async function selectTravelMenuPosition(describe) {
         await tty_start_menu(window);
         for (const spot of spots) {
             const description = await describe(spot.x, spot.y);
-            if (description)
-                tty_add_menu(window, { identifier: spot, text: description });
+            if (!description)
+                continue;
+            const coordinates = coordinateDescription(spot.x, spot.y, game.iflags.getpos_coords ?? 'n');
+            tty_add_menu(window, { identifier: spot,
+                text: description + (coordinates ? ` ${coordinates}` : '') });
         }
         tty_end_menu(window, 'Pick an interesting thing in view for travel destination');
         const result = await tty_select_menu(window, PICK_ONE);

@@ -7,6 +7,38 @@ import { game } from '../js/gstate.js';
 import { nhgetch } from '../js/input.js';
 import { freshTurnRoom } from './support/playable-room.js';
 import { answerPrompts } from './support/input-boundaries.js';
+const travelCoordinateModes = [
+    { mode: 'n', row: /a - staircase down\s*\n/ },
+    { mode: 'm', row: /a - staircase down <14,10>\s*\n/ },
+    { mode: 's', row: /a - staircase down \[12,14\]\s*\n/ },
+    { mode: 'c', row: /a - staircase down \(4e\)\s*\n/ },
+    { mode: 'f', row: /a - staircase down \(4east\)\s*\n/ },
+];
+for (const { mode, row } of travelCoordinateModes) {
+    void test(`travel menu uses the ${mode} coordinate format for destinations`, async () => {
+        const input = freshTurnRoom({ flags: { tips: false } });
+        const stair = game.level?.requireAt(14, 10);
+        assert.ok(stair);
+        stair.typ = STAIRS;
+        stair.ladder = LA_DOWN;
+        newsym(14, 10);
+        game.iflags.getpos_coords = mode;
+        input.feed('m_');
+        const action = rhack(0);
+        try {
+            await input.waitUntilBlocked();
+            assert.ok(game.nhDisplay);
+            const text = game.nhDisplay.grid.map(cells => cells.map(cell => cell.ch).join('')).join('\n');
+            assert.match(text, row);
+        }
+        finally {
+            input.feed('a');
+            await action;
+        }
+        assert.equal(game.u.ux, 11);
+        assert.equal(game.context.move, 1);
+    });
+}
 for (const selection of ['a', '\x1b']) {
     void test(`travel menu includes visible destinations outside the area filter when ${JSON.stringify(selection)} is selected`, async () => {
         const input = freshTurnRoom({ flags: { tips: false } });
