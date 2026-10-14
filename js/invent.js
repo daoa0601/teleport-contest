@@ -542,7 +542,7 @@ function itemActionEntries(item, state, repairGold) {
     }
     if ((item.owornmask ?? 0) & W_ARMOR)
         entries.push({ key: 'T', text: 'Take off this armor' });
-    if (isContainer(item) && (item.contents?.length || !item.cknown)
+    if ((isContainer(item) || item.otyp === BAG_OF_TRICKS) && (item.contents?.length || !item.cknown)
         || item.otyp === HORN_OF_PLENTY && (item.spe > 0 || !item.known))
         entries.push({ key: 'T', text: 'Tip all the contents out of this container' });
     if (item.otyp === FAKE_AMULET_OF_YENDOR && !item.known

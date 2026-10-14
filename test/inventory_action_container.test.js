@@ -26,6 +26,18 @@ for (const discovered of [false, true]) {
         }
     });
 }
+void test('a bag of tricks with unknown contents offers tipping through its item actions', async () => {
+    freshObjectRoom();
+    const bag = await addInventoryObject(BAG_OF_TRICKS, { cknown: false });
+    const input = resetInputState();
+    input.feed(bag.invlet);
+    const menu = ddoinv();
+    await input.waitUntilBlocked();
+    const text = requireGameDisplay().grid.map(row => row.map(cell => cell.ch).join('')).join('\n');
+    input.feed('\x1b');
+    await menu;
+    assert.match(text, /T - Tip all the contents out of this container/);
+});
 void test('a carried sack offers opening through its inventory action menu', async () => {
     freshObjectRoom();
     const sack = await addInventoryObject(SACK, { cknown: true });
