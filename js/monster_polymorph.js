@@ -486,7 +486,8 @@ export async function changeMonsterForm(monster, forcedTargetMnum = null, state 
     else if (targetMnum == null) {
         targetMnum = selectOrdinaryPolymorphForm(monster);
     }
-    if (targetMnum == null || targetMnum === monster.mnum)
+    if (targetMnum == null || targetMnum === monster.mnum
+        || monsterIsGenocided(targetMnum))
         return null;
     if (monster.wormno) {
         removeMonsterWormBody(monster);

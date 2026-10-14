@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { M_ATTK_AGR_DIED, M_ATTK_DEF_DIED, M_ATTK_HIT, NO_MINVENT, STRAT_WAITFORU, W_AMUL, W_ARMC } from '../js/const.js';
+import { G_GENOD, M_ATTK_AGR_DIED, M_ATTK_DEF_DIED, M_ATTK_HIT, NO_MINVENT, STRAT_WAITFORU, W_AMUL, W_ARMC } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { AD_POLY, AD_SLIM, AD_TLPT, AT_TUCH } from '../js/monster_attack_types.js';
@@ -131,6 +131,17 @@ void test('an uncured monster becomes green slime without taking the pending phy
     assert.equal(defender.mhp, defender.mhpmax);
     assert.equal(defender.mstrategy & STRAT_WAITFORU, 0);
     assert.ok(result.nativeResult & M_ATTK_HIT);
+});
+void test('a slime attack cannot turn its victim into a genocided species', async () => {
+    const { attacker, defender, options } = await transformFight('green slime');
+    const species = defender.mnum;
+    requireMonsterVital(attacker.mnum).mvflags |= G_GENOD;
+    await resolveMonsterCombatDamage(attacker, defender, [AT_TUCH, AD_SLIM, 1, 6], {
+        ...options, random: forceSliming,
+    });
+    assert.equal(defender.mnum, species);
+    assert.equal(defender.mhp, 100);
+    assert.equal(!!defender.dead, false);
 });
 void test('a defender burns slime away with its actual wand and spends its next move', async () => {
     const { attacker, defender, options } = await transformFight('green slime');
