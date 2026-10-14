@@ -57,7 +57,7 @@ import { surfaceName } from './terrain_name.js';
 import { dungeonFeatureAt, dungeonFeatureSentence, forceDescribeDecor } from './dungeon_feature.js';
 import { visibleRegionAt } from './regions.js';
 import { trapName } from './trap_name.js';
-import { isLavaAt, isPoolAt } from './terrain_properties.js';
+import { isIceAt, isLavaAt, isPoolAt } from './terrain_properties.js';
 import { impossible } from './diagnostics.js';
 import { armorSimpleName, armorSlotFor } from './armor.js';
 import { objectTypeKnown, currentShopResident, shopkeeperInOwnShop } from './shk.js';
@@ -836,7 +836,7 @@ export async function dolook() {
         const surface = surfaceName(x, y);
         if (featureName?.startsWith('altar ')) {
             await plineWithContinuation('You try to feel what is here.');
-        } else if (featureName && (featureName === 'ice' || featureName.endsWith(' ice'))) {
+        } else if (isIceAt(x, y)) {
             if (!game.flags.mention_decor || game._prevDecorType === ICE) await forceDescribeDecor();
             await plineWithContinuation('You try to feel what is on it.');
             feature = '';
