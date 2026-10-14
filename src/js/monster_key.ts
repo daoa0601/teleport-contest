@@ -13,6 +13,12 @@ export function isMonsterMagicKey(monster: Monster, object: GameObject, state: G
     return monster.mnum === PM_ROGUE ? !object.cursed : !!object.blessed;
 }
 
+export function heroHasMagicKey(state: GameState = game): boolean {
+    return state.inventory.some(object =>
+        artifactById(object.oartifact, state)?.name === 'The Master Key of Thievery'
+        && (state.urole?.key === 'rogue' ? !object.cursed : object.blessed));
+}
+
 export function monsterHasMagicKey(monster: Monster, state: GameState = game): boolean {
     return (monster.minvent || []).some(object => isMonsterMagicKey(monster, object, state));
 }
