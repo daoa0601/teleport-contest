@@ -9,6 +9,21 @@ import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { addInventoryObject, floorObject, knownObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshPlayableRoom } from './support/playable-room.js';
+void test('blind priest pickup learns earlier menu items before touching a corpse at the head of the pile', async () => {
+    freshPlayableRoom({ role: 'priest', hero: { blindTurns: 10 } });
+    const amulet = await addInventoryObject(AMULET_OF_LIFE_SAVING, {
+        invlet: 'a', worn: true, owornmask: W_AMUL,
+    });
+    game.uamul = game.u.uamul = amulet;
+    const club = await floorObject(CLUB, 10, 10, { cursed: true, bknown: false });
+    const corpse = await floorObject(CORPSE, 10, 10, { corpsenm: 10 });
+    pushKeys(' '.repeat(12));
+    await rhack(','.charCodeAt(0));
+    assert.equal(club.bknown, true, 'The Weapons menu heading precedes Food, so naming the club reveals its curse.');
+    assert.equal(game.inventory.includes(club), false);
+    assert.equal(corpse.where, 'floor');
+    assert.equal(amulet.where, 'gone');
+});
 void test('blind pickup inspects a lethal corpse before allowing a choice from the pile', async () => {
     freshPlayableRoom();
     game.u.blindTurns = 10;

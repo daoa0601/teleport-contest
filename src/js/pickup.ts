@@ -54,7 +54,7 @@ import {
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
 import type { MapLocation } from './map_types.js';
-import type { CountedSelection, MultiSelectSection } from './windows.js';
+import type { CountedSelection, MultiSelectItem, MultiSelectSection } from './windows.js';
 
 interface PickupSource {
     x: number;
@@ -139,14 +139,6 @@ async function choosePickupObjects(source: PickupSource, objects: readonly GameO
     const onlyObject = eligible[0];
     if (eligible.length === 1 && onlyObject && !(source.monster && objects[0]?.owornmask))
         return [{ value: onlyObject, count: count || objectQuantity(onlyObject) }];
-    if (!count && eligible.some(object => willFeelPetrifyingCorpse(object))) {
-        if (source.monster) await lookInsideSwallower(source.monster);
-        else {
-            await plineWithContinuation(blindPickupInspectionMessage(source.x, source.y));
-            await showFloorPile(source.objects, false, dungeonFeatureSentenceAt(source.x, source.y));
-        }
-        return [];
-    }
     const ordered = orderedPickupObjects(eligible);
     const sections: MultiSelectSection<GameObject>[] = [];
     let letterCode = 'a'.charCodeAt(0);
@@ -156,20 +148,28 @@ async function choosePickupObjects(source: PickupSource, objects: readonly GameO
         const items = heading === null ? ordered
             : ordered.filter(object => pickupObjectClass(object) === heading);
         if (!items.length) continue;
-        sections.push({
-            heading,
-            items: items.map(object => {
-                const isFirstGold = object.otyp === GOLD_PIECE && !goldAcceleratorUsed;
-                if (isFirstGold) goldAcceleratorUsed = true;
-                observeObjectForNaming(object);
-                return {
-                    key: isFirstGold ? '$' : String.fromCharCode(letterCode++),
-                    groupAccelerator: OBJECT_CLASS_SYMBOLS[object.oclass] || '',
-                    text: floorObjectDescription(object),
-                    value: object,
-                };
-            }),
-        });
+        const menuItems: MultiSelectItem<GameObject>[] = [];
+        for (const object of items) {
+            // query_objlist() names preceding entries before reverting to look_here().
+            if (!count && willFeelPetrifyingCorpse(object)) {
+                if (source.monster) await lookInsideSwallower(source.monster);
+                else {
+                    await plineWithContinuation(blindPickupInspectionMessage(source.x, source.y));
+                    await showFloorPile(source.objects, false, dungeonFeatureSentenceAt(source.x, source.y));
+                }
+                return [];
+            }
+            const isFirstGold = object.otyp === GOLD_PIECE && !goldAcceleratorUsed;
+            if (isFirstGold) goldAcceleratorUsed = true;
+            observeObjectForNaming(object);
+            menuItems.push({
+                key: isFirstGold ? '$' : String.fromCharCode(letterCode++),
+                groupAccelerator: OBJECT_CLASS_SYMBOLS[object.oclass] || '',
+                text: floorObjectDescription(object),
+                value: object,
+            });
+        }
+        sections.push({ heading, items: menuItems });
     }
     game._pending_message = '';
     await flush_screen(1);

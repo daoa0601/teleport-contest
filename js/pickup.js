@@ -108,15 +108,6 @@ async function choosePickupObjects(source, objects, count) {
     const onlyObject = eligible[0];
     if (eligible.length === 1 && onlyObject && !(source.monster && objects[0]?.owornmask))
         return [{ value: onlyObject, count: count || objectQuantity(onlyObject) }];
-    if (!count && eligible.some(object => willFeelPetrifyingCorpse(object))) {
-        if (source.monster)
-            await lookInsideSwallower(source.monster);
-        else {
-            await plineWithContinuation(blindPickupInspectionMessage(source.x, source.y));
-            await showFloorPile(source.objects, false, dungeonFeatureSentenceAt(source.x, source.y));
-        }
-        return [];
-    }
     const ordered = orderedPickupObjects(eligible);
     const sections = [];
     let letterCode = 'a'.charCodeAt(0);
@@ -127,21 +118,30 @@ async function choosePickupObjects(source, objects, count) {
             : ordered.filter(object => pickupObjectClass(object) === heading);
         if (!items.length)
             continue;
-        sections.push({
-            heading,
-            items: items.map(object => {
-                const isFirstGold = object.otyp === GOLD_PIECE && !goldAcceleratorUsed;
-                if (isFirstGold)
-                    goldAcceleratorUsed = true;
-                observeObjectForNaming(object);
-                return {
-                    key: isFirstGold ? '$' : String.fromCharCode(letterCode++),
-                    groupAccelerator: OBJECT_CLASS_SYMBOLS[object.oclass] || '',
-                    text: floorObjectDescription(object),
-                    value: object,
-                };
-            }),
-        });
+        const menuItems = [];
+        for (const object of items) {
+            // query_objlist() names preceding entries before reverting to look_here().
+            if (!count && willFeelPetrifyingCorpse(object)) {
+                if (source.monster)
+                    await lookInsideSwallower(source.monster);
+                else {
+                    await plineWithContinuation(blindPickupInspectionMessage(source.x, source.y));
+                    await showFloorPile(source.objects, false, dungeonFeatureSentenceAt(source.x, source.y));
+                }
+                return [];
+            }
+            const isFirstGold = object.otyp === GOLD_PIECE && !goldAcceleratorUsed;
+            if (isFirstGold)
+                goldAcceleratorUsed = true;
+            observeObjectForNaming(object);
+            menuItems.push({
+                key: isFirstGold ? '$' : String.fromCharCode(letterCode++),
+                groupAccelerator: OBJECT_CLASS_SYMBOLS[object.oclass] || '',
+                text: floorObjectDescription(object),
+                value: object,
+            });
+        }
+        sections.push({ heading, items: menuItems });
     }
     game._pending_message = '';
     await flush_screen(1);
