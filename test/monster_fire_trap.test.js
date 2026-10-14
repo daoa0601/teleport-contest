@@ -1,17 +1,19 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { FIRE_TRAP, MAGIC_TRAP, W_AMUL, } from '../js/const.js';
+import { FIRE_TRAP, MAGIC_TRAP, W_AMUL, W_ARM, } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resumeDeferredMonsterTrap, triggerImmediateMonsterTrap, } from '../js/monmove.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { initializeMonsterArmor } from '../js/monworn.js';
-import { quietMonsterName } from '../js/monster_name.js';
-import { AMULET_OF_LIFE_SAVING, CORPSE, POT_OIL, RED_DRAGON_SCALE_MAIL, SCR_IDENTIFY, TOWEL, } from '../js/object_data.js';
+import { monsterName, quietMonsterName } from '../js/monster_name.js';
+import { setMonsterGivenName } from '../js/monster_given_name.js';
+import { AMULET_OF_LIFE_SAVING, CORPSE, LEATHER_ARMOR, OBJECT_NAMES, POT_OIL, RED_DRAGON_SCALE_MAIL, SCR_IDENTIFY, TOWEL, } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { makeBlinded } from '../js/sight_change.js';
 import { floorObject, knownObject } from './support/game-objects.js';
 import { floorObjects, floorObjectsAt } from './support/level-state.js';
 import { freshMonsterTrapRoom } from './support/monster-traps.js';
+import { equipMonsterObject } from './support/monsters.js';
 async function freshMonsterFireTrap({ trapType = FIRE_TRAP, visible = true, species = 'little dog', hitPoints = 20, maxHitPoints = hitPoints, ...monsterState } = {}) {
     const result = await freshMonsterTrapRoom(trapType, {
         monster: {
@@ -56,6 +58,45 @@ void test('a fire trap burns a vulnerable monster', async () => {
     assert.ok(monster.mhpmax <= 20);
     assert.equal(trap.tseen, true);
     assert.match(messages[0] ?? '', /tower of flame/);
+});
+void test('a hallucinating hero sees an imaginary owner when a fire trap burns monster armor', async () => {
+    const { monster } = await freshMonsterFireTrap({ species: 'goblin' });
+    requirePlayingGame(game);
+    setMonsterGivenName(monster, 'ArmorControl');
+    const armor = await knownObject(LEATHER_ARMOR, { oeroded: 0 });
+    await equipMonsterObject(monster, armor, W_ARM);
+    game.u.hallucinationTurns = 20;
+    const messages = [];
+    const action = await triggerImmediateMonsterTrap(monster, game);
+    initRng(1n);
+    await resumeDeferredMonsterTrap(action, game, {
+        random: quietFireRandom,
+        publish: async (message) => { messages.push(message); },
+    });
+    const burnMessage = messages.find(message => message.endsWith('leather armor smoulders!'));
+    assert.ok(burnMessage, 'The trap must describe the burning leather armor');
+    assert.doesNotMatch(burnMessage, /ArmorControl|goblin/);
+    assert.equal(armor.oeroded, 1);
+});
+void test('armor that silently resists a fire trap does not change later hallucinated descriptions', async () => {
+    const { monster } = await freshMonsterFireTrap({ species: 'goblin' });
+    requirePlayingGame(game);
+    const armor = await knownObject(OBJECT_NAMES.indexOf('plate mail'));
+    await equipMonsterObject(monster, armor, W_ARM);
+    game.u.hallucinationTurns = 20;
+    const action = await triggerImmediateMonsterTrap(monster, game);
+    initRng(1n);
+    monsterName(monster);
+    const nextDescription = monsterName(monster);
+    initRng(1n);
+    const messages = [];
+    await resumeDeferredMonsterTrap(action, game, {
+        random: quietFireRandom,
+        publish: async (message) => { messages.push(message); },
+    });
+    assert.equal(messages.length, 1);
+    assert.equal(armor.oeroded ?? 0, 0);
+    assert.equal(monsterName(monster), nextDescription);
 });
 void test('worn fire resistance stops the flame but not an exploding potion', async () => {
     const { monster } = await freshMonsterFireTrap({ species: 'soldier' });
