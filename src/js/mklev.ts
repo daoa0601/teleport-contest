@@ -58,6 +58,7 @@ import { nextIdent } from './ident.js';
 import { erosionMatters, objectIsVulnerableToErosion } from './object_erosion.js';
 import { deallocateObject, deleteObject } from './object_delete.js';
 import { eggSpeciesIsDead, hatchableEggSpecies } from './egg_species.js';
+import { attachFigurineTimer } from './figurine_timer.js';
 import {
     placeCreatedObject, remove_object, stack_object, updateIceObjectTimersAt,
 } from './floor_object.js';
@@ -824,7 +825,7 @@ async function mksobj_init(
                 }
             }
             if (otmp.spe === 0) otmp.spe = rn2(4) - rn2(3);
-            if (otmp.spe < 0 && rn2(5)) otmp.cursed = true;
+            if (otmp.spe < 0 && rn2(5)) curseObjectState(otmp);
         } else if (rn2(10)
             && (otyp === 194 || otyp === 196 || otyp === 185
                 || otyp === 184 || !rn2(9))) {
@@ -832,6 +833,7 @@ async function mksobj_init(
         }
         break;
     case AMULET_CLASS:
+        if (otyp === AMULET_OF_YENDOR) game.context.made_amulet = true;
         if (rn2(10) && (otyp === AMULET_OF_STRANGULATION
             || otyp === AMULET_OF_CHANGE
             || otyp === AMULET_OF_RESTFUL_SLEEP)) otmp.cursed = true;
@@ -936,7 +938,7 @@ async function mksobj_init(
                 // Ordinary initialized statues can contain one non-novel
                 // spellbook.  A Lua `contents` field clears this object only
                 // after its complete constructor has consumed RNG.
-                otmp.contents = [await mkobj(SPBOOK_no_NOVEL, false)];
+                await addToContainer(otmp, await mkobj(SPBOOK_no_NOVEL, false));
             }
         }
         break;
@@ -991,6 +993,8 @@ async function initTool(otmp: GameObject): Promise<void> {
         } while (((MONSTER_FLAGS2[otmp.corpsenm] ?? 0) & M2_HUMAN)
             && tryCount++ < 30);
         blessorcurse(otmp, 4);
+    } else if (otyp === BELL_OF_OPENING) {
+        otmp.spe = 3;
     } else if (otyp === MAGIC_FLUTE || otyp === MAGIC_HARP
         || otyp === FROST_HORN || otyp === FIRE_HORN
         || otyp === DRUM_OF_EARTHQUAKE) {
@@ -1070,8 +1074,11 @@ export async function mkobj(oclass: number, artif: boolean): Promise<GameObject>
         // Keep that shared constructor policy here; hellfill.lua merely asks
         // for des.object() and does not own the resulting class weights.
         const inHell = !!game.dungeons?.[game.u?.uz?.dnum ?? 0]?.flags?.hellish;
-        const classProbs: readonly (readonly [number, number])[] = inHell
-            ? [[20, WEAPON_CLASS], [20, ARMOR_CLASS],
+        const classProbs: readonly (readonly [number, number])[] = Is_rogue_level(game.u.uz)
+            ? [[12, WEAPON_CLASS], [12, ARMOR_CLASS], [22, FOOD_CLASS],
+                [22, POTION_CLASS], [22, SCROLL_CLASS], [5, WAND_CLASS],
+                [5, RING_CLASS]]
+            : inHell ? [[20, WEAPON_CLASS], [20, ARMOR_CLASS],
                 [16, FOOD_CLASS], [12, TOOL_CLASS], [10, GEM_CLASS],
                 [1, POTION_CLASS], [1, SCROLL_CLASS], [8, WAND_CLASS],
                 [8, RING_CLASS], [4, AMULET_CLASS]]
@@ -1239,13 +1246,28 @@ export function set_corpsenm(otmp: GameObject | null | undefined, pm: number): v
         ? Math.max(0, existingEggTimer.deadline - (game.moves ?? 0))
         : 0;
     // set_corpsenm() replaces timers which depend on the object's species.
-    stopAllObjectTimers(otmp);
+    if (otmp.otyp === EGG) stopObjectTimer(otmp, OBJECT_TIMER_KIND.HATCH_EGG);
+    else stopAllObjectTimers(otmp);
+    if (otmp.otyp === CORPSE && otmp.oeaten) {
+        const previous = otmp.corpsenm;
+        const oldNutrition = previous === undefined ? 0 : MONSTER_BODY_META[previous]?.[1] ?? 0;
+        const newNutrition = MONSTER_BODY_META[pm]?.[1] ?? 0;
+        if (oldNutrition <= 0) throw new Error('Partly eaten corpse requires its original nutrition');
+        if (oldNutrition !== newNutrition)
+            otmp.oeaten = Math.trunc(otmp.oeaten * newNutrition / oldNutrition);
+    }
     otmp.corpsenm = pm;
     if (otmp.otyp === CORPSE) {
         startCorpseTimeout(otmp);
         otmp.owt = objectWeight(otmp);
-    } else if (otmp.otyp === EGG && pm >= 0) {
-        attachEggHatchTimer(otmp, remainingEggTime);
+    } else if (otmp.otyp === EGG) {
+        if (pm >= 0 && !eggSpeciesIsDead(pm))
+            attachEggHatchTimer(otmp, remainingEggTime);
+    } else {
+        if (otmp.otyp === FIGURINE
+            && (otmp.where === 'inventory' || otmp.where === 'minvent'))
+            attachFigurineTimer(otmp);
+        otmp.owt = objectWeight(otmp);
     }
 }
 

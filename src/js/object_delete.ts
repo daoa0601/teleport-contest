@@ -53,6 +53,10 @@ export function deallocateObject(object: GameObject, state: GameState = game): b
         throw new Error('dealloc_obj requires a free object without contents');
     if (object.timed) stopObjectTimers(object, state);
     if (objectShedsLight(object)) state.vision_full_recalc = 1;
+    const latest = state.context.objsplit;
+    if (latest && (object.o_id === latest.parent_oid || object.o_id === latest.child_oid)) {
+        latest.parent_oid = latest.child_oid = 0;
+    }
     object.where = 'gone';
     object.container = null;
     object.ocarry = null;

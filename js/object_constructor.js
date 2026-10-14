@@ -1,7 +1,7 @@
 // C mkobj.c:mksobj(): zeroobj, identity, age, and unknow_object().
 // Identity allocation belongs to the caller; initializing these fields draws
 // no random numbers and does not run class-specific creation effects.
-import { ELVEN_SHIELD, ORCISH_SHIELD, SHIELD_OF_REFLECTION, getObjectDefinition, } from './object_data.js';
+import { ELVEN_SHIELD, ORCISH_SHIELD, SHIELD_OF_REFLECTION, getObjectDefinition, GLOB_OF_GRAY_OOZE, GLOB_OF_BLACK_PUDDING, } from './object_data.js';
 const DESCRIPTION_UNKNOWN_CLASSES = new Set([
     2, // weapons
     4, // rings
@@ -16,7 +16,8 @@ const DESCRIPTION_UNKNOWN_CLASSES = new Set([
 export function createObjectBase(otyp, objectId, currentTurn) {
     const definition = getObjectDefinition(otyp);
     const oclass = definition.oclass;
-    const dknown = !DESCRIPTION_UNKNOWN_CLASSES.has(oclass)
+    const pudding = otyp >= GLOB_OF_GRAY_OOZE && otyp <= GLOB_OF_BLACK_PUDDING;
+    const dknown = pudding || !DESCRIPTION_UNKNOWN_CLASSES.has(oclass)
         && !(otyp >= ELVEN_SHIELD && otyp <= ORCISH_SHIELD)
         && otyp !== SHIELD_OF_REFLECTION && !definition.merge;
     return {

@@ -3,6 +3,7 @@
 // no random numbers and does not run class-specific creation effects.
 import {
     ELVEN_SHIELD, ORCISH_SHIELD, SHIELD_OF_REFLECTION, getObjectDefinition,
+    GLOB_OF_GRAY_OOZE, GLOB_OF_BLACK_PUDDING,
 } from './object_data.js';
 import type { GameObject } from './object_types.js';
 
@@ -23,7 +24,8 @@ export function createObjectBase(
 ): GameObject {
     const definition = getObjectDefinition(otyp);
     const oclass = definition.oclass;
-    const dknown = !DESCRIPTION_UNKNOWN_CLASSES.has(oclass)
+    const pudding = otyp >= GLOB_OF_GRAY_OOZE && otyp <= GLOB_OF_BLACK_PUDDING;
+    const dknown = pudding || !DESCRIPTION_UNKNOWN_CLASSES.has(oclass)
         && !(otyp >= ELVEN_SHIELD && otyp <= ORCISH_SHIELD)
         && otyp !== SHIELD_OF_REFLECTION && !definition.merge;
     return {

@@ -36,6 +36,11 @@ export function validSavedGameContext(
         no_of_wizards: optional(integer),
         nopick: optional(boolean),
         novel: optional(validNovelContext),
+        objsplit: optional((entry): entry is NonNullable<GameContext['objsplit']> =>
+            closedFieldsMatch<NonNullable<GameContext['objsplit']>>(entry, {
+                parent_oid: (id): id is number => integer(id) && id >= 0,
+                child_oid: (id): id is number => integer(id) && id >= 0,
+            })),
         obj_zapped: optional(boolean),
         polearm: optional(validPolearmContext),
         poly_zapped: optional(integer),

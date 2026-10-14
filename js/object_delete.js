@@ -48,6 +48,10 @@ export function deallocateObject(object, state = game) {
         stopObjectTimers(object, state);
     if (objectShedsLight(object))
         state.vision_full_recalc = 1;
+    const latest = state.context.objsplit;
+    if (latest && (object.o_id === latest.parent_oid || object.o_id === latest.child_oid)) {
+        latest.parent_oid = latest.child_oid = 0;
+    }
     object.where = 'gone';
     object.container = null;
     object.ocarry = null;

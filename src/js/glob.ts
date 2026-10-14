@@ -3,11 +3,12 @@
 
 import { newsym, plineWithContinuation } from './display.js';
 import { ICE, isok } from './const.js';
-import { remove_object } from './floor_object.js';
+import { deallocateObject } from './object_delete.js';
+import { unlinkObject } from './object_location.js';
 import { game, requireLiveGame } from './gstate.js';
 import { formatHeardMessage } from './hero_speech.js';
 import { maybeUnhideAt } from './monster_hiding.js';
-import { unlinkMonsterObject } from './monster_inventory.js';
+import { reconcileObjectDeletionBill } from './shk.js';
 import {
     GLOB_OF_BLACK_PUDDING, GLOB_OF_GRAY_OOZE, OBJECT_NAMES,
 } from './object_data.js';
@@ -260,35 +261,23 @@ function clearHeroEquipment(object: GameObject, state: GameState): void {
     if (removed) state._occupation = null;
 }
 
-function deleteGlob(glob: GameObject, state: GameState, carrier: Monster | null = null): void {
+function deleteGlob(glob: GameObject, state: GameState): void {
     const where = glob.where;
-    if (where === 'floor') {
-        remove_object(glob);
-    } else if (where === 'inventory') {
+    const x = glob.ox, y = glob.oy;
+    if (where === 'inventory') {
         clearHeroEquipment(glob, state);
-        const index = (state.inventory || []).indexOf(glob);
-        if (index >= 0) state.inventory.splice(index, 1);
-    } else if (where === 'contained') {
-        const container = parentContainer(glob, state);
-        const index = container?.contents?.indexOf(glob) ?? -1;
-        if (index >= 0) container?.contents?.splice(index, 1);
-        if (container) updateContainerWeights(container, state);
-        glob.container = null;
-    } else if (where === 'minvent') {
-        const monster = carrier || carryingMonster(glob, state);
-        if (monster) unlinkMonsterObject(monster, glob);
-    } else if (where === 'buried') {
-        const index = state.level?.buriedObjects?.indexOf(glob) ?? -1;
-        if (index >= 0) state.level?.buriedObjects?.splice(index, 1);
-        glob.buried = false;
     } else if (where === 'migrating') {
-        const index = state.migratingObjects?.indexOf(glob) ?? -1;
-        if (index >= 0) state.migratingObjects?.splice(index, 1);
+        glob.owornmask = 0;
+    } else if (where === 'minvent' && glob.ocarry?.mw === glob) {
+        glob.ocarry.mw = null;
+        glob.owornmask = 0;
     }
-    glob.where = 'gone';
-    glob.ocarry = null;
-    delete glob.carrierMid;
-    glob.ox = glob.oy = 0;
+    unlinkObject(glob, state);
+    if (where === 'floor') maybeUnhideAt(x, y, state);
+    if (state.context.victual?.piece === glob) state.context.victual = null;
+    // obfree() retains a consumed shop object for itemized billing.
+    if (reconcileObjectDeletionBill(glob, null, state) === 'retained') return;
+    deallocateObject(glob, state);
 }
 
 function activelyEatingGlob(glob: GameObject, state: GameState): boolean {
@@ -334,7 +323,7 @@ export function runClaimedGlobTimer(
             : missedShrinks;
         if (delta >= glob.owt) {
             glob.owt = 0;
-            deleteGlob(glob, state, carrier);
+            deleteGlob(glob, state);
             return {
                 glob, x, y, overdue: true, delta,
                 gone: true, message: null,
@@ -402,7 +391,7 @@ export function runClaimedGlobTimer(
 
     if (gone) {
         const visible = where === 'floor' && cansee(x, y);
-        deleteGlob(glob, state, carrier);
+        deleteGlob(glob, state);
         if (visible) {
             newsym(x, y);
             const article = x === state.u?.ux && y === state.u?.uy
@@ -422,7 +411,7 @@ export function finishGlobTimer(
     event: GlobTimerEvent | null, state: GameState = game, currentTurn = state.moves ?? 0,
 ): GlobTimerEvent | null {
     if (!event?.finishPending || !event.glob) return event;
-    if (event.gone) deleteGlob(event.glob, state, event.carrier);
+    if (event.gone) deleteGlob(event.glob, state);
     else scheduleNextGlobAttempt(event.glob, state, currentTurn);
     const newCapacity = nearCapacity(state);
     event.followupMessage = encumbranceMessage(

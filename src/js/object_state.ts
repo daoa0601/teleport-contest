@@ -7,7 +7,7 @@
 
 import {
     AMULET_OF_YENDOR, BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION,
-    BAG_OF_HOLDING, CORPSE, FIGURINE, OBJECT_CHARGED, OBJECT_NAMES, OBJECT_SUBTYPE, SPE_BOOK_OF_THE_DEAD,
+    BAG_OF_HOLDING, CORPSE, FIGURINE, OBJECT_BIMANUAL, OBJECT_CHARGED, OBJECT_NAMES, OBJECT_SUBTYPE, SPE_BOOK_OF_THE_DEAD,
 } from './object_data.js';
 import { artifactById } from './artifacts.js';
 import { game, requireLiveGame } from './gstate.js';
@@ -19,9 +19,19 @@ import { objectWeight } from './weight.js';
 import { bookCursed } from './spellbook_study.js';
 import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, W_ARMG, W_ARMH, W_RING } from './const.js';
 import type { AttributeIndex } from './attrib.js';
-import { bot } from './display.js';
-import { updateCarriedLuck } from './hero_inventory.js';
+import { bot, plineWithContinuation } from './display.js';
+import { freeInventoryObject, updateCarriedLuck } from './hero_inventory.js';
+import { heroHandName } from './body_parts.js';
+import { ownedObjectName } from './objnam.js';
+import { dropObjectAtHero } from './object_drop.js';
+import { shipObject } from './object_migration.js';
+import { landObjectOnAltar } from './altar_object.js';
+import { requireInitializedGame } from './gstate.js';
+import { ALTAR } from './const.js';
 import { OBJECT_TIMER_KIND, stopObjectTimer } from './object_timers.js';
+import { attachCursedFigurineTimer } from './figurine_timer.js';
+import { resetBulkTakeoff } from './takeoff_state.js';
+import { adjustObjectLightAfterBlessing, objectLightRadius } from './light.js';
 
 const WEAPON_CLASS = 2;
 const ARMOR_CLASS = 3;
@@ -109,7 +119,12 @@ export function curseObjectState(object: GameObject | null | undefined, state: G
     object.blessed = false;
     object.cursed = true;
     object.buc = 'cursed';
+    if (object === (state.uwep || state.u.uwep) && OBJECT_BIMANUAL[object.otyp])
+        resetBulkTakeoff(state);
     updateBlessingEffects(object, state);
+    if (object.otyp === FIGURINE
+        && (object.where === 'inventory' || object.where === 'minvent'))
+        attachCursedFigurineTimer(object, state);
     return changed;
 }
 
@@ -119,10 +134,31 @@ export async function curseObject(
     object: GameObject | null | undefined, { state = game }: { state?: GameState } = {},
 ): Promise<boolean> {
     const wasCursed = !!object?.cursed;
+    const oldLight = objectLightRadius(object, state);
     const changed = curseObjectState(object, state);
+    if (object && object === (state.uswapwep || state.u.uswapwep) && state.u.twoweap)
+        await dropCursedAlternateWeapon(object, state);
     if (object && changed && !wasCursed && object.oclass === 10)
         await bookCursed(object, { state });
+    if (object?.lamplit) await adjustObjectLightAfterBlessing(object, oldLight, state);
     return changed;
+}
+
+// C wield.c:drop_uswapwep() and do.c:dropx(): announce before extraction,
+// then handle shipping and altar contact before placing the dropped weapon.
+async function dropCursedAlternateWeapon(object: GameObject, state: GameState): Promise<void> {
+    await plineWithContinuation(`Your left ${heroHandName(state)} spasms and drops ${
+        ownedObjectName(object, state, { capitalized: false, includeQuantity: true })}!`);
+    await freeInventoryObject(object, state);
+    if (!state.u.uswallow) {
+        const initialized = requireInitializedGame(state);
+        if (await shipObject(object, state.u.ux, state.u.uy, {
+            state: initialized, publish: plineWithContinuation,
+        })) return;
+        if (state.level?.at(state.u.ux, state.u.uy)?.typ === ALTAR)
+            await landObjectOnAltar(object, { state });
+    }
+    await dropObjectAtHero(object, { state });
 }
 
 export function blessObjectState(object: GameObject | null | undefined, state: GameState = game): boolean {
