@@ -10,7 +10,7 @@ import { heroHasFreeHand } from './weapon_type.js';
 import { heroHandName } from './body_parts.js';
 import { chooseInventoryObject } from './inventory_prompt.js';
 import { inventoryItemDescription } from './invent.js';
-import { objectCombatName, observeObjectForNaming, simpleObjectName } from './objnam.js';
+import { objectCombatName, objectNameIsPlural, observeObjectForNaming, simpleObjectName } from './objnam.js';
 import { BAG_OF_HOLDING, BAG_OF_TRICKS, CAN_OF_GREASE, CRAM_RATION, FOOD_RATION, HORN_OF_PLENTY, ICE_BOX, LEMBAS_WAFER, MAGIC_LAMP, OIL_LAMP, POT_OIL, STATUE, TALLOW_CANDLE, WAX_CANDLE } from './object_data.js';
 import { consumeObjectCharge } from './object_charge.js';
 import { dropObjectAtHero, hitFloorWithObject } from './object_drop.js';
@@ -277,7 +277,7 @@ async function tipContainer(source) {
                     else {
                         const name = description(object);
                         await pline(terse ? `${name}${index + 1 < contents.length ? ',' : '.'}`
-                            : `${name.charAt(0).toUpperCase()}${name.slice(1)} ${object.quan === 1 ? 'drops' : 'drop'} to the ${surfaceName(x, y)}.`);
+                            : `${name.charAt(0).toUpperCase()}${name.slice(1)} ${objectNameIsPlural(object) ? 'drop' : 'drops'} to the ${surfaceName(x, y)}.`);
                         if (terse)
                             game._lastPlineKind = PLNMSG_OBJNAM_ONLY;
                     }

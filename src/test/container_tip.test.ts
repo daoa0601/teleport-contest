@@ -6,9 +6,28 @@ import { BAG_OF_HOLDING, CAN_OF_GREASE, CHEST, CLUB, HORN_OF_PLENTY, ROCK, SACK,
     WAN_CANCELLATION } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { runExtendedCommand } from './support/commands.js';
-import { addInventoryObject, floorObject, knownObject } from './support/game-objects.js';
+import { addInventoryObject, artifactObject, floorObject, knownObject } from './support/game-objects.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 import { floorObjectsAt } from './support/level-state.js';
+
+void test('tipping the discovered Eyes of the Overworld uses a plural drop verb', async () => {
+    const level = freshPlayableRoom();
+    level.requireAt(10, 10).typ = LAVAPOOL;
+    const sack = await addInventoryObject(SACK, { invlet: 'a', initialize: false });
+    const club = await knownObject(CLUB, { where: 'contained', container: sack });
+    const eyes = await artifactObject('The Eyes of the Overworld', {
+        where: 'contained', container: sack,
+    });
+    assert.ok(eyes.oartifact);
+    game._artifactDiscoveries = [eyes.oartifact];
+    sack.contents = [club, eyes];
+
+    await runExtendedCommand('tip', 'a\n' + ' '.repeat(10));
+
+    assert.equal(club.where, 'gone');
+    assert.equal(floorObjectsAt(level, 10, 10).includes(eyes), true);
+    assert.match(game._pending_message, /Eyes of the Overworld drop to the lava\./);
+});
 
 void test('tipping switches to full drop messages after an item burns in lava', async () => {
     const level = freshPlayableRoom();
