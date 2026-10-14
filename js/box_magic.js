@@ -1,3 +1,4 @@
+import { resetPick } from './lock_context.js';
 // Locking and opening magic applied to a box. C ref: lock.c boxlock().
 import { game } from './gstate.js';
 import { plineWithContinuation as pline } from './display.js';
@@ -24,8 +25,8 @@ export async function changeBoxLockByMagic(box, source, { state = game } = {}) {
         return true;
     }
     if (source.otyp === WAN_POLYMORPH || source.otyp === SPE_POLYMORPH) {
-        if (state.context?.xlock?.box === box)
-            state.context.xlock = null;
+        if (state._lockAttempt?.container === box)
+            resetPick(state);
         if (state._occupation?.key === 'pick-lock' && state._occupation.container === box)
             state._occupation = null;
     }

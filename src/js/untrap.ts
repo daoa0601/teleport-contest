@@ -29,7 +29,7 @@ import { game } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
-import type { Trap, MapLocation } from './map_types.js';
+import type { Trap, MapLocation, Position } from './map_types.js';
 import type { MessagePublisher } from './display.js';
 import type { DirectionSelection } from './tty_prompts.js';
 import { convertTrapToObject } from './trap_object.js';
@@ -85,6 +85,8 @@ type TrapEntry = (trap: Trap) => TrapEntryResult | Promise<TrapEntryResult>;
 
 export interface UntrapOptions {
     state?: GameState;
+    container?: GameObject | null;
+    door?: Position | null;
     force?: boolean;
     enterTrap?: TrapEntry | null;
     chooseDirection?: () => DirectionSelection | null | Promise<DirectionSelection | null>;
@@ -223,6 +225,8 @@ export async function doUntrap({
 
 export async function untrap({
     state = game,
+    container = null,
+    door = null,
     force = false,
     enterTrap = null,
     chooseDirection = promptDirection,
@@ -236,6 +240,19 @@ export async function untrap({
 }: UntrapOptions = {}): Promise<boolean> {
     if (!force && heroHasMagicKey(state)) force = true;
 
+    if (container) {
+        await inspectBox(container, { state, force, ask, publish, random, rollOne, rollDice });
+        return true;
+    }
+    if (door) {
+        if (!isok(door.x, door.y)) {
+            await publish('The perils lurking there are beyond your grasp.');
+            return false;
+        }
+        return handleDoor(door.x, door.y, {
+            state, force, trapSkipped: false, ask, publish, random, rollOne,
+        });
+    }
     const direction = await chooseDirection();
     if (!direction) {
         state._pending_message = '';

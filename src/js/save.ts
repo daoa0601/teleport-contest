@@ -203,6 +203,7 @@ export function restoreGame(
         game._commandCount = 0;
         game._commandKey = 0;
         game._occupation = null;
+        game._lockAttempt = null;
         game._runState = null;
         game._heroTimePending = false;
         game._kickedLoc = null;

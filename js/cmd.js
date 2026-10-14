@@ -1,3 +1,9 @@
+import { autokey, autoUnlockFlags, continuePicking, pickLock } from './lock_pick.js';
+import { resetPick } from './lock_context.js';
+import { AUTOUNLOCK_APPLY_KEY, AUTOUNLOCK_UNTRAP } from './const.js';
+import { findDrawbridgeAt } from './dbridge.js';
+import { doorObstructed } from './door_magic.js';
+import { DBWALL, DRAWBRIDGE_DOWN } from './const.js';
 import { dipFountainSword } from './fountain_sword.js';
 import { washHands } from './dip_water.js';
 import { waterDamageObject } from './trap.js';
@@ -906,42 +912,8 @@ async function continueOccupation(g) {
         g._occupation = null;
         return false;
     }
-    if (occupation.key === 'pick-lock') {
-        occupation.usedtime = (occupation.usedtime ?? 0) + 1;
-        if (occupation.usedtime > 50) {
-            await pline('You give up your attempt at picking the lock.');
-            await exerciseAttribute(A_DEX, true);
-            g._occupation = null;
-        }
-        else if (rn2(100) < occupation.chance) {
-            await pline('You succeed in picking the lock.');
-            if (occupation.container) {
-                occupation.container.olocked = !occupation.container.olocked;
-                occupation.container.lknown = true;
-            }
-            else if (occupation.door && (occupation.door.doormask & D_TRAPPED)) {
-                if (await triggerBoobyTrap('door', { bodypart: true, state: g }))
-                    return false;
-                occupation.door.doormask = D_NODOOR;
-                vision_note_blocker_change(occupation.x, occupation.y);
-                if (roomsAt(g.level, occupation.x, occupation.y, SHOPBASE).length)
-                    addShopDamage(occupation.x, occupation.y, SHOP_DOOR_COST, g);
-            }
-            else if (occupation.door && (occupation.door.doormask & D_LOCKED)) {
-                occupation.door.doormask &= ~D_LOCKED;
-                occupation.door.doormask |= D_CLOSED;
-            }
-            else if (occupation.door) {
-                occupation.door.doormask &= ~D_CLOSED;
-                occupation.door.doormask |= D_LOCKED;
-            }
-            await exerciseAttribute(A_DEX, true);
-            newsym(occupation.x, occupation.y);
-            g._occupation = null;
-        }
-        g.context.move = 1;
-        return true;
-    }
+    if (occupation.key === 'pick-lock')
+        return continuePicking(occupation, g);
     if (occupation.key === 'eat-food') {
         return continueFoodMeal(occupation, g);
     }
@@ -3146,49 +3118,17 @@ async function doloot() {
     await lootCommand({ unlockContainer: lootLockedContainer, chooseDirection: getAdjacentLocation });
 }
 async function lootLockedContainer(container) {
-    const x = container.ox, y = container.oy;
-    const containerName = container.otyp === SACK
-        || container.otyp === OILSKIN_SACK
-        || container.otyp === BAG_OF_HOLDING
-        ? 'bag' : OBJECT_NAMES[container.otyp] || 'container';
-    if (container.olocked) {
-        const lockedMessage = container.lknown
-            ? `The ${containerName} is locked.`
-            : `Hmmm, the ${containerName} turns out to be locked.`;
-        container.lknown = true;
-        const tool = autoUnlockTool(game);
-        if (!tool) {
-            await pline(lockedMessage);
-            game.context.move = 0;
-            return;
-        }
-        // do_loot_cont() emits the lock discovery before pick_lock() asks
-        // its ynq question. tty update_topl() pages the former message before
-        // it can install the prompt.
-        await promptKey(`${lockedMessage}--More--`);
-        const answer = await promptYesNoQuit(`Unlock it with ${lockToolName(tool)}?`);
-        if (answer === 'y') {
-            game._occupation = {
-                key: 'pick-lock',
-                text: tool.otyp === LOCK_PICK || tool.otyp === CREDIT_CARD
-                    ? 'picking the lock'
-                    : `unlocking the ${container.otyp === CHEST ? 'chest' : 'box'}`,
-                remaining: 51,
-                usedtime: 0,
-                container,
-                x,
-                y,
-                tool,
-                chance: lockPickChance(tool, game, container),
-            };
-            // Initiating container autounlock makes enclosing #loot timed
-            // before the first occupation callback.
-            game.context.move = 1;
-        }
-        else
-            game.context.move = 0;
+    if (!container.olocked)
         return;
-    }
+    const name = OBJECT_NAMES[container.otyp] || 'container';
+    await pline(container.lknown ? `The ${name} is locked.` : `Hmmm, the ${name} turns out to be locked.`);
+    container.lknown = true;
+    const flags = autoUnlockFlags(game);
+    const tool = flags & AUTOUNLOCK_APPLY_KEY ? autokey(true) : null;
+    if (tool || flags & AUTOUNLOCK_UNTRAP)
+        game.context.move = Number(await pickLock(tool, { target: { x: game.u.ux, y: game.u.uy }, container }));
+    else
+        game.context.move = 0;
 }
 // C cmd.c:extcmds_match(): availability applies to both full names and
 // completion; AUTOCOMPLETE only limits the latter.
@@ -5481,9 +5421,9 @@ async function dodrop() {
         game.context.move = spentTime ? 1 : 0;
         if (spentTime) {
             resetBulkTakeoff();
+            resetPick();
             resetTrapSetting();
         }
-        // Lock-picking's resumable record lives in the occupation itself.
         if (spentTime && game._occupation?.key === 'pick-lock')
             game._occupation = null;
     }
@@ -5530,46 +5470,90 @@ async function doclose() {
     }
     game.context.move = game.u.confused || game.u.confusionTurns
         || game.u.stunned || game.u.stunnedTurns ? 1 : 0;
-    if (loc?.typ !== DOOR)
-        await pline('You see no door there.');
-    else if (loc.doormask === D_NODOOR)
-        await pline('This doorway has no door.');
-    else if (loc.doormask === D_BROKEN)
-        await pline('This door is broken.');
-    else if (loc.doormask & (D_CLOSED | D_LOCKED))
-        await pline('This door is already closed.');
-    else {
-        loc.doormask = D_CLOSED;
-        newsym(x, y);
-        await pline('The door closes.');
-        game.context.move = 1;
+    if (loc && heroIsBlind(game)) {
+        const previousGlyph = glyphAt(x, y)?.glyph;
+        recordMappedOverviewState();
+        const previousTerrain = loc.lastseentyp;
+        feel_location(x, y);
+        if (glyphAt(x, y)?.glyph !== previousGlyph || loc.lastseentyp !== previousTerrain)
+            game.context.move = 1;
+    }
+    const portcullis = loc && (loc.typ === DOOR || loc.typ === DBWALL)
+        && findDrawbridgeAt(x, y) !== null;
+    if (portcullis || loc?.typ !== DOOR) {
+        if (loc?.typ === DBWALL || loc?.typ === DRAWBRIDGE_UP)
+            await pline('The drawbridge is already closed.');
+        else if (portcullis || loc?.typ === DRAWBRIDGE_DOWN)
+            await pline('There is no obvious way to close the drawbridge.');
+        else
+            await pline(`You ${heroIsBlind(game) ? 'feel' : 'see'} no door there.`);
         return;
     }
+    if (loc.doormask === D_NODOOR) {
+        await pline('This doorway has no door.');
+        return;
+    }
+    requirePlayingGame(game);
+    if (await doorObstructed(x, y, false, game))
+        return;
+    if (loc.doormask === D_BROKEN) {
+        await pline('This door is broken.');
+        return;
+    }
+    if (loc.doormask & (D_CLOSED | D_LOCKED)) {
+        await pline('This door is already closed.');
+        return;
+    }
+    if (loc.doormask === D_ISOPEN) {
+        if (heroIsVerySmall(game) && !game.u.usteed) {
+            await pline("You're too small to push the door closed.");
+            return;
+        }
+        const effort = Math.trunc((currentStrength()
+            + currentAttribute(A_DEX) + currentAttribute(A_CON)) / 3);
+        if (game.u.usteed || rn2(25) < effort) {
+            await pline('The door closes.');
+            loc.doormask = D_CLOSED;
+            feel_newsym(x, y);
+            vision_note_blocker_change(x, y);
+        }
+        else {
+            await exerciseAttribute(A_STR, true);
+            await pline('The door resists!');
+        }
+    }
+    game.context.move = 1;
 }
 // C refs: lock.c doopen(); cmd.c get_adjacent_loc()/getdir().  Direction
 // validation is owned by the same modal assistance transaction as close;
 // the door mutation happens only after that transaction returns a direction.
-async function doopen() {
+async function doopen(x = 0, y = 0) {
     if (heroHasNoHands(game)) {
         await pline("You can't open anything -- you have no hands!");
         game.context.move = 0;
         return;
     }
-    const direction = await promptDirection();
-    if (!direction) {
-        await pline('Never mind.');
-        game.context.move = 0;
-        return;
+    if (!(x > 0 && y >= 0)) {
+        const boxes = game.level?.objects[game.u.ux]?.[game.u.uy] ?? [];
+        const inPitWithContainer = game.u.utrap && game.u.utraptype === TT_PIT
+            && boxes.some(object => isContainer(object));
+        const direction = await promptDirection(inPitWithContainer
+            ? () => readDirectionKey('Open where? [.>] ') : readDirectionKey);
+        if (!direction) {
+            await pline('Never mind.');
+            game.context.move = 0;
+            return;
+        }
+        x = game.u.ux + direction.dx;
+        y = game.u.uy + direction.dy;
     }
-    const x = game.u.ux + direction.dx;
-    const y = game.u.uy + direction.dy;
     if (!isok(x, y)) {
         game.context.move = 0;
         return;
     }
     const loc = game.level?.at(x, y);
     if (x === game.u.ux && y === game.u.uy
-        && (direction.dz > 0 || loc?.typ !== DOOR || !(loc.doormask & (D_CLOSED | D_LOCKED)))) {
+        && ((game.u.dz ?? 0) > 0 || loc?.typ !== DOOR || !(loc.doormask & (D_CLOSED | D_LOCKED)))) {
         await doloot();
         return;
     }
@@ -5595,7 +5579,17 @@ async function doopen() {
             spentTime = true;
     }
     game.context.move = Number(spentTime);
-    if (loc?.typ !== DOOR) {
+    const portcullis = loc && (loc.typ === DOOR || loc.typ === DBWALL)
+        && findDrawbridgeAt(x, y) !== null;
+    if (portcullis || loc?.typ !== DOOR) {
+        if (loc?.typ === DBWALL || loc?.typ === DRAWBRIDGE_UP) {
+            await pline('There is no obvious way to open the drawbridge.');
+            return;
+        }
+        if (portcullis || loc?.typ === DRAWBRIDGE_DOWN) {
+            await pline('The drawbridge is already open.');
+            return;
+        }
         const floorPile = game.level?.objects[x]?.[y] ?? [];
         // Native Is_container includes a bag of tricks for this hint.
         const hasContainer = floorPile.some(object => object.otyp >= LARGE_BOX && object.otyp <= BAG_OF_TRICKS);
@@ -5618,7 +5612,11 @@ async function doopen() {
         return;
     }
     if (loc.doormask & D_LOCKED) {
-        game.context.move = Number(await openLockedDoor(loc, x, y));
+        game.context.move = Number(await openLockedDoor(x, y));
+        return;
+    }
+    if (heroIsVerySmall(game)) {
+        await pline("You're too small to pull the door open.");
         return;
     }
     if (rnl(20) < Math.trunc((currentStrength()
@@ -5648,12 +5646,8 @@ async function openClosedDoor(door, x, y) {
     }
     else
         door.doormask = D_ISOPEN;
-    if (heroIsBlind(game))
-        feel_location(x, y);
-    else
-        newsym(x, y);
-    vision_reset();
-    vision_recalc(0);
+    feel_newsym(x, y);
+    vision_note_blocker_change(x, y);
 }
 // C refs: write.c dowrite()/write_ok(); invent.c getobj().  The object picker
 // retains ownership after an absent inventory letter and reopens the same
@@ -5997,18 +5991,7 @@ async function applyTool(item, underlay) {
         return game.inventory.includes(item) ? item : null;
     }
     if ([SKELETON_KEY, LOCK_PICK, CREDIT_CARD].includes(item.otyp)) {
-        const direction = await readDirectionKey();
-        const directionKey = promptedDirectionKey(direction, game.commandBindings);
-        if (isMovementKey(directionKey)) {
-            const x = game.u.ux + DIR_DX[directionKey];
-            const y = game.u.uy + DIR_DY[directionKey];
-            const loc = game.level?.at(x, y);
-            await pline(loc?.typ === DOOR
-                && !(loc.doormask & (D_CLOSED | D_LOCKED))
-                ? 'You cannot lock an open door.'
-                : 'You see no door there.');
-        }
-        game.context.move = 1;
+        game.context.move = Number(await pickLock(item));
         return item;
     }
     if (item.otyp === BANANA && heroIsHallucinating(game)) {
@@ -6946,81 +6929,16 @@ async function dothrow(selectedItem = null, capabilityChecked = false, suppliedS
     }
     game.context.move = 1;
 }
-// C refs: lock.c autokey(TRUE), pick_lock().  Default autounlock includes
-// apply-key; an explicit false/none setting is the only state that disables
-// this branch in the currently ported option model.
-function autoUnlockTool(g = game) {
-    const setting = g.flags?.autounlock;
-    if (setting === false || setting === 0 || setting === 'none')
-        return null;
-    const inventory = g.inventory || [];
-    for (const otyp of [SKELETON_KEY, LOCK_PICK, CREDIT_CARD]) {
-        const tool = inventory.find(object => object.otyp === otyp);
-        if (tool)
-            return tool;
-    }
-    return null;
-}
-async function openLockedDoor(door, x, y) {
+async function openLockedDoor(x, y) {
     await pline('This door is locked.');
-    const tool = autoUnlockTool(game);
-    if (!tool)
-        return false;
+    const flags = autoUnlockFlags(game);
+    if (!flags)
+        return Boolean(game.context.move);
     game.u.dz = 0;
-    const monster = monsterAtPosition(requireGameLevel(), x, y);
-    if (monster && canSeeMonster(monster)
-        && M_AP_TYPE(monster) !== M_AP_FURNITURE
-        && M_AP_TYPE(monster) !== M_AP_OBJECT) {
-        if (tool.otyp === CREDIT_CARD
-            && (monster.isshk || MONSTER_NAME[monster.mnum] === 'Oracle'))
-            await plineWithContinuation('"No checks, no credit, no problem."');
-        else
-            await plineWithContinuation(`I don't think ${monsterName(monster)} would appreciate that.`);
-        return true;
-    }
-    await flushPendingTopline();
-    const answer = await promptYesNoQuit(`Unlock it with ${lockToolName(tool)}?`);
-    if (answer !== 'y')
-        return false;
-    const touch = await touchArtifactByHero(tool);
-    if (!touch.allowed || touch.died)
-        return true;
-    game._occupation = {
-        key: 'pick-lock',
-        text: tool.otyp === LOCK_PICK || tool.otyp === CREDIT_CARD
-            ? 'picking the lock' : 'unlocking the door',
-        remaining: 51, usedtime: 0, door, x, y, tool,
-        chance: lockPickChance(tool, game),
-    };
-    return true;
-}
-function lockToolName(tool) {
-    observeObjectForNaming(tool);
-    return ownedObjectName(tool, game, { capitalized: false });
-}
-function lockPickChance(tool, g = game, container = null) {
-    const dexterity = currentAttribute(A_DEX, g);
-    const rogueBonus = g.urole?.key === 'rogue';
-    let chance;
-    if (container) {
-        if (tool.otyp === CREDIT_CARD)
-            chance = dexterity + (rogueBonus ? 20 : 0);
-        else if (tool.otyp === LOCK_PICK)
-            chance = 4 * dexterity + (rogueBonus ? 25 : 0);
-        else
-            chance = 75 + dexterity;
-        if (container.cursed)
-            chance = Math.trunc(chance / 2);
-    }
-    else if (tool.otyp === CREDIT_CARD) {
-        chance = 2 * dexterity + (rogueBonus ? 20 : 0);
-    }
-    else if (tool.otyp === LOCK_PICK) {
-        chance = 3 * dexterity + (rogueBonus ? 30 : 0);
-    }
-    else
-        chance = 70 + dexterity;
-    return chance;
+    const tool = flags & AUTOUNLOCK_APPLY_KEY ? autokey(true) : null;
+    if (tool)
+        return pickLock(tool, { target: { x, y } });
+    return Boolean(game.context.move);
 }
 // C ref: hack.c:dopush().  Move a floor boulder before committing the hero
 // into its old square; the first push owns Strength exercise and its message.
@@ -7189,6 +7107,7 @@ export async function applyHeroLocationEffects(publish = plineWithContinuation, 
 async function finishMovedHero({ oldx, oldy, newx, newy, loc, explicitAttempt, ballChainMove = null, trapOptions = {}, }) {
     const u = game.u;
     resetBulkTakeoff();
+    resetPick();
     resetTrapSetting();
     // C hack.c:domove_core() sets this only in the common tail after map
     // coordinates changed.  The turn loop retains it through every global
@@ -7533,6 +7452,7 @@ async function domoveCore(dx, dy, explicitAttempt) {
                 // C domove_core() resets occupations after restoring the
                 // hero's position, even when a peaceful refuses the swap.
                 resetBulkTakeoff();
+                resetPick();
                 resetTrapSetting();
                 await finishBallAndChainMove(ballChainMove);
                 if (ballChainMove?.causeDelay)
@@ -7629,24 +7549,8 @@ async function domoveCore(dx, dy, explicitAttempt) {
             }
             return false;
         }
-        // lock.c:doopen_indir() classifies a locked door before the ordinary
-        // closed-door strength roll.  test_move() reaches autoopen before its
-        // later diagonal-door restriction, so a diagonal attempt still owns
-        // this zero-time message.
-        if (loc.doormask & D_LOCKED) {
-            await openLockedDoor(loc, newx, newy);
-            game.context.move = 0;
-            return false;
-        }
-        const openRoll = rnl(20);
-        const openThreshold = Math.trunc((currentStrength() + currentAttribute(A_DEX)
-            + currentAttribute(A_CON)) / 3);
-        if (openRoll >= openThreshold) {
-            await exerciseAttribute(A_STR, true);
-            await pline('The door resists!');
-            return false;
-        }
-        await openClosedDoor(loc, newx, newy);
+        await doopen(newx, newy);
+        game.context.move = 0;
         return false;
     }
     // C test_move() rejects an obstructed destination before it evaluates

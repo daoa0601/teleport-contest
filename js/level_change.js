@@ -1,3 +1,4 @@
+import { maybeResetPick } from './lock_context.js';
 // C do.c:goto_level(): departure, destination creation or restoration, and arrival.
 import { rewindEngravingsForSave, restoreEngravingPointers } from './engrave.js';
 import { monsterHasMapPosition } from './monster_location.js';
@@ -112,6 +113,7 @@ export async function gotoLevel(targetDepth, { arrival = 'random', ladder = fals
     }
     await currentLuaLifecycle().runCallbacks(game, 'level_leave');
     resetTrapSetting();
+    maybeResetPick(null);
     if (arrival === 'falling')
         await impactDrop(null, game.u.ux, game.u.uy, {
             destinationLevel: destinationDepth.dlevel, publish: plineWithContinuation,

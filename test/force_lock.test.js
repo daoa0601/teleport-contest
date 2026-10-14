@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { continueCountedCommand, rhack } from '../js/cmd.js';
 import { W_WEP } from '../js/const.js';
 import { requireGameLevel, game } from '../js/gstate.js';
-import { pushKeys } from '../js/input.js';
+import { pushKeys, resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { APPLE, CHEST, CLUB, DAGGER, POT_HEALING, SACK, } from '../js/object_data.js';
 import { addObjectToContainer } from '../js/object_container.js';
@@ -15,6 +15,7 @@ import { shopObjectUnitCost } from '../js/shk.js';
 import { initRng } from '../js/rng.js';
 import { addInventoryObject, floorObject, knownObject, corpseObject, } from './support/game-objects.js';
 import { freshGameplayRoom } from './support/playable-room.js';
+import { answerPrompts } from './support/input-boundaries.js';
 import { createStaffedShop } from './support/shop.js';
 void test('a blade can break while prying a chest lock', async () => {
     freshGameplayRoom();
@@ -39,6 +40,30 @@ void test('a blade can break while prying a chest lock', async () => {
     assert.equal(game.inventory.includes(dagger), false);
     assert.equal(game.uwep, null);
     assert.match(game._pending_message, /Your dagger broke!.*give up/);
+});
+void test('prying with stacked daggers reports one broken dagger and keeps the rest wielded', async () => {
+    freshGameplayRoom();
+    const daggers = await addInventoryObject(DAGGER, {
+        invlet: 'a', quan: 3, spe: 0, cursed: false,
+        wielded: true, owornmask: W_WEP,
+    });
+    const chest = await floorObject(CHEST, 10, 10, { olocked: true, obroken: false });
+    game.uwep = game.u.uwep = daggers;
+    const input = resetInputState();
+    initRng(46n);
+    pushKeys('force\ny');
+    await rhack('#'.charCodeAt(0));
+    await answerPrompts(continueCountedCommand(game), input, [
+        { prompt: /One of your daggers broke!.*--More--/, keys: ' ' },
+    ]);
+    assert.equal(game._pending_message, 'You give up your attempt to force the lock.');
+    assert.equal(daggers.quan, 2);
+    assert.ok(game.inventory.includes(daggers));
+    assert.equal(game.uwep, daggers);
+    assert.equal(daggers.owornmask, W_WEP);
+    assert.equal(chest.olocked, true);
+    assert.equal(chest.obroken, false);
+    assert.equal(game._occupation, null);
 });
 async function bashChest(seed) {
     const club = await addInventoryObject(CLUB, {

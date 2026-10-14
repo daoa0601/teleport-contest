@@ -129,9 +129,22 @@ export async function doUntrap({ state = game, enterTrap = null, } = {}) {
     state.context.move = spentTime ? 1 : 0;
     return spentTime;
 }
-export async function untrap({ state = game, force = false, enterTrap = null, chooseDirection = promptDirection, ask = promptYesNoQuit, chooseObject = promptInventoryObject, publish = pline, random = rn2, rollOne = rnd, rollDice = d, luckRandom = rnl, } = {}) {
+export async function untrap({ state = game, container = null, door = null, force = false, enterTrap = null, chooseDirection = promptDirection, ask = promptYesNoQuit, chooseObject = promptInventoryObject, publish = pline, random = rn2, rollOne = rnd, rollDice = d, luckRandom = rnl, } = {}) {
     if (!force && heroHasMagicKey(state))
         force = true;
+    if (container) {
+        await inspectBox(container, { state, force, ask, publish, random, rollOne, rollDice });
+        return true;
+    }
+    if (door) {
+        if (!isok(door.x, door.y)) {
+            await publish('The perils lurking there are beyond your grasp.');
+            return false;
+        }
+        return handleDoor(door.x, door.y, {
+            state, force, trapSkipped: false, ask, publish, random, rollOne,
+        });
+    }
     const direction = await chooseDirection();
     if (!direction) {
         state._pending_message = '';
