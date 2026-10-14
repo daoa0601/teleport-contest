@@ -16,7 +16,7 @@ import { CORR, G_GONE, Is_rogue_level, Is_waterlevel, MM_EDOG, MM_NOMSG, NO_MINV
 import { canSeeMonster, canSpotMonster, map_invisible, newsym, plineWithContinuation, displayColorName, } from './display.js';
 import { initializePet } from './dog.js';
 import { makemonNear, mksobj } from './mklev.js';
-import { wakeMonstersNear } from './monster_wake.js';
+import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { monsterDigests, monsterIsWhirly, monsterTypeName, } from './monster_data.js';
 import { BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, GOLD_DRAGON_SCALE_MAIL, GOLD_DRAGON_SCALES, MAGIC_LAMP, OBJECT_NAMES, OIL_LAMP, POT_OIL, POT_WATER, TALLOW_CANDLE, WAX_CANDLE, } from './object_data.js';
 import { OBJECT_TIMER_KIND, scheduleObjectTimer, stopObjectTimer, } from './object_timers.js';
@@ -121,8 +121,13 @@ function swallowedLightMessage() {
         : `${subject} glistens.`;
 }
 function roomEffectCells(radius, lit) {
-    if (!Is_rogue_level(game.u?.uz))
+    if (!Is_rogue_level(game.u?.uz)) {
+        // Sunsword illuminates the hero's spot directly; do_clear_area
+        // rejects radius zero in both the native source and the port.
+        if (radius === 0)
+            return [{ x: game.u.ux, y: game.u.uy }];
         return clearAreaCells(game.u.ux, game.u.uy, radius);
+    }
     const roomno = game.level?.at?.(game.u.ux, game.u.uy)?.roomno;
     const room = roomForRoomno(game.level, roomno ?? 0);
     if (!room)
@@ -223,19 +228,18 @@ async function impactArtifactLight(object, worsen) {
     deallocateObject(water);
 }
 export async function lightHitsGremlin(monster, damage, finishMonsterKill) {
-    const name = monsterName(monster, { capitalized: true });
-    const dx = (monster.mx ?? 0) - (game.u?.ux ?? 0);
-    const dy = (monster.my ?? 0) - (game.u?.uy ?? 0);
+    const dx = monster.mx - game.u.ux;
+    const dy = monster.my - game.u.uy;
     if (!heroIsDeaf(game) && dx * dx + dy * dy <= 90) {
-        const reaction = damage > (monster.mhp ?? 1) / 2
+        const reaction = damage > monster.mhp / 2
             ? 'wails in agony' : 'cries out in pain';
-        await plineWithContinuation(`${name} ${reaction}!`);
+        await plineWithContinuation(`${monsterName(monster, { capitalized: true })} ${reaction}!`);
     }
     else if (canSeeMonster(monster)) {
-        await plineWithContinuation(`${name} recoils from the light!`);
+        await plineWithContinuation(`${monsterName(monster, { capitalized: true })} recoils from the light!`);
     }
-    monster.mhp = Math.max(0, (monster.mhp ?? 1) - damage);
-    wakeMonstersNear(monster.mx, monster.my, 30);
+    monster.mhp -= damage;
+    await wakeMonstersNearWithMessages(monster.mx, monster.my, 30);
     if (monster.mhp <= 0) {
         if (finishMonsterKill)
             return finishMonsterKill(monster, monster.mx, monster.my);

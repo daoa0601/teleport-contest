@@ -28,6 +28,8 @@ import { cansee, vision_recalc, vision_reset } from '../js/vision.js';
 import { addInventoryObject, artifactObject, floorObject, knownObject, } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createStaffedShop } from './support/shop.js';
+import { mksobj } from '../js/mklev.js';
+import { addInventoryItem } from '../js/u_init.js';
 function screen() {
     assert.ok(game.nhDisplay);
     return game.nhDisplay.grid.map((row) => row.map((cell) => cell.ch).join('')).join('\n');
@@ -80,6 +82,21 @@ async function billed(object, quantity = objectQuantity(object)) {
     });
     object.unpaid = true;
     return shopkeeper;
+}
+for (const initialize of [false, true]) {
+    void test(`a newly created oil potion burns for 400 turns with initialization ${initialize}`, async () => {
+        freshLight({ moves: 10 });
+        const oil = await addInventoryItem(await mksobj(POT_OIL, initialize, false));
+        await lightCocktail(oil);
+        game.moves = 409;
+        await runDueTimers();
+        assert.equal(oil.lamplit, true);
+        assert.ok(game.inventory.includes(oil));
+        game.moves = 410;
+        await runDueTimers();
+        assert.equal(oil.where, 'gone');
+        assert.equal(game.inventory.includes(oil), false);
+    });
 }
 for (const type of [TALLOW_CANDLE, WAX_CANDLE]) {
     void test(`an applied ${type === TALLOW_CANDLE ? 'tallow' : 'wax'} candle stack lights and restores remaining fuel when snuffed`, async () => {
@@ -564,6 +581,10 @@ void test('holding a rejecting artifact uses its real blast and leaves it on the
     freshLight({ hero: { uhp: 200, uhpmax: 200, ualign: { type: -1, record: 0 } } });
     requirePlayingGame(game);
     const sword = await artifactObject('Excalibur', { where: 'free' });
+    installPagerInput(resetInputState(), {
+        expected: /You are blasted by the long sword named Excalibur's power!|The long sword named Excalibur evades your grasp!/,
+        limit: 2,
+    });
     const held = await holdAnotherObject(sword, { dropMessage: 'You drop the sword!' });
     assert.equal(held.heroDied, false);
     assert.equal(held.object, sword);

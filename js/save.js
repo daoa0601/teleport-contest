@@ -168,6 +168,7 @@ export function restoreGame(name, storage = game.storage) {
         resolveDungeonIdentities(game);
         game.multi = 0;
         game.warn_obj_cnt = 0;
+        game._magicKeyTrapWarningCount = 0;
         game._monsterSwallower = null;
         game._monsterEngulf = null;
         game._commandCount = 0;

@@ -20,6 +20,19 @@ import { freshObjectRoom } from './support/object-room.js';
 const maximumRoll = (range: number) => range;
 const TEST_MONSTER_FLAGS = MM_ANGRY | MM_NOGRP | MM_NOMSG | MM_NOWAIT | NO_MINVENT;
 
+void test('Magicbane still cancels when an artifact-hit caller supplies a zero die roll', async () => {
+    freshObjectRoom();
+    const golem = await createMonsterAt('clay golem', 12, 10, TEST_MONSTER_FLAGS);
+    const blade = await artifactObject('Magicbane', { spe: 0 });
+
+    await applyArtifactHitToMonster(blade, golem, 4, {
+        dieRoll: 0, random: limit => limit - 1, publish: async () => {},
+    });
+
+    assert.equal(golem.mcan, 1);
+    assert.equal(golem.mhp, 1);
+});
+
 void test('Fire Brand can burn a monster inventory and add its damage', async () => {
     freshObjectRoom();
     requirePlayingGame(game);
@@ -179,7 +192,7 @@ void test('the Tsurugi bisects small monsters and cuts deeply into large ones', 
         rollOne: maximumRoll,
     });
 
-    assert.equal(smallHit.damage, 41);
+    assert.equal(smallHit.damage, 240);
     assert.equal(largeHit.damage, 24);
     assert.match(messages[0] ?? '', /cuts the jackal in half/);
     assert.match(messages[1] ?? '', /slice deeply into the mumak/);
@@ -216,7 +229,7 @@ void test('Vorpal Blade misses a headless creature and beheads a jabberwock', as
 
     assert.equal(headless.damage, 0);
     assert.equal(headless.attackStopped, true);
-    assert.equal(jabberwock.damage, 41);
+    assert.equal(jabberwock.damage, 240);
     assert.match(messages[0] ?? '', /miss the gas spore wildly/);
     assert.match(messages[1] ?? '', /beheads the jabberwock/);
 });

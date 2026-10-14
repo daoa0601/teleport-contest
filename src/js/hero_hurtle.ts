@@ -391,10 +391,7 @@ async function moveOneSquare(x: number, y: number, options: HeroHurtleOptions, r
 
     const oldx = hero.ux;
     const oldy = hero.uy;
-    hero.ux0 = oldx;
-    hero.uy0 = oldy;
     await placeHeroOnLevel(x, y);
-    hero.umoved = true;
     newsym(oldx, oldy);
     vision_recalc(1);
     await flush_screen(1);

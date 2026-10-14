@@ -126,7 +126,7 @@ void test('the Eyes show magical enlightenment when invoked', async () => {
 });
 
 void test('the Sceptre turns conflict on', async () => {
-    freshObjectRoom({ role: 'caveman', moves: 130 });
+    freshObjectRoom({ role: 'caveman', hero: { ualign: { type: 1, record: 10 } }, moves: 130 });
     requirePlayingGame(game);
     const sceptre = await artifactObject('The Sceptre of Might', {
         invlet: 'a',
@@ -142,7 +142,7 @@ void test('the Sceptre turns conflict on', async () => {
 });
 
 void test('the Orb turns the hero invisible', async () => {
-    freshObjectRoom({ role: 'archeologist', moves: 150 });
+    freshObjectRoom({ role: 'archeologist', hero: { ualign: { type: 1, record: 10 } }, moves: 150 });
     requirePlayingGame(game);
     const orb = await artifactObject('The Orb of Detection', {
         invlet: 'a',
@@ -181,7 +181,7 @@ void test('turning an invoked property off starts its cooldown', async () => {
     assert.equal(heroIsInvisible(game), false);
     assert.equal(cooldown, 270);
     assert.equal(orb.age, 300);
-    assert.equal(messages.at(-1), 'You feel that The Orb of Detection is ignoring you.');
+    assert.equal(messages.at(-1), 'You feel that the crystal ball named the Orb of Detection is ignoring you.');
 });
 
 void test('another invisibility source stays active when the Orb is invoked', async () => {

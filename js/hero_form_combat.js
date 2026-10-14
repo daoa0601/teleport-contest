@@ -37,7 +37,7 @@ const S_ZOMBIE = 52;
 const M1_NOEYES = 0x00001000;
 const M1_HUMANOID = 0x00020000;
 const PM_ROPE_GOLEM = MONSTER_NAME.indexOf('rope golem');
-export async function attackHeroInMonsterForm(monster, x, y) {
+export async function attackHeroInMonsterForm(monster, x, y, { confirmationOverridden = false, } = {}) {
     requirePlayingGame(game);
     const results = Array(6).fill(M_ATTK_MISS);
     let weaponCount = 0;
@@ -53,7 +53,7 @@ export async function attackHeroInMonsterForm(monster, x, y) {
         state: game, monster, target: { x, y }, results, attempts: 0,
         multipleWeapons: weaponCount > 1, multipleHands: handCount > 1,
         twoHits: 0, oddClaw: true, weaponUsed: false,
-        alternateWeapon: false, skipBrainDrain: false,
+        alternateWeapon: false, skipBrainDrain: false, confirmationOverridden,
     };
     for (let index = 0; index < results.length; index++) {
         if (index > 0 && (monster.mhp <= 0
@@ -172,6 +172,7 @@ async function performFormWeaponAttack(sequence, attack, index) {
     const strike = await resolveHeroWeaponHit(monster, target.x, target.y, weapon, {
         attack, hit: chance.threshold > dieRoll || !!state.u.uswallow,
         threshold: chance.threshold, armorPenalty: chance.armorPenalty, dieRoll, twoHits: sequence.twoHits,
+        confirmationOverridden: sequence.confirmationOverridden,
     });
     const passiveWeapon = state[slot] || state.u[slot] || null;
     if (strike.heroDied || !strike.survived)

@@ -12,8 +12,29 @@ import { MONSTER_FLAGS2, MONSTER_NAME } from './monster_data.js';
 import { makePlural, makeSingular, withIndefiniteArticle } from './object_grammar.js';
 import { heroIsBlind } from './senses.js';
 import type { AlignmentName } from './roles.js';
+import { currentLuaLifecycle } from './lua/lifecycle.js';
+import { plineWithContinuation } from './display.js';
+import { rn2 } from './rng.js';
+import { COMMON_QUEST_INSULTS } from './common_quest_insults.js';
 
 const M2_PNAME = 0x00080000;
+
+// C questpgr.c:com_pager_core(). Each insult opens a fresh quest.lua state,
+// so nhlib's initialization precedes selection and message delivery.
+export async function deliverCommonQuestInsult(
+    messageId: 'angel_cuss' | 'demon_cuss', state: GameState = game,
+): Promise<void> {
+    if (state.program_state.wizkit_wishing) return;
+    const lua = currentLuaLifecycle().createSpecialState(state);
+    try {
+        const choices = COMMON_QUEST_INSULTS[messageId];
+        const selected = choices[rn2(choices.length)];
+        if (selected === undefined) throw new RangeError(`No ${messageId} insult was selected`);
+        await plineWithContinuation(convertQuestLine(selected, state));
+    } finally {
+        await lua.destroy();
+    }
+}
 
 // C questpgr.c:ldrname()/neminame() use the role's named species directly
 // when its name is a proper name, and with a "the" prefix otherwise.

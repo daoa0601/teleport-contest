@@ -68,6 +68,61 @@ async function buildThemedLevel(t: TestContext, definition: string) {
 
 for (const unavailable of [G_GENOD, G_EXTINCT]) {
     for (const explicit of [false, true]) {
+        void test(`${unavailable === G_GENOD ? 'genocided' : 'extinct'} named Lua monsters fall back at ${explicit ? 'explicit' : 'random dry'} coordinates`, async t => {
+            const level = await buildThemedLevel(t, `
+                themerooms = {{ frequency = 1, contents = function()
+                    des.room({ type = "themed", w = 5, h = 3, filled = 0, lit = 1 })
+                end }}
+            `);
+            const lua = currentLuaLifecycle().getThemedState(game, 0);
+            assert.ok(lua);
+            requirePlayingGame(game);
+            const centaur = MONSTER_NAME.indexOf('plains centaur');
+            const vital = game.mvitals?.[centaur];
+            assert.ok(vital);
+            vital.mvflags |= unavailable;
+            level.monsters = [];
+            await lua.executeAsync('des.map({ coord = {10,6}, map = [[...\n...]] })');
+
+            await lua.executeAsync(`des.monster({ id = "plains centaur",
+                ${explicit ? 'x = 0, y = 0,' : ''}
+                group = false, countbirth = false, peaceful = true,
+                name = "replacement" })`);
+
+            const monster = level.monsters.find(candidate => candidate.name === 'replacement');
+            assert.ok(monster, 'an unavailable ordinary species must be replaced');
+            assert.notEqual(monster.mnum, centaur);
+            assert.equal(level.requireAt(monster.mx, monster.my).typ, ROOM);
+            assert.equal(monster.mpeaceful, 1);
+            if (explicit) {
+                assert.equal(monster.mx, 10);
+                assert.equal(monster.my, 6);
+            }
+        });
+    }
+}
+
+void test('an extinct unique Lua monster is omitted without a replacement', async t => {
+    const level = await buildThemedLevel(t, `
+        themerooms = {{ frequency = 1, contents = function()
+            des.room({ type = "themed", w = 5, h = 3, filled = 0, lit = 1 })
+        end }}
+    `);
+    const lua = currentLuaLifecycle().getThemedState(game, 0);
+    assert.ok(lua);
+    const vital = game.mvitals?.[MONSTER_NAME.indexOf('Medusa')];
+    assert.ok(vital);
+    vital.mvflags |= G_EXTINCT;
+    level.monsters = [];
+    await lua.executeAsync('des.map({ coord = {10,6}, map = [[...\n...]] })');
+
+    await lua.executeAsync('des.monster({ id = "Medusa", x = 0, y = 0 })');
+
+    assert.equal(level.monsters.length, 0);
+});
+
+for (const unavailable of [G_GENOD, G_EXTINCT]) {
+    for (const explicit of [false, true]) {
         void test(`${unavailable === G_GENOD ? 'genocided' : 'extinct'} Lua monster classes create a random monster at ${explicit ? 'explicit' : 'random dry'} coordinates`, async t => {
             const level = await buildThemedLevel(t, `
                 themerooms = {{ frequency = 1, contents = function()

@@ -28,7 +28,7 @@ const DIRECTIONS = [
 ];
 const PM_GRID_BUG = MONSTER_NAME.indexOf('grid bug');
 const S_LEPRECHAUN = requireMonsterData(MONSTER_SYMBOL, MONSTER_NAME.indexOf('leprechaun'));
-export async function attackHostileMonster(monster, x, y) {
+export async function attackHostileMonster(monster, x, y, { confirmationOverridden = false, } = {}) {
     requirePlayingGame(game);
     game._heroMeleeThisCommand = true;
     if (Upolyd(game.u) && monsterHasNoAttacks(heroSpecies(game))) {
@@ -62,13 +62,13 @@ export async function attackHostileMonster(monster, x, y) {
         }
     }
     if (Upolyd(game.u)) {
-        await attackHeroInMonsterForm(monster, x, y);
+        await attackHeroInMonsterForm(monster, x, y, { confirmationOverridden });
     }
     else {
         const attack = requireMonsterData(MONSTER_ATTACKS, heroSpecies(game))[0];
         if (!attack)
             throw new Error('The hero species is missing its first attack.');
-        await attackWithHumanForm(monster, x, y, attack);
+        await attackWithHumanForm(monster, x, y, attack, confirmationOverridden);
     }
     monster.mstrategy = (monster.mstrategy ?? 0) & ~STRAT_WAITMASK;
     finishAttackDisplay(monster, x, y);
@@ -91,7 +91,7 @@ async function announceImprovisedAttack() {
         await pline(`You begin ${action} monsters with your ${covered} ${makePlural(heroHandName(game))}.`);
     }
 }
-async function attackWithHumanForm(monster, x, y, attack) {
+async function attackWithHumanForm(monster, x, y, attack, confirmationOverridden) {
     requirePlayingGame(game);
     const weaponBefore = primaryWeapon();
     if (artifactById(weaponBefore?.oartifact)?.enumName === 'CLEAVER'
@@ -110,7 +110,7 @@ async function attackWithHumanForm(monster, x, y, attack) {
     if (hit)
         await exerciseAttribute(A_DEX, true);
     const first = await resolveHeroWeaponHit(monster, x, y, primaryWeapon(), {
-        attack, hit: hit || !!game.u.uswallow, ...accuracy, dieRoll, twoHits,
+        attack, hit: hit || !!game.u.uswallow, ...accuracy, dieRoll, twoHits, confirmationOverridden,
     });
     if (first.heroDied)
         return;
@@ -119,7 +119,7 @@ async function attackWithHumanForm(monster, x, y, attack) {
         hit: first.hit, defenderSurvived: first.survived, attackType: AT_WEAP,
         weapon: weaponAfter, weaponWasDestroyed: !!weaponBefore && !weaponAfter,
     });
-    if (passive.heroDied || !twoHits || heroAttackInterrupted(mortality)
+    if (passive.heroDied || !twoHits || confirmationOverridden || heroAttackInterrupted(mortality)
         || !first.survived || monsterAtPosition(game.level, x, y) !== monster)
         return;
     // Accuracy uses the current slot; hmon uses the object saved before the

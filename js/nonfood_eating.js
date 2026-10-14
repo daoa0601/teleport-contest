@@ -20,7 +20,7 @@ import { chewIronBars } from './iron_bars_meal.js';
 import { releaseObjectLeash } from './monster_leash.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { monsterHasLineOfSightToHero } from './monster_perception.js';
-import { FLINT, LEASH, OBJECT_NUTRITION, RIN_SLOW_DIGESTION, SCR_SCARE_MONSTER, TRIDENT, requireObjectData, } from './object_data.js';
+import { FLINT, LEASH, OBJECT_NAMES, OBJECT_NUTRITION, RIN_SLOW_DIGESTION, SCR_SCARE_MONSTER, TRIDENT, requireObjectData, } from './object_data.js';
 import { objectMaterial } from './object_material.js';
 import { withIndefiniteArticle } from './object_grammar.js';
 import { objectQuantity, splitObjectStack } from './object_stack.js';
@@ -41,6 +41,7 @@ const FOOD_CLASS = 7, RING_CLASS = 4, AMULET_CLASS = 5, POTION_CLASS = 8;
 const SCROLL_CLASS = 9, COIN_CLASS = 12, BALL_CLASS = 15, CHAIN_CLASS = 16;
 const PAPER = 5, IRON = 11, MITHRIL = 17;
 const RUST_MONSTER = MONSTER_NAME.indexOf('rust monster');
+const SCR_MAIL = OBJECT_NAMES.indexOf('mail');
 export async function handleFoodAdmission(object, { state = game } = {}) {
     requireLiveGame(state);
     requirePlayingGame(state);
@@ -127,7 +128,7 @@ async function spitOutRustproofObject(object, state) {
 }
 async function eatNonFood(object, state) {
     const material = objectMaterial(object, state);
-    const nutrition = object.oclass === COIN_CLASS
+    const nutrition = object.otyp === SCR_MAIL ? 0 : object.oclass === COIN_CLASS
         ? Math.min(2000, Math.trunc(objectQuantity(object) / 100))
         : [BALL_CLASS, CHAIN_CLASS].includes(object.oclass) ? objectWeight(object)
             : requireObjectData(OBJECT_NUTRITION, object.otyp);
@@ -135,7 +136,7 @@ async function eatNonFood(object, state) {
         usedtime: 0, nmod: nutrition, canchoke: currentHungerState(state) === SATIATED, eating: true };
     state.context.victual = meal;
     await recordNonfoodConduct(object, { state });
-    let noDelicious = material === PAPER;
+    let noDelicious = object.otyp === SCR_MAIL || material === PAPER;
     if (object.cursed) {
         await applyRottenFood(object, { state });
         noDelicious = true;
@@ -183,8 +184,9 @@ async function finishNonFoodMeal(object, meal, state) {
     }
     if (objectMaterial(object, state) === PAPER) {
         const label = state.objectDescriptions?.[object.otyp];
-        await pline(object.otyp === SCR_SCARE_MONSTER ? `Yuck${object.blessed ? '!' : '.'}`
-            : object.oclass === SCROLL_CLASS && label === 'YUM YUM' ? `Yum${object.blessed ? '!' : '.'}` : 'Needs salt...');
+        await pline(object.otyp === SCR_MAIL ? 'This junk mail is less than satisfying.'
+            : object.otyp === SCR_SCARE_MONSTER ? `Yuck${object.blessed ? '!' : '.'}`
+                : object.oclass === SCROLL_CLASS && label === 'YUM YUM' ? `Yum${object.blessed ? '!' : '.'}` : 'Needs salt...');
     }
     if (object.oclass === POTION_CLASS)
         await drinkPotion(object, { state, consume: false });

@@ -151,7 +151,7 @@ import { objectName, singularObjectName, unseenObjectNoun, } from './objnam.js';
 import { artifactById, } from './artifacts.js';
 import { invokeArtifactPower, } from './artifact_invoke.js';
 import { touchArtifactByHero } from './artifact_touch.js';
-import { SLING, BULLWHIP, GRAPPLING_HOOK, CREAM_PIE, EGG, LUMP_OF_ROYAL_JELLY, LOCK_PICK, CREDIT_CARD, STETHOSCOPE, LOADSTONE, GOLD_PIECE, BOULDER, ROCK, DILITHIUM_CRYSTAL, LUCKSTONE, TOUCHSTONE, LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK, BAG_OF_HOLDING, BAG_OF_TRICKS, BRASS_LANTERN, OIL_LAMP, MAGIC_LAMP, STATUE, RIN_PROTECTION, BANANA, MIRROR, TIN_WHISTLE, MAGIC_WHISTLE, EUCALYPTUS_LEAF, BELL, BELL_OF_OPENING, EXPENSIVE_CAMERA, TIN_OPENER, FIGURINE, LEASH, CAN_OF_GREASE, SADDLE, HORN_OF_PLENTY, TINNING_KIT, LAND_MINE, BEARTRAP, TALLOW_CANDLE, WAX_CANDLE, CANDELABRUM_OF_INVOCATION, POT_OIL, RIN_CONFLICT, MEAT_RING, OBJECT_BIMANUAL, HELM_OF_OPPOSITE_ALIGNMENT, GRAY_DRAGON_SCALES, LENSES, BLINDFOLD, TOWEL, FUMBLE_BOOTS, KICKING_BOOTS, MAGIC_MARKER, UNICORN_HORN, SHIELD_OF_REFLECTION, AMULET_OF_YENDOR, AMULET_OF_STRANGULATION, FAKE_AMULET_OF_YENDOR, SPE_NOVEL, OBJECT_DELAY, OBJECT_DESCRIPTIONS, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_WEIGHT, OBJECT_SUBTYPE, } from './object_data.js';
+import { SLING, BULLWHIP, GRAPPLING_HOOK, CREAM_PIE, EGG, LUMP_OF_ROYAL_JELLY, LOCK_PICK, CREDIT_CARD, STETHOSCOPE, LOADSTONE, GOLD_PIECE, BOULDER, ROCK, DILITHIUM_CRYSTAL, LUCKSTONE, TOUCHSTONE, LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK, BAG_OF_HOLDING, BAG_OF_TRICKS, BRASS_LANTERN, OIL_LAMP, MAGIC_LAMP, STATUE, RIN_PROTECTION, BANANA, MIRROR, TIN_WHISTLE, MAGIC_WHISTLE, EUCALYPTUS_LEAF, BELL, BELL_OF_OPENING, EXPENSIVE_CAMERA, TIN_OPENER, FIGURINE, LEASH, CAN_OF_GREASE, SADDLE, HORN_OF_PLENTY, TINNING_KIT, LAND_MINE, BEARTRAP, TALLOW_CANDLE, WAX_CANDLE, CANDELABRUM_OF_INVOCATION, POT_OIL, RIN_CONFLICT, MEAT_RING, OBJECT_BIMANUAL, HELM_OF_OPPOSITE_ALIGNMENT, GRAY_DRAGON_SCALES, LENSES, BLINDFOLD, TOWEL, FUMBLE_BOOTS, KICKING_BOOTS, MAGIC_MARKER, UNICORN_HORN, SHIELD_OF_REFLECTION, AMULET_OF_YENDOR, AMULET_OF_STRANGULATION, FAKE_AMULET_OF_YENDOR, SPE_NOVEL, OBJECT_DELAY, OBJECT_UNIQUE, OBJECT_DESCRIPTIONS, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_WEIGHT, OBJECT_SUBTYPE, } from './object_data.js';
 import { CLR_WHITE, NO_COLOR, } from './terminal.js';
 import { MONSTER_COLOR, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, MONSTER_SOUND, MONSTER_ALIGNMENT, MONSTER_ATTACKS, MONSTER_CLASS_EXPLAIN, requireMonsterData, monsterTypeName, monsterClassSymbol, monsterIsHumanoid, } from './monster_data.js';
 import { createParticularMonster } from './read_creation.js';
@@ -3074,7 +3074,8 @@ async function runExtendedCommand(name) {
 // still consumes a turn after retouching, but its only effect is the ordinary
 // "Nothing happens." line.
 async function doinvoke() {
-    const eligible = (game.inventory || []).filter(object => !!(object.oartifact || object.artifact));
+    const eligible = (game.inventory || []).filter(object => !!(object.oartifact || object.artifact || OBJECT_UNIQUE[object.otyp]
+        || object.otyp === FAKE_AMULET_OF_YENDOR && !object.known));
     if (!eligible.length) {
         await pline("You don't have anything special to invoke.");
         game.context.move = 0;
@@ -3088,15 +3089,13 @@ async function doinvoke() {
     }
     game._pending_message = '';
     const object = selection.object;
+    const touch = await retouchHeroObject(object);
+    if (touch.rejected || touch.died) {
+        game.context.move = 1;
+        return;
+    }
     const artifact = object.oartifact
         ? artifactById(object.oartifact) : null;
-    if (artifact) {
-        const touch = await touchArtifactByHero(object, artifact);
-        if (!touch.allowed || touch.died) {
-            game.context.move = 1;
-            return;
-        }
-    }
     if (!artifact || artifact.invokePower === null) {
         await pline('Nothing happens.');
         game.context.move = 1;
@@ -7306,7 +7305,9 @@ async function domoveCore(dx, dy, explicitAttempt) {
         const verdict = await prepareAppliedWeaponAttack(monster, game.uwep ?? null, { state: game, struckAt: { x: newx, y: newy } });
         if (!verdict.proceed)
             return verdict.spentTime;
-        if (await attackHostileMonster(monster, newx, newy))
+        if (await attackHostileMonster(monster, newx, newy, {
+            confirmationOverridden: verdict.confirmationOverridden ?? false,
+        }))
             return true;
     }
     // domove_core() snapshots the origin before test_move().  This includes

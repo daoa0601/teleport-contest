@@ -32,6 +32,9 @@ import {
 } from './monworn.js';
 import { updateMonsterWeaponAfterPolymorph } from './monster_weapon.js';
 import { monsterSelfTouchAfterPolymorph } from './monster_stoning.js';
+import { setMonsterApparentHeroPosition } from './monster_perception.js';
+import { monsterIsScaredAt } from './monster_fear.js';
+import { makeMonsterFlee } from './monster_flee.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
 import { finishMonsterEating } from './monster_eating.js';
 import { setMimicAppearance } from './mklev.js';
@@ -110,6 +113,7 @@ const PM_VLAD_THE_IMPALER = MONSTER_NAME.indexOf('Vlad the Impaler');
 const PM_DOPPELGANGER = MONSTER_NAME.indexOf('doppelganger');
 const PM_SANDESTIN = MONSTER_NAME.indexOf('sandestin');
 const PM_CHAMELEON = MONSTER_NAME.indexOf('chameleon');
+const PM_GRID_BUG = MONSTER_NAME.indexOf('grid bug');
 const PM_STUDENT = MONSTER_NAME.indexOf('student');
 const PM_APPRENTICE = MONSTER_NAME.indexOf('apprentice');
 const PM_LONG_WORM = MONSTER_NAME.indexOf('long worm');
@@ -516,7 +520,9 @@ export async function initialShapechangedBirth<T extends Monster>(monster: T): P
     if (targetMnum === null || targetMnum === baseMnum
         || !acceptsShapechangerForm(baseMnum, targetMnum))
         return null;
-    return initialShapechangedMonster(monster, targetMnum);
+    const changed = initialShapechangedMonster(monster, targetMnum);
+    await refreshNewMonsterFormPerception(changed, game, plineWithContinuation);
+    return changed;
 }
 
 export async function changeMonsterForm(
@@ -679,6 +685,8 @@ export async function changeMonsterForm(
         ? await dropBouldersTheNewFormCannotCarry(monster, state, polyspot, publish) : [];
     const steedChange = state.u.usteed === monster
         ? await adjustRiderAfterSteedPolymorph(monster, oldMnum, state, publish) : null;
+    if (!steedChange?.died && !state.program_state.gameover)
+        await refreshNewMonsterFormPerception(monster, state, publish);
     return {
         oldMnum,
         newMnum: targetMnum,
@@ -692,6 +700,24 @@ export async function changeMonsterForm(
         selfTouch,
         message,
     };
+}
+
+// C mon.c:newcham() tail. A form changed during monster movement gets a
+// fresh chance to locate the hero, then tests fear using that new body.
+async function refreshNewMonsterFormPerception(
+    monster: Monster, state: GameState, publish: MessagePublisher,
+): Promise<void> {
+    if (!state.context.mon_moving) return;
+    if (monster.mux !== state.u.ux || monster.muy !== state.u.uy)
+        setMonsterApparentHeroPosition(monster, state, rn2);
+    const targetX = monster.mux ?? 0, targetY = monster.muy ?? 0;
+    const dx = monster.mx - targetX, dy = monster.my - targetY;
+    const nearby = dx * dx + dy * dy < 3
+        && !(monster.mnum === PM_GRID_BUG && dx && dy);
+    if (!monster.mpeaceful && monsterIsScaredAt(monster, state, targetX, targetY) && nearby)
+        await makeMonsterFlee(monster, {
+            state, turns: rn1(9, 2), first: true, announce: true, publish,
+        });
 }
 
 function vampireMayShiftOutOfSight(monster: Monster, state: GameState): boolean {

@@ -9,6 +9,7 @@ import type { DeathHandler } from './end.js';
 import { heroIsHallucinating } from './senses.js';
 import { makeConfused, makeStunned } from './hero_mental_status.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
+import { heroStomachName } from './body_parts.js';
 import {
     adjustAttribute, currentAttribute, exerciseAttribute,
 } from './attrib.js';
@@ -23,6 +24,8 @@ import { definiteName } from './objnam.js';
 import { nameToMonster } from './mondata.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { currentHungerState, spendHeroNutrition } from './hunger.js';
+import { stopHeroOccupation } from './occupation.js';
+import { openingTinMaySaveHero } from './tin.js';
 import { meltIce } from './ice.js';
 import {
     MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_SYMBOL,
@@ -204,7 +207,7 @@ export async function vomitHero({
     } else {
         await cureFoodPoisoningByVomiting(state, publish);
         if (hungerState >= FAINTING)
-            await publish('Your stomach heaves convulsively!');
+            await publish(`Your ${heroStomachName(state)} heaves convulsively!`);
     }
 
     installVomitingHelplessness(state);
@@ -238,17 +241,12 @@ export async function vomitHero({
     return { spewed: true, cannotVomit: false };
 }
 
-function stopCountedAction(state: GameState) {
-    if (state._occupation?.key === 'command')
-        state._occupation = null;
-}
-
 function vomitingMessage(state: GameState, nextTurns: number) {
     const hero = state.u;
     if (nextTurns === 14) return 'You are feeling mildly nauseated.';
     if (nextTurns === 11) {
         return (hero.confusionTurns ?? 0) > 0
-            ? 'You feel more confused.' : 'You feel slightly confused.';
+            ? 'You feel slightly more confused.' : 'You feel slightly confused.';
     }
     if (nextTurns === 8) {
         return (hero.stunnedTurns ?? 0) > 0
@@ -274,13 +272,17 @@ export async function advanceHeroVomiting({
     if (!heroIsVomiting(state)) return { active: false, vomited: false };
 
     const nextTurns = Math.max(0, (hero.vomitingTurns ?? 0) - 1);
-    if (nextTurns === 9) {
-        await makeConfused((hero.confusionTurns ?? 0) + rollDice(2, 4), { state, talk: false });
-        stopCountedAction(state);
-    } else if (nextTurns === 6) {
+    if (nextTurns === 6) {
         await makeStunned((hero.stunnedTurns ?? 0) + rollDice(2, 4), { state, talk: false });
-        state._occupation = null;
+        // stop_occupation finishes an already swallowed last bite before
+        // abandoning the meal, including that food's digestion effects.
+        if (!openingTinMaySaveHero('vomiting', state)) await stopHeroOccupation(state, publish);
+        if (state.program_state.gameover)
+            return { active: false, vomited: false, turns: nextTurns, died: true };
+    }
+    if (nextTurns === 6 || nextTurns === 9) {
         await makeConfused((hero.confusionTurns ?? 0) + rollDice(2, 4), { state, talk: false });
+        if (state.multi > 0) endVoluntaryMultiTurn(state);
     }
 
     const message = vomitingMessage(state, nextTurns);
@@ -288,7 +290,9 @@ export async function advanceHeroVomiting({
 
     let vomited = false;
     if (nextTurns === 0) {
-        state._occupation = null;
+        await stopHeroOccupation(state, publish);
+        if (state.program_state.gameover)
+            return { active: false, vomited: false, turns: nextTurns, died: true };
         if (!heroCannotVomit(state)) {
             await spendHeroNutrition(20, { state });
             if (state.program_state.gameover)

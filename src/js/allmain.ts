@@ -34,6 +34,7 @@ import { showInventoryWindow } from './windows.js';
 import type { InventoryMenuItem } from './windows.js';
 import { endVoluntaryMultiTurn, heroHasInvoluntaryDelay } from './command_state.js';
 import { dosounds } from './ambient_sounds.js';
+import { warnWithMasterKey } from './artifact_warning.js';
 import { regenerateHeroHp } from './hero_regeneration.js';
 import { ceilingName } from './terrain_name.js';
 import { tryCallObjectType } from './object_call.js';
@@ -272,6 +273,8 @@ import {
     getHungry, recoverHeroFromFainting, regainHearingAfterHelplessness,
 } from './hunger.js';
 import { chatWithQuestLeader, isQuestLeader } from './quest.js';
+import { deliverCommonQuestInsult } from './quest_pager.js';
+import { monsterAlignmentType } from './monster_alignment.js';
 import { moveElementalBubbles } from './elemental.js';
 import {
     removeObjectAndContentsFromBill, checkSpecialRoom,
@@ -886,6 +889,7 @@ async function finishInitialTurnMaintenanceAfterAutomaticSearch({
     sourceTurn, moveAmount,
 }: Pick<TurnMaintenance, 'sourceTurn' | 'moveAmount'>): Promise<MaintenancePhase> {
     if (game.u.warning) await revealWarnedMonsters();
+    await warnWithMasterKey(game);
     // Each sound keeps its native message wait before later feature rolls.
     await dosounds();
     return finishInitialTurnMaintenanceAfterAmbient({ sourceTurn, moveAmount });
@@ -2017,6 +2021,8 @@ function visibleMonsterSubject(monster: Monster): string {
     return monsterName(monster, { capitalized: true });
 }
 
+const M2_MINION = 0x00001000;
+
 const WIZARD_CUSS_INSULTS = [
     'antic', 'blackguard', 'caitiff', 'chucklehead', 'coistrel', 'craven',
     'cretin', 'cur', 'dastard', 'demon fodder', 'dimwit', 'dolt', 'fool',
@@ -2037,6 +2043,26 @@ const WIZARD_CUSS_MALEDICTIONS = [
     'Thy fate is sealed,',
     'Verily, thou shalt be one dead',
 ];
+
+async function presentMonsterCuss(action: MonsterAction): Promise<void> {
+    const game = requireInitializedGame();
+    if (heroIsDeaf(game)) return;
+    const monster = action.monster;
+    const minion = !!((MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_MINION);
+    if (monster.iswiz) {
+        await plineWithContinuation(selectWizardCussMessage(action, monster));
+    } else if (minion && monsterAlignmentType(monster) === 1
+        && !(monster.isminion && monster.emin?.renegade)) {
+        await deliverCommonQuestInsult('angel_cuss', game);
+    } else {
+        const ancestry = rn2(minion ? 100 : 5) === 0;
+        action.calls.push(`rn2(${minion ? 100 : 5})`);
+        if (ancestry)
+            await plineWithContinuation(`${visibleMonsterSubject(monster)} casts aspersions on your ancestry.`);
+        else await deliverCommonQuestInsult('demon_cuss', game);
+    }
+    wakeMonstersNear(monster.mx, monster.my, 25);
+}
 
 function selectWizardCussMessage(action: MonsterAction, monster: Monster): string {
     const game = requireInitializedGame();
@@ -3407,14 +3433,11 @@ async function executeMonsterTurns(): Promise<boolean | undefined> {
             if (cussGate === 0)
                 movement.deferredCuss = true;
         }
-        if (movement?.deferredCuss && monster.iswiz) {
+        if (movement?.deferredCuss) {
             movement.deferredCuss = false;
-            if (!game.deaf && !game.u?.deaf) {
-                const cussMessage = selectWizardCussMessage(action, monster);
-                await plineWithContinuation(cussMessage);
-                wakeMonstersNear(monster.mx, monster.my, 25);
-            }
+            await presentMonsterCuss(action);
         }
+
         if (movement?.deferredAfterPetAttack) {
             if (game.program_state?.gameover) return false;
             await resumeDeferredPetAttack(action, game);

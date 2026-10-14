@@ -7,10 +7,9 @@ import { nonrottingCorpse, veganCorpse, vegetarianCorpse } from './food_traits.j
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { MONSTER_FLAGS1, MONSTER_NAME, requireMonsterData } from './monster_data.js';
 import { APPLE, CORPSE, EGG, GLOB_OF_GREEN_SLIME, TIN } from './object_data.js';
-import { makePlural } from './object_grammar.js';
 import { objectMaterial } from './object_material.js';
 import { objectQuantity } from './object_stack.js';
-import { objectName } from './objnam.js';
+import { definiteName, objectName, objectNameIsPlural, observeObjectForNaming, pluralizeObjectNoun } from './objnam.js';
 import { heroIsPolymorphed } from './polyself.js';
 import { promptYesNo } from './query.js';
 import { heroIsSlimeproof, PM_GREEN_SLIME } from './slime.js';
@@ -44,6 +43,14 @@ function edibilityWarning(object: GameObject, state: PlayingGameState): string |
     const material = objectMaterial(object, state);
     if (corpse && species === undefined) throw new Error('Corpse edibility requires a species.');
     const conduct = hero.uconduct;
+    // Tobjnam uses xname, which calls a corpse "corpse" rather than naming
+    // its species. The warning still uses the species to assess danger.
+    observeObjectForNaming(object, { state });
+    const amount = objectQuantity(object);
+    const noun = objectName(object, state);
+    const subject = definiteName(amount === 1 ? noun : pluralizeObjectNoun(object, noun), state);
+    const smell = `${subject.charAt(0).toUpperCase()}${subject.slice(1)} ${objectNameIsPlural(object, state) ? 'smell' : 'smells'}`;
+    const pronoun = amount === 1 ? 'it' : 'they';
     let rotted = 0;
     if (corpse && !nonrottingCorpse(species)) {
         // C peek_at_iced_corpse_age() observes its slower aging without
@@ -60,11 +67,6 @@ function edibilityWarning(object: GameObject, state: PlayingGameState): string |
         if (species === PM_GREEN_SLIME || object.otyp === GLOB_OF_GREEN_SLIME)
             stoneOrSlime = !hero.unchanging && !state.unchanging && !heroIsSlimeproof(state);
     }
-    const amount = objectQuantity(object);
-    const noun = corpse && species !== undefined
-        ? `${requireMonsterData(MONSTER_NAME, species)} corpse` : objectName(object, state);
-    const smell = `The ${amount === 1 ? noun : makePlural(noun)} ${amount === 1 ? 'smells' : 'smell'}`;
-    const pronoun = amount === 1 ? 'it' : 'they';
     const flags = corpse && species !== undefined
         ? requireMonsterData(MONSTER_FLAGS1, species) : 0;
     if (corpse && rotted > 5 && !hero.sicknessResistance)

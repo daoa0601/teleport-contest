@@ -7,11 +7,10 @@ import {
 import { touchArtifactByHero } from './artifact_touch.js';
 import { artifactBaneApplies, artifactById } from './artifacts.js';
 import { exerciseAttribute } from './attrib.js';
-import { A_CON, DISMOUNT_THROWN, W_BALL, W_QUIVER, W_SWAPWEP } from './const.js';
-import { newsym, plineWithContinuation } from './display.js';
+import { A_CON, DISMOUNT_THROWN, IS_ALTAR, W_BALL, W_QUIVER, W_SWAPWEP } from './const.js';
+import { plineWithContinuation } from './display.js';
 import { finishHeroDeath } from './end.js';
 import { removeEyewear } from './eyewear.js';
-import { landFloorObject } from './floor_effects.js';
 import { game } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
@@ -22,12 +21,18 @@ import { loseHeroHp } from './hero_damage.js';
 import { removeWornHeroItem } from './hero_equipment.js';
 import { heroHatesSilver } from './hero_species.js';
 import { heroIsOnStairs, isInvocationPosition } from './invocation_position.js';
-import { BELL_OF_OPENING, LEASH, OBJECT_NAMES } from './object_data.js';
+import { BELL_OF_OPENING, LEASH } from './object_data.js';
 import { objectMaterial } from './object_material.js';
 import { uncurseObjectState } from './object_state.js';
 import { rnd } from './rng.js';
 import { selfTouchPetrifyingWeapons } from './stoning.js';
 import { dismountHero, monsterSaddle } from './steed.js';
+import { dropInventoryObjectAtHero } from './hero_drop.js';
+import { freeInventoryObject } from './hero_inventory.js';
+import { hitFloorWithObject } from './object_drop.js';
+import { definiteName, killerObjectName, objectCombatName, objectNameIsPlural, ownedObjectName } from './objnam.js';
+import { propertyIsActive } from './properties.js';
+import { surfaceName } from './terrain_name.js';
 
 type Artifact = (typeof ARTIFACTS)[number];
 type RetouchSlot = 'uarmg' | 'uswapwep' | 'uwep' | 'uleft' | 'uright' | 'ublindf';
@@ -133,7 +138,13 @@ async function checkItem(object: GameObject | null, dropRejected: boolean, conte
     const artifact = artifactById(object.oartifact, state);
     if (!inUse(object, artifact, state)) return { died: false, rejected: false };
 
-    return retouchHeroObject(object, { dropRejected, state, publish, die });
+    const invoked = artifactInvokeIsActive(artifact, state);
+    const result = await retouchHeroObject(object, { dropRejected, state, publish, die });
+    if (result.rejected && !result.died && invoked && state.inventory.includes(object)) {
+        await deactivateArtifactProperty(object, artifact, { state, publish });
+        if (state.program_state.gameover) return { died: true, rejected: true };
+    }
+    return result;
 }
 
 // Explicit handling (apply, wield, invoke) also checks carried items which
@@ -158,14 +169,17 @@ export async function retouchHeroObject(object: GameObject, {
     if (touch.allowed && !silver && !bane) return { died: false, rejected: false };
     if (touch.allowed) {
         const anymore = object.owornmask ? ' anymore' : '';
-        await publish(`You can't handle ${objectName(object, artifact)}${anymore}!`);
+        await publish(`You can't handle ${ownedObjectName(object, state, { capitalized: false })}${anymore}!`);
         if (!touch.blasted) {
             let damage = silver ? rnd(10) : 0;
             if (state.u.halfPhysicalDamage)
                 damage = Math.trunc((damage + 1) / 2);
             if (bane) damage += rnd(10);
+            const cause = silver && !artifact && !bane && [4, 11].includes(object.oclass)
+                ? object.oclass === 4 ? 'a silver ring' : 'a silver wand'
+                : killerObjectName(object, state);
             const died = await loseHeroHp(
-                damage, `handling ${objectName(object, artifact)}`,
+                damage, `handling ${cause}`,
                 { state, publish, die },
             );
             if (died) return { died: true, rejected: true };
@@ -173,28 +187,28 @@ export async function retouchHeroObject(object: GameObject, {
         }
     }
 
-    if (slotObject('ublindf', state) === object)
-        await removeEyewear(object, { state, publish });
-    else
-        await removeWornHeroItem(object, state);
+    if (object.owornmask) {
+        if (slotObject('ublindf', state) === object)
+            await removeEyewear(object, { state, publish });
+        else
+            await removeWornHeroItem(object, state);
+    }
     if (state.program_state?.gameover) return { died: true, rejected: true };
     if (!state.inventory?.includes(object)) return { died: false, rejected: true };
     if (dropRejected) {
-        state.inventory.splice(state.inventory.indexOf(object), 1);
-        object.where = 'free';
+        if (propertyIsActive('levitation', state)) {
+            await freeInventoryObject(object, state);
+            if (!state.program_state.gameover)
+                await hitFloorWithObject(object, { state, publish, verbose: true });
+        } else {
+            const spot = state.level?.at(state.u.ux, state.u.uy);
+            if (spot && !IS_ALTAR(spot.typ)) {
+                const name = definiteName(objectCombatName(object, { state }), state);
+                const verb = objectNameIsPlural(object, state) ? 'fall' : 'falls';
+                await publish(`${name.charAt(0).toUpperCase()}${name.slice(1)} ${verb} to the ${surfaceName(state.u.ux, state.u.uy, state)}.`);
+            }
+            await dropInventoryObjectAtHero(object, { state, publish });
+        }
     }
-    await deactivateArtifactProperty(object, artifact, { state, publish });
-    if (dropRejected) {
-        const name = objectName(object, artifact);
-        const verb = (object.quan ?? object.quantity ?? 1) > 1 ? 'fall' : 'falls';
-        await publish(`${name.charAt(0).toUpperCase()}${name.slice(1)} ${verb} to the floor.`);
-        await landFloorObject(object, state.u.ux, state.u.uy, { state, publish });
-        newsym(state.u.ux, state.u.uy);
-    }
-    return { died: false, rejected: true };
-}
-
-function objectName(object: GameObject, artifact: Artifact | null): string {
-    if (artifact?.name) return artifact.name.replace(/^The /, 'the ');
-    return `your ${object.name || OBJECT_NAMES[object.otyp] || 'object'}`;
+    return { died: !!state.program_state.gameover, rejected: true };
 }

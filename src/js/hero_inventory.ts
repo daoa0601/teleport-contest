@@ -4,6 +4,7 @@
 import { artifactById, artifactByName } from './artifacts.js';
 import { recordAchievement } from './achievements.js';
 import { deactivateArtifactProperty } from './artifact_invoke.js';
+import { setCarriedArtifactProperties } from './artifact_properties.js';
 import { plineWithContinuation } from './display.js';
 import { game, requireLiveGame } from './gstate.js';
 import { recordGameLogEvent } from './gamelog.js';
@@ -121,6 +122,7 @@ export function recordHeroPrizeAcquisition(object: GameObject, state: GameState 
 export async function finishInventoryAddition(object: GameObject, state: GameState = game) {
     if (object.oclass === COIN_CLASS) state.context.botl = true;
     updateCarriedFlags(object, true, state);
+    await setCarriedArtifactProperties(object, true, state);
     await reactToSeenInventoryObject(object, state);
 }
 
@@ -161,6 +163,7 @@ export async function finishInventoryRemoval(object: GameObject, state: GameStat
         return;
     }
     updateCarriedFlags(object, false, state);
+    await setCarriedArtifactProperties(object, false, state);
     const artifact = artifactById(object.oartifact, state);
     if (artifact) {
         await deactivateArtifactProperty(object, artifact, {

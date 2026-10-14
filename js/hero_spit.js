@@ -70,7 +70,7 @@ async function dropVenomAtHero(venom, state, publish, random, verbose) {
         await settleVenom(venom, x, y, state);
     return result;
 }
-async function tossVenomUp(venom, state, publish, random, rollOne) {
+export async function tossVenomUp(venom, state, publish = plineWithContinuation, random = rn2, rollOne = rnd) {
     const underwater = state.underwater || state.u?.uinwater;
     const hitsRoof = random(5) !== 0 && !underwater;
     const hasCeiling = levelHasCeiling(state);

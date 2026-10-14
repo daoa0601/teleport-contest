@@ -3,6 +3,7 @@
 
 import { armorOffMessage } from './armor.js';
 import { W_TOOL } from './const.js';
+import { setWornArtifactProperties } from './artifact_properties.js';
 import { setBallAndChainFelt } from './ball.js';
 import { gulpBlindnessCheck } from './engulf_blindness.js';
 import {
@@ -40,6 +41,7 @@ async function equipEyewear(object: GameObject): Promise<void> {
     object.worn = true;
     object.wornSlot = 'ublindf';
     object.owornmask = (object.owornmask ?? 0) | W_TOOL;
+    setWornArtifactProperties(object, 'ublindf', true, game);
 }
 
 export function unequipEyewear(object: GameObject, state: GameState = game): void {
@@ -49,6 +51,7 @@ export function unequipEyewear(object: GameObject, state: GameState = game): voi
     object.worn = false;
     object.wornSlot = null;
     object.owornmask = (object.owornmask ?? 0) & ~W_TOOL;
+    setWornArtifactProperties(object, 'ublindf', false, state);
 }
 
 async function announceWorn(object: GameObject): Promise<void> {

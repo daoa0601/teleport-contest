@@ -20,6 +20,8 @@ import { destroyMonsterInventoryByElement, INVENTORY_DAMAGE } from './zap.js';
 import { cansee } from './vision.js';
 const PM_WATER_ELEMENTAL = 157;
 const PM_JABBERWOCK = MONSTER_NAME.indexOf('jabberwock');
+// Native fatal blows leave enough damage for the caller's AC reduction.
+const FATAL_DAMAGE_MODIFIER = 200;
 export async function applyArtifactHitToMonster(object, monster, baseDamage, { state = game, attacker, visible = cansee(monster.mx, monster.my)
     || !!attacker && cansee(attacker.mx, attacker.my)
     || !attacker && !!state.u.uswallow && state.u.ustuck === monster && !heroIsBlind(state), realizesDamage = visible || !attacker && state.u.ustuck === monster, describeTarget = () => monsterName(monster, { state }), publish = async () => { }, random = rn2, rollOne = rnd, dieRoll = 0, hitOnHead = true, } = {}) {
@@ -60,7 +62,7 @@ export async function applyArtifactHitToMonster(object, monster, baseDamage, { s
             rollOne,
         });
     }
-    if (artifact.name === 'Magicbane' && dieRoll >= 1 && dieRoll <= 8) {
+    if (artifact.name === 'Magicbane' && dieRoll <= 8) {
         return applyMagicbaneHit(object, monster, damage, bonus > 0, {
             state,
             attacker,
@@ -158,7 +160,7 @@ async function applyBeheading(artifact, object, monster, damage, { state, attack
         if (swallowed) {
             await publish(`You slice ${describeTarget()} wide open!`);
             return {
-                damage: 2 * (monster.mhp ?? 1) + 1,
+                damage: 2 * monster.mhp + FATAL_DAMAGE_MODIFIER,
                 specialMessage: true,
             };
         }
@@ -176,7 +178,7 @@ async function applyBeheading(artifact, object, monster, damage, { state, attack
         await publish(`The razor-sharp blade cuts ${describeTarget()} in half!`);
         observeArtifactObject(object, state);
         return {
-            damage: 2 * (monster.mhp ?? 1) + 1,
+            damage: 2 * monster.mhp + FATAL_DAMAGE_MODIFIER,
             specialMessage: true,
         };
     }
@@ -203,7 +205,7 @@ async function applyBeheading(artifact, object, monster, damage, { state, attack
     }
     observeArtifactObject(object, state);
     return {
-        damage: 2 * (monster.mhp ?? 1) + 1,
+        damage: 2 * monster.mhp + FATAL_DAMAGE_MODIFIER,
         specialMessage: true,
     };
 }
@@ -229,7 +231,7 @@ async function applyLifeDrain(artifact, object, monster, damage, { state, attack
         await publish(`${weapon} draws the ${life} from ${describeTarget()}!`);
     }
     if (level === 0) {
-        damage = 2 * (monster.mhp ?? 1) + 1;
+        damage = 2 * monster.mhp + FATAL_DAMAGE_MODIFIER;
     }
     else {
         damage += drain;

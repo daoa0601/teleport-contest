@@ -262,7 +262,7 @@ import {
     RIN_CONFLICT, MEAT_RING, OBJECT_BIMANUAL, HELM_OF_OPPOSITE_ALIGNMENT, GRAY_DRAGON_SCALES,
     LENSES, BLINDFOLD, TOWEL, FUMBLE_BOOTS, KICKING_BOOTS, MAGIC_MARKER, UNICORN_HORN,
     SHIELD_OF_REFLECTION, AMULET_OF_YENDOR,
-    AMULET_OF_STRANGULATION, FAKE_AMULET_OF_YENDOR, SPE_NOVEL, OBJECT_DELAY,
+    AMULET_OF_STRANGULATION, FAKE_AMULET_OF_YENDOR, SPE_NOVEL, OBJECT_DELAY, OBJECT_UNIQUE,
     OBJECT_DESCRIPTIONS, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_WEIGHT, OBJECT_SUBTYPE,
 } from './object_data.js';
 import {
@@ -3231,7 +3231,8 @@ async function runExtendedCommand(name: string) {
 // "Nothing happens." line.
 async function doinvoke() {
     const eligible = (game.inventory || []).filter(object =>
-        !!(object.oartifact || object.artifact));
+        !!(object.oartifact || object.artifact || OBJECT_UNIQUE[object.otyp]
+            || object.otyp === FAKE_AMULET_OF_YENDOR && !object.known));
     if (!eligible.length) {
         await pline("You don't have anything special to invoke.");
         game.context.move = 0;
@@ -3250,15 +3251,13 @@ async function doinvoke() {
 
     game._pending_message = '';
     const object = selection.object;
+    const touch = await retouchHeroObject(object);
+    if (touch.rejected || touch.died) {
+        game.context.move = 1;
+        return;
+    }
     const artifact = object.oartifact
         ? artifactById(object.oartifact) : null;
-    if (artifact) {
-        const touch = await touchArtifactByHero(object, artifact);
-        if (!touch.allowed || touch.died) {
-            game.context.move = 1;
-            return;
-        }
-    }
     if (!artifact || artifact.invokePower === null) {
         await pline('Nothing happens.');
         game.context.move = 1;
@@ -7601,7 +7600,9 @@ async function domoveCore(dx: number, dy: number, explicitAttempt: boolean): Pro
             { state: game, struckAt: { x: newx, y: newy } });
         if (!verdict.proceed)
             return verdict.spentTime;
-        if (await attackHostileMonster(monster, newx, newy)) return true;
+        if (await attackHostileMonster(monster, newx, newy, {
+            confirmationOverridden: verdict.confirmationOverridden ?? false,
+        })) return true;
     }
 
     // domove_core() snapshots the origin before test_move().  This includes

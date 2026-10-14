@@ -24,5 +24,5 @@ void test('puton resolves artifact contact before wearing the Eyes of the Overwo
     assert.equal(!!lenses.worn, false);
     assert.ok((game.u.uhp ?? 100) < 100);
     assert.equal(game.context.move, 1);
-    assert.match([...messages, game._pending_message].join(' '), /blasted by The Eyes of the Overworld's power/);
+    assert.match([...messages, game._pending_message].join(' '), /You are blasted by the pair of lenses named the Eyes of the Overworld's power!/);
 });
