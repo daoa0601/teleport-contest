@@ -2,9 +2,9 @@
 // C refs: dothrow.c breaktest(), hero_breaks(), and breakobj().
 
 import {
-    ACID_VENOM, BLINDING_VENOM, CREAM_PIE, EGG, EXPENSIVE_CAMERA,
+    ACID_VENOM, BLINDING_VENOM, BOULDER, CREAM_PIE, EGG, EXPENSIVE_CAMERA,
     CRYSTAL_BALL, LENSES, MELON, MIRROR, OBJECT_MATERIAL, OBJECT_NAMES,
-    POT_OIL, POT_WATER,
+    POT_OIL, POT_WATER, STATUE,
 } from './object_data.js';
 import {
     newsym, plineWithContinuation,
@@ -285,6 +285,9 @@ export async function breakObjectAtLocation(object: GameObject, {
     }
     if (heroCaused)
         await settleBrokenShopObject(object, x, y, fromInventory, state, publish);
+    // Fracture callers replace the stone object after breakobj settles its cost.
+    if (object.otyp === BOULDER || object.otyp === STATUE)
+        return { destroyed: false, observed: false };
     await delobj(object, state, random);
     newsym(x, y);
     if (eggExplosion) {

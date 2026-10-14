@@ -14,7 +14,7 @@ import { heroHasHalfSpellDamage } from './spell_damage.js';
 import { disintegrateWornArmor } from './armor.js';
 import { exerciseAttribute } from './attrib.js';
 import {
-    A_CON, A_DEX, A_STR, NON_PM,
+    A_CON, A_DEX, A_STR, M_SEEN_MAGR, NON_PM,
 } from './const.js';
 import { plineWithContinuation, shieldeff } from './display.js';
 import { finishHeroDeath } from './end.js';
@@ -240,14 +240,18 @@ async function hitWithDisintegration(context: HeroRayContext) {
         const heroDied = await die({ killer: context.name || 'finger of death', deathLineShown: true });
         return { resisted: false, damage: 0, heroDied };
     }
+    // Native rolls inventory protection before checking the hero's resistance.
+    const protectedItems = hasWornProperty('disintegrationResistance', state)
+        && random(100) < 99;
     if (state.u.disintegrationResistance) {
         await publish('You are not disintegrated.');
+        noteRayResistance(context, true);
         return { resisted: true, damage: 0, heroDied: false };
     }
-    if (hasWornProperty('disintegrationResistance', state)
-        && random(100) < 99) {
+    if (protectedItems) {
         return { resisted: true, damage: 0, heroDied: false };
     }
+    noteRayResistance(context, false);
 
     const shield = wornObject(state, 'uarms');
     if (shield) {
@@ -273,6 +277,8 @@ async function hitWithDisintegration(context: HeroRayContext) {
         await disintegrateWornArmor(shirt, { state, publish });
     }
     state.u.ugrave_arise = context.nativeType === -24 ? -3 : NON_PM;
+    monstersForgetHeroResistance(M_SEEN_MAGR, state,
+        monster => monsterHasLineOfSightToHero(monster, state));
     // zhitu() calls done(DIED) directly; only losehp() prints "You die...".
     const heroDied = await die({ killer: context.name || 'blast of disintegration', deathLineShown: true });
     return { resisted: false, damage: 0, heroDied };

@@ -33,7 +33,6 @@ import { useCamera } from './camera.js';
 import { useTowel } from './towel.js';
 import { useBell } from './apply_bell.js';
 import { breakWand } from './wand_break.js';
-import { heroStatusLine } from './hero_status.js';
 import { speakArtifact } from './artifact_speech.js';
 import { lightCocktail, useCandelabrum, useCandle, useLamp } from './apply_light.js';
 import { useWhistle } from './whistle.js';
@@ -84,7 +83,7 @@ import { clearCommandKeys, nhgetch, queueCommandKeys, takeCommandKey } from './i
 import { readCommandInput } from './command_input.js';
 import { chooseInventoryObject, compactInventoryLetters, inventoryLetterOrder, promptInventoryObject, reassignInventoryLetters, } from './inventory_prompt.js';
 import { AT_EXPL, AT_KICK } from './monster_attack_types.js';
-import { directionAssistPage, promptKey, readDirectionKey, restoreCommandMap, } from './tty_prompts.js';
+import { directionAssistPage, promptDirection, promptKey, readDirectionKey, restoreCommandMap, } from './tty_prompts.js';
 import { getLine, paranoidQuery, promptYesNo, promptYesNoQuit, } from './query.js';
 export { getLine, promptYesNo, promptYesNoQuit } from './query.js';
 import { objectTypeCallNoun, } from './object_call.js';
@@ -150,10 +149,9 @@ import { objectName, singularObjectName, unseenObjectNoun, } from './objnam.js';
 import { artifactById, } from './artifacts.js';
 import { invokeArtifactPower, } from './artifact_invoke.js';
 import { touchArtifactByHero } from './artifact_touch.js';
-import { SLING, BULLWHIP, GRAPPLING_HOOK, CREAM_PIE, EGG, LUMP_OF_ROYAL_JELLY, LOCK_PICK, CREDIT_CARD, STETHOSCOPE, LOADSTONE, GOLD_PIECE, BOULDER, ROCK, DILITHIUM_CRYSTAL, LUCKSTONE, TOUCHSTONE, LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK, BAG_OF_HOLDING, BAG_OF_TRICKS, BRASS_LANTERN, OIL_LAMP, MAGIC_LAMP, STATUE, RIN_PROTECTION, BANANA, MIRROR, TIN_WHISTLE, MAGIC_WHISTLE, EUCALYPTUS_LEAF, BELL, BELL_OF_OPENING, EXPENSIVE_CAMERA, TIN_OPENER, TALLOW_CANDLE, WAX_CANDLE, CANDELABRUM_OF_INVOCATION, POT_OIL, RIN_CONFLICT, MEAT_RING, LENSES, BLINDFOLD, TOWEL, FUMBLE_BOOTS, KICKING_BOOTS, MAGIC_MARKER, UNICORN_HORN, SHIELD_OF_REFLECTION, AMULET_OF_YENDOR, AMULET_OF_STRANGULATION, FAKE_AMULET_OF_YENDOR, SPE_NOVEL, OBJECT_DELAY, OBJECT_DESCRIPTIONS, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_WEIGHT, OBJECT_SUBTYPE, } from './object_data.js';
+import { SLING, BULLWHIP, GRAPPLING_HOOK, CREAM_PIE, EGG, LUMP_OF_ROYAL_JELLY, LOCK_PICK, CREDIT_CARD, STETHOSCOPE, LOADSTONE, GOLD_PIECE, BOULDER, ROCK, DILITHIUM_CRYSTAL, LUCKSTONE, TOUCHSTONE, LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK, BAG_OF_HOLDING, BAG_OF_TRICKS, BRASS_LANTERN, OIL_LAMP, MAGIC_LAMP, STATUE, RIN_PROTECTION, BANANA, MIRROR, TIN_WHISTLE, MAGIC_WHISTLE, EUCALYPTUS_LEAF, BELL, BELL_OF_OPENING, EXPENSIVE_CAMERA, TIN_OPENER, FIGURINE, LEASH, CAN_OF_GREASE, SADDLE, HORN_OF_PLENTY, TINNING_KIT, LAND_MINE, BEARTRAP, TALLOW_CANDLE, WAX_CANDLE, CANDELABRUM_OF_INVOCATION, POT_OIL, RIN_CONFLICT, MEAT_RING, LENSES, BLINDFOLD, TOWEL, FUMBLE_BOOTS, KICKING_BOOTS, MAGIC_MARKER, UNICORN_HORN, SHIELD_OF_REFLECTION, AMULET_OF_YENDOR, AMULET_OF_STRANGULATION, FAKE_AMULET_OF_YENDOR, SPE_NOVEL, OBJECT_DELAY, OBJECT_DESCRIPTIONS, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_WEIGHT, OBJECT_SUBTYPE, } from './object_data.js';
 import { CLR_WHITE, NO_COLOR, } from './terminal.js';
 import { MONSTER_COLOR, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, MONSTER_SOUND, MONSTER_ALIGNMENT, MONSTER_ATTACKS, MONSTER_CLASS_EXPLAIN, requireMonsterData, monsterTypeName, monsterClassSymbol, } from './monster_data.js';
-import { monsterStatusLine } from './monster_status.js';
 import { createParticularMonster } from './read_creation.js';
 import { addExperience, checkExperienceLevel, gainExperienceLevel, loseHeroExperience, } from './exper.js';
 import { removeHeroAccessory, wearHeroAccessory, } from './accessory.js';
@@ -212,6 +210,15 @@ import { applyHeroContactPassive, } from './monster_passive.js';
 import { heroCannotTake, heroHasNoHands, heroHasNoLimbs, heroIsPolymorphed, heroIsVerySmall, heroCanChangeVampireShape, polymorphHero, returnHeroToHumanForm, } from './polyself.js';
 import { applyEyewear, isEyewear, removeEyewear, wearEyewear, } from './eyewear.js';
 import { useCreamPie } from './cream_pie.js';
+import { useFigurine } from './figurine_apply.js';
+import { checkHeroLeashes, useLeash } from './leash_apply.js';
+import { useGrease } from './grease_apply.js';
+import { useStethoscope } from './stethoscope.js';
+import { useBagOfTricks } from './bag_of_tricks.js';
+import { useHornOfPlenty } from './horn_of_plenty.js';
+import { useTinningKit } from './tinning_kit.js';
+import { continueTrapSetting, resetTrapSetting, useSettableTrap } from './trap_setting.js';
+import { useSaddle } from './steed.js';
 import { isRoyalJelly, useRoyalJelly, } from './royal_jelly.js';
 import { useBullwhip } from './bullwhip.js';
 import { useGrapplingHook } from './grappling_hook.js';
@@ -853,6 +860,13 @@ async function continueOccupation(g) {
         if (!continuing)
             g._occupation = null;
         return continuing;
+    }
+    if (occupation.key === 'set-trap') {
+        const continuing = await continueTrapSetting(g);
+        if (!continuing)
+            g._occupation = null;
+        g.context.move = 1;
+        return true;
     }
     if ('remaining' in occupation && occupation.remaining <= 0) {
         g._occupation = null;
@@ -2257,7 +2271,7 @@ async function doname() {
             && (!objectTypeKnown(object)
                 || !!game._objectCallNames?.[object.otyp]));
         const letters = compactInventoryLetters(suggested.map(object => object.invlet).join(''));
-        const selection = await promptInventoryObject(`What do you want to call? [${letters} or ?*] `, eligible, { allowMenu: true });
+        const selection = await promptInventoryObject(`What do you want to call? [${letters} or ?*] `, eligible, { verb: 'call', allowMenu: true });
         if (!selection.cancelled && selection.object) {
             const object = selection.object;
             if (object.dknown === false) {
@@ -3143,7 +3157,7 @@ async function doinvoke() {
         return;
     }
     const letters = eligible.map(object => object.invlet).join('');
-    const selection = await promptInventoryObject(`What do you want to invoke? [${compactInventoryLetters(letters)} or ?*] `, eligible, { allowMenu: true });
+    const selection = await promptInventoryObject(`What do you want to invoke? [${compactInventoryLetters(letters)} or ?*] `, eligible, { verb: 'invoke', allowMenu: true });
     if (selection.cancelled || !selection.object) {
         game.context.move = 0;
         return;
@@ -3189,7 +3203,7 @@ async function rubRoyalJelly(jelly) {
             return null;
         }
         const letters = compactInventoryLetters(eggs.map(egg => egg.invlet).join(''));
-        const selection = await promptInventoryObject(`What do you want to rub the royal jelly on? [${letters} or ?*] `, eggs, { allowMenu: true });
+        const selection = await promptInventoryObject(`What do you want to rub the royal jelly on? [${letters} or ?*] `, eggs, { verb: 'rub the royal jelly on', allowMenu: true });
         if (!selection.cancelled)
             game._pending_message = '';
         return selection.object;
@@ -4833,7 +4847,7 @@ async function removeWornItem(action, itemAction = false) {
         const letters = preferred.map(candidate => candidate.invlet).join('');
         const prompt = `What do you want to ${action}? [${letters} or ?*] `;
         inventoryPrompt = prompt;
-        const selection = await promptInventoryObject(prompt, worn);
+        const selection = await promptInventoryObject(prompt, worn, { verb: action });
         if (selection.cancelled) {
             game.context.move = 0;
             return;
@@ -5189,6 +5203,7 @@ async function dodrop() {
             .map(object => object.invlet).join('');
         const prompt = `What do you want to drop? [${gold ? '$' : ''}${compactInventoryLetters(letters)} or ?*] `;
         const selection = await promptInventoryObject(prompt, inventory, {
+            verb: 'drop',
             allowGold: true, allowMenu: true, allowCount: true,
         });
         if (selection.cancelled) {
@@ -5215,8 +5230,10 @@ async function dodrop() {
             state: game, publish: plineWithContinuation,
         });
         game.context.move = spentTime ? 1 : 0;
-        if (spentTime)
+        if (spentTime) {
             resetBulkTakeoff();
+            resetTrapSetting();
+        }
         // Lock-picking's resumable record lives in the occupation itself.
         if (spentTime && game._occupation?.key === 'pick-lock')
             game._occupation = null;
@@ -5225,42 +5242,6 @@ async function dodrop() {
         if (inShop)
             setSellDisposition(SELL_NORMAL);
     }
-}
-async function useStethoscope(item) {
-    const direction = promptedDirectionKey(await readDirectionKey(), game.commandBindings);
-    if (!isMovementKey(direction) && direction !== '.') {
-        game.context.move = 0;
-        return;
-    }
-    const heroActionSeq = game._heroActionSeq ?? 0;
-    const usedTime = game._stethoscopeSeq === heroActionSeq;
-    game._stethoscopeSeq = heroActionSeq;
-    if (direction === '.') {
-        await plineWithContinuation(heroStatusLine(game));
-        game.context.move = usedTime ? 1 : 0;
-        return;
-    }
-    const x = game.u.ux + DIR_DX[direction];
-    const y = game.u.uy + DIR_DY[direction];
-    const monster = game.level?.monsters?.find(candidate => monsterHasMapPosition(candidate, game) &&
-        (candidate.mhp ?? 1) > 0 && candidate.mx === x && candidate.my === y);
-    if (monster?.mappearance) {
-        const appearance = M_AP_TYPE(monster) === M_AP_OBJECT
-            ? (OBJECT_NAMES[monster.mappearance] || 'thing') : 'thing';
-        const monsterName = MONSTER_NAME[monster.mnum] || 'monster';
-        monster.m_ap_type = 0;
-        monster.mappearance = 0;
-        newsym(x, y);
-        await pline(`That ${appearance} is really ${withIndefiniteArticle(monsterName)}.`);
-        await plineWithContinuation(await monsterStatusLine(monster));
-    }
-    else if (!monster) {
-        await pline('You hear nothing special.');
-    }
-    else {
-        await plineWithContinuation(await monsterStatusLine(monster));
-    }
-    game.context.move = usedTime ? 1 : 0;
 }
 // C refs: lock.c doclose(); cmd.c getdir()/help_dir().  Invalid direction
 // help is a modal text window: bytes typed before a real More dismissal must
@@ -5578,6 +5559,43 @@ async function doapply(cannedInvlet = null) {
 // Return the surviving object for the native talking-artifact tail. Applied
 // stacks can split or disappear, so each destructive owner returns its object.
 async function applyTool(item, underlay) {
+    if (item.otyp === LAND_MINE || item.otyp === BEARTRAP) {
+        const object = await useSettableTrap(item);
+        game.context.move = 1;
+        return object;
+    }
+    if (item.otyp === TINNING_KIT) {
+        await useTinningKit(item);
+        game.context.move = 1;
+        return item;
+    }
+    if (item.otyp === HORN_OF_PLENTY) {
+        await useHornOfPlenty(item);
+        game.context.move = 1;
+        return item;
+    }
+    if (item.otyp === BAG_OF_TRICKS) {
+        await useBagOfTricks(item);
+        game.context.move = 1;
+        return item;
+    }
+    if (item.otyp === SADDLE) {
+        game.context.move = await useSaddle(item) ? 1 : 0;
+        return item;
+    }
+    if (item.otyp === CAN_OF_GREASE) {
+        game.context.move = await useGrease(item) ? 1 : 0;
+        return item;
+    }
+    if (item.otyp === LEASH) {
+        game.context.move = await useLeash(item) ? 1 : 0;
+        return item;
+    }
+    if (item.otyp === FIGURINE) {
+        const result = await useFigurine(item);
+        game.context.move = result.spentTime ? 1 : 0;
+        return result.object;
+    }
     if (item.otyp === EXPENSIVE_CAMERA || item.otyp === TOWEL
         || item.otyp === BELL || item.otyp === BELL_OF_OPENING) {
         const result = item.otyp === EXPENSIVE_CAMERA ? await useCamera(item)
@@ -5628,13 +5646,13 @@ async function applyTool(item, underlay) {
             game.context.move = 1;
             return item;
         }
-        const direction = await getAdjacentLocation('In what direction?', null, game.u.ux, game.u.uy);
+        const direction = await promptDirection();
         if (!direction)
             return item;
         game._pending_message = '';
         const result = await useBullwhip(item, direction, {
             state: game,
-            attackMonster: (monster) => attackHostileMonster(monster, monster.mx, monster.my),
+            attackMonster: (monster, x, y) => attackHostileMonster(monster, x, y),
             holdObject: async (object) => {
                 await addPickedInventoryObject(object);
                 return true;
@@ -5691,7 +5709,7 @@ async function applyTool(item, underlay) {
         return result.container;
     }
     if (item.otyp === STETHOSCOPE) {
-        await useStethoscope(item);
+        game.context.move = await useStethoscope(item) ? 1 : 0;
         return item;
     }
     if (item.otyp === TIN_OPENER) {
@@ -5805,6 +5823,7 @@ async function doquiverCore(verb) {
     const choices = `${noneSuggested ? '- ' : ''}${compactInventoryLetters(letters)}`.trim();
     const prompt = `What do you want to ${verb}? [${choices ? `${choices} or ?*` : '*'}] `;
     const selection = await promptInventoryObject(prompt, game.inventory || [], {
+        verb,
         allowNone: true, allowMenu: true, allowCount: true,
         menuItems: suggestions, noneSuggested,
         noneDescription: verb === 'ready'
@@ -6940,6 +6959,7 @@ export async function applyHeroLocationEffects(publish = plineWithContinuation, 
 async function finishMovedHero({ oldx, oldy, newx, newy, loc, explicitAttempt, ballChainMove = null, trapOptions = {}, }) {
     const u = game.u;
     resetBulkTakeoff();
+    resetTrapSetting();
     // C hack.c:domove_core() sets this only in the common tail after map
     // coordinates changed.  The turn loop retains it through every global
     // allocation needed to settle this action, then clears it before the next
@@ -6960,6 +6980,9 @@ async function finishMovedHero({ oldx, oldy, newx, newy, loc, explicitAttempt, b
         && !propertyIsActive('stealth', game)
         && (MONSTER_BODY_META[heroSpecies(game)]?.[0] ?? 0) >= 400)
         disturbBuriedZombies(u.ux, u.uy);
+    await checkHeroLeashes(oldx, oldy);
+    if (game.program_state.gameover)
+        return true;
     newsym(oldx, oldy);
     vision_recalc(1);
     await announceInvocationSquare();
@@ -7280,6 +7303,7 @@ async function domoveCore(dx, dy, explicitAttempt) {
                 // C domove_core() resets occupations after restoring the
                 // hero's position, even when a peaceful refuses the swap.
                 resetBulkTakeoff();
+                resetTrapSetting();
                 await finishBallAndChainMove(ballChainMove);
                 if (ballChainMove?.causeDelay)
                     await delayAfterDraggingBall();

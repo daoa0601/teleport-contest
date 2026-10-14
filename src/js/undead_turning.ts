@@ -15,7 +15,7 @@ export interface UndeadTurningOptions {
 // Undead turning for actual monsters, objects, inventories, and the hero.
 // C zap.c:bhitm(), bhito(), unturn_dead(), and unturn_you().
 
-import { G_GENOD } from './const.js';
+import { G_GENOD, PLNMSG_OBJ_GLOWS } from './const.js';
 import {
     canSeeMonster, plineWithContinuation as pline,
 } from './display.js';
@@ -90,7 +90,7 @@ export async function turnCarriedObjects(inventory: readonly GameObject[] | unde
         const plural = (object.quan ?? object.quantity ?? 1) > 1;
         const corpse = visible ? `${plural ? 'One of ' : ''}${ownedObjectName(object, state, { capitalized: !plural })}` : '';
         const species = object.corpsenm;
-        const event = await reviveCorpseByMagic(object, state);
+        const event = await reviveCorpseByMagic(object, state, { byHero: !state.context.mon_moving });
         if (event?.kind !== 'revived') continue;
         revived++;
         for (const message of event.messages || []) await pline(message);
@@ -98,7 +98,8 @@ export async function turnCarriedObjects(inventory: readonly GameObject[] | unde
             const alive = !monsterIsNonliving(event.monster.mnum);
             const different = species !== event.monster.mnum;
             const form = different ? ` as ${withIndefiniteArticle(monsterTypeName(event.monster.mnum, event.monster.female))}` : '';
-            await pline(`${corpse} suddenly ${alive ? 'comes alive' : 'reanimates'}${form}!`);
+            const subject = state._lastPlineKind === PLNMSG_OBJ_GLOWS ? 'It' : corpse;
+            await pline(`${subject} suddenly ${alive ? 'comes alive' : 'reanimates'}${form}!`);
         } else if (canSeeMonster(event.monster)) {
             await pline(`${monsterName(event.monster, { state, article: 'a', capitalized: true })} suddenly appears!`);
         }

@@ -225,7 +225,7 @@ function mark_visible_range(output: VisionOutput, row: number, left: number, rig
 
 // C ref: vision.c does_block().  In addition to terrain, boulders and
 // monsters disguised as boulders participate in the shadow-casting dig pass.
-function _blocks(level: GameMap, x: number, y: number): boolean {
+export function visionCellBlocksLight(level: GameMap, x: number, y: number): boolean {
     const loc = level.at(x, y);
     if (!loc) return true;
     const typ = loc.typ ?? 0;
@@ -269,7 +269,7 @@ export function vision_reset(): void {
         let dig_left = 0;
         let block = true;
         for (let x = 1; x < COLNO; x++) {
-            const cur_block = _blocks(level, x, y);
+            const cur_block = visionCellBlocksLight(level, x, y);
             if (block !== cur_block) {
                 if (block) {
                     for (let i = dig_left; i < x; i++) {

@@ -2,28 +2,22 @@
 // C refs: zap.c makewish(), objnam.c readobjnam(), and
 // invent.c hold_another_object().
 
-import { heroIsHallucinating } from './senses.js';
-import { withIndefiniteArticle } from './object_grammar.js';
-import { touchArtifactByHero } from './artifact_touch.js';
 import { markArtifactFound } from './artifacts.js';
-import { IRONBARS, POOL, WATER } from './const.js';
+import { ICE, IRONBARS, Is_airlevel, Is_waterlevel, POOL, WATER } from './const.js';
 import {
     bot, docrt, flushPendingTopline, flush_screen, newsym, pline,
     plineWithContinuation,
 } from './display.js';
 import { game, requirePlayingGame } from './gstate.js';
-import { addHeroGoldObject, heroGoldAmount } from './hero_gold.js';
-import { recordObjectEncounter } from './object_knowledge.js';
+import { holdAnotherObject } from './hero_hold_object.js';
+import { CORPSE } from './object_data.js';
+import type { GameObject } from './object_types.js';
 import {
-    objectStatePrefix, readObjectName, unseenObjectNoun,
-    wishedObjectPresentation,
+    corpseName, definiteName, objectName, observeObjectForNaming, pluralizeObjectNoun, readObjectName,
 } from './objnam.js';
 import { getLine } from './query.js';
 import { rn2 } from './rng.js';
-import { addInventoryItem } from './u_init.js';
-import {
-    encumbranceLabel, encumbranceMessage, nearCapacity,
-} from './weight.js';
+import { heroResistsStoning, touchPetrifies } from './stoning.js';
 import { showTextPages } from './windows.js';
 
 async function showWishHelp(triesLeft: number): Promise<void> {
@@ -136,70 +130,32 @@ export async function makeWish({
     if (object.oartifact) markArtifactFound(object.oartifact);
     game.u.uconduct.wishes = (game.u.uconduct.wishes || 0) + 1;
 
-    if (result.isGold) {
-        const quantity = object.quan ?? 1;
-        const previousGold = heroGoldAmount(game);
-        addHeroGoldObject(game, object);
-        const goldName = quantity === 1
-            ? 'a gold piece' : `${quantity} gold pieces`;
-        await pline(`$ - ${goldName}${previousGold > 0 ? '' : '.'}`);
-        game.u.ublesscnt = (game.u.ublesscnt || 0) + 50 + rn2(100);
-        game.context.move = 0;
-        return;
-    }
-
-    const clericBucKnowledge = game.urole?.key === 'priest';
-    if (clericBucKnowledge) object.bknown = true;
-    if (object.oartifact) {
-        const touch = await touchArtifactByHero(
-            object, result.artifact,
-        );
-        if (!touch.allowed || touch.died) {
-            game.context.move = 0;
-            return;
-        }
-    }
-    const presentation = {
-        ...wishedObjectPresentation(object),
-        showBuc: clericBucKnowledge,
-    };
-    const previousCapacity = game._encumbranceLevel ?? nearCapacity(game);
-    const canObserveWishedObject = !game.blind
-        && !heroIsHallucinating(game);
-    const item = await addInventoryItem(
-        object, presentation, canObserveWishedObject,
-    );
-    if (!object.known && [2, 3].includes(object.oclass))
-        item.enchantment = undefined;
-    if (canObserveWishedObject && item.dknown)
-        recordObjectEncounter(item.otyp);
-    const statePrefix = objectStatePrefix(item);
-    const perceivedName = `${statePrefix}${
-        item.dknown ? item.name : unseenObjectNoun(item)
-    }`;
-    const individualName = item.oextra?.oname || item.oname;
-    const namedObject = individualName
-        ? `${perceivedName} named ${individualName}` : perceivedName;
-    const visibleName = item.buc
-        ? `${item.buc} ${namedObject}` : namedObject;
-    const quantity = item.quantity ?? item.quan ?? 1;
-    const heldDescription = quantity > 1
-        ? `${quantity} ${item.buc ? `${item.buc} ` : ''}${
-            statePrefix
-        }${item.plural}`
-        : withIndefiniteArticle(visibleName);
-    await pline(`${item.invlet} - ${heldDescription}.`);
-
-    const currentCapacity = nearCapacity(game);
-    const capacityMessage = encumbranceMessage(
-        previousCapacity, currentCapacity,
-    );
-    if (capacityMessage) await plineWithContinuation(capacityMessage);
-    if (previousCapacity !== currentCapacity) game.context.botl = true;
-    game._encumbranceLevel = currentCapacity;
-    game.u._encumbrance = encumbranceLabel(currentCapacity);
+    if (object.otyp === CORPSE && !(game.uarmg || game.u.uarmg)
+        && touchPetrifies(object.corpsenm) && !heroResistsStoning(game))
+        object.wishedfor = true;
+    const held = await holdAnotherObject(object, { dropMessage: wishDropMessage(object) });
+    if (held.heroDied) return;
     game.u.ublesscnt = (game.u.ublesscnt || 0) + 50 + rn2(100);
     game.context.move = 0;
+}
+
+function wishDropMessage(object: GameObject): string {
+    const hero = game.u;
+    const airLevel = Is_airlevel(hero.uz);
+    const slips = airLevel || !!hero.uinwater;
+    const dangerous = object.otyp === CORPSE && !!object.wishedfor;
+    const verb = slips ? 'slip' : dangerous ? 'materialize' : 'drop';
+    observeObjectForNaming(object);
+    const quantity = object.quan;
+    const noun = object.otyp === CORPSE ? corpseName(object) : objectName(object);
+    const plural = object.otyp === CORPSE ? noun : pluralizeObjectNoun(object, noun);
+    const subject = definiteName(quantity === 1 ? noun : `${quantity} ${plural}`);
+    const action = `${subject.charAt(0).toUpperCase()}${subject.slice(1)} ${verb}${quantity === 1 ? 's' : ''}`;
+    if (hero.uswallow) return `Oops!  ${action} out of your reach!`;
+    const terrain = game.level?.at(hero.ux, hero.uy)?.typ;
+    if (airLevel || Is_waterlevel(hero.uz) || terrain !== undefined && (terrain < IRONBARS || terrain >= ICE))
+        return `Oops!  ${action} away from you!`;
+    return dangerous ? `Careful! ${action} on the floor!` : `Oops!  ${action} to the floor!`;
 }
 
 // C allmain.c grants this once, after elapsed monster work and before the

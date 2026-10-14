@@ -16,12 +16,15 @@ interface FractureOptions {
 }
 import { placeObject, placeObjectSynchronously, remove_object } from './floor_object.js';
 import { adjustHeroAlignment } from './alignment.js';
-import { chargeUnpaidObjectAsDebt, costlySpot } from './shk.js';
+import { costlySpot } from './shk.js';
+import { shopClaimsObject } from './shop_loss.js';
+import { breakObjectAtLocation } from './object_breakage.js';
+import { getObjectLocation } from './object_location.js';
 import { objectName } from './objnam.js';
 import { BOULDER, OBJECT_USES_KNOWN, ROCK, STATUE } from './object_data.js';
 import { rn2 } from './rng.js';
 import { activateStatueTrapAt } from './statue_trap.js';
-import { cansee, vision_note_blocker_change } from './vision.js';
+import { cansee, visionCellBlocksLight, vision_note_blocker_change, vision_recalc } from './vision.js';
 import { objectWeight } from './weight.js';
 
 const GEM_CLASS = 13;
@@ -61,13 +64,17 @@ export async function fractureRock(
     // message.  Callers own any "shatters"/"falls apart" prose.
     const byYou = !state.context?.mon_moving;
 
-    if (byYou && object.where === 'floor') {
-        const spot = costlySpot(x, y, state);
-        if (spot && object.unpaid) {
+    const location = getObjectLocation(object, state);
+    if (byYou && location) {
+        const spot = costlySpot(location.x, location.y, state);
+        if (spot && shopClaimsObject(object, spot.resident, false, state)) {
             await publish(
                 `You fracture ${shopkeeperName(spot.resident)}'s ${objectName(object, state)}.`,
             );
-            await chargeUnpaidObjectAsDebt(object, state, publish);
+            await breakObjectAtLocation(object, {
+                x: location.x, y: location.y, state, publish,
+                heroCaused: true, showBreakMessage: false,
+            });
         }
     }
     if (byYou && object.otyp === BOULDER) sokobanGuilt(state);
@@ -78,6 +85,9 @@ export async function fractureRock(
     object.dknown = object.bknown = object.rknown = false;
     object.known = !OBJECT_USES_KNOWN[ROCK];
     delete object.oextra;
+    delete object.oname;
+    delete object.name;
+    delete object.plural;
     delete object.corpsenm;
     object.owt = objectWeight(object);
 
@@ -88,7 +98,12 @@ export async function fractureRock(
         // preserves the raw C extract+place shape (no movobj unhide pass).
         remove_object(object, state);
         placeObjectSynchronously(object, x, y, state);
-        vision_note_blocker_change(x, y);
+        const level = state.level;
+        if (!level) throw new Error('Floor fracture requires a level.');
+        if (!visionCellBlocksLight(level, x, y)) {
+            vision_note_blocker_change(x, y);
+            vision_recalc(0);
+        }
         if (cansee(x, y)) newsym(x, y);
     }
 }

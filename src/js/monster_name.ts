@@ -166,6 +166,14 @@ export function monsterFormChangeName(monster: Monster, { state = game }: { stat
 }
 
 // C noname_monnam(monster, ARTICLE_NONE).
+// C l_monnam(): leash messages retain the species of a named creature.
+export function monsterLeashName(monster: Monster, state: GameState = game): string {
+    requireLiveGame(state);
+    return formatMonsterName(monster, state, {
+        article: 'none', called: true, suppressSaddle: !!MGIVENNAME(monster),
+    });
+}
+
 export function namelessMonsterName(monster: Monster, {
     state = game, article = 'none', suppressIt = false, suppressInvisible = false,
     suppressHallucination = false, suppressSaddle = false,

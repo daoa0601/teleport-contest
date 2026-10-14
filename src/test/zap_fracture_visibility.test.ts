@@ -1,0 +1,32 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+import { rhack } from '../js/cmd.js';
+import { game, requirePlayingGame } from '../js/gstate.js';
+import { resetInputState } from '../js/input.js';
+import { BOULDER, WAN_STRIKING } from '../js/object_data.js';
+import { cansee, vision_recalc } from '../js/vision.js';
+import { addInventoryObject, floorObject } from './support/game-objects.js';
+import { createMonsterAt } from './support/monsters.js';
+import { freshObjectRoom } from './support/object-room.js';
+import { installPagerInput } from './support/pager-input.js';
+
+void test('a striking beam sees the monster beyond a boulder as soon as the boulder fractures', async () => {
+    freshObjectRoom({ right: 30, top: 10, bottom: 10, flags: { verbose: true } });
+    requirePlayingGame(game);
+    await floorObject(BOULDER, 11, 10);
+    const jackal = await createMonsterAt('jackal', 12, 10);
+    jackal.mhp = jackal.mhpmax = 1000;
+    vision_recalc(0);
+    assert.equal(cansee(12, 10), false);
+    const wand = await addInventoryObject(WAN_STRIKING, { spe: 2 });
+    const input = resetInputState();
+    const messages: string[] = [];
+    input.beforeRead = () => { messages.push(game._pending_message); };
+    installPagerInput(input, { expected: /boulder|jackal|wand|it/, limit: 8 });
+    input.feed(`${wand.invlet}l`);
+
+    await rhack('z'.charCodeAt(0));
+
+    assert.match([...messages, game._pending_message].join('\n'), /(?:hits|misses) the jackal[!.]/);
+    assert.equal(cansee(12, 10), true);
+});

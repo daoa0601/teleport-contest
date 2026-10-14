@@ -1,0 +1,33 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+import { CORR, DOOR, D_CLOSED, D_NODOOR, STONE, VWALL } from '../js/const.js';
+import { rhack } from '../js/cmd.js';
+import { game, requirePlayingGame } from '../js/gstate.js';
+import { resetInputState } from '../js/input.js';
+import { WAN_COLD } from '../js/object_data.js';
+import { initRng } from '../js/rng.js';
+import { addInventoryObject } from './support/game-objects.js';
+import { installPagerInput } from './support/pager-input.js';
+import { freshObjectRoom } from './support/object-room.js';
+
+void test('a diagonal ray bounces along a corridor toward a closed door', async () => {
+    const level = freshObjectRoom({ right: 30, hero: { uhp: 1000, uhpmax: 1000 } });
+    requirePlayingGame(game);
+    level.requireAt(11, 11).typ = VWALL;
+    level.requireAt(11, 10).typ = CORR;
+    level.requireAt(10, 11).typ = STONE;
+    const door = level.requireAt(12, 10);
+    door.typ = DOOR;
+    door.doormask = D_CLOSED;
+    const wand = await addInventoryObject(WAN_COLD, { spe: 2 });
+    const input = resetInputState();
+    installPagerInput(input, { expected: /bounces|cold|door freezes|whizzes/, limit: 8 });
+    input.feed(`${wand.invlet}n`);
+    initRng(7n);
+
+    await rhack('z'.charCodeAt(0));
+
+    assert.equal(door.doormask, D_NODOOR, 'The reflected cold ray must reach and shatter the door.');
+    assert.equal(game.u.uhp, 1000);
+    assert.equal(wand.spe, 1);
+});

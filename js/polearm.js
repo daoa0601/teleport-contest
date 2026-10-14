@@ -1,7 +1,7 @@
 // Applying a polearm (or the Snickersnee katana) as a distance attack.
 // C refs: apply.c use_pole(), calc_pole_range(), find_poleable_mon(),
 // get_valid_polearm_position(), snickersnee_used_dist_attk().
-import { monsterHasMapPosition } from './monster_location.js';
+import { monsterAtPosition } from './monster_location.js';
 import { ACCESSIBLE, COLNO, IS_FURNITURE, P_BASIC, P_SKILLED, P_TWO_WEAPON_COMBAT, ROWNO, SCORR, STONE, STATUE_TRAP, isok, } from './const.js';
 import { artifactById } from './artifacts.js';
 import { canSenseMonster, glyphAt, pline, unmap_invisible } from './display.js';
@@ -39,11 +39,7 @@ function squaredDistance(x, y, state) {
     return dx * dx + dy * dy;
 }
 function monsterAt(x, y, state) {
-    return (state.level?.monsters?.find((monster) => monsterHasMapPosition(monster, state) &&
-        !monster.dead &&
-        (monster.mhp ?? 1) > 0 &&
-        monster.mx === x &&
-        monster.my === y) || null);
+    return state.level ? monsterAtPosition(state.level, x, y) : null;
 }
 function heroIsImpaired(state) {
     const confused = !!state.u?.confused || (state.u?.confusionTurns ?? 0) > 0;
@@ -230,6 +226,7 @@ export async function usePolearm(object, { state = game, ensureWielded, describe
         return { spentTime: false, failure: true };
     }
     rememberPolearmTarget(null, state);
+    state.bhitpos = { x: cc.x, y: cc.y };
     const monster = monsterAt(cc.x, cc.y, state);
     let freehit = false;
     if (monster) {
@@ -256,11 +253,11 @@ export async function usePolearm(object, { state = game, ensureWielded, describe
             if (freehit && !heroIsDeaf(state))
                 await pline('Shkinng!');
         }
-        // bhitpos equals the victim's own square, so thitmonst() observes
-        // notonhead FALSE and a long worm can never lose its tail here.
+        state.notonhead = cc.x !== monster.mx || cc.y !== monster.my;
         const hit = await hitMonsterWithAppliedWeapon(monster, object, {
             state,
             checkCaitiff: false,
+            target: cc,
         });
         if (hit.heroDied)
             return hit;

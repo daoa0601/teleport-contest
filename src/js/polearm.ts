@@ -2,7 +2,7 @@
 // C refs: apply.c use_pole(), calc_pole_range(), find_poleable_mon(),
 // get_valid_polearm_position(), snickersnee_used_dist_attk().
 
-import { monsterHasMapPosition } from './monster_location.js';
+import { monsterAtPosition } from './monster_location.js';
 import {
     ACCESSIBLE,
     COLNO,
@@ -81,16 +81,7 @@ function squaredDistance(x: number, y: number, state: GameState) {
 }
 
 function monsterAt(x: number, y: number, state: GameState) {
-    return (
-        state.level?.monsters?.find(
-            (monster) =>
-                monsterHasMapPosition(monster, state) &&
-                !monster.dead &&
-                (monster.mhp ?? 1) > 0 &&
-                monster.mx === x &&
-                monster.my === y,
-        ) || null
-    );
+    return state.level ? monsterAtPosition(state.level, x, y) : null;
 }
 
 function heroIsImpaired(state: GameState) {
@@ -295,6 +286,7 @@ export async function usePolearm(
     }
 
     rememberPolearmTarget(null, state);
+    state.bhitpos = { x: cc.x, y: cc.y };
     const monster = monsterAt(cc.x, cc.y, state);
     let freehit = false;
 
@@ -326,11 +318,11 @@ export async function usePolearm(
             if (freehit && !heroIsDeaf(state)) await pline('Shkinng!');
         }
 
-        // bhitpos equals the victim's own square, so thitmonst() observes
-        // notonhead FALSE and a long worm can never lose its tail here.
+        state.notonhead = cc.x !== monster.mx || cc.y !== monster.my;
         const hit = await hitMonsterWithAppliedWeapon(monster, object, {
             state,
             checkCaitiff: false,
+            target: cc,
         });
         if (hit.heroDied) return hit;
     } else if (statueGlyph(glyph) && floorHasObject(STATUE, cc.x, cc.y, state)) {
