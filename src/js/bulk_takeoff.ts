@@ -1,32 +1,24 @@
 // C do_wear.c:doddoremarm(), select_off(), take_off(), do_takeoff().
 import { removeHeroAccessory } from './accessory.js';
-import { armorOffMessage, armorSimpleName, findArmorClass, removeHeroArmor } from './armor.js';
-import { heroFingerName, heroFootName, heroHandName, heroNeckName } from './body_parts.js';
+import { armorOffMessage, armorSimpleName, removeHeroArmor } from './armor.js';
+import { heroFingerName, heroFootName, heroHandName } from './body_parts.js';
 import {
-    Is_airlevel, TT_BEARTRAP, TT_INFLOOR, P_LONG_SWORD, P_SHORT_SWORD,
+    TT_BEARTRAP, TT_INFLOOR, P_LONG_SWORD, P_SHORT_SWORD,
     P_BROAD_SWORD, P_SABER, P_TWO_HANDED_SWORD,
 } from './const.js';
-import { displayLiquidName, plineWithContinuation as pline, see_monsters } from './display.js';
+import { plineWithContinuation as pline } from './display.js';
 import { removeEyewear } from './eyewear.js';
 import { game } from './gstate.js';
 import type { GameState } from './game_state.js';
 import {
-    AMULET_OF_GUARDING, AMULET_OF_RESTFUL_SLEEP, AMULET_OF_STRANGULATION,
     BATTLE_AXE, CORPSE, LENSES, OBJECT_BIMANUAL, OBJECT_DELAY, OBJECT_NAMES, OBJECT_SUBTYPE,
 } from './object_data.js';
 import { MONSTER_NAME, monsterIsHumanoid } from './monster_data.js';
-import { heroIsBreathless, heroSpecies } from './hero_species.js';
-import { heroIsStrangled } from './hero_strangulation.js';
-import { hasIntrinsicProperty, propertyIsActive } from './properties.js';
-import { learnObjectType } from './object_knowledge.js';
-import { heroIsInDangerousRegion } from './regions.js';
-import { heroCanSwim } from './hack.js';
-import { applyHeroLiquidEffects, applyHeroLocationEffects } from './cmd.js';
-import { isLavaAt, isPoolAt, levelIsWaterLevel } from './terrain_properties.js';
+import { heroSpecies } from './hero_species.js';
 import { makePlural } from './object_grammar.js';
 import { objectName } from './objnam.js';
 import type { GameObject } from './object_types.js';
-import { heroFormFlags, heroHasNoLimbs } from './polyself.js';
+import { heroHasNoLimbs } from './polyself.js';
 import { paranoidQuery } from './query.js';
 import { touchPetrifies } from './stoning.js';
 import { surfaceName } from './terrain_name.js';
@@ -34,12 +26,6 @@ import { isWeldedPrimary, setPrimaryWeapon, setQuiverObject, setSecondaryWeapon 
 import { TAKEOFF_ORDER, resetBulkTakeoff, takeoffSlotObject } from './takeoff_state.js';
 import type { TakeoffSlot } from './takeoff_state.js';
 import { selectBulkTakeoff } from './takeoff_menu.js';
-
-const AMULET_OF_ESP = OBJECT_NAMES.indexOf('amulet of ESP');
-const AMULET_OF_FLYING = OBJECT_NAMES.indexOf('amulet of flying');
-const AMULET_OF_MAGICAL_BREATHING = OBJECT_NAMES.indexOf('amulet of magical breathing');
-const M1_AMPHIBIOUS = 0x00000200;
-const M1_BREATHLESS = 0x00000400;
 
 export async function takeOffAll(): Promise<void> {
     game.context.move = 0;
@@ -135,7 +121,7 @@ async function removeSelectedSlot(slot: TakeoffSlot, state: GameState): Promise<
     } else if (slot === 'ublindf') {
         await removeEyewear(object, { state });
     } else if (slot === 'uamul') {
-        await removeAmulet(object, state);
+        await removeHeroAccessory(object, state);
         // Native Amulet_off() supplies its own off_msg(); take_off() also
         // prints the returned object's off_msg(), including this second one.
         if (!state.program_state.gameover) await offMessage(object, state);
@@ -149,50 +135,6 @@ async function removeSelectedSlot(slot: TakeoffSlot, state: GameState): Promise<
         if (!state.program_state.gameover) {
             await offMessage(object, state);
         }
-    }
-}
-
-async function removeAmulet(object: GameObject, state: GameState): Promise<void> {
-    const strangled = heroIsStrangled(state);
-    const flying = propertyIsActive('flying', state);
-    const guarding = object.otyp === AMULET_OF_GUARDING;
-    // C Amulet_off() calculates guarding AC while the amulet is still worn.
-    if (guarding) findArmorClass(state);
-    await removeHeroAccessory(object, state);
-    if (guarding) state._armorClassDirty = true;
-    if (object.otyp === AMULET_OF_RESTFUL_SLEEP && !hasIntrinsicProperty('sleepy', null, state)
-        && !state.u._propertySources?.sleepy?.worn.length
-        && !state.u._propertySources?.sleepy?.carried.length) {
-        state.u._sleepyTimeout = 0;
-        state.u.sleepyTurns = 0;
-    }
-    await offMessage(object, state);
-    if (object.otyp === AMULET_OF_ESP) await see_monsters();
-    else if (object.otyp === AMULET_OF_STRANGULATION && strangled) {
-        await pline(heroIsBreathless(state)
-            ? `Your ${heroNeckName(state)} is no longer constricted!` : 'You can breathe more easily!');
-        learnObjectType(object.otyp, state);
-    } else if (object.otyp === AMULET_OF_MAGICAL_BREATHING) {
-        // C cant_drown() tests the form, not remaining magical breathing.
-        // drown() still runs for the warning and inventory water damage.
-        if (state.u.uinwater && !(heroFormFlags(state) & (M1_AMPHIBIOUS | M1_BREATHLESS))
-            && !heroCanSwim(state)) {
-            await pline(`You suddenly inhale an unhealthy amount of ${displayLiquidName('water')}!`);
-            await applyHeroLiquidEffects(undefined, { entry: 'drown' });
-            if (state.program_state.gameover) return;
-            learnObjectType(object.otyp, state);
-        }
-        if (heroIsInDangerousRegion(state)) {
-            await pline('You are breathing poison gas!');
-            learnObjectType(object.otyp, state);
-        }
-    } else if (object.otyp === AMULET_OF_FLYING && flying && !propertyIsActive('flying', state)) {
-        const overLiquid = isPoolAt(state.u.ux, state.u.uy, state) || isLavaAt(state.u.ux, state.u.uy, state)
-            || levelIsWaterLevel(state) || Is_airlevel(state.u.uz);
-        await pline(overLiquid ? 'You stop flying.' : 'You land.');
-        await applyHeroLocationEffects();
-        if (state.program_state.gameover) return;
-        learnObjectType(object.otyp, state);
     }
 }
 

@@ -14,7 +14,7 @@ import { restoreNaturalMonsterShapes } from './monster_polymorph.js';
 import { OBJECT_NAMES, OBJECT_PROPERTY, requireObjectData } from './object_data.js';
 import { learnObjectType, observeObject } from './object_knowledge.js';
 import { heroIsPolymorphed, returnHeroToHumanForm } from './polyself.js';
-import { captureLevitationState, grantIntrinsicProperty, hasCarriedProperty, hasIntrinsicProperty, hasTimedProperty, hasInvokedProperty, hasWornProperty, propertyIsActive, refreshProperty, } from './properties.js';
+import { captureLevitationState, grantIntrinsicProperty, hasCarriedProperty, hasIntrinsicProperty, hasTimedProperty, hasInvokedProperty, hasWornProperty, propertyIsActive, refreshProperty, propertyTimeout, setPropertyTimeout, } from './properties.js';
 import { d, rn2, rnd } from './rng.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { floatHeroUp } from './terrain_movement.js';
@@ -98,12 +98,12 @@ export async function digestAccessory(object, { state = game } = {}) {
     }
     else if (object.otyp === SLEEP) {
         const delay = rnd(100);
-        const oldDelay = state.u._sleepyTimeout || 0;
+        const oldDelay = propertyTimeout('sleepy', state);
         if (!hasIntrinsicProperty('sleepy', 'outside', state))
             await accessoryEffectMessage(object);
         grantIntrinsicProperty('sleepy', 'outside', state);
         if (!oldDelay || delay < oldDelay)
-            state.u._sleepyTimeout = delay;
+            setPropertyTimeout('sleepy', delay, state);
     }
     else if (property) {
         if (!hasIntrinsicProperty(property, 'outside', state))

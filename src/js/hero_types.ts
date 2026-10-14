@@ -272,7 +272,6 @@ export interface Hero extends HeroCoordinates, HeroPropertyState,
     slimeKiller?: string;
     _encumbrance?: string;
     _exercise?: AttributeValues;
-    _sleepyTimeout?: number;
     _woundedLegSide?: 'left' | 'right' | 'both' | null;
     _woundedLegTurns?: number;
 }

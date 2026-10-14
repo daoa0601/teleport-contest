@@ -202,7 +202,6 @@ export function validSavedHero(
         slimeKiller: optional(string),
         _encumbrance: optional(string),
         _exercise: optional(validSavedAttributeValues),
-        _sleepyTimeout: optional(integer),
         _woundedLegSide: optional(nullable(oneOf('left', 'right', 'both'))),
         _woundedLegTurns: optional(integer),
     };

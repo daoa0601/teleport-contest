@@ -4706,6 +4706,11 @@ async function putOnAccessoryObject(object) {
             game.context.move = 0;
             return;
         }
+        const touch = await retouchHeroObject(object);
+        if (touch.rejected || touch.died) {
+            game.context.move = 1;
+            return;
+        }
         await wearHeroAccessory(object, 'uamul', game);
         game.context.move = 1;
         return;
@@ -4847,8 +4852,6 @@ async function removeWornItem(action, itemAction = false) {
     }
     if (object === game.uamul || object === game.uleft
         || object === game.uright) {
-        const wasStrangled = object.otyp === AMULET_OF_STRANGULATION
-            && heroIsStrangled(game);
         // C armor_or_accessory_off(): a ring's off_msg() runs while it is
         // still worn, so the report keeps the "(on {right|left} hand)"
         // suffix and precedes Ring_off()'s side effects such as a
@@ -4859,16 +4862,6 @@ async function removeWornItem(action, itemAction = false) {
             await plineWithContinuation(armorOffMessage(object, game));
         }
         await removeHeroAccessory(object, game);
-        findArmorClass(game);
-        if (!ring && game.flags?.verbose !== false) {
-            await plineWithContinuation(armorOffMessage(object, game));
-        }
-        if (wasStrangled) {
-            await plineWithContinuation(heroIsBreathless(game)
-                ? `Your ${heroNeckName(game)} is no longer constricted!`
-                : 'You can breathe more easily!');
-            learnObjectType(AMULET_OF_STRANGULATION, game);
-        }
         game.context.move = 1;
         return;
     }
