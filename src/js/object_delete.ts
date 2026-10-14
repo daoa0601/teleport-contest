@@ -1,3 +1,4 @@
+import { maybeResetPick } from './lock_context.js';
 // Remove an object identity from the live game.
 // C refs: shk.c:1185-1275 obfree() as the deletion core, shk.c:1173-1183
 // delete_contents(), invent.c:1428-1462 delobj()/delobj_core().
@@ -82,8 +83,6 @@ export async function deleteObjectContents(
 // C shk.c:1185-1275 obfree().  A billed object is not freed: without a
 // merge target it stays as a used-up bill entry; with one, the sink-owned
 // billing branch reconciles the survivor's bill before deallocation.
-// C maybe_reset_pick and next_boulder have no modeled state today;
-// those clears are skipped rather than guessed.
 export async function deleteObject(
     object: GameObject | null | undefined, state: GameState = game,
     { mergeInto = null }: { mergeInto?: GameObject | null } = {},
@@ -94,6 +93,7 @@ export async function deleteObject(
     if (object.oclass === FOOD_CLASS)
         clearVictualReference(object, state);
     await deleteObjectContents(object, state);
+    maybeResetPick(object, state);
     unlinkObject(object, state);
     // C obj_stop_timers() runs cleanup even when the object stays on a bill.
     stopObjectTimers(object, state);

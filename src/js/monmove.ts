@@ -392,6 +392,7 @@ import {
     updateMonsterRegions,
 } from './regions.js';
 import { heroIsDeaf, syncBlindness } from './senses.js';
+import { makeBlinded } from './sight_change.js';
 import {
     applyMonsterStoningAttack,
     startHeroPetrificationFromMonster,
@@ -2388,6 +2389,7 @@ export async function commitPetPickup(monster: Monster, movement: PetInventoryAc
     if (!movement.pickupPending || !object) return;
     movement.pickupPending = false;
     remove_object(object, state);
+    newsym(monster.mx, monster.my);
     await addObjectToMonsterInventory(monster, object, state);
 }
 
@@ -6689,14 +6691,13 @@ export async function resumeDeferredHeroLegs(
 // make_blinded() precedes hitmu()'s shared knockback probes and contributes no
 // HP damage; keeping those phases together preserves the next attack/actor
 // boundary when the blindness line itself requires acknowledgement.
-export function resumeDeferredHeroBlindness(
+export async function resumeDeferredHeroBlindness(
     action: MonsterMovementAction,
     state: PlayingGameState,
     random: RandomBelow = rn2,
 ) {
     const attack = action?.movement?.heroAttackSequence?.current;
-    if (attack?.kind !== 'hero-attack' || !attack.deferredBlindEffect) return false;
-    let toggled = false;
+    if (attack?.kind !== 'hero-attack' || !attack.deferredBlindEffect) return;
     if (attack.blindApplicable) {
         const oldTurns = state?.u?.blindTurns ?? 0;
         // uhitm.c:mhitm_ad_blnd() passes the full declared damage to
@@ -6704,17 +6705,12 @@ export function resumeDeferredHeroBlindness(
         // hero is already blind.  The one-turn repeated-blindness behavior in
         // mhitu.c belongs to engulfing attacks, not ordinary raven contact.
         const increment = attack.blindIncrement ?? 0;
-        if (state?.u) state.u.blindTurns = oldTurns + increment;
-        toggled = !state.blind && oldTurns <= 0;
-        syncBlindness(state);
-        if (toggled) state.context.botl = true;
-        state.vision_full_recalc = 1;
+        await makeBlinded(oldTurns + increment, { state, talk: false });
     }
     recordRandom(random, action.calls, 3);
     recordRandom(random, action.calls, 6);
     attack.deferredBlindEffect = false;
     attack.blindResolved = true;
-    return toggled;
 }
 
 export async function completeHeroAttackSlot(
@@ -8857,6 +8853,7 @@ export async function runMonsterAction(
         monster.mstrategy = (monster.mstrategy ?? 0) & ~STRAT_WAITFORU;
     }
     if ((monster.mstrategy ?? 0) & STRAT_WAITMASK) {
+        if (heroIsHallucinating(state)) newsym(monster.mx, monster.my);
         return {
             monster,
             calls,
@@ -8874,6 +8871,7 @@ export async function runMonsterAction(
     // shared hider, eel, and Conflict phases above.  In particular, a
     // sleeping piercer still owns restrap()'s one-in-three probe.
     if (monster.mcanmove === 0 || (monster.mfrozen ?? 0) > 0) {
+        if (heroIsHallucinating(state)) newsym(monster.mx, monster.my);
         return {
             monster,
             calls,
@@ -8893,6 +8891,7 @@ export async function runMonsterAction(
     if (monster.msleeping) {
         const woke = await disturbSleepingMonster(monster, state, random, calls);
         if (!woke) {
+            if (heroIsHallucinating(state)) newsym(monster.mx, monster.my);
             return {
                 monster,
                 calls,

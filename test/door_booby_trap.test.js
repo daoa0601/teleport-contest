@@ -59,6 +59,8 @@ void test('successfully picking a trapped door lock detonates it', async () => {
     const messages = [];
     const door = trappedDoor(D_LOCKED, DOOR, messages);
     const tool = await knownObject(LOCK_PICK);
+    game.u.dx = 1;
+    game.u.dy = 0;
     game._occupation = { key: 'pick-lock', text: 'picking the lock', remaining: 51, usedtime: 0,
         door, x: 11, y: 10, tool, chance: 100 };
     await continueCountedCommand();
@@ -84,6 +86,8 @@ void test('picking a trapped lock refreshes sight before the next monster acts',
     vision_recalc(0);
     assert.equal(cansee(16, 10), false, 'The closed door must hide the sleeping gnome.');
     const tool = await knownObject(LOCK_PICK);
+    game.u.dx = 1;
+    game.u.dy = 0;
     game._occupation = { key: 'pick-lock', text: 'picking the lock', remaining: 51, usedtime: 0,
         door, x: 11, y: 10, tool, chance: 100 };
     const input = resetInputState();

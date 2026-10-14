@@ -59,7 +59,7 @@ import {
 } from './weight.js';
 import {
     A_CHA, A_CON, A_DEX, A_STR, A_WIS, G_GENOD, I_SPECIAL, In_endgame, M_AP_NOTHING,
-    STAIRS, STR18, STR19, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR,
+    STR18, STR19, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR,
     TT_LAVA, TT_PIT, TT_WEB, Upolyd,
     POLY_CONTROLLED, POLY_LOW_CTRL, POLY_MONSTER, POLY_NOFLAGS, POLY_REVERT,
     W_ACCESSORY, W_ARMOR, W_SADDLE,
@@ -435,11 +435,6 @@ async function dropCarriedObject(object: GameObject | null | undefined) {
     await dropInventoryObjectAtHero(object);
 }
 
-function heroSurfaceName() {
-    const location = game.level?.locations?.[game.u.ux]?.[game.u.uy];
-    return location?.typ === STAIRS ? 'stairs' : 'floor';
-}
-
 export interface PolymonOptions {
     sexChangeAllowed?: boolean;
     announceForm?: boolean;
@@ -641,6 +636,9 @@ export async function polymonHero(mnum: number, options: PolymonOptions = {}) {
     }
     await escapeTrapsAfterFormChange();
     await restartAmuletStrangulation();
+    game.context.botl = true;
+    game.vision_full_recalc = 1;
+    await see_monsters();
 
     // dropz() may already have reported the new body's carrying capacity
     // while dropping armor. Native encumber_msg() shares that cached level.
@@ -788,7 +786,7 @@ async function changeArmorForHeroForm(mnum: number) {
             );
         } else {
             await plineWithContinuation(
-                `Your helm falls to the ${heroSurfaceName()}!`,
+                `Your helm falls to the ${surfaceName(game.u.ux, game.u.uy)}!`,
             );
             await dropCarriedObject(object);
             if (game.program_state.gameover) return;
@@ -811,7 +809,7 @@ async function changeArmorForHeroForm(mnum: number) {
         }
         if ((object = worn('uarmh'))) {
             await plineWithContinuation(
-                `Your helm falls to the ${heroSurfaceName()}!`,
+                `Your helm falls to the ${surfaceName(game.u.ux, game.u.uy)}!`,
             );
             await dropCarriedObject(object);
             if (game.program_state.gameover) return;

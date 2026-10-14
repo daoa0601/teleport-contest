@@ -1,0 +1,24 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+import { MM_NOGRP, NO_MINVENT } from '../js/const.js';
+import { game } from '../js/gstate.js';
+import { resolveMonsterSelfExplosion } from '../js/monster_self_explosion.js';
+import { AD_BLND, AT_EXPL } from '../js/monster_attack_types.js';
+import { createMonsterAt } from './support/monsters.js';
+import { freshObjectRoom } from './support/object-room.js';
+
+void test('a light exploding away from the hero announces a nearby visible sleeper waking', async () => {
+    freshObjectRoom();
+    const sleeper = await createMonsterAt('goblin', 13, 10, MM_NOGRP | NO_MINVENT);
+    sleeper.msleeping = 1;
+    const light = await createMonsterAt('yellow light', 11, 10, MM_NOGRP | NO_MINVENT);
+    const messages: string[] = [];
+
+    await resolveMonsterSelfExplosion(light, [AT_EXPL, AD_BLND, 1, 6], {
+        foundHero: false, publish: async message => { messages.push(message); },
+    });
+
+    assert.equal(sleeper.msleeping, 0);
+    assert.match(messages.join('\n'), /The goblin wakes up\./);
+    assert.equal(game.level?.monsters.includes(light), false);
+});

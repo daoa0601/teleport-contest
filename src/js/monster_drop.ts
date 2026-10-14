@@ -13,7 +13,7 @@ import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import { inventoryItemDescription } from './invent.js';
 import { updateMonsterEquipment } from './monster_equipment.js';
 import { removeObjectFromMonsterInventory, unlinkMonsterObject } from './monster_inventory.js';
-import { monsterSentenceSubject } from './monster_sound.js';
+import { monsterName, possessiveName } from './monster_name.js';
 import { GOLD_PIECE } from './object_data.js';
 import { deleteObject } from './object_delete.js';
 import { observeDistantObjectForNaming } from './objnam.js';
@@ -54,7 +54,7 @@ export async function dropMonsterObject(monster: Monster, object: GameObject, st
         object.no_charge = true;
     }
     if (verbosely && cansee(x, y))
-        await publish(`${monsterSentenceSubject(monster)} drops ${name}.`);
+        await publish(`${monsterName(monster, { state, capitalized: true })} drops ${name}.`);
     const landed = await landFloorObject(object, x, y, {
         state, publish, random,
     });
@@ -83,8 +83,7 @@ export async function releaseMonsterInventory(monster: Monster, state: GameState
     const gold = monster.isgd && inventory().find(object => object.otyp === GOLD_PIECE);
     if (gold) {
         if (canSpotMonster(monster)) {
-            const subject = monsterSentenceSubject(monster);
-            const owner = subject.endsWith('s') ? `${subject}'` : `${subject}'s`;
+            const owner = possessiveName(monsterName(monster, { state, capitalized: true }));
             await publish(`${owner} gold ${canSeeMonster(monster)
                 ? 'vanishes' : 'seems to vanish'}.`);
         }

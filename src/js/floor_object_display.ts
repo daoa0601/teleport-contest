@@ -92,10 +92,11 @@ export async function showFloorPile(
         game._lastPlineKind = PLNMSG_ONE_ITEM_HERE;
         return await feelPetrifyingCorpse(first);
     }
-    // look_here() displays WIN_MESSAGE first; a corner NHW_MENU then clears
-    // that window, including seen text outside the menu's own rectangle.
+    // look_here() displays WIN_MESSAGE first. Unread prose is acknowledged
+    // and cleared; seen text stays beneath the corner window.
+    const unreadMessage = !!game._pending_message;
     await flushPendingTopline();
-    clearMessageWindow();
+    if (unreadMessage) clearMessageWindow();
     await flush_screen(1);
     const display = requireGameDisplay();
     const underlay = snapshotMenuUnderlay();

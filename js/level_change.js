@@ -1,3 +1,4 @@
+import { maybeResetPick } from './lock_context.js';
 // C do.c:goto_level(): departure, destination creation or restoration, and arrival.
 import { rewindEngravingsForSave, restoreEngravingPointers } from './engrave.js';
 import { monsterHasMapPosition } from './monster_location.js';
@@ -22,7 +23,8 @@ import { dungeonBuildsUp, level_difficulty, specialPrototypeAt } from './dungeon
 import { findNearbyMonsterPosition } from './teleport_rules.js';
 import { moveMonsterNextToHero, randomMonsterRelocation } from './teleport.js';
 import { placeHeroOnLevel } from './hero_location.js';
-import { MONSTER_FLAGS1 } from './monster_data.js';
+import { MONSTER_FLAGS1, MONSTER_NAME } from './monster_data.js';
+import { monsterDeathCount } from './monster_vitals.js';
 import { killGenocidedMonsters } from './mon.js';
 import { dismountHero, moveSteedWithHero } from './steed.js';
 import { clearHeroTrap } from './hero_traps.js';
@@ -38,7 +40,7 @@ import { fixShopDamage } from './shop_damage.js';
 import { displayPreparedQuestArrival, prepareQuestArrival, prepareMainQuestPortalCall, onQuestStart, okToQuest, } from './quest.js';
 import { fumaroles } from './monmove.js';
 import { moveElementalBubbles } from './elemental.js';
-import { CORR, ROOM, DISMOUNT_FELL, LR_UPTELE, LR_DOWNTELE, RLOC_NOMSG, MAGIC_PORTAL, In_endgame, Is_airlevel, Is_waterlevel, Is_rogue_level, UTOTYPE_DEFERRED, } from './const.js';
+import { CORR, ROOM, DISMOUNT_FELL, LR_UPTELE, LR_DOWNTELE, RLOC_NOMSG, MAGIC_PORTAL, In_endgame, Is_airlevel, Is_waterlevel, Is_rogue_level, Is_knox_level, UTOTYPE_DEFERRED, } from './const.js';
 import { resurrectWizard } from './wizard.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 // C do.c:schedule_goto(). The current command or monster finishes using
@@ -111,6 +113,7 @@ export async function gotoLevel(targetDepth, { arrival = 'random', ladder = fals
     }
     await currentLuaLifecycle().runCallbacks(game, 'level_leave');
     resetTrapSetting();
+    maybeResetPick(null);
     if (arrival === 'falling')
         await impactDrop(null, game.u.ux, game.u.uy, {
             destinationLevel: destinationDepth.dlevel, publish: plineWithContinuation,
@@ -287,6 +290,14 @@ export async function gotoLevel(targetDepth, { arrival = 'random', ladder = fals
             await plineWithContinuation('The odor of burnt flesh and decay pervades the air.');
             await plineWithContinuation('You hear groans and moans everywhere.');
         }
+        if (Is_knox_level(newDepth)
+            && (!cached || !monsterDeathCount(MONSTER_NAME.indexOf('Croesus')))) {
+            await plineWithContinuation('You have penetrated a high security area!');
+            await plineWithContinuation('An alarm sounds!');
+            for (const monster of game.level.monsters)
+                if (!monster.dead && monster.mhp > 0)
+                    monster.msleeping = 0;
+        }
         if (questPortalCall) {
             for (const line of questPortalCall)
                 await plineWithContinuation(line);
@@ -339,7 +350,6 @@ export async function gotoLevel(targetDepth, { arrival = 'random', ladder = fals
     await autopickupAtHero();
     if (game.program_state?.gameover)
         return true;
-    await bot();
     game.u.uz0 = { ...game.u.uz };
     return true;
 }

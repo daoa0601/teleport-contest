@@ -7,6 +7,7 @@ import { createHarmlessGasCloudSelection, runLevelRegions } from '../js/regions.
 import { initRng } from '../js/rng.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshPlayableRoom } from './support/playable-room.js';
+import { freshObjectRoom } from './support/object-room.js';
 function poisonCloud({ x = 10, y = 10, damage = 8, ttl = 3 } = {}) {
     const region = createHarmlessGasCloudSelection(game, [{ x, y }], { ttl });
     assert.ok(region);
@@ -21,6 +22,17 @@ function freshCloudRoom(hero = {}) {
     requirePlayingGame(game);
     initRng(8101n);
 }
+void test('an unseen nearby monster coughs without revealing its species', async () => {
+    freshObjectRoom();
+    const xan = await createMonsterAt('xan', 11, 10);
+    xan.minvis = true;
+    requireGameLevel().regions = [poisonCloud({ x: 11, y: 10 })];
+    const messages = [];
+    await runLevelRegions(game, {
+        publish: async (message) => { messages.push(message); },
+    });
+    assert.equal(messages[0], 'It coughs!');
+});
 void test('a poison cloud blinds and hurts a breathing hero', async () => {
     freshCloudRoom();
     requirePlayingGame(game);

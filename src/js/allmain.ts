@@ -2978,7 +2978,6 @@ async function presentMonsterAttackEffects(
                         && drainDismissal !== undefined) {
                         paging.pagerOwned = true;
                     }
-                    findArmorClass(game);
                 }
                 if (heroAttack.deferredLegEffect)
                     await resumeDeferredHeroLegs(action, game, { publish: publishEquipmentMessage });
@@ -3034,10 +3033,7 @@ async function presentMonsterAttackEffects(
                     if (game.program_state?.gameover) return { heroDied: true };
                 }
                 if (heroAttack.deferredBlindEffect) {
-                    const toggledBlindness = resumeDeferredHeroBlindness(
-                        action, game,
-                    );
-                    if (toggledBlindness) vision_recalc(0);
+                    await resumeDeferredHeroBlindness(action, game);
                 }
                 if (heroAttack.effectMessage) {
                     const effectDismissal = await plineWithContinuation(

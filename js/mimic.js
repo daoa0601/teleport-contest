@@ -72,7 +72,11 @@ export function isObjectOrFurnitureMimic(monster, state = game) {
 }
 export function isDoorMimic(monster, state = game) {
     return isObjectOrFurnitureMimic(monster, state)
-        && M_AP_TYPE(monster) === M_AP_FURNITURE
+        && hasDoorAppearance(monster);
+}
+// C is_door_mappear() tests only the disguise, regardless of perception.
+export function hasDoorAppearance(monster) {
+    return !!monster && M_AP_TYPE(monster) === M_AP_FURNITURE
         && monster.mappearance !== undefined && CLOSED_DOOR_APPEARANCES.has(monster.mappearance);
 }
 // lock.c checks the disguise itself, even when the hero senses the monster.
@@ -80,8 +84,7 @@ export async function stumbleOnDoorMimic(x, y, state = game) {
     if (!state.level || state.u.protectionFromShapeChangers || state.protectionFromShapeChangers)
         return false;
     const monster = monsterAtPosition(state.level, x, y);
-    if (!monster || M_AP_TYPE(monster) !== M_AP_FURNITURE
-        || monster.mappearance === undefined || !CLOSED_DOOR_APPEARANCES.has(monster.mappearance))
+    if (!hasDoorAppearance(monster))
         return false;
     await stumbleOntoMimic(monster, state);
     return true;

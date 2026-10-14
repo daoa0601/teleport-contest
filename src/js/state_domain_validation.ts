@@ -58,10 +58,6 @@ export function validSavedGameContext(
         travel1: optional(boolean),
         warnlevel: optional(integer),
         warntype: optional(validWarningContext),
-        xlock: optional(nullable((entry): entry is NonNullable<GameContext['xlock']> =>
-            closedFieldsMatch<NonNullable<GameContext['xlock']>>(entry, {
-                box: nullable(entities.object),
-            }))),
         zap_oseen: optional(boolean),
         achieveo: optional(validAchievementObjects),
         victual: optional(nullable((entry): entry is FoodMeal | NonfoodMeal =>

@@ -14,7 +14,7 @@ import { gotoLevel } from '../js/level_change.js';
 import { resetInputState } from '../js/input.js';
 import { beginObjectBurn } from '../js/light.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { AMULET_OF_LIFE_SAVING, AMULET_OF_YENDOR, FOOD_RATION, LEASH, LEATHER_GLOVES, OIL_LAMP } from '../js/object_data.js';
+import { AMULET_OF_LIFE_SAVING, AMULET_OF_YENDOR, FOOD_RATION, LEASH, LEATHER_GLOVES, OIL_LAMP, SPLINT_MAIL } from '../js/object_data.js';
 import { OBJECT_TIMER_KIND, scheduleObjectTimer } from '../js/object_timers.js';
 import { addInventoryItem } from '../js/u_init.js';
 import { restoreGame, saveGame } from '../js/save.js';
@@ -26,10 +26,33 @@ import { createMonsterAt } from './support/monsters.js';
 import { addInventoryObject, floorObject, knownObject, untimedCorpse } from './support/game-objects.js';
 import { installPolymorphedHero, installPunishedHero } from './support/hero-state.js';
 import { installPagerInput } from './support/pager-input.js';
-import { requireScreenCell } from './support/screen.js';
+import { requireScreenCell, requireScreenRow } from './support/screen.js';
+import { nearCapacity } from '../js/weight.js';
 import { createDungeon, createSpecialLevel } from './support/topology.js';
 import { answerPrompts } from './support/input-boundaries.js';
 import { docrt, flush_screen } from '../js/display.js';
+
+void test('arrival pickup leaves load status for the next turn update', async () => {
+    const { source, destination } = freshConnectedLevels();
+    requirePlayingGame(game);
+    game.flags.pickup = true;
+    game.flags.pickup_types = '';
+    game.level = destination;
+    await floorObject(SPLINT_MAIL, 13, 10, { quan: 3 });
+    game.level = source;
+    destination.downTeleportRegion = { lx: 13, ly: 10, hx: 13, hy: 10 };
+    resetInputState().display = { async readKey() {
+        const line = requireScreenRow(0).map(cell => cell.ch).join('');
+        return (line.includes('[yn') ? 'y' : ' ').charCodeAt(0);
+    } };
+
+    await gotoLevel({ dlevel: 2 });
+    await flush_screen(1);
+
+    assert.ok(game.inventory.some(object => object.otyp === SPLINT_MAIL));
+    assert.ok(nearCapacity(game) > 0);
+    assert.doesNotMatch(requireScreenRow(23).map(cell => cell.ch).join(''), /Burdened|Stressed|Strained/);
+});
 
 void test('wizard level teleport places the hero before acknowledging the Amulet grant', async () => {
     const { destination } = freshConnectedLevels();

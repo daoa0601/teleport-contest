@@ -35,6 +35,21 @@ async function createArtifact(name: string) {
     return object;
 }
 
+void test('an unseen monster dropping a visible object does not reveal its species', async () => {
+    freshObjectRoom();
+    const kitten = await createMonsterAt('kitten', 11, 10, NO_MINVENT);
+    kitten.minvis = true;
+    const gold = await addObjectToMonsterInventory(kitten, await knownObject(GOLD_PIECE));
+    assert.ok(gold);
+    const messages: string[] = [];
+
+    await dropMonsterObject(kitten, gold, game, {
+        verbosely: true, publish: async message => { messages.push(message); },
+    });
+
+    assert.equal(messages[0], 'It drops a gold piece.');
+});
+
 void test('postmortem inventory release drops every remaining object', async () => {
     const level = freshObjectRoom();
     requirePlayingGame(game);

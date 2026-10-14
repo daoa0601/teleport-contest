@@ -2665,7 +2665,6 @@ async function presentMonsterAttackEffects(action, game, { random = rn2, rollDic
                         && drainDismissal !== undefined) {
                         paging.pagerOwned = true;
                     }
-                    findArmorClass(game);
                 }
                 if (heroAttack.deferredLegEffect)
                     await resumeDeferredHeroLegs(action, game, { publish: publishEquipmentMessage });
@@ -2717,9 +2716,7 @@ async function presentMonsterAttackEffects(action, game, { random = rn2, rollDic
                         return { heroDied: true };
                 }
                 if (heroAttack.deferredBlindEffect) {
-                    const toggledBlindness = resumeDeferredHeroBlindness(action, game);
-                    if (toggledBlindness)
-                        vision_recalc(0);
+                    await resumeDeferredHeroBlindness(action, game);
                 }
                 if (heroAttack.effectMessage) {
                     const effectDismissal = await plineWithContinuation(heroAttack.effectMessage);

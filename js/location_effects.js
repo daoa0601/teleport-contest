@@ -1,5 +1,5 @@
 // C hack.c:spoteffects() and teleport.c:teleds().
-import { bot, redrawMap, newsym, plineWithContinuation } from './display.js';
+import { bot, plineWithContinuation } from './display.js';
 import { maybeSmudgeEngravings } from './engrave.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { MAX_TYPE, IS_SINK, I_SPECIAL, TIMEOUT, is_pit } from './const.js';
@@ -12,13 +12,8 @@ import { triggerHeroTrapAt } from './hero_traps.js';
 import { gotoLevel } from './level_change.js';
 import { autopickupAtHero } from './pickup.js';
 import { checkSpecialRoom } from './shk.js';
-import { vision_recalc, vision_reset } from './vision.js';
 import { announceInvocationSquare } from './invocation.js';
 export async function finishTeleportArrival(movement, { announceTeleport = true } = {}) {
-    newsym(movement.oldx, movement.oldy);
-    vision_reset();
-    vision_recalc(0);
-    await redrawMap();
     await bot();
     if (announceTeleport && game.flags.verbose !== false) {
         const place = movement.oldx === movement.x && movement.oldy === movement.y

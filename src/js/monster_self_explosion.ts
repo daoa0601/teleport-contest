@@ -18,7 +18,7 @@ import { AD_BLND, AD_COLD, AD_ELEC, AD_FIRE, AD_HALU, AD_STUN } from './monster_
 import { MONSTER_ATTACKS, MONSTER_LEVEL, MONSTER_NAME, monsterTypeName } from './monster_data.js';
 import { finishEnvironmentalMonsterDeath } from './monster_death.js';
 import { monsterName, possessiveName } from './monster_name.js';
-import { wakeMonstersNear } from './monster_wake.js';
+import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { applyHeroGolemEffects } from './polyself.js';
 import { d, rnd } from './rng.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
@@ -124,6 +124,6 @@ export async function resolveMonsterSelfExplosion(monster: Monster, attack: Mons
         const death = await removeExploder(monster, state, publish);
         if (death.heroDied) return { mask: M_ATTK_AGR_DIED, heroDied: true };
     }
-    wakeMonstersNear(monster.mx, monster.my, 49, state);
+    await wakeMonstersNearWithMessages(monster.mx, monster.my, 49, state, publish);
     return { mask: monster.mhp > 0 ? M_ATTK_MISS : M_ATTK_AGR_DIED, heroDied: false };
 }

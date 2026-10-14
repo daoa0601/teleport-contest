@@ -100,6 +100,23 @@ void test('severe poison can trigger life saving through low human health while 
     assert.ok(game.u.mh > 0);
     assert.equal(game.inventory.includes(amulet), false);
 });
+void test('deadly poison proceeds from its warning to the debug death question', async () => {
+    freshObjectRoom({ flags: { debug: true }, hero: { uhp: 5 } });
+    requirePlayingGame(game);
+    const messages = [];
+    resetInputState().display = { async readKey() {
+            const line = requireScreenRow(0).map(cell => cell.ch).join('').trimEnd();
+            messages.push(line);
+            return (line.startsWith('Die?') ? 'n' : ' ').charCodeAt(0);
+        } };
+    await poisonHero({
+        reason: 'poison', killer: 'quasit', attribute: A_STR,
+        random: () => 0, rollDice: () => 4,
+    });
+    assert.ok(messages.some(line => line.startsWith('Die?')));
+    assert.ok(messages.every(line => !line.includes('You die...')));
+    assert.ok(game.u.uhp > 0);
+});
 void test('poison reports a newly burdensome load before the attribute-loss message', async () => {
     freshObjectRoom();
     requirePlayingGame(game);

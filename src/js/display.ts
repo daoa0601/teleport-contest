@@ -24,12 +24,12 @@ import { hitpointBar } from './status_hitpoint_bar.js';
 import { criticallyLowHp } from './prayer_trouble.js';
 import { cansee, couldsee, set_seenv, vision_recalc } from './vision.js';
 import {
-    A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, BC_BALL, BC_CHAIN,
+    A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, ACCESSIBLE, BC_BALL, BC_CHAIN,
     COLNO, ROWNO, STONE, ROOM, CORR, SCORR, SDOOR, DOOR, STAIRS, FOUNTAIN, THRONE, SINK, GRAVE, ALTAR, ICE,
     HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER,
     CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL,
     TREE, IRONBARS, POOL, MOAT, WATER, LAVAPOOL, LAVAWALL, AIR, CLOUD,
-    IS_POOL, IS_OBSTRUCTED, IS_ROOM, IS_WALL, LADDER, LA_DOWN, DBWALL, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN,
+    IS_POOL, IS_LAVA, IS_OBSTRUCTED, IS_ROOM, IS_WALL, LADDER, LA_DOWN, DBWALL, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN,
     D_NODOOR, D_ISOPEN, D_CLOSED, D_LOCKED, D_BROKEN,
     SV0, SV1, SV2, SV3, SV4, SV5, SV6, SV7,
     WM_X_TL, WM_X_TR, WM_X_BL, WM_X_BR, WM_X_TLBR, WM_X_BLTR,
@@ -806,7 +806,8 @@ function terrainGlyphAppearance(loc: MapLocation, x: number, y: number): GlyphAp
     const rogue = Is_rogue_level(game.u?.uz);
     const dec = !rogue && /^DECgraphics$/i.test(game.symset || '');
     // C selects wall glyphs by branch, independently of puzzle completion.
-    // dat/symbols overrides the gray base color with blue for DEC Sokoban walls.
+    // dat/symbols overrides gray with blue for DEC Sokoban walls and yellow
+    // for DEC Fort Ludios walls.
     const inMines = game.dungeons?.[game.u?.uz?.dnum ?? -1]?.dname
         === 'The Gnomish Mines';
     const inHell = !!game.dungeons?.[game.u?.uz?.dnum ?? -1]?.flags?.hellish;
@@ -814,7 +815,8 @@ function terrainGlyphAppearance(loc: MapLocation, x: number, y: number): GlyphAp
         : In_sokoban(game.u?.uz)
         ? (dec ? CLR_BLUE : NO_COLOR)
         : inMines ? CLR_BROWN
-            : inHell ? CLR_RED : NO_COLOR;
+            : inHell ? CLR_RED
+                : dec && Is_knox_level(game.u.uz) ? CLR_YELLOW : NO_COLOR;
     switch (typ) {
     case STONE:     return { ch: ' ', color: NO_COLOR, dec: false };
     case SCORR:     return { ch: ' ', color: NO_COLOR, dec: false };
@@ -1739,7 +1741,8 @@ export function newsym(x: number, y: number) {
 
     const monster = monsterAtMapCell(x, y);
     const region = physicallyVisible ? visibleMapRegionAt(x, y) : null;
-    if (region && !monsterOverridesMapRegion(monster, x, y)) {
+    if (region && (ACCESSIBLE(loc.typ) || IS_POOL(loc.typ) || IS_LAVA(loc.typ))
+        && !monsterOverridesMapRegion(monster, x, y)) {
         // region.c:show_region() uses the gas-cloud cmap glyph.  Visible gas
         // overlays ordinary distant monsters but not sensed/warned or
         // adjacent otherwise-visible actors.
@@ -2278,7 +2281,7 @@ function statusLine2Fields(capacity: number): StatusLine2Fields | null {
     const dungeonName = game.dungeons?.[u.uz?.dnum ?? 0]?.dname;
     const endgameLocation = endgameLevelName(u.uz)
         .replace(/^Plane of /, '');
-    const location = Is_knox_level(u.uz) ? dungeonName ?? 'Fort Ludios'
+    const location = Is_knox_level(u.uz) ? dungeonName ?? ''
         : In_quest(u.uz) ? `Home ${u.uz?.dlevel ?? 1}`
             : In_endgame(u.uz) ? endgameLocation
             : `${game._tutorialActive ? 'Tutorial' : 'Dlvl'}:${dungeonDepth(u.uz)}`;
@@ -2514,6 +2517,18 @@ export function clearMessageWindow(coveredRows?: number) {
 // ── bot ──
 export async function bot() {
     refreshStatusLines();
+}
+
+// C botl.c:status_initialize(REASSESS_ONLY) resends every enabled field,
+// replacing tty's shortened level label and empty capacity separator.
+export function reassessStatusFields(): void {
+    const display = game.nhDisplay;
+    if (display) {
+        display.statusLine2Fields = null;
+        display.statusCapacityBlank = false;
+        display.statusLevelPrefixChanged = false;
+    }
+    game.context.botl = true;
 }
 
 function refreshStatusLines(): void {

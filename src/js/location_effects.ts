@@ -1,6 +1,6 @@
 // C hack.c:spoteffects() and teleport.c:teleds().
 
-import { bot, redrawMap, newsym, plineWithContinuation } from './display.js';
+import { bot, plineWithContinuation } from './display.js';
 import { maybeSmudgeEngravings } from './engrave.js';
 import { game, requirePlayingGame } from './gstate.js';
 import type { HeroTeleportMovement } from './teleport.js';
@@ -17,7 +17,6 @@ import { triggerHeroTrapAt } from './hero_traps.js';
 import { gotoLevel } from './level_change.js';
 import { autopickupAtHero } from './pickup.js';
 import { checkSpecialRoom } from './shk.js';
-import { vision_recalc, vision_reset } from './vision.js';
 import { announceInvocationSquare } from './invocation.js';
 
 export interface SpotEffectResult {
@@ -50,10 +49,6 @@ interface ActiveSpot extends Position {
 export async function finishTeleportArrival(
     movement: HeroTeleportMovement, { announceTeleport = true } = {},
 ): Promise<SpotEffectResult> {
-    newsym(movement.oldx, movement.oldy);
-    vision_reset();
-    vision_recalc(0);
-    await redrawMap();
     await bot();
     if (announceTeleport && game.flags.verbose !== false) {
         const place = movement.oldx === movement.x && movement.oldy === movement.y

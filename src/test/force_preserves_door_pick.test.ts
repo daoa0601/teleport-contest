@@ -1,0 +1,41 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+import { continueCountedCommand, rhack } from '../js/cmd.js';
+import { DOOR, D_LOCKED } from '../js/const.js';
+import { flushPendingTopline } from '../js/display.js';
+import { game } from '../js/gstate.js';
+import { pushKeys, resetInputState } from '../js/input.js';
+import { CLUB, CREDIT_CARD } from '../js/object_data.js';
+import { stopHeroOccupation } from '../js/occupation.js';
+import { initRng } from '../js/rng.js';
+import { addInventoryObject } from './support/game-objects.js';
+import { answerPrompts } from './support/input-boundaries.js';
+import { freshObjectRoom } from './support/object-room.js';
+
+void test('forcing with no floor box preserves an interrupted door lock attempt', async () => {
+    const level = freshObjectRoom({ hero: { acurr: { a: [18, 18, 18, 3, 18, 18] } } });
+    const door = level.requireAt(11, 10);
+    door.typ = DOOR;
+    door.doormask = D_LOCKED;
+    await addInventoryObject(CREDIT_CARD, { invlet: 'a' });
+    game.uwep = game.u.uwep = await addInventoryObject(CLUB, { invlet: 'b' });
+    const input = resetInputState();
+    pushKeys('al');
+    await answerPrompts(rhack('a'.charCodeAt(0)), input, [{ prompt: /Unlock it\?/, keys: 'y' }]);
+    initRng(1n);
+    await continueCountedCommand();
+    await stopHeroOccupation();
+    await answerPrompts(flushPendingTopline(), input, [{ prompt: /--More--/, keys: ' ' }]);
+
+    pushKeys('force\n');
+    await rhack('#'.charCodeAt(0));
+    assert.equal(game.context.move, 1);
+    assert.equal(game._pending_message, 'You decide not to force the issue.');
+    await answerPrompts(flushPendingTopline(), input, [{ prompt: /--More--/, keys: ' ' }]);
+    pushKeys('a');
+    await answerPrompts(rhack('a'.charCodeAt(0)), input, []);
+
+    assert.equal(game._occupation?.key, 'pick-lock');
+    assert.equal(game._pending_message, 'You resume your attempt at picking the lock.');
+    assert.equal(door.doormask, D_LOCKED);
+});

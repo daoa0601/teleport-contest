@@ -1,5 +1,6 @@
 // Native data lookup. C pager.c:checkfile(), strutil.c:pmatch().
 import { ENCYCLOPEDIA_ENTRIES } from './encyclopedia_data.js';
+import { BUFSZ } from './const.js';
 import type { EncyclopediaEntry } from './encyclopedia_data.js';
 import type { GameState } from './game_state.js';
 import { game } from './gstate.js';
@@ -8,6 +9,11 @@ import { makeSingular } from './object_grammar.js';
 
 export function encyclopediaEntries(name: string, state: GameState = game): readonly EncyclopediaEntry[] {
     return encyclopediaMatches(name, state).map(match => match.entry);
+}
+
+// checkfile() copies the original text after "called", including conditions.
+export function encyclopediaSupplementalName(name: string, state: GameState = game): string {
+    return lookupNames(name, state).supplementalName;
 }
 
 export function encyclopediaMatches(name: string, state: GameState = game): readonly {
@@ -49,12 +55,15 @@ function lookupNames(name: string, state: GameState) {
     const named = base.indexOf(' named ');
     const called = base.indexOf(' called ');
     let alternate: string | null = null;
+    let supplementalName = '';
     if (named >= 0) {
         alternate = base.slice(named + 7);
         base = base.slice(0, called >= 0 && called < named ? called : named);
     } else if (called >= 0) {
         alternate = base.slice(called + 8);
         base = base.slice(0, called);
+        const originalCalled = name.toLowerCase().indexOf(' called ');
+        if (originalCalled >= 0) supplementalName = name.slice(originalCalled + 8, originalCalled + 8 + BUFSZ - 1);
     } else {
         base = base.split(', ', 1)[0] ?? '';
     }
@@ -68,7 +77,7 @@ function lookupNames(name: string, state: GameState) {
         if (baseOffset <= alternate.length) base = alternate.slice(baseOffset);
     }
     alternate ??= makeSingular(base);
-    return { base, alternate };
+    return { base, alternate, supplementalName };
 }
 
 function entryMatches(entry: EncyclopediaEntry, name: string): boolean {

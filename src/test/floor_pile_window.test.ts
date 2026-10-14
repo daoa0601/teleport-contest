@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { flush_screen, pline } from '../js/display.js';
+import { flush_screen, pline, plineWithContinuation } from '../js/display.js';
 import { showFloorPile } from '../js/floor_object_display.js';
 import { requireGameDisplay, game } from '../js/gstate.js';
 import { nhgetch, resetInputState } from '../js/input.js';
@@ -14,7 +14,7 @@ function displayedRow(row: number) {
     return cells.map(cell => cell.ch).join('');
 }
 
-void test('a floor-pile corner window clears a seen message across the entire top row', async () => {
+void test('a floor-pile corner window preserves seen prose to its left', async () => {
     freshObjectRoom();
     const apple = await floorObject(APPLE, 10, 10);
     const ration = await floorObject(FOOD_RATION, 10, 10);
@@ -30,9 +30,8 @@ void test('a floor-pile corner window clears a seen message across the entire to
     input.feed(' ');
     await listing;
 
-    assert.match(title, /^ +Things that are here:/);
-    assert.doesNotMatch(title, /jackal|barking/);
-    assert.doesNotMatch(displayedRow(0), /jackal|barking/);
+    assert.match(title, /^You hear a jackal barking/);
+    assert.match(title, /Things that are here:/);
     assert.equal(apple.where, 'floor');
     assert.equal(ration.where, 'floor');
 });
@@ -58,15 +57,13 @@ void test('a floor-pile window acknowledges an unread message before clearing it
     assert.doesNotMatch(title, /jackal|barking/);
 });
 
-void test('a floor-pile corner window restores map rows covered by a seen wrapped message', async () => {
+void test('a floor-pile window follows paged wrapped prose without leaving text on the map', async () => {
     freshObjectRoom();
     const apple = await floorObject(APPLE, 10, 10);
     const ration = await floorObject(FOOD_RATION, 10, 10);
     const input = resetInputState();
-    await pline('You hear a jackal barking in the distant corridor, and another animal answering from beyond the closed door.');
-    await flush_screen(1);
-    input.feed('x');
-    await nhgetch();
+    input.feed(' ');
+    await plineWithContinuation('You hear a jackal barking in the distant corridor, and another animal answering from beyond the closed door.');
 
     const listing = showFloorPile([apple, ration]);
     await input.waitUntilBlocked();

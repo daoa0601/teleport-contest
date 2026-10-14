@@ -184,6 +184,7 @@ export function restoreGame(name, storage = game.storage) {
         game._inDoAgain = false;
         game._movementAttempt = null;
         game._occupation = null;
+        game._lockAttempt = null;
         game._runState = null;
         game._heroTimePending = false;
         game._kickedLoc = null;

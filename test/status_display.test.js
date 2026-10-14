@@ -5,6 +5,15 @@ import assert from 'node:assert/strict';
 import { flush_screen } from '../js/display.js';
 import { game } from '../js/gstate.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { createDungeon, createSpecialLevel } from './support/topology.js';
+void test('Fort Ludios status identifies the branch instead of a numbered dungeon level', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    game.dungeons = [createDungeon({ dname: 'Fort Ludios' })];
+    game.knox_level = createSpecialLevel(game.u.uz);
+    await flush_screen(1);
+    assert.match(statusText(), /^Fort Ludios \$/);
+});
 function statusText() {
     const row = requireScreenRow(23);
     assert.ok(row);

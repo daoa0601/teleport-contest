@@ -29,10 +29,10 @@ export async function wizSmell(describe: PositionDescription): Promise<void> {
             if (helpKey === undefined) throw new Error('Smell targeting requires a getpos.help binding');
             await plineWithContinuation(`(For instructions type a '${visibleCommandKey(helpKey)}')`);
         }
+        if (tipShown) await plineWithContinuation('Move cursor to a monster:');
         const target = await selectMapPosition({
             start: cursor, goal: 'a monster', describe,
-            prompt: tipShown ? 'Move cursor to a monster:'
-                : game._pending_message,
+            prompt: game._pending_message,
         });
         if (!target) return;
         cursor = target;

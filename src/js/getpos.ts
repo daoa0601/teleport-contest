@@ -3,7 +3,7 @@
 
 import {
     COLNO, D_ISOPEN, DOOR, GFILTER_NONE, GFILTER_VIEW, HI_ZAP, LOOK_ONCE, LOOK_QUICK,
-    LOOK_TRADITIONAL, LOOK_VERBOSE, NHW_MENU, PICK_ONE, ROWNO, VIBRATING_SQUARE, WEB, IS_WALL, TREE,
+    LOOK_TRADITIONAL, LOOK_VERBOSE, NHW_MENU, PICK_ONE, ROWNO, SCORR, STONE, VIBRATING_SQUARE, WEB, IS_WALL, TREE,
 } from './const.js';
 import {
     bot, clearMessageWindow, redrawMap, flush_screen, glyphAt, lastDirtyMapCursor,
@@ -391,7 +391,7 @@ function getposArea(state: GameState): ReadonlySet<number> {
     const classify = (tx: number, ty: number): number | null => {
         const location = state.level?.at(tx, ty);
         if (!location?.seenv || tx < 1 || tx >= COLNO || ty < 0 || ty >= ROWNO) return null;
-        if (IS_WALL(location.typ) || location.typ === TREE) return 2;
+        if (location.typ === STONE || location.typ === SCORR || IS_WALL(location.typ) || location.typ === TREE) return 2;
         const symbol = getposGlyphSymbol(terrain_glyph(location, tx, ty).glyph);
         if (symbol === null) return 0;
         if (symbol >= CmapSymbol.room && symbol <= CmapSymbol.darkroom
@@ -508,6 +508,9 @@ export async function selectMapPosition({
     const movePrompt = `Move cursor to ${goal}:`;
     let message = prompt;
     let firstPaint = true;
+    // Native msg_given clears prompts at exit, but leaves automatic
+    // descriptions visible after the player has read them.
+    let clearMessageOnExit = true;
     // garr[GLOC_VALID]/gidx and the hilite state live inside C getpos();
     // getpos_sethilite(NULL, NULL) resets them at its exit.
     const validity: { cycle: LocationCycle | null } = { cycle: null };
@@ -554,6 +557,7 @@ export async function selectMapPosition({
             if (queued && queued.kind !== 'key') return null;
             let key = queued ? queued.key : (await readchar('position')) & 255;
             if (!queued && game.iflags.remember_getpos) rememberCommandKey(key);
+            if (autoDescription()) clearMessageOnExit = false;
             let fast = false;
             if (key === game.commandBindings.keyForCommand('run')
                 || key === game.commandBindings.keyForCommand('rush')) {
@@ -562,7 +566,7 @@ export async function selectMapPosition({
             }
             const ch = String.fromCharCode(key);
             if (key === 27) {
-                clearMessageWindow();
+                clearMessageOnExit = true;
                 return null;
             }
             const pickType = mapPositionPickType(key);
@@ -606,6 +610,7 @@ export async function selectMapPosition({
             }
             if (!force && [' ', '\n', '\r'].includes(ch)) {
                 await pline('Done.');
+                clearMessageOnExit = false;
                 return null;
             }
             if (ch === ' ') {
@@ -619,6 +624,7 @@ export async function selectMapPosition({
             }
             if (key === game.commandBindings.specialKey('getpos.autodescribe')) {
                 game.iflags.autodescribe = !autoDescription();
+                clearMessageOnExit = true;
                 message = `Automatic description ${game.flags.verbose ? 'of features under cursor ' : ''}is ${autoDescription() ? 'on' : 'off'}.`;
                 if (!autoDescription()) {
                     await pline(message);
@@ -628,6 +634,7 @@ export async function selectMapPosition({
                 continue;
             }
             if (key === game.commandBindings.specialKey('getpos.filter')) {
+                clearMessageOnExit = true;
                 const previous = game.iflags.getloc_filter ?? 0;
                 game.iflags.getloc_filter = previous === 0 ? 1 : previous === 1 ? 2 : 0;
                 targetCycles.clear();
@@ -637,11 +644,13 @@ export async function selectMapPosition({
                 continue;
             }
             if (key === game.commandBindings.specialKey('getpos.menu')) {
+                clearMessageOnExit = true;
                 game.iflags.getloc_usemenu = !game.iflags.getloc_usemenu;
                 message = `${game.iflags.getloc_usemenu ? 'Using' : 'Not using'} a menu to show possible targets${game.iflags.getloc_usemenu ? " for 'm|M', 'o|O', 'd|D', and 'x|X'" : ''}.`;
                 continue;
             }
             if (key === game.commandBindings.specialKey('getpos.moveskip')) {
+                clearMessageOnExit = true;
                 game.iflags.getloc_moveskip = !game.iflags.getloc_moveskip;
                 message = `${game.iflags.getloc_moveskip ? 'S' : 'Not s'}kipping over similar terrain when fastmoving the cursor.`;
                 continue;
@@ -696,17 +705,25 @@ export async function selectMapPosition({
             if (feature) {
                 cursor.x = feature.x;
                 cursor.y = feature.y;
-                message = await movementMessage();
+                if (clearMessageOnExit) {
+                    clearMessageWindow();
+                    message = '';
+                }
+                clearMessageOnExit = false;
+                if (autoDescription()) message = await movementMessage();
                 continue;
             }
             message = getposFeatureMissMessage(ch);
+            clearMessageOnExit = true;
             if (!force && !isGetposFeatureSymbol(ch, game.symset)) {
                 await pline(message.replace(/\(use .*\)/, '(aborted)'));
                 await plineWithContinuation('Done.');
+                clearMessageOnExit = false;
                 return null;
             }
         }
     } finally {
+        if (clearMessageOnExit) clearMessageWindow();
         const hero = game.u;
         if (savedDirection.dx === undefined) delete hero.dx;
         else hero.dx = savedDirection.dx;

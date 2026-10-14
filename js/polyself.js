@@ -31,7 +31,7 @@ import { deleteObject } from './object_delete.js';
 import { dragonFormForArmor, findArmorClass, removeHeroArmor } from './armor.js';
 import { endObjectBurn } from './light.js';
 import { encumbranceLabel, encumbranceMessage, nearCapacity, } from './weight.js';
-import { A_CHA, A_CON, A_DEX, A_STR, A_WIS, G_GENOD, I_SPECIAL, In_endgame, M_AP_NOTHING, STAIRS, STR18, STR19, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, Upolyd, POLY_CONTROLLED, POLY_LOW_CTRL, POLY_MONSTER, POLY_NOFLAGS, POLY_REVERT, W_ACCESSORY, W_ARMOR, W_SADDLE, } from './const.js';
+import { A_CHA, A_CON, A_DEX, A_STR, A_WIS, G_GENOD, I_SPECIAL, In_endgame, M_AP_NOTHING, STR18, STR19, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, Upolyd, POLY_CONTROLLED, POLY_LOW_CTRL, POLY_MONSTER, POLY_NOFLAGS, POLY_REVERT, W_ACCESSORY, W_ARMOR, W_SADDLE, } from './const.js';
 import { exerciseAttribute } from './attrib.js';
 import { heroIsBlind, setHeroBlindnessTurns, syncBlindness } from './senses.js';
 import { nameToMonster, nameToMonsterClass } from './mondata.js';
@@ -354,10 +354,6 @@ async function dropCarriedObject(object) {
         return;
     await dropInventoryObjectAtHero(object);
 }
-function heroSurfaceName() {
-    const location = game.level?.locations?.[game.u.ux]?.[game.u.uy];
-    return location?.typ === STAIRS ? 'stairs' : 'floor';
-}
 async function beginMonsterForm(mnum, { sexChangeAllowed = false, announceForm = true, } = {}) {
     requirePlayingGame(game);
     const u = game.u;
@@ -556,6 +552,9 @@ export async function polymonHero(mnum, options = {}) {
     }
     await escapeTrapsAfterFormChange();
     await restartAmuletStrangulation();
+    game.context.botl = true;
+    game.vision_full_recalc = 1;
+    await see_monsters();
     // dropz() may already have reported the new body's carrying capacity
     // while dropping armor. Native encumber_msg() shares that cached level.
     await reportHeroEncumbrance(game);
@@ -704,7 +703,7 @@ async function changeArmorForHeroForm(mnum) {
             await plineWithContinuation(`Your ${hornCount === 1 ? 'horn pierces' : 'horns pierce'} through your ${object.name}.`);
         }
         else {
-            await plineWithContinuation(`Your helm falls to the ${heroSurfaceName()}!`);
+            await plineWithContinuation(`Your helm falls to the ${surfaceName(game.u.ux, game.u.uy)}!`);
             await dropCarriedObject(object);
             if (game.program_state.gameover)
                 return;
@@ -727,7 +726,7 @@ async function changeArmorForHeroForm(mnum) {
                 return;
         }
         if ((object = worn('uarmh'))) {
-            await plineWithContinuation(`Your helm falls to the ${heroSurfaceName()}!`);
+            await plineWithContinuation(`Your helm falls to the ${surfaceName(game.u.ux, game.u.uy)}!`);
             await dropCarriedObject(object);
             if (game.program_state.gameover)
                 return;

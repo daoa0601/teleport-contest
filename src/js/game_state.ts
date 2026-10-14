@@ -16,7 +16,7 @@ import type { StorageBackend } from './storage.js';
 import type { Isaac64Context } from './isaac64.js';
 import type { RngSeed } from './rng.js';
 import type { CannedCommand, DelayedArmorAction, MovementAttempt, RepeatCommandEntry, RunState } from './command_types.js';
-import type { FoodContext, HeroOccupation, TrapSetting } from './occupation_types.js';
+import type { FoodContext, HeroOccupation, TrapSetting, PickLockOccupation, ForceLockOccupation } from './occupation_types.js';
 import type { TakeoffContext } from './takeoff_state.js';
 import type { Artifact } from './artifacts.js';
 import type { LuaVariables } from './lua/runtime.js';
@@ -99,7 +99,6 @@ export interface GameContext extends FoodContext {
     travel1?: boolean;
     warnlevel?: number;
     warntype?: { obj?: number; polyd: number; speciesidx: number };
-    xlock?: { box: GameObject | null } | null;
     zap_oseen?: boolean;
     achieveo?: {
         mines_prize_oid?: number;
@@ -315,6 +314,7 @@ export interface GameState {
 
     // Resumed commands retain actual entities, not detached copies.
     _occupation?: HeroOccupation | null;
+    _lockAttempt?: PickLockOccupation | ForceLockOccupation | null;
     _trapSetting?: TrapSetting | null;
     _delayedAction?: DelayedArmorAction | null;
     _runState?: RunState | null;

@@ -11,7 +11,8 @@ import { depth } from './hacklib.js';
 import { levelAtDepth, insideWizardTower, levelIsWizardTower } from './dungeon.js';
 import { propertyIsActive } from './properties.js';
 import { finishTeleportArrival } from './location_effects.js';
-import { canSeeMonster, canSenseMonster, canSpotMonster, docrt, newsym, plineWithContinuation } from './display.js';
+import { canSeeMonster, canSenseMonster, canSpotMonster, docrt, newsym, plineWithContinuation, see_monsters } from './display.js';
+import { vision_recalc } from './vision.js';
 import { leashAttachedToMonster, releaseMonsterLeash, } from './monster_leash.js';
 import { rn2, rnd } from './rng.js';
 import { GP_CHECKSCARY, A_STR, COLNO, ROWNO, VAULT, VIBRATING_SQUARE, M_AP_NOTHING, MON_FLOOR, MON_OFFMAP, RLOC_MSG, RLOC_NOMSG, RLOC_NONE, RLOC_ERR, STRAT_APPEARMSG, BOLT_LIM, TT_BURIEDBALL, In_endgame, MIGR_PORTAL, Upolyd, ZAP_POS, is_hole, is_pit, isok, } from './const.js';
@@ -913,6 +914,10 @@ export async function moveHeroByTeleport(x, y, state = game, { allowDrag = false
     const chain = state.uchain || u.uchain;
     if (ballActive && chain?.where === 'free')
         await placeBallAndChain(state);
+    newsym(oldx, oldy);
+    await see_monsters();
+    state.vision_full_recalc = 1;
+    vision_recalc(0);
     endVoluntaryMultiTurn(state);
     return { oldx, oldy, x, y };
 }
