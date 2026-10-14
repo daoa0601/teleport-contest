@@ -115,6 +115,28 @@ void test('puton keeps asking for a ring hand after an invalid answer', async ()
     assert.equal(game.uleft, ring);
     assert.equal(game.context.move, 1);
 });
+for (const command of ['W', 'P']) {
+    for (const { name, key } of [
+        { name: 'Enter', key: '\n' },
+        { name: 'Return', key: '\r' },
+        { name: 'Space', key: ' ' },
+        { name: 'Escape', key: '\x1b' },
+    ]) {
+        void test(`${command}: ${name} cancels ring-hand selection and leaves the next movement command unread`, async () => {
+            freshObjectRoom();
+            const ring = await addInventoryObject(RIN_PROTECTION);
+            const startX = game.u.ux;
+            const startY = game.u.uy;
+            pushKeys(`${ring.invlet}${key}l`);
+            await rhack(command.charCodeAt(0));
+            assert.equal(!!ring.worn, false);
+            assert.equal(game.context.move, 0);
+            await rhack(0);
+            assert.equal(game.u.ux, startX + 1);
+            assert.equal(game.u.uy, startY);
+        });
+    }
+}
 void test('checking wearable armor reveals a welded weapon curse even if wear is cancelled', async () => {
     freshObjectRoom();
     const dagger = await addInventoryObject(DAGGER, { cursed: true, bknown: false });

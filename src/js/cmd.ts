@@ -4962,7 +4962,8 @@ async function putOnAccessoryObject(object: GameObject): Promise<void> {
             const finger = String.fromCharCode(await promptKey(
                 `Which ${monsterIsHumanoid(heroSpecies(game)) ? 'ring-' : ''}${heroFingerName(game)}, Right or Left? [rl] `,
             )).toLowerCase();
-            if (finger === '\x1b' || finger === '\0') {
+            // tty_yn_function() returns the zero default for quit keys.
+            if (['\x1b', '\0', ' ', '\r', '\n'].includes(finger)) {
                 game.context.move = 0;
                 return;
             }
