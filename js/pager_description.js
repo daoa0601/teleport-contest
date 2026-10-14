@@ -1,6 +1,6 @@
 // C pager.c:do_screen_description(), add_cmap_descr(), append_str().
-import { BOULDER, } from './object_data.js';
-import { BUFSZ, In_hell, Is_rogue_level, Is_waterlevel, TER_DETECT, TER_MAP, TER_MON, TER_OBJ, TRAP_EXPLANATIONS, VIBRATING_SQUARE, WEB, def_warnsyms, } from './const.js';
+import { BOULDER } from './object_data.js';
+import { BUFSZ, In_hell, Upolyd, Is_rogue_level, Is_waterlevel, TER_DETECT, TER_MAP, TER_MON, TER_OBJ, TRAP_EXPLANATIONS, VIBRATING_SQUARE, WEB, def_warnsyms, } from './const.js';
 import { cmapSymbolAppearance } from './display.js';
 import { game } from './gstate.js';
 import { CmapSymbol, GlyphOffset, cmapToGlyph } from './glyph_numbers.js';
@@ -9,7 +9,6 @@ import { MONSTER_CLASS_EXPLAIN, MONSTER_CLASS_SYMBOLS } from './monster_data.js'
 import { OBJECT_CLASS_EXPLAIN, OBJECT_CLASS_SYMBOLS } from './object_knowledge.js';
 import { withIndefiniteArticle } from './object_grammar.js';
 import { quotedEngraving, lookGlyphAt } from './pager_features.js';
-import { Upolyd } from './const.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 export function screenDescription(x, y, description) {
     const glyph = lookGlyphAt(x, y);

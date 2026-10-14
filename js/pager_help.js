@@ -101,6 +101,15 @@ export function keyText(key) {
     return key === 32 ? '<space>' : key === 27 ? '<esc>'
         : key === 10 ? '<enter>' : key === 127 ? '<del>' : visibleCommandKey(key);
 }
+export function setOptionsCommand() {
+    const bindings = game.commandBindings;
+    const full = bindings.keyForCommand('optionsfull');
+    if (full)
+        return `'${visibleCommandKey(full)}'`;
+    const prefix = bindings.keyForCommand('reqmenu');
+    const options = bindings.keyForCommand('options');
+    return `'#optionsfull' or '${prefix ? visibleCommandKey(prefix) : '#reqmenu'} ${options ? visibleCommandKey(options) : '#options'}'`;
+}
 export async function menuControlsHelp() {
     const wholeAndPage = (label, whole, page) => `${label.padStart(8)}     ${whole.padEnd(6)} ${page}`;
     const goTo = (key, name) => wholeAndPage('', key, name);

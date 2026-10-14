@@ -52,3 +52,12 @@ void test('help hides wizard-only commands during ordinary play', async () => {
     input.feed('\x1b');
     await operation;
 });
+
+void test('help names the actual key bound to the full options command', async () => {
+    freshObjectRoom();
+    game.commandBindings.bindKey('v'.charCodeAt(0), 'optionsfull');
+    const input = resetInputState();
+    await answerPrompts(rhack('?'.charCodeAt(0)), input, [
+        { prompt: /Using the 'v' command to set options\./, keys: '\x1b' },
+    ]);
+});

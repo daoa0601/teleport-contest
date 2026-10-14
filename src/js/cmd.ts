@@ -5,7 +5,6 @@ import { waterDamageObject } from './trap.js';
 import { dip, dipInto } from './potion_dip.js';
 import { AKLYS, BOOMERANG, CRYSTAL_BALL } from './object_data.js';
 import { useCrystalBall } from './crystal_ball.js';
-import { monsterHiddenConditions } from './monster_status.js';
 import { visibleRegionAt } from './regions.js';
 import type { PageLocalMultiSelectItem } from './windows.js';
 import type { ChoiceMenuItem } from './windows.js';
@@ -46,7 +45,6 @@ import { waterbodyName } from './terrain_name.js';
 import { def_warnsyms } from './const.js';
 import { iceDescriptionAt } from './dungeon_feature.js';
 import { CmapSymbol, GlyphOffset, cmapToGlyph } from './glyph_numbers.js';
-import { MAP_SYMBOLS } from './map_symbols.js';
 import { lookAtMonster, monsterSeenDescription, selfLookDetails, selfTrapDescription } from './pager_monsters.js';
 import { showLookList } from './pager_lists.js';
 import { screenDescription } from './pager_description.js';
@@ -141,7 +139,7 @@ import {
 } from './object_call.js';
 import { displayLiquidName, displayMessageWindow,
     newsym, feel_newsym, flushPendingTopline, flush_screen, pline, plineWithContinuation, moreUntilDismissed, docrt,
-    bot, terrain_glyph, cmapSymbolAppearance, glyphAt, canSeeMonster, canSpotMonster, canSenseMonster, canSpotHeroSelf,
+    bot, terrain_glyph, glyphAt, canSeeMonster, canSpotMonster, canSenseMonster, canSpotHeroSelf,
     unblindTelepathyRange,
     monsterHasWarningProjection, see_nearby_objects, show_glyph_cell, swallowed,
     randomDisplayMonsterName, randomDisplayMonsterSubject, see_monsters, see_objects,
@@ -203,7 +201,7 @@ import { PLAYABLE_INSTRUMENTS, playInstrument } from './music.js';
 import { dodiscovered } from './o_init.js';
 import { doattributes, doconduct } from './insight.js';
 import { extendedCommandsHelp, keyBindingsHelp } from './command_help.js';
-import { contactHelp, displayHelpFile, menuControlsHelp, whatdoes } from './pager_help.js';
+import { contactHelp, displayHelpFile, menuControlsHelp, setOptionsCommand, whatdoes } from './pager_help.js';
 import { doextversion, NATIVE_VERSION } from './extversion.js';
 import { dosearch, mapLevel } from './detect.js';
 import { detectMonsters } from './magic_detection.js';
@@ -284,7 +282,7 @@ import {
 } from './terminal.js';
 import {
     MONSTER_COLOR, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME,
-    MONSTER_SIZE, MONSTER_SYMBOL, MONSTER_SOUND, MONSTER_ALIGNMENT, MONSTER_ATTACKS, MONSTER_CLASS_EXPLAIN,
+    MONSTER_SIZE, MONSTER_SYMBOL, MONSTER_SOUND, MONSTER_ALIGNMENT, MONSTER_ATTACKS,
     requireMonsterData, monsterTypeName, monsterClassSymbol, monsterIsHumanoid,
 } from './monster_data.js';
 import { createParticularMonster } from './read_creation.js';
@@ -4793,7 +4791,7 @@ async function dohelp(): Promise<void> {
         { key: 'f', text: 'Info on what a given key does.' },
         { key: 'g', text: 'List of game options.' },
         { key: 'h', text: 'Longer explanation of game options.' },
-        { key: 'i', text: "Using the '#optionsfull' or 'm O' command to set options." },
+        { key: 'i', text: `Using the ${setOptionsCommand()} command to set options.` },
         { key: 'j', text: 'Full list of keyboard commands.' },
         { key: 'k', text: 'List of extended commands.' },
         { key: 'l', text: 'List menu control keys.' },
