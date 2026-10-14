@@ -44,6 +44,7 @@ import { heroIsBlind } from './senses.js';
 import { touchPetrifyingCorpse, willFeelPetrifyingCorpse } from './stoning.js';
 import { heroCannotTake } from './polyself.js';
 import { heroIsUnaware } from './hero_sleep.js';
+import { lookInsideSwallower } from './swallowed_inventory.js';
 import { addShopObjectToBill, billedPickupQuote, costlySpot } from './shk.js';
 import {
     SHOPBASE, A_WIS, STONE, DOOR, D_BROKEN, W_WEP, is_pit,
@@ -138,9 +139,12 @@ async function choosePickupObjects(source: PickupSource, objects: readonly GameO
     const onlyObject = eligible[0];
     if (eligible.length === 1 && onlyObject && !(source.monster && objects[0]?.owornmask))
         return [{ value: onlyObject, count: count || objectQuantity(onlyObject) }];
-    if (!count && !source.monster && eligible.some(object => willFeelPetrifyingCorpse(object))) {
-        await plineWithContinuation(`You try to feel what is lying here on the ${surfaceName(source.x, source.y)}.`);
-        await showFloorPile(source.objects, false, dungeonFeatureSentenceAt(source.x, source.y));
+    if (!count && eligible.some(object => willFeelPetrifyingCorpse(object))) {
+        if (source.monster) await lookInsideSwallower(source.monster);
+        else {
+            await plineWithContinuation(`You try to feel what is lying here on the ${surfaceName(source.x, source.y)}.`);
+            await showFloorPile(source.objects, false, dungeonFeatureSentenceAt(source.x, source.y));
+        }
         return [];
     }
     const ordered = orderedPickupObjects(eligible);
