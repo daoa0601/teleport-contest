@@ -2953,6 +2953,7 @@ async function wizTelekinesis(): Promise<void> {
         if (!direction) break;
         if (monster) {
             await hurtleMonster(monster, direction.dx, direction.dy, 6, {
+                finishMonsterDeath: finishHurtleMonsterDeath,
                 // minliquid() credits drowning and lava burning to the hero;
                 // rust and fatal damage to a fire-resistant monster use mondied().
                 finishLiquidDeath: (target, death) =>
