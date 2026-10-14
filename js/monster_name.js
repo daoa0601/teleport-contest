@@ -274,8 +274,8 @@ function priestName(monster, { article, hallucinating, invisible, state }) {
 export function monsterPossessive(monster, { state = game, random = rn2, noIt = false } = {}) {
     return POSSESSIVE_PRONOUNS[monsterPronounGender(monster, { state, random, noIt })];
 }
-export function monsterSubjectPronoun(monster, { state = game } = {}) {
-    return SUBJECT_PRONOUNS[monsterPronounGender(monster, { state })];
+export function monsterSubjectPronoun(monster, { state = game, noIt = false } = {}) {
+    return SUBJECT_PRONOUNS[monsterPronounGender(monster, { state, noIt })];
 }
 // C mhim()/noit_mhim(): the same perceived gender, in the object case.
 export function monsterObjectPronoun(monster, { state = game, random = rn2, noIt = false } = {}) {

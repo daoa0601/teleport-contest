@@ -328,8 +328,8 @@ export function monsterPossessive(monster: Monster, { state = game, random = rn2
     return POSSESSIVE_PRONOUNS[monsterPronounGender(monster, { state, random, noIt })];
 }
 
-export function monsterSubjectPronoun(monster: Monster, { state = game }: { state?: GameState } = {}): string {
-    return SUBJECT_PRONOUNS[monsterPronounGender(monster, { state })];
+export function monsterSubjectPronoun(monster: Monster, { state = game, noIt = false }: Pick<PronounOptions, 'state' | 'noIt'> = {}): string {
+    return SUBJECT_PRONOUNS[monsterPronounGender(monster, { state, noIt })];
 }
 
 // C mhim()/noit_mhim(): the same perceived gender, in the object case.

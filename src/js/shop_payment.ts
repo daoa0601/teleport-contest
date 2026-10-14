@@ -4,7 +4,7 @@ import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Monster, ShopBillEntry } from './monster_types.js';
 import { hasShopBill } from './shop_types.js';
-import type { BilledShopkeeper, ShopBillItem } from './shop_types.js';
+import type { BilledShopkeeper, ShopBillItem, Shopkeeper } from './shop_types.js';
 import { objectsInTimerGraph } from './object_timers.js';
 import { unpaidObjectCost } from './shk.js';
 import { hiddenGold } from './gold.js';
@@ -114,7 +114,7 @@ export async function buyShopBillItem(resident: Monster, item: ShopBillItem,
         const originalQuantity = object.quan;
         object.quan = quantity;
         try {
-            await payBillPrice(resident, price, state);
+            await payShopkeeper(resident, price, state);
             if (!container) await plineWithContinuation(feedback);
         } finally {
             object.quan = originalQuantity;
@@ -217,7 +217,7 @@ async function rejectPartlyUsedPurchase(resident: BilledShopkeeper, object: Game
     }
 }
 
-async function payBillPrice(resident: BilledShopkeeper, price: number, state: GameState): Promise<void> {
+export async function payShopkeeper(resident: Shopkeeper, price: number, state: GameState = game): Promise<void> {
     const credit = resident.eshk.credit ?? 0;
     const creditUsed = Math.min(credit, price);
     if (creditUsed)

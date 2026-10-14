@@ -113,7 +113,7 @@ export async function buyShopBillItem(resident, item, state = game) {
         const originalQuantity = object.quan;
         object.quan = quantity;
         try {
-            await payBillPrice(resident, price, state);
+            await payShopkeeper(resident, price, state);
             if (!container)
                 await plineWithContinuation(feedback);
         }
@@ -216,7 +216,7 @@ async function rejectPartlyUsedPurchase(resident, object, entry, state) {
         object.quan = intactQuantity;
     }
 }
-async function payBillPrice(resident, price, state) {
+export async function payShopkeeper(resident, price, state = game) {
     const credit = resident.eshk.credit ?? 0;
     const creditUsed = Math.min(credit, price);
     if (creditUsed)

@@ -3,18 +3,21 @@ import { bot, canSpotMonster, flush_screen, pline, plineWithContinuation } from 
 import { cansee } from './vision.js';
 import { heroIsBlind } from './senses.js';
 import { distmin } from './hacklib.js';
-import { shopkeeperName, monsterName } from './monster_name.js';
+import { shopkeeperName, monsterName, monsterSubjectPronoun, monsterObjectPronoun, monsterPossessive } from './monster_name.js';
 import { selectMapPosition } from './getpos.js';
 import { hasShopkeeperData } from './shop_types.js';
 import type { Shopkeeper } from './shop_types.js';
 import { payShopDebt, shopkeeperForHero, shopkeeperInOwnShop, shopThankYouMessage } from './shk.js';
-import { rileShopkeeper } from './shop_damage.js';
+import { rileShopkeeper, makeShopkeeperHappy, setPaidShopkeeper } from './shop_damage.js';
 import { heroGoldAmount } from './hero_gold.js';
 import { hiddenGold } from './gold.js';
 import { rn2 } from './rng.js';
-import { itemizedShopBill, minimumShopPurchase, buyShopBillItem } from './shop_payment.js';
+import { itemizedShopBill, minimumShopPurchase, buyShopBillItem, payShopkeeper } from './shop_payment.js';
 import { observeObjectForNaming } from './objnam.js';
 import { paymentObjectDescription } from './object_description.js';
+import { rouseShopkeeper } from './shop_sell.js';
+import { monsterIsHelpless } from './monster_sleep.js';
+import { impossible } from './diagnostics.js';
 import { showMultiSelectWindow } from './windows.js';
 
 // C refs: shk.c:dopay(), rouse_shk(), menu_pick_pay_items(), pay(), and update_bill().
@@ -28,28 +31,31 @@ export async function dopay(): Promise<void> {
         return;
     }
 
-    if (resident.msleeping || !resident.mcanmove) {
-        // Outstanding charges rouse the keeper before payment can proceed.
-        if (resident.eshk?.robbed || resident.eshk?.billct || resident.eshk?.debit) {
-            if (canSpotMonster(resident)) {
-                const recovery = resident.msleeping ? 'wakes up' : 'can move again';
-                await plineWithContinuation(`${shopkeeperName(resident, { capitalized: true })} ${recovery}.`);
-            }
-            resident.msleeping = 0;
-            resident.mfrozen = 0;
-            resident.mcanmove = 1;
-        } else {
-            const name = shopkeeperName(resident, { capitalized: true });
-            const response = rn2(2) ? 'seems to be napping' : "doesn't respond";
-            await plineWithContinuation(`${name} ${response}.`);
-            game.context.move = 0;
-            return;
-        }
+    const shop = resident.eshk;
+    const robbed = shop.robbed ?? 0;
+    if (robbed || shop.billct || shop.debit) await rouseShopkeeper(resident);
+    if (monsterIsHelpless(resident)) {
+        const response = rn2(2) ? 'seems to be napping' : "doesn't respond";
+        await plineWithContinuation(`${shopkeeperName(resident, { capitalized: true })} ${response}.`);
+        game.context.move = 0;
+        return;
     }
-
-    if (resident !== shopkeeperForHero() && resident.mpeaceful && !resident.eshk?.robbed) {
-        await plineWithContinuation(`You do not owe ${shopkeeperName(resident)} anything.`);
+    const stashedGold = hiddenGold(game, true) > 0;
+    if (resident !== shopkeeperForHero() && resident.mpeaceful) {
+        await payOutsideShop(resident, robbed, stashedGold);
         game.context.move = 1;
+        return;
+    }
+    if (!shop.billct && !shop.debit) {
+        await settleEmptyBill(resident, robbed, stashedGold);
+        game.context.move = 1;
+        return;
+    }
+    if (resident !== shopkeeperForHero()) {
+        await impossible('dopay: not to shopkeeper?');
+        const ownKeeper = shopkeeperForHero();
+        if (ownKeeper) setPaidShopkeeper(ownKeeper);
+        game.context.move = 0;
         return;
     }
 
@@ -232,4 +238,64 @@ async function choosePaymentShopkeeper(): Promise<Shopkeeper | null> {
         return monster;
     }
     return null;
+}
+
+// A peaceful keeper away from the hero's shop accepts whatever is offered,
+// even when that amount will not settle the robbery.
+async function payOutsideShop(keeper: Shopkeeper, robbed: number, stashed: boolean): Promise<void> {
+    const money = heroGoldAmount(game);
+    if (!robbed) {
+        await plineWithContinuation(`You do not owe ${shopkeeperName(keeper)} anything.`);
+    } else if (!money) {
+        await plineWithContinuation(`You ${stashed ? 'seem to ' : ''}have no gold.`);
+        if (stashed) await plineWithContinuation('But you have some gold stashed away.');
+    } else {
+        if (money > robbed) {
+            await plineWithContinuation(`You give ${shopkeeperName(keeper)} the ${robbed} gold piece${robbed === 1 ? '' : 's'} ${monsterSubjectPronoun(keeper, { noIt: true })} asked for.`);
+            await payShopkeeper(keeper, robbed);
+        } else {
+            await plineWithContinuation(`You give ${shopkeeperName(keeper)} all your${stashed ? ' openly kept' : ''} gold.`);
+            await payShopkeeper(keeper, money);
+            if (stashed) await plineWithContinuation('But you have hidden gold!');
+        }
+        if (money < Math.trunc(robbed / 2) || money < robbed && stashed) {
+            await plineWithContinuation(`Unfortunately, ${monsterSubjectPronoun(keeper, { noIt: true })} doesn't look satisfied.`);
+        } else await makeShopkeeperHappy(keeper);
+    }
+}
+
+async function settleEmptyBill(keeper: Shopkeeper, robbed: number, stashed: boolean): Promise<void> {
+    const money = heroGoldAmount(game);
+    if (!robbed && keeper.mpeaceful) {
+        await plineWithContinuation(`You do not owe ${shopkeeperName(keeper)} anything.`);
+        if (!money) await plineWithContinuation(`Moreover, you${stashed ? ' seem to' : ''} have no gold.`);
+    } else if (robbed) {
+        await plineWithContinuation(`${shopkeeperName(keeper)} is after blood, not gold!`);
+        if (money < Math.trunc(robbed / 2) || money < robbed && stashed) {
+            await rejectRestitution(keeper, money, stashed);
+            return;
+        }
+        await plineWithContinuation(`But since ${monsterPossessive(keeper, { noIt: true })} shop has been robbed recently,`);
+        await plineWithContinuation(`you ${money < robbed ? 'partially ' : ''}compensate ${shopkeeperName(keeper)} for ${monsterPossessive(keeper, { noIt: true })} losses.`);
+        await payShopkeeper(keeper, Math.min(money, robbed));
+        await makeShopkeeperHappy(keeper);
+    } else {
+        await plineWithContinuation(`${shopkeeperName(keeper, { capitalized: true })} is after your hide, not your gold!`);
+        if (money < 1000) {
+            await rejectRestitution(keeper, money, stashed);
+            return;
+        }
+        const name = canSpotMonster(keeper)
+            ? monsterName(keeper, { adjective: 'angry' }) : shopkeeperName(keeper);
+        await plineWithContinuation(`You try to appease ${name} by giving ${monsterObjectPronoun(keeper, { noIt: true })} 1000 gold pieces.`);
+        await payShopkeeper(keeper, 1000);
+        if (keeper.eshk.customer !== game.plname || rn2(3)) await makeShopkeeperHappy(keeper);
+        else await plineWithContinuation(`But ${shopkeeperName(keeper)} is as angry as ever.`);
+    }
+}
+
+async function rejectRestitution(keeper: Shopkeeper, money: number, stashed: boolean): Promise<void> {
+    await plineWithContinuation(!money
+        ? `Moreover, you${stashed ? ' seem to' : ''} have no gold.`
+        : `Besides, you don't have enough to interest ${monsterObjectPronoun(keeper, { noIt: true })}.`);
 }
