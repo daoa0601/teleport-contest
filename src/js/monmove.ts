@@ -1,3 +1,4 @@
+import { moveMonsterNextToHero } from './teleport.js';
 import { monsterFireDescription } from './monster_fire_description.js';
 import { bot } from './display.js';
 import { launchRollingBoulder } from './rolling_boulder.js';
@@ -158,6 +159,7 @@ import { heroHasDrainResistance, heroHasFreeAction, heroIsDisplaced } from './ar
 import { heroHasConflict } from './hero_conflict.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { checkMonsterHeroRange } from './monster_flee.js';
+import { chooseCovetousStrategy, pursueCovetousTarget } from './monster_covetous_target.js';
 import { retreatCovetousMonster } from './monster_covetous_retreat.js';
 import {
     monsterName as canonicalMonsterName,
@@ -207,7 +209,6 @@ import {
     resolveHeroEngulf,
 } from './hero_engulf.js';
 import { splitObjectStack } from './object_stack.js';
-import { artifactById } from './artifacts.js';
 import { respondMedusa } from './monster_gaze.js';
 import {
     canSeeMonster,
@@ -221,7 +222,6 @@ import {
     MONSTER_ATTACKS,
     MONSTER_FLAGS1,
     MONSTER_FLAGS2,
-    MONSTER_FLAGS3,
     MONSTER_GENO,
     MONSTER_LEVEL,
     MONSTER_MOVE,
@@ -581,7 +581,6 @@ import {
     SHOPBASE,
     TEMPLE,
     TRAPNUM,
-    STRAT_APPEARMSG,
     STRAT_WAITFORU,
     STRAT_WAITMASK,
     UNLOCKDOOR,
@@ -660,11 +659,6 @@ const PM_AIR_ELEMENTAL = 154;
 const PM_SALAMANDER = 329;
 const M2_COLLECT = 0x40000000;
 const M2_MAGIC = 0x80000000;
-const M3_WANTSAMUL = 0x0001;
-const M3_WANTSBELL = 0x0002;
-const M3_WANTSBOOK = 0x0004;
-const M3_WANTSCAND = 0x0008;
-const M3_WANTSARTI = 0x0010;
 const PM_FOG_CLOUD = 106;
 const PM_TENGU = 55;
 const PM_BABY_PURPLE_WORM = 113;
@@ -1932,14 +1926,6 @@ export function monsterLinedUpWithPerceivedHero(
 ) {
     return monsterLinedUpWithHero(monster, state,
         range => recordRandom(random, calls, range));
-}
-
-function isQuestArtifact(object: GameObject, state: PlayingGameState) {
-    if (object?.questArtifact) return true;
-    if (!(object?.artifact || object?.oartifact)) return false;
-    const roleName = state?.urole?.artifactName?.toLowerCase();
-    const objectName = (object?.artifactName || object?.oextra?.oname)?.toLowerCase();
-    return !!roleName && roleName === objectName;
 }
 
 function nearbyFloorObjects(monster: Monster, state: PlayingGameState) {
@@ -3414,6 +3400,21 @@ async function moveHostile(
     if (!options.afterRestrictedTenguTeleport)
         setMonsterApparentHeroPosition(monster, state, random, calls);
     requirePerceivedHero(monster);
+    if (!monster.wormno && !options.afterRestrictedTenguTeleport && monsterIsCovetous(monster)
+        && monster.mgoal && isok(monster.mgoal.x, monster.mgoal.y)) {
+        const intruder = monsterAtPosition(state.level, monster.mgoal.x, monster.mgoal.y);
+        if (intruder && intruder !== monster
+            && dist2(monster.mx, monster.my, monster.mgoal.x, monster.mgoal.y) <= 2) {
+            const attack = await beginMonsterMeleeAttack(monster, intruder, state,
+                random, rollDice, rollOne, calls, null, monster.mgoal);
+            return {
+                oldx, oldy, x: monster.mx, y: monster.my, moved: false, attack,
+                heroDied: !!attack.heroDied,
+                postMoveStatus: monsterAttackStopsAggressor(attack) ? MMOVE_DIED : MMOVE_MOVED,
+                movementStage: 'postmov',
+            };
+        }
+    }
     if (!monster.wormno && !options.afterRestrictedTenguTeleport) {
         const priestMovement = await movePriest(monster, state, random, rollDice, rollOne, calls);
         if (priestMovement) return priestMovement;
@@ -6657,142 +6658,20 @@ export function resumeDeferredHeroStun(
     return action;
 }
 
-function covetousObjectMatchesMask(object: GameObject, mask: number, state: PlayingGameState) {
-    if (!object) return false;
-    if (mask === M3_WANTSAMUL) return object.otyp === AMULET_OF_YENDOR;
-    if (mask === M3_WANTSBELL) return object.otyp === BELL_OF_OPENING;
-    if (mask === M3_WANTSBOOK) return object.otyp === SPE_BOOK_OF_THE_DEAD;
-    if (mask === M3_WANTSCAND) return object.otyp === CANDELABRUM_OF_INVOCATION;
-    return mask === M3_WANTSARTI && isQuestArtifact(object, state);
-}
-
-function covetousExternalTargetExists(monster: Monster, state: PlayingGameState, mask: number) {
-    const speciesFlags = MONSTER_FLAGS3[monster?.mnum] ?? 0;
-    if (!(speciesFlags & mask)) return false;
-    const ownsTarget = (monster?.minvent || monster?.inventory || []).some((object) =>
-        covetousObjectMatchesMask(object, mask, state),
-    );
-    if (ownsTarget) return false;
-    if ((state?.inventory || []).some((object) => covetousObjectMatchesMask(object, mask, state))) {
-        return true;
-    }
-    for (let x = 0; x < (state?.level?.objects?.length || 0); x++) {
-        const column = state.level.objects[x];
-        for (let y = 0; y < (column?.length || 0); y++) {
-            if (
-                (column?.[y] || []).some((object) => covetousObjectMatchesMask(object, mask, state))
-            )
-                return true;
-        }
-    }
-    return !!state?.level?.monsters?.some(
-        (candidate) =>
-            candidate !== monster &&
-            (candidate.mhp ?? 1) > 0 &&
-            (candidate.minvent || candidate.inventory || []).some((object) =>
-                covetousObjectMatchesMask(object, mask, state),
-            ),
-    );
-}
-
-function covetousTargetMasks(state: PlayingGameState) {
-    const invoked = !!state?.u?.uevent?.invoked;
-    const masks = state?.context?.made_amulet ? [M3_WANTSAMUL] : [];
-    masks.push(
-        ...(invoked
-            ? [M3_WANTSARTI, M3_WANTSBOOK, M3_WANTSBELL, M3_WANTSCAND]
-            : [M3_WANTSBOOK, M3_WANTSBELL, M3_WANTSCAND, M3_WANTSARTI]),
-    );
-    return masks;
-}
-
-// wizard.c:tactics(STRAT_GROUND).  When a covetous monster already occupies
-// the artifact square, rloc_to() is a no-op and mpickobj() transfers the
-// object before ordinary m_move().  Other ground/hero/monster target
-// relocations remain separate branches; this exact-square case owns no RNG.
-async function covetousPicksUpTargetUnderfoot(monster: Monster, state: PlayingGameState) {
-    if (!monsterIsCovetous(monster)) return null;
-    const pile = state?.level?.objects?.[monster.mx]?.[monster.my];
-    if (!Array.isArray(pile) || !pile.length) return null;
-    for (const mask of covetousTargetMasks(state)) {
-        if (!((MONSTER_FLAGS3[monster.mnum] ?? 0) & mask)) continue;
-        const index = pile.findIndex((object) => covetousObjectMatchesMask(object, mask, state));
-        if (index < 0) continue;
-        const object = pile[index];
-        remove_object(object, state);
-        await addObjectToMonsterInventory(monster, object, state, { atFront: true });
-        return object;
-    }
-    return null;
-}
-
-// C wizard.c strategy(): this predicate identifies the full-health,
-// no-artifact-target STRAT_NONE branch.  The wounded stair-healing and
-// concrete artifact pursuit branches have different relocation owners and
-// deliberately do not enter the harass roll below.
-function covetousUsesHarassStrategy(monster: Monster, state: PlayingGameState) {
-    if (
-        !monsterIsCovetous(monster) ||
-        shopkeeperInOwnShop(monster, state) ||
-        priestIsInOwnTemple(monster, state)
-    )
-        return false;
-    const hp = Math.max(0, monster.mhp ?? 0);
-    const maxHp = Math.max(1, monster.mhpmax ?? hp);
-    if (Math.floor((hp * 3) / maxHp) !== 3) return false;
-    return !covetousTargetMasks(state).some((mask) =>
-        covetousExternalTargetExists(monster, state, mask),
-    );
-}
-
-function covetousSeeksHealing(monster: Monster, state: PlayingGameState): boolean {
-    if (!monsterIsCovetous(monster) || shopkeeperInOwnShop(monster, state)
-        || priestIsInOwnTemple(monster, state)) return false;
-    const health = Math.trunc(monster.mhp * 3 / monster.mhpmax);
-    if (health === 0 || (health === 1 && MONSTER_NAME[monster.mnum] !== 'Wizard of Yendor'))
-        return true;
-    return health < 3 && !covetousTargetMasks(state).some(mask =>
-        covetousExternalTargetExists(monster, state, mask));
-}
-
 async function runCovetousHarassTactics(
     monster: Monster,
     state: PlayingGameState,
     random: RandomBelow,
     calls: MonsterCallLog,
-    rollOne: RollOne,
-    afterRetreat = false,
 ): Promise<MonsterMovement | null> {
-    if (!afterRetreat && !covetousUsesHarassStrategy(monster, state)) return null;
-    // tactics() replaces the previous strategy while retaining the two
-    // waiting bits and its one-shot relocation presentation bit.
-    if (!afterRetreat)
-        monster.mstrategy = (monster.mstrategy ?? 0) & (STRAT_WAITMASK | STRAT_APPEARMSG);
     if (
         monsterTeleportRestricted(monster, state) ||
         recordRandom(random, calls, monster.mflee ? 33 : 5) !== 0
     ) {
         return null;
     }
-    const destination = findNearbyMonsterPosition(monster.mnum, state.u.ux, state.u.uy, {
-        state,
-        random,
-        calls,
-    });
-    if (!destination) return null;
-    const oldx = monster.mx;
-    const oldy = monster.my;
-    await relocateMonsterTo(monster, destination.x, destination.y, {
-        state, random, rollOne, calls, flags: RLOC_MSG,
-    });
-    return {
-        oldx,
-        oldy,
-        x: monster.mx,
-        y: monster.my,
-        moved: oldx !== monster.mx || oldy !== monster.my,
-        deferredCovetousRelocation: true,
-    };
+    const relocation = await moveMonsterNextToHero(monster, state, { flags: RLOC_MSG, random });
+    return relocation ? { ...relocation, deferredCovetousRelocation: true } : null;
 }
 
 async function knockHeroFromMonster(
@@ -8519,14 +8398,22 @@ export async function takeMonsterTurn(
     if (!options.afterCovetousRelocation) {
         setMonsterApparentHeroPosition(monster, state, random, calls);
         let tacticsMovement: MonsterMovement | null = null;
-        if (covetousSeeksHealing(monster, state)) {
-            const retreat = await retreatCovetousMonster(monster, state, random, rollOne);
-            if (retreat === 'harass')
-                tacticsMovement = await runCovetousHarassTactics(monster, state, random, calls, rollOne, true);
-        } else {
-            const pickedTarget = await covetousPicksUpTargetUnderfoot(monster, state);
-            if (!pickedTarget)
-                tacticsMovement = await runCovetousHarassTactics(monster, state, random, calls, rollOne);
+        if (monsterIsCovetous(monster)) {
+            const strategy = chooseCovetousStrategy(monster, state);
+            if (strategy.kind === 'heal') {
+                const retreat = await retreatCovetousMonster(monster, state, random, rollOne);
+                if (retreat === 'harass')
+                    tacticsMovement = await runCovetousHarassTactics(monster, state, random, calls);
+            } else if (strategy.kind === 'target') {
+                const result = await pursueCovetousTarget(monster, strategy.target, state);
+                if (result === 'blocked-ground' && recordRandom(random, calls, 5) === 0
+                    && !monsterTeleportRestricted(monster, state)) {
+                    const relocation = await moveMonsterNextToHero(monster, state, { flags: RLOC_MSG, random });
+                    if (relocation) tacticsMovement = { ...relocation, deferredCovetousRelocation: true };
+                }
+            } else {
+                tacticsMovement = await runCovetousHarassTactics(monster, state, random, calls);
+            }
         }
         if (state.program_state.gameover) {
             return {
@@ -8537,6 +8424,13 @@ export async function takeMonsterTurn(
                 },
             };
         }
+        if (monsterIsCovetous(monster) && (monster.mstate ?? MON_FLOOR) !== MON_FLOOR) return {
+            calls, dochugContext,
+            movement: {
+                oldx: monster.mx, oldy: monster.my, x: monster.mx, y: monster.my,
+                moved: false, actorLeftLevel: true,
+            },
+        };
         if (tacticsMovement) return { calls, dochugContext, movement: tacticsMovement };
     }
     // dochug() refreshes perception after tactics, including when relocation
