@@ -89,7 +89,8 @@ export interface PickLockOccupation {
     door?: MapLocation;
     x: number;
     y: number;
-    tool: GameObject;
+    // Declining autountrap without a tool can start a zero-chance attempt.
+    tool: GameObject | null;
     chance: number;
 }
 

@@ -80,7 +80,8 @@ export function autoUnlockFlags(state: GameState = game): number {
     return flags;
 }
 
-export function isHeroMagicKey(tool: GameObject, state: GameState = game): boolean {
+export function isHeroMagicKey(tool: GameObject | null, state: GameState = game): boolean {
+    if (!tool) return false;
     return artifactById(tool.oartifact, state)?.name === 'The Master Key of Thievery'
         && (state.urole?.key === 'rogue' ? !tool.cursed : !!tool.blessed);
 }
@@ -119,10 +120,10 @@ export async function pickLock(tool: GameObject | null, {
 }: { state?: GameState; target?: Position | null; container?: GameObject | null } = {}): Promise<boolean> {
     requirePlayingGame(state);
     const previous = state._lockAttempt;
-    if (tool && previous?.key === 'pick-lock' && previous.usedtime
-        && previous.tool.otyp === tool.otyp) {
+    if (previous?.key === 'pick-lock' && previous.usedtime
+        && previous.tool?.otyp === tool?.otyp) {
         if (heroHasNoHands(state)) {
-            const noun = tool.otyp === LOCK_PICK ? 'pick' : tool.otyp === CREDIT_CARD ? 'card' : 'key';
+            const noun = tool?.otyp === LOCK_PICK ? 'pick' : tool?.otyp === CREDIT_CARD ? 'card' : 'key';
             await pline(`Unfortunately, you can no longer hold the ${noun}.`);
             resetPick(state);
         } else if (state.u.uswallow || previous.container && !heroCanReachFloor(state, { checkPit: true })) {
@@ -214,8 +215,7 @@ async function pickBoxLock(tool: GameObject | null, container: GameObject | null
             await pline(`You can't do that with a ${simpleObjectTypeName(tool.otyp, state)}.`);
             return true;
         }
-        if (!tool) return false;
-        if (automatic) {
+        if (automatic && tool) {
             const touch = await touchArtifactByHero(tool, artifactById(tool.oartifact, state), { state });
             if (!touch.allowed || touch.died) return true;
         }
@@ -283,7 +283,7 @@ async function pickDoorLock(tool: GameObject | null, x: number, y: number, autom
     return true;
 }
 
-function startPicking(tool: GameObject, target: Pick<PickLockOccupation, 'door' | 'container'> & Partial<Position>, state: GameState): void {
+function startPicking(tool: GameObject | null, target: Pick<PickLockOccupation, 'door' | 'container'> & Partial<Position>, state: GameState): void {
     const attempt: PickLockOccupation = {
         key: 'pick-lock', text: '', remaining: 51, usedtime: 0, tool,
         x: target.x ?? state.u.ux, y: target.y ?? state.u.uy,
@@ -369,11 +369,12 @@ function lockAction(attempt: PickLockOccupation): string {
     if (attempt.door && !(attempt.door.doormask & D_LOCKED)) return 'locking the door';
     if (attempt.container && !attempt.container.olocked)
         return `locking the ${attempt.container.otyp === CHEST ? 'chest' : 'box'}`;
-    if (attempt.tool.otyp === LOCK_PICK || attempt.tool.otyp === CREDIT_CARD) return 'picking the lock';
+    if (attempt.tool?.otyp === LOCK_PICK || attempt.tool?.otyp === CREDIT_CARD) return 'picking the lock';
     return `unlocking the ${attempt.door ? 'door' : attempt.container?.otyp === CHEST ? 'chest' : 'box'}`;
 }
 
-function lockPickChance(tool: GameObject, box: GameObject | undefined, state: GameState): number {
+function lockPickChance(tool: GameObject | null, box: GameObject | undefined, state: GameState): number {
+    if (!tool) return 0;
     const dexterity = currentAttribute(A_DEX, state);
     const rogue = state.urole?.key === 'rogue';
     let chance;

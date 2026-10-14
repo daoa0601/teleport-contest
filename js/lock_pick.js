@@ -67,6 +67,8 @@ export function autoUnlockFlags(state = game) {
     return flags;
 }
 export function isHeroMagicKey(tool, state = game) {
+    if (!tool)
+        return false;
     return artifactById(tool.oartifact, state)?.name === 'The Master Key of Thievery'
         && (state.urole?.key === 'rogue' ? !tool.cursed : !!tool.blessed);
 }
@@ -111,10 +113,10 @@ export function lockToolName(tool, state = game) {
 export async function pickLock(tool, { state = game, target = null, container = null, } = {}) {
     requirePlayingGame(state);
     const previous = state._lockAttempt;
-    if (tool && previous?.key === 'pick-lock' && previous.usedtime
-        && previous.tool.otyp === tool.otyp) {
+    if (previous?.key === 'pick-lock' && previous.usedtime
+        && previous.tool?.otyp === tool?.otyp) {
         if (heroHasNoHands(state)) {
-            const noun = tool.otyp === LOCK_PICK ? 'pick' : tool.otyp === CREDIT_CARD ? 'card' : 'key';
+            const noun = tool?.otyp === LOCK_PICK ? 'pick' : tool?.otyp === CREDIT_CARD ? 'card' : 'key';
             await pline(`Unfortunately, you can no longer hold the ${noun}.`);
             resetPick(state);
         }
@@ -211,9 +213,7 @@ async function pickBoxLock(tool, container, automatic, state) {
             await pline(`You can't do that with a ${simpleObjectTypeName(tool.otyp, state)}.`);
             return true;
         }
-        if (!tool)
-            return false;
-        if (automatic) {
+        if (automatic && tool) {
             const touch = await touchArtifactByHero(tool, artifactById(tool.oartifact, state), { state });
             if (!touch.allowed || touch.died)
                 return true;
@@ -385,11 +385,13 @@ function lockAction(attempt) {
         return 'locking the door';
     if (attempt.container && !attempt.container.olocked)
         return `locking the ${attempt.container.otyp === CHEST ? 'chest' : 'box'}`;
-    if (attempt.tool.otyp === LOCK_PICK || attempt.tool.otyp === CREDIT_CARD)
+    if (attempt.tool?.otyp === LOCK_PICK || attempt.tool?.otyp === CREDIT_CARD)
         return 'picking the lock';
     return `unlocking the ${attempt.door ? 'door' : attempt.container?.otyp === CHEST ? 'chest' : 'box'}`;
 }
 function lockPickChance(tool, box, state) {
+    if (!tool)
+        return 0;
     const dexterity = currentAttribute(A_DEX, state);
     const rogue = state.urole?.key === 'rogue';
     let chance;
