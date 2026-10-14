@@ -44,6 +44,8 @@ import { DIED, KILLED_BY, MENU_ITEMFLAGS_SKIPINVERT, MGIVENNAME, NHW_MENU, PICK_
 import { AD_PHYS } from './monster_attack_types.js';
 import { finishMonsterKilled } from './monster_death.js';
 import { monsterIsNonliving } from './monster_data.js';
+import { map_engraving, map_trap } from './display.js';
+import { mapMagicLevel } from './magic_mapping.js';
 import {
     tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow,
     tty_end_menu, tty_select_menu, tty_start_menu,
@@ -206,7 +208,7 @@ import { PLAYABLE_INSTRUMENTS, playInstrument } from './music.js';
 import { dodiscovered } from './o_init.js';
 import { doattributes, doconduct } from './insight.js';
 import { doextversion } from './extversion.js';
-import { dosearch, findit, mapLevel } from './detect.js';
+import { dosearch, findit } from './detect.js';
 import { detectMonsters } from './magic_detection.js';
 import { abusePetAfterHeroHit } from './dog.js';
 import {
@@ -3586,13 +3588,17 @@ async function wizMap() {
 
     const savedConfusion = game.u?.confusionTurns ?? 0;
     const savedHallucination = game.u?.hallucinationTurns ?? 0;
-    if (game.u) {
-        game.u.confusionTurns = 0;
-        game.u.hallucinationTurns = 0;
-    }
-
-    mapLevel({ confused: false, revealAllTraps: true });
-    if (game.u) {
+    game.u.confusionTurns = 0;
+    game.u.hallucinationTurns = 0;
+    try {
+        for (const trap of requireGameLevel().traps) {
+            trap.tseen = true;
+            map_trap(trap, true);
+        }
+        for (const engraving of requireGameLevel().engravings ?? [])
+            map_engraving(engraving, true);
+        await mapMagicLevel({ confused: false });
+    } finally {
         game.u.confusionTurns = savedConfusion;
         game.u.hallucinationTurns = savedHallucination;
     }
