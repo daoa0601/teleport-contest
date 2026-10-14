@@ -155,7 +155,7 @@ import { monsterStatusLine } from './monster_status.js';
 import { createParticularMonster } from './read_creation.js';
 import { addExperience, checkExperienceLevel, gainExperienceLevel, loseHeroExperience, } from './exper.js';
 import { removeHeroAccessory, wearHeroAccessory, } from './accessory.js';
-import { heroPassesWalls, heroSpecies } from './hero_species.js';
+import { heroHasNoHead, heroPassesWalls, heroSpecies } from './hero_species.js';
 import { disturbBuriedZombies } from './object_impact.js';
 import { checkSlipperyIce } from './fumbling.js';
 import { MONSTER_BODY_META } from './monster_data.js';
@@ -4693,6 +4693,13 @@ async function putOnAccessoryObject(object) {
         return;
     }
     if (isEyewear(object)) {
+        if (!heroHasNoHead(game) && !game.ublindf && !game.u.ublindf) {
+            const touch = await retouchHeroObject(object);
+            if (touch.rejected || touch.died) {
+                game.context.move = 1;
+                return;
+            }
+        }
         const worn = await wearEyewear(object);
         game.context.move = worn ? 1 : 0;
         return;

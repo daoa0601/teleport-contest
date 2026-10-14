@@ -278,7 +278,7 @@ import {
 import {
     removeHeroAccessory, wearHeroAccessory,
 } from './accessory.js';
-import { heroPassesWalls, heroSpecies } from './hero_species.js';
+import { heroHasNoHead, heroPassesWalls, heroSpecies } from './hero_species.js';
 import { disturbBuriedZombies } from './object_impact.js';
 import { checkSlipperyIce } from './fumbling.js';
 import { MONSTER_BODY_META } from './monster_data.js';
@@ -4901,6 +4901,13 @@ async function putOnAccessoryObject(object: GameObject): Promise<void> {
     }
 
     if (isEyewear(object)) {
+        if (!heroHasNoHead(game) && !game.ublindf && !game.u.ublindf) {
+            const touch = await retouchHeroObject(object);
+            if (touch.rejected || touch.died) {
+                game.context.move = 1;
+                return;
+            }
+        }
         const worn = await wearEyewear(object);
         game.context.move = worn ? 1 : 0;
         return;
