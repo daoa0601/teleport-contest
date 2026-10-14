@@ -411,8 +411,8 @@ export function getCostOfShopItem(object: GameObject | null | undefined, state: 
 // applied before each keeper's bill is inspected.
 export function* visitBilledShopkeepers(state: GameState = game): Generator<BilledShopkeeper> {
     requireLiveGame(state);
-    for (const keeper of requireGameLevel(state).monsters) {
-        if (keeper.mhp <= 0 || !keeper.isshk || !hasShopBill(keeper) || !keeper.eshk.bill.length)
+    for (const keeper of [...requireGameLevel(state).monsters].reverse()) {
+        if (keeper.dead || keeper.mhp <= 0 || !keeper.isshk || !hasShopBill(keeper) || !keeper.eshk.bill.length)
             continue;
         if (!keeper.mpeaceful && !keeper.eshk.surcharge)
             rileShopkeeper(keeper);
@@ -432,9 +432,9 @@ export function billForObject(
     // C onbill(): with a keeper given, only that keeper's bill answers;
     // other shops' bills stay untouched.
     const keepers = resident ? [resident]
-        : (state.level?.rooms ?? []).flatMap(room => 'resident' in room && room.resident ? [room.resident] : []);
+        : [...(state.level?.monsters ?? [])].reverse();
     for (const keeper of keepers) {
-        if (!hasShopBill(keeper)) continue;
+        if (keeper.dead || keeper.mhp <= 0 || !hasShopBill(keeper)) continue;
         const bill = keeper.eshk.bill;
         const entry = bill.find(candidate => candidate.bo_id === object?.o_id);
         if (entry) return { resident: keeper, entry };

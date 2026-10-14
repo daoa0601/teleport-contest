@@ -1100,10 +1100,12 @@ export async function fixShopDamage(state = game) {
     const records = damageRecords(state);
     if (!records.length)
         return;
-    for (const keeper of [...state.level.monsters || []]) {
+    for (const keeper of [...state.level.monsters].reverse()) {
         if (!hasShopkeeperData(keeper) || !keeper.isshk || keeper.dead
             || (keeper.mhp ?? 1) <= 0)
             continue;
+        if (!keeper.mpeaceful && !keeper.eshk.surcharge)
+            rileShopkeeper(keeper);
         if (shopkeeperImpaired(keeper, state))
             continue;
         for (const record of [...records]) {

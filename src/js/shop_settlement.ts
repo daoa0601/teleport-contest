@@ -94,7 +94,7 @@ function preferredShopkeeper(): Shopkeeper | null {
 // C next_shkp(FALSE). Capture the list before this pass because mongone()
 // removes its current member while the native loop retains the next pointer.
 function* exitShopkeepers(): Generator<Shopkeeper> {
-    for (const keeper of [...(game.level?.monsters ?? [])]) {
+    for (const keeper of [...(game.level?.monsters ?? [])].reverse()) {
         if (keeper.dead || keeper.mhp <= 0 || !keeper.isshk) continue;
         if (!hasShopkeeperData(keeper)) throw new Error('Shopkeeper lacks shop history.');
         if (!keeper.mpeaceful && !keeper.eshk.surcharge) rileShopkeeper(keeper);
