@@ -11,6 +11,7 @@ import {
     MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL,
 } from './monster_data.js';
 import { monsterWearsIronShoes } from './monworn.js';
+import { monsterName } from './monster_name.js';
 import { rnd } from './rng.js';
 import { monsterTrapVisibility, seeTrap } from './trap.js';
 import { levelHasCeiling } from './terrain_properties.js';
@@ -108,7 +109,7 @@ export async function finishMonsterPitTrap(
     if (!event.falls) {
         if (event.inSight) {
             seeTrap(event.trap, state);
-            await publish(`${describeMonster(monster)} doesn't fall into the pit.`);
+            await publish(`${monsterName(monster, { capitalized: true, state })} doesn't fall into the pit.`);
         }
         event.finished = true;
         return event;

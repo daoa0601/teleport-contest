@@ -5,6 +5,7 @@ import { flush_screen, newsym } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { finishImmediateMonsterTrap, triggerImmediateMonsterTrap } from '../js/monmove.js';
+import { setMonsterGivenName } from '../js/monster_given_name.js';
 import { placeMonsterAt } from '../js/monster_location.js';
 import { initRng } from '../js/rng.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
@@ -61,6 +62,39 @@ void test('magically opening a pit under a flyer reveals it without pulling the 
     assert.equal(monster.mhp, 80);
     assert.equal(trap.tseen, true);
     assert.match(game._last_message || '', /doesn't fall into the pit\./);
+});
+
+void test('a magically opened pit names a flying monster without an extra article', async () => {
+    const { monster, trap } = await freshMonsterTrapRoom(PIT, {
+        monster: { species: 'red dragon', hitPoints: 80 },
+    });
+    requirePlayingGame(game);
+    setMonsterGivenName(monster, 'Smaug');
+
+    await openFallingTrap(monster);
+
+    assert.equal(game._last_message, "Smaug doesn't fall into the pit.");
+    assert.equal(monster.mtrapped ?? 0, 0);
+    assert.equal(monster.mhp, 80);
+    assert.equal(trap.tseen, true);
+});
+
+void test('a hallucinating hero sees an imaginary flyer avoid a magically opened pit', async () => {
+    const { monster } = await freshMonsterTrapRoom(PIT, {
+        monster: { species: 'red dragon', hitPoints: 80 },
+    });
+    requirePlayingGame(game);
+    setMonsterGivenName(monster, 'Smaug');
+    game.u.hallucinationTurns = 20;
+    initRng(1n);
+
+    await openFallingTrap(monster);
+
+    assert.match(game._last_message ?? '', /doesn't fall into the pit\./);
+    assert.doesNotMatch(game._last_message ?? '', /Smaug/);
+    assert.equal(monster.name, 'Smaug');
+    assert.equal(monster.mtrapped ?? 0, 0);
+    assert.equal(monster.mhp, 80);
 });
 
 for (const type of [PIT, SPIKED_PIT]) {
