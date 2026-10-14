@@ -157,7 +157,7 @@ export async function killGenocidedMonsters(state: GameState = game): Promise<Ge
             && !baseWasGenocided) continue;
         if (monster.cham !== undefined && Number.isInteger(monster.cham) && monster.cham >= 0
             && !baseWasGenocided) {
-            const change = await changeMonsterForm(monster, null, state);
+            const change = await changeMonsterForm(monster, null, state, { showMessage: true });
             if (change?.heroDied) return { killed, reshaped, heroDied: true };
             if (change) reshaped.push(monster);
             continue;
