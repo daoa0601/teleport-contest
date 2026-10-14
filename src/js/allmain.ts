@@ -3044,10 +3044,9 @@ async function presentMonsterAttackEffects(
                     if (game.program_state?.gameover) return { heroDied: true };
                 }
                 if (heroAttack.deferredBlindEffect) {
-                    const toggledBlindness = resumeDeferredHeroBlindness(
+                    await resumeDeferredHeroBlindness(
                         action, game,
                     );
-                    if (toggledBlindness) vision_recalc(0);
                 }
                 if (heroAttack.effectMessage) {
                     const effectDismissal = await plineWithContinuation(
