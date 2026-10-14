@@ -41,6 +41,22 @@ void test('an empty tinning kit takes time without selecting or consuming a corp
     assert.equal(game._pending_message, 'You seem to be out of tins.');
     assert.equal(game.context.move, 1);
 });
+for (const floorSpecies of [[], ['newt'], ['newt', 'lichen']]) {
+    void test(`a tinning kit reports no ${floorSpecies.length ? 'other ' : ''}corpse after declining ${floorSpecies.length} floor corpses`, async () => {
+        freshPlayableRoom();
+        const kit = await addInventoryObject(TINNING_KIT, { spe: 2 });
+        for (const species of floorSpecies) {
+            await floorObject(CORPSE, game.u.ux, game.u.uy, {
+                corpsenm: MONSTER_NAME.indexOf(species),
+            });
+        }
+        await runExtendedCommand('apply', `${kit.invlet}${'n'.repeat(floorSpecies.length)}`);
+        assert.equal(game._pending_message, floorSpecies.length ? "You don't have anything else to tin." : "You don't have anything to tin.");
+        assert.equal(kit.spe, 2);
+        assert.equal(game.inventory.some(object => object.otyp === TIN), false);
+        assert.equal(game.context.move, 1);
+    });
+}
 for (const source of ['intrinsic', 'amulet']) {
     void test(`a flying hero with magical breathing from an ${source} can tin a corpse beneath water`, async () => {
         const level = freshPlayableRoom();

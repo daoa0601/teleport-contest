@@ -82,6 +82,7 @@ function tinnable(corpse: GameObject): boolean {
 async function chooseTinningCorpse(): Promise<GameObject | null> {
     requirePlayingGame(game);
     const hero = game.u;
+    let declinedFloorCorpse = false;
     const flags = MONSTER_FLAGS1[heroSpecies(game)] ?? 0;
     const aboveLiquid = (isPoolAt(hero.ux, hero.uy) || isLavaAt(hero.ux, hero.uy))
         && (propertyIsActive('waterWalking', game) || (flags & 0x10)
@@ -97,12 +98,14 @@ async function chooseTinningCorpse(): Promise<GameObject | null> {
             const answer = await promptChoice(`There ${one ? 'is' : 'are'} ${inventoryItemDescription(corpse)} here; tin ${one ? 'it' : 'one'}?`, ['y', 'n', 'q'], 'n');
             if (answer === 'y') return corpse;
             if (answer === 'q') return null;
+            declinedFloorCorpse = true;
         }
     }
     const corpse = await chooseInventoryObject('tin', object => {
         if (!object || object.oclass !== 7) return GETOBJ_EXCLUDE;
         return tinnable(object) ? GETOBJ_SUGGEST : GETOBJ_EXCLUDE_SELECTABLE;
-    });
+    }, { emptyMessage: declinedFloorCorpse
+        ? "You don't have anything else to tin." : "You don't have anything to tin." });
     if (corpse && !tinnable(corpse)) {
         await pline("You can't tin that!");
         return null;
