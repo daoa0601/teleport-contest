@@ -70,18 +70,19 @@ export async function finishMonsterWebTrap(monster, trap, { state = game, publis
                 (MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_NASTY) ||
             (!!monster.wormno && (monster.wormSegments?.length || 0) > 5));
     const owner = trap.madeby_u ? 'your' : 'a';
-    const name = typeof subject === 'function' ? subject(monster) : subject;
     if (hiddenBear) {
         if (!heroIsDeaf(state))
             await publish('You hear the roaring of a confused bear!');
     }
-    else if (tear) {
-        if (visible)
-            await publish(`${name} tears through ${owner} spider web!`);
-    }
     else if (visible) {
-        await publish(`${name} is caught in ${owner} spider web.`);
-        trap.tseen = true;
+        const name = typeof subject === 'function' ? subject(monster) : subject;
+        if (tear) {
+            await publish(`${name} tears through ${owner} spider web!`);
+        }
+        else {
+            await publish(`${name} is caught in ${owner} spider web.`);
+            trap.tseen = true;
+        }
     }
     monster.mtrapped = tear ? 0 : 1;
     if (tear) {

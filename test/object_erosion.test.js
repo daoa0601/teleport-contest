@@ -11,6 +11,7 @@ import { CLUB, DAGGER, OBJECT_NAMES } from '../js/object_data.js';
 import { addInventoryObject, floorObject, knownObject } from './support/game-objects.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { setMonsterGivenName } from '../js/monster_given_name.js';
 const quiet = { publish: async () => { } };
 test.beforeEach(() => freshObjectRoom());
 void test('erosion waits for the preceding message before changing the weapon', async () => {
@@ -28,6 +29,19 @@ void test('grease protects an iron weapon and can wear off without rusting it', 
     const dagger = await addInventoryObject(DAGGER, { greased: true });
     await erodeObject(dagger, 'rust', { ...quiet, random: () => 0 });
     assert.equal(dagger.greased, false);
+    assert.equal(dagger.oeroded ?? 0, 0);
+});
+void test('grease protection retains the possessive ending on a monster name ending in s', async () => {
+    const goblin = await createMonsterAt('goblin', 11, 10, NO_MINVENT);
+    setMonsterGivenName(goblin, 'Marcus');
+    const dagger = await knownObject(DAGGER, { greased: true });
+    await equipMonsterObject(goblin, dagger, 0);
+    const messages = [];
+    await erodeObject(dagger, 'rust', {
+        random: () => 1,
+        publish: async (message) => { messages.push(message); },
+    });
+    assert.equal(messages[0], "Marcus's dagger is protected by the layer of grease!");
     assert.equal(dagger.oeroded ?? 0, 0);
 });
 void test('grease does not protect a wooden club from burning', async () => {

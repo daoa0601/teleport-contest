@@ -813,8 +813,12 @@ export async function heroLiquidEffects(options = {}) {
             ? 'The leash slips loose.' : 'The leashes slip loose.');
     }
     if (canLiveUnderwater) {
-        if (heroDoesNotNeedAir(state))
-            await publish("But you aren't drowning.");
+        if (heroDoesNotNeedAir(state)) {
+            if (state.flags.verbose)
+                await publish("But you aren't drowning.");
+            if (!heroIsOnWaterLevel(state))
+                await publish(heroIsHallucinating(state) ? 'Your keel hits the bottom.' : 'You touch bottom.');
+        }
         u.uinwater = 1;
         recalculateVision(1);
         return { entered: true, moved: false, died: false };
