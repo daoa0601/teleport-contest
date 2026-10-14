@@ -60,8 +60,10 @@ export function mergable(otmp, obj, state = game) {
         return false;
     if (obj.globby || otmp.globby)
         return !!obj.globby && !!otmp.globby;
+    // C obj.h defines opoisoned as an alias of otrapped, so native mergable()'s
+    // otrapped test also keeps poisoned and plain weapons apart.
     for (const field of [
-        'unpaid', 'no_charge', 'obroken', 'otrapped', 'lamplit',
+        'unpaid', 'no_charge', 'obroken', 'otrapped', 'opoisoned', 'lamplit',
     ]) {
         if (!!otmp[field] !== !!obj[field])
             return false;
