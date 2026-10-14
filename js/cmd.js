@@ -6207,7 +6207,8 @@ async function dothrow(selectedItem = null, capabilityChecked = false, suppliedS
         if (item.bknown && isWeldedPrimary(item))
             return GETOBJ_DOWNPLAY;
         if (item.otyp === BOOMERANG || item === game.uwep && (item.otyp === AKLYS
-            || artifactById(item.oartifact)?.name === 'Mjollnir' && currentAttribute(A_STR) >= STR19(25)))
+            || artifactById(item.oartifact)?.name === 'Mjollnir'
+                && game.urole?.key === 'valkyrie' && currentAttribute(A_STR) >= STR19(25)))
             return GETOBJ_SUGGEST;
         if (item.quan === 1 && (item === game.uwep || item === game.uswapwep && game.u.twoweap))
             return GETOBJ_DOWNPLAY;
