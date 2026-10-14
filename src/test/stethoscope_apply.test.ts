@@ -4,12 +4,13 @@ import { CORPSTAT_FEMALE, CORPSTAT_MALE, CORPSTAT_NEUTER, CORPSTAT_RANDOM, CORR,
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
+import { setMonsterGivenName } from '../js/monster_given_name.js';
 import { CORPSE, FLINT, GAUNTLETS_OF_FUMBLING, GAUNTLETS_OF_POWER, OBJECT_NAMES, POT_HEALING, RUBY, STATUE, STETHOSCOPE } from '../js/object_data.js';
 import { learnObjectType } from '../js/object_knowledge.js';
 import { initRng } from '../js/rng.js';
 import { applyInventoryObject, runExtendedCommand } from './support/commands.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
-import { createMonsterAt } from './support/monsters.js';
+import { createMonsterAt, createSaddledSteed } from './support/monsters.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 import { addTrap } from './support/level-state.js';
 import { createSpecialLevel } from './support/topology.js';
@@ -193,6 +194,21 @@ void test('a visible monster receives a fresh hallucinated identity in its steth
     await runExtendedCommand('apply', `${stethoscope.invlet}l`);
 
     assert.match(game._pending_message, /^Status of the flaming sphere \(/);
+    assert.equal(game.context.move, 0);
+});
+
+void test('a stethoscope describes the saddle on a named invisible pony', async () => {
+    freshPlayableRoom({ flags: { verbose: true } });
+    const pony = await createSaddledSteed();
+    setMonsterGivenName(pony, 'Pip');
+    pony.minvis = true;
+    const stethoscope = await addInventoryObject(STETHOSCOPE);
+    const messages: string[] = [];
+    resetInputState().beforeRead = () => { messages.push(game._pending_message); };
+
+    await runExtendedCommand('apply', `${stethoscope.invlet}l   `);
+
+    assert.ok(messages.includes('There is a saddled Pip there.'), messages.join('\n'));
     assert.equal(game.context.move, 0);
 });
 

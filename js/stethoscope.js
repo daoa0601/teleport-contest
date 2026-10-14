@@ -136,7 +136,9 @@ async function hear(sound) {
 async function diagnoseMonster(monster, x, y) {
     // C formats this even when only the later status line is printed.
     // During hallucination each formatting selects a new perceived identity.
-    const name = monsterName(monster, { article: 'a', suppressIt: true, suppressInvisible: true });
+    const name = monsterName(monster, {
+        article: 'a', suppressIt: true, suppressInvisible: true, suppressSaddle: false,
+    });
     if (monster.mundetected) {
         if (!canSpotMonster(monster))
             await pline(`There is ${name} hidden there.`);
