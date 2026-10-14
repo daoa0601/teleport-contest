@@ -1,7 +1,6 @@
 // C objnam.c:readobjnam(), depicted gender, species admission, and food
 // contents. Species changes use the normal corpse and egg timer owner.
 import { CORPSTAT_FEMALE, CORPSTAT_HISTORIC, CORPSTAT_MALE, CORPSTAT_NEUTER, CORPSTAT_RANDOM, G_GENOD, G_NOCORPSE, } from './const.js';
-import { zombieForm } from './corpse_species.js';
 import { hatchableEggSpecies } from './egg_species.js';
 import { game } from './gstate.js';
 import { set_corpsenm } from './mklev.js';
@@ -66,7 +65,9 @@ export async function applyWishSpecies(object, parsed, wizardWish) {
                     species = guardianGenus(species);
                 set_corpsenm(object, species);
             }
-            if (parsed.zombifying && zombieForm(species) !== null)
+            // C tests zombie_form() as a boolean; NON_PM is -1, so a corpse
+            // without a zombie form also gets this timer and rots when it fires.
+            if (parsed.zombifying)
                 scheduleObjectTimer(object, OBJECT_TIMER_KIND.ZOMBIFY_MON, game.moves + 10 + rn2(5));
             break;
         case EGG:

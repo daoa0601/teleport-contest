@@ -1,10 +1,12 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { CORPSTAT_FEMALE, CORPSTAT_HISTORIC, CORPSTAT_NEUTER, G_GENOD } from '../js/const.js';
+import { placeCreatedObject } from '../js/floor_object.js';
 import { game } from '../js/gstate.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { CORPSE, EGG, FIGURINE, GLOB_OF_GRAY_OOZE, STATUE, TIN } from '../js/object_data.js';
 import { readObjectName } from '../js/objnam.js';
+import { runDueTimers } from '../js/timer_effects.js';
 import { freshObjectRoom } from './support/object-room.js';
 async function wish(request, wizardWish = true) {
     const result = await readObjectName(request, { wizardWish });
@@ -31,6 +33,18 @@ void test('a neuter species overrides a female corpse request', async () => {
     assert.equal(corpse.otyp, CORPSE);
     assert.equal(corpse.corpsenm, MONSTER_NAME.indexOf('lichen'));
     assert.equal(corpse.spe, CORPSTAT_NEUTER);
+});
+void test('a zombifying newt corpse wish rots after ten to fourteen turns', async () => {
+    freshObjectRoom();
+    const corpse = await wish('zombifying newt corpse');
+    assert.equal(corpse.corpsenm, MONSTER_NAME.indexOf('newt'));
+    placeCreatedObject(corpse, game.u.ux, game.u.uy);
+    game.moves += 9;
+    await runDueTimers();
+    assert.equal(corpse.where, 'floor', 'The corpse should remain for at least ten turns');
+    game.moves += 5;
+    await runDueTimers();
+    assert.equal(corpse.where, 'gone', 'A species without a zombie form should rot by turn fourteen');
 });
 void test('corpse wishes for pudding species produce their glob', async () => {
     freshObjectRoom();
