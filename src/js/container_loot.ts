@@ -21,7 +21,8 @@ import { BAG_OF_TRICKS } from './object_data.js';
 import { learnObjectType } from './object_knowledge.js';
 import { propertyIsActive } from './properties.js';
 import { loseHeroHp } from './hero_damage.js';
-import { rnd } from './rng.js';
+import { rn2, rnd } from './rng.js';
+import { reverseLoot } from './confused_loot.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
 import type { Position } from './map_types.js';
@@ -38,6 +39,14 @@ export async function lootCommand(input: LootCommandInput): Promise<void> {
         return;
     }
     if (heroHasNoHands(game)) { await pline('You have no hands!'); return; }
+    if (game.u.confused || (game.u.confusionTurns ?? 0) > 0) {
+        if (rn2(6) && await reverseLoot()) { game.context.move = 1; return; }
+        if (rn2(2)) {
+            await pline('Being confused, you find nothing to loot.');
+            game.context.move = 1;
+            return;
+        }
+    }
     const { ux: x, uy: y } = game.u;
     if (!game.iflags.menu_requested && await lootFloorContainers(x, y, input.unlockContainer)) return;
     const beside = requireGameLevel().monsters.some(monster =>
