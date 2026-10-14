@@ -591,6 +591,10 @@ async function enterTutorial() {
     await docrt();
     await checkSpecialRoom();
     await readEngravingAt(game.u.ux, game.u.uy, plineWithContinuation);
+    // maybe_do_tutorial() redraws after deferred_goto(), acknowledging the
+    // arrival engraving before the normal command loop starts.
+    vision_recalc(0);
+    await docrt();
     findArmorClass(game);
     await redrawMap();
     await flush_screen(1);

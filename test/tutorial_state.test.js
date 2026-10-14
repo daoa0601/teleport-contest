@@ -47,6 +47,29 @@ void test('tutorial entry retains the old armor class until its entry message is
     assert.equal(engine.state.inventory.length, 0);
     assert.equal(engine.state.u.uac, startingArmorClass);
 });
+void test('tutorial entry acknowledges the starting engraving before accepting a command', async () => {
+    const engine = await runSegment({
+        seed: 827,
+        datetime: '20261012090000',
+        nethackrc: 'OPTIONS=name:Learner,role:Ranger,race:elf,gender:female,align:chaotic,!legacy,!autopickup,pettype:none',
+        moves: '', storage: memoryStorage(),
+    });
+    for (let phase = 0; phase < 12; phase++) {
+        const display = engine.state.nhDisplay;
+        assert.ok(display);
+        const message = display.grid[0]?.map(cell => cell.ch).join('') ?? '';
+        if (message.includes('You read:')) {
+            assert.match(message, /You read:.*--More--/);
+            engine.inputGate.feed(' ');
+            await engine.runUntilInputNeeded();
+            assert.equal(display.grid[0]?.map(cell => cell.ch).join('').trim(), '');
+            return;
+        }
+        engine.inputGate.feed(message.includes('Do you want a tutorial?') ? 'y' : ' ');
+        await engine.runUntilInputNeeded();
+    }
+    assert.fail('Tutorial entry did not read its starting engraving');
+});
 void test('entering the tutorial stores equipment and returning restores the same items', async (t) => {
     freshObjectRoom();
     requirePlayingGame(game);
