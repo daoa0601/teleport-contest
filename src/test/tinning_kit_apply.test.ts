@@ -74,6 +74,29 @@ void test('an empty tinning kit takes time without selecting or consuming a corp
     assert.equal(game.context.move, 1);
 });
 
+for (const quantity of [1, 2]) {
+    void test(`tinning ${quantity} petrifying corpse${quantity === 1 ? '' : 's'} retains the quantity in the warning and death reason`, async () => {
+        freshPlayableRoom();
+        const kit = await addInventoryObject(TINNING_KIT, { spe: 2 });
+        const corpse = await addInventoryObject(CORPSE, {
+            corpsenm: MONSTER_NAME.indexOf('cockatrice'), quan: quantity,
+        });
+        let warning = '';
+        resetInputState().beforeRead = () => {
+            if (game._pending_message.includes('Tinning ')) warning = game._pending_message;
+        };
+
+        await runExtendedCommand('apply', `${kit.invlet}${corpse.invlet}${' '.repeat(100)}`);
+
+        const name = `a cockatrice corpse${quantity === 1 ? '' : 's'}`;
+        assert.ok(game.program_state.gameover, 'tinning petrifying flesh without gloves must be fatal');
+        assert.equal(warning, `Tinning ${name} without wearing gloves is a fatal mistake...`);
+        assert.equal(game._deathKiller, `trying to tin ${name} without gloves`);
+        assert.equal(corpse.quan, quantity);
+        assert.equal(kit.spe, 2);
+    });
+}
+
 for (const blind of [false, true]) {
     void test(`a ${blind ? 'blind' : 'sighted'} priest recognizes the blessing of a freshly made tin before dropping it`, async () => {
         const level = freshPlayableRoom({ role: 'priest', hero: { permaBlind: blind } });
