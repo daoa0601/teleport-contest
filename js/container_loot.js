@@ -14,6 +14,7 @@ import { monsterSaddle } from './steed.js';
 import { monsterName } from './monster_name.js';
 import { removeObjectFromMonsterInventory } from './monster_inventory.js';
 import { holdAnotherObject } from './hero_hold_object.js';
+import { clearJustPicked, markJustPicked } from './just_picked.js';
 import { pickupAtHero } from './pickup.js';
 import { objectCombatName } from './objnam.js';
 import { promptYesNoQuit } from './query.js';
@@ -164,7 +165,10 @@ async function lootMonster(monster) {
             await removeObjectFromMonsterInventory(monster, saddle);
             if (game.flags.verbose !== false)
                 await pline(`You take the ${objectCombatName(saddle)} off of ${monsterName(monster)}.`);
-            await holdAnotherObject(saddle, { dropMessage: `You drop ${inventoryItemDescription(saddle)}!` });
+            // C doloot()/addinv_core0() reset the batch when the saddle is acquired.
+            clearJustPicked(game);
+            const held = await holdAnotherObject(saddle, { dropMessage: `You drop ${inventoryItemDescription(saddle)}!` });
+            markJustPicked(held.object);
             rnd(3);
             game.context.move = 1;
             spentTime = true;

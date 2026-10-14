@@ -1,10 +1,25 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { game } from '../js/gstate.js';
-import { CHEST, CLUB, DART, FOOD_RATION } from '../js/object_data.js';
+import { CHEST, CLUB, DART, FOOD_RATION, SADDLE } from '../js/object_data.js';
 import { applyInventoryObject, runExtendedCommand } from './support/commands.js';
 import { addInventoryObject, floorObject, knownObject } from './support/game-objects.js';
 import { freshPlayableRoom } from './support/playable-room.js';
+import { createSaddledSteed } from './support/monsters.js';
+
+void test('removing a saddle replaces the previous just-picked batch', async () => {
+    freshPlayableRoom();
+    const previous = await addInventoryObject(CLUB, { pickup_prev: true });
+    const horse = await createSaddledSteed('horse');
+    const saddle = horse.minvent.find(object => object.otyp === SADDLE);
+    assert.ok(saddle);
+
+    await runExtendedCommand('loot', 'ly    ');
+
+    assert.equal(game.inventory.includes(saddle), true);
+    assert.equal(previous.pickup_prev, false);
+    assert.equal(saddle.pickup_prev, true);
+});
 
 void test('applying a container preserves the previous just-picked inventory batch', async () => {
     freshPlayableRoom();
