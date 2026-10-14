@@ -191,6 +191,7 @@ async function chooseStylus(state) {
     // C getobj(): "- " plus the suggested letters, then the ?* alternatives.
     const choices = letters ? `- ${letters}` : '-';
     const selection = await promptInventoryObject(`What do you want to write with? [${choices} or ?*] `, inventory, {
+        verb: 'write with',
         allowMenu: true,
         allowNone: true,
         noneDescription: `your ${heroFingerTipName(state)}`,

@@ -29,7 +29,7 @@ void test('answering a wrapped object query clears the message window', async ()
     const egg = game.inventory.find(object => object.invlet === 'b');
     assert.ok(egg);
     pushKeys('b');
-    const selection = await promptInventoryObject(`What do you want to rub the royal jelly on? [${letters} or ?*] `, game.inventory);
+    const selection = await promptInventoryObject(`What do you want to rub the royal jelly on? [${letters} or ?*] `, game.inventory, { verb: 'rub the royal jelly on' });
     await flush_screen(1);
     assert.equal(selection.object, egg);
     const topline = requireGameDisplay().grid[0]?.map(cell => cell.ch).join('').trimEnd();

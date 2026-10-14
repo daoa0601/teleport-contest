@@ -164,7 +164,7 @@ export function compactInventoryLetters(letters) {
     }
     return compact;
 }
-export async function promptInventoryObject(prompt, eligible, { verb = 'use', classify = () => GETOBJ_SUGGEST, allowGold = false, allowNone = false, noneDescription, noneSuggested = allowNone, allowMenu = false, allowCount = false, menuItems = eligible, } = {}) {
+export async function promptInventoryObject(prompt, eligible, { verb, classify = () => GETOBJ_SUGGEST, allowGold = false, allowNone = false, noneDescription, noneSuggested = allowNone, allowMenu = false, allowCount = false, menuItems = eligible, }) {
     // getobj() checks CQ_CANNED before invoking tty_yn_function(). A queued
     // choice neither acknowledges unread prose nor paints an item question.
     const queuedKey = takeCommandKey();

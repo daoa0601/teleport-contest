@@ -2431,7 +2431,7 @@ async function doname() {
         const selection = await promptInventoryObject(
             `What do you want to call? [${letters} or ?*] `,
             eligible,
-            { allowMenu: true },
+            { verb: 'call', allowMenu: true },
         );
         if (!selection.cancelled && selection.object) {
             const object = selection.object;
@@ -3277,7 +3277,7 @@ async function doinvoke() {
     const selection = await promptInventoryObject(
         `What do you want to invoke? [${
             compactInventoryLetters(letters)} or ?*] `,
-        eligible, { allowMenu: true },
+        eligible, { verb: 'invoke', allowMenu: true },
     );
     if (selection.cancelled || !selection.object) {
         game.context.move = 0;
@@ -3334,7 +3334,7 @@ async function rubRoyalJelly(jelly: GameObject) {
         const selection = await promptInventoryObject(
             `What do you want to rub the royal jelly on? [${letters} or ?*] `,
             eggs,
-            { allowMenu: true },
+            { verb: 'rub the royal jelly on', allowMenu: true },
         );
         if (!selection.cancelled) game._pending_message = '';
         return selection.object;
@@ -5019,7 +5019,7 @@ async function removeWornItem(action: 'remove' | 'take off', itemAction = false)
         const letters = preferred.map(candidate => candidate.invlet).join('');
         const prompt = `What do you want to ${action}? [${letters} or ?*] `;
         inventoryPrompt = prompt;
-        const selection = await promptInventoryObject(prompt, worn);
+        const selection = await promptInventoryObject(prompt, worn, { verb: action });
         if (selection.cancelled) {
             game.context.move = 0;
             return;
@@ -5555,6 +5555,7 @@ async function dodrop(): Promise<void> {
             .map(object => object.invlet).join('');
         const prompt = `What do you want to drop? [${gold ? '$' : ''}${compactInventoryLetters(letters)} or ?*] `;
         const selection = await promptInventoryObject(prompt, inventory, {
+            verb: 'drop',
             allowGold: true, allowMenu: true, allowCount: true,
         });
         if (selection.cancelled) {
@@ -6188,6 +6189,7 @@ async function doquiverCore(verb: 'ready' | 'fire'): Promise<QuiverCommandResult
     const prompt = `What do you want to ${verb}? [${choices ? `${choices} or ?*` : '*'}] `;
     const selection = await promptInventoryObject(
         prompt, game.inventory || [], {
+            verb,
             allowNone: true, allowMenu: true, allowCount: true,
             menuItems: suggestions, noneSuggested,
             noneDescription: verb === 'ready'

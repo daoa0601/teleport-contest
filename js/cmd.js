@@ -2254,7 +2254,7 @@ async function doname() {
             && (!objectTypeKnown(object)
                 || !!game._objectCallNames?.[object.otyp]));
         const letters = compactInventoryLetters(suggested.map(object => object.invlet).join(''));
-        const selection = await promptInventoryObject(`What do you want to call? [${letters} or ?*] `, eligible, { allowMenu: true });
+        const selection = await promptInventoryObject(`What do you want to call? [${letters} or ?*] `, eligible, { verb: 'call', allowMenu: true });
         if (!selection.cancelled && selection.object) {
             const object = selection.object;
             if (object.dknown === false) {
@@ -3108,7 +3108,7 @@ async function doinvoke() {
         return;
     }
     const letters = eligible.map(object => object.invlet).join('');
-    const selection = await promptInventoryObject(`What do you want to invoke? [${compactInventoryLetters(letters)} or ?*] `, eligible, { allowMenu: true });
+    const selection = await promptInventoryObject(`What do you want to invoke? [${compactInventoryLetters(letters)} or ?*] `, eligible, { verb: 'invoke', allowMenu: true });
     if (selection.cancelled || !selection.object) {
         game.context.move = 0;
         return;
@@ -3154,7 +3154,7 @@ async function rubRoyalJelly(jelly) {
             return null;
         }
         const letters = compactInventoryLetters(eggs.map(egg => egg.invlet).join(''));
-        const selection = await promptInventoryObject(`What do you want to rub the royal jelly on? [${letters} or ?*] `, eggs, { allowMenu: true });
+        const selection = await promptInventoryObject(`What do you want to rub the royal jelly on? [${letters} or ?*] `, eggs, { verb: 'rub the royal jelly on', allowMenu: true });
         if (!selection.cancelled)
             game._pending_message = '';
         return selection.object;
@@ -4798,7 +4798,7 @@ async function removeWornItem(action, itemAction = false) {
         const letters = preferred.map(candidate => candidate.invlet).join('');
         const prompt = `What do you want to ${action}? [${letters} or ?*] `;
         inventoryPrompt = prompt;
-        const selection = await promptInventoryObject(prompt, worn);
+        const selection = await promptInventoryObject(prompt, worn, { verb: action });
         if (selection.cancelled) {
             game.context.move = 0;
             return;
@@ -5308,6 +5308,7 @@ async function dodrop() {
             .map(object => object.invlet).join('');
         const prompt = `What do you want to drop? [${gold ? '$' : ''}${compactInventoryLetters(letters)} or ?*] `;
         const selection = await promptInventoryObject(prompt, inventory, {
+            verb: 'drop',
             allowGold: true, allowMenu: true, allowCount: true,
         });
         if (selection.cancelled) {
@@ -5927,6 +5928,7 @@ async function doquiverCore(verb) {
     const choices = `${noneSuggested ? '- ' : ''}${compactInventoryLetters(letters)}`.trim();
     const prompt = `What do you want to ${verb}? [${choices ? `${choices} or ?*` : '*'}] `;
     const selection = await promptInventoryObject(prompt, game.inventory || [], {
+        verb,
         allowNone: true, allowMenu: true, allowCount: true,
         menuItems: suggestions, noneSuggested,
         noneDescription: verb === 'ready'

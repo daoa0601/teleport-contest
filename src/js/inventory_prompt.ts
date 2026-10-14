@@ -14,7 +14,7 @@ import type { GameObject } from './object_types.js';
 export type InventoryClassification = 0 | 1 | 2 | 3 | 4 | 5;
 
 export interface InventoryPromptOptions {
-    verb?: string;
+    verb: string;
     classify?: (object: GameObject) => InventoryClassification;
     allowGold?: boolean;
     allowNone?: boolean;
@@ -204,7 +204,7 @@ export function compactInventoryLetters(letters: string): string {
 }
 
 export async function promptInventoryObject(prompt: string, eligible: readonly GameObject[], {
-    verb = 'use',
+    verb,
     classify = () => GETOBJ_SUGGEST,
     allowGold = false,
     allowNone = false,
@@ -213,7 +213,7 @@ export async function promptInventoryObject(prompt: string, eligible: readonly G
     allowMenu = false,
     allowCount = false,
     menuItems = eligible,
-}: InventoryPromptOptions = {}): Promise<InventoryObjectSelection> {
+}: InventoryPromptOptions): Promise<InventoryObjectSelection> {
     // getobj() checks CQ_CANNED before invoking tty_yn_function(). A queued
     // choice neither acknowledges unread prose nor paints an item question.
     const queuedKey = takeCommandKey();
