@@ -116,6 +116,23 @@ void test('a hallucinated corpse diagnosis takes time even on the first use', as
     assert.equal(game.context.move, 1);
     assert.match(game._pending_message, /"It's dead, Jim\."/);
 });
+for (const type of [CORPSE, STATUE]) {
+    for (const acoustics of [false, true]) {
+        void test(`a hallucinated ${type === CORPSE ? 'corpse' : 'statue'} diagnosis ${acoustics ? 'is muffled underwater' : 'is silent with acoustics disabled'}`, async () => {
+            freshPlayableRoom({
+                flags: { acoustics }, hero: { hallucination: true, hallucinationTurns: 12 },
+            });
+            game.underwater = true;
+            await floorObject(type, game.u.ux + 1, game.u.uy, { corpsenm: MONSTER_NAME.indexOf('newt') });
+            const stethoscope = await addInventoryObject(STETHOSCOPE);
+            await runExtendedCommand('apply', `${stethoscope.invlet}l`);
+            const diagnosis = type === CORPSE ? "It's dead" : "You're both stoned";
+            assert.equal(game._pending_message, acoustics
+                ? `You barely hear a voice say, "${diagnosis}, Jim."` : '');
+            assert.equal(game.context.move, 1, 'hallucinated floor diagnosis always takes time');
+        });
+    }
+}
 for (const identified of [false, true]) {
     void test(`a stethoscope ${identified ? 'names an identified potion disguise' : 'keeps an unknown potion disguise generic'}`, async () => {
         freshPlayableRoom();

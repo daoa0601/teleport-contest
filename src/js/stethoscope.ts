@@ -166,7 +166,7 @@ async function diagnoseFloorObjects(x: number, y: number): Promise<{ found: bool
         if (object.otyp === CORPSE && one) {
             diagnosis = `${corpsePronoun(object, species)}'s dead`;
         }
-        await pline(`You hear a voice say, "${diagnosis}, Jim."`);
+        await hear(`a voice say, "${diagnosis}, Jim."`);
         return { found: true, spentTime: true };
     }
     if (object.otyp === CORPSE) {
