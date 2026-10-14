@@ -103,9 +103,9 @@ async function dropVenomAtHero(
     return result;
 }
 
-async function tossVenomUp(
-    venom: GameObject, state: GameState, publish: MessagePublisher,
-    random: typeof rn2, rollOne: typeof rnd,
+export async function tossVenomUp(
+    venom: GameObject, state: GameState, publish: MessagePublisher = plineWithContinuation,
+    random: typeof rn2 = rn2, rollOne: typeof rnd = rnd,
 ) {
     const underwater = state.underwater || state.u?.uinwater;
     const hitsRoof = random(5) !== 0 && !underwater;

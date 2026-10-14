@@ -11,6 +11,8 @@ import {
 } from './hero_thrown_egg_pie_venom.js';
 import { hitMonsterWithThrownObject } from './hero_ranged_attack.js';
 import { hurtleHero } from './hero_hurtle.js';
+import { tossVenomUp } from './hero_spit.js';
+import { ACID_VENOM, BLINDING_VENOM } from './object_data.js';
 import {
     isThrowingWeapon, launcherMatchesAmmo,
 } from './object_properties.js';
@@ -65,6 +67,10 @@ export async function throwOrdinaryObject({
         const actualDx = state.u.dx ?? dx;
         const actualDy = state.u.dy ?? dy;
         if (state.u.dz) {
+            if (state.u.dz < 0 && (thrown.otyp === ACID_VENOM || thrown.otyp === BLINDING_VENOM)) {
+                const { destroyed } = await tossVenomUp(thrown, state);
+                return { object: thrown, landed: destroyed ? null : thrown, stoppedBy: 'vertical' };
+            }
             const landed = await finishHeroThrownObjectLanding({
                 state,
                 object: thrown,
