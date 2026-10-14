@@ -524,9 +524,11 @@ export async function takeFromContainer(container, object, state = game, count =
 }
 async function takeSelectedObjects(container) {
     if (!container.contents?.length)
-        return [];
+        return { results: [], spentTime: false };
     const categories = await chooseCategories('Take out what type of objects?', container.contents);
     const eligible = matchingObjects(container.contents, categories.matchers);
+    if (categories.matchers.length)
+        container.cknown = true;
     const selected = categories.autoSelect
         ? eligible.map(value => ({ value, count: -1 }))
         : await chooseObjects('Take out what?', eligible, false);
@@ -542,7 +544,8 @@ async function takeSelectedObjects(container) {
         if (result.stop)
             break;
     }
-    return results;
+    return { results, spentTime: categories.autoSelect
+            ? results.some(result => result.moved) : selected.length > 0 };
 }
 async function putSelectedObjects(container, stashOne = false) {
     // menu_loot queries the whole inventory; only stash-one uses ck_bag.
@@ -721,10 +724,10 @@ export async function useContainer(container, { held = false, moreContainers = f
             await pline(`The ${containerNoun(container)} is empty.`);
         }
         else {
-            const results = await takeSelectedObjects(container);
-            if (results.some(result => result.moved))
+            const transfer = await takeSelectedObjects(container);
+            if (transfer.spentTime)
                 spentTime = true;
-            stopped = results.some(result => result.stop);
+            stopped = transfer.results.some(result => result.stop);
         }
     }
     if (!stopped && (putIn || action === keys.stash)) {
@@ -745,8 +748,8 @@ export async function useContainer(container, { held = false, moreContainers = f
         }
     }
     if (!stopped && takeOut && putInFirst && container.contents?.length) {
-        const results = await takeSelectedObjects(container);
-        if (results.some(result => result.moved))
+        const transfer = await takeSelectedObjects(container);
+        if (transfer.spentTime)
             spentTime = true;
     }
     if (game.program_state?.gameover)

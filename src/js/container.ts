@@ -77,6 +77,10 @@ interface CategorySelection {
     justPickedCount?: number;
 }
 interface TransferStack { object: GameObject; parent: GameObject | null }
+interface ContainerTransferBatch {
+    results: ContainerTransferResult[];
+    spentTime: boolean;
+}
 export type ContainerTransferResult =
     | { moved: true; message: string; stop?: never; destroyedContainer?: never }
     | { moved: false; message: string | null; stop?: boolean; destroyedContainer?: never }
@@ -588,12 +592,13 @@ export async function takeFromContainer(
     };
 }
 
-async function takeSelectedObjects(container: GameObject): Promise<ContainerTransferResult[]> {
-    if (!container.contents?.length) return [];
+async function takeSelectedObjects(container: GameObject): Promise<ContainerTransferBatch> {
+    if (!container.contents?.length) return { results: [], spentTime: false };
     const categories = await chooseCategories(
         'Take out what type of objects?', container.contents,
     );
     const eligible = matchingObjects(container.contents, categories.matchers);
+    if (categories.matchers.length) container.cknown = true;
     const selected = categories.autoSelect
         ? eligible.map(value => ({ value, count: -1 }))
         : await chooseObjects('Take out what?', eligible, false);
@@ -609,13 +614,11 @@ async function takeSelectedObjects(container: GameObject): Promise<ContainerTran
         if (result.moved) resetJustPicked = false;
         if (result.stop) break;
     }
-    return results;
+    return { results, spentTime: categories.autoSelect
+        ? results.some(result => result.moved) : selected.length > 0 };
 }
 
-async function putSelectedObjects(container: GameObject, stashOne = false): Promise<{
-    results: ContainerTransferResult[];
-    spentTime: boolean;
-}> {
+async function putSelectedObjects(container: GameObject, stashOne = false): Promise<ContainerTransferBatch> {
     // menu_loot queries the whole inventory; only stash-one uses ck_bag.
     const candidates = stashOne
         ? game.inventory.filter(object => object !== container) : game.inventory;
@@ -795,9 +798,9 @@ export async function useContainer(container: GameObject, {
             container.cknown = true;
             await pline(`The ${containerNoun(container)} is empty.`);
         } else {
-            const results = await takeSelectedObjects(container);
-            if (results.some(result => result.moved)) spentTime = true;
-            stopped = results.some(result => result.stop);
+            const transfer = await takeSelectedObjects(container);
+            if (transfer.spentTime) spentTime = true;
+            stopped = transfer.results.some(result => result.stop);
         }
     }
 
@@ -821,8 +824,8 @@ export async function useContainer(container: GameObject, {
     }
 
     if (!stopped && takeOut && putInFirst && container.contents?.length) {
-        const results = await takeSelectedObjects(container);
-        if (results.some(result => result.moved)) spentTime = true;
+        const transfer = await takeSelectedObjects(container);
+        if (transfer.spentTime) spentTime = true;
     }
 
     if (game.program_state?.gameover) return { spentTime: true, container };
