@@ -2749,6 +2749,11 @@ async function makemon(
         // Branch knowledge survives puzzle completion.
         monster.mtrapseen = (1 << (PIT - 1)) | (1 << (HOLE - 1));
     }
+    if (Is_stronghold(game.u.uz) && !(requireMonsterData(MONSTER_FLAGS1, mndx) & M1_MINDLESS))
+        monster.mtrapseen = (monster.mtrapseen ?? 0) | (1 << (TRAPDOOR - 1));
+    // Native quest leaders and nemeses know every trap type at birth.
+    if (MONSTER_SOUND[mndx] === 36 || MONSTER_SOUND[mndx] === 37)
+        monster.mtrapseen = -1;
     if (mndx === PM_SHOPKEEPER) {
         monster.mpeaceful = 1;
     }
