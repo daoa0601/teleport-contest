@@ -2711,7 +2711,7 @@ async function wizKill() {
     let cursor = { x: game.u.ux, y: game.u.uy };
     let prompt = 'Pick first monster to slay';
     for (;;) {
-        await pline(`${prompt}:`);
+        await plineWithContinuation(`${prompt}:`);
         prompt = 'Next monster';
         const verbose = game.flags.verbose;
         const autodescribe = game.iflags.autodescribe;
@@ -2721,8 +2721,7 @@ async function wizKill() {
         try {
             const tipShown = await showGetposTip();
             target = await selectMapPosition({
-                start: cursor, prompt: tipShown ? 'Move cursor to a monster:'
-                    : await farlookLocationDescription(cursor.x, cursor.y) ?? `${prompt}:`,
+                start: cursor, prompt: tipShown ? 'Move cursor to a monster:' : game._pending_message,
                 goal: 'a monster', describe: farlookLocationDescription,
             });
         }

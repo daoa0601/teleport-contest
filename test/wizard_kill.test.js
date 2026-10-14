@@ -1,12 +1,25 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { rhack } from '../js/cmd.js';
-import { game, requirePlayingGame } from '../js/gstate.js';
+import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { runExtendedCommand } from './support/commands.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
+void test('#wizkill keeps the first-target prompt visible before the cursor moves', async () => {
+    freshObjectRoom({ flags: { debug: true, tips: false } });
+    requirePlayingGame(game);
+    resetInputState().display = {
+        async readKey() {
+            const screen = requireGameDisplay().grid[0]?.map(cell => cell.ch).join('') ?? '';
+            assert.match(screen, /Pick first monster to slay:/);
+            return 27;
+        },
+    };
+    await runExtendedCommand('wizkill');
+    assert.equal(game.context.move, 0);
+});
 void test('#wizkill keeps selecting targets from the last chosen position without taking time', async () => {
     freshObjectRoom({ flags: { debug: true, tips: false } });
     requirePlayingGame(game);
