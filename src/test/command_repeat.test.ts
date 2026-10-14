@@ -152,3 +152,61 @@ void test('repeat resolves an alias to the native command used by Lua admission'
     assert.equal(await nhgetch(), 27, 'the vetoed repeat never enters the naming menu');
     assert.equal(game.context.move, 0);
 });
+
+for (const command of ['\x04', '#kick\n']) {
+    for (const direction of ['\x1b', '.', '<', '>']) {
+        void test(`kick ${JSON.stringify(command + direction)} clears recall when no adjacent direction is selected`, async () => {
+            const input = freshTurnRoom();
+            input.feed(command + direction);
+            await rhack(0);
+            assert.equal(game.context.move, 0);
+
+            input.feed('\x01');
+            await rhack(0);
+
+            assert.equal(game._pending_message, 'There is no command available to repeat.');
+            assert.equal(game.context.move, 0);
+        });
+    }
+}
+
+void test('cancelling the ride direction clears recall', async () => {
+    const input = freshTurnRoom();
+    input.feed('#ride\n\x1b');
+    await rhack(0);
+    assert.equal(game.context.move, 0);
+
+    input.feed('\x01');
+    await rhack(0);
+
+    assert.equal(game._pending_message, 'There is no command available to repeat.');
+    assert.equal(game.context.move, 0);
+});
+
+void test('a ride direction outside the map clears recall', async () => {
+    const input = freshTurnRoom({ heroX: 1 });
+    input.feed('#ride\nh');
+    await rhack(0);
+
+    input.feed('\x01');
+    await rhack(0);
+
+    assert.equal(game._pending_message, 'There is no command available to repeat.');
+    assert.equal(game.context.move, 0);
+});
+
+for (const direction of ['.', '<', '>']) {
+    void test(`ride toward ${direction} checks the current square and retains recall`, async () => {
+        const input = freshTurnRoom();
+        input.feed(`#ride\n${direction}`);
+        await rhack(0);
+        assert.equal(game._pending_message, 'I see nobody there.');
+        assert.equal(game.context.move, 0);
+
+        input.feed('\x01h');
+        await rhack(0);
+
+        assert.equal(game._pending_message, 'I see nobody there.');
+        assert.equal(await nhgetch(), 'h'.charCodeAt(0), 'the repeat reuses the accepted direction');
+    });
+}

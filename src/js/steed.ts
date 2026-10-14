@@ -67,6 +67,7 @@ import {
 import { applyHeroLocationEffects, heroCouldMoveOntoBoulder } from './cmd.js';
 import { finishDestinationSpotEffects } from './location_effects.js';
 import { adjustHeroAlignment } from './alignment.js';
+import { resetCommandVariables } from './command_state.js';
 
 import { resumeDeferredMonsterTrap, triggerImmediateMonsterTrap } from './monmove.js';
 import { levelHasCeiling, isLavaAt, isPoolAt } from './terrain_properties.js';
@@ -154,8 +155,8 @@ export async function doride() {
     }
 
     const direction = await promptDirection();
-    if (!direction || direction.dz || (!direction.dx && !direction.dy)) {
-        game.context.move = 0;
+    if (!direction) {
+        resetCommandVariables(true); // doride() returns ECMD_CANCEL.
         return;
     }
     const { dx, dy } = direction;
@@ -163,7 +164,7 @@ export async function doride() {
     const x = hero.ux + dx;
     const y = hero.uy + dy;
     if (!isok(x, y)) {
-        game.context.move = 0;
+        resetCommandVariables(true);
         return;
     }
     const force = !!game.flags.debug

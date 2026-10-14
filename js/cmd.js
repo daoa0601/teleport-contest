@@ -1902,7 +1902,7 @@ async function dokick() {
     }
     const direction = await promptDirection();
     if (!direction || direction.dz || (!direction.dx && !direction.dy)) {
-        game.context.move = 0;
+        resetCommandVariables(true); // dokick() returns ECMD_CANCEL.
         return;
     }
     game.u.dx = direction.dx;
