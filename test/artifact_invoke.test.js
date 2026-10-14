@@ -112,7 +112,7 @@ void test('the Eyes show magical enlightenment when invoked', async () => {
     assert.equal(game.u._exercise[A_WIS], 0);
 });
 void test('the Sceptre turns conflict on', async () => {
-    freshObjectRoom({ role: 'caveman', moves: 130 });
+    freshObjectRoom({ role: 'caveman', hero: { ualign: { type: 1, record: 10 } }, moves: 130 });
     requirePlayingGame(game);
     const sceptre = await artifactObject('The Sceptre of Might', {
         invlet: 'a',
@@ -125,7 +125,7 @@ void test('the Sceptre turns conflict on', async () => {
     assert.equal(game._pending_message, 'You feel like a rabble-rouser.');
 });
 void test('the Orb turns the hero invisible', async () => {
-    freshObjectRoom({ role: 'archeologist', moves: 150 });
+    freshObjectRoom({ role: 'archeologist', hero: { ualign: { type: 1, record: 10 } }, moves: 150 });
     requirePlayingGame(game);
     const orb = await artifactObject('The Orb of Detection', {
         invlet: 'a',

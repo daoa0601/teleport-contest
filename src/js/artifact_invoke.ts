@@ -25,6 +25,7 @@ import { ACID_VENOM, ARROW, BLINDING_VENOM, SPE_CONE_OF_COLD, SPE_FIREBALL } fro
 import {
     captureLevitationState,
     hasInvokedProperty,
+    hasIntrinsicProperty,
     propertyHasOtherSources,
     refreshProperty,
     setInvokedProperty,
@@ -32,7 +33,7 @@ import {
 import { floatHeroDown, floatHeroUp } from './terrain_movement.js';
 import { applyHeroLocationEffects } from './cmd.js';
 import { d, rnd, rnz } from './rng.js';
-import { heroIsBlind, setHeroBlindnessTurns } from './senses.js';
+import { heroIsBlind, heroIsBlinded, permanentBlind } from './senses.js';
 import { clearHeroSliming, heroIsSliming } from './slime.js';
 import { untrap } from './untrap.js';
 import { objectWeight } from './weight.js';
@@ -42,7 +43,7 @@ import { heroSpecies } from './hero_species.js';
 import { lightDamage, lightRoom } from './light.js';
 import { MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL } from './monster_data.js';
 import { definiteName, objectCombatName, objectName, objectNameIsPlural } from './objnam.js';
-import { flashBurn } from './sight_change.js';
+import { flashBurn, makeBlinded } from './sight_change.js';
 import { promptDirection } from './tty_prompts.js';
 import { castSpell } from './spell.js';
 import { spellSkillType } from './spell_casting_rules.js';
@@ -286,17 +287,24 @@ async function invokeHealing(
     const healing = Math.trunc((maximum + 1 - current) / 2);
     const cream = hero.ucreamed ?? 0;
     const curesBlindness = (hero.blindTurns ?? 0) > cream;
-    const helps = healing > 0 || heroIsSick(state) || heroIsSliming(state) || curesBlindness;
+    const permanent = permanentBlind(state) || hasIntrinsicProperty('blinded', null, state);
+    const treatsIllness = heroIsSick(state) || heroIsSliming(state);
+    // The pinned helper emits this initial feedback separately from its
+    // timeout check, even when permanent blindness cannot be cured.
+    if (healing !== 0 || treatsIllness || heroIsBlinded(state) && (curesBlindness || permanent))
+        await publish('You feel better.');
+    const helps = healing !== 0 || treatsIllness || curesBlindness;
 
     if (!helps) {
         await nothingSpecial(object, state, publish);
         return;
     }
-    await publish('You feel better.');
+    await publish(!healing && !treatsIllness && permanent
+        ? 'You feel slightly better.' : 'You feel better.');
     if (healing > 0) hero[hitPoints] = current + healing;
     cureHeroSickness(state);
     clearHeroSliming(state);
-    if (curesBlindness) setHeroBlindnessTurns(cream, state);
+    if (curesBlindness) await makeBlinded(cream, { state, talk: false, publish });
     state.context.botl = true;
 }
 
