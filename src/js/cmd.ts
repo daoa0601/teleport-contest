@@ -196,7 +196,7 @@ import { PLAYABLE_INSTRUMENTS, playInstrument } from './music.js';
 import { dodiscovered } from './o_init.js';
 import { doattributes, doconduct } from './insight.js';
 import { doextversion } from './extversion.js';
-import { dosearch, mapLevel } from './detect.js';
+import { dosearch, findit, mapLevel } from './detect.js';
 import { detectMonsters } from './magic_detection.js';
 import { abusePetAfterHeroHit } from './dog.js';
 import {
@@ -2800,6 +2800,11 @@ async function wizGenesis() {
     game.context.move = 0;
 }
 
+async function wizDetect() {
+    await findit();
+    game.context.move = 0;
+}
+
 async function wizKill() {
     if (!game.flags?.debug) {
         await pline('#wizkill: unknown extended command.');
@@ -3212,6 +3217,7 @@ const EXTENDED_COMMAND_HANDLERS = new Map<string, () => Promise<unknown>>([
     ['wizwhere', wizWhere],
     ['wizwish', wizWish],
     ['wizgenesis', wizGenesis],
+    ['wizdetect', wizDetect],
     ['wizkill', wizKill],
     ['wizidentify', wizIdentify],
     ['wizintrinsic', wizIntrinsic],
