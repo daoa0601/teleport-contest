@@ -16,11 +16,13 @@ import {
     OBJECT_PROPERTY, RIN_PROTECTION,
 } from './object_data.js';
 import { learnObjectType } from './object_knowledge.js';
+import { refreshHeroSeeing } from './hero_seeing.js';
+import { showInvisibilityMessage } from './hero_invisibility.js';
 import { heroIsBlind } from './senses.js';
 import { objectTypeKnown } from './shk.js';
 import {
     captureLevitationState, grantWornProperty, propertyIsActive,
-    refreshMovementProperties, removeWornProperty, hasIntrinsicProperty, propertyTimeout, setPropertyTimeout,
+    refreshMovementProperties, removeWornProperty, hasIntrinsicProperty, propertyIsBlocked, propertyTimeout, setPropertyTimeout,
 } from './properties.js';
 import { isWeldedPrimary, releaseWeaponSlots } from './weapon_slots.js';
 import { cancelSlotTakeoff } from './takeoff_state.js';
@@ -101,6 +103,8 @@ export async function wearHeroAccessory(
         requireLiveGame(state);
     const previousLevitation = captureLevitationState(state);
     const wasStealthy = propertyIsActive('stealth', state);
+    const wasInvisible = propertyIsActive('invisible', state);
+    const wasSeeingInvisible = propertyIsActive('seeInvisible', state);
     const wasFlying = !!state.u.flying;
     const wasInGas = property === 'magicalBreathing' && heroIsInDangerousRegion(state);
     await releaseWeaponSlots(object, state);
@@ -114,6 +118,20 @@ export async function wearHeroAccessory(
     if (property) grantWornProperty(property, object, slot, state);
     if (slot !== 'uamul') changeRingBonus(object, 1, state);
     if (slot === 'uamul') await applyAmuletOnEffects(object, state, { wasFlying, wasInGas });
+    if (property === 'warning') await see_monsters();
+    if (property === 'seeInvisible') {
+        await refreshHeroSeeing({ state });
+        if (propertyIsActive('invisible', state) && !wasSeeingInvisible && !heroIsBlind(state)) {
+            newsym(state.u.ux, state.u.uy);
+            await plineWithContinuation('Suddenly you are transparent, but there!');
+            learnRing(object, true, state);
+        }
+    } else if (property === 'invisible' && !wasInvisible
+        && !propertyIsBlocked('invisible', state) && !heroIsBlind(state)) {
+        learnRing(object, true, state);
+        newsym(state.u.ux, state.u.uy);
+        await showInvisibilityMessage(state);
+    }
     if (property === 'protectionFromShapeChangers')
         await restoreNaturalMonsterShapes(state);
     if (property === 'stealth' && !wasStealthy && propertyIsActive('stealth', state)) {
@@ -208,7 +226,20 @@ export async function removeHeroAccessory(
     const previousLevitation = captureLevitationState(state);
     const wasStealthy = propertyIsActive('stealth', state);
     const property = clearHeroAccessory(object, state);
-    if (property === 'flying') state.context.botl = true;
+    if (property === 'warning') await see_monsters();
+    if (property === 'seeInvisible') {
+        if (!propertyIsActive('seeInvisible', state)) await refreshHeroSeeing({ state });
+        if (propertyIsActive('invisible', state) && !propertyIsActive('seeInvisible', state) && !heroIsBlind(state)) {
+            newsym(state.u.ux, state.u.uy);
+            await plineWithContinuation('Suddenly you cannot see yourself.');
+            learnRing(object, true, state);
+        }
+    } else if (property === 'invisible' && !propertyIsActive('invisible', state)
+        && !propertyIsBlocked('invisible', state) && !heroIsBlind(state)) {
+        newsym(state.u.ux, state.u.uy);
+        await plineWithContinuation(`Your body seems to unfade${propertyIsActive('seeInvisible', state) ? ' completely' : '..'}.`);
+        learnRing(object, true, state);
+    }
     if (property === 'stealth' && wasStealthy && !propertyIsActive('stealth', state)) {
         learnRing(object, true, state);
         const steed = state.u.usteed;
