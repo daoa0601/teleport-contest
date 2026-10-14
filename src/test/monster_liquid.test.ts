@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 
 import { LAVAPOOL, POOL, W_AMUL } from '../js/const.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
+import { finishHeroLiquidMonsterDeath } from '../js/hero_monster_death.js';
 import { initializePet } from '../js/dog.js';
 import { setMonsterGivenName } from '../js/monster_given_name.js';
 import { flush_screen } from '../js/display.js';
@@ -14,6 +15,27 @@ import { knownObject } from './support/game-objects.js';
 import { installSwallowedHero } from './support/hero-state.js';
 import { createMonsterAt, createSaddledSteed, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+
+for (const lava of [false, true]) {
+    void test(`${lava ? 'lava scorching' : 'iron golem rust'} on the hero turn gives no hero kill credit`, async () => {
+        const level = freshObjectRoom();
+        requirePlayingGame(game);
+        const monster = await createMonsterAt(lava ? 'fire ant' : 'iron golem', 12, 10);
+        monster.mhp = 1;
+        level.requireAt(12, 10).typ = lava ? LAVAPOOL : POOL;
+        const experience = game.u.uexp;
+        const kills = game.u.uconduct.killer;
+
+        await resolveMonsterLiquid(monster, game, {
+            monsterMoving: false, finishDeath: finishHeroLiquidMonsterDeath,
+            random: () => 0, rollDice: () => 2,
+        });
+
+        assert.equal(monster.dead, true);
+        assert.equal(game.u.uconduct.killer, kills);
+        assert.equal(game.u.uexp, experience);
+    });
+}
 
 void test('a drowning engulfer announces the water flushing the hero out', async () => {
     const level = freshObjectRoom();

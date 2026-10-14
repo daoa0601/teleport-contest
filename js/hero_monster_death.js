@@ -19,7 +19,7 @@ import { preventMonsterDeath } from './mondeath.js';
 import { prepareMonsterPetrification } from './monster_stoning.js';
 import { MONSTER_ALIGNMENT, MONSTER_FLAGS2, MONSTER_SIZE, monsterIsAlwaysHostile, monsterIsHuman, monsterIsKop, monsterIsNonliving, monsterIsPlainHuman, monsterIsPlayerMonster, monsterIsQuestGuardian, monsterIsQuestNemesis, monsterIsUnicorn, } from './monster_data.js';
 import { monsterDeathCount, } from './monster_vitals.js';
-import { createMonsterRemains, detachDeadMonster, levelAllowsMonsterDeathDrops, monsterBodyCrumbles, monsterBodyCrumblesMessage, monsterDeathSquareAllowsObjects, monsterLeavesCorpse, } from './monster_death.js';
+import { createMonsterRemains, detachDeadMonster, finishMonsterLiquidDeath, levelAllowsMonsterDeathDrops, monsterBodyCrumbles, monsterBodyCrumblesMessage, monsterDeathSquareAllowsObjects, monsterLeavesCorpse, } from './monster_death.js';
 import { resolveMonsterDeathExplosion, monsterDeathSwallower, rollMonsterDeathExplosion, } from './monster_explosion.js';
 import { addObjectToMonsterInventory, } from './monster_inventory.js';
 import { BOULDER, FIGURINE, OBJECT_BIMANUAL, } from './object_data.js';
@@ -291,9 +291,13 @@ export async function finishHeroMonsterKillOutcome(monster, x, y, { hallucinatin
     adjustHeroAlignment(monster.malign);
     return { killed: true, heroDied: false };
 }
-// When the hero creates water under a monster, minliquid() calls xkilled()
-// without printing a second kill line.
-export async function finishHeroLiquidMonsterDeath(monster, { leaveCorpse = false, hallucinating = heroIsHallucinating(game), } = {}) {
+// Drowning caused by the hero uses xkilled() without a second kill line.
+// Rust and fire-resistant scorching retain mon.c's environmental death owner.
+export async function finishHeroLiquidMonsterDeath(monster, { leaveCorpse = false, hallucinating = heroIsHallucinating(game), cause, } = {}) {
+    if (cause === 'rust' || cause === 'lava-scorch') {
+        const death = await finishMonsterLiquidDeath(monster, { leaveCorpse });
+        return { ...death, heroDied: !!death.heroDied };
+    }
     const x = monster.mx;
     const y = monster.my;
     const { killed, heroDied } = await finishHeroMonsterKillOutcome(monster, x, y, {
