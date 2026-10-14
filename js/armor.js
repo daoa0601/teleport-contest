@@ -249,6 +249,8 @@ export async function removeHeroArmor(object, state = game, options = {}) {
         if (alignment === undefined)
             throw new Error('Helmet removal requires the hero base alignment');
         await changeHeroAlignmentFromHelmet(alignment, false, state);
+        if (state.program_state.gameover)
+            return false;
     }
     const removed = await clearHeroArmor(object, state, { ...options, cancelledDon });
     if (removed && (object.otyp === HELM_OF_TELEPATHY || object.otyp === HELM_OF_CAUTION))

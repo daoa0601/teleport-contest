@@ -3,7 +3,7 @@ import test from 'node:test';
 import { moveloop_core } from '../js/allmain.js';
 import { artifactByName } from '../js/artifacts.js';
 import { rhack } from '../js/cmd.js';
-import { G_EXTINCT } from '../js/const.js';
+import { G_EXTINCT, W_ARMH } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
@@ -61,6 +61,31 @@ void test('a fatal Excalibur blast stops helmet wear before cursing or discoveri
     assert.doesNotMatch(messages, /glows black for a moment/);
 });
 
+void test('a fatal alignment blast during helmet removal leaves the helmet worn', async () => {
+    freshObjectRoom({
+        hero: { ualign: { type: 1, record: 20, abuse: 0 }, ualignbase: [1, 1] },
+        flags: { bones: false, disclose: '-i -a -v -c -o', tombstone: false },
+    });
+    game.storage = memoryStorage();
+    const helmet = await addInventoryObject(HELM_OF_OPPOSITE_ALIGNMENT, { known: false });
+    await dress('W', helmet);
+    uncurseObjectState(helmet);
+    const artifact = artifactByName('Stormbringer');
+    assert.ok(artifact);
+    const sword = await addInventoryObject(artifact.baseType, { oartifact: artifact.id, oname: artifact.name });
+    await setPrimaryWeapon(sword);
+    game.u.uhp = game.u.uhpmax = 1;
+
+    const messages = await dress('T', helmet);
+
+    assert.equal(game.program_state.gameover, true);
+    assert.match(messages, /You are blasted by Stormbringer's power!/);
+    assert.equal(game.u.ualign?.type, 1);
+    assert.equal(game.uarmh, helmet, 'Death interrupts Helmet_off before it clears the slot');
+    assert.equal(helmet.worn, true);
+    assert.ok((helmet.owornmask ?? 0) & W_ARMH);
+});
+
 for (const id of [2, 3]) {
     void test(`a neutral hero's opposite alignment follows helm identity parity ${id % 2}`, async () => {
         freshObjectRoom({ hero: { ualign: { type: 0, record: 0, abuse: 0 }, ualignbase: [0, 0] } });
@@ -108,7 +133,7 @@ async function dress(command: 'W' | 'T', object: GameObject): Promise<string> {
     input.beforeRead = () => { messages.push(game._pending_message); };
     input.feed(`${object.invlet}                       \x1b`);
     await rhack(command.charCodeAt(0));
-    for (let turn = 0; turn < 20; turn++) {
+    for (let turn = 0; turn < 20 && !game.program_state.gameover; turn++) {
         await moveloop_core();
         if (command === 'W' ? object.known : !object.worn) break;
     }
