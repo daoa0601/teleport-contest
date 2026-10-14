@@ -4,7 +4,7 @@ import { rhack } from '../js/cmd.js';
 import { A_CON, A_DEX, A_STR, DOOR, D_CLOSED, D_ISOPEN } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { nhgetch } from '../js/input.js';
-import { DAGGER } from '../js/object_data.js';
+import { DAGGER, POT_HEALING } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshTurnRoom } from './support/playable-room.js';
 import { startLuaCore } from './support/lua-game.js';
@@ -93,6 +93,41 @@ void test('an unknown command discards the previous repeat command', async () =>
     await rhack(0);
     assert.equal(game.u.ux, 11);
     assert.equal(game._pending_message, 'There is no command available to repeat.');
+});
+
+for (const command of ['q', '#quaff\n']) {
+    void test(`cancelling ${JSON.stringify(command)} forgets it instead of asking for another potion`, async () => {
+        const input = freshTurnRoom();
+        const potion = await addInventoryObject(POT_HEALING);
+        input.feed(`${command}\x1b`);
+        await rhack(0);
+        assert.equal(game.context.move, 0);
+
+        input.feed('\x01\x1b');
+        await rhack(0);
+
+        assert.equal(game._pending_message, 'There is no command available to repeat.');
+        assert.equal(game.inventory.includes(potion), true);
+        assert.equal(await nhgetch(), 27, 'repeat must not ask for an inventory choice');
+    });
+}
+
+void test('trying to drink without any potions clears command recall', async () => {
+    const input = freshTurnRoom();
+    input.feed('q');
+    await rhack(0);
+    input.feed('\x01');
+    await rhack(0);
+    assert.equal(game._pending_message, 'There is no command available to repeat.');
+});
+
+void test('strangulation refuses drinking without cancelling command recall', async () => {
+    const input = freshTurnRoom({ hero: { strangledTurns: 6 } });
+    input.feed('q\x01');
+    await rhack(0);
+    await rhack(0);
+    assert.equal(game._pending_message, "If you can't breathe air, how can you drink liquid?");
+    assert.equal(game.context.move, 0);
 });
 
 void test('repeat resolves an alias to the native command used by Lua admission', async t => {

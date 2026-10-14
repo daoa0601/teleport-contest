@@ -1582,6 +1582,7 @@ function enqueueInventoryAction(action: InventoryAction | null): void {
 
 async function doquaff() {
     const result = await quaff();
+    if (result.cancelled) resetCommandVariables(true);
     game.context.move = result.spentTime && !result.heroDied ? 1 : 0;
 }
 
