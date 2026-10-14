@@ -39,7 +39,7 @@ export function splitObjectStack(object, count, state = game, objectId = null) {
         lua_ref_cnt: 0,
     };
     if (object.oextra) {
-        split.oextra = { ...object.oextra };
+        split.oextra = structuredClone(object.oextra);
         delete split.oextra.omid;
     }
     split.o_id = objectId ?? nextObjectId(object, split, state);

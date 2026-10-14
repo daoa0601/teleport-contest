@@ -52,7 +52,7 @@ export function splitObjectStack(
         lua_ref_cnt: 0,
     };
     if (object.oextra) {
-        split.oextra = { ...object.oextra };
+        split.oextra = structuredClone(object.oextra);
         delete split.oextra.omid;
     }
     split.o_id = objectId ?? nextObjectId(object, split, state);
