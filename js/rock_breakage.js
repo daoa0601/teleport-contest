@@ -14,7 +14,7 @@ import { objectName } from './objnam.js';
 import { BOULDER, OBJECT_USES_KNOWN, ROCK, STATUE } from './object_data.js';
 import { rn2 } from './rng.js';
 import { activateStatueTrapAt } from './statue_trap.js';
-import { cansee, vision_note_blocker_change } from './vision.js';
+import { cansee, visionCellBlocksLight, vision_note_blocker_change, vision_recalc } from './vision.js';
 import { objectWeight } from './weight.js';
 const GEM_CLASS = 13;
 // C trap.c:sokoban_guilt().  force_bolt.js previously kept this logic beside
@@ -72,7 +72,13 @@ export async function fractureRock(object, x, y, { state = game, random = rn2, p
         // preserves the raw C extract+place shape (no movobj unhide pass).
         remove_object(object, state);
         placeObjectSynchronously(object, x, y, state);
-        vision_note_blocker_change(x, y);
+        const level = state.level;
+        if (!level)
+            throw new Error('Floor fracture requires a level.');
+        if (!visionCellBlocksLight(level, x, y)) {
+            vision_note_blocker_change(x, y);
+            vision_recalc(0);
+        }
         if (cansee(x, y))
             newsym(x, y);
     }
