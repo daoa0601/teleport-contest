@@ -122,7 +122,7 @@ import {
     MM_NOWAIT, MM_NOTAIL, MM_IGNOREWATER, MM_ADJACENTOK,
     MM_NOCOUNTBIRTH, MM_NOMSG, MM_MALE, MM_FEMALE, MM_MINVIS, MM_EDOG, NO_MINVENT,
     G_EXTINCT, G_GENOD, G_GONE, G_NOCORPSE,
-    ROT_AGE, TROLL_REVIVE_CHANCE, HEALTHY_TIN, RANDOM_TIN,
+    ROT_AGE, TROLL_REVIVE_CHANCE, HEALTHY_TIN, RANDOM_TIN, MAX_OIL_IN_FLASK,
     CORPSTAT_FEMALE, CORPSTAT_MALE, CORPSTAT_NEUTER, CORPSTAT_HISTORIC, CORPSTAT_INIT, CORPSTAT_SPE_VAL,
     STRAT_APPEARMSG, STRAT_CLOSE, STRAT_WAITFORU,
     ANTI_MAGIC, TT_BURIEDBALL, TT_BEARTRAP, TT_WEB, TT_PIT, TT_LAVA,
@@ -668,6 +668,8 @@ export async function mksobj(
     if (init) {
         await mksobj_init(otmp, artif, definition);
     }
+    // Fuel is intrinsic to an oil flask even when random initialization is skipped.
+    if (otyp === POT_OIL) otmp.age = MAX_OIL_IN_FLASK;
     if (otyp === CORPSE || otyp === STATUE || otyp === FIGURINE) {
         if (otmp.corpsenm == null) {
             otmp.corpsenm = rndmonnum();
