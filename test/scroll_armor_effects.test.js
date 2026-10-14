@@ -43,7 +43,7 @@ function armorEffectInput() {
 async function wornArmor(type, properties = {}) {
     const armor = await addInventoryObject(type, { spe: 0, ...properties });
     wearHeroArmor(armor);
-    await applyArmorOnEffects(armor);
+    await applyArmorOnEffects(armor, game, { initialDon: true });
     findArmorClass();
     return armor;
 }
@@ -275,6 +275,7 @@ void test('cancelling blessed armor selection still disintegrates the originally
     const input = resetInputState();
     const result = await answerPrompts(applyArmorScrollEffect(scroll), input, [
         { prompt: /What do you want to destroy\?/, keys: '\x1b' },
+        { prompt: /Your cloak crumbles and turns to dust!.*--More--/s, keys: ' ' },
     ]);
     assert.equal(cloak.where, 'gone');
     assert.equal(game.uarm, suit);

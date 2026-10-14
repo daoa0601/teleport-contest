@@ -44,7 +44,7 @@ import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { PropertyName, WornPropertySlot } from './property_types.js';
 import type { MessagePublisher } from './display.js';
-import { currentAttribute } from './attrib.js';
+import { currentAttribute, reportHeroEncumbrance } from './attrib.js';
 import { curseObjectState } from './object_state.js';
 import { heroIsHallucinating } from './senses.js';
 import type { AttributeIndex } from './attrib.js';
@@ -258,6 +258,8 @@ export function wearHeroArmor(object: GameObject, state: GameState = game): Armo
 }
 
 export async function removeHeroArmor(object: GameObject, state: GameState = game, options: ArmorRemovalOptions = {}) {
+    const slot = armorSlotFor(object.otyp);
+    if (!slot || equippedObject(state, slot) !== object) return false;
     if (object.otyp === LEVITATION_BOOTS || object.otyp === WATER_WALKING_BOOTS)
         requireLiveGame(state);
     const previousLevitation = captureLevitationState(state);
@@ -292,6 +294,8 @@ export async function removeHeroArmor(object: GameObject, state: GameState = gam
             await toggleArmorStealth(object, false, state);
     }
     if (losingGloves) {
+        if (object.otyp === GAUNTLETS_OF_POWER) learnObjectType(object.otyp, state);
+        await reportHeroEncumbrance(state);
         setSlipperyHands(0, state);
         await loseGloveProtection(object, state);
         if (state.program_state?.gameover) return removed;

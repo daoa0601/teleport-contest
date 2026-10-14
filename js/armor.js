@@ -28,7 +28,7 @@ import { heroResistsLifeDrain } from './monster_resistance.js';
 import { beginObjectBurn, endObjectBurn, equipmentLightDescription, equipmentLightMessage } from './light.js';
 import { AMULET_OF_GUARDING, ALCHEMY_SMOCK, CLOAK_OF_DISPLACEMENT, CLOAK_OF_PROTECTION, CORPSE, ELVEN_BOOTS, ELVEN_CLOAK, GAUNTLETS_OF_FUMBLING, GAUNTLETS_OF_POWER, CORNUTHAUM, DUNCE_CAP, MUMMY_WRAPPING, FEDORA, FUMBLE_BOOTS, LEVITATION_BOOTS, RIN_FREE_ACTION, RIN_PROTECTION, GRAY_DRAGON_SCALE_MAIL, GRAY_DRAGON_SCALES, YELLOW_DRAGON_SCALE_MAIL, YELLOW_DRAGON_SCALES, SHIELD_OF_DRAIN_RESISTANCE, SHIELD_OF_REFLECTION, OBJECT_DESCRIPTIONS, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_PROPERTY, WATER_WALKING_BOOTS, } from './object_data.js';
 import { rn2, rnd } from './rng.js';
-import { currentAttribute } from './attrib.js';
+import { currentAttribute, reportHeroEncumbrance } from './attrib.js';
 import { curseObjectState } from './object_state.js';
 import { heroIsHallucinating } from './senses.js';
 import { monsterName } from './monster_name.js';
@@ -223,6 +223,9 @@ export function wearHeroArmor(object, state = game) {
     return slot;
 }
 export async function removeHeroArmor(object, state = game, options = {}) {
+    const slot = armorSlotFor(object.otyp);
+    if (!slot || equippedObject(state, slot) !== object)
+        return false;
     if (object.otyp === LEVITATION_BOOTS || object.otyp === WATER_WALKING_BOOTS)
         requireLiveGame(state);
     const previousLevitation = captureLevitationState(state);
@@ -258,6 +261,9 @@ export async function removeHeroArmor(object, state = game, options = {}) {
             await toggleArmorStealth(object, false, state);
     }
     if (losingGloves) {
+        if (object.otyp === GAUNTLETS_OF_POWER)
+            learnObjectType(object.otyp, state);
+        await reportHeroEncumbrance(state);
         setSlipperyHands(0, state);
         await loseGloveProtection(object, state);
         if (state.program_state?.gameover)
