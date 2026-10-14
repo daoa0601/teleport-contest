@@ -78,6 +78,16 @@ export function hasRawLevitationSource(state: PropertyState = game) {
     return propertySourceIsActive('levitation', state);
 }
 
+// C hack.c:weight_cap() ignores the trap block on levitation, and defers
+// the carrying benefit of boots whose Boots_on callback has not run yet.
+export function levitationSupportsLoad(ignoreBoots: boolean, state: PropertyState = game): boolean {
+    const record = existingPropertyRecord('levitation', state);
+    if (record?.blockedByTerrain) return false;
+    return intrinsicSourceIsActive(record) || !!record?.invoked
+        || !!record?.carried.length || timedSourceIsActive('levitation', state.u)
+        || !!record?.worn.some(source => !ignoreBoots || source.slot !== 'uarmf');
+}
+
 export function propertyIsBlocked(property: PropertyName, state: PropertyState = game) {
     if (existingPropertyRecord(property, state)?.blockedByTerrain) return true;
     const hero = state.u;
