@@ -164,6 +164,7 @@ import { adjustMonsterSpeed, monsterSpeedMessage } from './monster_speed.js';
 import { setMonsterPermanentInvisibility } from './monster_invisibility.js';
 import { msummon } from './minion.js';
 import { talkToDemon } from './demon_talk.js';
+import { stashLeprechaunGold } from './leprechaun_stash.js';
 import { MONSTER_SOUND } from './monster_data.js';
 import { MONSTER_DIFFICULTY } from './monster_data.js';
 import { depth } from './hacklib.js';
@@ -6685,6 +6686,8 @@ export async function takeMonsterTurn(monster, state, random = rn2, rollDice = d
                     rollOne,
                     flags: RLOC_MSG,
                 });
+                if (relocation)
+                    await stashLeprechaunGold(monster, state, limit => recordRandom(random, calls, limit));
                 return {
                     calls,
                     dochugContext,
