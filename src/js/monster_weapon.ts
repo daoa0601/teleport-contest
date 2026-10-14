@@ -24,7 +24,7 @@ import {
 } from './monster_data.js';
 import { monsterCanTouchObject } from './monster_carry.js';
 import { unlinkMonsterObject } from './monster_inventory.js';
-import { monsterName } from './monster_name.js';
+import { monsterName, monsterPossessive as perceivedPossessivePronoun } from './monster_name.js';
 import { monsterSentenceSubject } from './monster_sound.js';
 import { isPoisonableObject } from './object_properties.js';
 import { recordObjectEncounter } from './object_knowledge.js';
@@ -102,7 +102,7 @@ export async function swingMonsterWeapon(
     const verb = monsterWeaponSwingVerb(weapon, bash, random);
     const name = meleeWeaponName(weapon, state);
     const quantity = weapon.quan > 1 ? 'one of ' : '';
-    const possessive = monster.female ? 'her' : 'his';
+    const possessive = perceivedPossessivePronoun(monster, { state, random });
     let target = '';
     if (defender) {
         const targetName = canSeeMonster(defender)
