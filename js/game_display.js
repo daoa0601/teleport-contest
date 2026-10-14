@@ -22,6 +22,10 @@ export class GameDisplay {
     messageWinFlags;
     // WIN_STATUS retains its fields independently of map and message redraws.
     statusLines = null;
+    statusLine2Fields = null;
+    statusCapacityBlank = false;
+    // Tty keeps the replacement prefix until BL_LEVELDESC changes.
+    statusLevelPrefixChanged = false;
     statusVisible = true;
     constructor(terminalOrContainerId = null) {
         // A supplied terminal permits headless use; a container ID creates the browser surface.

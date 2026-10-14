@@ -2,7 +2,8 @@
 // C refs: hack.c:runmode_delay_output(), allmain.c:moveloop_core().
 import { game } from './gstate.js';
 import { flush_screen } from './display.js';
-import { COLNO, ROWNO } from './const.js';
+import { COLNO, MAX_TYPE, ROWNO } from './const.js';
+import { classifyStatusTerrain } from './status_terrain.js';
 // C refs: cmd.c set_move_cmd(run=1) and hack.c lookaround().
 export function startRun(dx, dy, g = game, mode = 1) {
     g._runState = {
@@ -17,10 +18,15 @@ export function startRun(dx, dy, g = game, mode = 1) {
     return g._runState;
 }
 export function stopRun(g = game) {
+    const running = !!g.context.run;
     if (g.context.run && g.flags.time)
         g.context.time_botl = true;
     g._runState = null;
     g.context.run = 0;
+    if (running && g.flags.terrainstatus) {
+        g.iflags.terrain_typ = MAX_TYPE;
+        classifyStatusTerrain(g);
+    }
     g.context.mv = false;
     g.context.travel = false;
     g.context.travel1 = false;

@@ -5,6 +5,8 @@
 
 export type TerminalColor = number | string;
 
+import { ATR_BLINK } from './terminal_attributes.js';
+
 export interface TerminalCell {
     ch: string;
     color: TerminalColor;
@@ -181,7 +183,7 @@ export class Terminal {
         this.cols = cols;
 
         // The character grid: [row][col] = {ch, color, attr}
-        // attr: 0=normal, 1=inverse, 2=bold, 4=underline (can be OR'd)
+        // attr: 0=normal, 1=inverse, 2=bold, 4=underline, 8=blink (can be OR'd)
         this.grid = Array.from({ length: this.rows }, () =>
             Array.from({ length: this.cols }, () => ({ ch: ' ', color: CLR_GRAY, attr: 0 })),
         );
@@ -238,9 +240,16 @@ export class Terminal {
             }
         }
 
-        // CSS animation for blinking cursor
+        // CSS animations for blinking text and cursor
         const style = document.createElement('style');
         style.textContent = `
+@keyframes terminal-text-blink {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+span.terminal-blink {
+  animation: terminal-text-blink 1s step-end infinite;
+}
 @keyframes terminal-cursor-blink {
   0%, 49% { box-shadow: inset 0 -3px 0 0 rgba(255,255,255,0.85); }
   50%, 100% { box-shadow: none; }
@@ -440,7 +449,7 @@ span.terminal-cursor {
     /**
      * Set a character at terminal position (col, row) with color and attributes.
      * color: integer CLR_* constant (0-15) or CSS color string.
-     * attr: 0=normal, 1=inverse, 2=bold, 4=underline (can be OR'd together).
+     * attr: 0=normal, 1=inverse, 2=bold, 4=underline, 8=blink (can be OR'd).
      */
     setCell(col: number, row: number, ch: string, color: TerminalColor, attr = 0): void {
         if (row < 0 || row >= this.rows || col < 0 || col >= this.cols) return;
@@ -474,6 +483,7 @@ span.terminal-cursor {
 
         span.style.fontWeight = isBold ? 'bold' : '';
         span.style.textDecoration = isUnderline ? 'underline' : '';
+        span.classList.toggle('terminal-blink', (attr & ATR_BLINK) !== 0);
     }
 
     /** Clear a row to spaces with CLR_GRAY. */
@@ -621,6 +631,7 @@ span.terminal-cursor {
                     }
                     span.style.fontWeight = (cell.attr & ATR_BOLD) ? 'bold' : '';
                     span.style.textDecoration = (cell.attr & ATR_UNDERLINE) ? 'underline' : '';
+                    span.classList.toggle('terminal-blink', (cell.attr & ATR_BLINK) !== 0);
                 }
             }
         }
