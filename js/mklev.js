@@ -33,6 +33,7 @@ import { nextIdent } from './ident.js';
 import { erosionMatters, objectIsVulnerableToErosion } from './object_erosion.js';
 import { deallocateObject, deleteObject } from './object_delete.js';
 import { eggSpeciesIsDead, hatchableEggSpecies } from './egg_species.js';
+import { attachFigurineTimer } from './figurine_timer.js';
 import { placeCreatedObject, remove_object, stack_object, updateIceObjectTimersAt, } from './floor_object.js';
 import { addBuriedObject, buryObject, unearthFloorObjectsAt, } from './buried_object.js';
 import { resetHeroTrap } from './terrain_movement.js';
@@ -1133,13 +1134,29 @@ export function set_corpsenm(otmp, pm) {
         : 0;
     // set_corpsenm() replaces timers which depend on the object's species.
     stopAllObjectTimers(otmp);
+    if (otmp.otyp === CORPSE && otmp.oeaten) {
+        const previous = otmp.corpsenm;
+        const oldNutrition = previous === undefined ? 0 : MONSTER_BODY_META[previous]?.[1] ?? 0;
+        const newNutrition = MONSTER_BODY_META[pm]?.[1] ?? 0;
+        if (oldNutrition <= 0)
+            throw new Error('Partly eaten corpse requires its original nutrition');
+        if (oldNutrition !== newNutrition)
+            otmp.oeaten = Math.trunc(otmp.oeaten * newNutrition / oldNutrition);
+    }
     otmp.corpsenm = pm;
     if (otmp.otyp === CORPSE) {
         startCorpseTimeout(otmp);
         otmp.owt = objectWeight(otmp);
     }
-    else if (otmp.otyp === EGG && pm >= 0) {
-        attachEggHatchTimer(otmp, remainingEggTime);
+    else if (otmp.otyp === EGG) {
+        if (pm >= 0 && !eggSpeciesIsDead(pm))
+            attachEggHatchTimer(otmp, remainingEggTime);
+    }
+    else {
+        if (otmp.otyp === FIGURINE
+            && (otmp.where === 'inventory' || otmp.where === 'minvent'))
+            attachFigurineTimer(otmp);
+        otmp.owt = objectWeight(otmp);
     }
 }
 // C mkobj.c:mkcorpstat(). Generation uses an explicit square; live callers

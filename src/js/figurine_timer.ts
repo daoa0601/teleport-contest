@@ -21,7 +21,13 @@ function figurineSpeciesGenocided(figurine: GameObject, state: GameState): boole
 }
 
 export function attachCursedFigurineTimer(figurine: GameObject | null | undefined, state: GameState = game): ObjectTimer | null {
-    if (!figurine || figurine.otyp !== FIGURINE || !figurine.cursed
+    if (!figurine?.cursed) return null;
+    return attachFigurineTimer(figurine, state);
+}
+
+// set_corpsenm() can also attach a timer to an uncursed carried figurine.
+export function attachFigurineTimer(figurine: GameObject | null | undefined, state: GameState = game): ObjectTimer | null {
+    if (!figurine || figurine.otyp !== FIGURINE
         || figurineSpeciesGenocided(figurine, state)) return null;
     // Native attachment removes an earlier deadline before choosing the new
     // one.  scheduleObjectTimer() also defends against duplicates, but this
