@@ -2502,6 +2502,17 @@ export function clearMessageWindow(coveredRows) {
 export async function bot() {
     refreshStatusLines();
 }
+// C botl.c:status_initialize(REASSESS_ONLY) resends every enabled field,
+// replacing tty's shortened level label and empty capacity separator.
+export function reassessStatusFields() {
+    const display = game.nhDisplay;
+    if (display) {
+        display.statusLine2Fields = null;
+        display.statusCapacityBlank = false;
+        display.statusLevelPrefixChanged = false;
+    }
+    game.context.botl = true;
+}
 function refreshStatusLines() {
     const display = game.nhDisplay;
     if (!display || game._statusUpdatesDisabled || game.program_state.saving

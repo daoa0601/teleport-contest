@@ -7,10 +7,38 @@ import { GameDisplay } from '../js/game_display.js';
 import { Terminal } from '../js/terminal.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';
+import { doOptions } from '../js/options.js';
+import { resetInputState } from '../js/input.js';
 
 function status(): string {
     return requireScreenRow(23).map(cell => cell.ch).join('');
 }
+
+void test('disabling time restores the full tutorial status label', async () => {
+    freshObjectRoom({ moves: 100000000, flags: { time: true }, hero: { uhs: 1 } });
+    game._tutorialActive = true;
+    game.nhDisplay = new GameDisplay(new Terminal(null, { cols: 52, rows: 24 }));
+    await bot();
+    assert.match(status(), /^Dl:8 /);
+
+    resetInputState().feed(' p\x1b');
+    await doOptions();
+
+    assert.equal(game.flags.time, false);
+    assert.match(status(), /^Tutorial:8 /);
+});
+
+void test('disabling time removes the empty capacity separator left by shortening', async () => {
+    freshObjectRoom({ moves: 10000, flags: { time: true }, hero: { blindTurns: 5, uhs: 1 } });
+    game.nhDisplay = new GameDisplay(new Terminal(null, { cols: 50, rows: 24 }));
+    await bot();
+    assert.match(status(), /T:10000  Bl/);
+
+    resetInputState().feed(' p\x1b');
+    await doOptions();
+
+    assert.match(status(), /Xp:8 Blind/);
+});
 
 void test('tty shortens all condition names together before losing a condition', async () => {
     freshObjectRoom({ flags: { time: true }, hero: {

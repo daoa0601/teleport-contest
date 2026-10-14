@@ -7,7 +7,7 @@ import { classifyStatusTerrain } from './status_terrain.js';
 import type { GameFlags, InterfaceFlags, LootSortMode, MenuStyle } from './flags.js';
 import { CommandBindings } from './command_bindings.js';
 import { changePreferredFruit, normalizePreferredFruitName } from './fruit.js';
-import { bot, clearMessageWindow, docrt, flushPendingTopline, flush_screen, plineWithContinuation, reglyph_darkroom } from './display.js';
+import { bot, clearMessageWindow, docrt, flushPendingTopline, flush_screen, plineWithContinuation, reassessStatusFields, reglyph_darkroom } from './display.js';
 import { vision_recalc } from './vision.js';
 import { nhgetch } from './input.js';
 import { getLine } from './query.js';
@@ -955,8 +955,8 @@ async function editPickupTypes(preserveStatus = false): Promise<void> {
 // selected options and their compound handlers have finished.
 function applyBooleanVisualChange(name: BooleanOptionName): boolean {
     if (name === 'terrainstatus') classifyStatusTerrain(game);
-    if (['showexp', 'time', 'showvers', 'weaponstatus', 'armorstatus', 'terrainstatus'].includes(name))
-        game.context.botl = true;
+    if (['showexp', 'time', 'showvers', 'weaponstatus', 'armorstatus', 'terrainstatus', 'hitpointbar'].includes(name))
+        reassessStatusFields();
     if (name === 'dark_room' || name === 'lit_corridor') {
         vision_recalc(2);
         game.vision_full_recalc = 1;
@@ -1138,8 +1138,10 @@ export async function doOptions(menuRequested = false): Promise<void> {
             needsRedraw = true;
         } else if (page === 2 && input === 'l') {
             flags.showexp = !flags.showexp;
+            applyBooleanVisualChange('showexp');
         } else if (page === 2 && input === 'p') {
             flags.time = !flags.time;
+            applyBooleanVisualChange('time');
         } else {
             continue;
         }

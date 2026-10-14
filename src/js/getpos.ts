@@ -3,7 +3,7 @@
 
 import {
     COLNO, D_ISOPEN, DOOR, HI_ZAP, LOOK_ONCE, LOOK_QUICK,
-    LOOK_TRADITIONAL, LOOK_VERBOSE, NHW_MENU, PICK_ONE, ROWNO, VIBRATING_SQUARE, WEB, IS_WALL, TREE,
+    LOOK_TRADITIONAL, LOOK_VERBOSE, NHW_MENU, PICK_ONE, ROWNO, SCORR, STONE, VIBRATING_SQUARE, WEB, IS_WALL, TREE,
 } from './const.js';
 import {
     bot, clearMessageWindow, redrawMap, flush_screen, glyphAt, lastDirtyMapCursor,
@@ -390,7 +390,7 @@ function getposArea(state: GameState): ReadonlySet<number> {
     const classify = (tx: number, ty: number): number | null => {
         const location = state.level?.at(tx, ty);
         if (!location?.seenv || tx < 1 || tx >= COLNO || ty < 0 || ty >= ROWNO) return null;
-        if (IS_WALL(location.typ) || location.typ === TREE) return 2;
+        if (location.typ === STONE || location.typ === SCORR || IS_WALL(location.typ) || location.typ === TREE) return 2;
         const symbol = getposGlyphSymbol(terrain_glyph(location, tx, ty).glyph);
         if (symbol === null) return 0;
         if (symbol >= CmapSymbol.room && symbol <= CmapSymbol.darkroom
