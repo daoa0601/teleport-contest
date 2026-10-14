@@ -4376,6 +4376,8 @@ export async function farlookLocationDescription(x, y) {
     if (farlookDescribesHero(x, y))
         return wizardPositionDescription(x, y);
     const glyph = glyphAt(x, y);
+    if (!glyph || glyph.kind === 'unexplored')
+        return 'unexplored area';
     if (glyph?.kind === 'warning') {
         const index = glyph.glyph === undefined ? -1 : glyph.glyph - GlyphOffset.warning;
         const warning = def_warnsyms[index];

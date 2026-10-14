@@ -1,13 +1,23 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { farlookLocationDescription } from '../js/cmd.js';
-import { ICE, LA_DOWN, LA_UP, LAVAPOOL, LAVAWALL, MOAT, POOL, ROOM, STAIRS, WATER } from '../js/const.js';
+import { HWALL, ICE, LA_DOWN, LA_UP, LAVAPOOL, LAVAWALL, MOAT, POOL, ROOM, STAIRS, WATER } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { newsym } from '../js/display.js';
+import { newsym, redrawMap } from '../js/display.js';
 import { LEVEL_TIMER_KIND, scheduleLevelTimer } from '../js/object_timers.js';
 import { makeBlinded } from '../js/sight_change.js';
-import { vision_recalc } from '../js/vision.js';
+import { cansee, vision_recalc } from '../js/vision.js';
 import { freshObjectRoom } from './support/object-room.js';
+for (const [terrain, name] of [[HWALL, 'wall'], [ROOM, 'room']]) {
+    void test(`farlook describes an unseen ${name} as unexplored`, async () => {
+        const level = freshObjectRoom();
+        level.requireAt(30, 10).typ = terrain;
+        assert.equal(cansee(30, 10), false);
+        assert.equal(level.requireAt(30, 10).seenv, 0);
+        await redrawMap();
+        assert.equal(await farlookLocationDescription(30, 10), 'unexplored area');
+    });
+}
 for (const remembered of [false, true]) {
     void test(`farlook preserves the ${remembered ? 'remembered' : 'visible'} branch-staircase description`, async () => {
         const level = freshObjectRoom();

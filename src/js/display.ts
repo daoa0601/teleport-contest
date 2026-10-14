@@ -1777,7 +1777,7 @@ export function newsym(x: number, y: number) {
         // unseen, never-mapped square, restore unexplored space rather than
         // leaving a presentation-only duplicate behind.
         show_glyph_cell(x, y, ' ', NO_COLOR, false, 0,
-            { kind: 'terrain', terrainName: 'stone', glyph: GlyphOffset.cmapStone });
+            { kind: 'unexplored', glyph: GlyphOffset.unexplored });
     }
 }
 
@@ -2092,7 +2092,8 @@ export async function docrt({ beforeGlow = null }: RedrawOptions = {}) {
                     show_glyph_cell(x, y, memory.ch, memory.color, memory.decgfx,
                         objectGlyphAttr(memory), memory);
                 } else {
-                    show_glyph_cell(x, y, ' ', NO_COLOR, false);
+                    show_glyph_cell(x, y, ' ', NO_COLOR, false, 0,
+                        { kind: 'unexplored', glyph: GlyphOffset.unexplored });
                 }
             }
         vision_recalc(0);
@@ -2135,7 +2136,8 @@ export async function redrawMap() {
                 // Modal redraw reconstructs presentation from visibility and
                 // memory.  Clear any old transient actor/warning overlay when
                 // neither owner projects this square anymore.
-                show_glyph_cell(x, y, ' ', NO_COLOR, false);
+                show_glyph_cell(x, y, ' ', NO_COLOR, false, 0,
+                    { kind: 'unexplored', glyph: GlyphOffset.unexplored });
             }
         }
     if (game.u?.ux > 0 && canSpotHeroSelf()) {

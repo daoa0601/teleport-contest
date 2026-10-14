@@ -1720,7 +1720,7 @@ export function newsym(x, y) {
         // A living glyph is only an overlay.  When its actor vacates an
         // unseen, never-mapped square, restore unexplored space rather than
         // leaving a presentation-only duplicate behind.
-        show_glyph_cell(x, y, ' ', NO_COLOR, false, 0, { kind: 'terrain', terrainName: 'stone', glyph: GlyphOffset.cmapStone });
+        show_glyph_cell(x, y, ' ', NO_COLOR, false, 0, { kind: 'unexplored', glyph: GlyphOffset.unexplored });
     }
 }
 // C display.c:display_monster(). Sight updates and touch share this renderer,
@@ -2041,7 +2041,7 @@ export async function docrt({ beforeGlow = null } = {}) {
                     show_glyph_cell(x, y, memory.ch, memory.color, memory.decgfx, objectGlyphAttr(memory), memory);
                 }
                 else {
-                    show_glyph_cell(x, y, ' ', NO_COLOR, false);
+                    show_glyph_cell(x, y, ' ', NO_COLOR, false, 0, { kind: 'unexplored', glyph: GlyphOffset.unexplored });
                 }
             }
         vision_recalc(0);
@@ -2087,7 +2087,7 @@ export async function redrawMap() {
                 // Modal redraw reconstructs presentation from visibility and
                 // memory.  Clear any old transient actor/warning overlay when
                 // neither owner projects this square anymore.
-                show_glyph_cell(x, y, ' ', NO_COLOR, false);
+                show_glyph_cell(x, y, ' ', NO_COLOR, false, 0, { kind: 'unexplored', glyph: GlyphOffset.unexplored });
             }
         }
     if (game.u?.ux > 0 && canSpotHeroSelf()) {
