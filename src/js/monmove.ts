@@ -454,7 +454,7 @@ import { objectMaterial } from './object_material.js';
 import { monsterHatesSilver } from './monster_data.js';
 import { canHeroRiseUp, levelAtDepth } from './dungeon.js';
 import { LEVEL_TELEP } from './const.js';
-import { teleportMonsterToRandomLevel } from './teleport.js';
+import { teleportMonsterThroughPortal, teleportMonsterToRandomLevel } from './teleport.js';
 import { learnObjectType } from './object_knowledge.js';
 import { changeMonsterForm } from './monster_polymorph.js';
 import { rndmonstAdj } from './mklev.js';
@@ -540,7 +540,6 @@ import {
     OPENDOOR,
     TELEP_TRAP,
     MIGR_RANDOM,
-    MIGR_PORTAL,
     ANTI_MAGIC,
     FIRE_TRAP,
     HOLE,
@@ -4687,25 +4686,25 @@ async function triggerMonsterTrap(
         return null;
     }
     if (trap.ttyp === MAGIC_PORTAL) {
-        // trap.c:mintrap()->trapeffect_magic_portal() treats a fixed portal
-        // as inescapable, then routes monsters through mlevel_tele_trap().
-        // migrate_to_level() removes the actor from fmon and stores its
-        // destination out of map before postmov() can return to dochug(), so
-        // there is no trailing distfleeck() draw for this action.
-        // TODO: handle leashes and the endgame Amulet restriction for pets.
-        if (monster.pet || (monster.mtame ?? 0) > 0) return null;
+        if (monster !== state.u.usteed && monsterKnowsTrap(monster, trap)
+            && !movement.forcedTrapLanding
+            && recordRandom(random, calls, 4) !== 0 && !movement.forcedTrapBungle) {
+            const avoided: MonsterTrapEvent = { kind: 'known-trap-avoided', trap, damage: 0 };
+            movement.trap = avoided;
+            return avoided;
+        }
         monsterLearnsTrap(monster, trap);
         monstersSeeTrap(state, trap);
-        await announceTrapLevelDeparture(monster, trap, state, publish);
-        const event = await migrateMonsterOffLevel(monster, state, trap, {
-            kind: 'magic-portal-migration',
-            mode: MIGR_PORTAL,
-            confused: true,
+        if (trap.madeby_u && rnl(5)) await angerMonster(monster);
+        const event = await teleportMonsterThroughPortal(monster, trap, {
+            state, random, force: !!movement.forcedTrapLanding, publish,
         });
-        movement.trap = event;
-        movement.actorLeftLevel = true;
-        movement.postMoveStatus = MMOVE_DIED;
-        movement.actionCompleted = true;
+        if (event) {
+            movement.trap = event;
+            movement.actorLeftLevel = true;
+            movement.postMoveStatus = MMOVE_DIED;
+            movement.actionCompleted = true;
+        }
         return event;
     }
     if (trap.ttyp === LEVEL_TELEP) {
