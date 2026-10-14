@@ -1,6 +1,9 @@
 // C shk.c:sellobj() - the hero drops something in a shop and can sell it -
 // plus sellobj_state()'s command disposition.
 
+import { nameShopTransaction } from './shop_speech.js';
+import { objectDescription } from './object_description.js';
+import { objectCombatName } from './objnam.js';
 import { SHOPBASE } from './const.js';
 import { shopkeeperName } from './monster_name.js';
 import { canSpotMonster, plineWithContinuation } from './display.js';
@@ -14,10 +17,10 @@ import type { Shopkeeper } from './shop_types.js';
 import { containedGold } from './gold.js';
 import { heroGoldAmount, setHeroGoldAmount } from './hero_gold.js';
 import {
-    learnObjectType, recordObjectEncounter, recordObjectPriceQuote,
+    recordObjectPriceQuote,
 } from './object_knowledge.js';
 import {
-    CORPSE, EGG, MIRROR, OBJECT_COST, OBJECT_MAGIC, OBJECT_MATERIAL,
+    CORPSE, EGG, OBJECT_COST, OBJECT_MATERIAL,
     OBJECT_NAMES, TIN,
 } from './object_data.js';
 import { inTown } from './room.js';
@@ -319,38 +322,6 @@ function payToHero(amount: number, resident: Shopkeeper, state: GameState): void
     setHeroGoldAmount(state, heroGoldAmount(state) + amount);
 }
 
-// C shk.c:3413 shk_names_obj(): observe, make known for in-stock mundane
-// gear, then the sale message with its was-unknown variant.
-async function shkNamesObject(resident: Shopkeeper, object: GameObject, compose: (name: string) => string,
-    { publish, state }: { publish: MessagePublisher; state: GameState }): Promise<void> {
-    let wasUnknown = !object.dknown;
-    object.dknown = true;
-    recordObjectEncounter(object.otyp, state);
-    if (!OBJECT_MAGIC[object.otyp] && saleable(resident, object)
-        && (object.oclass === WEAPON_CLASS || object.oclass === ARMOR_CLASS
-            || object.oclass === SCROLL_CLASS
-            || object.oclass === SPBOOK_CLASS
-            || object.otyp === MIRROR)) {
-        wasUnknown ||= !objectTypeKnown(object, state);
-        learnObjectType(object.otyp, state);
-    }
-    const objName = payDoname(object);
-    const itOrThem = objectQuan(object) > 1 ? 'them' : 'it';
-    if (wasUnknown) {
-        const capitalized = objName.charAt(0).toUpperCase()
-            + objName.slice(1);
-        await publish(`${capitalized}; you ${compose(itOrThem)}`);
-    } else {
-        await publish(`You ${compose(objName)}`);
-    }
-}
-
-function payDoname(object: GameObject): string {
-    const name = OBJECT_NAMES[object.otyp] || object.name || 'thing';
-    return `${object.unpaid ? 'the ' : ''}${name}${
-        object.unpaid ? ' (unpaid)' : ''}`;
-}
-
 // C shk.c:3103 special_stock(): the candelabrum in a lighting store.
 async function specialStock(resident: Shopkeeper, object: GameObject,
     { publish, state }: { publish: MessagePublisher; state: GameState }): Promise<boolean> {
@@ -577,7 +548,7 @@ export async function sellHeroDroppedObject(object: GameObject, x: number, y: nu
                 Math.trunc(tmpcr / objectQuan(object)), 'sell');
             answer = await askSell(
                 `Will you accept ${zorkmids(tmpcr)} in credit for ${
-                    payDoname(object)}?`, { query });
+                    objectDescription(object, { state })}?`, { query });
             if (answer === 'a') {
                 answer = 'y';
                 autoCredit = true;
@@ -587,7 +558,7 @@ export async function sellHeroDroppedObject(object: GameObject, x: number, y: nu
         }
 
         if (answer === 'y') {
-            await shkNamesObject(resident, object,
+            await nameShopTransaction(resident, object,
                 it => sellHow !== SELL_NORMAL
                     ? `traded ${it} for ${zorkmids(tmpcr)} in ${
                         (eshk.credit ?? 0) > 0 ? 'additional ' : ''}credit.`
@@ -625,7 +596,7 @@ export async function sellHeroDroppedObject(object: GameObject, x: number, y: nu
                 ? (yourc === 1 ? ' and item inside' : ' and items inside')
                 : ' and its contents';
         }
-        const name = payDoname(object);
+        const name = `${object.unpaid ? 'the' : 'your'} ${objectCombatName(object, { state, includeCorpseSpecies: false })}`;
         recordObjectPriceQuote(object.otyp,
             Math.trunc(offer / objectQuan(object)), 'sell');
         const question = `${shopkeeperName(resident)} offers${
@@ -641,7 +612,7 @@ export async function sellHeroDroppedObject(object: GameObject, x: number, y: nu
             if (!object.unpaid && !saleitem) object.no_charge = true;
             removeObjectAndContentsFromBill(object, state);
             payToHero(offer, resident, state);
-            await shkNamesObject(resident, object,
+            await nameShopTransaction(resident, object,
                 it => sellHow !== SELL_NORMAL
                     ? `sold ${it} for ${goldPieces(offer)}.`
                     : `relinquish ${it} and receive ${goldPieces(
@@ -656,7 +627,7 @@ export async function sellHeroDroppedObject(object: GameObject, x: number, y: nu
             if (!object.unpaid && !saleitem) object.no_charge = true;
             removeObjectAndContentsFromBill(object, state);
             payToHero(offer, resident, state);
-            await shkNamesObject(resident, object,
+            await nameShopTransaction(resident, object,
                 it => sellHow !== SELL_NORMAL
                     ? `sold ${it} for ${goldPieces(offer)}.`
                     : `relinquish ${it} and receive ${goldPieces(

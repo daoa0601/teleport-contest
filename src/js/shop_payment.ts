@@ -1,4 +1,5 @@
 // C shk.c:make_itemized_bill(), pay_billed_items(), dopayobj(), buy_container().
+import { nameShopTransaction } from './shop_speech.js';
 import { promptYesNo } from './query.js';
 import { currency } from './currency.js';
 import { observeObjectForNaming } from './objnam.js';
@@ -106,10 +107,6 @@ export async function buyShopBillItem(resident: Monster, item: ShopBillItem,
     if (declined) return 'skip';
     if (!container && !await checkPurchaseFunds(resident, item, state)) return itemize ? 'skip' : 'stop';
     const unpaidContainer = container && item.object.unpaid;
-    // Only buy_container() suppresses "an unpaid" for a grouped purchase.
-    const name = paymentObjectDescription(item.object, item.quantity, { state, purchasingContents: container });
-    const feedback = `You ${item.kind === 'used' ? 'paid for' : 'bought'} ${name}${
-        item.kind === 'used' ? ' at a cost of' : ' for'} ${item.price} gold piece${item.price === 1 ? '' : 's'}.`;
     let bought = 0;
     for (const object of purchases) {
         const entry = resident.eshk.bill.find(candidate => candidate.bo_id === object.o_id);
@@ -128,7 +125,10 @@ export async function buyShopBillItem(resident: Monster, item: ShopBillItem,
         object.quan = quantity;
         try {
             await payShopkeeper(resident, price, state);
-            if (!container) await plineWithContinuation(feedback);
+            if (!container) await nameShopTransaction(resident, object,
+                name => `${item.kind === 'used' ? 'paid for' : 'bought'} ${name}${
+                    item.kind === 'used' ? ' at a cost of' : ' for'} ${price} gold piece${price === 1 ? '' : 's'}.`,
+                { publish: plineWithContinuation, state });
         } finally {
             object.quan = originalQuantity;
         }
@@ -155,7 +155,9 @@ export async function buyShopBillItem(resident: Monster, item: ShopBillItem,
             item.object.unpaid = true;
             item.object.no_charge = true;
         }
-        await plineWithContinuation(feedback);
+        await nameShopTransaction(resident, item.object,
+            name => `bought ${name} for ${item.price} gold piece${item.price === 1 ? '' : 's'}.`,
+            { publish: plineWithContinuation, state });
         item.object.unpaid = false;
         item.object.no_charge = false;
     }

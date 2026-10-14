@@ -1,5 +1,8 @@
 // C shk.c:sellobj() - the hero drops something in a shop and can sell it -
 // plus sellobj_state()'s command disposition.
+import { nameShopTransaction } from './shop_speech.js';
+import { objectDescription } from './object_description.js';
+import { objectCombatName } from './objnam.js';
 import { SHOPBASE } from './const.js';
 import { shopkeeperName } from './monster_name.js';
 import { canSpotMonster, plineWithContinuation } from './display.js';
@@ -7,8 +10,8 @@ import { game, requireLiveGame } from './gstate.js';
 import { requireShopGame } from './shop_types.js';
 import { containedGold } from './gold.js';
 import { heroGoldAmount, setHeroGoldAmount } from './hero_gold.js';
-import { learnObjectType, recordObjectEncounter, recordObjectPriceQuote, } from './object_knowledge.js';
-import { CORPSE, EGG, MIRROR, OBJECT_COST, OBJECT_MAGIC, OBJECT_MATERIAL, OBJECT_NAMES, TIN, } from './object_data.js';
+import { recordObjectPriceQuote, } from './object_knowledge.js';
+import { CORPSE, EGG, OBJECT_COST, OBJECT_MATERIAL, OBJECT_NAMES, TIN, } from './object_data.js';
 import { inTown } from './room.js';
 import { heroIsDeaf } from './senses.js';
 import { costlySpot, objectIsUnpaid, removeObjectAndContentsFromBill, objectTypeKnown } from './shk.js';
@@ -277,35 +280,6 @@ function payToHero(amount, resident, state) {
     resident.gold = Math.max(0, (resident.gold ?? 0) - amount);
     setHeroGoldAmount(state, heroGoldAmount(state) + amount);
 }
-// C shk.c:3413 shk_names_obj(): observe, make known for in-stock mundane
-// gear, then the sale message with its was-unknown variant.
-async function shkNamesObject(resident, object, compose, { publish, state }) {
-    let wasUnknown = !object.dknown;
-    object.dknown = true;
-    recordObjectEncounter(object.otyp, state);
-    if (!OBJECT_MAGIC[object.otyp] && saleable(resident, object)
-        && (object.oclass === WEAPON_CLASS || object.oclass === ARMOR_CLASS
-            || object.oclass === SCROLL_CLASS
-            || object.oclass === SPBOOK_CLASS
-            || object.otyp === MIRROR)) {
-        wasUnknown ||= !objectTypeKnown(object, state);
-        learnObjectType(object.otyp, state);
-    }
-    const objName = payDoname(object);
-    const itOrThem = objectQuan(object) > 1 ? 'them' : 'it';
-    if (wasUnknown) {
-        const capitalized = objName.charAt(0).toUpperCase()
-            + objName.slice(1);
-        await publish(`${capitalized}; you ${compose(itOrThem)}`);
-    }
-    else {
-        await publish(`You ${compose(objName)}`);
-    }
-}
-function payDoname(object) {
-    const name = OBJECT_NAMES[object.otyp] || object.name || 'thing';
-    return `${object.unpaid ? 'the ' : ''}${name}${object.unpaid ? ' (unpaid)' : ''}`;
-}
 // C shk.c:3103 special_stock(): the candelabrum in a lighting store.
 async function specialStock(resident, object, { publish, state }) {
     if ((resident?.eshk?.shoptype ?? SHOPBASE) !== SHOPBASE + 11
@@ -517,7 +491,7 @@ export async function sellHeroDroppedObject(object, x, y, state = game, { publis
         else if (sellResponse !== 'n') {
             await publish(`${shopkeeperName(resident)} cannot pay you at present.`);
             recordObjectPriceQuote(object.otyp, Math.trunc(tmpcr / objectQuan(object)), 'sell');
-            answer = await askSell(`Will you accept ${zorkmids(tmpcr)} in credit for ${payDoname(object)}?`, { query });
+            answer = await askSell(`Will you accept ${zorkmids(tmpcr)} in credit for ${objectDescription(object, { state })}?`, { query });
             if (answer === 'a') {
                 answer = 'y';
                 autoCredit = true;
@@ -527,7 +501,7 @@ export async function sellHeroDroppedObject(object, x, y, state = game, { publis
             answer = 'n';
         }
         if (answer === 'y') {
-            await shkNamesObject(resident, object, it => sellHow !== SELL_NORMAL
+            await nameShopTransaction(resident, object, it => sellHow !== SELL_NORMAL
                 ? `traded ${it} for ${zorkmids(tmpcr)} in ${(eshk.credit ?? 0) > 0 ? 'additional ' : ''}credit.`
                 : `relinquish ${it} and acquire ${zorkmids(tmpcr)} in ${(eshk.credit ?? 0) > 0
                     ? 'additional ' : ''}credit.`, { publish, state });
@@ -565,7 +539,7 @@ export async function sellHeroDroppedObject(object, x, y, state = game, { publis
                 ? (yourc === 1 ? ' and item inside' : ' and items inside')
                 : ' and its contents';
         }
-        const name = payDoname(object);
+        const name = `${object.unpaid ? 'the' : 'your'} ${objectCombatName(object, { state, includeCorpseSpecies: false })}`;
         recordObjectPriceQuote(object.otyp, Math.trunc(offer / objectQuan(object)), 'sell');
         const question = `${shopkeeperName(resident)} offers${shortFunds ? ' only' : ''} ${goldPieces(offer)} for ${cltmp && !ltmp
             ? (yourc === 1 ? 'your item in ' : 'your items in ') : ''}${name}${contentsSuffix}.  Sell ${one ? 'it' : 'them'}?`;
@@ -581,7 +555,7 @@ export async function sellHeroDroppedObject(object, x, y, state = game, { publis
                 object.no_charge = true;
             removeObjectAndContentsFromBill(object, state);
             payToHero(offer, resident, state);
-            await shkNamesObject(resident, object, it => sellHow !== SELL_NORMAL
+            await nameShopTransaction(resident, object, it => sellHow !== SELL_NORMAL
                 ? `sold ${it} for ${goldPieces(offer)}.`
                 : `relinquish ${it} and receive ${goldPieces(offer)} in compensation.`, { publish, state });
             return { sold: true, offer };
@@ -596,7 +570,7 @@ export async function sellHeroDroppedObject(object, x, y, state = game, { publis
                 object.no_charge = true;
             removeObjectAndContentsFromBill(object, state);
             payToHero(offer, resident, state);
-            await shkNamesObject(resident, object, it => sellHow !== SELL_NORMAL
+            await nameShopTransaction(resident, object, it => sellHow !== SELL_NORMAL
                 ? `sold ${it} for ${goldPieces(offer)}.`
                 : `relinquish ${it} and receive ${goldPieces(offer)} in compensation.`, { publish, state });
             return { sold: true, offer };

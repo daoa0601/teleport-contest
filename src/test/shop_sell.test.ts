@@ -72,7 +72,7 @@ void test('answering the offer sells the item for the whole-stack offer', async 
     assert.deepEqual(outcome, { sold: true, offer });
     assert.equal(heroGoldAmount(game), offer);
     assert.equal(shopkeeper.gold, 1000 - offer);
-    assert.match(game._lastPlineMessage, /sold dagger for 2 gold pieces\./);
+    assert.match(game._lastPlineMessage, /sold .*dagger for 2 gold pieces\./);
 });
 
 void test('declining the offer marks the item no charge and pays nothing', async t => {
@@ -87,7 +87,7 @@ void test('declining the offer marks the item no charge and pays nothing', async
 });
 
 void test('a SELL_NORMAL disposition sells automatically without a query', async t => {
-    const { shopkeeper } = await sellShop(t, [{ prompt: /relinquish dagger and receive.*gold pieces/, keys: ' ' }]);
+    const { shopkeeper } = await sellShop(t, [{ prompt: /relinquish .*dagger and receive.*gold pieces/, keys: ' ' }]);
     requirePlayingGame(game);
     setSellDisposition(SELL_NORMAL);
     const first = await floorObject(DAGGER, 10, 10);
@@ -128,7 +128,7 @@ void test('an angry shopkeeper confiscates with thanks and no payment', async t 
 void test('a broke shopkeeper pays in credit', async t => {
     const { shopkeeper } = await sellShop(t, [
         { prompt: /cannot pay you at present/, keys: ' ' },
-        { prompt: /accept.*in credit for dagger\?/, keys: 'y' },
+        { prompt: /accept.*in credit for .*dagger\?/, keys: 'y' },
     ], { gold: 0 });
     requirePlayingGame(game);
     const dagger = await floorObject(DAGGER, 10, 10);
@@ -145,8 +145,8 @@ void test('a broke shopkeeper pays in credit', async t => {
 void test('an "all" answer keeps accepting credit for the batch', async t => {
     await sellShop(t, [
         { prompt: /cannot pay you at present/, keys: ' ' },
-        { prompt: /accept.*in credit for dagger\?/, keys: 'a' },
-        { prompt: /traded dagger.*in credit/, keys: ' ' },
+        { prompt: /accept.*in credit for .*dagger\?/, keys: 'a' },
+        { prompt: /traded .*dagger.*in credit/, keys: ' ' },
     ], { gold: 0 });
     requirePlayingGame(game);
     assert.equal(
