@@ -13,6 +13,7 @@ import { releaseMonsterLeash } from './monster_leash.js';
 import { detachMonsterFromLevel } from './monster_level_departure.js';
 import { wizardDeadOrGone } from './wizard.js';
 import { dismountHero } from './steed.js';
+import { monsterEmitsLight } from './vision.js';
 export async function removeMonsterFromGame(monster) {
     requireLiveGame(game);
     if (!monster) {
@@ -28,6 +29,8 @@ export async function removeMonsterFromGame(monster) {
     const discarded = await discardMonsterInventory(monster, false);
     if (monster.mleashed)
         releaseMonsterLeash(monster);
+    if (x > 0 && monsterEmitsLight(monster.mnum))
+        game.vision_full_recalc = 1;
     await detachMonsterFromLevel(monster);
     // End-game settlement starts removals after gameover is already set.
     // Only a new death during this removal interrupts the remaining cleanup.
