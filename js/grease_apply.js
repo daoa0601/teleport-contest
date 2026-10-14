@@ -47,6 +47,9 @@ export async function useGrease(can) {
         const covering = coveringEquipment(target);
         const outermost = covering[0];
         if (outermost) {
+            for (const object of covering)
+                observeObjectForNaming(object);
+            observeObjectForNaming(target);
             const names = covering.map((object, index) => index && carriedObjectOwner(object, game) === carriedObjectOwner(outermost, game)
                 ? objectName(object, game) : ownedObjectName(object, game, { capitalized: false }));
             await pline(`You need to take off ${names.join(' and ')} to grease ${ownedObjectName(target, game, { capitalized: false })}.`);

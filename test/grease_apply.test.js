@@ -1,9 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { W_ARM, W_ARMC, W_ARMG } from '../js/const.js';
+import { W_ARM, W_ARMC, W_ARMG, W_ARMU } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { CAN_OF_GREASE, CLOAK_OF_PROTECTION, DAGGER, GAUNTLETS_OF_POWER, LEATHER_ARMOR, POT_HEALING } from '../js/object_data.js';
+import { CAN_OF_GREASE, CLOAK_OF_PROTECTION, DAGGER, GAUNTLETS_OF_POWER, LEATHER_ARMOR, OBJECT_NAMES, POT_HEALING } from '../js/object_data.js';
 import { applyInventoryObject, runExtendedCommand } from './support/commands.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshPlayableRoom } from './support/playable-room.js';
@@ -48,6 +48,38 @@ void test('grease cannot reach armor beneath a cloak and wastes no charge or tur
     assert.equal(game.context.move, 0);
     assert.match(game._pending_message, /need to take off .*cloak.* to grease/);
 });
+for (const blind of [false, true]) {
+    void test(`a covered grease target and both covering layers reveal beatitude to a ${blind ? 'blind' : 'sighted'} priest`, async () => {
+        freshPlayableRoom({ role: 'priest', hero: { permaBlind: blind } });
+        const grease = await addInventoryObject(CAN_OF_GREASE, { spe: 3 });
+        const shirt = await addInventoryObject(OBJECT_NAMES.indexOf('T-shirt'), {
+            owornmask: W_ARMU, observed: false, bknown: false, dknown: false,
+        });
+        const suit = await addInventoryObject(LEATHER_ARMOR, {
+            owornmask: W_ARM, observed: false, bknown: false, dknown: false,
+        });
+        const cloak = await addInventoryObject(CLOAK_OF_PROTECTION, {
+            owornmask: W_ARMC, observed: false, bknown: false, dknown: false,
+        });
+        game.uarmu = game.u.uarmu = shirt;
+        game.uarm = game.u.uarm = suit;
+        game.uarmc = game.u.uarmc = cloak;
+        let refusal = '';
+        resetInputState().beforeRead = () => {
+            if (game._pending_message.includes('need to take off'))
+                refusal = game._pending_message;
+        };
+        await runExtendedCommand('apply', `${grease.invlet}${shirt.invlet}    `);
+        for (const object of [cloak, suit, shirt]) {
+            assert.equal(object.bknown, true, `${object.name} must reveal beatitude when named`);
+            assert.equal(object.dknown, !blind);
+            assert.equal(object.greased ?? false, false);
+        }
+        assert.match(refusal, /You need to take off .*cloak.* and leather armor to grease your T-shirt\./);
+        assert.equal(grease.spe, 3);
+        assert.equal(game.context.move, 0);
+    });
+}
 void test('an empty known grease can reports that it is empty and takes time', async () => {
     freshPlayableRoom();
     const grease = await addInventoryObject(CAN_OF_GREASE, { spe: 0 });
