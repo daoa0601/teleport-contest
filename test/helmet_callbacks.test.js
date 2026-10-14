@@ -1,12 +1,14 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { moveloop_core } from '../js/allmain.js';
+import { disintegrateWornArmor } from '../js/armor.js';
 import { currentAttribute } from '../js/attrib.js';
 import { rhack } from '../js/cmd.js';
 import { A_CHA, A_INT, A_WIS } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { DUNCE_CAP, HELM_OF_OPPOSITE_ALIGNMENT, OBJECT_NAMES } from '../js/object_data.js';
+import { inventoryItemDescription } from '../js/invent.js';
+import { CORNUTHAUM, DUNCE_CAP, HELM_OF_OPPOSITE_ALIGNMENT, OBJECT_NAMES } from '../js/object_data.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
 import { objectTypeKnown } from '../js/shk.js';
 import { addInventoryObject } from './support/game-objects.js';
@@ -23,6 +25,33 @@ for (const role of ['wizard', 'caveman']) {
         await dress('T', hat);
         assert.equal(currentAttribute(A_CHA), charisma);
         assert.equal(!!game.u.clairvoyanceBlocked, false);
+    });
+    void test(`destroying a cornuthaum before ${role} dressing finishes leaves charisma unchanged`, async () => {
+        freshObjectRoom({ role });
+        const hat = await addInventoryObject(CORNUTHAUM, { typeKnown: false });
+        const charisma = currentAttribute(A_CHA);
+        assert.ok(hat.invlet);
+        resetInputState().feed(hat.invlet);
+        await rhack('W'.charCodeAt(0));
+        assert.match(inventoryItemDescription(hat), /\(being donned\)$/);
+        assert.equal(currentAttribute(A_CHA), charisma);
+        await disintegrateWornArmor(hat);
+        assert.equal(currentAttribute(A_CHA), charisma);
+        assert.equal(objectTypeKnown(hat), false);
+        assert.equal(game.uarmh, null);
+        assert.equal(hat.where, 'gone');
+        assert.equal(game.multi, 0);
+    });
+    void test(`destroying a fully worn cornuthaum restores ${role} charisma`, async () => {
+        freshObjectRoom({ role });
+        const hat = await addInventoryObject(CORNUTHAUM);
+        const charisma = currentAttribute(A_CHA);
+        await dress('W', hat);
+        assert.equal(currentAttribute(A_CHA), charisma + (role === 'wizard' ? 1 : -1));
+        await disintegrateWornArmor(hat);
+        assert.equal(currentAttribute(A_CHA), charisma);
+        assert.equal(game.uarmh, null);
+        assert.equal(hat.where, 'gone');
     });
 }
 void test('a dunce cap curses itself, limits both mental attributes, and refuses takeoff', async () => {

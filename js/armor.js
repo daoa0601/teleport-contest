@@ -549,10 +549,6 @@ export async function disintegrateWornArmor(armor, { state = game, publish = pli
             break;
     }
     await publish(message);
-    if (state._delayedAction?.object === armor) {
-        state._delayedAction = null;
-        state.multi = 0;
-    }
     await destroyWornArmor(armor, state);
     if (state.program_state?.gameover)
         return true;
