@@ -8,6 +8,7 @@ import { explodeLitOilPotion } from './fire_explosion.js';
 import { game, requireLiveGame } from './gstate.js';
 import { objectDescription } from './object_description.js';
 import { deleteObject, delobj } from './object_delete.js';
+import { observeObjectForNaming } from './objnam.js';
 import { makemonAt } from './mklev.js';
 import { objectResistsDestruction } from './object_state.js';
 import { applySupportedPotionVapor, heroPotionVaporProfile, potionImpactObjectName, } from './potion_hit.js';
@@ -68,6 +69,7 @@ async function publishBreakMessage(object, visible, audible, publish, state) {
     const quantity = object.quan ?? object.quantity ?? 1;
     const intoPieces = [LENSES, MIRROR, CRYSTAL_BALL, EXPENSIVE_CAMERA]
         .includes(object.otyp) ? ' into a thousand pieces' : '';
+    observeObjectForNaming(object, { state });
     const description = objectDescription(object, { state });
     const subject = description.charAt(0).toUpperCase() + description.slice(1);
     await publish(`${subject} ${quantity === 1 ? 'shatters' : 'shatter'}${intoPieces}!`);
