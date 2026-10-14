@@ -8,6 +8,7 @@ import { wizIntrinsic } from './wizard_intrinsics.js';
 import { wizFuzzer, wizPanic } from './wizard_debug_commands.js';
 import { wizSmell } from './wizard_smell.js';
 import { wizBury } from './wizard_bury.js';
+import { hurtleMonster } from './monster_hurtle.js';
 import { isRoom } from './map_types.js';
 import { bookCursed, continueSpellbookStudy } from './spellbook_study.js';
 import { grantMonsterWish } from './potion_occupants.js';
@@ -2796,6 +2797,48 @@ async function wizardKillTarget(cursor) {
             || monster.wormSegments?.some(segment => segment.x === cursor.x && segment.y === cursor.y))
         && !monster.dead && monster.mhp > 0) ?? null;
 }
+// C wizcmds.c:wiz_telekinesis(). The command keeps the cursor on a hurtled
+// actor and takes no time. rhack's reset_cmd_vars() clears hurtle's delay.
+async function wizTelekinesis() {
+    requirePlayingGame(game);
+    let cursor = { x: game.u.ux, y: game.u.uy };
+    await plineWithContinuation('Pick a monster to hurtle.');
+    do {
+        const tipShown = await showGetposTip();
+        const target = await selectMapPosition({
+            start: cursor, goal: 'a monster', describe: farlookLocationDescription,
+            prompt: tipShown ? 'Move cursor to a monster:' : game._pending_message,
+        });
+        if (!target)
+            break;
+        cursor = target;
+        const monster = monsterAtPosition(game.level, cursor.x, cursor.y);
+        const atHero = cursor.x === game.u.ux && cursor.y === game.u.uy;
+        if (!(monster && canSpotMonster(monster)) && !atHero)
+            continue;
+        const direction = await promptDirection(() => readDirectionKey('which direction? '));
+        if (!direction)
+            break;
+        if (monster) {
+            await hurtleMonster(monster, direction.dx, direction.dy, 6);
+            if (!monster.dead && monster.mhp > 0 && canSpotMonster(monster))
+                cursor = { x: monster.mx, y: monster.my };
+        }
+        else {
+            await hurtleHero(direction.dx, direction.dy, 6, {
+                finishTeleport: finishTeleportArrival,
+                gotoLevel, chooseTeleportDestination: askTeleportDestination,
+                finishMonsterDeath: finishHurtleMonsterDeath,
+            });
+            cursor = { x: game.u.ux, y: game.u.uy };
+        }
+        if (game.program_state.gameover)
+            break;
+    } while (!game.u.utotype);
+    if (game._helplessReason === 'moving through the air')
+        game._helplessTurns = 0;
+    game.context.move = 0;
+}
 function menuLetter(index) {
     return index < 26
         ? String.fromCharCode('a'.charCodeAt(0) + index)
@@ -3155,6 +3198,7 @@ const EXTENDED_COMMAND_HANDLERS = new Map([
     ['wizdetect', wizDetect],
     ['wizsmell', () => wizSmell(farlookLocationDescription)],
     ['wizbury', wizBury],
+    ['wiztelekinesis', wizTelekinesis],
     ['wizkill', wizKill],
     ['wizidentify', wizIdentify],
     ['wizintrinsic', wizIntrinsic],
