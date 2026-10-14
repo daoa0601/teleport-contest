@@ -8,11 +8,13 @@ import { hasShopBill, hasShopkeeperData, requireShopGame } from './shop_types.js
 import { SHOP_TYPES } from './shop_data.js';
 import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, monsterIsHuman, monsterIsVampire } from './monster_data.js';
 import { heroSpecies } from './hero_species.js';
-import { monsterName, monsterPossessive, possessiveName, shopkeeperName } from './monster_name.js';
+import { monsterName, monsterPossessive, monsterSubjectPronoun, possessiveName, shopkeeperName } from './monster_name.js';
 import { containedGold } from './gold.js';
 import { containedBuyCost, objectIsCandle, objectPricingUnits, pickedContainer, shopClaimsObject, shopGetPrice, shopkeeperIsMuted, stolenValue, } from './shop_loss.js';
 import { costlyGold, donateGold, sellHeroDroppedObject, shopOfferForObject, shopStocksObject, } from './shop_sell.js';
 import { canSeeMonster, canSenseMonster, pline, plineWithContinuation } from './display.js';
+import { currency } from './currency.js';
+import { objectName, objectCombatName, definiteName } from './objnam.js';
 import { rn2 } from './rng.js';
 import { detachHeroGold, heroGoldAmount } from './hero_gold.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
@@ -1166,29 +1168,37 @@ async function enterShop({ room, roomno }) {
         return null;
     const typeName = SHOP_TYPES[(room.rtype ?? roomno) - SHOPBASE]?.name
         || 'shop';
-    if (game.u?.invisible || game.u?.invis) {
-        const message = `${shopkeeperName(shopkeeper, { capitalized: true })} senses your presence.`;
+    const deaf = heroIsDeaf(game);
+    let message;
+    if (game.u.invisible || game.u.invis) {
+        await plineWithContinuation(`${shopkeeperName(shopkeeper, { capitalized: true })} senses your presence.`);
+        message = deaf
+            ? `${shopkeeperName(shopkeeper, { capitalized: true })} stands firm as if ${monsterSubjectPronoun(shopkeeper, { noIt: true })} knows you are there.`
+            : '"Invisible customers are not welcome!"';
         await plineWithContinuation(message);
         return message;
     }
     if (!shopkeeper.mpeaceful) {
-        const message = `"So, ${playerName}, you dare return to ${possessive(shopkeeperName(shopkeeper))} ${typeName}?!"`;
-        await plineWithContinuation(message);
-        return message;
+        message = deaf
+            ? `${shopkeeperName(shopkeeper, { capitalized: true })} seems ${['quite upset', 'ticked off', 'furious'][rn2(3)]} over your return to ${monsterPossessive(shopkeeper, { noIt: true })} ${typeName}!`
+            : `"So, ${playerName}, you dare return to ${possessive(shopkeeperName(shopkeeper))} ${typeName}?!"`;
     }
-    if (eshk.surcharge) {
-        const message = `"Back again, ${playerName}?  I've got my eye on you."`;
-        await plineWithContinuation(message);
-        return message;
+    else if (eshk.surcharge) {
+        message = deaf
+            ? `The atmosphere at ${possessive(shopkeeperName(shopkeeper))} ${typeName} seems unwelcoming.`
+            : `"Back again, ${playerName}?  I've got my eye on you."`;
     }
-    if (eshk.robbed) {
-        const message = `${shopkeeperName(shopkeeper, { capitalized: true })} mutters imprecations against shoplifters.`;
-        await plineWithContinuation(message);
-        return message;
+    else if (eshk.robbed) {
+        message = deaf
+            ? `${shopkeeperName(shopkeeper, { capitalized: true })} is combing through ${monsterPossessive(shopkeeper, { noIt: true })} inventory list.`
+            : `${shopkeeperName(shopkeeper, { capitalized: true })} mutters imprecations against shoplifters.`;
     }
-    const again = eshk.visitct ? ' again' : '';
-    eshk.visitct = (eshk.visitct ?? 0) + 1;
-    const message = `"${shopGreeting(shopkeeper)}, ${playerName}!  Welcome${again} to ${possessive(shopkeeperName(shopkeeper))} ${typeName}!"`;
+    else {
+        const again = eshk.visitct ? ' again' : '';
+        eshk.visitct = (eshk.visitct ?? 0) + 1;
+        message = deaf ? `You enter ${possessive(shopkeeperName(shopkeeper))} ${typeName}${again}!`
+            : `"${shopGreeting(shopkeeper)}, ${playerName}!  Welcome${again} to ${possessive(shopkeeperName(shopkeeper))} ${typeName}!"`;
+    }
     await plineWithContinuation(message);
     return message;
 }
