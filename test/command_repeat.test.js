@@ -4,7 +4,7 @@ import { rhack } from '../js/cmd.js';
 import { A_CON, A_DEX, A_STR, DOOR, D_CLOSED, D_ISOPEN } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { nhgetch } from '../js/input.js';
-import { DAGGER, LOADSTONE, POT_HEALING, SCR_BLANK_PAPER } from '../js/object_data.js';
+import { DAGGER, LOADSTONE, OIL_LAMP, POT_HEALING, SCR_BLANK_PAPER } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshTurnRoom } from './support/playable-room.js';
 import { startLuaCore } from './support/lua-game.js';
@@ -25,6 +25,33 @@ void test('cancelling chat clears recall without spending time', async () => {
     assert.equal(game._pending_message, 'There is no command available to repeat.');
     assert.equal(game.context.move, 0);
     assert.equal(await nhgetch(), 'h'.charCodeAt(0), 'repeat must not reopen the chat direction prompt');
+});
+for (const command of ['a', '#apply\n']) {
+    for (const cancel of ['\x1b', '\n']) {
+        void test(`cancelling ${JSON.stringify(command)} with ${JSON.stringify(cancel)} clears apply recall`, async () => {
+            const input = freshTurnRoom();
+            const lamp = await addInventoryObject(OIL_LAMP);
+            input.feed(command + cancel);
+            await rhack(0);
+            assert.equal(game.context.move, 0);
+            input.feed('\x01\x1b');
+            await rhack(0);
+            assert.equal(game._pending_message, 'There is no command available to repeat.');
+            assert.equal(game.context.move, 0);
+            assert.equal(game.inventory.includes(lamp), true);
+            assert.equal(await nhgetch(), 27, 'repeat must not reopen the apply prompt');
+        });
+    }
+}
+void test('trying to apply with no usable inventory clears recall', async () => {
+    const input = freshTurnRoom();
+    input.feed('a');
+    await rhack(0);
+    assert.equal(game._pending_message, "You don't have anything to use or apply.");
+    input.feed('\x01');
+    await rhack(0);
+    assert.equal(game._pending_message, 'There is no command available to repeat.');
+    assert.equal(game.context.move, 0);
 });
 for (const command of ['r', '#read\n']) {
     void test(`cancelling ${JSON.stringify(command)} clears read recall`, async () => {

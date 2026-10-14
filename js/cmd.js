@@ -5672,7 +5672,7 @@ async function doapply(cannedInvlet = null) {
         : game.inventory.find(object => object.invlet === cannedInvlet
             && [GETOBJ_SUGGEST, GETOBJ_DOWNPLAY].includes(applySuggestion(object)));
     if (!item) {
-        game.context.move = 0;
+        resetCommandVariables(true); // doapply() returns ECMD_CANCEL without an object.
         return;
     }
     const touch = await retouchHeroObject(item);
