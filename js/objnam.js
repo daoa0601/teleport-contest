@@ -19,7 +19,7 @@ import { objectWeight } from './weight.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { artifactById, artifactByName, artifactExistCount, findArtifact, nameArtifact, uncreateArtifact, } from './artifacts.js';
 import { CRYSKNIFE, DILITHIUM_CRYSTAL, FLINT, GOLD_PIECE, JADE, LENSES, ROCK, GLOB_OF_BLACK_PUDDING, GLOB_OF_GRAY_OOZE, TALLOW_CANDLE, WAX_CANDLE, ACID_VENOM, AMULET_OF_YENDOR, BELL, BELL_OF_OPENING, BLINDING_VENOM, BOULDER, CANDELABRUM_OF_INVOCATION, CHEST, CORPSE, CRYSTAL_BALL, FAKE_AMULET_OF_YENDOR, FIGURINE, HEAVY_IRON_BALL, IRON_CHAIN, LARGE_BOX, MAGIC_LAMP, OIL_LAMP, SKELETON_KEY, SLIME_MOLD, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, STATUE, POT_WATER, TIN, TOWEL, WAN_WISHING, OBJECT_BASES, requireObjectData, OBJECT_DESCRIPTIONS, OBJECT_NAMES, OBJECT_PROB, OBJECT_MERGE, OBJECT_NOWISH, OBJECT_CHARGED, OBJECT_MAGIC, OBJECT_UNIQUE, OBJECT_USES_KNOWN, OBJECT_MATERIAL, OBJECT_SPELL_CATEGORY, OBJECT_SPELL_LEVEL, OBJECT_SUBTYPE, OBJECT_WEIGHT, } from './object_data.js';
-import { armorPresentationName, withIndefiniteArticle, makePlural, makeSingular } from './object_grammar.js';
+import { armorPresentationName, withIndefiniteArticle, makePlural, makeSingular, verbForSubject } from './object_grammar.js';
 import { armorSimpleName } from './armor.js';
 import { isContainer } from './container.js';
 import { objectClassForType, observeBucForNaming, observeObject } from './object_knowledge.js';
@@ -606,19 +606,7 @@ export function ownedObjectAction(object, verb, state = game, { capitalized = tr
         subject = subject.charAt(0).toUpperCase() + subject.slice(1);
     if (!verb)
         return subject;
-    let action = verb;
-    if (!objectNameIsPlural(object, state)) {
-        if (/are$/.test(verb))
-            action = verb.slice(0, -3) + 'is';
-        else if (/have$/.test(verb))
-            action = verb.slice(0, -4) + 'has';
-        else if (/(?:z|x|s|ch|sh)$/.test(verb))
-            action = verb + 'es';
-        else if (/[^aeiou]y$/.test(verb))
-            action = verb.slice(0, -1) + 'ies';
-        else
-            action = verb + 's';
-    }
+    const action = objectNameIsPlural(object, state) ? verb : verbForSubject(null, verb);
     return `${subject} ${action}`;
 }
 const CLASS_PRESENTATION = {
