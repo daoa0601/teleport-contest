@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { bot } from '../js/display.js';
 import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
@@ -45,11 +46,15 @@ void test('removing a flying amulet directly announces landing and discovers the
     input.feed(`${amulet.invlet}           `);
     await rhack('P'.charCodeAt(0));
     revokeIntrinsicProperty('flying', 'outside');
+    await bot();
+    assert.match(game.nhDisplay?.statusLines?.join(' ') ?? '', /Fly/);
+    game.context.botl = false;
 
     await rhack('R'.charCodeAt(0));
 
     assert.equal(game.uamul, null);
     assert.equal(propertyIsActive('flying'), false);
+    assert.doesNotMatch(game.nhDisplay?.statusLines?.join(' ') ?? '', /Fly/, 'the landing message refreshes the visible flight status');
     assert.equal(objectTypeKnown(amulet), true);
     assert.match([...messages, game._pending_message].join(' '), /You land\./);
 });

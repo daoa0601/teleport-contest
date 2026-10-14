@@ -299,6 +299,7 @@ async function removeAmulet(object: GameObject, state: GameState): Promise<Prope
             learnObjectType(object.otyp, state);
         }
     } else if (object.otyp === AMULET_OF_FLYING && flying && !propertyIsActive('flying', state)) {
+        state.context.botl = true;
         const overLiquid = isPoolAt(state.u.ux, state.u.uy, state) || isLavaAt(state.u.ux, state.u.uy, state)
             || levelIsWaterLevel(state) || Is_airlevel(state.u.uz);
         await plineWithContinuation(overLiquid ? 'You stop flying.' : 'You land.');
