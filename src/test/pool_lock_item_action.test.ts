@@ -26,4 +26,3 @@ for (const type of [LOCK_PICK, CREDIT_CARD, SKELETON_KEY]) {
         }
     });
 }
-

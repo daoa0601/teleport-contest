@@ -20,4 +20,3 @@ void test('a disenchanter describes a pair of gloves as one item when draining i
     assert.equal(gloves.spe, 2);
     assert.deepEqual(messages, ['Your pair of leather gloves seems less effective.']);
 });
-
