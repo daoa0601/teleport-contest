@@ -19,6 +19,8 @@ import { endObjectBurn, objectShedsLight } from './light.js';
 import { assertCreatedObject } from './object_release.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { objectWeight } from './weight.js';
+import { erosionMatters } from './object_erosion.js';
+import { isReviver } from './corpse_species.js';
 import { mergeHeroWeaponSlots } from './weapon_slots.js';
 import {
     OBJECT_TIMER_KIND, stopObjectTimer,
@@ -79,7 +81,7 @@ export function mergable(
     if (obj.globby || otmp.globby) return !!obj.globby && !!otmp.globby;
 
     for (const field of [
-        'unpaid', 'no_charge', 'obroken', 'otrapped', 'lamplit', 'opoisoned',
+        'unpaid', 'no_charge', 'obroken', 'otrapped', 'lamplit',
     ] as const) {
         if (!!otmp[field] !== !!obj[field]) return false;
     }
@@ -95,15 +97,16 @@ export function mergable(
             && !cleric && impairedSight)
         || (otmp.oeroded ?? 0) !== (obj.oeroded ?? 0)
         || (otmp.oeroded2 ?? 0) !== (obj.oeroded2 ?? 0)
-        || !!otmp.greased !== !!obj.greased
-        || !!otmp.oerodeproof !== !!obj.oerodeproof
-        || ((!!otmp.rknown !== !!obj.rknown) && impairedSight)) {
+        || !!otmp.greased !== !!obj.greased) {
         return false;
     }
+    if (erosionMatters(obj) && (!!otmp.oerodeproof !== !!obj.oerodeproof
+        || !!otmp.rknown !== !!obj.rknown && impairedSight)) return false;
 
     if ([CORPSE, EGG, TIN].includes(obj.otyp)
         && (otmp.corpsenm ?? -1) !== (obj.corpsenm ?? -1)) return false;
     if (obj.otyp === EGG && (otmp.timed || obj.timed)) return false;
+    if (obj.otyp === CORPSE && isReviver(otmp.corpsenm)) return false;
     if ((obj.otyp === TALLOW_CANDLE || obj.otyp === WAX_CANDLE)
         && Math.trunc((otmp.age ?? 0) / 25)
             !== Math.trunc((obj.age ?? 0) / 25)) return false;

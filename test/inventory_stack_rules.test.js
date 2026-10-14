@@ -1,0 +1,55 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+import { rhack } from '../js/cmd.js';
+import { game } from '../js/gstate.js';
+import { queueCommandKeys, resetInputState } from '../js/input.js';
+import { CORPSE, DART, POT_HEALING } from '../js/object_data.js';
+import { MONSTER_NAME } from '../js/monster_data.js';
+import { addInventoryObject } from './support/game-objects.js';
+import { freshObjectRoom } from './support/object-room.js';
+import { planInput } from './support/planned-input.js';
+void test('#adjust collects potions whose irrelevant erosion knowledge differs', async (t) => {
+    freshObjectRoom();
+    const first = await addInventoryObject(POT_HEALING, { quan: 2 });
+    const second = await addInventoryObject(POT_HEALING, { nomerge: true, oerodeproof: true, rknown: false, quan: 3 });
+    second.nomerge = false;
+    const input = resetInputState();
+    input.feed('adjust\r');
+    queueCommandKeys(first.invlet);
+    planInput(input, t, [{ prompt: /Adjust letter to what/, keys: first.invlet }]);
+    await rhack('#'.charCodeAt(0));
+    const potions = game.inventory.filter(object => object.otyp === POT_HEALING);
+    assert.equal(potions.length, 1);
+    assert.equal(potions[0]?.quan, 5);
+});
+void test('#adjust leaves revivable troll corpses in separate stacks', async (t) => {
+    freshObjectRoom();
+    const troll = MONSTER_NAME.indexOf('troll');
+    const first = await addInventoryObject(CORPSE, { corpsenm: troll, spe: 0 });
+    const second = await addInventoryObject(CORPSE, { corpsenm: troll, spe: 0, nomerge: true });
+    second.nomerge = false;
+    const input = resetInputState();
+    input.feed('adjust\r');
+    queueCommandKeys(first.invlet);
+    planInput(input, t, [{ prompt: /Adjust letter to what/, keys: first.invlet }]);
+    await rhack('#'.charCodeAt(0));
+    assert.equal(game.inventory.includes(first), true);
+    assert.equal(game.inventory.includes(second), true);
+    assert.equal(first.quan, 1);
+    assert.equal(second.quan, 1);
+});
+void test('#adjust collects otherwise matching darts despite different poison coatings', async (t) => {
+    freshObjectRoom();
+    const first = await addInventoryObject(DART, { quan: 2, opoisoned: false });
+    const second = await addInventoryObject(DART, { quan: 3, opoisoned: true, nomerge: true });
+    second.nomerge = false;
+    const input = resetInputState();
+    input.feed('adjust\r');
+    queueCommandKeys(first.invlet);
+    planInput(input, t, [{ prompt: /Adjust letter to what/, keys: first.invlet }]);
+    await rhack('#'.charCodeAt(0));
+    assert.equal(game.inventory.filter(object => object.otyp === DART).length, 1);
+    assert.equal(second.quan, 5);
+    assert.equal(second.opoisoned, true);
+});
+//# sourceMappingURL=inventory_stack_rules.test.js.map
