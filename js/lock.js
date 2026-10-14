@@ -62,7 +62,9 @@ export async function doforce(state = game) {
     const x = state.u.ux;
     const y = state.u.uy;
     const boxes = (state.level?.objects?.[x]?.[y] || []).filter(object => object.otyp === LARGE_BOX || object.otyp === CHEST);
-    resetPick(state);
+    // Native clears the box target here, leaving interrupted door work intact.
+    if (previous?.key !== 'pick-lock' || !previous.door)
+        resetPick(state);
     let reportedOpenBox = false;
     for (const box of boxes) {
         if (box.obroken || !box.olocked) {
