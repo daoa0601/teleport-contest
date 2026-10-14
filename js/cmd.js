@@ -76,7 +76,6 @@ import { quoteShopGoods } from './shop_price_quote.js';
 import { shopkeeperBlockingDoor, shopkeeperBlockingEntry } from './shop_blocking.js';
 import { poisonHeroStrengthAndHp } from './poison.js';
 import { isContainer, useContainer } from './container.js';
-import { dotip } from './inventory_tip.js';
 import { tipCommand } from './container_tip.js';
 import { lootCommand } from './container_loot.js';
 import { adjustHeroAlignment } from './alignment.js';
@@ -2459,7 +2458,7 @@ async function runInventoryAction({ key, item }) {
                 await removeWornItem('take off', true);
             else {
                 game.iflags.menu_requested = true;
-                await dotip();
+                await tipCommand();
             }
             return;
         case 't':
