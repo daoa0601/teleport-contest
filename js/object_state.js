@@ -12,8 +12,15 @@ import { chargeAlteredUnpaidObject } from './shk.js';
 import { objectWeight } from './weight.js';
 import { bookCursed } from './spellbook_study.js';
 import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, W_ARMG, W_ARMH, W_RING } from './const.js';
-import { bot } from './display.js';
-import { updateCarriedLuck } from './hero_inventory.js';
+import { bot, plineWithContinuation } from './display.js';
+import { freeInventoryObject, updateCarriedLuck } from './hero_inventory.js';
+import { heroHandName } from './body_parts.js';
+import { ownedObjectName } from './objnam.js';
+import { dropObjectAtHero } from './object_drop.js';
+import { shipObject } from './object_migration.js';
+import { landObjectOnAltar } from './altar_object.js';
+import { requireInitializedGame } from './gstate.js';
+import { ALTAR } from './const.js';
 import { OBJECT_TIMER_KIND, stopObjectTimer } from './object_timers.js';
 import { attachCursedFigurineTimer } from './figurine_timer.js';
 import { resetBulkTakeoff } from './takeoff_state.js';
@@ -124,9 +131,27 @@ export function curseObjectState(object, state = game) {
 export async function curseObject(object, { state = game } = {}) {
     const wasCursed = !!object?.cursed;
     const changed = curseObjectState(object, state);
+    if (object && object === (state.uswapwep || state.u.uswapwep) && state.u.twoweap)
+        await dropCursedAlternateWeapon(object, state);
     if (object && changed && !wasCursed && object.oclass === 10)
         await bookCursed(object, { state });
     return changed;
+}
+// C wield.c:drop_uswapwep() and do.c:dropx(): announce before extraction,
+// then handle shipping and altar contact before placing the dropped weapon.
+async function dropCursedAlternateWeapon(object, state) {
+    await plineWithContinuation(`Your left ${heroHandName(state)} spasms and drops ${ownedObjectName(object, state, { capitalized: false })}!`);
+    await freeInventoryObject(object, state);
+    if (!state.u.uswallow) {
+        const initialized = requireInitializedGame(state);
+        if (await shipObject(object, state.u.ux, state.u.uy, {
+            state: initialized, publish: plineWithContinuation,
+        }))
+            return;
+        if (state.level?.at(state.u.ux, state.u.uy)?.typ === ALTAR)
+            await landObjectOnAltar(object, { state });
+    }
+    await dropObjectAtHero(object, { state });
 }
 export function blessObjectState(object, state = game) {
     if (!object || object.oclass === COIN_CLASS)
