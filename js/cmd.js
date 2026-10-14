@@ -69,6 +69,7 @@ import { quoteShopGoods } from './shop_price_quote.js';
 import { shopkeeperBlockingDoor, shopkeeperBlockingEntry } from './shop_blocking.js';
 import { poisonHeroStrengthAndHp } from './poison.js';
 import { isContainer, useContainer } from './container.js';
+import { tipCommand } from './container_tip.js';
 import { adjustHeroAlignment } from './alignment.js';
 import { doOptions } from './options.js';
 import { blocksDiagonalDoor, blocksMove, escapeFromStickyMonster, heroBadRock, heroCanPassWallAt, heroLiquidEffects, heroShouldAvoidLiquid, heroTightDiagonalReason, } from './hack.js';
@@ -3039,33 +3040,6 @@ async function doloot() {
         return;
     game.context.move = result.spentTime ? 1 : 0;
 }
-// C refs: pickup.c:dotip(), safe_qbuf(), and ynq().  Floor containers are
-// considered before carried objects.  Keep this prompt transaction separate
-// from tipcontainer(), whose spill mechanics own the timed yes branch.
-async function dotip() {
-    const x = game.u?.ux, y = game.u?.uy;
-    const pile = game.level?.objects?.[x]?.[y] || [];
-    const containers = pile.filter(isContainer);
-    const container = containers[0];
-    if (containers.length === 1 && container && !heroHasNoLimbs(game)
-        && !exceedsActionCapacity(game)) {
-        observeObjectForNaming(container);
-        const prompt = `There is ${floorObjectDescription(container)} here, `
-            + 'tip it?';
-        const answer = await promptYesNoQuit(prompt);
-        if (answer === 'q') {
-            // tty leaves the resolved query physically painted until the
-            // following command read, but it is no longer continuation-owned.
-            game.context.move = 0;
-            return;
-        }
-        // TODO: implement spilling and choosing another container.
-        game.context.move = answer === 'y' ? 1 : 0;
-        return;
-    }
-    await pline('Nothing happens.');
-    game.context.move = 0;
-}
 // C cmd.c:extcmds_match(): availability applies to both full names and
 // completion; AUTOCOMPLETE only limits the latter.
 function availableExtendedCommands() {
@@ -3103,7 +3077,7 @@ const EXTENDED_COMMAND_HANDLERS = new Map([
     ['ride', doride],
     ['rub', dorub],
     ['loot', doloot],
-    ['tip', dotip],
+    ['tip', tipCommand],
     ['force', doforce],
     ['jump', dojump],
     ['overview', doDungeonOverview],

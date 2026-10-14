@@ -38,7 +38,7 @@ import { heroHasFreeHand } from './weapon_type.js';
 import { restoreMenuUnderlay, showChoiceWindow, showMultiSelectWindow, } from './windows.js';
 import { MENU_FULL, MENU_ITEMFLAGS_SKIPINVERT, PARANOID_AUTOALL, PARANOID_CONFIRM, W_ACCESSORY, W_ARMOR, } from './const.js';
 export const CONTAINER_TYPES = new Set([
-    LARGE_BOX, CHEST, ICE_BOX, SACK, BAG_OF_HOLDING, OILSKIN_SACK,
+    LARGE_BOX, CHEST, ICE_BOX, SACK, BAG_OF_HOLDING, OILSKIN_SACK, BAG_OF_TRICKS,
 ]);
 const FORBIDDEN_CONTENTS = new Set([
     AMULET_OF_YENDOR,
@@ -269,7 +269,7 @@ function updateContainerWeights(container) {
         current = current.where === 'contained' ? current.container : null;
     }
 }
-function magicBagExplodes(object, depth = 0) {
+export function magicBagExplodes(object, depth = 0) {
     if ((object.otyp === WAN_CANCELLATION
         || object.otyp === BAG_OF_TRICKS)
         && (object.spe ?? 0) <= 0)
@@ -298,9 +298,10 @@ async function scatterBagContents(container, state) {
     }
 }
 // C pickup.c:in_container() names the trigger before either bag blows up.
-async function explodeBag(container, trigger, state) {
+export async function explodeBag(container, trigger, state, tipping = false) {
     observeObjectForNaming(trigger, { state });
-    await plineWithContinuation(`As you put ${objectDescription(trigger)} inside, you are blasted by a magical explosion!`, { urgent: true });
+    await plineWithContinuation(tipping ? `As ${objectDescription(trigger)} ${trigger.quan === 1 ? 'tumbles' : 'tumble'} inside, you are blasted by a magical explosion!`
+        : `As you put ${objectDescription(trigger)} inside, you are blasted by a magical explosion!`, { urgent: true });
     if (trigger.otyp === BAG_OF_HOLDING)
         await scatterBagContents(trigger, state);
     await deleteObject(trigger, state);

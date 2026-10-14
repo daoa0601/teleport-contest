@@ -89,7 +89,7 @@ interface ContainerUseOptions {
 }
 
 export const CONTAINER_TYPES = new Set([
-    LARGE_BOX, CHEST, ICE_BOX, SACK, BAG_OF_HOLDING, OILSKIN_SACK,
+    LARGE_BOX, CHEST, ICE_BOX, SACK, BAG_OF_HOLDING, OILSKIN_SACK, BAG_OF_TRICKS,
 ]);
 
 const FORBIDDEN_CONTENTS = new Set([
@@ -321,7 +321,7 @@ function updateContainerWeights(container: GameObject): void {
     }
 }
 
-function magicBagExplodes(object: GameObject, depth = 0): boolean {
+export function magicBagExplodes(object: GameObject, depth = 0): boolean {
     if ((object.otyp === WAN_CANCELLATION
             || object.otyp === BAG_OF_TRICKS)
         && (object.spe ?? 0) <= 0) return false;
@@ -351,10 +351,11 @@ async function scatterBagContents(container: GameObject, state: GameState): Prom
 }
 
 // C pickup.c:in_container() names the trigger before either bag blows up.
-async function explodeBag(container: GameObject, trigger: GameObject, state: GameState): Promise<ContainerTransferResult> {
+export async function explodeBag(container: GameObject, trigger: GameObject, state: GameState, tipping = false): Promise<ContainerTransferResult> {
     observeObjectForNaming(trigger, { state });
     await plineWithContinuation(
-        `As you put ${objectDescription(trigger)} inside, you are blasted by a magical explosion!`,
+        tipping ? `As ${objectDescription(trigger)} ${trigger.quan === 1 ? 'tumbles' : 'tumble'} inside, you are blasted by a magical explosion!`
+            : `As you put ${objectDescription(trigger)} inside, you are blasted by a magical explosion!`,
         { urgent: true },
     );
     if (trigger.otyp === BAG_OF_HOLDING)
