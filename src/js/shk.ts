@@ -737,7 +737,7 @@ export async function settleGlobAbsorptionBilling(
     const shop = keeper.eshk;
     const offer = shopOfferForObject(absorbed, keeper, state);
     const name = OBJECT_NAMES[absorbed.otyp];
-    const money = (amount: number) => `${amount} zorkmid${amount === 1 ? '' : 's'}`;
+    const money = (amount: number) => `${amount} ${currency(amount, { state })}`;
 
     if (absorbedEntry && (!absorber.no_charge
         || shopClaimsObject(absorber, keeper, false, state))) {
@@ -785,11 +785,9 @@ export async function settleGlobAbsorptionBilling(
         || (floorAbsorber && !costlySpot(absorber.ox, absorber.oy, state)))) {
         const amount = absorbedEntry.price;
         await billDummyObject(absorbed, state);
-        if (!heroIsDeaf(state) && !shopkeeperIsMuted(keeper)) {
-            const action = keeper.mpeaceful ? 'just mixed' : 'had the audacity to mix';
-            const ending = keeper.mpeaceful ? 's.' : ' stinking batch!';
-            await publish(`"You owe me ${money(amount)} for my ${name} that you ${action} with your${ending}"`);
-        }
+        const action = keeper.mpeaceful ? 'just mixed' : 'had the audacity to mix';
+        const ending = keeper.mpeaceful ? 's.' : ' stinking batch!';
+        await publish(`"You owe me ${money(amount)} for my ${name} that you ${action} with your${ending}"`);
     }
 }
 
