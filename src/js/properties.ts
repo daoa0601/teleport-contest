@@ -81,6 +81,7 @@ export function hasRawLevitationSource(state: PropertyState = game) {
 export function propertyIsBlocked(property: PropertyName, state: PropertyState = game) {
     if (existingPropertyRecord(property, state)?.blockedByTerrain) return true;
     const hero = state.u;
+    if (property === 'clairvoyant') return !!hero.clairvoyanceBlocked;
     if (property === 'invisible') {
         const cloak = state.uarmc || hero.uarmc;
         return cloak?.otyp === MUMMY_WRAPPING || !!hero.invisibilityBlocked || !!hero.invisBlocked;
@@ -109,7 +110,7 @@ export function propertyIsActive(property: PropertyName, state: PropertyState = 
     const fromSteed = property === 'flying' ? steedFlags & 0x01
         : property === 'swimming' ? steedFlags & 0x02 : false;
     if (!propertySourceIsActive(property, state) && !fromSteed) return false;
-    if (property === 'levitation' || property === 'flying' || property === 'invisible')
+    if (property === 'levitation' || property === 'flying' || property === 'invisible' || property === 'clairvoyant')
         return !propertyIsBlocked(property, state);
     if (property === 'stealth' && hero.usteed)
         return propertyIsActive('flying', state)

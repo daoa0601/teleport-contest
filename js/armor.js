@@ -6,7 +6,7 @@ import { game, requireLiveGame } from './gstate.js';
 import { corpseName, killerObjectName, observeObjectForNaming, simpleObjectNameWithArticle, objectName } from './objnam.js';
 import { heroHandName } from './body_parts.js';
 import { makePlural } from './object_grammar.js';
-import { newsym, plineWithContinuation } from './display.js';
+import { displayColorName, newsym, plineWithContinuation, see_monsters } from './display.js';
 import { consumeInventoryItem, inventoryItemDescription } from './invent.js';
 import { objectResistsDestruction } from './object_state.js';
 import { erodeObject, erosionMatters, objectIsVulnerableToErosion } from './object_erosion.js';
@@ -26,12 +26,15 @@ import { applyHeroLocationEffects } from './cmd.js';
 import { artifactEmitsLight, heroHasArtifactDefense } from './artifacts.js';
 import { heroResistsLifeDrain } from './monster_resistance.js';
 import { beginObjectBurn, endObjectBurn, equipmentLightDescription, equipmentLightMessage } from './light.js';
-import { AMULET_OF_GUARDING, ALCHEMY_SMOCK, CLOAK_OF_DISPLACEMENT, CLOAK_OF_PROTECTION, CORPSE, ELVEN_BOOTS, ELVEN_CLOAK, GAUNTLETS_OF_FUMBLING, GAUNTLETS_OF_POWER, MUMMY_WRAPPING, FEDORA, FUMBLE_BOOTS, LEVITATION_BOOTS, RIN_FREE_ACTION, RIN_PROTECTION, GRAY_DRAGON_SCALE_MAIL, GRAY_DRAGON_SCALES, YELLOW_DRAGON_SCALE_MAIL, YELLOW_DRAGON_SCALES, SHIELD_OF_DRAIN_RESISTANCE, SHIELD_OF_REFLECTION, OBJECT_DESCRIPTIONS, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_PROPERTY, WATER_WALKING_BOOTS, } from './object_data.js';
+import { AMULET_OF_GUARDING, ALCHEMY_SMOCK, CLOAK_OF_DISPLACEMENT, CLOAK_OF_PROTECTION, CORPSE, ELVEN_BOOTS, ELVEN_CLOAK, GAUNTLETS_OF_FUMBLING, GAUNTLETS_OF_POWER, CORNUTHAUM, DUNCE_CAP, MUMMY_WRAPPING, FEDORA, FUMBLE_BOOTS, LEVITATION_BOOTS, RIN_FREE_ACTION, RIN_PROTECTION, GRAY_DRAGON_SCALE_MAIL, GRAY_DRAGON_SCALES, YELLOW_DRAGON_SCALE_MAIL, YELLOW_DRAGON_SCALES, SHIELD_OF_DRAIN_RESISTANCE, SHIELD_OF_REFLECTION, OBJECT_DESCRIPTIONS, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_PROPERTY, WATER_WALKING_BOOTS, } from './object_data.js';
 import { rn2, rnd } from './rng.js';
+import { currentAttribute } from './attrib.js';
+import { curseObjectState } from './object_state.js';
+import { heroIsHallucinating } from './senses.js';
 import { monsterName } from './monster_name.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { captureLevitationState, grantWornProperty, hasIntrinsicProperty, hasWornProperty, propertyIsActive, propertyIsBlocked, propertyTimeout, refreshMovementProperties, refreshProperty, removeWornProperty, setPropertyTimeout, } from './properties.js';
-import { A_DEX, A_INT, A_WIS, LUCKMIN, LUCKMAX, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMOR, W_ARMS, W_ARMU, } from './const.js';
+import { A_CHA, A_DEX, A_INT, A_WIS, LUCKMIN, LUCKMAX, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMOR, W_ARMS, W_ARMU, } from './const.js';
 // objects[].a_ac is `10 - ac` for every ARMOR()/HELM()/CLOAK()/SHIELD()/
 // GLOVES()/BOOTS() entry in the pinned objects.h. Armor occupies IDs 89..172.
 // Keeping the complete table here makes equipment transactions consume object
@@ -75,6 +78,8 @@ const ARMOR_MASKS = Object.freeze({
 const AC_MAX = 99;
 const SPEED_BOOTS = 166;
 const CLOAK_OF_INVISIBILITY = OBJECT_NAMES.indexOf('cloak of invisibility');
+const HELM_OF_CAUTION = OBJECT_NAMES.indexOf('helm of caution');
+const HELM_OF_TELEPATHY = OBJECT_NAMES.indexOf('helm of telepathy');
 const OILSKIN_CLOAK = OBJECT_NAMES.indexOf('oilskin cloak');
 const GAUNTLETS_OF_DEXTERITY = OBJECT_NAMES.indexOf('gauntlets of dexterity');
 const HELM_OF_BRILLIANCE = OBJECT_NAMES.indexOf('helm of brilliance');
@@ -212,6 +217,10 @@ export function wearHeroArmor(object, state = game) {
     applyWornArmorProperty(object, state);
     if (object.otyp === MUMMY_WRAPPING)
         refreshProperty('invisible', state);
+    if (object.otyp === CORNUTHAUM) {
+        state.u.clairvoyanceBlocked = state.urole?.key !== 'wizard';
+        refreshProperty('clairvoyant', state);
+    }
     return slot;
 }
 export async function removeHeroArmor(object, state = game, options = {}) {
@@ -228,7 +237,14 @@ export async function removeHeroArmor(object, state = game, options = {}) {
     }
     if (object?.otyp === FEDORA && state.urole?.key === 'archeologist')
         state.u.uluck = Math.max(LUCKMIN, (state.u.uluck ?? 0) - 1);
+    if (object.otyp === CORNUTHAUM && !cancelledDon) {
+        state.u.abon ??= { a: [0, 0, 0, 0, 0, 0] };
+        state.u.abon.a[A_CHA] += state.urole?.key === 'wizard' ? -1 : 1;
+        state.context.botl = true;
+    }
     const removed = await clearHeroArmor(object, state, { ...options, cancelledDon });
+    if (removed && (object.otyp === HELM_OF_TELEPATHY || object.otyp === HELM_OF_CAUTION))
+        await see_monsters();
     if (removed) {
         if (!cancelledDon)
             await announceDisplacementLoss(object, state);
@@ -325,6 +341,12 @@ export async function clearHeroArmor(object, state = game, { cancelledDon = stat
             await plineWithContinuation(equipmentLightMessage(object, false, state));
     }
     await removeArmorProperties(object, state);
+    if (object.otyp === CORNUTHAUM) {
+        state.u.clairvoyanceBlocked = false;
+        refreshProperty('clairvoyant', state);
+    }
+    if (object.otyp === DUNCE_CAP)
+        state.context.botl = true;
     if (object.otyp === ALCHEMY_SMOCK)
         removeWornProperty('acidResistance', object, 'uarmc', state);
     if (object.otyp === MUMMY_WRAPPING)
@@ -621,6 +643,33 @@ function grantArmorProperty(object, state, property) {
         hero.veryFast = true;
     }
 }
+async function applyHelmetOnEffects(object, state) {
+    if (object.otyp === CORNUTHAUM) {
+        state.u.abon ??= { a: [0, 0, 0, 0, 0, 0] };
+        state.u.abon.a[A_CHA] += state.urole?.key === 'wizard' ? 1 : -1;
+        state.context.botl = true;
+        learnObjectType(object.otyp, state);
+    }
+    else if (object.otyp === DUNCE_CAP) {
+        if (!object.cursed) {
+            const blind = heroIsBlind(state);
+            const action = blind ? 'vibrates' : `glows ${displayColorName('black', state)}`;
+            await plineWithContinuation(`The ${objectName(object)} ${action} for a moment.`);
+            curseObjectState(object, state);
+            if (blind)
+                object.bknown = false;
+            else if (state.urole?.key === 'priest')
+                object.bknown = true;
+        }
+        state.context.botl = true;
+        const intelligence = (state.u.acurr?.a[A_INT] ?? 10)
+            + (state.u.abon?.a[A_INT] ?? 0) + (state.u.atemp?.a[A_INT] ?? 0);
+        await plineWithContinuation(heroIsHallucinating(state) ? 'My brain hurts!'
+            : `You feel ${currentAttribute(A_INT, state) <= intelligence ? 'like sitting in a corner' : 'giddy'}.`);
+    }
+    else if (object.otyp === HELM_OF_CAUTION)
+        await see_monsters();
+}
 function fumblingHasPermanentOrEquipmentSource(state) {
     const sources = state.u._propertySources?.fumbling;
     return hasIntrinsicProperty('fumbling', null, state) || hasWornProperty('fumbling', state)
@@ -729,6 +778,10 @@ export async function applyArmorOnEffects(object, state = game, { initialDon = f
     if (object?.otyp === FEDORA && state.urole?.key === 'archeologist') {
         // Helmet_on()/Helmet_off() use change_luck(), including its bounds.
         state.u.uluck = Math.min(LUCKMAX, (state.u.uluck ?? 0) + 1);
+        return [];
+    }
+    if (armorSlotFor(object.otyp) === 'uarmh') {
+        await applyHelmetOnEffects(object, state);
         return [];
     }
     if (object?.otyp === GAUNTLETS_OF_POWER) {
