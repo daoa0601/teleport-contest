@@ -7,10 +7,27 @@ import { flush_screen } from '../js/display.js';
 import { resetInputState } from '../js/input.js';
 import { resolveMonsterLiquid } from '../js/mon.js';
 import { finishMonsterLiquidDeath } from '../js/monster_death.js';
-import { AMULET_OF_LIFE_SAVING } from '../js/object_data.js';
+import { AMULET_OF_LIFE_SAVING, POT_HEALING } from '../js/object_data.js';
 import { knownObject } from './support/game-objects.js';
 import { createMonsterAt, createSaddledSteed, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+
+void test('a drowning monster drops its potion into water only once', async () => {
+    const level = freshObjectRoom({ hero: { uluck: -5 } });
+    requirePlayingGame(game);
+    level.requireAt(12, 10).typ = POOL;
+    const giant = await createMonsterAt('giant', 12, 10);
+    const potion = await equipMonsterObject(giant, await knownObject(POT_HEALING), 0);
+
+    await resolveMonsterLiquid(giant, game, {
+        finishDeath: finishMonsterLiquidDeath,
+    });
+
+    assert.equal(giant.dead, true);
+    assert.equal(potion.where, 'floor');
+    assert.equal(potion.otyp, POT_HEALING);
+    assert.equal(potion.odiluted, true);
+});
 
 for (const property of ['flying', 'levitating'] as const) {
     void test(`a ${property} rider keeps the steed and its equipment above lava`, async () => {

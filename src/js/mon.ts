@@ -321,10 +321,8 @@ export async function resolveMonsterLiquid<DeathResult = MonsterLiquidDeathResul
                         announce, random, rollOne,
                     },
                 );
+                if (recovery.heroDied) return { heroDied: true };
                 if (!recovery.survived) {
-                    await waterDamageChain(
-                        monster.minvent || monster.inventory || [], [], state,
-                    );
                     return finishDeath(monster, {
                         state, random, leaveCorpse: true, cause: 'rust',
                     });
@@ -352,21 +350,19 @@ export async function resolveMonsterLiquid<DeathResult = MonsterLiquidDeathResul
                     announce, random, rollOne,
                 },
             );
+            if (recovery.heroDied) return { heroDied: true };
             if (!recovery.survived) {
-                await waterDamageChain(
-                    monster.minvent || monster.inventory || [], [], state,
-                );
                 return finishDeath(monster, {
                     state, random, leaveCorpse: true, cause: 'drowning',
                 });
             }
+            if (monsterInAir(monster, state)) return { survived: true };
             await waterDamageChain(
                 monster.minvent || monster.inventory || [], [], state,
             );
-            const relocation = monsterInAir(monster, state) ? null
-                : await randomMonsterRelocation(monster, {
-                    state, calls, random, rollOne, flags: RLOC_NOMSG,
-                });
+            const relocation = await randomMonsterRelocation(monster, {
+                state, calls, random, rollOne, flags: RLOC_NOMSG,
+            });
             if (relocation && state === game) {
                 newsym(x, y);
                 newsym(monster.mx, monster.my);
@@ -410,6 +406,7 @@ export async function resolveMonsterLiquid<DeathResult = MonsterLiquidDeathResul
                         announce, random, rollOne,
                     },
                 );
+                if (recovery.heroDied) return { heroDied: true };
                 if (!recovery.survived) {
                     return finishDeath(monster, {
                         state,
