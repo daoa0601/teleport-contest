@@ -21,6 +21,9 @@ import { fruitName } from './fruit.js';
 import { encyclopediaEntries, encyclopediaMatches } from './encyclopedia.js';
 import { objectAtMapDescription } from './map_object_description.js';
 import { objectNeedsFullIdentification } from './invent.js';
+import { identifyPack } from './invent.js';
+import { MENU_ITEMFLAGS_SKIPINVERT, NHW_MENU, PICK_ANY } from './const.js';
+import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu, } from './tty_menu.js';
 import { LOOK_ONCE, LOOK_QUICK, LOOK_VERBOSE } from './const.js';
 import { waterbodyName } from './terrain_name.js';
 import { def_warnsyms } from './const.js';
@@ -3981,6 +3984,11 @@ function wizardIdentifyDescription(item, primaryHandDetail) {
 // iflags.override_ID set.  Fully identified inventories still open a short
 // PICK_NONE menu; the command does not collapse into a topline message.
 async function wizIdentify() {
+    if (!game.inventory.length) {
+        await pline('Not carrying anything.');
+        game.context.move = 0;
+        return;
+    }
     const unidentified = game.inventory.filter(objectNeedsFullIdentification);
     if (!unidentified.length) {
         await showTextMenuOverlay([
@@ -4005,20 +4013,42 @@ async function wizIdentify() {
             };
         }),
     })).filter(section => section.items.length);
+    const allKey = game.commandBindings.keyForCommand('wizidentify') || 9;
+    const window = tty_create_nhwindow(NHW_MENU);
+    let selected;
+    try {
+        await tty_start_menu(window);
+        tty_add_menu(window, {
+            identifier: null,
+            text: `Debug Identify -- unidentified or partially identified item${unidentified.length === 1 ? '' : 's'}`,
+        });
+        tty_add_menu(window, {
+            identifier: 'all', selector: '_', group: String.fromCharCode(allKey),
+            itemflags: MENU_ITEMFLAGS_SKIPINVERT,
+            text: `select ${unidentified.length === 1
+                ? 'it' : 'any or all of them'} to permanently identify${unidentified.length === 1 ? '' : ` (${visibleCommandKey(allKey)} for all)`}`,
+        });
+        for (const section of sections) {
+            tty_add_menu(window, { identifier: null, text: section.heading, attr: ATR_INVERSE });
+            for (const item of section.items)
+                tty_add_menu(window, { identifier: item.value, selector: item.key, text: item.text });
+        }
+        tty_end_menu(window);
+        const result = await tty_select_menu(window, PICK_ANY);
+        selected = result.selections.map(selection => selection.identifier);
+    }
+    finally {
+        await tty_destroy_nhwindow(window);
+    }
     game._pending_message = '';
-    game.nhDisplay?.clearRow(0);
-    const selected = await showMultiSelectWindow({
-        title: `Debug Identify -- unidentified or partially identified item${unidentified.length === 1 ? '' : 's'}`,
-        introLines: [
-            `_ - select ${unidentified.length === 1
-                ? 'it' : 'any or all of them'} to permanently identify${unidentified.length === 1 ? '' : ' (^I for all)'}`,
-        ],
-        sections,
-        blankAfterTitle: false,
-        titleAttr: ATR_NONE,
-    });
-    game._pending_message = '';
+    if (selected.includes('all')) {
+        await identifyPack(0);
+        game.context.move = 0;
+        return;
+    }
     for (const item of selected) {
+        if (item === 'all')
+            continue;
         const learnedType = !objectTypeKnown(item);
         fullyIdentifyObject(item);
         if (learnedType)
