@@ -6,6 +6,7 @@ import type { MessagePublisher } from './display.js';
 import { observeObject, learnObjectType } from './object_knowledge.js';
 import { MIRROR, OBJECT_MAGIC } from './object_data.js';
 import { paymentObjectDescription } from './object_description.js';
+import { observeObjectForNaming } from './objnam.js';
 import { objectTypeKnown } from './shk.js';
 import { shopStocksObject } from './shop_sell.js';
 
@@ -24,6 +25,7 @@ export async function nameShopTransaction(keeper: Shopkeeper, object: GameObject
         wasUnknown ||= !objectTypeKnown(object, state);
         learnObjectType(object.otyp, state);
     }
+    observeObjectForNaming(object, { state });
     const name = paymentObjectDescription(object, object.quan, { state });
     if (wasUnknown) {
         const subject = name.charAt(0).toUpperCase() + name.slice(1);

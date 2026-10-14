@@ -78,6 +78,38 @@ void test('declining traditional itemization pays for the whole bill without per
     assert.equal(heroGoldAmount(game), 4);
     assert.equal(game.context.move, 1);
 });
+void test('a priest learns blessings and curses when buying without itemization', async (t) => {
+    freshObjectRoom({ role: 'priest' });
+    const dagger = await addInventoryObject(DAGGER, {
+        blessed: true, bknown: false, observed: false,
+    });
+    const sack = await addInventoryObject(SACK, {
+        initialize: false, cursed: true, bknown: false, observed: false,
+    });
+    dagger.unpaid = sack.unpaid = true;
+    const { shopkeeper } = await createStaffedShop({ bill: [
+            { bo_id: dagger.o_id, bquan: 1, price: 4, useup: false },
+            { bo_id: sack.o_id, bquan: 1, price: 2, useup: false },
+        ] });
+    game.flags.menu_style = MENU_TRADITIONAL;
+    setHeroGoldAmount(game, 10);
+    const input = resetInputState();
+    const messages = [];
+    input.beforeRead = () => { messages.push(game._pending_message); };
+    planInput(input, t, [
+        { prompt: /Itemized billing\?/, keys: 'n' },
+        { prompt: /bought .*dagger.*--More--/, keys: ' ' },
+        { prompt: /bought .*sack.*--More--/, keys: ' ' },
+    ]);
+    await rhack('p'.charCodeAt(0));
+    assert.equal(dagger.bknown, true, 'Purchased blessed goods reveal their blessing to a priest');
+    assert.equal(sack.bknown, true, 'Purchased cursed goods reveal their curse to a priest');
+    assert.match(messages.join('\n'), /bought a blessed .*dagger/);
+    assert.match(messages.join('\n'), /bought a cursed sack/);
+    assert.equal(shopkeeper.eshk.billct, 0);
+    assert.equal(heroGoldAmount(game), 4);
+    assert.equal(game.context.move, 1);
+});
 void test('a menu prefix switches traditional payment to item selection', async (t) => {
     freshObjectRoom();
     const dagger = await addInventoryObject(DAGGER);
