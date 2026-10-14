@@ -1,3 +1,6 @@
+import { MENU_FULL, MENU_TRADITIONAL } from './const.js';
+import { promptChoice } from './query.js';
+import type { ShopBillItem } from './shop_types.js';
 import { game } from './gstate.js';
 import { bot, canSpotMonster, flush_screen, pline, plineWithContinuation } from './display.js';
 import { cansee } from './vision.js';
@@ -125,6 +128,51 @@ export async function dopay(): Promise<void> {
         return;
     }
 
+    const selection = await chooseBilledItems(billed, minimumShopPurchase(resident)?.multipleItems ?? false);
+    let paidForItem = false;
+    let finished = true;
+    // Native queued selection buys in bill order, regardless of selection order.
+    for (const item of selection.items) {
+        const result = await buyShopBillItem(resident, item, game, { itemize: selection.itemize });
+        if (result === 'broke') {
+            paidForItem = true;
+            break;
+        }
+        if (result === 'stop') {
+            finished = false;
+            break;
+        }
+        if (result === 'skip') continue;
+        paidForItem = true;
+        if (selection.itemize || selection.queued) await bot();
+    }
+    game.iflags.menu_requested = false;
+    if (!paid && !paidForItem) {
+        game.context.move = 0;
+        return;
+    }
+    if (finished && resident.mpeaceful)
+        await plineWithContinuation(shopThankYouMessage(resident));
+    game.context.move = 1;
+}
+
+async function chooseBilledItems(billed: ShopBillItem[], multiple: boolean): Promise<{
+    items: ShopBillItem[]; itemize: boolean; queued: boolean;
+}> {
+    let viaMenu = (game.flags.menu_style ?? MENU_FULL) !== MENU_TRADITIONAL;
+    if (game.iflags.menu_requested) viaMenu = !viaMenu;
+    if (!viaMenu) {
+        const answer = multiple
+            ? await promptChoice('Itemized billing?', ['y', 'n', 'q', 'm'], 'q', { visibleChoices: 'ynq m' })
+            : 'y';
+        if (answer === 'q') return { items: [], itemize: false, queued: false };
+        if (answer !== 'm') return { items: billed, itemize: answer === 'y', queued: false };
+    }
+    const selected = await paymentMenu(billed);
+    return { items: billed.filter(item => selected.includes(item)), itemize: false, queued: true };
+}
+
+async function paymentMenu(billed: ShopBillItem[]): Promise<ShopBillItem[]> {
     for (const item of billed) observeObjectForNaming(item.object);
     const priceWidth = String(Math.max(...billed.map(item => item.price))).length;
     const used = billed.filter(item => item.kind === 'used');
@@ -139,35 +187,10 @@ export async function dopay(): Promise<void> {
     }));
     game._pending_message = '';
     await flush_screen(1);
-    const selected = await showMultiSelectWindow({
+    return await showMultiSelectWindow({
         title: 'Pay for which items?', sections,
         omitHeadings: !used.length,
     });
-    if (!selected.length) {
-        game.context.move = paid ? 1 : 0;
-        return;
-    }
-
-    let paidForItem = false;
-    let finished = true;
-    // Native queued selection buys in bill order, regardless of selection order.
-    for (const item of billed.filter(item => selected.includes(item))) {
-        const result = await buyShopBillItem(resident, item);
-        if (result === 'stop') {
-            finished = false;
-            break;
-        }
-        if (result === 'skip') continue;
-        paidForItem = true;
-        await bot();
-    }
-    if (!paid && !paidForItem) {
-        game.context.move = 0;
-        return;
-    }
-    if (finished && resident.mpeaceful)
-        await plineWithContinuation(shopThankYouMessage(resident));
-    game.context.move = 1;
 }
 
 // next_shkp() applies the surcharge as it visits angry keepers. The linked

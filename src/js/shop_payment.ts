@@ -1,4 +1,7 @@
 // C shk.c:make_itemized_bill(), pay_billed_items(), dopayobj(), buy_container().
+import { promptYesNo } from './query.js';
+import { currency } from './currency.js';
+import { observeObjectForNaming } from './objnam.js';
 import { game } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
@@ -74,7 +77,8 @@ export function itemizedShopBill(resident: Monster | null | undefined, state: Ga
 }
 
 export async function buyShopBillItem(resident: Monster, item: ShopBillItem,
-    state: GameState = game): Promise<'paid' | 'skip' | 'stop'> {
+    state: GameState = game, { itemize = false }: { itemize?: boolean } = {}
+): Promise<'paid' | 'skip' | 'stop' | 'broke'> {
     if (!hasShopBill(resident)) return 'stop';
     const container = item.kind === 'known-container' || item.kind === 'hidden-container';
     // buy_container() checks the group price first; dopayobj() rejects a
@@ -82,6 +86,14 @@ export async function buyShopBillItem(resident: Monster, item: ShopBillItem,
     if (container) {
         if (!await checkPurchaseFunds(resident, item, state, 0)) return 'stop';
         if (!await checkPurchaseFunds(resident, item, state)) return 'stop';
+    }
+    let declined = false;
+    if (itemize && !container) {
+        if (!await checkPurchaseFunds(resident, item, state, 0)) return 'broke';
+        observeObjectForNaming(item.object, { state });
+        let name = paymentObjectDescription(item.object, item.quantity, { state });
+        if (item.quantity === 1) name = name.charAt(0).toUpperCase() + name.slice(1);
+        declined = await promptYesNo(`${name} for ${item.price} ${currency(item.price, { state })}.  Pay?`) === 'n';
     }
     const purchases = container ? containedPurchases(resident, item.object, state) : [item.object];
     for (const object of purchases) {
@@ -91,7 +103,8 @@ export async function buyShopBillItem(resident: Monster, item: ShopBillItem,
             return container ? 'stop' : 'skip';
         }
     }
-    if (!container && !await checkPurchaseFunds(resident, item, state)) return 'stop';
+    if (declined) return 'skip';
+    if (!container && !await checkPurchaseFunds(resident, item, state)) return itemize ? 'skip' : 'stop';
     const unpaidContainer = container && item.object.unpaid;
     // Only buy_container() suppresses "an unpaid" for a grouped purchase.
     const name = paymentObjectDescription(item.object, item.quantity, { state, purchasingContents: container });

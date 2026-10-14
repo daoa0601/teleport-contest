@@ -1125,6 +1125,9 @@ async function runCommandHandler(binding, { cannedCommand = null, previousMessag
         else if (nextKey === 79) {
             await doOptions(true);
         }
+        else if (direction === 'p') {
+            await dopay();
+        }
         else if (nextKey === 22 && game.flags?.debug) {
             // cmd.c marks wiz_level_tele CMD_M_PREFIX. do_reqmenu() sets
             // iflags.menu_requested, so level_tele() skips its numeric
