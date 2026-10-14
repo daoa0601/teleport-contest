@@ -20,7 +20,7 @@ import { objectName } from './objnam.js';
 import { impactDisturbsZombies } from './object_impact.js';
 import { isPick } from './weapon_type.js';
 import { MONSTER_MOVE, MONSTER_NAME } from './monster_data.js';
-import { breakFloorObject } from './object_breakage.js';
+import { breakObjectAtLocation, objectBreaksOnImpact } from './object_breakage.js';
 import { CANDELABRUM_OF_INVOCATION, HEAVY_IRON_BALL, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_SUBTYPE, TALLOW_CANDLE, WAX_CANDLE, } from './object_data.js';
 import { objectClassForType } from './object_knowledge.js';
 import { isLauncherAmmunition, launcherMatchesAmmo, } from './object_properties.js';
@@ -32,6 +32,7 @@ import { heroIsBlind } from './senses.js';
 import { settleThrownShopObject } from './shk.js';
 import { objectNoLongerHeld } from './object_release.js';
 import { cansee } from './vision.js';
+const VENOM_CLASS = 17;
 const COIN_CLASS = 12;
 const GEM_CLASS = 13;
 function objectClass(object) {
@@ -137,8 +138,9 @@ export async function finishHeroThrownObjectLanding({ state = game, object, x, y
     const landingSquare = requireGameLevel(state).at(x, y);
     if (!landingSquare)
         throw new RangeError(`A thrown object cannot land outside the level at (${x}, ${y}).`);
-    if (!IS_SOFT(landingSquare.typ)) {
-        const { destroyed } = await breakFloorObject(object, {
+    const breaksOnImpact = !IS_SOFT(landingSquare.typ) && objectBreaksOnImpact(object, random);
+    if (breaksOnImpact || object.oclass === VENOM_CLASS) {
+        const { destroyed } = await breakObjectAtLocation(object, {
             x, y, fromInventory: true, inView: cansee(x, y),
             state, publish, random,
         });

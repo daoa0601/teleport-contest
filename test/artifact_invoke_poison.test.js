@@ -5,9 +5,43 @@ import { resetInputState } from '../js/input.js';
 import { artifactObject } from './support/game-objects.js';
 import { invokeInventoryObject } from './support/commands.js';
 import { freshObjectRoom } from './support/object-room.js';
-import { MM_ANGRY, MM_NOGRP, MM_NOMSG, NO_MINVENT } from '../js/const.js';
+import { AIR, CLOUD, MM_ANGRY, MM_NOGRP, MM_NOMSG, NO_MINVENT } from '../js/const.js';
 import { createMonsterAt } from './support/monsters.js';
 import { floorObjects } from './support/level-state.js';
+import { ACID_VENOM, BLINDING_VENOM } from '../js/object_data.js';
+for (const { terrain, name } of [{ terrain: AIR, name: 'air' }, { terrain: CLOUD, name: 'cloud' }]) {
+    void test(`horizontal Grimtooth venom breaks when it lands on ${name}`, async () => {
+        const level = freshObjectRoom({ hero: { ualign: { type: -1, record: 10 } } });
+        requirePlayingGame(game);
+        for (let x = 7; x <= 16; x++) {
+            for (let y = 6; y <= 14; y++)
+                level.requireAt(x, y).typ = terrain;
+        }
+        const dagger = await artifactObject('Grimtooth', { invlet: 'a', where: 'inventory', age: 0 });
+        game.inventory = [dagger];
+        await invokeInventoryObject(dagger, 'l' + ' '.repeat(20));
+        assert.equal(floorObjects(level).length, 0);
+        assert.match(game._pending_message, /Splash!/);
+        assert.equal(game.inventory.includes(dagger), true);
+        assert.equal(game.context.move, 1);
+        assert.ok(dagger.age > game.moves);
+    });
+    void test(`downward Grimtooth venom survives on ${name}`, async () => {
+        const level = freshObjectRoom({ hero: { ualign: { type: -1, record: 10 } } });
+        requirePlayingGame(game);
+        level.requireAt(game.u.ux, game.u.uy).typ = terrain;
+        const dagger = await artifactObject('Grimtooth', { invlet: 'a', where: 'inventory', age: 0 });
+        game.inventory = [dagger];
+        await invokeInventoryObject(dagger, '>' + ' '.repeat(20));
+        const venom = floorObjects(level);
+        assert.equal(venom.length, 1);
+        const splash = venom[0];
+        assert.ok(splash);
+        assert.ok(splash.otyp === ACID_VENOM || splash.otyp === BLINDING_VENOM);
+        assert.doesNotMatch(game._pending_message, /Splash!/);
+        assert.equal(game.context.move, 1);
+    });
+}
 void test('upward Grimtooth venom can hit the ceiling or fall back and blind its owner', async () => {
     let hitCeiling = false;
     let blindedOwner = false;
