@@ -2695,7 +2695,7 @@ async function dochat() {
         const x = game.u.ux + DIR_DX[direction];
         const y = game.u.uy + DIR_DY[direction];
         const monster = game.level?.monsters?.find(mon => monsterHasMapPosition(mon, game) && mon.mx === x && mon.my === y);
-        if (monster?.isshk && (monster.msleeping || !monster.mcanmove)) {
+        if (monster && !monster.ispriest && (monster.msleeping || !monster.mcanmove)) {
             if (canSpotMonster(monster))
                 await plineWithContinuation(`${monsterName(monster, { capitalized: true })} seems not to notice you.`);
             game.context.move = 0;
