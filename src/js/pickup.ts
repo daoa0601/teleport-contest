@@ -73,8 +73,7 @@ export function pickupClassOrder(): string[] {
     return [...inventoryClassOrder(), 17, 0].map(objectClassHeading);
 }
 
-export async function pickupAtHero(): Promise<void> {
-    const count = Math.max(0, game._commandCount || 0);
+export async function pickupAtHero(count = Math.max(0, game._commandCount || 0)): Promise<void> {
     game.multi = 0;
     const source = pickupSourceAtHero();
     const objects = pickupObjects(source);

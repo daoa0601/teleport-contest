@@ -1,12 +1,30 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { game } from '../js/gstate.js';
+import { rhack } from '../js/cmd.js';
+import { pushKeys } from '../js/input.js';
+import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { POOL } from '../js/const.js';
-import { CHEST, CLUB, SADDLE } from '../js/object_data.js';
+import { CHEST, CLUB, DART, SADDLE } from '../js/object_data.js';
 import { runExtendedCommand } from './support/commands.js';
 import { floorObject, knownObject } from './support/game-objects.js';
-import { createSaddledSteed } from './support/monsters.js';
+import { createMonsterAt, createSaddledSteed } from './support/monsters.js';
 import { freshPlayableRoom } from './support/playable-room.js';
+void test('counted loot inside a swallower picks up the whole selected stack', async () => {
+    freshPlayableRoom();
+    const worm = await createMonsterAt('purple worm', 11, 10);
+    worm.mx = game.u.ux;
+    worm.my = game.u.uy;
+    const darts = await knownObject(DART, { quantity: 5 });
+    await addObjectToMonsterInventory(worm, darts);
+    game.u.uswallow = 1;
+    game.u.ustuck = worm;
+    pushKeys('3#loot\n.');
+    await rhack(0);
+    assert.equal(game.inventory.find(object => object.otyp === DART)?.quan, 5);
+    assert.equal(worm.minvent.includes(darts), false);
+    assert.equal(game.context.move, 1);
+});
 void test('loot can remove the saddle from an adjacent monster', async () => {
     freshPlayableRoom();
     const horse = await createSaddledSteed('horse');

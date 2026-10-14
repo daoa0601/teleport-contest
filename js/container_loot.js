@@ -171,7 +171,8 @@ async function lootMonster(monster) {
         }
     }
     if (game.u.uswallow) {
-        await pickupAtHero();
+        // C loot_mon() passes the saddle inquiry flag, not the command count.
+        await pickupAtHero(asked ? 1 : 0);
         spentTime = !!game.context.move;
     }
     return { asked, spentTime };

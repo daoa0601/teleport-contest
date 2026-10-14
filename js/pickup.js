@@ -39,8 +39,7 @@ import { SHOPBASE, A_WIS, STONE, DOOR, D_BROKEN, W_WEP, is_pit, LOST_NONE, LOST_
 export function pickupClassOrder() {
     return [...inventoryClassOrder(), 17, 0].map(objectClassHeading);
 }
-export async function pickupAtHero() {
-    const count = Math.max(0, game._commandCount || 0);
+export async function pickupAtHero(count = Math.max(0, game._commandCount || 0)) {
     game.multi = 0;
     const source = pickupSourceAtHero();
     const objects = pickupObjects(source);
