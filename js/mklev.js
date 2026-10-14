@@ -92,7 +92,7 @@ import { objectWeight } from './weight.js';
 import { curseObjectState, objectResistsDestruction, } from './object_state.js';
 import { isMultiGeneratedWeapon, isPoisonableObject, } from './object_properties.js';
 import { addCreatedObjectToContainer, addObjectToContainer } from './object_container.js';
-import { vision_note_blocker_change } from './vision.js';
+import { monsterEmitsLight, vision_note_blocker_change } from './vision.js';
 import { goodPosition } from './teleport_rules.js';
 import { randomDefensiveMonsterItem, randomMiscMonsterItem, randomOffensiveMonsterItem, } from './muse.js';
 import { SpecialSelection, match_maptyps, mapCharacterType, specialSelectionFillRect, specialSelectionMatch, } from './selvar.js';
@@ -6197,6 +6197,8 @@ function applyLuaMonsterAppearance(monster, appearance) {
             const oldForm = monster.mnum;
             monster.female = shapechangerGender(monster.cham ?? oldForm, type, !!monster.female);
             setMonsterSpecies(monster, type);
+            if (monsterEmitsLight(oldForm) !== monsterEmitsLight(type))
+                game.vision_full_recalc = 1;
             if (!monster.perminvis || oldForm === PM_STALKER || oldForm === PM_BLACK_LIGHT)
                 monster.perminvis = type === PM_STALKER || type === PM_BLACK_LIGHT;
         }

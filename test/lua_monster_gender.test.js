@@ -9,7 +9,40 @@ import { freshObjectRoom } from './support/object-room.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { changeMonsterForm } from '../js/monster_polymorph.js';
 import { initRng } from '../js/rng.js';
+import { pline } from '../js/display.js';
+import { cansee, vision_recalc, vision_reset_new_level } from '../js/vision.js';
 import { roomBindings } from './support/themed-room-bindings.js';
+void test('a Lua shapechanger in a fire-elemental body illuminates nearby dark floor before the next message', async (t) => {
+    const lua = await roomBindings(t);
+    requirePlayingGame(game);
+    await lua.executeAsync(`des.map({ x = 7, y = 6, lit = false,
+        map = [[..........
+..........
+..........
+..........
+..........
+..........
+..........
+..........
+..........]] })`);
+    game.in_mklev = false;
+    game.u.ux = 10;
+    game.u.uy = 10;
+    vision_reset_new_level();
+    vision_recalc(0);
+    assert.equal(cansee(14, 10), false);
+    initRng(2n);
+    await lua.executeAsync(`des.monster({ id = "chameleon", x = 6, y = 4,
+        appear_as = "mon:fire elemental", group = 0, name = "Glowing body" })`);
+    await pline('You look around.');
+    const monster = game.level.monsters.find(candidate => candidate.mgivenname === 'Glowing body');
+    assert.ok(monster);
+    assert.equal(monster.mnum, MONSTER_NAME.indexOf('fire elemental'));
+    assert.equal(monster.mx, 13);
+    assert.equal(monster.my, 10);
+    assert.equal(cansee(14, 10), true, 'the new body lights adjacent floor without moving the hero');
+    assert.equal(game.level.requireAt(14, 10).lit, false, 'body light is temporary illumination');
+});
 for (const female of [undefined, false, true]) {
     void test(`Lua vampire-class creation uses ${female === true ? 'explicit female' : female === false ? 'explicit male' : 'default male'} sex through shape changes`, async (t) => {
         const lua = await roomBindings(t);
