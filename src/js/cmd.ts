@@ -88,7 +88,7 @@ import {
 } from './floor_object_display.js';
 import { loseHeroHp } from './hero_damage.js';
 import { dopay } from './shop_pay_command.js';
-import { reportShopFinances } from './shop_finance.js';
+import { inventoryReport } from './inventory_reports.js';
 import { quoteShopGoods } from './shop_price_quote.js';
 import { shopkeeperBlockingDoor, shopkeeperBlockingEntry } from './shop_blocking.js';
 import { poisonHeroStrengthAndHp } from './poison.js';
@@ -343,7 +343,6 @@ import {
     encumbranceLabel, encumbranceMessage, exceedsActionCapacity, nearCapacity,
     invWeight, OVERLOADED, SLT_ENCUMBER,
 } from './weight.js';
-import { hiddenGold } from './gold.js';
 import { makeWish } from './wish.js';
 import { dopray } from './pray.js';
 import { finishDestinationSpotEffects, finishTeleportArrival } from './location_effects.js';
@@ -1328,6 +1327,8 @@ async function runCommandHandler(binding: CommandBinding, {
             await doOptions(true);
         } else if (direction === 'p') {
             await dopay();
+        } else if (nextKey !== null && '$)[="(*'.includes(String.fromCharCode(nextKey))) {
+            await runCommandHandler(nextCommand);
         } else if (nextKey === 22 && game.flags?.debug) {
             // cmd.c marks wiz_level_tele CMD_M_PREFIX. do_reqmenu() sets
             // iflags.menu_requested, so level_tele() skips its numeric
@@ -1349,11 +1350,13 @@ async function runCommandHandler(binding: CommandBinding, {
             game.context.move = 0;
         }
     } else if (ch === 'i') {
-        const action = await ddoinv();
-        if (action && !['\x1b', ' ', '\n', '\r'].includes(action.key)) {
-            game._cannedCommands ??= [];
-            game._cannedCommands.push({ kind: 'inventory-action', action });
-        }
+        enqueueInventoryAction(await ddoinv());
+    } else if (ch === 'I') {
+        enqueueInventoryAction(await inventoryReport('type'));
+    } else if (ch === '(') {
+        enqueueInventoryAction(await inventoryReport('tools'));
+    } else if (ch === '*') {
+        enqueueInventoryAction(await inventoryReport('inuse'));
     } else if (ch === 'O') {
         await doOptions();
     } else if (ch === 'Z') {
@@ -1435,15 +1438,15 @@ async function runCommandHandler(binding: CommandBinding, {
     } else if (ch === 'S') {
         await dosave();
     } else if (ch === '$') {
-        await doWalletQuery();
+        enqueueInventoryAction(await inventoryReport('gold'));
     } else if (ch === ')') {
-        await doWeaponQuery();
+        enqueueInventoryAction(await inventoryReport('weapon'));
     } else if (ch === '[') {
-        await doArmorQuery();
+        enqueueInventoryAction(await inventoryReport('armor'));
     } else if (ch === '=') {
-        await doRingQuery();
+        enqueueInventoryAction(await inventoryReport('rings'));
     } else if (ch === '"') {
-        await doAmuletQuery();
+        enqueueInventoryAction(await inventoryReport('amulet'));
     } else if (key === 127) { // Delete: overview of known terrain.
         await doTerrainOverview();
     } else if (key === 27) { // Escape cancels without producing a message.
@@ -1452,6 +1455,13 @@ async function runCommandHandler(binding: CommandBinding, {
         // Unknown command
         game.context.move = 0;
         await pline(`Unknown command '${ch}'.`);
+    }
+}
+
+function enqueueInventoryAction(action: InventoryAction | null): void {
+    if (action && !['\x1b', ' ', '\n', '\r'].includes(action.key)) {
+        game._cannedCommands ??= [];
+        game._cannedCommands.push({ kind: 'inventory-action', action });
     }
 }
 
@@ -1714,68 +1724,6 @@ export async function travelStairs(up: boolean) {
     });
     if (changed !== false) game.context.move = 1;
     return changed !== false;
-}
-
-async function doWalletQuery() {
-    const purse = heroGoldAmount(game);
-    const stashed = hiddenGold(game, false);
-    if (game.flags?.verbose !== false) {
-        let message = purse
-            ? `Your wallet contains ${purse} zorkmid${purse === 1 ? '' : 's'}`
-            : 'Your wallet is empty';
-        if (stashed) {
-            message += `, ${purse ? 'and' : 'but'} you have ${stashed} ${
-                purse ? 'more' : `zorkmid${stashed === 1 ? '' : 's'}`
-            } stashed away in your pack`;
-        }
-        await pline(`${message}.`);
-    } else {
-        const total = purse + stashed;
-        await pline(total
-            ? `You are carrying a total of ${total} zorkmid${
-                total === 1 ? '' : 's'}.`
-            : 'You have no money.');
-    }
-    await reportShopFinances();
-    game.context.move = 0;
-}
-
-async function doWeaponQuery() {
-    await pline(game.uwep
-        ? `${game.uwep.invlet} - ${game.uwep.name}.`
-        : 'You are bare handed.');
-    game.context.move = 0;
-}
-
-async function doArmorQuery() {
-    const armor = game.uarm;
-    if (!armor) {
-        await pline('You are not wearing any armor.');
-    } else {
-        const parts = [];
-        if (armor.buc) parts.push(armor.buc);
-        if (armor.enchantment !== undefined && Number.isInteger(armor.enchantment))
-            parts.push(`${armor.enchantment >= 0 ? '+' : ''}${armor.enchantment}`);
-        parts.push(armor.name);
-        const description = parts.join(' ');
-        const article = /^[aeiou]/i.test(description) ? 'an' : 'a';
-        await pline(`${armor.invlet} - ${article} ${description} (being worn).`);
-    }
-    game.context.move = 0;
-}
-
-async function doRingQuery() {
-    await pline(game.uleft || game.uright
-        ? 'You are wearing a ring.'
-        : 'You are not wearing any rings.');
-    game.context.move = 0;
-}
-
-async function doAmuletQuery() {
-    await pline(game.uamul
-        ? 'You are wearing an amulet.'
-        : 'You are not wearing an amulet.');
-    game.context.move = 0;
 }
 
 function captureMapDisplay(): MapDisplaySnapshot {

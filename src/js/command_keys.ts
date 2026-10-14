@@ -20,6 +20,7 @@ const DEFAULT_COMMAND_KEYS = new Map([
     ['reqmenu', 'm'], ['run', 'G'], ['rush', 'g'], ['save', 'S'],
     ['search', 's'], ['swap', 'x'],
     ['seeamulet', '"'], ['seearmor', '['], ['seerings', '='], ['seeweapon', ')'],
+    ['seetools', '('], ['seeall', '*'], ['inventtype', 'I'],
     ['showgold', '$'], ['showspells', '+'], ['terrain', String.fromCharCode(127)],
     ['takeoff', 'T'], ['throw', 't'], ['travel', '_'],
     ['up', '<'], ['wait', '.'], ['wear', 'W'],

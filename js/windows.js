@@ -331,9 +331,11 @@ export async function showMultiSelectWindow({ title, sections, omitHeadings = fa
     const window = tty_create_nhwindow(NHW_MENU);
     try {
         await tty_start_menu(window);
-        tty_add_menu(window, { identifier: null, text: title, attr: titleAttr });
-        if (blankAfterTitle)
-            tty_add_menu(window, { identifier: null, text: '' });
+        if (title) {
+            tty_add_menu(window, { identifier: null, text: title, attr: titleAttr });
+            if (blankAfterTitle)
+                tty_add_menu(window, { identifier: null, text: '' });
+        }
         for (const text of introLines)
             tty_add_menu(window, { identifier: null, text });
         for (const section of sections) {

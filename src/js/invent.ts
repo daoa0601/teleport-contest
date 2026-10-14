@@ -478,6 +478,10 @@ async function showItemActionMenu(item: GameObject) {
     });
 }
 
+export async function inventoryActionForObject(item: GameObject): Promise<InventoryAction> {
+    return { key: inventoryActionKey(await showItemActionMenu(item)), item };
+}
+
 function itemActionEntries(item: GameObject, state: GameState, repairGold: boolean) {
     const itemName = simpleObjectName(item, state);
     const entries: { key: InventoryActionKey; text: string }[] = [];
@@ -611,10 +615,7 @@ export async function ddoinv(): Promise<InventoryAction | null> {
         item.invlet === String.fromCharCode(key));
     let action: InventoryAction | null = null;
     if (selected) {
-        const actionKey = await showItemActionMenu(selected);
-        action = {
-            key: inventoryActionKey(actionKey), item: selected,
-        };
+        action = await inventoryActionForObject(selected);
     }
     await bot();
     await flush_screen(1);

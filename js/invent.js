@@ -438,6 +438,9 @@ async function showItemActionMenu(item) {
         validKeys: [27, 32, 10, 13],
     });
 }
+export async function inventoryActionForObject(item) {
+    return { key: inventoryActionKey(await showItemActionMenu(item)), item };
+}
 function itemActionEntries(item, state, repairGold) {
     const itemName = simpleObjectName(item, state);
     const entries = [];
@@ -604,10 +607,7 @@ export async function ddoinv() {
     const selected = inventory.find(item => item.invlet === String.fromCharCode(key));
     let action = null;
     if (selected) {
-        const actionKey = await showItemActionMenu(selected);
-        action = {
-            key: inventoryActionKey(actionKey), item: selected,
-        };
+        action = await inventoryActionForObject(selected);
     }
     await bot();
     await flush_screen(1);
