@@ -1,7 +1,7 @@
 // Applying keys, picks and cards. C lock.c:pick_lock(), picklock(), autokey().
 import { artifactById } from './artifacts.js';
 import { touchArtifactByHero } from './artifact_touch.js';
-import { currentAttribute, exerciseAttribute } from './attrib.js';
+import { currentAttribute, exerciseAttribute, reportHeroEncumbrance } from './attrib.js';
 import { heroFingerName, heroHandName } from './body_parts.js';
 import { triggerChestTrap } from './chest_trap.js';
 import { A_DEX, A_WIS, AUTOUNLOCK_APPLY_KEY, AUTOUNLOCK_KICK, AUTOUNLOCK_UNTRAP, AUTOUNLOCK_FORCE, DOOR, D_NODOOR, D_ISOPEN, D_BROKEN, D_LOCKED, D_CLOSED, D_TRAPPED, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, SHOPBASE, TT_PIT, isok, SHOP_DOOR_COST, } from './const.js';
@@ -17,6 +17,7 @@ import { MONSTER_NAME } from './monster_data.js';
 import { monsterName } from './monster_name.js';
 import { addObjectToMonsterInventory } from './monster_inventory.js';
 import { removeHeroEquipment } from './hero_equipment.js';
+import { freeInventoryObject } from './hero_inventory.js';
 import { CHEST, CREDIT_CARD, LARGE_BOX, LOCK_PICK, SKELETON_KEY, } from './object_data.js';
 import { inventoryItemDescription } from './invent.js';
 import { definiteName, observeObjectForNaming, ownedObjectName, simpleObjectNameWithArticle, simpleObjectTypeName, objectName, } from './objnam.js';
@@ -26,6 +27,7 @@ import { promptYesNo, promptYesNoQuit } from './query.js';
 import { rn2 } from './rng.js';
 import { roomsAt } from './room.js';
 import { heroIsBlind } from './senses.js';
+import { removeObjectAndContentsFromBill } from './shk.js';
 import { addShopDamage } from './shop_damage.js';
 import { triggerBoobyTrap } from './booby_trap.js';
 import { isLavaAt, isPoolAt } from './terrain_properties.js';
@@ -404,11 +406,15 @@ async function absorbLockTool(monster, tool, state) {
         return;
     if (tool.owornmask)
         await removeHeroEquipment(tool, state);
+    if (tool.unpaid)
+        removeObjectAndContentsFromBill(tool, state);
     const name = lockToolName(tool, state);
     if (cansee(monster.mx, monster.my))
         await pline(`${monsterName(monster, { capitalized: true, augmentIt: true, state })} pulls ${name} away from you and absorbs ${(tool.quan ?? 1) > 1 ? 'them' : 'it'}!`);
     else
         await pline(`${name.charAt(0).toUpperCase() + name.slice(1)} ${(tool.quan ?? 1) > 1 ? 'are' : 'is'} pulled from your ${heroHandName(state)}!`);
+    await freeInventoryObject(tool, state);
+    await reportHeroEncumbrance(state);
     await addObjectToMonsterInventory(monster, tool, state);
 }
 //# sourceMappingURL=lock_pick.js.map
