@@ -38,7 +38,6 @@ export async function lookInsideSwallower(monster) {
         suppressSaddle: !!MGIVENNAME(monster) });
     const ordered = sortObjects(objects, { mode: lootSortMode() });
     const sections = [];
-    let letter = 97;
     let first = true;
     for (const oclass of [...inventoryClassOrder(), 17, 0]) {
         const items = ordered.filter(object => object.oclass === oclass);
@@ -47,9 +46,10 @@ export async function lookInsideSwallower(monster) {
         sections.push({ heading: objectClassHeading(oclass), items: items.map(object => {
                 observeObjectForNaming(object);
                 consumeHallucinatedMenuObjectGlyph(object);
-                const key = first && object.otyp === GOLD_PIECE ? '$' : String.fromCharCode(letter++);
+                const firstGold = first && object.otyp === GOLD_PIECE;
                 first = false;
-                return { key, text: inventoryItemDescription(object) };
+                return { ...(firstGold ? { key: '$' } : {}),
+                    text: inventoryItemDescription(object), value: object };
             }) });
     }
     // query_objlist() attaches a monster glyph even though tty only shows text.

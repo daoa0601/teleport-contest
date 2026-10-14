@@ -20,6 +20,7 @@ import { withIndefiniteArticle } from './object_grammar.js';
 import { showInventoryWindow } from './windows.js';
 import type { InventorySection } from './windows.js';
 import type { Monster } from './monster_types.js';
+import type { GameObject } from './object_types.js';
 
 export async function lookInsideSwallower(monster: Monster): Promise<void> {
     const blind = heroIsBlind();
@@ -39,8 +40,7 @@ export async function lookInsideSwallower(monster: Monster): Promise<void> {
     monsterName(monster, { article: 'your', suppressIt: true, capitalized: true,
         suppressSaddle: !!MGIVENNAME(monster) });
     const ordered = sortObjects(objects, { mode: lootSortMode() });
-    const sections: InventorySection[] = [];
-    let letter = 97;
+    const sections: InventorySection<GameObject>[] = [];
     let first = true;
     for (const oclass of [...inventoryClassOrder(), 17, 0]) {
         const items = ordered.filter(object => object.oclass === oclass);
@@ -48,9 +48,10 @@ export async function lookInsideSwallower(monster: Monster): Promise<void> {
         sections.push({ heading: objectClassHeading(oclass), items: items.map(object => {
             observeObjectForNaming(object);
             consumeHallucinatedMenuObjectGlyph(object);
-            const key = first && object.otyp === GOLD_PIECE ? '$' : String.fromCharCode(letter++);
+            const firstGold = first && object.otyp === GOLD_PIECE;
             first = false;
-            return { key, text: inventoryItemDescription(object) };
+            return { ...(firstGold ? { key: '$' } : {}),
+                text: inventoryItemDescription(object), value: object };
         }) });
     }
     // query_objlist() attaches a monster glyph even though tty only shows text.
