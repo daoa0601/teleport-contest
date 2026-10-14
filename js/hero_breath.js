@@ -4,7 +4,7 @@ import { heroHasArtifactDefense } from './artifacts.js';
 import { heroHasHalfSpellDamage } from './spell_damage.js';
 import { disintegrateWornArmor } from './armor.js';
 import { exerciseAttribute } from './attrib.js';
-import { A_CON, A_DEX, A_STR, NON_PM, } from './const.js';
+import { A_CON, A_DEX, A_STR, M_SEEN_MAGR, NON_PM, } from './const.js';
 import { plineWithContinuation, shieldeff } from './display.js';
 import { finishHeroDeath } from './end.js';
 import { loseHeroHp } from './hero_damage.js';
@@ -199,6 +199,7 @@ async function hitWithDisintegration(context) {
         await disintegrateWornArmor(shirt, { state, publish });
     }
     state.u.ugrave_arise = context.nativeType === -24 ? -3 : NON_PM;
+    monstersForgetHeroResistance(M_SEEN_MAGR, state, monster => monsterHasLineOfSightToHero(monster, state));
     // zhitu() calls done(DIED) directly; only losehp() prints "You die...".
     const heroDied = await die({ killer: context.name || 'blast of disintegration', deathLineShown: true });
     return { resisted: false, damage: 0, heroDied };
