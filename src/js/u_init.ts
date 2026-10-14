@@ -1089,7 +1089,8 @@ async function finishAddedInventoryItem(item: GameObject): Promise<GameObject> {
 
 export async function addInventoryItem(raw: GameObject, presentation: ItemPresentation | null = null, observe = true): Promise<GameObject> {
     let item = prepareInventoryItem(raw, presentation, observe);
-    const existing = game.inventory.find(other => mergable(other, item, game));
+    const existing = game.uquiver && mergable(game.uquiver, item, game) ? game.uquiver
+        : game.inventory.find(other => mergable(other, item, game));
     const added = existing ? await mergeObjectStacks(existing, item, game)
         : linkInventoryItem(item);
     if (!added) throw new Error(`Inventory merge rejected object ${item.o_id} after admission`);
@@ -1100,7 +1101,8 @@ export async function addInventoryItem(raw: GameObject, presentation: ItemPresen
 export async function addCreatedInventoryItem(raw: GameObject, presentation: ItemPresentation | null = null, observe = true): Promise<GameObject> {
     assertCreatedObject(raw, game);
     let item = prepareInventoryItem(raw, presentation, observe);
-    const existing = game.inventory.find(other => mergable(other, item, game));
+    const existing = game.uquiver && mergable(game.uquiver, item, game) ? game.uquiver
+        : game.inventory.find(other => mergable(other, item, game));
     const added = existing ? await mergeCreatedObjectStacks(existing, item, game)
         : linkInventoryItem(item);
     if (!added) throw new Error(`Initial inventory merge rejected object ${item.o_id} after admission`);

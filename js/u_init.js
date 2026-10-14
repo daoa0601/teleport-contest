@@ -991,7 +991,8 @@ async function finishAddedInventoryItem(item) {
 }
 export async function addInventoryItem(raw, presentation = null, observe = true) {
     let item = prepareInventoryItem(raw, presentation, observe);
-    const existing = game.inventory.find(other => mergable(other, item, game));
+    const existing = game.uquiver && mergable(game.uquiver, item, game) ? game.uquiver
+        : game.inventory.find(other => mergable(other, item, game));
     const added = existing ? await mergeObjectStacks(existing, item, game)
         : linkInventoryItem(item);
     if (!added)
@@ -1002,7 +1003,8 @@ export async function addInventoryItem(raw, presentation = null, observe = true)
 export async function addCreatedInventoryItem(raw, presentation = null, observe = true) {
     assertCreatedObject(raw, game);
     let item = prepareInventoryItem(raw, presentation, observe);
-    const existing = game.inventory.find(other => mergable(other, item, game));
+    const existing = game.uquiver && mergable(game.uquiver, item, game) ? game.uquiver
+        : game.inventory.find(other => mergable(other, item, game));
     const added = existing ? await mergeCreatedObjectStacks(existing, item, game)
         : linkInventoryItem(item);
     if (!added)
