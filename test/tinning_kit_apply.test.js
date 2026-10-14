@@ -41,6 +41,22 @@ void test('an empty tinning kit takes time without selecting or consuming a corp
     assert.equal(game._pending_message, 'You seem to be out of tins.');
     assert.equal(game.context.move, 1);
 });
+for (const blind of [false, true]) {
+    void test(`a ${blind ? 'blind' : 'sighted'} priest recognizes the blessing of a freshly made tin before dropping it`, async () => {
+        const level = freshPlayableRoom({ role: 'priest', hero: { permaBlind: blind } });
+        grantIntrinsicProperty('fumbling', 'outside');
+        const kit = await addInventoryObject(TINNING_KIT, { blessed: true, spe: 2 });
+        const corpse = await addInventoryObject(CORPSE, { corpsenm: MONSTER_NAME.indexOf('newt') });
+        await runExtendedCommand('apply', `${kit.invlet}${corpse.invlet}`);
+        const tin = level.objects[game.u.ux]?.[game.u.uy]?.find(object => object.otyp === TIN);
+        assert.ok(tin, 'fumbling must drop the newly made tin');
+        assert.equal(tin.bknown, true, 'the priest must recognize its blessing when it is named');
+        assert.match(game._pending_message, /You make, but cannot pick up, a blessed tin/);
+        assert.equal(tin.dknown, !blind);
+        assert.equal(kit.spe, 1);
+        assert.equal(game.context.move, 1);
+    });
+}
 for (const floorSpecies of [[], ['newt'], ['newt', 'lichen']]) {
     void test(`a tinning kit reports no ${floorSpecies.length ? 'other ' : ''}corpse after declining ${floorSpecies.length} floor corpses`, async () => {
         freshPlayableRoom();

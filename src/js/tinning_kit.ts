@@ -14,7 +14,7 @@ import { MONSTER_FLAGS1, MONSTER_NUTRITION } from './monster_data.js';
 import { consumeObjectCharge } from './object_charge.js';
 import { CORPSE, TIN } from './object_data.js';
 import { withIndefiniteArticle } from './object_grammar.js';
-import { singularObjectName } from './objnam.js';
+import { observeObjectForNaming, singularObjectName } from './objnam.js';
 import { heroIsBreathless, heroSpecies } from './hero_species.js';
 import { propertyIsActive } from './properties.js';
 import { promptChoice } from './query.js';
@@ -72,6 +72,7 @@ export async function useTinningKit(kit: GameObject) {
             await pline('"You tin it, you bought it!"');
         await useUpFloorObject(corpse, 1);
     }
+    observeObjectForNaming(tin);
     await holdAnotherObject(tin, { dropMessage: `You make, but cannot pick up, ${inventoryItemDescription(tin)}.` });
 }
 
