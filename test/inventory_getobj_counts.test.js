@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { rhack } from '../js/cmd.js';
-import { GETOBJ_EXCLUDE_INACCESS } from '../js/const.js';
+import { GETOBJ_EXCLUDE_INACCESS, W_WEP } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { chooseInventoryObject } from '../js/inventory_prompt.js';
@@ -22,6 +22,28 @@ void test('#adjust moves only the counted part of a stack', async (t) => {
     await rhack('#'.charCodeAt(0));
     assert.equal(dagger.quan, 4);
     assert.equal(game.inventory.find(object => object.invlet === 'z')?.quan, 3);
+    assert.equal(game.context.move, 0);
+});
+void test('counted #adjust reveals a wielded stack curse and moves the whole stack', async (t) => {
+    freshObjectRoom();
+    const dagger = await addInventoryObject(DAGGER, {
+        quan: 7, cursed: true, bknown: false, wielded: true, owornmask: W_WEP,
+    });
+    game.uwep = dagger;
+    game.u.uwep = dagger;
+    const input = resetInputState();
+    input.feed('adjust\r');
+    planInput(input, t, [
+        { prompt: /What do you want to adjust\?/, keys: `3${dagger.invlet}` },
+        { prompt: /Adjust letter to what/, keys: 'z' },
+    ]);
+    await rhack('#'.charCodeAt(0));
+    assert.equal(dagger.bknown, true, 'Trying to split a welded weapon reveals its curse');
+    assert.equal(dagger.quan, 7);
+    assert.equal(game.inventory.length, 1);
+    assert.equal(game.inventory.find(object => object.invlet === 'z'), dagger);
+    assert.equal(game.uwep, dagger);
+    assert.match(game._pending_message, /Moving: z - 7 cursed .*daggers/);
     assert.equal(game.context.move, 0);
 });
 void test('zero typed before a drop letter means that no count was supplied', async (t) => {

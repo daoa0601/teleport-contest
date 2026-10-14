@@ -46,7 +46,11 @@ export async function chooseInventoryObject(verb, classify, { forcePrompt = fals
     if (object && selection.count !== null && selection.count < object.quan) {
         if (object.otyp === LOADSTONE && object.cursed)
             object.corpsenm = selection.count;
-        else if (!isWeldedPrimary(object))
+        // C splittable() calls welded(), revealing the curse before refusing
+        // the split. A cursed loadstone returns before that weapon check.
+        else if (isWeldedPrimary(object))
+            object.bknown = true;
+        else
             return splitObjectStack(object, selection.count, game);
     }
     return object;
