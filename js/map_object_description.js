@@ -8,7 +8,7 @@ import { deallocateObject, stopObjectTimers } from './object_delete.js';
 import { objectDescription } from './object_description.js';
 import { makePlural, withIndefiniteArticle } from './object_grammar.js';
 import { objectClassForType, observeObject } from './object_knowledge.js';
-import { minimalObjectName, observeDistantObjectForNaming } from './objnam.js';
+import { distantObjectName, minimalObjectName } from './objnam.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { costlySpot } from './shk.js';
 import { isLavaAt, isPoolAt } from './terrain_properties.js';
@@ -69,9 +69,8 @@ export async function objectAtMapDescription(x, y, glyph, state = game, style = 
             return object.quan === 1 ? withIndefiniteArticle(noun) : makePlural(noun);
         }
         const withPrice = object.dknown;
-        observeDistantObjectForNaming(object, state);
-        const description = object.otyp === STRANGE_OBJECT ? 'strange object'
-            : objectDescription(object, { state, withPrice, vagueQuantity: true });
+        const description = distantObjectName(object, item => item.otyp === STRANGE_OBJECT ? 'strange object'
+            : objectDescription(item, { state, withPrice, vagueQuantity: true }), state);
         return description + placementSuffix(temporary ? null : object, x, y, state);
     }
     finally {

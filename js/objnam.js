@@ -91,6 +91,20 @@ export function observeDistantObjectForNaming(object, state = game) {
         distant: !visible || (!object.oartifact && !close), state,
     });
 }
+// C distant_name() also suppresses inscriptions during final map browsing.
+// Restore the identity before returning; it still selects inventory text.
+export function distantObjectName(object, format, state = game) {
+    const identity = object.o_id;
+    if (state.program_state.gameover)
+        object.o_id = 0;
+    try {
+        observeDistantObjectForNaming(object, state);
+        return format(object);
+    }
+    finally {
+        object.o_id = identity;
+    }
+}
 // objnam.c:xname() visible name without inventory annotations.
 // Unlike doname(), this omits quantity, beatitude, enchantment, and article.
 export function objectName(object, state = game, { minimal = false } = {}) {
