@@ -448,6 +448,8 @@ import {
 import { adjustMonsterSpeed, monsterSpeedMessage } from './monster_speed.js';
 import { setMonsterPermanentInvisibility } from './monster_invisibility.js';
 import { msummon } from './minion.js';
+import { talkToDemon } from './demon_talk.js';
+import { MONSTER_SOUND } from './monster_data.js';
 import { MONSTER_DIFFICULTY } from './monster_data.js';
 import { depth } from './hacklib.js';
 import { objectMaterial } from './object_material.js';
@@ -8260,6 +8262,17 @@ export async function takeMonsterTurn(
                 usedMisc: miscItem,
             },
         };
+    }
+    if (range.nearby && MONSTER_SOUND[dochugContext.entryMnum] === 33
+        && monster.mpeaceful && !monster.mtame && !state.u.uswallow
+        && await talkToDemon(monster, state,
+            limit => recordRandom(random, calls, limit),
+            sides => { calls.push(`rnd(${sides})`); return rollOne(sides); })) {
+        return { calls, dochugContext, movement: {
+            oldx: monster.mx, oldy: monster.my, x: monster.mx, y: monster.my,
+            moved: false, actionCompleted: true, postMoveStatus: MMOVE_DONE,
+            actorLeftLevel: !monsterHasMapPosition(monster, state),
+        } };
     }
     await watchOnDuty(monster, state, random, calls);
     if (monsterIsMindFlayer(dochugContext.entryMnum) && recordRandom(random, calls, 20) === 0) {
