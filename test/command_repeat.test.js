@@ -15,6 +15,17 @@ void test('repeat without a saved command reports why it cannot run', async () =
     assert.equal(game._pending_message, 'There is no command available to repeat.');
     assert.equal(game.context.move, 0);
 });
+void test('cancelling chat clears recall without spending time', async () => {
+    const input = freshTurnRoom();
+    input.feed('#chat\n\x1b');
+    await rhack(0);
+    assert.equal(game.context.move, 0);
+    input.feed('\x01h');
+    await rhack(0);
+    assert.equal(game._pending_message, 'There is no command available to repeat.');
+    assert.equal(game.context.move, 0);
+    assert.equal(await nhgetch(), 'h'.charCodeAt(0), 'repeat must not reopen the chat direction prompt');
+});
 for (const command of ['r', '#read\n']) {
     void test(`cancelling ${JSON.stringify(command)} clears read recall`, async () => {
         const input = freshTurnRoom();

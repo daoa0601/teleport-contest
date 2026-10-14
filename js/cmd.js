@@ -2549,7 +2549,7 @@ async function dochat() {
     }
     const direction = await promptDirection(() => readDirectionKey('Talk to whom? (in what direction) '));
     if (!direction) {
-        game.context.move = 0;
+        resetCommandVariables(true); // sounds.c:dochat() returns ECMD_CANCEL.
         return;
     }
     if (!direction.dx && !direction.dy && !direction.dz) {
