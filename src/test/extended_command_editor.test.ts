@@ -123,6 +123,31 @@ void test('a nonempty command-list search redisplays matching command descriptio
     assert.equal(game.context.move, 0);
 });
 
+for (const mode of ['ordinary', 'explore', 'wizard']) {
+    void test(`command-list search uses the ${mode} description of genocided`, async () => {
+        freshObjectRoom({ flags: { debug: mode === 'wizard', explore: mode === 'explore' } });
+        const input = resetInputState();
+        input.feed('#?\n:');
+        const action = rhack(0);
+        try {
+            await input.waitUntilBlocked();
+            input.feed('extinct\n');
+            await input.waitUntilBlocked();
+            const text = game.nhDisplay?.grid.map(row => row.map(cell => cell.ch).join('')).join('\n') ?? '';
+            if (mode === 'ordinary') {
+                assert.match(text, /no matches/);
+                assert.doesNotMatch(text, /genocided/);
+            } else {
+                assert.match(text, /genocided .*been genocided or become extinct/);
+            }
+        } finally {
+            input.feed('\x1b\x1b');
+            await action;
+        }
+        assert.equal(game.context.move, 0);
+    });
+}
+
 void test('the extmenu option asks for command initials in a menu', async () => {
     freshObjectRoom();
     game.flags.extmenu = true;

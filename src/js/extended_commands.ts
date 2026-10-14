@@ -99,20 +99,18 @@ export async function showExtendedCommandList(): Promise<void> {
         label('');
         let found = 0;
         for (const wizardSection of oneList || !game.flags.debug ? [false] : [false, true]) {
-            const entries = availableExtendedCommands().filter(command =>
+            const entries = availableExtendedCommands().map(command => ({
+                command, description: listedCommandDescription(command),
+            })).filter(({ command, description }) =>
                 (oneList || !!(command.flags & flags.WIZMODECMD) === wizardSection)
                 && (!autocompleteOnly || !!(command.flags & flags.AUTOCOMPLETE))
                 && (!search || matchesSearch(command.name ?? '', search)
-                    || matchesSearch(commandDescription(command), search)));
+                    || matchesSearch(description, search)));
             if (!entries.length) continue;
             label(wizardSection ? 'Debugging Extended Commands' : 'Extended commands',
                 game.iflags.menu_headings?.attr ?? 1);
-            for (const command of entries) {
+            for (const { command, description } of entries) {
                 const markers = `${command.flags & flags.CMD_M_PREFIX ? 'm' : ''}${command.flags & flags.AUTOCOMPLETE ? 'A' : ''}`;
-                const description = !game.flags.debug && !game.flags.explore
-                    && command.name === 'genocided'
-                    ? commandDescription(command).replace(' been genocided or become extinct', ' been genocided')
-                    : commandDescription(command);
                 label(` ${(command.name ?? '').padEnd(14)} ${(markers ? `[${markers}]` : '').padStart(4)} ${description}`);
                 found++;
             }
@@ -142,6 +140,14 @@ export async function showExtendedCommandList(): Promise<void> {
             return;
         }
     }
+}
+
+// C doextlist() changes the description before both searching and display.
+function listedCommandDescription(command: NativeCommand): string {
+    const description = commandDescription(command);
+    if (game.flags.debug || game.flags.explore || !(command.flags & flags.GENERALCMD))
+        return description;
+    return description.replace(' been genocided or become extinct', ' been genocided');
 }
 
 function matchesSearch(text: string, pattern: string): boolean {
