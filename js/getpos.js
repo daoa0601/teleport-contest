@@ -1,7 +1,7 @@
 // C refs: getpos.c:getpos(), drawing.c:defsyms[], symbols.c:gs.showsyms[],
 // display.c:tmp_at() for the valid-location marking overlay.
 import { COLNO, D_ISOPEN, DOOR, HI_ZAP, LOOK_ONCE, LOOK_QUICK, LOOK_TRADITIONAL, LOOK_VERBOSE, ROWNO, VIBRATING_SQUARE, WEB, IS_WALL, TREE, } from './const.js';
-import { bot, clearMessageWindow, redrawMap, flush_screen, glyphAt, lastDirtyMapCursor, newsym_force, pline, show_glyph_cell, terrain_glyph, } from './display.js';
+import { bot, clearMessageWindow, redrawMap, flush_screen, glyphAt, lastDirtyMapCursor, newsym_force, pline, plineWithContinuation, show_glyph_cell, terrain_glyph, } from './display.js';
 import { game } from './gstate.js';
 import { nhgetch, readchar } from './input.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
@@ -487,7 +487,7 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
                 return null;
             }
             if (ch === ' ') {
-                message = await describeSelectedPosition(describe, cursor, movePrompt);
+                message = await movementMessage();
                 continue;
             }
             if (key === game.commandBindings.specialKey('getpos.valid')) {
@@ -605,7 +605,7 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
             message = getposFeatureMissMessage(ch);
             if (!force && !isGetposFeatureSymbol(ch, game.symset)) {
                 await pline(message.replace(/\(use .*\)/, '(aborted)'));
-                await pline('Done.');
+                await plineWithContinuation('Done.');
                 return null;
             }
         }

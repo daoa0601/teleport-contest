@@ -7,7 +7,7 @@ import {
 } from './const.js';
 import {
     bot, clearMessageWindow, redrawMap, flush_screen, glyphAt, lastDirtyMapCursor,
-    newsym_force, pline, show_glyph_cell, terrain_glyph,
+    newsym_force, pline, plineWithContinuation, show_glyph_cell, terrain_glyph,
 } from './display.js';
 import { game } from './gstate.js';
 import { nhgetch, readchar } from './input.js';
@@ -536,7 +536,7 @@ export async function selectMapPosition({
                 return null;
             }
             if (ch === ' ') {
-                message = await describeSelectedPosition(describe, cursor, movePrompt);
+                message = await movementMessage();
                 continue;
             }
             if (key === game.commandBindings.specialKey('getpos.valid')) {
@@ -647,7 +647,7 @@ export async function selectMapPosition({
             message = getposFeatureMissMessage(ch);
             if (!force && !isGetposFeatureSymbol(ch, game.symset)) {
                 await pline(message.replace(/\(use .*\)/, '(aborted)'));
-                await pline('Done.');
+                await plineWithContinuation('Done.');
                 return null;
             }
         }

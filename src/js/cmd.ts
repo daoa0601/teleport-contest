@@ -4624,47 +4624,55 @@ async function dotravel(): Promise<void> {
 // Farlook spends no game time. Ordinary look retains its cursor between
 // selections; quick look returns after describing one selection.
 async function doFarlook(quick = true): Promise<void> {
-    let verbose = !!game.flags.verbose && !quick;
+    const savedVerbose = game.flags.verbose;
+    game.flags.verbose = !!savedVerbose && !quick;
+    let verbose = !!game.flags.verbose;
     let position = { x: game.u.ux, y: game.u.uy };
-    for (;;) {
-        await plineWithContinuation(verbose
-            ? 'Please move the cursor to a monster, object or location.'
-            : 'Pick a monster, object or location.');
-        const firstUse = shouldShowGetposTip();
-        if (firstUse) await showGetposTip();
-        if (verbose) {
-            const helpKey = game.commandBindings.specialKey('getpos.help');
-            if (helpKey === undefined) throw new Error('Map selection requires a getpos.help binding');
-            await plineWithContinuation(`(For instructions type a '${visibleCommandKey(helpKey)}')`);
+    try {
+        for (;;) {
+            await plineWithContinuation(verbose
+                ? 'Please move the cursor to a monster, object or location.'
+                : 'Pick a monster, object or location.');
+            const firstUse = shouldShowGetposTip();
+            if (firstUse) await showGetposTip();
+            if (verbose) {
+                const helpKey = game.commandBindings.specialKey('getpos.help');
+                if (helpKey === undefined) throw new Error('Map selection requires a getpos.help binding');
+                await plineWithContinuation(`(For instructions type a '${visibleCommandKey(helpKey)}')`);
+            }
+            if (firstUse) await plineWithContinuation('Move cursor to a monster, object or location:');
+    
+            const cursor = await selectMapPosition({
+                start: position, force: quick,
+                prompt: game._pending_message || game._retained_message,
+                goal: 'a monster, object or location',
+                describe: farlookLocationDescription,
+            });
+            if (!cursor) break;
+            position = { x: cursor.x, y: cursor.y };
+            verbose = false;
+            game.flags.verbose = false;
+            // putmixed() returns the description to WIN_MESSAGE. A later
+            // checkfile() question or the next picker acknowledges that prose.
+            game._pending_message = '';
+            game._retained_message = '';
+            const description = await farlookLocationDescription(cursor.x, cursor.y);
+            const glyph = glyphAt(cursor.x, cursor.y);
+            const monster = glyph?.kind === 'monster' && game.level
+                && !farlookDescribesHero(cursor.x, cursor.y)
+                ? monsterAtPosition(game.level, cursor.x, cursor.y) : null;
+            const seen = monster ? monsterSeenDescription(monster) : '';
+            const screen = screenDescription(cursor.x, cursor.y, description);
+            await plineWithContinuation(screen.count ? screen.text
+                + (seen ? ` [seen: ${seen}]` : '') : "I've never heard of such things.");
+            if (screen.count === 1 && cursor.pickType !== LOOK_QUICK && cursor.pickType !== LOOK_ONCE
+                && (cursor.pickType === LOOK_VERBOSE || !quick && game.flags.help !== false))
+                await offerFarlookInformation(screen.firstMatch, cursor.pickType === LOOK_VERBOSE);
+            if (quick || cursor.pickType === LOOK_ONCE) break;
         }
-        if (firstUse) await plineWithContinuation('Move cursor to a monster, object or location:');
-
-        const cursor = await selectMapPosition({
-            start: position,
-            prompt: game._pending_message || game._retained_message,
-            goal: 'a monster, object or location',
-            describe: farlookLocationDescription,
-        });
-        if (!cursor) break;
-        position = { x: cursor.x, y: cursor.y };
-        verbose = false;
-        // putmixed() returns the description to WIN_MESSAGE. A later
-        // checkfile() question or the next picker acknowledges that prose.
-        game._pending_message = '';
-        game._retained_message = '';
-        const description = await farlookLocationDescription(cursor.x, cursor.y);
-        const glyph = glyphAt(cursor.x, cursor.y);
-        const monster = glyph?.kind === 'monster' && game.level
-            && !farlookDescribesHero(cursor.x, cursor.y)
-            ? monsterAtPosition(game.level, cursor.x, cursor.y) : null;
-        const seen = monster ? monsterSeenDescription(monster) : '';
-        const screen = screenDescription(cursor.x, cursor.y, description);
-        await plineWithContinuation(screen.count ? screen.text
-            + (seen ? ` [seen: ${seen}]` : '') : "I've never heard of such things.");
-        if (screen.count === 1 && cursor.pickType !== LOOK_QUICK && cursor.pickType !== LOOK_ONCE
-            && (cursor.pickType === LOOK_VERBOSE || !quick && game.flags.help !== false))
-            await offerFarlookInformation(screen.firstMatch, cursor.pickType === LOOK_VERBOSE);
-        if (quick || cursor.pickType === LOOK_ONCE) break;
+    } finally {
+        if (savedVerbose === undefined) delete game.flags.verbose;
+        else game.flags.verbose = savedVerbose;
     }
     game.context.move = 0;
 }
