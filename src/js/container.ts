@@ -9,7 +9,6 @@ import { loseHeroHp } from './hero_damage.js';
 import { triggerChestTrap } from './chest_trap.js';
 import { game } from './gstate.js';
 import { startGlobTimeout } from './glob.js';
-import { addHeroGoldObject } from './hero_gold.js';
 import { finishInventoryRemoval } from './hero_inventory.js';
 import { setPrimaryWeapon, setSecondaryWeapon, setQuiverObject } from './weapon_slots.js';
 import { nhgetch } from './input.js';
@@ -33,7 +32,6 @@ import {
     OILSKIN_SACK, SACK, SPE_BOOK_OF_THE_DEAD, STATUE, WAN_CANCELLATION,
 } from './object_data.js';
 import { unlinkObject } from './object_location.js';
-import { mergable, mergeObjectStacks } from './object_merge.js';
 import {
     objectQuantity, rejoinObjectStack, splitObjectStack,
 } from './object_stack.js';
@@ -47,7 +45,7 @@ import { d, rn2 } from './rng.js';
 import { getLine, promptChoice } from './query.js';
 import { touchPetrifyingCorpse } from './stoning.js';
 import { NO_COLOR } from './terminal.js';
-import { assignInventoryLetter } from './u_init.js';
+import { addPickedInventoryObject } from './pickup.js';
 import { objectWeight } from './weight.js';
 import { heroHasFreeHand } from './weapon_type.js';
 import {
@@ -387,21 +385,6 @@ async function loseCursedBagContents(container: GameObject, state: GameState): P
     return true;
 }
 
-async function addToInventory(object: GameObject, state: GameState): Promise<GameObject> {
-    const existing = (state.inventory || []).find(candidate =>
-        mergable(candidate, object, state));
-    if (existing) {
-        const merged = await mergeObjectStacks(existing, object, state);
-        if (!merged) throw new Error('A matching inventory stack must accept the container item');
-        return markJustPicked(merged);
-    }
-    assignInventoryLetter(object);
-    object.where = 'inventory';
-    state.inventory ||= [];
-    state.inventory.push(object);
-    return markJustPicked(object);
-}
-
 function freezeObject(object: GameObject, state: GameState): void {
     if (object.ageRelative) return;
     object.age = (state.moves ?? 0) - (object.age ?? 0);
@@ -574,13 +557,7 @@ export async function takeFromContainer(
     if (container.otyp === ICE_BOX) thawObject(object, state);
     if (resetJustPicked) clearJustPicked(state);
 
-    let carried;
-    if (object.otyp === GOLD_PIECE) {
-        carried = addHeroGoldObject(state, object).object;
-        if (!carried) throw new Error('Taken gold must enter the hero inventory');
-    } else {
-        carried = await addToInventory(object, state);
-    }
+    const { object: carried } = await addPickedInventoryObject(object);
     container.cknown = true;
     updateContainerWeights(container);
     state._capacityDirty = true;
