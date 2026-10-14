@@ -20,6 +20,7 @@ import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBO
 import { AD_DCAY, AD_DGST, AD_FIRE, AD_RUST } from './monster_attack_types.js';
 import { recordMonsterDeath } from './monster_vitals.js';
 import { monsterName, possessiveName } from './monster_name.js';
+import { setMonsterGivenName } from './monster_given_name.js';
 import { createSteamVortexDeathCloud } from './monster_death_cloud.js';
 import { returnDeadKop } from './monster_return.js';
 import { restoreMonsterTrueSpecies } from './monster_species.js';
@@ -215,7 +216,7 @@ async function createGolemRemains(monster, state) {
             break;
     }
     if (monster.mnum !== PM_STONE_GOLEM)
-        delete monster.name;
+        setMonsterGivenName(monster, null);
     return remains;
 }
 async function placeMonsterPart(type, monster, state, initialize = true) {
@@ -257,7 +258,7 @@ async function createPuddingGlob(monster, state, publish) {
         || monster.mnum > PM_BLACK_PUDDING)
         return null;
     const glob = await placeMonsterPart(GLOB_OF_GRAY_OOZE + monster.mnum - PM_GRAY_OOZE, monster, state);
-    delete monster.name;
+    setMonsterGivenName(monster, null);
     return meldNearbyFloorGlobs(glob, { state, publish });
 }
 export async function createMonsterRemains(monster, state = game, { buried = false, zombify = false, noRevive = false, seen = false, publish = plineWithContinuation, } = {}) {

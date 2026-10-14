@@ -32,6 +32,7 @@ import { AD_DCAY, AD_DGST, AD_FIRE, AD_RUST } from './monster_attack_types.js';
 import type { DamageType } from './monster_attack_types.js';
 import { recordMonsterDeath } from './monster_vitals.js';
 import { monsterName, possessiveName } from './monster_name.js';
+import { setMonsterGivenName } from './monster_given_name.js';
 import { createSteamVortexDeathCloud } from './monster_death_cloud.js';
 import { returnDeadKop } from './monster_return.js';
 import { restoreMonsterTrueSpecies } from './monster_species.js';
@@ -312,7 +313,7 @@ async function createGolemRemains(monster: Monster, state: GameState): Promise<G
         break;
     }
 
-    if (monster.mnum !== PM_STONE_GOLEM) delete monster.name;
+    if (monster.mnum !== PM_STONE_GOLEM) setMonsterGivenName(monster, null);
     return remains;
 }
 
@@ -362,7 +363,7 @@ async function createPuddingGlob(monster: Monster, state: GameState, publish: Me
         GLOB_OF_GRAY_OOZE + monster.mnum - PM_GRAY_OOZE,
         monster, state,
     );
-    delete monster.name;
+    setMonsterGivenName(monster, null);
     return meldNearbyFloorGlobs(glob, { state, publish });
 }
 

@@ -1,14 +1,29 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { G_NOCORPSE, NO_MINVENT } from '../js/const.js';
+import { G_NOCORPSE, MGIVENNAME, NO_MINVENT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { AD_PHYS } from '../js/monster_attack_types.js';
 import { finishMonsterKilled } from '../js/monster_death.js';
+import { setMonsterGivenName } from '../js/monster_given_name.js';
 import { CORPSE, ROCK, STATUE } from '../js/object_data.js';
 import { floorObjectsAt } from './support/level-state.js';
 import { createMonsterAt, requireMonsterVital } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+
+void test('material remains discard the dead golem given name', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    const golem = await createMonsterAt('clay golem', 11, 10, NO_MINVENT);
+    setMonsterGivenName(golem, 'Clayton');
+
+    const death = await finishMonsterKilled(golem, game, {
+        damageType: AD_PHYS, cause: null, publish: async () => {},
+    });
+
+    assert.equal(MGIVENNAME(golem), '');
+    assert.equal(death.corpse?.oname, undefined);
+});
 
 void test('a combat death respects the species current no-corpse flag', async () => {
     const level = freshObjectRoom();
