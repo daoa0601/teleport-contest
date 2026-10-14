@@ -403,6 +403,7 @@ export function removeOneObjectFromBill(object, state = game, resident = null) {
         return null;
     }
     const eshk = billed.resident.eshk;
+    const removedEntry = { ...billed.entry };
     const objectQuantity = Math.max(1, object.quan ?? object.quantity ?? 1);
     const billedQuantity = Math.max(1, billed.entry.bquan ?? 1);
     const removedQuantity = Math.min(objectQuantity, billedQuantity);
@@ -429,11 +430,13 @@ export function removeOneObjectFromBill(object, state = game, resident = null) {
         retainBillObject(usedObject, state);
     }
     else {
-        eshk.bill = (eshk.bill || []).filter(candidate => candidate !== billed.entry);
+        const last = eshk.bill.pop();
+        if (last && last !== billed.entry)
+            copyBillEntry(billed.entry, last);
     }
     eshk.billct = eshk.bill.length;
     object.unpaid = false;
-    return { ...billed, removedQuantity };
+    return { resident: billed.resident, entry: removedEntry, removedQuantity };
 }
 export function removeObjectAndContentsFromBill(object, state = game, { resident = null } = {}) {
     // C subfrombill(): recursion over non-coin contents, keeper-scoped.
