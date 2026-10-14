@@ -353,6 +353,8 @@ async function freezeLiquidAt(x, y, state, publish) {
         startMeltIceTimer(x, y, 0, state);
         updateIceObjectTimersAt(x, y, state, { includeBuried: true });
     }
+    // Cooling changes the surface without changing its vision blocking.
+    // A visibility reset here would erase an active ray at the hero.
     return -3;
 }
 async function evaporatePoolAt(x, y, state, publish, heroCaused) {

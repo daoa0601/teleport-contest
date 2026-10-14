@@ -1,7 +1,6 @@
 import { moveMonsterNextToHero } from './teleport.js';
 import { monsterFireDescription } from './monster_fire_description.js';
 import { bot } from './display.js';
-import { makeBlinded } from './sight_change.js';
 import { launchRollingBoulder } from './rolling_boulder.js';
 import { recorderLocalHour } from './calendar.js';
 import type { MonsterLiquidDeathContext } from './mon.js';
@@ -393,6 +392,7 @@ import {
     updateMonsterRegions,
 } from './regions.js';
 import { heroIsDeaf, syncBlindness } from './senses.js';
+import { makeBlinded } from './sight_change.js';
 import {
     applyMonsterStoningAttack,
     startHeroPetrificationFromMonster,
@@ -8853,6 +8853,7 @@ export async function runMonsterAction(
         monster.mstrategy = (monster.mstrategy ?? 0) & ~STRAT_WAITFORU;
     }
     if ((monster.mstrategy ?? 0) & STRAT_WAITMASK) {
+        if (heroIsHallucinating(state)) newsym(monster.mx, monster.my);
         return {
             monster,
             calls,
@@ -8870,6 +8871,7 @@ export async function runMonsterAction(
     // shared hider, eel, and Conflict phases above.  In particular, a
     // sleeping piercer still owns restrap()'s one-in-three probe.
     if (monster.mcanmove === 0 || (monster.mfrozen ?? 0) > 0) {
+        if (heroIsHallucinating(state)) newsym(monster.mx, monster.my);
         return {
             monster,
             calls,
@@ -8889,6 +8891,7 @@ export async function runMonsterAction(
     if (monster.msleeping) {
         const woke = await disturbSleepingMonster(monster, state, random, calls);
         if (!woke) {
+            if (heroIsHallucinating(state)) newsym(monster.mx, monster.my);
             return {
                 monster,
                 calls,

@@ -1,7 +1,6 @@
 import { moveMonsterNextToHero } from './teleport.js';
 import { monsterFireDescription } from './monster_fire_description.js';
 import { bot } from './display.js';
-import { makeBlinded } from './sight_change.js';
 import { launchRollingBoulder } from './rolling_boulder.js';
 import { recorderLocalHour } from './calendar.js';
 // Monster movement-ration state, movement, and combat.
@@ -133,6 +132,7 @@ import { inTown, roomsAt } from './room.js';
 import { addShopDamage } from './shop_damage.js';
 import { createHarmlessGasCloudSelection, createPoisonGasCloud, createSteamCloud, GAS_OK, monsterGasTolerance, visibleRegionAt, updateMonsterRegions, } from './regions.js';
 import { heroIsDeaf, syncBlindness } from './senses.js';
+import { makeBlinded } from './sight_change.js';
 import { applyMonsterStoningAttack, startHeroPetrificationFromMonster, touchPetrifies, } from './stoning.js';
 import { monsterHasFireResistance, monsterHasStoneResistance } from './monster_resistance.js';
 import { monsterReflectsRay } from './ray.js';
@@ -7217,6 +7217,8 @@ export async function runMonsterAction(monster, state, random = rn2, rollDice = 
         monster.mstrategy = (monster.mstrategy ?? 0) & ~STRAT_WAITFORU;
     }
     if ((monster.mstrategy ?? 0) & STRAT_WAITMASK) {
+        if (heroIsHallucinating(state))
+            newsym(monster.mx, monster.my);
         return {
             monster,
             calls,
@@ -7234,6 +7236,8 @@ export async function runMonsterAction(monster, state, random = rn2, rollDice = 
     // shared hider, eel, and Conflict phases above.  In particular, a
     // sleeping piercer still owns restrap()'s one-in-three probe.
     if (monster.mcanmove === 0 || (monster.mfrozen ?? 0) > 0) {
+        if (heroIsHallucinating(state))
+            newsym(monster.mx, monster.my);
         return {
             monster,
             calls,
@@ -7253,6 +7257,8 @@ export async function runMonsterAction(monster, state, random = rn2, rollDice = 
     if (monster.msleeping) {
         const woke = await disturbSleepingMonster(monster, state, random, calls);
         if (!woke) {
+            if (heroIsHallucinating(state))
+                newsym(monster.mx, monster.my);
             return {
                 monster,
                 calls,
