@@ -5778,6 +5778,7 @@ async function applyPickAxe(item: GameObject): Promise<void> {
         ),
     });
     if ('died' in result && result.died) return;
+    if (result.cancelled) resetCommandVariables(true);
     if ('resume' in result && result.resume) {
         game._cannedCommands ||= [];
         game._cannedCommands.push({ kind: 'apply', invlet: inventoryCommandLetter(item) });
