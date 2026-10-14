@@ -7,7 +7,7 @@ import { pushKeys, resetInputState } from '../js/input.js';
 import { BEARTRAP, LAND_MINE } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { stopHeroOccupation } from '../js/occupation.js';
-import { applyInventoryObject } from './support/commands.js';
+import { applyInventoryObject, runExtendedCommand } from './support/commands.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 import { createSaddledSteed } from './support/monsters.js';
@@ -106,5 +106,31 @@ void test('an unskilled rider drops a beartrap when the setting attempt bungles'
     assert.equal(beartrap.where, 'floor');
     assert.equal(game._occupation ?? null, null);
     assert.equal(game.context.move, 1);
+});
+void test('switching traps after an interrupted mounted bungle activates the replacement trap', async () => {
+    freshPlayableRoom({ hero: { acurr: { a: [18, 10, 10, 18, 10, 10] } } });
+    const pony = await createSaddledSteed();
+    game.u.usteed = pony;
+    pony.mx = game.u.ux;
+    pony.my = game.u.uy;
+    const mine = await addInventoryObject(LAND_MINE, { cursed: true });
+    const beartrap = await addInventoryObject(BEARTRAP);
+    const startingHp = pony.mhp;
+    let reads = 0;
+    resetInputState().display = { async readKey() {
+            assert.ok(++reads < 20, `Trap switching did not finish: ${game._pending_message}`);
+            return (game._pending_message.includes('Continue your attempt') ? 'y' : ' ').charCodeAt(0);
+        } };
+    initRng(4n);
+    await runExtendedCommand('apply', mine.invlet);
+    await stopHeroOccupation();
+    initRng(1n);
+    await runExtendedCommand('apply', beartrap.invlet);
+    for (let turn = 0; turn < 8 && game._occupation; turn++)
+        await continueCountedCommand();
+    assert.equal(beartrap.where, 'gone');
+    assert.equal(mine.where, 'inventory');
+    assert.ok((game.u.utrap ?? 0) > 0, 'the replacement bear trap must close on the steed');
+    assert.ok(pony.mhp < startingHp, 'the replacement trap must injure the steed');
 });
 //# sourceMappingURL=trap_setting_apply.test.js.map

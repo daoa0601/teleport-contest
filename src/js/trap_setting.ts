@@ -50,7 +50,8 @@ export async function useSettableTrap(object: GameObject): Promise<GameObject | 
         return null;
     }
     const remaining = trapPreparationTime(type, currentAttribute(A_DEX, game), currentAttribute(A_STR, game), heroIsBlind(game));
-    const progress = { object, level: game.level, x: hero.ux, y: hero.uy, remaining, forceBungle: false };
+    // C use_trap() preserves a pending bungle until reset_trapset().
+    const progress = { object, level: game.level, x: hero.ux, y: hero.uy, remaining, forceBungle: old?.forceBungle ?? false };
     game._trapSetting = progress;
     if (hero.usteed && (hero.weaponSkills?.[P_RIDING]?.skill ?? 0) < P_BASIC) {
         const bungle = rnl(10) > (propertyIsActive('fumbling', game) || object.cursed ? 3 : 5);
