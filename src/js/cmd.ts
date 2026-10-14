@@ -36,6 +36,7 @@ import { requireInitializedHero } from './hero_types.js';
 
 import { fruitName } from './fruit.js';
 import { encyclopediaEntries, encyclopediaMatches } from './encyclopedia.js';
+import { objectAtMapDescription } from './map_object_description.js';
 import { LOOK_ONCE, LOOK_QUICK, LOOK_VERBOSE } from './const.js';
 import { waterbodyName } from './terrain_name.js';
 import { def_warnsyms } from './const.js';
@@ -4445,11 +4446,6 @@ async function wizardPositionDescription(x: number, y: number): Promise<string> 
     // C pager.c:do_screen_description() describes the displayed glyph, not
     // the terrain below it.  A visible (or still remembered) pile therefore
     // owns farlook before the room/corridor fallback.
-    const object = game.level?.objects?.[x]?.[y]?.[0];
-    if (object && glyph?.kind === 'object') {
-        observeDistantObjectForNaming(object);
-        return floorObjectDescription(object);
-    }
     return await farlookLocationDescription(x, y) || 'unexplored area';
 }
 
@@ -4622,6 +4618,7 @@ export async function farlookLocationDescription(x: number, y: number): Promise<
         const hiddenText = hidden.length ? `, ${hidden.join(', ')}` : '';
         return `${tail ? 'tail of a ' : ''}${prefix}${name}${condition}${hiddenText}`;
     }
+    if (glyph.kind === 'object') return objectAtMapDescription(x, y, glyph);
     // Hallucinated statues project monster glyphs without a live monster.
     if (glyph?.kind === 'monster' && heroIsHallucinating(game))
         return randomDisplayMonsterName();
@@ -4694,7 +4691,7 @@ async function dojump(): Promise<void> {
     game.context.move = result.spentTime ? 1 : 0;
 }
 
-async function verboseFarlookDescription(x: number, y: number): Promise<string> {
+function verboseFarlookDescription(x: number, y: number, description: string): string {
     const glyph = glyphAt(x, y);
     if (glyph?.kind === 'terrain' && glyph.terrainName.includes('staircase')) {
         const direction = glyph.glyph === cmapToGlyph(CmapSymbol.upstair)
@@ -4707,7 +4704,7 @@ async function verboseFarlookDescription(x: number, y: number): Promise<string> 
             ...kinds.map(kind => `a ${kind} ${direction}`),
             ...kinds.map(kind => `a branch ${kind} ${direction}`),
         ];
-        return `${direction === 'up' ? '<' : '>'}\x1b[8C${descriptions.join(' or ')} (${await farlookLocationDescription(x, y)})`;
+        return `${direction === 'up' ? '<' : '>'}\x1b[8C${descriptions.join(' or ')} (${description})`;
     }
     if (farlookDescribesHero(x, y) && glyph?.kind === 'monster'
         && glyph.mnum !== undefined) {
@@ -4723,7 +4720,7 @@ async function verboseFarlookDescription(x: number, y: number): Promise<string> 
         // C collapses more than four meanings before appending self_lookat().
         const classDescription = symbol === ' ' ? 'can be many things'
             : withIndefiniteArticle(explanation) + (includesHero ? ' or you' : '');
-        return `${symbol}\x1b[8C${classDescription} (${await farlookLocationDescription(x, y)})`;
+        return `${symbol}\x1b[8C${classDescription} (${description})`;
     }
     const loc = game.level?.at(x, y);
     if (loc?.typ === CORR)
@@ -4742,7 +4739,7 @@ async function verboseFarlookDescription(x: number, y: number): Promise<string> 
                 + ' or the dark part of a room or ice (floor of a room)';
         }
     }
-    return farlookLocationDescription(x, y);
+    return description;
 }
 
 // C refs: cmd.c dotravel(), getpos.c getpos(), hack.c handle_tip(), and
@@ -4809,9 +4806,8 @@ async function dotravel(): Promise<void> {
 }
 
 // C refs: pager.c:dowhatis(), getpos.c:getpos(), pager.c:do_screen_description().
-// Quick far-look is a zero-time modal command.  It shares getpos's cached
-// cursor with travel, paints a short automatic description after movement,
-// then restores the gameplay cursor while showing the verbose selection.
+// Farlook spends no game time. Ordinary look retains its cursor between
+// selections; quick look returns after describing one selection.
 async function doFarlook(quick = true): Promise<void> {
     let verbose = !!game.flags.verbose && !quick;
     let position = { x: game.u.ux, y: game.u.uy };
@@ -4841,16 +4837,17 @@ async function doFarlook(quick = true): Promise<void> {
         // checkfile() question or the next picker acknowledges that prose.
         game._pending_message = '';
         game._retained_message = '';
-        await plineWithContinuation(await verboseFarlookDescription(cursor.x, cursor.y));
+        const description = await farlookLocationDescription(cursor.x, cursor.y);
+        await plineWithContinuation(verboseFarlookDescription(cursor.x, cursor.y, description));
         if (cursor.pickType !== LOOK_QUICK && cursor.pickType !== LOOK_ONCE
             && (cursor.pickType === LOOK_VERBOSE || !quick && game.flags.help !== false))
-            await offerFarlookInformation(cursor.x, cursor.y, cursor.pickType === LOOK_VERBOSE);
+            await offerFarlookInformation(cursor.x, cursor.y, description, cursor.pickType === LOOK_VERBOSE);
         if (quick || cursor.pickType === LOOK_ONCE) break;
     }
     game.context.move = 0;
 }
 
-async function offerFarlookInformation(x: number, y: number, withoutAsking: boolean): Promise<void> {
+async function offerFarlookInformation(x: number, y: number, description: string, withoutAsking: boolean): Promise<void> {
     const monster = game.level ? monsterAtPosition(game.level, x, y) : null;
     const glyph = glyphAt(x, y);
     // lookat() supplies the real monster type to checkfile() unless the
@@ -4860,7 +4857,7 @@ async function offerFarlookInformation(x: number, y: number, withoutAsking: bool
     const name = gnomishWizard ? 'wizard'
         : monster && glyph?.kind === 'monster' && !heroIsHallucinating(game)
             ? monsterTypeName(monster.mnum)
-            : await farlookLocationDescription(x, y);
+            : description;
     for (const match of encyclopediaMatches(name)) {
         if (withoutAsking || await promptYesNo(`More info about "${match.name}"?`, 'n') === 'y')
             await showDisclosureOverlay(match.entry.lines, { restoreUnderlay: true });

@@ -1,0 +1,32 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+
+import { farlookLocationDescription } from '../js/cmd.js';
+import { newsym } from '../js/display.js';
+import { MONSTER_NAME } from '../js/monster_data.js';
+import { DAGGER, STATUE } from '../js/object_data.js';
+import { floorObject } from './support/game-objects.js';
+import { freshObjectRoom } from './support/object-room.js';
+
+void test('farlook describes the species depicted by a floor statue', async () => {
+    freshObjectRoom();
+    const statue = await floorObject(STATUE, 11, 10, {
+        corpsenm: MONSTER_NAME.indexOf('plains centaur'), cknown: false, bknown: false,
+    });
+    newsym(11, 10);
+
+    assert.equal(await farlookLocationDescription(11, 10), 'a statue of a plains centaur');
+    assert.equal(statue.where, 'floor');
+});
+
+void test('farlook leaves the quantity of an unobserved distant stack vague', async () => {
+    freshObjectRoom();
+    const daggers = await floorObject(DAGGER, 15, 10, {
+        quan: 6, dknown: false, known: false, bknown: false,
+    });
+    newsym(15, 10);
+
+    assert.equal(await farlookLocationDescription(15, 10), 'some daggers');
+    assert.equal(daggers.quan, 6);
+    assert.equal(daggers.dknown, false);
+});

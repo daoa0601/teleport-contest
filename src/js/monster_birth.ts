@@ -2,7 +2,7 @@
 // C refs: makemon.c:makemon(), pager.c:mhidden_description(), dochugw(FALSE).
 
 import {
-    BOLT_LIM, M_AP_F_DKNOWN, M_AP_FURNITURE, M_AP_MONSTER, M_AP_NOTHING,
+    BOLT_LIM, M_AP_FURNITURE, M_AP_MONSTER, M_AP_NOTHING,
     M_AP_OBJECT, M_AP_TYPE, MM_NOMSG, MM_NOEXCLAM,
 } from './const.js';
 import {
@@ -10,18 +10,14 @@ import {
 } from './display.js';
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
-import { mkobj, mksobj } from './mklev.js';
+import { objectAtMapDescription } from './map_object_description.js';
 import { monsterHasNoAttacks } from './monster_data.js';
 import { monsterIsScaredAt } from './monster_fear.js';
 import { monsterName } from './monster_name.js';
-import { deallocateObject, stopObjectTimers } from './object_delete.js';
-import { makePlural, verbForSubject, withIndefiniteArticle } from './object_grammar.js';
-import { objectClassForType, observeObject } from './object_knowledge.js';
-import { minimalObjectName } from './objnam.js';
+import { verbForSubject, withIndefiniteArticle } from './object_grammar.js';
 import { stopHeroOccupation } from './occupation.js';
-import { GOLD_PIECE, OBJECT_NAMES, SLIME_MOLD } from './object_data.js';
 import { visibleRegionAt } from './regions.js';
-import { heroIsBlind, heroIsHallucinating } from './senses.js';
+import { heroIsHallucinating } from './senses.js';
 import { couldsee, monsterEmitsLight } from './vision.js';
 import type { Monster } from './monster_types.js';
 import type { GameState } from './game_state.js';
@@ -89,54 +85,7 @@ export async function objectAtMonsterDescription(
     glyph ??= level.flags.hero_memory
         ? level.at(monster.mx, monster.my)?.remembered_glyph ?? null
         : glyphAt(monster.mx, monster.my, state);
-    if (glyph?.kind !== 'object') return 'something';
-    const matchingMimic = M_AP_TYPE(monster) === M_AP_OBJECT
-        && monster.mappearance === glyph.otyp;
-    const objectType = glyph.otyp;
-    // A hallucinated glyph can match a real floor or buried object instead
-    // of the mimic. Only a matching mimic overrides that real object.
-    const floor = level.objects[monster.mx]?.[monster.my] || [];
-    const buried = level.buriedObjects || [];
-    const realObject = matchingMimic ? null
-        : floor.find(object => object.otyp === objectType)
-            || buried.find(object => object.otyp === objectType
-                && object.ox === monster.mx && object.oy === monster.my);
-    const temporary = !realObject;
-    const object = realObject || (OBJECT_NAMES[glyph.otyp]
-        ? await mksobj(glyph.otyp, false, false)
-        : await mkobj(objectClassForType(glyph.otyp), false));
-    try {
-        if (temporary) {
-            // object_from_map() stops no-init corpse/egg/figurine timers.
-            stopObjectTimers(object, state);
-            if (object.otyp === GOLD_PIECE) object.quan = 2;
-            const represented = monster.mcorpsenm;
-            const hasRepresentedSpecies = matchingMimic
-                && represented !== undefined && represented >= 0;
-            if (object.otyp === SLIME_MOLD) {
-                const fruit = hasRepresentedSpecies ? represented : state.context.current_fruit;
-                if (fruit === undefined) throw new Error('mimic description requires fruit history');
-                object.spe = fruit;
-            } else if (hasRepresentedSpecies) object.corpsenm = represented;
-        }
-        const nextToHero = Math.abs(monster.mx - state.u.ux) <= 1
-            && Math.abs(monster.my - state.u.uy) <= 1;
-        if (nextToHero && !heroIsBlind(state) && !heroIsHallucinating(state)
-            && (temporary || object.where === 'floor') && !state.iflags.terrainmode)
-            observeObject(object, state);
-        if (temporary && matchingMimic
-            && (object.dknown || ((monster.m_ap_type ?? 0) & M_AP_F_DKNOWN))) {
-            monster.m_ap_type = (monster.m_ap_type ?? 0) | M_AP_F_DKNOWN;
-            observeObject(object, state);
-        }
-        const noun = minimalObjectName(object, state);
-        return object.quan === 1 ? withIndefiniteArticle(noun) : makePlural(noun);
-    } finally {
-        if (temporary) {
-            object.where = 'free';
-            deallocateObject(object, state);
-        }
-    }
+    return objectAtMapDescription(monster.mx, monster.my, glyph, state, 'hidden');
 }
 
 async function interruptOccupationForBirth(monster: Monster, state: GameState): Promise<void> {

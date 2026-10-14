@@ -28,6 +28,7 @@ export interface ObjectDescriptionOptions {
     withPrice?: boolean;
     primaryHandDetail?: string | null;
     projectPrimaryHand?: boolean;
+    vagueQuantity?: boolean;
 }
 
 const WEAPON_CLASS = 2;
@@ -67,7 +68,9 @@ export function paymentObjectDescription(object: GameObject, quantity: number, {
 
 export function objectDescription(object: GameObject, {
     state = game, withPrice = false, primaryHandDetail, projectPrimaryHand = false,
+    vagueQuantity = false,
 }: ObjectDescriptionOptions = {}): string {
+    const quantity = vagueQuantity && !object.dknown ? 'some' : String(object.quan);
     let noun = objectName(object, state);
     const poisoned = !!object.opoisoned && noun.startsWith('poisoned ');
     if (poisoned) noun = noun.slice(9);
@@ -100,7 +103,7 @@ export function objectDescription(object: GameObject, {
     let description: string;
     if (object.otyp === CORPSE) {
         description = corpseName(object, {
-            adjective: [...(object.quan !== 1 ? [object.quan] : []), ...prefix].join(' '),
+            adjective: [...(object.quan !== 1 ? [quantity] : []), ...prefix].join(' '),
             includeArticle: object.quan === 1,
         }) + noun.replace(/^corpses?/, '');
     } else {
@@ -109,7 +112,7 @@ export function objectDescription(object: GameObject, {
             prefix.push(MONSTER_NAME[object.corpsenm] ?? '');
         description = [...prefix, noun].join(' ');
         const fruitArtifact = object.otyp === SLIME_MOLD ? artifactByName(noun, state) : null;
-        if (object.quan !== 1) description = `${object.quan} ${description}`;
+        if (object.quan !== 1) description = `${quantity} ${description}`;
         else if (objectHasPersonalName(object, state) || uniqueObject(object, state)
             || fruitArtifact?.name.toLowerCase().startsWith('the '))
             description = `the ${description.replace(/^the /i, '')}`;
