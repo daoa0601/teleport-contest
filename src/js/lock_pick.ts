@@ -6,7 +6,7 @@ import { heroFingerName, heroHandName } from './body_parts.js';
 import { triggerChestTrap } from './chest_trap.js';
 import {
     A_DEX, A_WIS, AUTOUNLOCK_APPLY_KEY, AUTOUNLOCK_KICK, AUTOUNLOCK_UNTRAP,
-    AUTOUNLOCK_FORCE, DOOR, D_NODOOR, D_ISOPEN, D_BROKEN, D_LOCKED, D_CLOSED,
+    AUTOUNLOCK_FORCE, DBWALL, DOOR, D_NODOOR, D_ISOPEN, D_BROKEN, D_LOCKED, D_CLOSED,
     D_TRAPPED, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, SHOPBASE, TT_PIT, isok, SHOP_DOOR_COST,
 } from './const.js';
 import { recordMappedOverviewState } from './dungeon.js';
@@ -237,8 +237,8 @@ async function pickDoorLock(tool: GameObject | null, x: number, y: number, autom
         const previousTerrain = door.lastseentyp;
         feel_location(x, y);
         const learned = glyphAt(x, y)?.glyph !== previousGlyph || door.lastseentyp !== previousTerrain;
-        const bridge = findDrawbridgeAt(x, y, state);
-        await pline(`You ${heroIsBlind(state) ? 'feel' : 'see'} no ${bridge ? 'lock on the drawbridge' : 'door there'}.`);
+        const portcullis = door.typ === DBWALL && findDrawbridgeAt(x, y, state) !== null;
+        await pline(`You ${heroIsBlind(state) ? 'feel' : 'see'} no ${portcullis ? 'lock on the drawbridge' : 'door there'}.`);
         return learned;
     }
     if (door.doormask === D_NODOOR || door.doormask === D_ISOPEN || door.doormask === D_BROKEN) {
