@@ -11,7 +11,7 @@ import {
     WT_TOOMUCH_DIAGONAL,
 } from './const.js';
 import { displayLiquidName, feel_newsym, newsym, plineWithContinuation, updateLastSeenTerrain } from './display.js';
-import { heroPassesWalls, heroFormSticks } from './hero_species.js';
+import { heroPassesWalls, heroFormSticks, heroSpecies } from './hero_species.js';
 import { heroHasConflict } from './hero_conflict.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { setHeroInWater } from './terrain_movement.js';
@@ -32,7 +32,7 @@ import { destroyFireInventory } from './zap.js';
 import { releaseAllMonsterLeashes } from './monster_leash.js';
 import { splitHeroMonsterForm } from './mklev.js';
 import {
-    MONSTER_MOVE, MONSTER_SIZE, MONSTER_SYMBOL,
+    MONSTER_FLAGS1, MONSTER_MOVE, MONSTER_SIZE, MONSTER_SYMBOL,
 } from './monster_data.js';
 import {
     AMULET_OF_LIFE_SAVING, BOULDER, LOADSTONE, OBJECT_MATERIAL,
@@ -178,6 +178,7 @@ const CRAWL_DX = [-1, -1, 0, 1, 1, 1, 0, -1];
 const CRAWL_DY = [0, -1, -1, -1, 0, 1, 1, 1];
 const M1_SWIM = 0x00000002;
 const M1_AMORPHOUS = 0x00000004;
+const M1_WALLWALK = 0x00000008;
 const M1_TUNNEL = 0x00000020;
 const M1_NEEDPICK = 0x00000040;
 const M1_SLITHY = 0x00080000;
@@ -278,13 +279,16 @@ export function heroBadRock(state: GameState, x: number, y: number) {
         && pile.some(object => object.otyp === BOULDER)) return true;
     if (!IS_OBSTRUCTED(location.typ)) return false;
 
-    const flags = heroFormFlags(state);
-    const mayDig = !((IS_WALL(location.typ) || location.typ === TREE)
+    // C bad_rock() tests the species, even when the hero has temporary
+    // wall passing. test_move() applies that property after direction selection.
+    const flags = MONSTER_FLAGS1[heroSpecies(state)] ?? 0;
+    const mayDig = !((IS_STWALL(location.typ) || location.typ === TREE)
         && ((location.wall_info ?? 0) & W_NONDIGGABLE));
     const cannotTunnel = !(flags & M1_TUNNEL)
         || !!(flags & M1_NEEDPICK) || !mayDig;
-    const cannotPass = !heroCanPassWallAt(state, x, y);
-    return cannotTunnel && cannotPass;
+    const canPass = !!(flags & M1_WALLWALK)
+        && !(IS_STWALL(location.typ) && (location.wall_info & W_NONPASSWALL));
+    return cannotTunnel && !canPass;
 }
 
 export function heroTightDiagonalReason(state = game) {

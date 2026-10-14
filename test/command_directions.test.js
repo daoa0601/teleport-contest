@@ -83,4 +83,38 @@ void test('exhausting stunned movement choices spends a turn and ends a counted 
     assert.equal(game.multi, 0);
     assert.equal(game.context.mv, false);
 });
+void test('stunned movement rejects surrounding rock despite temporary wall passing', async () => {
+    const input = freshTurnRoom({ hero: { passesWalls: true } });
+    assert.ok(game.level);
+    for (let x = 9; x <= 11; x++) {
+        for (let y = 9; y <= 11; y++) {
+            if (x !== 10 || y !== 10)
+                game.level.requireAt(x, y).typ = STONE;
+        }
+    }
+    await makeStunned(20, { talk: false });
+    input.feed('4l');
+    await rhack(0);
+    assert.equal(game.u.ux, 10, 'impaired movement must find a destination the species can enter');
+    assert.equal(game.u.uy, 10);
+    assert.equal(game.multi, 0);
+    assert.equal(game.context.move, 1);
+    await makeStunned(0, { talk: false });
+    await rhack('l'.charCodeAt(0));
+    assert.equal(game.u.ux, 11, 'temporary wall passing still permits an unimpaired step');
+});
+void test('a stunned ghost can choose rock because its species passes walls', async () => {
+    freshTurnRoom({ hero: { umonnum: MONSTER_NAME.indexOf('ghost'), mtimedone: 100 } });
+    assert.ok(game.level);
+    for (let x = 9; x <= 11; x++) {
+        for (let y = 9; y <= 11; y++) {
+            if (x !== 10 || y !== 10)
+                game.level.requireAt(x, y).typ = STONE;
+        }
+    }
+    await makeStunned(20, { talk: false });
+    await rhack('l'.charCodeAt(0));
+    assert.equal(Math.max(Math.abs(game.u.ux - 10), Math.abs(game.u.uy - 10)), 1);
+    assert.equal(game.context.move, 1);
+});
 //# sourceMappingURL=command_directions.test.js.map
