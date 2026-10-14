@@ -132,10 +132,9 @@ void test('a robbed shop takes the drop as a contribution', async (t) => {
     requirePlayingGame(game);
     shopkeeper.eshk.robbed = 50;
     const dagger = await floorObject(DAGGER, 10, 10);
-    const offer = shopOfferForObject(dagger, shopkeeper);
     const outcome = await sellHeroDroppedObject(dagger, 10, 10);
     assert.deepEqual(outcome, { sold: false });
-    assert.equal(shopkeeper.eshk.robbed, 50 - offer);
+    assert.equal(shopkeeper.eshk.robbed, 0);
     assert.equal(heroGoldAmount(game), 0);
     assert.match(game._lastPlineMessage, /contribution to restock this recently plundered shop/);
 });
@@ -260,18 +259,16 @@ void test('spinach tins and ghost corpses stock in the health food shop', async 
     // Wraiths are unsolid but not ghosts: not vegan.
     assert.equal(shopStocksObject(health, await knownObject(CORPSE, { corpsenm: wraith })), false);
 });
-void test('a robbed shop takes one zorkmid for contained gold', async (t) => {
+void test('a contained-gold contribution clears a robbed shop balance', async (t) => {
     const { shopkeeper } = await sellShop(t);
     requirePlayingGame(game);
     shopkeeper.eshk.robbed = 50;
     const sack = placeCreatedObject(await uninitializedObject(SACK, { dknown: true, cknown: true }), 10, 10);
     const purse = await knownObject(GOLD_PIECE, { dknown: true, quan: 25 });
     await addCreatedObjectToContainer(sack, purse, game);
-    // The sack itself offers one zorkmid (general store), plus the C
-    // boolean quirk adds exactly one more for the contained gold.
     const outcome = await sellHeroDroppedObject(sack, 10, 10);
     assert.deepEqual(outcome, { sold: false });
-    assert.equal(shopkeeper.eshk.robbed, 48);
+    assert.equal(shopkeeper.eshk.robbed, 0);
 });
 void test('an out-of-town candelabrum draw is refused, not advised', async (t) => {
     const { shopkeeper } = await sellShop(t, [], { shoptype: SHOPBASE + 11 });

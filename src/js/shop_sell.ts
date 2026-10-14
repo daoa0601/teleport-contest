@@ -524,7 +524,10 @@ export async function sellHeroDroppedObject(object: GameObject, x: number, y: nu
         // bones; shop robbed by previous customer
         if (gold) offer = objectQuan(object);
         else if (cgold) offer += 1; // C adds the boolean, not the amount
-        eshk.robbed = Math.max(0, eshk.robbed - offer);
+        // In pinned C, '<' binds before '-=' in the balance update.
+        // The existing nonzero robbed balance therefore clears even when
+        // this contribution is worth less than the loss.
+        eshk.robbed = 0;
         if (offer && !heroIsDeaf(state) && !shopkeeperIsMuted(resident)) {
             await publish('"Thank you for your contribution to restock this recently plundered shop."');
         }
