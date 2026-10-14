@@ -26,11 +26,11 @@ import { applyHeroLocationEffects } from './cmd.js';
 import { artifactEmitsLight, heroHasArtifactDefense } from './artifacts.js';
 import { heroResistsLifeDrain } from './monster_resistance.js';
 import { beginObjectBurn, endObjectBurn, equipmentLightDescription, equipmentLightMessage } from './light.js';
-import { AMULET_OF_GUARDING, ALCHEMY_SMOCK, CLOAK_OF_DISPLACEMENT, CLOAK_OF_PROTECTION, CORPSE, ELVEN_BOOTS, ELVEN_CLOAK, GAUNTLETS_OF_POWER, MUMMY_WRAPPING, FEDORA, FUMBLE_BOOTS, LEVITATION_BOOTS, RIN_FREE_ACTION, RIN_PROTECTION, GRAY_DRAGON_SCALE_MAIL, GRAY_DRAGON_SCALES, YELLOW_DRAGON_SCALE_MAIL, YELLOW_DRAGON_SCALES, SHIELD_OF_DRAIN_RESISTANCE, SHIELD_OF_REFLECTION, OBJECT_DESCRIPTIONS, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_PROPERTY, WATER_WALKING_BOOTS, } from './object_data.js';
+import { AMULET_OF_GUARDING, ALCHEMY_SMOCK, CLOAK_OF_DISPLACEMENT, CLOAK_OF_PROTECTION, CORPSE, ELVEN_BOOTS, ELVEN_CLOAK, GAUNTLETS_OF_FUMBLING, GAUNTLETS_OF_POWER, MUMMY_WRAPPING, FEDORA, FUMBLE_BOOTS, LEVITATION_BOOTS, RIN_FREE_ACTION, RIN_PROTECTION, GRAY_DRAGON_SCALE_MAIL, GRAY_DRAGON_SCALES, YELLOW_DRAGON_SCALE_MAIL, YELLOW_DRAGON_SCALES, SHIELD_OF_DRAIN_RESISTANCE, SHIELD_OF_REFLECTION, OBJECT_DESCRIPTIONS, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_PROPERTY, WATER_WALKING_BOOTS, } from './object_data.js';
 import { rn2, rnd } from './rng.js';
 import { monsterName } from './monster_name.js';
 import { MONSTER_NAME } from './monster_data.js';
-import { captureLevitationState, grantWornProperty, hasIntrinsicProperty, hasWornProperty, propertyIsActive, propertyIsBlocked, propertyTimeout, refreshMovementProperties, refreshProperty, removeWornProperty, } from './properties.js';
+import { captureLevitationState, grantWornProperty, hasIntrinsicProperty, hasWornProperty, propertyIsActive, propertyIsBlocked, propertyTimeout, refreshMovementProperties, refreshProperty, removeWornProperty, setPropertyTimeout, } from './properties.js';
 import { A_DEX, A_INT, A_WIS, LUCKMIN, LUCKMAX, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMOR, W_ARMS, W_ARMU, } from './const.js';
 // objects[].a_ac is `10 - ac` for every ARMOR()/HELM()/CLOAK()/SHIELD()/
 // GLOVES()/BOOTS() entry in the pinned objects.h. Armor occupies IDs 89..172.
@@ -203,12 +203,6 @@ export function wearHeroArmor(object, state = game) {
         hero.veryFastFromArmor = true;
         hero.veryFast = true;
     }
-    if (object.otyp === FUMBLE_BOOTS) {
-        object._fumbleBootsHadOtherSource = !!hero.fumbling
-            && (hero.fumblingTurns ?? 0) <= 0;
-        hero.fumblingFromArmor = true;
-        hero.fumbling = true;
-    }
     state[slot] = object;
     if (state.u)
         state.u[slot] = object;
@@ -346,13 +340,9 @@ export async function clearHeroArmor(object, state = game, { cancelledDon = stat
         hero.veryFast = hero.veryFastFromArmor
             || (hero.veryFastTurns ?? 0) > 0;
     }
-    if (object.otyp === FUMBLE_BOOTS) {
-        hero.fumblingFromArmor = false;
-        if (!object._fumbleBootsHadOtherSource)
-            hero.fumblingTurns = 0;
-        hero.fumbling = !!hero.fumblingIntrinsic
-            || (hero.fumblingTurns ?? 0) > 0;
-    }
+    if ((object.otyp === FUMBLE_BOOTS || object.otyp === GAUNTLETS_OF_FUMBLING)
+        && !fumblingHasPermanentOrEquipmentSource(state))
+        setPropertyTimeout('fumbling', 0, state);
     if (deferArmorClass)
         state._armorClassDirty = true;
     else
@@ -631,6 +621,12 @@ function grantArmorProperty(object, state, property) {
         hero.veryFast = true;
     }
 }
+function fumblingHasPermanentOrEquipmentSource(state) {
+    const sources = state.u._propertySources?.fumbling;
+    return hasIntrinsicProperty('fumbling', null, state) || hasWornProperty('fumbling', state)
+        || !!sources?.invoked || !!sources?.carried.length
+        || !!state.u.fumblingIntrinsic || !!state.u.fumblingFromIce;
+}
 function armorHasOtherPropertySource(property, object, state) {
     const sources = state.u._propertySources?.[property];
     const slot = armorSlotFor(object.otyp);
@@ -745,13 +741,13 @@ export async function applyArmorOnEffects(object, state = game, { initialDon = f
         state.context.botl = true;
         return [];
     }
-    if (object?.otyp === FUMBLE_BOOTS) {
-        const hero = state.u;
-        if (!object._fumbleBootsHadOtherSource) {
-            hero.fumblingTurns = (hero.fumblingTurns ?? 0) + rnd(20);
-        }
-        hero.fumblingFromArmor = true;
-        hero.fumbling = true;
+    if (object.otyp === FUMBLE_BOOTS || object.otyp === GAUNTLETS_OF_FUMBLING) {
+        const sources = state.u._propertySources?.fumbling;
+        const slot = armorSlotFor(object.otyp);
+        const otherEquipment = sources?.worn.some(source => source.slot !== slot);
+        if (!otherEquipment && !hasIntrinsicProperty('fumbling', null, state)
+            && !state.u.fumblingIntrinsic && !state.u.fumblingFromIce)
+            setPropertyTimeout('fumbling', propertyTimeout('fumbling', state) + rnd(20), state);
         return [];
     }
     if (object.otyp === ELVEN_CLOAK || object.otyp === ELVEN_BOOTS) {

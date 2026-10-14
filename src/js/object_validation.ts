@@ -211,7 +211,6 @@ export function validSavedObject(value: unknown, context: SavedEntityContext): v
         _speedBootsHadTimedVeryFast: optional(boolean),
         _speedBootsHadIntrinsicFast: optional(boolean),
         _grantsVeryFastFromArmor: optional(boolean),
-        _fumbleBootsHadOtherSource: optional(boolean),
         quantity: optional(integer),
         enchantment: optional(integer),
         buc: optional(oneOf('blessed', 'uncursed', 'cursed', '')),

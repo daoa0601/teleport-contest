@@ -31,7 +31,7 @@ import { artifactEmitsLight, heroHasArtifactDefense } from './artifacts.js';
 import { heroResistsLifeDrain } from './monster_resistance.js';
 import { beginObjectBurn, endObjectBurn, equipmentLightDescription, equipmentLightMessage } from './light.js';
 import {
-    AMULET_OF_GUARDING, ALCHEMY_SMOCK, CLOAK_OF_DISPLACEMENT, CLOAK_OF_PROTECTION, CORPSE, ELVEN_BOOTS, ELVEN_CLOAK, GAUNTLETS_OF_POWER, MUMMY_WRAPPING,
+    AMULET_OF_GUARDING, ALCHEMY_SMOCK, CLOAK_OF_DISPLACEMENT, CLOAK_OF_PROTECTION, CORPSE, ELVEN_BOOTS, ELVEN_CLOAK, GAUNTLETS_OF_FUMBLING, GAUNTLETS_OF_POWER, MUMMY_WRAPPING,
     FEDORA, FUMBLE_BOOTS, LEVITATION_BOOTS, RIN_FREE_ACTION, RIN_PROTECTION,
     GRAY_DRAGON_SCALE_MAIL, GRAY_DRAGON_SCALES,
     YELLOW_DRAGON_SCALE_MAIL, YELLOW_DRAGON_SCALES,
@@ -61,7 +61,7 @@ import { monsterName } from './monster_name.js';
 import { MONSTER_NAME } from './monster_data.js';
 import {
     captureLevitationState, grantWornProperty, hasIntrinsicProperty, hasWornProperty,
-    propertyIsActive, propertyIsBlocked, propertyTimeout, refreshMovementProperties, refreshProperty, removeWornProperty,
+    propertyIsActive, propertyIsBlocked, propertyTimeout, refreshMovementProperties, refreshProperty, removeWornProperty, setPropertyTimeout,
 } from './properties.js';
 import {
     A_DEX, A_INT, A_WIS, LUCKMIN, LUCKMAX,
@@ -239,12 +239,6 @@ export function wearHeroArmor(object: GameObject, state: GameState = game): Armo
         hero.veryFastFromArmor = true;
         hero.veryFast = true;
     }
-    if (object.otyp === FUMBLE_BOOTS) {
-        object._fumbleBootsHadOtherSource = !!hero.fumbling
-            && (hero.fumblingTurns ?? 0) <= 0;
-        hero.fumblingFromArmor = true;
-        hero.fumbling = true;
-    }
     state[slot] = object;
     if (state.u) state.u[slot] = object;
     object.worn = true;
@@ -372,12 +366,9 @@ export async function clearHeroArmor(object: GameObject, state: GameState = game
         hero.veryFast = hero.veryFastFromArmor
             || (hero.veryFastTurns ?? 0) > 0;
     }
-    if (object.otyp === FUMBLE_BOOTS) {
-        hero.fumblingFromArmor = false;
-        if (!object._fumbleBootsHadOtherSource) hero.fumblingTurns = 0;
-        hero.fumbling = !!hero.fumblingIntrinsic
-            || (hero.fumblingTurns ?? 0) > 0;
-    }
+    if ((object.otyp === FUMBLE_BOOTS || object.otyp === GAUNTLETS_OF_FUMBLING)
+        && !fumblingHasPermanentOrEquipmentSource(state))
+        setPropertyTimeout('fumbling', 0, state);
     if (deferArmorClass) state._armorClassDirty = true;
     else findArmorClass(state);
     return true;
@@ -625,6 +616,13 @@ function grantArmorProperty(object: GameObject, state: GameState, property: Prop
     }
 }
 
+function fumblingHasPermanentOrEquipmentSource(state: GameState): boolean {
+    const sources = state.u._propertySources?.fumbling;
+    return hasIntrinsicProperty('fumbling', null, state) || hasWornProperty('fumbling', state)
+        || !!sources?.invoked || !!sources?.carried.length
+        || !!state.u.fumblingIntrinsic || !!state.u.fumblingFromIce;
+}
+
 function armorHasOtherPropertySource(property: PropertyName, object: GameObject, state: GameState): boolean {
     const sources = state.u._propertySources?.[property];
     const slot = armorSlotFor(object.otyp);
@@ -734,13 +732,13 @@ export async function applyArmorOnEffects(object: GameObject, state: GameState =
         return [];
     }
 
-    if (object?.otyp === FUMBLE_BOOTS) {
-        const hero = state.u;
-        if (!object._fumbleBootsHadOtherSource) {
-            hero.fumblingTurns = (hero.fumblingTurns ?? 0) + rnd(20);
-        }
-        hero.fumblingFromArmor = true;
-        hero.fumbling = true;
+    if (object.otyp === FUMBLE_BOOTS || object.otyp === GAUNTLETS_OF_FUMBLING) {
+        const sources = state.u._propertySources?.fumbling;
+        const slot = armorSlotFor(object.otyp);
+        const otherEquipment = sources?.worn.some(source => source.slot !== slot);
+        if (!otherEquipment && !hasIntrinsicProperty('fumbling', null, state)
+            && !state.u.fumblingIntrinsic && !state.u.fumblingFromIce)
+            setPropertyTimeout('fumbling', propertyTimeout('fumbling', state) + rnd(20), state);
         return [];
     }
 

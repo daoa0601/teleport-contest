@@ -157,7 +157,6 @@ export interface GameObject {
     _speedBootsHadTimedVeryFast?: boolean;
     _speedBootsHadIntrinsicFast?: boolean;
     _grantsVeryFastFromArmor?: boolean;
-    _fumbleBootsHadOtherSource?: boolean;
 
     // Inventory presentation is attached to the same object identity. These
     // optional projections do not replace the native fields above.
