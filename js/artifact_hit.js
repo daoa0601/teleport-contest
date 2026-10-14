@@ -62,7 +62,7 @@ export async function applyArtifactHitToMonster(object, monster, baseDamage, { s
             rollOne,
         });
     }
-    if (artifact.name === 'Magicbane' && dieRoll >= 1 && dieRoll <= 8) {
+    if (artifact.name === 'Magicbane' && dieRoll <= 8) {
         return applyMagicbaneHit(object, monster, damage, bonus > 0, {
             state,
             attacker,
