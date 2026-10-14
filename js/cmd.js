@@ -109,6 +109,7 @@ import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { nextObjectId } from './ident.js';
 import { clearCommandKeys, nhgetch, queueCommandKeys, takeCommandKey } from './input.js';
 import { readCommandInput } from './command_input.js';
+import { clearRepeatCommand, rememberCommand, takeRepeatCommand } from './command_repeat.js';
 import { chooseInventoryObject, compactInventoryLetters, inventoryLetterOrder, promptInventoryObject, reassignInventoryLetters, } from './inventory_prompt.js';
 import { AT_EXPL, AT_KICK } from './monster_attack_types.js';
 import { directionAssistPage, promptDirection, promptKey, readDirectionKey, restoreCommandMap, } from './tty_prompts.js';
@@ -1002,17 +1003,22 @@ export async function rhack(key) {
     let prefix = null;
     let menuPrefix = false;
     for (;;) {
-        const cannedCommand = game._cannedCommands?.shift() ?? null;
-        if (key === 0 && !cannedCommand) {
+        const repeated = takeRepeatCommand();
+        const cannedCommand = game._inDoAgain ? null : game._cannedCommands?.shift() ?? null;
+        if (key === 0 && !cannedCommand && !repeated) {
             key = (await readCommandInput()).key;
             delete game._cursorOverride;
         }
         delete game._statusGoldOverride;
-        if (!cannedCommand && [0, -1, 255, 27].includes(key)) {
+        if (!cannedCommand && !repeated && [0, -1, 255, 27].includes(key)) {
             resetCommandVariables(true);
             return;
         }
-        const configured = configuredCommand(key);
+        if (repeated && repeated.kind !== 'command') {
+            resetCommandVariables(true);
+            return;
+        }
+        const configured = repeated?.binding ?? configuredCommand(key);
         if (!cannedCommand) {
             game._pending_message = '';
             game._retained_message = '';
@@ -1052,6 +1058,7 @@ export async function rhack(key) {
         let binding = { ...configured, command };
         prepareTimedCommand(binding);
         if (command.handler === 'doextcmd') {
+            clearRepeatCommand();
             const selected = await readExtendedCommand();
             if (!selected) {
                 resetCommandVariables(false);
@@ -1074,6 +1081,11 @@ export async function rhack(key) {
         const selected = binding.command;
         if (!selected)
             throw new Error('Command dispatch lost its selected command');
+        if (selected.handler === 'do_repeat') {
+            await repeatLastCommand();
+            return;
+        }
+        rememberCommand(binding, !!prefix && command.handler !== 'doextcmd');
         if (selected.flags & NATIVE_COMMAND_FLAGS.PREFIXCMD) {
             if (!await applyMovementPrefix(selected, movement)) {
                 resetCommandVariables(true);
@@ -1093,6 +1105,27 @@ export async function rhack(key) {
         }
         await executeCommandAction(binding, { cannedCommand, previousMessage });
         return;
+    }
+}
+// C cmd.c:do_repeat(). Preserve the saved queue even when its execution
+// cancels, so another repeat makes the same attempt in the new context.
+async function repeatLastCommand() {
+    if (game._inDoAgain)
+        return;
+    const saved = [...(game._repeatCommands ?? [])];
+    if (!saved.length) {
+        await pline('There is no command available to repeat.');
+        resetCommandVariables(true);
+        return;
+    }
+    game._inDoAgain = true;
+    try {
+        await rhack(0);
+    }
+    finally {
+        game._inDoAgain = false;
+        game._repeatCommands = saved;
+        game.iflags.menu_requested = false;
     }
 }
 async function applyMovementPrefix(command, movement) {

@@ -12,6 +12,7 @@ import { rn2 } from './rng.js';
 import { showTextPages } from './windows.js';
 import type { TextPage } from './windows.js';
 import type { Hero } from './hero_types.js';
+import { rememberCommandKey, takeRepeatCommand } from './command_repeat.js';
 
 export interface DirectionSelection {
     key: string;
@@ -46,6 +47,8 @@ export async function promptKey(message: string, cursorOffset = 0): Promise<numb
 // C cmd.c:getdir() removes its query immediately after receiving a key,
 // before interpreting that key as a direction, cancellation, or help.
 export async function readDirectionKey(message = 'In what direction? ') {
+    const queued = takeRepeatCommand();
+    if (queued) return queued.kind === 'key' ? queued.key : 27;
     // tty_yn_function() skips an unread topline stopped by Escape, then
     // clears WIN_STOP before painting its question.
     if (game._suppressMessagesUntilInput) clearMessageWindow();
@@ -53,6 +56,8 @@ export async function readDirectionKey(message = 'In what direction? ') {
     game._suppressMessagesUntilInput = false;
     await paintKeyPrompt(message);
     const key = (await readchar('direction')) & 255;
+    if (game.commandBindings.lookup(key)?.command?.handler !== 'doredraw')
+        rememberCommandKey(key);
     clearMessageWindow();
     return key;
 }

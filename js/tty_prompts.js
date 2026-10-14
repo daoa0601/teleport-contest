@@ -9,6 +9,7 @@ import { promptedDirectionKey, visibleCommandKey } from './command_keys.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { rn2 } from './rng.js';
 import { showTextPages } from './windows.js';
+import { rememberCommandKey, takeRepeatCommand } from './command_repeat.js';
 const GRID_BUG = MONSTER_NAME.indexOf('grid bug');
 const impairedDirections = [
     [-1, 0], [0, -1], [1, 0], [0, 1],
@@ -33,6 +34,9 @@ export async function promptKey(message, cursorOffset = 0) {
 // C cmd.c:getdir() removes its query immediately after receiving a key,
 // before interpreting that key as a direction, cancellation, or help.
 export async function readDirectionKey(message = 'In what direction? ') {
+    const queued = takeRepeatCommand();
+    if (queued)
+        return queued.kind === 'key' ? queued.key : 27;
     // tty_yn_function() skips an unread topline stopped by Escape, then
     // clears WIN_STOP before painting its question.
     if (game._suppressMessagesUntilInput)
@@ -42,6 +46,8 @@ export async function readDirectionKey(message = 'In what direction? ') {
     game._suppressMessagesUntilInput = false;
     await paintKeyPrompt(message);
     const key = (await readchar('direction')) & 255;
+    if (game.commandBindings.lookup(key)?.command?.handler !== 'doredraw')
+        rememberCommandKey(key);
     clearMessageWindow();
     return key;
 }

@@ -15,7 +15,7 @@ import type { GameDisplay } from './game_display.js';
 import type { StorageBackend } from './storage.js';
 import type { Isaac64Context } from './isaac64.js';
 import type { RngSeed } from './rng.js';
-import type { CannedCommand, DelayedArmorAction, RunState } from './command_types.js';
+import type { CannedCommand, DelayedArmorAction, RepeatCommandEntry, RunState } from './command_types.js';
 import type { FoodContext, HeroOccupation, TrapSetting } from './occupation_types.js';
 import type { TakeoffContext } from './takeoff_state.js';
 import type { Artifact } from './artifacts.js';
@@ -321,6 +321,8 @@ export interface GameState {
     _cannedCommands?: CannedCommand[];
     _commandCount?: number;
     _commandKey?: number;
+    _repeatCommands?: RepeatCommandEntry[];
+    _inDoAgain?: boolean;
     _alreadyFoundFlag?: number;
     _didNothingFlag?: number;
     _heroActionSeq?: number;

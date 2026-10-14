@@ -59,6 +59,8 @@ const transientFields = {
     _cursorOverride: true,
     _commandCount: true,
     _commandKey: true,
+    _repeatCommands: true,
+    _inDoAgain: true,
     _kickedLoc: true,
     _helplessRunmodeDelayPending: true,
     multi: true,

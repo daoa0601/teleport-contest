@@ -11,6 +11,7 @@ import { GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, GETOBJ_SUGGES
 import { AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, LOADSTONE } from './object_data.js';
 import { splitObjectStack } from './object_stack.js';
 import { isWeldedPrimary } from './weapon_slots.js';
+import { rememberObjectChoice, takeRepeatCommand } from './command_repeat.js';
 // C getobj(): suggestions control the prompt and '?' subset, not what a
 // typed inventory letter or '*' may select. Downplayed items keep a command
 // available even when nothing is suggested.
@@ -143,6 +144,32 @@ export function compactInventoryLetters(letters) {
 }
 export async function promptInventoryObject(prompt, eligible, { verb, allowGold = false, classify = object => eligible.includes(object) || allowGold && object.oclass === 12
     ? GETOBJ_SUGGEST : GETOBJ_EXCLUDE, allowNone = false, noneDescription, noneSuggested = allowNone, allowMenu = false, allowCount = false, menuItems = eligible, }) {
+    let repeated = takeRepeatCommand();
+    let repeatedCount = null;
+    if (repeated?.kind === 'count') {
+        if (!allowCount)
+            return { cancelled: true, object: null, gold: false, none: false, count: null };
+        repeatedCount = repeated.count;
+        repeated = takeRepeatCommand();
+        if (!repeated)
+            return { cancelled: true, object: null, gold: false, none: false, count: null };
+    }
+    if (repeated) {
+        if (repeated.kind !== 'key')
+            return { cancelled: true, object: null, gold: false, none: false, count: null };
+        const letter = String.fromCharCode(repeated.key);
+        const object = game.inventory.find(candidate => candidate.invlet === letter
+            && [GETOBJ_SUGGEST, GETOBJ_DOWNPLAY].includes(classify(candidate)));
+        if (object)
+            return {
+                cancelled: false, object, gold: false, none: false,
+                count: repeatedCount !== null && repeatedCount > 0 && repeatedCount < object.quan
+                    ? repeatedCount : null,
+            };
+        if (allowNone && letter === '-')
+            return { cancelled: false, object: null, gold: false, none: true, count: null };
+        return { cancelled: true, object: null, gold: false, none: false, count: null };
+    }
     // getobj() checks CQ_CANNED before invoking tty_yn_function(). A queued
     // choice neither acknowledges unread prose nor paints an item question.
     const queuedKey = takeCommandKey();
@@ -264,6 +291,7 @@ export async function promptInventoryObject(prompt, eligible, { verb, allowGold 
                 count = null;
                 continue;
             }
+            rememberObjectChoice(key, count);
             if (count !== null && count > quantity) {
                 await pline(`You don't have that many!  You have only ${quantity}.`);
                 // C getobj() keeps the forced-menu letter and drops the count.

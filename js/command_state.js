@@ -3,6 +3,7 @@
 import { game } from './gstate.js';
 import { stopRun } from './runmode.js';
 import { clearCommandKeys } from './input.js';
+import { clearRepeatCommand } from './command_repeat.js';
 // C cmd.c:reset_cmd_vars(). Full command_count belongs to the next parse.
 export function resetCommandVariables(clearQueues) {
     stopRun();
@@ -14,6 +15,7 @@ export function resetCommandVariables(clearQueues) {
     if (clearQueues) {
         game._cannedCommands = [];
         clearCommandKeys();
+        clearRepeatCommand();
     }
 }
 // C hack.c:nomul(0). Cancel voluntary repetition, not an involuntary delay.
