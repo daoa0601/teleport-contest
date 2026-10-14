@@ -1,6 +1,6 @@
 // C pager.c:self_lookat(), look_at_monster(), monhealthdescr(). Native
 // monhealthdescr() is disabled, so wounded creatures have no health prefix.
-import { BEAR_TRAP, M_AP_FURNITURE, M_AP_OBJECT, MONSEEN_NORMAL, MONSEEN_SEEINVIS, MONSEEN_INFRAVIS, MONSEEN_TELEPAT, MONSEEN_XRAYVIS, MONSEEN_DETECT, MONSEEN_WARNMON, STRAT_WAITMASK, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, WEB, is_pit, } from './const.js';
+import { BEAR_TRAP, MGIVENNAME, M_AP_FURNITURE, M_AP_OBJECT, MONSEEN_NORMAL, MONSEEN_SEEINVIS, MONSEEN_INFRAVIS, MONSEEN_TELEPAT, MONSEEN_XRAYVIS, MONSEEN_DETECT, MONSEEN_WARNMON, STRAT_WAITMASK, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, WEB, is_pit, } from './const.js';
 import { displayLiquidName, glyphAt, howMonsterSeen } from './display.js';
 import { game } from './gstate.js';
 import { heroFormSticks, heroSpecies } from './hero_species.js';
@@ -16,6 +16,8 @@ import { isPoolAt } from './terrain_properties.js';
 import { surfaceName } from './terrain_name.js';
 import { trapName } from './trap_name.js';
 import { cansee } from './vision.js';
+import { promptYesNo } from './query.js';
+import { showDisclosureOverlay } from './windows.js';
 const COYOTE_NAMES = [
     'Carnivorous Vulgaris', 'Road-Runnerus Digestus', 'Eatibus Anythingus',
     'Famishus-Famishus', 'Eatibus Almost Anythingus', 'Eatius Birdius',
@@ -75,7 +77,7 @@ export function monsterSeenDescription(monster) {
         else {
             const mask = (game.context.warntype?.obj ?? 0) | (game.context.warntype?.polyd ?? 0);
             const speciesFlags = MONSTER_FLAGS2[monster.mnum] ?? 0;
-            const category = [[0x08, 'human'], [0x10, 'elf'], [0x40, 'orc'], [0x10000, 'demon']];
+            const category = [[0x08, 'human'], [0x10, 'elf'], [0x80, 'orc'], [0x100, 'demon']];
             const name = category.find(([bit]) => mask & speciesFlags & bit)?.[1]
                 ?? monsterTypeName(monster.mnum, monster.female);
             descriptions.push(`warned of ${makePlural(name)}`);
@@ -124,5 +126,36 @@ export function selfTrapDescription() {
         return `, stuck in the ${surfaceName(hero.ux, hero.uy)}`;
     const trap = game.level?.traps.find(t => t.tx === hero.ux && t.ty === hero.uy);
     return `, trapped${trap ? ` in ${withIndefiniteArticle(trapName(trap.ttyp))}` : ''}`;
+}
+// C pager.c:do_supplemental_info(). The native without-asking branch does
+// not set yes_to_moreinfo, so verbose look does not open this extra window.
+export async function offerMonsterSupplement(monster, withoutAsking) {
+    if (withoutAsking || heroIsHallucinating() || !((MONSTER_FLAGS2[monster.mnum] ?? 0) & 0x80))
+        return;
+    const name = MGIVENNAME(monster);
+    if (!name || name.length >= 255)
+        return;
+    const gangIndex = name.toLowerCase().indexOf(' of ');
+    const fence = name.toLowerCase().includes(' the fence');
+    if (gangIndex < 0 && !fence)
+        return;
+    if (await promptYesNo(`More info about "${name}"?`, 'n') !== 'y')
+        return;
+    const lines = gangIndex >= 0 ? [
+        `${name} is a member of a marauding horde of orcs`,
+        'rumored to have brutally attacked and plundered',
+        'the ordinarily sheltered town that is located ',
+        'deep within The Gnomish Mines.', '',
+        'The members of that vicious horde proudly and ',
+        'defiantly acclaim their allegiance to their',
+        `leader ${name.slice(gangIndex + 4)} in their names.`,
+    ] : [
+        `"${name}" is the common dungeon name of`,
+        'a nefarious orc who is known to acquire property',
+        'from thieves and sell it off for profit.', '',
+        'The perpetrator was last seen hanging around the',
+        'stairs leading to the Gnomish Mines.',
+    ];
+    await showDisclosureOverlay(lines, { restoreUnderlay: true });
 }
 //# sourceMappingURL=pager_monsters.js.map

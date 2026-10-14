@@ -45,7 +45,7 @@ import { waterbodyName } from './terrain_name.js';
 import { def_warnsyms } from './const.js';
 import { iceDescriptionAt } from './dungeon_feature.js';
 import { CmapSymbol, GlyphOffset, cmapToGlyph } from './glyph_numbers.js';
-import { lookAtMonster, monsterSeenDescription, selfLookDetails, selfTrapDescription } from './pager_monsters.js';
+import { lookAtMonster, monsterSeenDescription, offerMonsterSupplement, selfLookDetails, selfTrapDescription } from './pager_monsters.js';
 import { identifyTrap } from './pager_traps.js';
 import { showLookList } from './pager_lists.js';
 import { screenDescription } from './pager_description.js';
@@ -4666,8 +4666,10 @@ async function doFarlook(quick = true): Promise<void> {
             await plineWithContinuation(screen.count ? screen.text
                 + (seen ? ` [seen: ${seen}]` : '') : "I've never heard of such things.");
             if (screen.count === 1 && cursor.pickType !== LOOK_QUICK && cursor.pickType !== LOOK_ONCE
-                && (cursor.pickType === LOOK_VERBOSE || !quick && game.flags.help !== false))
+                && (cursor.pickType === LOOK_VERBOSE || !quick && game.flags.help !== false)) {
                 await offerFarlookInformation(screen.firstMatch, cursor.pickType === LOOK_VERBOSE);
+                if (monster) await offerMonsterSupplement(monster, cursor.pickType === LOOK_VERBOSE);
+            }
             if (quick || cursor.pickType === LOOK_ONCE) break;
         }
     } finally {
