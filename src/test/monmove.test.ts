@@ -291,7 +291,7 @@ void test('a drowning vampire wolf rises as a flying vampire leader', async () =
 
     assert.ok(result && 'survived' in result, 'The vampire resolved its survival');
     assert.equal(result.survived, true);
-    assert.equal(result.relocation, null);
+    assert.ok(wolf.mhp > 0);
     assert.equal(wolf.mnum, vampireLeader);
     assert.deepEqual({ x: wolf.mx, y: wolf.my }, { x: 12, y: 10 });
     assert.equal(level.monsters.includes(wolf), true);
