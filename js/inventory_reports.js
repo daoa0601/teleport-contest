@@ -4,8 +4,8 @@ import { game, requireGameLevel } from './gstate.js';
 import { inventoryActionForObject, inventoryItemDescription, inventoryPrimaryHandDetail, selectInventoryObject, } from './invent.js';
 import { reassignInventoryLetters } from './inventory_prompt.js';
 import { inventoryClassOrder, lootSortMode, objectClassHeading, sortObjects } from './object_sort.js';
-import { consumeHallucinatedMenuObjectGlyph, plineWithContinuation as pline } from './display.js';
-import { showChoiceWindow, showInventoryWindow, showMultiSelectWindow, showTextMenuOverlay } from './windows.js';
+import { clearMessageWindow, consumeHallucinatedMenuObjectGlyph, plineWithContinuation as pline } from './display.js';
+import { showInventoryWindow, showMultiSelectWindow, showTextMenuOverlay } from './windows.js';
 import { promptKey } from './tty_prompts.js';
 import { heroHandName } from './body_parts.js';
 import { makePlural } from './object_grammar.js';
@@ -21,8 +21,8 @@ import { objectsInTimerGraph } from './object_timers.js';
 import { MENU_FULL, MENU_PARTIAL, PICK_ONE, SORTLOOT_INUSE, W_ACCESSORY, W_AMUL, W_ARMOR, W_RING, W_SADDLE, W_TOOL, W_WEAPONS, } from './const.js';
 import { LEASH } from './object_data.js';
 import { heroSpecies } from './hero_species.js';
-import { MONSTER_FLAGS1 } from './monster_data.js';
-const M1_HUMANOID = 0x00020000;
+import { monsterIsHumanoid } from './monster_data.js';
+const BUC_CHOICES = ['B', 'C', 'U', 'X'];
 export async function inventoryReport(report) {
     game.context.move = 0;
     if (report === 'type')
@@ -34,7 +34,7 @@ export async function inventoryReport(report) {
     }
     if (report === 'weapon') {
         if (!game.uwep) {
-            await pline(`You are ${game.uarmg ? 'empty handed' : (MONSTER_FLAGS1[heroSpecies(game)] ?? 0) & M1_HUMANOID
+            await pline(`You are ${game.uarmg ? 'empty handed' : monsterIsHumanoid(heroSpecies(game))
                 ? 'bare handed' : 'not wielding anything'}.`);
         }
         else if (!game.iflags.menu_requested) {
@@ -208,9 +208,21 @@ async function typeInventory() {
     }
     else {
         const types = classes.map(oclass => OBJECT_CLASS_SYMBOLS[oclass]).join('') + (extra ? ` ${extra}` : '');
-        choice = types.length > 1 ? String.fromCharCode(await promptKey(`${prompt} [${types}] `)) : types;
-        if (choice === '\x1b')
-            return null;
+        choice = types;
+        if (types.length > 1) {
+            for (;;) {
+                const key = await promptKey(`${prompt} [${types}] `);
+                if ([27, 32, 10, 13].includes(key)) {
+                    clearMessageWindow();
+                    return null;
+                }
+                const symbol = String.fromCharCode(key);
+                if (OBJECT_CLASS_SYMBOLS.includes(symbol) || 'uxBUCXP'.includes(symbol)) {
+                    choice = symbol;
+                    break;
+                }
+            }
+        }
     }
     if (choice === null)
         return null;
@@ -272,18 +284,24 @@ function bucChoice(choice) {
 async function inventoryCategoryMenu(classes, unpaid, billed, statuses, picked, prompt) {
     if (classes.length === 1 && !unpaid && !billed && statuses.size <= 1)
         return classes[0] ?? null;
-    const entries = classes.map((oclass, index) => ({ key: String.fromCharCode(97 + index), text: objectClassHeading(oclass) }));
+    const entries = classes.map((oclass, index) => ({ key: String.fromCharCode(97 + index),
+        groupAccelerator: OBJECT_CLASS_SYMBOLS[oclass] ?? '', value: oclass, text: objectClassHeading(oclass) }));
     const extras = [
         ...(unpaid ? [{ key: 'u', text: 'Unpaid items' }] : []),
         ...(billed ? [{ key: 'x', text: 'Unpaid items already used up' }] : []),
-        ...['B', 'C', 'U', 'X'].filter(status => statuses.has(status)).map(key => ({ key,
+        ...BUC_CHOICES.filter(status => statuses.has(status)).map(key => ({ key,
             text: key === 'X' ? 'Items of unknown Bless/Curse status' : `Items known to be ${key === 'B' ? 'Blessed' : key === 'C' ? 'Cursed' : 'Uncursed'}` })),
         ...(picked.length ? [{ key: 'P', text: picked.length === 1 && picked[0]
                     ? `Just picked up: ${inventoryItemDescription(picked[0])}` : 'Items you just picked up' }] : []),
     ];
-    const key = await showChoiceWindow({ title: prompt, entries: [...entries, ...(extras.length ? ['', ...extras] : [])] });
-    const selectedClass = classes[key - 97];
-    return selectedClass ?? (extras.some(entry => entry.key.charCodeAt(0) === key) ? String.fromCharCode(key) : null);
+    const separator = { selectable: false, text: '' };
+    const selected = await showMultiSelectWindow({ title: prompt, pickOne: true,
+        omitHeadings: true, sections: [{ items: [...entries,
+                    ...(extras.length ? [separator] : []),
+                    ...extras.map(entry => ({ ...entry, value: entry.key })),
+                ] }],
+    });
+    return selected[0] ?? null;
 }
 function usedUpBill() {
     const keeper = currentShopResident();
@@ -388,6 +406,8 @@ function pricedInventoryLine(object, letter, price, text = null, quantity = 0, u
                 letter = object.invlet ?? letter;
         }
         const tab = game.iflags.menu_tab_sep;
+        if (!price && letter !== '*')
+            return `${letter} - ${text}${useInvlet ? '.' : ''}`;
         return `${letter} - ${tab ? text : (text ?? '').padEnd(45)}${tab ? '\t' : ' '}${String(price).padStart(6)} ${currency(price)}`;
     }
     finally {
