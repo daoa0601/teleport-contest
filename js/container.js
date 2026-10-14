@@ -23,7 +23,7 @@ import { scatterFloorObjects } from './scatter.js';
 import { finishEnvironmentalMonsterDeath } from './monster_death.js';
 import { finishHeroMonsterKill, finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { startCorpseTimeout } from './mklev.js';
-import { MONSTER_SIZE } from './monster_data.js';
+import { MONSTER_NAME, MONSTER_SIZE } from './monster_data.js';
 import { deleteObject } from './object_delete.js';
 import { AMULET_OF_YENDOR, BAG_OF_HOLDING, BELL_OF_OPENING, BOULDER, BAG_OF_TRICKS, BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, CHEST, CORPSE, GOLD_PIECE, ICE_BOX, LARGE_BOX, LEASH, LOADSTONE, OBJECT_NAMES, OIL_LAMP, OILSKIN_SACK, POT_OIL, SACK, SPE_BOOK_OF_THE_DEAD, STATUE, TALLOW_CANDLE, WAN_CANCELLATION, WAX_CANDLE, } from './object_data.js';
 import { unlinkObject } from './object_location.js';
@@ -383,18 +383,22 @@ function freezeObject(object, state) {
     if (object.otyp === CORPSE) {
         stopObjectTimer(object, OBJECT_TIMER_KIND.ROT_CORPSE);
         stopObjectTimer(object, OBJECT_TIMER_KIND.REVIVE_MON);
+        const traits = object.oextra?.omonst;
+        if (object.corpsenm === MONSTER_NAME.indexOf('ice troll') && traits)
+            traits.mcan = 0;
     }
     else if (object.globby) {
         stopObjectTimer(object, OBJECT_TIMER_KIND.SHRINK_GLOB);
     }
 }
 export function thawObject(object, state) {
-    if (ageStoresFuel(object) || !object.ageRelative)
+    if (ageStoresFuel(object))
         return;
     object.age = (state.moves ?? 0) - (object.age ?? 0);
     object.ageRelative = false;
     if (object.otyp === CORPSE) {
-        object.norevive = object.corpsenm !== 221;
+        object.norevive = (object.oextra?.omonst?.mnum ?? object.corpsenm)
+            !== MONSTER_NAME.indexOf('ice troll');
         startCorpseTimeout(object);
     }
     else if (object.globby) {
