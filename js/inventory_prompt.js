@@ -181,7 +181,8 @@ export async function promptInventoryObject(prompt, eligible, { verb = 'use', cl
         clearCommandKeys();
         return { cancelled: true, object: null, gold: false, none: false, count: null };
     }
-    let key = await askInventoryPrompt(prompt);
+    const forcedMenu = allowMenu && game.flags.force_invmenu;
+    let key = forcedMenu ? menuItems.length ? 63 : 42 : await askInventoryPrompt(prompt);
     let count = null;
     for (;;) {
         if (!allowCount && key >= 48 && key <= 57) {
@@ -216,12 +217,21 @@ export async function promptInventoryObject(prompt, eligible, { verb = 'use', cl
         if (allowMenu && (key === 63 || key === 42)) {
             const selection = await selectInventoryObject({
                 ...(key === 63 ? { items: menuItems } : {}),
+                ...(forcedMenu ? {
+                    title: `What do you want to ${verb}?`,
+                    menuOptions: key === 42
+                        ? [{ key: '?', text: '(list likely candidates)' }]
+                        : menuItems.length < eligible.length
+                            ? [{ key: '*', text: '(list everything)' }] : [],
+                } : {}),
                 ...(allowNone && noneDescription
                     && (key === 42 || noneSuggested || menuItems.length === 0)
                     ? { extraChoice: noneDescription } : {}),
             });
             key = selection.key;
             if (key === 0) {
+                if (forcedMenu)
+                    return { cancelled: true, object: null, gold: false, none: false, count: null };
                 key = await askInventoryPrompt(prompt);
                 continue;
             }

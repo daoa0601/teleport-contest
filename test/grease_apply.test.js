@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { W_ARM, W_ARMC, W_ARMG } from '../js/const.js';
 import { game } from '../js/gstate.js';
+import { resetInputState } from '../js/input.js';
 import { CAN_OF_GREASE, CLOAK_OF_PROTECTION, DAGGER, GAUNTLETS_OF_POWER, LEATHER_ARMOR, POT_HEALING } from '../js/object_data.js';
 import { applyInventoryObject, runExtendedCommand } from './support/commands.js';
 import { addInventoryObject } from './support/game-objects.js';
@@ -78,6 +79,30 @@ for (const blind of [false, true]) {
         assert.equal(potion.greased, true);
         assert.equal(grease.spe, 2);
         assert.equal(game.context.move, 1);
+    });
+}
+for (const bareHands of [false, true]) {
+    void test(`forced inventory menus offer ${bareHands ? 'bare hands' : 'carried items'} for greasing`, async () => {
+        freshPlayableRoom({ flags: { force_invmenu: true } });
+        const grease = await addInventoryObject(CAN_OF_GREASE, { spe: 3 });
+        const dagger = await addInventoryObject(DAGGER);
+        let targetMenu = '';
+        resetInputState().beforeRead = () => {
+            const display = game.nhDisplay;
+            assert.ok(display);
+            const text = display.grid.map(row => row.map(cell => cell.ch).join('')).join('\n');
+            if (text.includes('What do you want to grease?'))
+                targetMenu = text;
+        };
+        await runExtendedCommand('apply', `${grease.invlet}${bareHands ? '-' : dagger.invlet}`);
+        assert.match(targetMenu, /grease your fingers/);
+        assert.match(targetMenu, /dagger/);
+        assert.equal(grease.spe, 2);
+        assert.equal(game.context.move, 1);
+        if (bareHands)
+            assert.equal(game.u.glib, true);
+        else
+            assert.equal(dagger.greased, true);
     });
 }
 //# sourceMappingURL=grease_apply.test.js.map
