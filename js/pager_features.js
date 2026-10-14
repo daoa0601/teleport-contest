@@ -75,6 +75,13 @@ export function mapFeatureDescription(x, y, glyph) {
     return glyph.terrainName;
 }
 export function displayedTrapDescription(type, x, y) {
+    return detectedTrapDisguise(type, x, y) ?? trapName(type);
+}
+// C detect.c:trapped_chest_at()/trapped_door_at() identify the projection,
+// not whether a visible box or door still has its trap armed.
+export function detectedTrapDisguise(type, x, y) {
+    if (glyphAt(x, y)?.kind !== 'trap')
+        return null;
     if (type === TRAPPED_CHEST && (!heroIsHallucinating() || rn2(20) === 0)) {
         const level = game.level;
         const boxes = level?.objects[x]?.[y] ?? [];
@@ -89,7 +96,7 @@ export function displayedTrapDescription(type, x, y) {
     if (type === TRAPPED_DOOR && (!heroIsHallucinating() || rn2(20) === 0)
         && game.level?.at(x, y)?.typ === DOOR)
         return 'trapped door';
-    return trapName(type);
+    return null;
 }
 function adjacentToHero(x, y) {
     return Math.abs(x - game.u.ux) <= 1 && Math.abs(y - game.u.uy) <= 1;

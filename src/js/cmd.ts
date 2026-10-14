@@ -46,6 +46,7 @@ import { def_warnsyms } from './const.js';
 import { iceDescriptionAt } from './dungeon_feature.js';
 import { CmapSymbol, GlyphOffset, cmapToGlyph } from './glyph_numbers.js';
 import { lookAtMonster, monsterSeenDescription, selfLookDetails, selfTrapDescription } from './pager_monsters.js';
+import { identifyTrap } from './pager_traps.js';
 import { showLookList } from './pager_lists.js';
 import { screenDescription } from './pager_description.js';
 import { lookGlyphAt, mapFeatureDescription } from './pager_features.js';
@@ -3158,6 +3159,7 @@ const EXTENDED_COMMAND_HANDLERS = new Map<string, () => Promise<unknown>>([
     ['glance', doFarlook],
     ['whatdoes', whatdoes],
     ['history', () => displayHelpFile('history')],
+    ['showtrap', identifyTrap],
     ['versionshort', doversion],
     ['takeoffall', takeOffAll],
     ['conduct', doconduct],
