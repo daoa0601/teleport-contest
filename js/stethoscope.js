@@ -1,4 +1,5 @@
 // C apply.c:use_stethoscope() and its_dead().
+import { armorSlotFor } from './armor.js';
 import { heroHandName } from './body_parts.js';
 import { CORR, Is_stronghold, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, SCORR, SDOOR, STATUE_TRAP, isok } from './const.js';
 import { convertSecretDoor } from './detect.js';
@@ -144,7 +145,8 @@ async function diagnoseMonster(monster, x, y) {
             what = appearance === SLIME_MOLD && fruit !== undefined
                 ? minimalObjectName({ otyp: appearance, oclass: 7, dknown: true, spe: fruit }, game)
                 : simpleObjectTypeName(appearance, game);
-            plural = /boots|gloves/.test(what) || appearance === LENSES;
+            const slot = armorSlotFor(appearance);
+            plural = slot === 'uarmf' || slot === 'uarmg' || appearance === LENSES;
         }
         else if (type === M_AP_MONSTER)
             what = monsterTypeName(appearance, monster.female);

@@ -4,7 +4,7 @@ import { CORPSTAT_FEMALE, CORPSTAT_MALE, CORPSTAT_NEUTER, CORPSTAT_RANDOM, CORR,
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { CORPSE, FLINT, POT_HEALING, RUBY, STATUE, STETHOSCOPE } from '../js/object_data.js';
+import { CORPSE, FLINT, GAUNTLETS_OF_FUMBLING, GAUNTLETS_OF_POWER, OBJECT_NAMES, POT_HEALING, RUBY, STATUE, STETHOSCOPE } from '../js/object_data.js';
 import { learnObjectType } from '../js/object_knowledge.js';
 import { initRng } from '../js/rng.js';
 import { applyInventoryObject, runExtendedCommand } from './support/commands.js';
@@ -171,6 +171,31 @@ for (const [species, gender, title] of clericStatues) {
         await runExtendedCommand('apply', `${stethoscope.invlet}l`);
 
         assert.equal(game._pending_message, `The ${title} is in fine health for a statue.`);
+        assert.equal(game.context.move, 0);
+    });
+}
+
+const pairedDisguises: [number, string][] = [
+    [GAUNTLETS_OF_POWER, 'gauntlets of power'],
+    [GAUNTLETS_OF_FUMBLING, 'gauntlets of fumbling'],
+    [OBJECT_NAMES.indexOf('gauntlets of dexterity'), 'gauntlets of dexterity'],
+    [OBJECT_NAMES.indexOf('iron shoes'), 'iron shoes'],
+];
+for (const [type, name] of pairedDisguises) {
+    void test(`a stethoscope uses plural grammar for an identified ${name} disguise`, async () => {
+        freshPlayableRoom();
+        learnObjectType(type);
+        const mimic = await createMonsterAt('small mimic', game.u.ux + 1, game.u.uy);
+        mimic.m_ap_type = M_AP_OBJECT;
+        mimic.mappearance = type;
+        const stethoscope = await addInventoryObject(STETHOSCOPE);
+        const messages: string[] = [];
+        resetInputState().beforeRead = () => { messages.push(game._pending_message); };
+
+        await runExtendedCommand('apply', `${stethoscope.invlet}l   `);
+
+        assert.ok(messages.includes(`Those pair of ${name} are really a small mimic.`), messages.join('\n'));
+        assert.equal(mimic.m_ap_type, 0);
         assert.equal(game.context.move, 0);
     });
 }
