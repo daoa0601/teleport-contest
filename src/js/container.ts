@@ -12,6 +12,7 @@ import { startGlobTimeout } from './glob.js';
 import { finishInventoryRemoval, useUpInventoryStack } from './hero_inventory.js';
 import { setPrimaryWeapon, setSecondaryWeapon, setQuiverObject } from './weapon_slots.js';
 import { inventoryItemDescription, inventoryPrimaryHandDetail } from './invent.js';
+import { compactInventoryLetters, promptInventoryObject } from './inventory_prompt.js';
 import { observeObjectForNaming } from './objnam.js';
 import { inventoryClassOrder, lootSortMode, objectClassHeading, sortObjects } from './object_sort.js';
 import { OBJECT_CLASS_SYMBOLS, objectClassForType } from './object_knowledge.js';
@@ -54,13 +55,14 @@ import { heroIsBlind } from './senses.js';
 import { addShopObjectToBill, currentShopResident, costlySpot } from './shk.js';
 import { stolenValue } from './shop_loss.js';
 import { currency } from './currency.js';
+import { heroGoldObject } from './hero_gold.js';
 import { sellHeroDroppedObject, setSellDisposition, SELL_DELIBERATE, SELL_DONTSELL, SELL_NORMAL } from './shop_sell.js';
 import {
     restoreMenuUnderlay, showChoiceWindow,
     showDisclosureOverlay, showMultiSelectWindow, showTextWindow,
 } from './windows.js';
 import {
-    MENU_FULL, MENU_ITEMFLAGS_SKIPINVERT, PARANOID_AUTOALL, PARANOID_CONFIRM,
+    GETOBJ_EXCLUDE_SELECTABLE, GETOBJ_SUGGEST, MENU_FULL, MENU_ITEMFLAGS_SKIPINVERT, PARANOID_AUTOALL, PARANOID_CONFIRM,
     W_ACCESSORY, W_ARMOR,
 } from './const.js';
 
@@ -668,8 +670,14 @@ async function putSelectedObjects(container: GameObject, stashOne = false): Prom
     let selected: CountedSelection<GameObject>[];
     let spentTime = false;
     if (stashOne) {
-        selected = await chooseObjects('What do you want to stash?', candidates, true);
-        selected = selected.slice(0, 1);
+        const letters = compactInventoryLetters(candidates.map(object => object.invlet).join(''));
+        const choice = await promptInventoryObject(`What do you want to stash? [${letters} or ?*] `,
+            game.inventory, { verb: 'stash', allowCount: true, allowGold: true, allowMenu: true,
+                menuItems: candidates, classify: object => object === container ? GETOBJ_EXCLUDE_SELECTABLE : GETOBJ_SUGGEST });
+        const object = choice.gold ? heroGoldObject(game) : choice.object;
+        if (choice.cancelled || !object) return { results: [], spentTime: false };
+        const count = object.otyp === LOADSTONE && object.cursed ? -1 : choice.count ?? -1;
+        selected = [{ value: object, count }];
     } else {
         const categories = await chooseCategories(
             'Put in what type of objects?', candidates,
@@ -701,7 +709,7 @@ async function putSelectedObjects(container: GameObject, stashOne = false): Prom
         results.push(result);
         if (!result.moved && result.message) await plineWithContinuation(result.message);
         // Stashing one item costs a turn even when it destroys the bag.
-        if (stashOne && result.destroyedContainer) spentTime = true;
+        if (stashOne && (result.destroyedContainer || result.stop)) spentTime = true;
         if (result.destroyedContainer || result.stop) break;
     }
     return { results, spentTime: spentTime || results.some(result => result.moved) };
