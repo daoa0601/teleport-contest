@@ -641,6 +641,9 @@ export async function polymonHero(mnum: number, options: PolymonOptions = {}) {
     }
     await escapeTrapsAfterFormChange();
     await restartAmuletStrangulation();
+    game.context.botl = true;
+    game.vision_full_recalc = 1;
+    await see_monsters();
 
     // dropz() may already have reported the new body's carrying capacity
     // while dropping armor. Native encumber_msg() shares that cached level.
