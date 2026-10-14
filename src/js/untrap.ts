@@ -514,7 +514,10 @@ async function failMonsterRescue(monster: Monster, trap: Trap, {
             if (web?.ttyp === WEB) {
                 await publish("The web sticks to you.  You're caught too!");
                 await triggerHeroTrap(web, { noWebMessage: true });
-                if (state.u.usteed && state.u.utrap) await dismountHero(DISMOUNT_FELL);
+                if (state.u.usteed && state.u.utrap) {
+                    const dismount = await dismountHero(DISMOUNT_FELL);
+                    if (dismount.died) return;
+                }
             }
         }
         if (monster.mtrapped)
