@@ -19,7 +19,7 @@ import type {
 import { SHOP_TYPES } from './shop_data.js';
 import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, monsterIsHuman, monsterIsVampire } from './monster_data.js';
 import { heroSpecies } from './hero_species.js';
-import { monsterName, possessiveName, shopkeeperName } from './monster_name.js';
+import { monsterName, monsterPossessive, possessiveName, shopkeeperName } from './monster_name.js';
 import { containedGold } from './gold.js';
 import {
     containedBuyCost, objectIsCandle, objectPricingUnits, pickedContainer,
@@ -166,11 +166,14 @@ function copyBillEntry(target: ShopBillEntry, source: ShopBillEntry): void {
 }
 
 export function shopThankYouMessage(resident: Monster): string {
-    const name = shopkeeperName(resident);
     const typeName = SHOP_TYPES[
         (resident?.eshk?.shoptype ?? SHOPBASE) - SHOPBASE
     ]?.name || 'shop';
-    return `"Thank you for shopping in ${possessive(name)} ${typeName}!"`;
+    const enthusiastic = !resident.eshk?.surcharge;
+    const end = enthusiastic ? '!' : '.';
+    if (!heroIsDeaf() && !shopkeeperIsMuted(resident))
+        return `"Thank you for shopping in ${possessive(shopkeeperName(resident))} ${typeName}${end}"`;
+    return `${shopkeeperName(resident, { capitalized: true })} nods${enthusiastic ? ' appreciatively' : ''} at you for shopping in ${monsterPossessive(resident, { noIt: true })} ${typeName}${end}`;
 }
 
 export function costlySpot(x: number, y: number, state: GameState = game): CostlyShopSpot | null {

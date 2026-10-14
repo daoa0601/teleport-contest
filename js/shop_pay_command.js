@@ -9,6 +9,7 @@ import { hasShopkeeperData } from './shop_types.js';
 import { payShopDebt, shopkeeperForHero, shopkeeperInOwnShop, shopThankYouMessage } from './shk.js';
 import { rileShopkeeper, makeShopkeeperHappy, setPaidShopkeeper } from './shop_damage.js';
 import { heroGoldAmount } from './hero_gold.js';
+import { currency } from './currency.js';
 import { hiddenGold } from './gold.js';
 import { rn2 } from './rng.js';
 import { itemizedShopBill, minimumShopPurchase, buyShopBillItem, payShopkeeper } from './shop_payment.js';
@@ -60,22 +61,26 @@ export async function dopay() {
     let paid = false;
     const debt = Math.max(0, resident.eshk?.debit ?? 0);
     if (debt) {
-        await pline(`You owe ${shopkeeperName(resident)} ${debt} zorkmid${debt === 1 ? '' : 's'} for the use of merchandise.`);
+        const loan = resident.eshk.loan ?? 0;
+        const reason = !loan ? 'for the use of merchandise.'
+            : loan === debt ? 'you picked up in the store.'
+                : 'for gold picked up and the use of merchandise.';
+        await plineWithContinuation(`You owe ${shopkeeperName(resident)} ${debt} ${currency(debt)} ${reason}`);
         const payment = payShopDebt(resident, game);
         if (!payment.paid) {
-            await pline("But you don't have enough gold or credit.");
+            await plineWithContinuation(`But you don't${stashedGold ? ' seem to' : ''} have enough gold${resident.eshk.credit ? ' or credit' : ''}.`);
             game.context.move = 1;
             return;
         }
         if (payment.creditUsed === payment.debt) {
-            await pline('Your debt is covered by your credit.');
+            await plineWithContinuation('Your debt is covered by your credit.');
         }
         else if (payment.creditUsed) {
-            await pline('That debt is partially offset by your credit.');
-            await pline('You pay the remainder.');
+            await plineWithContinuation('That debt is partially offset by your credit.');
+            await plineWithContinuation('You pay the remainder.');
         }
         else {
-            await pline('You pay that debt.');
+            await plineWithContinuation('You pay that debt.');
         }
         paid = true;
     }
@@ -112,7 +117,8 @@ export async function dopay() {
             game.context.move = 1;
             return;
         }
-        await plineWithContinuation(shopThankYouMessage(resident));
+        if (resident.mpeaceful)
+            await plineWithContinuation(shopThankYouMessage(resident));
         game.context.move = 1;
         return;
     }
