@@ -14,12 +14,12 @@ void test('cold crossing adjacent lava squares announces cooling once', async ()
     assert.equal(level.requireAt(12, 10).typ, ROOM);
     assert.equal(game._pending_message, 'The lava cools and solidifies.');
 });
-void test('fire passing back across the same moat square reports evaporation once', async () => {
+void test('repeated fire across a moat does not repeat the steam envelope announcement', async () => {
     const level = freshObjectRoom();
     level.requireAt(11, 10).typ = MOAT;
     await applyRayFloorFeatures('fire', 11, 10);
     await applyRayFloorFeatures('fire', 11, 10);
-    assert.equal(game._pending_message, 'Some water evaporates.');
+    assert.equal(game._pending_message, 'You are enveloped in a cloud of steam!');
     assert.equal(level.requireAt(11, 10).typ, MOAT);
 });
 //# sourceMappingURL=ray_evaporation_message.test.js.map

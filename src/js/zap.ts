@@ -5,7 +5,7 @@
 import { monsterHasMapPosition } from './monster_location.js';
 import { chooseInventoryObject } from './inventory_prompt.js';
 import { applyWandEffect } from './wand_effects.js';
-import { GETOBJ_EXCLUDE, GETOBJ_SUGGEST } from './const.js';
+import { GETOBJ_EXCLUDE, GETOBJ_SUGGEST, PLNMSG_ENVELOPED_IN_GAS } from './const.js';
 import { OBJECT_DIR } from './object_data.js';
 import { zapHeroWithObject } from './hero_self_zap.js';
 import { backfireWand, zappable } from './wand_charge.js';
@@ -52,7 +52,7 @@ import {
 } from './object_timers.js';
 import { applySupportedPotionVapor } from './potion_hit.js';
 import { heroHasNoHands } from './polyself.js';
-import { createPoisonGasCloud, createSteamCloud } from './regions.js';
+import { createPoisonGasCloud } from './regions.js';
 import { dryFountainAt } from './fountain.js';
 import { specialLevelAt } from './dungeon.js';
 import { resetHeroTrap, switchHeroTerrain } from './terrain_movement.js';
@@ -429,7 +429,11 @@ async function evaporatePoolAt(x: number, y: number, state: GameState, publish: 
     const visible = cansee(x, y);
     const deaf = !!(state.u?.deaf || state.deaf);
     const waterLevel = Is_waterlevel(state.u?.uz);
-    if (!waterLevel) createSteamCloud(state, x, y, rnd(5));
+    let enveloped = false;
+    if (!waterLevel) {
+        await createPoisonGasCloud(state, x, y, rnd(5), 0, rn2, publish);
+        enveloped = state._lastPlineKind === PLNMSG_ENVELOPED_IN_GAS;
+    }
 
     let message = !deaf ? 'You hear hissing gas.'
         : heroCaused ? 'That seemed remarkably uneventful.' : null;
@@ -446,7 +450,7 @@ async function evaporatePoolAt(x: number, y: number, state: GameState, publish: 
     } else if (visible) {
         message = 'Some water evaporates.';
     }
-    if (message) await publish(message, { noRepeat: true });
+    if (message && !enveloped) await publish(message, { noRepeat: true });
 
     if (location.typ === ROOM) {
         revealStrandedSwimmer(x, y, state);
@@ -489,7 +493,7 @@ export async function applyRayFloorFeatures(
     }
     if (state.program_state.gameover) return { absorbed: false, rangeChange };
     if (kind === RAY_FIRE && location.typ === FOUNTAIN) {
-        createSteamCloud(state, x, y, rnd(3), random);
+        await createPoisonGasCloud(state, x, y, rnd(3), 0, random, publish);
         if (visible) await publish('Steam billows from the fountain.');
         rangeChange--;
         await dryFountainAt(x, y, { causedByHero: heroBurnsObjects, state, publish, random });
