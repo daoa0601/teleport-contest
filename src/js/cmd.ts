@@ -2707,7 +2707,9 @@ async function dochat() {
         // after assigning the quest.
         if (monster) monster.mstrategy = (monster.mstrategy ?? 0) & ~STRAT_WAITMASK;
         if (monster?.isshk && heroIsDeaf(game)) {
-            await plineWithContinuation(`Any response${canSpotMonster(monster) ? ` from ${monsterName(monster)}` : ''} falls on deaf ears.`);
+            const response = (MONSTER_FLAGS1[species] ?? 0) & M1_HUMANOID
+                ? 'falls on deaf ears' : 'is inaudible';
+            await plineWithContinuation(`Any response${canSpotMonster(monster) ? ` from ${monsterName(monster)}` : ''} ${response}.`);
             game.context.move = 0;
             return;
         }
