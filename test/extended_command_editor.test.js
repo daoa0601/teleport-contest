@@ -49,6 +49,45 @@ void test('listing extended commands returns to the editor for the next command'
     assert.equal(game.flags.pickup, true);
     assert.equal(game.context.move, 0);
 });
+for (const answer of ['\n', '   \n', '\x1b', 'wait\x1b\x1b']) {
+    void test(`an empty or cancelled command-list search returns to the editor (${JSON.stringify(answer)})`, async () => {
+        freshObjectRoom();
+        const input = resetInputState();
+        input.feed('#?\n:');
+        const action = rhack(0);
+        try {
+            await input.waitUntilBlocked();
+            input.feed(answer);
+            await input.waitUntilBlocked();
+            assert.equal(game._pending_message, '#', 'only a nonempty search should reopen the command list');
+        }
+        finally {
+            input.feed('\x1b\x1b');
+            await action;
+        }
+        assert.equal(game.context.move, 0);
+    });
+}
+void test('a nonempty command-list search redisplays matching command descriptions', async () => {
+    freshObjectRoom();
+    const input = resetInputState();
+    input.feed('#?\n:');
+    const action = rhack(0);
+    try {
+        await input.waitUntilBlocked();
+        assert.equal(game._pending_message, 'Extended command list search phrase?');
+        input.feed('wait\n');
+        await input.waitUntilBlocked();
+        const text = game.nhDisplay?.grid.map(row => row.map(cell => cell.ch).join('')).join('\n') ?? '';
+        assert.match(text, /rest one move while doing nothing/);
+        assert.doesNotMatch(text, /search for traps and secret doors/);
+    }
+    finally {
+        input.feed('\x1b\x1b\x1b');
+        await action;
+    }
+    assert.equal(game.context.move, 0);
+});
 void test('the extmenu option asks for command initials in a menu', async () => {
     freshObjectRoom();
     game.flags.extmenu = true;
