@@ -68,7 +68,7 @@ import { nhgetch } from './input.js';
 import { canSeeMonster, canSenseMonster, flush_screen, newsym, pline, } from './display.js';
 import { premap_detect } from './detect.js';
 import { TRUE_RUMORS, FALSE_RUMORS, RANDOM_ENGRAVINGS, RANDOM_EPITAPHS, } from './random_text_data.js';
-import { makeEngravingAt, wipeEngravingAt, wipeoutText } from './engrave.js';
+import { deleteEngravingAt, makeEngravingAt, wipeEngravingAt, wipeoutText } from './engrave.js';
 import { registerQuestLeader } from './quest.js';
 import { armorBonus } from './armor.js';
 import { initializeMonsterArmor } from './monworn.js';
@@ -7928,11 +7928,8 @@ async function makeRandomTemple(room) {
     return true;
 }
 async function markRandomSpecialRoom(roomType) {
-    // All zoo-family rooms use pick_room(FALSE); temples use the stricter
-    // stair exclusion.  Swamps have their own multi-room terrain transaction
-    // and remain a distinct downstream owner.
     if (roomType === SWAMP)
-        return false;
+        return makeSwamps();
     const room = pickSpecialRoom(roomType === TEMPLE);
     if (!room)
         return false;
@@ -7941,6 +7938,61 @@ async function markRandomSpecialRoom(roomType) {
     room.rtype = roomType;
     room.needfill = FILL_NORMAL;
     return true;
+}
+// C mkroom.c:mkswamp(). Room selection is with replacement; a room already
+// converted by an earlier attempt is skipped. The first pool has a resident.
+async function makeSwamps() {
+    const level = requireGameLevel();
+    let residents = 0;
+    let madeSwamp = false;
+    for (let attempt = 0; attempt < 5; attempt++) {
+        const roomIndex = rn2(level.nroom);
+        const room = level.rooms[roomIndex];
+        if (!isRoom(room) || room.hx < 0 || room.rtype !== OROOM
+            || roomHasStair(room, true) || roomHasStair(room, false))
+            continue;
+        room.rtype = SWAMP;
+        for (let x = room.lx; x <= room.hx; x++) {
+            for (let y = room.ly; y <= room.hy; y++) {
+                const location = level.requireAt(x, y);
+                if (!IS_ROOM(location.typ) || location.roomno !== roomIndex + ROOMOFFSET
+                    || level.objects[x]?.[y]?.length || monsterAtPosition(level, x, y)
+                    || level.traps.some(trap => trap.tx === x && trap.ty === y)
+                    || swampSquareBordersDoor(x, y))
+                    continue;
+                if ((x + y) % 2) {
+                    deleteEngravingAt(x, y, level);
+                    location.typ = POOL;
+                    if (!residents || !rn2(4)) {
+                        const species = rn2(5) ? PM_GIANT_EEL
+                            : rn2(2) ? MONSTER_NAME.indexOf('piranha')
+                                : MONSTER_NAME.indexOf('electric eel');
+                        await makemon(species, x, y, 0);
+                        residents++;
+                    }
+                }
+                else if (!rn2(4)) {
+                    await makemon(mkclass(32, 0), x, y, 0); // S_FUNGUS
+                }
+            }
+        }
+        level.flags.has_swamp = true;
+        madeSwamp = true;
+    }
+    return madeSwamp;
+}
+function swampSquareBordersDoor(x, y) {
+    const level = requireGameLevel();
+    for (let dx = -1; dx <= 1; dx++) {
+        for (let dy = -1; dy <= 1; dy++) {
+            if (!isok(x + dx, y + dy))
+                continue;
+            const location = level.at(x + dx, y + dy);
+            if (location && (IS_DOOR(location.typ) || location.typ === SDOOR))
+                return true;
+        }
+    }
+    return false;
 }
 // C ref: mklev.c makelevel() random-special-room else-if chain.  Every failed
 // depth-eligible predicate owns its draw; once one type is selected, room
