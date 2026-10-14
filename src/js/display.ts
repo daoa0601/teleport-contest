@@ -20,6 +20,8 @@ import type { StatusLine2Fields } from './status_layout.js';
 import { armorStatus, weaponStatus } from './status_equipment.js';
 import { statusVersion } from './status_version.js';
 import { statusTerrain } from './status_terrain.js';
+import { hitpointBar } from './status_hitpoint_bar.js';
+import { criticallyLowHp } from './prayer_trouble.js';
 import { cansee, couldsee, set_seenv, vision_recalc } from './vision.js';
 import {
     A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, BC_BALL, BC_CHAIN,
@@ -2240,7 +2242,13 @@ export function _statusLine1() {
         + `Dx:${currentAttribute(A_DEX)} Co:${currentAttribute(A_CON)} `
         + `In:${currentAttribute(A_INT)} Wi:${currentAttribute(A_WIS)} `
         + `Ch:${currentAttribute(A_CHA)}`;
-    const align = u.ualign?.type === 0 ? 'Neutral' : (u.ualign?.type ?? -1) > 0 ? 'Lawful' : 'Chaotic';
+    const align = u.ualign?.type === -1 ? 'Chaotic' : u.ualign?.type === 0 ? 'Neutral' : 'Lawful';
+    if (game.flags.hitpointbar) {
+        const hp = Upolyd(u) ? u.mh : u.uhp;
+        const maximum = Upolyd(u) ? u.mhmax : u.uhpmax;
+        const critical = !!game.level && !!game.urole && !!game.urace && criticallyLowHp(true, game);
+        return `${hitpointBar(title, hp ?? 0, maximum ?? 0, critical)} ${stats} ${align}`;
+    }
     // C uses cursor-forward for gap between title and stats
     // C pads to align stats starting at a fixed column
     const gap = Math.max(1, 31 - title.length);
@@ -2348,7 +2356,19 @@ function writeStatusLines(display: GameDisplay, lines: readonly [string, string]
         const plain = text.replace(/\x1b\[(\d+)C/g,
             (_match, count) => ' '.repeat(Number(count)));
         display.clearRow(row);
-        display.putstr(0, row, plain.slice(0, Math.max(0, display.cols - 1)), NO_COLOR);
+        let column = 0, attr = 0;
+        for (const part of plain.split(/(\x1b\[[0-9;]+m)/)) {
+            if (part.startsWith('\x1b[')) {
+                if (part === '\x1b[7m') attr = ATR_INVERSE;
+                else if (part === '\x1b[0m') attr = 0;
+                // Blink is emitted in screen output; Terminal cells retain
+                // the inverse attribute supported by the frozen adapter.
+                continue;
+            }
+            const visible = part.slice(0, Math.max(0, display.cols - 1 - column));
+            display.putstr(column, row, visible, NO_COLOR, attr);
+            column += visible.length;
+        }
     }
 }
 
