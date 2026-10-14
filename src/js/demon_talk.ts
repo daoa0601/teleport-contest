@@ -116,15 +116,15 @@ async function bribeDemon(monster: Monster, state: PlayingGameState, random: typ
     const digits = /^\s*[+-]?\d+/u.exec(text ?? '');
     let offer = digits ? Number(digits[0]) : 0;
     if (!Number.isFinite(offer)) offer = 0;
-    const name = monsterName(monster, { state });
     if (offer < 0) {
-        await plineWithContinuation(`You try to shortchange ${name}, but fumble.`);
+        await plineWithContinuation(`You try to shortchange ${monsterName(monster, { state })}, but fumble.`);
         return 0;
     }
     if (!offer) {
         await plineWithContinuation('You refuse.');
         return 0;
     }
+    const name = monsterName(monster, { state });
     const cash = heroGoldAmount(state);
     if (offer >= cash) {
         await plineWithContinuation(`You give ${name} all your gold.`);

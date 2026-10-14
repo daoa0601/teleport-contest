@@ -7,6 +7,8 @@ import { pushKey, pushKeys } from '../js/input.js';
 import { rhack } from '../js/cmd.js';
 import { talkToDemon } from '../js/demon_talk.js';
 import { heroGoldAmount, setHeroGoldAmount } from '../js/hero_gold.js';
+import { monsterName } from '../js/monster_name.js';
+import { initRng } from '../js/rng.js';
 import { RING_MAIL } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
@@ -46,5 +48,24 @@ void test('a demon attacks a wealthy hero who is still putting on armor', async 
     assert.equal(!!demon.mpeaceful, false);
     assert.equal(heroGoldAmount(game), 1000, 'dressing prevents a bribe offer or payment');
     assert.equal(game._delayedAction, dressing, 'the demon does not cancel dressing');
+});
+void test('a zero bribe leaves the next hallucinated demon identity for its anger message', async () => {
+    freshObjectRoom({ hero: { hallucinationTurns: 10 } });
+    requirePlayingGame(game);
+    const demon = await createMonsterAt('water demon', 11, 10, NO_MINVENT);
+    demon.mpeaceful = 1;
+    demon.mux = game.u.ux;
+    demon.muy = game.u.uy;
+    setHeroGoldAmount(game, 1000);
+    // Exercise message naming without map glyphs drawing from the same stream.
+    game.nhDisplay = null;
+    initRng(83n);
+    monsterName(demon, { state: game, capitalized: true, article: 'a' });
+    const angryName = monsterName(demon, { state: game, capitalized: true, article: 'a' });
+    initRng(83n);
+    pushKeys(' 0\n' + ' '.repeat(20));
+    await talkToDemon(demon, game);
+    assert.equal(game._lastPlineMessage, `${angryName} gets angry...`);
+    assert.equal(heroGoldAmount(game), 1000);
 });
 //# sourceMappingURL=demon_blackmail.test.js.map
