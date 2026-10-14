@@ -193,7 +193,7 @@ function vomitingMessage(state, nextTurns) {
         return 'You are feeling mildly nauseated.';
     if (nextTurns === 11) {
         return (hero.confusionTurns ?? 0) > 0
-            ? 'You feel more confused.' : 'You feel slightly confused.';
+            ? 'You feel slightly more confused.' : 'You feel slightly confused.';
     }
     if (nextTurns === 8) {
         return (hero.stunnedTurns ?? 0) > 0

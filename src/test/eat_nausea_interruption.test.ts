@@ -6,6 +6,7 @@ import { flushPendingTopline } from '../js/display.js';
 import { doeat } from '../js/eat.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { advanceHeroVomiting, startHeroVomiting } from '../js/hero_illness.js';
+import { makeConfused } from '../js/hero_mental_status.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { CORPSE, FOOD_RATION } from '../js/object_data.js';
@@ -87,4 +88,19 @@ void test('early nausea cancels repeated turns while allowing the meal to contin
     assert.equal(game._occupation?.key, 'eat-food');
     assert.equal(ration.where, 'inventory');
     assert.ok((game.u.confusionTurns ?? 0) >= 2);
+});
+
+void test('nausea describes existing confusion as slightly more confused', async () => {
+    const input = eatingRoom();
+    requirePlayingGame(game);
+    const ration = await addInventoryObject(FOOD_RATION, { age: game.moves });
+    input.feed(ration.invlet);
+    await doeat();
+    await makeConfused(20, { talk: false });
+    startHeroVomiting({ turns: 12 });
+
+    await advanceHeroVomiting();
+
+    assert.equal(game._lastPlineMessage, 'You feel slightly more confused.');
+    assert.equal(game._occupation?.key, 'eat-food');
 });
