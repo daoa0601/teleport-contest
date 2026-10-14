@@ -16,6 +16,7 @@ export interface MonsterNameMatch {
 
 export interface MonsterNamePrefix extends MonsterNameMatch {
     readonly remainder: string;
+    readonly overridesGender: boolean;
 }
 
 export const MONSTER_CLASS_SYMBOLS: readonly string[] = [
@@ -174,7 +175,7 @@ export function resolveMonsterNamePrefix(value: string): MonsterNamePrefix | nul
     for (const [alias, match] of MONSTER_NAME_ALIASES) {
         if (requested.startsWith(alias)
             && acceptedNameRemainder(requested.slice(alias.length))) {
-            return { ...match, remainder: source.slice(alias.length) };
+            return { ...match, remainder: source.slice(alias.length), overridesGender: true };
         }
     }
 
@@ -189,9 +190,15 @@ export function resolveMonsterNamePrefix(value: string): MonsterNamePrefix | nul
                 best = { length: name.length, mnum, gender };
         }
     }
-    if (best) return { mnum: best.mnum, gender: best.gender, remainder: source.slice(best.length) };
+    if (best) return {
+        mnum: best.mnum, gender: best.gender,
+        remainder: source.slice(best.length), overridesGender: false,
+    };
     const title = roleTitleMonster(requested);
-    return title ? { mnum: title.mnum, gender: 2, remainder: source.slice(title.length) } : null;
+    return title ? {
+        mnum: title.mnum, gender: 2,
+        remainder: source.slice(title.length), overridesGender: false,
+    } : null;
 }
 
 function singularClassName(value: string) {

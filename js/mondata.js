@@ -148,7 +148,7 @@ export function resolveMonsterNamePrefix(value) {
     for (const [alias, match] of MONSTER_NAME_ALIASES) {
         if (requested.startsWith(alias)
             && acceptedNameRemainder(requested.slice(alias.length))) {
-            return { ...match, remainder: source.slice(alias.length) };
+            return { ...match, remainder: source.slice(alias.length), overridesGender: true };
         }
     }
     let best = null;
@@ -163,9 +163,15 @@ export function resolveMonsterNamePrefix(value) {
         }
     }
     if (best)
-        return { mnum: best.mnum, gender: best.gender, remainder: source.slice(best.length) };
+        return {
+            mnum: best.mnum, gender: best.gender,
+            remainder: source.slice(best.length), overridesGender: false,
+        };
     const title = roleTitleMonster(requested);
-    return title ? { mnum: title.mnum, gender: 2, remainder: source.slice(title.length) } : null;
+    return title ? {
+        mnum: title.mnum, gender: 2,
+        remainder: source.slice(title.length), overridesGender: false,
+    } : null;
 }
 function singularClassName(value) {
     const name = normalizeMonsterName(value);

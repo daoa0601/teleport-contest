@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
+import { CORPSTAT_FEMALE, CORPSTAT_MALE } from '../js/const.js';
 import { addFruit } from '../js/fruit.js';
 import { requireGameLevel } from '../js/gstate.js';
 import { BAG_OF_TRICKS, LAND_MINE, POT_HEALING, SACK, SPEED_BOOTS } from '../js/object_data.js';
@@ -85,4 +86,27 @@ void test('an explicit article requests one fruit even with a plural registered 
     assert.ok(result && !result.noWish);
     assert.equal(result.object.spe, fruit);
     assert.equal(result.object.quan, 1);
+});
+
+void test('a neutral monster alias replaces a wished gender and can depict either sex', async () => {
+    const genders = new Set<number>();
+    for (let seed = 1; seed <= 12; seed++) {
+        freshObjectRoom({ gameplaySeed: seed });
+
+        const result = await readObjectName('female grey dragon statue', { wizardWish: true });
+
+        assert.ok(result && !result.noWish, `Statue wish failed with seed ${seed}`);
+        genders.add(result.object.spe);
+    }
+    assert.ok(genders.has(CORPSTAT_MALE), 'Alias wishes should be able to produce male statues');
+    assert.ok(genders.has(CORPSTAT_FEMALE), 'Alias wishes should be able to produce female statues');
+});
+
+void test('a canonical neutral monster name preserves the explicit wished gender', async () => {
+    freshObjectRoom();
+
+    const result = await readObjectName('female gray dragon statue', { wizardWish: true });
+
+    assert.ok(result && !result.noWish);
+    assert.equal(result.object.spe, CORPSTAT_FEMALE);
 });

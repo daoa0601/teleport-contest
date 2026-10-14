@@ -189,7 +189,7 @@ function parseWishSpecies(text, parsed) {
             parsed.tinVariety = preparation.variety;
             const match = resolveMonsterNamePrefix(preparation.remaining);
             if (match)
-                recordWishSpecies(parsed, match.mnum, match.gender);
+                recordWishSpecies(parsed, match);
             parsed.directType = TIN;
             return 'tin';
         }
@@ -197,7 +197,7 @@ function parseWishSpecies(text, parsed) {
         if (of?.[1]) {
             const match = resolveMonsterNamePrefix(of[1]);
             if (match) {
-                recordWishSpecies(parsed, match.mnum, match.gender);
+                recordWishSpecies(parsed, match);
                 return text.slice(0, of.index);
             }
         }
@@ -207,7 +207,7 @@ function parseWishSpecies(text, parsed) {
     const match = resolveMonsterNamePrefix(text);
     if (!match?.remainder)
         return text;
-    recordWishSpecies(parsed, match.mnum, match.gender);
+    recordWishSpecies(parsed, match);
     const remaining = match.remainder.replace(/^(?:es |s |'s |' | )/i, '');
     const firstDragon = MONSTER_NAME.indexOf('gray dragon');
     const lastDragon = MONSTER_NAME.indexOf('yellow dragon');
@@ -220,10 +220,11 @@ function parseWishSpecies(text, parsed) {
     }
     return remaining;
 }
-function recordWishSpecies(parsed, species, gender) {
-    parsed.monsterSpecies = species;
-    if (parsed.gender === null || gender !== 2)
-        parsed.gender = gender;
+function recordWishSpecies(parsed, match) {
+    parsed.monsterSpecies = match.mnum;
+    // C aliases always replace the hint; canonical neutral names preserve it.
+    if (match.overridesGender || parsed.gender === null || match.gender !== 2)
+        parsed.gender = match.gender;
 }
 function parseWishCharges(text, parsed) {
     const index = text.lastIndexOf('(');

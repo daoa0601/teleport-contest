@@ -6,7 +6,7 @@ import type { ObjectBlessing } from './object_types.js';
 import { makeSingular } from './object_grammar.js';
 import { rn2, rnd } from './rng.js';
 import { resolveMonsterNamePrefix } from './mondata.js';
-import type { MonsterNameGender } from './mondata.js';
+import type { MonsterNameGender, MonsterNamePrefix } from './mondata.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { GRAY_DRAGON_SCALES, YELLOW_DRAGON_SCALES, POT_WATER, TIN } from './object_data.js';
 import { parseTinPreparation } from './tin.js';
@@ -187,7 +187,7 @@ function parseWishSpecies(text: string, parsed: ParsedWish): string {
             const preparation = parseTinPreparation(tin[1]);
             parsed.tinVariety = preparation.variety;
             const match = resolveMonsterNamePrefix(preparation.remaining);
-            if (match) recordWishSpecies(parsed, match.mnum, match.gender);
+            if (match) recordWishSpecies(parsed, match);
             parsed.directType = TIN;
             return 'tin';
         }
@@ -195,7 +195,7 @@ function parseWishSpecies(text: string, parsed: ParsedWish): string {
         if (of?.[1]) {
             const match = resolveMonsterNamePrefix(of[1]);
             if (match) {
-                recordWishSpecies(parsed, match.mnum, match.gender);
+                recordWishSpecies(parsed, match);
                 return text.slice(0, of.index);
             }
         }
@@ -203,7 +203,7 @@ function parseWishSpecies(text: string, parsed: ParsedWish): string {
     if (/^(?:samurai sword|wizard lock|death wand|master key|ninja-to|magenta)/i.test(text)) return text;
     const match = resolveMonsterNamePrefix(text);
     if (!match?.remainder) return text;
-    recordWishSpecies(parsed, match.mnum, match.gender);
+    recordWishSpecies(parsed, match);
     const remaining = match.remainder.replace(/^(?:es |s |'s |' | )/i, '');
     const firstDragon = MONSTER_NAME.indexOf('gray dragon');
     const lastDragon = MONSTER_NAME.indexOf('yellow dragon');
@@ -217,9 +217,11 @@ function parseWishSpecies(text: string, parsed: ParsedWish): string {
     return remaining;
 }
 
-function recordWishSpecies(parsed: ParsedWish, species: number, gender: MonsterNameGender): void {
-    parsed.monsterSpecies = species;
-    if (parsed.gender === null || gender !== 2) parsed.gender = gender;
+function recordWishSpecies(parsed: ParsedWish, match: MonsterNamePrefix): void {
+    parsed.monsterSpecies = match.mnum;
+    // C aliases always replace the hint; canonical neutral names preserve it.
+    if (match.overridesGender || parsed.gender === null || match.gender !== 2)
+        parsed.gender = match.gender;
 }
 
 function parseWishCharges(text: string, parsed: ParsedWish): string {
