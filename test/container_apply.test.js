@@ -61,7 +61,7 @@ for (const { selection, answers, putClubFirst, expectedMove } of [
             invlet: 'd', spe: 1,
         });
         installPagerInput(resetInputState(), {
-            expected: /You put .*club into the bag\.|magical explosion/,
+            expected: /You put .*club into the bag(?: of holding)?\.|magical explosion/,
             limit: 2,
         });
         await applyInventoryObject(bag, answers);
@@ -89,7 +89,7 @@ void test('applying a carried chest can take its item back out', async () => {
     assert.equal(game.inventory.includes(club), true);
     assert.equal(club.where, 'inventory');
     assert.equal(club.container, null);
-    assert.equal(chest.pickup_prev, false);
+    assert.equal(chest.pickup_prev, true, 'Apply leaves the prior pickup batch intact.');
     assert.equal(club.pickup_prev, true);
     assert.equal(game.context.move, 1);
 });
@@ -300,7 +300,7 @@ void test('opening a cursed bag of holding can make its contents vanish', async 
     await applyInventoryObject('a', ' q');
     assert.deepEqual(bag.contents, []);
     assert.equal(club.where, 'gone');
-    assert.equal(game.context.move, 1);
+    assert.equal(game.context.move, 0, 'Loss of personal items alone does not charge a loot turn.');
 });
 void test('putting one bag of holding inside another destroys both bags', async () => {
     requirePlayingGame(game);
@@ -324,7 +324,8 @@ void test('putting one bag of holding inside another destroys both bags', async 
     assert.equal(game.inventory.includes(outer), false);
     assert.equal(game.inventory.includes(inner), false);
     assert.ok(game.u.uhp < hitPoints);
-    assert.equal(floorObjectsAt(requireGameLevel(), 10, 10).includes(club), true);
+    assert.equal(club.where, 'floor');
+    assert.equal(floorObjectsAt(requireGameLevel(), club.ox, club.oy).includes(club), true);
     assert.equal(game.context.move, 1);
 });
 void test('opening a quantum box resolves its cat once', async () => {

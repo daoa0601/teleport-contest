@@ -10,13 +10,13 @@ import { rn2, rnd } from './rng.js';
 import { objectTypeKnown } from './shk.js';
 import type { GameObject } from './object_types.js';
 
-export async function useBagOfTricks(bag: GameObject) {
+export async function useBagOfTricks(bag: GameObject, { tipping = false } = {}): Promise<{ created: number; seen: number }> {
     if (bag.spe < 1) {
-        await pline('Nothing happens.');
+        await pline(tipping && bag.cknown ? "It's empty." : 'Nothing happens.');
         if (bag.dknown && objectTypeKnown(bag, game)) bag.cknown = true;
-        return;
+        return { created: 0, seen: 0 };
     }
-    await consumeObjectCharge(bag);
+    await consumeObjectCharge(bag, { maybeUnpaid: !tipping });
     let count = 1;
     if (!rn2(23)) count += rnd(7);
     let created = 0, seen = 0;
@@ -30,5 +30,6 @@ export async function useBagOfTricks(bag: GameObject) {
     }
     if (seen) {
         if (bag.dknown) learnObjectType(BAG_OF_TRICKS, game);
-    } else await pline(created ? 'Nothing seems to happen.' : 'Nothing happens.');
+    } else if (!tipping) await pline(created ? 'Nothing seems to happen.' : 'Nothing happens.');
+    return { created, seen };
 }

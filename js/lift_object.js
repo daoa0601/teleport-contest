@@ -163,7 +163,7 @@ export async function liftObject({ object, container = null, count = objectQuant
         const sameType = (state.inventory || []).some(carried => carried.otyp === object.otyp);
         if (inventoryObjectCount(state) < INVENTORY_SLOT_COUNT
             || !sameType || canMergeWithInventory(object, total, state)) {
-            return { decision: 'lift', count: total };
+            return { decision: 'lift', count };
         }
         const noun = OBJECT_NAMES[object.otyp] || object.name || 'object';
         await plineWithContinuation(`You are carrying too much stuff to pick up ${total === 1 ? 'another' : 'more'} ${noun}.`);

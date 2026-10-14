@@ -10,7 +10,7 @@ import {
 import { newsym } from './display.js';
 import { applyFloorEffects, landFloorObject } from './floor_effects.js';
 import {
-    placeObject, remove_object, stack_object,
+    placeObject, stack_object,
 } from './floor_object.js';
 import { game, requireLiveGame } from './gstate.js';
 import { unlinkObject } from './object_location.js';
@@ -101,8 +101,7 @@ async function placeOnFloor(object: GameObject, x: number, y: number, state: Gam
 }
 
 function removeFloorObject(object: GameObject, state: GameState): void {
-    remove_object(object, state);
-    object.where = 'free';
+    unlinkObject(object, state);
 }
 
 function squareIsVisible(state: GameState, x: number, y: number): boolean {
@@ -333,9 +332,11 @@ async function prepareScatteredObject(object: GameObject, x: number, y: number, 
         const fragile = OBJECT_MATERIAL[object.otyp] === GLASS
             || object.otyp === EGG;
         if (destructionRoll === 0 || fragile) {
+            // Native scatter() uses breaks(), even during the hero's turn.
+            // Combat credit still depends on who caused the scatter.
             const broken = await breakFloorObject(object, {
                 state,
-                heroCaused: options.heroCaused,
+                heroCaused: false,
                 publish: options.publish,
                 random: options.random,
                 rollDice: options.rollDice,
@@ -365,7 +366,7 @@ async function prepareScatteredObject(object: GameObject, x: number, y: number, 
 
 function nextObjectFromPile(pile: GameObject[], state: GameState, options: ScatterSettings): { object: GameObject; lastPiece: boolean } | null {
     const object = options.onlyObject || pile[0];
-    if (!object || !pile.includes(object)) return null;
+    if (!object || !options.onlyObject && !pile.includes(object)) return null;
     const quantity = object.quan ?? object.quantity ?? 1;
     if (quantity <= 1) return { object, lastPiece: true };
     const part = splitObjectStack(
@@ -408,12 +409,13 @@ export async function scatterFloorObjects(
     let lostGoods = false;
     const nodes: ScatterNode[] = [];
     const pile = floorPile(state, x, y);
-    while (pile.length) {
+    while (onlyObject || pile.length) {
         const next = nextObjectFromPile(pile, state, options);
         if (!next) break;
         const node = await prepareScatteredObject(
             next.object, x, y, state, options,
         );
+        if (state.program_state.gameover) return 0;
         if (node) nodes.push(node);
         if (onlyObject && next.lastPiece) break;
     }

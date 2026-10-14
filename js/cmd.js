@@ -74,6 +74,8 @@ import { quoteShopGoods } from './shop_price_quote.js';
 import { shopkeeperBlockingDoor, shopkeeperBlockingEntry } from './shop_blocking.js';
 import { poisonHeroStrengthAndHp } from './poison.js';
 import { isContainer, useContainer } from './container.js';
+import { tipCommand } from './container_tip.js';
+import { lootCommand } from './container_loot.js';
 import { adjustHeroAlignment } from './alignment.js';
 import { doOptions } from './options.js';
 import { blocksDiagonalDoor, blocksMove, escapeFromStickyMonster, heroBadRock, heroCanPassWallAt, heroLiquidEffects, heroShouldAvoidLiquid, heroTightDiagonalReason, } from './hack.js';
@@ -2307,13 +2309,6 @@ async function doname() {
     }
     game.context.move = 0;
 }
-function monsterBeside(x, y) {
-    // C pickup.c:mon_beside() deliberately includes the hero's own square so
-    // a steed can make directional looting available too.
-    return (game.level?.monsters || []).some(monster => (monster.mhp ?? 1) > 0
-        && Math.abs(monster.mx - x) <= 1
-        && Math.abs(monster.my - y) <= 1);
-}
 async function getAdjacentLocation(prompt, errorMessage, x, y) {
     // C cmd.c:get_adjacent_loc() delegates input and command assistance to
     // getdir(), then turns its relative result into a checked map location.
@@ -2956,47 +2951,10 @@ async function wizLevelChange() {
     game.context.move = 0;
 }
 async function doloot() {
-    // pickup.c:doloot_core() rejects body forms without hands before it
-    // inspects the floor, containers, or adjacent monsters.
-    if (heroHasNoHands(game)) {
-        await pline('You have no hands!');
-        game.context.move = 0;
-        return;
-    }
-    const x = game.u?.ux, y = game.u?.uy;
-    const pile = game.level?.objects?.[x]?.[y] || [];
-    const container = pile.find(isContainer);
-    if (!container && monsterBeside(x, y)) {
-        const target = await getAdjacentLocation('Loot in what direction?', 'Invalid loot location', x, y);
-        if (!target)
-            return;
-        const targetPile = game.level?.objects?.[target.x]?.[target.y] || [];
-        const targetContainer = targetPile.some(isContainer);
-        const targetMonster = game.level?.monsters?.find(monster => monsterHasMapPosition(monster, game) &&
-            (monster.mhp ?? 1) > 0
-            && monster.mx === target.x && monster.my === target.y);
-        if (target.dz < 0) {
-            await pline("You don't find anything to loot on the ceiling.");
-            game.context.move = 1;
-        }
-        else if (targetContainer && (target.x !== x || target.y !== y)) {
-            await pline(targetMonster
-                ? "You can't loot anything there with a monster in the way."
-                : 'You have to be at a container to loot it.');
-            game.context.move = 0;
-        }
-        else {
-            await pline(`You don't find anything ${target.x === x
-                && target.y === y ? 'here' : 'there'} to loot.`);
-            game.context.move = 0;
-        }
-        return;
-    }
-    if (!container) {
-        await pline("You don't find anything here to loot.");
-        game.context.move = 0;
-        return;
-    }
+    await lootCommand({ unlockContainer: lootLockedContainer, chooseDirection: getAdjacentLocation });
+}
+async function lootLockedContainer(container) {
+    const x = container.ox, y = container.oy;
     const containerName = container.otyp === SACK
         || container.otyp === OILSKIN_SACK
         || container.otyp === BAG_OF_HOLDING
@@ -3039,41 +2997,6 @@ async function doloot() {
             game.context.move = 0;
         return;
     }
-    game._pending_message = '';
-    await flush_screen(1);
-    const result = await useContainer(container, {
-        underlay: snapshotMenuUnderlay(),
-    });
-    if (result.heroDied)
-        return;
-    game.context.move = result.spentTime ? 1 : 0;
-}
-// C refs: pickup.c:dotip(), safe_qbuf(), and ynq().  Floor containers are
-// considered before carried objects.  Keep this prompt transaction separate
-// from tipcontainer(), whose spill mechanics own the timed yes branch.
-async function dotip() {
-    const x = game.u?.ux, y = game.u?.uy;
-    const pile = game.level?.objects?.[x]?.[y] || [];
-    const containers = pile.filter(isContainer);
-    const container = containers[0];
-    if (containers.length === 1 && container && !heroHasNoLimbs(game)
-        && !exceedsActionCapacity(game)) {
-        observeObjectForNaming(container);
-        const prompt = `There is ${floorObjectDescription(container)} here, `
-            + 'tip it?';
-        const answer = await promptYesNoQuit(prompt);
-        if (answer === 'q') {
-            // tty leaves the resolved query physically painted until the
-            // following command read, but it is no longer continuation-owned.
-            game.context.move = 0;
-            return;
-        }
-        // TODO: implement spilling and choosing another container.
-        game.context.move = answer === 'y' ? 1 : 0;
-        return;
-    }
-    await pline('Nothing happens.');
-    game.context.move = 0;
 }
 // C cmd.c:extcmds_match(): availability applies to both full names and
 // completion; AUTOCOMPLETE only limits the latter.
@@ -3112,7 +3035,7 @@ const EXTENDED_COMMAND_HANDLERS = new Map([
     ['ride', doride],
     ['rub', dorub],
     ['loot', doloot],
-    ['tip', dotip],
+    ['tip', tipCommand],
     ['force', doforce],
     ['jump', dojump],
     ['overview', doDungeonOverview],

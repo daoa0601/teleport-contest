@@ -41,19 +41,23 @@ import {
 } from './object_knowledge.js';
 import { nearCapacity, pickupLoadPrefix } from './weight.js';
 import { heroIsBlind } from './senses.js';
-import { touchPetrifyingCorpse } from './stoning.js';
+import { touchPetrifyingCorpse, willFeelPetrifyingCorpse } from './stoning.js';
 import { heroCannotTake } from './polyself.js';
 import { heroIsUnaware } from './hero_sleep.js';
+import { lookInsideSwallower } from './swallowed_inventory.js';
+import { visibleRegionAt } from './regions.js';
+import { trapName } from './trap_name.js';
+import { withIndefiniteArticle } from './object_grammar.js';
 import { addShopObjectToBill, billedPickupQuote, costlySpot } from './shk.js';
 import {
-    SHOPBASE, A_WIS, STONE, DOOR, D_BROKEN, W_WEP, is_pit,
+    SHOPBASE, A_WIS, STONE, DOOR, D_BROKEN, ALTAR, W_WEP, is_pit,
     LOST_NONE, LOST_THROWN, LOST_STOLEN, LOST_DROPPED, LOST_EXPLODING,
 } from './const.js';
 
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
 import type { MapLocation } from './map_types.js';
-import type { CountedSelection, MultiSelectSection } from './windows.js';
+import type { CountedSelection, MultiSelectItem, MultiSelectSection } from './windows.js';
 
 interface PickupSource {
     x: number;
@@ -73,8 +77,7 @@ export function pickupClassOrder(): string[] {
     return [...inventoryClassOrder(), 17, 0].map(objectClassHeading);
 }
 
-export async function pickupAtHero(): Promise<void> {
-    const count = Math.max(0, game._commandCount || 0);
+export async function pickupAtHero(count = Math.max(0, game._commandCount || 0)): Promise<void> {
     game.multi = 0;
     const source = pickupSourceAtHero();
     const objects = pickupObjects(source);
@@ -89,7 +92,7 @@ export async function pickupAtHero(): Promise<void> {
         game.context.move = 0;
         return;
     }
-    const selected = await choosePickupObjects(objects, count);
+    const selected = await choosePickupObjects(source, objects, count);
     const { attempted } = await takeSelectedObjects(source, selected);
     game.context.move = attempted ? 1 : 0;
 }
@@ -132,12 +135,12 @@ export async function autopickupAtHero(): Promise<void> {
     if (!monster && !game.program_state?.gameover) await checkHere(source, picked > 0);
 }
 
-async function choosePickupObjects(objects: readonly GameObject[], count: number): Promise<CountedSelection<GameObject>[]> {
+async function choosePickupObjects(source: PickupSource, objects: readonly GameObject[], count: number): Promise<CountedSelection<GameObject>[]> {
     const eligible = count
         ? objects.filter(object => objectQuantity(object) >= count) : objects;
     if (!eligible.length) return [];
     const onlyObject = eligible[0];
-    if (eligible.length === 1 && onlyObject)
+    if (eligible.length === 1 && onlyObject && !(source.monster && objects[0]?.owornmask))
         return [{ value: onlyObject, count: count || objectQuantity(onlyObject) }];
     const ordered = orderedPickupObjects(eligible);
     const sections: MultiSelectSection<GameObject>[] = [];
@@ -148,19 +151,29 @@ async function choosePickupObjects(objects: readonly GameObject[], count: number
         const items = heading === null ? ordered
             : ordered.filter(object => pickupObjectClass(object) === heading);
         if (!items.length) continue;
-        sections.push({
-            heading,
-            items: items.map(object => {
-                const isFirstGold = object.otyp === GOLD_PIECE && !goldAcceleratorUsed;
-                if (isFirstGold) goldAcceleratorUsed = true;
-                observeObjectForNaming(object);
-                return {
-                    key: isFirstGold ? '$' : String.fromCharCode(letterCode++),
-                    text: floorObjectDescription(object),
-                    value: object,
-                };
-            }),
-        });
+        const menuItems: MultiSelectItem<GameObject>[] = [];
+        for (const object of items) {
+            // query_objlist() names preceding entries before reverting to look_here().
+            if (!count && willFeelPetrifyingCorpse(object)) {
+                if (source.monster) await lookInsideSwallower(source.monster);
+                else {
+                    await announceFloorHazards(source.x, source.y);
+                    await plineWithContinuation(blindPickupInspectionMessage(source.x, source.y));
+                    await showFloorPile(source.objects, false, dungeonFeatureSentenceAt(source.x, source.y));
+                }
+                return [];
+            }
+            const isFirstGold = object.otyp === GOLD_PIECE && !goldAcceleratorUsed;
+            if (isFirstGold) goldAcceleratorUsed = true;
+            observeObjectForNaming(object);
+            menuItems.push({
+                key: isFirstGold ? '$' : String.fromCharCode(letterCode++),
+                groupAccelerator: OBJECT_CLASS_SYMBOLS[object.oclass] || '',
+                text: floorObjectDescription(object),
+                value: object,
+            });
+        }
+        sections.push({ heading, items: menuItems });
     }
     game._pending_message = '';
     await flush_screen(1);
@@ -169,12 +182,17 @@ async function choosePickupObjects(objects: readonly GameObject[], count: number
         sections,
         omitHeadings: game.flags.sortpack === false,
     };
-    if (count) {
-        const selected = await showMultiSelectWindow({ ...menu, pickOne: true });
-        const first = selected[0];
-        return first ? [{ value: first, count }] : [];
+    const selected = count
+        ? (await showMultiSelectWindow({ ...menu, pickOne: true })).map(value => ({ value, count }))
+        : await showMultiSelectWindow({ ...menu, returnCounts: true });
+    const allowed: CountedSelection<GameObject>[] = [];
+    for (const selection of selected) {
+        if (source.monster && selection.value.owornmask) {
+            observeObjectForNaming(selection.value);
+            await plineWithContinuation(`You can't pick the ${objectName(selection.value)} up.`);
+        } else allowed.push(selection);
     }
-    return showMultiSelectWindow({ ...menu, returnCounts: true });
+    return allowed;
 }
 
 // C pickup.c:pickup_object(): remote tools lift the original floor stack.
@@ -257,7 +275,7 @@ async function takeSelectedObjects(source: PickupSource, selected: readonly Pick
         const remote = object.unpaid && shopRoom !== undefined && !savedShops.includes(shopRoom);
         const added = await addPickedInventoryObject(object);
         if (remote) await remoteBurglary(source.x, source.y);
-        const message = pickedInventoryDescription(added.object, added.count);
+        const message = pickedInventoryDescription(added.object, lift.count);
         const capacity = nearCapacity(game);
         const prefix = capacity === previousCapacity ? '' : pickupLoadPrefix(capacity);
         previousCapacity = capacity;
@@ -288,8 +306,9 @@ function pickedInventoryDescription(carried: GameObject, count: number): string 
     // Native pickup suppresses the primary-hand annotation when the new
     // objects merged into the wielded stack; other slot annotations remain.
     if (carried === game.uwep) picked.owornmask = (picked.owornmask ?? 0) & ~W_WEP;
-    const total = count < objectQuantity(carried) && game.flags?.verbose !== false
-        ? ` (${objectQuantity(carried)} in total).` : '.';
+    const merged = count < objectQuantity(carried);
+    const total = merged ? game.flags.verbose === false ? ''
+        : ` (${objectQuantity(carried)} in total).` : '.';
     return `${carried.invlet} - ${floorObjectDescription(picked)}${total}`;
 }
 
@@ -383,7 +402,7 @@ async function checkHere(source: PickupSource, pickedSome: boolean): Promise<{ d
     if (heroIsBlind(game)) {
         const first = source.objects[0];
         if (first) map_object(first, false, false);
-        await plineWithContinuation(`You try to feel what is lying here on the ${surfaceName(x, y)}.`);
+        await plineWithContinuation(blindPickupInspectionMessage(x, y));
     }
     return await showFloorPile(source.objects, pickedSome, feature, { automatic: true });
 }
@@ -394,6 +413,23 @@ async function describePickupDecor(loc: MapLocation | null): Promise<boolean> {
     game._prevDecorType = loc?.typ ?? STONE;
     if (brokenDoor) await pline('There is a broken door here.');
     return brokenDoor;
+}
+
+function blindPickupInspectionMessage(x: number, y: number): string {
+    // look_here() leaves the altar description to the following floor display.
+    return requireGameLevel().at(x, y)?.typ === ALTAR
+        ? 'You try to feel what is here.'
+        : `You try to feel what is lying here on the ${surfaceName(x, y)}.`;
+}
+
+// C invent.c:look_here() announces these before starting touch inspection.
+async function announceFloorHazards(x: number, y: number): Promise<void> {
+    const region = visibleRegionAt(game, x, y);
+    const trap = requireGameLevel().traps.find(trap => trap.tx === x && trap.ty === y && trap.tseen);
+    if (!region && !trap) return;
+    const cloud = region ? `a ${region.damage ? 'poison gas' : 'vapor'} cloud` : '';
+    const hazard = trap ? withIndefiniteArticle(trapName(trap.ttyp)) : '';
+    await plineWithContinuation(`There is ${cloud}${region && trap ? ' and ' : ''}${hazard} here.`);
 }
 
 export function orderedPickupObjects(pile: readonly GameObject[]): GameObject[] {
