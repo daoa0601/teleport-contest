@@ -141,7 +141,7 @@ const S_GHOST = 54;
 const S_GOLEM = 55;
 const MS_NEMESIS = 37;
 const MS_GUARDIAN = 38;
-const MONSTER_CLASS_SYMBOLS = ['', ...'abcdefghijklmnopqrstuvwxyz',
+export const MONSTER_CLASS_SYMBOLS = ['', ...'abcdefghijklmnopqrstuvwxyz',
     ...'ABCDEFGHIJKLMNOPQRSTUVWXYZ', '@', ' ', "'", '&', ';', ':', '~', ']'];
 // C drawing.c def_monsyms[].explain: the class name shown by sorted
 // vanquished/genocided headers, indexed like MONSTER_SYMBOL.
