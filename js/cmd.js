@@ -9,6 +9,7 @@ import { wizFuzzer, wizPanic } from './wizard_debug_commands.js';
 import { wizSmell } from './wizard_smell.js';
 import { wizBury } from './wizard_bury.js';
 import { wizMigrateMonsters } from './wizard_migration.js';
+import { prepareWizardTeleportAtWill, wizardTeleportCommand } from './wizard_teleport.js';
 import { hurtleMonster } from './monster_hurtle.js';
 import { isRoom } from './map_types.js';
 import { bookCursed, continueSpellbookStudy } from './spellbook_study.js';
@@ -1119,7 +1120,7 @@ async function runCommandHandler(binding, { cannedCommand = null, previousMessag
         return;
     }
     if (key === 20 && game.flags?.debug) { // Ctrl-T: wiztele()
-        await wizTeleportPosition();
+        await wizardTeleportCommand(wizTeleportPosition);
         return;
     }
     if (key === 6 && game.flags?.debug) { // Ctrl-F: wiz_map()
@@ -4449,7 +4450,7 @@ export async function askTeleportDestination({ onPrompt = null } = {}) {
 // and priest.c intemple().  A successful Wizard position teleport returns
 // ECMD_TIME.  Its first getpos use still owns the shared Lua tutorial, while
 // the destination room separately owns entry effects after relocation.
-async function wizTeleportPosition() {
+async function wizTeleportPosition(ignoreRestrictions) {
     requirePlayingGame(game);
     let trap = game.level.traps.find(candidate => candidate.tx === game.u.ux && candidate.ty === game.u.uy);
     if (!trap?.tseen)
@@ -4481,6 +4482,8 @@ async function wizTeleportPosition() {
                 : monsterLocomotion(heroSpecies(), 'jump');
         await plineWithContinuation(`You ${locomotion} onto the teleportation trap.`);
     }
+    if (!trap && !ignoreRestrictions && !await prepareWizardTeleportAtWill())
+        return;
     if (!await bringLeashedFollowers()) {
         await plineWithContinuation('You shudder for a moment.');
         game.context.move = 0;
