@@ -1,10 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { CORR, DOOR, SCORR, SDOOR } from '../js/const.js';
+import { CORR, DOOR, M_AP_OBJECT, SCORR, SDOOR } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { CORPSE, STATUE, STETHOSCOPE } from '../js/object_data.js';
+import { CORPSE, POT_HEALING, STATUE, STETHOSCOPE } from '../js/object_data.js';
+import { learnObjectType } from '../js/object_knowledge.js';
 import { applyInventoryObject } from './support/commands.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
@@ -82,3 +83,26 @@ void test('a hallucinated corpse diagnosis takes time even on the first use', as
     assert.equal(game.context.move, 1);
     assert.match(game._pending_message, /"It's dead, Jim\."/);
 });
+
+for (const identified of [false, true]) {
+    void test(`a stethoscope ${identified ? 'names an identified potion disguise' : 'keeps an unknown potion disguise generic'}`, async () => {
+        freshPlayableRoom();
+        game.objectDescriptions ||= [];
+        game.objectDescriptions[POT_HEALING] = 'pink';
+        if (identified) learnObjectType(POT_HEALING);
+        const mimic = await createMonsterAt('small mimic', 11, 10);
+        mimic.m_ap_type = M_AP_OBJECT;
+        mimic.mappearance = POT_HEALING;
+        const stethoscope = await addInventoryObject(STETHOSCOPE);
+        const messages: string[] = [];
+        resetInputState().beforeRead = () => { messages.push(game._pending_message); };
+
+        await applyInventoryObject(stethoscope, 'l   ');
+
+        assert.match(messages.join('\n'), identified
+            ? /That potion of healing is really a small mimic\./
+            : /That potion is really a small mimic\./);
+        assert.equal(mimic.m_ap_type, 0);
+        assert.equal(game.context.move, 0);
+    });
+}

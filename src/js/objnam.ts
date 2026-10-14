@@ -42,7 +42,7 @@ import {
 import { armorPresentationName, withIndefiniteArticle, makePlural, makeSingular } from './object_grammar.js';
 import { armorSimpleName } from './armor.js';
 import { isContainer } from './container.js';
-import { observeBucForNaming, observeObject } from './object_knowledge.js';
+import { objectClassForType, observeBucForNaming, observeObject } from './object_knowledge.js';
 import { getObjectLocation } from './object_location.js';
 import { objectDisclosureText } from './object_inscription.js';
 import { cansee } from './vision.js';
@@ -458,6 +458,44 @@ const CAPITALIZED_MONSTER_TITLES = [
 function capitalizedMonsterTitle(name: string): boolean {
     return CAPITALIZED_MONSTER_TITLES.some(title => name.startsWith(title)
         && (name.length === title.length || [' ', "'"].includes(name.charAt(title.length))));
+}
+
+// C simple_typename()/obj_typename(): type knowledge alone selects the name.
+// Potions, rings, scrolls, wands and spellbooks retain their generic noun
+// until identified; other unknown types use their appearance.
+export function simpleObjectTypeName(otyp: number, state: GameState = game): string {
+    const oclass = objectClassForType(otyp);
+    const object = { otyp, oclass };
+    const actual = actualObjectTypeName(object, state);
+    const known = objectTypeKnown(object, state);
+    let className: string | null = null;
+    switch (oclass) {
+    case COIN_CLASS: return actual;
+    case AMULET_CLASS: return known ? actual : 'amulet';
+    case RING_CLASS: className = 'ring'; break;
+    case POTION_CLASS: className = 'potion'; break;
+    case SCROLL_CLASS: className = 'scroll'; break;
+    case WAND_CLASS: className = 'wand'; break;
+    case SPBOOK_CLASS:
+        if (OBJECT_NAMES[otyp] === 'novel') return known ? 'novel' : 'book';
+        className = 'spellbook';
+        break;
+    }
+    if (className) {
+        if (!known) return className;
+        return OBJECT_UNIQUE[otyp] ? actual : `${className} of ${actual}`;
+    }
+
+    const appearance = state.urole?.key === 'samurai'
+        && ['wooden harp', 'magic harp'].includes(OBJECT_NAMES[otyp] ?? '')
+        ? 'koto' : state.objectDescriptions?.[otyp] ?? OBJECT_DESCRIPTIONS[otyp] ?? actual;
+    const name = known ? actual : appearance;
+    if (oclass === ARMOR_CLASS) return armorPresentationName(name, OBJECT_NAMES[otyp]);
+    if (oclass === GEM_CLASS) {
+        if (known) return OBJECT_MATERIAL[otyp] === 20 ? `${name} stone` : name;
+        return `${name} ${OBJECT_MATERIAL[otyp] === 21 ? 'stone' : 'gem'}`;
+    }
+    return name;
 }
 
 // C minimal_xname() builds a bare object so personal names, call names,

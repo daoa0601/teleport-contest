@@ -13,9 +13,8 @@ import { monsterAtPosition } from './monster_location.js';
 import { monsterName } from './monster_name.js';
 import { monsterStatusLine } from './monster_status.js';
 import { CORPSE, LENSES, SLIME_MOLD, STATUE } from './object_data.js';
-import { objectClassForType } from './object_knowledge.js';
 import { OBJECT_TIMER_KIND, objectTimers } from './object_timers.js';
-import { minimalObjectName } from './objnam.js';
+import { minimalObjectName, simpleObjectTypeName } from './objnam.js';
 import { heroHasNoHands } from './polyself.js';
 import { rn2 } from './rng.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
@@ -139,8 +138,10 @@ async function diagnoseMonster(monster, x, y) {
         const type = M_AP_TYPE(monster), appearance = monster.mappearance;
         let what = 'thing', plural = false;
         if (type === M_AP_OBJECT) {
-            what = minimalObjectName({ otyp: appearance, oclass: objectClassForType(appearance), quan: 1,
-                spe: appearance === SLIME_MOLD ? monster.mcorpsenm ?? monster.mextra?.mcorpsenm ?? 0 : 0 }, game);
+            const fruit = monster.mcorpsenm ?? monster.mextra?.mcorpsenm;
+            what = appearance === SLIME_MOLD && fruit !== undefined
+                ? minimalObjectName({ otyp: appearance, oclass: 7, dknown: true, spe: fruit }, game)
+                : simpleObjectTypeName(appearance, game);
             plural = /boots|gloves/.test(what) || appearance === LENSES;
         }
         else if (type === M_AP_MONSTER)
