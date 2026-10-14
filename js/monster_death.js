@@ -352,9 +352,18 @@ export async function detachDeadMonster(monster, state, random, publish) {
     }
     return false;
 }
-export async function finishMonsterLiquidDeath(monster, { state = game, random = rn2, rollDice = d, leaveCorpse = false, sadFeeling = false, publish = plineWithContinuation, } = {}) {
+export async function finishMonsterLiquidDeath(monster, { state = game, random = rn2, rollOne = rnd, rollDice = d, leaveCorpse = false, sadFeeling = false, publish = plineWithContinuation, } = {}) {
     const x = monster.mx;
     const y = monster.my;
+    const recovery = await preventMonsterDeath(monster, { state, random, rollOne, publish });
+    if (recovery.survived || recovery.heroDied || recovery.completedDeath) {
+        return {
+            oldx: x, oldy: y, x, y, moved: false,
+            dead: !recovery.survived, actionCompleted: !recovery.survived,
+            corpse: recovery.completedDeath?.corpse ?? null,
+            ...(recovery.heroDied ? { heroDied: true } : {}),
+        };
+    }
     if (sadFeeling)
         await publish('You have a sad feeling for a moment, then it passes.');
     if (await detachDeadMonster(monster, state, random, publish)) {

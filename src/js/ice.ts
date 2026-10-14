@@ -13,6 +13,9 @@ import { game, requireGameLevel } from './gstate.js';
 import type { ToplineOptions } from './display.js';
 import { resolveMonsterLiquid } from './mon.js';
 import { finishMonsterLiquidDeath } from './monster_death.js';
+import { finishHeroLiquidMonsterDeath } from './hero_monster_death.js';
+import type { HeroLiquidMonsterDeathOutcome } from './hero_monster_death.js';
+import type { MonsterLiquidDeathResult } from './monster_death.js';
 import { monsterAtPosition } from './monster_location.js';
 import { BEARTRAP, BOULDER, LAND_MINE } from './object_data.js';
 import { withIndefiniteArticle } from './object_grammar.js';
@@ -72,10 +75,15 @@ export async function meltIce(x: number, y: number, {
         await applyHeroLocationEffects(announce, { pick: true });
     } else if (isPoolAt(x, y)) {
         const monster = monsterAtPosition(requireGameLevel(game), x, y);
-        if (monster) await resolveMonsterLiquid(monster, game, {
-            announce, finishDeath: finishMonsterLiquidDeath,
-            monsterMoving: !!game.context.mon_moving,
-        });
+        if (monster) {
+            await resolveMonsterLiquid<MonsterLiquidDeathResult | HeroLiquidMonsterDeathOutcome>(
+                monster, game, {
+                    announce, finishDeath: game.context.mon_moving
+                        ? finishMonsterLiquidDeath : finishHeroLiquidMonsterDeath,
+                    monsterMoving: !!game.context.mon_moving,
+                },
+            );
+        }
     }
 }
 
