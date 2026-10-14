@@ -67,10 +67,17 @@ export async function doforce(state: GameState = game): Promise<void> {
 
     const prying = isBlade(state.uwep) && !isPick(state.uwep);
     const previous = state._lockAttempt;
-    if (previous?.key === 'force-lock' && previous.usedtime
-        && previous.container && previous.picktyp === prying) {
+    const samePickType = previous?.key === 'force-lock'
+        ? previous.picktyp === prying
+        : previous?.key === 'pick-lock' && !previous.tool && !prying;
+    if (previous?.usedtime && previous.container && samePickType) {
         await pline('You resume your attempt to force the lock.');
-        state._occupation = previous;
+        const attempt: ForceLockOccupation = previous.key === 'force-lock' ? previous : {
+            key: 'force-lock', text: 'forcing the lock',
+            container: previous.container, picktyp: prying,
+            chance: previous.chance, usedtime: previous.usedtime,
+        };
+        state._lockAttempt = state._occupation = attempt;
         state.context.move = 1;
         return;
     }

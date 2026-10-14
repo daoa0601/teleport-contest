@@ -120,8 +120,11 @@ export async function pickLock(tool: GameObject | null, {
 }: { state?: GameState; target?: Position | null; container?: GameObject | null } = {}): Promise<boolean> {
     requirePlayingGame(state);
     const previous = state._lockAttempt;
-    if (previous?.key === 'pick-lock' && previous.usedtime
-        && previous.tool?.otyp === tool?.otyp) {
+    // Native uses picktyp 0 for both a missing tool and blunt forcing.
+    const samePickType = previous?.key === 'pick-lock'
+        ? previous.tool?.otyp === tool?.otyp
+        : previous?.key === 'force-lock' && !previous.picktyp && !tool;
+    if (previous?.usedtime && samePickType) {
         if (heroHasNoHands(state)) {
             const noun = tool?.otyp === LOCK_PICK ? 'pick' : tool?.otyp === CREDIT_CARD ? 'card' : 'key';
             await pline(`Unfortunately, you can no longer hold the ${noun}.`);
@@ -130,10 +133,16 @@ export async function pickLock(tool: GameObject | null, {
             await pline('Unfortunately, you can no longer reach the lock.');
             resetPick(state);
         } else {
-            previous.text = lockAction(previous);
-            previous.magicKey = isHeroMagicKey(tool, state);
-            await pline(`You resume your attempt at ${previous.text}.`);
-            state._occupation = previous;
+            const attempt: PickLockOccupation = previous.key === 'pick-lock' ? previous : {
+                key: 'pick-lock', text: '', remaining: 51, tool,
+                container: previous.container,
+                x: previous.container.ox, y: previous.container.oy,
+                chance: previous.chance, usedtime: previous.usedtime,
+            };
+            attempt.text = lockAction(attempt);
+            attempt.magicKey = isHeroMagicKey(tool, state);
+            await pline(`You resume your attempt at ${attempt.text}.`);
+            state._lockAttempt = state._occupation = attempt;
         }
         return true;
     }
