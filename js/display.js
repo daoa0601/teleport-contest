@@ -33,6 +33,7 @@ import { heroGoldAmount } from './hero_gold.js';
 import { encumbranceLabel, nearCapacity } from './weight.js';
 import { heroCanReachFloor } from './floor_reach.js';
 import { hasCarriedProperty, hasWornProperty, propertyIsActive } from './properties.js';
+import { ATR_BLINK } from './terminal_attributes.js';
 const HALLUCINATED_LIQUIDS = [
     'yoghurt', 'oobleck', 'clotted blood', 'diluted water',
     'purified water', 'instant coffee', 'tea', 'herbal infusion',
@@ -2335,11 +2336,11 @@ function writeStatusLines(display, lines) {
         for (const part of plain.split(/(\x1b\[[0-9;]+m)/)) {
             if (part.startsWith('\x1b[')) {
                 if (part === '\x1b[7m')
-                    attr = ATR_INVERSE;
+                    attr |= ATR_INVERSE;
+                else if (part === '\x1b[5m')
+                    attr |= ATR_BLINK;
                 else if (part === '\x1b[0m')
                     attr = 0;
-                // Blink is emitted in screen output; Terminal cells retain
-                // the inverse attribute supported by the frozen adapter.
                 continue;
             }
             const visible = part.slice(0, Math.max(0, display.cols - 1 - column));

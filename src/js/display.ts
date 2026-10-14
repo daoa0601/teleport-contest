@@ -73,6 +73,7 @@ import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import type { MapLocation, Trap, Engraving } from './map_types.js';
 import type { GameDisplay } from './game_display.js';
+import { ATR_BLINK } from './terminal_attributes.js';
 
 /** Message callers await publication but do not consume the producer's result. */
 export type MessagePublisher = (message: string, options?: ToplineOptions) => unknown;
@@ -2359,10 +2360,9 @@ function writeStatusLines(display: GameDisplay, lines: readonly [string, string]
         let column = 0, attr = 0;
         for (const part of plain.split(/(\x1b\[[0-9;]+m)/)) {
             if (part.startsWith('\x1b[')) {
-                if (part === '\x1b[7m') attr = ATR_INVERSE;
+                if (part === '\x1b[7m') attr |= ATR_INVERSE;
+                else if (part === '\x1b[5m') attr |= ATR_BLINK;
                 else if (part === '\x1b[0m') attr = 0;
-                // Blink is emitted in screen output; Terminal cells retain
-                // the inverse attribute supported by the frozen adapter.
                 continue;
             }
             const visible = part.slice(0, Math.max(0, display.cols - 1 - column));
