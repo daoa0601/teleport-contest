@@ -937,7 +937,7 @@ async function mksobj_init(
                 // Ordinary initialized statues can contain one non-novel
                 // spellbook.  A Lua `contents` field clears this object only
                 // after its complete constructor has consumed RNG.
-                otmp.contents = [await mkobj(SPBOOK_no_NOVEL, false)];
+                await addToContainer(otmp, await mkobj(SPBOOK_no_NOVEL, false));
             }
         }
         break;
