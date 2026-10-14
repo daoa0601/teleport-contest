@@ -16,7 +16,7 @@ export async function affectMonsterSpeed(monster, kind, source, state, options) 
         revealMonsterAppearance(monster);
         const speed = adjustMonsterSpeed(monster, kind === 'speed' ? 1 : -1);
         checkMonsterGearNextTurn(monster);
-        if (canSeeMonster(monster)) {
+        if (speed.changed && speed.canDescribe && canSeeMonster(monster)) {
             const subject = monsterName(monster, { state, capitalized: true });
             const message = monsterSpeedMessage(speed, subject);
             if (message) {
