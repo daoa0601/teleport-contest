@@ -41,7 +41,7 @@ import { delobj } from './object_delete.js';
 import { ACID_VENOM, BLINDING_VENOM, CREAM_PIE, EGG, ELVEN_ARROW, ELVEN_BOW, OBJECT_NAMES, OBJECT_SUBTYPE } from './object_data.js';
 import { dropObjectAtHero } from './object_drop.js';
 import { withIndefiniteArticle, verbForSubject } from './object_grammar.js';
-import { learnObjectType, observeObject } from './object_knowledge.js';
+import { learnObjectType } from './object_knowledge.js';
 import { objectMaterial } from './object_material.js';
 import { shipObject } from './object_migration.js';
 import { isPoisonableObject } from './object_properties.js';
@@ -125,8 +125,6 @@ export async function throwMonsterProjectile(source, object, { state = game, dx,
             missile.ox = shot.impactX = point.x;
             missile.oy = shot.impactY = point.y;
             shot.flightPath.push(point);
-            if (cansee(point.x, point.y))
-                observeObject(missile, state);
             const monster = monsterAtPosition(state.level, point.x, point.y);
             if (monster) {
                 const shadeMiss = await rejectMonsterShadeContact(source, monster, missile, {
