@@ -32,7 +32,7 @@ import {
     ENGRAVE, BURN, HEADSTONE,
     is_pit, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE,
     def_warnsyms, MON_STILL_ARRIVING,
-    In_endgame, Is_rogue_level, Is_waterlevel, Is_knox_level, In_sokoban, PLNMSG_UNKNOWN,
+    In_endgame, In_quest, Is_rogue_level, Is_waterlevel, Is_knox_level, In_sokoban, PLNMSG_UNKNOWN,
     MONSEEN_NORMAL, MONSEEN_SEEINVIS, MONSEEN_INFRAVIS, MONSEEN_TELEPAT,
     MONSEEN_XRAYVIS, MONSEEN_DETECT, MONSEEN_WARNMON, PICK_NONE, PICK_ONE, Upolyd, ismnum,
 } from './const.js';
@@ -2261,10 +2261,10 @@ export function _statusLine2(refreshLoad = true) {
     const dungeonName = game.dungeons?.[u.uz?.dnum ?? 0]?.dname;
     const endgameLocation = endgameLevelName(u.uz)
         .replace(/^Plane of /, '');
-    const location = game._tutorialActive ? `Tutorial:${dungeonDepth(u.uz)}`
-        : dungeonName === 'The Quest' ? `Home ${u.uz?.dlevel ?? 1}`
+    const location = Is_knox_level(u.uz) ? dungeonName ?? 'Fort Ludios'
+        : In_quest(u.uz) ? `Home ${u.uz?.dlevel ?? 1}`
             : In_endgame(u.uz) ? endgameLocation
-            : `Dlvl:${dungeonDepth(u.uz)}`;
+            : `${game._tutorialActive ? 'Tutorial' : 'Dlvl'}:${dungeonDepth(u.uz)}`;
     const polymorphed = Upolyd(u);
     // botl.c bounds the printed numbers without changing combat state.
     const currentHp = (polymorphed ? u.mh : u.uhp) ?? 0;
