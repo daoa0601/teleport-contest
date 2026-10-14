@@ -9,7 +9,9 @@ import type { Position } from './map_types.js';
 import type { SpellCategory } from './data_types.js';
 import type { Advancement, AttributeValues, RoleKey } from './roles.js';
 import { useStartingItem } from './starting_equipment.js';
-import { isGrayStone } from './object_properties.js';
+import { isGrayStone, isLauncherAmmunition, isThrowingWeapon } from './object_properties.js';
+import { artifactById } from './artifacts.js';
+import { pickedContainer } from './shop_loss.js';
 import { deallocateObject } from './object_delete.js';
 import { initializeHeroRoomMembership } from './room.js';
 import { finishInventoryAddition, recordHeroPrizeAcquisition, useUpInventoryStack } from './hero_inventory.js';
@@ -25,9 +27,9 @@ import { goodPosition } from './teleport_rules.js';
 import { MONSTER_MOVE, MONSTER_NAME, SPECIAL_PM } from './monster_data.js';
 import { findArmorClass } from './armor.js';
 import { ensureQuestStatus } from './quest.js';
-import { GP_AVOID_MONPOS, A_CHA, A_CHAOTIC, A_CON, A_STR, COLNO, ROWNO, LOST_NONE, NOT_HUNGRY } from './const.js';
+import { GP_AVOID_MONPOS, A_CHA, A_CHAOTIC, A_CON, A_STR, COLNO, ROWNO, LOST_NONE, LOST_THROWN, NOT_HUNGRY } from './const.js';
 import {
-    ARROW, CROSSBOW_BOLT, YA, DART, DAGGER, SCALPEL, SPEAR, AXE, BATTLE_AXE,
+    AKLYS, ARROW, CROSSBOW_BOLT, YA, DART, DAGGER, SCALPEL, SPEAR, AXE, BATTLE_AXE,
     SHORT_SWORD,
     LONG_SWORD, TWO_HANDED_SWORD, KATANA, LANCE, MACE, CLUB, QUARTERSTAFF,
     BULLWHIP, BOW, CROSSBOW, YUMI, SLING,
@@ -1056,6 +1058,7 @@ export function assignInventoryLetter(item: GameObject): GameObject {
 function prepareInventoryItem(raw: GameObject, presentation: ItemPresentation | null, observe: boolean): GameObject {
     raw.how_lost = LOST_NONE;
     raw.no_charge = false;
+    if (raw.contents?.length) pickedContainer(raw);
     raw.ox = raw.oy = 0;
     const item = updateInventoryPresentation(raw, presentation);
     if (observe) item.dknown = true;
@@ -1081,13 +1084,19 @@ export function inventoryLetterRank(item: GameObject): number {
     return (item.invlet?.charCodeAt(0) ?? 0) ^ 0x20;
 }
 
-async function finishAddedInventoryItem(item: GameObject): Promise<GameObject> {
+async function finishAddedInventoryItem(item: GameObject, recoveredThrownStack = false): Promise<GameObject> {
+    if (recoveredThrownStack && game.flags.pickup_thrown !== false && !game.uquiver
+        && item.otyp !== AKLYS && artifactById(item.oartifact)?.name !== 'Mjollnir'
+        && (isThrowingWeapon(item) || isLauncherAmmunition(item)))
+        await setQuiverObject(item, game);
+    item.pickup_prev = true;
     await finishInventoryAddition(item, game);
     attachCursedFigurineTimer(item, game);
     return item;
 }
 
 export async function addInventoryItem(raw: GameObject, presentation: ItemPresentation | null = null, observe = true): Promise<GameObject> {
+    const wasThrown = raw.how_lost === LOST_THROWN;
     let item = prepareInventoryItem(raw, presentation, observe);
     const existing = game.uquiver && mergable(game.uquiver, item, game) ? game.uquiver
         : game.inventory.find(other => mergable(other, item, game));
@@ -1095,11 +1104,12 @@ export async function addInventoryItem(raw: GameObject, presentation: ItemPresen
         : linkInventoryItem(item);
     if (!added) throw new Error(`Inventory merge rejected object ${item.o_id} after admission`);
     item = added;
-    return await finishAddedInventoryItem(item);
+    return await finishAddedInventoryItem(item, wasThrown && !existing);
 }
 
 export async function addCreatedInventoryItem(raw: GameObject, presentation: ItemPresentation | null = null, observe = true): Promise<GameObject> {
     assertCreatedObject(raw, game);
+    const wasThrown = raw.how_lost === LOST_THROWN;
     let item = prepareInventoryItem(raw, presentation, observe);
     const existing = game.uquiver && mergable(game.uquiver, item, game) ? game.uquiver
         : game.inventory.find(other => mergable(other, item, game));
@@ -1107,7 +1117,7 @@ export async function addCreatedInventoryItem(raw: GameObject, presentation: Ite
         : linkInventoryItem(item);
     if (!added) throw new Error(`Initial inventory merge rejected object ${item.o_id} after admission`);
     item = added;
-    return await finishAddedInventoryItem(item);
+    return await finishAddedInventoryItem(item, wasThrown && !existing);
 }
 
 interface StartingInventoryRestrictions {

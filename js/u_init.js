@@ -2,7 +2,9 @@
 // C refs: u_init.c, attrib.c, dog.c, teleport.c, makemon.c.
 import { game } from './gstate.js';
 import { useStartingItem } from './starting_equipment.js';
-import { isGrayStone } from './object_properties.js';
+import { isGrayStone, isLauncherAmmunition, isThrowingWeapon } from './object_properties.js';
+import { artifactById } from './artifacts.js';
+import { pickedContainer } from './shop_loss.js';
 import { deallocateObject } from './object_delete.js';
 import { initializeHeroRoomMembership } from './room.js';
 import { finishInventoryAddition, recordHeroPrizeAcquisition, useUpInventoryStack } from './hero_inventory.js';
@@ -18,8 +20,8 @@ import { goodPosition } from './teleport_rules.js';
 import { MONSTER_MOVE, MONSTER_NAME, SPECIAL_PM } from './monster_data.js';
 import { findArmorClass } from './armor.js';
 import { ensureQuestStatus } from './quest.js';
-import { GP_AVOID_MONPOS, A_CHA, A_CHAOTIC, A_CON, A_STR, COLNO, ROWNO, LOST_NONE, NOT_HUNGRY } from './const.js';
-import { ARROW, CROSSBOW_BOLT, YA, DART, DAGGER, SCALPEL, SPEAR, AXE, BATTLE_AXE, SHORT_SWORD, LONG_SWORD, TWO_HANDED_SWORD, KATANA, LANCE, MACE, CLUB, QUARTERSTAFF, BULLWHIP, BOW, CROSSBOW, YUMI, SLING, HELMET, FEDORA, SPLINT_MAIL, RING_MAIL, LEATHER_ARMOR, LEATHER_JACKET, LEATHER_GLOVES, ROBE, SMALL_SHIELD, HAWAIIAN_SHIRT, CLOAK_OF_DISPLACEMENT, CLOAK_OF_MAGIC_RESISTANCE, LARGE_BOX, BAG_OF_TRICKS, SACK, CORPSE, STATUE, LOCK_PICK, CREDIT_CARD, EXPENSIVE_CAMERA, TOWEL, SADDLE, LEASH, STETHOSCOPE, TIN_OPENER, MAGIC_MARKER, BLINDFOLD, OIL_LAMP, PICK_AXE, TINNING_KIT, WOODEN_FLUTE, TOOLED_HORN, WOODEN_HARP, BELL, BUGLE, LEATHER_DRUM, CRAM_RATION, FOOD_RATION, TRIPE_RATION, TIN, EUCALYPTUS_LEAF, APPLE, ORANGE, PEAR, MELON, BANANA, CARROT, SPRIG_OF_WOLFSBANE, CLOVE_OF_GARLIC, SLIME_MOLD, CREAM_PIE, CANDY_BAR, FORTUNE_COOKIE, PANCAKE, LEMBAS_WAFER, POT_HEALING, POT_EXTRA_HEALING, POT_FULL_HEALING, POT_SICKNESS, POT_OIL, POT_WATER, SCR_MAGIC_MAPPING, SCR_PUNISHMENT, SPE_DETECT_MONSTERS, SPE_HEALING, SPE_FORCE_BOLT, SPE_CONFUSE_MONSTER, SPE_EXTRA_HEALING, SPE_STONE_TO_FLESH, SPE_PROTECTION, WAN_SLEEP, WAN_WISHING, GOLD_PIECE, AMULET_OF_YENDOR, TOUCHSTONE, FLINT, ROCK, OBJECT_NAMES, OBJECT_DESCRIPTIONS, OBJECT_BASES, OBJECT_CHARGED, OBJECT_USES_KNOWN, OBJECT_SPELL_LEVEL, OBJECT_SPELL_CATEGORY, OBJECT_SUBTYPE, OBJECT_MAGIC, ELVEN_SHORT_SWORD, ELVEN_ARROW, ELVEN_BOW, ELVEN_SPEAR, ELVEN_DAGGER, ELVEN_BROADSWORD, ELVEN_MITHRIL_COAT, ELVEN_LEATHER_HELM, ELVEN_SHIELD, ELVEN_BOOTS, ELVEN_CLOAK, ORCISH_ARROW, ORCISH_SPEAR, ORCISH_DAGGER, ORCISH_SHORT_SWORD, ORCISH_BOW, ORCISH_HELM, ORCISH_CHAIN_MAIL, ORCISH_RING_MAIL, ORCISH_CLOAK, URUK_HAI_SHIELD, ORCISH_SHIELD, DWARVISH_SPEAR, DWARVISH_SHORT_SWORD, DWARVISH_MATTOCK, DWARVISH_IRON_HELM, DWARVISH_MITHRIL_COAT, DWARVISH_CLOAK, DWARVISH_ROUNDSHIELD, CHAIN_MAIL, RIN_LEVITATION, RIN_HUNGER, RIN_AGGRAVATE_MONSTER, RIN_POISON_RESISTANCE, RIN_POLYMORPH, RIN_POLYMORPH_CONTROL, POT_POLYMORPH, WAN_POLYMORPH, SPE_POLYMORPH, SPE_BLANK_PAPER, SPE_NOVEL, WAN_NOTHING, POT_HALLUCINATION, POT_ACID, SCR_AMNESIA, SCR_FIRE, SCR_BLANK_PAPER, SCR_ENCHANT_WEAPON, } from './object_data.js';
+import { GP_AVOID_MONPOS, A_CHA, A_CHAOTIC, A_CON, A_STR, COLNO, ROWNO, LOST_NONE, LOST_THROWN, NOT_HUNGRY } from './const.js';
+import { AKLYS, ARROW, CROSSBOW_BOLT, YA, DART, DAGGER, SCALPEL, SPEAR, AXE, BATTLE_AXE, SHORT_SWORD, LONG_SWORD, TWO_HANDED_SWORD, KATANA, LANCE, MACE, CLUB, QUARTERSTAFF, BULLWHIP, BOW, CROSSBOW, YUMI, SLING, HELMET, FEDORA, SPLINT_MAIL, RING_MAIL, LEATHER_ARMOR, LEATHER_JACKET, LEATHER_GLOVES, ROBE, SMALL_SHIELD, HAWAIIAN_SHIRT, CLOAK_OF_DISPLACEMENT, CLOAK_OF_MAGIC_RESISTANCE, LARGE_BOX, BAG_OF_TRICKS, SACK, CORPSE, STATUE, LOCK_PICK, CREDIT_CARD, EXPENSIVE_CAMERA, TOWEL, SADDLE, LEASH, STETHOSCOPE, TIN_OPENER, MAGIC_MARKER, BLINDFOLD, OIL_LAMP, PICK_AXE, TINNING_KIT, WOODEN_FLUTE, TOOLED_HORN, WOODEN_HARP, BELL, BUGLE, LEATHER_DRUM, CRAM_RATION, FOOD_RATION, TRIPE_RATION, TIN, EUCALYPTUS_LEAF, APPLE, ORANGE, PEAR, MELON, BANANA, CARROT, SPRIG_OF_WOLFSBANE, CLOVE_OF_GARLIC, SLIME_MOLD, CREAM_PIE, CANDY_BAR, FORTUNE_COOKIE, PANCAKE, LEMBAS_WAFER, POT_HEALING, POT_EXTRA_HEALING, POT_FULL_HEALING, POT_SICKNESS, POT_OIL, POT_WATER, SCR_MAGIC_MAPPING, SCR_PUNISHMENT, SPE_DETECT_MONSTERS, SPE_HEALING, SPE_FORCE_BOLT, SPE_CONFUSE_MONSTER, SPE_EXTRA_HEALING, SPE_STONE_TO_FLESH, SPE_PROTECTION, WAN_SLEEP, WAN_WISHING, GOLD_PIECE, AMULET_OF_YENDOR, TOUCHSTONE, FLINT, ROCK, OBJECT_NAMES, OBJECT_DESCRIPTIONS, OBJECT_BASES, OBJECT_CHARGED, OBJECT_USES_KNOWN, OBJECT_SPELL_LEVEL, OBJECT_SPELL_CATEGORY, OBJECT_SUBTYPE, OBJECT_MAGIC, ELVEN_SHORT_SWORD, ELVEN_ARROW, ELVEN_BOW, ELVEN_SPEAR, ELVEN_DAGGER, ELVEN_BROADSWORD, ELVEN_MITHRIL_COAT, ELVEN_LEATHER_HELM, ELVEN_SHIELD, ELVEN_BOOTS, ELVEN_CLOAK, ORCISH_ARROW, ORCISH_SPEAR, ORCISH_DAGGER, ORCISH_SHORT_SWORD, ORCISH_BOW, ORCISH_HELM, ORCISH_CHAIN_MAIL, ORCISH_RING_MAIL, ORCISH_CLOAK, URUK_HAI_SHIELD, ORCISH_SHIELD, DWARVISH_SPEAR, DWARVISH_SHORT_SWORD, DWARVISH_MATTOCK, DWARVISH_IRON_HELM, DWARVISH_MITHRIL_COAT, DWARVISH_CLOAK, DWARVISH_ROUNDSHIELD, CHAIN_MAIL, RIN_LEVITATION, RIN_HUNGER, RIN_AGGRAVATE_MONSTER, RIN_POISON_RESISTANCE, RIN_POLYMORPH, RIN_POLYMORPH_CONTROL, POT_POLYMORPH, WAN_POLYMORPH, SPE_POLYMORPH, SPE_BLANK_PAPER, SPE_NOVEL, WAN_NOTHING, POT_HALLUCINATION, POT_ACID, SCR_AMNESIA, SCR_FIRE, SCR_BLANK_PAPER, SCR_ENCHANT_WEAPON, } from './object_data.js';
 import { recordObjectEncounter, recordObjectKnowledge, } from './object_knowledge.js';
 import { ensureHeroSkills, roleAllowsSpellbook } from './skills.js';
 import { hiddenGold } from './gold.js';
@@ -962,6 +964,8 @@ export function assignInventoryLetter(item) {
 function prepareInventoryItem(raw, presentation, observe) {
     raw.how_lost = LOST_NONE;
     raw.no_charge = false;
+    if (raw.contents?.length)
+        pickedContainer(raw);
     raw.ox = raw.oy = 0;
     const item = updateInventoryPresentation(raw, presentation);
     if (observe)
@@ -984,12 +988,18 @@ function linkInventoryItem(item) {
 export function inventoryLetterRank(item) {
     return (item.invlet?.charCodeAt(0) ?? 0) ^ 0x20;
 }
-async function finishAddedInventoryItem(item) {
+async function finishAddedInventoryItem(item, recoveredThrownStack = false) {
+    if (recoveredThrownStack && game.flags.pickup_thrown !== false && !game.uquiver
+        && item.otyp !== AKLYS && artifactById(item.oartifact)?.name !== 'Mjollnir'
+        && (isThrowingWeapon(item) || isLauncherAmmunition(item)))
+        await setQuiverObject(item, game);
+    item.pickup_prev = true;
     await finishInventoryAddition(item, game);
     attachCursedFigurineTimer(item, game);
     return item;
 }
 export async function addInventoryItem(raw, presentation = null, observe = true) {
+    const wasThrown = raw.how_lost === LOST_THROWN;
     let item = prepareInventoryItem(raw, presentation, observe);
     const existing = game.uquiver && mergable(game.uquiver, item, game) ? game.uquiver
         : game.inventory.find(other => mergable(other, item, game));
@@ -998,10 +1008,11 @@ export async function addInventoryItem(raw, presentation = null, observe = true)
     if (!added)
         throw new Error(`Inventory merge rejected object ${item.o_id} after admission`);
     item = added;
-    return await finishAddedInventoryItem(item);
+    return await finishAddedInventoryItem(item, wasThrown && !existing);
 }
 export async function addCreatedInventoryItem(raw, presentation = null, observe = true) {
     assertCreatedObject(raw, game);
+    const wasThrown = raw.how_lost === LOST_THROWN;
     let item = prepareInventoryItem(raw, presentation, observe);
     const existing = game.uquiver && mergable(game.uquiver, item, game) ? game.uquiver
         : game.inventory.find(other => mergable(other, item, game));
@@ -1010,7 +1021,7 @@ export async function addCreatedInventoryItem(raw, presentation = null, observe 
     if (!added)
         throw new Error(`Initial inventory merge rejected object ${item.o_id} after admission`);
     item = added;
-    return await finishAddedInventoryItem(item);
+    return await finishAddedInventoryItem(item, wasThrown && !existing);
 }
 function startingInventoryRestrictions() {
     return {

@@ -18,7 +18,7 @@ import { removeHeroEquipment } from './hero_equipment.js';
 import { deleteObject } from './object_delete.js';
 import { heroHandName } from './body_parts.js';
 import { makePlural } from './object_grammar.js';
-import { ACH_MINE_PRIZE, ACH_SOKO_PRIZE, W_ACCESSORY, W_ARMOR, W_SADDLE } from './const.js';
+import { ACH_AMUL, ACH_BELL, ACH_BOOK, ACH_CNDL, ACH_MINE_PRIZE, ACH_SOKO_PRIZE, W_ACCESSORY, W_ARMOR, W_SADDLE } from './const.js';
 import { AMULET_OF_YENDOR, BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION, FIGURINE, LEASH, LOADSTONE, LUCKSTONE, OBJECT_BIMANUAL, OBJECT_NAMES, SCR_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, } from './object_data.js';
 import { curseObjectState } from './object_state.js';
 import { OBJECT_TIMER_KIND, stopObjectTimer } from './object_timers.js';
@@ -115,6 +115,12 @@ export async function finishInventoryAddition(object, state = game) {
     if (object.oclass === COIN_CLASS)
         state.context.botl = true;
     updateCarriedFlags(object, true, state);
+    const achievement = object.otyp === AMULET_OF_YENDOR ? ACH_AMUL
+        : object.otyp === BELL_OF_OPENING ? ACH_BELL
+            : object.otyp === CANDELABRUM_OF_INVOCATION ? ACH_CNDL
+                : object.otyp === SPE_BOOK_OF_THE_DEAD ? ACH_BOOK : null;
+    if (achievement !== null)
+        recordAchievement(state, achievement);
     await setCarriedArtifactProperties(object, true, state);
     await reactToSeenInventoryObject(object, state);
 }
