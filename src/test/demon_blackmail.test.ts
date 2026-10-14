@@ -7,6 +7,7 @@ import { pushKey, pushKeys } from '../js/input.js';
 import { rhack } from '../js/cmd.js';
 import { talkToDemon } from '../js/demon_talk.js';
 import { heroGoldAmount, setHeroGoldAmount } from '../js/hero_gold.js';
+import { MONSTER_NAME } from '../js/monster_data.js';
 import { monsterName } from '../js/monster_name.js';
 import { initRng } from '../js/rng.js';
 import { RING_MAIL } from '../js/object_data.js';
@@ -76,4 +77,23 @@ void test('a zero bribe leaves the next hallucinated demon identity for its ange
 
     assert.equal(game._lastPlineMessage, `${angryName} gets angry...`);
     assert.equal(heroGoldAmount(game), 1000);
+});
+
+void test('a demon greeting reports the force that prevents its teleport', async () => {
+    const level = freshObjectRoom({ hero: {
+        mtimedone: 50, umonnum: MONSTER_NAME.indexOf('water demon'),
+    } });
+    requirePlayingGame(game);
+    const demon = await createMonsterAt('water demon', 11, 10, NO_MINVENT);
+    demon.mux = game.u.ux;
+    demon.muy = game.u.uy;
+    level.flags.stasis_until = game.moves + 10;
+    pushKeys(' '.repeat(20));
+
+    const satisfied = await talkToDemon(demon, game);
+
+    assert.equal(satisfied, true);
+    assert.equal(game._lastPlineMessage, 'A mysterious force prevents the water demon from teleporting!');
+    assert.equal(demon.mx, 11);
+    assert.equal(demon.my, 10);
 });

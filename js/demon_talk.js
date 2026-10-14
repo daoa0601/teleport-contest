@@ -20,7 +20,7 @@ import { getLine } from './query.js';
 import { rn2, rnd } from './rng.js';
 import { heroIsDeaf } from './senses.js';
 import { randomMonsterRelocation } from './teleport.js';
-import { monsterTeleportRestricted } from './teleport_rules.js';
+import { reportMonsterTeleportRestriction } from './teleport_rules.js';
 import { cansee } from './vision.js';
 import { AMULET_OF_YENDOR } from './object_data.js';
 const M2_DEMON = 0x00000100;
@@ -34,7 +34,7 @@ export async function talkToDemon(monster, state, random = rn2, rollOne = rnd) {
     const subject = () => monsterName(monster, { state, capitalized: true, article: 'a' });
     const heroIsDemon = MONSTER_SYMBOL[heroSpecies(state)] === S_DEMON;
     const relocate = async () => {
-        if (!monsterTeleportRestricted(monster, state))
+        if (!await reportMonsterTeleportRestriction(monster, { state }))
             await randomMonsterRelocation(monster, { state, flags: RLOC_MSG, random, rollOne });
     };
     if (monster.mux !== state.u.ux || monster.muy !== state.u.uy) {
