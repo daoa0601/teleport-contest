@@ -3031,11 +3031,14 @@ export async function summonNastyMonsters(
             );
             if (makeindex == null) continue;
 
+            // nasty() preselects a nearby square for a monster caster;
+            // that construction does not inherit the hero's position.
             const monster = await makemonNear(
                 makeindex,
                 summoner?.mux ?? game.u?.ux ?? 0,
                 summoner?.muy ?? game.u?.uy ?? 0,
                 MM_NOMSG,
+                !summoner,
             );
             if (!monster) {
                 // C tries a random replacement only when direct construction
