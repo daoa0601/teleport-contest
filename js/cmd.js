@@ -4462,7 +4462,6 @@ export async function askMonsterTeleportDestination(monster, start) {
         start, prompt: game._pending_message, goal,
         describe: wizardPositionDescription,
     });
-    game._retained_message = game._pending_message;
     game._pending_message = '';
     return destination;
 }
@@ -4486,7 +4485,6 @@ export async function askTeleportDestination({ onPrompt = null } = {}) {
         goal: 'the desired position',
         describe: wizardPositionDescription,
     });
-    game._retained_message = game._pending_message;
     game._pending_message = '';
     return destination;
 }
