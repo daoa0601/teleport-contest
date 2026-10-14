@@ -155,7 +155,10 @@ const BELL = 255;
 const CANDELABRUM_OF_INVOCATION = 262;
 const BELL_OF_OPENING = 263;
 const BEC_DE_CORBIN = 70;
+const PM_BAT = 126;
+const PM_GIANT_BAT = 127;
 const PM_RAVEN = 128;
+const PM_VAMPIRE_BAT = 129;
 const MS_BRIBE = 33;
 const LONG_SWORD = 54;
 const SPBOOK_no_NOVEL = -SPBOOK_CLASS;
@@ -2635,7 +2638,7 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
     // permanent-speed property of the actor, not a projection of its current
     // species; vampire bases which immediately shapechange into a bat do not
     // pass through this birth-time branch.
-    const hellishNativeBat = classIndex === 28
+    const hellishNativeBat = [PM_BAT, PM_GIANT_BAT, PM_VAMPIRE_BAT].includes(mndx)
         && !!game.dungeons?.[game.u?.uz?.dnum ?? 0]?.flags?.hellish;
     // makemon.c: a bribe-demanding demon prince is born peaceful and
     // permanently invisible unless the hero wields Excalibur or Demonbane;
