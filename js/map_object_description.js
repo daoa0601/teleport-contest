@@ -86,8 +86,7 @@ function placementSuffix(object, x, y, state) {
     const location = level.requireAt(x, y);
     if (object?.where === 'buried')
         return ' (buried)';
-    if (location.typ === TREE || level.flags.arboreal
-        && (location.typ === STONE || location.typ === SCORR || location.arboreal_sdoor)) {
+    if (location.typ === TREE || level.flags.arboreal && location.typ === STONE) {
         const fruit = object && [APPLE, ORANGE, PEAR, BANANA, EUCALYPTUS_LEAF].includes(object.otyp);
         return fruit ? ' dangling in a tree' : ' stuck in a tree';
     }

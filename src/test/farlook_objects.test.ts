@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { farlookLocationDescription } from '../js/cmd.js';
-import { newsym } from '../js/display.js';
+import { SCORR } from '../js/const.js';
+import { map_object, newsym } from '../js/display.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { DAGGER, STATUE } from '../js/object_data.js';
 import { floorObject } from './support/game-objects.js';
@@ -29,4 +30,14 @@ void test('farlook leaves the quantity of an unobserved distant stack vague', as
     assert.equal(await farlookLocationDescription(15, 10), 'some daggers');
     assert.equal(daggers.quan, 6);
     assert.equal(daggers.dknown, false);
+});
+
+void test('farlook describes an object in an arboreal secret corridor as embedded in stone', async () => {
+    const level = freshObjectRoom();
+    level.flags.arboreal = true;
+    level.requireAt(11, 10).typ = SCORR;
+    const dagger = await floorObject(DAGGER, 11, 10, { known: false, bknown: false });
+    map_object(dagger);
+
+    assert.equal(await farlookLocationDescription(11, 10), 'a dagger embedded in stone');
 });
