@@ -149,7 +149,7 @@ void test('the Tsurugi bisects small monsters and cuts deeply into large ones', 
         },
         rollOne: maximumRoll,
     });
-    assert.equal(smallHit.damage, 41);
+    assert.equal(smallHit.damage, 240);
     assert.equal(largeHit.damage, 24);
     assert.match(messages[0] ?? '', /cuts the jackal in half/);
     assert.match(messages[1] ?? '', /slice deeply into the mumak/);
@@ -184,7 +184,7 @@ void test('Vorpal Blade misses a headless creature and beheads a jabberwock', as
     });
     assert.equal(headless.damage, 0);
     assert.equal(headless.attackStopped, true);
-    assert.equal(jabberwock.damage, 41);
+    assert.equal(jabberwock.damage, 240);
     assert.match(messages[0] ?? '', /miss the gas spore wildly/);
     assert.match(messages[1] ?? '', /beheads the jabberwock/);
 });
