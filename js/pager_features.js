@@ -11,6 +11,16 @@ import { rn2 } from './rng.js';
 import { heroIsHallucinating } from './senses.js';
 import { waterbodyName } from './terrain_name.js';
 import { trapName } from './trap_name.js';
+// Looking never reads an engraving: report its saved text, even when the
+// live inscription has since been scuffed or replaced.
+export function quotedEngraving(x, y, name, force = false) {
+    const engraving = game.level?.engravings?.find(e => e.x === x && e.y === y);
+    const headstone = name === 'grave';
+    if (!engraving || !force && name !== 'engraving' && !headstone)
+        return '';
+    return engraving.eread ? ` with ${headstone ? 'headstone reading' : 'remembered text'}: "${engraving.rememberedText}"`
+        : ` ${headstone ? 'whose headstone' : 'that'} you haven't read`;
+}
 export function lookGlyphAt(x, y) {
     const glyph = glyphAt(x, y);
     const mode = game.iflags.terrainmode;

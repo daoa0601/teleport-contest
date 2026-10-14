@@ -45,10 +45,10 @@ void test('quick look explains a monster seen through detection', async () => {
     freshObjectRoom({ flags: { tips: false }, hero: { detectMonsters: true } });
     await createMonsterAt('kitten', 11, 10);
     newsym(11, 10);
-    resetInputState().feed('l. ');
-    await rhack(';'.charCodeAt(0));
-    await flush_screen(1);
-    const text = requireGameDisplay().grid.slice(0, 2).map(row => row.map(cell => cell.ch).join('')).join('');
-    assert.match(text, /seen: normal vision, monster detection/);
+    const input = resetInputState();
+    input.feed('l.');
+    await answerPrompts(rhack(';'.charCodeAt(0)), input, [
+        { prompt: /seen: normal vision, monster[\s\S]*detection[\s\S]*--More--/, keys: ' ' },
+    ]);
 });
 //# sourceMappingURL=pager_monster_details.test.js.map

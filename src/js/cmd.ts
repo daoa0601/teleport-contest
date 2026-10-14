@@ -47,6 +47,7 @@ import { iceDescriptionAt } from './dungeon_feature.js';
 import { CmapSymbol, GlyphOffset, cmapToGlyph } from './glyph_numbers.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import { lookAtMonster, monsterSeenDescription, selfLookDetails, selfTrapDescription } from './pager_monsters.js';
+import { screenDescription } from './pager_description.js';
 import { lookGlyphAt, mapFeatureDescription } from './pager_features.js';
 import { typedSymbolDescription } from './look_symbols.js';
 import { isGrayStone, isWeaponTool } from './object_properties.js';
@@ -4504,6 +4505,8 @@ function farlookDescribesHero(x: number, y: number): boolean {
 
 export async function farlookLocationDescription(x: number, y: number): Promise<string> {
     if (farlookDescribesHero(x, y)) return wizardPositionDescription(x, y);
+    if (game.u.uswallow && game.u.ustuck)
+        return `interior of ${monsterName(game.u.ustuck)}`;
     const glyph = lookGlyphAt(x, y);
     if (!glyph || glyph.kind === 'unexplored') {
         if ((game.u.uinwater || game.underwater) && !Is_waterlevel(game.u.uz))
@@ -4538,65 +4541,6 @@ export async function farlookLocationDescription(x: number, y: number): Promise<
 async function dojump(): Promise<void> {
     const result = await jumpHero(0);
     game.context.move = result.spentTime ? 1 : 0;
-}
-
-function verboseFarlookDescription(x: number, y: number, description: string): string {
-    const glyph = glyphAt(x, y);
-    if (glyph?.kind === 'terrain'
-        && (glyph.terrainName.includes('staircase') || glyph.terrainName.includes('ladder'))) {
-        const symbolIndex = MAP_SYMBOLS.findIndex((_definition, index) =>
-            index >= CmapSymbol.upstair && index <= CmapSymbol.brdnladder
-            && glyph.glyph === cmapToGlyph(index));
-        if (symbolIndex < 0) throw new Error(`Stair glyph ${glyph.glyph} has no dungeon symbol`);
-        const displayed = cmapSymbolAppearance(symbolIndex);
-        const descriptions: string[] = [];
-        // do_screen_description() lists meanings of the displayed symbol
-        // in defsyms[] order, then lookat() identifies the selected stairs.
-        for (let index = CmapSymbol.upstair; index <= CmapSymbol.brdnladder; index++) {
-            const candidate = cmapSymbolAppearance(index);
-            const definition = MAP_SYMBOLS[index];
-            if (definition && candidate.ch === displayed.ch && candidate.dec === displayed.dec)
-                descriptions.push(withIndefiniteArticle(definition.name));
-        }
-        const symbol = displayed.dec ? `\x0e${displayed.ch}\x0f` : displayed.ch;
-        return `${symbol}\x1b[8C${descriptions.join(' or ')} (${description})`;
-    }
-    if (farlookDescribesHero(x, y) && glyph?.kind === 'monster'
-        && glyph.mnum !== undefined) {
-        // C do_screen_description() classifies the displayed glyph. With
-        // showrace, that can differ from the role named by self_lookat().
-        const species = glyph.mnum;
-        const symbol = monsterClassSymbol(species);
-        const explanation = MONSTER_CLASS_EXPLAIN[MONSTER_SYMBOL[species] ?? 0];
-        if (!explanation) throw new Error(`Displayed species ${species} has no monster class description`);
-        const includesHero = symbol === '@' && !heroIsPolymorphed(game) && game.urace
-            && game.urace.name !== 'human' && game.urace.name !== 'elf';
-        // A blank also denotes stone, air, darkness, and unexplored squares.
-        // C collapses more than four meanings before appending self_lookat().
-        const classDescription = symbol === ' ' ? 'can be many things'
-            : withIndefiniteArticle(explanation) + (includesHero ? ' or you' : '');
-        return `${symbol}\x1b[8C${classDescription} (${description})`;
-    }
-    if (!glyph) return description;
-    const loc = game.level?.at(x, y);
-    const appearance = loc?.disp_glyph
-        ? { ch: loc.disp_ch, dec: loc.disp_decgfx }
-        : loc?.remembered_glyph;
-    if (!appearance) return description;
-    const symbol = appearance.dec ? `\x0e${appearance.ch}\x0f` : appearance.ch;
-    if (glyph.kind === 'unexplored' || glyph.kind === 'nothing'
-        || glyph.kind === 'terrain' && ['stone', 'corridor', 'lit corridor'].includes(glyph.terrainName)) {
-        return `${symbol}\x1b[8Ccan be many things (${description})`;
-    }
-    if (glyph.kind === 'terrain' && glyph.terrainName === 'wall')
-        return `${symbol}\x1b[8Cthe interior of a monster or a wall (${description})`;
-    if (glyph.kind === 'terrain' && glyph.terrainName === 'floor of a room') {
-        if (appearance.dec && appearance.ch === '~') {
-            return '\x0e~\x0f\x1b[8Ca doorway or the floor of a room'
-                + ` or the dark part of a room or ice (${description})`;
-        }
-    }
-    return description;
 }
 
 // C refs: cmd.c dotravel(), getpos.c getpos(), hack.c handle_tip(), and
@@ -4700,11 +4644,12 @@ async function doFarlook(quick = true): Promise<void> {
             && !farlookDescribesHero(cursor.x, cursor.y)
             ? monsterAtPosition(game.level, cursor.x, cursor.y) : null;
         const seen = monster ? monsterSeenDescription(monster) : '';
-        await plineWithContinuation(verboseFarlookDescription(cursor.x, cursor.y, description)
-            + (seen ? ` [seen: ${seen}]` : ''));
-        if (cursor.pickType !== LOOK_QUICK && cursor.pickType !== LOOK_ONCE
+        const screen = screenDescription(cursor.x, cursor.y, description);
+        await plineWithContinuation(screen.count ? screen.text
+            + (seen ? ` [seen: ${seen}]` : '') : "I've never heard of such things.");
+        if (screen.count === 1 && cursor.pickType !== LOOK_QUICK && cursor.pickType !== LOOK_ONCE
             && (cursor.pickType === LOOK_VERBOSE || !quick && game.flags.help !== false))
-            await offerFarlookInformation(description, cursor.pickType === LOOK_VERBOSE);
+            await offerFarlookInformation(screen.firstMatch, cursor.pickType === LOOK_VERBOSE);
         if (quick || cursor.pickType === LOOK_ONCE) break;
     }
     game.context.move = 0;
