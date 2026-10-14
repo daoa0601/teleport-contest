@@ -824,7 +824,7 @@ async function mksobj_init(
                 }
             }
             if (otmp.spe === 0) otmp.spe = rn2(4) - rn2(3);
-            if (otmp.spe < 0 && rn2(5)) otmp.cursed = true;
+            if (otmp.spe < 0 && rn2(5)) curseObjectState(otmp);
         } else if (rn2(10)
             && (otyp === 194 || otyp === 196 || otyp === 185
                 || otyp === 184 || !rn2(9))) {

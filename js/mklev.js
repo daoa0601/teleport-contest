@@ -692,7 +692,7 @@ async function mksobj_init(otmp, artif, definition) {
                 if (otmp.spe === 0)
                     otmp.spe = rn2(4) - rn2(3);
                 if (otmp.spe < 0 && rn2(5))
-                    otmp.cursed = true;
+                    curseObjectState(otmp);
             }
             else if (rn2(10)
                 && (otyp === 194 || otyp === 196 || otyp === 185
