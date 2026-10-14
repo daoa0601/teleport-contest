@@ -20,4 +20,16 @@ void test('a call name does not arm a wished land mine', async () => {
     assert.equal(result.object.otyp, LAND_MINE);
     assert.equal(requireGameLevel().traps.length, 0);
 });
+void test('ordinary trapped chest wishes retain a generated trap', async () => {
+    freshObjectRoom({ gameplaySeed: 5 });
+    const result = await readObjectName('trapped chest');
+    assert.ok(result && !result.noWish);
+    assert.equal(result.object.otrapped, true);
+});
+void test('an ordinary untrapped chest wish removes a generated trap', async () => {
+    freshObjectRoom({ gameplaySeed: 5 });
+    const result = await readObjectName('untrapped chest');
+    assert.ok(result && !result.noWish);
+    assert.equal(result.object.otrapped, false);
+});
 //# sourceMappingURL=wish_review.test.js.map

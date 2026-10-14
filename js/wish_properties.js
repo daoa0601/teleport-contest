@@ -26,8 +26,9 @@ export async function applyWishProperties(object, parsed, wizardWish, luck) {
         else if (object.oclass === 7)
             object.age = 1;
     }
-    if (parsed.trapped && (object.otyp === CHEST || object.otyp === LARGE_BOX || object.otyp === TIN))
-        object.otrapped = parsed.trapped === 'trapped' && wizardWish;
+    if (parsed.trapped && (wizardWish || parsed.trapped === 'untrapped')
+        && (object.otyp === CHEST || object.otyp === LARGE_BOX || object.otyp === TIN))
+        object.otrapped = parsed.trapped === 'trapped';
     if (parsed.empty) {
         if (object.otyp === BAG_OF_TRICKS || object.otyp === HORN_OF_PLENTY) {
             if (object.spe > 0)
