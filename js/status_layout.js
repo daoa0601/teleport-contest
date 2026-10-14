@@ -28,6 +28,12 @@ export function renderStatusLine2(fields, columns) {
             line += ` ${condition[conditionSize]}`;
         for (const equipment of fields.equipment)
             line += ` ${equipment}`;
+        if (fields.version) {
+            // The last field is right justified, with its leading separator
+            // still counted by make_things_fit().
+            const gap = Math.max(1, columns - 1 - line.length - fields.version.length);
+            line += ' '.repeat(gap) + fields.version;
+        }
         if (line.length <= columns - 1)
             return line;
     }

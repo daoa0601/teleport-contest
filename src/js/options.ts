@@ -294,6 +294,11 @@ function parseConfiguration(rc: string, result: ConfigurationSettings): Configur
             const colonIdx = stripped.indexOf(':');
             const bindingOption = (colonIdx < 0 ? stripped : stripped.slice(0, colonIdx)).trim().toLowerCase();
             const optionValue = colonIdx < 0 ? null : stripped.slice(colonIdx + 1).trim();
+            if (bindingOption === 'versinfo') {
+                const value = Number.parseInt(optionValue ?? '', 10);
+                if (!negated && value >= 1 && value <= 7) result.flags.versinfo = value;
+                continue;
+            }
             if (bindingOption === 'dogname' || bindingOption === 'catname' || bindingOption === 'horsename') {
                 if (negated) continue;
                 if (optionValue === 'none' || optionValue === '(none)')

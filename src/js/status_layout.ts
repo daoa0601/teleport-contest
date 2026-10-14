@@ -12,6 +12,7 @@ export interface StatusLine2Fields {
     capacity: number;
     conditions: readonly ConditionText[];
     equipment: readonly string[];
+    version: string;
 }
 
 const capacityText: readonly (readonly string[])[] = [
@@ -41,6 +42,12 @@ export function renderStatusLine2(fields: StatusLine2Fields, columns: number): s
         if (load || capacitySize > 0) line += ` ${load}`;
         for (const condition of fields.conditions) line += ` ${condition[conditionSize]}`;
         for (const equipment of fields.equipment) line += ` ${equipment}`;
+        if (fields.version) {
+            // The last field is right justified, with its leading separator
+            // still counted by make_things_fit().
+            const gap = Math.max(1, columns - 1 - line.length - fields.version.length);
+            line += ' '.repeat(gap) + fields.version;
+        }
         if (line.length <= columns - 1) return line;
     }
     return line.slice(0, Math.max(0, columns - 1));
