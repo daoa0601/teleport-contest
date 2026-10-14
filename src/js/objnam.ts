@@ -3,7 +3,7 @@
 
 import { game } from './gstate.js';
 import type { GameState, Fruit } from './game_state.js';
-import type { GameObject, ObjectBlessing } from './object_types.js';
+import type { GameObject } from './object_types.js';
 import type { Artifact } from './artifacts.js';
 import { fruitFromIndex, fruitFromName, matchWishedFruit } from './fruit.js';
 import { objectOwnershipPrefix, objectTypeKnown } from './shk.js';
@@ -48,6 +48,10 @@ import { objectDisclosureText } from './object_inscription.js';
 import { cansee } from './vision.js';
 import { BOGUS_MONSTERS } from './random_text_data.js';
 import { lookupWishType, randomTypeByDescription } from './wish_lookup.js';
+import { parseWishText, type ParsedWish } from './wish_parse.js';
+import { applyWishProperties, finishWishWeight, lightWishedObject } from './wish_properties.js';
+export { parseWishText } from './wish_parse.js';
+export type { ParsedWish } from './wish_parse.js';
 
 // Detection and minimal_xname supply a naming view without allocating a game object.
 export type ObjectNameView = Pick<GameObject, 'otyp' | 'oclass'> & Partial<Pick<GameObject,
@@ -58,22 +62,6 @@ export type ObjectNameView = Pick<GameObject, 'otyp' | 'oclass'> & Partial<Pick<
 
 type CorpseNameView = Pick<GameObject, 'otyp'> & Partial<Pick<GameObject,
     'corpsenm' | 'spe' | 'globby' | 'quan' | 'quantity'>>;
-
-export interface ParsedWish {
-    count: number;
-    countExplicit: boolean;
-    globSize: number;
-    enchantment: number | null;
-    buc: ObjectBlessing | null;
-    recharged: number | null;
-    charges: number | null;
-    erodeproof: boolean;
-    eroded: number | null;
-    eroded2: number | null;
-    greased: boolean;
-    fruitName: string;
-    name: string;
-}
 
 export type ObjectWishResult =
     | { noWish: true; parsed: ParsedWish }
@@ -701,20 +689,8 @@ export function unseenObjectNoun(
     }
 }
 
-function normalizeName(value: string | null | undefined): string {
-    return String(value || '')
-        .trim()
-        .replace(/\s+/g, ' ')
-        .replace(/^(?:an?|the)\s+/i, '')
-        .toLowerCase();
-}
-
 function currentDescription(otyp: number): string | null | undefined {
     return game.objectDescriptions?.[otyp] ?? OBJECT_DESCRIPTIONS[otyp];
-}
-
-function singularizeObjectName(value: string): string {
-    return ['tricks', 'clothes'].includes(value) ? value : makeSingular(value);
 }
 
 // C readobjnam_postparse3(): Japanese aliases follow the ordinary name and
@@ -741,111 +717,6 @@ function japaneseWishType(request: string): number | null {
 }
 
 const GENERIC_SCALE_MAIL = OBJECT_NAMES.findIndex(name => name === 'scale mail');
-export function parseWishText(text: string): ParsedWish {
-    let remaining = String(text || '').trim().replace(/\s+/g, ' ');
-    const parsed: ParsedWish = {
-        fruitName: '',
-        name: '',
-        count: 1,
-        countExplicit: false,
-        globSize: 0,
-        enchantment: null,
-        buc: null,
-        recharged: null,
-        charges: null,
-        erodeproof: false,
-        eroded: null,
-        eroded2: null,
-        greased: false,
-    };
-
-    const chargeMatch = remaining.match(/\s*\((?:(-?\d+):)?(-?\d+)\)\s*$/);
-    if (chargeMatch) {
-        remaining = remaining.slice(0, chargeMatch.index).trim();
-    }
-
-    let erosionIntensity = 0;
-    for (;;) {
-        let match: RegExpMatchArray | null;
-        if ((match = remaining.match(/^(?:an?|the)\s+/i))) {
-            parsed.countExplicit = true;
-            remaining = remaining.slice(match[0].length);
-        } else if ((match = remaining.match(/^(\d+)\s+/))) {
-            parsed.countExplicit = true;
-            parsed.count = Math.max(1, Number(match[1]));
-            remaining = remaining.slice(match[0].length);
-        } else if ((match = remaining.match(
-            /^(very large|large|medium|small)\s+(?=.*\bglobs?\b)/i,
-        ))) {
-            parsed.globSize = ['small', 'medium', 'large', 'very large']
-                .indexOf(requiredCapture(match, 1).toLowerCase()) + 1;
-            remaining = remaining.slice(match[0].length);
-        } else if ((match = remaining.match(/^([+-])(\d+)\s+/))) {
-            parsed.enchantment = Number(match[2]) * (match[1] === '-' ? -1 : 1);
-            remaining = remaining.slice(match[0].length);
-        } else if ((match = remaining.match(/^(blessed|holy)\s+/i))) {
-            parsed.buc = 'blessed';
-            remaining = remaining.slice(match[0].length);
-        } else if ((match = remaining.match(/^(cursed|unholy)\s+/i))) {
-            parsed.buc = 'cursed';
-            remaining = remaining.slice(match[0].length);
-        } else if ((match = remaining.match(/^uncursed\s+/i))) {
-            parsed.buc = 'uncursed';
-            remaining = remaining.slice(match[0].length);
-        } else if ((match = remaining.match(
-            /^(?:rustproof|erodeproof|corrodeproof|fixed|fireproof|rotproof|tempered|crackproof)\s+/i,
-        ))) {
-            parsed.erodeproof = true;
-            remaining = remaining.slice(match[0].length);
-        } else if ((match = remaining.match(/^greased\s+/i))) {
-            parsed.greased = true;
-            remaining = remaining.slice(match[0].length);
-        } else if ((match = remaining.match(
-            /^(very|thoroughly)\s+(?=(?:rusty|rusted|burnt|burned|cracked|corroded|rotted)\s+)/i,
-        ))) {
-            erosionIntensity = requiredCapture(match, 1).toLowerCase() === 'very' ? 1 : 2;
-            remaining = remaining.slice(match[0].length);
-        } else if ((match = remaining.match(
-            /^(?:rusty|rusted|burnt|burned|cracked)\s+/i,
-        ))) {
-            parsed.eroded = 1 + erosionIntensity;
-            erosionIntensity = 0;
-            remaining = remaining.slice(match[0].length);
-        } else if ((match = remaining.match(
-            /^(?:corroded|rotted)\s+/i,
-        ))) {
-            parsed.eroded2 = 1 + erosionIntensity;
-            erosionIntensity = 0;
-            remaining = remaining.slice(match[0].length);
-        } else {
-            break;
-        }
-    }
-
-    if (chargeMatch) {
-        // C's parenthesized charge parser consumes digits, not minus signs.
-        // A malformed suffix clears its numbers but preserves a prefix sign.
-        const malformed = chargeMatch.slice(1).some(value => value?.startsWith('-'));
-        if (malformed) {
-            parsed.recharged = 0;
-            if (parsed.enchantment !== null) {
-                const negative = parsed.enchantment < 0 || Object.is(parsed.enchantment, -0);
-                parsed.charges = negative ? -0 : 0;
-            }
-        } else {
-            const recharge = Number(chargeMatch[1] || 0);
-            parsed.recharged = recharge > 7 ? 7 : recharge;
-            parsed.charges = Math.min(SPE_LIM, Number(chargeMatch[2]));
-        }
-    }
-    parsed.fruitName = remaining;
-    const requestedName = normalizeName(remaining);
-    parsed.name = singularizeObjectName(requestedName);
-    if (parsed.name !== requestedName && parsed.count === 1)
-        parsed.count = 2;
-    return parsed;
-}
-
 // C refs: objnam.c:erosion_matters(), objclass.h:is_damageable(), and
 // mkobj.c:is_flammable()/is_rottable().  Wished proof applies only where the
 // object instance can retain erosion state; an ordinary non-weapon tool does
@@ -923,7 +794,7 @@ export async function readObjectName(
 ): Promise<ObjectWishResult | null> {
     const parsed = parseWishText(text);
     normalizeGlobWish(parsed);
-    if (['nothing', 'nil', 'none'].includes(parsed.name))
+    if (['nothing', 'nil', 'none'].includes(text.trim().toLowerCase()))
         return { noWish: true, parsed };
     if (['gold piece', 'gold', 'money', 'coin', 'zorkmid'].includes(parsed.name)
         || parsed.name.startsWith('$')) {
@@ -956,7 +827,10 @@ export async function readObjectName(
         lookupOtyp = object.otyp;
     } else {
         const lookup = lookupWishType(parsed.name, { wizardWish });
-        let matchedType = artifact?.baseType ?? lookup.type
+        const blankType = parsed.unlabeled && /scroll$/.test(parsed.name)
+            ? OBJECT_NAMES.indexOf('blank paper')
+            : parsed.unlabeled && /spellbook$/.test(parsed.name) ? SPE_BLANK_PAPER : null;
+        let matchedType = artifact?.baseType ?? blankType ?? lookup.type
             ?? japaneseWishType(parsed.name);
         if (matchedType === null) {
             const match = matchWishedFruit(parsed.fruitName);
@@ -981,6 +855,7 @@ export async function readObjectName(
     }
 
     await applyWishQuantity(object, parsed, wizardWish);
+    lightWishedObject(object, parsed);
     const luck = (game.u.uluck || 0) + (game.u.moreluck || 0);
     const enchantmentSign = applyWishEnchantment(object, parsed, wizardWish, luck);
     if (finalType !== null && lookupOtyp === GENERIC_SCALE_MAIL) {
@@ -1001,7 +876,7 @@ export async function readObjectName(
         object.recharged = object.otyp === WAN_WISHING && !wizardWish
             ? 1 : parsed.recharged ?? 0;
     }
-    if (parsed.greased) object.greased = true;
+    await applyWishProperties(object, parsed, wizardWish, luck);
 
     if (artifact) {
         nameArtifact(object, artifact);
@@ -1023,7 +898,7 @@ export async function readObjectName(
         return { noWish: true, parsed };
     }
     object.quantity = object.quan;
-    object.owt = objectWeight(object);
+    await finishWishWeight(object, parsed);
     return {
         object, parsed, lookupOtyp, finalOtyp: object.otyp, artifact,
     };
