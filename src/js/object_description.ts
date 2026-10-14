@@ -70,11 +70,11 @@ export function objectDescription(object: GameObject, {
     state = game, withPrice = false, primaryHandDetail, projectPrimaryHand = false,
     vagueQuantity = false,
 }: ObjectDescriptionOptions = {}): string {
-    const quantity = vagueQuantity && !object.dknown ? 'some' : String(object.quan);
     let noun = objectName(object, state);
     const poisoned = !!object.opoisoned && noun.startsWith('poisoned ');
     if (poisoned) noun = noun.slice(9);
     const override = !!(state.iflags.override_ID || object.overrideIdentified);
+    const quantity = vagueQuantity && !object.dknown && !override ? 'some' : String(object.quan);
     const known = object.known || override;
     const contentsKnown = object.cknown || override;
     const prefix: string[] = [];
