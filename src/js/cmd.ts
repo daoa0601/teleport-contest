@@ -4610,7 +4610,11 @@ function farlookDescribesHero(x: number, y: number): boolean {
 export async function farlookLocationDescription(x: number, y: number): Promise<string> {
     if (farlookDescribesHero(x, y)) return wizardPositionDescription(x, y);
     const glyph = glyphAt(x, y);
-    if (!glyph || glyph.kind === 'unexplored') return 'unexplored area';
+    if (!glyph || glyph.kind === 'unexplored') {
+        if ((game.u.uinwater || game.underwater) && !Is_waterlevel(game.u.uz))
+            return dist2(x, y, game.u.ux, game.u.uy) <= 2 ? 'land' : 'unknown';
+        return 'unexplored area';
+    }
     if (glyph?.kind === 'warning') {
         const index = glyph.glyph === undefined ? -1 : glyph.glyph - GlyphOffset.warning;
         const warning = def_warnsyms[index];

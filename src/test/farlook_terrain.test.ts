@@ -22,6 +22,15 @@ for (const [terrain, name] of [[HWALL, 'wall'], [ROOM, 'room']] as const) {
     });
 }
 
+for (const [x, y, description] of [[11, 10, 'land'], [11, 11, 'land'], [12, 10, 'unknown']] as const) {
+    void test(`submerged farlook calls hidden terrain at ${x},${y} ${description}`, async () => {
+        freshObjectRoom({ hero: { uinwater: true } });
+        await redrawMap();
+
+        assert.equal(await farlookLocationDescription(x, y), description);
+    });
+}
+
 for (const remembered of [false, true]) {
     void test(`farlook preserves the ${remembered ? 'remembered' : 'visible'} branch-staircase description`, async () => {
         const level = freshObjectRoom();
