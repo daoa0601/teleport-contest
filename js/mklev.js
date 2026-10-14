@@ -975,15 +975,18 @@ export async function mkobj(oclass, artif) {
         // Keep that shared constructor policy here; hellfill.lua merely asks
         // for des.object() and does not own the resulting class weights.
         const inHell = !!game.dungeons?.[game.u?.uz?.dnum ?? 0]?.flags?.hellish;
-        const classProbs = inHell
-            ? [[20, WEAPON_CLASS], [20, ARMOR_CLASS],
+        const classProbs = Is_rogue_level(game.u.uz)
+            ? [[12, WEAPON_CLASS], [12, ARMOR_CLASS], [22, FOOD_CLASS],
+                [22, POTION_CLASS], [22, SCROLL_CLASS], [5, WAND_CLASS],
+                [5, RING_CLASS]]
+            : inHell ? [[20, WEAPON_CLASS], [20, ARMOR_CLASS],
                 [16, FOOD_CLASS], [12, TOOL_CLASS], [10, GEM_CLASS],
                 [1, POTION_CLASS], [1, SCROLL_CLASS], [8, WAND_CLASS],
                 [8, RING_CLASS], [4, AMULET_CLASS]]
-            : [[10, WEAPON_CLASS], [11, ARMOR_CLASS],
-                [20, FOOD_CLASS], [8, TOOL_CLASS], [7, GEM_CLASS],
-                [16, POTION_CLASS], [16, SCROLL_CLASS], [4, SPBOOK_CLASS],
-                [4, WAND_CLASS], [3, RING_CLASS], [1, AMULET_CLASS]];
+                : [[10, WEAPON_CLASS], [11, ARMOR_CLASS],
+                    [20, FOOD_CLASS], [8, TOOL_CLASS], [7, GEM_CLASS],
+                    [16, POTION_CLASS], [16, SCROLL_CLASS], [4, SPBOOK_CLASS],
+                    [4, WAND_CLASS], [3, RING_CLASS], [1, AMULET_CLASS]];
         let roll = rnd(100);
         for (const [probability, cls] of classProbs) {
             roll -= probability;

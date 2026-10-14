@@ -1073,8 +1073,11 @@ export async function mkobj(oclass: number, artif: boolean): Promise<GameObject>
         // Keep that shared constructor policy here; hellfill.lua merely asks
         // for des.object() and does not own the resulting class weights.
         const inHell = !!game.dungeons?.[game.u?.uz?.dnum ?? 0]?.flags?.hellish;
-        const classProbs: readonly (readonly [number, number])[] = inHell
-            ? [[20, WEAPON_CLASS], [20, ARMOR_CLASS],
+        const classProbs: readonly (readonly [number, number])[] = Is_rogue_level(game.u.uz)
+            ? [[12, WEAPON_CLASS], [12, ARMOR_CLASS], [22, FOOD_CLASS],
+                [22, POTION_CLASS], [22, SCROLL_CLASS], [5, WAND_CLASS],
+                [5, RING_CLASS]]
+            : inHell ? [[20, WEAPON_CLASS], [20, ARMOR_CLASS],
                 [16, FOOD_CLASS], [12, TOOL_CLASS], [10, GEM_CLASS],
                 [1, POTION_CLASS], [1, SCROLL_CLASS], [8, WAND_CLASS],
                 [8, RING_CLASS], [4, AMULET_CLASS]]
