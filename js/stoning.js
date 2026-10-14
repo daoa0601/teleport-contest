@@ -257,6 +257,7 @@ export async function resolveImmediatePetrification({ state = game, killer, publ
     await publish('You turn to stone...');
     const died = await die({
         killer,
+        killerFormat: KILLED_BY,
         deathVerb: 'turned to stone',
         deathLineShown: true,
         deathType: STONING,

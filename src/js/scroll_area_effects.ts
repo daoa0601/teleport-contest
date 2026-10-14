@@ -85,7 +85,7 @@ async function fireEffect(
         } else {
             monstersForgetHeroResistance(M_SEEN_FIRE, state);
             await pline(`The scroll catches fire and you burn your ${makePlural(heroHandName(state))}.`);
-            result.heroDied = !!await loseHeroHp(1, 'a scroll of fire', { state, die: finishHeroDeath });
+            result.heroDied = !!await loseHeroHp(1, 'scroll of fire', { state, die: finishHeroDeath });
         }
         return result;
     }

@@ -123,7 +123,7 @@ async function hitHeroWithImmediateWand(context) {
                 monstersForgetHeroResistance(M_SEEN_MAGR, state);
                 await publish('The wand hits you!');
                 const damage = rollDice(2, 12);
-                if (await loseHeroHp(heroHasHalfSpellDamage(state) ? Math.ceil(damage / 2) : damage, 'a wand', { state, publish }))
+                if (await loseHeroHp(heroHasHalfSpellDamage(state) ? Math.ceil(damage / 2) : damage, 'wand', { state, publish }))
                     return;
                 learned = true;
             }

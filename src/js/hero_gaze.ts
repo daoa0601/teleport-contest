@@ -11,7 +11,7 @@ import { heroIsHallucinating } from './senses.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { heroHasFreeAction } from './armor.js';
 import {
-    M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, STONING,
+    KILLED_BY, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, STONING,
 } from './const.js';
 import {
     canSeeMonster, plineWithContinuation,
@@ -125,6 +125,7 @@ async function applyGazePassive(
     await publish('You turn to stone...');
     const heroDied = await die({
         killer: "deliberately meeting Medusa's gaze",
+        killerFormat: KILLED_BY,
         deathVerb: 'turned to stone',
         deathLineShown: true,
         deathType: STONING,

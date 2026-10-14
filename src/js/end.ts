@@ -39,7 +39,7 @@ import { doneObjectCleanup } from './object_cleanup.js';
 import { restoreHeroNutrition } from './hunger.js';
 import {
     A_CON, A_WIS, CHOKING, DIED, G_EXTINCT, G_GENOD, GENOCIDED, PANICKED, POISONING, STARVING, STONING,
-    Is_astralevel, PICK_ONE, STRAT_WAITFORU, Upolyd,
+    Is_astralevel, KILLED_BY, KILLED_BY_AN, NO_KILLER_PREFIX, PICK_ONE, STRAT_WAITFORU, Upolyd,
 } from './const.js';
 import {
     AMULET_OF_LIFE_SAVING, AMULET_OF_YENDOR, BELL_OF_OPENING,
@@ -73,8 +73,11 @@ export interface DeathDamage {
     damage: number;
 }
 
+export type KillerFormat = typeof KILLED_BY | typeof KILLED_BY_AN | typeof NO_KILLER_PREFIX;
+
 export interface OrdinaryDeathOptions {
     killer: string;
+    killerFormat?: KillerFormat;
     possessionAnswer?: string | null;
     deathVerb?: string;
     deathCause?: string | null;
@@ -220,6 +223,7 @@ export async function restoreHeroAfterDeath({ deathType = null }: RevivalOptions
 
 export async function finishHeroDeath({
     killer,
+    killerFormat = KILLED_BY_AN,
     beforeFinalDeath = null,
     deathCause = null,
     deathVerb = 'died',
@@ -264,7 +268,7 @@ export async function finishHeroDeath({
 
     await beforeFinalDeath?.();
     setHeroRemainsFromDeath(deathType, game);
-    await finishOrdinaryDeath({ killer, deathCause, deathVerb, deathType });
+    await finishOrdinaryDeath({ killer, killerFormat, deathCause, deathVerb, deathType });
     return true;
 }
 
@@ -759,15 +763,16 @@ const DEATH_CAUSE_PREFIXES: readonly string[] = [
     '', '', '', '', '',
 ];
 
-function deathCauseRecord(killer: string, deathVerb = 'died', deathType: number | null = null) {
+function deathCauseRecord(
+    killer: string, deathVerb = 'died', deathType: number | null = null,
+    killerFormat: KillerFormat = KILLED_BY_AN,
+) {
     const raw = String(killer || 'unknown cause');
     const prefix = deathType === null ? undefined : DEATH_CAUSE_PREFIXES[deathType];
-    if (prefix === '') return raw;
+    if (killerFormat === NO_KILLER_PREFIX || prefix === '') return raw;
     if (prefix === undefined && deathVerb !== 'died') return `${deathVerb} by ${raw}`;
-    if (/^(?:an?|the) /i.test(raw)
-        || /^(?:Mr|Mrs|Ms|Miss|Sir|Lady|Lord)\.?\s/.test(raw))
-        return `${prefix ?? 'killed by '}${raw}`;
-    return `${prefix ?? 'killed by '}${withIndefiniteArticle(raw)}`;
+    const name = killerFormat === KILLED_BY ? raw : withIndefiniteArticle(raw);
+    return `${prefix ?? 'killed by '}${name}`;
 }
 
 // C topten.c:formatkiller() sanitizes killer names for every caller, including rip.c.
@@ -1315,9 +1320,9 @@ export async function finishOrdinaryDeath(options: OrdinaryDeathOptions): Promis
 
 async function completeOrdinaryDeath({
     killer, possessionAnswer = null, deathVerb = 'died', deathCause = null,
-    deathType = null,
+    deathType = null, killerFormat = KILLED_BY_AN,
 }: OrdinaryDeathOptions): Promise<void> {
-    deathCause ||= deathCauseRecord(killer, deathVerb, deathType);
+    deathCause ||= deathCauseRecord(killer, deathVerb, deathType, killerFormat);
     // topten.c:formatkiller() uses "poisoned by" for the cause; only
     // end.c:ends[POISONING] uses "were poisoned" in the final summary.
     if (deathType === POISONING) {
