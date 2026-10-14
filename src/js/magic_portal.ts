@@ -8,6 +8,7 @@ import { makeStunned } from './hero_mental_status.js';
 import type { DungeonLocation } from './dungeon_types.js';
 import type { Trap } from './map_types.js';
 import type { gotoLevel as changeLevel } from './level_change.js';
+import { scheduleLevelChange } from './level_change.js';
 import { bringLeashedFollowers } from './teleport.js';
 
 function dungeonName(level: DungeonLocation | undefined) {
@@ -27,11 +28,11 @@ async function addPortalStun() {
 }
 
 export async function activateMagicPortal(
-    trap: Trap, gotoLevel: ((...args: Parameters<typeof changeLevel>) => unknown) | null | undefined,
-): Promise<boolean> {
+    trap: Trap, gotoLevel: typeof changeLevel | null | undefined,
+): Promise<void> {
     if (!await bringLeashedFollowers()) {
         await plineWithContinuation('You shudder for a moment.');
-        return true;
+        return;
     }
 
     await plineWithContinuation('You activated a magic portal!');
@@ -39,7 +40,7 @@ export async function activateMagicPortal(
         await plineWithContinuation(
             'You feel dizzy for a moment, but nothing happens...',
         );
-        return true;
+        return;
     }
     if (typeof gotoLevel !== 'function')
         throw new Error('magic portal needs the level-change function');
@@ -47,13 +48,11 @@ export async function activateMagicPortal(
     if (!trap.dst) throw new Error('Magic portal has no destination.');
     const leavingTutorial = isTutorialLevel(game.u?.uz)
         && !isTutorialLevel(trap.dst);
-    // domagicportal() schedules this as deferred_goto()'s pre-message. Its
-    // pline flushes the activation before any destination generation.
+    // domove() still needs the departure level to wear its engravings.
+    // deferred_goto() prints dizziness after that movement tail finishes.
     const preMessage = leavingTutorial ? 'Resuming regular play.' : await addPortalStun();
-    await plineWithContinuation(preMessage);
-    await gotoLevel(trap.dst, {
+    scheduleLevelChange([trap.dst, {
         arrival: leavingTutorial ? 'stairs' : 'portal',
-    });
+    }], gotoLevel, preMessage);
     game.context.move = 1;
-    return true;
 }

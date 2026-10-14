@@ -1313,7 +1313,7 @@ export async function triggerHeroTrap(trap: Trap | null | undefined, {
     case MAGIC_PORTAL:
         trap.tseen = true;
         if (game.u.utraptype === TT_BURIEDBALL) await buriedBallToPunishment();
-        shortCircuited = await activateMagicPortal(trap, gotoLevel);
+        await activateMagicPortal(trap, gotoLevel);
         break;
     case MAGIC_TRAP:
         await triggerMagicTrap(trap);

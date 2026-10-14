@@ -8,6 +8,7 @@ import { artifactByName, nameArtifact } from '../js/artifacts.js';
 import { wearHeroAccessory } from '../js/accessory.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { rhack } from '../js/cmd.js';
+import { finishScheduledLevelChange } from '../js/level_change.js';
 import {
     ANTI_MAGIC, ARROW_TRAP, FIRE_TRAP, MAGIC_PORTAL, PIT, ROCKTRAP, ROOM,
     SLP_GAS_TRAP, RUST_TRAP, SQKY_BOARD,
@@ -332,7 +333,7 @@ void test('stepping into a magic portal moves the hero to its other end',
         ]]);
 
         const input = resetInputState();
-        const movement = rhack('l'.charCodeAt(0));
+        const movement = rhack('l'.charCodeAt(0)).then(finishScheduledLevelChange);
         await input.waitUntilBlocked();
         const text = requireGameDisplay(game).grid
             .map(row => row.map(cell => cell.ch).join('')).join('\n');
