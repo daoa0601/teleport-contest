@@ -84,7 +84,6 @@ export interface WishLookup {
     readonly name: string;
     readonly oclass: number;
     readonly type: number | null;
-    readonly finalType: number | null;
 }
 
 export function lookupWishType(request: string, {
@@ -106,8 +105,8 @@ export function lookupWishType(request: string, {
         description = name.slice(label.index + label[0].length);
         name = name.slice(0, label.index);
     }
-    const result = (type: number | null, oclass = 0, finalType: number | null = null): WishLookup =>
-        ({ name, type, oclass: type === null ? oclass : objectClassForType(type), finalType });
+    const result = (type: number | null, oclass = 0): WishLookup =>
+        ({ name, type, oclass: type === null ? oclass : objectClassForType(type) });
 
     const callRange = callName ? ranges.find(([range]) => range === name.toLowerCase()) : null;
     if (callRange) return result(randomTypeByDescription(callName, callRange[1], 1, state), callRange[1]);
@@ -118,12 +117,6 @@ export function lookupWishType(request: string, {
     const alias = alternateSpellings.find(([alias]) => wishMatches(name, alias, true));
     if (alias) return result(alias[1]);
     name = name.replace(/^grey spell/i, 'gray spell').replace(/armour/i, 'armor');
-    const dragonScales = /^(.+ dragon) scales$/i.exec(name);
-    if (dragonScales) {
-        const type = objects.OBJECT_NAMES.findIndex(candidate => candidate?.toLowerCase() === name.toLowerCase());
-        if (type >= objects.GRAY_DRAGON_SCALES && type <= objects.YELLOW_DRAGON_SCALES)
-            return result(type);
-    }
     if (/^paperback(?:$| book)/i.test(name)) return result(objects.SPE_NOVEL);
     if (/^paperback/i.test(name)) return result(null);
     if (/orange$/i.test(name)) return result(objects.ORANGE);
@@ -183,19 +176,11 @@ export function lookupWishType(request: string, {
         if (actual.toLowerCase() === 'tin') return result(objects.TIN);
     }
 
-    // Monster prefix parsing leaves SCALE_MAIL for the lottery; only after
-    // constructing that object does readobjnam() choose dragon scale mail.
-    const dragonMail = actual && /^(.+ dragon) scale mail$/i.test(actual)
-        ? objects.OBJECT_NAMES.findIndex(candidate => candidate?.toLowerCase() === actual?.toLowerCase()) : -1;
-    const finalType = dragonMail >= objects.GRAY_DRAGON_SCALE_MAIL && dragonMail <= objects.YELLOW_DRAGON_SCALE_MAIL
-        ? dragonMail : null;
-    if (finalType !== null) actual = description = 'scale mail';
-
     const candidates = [actual, description !== actual ? description : null, callName,
         original !== actual ? original : null];
     for (const candidate of candidates) {
         const type = randomTypeByDescription(candidate, oclass, 1, state);
-        if (type !== null) return result(type, oclass, finalType);
+        if (type !== null) return result(type, oclass);
     }
     if (oclass === ARMOR_CLASS && !/mail/i.test(name)) {
         const retry = lookupWishType(`${name} mail`, { wizardWish, state });
@@ -206,7 +191,7 @@ export function lookupWishType(request: string, {
     if (classAlias) return result(classAlias[1]);
     if (!oclass && /^polearm/i.test(name)) return result(randomWeaponBySkill(P_POLEARMS));
     if (!oclass && /^hammer/i.test(name)) return result(randomWeaponBySkill(P_HAMMER));
-    return result(null, oclass, finalType);
+    return result(null, oclass);
 }
 
 export function randomTypeByDescription(name: string | null, oclass = 0, extraProbability = 1,

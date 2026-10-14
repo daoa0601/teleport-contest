@@ -30,6 +30,7 @@ import { BOGUS_MONSTERS } from './random_text_data.js';
 import { lookupWishType, randomTypeByDescription } from './wish_lookup.js';
 import { parseWishText } from './wish_parse.js';
 import { applyWishProperties, finishWishWeight, lightWishedObject } from './wish_properties.js';
+import { applyWishSpecies, applyWishedTinVariety, substituteWishedGlob } from './wish_species.js';
 export { parseWishText } from './wish_parse.js';
 const WEAPON_CLASS = 2;
 const ARMOR_CLASS = 3;
@@ -687,7 +688,6 @@ function japaneseWishType(request) {
     }
     return null;
 }
-const GENERIC_SCALE_MAIL = OBJECT_NAMES.findIndex(name => name === 'scale mail');
 // C refs: objnam.c:erosion_matters(), objclass.h:is_damageable(), and
 // mkobj.c:is_flammable()/is_rottable().  Wished proof applies only where the
 // object instance can retain erosion state; an ordinary non-weapon tool does
@@ -772,7 +772,6 @@ export async function readObjectName(text, { wizardWish = false } = {}) {
     const artifact = artifactByName(parsed.name);
     let lookupOtyp;
     let object;
-    let finalType = null;
     let fruit = null;
     if (!parsed.name) {
         // C's empty request selects a class and retains the generated count.
@@ -793,7 +792,7 @@ export async function readObjectName(text, { wizardWish = false } = {}) {
         const blankType = parsed.unlabeled && /scroll$/.test(parsed.name)
             ? OBJECT_NAMES.indexOf('blank paper')
             : parsed.unlabeled && /spellbook$/.test(parsed.name) ? SPE_BLANK_PAPER : null;
-        let matchedType = artifact?.baseType ?? blankType ?? lookup.type
+        let matchedType = parsed.directType ?? artifact?.baseType ?? blankType ?? lookup.type
             ?? japaneseWishType(parsed.name);
         if (matchedType === null) {
             const match = matchWishedFruit(parsed.fruitName);
@@ -811,13 +810,12 @@ export async function readObjectName(text, { wizardWish = false } = {}) {
             lookupOtyp = object.otyp;
         }
         else {
-            lookupOtyp = matchedType;
+            lookupOtyp = substituteWishedGlob(matchedType, parsed);
             const type = wizardWish ? lookupOtyp : permittedWishType(lookupOtyp);
             if (type === null)
                 return null;
             object = await mksobj(type, true, false);
         }
-        finalType = lookup.finalType;
         if (fruit)
             object.spe = fruit.fid;
     }
@@ -825,10 +823,7 @@ export async function readObjectName(text, { wizardWish = false } = {}) {
     lightWishedObject(object, parsed);
     const luck = (game.u.uluck || 0) + (game.u.moreluck || 0);
     const enchantmentSign = applyWishEnchantment(object, parsed, wizardWish, luck);
-    if (finalType !== null && lookupOtyp === GENERIC_SCALE_MAIL) {
-        object.otyp = finalType;
-        object.oclass = objectClass(finalType);
-    }
+    await applyWishSpecies(object, parsed, wizardWish);
     applyWishBlessing(object, parsed, wizardWish, luck, enchantmentSign);
     if (erosionMatters(object)) {
         object.oeroded = object.oeroded2 = 0;
@@ -844,6 +839,7 @@ export async function readObjectName(text, { wizardWish = false } = {}) {
             ? 1 : parsed.recharged ?? 0;
     }
     await applyWishProperties(object, parsed, wizardWish, luck);
+    applyWishedTinVariety(object, parsed, wizardWish);
     if (artifact) {
         nameArtifact(object, artifact);
         object.quan = 1;

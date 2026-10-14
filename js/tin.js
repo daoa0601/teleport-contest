@@ -388,6 +388,15 @@ export function setTinVariety(tin, mode = RANDOM_TIN) {
     }
     tin.spe = -(variety + 1);
 }
+// Native tin_variety_txt(): preparation labels are accepted only as whole
+// prefixes followed by a space and the monster that supplies the meat.
+export function parseTinPreparation(text) {
+    for (const [variety, preparation] of preparations.entries()) {
+        if (preparation.name && text.toLowerCase().startsWith(`${preparation.name} `))
+            return { variety, remaining: text.slice(preparation.name.length + 1) };
+    }
+    return { variety: null, remaining: text };
+}
 export function tinDetails(tin, species = tinSpecies(tin), { state = game } = {}) {
     const variety = tinVariety(tin, true);
     if (variety === SPINACH_TIN)

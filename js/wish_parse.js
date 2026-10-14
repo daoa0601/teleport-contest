@@ -4,6 +4,10 @@
 import { SPE_LIM } from './const.js';
 import { makeSingular } from './object_grammar.js';
 import { rn2, rnd } from './rng.js';
+import { resolveMonsterNamePrefix } from './mondata.js';
+import { MONSTER_NAME } from './monster_data.js';
+import { GRAY_DRAGON_SCALES, YELLOW_DRAGON_SCALES, TIN } from './object_data.js';
+import { parseTinPreparation } from './tin.js';
 export function parseWishText(text) {
     const original = text.trim().replace(/\s+/g, ' ');
     const parsed = {
@@ -14,6 +18,8 @@ export function parseWishText(text) {
         trapped: null, lock: null, partlyEaten: false, historic: false,
         diluted: false, empty: false, heavy: false, fakeAmulet: false,
         personalName: null,
+        gender: null, monsterSpecies: null, directType: null,
+        tinVariety: null, spinach: false, zombifying: false,
     };
     let remaining = original;
     let intensity = 0;
@@ -64,6 +70,14 @@ export function parseWishText(text) {
             parsed.lock = word;
         else if (word === 'greased')
             parsed.greased = true;
+        else if (word === 'male')
+            parsed.gender = 0;
+        else if (word === 'female')
+            parsed.gender = 1;
+        else if (word === 'neuter')
+            parsed.gender = 2;
+        else if (word === 'zombifying')
+            parsed.zombifying = true;
         else if (word === 'very')
             intensity = 1;
         else if (word === 'thoroughly')
@@ -121,11 +135,70 @@ export function parseWishText(text) {
     if (parsed.fakeAmulet && /amulet of yendor/i.test(remaining))
         remaining = 'cheap plastic imitation of the Amulet of Yendor';
     parsed.fruitName = original.replace(/^(?:(?:a|an|blessed|cursed|uncursed) |\d+ |part(?:ly|ially) eaten )+/i, '');
+    remaining = parseWishSpecies(remaining, parsed);
     const requested = remaining.toLowerCase();
     parsed.name = ['tricks', 'clothes'].includes(requested) ? requested : makeSingular(requested);
     if (parsed.name !== requested && parsed.count === 1)
         parsed.count = 2;
     return parsed;
+}
+function parseWishSpecies(text, parsed) {
+    const depicted = /^(corpse|statue|figurine) of (?:an? |the )?(male|female|neuter) (.+)$/i.exec(text);
+    if (depicted) {
+        parsed.gender = depicted[2]?.toLowerCase() === 'male' ? 0
+            : depicted[2]?.toLowerCase() === 'female' ? 1 : 2;
+        text = `${depicted[1]} of ${depicted[3]}`;
+    }
+    // Globs have their own canonicalization and are never corpse species.
+    if (/\bglobs?\b/i.test(text))
+        return text;
+    if (/ of spinach/i.test(text) || text.toLowerCase() === 'spinach') {
+        parsed.spinach = true;
+        parsed.directType = TIN;
+        return 'tin';
+    }
+    if (!/(?:wand |spellbook |gauntlets |gloves |finger )/i.test(text)) {
+        const tin = /tin of (.+)/i.exec(text);
+        if (tin?.[1]) {
+            const preparation = parseTinPreparation(tin[1]);
+            parsed.tinVariety = preparation.variety;
+            const match = resolveMonsterNamePrefix(preparation.remaining);
+            if (match)
+                recordWishSpecies(parsed, match.mnum, match.gender);
+            parsed.directType = TIN;
+            return 'tin';
+        }
+        const of = / of (.+)/i.exec(text);
+        if (of?.[1]) {
+            const match = resolveMonsterNamePrefix(of[1]);
+            if (match) {
+                recordWishSpecies(parsed, match.mnum, match.gender);
+                return text.slice(0, of.index);
+            }
+        }
+    }
+    if (/^(?:samurai sword|wizard lock|death wand|master key|ninja-to|magenta)/i.test(text))
+        return text;
+    const match = resolveMonsterNamePrefix(text);
+    if (!match?.remainder)
+        return text;
+    recordWishSpecies(parsed, match.mnum, match.gender);
+    const remaining = match.remainder.replace(/^(?:es |s |'s |' | )/i, '');
+    const firstDragon = MONSTER_NAME.indexOf('gray dragon');
+    const lastDragon = MONSTER_NAME.indexOf('yellow dragon');
+    if (remaining.toLowerCase() === 'scales' && match.mnum >= firstDragon && match.mnum <= lastDragon) {
+        const type = GRAY_DRAGON_SCALES + match.mnum - firstDragon;
+        if (type <= YELLOW_DRAGON_SCALES) {
+            parsed.directType = type;
+            parsed.monsterSpecies = null;
+        }
+    }
+    return remaining;
+}
+function recordWishSpecies(parsed, species, gender) {
+    parsed.monsterSpecies = species;
+    if (parsed.gender === null || gender !== 2)
+        parsed.gender = gender;
 }
 function parseWishCharges(text, parsed) {
     const index = text.lastIndexOf('(');
