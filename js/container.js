@@ -572,8 +572,9 @@ export async function takeFromContainer(container, object, state = game, count =
     const capacity = nearCapacity(state);
     const prefix = capacity === previousCapacity ? '' : pickupLoadPrefix(capacity);
     const added = { ...carried, quan: addedCount, quantity: addedCount };
-    const total = addedCount < quantity(carried) && state.flags.verbose !== false
-        ? ` (${quantity(carried)} in total).` : '.';
+    const merged = addedCount < quantity(carried);
+    const total = merged ? state.flags.verbose === false ? ''
+        : ` (${quantity(carried)} in total).` : '.';
     const description = `${carried.invlet || '$'} - ${objectDescription(added, inventoryPrimaryHandDetail(carried))}${total}`;
     return {
         moved: true,

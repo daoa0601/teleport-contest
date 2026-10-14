@@ -293,8 +293,9 @@ function pickedInventoryDescription(carried, count) {
     // objects merged into the wielded stack; other slot annotations remain.
     if (carried === game.uwep)
         picked.owornmask = (picked.owornmask ?? 0) & ~W_WEP;
-    const total = count < objectQuantity(carried) && game.flags?.verbose !== false
-        ? ` (${objectQuantity(carried)} in total).` : '.';
+    const merged = count < objectQuantity(carried);
+    const total = merged ? game.flags.verbose === false ? ''
+        : ` (${objectQuantity(carried)} in total).` : '.';
     return `${carried.invlet} - ${floorObjectDescription(picked)}${total}`;
 }
 function pickupSourceAtHero() {
