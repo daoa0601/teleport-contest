@@ -5470,9 +5470,9 @@ async function dodrop() {
         game.context.move = spentTime ? 1 : 0;
         if (spentTime) {
             resetBulkTakeoff();
+            resetPick();
             resetTrapSetting();
         }
-        // Lock-picking's resumable record lives in the occupation itself.
         if (spentTime && game._occupation?.key === 'pick-lock')
             game._occupation = null;
     }
