@@ -134,6 +134,8 @@ export function shopThankYouMessage(resident) {
     return `${shopkeeperName(resident, { capitalized: true })} nods${enthusiastic ? ' appreciatively' : ''} at you for shopping in ${monsterPossessive(resident, { noIt: true })} ${typeName}${end}`;
 }
 export function costlySpot(x, y, state = game) {
+    if (!state.level?.flags.has_shop)
+        return null;
     const spot = insideShopRoomAt(state, x, y);
     if (!spot)
         return null;

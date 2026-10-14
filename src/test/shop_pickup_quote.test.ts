@@ -32,3 +32,16 @@ for (const deaf of [false, true]) {
         assert.equal(game.context.move, 1);
     });
 }
+
+void test('a level without the shop flag does not bill a floor pickup', async () => {
+    freshObjectRoom();
+    const { shopkeeper } = await createStaffedShop();
+    if (!game.level) throw new Error('The shop level must exist.');
+    game.level.flags.has_shop = false;
+    const dagger = await floorObject(DAGGER, 10, 10);
+
+    await withMessagePages(() => rhack(','.charCodeAt(0)), resetInputState(), /dagger|For you/, 2);
+
+    assert.equal(dagger.unpaid ?? false, false);
+    assert.equal(shopkeeper.eshk.billct, 0);
+});

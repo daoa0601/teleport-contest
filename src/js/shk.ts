@@ -179,6 +179,7 @@ export function shopThankYouMessage(resident: Monster): string {
 }
 
 export function costlySpot(x: number, y: number, state: GameState = game): CostlyShopSpot | null {
+    if (!state.level?.flags.has_shop) return null;
     const spot = insideShopRoomAt(state, x, y);
     if (!spot) return null;
     const resident = shopkeeperForRoom(spot.roomno, state);
