@@ -148,9 +148,9 @@ import { objectName, singularObjectName, unseenObjectNoun, } from './objnam.js';
 import { artifactById, } from './artifacts.js';
 import { invokeArtifactPower, } from './artifact_invoke.js';
 import { touchArtifactByHero } from './artifact_touch.js';
-import { SLING, BULLWHIP, GRAPPLING_HOOK, CREAM_PIE, EGG, LUMP_OF_ROYAL_JELLY, LOCK_PICK, CREDIT_CARD, STETHOSCOPE, LOADSTONE, GOLD_PIECE, BOULDER, ROCK, DILITHIUM_CRYSTAL, LUCKSTONE, TOUCHSTONE, LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK, BAG_OF_HOLDING, BAG_OF_TRICKS, BRASS_LANTERN, OIL_LAMP, MAGIC_LAMP, STATUE, RIN_PROTECTION, BANANA, MIRROR, TIN_WHISTLE, MAGIC_WHISTLE, EUCALYPTUS_LEAF, BELL, BELL_OF_OPENING, EXPENSIVE_CAMERA, TIN_OPENER, TALLOW_CANDLE, WAX_CANDLE, CANDELABRUM_OF_INVOCATION, POT_OIL, RIN_CONFLICT, MEAT_RING, LENSES, BLINDFOLD, TOWEL, FUMBLE_BOOTS, KICKING_BOOTS, MAGIC_MARKER, UNICORN_HORN, SHIELD_OF_REFLECTION, AMULET_OF_YENDOR, AMULET_OF_STRANGULATION, FAKE_AMULET_OF_YENDOR, SPE_NOVEL, OBJECT_DELAY, OBJECT_DESCRIPTIONS, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_WEIGHT, OBJECT_SUBTYPE, } from './object_data.js';
+import { SLING, BULLWHIP, GRAPPLING_HOOK, CREAM_PIE, EGG, LUMP_OF_ROYAL_JELLY, LOCK_PICK, CREDIT_CARD, STETHOSCOPE, LOADSTONE, GOLD_PIECE, BOULDER, ROCK, DILITHIUM_CRYSTAL, LUCKSTONE, TOUCHSTONE, LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK, BAG_OF_HOLDING, BAG_OF_TRICKS, BRASS_LANTERN, OIL_LAMP, MAGIC_LAMP, STATUE, RIN_PROTECTION, BANANA, MIRROR, TIN_WHISTLE, MAGIC_WHISTLE, EUCALYPTUS_LEAF, BELL, BELL_OF_OPENING, EXPENSIVE_CAMERA, TIN_OPENER, TALLOW_CANDLE, WAX_CANDLE, CANDELABRUM_OF_INVOCATION, POT_OIL, RIN_CONFLICT, MEAT_RING, OBJECT_BIMANUAL, LENSES, BLINDFOLD, TOWEL, FUMBLE_BOOTS, KICKING_BOOTS, MAGIC_MARKER, UNICORN_HORN, SHIELD_OF_REFLECTION, AMULET_OF_YENDOR, AMULET_OF_STRANGULATION, FAKE_AMULET_OF_YENDOR, SPE_NOVEL, OBJECT_DELAY, OBJECT_DESCRIPTIONS, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_WEIGHT, OBJECT_SUBTYPE, } from './object_data.js';
 import { CLR_WHITE, NO_COLOR, } from './terminal.js';
-import { MONSTER_COLOR, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, MONSTER_ALIGNMENT, MONSTER_ATTACKS, MONSTER_CLASS_EXPLAIN, requireMonsterData, monsterTypeName, monsterClassSymbol, } from './monster_data.js';
+import { MONSTER_COLOR, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, MONSTER_ALIGNMENT, MONSTER_ATTACKS, MONSTER_CLASS_EXPLAIN, requireMonsterData, monsterTypeName, monsterClassSymbol, monsterIsHumanoid, } from './monster_data.js';
 import { monsterStatusLine } from './monster_status.js';
 import { createParticularMonster } from './read_creation.js';
 import { addExperience, checkExperienceLevel, gainExperienceLevel, loseHeroExperience, } from './exper.js';
@@ -160,6 +160,7 @@ import { heroIsBreathless, heroPassesWalls, heroSpecies } from './hero_species.j
 import { disturbBuriedZombies } from './object_impact.js';
 import { checkSlipperyIce } from './fumbling.js';
 import { MONSTER_BODY_META } from './monster_data.js';
+import { armorWearDecision } from './armor_wear.js';
 import { heroCanOoze } from './monster_perception.js';
 import { isPoolAt } from './terrain_properties.js';
 import { drawbridgeUnderlyingType } from './drawbridge_terrain.js';
@@ -182,7 +183,7 @@ import { heroCanMoveFromTrap, triggerHeroTrapAt } from './hero_traps.js';
 import { activateStatueTrapAt } from './statue_trap.js';
 import { applyDippedCoinFate, applyFountainDemonActor, applyFountainGemDiscovery, applyFountainNymphActor, applyFountainSnakeActors, resolveDippedBucFate, resolveDippedSensationFate, } from './fountain_effects.js';
 import { dryFountainAt, gushForthFromFountain } from './fountain.js';
-import { heroArmName, heroHandName, heroNeckName } from './body_parts.js';
+import { heroArmName, heroFingerName, heroHandName, heroNeckName } from './body_parts.js';
 import { armorUsesPairGrammar, withIndefiniteArticle, makePlural } from './object_grammar.js';
 import { objectWearMessage } from './object_wear_message.js';
 import { isWetTowel, willWeld } from './weapon_type.js';
@@ -4665,34 +4666,22 @@ async function dohelp() {
     game.context.move = 0;
 }
 async function doputon() {
-    const accessories = (game.inventory || []).filter(object => (object.class === 'Rings' || object.oclass === 4
-        || object.class === 'Amulets' || object.oclass === 5
-        || object.otyp === RIN_CONFLICT
-        || object.otyp === LENSES
-        || object.otyp === BLINDFOLD || object.otyp === TOWEL)
-        && object !== game.uright && object !== game.uleft
-        && object !== game.uamul);
-    if (!accessories.length) {
-        await pline("You don't have anything appropriate to put on.");
-        game.context.move = 0;
-        return;
-    }
-    const letters = accessories.map(object => object.invlet).join('');
-    const selection = String.fromCharCode(await promptKey(`What do you want to put on? [${letters} or ?*] `));
-    game._pending_message = '';
-    const inventoryObject = (game.inventory || []).find(candidate => candidate.invlet === selection);
-    const object = accessories.find(candidate => candidate === inventoryObject);
-    // do_wear.c:equip_ok() returns GETOBJ_DOWNPLAY for armor selected by P:
-    // it is omitted from the suggested-letter prompt but a direct inventory
-    // letter is accepted and enters the same armor-on transaction as W.
-    if (!object && inventoryObject
-        && (inventoryObject.class === 'Armor'
-            || inventoryObject.oclass === 3)) {
-        await putOnArmorObject(inventoryObject);
-        return;
-    }
+    const object = await chooseInventoryObject('put on', candidate => {
+        if ((candidate.owornmask ?? 0) & (W_ARMOR | W_ACCESSORY))
+            return GETOBJ_EXCLUDE_INACCESS;
+        if (candidate.oclass === 3)
+            return GETOBJ_DOWNPLAY;
+        if (candidate.oclass === 4 || candidate.oclass === 5
+            || isEyewear(candidate) || candidate.otyp === MEAT_RING)
+            return GETOBJ_SUGGEST;
+        return GETOBJ_EXCLUDE;
+    });
     if (!object) {
         game.context.move = 0;
+        return;
+    }
+    if (object.oclass === 3) {
+        await putOnArmorObject(object);
         return;
     }
     await putOnAccessoryObject(object);
@@ -4727,9 +4716,15 @@ async function putOnAccessoryObject(object) {
         game.context.move = 0;
         return;
     }
+    if (game.uleft && game.uright) {
+        const prefix = monsterIsHumanoid(heroSpecies(game)) ? 'ring-' : '';
+        await pline(`There are no more ${prefix}${makePlural(heroFingerName(game))} to fill.`);
+        game.context.move = 0;
+        return;
+    }
     let hand;
     if (!game.uleft && !game.uright) {
-        const finger = String.fromCharCode(await promptKey('Which ring-finger, Right or Left? [rl] ')).toLowerCase();
+        const finger = String.fromCharCode(await promptKey(`Which ${monsterIsHumanoid(heroSpecies(game)) ? 'ring-' : ''}${heroFingerName(game)}, Right or Left? [rl] `)).toLowerCase();
         if (finger !== 'r' && finger !== 'l') {
             game.context.move = 0;
             return;
@@ -4740,6 +4735,35 @@ async function putOnAccessoryObject(object) {
         hand = game.uright ? 'left' : 'right';
     }
     const ringSlot = hand === 'right' ? 'uright' : 'uleft';
+    const gloves = game.uarmg;
+    if (gloves && (game.u.glib || (game.u.glibTurns ?? 0) > 0)) {
+        await pline(`Your ${armorSimpleName(gloves)} are too slippery to remove, so you cannot put on the ring.`);
+        game.context.move = 1;
+        return;
+    }
+    if (gloves?.cursed) {
+        const discovered = !gloves.bknown;
+        gloves.bknown = true;
+        await pline('You cannot remove your gloves to put on the ring.');
+        game.context.move = discovered ? 1 : 0;
+        return;
+    }
+    const weapon = game.uwep;
+    const primary = game.u.rightHanded === false ? 'uleft' : 'uright';
+    if (weapon && (ringSlot === primary || OBJECT_BIMANUAL[weapon.otyp])
+        && isWeldedPrimary(weapon)) {
+        const discovered = !weapon.bknown;
+        weapon.bknown = true;
+        const handName = OBJECT_BIMANUAL[weapon.otyp] ? makePlural(heroHandName(game)) : heroHandName(game);
+        await pline(`You cannot free your weapon ${handName} to put on the ring.`);
+        game.context.move = discovered ? 1 : 0;
+        return;
+    }
+    const touch = await retouchHeroObject(object);
+    if (touch.rejected || touch.died) {
+        game.context.move = 1;
+        return;
+    }
     await wearHeroAccessory(object, ringSlot, game);
     // Sink effects can remove the ring inside Ring_on().
     if (game.uleft === object || game.uright === object) {
@@ -4879,6 +4903,19 @@ async function putOnArmorObject(object) {
     if (object.worn) {
         await pline('You are already wearing that!');
         game.context.move = 0;
+        return;
+    }
+    const decision = armorWearDecision(object);
+    if (decision.checkedWeldedWeapon)
+        decision.checkedWeldedWeapon.bknown = true;
+    if (decision.refusal) {
+        await pline(decision.refusal);
+        game.context.move = 0;
+        return;
+    }
+    const touch = await retouchHeroObject(object);
+    if (touch.rejected || touch.died) {
+        game.context.move = 1;
         return;
     }
     const hero = game.u;
@@ -5053,7 +5090,7 @@ async function dowear() {
         if ((candidate.owornmask ?? 0) & (W_ARMOR | W_ACCESSORY))
             return GETOBJ_EXCLUDE_INACCESS;
         if (candidate.oclass === 3)
-            return GETOBJ_SUGGEST;
+            return armorWearDecision(candidate).refusal ? GETOBJ_DOWNPLAY : GETOBJ_SUGGEST;
         if (candidate.oclass === 4 || candidate.oclass === 5
             || isEyewear(candidate) || candidate.otyp === MEAT_RING)
             return GETOBJ_DOWNPLAY;
