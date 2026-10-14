@@ -1,12 +1,18 @@
 // C shk.c:make_itemized_bill(), pay_billed_items(), dopayobj(), buy_container().
+import { moneyToMonster } from './shop_damage.js';
+import { nameShopTransaction } from './shop_speech.js';
+import { promptYesNo } from './query.js';
+import { currency } from './currency.js';
+import { QBUFSZ } from './const.js';
+import { observeObjectForNaming } from './objnam.js';
 import { game } from './gstate.js';
 import { hasShopBill } from './shop_types.js';
 import { objectsInTimerGraph } from './object_timers.js';
 import { unpaidObjectCost } from './shk.js';
 import { hiddenGold } from './gold.js';
-import { detachHeroGold, heroGoldAmount } from './hero_gold.js';
-import { paymentObjectDescription } from './object_description.js';
-import { definiteName, simpleObjectName } from './objnam.js';
+import { heroGoldAmount } from './hero_gold.js';
+import { objectDescription, paymentObjectDescription } from './object_description.js';
+import { definiteName, simpleObjectName, simpleObjectNameWithArticle } from './objnam.js';
 import { plineWithContinuation } from './display.js';
 import { shopkeeperIsMuted } from './shop_loss.js';
 import { heroIsDeaf } from './senses.js';
@@ -69,7 +75,7 @@ export function itemizedShopBill(resident, state = game) {
     return bill.sort((left, right) => Number(right.kind === 'used') - Number(left.kind === 'used')
         || right.price - left.price || left.billIndex - right.billIndex);
 }
-export async function buyShopBillItem(resident, item, state = game) {
+export async function buyShopBillItem(resident, item, state = game, { itemize = false } = {}) {
     if (!hasShopBill(resident))
         return 'stop';
     const container = item.kind === 'known-container' || item.kind === 'hidden-container';
@@ -81,6 +87,26 @@ export async function buyShopBillItem(resident, item, state = game) {
         if (!await checkPurchaseFunds(resident, item, state))
             return 'stop';
     }
+    let declined = false;
+    if (itemize && !container) {
+        if (!await checkPurchaseFunds(resident, item, state, 0))
+            return 'broke';
+        observeObjectForNaming(item.object, { state });
+        const originalQuantity = item.object.quan;
+        const originalSuppressPrice = state.iflags.suppress_price;
+        item.object.quan = item.quantity;
+        state.iflags.suppress_price = true;
+        try {
+            declined = await promptYesNo(paymentQuestion(item.object, item.price, state)) === 'n';
+        }
+        finally {
+            item.object.quan = originalQuantity;
+            if (originalSuppressPrice === undefined)
+                delete state.iflags.suppress_price;
+            else
+                state.iflags.suppress_price = originalSuppressPrice;
+        }
+    }
     const purchases = container ? containedPurchases(resident, item.object, state) : [item.object];
     for (const object of purchases) {
         const entry = resident.eshk.bill.find(candidate => candidate.bo_id === object.o_id);
@@ -89,12 +115,11 @@ export async function buyShopBillItem(resident, item, state = game) {
             return container ? 'stop' : 'skip';
         }
     }
+    if (declined)
+        return 'skip';
     if (!container && !await checkPurchaseFunds(resident, item, state))
-        return 'stop';
+        return itemize ? 'skip' : 'stop';
     const unpaidContainer = container && item.object.unpaid;
-    // Only buy_container() suppresses "an unpaid" for a grouped purchase.
-    const name = paymentObjectDescription(item.object, item.quantity, { state, purchasingContents: container });
-    const feedback = `You ${item.kind === 'used' ? 'paid for' : 'bought'} ${name}${item.kind === 'used' ? ' at a cost of' : ' for'} ${item.price} gold piece${item.price === 1 ? '' : 's'}.`;
     let bought = 0;
     for (const object of purchases) {
         const entry = resident.eshk.bill.find(candidate => candidate.bo_id === object.o_id);
@@ -113,9 +138,9 @@ export async function buyShopBillItem(resident, item, state = game) {
         const originalQuantity = object.quan;
         object.quan = quantity;
         try {
-            await payBillPrice(resident, price, state);
+            await payShopkeeper(resident, price, state);
             if (!container)
-                await plineWithContinuation(feedback);
+                await nameShopTransaction(resident, object, name => `${item.kind === 'used' ? 'paid for' : 'bought'} ${name}${item.kind === 'used' ? ' at a cost of' : ' for'} ${price} gold piece${price === 1 ? '' : 's'}.`, { publish: plineWithContinuation, state });
         }
         finally {
             object.quan = originalQuantity;
@@ -144,11 +169,95 @@ export async function buyShopBillItem(resident, item, state = game) {
             item.object.unpaid = true;
             item.object.no_charge = true;
         }
-        await plineWithContinuation(feedback);
+        await nameShopTransaction(resident, item.object, name => `bought ${name} for ${item.price} gold piece${item.price === 1 ? '' : 's'}.`, { publish: plineWithContinuation, state });
         item.object.unpaid = false;
         item.object.no_charge = false;
     }
     return 'paid';
+}
+// C dopayobj(): safe_qbuf() reserves the price and question before shortening
+// the doname() description. Keep the same object for equipment annotations,
+// and restore the temporary naming fields before asking for input.
+function paymentQuestion(object, price, state) {
+    const suffix = ` for ${price} ${currency(price, { state })}.  Pay?`;
+    const limit = QBUFSZ - 1 - suffix.length;
+    const describe = (nameState) => {
+        const name = objectDescription(object, { state: nameState });
+        return object.quan === 1 ? name.charAt(0).toUpperCase() + name.slice(1) : name;
+    };
+    let name = describe(state);
+    if (name.length <= limit)
+        return name + suffix;
+    // C short_oname() tries each user name separately, then both together.
+    const callName = state._objectCallNames?.[object.otyp];
+    const personalName = object.oextra?.oname || object.oname;
+    const shortCallState = callName && callName.length >= 12
+        ? { ...state, _objectCallNames: {
+                ...state._objectCallNames, [object.otyp]: `${callName.slice(0, 8)}...`,
+            } } : state;
+    if (shortCallState !== state) {
+        name = describe(shortCallState);
+        if (name.length <= limit)
+            return name + suffix;
+    }
+    const shortPersonalName = personalName && personalName.length >= 12
+        ? `${personalName.slice(0, 8)}...` : null;
+    const { oextra, bknown, rknown, greased, oeroded, oeroded2 } = object;
+    try {
+        if (shortPersonalName) {
+            object.oextra = { ...oextra, oname: shortPersonalName };
+            name = describe(state);
+            if (name.length <= limit)
+                return name + suffix;
+        }
+        const shortenBoth = shortCallState !== state && shortPersonalName !== null;
+        const nameState = shortenBoth ? shortCallState : state;
+        if (shortenBoth) {
+            name = describe(nameState);
+            if (name.length <= limit)
+                return name + suffix;
+        }
+        else if (oextra === undefined)
+            delete object.oextra;
+        else
+            object.oextra = oextra;
+        // Only the combined attempt keeps abbreviated names while stripping
+        // physical details; native restores each separate attempt first.
+        object.bknown = object.rknown = object.greased = false;
+        object.oeroded = object.oeroded2 = 0;
+        name = describe(nameState);
+        if (name.length > limit)
+            name = simpleObjectNameWithArticle(object, nameState);
+        if (name.length > limit)
+            name = object.quan === 1 ? 'that' : 'those';
+        return name + suffix;
+    }
+    finally {
+        if (oextra === undefined)
+            delete object.oextra;
+        else
+            object.oextra = oextra;
+        if (bknown === undefined)
+            delete object.bknown;
+        else
+            object.bknown = bknown;
+        if (rknown === undefined)
+            delete object.rknown;
+        else
+            object.rknown = rknown;
+        if (greased === undefined)
+            delete object.greased;
+        else
+            object.greased = greased;
+        if (oeroded === undefined)
+            delete object.oeroded;
+        else
+            object.oeroded = oeroded;
+        if (oeroded2 === undefined)
+            delete object.oeroded2;
+        else
+            object.oeroded2 = oeroded2;
+    }
 }
 async function checkPurchaseFunds(resident, item, state, cost = item.price) {
     const funds = heroGoldAmount(state) + (resident.eshk.credit ?? 0);
@@ -216,7 +325,7 @@ async function rejectPartlyUsedPurchase(resident, object, entry, state) {
         object.quan = intactQuantity;
     }
 }
-async function payBillPrice(resident, price, state) {
+export async function payShopkeeper(resident, price, state = game) {
     const credit = resident.eshk.credit ?? 0;
     const creditUsed = Math.min(credit, price);
     if (creditUsed)
@@ -224,13 +333,8 @@ async function payBillPrice(resident, price, state) {
             : 'The price is partially covered by your credit.');
     resident.eshk.credit = credit - creditUsed;
     const gold = price - creditUsed;
-    if (gold) {
-        const payment = detachHeroGold(state, gold);
-        if (payment)
-            payment.where = 'gone';
-        resident.gold = (resident.gold ?? 0) + gold;
-        state._capacityDirty = true;
-    }
+    if (gold)
+        await moneyToMonster(resident, gold, state);
     resident.eshk.robbed = Math.max(0, (resident.eshk.robbed ?? 0) - price);
     state.context.botl = true;
 }

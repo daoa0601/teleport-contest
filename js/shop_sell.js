@@ -1,14 +1,17 @@
 // C shk.c:sellobj() - the hero drops something in a shop and can sell it -
 // plus sellobj_state()'s command disposition.
-import { SHOPBASE } from './const.js';
+import { monsterGoldAmount, moneyToHero } from './shop_money.js';
+import { nameShopTransaction } from './shop_speech.js';
+import { objectDescription } from './object_description.js';
+import { definiteName, objectCombatName, observeObjectForNaming, simpleObjectName } from './objnam.js';
+import { QBUFSZ, SHOPBASE } from './const.js';
 import { shopkeeperName } from './monster_name.js';
 import { canSpotMonster, plineWithContinuation } from './display.js';
 import { game, requireLiveGame } from './gstate.js';
 import { requireShopGame } from './shop_types.js';
 import { containedGold } from './gold.js';
-import { heroGoldAmount, setHeroGoldAmount } from './hero_gold.js';
-import { learnObjectType, recordObjectEncounter, recordObjectPriceQuote, } from './object_knowledge.js';
-import { CORPSE, EGG, MIRROR, OBJECT_COST, OBJECT_MAGIC, OBJECT_MATERIAL, OBJECT_NAMES, TIN, } from './object_data.js';
+import { recordObjectPriceQuote, } from './object_knowledge.js';
+import { CORPSE, EGG, OBJECT_COST, OBJECT_MATERIAL, OBJECT_NAMES, TIN, } from './object_data.js';
 import { inTown } from './room.js';
 import { heroIsDeaf } from './senses.js';
 import { costlySpot, objectIsUnpaid, removeObjectAndContentsFromBill, objectTypeKnown } from './shk.js';
@@ -172,12 +175,13 @@ export function shopOfferForObject(object, resident, state = game) {
     }
     const unknown = !object.dknown || !objectTypeKnown(object, state);
     if (unknown) {
-        if (object.oclass === GEM_CLASS
-            && [19, 20].includes(OBJECT_MATERIAL[object.otyp] ?? 0)) {
-            tmp = (object.otyp - FIRST_REAL_GEM)
-                % (6 - (resident?.m_id ?? 1) % 3);
-            tmp = (tmp + 3) * objectQuan(object);
-            divisor = 1;
+        if (object.oclass === GEM_CLASS) {
+            if ([19, 20].includes(OBJECT_MATERIAL[object.otyp] ?? 0)) {
+                tmp = (object.otyp - FIRST_REAL_GEM)
+                    % (6 - (resident?.m_id ?? 1) % 3);
+                tmp = (tmp + 3) * objectQuan(object);
+                divisor = 1;
+            }
         }
         else if (tmp > 1 && (resident?.m_id ?? 1) % 4 === 0) {
             multiplier *= 3;
@@ -270,42 +274,6 @@ export async function costlyGold(x, y, amount, { silent = false, publish = pline
     }
     return spot.resident;
 }
-// C shk.c:1297 pay(-offer): money2u; the check_credit and robbed branches
-// are unreachable on the sell path (robbed returns earlier, and the credit
-// check only runs for positive amounts).
-function payToHero(amount, resident, state) {
-    resident.gold = Math.max(0, (resident.gold ?? 0) - amount);
-    setHeroGoldAmount(state, heroGoldAmount(state) + amount);
-}
-// C shk.c:3413 shk_names_obj(): observe, make known for in-stock mundane
-// gear, then the sale message with its was-unknown variant.
-async function shkNamesObject(resident, object, compose, { publish, state }) {
-    let wasUnknown = !object.dknown;
-    object.dknown = true;
-    recordObjectEncounter(object.otyp, state);
-    if (!OBJECT_MAGIC[object.otyp] && saleable(resident, object)
-        && (object.oclass === WEAPON_CLASS || object.oclass === ARMOR_CLASS
-            || object.oclass === SCROLL_CLASS
-            || object.oclass === SPBOOK_CLASS
-            || object.otyp === MIRROR)) {
-        wasUnknown ||= !objectTypeKnown(object, state);
-        learnObjectType(object.otyp, state);
-    }
-    const objName = payDoname(object);
-    const itOrThem = objectQuan(object) > 1 ? 'them' : 'it';
-    if (wasUnknown) {
-        const capitalized = objName.charAt(0).toUpperCase()
-            + objName.slice(1);
-        await publish(`${capitalized}; you ${compose(itOrThem)}`);
-    }
-    else {
-        await publish(`You ${compose(objName)}`);
-    }
-}
-function payDoname(object) {
-    const name = OBJECT_NAMES[object.otyp] || object.name || 'thing';
-    return `${object.unpaid ? 'the ' : ''}${name}${object.unpaid ? ' (unpaid)' : ''}`;
-}
 // C shk.c:3103 special_stock(): the candelabrum in a lighting store.
 async function specialStock(resident, object, { publish, state }) {
     if ((resident?.eshk?.shoptype ?? SHOPBASE) !== SHOPBASE + 11
@@ -397,6 +365,61 @@ function hasContents(object) {
 function askSell(question, { query }) {
     return query(question);
 }
+// C safe_qbuf() reserves the offer and question before short_oname()
+// abbreviates user names. Cash offers use xname/simpleonames; credit offers
+// use doname/thesimpleoname. The object's full names survive the question.
+function saleQuestion(object, prefix, suffix, one, state, kind) {
+    const limit = QBUFSZ - 1 - prefix.length - suffix.length;
+    const describe = (item, nameState) => {
+        if (kind === 'cash')
+            return objectCombatName(item, { state: nameState, includeCorpseSpecies: false });
+        observeObjectForNaming(item, { state: nameState });
+        return objectDescription(item, { state: nameState });
+    };
+    const question = (name) => `${prefix}${name}${suffix}`;
+    let name = describe(object, state);
+    if (name.length <= limit)
+        return question(name);
+    const callName = state._objectCallNames?.[object.otyp];
+    const personalName = object.oextra?.oname || object.oname;
+    const shortCallState = callName && callName.length >= 12
+        ? { ...state, _objectCallNames: {
+                ...state._objectCallNames, [object.otyp]: `${callName.slice(0, 8)}...`,
+            } } : state;
+    const shortNamedObject = personalName && personalName.length >= 12
+        ? { ...object, oextra: { ...object.oextra, oname: `${personalName.slice(0, 8)}...` } }
+        : object;
+    if (shortCallState !== state) {
+        name = describe(object, shortCallState);
+        if (name.length <= limit)
+            return question(name);
+    }
+    if (shortNamedObject !== object) {
+        name = describe(shortNamedObject, state);
+        if (name.length <= limit)
+            return question(name);
+    }
+    const shortenBoth = shortCallState !== state && shortNamedObject !== object;
+    if (shortenBoth) {
+        name = describe(shortNamedObject, shortCallState);
+        if (name.length <= limit)
+            return question(name);
+    }
+    // Native retains abbreviated names during attribute removal only when
+    // both names needed shortening; the separate attempts restore them.
+    const nameState = shortenBoth ? shortCallState : state;
+    const plainObject = { ...(shortenBoth ? shortNamedObject : object),
+        bknown: false, rknown: false, greased: false, oeroded: 0, oeroded2: 0 };
+    name = describe(plainObject, nameState);
+    if (name.length > limit) {
+        name = simpleObjectName(plainObject, nameState);
+        if (kind === 'credit')
+            name = definiteName(name, nameState);
+    }
+    if (name.length > limit)
+        name = one ? 'that' : 'those';
+    return question(name);
+}
 // ---- the owner: C shk.c:3927 sellobj() -----------------------------------
 export async function sellHeroDroppedObject(object, x, y, state = game, { publish = plineWithContinuation, query = promptYesNoAllQuit } = {}) {
     requireLiveGame(state);
@@ -469,7 +492,10 @@ export async function sellHeroDroppedObject(object, x, y, state = game, { publis
             offer = objectQuan(object);
         else if (cgold)
             offer += 1; // C adds the boolean, not the amount
-        eshk.robbed = Math.max(0, eshk.robbed - offer);
+        // In pinned C, '<' binds before '-=' in the balance update.
+        // The existing nonzero robbed balance therefore clears even when
+        // this contribution is worth less than the loss.
+        eshk.robbed = 0;
         if (offer && !heroIsDeaf(state) && !shopkeeperIsMuted(resident)) {
             await publish('"Thank you for your contribution to restock this recently plundered shop."');
         }
@@ -504,7 +530,7 @@ export async function sellHeroDroppedObject(object, x, y, state = game, { publis
         object.no_charge = true;
         return { sold: false };
     }
-    const shkmoney = resident.gold ?? 0;
+    const shkmoney = monsterGoldAmount(resident);
     if (!shkmoney) {
         const tmpcr = Math.trunc((offer * 9) / 10) + (offer <= 1 ? 1 : 0);
         let answer;
@@ -514,7 +540,8 @@ export async function sellHeroDroppedObject(object, x, y, state = game, { publis
         else if (sellResponse !== 'n') {
             await publish(`${shopkeeperName(resident)} cannot pay you at present.`);
             recordObjectPriceQuote(object.otyp, Math.trunc(tmpcr / objectQuan(object)), 'sell');
-            answer = await askSell(`Will you accept ${zorkmids(tmpcr)} in credit for ${payDoname(object)}?`, { query });
+            const prefix = `Will you accept ${zorkmids(tmpcr)} in credit for `;
+            answer = await askSell(saleQuestion(object, prefix, '?', object.quan === 1, state, 'credit'), { query });
             if (answer === 'a') {
                 answer = 'y';
                 autoCredit = true;
@@ -524,7 +551,7 @@ export async function sellHeroDroppedObject(object, x, y, state = game, { publis
             answer = 'n';
         }
         if (answer === 'y') {
-            await shkNamesObject(resident, object, it => sellHow !== SELL_NORMAL
+            await nameShopTransaction(resident, object, it => sellHow !== SELL_NORMAL
                 ? `traded ${it} for ${zorkmids(tmpcr)} in ${(eshk.credit ?? 0) > 0 ? 'additional ' : ''}credit.`
                 : `relinquish ${it} and acquire ${zorkmids(tmpcr)} in ${(eshk.credit ?? 0) > 0
                     ? 'additional ' : ''}credit.`, { publish, state });
@@ -562,10 +589,11 @@ export async function sellHeroDroppedObject(object, x, y, state = game, { publis
                 ? (yourc === 1 ? ' and item inside' : ' and items inside')
                 : ' and its contents';
         }
-        const name = payDoname(object);
         recordObjectPriceQuote(object.otyp, Math.trunc(offer / objectQuan(object)), 'sell');
-        const question = `${shopkeeperName(resident)} offers${shortFunds ? ' only' : ''} ${goldPieces(offer)} for ${cltmp && !ltmp
-            ? (yourc === 1 ? 'your item in ' : 'your items in ') : ''}${name}${contentsSuffix}.  Sell ${one ? 'it' : 'them'}?`;
+        const prefix = `${shopkeeperName(resident)} offers${shortFunds ? ' only' : ''} ${goldPieces(offer)} for ${cltmp && !ltmp
+            ? (yourc === 1 ? 'your item in ' : 'your items in ') : ''}${object.unpaid ? 'the' : 'your'} `;
+        const suffix = `${contentsSuffix}.  Sell ${one ? 'it' : 'them'}?`;
+        const question = saleQuestion(object, prefix, suffix, one, state, 'cash');
         const answer = await askSell(question, { query });
         if (answer === 'q')
             sellResponse = 'n';
@@ -577,8 +605,8 @@ export async function sellHeroDroppedObject(object, x, y, state = game, { publis
             if (!object.unpaid && !saleitem)
                 object.no_charge = true;
             removeObjectAndContentsFromBill(object, state);
-            payToHero(offer, resident, state);
-            await shkNamesObject(resident, object, it => sellHow !== SELL_NORMAL
+            await moneyToHero(resident, offer, state);
+            await nameShopTransaction(resident, object, it => sellHow !== SELL_NORMAL
                 ? `sold ${it} for ${goldPieces(offer)}.`
                 : `relinquish ${it} and receive ${goldPieces(offer)} in compensation.`, { publish, state });
             return { sold: true, offer };
@@ -592,8 +620,8 @@ export async function sellHeroDroppedObject(object, x, y, state = game, { publis
             if (!object.unpaid && !saleitem)
                 object.no_charge = true;
             removeObjectAndContentsFromBill(object, state);
-            payToHero(offer, resident, state);
-            await shkNamesObject(resident, object, it => sellHow !== SELL_NORMAL
+            await moneyToHero(resident, offer, state);
+            await nameShopTransaction(resident, object, it => sellHow !== SELL_NORMAL
                 ? `sold ${it} for ${goldPieces(offer)}.`
                 : `relinquish ${it} and receive ${goldPieces(offer)} in compensation.`, { publish, state });
             return { sold: true, offer };

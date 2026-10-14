@@ -1,3 +1,4 @@
+import { monsterGoldAmount } from '../js/shop_money.js';
 import { requirePlayingGame } from '../js/gstate.js';
 import test, {} from 'node:test';
 import { planInput } from './support/planned-input.js';
@@ -14,7 +15,7 @@ import { MONSTER_CONVEYS, MONSTER_LEVEL, MONSTER_NAME, MONSTER_NUTRITION, } from
 import { addCreatedObjectToContainer, addObjectToContainer, } from '../js/object_container.js';
 import { floorObject, knownObject, uninitializedObject, } from './support/game-objects.js';
 import { placeCreatedObject } from '../js/floor_object.js';
-import { createStaffedShop } from './support/shop.js';
+import { createStaffedShop, setShopkeeperGold } from './support/shop.js';
 import { freshObjectRoom } from './support/object-room.js';
 const SHOP = { left: 9, right: 13, top: 9, bottom: 11 };
 const RIN_LEVITATION = OBJECT_NAMES.indexOf('levitation');
@@ -36,7 +37,7 @@ async function sellShop(t, answers = [], { shoptype = SHOPBASE, gold = 1000 } = 
         ...SHOP, keeperX: 12, keeperY: 10, doorX: 9, doorY: 10,
         shopType: shoptype,
     });
-    shopkeeper.gold = gold;
+    await setShopkeeperGold(shopkeeper, gold);
     setHeroGoldAmount(game, 0);
     setSellDisposition(SELL_DELIBERATE);
     planInput(resetInputState(), t, answers);
@@ -50,8 +51,8 @@ void test('answering the offer sells the item for the whole-stack offer', async 
     const outcome = await sellHeroDroppedObject(dagger, 10, 10);
     assert.deepEqual(outcome, { sold: true, offer });
     assert.equal(heroGoldAmount(game), offer);
-    assert.equal(shopkeeper.gold, 1000 - offer);
-    assert.match(game._lastPlineMessage, /sold dagger for 2 gold pieces\./);
+    assert.equal(monsterGoldAmount(shopkeeper), 1000 - offer);
+    assert.match(game._lastPlineMessage, /sold .*dagger for 2 gold pieces\./);
 });
 void test('declining the offer marks the item no charge and pays nothing', async (t) => {
     const { shopkeeper } = await sellShop(t, [{ prompt: /Sell (?:it|them)\?/, keys: 'n' }]);
@@ -60,11 +61,11 @@ void test('declining the offer marks the item no charge and pays nothing', async
     const outcome = await sellHeroDroppedObject(dagger, 10, 10);
     assert.deepEqual(outcome, { sold: false });
     assert.equal(heroGoldAmount(game), 0);
-    assert.equal(shopkeeper.gold, 1000);
+    assert.equal(monsterGoldAmount(shopkeeper), 1000);
     assert.equal(dagger.no_charge, true);
 });
 void test('a SELL_NORMAL disposition sells automatically without a query', async (t) => {
-    const { shopkeeper } = await sellShop(t, [{ prompt: /relinquish dagger and receive.*gold pieces/, keys: ' ' }]);
+    const { shopkeeper } = await sellShop(t, [{ prompt: /relinquish .*dagger and receive.*gold pieces/, keys: ' ' }]);
     requirePlayingGame(game);
     setSellDisposition(SELL_NORMAL);
     const first = await floorObject(DAGGER, 10, 10);
@@ -101,7 +102,7 @@ void test('an angry shopkeeper confiscates with thanks and no payment', async (t
 void test('a broke shopkeeper pays in credit', async (t) => {
     const { shopkeeper } = await sellShop(t, [
         { prompt: /cannot pay you at present/, keys: ' ' },
-        { prompt: /accept.*in credit for dagger\?/, keys: 'y' },
+        { prompt: /accept.*in credit for .*dagger\?/, keys: 'y' },
     ], { gold: 0 });
     requirePlayingGame(game);
     const dagger = await floorObject(DAGGER, 10, 10);
@@ -117,8 +118,8 @@ void test('a broke shopkeeper pays in credit', async (t) => {
 void test('an "all" answer keeps accepting credit for the batch', async (t) => {
     await sellShop(t, [
         { prompt: /cannot pay you at present/, keys: ' ' },
-        { prompt: /accept.*in credit for dagger\?/, keys: 'a' },
-        { prompt: /traded dagger.*in credit/, keys: ' ' },
+        { prompt: /accept.*in credit for .*dagger\?/, keys: 'a' },
+        { prompt: /traded .*dagger.*in credit/, keys: ' ' },
     ], { gold: 0 });
     requirePlayingGame(game);
     assert.equal((await sellHeroDroppedObject(await floorObject(DAGGER, 10, 10), 10, 10))
@@ -132,10 +133,9 @@ void test('a robbed shop takes the drop as a contribution', async (t) => {
     requirePlayingGame(game);
     shopkeeper.eshk.robbed = 50;
     const dagger = await floorObject(DAGGER, 10, 10);
-    const offer = shopOfferForObject(dagger, shopkeeper);
     const outcome = await sellHeroDroppedObject(dagger, 10, 10);
     assert.deepEqual(outcome, { sold: false });
-    assert.equal(shopkeeper.eshk.robbed, 50 - offer);
+    assert.equal(shopkeeper.eshk.robbed, 0);
     assert.equal(heroGoldAmount(game), 0);
     assert.match(game._lastPlineMessage, /contribution to restock this recently plundered shop/);
 });
@@ -260,18 +260,16 @@ void test('spinach tins and ghost corpses stock in the health food shop', async 
     // Wraiths are unsolid but not ghosts: not vegan.
     assert.equal(shopStocksObject(health, await knownObject(CORPSE, { corpsenm: wraith })), false);
 });
-void test('a robbed shop takes one zorkmid for contained gold', async (t) => {
+void test('a contained-gold contribution clears a robbed shop balance', async (t) => {
     const { shopkeeper } = await sellShop(t);
     requirePlayingGame(game);
     shopkeeper.eshk.robbed = 50;
     const sack = placeCreatedObject(await uninitializedObject(SACK, { dknown: true, cknown: true }), 10, 10);
     const purse = await knownObject(GOLD_PIECE, { dknown: true, quan: 25 });
     await addCreatedObjectToContainer(sack, purse, game);
-    // The sack itself offers one zorkmid (general store), plus the C
-    // boolean quirk adds exactly one more for the contained gold.
     const outcome = await sellHeroDroppedObject(sack, 10, 10);
     assert.deepEqual(outcome, { sold: false });
-    assert.equal(shopkeeper.eshk.robbed, 48);
+    assert.equal(shopkeeper.eshk.robbed, 0);
 });
 void test('an out-of-town candelabrum draw is refused, not advised', async (t) => {
     const { shopkeeper } = await sellShop(t, [], { shoptype: SHOPBASE + 11 });
@@ -290,6 +288,6 @@ void test('a short keeper offers only what it can pay', async (t) => {
     // The short-funds clip is observable in the paid offer itself.
     assert.deepEqual(outcome, { sold: true, offer: 1 });
     assert.equal(heroGoldAmount(game), 1);
-    assert.equal(shopkeeper.gold, 0);
+    assert.equal(monsterGoldAmount(shopkeeper), 0);
 });
 //# sourceMappingURL=shop_sell.test.js.map

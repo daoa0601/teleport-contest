@@ -8,13 +8,15 @@ import { hasShopBill, hasShopkeeperData, requireShopGame } from './shop_types.js
 import { SHOP_TYPES } from './shop_data.js';
 import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, monsterIsHuman, monsterIsVampire } from './monster_data.js';
 import { heroSpecies } from './hero_species.js';
-import { monsterName, possessiveName, shopkeeperName } from './monster_name.js';
+import { monsterName, monsterPossessive, monsterSubjectPronoun, possessiveName, shopkeeperName } from './monster_name.js';
 import { containedGold } from './gold.js';
 import { containedBuyCost, objectIsCandle, objectPricingUnits, pickedContainer, shopClaimsObject, shopGetPrice, shopkeeperIsMuted, stolenValue, } from './shop_loss.js';
 import { costlyGold, donateGold, sellHeroDroppedObject, shopOfferForObject, shopStocksObject, } from './shop_sell.js';
 import { canSeeMonster, canSenseMonster, pline, plineWithContinuation } from './display.js';
+import { currency } from './currency.js';
+import { objectName, objectCombatName, definiteName } from './objnam.js';
 import { rn2 } from './rng.js';
-import { detachHeroGold, heroGoldAmount } from './hero_gold.js';
+import { heroGoldAmount } from './hero_gold.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
 import { propertyIsActive } from './properties.js';
@@ -27,7 +29,7 @@ import { BAG_OF_TRICKS, BRASS_LANTERN, CAN_OF_GREASE, CHEST, CORPSE, CRYSTAL_BAL
 import { recordObjectPriceQuote } from './object_knowledge.js';
 import { ACH_SHOP, ACH_TOWN, recordAchievement } from './achievements.js';
 import { nextIdent, nextObjectId } from './ident.js';
-import { pacifyShopkeeper, rileShopkeeper, shopkeeperCustomerInsult, } from './shop_damage.js';
+import { moneyToMonster, pacifyShopkeeper, rileShopkeeper, shopkeeperCustomerInsult, } from './shop_damage.js';
 import { deallocateObject, stopObjectTimers } from './object_delete.js';
 import { getObjectLocation, unlinkObject } from './object_location.js';
 import { objectsInTimerGraph } from './object_timers.js';
@@ -124,11 +126,16 @@ function copyBillEntry(target, source) {
     target.useup = source.useup;
 }
 export function shopThankYouMessage(resident) {
-    const name = shopkeeperName(resident);
     const typeName = SHOP_TYPES[(resident?.eshk?.shoptype ?? SHOPBASE) - SHOPBASE]?.name || 'shop';
-    return `"Thank you for shopping in ${possessive(name)} ${typeName}!"`;
+    const enthusiastic = !resident.eshk?.surcharge;
+    const end = enthusiastic ? '!' : '.';
+    if (!heroIsDeaf() && !shopkeeperIsMuted(resident))
+        return `"Thank you for shopping in ${possessive(shopkeeperName(resident))} ${typeName}${end}"`;
+    return `${shopkeeperName(resident, { capitalized: true })} nods${enthusiastic ? ' appreciatively' : ''} at you for shopping in ${monsterPossessive(resident, { noIt: true })} ${typeName}${end}`;
 }
 export function costlySpot(x, y, state = game) {
+    if (!state.level?.flags.has_shop)
+        return null;
     const spot = insideShopRoomAt(state, x, y);
     if (!spot)
         return null;
@@ -367,8 +374,8 @@ export function getCostOfShopItem(object, state = game) {
 // applied before each keeper's bill is inspected.
 export function* visitBilledShopkeepers(state = game) {
     requireLiveGame(state);
-    for (const keeper of requireGameLevel(state).monsters) {
-        if (keeper.mhp <= 0 || !keeper.isshk || !hasShopBill(keeper) || !keeper.eshk.bill.length)
+    for (const keeper of [...requireGameLevel(state).monsters].reverse()) {
+        if (keeper.dead || keeper.mhp <= 0 || !keeper.isshk || !hasShopBill(keeper) || !keeper.eshk.bill.length)
             continue;
         if (!keeper.mpeaceful && !keeper.eshk.surcharge)
             rileShopkeeper(keeper);
@@ -379,9 +386,9 @@ export function billForObject(object, state = game, resident = null) {
     // C onbill(): with a keeper given, only that keeper's bill answers;
     // other shops' bills stay untouched.
     const keepers = resident ? [resident]
-        : (state.level?.rooms ?? []).flatMap(room => 'resident' in room && room.resident ? [room.resident] : []);
+        : [...(state.level?.monsters ?? [])].reverse();
     for (const keeper of keepers) {
-        if (!hasShopBill(keeper))
+        if (keeper.dead || keeper.mhp <= 0 || !hasShopBill(keeper))
             continue;
         const bill = keeper.eshk.bill;
         const entry = bill.find(candidate => candidate.bo_id === object?.o_id);
@@ -398,6 +405,7 @@ export function removeOneObjectFromBill(object, state = game, resident = null) {
         return null;
     }
     const eshk = billed.resident.eshk;
+    const removedEntry = { ...billed.entry };
     const objectQuantity = Math.max(1, object.quan ?? object.quantity ?? 1);
     const billedQuantity = Math.max(1, billed.entry.bquan ?? 1);
     const removedQuantity = Math.min(objectQuantity, billedQuantity);
@@ -424,11 +432,13 @@ export function removeOneObjectFromBill(object, state = game, resident = null) {
         retainBillObject(usedObject, state);
     }
     else {
-        eshk.bill = (eshk.bill || []).filter(candidate => candidate !== billed.entry);
+        const last = eshk.bill.pop();
+        if (last && last !== billed.entry)
+            copyBillEntry(billed.entry, last);
     }
     eshk.billct = eshk.bill.length;
     object.unpaid = false;
-    return { ...billed, removedQuantity };
+    return { resident: billed.resident, entry: removedEntry, removedQuantity };
 }
 export function removeObjectAndContentsFromBill(object, state = game, { resident = null } = {}) {
     // C subfrombill(): recursion over non-coin contents, keeper-scoped.
@@ -473,7 +483,7 @@ export async function chargeUnpaidObjectAsDebt(object, state = game, publish = p
         await publish(message);
     return { resident, value, message };
 }
-export function payShopDebt(resident, state = game) {
+export async function payShopDebt(resident, state = game) {
     const eshk = resident?.eshk;
     const debt = Math.max(0, eshk?.debit ?? 0);
     if (!resident || !eshk || !debt)
@@ -485,13 +495,8 @@ export function payShopDebt(resident, state = game) {
     const creditUsed = Math.min(credit, debt);
     const goldPaid = debt - creditUsed;
     eshk.credit = credit - creditUsed;
-    if (goldPaid) {
-        const payment = detachHeroGold(state, goldPaid);
-        if (payment)
-            payment.where = 'gone';
-        resident.gold = (resident.gold ?? 0) + goldPaid;
-        state._capacityDirty = true;
-    }
+    if (goldPaid)
+        await moneyToMonster(resident, goldPaid, state);
     eshk.debit = 0;
     eshk.loan = 0;
     return { paid: true, debt, creditUsed, goldPaid };
@@ -677,7 +682,7 @@ export async function settleGlobAbsorptionBilling(absorber, absorbed, state = ga
     const shop = keeper.eshk;
     const offer = shopOfferForObject(absorbed, keeper, state);
     const name = OBJECT_NAMES[absorbed.otyp];
-    const money = (amount) => `${amount} zorkmid${amount === 1 ? '' : 's'}`;
+    const money = (amount) => `${amount} ${currency(amount, { state })}`;
     if (absorbedEntry && (!absorber.no_charge
         || shopClaimsObject(absorber, keeper, false, state))) {
         const amount = absorbedEntry.price;
@@ -729,11 +734,9 @@ export async function settleGlobAbsorptionBilling(absorber, absorbed, state = ga
         || (floorAbsorber && !costlySpot(absorber.ox, absorber.oy, state)))) {
         const amount = absorbedEntry.price;
         await billDummyObject(absorbed, state);
-        if (!heroIsDeaf(state) && !shopkeeperIsMuted(keeper)) {
-            const action = keeper.mpeaceful ? 'just mixed' : 'had the audacity to mix';
-            const ending = keeper.mpeaceful ? 's.' : ' stinking batch!';
-            await publish(`"You owe me ${money(amount)} for my ${name} that you ${action} with your${ending}"`);
-        }
+        const action = keeper.mpeaceful ? 'just mixed' : 'had the audacity to mix';
+        const ending = keeper.mpeaceful ? 's.' : ' stinking batch!';
+        await publish(`"You owe me ${money(amount)} for my ${name} that you ${action} with your${ending}"`);
     }
 }
 // C mkobj.c:752 costly_alteration(): possibly bill an object the hero just
@@ -1003,18 +1006,25 @@ export async function addShopObjectToBill(object, state = game, { ininv = true, 
     }
     if (!heroIsDeaf(state) && !shopkeeperIsMuted(keeper) && !silent) {
         if (!ltmp) {
-            const name = OBJECT_NAMES[object.otyp] || object.name || 'thing';
-            await publish(`${shopkeeperName(keeper)} has no interest in the ${name}.`);
+            await publish(`${shopkeeperName(keeper, { capitalized: true })} has no interest in ${definiteName(objectCombatName(object, { state, includeCorpseSpecies: false }), state)}.`);
             return null;
         }
         if (!ininv) {
-            const name = OBJECT_NAMES[object.otyp] || object.name || 'thing';
+            const name = objectCombatName(object, { state, includeCorpseSpecies: false });
             const each = (object.quan ?? object.quantity ?? 1) > 1
                 ? ' each' : '';
-            await publish(`The ${name} will cost you ${ltmp} zorkmid${ltmp === 1 ? '' : 's'}${each}.`);
+            const subject = definiteName(name, state);
+            await publish(`${subject.charAt(0).toUpperCase()}${subject.slice(1)} will cost you ${ltmp} ${currency(ltmp, { state })}${each}.`);
         }
     }
-    return { resident: keeper, entry, object, offer: ltmp, contentscount };
+    const transaction = { resident: keeper, entry, object, offer: ltmp, contentscount };
+    if (!ininv && !silent && (heroIsDeaf(state) || shopkeeperIsMuted(keeper))) {
+        const quote = ltmp ? billedPickupQuote(transaction, state)
+            : `${shopkeeperName(keeper, { capitalized: true })} does not notice.`;
+        if (quote)
+            await publish(quote);
+    }
+    return transaction;
 }
 function countUnpaidContents(container) {
     let count = 0;
@@ -1046,20 +1056,30 @@ function heroHonorific(state = game) {
                 : female ? 'lady' : 'sir';
     return `${title} ${suffix}`;
 }
-export function billedPickupQuote(transaction, noun, state = game) {
+export function billedPickupQuote(transaction, state = game) {
     if (!transaction)
         return null;
-    const { resident } = transaction;
-    if (heroIsDeaf(state) || shopkeeperIsMuted(resident))
-        return null;
-    const price = transaction.offer;
-    const contentscount = transaction.contentscount ?? 0;
-    const suffix = contentscount > 1 ? ' for all of them' : '';
+    const { resident, object, offer: price, contentscount } = transaction;
+    if (heroIsDeaf(state) || shopkeeperIsMuted(resident)) {
+        const contents = contentscount && !object.unpaid ? 'the contents of ' : '';
+        const suffix = contentscount && object.unpaid ? ' and its contents' : '';
+        return `The list price of ${contents}${definiteName(objectCombatName(object, { state, includeCorpseSpecies: false }), state)}${suffix} is ${price} ${currency(price, { state })}${object.quan > 1 ? ' each' : ''}.`;
+    }
+    let greeting = '"For you,';
     if (!resident.mpeaceful)
-        return `"For you, scum; ${price} zorkmid${price === 1 ? '' : 's'} for this ${noun}.${suffix}"`;
-    if (resident.eshk?.surcharge)
-        return `"For you, ${price} zorkmid${price === 1 ? '' : 's'} for this ${noun}.${suffix}"`;
-    return `"For you, ${heroHonorific(state)}; only ${price} zorkmid${price === 1 ? '' : 's'} for this ${noun}.${suffix}"`;
+        greeting += ' scum;';
+    else if (!resident.eshk.surcharge)
+        greeting += ` ${heroHonorific(state)}; only`;
+    const quantity = object.quan;
+    object.quan = 1;
+    try {
+        const unit = quantity > 1 ? 'per'
+            : contentscount && !object.unpaid ? 'for the contents of this' : 'for this';
+        return `${greeting} ${price} ${currency(price, { state })} ${unit} ${objectName(object, state)}${contentscount && object.unpaid ? ' and its contents' : ''}."`;
+    }
+    finally {
+        object.quan = quantity;
+    }
 }
 function possessive(name) {
     return /s$/i.test(name) ? `${name}'` : `${name}'s`;
@@ -1146,29 +1166,37 @@ async function enterShop({ room, roomno }) {
         return null;
     const typeName = SHOP_TYPES[(room.rtype ?? roomno) - SHOPBASE]?.name
         || 'shop';
-    if (game.u?.invisible || game.u?.invis) {
-        const message = `${shopkeeperName(shopkeeper, { capitalized: true })} senses your presence.`;
+    const deaf = heroIsDeaf(game);
+    let message;
+    if (game.u.invisible || game.u.invis) {
+        await plineWithContinuation(`${shopkeeperName(shopkeeper, { capitalized: true })} senses your presence.`);
+        message = deaf
+            ? `${shopkeeperName(shopkeeper, { capitalized: true })} stands firm as if ${monsterSubjectPronoun(shopkeeper, { noIt: true })} knows you are there.`
+            : '"Invisible customers are not welcome!"';
         await plineWithContinuation(message);
         return message;
     }
     if (!shopkeeper.mpeaceful) {
-        const message = `"So, ${playerName}, you dare return to ${possessive(shopkeeperName(shopkeeper))} ${typeName}?!"`;
-        await plineWithContinuation(message);
-        return message;
+        message = deaf
+            ? `${shopkeeperName(shopkeeper, { capitalized: true })} seems ${['quite upset', 'ticked off', 'furious'][rn2(3)]} over your return to ${monsterPossessive(shopkeeper, { noIt: true })} ${typeName}!`
+            : `"So, ${playerName}, you dare return to ${possessive(shopkeeperName(shopkeeper))} ${typeName}?!"`;
     }
-    if (eshk.surcharge) {
-        const message = `"Back again, ${playerName}?  I've got my eye on you."`;
-        await plineWithContinuation(message);
-        return message;
+    else if (eshk.surcharge) {
+        message = deaf
+            ? `The atmosphere at ${possessive(shopkeeperName(shopkeeper))} ${typeName} seems unwelcoming.`
+            : `"Back again, ${playerName}?  I've got my eye on you."`;
     }
-    if (eshk.robbed) {
-        const message = `${shopkeeperName(shopkeeper, { capitalized: true })} mutters imprecations against shoplifters.`;
-        await plineWithContinuation(message);
-        return message;
+    else if (eshk.robbed) {
+        message = deaf
+            ? `${shopkeeperName(shopkeeper, { capitalized: true })} is combing through ${monsterPossessive(shopkeeper, { noIt: true })} inventory list.`
+            : `${shopkeeperName(shopkeeper, { capitalized: true })} mutters imprecations against shoplifters.`;
     }
-    const again = eshk.visitct ? ' again' : '';
-    eshk.visitct = (eshk.visitct ?? 0) + 1;
-    const message = `"${shopGreeting(shopkeeper)}, ${playerName}!  Welcome${again} to ${possessive(shopkeeperName(shopkeeper))} ${typeName}!"`;
+    else {
+        const again = eshk.visitct ? ' again' : '';
+        eshk.visitct = (eshk.visitct ?? 0) + 1;
+        message = deaf ? `You enter ${possessive(shopkeeperName(shopkeeper))} ${typeName}${again}!`
+            : `"${shopGreeting(shopkeeper)}, ${playerName}!  Welcome${again} to ${possessive(shopkeeperName(shopkeeper))} ${typeName}!"`;
+    }
     await plineWithContinuation(message);
     return message;
 }

@@ -8333,13 +8333,13 @@ async function stockShopRoom(sroom: Room): Promise<void> {
     shopkeeper.isshk = 1;
     sroom.resident = shopkeeper;
 
-    // C ref: shkinit().  The gold object and possible charging scroll live
-    // in the shopkeeper's inventory even though only their RNG-visible
-    // initialization is needed by the current session.
-    shopkeeper.gold = 1000 + 30 * rnd(100);
-    await linkObjectToMonsterInventory(
-        shopkeeper, await mksobj(GOLD_PIECE, false, false), { atFront: true },
-    );
+    // C shknam.c:shkinit()/makemon.c:mkmonmoney(). Initial capital is
+    // an ordinary coin stack in the keeper's inventory.
+    const capital = 1000 + 30 * rnd(100);
+    const coins = await mksobj(GOLD_PIECE, false, false);
+    coins.quan = coins.quantity = capital;
+    coins.owt = objectWeight(coins);
+    await linkObjectToMonsterInventory(shopkeeper, coins, { atFront: true });
     if (shopIndex === 6)
         await addObjectToMonsterInventory(
             shopkeeper, await mksobj(TOUCHSTONE, true, false), game,

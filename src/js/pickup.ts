@@ -199,7 +199,7 @@ async function takeSelectedObjects(source: PickupSource, selected: readonly Pick
         if (!source.objects.includes(object)) continue;
         if (source.monster && object.owornmask) {
             observeObjectForNaming(object);
-            await plineWithContinuation(`You can't pick the ${pickupObjectNoun(object)} up.`);
+            await plineWithContinuation(`You can't pick the ${objectName(object)} up.`);
             continue;
         }
         attempted = true;
@@ -252,7 +252,7 @@ async function takeSelectedObjects(source: PickupSource, selected: readonly Pick
             finally { game.u.ushops = savedShops; }
         }
         if (transaction) observeObjectForNaming(object);
-        const quote = transaction && billedPickupQuote(transaction, pickupObjectNoun(object));
+        const quote = transaction && billedPickupQuote(transaction);
         if (quote) await plineWithContinuation(quote);
         const remote = object.unpaid && shopRoom !== undefined && !savedShops.includes(shopRoom);
         const added = await addPickedInventoryObject(object);
@@ -403,8 +403,4 @@ export function orderedPickupObjects(pile: readonly GameObject[]): GameObject[] 
 export function pickupObjectClass(object: GameObject): string {
     const oclass = object.oclass || objectClassForType(object.otyp);
     return objectClassHeading(oclass);
-}
-
-function pickupObjectNoun(object: GameObject): string {
-    return objectName(object);
 }
