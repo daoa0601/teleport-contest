@@ -485,7 +485,7 @@ async function chooseSqueakyBoardTool({ state, chooseObject, publish }) {
     const letters = compactInventoryLetters(recommended.map(object => object.invlet).join(''));
     const choices = letters ? `${letters} or ?*` : '?*';
     const prompt = `What do you want to untrap with? [${choices}] `;
-    const selection = await chooseObject(prompt, eligible, { allowMenu: true });
+    const selection = await chooseObject(prompt, eligible, { verb: 'untrap with', allowMenu: true });
     return selection.cancelled ? null : selection.object;
 }
 async function consumeOne(object, state) {

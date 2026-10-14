@@ -22,7 +22,7 @@ import { CRYSKNIFE, DILITHIUM_CRYSTAL, FLINT, GOLD_PIECE, JADE, LENSES, ROCK, GL
 import { armorPresentationName, withIndefiniteArticle, makePlural, makeSingular } from './object_grammar.js';
 import { armorSimpleName } from './armor.js';
 import { isContainer } from './container.js';
-import { observeBucForNaming, observeObject } from './object_knowledge.js';
+import { objectClassForType, observeBucForNaming, observeObject } from './object_knowledge.js';
 import { getObjectLocation } from './object_location.js';
 import { objectDisclosureText } from './object_inscription.js';
 import { cansee } from './vision.js';
@@ -285,7 +285,9 @@ export function killerObjectName(object, state = game) {
     return OBJECT_UNIQUE[object.otyp] ? definiteName(name, state)
         : withIndefiniteArticle(name);
 }
-function objectMonsterName(object) {
+// C do_name.c:obj_pmname(): object gender describes the depicted creature,
+// independently of any saved traits used when a corpse revives.
+export function objectMonsterName(object) {
     let species = object.corpsenm;
     if (species === undefined)
         return 'thing';
@@ -418,6 +420,51 @@ const CAPITALIZED_MONSTER_TITLES = [
 function capitalizedMonsterTitle(name) {
     return CAPITALIZED_MONSTER_TITLES.some(title => name.startsWith(title)
         && (name.length === title.length || [' ', "'"].includes(name.charAt(title.length))));
+}
+// C simple_typename()/obj_typename(): type knowledge alone selects the name.
+// Potions, rings, scrolls, wands and spellbooks retain their generic noun
+// until identified; other unknown types use their appearance.
+export function simpleObjectTypeName(otyp, state = game) {
+    const oclass = objectClassForType(otyp);
+    const object = { otyp, oclass };
+    const actual = actualObjectTypeName(object, state);
+    const known = objectTypeKnown(object, state);
+    let className = null;
+    switch (oclass) {
+        case COIN_CLASS: return actual;
+        case AMULET_CLASS: return known ? actual : 'amulet';
+        case RING_CLASS:
+            className = 'ring';
+            break;
+        case POTION_CLASS:
+            className = 'potion';
+            break;
+        case SCROLL_CLASS:
+            className = 'scroll';
+            break;
+        case WAND_CLASS:
+            className = 'wand';
+            break;
+        case SPBOOK_CLASS:
+            if (OBJECT_NAMES[otyp] === 'novel')
+                return known ? 'novel' : 'book';
+            className = 'spellbook';
+            break;
+    }
+    if (className) {
+        if (!known)
+            return className;
+        return OBJECT_UNIQUE[otyp] ? actual : `${className} of ${actual}`;
+    }
+    const appearance = state.urole?.key === 'samurai'
+        && ['wooden harp', 'magic harp'].includes(OBJECT_NAMES[otyp] ?? '')
+        ? 'koto' : state.objectDescriptions?.[otyp] ?? OBJECT_DESCRIPTIONS[otyp] ?? actual;
+    const name = known ? actual : appearance;
+    if (oclass === ARMOR_CLASS)
+        return armorPresentationName(name, OBJECT_NAMES[otyp]);
+    if (oclass === GEM_CLASS)
+        return gemPresentationName(otyp, actual, known ? null : appearance);
+    return name;
 }
 // C minimal_xname() builds a bare object so personal names, call names,
 // quantity, and statue identity cannot reveal more than the known type.

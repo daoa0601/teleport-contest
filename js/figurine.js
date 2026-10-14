@@ -1,7 +1,7 @@
 // Cursed figurines which come to life on their own.
 // C refs: apply.c:fig_transform() and dog.c:make_familiar()/initedog().
 import { makeFamiliar } from './familiar.js';
-import { IS_OBSTRUCTED, IS_POOL, W_NONPASSWALL, isok, } from './const.js';
+import { IS_OBSTRUCTED, IS_POOL, STONE, TREE, W_NONPASSWALL, isok, } from './const.js';
 import { canSeeMonster, newsym } from './display.js';
 import { remove_object } from './floor_object.js';
 import { game } from './gstate.js';
@@ -44,13 +44,18 @@ function figurineLocomotion(mnum, fallback = 'drop') {
     return fallback;
 }
 function figurineMayTransformAt(figurine, x, y, state) {
-    if (figurine.where === 'inventory' && state.u?.uswallow)
-        return false;
+    return figurinePlacementFailure(figurine, x, y, state) === null;
+}
+// C figurine_location_checks(): timers use the same rules silently.
+export function figurinePlacementFailure(figurine, x, y, state) {
+    if (figurine.where === 'inventory' && state.u.uswallow)
+        return "You don't have enough room in here.";
     if (!isok(x, y))
-        return false;
-    const location = state.level?.at?.(x, y);
-    if (!location)
-        return false;
+        return 'You cannot put the figurine there.';
+    const level = state.level;
+    const location = level?.at(x, y);
+    if (!level || !location)
+        return 'You cannot put the figurine there.';
     const species = figurine.corpsenm;
     if (species === undefined)
         throw new TypeError('A figurine requires a monster species.');
@@ -59,12 +64,14 @@ function figurineMayTransformAt(figurine, x, y, state) {
     const passesWalls = !!(flags1 & M1_WALLWALK);
     const mayPassWall = passesWalls
         && !(location.wall_info & W_NONPASSWALL);
-    if (IS_OBSTRUCTED(location.typ) && !mayPassWall)
-        return false;
+    if (IS_OBSTRUCTED(location.typ) && !mayPassWall) {
+        const tree = location.typ === TREE || location.typ === STONE && level.flags.arboreal;
+        return `You cannot place a figurine in ${tree ? 'a tree' : 'solid rock'}!`;
+    }
     const boulder = state.level?.objects?.[x]?.[y]?.some(object => object !== figurine && object.otyp === BOULDER);
     if (boulder && !passesWalls && !(flags2 & M2_ROCKTHROW))
-        return false;
-    return true;
+        return 'You cannot fit the figurine on the boulder.';
+    return null;
 }
 function monsterCarryingFigurine(figurine, state) {
     return state.level?.monsters?.find(monster => (monster.minvent || monster.inventory || []).includes(figurine)) || null;

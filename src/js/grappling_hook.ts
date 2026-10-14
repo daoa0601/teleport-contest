@@ -1,7 +1,6 @@
 // Applying a grappling hook.
 // C ref: apply.c use_grapple().
 
-import { monsterHasMapPosition } from './monster_location.js';
 import {
     IS_AIR, IS_POOL, P_BASIC, P_SKILLED, isok,
 } from './const.js';
@@ -14,8 +13,11 @@ import {
     shouldShowGetposTip, showGetposTip, selectMapPosition,
 } from './getpos.js';
 import { applyCaitiffPenalty } from './hero_attack_conduct.js';
+import { prepareAppliedWeaponAttack } from './hero_attack_preflight.js';
 import { hitMonsterWithAppliedWeapon } from './hero_ranged_attack.js';
 import { findMonsterNearPosition } from './mklev.js';
+import { monsterAtPosition } from './monster_location.js';
+import { relocateMonsterTo } from './teleport.js';
 import {
     MONSTER_FLAGS2, MONSTER_SIZE, monsterTypeName,
 } from './monster_data.js';
@@ -65,9 +67,7 @@ function squaredDistanceFromHero(x: number, y: number, state: GameState) {
 }
 
 function monsterAt(x: number, y: number, state: GameState) {
-    return state.level?.monsters?.find(monster => monsterHasMapPosition(monster, state) &&
-        !monster.dead && (monster.mhp ?? 1) > 0
-        && monster.mx === x && monster.my === y) || null;
+    return state.level ? monsterAtPosition(state.level, x, y) : null;
 }
 
 function monsterObject(monster: Monster) {
@@ -121,16 +121,23 @@ async function snagObject(x: number, y: number, state: GameState) {
 }
 
 async function pullTinyMonster(monster: Monster, destination: Position, state: GameState) {
-    await applyCaitiffPenalty(monster, state);
     await pline(`You pull in ${monsterObject(monster)}!`);
-    const oldx = monster.mx;
-    const oldy = monster.my;
     monster.mundetected = 0;
-    monster.mx = destination.x;
-    monster.my = destination.y;
-    monster.mtrack = [];
-    newsym(oldx, oldy);
-    newsym(monster.mx, monster.my);
+    await relocateMonsterTo(monster, destination.x, destination.y, { state });
+}
+
+async function prepareHookAttack(monster: Monster, hook: GameObject, target: Position, state: GameState) {
+    const confirmation = state.flags.confirm;
+    state.flags.confirm = false;
+    try {
+        // use_grapple() deliberately proceeds after revealing a hidden target,
+        // even when attack_checks() would stop an ordinary melee attack.
+        await prepareAppliedWeaponAttack(monster, hook, { state, struckAt: target });
+    } finally {
+        if (confirmation === undefined) delete state.flags.confirm;
+        else state.flags.confirm = confirmation;
+    }
+    if (!state.program_state.gameover) await applyCaitiffPenalty(monster, state);
 }
 
 async function damageHero(state: GameState) {
@@ -199,12 +206,16 @@ export async function useGrapplingHook(hook: GameObject, {
     if (toHit === 2) {
         const monster = monsterAt(target.x, target.y, state);
         if (monster) {
+            state.bhitpos = { x: target.x, y: target.y };
+            state.notonhead = target.x !== monster.mx || target.y !== monster.my;
             const tiny = (MONSTER_SIZE[monster.mnum] ?? 2) === 0;
             if (tiny && rn2(4) === 0) {
                 const destination = findMonsterNearPosition(
                     null, state.u.ux, state.u.uy, { state },
                 );
                 if (destination) {
+                    await prepareHookAttack(monster, hook, target, state);
+                    if (state.program_state.gameover) return { spentTime: true };
                     await pullTinyMonster(monster, destination, state);
                     return { spentTime: true };
                 }
@@ -214,7 +225,9 @@ export async function useGrapplingHook(hook: GameObject, {
             const strong = !!((MONSTER_FLAGS2[monster.mnum] ?? 0)
                 & M2_STRONG);
             if ((!large && !strong) || rn2(4) !== 0) {
-                await attackMonster(monster, hook, { state });
+                await prepareHookAttack(monster, hook, target, state);
+                if (state.program_state.gameover) return { spentTime: true };
+                await attackMonster(monster, hook, { state, target, checkCaitiff: false });
                 return { spentTime: true };
             }
             hitSurface = true;

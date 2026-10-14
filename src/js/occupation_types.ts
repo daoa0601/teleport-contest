@@ -1,6 +1,7 @@
 import type { CommandBinding } from './command_types.js';
 import type { MapLocation } from './map_types.js';
 import type { GameObject } from './object_types.js';
+import type { GameMap } from './game.js';
 
 // The meal survives interruption. Its object may disappear or merge while
 // context.victual still retains the counters for the interrupted action.
@@ -124,6 +125,20 @@ export interface TakeoffOccupation {
     text: 'disrobing' | 'disarming';
 }
 
+export interface TrapSetting {
+    object: GameObject;
+    level: GameMap;
+    x: number;
+    y: number;
+    remaining: number;
+    forceBungle: boolean;
+}
+
+export interface TrapSettingOccupation {
+    key: 'set-trap';
+    text: 'setting the trap';
+}
+
 export type HeroOccupation = CommandOccupation | DiggingOccupation
     | StudyOccupation | ForceLockOccupation | PickLockOccupation
-    | WipeFaceOccupation | FoodOccupation | TinOpening | EngraveOccupation | TakeoffOccupation;
+    | WipeFaceOccupation | FoodOccupation | TinOpening | EngraveOccupation | TakeoffOccupation | TrapSettingOccupation;

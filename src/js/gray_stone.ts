@@ -105,8 +105,9 @@ function stoneMarks(
     const colorIndex = state.objectColors?.[object.otyp] ?? OBJECT_COLOR[object.otyp];
     const color = colorIndex === undefined ? null : OBJECT_COLOR_NAMES[colorIndex] ?? null;
     if (gemLike) {
-        if (stone.otyp === TOUCHSTONE && material === GLASS) return { scratch: true, color: null };
-        return { scratch: stone.otyp !== TOUCHSTONE, color };
+        if (stone.otyp !== TOUCHSTONE) return { scratch: true, color };
+        if (material === GLASS) return { scratch: true, color: null };
+        return { scratch: false, color };
     }
     const plural = (stone.quantity ?? stone.quan ?? 1) > 1;
     switch (material) {

@@ -37,6 +37,7 @@ void test('answering a wrapped object query clears the message window', async ()
     const selection = await promptInventoryObject(
         `What do you want to rub the royal jelly on? [${letters} or ?*] `,
         game.inventory,
+        { verb: 'rub the royal jelly on' },
     );
     await flush_screen(1);
 
