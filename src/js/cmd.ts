@@ -1244,12 +1244,14 @@ export async function rhack(key: number): Promise<void> {
         prepareTimedCommand(binding);
         if (command.handler === 'doextcmd') {
             clearRepeatCommand();
-            const selected = await readExtendedCommand();
-            if (!selected) {
-                resetCommandVariables(false);
-                return;
-            }
-            if (!await commandAllowed(selected)) {
+            const { selected, lastExecuted } = await readExtendedCommand();
+            if (!selected || !await commandAllowed(selected)) {
+                // doextcmd() leaves ext_tlist pointing at the last list it
+                // executed when the following editor quits or is rejected.
+                if (lastExecuted) rememberCommand({
+                    key: commandExecutionKey(lastExecuted.name)?.charCodeAt(0) ?? null,
+                    command: lastExecuted, parameter: null,
+                }, false);
                 resetCommandVariables(false);
                 return;
             }
@@ -4303,10 +4305,15 @@ async function wizIdentify(): Promise<void> {
     game.context.move = 0;
 }
 
-// TTY's extended-command line editor redraws the prompt at every input
-// boundary.  #enhance has AUTOCOMPLETE, so its unique initial "e" expands
-// visually while subsequent characters advance through that completed word.
-async function readExtendedCommand(): Promise<NativeCommand | null> {
+interface ExtendedCommandInput {
+    selected: NativeCommand | null;
+    lastExecuted: NativeCommand | null;
+}
+
+// C cmd.c:doextcmd() runs the list inside its editor loop and retains the
+// last executed command separately from the next editor selection.
+async function readExtendedCommand(): Promise<ExtendedCommandInput> {
+    let lastExecuted: NativeCommand | null = null;
     for (;;) {
         const statusDisabled = game._statusUpdatesDisabled;
         game._statusUpdatesDisabled = true;
@@ -4317,12 +4324,15 @@ async function readExtendedCommand(): Promise<NativeCommand | null> {
             if (statusDisabled === undefined) delete game._statusUpdatesDisabled;
             else game._statusUpdatesDisabled = statusDisabled;
         }
-        if (selected?.handler !== 'doextlist') return selected;
-        if (!await commandAllowed(selected)) return null;
+        if (selected?.handler !== 'doextlist') return { selected, lastExecuted };
+        if (!await commandAllowed(selected)) return { selected: null, lastExecuted };
         await showExtendedCommandList();
+        lastExecuted = selected;
     }
 }
 
+// TTY's extended-command line editor redraws the prompt at every input
+// boundary. Completion expands visually while typed input advances the cursor.
 async function editExtendedCommand(): Promise<NativeCommand | null> {
     let command = '';
     let completion: string | null = null;

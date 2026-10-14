@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
-import { resetInputState } from '../js/input.js';
+import { nhgetch, resetInputState } from '../js/input.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';
 void test('cancelling an empty extended command clears its prompt from the tty', async () => {
@@ -48,6 +48,31 @@ void test('listing extended commands returns to the editor for the next command'
     await rhack(0);
     assert.equal(game.flags.pickup, true);
     assert.equal(game.context.move, 0);
+});
+void test('cancelling the editor after listing extended commands preserves list recall', async () => {
+    freshObjectRoom();
+    const input = resetInputState();
+    input.feed('#?\n\x1b\x1b');
+    await rhack(0);
+    input.feed('\x01');
+    const action = rhack(0);
+    try {
+        const result = await Promise.race([
+            action.then(() => 'completed'),
+            input.waitUntilBlocked().then(() => 'prompted'),
+        ]);
+        assert.equal(result, 'prompted', 'repeat must reopen the executed command list');
+        const text = game.nhDisplay?.grid.map(row => row.map(cell => cell.ch).join('')).join('\n') ?? '';
+        assert.match(text, /Extended Commands List/);
+        input.feed('\x1bh');
+        await action;
+        assert.equal(game.context.move, 0);
+        assert.equal(await nhgetch(), 'h'.charCodeAt(0), 'repeating the list must not reopen the editor');
+    }
+    finally {
+        input.feed('\x1b\x1b');
+        await action;
+    }
 });
 for (const answer of ['\n', '   \n', '\x1b', 'wait\x1b\x1b']) {
     void test(`an empty or cancelled command-list search returns to the editor (${JSON.stringify(answer)})`, async () => {
