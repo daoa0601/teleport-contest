@@ -33,6 +33,10 @@ import { finishMonsterKilled } from './monster_death.js';
 import { monsterIsNonliving } from './monster_data.js';
 import { Invocation_lev, Is_earthlevel, Is_firelevel, Is_knox_level, MAGIC_PORTAL, VIBRATING_SQUARE } from './const.js';
 import { map_engraving, map_trap } from './display.js';
+import { VAULT } from './const.js';
+import { somexyspace } from './mkroom.js';
+import { deleteTrap } from './trap_lifecycle.js';
+import { teleportHero } from './teleport.js';
 import { mapMagicLevel } from './magic_mapping.js';
 import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu, } from './tty_menu.js';
 import { LOOK_ONCE, LOOK_QUICK, LOOK_VERBOSE } from './const.js';
@@ -268,7 +272,7 @@ import { announceInvocationSquare } from './invocation.js';
 import { abuseKickedPet, kickConductViolation, levitatingKickMisses, prepareKick, prepareKickDamage, rollKickDamage, tryKickEvasion, tryKickReel, } from './monster_kick.js';
 import { kickFloorObject } from './object_kick.js';
 import { kickWithMonsterForm } from './hero_form_kick.js';
-import { bringLeashedFollowers, heroTeleportDestinationOk, moveHeroByTeleport, randomMonsterRelocation, safeTeleportDestination, } from './teleport.js';
+import { bringLeashedFollowers, heroTeleportDestinationOk, moveHeroByTeleport, randomMonsterRelocation, } from './teleport.js';
 import { goodPosition, monsterTeleportRestricted } from './teleport_rules.js';
 import { removeWishGrantingMonster } from './monster_departure.js';
 import { RLOC_MSG, A_CON, A_DEX, A_STR, A_WIS, BOLT_LIM, COLNO, ROWNO, STONE, SCORR, SDOOR, DOOR, CORR, ROOM, ICE, POOL, CLOUD, IRONBARS, FOUNTAIN, SINK, ALTAR, WATER, MOAT, LAVAWALL, TREE, D_NODOOR, D_BROKEN, D_ISOPEN, D_CLOSED, D_LOCKED, D_TRAPPED, SHOP_DOOR_COST, IS_WALL, IS_STWALL, IS_OBSTRUCTED, IS_FURNITURE, IS_AIR, IS_POOL, IS_LAVA, IS_ROOM, ZAP_POS, SQKY_BOARD, BEAR_TRAP, LANDMINE, FIRE_TRAP, PIT, SPIKED_PIT, TT_PIT, HOLE, TRAPDOOR, DART_TRAP, MAGIC_TRAP, TELEP_TRAP, LEVEL_TELEP, STATUE_TRAP, WEB, ANTI_MAGIC, G_GONE, ER_NOTHING, ER_DAMAGED, M_AP_MONSTER, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, STRAT_WAITMASK, MM_NOEXCLAM, MM_NOMSG, SHOPBASE, ROOMOFFSET, F_LOOTED, In_endgame, Is_airlevel, Is_waterlevel, Is_rogue_level, In_hell, W_ARMOR, W_ACCESSORY, W_SADDLE, LOST_THROWN, WT_SPLASH_THRESHOLD, WT_SQUEEZABLE_INV, P_BOW, P_SLING, PARANOID_HIT, POLY_CONTROLLED, STR19, isok, ACCESSIBLE, AIR, DIGTYP_UNDIGGABLE, DRAWBRIDGE_UP, } from './const.js';
@@ -4429,69 +4433,69 @@ export async function askTeleportDestination({ onPrompt = null } = {}) {
 // ECMD_TIME.  Its first getpos use still owns the shared Lua tutorial, while
 // the destination room separately owns entry effects after relocation.
 async function wizTeleportPosition() {
-    const trap = game.level?.traps.find(candidate => candidate.tx === game.u.ux && candidate.ty === game.u.uy);
-    if (trap?.tseen && trap.ttyp === TELEP_TRAP && !trap.once
-        && trap.teledest && isok(trap.teledest.x, trap.teledest.y)) {
+    requirePlayingGame(game);
+    let trap = game.level.traps.find(candidate => candidate.tx === game.u.ux && candidate.ty === game.u.uy);
+    if (!trap?.tseen)
+        trap = undefined;
+    if (trap?.ttyp === LEVEL_TELEP) {
+        if (await promptYesNo('There is a level teleporter here. Trigger it?') === 'y') {
+            await triggerHeroTrapAt(game.u.ux, game.u.uy, { forceTrap: true, gotoLevel });
+            game.context.move = 1;
+            return;
+        }
+        trap = undefined;
+    }
+    else if (trap?.ttyp === TELEP_TRAP) {
+        if (trap.once) {
+            await plineWithContinuation('This is a vault teleport, usable once only.');
+            if (await promptYesNo('Jump in?') === 'n')
+                trap = undefined;
+            else {
+                deleteTrap(trap);
+                newsym(game.u.ux, game.u.uy);
+            }
+        }
+    }
+    else
+        trap = undefined;
+    if (trap) {
         const locomotion = propertyIsActive('levitation') ? 'float'
             : propertyIsActive('flying') ? 'fly'
                 : monsterLocomotion(heroSpecies(), 'jump');
         await plineWithContinuation(`You ${locomotion} onto the teleportation trap.`);
-        if (!await bringLeashedFollowers()) {
-            await plineWithContinuation('You shudder for a moment.');
-            game.context.move = 0;
-            return;
-        }
-        // dotele() calls teleds() directly for a fixed trap destination:
-        // no location prompt, travel-target clear, or nutrition cost.
-        const movement = await moveHeroByTeleport(trap.teledest.x, trap.teledest.y);
-        await finishTeleportArrival(movement);
-        if (game.program_state.gameover)
-            return;
-        await bringLeashedFollowers();
-        game.context.move = 1;
-        return;
     }
     if (!await bringLeashedFollowers()) {
         await plineWithContinuation('You shudder for a moment.');
         game.context.move = 0;
         return;
     }
-    // dotele() clears travelcc only after next_to_u() allows tele().
-    game._travelTarget = null;
-    let destination = await askTeleportDestination();
-    if (!destination) {
-        // dotele(TRUE) still reaches morehungry(100) and returns a timed
-        // command when scrolltele()'s controlled getpos was cancelled.
+    if (trap?.once) {
+        const vault = game.level.rooms.find((room) => isRoom(room) && room.rtype === VAULT);
+        const point = { x: 0, y: 0 };
+        if (vault && somexyspace(vault, point)
+            && heroTeleportDestinationOk(point.x, point.y)) {
+            await finishTeleportArrival(await moveHeroByTeleport(point.x, point.y));
+        }
+        else
+            await teleportHero({ chooseDestination: askTeleportDestination });
+    }
+    else if (trap?.teledest && isok(trap.teledest.x, trap.teledest.y)) {
+        // Native dotele() uses the fixed location directly, preserving travelcc.
+        await finishTeleportArrival(await moveHeroByTeleport(trap.teledest.x, trap.teledest.y));
+    }
+    else {
+        // Travel suggestions are cleared only after next_to_u() succeeds.
+        game._travelTarget = null;
+        await teleportHero({ chooseDestination: askTeleportDestination });
+    }
+    if (game.program_state.gameover)
+        return;
+    await bringLeashedFollowers();
+    if (!trap) {
         await spendHeroNutrition(100);
         if (game.program_state.gameover)
             return;
-        game.context.move = 1;
-        return;
     }
-    const acceptedChoice = heroTeleportDestinationOk(destination.x, destination.y);
-    if (!acceptedChoice) {
-        // teleport.c:scrolltele() rejects the controlled location before
-        // entering safe_teleds().  Keep "Sorry..." pending while the random
-        // selector and teleds() update the map; a destination floor pager can
-        // then suspend this line at the same tty boundary as C.
-        await pline('Sorry...');
-        destination = safeTeleportDestination();
-        if (!destination) {
-            await spendHeroNutrition(100);
-            if (game.program_state.gameover)
-                return;
-            game.context.move = 1;
-            return;
-        }
-    }
-    const movement = await moveHeroByTeleport(destination.x, destination.y);
-    await finishTeleportArrival(movement);
-    if (game.program_state.gameover)
-        return;
-    // C dotele() spends nutrition only after teleds() finishes its effects.
-    await spendHeroNutrition(100);
-    if (game.program_state.gameover)
-        return;
     game.context.move = 1;
 }
 function travelLocationDescription(x, y) {
