@@ -886,6 +886,9 @@ async function initTool(otmp) {
             && tryCount++ < 30);
         blessorcurse(otmp, 4);
     }
+    else if (otyp === BELL_OF_OPENING) {
+        otmp.spe = 3;
+    }
     else if (otyp === MAGIC_FLUTE || otyp === MAGIC_HARP
         || otyp === FROST_HORN || otyp === FIRE_HORN
         || otyp === DRUM_OF_EARTHQUAKE) {

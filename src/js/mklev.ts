@@ -991,6 +991,8 @@ async function initTool(otmp: GameObject): Promise<void> {
         } while (((MONSTER_FLAGS2[otmp.corpsenm] ?? 0) & M2_HUMAN)
             && tryCount++ < 30);
         blessorcurse(otmp, 4);
+    } else if (otyp === BELL_OF_OPENING) {
+        otmp.spe = 3;
     } else if (otyp === MAGIC_FLUTE || otyp === MAGIC_HARP
         || otyp === FROST_HORN || otyp === FIRE_HORN
         || otyp === DRUM_OF_EARTHQUAKE) {
