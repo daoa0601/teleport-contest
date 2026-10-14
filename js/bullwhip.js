@@ -247,7 +247,7 @@ async function escapePit(targetX, targetY, monster, proficiency, attackMonster, 
     const anchor = pitAnchor(targetX, targetY, monster, state);
     if (!anchor) {
         if (monster) {
-            await attackMonsterWithWhip(monster, proficiency, attackMonster, holdObject, state);
+            await attackMonsterWithWhip(monster, targetX, targetY, proficiency, attackMonster, holdObject, state);
             return;
         }
         await pline('Snap!');
@@ -281,10 +281,10 @@ async function revealWhipTarget(monster, x, y, state) {
     else
         map_invisible(x, y);
 }
-async function attackMonsterWithWhip(monster, proficiency, attackMonster, holdObject, state) {
+async function attackMonsterWithWhip(monster, x, y, proficiency, attackMonster, holdObject, state) {
     const spottedBefore = canSpotMonster(monster);
     if (!spottedBefore) {
-        await revealWhipTarget(monster, monster.mx, monster.my, state);
+        await revealWhipTarget(monster, x, y, state);
     }
     const weapon = spottedBefore ? monsterWieldedWeapon(monster) : null;
     if (weapon) {
@@ -302,7 +302,7 @@ async function attackMonsterWithWhip(monster, proficiency, attackMonster, holdOb
     else {
         await pline(`You flick your bullwhip towards ${monsterObject(monster)}.`);
     }
-    if (proficiency > 0 && await attackMonster(monster))
+    if (proficiency > 0 && await attackMonster(monster, x, y))
         return;
     if (snap)
         await pline('Snap!');
@@ -383,7 +383,7 @@ export async function useBullwhip(whip, direction, { state = game, attackMonster
         await escapePit(targetX, targetY, monster, proficiency, attackMonster, holdObject, state);
     }
     else if (monster) {
-        await attackMonsterWithWhip(monster, proficiency, attackMonster, holdObject, state);
+        await attackMonsterWithWhip(monster, targetX, targetY, proficiency, attackMonster, holdObject, state);
     }
     else if (Is_airlevel(hero.uz) || Is_waterlevel(hero.uz)) {
         await pline('You snap your whip through thin air.');

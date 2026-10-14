@@ -5787,7 +5787,7 @@ async function applyTool(item, underlay) {
         game._pending_message = '';
         const result = await useBullwhip(item, direction, {
             state: game,
-            attackMonster: (monster) => attackHostileMonster(monster, monster.mx, monster.my),
+            attackMonster: (monster, x, y) => attackHostileMonster(monster, x, y),
             holdObject: async (object) => {
                 await addPickedInventoryObject(object);
                 return true;

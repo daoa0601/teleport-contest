@@ -53,7 +53,7 @@ import type { Position } from './map_types.js';
 import type { DirectionSelection } from './tty_prompts.js';
 
 type WhipDirection = Pick<DirectionSelection, 'dx' | 'dy' | 'dz'>;
-type WhipAttack = (monster: Monster) => boolean | Promise<boolean>;
+type WhipAttack = (monster: Monster, x: number, y: number) => boolean | Promise<boolean>;
 type HoldWhippedObject = (object: GameObject) => boolean | Promise<boolean>;
 
 export interface BullwhipOptions {
@@ -308,7 +308,7 @@ async function escapePit(
     if (!anchor) {
         if (monster) {
             await attackMonsterWithWhip(
-                monster, proficiency, attackMonster, holdObject, state,
+                monster, targetX, targetY, proficiency, attackMonster, holdObject, state,
             );
             return;
         }
@@ -345,13 +345,13 @@ async function revealWhipTarget(monster: Monster, x: number, y: number, state: G
 }
 
 async function attackMonsterWithWhip(
-    monster: Monster, proficiency: number, attackMonster: WhipAttack,
+    monster: Monster, x: number, y: number, proficiency: number, attackMonster: WhipAttack,
     holdObject: HoldWhippedObject, state: GameState,
 ) {
     const spottedBefore = canSpotMonster(monster);
     if (!spottedBefore) {
         await revealWhipTarget(
-            monster, monster.mx, monster.my, state,
+            monster, x, y, state,
         );
     }
     const weapon = spottedBefore ? monsterWieldedWeapon(monster) : null;
@@ -372,7 +372,7 @@ async function attackMonsterWithWhip(
     } else {
         await pline(`You flick your bullwhip towards ${monsterObject(monster)}.`);
     }
-    if (proficiency > 0 && await attackMonster(monster)) return;
+    if (proficiency > 0 && await attackMonster(monster, x, y)) return;
     if (snap) await pline('Snap!');
     await wakeAttackedMonster(monster);
 }
@@ -460,7 +460,7 @@ export async function useBullwhip(
         );
     } else if (monster) {
         await attackMonsterWithWhip(
-            monster, proficiency, attackMonster, holdObject, state,
+            monster, targetX, targetY, proficiency, attackMonster, holdObject, state,
         );
     } else if (Is_airlevel(hero.uz) || Is_waterlevel(hero.uz)) {
         await pline('You snap your whip through thin air.');
