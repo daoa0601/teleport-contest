@@ -46,3 +46,19 @@ void test('payment asks whom to pay when several shopkeepers are visible', async
     assert.equal(game._pending_message, 'You are generous to yourself.');
     assert.equal(game.context.move, 0);
 });
+
+void test('prioritizing an angry neighbor does not clear another resident bill skipped during selection', async () => {
+    freshObjectRoom({ right: 22 });
+    const local = await createStaffedShop({ keeperX: 9 });
+    local.shopkeeper.eshk.credit = 19;
+    const visitor = await createStaffedShop({ left: 15, right: 20, keeperX: 11 });
+    visitor.shopkeeper.mpeaceful = 0;
+    visitor.shopkeeper.eshk.debit = 7;
+
+    await withMessagePages(() => rhack('p'.charCodeAt(0)), resetInputState(),
+        /dopay|Program in disorder|Please report|shopkeeper/, 6);
+
+    assert.equal(local.shopkeeper.eshk.credit, 19);
+    assert.equal(visitor.shopkeeper.eshk.debit, 7);
+    assert.equal(game.context.move, 0);
+});

@@ -10,7 +10,7 @@ import { shopkeeperName, monsterName, monsterSubjectPronoun, monsterObjectPronou
 import { selectMapPosition } from './getpos.js';
 import { hasShopkeeperData } from './shop_types.js';
 import type { Shopkeeper } from './shop_types.js';
-import { payShopDebt, shopkeeperForHero, shopkeeperInOwnShop, shopThankYouMessage } from './shk.js';
+import { payShopDebt, shopkeeperInOwnShop, shopThankYouMessage } from './shk.js';
 import { rileShopkeeper, makeShopkeeperHappy, setPaidShopkeeper } from './shop_damage.js';
 import { heroGoldAmount } from './hero_gold.js';
 import { currency } from './currency.js';
@@ -29,51 +29,51 @@ import { showMultiSelectWindow } from './windows.js';
 // takes no time until a debt or billed item is paid.
 export async function dopay(): Promise<void> {
     game.multi = 0;
-    const resident = await choosePaymentShopkeeper();
-    if (!resident) {
+    const stashedGold = hiddenGold(game, true) > 0;
+    const target = await choosePaymentShopkeeper();
+    if (!target) {
         game.context.move = 0;
         return;
     }
 
-    const shop = resident.eshk;
+    const { keeper, resident } = target;
+    const shop = keeper.eshk;
     const robbed = shop.robbed ?? 0;
-    if (robbed || shop.billct || shop.debit) await rouseShopkeeper(resident);
-    if (monsterIsHelpless(resident)) {
+    if (robbed || shop.billct || shop.debit) await rouseShopkeeper(keeper);
+    if (monsterIsHelpless(keeper)) {
         const response = rn2(2) ? 'seems to be napping' : "doesn't respond";
-        await plineWithContinuation(`${shopkeeperName(resident, { capitalized: true })} ${response}.`);
+        await plineWithContinuation(`${shopkeeperName(keeper, { capitalized: true })} ${response}.`);
         game.context.move = 0;
         return;
     }
-    const stashedGold = hiddenGold(game, true) > 0;
-    if (resident !== shopkeeperForHero() && resident.mpeaceful) {
-        await payOutsideShop(resident, robbed, stashedGold);
+    if (keeper !== resident && keeper.mpeaceful) {
+        await payOutsideShop(keeper, robbed, stashedGold);
         game.context.move = 1;
         return;
     }
     if (!shop.billct && !shop.debit) {
-        await settleEmptyBill(resident, robbed, stashedGold);
+        await settleEmptyBill(keeper, robbed, stashedGold);
         game.context.move = 1;
         return;
     }
-    if (resident !== shopkeeperForHero()) {
+    if (keeper !== resident) {
         await impossible('dopay: not to shopkeeper?');
-        const ownKeeper = shopkeeperForHero();
-        if (ownKeeper) setPaidShopkeeper(ownKeeper);
+        if (resident) setPaidShopkeeper(resident);
         game.context.move = 0;
         return;
     }
 
     let paid = false;
-    const debt = Math.max(0, resident.eshk?.debit ?? 0);
+    const debt = Math.max(0, keeper.eshk?.debit ?? 0);
     if (debt) {
-        const loan = resident.eshk.loan ?? 0;
+        const loan = keeper.eshk.loan ?? 0;
         const reason = !loan ? 'for the use of merchandise.'
             : loan === debt ? 'you picked up in the store.'
                 : 'for gold picked up and the use of merchandise.';
-        await plineWithContinuation(`You owe ${shopkeeperName(resident)} ${debt} ${currency(debt)} ${reason}`);
-        const payment = await payShopDebt(resident, game);
+        await plineWithContinuation(`You owe ${shopkeeperName(keeper)} ${debt} ${currency(debt)} ${reason}`);
+        const payment = await payShopDebt(keeper, game);
         if (!payment.paid) {
-            await plineWithContinuation(`But you don't${stashedGold ? ' seem to' : ''} have enough gold${resident.eshk.credit ? ' or credit' : ''}.`);
+            await plineWithContinuation(`But you don't${stashedGold ? ' seem to' : ''} have enough gold${keeper.eshk.credit ? ' or credit' : ''}.`);
             game.context.move = 1;
             return;
         }
@@ -90,50 +90,50 @@ export async function dopay(): Promise<void> {
 
     // pay_billed_items() checks the whole bill, including contained goods,
     // before offering item selection. Stashed gold cannot fund this payment.
-    if (resident === shopkeeperForHero() && (resident.eshk?.billct ?? 0) > 0
-        && !heroGoldAmount(game) && !(resident.eshk?.credit ?? 0)) {
+    if (keeper === resident && (keeper.eshk?.billct ?? 0) > 0
+        && !heroGoldAmount(game) && !(keeper.eshk?.credit ?? 0)) {
         await plineWithContinuation(`You ${hiddenGold(game, true) ? 'seem to ' : ''}have no gold or credit${paid ? ' left' : ''}.`);
-        if (paid && resident.mpeaceful)
-            await plineWithContinuation(shopThankYouMessage(resident));
+        if (paid && keeper.mpeaceful)
+            await plineWithContinuation(shopThankYouMessage(keeper));
         game.context.move = paid ? 1 : 0;
         return;
     }
 
-    if (resident === shopkeeperForHero()) {
-        const purchase = minimumShopPurchase(resident);
-        if (purchase && heroGoldAmount(game) + (resident.eshk?.credit ?? 0) < purchase.price) {
+    if (keeper === resident) {
+        const purchase = minimumShopPurchase(keeper);
+        if (purchase && heroGoldAmount(game) + (keeper.eshk?.credit ?? 0) < purchase.price) {
             const items = purchase.multipleItems ? ' any of the items' : ' the item';
-            const bill = (resident.eshk?.billct ?? 0) > 1 ? "you've picked" : 'on your bill';
+            const bill = (keeper.eshk?.billct ?? 0) > 1 ? "you've picked" : 'on your bill';
             await plineWithContinuation(`You don't have enough gold to buy${items} ${bill}.`);
             if (hiddenGold(game, true))
                 await plineWithContinuation('Maybe you have some gold stashed away?');
-            if (paid && resident.mpeaceful)
-                await plineWithContinuation(shopThankYouMessage(resident));
+            if (paid && keeper.mpeaceful)
+                await plineWithContinuation(shopThankYouMessage(keeper));
             game.context.move = paid ? 1 : 0;
             return;
         }
     }
 
-    const billed = itemizedShopBill(resident);
+    const billed = itemizedShopBill(keeper);
     if (!billed.length) {
         if (!paid) {
-            await plineWithContinuation(`You do not owe ${shopkeeperName(resident)} anything.`);
-            if (resident === shopkeeperForHero() && resident.mpeaceful && !heroGoldAmount(game))
+            await plineWithContinuation(`You do not owe ${shopkeeperName(keeper)} anything.`);
+            if (keeper === resident && keeper.mpeaceful && !heroGoldAmount(game))
                 await plineWithContinuation(`Moreover, you${hiddenGold(game, true) ? ' seem to' : ''} have no gold.`);
             game.context.move = 1;
             return;
         }
-        if (resident.mpeaceful) await plineWithContinuation(shopThankYouMessage(resident));
+        if (keeper.mpeaceful) await plineWithContinuation(shopThankYouMessage(keeper));
         game.context.move = 1;
         return;
     }
 
-    const selection = await chooseBilledItems(billed, minimumShopPurchase(resident)?.multipleItems ?? false);
+    const selection = await chooseBilledItems(billed, minimumShopPurchase(keeper)?.multipleItems ?? false);
     let paidForItem = false;
     let finished = true;
     // Native queued selection buys in bill order, regardless of selection order.
     for (const item of selection.items) {
-        const result = await buyShopBillItem(resident, item, game, { itemize: selection.itemize });
+        const result = await buyShopBillItem(keeper, item, game, { itemize: selection.itemize });
         if (result === 'broke') {
             paidForItem = true;
             break;
@@ -151,8 +151,8 @@ export async function dopay(): Promise<void> {
         game.context.move = 0;
         return;
     }
-    if (finished && resident.mpeaceful)
-        await plineWithContinuation(shopThankYouMessage(resident));
+    if (finished && keeper.mpeaceful)
+        await plineWithContinuation(shopThankYouMessage(keeper));
     game.context.move = 1;
 }
 
@@ -195,7 +195,12 @@ async function paymentMenu(billed: ShopBillItem[]): Promise<ShopBillItem[]> {
 
 // next_shkp() applies the surcharge as it visits angry keepers. The linked
 // native monster list runs from the newest monster to the oldest.
-async function choosePaymentShopkeeper(): Promise<Shopkeeper | null> {
+interface PaymentTarget {
+    keeper: Shopkeeper;
+    resident: Shopkeeper | null;
+}
+
+async function choosePaymentShopkeeper(): Promise<PaymentTarget | null> {
     const shopkeepers: Shopkeeper[] = [];
     let nearby: Shopkeeper | null = null;
     let nearbyCount = 0;
@@ -218,7 +223,7 @@ async function choosePaymentShopkeeper(): Promise<Shopkeeper | null> {
         if (shopkeeperInOwnShop(monster) && game.u.ushops?.[0] === monster.eshk.shoproom)
             resident = monster;
     }
-    if (nearby && nearbyCount === 1) return nearby;
+    if (nearby && nearbyCount === 1) return { keeper: nearby, resident };
     const blind = heroIsBlind();
     if ((!shopkeepers.length && (!blind || game.u.blindTelepathy || game.u.telepathy))
         || (!blind && !visibleCount)) {
@@ -229,7 +234,7 @@ async function choosePaymentShopkeeper(): Promise<Shopkeeper | null> {
         await pline("You can't see...");
         return null;
     }
-    if (shopkeepers.length === 1 && resident) return resident;
+    if (shopkeepers.length === 1 && resident) return { keeper: resident, resident };
     if (visibleCount === 1) {
         const keeper = shopkeepers.find(monster => canSpotMonster(monster));
         if (!keeper) throw new Error('Visible shopkeeper disappeared during payment.');
@@ -237,7 +242,7 @@ async function choosePaymentShopkeeper(): Promise<Shopkeeper | null> {
             await pline(`${shopkeeperName(keeper, { capitalized: true })} is not near enough to receive your payment.`);
             return null;
         }
-        return keeper;
+        return { keeper, resident };
     }
     const position = await selectMapPosition({
         start: { x: game.u.ux, y: game.u.uy },
@@ -259,7 +264,7 @@ async function choosePaymentShopkeeper(): Promise<Shopkeeper | null> {
     } else if (monster !== resident && !adjacent(monster)) {
         await pline(`${shopkeeperName(monster, { capitalized: true })} is too far to receive your payment.`);
     } else {
-        return monster;
+        return { keeper: monster, resident };
     }
     return null;
 }

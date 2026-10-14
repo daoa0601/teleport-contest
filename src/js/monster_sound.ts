@@ -215,4 +215,3 @@ function looksLikeGecko(monster: Monster, state: GameState): boolean {
     const glyph = glyphAt(monster.mx, monster.my, state);
     return glyph?.kind === 'monster' && glyph.mnum === PM_GECKO;
 }
-

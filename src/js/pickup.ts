@@ -404,4 +404,3 @@ export function pickupObjectClass(object: GameObject): string {
     const oclass = object.oclass || objectClassForType(object.otyp);
     return objectClassHeading(oclass);
 }
-
