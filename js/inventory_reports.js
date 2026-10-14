@@ -282,6 +282,8 @@ function bucChoice(choice) {
     }
 }
 async function inventoryCategoryMenu(classes, unpaid, billed, statuses, picked, prompt) {
+    if (!game.inventory.length)
+        return null;
     if (classes.length === 1 && !unpaid && !billed && statuses.size <= 1)
         return classes[0] ?? null;
     const entries = classes.map((oclass, index) => ({ key: String.fromCharCode(97 + index),

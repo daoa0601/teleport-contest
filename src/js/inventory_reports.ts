@@ -274,6 +274,7 @@ function bucChoice(choice: string): Buc {
 
 async function inventoryCategoryMenu(classes: readonly number[], unpaid: boolean, billed: boolean,
     statuses: ReadonlySet<Buc>, picked: readonly GameObject[], prompt: string): Promise<string | number | null> {
+    if (!game.inventory.length) return null;
     if (classes.length === 1 && !unpaid && !billed && statuses.size <= 1) return classes[0] ?? null;
     const entries = classes.map((oclass, index) => ({ key: String.fromCharCode(97 + index),
         groupAccelerator: OBJECT_CLASS_SYMBOLS[oclass] ?? '', value: oclass, text: objectClassHeading(oclass) }));

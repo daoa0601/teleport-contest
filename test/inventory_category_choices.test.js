@@ -3,7 +3,7 @@ import test from 'node:test';
 import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { MENU_FULL } from '../js/const.js';
+import { MENU_FULL, MENU_PARTIAL } from '../js/const.js';
 import { DAGGER, POT_HEALING } from '../js/object_data.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -60,4 +60,18 @@ void test('inventory of used-up objects names their consumed quantity and total 
     assert.equal(used.quan, 4);
     assert.equal(game.context.move, 0);
 });
+const categoryMenuStyles = [MENU_FULL, MENU_PARTIAL];
+for (const style of categoryMenuStyles) {
+    void test(`an empty pack with a used-up bill has no inventory category menu in style ${style}`, async (t) => {
+        freshObjectRoom({ flags: { menu_style: style } });
+        const used = await knownObject(DAGGER, { where: 'onbill' });
+        game.billObjects = [used];
+        await createStaffedShop({ bill: [{ bo_id: used.o_id, bquan: 1, price: 10, useup: true }] });
+        const input = resetInputState();
+        planInput(input, t, []);
+        await rhack('I'.charCodeAt(0));
+        assert.equal(game.context.move, 0);
+        assert.equal(game._pending_message, '');
+    });
+}
 //# sourceMappingURL=inventory_category_choices.test.js.map
