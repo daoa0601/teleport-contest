@@ -12,12 +12,10 @@ import { artifactWarningFeedback } from './artifact_warning.js';
 import { currentAttribute } from './attrib.js';
 import { nhgetch } from './input.js';
 import { currentHungerState } from './hunger.js';
-import { heroIsSick } from './hero_illness.js';
-import { heroIsSliming } from './slime.js';
-import { heroIsPetrifying } from './stoning.js';
 import { rankOf } from './quest_pager.js';
+import { statusConditions } from './status_conditions.js';
 import { cansee, couldsee, set_seenv, vision_recalc } from './vision.js';
-import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, BC_BALL, BC_CHAIN, COLNO, ROWNO, STONE, ROOM, CORR, SCORR, SDOOR, DOOR, STAIRS, FOUNTAIN, THRONE, SINK, GRAVE, ALTAR, ICE, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER, CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL, TREE, IRONBARS, POOL, MOAT, WATER, LAVAPOOL, LAVAWALL, AIR, CLOUD, IS_POOL, IS_OBSTRUCTED, IS_ROOM, IS_WALL, LADDER, LA_DOWN, DBWALL, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN, D_NODOOR, D_ISOPEN, D_CLOSED, D_LOCKED, D_BROKEN, SV0, SV1, SV2, SV3, SV4, SV5, SV6, SV7, SICK_VOMITABLE, SICK_NONVOMITABLE, WM_X_TL, WM_X_TR, WM_X_BL, WM_X_BR, WM_X_TLBR, WM_X_BLTR, BEAR_TRAP, WEB, VIBRATING_SQUARE, CORPSTAT_GENDER, CORPSTAT_FEMALE, ENGRAVE, BURN, HEADSTONE, is_pit, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, def_warnsyms, MON_STILL_ARRIVING, In_endgame, In_quest, Is_rogue_level, Is_waterlevel, Is_knox_level, In_sokoban, PLNMSG_UNKNOWN, MONSEEN_NORMAL, MONSEEN_SEEINVIS, MONSEEN_INFRAVIS, MONSEEN_TELEPAT, MONSEEN_XRAYVIS, MONSEEN_DETECT, MONSEEN_WARNMON, PICK_NONE, PICK_ONE, Upolyd, ismnum, } from './const.js';
+import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, BC_BALL, BC_CHAIN, COLNO, ROWNO, STONE, ROOM, CORR, SCORR, SDOOR, DOOR, STAIRS, FOUNTAIN, THRONE, SINK, GRAVE, ALTAR, ICE, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER, CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL, TREE, IRONBARS, POOL, MOAT, WATER, LAVAPOOL, LAVAWALL, AIR, CLOUD, IS_POOL, IS_OBSTRUCTED, IS_ROOM, IS_WALL, LADDER, LA_DOWN, DBWALL, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN, D_NODOOR, D_ISOPEN, D_CLOSED, D_LOCKED, D_BROKEN, SV0, SV1, SV2, SV3, SV4, SV5, SV6, SV7, WM_X_TL, WM_X_TR, WM_X_BL, WM_X_BR, WM_X_TLBR, WM_X_BLTR, BEAR_TRAP, WEB, VIBRATING_SQUARE, CORPSTAT_GENDER, CORPSTAT_FEMALE, ENGRAVE, BURN, HEADSTONE, is_pit, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, def_warnsyms, MON_STILL_ARRIVING, In_endgame, In_quest, Is_rogue_level, Is_waterlevel, Is_knox_level, In_sokoban, PLNMSG_UNKNOWN, MONSEEN_NORMAL, MONSEEN_SEEINVIS, MONSEEN_INFRAVIS, MONSEEN_TELEPAT, MONSEEN_XRAYVIS, MONSEEN_DETECT, MONSEEN_WARNMON, PICK_NONE, PICK_ONE, Upolyd, ismnum, } from './const.js';
 import { NO_COLOR, ATR_INVERSE, CLR_BLACK, CLR_RED, CLR_GREEN, CLR_GRAY, CLR_BROWN, CLR_MAGENTA, CLR_CYAN, CLR_WHITE, CLR_YELLOW, CLR_BLUE, CLR_ORANGE, CLR_BRIGHT_GREEN, CLR_BRIGHT_BLUE, CLR_BRIGHT_MAGENTA, DEC_TO_UNICODE, } from './terminal.js';
 import { LARGE_BOX, CHEST, GOLD_PIECE, FOOD_RATION, CORPSE, TOWEL, STATUE, BOULDER, OBJECT_BASES, OBJECT_COLOR, } from './object_data.js';
 import { MONSTER_COLOR, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_FLAGS3, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SYMBOL, SPECIAL_PM, monsterTypeName, } from './monster_data.js';
@@ -2256,34 +2254,8 @@ export function _statusLine2(refreshLoad = true) {
     const load = refreshLoad ? encumbranceLabel(nearCapacity(game)) : u._encumbrance;
     if (load)
         line += ` ${load}`;
-    // TTY places conditions after hunger and load, sorted by severity and name.
-    if (u.strangled || (u.strangledTurns ?? 0) > 0)
-        line += ' Strngl';
-    const sick = heroIsSick(game);
-    if (sick && ((u.sickType ?? 0) & SICK_VOMITABLE))
-        line += ' FoodPois';
-    if (heroIsSliming(game))
-        line += ' Slime';
-    if (heroIsPetrifying(game))
-        line += ' Stone';
-    if (sick && ((u.sickType ?? 0) & SICK_NONVOMITABLE))
-        line += ' TermIll';
-    if (game.blind)
-        line += ' Blind';
-    if ((u.confusionTurns ?? 0) > 0)
-        line += ' Conf';
-    if (game.deaf)
-        line += ' Deaf';
-    if (propertyIsActive('flying', game))
-        line += ' Fly';
-    if (heroIsHallucinating(game))
-        line += ' Hallu';
-    if (propertyIsActive('levitation', game))
-        line += ' Lev';
-    if (u.usteed)
-        line += ' Ride';
-    if (u.stunned || (u.stunnedTurns ?? 0) > 0)
-        line += ' Stun';
+    for (const condition of statusConditions(game))
+        line += ` ${condition[0]}`;
     return line;
 }
 // ── Serialize terminal grid for screen comparison ──

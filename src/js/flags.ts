@@ -24,6 +24,7 @@ export type MenuStyle = 0 | 1 | 2 | 3;
 export type LootSortMode = 'n' | 'l' | 'f';
 
 export interface GameFlags extends Partial<Record<GameBooleanFlag, boolean>> {
+    statusConditionMask?: number;
     autounlock?: string | number | boolean;
     debug_fuzzer?: number;
     disclose?: string;

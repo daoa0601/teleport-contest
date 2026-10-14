@@ -2,6 +2,7 @@
 // C ref: options.c — handles OPTIONS=, BIND=, etc.
 
 import { game } from './gstate.js';
+import { setConditionOption } from './status_conditions.js';
 import type { GameFlags, InterfaceFlags, LootSortMode, MenuStyle } from './flags.js';
 import { CommandBindings } from './command_bindings.js';
 import { changePreferredFruit, normalizePreferredFruitName } from './fruit.js';
@@ -283,6 +284,12 @@ function parseConfiguration(rc: string, result: ConfigurationSettings): Configur
 
             const negated = trimmed.startsWith('!');
             const stripped = negated ? trimmed.slice(1) : trimmed;
+
+            if (stripped.toLowerCase().startsWith('cond_')) {
+                const mask = setConditionOption(stripped, !negated, result.flags.statusConditionMask);
+                if (mask !== null) result.flags.statusConditionMask = mask;
+                continue;
+            }
 
             const colonIdx = stripped.indexOf(':');
             const bindingOption = (colonIdx < 0 ? stripped : stripped.slice(0, colonIdx)).trim().toLowerCase();
