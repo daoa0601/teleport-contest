@@ -283,6 +283,7 @@ import {
     removeHeroAccessory, wearHeroAccessory,
 } from './accessory.js';
 import { heroHasNoHead, heroPassesWalls, heroSpecies } from './hero_species.js';
+import { monsterLocomotion } from './monster_locomotion.js';
 import { disturbBuriedZombies } from './object_impact.js';
 import { checkSlipperyIce } from './fumbling.js';
 import { MONSTER_BODY_META } from './monster_data.js';
@@ -4512,8 +4513,30 @@ export async function askTeleportDestination({ onPrompt = null }: {
 // ECMD_TIME.  Its first getpos use still owns the shared Lua tutorial, while
 // the destination room separately owns entry effects after relocation.
 async function wizTeleportPosition(): Promise<void> {
-    // dotele() clears travelcc before tele() asks for a destination.
-    // Scroll teleportation calls scrolltele() directly and keeps its cache.
+    const trap = game.level?.traps.find(candidate =>
+        candidate.tx === game.u.ux && candidate.ty === game.u.uy);
+    if (trap?.tseen && trap.ttyp === TELEP_TRAP && !trap.once
+        && trap.teledest && isok(trap.teledest.x, trap.teledest.y)) {
+        const locomotion = propertyIsActive('levitation') ? 'float'
+            : propertyIsActive('flying') ? 'fly'
+                : monsterLocomotion(heroSpecies(), 'jump');
+        await plineWithContinuation(`You ${locomotion} onto the teleportation trap.`);
+        if (!await bringLeashedFollowers()) {
+            await plineWithContinuation('You shudder for a moment.');
+            game.context.move = 0;
+            return;
+        }
+        // dotele() calls teleds() directly for a fixed trap destination:
+        // no location prompt, travel-target clear, or nutrition cost.
+        const movement = await moveHeroByTeleport(trap.teledest.x, trap.teledest.y);
+        await finishTeleportArrival(movement);
+        if (game.program_state.gameover) return;
+        await bringLeashedFollowers();
+        game.context.move = 1;
+        return;
+    }
+
+    // dotele() clears travelcc only on the route through tele().
     game._travelTarget = null;
     let destination = await askTeleportDestination();
     if (!destination) {
