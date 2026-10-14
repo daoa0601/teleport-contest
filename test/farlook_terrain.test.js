@@ -1,13 +1,43 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { farlookLocationDescription } from '../js/cmd.js';
-import { ICE, LA_DOWN, LA_UP, LAVAPOOL, LAVAWALL, MOAT, POOL, ROOM, STAIRS, WATER } from '../js/const.js';
-import { game } from '../js/gstate.js';
-import { newsym } from '../js/display.js';
+import { farlookLocationDescription, rhack } from '../js/cmd.js';
+import { HWALL, ICE, LA_DOWN, LA_UP, LAVAPOOL, LAVAWALL, MOAT, POOL, ROOM, STAIRS, WATER } from '../js/const.js';
+import { game, requireGameDisplay } from '../js/gstate.js';
+import { flush_screen, newsym, redrawMap } from '../js/display.js';
+import { resetInputState } from '../js/input.js';
 import { LEVEL_TIMER_KIND, scheduleLevelTimer } from '../js/object_timers.js';
 import { makeBlinded } from '../js/sight_change.js';
-import { vision_recalc } from '../js/vision.js';
+import { cansee, vision_recalc } from '../js/vision.js';
 import { freshObjectRoom } from './support/object-room.js';
+for (const [terrain, name] of [[HWALL, 'wall'], [ROOM, 'room']]) {
+    void test(`farlook describes an unseen ${name} as unexplored`, async () => {
+        const level = freshObjectRoom();
+        level.requireAt(30, 10).typ = terrain;
+        assert.equal(cansee(30, 10), false);
+        assert.equal(level.requireAt(30, 10).seenv, 0);
+        await redrawMap();
+        assert.equal(await farlookLocationDescription(30, 10), 'unexplored area');
+    });
+}
+for (const [x, y, description] of [[11, 10, 'land'], [11, 11, 'land'], [12, 10, 'unknown']]) {
+    void test(`submerged farlook calls hidden terrain at ${x},${y} ${description}`, async () => {
+        freshObjectRoom({ hero: { uinwater: true } });
+        await redrawMap();
+        assert.equal(await farlookLocationDescription(x, y), description);
+    });
+}
+void test('quick look describes an undiscovered wall through its unexplored glyph', async () => {
+    const level = freshObjectRoom({ flags: { tips: false } });
+    level.requireAt(30, 10).typ = HWALL;
+    await redrawMap();
+    const input = resetInputState();
+    input.feed('l'.repeat(20) + '.');
+    await rhack(';'.charCodeAt(0));
+    await flush_screen(1);
+    const description = requireGameDisplay().grid[0]?.map(cell => cell.ch).join('').trim();
+    assert.ok(description?.endsWith('can be many things (unexplored area)'), description);
+    assert.equal(level.requireAt(30, 10).seenv, 0);
+});
 for (const remembered of [false, true]) {
     void test(`farlook preserves the ${remembered ? 'remembered' : 'visible'} branch-staircase description`, async () => {
         const level = freshObjectRoom();

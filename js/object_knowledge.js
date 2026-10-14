@@ -25,6 +25,13 @@ export const OBJECT_CLASS_SYMBOLS = [
     '_',
     '.',
 ];
+// C drawing.c:def_oc_syms[].explain, in object-class order.
+export const OBJECT_CLASS_EXPLAIN = [
+    '', 'strange object', 'weapon', 'suit or piece of armor', 'ring',
+    'amulet', 'useful item (pick-axe, key, lamp...)', 'piece of food',
+    'potion', 'scroll', 'spellbook', 'wand', 'pile of coins', 'gem or rock',
+    'boulder or statue', 'iron ball', 'iron chain', 'splash of venom',
+];
 export const OBJECT_CLASS_LABELS = {
     2: 'Weapons',
     3: 'Armor',

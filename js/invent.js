@@ -49,7 +49,7 @@ export async function checkInventoryGold(why, state = game) {
     await impossible(`${why}: ${wrongSlotMessage}${wrongSlots && gold.length > 1 ? ' and ' : ''}${gold.length > 1 ? 'multiple gold stacks' : ''}`, { state });
     return true;
 }
-function objectNeedsFullIdentification(object) {
+export function objectNeedsFullIdentification(object) {
     if (!object || object.oclass === COIN_CLASS)
         return false;
     const typeKnown = OBJECT_INITIAL_KNOWN[object.otyp] || object.typeKnown

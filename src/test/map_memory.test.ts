@@ -44,6 +44,26 @@ for (const darkRoom of [true, false]) {
     });
 }
 
+void test('known terrain uses the ordinary corridor colour and restores its lighting afterward', async () => {
+    const level = freshObjectRoom({ flags: { tips: false, lit_corridor: true } });
+    level.requireAt(11, 10).typ = CORR;
+    newsym(11, 10);
+    await flush_screen(1);
+    assert.equal(requireScreenCell(10, 11).color, CLR_WHITE);
+    const input = resetInputState();
+    input.feed('a');
+    const browsing = rhack(127);
+    await input.waitUntilBlocked();
+    try {
+        assert.equal(requireScreenCell(10, 11).ch, '#');
+        assert.equal(requireScreenCell(10, 11).color, NO_COLOR);
+    } finally {
+        input.feed('\x1b ');
+        await browsing;
+    }
+    assert.equal(requireScreenCell(10, 11).color, CLR_WHITE);
+});
+
 void test('redrawing an unseen detected monster preserves its remembered lit floor', async () => {
     const level = freshObjectRoom({ flags: { dark_room: true, color: true },
         hero: { monsterDetection: true } });
