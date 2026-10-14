@@ -6280,8 +6280,6 @@ async function dothrow(selectedItem = null, capabilityChecked = false, suppliedS
     const launcher = game.uwep;
     const wieldingSling = !!launcher
         && OBJECT_SUBTYPE[launcher.otyp] === OBJECT_SUBTYPE[SLING];
-    if (!selectedItem && game.flags.fixinv === false)
-        reassignInventoryLetters();
     // C getobj() sorts its candidates independently of the carried chain.
     const throwClassification = (item) => {
         const objectClass = item.oclass || objectClassForType(item.otyp);

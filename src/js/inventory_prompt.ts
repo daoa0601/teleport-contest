@@ -61,6 +61,8 @@ export type InventoryObjectSelection = {
 export async function chooseInventoryObject(verb: string, classify: (object: GameObject) => InventoryClassification, {
     forcePrompt = false, emptyMessage, allowCount = false,
 }: { forcePrompt?: boolean; emptyMessage?: string; allowCount?: boolean } = {}): Promise<GameObject | null> {
+    const repeated = takeRepeatedInventorySelection(classify, allowCount, false);
+    if (repeated) return selectedInventoryObject(repeated);
     const queuedKey = takeCommandKey();
     if (queuedKey !== undefined) {
         const object = game.inventory.find(candidate =>
@@ -88,6 +90,10 @@ export async function chooseInventoryObject(verb: string, classify: (object: Gam
             allowMenu: true,
             allowGold: inventory.some(object => object.oclass === 12), menuItems,
         });
+    return selectedInventoryObject(selection);
+}
+
+function selectedInventoryObject(selection: InventoryObjectSelection): GameObject | null {
     const object = selection.object;
     if (object && selection.count !== null && selection.count < object.quan) {
         if (object.otyp === LOADSTONE && object.cursed) object.corpsenm = selection.count;
@@ -97,6 +103,36 @@ export async function chooseInventoryObject(verb: string, classify: (object: Gam
         else return splitObjectStack(object, selection.count, game);
     }
     return object;
+}
+
+// C getobj() resolves CQ_REPEAT before reassign(): a consumed letter must
+// not become a different possession merely because fixinv is disabled.
+function takeRepeatedInventorySelection(
+    classify: (object: GameObject) => InventoryClassification,
+    allowCount: boolean,
+    allowNone: boolean,
+): InventoryObjectSelection | undefined {
+    let repeated = takeRepeatCommand();
+    if (!repeated) return undefined;
+    let count: number | null = null;
+    if (repeated.kind === 'count') {
+        if (!allowCount)
+            return { cancelled: true, object: null, gold: false, none: false, count: null };
+        count = repeated.count;
+        repeated = takeRepeatCommand();
+    }
+    if (repeated?.kind !== 'key')
+        return { cancelled: true, object: null, gold: false, none: false, count: null };
+    const letter = String.fromCharCode(repeated.key);
+    const object = game.inventory.find(candidate => candidate.invlet === letter
+        && [GETOBJ_SUGGEST, GETOBJ_DOWNPLAY].includes(classify(candidate)));
+    if (object) return {
+        cancelled: false, object, gold: false, none: false,
+        count: count !== null && count > 0 && count < object.quan ? count : null,
+    };
+    if (allowNone && letter === '-')
+        return { cancelled: false, object: null, gold: false, none: true, count: null };
+    return { cancelled: true, object: null, gold: false, none: false, count: null };
 }
 
 // C invent.c:mime_action(): '-' without a hands option is an action mime.
@@ -191,31 +227,8 @@ export async function promptInventoryObject(prompt: string, eligible: readonly G
     allowCount = false,
     menuItems = eligible,
 }: InventoryPromptOptions): Promise<InventoryObjectSelection> {
-    let repeated = takeRepeatCommand();
-    let repeatedCount: number | null = null;
-    if (repeated?.kind === 'count') {
-        if (!allowCount)
-            return { cancelled: true, object: null, gold: false, none: false, count: null };
-        repeatedCount = repeated.count;
-        repeated = takeRepeatCommand();
-        if (!repeated)
-            return { cancelled: true, object: null, gold: false, none: false, count: null };
-    }
-    if (repeated) {
-        if (repeated.kind !== 'key')
-            return { cancelled: true, object: null, gold: false, none: false, count: null };
-        const letter = String.fromCharCode(repeated.key);
-        const object = game.inventory.find(candidate => candidate.invlet === letter
-            && [GETOBJ_SUGGEST, GETOBJ_DOWNPLAY].includes(classify(candidate)));
-        if (object) return {
-            cancelled: false, object, gold: false, none: false,
-            count: repeatedCount !== null && repeatedCount > 0 && repeatedCount < object.quan
-                ? repeatedCount : null,
-        };
-        if (allowNone && letter === '-')
-            return { cancelled: false, object: null, gold: false, none: true, count: null };
-        return { cancelled: true, object: null, gold: false, none: false, count: null };
-    }
+    const repeated = takeRepeatedInventorySelection(classify, allowCount, allowNone);
+    if (repeated) return repeated;
     // getobj() checks CQ_CANNED before invoking tty_yn_function(). A queued
     // choice neither acknowledges unread prose nor paints an item question.
     const queuedKey = takeCommandKey();

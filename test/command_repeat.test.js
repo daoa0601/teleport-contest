@@ -4,7 +4,7 @@ import { rhack } from '../js/cmd.js';
 import { A_CON, A_DEX, A_STR, DOOR, D_CLOSED, D_ISOPEN } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { nhgetch } from '../js/input.js';
-import { DAGGER, LOADSTONE, OIL_LAMP, POT_HEALING, SCR_BLANK_PAPER } from '../js/object_data.js';
+import { DAGGER, LOADSTONE, OIL_LAMP, POT_EXTRA_HEALING, POT_HEALING, SCR_BLANK_PAPER } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshTurnRoom } from './support/playable-room.js';
 import { startLuaCore } from './support/lua-game.js';
@@ -205,6 +205,21 @@ void test('trying to drink without any potions clears command recall', async () 
     input.feed('\x01');
     await rhack(0);
     assert.equal(game._pending_message, 'There is no command available to repeat.');
+});
+void test('repeat does not renumber another potion into the consumed potion slot', async () => {
+    const input = freshTurnRoom({ flags: { fixinv: false } });
+    const first = await addInventoryObject(POT_HEALING);
+    const second = await addInventoryObject(POT_EXTRA_HEALING);
+    input.feed('qa');
+    await rhack(0);
+    assert.equal(game.inventory.includes(first), false);
+    assert.equal(second.invlet, 'b');
+    input.feed('\x01h');
+    await rhack(0);
+    assert.equal(game.inventory.includes(second), true, 'the saved a choice must not consume potion b');
+    assert.equal(second.invlet, 'b');
+    assert.equal(game.context.move, 0);
+    assert.equal(await nhgetch(), 'h'.charCodeAt(0), 'recall must not ask for another potion');
 });
 void test('strangulation refuses drinking without cancelling command recall', async () => {
     const input = freshTurnRoom({ hero: { strangledTurns: 6 } });
