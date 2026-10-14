@@ -9,6 +9,7 @@ import type { DeathHandler } from './end.js';
 import { heroIsHallucinating } from './senses.js';
 import { makeConfused, makeStunned } from './hero_mental_status.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
+import { heroStomachName } from './body_parts.js';
 import {
     adjustAttribute, currentAttribute, exerciseAttribute,
 } from './attrib.js';
@@ -206,7 +207,7 @@ export async function vomitHero({
     } else {
         await cureFoodPoisoningByVomiting(state, publish);
         if (hungerState >= FAINTING)
-            await publish('Your stomach heaves convulsively!');
+            await publish(`Your ${heroStomachName(state)} heaves convulsively!`);
     }
 
     installVomitingHelplessness(state);

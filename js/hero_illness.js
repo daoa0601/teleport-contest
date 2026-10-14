@@ -4,6 +4,7 @@
 import { heroIsHallucinating } from './senses.js';
 import { makeConfused, makeStunned } from './hero_mental_status.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
+import { heroStomachName } from './body_parts.js';
 import { adjustAttribute, currentAttribute, exerciseAttribute, } from './attrib.js';
 import { A_CON, ALTAR, FAINTING, ICE, POISONING, SICK_ALL, SICK_NONVOMITABLE, SICK_VOMITABLE, TIMEOUT, } from './const.js';
 import { pline, plineWithContinuation } from './display.js';
@@ -156,7 +157,7 @@ export async function vomitHero({ state = game, publish = pline, angerAltar = al
     else {
         await cureFoodPoisoningByVomiting(state, publish);
         if (hungerState >= FAINTING)
-            await publish('Your stomach heaves convulsively!');
+            await publish(`Your ${heroStomachName(state)} heaves convulsively!`);
     }
     installVomitingHelplessness(state);
     if (cannotVomit || hungerState >= FAINTING)
