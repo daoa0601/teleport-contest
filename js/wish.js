@@ -2,7 +2,7 @@
 // C refs: zap.c makewish(), objnam.c readobjnam(), and
 // invent.c hold_another_object().
 import { markArtifactFound } from './artifacts.js';
-import { ICE, IRONBARS, Is_airlevel, Is_waterlevel } from './const.js';
+import { ICE, IRONBARS, Is_airlevel, Is_waterlevel, NHW_MENU, PICK_ONE } from './const.js';
 import { bot, docrt, flushPendingTopline, flush_screen, pline, plineWithContinuation, } from './display.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { holdAnotherObject } from './hero_hold_object.js';
@@ -12,6 +12,7 @@ import { getLine } from './query.js';
 import { rn2 } from './rng.js';
 import { heroResistsStoning, touchPetrifies } from './stoning.js';
 import { showTextPages } from './windows.js';
+import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu, } from './tty_menu.js';
 async function showWishHelp(triesLeft) {
     const countNames = ['zero', 'one', 'two', 'three', 'four', 'five'];
     const count = countNames[triesLeft] ?? String(triesLeft);
@@ -57,7 +58,9 @@ export async function makeWish({ announce = false, } = {}) {
         const assistance = failedAttempts > 0
             && game.flags?.cmdassist !== false
             ? " (enter 'help' for assistance)" : '';
-        value = await getLine(`For what do you wish${assistance}?`, (_ch, key) => key >= 32 && key < 127);
+        value = failedAttempts === 0 && game.iflags.menu_requested && game._wishHistory?.length
+            ? await choosePastWish()
+            : await getLine(`For what do you wish${assistance}?`, (_ch, key) => key >= 32 && key < 127);
         if ((value ?? '').trim().toLowerCase() === 'help') {
             await showWishHelp(5 - failedAttempts);
             continue;
@@ -79,10 +82,13 @@ export async function makeWish({ announce = false, } = {}) {
         }
     }
     if (result.noWish) {
+        if (!['nothing', 'nil', 'none'].includes((value ?? '').trim().toLowerCase()))
+            rememberWish(value ?? '');
         game.context.move = 0;
         return;
     }
     const object = result.object;
+    rememberWish(value ?? '');
     if (object.oartifact)
         markArtifactFound(object.oartifact);
     game.u.uconduct.wishes = (game.u.uconduct.wishes || 0) + 1;
@@ -94,6 +100,31 @@ export async function makeWish({ announce = false, } = {}) {
         return;
     game.u.ublesscnt = (game.u.ublesscnt || 0) + 50 + rn2(100);
     game.context.move = 0;
+}
+// C zap.c:wish_history_add()/wish_history_menu(). History belongs to the
+// running game, is limited to twenty entries, and omits repeated prefixes.
+function rememberWish(value) {
+    if (!game.flags.debug)
+        return;
+    const wish = value.trim().replace(/\s+/g, ' ');
+    const history = game._wishHistory ?? [];
+    if (history.some(previous => wish.toLowerCase().startsWith(previous.toLowerCase())))
+        return;
+    game._wishHistory = [wish, ...history].slice(0, 20);
+}
+async function choosePastWish() {
+    const window = tty_create_nhwindow(NHW_MENU);
+    try {
+        await tty_start_menu(window);
+        for (const wish of game._wishHistory ?? [])
+            tty_add_menu(window, { identifier: wish, text: wish });
+        tty_end_menu(window, 'Wish what?');
+        const result = await tty_select_menu(window, PICK_ONE);
+        return result.selections[0]?.identifier ?? '';
+    }
+    finally {
+        await tty_destroy_nhwindow(window);
+    }
 }
 function wishDropMessage(object) {
     const hero = game.u;
