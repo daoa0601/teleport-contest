@@ -15,7 +15,7 @@ import { withIndefiniteArticle } from './object_grammar.js';
 import { quotedEngraving, lookGlyphAt } from './pager_features.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 
-interface ScreenDescription { text: string; count: number; firstMatch: string }
+interface ScreenDescription { text: string; count: number; firstMatch: string; needsDetail: boolean }
 
 export function screenDescription(x: number, y: number, description: string): ScreenDescription {
     const glyph = lookGlyphAt(x, y);
@@ -23,7 +23,7 @@ export function screenDescription(x: number, y: number, description: string): Sc
     const appearance = location?.disp_glyph
         ? { ch: location.disp_ch, dec: location.disp_decgfx }
         : location?.remembered_glyph;
-    if (!glyph || !appearance) return { text: description, count: 0, firstMatch: '' };
+    if (!glyph || !appearance) return { text: description, count: 0, firstMatch: '', needsDetail: false };
     const symbol = appearance.dec ? `\x0e${appearance.ch}\x0f` : appearance.ch;
     const prefix = `${symbol}        `;
     const submerged = (game.u.uinwater || game.underwater) && !Is_waterlevel(game.u.uz);
@@ -31,7 +31,7 @@ export function screenDescription(x: number, y: number, description: string): Sc
     const detectionOnly = ((game.iflags.terrainmode ?? 0) & (TER_DETECT | TER_MAP)) === TER_DETECT;
     if ((game.u.uswallow || submerged) && distant
         || detectionOnly && glyph.glyph === cmapToGlyph(CmapSymbol.stone))
-        return { text: prefix + 'unreconnoitered', count: 1, firstMatch: 'unreconnoitered' };
+        return { text: prefix + 'unreconnoitered', count: 1, firstMatch: 'unreconnoitered', needsDetail: false };
 
     const meanings: string[] = [];
     let count = 0, firstMatch = '', needLook = false, hitTrap = false, skippedVenom = false;
@@ -134,12 +134,13 @@ export function screenDescription(x: number, y: number, description: string): Sc
     }
     if (skippedVenom && count < 2) append('a splash of venom', 'splash of venom');
     let text = count > 4 ? 'can be many things' : meanings.join(' or ');
-    if (count > 1 || needLook) {
+    const needsDetail = count > 1 || needLook;
+    if (needsDetail) {
         firstMatch = description || firstMatch;
         if (firstMatch) {
             text += ` (${firstMatch}${quotedEngraving(x, y, firstMatch)})`;
             count = 1;
         }
     }
-    return { text: prefix + text.slice(0, BUFSZ - 19), count, firstMatch };
+    return { text: prefix + text.slice(0, BUFSZ - 19), count, firstMatch, needsDetail };
 }

@@ -4646,7 +4646,10 @@ async function doFarlook(quick = true): Promise<void> {
                 start: position, force: quick,
                 prompt: game._pending_message || game._retained_message,
                 goal: 'a monster, object or location',
-                describe: farlookLocationDescription,
+                describe: async (x, y) => {
+                    const screen = screenDescription(x, y, '');
+                    return screen.needsDetail ? await farlookLocationDescription(x, y) || screen.firstMatch : screen.firstMatch;
+                },
             });
             if (!cursor) break;
             position = { x: cursor.x, y: cursor.y };
@@ -4656,13 +4659,14 @@ async function doFarlook(quick = true): Promise<void> {
             // checkfile() question or the next picker acknowledges that prose.
             game._pending_message = '';
             game._retained_message = '';
-            const description = await farlookLocationDescription(cursor.x, cursor.y);
+            const basic = screenDescription(cursor.x, cursor.y, '');
+            const description = basic.needsDetail ? await farlookLocationDescription(cursor.x, cursor.y) : '';
             const glyph = glyphAt(cursor.x, cursor.y);
-            const monster = glyph?.kind === 'monster' && game.level
+            const monster = basic.needsDetail && glyph?.kind === 'monster' && game.level
                 && !farlookDescribesHero(cursor.x, cursor.y)
                 ? monsterAtPosition(game.level, cursor.x, cursor.y) : null;
             const seen = monster ? monsterSeenDescription(monster) : '';
-            const screen = screenDescription(cursor.x, cursor.y, description);
+            const screen = basic.needsDetail ? screenDescription(cursor.x, cursor.y, description) : basic;
             await plineWithContinuation(screen.count ? screen.text
                 + (seen ? ` [seen: ${seen}]` : '') : "I've never heard of such things.");
             if (screen.count === 1 && cursor.pickType !== LOOK_QUICK && cursor.pickType !== LOOK_ONCE

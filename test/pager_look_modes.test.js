@@ -25,4 +25,12 @@ void test('quick look uses concise getpos feedback and restores verbosity', asyn
     ]);
     assert.equal(game.flags.verbose, true);
 });
+void test('submerged quick look describes distant cursor positions as unreconnoitered', async () => {
+    freshObjectRoom({ flags: { tips: false }, hero: { uinwater: true } });
+    const input = resetInputState();
+    input.feed('ll');
+    await answerPrompts(rhack(';'.charCodeAt(0)), input, [
+        { prompt: /unreconnoitered/, keys: '\x1b' },
+    ]);
+});
 //# sourceMappingURL=pager_look_modes.test.js.map
