@@ -4,9 +4,9 @@
 import { SPE_LIM } from './const.js';
 import { makeSingular } from './object_grammar.js';
 import { rn2, rnd } from './rng.js';
-import { resolveMonsterNamePrefix } from './mondata.js';
+import { nameToMonster, resolveMonsterNamePrefix } from './mondata.js';
 import { MONSTER_NAME } from './monster_data.js';
-import { GRAY_DRAGON_SCALES, YELLOW_DRAGON_SCALES, POT_WATER, TIN } from './object_data.js';
+import { GLOB_OF_BLACK_PUDDING, GLOB_OF_GRAY_OOZE, GRAY_DRAGON_SCALES, OBJECT_NAMES, YELLOW_DRAGON_SCALES, TIN, } from './object_data.js';
 import { parseTinPreparation } from './tin.js';
 export function parseWishText(text) {
     const original = text.trim().replace(/\s+/g, ' ');
@@ -14,6 +14,7 @@ export function parseWishText(text) {
         count: 1, explicitCount: null, globSize: 0, enchantment: null,
         buc: null, recharged: null, charges: null, erodeproof: false,
         eroded: null, eroded2: null, greased: false, fruit: parseFruitWish(original), name: '',
+        originalName: original,
         lit: false, wetness: 0, unlabeled: false, poisoned: false,
         trapped: null, lock: null, partlyEaten: false, historic: false,
         diluted: false, empty: false, heavy: false, fakeAmulet: false,
@@ -125,6 +126,7 @@ export function parseWishText(text) {
         remaining = rest;
     }
     parsed.heavy = intensity > 0;
+    const prefixes = original.slice(0, original.length - remaining.length);
     remaining = parseWishCharges(remaining, parsed);
     const named = remaining.search(/ named /i);
     if (named >= 0) {
@@ -148,6 +150,14 @@ export function parseWishText(text) {
         parsed.empty = false;
         remaining = remaining.slice(0, spinach);
     }
+    parsed.name = remaining;
+    parsed.originalName = prefixes + remaining;
+    return parsed;
+}
+// Called ranges and the Amulet rule skip this part of postparse1. The lookup
+// owner decides when to advance here rather than parsing every noun eagerly.
+export function parseWishNoun(parsed) {
+    let remaining = parsed.name;
     if (/^pair of /i.test(remaining)) {
         parsed.count *= 2;
         remaining = remaining.slice(8);
@@ -159,21 +169,38 @@ export function parseWishText(text) {
     }
     else
         remaining = remaining.replace(/^sets? of /i, '');
-    if (parsed.fakeAmulet && /amulet of yendor/i.test(remaining))
-        remaining = 'cheap plastic imitation of the Amulet of Yendor';
+    const glob = remaining.match(/^globs?(?: of (.+))?$/i)
+        || remaining.match(/^(.+) globs?$/i);
+    if (glob) {
+        const species = nameToMonster(glob[1] ?? '');
+        if (species < 0) {
+            const type = GLOB_OF_GRAY_OOZE + rn2(GLOB_OF_BLACK_PUDDING - GLOB_OF_GRAY_OOZE);
+            const name = OBJECT_NAMES[type];
+            if (!name)
+                throw new RangeError(`Missing glob name for object type ${type}`);
+            parsed.name = name;
+        }
+        else
+            parsed.name = `glob of ${MONSTER_NAME[species]}`;
+        if (/\bglobs\b/i.test(glob[0]) && parsed.count < 2)
+            parsed.count = 2;
+        return 'glob';
+    }
     remaining = parseWishSpecies(remaining, parsed);
-    const requested = remaining.toLowerCase();
-    parsed.name = ['tricks', 'clothes'].includes(requested) ? requested : makeSingular(requested);
-    if (parsed.name !== requested && parsed.count === 1)
+    if (parsed.directType === TIN) {
+        parsed.name = remaining;
+        return 'direct';
+    }
+    const singular = ['tricks', 'clothes'].includes(remaining.toLowerCase())
+        ? remaining : makeSingular(remaining);
+    if (singular !== remaining && parsed.count === 1)
         parsed.count = 2;
+    rewriteOriginalNoun(parsed, remaining, singular);
+    parsed.name = singular;
     // C wall properties use the remaining name and match case sensitively.
     parsed.undiggable = remaining.includes('undiggable ') || remaining.includes('nondiggable ');
     parsed.unphaseable = remaining.includes('unphaseable ') || remaining.includes('nonpasswall ');
-    if (parsed.directType === null && /holy water$/i.test(parsed.name)) {
-        parsed.buc = /unholy water$/i.test(parsed.name) ? 'cursed' : 'blessed';
-        parsed.directType = POT_WATER;
-    }
-    return parsed;
+    return 'lookup';
 }
 // Fruit names can contain ordinary object modifiers. C reparses only food
 // prefixes and restores these values after a case-sensitive fruit match.
@@ -225,7 +252,9 @@ function parseWishSpecies(text, parsed) {
     if (depicted) {
         parsed.gender = depicted[2]?.toLowerCase() === 'male' ? 0
             : depicted[2]?.toLowerCase() === 'female' ? 1 : 2;
-        text = `${depicted[1]} of ${depicted[3]}`;
+        const noun = `${depicted[1]} of ${depicted[3]}`;
+        rewriteOriginalNoun(parsed, text, noun);
+        text = noun;
     }
     // Globs have their own canonicalization and are never corpse species.
     if (/\bglobs?\b/i.test(text))
@@ -246,7 +275,9 @@ function parseWishSpecies(text, parsed) {
             const match = resolveMonsterNamePrefix(of[1]);
             if (match) {
                 recordWishSpecies(parsed, match);
-                text = text.slice(0, of.index);
+                const noun = text.slice(0, of.index);
+                rewriteOriginalNoun(parsed, text, noun);
+                text = noun;
             }
         }
     }
@@ -269,6 +300,11 @@ function parseWishSpecies(text, parsed) {
         }
     }
     return text;
+}
+function rewriteOriginalNoun(parsed, before, after) {
+    if (before === after)
+        return;
+    parsed.originalName = parsed.originalName.slice(0, -before.length) + after;
 }
 function recordWishSpecies(parsed, match) {
     parsed.monsterSpecies = match.mnum;

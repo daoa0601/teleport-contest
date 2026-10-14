@@ -3,13 +3,18 @@
 // random generation; a class-qualified failed description is still a wish.
 import { P_HAMMER, P_POLEARMS } from './const.js';
 import { game } from './gstate.js';
-import type { GameState } from './game_state.js';
+import type { Fruit, GameState } from './game_state.js';
+import { artifactByName } from './artifacts.js';
+import type { Artifact } from './artifacts.js';
+import { matchWishedFruit } from './fruit.js';
+import { japaneseWishType } from './japanese_item_name.js';
 import { rndClass } from './mklev.js';
 import * as objects from './object_data.js';
 import { makeSingular } from './object_grammar.js';
 import { OBJECT_CLASS_SYMBOLS, objectClassForType } from './object_knowledge.js';
 import { rn2 } from './rng.js';
-import type { ParsedWish } from './wish_parse.js';
+import { parseWishNoun, type ParsedWish } from './wish_parse.js';
+import { wizardTrapRequest } from './wish_terrain.js';
 
 const WEAPON_CLASS = 2;
 const ARMOR_CLASS = 3;
@@ -81,123 +86,212 @@ const alternateSpellings: readonly (readonly [string, number])[] = [
     ['touch stone', objects.TOUCHSTONE], ['flintstone', objects.FLINT],
 ];
 
-export interface WishLookup {
-    readonly name: string;
-    readonly oclass: number;
-    readonly type: number | null;
+export type WishLookup =
+    | { readonly kind: 'object'; readonly type: number;
+        readonly fruit: Fruit | null; readonly artifact: Artifact | null }
+    | { readonly kind: 'random'; readonly oclass: number }
+    | { readonly kind: 'gold' }
+    | { readonly kind: 'rejected' }
+    | { readonly kind: 'terrain'; readonly trapType: number }
+    | { readonly kind: 'unresolved'; readonly name: string };
+
+interface WishSearch {
+    name: string;
+    originalName: string;
+    oclass: number;
+    actual: string | null;
+    description: string | null;
+    descriptionUsesNoun: boolean;
 }
 
+// Follow readobjnam's jumps: an early type or rejection ends lookup; class
+// parsing goes directly to name search; only unclassified nouns try ranges.
 export function lookupWishType(parsed: ParsedWish, {
     wizardWish = false, state = game,
 }: { wizardWish?: boolean; state?: GameState } = {}): WishLookup {
-    const original = parsed.name;
-    let name = original;
-    const callName = parsed.callName;
-    let description = parsed.description;
-    const result = (type: number | null, oclass = 0): WishLookup =>
-        ({ name, type, oclass: type === null ? oclass : objectClassForType(type) });
-
-    if (/^glob of /i.test(name)) {
-        const type = randomTypeByDescription(name, FOOD_CLASS, 1, state)
-            ?? randomTypeByDescription(callName, FOOD_CLASS, 1, state);
-        return result(type, FOOD_CLASS);
-    }
     // C recognizes called ranges before singularizing the object noun.
-    const callRange = callName
+    const callRange = parsed.callName
         ? ranges.find(([range]) => range === parsed.calledNoun?.toLowerCase()) : null;
     if (callRange) {
-        const calledType = randomTypeByDescription(callName, callRange[1], 1, state);
-        const type = calledType ?? randomTypeByDescription(original, callRange[1], 1, state);
-        return result(type, callRange[1]);
+        return searchWishNames(parsed, {
+            name: parsed.name, originalName: parsed.originalName, oclass: callRange[1],
+            actual: null, description: null, descriptionUsesNoun: false,
+        }, state);
     }
-    const amulet = /(?:^| )Amulet of Yendor/i.exec(name);
-    if (amulet) return result(/^(?:cheap |plastic |imitation )/i.test(name)
-        ? objects.FAKE_AMULET_OF_YENDOR : objects.AMULET_OF_YENDOR);
+    if (/(?:^| )Amulet of Yendor/i.test(parsed.name))
+        return foundWishType(parsed.fakeAmulet || /^(?:cheap |plastic |imitation )/i.test(parsed.name)
+            ? objects.FAKE_AMULET_OF_YENDOR : objects.AMULET_OF_YENDOR);
 
-    const alias = alternateSpellings.find(([alias]) => wishMatches(name, alias, true));
-    if (alias) return result(alias[1]);
-    name = name.replace(/^grey spell/i, 'gray spell').replace(/armour/i, 'armor');
-    if (/^paperback(?:$| book)/i.test(name)) return result(objects.SPE_NOVEL);
-    if (/^paperback/i.test(name)) return result(null);
-    if (/orange$/i.test(name)) return result(objects.ORANGE);
+    const noun = parseWishNoun(parsed);
+    if (noun === 'direct' && parsed.directType !== null) return foundWishType(parsed.directType);
+    const search: WishSearch = {
+        name: parsed.name, originalName: parsed.originalName, oclass: 0,
+        actual: null, description: parsed.description, descriptionUsesNoun: false,
+    };
+    if (noun === 'glob') {
+        search.oclass = FOOD_CLASS;
+        search.actual = search.name;
+        search.description = null;
+        return searchWishNames(parsed, search, state);
+    }
 
-    const classSymbol = name.length === 1 ? OBJECT_CLASS_SYMBOLS.indexOf(name) : -1;
+    const alias = alternateSpellings.find(([alias]) => wishMatches(search.name, alias, true));
+    if (alias) return foundWishType(alias[1]);
+    rewriteSearchNoun(search, search.name.replace(/^grey spell/i, 'gray spell').replace(/armour/i, 'armor'));
+    if (parsed.directType !== null) return foundWishType(parsed.directType);
+    if (/holy water$/i.test(search.name)) {
+        parsed.buc = /unholy water$/i.test(search.name) ? 'cursed' : 'blessed';
+        return foundWishType(objects.POT_WATER);
+    }
+    if (/^paperback(?:$| book)/i.test(search.name)) return foundWishType(objects.SPE_NOVEL);
+    if (/^paperback/i.test(search.name)) return { kind: 'rejected' };
+    if (parsed.unlabeled && /scroll$/i.test(search.name)) return foundWishType(objects.SCR_BLANK_PAPER);
+    if (parsed.unlabeled && /spellbook$/i.test(search.name)) return foundWishType(objects.SPE_BLANK_PAPER);
+    if (/orange$/i.test(search.name) && parsed.monsterSpecies === null) return foundWishType(objects.ORANGE);
+    if (/gold piece$|zorkmid$|^(?:gold|money|coin)$|^\$/i.test(search.name)) return { kind: 'gold' };
+
+    const classSymbol = search.name.length === 1 ? OBJECT_CLASS_SYMBOLS.indexOf(search.name) : -1;
     if (classSymbol > 1 && (classSymbol !== VENOM_CLASS || wizardWish))
-        return result(null, classSymbol);
+        return { kind: 'random', oclass: classSymbol };
 
-    let oclass = 0;
-    let actual: string | null = null;
+    const classResult = parseWishClass(search, state);
+    if (classResult) return classResult;
+    if (search.oclass) return searchWishNames(parsed, search, state);
+
+    if (wizardWish) {
+        parsed.name = search.name.toLowerCase();
+        const trapType = wizardTrapRequest(parsed);
+        if (parsed.directType !== null) return foundWishType(parsed.directType);
+        if (trapType !== null) return { kind: 'terrain', trapType };
+    }
+    const rangeResult = parseWishRange(parsed, search);
+    return rangeResult ?? searchWishNames(parsed, search, state);
+}
+
+function parseWishClass(search: WishSearch, state: GameState): WishLookup | null {
     const wrapperException = /^(?:enchant |destroy |detect food|food detection|ring mail|studded leather armor|leather armor|tooled horn|food ration|meat ring)/i;
-    if (!wrapperException.test(name)) {
-        for (const [wrapper, cls] of wrappers) {
-            if (name.toLowerCase().startsWith(wrapper)) {
-                oclass = cls;
-                if (cls === AMULET_CLASS) actual = name;
-                else {
-                    name = name.slice(wrapper.length);
-                    if (/^ of /i.test(name)) actual = name.slice(4);
-                }
-                break;
+    if (wrapperException.test(search.name)) return null;
+    for (const [wrapper, cls] of wrappers) {
+        if (search.name.toLowerCase().startsWith(wrapper)) {
+            search.oclass = cls;
+            if (cls === AMULET_CLASS) search.actual = search.name;
+            else {
+                // Advancing bp leaves the class prefix in origbp.
+                search.name = search.name.slice(wrapper.length);
+                if (/^ of /i.test(search.name)) search.actual = search.name.slice(4);
             }
-            if (name.toLowerCase().endsWith(wrapper)) {
-                oclass = cls;
-                if (cls === AMULET_CLASS) {
-                    if (/^versus poison /i.test(name)) return result(objectType('amulet versus poison'));
-                    const shape = name.slice(0, -wrapper.length).trimEnd();
-                    const shapeType = randomTypeByDescription(shape, cls, 0, state);
-                    if (shapeType !== null) return result(shapeType);
-                } else name = name.slice(0, -wrapper.length).trimEnd();
-                actual = description = name;
-                break;
+            return null;
+        }
+        if (search.name.toLowerCase().endsWith(wrapper)) {
+            search.oclass = cls;
+            if (cls === AMULET_CLASS) {
+                if (/^versus poison /i.test(search.name)) return foundWishType(objectType('amulet versus poison'));
+                const shape = search.name.slice(0, -wrapper.length).trimEnd();
+                const shapeType = randomTypeByDescription(shape, cls, 0, state);
+                if (shapeType !== null) return foundWishType(shapeType);
+            } else {
+                rewriteSearchNoun(search, search.name.slice(0, -wrapper.length).trimEnd());
             }
+            search.actual = search.description = search.name;
+            search.descriptionUsesNoun = true;
+            return null;
         }
     }
-    let retryingArmor = false;
+    return null;
+}
+
+// C postparse2 is also the armor retry target, even with a class selected.
+function parseWishRange(parsed: ParsedWish, search: WishSearch): WishLookup | null {
+    const range = ranges.find(([range]) => range === search.name.toLowerCase());
+    if (range) return foundWishType(rndClass(range[2], range[3]));
+    if (/ (?:stone|gem)$/i.test(search.name)) {
+        rewriteSearchNoun(search, search.name.replace(/ (?:stone|gem)$/i, ''));
+        search.oclass = GEM_CLASS;
+        search.actual = search.description = search.name;
+        search.descriptionUsesNoun = true;
+        return null;
+    }
+    if (search.name.toLowerCase() !== 'looking glass' && /(?:^| )glass$/i.test(search.name)) {
+        if (parsed.lock === 'broken' || /broken/i.test(search.name)) return { kind: 'rejected' };
+        const glass = search.name.replace(/^worthless /i, '').replace(/^piece of /i, '')
+            .replace(/^colou?red /i, '');
+        if (glass.toLowerCase() === 'glass')
+            return foundWishType(objects.WORTHLESS_PIECE_OF_WHITE_GLASS + rn2(9));
+        rewriteSearchNoun(search, `worthless piece of ${glass}`);
+    }
+    search.actual = search.name;
+    if (search.description === null) {
+        search.description = search.name;
+        search.descriptionUsesNoun = true;
+    }
+    return null;
+}
+
+function searchWishNames(parsed: ParsedWish, search: WishSearch, state: GameState): WishLookup {
     for (;;) {
-        if (!oclass || retryingArmor) {
-            const range = ranges.find(([range]) => range === name.toLowerCase());
-            if (range) return result(rndClass(range[2], range[3]));
-            if (/ (?:stone|gem)$/i.test(name)) {
-                name = name.replace(/ (?:stone|gem)$/i, '');
-                oclass = GEM_CLASS;
-            } else if (name.toLowerCase() !== 'looking glass'
-                && (/ glass$/i.test(name) || /^glass$/i.test(name))) {
-                if (parsed.lock === 'broken' || /broken/i.test(name)) return result(null);
-                const glass = name.replace(/^worthless /i, '').replace(/^piece of /i, '')
-                    .replace(/^colou?red /i, '');
-                if (glass.toLowerCase() === 'glass')
-                    return result(objects.WORTHLESS_PIECE_OF_WHITE_GLASS + rn2(9));
-                name = `worthless piece of ${glass}`;
-            }
-            actual = name;
-            description ??= actual;
-        }
-
-        if (!oclass && actual) {
+        if (!search.oclass && search.actual) {
             for (let type = objects.DILITHIUM_CRYSTAL; type <= objects.JADE; type++)
-                if (actual.toLowerCase() === objects.OBJECT_NAMES[type]?.toLowerCase()) return result(type);
-            if (actual.toLowerCase() === 'tin') return result(objects.TIN);
+                if (search.actual.toLowerCase() === objects.OBJECT_NAMES[type]?.toLowerCase())
+                    return foundWishType(type);
+            if (search.actual.toLowerCase() === 'tin') return foundWishType(objects.TIN);
         }
-
-        const candidates = [actual, description !== actual ? description : null, callName,
-            original !== actual ? original : null];
+        const candidates = [search.actual,
+            search.description !== search.actual ? search.description : null, parsed.callName,
+            search.originalName !== search.actual ? search.originalName : null];
         for (const candidate of candidates) {
-            const type = randomTypeByDescription(candidate, oclass, 1, state);
-            if (type !== null) return result(type, oclass);
+            const type = randomTypeByDescription(candidate, search.oclass, 1, state);
+            if (type !== null) return foundWishType(type);
         }
-        if (oclass === ARMOR_CLASS && !/mail/i.test(name)) {
-            // C retries postparse2 with the chosen class still in effect.
-            name += ' mail';
-            retryingArmor = true;
+        const japaneseType = japaneseWishType(search.actual);
+        if (japaneseType !== null) return foundWishType(japaneseType);
+        if (search.oclass === ARMOR_CLASS && !/mail/i.test(search.name)) {
+            rewriteSearchNoun(search, `${search.name} mail`);
+            if (search.descriptionUsesNoun) search.description = search.name;
+            const retryResult = parseWishRange(parsed, search);
+            if (retryResult) return retryResult;
             continue;
         }
-        const classAlias = alternateSpellings.find(([alias, type]) =>
-            objectClassForType(type) === oclass && wishMatches(name, alias, true));
-        if (classAlias) return result(classAlias[1]);
-        if (!oclass && /^polearm/i.test(name)) return result(randomWeaponBySkill(P_POLEARMS));
-        if (!oclass && /^hammer/i.test(name)) return result(randomWeaponBySkill(P_HAMMER));
-        return result(null, oclass);
+        break;
     }
+    if (search.name.toLowerCase() === 'spinach') {
+        parsed.spinach = true;
+        parsed.empty = false;
+        return foundWishType(objects.TIN);
+    }
+    const fruit = matchWishedFruit(parsed.fruit.name, state);
+    if (fruit) {
+        parsed.count = parsed.fruit.count ?? fruit.count;
+        parsed.buc = parsed.fruit.buc;
+        parsed.partlyEaten = parsed.fruit.partlyEaten;
+        return { kind: 'object', type: objects.SLIME_MOLD, fruit: fruit.fruit, artifact: null };
+    }
+    if (!search.oclass && search.actual) {
+        const artifact = artifactByName(search.actual);
+        if (artifact) return { kind: 'object', type: artifact.baseType, fruit: null, artifact };
+    }
+    if (search.oclass) {
+        const alias = alternateSpellings.find(([alias, type]) =>
+            objectClassForType(type) === search.oclass && wishMatches(search.name, alias, true));
+        return alias ? foundWishType(alias[1]) : { kind: 'random', oclass: search.oclass };
+    }
+    return { kind: 'unresolved', name: search.name };
+}
+
+function foundWishType(type: number): WishLookup {
+    return { kind: 'object', type, fruit: null, artifact: null };
+}
+
+function rewriteSearchNoun(search: WishSearch, name: string): void {
+    if (name === search.name) return;
+    search.originalName = search.originalName.slice(0, search.originalName.length - search.name.length) + name;
+    search.name = name;
+}
+
+// Native tries these only after wizard terrain lookup fails.
+export function randomUnqualifiedWishType(name: string): number | null {
+    if (/^polearm/i.test(name)) return randomWeaponBySkill(P_POLEARMS);
+    if (/^hammer/i.test(name)) return randomWeaponBySkill(P_HAMMER);
+    return null;
 }
 
 export function randomTypeByDescription(name: string | null, oclass = 0, extraProbability = 1,
