@@ -58,6 +58,21 @@ void test('cancelling a crystal-ball search preserves its charges and takes one 
     assert.equal(game._helplessTurns ?? 0, 0);
     assert.equal(game.context.move, 1);
 });
+void test('verbose crystal-ball help is acknowledged before a cancelled search', async (t) => {
+    freshObjectRoom({ flags: { verbose: true }, hero: { acurr: { a: [12, 12, 12, 18, 12, 12] } } });
+    const ball = await addInventoryObject(CRYSTAL_BALL, { blessed: true, spe: 2 });
+    const input = resetInputState();
+    planInput(input, t, [
+        { prompt: /What do you want to use or apply\?/, keys: ball.invlet },
+        { prompt: /You may look for an object, monster, or special map symbol\.--More--/, keys: ' ' },
+        { prompt: /What do you look for\?/, keys: '\x1b' },
+    ]);
+    await rhack('a'.charCodeAt(0));
+    assert.equal(ball.spe, 2);
+    assert.equal(game._helplessTurns ?? 0, 0);
+    assert.equal(game._pending_message, 'Never mind.');
+    assert.equal(game.context.move, 1);
+});
 void test('a cancelled crystal ball implodes when used without harming the hero', async (t) => {
     freshObjectRoom({ flags: { verbose: false } });
     const ball = await addInventoryObject(CRYSTAL_BALL, { spe: -1 });

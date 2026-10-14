@@ -50,6 +50,7 @@ export async function useCrystalBall(object) {
     }
     if (game.flags.verbose)
         await pline('You may look for an object, monster, or special map symbol.');
+    await flushPendingTopline();
     let symbol = String.fromCharCode(await promptKey('What do you look for? '));
     // Space is the ghost class, so it is a search rather than cancellation.
     if ('\r\n\x1b'.includes(symbol)) {
