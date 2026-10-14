@@ -6,10 +6,11 @@ import { MM_NOGRP, MM_NOWAIT, NO_MINVENT, Upolyd } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { pushKey, resetInputState } from '../js/input.js';
 import { setMonsterGivenName } from '../js/monster_given_name.js';
-import { IRON_SHOES, LEATHER_GLOVES } from '../js/object_data.js';
+import { DAGGER, ELVEN_LEATHER_HELM, IRON_SHOES, LEATHER_GLOVES } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { heroIsBlind } from '../js/senses.js';
 import { vision_recalc } from '../js/vision.js';
+import { setPrimaryWeapon } from '../js/weapon_slots.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { memoryStorage } from './support/memory-storage.js';
@@ -162,5 +163,19 @@ void test('a hero explosion announces waking a distant sleeper before ending the
     const wake = messages.indexOf('The kobold wakes up.');
     const restoration = messages.indexOf('You return to');
     assert.ok(restoration > wake, 'The explosion wakes its neighbors before rehumanizing the hero');
+});
+void test('a wielded primary weapon protects later claws from contact petrification', async () => {
+    const bird = await meleeRoom('minotaur', 'cockatrice');
+    game.storage = memoryStorage();
+    game.iflags.toptenwin = false;
+    await setPrimaryWeapon(await addInventoryObject(DAGGER));
+    // A flexible helm fits the horned form and insulates its head butt.
+    wearHeroArmor(await addInventoryObject(ELVEN_LEATHER_HELM));
+    initRng(41n);
+    const messages = await attackEast(/cockatrice|stone|Goodbye|points|survived|turns/, true);
+    assert.equal(!!game.program_state.gameover, false);
+    assert.match(messages, /You head butt the cockatrice/);
+    assert.equal(game.u.uconduct?.weaphit, 1);
+    assert.ok(bird.mhp < 2000);
 });
 //# sourceMappingURL=hero_melee_passive_audit.test.js.map

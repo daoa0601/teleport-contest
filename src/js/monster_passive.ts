@@ -238,7 +238,7 @@ async function applyEquipmentPassive(context: PassiveContext): Promise<PassiveEf
 }
 
 async function applyStonePassive({
-    monster, hit, attackType, weapon, weaponWasDestroyed, state, publish, die,
+    monster, hit, attackType, weaponWasDestroyed, state, publish, die,
 }: PassiveContext): Promise<PassiveEffect> {
     const wornMask = (state.inventory || []).reduce(
         (mask, object) => mask | (object.owornmask ?? 0), 0,
@@ -247,7 +247,7 @@ async function applyStonePassive({
     // contact needs the same insulation as a claw, rather than a spell.
     const contactType = attackType === AT_MAGC ? AT_CLAW : attackType;
     if (!hit || contactIsProtected(
-        contactType, wornMask, !!weapon || weaponWasDestroyed,
+        contactType, wornMask, !!(state.uwep || state.u.uwep) || weaponWasDestroyed,
     ) || heroResists(state, 'stoneResistance', MR_STONE)) {
         return { heroDied: false };
     }

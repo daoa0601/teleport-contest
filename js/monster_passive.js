@@ -140,12 +140,12 @@ async function applyEquipmentPassive(context) {
     });
     return { heroDied: false };
 }
-async function applyStonePassive({ monster, hit, attackType, weapon, weaponWasDestroyed, state, publish, die, }) {
+async function applyStonePassive({ monster, hit, attackType, weaponWasDestroyed, state, publish, die, }) {
     const wornMask = (state.inventory || []).reduce((mask, object) => mask | (object.owornmask ?? 0), 0);
     // hmonas turns a small caster's spell slot into a hand strike. Its
     // contact needs the same insulation as a claw, rather than a spell.
     const contactType = attackType === AT_MAGC ? AT_CLAW : attackType;
-    if (!hit || contactIsProtected(contactType, wornMask, !!weapon || weaponWasDestroyed) || heroResists(state, 'stoneResistance', MR_STONE)) {
+    if (!hit || contactIsProtected(contactType, wornMask, !!(state.uwep || state.u.uwep) || weaponWasDestroyed) || heroResists(state, 'stoneResistance', MR_STONE)) {
         return { heroDied: false };
     }
     if (formCanBecomeStoneGolem(state.u.umonnum, state)) {
