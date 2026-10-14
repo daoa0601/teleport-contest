@@ -23,7 +23,7 @@ import { objectMaterial } from './object_material.js';
 import { withIndefiniteArticle } from './object_grammar.js';
 import { deleteObject, delobj } from './object_delete.js';
 import { unlinkObject } from './object_location.js';
-import { definiteName, objectName, ownedObjectName, singularObjectName } from './objnam.js';
+import { definiteName, objectName, ownedObjectName, pluralizeObjectNoun, singularObjectName } from './objnam.js';
 import { inventoryItemDescription } from './invent.js';
 import { heroCanReachFloor } from './floor_reach.js';
 import { surfaceName } from './terrain_name.js';
@@ -216,9 +216,10 @@ function bladeBreaks(weapon: GameObject): boolean {
 }
 
 function bladeBreakMessage(weapon: GameObject, state: GameState): string {
+    const name = objectName(weapon, state);
     return objectQuantity(weapon) > 1
-        ? `One of your ${objectName(weapon, state)} broke!`
-        : `Your ${objectName(weapon, state)} broke!`;
+        ? `One of your ${pluralizeObjectNoun(weapon, name)} broke!`
+        : `Your ${name} broke!`;
 }
 
 async function giveUpForcing(occupation: ForceLockOccupation, state: GameState): Promise<void> {
