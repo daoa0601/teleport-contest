@@ -7,6 +7,7 @@ import { nhgetch } from '../js/input.js';
 import { DAGGER } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshTurnRoom } from './support/playable-room.js';
+import { startLuaCore } from './support/lua-game.js';
 void test('repeat without a saved command reports why it cannot run', async () => {
     const input = freshTurnRoom();
     input.feed('\x01');
@@ -85,5 +86,27 @@ void test('an unknown command discards the previous repeat command', async () =>
     await rhack(0);
     assert.equal(game.u.ux, 11);
     assert.equal(game._pending_message, 'There is no command available to repeat.');
+});
+void test('repeat resolves an alias to the native command used by Lua admission', async (t) => {
+    const input = freshTurnRoom();
+    const core = await startLuaCore(t);
+    core.execute(`
+        blocked_calls = 0
+        function reject_call(command)
+            if command == "call" then
+                blocked_calls = blocked_calls + 1
+                return false
+            end
+            return true
+        end
+        nh.callback("cmd_before", "reject_call")
+    `);
+    input.feed('#name\n\x1b');
+    await rhack(0);
+    input.feed('\x01\x1b');
+    await rhack(0);
+    assert.equal(core.getGlobal('blocked_calls'), 1);
+    assert.equal(await nhgetch(), 27, 'the vetoed repeat never enters the naming menu');
+    assert.equal(game.context.move, 0);
 });
 //# sourceMappingURL=command_repeat.test.js.map
