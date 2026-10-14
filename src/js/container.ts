@@ -376,6 +376,7 @@ async function scatterBagContents(container: GameObject, state: GameState, held:
                 return { survived: !death.killed, heroDied: death.heroDied };
             },
         });
+        if (state.program_state.gameover) return;
     }
 }
 
@@ -393,6 +394,7 @@ export async function explodeBag(container: GameObject, trigger: GameObject, sta
         await addShopObjectToBill(trigger, state, { ininv: false, silent: true });
     if (trigger.otyp === BAG_OF_HOLDING)
         await scatterBagContents(trigger, state, triggerHeld);
+    if (state.program_state.gameover) return { moved: false, stop: true, message: null };
     await deleteObject(trigger, state);
     const held = container.where === 'inventory';
     if (!held && costlySpot(container.ox, container.oy, state)) {
@@ -402,6 +404,7 @@ export async function explodeBag(container: GameObject, trigger: GameObject, sta
         else container.no_charge = noCharge;
     }
     await scatterBagContents(container, state, held);
+    if (state.program_state.gameover) return { moved: false, stop: true, message: null };
     if (held) await useUpInventoryStack(container, state);
     else await useUpFloorObject(container, container.quan, { state });
     await loseHeroHp(d(6, 6), 'magical explosion', { state });
@@ -937,7 +940,7 @@ async function useContainerActions(container: GameObject, {
         }
     }
 
-    if (game.program_state?.gameover) return { spentTime: true, container };
+    if (game.program_state.gameover) return { spentTime: true, container, heroDied: true };
     if (spentTime) container.cknown = true;
     if (underlay) restoreMenuUnderlay(underlay);
     await redrawMap();

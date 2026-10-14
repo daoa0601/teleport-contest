@@ -316,6 +316,8 @@ async function scatterBagContents(container, state, held) {
                 return { survived: !death.killed, heroDied: death.heroDied };
             },
         });
+        if (state.program_state.gameover)
+            return;
     }
 }
 // C pickup.c:in_container() names the trigger before either bag blows up.
@@ -327,6 +329,8 @@ export async function explodeBag(container, trigger, state, { tipping = false, t
         await addShopObjectToBill(trigger, state, { ininv: false, silent: true });
     if (trigger.otyp === BAG_OF_HOLDING)
         await scatterBagContents(trigger, state, triggerHeld);
+    if (state.program_state.gameover)
+        return { moved: false, stop: true, message: null };
     await deleteObject(trigger, state);
     const held = container.where === 'inventory';
     if (!held && costlySpot(container.ox, container.oy, state)) {
@@ -338,6 +342,8 @@ export async function explodeBag(container, trigger, state, { tipping = false, t
             container.no_charge = noCharge;
     }
     await scatterBagContents(container, state, held);
+    if (state.program_state.gameover)
+        return { moved: false, stop: true, message: null };
     if (held)
         await useUpInventoryStack(container, state);
     else
@@ -857,8 +863,8 @@ async function useContainerActions(container, { held = false, moreContainers = f
             tookOut = transfer.results.some(result => result.moved);
         }
     }
-    if (game.program_state?.gameover)
-        return { spentTime: true, container };
+    if (game.program_state.gameover)
+        return { spentTime: true, container, heroDied: true };
     if (spentTime)
         container.cknown = true;
     if (underlay)

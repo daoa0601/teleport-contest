@@ -324,6 +324,8 @@ export async function scatterFloorObjects(x, y, force, { state = game, onlyObjec
         if (!next)
             break;
         const node = await prepareScatteredObject(next.object, x, y, state, options);
+        if (state.program_state.gameover)
+            return 0;
         if (node)
             nodes.push(node);
         if (onlyObject && next.lastPiece)
