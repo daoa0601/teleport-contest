@@ -1,3 +1,4 @@
+import { monsterGoldAmount } from '../js/shop_money.js';
 import { requirePlayingGame } from '../js/gstate.js';
 import test, { type TestContext } from 'node:test';
 import { planInput } from './support/planned-input.js';
@@ -28,7 +29,7 @@ import {
     floorObject, knownObject, uninitializedObject,
 } from './support/game-objects.js';
 import { placeCreatedObject } from '../js/floor_object.js';
-import { createStaffedShop } from './support/shop.js';
+import { createStaffedShop, setShopkeeperGold } from './support/shop.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 const SHOP = { left: 9, right: 13, top: 9, bottom: 11 };
@@ -56,7 +57,7 @@ async function sellShop(t: TestContext, answers: readonly PromptAnswer[] = [], {
         ...SHOP, keeperX: 12, keeperY: 10, doorX: 9, doorY: 10,
         shopType: shoptype,
     });
-    shopkeeper.gold = gold;
+    await setShopkeeperGold(shopkeeper, gold);
     setHeroGoldAmount(game, 0);
     setSellDisposition(SELL_DELIBERATE);
     planInput(resetInputState(), t, answers);
@@ -71,7 +72,7 @@ void test('answering the offer sells the item for the whole-stack offer', async 
     const outcome = await sellHeroDroppedObject(dagger, 10, 10);
     assert.deepEqual(outcome, { sold: true, offer });
     assert.equal(heroGoldAmount(game), offer);
-    assert.equal(shopkeeper.gold, 1000 - offer);
+    assert.equal(monsterGoldAmount(shopkeeper), 1000 - offer);
     assert.match(game._lastPlineMessage, /sold .*dagger for 2 gold pieces\./);
 });
 
@@ -82,7 +83,7 @@ void test('declining the offer marks the item no charge and pays nothing', async
     const outcome = await sellHeroDroppedObject(dagger, 10, 10);
     assert.deepEqual(outcome, { sold: false });
     assert.equal(heroGoldAmount(game), 0);
-    assert.equal(shopkeeper.gold, 1000);
+    assert.equal(monsterGoldAmount(shopkeeper), 1000);
     assert.equal(dagger.no_charge, true);
 });
 
@@ -354,5 +355,5 @@ void test('a short keeper offers only what it can pay', async t => {
     // The short-funds clip is observable in the paid offer itself.
     assert.deepEqual(outcome, { sold: true, offer: 1 });
     assert.equal(heroGoldAmount(game), 1);
-    assert.equal(shopkeeper.gold, 0);
+    assert.equal(monsterGoldAmount(shopkeeper), 0);
 });

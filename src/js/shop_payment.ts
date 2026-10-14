@@ -1,4 +1,5 @@
 // C shk.c:make_itemized_bill(), pay_billed_items(), dopayobj(), buy_container().
+import { moneyToMonster } from './shop_damage.js';
 import { nameShopTransaction } from './shop_speech.js';
 import { promptYesNo } from './query.js';
 import { currency } from './currency.js';
@@ -12,7 +13,7 @@ import type { BilledShopkeeper, ShopBillItem, Shopkeeper } from './shop_types.js
 import { objectsInTimerGraph } from './object_timers.js';
 import { unpaidObjectCost } from './shk.js';
 import { hiddenGold } from './gold.js';
-import { detachHeroGold, heroGoldAmount } from './hero_gold.js';
+import { heroGoldAmount } from './hero_gold.js';
 import { paymentObjectDescription } from './object_description.js';
 import { definiteName, simpleObjectName } from './objnam.js';
 import { plineWithContinuation } from './display.js';
@@ -240,12 +241,7 @@ export async function payShopkeeper(resident: Shopkeeper, price: number, state: 
             : 'The price is partially covered by your credit.');
     resident.eshk.credit = credit - creditUsed;
     const gold = price - creditUsed;
-    if (gold) {
-        const payment = detachHeroGold(state, gold);
-        if (payment) payment.where = 'gone';
-        resident.gold = (resident.gold ?? 0) + gold;
-        state._capacityDirty = true;
-    }
+    if (gold) await moneyToMonster(resident, gold, state);
     resident.eshk.robbed = Math.max(0, (resident.eshk.robbed ?? 0) - price);
     state.context.botl = true;
 }

@@ -1,6 +1,7 @@
 // C shk.c:sellobj() - the hero drops something in a shop and can sell it -
 // plus sellobj_state()'s command disposition.
 
+import { monsterGoldAmount, moneyToHero } from './shop_money.js';
 import { nameShopTransaction } from './shop_speech.js';
 import { objectDescription } from './object_description.js';
 import { objectCombatName } from './objnam.js';
@@ -15,7 +16,6 @@ import type { MessagePublisher } from './display.js';
 import { requireShopGame } from './shop_types.js';
 import type { Shopkeeper } from './shop_types.js';
 import { containedGold } from './gold.js';
-import { heroGoldAmount, setHeroGoldAmount } from './hero_gold.js';
 import {
     recordObjectPriceQuote,
 } from './object_knowledge.js';
@@ -315,14 +315,6 @@ export async function costlyGold(x: number, y: number, amount: number,
     return spot.resident;
 }
 
-// C shk.c:1297 pay(-offer): money2u; the check_credit and robbed branches
-// are unreachable on the sell path (robbed returns earlier, and the credit
-// check only runs for positive amounts).
-function payToHero(amount: number, resident: Shopkeeper, state: GameState): void {
-    resident.gold = Math.max(0, (resident.gold ?? 0) - amount);
-    setHeroGoldAmount(state, heroGoldAmount(state) + amount);
-}
-
 // C shk.c:3103 special_stock(): the candelabrum in a lighting store.
 async function specialStock(resident: Shopkeeper, object: GameObject,
     { publish, state }: { publish: MessagePublisher; state: GameState }): Promise<boolean> {
@@ -537,7 +529,7 @@ export async function sellHeroDroppedObject(object: GameObject, x: number, y: nu
         return { sold: false };
     }
 
-    const shkmoney = resident.gold ?? 0;
+    const shkmoney = monsterGoldAmount(resident);
     if (!shkmoney) {
         const tmpcr = Math.trunc((offer * 9) / 10) + (offer <= 1 ? 1 : 0);
         let answer;
@@ -612,7 +604,7 @@ export async function sellHeroDroppedObject(object: GameObject, x: number, y: nu
             if (container) droppedContainerContents(object, resident, true);
             if (!object.unpaid && !saleitem) object.no_charge = true;
             removeObjectAndContentsFromBill(object, state);
-            payToHero(offer, resident, state);
+            await moneyToHero(resident, offer, state);
             await nameShopTransaction(resident, object,
                 it => sellHow !== SELL_NORMAL
                     ? `sold ${it} for ${goldPieces(offer)}.`
@@ -627,7 +619,7 @@ export async function sellHeroDroppedObject(object: GameObject, x: number, y: nu
             if (container) droppedContainerContents(object, resident, true);
             if (!object.unpaid && !saleitem) object.no_charge = true;
             removeObjectAndContentsFromBill(object, state);
-            payToHero(offer, resident, state);
+            await moneyToHero(resident, offer, state);
             await nameShopTransaction(resident, object,
                 it => sellHow !== SELL_NORMAL
                     ? `sold ${it} for ${goldPieces(offer)}.`

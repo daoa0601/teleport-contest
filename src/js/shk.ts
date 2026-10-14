@@ -33,7 +33,7 @@ import { canSeeMonster, canSenseMonster, pline, plineWithContinuation } from './
 import { currency } from './currency.js';
 import { objectName, objectCombatName, definiteName } from './objnam.js';
 import { rn2 } from './rng.js';
-import { detachHeroGold, heroGoldAmount } from './hero_gold.js';
+import { heroGoldAmount } from './hero_gold.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
 import { propertyIsActive } from './properties.js';
@@ -57,7 +57,7 @@ import { recordObjectPriceQuote } from './object_knowledge.js';
 import { ACH_SHOP, ACH_TOWN, recordAchievement } from './achievements.js';
 import { nextIdent, nextObjectId } from './ident.js';
 import {
-    pacifyShopkeeper, rileShopkeeper, shopkeeperCustomerInsult,
+    moneyToMonster, pacifyShopkeeper, rileShopkeeper, shopkeeperCustomerInsult,
 } from './shop_damage.js';
 import { deallocateObject, stopObjectTimers } from './object_delete.js';
 import { getObjectLocation, unlinkObject } from './object_location.js';
@@ -537,7 +537,7 @@ export async function chargeUnpaidObjectAsDebt(
     return { resident, value, message };
 }
 
-export function payShopDebt(resident: Monster | null | undefined, state: GameState = game) {
+export async function payShopDebt(resident: Monster | null | undefined, state: GameState = game) {
     const eshk = resident?.eshk;
     const debt = Math.max(0, eshk?.debit ?? 0);
     if (!resident || !eshk || !debt) return { paid: false, debt: 0 };
@@ -549,12 +549,7 @@ export function payShopDebt(resident: Monster | null | undefined, state: GameSta
     const creditUsed = Math.min(credit, debt);
     const goldPaid = debt - creditUsed;
     eshk.credit = credit - creditUsed;
-    if (goldPaid) {
-        const payment = detachHeroGold(state, goldPaid);
-        if (payment) payment.where = 'gone';
-        resident.gold = (resident.gold ?? 0) + goldPaid;
-        state._capacityDirty = true;
-    }
+    if (goldPaid) await moneyToMonster(resident, goldPaid, state);
     eshk.debit = 0;
     eshk.loan = 0;
     return { paid: true, debt, creditUsed, goldPaid };

@@ -209,7 +209,6 @@ function monsterFields(value, context) {
         isminion: optional(flag),
         questLeader: optional(boolean),
         waiting: optional(boolean),
-        gold: optional(integer),
         malign: integer,
         maligntyp: optional(integer),
         edog: optional(pet),

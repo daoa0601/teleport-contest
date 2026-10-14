@@ -1,3 +1,8 @@
+import type { Monster } from '../../js/monster_types.js';
+import { GOLD_PIECE } from '../../js/object_data.js';
+import { deleteObject } from '../../js/object_delete.js';
+import { addCreatedObjectToMonsterInventory } from '../../js/monster_inventory.js';
+import { knownObject } from './game-objects.js';
 import type { Room } from '../../js/map_types.js';
 import type { ShopBillEntry, ShopkeeperData, MonsterBirthState } from '../../js/monster_types.js';
 import { ROOM, ROOMOFFSET, SHOPBASE } from '../../js/const.js';
@@ -84,4 +89,11 @@ function requireStaffedShopkeeper(monster: MonsterBirthState): asserts monster i
     const shop = monster.eshk;
     if (!shop || !shop.bill || shop.billct === undefined || shop.debit === undefined)
         throw new Error('A staffed shop needs a resident with initialized billing.');
+}
+
+export async function setShopkeeperGold(monster: Monster, amount: number): Promise<void> {
+    for (const object of [...monster.minvent ?? []])
+        if (object.otyp === GOLD_PIECE) await deleteObject(object);
+    if (amount)
+        await addCreatedObjectToMonsterInventory(monster, await knownObject(GOLD_PIECE, { quan: amount, bknown: false }));
 }

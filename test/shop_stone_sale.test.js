@@ -1,3 +1,4 @@
+import { monsterGoldAmount } from '../js/shop_money.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { rhack } from '../js/cmd.js';
@@ -8,13 +9,13 @@ import { FLINT } from '../js/object_data.js';
 import { objectTypeKnown } from '../js/shk.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
-import { createStaffedShop } from './support/shop.js';
+import { createStaffedShop, setShopkeeperGold } from './support/shop.js';
 import { planInput } from './support/planned-input.js';
 void test('an unidentified mineral stone receives the ordinary gem-class sale price', async (t) => {
     freshObjectRoom();
     const { shopkeeper } = await createStaffedShop();
     shopkeeper.m_id = 4; // This keeper discounts unknown non-gems.
-    shopkeeper.gold = 100;
+    await setShopkeeperGold(shopkeeper, 100);
     const stones = await addInventoryObject(FLINT, { typeKnown: false, quan: 8 });
     assert.equal(objectTypeKnown(stones), false);
     setHeroGoldAmount(game, 0);

@@ -1,3 +1,4 @@
+import { monsterGoldAmount } from '../js/shop_money.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { rhack } from '../js/cmd.js';
@@ -5,7 +6,7 @@ import { game } from '../js/gstate.js';
 import { heroGoldAmount, setHeroGoldAmount } from '../js/hero_gold.js';
 import { resetInputState } from '../js/input.js';
 import { freshObjectRoom } from './support/object-room.js';
-import { createStaffedShop } from './support/shop.js';
+import { createStaffedShop, setShopkeeperGold } from './support/shop.js';
 import { withMessagePages } from './support/planned-input.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { GOLD_PIECE, SACK } from '../js/object_data.js';
@@ -19,7 +20,7 @@ for (const gold of [49, 50, 100]) {
         shopkeeper.mpeaceful = 0;
         shopkeeper.eshk.robbed = 100;
         shopkeeper.eshk.following = 1;
-        const before = shopkeeper.gold ?? 0;
+        const before = monsterGoldAmount(shopkeeper);
         setHeroGoldAmount(game, gold);
         const messages: string[] = [];
         const input = resetInputState();
@@ -34,7 +35,7 @@ for (const gold of [49, 50, 100]) {
         assert.equal(shopkeeper.eshk.following, gold >= 50 ? 0 : 1);
         assert.equal(shopkeeper.eshk.robbed, gold >= 50 ? 0 : 100);
         assert.equal(heroGoldAmount(game), gold >= 50 ? 0 : gold);
-        assert.equal(shopkeeper.gold ?? 0, before + (gold >= 50 ? gold : 0));
+        assert.equal(monsterGoldAmount(shopkeeper), before + (gold >= 50 ? gold : 0));
         assert.equal(game.context.move, 1);
     });
 }
@@ -63,14 +64,14 @@ void test('a peaceful keeper outside the shop accepts all visible gold but rejec
     const { shopkeeper } = await createStaffedShop({ left: 11 });
     shopkeeper.eshk.shknam = 'Ada';
     shopkeeper.eshk.robbed = 100;
-    const before = shopkeeper.gold ?? 0;
+    const before = monsterGoldAmount(shopkeeper);
     setHeroGoldAmount(game, 49);
 
     await withMessagePages(() => rhack('p'.charCodeAt(0)), resetInputState(),
         /give Ada|satisfied/, 2);
 
     assert.equal(heroGoldAmount(game), 0);
-    assert.equal(shopkeeper.gold ?? 0, before + 49);
+    assert.equal(monsterGoldAmount(shopkeeper), before + 49);
     assert.equal(shopkeeper.eshk.robbed, 51);
     assert.match(game._pending_message, /doesn't look satisfied/);
     assert.equal(game.context.move, 1);
@@ -84,14 +85,14 @@ for (const gold of [999, 1200]) {
         shopkeeper.mpeaceful = 0;
         // A previous customer's offense guarantees acceptance, without a roll.
         shopkeeper.eshk.customer = 'someone else';
-        const before = shopkeeper.gold ?? 0;
+        const before = monsterGoldAmount(shopkeeper);
         setHeroGoldAmount(game, gold);
 
         await withMessagePages(() => rhack('p'.charCodeAt(0)), resetInputState(),
             /your hide|interest|appease|calms down/, 3);
 
         assert.equal(heroGoldAmount(game), gold >= 1000 ? gold - 1000 : gold);
-        assert.equal(shopkeeper.gold ?? 0, before + (gold >= 1000 ? 1000 : 0));
+        assert.equal(monsterGoldAmount(shopkeeper), before + (gold >= 1000 ? 1000 : 0));
         assert.equal(shopkeeper.mpeaceful, gold >= 1000 ? 1 : 0);
         assert.equal(shopkeeper.eshk.surcharge, true, 'Appeasement leaves the surcharge in place');
         assert.equal(game.context.move, 1);

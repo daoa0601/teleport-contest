@@ -71,7 +71,7 @@ export async function dopay(): Promise<void> {
             : loan === debt ? 'you picked up in the store.'
                 : 'for gold picked up and the use of merchandise.';
         await plineWithContinuation(`You owe ${shopkeeperName(resident)} ${debt} ${currency(debt)} ${reason}`);
-        const payment = payShopDebt(resident, game);
+        const payment = await payShopDebt(resident, game);
         if (!payment.paid) {
             await plineWithContinuation(`But you don't${stashedGold ? ' seem to' : ''} have enough gold${resident.eshk.credit ? ' or credit' : ''}.`);
             game.context.move = 1;

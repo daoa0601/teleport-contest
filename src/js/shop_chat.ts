@@ -11,6 +11,7 @@ import { inTown } from './room.js';
 import { shopGreeting } from './shk.js';
 import { shopkeeperIsMuted } from './shop_loss.js';
 import { hasShopkeeperData } from './shop_types.js';
+import { monsterGoldAmount } from './shop_money.js';
 import { addUpBill } from './shop_damage.js';
 import { rn2 } from './rng.js';
 
@@ -61,7 +62,7 @@ export async function chatWithShopkeeper(monster: Monster, state: GameState = ga
     } else if (shop.surcharge) {
         message = `${name()} ${speaking ? 'warns you' : 'indicates'} that ${subject()} is watching you carefully.`;
     } else {
-        const money = monster.minvent?.find(object => object.oclass === 12)?.quan ?? 0;
+        const money = monsterGoldAmount(monster);
         if (money < 50 || money > 4000) {
             message = `${name()} ${speaking ? money < 50 ? 'complains' : 'says' : 'indicates'} that business is ${money < 50 ? 'bad' : 'good'}.`;
         } else {
