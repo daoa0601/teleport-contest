@@ -9,7 +9,7 @@ import { observeObjectForNaming } from './objnam.js';
 import { currency } from './currency.js';
 import { OBJECT_MAGIC } from './object_data.js';
 import { rn2 } from './rng.js';
-import { showTextWindow } from './windows.js';
+import { showDisclosureOverlay } from './windows.js';
 export async function quoteShopGoods() {
     if (heroIsBlind() || heroIsDeaf())
         return false;
@@ -37,7 +37,7 @@ export async function quoteShopGoods() {
     if (!quote)
         throw new Error('Shop goods disappeared during a price quote.');
     if (quotes.length > 1) {
-        await showTextWindow(['Fine goods for sale:', '', ...quotes.map(item => item.line)]);
+        await showDisclosureOverlay(['Fine goods for sale:', '', ...quotes.map(item => item.line)], { restoreUnderlay: true });
     }
     else if (!quote.cost) {
         await plineWithContinuation(`"${capitalize(quote.line)}!"`);
