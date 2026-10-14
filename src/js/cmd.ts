@@ -2497,10 +2497,13 @@ function inventoryActionCommand({ key, item }: InventoryAction): NativeCommand |
         '-': item === game.uwep ? 'dowield'
             : item === game.uswapwep ? 'remarm_swapwep'
                 : item === game.uquiver ? 'dowieldquiver' : 'donull',
-        'a': 'doapply', 'c': 'docallcmd', 'd': 'dodrop', 'e': 'doeat', 'E': 'doengrave', 'f': 'dofire',
-        'i': 'doorganize', 'I': 'adjust_split', 'P': 'dowear', 'Q': 'dowieldquiver', 'r': 'doread',
-        'R': 'ia_dotakeoff', 't': 'dothrow', 'T': 'ia_dotakeoff',
-        'w': 'dowield', 'x': 'doswapweapon', 'X': 'dotwoweapon',
+        'a': item.oclass === 8 && !(item.otyp === POT_OIL && objectTypeKnown(item)) ? 'dip_into' : 'doapply',
+        'c': 'docallcmd', 'C': 'docallcmd', 'd': 'dodrop', 'e': 'doeat', 'E': 'doengrave', 'f': 'dofire',
+        'i': 'doorganize', 'I': 'adjust_split', 'O': 'dosacrifice', 'p': 'dopay', 'P': 'dowear', 'q': 'dodrink',
+        'Q': 'dowieldquiver', 'r': 'doread',
+        'R': item.owornmask && item.owornmask & W_ACCESSORY ? 'ia_dotakeoff' : 'dorub',
+        't': 'dothrow', 'T': item.oclass === 3 ? 'ia_dotakeoff' : 'dotip', 'V': 'doinvoke',
+        'w': 'dowield', 'W': 'dowear', 'x': 'doswapweapon', 'X': 'dotwoweapon', 'z': 'dozap',
         '/': 'dowhatis', '\x1b': null, ' ': null, '\n': null, '\r': null,
     };
     return NATIVE_COMMANDS.find(command => command.handler === handlers[key]) ?? null;
@@ -2539,8 +2542,13 @@ async function runInventoryAction({ key, item }: InventoryAction): Promise<void>
             await doready();
         }
         return;
-    case 'a': queueCommandKeys(letter); await doapply(); return;
+    case 'a':
+        queueCommandKeys(letter);
+        if (item.oclass === 8 && !(item.otyp === POT_OIL && objectTypeKnown(item))) await dipInto();
+        else await doapply();
+        return;
     case 'c': queueCommandKeys(`i${letter}`); await doname(); return;
+    case 'C': queueCommandKeys(`o${letter}`); await doname(); return;
     case 'd': queueCommandKeys(letter); await dodrop(); return;
     case 'e':
         queueCommandKeys(letter);
@@ -2551,17 +2559,35 @@ async function runInventoryAction({ key, item }: InventoryAction): Promise<void>
     case 'f': await dofire(); return;
     case 'i': queueCommandKeys(letter); await doadjust(); return;
     case 'I': queueCommandKeys(letter); await adjustSplit(); return;
-    case 'P': queueCommandKeys(letter); await dowear(); return;
+    case 'O': queueCommandKeys(letter); await dosacrifice(); return;
+    case 'p': queueCommandKeys(letter); await dopay(); return;
+    case 'P': case 'W': queueCommandKeys(letter); await dowear(); return;
+    case 'q':
+        queueCommandKeys(letter);
+        game.iflags.menu_requested = true;
+        await doquaff();
+        return;
     case 'Q': queueCommandKeys(letter); await doready(); return;
     case 'r': queueCommandKeys(letter); await doread({ gotoLevel }); return;
-    case 'R': case 'T':
+    case 'R':
         queueCommandKeys(letter);
-        await removeWornItem('take off', true);
+        if ((item.owornmask ?? 0) & W_ACCESSORY) await removeWornItem('take off', true);
+        else await dorub();
+        return;
+    case 'T':
+        queueCommandKeys(letter);
+        if ((item.owornmask ?? 0) & W_ARMOR) await removeWornItem('take off', true);
+        else {
+            game.iflags.menu_requested = true;
+            await dotip();
+        }
         return;
     case 't': await dothrow(item); return;
     case 'w': queueCommandKeys(letter); await dowield(); return;
+    case 'V': queueCommandKeys(letter); await doinvoke(); return;
     case 'x': await doswapweapon(); return;
     case 'X': await dotwoweapon(); return;
+    case 'z': queueCommandKeys(letter); await dozap(); return;
     case '/': queueCommandKeys(`i${letter}`); await dowhatis(); return;
     case '\x1b': case ' ': case '\n': case '\r':
         game.context.move = 0;
