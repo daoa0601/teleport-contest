@@ -713,9 +713,11 @@ export async function mksobj(
 // C ref: objnam.c rnd_class().  Object probabilities are absolute weights
 // within the requested inclusive type range rather than a uniform index.
 export function rndClass(first: number, last: number): number {
+    if (first >= last) return first === last ? first : 0;
     let total = 0;
     for (let otyp = first; otyp <= last; otyp++)
         total += OBJECT_PROB[otyp] ?? 0;
+    if (!total) return first + rn2(last - first + 1);
     let roll = rnd(total);
     for (let otyp = first; otyp <= last; otyp++) {
         roll -= OBJECT_PROB[otyp] ?? 0;

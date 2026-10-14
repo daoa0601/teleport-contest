@@ -1,25 +1,24 @@
 // objnam.js — Object wish-name parsing, weighted lookup, and visible naming.
 // C refs: objnam.c readobjnam(), rnd_otyp_by_namedesc(), xname().
 import { game } from './gstate.js';
-import { fruitFromIndex, fruitFromName, matchWishedFruit } from './fruit.js';
+import { fruitFromIndex, fruitFromName } from './fruit.js';
 import { objectOwnershipPrefix, objectTypeKnown } from './shk.js';
 import { rn2, rnd } from './rng.js';
 import { mkobj, mksobj, rndClass } from './mklev.js';
-import { CORPSTAT_FEMALE, CORPSTAT_HISTORIC, SPE_LIM } from './const.js';
+import { CORPSTAT_FEMALE, CORPSTAT_HISTORIC, PL_PSIZ, SPE_LIM } from './const.js';
 import { heroHandName } from './body_parts.js';
 import { plineWithContinuation } from './display.js';
 import { deleteObject } from './object_delete.js';
-import { nameToMonster } from './mondata.js';
 import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, monsterTypeName } from './monster_data.js';
 import { possessiveName } from './monster_name.js';
 import { tinDetails } from './tin.js';
 import { isLauncherAmmunition, isMissileObject, isPoisonableObject, isWeaponTool } from './object_properties.js';
 import { promptYesNo } from './query.js';
 import { objectWeight } from './weight.js';
-import { heroIsBlind, heroIsHallucinating } from './senses.js';
+import { heroIsBlind } from './senses.js';
 import { artifactById, artifactByName, artifactExistCount, findArtifact, nameArtifact, uncreateArtifact, } from './artifacts.js';
-import { CRYSKNIFE, DILITHIUM_CRYSTAL, FLINT, GOLD_PIECE, JADE, LENSES, ROCK, GLOB_OF_BLACK_PUDDING, GLOB_OF_GRAY_OOZE, TALLOW_CANDLE, WAX_CANDLE, ACID_VENOM, AMULET_OF_YENDOR, BELL, BELL_OF_OPENING, BLINDING_VENOM, BOULDER, CANDELABRUM_OF_INVOCATION, CHEST, CORPSE, CRYSTAL_BALL, FAKE_AMULET_OF_YENDOR, FIGURINE, HEAVY_IRON_BALL, IRON_CHAIN, LARGE_BOX, MAGIC_LAMP, OIL_LAMP, SKELETON_KEY, SLIME_MOLD, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, STATUE, POT_WATER, TIN, TOWEL, WAN_WISHING, OBJECT_BASES, requireObjectData, OBJECT_DESCRIPTIONS, OBJECT_NAMES, OBJECT_PROB, OBJECT_MERGE, OBJECT_NOWISH, OBJECT_CHARGED, OBJECT_MAGIC, OBJECT_UNIQUE, OBJECT_USES_KNOWN, OBJECT_MATERIAL, OBJECT_SPELL_CATEGORY, OBJECT_SPELL_LEVEL, OBJECT_SUBTYPE, OBJECT_WEIGHT, } from './object_data.js';
-import { armorPresentationName, withIndefiniteArticle, makePlural, makeSingular } from './object_grammar.js';
+import { CRYSKNIFE, FLINT, GOLD_PIECE, LENSES, ROCK, TALLOW_CANDLE, WAX_CANDLE, ACID_VENOM, AMULET_OF_YENDOR, BELL, BELL_OF_OPENING, BLINDING_VENOM, BOULDER, CANDELABRUM_OF_INVOCATION, CHEST, CORPSE, CRYSTAL_BALL, FAKE_AMULET_OF_YENDOR, FIGURINE, HEAVY_IRON_BALL, IRON_CHAIN, LARGE_BOX, MAGIC_LAMP, OIL_LAMP, SKELETON_KEY, SLIME_MOLD, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, STATUE, POT_WATER, TIN, TOWEL, WAN_WISHING, SPE_NOVEL, OBJECT_BASES, requireObjectData, OBJECT_DESCRIPTIONS, OBJECT_NAMES, OBJECT_MERGE, OBJECT_NOWISH, OBJECT_CHARGED, OBJECT_MAGIC, OBJECT_UNIQUE, OBJECT_USES_KNOWN, OBJECT_MATERIAL, OBJECT_SPELL_CATEGORY, OBJECT_SPELL_LEVEL, OBJECT_SUBTYPE, OBJECT_WEIGHT, } from './object_data.js';
+import { armorPresentationName, withIndefiniteArticle, makePlural, makeSingular, verbForSubject } from './object_grammar.js';
 import { armorSimpleName } from './armor.js';
 import { isContainer } from './container.js';
 import { objectClassForType, observeBucForNaming, observeObject } from './object_knowledge.js';
@@ -27,6 +26,15 @@ import { getObjectLocation } from './object_location.js';
 import { objectDisclosureText } from './object_inscription.js';
 import { cansee } from './vision.js';
 import { BOGUS_MONSTERS } from './random_text_data.js';
+import { lookupWishType, randomTypeByDescription, randomUnqualifiedWishType } from './wish_lookup.js';
+import { japaneseItemName } from './japanese_item_name.js';
+import { parseWishText } from './wish_parse.js';
+import { applyWishProperties, finishWishWeight, lightWishedObject } from './wish_properties.js';
+import { applyWishSpecies, applyWishedTinVariety, substituteWishedGlob } from './wish_species.js';
+import { lookupNovelTitle } from './novel_titles.js';
+import { tryWizardTerrainWish, wishForWizardTrap } from './wish_terrain.js';
+export { japaneseItemName } from './japanese_item_name.js';
+export { parseWishText } from './wish_parse.js';
 const WEAPON_CLASS = 2;
 const ARMOR_CLASS = 3;
 const RING_CLASS = 4;
@@ -43,24 +51,6 @@ const ROCK_CLASS = 14;
 const BALL_CLASS = 15;
 const CHAIN_CLASS = 16;
 const SCROLL_OF_MAIL = OBJECT_NAMES.indexOf('mail');
-const JAPANESE_ITEM_NAMES = new Map([
-    [OBJECT_NAMES.indexOf('short sword'), 'wakizashi'],
-    [OBJECT_NAMES.indexOf('broadsword'), 'ninja-to'],
-    [OBJECT_NAMES.indexOf('flail'), 'nunchaku'],
-    [OBJECT_NAMES.indexOf('glaive'), 'naginata'],
-    [OBJECT_NAMES.indexOf('lock pick'), 'osaku'],
-    [OBJECT_NAMES.indexOf('wooden harp'), 'koto'],
-    [OBJECT_NAMES.indexOf('magic harp'), 'magic koto'],
-    [OBJECT_NAMES.indexOf('knife'), 'shito'],
-    [OBJECT_NAMES.indexOf('plate mail'), 'tanko'],
-    [OBJECT_NAMES.indexOf('helmet'), 'kabuto'],
-    [OBJECT_NAMES.indexOf('leather gloves'), 'yugake'],
-    [OBJECT_NAMES.indexOf('food ration'), 'gunyoki'],
-    [OBJECT_NAMES.indexOf('booze'), 'sake'],
-]);
-export function japaneseItemName(otyp) {
-    return JAPANESE_ITEM_NAMES.get(otyp);
-}
 // C xname_flags() observation, kept separate from reusable name formatting.
 // distant_name() suppresses new appearance knowledge, not existing knowledge.
 export function observeObjectForNaming(object, { distant = false, source = object, state = game, } = {}) {
@@ -83,6 +73,20 @@ export function observeDistantObjectForNaming(object, state = game) {
     observeObjectForNaming(object, {
         distant: !visible || (!object.oartifact && !close), state,
     });
+}
+// C distant_name() also suppresses inscriptions during final map browsing.
+// Restore the identity before returning; it still selects inventory text.
+export function distantObjectName(object, format, state = game) {
+    const identity = object.o_id;
+    if (state.program_state.gameover)
+        object.o_id = 0;
+    try {
+        observeDistantObjectForNaming(object, state);
+        return format(object);
+    }
+    finally {
+        object.o_id = identity;
+    }
 }
 // objnam.c:xname() visible name without inventory annotations.
 // Unlike doname(), this omits quantity, beatitude, enchantment, and article.
@@ -174,6 +178,9 @@ export function objectName(object, state = game, { minimal = false } = {}) {
         noun = `poisoned ${noun}`;
     if (!minimal)
         noun = physicalObjectNoun(object, noun, state);
+    if (!minimal && oclass === FOOD_CLASS && object.otyp !== SLIME_MOLD
+        && state.iflags.partly_eaten_hack && object.oeaten)
+        noun = `partly eaten ${noun}`;
     if (minimal)
         return noun.replace(/^the /i, '');
     noun += objectDisclosureText(object, state);
@@ -194,6 +201,8 @@ export function singularObjectName(object, state = game) {
 // C cxname()/xname(): contact feedback observes the object and retains its
 // quantity, poison, physical details, and personal name without a count prefix.
 export function objectCombatName(object, { state = game, includeCorpseSpecies = true, } = {}) {
+    if (object.otyp === CORPSE && includeCorpseSpecies)
+        return corpseName(object);
     observeObjectForNaming(object, { state });
     if (objectHasPersonalName(object, state)) {
         const name = object.oextra?.oname || object.oname;
@@ -201,8 +210,6 @@ export function objectCombatName(object, { state = game, includeCorpseSpecies = 
             throw new Error('A personally named artifact needs its name');
         return name.replace(/^the /iu, '');
     }
-    if (object.otyp === CORPSE && includeCorpseSpecies)
-        return corpseName(object);
     let name = objectName(object, state);
     if ((object.quan ?? object.quantity ?? 1) !== 1)
         name = pluralizeObjectNoun(object, name);
@@ -274,8 +281,6 @@ export function killerObjectName(object, state = game) {
     }
     else {
         name = objectName(view, nameState);
-        if (view.oclass === FOOD_CLASS && state.iflags?.partly_eaten_hack && view.oeaten)
-            name = `partly eaten ${name}`;
         if (quantity !== 1)
             name = makePlural(name);
     }
@@ -544,6 +549,8 @@ export function simpleObjectNameWithArticle(object, state = game) {
     return withIndefiniteArticle(noun);
 }
 export function ownedObjectName(object, state = game, { capitalized = true } = {}) {
+    if (object.otyp !== CORPSE)
+        observeObjectForNaming(object, { state });
     // yname() omits ownership for most personal artifacts; quest artifacts retain it.
     const omitOwner = object.where === 'inventory'
         && objectHasPersonalName(object, state)
@@ -589,6 +596,8 @@ export function objectNameIsPlural(object, state = game) {
             && !!state._artifactDiscoveries?.includes(object.oartifact));
 }
 export function ownedObjectAction(object, verb, state = game, { capitalized = true } = {}) {
+    if (object.otyp !== CORPSE)
+        observeObjectForNaming(object, { state });
     const quantity = object.quan ?? object.quantity ?? 1;
     const personalName = object.oextra?.oname || object.oname;
     const personal = !!personalName && objectHasPersonalName(object, state);
@@ -605,19 +614,7 @@ export function ownedObjectAction(object, verb, state = game, { capitalized = tr
         subject = subject.charAt(0).toUpperCase() + subject.slice(1);
     if (!verb)
         return subject;
-    let action = verb;
-    if (!objectNameIsPlural(object, state)) {
-        if (/are$/.test(verb))
-            action = verb.slice(0, -3) + 'is';
-        else if (/have$/.test(verb))
-            action = verb.slice(0, -4) + 'has';
-        else if (/(?:z|x|s|ch|sh)$/.test(verb))
-            action = verb + 'es';
-        else if (/[^aeiou]y$/.test(verb))
-            action = verb.slice(0, -1) + 'ies';
-        else
-            action = verb + 's';
-    }
+    const action = objectNameIsPlural(object, state) ? verb : verbForSubject(null, verb);
     return `${subject} ${action}`;
 }
 const CLASS_PRESENTATION = {
@@ -668,217 +665,8 @@ export function unseenObjectNoun(object) {
             return object?.name || OBJECT_NAMES[object?.otyp] || 'object';
     }
 }
-function normalizeName(value) {
-    return String(value || '')
-        .trim()
-        .replace(/\s+/g, ' ')
-        .replace(/^(?:an?|the)\s+/i, '')
-        .toLowerCase();
-}
-function classQualifiedName(otyp) {
-    if (otyp === SLIME_MOLD)
-        return 'fruit';
-    const name = requireObjectName(otyp);
-    switch (objectClass(otyp)) {
-        case RING_CLASS: return `ring of ${name}`;
-        case POTION_CLASS: return `potion of ${name}`;
-        case SCROLL_CLASS: return `scroll of ${name}`;
-        case SPBOOK_CLASS: return `spellbook of ${name}`;
-        case WAND_CLASS: return `wand of ${name}`;
-        default: return name;
-    }
-}
 function currentDescription(otyp) {
     return game.objectDescriptions?.[otyp] ?? OBJECT_DESCRIPTIONS[otyp];
-}
-function candidateNames(otyp) {
-    const name = otyp === SLIME_MOLD ? 'fruit' : OBJECT_NAMES[otyp];
-    const description = currentDescription(otyp);
-    const names = [name, classQualifiedName(otyp)];
-    if (description) {
-        names.push(description);
-        const cls = objectClass(otyp);
-        if (cls === RING_CLASS)
-            names.push(`${description} ring`);
-        else if (cls === AMULET_CLASS)
-            names.push(`${description} amulet`);
-        else if (cls === POTION_CLASS)
-            names.push(`${description} potion`);
-        else if (cls === SCROLL_CLASS)
-            names.push(`scroll labeled ${description}`);
-        else if (cls === SPBOOK_CLASS)
-            names.push(`${description} spellbook`);
-        else if (cls === WAND_CLASS)
-            names.push(`${description} wand`);
-    }
-    return names.filter((name) => typeof name === 'string' && name.length > 0)
-        .map(normalizeName);
-}
-function singularizeObjectName(value) {
-    const requested = normalizeName(value);
-    const isExactCandidate = (candidate) => japaneseWishType(candidate) !== null
-        || OBJECT_NAMES.some((name, otyp) => name && candidateNames(otyp).includes(candidate));
-    if (isExactCandidate(requested))
-        return requested;
-    const alternatives = [];
-    // readobjnam_postparse2() accepts plural class-qualified wishes even
-    // when the object name itself is not plural ("scrolls of punishment").
-    // Normalize the class noun before applying ordinary trailing-s rules.
-    const classSingular = requested.replace(/^(rings|amulets|potions|scrolls|spellbooks|wands) of\s+/, prefix => `${prefix.slice(0, -5)} of `);
-    if (classSingular !== requested)
-        alternatives.push(classSingular);
-    if (requested.startsWith('scrolls labeled '))
-        alternatives.push(`scroll labeled ${requested.slice(16)}`);
-    if (/[^aeiou]ies$/.test(requested))
-        alternatives.push(`${requested.slice(0, -3)}y`);
-    if (/(?:ches|shes|sses|xes|zes)$/.test(requested))
-        alternatives.push(requested.slice(0, -2));
-    if (requested.endsWith('s'))
-        alternatives.push(requested.slice(0, -1));
-    return alternatives.find(isExactCandidate) || requested;
-}
-// C readobjnam_postparse3(): Japanese aliases follow the ordinary name and
-// description lottery, regardless of the hero's role, without another draw.
-function japaneseWishType(request) {
-    let name = request;
-    for (const wrapper of ['wand', 'ring', 'potion', 'scroll', 'gem', 'spellbook',
-        'spell book', 'weapon', 'armor', 'tool', 'food', 'comestible']) {
-        const prefix = `${wrapper} of `;
-        const suffix = ` ${wrapper}`;
-        if (request.startsWith(prefix)) {
-            name = request.slice(prefix.length);
-            break;
-        }
-        if (request.endsWith(suffix)) {
-            name = request.slice(0, -suffix.length);
-            break;
-        }
-    }
-    for (const [type, japaneseName] of JAPANESE_ITEM_NAMES) {
-        if (name === japaneseName)
-            return type;
-    }
-    return null;
-}
-const GENERIC_SCALE_MAIL = OBJECT_NAMES.findIndex(name => name === 'scale mail');
-const DRAGON_SCALE_MAIL_REMAP = new Map(OBJECT_NAMES.map((name, otyp) => [normalizeName(name), otyp])
-    .filter(([name]) => /^[a-z]+ dragon scale mail$/.test(name)));
-// C readobjnam_postparse1() recognizes a leading monster name before object
-// lookup.  For "blue dragon scale mail", name_to_monplus() retains the blue
-// dragon index and leaves "scale mail" for rnd_otyp_by_namedesc(); only after
-// constructing generic SCALE_MAIL does readobjnam() remap it to blue DSM.
-function namedLookupPlan(name) {
-    const requested = normalizeName(name)
-        .replace(/^pairs? of\s+/, '')
-        .replace(/^sets? of\s+/, '');
-    const finalType = DRAGON_SCALE_MAIL_REMAP.get(requested);
-    return finalType === undefined
-        ? { requested, lookupName: requested, finalType: null }
-        : { requested, lookupName: 'scale mail', finalType };
-}
-export function parseWishText(text) {
-    let remaining = String(text || '').trim().replace(/\s+/g, ' ');
-    const parsed = {
-        fruitName: '',
-        name: '',
-        count: 1,
-        countExplicit: false,
-        globSize: 0,
-        enchantment: null,
-        buc: null,
-        recharged: null,
-        charges: null,
-        erodeproof: false,
-        eroded: null,
-        eroded2: null,
-        greased: false,
-    };
-    const chargeMatch = remaining.match(/\s*\((?:(-?\d+):)?(-?\d+)\)\s*$/);
-    if (chargeMatch) {
-        remaining = remaining.slice(0, chargeMatch.index).trim();
-    }
-    let erosionIntensity = 0;
-    for (;;) {
-        let match;
-        if ((match = remaining.match(/^(?:an?|the)\s+/i))) {
-            parsed.countExplicit = true;
-            remaining = remaining.slice(match[0].length);
-        }
-        else if ((match = remaining.match(/^(\d+)\s+/))) {
-            parsed.countExplicit = true;
-            parsed.count = Math.max(1, Number(match[1]));
-            remaining = remaining.slice(match[0].length);
-        }
-        else if ((match = remaining.match(/^(very large|large|medium|small)\s+(?=.*\bglobs?\b)/i))) {
-            parsed.globSize = ['small', 'medium', 'large', 'very large']
-                .indexOf(requiredCapture(match, 1).toLowerCase()) + 1;
-            remaining = remaining.slice(match[0].length);
-        }
-        else if ((match = remaining.match(/^([+-])(\d+)\s+/))) {
-            parsed.enchantment = Number(match[2]) * (match[1] === '-' ? -1 : 1);
-            remaining = remaining.slice(match[0].length);
-        }
-        else if ((match = remaining.match(/^(blessed|holy)\s+/i))) {
-            parsed.buc = 'blessed';
-            remaining = remaining.slice(match[0].length);
-        }
-        else if ((match = remaining.match(/^(cursed|unholy)\s+/i))) {
-            parsed.buc = 'cursed';
-            remaining = remaining.slice(match[0].length);
-        }
-        else if ((match = remaining.match(/^uncursed\s+/i))) {
-            parsed.buc = 'uncursed';
-            remaining = remaining.slice(match[0].length);
-        }
-        else if ((match = remaining.match(/^(?:rustproof|erodeproof|corrodeproof|fixed|fireproof|rotproof|tempered|crackproof)\s+/i))) {
-            parsed.erodeproof = true;
-            remaining = remaining.slice(match[0].length);
-        }
-        else if ((match = remaining.match(/^greased\s+/i))) {
-            parsed.greased = true;
-            remaining = remaining.slice(match[0].length);
-        }
-        else if ((match = remaining.match(/^(very|thoroughly)\s+(?=(?:rusty|rusted|burnt|burned|cracked|corroded|rotted)\s+)/i))) {
-            erosionIntensity = requiredCapture(match, 1).toLowerCase() === 'very' ? 1 : 2;
-            remaining = remaining.slice(match[0].length);
-        }
-        else if ((match = remaining.match(/^(?:rusty|rusted|burnt|burned|cracked)\s+/i))) {
-            parsed.eroded = 1 + erosionIntensity;
-            erosionIntensity = 0;
-            remaining = remaining.slice(match[0].length);
-        }
-        else if ((match = remaining.match(/^(?:corroded|rotted)\s+/i))) {
-            parsed.eroded2 = 1 + erosionIntensity;
-            erosionIntensity = 0;
-            remaining = remaining.slice(match[0].length);
-        }
-        else {
-            break;
-        }
-    }
-    if (chargeMatch) {
-        // C's parenthesized charge parser consumes digits, not minus signs.
-        // A malformed suffix clears its numbers but preserves a prefix sign.
-        const malformed = chargeMatch.slice(1).some(value => value?.startsWith('-'));
-        if (malformed) {
-            parsed.recharged = 0;
-            if (parsed.enchantment !== null) {
-                const negative = parsed.enchantment < 0 || Object.is(parsed.enchantment, -0);
-                parsed.charges = negative ? -0 : 0;
-            }
-        }
-        else {
-            const recharge = Number(chargeMatch[1] || 0);
-            parsed.recharged = recharge > 7 ? 7 : recharge;
-            parsed.charges = Math.min(SPE_LIM, Number(chargeMatch[2]));
-        }
-    }
-    parsed.fruitName = remaining;
-    const requestedName = normalizeName(remaining);
-    parsed.name = singularizeObjectName(requestedName);
-    if (parsed.name !== requestedName && parsed.count === 1)
-        parsed.count = 2;
-    return parsed;
 }
 // C refs: objnam.c:erosion_matters(), objclass.h:is_damageable(), and
 // mkobj.c:is_flammable()/is_rottable().  Wished proof applies only where the
@@ -943,61 +731,15 @@ export function objectStatePrefix(object) {
 // C adds xtra_prob=1 for readobjnam() so 0%-generation objects remain
 // wishable.  The draw is over total probability, not candidate count.
 export function rndObjectTypeByName(name, xtraProb = 1) {
-    const target = namedLookupPlan(name).lookupName;
-    const matches = [];
-    const firstWeapon = OBJECT_BASES[WEAPON_CLASS];
-    if (firstWeapon === undefined)
-        throw new RangeError('Weapon class has no first object type');
-    for (let otyp = firstWeapon; otyp < OBJECT_NAMES.length; otyp++) {
-        if (!OBJECT_NAMES[otyp])
-            continue;
-        if (candidateNames(otyp).some(candidate => candidate === target))
-            matches.push(otyp);
-    }
-    if (!matches.length)
-        return null;
-    const total = matches.reduce((sum, otyp) => sum + requireObjectData(OBJECT_PROB, otyp) + xtraProb, 0);
-    if (total <= 0)
-        return null;
-    let roll = rn2(total);
-    for (const otyp of matches) {
-        roll -= requireObjectData(OBJECT_PROB, otyp) + xtraProb;
-        if (roll < 0)
-            return otyp;
-    }
-    return matches.at(-1) ?? null;
-}
-// C objnam.c:readobjnam_postparse3() checks exact canonical real-gem names
-// before the combined name/description lottery.  This disambiguates requests
-// such as bare "ruby" from a potion whose shuffled description is "ruby".
-function exactRealGemType(name) {
-    for (let otyp = DILITHIUM_CRYSTAL; otyp <= JADE; otyp++) {
-        if (normalizeName(OBJECT_NAMES[otyp]) === name)
-            return otyp;
-    }
-    return null;
+    return randomTypeByDescription(name, 0, xtraProb);
 }
 export async function readObjectName(text, { wizardWish = false } = {}) {
     const parsed = parseWishText(text);
-    normalizeGlobWish(parsed);
-    if (['nothing', 'nil', 'none'].includes(parsed.name))
+    if (['nothing', 'nil', 'none'].includes(text.trim().toLowerCase()))
         return { noWish: true, parsed };
-    if (['gold piece', 'gold', 'money', 'coin', 'zorkmid'].includes(parsed.name)
-        || parsed.name.startsWith('$')) {
-        const object = await mksobj(GOLD_PIECE, false, false);
-        object.quan = object.quantity = wizardWish
-            ? parsed.count : Math.min(5000, parsed.count);
-        object.owt = objectWeight(object);
-        return {
-            object, parsed, lookupOtyp: GOLD_PIECE,
-            finalOtyp: GOLD_PIECE, isGold: true,
-        };
-    }
-    const artifact = artifactByName(parsed.name);
+    let artifact = null;
     let lookupOtyp;
     let object;
-    let finalType = null;
-    let fruit = null;
     if (!parsed.name) {
         // C's empty request selects a class and retains the generated count.
         const wishClasses = [
@@ -1013,37 +755,54 @@ export async function readObjectName(text, { wizardWish = false } = {}) {
         lookupOtyp = object.otyp;
     }
     else {
-        const lookup = namedLookupPlan(parsed.name);
-        let matchedType = artifact?.baseType ?? exactRealGemType(lookup.lookupName)
-            ?? rndObjectTypeByName(lookup.lookupName, 1)
-            ?? japaneseWishType(lookup.lookupName);
-        if (matchedType === null) {
-            const match = matchWishedFruit(parsed.fruitName);
-            if (match) {
-                fruit = match.fruit;
-                if (!parsed.countExplicit)
-                    parsed.count = match.count;
-                matchedType = SLIME_MOLD;
-            }
+        const lookup = lookupWishType(parsed, { wizardWish });
+        if (lookup.kind === 'rejected')
+            return null;
+        if (lookup.kind === 'terrain') {
+            if (game.program_state.wizkit_wishing)
+                return null;
+            await wishForWizardTrap(lookup.trapType);
+            return { noWish: true, parsed };
         }
-        if (matchedType === null)
-            return null;
-        lookupOtyp = matchedType;
-        finalType = lookup.finalType;
-        const type = wizardWish ? lookupOtyp : permittedWishType(lookupOtyp);
-        if (type === null)
-            return null;
-        object = await mksobj(type, true, false);
-        if (fruit)
-            object.spe = fruit.fid;
+        if (lookup.kind === 'gold') {
+            object = await mksobj(GOLD_PIECE, false, false);
+            object.quan = object.quantity = wizardWish ? parsed.count : Math.min(5000, parsed.count);
+            object.owt = objectWeight(object);
+            return { object, parsed, lookupOtyp: GOLD_PIECE, finalOtyp: GOLD_PIECE, isGold: true };
+        }
+        if (lookup.kind === 'random') {
+            object = await mkobj(lookup.oclass, false);
+            lookupOtyp = object.otyp;
+        }
+        else {
+            let matchedType;
+            if (lookup.kind === 'unresolved') {
+                parsed.name = lookup.name.toLowerCase();
+                if (wizardWish && !game.program_state.wizkit_wishing
+                    && await tryWizardTerrainWish(parsed))
+                    return { noWish: true, parsed };
+                matchedType = randomUnqualifiedWishType(lookup.name);
+                if (matchedType === null)
+                    return null;
+            }
+            else {
+                matchedType = lookup.type;
+                artifact = lookup.artifact;
+            }
+            lookupOtyp = substituteWishedGlob(matchedType, parsed);
+            const type = wizardWish ? lookupOtyp : permittedWishType(lookupOtyp);
+            if (type === null)
+                return null;
+            object = await mksobj(type, true, false);
+            if (lookup.kind === 'object' && lookup.fruit)
+                object.spe = lookup.fruit.fid;
+        }
     }
     await applyWishQuantity(object, parsed, wizardWish);
+    lightWishedObject(object, parsed);
     const luck = (game.u.uluck || 0) + (game.u.moreluck || 0);
     const enchantmentSign = applyWishEnchantment(object, parsed, wizardWish, luck);
-    if (finalType !== null && lookupOtyp === GENERIC_SCALE_MAIL) {
-        object.otyp = finalType;
-        object.oclass = objectClass(finalType);
-    }
+    await applyWishSpecies(object, parsed, wizardWish);
     applyWishBlessing(object, parsed, wizardWish, luck, enchantmentSign);
     if (erosionMatters(object)) {
         object.oeroded = object.oeroded2 = 0;
@@ -1058,13 +817,23 @@ export async function readObjectName(text, { wizardWish = false } = {}) {
         object.recharged = object.otyp === WAN_WISHING && !wizardWish
             ? 1 : parsed.recharged ?? 0;
     }
-    if (parsed.greased)
-        object.greased = true;
-    if (artifact) {
-        nameArtifact(object, artifact);
-        object.quan = 1;
-        game.u.uconduct ||= {};
-        game.u.uconduct.wisharti = (game.u.uconduct.wisharti || 0) + 1;
+    await applyWishProperties(object, parsed, wizardWish, luck);
+    applyWishedTinVariety(object, parsed, wizardWish);
+    const personalName = artifact?.name ?? parsed.personalName;
+    if (personalName) {
+        const namedArtifact = artifactByName(personalName);
+        if (namedArtifact?.baseType === object.otyp) {
+            artifact = namedArtifact;
+            nameArtifact(object, artifact);
+            object.quan = 1;
+            game.u.uconduct ||= {};
+            game.u.uconduct.wisharti = (game.u.uconduct.wisharti || 0) + 1;
+        }
+        else if (!object.oartifact) {
+            const name = object.otyp === SPE_NOVEL
+                ? lookupNovelTitle(personalName, object) ?? personalName : personalName;
+            object.oextra = { ...object.oextra, oname: name.slice(0, PL_PSIZ - 1) };
+        }
     }
     let deniedArtifact = false;
     if (object.oartifact) {
@@ -1079,7 +848,7 @@ export async function readObjectName(text, { wizardWish = false } = {}) {
         return { noWish: true, parsed };
     }
     object.quantity = object.quan;
-    object.owt = objectWeight(object);
+    await finishWishWeight(object, parsed);
     return {
         object, parsed, lookupOtyp, finalOtyp: object.otyp, artifact,
     };
@@ -1162,25 +931,6 @@ function applyWishBlessing(object, parsed, wizardWish, luck, enchantmentSign) {
         object.blessed = false;
         object.cursed = true;
     }
-}
-// C readobjnam_postparse1(): globs accept both "glob of gray ooze" and
-// "gray ooze glob". Unknown monster names request a random glob species.
-function normalizeGlobWish(parsed) {
-    const match = parsed.name.match(/^globs?(?: of (.+))?$/)
-        || parsed.name.match(/^(.+) globs?$/);
-    if (!match)
-        return;
-    const monster = nameToMonster(match[1] || '');
-    if (monster < 0) {
-        const type = GLOB_OF_GRAY_OOZE
-            + rn2(GLOB_OF_BLACK_PUDDING - GLOB_OF_GRAY_OOZE);
-        parsed.name = requireObjectName(type);
-    }
-    else {
-        parsed.name = `glob of ${MONSTER_NAME[monster]}`;
-    }
-    if (/\bglobs\b/.test(match[0]) && parsed.count < 2)
-        parsed.count = 2;
 }
 async function applyWishQuantity(object, parsed, wizardWish) {
     let count = parsed.count;
@@ -1310,11 +1060,5 @@ function requiredArtifact(name, state) {
     if (!artifact)
         throw new RangeError(`No native artifact named ${name}`);
     return artifact;
-}
-function requiredCapture(match, group) {
-    const value = match[group];
-    if (value === undefined)
-        throw new Error(`Missing name capture ${group} in ${match[0]}`);
-    return value;
 }
 //# sourceMappingURL=objnam.js.map

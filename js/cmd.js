@@ -2653,7 +2653,7 @@ async function dochat() {
     game.context.move = 0;
 }
 async function wizWish() {
-    return makeWish({ allowWizardTerrain: true });
+    return makeWish();
 }
 // C refs: cmd.c Ctrl-G/wizgenesis, wizcmds.c wiz_genesis(), and read.c
 // create_particular().  The debug command remains zero-time.
