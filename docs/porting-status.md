@@ -130,7 +130,7 @@ existing tests needed their setup corrected:
   `commitPetPickup()` and checks that the dagger stays on the floor until
   then.
 
-## Parallel batches 1–13 (`efb95fb`)
+## Parallel batches 1–14 (`379eda8`)
 
 Units ran in worktrees under `docs/orchestration.md` (Codex; each diff reviewed
 by Codex against the C source, then merged only if the full suite adds no
@@ -229,34 +229,40 @@ pool's message and `distfleeck` clusters are gone), and C-source audits of
 files the corpus barely runs: **audit-pray** (`pray.c`), **audit-potion**
 (`potion.c`), **audit-zap** (`zap.c`), **audit-apply** (`apply.c`).
 
+Batch 14: **pool-tail** and **pool-tail-2** (the scattered remaining pool
+first differences: killer formats, monster form changes, map and status
+rows), **audit-shk** (`shk.c`: payment refusals, damage repair, selling and
+credit, hallucinated keepers) and **audit-wear** (`do_wear.c`: every slot's
+on/off effects, multi-turn removal, ring-hand prompts).
+
 ## Verification
 
-`npm test` at `efb95fb`: **9,178/9,178**. Merges require a fully green suite;
+`npm test` at `379eda8`: **9,415/9,415**. Merges require a fully green suite;
 batch runs also compare matched screens per session with the previous batch
-(no screen regression in batch 13, eval, public or pool).
+(no screen regression in batch 14, eval, public or pool).
 
 ## Most recent native diagnostics
 
 | Diagnostic | Complete | Matched screens | Matched random calls | Crashes |
 | --- | ---: | ---: | ---: | ---: |
 | Public | 37/44 | 10,849/11,405 | 778,133/792,838 | 0 |
-| Native eval sample | 296/300 | 50,322/50,586 | 3,597,421/3,616,669 | 0 |
-| Holdout-dev pool | 2,412/2,500 | | | 0 |
+| Native eval sample | 297/300 | 50,521/50,586 | 3,616,468/3,616,669 | 0 |
+| Holdout-dev pool | 2,452/2,500 | | | 0 |
 
-Runs: `.cache/generalization/batch13-efb95fb-{eval,public}` and
-`triage-efb95fb` (pool) in the verify worktree (baseline `base-06d7e73`:
-143/300; batch 12: 292/300, pool 2,350/2,500). No verified random call was
-lost; the ledgers now hold 284 eval and 184 public functions. The
-state oracle finds 297 sessions matching C state throughout; one hidden-state
+Runs: `.cache/generalization/batch14-379eda8-{eval,public}` and
+`triage-379eda8` (pool) in the verify worktree (baseline `base-06d7e73`:
+143/300; batch 13: 296/300, pool 2,412/2,500). No verified random call was
+lost; the ledgers now hold 312 eval and 184 public functions. The
+state oracle finds 299 sessions matching C state throughout; one hidden-state
 session remains.
 
 ## Next work
 
-In flight: pool-tail (the remaining 88 pool failures: 13 map rows and
-scattered random-call tails such as `mcalcmove`, `m_move`, `next_ident`), and
-C-source audits of `do_wear.c` (audit-wear), `shk.c` (audit-shk) and `uhitm.c`
-(audit-uhitm). `.cache/agents/pool-181c8bb-firsts.tsv` lists the pool
-differences; `.cache/agents/queue.md` holds accepted review findings. 
+In flight: C-source audits of `uhitm.c` (audit-uhitm), `artifact.c`
+(audit-artifact) and `pickup.c` (audit-pickup), and the 7 failing public
+sessions (public-4). 48 pool sessions still fail (12 map rows, a few message
+and status rows, single random-call tails); `.cache/agents/pool-379eda8-firsts.tsv`
+lists them and `.cache/agents/queue.md` holds accepted review findings. 
 
 `splitObjectStack()` now links the new piece right after the original in
 whichever chain owns it (floor pile, hero or monster inventory, container,
