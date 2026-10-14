@@ -1,8 +1,9 @@
 // C artifact.c:set_artifact_intrinsic(), Sting_effects(), glow_verb().
 
 import { artifactById, artifactGlowColor, artifactWarningMask } from './artifacts.js';
-import { W_WEP } from './const.js';
-import { displayColorName, plineWithContinuation, see_monsters } from './display.js';
+import { DOOR, D_TRAPPED, W_WEP, isok } from './const.js';
+import { displayColorName, glyphAt, plineWithContinuation, see_monsters } from './display.js';
+import { isContainer } from './container.js';
 import { game, requireLiveGame } from './gstate.js';
 import { verbForSubject } from './object_grammar.js';
 import { grantWornProperty, removeWornProperty, wornObjectGrantsProperty } from './properties.js';
@@ -81,4 +82,31 @@ export async function artifactWarningFeedback(
             `${name} stops ${artifactGlowVerb(blind ? 0 : previous, true)}.`,
         );
     }
+}
+
+// C mkot_trap_warn(): warmth counts locations whose trap is not displayed,
+// including trapped doors and containers beneath other floor objects.
+export async function warnWithMasterKey(state: GameState = game): Promise<void> {
+    const weapon = state.uwep;
+    if (state.uarmg || artifactById(weapon?.oartifact, state)?.enumName !== 'MASTER_KEY_OF_THIEVERY') {
+        state._magicKeyTrapWarningCount = 0;
+        return;
+    }
+    requireLiveGame(state);
+    let count = 0;
+    for (let x = state.u.ux - 1; x <= state.u.ux + 1; x++) {
+        for (let y = state.u.uy - 1; y <= state.u.uy + 1; y++) {
+            if (!isok(x, y) || glyphAt(x, y, state)?.kind === 'trap') continue;
+            const spot = state.level?.at(x, y);
+            if (state.level?.traps.some(trap => trap.tx === x && trap.ty === y)
+                || spot?.typ === DOOR && (spot.doormask & D_TRAPPED)
+                || state.level?.objects[x]?.[y]?.some(object => isContainer(object) && object.otrapped))
+                count++;
+        }
+    }
+    if (count !== state._magicKeyTrapWarningCount) {
+        const heat = ['cool', 'slightly warm', 'warm', 'very warm', 'hot', 'very hot', 'like fire'];
+        await plineWithContinuation(`The Key feels ${heat[Math.min(count, 6)]}${count > 3 ? '!' : '.'}`);
+    }
+    state._magicKeyTrapWarningCount = count;
 }
