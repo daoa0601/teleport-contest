@@ -38,8 +38,9 @@ export async function dopay() {
     if (robbed || shop.billct || shop.debit)
         await rouseShopkeeper(keeper);
     if (monsterIsHelpless(keeper)) {
+        const name = shopkeeperName(keeper, { capitalized: true });
         const response = rn2(2) ? 'seems to be napping' : "doesn't respond";
-        await plineWithContinuation(`${shopkeeperName(keeper, { capitalized: true })} ${response}.`);
+        await plineWithContinuation(`${name} ${response}.`);
         game.context.move = 0;
         return;
     }
