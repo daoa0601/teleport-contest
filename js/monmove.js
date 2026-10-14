@@ -5975,13 +5975,14 @@ function heroCanSeeInvisible(state) {
     return !!(state?.u?.seeInvisible || (state?.u?.seeInvisibleTurns ?? 0) > 0);
 }
 function monsterSpellHasAggravatables(caster, state) {
-    return !!state?.level?.monsters?.some((monster) => monster !== caster &&
-        !monster.dead &&
+    const inTower = insideWizardTower(caster.mx, caster.my, state);
+    if (inTower !== insideWizardTower(state.u.ux, state.u.uy, state))
+        return false;
+    return state.level.monsters.some((monster) => !monster.dead &&
         (monster.mhp ?? 1) > 0 &&
+        insideWizardTower(monster.mx, monster.my, state) === inTower &&
         ((monster.mstrategy ?? 0) & STRAT_WAITFORU ||
-            monster.msleeping ||
-            monster.mcanmove === 0 ||
-            (monster.mfrozen ?? 0) > 0));
+            monsterIsHelpless(monster)));
 }
 function monsterSpellUseless(monster, spell, state, random = rn2, calls = []) {
     if (spell.flags & MCF_HOSTILE && monster.mpeaceful)

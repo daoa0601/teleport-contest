@@ -7209,15 +7209,15 @@ function heroCanSeeInvisible(state: PlayingGameState) {
 }
 
 function monsterSpellHasAggravatables(caster: Monster, state: PlayingGameState) {
-    return !!state?.level?.monsters?.some(
+    const inTower = insideWizardTower(caster.mx, caster.my, state);
+    if (inTower !== insideWizardTower(state.u.ux, state.u.uy, state)) return false;
+    return state.level.monsters.some(
         (monster) =>
-            monster !== caster &&
             !monster.dead &&
             (monster.mhp ?? 1) > 0 &&
+            insideWizardTower(monster.mx, monster.my, state) === inTower &&
             ((monster.mstrategy ?? 0) & STRAT_WAITFORU ||
-                monster.msleeping ||
-                monster.mcanmove === 0 ||
-                (monster.mfrozen ?? 0) > 0),
+                monsterIsHelpless(monster)),
     );
 }
 
