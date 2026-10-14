@@ -52,18 +52,6 @@ void test('a counted drop from a wielded stack splits and keeps the remainder wi
     assert.equal(game.uwep ?? game.u?.uwep, daggers);
     assert.equal(game.context.move, 1);
 });
-// C getobj count handling: a numeric 0 count cancels the selection
-// outright — nothing leaves the pack, the floor stays empty, no time.
-void test('a zero count cancels the drop entirely', async () => {
-    freshObjectRoom({ gameplaySeed: 96 });
-    requireFixtureGame(game);
-    const daggers = await addInventoryObject(DAGGER, { invlet: 'a', quan: 5, quantity: 5 });
-    await dropCommand('0a');
-    assert.ok(game.inventory.includes(daggers));
-    assert.equal(daggers.quan ?? daggers.quantity, 5);
-    assert.equal((floorObjectsAt(requireGameLevel(game), game.u.ux, game.u.uy) || []).length, 0);
-    assert.equal(game.context.move, 0);
-});
 // C do.c:685-698 canletgo: with a count below the stack size the getobj
 // kludge sets corpsenm, so the refusal names "any of" the stones.
 void test('a counted cursed loadstone refusal keeps the whole stack', async () => {

@@ -47,6 +47,9 @@ export async function artifactObject(name, overrides = {}) {
 export async function addInventoryObject(otyp, overrides = {}) {
     const { observed = true, ...properties } = overrides;
     const object = await addInventoryItem(await knownObject(otyp, properties), null, observed);
+    // These fixtures represent existing possessions. Tests of acquisition
+    // place objects on the floor and pick them up through the game command.
+    object.pickup_prev = properties.pickup_prev ?? false;
     requireInventoryLetter(object);
     return object;
 }
