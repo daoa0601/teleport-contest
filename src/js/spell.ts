@@ -6,6 +6,7 @@ export interface SpellCastOptions { atSelf?: boolean; force?: boolean; state?: G
 export interface SpellCastResult { spentTime: boolean; heroDied: boolean; }
 
 // Spell learning and the native spell.c:spelleffects() transaction.
+import { resetCommandVariables } from './command_state.js';
 import { game, requireLiveGame } from './gstate.js';
 import { plineWithContinuation } from './display.js';
 import { promptDirection } from './tty_prompts.js';
@@ -228,9 +229,14 @@ async function applyDirectedSpell(source: GameObject, atSelf: boolean, state: Pl
 export async function docast() {
     const spell = await selectSpellToCast(game);
     if (!spell) {
-        game.context.move = 0;
+        resetCommandVariables(true);
         return;
     }
+    const index = (game.spells ?? []).indexOf(spell);
+    const letter = index < 26 ? 97 + index : 65 + index - 26;
+    // C docast() appends the selected letter even during do_repeat().
+    game._repeatCommands ??= [];
+    game._repeatCommands.push({ kind: 'key', key: letter });
     await castSpell(spell.otyp);
 }
 

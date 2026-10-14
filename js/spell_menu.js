@@ -5,6 +5,7 @@ import { flushPendingTopline, plineWithContinuation } from './display.js';
 import { game, requireLiveGame } from './gstate.js';
 import { OBJECT_NAMES, OBJECT_SPELL_CATEGORY, OBJECT_SPELL_LEVEL } from './object_data.js';
 import { currentSpellKnowledge, liveSpellSkill, percentSuccess, rejectCasting, spellSkillType, } from './spell_casting_rules.js';
+import { rememberCommandKey, takeRepeatCommand } from './command_repeat.js';
 import { promptKey } from './tty_prompts.js';
 import { showInventoryWindow } from './windows.js';
 const SORT_LETTER = 0;
@@ -35,6 +36,13 @@ export async function selectSpellToCast(state = game) {
     }
     if (await rejectCasting(state))
         return null;
+    const queued = takeRepeatCommand();
+    if (queued) {
+        if (queued.kind !== 'key')
+            return null;
+        const index = spellIndex(queued.key);
+        return index >= 0 ? spells[index] ?? null : null;
+    }
     if (state.flags.menu_style === MENU_TRADITIONAL) {
         const selection = await selectTraditionalSpell(spells);
         if (selection !== 'menu')
@@ -93,6 +101,7 @@ async function selectTraditionalSpell(spells) {
         // an unrestricted, case-sensitive single-key question.
         await flushPendingTopline();
         const key = await promptKey(`Cast which spell? [${letters} *?] `);
+        rememberCommandKey(key);
         if (key === 42 || key === 63)
             return 'menu';
         if ([32, 10, 13, 27].includes(key)) {
