@@ -85,10 +85,7 @@ export function armorWearDecision(object, state = game) {
             if (state.uarm || state.uarmc)
                 return refuse(`You can't wear that over your ${state.uarmc ? armorSimpleName(state.uarmc, state) : 'armor'}.`);
             break;
-        case 'uarm':
-            if (state.uarmc)
-                return refuse(`You cannot wear armor over a ${armorSimpleName(state.uarmc, state)}.`);
-            break;
+        case 'uarm': break;
         case 'uarmc': break;
     }
     return refuse(null);

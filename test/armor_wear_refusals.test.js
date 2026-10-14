@@ -6,7 +6,7 @@ import { pushKeys } from '../js/input.js';
 import { wearHeroArmor } from '../js/armor.js';
 import { wearHeroAccessory } from '../js/accessory.js';
 import { TT_BEARTRAP } from '../js/const.js';
-import { GAUNTLETS_OF_POWER, LEATHER_CLOAK, OBJECT_NAMES, RIN_PROTECTION, RING_MAIL, SMALL_SHIELD, TWO_HANDED_SWORD, } from '../js/object_data.js';
+import { GAUNTLETS_OF_POWER, LEATHER_CLOAK, MEAT_RING, OBJECT_NAMES, RIN_PROTECTION, RING_MAIL, SMALL_SHIELD, TWO_HANDED_SWORD, } from '../js/object_data.js';
 import { setPrimaryWeapon } from '../js/weapon_slots.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { addInventoryObject } from './support/game-objects.js';
@@ -83,5 +83,22 @@ void test('puton refuses a third ring without replacing either hand', async () =
     assert.equal(game.uleft, left);
     assert.equal(game.uright, right);
     assert.equal(game.context.move, 0);
+});
+void test('a limbless hero cannot wear a meat ring', async () => {
+    freshObjectRoom({ hero: { umonnum: MONSTER_NAME.indexOf('black pudding'), mh: 40, mhmax: 40 } });
+    const ring = await addInventoryObject(MEAT_RING);
+    pushKeys(`${ring.invlet}l`);
+    await rhack('P'.charCodeAt(0));
+    assert.equal(game._pending_message, 'You cannot make the ring stick to your body.');
+    assert.equal(game.context.move, 0);
+    assert.equal(!!game.uleft, false);
+});
+void test('puton keeps asking for a ring hand after an invalid answer', async () => {
+    freshObjectRoom();
+    const ring = await addInventoryObject(RIN_PROTECTION);
+    pushKeys(`${ring.invlet}xl`);
+    await rhack('P'.charCodeAt(0));
+    assert.equal(game.uleft, ring);
+    assert.equal(game.context.move, 1);
 });
 //# sourceMappingURL=armor_wear_refusals.test.js.map

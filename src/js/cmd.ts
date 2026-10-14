@@ -55,7 +55,7 @@ import { speakArtifact } from './artifact_speech.js';
 import { lightCocktail, useCandelabrum, useCandle, useLamp } from './apply_light.js';
 import { useWhistle } from './whistle.js';
 import { retouchHeroObject } from './hero_retouch.js';
-import { GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, PARANOID_REMOVE, GETOBJ_SUGGEST } from './const.js';
+import { GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, PARANOID_REMOVE, GETOBJ_SUGGEST } from './const.js';
 import { TER_MON } from './const.js';
 import { senseBuriedObjects } from './buried_object.js';
 import { distantMonsterName, monsterInstanceDisplayName, monsterName, shopkeeperName } from './monster_name.js';
@@ -278,8 +278,7 @@ import {
 import {
     removeHeroAccessory, wearHeroAccessory,
 } from './accessory.js';
-import { heroIsStrangled } from './hero_strangulation.js';
-import { heroIsBreathless, heroPassesWalls, heroSpecies } from './hero_species.js';
+import { heroPassesWalls, heroSpecies } from './hero_species.js';
 import { disturbBuriedZombies } from './object_impact.js';
 import { checkSlipperyIce } from './fumbling.js';
 import { MONSTER_BODY_META } from './monster_data.js';
@@ -325,7 +324,7 @@ import {
     resolveDippedBucFate, resolveDippedSensationFate,
 } from './fountain_effects.js';
 import { dryFountainAt, gushForthFromFountain } from './fountain.js';
-import { heroArmName, heroFingerName, heroHandName, heroNeckName } from './body_parts.js';
+import { heroArmName, heroFingerName, heroHandName } from './body_parts.js';
 import { armorUsesPairGrammar, withIndefiniteArticle, makePlural } from './object_grammar.js';
 import { objectWearMessage } from './object_wear_message.js';
 import { isWetTowel, willWeld } from './weapon_type.js';
@@ -4923,7 +4922,7 @@ async function putOnAccessoryObject(object: GameObject): Promise<void> {
         return;
     }
 
-    if ((object.oclass === 4 || object.class === 'Rings')
+    if ((object.oclass === 4 || object.class === 'Rings' || object.otyp === MEAT_RING)
         && heroHasNoLimbs(game)) {
         await pline('You cannot make the ring stick to your body.');
         game.context.move = 0;
@@ -4939,14 +4938,19 @@ async function putOnAccessoryObject(object: GameObject): Promise<void> {
 
     let hand: 'left' | 'right';
     if (!game.uleft && !game.uright) {
-        const finger = String.fromCharCode(await promptKey(
-            `Which ${monsterIsHumanoid(heroSpecies(game)) ? 'ring-' : ''}${heroFingerName(game)}, Right or Left? [rl] `,
-        )).toLowerCase();
-        if (finger !== 'r' && finger !== 'l') {
-            game.context.move = 0;
-            return;
+        for (;;) {
+            const finger = String.fromCharCode(await promptKey(
+                `Which ${monsterIsHumanoid(heroSpecies(game)) ? 'ring-' : ''}${heroFingerName(game)}, Right or Left? [rl] `,
+            )).toLowerCase();
+            if (finger === '\x1b' || finger === '\0') {
+                game.context.move = 0;
+                return;
+            }
+            if (finger === 'r' || finger === 'l') {
+                hand = finger === 'r' ? 'right' : 'left';
+                break;
+            }
         }
-        hand = finger === 'r' ? 'right' : 'left';
     } else {
         hand = game.uright ? 'left' : 'right';
     }

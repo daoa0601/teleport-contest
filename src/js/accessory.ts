@@ -22,7 +22,8 @@ import { heroIsBlind } from './senses.js';
 import { objectTypeKnown } from './shk.js';
 import {
     captureLevitationState, grantWornProperty, propertyIsActive,
-    refreshMovementProperties, removeWornProperty, hasIntrinsicProperty, propertyIsBlocked, propertyTimeout, setPropertyTimeout,
+    hasIntrinsicProperty, propertyIsBlocked, propertyTimeout,
+    refreshMovementProperties, removeWornProperty, setPropertyTimeout,
 } from './properties.js';
 import { isWeldedPrimary, releaseWeaponSlots } from './weapon_slots.js';
 import { cancelSlotTakeoff } from './takeoff_state.js';
