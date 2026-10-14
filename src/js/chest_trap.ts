@@ -7,6 +7,7 @@ import { endVoluntaryMultiTurn } from './command_state.js';
 import { exerciseAttribute } from './attrib.js';
 import { heroHasFreeAction } from './armor.js';
 import { A_CON, A_DEX, A_STR, W_BALL } from './const.js';
+import { currency } from './currency.js';
 import {
     bot, plineWithContinuation, shieldeff,
 } from './display.js';
@@ -15,7 +16,6 @@ import { game } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Position } from './map_types.js';
-import type { Shopkeeper } from './shop_types.js';
 import type { MessagePublisher } from './display.js';
 import { loseHeroHp } from './hero_damage.js';
 import { wakeMonstersNear } from './monster_wake.js';
@@ -28,9 +28,9 @@ import { objectResistsDestruction } from './object_state.js';
 import { poisonHero } from './poison.js';
 import { createPoisonGasCloud } from './regions.js';
 import { d, rn2 } from './rng.js';
-import {
-    costlySpot, shopObjectUnitCost, unpaidObjectCost,
-} from './shk.js';
+import { costlySpot, insideShopRoomAt } from './shk.js';
+import { makeAngryShopkeeper } from './shop_damage.js';
+import { stolenValue } from './shop_loss.js';
 import { heroIsBlind } from './senses.js';
 import { destroyElectricInventory } from './zap.js';
 
@@ -72,10 +72,6 @@ function objectName(object: GameObject | null | undefined): string {
     return object?.name || OBJECT_NAMES[object?.otyp ?? -1] || 'container';
 }
 
-function quantity(object: GameObject | null | undefined): number {
-    return object?.quan ?? object?.quantity ?? 1;
-}
-
 function containerLocation(container: GameObject, state: GameState): Position {
     if (container.where === 'floor')
         return { x: container.ox, y: container.oy };
@@ -107,52 +103,29 @@ async function clearPunishment(state: GameState): Promise<void> {
     }
 }
 
-function destroyedShopValue(objects: readonly GameObject[], resident: Shopkeeper, state: GameState): number {
-    let loss = 0;
-    for (const object of objects) {
-        if (!object || object.no_charge) continue;
-        const billed = unpaidObjectCost(object, state);
-        loss += billed || shopObjectUnitCost(object, resident, state)
-            * quantity(object);
-    }
-    return loss;
-}
-
-async function settleExplosionDamage(location: Position, objects: readonly GameObject[], state: GameState, publish: MessagePublisher): Promise<number> {
-    const spot = costlySpot(location.x, location.y, state);
-    if (!spot) return 0;
-    const loss = destroyedShopValue(objects, spot.resident, state);
-    if (!loss) return 0;
-
-    const heroRoom = state.level?.at?.(state.u.ux, state.u.uy)?.roomno;
-    if (heroRoom === spot.roomno) {
-        spot.resident.eshk.debit = (spot.resident.eshk.debit ?? 0) + loss;
-        await publish(`You owe ${loss} zorkmids for objects destroyed.`);
-    } else {
-        spot.resident.eshk.robbed = (spot.resident.eshk.robbed ?? 0) + loss;
-        spot.resident.eshk.surcharge = true;
-        spot.resident.mpeaceful = 0;
-        await publish(`You caused ${loss} zorkmids worth of damage!`);
-    }
-    return loss;
-}
-
 async function explodeContainer(
     container: GameObject, location: Position, state: GameState, publish: MessagePublisher, rollDice: RollDice,
 ): Promise<ChestTrapResult> {
+    const spot = costlySpot(location.x, location.y, state);
+    const insider = !!spot && !!insideShopRoomAt(state, state.u.ux, state.u.uy)
+        && state.u.ushops?.[0] === spot.roomno;
     const name = formattedObjectName(container, state);
     await publish(`The ${name} explodes!`);
     const killer = `exploding ${name}`;
-    const contents = [...(container.contents || [])];
+    // Charge while the objects and their bills still exist, before damage
+    // can end the game and settle the hero's debt through inheritance.
+    let loss = spot ? await stolenValue(container, location.x, location.y,
+        spot.resident.mpeaceful, { state, publish, silent: true }) : 0;
+    await deleteObjectContents(container, state);
     const pile = [...(state.level?.objects?.[location.x]?.[location.y] || [])];
-    const destroyed = [...new Set([container, ...contents, ...pile])];
     const ball = state.uball || state.u?.uball;
     const chain = state.uchain || state.u?.uchain;
     if ((ball && pile.includes(ball)) || (chain && pile.includes(chain))) await clearPunishment(state);
 
-    await deleteObjectContents(container, state);
     let containerDestroyed = false;
     for (const object of pile) {
+        if (spot) loss += await stolenValue(object, object.ox, object.oy,
+            spot.resident.mpeaceful, { state, publish, silent: true });
         if (objectResistsDestruction(object, 0, 0)) continue;
         if (object === container) containerDestroyed = true;
         await deleteObject(object, state);
@@ -165,7 +138,14 @@ async function explodeContainer(
     if (await loseHeroHp(damage, killer, { state, publish }))
         return { outcome: 'explosion', damage, destroyed: containerDestroyed, died: true };
     await exerciseAttribute(A_STR, false, state);
-    await settleExplosionDamage(location, destroyed, state, publish);
+    if (spot && loss) {
+        const money = `${loss} ${currency(loss, { state })}`;
+        if (insider) await publish(`You owe ${money} for objects destroyed.`);
+        else {
+            await publish(`You caused ${money} worth of damage!`);
+            await makeAngryShopkeeper(spot.resident, state);
+        }
+    }
     return { outcome: 'explosion', damage, destroyed: containerDestroyed };
 }
 
