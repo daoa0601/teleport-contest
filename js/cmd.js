@@ -7265,7 +7265,7 @@ async function domoveCore(dx, dy, explicitAttempt) {
     // C hack.c:impaired_movement() always checks Confusion before deriving
     // the destination.  A nonzero rn2(5) keeps the requested direction; on
     // impairment, confdir(TRUE) chooses cardinals first and retries only an
-    // out-of-bounds or solid-rock result.
+    // out-of-bounds square or rock this body cannot traverse.
     const confused = (u?.confusionTurns || 0) > 0;
     const stunned = !!(u?.stunned || (u?.stunnedTurns || 0) > 0);
     if (stunned || (confused && rn2(5) === 0)) {
@@ -7273,21 +7273,29 @@ async function domoveCore(dx, dy, explicitAttempt) {
             [-1, 0], [0, -1], [1, 0], [0, 1],
             [-1, -1], [1, -1], [1, 1], [-1, 1],
         ];
+        const directionCount = MONSTER_NAME[u.umonnum] === 'grid bug' ? 4 : 8;
+        let foundDirection = false;
         for (let tries = 0; tries <= 50; tries++) {
-            const candidateDirection = impairedDirections[rn2(impairedDirections.length)];
+            const candidateDirection = impairedDirections[rn2(directionCount)];
             if (!candidateDirection)
                 throw new Error('Movement RNG produced an invalid direction.');
             const [candidateDx, candidateDy] = candidateDirection;
             const candidateX = u.ux + candidateDx;
             const candidateY = u.uy + candidateDy;
-            const candidate = game.level?.at(candidateX, candidateY);
+            u.dx = candidateDx;
+            u.dy = candidateDy;
             if (candidateX < 1 || candidateX >= COLNO
                 || candidateY < 0 || candidateY >= ROWNO
-                || !candidate || IS_OBSTRUCTED(candidate.typ))
+                || heroBadRock(game, candidateX, candidateY))
                 continue;
             dx = candidateDx;
             dy = candidateDy;
+            foundDirection = true;
             break;
+        }
+        if (!foundDirection) {
+            endVoluntaryMultiTurn(game);
+            return true;
         }
     }
     // confdir() updates the same persistent vector selected by set_move_cmd().
