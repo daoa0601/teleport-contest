@@ -179,7 +179,7 @@ import {
     resumeDeferredHeroColdSpecial, resumeDeferredHeroContact,
     resumeDeferredHeroFireSpecial,
     resumeDeferredHeroElectricSpecial,
-    resumeDeferredHeroLifeDrain, resumeDeferredHeroStun,
+    resumeDeferredHeroLifeDrain, resumeDeferredHeroStun, resumeDeferredHeroEnchantment,
     resumeDeferredHeroSticking,
     resumeDeferredHeroEngulf, resumeDeferredHeroBlindness,
     resumeDeferredHeroLegs,
@@ -2967,6 +2967,8 @@ async function presentMonsterAttackEffects(
                     heroAttack.deferredDecayArmor = false;
                     heroAttack.deferredPostHit = true;
                 }
+                if (heroAttack.deferredEnchantment)
+                    await resumeDeferredHeroEnchantment(action, game, random);
                 if (heroAttack.drainMessage) {
                     const drainDismissal = await plineWithContinuation(
                         heroAttack.drainMessage,

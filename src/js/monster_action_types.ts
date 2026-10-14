@@ -326,6 +326,7 @@ export interface HeroContactAttack extends HeroAttackProgress {
     deferredDecayRehumanize?: boolean;
     deferredDecayArmor?: boolean;
     rehumanize?: boolean;
+    deferredEnchantment?: boolean;
     drainedObject?: GameObject | null;
     drainMessage?: string | null;
 }

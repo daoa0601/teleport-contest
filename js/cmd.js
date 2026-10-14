@@ -5555,30 +5555,30 @@ async function doclose() {
         game.context.move = 0;
         return;
     }
-    const key = await readDirectionKey();
-    const direction = promptedDirectionKey(key, game.commandBindings);
-    if (!isMovementKey(direction)) {
-        const quitDirection = [27, 32, 10, 13].includes(key);
-        if (!quitDirection && game.flags?.cmdassist !== false) {
-            await showTextPages([directionAssistPage()], {
-                validKeys: [27, 32, 10, 13],
-            });
-            game._pending_message = '';
-            await restoreCommandMap();
-        }
-        else if (!quitDirection) {
-            await pline('What a strange direction!');
-        }
+    const direction = await promptDirection();
+    if (!direction) {
         game.context.move = 0;
         return;
     }
-    const x = game.u.ux + DIR_DX[direction];
-    const y = game.u.uy + DIR_DY[direction];
+    const x = game.u.ux + direction.dx;
+    const y = game.u.uy + direction.dy;
+    if (x === game.u.ux && y === game.u.uy && !heroPassesWalls(game)) {
+        await pline('You are in the way!');
+        game.context.move = 1;
+        return;
+    }
+    if (!isok(x, y)) {
+        await pline(`You ${heroIsBlind(game) ? 'feel' : 'see'} no door there.`);
+        game.context.move = 0;
+        return;
+    }
     const loc = game.level?.at(x, y);
     if (await stumbleOnDoorMimic(x, y)) {
         game.context.move = 1;
         return;
     }
+    game.context.move = game.u.confused || game.u.confusionTurns
+        || game.u.stunned || game.u.stunnedTurns ? 1 : 0;
     if (loc?.typ !== DOOR)
         await pline('You see no door there.');
     else if (loc.doormask === D_NODOOR)
@@ -5594,7 +5594,6 @@ async function doclose() {
         game.context.move = 1;
         return;
     }
-    game.context.move = 0;
 }
 // C refs: lock.c doopen(); cmd.c get_adjacent_loc()/getdir().  Direction
 // validation is owned by the same modal assistance transaction as close;
@@ -5605,24 +5604,22 @@ async function doopen() {
         game.context.move = 0;
         return;
     }
-    const key = await readDirectionKey();
-    const direction = promptedDirectionKey(key, game.commandBindings);
-    if (!isMovementKey(direction)) {
-        const quitDirection = [27, 32, 10, 13].includes(key);
-        if (!quitDirection && game.flags?.cmdassist !== false) {
-            await showTextPages([directionAssistPage()], {
-                validKeys: [27, 32, 10, 13],
-            });
-            game._pending_message = '';
-            await restoreCommandMap();
-        }
-        else if (!quitDirection) {
-            await pline('What a strange direction!');
-        }
-        // lock.c:doopen_indir() uses cmd.c:get_adjacent_loc(), whose caller
-        // projection always follows a failed getdir() with Never_mind.
+    const direction = await promptDirection();
+    if (!direction) {
         await pline('Never mind.');
         game.context.move = 0;
+        return;
+    }
+    const x = game.u.ux + direction.dx;
+    const y = game.u.uy + direction.dy;
+    if (!isok(x, y)) {
+        game.context.move = 0;
+        return;
+    }
+    const loc = game.level?.at(x, y);
+    if (x === game.u.ux && y === game.u.uy
+        && (direction.dz > 0 || loc?.typ !== DOOR || !(loc.doormask & (D_CLOSED | D_LOCKED)))) {
+        await doloot();
         return;
     }
     if (game.u.utrap && game.u.utraptype === TT_PIT) {
@@ -5630,9 +5627,6 @@ async function doopen() {
         game.context.move = 0;
         return;
     }
-    const x = game.u.ux + DIR_DX[direction];
-    const y = game.u.uy + DIR_DY[direction];
-    const loc = game.level?.at(x, y);
     if (await stumbleOnDoorMimic(x, y)) {
         game.context.move = 1;
         return;
