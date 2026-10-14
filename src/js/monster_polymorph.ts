@@ -2,7 +2,7 @@
 // C refs: mon.c:select_newcham_form(), pickvampshape(), and newcham().
 
 import {
-    BOLT_LIM, DOOR, D_CLOSED, D_LOCKED, Is_rogue_level, STRAT_WAITFORU, W_ARM,
+    BOLT_LIM, DOOR, D_CLOSED, D_LOCKED, In_endgame, Is_rogue_level, MGIVENNAME, STRAT_WAITFORU, W_ARM,
     M_AP_MONSTER, M_AP_NOTHING, M_AP_TYPE, MON_FLOOR, NON_PM, ismnum,
 } from './const.js';
 import { canSeeMonster, canSpotMonster, newsym, plineWithContinuation, swallowed } from './display.js';
@@ -12,6 +12,7 @@ import { placeMonsterAt } from './monster_location.js';
 import { expelHero, releaseHeroFromMonster } from './hero_expulsion.js';
 import { heroFormSticks } from './hero_species.js';
 import { monsterName, monsterFormChangeName, namelessMonsterName } from './monster_name.js';
+import { setMonsterGivenName } from './monster_given_name.js';
 import { hideMonsterUnder } from './monster_hiding.js';
 import {
     monsterCanBeLeashed, releaseMonsterLeashWithFeedback,
@@ -586,6 +587,11 @@ export async function changeMonsterForm(
     const oldHp = Math.max(1, monster.mhp ?? 1);
     const oldMax = Math.max(1, monster.mhpmax ?? oldHp);
     const female = shapechangerGender(baseMnum, targetMnum, !!monster.female);
+    if (In_endgame(state.u.uz) && monsterIsPlayerMonster(oldMnum)) {
+        const name = MGIVENNAME(monster);
+        const rank = name.indexOf(' the ');
+        if (rank >= 0) setMonsterGivenName(monster, name.slice(0, rank));
+    }
     const { level, hp } = newMonsterHitPoints(targetMnum);
     const scaledHp = Math.trunc(oldHp * hp / oldMax);
     const oldNaturallyInvisible = monster.mnum === PM_STALKER

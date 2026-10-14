@@ -11,6 +11,7 @@ import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
 import { finishEnvironmentalMonsterDeath } from '../js/monster_death.js';
 import { wakeMonstersNear } from '../js/monster_wake.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
+import { setMonsterGivenName } from '../js/monster_given_name.js';
 import {
     changeMonsterForm, decideMonsterShapeChange,
 } from '../js/monster_polymorph.js';
@@ -23,6 +24,19 @@ import { presentWereChange, wereChange } from '../js/were.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+
+void test('an endgame adventurer loses the rank in its name when polymorphed', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    game.astral_level = { dnum: 9, dlevel: 5, flags: { town: false }, alignment: null };
+    game.u.uz = { dnum: 9, dlevel: 1 };
+    const adventurer = await createMonsterAt('archeologist', 11, 10, NO_MINVENT);
+    setMonsterGivenName(adventurer, 'Aria the Investigator');
+
+    await changeMonsterForm(adventurer, MONSTER_NAME.indexOf('little dog'), game);
+
+    assert.equal(adventurer.name, 'Aria');
+});
 
 void test('random monster polymorph selects a species rather than a generic giant placeholder', async () => {
     freshObjectRoom();
