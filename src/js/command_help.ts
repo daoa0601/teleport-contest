@@ -4,6 +4,7 @@ import { COMMAND_DESCRIPTIONS } from './command_descriptions.js';
 import { NATIVE_COMMANDS, NATIVE_COMMAND_FLAGS as F } from './command_data.js';
 import { visibleCommandKey } from './command_keys.js';
 import { game } from './gstate.js';
+import { patternMatches } from './encyclopedia.js';
 import { keyText } from './pager_help.js';
 import { getLine } from './query.js';
 import { restoreCommandMap } from './tty_prompts.js';
@@ -89,14 +90,17 @@ export async function extendedCommandsHelp(): Promise<void> {
                 if (debug && !game.flags.debug || !mergedDebug && Number(debug) !== pass) continue;
                 let description = COMMAND_DESCRIPTIONS.get(name) ?? '';
                 if (!game.flags.debug && !game.flags.explore) description = description.replace(' been genocided or become extinct', ' been genocided');
-                if (search && !name.toLowerCase().includes(search.toLowerCase()) && !description.toLowerCase().includes(search.toLowerCase())) continue;
+                const phrase = search.toLowerCase();
+                if (search && !name.toLowerCase().includes(phrase) && !description.toLowerCase().includes(phrase)
+                    && !patternMatches(phrase, name.toLowerCase()) && !patternMatches(phrase, description.toLowerCase())) continue;
                 const flags = `${command.flags & F.CMD_M_PREFIX ? 'm' : ''}${command.flags & F.AUTOCOMPLETE ? 'A' : ''}`;
                 items.push({ selectable: false, text: ` ${name.padEnd(14)} ${(flags ? `[${flags}]` : '').padStart(4)} ${description}` });
             }
             if (items.length) sections.push({ items: [{ selectable: false, text: pass ? 'Debugging Extended Commands' : 'Extended commands' }, ...items, { selectable: false, text: '' }] });
         }
-        sections.push({ items: [{ selectable: false, text: '[A] Command autocompletes' },
-            { selectable: false, text: `[m] Command accepts '${visibleCommandKey(game.commandBindings.keyForCommand('reqmenu'))}' prefix` }] });
+        sections.push({ items: search && sections.length === 1 ? [{ selectable: false, text: 'no matches' }]
+            : [{ selectable: false, text: '[A] Command autocompletes' },
+                { selectable: false, text: `[m] Command accepts '${visibleCommandKey(game.commandBindings.keyForCommand('reqmenu'))}' prefix` }] });
         const selection = await showMultiSelectWindow({ title: 'Extended Commands List', titleAttr: 0,
             omitHeadings: true, sections, pageLocalKeys: true, pickOne: true });
         const choice = selection[0];
@@ -105,7 +109,7 @@ export async function extendedCommandsHelp(): Promise<void> {
         else if (choice === 'debug') { mergedDebug = !mergedDebug; search = ''; }
         else if (choice === 'clear') search = '';
         else if (choice === 'search') {
-            search = (await getLine('Extended command list search phrase?'))?.trim().replace(/\s+/g, ' ') ?? '';
+            search = (await getLine('Extended command list search phrase?', ch => ch >= ' '))?.trim().replace(/\s+/g, ' ') ?? '';
             if (!search) break;
         } else break;
     }

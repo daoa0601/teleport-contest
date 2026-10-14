@@ -56,4 +56,13 @@ void test('help names the actual key bound to the full options command', async (
         { prompt: /Using the 'v' command to set options\./, keys: '\x1b' },
     ]);
 });
+void test('the extended-command help list supports wildcard searches', async () => {
+    freshObjectRoom();
+    const input = resetInputState();
+    input.feed('k:');
+    await answerPrompts(rhack('?'.charCodeAt(0)), input, [
+        { prompt: /Extended command list search phrase\?/, keys: '*wand*\r' },
+        { prompt: /zap\s+\[.*\]\s+zap a wand|zap\s+zap a wand/, keys: '\x1b' },
+    ]);
+});
 //# sourceMappingURL=pager_help.test.js.map
