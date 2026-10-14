@@ -7,6 +7,7 @@ import { visibleRegionAt } from './regions.js';
 import { wizIntrinsic } from './wizard_intrinsics.js';
 import { wizFuzzer, wizPanic } from './wizard_debug_commands.js';
 import { wizSmell } from './wizard_smell.js';
+import { wizBury } from './wizard_bury.js';
 import { isRoom } from './map_types.js';
 import { bookCursed, continueSpellbookStudy } from './spellbook_study.js';
 import { grantMonsterWish } from './potion_occupants.js';
@@ -3153,6 +3154,7 @@ const EXTENDED_COMMAND_HANDLERS = new Map([
     ['wizgenesis', wizGenesis],
     ['wizdetect', wizDetect],
     ['wizsmell', () => wizSmell(farlookLocationDescription)],
+    ['wizbury', wizBury],
     ['wizkill', wizKill],
     ['wizidentify', wizIdentify],
     ['wizintrinsic', wizIntrinsic],
