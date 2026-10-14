@@ -29,6 +29,7 @@ import { def_warnsyms } from './const.js';
 import { iceDescriptionAt } from './dungeon_feature.js';
 import { CmapSymbol, GlyphOffset, cmapToGlyph } from './glyph_numbers.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
+import { mapFeatureDescription } from './pager_features.js';
 import { typedSymbolDescription } from './look_symbols.js';
 import { isGrayStone, isWeaponTool } from './object_properties.js';
 import { applySuggestion } from './apply_selection.js';
@@ -4374,78 +4375,12 @@ export async function farlookLocationDescription(x, y) {
     // Hallucinated statues project monster glyphs without a live monster.
     if (glyph?.kind === 'monster' && heroIsHallucinating(game))
         return randomDisplayMonsterName();
-    const trap = game.level?.traps?.find(candidate => candidate.tx === x && candidate.ty === y && candidate.tseen);
-    if (trap?.ttyp === DART_TRAP)
-        return 'dart trap';
-    if (trap?.ttyp === BEAR_TRAP)
-        return 'bear trap';
-    const loc = game.level?.at(x, y);
-    if (!loc)
-        return '';
-    // pager.c:lookat() recognizes liquid cmap glyphs, including memory,
-    // then waterbody_name() describes the current surface at that square.
-    if (glyph?.kind === 'terrain' && [
-        CmapSymbol.pool, CmapSymbol.water, CmapSymbol.lava,
-        CmapSymbol.lavawall, CmapSymbol.ice,
-    ].some(symbol => glyph.glyph === cmapToGlyph(symbol))) {
-        const description = waterbodyName(x, y);
-        // do_screen_description() adds strength only to plain "ice";
-        // hallucinated frozen liquids retain their waterbody_name().
-        return description === 'ice' ? iceDescriptionAt(x, y) : description;
-    }
-    // do_screen_description() applies the Quest gate to the glyph's stair
-    // description, whether the stair is visible now or remembered.
-    if (glyph?.kind === 'terrain' && glyph.terrainName === 'staircase down'
-        && onQuestStart(game) && !okToQuest(game))
+    const description = mapFeatureDescription(x, y, glyph);
+    if (description === 'ice')
+        return iceDescriptionAt(x, y);
+    if (description === 'staircase down' && onQuestStart(game) && !okToQuest(game))
         return 'blocked staircase down';
-    // pager.c:do_screen_description() recognizes the concrete S_cloud glyph
-    // before the generic '#' ambiguity list.  Moving elemental bubbles can
-    // therefore be "fog/vapor cloud" even though their tty character is the
-    // same as a remembered corridor.
-    if (loc.typ === CLOUD)
-        return Is_airlevel(game.u?.uz) ? 'cloudy area' : 'fog/vapor cloud';
-    // display.c:reglyph_darkroom() keeps an explored but never-lit room as
-    // GLYPH_NOTHING once it leaves sight.  The physical tty cell can still
-    // contain the DECgraphics floor character from an earlier getpos paint,
-    // but pager.c describes glyph_at(), hence "dark part of a room".
-    if (!cansee(x, y) && loc.typ === ROOM && loc.seenv && !loc.waslit)
-        return 'dark part of a room';
-    // pager.c describes the projected screen glyph.  A blind hero can retain
-    // a stone/blank memory over real corridor terrain, so consulting `typ`
-    // first leaks topology and produces the wrong automatic getpos label.
-    if (!cansee(x, y) && loc.remembered_glyph?.kind === 'terrain') {
-        const remembered = loc.remembered_glyph.ch;
-        if (remembered === ' ')
-            return 'stone';
-        if (remembered === '#')
-            return 'corridor';
-        if (remembered === '.')
-            return 'floor of a room';
-        if (remembered === '<' || remembered === '>')
-            return loc.remembered_glyph.terrainName;
-        if (remembered === '{')
-            return 'fountain';
-        if (remembered === '+') {
-            return loc.typ === DOOR && loc.doormask === D_ISOPEN
-                ? 'open door' : 'closed door';
-        }
-        return loc.remembered_glyph.terrainName;
-    }
-    if (loc.typ === FOUNTAIN)
-        return 'fountain';
-    if (loc.typ === SINK)
-        return 'sink';
-    if (loc.typ === STONE)
-        return 'stone';
-    if (IS_WALL(loc.typ))
-        return 'wall';
-    if (loc.typ === DOOR)
-        return loc.doormask === D_ISOPEN ? 'open door' : 'closed door';
-    if (loc.typ === ROOM)
-        return 'floor of a room';
-    if (loc.typ === CORR)
-        return 'corridor';
-    return glyph?.kind === 'terrain' ? glyph.terrainName : travelLocationDescription(x, y);
+    return description;
 }
 // C apply.c:dojump(): the physical command shares the spell's jump owner.
 async function dojump() {
