@@ -57,12 +57,26 @@ export function autoUnlockFlags(state: GameState = game): number {
     if (setting === undefined || setting === true) return AUTOUNLOCK_APPLY_KEY;
     if (typeof setting === 'number') return setting;
     if (!setting) return 0;
-    const choices = setting.split(/[,+\s]+/);
+    const choices = setting.split(setting.includes('+') ? '+' : /\s+/);
+    const unlockTypes = [
+        { name: 'untrap', flag: AUTOUNLOCK_UNTRAP },
+        { name: 'apply-key', flag: AUTOUNLOCK_APPLY_KEY },
+        { name: 'kick', flag: AUTOUNLOCK_KICK },
+        { name: 'force', flag: AUTOUNLOCK_FORCE },
+    ];
     let flags = 0;
-    if (choices.includes('apply-key')) flags |= AUTOUNLOCK_APPLY_KEY;
-    if (choices.includes('untrap')) flags |= AUTOUNLOCK_UNTRAP;
-    if (choices.includes('kick')) flags |= AUTOUNLOCK_KICK;
-    if (choices.includes('force')) flags |= AUTOUNLOCK_FORCE;
+    for (const value of choices) {
+        const choice = value.trim().toLowerCase();
+        if (!choice) continue;
+        if ('none'.startsWith(choice)) return 0;
+        const compact = choice.replace(/[ _-]/g, '');
+        for (const type of unlockTypes) {
+            if (type.name.startsWith(choice) || type.name.replace('-', '') === compact) {
+                flags |= type.flag;
+                break;
+            }
+        }
+    }
     return flags;
 }
 
