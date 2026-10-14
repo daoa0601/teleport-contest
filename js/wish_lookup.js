@@ -81,8 +81,11 @@ export function lookupWishType(parsed, { wizardWish = false, state = game, } = {
     let description = parsed.description;
     const result = (type, oclass = 0) => ({ name, type, oclass: type === null ? oclass : objectClassForType(type) });
     const callRange = callName ? ranges.find(([range]) => range === name.toLowerCase()) : null;
-    if (callRange)
-        return result(randomTypeByDescription(callName, callRange[1], 1, state), callRange[1]);
+    if (callRange) {
+        const calledType = randomTypeByDescription(callName, callRange[1], 1, state);
+        const type = calledType ?? randomTypeByDescription(original, callRange[1], 1, state);
+        return result(type, callRange[1]);
+    }
     const amulet = /(?:^| )Amulet of Yendor/i.exec(name);
     if (amulet)
         return result(/^(?:cheap |plastic |imitation )/i.test(name)

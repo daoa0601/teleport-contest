@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { requireGameLevel } from '../js/gstate.js';
-import { LAND_MINE, POT_HEALING } from '../js/object_data.js';
+import { BAG_OF_TRICKS, LAND_MINE, POT_HEALING, SACK, SPEED_BOOTS } from '../js/object_data.js';
 import { recordObjectCall } from '../js/object_knowledge.js';
 import { readObjectName } from '../js/objnam.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -36,5 +36,19 @@ void test('broken glass is rejected instead of granting a glass gem', async () =
     freshObjectRoom();
     const result = await readObjectName('broken glass', { wizardWish: true });
     assert.equal(result, null);
+});
+void test('an unmatched bag call name falls back to a bag description', async () => {
+    freshObjectRoom({ gameplaySeed: 1 });
+    const result = await readObjectName('bag called unregistered', { wizardWish: true });
+    assert.ok(result && !result.noWish);
+    assert.ok(result.object.otyp >= SACK && result.object.otyp <= BAG_OF_TRICKS, `Expected a bag, received object type ${result.object.otyp}`);
+});
+void test('a plural range noun keeps its class when resolving a call name', async () => {
+    freshObjectRoom();
+    recordObjectCall(SPEED_BOOTS, 'speedy');
+    recordObjectCall(POT_HEALING, 'speedy');
+    const result = await readObjectName('boots called speedy', { wizardWish: true });
+    assert.ok(result && !result.noWish);
+    assert.equal(result.object.otyp, SPEED_BOOTS);
 });
 //# sourceMappingURL=wish_review.test.js.map
