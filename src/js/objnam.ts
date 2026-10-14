@@ -20,12 +20,12 @@ import { tinDetails } from './tin.js';
 import { isLauncherAmmunition, isMissileObject, isPoisonableObject, isWeaponTool } from './object_properties.js';
 import { promptYesNo } from './query.js';
 import { objectWeight } from './weight.js';
-import { heroIsBlind, heroIsHallucinating } from './senses.js';
+import { heroIsBlind } from './senses.js';
 import {
     artifactById, artifactByName, artifactExistCount, findArtifact, nameArtifact, uncreateArtifact,
 } from './artifacts.js';
 import {
-    CRYSKNIFE, DILITHIUM_CRYSTAL, FLINT, GOLD_PIECE, JADE, LENSES, ROCK,
+    CRYSKNIFE, FLINT, GOLD_PIECE, LENSES, ROCK,
     GLOB_OF_BLACK_PUDDING, GLOB_OF_GRAY_OOZE, TALLOW_CANDLE, WAX_CANDLE,
     ACID_VENOM, AMULET_OF_YENDOR, BELL, BELL_OF_OPENING, BLINDING_VENOM,
     BOULDER, CANDELABRUM_OF_INVOCATION, CHEST, CORPSE, CRYSTAL_BALL, FAKE_AMULET_OF_YENDOR,
@@ -35,7 +35,7 @@ import {
     SPE_NOVEL,
     OBJECT_BASES, requireObjectData,
     OBJECT_DESCRIPTIONS,
-    OBJECT_NAMES, OBJECT_PROB, OBJECT_MERGE, OBJECT_NOWISH, OBJECT_CHARGED, OBJECT_MAGIC,
+    OBJECT_NAMES, OBJECT_MERGE, OBJECT_NOWISH, OBJECT_CHARGED, OBJECT_MAGIC,
     OBJECT_UNIQUE, OBJECT_USES_KNOWN,
     OBJECT_MATERIAL, OBJECT_SPELL_CATEGORY, OBJECT_SPELL_LEVEL,
     OBJECT_SUBTYPE, OBJECT_WEIGHT,
@@ -1167,8 +1167,3 @@ function requiredArtifact(name: string, state: GameState): Artifact {
     return artifact;
 }
 
-function requiredCapture(match: RegExpMatchArray, group: number): string {
-    const value = match[group];
-    if (value === undefined) throw new Error(`Missing name capture ${group} in ${match[0]}`);
-    return value;
-}

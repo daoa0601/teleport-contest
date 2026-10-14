@@ -16,9 +16,9 @@ import { tinDetails } from './tin.js';
 import { isLauncherAmmunition, isMissileObject, isPoisonableObject, isWeaponTool } from './object_properties.js';
 import { promptYesNo } from './query.js';
 import { objectWeight } from './weight.js';
-import { heroIsBlind, heroIsHallucinating } from './senses.js';
+import { heroIsBlind } from './senses.js';
 import { artifactById, artifactByName, artifactExistCount, findArtifact, nameArtifact, uncreateArtifact, } from './artifacts.js';
-import { CRYSKNIFE, DILITHIUM_CRYSTAL, FLINT, GOLD_PIECE, JADE, LENSES, ROCK, GLOB_OF_BLACK_PUDDING, GLOB_OF_GRAY_OOZE, TALLOW_CANDLE, WAX_CANDLE, ACID_VENOM, AMULET_OF_YENDOR, BELL, BELL_OF_OPENING, BLINDING_VENOM, BOULDER, CANDELABRUM_OF_INVOCATION, CHEST, CORPSE, CRYSTAL_BALL, FAKE_AMULET_OF_YENDOR, FIGURINE, HEAVY_IRON_BALL, IRON_CHAIN, LARGE_BOX, MAGIC_LAMP, OIL_LAMP, SKELETON_KEY, SLIME_MOLD, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, STATUE, POT_WATER, TIN, TOWEL, WAN_WISHING, SPE_NOVEL, OBJECT_BASES, requireObjectData, OBJECT_DESCRIPTIONS, OBJECT_NAMES, OBJECT_PROB, OBJECT_MERGE, OBJECT_NOWISH, OBJECT_CHARGED, OBJECT_MAGIC, OBJECT_UNIQUE, OBJECT_USES_KNOWN, OBJECT_MATERIAL, OBJECT_SPELL_CATEGORY, OBJECT_SPELL_LEVEL, OBJECT_SUBTYPE, OBJECT_WEIGHT, } from './object_data.js';
+import { CRYSKNIFE, FLINT, GOLD_PIECE, LENSES, ROCK, GLOB_OF_BLACK_PUDDING, GLOB_OF_GRAY_OOZE, TALLOW_CANDLE, WAX_CANDLE, ACID_VENOM, AMULET_OF_YENDOR, BELL, BELL_OF_OPENING, BLINDING_VENOM, BOULDER, CANDELABRUM_OF_INVOCATION, CHEST, CORPSE, CRYSTAL_BALL, FAKE_AMULET_OF_YENDOR, FIGURINE, HEAVY_IRON_BALL, IRON_CHAIN, LARGE_BOX, MAGIC_LAMP, OIL_LAMP, SKELETON_KEY, SLIME_MOLD, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, STATUE, POT_WATER, TIN, TOWEL, WAN_WISHING, SPE_NOVEL, OBJECT_BASES, requireObjectData, OBJECT_DESCRIPTIONS, OBJECT_NAMES, OBJECT_MERGE, OBJECT_NOWISH, OBJECT_CHARGED, OBJECT_MAGIC, OBJECT_UNIQUE, OBJECT_USES_KNOWN, OBJECT_MATERIAL, OBJECT_SPELL_CATEGORY, OBJECT_SPELL_LEVEL, OBJECT_SUBTYPE, OBJECT_WEIGHT, } from './object_data.js';
 import { armorPresentationName, withIndefiniteArticle, makePlural, makeSingular, verbForSubject } from './object_grammar.js';
 import { armorSimpleName } from './armor.js';
 import { isContainer } from './container.js';
@@ -1138,11 +1138,5 @@ function requiredArtifact(name, state) {
     if (!artifact)
         throw new RangeError(`No native artifact named ${name}`);
     return artifact;
-}
-function requiredCapture(match, group) {
-    const value = match[group];
-    if (value === undefined)
-        throw new Error(`Missing name capture ${group} in ${match[0]}`);
-    return value;
 }
 //# sourceMappingURL=objnam.js.map

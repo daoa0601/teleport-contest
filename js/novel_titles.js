@@ -58,14 +58,13 @@ export function novelTitle(book) {
 // C do_name.c:lookup_novel(). An unrecognized label keeps a novel's existing
 // title index; recognized spellings replace both its title and index.
 export function lookupNovelTitle(name, book) {
-    const theName = `T${definiteName(name).slice(1)}`;
     const aliases = new Map([
         ['the color of magic', 'The Colour of Magic'], ['sorcery', 'Sourcery'],
         ['masquerade', 'Maskerade'],
         ['the amazing maurice', 'The Amazing Maurice and His Educated Rodents'],
         ['thud', 'Thud!'],
     ]);
-    const requested = aliases.get(name.toLowerCase()) ?? aliases.get(theName.toLowerCase()) ?? name;
+    const requested = aliases.get(name.toLowerCase()) ?? aliases.get(definiteName(name).toLowerCase()) ?? name;
     const fullName = definiteName(requested).toLowerCase();
     const index = NOVEL_TITLES.findIndex(title => title.toLowerCase() === requested.toLowerCase()
         || title.toLowerCase() === fullName);
