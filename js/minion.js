@@ -43,7 +43,7 @@ export async function summonMinion(alignment, talk = false) {
         return null;
     const specialRole = ['shopkeeper', 'guard', 'aligned cleric', 'high cleric'].includes(MONSTER_NAME[mnum] ?? '');
     const flags = MM_NOMSG | (specialRole ? 0 : MM_EMIN);
-    const monster = await makemonNear(mnum, game.u.ux, game.u.uy, flags, false);
+    const monster = await makemonNear(mnum, game.u.ux, game.u.uy, flags);
     if (!monster)
         return null;
     if (!specialRole) {
@@ -234,7 +234,7 @@ export async function msummon(monster = null) {
     }
     const created = [];
     while (count-- > 0) {
-        const summoned = await makemonNear(mnum, game.u.ux, game.u.uy, MM_EMIN | MM_NOMSG, false);
+        const summoned = await makemonNear(mnum, game.u.ux, game.u.uy, MM_EMIN | MM_NOMSG);
         if (!summoned)
             continue;
         summoned.emin = { min_align: 0, renegade: 0 };

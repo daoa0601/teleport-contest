@@ -188,6 +188,7 @@ function monsterFields(value: unknown, context: SavedEntityContext): Fields<Mons
         symbol: optional(string),
         color: optional(integer),
         mstrategy: optional(integer),
+        mgoal: optional(position),
         mtrapseen: optional(integer),
         mtrack: optional(arrayOf(position)),
         mtame: optional(integer),

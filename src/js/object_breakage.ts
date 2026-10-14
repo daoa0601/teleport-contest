@@ -15,7 +15,9 @@ import {
 } from './egg_impact.js';
 import { explodeLitOilPotion } from './fire_explosion.js';
 import { game, requireLiveGame } from './gstate.js';
-import { deleteObject } from './object_delete.js';
+import { objectDescription } from './object_description.js';
+import { deleteObject, delobj } from './object_delete.js';
+import { observeObjectForNaming } from './objnam.js';
 import { makemonAt } from './mklev.js';
 import { objectResistsDestruction } from './object_state.js';
 import {
@@ -93,7 +95,7 @@ function objectName(object: GameObject) {
     return object.name || OBJECT_NAMES[object.otyp] || 'object';
 }
 
-async function publishBreakMessage(object: GameObject, visible: boolean, audible: boolean, publish: MessagePublisher) {
+async function publishBreakMessage(object: GameObject, visible: boolean, audible: boolean, publish: MessagePublisher, state: GameState) {
     if ([EGG, MELON].includes(object.otyp)) {
         await publish('Splat!');
         return;
@@ -114,7 +116,10 @@ async function publishBreakMessage(object: GameObject, visible: boolean, audible
     const quantity = object.quan ?? object.quantity ?? 1;
     const intoPieces = [LENSES, MIRROR, CRYSTAL_BALL, EXPENSIVE_CAMERA]
         .includes(object.otyp) ? ' into a thousand pieces' : '';
-    await publish(`The ${objectName(object)} ${
+    observeObjectForNaming(object, { state });
+    const description = objectDescription(object, { state });
+    const subject = description.charAt(0).toUpperCase() + description.slice(1);
+    await publish(`${subject} ${
         quantity === 1 ? 'shatters' : 'shatter'
     }${intoPieces}!`);
 }
@@ -249,7 +254,7 @@ export async function breakObjectAtLocation(object: GameObject, {
     }
 
     if (showBreakMessage)
-        await publishBreakMessage(object, visible, audible, publish);
+        await publishBreakMessage(object, visible, audible, publish, state);
     if (heroCaused && object.otyp === MIRROR) {
         state.u.uluck = Math.max(
             -13, Math.min(13, (state.u.uluck ?? 0) - 2),
@@ -283,7 +288,7 @@ export async function breakObjectAtLocation(object: GameObject, {
     // Fracture callers replace the stone object after breakobj settles its cost.
     if (object.otyp === BOULDER || object.otyp === STATUE)
         return { destroyed: false, observed: false };
-    await deleteBrokenObject(object, state);
+    await delobj(object, state, random);
     newsym(x, y);
     if (eggExplosion) {
         await explodePyroliskEggAt(x, y, {

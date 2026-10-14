@@ -62,7 +62,7 @@ export async function applyLevitationPotion(potion, { state = game, publish = pl
                 if (hero.halfPhysicalDamage)
                     damage = Math.trunc((damage + 1) / 2);
                 await publish(`You hit your ${heroHeadName(state)} on the ${ceilingName(hero.ux, hero.uy, state)}.`);
-                await loseHeroHp(damage, 'colliding with the ceiling', { state, publish });
+                await loseHeroHp(damage, 'colliding with the ceiling', { state, publish, deathCause: 'killed by colliding with the ceiling' });
                 potionNothing = false; /* not nothing after all */
             }
         }

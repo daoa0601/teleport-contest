@@ -17,7 +17,8 @@ import { game, requirePlayingGame } from './gstate.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { summonMinion } from './minion.js';
-import { MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
+import { MONSTER_SYMBOL } from './monster_data.js';
+import { monsterName } from './monster_name.js';
 import {
     monstersForgetHeroResistance, monstersObserveHeroResistance,
 } from './monster_perception.js';
@@ -248,18 +249,17 @@ export async function godZapsHero(alignment: number, state: GameState = game): P
 async function strikeSwallower(disintegration: boolean, state: PlayingGameState): Promise<void> {
     const monster = state.u.ustuck;
     if (!monster) throw new Error('Divine lightning requires the swallowing monster');
-    const name = MONSTER_NAME[monster.mnum];
     await pline(disintegration
-        ? `A wide-angle disintegration beam aimed at you hits the ${name}!`
-        : `It strikes the ${name}!`);
+        ? `A wide-angle disintegration beam aimed at you hits ${monsterName(monster, { state })}!`
+        : `It strikes ${monsterName(monster, { state })}!`);
     const resisted = disintegration
         ? monsterHasDisintegrationResistance(monster) : monsterHasShockResistance(monster);
     if (resisted) {
-        await pline(`The ${name} seems unaffected.`);
+        await pline(`${monsterName(monster, { state, capitalized: true })} seems unaffected.`);
         return;
     }
     const fate = disintegration ? 'disintegrates into a pile of dust' : 'fries to a crisp';
-    await pline(`The ${name} ${fate}!`);
+    await pline(`${monsterName(monster, { state, capitalized: true })} ${fate}!`);
     await finishHeroMonsterKill(monster, monster.mx, monster.my, {
         showKillMessage: false, recordConduct: false, noCorpse: disintegration,
     });

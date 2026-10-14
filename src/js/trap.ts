@@ -15,10 +15,10 @@ import { cansee } from './vision.js';
 import { endObjectBurn } from './light.js';
 import { game } from './gstate.js';
 import { monsterName, possessiveName } from './monster_name.js';
-import { removeWornHeroItem } from './hero_equipment.js';
+import { removeHeroEquipment, removeWornHeroItem } from './hero_equipment.js';
 import { useUpInventoryStack } from './hero_inventory.js';
 import { getObjectLocation } from './object_location.js';
-import { heroIsBlind, heroIsDeaf } from './senses.js';
+import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { heroIsFlying } from './polyself.js';
 import { MONSTER_FLAGS1 } from './monster_data.js';
 import { splitMonster } from './monster_clone.js';
@@ -28,13 +28,17 @@ import {
     FIRE_HORN, LARGE_BOX, OBJECT_BIMANUAL, OBJECT_MATERIAL, OBJECT_MATERIAL_NAMES, OBJECT_NAMES, OBJECT_PROPERTY, OILSKIN_SACK,
     POT_ACID, POT_WATER, RED_DRAGON_SCALE_MAIL, RED_DRAGON_SCALES,
     RIN_FIRE_RESISTANCE, SCR_BLANK_PAPER, SCR_FIRE, SPE_BLANK_PAPER,
-    SPE_BOOK_OF_THE_DEAD, SPE_FIREBALL, TOWEL, WAN_FIRE,
+    SPE_BOOK_OF_THE_DEAD, SPE_FIREBALL, SPE_NOVEL, TOWEL, WAN_FIRE,
 } from './object_data.js';
+import { erodeObject } from './object_erosion.js';
+import { learnObjectType } from './object_knowledge.js';
+import { blankNovel } from './object_cancellation.js';
+import { displayLiquidName } from './display.js';
 import { objectResistsDestruction } from './object_state.js';
 import { objectMaterial } from './object_material.js';
 import { impossible } from './diagnostics.js';
 import { stopAllObjectTimers } from './object_timers.js';
-import { rnl, rn2 } from './rng.js';
+import { rnl, rn2, rnd } from './rng.js';
 import type { MessagePublisher } from './display.js';
 import { canSeeMonster, newsym } from './display.js';
 import type { GameState } from './game_state.js';
@@ -78,6 +82,9 @@ interface WaterDamageOptions {
     description?: string | null;
     random?: RandomBelow;
     luckRoll?: RandomBelow;
+    rollOne?: typeof rnd;
+    publish?: MessagePublisher;
+    mentionWater?: () => void;
 }
 
 export type WaterDamageOutcome = 'nothing' | 'damaged' | 'destroyed' | 'greased';
@@ -396,146 +403,128 @@ export async function waterDamageObject(
     object: GameObject | null | undefined,
     messages: string[] = [],
     state = game,
-    {
-        force = false,
-        description = null,
-        random = rn2,
-        luckRoll = rnl,
-    }: WaterDamageOptions = {},
+    { force = false, description = null, random = rn2, luckRoll = rnl,
+        rollOne = rnd, publish, mentionWater }: WaterDamageOptions = {},
 ): Promise<WaterDamageOutcome> {
     if (!object) return 'nothing';
-    if (splashLitObject(object, messages, state)) return 'damaged';
+    const emit: MessagePublisher = async message => {
+        if (publish) await publish(message);
+        else messages.push(message);
+    };
+    const lightMessages: string[] = [];
+    if (splashLitObject(object, lightMessages, state)) {
+        for (const message of lightMessages) await emit(message);
+        return 'damaged';
+    }
+    for (const message of lightMessages) await emit(message);
     const name = description ?? objectCombatName(object, { state });
+    const carried = carriedByHero(object, state);
+    const plural = waterObjectIsPlural(object, name);
     const spe = object.spe ?? 0;
     if (object.otyp === CAN_OF_GREASE && spe > 0) return 'nothing';
     if (object.otyp === TOWEL && spe < 7) {
-        object.spe = spe + 1 + random(7 - spe);
+        const wetness = spe + rollOne(7 - spe);
+        if (carried) {
+            const adjective = wetness < 3 ? spe ? 'damper' : 'damp' : spe ? 'wetter' : 'wet';
+            await emit(`${ownedObjectName(object, state)} gets ${adjective}.`);
+        }
+        object.spe = wetness;
         return 'nothing';
     }
     if (object.greased) {
-        if (random(2) === 0) {
-            object.greased = false;
-            if (carriedByHero(object, state)) {
-                observeObjectForNaming(object, { state });
-                messages.push(
-                    `The grease on ${ownedObjectName(object, state, { capitalized: false })} washes off.`,
-                );
-            }
-            if (object.otyp === POT_ACID) {
-                messages.push(explodingPotionMessage(object, state));
-                return 'destroyed';
-            }
+        if (random(2) !== 0) return 'greased';
+        object.greased = false;
+        if (carried) {
+            observeObjectForNaming(object, { state });
+            await emit(`The grease on ${ownedObjectName(object, state, { capitalized: false })} washes off.`);
         }
+        // C water_damage(): washed-off acid bypasses luck protection.
+        if (object.otyp === POT_ACID)
+            return await destroyWetAcidPotion(object, carried, emit, state);
         return 'greased';
     }
-
-    const isContainer = object.otyp >= LARGE_BOX
-        && object.otyp <= BAG_OF_TRICKS;
-    if (isContainer) {
-        const waterproof = object.otyp === OILSKIN_SACK
-            || object.otyp === ICE_BOX
-            || object.otyp === LARGE_BOX
-            || object.otyp === CHEST;
-        const leaks = !waterproof || (object.cursed && random(3) === 0);
-        if (leaks) {
-            if (carriedByHero(object, state)) {
-                messages.push(`Some water gets into your ${name}!`);
+    if (object.otyp >= LARGE_BOX && object.otyp <= BAG_OF_TRICKS) {
+        const waterproof = [OILSKIN_SACK, ICE_BOX, LARGE_BOX, CHEST].includes(object.otyp);
+        if (!waterproof || object.cursed && random(3) === 0) {
+            if (carried) {
+                await emit(`Some ${displayLiquidName('water', state)} gets into your ${name}!`);
+                if (!heroIsHallucinating(state)) mentionWater?.();
             }
-            await waterDamageChain(objectContents(object), messages, state);
-            return 'damaged';
-        }
-        if (carriedByHero(object, state)
-            && !heroIsBlind(state) && !state.underwater) {
-            messages.push(`The water cannot get into your ${name}.`);
+            for (const content of [...objectContents(object)])
+                await waterDamageObject(content, messages, state,
+                    { random, luckRoll, rollOne, publish: emit });
+        } else if (carried && !heroIsBlind(state) && !state.underwater) {
+            await emit(`The ${displayLiquidName('water', state)} cannot get into your ${name}.`);
+            if (!heroIsHallucinating(state)) mentionWater?.();
+            learnObjectType(object.otyp, state);
         }
         return 'damaged';
     }
-
-    if (!force && ((state.u?.uluck ?? 0) + 5) > random(20))
-        return 'nothing';
-
-    const plural = waterObjectIsPlural(object, name);
-    const carried = carriedByHero(object, state);
-
+    if (!force && (state.u.uluck ?? 0) + 5 > random(20)) return 'nothing';
     if (object.oclass === 9) {
-        if (object.otyp !== SCR_BLANK_PAPER) {
-            if (carried)
-                messages.push(`Your ${name} ${plural ? 'fade' : 'fades'}.`);
-            object.otyp = SCR_BLANK_PAPER;
-            object.dknown = false;
-            object.spe = 0;
-            return 'damaged';
-        }
-        return 'nothing';
+        if (object.otyp === SCR_BLANK_PAPER) return 'nothing';
+        if (carried) await emit(`Your ${name} ${plural ? 'fade' : 'fades'}.`);
+        object.otyp = SCR_BLANK_PAPER;
+        object.dknown = false;
+        object.spe = 0;
+        return 'damaged';
     }
     if (object.oclass === 10) {
         if (object.otyp === SPE_BOOK_OF_THE_DEAD) {
-            const position = getObjectLocation(object, state, {
-                contained: true, buried: true,
-            });
+            const position = getObjectLocation(object, state, { contained: true, buried: true });
             if (position) {
                 object.ox = position.x;
                 object.oy = position.y;
                 if (isok(position.x, position.y) && cansee(position.x, position.y))
-                    messages.push('Steam rises from the Book of the Dead.');
+                    await emit('Steam rises from the Book of the Dead.');
             }
             return 'nothing';
         }
-        if (object.otyp !== SPE_BLANK_PAPER) {
-            if (carried)
-                messages.push(`Your ${name} ${plural ? 'fade' : 'fades'}.`);
-            if (object.spestudied)
-                object.spestudied = random(object.spestudied);
-            object.otyp = SPE_BLANK_PAPER;
-            object.dknown = false;
-            return 'damaged';
+        if (object.otyp === SPE_BLANK_PAPER) return 'nothing';
+        const novel = object.otyp === SPE_NOVEL;
+        if (carried) await emit(`Your ${name} ${plural ? 'fade' : 'fades'}.`);
+        if (object.spestudied) object.spestudied = random(object.spestudied);
+        object.otyp = SPE_BLANK_PAPER;
+        object.dknown = false;
+        if (novel) {
+            blankNovel(object);
+            state._capacityDirty = true;
         }
-        return 'nothing';
+        return 'damaged';
     }
     if (object.oclass === 8) {
         if (object.otyp === POT_ACID) {
-            messages.push(explodingPotionMessage(object, state));
-            return 'destroyed';
+            return await destroyWetAcidPotion(object, false, emit, state);
         }
         if (object.odiluted) {
-            if (carried) {
-                messages.push(
-                    `Your ${name} ${plural ? 'dilute' : 'dilutes'} further.`,
-                );
-            }
+            if (carried) await emit(`Your ${name} ${plural ? 'dilute' : 'dilutes'} further.`);
             object.otyp = POT_WATER;
             object.dknown = false;
             object.blessed = false;
             object.cursed = false;
-            object.odiluted = 0;
-            return 'damaged';
-        } else if (object.otyp !== POT_WATER) {
-            if (carried)
-                messages.push(`Your ${name} ${plural ? 'dilute' : 'dilutes'}.`);
-            object.odiluted = 1;
+            object.buc = 'uncursed';
+            object.odiluted = false;
             return 'damaged';
         }
-        return 'nothing';
+        if (object.otyp === POT_WATER) return 'nothing';
+        if (carried) await emit(`Your ${name} ${plural ? 'dilute' : 'dilutes'}.`);
+        object.odiluted = true;
+        return 'damaged';
     }
+    return erodeObject(object, 'rust', { state, publish: emit, random, luckRandom: luckRoll,
+        grease: false, displayName: name });
+}
 
-    const rust = rustMetalObject(object, name, luckRoll);
-    if (rust.kind === 'rustproof' && carried) {
-        messages.push(
-            `Somehow, your ${name} ${
-                plural ? 'are' : 'is'
-            } not affected by the oxidation.`,
-        );
-    } else if (rust.outcome === 'damaged') {
-        if (carried) {
-            const suffix = rust.erosion === 3
-                ? ' completely' : rust.erosion > 1 ? ' further' : '';
-            messages.push(
-                `Your ${name} ${plural ? 'rust' : 'rusts'}${suffix}!`,
-            );
-        }
-        if (object.owornmask) state._armorClassDirty = true;
-    }
-    return rust.outcome;
+// C pot_acid_damage(): water destroys the bottle without impact or vapors.
+async function destroyWetAcidPotion(
+    object: GameObject, described: boolean, emit: MessagePublisher, state: GameState,
+): Promise<'destroyed'> {
+    const plural = waterObjectIsPlural(object);
+    await emit(described ? `The potion${plural ? 's explode' : ' explodes'}!`
+        : explodingPotionMessage(object, state));
+    await removeHeroEquipment(object, state);
+    await delobj(object, state);
+    return 'destroyed';
 }
 
 export async function waterDamageChain(

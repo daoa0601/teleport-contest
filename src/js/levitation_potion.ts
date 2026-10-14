@@ -83,7 +83,7 @@ export async function applyLevitationPotion(
                 await publish(`You hit your ${heroHeadName(state)} on the ${
                     ceilingName(hero.ux, hero.uy, state)}.`);
                 await loseHeroHp(damage, 'colliding with the ceiling',
-                    { state, publish });
+                    { state, publish, deathCause: 'killed by colliding with the ceiling' });
                 potionNothing = false; /* not nothing after all */
             }
         }

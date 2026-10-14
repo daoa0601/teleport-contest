@@ -1,3 +1,8 @@
+import type { DipTarget } from './dip_water.js';
+import { dipFountainSword } from './fountain_sword.js';
+import { washHands } from './dip_water.js';
+import { waterDamageObject } from './trap.js';
+import { dip, dipInto } from './potion_dip.js';
 import { monsterHiddenConditions } from './monster_status.js';
 import { visibleRegionAt } from './regions.js';
 import type { ChoiceMenuItem } from './windows.js';
@@ -67,7 +72,7 @@ import {
 } from './objnam.js';
 import { woundHeroLegs } from './hero_legs.js';
 import { makeMonsterFlee } from './monster_flee.js';
-import { descendFromLevitation } from './levitation_commands.js';
+import { descendFromLevitation, floatingAbove } from './levitation_commands.js';
 import { endVoluntaryMultiTurn, resetCommandVariables } from './command_state.js';
 import { propertyIsActive } from './properties.js';
 import {
@@ -287,7 +292,7 @@ import {
     applyArmorOnEffects, armorOnIdentifiesType, armorSlotFor,
     armorSimpleName, armorOffMessage,
     findArmorClass, heroIsDisplaced,
-    objectErosionKind, objectErosionMessage, removeHeroArmor, wearHeroArmor,
+    removeHeroArmor, wearHeroArmor,
 } from './armor.js';
 import {
     findMonsterArmorClass,
@@ -425,7 +430,7 @@ import {
     IS_AIR, IS_POOL, IS_LAVA, IS_ROOM, ZAP_POS, SQKY_BOARD, BEAR_TRAP, LANDMINE, FIRE_TRAP, PIT,
     SPIKED_PIT, TT_PIT, HOLE, TRAPDOOR, DART_TRAP, MAGIC_TRAP, TELEP_TRAP, LEVEL_TELEP, STATUE_TRAP, WEB,
     ANTI_MAGIC, G_GONE, ER_NOTHING, ER_DAMAGED, M_AP_MONSTER, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE,
-    STRAT_WAITMASK, MM_NOMSG, SHOPBASE, ROOMOFFSET, F_LOOTED, In_endgame,
+    STRAT_WAITMASK, MM_NOEXCLAM, MM_NOMSG, SHOPBASE, ROOMOFFSET, F_LOOTED, In_endgame,
     Is_airlevel, Is_waterlevel, W_ARMOR, W_ACCESSORY, W_SADDLE, LOST_THROWN, WT_SPLASH_THRESHOLD,
     WT_SQUEEZABLE_INV, P_BOW, P_SLING, PARANOID_HIT, POLY_CONTROLLED, STR19, isok,
     ACCESSIBLE, AIR, DIGTYP_UNDIGGABLE, DRAWBRIDGE_UP,
@@ -3204,6 +3209,7 @@ const EXTENDED_COMMAND_HANDLERS = new Map<string, () => Promise<unknown>>([
     ['overview', doDungeonOverview],
     ['offer', dosacrifice],
     ['dip', dodip],
+    ['altdip', dipInto],
     ['turn', doturn],
     ['engrave', doengrave],
     // C extcmdlist[] maps both "call" and "name" to docallcmd().
@@ -3886,44 +3892,29 @@ async function doturn() {
     await turnUndeadByCallingOnDeity(game);
 }
 
-// C refs: trap.c water_damage()/erode_obj().  Fountain dipping forces the
-// water check, so the ordinary luck-based shield is bypassed; the erosion
-// result then controls dipfountain()'s separate one-in-two early-return gate.
-async function waterDamageCarriedObject(object: GameObject) {
-    const kind = objectErosionKind(object);
-    if (!kind || kind.action !== 'rust') return ER_NOTHING;
-
-    const proof = !!object.oerodeproof;
-    if (proof) {
-        object.rknown = true;
-        return ER_NOTHING;
+async function dipFountain(object: DipTarget, loc: MapLocation) {
+    if (propertyIsActive('levitation')) {
+        await floatingAbove('fountain');
+        return;
     }
-    if (object.blessed && rnl(4) === 0) return ER_NOTHING;
-    if ((object.oeroded || 0) >= 3) return ER_NOTHING;
-
-    const message = objectErosionMessage(object, kind);
-    await pline(message);
-    object.oeroded = (object.oeroded || 0) + 1;
-    if (object.worn) findArmorClass(game);
-    return ER_DAMAGED;
-}
-
-async function dipFountain(object: GameObject, loc: MapLocation) {
-    const result = await waterDamageCarriedObject(object);
-    if (result !== ER_NOTHING && rn2(2) === 0) {
+    if (object !== 'hands' && await dipFountainSword(object, loc)) return;
+    const result = object === 'hands' || object === game.uarmg ? await washHands()
+        : await waterDamageObject(object, [], game, { force: true, publish: plineWithContinuation });
+    if (result === 'destroyed' || result !== 'nothing' && rn2(2) === 0) {
         return;
     }
 
     const fate = rnd(30);
     let eventMessage = '';
-    const wasCursed = object.cursed;
-    const bucEffect = resolveDippedBucFate({
+    const wasCursed = object !== 'hands' && object.cursed;
+    const bucEffect = object === 'hands' ? { handled: fate >= 16 && fate <= 20,
+        message: fate >= 17 && fate <= 20 ? 'A feeling of loss comes over you.' : '' } : resolveDippedBucFate({
         fate,
         object,
         blind: !!game.blind,
         liquidName: () => displayLiquidName('water'),
     });
-    if (!wasCursed && object.cursed) {
+    if (object !== 'hands' && !wasCursed && object.cursed) {
         await dropCursedSecondaryWeapon(object);
         if (game.program_state.gameover) return;
         await bookCursed(object);
@@ -3985,77 +3976,15 @@ async function dipFountain(object: GameObject, loc: MapLocation) {
 
         await dryFountainAt(game.u.ux, game.u.uy);
         return;
-    } else if ((fate < 16 || fate === 30) && result === ER_NOTHING) {
+    } else if ((fate < 16 || fate === 30) && result === 'nothing') {
         eventMessage = 'Nothing seems to happen.';
     }
     if (eventMessage) await plineWithContinuation(eventMessage);
     await dryFountainAt(game.u.ux, game.u.uy);
 }
 
-function dipTargetDescription(object: GameObject) {
-    observeObjectForNaming(object);
-    const full = inventoryItemDescription(object);
-    if (full.length <= 49) return full;
-
-    // objnam.c:short_oname() strips these lengthening properties on a
-    // temporary copy before falling back to its minimal formatter.
-    const shortened = {
-        ...object,
-        bknown: false,
-        rknown: false,
-        greased: false,
-        oeroded: 0,
-        oeroded2: 0,
-    };
-    delete shortened.buc;
-    return inventoryItemDescription(shortened);
-}
-
-// C ref: potion.c dodip()/invent.c getobj().  Object selection, terrain
-// confirmation, and the committed dip are one nested command transaction.
 async function dodip() {
-    const items = (game.inventory || []).filter((item: GameObject): item is GameObject & { invlet: string } =>
-            typeof item.invlet === 'string' && item.invlet.length > 0)
-        .sort((a, b) => a.invlet.localeCompare(b.invlet));
-    const suggested = items.filter(item => item.oclass !== 12);
-    const letters = compactInventoryLetters(
-        suggested.map(item => item.invlet).join(''),
-    );
-    const choices = letters ? `[${letters} or ?*]` : '[*]';
-    const selection = await promptInventoryObject(
-        `What do you want to dip? ${choices} `,
-        items,
-        {
-            verb: 'dip',
-            classify: item => item.oclass === 12 ? GETOBJ_EXCLUDE : GETOBJ_SUGGEST,
-            menuItems: suggested,
-            allowMenu: true,
-            retainPromptOnCancel: true,
-        },
-    );
-    if (selection.cancelled || !selection.object) {
-        game.context.move = 0;
-        return;
-    }
-
-    const object = selection.object;
-    const loc = game.level?.at(game.u?.ux, game.u?.uy);
-    if (loc?.typ === FOUNTAIN) {
-        const description = dipTargetDescription(object);
-        const prompt = `Dip ${description} into the fountain?`;
-        const answer = await promptYesNo(
-            prompt, 'n',
-        );
-        if (answer === 'y') {
-            await dipFountain(object, loc);
-            game.context.move = 1;
-            return;
-        }
-    }
-
-    // Potion, sink, pool, and declined-fountain second selectors remain
-    // distinct source transactions.
-    game.context.move = 0;
+    await dip({ fountain: dipFountain });
 }
 
 function visitedDungeonLevels() {

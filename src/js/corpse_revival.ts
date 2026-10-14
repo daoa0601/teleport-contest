@@ -17,7 +17,7 @@ import { game, requireGameLevel } from './gstate.js';
 import { updateHeroHunger } from './hunger.js';
 import { stopHeroOccupation } from './occupation.js';
 import { deleteObject, delobjCore } from './object_delete.js';
-import { splitObjectStack } from './object_stack.js';
+import { objectQuantity, splitObjectStack } from './object_stack.js';
 import { useUpInventoryStack } from './hero_inventory.js';
 import {
     findMonsterNearPosition, makemonAt, makemonNear, maketrap,
@@ -229,10 +229,10 @@ function containerDescription(container: GameObject) {
 
 function revivalMessage(
     corpse: CorpseObject, monster: Monster, location: CorpseRevivalLocation,
-    originalWhere: ObjectWhere, state: GameState,
+    originalWhere: ObjectWhere, wasWielded: boolean,
 ) {
     if (originalWhere === 'inventory') {
-        return state.uwep === corpse
+        return wasWielded
             ? `The ${corpseName(corpse)} writhes out of your grasp!`
             : 'You feel squirming in your backpack!';
     }
@@ -470,6 +470,8 @@ async function reviveCorpse(
 ): Promise<CorpseRevivalResult> {
     requireCorpseSpecies(corpse);
     const originalWhere = corpse.where;
+    // A split-off body is not the weapon; retain the original stack's identity.
+    const wasWielded = state.uwep === corpse;
     await stopCorpseMeal(corpse, state);
     const digsOut = originalWhere === 'buried'
         && (isReviver(corpse.corpsenm)
@@ -491,33 +493,33 @@ async function reviveCorpse(
     }
 
     const monster = creation.monster;
-    const oneOf = corpse.quan > 1;
-    const revivedCorpse = oneOf
-        ? splitObjectStack(corpse, 1, state) : corpse;
-    if (!revivedCorpse) throw new Error('A successful revival could not split its corpse stack');
-    requireCorpseSpecies(revivedCorpse);
-    if (byHero) await announceHeroRevival(revivedCorpse, monster, oneOf, state);
-    await mergeGhostIntoBody(monster, revivedCorpse, state);
-    restoreCorpseNameAndHealth(monster, revivedCorpse);
+    const oneOf = objectQuantity(corpse) > 1;
+    const body = oneOf ? splitObjectStack(corpse, 1, state) : corpse;
+    if (!body) throw new Error('A revived corpse could not be separated from its stack');
+    requireCorpseSpecies(body);
+    if (byHero) await announceHeroRevival(body, monster, oneOf, state);
+    await mergeGhostIntoBody(monster, body, state);
+    restoreCorpseNameAndHealth(monster, body);
     monster.mrevived = 1;
     if (announce) {
         const message = revivalMessage(
-            corpse, monster, location, originalWhere, state,
+            body, monster, location, originalWhere, wasWielded,
         );
         if (message) messages.push(message);
     }
-    await consumeRevivedCorpse(revivedCorpse, location, state);
+    await consumeRevivedCorpse(body, location, state);
     newsym(monster.mx, monster.my);
 
     let trap: Trap | null = null;
     if (digsOut) trap = await maketrap(monster.mx, monster.my, PIT);
     return {
-        kind: 'revived', corpse, monster, trap,
+        kind: 'revived', corpse: body, monster, trap,
         buried: digsOut, originalWhere, location, messages,
     };
 }
 
-async function announceHeroRevival(corpse: GameObject, monster: Monster, oneOf: boolean, state: GameState): Promise<void> {
+// C zap.c:revive(..., TRUE) announces and charges the body before consuming it.
+async function announceHeroRevival(corpse: CorpseObject, monster: Monster, oneOf: boolean, state: GameState): Promise<void> {
     const { ox: x, oy: y } = corpse;
     const keeper = costlySpot(x, y, state)?.resident;
     const charge = keeper && (corpse.where === 'inventory' ? corpse.unpaid : !corpse.no_charge);
@@ -532,6 +534,12 @@ async function announceHeroRevival(corpse: GameObject, monster: Monster, oneOf: 
     }
     if (charge && keeper !== monster)
         await stolenValue(corpse, x, y, keeper.mpeaceful, { silent: false, state });
+}
+
+export async function reviveCorpseForHero(corpse: GameObject, state: GameState = game): Promise<CorpseRevivalResult> {
+    const result = await reviveCorpse(corpse, state, { announce: false, byHero: true });
+    for (const message of result.messages) await plineWithContinuation(message);
+    return result;
 }
 
 export async function reviveCorpseImmediately(corpse: GameObject | null | undefined, state: GameState = game, { announce = true } = {}): Promise<CorpseRevivalResult | null> {
