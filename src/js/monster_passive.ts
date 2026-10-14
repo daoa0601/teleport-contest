@@ -242,8 +242,11 @@ async function applyStonePassive({
     const wornMask = (state.inventory || []).reduce(
         (mask, object) => mask | (object.owornmask ?? 0), 0,
     );
+    // hmonas turns a small caster's spell slot into a hand strike. Its
+    // contact needs the same insulation as a claw, rather than a spell.
+    const contactType = attackType === AT_MAGC ? AT_CLAW : attackType;
     if (!hit || contactIsProtected(
-        attackType, wornMask, !!weapon || weaponWasDestroyed,
+        contactType, wornMask, !!weapon || weaponWasDestroyed,
     ) || heroResists(state, 'stoneResistance', MR_STONE)) {
         return { heroDied: false };
     }

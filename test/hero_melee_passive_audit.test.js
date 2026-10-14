@@ -6,7 +6,7 @@ import { MM_NOGRP, MM_NOWAIT, NO_MINVENT } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { pushKey, resetInputState } from '../js/input.js';
 import { initRng } from '../js/rng.js';
-import { IRON_SHOES } from '../js/object_data.js';
+import { IRON_SHOES, LEATHER_GLOVES } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { createMonsterAt } from './support/monsters.js';
@@ -14,6 +14,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 import { heroIsBlind } from '../js/senses.js';
 import { vision_recalc } from '../js/vision.js';
+import { memoryStorage } from './support/memory-storage.js';
 async function meleeRoom(form, defender) {
     freshObjectRoom({
         flags: { verbose: true, bones: false, disclose: '-i -a -v -c -o' },
@@ -44,7 +45,8 @@ async function attackEast(expected, force = false) {
     if (force)
         pushKey('l');
     await rhack((force ? 'F' : 'l').charCodeAt(0));
-    assert.equal(game.context.move, 1, 'An attack against the adjacent target must spend a turn');
+    if (!game.program_state.gameover)
+        assert.equal(game.context.move, 1, 'An attack against the adjacent target must spend a turn');
     messages.push(game._pending_message);
     return messages.join('\n');
 }
@@ -113,4 +115,21 @@ void test('a hallucinating attacker sees acid splashes as fanciful liquids', asy
     assert.match(messages, /splashed by .*'s (?!acid!)[^!]+!/, 'Hallucination can change the perceived splash without changing its acidity');
     assert.equal(game.u.mh, 200);
 });
+for (const gloved of [false, true]) {
+    void test(`a gnomish wizard's melee spell slot ${gloved ? 'is protected by gloves' : 'touches a cockatrice with bare hands'}`, async () => {
+        const cockatrice = await meleeRoom('gnomish wizard', 'cockatrice');
+        game.storage = memoryStorage();
+        game.iflags.toptenwin = false;
+        if (gloved)
+            wearHeroArmor(await addInventoryObject(LEATHER_GLOVES));
+        initRng(41n);
+        const messages = await attackEast(/cockatrice|stone|Goodbye|points|survived|turns/, true);
+        assert.ok(cockatrice.mhp < 2000, 'The spell slot delivers an ordinary hand strike');
+        assert.equal(!!game.program_state.gameover, !gloved);
+        if (gloved)
+            assert.doesNotMatch(messages, /turn to stone/);
+        else
+            assert.match(messages, /You turn to stone/);
+    });
+}
 //# sourceMappingURL=hero_melee_passive_audit.test.js.map
