@@ -3,9 +3,9 @@
 import { W_QUIVER, W_SWAPWEP, W_WEAPONS, W_WEP, } from './const.js';
 import { game } from './gstate.js';
 import { artifactById, artifactEmitsLight } from './artifacts.js';
+import { setWornArtifactProperties } from './artifact_properties.js';
 import { makeHallucinated } from './hero_mental_status.js';
 import { setArtifactWarningWielded } from './artifact_warning.js';
-import { grantWornProperty, removeWornProperty } from './properties.js';
 import { endObjectBurn, equipmentLightMessage } from './light.js';
 import { plineWithContinuation } from './display.js';
 import { heroIsBlind } from './senses.js';
@@ -62,12 +62,7 @@ async function replaceSlot(object, slot, mask, flag, state) {
 }
 export async function setWieldedArtifactProperties(object, active, state) {
     const artifact = artifactById(object.oartifact, state);
-    if (artifact?.flags.includes('SPFX_SEARCH')) {
-        if (active)
-            grantWornProperty('searching', object, 'uwep', state);
-        else
-            removeWornProperty('searching', object, 'uwep', state);
-    }
+    setWornArtifactProperties(object, 'uwep', active, state);
     if (artifact?.flags.includes('SPFX_HALRES')) {
         await makeHallucinated(Number(!active), {
             state, talk: !state.program_state?.restoring,

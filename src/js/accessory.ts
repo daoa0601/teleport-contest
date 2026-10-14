@@ -10,6 +10,7 @@ import type { GameObject } from './object_types.js';
 import type { PropertyName } from './property_types.js';
 import { findArmorClass } from './armor.js';
 import { game, requireLiveGame } from './gstate.js';
+import { setWornArtifactProperties } from './artifact_properties.js';
 import {
     AMULET_OF_CHANGE, AMULET_OF_GUARDING, AMULET_OF_RESTFUL_SLEEP,
     AMULET_OF_STRANGULATION, AMULET_OF_UNCHANGING, OBJECT_BIMANUAL, OBJECT_CHARGED, OBJECT_NAMES,
@@ -103,6 +104,7 @@ export async function wearHeroAccessory(
     object.wornSlot = position.label;
     object.owornmask = (object.owornmask ?? 0) | position.mask;
     if (property) grantWornProperty(property, object, slot, state);
+    setWornArtifactProperties(object, slot, true, state);
     if (slot !== 'uamul') changeRingBonus(object, 1, state);
     if (slot === 'uamul') await applyAmuletOnEffects(object, state, { wasFlying, wasInGas });
     if (property === 'protectionFromShapeChangers')
@@ -238,6 +240,7 @@ export function clearHeroAccessory(
     object.owornmask = (object.owornmask ?? 0) & ~position.mask;
     const property = OBJECT_PROPERTY[object.otyp];
     if (property) removeWornProperty(property, object, slot, state);
+    setWornArtifactProperties(object, slot, false, state);
     if (slot !== 'uamul') changeRingBonus(object, -1, state, deferArmorClass);
     if (object.otyp === AMULET_OF_STRANGULATION && heroIsStrangled(state)) {
         clearHeroStrangulation(state);

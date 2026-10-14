@@ -1,6 +1,7 @@
 // Wearing and removing blindfolds, towels, and lenses.
 // C ref: do_wear.c Blindf_on(), Blindf_off().
 import { W_TOOL } from './const.js';
+import { setWornArtifactProperties } from './artifact_properties.js';
 import { setBallAndChainFelt } from './ball.js';
 import { gulpBlindnessCheck } from './engulf_blindness.js';
 import { pline, plineWithContinuation, } from './display.js';
@@ -32,6 +33,7 @@ async function equipEyewear(object) {
     object.worn = true;
     object.wornSlot = 'ublindf';
     object.owornmask = (object.owornmask ?? 0) | W_TOOL;
+    setWornArtifactProperties(object, 'ublindf', true, game);
 }
 export function unequipEyewear(object, state = game) {
     if (state.ublindf === object || state.u.ublindf === object)
@@ -43,6 +45,7 @@ export function unequipEyewear(object, state = game) {
     object.worn = false;
     object.wornSlot = null;
     object.owornmask = (object.owornmask ?? 0) & ~W_TOOL;
+    setWornArtifactProperties(object, 'ublindf', false, state);
 }
 async function announceWorn(object) {
     const message = objectWearMessage(object);
