@@ -16,12 +16,12 @@ void test('ordinary look ends after an unknown direction', async () => {
     assert.match(text, /aborted.*Done\./);
     assert.equal(game.context.move, 0);
 });
-void test('quick look uses concise getpos feedback and restores verbosity', async () => {
+void test('quick look restores its goal after disabling descriptions and restores verbosity', async () => {
     freshObjectRoom({ flags: { tips: false, verbose: true } });
     const input = resetInputState();
     input.feed('#');
     await answerPrompts(rhack(';'.charCodeAt(0)), input, [
-        { prompt: /Automatic description is off\./, keys: '\x1b' },
+        { prompt: /Move cursor to a monster, object or location:/, keys: '\x1b' },
     ]);
     assert.equal(game.flags.verbose, true);
 });

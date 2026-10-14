@@ -539,6 +539,11 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
             if (key === game.commandBindings.specialKey('getpos.autodescribe')) {
                 game.iflags.autodescribe = !autoDescription();
                 message = `Automatic description ${game.flags.verbose ? 'of features under cursor ' : ''}is ${autoDescription() ? 'on' : 'off'}.`;
+                if (!autoDescription()) {
+                    await pline(message);
+                    await flush_screen(1);
+                    message = movePrompt;
+                }
                 continue;
             }
             if (key === game.commandBindings.specialKey('getpos.filter')) {

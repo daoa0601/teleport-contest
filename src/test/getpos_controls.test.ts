@@ -37,7 +37,7 @@ void test('getpos toggles automatic descriptions off and on', async () => {
         describe: () => 'floor of a room',
     }), input, [
         { prompt: /Pick a location\./, keys: '#' },
-        { prompt: /Automatic description is off\./, keys: 'l' },
+        { prompt: /Move cursor to a location:/, keys: 'l' },
         { prompt: /Move cursor to a location:/, keys: '#' },
         { prompt: /Automatic description is on\./, keys: '.' },
     ]);
@@ -133,7 +133,7 @@ void test('configuring autodescribe takes effect after the cursor toggle', async
     const input = resetInputState();
     input.feed('#');
     await answerPrompts(rhack(';'.charCodeAt(0)), input, [
-        { prompt: /Automatic description is off\./, keys: '\x1b' },
+        { prompt: /Move cursor to a monster, object or location:/, keys: '\x1b' },
     ]);
     applyNethackrc('OPTIONS=autodescribe');
     input.feed('l');
