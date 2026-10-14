@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { rhack } from '../js/cmd.js';
-import { game } from '../js/gstate.js';
+import { game, requireGameDisplay } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { W_ARMF, W_RINGL, W_RINGR } from '../js/const.js';
-import { DAGGER, OBJECT_NAMES, OIL_LAMP, RIN_PROTECTION } from '../js/object_data.js';
+import { DAGGER, GOLD_PIECE, OBJECT_NAMES, OIL_LAMP, RIN_PROTECTION } from '../js/object_data.js';
 import { setPrimaryWeapon } from '../js/weapon_slots.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { planInput } from './support/planned-input.js';
@@ -46,6 +46,23 @@ void test('the tools report includes a lit lamp', async () => {
     await addInventoryObject(OIL_LAMP, { lamplit: true });
     await rhack('('.charCodeAt(0));
     assert.match(game._pending_message, /oil lamp.*\(lit\)/);
+    assert.equal(game.context.move, 0);
+});
+void test('the menu-prefixed gold report displays coins as ordinary inventory', async (t) => {
+    freshObjectRoom();
+    await addInventoryObject(GOLD_PIECE, { quan: 20 });
+    const input = resetInputState();
+    let menu = '';
+    input.beforeRead = () => {
+        menu = requireGameDisplay().grid.map(row => row.map(cell => cell.ch).join('')).join('\n');
+    };
+    planInput(input, t, [
+        { prompt: /Your wallet contains 20 zorkmids\.--More--/, keys: ' ' },
+        { prompt: /\$ - 20 gold pieces/, keys: '\x1b' },
+    ]);
+    input.feed('$');
+    await rhack('m'.charCodeAt(0));
+    assert.doesNotMatch(menu, /Inventory in use|Miscellaneous/);
     assert.equal(game.context.move, 0);
 });
 void test('inventory in use includes empty hands beside an active tool', async (t) => {

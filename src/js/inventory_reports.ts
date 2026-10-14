@@ -42,7 +42,7 @@ export async function inventoryReport(report: InventoryReport): Promise<Inventor
     if (report === 'gold') {
         await reportWallet();
         const purse = heroGoldObject(game);
-        return purse && game.iflags.menu_requested ? reportSubset([purse]) : null;
+        return purse && game.iflags.menu_requested ? reportSubset([purse], false) : null;
     }
     if (report === 'weapon') {
         if (!game.uwep) {
