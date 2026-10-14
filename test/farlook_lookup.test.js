@@ -49,6 +49,48 @@ void test('the typed-name look command opens the encyclopedia without asking for
     ]);
     assert.equal(game.context.move, 0);
 });
+for (const [symbol, description] of [
+    ['<', 'a staircase up or a ladder up or a branch staircase up or a branch ladder up'],
+    ['a', 'an ant or other insect'],
+    ['/', 'the interior of a monster or a wand'],
+    ['^', 'a trap'],
+    [' ', 'a ghost or stone or air'],
+    ['`', 'a boulder or an engraving'],
+    ['~', 'a long worm tail'],
+    ['3', 'unknown creature causing you disquiet'],
+    ['.', 'can be many things'],
+    ['8', "I've never heard of such things."],
+]) {
+    void test(`typed look describes the default ${JSON.stringify(symbol)} symbol`, async () => {
+        freshObjectRoom({ flags: { tips: false, help: false } });
+        game.symset = 'DECgraphics';
+        const input = resetInputState();
+        input.feed(`/?${symbol}\n`);
+        if (symbol === '<') {
+            await answerPrompts(rhack(0), input, [
+                { prompt: /a staircase up or a ladder up[\s\S]*a branch\s+ladder up--More--/, keys: ' ' },
+            ]);
+        }
+        else {
+            await rhack(0);
+            await flush_screen(1);
+            const message = requireGameDisplay().grid[0]?.map(cell => cell.ch).join('').trim();
+            assert.ok(message?.endsWith(description), message);
+        }
+        assert.equal(game.context.move, 0);
+    });
+}
+for (const blind of [false, true]) {
+    void test(`typed look describes an unseen creature with blindness=${blind}`, async () => {
+        freshObjectRoom({ flags: { help: false }, hero: { blindTurns: blind ? 10 : 0 } });
+        const input = resetInputState();
+        input.feed('/?I\n');
+        await rhack(0);
+        await flush_screen(1);
+        const message = requireGameDisplay().grid[0]?.map(cell => cell.ch).join('').trim();
+        assert.ok(message?.endsWith(blind ? 'an unseen creature' : 'a remembered, unseen, creature'), message);
+    });
+}
 for (const up of [false, true]) {
     void test(`farlook explains ordinary and branch staircases ${up ? 'up' : 'down'}`, async () => {
         const level = freshObjectRoom({ flags: { tips: false } });

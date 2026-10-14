@@ -27,6 +27,7 @@ import { def_warnsyms } from './const.js';
 import { iceDescriptionAt } from './dungeon_feature.js';
 import { CmapSymbol, GlyphOffset, cmapToGlyph } from './glyph_numbers.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
+import { typedSymbolDescription } from './look_symbols.js';
 import { isGrayStone, isWeaponTool } from './object_properties.js';
 import { applySuggestion } from './apply_selection.js';
 import { flipThroughBook } from './book_flip.js';
@@ -254,7 +255,7 @@ import { kickWithMonsterForm } from './hero_form_kick.js';
 import { bringLeashedFollowers, heroTeleportDestinationOk, moveHeroByTeleport, randomMonsterRelocation, safeTeleportDestination, } from './teleport.js';
 import { goodPosition, monsterTeleportRestricted } from './teleport_rules.js';
 import { removeWishGrantingMonster } from './monster_departure.js';
-import { RLOC_MSG, A_CON, A_DEX, A_STR, A_WIS, BOLT_LIM, COLNO, ROWNO, STONE, SCORR, SDOOR, DOOR, CORR, ROOM, ICE, POOL, CLOUD, IRONBARS, FOUNTAIN, SINK, ALTAR, WATER, MOAT, LAVAWALL, TREE, D_NODOOR, D_BROKEN, D_ISOPEN, D_CLOSED, D_LOCKED, D_TRAPPED, SHOP_DOOR_COST, IS_WALL, IS_STWALL, IS_OBSTRUCTED, IS_FURNITURE, IS_AIR, IS_POOL, IS_LAVA, IS_ROOM, ZAP_POS, SQKY_BOARD, BEAR_TRAP, LANDMINE, FIRE_TRAP, PIT, SPIKED_PIT, TT_PIT, HOLE, TRAPDOOR, DART_TRAP, MAGIC_TRAP, TELEP_TRAP, LEVEL_TELEP, STATUE_TRAP, WEB, ANTI_MAGIC, G_GONE, ER_NOTHING, ER_DAMAGED, M_AP_MONSTER, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, STRAT_WAITMASK, MM_NOEXCLAM, MM_NOMSG, SHOPBASE, ROOMOFFSET, F_LOOTED, In_endgame, Is_airlevel, Is_waterlevel, W_ARMOR, W_ACCESSORY, W_SADDLE, LOST_THROWN, WT_SPLASH_THRESHOLD, WT_SQUEEZABLE_INV, P_BOW, P_SLING, PARANOID_HIT, POLY_CONTROLLED, STR19, isok, ACCESSIBLE, AIR, DIGTYP_UNDIGGABLE, DRAWBRIDGE_UP, } from './const.js';
+import { RLOC_MSG, A_CON, A_DEX, A_STR, A_WIS, BOLT_LIM, COLNO, ROWNO, STONE, SCORR, SDOOR, DOOR, CORR, ROOM, ICE, POOL, CLOUD, IRONBARS, FOUNTAIN, SINK, ALTAR, WATER, MOAT, LAVAWALL, TREE, D_NODOOR, D_BROKEN, D_ISOPEN, D_CLOSED, D_LOCKED, D_TRAPPED, SHOP_DOOR_COST, IS_WALL, IS_STWALL, IS_OBSTRUCTED, IS_FURNITURE, IS_AIR, IS_POOL, IS_LAVA, IS_ROOM, ZAP_POS, SQKY_BOARD, BEAR_TRAP, LANDMINE, FIRE_TRAP, PIT, SPIKED_PIT, TT_PIT, HOLE, TRAPDOOR, DART_TRAP, MAGIC_TRAP, TELEP_TRAP, LEVEL_TELEP, STATUE_TRAP, WEB, ANTI_MAGIC, G_GONE, ER_NOTHING, ER_DAMAGED, M_AP_MONSTER, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, STRAT_WAITMASK, MM_NOEXCLAM, MM_NOMSG, SHOPBASE, ROOMOFFSET, F_LOOTED, In_endgame, Is_airlevel, Is_waterlevel, Is_rogue_level, In_hell, W_ARMOR, W_ACCESSORY, W_SADDLE, LOST_THROWN, WT_SPLASH_THRESHOLD, WT_SQUEEZABLE_INV, P_BOW, P_SLING, PARANOID_HIT, POLY_CONTROLLED, STR19, isok, ACCESSIBLE, AIR, DIGTYP_UNDIGGABLE, DRAWBRIDGE_UP, } from './const.js';
 const DIR_DX = { h: -1, l: 1, j: 0, k: 0, y: -1, u: 1, b: -1, n: 1 };
 const DIR_DY = { h: 0, l: 0, j: 1, k: -1, y: -1, u: -1, b: 1, n: 1 };
 // object.h enum value; object_data currently exposes the two other tools.
@@ -4745,9 +4746,23 @@ async function dowhatis() {
     }
     else if (choice === '?') {
         const typed = await getLine('Specify what? (type the word)', ch => ch >= ' ');
-        const name = typed?.trim().replace(/\s+/g, ' ');
+        const name = typed === ' ' ? typed : typed?.trim().replace(/\s+/g, ' ');
         if (name && name.length > 1)
             await showEncyclopediaInformation(name);
+        else if (name) {
+            const result = typedSymbolDescription(name, {
+                includeHero: !game.flags.showrace && !heroIsPolymorphed(game)
+                    && !!game.urace && game.urace.name !== 'human' && game.urace.name !== 'elf',
+                waterLevel: Is_waterlevel(game.u.uz),
+                inHell: In_hell(game.u.uz),
+                decGraphics: /^DECgraphics$/i.test(game.symset ?? '') && !Is_rogue_level(game.u.uz),
+                blind: heroIsBlind(game),
+            });
+            await plineWithContinuation(result.count
+                ? `${name}        ${result.text}` : "I've never heard of such things.");
+            if (result.count === 1 && game.flags.help !== false)
+                await offerFarlookInformation(result.firstMatch, false);
+        }
     }
     game.context.move = 0;
 }

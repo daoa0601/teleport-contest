@@ -44,6 +44,7 @@ import { def_warnsyms } from './const.js';
 import { iceDescriptionAt } from './dungeon_feature.js';
 import { CmapSymbol, GlyphOffset, cmapToGlyph } from './glyph_numbers.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
+import { typedSymbolDescription } from './look_symbols.js';
 import { isGrayStone, isWeaponTool } from './object_properties.js';
 import { applySuggestion } from './apply_selection.js';
 import { flipThroughBook } from './book_flip.js';
@@ -446,7 +447,7 @@ import {
     SPIKED_PIT, TT_PIT, HOLE, TRAPDOOR, DART_TRAP, MAGIC_TRAP, TELEP_TRAP, LEVEL_TELEP, STATUE_TRAP, WEB,
     ANTI_MAGIC, G_GONE, ER_NOTHING, ER_DAMAGED, M_AP_MONSTER, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE,
     STRAT_WAITMASK, MM_NOEXCLAM, MM_NOMSG, SHOPBASE, ROOMOFFSET, F_LOOTED, In_endgame,
-    Is_airlevel, Is_waterlevel, W_ARMOR, W_ACCESSORY, W_SADDLE, LOST_THROWN, WT_SPLASH_THRESHOLD,
+    Is_airlevel, Is_waterlevel, Is_rogue_level, In_hell, W_ARMOR, W_ACCESSORY, W_SADDLE, LOST_THROWN, WT_SPLASH_THRESHOLD,
     WT_SQUEEZABLE_INV, P_BOW, P_SLING, PARANOID_HIT, POLY_CONTROLLED, STR19, isok,
     ACCESSIBLE, AIR, DIGTYP_UNDIGGABLE, DRAWBRIDGE_UP,
 } from './const.js';
@@ -4938,8 +4939,22 @@ async function dowhatis(): Promise<void> {
         else if (queuedLetter !== undefined) clearCommandKeys();
     } else if (choice === '?') {
         const typed = await getLine('Specify what? (type the word)', ch => ch >= ' ');
-        const name = typed?.trim().replace(/\s+/g, ' ');
+        const name = typed === ' ' ? typed : typed?.trim().replace(/\s+/g, ' ');
         if (name && name.length > 1) await showEncyclopediaInformation(name);
+        else if (name) {
+            const result = typedSymbolDescription(name, {
+                includeHero: !game.flags.showrace && !heroIsPolymorphed(game)
+                    && !!game.urace && game.urace.name !== 'human' && game.urace.name !== 'elf',
+                waterLevel: Is_waterlevel(game.u.uz),
+                inHell: In_hell(game.u.uz),
+                decGraphics: /^DECgraphics$/i.test(game.symset ?? '') && !Is_rogue_level(game.u.uz),
+                blind: heroIsBlind(game),
+            });
+            await plineWithContinuation(result.count
+                ? `${name}        ${result.text}` : "I've never heard of such things.");
+            if (result.count === 1 && game.flags.help !== false)
+                await offerFarlookInformation(result.firstMatch, false);
+        }
     }
     game.context.move = 0;
 }
