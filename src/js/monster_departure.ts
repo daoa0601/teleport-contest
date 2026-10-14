@@ -5,6 +5,7 @@ import type { GameObject } from './object_types.js';
 // C mon.c:mongone().
 
 import { prepareVaultGuardDeath } from './vault_guard.js';
+import { DISMOUNT_GENERIC } from './const.js';
 import { armorThiefGone } from './command_state.js';
 import { game, requireLiveGame } from './gstate.js';
 import { finishShopkeeperDeparture } from './shop_damage.js';
@@ -14,6 +15,7 @@ import { removeMonsterWormBody } from './monster_worm.js';
 import { releaseMonsterLeash } from './monster_leash.js';
 import { detachMonsterFromLevel } from './monster_level_departure.js';
 import { wizardDeadOrGone } from './wizard.js';
+import { dismountHero } from './steed.js';
 
 interface MonsterDepartureResult {
     removed: boolean;
@@ -51,6 +53,7 @@ export async function removeMonsterFromGame(monster: Monster | null | undefined)
     }
     if (monster.wormno) removeMonsterWormBody(monster);
     monster.dead = true;
+    if (game.u.usteed === monster) await dismountHero(DISMOUNT_GENERIC);
     return { removed: true, dropped, discarded, x, y };
 }
 
