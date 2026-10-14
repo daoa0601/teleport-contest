@@ -45,6 +45,7 @@ import { finishEnvironmentalMonsterDeath } from './monster_death.js';
 import { adjustRiderAfterSteedPolymorph } from './steed.js';
 import { BOULDER, CANDELABRUM_OF_INVOCATION } from './object_data.js';
 import { rn1, rn2 } from './rng.js';
+import { monsterEmitsLight } from './vision.js';
 import { isLavaAt, isPoolAt } from './terrain_properties.js';
 import { toptenMonsterForm } from './topten.js';
 import { findNearbyMonsterPosition } from './teleport_rules.js';
@@ -601,6 +602,8 @@ export async function changeMonsterForm(
         await releaseMonsterLeashWithFeedback(monster, { state, publish });
         leashReleased = true;
     }
+    if (monsterEmitsLight(oldMnum) !== monsterEmitsLight(targetMnum))
+        state.vision_full_recalc = 1;
     if (!monster.perminvis || oldNaturallyInvisible)
         monster.perminvis = naturallyInvisible;
     monster.minvis = monster.invis_blkd ? 0 : !!monster.perminvis;
