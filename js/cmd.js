@@ -1036,7 +1036,13 @@ export async function rhack(key) {
                 : configured.command;
         if (!command) {
             await pline(`Unknown command '${visibleCommandKey(key)}'.`);
-            resetCommandVariables(true);
+            // Unlike a rejected known command, C's unknown-key tail keeps
+            // pending movement flags until the next command resolves them.
+            game._cannedCommands = [];
+            clearCommandKeys();
+            clearRepeatCommand();
+            game.context.move = 0;
+            game.multi = 0;
             return;
         }
         if (!await commandAllowed(command)) {

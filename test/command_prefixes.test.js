@@ -82,4 +82,14 @@ void test('a grid bug rejects diagonal movement before attempting a step', async
     assert.equal(game.context.move, 0);
     assert.equal(game._pending_message, "You can't get there from here...");
 });
+void test('an unknown key clears command recall while retaining an unfinished fight request', async () => {
+    const input = freshTurnRoom();
+    input.feed('F~l');
+    await rhack(0);
+    assert.equal(game._pending_message, "Unknown command '~'.");
+    await rhack(0);
+    assert.equal(game.u.ux, 10);
+    assert.equal(game.context.move, 1);
+    assert.match(game._pending_message, /attack thin air/);
+});
 //# sourceMappingURL=command_prefixes.test.js.map
