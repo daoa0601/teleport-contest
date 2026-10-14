@@ -131,7 +131,7 @@ export function monsterSurvivesPool(monster, { waterWall = false } = {}) {
         | (waterWall ? 0 : M1_CLING);
     return !!(flags & safeFlags);
 }
-function heroKeepsSteedAboveWater(monster, state, waterWall) {
+function heroKeepsSteedAboveLiquid(monster, state, waterWall) {
     if (waterWall || state.u?.usteed !== monster)
         return false;
     return !!(state.u?.flying || state.flying
@@ -143,7 +143,7 @@ export function rollMonsterPoolReaction(monster, state = game, { random = rn2, r
     const waterLevel = levelIsWaterLevel(state);
     const safelyAirborne = !waterWall && !waterLevel
         && monsterFliesOrFloats(monster);
-    if (heroKeepsSteedAboveWater(monster, state, waterWall)
+    if (heroKeepsSteedAboveLiquid(monster, state, waterWall)
         || safelyAirborne) {
         return { kind: 'safe' };
     }
@@ -201,6 +201,8 @@ export async function resolveMonsterLiquid(monster, state = game, { announce = a
     }
     const waterLevel = levelIsWaterLevel(state);
     const waterWall = location.typ === WATER;
+    if (heroKeepsSteedAboveLiquid(monster, state, waterWall))
+        return { survived: true };
     const inPool = isPoolAt(x, y, state)
         && (!monsterFliesOrFloats(monster) || waterLevel);
     const inLava = isLavaAt(x, y, state) && !monsterFliesOrFloats(monster);

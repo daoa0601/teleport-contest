@@ -8,8 +8,27 @@ import { resolveMonsterLiquid } from '../js/mon.js';
 import { finishMonsterLiquidDeath } from '../js/monster_death.js';
 import { AMULET_OF_LIFE_SAVING } from '../js/object_data.js';
 import { knownObject } from './support/game-objects.js';
-import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
+import { createMonsterAt, createSaddledSteed, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+for (const property of ['flying', 'levitating']) {
+    void test(`a ${property} rider keeps the steed and its equipment above lava`, async () => {
+        const level = freshObjectRoom();
+        requirePlayingGame(game);
+        const steed = await createSaddledSteed();
+        game.u.usteed = steed;
+        game.u[property] = true;
+        level.requireAt(steed.mx, steed.my).typ = LAVAPOOL;
+        const health = steed.mhp;
+        const saddle = steed.saddle;
+        await resolveMonsterLiquid(steed, game, {
+            finishDeath: finishMonsterLiquidDeath,
+        });
+        assert.equal(steed.mhp, health);
+        assert.equal(game.u.usteed, steed);
+        assert.equal(level.monsters.includes(steed), true);
+        assert.ok(saddle && steed.minvent.includes(saddle));
+    });
+}
 void test('an iron golem can rust in a pool despite being breathless', async () => {
     const level = freshObjectRoom();
     requirePlayingGame(game);
