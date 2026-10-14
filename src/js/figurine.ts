@@ -3,7 +3,7 @@
 
 import { makeFamiliar } from './familiar.js';
 import {
-    IS_OBSTRUCTED, IS_POOL, TREE, W_NONPASSWALL, isok,
+    IS_OBSTRUCTED, IS_POOL, STONE, TREE, W_NONPASSWALL, isok,
 } from './const.js';
 import { canSeeMonster, newsym } from './display.js';
 import { remove_object } from './floor_object.js';
@@ -109,8 +109,9 @@ export function figurinePlacementFailure(figurine: GameObject, x: number, y: num
     if (figurine.where === 'inventory' && state.u.uswallow)
         return "You don't have enough room in here.";
     if (!isok(x, y)) return 'You cannot put the figurine there.';
-    const location = state.level?.at?.(x, y);
-    if (!location) return 'You cannot put the figurine there.';
+    const level = state.level;
+    const location = level?.at(x, y);
+    if (!level || !location) return 'You cannot put the figurine there.';
     const species = figurine.corpsenm;
     if (species === undefined) throw new TypeError('A figurine requires a monster species.');
     const flags1 = MONSTER_FLAGS1[species] ?? 0;
@@ -118,8 +119,10 @@ export function figurinePlacementFailure(figurine: GameObject, x: number, y: num
     const passesWalls = !!(flags1 & M1_WALLWALK);
     const mayPassWall = passesWalls
         && !(location.wall_info & W_NONPASSWALL);
-    if (IS_OBSTRUCTED(location.typ) && !mayPassWall)
-        return `You cannot place a figurine in ${location.typ === TREE ? 'a tree' : 'solid rock'}!`;
+    if (IS_OBSTRUCTED(location.typ) && !mayPassWall) {
+        const tree = location.typ === TREE || location.typ === STONE && level.flags.arboreal;
+        return `You cannot place a figurine in ${tree ? 'a tree' : 'solid rock'}!`;
+    }
     const boulder = state.level?.objects?.[x]?.[y]?.some(
         object => object !== figurine && object.otyp === BOULDER,
     );

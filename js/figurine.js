@@ -1,7 +1,7 @@
 // Cursed figurines which come to life on their own.
 // C refs: apply.c:fig_transform() and dog.c:make_familiar()/initedog().
 import { makeFamiliar } from './familiar.js';
-import { IS_OBSTRUCTED, IS_POOL, TREE, W_NONPASSWALL, isok, } from './const.js';
+import { IS_OBSTRUCTED, IS_POOL, STONE, TREE, W_NONPASSWALL, isok, } from './const.js';
 import { canSeeMonster, newsym } from './display.js';
 import { remove_object } from './floor_object.js';
 import { game } from './gstate.js';
@@ -52,8 +52,9 @@ export function figurinePlacementFailure(figurine, x, y, state) {
         return "You don't have enough room in here.";
     if (!isok(x, y))
         return 'You cannot put the figurine there.';
-    const location = state.level?.at?.(x, y);
-    if (!location)
+    const level = state.level;
+    const location = level?.at(x, y);
+    if (!level || !location)
         return 'You cannot put the figurine there.';
     const species = figurine.corpsenm;
     if (species === undefined)
@@ -63,8 +64,10 @@ export function figurinePlacementFailure(figurine, x, y, state) {
     const passesWalls = !!(flags1 & M1_WALLWALK);
     const mayPassWall = passesWalls
         && !(location.wall_info & W_NONPASSWALL);
-    if (IS_OBSTRUCTED(location.typ) && !mayPassWall)
-        return `You cannot place a figurine in ${location.typ === TREE ? 'a tree' : 'solid rock'}!`;
+    if (IS_OBSTRUCTED(location.typ) && !mayPassWall) {
+        const tree = location.typ === TREE || location.typ === STONE && level.flags.arboreal;
+        return `You cannot place a figurine in ${tree ? 'a tree' : 'solid rock'}!`;
+    }
     const boulder = state.level?.objects?.[x]?.[y]?.some(object => object !== figurine && object.otyp === BOULDER);
     if (boulder && !passesWalls && !(flags2 & M2_ROCKTHROW))
         return 'You cannot fit the figurine on the boulder.';

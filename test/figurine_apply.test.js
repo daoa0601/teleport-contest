@@ -41,6 +41,16 @@ void test('a figurine rejected by solid rock stays carried but takes time', asyn
     assert.equal(game.context.move, 1);
     assert.equal(game._pending_message, 'You cannot place a figurine in solid rock!');
 });
+void test('arboreal stone blocks a figurine as a tree', async () => {
+    const level = freshPlayableRoom();
+    level.flags.arboreal = true;
+    level.requireAt(game.u.ux + 1, game.u.uy).typ = STONE;
+    const figurine = await addInventoryObject(FIGURINE, { corpsenm: MONSTER_NAME.indexOf('kitten') });
+    await applyInventoryObject(figurine, 'l');
+    assert.equal(game._pending_message, 'You cannot place a figurine in a tree!');
+    assert.equal(figurine.where, 'inventory');
+    assert.equal(game.context.move, 1);
+});
 void test('a wall-passing figurine can transform in solid rock', async () => {
     const level = freshPlayableRoom();
     level.requireAt(game.u.ux + 1, game.u.uy).typ = STONE;
