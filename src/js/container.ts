@@ -3,7 +3,7 @@ import type { ChoiceMenuEntry } from './windows.js';
 // C refs: pickup.c use_container(), in_container(), out_container().
 
 import { withIndefiniteArticle } from './object_grammar.js';
-import { bot, redrawMap, flush_screen, pline, plineWithContinuation } from './display.js';
+import { bot, displayMessageWindow, redrawMap, flush_screen, pline, plineWithContinuation } from './display.js';
 import { touchArtifactByHero } from './artifact_touch.js';
 import { loseHeroHp } from './hero_damage.js';
 import { triggerChestTrap } from './chest_trap.js';
@@ -11,7 +11,6 @@ import { game } from './gstate.js';
 import { startGlobTimeout } from './glob.js';
 import { finishInventoryRemoval, useUpInventoryStack } from './hero_inventory.js';
 import { setPrimaryWeapon, setSecondaryWeapon, setQuiverObject } from './weapon_slots.js';
-import { nhgetch } from './input.js';
 import { inventoryItemDescription, inventoryPrimaryHandDetail } from './invent.js';
 import { observeObjectForNaming } from './objnam.js';
 import { inventoryClassOrder, lootSortMode, objectClassHeading, sortObjects } from './object_sort.js';
@@ -48,7 +47,6 @@ import { d, rn2 } from './rng.js';
 
 import { getLine, promptChoice } from './query.js';
 import { touchPetrifyingCorpse } from './stoning.js';
-import { NO_COLOR } from './terminal.js';
 import { addPickedInventoryObject } from './pickup.js';
 import { objectWeight } from './weight.js';
 import { heroHasFreeHand } from './weapon_type.js';
@@ -59,7 +57,7 @@ import { currency } from './currency.js';
 import { sellHeroDroppedObject, setSellDisposition, SELL_DELIBERATE, SELL_DONTSELL, SELL_NORMAL } from './shop_sell.js';
 import {
     restoreMenuUnderlay, showChoiceWindow,
-    showMultiSelectWindow,
+    showDisclosureOverlay, showMultiSelectWindow, showTextWindow,
 } from './windows.js';
 import {
     MENU_FULL, MENU_ITEMFLAGS_SKIPINVERT, PARANOID_AUTOALL, PARANOID_CONFIRM,
@@ -718,27 +716,16 @@ async function showContents(container: GameObject): Promise<void> {
     container.cknown = true;
     if (!container.contents?.length) {
         await pline(`The ${containerNoun(container)} is empty.`);
+        await displayMessageWindow();
         return;
     }
-    const display = game.nhDisplay;
-    if (!display) return;
-    const left = 41;
     for (const object of container.contents) observeObjectForNaming(object);
     const lines = [
         `Contents of the ${containerNoun(container)}:`,
         '',
         ...contentLines(container),
-        '--More--',
     ];
-    for (const [row, line] of lines.entries()) {
-        if (row >= display.rows) break;
-        for (let col = 38; col < display.cols; col++)
-            display.setCell(col, row, ' ', NO_COLOR, 0);
-        for (let col = 0; col < line.length; col++)
-            display.setCell(left + col, row, line.charAt(col), NO_COLOR, 0);
-    }
-    display.setCursor(left + 8, Math.min(lines.length - 1, display.rows - 1));
-    await nhgetch();
+    await showDisclosureOverlay(lines, { pagerStyle: 'menu', restoreUnderlay: true });
 }
 
 function actionKeys() {
@@ -752,6 +739,7 @@ async function chooseAction(container: GameObject, held: boolean, usedTime: bool
     const hasContents = !!container.contents?.length;
     const mayTakeOut = hasContents || !container.cknown;
     const mayPutIn = (game.inventory || []).some(object => object !== container);
+    if (!mayTakeOut && !mayPutIn) return keys.both;
     const entries: ChoiceMenuEntry[] = [{ key: ':', text: `Look inside the ${containerNoun(container)}` }];
     if (mayTakeOut) entries.push({ key: keys.takeOut, text: 'take something out' });
     if (mayPutIn) entries.push({ key: keys.putIn, text: 'put something in' });
@@ -765,18 +753,20 @@ async function chooseAction(container: GameObject, held: boolean, usedTime: bool
         entries.push({ key: keys.stash, text: `stash one item into the ${containerNoun(container)}` });
     }
     entries.push('');
-    if (moreContainers) entries.push({ key: 'n', text: 'loot next container' });
-    entries.push({ key: 'q', marker: '*', text: usedTime ? 'done' : 'do nothing' });
-    const valid = [27, 58, 63, 110, 113,
+    if (moreContainers) entries.push({ key: 'n', marker: '*', text: 'loot next container' });
+    entries.push({ key: 'q', marker: moreContainers ? '-' : '*', text: usedTime ? 'done' : 'do nothing' });
+    const valid = [10, 13, 27, 32, 58, 63, 110, 113,
         ...Object.values(keys).map(key => key.charCodeAt(0))];
     const title = mayTakeOut
         ? `Do what with ${containerReference(container, held)}?`
         : `The ${containerNoun(container)} is empty.  Do what with it?`;
-    return String.fromCharCode(await showChoiceWindow({
+    const chosen = await showChoiceWindow({
         title,
         entries,
         validKeys: valid,
-    }));
+    });
+    if ([10, 13, 32].includes(chosen)) return moreContainers ? 'n' : 'q';
+    return chosen === 27 ? 'q' : String.fromCharCode(chosen);
 }
 
 export async function useContainer(container: GameObject, {
@@ -838,6 +828,17 @@ async function useContainerActions(container: GameObject, {
         action = await chooseAction(
             container, held, spentTime, moreContainers,
         );
+        if (action === '?') {
+            const help = ['Container actions:', '',
+                ' : -- Look: examine contents', ' o -- Out: take things out', ' i -- In: put things in',
+                ' b -- Both: first take things out, then put things in',
+                ' r -- Reversed: put things in, then take things out',
+                ' s -- Stash: put one item in', '',
+                ...(moreContainers ? [' n -- Next: loot next selected container'] : []),
+                ' q -- Quit: finished', ' ? -- Help: display this text.', ''];
+            await showTextWindow(help);
+            continue;
+        }
         if (action !== ':') break;
         if (!container.cknown) spentTime = true;
         await showContents(container);

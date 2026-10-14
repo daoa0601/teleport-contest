@@ -50,9 +50,7 @@ void test('the inventory opening action applies the selected sack after its menu
         { prompt: /Tools/, keys: sack.invlet },
         { prompt: /a - Open this container/, keys: 'a' },
     ]);
-    await answerPrompts(rhack(0), input, [
-        { prompt: /The bag is empty\.  Do what with it\?/, keys: 'q' },
-    ]);
+    await answerPrompts(rhack(0), input, []);
     assert.equal(sack.cknown, true);
     assert.equal(game.inventory.includes(sack), true);
 });
