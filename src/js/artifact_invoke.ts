@@ -461,8 +461,15 @@ async function invokeBanish(state: GameState, publish: MessagePublisher) {
             await teleportMonsterByHero(monster, { state, giveFeedback: false });
         } else {
             vanished++;
+            const rolledLevel = rn2(dungeon.num_dunlevs);
+            // C passes this through ledger_no() and migrate_to_level().
+            // Local level zero is the preceding dungeon's final ledger entry.
+            const dnum = rolledLevel === 0 ? hell.dnum - 1 : hell.dnum;
+            const destinationDungeon = state.dungeons[dnum];
+            if (!destinationDungeon)
+                throw new Error('Demon banishment requires a valid ledger destination');
             await migrateMonsterToLevel(monster, {
-                dnum: hell.dnum, dlevel: rn2(dungeon.num_dunlevs),
+                dnum, dlevel: rolledLevel || destinationDungeon.num_dunlevs,
             }, state);
         }
     }

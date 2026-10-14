@@ -10,6 +10,27 @@ import { freshObjectRoom } from './support/object-room.js';
 import { createDungeon, createSpecialLevel } from './support/topology.js';
 import { initializePet } from '../js/dog.js';
 
+void test('a zero banishment roll sends the demon to the preceding dungeon bottom', async () => {
+    const level = freshObjectRoom({ role: 'priest', hero: { ualign: { type: 1, record: 10 } } });
+    requirePlayingGame(game);
+    game.valley_level = createSpecialLevel({ dnum: 2, dlevel: 1 });
+    game.dungeons = [
+        createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 20 }),
+        createDungeon({ dname: 'The Gnomish Mines', num_dunlevs: 7 }),
+        createDungeon({ dname: 'Gehennom', num_dunlevs: 1, flags: { hellish: true } }),
+    ];
+    const sword = await artifactObject('Demonbane', { invlet: 'a', where: 'inventory', age: 0 });
+    game.inventory = [sword];
+    const demon = await createMonsterAt('horned devil', 11, 10,
+        MM_ANGRY | MM_NOGRP | MM_NOMSG | NO_MINVENT);
+
+    await invokeInventoryObject(sword, ' '.repeat(20));
+
+    assert.equal(level.monsters.includes(demon), false);
+    assert.deepEqual(demon.migrationDestination, { dnum: 1, dlevel: 7 });
+    assert.equal(game.context.move, 1);
+});
+
 void test('Demonbane banishes visible demons and imps, leaving other creatures and hidden demons here', async () => {
     const level = freshObjectRoom({ role: 'priest', hero: { ualign: { type: 1, record: 10 } } });
     requirePlayingGame(game);
