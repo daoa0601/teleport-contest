@@ -4643,24 +4643,16 @@ async function doFarlook(quick = true) {
         await plineWithContinuation(verboseFarlookDescription(cursor.x, cursor.y, description));
         if (cursor.pickType !== LOOK_QUICK && cursor.pickType !== LOOK_ONCE
             && (cursor.pickType === LOOK_VERBOSE || !quick && game.flags.help !== false))
-            await offerFarlookInformation(cursor.x, cursor.y, description, cursor.pickType === LOOK_VERBOSE);
+            await offerFarlookInformation(description, cursor.pickType === LOOK_VERBOSE);
         if (quick || cursor.pickType === LOOK_ONCE)
             break;
     }
     game.context.move = 0;
 }
-async function offerFarlookInformation(x, y, description, withoutAsking) {
-    const monster = game.level ? monsterAtPosition(game.level, x, y) : null;
-    const glyph = glyphAt(x, y);
-    // lookat() supplies the real monster type to checkfile() unless the
-    // hero is hallucinating. Gnomish wizards use the general Wizard entry.
-    const gnomishWizard = farlookDescribesHero(x, y) && !heroIsPolymorphed(game)
-        && game.urace?.name === 'gnome' && game.urole?.name.m === 'Wizard';
-    const name = gnomishWizard ? 'wizard'
-        : monster && glyph?.kind === 'monster' && !heroIsHallucinating(game)
-            ? monsterTypeName(monster.mnum)
-            : description;
-    for (const match of encyclopediaMatches(name)) {
+async function offerFarlookInformation(description, withoutAsking) {
+    // do_look() passes firstmatch with a null monster type. The selected
+    // description retains given names for checkfile()'s alternate lookup.
+    for (const match of encyclopediaMatches(description)) {
         if (withoutAsking || await promptYesNo(`More info about "${match.name}"?`, 'n') === 'y')
             await showDisclosureOverlay(match.entry.lines, { restoreUnderlay: true });
     }

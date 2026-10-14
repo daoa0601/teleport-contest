@@ -6,8 +6,28 @@ import { LA_DOWN, LA_UP, STAIRS } from '../js/const.js';
 import { flush_screen, newsym } from '../js/display.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
+import { setMonsterGivenName } from '../js/monster_given_name.js';
 import { answerPrompts } from './support/input-boundaries.js';
+import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+
+void test('farlook offers a named monster entry before its species entry', async () => {
+    freshObjectRoom({ flags: { tips: false, verbose: false, help: true } });
+    const kitten = await createMonsterAt('kitten', 11, 10);
+    setMonsterGivenName(kitten, 'Oracle');
+    newsym(11, 10);
+    const input = resetInputState();
+    input.feed('/l.');
+
+    await answerPrompts(rhack('/'.charCodeAt(0)), input, [
+        { prompt: /kitten called Oracle.*--More--/, keys: ' ' },
+        { prompt: /More info about "oracle"\?/, keys: 'n' },
+        { prompt: /More info about "kitten"\?/, keys: 'n' },
+        { prompt: /Pick a monster, object or location\./, keys: '\x1b' },
+    ]);
+
+    assert.equal(game.context.move, 0);
+});
 
 void test('ordinary farlook offers information about the hero and keeps looking after declining it', async () => {
     freshObjectRoom({ role: 'wizard', flags: { tips: false, verbose: true, help: true } });
