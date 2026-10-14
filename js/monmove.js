@@ -6131,22 +6131,15 @@ export async function resumeDeferredMovementSpell(action, state, random = rn2, r
         };
     }
     else if (spellCast.spell === 'disappear') {
-        // C mcastu.c:mcast_disappear() makes invisibility permanent, repaints
-        // the actor square, and leaves an invisible marker when the hero saw
-        // the square but can no longer spot the caster.
         const monster = action.monster;
-        const blind = !!state?.blind || (state?.u?.blindTurns ?? 0) > 0;
-        const inSight = !blind && !!((state?.viz_array?.[monster.my]?.[monster.mx] ?? 0) & 0x2);
-        const canSeeInvisible = !!state?.u?.seeInvisible;
-        const wasVisible = inSight && !monster.mundetected && (!monster.minvis || canSeeInvisible);
+        if (canSeeMonster(monster)) {
+            const canSeeInvisible = state.u.seeInvisible || (state.u.seeInvisibleTurns ?? 0) > 0;
+            await publish(`${canonicalMonsterName(monster, { state, capitalized: true })} suddenly ${canSeeInvisible ? 'becomes transparent' : 'disappears'}!`);
+        }
         setMonsterPermanentInvisibility(monster);
         newsym(monster.mx, monster.my);
-        const stillVisible = inSight && !monster.mundetected && (!monster.minvis || canSeeInvisible);
-        if (inSight && !stillVisible)
+        if (cansee(monster.mx, monster.my) && !canSpotMonster(monster))
             map_invisible(monster.mx, monster.my);
-        if (wasVisible) {
-            effect.message = `The ${MONSTER_NAME[monster.mnum]} suddenly ${canSeeInvisible ? 'becomes transparent' : 'disappears'}!`;
-        }
     }
     else {
         throw new Error(`Directed spell ${spellCast.spell} reached the undirected spell effect`);
