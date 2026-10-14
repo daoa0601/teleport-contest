@@ -14,6 +14,7 @@ import { nameToMonster } from './mondata.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { currentHungerState, spendHeroNutrition } from './hunger.js';
 import { stopHeroOccupation } from './occupation.js';
+import { openingTinMaySaveHero } from './tin.js';
 import { meltIce } from './ice.js';
 import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_SYMBOL, } from './monster_data.js';
 import { heroMonsterForm } from './polyself.js';
@@ -219,7 +220,8 @@ export async function advanceHeroVomiting({ state = game, publish = pline, rollD
         await makeStunned((hero.stunnedTurns ?? 0) + rollDice(2, 4), { state, talk: false });
         // stop_occupation finishes an already swallowed last bite before
         // abandoning the meal, including that food's digestion effects.
-        await stopHeroOccupation(state, publish);
+        if (!openingTinMaySaveHero('vomiting', state))
+            await stopHeroOccupation(state, publish);
         if (state.program_state.gameover)
             return { active: false, vomited: false, turns: nextTurns, died: true };
     }

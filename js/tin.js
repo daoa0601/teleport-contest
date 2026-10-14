@@ -18,7 +18,8 @@ import { heroSpecies } from './hero_species.js';
 import { gainHeroNutrition } from './hunger.js';
 import { inventoryItemDescription } from './invent.js';
 import { chooseInventoryObject } from './inventory_prompt.js';
-import { MONSTER_BODY_META, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, requireMonsterData } from './monster_data.js';
+import { AD_POLY } from './monster_attack_types.js';
+import { MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, requireMonsterData } from './monster_data.js';
 import { AXE, OBJECT_NAMES, PICK_AXE, TIN, TIN_OPENER } from './object_data.js';
 import { makePlural } from './object_grammar.js';
 import { observeObject } from './object_knowledge.js';
@@ -144,6 +145,35 @@ export async function continueTinOpening(opening, state = game) {
     }
     state.context.move = state.program_state.gameover ? 0 : 1;
     return true;
+}
+// C eat.c:Popeye(): do not interrupt opening a tin which might cure the
+// current threat. Unknown contents are given the benefit of the doubt.
+export function openingTinMaySaveHero(threat, state = game) {
+    if (state._occupation?.key !== 'open-tin')
+        return false;
+    const tin = state.context.tin?.tin;
+    if (!tin)
+        return false;
+    const available = tin.where === 'inventory'
+        || tin.where === 'floor' && tin.ox === state.u.ux && tin.oy === state.u.uy
+            && state.level?.objects[tin.ox]?.[tin.oy]?.includes(tin)
+            && heroCanReachFloor(state, { checkPit: true });
+    if (!available)
+        return false;
+    if (!tin.known)
+        return true;
+    const species = tinSpecies(tin);
+    switch (threat) {
+        case 'hunger': return species !== -1 || tin.spe === 1;
+        case 'stoned':
+            return species >= 0 && (MONSTER_NAME[species] === 'lizard'
+                || !!(requireMonsterData(MONSTER_FLAGS1, species) & 0x08000000));
+        case 'slimed':
+            return species >= 0 && (!!(requireMonsterData(MONSTER_FLAGS2, species) & 0x00004000)
+                || requireMonsterData(MONSTER_ATTACKS, species).some(([, damage]) => damage === AD_POLY));
+        case 'sick':
+        case 'vomiting': return false;
+    }
 }
 export async function useTinOpener(tool, { state = game, swapWeapons } = {}) {
     requireLiveGame(state);
