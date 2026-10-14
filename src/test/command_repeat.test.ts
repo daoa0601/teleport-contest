@@ -4,7 +4,7 @@ import { rhack } from '../js/cmd.js';
 import { A_CON, A_DEX, A_STR, DOOR, D_CLOSED, D_ISOPEN } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { nhgetch } from '../js/input.js';
-import { DAGGER, POT_HEALING } from '../js/object_data.js';
+import { DAGGER, LOADSTONE, POT_HEALING } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshTurnRoom } from './support/playable-room.js';
 import { startLuaCore } from './support/lua-game.js';
@@ -60,6 +60,46 @@ void test('repeat drops the same partial quantity from the remaining carried sta
     await rhack(0);
     assert.equal(daggers.quan, 4);
     assert.equal(await nhgetch(), 'h'.charCodeAt(0));
+});
+
+for (const command of ['d', '#drop\n']) {
+    void test(`cancelling ${JSON.stringify(command)} clears drop recall`, async () => {
+        const input = freshTurnRoom();
+        const dagger = await addInventoryObject(DAGGER);
+        input.feed(`${command}\x1b`);
+        await rhack(0);
+
+        input.feed('\x01\x1b');
+        await rhack(0);
+
+        assert.equal(game._pending_message, 'There is no command available to repeat.');
+        assert.equal(game.inventory.includes(dagger), true);
+        assert.equal(game.context.move, 0);
+        assert.equal(await nhgetch(), 27, 'repeat must not reopen the drop prompt');
+    });
+}
+
+void test('trying to drop from an empty inventory clears recall', async () => {
+    const input = freshTurnRoom();
+    input.feed('d\x01');
+    await rhack(0);
+    await rhack(0);
+    assert.equal(game._pending_message, 'There is no command available to repeat.');
+    assert.equal(game.context.move, 0);
+});
+
+void test('a refused loadstone drop clears recall', async () => {
+    const input = freshTurnRoom();
+    const stone = await addInventoryObject(LOADSTONE, { cursed: true });
+    input.feed(`d${stone.invlet}`);
+    await rhack(0);
+    assert.match(game._pending_message, /cannot drop/);
+
+    input.feed('\x01');
+    await rhack(0);
+    assert.equal(game._pending_message, 'There is no command available to repeat.');
+    assert.equal(game.inventory.includes(stone), true);
+    assert.equal(game.context.move, 0);
 });
 
 void test('repeat can execute an extended command without reopening its editor', async () => {

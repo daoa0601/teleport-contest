@@ -4707,7 +4707,12 @@ async function dotravel() {
         });
     if (!cursor) {
         game.iflags.getloc_travelmode = false;
-        game.context.move = 0;
+        // dotravel() returns ECMD_OK for menu dismissal, ECMD_CANCEL for ESC
+        // in getpos(). Only the latter discards both command queues.
+        if (game.iflags.menu_requested)
+            game.context.move = 0;
+        else
+            resetCommandVariables(true);
         return;
     }
     // getpos() leaves its painted location description on the physical tty
@@ -5424,7 +5429,7 @@ async function dodrop() {
         const gold = heroGoldObject(game);
         if (!inventory.length) {
             await pline("You don't have anything to drop.");
-            game.context.move = 0;
+            resetCommandVariables(true);
             return;
         }
         const letters = inventory.filter(object => object !== gold)
@@ -5435,12 +5440,12 @@ async function dodrop() {
             allowGold: true, allowMenu: true, allowCount: true,
         });
         if (selection.cancelled) {
-            game.context.move = 0;
+            resetCommandVariables(true);
             return;
         }
         let object = selection.gold ? gold : selection.object;
         if (!object) {
-            game.context.move = 0;
+            resetCommandVariables(true);
             return;
         }
         if (selection.count !== null
@@ -5457,13 +5462,16 @@ async function dodrop() {
         const spentTime = await dropHeroObject(object, {
             state: game, publish: plineWithContinuation,
         });
-        game.context.move = spentTime ? 1 : 0;
-        if (spentTime) {
-            resetBulkTakeoff();
-            resetTrapSetting();
+        if (!spentTime) {
+            // do.c:drop() returns ECMD_FAIL for every refusal.
+            resetCommandVariables(true);
+            return;
         }
+        game.context.move = 1;
+        resetBulkTakeoff();
+        resetTrapSetting();
         // Lock-picking's resumable record lives in the occupation itself.
-        if (spentTime && game._occupation?.key === 'pick-lock')
+        if (game._occupation?.key === 'pick-lock')
             game._occupation = null;
     }
     finally {
