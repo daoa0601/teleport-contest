@@ -1,5 +1,6 @@
 // Wearing and removing blindfolds, towels, and lenses.
 // C ref: do_wear.c Blindf_on(), Blindf_off().
+import { armorOffMessage } from './armor.js';
 import { W_TOOL } from './const.js';
 import { setBallAndChainFelt } from './ball.js';
 import { gulpBlindnessCheck } from './engulf_blindness.js';
@@ -114,7 +115,7 @@ export async function removeEyewear(object = null, { state = game, publish = pli
     unequipEyewear(object, state);
     const blind = syncBlindness(state);
     if (!noOffMessage && state.flags?.verbose !== false)
-        await publish(`You were wearing ${simpleEyewearName(object)}.`);
+        await publish(armorOffMessage(object, state));
     let changed = false;
     if (blind) {
         if (!wasBlind) {
