@@ -10,8 +10,24 @@ import { resolveMonsterLiquid } from '../js/mon.js';
 import { finishMonsterLiquidDeath } from '../js/monster_death.js';
 import { AMULET_OF_LIFE_SAVING, POT_HEALING } from '../js/object_data.js';
 import { knownObject } from './support/game-objects.js';
+import { installSwallowedHero } from './support/hero-state.js';
 import { createMonsterAt, createSaddledSteed, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+void test('a drowning engulfer announces the water flushing the hero out', async () => {
+    const level = freshObjectRoom();
+    requirePlayingGame(game);
+    const worm = await createMonsterAt('purple worm', 12, 10);
+    installSwallowedHero(worm);
+    level.requireAt(worm.mx, worm.my).typ = POOL;
+    const messages = [];
+    await resolveMonsterLiquid(worm, game, {
+        finishDeath: finishMonsterLiquidDeath,
+        announce: async (message) => messages.push(message),
+    });
+    assert.ok(messages.includes('The purple worm sinks as water rushes in and flushes you out.'));
+    assert.equal(!!game.u.uswallow, false);
+    assert.equal(game.u.ustuck, null);
+});
 void test('lava describes a named water elemental by its body rather than its given name', async () => {
     const level = freshObjectRoom();
     requirePlayingGame(game);

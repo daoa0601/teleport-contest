@@ -6,7 +6,7 @@ import { isLavaAt, isPoolAt, levelIsWaterLevel, monsterFliesOrFloats, monsterInA
 import { makeMonsterFlee } from './monster_flee.js';
 import { RLOC_MSG, RLOC_NOMSG, FOUNTAIN, G_GENOD, MSLOW, STRAT_WAITFORU, WATER } from './const.js';
 import { dryFountainAt } from './fountain.js';
-import { canSeeMonster, newsym, plineWithContinuation, } from './display.js';
+import { canSeeMonster, displayLiquidName, newsym, plineWithContinuation, } from './display.js';
 import { preventMonsterDeath } from './mondeath.js';
 import { splitMonster } from './monster_clone.js';
 import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL, monsterYoungerForm, } from './monster_data.js';
@@ -265,6 +265,10 @@ export async function resolveMonsterLiquid(monster, state = game, { announce = a
                 await announce(monsterMoving
                     ? `${monsterName(monster, { state, capitalized: true })} drowns.`
                     : `You drown ${monsterName(monster, { state })}.`);
+            if (state.u.uswallow && state.u.ustuck === monster) {
+                const name = monsterName(monster, { state, capitalized: true });
+                await announce(`${name} sinks as ${displayLiquidName('water', state)} rushes in and flushes you out.`);
+            }
             monster.mhp = 0;
             const recovery = await recoverMonsterFromLiquid(monster, state, {
                 announce, random, rollOne,
