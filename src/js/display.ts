@@ -18,12 +18,12 @@ import { heroIsSliming } from './slime.js';
 import { heroIsPetrifying } from './stoning.js';
 import { cansee, couldsee, set_seenv, vision_recalc } from './vision.js';
 import {
-    A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, BC_BALL, BC_CHAIN,
+    A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, ACCESSIBLE, BC_BALL, BC_CHAIN,
     COLNO, ROWNO, STONE, ROOM, CORR, SCORR, SDOOR, DOOR, STAIRS, FOUNTAIN, THRONE, SINK, GRAVE, ALTAR, ICE,
     HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER,
     CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL,
     TREE, IRONBARS, POOL, MOAT, WATER, LAVAPOOL, LAVAWALL, AIR, CLOUD,
-    IS_POOL, IS_OBSTRUCTED, IS_ROOM, IS_WALL, LADDER, LA_DOWN, DBWALL, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN,
+    IS_POOL, IS_LAVA, IS_OBSTRUCTED, IS_ROOM, IS_WALL, LADDER, LA_DOWN, DBWALL, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN,
     D_NODOOR, D_ISOPEN, D_CLOSED, D_LOCKED, D_BROKEN,
     SV0, SV1, SV2, SV3, SV4, SV5, SV6, SV7, SICK_VOMITABLE, SICK_NONVOMITABLE,
     WM_X_TL, WM_X_TR, WM_X_BL, WM_X_BR, WM_X_TLBR, WM_X_BLTR,
@@ -1733,7 +1733,8 @@ export function newsym(x: number, y: number) {
 
     const monster = monsterAtMapCell(x, y);
     const region = physicallyVisible ? visibleMapRegionAt(x, y) : null;
-    if (region && !monsterOverridesMapRegion(monster, x, y)) {
+    if (region && (ACCESSIBLE(loc.typ) || IS_POOL(loc.typ) || IS_LAVA(loc.typ))
+        && !monsterOverridesMapRegion(monster, x, y)) {
         // region.c:show_region() uses the gas-cloud cmap glyph.  Visible gas
         // overlays ordinary distant monsters but not sensed/warned or
         // adjacent otherwise-visible actors.
