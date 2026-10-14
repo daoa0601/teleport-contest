@@ -130,10 +130,10 @@ async function promptClickDirection() {
     return { key: '_', dx: hero.dx, dy: hero.dy, dz: hero.dz };
 }
 // C getdir() calls confdir(FALSE) even for self, but never for up/down.
-export function confusePromptDirection(hero) {
+export function confusePromptDirection(hero, forceImpairment = false) {
     const stunned = hero.stunned || (hero.stunnedTurns ?? 0) > 0;
     const confused = hero.confused || (hero.confusionTurns ?? 0) > 0;
-    if (!stunned && !(confused && !rn2(5)))
+    if (!forceImpairment && !stunned && !(confused && !rn2(5)))
         return;
     const count = hero.umonnum === GRID_BUG ? 4 : 8;
     const vector = impairedDirections[rn2(count)];
@@ -152,7 +152,7 @@ export function directionAssistPage(invalidDirection = true) {
     const bindings = game.commandBindings;
     const key = (direction) => visibleCommandKey(bindings.keyForDirection(direction) ?? 0);
     const lines = invalidDirection ? ['cmdassist: Invalid direction key!', ''] : [];
-    lines.push('Valid direction keys are:');
+    lines.push(`Valid direction keys${game.u.umonnum === GRID_BUG ? ' in your current form' : ''} are:`);
     if (game.u.umonnum === GRID_BUG) {
         lines.push(`             ${key(2)}   `, '             |   ', `          ${key(0)}- . -${key(4)}`, '             |   ', `             ${key(6)}   `);
     }

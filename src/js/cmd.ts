@@ -147,7 +147,7 @@ import {
 } from './inventory_prompt.js';
 import { AT_EXPL, AT_KICK } from './monster_attack_types.js';
 import {
-    directionAssistPage, promptDirection, promptKey, readDirectionKey,
+    confusePromptDirection, directionAssistPage, promptDirection, promptKey, readDirectionKey,
     restoreCommandMap,
 } from './tty_prompts.js';
 import {
@@ -2165,14 +2165,13 @@ async function dokick() {
         game.context.move = 0;
         return;
     }
-    const key = await readDirectionKey();
-    const direction = promptedDirectionKey(key, game.commandBindings);
-    if (!isMovementKey(direction)) {
+    const direction = await promptDirection();
+    if (!direction || direction.dz || (!direction.dx && !direction.dy)) {
         game.context.move = 0;
         return;
     }
-    game.u.dx = DIR_DX[direction];
-    game.u.dy = DIR_DY[direction];
+    game.u.dx = direction.dx;
+    game.u.dy = direction.dy;
     const x = game.u.ux + game.u.dx;
     const y = game.u.uy + game.u.dy;
     // C dokick() records gk.kickedloc for every valid directed kick before
@@ -2535,45 +2534,13 @@ async function doname() {
 async function getAdjacentLocation(prompt: string, errorMessage: string | null, x: number, y: number) {
     // C cmd.c:get_adjacent_loc() delegates input and command assistance to
     // getdir(), then turns its relative result into a checked map location.
-    const key = await readDirectionKey(`${prompt} `);
-    const ch = promptedDirectionKey(key, game.commandBindings);
-    let dx = 0, dy = 0, dz = 0;
-    let validDirection = true;
-    if (isMovementKey(ch)) {
-        dx = DIR_DX[ch];
-        dy = DIR_DY[ch];
-    } else if (ch === '.' || ch === 's') {
-        // Direct at the hero's square.
-    } else if (ch === '<') {
-        dz = -1;
-    } else if (ch === '>') {
-        dz = 1;
-    } else {
-        validDirection = false;
-    }
-
-    if (!validDirection) {
-        // Space, Return, and Escape are getdir() quitchars.  Other invalid
-        // keys open cmdassist by default; the tty text window accepts only a
-        // real More dismissal before get_adjacent_loc() reports cancellation.
-        const quitDirection = [27, 32, 10, 13].includes(key);
-        if (!quitDirection && game.flags?.cmdassist !== false) {
-            await showTextPages([directionAssistPage()], {
-                validKeys: [27, 32, 10, 13],
-            });
-            game._pending_message = '';
-            await restoreCommandMap();
-        } else if (!quitDirection) {
-            await pline('What a strange direction!');
-        }
+    const direction = await promptDirection(() => readDirectionKey(`${prompt} `));
+    if (!direction) {
         await pline('Never mind.');
         game.context.move = 0;
         return null;
     }
-
-    game.u.dx = dx;
-    game.u.dy = dy;
-    game.u.dz = dz;
+    const { dx, dy, dz } = direction;
     const target = { x: x + dx, y: y + dy, dx, dy, dz };
     if (target.x < 1 || target.x >= COLNO
         || target.y < 0 || target.y >= ROWNO) {
@@ -2771,16 +2738,19 @@ async function dochat() {
         game.context.move = 1;
         return;
     }
-    const key = await readDirectionKey('Talk to whom? (in what direction) ');
-    const direction = promptedDirectionKey(key, game.commandBindings);
-    if (direction === '.') {
+    const direction = await promptDirection(() => readDirectionKey('Talk to whom? (in what direction) '));
+    if (!direction) {
+        game.context.move = 0;
+        return;
+    }
+    if (!direction.dx && !direction.dy && !direction.dz) {
         await pline('Talking to yourself is a bad habit for a dungeoneer.');
         game.context.move = 0;
         return;
     }
-    if (isMovementKey(direction)) {
-        const x = game.u.ux + DIR_DX[direction];
-        const y = game.u.uy + DIR_DY[direction];
+    if (direction.dx || direction.dy) {
+        const x = game.u.ux + direction.dx;
+        const y = game.u.uy + direction.dy;
         const monster = game.level?.monsters?.find(mon => monsterHasMapPosition(mon, game) && mon.mx === x && mon.my === y);
         if (monster && !monster.ispriest && (monster.msleeping || !monster.mcanmove)) {
             if (canSpotMonster(monster))
@@ -5712,25 +5682,19 @@ async function doclose(): Promise<void> {
         game.context.move = 0;
         return;
     }
-    const key = await readDirectionKey();
-    const direction = promptedDirectionKey(key, game.commandBindings);
-    if (!isMovementKey(direction)) {
-        const quitDirection = [27, 32, 10, 13].includes(key);
-        if (!quitDirection && game.flags?.cmdassist !== false) {
-            await showTextPages([directionAssistPage()], {
-                validKeys: [27, 32, 10, 13],
-            });
-            game._pending_message = '';
-            await restoreCommandMap();
-        } else if (!quitDirection) {
-            await pline('What a strange direction!');
-        }
+    const direction = await promptDirection();
+    if (!direction) {
+        clearRepeatCommand(); // lock.c:doclose() returns ECMD_CANCEL.
         game.context.move = 0;
         return;
     }
-
-    const x = game.u.ux + DIR_DX[direction];
-    const y = game.u.uy + DIR_DY[direction];
+    const x = game.u.ux + direction.dx;
+    const y = game.u.uy + direction.dy;
+    if (x === game.u.ux && y === game.u.uy && !heroPassesWalls(game)) {
+        await pline('You are in the way!');
+        game.context.move = 1;
+        return;
+    }
     const loc = game.level?.at(x, y);
     if (await stumbleOnDoorMimic(x, y)) {
         game.context.move = 1;
@@ -5750,7 +5714,8 @@ async function doclose(): Promise<void> {
         game.context.move = 1;
         return;
     }
-    game.context.move = 0;
+    game.context.move = game.u.confused || game.u.confusionTurns
+        || game.u.stunned || game.u.stunnedTurns ? 1 : 0;
 }
 
 // C refs: lock.c doopen(); cmd.c get_adjacent_loc()/getdir().  Direction
@@ -5762,23 +5727,19 @@ async function doopen(): Promise<void> {
         game.context.move = 0;
         return;
     }
-    const key = await readDirectionKey();
-    const direction = promptedDirectionKey(key, game.commandBindings);
-    if (!isMovementKey(direction)) {
-        const quitDirection = [27, 32, 10, 13].includes(key);
-        if (!quitDirection && game.flags?.cmdassist !== false) {
-            await showTextPages([directionAssistPage()], {
-                validKeys: [27, 32, 10, 13],
-            });
-            game._pending_message = '';
-            await restoreCommandMap();
-        } else if (!quitDirection) {
-            await pline('What a strange direction!');
-        }
-        // lock.c:doopen_indir() uses cmd.c:get_adjacent_loc(), whose caller
-        // projection always follows a failed getdir() with Never_mind.
+    const direction = await promptDirection();
+    if (!direction) {
         await pline('Never mind.');
         game.context.move = 0;
+        return;
+    }
+    const x = game.u.ux + direction.dx;
+    const y = game.u.uy + direction.dy;
+    const here = game.level?.at(game.u.ux, game.u.uy);
+    if (x === game.u.ux && y === game.u.uy
+        && (direction.dz > 0 || here?.typ !== DOOR
+            || !(here.doormask & (D_CLOSED | D_LOCKED)))) {
+        await doloot();
         return;
     }
 
@@ -5788,8 +5749,6 @@ async function doopen(): Promise<void> {
         return;
     }
 
-    const x = game.u.ux + DIR_DX[direction];
-    const y = game.u.uy + DIR_DY[direction];
     const loc = game.level?.at(x, y);
     if (await stumbleOnDoorMimic(x, y)) {
         game.context.move = 1;
@@ -5907,28 +5866,7 @@ async function useMagicMarker(): Promise<void> {
 }
 
 async function pickAxeDirection(prompt: string): Promise<{ dx: number; dy: number; dz: number } | null> {
-    for (;;) {
-        const rawKey = await readDirectionKey(`${prompt} `);
-        const key = rawKey;
-        const ch = promptedDirectionKey(key, game.commandBindings);
-        if (isMovementKey(ch))
-            return { dx: DIR_DX[ch], dy: DIR_DY[ch], dz: 0 };
-        if (ch === '.' || ch === 's') return { dx: 0, dy: 0, dz: 0 };
-        if (ch === '<' || ch === '>')
-            return { dx: 0, dy: 0, dz: ch === '<' ? -1 : 1 };
-        if ([27, 32, 10, 13].includes(key)) return null;
-        if (key === 18) {
-            await restoreCommandMap();
-            continue;
-        }
-        if (key === game.commandBindings.specialKey('getdir.help') || game.flags?.cmdassist !== false) {
-            await showTextPages([directionAssistPage()], {
-                validKeys: [27, 32, 10, 13],
-            });
-            await restoreCommandMap();
-        } else await pline('What a strange direction!');
-        if (key !== game.commandBindings.specialKey('getdir.help')) return null;
-    }
+    return promptDirection(() => readDirectionKey(`${prompt} `));
 }
 
 async function applyPickAxe(item: GameObject): Promise<void> {
@@ -6217,11 +6155,10 @@ async function applyTool(
         return game.inventory.includes(item) ? item : null;
     }
     if ([SKELETON_KEY, LOCK_PICK, CREDIT_CARD].includes(item.otyp)) {
-        const direction = await readDirectionKey();
-        const directionKey = promptedDirectionKey(direction, game.commandBindings);
-        if (isMovementKey(directionKey)) {
-            const x = game.u.ux + DIR_DX[directionKey];
-            const y = game.u.uy + DIR_DY[directionKey];
+        const direction = await promptDirection();
+        if (direction && (direction.dx || direction.dy)) {
+            const x = game.u.ux + direction.dx;
+            const y = game.u.uy + direction.dy;
             const loc = game.level?.at(x, y);
             await pline(loc?.typ === DOOR
                 && !(loc.doormask & (D_CLOSED | D_LOCKED))
@@ -6648,33 +6585,17 @@ async function dothrow(
     const selectedObjectClass = item.oclass || objectClassForType(item.otyp);
     const selectedIsGold = selectedObjectClass === 12;
     const directGoldThrow = selectedIsGold && item !== game.uquiver;
-    const directionKey = await readDirectionKey();
-    const direction = promptedDirectionKey(directionKey, game.commandBindings);
-    const selfThrow = direction === '.';
-    const verticalThrow = direction === '<' || direction === '>';
-    if (!isMovementKey(direction) && !verticalThrow && !selfThrow) {
+    const direction = await promptDirection();
+    if (!direction) {
         if (splitParent) await rejoinObjectStack(splitParent, item, game);
-        const quitDirection = [27, 32, 10, 13].includes(directionKey);
-        if (!quitDirection && game.flags?.cmdassist !== false) {
-            await showTextPages([directionAssistPage()], {
-                validKeys: [27, 32, 10, 13],
-            });
-            await restoreCommandMap();
-        } else if (!quitDirection) {
-            await pline('What a strange direction!');
-        }
+        clearRepeatCommand(); // dothrow.c:throw_obj() returns ECMD_CANCEL.
         game.context.move = 0;
         game._pending_message = '';
         return;
     }
-    // getdir() commits the source direction before throw_obj() detaches an
-    // identity.  throwit() may later rewrite it for slip or low stamina.
-    const dx = isMovementKey(direction) ? DIR_DX[direction] : 0;
-    const dy = isMovementKey(direction) ? DIR_DY[direction] : 0;
-    const dz = direction === '<' ? -1 : direction === '>' ? 1 : 0;
-    game.u.dx = dx;
-    game.u.dy = dy;
-    game.u.dz = dz;
+    const { dx, dy, dz } = direction;
+    const selfThrow = !dx && !dy && !dz;
+    const verticalThrow = !!dz;
 
     if (directGoldThrow) {
         if (selfThrow) {
@@ -7641,25 +7562,23 @@ async function domoveCore(dx: number, dy: number, explicitAttempt: boolean): Pro
     const confused = (u?.confusionTurns || 0) > 0;
     const stunned = !!(u?.stunned || (u?.stunnedTurns || 0) > 0);
     if (stunned || (confused && rn2(5) === 0)) {
-        const impairedDirections: readonly (readonly [number, number])[] = [
-            [-1, 0], [0, -1], [1, 0], [0, 1],
-            [-1, -1], [1, -1], [1, 1], [-1, 1],
-        ];
+        let found = false;
         for (let tries = 0; tries <= 50; tries++) {
-            const candidateDirection = impairedDirections[rn2(impairedDirections.length)];
-            if (!candidateDirection) throw new Error('Movement RNG produced an invalid direction.');
-            const [candidateDx, candidateDy] = candidateDirection;
-            const candidateX = u.ux + candidateDx;
-            const candidateY = u.uy + candidateDy;
-            const candidate = game.level?.at(candidateX, candidateY);
-            if (candidateX < 1 || candidateX >= COLNO
-                || candidateY < 0 || candidateY >= ROWNO
-                || !candidate || IS_OBSTRUCTED(candidate.typ)) continue;
-            dx = candidateDx;
-            dy = candidateDy;
+            confusePromptDirection(u, true);
+            dx = u.dx ?? 0;
+            dy = u.dy ?? 0;
+            const x = u.ux + dx, y = u.uy + dy;
+            if (!isok(x, y) || heroBadRock(game, x, y)) continue;
+            found = true;
             break;
         }
+        if (!found) {
+            endVoluntaryMultiTurn(game);
+            game.context.move = 0;
+            return false;
+        }
     }
+
     // confdir() updates the same persistent vector selected by set_move_cmd().
     u.dx = dx;
     u.dy = dy;

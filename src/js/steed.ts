@@ -153,17 +153,13 @@ export async function doride() {
         return;
     }
 
-    const direction = String.fromCharCode(
-        await readDirectionKey(),
-    ).toLowerCase();
-    const vector = DIRECTION_KEYS[direction];
-    if (!vector) {
+    const direction = await promptDirection();
+    if (!direction || direction.dz || (!direction.dx && !direction.dy)) {
         game.context.move = 0;
         return;
     }
-    const [dx, dy] = vector;
-    hero.dx = dx;
-    hero.dy = dy;
+    const { dx, dy } = direction;
+    const vector: [number, number] = [dx, dy];
     const x = hero.ux + dx;
     const y = hero.uy + dy;
     if (!isok(x, y)) {
