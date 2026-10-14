@@ -99,15 +99,13 @@ export async function swingMonsterWeapon(
     const bash = isPolearm(weapon)
         && artifactById(weapon.oartifact, state)?.name !== 'Snickersnee'
         && (monster.mx - x) ** 2 + (monster.my - y) ** 2 <= 2;
+    const subject = monsterName(monster, { state, capitalized: true });
     const verb = monsterWeaponSwingVerb(weapon, bash, random);
-    const name = meleeWeaponName(weapon, state);
     const quantity = weapon.quan > 1 ? 'one of ' : '';
     const possessive = perceivedPossessivePronoun(monster, { state, random });
-    let target = '';
-    if (defender) {
-        target = ` at ${monsterName(defender, { state })}`;
-    }
-    await publish(`${monsterName(monster, { state, capitalized: true })} ${verb} ${quantity}${possessive} ${name}${target}.`);
+    const name = meleeWeaponName(weapon, state);
+    const target = defender ? ` at ${monsterName(defender, { state })}` : '';
+    await publish(`${subject} ${verb} ${quantity}${possessive} ${name}${target}.`);
 }
 
 // mswings uses xname(), so it does not show BUC or enchantment.
