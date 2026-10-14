@@ -332,7 +332,9 @@ export function killerObjectName(object: GameObject, state: GameState = game): s
         : withIndefiniteArticle(name);
 }
 
-function objectMonsterName(object: CorpseNameView): string {
+// C do_name.c:obj_pmname(): object gender describes the depicted creature,
+// independently of any saved traits used when a corpse revives.
+export function objectMonsterName(object: CorpseNameView): string {
     let species = object.corpsenm;
     if (species === undefined) return 'thing';
     const gender = (object.spe || 0) & 3;

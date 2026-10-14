@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { CORR, DOOR, M_AP_OBJECT, PIT, SCORR, SDOOR } from '../js/const.js';
+import { CORPSTAT_FEMALE, CORPSTAT_MALE, CORPSTAT_NEUTER, CORPSTAT_RANDOM, CORR, DOOR, M_AP_OBJECT, PIT, SCORR, SDOOR } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
@@ -120,6 +120,25 @@ for (const [type, name] of identifiedGems) {
         await runExtendedCommand('apply', `${stethoscope.invlet}l   `);
         assert.ok(messages.includes(`That ${name} is really a small mimic.`), messages.join('\n'));
         assert.equal(mimic.m_ap_type, 0);
+        assert.equal(game.context.move, 0);
+    });
+}
+const clericStatues = [
+    ['cleric', CORPSTAT_FEMALE, 'priestess'],
+    ['cleric', CORPSTAT_MALE, 'priest'],
+    ['cleric', CORPSTAT_NEUTER, 'cleric'],
+    ['aligned cleric', CORPSTAT_RANDOM, 'cleric'],
+    ['high cleric', CORPSTAT_FEMALE, 'high priestess'],
+];
+for (const [species, gender, title] of clericStatues) {
+    void test(`a stethoscope calls a ${species} statue with gender ${gender} a ${title}`, async () => {
+        freshPlayableRoom();
+        await floorObject(STATUE, game.u.ux + 1, game.u.uy, {
+            corpsenm: MONSTER_NAME.indexOf(species), spe: gender,
+        });
+        const stethoscope = await addInventoryObject(STETHOSCOPE);
+        await runExtendedCommand('apply', `${stethoscope.invlet}l`);
+        assert.equal(game._pending_message, `The ${title} is in fine health for a statue.`);
         assert.equal(game.context.move, 0);
     });
 }

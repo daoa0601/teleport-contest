@@ -14,7 +14,7 @@ import { monsterName } from './monster_name.js';
 import { monsterStatusLine } from './monster_status.js';
 import { CORPSE, LENSES, SLIME_MOLD, STATUE } from './object_data.js';
 import { OBJECT_TIMER_KIND, objectTimers } from './object_timers.js';
-import { minimalObjectName, simpleObjectTypeName } from './objnam.js';
+import { minimalObjectName, objectMonsterName, simpleObjectTypeName } from './objnam.js';
 import { heroHasNoHands } from './polyself.js';
 import { rn2 } from './rng.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
@@ -167,7 +167,7 @@ async function diagnoseFloorObjects(x: number, y: number): Promise<{ found: bool
         await pline(`You determine that ${one ? here ? 'this' : 'that' : here ? 'these' : 'those'} unfortunate being${one ? '' : 's'} ${one ? 'is' : 'are'}${reviver ? ' mostly' : ''} dead.`);
     } else {
         const name = heroIsBlind(game) ? `${x === game.u.ux && y === game.u.uy ? 'This' : 'That'} ${monsterIsHumanoid(species) ? 'person' : 'creature'}`
-            : `${(MONSTER_FLAGS2[species] ?? 0) & 0x80000 ? '' : 'The '}${monsterTypeName(species)}`;
+            : `${(MONSTER_FLAGS2[species] ?? 0) & 0x80000 ? '' : 'The '}${objectMonsterName(object)}`;
         const health = game.urole.key === 'healer'
             ? game.level.traps.some(trap => trap.tx === x && trap.ty === y && trap.ttyp === STATUE_TRAP) ? 'extraordinary'
                 : object.contents?.length ? 'remarkable' : 'fine' : 'fine';

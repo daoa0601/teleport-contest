@@ -285,7 +285,9 @@ export function killerObjectName(object, state = game) {
     return OBJECT_UNIQUE[object.otyp] ? definiteName(name, state)
         : withIndefiniteArticle(name);
 }
-function objectMonsterName(object) {
+// C do_name.c:obj_pmname(): object gender describes the depicted creature,
+// independently of any saved traits used when a corpse revives.
+export function objectMonsterName(object) {
     let species = object.corpsenm;
     if (species === undefined)
         return 'thing';
