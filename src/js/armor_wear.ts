@@ -48,7 +48,7 @@ export function armorWearDecision(object: GameObject, state: GameState = game): 
     if (worn) {
         const name = slot === 'uarm' ? 'some armor'
             : slot === 'uarmg' ? 'gloves' : slot === 'uarmf' ? 'boots'
-                : withIndefiniteArticle(armorSimpleName(worn, state));
+                : slot === 'uarms' ? 'a shield' : withIndefiniteArticle(armorSimpleName(worn, state));
         return refuse(`You are already wearing ${name}.`);
     }
     switch (slot) {

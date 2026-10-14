@@ -6,7 +6,7 @@ import { pushKeys } from '../js/input.js';
 import { wearHeroArmor } from '../js/armor.js';
 import { wearHeroAccessory } from '../js/accessory.js';
 import { TT_BEARTRAP } from '../js/const.js';
-import { DAGGER, GAUNTLETS_OF_POWER, LEATHER_CLOAK, MEAT_RING, OBJECT_NAMES, RIN_PROTECTION, RING_MAIL, SMALL_SHIELD, TWO_HANDED_SWORD, } from '../js/object_data.js';
+import { DAGGER, GAUNTLETS_OF_POWER, LEATHER_CLOAK, MEAT_RING, OBJECT_NAMES, RIN_PROTECTION, RING_MAIL, SHIELD_OF_REFLECTION, SMALL_SHIELD, TWO_HANDED_SWORD, } from '../js/object_data.js';
 import { setPrimaryWeapon } from '../js/weapon_slots.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { addInventoryObject } from './support/game-objects.js';
@@ -21,6 +21,20 @@ for (const command of ['W', 'P']) {
         await rhack(command.charCodeAt(0));
         assert.equal(game._pending_message, 'You are already wearing a cloak.');
         assert.equal(game.uarmc, cloak);
+        assert.equal(!!spare.worn, false);
+        assert.equal(game.context.move, 0);
+    });
+}
+for (const command of ['W', 'P']) {
+    void test(`${command} calls an already worn reflection shield a shield`, async () => {
+        freshObjectRoom();
+        const reflection = await addInventoryObject(SHIELD_OF_REFLECTION);
+        const spare = await addInventoryObject(SMALL_SHIELD);
+        wearHeroArmor(reflection);
+        pushKeys(`${spare.invlet} `);
+        await rhack(command.charCodeAt(0));
+        assert.equal(game._pending_message, 'You are already wearing a shield.');
+        assert.equal(game.uarms, reflection);
         assert.equal(!!spare.worn, false);
         assert.equal(game.context.move, 0);
     });
