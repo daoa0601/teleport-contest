@@ -5,7 +5,7 @@ import { heroIsHallucinating } from './senses.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { exerciseAttribute } from './attrib.js';
 import { heroHasFreeAction } from './armor.js';
-import { A_CON, A_DEX, A_STR, Upolyd, W_BALL } from './const.js';
+import { A_CON, A_DEX, A_STR, W_BALL } from './const.js';
 import { bot, plineWithContinuation, shieldeff, } from './display.js';
 import { triggerHeroFireTrap } from './fire_trap.js';
 import { game } from './gstate.js';
@@ -41,11 +41,6 @@ function containerLocation(container, state) {
     container.ox = location.x;
     container.oy = location.y;
     return location;
-}
-function damageHero(amount, state) {
-    state.context.botl = true;
-    const hitPoints = Upolyd(state.u) ? 'mh' : 'uhp';
-    state.u[hitPoints] = Math.max(0, (state.u[hitPoints] ?? 1) - amount);
 }
 function halfPhysicalDamage(amount, state) {
     return state.u?.halfPhysicalDamage
@@ -101,6 +96,7 @@ async function settleExplosionDamage(location, objects, state, publish) {
 }
 async function explodeContainer(container, location, state, publish, rollDice) {
     await publish(`The ${objectName(container)} explodes!`);
+    const killer = `exploding ${objectName(container)}`;
     const contents = [...(container.contents || [])];
     const pile = [...(state.level?.objects?.[location.x]?.[location.y] || [])];
     const destroyed = [...new Set([container, ...contents, ...pile])];
@@ -119,7 +115,8 @@ async function explodeContainer(container, location, state, publish, rollDice) {
     }
     wakeMonstersNear(state.u.ux, state.u.uy, (state.u.ulevel ?? 1) * 20, state);
     const damage = halfPhysicalDamage(rollDice(6, 6), state);
-    damageHero(damage, state);
+    if (await loseHeroHp(damage, killer, { state, publish }))
+        return { outcome: 'explosion', damage, destroyed: containerDestroyed, died: true };
     await exerciseAttribute(A_STR, false, state);
     await settleExplosionDamage(location, destroyed, state, publish);
     return { outcome: 'explosion', damage, destroyed: containerDestroyed };
