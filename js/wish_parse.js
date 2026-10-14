@@ -6,7 +6,7 @@ import { makeSingular } from './object_grammar.js';
 import { rn2, rnd } from './rng.js';
 import { resolveMonsterNamePrefix } from './mondata.js';
 import { MONSTER_NAME } from './monster_data.js';
-import { GRAY_DRAGON_SCALES, YELLOW_DRAGON_SCALES, TIN } from './object_data.js';
+import { GRAY_DRAGON_SCALES, YELLOW_DRAGON_SCALES, POT_WATER, TIN } from './object_data.js';
 import { parseTinPreparation } from './tin.js';
 export function parseWishText(text) {
     const original = text.trim().replace(/\s+/g, ' ');
@@ -153,6 +153,11 @@ export function parseWishText(text) {
     return parsed;
 }
 function parseWishSpecies(text, parsed) {
+    if (/holy water$/i.test(text)) {
+        parsed.buc = /unholy water$/i.test(text) ? 'cursed' : 'blessed';
+        parsed.directType = POT_WATER;
+        return text;
+    }
     const depicted = /^(corpse|statue|figurine) of (?:an? |the )?(male|female|neuter) (.+)$/i.exec(text);
     if (depicted) {
         parsed.gender = depicted[2]?.toLowerCase() === 'male' ? 0
