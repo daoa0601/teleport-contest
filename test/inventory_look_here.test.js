@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { rhack } from '../js/cmd.js';
-import { ALTAR, PIT, POOL } from '../js/const.js';
+import { ALTAR, ICE, PIT, POOL } from '../js/const.js';
+import { displayLiquidName } from '../js/display.js';
+import { initRng } from '../js/rng.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { DAGGER } from '../js/object_data.js';
@@ -42,5 +44,19 @@ void test('look-here describes a known trap before reporting an empty floor', as
     await rhack(':'.charCodeAt(0));
     assert.match(game._pending_message, /^There is a pit here\.  You see no objects here\.$/);
     assert.equal(game.context.move, 0);
+});
+void test('each look at hallucinated ice chooses one liquid description', async (t) => {
+    const level = freshObjectRoom({ hero: { hallucinationTurns: 10 } });
+    level.requireAt(game.u.ux, game.u.uy).typ = ICE;
+    initRng(71);
+    const liquids = [displayLiquidName('water'), displayLiquidName('water')];
+    initRng(71);
+    const input = resetInputState();
+    planInput(input, t, []);
+    for (const liquid of liquids) {
+        game._pending_message = '';
+        await rhack(':'.charCodeAt(0));
+        assert.ok(game._pending_message.includes(`solid frozen ${liquid} here.`), game._pending_message);
+    }
 });
 //# sourceMappingURL=inventory_look_here.test.js.map

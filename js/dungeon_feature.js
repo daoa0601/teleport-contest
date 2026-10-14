@@ -117,7 +117,9 @@ export function dungeonFeatureAt(x, y, { state = game, probing = false } = {}) {
     return null;
 }
 export function dungeonFeatureSentenceAt(x, y) {
-    const feature = dungeonFeatureAt(x, y);
+    return dungeonFeatureSentence(dungeonFeatureAt(x, y));
+}
+export function dungeonFeatureSentence(feature) {
     if (!feature || feature === 'pool of water' && (game.underwater || game.u.uinwater))
         return '';
     const noArticle = feature === 'molten lava' || feature === 'ice'

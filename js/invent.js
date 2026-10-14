@@ -33,7 +33,7 @@ import { objectWeight } from './weight.js';
 import { readFloorEngraving, showFloorPile } from './floor_object_display.js';
 import { heroCanReachFloor } from './floor_reach.js';
 import { surfaceName } from './terrain_name.js';
-import { dungeonFeatureAt, dungeonFeatureSentenceAt, forceDescribeDecor } from './dungeon_feature.js';
+import { dungeonFeatureAt, dungeonFeatureSentence, forceDescribeDecor } from './dungeon_feature.js';
 import { visibleRegionAt } from './regions.js';
 import { trapName } from './trap_name.js';
 import { isLavaAt, isPoolAt } from './terrain_properties.js';
@@ -829,8 +829,8 @@ export async function dolook() {
     const underwater = game.underwater || game.u.uinwater;
     const objects = isLavaAt(x, y) || isPoolAt(x, y) && !underwater ? [] : level.objects[x]?.[y] || [];
     const blind = heroIsBlind();
-    let feature = dungeonFeatureSentenceAt(x, y);
     const featureName = dungeonFeatureAt(x, y);
+    let feature = dungeonFeatureSentence(featureName);
     const trap = level.traps.find(trap => trap.tx === x && trap.ty === y);
     const region = visibleRegionAt(game, x, y);
     if (region || trap?.tseen) {
