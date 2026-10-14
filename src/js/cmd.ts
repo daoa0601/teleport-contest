@@ -27,7 +27,7 @@ import type { LiquidEffectResult } from './hack.js';
 import type { SpotEffectResult } from './location_effects.js';
 import type { DungeonBranch, DungeonLocation, OverviewRecord, SpecialLevelDescriptor } from './dungeon_types.js';
 import type {
-    CannedCommand, CommandBinding, NativeCommand, RunState, TravelRunState,
+    CannedCommand, CommandBinding, DirectionalRunMode, NativeCommand, RunState, TravelRunState,
 } from './command_types.js';
 import { bookCursed, continueSpellbookStudy } from './spellbook_study.js';
 import { grantMonsterWish } from './potion_occupants.js';
@@ -1156,66 +1156,180 @@ async function commandAllowed(command: NativeCommand | null | undefined): Promis
         && (command.flags & NATIVE_COMMAND_FLAGS.NOFUZZERCMD));
 }
 
-// C ref: cmd.c rhack — main command dispatcher
+interface MovementPrefixes {
+    walk: boolean;
+    rush: boolean;
+}
+
+// C cmd.c:rhack(). Prefixes are commands; each consumes another parse in
+// the same dispatch, so counts and configured keys work at every position.
 export async function rhack(key: number): Promise<void> {
     requirePlayingGame(game);
-    // C cmd.c:rhack() resets the request-menu/movement-prefix bit for each
-    // top-level command.  An `m` prefix below sets it only while dispatching
-    // the following movement key.
     game.context.nopick = false;
     game.iflags.menu_requested = false;
     if (key !== 0) delete game._cursorOverride;
     game._heroMeleeThisCommand = false;
-    // A prior silent-prefix marker belongs to the monster phase following
-    // that command.  Reaching a new top-level dispatch acknowledges it.
     game._silentPrefixRetainedTopline = false;
-    const cannedCommand = game._cannedCommands?.shift() ?? null;
     const previousMessage = game._pending_message;
-    if (key === 0 && !cannedCommand) {
-        const input = await readCommandInput();
-        key = input.key;
-        delete game._cursorOverride;
+    const movement: MovementPrefixes = { walk: false, rush: false };
+    let prefix: NativeCommand | null = null;
+    let menuPrefix = false;
+
+    for (;;) {
+        const cannedCommand = game._cannedCommands?.shift() ?? null;
+        if (key === 0 && !cannedCommand) {
+            key = (await readCommandInput()).key;
+            delete game._cursorOverride;
+        }
+        delete game._statusGoldOverride;
+        if (!cannedCommand && [0, -1, 255, 27].includes(key)) {
+            resetCommandVariables(true);
+            return;
+        }
+        const configured = configuredCommand(key);
+        if (!cannedCommand) {
+            game._pending_message = '';
+            game._retained_message = '';
+        }
+        const cannedName = cannedCommand?.kind === 'swap-weapon'
+            ? 'swap' : cannedCommand?.kind;
+        const command = cannedCommand?.kind === 'inventory-action'
+            ? inventoryActionCommand(cannedCommand.action)
+            : cannedCommand
+                ? NATIVE_COMMANDS.find(entry => entry.name === cannedName) ?? null
+                : configured.command;
+        if (!command) {
+            await pline(`Unknown command '${visibleCommandKey(key)}'.`);
+            resetCommandVariables(true);
+            return;
+        }
+        if (!await commandAllowed(command)) {
+            resetCommandVariables(true);
+            return;
+        }
+        if (prefix && !(command.flags & NATIVE_COMMAND_FLAGS.PREFIXCMD)
+            && !(command.flags & (menuPrefix ? NATIVE_COMMAND_FLAGS.CMD_M_PREFIX
+                : NATIVE_COMMAND_FLAGS.CMD_gGF_PREFIX))) {
+            const prefixKey = game.commandBindings.keyForCommand(prefix.name ?? '');
+            const which = prefixKey ? visibleCommandKey(prefixKey)
+                : prefix.handler === 'do_reqmenu'
+                    ? 'move-no-pickup or request-menu' : prefix.name;
+            if (menuPrefix)
+                await pline(`The ${command.name} command does not accept '${which}' prefix.`);
+            else {
+                const vertical = command.handler === 'doup' || command.handler === 'dodown';
+                await pline(`The '${which}' prefix should be followed by a movement command${vertical ? ' other than up or down' : ''}.`);
+            }
+            resetCommandVariables(true);
+            return;
+        }
+        let binding: CommandBinding = { ...configured, command };
+        prepareTimedCommand(binding);
+        if (command.handler === 'doextcmd') {
+            const selected = await readExtendedCommand();
+            if (!selected) {
+                resetCommandVariables(false);
+                return;
+            }
+            if (!await commandAllowed(selected)) {
+                resetCommandVariables(false);
+                return;
+            }
+            if (game.iflags.menu_requested && !(selected.flags & NATIVE_COMMAND_FLAGS.CMD_M_PREFIX)) {
+                const prefixKey = visibleCommandKey(game.commandBindings.keyForCommand('reqmenu'));
+                await plineWithContinuation(`'${prefixKey}' prefix has no effect for the ${selected.name} command.`);
+                game.iflags.menu_requested = false;
+            }
+            binding = {
+                key: commandExecutionKey(selected.name)?.charCodeAt(0) ?? null,
+                command: selected, parameter: null,
+            };
+        }
+        const selected = binding.command;
+        if (!selected) throw new Error('Command dispatch lost its selected command');
+        if (selected.flags & NATIVE_COMMAND_FLAGS.PREFIXCMD) {
+            if (!await applyMovementPrefix(selected, movement)) {
+                resetCommandVariables(true);
+                return;
+            }
+            prefix = selected;
+            if (selected.handler === 'do_reqmenu') {
+                menuPrefix = true;
+                game._silentPrefixRetainedTopline = !!previousMessage;
+            }
+            key = 0;
+            continue;
+        }
+        if (selected.flags & NATIVE_COMMAND_FLAGS.MOVEMENTCMD) {
+            await dispatchMovement(binding, movement);
+            return;
+        }
+        await executeCommandAction(binding, { cannedCommand, previousMessage });
+        return;
     }
-    // Status rows beneath a tty pager remain physically unchanged even when
-    // the suspended command has already mutated the wallet.  The next real
-    // top-level command read makes that state eligible for a fresh botl.
-    delete game._statusGoldOverride;
-    if (!cannedCommand && (key === 0 || key === -1 || key === 255 || key === 27)) {
+}
+
+async function applyMovementPrefix(command: NativeCommand, movement: MovementPrefixes): Promise<boolean> {
+    if (command.handler === 'do_reqmenu') {
+        if (game.iflags.menu_requested) {
+            const key = visibleCommandKey(game.commandBindings.keyForCommand('reqmenu'));
+            await pline(`Double ${key} prefix, canceled.`);
+            return false;
+        }
+        game.iflags.menu_requested = true;
+        return true;
+    }
+    if (command.handler === 'do_fight') {
+        if (game.context.forcefight) {
+            await pline('Double fight prefix, canceled.');
+            return false;
+        }
+        game.context.forcefight = true;
+        movement.walk = true;
+        return true;
+    }
+    if (command.handler === 'do_rush' || command.handler === 'do_run') {
+        if (movement.rush) {
+            await pline(`Double ${command.handler === 'do_rush' ? 'rush' : 'run'} prefix, canceled.`);
+            return false;
+        }
+        game.context.run = command.handler === 'do_rush' ? 2 : 3;
+        movement.rush = true;
+        return true;
+    }
+    throw new Error(`Unimplemented movement prefix: ${command.name}`);
+}
+
+async function dispatchMovement(binding: CommandBinding, prefixes: MovementPrefixes): Promise<void> {
+    const key = binding.key ?? 0;
+    const ch = String.fromCharCode(key);
+    const direction = controlRushDirection(key) || ch.toLowerCase();
+    if (!isMovementKey(direction)) throw new Error('Movement command has no direction');
+    const hero = game.u;
+    hero.dx = DIR_DX[direction];
+    hero.dy = DIR_DY[direction];
+    hero.dz = 0;
+    if (MONSTER_NAME[hero.umonnum ?? -1] === 'grid bug' && hero.dx && hero.dy) {
+        hero.dx = hero.dy = 0;
+        await pline("You can't get there from here...");
         resetCommandVariables(true);
         return;
     }
-    const inputKey = key;
-    const configured = configuredCommand(key);
-
-    // A player command acknowledges the previous topline. A canned command
-    // bypasses parse(), so unread prose and cmd_before output remain pending.
-    if (!cannedCommand) {
-        game._pending_message = '';
-        game._retained_message = '';
-    }
-
-    if (!cannedCommand && !configured.command) {
-        game.multi = 0;
-        game._cannedCommands = [];
-        game.context.move = 0;
-        await pline(`Unknown command '${visibleCommandKey(inputKey)}'.`);
-        return;
-    }
-
-    const cannedName = cannedCommand?.kind === 'swap-weapon'
-        ? 'swap' : cannedCommand?.kind;
-    const command = cannedCommand?.kind === 'inventory-action'
-        ? inventoryActionCommand(cannedCommand.action)
-        : cannedCommand
-            ? NATIVE_COMMANDS.find(entry => entry.name === cannedName) ?? null
-            : configured.command;
-    if (!await commandAllowed(command)) {
-        resetCommandVariables(true);
-        return;
-    }
-    const binding = { ...configured, command };
-    prepareTimedCommand(binding);
-    await executeCommandAction(binding, { cannedCommand, previousMessage });
+    const mode: DirectionalRunMode = prefixes.walk || prefixes.rush
+        ? game.context.run === 2 ? 2 : game.context.run === 3 ? 3 : 0
+        : controlRushDirection(key) ? 3 : ch !== ch.toLowerCase() ? 1 : 0;
+    game.context.run = mode;
+    if (game.iflags.menu_requested) game.context.nopick = true;
+    if (game.multi > 0 || (mode && !prefixes.walk))
+        startRun(hero.dx, hero.dy, game, mode);
+    const moved = await domove(hero.dx, hero.dy, !!game.context.nopick);
+    if (game.program_state.gameover) return;
+    if (mode && !prefixes.walk && moved)
+        await captureRunmodeDelay(game, !!game._runState);
+    game.context.move = moved ? 1 : 0;
+    if (!moved) stopRun();
+    if (!mode || prefixes.walk) game.context.forcefight = false;
+    game.iflags.menu_requested = false;
 }
 
 // C cmd.c:rhack() clears kickedloc after an elapsed non-kick action.
@@ -1308,84 +1422,7 @@ async function runCommandHandler(binding: CommandBinding, {
         return;
     }
 
-    if (ch === 'F') {
-        await doforcefight();
-    } else if (isMovementKey(ch) || (/[HJKLYUBN]/.test(ch))
-        || controlRushDirection(key ?? 0)) {
-        const rushDirection = controlRushDirection(key ?? 0);
-        const direction = rushDirection || ch.toLowerCase();
-        if (!isMovementKey(direction)) return;
-        const running = /[HJKLYUBN]/.test(ch) || !!rushDirection;
-        if (running || game.multi > 0) startRun(
-            DIR_DX[direction], DIR_DY[direction], game,
-            running ? (rushDirection ? 3 : 1) : 0,
-        );
-        const moved = await domove(DIR_DX[direction], DIR_DY[direction]);
-        if (game.program_state.gameover) return;
-        if (running && moved)
-            await captureRunmodeDelay(game, !!game._runState);
-        game.context.move = moved ? 1 : 0;
-        if (!moved) stopRun();
-    } else if (ch === 'm') {
-        game.iflags.menu_requested = true;
-        // `m` is both request-menu and move-without-pickup.  Movement is the
-        // live owner here: parse the next key inside the same command, so tty
-        // exposes the unchanged map at the intermediate input boundary.
-        // tty has accepted `m` as an incomplete command, not acknowledged
-        // the previous topline as a completed command.  If the prefixed
-        // action later dies during its monster phase, the first fatal pager
-        // can therefore project the status row from before contact.
-        game._silentPrefixRetainedTopline = !!previousMessage;
-        const input = await readCommandInput();
-        const nextCommand = configuredCommand(input.key);
-        const nextKey = nextCommand.key;
-        const direction = nextKey === null ? '' : String.fromCharCode(nextKey).toLowerCase();
-        game._pending_message = '';
-        if (!await commandAllowed(nextCommand.command)) {
-            resetCommandVariables(true);
-            return;
-        }
-        if (isMovementKey(direction)) {
-            game.context.nopick = true;
-            if (game.multi > 0)
-                startRun(DIR_DX[direction], DIR_DY[direction], game, 0);
-            const moved = await domove(
-                DIR_DX[direction], DIR_DY[direction], true,
-            );
-            if (game.program_state.gameover) return;
-            game.context.move = moved ? 1 : 0;
-            if (!moved) stopRun();
-        } else if (nextKey === 79) {
-            await doOptions(true);
-        } else if (direction === 'p') {
-            await dopay();
-        } else if (nextKey !== null && '$)[="(*'.includes(String.fromCharCode(nextKey))) {
-            await runCommandHandler(nextCommand);
-        } else if (nextKey === 22 && game.flags?.debug) {
-            // cmd.c marks wiz_level_tele CMD_M_PREFIX. do_reqmenu() sets
-            // iflags.menu_requested, so level_tele() skips its numeric
-            // get-line editor and opens print_dungeon(TRUE) immediately.
-            await wizLevelTeleport({ menuRequested: true });
-        } else if (direction === 's') {
-            // cmd.c marks search CMD_M_PREFIX: request-menu/move-no-pickup
-            // does not alter its behavior, but the prefixed command still
-            // consumes a normal search turn.
-            prepareTimedCommand(nextCommand);
-            await dosearch(true);
-        } else if (direction === '.') {
-            // do_reqmenu() is the source-level override advertised by
-            // cmd_safety_prevention(); `m.` deliberately spends the turn.
-            prepareTimedCommand(nextCommand);
-            await performWaitCommand(true);
-        } else if (nextCommand.command?.handler === 'doextcmd'
-            || nextCommand.command && (nextCommand.command.flags & NATIVE_COMMAND_FLAGS.CMD_M_PREFIX)) {
-            prepareTimedCommand(nextCommand);
-            await executeCommandAction(nextCommand);
-        } else {
-            await pline("The 'm' prefix should be followed by a movement command.");
-            game.context.move = 0;
-        }
-    } else if (ch === 'i') {
+    if (ch === 'i') {
         enqueueInventoryAction(await ddoinv());
     } else if (ch === 'I') {
         enqueueInventoryAction(await inventoryReport('type'));
@@ -1462,7 +1499,7 @@ async function runCommandHandler(binding: CommandBinding, {
     } else if (ch === '?') {
         await dohelp();
     } else if (ch === '#') {
-        await doextcmd();
+        await rhack(game.commandBindings.keyForCommand('#'));
     } else if (ch === 'Q') {
         await doready();
     } else if (ch === 't') {
@@ -3356,27 +3393,6 @@ const EXTENDED_COMMAND_HANDLERS = new Map<string, () => Promise<unknown>>([
     ['wizmap', wizMap],
 ]);
 
-async function runExtendedCommand(name: string) {
-    const command = availableExtendedCommands().find(entry => entry.name === name);
-    if (!command) {
-        await pline(`#${name}: unknown extended command.`);
-        game.context.move = 0;
-        return;
-    }
-    if (!await commandAllowed(command)) {
-        // doextcmd() returns ECMD_OK; rhack clears queues only for a delay.
-        resetCommandVariables(game.multi < 0);
-        return;
-    }
-    if (game.iflags.menu_requested && !(command.flags & NATIVE_COMMAND_FLAGS.CMD_M_PREFIX)) {
-        const prefix = visibleCommandKey(game.commandBindings.keyForCommand('reqmenu'));
-        await plineWithContinuation(`'${prefix}' prefix has no effect for the ${name} command.`);
-        game.iflags.menu_requested = false;
-    }
-    const key = commandExecutionKey(command.name)?.charCodeAt(0) ?? null;
-    return executeCommandAction({ key, command, parameter: null });
-}
-
 // C refs: artifact.c:doinvoke(), invoke_ok(), arti_invoke().  getobj()
 // suggests artifacts and other unique objects; an artifact with inv_prop 0
 // still consumes a turn after retouching, but its only effect is the ordinary
@@ -4396,7 +4412,7 @@ async function wizIdentify(): Promise<void> {
 // TTY's extended-command line editor redraws the prompt at every input
 // boundary.  #enhance has AUTOCOMPLETE, so its unique initial "e" expands
 // visually while subsequent characters advance through that completed word.
-async function doextcmd(): Promise<void> {
+async function readExtendedCommand(): Promise<NativeCommand | null> {
     let command = '';
     game._pending_message = '#';
     await flush_screen(1);
@@ -4442,7 +4458,7 @@ async function doextcmd(): Promise<void> {
             game._retained_message = '';
             game.nhDisplay?.clearRow(0);
             game.context.move = 0;
-            return;
+            return null;
         }
         if (key === 10 || key === 13) break;
         if (key === 8) {
@@ -4481,11 +4497,12 @@ async function doextcmd(): Promise<void> {
         game.nhDisplay?.clearRow(0);
         game.nhDisplay?.setCursor(game.u.ux - 1, game.u.uy + 1);
         game.context.move = 0;
-        return;
+        return null;
     }
-    await runExtendedCommand(
-        completeExtendedCommand(normalizedCommand) || normalizedCommand,
-    );
+    const name = completeExtendedCommand(normalizedCommand) || normalizedCommand;
+    const selected = availableExtendedCommands().find(entry => entry.name === name);
+    if (!selected) await pline(`#${normalizedCommand.slice(0, 60)}: unknown extended command.`);
+    return selected ?? null;
 }
 
 async function wizardPositionDescription(x: number, y: number): Promise<string> {
@@ -5573,44 +5590,6 @@ async function dowear(): Promise<void> {
     }
     if (object.oclass === 3) await putOnArmorObject(object);
     else await putOnAccessoryObject(object);
-}
-
-// C ref: cmd.c do_fight()/rhack().  F is a movement prefix whose next
-// direction key is collected without painting a separate tty prompt.  The
-// direction still enters domove(); context.forcefight changes how that shared
-// movement transaction treats actors and empty destinations.
-async function doforcefight(): Promise<void> {
-    game._pending_message = '';
-    // The direction read is its own tty input boundary.  C clears the old
-    // message window before collecting that key, so make the cleared row
-    // visible before nhgetch() captures the nested prompt screen.
-    const input = await readCommandInput();
-    const nextCommand = configuredCommand(input.key);
-    if (!await commandAllowed(nextCommand.command)) {
-        resetCommandVariables(true);
-        return;
-    }
-    const direction = nextCommand.key === null ? ''
-        : String.fromCharCode(nextCommand.key).toLowerCase();
-    if (!isMovementKey(direction)) {
-        await pline(
-            "The 'F' prefix should be followed by a movement command.",
-        );
-        game.context.move = 0;
-        return;
-    }
-    game.context.forcefight = true;
-    if (game.multi > 0)
-        startRun(DIR_DX[direction], DIR_DY[direction], game, 0);
-    try {
-        const moved = await domove(
-            DIR_DX[direction], DIR_DY[direction], true,
-        );
-        if (game.program_state.gameover) return;
-        game.context.move = moved ? 1 : 0;
-    } finally {
-        if (!game.program_state.gameover) game.context.forcefight = false;
-    }
 }
 
 function droppedObjectDescription(object: GameObject): string {
