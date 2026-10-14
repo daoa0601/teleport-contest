@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { continueCountedCommand, rhack } from '../js/cmd.js';
-import { DOOR, D_CLOSED, D_LOCKED, D_TRAPPED } from '../js/const.js';
+import { AUTOUNLOCK_UNTRAP, DOOR, D_CLOSED, D_LOCKED, D_TRAPPED, LEVEL_TELEP } from '../js/const.js';
 import { flushPendingTopline } from '../js/display.js';
 import { artifactByName } from '../js/artifacts.js';
 import { game } from '../js/gstate.js';
@@ -112,6 +112,22 @@ void test('moving away from the floor box ends picking without unlocking it', as
     await continueCountedCommand();
     assert.equal(box.olocked, true);
     assert.equal(game._occupation, null);
+});
+
+void test('checking a door through autounlock ignores a floor trap on that square', async () => {
+    const level = freshObjectRoom({ flags: { autounlock: AUTOUNLOCK_UNTRAP } });
+    const door = level.requireAt(11, 10);
+    door.typ = DOOR;
+    door.doormask = D_LOCKED;
+    level.traps.push({ tx: 11, ty: 10, ttyp: LEVEL_TELEP, tseen: true, once: false, launch: { x: 0, y: 0 } });
+    await addInventoryObject(SKELETON_KEY, { invlet: 'a' });
+    const input = resetInputState();
+    pushKeys('al');
+    await answerPrompts(rhack('a'.charCodeAt(0)), input, [{ prompt: /Check this door for a trap\?/, keys: 'y' }]);
+    assert.equal(game._pending_message, 'You find no traps on the door.');
+    assert.equal(door.doormask, D_LOCKED);
+    assert.equal(level.traps.length, 1);
+    assert.equal(game.context.move, 1);
 });
 
 for (const target of ['box', 'door'] as const) {

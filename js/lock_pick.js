@@ -251,7 +251,7 @@ async function pickDoorLock(tool, x, y, automatic, state) {
         if (answer === 'q')
             return false;
         if (answer === 'y') {
-            await untrap({ state, chooseDirection: () => ({ key: '.', dx: x - state.u.ux, dy: y - state.u.uy, dz: 0 }) });
+            await untrap({ state, door: { x, y } });
             return true;
         }
     }

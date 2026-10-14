@@ -248,7 +248,7 @@ async function pickDoorLock(tool: GameObject | null, x: number, y: number, autom
         const answer = await promptYesNoQuit('Check this door for a trap?');
         if (answer === 'q') return false;
         if (answer === 'y') {
-            await untrap({ state, chooseDirection: () => ({ key: '.', dx: x - state.u.ux, dy: y - state.u.uy, dz: 0 }) });
+            await untrap({ state, door: { x, y } });
             return true;
         }
     }
