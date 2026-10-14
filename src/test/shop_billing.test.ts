@@ -430,16 +430,16 @@ void test('a contained unbilled crysknife in a dropped sack reverts silently', a
     assert.equal(game._lastPlineMessage, '');
 });
 
-void test('a sleeping keeper offers no greeting or pickup quote', async t => {
+void test('a sleeping keeper gives a list price instead of a spoken pickup quote', async t => {
     const { shopkeeper } = await staffedShop(t);
     requirePlayingGame(game);
     shopkeeper.msleeping = 1;
     const dagger = await floorObject(DAGGER, 10, 10, { dknown: true });
     const transaction = await addShopObjectToBill(dagger);
     assert.ok(transaction);
-    assert.equal(billedPickupQuote(transaction, 'dagger'), null);
+    assert.match(billedPickupQuote(transaction) ?? '', /The list price of the dagger/);
     shopkeeper.msleeping = 0;
-    assert.match(billedPickupQuote(transaction, 'dagger') ?? '', /For you/);
+    assert.match(billedPickupQuote(transaction) ?? '', /For you/);
 });
 
 for (const away of [false, true]) {

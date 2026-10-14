@@ -3,8 +3,8 @@
 import type { GameState } from './game_state.js';
 import type { MessagePublisher } from './display.js';
 import type { Monster } from './monster_types.js';
-import type { DeathHandler } from './end.js';
-import { Upolyd } from './const.js';
+import type { DeathHandler, KillerFormat } from './end.js';
+import { KILLED_BY_AN, Upolyd } from './const.js';
 import { plineWithContinuation } from './display.js';
 import { finishHeroDeath } from './end.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
@@ -21,6 +21,7 @@ interface HeroDamageOptions {
     publish?: MessagePublisher;
     die?: DeathHandler;
     deathCause?: string | null;
+    killerFormat?: KillerFormat;
 }
 
 export async function loseHeroHp(amount: number, killer: string, {
@@ -28,6 +29,7 @@ export async function loseHeroHp(amount: number, killer: string, {
     publish = plineWithContinuation,
     die = finishHeroDeath,
     deathCause = null,
+    killerFormat = KILLED_BY_AN,
 }: HeroDamageOptions = {}) {
     requirePlayingGame(state);
     const hero = state.u;
@@ -51,7 +53,7 @@ export async function loseHeroHp(amount: number, killer: string, {
         const result = await returnHeroToHumanForm(state, { publish, die });
         return result.died;
     }
-    return die({ killer, deathCause,
+    return die({ killer, killerFormat, deathCause,
         damage: { hpKey: current, hpBefore, damage: amount } });
 }
 

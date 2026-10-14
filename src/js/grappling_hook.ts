@@ -2,7 +2,7 @@
 // C ref: apply.c use_grapple().
 
 import {
-    IS_AIR, IS_POOL, P_BASIC, P_SKILLED, isok,
+    IS_AIR, IS_POOL, KILLED_BY, P_BASIC, P_SKILLED, isok,
 } from './const.js';
 import { newsym, pline } from './display.js';
 import { wipeHeroEngraving } from './engrave.js';
@@ -146,7 +146,7 @@ async function damageHero(state: GameState) {
     if (state.u.halfPhysicalDamage)
         damage = Math.trunc((damage + 1) / 2);
 
-    return loseHeroHp(damage, 'a grappling hook', { state, publish: pline });
+    return loseHeroHp(damage, 'a grappling hook', { state, publish: pline, killerFormat: KILLED_BY });
 }
 
 export async function useGrapplingHook(hook: GameObject, {

@@ -1,3 +1,4 @@
+import { monsterGoldAmount } from '../js/shop_money.js';
 import { requirePlayingGame } from '../js/gstate.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -8,7 +9,7 @@ import { chargeDestroyedShopContent, settleDestroyedShopCharges, stolenValue, } 
 import { SACK } from '../js/object_data.js';
 import { shopObjectUnitCost } from '../js/shk.js';
 import { addInventoryObject, floorObject, knownObject } from './support/game-objects.js';
-import { createStaffedShop } from './support/shop.js';
+import { createStaffedShop, setShopkeeperGold } from './support/shop.js';
 import { freshObjectRoom } from './support/object-room.js';
 const SHOP = { left: 9, right: 13, top: 9, bottom: 11 };
 function collector() {
@@ -22,7 +23,7 @@ async function lossShop({ shoptype } = {}) {
         ...SHOP, keeperX: 12, keeperY: 10, doorX: 9, doorY: 10,
         ...(shoptype === undefined ? {} : { shopType: shoptype }),
     });
-    shopkeeper.gold = 1000;
+    await setShopkeeperGold(shopkeeper, 1000);
     return { shopkeeper };
 }
 void test('an unbilled shop item charges its buy value as silent debt', async () => {

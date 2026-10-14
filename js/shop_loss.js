@@ -2,7 +2,7 @@
 // Reusable by drop-side theft owners (swallowed objects, destroyed contents).
 import { HUNGRY, SHOPBASE } from './const.js';
 import { shopkeeperName } from './monster_name.js';
-import { canSpotMonster, plineWithContinuation } from './display.js';
+import { canSeeMonster, plineWithContinuation } from './display.js';
 import { game, requireLiveGame } from './gstate.js';
 import { hasShopkeeperData } from './shop_types.js';
 import { containedGold } from './gold.js';
@@ -12,9 +12,10 @@ import { artifactById } from './artifacts.js';
 import { CORPSE, EGG, OBJECT_COST, OBJECT_NAMES, TIN, } from './object_data.js';
 import { monsterIsHelpless } from './monster_sleep.js';
 import { OBJECT_WEIGHT } from './object_data.js';
-import { roomForRoomno, roomsAt } from './room.js';
+import { roomsAt } from './room.js';
+import { currency } from './currency.js';
 import { heroIsDeaf } from './senses.js';
-import { costlySpot, insideShopRoomAt, removeOneObjectFromBill, shopkeeperInOwnShop, shopObjectUnitCost, } from './shk.js';
+import { costlySpot, insideShopRoomAt, removeOneObjectFromBill, shopResident, shopkeeperInOwnShop, shopObjectUnitCost, visitBilledShopkeepers, } from './shk.js';
 import { hotPursuitShopkeeper, makeAngryShopkeeper, } from './shop_damage.js';
 import { objectWeight } from './weight.js';
 const COIN_CLASS = 12;
@@ -245,28 +246,26 @@ export function shopClaimsObject(object, resident, resetNoCharge, state) {
 }
 // C shop_keeper(roomno) + inhishop(shkp).
 function validateShopkeeper(roomno, state) {
-    const resident = roomForRoomno(state.level, roomno)?.resident ?? null;
+    const resident = shopResident(roomno, state);
     return hasShopkeeperData(resident) && shopkeeperInOwnShop(resident, state) ? resident : null;
 }
 // C shk.c:1084 find_objowner(): on-bill objects belong to their billing
 // shop; otherwise the rooms containing (x,y) claim via bill then resident.
 export function findObjectOwner(object, x, y, state) {
     if (object.where === 'onbill') {
-        for (const room of state.level?.rooms || []) {
-            const resident = 'resident' in room ? room.resident : null;
-            if (hasShopkeeperData(resident) && onBillEntry(object, resident))
+        for (const resident of visitBilledShopkeepers(state))
+            if (onBillEntry(object, resident))
                 return resident;
-        }
         return null;
     }
     let fallback = null;
     for (const roomno of roomsAt(state.level, x, y, SHOPBASE)) {
-        const resident = roomForRoomno(state.level, roomno)?.resident ?? null;
+        const resident = shopResident(roomno, state);
         if (!hasShopkeeperData(resident))
             continue;
         if (onBillEntry(object, resident))
             return resident;
-        if (!fallback && shopkeeperInOwnShop(resident, state))
+        if (!fallback)
             fallback = resident;
     }
     return fallback;
@@ -312,7 +311,7 @@ async function stolenContainer(container, resident, { inInventory, state }) {
     return price;
 }
 function zorkmids(amount) {
-    return `${amount} zorkmid${amount === 1 ? '' : 's'}`;
+    return `${amount} ${currency(amount)}`;
 }
 // C shk.c:3754 stolen_value().  World mutations (bills, credit, debit,
 // robbed, pursuit, guards) are live-game only.
@@ -325,7 +324,7 @@ export async function stolenValue(object, x, y, peaceful, { silent = true, publi
     const wasUnpaid = !!object.unpaid;
     const container = !!(object.contents?.length);
     const cCount = container
-        ? countContents(object, { quantity: true, everything: true }, state) : 0;
+        ? countContents(object, { quantity: false, everything: true }, state) : 0;
     const uCount = container
         ? countContents(object, { quantity: false, everything: false }, state) : 0;
     const resident = validateShopkeeper(roomno, state);
@@ -401,7 +400,7 @@ export async function stolenValue(object, x, y, peaceful, { silent = true, publi
     else {
         resident.eshk.robbed = (resident.eshk.robbed ?? 0) + value;
         if (!silent) {
-            if (canSpotMonster(resident)) {
+            if (canSeeMonster(resident)) {
                 await publish(`${shopkeeperName(resident)} booms: "${state.plname || 'you'}, you are a thief!"`);
             }
             else if (!heroIsDeaf(state)) {

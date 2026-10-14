@@ -1,5 +1,5 @@
 // C hack.c:losehp(). Damage belongs to the body the hero currently occupies.
-import { Upolyd } from './const.js';
+import { KILLED_BY_AN, Upolyd } from './const.js';
 import { plineWithContinuation } from './display.js';
 import { finishHeroDeath } from './end.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
@@ -9,7 +9,7 @@ import { returnHeroToHumanForm } from './polyself.js';
 import { formatHeardMessage } from './hero_speech.js';
 import { hasPermanentIntrinsicProperty, propertyIsActive } from './properties.js';
 import { stopRun } from './runmode.js';
-export async function loseHeroHp(amount, killer, { state = game, publish = plineWithContinuation, die = finishHeroDeath, deathCause = null, } = {}) {
+export async function loseHeroHp(amount, killer, { state = game, publish = plineWithContinuation, die = finishHeroDeath, deathCause = null, killerFormat = KILLED_BY_AN, } = {}) {
     requirePlayingGame(state);
     const hero = state.u;
     const polymorphed = Upolyd(hero);
@@ -33,7 +33,7 @@ export async function loseHeroHp(amount, killer, { state = game, publish = pline
         const result = await returnHeroToHumanForm(state, { publish, die });
         return result.died;
     }
-    return die({ killer, deathCause,
+    return die({ killer, killerFormat, deathCause,
         damage: { hpKey: current, hpBefore, damage: amount } });
 }
 // C hack.c:maybe_wail(): the cooldown advances even when sound is suppressed.

@@ -169,7 +169,7 @@ import { objectMaterial } from './object_material.js';
 import { monsterHatesSilver } from './monster_data.js';
 import { canHeroRiseUp, levelAtDepth } from './dungeon.js';
 import { LEVEL_TELEP } from './const.js';
-import { teleportMonsterToRandomLevel } from './teleport.js';
+import { teleportMonsterThroughPortal, teleportMonsterToRandomLevel } from './teleport.js';
 import { learnObjectType } from './object_knowledge.js';
 import { changeMonsterForm } from './monster_polymorph.js';
 import { rndmonstAdj } from './mklev.js';
@@ -191,7 +191,7 @@ import { stopHeroOccupation } from './occupation.js';
 import { rileShopkeeper, shopkeeperRepairsDamage } from './shop_damage.js';
 import { diggingTimeToHole } from './hero_digging.js';
 import { migrateMonsterOffLevel } from './monster_migration.js';
-import { RLOC_MSG, A_CHA, A_DEX, A_STR, A_CON, ALLOW_ALL, ALLOW_BARS, ALLOW_DIG, ALLOW_M, ALLOW_MDISP, ALLOW_ROCK, ALLOW_SANCT, MMOVE_NOTHING, MMOVE_MOVED, MMOVE_DIED, MMOVE_DONE, MMOVE_NOMOVES, MON_FLOOR, ALLOW_SSM, ALLOW_TM, ALLOW_TRAPS, ALLOW_U, ALLOW_WALL, ARROW_TRAP, BEAR_TRAP, BOLT_LIM, COLNO, CORR, DART_TRAP, DOOR, ROWNO, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, D_WARNED, FOUNTAIN, SDOOR, Is_firelevel, Is_waterlevel, IS_DOOR, IS_LAVA, IS_OBSTRUCTED, IS_POOL, IS_ROOM, IS_STWALL, IS_TREE, IS_WALL, IRONBARS, LAVAPOOL, LAVAWALL, BUSTDOOR, MAGIC_PORTAL, OPENDOOR, TELEP_TRAP, MIGR_RANDOM, MIGR_PORTAL, ANTI_MAGIC, FIRE_TRAP, HOLE, LANDMINE, MAGIC_TRAP, M_ATTK_AGR_DIED, M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, M_ATTK_AGR_DONE, M_AP_FURNITURE, M_AP_MONSTER, M_AP_NOTHING, M_AP_OBJECT, M_AP_TYPE, POLY_TRAP, RUST_TRAP, PIT, PL_NSIZ, ROCKTRAP, ROLLING_BOULDER_TRAP, ROOM, SLP_GAS_TRAP, STONE, SPIKED_PIT, SQKY_BOARD, STATUE_TRAP, TRAPDOOR, NEED_AXE, NEED_HTH_WEAPON, NEED_PICK_AXE, NEED_PICK_OR_AXE, NEED_WEAPON, NO_WEAPON_WANTED, MM_NOWAIT, NOGARLIC, NOTONL, SHOPBASE, TEMPLE, TRAPNUM, STRAT_WAITFORU, STRAT_WAITMASK, UNLOCKDOOR, VIBRATING_SQUARE, WATER, W_ACCESSORY, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMOR, W_ARMS, W_ARMU, W_NONDIGGABLE, W_NONPASSWALL, Upolyd, isok, WEB, WT_TOOMUCH_DIAGONAL, } from './const.js';
+import { RLOC_MSG, A_CHA, A_DEX, A_STR, A_CON, ALLOW_ALL, ALLOW_BARS, ALLOW_DIG, ALLOW_M, ALLOW_MDISP, ALLOW_ROCK, ALLOW_SANCT, MMOVE_NOTHING, MMOVE_MOVED, MMOVE_DIED, MMOVE_DONE, MMOVE_NOMOVES, MON_FLOOR, ALLOW_SSM, ALLOW_TM, ALLOW_TRAPS, ALLOW_U, ALLOW_WALL, ARROW_TRAP, BEAR_TRAP, BOLT_LIM, COLNO, CORR, DART_TRAP, DOOR, ROWNO, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, D_WARNED, FOUNTAIN, SDOOR, Is_firelevel, Is_waterlevel, IS_DOOR, IS_LAVA, IS_OBSTRUCTED, IS_POOL, IS_ROOM, IS_STWALL, IS_TREE, IS_WALL, IRONBARS, LAVAPOOL, LAVAWALL, BUSTDOOR, MAGIC_PORTAL, OPENDOOR, TELEP_TRAP, MIGR_RANDOM, ANTI_MAGIC, FIRE_TRAP, HOLE, LANDMINE, MAGIC_TRAP, M_ATTK_AGR_DIED, M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, M_ATTK_AGR_DONE, M_AP_FURNITURE, M_AP_MONSTER, M_AP_NOTHING, M_AP_OBJECT, M_AP_TYPE, POLY_TRAP, RUST_TRAP, PIT, PL_NSIZ, ROCKTRAP, ROLLING_BOULDER_TRAP, ROOM, SLP_GAS_TRAP, STONE, SPIKED_PIT, SQKY_BOARD, STATUE_TRAP, TRAPDOOR, NEED_AXE, NEED_HTH_WEAPON, NEED_PICK_AXE, NEED_PICK_OR_AXE, NEED_WEAPON, NO_WEAPON_WANTED, MM_NOWAIT, NOGARLIC, NOTONL, SHOPBASE, TEMPLE, TRAPNUM, STRAT_WAITFORU, STRAT_WAITMASK, UNLOCKDOOR, VIBRATING_SQUARE, WATER, W_ACCESSORY, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMOR, W_ARMS, W_ARMU, W_NONDIGGABLE, W_NONPASSWALL, Upolyd, isok, WEB, WT_TOOMUCH_DIAGONAL, } from './const.js';
 import { monsterIsScaredAt } from './monster_fear.js';
 import { monsterInAir, monsterFliesOrFloats, levelHasCeiling, isLavaAt, isPoolAt } from './terrain_properties.js';
 import { disturbBuriedZombies } from './object_impact.js';
@@ -3655,26 +3655,26 @@ async function triggerMonsterTrap(monster, state, movement, random, rollDice, ro
         return null;
     }
     if (trap.ttyp === MAGIC_PORTAL) {
-        // trap.c:mintrap()->trapeffect_magic_portal() treats a fixed portal
-        // as inescapable, then routes monsters through mlevel_tele_trap().
-        // migrate_to_level() removes the actor from fmon and stores its
-        // destination out of map before postmov() can return to dochug(), so
-        // there is no trailing distfleeck() draw for this action.
-        // TODO: handle leashes and the endgame Amulet restriction for pets.
-        if (monster.pet || (monster.mtame ?? 0) > 0)
-            return null;
+        if (monster !== state.u.usteed && monsterKnowsTrap(monster, trap)
+            && !movement.forcedTrapLanding
+            && recordRandom(random, calls, 4) !== 0 && !movement.forcedTrapBungle) {
+            const avoided = { kind: 'known-trap-avoided', trap, damage: 0 };
+            movement.trap = avoided;
+            return avoided;
+        }
         monsterLearnsTrap(monster, trap);
         monstersSeeTrap(state, trap);
-        await announceTrapLevelDeparture(monster, trap, state, publish);
-        const event = await migrateMonsterOffLevel(monster, state, trap, {
-            kind: 'magic-portal-migration',
-            mode: MIGR_PORTAL,
-            confused: true,
+        if (trap.madeby_u && rnl(5))
+            await angerMonster(monster);
+        const event = await teleportMonsterThroughPortal(monster, trap, {
+            state, random, force: !!movement.forcedTrapLanding, publish,
         });
-        movement.trap = event;
-        movement.actorLeftLevel = true;
-        movement.postMoveStatus = MMOVE_DIED;
-        movement.actionCompleted = true;
+        if (event) {
+            movement.trap = event;
+            movement.actorLeftLevel = true;
+            movement.postMoveStatus = MMOVE_DIED;
+            movement.actionCompleted = true;
+        }
         return event;
     }
     if (trap.ttyp === LEVEL_TELEP) {
@@ -5975,13 +5975,14 @@ function heroCanSeeInvisible(state) {
     return !!(state?.u?.seeInvisible || (state?.u?.seeInvisibleTurns ?? 0) > 0);
 }
 function monsterSpellHasAggravatables(caster, state) {
-    return !!state?.level?.monsters?.some((monster) => monster !== caster &&
-        !monster.dead &&
+    const inTower = insideWizardTower(caster.mx, caster.my, state);
+    if (inTower !== insideWizardTower(state.u.ux, state.u.uy, state))
+        return false;
+    return state.level.monsters.some((monster) => !monster.dead &&
         (monster.mhp ?? 1) > 0 &&
+        insideWizardTower(monster.mx, monster.my, state) === inTower &&
         ((monster.mstrategy ?? 0) & STRAT_WAITFORU ||
-            monster.msleeping ||
-            monster.mcanmove === 0 ||
-            (monster.mfrozen ?? 0) > 0));
+            monsterIsHelpless(monster)));
 }
 function monsterSpellUseless(monster, spell, state, random = rn2, calls = []) {
     if (spell.flags & MCF_HOSTILE && monster.mpeaceful)

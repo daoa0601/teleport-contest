@@ -171,7 +171,7 @@ async function takeSelectedObjects(source, selected, telekinesis = false, batch 
             continue;
         if (source.monster && object.owornmask) {
             observeObjectForNaming(object);
-            await plineWithContinuation(`You can't pick the ${pickupObjectNoun(object)} up.`);
+            await plineWithContinuation(`You can't pick the ${objectName(object)} up.`);
             continue;
         }
         attempted = true;
@@ -236,7 +236,7 @@ async function takeSelectedObjects(source, selected, telekinesis = false, batch 
         }
         if (transaction)
             observeObjectForNaming(object);
-        const quote = transaction && billedPickupQuote(transaction, pickupObjectNoun(object));
+        const quote = transaction && billedPickupQuote(transaction);
         if (quote)
             await plineWithContinuation(quote);
         const remote = object.unpaid && shopRoom !== undefined && !savedShops.includes(shopRoom);
@@ -387,8 +387,5 @@ export function orderedPickupObjects(pile) {
 export function pickupObjectClass(object) {
     const oclass = object.oclass || objectClassForType(object.otyp);
     return objectClassHeading(oclass);
-}
-function pickupObjectNoun(object) {
-    return objectName(object);
 }
 //# sourceMappingURL=pickup.js.map

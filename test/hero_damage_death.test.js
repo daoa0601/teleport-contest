@@ -2,7 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 // C hack.c:losehp() lets hit points fall below one and then dies with the
 // caller's killer and format. Each case starts the hero at one hit point.
-import { LAVAPOOL, MAGIC_TRAP, PIT, ROCKTRAP, ROLLING_BOULDER_TRAP, SPIKED_PIT, TT_LAVA, TT_PIT, } from '../js/const.js';
+import { LAVAPOOL, MAGIC_TRAP, NO_MINVENT, PIT, ROCKTRAP, ROLLING_BOULDER_TRAP, SPIKED_PIT, TT_LAVA, TT_PIT, W_WEP, } from '../js/const.js';
+import { dropBoulderOnHero } from '../js/falling_boulder.js';
 import { gotoLevel } from '../js/level_change.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
 import { rhack } from '../js/cmd.js';
@@ -10,12 +11,14 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { hitHeroWithObject } from '../js/hero_object_hit.js';
 import { triggerHeroTrap } from '../js/hero_traps.js';
 import { pushKeys, resetInputState } from '../js/input.js';
-import { ARROW, BAG_OF_HOLDING, BOULDER, CLUB, CORPSE, DART } from '../js/object_data.js';
+import { ARROW, BAG_OF_HOLDING, BOULDER, CLUB, CORPSE, DART, GRAPPLING_HOOK, SCR_FIRE, WAN_STRIKING } from '../js/object_data.js';
 import { killerObjectName } from '../js/objnam.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
+import { resolveMonsterImmediateWand } from '../js/monster_wand_ray.js';
 import { initRng } from '../js/rng.js';
 import { scatterFloorObjects } from '../js/scatter.js';
 import { loadScoreRecords } from '../js/score_records.js';
+import { applyAreaScrollEffect } from '../js/scroll_area_effects.js';
 import { dosit } from '../js/sit.js';
 import { addInventoryObject, floorObject, knownObject } from './support/game-objects.js';
 import { carriedGold, readyGold } from './support/gold-arena.js';
@@ -23,6 +26,8 @@ import { addTrap } from './support/level-state.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createDungeon } from './support/topology.js';
+import { createMonsterAt } from './support/monsters.js';
+import { applyInventoryObject } from './support/commands.js';
 function lowHitPointRoom() {
     const level = freshObjectRoom({
         hero: { uhp: 1, uhpmax: 100, urexp: 100 },
@@ -41,6 +46,39 @@ async function dieWith(action, death) {
     assert.equal(game.program_state.gameover, true);
     assert.equal(loadScoreRecords()[0]?.death, death);
 }
+void test('a fatal monster striking ray identifies the killer as a wand', async () => {
+    lowHitPointRoom();
+    requirePlayingGame(game);
+    const state = game;
+    const monster = await createMonsterAt('orc', 11, 10, NO_MINVENT);
+    monster.mux = game.u.ux;
+    monster.muy = game.u.uy;
+    monster.mwandexp = true;
+    const wand = await knownObject(WAN_STRIKING);
+    await dieWith(() => resolveMonsterImmediateWand(monster, wand, {
+        state, rollOne: () => 1, rollDice: () => 8,
+    }), 'killed by a wand');
+});
+void test('a fatal boulder conjured above the hero identifies the scroll of earth', async () => {
+    lowHitPointRoom();
+    await dieWith(() => dropBoulderOnHero(), 'killed by a scroll of earth');
+});
+void test('a confused fire scroll retains its article when it burns the last hit point', async () => {
+    lowHitPointRoom();
+    game.u.confusionTurns = 5;
+    const scroll = await addInventoryObject(SCR_FIRE);
+    await dieWith(() => applyAreaScrollEffect(scroll), 'killed by a scroll of fire');
+});
+void test('a fatal grappling mishap keeps its already supplied article', async () => {
+    lowHitPointRoom();
+    const hook = await addInventoryObject(GRAPPLING_HOOK, { owornmask: W_WEP, wielded: true });
+    game.uwep = game.u.uwep = hook;
+    game._travelTipShown = true;
+    initRng(5n);
+    await applyInventoryObject(hook, 'll.' + ' '.repeat(100));
+    assert.equal(game.program_state.gameover, true);
+    assert.equal(loadScoreRecords()[0]?.death, 'killed by a grappling hook');
+});
 void test('sitting in lava kills a hero who cannot spare the burn', async () => {
     const level = lowHitPointRoom();
     level.requireAt(game.u.ux, game.u.uy).typ = LAVAPOOL;

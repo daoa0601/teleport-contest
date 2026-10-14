@@ -1,14 +1,56 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { MM_NOGRP, MM_NOWAIT } from '../js/const.js';
+import { MM_NOGRP, MM_NOWAIT, NO_MINVENT } from '../js/const.js';
 import { CANDELABRUM_OF_INVOCATION, POT_ACID, POT_BLINDNESS, POT_CONFUSION, POT_PARALYSIS, POT_SLEEPING,
-    WAN_MAGIC_MISSILE, WAN_STRIKING } from '../js/object_data.js';
+    TWO_HANDED_SWORD, WAN_MAGIC_MISSILE, WAN_STRIKING } from '../js/object_data.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 const offensiveTypes = new Set([POT_ACID, POT_BLINDNESS, POT_CONFUSION,
     POT_PARALYSIS, POT_SLEEPING, WAN_MAGIC_MISSILE, WAN_STRIKING]);
+
+for (const noInventory of [false, true]) {
+    void test(`Croesus ${noInventory ? 'receives no sword under NO_MINVENT' : 'always receives a two-handed sword'}`, async () => {
+        for (let seed = 1; seed <= 16; seed++) {
+            freshObjectRoom({ gameplaySeed: seed });
+
+            const croesus = await createMonsterAt('Croesus', 11, 10,
+                noInventory ? NO_MINVENT : 0);
+
+            assert.equal(croesus.minvent.some(object => object.otyp === TWO_HANDED_SWORD),
+                !noInventory, `Croesus sword admission differs at seed ${seed}`);
+        }
+    });
+}
+
+for (const perception of ['invisible', 'displaced']) {
+    void test(`Croesus's fixed sword has the same properties beside a visible or ${perception} hero`, async () => {
+        for (let seed = 1; seed <= 16; seed++) {
+            freshObjectRoom({ gameplaySeed: seed });
+            requirePlayingGame(game);
+            game.rogue_level = { ...game.u.uz };
+            const visibleBirth = await createMonsterAt('Croesus', game.u.ux, game.u.uy);
+            const visibleSword = visibleBirth.minvent.find(object => object.otyp === TWO_HANDED_SWORD);
+            assert.ok(visibleSword, 'Croesus retains his fixed sword on the Rogue level');
+
+            freshObjectRoom({ gameplaySeed: seed });
+            requirePlayingGame(game);
+            game.rogue_level = { ...game.u.uz };
+            if (perception === 'invisible') game.u.invisibleTurns = 20;
+            else game.u.displaced = true;
+            const hiddenBirth = await createMonsterAt('Croesus', game.u.ux, game.u.uy);
+            const hiddenSword = hiddenBirth.minvent.find(object => object.otyp === TWO_HANDED_SWORD);
+            assert.ok(hiddenSword, 'Croesus retains his fixed sword beside the concealed hero');
+
+            const context = `${perception} hero, seed ${seed}`;
+            assert.equal(hiddenSword.spe, visibleSword.spe, `sword enchantment changed: ${context}`);
+            assert.equal(hiddenSword.blessed, visibleSword.blessed, `sword blessing changed: ${context}`);
+            assert.equal(hiddenSword.cursed, visibleSword.cursed, `sword curse changed: ${context}`);
+            assert.equal(hiddenSword.oartifact, visibleSword.oartifact, `sword artifact changed: ${context}`);
+        }
+    });
+}
 
 for (const species of ['kobold leader', 'hobbit', 'guard']) {
     void test(`a ${species} can be born with an offensive magic item alongside its ordinary equipment`, async () => {

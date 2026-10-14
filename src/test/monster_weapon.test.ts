@@ -8,9 +8,9 @@ import { initRng } from '../js/rng.js';
 import { monsterCanCarryObject, monsterCanTouchObject } from '../js/monster_carry.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
-import { selectHandToHandWeapon, updateMonsterWeaponAfterPolymorph, wieldMonsterWeapon } from '../js/monster_weapon.js';
+import { selectHandToHandWeapon, swingMonsterWeapon, updateMonsterWeaponAfterPolymorph, wieldMonsterWeapon } from '../js/monster_weapon.js';
 import {
-    AKLYS, BELL_OF_OPENING, CLUB, CRYSKNIFE, DAGGER, DWARVISH_MATTOCK, LEATHER_GLOVES, OBJECT_NAMES, PICK_AXE,
+    AKLYS, BELL_OF_OPENING, BULLWHIP, CLUB, CRYSKNIFE, DAGGER, DWARVISH_MATTOCK, LEATHER_GLOVES, OBJECT_NAMES, PICK_AXE,
     SMALL_SHIELD, TWO_HANDED_SWORD,
 } from '../js/object_data.js';
 import { artifactObject, knownObject, untimedCorpse } from './support/game-objects.js';
@@ -18,6 +18,22 @@ import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 const SILVER_SABER = OBJECT_NAMES.indexOf('silver saber');
+
+for (const targetsMonster of [false, true]) {
+    void test(`a balrog lashes its bullwhip at ${targetsMonster ? 'another monster' : 'the hero'} with the perceived possessive pronoun`, async () => {
+        freshObjectRoom({ flags: { verbose: true } });
+        const balrog = await createMonsterAt('balrog', 11, 10, NO_MINVENT);
+        const weapon = await knownObject(BULLWHIP);
+        const defender = targetsMonster ? await createMonsterAt('goblin', 12, 10, NO_MINVENT) : null;
+        const messages: string[] = [];
+
+        await swingMonsterWeapon(balrog, weapon, game, {
+            defender, publish: async message => { messages.push(message); },
+        });
+
+        assert.equal(messages[0], `The balrog lashes its bullwhip${targetsMonster ? ' at the goblin' : ''}.`);
+    });
+}
 
 void test('wielding identifies a visible invisible monster by its current appearance', async () => {
     freshObjectRoom({ hero: { seeInvisible: true } });

@@ -76,7 +76,7 @@ export async function dropBoulderOnHero({
     wakeMonstersNear(state.u.ux, state.u.uy, 16, state);
     await landFallingRock(object, state.u.ux, state.u.uy, state);
     if (state.u.halfPhysicalDamage) damage = Math.trunc((damage + 1) / 2);
-    const heroDied = damage ? await loseHeroHp(damage, 'a scroll of earth', {
+    const heroDied = damage ? await loseHeroHp(damage, 'scroll of earth', {
         state, die: finishHeroDeath,
     }) : false;
     return { dropped: true, heroDied: !!heroDied };

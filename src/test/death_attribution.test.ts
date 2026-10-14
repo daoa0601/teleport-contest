@@ -2,15 +2,22 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { performMonsterHeroAttack } from '../js/allmain.js';
+import { STONING, TURNED_SLIME } from '../js/const.js';
+import { applyCorpsePreEffects } from '../js/corpse_eating.js';
 import { finishOrdinaryDeath } from '../js/end.js';
+import { useHeroGaze } from '../js/hero_gaze.js';
 import { game, requireGameDisplay, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { finishMonsterAttackDeath } from '../js/monster_attack_death.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
+import { respondMedusa } from '../js/monster_gaze.js';
 import { setMonsterGivenName } from '../js/monster_given_name.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { loadScoreRecords } from '../js/score_records.js';
+import { feelPetrifyingCorpse } from '../js/stoning.js';
+import { corpseObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { freshMonsterAbilityRoom } from './support/hero-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { installPagerInput } from './support/pager-input.js';
@@ -18,6 +25,114 @@ import { installPagerInput } from './support/pager-input.js';
 function visibleText(): string {
     return requireGameDisplay().grid.map(row => row.map(cell => cell.ch).join('')).join('\n');
 }
+
+for (const death of [
+    { type: STONING, killer: 'cockatrice', verb: 'turned to stone', cause: 'petrified by a cockatrice', epitaph: /petrified by a/ },
+    { type: TURNED_SLIME, killer: 'green slime', verb: 'turned into slime', cause: 'turned to slime by a green slime', epitaph: /turned to slime/ },
+]) {
+    void test(`a ${death.killer} death uses its native cause on the tombstone and score entry`, async () => {
+        freshObjectRoom({ flags: { bones: false, disclose: '-i -a -v -c -o', tombstone: true } });
+        game.storage = memoryStorage();
+        game.u.urexp = 100;
+        game.iflags.toptenwin = false;
+        const input = resetInputState();
+        let tombstone = '';
+        input.beforeRead = () => {
+            if (visibleText().includes('REST')) tombstone = visibleText();
+        };
+        installPagerInput(input, { expected: /revenant|Goodbye|points|You were/i, limit: 8 });
+
+        await finishOrdinaryDeath({ killer: death.killer, deathVerb: death.verb, deathType: death.type });
+
+        assert.match(tombstone, death.epitaph);
+        assert.equal(loadScoreRecords()[0]?.death, death.cause);
+    });
+}
+
+void test('tasting petrifying flesh keeps the native action phrase on the tombstone and score entry', async () => {
+    freshObjectRoom({ flags: { bones: false, disclose: '-i -a -v -c -o', tombstone: true } });
+    game.storage = memoryStorage();
+    game.u.urexp = 100;
+    game.iflags.toptenwin = false;
+    const input = resetInputState();
+    let tombstone = '';
+    input.beforeRead = () => {
+        if (visibleText().includes('REST')) tombstone = visibleText();
+    };
+    installPagerInput(input, { expected: /stone|Goodbye|points|You were/i, limit: 8 });
+
+    await applyCorpsePreEffects(MONSTER_NAME.indexOf('cockatrice'));
+
+    assert.equal(loadScoreRecords()[0]?.death, 'petrified by tasting cockatrice meat');
+    assert.match(tombstone, /petrified by/);
+    assert.match(tombstone, /tasting/);
+    assert.doesNotMatch(tombstone, /petrified by a/);
+});
+
+void test("Medusa's attacking gaze keeps her proper name on the tombstone and score entry", async () => {
+    freshObjectRoom({ flags: { bones: false, disclose: '-i -a -v -c -o', tombstone: true } });
+    requirePlayingGame(game);
+    const medusa = await createMonsterAt('Medusa', 11, 10);
+    medusa.mpeaceful = 0;
+    game.storage = memoryStorage();
+    game.u.urexp = 100;
+    game.iflags.toptenwin = false;
+    const input = resetInputState();
+    let tombstone = '';
+    input.beforeRead = () => {
+        if (visibleText().includes('REST')) tombstone = visibleText();
+    };
+    installPagerInput(input, { expected: /gaze|stone|Goodbye|points|You were/i, limit: 8 });
+
+    await respondMedusa(medusa);
+
+    assert.equal(loadScoreRecords()[0]?.death, 'petrified by Medusa');
+    assert.match(tombstone, /petrified by/);
+    assert.match(tombstone, /Medusa/);
+    assert.doesNotMatch(tombstone, /petrified by a/);
+});
+
+void test("deliberately meeting Medusa's gaze keeps the native phrase on the tombstone and score entry", async () => {
+    freshMonsterAbilityRoom('umber hulk', {
+        energy: 30,
+        flags: { bones: false, disclose: '-i -a -v -c -o', tombstone: true },
+    });
+    const medusa = await createMonsterAt('Medusa', 11, 10);
+    medusa.mpeaceful = 0;
+    game.storage = memoryStorage();
+    game.u.urexp = 100;
+    game.iflags.toptenwin = false;
+    const input = resetInputState();
+    let tombstone = '';
+    input.beforeRead = () => {
+        if (visibleText().includes('REST')) tombstone = visibleText();
+    };
+    installPagerInput(input, { expected: /stone|Goodbye|points|You were/i, limit: 8 });
+
+    await useHeroGaze({ publish: async () => undefined });
+
+    assert.match(tombstone, /petrified by/);
+    assert.doesNotMatch(tombstone, /petrified by a/);
+    assert.equal(loadScoreRecords()[0]?.death, "petrified by deliberately meeting Medusa's gaze");
+});
+
+void test('feeling a petrifying corpse keeps the native action phrase in the score entry', async () => {
+    freshObjectRoom({
+        hero: { blindTurns: 3 },
+        flags: { bones: false, disclose: '-i -a -v -c -o', tombstone: false },
+    });
+    const corpse = await corpseObject(MONSTER_NAME.indexOf('cockatrice'));
+    game.storage = memoryStorage();
+    game.u.urexp = 100;
+    game.iflags.toptenwin = false;
+    const input = resetInputState();
+    installPagerInput(input, { expected: /stone|fatal mistake|Goodbye|points|You were/i, limit: 8 });
+
+    await feelPetrifyingCorpse(corpse);
+
+    assert.equal(loadScoreRecords()[0]?.death,
+        'petrified by touching a cockatrice corpse bare-handed');
+});
 
 void test('an invisible monster keeps its invisibility in the tombstone and score entry', async () => {
     freshObjectRoom({ flags: { bones: false, disclose: '-i -a -v -c -o', tombstone: true } });

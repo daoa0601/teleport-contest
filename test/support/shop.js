@@ -1,3 +1,7 @@
+import { GOLD_PIECE } from '../../js/object_data.js';
+import { deleteObject } from '../../js/object_delete.js';
+import { addCreatedObjectToMonsterInventory } from '../../js/monster_inventory.js';
+import { knownObject } from './game-objects.js';
 import { ROOM, ROOMOFFSET, SHOPBASE } from '../../js/const.js';
 import { game, requirePlayingGame } from '../../js/gstate.js';
 import { cls } from '../../js/display.js';
@@ -59,5 +63,12 @@ function requireStaffedShopkeeper(monster) {
     const shop = monster.eshk;
     if (!shop || !shop.bill || shop.billct === undefined || shop.debit === undefined)
         throw new Error('A staffed shop needs a resident with initialized billing.');
+}
+export async function setShopkeeperGold(monster, amount) {
+    for (const object of [...monster.minvent ?? []])
+        if (object.otyp === GOLD_PIECE)
+            await deleteObject(object);
+    if (amount)
+        await addCreatedObjectToMonsterInventory(monster, await knownObject(GOLD_PIECE, { quan: amount, bknown: false }));
 }
 //# sourceMappingURL=shop.js.map

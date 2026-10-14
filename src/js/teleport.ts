@@ -21,7 +21,7 @@ import {
     GP_CHECKSCARY, A_STR, COLNO, ROWNO,
     VAULT, VIBRATING_SQUARE, M_AP_NOTHING, MON_FLOOR, MON_OFFMAP, RLOC_MSG,
     RLOC_NOMSG, RLOC_NONE, RLOC_ERR, STRAT_APPEARMSG, BOLT_LIM, TT_BURIEDBALL,
-    In_endgame, Upolyd, ZAP_POS, is_hole, is_pit, isok,
+    In_endgame, MIGR_PORTAL, Upolyd, ZAP_POS, is_hole, is_pit, isok,
 } from './const.js';
 import {
     MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL, monsterHasNoAttacks,
@@ -119,6 +119,7 @@ function requireLevel(state: GameState): asserts state is LevelGameState {
 const M1_WALLWALK = 0x00000008;
 const M1_TPORT = 0x02000000;
 const M1_TPORT_CNTRL = 0x04000000;
+const S_ELEMENTAL = 31;
 const S_MIMIC = 13;
 
 function wornRing(state: GameState, objectType: number) {
@@ -1031,6 +1032,33 @@ function teleportSpellLevel(): number {
     const level = OBJECT_SPELL_LEVEL[SPE_TELEPORT_AWAY];
     if (level === undefined) throw new Error('Missing teleport spell level.');
     return level;
+}
+
+// C teleport.c:mlevel_tele_trap(), the MAGIC_PORTAL branch.
+export async function teleportMonsterThroughPortal(monster: Monster, trap: Trap, {
+    state = game, random = rn2, force = false, publish = plineWithContinuation,
+}: RelocationOptions & { force?: boolean; publish?: MessagePublisher } = {}) {
+    requirePlayingGame(state);
+    if (monster === state.u.ustuck) return null;
+    if (!await teleportMonsterPet(monster, state, force, publish)) return null;
+    const seen = canSeeMonster(monster) || monster === state.u.usteed;
+    if (In_endgame(state.u.uz)
+        && ((monster.minvent || []).some(object => object.otyp === AMULET_OF_YENDOR)
+            || isHomeElemental(monster.mnum) || random(7))) {
+        if (seen && MONSTER_SYMBOL[monster.mnum] !== S_ELEMENTAL) {
+            await publish(`${monsterName(monster, { state, capitalized: true })} seems to shimmer for a moment.`);
+            seeTrap(trap, state);
+        }
+        return null;
+    }
+    if (seen) {
+        await publish(`Suddenly, ${monsterName(monster, { state })} disappears out of sight.`);
+        seeTrap(trap, state);
+    }
+    if (!((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_TPORT_CNTRL)) monster.mconf = 1;
+    return migrateMonsterOffLevel(monster, state, trap, {
+        kind: 'magic-portal-migration', mode: MIGR_PORTAL,
+    });
 }
 
 // C teleport.c:mlevel_tele_trap(), the LEVEL_TELEP branch. The destination
