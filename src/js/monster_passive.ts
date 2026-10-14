@@ -18,7 +18,7 @@ import {
 import { finishHeroDeath } from './end.js';
 import { game } from './gstate.js';
 import { healMonster } from './mon.js';
-import { ownedObjectAction } from './objnam.js';
+import { observeObjectForNaming, ownedObjectAction } from './objnam.js';
 import { erodeArmor, erodeObject } from './object_erosion.js';
 import {
     MONSTER_ATTACKS, MONSTER_NAME, MONSTER_RESISTS, monsterTypeName,
@@ -583,6 +583,7 @@ export async function applyMonsterPassiveToObject(
         if (!await drainObjectEnchantment(object, { state, random, byHero: true })) return;
         if (carried) state._armorClassDirty = true;
         if (carried && (object.known || object.typeKnown || object.oclass === 3)) {
+            observeObjectForNaming(object, { state });
             await publish(`${ownedObjectAction(object, 'seem', state)} less effective.`);
         }
         return;
