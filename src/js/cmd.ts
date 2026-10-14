@@ -89,6 +89,7 @@ import {
 } from './floor_object_display.js';
 import { loseHeroHp } from './hero_damage.js';
 import { dopay } from './shop_pay_command.js';
+import { reportShopFinances } from './shop_finance.js';
 import { poisonHeroStrengthAndHp } from './poison.js';
 import { isContainer, useContainer } from './container.js';
 import { adjustHeroAlignment } from './alignment.js';
@@ -1709,6 +1710,7 @@ async function doWalletQuery() {
                 total === 1 ? '' : 's'}.`
             : 'You have no money.');
     }
+    await reportShopFinances();
     game.context.move = 0;
 }
 
