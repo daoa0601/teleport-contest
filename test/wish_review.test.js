@@ -3,7 +3,7 @@ import test from 'node:test';
 import { CORPSTAT_FEMALE, CORPSTAT_MALE } from '../js/const.js';
 import { addFruit } from '../js/fruit.js';
 import { requireGameLevel } from '../js/gstate.js';
-import { BAG_OF_TRICKS, LAND_MINE, POT_HEALING, SACK, SPEED_BOOTS } from '../js/object_data.js';
+import { BAG_OF_TRICKS, LAND_MINE, POT_HEALING, RED_DRAGON_SCALES, SACK, SPEED_BOOTS } from '../js/object_data.js';
 import { recordObjectCall } from '../js/object_knowledge.js';
 import { readObjectName } from '../js/objnam.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -78,4 +78,12 @@ void test('a canonical neutral monster name preserves the explicit wished gender
     assert.ok(result && !result.noWish);
     assert.equal(result.object.spe, CORPSTAT_FEMALE);
 });
+for (const request of ['scales of red dragon', 'red dragon scales']) {
+    void test(`a wish for ${request} produces that dragon's scales`, async () => {
+        freshObjectRoom();
+        const result = await readObjectName(request, { wizardWish: true });
+        assert.ok(result && !result.noWish, `Scale wish was rejected: ${request}`);
+        assert.equal(result.object.otyp, RED_DRAGON_SCALES);
+    });
+}
 //# sourceMappingURL=wish_review.test.js.map

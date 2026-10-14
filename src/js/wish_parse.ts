@@ -196,25 +196,29 @@ function parseWishSpecies(text: string, parsed: ParsedWish): string {
             const match = resolveMonsterNamePrefix(of[1]);
             if (match) {
                 recordWishSpecies(parsed, match);
-                return text.slice(0, of.index);
+                text = text.slice(0, of.index);
             }
         }
     }
-    if (/^(?:samurai sword|wizard lock|death wand|master key|ninja-to|magenta)/i.test(text)) return text;
-    const match = resolveMonsterNamePrefix(text);
-    if (!match?.remainder) return text;
-    recordWishSpecies(parsed, match);
-    const remaining = match.remainder.replace(/^(?:es |s |'s |' | )/i, '');
+    if (parsed.monsterSpecies === null
+        && !/^(?:samurai sword|wizard lock|death wand|master key|ninja-to|magenta)/i.test(text)) {
+        const match = resolveMonsterNamePrefix(text);
+        if (match?.remainder) {
+            recordWishSpecies(parsed, match);
+            text = match.remainder.replace(/^(?:es |s |'s |' | )/i, '');
+        }
+    }
+    const species = parsed.monsterSpecies;
     const firstDragon = MONSTER_NAME.indexOf('gray dragon');
     const lastDragon = MONSTER_NAME.indexOf('yellow dragon');
-    if (remaining.toLowerCase() === 'scales' && match.mnum >= firstDragon && match.mnum <= lastDragon) {
-        const type = GRAY_DRAGON_SCALES + match.mnum - firstDragon;
+    if (text.toLowerCase() === 'scales' && species !== null && species >= firstDragon && species <= lastDragon) {
+        const type = GRAY_DRAGON_SCALES + species - firstDragon;
         if (type <= YELLOW_DRAGON_SCALES) {
             parsed.directType = type;
             parsed.monsterSpecies = null;
         }
     }
-    return remaining;
+    return text;
 }
 
 function recordWishSpecies(parsed: ParsedWish, match: MonsterNamePrefix): void {
