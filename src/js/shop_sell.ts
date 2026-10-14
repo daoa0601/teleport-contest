@@ -211,12 +211,13 @@ export function shopOfferForObject(object: GameObject, resident: Monster | null,
     }
     const unknown = !object.dknown || !objectTypeKnown(object, state);
     if (unknown) {
-        if (object.oclass === GEM_CLASS
-            && [19, 20].includes(OBJECT_MATERIAL[object.otyp] ?? 0)) {
-            tmp = (object.otyp - FIRST_REAL_GEM)
-                % (6 - (resident?.m_id ?? 1) % 3);
-            tmp = (tmp + 3) * objectQuan(object);
-            divisor = 1;
+        if (object.oclass === GEM_CLASS) {
+            if ([19, 20].includes(OBJECT_MATERIAL[object.otyp] ?? 0)) {
+                tmp = (object.otyp - FIRST_REAL_GEM)
+                    % (6 - (resident?.m_id ?? 1) % 3);
+                tmp = (tmp + 3) * objectQuan(object);
+                divisor = 1;
+            }
         } else if (tmp > 1 && (resident?.m_id ?? 1) % 4 === 0) {
             multiplier *= 3;
             divisor *= 4;
