@@ -182,7 +182,7 @@ export async function prepareAppliedWeaponAttack(monster, weapon, { state = game
     const confirm = state.flags?.confirm !== false;
     if (confirm && monster.mpeaceful && !heroIsImpaired(state)) {
         if (stormbringerOverridesConfirmation(weapon, state))
-            return { proceed: true, spentTime: false };
+            return { proceed: true, spentTime: false, confirmationOverridden: true };
         if (canSpotMonster(monster)) {
             const paranoid = !!((state.flags?.paranoia_bits ?? 0)
                 & PARANOID_HIT);

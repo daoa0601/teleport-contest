@@ -7436,7 +7436,9 @@ async function domoveCore(dx, dy, explicitAttempt) {
         const verdict = await prepareAppliedWeaponAttack(monster, game.uwep ?? null, { state: game, struckAt: { x: newx, y: newy } });
         if (!verdict.proceed)
             return verdict.spentTime;
-        if (await attackHostileMonster(monster, newx, newy))
+        if (await attackHostileMonster(monster, newx, newy, {
+            confirmationOverridden: verdict.confirmationOverridden ?? false,
+        }))
             return true;
     }
     // domove_core() snapshots the origin before test_move().  This includes
