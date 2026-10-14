@@ -3,7 +3,7 @@
 import { heroDetectsMonsters, heroIsBlind } from './senses.js';
 import { makeHallucinated } from './hero_mental_status.js';
 import { game, requireLiveGame } from './gstate.js';
-import { corpseName, killerObjectName, observeObjectForNaming, simpleObjectNameWithArticle, objectName } from './objnam.js';
+import { corpseName, killerObjectName, observeObjectForNaming, simpleObjectNameWithArticle, simpleObjectName, objectName } from './objnam.js';
 import { heroHandName } from './body_parts.js';
 import { makePlural } from './object_grammar.js';
 import { displayColorName, newsym, plineWithContinuation, see_monsters } from './display.js';
@@ -265,8 +265,13 @@ export async function removeHeroArmor(object, state = game, options = {}) {
             learnObjectType(object.otyp, state);
         await reportHeroEncumbrance(state);
         setSlipperyHands(0, state);
-        await loseGloveProtection(object, state);
+        await losePetrificationProtection(object, state);
         if (state.program_state?.gameover)
+            return removed;
+    }
+    if (removed && dragonArmorColor(object) === 'yellow') {
+        await losePetrificationProtection(object, state);
+        if (state.program_state.gameover)
             return removed;
     }
     // C Boots_off(): identify before spoteffects(), which can kill the hero.
@@ -306,9 +311,14 @@ async function announceDisplacementLoss(object, state = game) {
     learnObjectType(object.otyp, state);
     await plineWithContinuation('You feel that monsters no longer have difficulty pinpointing your location.');
 }
-// C Gloves_off(): wielding_corpse(). Glove loss resolves life saving or
-// stone-golem transformation before the armor's destruction can continue.
-async function loseGloveProtection(gloves, state) {
+// C wielding_corpse(): losing gloves or yellow dragon armor can expose a
+// petrifying weapon. Resolve life saving before the removal continues.
+async function losePetrificationProtection(armor, state) {
+    if (equippedObject(state, 'uarmg'))
+        return;
+    const armorSlot = armorSlotFor(armor.otyp);
+    if (!armorSlot)
+        return;
     const slots = state.u.twoweap
         ? ['uwep', 'uswapwep'] : ['uwep'];
     for (const slot of slots) {
@@ -316,10 +326,10 @@ async function loseGloveProtection(gloves, state) {
         if (weapon?.otyp !== CORPSE || !touchPetrifies(weapon.corpsenm)
             || heroResistsStoning(state))
             continue;
-        await plineWithContinuation(`You now wield ${corpseName(weapon, { includeArticle: true })} `
+        await plineWithContinuation(`You ${armorSlot === 'uarmg' ? 'now wield' : 'are wielding'} ${corpseName(weapon, { includeArticle: true })} `
             + `in your bare ${makePlural(heroHandName(state))}.`);
-        const voluntary = !state.context?.mon_moving && !gloves.in_use;
-        const killer = `${voluntary ? 'removing' : 'losing'} ${simpleArmorName(gloves, 'uarmg', state)} `
+        const voluntary = armorSlot !== 'uarmg' || !state.context?.mon_moving && !armor.in_use;
+        const killer = `${voluntary ? 'removing' : 'losing'} ${armorSlot === 'uarmg' ? simpleArmorName(armor, armorSlot, state) : simpleObjectName(armor, state).replace('set of ', '')} `
             + `while wielding ${killerObjectName(weapon, state)}`;
         const result = await resolveImmediatePetrification({ killer, state });
         if (result.died)
