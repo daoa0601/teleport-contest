@@ -374,7 +374,13 @@ export async function hurtleHero(dx, dy, range, { verbose = false, finishTelepor
         return false;
     stopRun();
     endVoluntaryMultiTurn(game);
-    game._helplessTurns = range;
+    // nomul(-range) cannot shorten an existing involuntary delay.
+    if ((game._helplessTurns ?? 0) <= range && game.multi >= -range) {
+        game._helplessTurns = range;
+        game.multi = -range;
+        game.u.usleep = 0;
+        game.u.invulnerable = false;
+    }
     game._helplessReason = 'moving through the air';
     game._helplessDoneMessage = '';
     if (verbose) {
