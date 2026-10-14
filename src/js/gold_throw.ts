@@ -38,6 +38,7 @@ import { currentAttribute } from './attrib.js';
 import { newsym, pline, plineWithContinuation } from './display.js';
 import { placeObjectSynchronously, stack_object } from './floor_object.js';
 import { hiddenGold } from './gold.js';
+import { freeInventoryObject } from './hero_inventory.js';
 import { requirePlayingGame } from './gstate.js';
 import {
     detachHeroGold, heroGoldAmount, heroGoldObject,
@@ -257,10 +258,8 @@ export async function resolveDirectGoldThrow({
     captureFlight = null, wakeMonster = null, angerMonster = null,
     adjustAlignment = null,
 }: GoldThrowOptions): Promise<boolean> {
-    if (!gold || gold !== heroGoldObject(state)) return false;
-    gold = detachHeroGold(state);
-    if (!gold) return false;
-    gold.how_lost = LOST_THROWN;
+    if (!gold || gold.oclass !== 12 || !state.inventory.includes(gold)) return false;
+    await freeInventoryObject(gold, state);
 
     if (state.u?.uswallow && state.u?.ustuck) {
         await pline('The gold disappears into the engulfing monster.');

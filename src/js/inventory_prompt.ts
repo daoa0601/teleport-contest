@@ -1,14 +1,17 @@
 // Inventory selection shared by commands which use NetHack's getobj flow.
 // C ref: invent.c getobj().
 
-import { flushPendingTopline, pline } from './display.js';
+import { clearMessageWindow, flushPendingTopline, flush_screen, pline } from './display.js';
 import { game } from './gstate.js';
 import { heroGoldAmount } from './hero_gold.js';
 import { selectInventoryObject } from './invent.js';
 import { clearCommandKeys, nhgetch, takeCommandKey } from './input.js';
 import { promptKey } from './tty_prompts.js';
 import { rn2 } from './rng.js';
-import { GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST } from './const.js';
+import { GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, GETOBJ_SUGGEST } from './const.js';
+import { AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, LOADSTONE } from './object_data.js';
+import { splitObjectStack } from './object_stack.js';
+import { isWeldedPrimary } from './weapon_slots.js';
 import type { GameObject } from './object_types.js';
 
 export type InventoryClassification = 0 | 1 | 2 | 3 | 4 | 5;
@@ -55,8 +58,8 @@ export type InventoryObjectSelection = {
 // typed inventory letter or '*' may select. Downplayed items keep a command
 // available even when nothing is suggested.
 export async function chooseInventoryObject(verb: string, classify: (object: GameObject) => InventoryClassification, {
-    forcePrompt = false, emptyMessage = `You don't have anything to ${verb}.`,
-}: { forcePrompt?: boolean; emptyMessage?: string } = {}): Promise<GameObject | null> {
+    forcePrompt = false, emptyMessage, allowCount = false,
+}: { forcePrompt?: boolean; emptyMessage?: string; allowCount?: boolean } = {}): Promise<GameObject | null> {
     const queuedKey = takeCommandKey();
     if (queuedKey !== undefined) {
         const object = game.inventory.find(candidate =>
@@ -71,34 +74,27 @@ export async function chooseInventoryObject(verb: string, classify: (object: Gam
     const suggested = inventory.filter(object => classify(object) === GETOBJ_SUGGEST);
     const downplayed = inventory.filter(object => classify(object) === GETOBJ_DOWNPLAY);
     if (!suggested.length && !downplayed.length && !forcePrompt) {
-        await pline(emptyMessage);
+        const inaccessible = inventory.some(object => classify(object) === GETOBJ_EXCLUDE_INACCESS);
+        await pline(emptyMessage ?? `You don't have anything ${inaccessible ? 'else ' : ''}to ${verb}.`);
         return null;
     }
     const letters = compactInventoryLetters(suggested.map(object => object.invlet).join(''));
     const choices = letters ? `${letters} or ?*` : '*';
     const menuItems = suggested.length ? suggested : downplayed.length ? downplayed : inventory;
-    let object;
-    if (game.flags?.force_invmenu) {
-        object = await chooseFromInventoryMenu(verb, inventory, menuItems);
-        if (object && (object.oclass !== 12 || classify(object) !== GETOBJ_EXCLUDE))
-            game.context.botl = true;
-    } else {
-        const selection = await promptInventoryObject(
-            `What do you want to ${verb}? [${choices}] `, inventory, {
-                verb, classify,
-                allowMenu: true, allowNone: true,
-                allowGold: inventory.some(object => object.oclass === 12), menuItems,
-            });
-        if (selection.none) {
-            await mimeInventoryAction(verb);
-            return null;
-        }
-        object = selection.object;
-    }
-    if (object && classify(object) === GETOBJ_EXCLUDE) {
-        await pline(object.oclass === 12 ? `You cannot ${verb} gold.`
-            : `That is a silly thing to ${verb}.`);
+    const selection = await promptInventoryObject(
+        `What do you want to ${verb}? [${choices}] `, inventory, {
+            verb, classify, allowCount,
+            allowMenu: true, allowNone: true,
+            allowGold: inventory.some(object => object.oclass === 12), menuItems,
+        });
+    if (selection.none) {
+        await mimeInventoryAction(verb);
         return null;
+    }
+    const object = selection.object;
+    if (object && selection.count !== null && selection.count < object.quan) {
+        if (object.otyp === LOADSTONE && object.cursed) object.corpsenm = selection.count;
+        else if (!isWeldedPrimary(object)) return splitObjectStack(object, selection.count, game);
     }
     return object;
 }
@@ -154,26 +150,6 @@ export function reassignInventoryLetters() {
         index++;
     }
     game._lastInvNr = Math.min(index, 51);
-}
-
-async function chooseFromInventoryMenu(verb: string, inventory: readonly GameObject[], suggestions: readonly GameObject[]): Promise<GameObject | null> {
-    let showAll = false;
-    for (;;) {
-        const items = showAll ? inventory : suggestions;
-        const menuOptions = showAll
-            ? [{ key: '?', text: '(list likely candidates)' }]
-            : items.length < inventory.length ? [{ key: '*', text: '(list everything)' }] : [];
-        const { key } = await selectInventoryObject({
-            items, includeGold: items.some(object => object.oclass === 12),
-            title: `What do you want to ${verb}?`, menuOptions,
-        });
-        if (key === 42 || key === 63) {
-            showAll = key === 42;
-            continue;
-        }
-        if (key === 27 && game.flags?.verbose !== false) await pline('Never mind.');
-        return items.find(object => object.invlet === String.fromCharCode(key)) || null;
-    }
 }
 
 // C invent.c invletter_value(): '$' first, then a-z, then A-Z, then other.
@@ -239,12 +215,9 @@ export async function promptInventoryObject(prompt: string, eligible: readonly G
             continue;
         }
         if (allowCount && key >= 48 && key <= 57) {
-            let digits = '';
-            do {
-                digits += String.fromCharCode(key);
-                key = await nhgetch();
-            } while (key >= 48 && key <= 57);
-            count = Number.parseInt(digits, 10);
+            const counted = await readInventoryCount(key);
+            key = counted.key;
+            count = counted.count || null;
         }
         const cancelled = [27, 32, 10, 13].includes(key);
         if (cancelled) {
@@ -280,6 +253,7 @@ export async function promptInventoryObject(prompt: string, eligible: readonly G
             if (key === 0) {
                 if (forcedMenu)
                     return { cancelled: true, object: null, gold: false, none: false, count: null };
+                count = null;
                 key = await askInventoryPrompt(prompt);
                 continue;
             }
@@ -302,7 +276,10 @@ export async function promptInventoryObject(prompt: string, eligible: readonly G
                 game.context.botl = true;
             if (classification === GETOBJ_EXCLUDE) {
                 await pline(object.oclass === 12 ? `You cannot ${verb} gold.`
-                    : `That is a silly thing to ${verb}.`);
+                    : verb === 'call' && (object.otyp === AMULET_OF_YENDOR
+                        || object.otyp === FAKE_AMULET_OF_YENDOR && !object.known)
+                        ? "The Amulet doesn't like being called names."
+                        : `That is a silly thing to ${verb}.`);
                 return { cancelled: true, object: null, gold: false, none: false, count: null };
             }
             if (count === 0) {
@@ -312,6 +289,15 @@ export async function promptInventoryObject(prompt: string, eligible: readonly G
                 };
             }
             const quantity = object.quantity ?? object.quan ?? 1;
+            if (count !== null && verb === 'throw' && count > 1
+                && (object.oclass !== 12 || count > quantity)) {
+                await pline(count > quantity ? `You only have ${quantity}${
+                    object.oclass !== 12 && quantity > 1 ? ' and can only throw one at a time' : ''}.`
+                    : 'You can only throw one at a time.');
+                key = await askInventoryPrompt(prompt);
+                count = null;
+                continue;
+            }
             if (count !== null && count > quantity) {
                 await pline(
                     `You don't have that many!  You have only ${quantity}.`,
@@ -352,6 +338,32 @@ export async function promptInventoryObject(prompt: string, eligible: readonly G
         await pline("You don't have that object.");
         key = await askInventoryPrompt(prompt);
         count = null;
+    }
+}
+
+// C cmd.c:get_count(): only a positive typed count is passed on by getobj.
+// Backspace edits the count; a second digit makes the count visible.
+async function readInventoryCount(firstKey: number): Promise<{ key: number; count: number }> {
+    let count = 0, key = firstKey, backspaced = false;
+    for (;;) {
+        let showZero = false;
+        if (key >= 48 && key <= 57) {
+            count = Math.min(0x7fffffff, count * 10 + key - 48);
+            showZero = key === 48;
+        } else if (key === 8 || key === 127) {
+            if (!count) return { key, count: 0 };
+            count = Math.trunc(count / 10);
+            backspaced = true;
+        } else return { key, count: key === 27 ? 0 : count };
+        if (count > 9 || backspaced) {
+            const text = backspaced && !count && !showZero ? 'Count: ' : `Count: ${count}`;
+            if (count || showZero) backspaced = false;
+            clearMessageWindow();
+            await pline(text);
+            await flush_screen(0);
+            game.nhDisplay?.setCursor(text.length, 0);
+        }
+        key = await nhgetch();
     }
 }
 

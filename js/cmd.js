@@ -2,6 +2,7 @@ import { dipFountainSword } from './fountain_sword.js';
 import { washHands } from './dip_water.js';
 import { waterDamageObject } from './trap.js';
 import { dip, dipInto } from './potion_dip.js';
+import { AKLYS, BOOMERANG } from './object_data.js';
 import { monsterHiddenConditions } from './monster_status.js';
 import { visibleRegionAt } from './regions.js';
 import { wizIntrinsic } from './wizard_intrinsics.js';
@@ -3565,10 +3566,15 @@ async function doadjust(selected = null, splitting = null) {
     if (!selected && game.flags.fixinv === false)
         reassignInventoryLetters();
     const repairGold = !selected && await checkInventoryGold('adjust');
-    let object = selected || await chooseInventoryObject('adjust', candidate => candidate.oclass === 12 && !repairGold ? GETOBJ_EXCLUDE : GETOBJ_SUGGEST, { forcePrompt: true });
+    let object = selected || await chooseInventoryObject('adjust', candidate => candidate.oclass === 12 && !repairGold ? GETOBJ_EXCLUDE : GETOBJ_SUGGEST, { forcePrompt: true, allowCount: true });
     if (!object) {
         game.context.move = 0;
         return;
+    }
+    if (!splitting) {
+        const previous = game.inventory[game.inventory.indexOf(object) - 1];
+        if (previous && previous.invlet === object.invlet)
+            splitting = previous;
     }
     const source = object.invlet;
     if (!source)
@@ -3611,10 +3617,12 @@ async function doadjust(selected = null, splitting = null) {
     const adjusting = object;
     const occupied = new Set(inventory.filter(candidate => candidate !== adjusting && !mergable(candidate, adjusting))
         .map(candidate => candidate.invlet));
-    const recommended = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
+    const slots = game.flags.fixinv === false
+        ? game.inventory.filter(item => item.oclass !== 12).length + (splitting ? 0 : 1) : 52;
+    const recommended = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'.slice(0, slots)
         .split('')
         .filter(letter => letter === adjusting.invlet || !occupied.has(letter))
-        .join('');
+        .join('') + (occupied.has('#') ? '#' : '');
     const destinationPrompt = `${splitting ? `Split ${object.quan}` : 'Adjust letter'} to what [${compactInventoryLetters(recommended)}] (? see used letters)?`;
     // The source item's queued letter bypasses getobj's prompt, but the
     // destination uses tty_yn_function(), which acknowledges unread prose.
@@ -6188,60 +6196,29 @@ async function dothrow(selectedItem = null, capabilityChecked = false, suppliedS
     if (!selectedItem && game.flags.fixinv === false)
         reassignInventoryLetters();
     // C getobj() sorts its candidates independently of the carried chain.
-    const throwables = (game.inventory || []).filter(item => {
+    const throwClassification = (item) => {
         const objectClass = item.oclass || objectClassForType(item.otyp);
-        return (objectClass === 12 || objectClass === (wieldingSling ? 13 : 2))
-            && !(item === game.uwep && (item.quantity ?? item.quan ?? 1) === 1);
-    }).sort((left, right) => inventoryLetterOrder(left.invlet) - inventoryLetterOrder(right.invlet));
-    const letters = throwables.map(item => item.invlet).join('');
-    const prompt = letters
-        ? `What do you want to throw? [${letters} or ?*] `
-        : 'What do you want to throw? [*] ';
+        if (item.bknown && isWeldedPrimary(item))
+            return GETOBJ_DOWNPLAY;
+        if (item.otyp === BOOMERANG || item === game.uwep && (item.otyp === AKLYS
+            || artifactById(item.oartifact)?.name === 'Mjollnir' && currentAttribute(A_STR) >= STR19(25)))
+            return GETOBJ_SUGGEST;
+        if (item.quan === 1 && (item === game.uwep || item === game.uswapwep && game.u.twoweap))
+            return GETOBJ_DOWNPLAY;
+        return objectClass === 12 || objectClass === (wieldingSling ? 13 : 2)
+            || item.otyp === BOULDER && ((MONSTER_FLAGS2[game.u.umonnum ?? -1] ?? 0) & M2_ROCKTHROW)
+            ? GETOBJ_SUGGEST : GETOBJ_DOWNPLAY;
+    };
     if (!selectedItem) {
-        let key = await promptKey(prompt);
-        for (;;) {
-            if ([27, 32, 10, 13].includes(key)) {
-                await pline('Never mind.');
-                game.context.move = 0;
-                return;
-            }
-            if (key === 63) {
-                ({ key } = await selectInventoryObject({
-                    // invent.c:getobj(): `?` normally lists suggestions.  If
-                    // lets is empty but altlets forced the prompt, it lists
-                    // those downplayed objects instead.
-                    items: throwables.length
-                        ? throwables : (game.inventory || []),
-                    includeGold: true,
-                }));
-                if (!key)
-                    key = await promptKey(prompt);
-                continue;
-            }
-            if (key === 42) {
-                ({ key } = await selectInventoryObject());
-                if (!key)
-                    key = await promptKey(prompt);
-                continue;
-            }
-            selectedItem = game.inventory?.find(candidate => candidate.invlet === String.fromCharCode(key)) ?? null;
-            game.context.botl = true;
-            if (selectedItem)
-                break;
-            // invent.c:getobj() retains the picker after an absent letter.
-            // Reissuing its prompt forces tty to acknowledge the intervening
-            // error line, so the recorded boundary exposes --More-- first.
-            await moreUntilDismissed("You don't have that object.");
-            game._pending_message = '';
-            key = await promptKey(prompt);
-        }
+        selectedItem = await chooseInventoryObject('throw', throwClassification, { forcePrompt: true, allowCount: true });
     }
     const item = selectedItem;
     if (!item) {
         game.context.move = 0;
-        game._pending_message = '';
         return;
     }
+    const previous = game.inventory[game.inventory.indexOf(item) - 1];
+    const splitParent = previous && previous.invlet === item.invlet ? previous : null;
     const selectedObjectClass = item.oclass || objectClassForType(item.otyp);
     const selectedIsGold = selectedObjectClass === 12;
     const directGoldThrow = selectedIsGold && item !== game.uquiver;
@@ -6250,6 +6227,8 @@ async function dothrow(selectedItem = null, capabilityChecked = false, suppliedS
     const selfThrow = direction === '.';
     const verticalThrow = direction === '<' || direction === '>';
     if (!isMovementKey(direction) && !verticalThrow && !selfThrow) {
+        if (splitParent)
+            await rejoinObjectStack(splitParent, item, game);
         const quitDirection = [27, 32, 10, 13].includes(directionKey);
         if (!quitDirection && game.flags?.cmdassist !== false) {
             await showTextPages([directionAssistPage()], {
@@ -6274,6 +6253,8 @@ async function dothrow(selectedItem = null, capabilityChecked = false, suppliedS
     game.u.dz = dz;
     if (directGoldThrow) {
         if (selfThrow) {
+            if (splitParent)
+                await rejoinObjectStack(splitParent, item, game);
             await pline('You cannot throw gold at yourself.');
             game.context.move = 0;
             return;
@@ -6291,11 +6272,15 @@ async function dothrow(selectedItem = null, capabilityChecked = false, suppliedS
         return;
     }
     if (!await canLetGo(item, 'throw')) {
+        if (splitParent)
+            await rejoinObjectStack(splitParent, item, game);
         game.context.move = 0;
         return;
     }
     const mjollnir = artifactById(item.oartifact, game)?.name === 'Mjollnir';
     if (mjollnir && item !== game.uwep) {
+        if (splitParent)
+            await rejoinObjectStack(splitParent, item, game);
         await pline(`The ${objectName(item)} must be wielded before it can be thrown.`);
         game.context.move = 0;
         return;
@@ -6303,11 +6288,15 @@ async function dothrow(selectedItem = null, capabilityChecked = false, suppliedS
     if (mjollnir && currentAttribute(A_STR) < STR19(25)
         || item.otyp === BOULDER
             && !((MONSTER_FLAGS2[game.u.umonnum] ?? 0) & M2_ROCKTHROW)) {
+        if (splitParent)
+            await rejoinObjectStack(splitParent, item, game);
         await pline("It's too heavy.");
         game.context.move = 1;
         return;
     }
     if (selfThrow) {
+        if (splitParent)
+            await rejoinObjectStack(splitParent, item, game);
         await pline('You cannot throw an object at yourself.');
         game.context.move = 0;
         return;

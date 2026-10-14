@@ -9,6 +9,7 @@ import { currentAttribute } from './attrib.js';
 import { newsym, pline, plineWithContinuation } from './display.js';
 import { placeObjectSynchronously, stack_object } from './floor_object.js';
 import { hiddenGold } from './gold.js';
+import { freeInventoryObject } from './hero_inventory.js';
 import { requirePlayingGame } from './gstate.js';
 import { detachHeroGold, heroGoldAmount, heroGoldObject, } from './hero_gold.js';
 import { addObjectToMonsterInventory, linkObjectToMonsterInventory, } from './monster_inventory.js';
@@ -183,12 +184,9 @@ async function resolveQuiveredGoldMonsterContact({ state, monster, gold, swallow
     return false;
 }
 export async function resolveDirectGoldThrow({ state, gold, dx = 0, dy = 0, dz = 0, captureFlight = null, wakeMonster = null, angerMonster = null, adjustAlignment = null, }) {
-    if (!gold || gold !== heroGoldObject(state))
+    if (!gold || gold.oclass !== 12 || !state.inventory.includes(gold))
         return false;
-    gold = detachHeroGold(state);
-    if (!gold)
-        return false;
-    gold.how_lost = LOST_THROWN;
+    await freeInventoryObject(gold, state);
     if (state.u?.uswallow && state.u?.ustuck) {
         await pline('The gold disappears into the engulfing monster.');
         await linkObjectToMonsterInventory(state.u.ustuck, gold, { state });
