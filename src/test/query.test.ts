@@ -126,7 +126,7 @@ void test('a wrapped line prompt leaves covered status rows blank until the next
     }
     await bot();
     assert.match(game.nhDisplay.grid[22]?.map(cell => cell.ch).join('') ?? '', /^Lin/);
-    assert.match(game.nhDisplay.grid[23]?.map(cell => cell.ch).join('') ?? '', /^Dlvl:/);
+    assert.match(game.nhDisplay.grid[23]?.map(cell => cell.ch).join('') ?? '', /^Dl:1/);
 });
 
 void test('line input holds existing status until it returns', async () => {
@@ -165,7 +165,7 @@ void test('a wrapped confirmation restores the status rows it covered', async ()
     }
 
     assert.match(game.nhDisplay.grid[22]?.map(cell => cell.ch).join('') ?? '', /^Lin/);
-    assert.match(game.nhDisplay.grid[23]?.map(cell => cell.ch).join('') ?? '', /^Dlvl:/);
+    assert.match(game.nhDisplay.grid[23]?.map(cell => cell.ch).join('') ?? '', /^Dl:1/);
 });
 
 for (const length of [127, 128, 160]) {
