@@ -141,6 +141,12 @@ export function parseWishText(text) {
         parsed.description = remaining.slice(label.index + label[0].length);
         remaining = remaining.slice(0, label.index);
     }
+    const spinach = remaining.search(/ of spinach/i);
+    if (spinach >= 0) {
+        parsed.spinach = true;
+        parsed.empty = false;
+        remaining = remaining.slice(0, spinach);
+    }
     if (/^pair of /i.test(remaining)) {
         parsed.count *= 2;
         remaining = remaining.slice(8);
@@ -177,7 +183,7 @@ function parseWishSpecies(text, parsed) {
     // Globs have their own canonicalization and are never corpse species.
     if (/\bglobs?\b/i.test(text))
         return text;
-    if (/ of spinach/i.test(text) || text.toLowerCase() === 'spinach') {
+    if (text.toLowerCase() === 'spinach') {
         parsed.spinach = true;
         parsed.directType = TIN;
         return 'tin';

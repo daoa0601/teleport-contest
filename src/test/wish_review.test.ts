@@ -121,3 +121,14 @@ for (const request of ['scales of red dragon', 'red dragon scales']) {
         assert.equal(result.object.otyp, RED_DRAGON_SCALES);
     });
 }
+
+for (const [noun, oclass] of [['ring', 4], ['wand', 11]] as const) {
+    void test(`of spinach does not change a wished ${noun} into food`, async () => {
+        freshObjectRoom();
+
+        const result = await readObjectName(`${noun} of spinach`, { wizardWish: true });
+
+        assert.ok(result && !result.noWish);
+        assert.equal(result.object.oclass, oclass);
+    });
+}
