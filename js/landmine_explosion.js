@@ -2,16 +2,18 @@
 // C ref: trap.c:blow_up_landmine().
 import { deleteTrap } from './trap_lifecycle.js';
 import { D_BROKEN, IS_DOOR, Is_airlevel, Is_waterlevel, LAVAPOOL, PIT, ROOM, } from './const.js';
-import { newsym, plineWithContinuation } from './display.js';
+import { displayLiquidName, newsym, plineWithContinuation } from './display.js';
 import { game, requireGameLevel } from './gstate.js';
 import { liquidForHole } from './hole.js';
 import { fillPitWithBoulderAt } from './pit_fill.js';
-import { wakeMonstersNear } from './monster_wake.js';
+import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { rn2, rnd } from './rng.js';
 import { scatterFloorObjects } from './scatter.js';
 import { waterDamageChain } from './trap.js';
 import { fireDamageChain } from './fire_damage.js';
 import { vision_note_blocker_change } from './vision.js';
+import { unearthFloorObjectsAt } from './buried_object.js';
+import { updateIceObjectTimersAt } from './floor_object.js';
 function levelHasNoPits(state) {
     return Is_airlevel(state.u?.uz) || Is_waterlevel(state.u?.uz);
 }
@@ -34,6 +36,10 @@ async function fillMineHoleWithLiquid(x, y, trap, liquid, state, options) {
         throw new Error(`Land mine has no terrain at (${x}, ${y})`);
     location.typ = liquid;
     location.flags = 0;
+    updateIceObjectTimersAt(x, y, state);
+    await unearthFloorObjectsAt(x, y, state);
+    if (options.seeSquare)
+        await options.publish(`The hole fills with ${displayLiquidName(liquid === LAVAPOOL ? 'lava' : 'water', state)}!`);
     const pile = state.level?.objects?.[x]?.[y] || [];
     if (liquid === LAVAPOOL) {
         await fireDamageChain(pile, {
@@ -80,7 +86,7 @@ export async function explodeLandMine(trap, state = game, { publish = plineWithC
     if (state.program_state.gameover)
         return null;
     removeEngravingAt(state, x, y);
-    wakeMonstersNear(x, y, 400, state);
+    await wakeMonstersNearWithMessages(x, y, 400, state, publish);
     const location = state.level?.at?.(x, y);
     if (location && IS_DOOR(location.typ))
         location.doormask = D_BROKEN;
