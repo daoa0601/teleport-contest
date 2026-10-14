@@ -10,7 +10,7 @@ import { objectsInTimerGraph } from './object_timers.js';
 import { unpaidObjectCost } from './shk.js';
 import { hiddenGold } from './gold.js';
 import { heroGoldAmount } from './hero_gold.js';
-import { paymentObjectDescription } from './object_description.js';
+import { objectDescription, paymentObjectDescription } from './object_description.js';
 import { definiteName, simpleObjectName } from './objnam.js';
 import { plineWithContinuation } from './display.js';
 import { shopkeeperIsMuted } from './shop_loss.js';
@@ -91,10 +91,25 @@ export async function buyShopBillItem(resident, item, state = game, { itemize = 
         if (!await checkPurchaseFunds(resident, item, state, 0))
             return 'broke';
         observeObjectForNaming(item.object, { state });
-        let name = paymentObjectDescription(item.object, item.quantity, { state });
-        if (item.quantity === 1)
-            name = name.charAt(0).toUpperCase() + name.slice(1);
-        declined = await promptYesNo(`${name} for ${item.price} ${currency(item.price, { state })}.  Pay?`) === 'n';
+        const originalQuantity = item.object.quan;
+        const originalSuppressPrice = state.iflags.suppress_price;
+        item.object.quan = item.quantity;
+        state.iflags.suppress_price = true;
+        try {
+            // dopayobj() uses doname(), retaining known contents and weight
+            // while suppressing the separate unpaid-price suffix.
+            let name = objectDescription(item.object, { state });
+            if (item.quantity === 1)
+                name = name.charAt(0).toUpperCase() + name.slice(1);
+            declined = await promptYesNo(`${name} for ${item.price} ${currency(item.price, { state })}.  Pay?`) === 'n';
+        }
+        finally {
+            item.object.quan = originalQuantity;
+            if (originalSuppressPrice === undefined)
+                delete state.iflags.suppress_price;
+            else
+                state.iflags.suppress_price = originalSuppressPrice;
+        }
     }
     const purchases = container ? containedPurchases(resident, item.object, state) : [item.object];
     for (const object of purchases) {
