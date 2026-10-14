@@ -183,8 +183,10 @@ void test('a crash interrupts donning armor and loses the partial wear', async (
         kind: 'wear', object: boots, remainingGlobalTurns: 5, ready: false,
         finishMessage: 'You finish your dressing maneuver.',
     };
+    pushKeys(' '); // acknowledge the crash before the interrupted-dressing message
     const outcome = await fallIntoSink();
     assert.deepEqual(outcome, { fell: true, died: false });
+    assert.match(game._pending_message, /You stop putting on the pair of levitation boots\./);
     assert.equal(game._delayedAction, null);
     assert.equal(game.uarmf, null);
     assert.equal(boots.worn, false);
