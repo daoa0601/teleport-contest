@@ -7,6 +7,7 @@ import { MONSTER_NAME } from '../js/monster_data.js';
 import { DART, EGG, LUMP_OF_ROYAL_JELLY } from '../js/object_data.js';
 import { runExtendedCommand } from './support/commands.js';
 import { addInventoryObject } from './support/game-objects.js';
+import { answerPrompts } from './support/input-boundaries.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 for (const dropping of [false, true]) {
     void test(`a forced inventory menu asks what to ${dropping ? 'drop' : 'ready'}`, async () => {
@@ -34,6 +35,19 @@ for (const dropping of [false, true]) {
         }
     });
 }
+void test('a forced quiver menu lists everything to expose its hidden empty choice', async () => {
+    freshPlayableRoom({ flags: { force_invmenu: true } });
+    const dart = await addInventoryObject(DART);
+    const input = resetInputState();
+    await answerPrompts(rhack('Q'.charCodeAt(0)), input, [
+        { prompt: /What do you want to ready\?[\s\S]*\* - \(list everything\)/, keys: '*' },
+        { prompt: /- - empty quiver \(nothing readied\)/, keys: '-' },
+    ]);
+    assert.equal(game.uquiver, null);
+    assert.equal(dart.where, 'inventory');
+    assert.equal(game.context.move, 0);
+    assert.equal(game._pending_message, 'You already have no ammunition readied!');
+});
 void test('applying royal jelly titles the forced target menu with the full action', async () => {
     freshPlayableRoom({ flags: { force_invmenu: true } });
     const jelly = await addInventoryObject(LUMP_OF_ROYAL_JELLY, { blessed: true });

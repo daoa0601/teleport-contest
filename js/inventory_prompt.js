@@ -215,18 +215,18 @@ export async function promptInventoryObject(prompt, eligible, { verb, classify =
             };
         }
         if (allowMenu && (key === 63 || key === 42)) {
+            const extraChoice = allowNone && (key === 42 || noneSuggested || menuItems.length === 0)
+                ? noneDescription : undefined;
             const selection = await selectInventoryObject({
                 ...(key === 63 ? { items: menuItems } : {}),
                 ...(forcedMenu ? {
                     title: `What do you want to ${verb}?`,
                     menuOptions: key === 42
                         ? [{ key: '?', text: '(list likely candidates)' }]
-                        : menuItems.length < eligible.length
+                        : menuItems.length < eligible.length || (allowNone && !extraChoice)
                             ? [{ key: '*', text: '(list everything)' }] : [],
                 } : {}),
-                ...(allowNone && noneDescription
-                    && (key === 42 || noneSuggested || menuItems.length === 0)
-                    ? { extraChoice: noneDescription } : {}),
+                ...(extraChoice ? { extraChoice } : {}),
             });
             key = selection.key;
             if (key === 0) {
