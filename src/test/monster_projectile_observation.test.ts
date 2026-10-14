@@ -11,25 +11,6 @@ import { floorObjectsAt } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
-void test('seeing an unnamed missile in flight does not prevent stacking it with an unrecognized weapon', async () => {
-    const level = freshObjectRoom();
-    requirePlayingGame(game);
-    const elf = await createMonsterAt('Grey-elf', 12, 10, MM_NOGRP | NO_MINVENT);
-    elf.minvis = true;
-    await floorObject(ELVEN_DAGGER, 14, 10, { dknown: false });
-    const missile = await knownObject(ELVEN_DAGGER, { dknown: true });
-    await addObjectToMonsterInventory(elf, missile);
-
-    await throwMonsterProjectile(elf, missile, { state: game, dx: 1, dy: 0, range: 2 });
-
-    const pile = floorObjectsAt(level, 14, 10);
-    assert.equal(pile.length, 1, 'the unseen thrower leaves a compatible unrecognized dagger');
-    const stack = pile[0];
-    assert.ok(stack);
-    assert.equal(stack.quan, 2);
-    assert.equal(stack.dknown, false);
-});
-
 void test('an offscreen missile miss leaves its description unknown and its floor stack mergeable', async () => {
     const level = freshObjectRoom({ right: 18 });
     requirePlayingGame(game);

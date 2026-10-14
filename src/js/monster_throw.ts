@@ -49,7 +49,7 @@ import { ACID_VENOM, BLINDING_VENOM, CREAM_PIE, EGG, ELVEN_ARROW, ELVEN_BOW,
     OBJECT_NAMES, OBJECT_SUBTYPE } from './object_data.js';
 import { dropObjectAtHero } from './object_drop.js';
 import { withIndefiniteArticle, verbForSubject } from './object_grammar.js';
-import { learnObjectType } from './object_knowledge.js';
+import { learnObjectType, observeObject } from './object_knowledge.js';
 import { objectMaterial } from './object_material.js';
 import { shipObject } from './object_migration.js';
 import { isPoisonableObject } from './object_properties.js';
@@ -172,6 +172,7 @@ export async function throwMonsterProjectile(source: Monster, object: GameObject
             missile.ox = shot.impactX = point.x;
             missile.oy = shot.impactY = point.y;
             shot.flightPath.push(point);
+            if (cansee(point.x, point.y)) observeObject(missile, state);
             const monster = monsterAtPosition(state.level, point.x, point.y);
             if (monster) {
                 const shadeMiss = await rejectMonsterShadeContact(source, monster, missile, {
@@ -374,6 +375,7 @@ async function hitMonsterWithProjectile(defender: Monster, shot: MonsterProjecti
     state.notonhead = point.x !== defender.mx || point.y !== defender.my;
     const disguised = M_AP_TYPE(defender) !== 0 && M_AP_TYPE(defender) !== M_AP_MONSTER;
     const visible = cansee(point.x, point.y);
+    if (visible) observeObject(object, state);
     let accuracy = 5 + findMonsterArmorClass(defender)
         + rangedTargetHitBonus(object, defender, { state, random, rollOne });
     if (archer && defender === target) {
@@ -384,13 +386,12 @@ async function hitMonsterWithProjectile(defender: Monster, shot: MonsterProjecti
     shot.target = defender;
     shot.heroTarget = false;
     shot.hit = accuracy >= rollOne(20);
-    // ohitmon() observes and names the missile only at a visible impact.
-    // An unseen miss must retain the description knowledge cleared at launch.
-    const name = visible ? captureHeroProjectileName(object, state, volley) : '';
     if (!shot.hit) {
         if (!disguised) {
-            if (visible) await publish(rayMissMessage(name, defender, { ...point, state }));
-            else if (!target) await publish('It is missed.');
+            if (visible) {
+                const name = captureHeroProjectileName(object, state, volley);
+                await publish(rayMissMessage(name, defender, { ...point, state }));
+            } else if (!target) await publish('It is missed.');
         }
         if (remaining) return false;
         await dropMonsterProjectile(shot, false, { x: defender.mx, y: defender.my }, context);
@@ -428,6 +429,7 @@ async function hitMonsterWithProjectile(defender: Monster, shot: MonsterProjecti
                 ? `${withIndefiniteArticle(MONSTER_NAME[object.corpsenm] ?? 'unknown')} egg` : 'an egg';
             await publish(`Splat!  ${monsterName(defender, { state, capitalized: true })} is hit with ${egg}!`);
         } else {
+            const name = captureHeroProjectileName(object, state, volley);
             await publish(rayHitMessage(name, defender, {
                 ...point, state, damage,
                 ...(harmless ? { ending: ` but passes harmlessly through ${monsterObjectPronoun(defender, { state })}.` } : {}),
