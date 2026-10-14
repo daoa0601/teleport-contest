@@ -1789,7 +1789,12 @@ async function makemon(
             if (mndx == null) return null;
             ++tryCount;
         } while (tryCount <= 50
-            && !goodPosition(x, y, { kind: 'species', mnum: mndx }));
+            && ((tryCount === 1 && In_sokoban(game.u.uz)
+                && !!((MONSTER_FLAGS2[mndx] ?? 0) & 0x08000000)) // M2_ROCKTHROW
+                || !goodPosition(x, y, { kind: 'species', mnum: mndx }, {
+                    gpflags: GP_AVOID_MONPOS | GP_CHECKSCARY
+                        | (mmflags & MM_IGNOREWATER),
+                })));
     }
     if (mdat != null
         && ((game.mvitals?.[mndx]?.mvflags ?? 0) & G_GENOD)) return null;
