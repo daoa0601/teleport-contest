@@ -78,6 +78,8 @@ import { senseBuriedObjects } from './buried_object.js';
 import { distantMonsterName, monsterInstanceDisplayName, monsterName, shopkeeperName } from './monster_name.js';
 import { attackHostileMonster } from './hero_melee.js';
 import { prepareAppliedWeaponAttack } from './hero_attack_preflight.js';
+import { applyCaitiffPenalty } from './hero_attack_conduct.js';
+import { revealMonsterAppearance } from './monster_appearance.js';
 import { beastChoosesHeroDisplacement, settleBeastHeroDisplacement } from './hero_beast_displacement.js';
 import { stumbleOnDoorMimic, stumbleOntoMimic } from './mimic.js';
 import { monsterHasMapPosition, monsterAtPosition } from './monster_location.js';
@@ -281,12 +283,13 @@ import { chatWithQuestLeader, onQuestStart, okToQuest } from './quest.js';
 import { performPetRangedAttack, resumeDeferredMonsterTrap, triggerImmediateMonsterTrap, } from './monmove.js';
 import { hurtleHero, kickRecoilRange } from './hero_hurtle.js';
 import { announceInvocationSquare } from './invocation.js';
-import { abuseKickedPet, kickConductViolation, levitatingKickMisses, prepareKick, prepareKickDamage, rollKickDamage, tryKickEvasion, tryKickReel, } from './monster_kick.js';
+import { abuseKickedPet, levitatingKickMisses, prepareKick, prepareKickDamage, rollKickDamage, tryKickEvasion, tryKickReel, } from './monster_kick.js';
 import { kickFloorObject } from './object_kick.js';
 import { kickWithMonsterForm } from './hero_form_kick.js';
 import { admitHeroKick, kickCanReachTarget } from './kick_admission.js';
 import { kickNonDoorTerrain } from './kick_terrain.js';
 import { kickDoor } from './kick_door.js';
+import { heroHasMartialKick } from './kick_rules.js';
 import { bringLeashedFollowers, heroTeleportDestinationOk, moveHeroByTeleport, randomMonsterRelocation, } from './teleport.js';
 import { goodPosition, monsterTeleportRestricted } from './teleport_rules.js';
 import { removeWishGrantingMonster } from './monster_departure.js';
@@ -1758,23 +1761,6 @@ async function recoilFromKick(range) {
         finishMonsterDeath: finishHurtleMonsterDeath,
     });
 }
-function kickPromptTargetName(monster) {
-    if (monster.name)
-        return monster.name;
-    const article = (monster.mtame ?? 0) > 0 ? 'your' : 'the';
-    return `${article} ${monsterInstanceDisplayName(monster)}`;
-}
-async function confirmKickTarget(monster) {
-    const hero = game.u;
-    const impaired = hero?.confused || (hero?.confusionTurns ?? 0) > 0
-        || heroIsHallucinating(game)
-        || hero?.stunned || (hero?.stunnedTurns ?? 0) > 0;
-    if (game.flags?.confirm === false || !monster.mpeaceful || impaired
-        || game.context?.forcefight || !canSpotMonster(monster))
-        return true;
-    const paranoid = !!((game.flags?.paranoia_bits ?? 0) & PARANOID_HIT);
-    return paranoidQuery(paranoid, `Really attack ${kickPromptTargetName(monster)}?`);
-}
 function applyKickPassive(monster, hit) {
     return applyHeroContactPassive(monster, {
         hit,
@@ -1786,32 +1772,40 @@ function applyKickPassive(monster, hit) {
 // Form-specific attacks share the command admission rules. Projection affects only the
 // target noun: dokick() still targets m_at(x,y) when the actor is invisible.
 async function kickLiveMonster(monster, x, y) {
-    const helplessBeforeKick = !!(monster.msleeping
-        || monster.mcanmove === 0 || (monster.mfrozen ?? 0) > 0);
-    const fleeingFromBehind = !!(monster.mflee && !monster.mavenge);
-    monster.mstrategy = (monster.mstrategy ?? 0) & ~STRAT_WAITMASK;
-    if (!await confirmKickTarget(monster)) {
-        game.context.move = 0;
-        return;
+    const forcefight = game.context.forcefight;
+    try {
+        if (!monster.mpeaceful || !canSpotMonster(monster))
+            game.context.forcefight = true;
+        const permission = await prepareAppliedWeaponAttack(monster, null, { struckAt: { x, y } });
+        if (!permission.proceed) {
+            game.context.move = permission.spentTime ? 1 : 0;
+            return false;
+        }
+        if (await checkHeroAttackOverexertion()) {
+            game.context.move = 1;
+            return false;
+        }
     }
-    if (await checkHeroAttackOverexertion()) {
-        game.context.move = 1;
-        return;
+    finally {
+        if (forcefight === undefined)
+            delete game.context.forcefight;
+        else
+            game.context.forcefight = forcefight;
     }
     wakeMonstersNear(game.u.ux, game.u.uy, (game.u?.ulevel ?? 1) * 20);
     wipeHeroEngraving(2);
     await angerAttackedMonster(monster);
     if (await levitatingKickMisses(monster)) {
         await pline('Floating in the air, you miss wildly!');
+        await exerciseAttribute(A_DEX, false);
         await applyKickPassive(monster, false);
         game.context.move = 1;
-        return;
+        return true;
     }
     if (monster.mundetected
         || (M_AP_TYPE(monster) && M_AP_TYPE(monster) !== M_AP_MONSTER)) {
         monster.mundetected = 0;
-        monster.m_ap_type = 0;
-        monster.mappearance = 0;
+        revealMonsterAppearance(monster);
         if (canSpotMonster(monster)) {
             newsym(x, y);
             const name = monsterInstanceDisplayName(monster);
@@ -1824,11 +1818,10 @@ async function kickLiveMonster(monster, x, y) {
     }
     if (await kickWithMonsterForm(monster, x, y)) {
         game.context.move = 1;
-        return;
+        return true;
     }
     const target = monsterName(monster);
-    const martial = game.urole?.key === 'monk' || game.urole?.key === 'samurai'
-        || game.uarmf?.otyp === KICKING_BOOTS;
+    const martial = heroHasMartialKick();
     const kick = await prepareKick({
         martial,
         announce: pline,
@@ -1836,7 +1829,7 @@ async function kickLiveMonster(monster, x, y) {
     if (kick.stopped) {
         await applyKickPassive(monster, false);
         game.context.move = 1;
-        return;
+        return true;
     }
     await plineWithContinuation(`You kick ${target}.`);
     const evaded = await tryKickEvasion(monster, {
@@ -1852,41 +1845,35 @@ async function kickLiveMonster(monster, x, y) {
             && !canSpotMonster(monster))
             map_invisible(x, y);
         game.context.move = 1;
-        return;
+        return true;
     }
     const preparedDamage = prepareKickDamage(monster, {
         clumsy: kick.clumsy,
     });
     if (preparedDamage.passesThroughShade) {
-        await plineWithContinuation('The kick passes harmlessly through the shade.');
+        await plineWithContinuation('The kick passes harmlessly through.');
         game.context.move = 1;
-        return;
+        return true;
     }
-    const conductMessage = kickConductViolation(monster, {
-        helpless: helplessBeforeKick,
-        fleeingFromBehind,
-    });
-    if (conductMessage) {
-        await plineWithContinuation(conductMessage);
-        adjustHeroAlignment(-1);
-    }
+    revealMonsterAppearance(monster);
+    await applyCaitiffPenalty(monster);
     const petReaction = await abuseKickedPet(monster, preparedDamage.potentialDamage);
     if (petReaction.heroDied)
-        return;
+        return true;
     const damage = await rollKickDamage(preparedDamage, { martial });
     if (damage.damage > 0)
-        monster.mhp = Math.max(0, (monster.mhp ?? 1) - damage.damage);
+        monster.mhp -= damage.damage;
     const reel = await tryKickReel(monster, x - (game.u?.ux ?? x), y - (game.u?.uy ?? y), {
         martial,
         announce: plineWithContinuation,
         nameMonster: (actor) => canSpotMonster(actor) ? `The ${monsterInstanceDisplayName(actor)}` : 'It',
     });
     if (reel?.heroDied)
-        return;
+        return true;
     const passive = await applyKickPassive(monster, true);
     if (passive.heroDied) {
         game.context.move = 1;
-        return;
+        return true;
     }
     if ((monster.mhp ?? 1) <= 0 && !reel?.dead) {
         await finishHeroMonsterKill(monster, monster.mx, monster.my, {
@@ -1900,6 +1887,7 @@ async function kickLiveMonster(monster, x, y) {
     if (damage.trainSkill)
         await useHeroSkill(35);
     game.context.move = 1;
+    return true;
 }
 async function dokick() {
     if (!await admitHeroKick())
@@ -1926,7 +1914,8 @@ async function dokick() {
     const monster = monsterAtPosition(requireGameLevel(), x, y);
     if (monster) {
         const recoilRange = kickRecoilRange(monster.mnum);
-        await kickLiveMonster(monster, x, y);
+        if (!await kickLiveMonster(monster, x, y))
+            return;
         if (kickCausesRecoil() && game.context.move)
             await recoilFromKick(recoilRange);
         return;
@@ -2038,8 +2027,7 @@ async function kickDumb(x, y) {
     // dokick.c:kick_dumb() always abuses Dexterity before deciding whether
     // an unremarkable floor kick is merely empty or strains a muscle.
     await exerciseAttribute(A_DEX, false);
-    const martial = game.urole?.key === 'monk' || game.urole?.key === 'samurai'
-        || game.uarmf?.otyp === KICKING_BOOTS;
+    const martial = heroHasMartialKick();
     if (martial || currentAttribute(A_DEX) >= 16 || rn2(3) !== 0) {
         await pline('You kick at empty space.');
         if (heroIsBlind(game))

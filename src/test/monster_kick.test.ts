@@ -153,9 +153,9 @@ void test('kicking a wall while levitating throws the hero backward', async () =
     game.level.requireAt(11, 10).typ = STONE;
     vision_reset();
     game.u.levitating = true;
-        // An open doorway provides a brace without blocking the recoil.
-        game.level.requireAt(9, 10).typ = DOOR;
-        game.level.requireAt(9, 10).doormask = D_ISOPEN;
+    // An open doorway provides a brace without blocking the recoil.
+    game.level.requireAt(9, 10).typ = DOOR;
+    game.level.requireAt(9, 10).doormask = D_ISOPEN;
     game.u.uhp = game.u.uhpmax = 100;
     initRng(19n);
     await kickDirection('l', [' ', ' ']);
