@@ -94,7 +94,7 @@ export function monsterSeenDescription(monster: Monster): string {
 
 export async function selfLookDetails(): Promise<string> {
     const hero = game.u;
-    let result = hero.usteed ? `, mounted on ${monsterName(hero.usteed, { article: 'your' })}` : '';
+    let result = hero.usteed ? `, mounted on ${monsterName(hero.usteed, { article: 'your', suppressSaddle: true })}` : '';
     const species = heroSpecies();
     const appearance = (hero.m_ap_type ?? 0) & 3;
     if (appearance === M_AP_FURNITURE) {

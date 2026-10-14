@@ -8,7 +8,7 @@ import { resetInputState } from '../js/input.js';
 import { answerPrompts } from './support/input-boundaries.js';
 import { createMonsterAt, createSaddledSteed } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
-void test('quick look describes the hero mount and trap', async () => {
+void test('quick look describes the hero mount and trap without a redundant saddle', async () => {
     const level = freshObjectRoom({ flags: { tips: false } });
     const pony = await createSaddledSteed();
     game.u.usteed = pony;
@@ -20,8 +20,19 @@ void test('quick look describes the hero mount and trap', async () => {
     const input = resetInputState();
     input.feed('.');
     await answerPrompts(rhack(';'.charCodeAt(0)), input, [
-        { prompt: /mounted on your[\s\S]*saddled pony[\s\S]*trapped in a bear trap[\s\S]*--More--/, keys: ' ' },
+        { prompt: /mounted on your pony[\s\S]*trapped in a bear trap[\s\S]*--More--/, keys: ' ' },
     ]);
+    assert.equal(game.context.move, 0);
+});
+void test('quick look still describes the saddle on an unmounted pony', async () => {
+    freshObjectRoom({ flags: { tips: false } });
+    await createSaddledSteed();
+    newsym(11, 10);
+    resetInputState().feed('l.');
+    await rhack(';'.charCodeAt(0));
+    await flush_screen(1);
+    const text = requireGameDisplay().grid[0]?.map(cell => cell.ch).join('') ?? '';
+    assert.match(text, /saddled pony/);
     assert.equal(game.context.move, 0);
 });
 void test('quick look describes a leashed trapped monster and reveals the trap', async () => {

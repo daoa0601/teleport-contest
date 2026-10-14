@@ -87,7 +87,7 @@ export function monsterSeenDescription(monster) {
 }
 export async function selfLookDetails() {
     const hero = game.u;
-    let result = hero.usteed ? `, mounted on ${monsterName(hero.usteed, { article: 'your' })}` : '';
+    let result = hero.usteed ? `, mounted on ${monsterName(hero.usteed, { article: 'your', suppressSaddle: true })}` : '';
     const species = heroSpecies();
     const appearance = (hero.m_ap_type ?? 0) & 3;
     if (appearance === M_AP_FURNITURE) {
