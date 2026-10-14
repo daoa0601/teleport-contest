@@ -79,6 +79,14 @@ export async function whatdoes(): Promise<void> {
 // the current command binding. Movement descriptions come from extcmdlist.
 export function commandDescription(key: number): string | null {
     const bindings = game.commandBindings;
+    // key2extcmddesc() calls movecmd() before describing any key. Movement
+    // replaces dx/dy; failed checks clear dz, including after a stair key.
+    const movement = bindings.movementForKey(key);
+    if (movement) {
+        game.u.dx = movement.dx;
+        game.u.dy = movement.dy;
+    }
+    game.u.dz = 0;
     if (key >= 48 && key <= 57 || bindings.numberPad && (key & 127) >= 48 && (key & 127) <= 57) {
         if (!bindings.numberPad) return 'start of, or continuation of, a count';
         if ((key & 127) === 53) return `${bindings.pcHack !== (key === (53 | 128)) ? 'run' : 'rush'} prefix`;
