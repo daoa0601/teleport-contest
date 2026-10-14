@@ -463,18 +463,17 @@ async function installPotionHelplessness(state: GameState, duration: number, rea
     // nomul() keeps a longer involuntary delay. The caller still replaces
     // its reason and recovery message, even when nomul() returns early.
     const remainingDelay = Math.max(
-        state._helplessTurns ?? 0, state._prayerTurnsRemaining ?? 0,
+        state._helplessTurns ?? 0, -state.multi,
     );
     if (remainingDelay <= duration) {
         endVoluntaryMultiTurn(state);
         state.u.invulnerable = false;
         state.u.usleep = 0;
         state._helplessTurns = duration;
+        state.multi = -duration;
     }
     state._helplessReason = reason;
     state._helplessDoneMessage = 'You can move again.';
-    if ((state._prayerTurnsRemaining ?? 0) > 0)
-        state._prayerCompletionMessage = 'You can move again.';
     await exerciseAttribute(A_DEX, false, state);
 }
 

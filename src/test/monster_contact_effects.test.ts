@@ -84,13 +84,13 @@ for (const delay of ['dressing', 'unprotected prayer', 'negative multi']) {
             assert.ok(armor.invlet);
             resetInputState().feed(armor.invlet);
             await rhack('W'.charCodeAt(0));
-            assert.ok((game._delayedAction?.remainingGlobalTurns ?? 0) > 0);
+            assert.equal(game.uarm, armor);
         } else if (delay === 'unprotected prayer') {
             game.flags.paranoia_bits = 0;
             game.flags.debug = false;
             game.u.ublesscnt = 500;
             await dopray();
-            assert.equal(game._prayerTurnsRemaining, 3);
+            assert.equal(game._helplessTurns, 3);
             assert.ok(!game.u.invulnerable);
         } else {
             game.multi = -3;
@@ -104,7 +104,7 @@ for (const delay of ['dressing', 'unprotected prayer', 'negative multi']) {
         });
 
         assert.equal(game.u.uhp, 97);
-        assert.equal(game._helplessTurns ?? 0, 0);
+        assert.equal(game._helplessTurns ?? 0, delay === 'unprotected prayer' ? 3 : 0);
         assert.ok(!game.u.usleep);
     });
 }

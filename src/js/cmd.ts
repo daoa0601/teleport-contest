@@ -62,7 +62,7 @@ import { distantMonsterName, monsterInstanceDisplayName, monsterName, shopkeeper
 import { attackHostileMonster } from './hero_melee.js';
 import { prepareAppliedWeaponAttack } from './hero_attack_preflight.js';
 import { beastChoosesHeroDisplacement, settleBeastHeroDisplacement } from './hero_beast_displacement.js';
-import { stumbleOntoMimic } from './mimic.js';
+import { stumbleOnDoorMimic, stumbleOntoMimic } from './mimic.js';
 import { monsterHasMapPosition, monsterAtPosition } from './monster_location.js';
 import { SHOP_TYPES } from './shop_data.js';
 import { observeBucForNaming } from './object_knowledge.js';
@@ -252,7 +252,7 @@ import {
     SLING, BULLWHIP, GRAPPLING_HOOK, CREAM_PIE, EGG, LUMP_OF_ROYAL_JELLY, LOCK_PICK,
     CREDIT_CARD, STETHOSCOPE, LOADSTONE, GOLD_PIECE, BOULDER, ROCK, DILITHIUM_CRYSTAL,
     LUCKSTONE, TOUCHSTONE, LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK,
-    BAG_OF_HOLDING, BRASS_LANTERN, OIL_LAMP, MAGIC_LAMP, STATUE, RIN_PROTECTION,
+    BAG_OF_HOLDING, BAG_OF_TRICKS, BRASS_LANTERN, OIL_LAMP, MAGIC_LAMP, STATUE, RIN_PROTECTION,
     BANANA, MIRROR, TIN_WHISTLE, MAGIC_WHISTLE, EUCALYPTUS_LEAF,
     BELL, BELL_OF_OPENING, EXPENSIVE_CAMERA, TIN_OPENER,
     TALLOW_CANDLE, WAX_CANDLE, CANDELABRUM_OF_INVOCATION, POT_OIL,
@@ -289,7 +289,7 @@ import { drawbridgeUnderlyingType } from './drawbridge_terrain.js';
 import { dosave } from './save.js';
 import { captureRunmodeDelay, startRun, stopRun } from './runmode.js';
 import {
-    announceDisplacementLoss, applyArmorOnEffects, armorOnIdentifiesType, armorSlotFor,
+    applyArmorOnEffects, armorOnIdentifiesType, armorSlotFor,
     armorSimpleName, armorOffMessage,
     findArmorClass, heroIsDisplaced,
     removeHeroArmor, wearHeroArmor,
@@ -4977,7 +4977,6 @@ export async function finishArmorRemoval(
     object: GameObject, { silent = false }: { silent?: boolean } = {},
 ): Promise<string> {
     await removeHeroArmor(object, game, { deferArmorClass: true });
-    await announceDisplacementLoss(object, game);
     if (silent || game.flags?.verbose === false) return '';
     return armorOffMessage(object, game);
 }
@@ -5627,6 +5626,11 @@ async function doclose(): Promise<void> {
         game.context.move = 0;
         return;
     }
+    if (game.u.utrap && game.u.utraptype === TT_PIT) {
+        await pline("You can't reach over the edge of the pit.");
+        game.context.move = 0;
+        return;
+    }
     const key = await readDirectionKey();
     const direction = promptedDirectionKey(key, game.commandBindings);
     if (!isMovementKey(direction)) {
@@ -5647,6 +5651,10 @@ async function doclose(): Promise<void> {
     const x = game.u.ux + DIR_DX[direction];
     const y = game.u.uy + DIR_DY[direction];
     const loc = game.level?.at(x, y);
+    if (await stumbleOnDoorMimic(x, y)) {
+        game.context.move = 1;
+        return;
+    }
     if (loc?.typ !== DOOR) await pline('You see no door there.');
     else if (loc.doormask === D_NODOOR)
         await pline('This doorway has no door.');
@@ -5702,24 +5710,44 @@ async function doopen(): Promise<void> {
     const x = game.u.ux + DIR_DX[direction];
     const y = game.u.uy + DIR_DY[direction];
     const loc = game.level?.at(x, y);
+    if (await stumbleOnDoorMimic(x, y)) {
+        game.context.move = 1;
+        return;
+    }
+    let spentTime = !!(game.u.confused || game.u.confusionTurns
+        || game.u.stunned || game.u.stunnedTurns);
+    if (loc) {
+        const previousGlyph = glyphAt(x, y)?.glyph;
+        recordMappedOverviewState();
+        const previousTerrain = loc.lastseentyp;
+        newsym(x, y);
+        // doopen_indir() uses a turn when looking at the target teaches
+        // the hero something, even if the target has no door to open.
+        if (glyphAt(x, y)?.glyph !== previousGlyph || loc.lastseentyp !== previousTerrain)
+            spentTime = true;
+    }
+    game.context.move = Number(spentTime);
     if (loc?.typ !== DOOR) {
-        await pline('You see no door there.');
-        game.context.move = 0;
+        const floorPile = game.level?.objects[x]?.[y] ?? [];
+        // Native Is_container includes a bag of tricks for this hint.
+        const hasContainer = floorPile.some(object =>
+            object.otyp >= LARGE_BOX && object.otyp <= BAG_OF_TRICKS);
+        const blind = heroIsBlind(game);
+        await pline(hasContainer
+            ? `${blind ? 'Feels' : 'Seems'} like something lootable over there.`
+            : `You ${blind ? 'feel' : 'see'} no door there.`);
         return;
     }
     if (loc.doormask === D_BROKEN) {
         await pline('This door is broken.');
-        game.context.move = 0;
         return;
     }
     if (loc.doormask === D_NODOOR) {
         await pline('This doorway has no door.');
-        game.context.move = 0;
         return;
     }
     if (loc.doormask === D_ISOPEN) {
         await pline('This door is already open.');
-        game.context.move = 0;
         return;
     }
     if (loc.doormask & D_LOCKED) {

@@ -1,11 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { finishHeroHelplessness } from '../js/allmain.js';
 import { PARANOID_PRAY } from '../js/const.js';
 import { clearMessageWindow } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { hitHeroWithThrownPotion } from '../js/hero_potion_hit.js';
 import { POT_PARALYSIS, POT_SLEEPING } from '../js/object_data.js';
-import { finishPrayerOccupation } from '../js/pray.js';
 import { initRng } from '../js/rng.js';
 import { runExtendedCommand } from './support/commands.js';
 import { knownObject } from './support/game-objects.js';
@@ -36,8 +36,7 @@ for (const { type, name } of [{ type: POT_PARALYSIS, name: 'paralysis' },
         initRng(1n);
         await hitHeroWithThrownPotion(potion, { publish: async () => { } });
         assert.equal(game.u.invulnerable, true);
-        assert.equal(game._prayerTurnsRemaining, 3);
-        assert.equal(game._helplessTurns ?? 0, 0);
+        assert.equal(game._helplessTurns, 3);
         assert.equal(potion.where, 'gone');
     });
     void test(`prayer completes with movement recovery after shorter ${name} vapors`, async () => {
@@ -52,7 +51,7 @@ for (const { type, name } of [{ type: POT_PARALYSIS, name: 'paralysis' },
         clearMessageWindow();
         initRng(1n);
         await hitHeroWithThrownPotion(potion, { publish: async () => { } });
-        await finishPrayerOccupation();
+        await finishHeroHelplessness();
         const messages = game._pending_message;
         assert.match(messages, /You can move again\./);
         assert.doesNotMatch(messages, /You finish your prayer\./);

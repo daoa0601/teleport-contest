@@ -55,11 +55,11 @@ for (const confused of [false, true]) {
         await wearHeroAccessory(amulet, 'uamul');
         const messages: string[] = [];
         input.beforeRead = () => { messages.push(game._pending_message || ''); };
-        installPagerInput(input, { expected: /Mira hits|die|But wait|medallion|feel much better/i, limit: 10 });
+        installPagerInput(input, { expected: /Mira hits|die|But wait|medallion|feel much better|You survived that attempt on your life/i, limit: 10 });
         input.feed('m.');
 
         await moveloop_core();
-        await finishAtCommandInput(input, () => moveloop_core(), /Mira hits|medallion|feel much better/i);
+        await finishAtCommandInput(input, () => moveloop_core(), /Mira hits|medallion|feel much better|You survived that attempt on your life/i);
 
         assert.ok(!game.program_state.gameover);
         assert.equal(game.u.umortality, 1);

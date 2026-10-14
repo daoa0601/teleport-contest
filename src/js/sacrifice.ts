@@ -13,7 +13,7 @@ import { heroFootName } from './body_parts.js';
 import {
     A_NONE, A_WIS, ALTAR, AM_SANCTUM, AM_SHRINE, Align2amask, Amask2align,
     Is_astralevel, LUCKMAX, LUCKMIN, MM_NOMSG, ROOM,
-    STRAT_APPEARMSG,
+    STRAT_APPEARMSG, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_SELECTABLE, GETOBJ_SUGGEST,
 } from './const.js';
 import { isRider } from './corpse_species.js';
 import { reviveCorpseImmediately } from './corpse_revival.js';
@@ -30,13 +30,14 @@ import { recordGameLogEvent } from './gamelog.js';
 import { game, requireInitializedGame } from './gstate.js';
 import type { GameObject } from './object_types.js';
 import { consumeInventoryItem, inventoryItemDescription } from './invent.js';
-import { compactInventoryLetters, promptInventoryObject } from './inventory_prompt.js';
+import { chooseInventoryObject } from './inventory_prompt.js';
 import { demonLord, summonMinion } from './minion.js';
 import { makemonNear } from './mklev.js';
 import {
     MONSTER_ALIGNMENT, MONSTER_BODY_META, MONSTER_DIFFICULTY,
     MONSTER_FLAGS2, MONSTER_NAME, monsterIsUnicorn,
 } from './monster_data.js';
+import { monsterName } from './monster_name.js';
 import {
     AMULET_OF_YENDOR, CORPSE, FAKE_AMULET_OF_YENDOR, OBJECT_SUBTYPE,
 } from './object_data.js';
@@ -48,7 +49,7 @@ import { objectQuantity } from './object_stack.js';
 import { uncurseObjectState } from './object_state.js';
 import { angerTemplePriest } from './priest.js';
 import { heroFormHidesUnderObjects } from './polyself.js';
-import { grantIntrinsicProperty } from './properties.js';
+import { grantIntrinsicProperty, propertyIsActive } from './properties.js';
 import { promptYesNo, promptYesNoQuit } from './query.js';
 import { rn2, rnl, rnd, rnz } from './rng.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
@@ -82,7 +83,7 @@ export async function dosacrifice(): Promise<void> {
         await pline(`You are not ${hero.levitating || hero.flying ? 'over' : 'on'} an altar.`);
         return;
     }
-    if ((hero.confusionTurns ?? 0) > 0 || (hero.stunnedTurns ?? 0) > 0) {
+    if (propertyIsActive('confusion') || propertyIsActive('stunned')) {
         await pline('You are too impaired to perform the rite.');
         return;
     }
@@ -127,24 +128,13 @@ async function chooseOffering(): Promise<GameObject | null> {
             declinedFloor = true;
         }
     }
-    const offerings = game.inventory.filter(object =>
-        [CORPSE, AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR].includes(object.otyp));
-    if (!offerings.length) {
-        await pline(`You don't have anything ${declinedFloor ? 'else ' : ''}to sacrifice.`);
-        return null;
-    }
     const astral = Is_astralevel(hero.uz);
-    const suggested = offerings.filter(object => astral === (object.oclass === AMULET_CLASS));
-    const letters = compactInventoryLetters(suggested.map(object => object.invlet).join(''));
-    const selection = await promptInventoryObject(
-        `What do you want to sacrifice? ${letters ? `[${letters} or ?*]` : '[*]'} `,
-        game.inventory, { allowMenu: true, menuItems: suggested.length ? suggested : offerings },
-    );
-    const object = selection.object;
-    if (object && ![AMULET_CLASS, FOOD_CLASS].includes(object.oclass ?? 0)) {
-        await pline('That is a silly thing to sacrifice.');
-        return null;
-    }
+    const object = await chooseInventoryObject('sacrifice', object => {
+        if (object.oclass !== FOOD_CLASS && object.oclass !== AMULET_CLASS) return GETOBJ_EXCLUDE;
+        if (![CORPSE, AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR].includes(object.otyp))
+            return GETOBJ_EXCLUDE_SELECTABLE;
+        return astral !== (object.oclass === AMULET_CLASS) ? GETOBJ_DOWNPLAY : GETOBJ_SUGGEST;
+    }, { emptyMessage: `You don't have anything ${declinedFloor ? 'else ' : ''}to sacrifice.` });
     if (object && object.oclass !== AMULET_CLASS && object.otyp !== CORPSE) {
         await pline("You can't sacrifice that!");
         return null;
@@ -164,7 +154,8 @@ async function offerCorpse(corpse: GameObject, highAltar: boolean, alignment: nu
     if (game.program_state.gameover) return;
     if (isRider(corpse.corpsenm)) {
         await pline('At your touch, the corpse suddenly moves...');
-        await reviveCorpseImmediately(corpse);
+        const revival = await reviveCorpseImmediately(corpse);
+        for (const message of revival?.messages ?? []) await pline(message);
         await exerciseAttribute(A_WIS, false);
         return;
     }
@@ -371,8 +362,9 @@ async function offerOwnRace(corpse: CorpseOffering, highAltar: boolean, alignmen
         const type = demonLord(alignment);
         const demon = type == null ? null : await makemonNear(type, hero.ux, hero.uy, MM_NOMSG);
         if (demon && type !== null) {
-            demon.mstrategy = (demon.mstrategy ?? 0) & ~STRAT_APPEARMSG;
-            await pline(`You have summoned ${MONSTER_NAME[type]}!`);
+            const name = monsterName(demon, { article: 'a' });
+            if (name !== 'it') demon.mstrategy = (demon.mstrategy ?? 0) & ~STRAT_APPEARMSG;
+            await pline(`You have summoned ${name === 'it' ? 'something dreadful' : name}!`);
             if (Math.sign(hero.ualign.type) === Math.sign(MONSTER_ALIGNMENT[type] ?? 0)) demon.mpeaceful = true;
             await pline('You are terrified, and unable to move.');
             endVoluntaryMultiTurn(game);

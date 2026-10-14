@@ -1,3 +1,5 @@
+import { monsterFireDescription } from './monster_fire_description.js';
+import { bot } from './display.js';
 import { launchRollingBoulder } from './rolling_boulder.js';
 import { recorderLocalHour } from './calendar.js';
 import type { MonsterLiquidDeathContext } from './mon.js';
@@ -855,20 +857,21 @@ async function readyMonsterDiggingWeapon(
 }
 
 function monsterHasLauncherAndAmmo(monster: Monster) {
+    const launcher = monsterWieldedWeapon(monster);
+    if (!launcher) return false;
     const inventory = monster.minvent || monster.inventory || [];
-    return inventory.some((ammo) =>
-        inventory.some((launcher) => ammunitionMatchesLauncher(ammo, launcher)),
-    );
+    return inventory.some(ammo => ammunitionMatchesLauncher(ammo, launcher));
 }
 
-function monsterHasAvailableDistanceAttack(monster: Monster) {
-    return (MONSTER_ATTACKS[monster?.mnum] || []).some(
-        ([attackType]) =>
-            attackType === AT_SPIT ||
-            attackType === AT_BREA ||
-            attackType === AT_MAGC ||
-            attackType === AT_GAZE,
-    );
+// mhitu.c:ranged_attk_available() excludes effects the hero has resisted.
+function monsterHasAvailableDistanceAttack(monster: Monster, random: RandomBelow) {
+    for (const [method, damage] of MONSTER_ATTACKS[monster.mnum] ?? []) {
+        if (![AT_SPIT, AT_BREA, AT_MAGC, AT_GAZE].includes(method)) continue;
+        const damageType = damage === AD_RBRE ? AD_MAGM + random(8) : damage;
+        if (damageType >= 0 && !((monster.seen_resistance ?? 0) & seenResistanceForDamage(damageType)))
+            return true;
+    }
+    return false;
 }
 
 // C monmove.c:dochug() phase two.  A close weapon attacker may spend its
@@ -1897,8 +1900,7 @@ async function finishHeroContactDamage(
 function heroHasNegativeMulti(state: PlayingGameState) {
     return (
         !!state?._delayedAction ||
-        (state?._helplessTurns ?? 0) > 0 ||
-        (state?._prayerTurnsRemaining ?? 0) > 0
+        (state?._helplessTurns ?? 0) > 0
     );
 }
 
@@ -3362,6 +3364,7 @@ function monsterApproachPolicy(
     oldPolicy: MonsterApproach,
     targetX: number,
     targetY: number,
+    random: RandomBelow,
 ): { policy: MonsterApproach; min: number; max: number } {
     const distance = dist2(monster.mx, monster.my, targetX, targetY);
     const heroInvisible = !!(
@@ -3386,7 +3389,7 @@ function monsterApproachPolicy(
     if (wieldedName === 'aklys') return { policy: -2, min: 4, max: 16 };
 
     const badlyHurt = (monster.mhp ?? 0) < Math.trunc(((monster.mhpmax ?? 0) + 1) / 3);
-    if (monsterHasAvailableDistanceAttack(monster) && (badlyHurt || !(monster.mspec_used ?? 0)))
+    if (monsterHasAvailableDistanceAttack(monster, random) && (badlyHurt || !(monster.mspec_used ?? 0)))
         return { policy: -1, min: 0, max: 0 };
 
     return { policy: oldPolicy, min: 0, max: 0 };
@@ -3588,13 +3591,23 @@ async function moveHostile(
     ) {
         appr = 0;
     }
-    const approach = monsterApproachPolicy(
-        monster,
-        state,
-        appr,
-        monster.mux ?? gx,
-        monster.muy ?? gy,
-    );
+    if (appr === 1 && monster.mnum === MONSTER_NAME.indexOf('leprechaun')) {
+        const carriedGold = monster.minvent?.find(object => object.otyp === GOLD_PIECE);
+        const heroGold = state.inventory.find(object => object.otyp === GOLD_PIECE);
+        // leppie_avoidance(): a richer leprechaun protects its own gold.
+        if (carriedGold && carriedGold.quan > (heroGold?.quan ?? 0)) appr = -1;
+    }
+    // Confused and engulfing monsters skip deliberate ranged movement.
+    const approach = monster.mconf || state.u.uswallow && state.u.ustuck === monster
+        ? { policy: appr, min: 0, max: 0 }
+        : monsterApproachPolicy(
+            monster,
+            state,
+            appr,
+            monster.mux ?? gx,
+            monster.muy ?? gy,
+            limit => recordRandom(random, calls, limit),
+        );
     appr = approach.policy;
     // Native lined_up() is evaluated for every admitted search, including
     // peaceful actors, before approach determines whether combat forbids it.
@@ -5241,9 +5254,8 @@ export async function finishImmediateMonsterTrap(
 // C steal.c:steal().  Inventory stacks are candidates as objects rather than
 // by quantity.  Worn armor and accessories receive five tickets; weapons
 // (including the primary and alternate weapon) still receive one.  Keep
-// selection in the synchronous hitmu() slice so its rn2() stays before any
-// removal prose can suspend on tty --More--.
-function selectHeroItemForTheft(
+// selection after an animal's hit message and before removal prose.
+export function selectHeroItemForTheft(
     state: PlayingGameState,
     random: RandomBelow,
     calls: MonsterCallLog,
@@ -5280,20 +5292,24 @@ function selectHeroItemForTheft(
         candidates.push({ object, weight });
         total += weight;
     }
-    if (!total) return { object: null, total: 0, ticket: null };
+    if (!total) return null;
     let ticket = recordRandom(random, calls, total);
-    const initialTicket = ticket;
     for (const candidate of candidates) {
         ticket -= candidate.weight;
         if (ticket < 0) {
-            return {
-                object: candidate.object,
-                total,
-                ticket: initialTicket,
-            };
+            return theftEquipmentTarget(candidate.object, state);
         }
     }
-    return { object: null, total, ticket: initialTicket };
+    return null;
+}
+
+function theftEquipmentTarget(object: GameObject, state: PlayingGameState): GameObject {
+    if ((object === state.uleft || object === state.uright) && state.uarmg)
+        object = state.uarmg;
+    if (object === state.uarmg && state.uwep) return state.uwep;
+    if (object === state.uarm && state.uarmc) return state.uarmc;
+    if (object === state.uarmu) return state.uarmc || state.uarm || object;
+    return object;
 }
 
 // C do_wear.c:some_armor().  Torso priority is deterministic; each later
@@ -6089,11 +6105,10 @@ async function beginHeroAttackSlot(
             effect: 'electric-natural',
             deferredElectricNegation: true,
         };
-    } else if (hit && damageType === AD_SITM) {
+    } else if (hit && (damageType === AD_SITM || damageType === AD_SEDU)) {
         // hitmu() records the attack's declared zero dice before dispatching
-        // AD_SITM through mhitm_ad_sedu().  A successful nymph theft ends the
+        // both theft claws through mhitm_ad_sedu(). A successful theft ends the
         // aggressor's attack sequence, so do not retain its second claw slot.
-        const theft = selectHeroItemForTheft(state, random, calls);
         return {
             kind: 'hero-attack',
             roll,
@@ -6104,9 +6119,6 @@ async function beginHeroAttackSlot(
             damageType,
             effect: 'item-theft',
             deferredItemTheft: true,
-            stolenObject: theft.object,
-            theftWeight: theft.total,
-            theftTicket: theft.ticket,
         };
     } else if (hit && damageType === AD_LEGS) {
         // uhitm.c:mhitm_ad_legs().  The declared sting damage and chosen
@@ -6550,7 +6562,7 @@ export function resumeDeferredHeroFireSpecial(
         attack.damage = 0;
         attack.fireEffectMessage = 'You avoid harm.';
     } else {
-        attack.fireEffectMessage = "You're on fire!";
+        attack.fireEffectMessage = `You're ${monsterFireDescription({ mnum: heroSpecies(state) }, attack.attackType)}!`;
         if (state.u.fireResistance) {
             attack.damage = 0;
             attack.fireResistanceMessage = "The fire doesn't feel hot!";
@@ -7060,6 +7072,8 @@ export async function completeHeroAttackSlot(
             result |= M_ATTK_AGR_DONE;
     }
     sequence.results[attack.attackIndex] = result;
+    // C mattacku() commits pending status before the next attack slot.
+    if (state === game && state.context.botl) await bot();
     if (attack.kind === 'hero-attack' && attack.skipBrainDrain) sequence.skipBrainDrain = true;
     if (
         result === M_ATTK_HIT &&
@@ -7877,7 +7891,7 @@ async function finishDochugAfterMovement(
         if (monsterIsHelpless(monster)) return;
         const canContinue =
             !range.nearby &&
-            (monsterHasAvailableDistanceAttack(monster) ||
+            (monsterHasAvailableDistanceAttack(monster, limit => recordRandom(random, calls, limit)) ||
                 speciesHasWeaponAttack(dochugContext.entryMnum) ||
                 selectMonsterOffensiveItem(monster, state, {
                     random: limit => recordRandom(random, calls, limit),

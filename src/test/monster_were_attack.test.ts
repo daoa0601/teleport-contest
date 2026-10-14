@@ -26,7 +26,7 @@ async function attacker() {
     monster.mhp = 4;
     monster.mhpmax = 20;
     game.u.invulnerable = true;
-    game._prayerTurnsRemaining = 2;
+    game._helplessTurns = 2;
     const input = resetInputState();
     input.beforeRead = () => input.feed(' ');
     return { level, monster };
