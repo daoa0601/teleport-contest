@@ -13,7 +13,7 @@ import { finishInventoryRemoval, useUpInventoryStack } from './hero_inventory.js
 import { setPrimaryWeapon, setSecondaryWeapon, setQuiverObject } from './weapon_slots.js';
 import { inventoryItemDescription, inventoryPrimaryHandDetail } from './invent.js';
 import { compactInventoryLetters, promptInventoryObject } from './inventory_prompt.js';
-import { objectCombatName, observeObjectForNaming } from './objnam.js';
+import { objectCombatName, observeObjectForNaming, ownedObjectAction } from './objnam.js';
 import { inventoryClassOrder, lootSortMode, objectClassHeading, sortObjects } from './object_sort.js';
 import { OBJECT_CLASS_SYMBOLS, objectClassForType } from './object_knowledge.js';
 import { clearJustPicked } from './just_picked.js';
@@ -508,7 +508,7 @@ function rejectedPutMessage(container: GameObject, object: GameObject, state: Ga
         object.bknown = true;
         observeObjectForNaming(object, { state });
         const hand = heroHandName(state);
-        return `Your ${objectCombatName(object, { state })} ${quantity(object) === 1 ? 'is' : 'are'} welded to your ${
+        return `${ownedObjectAction(object, 'are', state)} welded to your ${
             OBJECT_BIMANUAL[object.otyp] ? makePlural(hand) : hand}!`;
     }
     return null;
