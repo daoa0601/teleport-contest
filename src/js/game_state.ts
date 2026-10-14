@@ -338,6 +338,7 @@ export interface GameState {
     _lastInvNr?: number;
     _capacityDirty?: boolean;
     _encumbranceLevel?: number;
+    _pickWarningMove?: number;
     _pendingHeroShapeChange?: 'polymorph' | 'were';
     _unweapon?: boolean;
     dx?: number;

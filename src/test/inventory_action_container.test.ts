@@ -67,7 +67,6 @@ void test('the inventory opening action applies the selected sack after its menu
     ]);
 
     await answerPrompts(rhack(0), input, [
-        { prompt: /The bag is empty\.  Do what with it\?/, keys: 'q' },
     ]);
 
     assert.equal(sack.cknown, true);

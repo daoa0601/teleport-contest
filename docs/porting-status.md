@@ -130,7 +130,7 @@ existing tests needed their setup corrected:
   `commitPetPickup()` and checks that the dagger stays on the floor until
   then.
 
-## Parallel batches 1–14 (`379eda8`)
+## Parallel batches 1–15 (`2f476a5`)
 
 Units ran in worktrees under `docs/orchestration.md` (Codex; each diff reviewed
 by Codex against the C source, then merged only if the full suite adds no
@@ -235,34 +235,43 @@ rows), **audit-shk** (`shk.c`: payment refusals, damage repair, selling and
 credit, hallucinated keepers) and **audit-wear** (`do_wear.c`: every slot's
 on/off effects, multi-turn removal, ring-hand prompts).
 
+Batch 15: **public-4** (pager-forcing messages, farlook of unexplored and
+underwater squares, typed look symbols; +4 public sessions) and C-source
+audits of **audit-uhitm** (`uhitm.c`: polymorphed-hero attacks, passive
+responses), **audit-eat** (`eat.c`: corpse and food effects, tins, choking,
+hunger), **audit-artifact** (`artifact.c`: invoke powers, special attacks,
+touch blasts) and **audit-pickup** (`pickup.c`: refusals, #loot, #tip,
+container menus, bag of holding).
+
 ## Verification
 
-`npm test` at `379eda8`: **9,415/9,415**. Merges require a fully green suite;
+`npm test` at `2f476a5`: **9,678/9,678**. Merges require a fully green suite;
 batch runs also compare matched screens per session with the previous batch
-(no screen regression in batch 14, eval, public or pool).
+(no screen regression in batch 15, eval, public or pool).
 
 ## Most recent native diagnostics
 
 | Diagnostic | Complete | Matched screens | Matched random calls | Crashes |
 | --- | ---: | ---: | ---: | ---: |
-| Public | 37/44 | 10,849/11,405 | 778,133/792,838 | 0 |
+| Public | 41/44 | 11,084/11,405 | 787,506/792,838 | 0 |
 | Native eval sample | 297/300 | 50,521/50,586 | 3,616,468/3,616,669 | 0 |
 | Holdout-dev pool | 2,452/2,500 | | | 0 |
 
-Runs: `.cache/generalization/batch14-379eda8-{eval,public}` and
-`triage-379eda8` (pool) in the verify worktree (baseline `base-06d7e73`:
-143/300; batch 13: 296/300, pool 2,412/2,500). No verified random call was
-lost; the ledgers now hold 312 eval and 184 public functions. The
+Runs: `.cache/generalization/batch15-2f476a5-{eval,public}` and
+`triage-2f476a5` (pool) in the verify worktree (baseline `base-06d7e73`:
+143/300; batch 14: 297/300, pool 2,452/2,500). No verified random call was
+lost; the ledgers now hold 312 eval and 188 public functions. The
 state oracle finds 299 sessions matching C state throughout; one hidden-state
 session remains.
 
 ## Next work
 
-In flight: C-source audits of `uhitm.c` (audit-uhitm), `artifact.c`
-(audit-artifact) and `pickup.c` (audit-pickup), and the 7 failing public
-sessions (public-4). 48 pool sessions still fail (12 map rows, a few message
-and status rows, single random-call tails); `.cache/agents/pool-379eda8-firsts.tsv`
-lists them and `.cache/agents/queue.md` holds accepted review findings. 
+In flight: C-source audits of `trap.c` (audit-trap), `invent.c`
+(audit-invent) and `objnam.c` (audit-objnam), and review-debt-3 (accepted
+findings from pager-timing, pool-msgs-4, audit-potion, audit-pickup). 48 pool
+sessions still fail (12 map rows, a few message and status rows, single
+random-call tails); `.cache/agents/pool-2f476a5-firsts.tsv` lists them and
+`.cache/agents/queue.md` holds accepted review findings. 
 
 `splitObjectStack()` now links the new piece right after the original in
 whichever chain owns it (floor pile, hero or monster inventory, container,

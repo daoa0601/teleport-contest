@@ -2,38 +2,40 @@ import type { ChoiceMenuEntry } from './windows.js';
 // Container use and object transfer.
 // C refs: pickup.c use_container(), in_container(), out_container().
 
-import { withIndefiniteArticle } from './object_grammar.js';
-import { bot, redrawMap, flush_screen, pline, plineWithContinuation } from './display.js';
+import { makePlural } from './object_grammar.js';
+import { bot, displayMessageWindow, redrawMap, flush_screen, pline, plineWithContinuation } from './display.js';
 import { touchArtifactByHero } from './artifact_touch.js';
 import { loseHeroHp } from './hero_damage.js';
 import { triggerChestTrap } from './chest_trap.js';
 import { game } from './gstate.js';
 import { startGlobTimeout } from './glob.js';
-import { addHeroGoldObject } from './hero_gold.js';
-import { finishInventoryRemoval } from './hero_inventory.js';
+import { finishInventoryRemoval, useUpInventoryStack } from './hero_inventory.js';
 import { setPrimaryWeapon, setSecondaryWeapon, setQuiverObject } from './weapon_slots.js';
-import { nhgetch } from './input.js';
 import { inventoryItemDescription, inventoryPrimaryHandDetail } from './invent.js';
-import { observeObjectForNaming } from './objnam.js';
+import { compactInventoryLetters, promptInventoryObject } from './inventory_prompt.js';
+import { objectCombatName, objectNameIsPlural, observeObjectForNaming, ownedObjectAction } from './objnam.js';
 import { inventoryClassOrder, lootSortMode, objectClassHeading, sortObjects } from './object_sort.js';
 import { OBJECT_CLASS_SYMBOLS, objectClassForType } from './object_knowledge.js';
-import { clearJustPicked, markJustPicked } from './just_picked.js';
+import { clearJustPicked } from './just_picked.js';
 import { liftObject } from './lift_object.js';
 import { endObjectBurn } from './light.js';
 import { addObjectToContainer } from './object_container.js';
-import { placeObject } from './floor_object.js';
+import { useUpFloorObject } from './floor_consumption.js';
+import { scatterFloorObjects } from './scatter.js';
+import { finishEnvironmentalMonsterDeath } from './monster_death.js';
+import { finishHeroMonsterKill, finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { startCorpseTimeout } from './mklev.js';
-import { MONSTER_SIZE } from './monster_data.js';
+import { MONSTER_NAME, MONSTER_SIZE } from './monster_data.js';
 import { deleteObject } from './object_delete.js';
 import {
     AMULET_OF_YENDOR, BAG_OF_HOLDING, BELL_OF_OPENING, BOULDER,
-    BAG_OF_TRICKS, CANDELABRUM_OF_INVOCATION, CHEST, CORPSE, GOLD_PIECE,
+    BAG_OF_TRICKS, BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, CHEST, CORPSE, GOLD_PIECE,
     ICE_BOX,
-    LARGE_BOX, LEASH, LOADSTONE, OBJECT_NAMES,
-    OILSKIN_SACK, SACK, SPE_BOOK_OF_THE_DEAD, STATUE, WAN_CANCELLATION,
+    LARGE_BOX, LEASH, LOADSTONE, OBJECT_BIMANUAL, OBJECT_NAMES,
+    OIL_LAMP, OILSKIN_SACK, POT_OIL, SACK, SPE_BOOK_OF_THE_DEAD, STATUE,
+    TALLOW_CANDLE, WAN_CANCELLATION, WAX_CANDLE,
 } from './object_data.js';
 import { unlinkObject } from './object_location.js';
-import { mergable, mergeObjectStacks } from './object_merge.js';
 import {
     objectQuantity, rejoinObjectStack, splitObjectStack,
 } from './object_stack.js';
@@ -46,16 +48,24 @@ import { d, rn2 } from './rng.js';
 
 import { getLine, promptChoice } from './query.js';
 import { touchPetrifyingCorpse } from './stoning.js';
-import { NO_COLOR } from './terminal.js';
-import { assignInventoryLetter } from './u_init.js';
-import { objectWeight } from './weight.js';
-import { heroHasFreeHand } from './weapon_type.js';
+import { addPickedInventoryObject } from './pickup.js';
+import { nearCapacity, objectWeight, pickupLoadPrefix } from './weight.js';
+import { heroHasFreeHand, willWeld } from './weapon_type.js';
+import { heroHandName } from './body_parts.js';
+import { heroIsBlind } from './senses.js';
+import { addShopObjectToBill, currentShopResident, costlySpot } from './shk.js';
+import { stolenValue } from './shop_loss.js';
+import { currency } from './currency.js';
+import { warnAboutRemovedPick } from './container_shop.js';
+import { heroGoldObject } from './hero_gold.js';
+import { sellHeroDroppedObject, setSellDisposition, SELL_DELIBERATE, SELL_DONTSELL, SELL_NORMAL } from './shop_sell.js';
 import {
     restoreMenuUnderlay, showChoiceWindow,
-    showMultiSelectWindow,
+    showDisclosureOverlay, showMultiSelectWindow, showTextWindow,
 } from './windows.js';
 import {
-    MENU_FULL, MENU_ITEMFLAGS_SKIPINVERT, PARANOID_AUTOALL, PARANOID_CONFIRM,
+    GETOBJ_EXCLUDE_SELECTABLE, GETOBJ_SUGGEST, MENU_COMBINATION, MENU_FULL, MENU_PARTIAL, MENU_TRADITIONAL,
+    MENU_ITEMFLAGS_SKIPINVERT, PARANOID_AUTOALL, PARANOID_CONFIRM,
     W_ACCESSORY, W_ARMOR,
 } from './const.js';
 
@@ -74,6 +84,10 @@ interface CategorySelection {
     justPickedCount?: number;
 }
 interface TransferStack { object: GameObject; parent: GameObject | null }
+interface ContainerTransferBatch {
+    results: ContainerTransferResult[];
+    spentTime: boolean;
+}
 export type ContainerTransferResult =
     | { moved: true; message: string; stop?: never; destroyedContainer?: never }
     | { moved: false; message: string | null; stop?: boolean; destroyedContainer?: never }
@@ -82,15 +96,18 @@ export interface ContainerUseResult {
     spentTime: boolean;
     container: GameObject | null;
     heroDied?: boolean;
+    stopLooting?: boolean;
+    tookOut?: boolean;
 }
 interface ContainerUseOptions {
     held?: boolean;
     moreContainers?: boolean;
     underlay?: MenuUnderlay | null;
+    resetJustPicked?: boolean;
 }
 
 export const CONTAINER_TYPES = new Set([
-    LARGE_BOX, CHEST, ICE_BOX, SACK, BAG_OF_HOLDING, OILSKIN_SACK,
+    LARGE_BOX, CHEST, ICE_BOX, SACK, BAG_OF_HOLDING, OILSKIN_SACK, BAG_OF_TRICKS,
 ]);
 
 const FORBIDDEN_CONTENTS = new Set([
@@ -335,91 +352,123 @@ export function magicBagExplodes(object: GameObject, depth = 0): boolean {
         magicBagExplodes(content, depth + 1));
 }
 
-async function scatterBagContents(container: GameObject, state: GameState): Promise<void> {
+async function scatterBagContents(container: GameObject, state: GameState, held: boolean): Promise<void> {
+    container.in_use = true;
     const contents = [...(container.contents || [])];
-    container.contents = [];
     for (const object of contents) {
-        // C obj_extract_self(): a scattered content becomes truly free
-        // before its arbitrary release placement.
-        object.container = null;
-        object.where = 'free';
         if (rn2(13) === 0) {
-            await deleteObject(object, state);
+            unlinkObject(object, state);
+            await loseMagicBagItem(object, held, state, true);
             continue;
         }
-        await placeObject(object, state.u.ux, state.u.uy, state);
+        object.ox = state.u.ux;
+        object.oy = state.u.uy;
+        await scatterFloorObjects(object.ox, object.oy, 4, {
+            state, onlyObject: object, mayFracture: false,
+            publish: plineWithContinuation, heroCaused: !state.context.mon_moving,
+            finishMonsterKill: finishHeroMonsterKill,
+            finishMonsterDeath: async (monster, options = {}) => {
+                if (state.context.mon_moving)
+                    return await finishEnvironmentalMonsterDeath(monster, state, options);
+                if (options.deathMessage) await plineWithContinuation(options.deathMessage);
+                const death = await finishHeroMonsterKillOutcome(monster, monster.mx, monster.my,
+                    { showKillMessage: false, publish: plineWithContinuation });
+                return { survived: !death.killed, heroDied: death.heroDied };
+            },
+        });
+        if (state.program_state.gameover) return;
     }
 }
 
 // C pickup.c:in_container() names the trigger before either bag blows up.
-async function explodeBag(container: GameObject, trigger: GameObject, state: GameState): Promise<ContainerTransferResult> {
+export async function explodeBag(container: GameObject, trigger: GameObject, state: GameState,
+    { tipping = false, triggerHeld = true, rebillTrigger = false }:
+    { tipping?: boolean; triggerHeld?: boolean; rebillTrigger?: boolean } = {}): Promise<ContainerTransferResult> {
     observeObjectForNaming(trigger, { state });
     await plineWithContinuation(
-        `As you put ${objectDescription(trigger)} inside, you are blasted by a magical explosion!`,
+        tipping ? `As ${objectDescription(trigger)} ${trigger.quan === 1 ? 'tumbles' : 'tumble'} inside, you are blasted by a magical explosion!`
+            : `As you put ${objectDescription(trigger)} inside, you are blasted by a magical explosion!`,
         { urgent: true },
     );
+    if (rebillTrigger)
+        await addShopObjectToBill(trigger, state, { ininv: false, silent: true });
     if (trigger.otyp === BAG_OF_HOLDING)
-        await scatterBagContents(trigger, state);
+        await scatterBagContents(trigger, state, triggerHeld);
+    if (state.program_state.gameover) return { moved: false, stop: true, message: null };
     await deleteObject(trigger, state);
-    await scatterBagContents(container, state);
-    await deleteObject(container, state);
+    const held = container.where === 'inventory';
+    if (!held && costlySpot(container.ox, container.oy, state)) {
+        const noCharge = container.no_charge;
+        await addShopObjectToBill(container, state, { ininv: false });
+        if (noCharge === undefined) delete container.no_charge;
+        else container.no_charge = noCharge;
+    }
+    await scatterBagContents(container, state, held);
+    if (state.program_state.gameover) return { moved: false, stop: true, message: null };
+    if (held) await useUpInventoryStack(container, state);
+    else await useUpFloorObject(container, container.quan, { state });
     await loseHeroHp(d(6, 6), 'magical explosion', { state });
+    if (!tipping) await bot();
     return { moved: false, destroyedContainer: true, message: null };
 }
 
-async function loseCursedBagContents(container: GameObject, state: GameState): Promise<boolean> {
-    if (container.otyp !== BAG_OF_HOLDING || !container.cursed
-        || !container.contents?.length) return false;
-    const vanished: string[] = [];
-    for (const object of [...container.contents]) {
-        if (rn2(13) !== 0) continue;
+// C mbag_item_gone(): announce before settling the loss and freeing the item.
+export async function loseMagicBagItem(object: GameObject, held: boolean, state: GameState = game,
+    silent = false): Promise<number> {
+    if (!silent) {
+        const known = object.dknown;
+        // The message uses prior knowledge, but doname() observes the item.
         observeObjectForNaming(object, { state });
-        vanished.push(objectDescription(object));
-        await deleteObject(object, state);
+        const name = objectDescription(object);
+        await plineWithContinuation(known
+            ? `${name.charAt(0).toUpperCase()}${name.slice(1)} ${objectNameIsPlural(object, state) ? 'have' : 'has'} vanished!`
+            : `You ${heroIsBlind(state) ? 'notice' : 'see'} ${name} disappear!`);
     }
-    if (!vanished.length) return false;
-    updateContainerWeights(container);
-    for (const description of vanished) {
-        await plineWithContinuation(
-            `${description.charAt(0).toUpperCase()}${description.slice(1)} vanished!`,
-        );
-    }
-    return true;
+    const keeper = currentShopResident(state);
+    const loss = keeper && (held ? object.unpaid : costlySpot(state.u.ux, state.u.uy, state))
+        ? await stolenValue(object, state.u.ux, state.u.uy, keeper.mpeaceful, { state, silent: true }) : 0;
+    await deleteObject(object, state);
+    return loss;
 }
 
-async function addToInventory(object: GameObject, state: GameState): Promise<GameObject> {
-    const existing = (state.inventory || []).find(candidate =>
-        mergable(candidate, object, state));
-    if (existing) {
-        const merged = await mergeObjectStacks(existing, object, state);
-        if (!merged) throw new Error('A matching inventory stack must accept the container item');
-        return markJustPicked(merged);
+async function loseCursedBagContents(container: GameObject, state: GameState): Promise<number> {
+    if (container.otyp !== BAG_OF_HOLDING || !container.cursed
+        || !container.contents?.length) return 0;
+    let loss = 0;
+    for (const object of [...container.contents]) {
+        if (rn2(13) !== 0) continue;
+        unlinkObject(object, state);
+        loss += await loseMagicBagItem(object, container.where === 'inventory', state);
     }
-    assignInventoryLetter(object);
-    object.where = 'inventory';
-    state.inventory ||= [];
-    state.inventory.push(object);
-    return markJustPicked(object);
+    return loss;
+}
+
+function ageStoresFuel(object: GameObject): boolean {
+    return [BRASS_LANTERN, OIL_LAMP, CANDELABRUM_OF_INVOCATION,
+        TALLOW_CANDLE, WAX_CANDLE, POT_OIL].includes(object.otyp);
 }
 
 function freezeObject(object: GameObject, state: GameState): void {
-    if (object.ageRelative) return;
+    if (ageStoresFuel(object) || object.ageRelative) return;
     object.age = (state.moves ?? 0) - (object.age ?? 0);
     object.ageRelative = true;
     if (object.otyp === CORPSE) {
         stopObjectTimer(object, OBJECT_TIMER_KIND.ROT_CORPSE);
         stopObjectTimer(object, OBJECT_TIMER_KIND.REVIVE_MON);
+        const traits = object.oextra?.omonst;
+        if (object.corpsenm === MONSTER_NAME.indexOf('ice troll') && traits) traits.mcan = 0;
     } else if (object.globby) {
         stopObjectTimer(object, OBJECT_TIMER_KIND.SHRINK_GLOB);
     }
 }
 
 export function thawObject(object: GameObject, state: GameState): void {
-    if (!object.ageRelative) return;
+    if (ageStoresFuel(object)) return;
     object.age = (state.moves ?? 0) - (object.age ?? 0);
     object.ageRelative = false;
     if (object.otyp === CORPSE) {
-        object.norevive = object.corpsenm !== 221;
+        object.norevive = (object.oextra?.omonst?.mnum ?? object.corpsenm)
+            !== MONSTER_NAME.indexOf('ice troll');
         startCorpseTimeout(object);
     } else if (object.globby) {
         startGlobTimeout(object, state, state.moves ?? 0);
@@ -435,7 +484,7 @@ function cannotFit(object: GameObject): boolean {
 
 function weldedPrimary(object: GameObject, state: GameState): boolean {
     const primary = state.uwep || state.u?.uwep;
-    return object === primary && !!object.cursed;
+    return object === primary && willWeld(object);
 }
 
 function rejectedPutMessage(container: GameObject, object: GameObject, state: GameState): string | null {
@@ -452,23 +501,18 @@ function rejectedPutMessage(container: GameObject, object: GameObject, state: Ga
         return `The stone${quantity(object) === 1 ? '' : 's'} won't leave your person.`;
     }
     if (FORBIDDEN_CONTENTS.has(object.otyp)) {
-        const noun = OBJECT_NAMES[object.otyp] || object.name || 'object';
-        return `${withIndefiniteArticle(noun)} cannot be confined in such trappings.`;
+        return `The ${objectCombatName(object, { state })} cannot be confined in such trappings.`;
     }
     if (object.otyp === LEASH && object.leashmon) {
         observeObjectForNaming(object, { state });
-        return `${objectDescription(object)} is attached to your pet.`;
+        return `The ${objectCombatName(object, { state })} ${quantity(object) === 1 ? 'is' : 'are'} attached to your pet.`;
     }
     if (weldedPrimary(object, state)) {
         object.bknown = true;
         observeObjectForNaming(object, { state });
-        return `${objectDescription(object)} is welded to your hand!`;
-    }
-    if (cannotFit(object)) {
-        observeObjectForNaming(object, { state });
-        observeObjectForNaming(container, { state });
-        return `You cannot fit ${objectDescription(object)} into the ${
-            containerNoun(container)}.`;
+        const hand = heroHandName(state);
+        return `${ownedObjectAction(object, 'are', state)} welded to your ${
+            OBJECT_BIMANUAL[object.otyp] ? makePlural(hand) : hand}!`;
     }
     return null;
 }
@@ -496,10 +540,6 @@ export async function putIntoContainer(
 ): Promise<ContainerTransferResult> {
     const transfer = splitForTransfer(object, count, state);
     object = transfer.object;
-    if (await touchPetrifyingCorpse(object)) {
-        await restoreRejectedSplit(transfer, state);
-        return { moved: false, stop: true, message: null };
-    }
     const rejected = rejectedPutMessage(container, object, state);
     if (rejected) {
         await restoreRejectedSplit(transfer, state);
@@ -509,26 +549,42 @@ export async function putIntoContainer(
     if (state.uwep === object) await setPrimaryWeapon(null, state);
     if (state.uswapwep === object) await setSecondaryWeapon(null, state);
     if (state.uquiver === object) await setQuiverObject(null, state);
+    if (await touchPetrifyingCorpse(object)) {
+        await restoreRejectedSplit(transfer, state);
+        return { moved: false, stop: true, message: null };
+    }
+    if (cannotFit(object)) {
+        const message = `You cannot fit the ${objectCombatName(object, { state })} into the ${objectCombatName(container, { state })}.`;
+        await restoreRejectedSplit(transfer, state);
+        return { moved: false, message };
+    }
     state.inventory = state.inventory.filter(candidate => candidate !== object);
     object.where = 'free';
     await finishInventoryRemoval(object, state);
     if (state.program_state?.gameover)
         return { moved: false, stop: true, message: null };
     if (object.lamplit) endObjectBurn(object, state, state.moves ?? 0);
+    const floorShop = container.where !== 'inventory' && costlySpot(state.u.ux, state.u.uy, state);
+    const wasUnpaid = object.unpaid;
+    if (floorShop && object.oclass !== 12)
+        await sellHeroDroppedObject(object, state.u.ux, state.u.uy, state);
     if (container.otyp === ICE_BOX) freezeObject(object, state);
     else if (container.otyp === BAG_OF_HOLDING
         && magicBagExplodes(object)) {
-        return await explodeBag(container, object, state);
+        return await explodeBag(container, object, state, { rebillTrigger: !!(wasUnpaid && floorShop) });
     }
 
     observeObjectForNaming(container, { state });
     observeObjectForNaming(object, { state });
-    const message = `You put ${objectDescription(object)} into the ${
-        containerNoun(container)}.`;
+    const message = `You put ${objectDescription(object)} into the ${objectCombatName(container, { state })}.`;
+    await plineWithContinuation(message);
+    if (floorShop && object.oclass === 12)
+        await sellHeroDroppedObject(object, container.ox, container.oy, state);
     await addObjectToContainer(container, object, state);
     container.cknown = true;
     updateContainerWeights(container);
     state._capacityDirty = true;
+    await bot();
     return {
         moved: true,
         message,
@@ -537,7 +593,7 @@ export async function putIntoContainer(
 
 export async function takeFromContainer(
     container: GameObject, object: GameObject, state: GameState = game, count = -1,
-    { resetJustPicked = false }: { resetJustPicked?: boolean } = {},
+    { resetJustPicked = false, previousCapacity = 0 }: { resetJustPicked?: boolean; previousCapacity?: number } = {},
 ): Promise<ContainerTransferResult> {
     if (!container.contents?.includes(object))
         return { moved: false, message: null };
@@ -572,53 +628,68 @@ export async function takeFromContainer(
     if (object.otyp !== LOADSTONE) object = splitForTransfer(object, lift.count, state).object;
     unlinkObject(object, state);
     if (container.otyp === ICE_BOX) thawObject(object, state);
-    if (resetJustPicked) clearJustPicked(state);
 
-    let carried;
-    if (object.otyp === GOLD_PIECE) {
-        carried = addHeroGoldObject(state, object).object;
-        if (!carried) throw new Error('Taken gold must enter the hero inventory');
-    } else {
-        carried = await addToInventory(object, state);
+    if (!object.unpaid && container.where !== 'inventory'
+        && costlySpot(container.ox, container.oy, state)) {
+        object.ox = container.ox;
+        object.oy = container.oy;
+        await addShopObjectToBill(object, state, { ininv: false });
     }
+
+    await warnAboutRemovedPick(object, state);
+    if (resetJustPicked) clearJustPicked(state);
+    const { object: carried, count: addedCount } = await addPickedInventoryObject(object);
     container.cknown = true;
     updateContainerWeights(container);
     state._capacityDirty = true;
     observeObjectForNaming(carried, { state });
+    const capacity = nearCapacity(state);
+    const prefix = capacity === previousCapacity ? '' : pickupLoadPrefix(capacity);
+    const added = { ...carried, quan: addedCount, quantity: addedCount };
+    const merged = addedCount < quantity(carried);
+    const total = merged ? state.flags.verbose === false ? ''
+        : ` (${quantity(carried)} in total).` : '.';
+    const description = `${carried.invlet || '$'} - ${objectDescription(added, inventoryPrimaryHandDetail(carried))}${total}`;
     return {
         moved: true,
-        message: `${carried.invlet || '$'} - ${objectDescription(carried)}.`,
+        message: prefix ? `${prefix} removing ${description}` : description,
     };
 }
 
-async function takeSelectedObjects(container: GameObject): Promise<ContainerTransferResult[]> {
-    if (!container.contents?.length) return [];
+async function takeSelectedObjects(container: GameObject, resetPicked: boolean): Promise<ContainerTransferBatch> {
+    if (!container.contents?.length) return { results: [], spentTime: false };
     const categories = await chooseCategories(
         'Take out what type of objects?', container.contents,
     );
     const eligible = matchingObjects(container.contents, categories.matchers);
+    if (categories.matchers.length) container.cknown = true;
     const selected = categories.autoSelect
         ? eligible.map(value => ({ value, count: -1 }))
         : await chooseObjects('Take out what?', eligible, false);
     const results: ContainerTransferResult[] = [];
-    let resetJustPicked = true;
+    let resetJustPicked = resetPicked;
+    let previousCapacity = 0;
     for (const selection of selected) {
+        const transfer = splitForTransfer(selection.value, selection.count, game);
         const result = await takeFromContainer(
-            container, selection.value, game, selection.count,
-            { resetJustPicked },
+            container, transfer.object, game, -1,
+            { resetJustPicked, previousCapacity },
         );
+        if (!result.moved) await restoreRejectedSplit(transfer, game);
         results.push(result);
         if (result.message) await plineWithContinuation(result.message);
-        if (result.moved) resetJustPicked = false;
+        if (result.moved) {
+            resetJustPicked = false;
+            previousCapacity = nearCapacity(game);
+            if (selection.value.oclass === 12) await bot();
+        }
         if (result.stop) break;
     }
-    return results;
+    return { results, spentTime: categories.autoSelect
+        ? results.some(result => result.moved) : selected.length > 0 };
 }
 
-async function putSelectedObjects(container: GameObject, stashOne = false): Promise<{
-    results: ContainerTransferResult[];
-    spentTime: boolean;
-}> {
+async function putSelectedObjects(container: GameObject, stashOne = false): Promise<ContainerTransferBatch> {
     // menu_loot queries the whole inventory; only stash-one uses ck_bag.
     const candidates = stashOne
         ? game.inventory.filter(object => object !== container) : game.inventory;
@@ -627,8 +698,14 @@ async function putSelectedObjects(container: GameObject, stashOne = false): Prom
     let selected: CountedSelection<GameObject>[];
     let spentTime = false;
     if (stashOne) {
-        selected = await chooseObjects('What do you want to stash?', candidates, true);
-        selected = selected.slice(0, 1);
+        const letters = compactInventoryLetters(candidates.map(object => object.invlet).join(''));
+        const choice = await promptInventoryObject(`What do you want to stash? [${letters} or ?*] `,
+            game.inventory, { verb: 'stash', allowCount: true, allowGold: true, allowMenu: true,
+                menuItems: candidates, classify: object => object === container ? GETOBJ_EXCLUDE_SELECTABLE : GETOBJ_SUGGEST });
+        const object = choice.gold ? heroGoldObject(game) : choice.object;
+        if (choice.cancelled || !object) return { results: [], spentTime: false };
+        const count = object.otyp === LOADSTONE && object.cursed ? -1 : choice.count ?? -1;
+        selected = [{ value: object, count }];
     } else {
         const categories = await chooseCategories(
             'Put in what type of objects?', candidates,
@@ -642,7 +719,7 @@ async function putSelectedObjects(container: GameObject, stashOne = false): Prom
             // and charges a turn regardless of in_container's result.
             const transfer = splitForTransfer(onePicked, categories.justPickedCount ?? -1, game);
             const result = await putIntoContainer(container, transfer.object);
-            if (result.message) await plineWithContinuation(result.message);
+            if (!result.moved && result.message) await plineWithContinuation(result.message);
             return { results: [result], spentTime: true };
         }
         selected = categories.autoSelect
@@ -658,9 +735,9 @@ async function putSelectedObjects(container: GameObject, stashOne = false): Prom
             container, selection.value, game, selection.count,
         );
         results.push(result);
-        if (result.message) await plineWithContinuation(result.message);
+        if (!result.moved && result.message) await plineWithContinuation(result.message);
         // Stashing one item costs a turn even when it destroys the bag.
-        if (stashOne && result.destroyedContainer) spentTime = true;
+        if (stashOne && (result.destroyedContainer || result.stop)) spentTime = true;
         if (result.destroyedContainer || result.stop) break;
     }
     return { results, spentTime: spentTime || results.some(result => result.moved) };
@@ -675,31 +752,22 @@ async function showContents(container: GameObject): Promise<void> {
     container.cknown = true;
     if (!container.contents?.length) {
         await pline(`The ${containerNoun(container)} is empty.`);
+        await displayMessageWindow();
         return;
     }
-    const display = game.nhDisplay;
-    if (!display) return;
-    const left = 41;
     for (const object of container.contents) observeObjectForNaming(object);
     const lines = [
         `Contents of the ${containerNoun(container)}:`,
         '',
         ...contentLines(container),
-        '--More--',
     ];
-    for (const [row, line] of lines.entries()) {
-        if (row >= display.rows) break;
-        for (let col = 38; col < display.cols; col++)
-            display.setCell(col, row, ' ', NO_COLOR, 0);
-        for (let col = 0; col < line.length; col++)
-            display.setCell(left + col, row, line.charAt(col), NO_COLOR, 0);
-    }
-    display.setCursor(left + 8, Math.min(lines.length - 1, display.rows - 1));
-    await nhgetch();
+    // putstr() gives this NHW_MENU a text buffer; tty uses --More--.
+    await showDisclosureOverlay(lines, { pagerStyle: 'text', restoreUnderlay: true });
 }
 
 function actionKeys() {
-    return game.flags?.lootabc
+    const menuStyle = game.flags.menu_style ?? MENU_FULL;
+    return game.flags.lootabc && (menuStyle === MENU_PARTIAL || menuStyle === MENU_FULL)
         ? { takeOut: 'a', putIn: 'b', both: 'c', reverse: 'd', stash: 'e' }
         : { takeOut: 'o', putIn: 'i', both: 'b', reverse: 'r', stash: 's' };
 }
@@ -709,6 +777,18 @@ async function chooseAction(container: GameObject, held: boolean, usedTime: bool
     const hasContents = !!container.contents?.length;
     const mayTakeOut = hasContents || !container.cknown;
     const mayPutIn = (game.inventory || []).some(object => object !== container);
+    const title = mayTakeOut
+        ? `Do what with ${containerReference(container, held)}?`
+        : `The ${containerNoun(container)} is empty.  Do what with it?`;
+    const menuStyle = game.flags.menu_style ?? MENU_FULL;
+    if (menuStyle === MENU_TRADITIONAL || menuStyle === MENU_COMBINATION) {
+        const visibleChoices = `:${mayTakeOut ? 'o' : ''}${mayPutIn ? 'i' : ''}`
+            + `${mayTakeOut ? 'b' : ''}${mayPutIn ? 'rs' : ''} ${moreContainers ? 'n' : ''}q`
+            + ((game.flags.cmdassist ?? true) ? ' or ?' : '');
+        return await promptChoice(title, [':', 'o', 'i', 'b', 'r', 's', 'n', 'q', '?'],
+            moreContainers ? 'n' : 'q', { visibleChoices });
+    }
+    if (!mayTakeOut && !mayPutIn) return keys.both;
     const entries: ChoiceMenuEntry[] = [{ key: ':', text: `Look inside the ${containerNoun(container)}` }];
     if (mayTakeOut) entries.push({ key: keys.takeOut, text: 'take something out' });
     if (mayPutIn) entries.push({ key: keys.putIn, text: 'put something in' });
@@ -722,24 +802,38 @@ async function chooseAction(container: GameObject, held: boolean, usedTime: bool
         entries.push({ key: keys.stash, text: `stash one item into the ${containerNoun(container)}` });
     }
     entries.push('');
-    if (moreContainers) entries.push({ key: 'n', text: 'loot next container' });
-    entries.push({ key: 'q', marker: '*', text: usedTime ? 'done' : 'do nothing' });
-    const valid = [27, 58, 63, 110, 113,
+    if (moreContainers) entries.push({ key: 'n', marker: '*', text: 'loot next container' });
+    entries.push({ key: 'q', marker: moreContainers ? '-' : '*', text: usedTime ? 'done' : 'do nothing' });
+    const valid = [10, 13, 27, 32, 58, 63, 110, 113,
         ...Object.values(keys).map(key => key.charCodeAt(0))];
-    const title = mayTakeOut
-        ? `Do what with ${containerReference(container, held)}?`
-        : `The ${containerNoun(container)} is empty.  Do what with it?`;
-    return String.fromCharCode(await showChoiceWindow({
+    const chosen = await showChoiceWindow({
         title,
         entries,
         validKeys: valid,
-    }));
+    });
+    if ([10, 13, 32].includes(chosen)) return moreContainers ? 'n' : 'q';
+    return chosen === 27 ? 'q' : String.fromCharCode(chosen);
 }
 
 export async function useContainer(container: GameObject, {
     held = false,
     moreContainers = false,
     underlay = null,
+    resetJustPicked = false,
+}: ContainerUseOptions = {}): Promise<ContainerUseResult> {
+    setSellDisposition(container.no_charge ? SELL_DONTSELL : SELL_DELIBERATE);
+    try {
+        return await useContainerActions(container, { held, moreContainers, underlay, resetJustPicked });
+    } finally {
+        setSellDisposition(SELL_NORMAL);
+    }
+}
+
+async function useContainerActions(container: GameObject, {
+    held = false,
+    moreContainers = false,
+    underlay = null,
+    resetJustPicked = false,
 }: ContainerUseOptions = {}): Promise<ContainerUseResult> {
     if (heroHasNoHands(game)) {
         await pline('You have no hands!');
@@ -763,19 +857,37 @@ export async function useContainer(container: GameObject, {
         const trap = await triggerChestTrap(container);
         return {
             spentTime: true,
+            stopLooting: true,
             heroDied: !!trap && 'died' in trap && trap.died,
             container: trap?.destroyed ? null : container,
         };
     }
 
     let spentTime = await observeQuantumCat(container);
-    if (await loseCursedBagContents(container, game)) spentTime = true;
+    let tookOut = false;
+    const loss = await loseCursedBagContents(container, game);
+    if (loss) {
+        spentTime = true;
+        await plineWithContinuation(`You owe ${loss} ${currency(loss)} for lost merchandise.`);
+        updateContainerWeights(container);
+    }
     const keys = actionKeys();
     let action;
     for (;;) {
         action = await chooseAction(
             container, held, spentTime, moreContainers,
         );
+        if (action === '?') {
+            const help = ['Container actions:', '',
+                ' : -- Look: examine contents', ' o -- Out: take things out', ' i -- In: put things in',
+                ' b -- Both: first take things out, then put things in',
+                ' r -- Reversed: put things in, then take things out',
+                ' s -- Stash: put one item in', '',
+                ...(moreContainers ? [' n -- Next: loot next selected container'] : []),
+                ' q -- Quit: finished', ' ? -- Help: display this text.', ''];
+            await showTextWindow(help);
+            continue;
+        }
         if (action !== ':') break;
         if (!container.cknown) spentTime = true;
         await showContents(container);
@@ -785,7 +897,6 @@ export async function useContainer(container: GameObject, {
     const takeOut = [keys.takeOut, keys.both, keys.reverse].includes(action);
     const putIn = [keys.putIn, keys.both, keys.reverse].includes(action);
     const putInFirst = action === keys.reverse;
-    let stopped = false;
 
     if (takeOut && !putInFirst) {
         if (!container.contents.length) {
@@ -793,13 +904,13 @@ export async function useContainer(container: GameObject, {
             container.cknown = true;
             await pline(`The ${containerNoun(container)} is empty.`);
         } else {
-            const results = await takeSelectedObjects(container);
-            if (results.some(result => result.moved)) spentTime = true;
-            stopped = results.some(result => result.stop);
+            const transfer = await takeSelectedObjects(container, resetJustPicked);
+            if (transfer.spentTime) spentTime = true;
+            tookOut = transfer.results.some(result => result.moved);
         }
     }
 
-    if (!stopped && (putIn || action === keys.stash)) {
+    if (!game.program_state.gameover && (putIn || action === keys.stash)) {
         const hasOtherInventory = (game.inventory || [])
             .some(object => object !== container);
         if (!hasOtherInventory) {
@@ -811,23 +922,29 @@ export async function useContainer(container: GameObject, {
             );
             const results = transfer.results;
             if (transfer.spentTime) spentTime = true;
-            stopped = results.some(result => result.stop);
             if (results.some(result => result.destroyedContainer)) {
                 return { spentTime, container: null };
             }
         }
     }
 
-    if (!stopped && takeOut && putInFirst && container.contents?.length) {
-        const results = await takeSelectedObjects(container);
-        if (results.some(result => result.moved)) spentTime = true;
+    if (!game.program_state.gameover && takeOut && putInFirst) {
+        if (!container.contents.length) {
+            if (!container.cknown) spentTime = true;
+            container.cknown = true;
+            await pline(`The ${containerNoun(container)} is empty.`);
+        } else {
+            const transfer = await takeSelectedObjects(container, resetJustPicked);
+            if (transfer.spentTime) spentTime = true;
+            tookOut = transfer.results.some(result => result.moved);
+        }
     }
 
-    if (game.program_state?.gameover) return { spentTime: true, container };
+    if (game.program_state.gameover) return { spentTime: true, container, heroDied: true };
     if (spentTime) container.cknown = true;
     if (underlay) restoreMenuUnderlay(underlay);
     await redrawMap();
     await bot();
     await flush_screen(1);
-    return { spentTime, container };
+    return { spentTime, container, tookOut, stopLooting: action === 'q' || action === '\x1b' };
 }

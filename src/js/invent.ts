@@ -111,7 +111,7 @@ export async function checkInventoryGold(why: string, state: GameState = game): 
         gold.length > 1 ? 'multiple gold stacks' : ''}`, { state });
     return true;
 }
-function objectNeedsFullIdentification(object: GameObject | null | undefined) {
+export function objectNeedsFullIdentification(object: GameObject | null | undefined) {
     if (!object || object.oclass === COIN_CLASS) return false;
     const typeKnown = OBJECT_INITIAL_KNOWN[object.otyp] || object.typeKnown
         || game._knownObjectTypes?.has(object.otyp);
