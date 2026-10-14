@@ -57,4 +57,20 @@ void test('a time-only update refits the row while retaining earlier health', as
     assert.match(status(), /T:10000 Bl/);
     assert.equal(status().at(-1), ' ');
 });
+void test('a shortened tutorial level restores the Dlvl prefix on later status refits', async () => {
+    freshObjectRoom({ moves: 100000000, flags: { time: true }, hero: { uhs: 1 } });
+    game._tutorialActive = true;
+    game.nhDisplay = new GameDisplay(new Terminal(null, { cols: 52, rows: 24 }));
+    await bot();
+    assert.match(status(), /^Dl:8 /, 'the crowded tutorial row abbreviates the level');
+    game.moves = 9;
+    timebot();
+    assert.match(status(), /^Dlvl:8 /, 'refitting restores the native dungeon prefix');
+    await bot();
+    assert.match(status(), /^Dlvl:8 /, 'an unchanged level field keeps the restored prefix');
+    requirePlayingGame(game);
+    game.u.uz.dlevel = 9;
+    await bot();
+    assert.match(status(), /^Tutorial:9 /, 'a changed level supplies its full tutorial label');
+});
 //# sourceMappingURL=status_tty_fit.test.js.map

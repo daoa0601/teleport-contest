@@ -5,15 +5,21 @@ const capacityText = [
 ];
 // wintty.c:make_things_fit() tries all condition abbreviations, then both
 // encumbrance abbreviations, then Dlvl -> Dl, before truncating at cols-1.
-export function renderStatusLine2(fields, columns, capacityBlank = false) {
+export function renderStatusLine2(fields, columns, capacityBlank = false, levelPrefixChanged = false) {
     const attempts = [
         [0, 0, false], [1, 0, false], [2, 0, false],
         [2, 1, false], [2, 2, false], [2, 2, true],
     ];
     let line = '';
     let emptyCapacitySpace = fields.capacity === 0 && capacityBlank;
+    // shrink_dlvl(0) restores Dlvl, even when the original label was Tutorial.
+    const fullLocation = levelPrefixChanged
+        ? fields.location.replace(/^[^:]+:/, 'Dlvl:') : fields.location;
+    let prefixChanged = levelPrefixChanged;
     for (const [conditionSize, capacitySize, shortLevel] of attempts) {
-        const location = shortLevel ? fields.location.replace(/^[^:]+:/, 'Dl:') : fields.location;
+        const location = shortLevel ? fullLocation.replace(/^[^:]+:/, 'Dl:') : fullLocation;
+        if (location !== fullLocation)
+            prefixChanged = true;
         line = `${location} ${fields.gold} ${fields.health} ${fields.experience}`;
         if (fields.moves !== null)
             line += ` T:${fields.moves}`;
@@ -37,8 +43,12 @@ export function renderStatusLine2(fields, columns, capacityBlank = false) {
             line += ' '.repeat(gap) + fields.version;
         }
         if (line.length <= columns - 1)
-            return { text: line, capacityBlank: emptyCapacitySpace };
+            return { text: line, capacityBlank: emptyCapacitySpace, levelPrefixChanged: prefixChanged };
     }
-    return { text: line.slice(0, Math.max(0, columns - 1)), capacityBlank: emptyCapacitySpace };
+    return {
+        text: line.slice(0, Math.max(0, columns - 1)),
+        capacityBlank: emptyCapacitySpace,
+        levelPrefixChanged: prefixChanged,
+    };
 }
 //# sourceMappingURL=status_layout.js.map

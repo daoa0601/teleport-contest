@@ -18,6 +18,7 @@ export interface StatusLine2Fields {
 export interface StatusLine2Layout {
     text: string;
     capacityBlank: boolean;
+    levelPrefixChanged: boolean;
 }
 
 const capacityText: readonly (readonly string[])[] = [
@@ -32,6 +33,7 @@ export function renderStatusLine2(
     fields: StatusLine2Fields,
     columns: number,
     capacityBlank = false,
+    levelPrefixChanged = false,
 ): StatusLine2Layout {
     const attempts: readonly (readonly [0 | 1 | 2, 0 | 1 | 2, boolean])[] = [
         [0, 0, false], [1, 0, false], [2, 0, false],
@@ -39,8 +41,13 @@ export function renderStatusLine2(
     ];
     let line = '';
     let emptyCapacitySpace = fields.capacity === 0 && capacityBlank;
+    // shrink_dlvl(0) restores Dlvl, even when the original label was Tutorial.
+    const fullLocation = levelPrefixChanged
+        ? fields.location.replace(/^[^:]+:/, 'Dlvl:') : fields.location;
+    let prefixChanged = levelPrefixChanged;
     for (const [conditionSize, capacitySize, shortLevel] of attempts) {
-        const location = shortLevel ? fields.location.replace(/^[^:]+:/, 'Dl:') : fields.location;
+        const location = shortLevel ? fullLocation.replace(/^[^:]+:/, 'Dl:') : fullLocation;
+        if (location !== fullLocation) prefixChanged = true;
         line = `${location} ${fields.gold} ${fields.health} ${fields.experience}`;
         if (fields.moves !== null) line += ` T:${fields.moves}`;
         if (fields.hunger) line += ` ${fields.hunger}`;
@@ -57,7 +64,12 @@ export function renderStatusLine2(
             const gap = Math.max(1, columns - 1 - line.length - fields.version.length);
             line += ' '.repeat(gap) + fields.version;
         }
-        if (line.length <= columns - 1) return { text: line, capacityBlank: emptyCapacitySpace };
+        if (line.length <= columns - 1)
+            return { text: line, capacityBlank: emptyCapacitySpace, levelPrefixChanged: prefixChanged };
     }
-    return { text: line.slice(0, Math.max(0, columns - 1)), capacityBlank: emptyCapacitySpace };
+    return {
+        text: line.slice(0, Math.max(0, columns - 1)),
+        capacityBlank: emptyCapacitySpace,
+        levelPrefixChanged: prefixChanged,
+    };
 }

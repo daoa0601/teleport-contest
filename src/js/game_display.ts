@@ -29,6 +29,8 @@ export class GameDisplay {
     statusLines: readonly [string, string] | null = null;
     statusLine2Fields: StatusLine2Fields | null = null;
     statusCapacityBlank = false;
+    // Tty keeps the replacement prefix until BL_LEVELDESC changes.
+    statusLevelPrefixChanged = false;
     statusVisible = true;
 
     constructor(terminalOrContainerId: Terminal | string | HTMLElement | null = null) {

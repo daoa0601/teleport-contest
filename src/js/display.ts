@@ -2531,10 +2531,14 @@ function refreshStatusLines(): void {
     // then clears any blank left by earlier encumbrance shortening.
     const capacityBlank = display.statusLine2Fields?.capacity === capacity
         && display.statusCapacityBlank;
-    display.statusLine2Fields = statusLine2Fields(capacity);
+    const fields = statusLine2Fields(capacity);
+    const levelPrefixChanged = display.statusLine2Fields?.location === fields?.location
+        && display.statusLevelPrefixChanged;
+    display.statusLine2Fields = fields;
     const layout = display.statusLine2Fields
-        ? renderStatusLine2(display.statusLine2Fields, display.cols, capacityBlank) : null;
+        ? renderStatusLine2(display.statusLine2Fields, display.cols, capacityBlank, levelPrefixChanged) : null;
     display.statusCapacityBlank = layout?.capacityBlank ?? false;
+    display.statusLevelPrefixChanged = layout?.levelPrefixChanged ?? false;
     display.statusLines = [_statusLine1(), layout?.text ?? ''];
     display.statusVisible = true;
     writeStatusLines(display, display.statusLines);
@@ -2553,8 +2557,10 @@ export function timebot(): void {
         || game._suppressMapStatusForFlush) return;
     const [first] = display.statusLines;
     display.statusLine2Fields = { ...display.statusLine2Fields, moves: game.moves };
-    const layout = renderStatusLine2(display.statusLine2Fields, display.cols, display.statusCapacityBlank);
+    const layout = renderStatusLine2(display.statusLine2Fields, display.cols,
+        display.statusCapacityBlank, display.statusLevelPrefixChanged);
     display.statusCapacityBlank = layout.capacityBlank;
+    display.statusLevelPrefixChanged = layout.levelPrefixChanged;
     display.statusLines = [first, layout.text];
     display.statusVisible = true;
     writeStatusLines(display, display.statusLines);
