@@ -3,7 +3,7 @@ import test from 'node:test';
 import { wearHeroAccessory } from '../js/accessory.js';
 import { rhack } from '../js/cmd.js';
 import { MM_NOGRP, MM_NOWAIT, NO_MINVENT } from '../js/const.js';
-import { game } from '../js/gstate.js';
+import { game, requireGameDisplay } from '../js/gstate.js';
 import { pushKey, resetInputState } from '../js/input.js';
 import { setMonsterGivenName } from '../js/monster_given_name.js';
 import { AMULET_OF_LIFE_SAVING } from '../js/object_data.js';
@@ -14,6 +14,66 @@ import { addInventoryObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
+
+for (const { mode, command, name } of [
+    { mode: 'wizard', command: 'movement', name: 'Bird With A Very Long And Elaborate Given Name' },
+    { mode: 'wizard', command: 'fight', name: 'Bird With A Very Long And Elaborate Given Name That Wraps Onto Another Line' },
+    { mode: 'explorer', command: 'movement', name: 'Bird With A Very Long And Elaborate Given Name That Wraps Onto Another Line' },
+    { mode: 'explorer', command: 'fight', name: 'Bird With A Very Long And Elaborate Given Name' },
+]) {
+    for (const dismissal of ['Escape', 'space']) {
+        void test(`${mode} ${command} contact reaches Die? ${dismissal === 'Escape' ? 'directly after Escape stops the hit' : 'after acknowledging petrification'}`, async () => {
+            freshObjectRoom({
+                flags: { verbose: true, debug: mode === 'wizard', explore: mode === 'explorer' },
+                hero: { uhitinc: 100, uhp: 40, uhpmax: 40 },
+            });
+            const bird = await createMonsterAt('cockatrice', 11, 10, MM_NOGRP | MM_NOWAIT | NO_MINVENT);
+            setMonsterGivenName(bird, name);
+            bird.mhp = bird.mhpmax = 2000;
+            bird.mpeaceful = false;
+            bird.msleeping = 0;
+            let hitAcknowledged = false;
+            let askedToDie = false;
+            let deathAcknowledged = false;
+            const input = resetInputState();
+            input.display = {
+                async readKey() {
+                    const screen = requireGameDisplay().grid.map(row => row.map(cell => cell.ch).join('')).join('\n');
+                    if (!hitAcknowledged) {
+                        assert.match(screen, /You hit Bird With/);
+                        assert.match(screen, /--More--/);
+                        assert.doesNotMatch(screen, /You turn to stone/);
+                        assert.equal(game.u.uhp, 40, 'The hit pager precedes the fatal event');
+                        hitAcknowledged = true;
+                        return dismissal === 'Escape' ? 27 : 32;
+                    }
+                    if (!askedToDie && dismissal === 'space' && !deathAcknowledged) {
+                        assert.match(screen, /You turn to stone\.\.\.--More--/);
+                        deathAcknowledged = true;
+                        return 32;
+                    }
+                    assert.equal(askedToDie, false, `Unexpected input after refusing death: ${screen}`);
+                    assert.match(screen, /Die\? \[yn\] \(n\)/,
+                        'Stopped prose must yield directly to the death question');
+                    assert.doesNotMatch(screen, /--More--/);
+                    assert.equal(game.u.uhp, 0);
+                    assert.equal(game.u.umortality, 1);
+                    askedToDie = true;
+                    return 'n'.charCodeAt(0);
+                },
+            };
+            if (command === 'fight') pushKey('l');
+            initRng(41n);
+
+            await rhack((command === 'fight' ? 'F' : 'l').charCodeAt(0));
+
+            assert.equal(askedToDie, true);
+            assert.equal(!!game.program_state.gameover, false);
+            assert.ok((game.u.uhp ?? 0) > 0, 'Refusing death restores the hero');
+            assert.equal(game.context.move, 1);
+        });
+    }
+}
 
 for (const { lifeSaved, longName, description } of [
     { lifeSaved: false, longName: false, description: "shares a short hit message's pager" },

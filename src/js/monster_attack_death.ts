@@ -172,7 +172,8 @@ export async function finishMonsterAttackDeath(monster: Monster, {
         } else if (announcesDeath) {
             if (!petrificationAnnounced) await plineWithContinuation(fatalLine);
             commitFatalEvent();
-            if (game.flags?.debug || game.flags?.explore)
+            // tty_yn_function() skips more() while Escape's WIN_STOP is set.
+            if ((game.flags?.debug || game.flags?.explore) && !game._suppressMessagesUntilInput)
                 await waitForCurrentMonsterMore(fatalLine);
         } else {
             commitFatalEvent();
