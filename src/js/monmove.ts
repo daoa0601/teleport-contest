@@ -144,6 +144,7 @@ import { summonMonsterAttackHelp } from './minion.js';
 import { releaseMonsterLeash } from './monster_leash.js';
 import {
     ammunitionMatchesLauncher,
+    isPick,
     isPolearm,
     returningWeaponRangeSquared,
     willWeld,
@@ -873,11 +874,11 @@ function monsterHasAvailableDistanceAttack(monster: Monster, random: RandomBelow
 // C monmove.c:dochug() phase two.  A close weapon attacker may spend its
 // whole action readying carried equipment before phase-three movement.  This
 // transition is deliberately RNG-free but changes every later actor's stream.
-async function readyCloseMonsterWeapon(monster: Monster, state: PlayingGameState) {
+async function readyCloseMonsterWeapon(monster: Monster, state: PlayingGameState,
+    range: { inRange: boolean; nearby: boolean; scared: boolean }) {
     if (
-        monster?.mpeaceful ||
-        monster?.pet ||
-        monster?.mtame ||
+        (monster.mpeaceful && !heroHasConflict(state)) ||
+        !range.inRange ||
         !speciesHasWeaponAttack(monster.mnum) ||
         monster.weaponCheck !== NEED_WEAPON
     )
@@ -891,6 +892,9 @@ async function readyCloseMonsterWeapon(monster: Monster, state: PlayingGameState
     )
         return null;
 
+    const weapon = monsterWieldedWeapon(monster);
+    if ((range.scared && weapon && isPick(weapon))
+        || (monster.mtrapped && !range.nearby && selectMonsterRangedWeapon(monster, state))) return null;
     monster.weaponCheck = NEED_HTH_WEAPON;
     return wieldMonsterWeapon(monster, state);
 }
@@ -8294,7 +8298,7 @@ export async function takeMonsterTurn(
         range = await checkMonsterHeroRange(monster, { state, random, rollOne });
         dochugContext.range = range;
     }
-    if (await readyCloseMonsterWeapon(monster, state)) {
+    if (await readyCloseMonsterWeapon(monster, state, range)) {
         return {
             calls,
             dochugContext,

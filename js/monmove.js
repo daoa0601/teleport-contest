@@ -66,7 +66,7 @@ import { monsterWieldedWeapon, selectMonsterRangedWeapon, swingMonsterWeapon, up
 import { attackHeroWithPolearm } from './monster_polearm.js';
 import { summonMonsterAttackHelp } from './minion.js';
 import { releaseMonsterLeash } from './monster_leash.js';
-import { ammunitionMatchesLauncher, isPolearm, returningWeaponRangeSquared, willWeld, } from './weapon_type.js';
+import { ammunitionMatchesLauncher, isPick, isPolearm, returningWeaponRangeSquared, willWeld, } from './weapon_type.js';
 import { growMonster } from './monster_growth.js';
 import { monsterLocomotion } from './monster_locomotion.js';
 import { verbForSubject } from './object_grammar.js';
@@ -455,10 +455,9 @@ function monsterHasAvailableDistanceAttack(monster, random) {
 // C monmove.c:dochug() phase two.  A close weapon attacker may spend its
 // whole action readying carried equipment before phase-three movement.  This
 // transition is deliberately RNG-free but changes every later actor's stream.
-async function readyCloseMonsterWeapon(monster, state) {
-    if (monster?.mpeaceful ||
-        monster?.pet ||
-        monster?.mtame ||
+async function readyCloseMonsterWeapon(monster, state, range) {
+    if ((monster.mpeaceful && !heroHasConflict(state)) ||
+        !range.inRange ||
         !speciesHasWeaponAttack(monster.mnum) ||
         monster.weaponCheck !== NEED_WEAPON)
         return null;
@@ -467,6 +466,10 @@ async function readyCloseMonsterWeapon(monster, state) {
     if (!isFiniteNumber(apparentX) ||
         !isFiniteNumber(apparentY) ||
         dist2(monster.mx, monster.my, apparentX, apparentY) > 8)
+        return null;
+    const weapon = monsterWieldedWeapon(monster);
+    if ((range.scared && weapon && isPick(weapon))
+        || (monster.mtrapped && !range.nearby && selectMonsterRangedWeapon(monster, state)))
         return null;
     monster.weaponCheck = NEED_HTH_WEAPON;
     return wieldMonsterWeapon(monster, state);
@@ -6855,7 +6858,7 @@ export async function takeMonsterTurn(monster, state, random = rn2, rollDice = d
         range = await checkMonsterHeroRange(monster, { state, random, rollOne });
         dochugContext.range = range;
     }
-    if (await readyCloseMonsterWeapon(monster, state)) {
+    if (await readyCloseMonsterWeapon(monster, state, range)) {
         return {
             calls,
             dochugContext,
