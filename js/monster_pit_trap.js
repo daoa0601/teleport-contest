@@ -9,7 +9,7 @@ import { AD_PHYS } from './monster_attack_types.js';
 import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL, } from './monster_data.js';
 import { monsterWearsIronShoes } from './monworn.js';
 import { rnd } from './rng.js';
-import { monsterTrapVisibility } from './trap.js';
+import { monsterTrapVisibility, seeTrap } from './trap.js';
 import { levelHasCeiling } from './terrain_properties.js';
 const M1_CLING = 0x00000010;
 const M1_FLY = 0x00000001;
@@ -60,7 +60,7 @@ export async function finishMonsterPitTrap(monster, event, { publish = plineWith
         return event;
     if (!event.falls) {
         if (event.inSight) {
-            event.trap.tseen = true;
+            seeTrap(event.trap, state);
             await publish(`${describeMonster(monster)} doesn't fall into the pit.`);
         }
         event.finished = true;
