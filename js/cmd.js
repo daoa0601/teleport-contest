@@ -4497,6 +4497,19 @@ async function dojump() {
 }
 async function verboseFarlookDescription(x, y) {
     const glyph = glyphAt(x, y);
+    if (glyph?.kind === 'terrain' && glyph.terrainName.includes('staircase')) {
+        const direction = glyph.glyph === cmapToGlyph(CmapSymbol.upstair)
+            || glyph.glyph === cmapToGlyph(CmapSymbol.brupstair) ? 'up' : 'down';
+        // DECgraphics gives ladders their own symbols. With default
+        // graphics they share the staircase symbol and its ambiguity list.
+        const kinds = /^DECgraphics$/i.test(game.symset ?? '')
+            ? ['staircase'] : ['staircase', 'ladder'];
+        const descriptions = [
+            ...kinds.map(kind => `a ${kind} ${direction}`),
+            ...kinds.map(kind => `a branch ${kind} ${direction}`),
+        ];
+        return `${direction === 'up' ? '<' : '>'}\x1b[8C${descriptions.join(' or ')} (${await farlookLocationDescription(x, y)})`;
+    }
     if (farlookDescribesHero(x, y) && glyph?.kind === 'monster'
         && glyph.mnum !== undefined) {
         // C do_screen_description() classifies the displayed glyph. With
