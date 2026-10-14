@@ -388,7 +388,6 @@ export async function gotoLevel(targetDepth: Partial<DungeonLocation>, {
     }
     await autopickupAtHero();
     if (game.program_state?.gameover) return true;
-    await bot();
     game.u.uz0 = { ...game.u.uz };
     return true;
 }

@@ -339,7 +339,6 @@ export async function gotoLevel(targetDepth, { arrival = 'random', ladder = fals
     await autopickupAtHero();
     if (game.program_state?.gameover)
         return true;
-    await bot();
     game.u.uz0 = { ...game.u.uz };
     return true;
 }
