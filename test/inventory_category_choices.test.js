@@ -76,6 +76,29 @@ void test('inventory of used-up objects names their consumed quantity and total 
     assert.equal(used.quan, 4);
     assert.equal(game.context.move, 0);
 });
+void test('used-up potions reveal their appearance on the bill only after sight returns', async (t) => {
+    freshObjectRoom({ flags: { menu_style: MENU_TRADITIONAL }, hero: { blindTurns: 10 } });
+    await addInventoryObject(DAGGER);
+    const used = await knownObject(POT_HEALING, {
+        where: 'onbill', quan: 1, dknown: false, bknown: false, known: false, typeKnown: false,
+    });
+    game.billObjects = [used];
+    await createStaffedShop({ bill: [{ bo_id: used.o_id, bquan: 3, price: 10, useup: true }] });
+    const input = resetInputState();
+    planInput(input, t, [
+        { prompt: /What type of object do you want an inventory of\?/, keys: 'x' },
+        { prompt: /x - 3 potions\s+30 zorkmids/, keys: ' ' },
+        { prompt: /What type of object do you want an inventory of\?/, keys: 'x' },
+        { prompt: /x - 3 \w[\w -]* potions\s+30 zorkmids/, keys: ' ' },
+    ]);
+    await rhack('I'.charCodeAt(0));
+    assert.equal(used.dknown, false);
+    game.u.blindTurns = 0;
+    await rhack('I'.charCodeAt(0));
+    assert.equal(used.dknown, true);
+    assert.equal(used.quan, 1);
+    assert.equal(game.context.move, 0);
+});
 const categoryMenuStyles = [MENU_FULL, MENU_PARTIAL];
 for (const style of categoryMenuStyles) {
     void test(`an empty pack with a used-up bill has no inventory category menu in style ${style}`, async (t) => {

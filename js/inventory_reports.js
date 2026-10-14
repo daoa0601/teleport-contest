@@ -10,7 +10,7 @@ import { promptKey } from './tty_prompts.js';
 import { heroHandName } from './body_parts.js';
 import { makePlural } from './object_grammar.js';
 import { possessiveName } from './monster_name.js';
-import { objectName, observeDistantObjectForNaming, observeObjectForNaming, simpleObjectName } from './objnam.js';
+import { objectName, observeObjectForNaming, simpleObjectName } from './objnam.js';
 import { OBJECT_CLASS_SYMBOLS } from './object_knowledge.js';
 import { currency } from './currency.js';
 import { heroGoldAmount, heroGoldObject } from './hero_gold.js';
@@ -403,7 +403,7 @@ function pricedInventoryLine(object, letter, price, text = null, quantity = 0, u
         if (object) {
             if (quantity)
                 object.quan = quantity;
-            observeDistantObjectForNaming(object);
+            observeObjectForNaming(object);
             text ??= inventoryItemDescription(object);
             if (useInvlet && game.flags.fixinv !== false && letter !== '>')
                 letter = object.invlet ?? letter;
