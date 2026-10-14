@@ -262,9 +262,11 @@ async function prepareScatteredObject(object, x, y, state, options) {
         const fragile = OBJECT_MATERIAL[object.otyp] === GLASS
             || object.otyp === EGG;
         if (destructionRoll === 0 || fragile) {
+            // Native scatter() uses breaks(), even during the hero's turn.
+            // Combat credit still depends on who caused the scatter.
             const broken = await breakFloorObject(object, {
                 state,
-                heroCaused: options.heroCaused,
+                heroCaused: false,
                 publish: options.publish,
                 random: options.random,
                 rollDice: options.rollDice,
