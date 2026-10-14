@@ -99,3 +99,15 @@ void test('an unknown key clears command recall while retaining an unfinished fi
     assert.equal(game.context.move, 1);
     assert.match(game._pending_message, /attack thin air/);
 });
+
+void test('an unknown key retains a rush request until a movement command consumes it', async () => {
+    const input = freshTurnRoom();
+    input.feed('g~l');
+    await rhack(0);
+    assert.equal(game._pending_message, "Unknown command '~'.");
+    await rhack(0);
+    assert.equal(game.u.ux, 11);
+    assert.equal(game.context.run, 2);
+    assert.equal(await continueRun(), true);
+    assert.equal(game.u.ux, 12);
+});

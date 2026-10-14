@@ -12,6 +12,7 @@ export function resetCommandVariables(clearQueues) {
     game.context.move = 0;
     game.multi = 0;
     game.iflags.menu_requested = false;
+    game._movementAttempt = null;
     if (clearQueues) {
         game._cannedCommands = [];
         clearCommandKeys();

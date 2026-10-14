@@ -26,6 +26,11 @@ export type CannedCommand =
 
 export type DirectionalRunMode = 0 | 1 | 2 | 3;
 
+export interface MovementAttempt {
+    walk: boolean;
+    rush: boolean;
+}
+
 export interface DirectionalRunState {
     mode: DirectionalRunMode;
     dx: number;

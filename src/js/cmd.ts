@@ -27,7 +27,7 @@ import type { LiquidEffectResult } from './hack.js';
 import type { SpotEffectResult } from './location_effects.js';
 import type { DungeonBranch, DungeonLocation, OverviewRecord, SpecialLevelDescriptor } from './dungeon_types.js';
 import type {
-    CannedCommand, CommandBinding, DirectionalRunMode, NativeCommand, RunState, TravelRunState,
+    CannedCommand, CommandBinding, DirectionalRunMode, MovementAttempt, NativeCommand, RunState, TravelRunState,
 } from './command_types.js';
 import { bookCursed, continueSpellbookStudy } from './spellbook_study.js';
 import { grantMonsterWish } from './potion_occupants.js';
@@ -1166,11 +1166,6 @@ async function commandAllowed(command: NativeCommand | null | undefined): Promis
         && (command.flags & NATIVE_COMMAND_FLAGS.NOFUZZERCMD));
 }
 
-interface MovementPrefixes {
-    walk: boolean;
-    rush: boolean;
-}
-
 // C cmd.c:rhack(). Prefixes are commands; each consumes another parse in
 // the same dispatch, so counts and configured keys work at every position.
 export async function rhack(key: number): Promise<void> {
@@ -1181,7 +1176,8 @@ export async function rhack(key: number): Promise<void> {
     game._heroMeleeThisCommand = false;
     game._silentPrefixRetainedTopline = false;
     const previousMessage = game._pending_message;
-    const movement: MovementPrefixes = { walk: false, rush: false };
+    const movement = game._movementAttempt ?? { walk: false, rush: false };
+    game._movementAttempt = movement;
     let prefix: NativeCommand | null = null;
     let menuPrefix = false;
 
@@ -1316,7 +1312,7 @@ async function repeatLastCommand(): Promise<void> {
     }
 }
 
-async function applyMovementPrefix(command: NativeCommand, movement: MovementPrefixes): Promise<boolean> {
+async function applyMovementPrefix(command: NativeCommand, movement: MovementAttempt): Promise<boolean> {
     if (command.handler === 'do_reqmenu') {
         if (game.iflags.menu_requested) {
             const key = visibleCommandKey(game.commandBindings.keyForCommand('reqmenu'));
@@ -1347,7 +1343,7 @@ async function applyMovementPrefix(command: NativeCommand, movement: MovementPre
     throw new Error(`Unimplemented movement prefix: ${command.name}`);
 }
 
-async function dispatchMovement(binding: CommandBinding, prefixes: MovementPrefixes): Promise<void> {
+async function dispatchMovement(binding: CommandBinding, prefixes: MovementAttempt): Promise<void> {
     const key = binding.key ?? 0;
     const ch = String.fromCharCode(key);
     const direction = controlRushDirection(key) || ch.toLowerCase();
@@ -7414,7 +7410,10 @@ async function delayAfterDraggingBall(): Promise<void> {
 // C hack.c:domove() clears kickedloc after even an unsuccessful attempt.
 async function domove(dx: number, dy: number, explicitAttempt = true): Promise<boolean> {
     const moved = await domoveCore(dx, dy, explicitAttempt);
-    if (!game.program_state.gameover) game._kickedLoc = null;
+    if (!game.program_state.gameover) {
+        game._kickedLoc = null;
+        game._movementAttempt = null;
+    }
     return moved;
 }
 

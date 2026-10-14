@@ -1007,7 +1007,8 @@ export async function rhack(key) {
     game._heroMeleeThisCommand = false;
     game._silentPrefixRetainedTopline = false;
     const previousMessage = game._pending_message;
-    const movement = { walk: false, rush: false };
+    const movement = game._movementAttempt ?? { walk: false, rush: false };
+    game._movementAttempt = movement;
     let prefix = null;
     let menuPrefix = false;
     for (;;) {
@@ -7181,8 +7182,10 @@ async function delayAfterDraggingBall() {
 // C hack.c:domove() clears kickedloc after even an unsuccessful attempt.
 async function domove(dx, dy, explicitAttempt = true) {
     const moved = await domoveCore(dx, dy, explicitAttempt);
-    if (!game.program_state.gameover)
+    if (!game.program_state.gameover) {
         game._kickedLoc = null;
+        game._movementAttempt = null;
+    }
     return moved;
 }
 // C hack.c:move_out_of_bounds(). A failed step takes no time; a forced
