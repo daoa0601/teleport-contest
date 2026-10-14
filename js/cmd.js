@@ -97,7 +97,7 @@ import { gotoLevel } from './level_change.js';
 import { levelTeleport } from './level_teleport.js';
 import { confirmHeroStep } from './hero_step_confirmation.js';
 import { monsterPassesBars } from './monster_movement_traits.js';
-import { heroCanEnterIronBars } from './iron_bars_meal.js';
+import { continueChewingTerrain, heroCanEnterIronBars } from './iron_bars_meal.js';
 import { wormCrossesBetween } from './monster_worm.js';
 import { floorObjectDescription, } from './floor_object_display.js';
 import { loseHeroHp } from './hero_damage.js';
@@ -302,6 +302,8 @@ const PM_WATER_DEMON = 289;
 const PM_WATER_MOCCASIN = 216;
 const M2_ROCKTHROW = 0x08000000;
 const M1_HUMANOID = 0x00020000;
+const M1_TUNNEL = 0x20;
+const M1_NEEDPICK = 0x40;
 const MAT_GEMSTONE = 20;
 const MAT_MINERAL = 21;
 function isMovementKey(ch) {
@@ -7589,6 +7591,18 @@ async function domoveCore(dx, dy, explicitAttempt) {
     }
     if (!await heroCanEnterIronBars(newx, newy, game))
         return false;
+    const formFlags = MONSTER_FLAGS1[heroSpecies(game)] ?? 0;
+    const tunnels = !!(formFlags & M1_TUNNEL) && !(formFlags & M1_NEEDPICK);
+    if (loc && (IS_OBSTRUCTED(loc.typ)
+        || loc.typ === DOOR && !!(loc.doormask & (D_CLOSED | D_LOCKED)))
+        && !heroCanPassWallAt(game, newx, newy) && !heroOozesUnderDoor(loc)) {
+        if (u.uinwater || game.underwater) {
+            await pline('There is an obstacle there.');
+            return false;
+        }
+        if (tunnels && await continueChewingTerrain(newx, newy, game))
+            return false;
+    }
     const oozingUnderDoor = heroOozesUnderDoor(loc);
     if (oozingUnderDoor)
         await pline('You ooze under the door.');
@@ -7683,7 +7697,11 @@ async function domoveCore(dx, dy, explicitAttempt) {
         game.context.move = 0;
         return false;
     }
-    if (boulder && !await pushBoulder(boulder, newx, newy, dx, dy)) {
+    if (boulder && tunnels && !game.level.flags.sokoban_rules) {
+        if (await continueChewingTerrain(newx, newy, game))
+            return false;
+    }
+    else if (boulder && !await pushBoulder(boulder, newx, newy, dx, dy)) {
         game.context.move = 0;
         return false;
     }
