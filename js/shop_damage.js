@@ -1084,8 +1084,8 @@ export async function shopkeeperRepairsDamage(keeper, state = game) {
         return 0;
     const shkCloseby = distu(state, keeper.mx, keeper.my)
         <= (BOLT_LIM / 2) * (BOLT_LIM / 2);
-    if (canSpotMonster(keeper)) {
-        await pline(`${shopkeeperName(keeper)} whispers ${shkCloseby ? 'an incantation' : 'something'}.`);
+    if (canSeeMonster(keeper)) {
+        await pline(`${shopkeeperName(keeper, { capitalized: true })} whispers ${shkCloseby ? 'an incantation' : 'something'}.`);
     }
     else if (!heroIsDeafNow(state) && shkCloseby) {
         await pline('You hear someone muttering an incantation.');

@@ -480,4 +480,23 @@ void test('sensing a nearby keeper does not reveal its trap repair to a blind he
     assert.ok(shopkeeper.minvent?.some(object => object.otyp === LAND_MINE));
     assert.equal(game._lastPlineMessage, lastMessage);
 });
+void test('telepathy does not reveal an unheard shop repair incantation', async () => {
+    const { shopkeeper, roomno } = await damageShop();
+    game.u.blindTurns = 10;
+    game.blind = true;
+    game.u.deafTurns = 10;
+    game.deaf = true;
+    game.u.telepathy = true;
+    vision_recalc(0);
+    const level = requireGameLevel(game);
+    level.requireAt(12, 11).roomno = roomno;
+    addTrap(level, 6, 12, 11, { tseen: 1 });
+    level.damagelist = [{ when: game.moves - 5, place: { x: 12, y: 11 },
+            cost: 0, typ: ROOM, flags: 0 }];
+    const before = game._lastPlineMessage;
+    await shopkeeperRepairsDamage(shopkeeper);
+    assert.equal(game._lastPlineMessage, before);
+    assert.ok(!level.traps.some(trap => trap.tx === 12 && trap.ty === 11));
+    assert.equal(level.damagelist.length, 0);
+});
 //# sourceMappingURL=shop_damage.test.js.map
