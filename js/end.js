@@ -1,5 +1,6 @@
 // end.js — End-of-game disclosure and terminal presentation.
 // C refs: end.c disclose()/really_done(), insight.c, dungeon.c.
+import { PARANOID_DIE, PARANOID_QUIT } from './const.js';
 import { PanicTermination } from './panic_termination.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { achievementEntries } from './achievements.js';
@@ -39,7 +40,7 @@ import { finishShopkeeperRepossession, settleShopkeepersOnExit } from './shop_se
 import { payVaultGuardOnExit } from './vault_exit.js';
 import { currency } from './currency.js';
 import { clearNonlocalPriestsOnExit } from './priest.js';
-import { promptChoice, promptYesNo } from './query.js';
+import { paranoidQuery, promptChoice, promptYesNo } from './query.js';
 import { clearHeroRemains, setHeroRemainsFromDeath, } from './death_remains.js';
 import { loadScoreRecords, saveScoreRecords } from './score_records.js';
 import { requireInitializedHero } from './hero_types.js';
@@ -163,8 +164,8 @@ export async function finishHeroDeath({ killer, killerFormat = KILLED_BY_AN, bef
         }
     }
     if (game.flags?.debug || game.flags?.explore) {
-        const answer = await promptYesNo('Die?');
-        if (answer !== 'y') {
+        const answer = await paranoidQuery(!!((game.flags.paranoia_bits ?? 0) & PARANOID_DIE), 'Die?');
+        if (!answer) {
             await plineWithContinuation("OK, so you don't die.");
             await restoreHeroAfterDeath({ deathType });
             if (game.program_state.gameover)
@@ -1204,8 +1205,8 @@ async function completeOrdinaryDeath({ killer, possessionAnswer = null, deathVer
     game.context.move = 0;
 }
 export async function doquit() {
-    const answer = await promptYesNo('Really quit without saving?');
-    if (answer !== 'y') {
+    const answer = await paranoidQuery(!!((game.flags.paranoia_bits ?? 0) & PARANOID_QUIT), 'Really quit without saving?');
+    if (!answer) {
         // C end.c:done2() clears the answered question without a docrt,
         // cancels voluntary repetition, and releases prayer/sleep only
         // after multi has reached zero. Involuntary delays remain active.

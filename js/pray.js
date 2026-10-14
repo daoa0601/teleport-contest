@@ -76,7 +76,7 @@ export async function dopray() {
     let outcome = prayerOutcome(alignment, trouble);
     if (game.flags.debug && !['moloch', 'undead'].includes(outcome)) {
         await flushPendingTopline();
-        if (await promptYesNo('Force the gods to be pleased?') === 'y') {
+        if (await promptYesNo('Force the gods to be pleased?', 'n', !((game.flags.paranoia_bits ?? 0) & PARANOID_PRAY)) === 'y') {
             hero.ublesscnt = 0;
             hero.uluck = Math.max(0, hero.uluck || 0);
             hero.ualign.record = Math.max(1, hero.ualign.record);

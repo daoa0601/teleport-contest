@@ -1,5 +1,7 @@
 // C refs: bones.c:savebones(), drop_upon_death(), and give_to_nearby_mon().
 
+import { PARANOID_BONES } from './const.js';
+import { paranoidQuery } from './query.js';
 import { monsterHasMapPosition } from './monster_location.js';
 import {
     CORPSTAT_INIT, G_NOCORPSE, GRAVE, HEADSTONE, isok, LEAVESTATUE,
@@ -156,8 +158,10 @@ export async function createBonesFromDeath(deathCause: string, promptDeathQuesti
     }
 
     if (game.flags?.debug) {
-        const save = await promptDeathQuestion('Save bones?');
-        if (save !== 'y') return false;
+        const save = (game.flags.paranoia_bits ?? 0) & PARANOID_BONES
+            ? await paranoidQuery(true, 'Save bones?')
+            : await promptDeathQuestion('Save bones?') === 'y';
+        if (!save) return false;
     }
     if (bonesLevelExists()) {
         if (!game.flags?.debug) return false;
