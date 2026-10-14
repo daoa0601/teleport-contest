@@ -288,7 +288,6 @@ async function createGolemRemains(monster: Monster, state: GameState): Promise<G
         remains = await mkcorpstat(
             STATUE, null, monster.mnum, x, y, corpseFlags(monster, false), { state },
         );
-        if (monster.name) remains.oname = monster.name;
         break;
     case PM_WOOD_GOLEM:
         for (let count = d(2, 4); count > 0; count--)
@@ -314,7 +313,7 @@ async function createGolemRemains(monster: Monster, state: GameState): Promise<G
     }
 
     if (monster.mnum !== PM_STONE_GOLEM) delete monster.name;
-    return remains ? await stack_object(remains, state) : null;
+    return remains;
 }
 
 async function placeMonsterPart(type: number, monster: Monster, state: GameState, initialize = true): Promise<GameObject> {
@@ -378,8 +377,10 @@ export async function createMonsterRemains(
 ): Promise<GameObject | null> {
     const x = monster.mx;
     const y = monster.my;
-    if (SPECIAL_GOLEM_REMAINS.has(monster.mnum))
-        return await createGolemRemains(monster, state);
+    if (SPECIAL_GOLEM_REMAINS.has(monster.mnum)) {
+        const remains = await createGolemRemains(monster, state);
+        return remains ? await finishMonsterRemains(remains, monster, state) : null;
+    }
     if (monster.mnum >= PM_GRAY_OOZE && monster.mnum <= PM_BLACK_PUDDING)
         return createPuddingGlob(monster, state, publish);
 
@@ -400,8 +401,6 @@ export async function createMonsterRemains(
         },
     );
     corpse.name = `${MONSTER_NAME[corpseForm] || 'monster'} corpse`;
-    if (state.context?.bypasses) corpse.bypass = true;
-    if (monster.name) corpse.oname = monster.name;
     if (corpseForm !== monster.mnum)
         corpse.age = (corpse.age ?? state.moves ?? 1) - 51;
     if (buried) {
@@ -409,7 +408,21 @@ export async function createMonsterRemains(
         if (result.outcome === 'absorbed') return null;
         if (result.outcome === 'buried') return corpse;
     }
-    return await stack_object(corpse, state);
+    return await finishMonsterRemains(corpse, monster, state);
+}
+
+// Special golem objects share make_corpse's tail with ordinary corpses.
+// In particular, the beam which killed a monster must skip its new remains.
+async function finishMonsterRemains(
+    remains: GameObject, monster: Monster, state: GameState,
+): Promise<GameObject> {
+    if (state.context.bypasses) remains.bypass = true;
+    if (monster.name) remains.oname = monster.name;
+    const stacked = await stack_object(remains, state);
+    newsym(monster.mx, monster.my);
+    if (stacked.ox !== monster.mx || stacked.oy !== monster.my)
+        newsym(stacked.ox, stacked.oy);
+    return stacked;
 }
 
 // Native mondead() after recovery has failed. Kill credit and remains belong

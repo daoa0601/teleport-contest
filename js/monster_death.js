@@ -191,8 +191,6 @@ async function createGolemRemains(monster, state) {
         }
         case PM_STONE_GOLEM:
             remains = await mkcorpstat(STATUE, null, monster.mnum, x, y, corpseFlags(monster, false), { state });
-            if (monster.name)
-                remains.oname = monster.name;
             break;
         case PM_WOOD_GOLEM:
             for (let count = d(2, 4); count > 0; count--)
@@ -218,7 +216,7 @@ async function createGolemRemains(monster, state) {
     }
     if (monster.mnum !== PM_STONE_GOLEM)
         delete monster.name;
-    return remains ? await stack_object(remains, state) : null;
+    return remains;
 }
 async function placeMonsterPart(type, monster, state, initialize = true) {
     const part = await mksobj(type, initialize, false);
@@ -265,8 +263,10 @@ async function createPuddingGlob(monster, state, publish) {
 export async function createMonsterRemains(monster, state = game, { buried = false, zombify = false, noRevive = false, seen = false, publish = plineWithContinuation, } = {}) {
     const x = monster.mx;
     const y = monster.my;
-    if (SPECIAL_GOLEM_REMAINS.has(monster.mnum))
-        return await createGolemRemains(monster, state);
+    if (SPECIAL_GOLEM_REMAINS.has(monster.mnum)) {
+        const remains = await createGolemRemains(monster, state);
+        return remains ? await finishMonsterRemains(remains, monster, state) : null;
+    }
     if (monster.mnum >= PM_GRAY_OOZE && monster.mnum <= PM_BLACK_PUDDING)
         return createPuddingGlob(monster, state, publish);
     await createMonsterPart(monster, state, seen, publish);
@@ -283,10 +283,6 @@ export async function createMonsterRemains(monster, state = game, { buried = fal
         state, zombify, noRevive,
     });
     corpse.name = `${MONSTER_NAME[corpseForm] || 'monster'} corpse`;
-    if (state.context?.bypasses)
-        corpse.bypass = true;
-    if (monster.name)
-        corpse.oname = monster.name;
     if (corpseForm !== monster.mnum)
         corpse.age = (corpse.age ?? state.moves ?? 1) - 51;
     if (buried) {
@@ -296,7 +292,20 @@ export async function createMonsterRemains(monster, state = game, { buried = fal
         if (result.outcome === 'buried')
             return corpse;
     }
-    return await stack_object(corpse, state);
+    return await finishMonsterRemains(corpse, monster, state);
+}
+// Special golem objects share make_corpse's tail with ordinary corpses.
+// In particular, the beam which killed a monster must skip its new remains.
+async function finishMonsterRemains(remains, monster, state) {
+    if (state.context.bypasses)
+        remains.bypass = true;
+    if (monster.name)
+        remains.oname = monster.name;
+    const stacked = await stack_object(remains, state);
+    newsym(monster.mx, monster.my);
+    if (stacked.ox !== monster.mx || stacked.oy !== monster.my)
+        newsym(stacked.ox, stacked.oy);
+    return stacked;
 }
 // Native mondead() after recovery has failed. Kill credit and remains belong
 // to the caller; map, inventory, and population cleanup share this owner.
