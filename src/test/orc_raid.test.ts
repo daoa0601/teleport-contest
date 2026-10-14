@@ -3,6 +3,8 @@ import test from 'node:test';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { generateMinetown } from '../js/mklev.js';
 import { MONSTER_FLAGS2, MONSTER_NAME } from '../js/monster_data.js';
+import { MM_NOGRP, NON_PM } from '../js/const.js';
+import { createMonsterAt } from './support/monsters.js';
 import { freshSpecialLevel } from './support/special-level.js';
 
 void test('ransacked Minetown sends its raiders and named stolen goods into the lower Mines', async () => {
@@ -12,6 +14,7 @@ void test('ransacked Minetown sends its raiders and named stolen goods into the 
     assert.ok(mines);
     mines.dname = 'The Gnomish Mines';
     mines.num_dunlevs = 8;
+    game.mines_dnum = 0;
 
     await generateMinetown(active);
 
@@ -29,4 +32,16 @@ void test('ransacked Minetown sends its raiders and named stolen goods into the 
     const loot = game.migratingObjects ?? [];
     assert.ok(loot.length > 0, 'unclaimed stolen goods must remain available for later orcs');
     assert.ok(loot.every(object => object.where === 'migrating' && !!object.oextra?.oname));
+
+    const stolen = loot[0];
+    assert.ok(stolen);
+    const remaining = loot.length;
+    const buyer = await createMonsterAt('hill orc', 1, 1, MM_NOGRP);
+
+    assert.equal(loot.length, remaining - 1, 'each new orc receives one stolen item');
+    assert.equal(buyer.inventory.includes(stolen), true);
+    assert.match(buyer.name ?? '', / of /);
+    assert.equal(stolen.oextra?.oname, undefined);
+    assert.equal(stolen.migration, undefined);
+    assert.equal(stolen.corpsenm, NON_PM);
 });

@@ -17,6 +17,7 @@ import {
 } from './object_data.js';
 import { rn2, rnd } from './rng.js';
 import { objectWeight } from './weight.js';
+import { deallocateObject } from './object_delete.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 
@@ -71,7 +72,7 @@ export async function createOrcRaid(): Promise<void> {
     }
 }
 
-export function randomOrcName(): string {
+function randomOrcName(): string {
     const vowels = ['a', 'ai', 'og', 'u'];
     const consonants = ['gor', 'gris', 'un', 'bane', 'ruk', 'oth', 'ul', 'z', 'thos', 'akh', 'hai'];
     const count = rn2(2) + 3;
@@ -127,7 +128,7 @@ async function giveShinyLoot(monster: Monster, state: PlayingGameState): Promise
     if (rn2(1000) < goldChance / 4) {
         const gem = await mkobj(GEM_CLASS, false);
         if (gem.otyp !== ROCK) await addObjectToMonsterInventory(monster, gem, state);
-        else gem.where = 'gone';
+        else deallocateObject(gem, state);
     }
     if (captain || rn2(8) === 0) {
         const { first, last } = getObjectClassBounds(RING_CLASS);
@@ -179,7 +180,7 @@ export async function deliverOrcRaidLoot(monster: Monster, state: GameState, all
         object.ox = object.oy = 0;
         if ((migration.speciesFlags & M2_ORC) && object.oextra?.oname) {
             if (!monster.name) {
-                const inMines = state.dungeons[state.u.uz?.dnum ?? 0]?.dname === 'The Gnomish Mines';
+                const inMines = state.u.uz?.dnum === state.mines_dnum;
                 if (inMines || rn2(2) === 0) nameOrc(monster, inMines ? object.oextra.oname : null, ' the Fence');
             }
             delete object.oextra.oname;

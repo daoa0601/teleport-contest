@@ -7488,8 +7488,7 @@ async function generateSpecialAndFixup(
     if (Is_stronghold(game.u.uz) || game.urole?.key === 'priest' && In_quest(game.u.uz))
         level.flags.graveyard = true;
     if (active?.baalzFixup) await fixupBaalz(active);
-    if (active.file === 'minetn-1.lua'
-        && game.dungeons[game.u.uz?.dnum ?? 0]?.dname === 'The Gnomish Mines')
+    if (active.file === 'minetn-1.lua' && In_mines(game.u.uz))
         await createOrcRaid();
     // sp_lev.c explicitly places deferred portals, stairs, and branches
     // before premap_detect(); otherwise their remembered glyphs retain the
