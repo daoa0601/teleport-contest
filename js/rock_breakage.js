@@ -6,7 +6,10 @@ import { newsym, pline } from './display.js';
 import { game } from './gstate.js';
 import { placeObject, placeObjectSynchronously, remove_object } from './floor_object.js';
 import { adjustHeroAlignment } from './alignment.js';
-import { chargeUnpaidObjectAsDebt, costlySpot } from './shk.js';
+import { costlySpot } from './shk.js';
+import { shopClaimsObject } from './shop_loss.js';
+import { breakObjectAtLocation } from './object_breakage.js';
+import { getObjectLocation } from './object_location.js';
 import { objectName } from './objnam.js';
 import { BOULDER, OBJECT_USES_KNOWN, ROCK, STATUE } from './object_data.js';
 import { rn2 } from './rng.js';
@@ -38,11 +41,15 @@ export async function fractureRock(object, x, y, { state = game, random = rn2, p
     // C zap.c:fracture_rock() — "no texts here!" beyond the shop-billing
     // message.  Callers own any "shatters"/"falls apart" prose.
     const byYou = !state.context?.mon_moving;
-    if (byYou && object.where === 'floor') {
-        const spot = costlySpot(x, y, state);
-        if (spot && object.unpaid) {
+    const location = getObjectLocation(object, state);
+    if (byYou && location) {
+        const spot = costlySpot(location.x, location.y, state);
+        if (spot && shopClaimsObject(object, spot.resident, false, state)) {
             await publish(`You fracture ${shopkeeperName(spot.resident)}'s ${objectName(object, state)}.`);
-            await chargeUnpaidObjectAsDebt(object, state, publish);
+            await breakObjectAtLocation(object, {
+                x: location.x, y: location.y, state, publish,
+                heroCaused: true, showBreakMessage: false,
+            });
         }
     }
     if (byYou && object.otyp === BOULDER)
