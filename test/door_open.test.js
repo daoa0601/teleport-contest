@@ -1,7 +1,7 @@
 import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { A_CON, A_DEX, A_STR, D_CLOSED, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, DOOR, STONE, } from '../js/const.js';
+import { A_CON, A_DEX, A_STR, COLNO, D_CLOSED, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, DOOR, STONE, } from '../js/const.js';
 import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
 import { initRng } from '../js/rng.js';
@@ -142,4 +142,25 @@ void test('closing toward yourself spends a turn because the hero blocks the way
     assert.equal(game._pending_message, 'You are in the way!');
     assert.equal(game.context.move, 1);
 });
+for (const impairment of ['stunnedTurns', 'confusionTurns']) {
+    for (const blind of [false, true]) {
+        void test(`closing off the map with ${impairment} while ${blind ? 'blind' : 'sighted'} does not spend a turn`, async () => {
+            freshPlayableRoom({
+                left: COLNO - 3, right: COLNO - 1, heroX: COLNO - 1,
+                hero: { [impairment]: 5, blindTurns: blind ? 5 : 0 },
+            });
+            pushKeys('l');
+            await rhack('c'.charCodeAt(0));
+            assert.equal(game._pending_message, `You ${blind ? 'feel' : 'see'} no door there.`);
+            assert.equal(game.context.move, 0);
+        });
+    }
+    void test(`closing at an on-map square without a door with ${impairment} spends a turn`, async () => {
+        freshPlayableRoom({ hero: { [impairment]: 5 } });
+        pushKeys('l');
+        await rhack('c'.charCodeAt(0));
+        assert.equal(game._pending_message, 'You see no door there.');
+        assert.equal(game.context.move, 1);
+    });
+}
 //# sourceMappingURL=door_open.test.js.map
