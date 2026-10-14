@@ -1,7 +1,7 @@
 // Artifact powers used by the #invoke command.
 // C ref: artifact.c arti_invoke() and its invoke_* helpers.
 import { heroIsHallucinating } from './senses.js';
-import { I_SPECIAL, In_endgame, P_EXPERT, TIMEOUT, Upolyd, W_ARTI } from './const.js';
+import { I_SPECIAL, In_endgame, In_hell, In_quest, P_EXPERT, TIMEOUT, Upolyd, W_ARTI, isok } from './const.js';
 import { newsym, pline } from './display.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { hasNonArtifactConflict, syncHeroConflict } from './hero_conflict.js';
@@ -23,7 +23,7 @@ import { chooseObjectToCharge, rechargeObject } from './recharge.js';
 import { doBlindingRay } from './flash.js';
 import { heroSpecies } from './hero_species.js';
 import { lightDamage, lightRoom } from './light.js';
-import { MONSTER_NAME } from './monster_data.js';
+import { MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL } from './monster_data.js';
 import { objectName, objectNameIsPlural } from './objnam.js';
 import { flashBurn } from './sight_change.js';
 import { promptDirection } from './tty_prompts.js';
@@ -35,6 +35,15 @@ import { gotoLevel } from './level_change.js';
 import { levelTeleport } from './level_teleport.js';
 import { bringLeashedFollowers } from './teleport.js';
 import { showPagedPickOneMenu } from './windows.js';
+import { migrateMonsterToLevel } from './monster_migration.js';
+import { teleportMonsterByHero } from './monster_magic_response.js';
+import { couldsee } from './vision.js';
+import { rn2 } from './rng.js';
+const M2_DEMON = 0x100;
+const M2_LORD = 0x400;
+const M2_PRINCE = 0x800;
+const S_IMP = 9;
+const MS_NEMESIS = 37;
 const DIRECT_POWERS = [
     'healing',
     'energy-boost',
@@ -47,6 +56,7 @@ const DIRECT_POWERS = [
     'firestorm',
     'level-teleport',
     'create-portal',
+    'banish',
 ];
 function isDirectPower(power) {
     return DIRECT_POWERS.some((candidate) => candidate === power);
@@ -319,6 +329,52 @@ async function invokeCreatePortal(object, state, publish) {
         : 'You are surrounded by a shimmering sphere!');
     await gotoLevel(destination);
 }
+async function invokeBanish(state, publish) {
+    requirePlayingGame(state);
+    const hell = state.valley_level;
+    const dungeon = hell && state.dungeons[hell.dnum];
+    if (!hell || !dungeon)
+        throw new Error('Demon banishment requires initialized Gehennom');
+    let vanished = 0;
+    let stayed = 0;
+    // fmon is newest first; removals and migration must preserve that order.
+    for (const monster of [...state.level.monsters].reverse()) {
+        if (monster.dead || monster.mhp <= 0 || !isok(monster.mx, monster.my))
+            continue;
+        const flags = MONSTER_FLAGS2[monster.mnum] ?? 0;
+        if (!(flags & M2_DEMON) && MONSTER_SYMBOL[monster.mnum] !== S_IMP)
+            continue;
+        if (!couldsee(monster.mx, monster.my) || MONSTER_SOUND[monster.mnum] === MS_NEMESIS)
+            continue;
+        let chance = 1;
+        if (In_quest(state.u.uz) && !state.quest_status?.killed_nemesis)
+            chance += 10;
+        if ((flags & (M2_DEMON | M2_PRINCE)) === (M2_DEMON | M2_PRINCE))
+            chance += 2;
+        if ((flags & (M2_DEMON | M2_LORD)) === (M2_DEMON | M2_LORD))
+            chance++;
+        monster.msleeping = monster.mtame = monster.mpeaceful = 0;
+        monster.pet = false;
+        if (chance > 1 && rn2(chance)) {
+            stayed++;
+            continue;
+        }
+        if (In_hell(state.u.uz, state)) {
+            await teleportMonsterByHero(monster, { state, giveFeedback: false });
+        }
+        else {
+            vanished++;
+            await migrateMonsterToLevel(monster, {
+                dnum: hell.dnum, dlevel: rn2(dungeon.num_dunlevs),
+            }, state);
+        }
+    }
+    if (vanished) {
+        const subject = vanished === 1 ? 'demon' : 'demons';
+        const amount = !stayed ? 'The' : vanished > stayed ? 'Most of the' : 'Some of the';
+        await publish(`${amount} ${subject} ${vanished === 1 ? 'disappears' : 'disappear'} in a cloud of brimstone!`);
+    }
+}
 export async function invokeArtifactPower(object, artifact, { state = game, publish = pline, rollDice = d, rollOne = rnd, scaledRandom = rnz, enterTrap = null, } = {}) {
     if (!artifact)
         return { used: false };
@@ -332,6 +388,9 @@ export async function invokeArtifactPower(object, artifact, { state = game, publ
     if (!ready)
         return { used: true, ready: false };
     switch (power) {
+        case 'banish':
+            await invokeBanish(state, publish);
+            break;
         case 'level-teleport':
             await levelTeleport({ state });
             if (state.program_state.gameover)
