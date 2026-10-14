@@ -1,10 +1,13 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { wearHeroArmor } from '../js/armor.js';
 import { rhack } from '../js/cmd.js';
 import { MM_NOGRP, MM_NOWAIT, NO_MINVENT } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { pushKey, resetInputState } from '../js/input.js';
 import { initRng } from '../js/rng.js';
+import { IRON_SHOES } from '../js/object_data.js';
+import { addInventoryObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -79,4 +82,21 @@ void test('a blind floating eye cannot freeze the hero who strikes it', async ()
 
     assert.match(messages, /The blind floating eye cannot defend itself\./);
     assert.equal(game._helplessTurns ?? 0, 0);
+});
+
+void test('a natural melee kick does not offer boots to an acid blob\'s object passive', async () => {
+    await meleeRoom('sasquatch', 'acid blob');
+    const boots = await addInventoryObject(IRON_SHOES);
+    wearHeroArmor(boots);
+    // Intrinsic acid resistance protects the body, not these boots.
+    game.u.acidResistance = true;
+    initRng(41n);
+    let messages = '';
+
+    for (let attempt = 0; attempt < 6; attempt++)
+        messages += await attackEast(/acid blob|splashed|corrode/);
+
+    assert.match(messages, /You kick the acid blob/);
+    assert.equal(boots.oeroded2 ?? 0, 0,
+        'hmonas passes no contact object for a natural kick');
 });

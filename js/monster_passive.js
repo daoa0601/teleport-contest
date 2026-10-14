@@ -112,8 +112,8 @@ async function applyAcidPassive({ monster, damage, hit, attackType, weapon, stat
             });
         }
     }
-    const object = objectTouchedByAttack(state, attackType, weapon);
-    if (!heroDied && hit && object && random(6) === 0) {
+    const object = hit && weapon ? objectTouchedByAttack(state, attackType, weapon) : null;
+    if (!heroDied && object && random(6) === 0) {
         await erodeObject(object, 'corrosion', {
             state,
             publish,
