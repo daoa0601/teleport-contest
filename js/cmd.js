@@ -220,7 +220,6 @@ import { doUntrap } from './untrap.js';
 import { dosit } from './sit.js';
 import { continueEngraving, doengrave } from './engrave_command.js';
 import { heroCanMoveFromTrap, triggerHeroTrapAt, triggerLevelTeleportTrap } from './hero_traps.js';
-import { activateStatueTrapAt } from './statue_trap.js';
 import { applyDippedCoinFate, applyFountainDemonActor, applyFountainGemDiscovery, applyFountainNymphActor, applyFountainSnakeActors, resolveDippedBucFate, resolveDippedSensationFate, } from './fountain_effects.js';
 import { dryFountainAt, gushForthFromFountain } from './fountain.js';
 import { heroArmName, heroFingerName, heroHandName } from './body_parts.js';
@@ -1946,12 +1945,6 @@ async function dokick() {
     const hasBoulder = game.level?.objects?.[x]?.[y]?.some(object => object.otyp === BOULDER);
     if (kickedObject && (!game.u.levitating || Is_airlevel(game.u.uz)
         || Is_waterlevel(game.u.uz) || hasBoulder)) {
-        const trap = game.level?.traps?.find(candidate => candidate.tx === x && candidate.ty === y);
-        if (trap?.ttyp === STATUE_TRAP) {
-            await activateStatueTrapAt(x, y);
-            game.context.move = 1;
-            return;
-        }
         const kicked = await kickFloorObject(x, y, {
             state: game,
             dx: game.u.dx,
