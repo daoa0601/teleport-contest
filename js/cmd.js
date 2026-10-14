@@ -110,6 +110,7 @@ import { nextObjectId } from './ident.js';
 import { clearCommandKeys, nhgetch, queueCommandKeys, takeCommandKey } from './input.js';
 import { readCommandInput } from './command_input.js';
 import { clearRepeatCommand, rememberCommand, takeRepeatCommand } from './command_repeat.js';
+import { availableExtendedCommands, completeExtendedCommand, extendedCommandMenu, showExtendedCommandList } from './extended_commands.js';
 import { chooseInventoryObject, compactInventoryLetters, inventoryLetterOrder, promptInventoryObject, reassignInventoryLetters, } from './inventory_prompt.js';
 import { AT_EXPL, AT_KICK } from './monster_attack_types.js';
 import { confusePromptDirection, directionAssistPage, promptDirection, promptKey, readDirectionKey, restoreCommandMap, } from './tty_prompts.js';
@@ -3205,20 +3206,8 @@ async function lootLockedContainer(container) {
         return;
     }
 }
-// C cmd.c:extcmds_match(): availability applies to both full names and
-// completion; AUTOCOMPLETE only limits the latter.
-function availableExtendedCommands() {
-    return NATIVE_COMMANDS.filter(command => !(command.flags & (NATIVE_COMMAND_FLAGS.CMD_NOT_AVAILABLE
-        | NATIVE_COMMAND_FLAGS.INTERNALCMD))
-        && (game.flags.debug || !(command.flags & NATIVE_COMMAND_FLAGS.WIZMODECMD)));
-}
-function completeExtendedCommand(prefix) {
-    const matches = availableExtendedCommands().filter(command => !!(command.flags & NATIVE_COMMAND_FLAGS.AUTOCOMPLETE)
-        && command.name !== null
-        && command.name.startsWith(prefix));
-    return matches.length === 1 ? matches[0]?.name ?? null : null;
-}
 const EXTENDED_COMMAND_HANDLERS = new Map([
+    ['?', showExtendedCommandList],
     ['whatis', dowhatis],
     ['takeoffall', takeOffAll],
     ['conduct', doconduct],
@@ -4268,15 +4257,37 @@ async function wizIdentify() {
 // boundary.  #enhance has AUTOCOMPLETE, so its unique initial "e" expands
 // visually while subsequent characters advance through that completed word.
 async function readExtendedCommand() {
+    for (;;) {
+        const statusDisabled = game._statusUpdatesDisabled;
+        game._statusUpdatesDisabled = true;
+        let selected;
+        try {
+            selected = game.flags.extmenu ? await extendedCommandMenu() : await editExtendedCommand();
+        }
+        finally {
+            if (statusDisabled === undefined)
+                delete game._statusUpdatesDisabled;
+            else
+                game._statusUpdatesDisabled = statusDisabled;
+        }
+        if (selected?.handler !== 'doextlist')
+            return selected;
+        if (!await commandAllowed(selected))
+            return null;
+        await showExtendedCommandList();
+    }
+}
+async function editExtendedCommand() {
     let command = '';
-    game._pending_message = '#';
+    let completion = null;
+    const initiator = visibleCommandKey(game.commandBindings.keyForCommand('#'));
+    game._pending_message = initiator;
     await flush_screen(1);
-    game.nhDisplay?.setCursor(2, 0);
+    game.nhDisplay?.setCursor(initiator.length + 1, 0);
     const redrawCommand = async () => {
-        const completion = completeExtendedCommand(command.toLowerCase());
         const displayedCommand = completion || command;
         game._pending_message = command
-            ? `# ${displayedCommand}` : '#';
+            ? `${initiator} ${displayedCommand}` : initiator;
         await flush_screen(1);
         const display = game.nhDisplay;
         const columns = display?.cols ?? COLNO;
@@ -4291,7 +4302,7 @@ async function readExtendedCommand() {
         }
         // NEWAUTOCOMP leaves the insertion pointer immediately after the
         // physically typed prefix, not after its displayed suffix.
-        const insertion = command.length + 2;
+        const insertion = command.length + initiator.length + 1;
         if (insertion > columns - 1)
             display?.setCursor(insertion - (columns - 1), 1);
         else
@@ -4304,6 +4315,7 @@ async function readExtendedCommand() {
             // at an already empty prompt cancels the extended command.
             if (command) {
                 command = '';
+                completion = null;
                 await redrawCommand();
                 continue;
             }
@@ -4315,18 +4327,19 @@ async function readExtendedCommand() {
         }
         if (key === 10 || key === 13)
             break;
-        if (key === 8) {
+        if (key === 8 || key === 127) {
             if (command) {
                 command = command.slice(0, -1);
+                completion = null;
                 await redrawCommand();
             }
             continue;
         }
-        if (key === 127) {
-            // DEL is tty's kill character in the recorder sessions.  It
-            // removes both the typed prefix and the visible completion.
+        if (key === 21) {
+            // The tty kill character clears both typed text and completion.
             if (command) {
                 command = '';
+                completion = null;
                 await redrawCommand();
             }
             continue;
@@ -4335,6 +4348,7 @@ async function readExtendedCommand() {
         if (key < 32 || key === 127 || command.length >= COLNO)
             continue;
         command += ch;
+        completion = completeExtendedCommand(command);
         await redrawCommand();
     }
     // tty_getlin() clears its message window on return. The completed
@@ -4342,7 +4356,7 @@ async function readExtendedCommand() {
     game._pending_message = '';
     game._retained_message = '';
     game.nhDisplay?.clearRow(0);
-    const normalizedCommand = command
+    const normalizedCommand = (completion || command)
         .trim()
         .replace(/\s+/g, ' ')
         .toLowerCase();
@@ -4353,10 +4367,9 @@ async function readExtendedCommand() {
         game.context.move = 0;
         return null;
     }
-    const name = completeExtendedCommand(normalizedCommand) || normalizedCommand;
-    const selected = availableExtendedCommands().find(entry => entry.name === name);
+    const selected = availableExtendedCommands().find(entry => entry.name === normalizedCommand);
     if (!selected)
-        await pline(`#${normalizedCommand.slice(0, 60)}: unknown extended command.`);
+        await pline(`${initiator}${normalizedCommand.slice(0, 60)}: unknown extended command.`);
     return selected ?? null;
 }
 async function wizardPositionDescription(x, y) {
