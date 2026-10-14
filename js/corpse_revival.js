@@ -18,8 +18,8 @@ import { MONSTER_BODY_META, MONSTER_GENO, MONSTER_NAME, MONSTER_SYMBOL, monsterI
 import { monsterAtPosition } from './monster_location.js';
 import { monsterName } from './monster_name.js';
 import { removeMonsterFromGame } from './monster_departure.js';
-import { ownedObjectName } from './objnam.js';
-import { costlySpot } from './shk.js';
+import { corpseName as corpseObjectName } from './objnam.js';
+import { costlySpot, objectOwnershipPrefix } from './shk.js';
 import { stolenValue } from './shop_loss.js';
 import { restoreMonsterTraits } from './monster_traits.js';
 import { changeMonsterForm, restoreMonsterShape } from './monster_polymorph.js';
@@ -420,10 +420,10 @@ async function announceHeroRevival(corpse, monster, oneOf, state) {
     const keeper = costlySpot(x, y, state)?.resident;
     const charge = keeper && (corpse.where === 'inventory' ? corpse.unpaid : !corpse.no_charge);
     if (cansee(x, y)) {
-        const name = oneOf
-            ? `One of ${ownedObjectName({ ...corpse, quan: 2, quantity: 2 }, state, { capitalized: false })}`
-            : ownedObjectName(corpse, state);
-        await plineWithContinuation(`${name} glows iridescently.`);
+        const owner = objectOwnershipPrefix(corpse, state, { capitalized: false });
+        const body = oneOf ? { ...corpse, quan: 2, quantity: 2 } : corpse;
+        const name = `${oneOf ? 'one of ' : ''}${owner}${corpseObjectName(body, { omitPrefix: true })}`;
+        await plineWithContinuation(`${name.charAt(0).toUpperCase()}${name.slice(1)} glows iridescently.`);
         state._lastPlineKind = PLNMSG_OBJ_GLOWS;
     }
     else if (charge) {

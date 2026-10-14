@@ -11,6 +11,34 @@ import { freshObjectRoom } from './support/object-room.js';
 import { createStaffedShop } from './support/shop.js';
 import { answerPrompts } from './support/input-boundaries.js';
 
+for (const quantity of [1, 2]) {
+    void test(`undead turning describes ${quantity === 1 ? "the Oracle's corpse" : "one of the Oracle's corpses"} with one article`, async () => {
+        freshObjectRoom();
+        requirePlayingGame(game);
+        const body = await floorObject(CORPSE, game.u.ux, game.u.uy, {
+            corpsenm: MONSTER_NAME.indexOf('Oracle'), quan: quantity,
+        });
+        const wand = await addInventoryObject(WAN_UNDEAD_TURNING, { spe: 2 });
+        const input = resetInputState();
+        const messages: string[] = [];
+        input.beforeRead = () => {
+            if (game._pending_message) messages.push(game._pending_message);
+        };
+        installPagerInput(input, { expected: /glows iridescently/, limit: 2 });
+        input.feed(`${wand.invlet}>`);
+
+        await rhack('z'.charCodeAt(0));
+
+        assert.match([...messages, game._pending_message].join('\n'), quantity === 1
+            ? /^The Oracle's corpse glows iridescently\./m
+            : /^One of the Oracle's corpses glows iridescently\./m);
+        assert.match(game._pending_message, /is resurrected!/);
+        assert.equal(body.where, quantity === 1 ? 'gone' : 'floor');
+        if (quantity > 1) assert.equal(body.quan, quantity - 1);
+        assert.equal(wand.spe, 1);
+    });
+}
+
 void test('reviving shop stock with a wand charges only the corpse brought to life', async () => {
     freshObjectRoom();
     requirePlayingGame(game);
