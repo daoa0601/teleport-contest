@@ -46,7 +46,7 @@ import { objectNeedsFullIdentification } from './invent.js';
 import { identifyPack } from './invent.js';
 import { DIED, KILLED_BY, MENU_ITEMFLAGS_SKIPINVERT, MGIVENNAME, NHW_MENU, PICK_ANY } from './const.js';
 import { AD_PHYS } from './monster_attack_types.js';
-import { finishMonsterKilled } from './monster_death.js';
+import { finishMonsterKilled, finishMonsterLiquidDeath } from './monster_death.js';
 import { monsterIsNonliving } from './monster_data.js';
 import { Invocation_lev, Is_earthlevel, Is_firelevel, Is_knox_level, MAGIC_PORTAL, VIBRATING_SQUARE } from './const.js';
 import { map_engraving, map_trap } from './display.js';
@@ -2952,7 +2952,14 @@ async function wizTelekinesis(): Promise<void> {
         const direction = await promptDirection(() => readDirectionKey('which direction? '));
         if (!direction) break;
         if (monster) {
-            await hurtleMonster(monster, direction.dx, direction.dy, 6);
+            await hurtleMonster(monster, direction.dx, direction.dy, 6, {
+                // minliquid() credits drowning and lava burning to the hero;
+                // rust and fatal damage to a fire-resistant monster use mondied().
+                finishLiquidDeath: (target, death) =>
+                    death.cause === 'drowning' || death.cause === 'lava-burning'
+                        ? finishHeroMonsterKillOutcome(target, target.mx, target.my, { showKillMessage: false })
+                        : finishMonsterLiquidDeath(target, death),
+            });
             if (!monster.dead && monster.mhp > 0 && canSpotMonster(monster))
                 cursor = { x: monster.mx, y: monster.my };
         } else {

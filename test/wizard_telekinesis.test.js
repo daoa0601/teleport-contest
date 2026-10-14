@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { LAVAPOOL, POOL } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { runExtendedCommand } from './support/commands.js';
@@ -39,6 +40,33 @@ void test('#wiztelekinesis can hurtle the hero without leaving a recovery delay 
     assert.equal(game.u.uy, 10);
     assert.equal(game.multi, 0);
     assert.equal(game._helplessTurns ?? 0, 0);
+    assert.equal(game.context.move, 0);
+});
+for (const [terrain, death] of [[POOL, 'drowning'], [LAVAPOOL, 'burning']]) {
+    void test(`#wiztelekinesis credits the hero for a goblin's ${death}`, async () => {
+        const level = freshObjectRoom({ right: 25, flags: { debug: true, tips: false, verbose: false } });
+        requirePlayingGame(game);
+        level.requireAt(17, 10).typ = terrain;
+        const goblin = await createMonsterAt('goblin', 11, 10);
+        const experience = game.u.uexp;
+        await runExtendedCommand('wiztelekinesis', 'l.l\x1b');
+        assert.equal(goblin.dead, true);
+        assert.equal(game.u.uconduct.killer, 1, 'A telekinesis liquid kill breaks pacifist conduct');
+        assert.ok(game.u.uexp > experience, 'The hero earns experience for the liquid kill');
+        assert.equal(game.context.move, 0);
+    });
+}
+void test('#wiztelekinesis gives no kill credit for a fire-resistant monster surrendering to lava', async () => {
+    const level = freshObjectRoom({ right: 25, flags: { debug: true, tips: false, verbose: false } });
+    requirePlayingGame(game);
+    level.requireAt(17, 10).typ = LAVAPOOL;
+    const ant = await createMonsterAt('fire ant', 11, 10);
+    ant.mhp = 1;
+    const experience = game.u.uexp;
+    await runExtendedCommand('wiztelekinesis', 'l.l\x1b');
+    assert.equal(ant.dead, true);
+    assert.equal(game.u.uconduct.killer ?? 0, 0);
+    assert.equal(game.u.uexp, experience);
     assert.equal(game.context.move, 0);
 });
 //# sourceMappingURL=wizard_telekinesis.test.js.map
