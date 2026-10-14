@@ -256,7 +256,7 @@ import {
     BANANA, MIRROR, TIN_WHISTLE, MAGIC_WHISTLE, EUCALYPTUS_LEAF,
     BELL, BELL_OF_OPENING, EXPENSIVE_CAMERA, TIN_OPENER,
     TALLOW_CANDLE, WAX_CANDLE, CANDELABRUM_OF_INVOCATION, POT_OIL,
-    RIN_CONFLICT, MEAT_RING, OBJECT_BIMANUAL,
+    RIN_CONFLICT, MEAT_RING, OBJECT_BIMANUAL, HELM_OF_OPPOSITE_ALIGNMENT, GRAY_DRAGON_SCALES,
     LENSES, BLINDFOLD, TOWEL, FUMBLE_BOOTS, KICKING_BOOTS, MAGIC_MARKER, UNICORN_HORN,
     SHIELD_OF_REFLECTION, AMULET_OF_YENDOR,
     AMULET_OF_STRANGULATION, FAKE_AMULET_OF_YENDOR, SPE_NOVEL, OBJECT_DELAY,
@@ -283,6 +283,7 @@ import { heroIsBreathless, heroPassesWalls, heroSpecies } from './hero_species.j
 import { disturbBuriedZombies } from './object_impact.js';
 import { checkSlipperyIce } from './fumbling.js';
 import { MONSTER_BODY_META } from './monster_data.js';
+import { accessibleEquipment, equipmentClassification, wearingFullEquipment } from './equipment_selection.js';
 import { armorWearDecision } from './armor_wear.js';
 import { heroCanOoze } from './monster_perception.js';
 import { isPoolAt } from './terrain_properties.js';
@@ -4871,15 +4872,13 @@ async function dohelp(): Promise<void> {
 }
 
 async function doputon(): Promise<void> {
-    const object = await chooseInventoryObject('put on', candidate => {
-        if ((candidate.owornmask ?? 0) & (W_ARMOR | W_ACCESSORY))
-            return GETOBJ_EXCLUDE_INACCESS;
-        if (candidate.oclass === 3) return GETOBJ_DOWNPLAY;
-        if (candidate.oclass === 4 || candidate.oclass === 5
-            || isEyewear(candidate) || candidate.otyp === MEAT_RING)
-            return GETOBJ_SUGGEST;
-        return GETOBJ_EXCLUDE;
-    });
+    if (wearingFullEquipment()) {
+        const prefix = monsterIsHumanoid(heroSpecies(game)) ? 'ring-' : '';
+        await pline(`Your ${prefix}${makePlural(heroFingerName(game))} are full, and you're already wearing an amulet and ${game.ublindf?.otyp === LENSES ? 'some lenses' : 'a blindfold'}.`);
+        game.context.move = 0;
+        return;
+    }
+    const object = await chooseInventoryObject('put on', candidate => equipmentClassification(candidate, 'put on'));
     if (!object) {
         game.context.move = 0;
         return;
@@ -5010,32 +5009,26 @@ export async function finishArmorRemoval(
 async function removeWornItem(action: 'remove' | 'take off', itemAction = false): Promise<void> {
     const worn = (game.inventory || []).filter(object => object.worn);
     if (!worn.length) {
-        await pline(action === 'remove'
-            ? 'Not wearing any accessories or armor.'
-            : 'Not wearing any armor or accessories.');
+        await pline(action === 'take off' && game.uskin
+            ? `The dragon ${game.uskin.otyp >= GRAY_DRAGON_SCALES ? 'scales are' : 'scale mail is'} merged with your skin!`
+            : action === 'remove' ? 'Not wearing any accessories or armor.'
+                : 'Not wearing any armor or accessories.');
         game.context.move = 0;
         return;
     }
 
     let object: GameObject | null | undefined;
     let inventoryPrompt: string | null = null;
-    const preferred = worn.filter(candidate => action === 'remove'
-        ? candidate.oclass === 4 || candidate.oclass === 5 || isEyewear(candidate)
-        : candidate.class === 'Armor' || candidate.oclass === 3);
+    const preferred = accessibleEquipment(action === 'remove');
     // C ia_dotakeoff() forces getobj() to consume the queued item letter,
     // even if another accessible piece is the only normal suggestion.
     if (preferred.length === 1 && !itemAction) {
         [object] = preferred;
     } else {
-        const letters = preferred.map(candidate => candidate.invlet).join('');
-        const prompt = `What do you want to ${action}? [${letters} or ?*] `;
-        inventoryPrompt = prompt;
-        const selection = await promptInventoryObject(prompt, worn);
-        if (selection.cancelled) {
-            game.context.move = 0;
-            return;
-        }
-        object = selection.object;
+        const suggested = game.inventory.filter(candidate => equipmentClassification(candidate, action, itemAction) === GETOBJ_SUGGEST);
+        const letters = compactInventoryLetters(suggested.map(candidate => candidate.invlet).join(''));
+        inventoryPrompt = `What do you want to ${action}? [${letters ? `${letters} or ?*` : '*'}] `;
+        object = await chooseInventoryObject(action, candidate => equipmentClassification(candidate, action, itemAction));
     }
     if (!object) {
         game.context.move = 0;
@@ -5129,6 +5122,16 @@ async function putOnArmorObject(object: GameObject): Promise<void> {
     if (decision.refusal) {
         await pline(decision.refusal);
         game.context.move = 0;
+        return;
+    }
+    if (object.otyp === HELM_OF_OPPOSITE_ALIGNMENT && game.u.uz?.dnum === game.quest_dnum) {
+        await pline(game.u.ualignbase?.[0] === game.u.ualignbase?.[1]
+            ? 'You narrowly avoid losing all chance at your goal.'
+            : 'You are suddenly overcome with shame and change your mind.');
+        game.u.ublessed = 0;
+        learnObjectType(object.otyp, game);
+        game.context.botl = true;
+        game.context.move = 1;
         return;
     }
     const touch = await retouchHeroObject(object);
@@ -5310,15 +5313,12 @@ async function dowear(): Promise<void> {
 
     // wear_ok() downplays accessories but accepts them through the same
     // getobj transaction, including a queued inventory action.
-    const object = await chooseInventoryObject('wear', candidate => {
-        if ((candidate.owornmask ?? 0) & (W_ARMOR | W_ACCESSORY))
-            return GETOBJ_EXCLUDE_INACCESS;
-        if (candidate.oclass === 3) return armorWearDecision(candidate).refusal ? GETOBJ_DOWNPLAY : GETOBJ_SUGGEST;
-        if (candidate.oclass === 4 || candidate.oclass === 5
-            || isEyewear(candidate) || candidate.otyp === MEAT_RING)
-            return GETOBJ_DOWNPLAY;
-        return GETOBJ_EXCLUDE;
-    });
+    if (wearingFullEquipment()) {
+        await pline('You are already wearing a full complement of armor.');
+        game.context.move = 0;
+        return;
+    }
+    const object = await chooseInventoryObject('wear', candidate => equipmentClassification(candidate, 'wear'));
     if (!object) {
         game.context.move = 0;
         return;

@@ -148,7 +148,7 @@ import { objectName, singularObjectName, unseenObjectNoun, } from './objnam.js';
 import { artifactById, } from './artifacts.js';
 import { invokeArtifactPower, } from './artifact_invoke.js';
 import { touchArtifactByHero } from './artifact_touch.js';
-import { SLING, BULLWHIP, GRAPPLING_HOOK, CREAM_PIE, EGG, LUMP_OF_ROYAL_JELLY, LOCK_PICK, CREDIT_CARD, STETHOSCOPE, LOADSTONE, GOLD_PIECE, BOULDER, ROCK, DILITHIUM_CRYSTAL, LUCKSTONE, TOUCHSTONE, LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK, BAG_OF_HOLDING, BAG_OF_TRICKS, BRASS_LANTERN, OIL_LAMP, MAGIC_LAMP, STATUE, RIN_PROTECTION, BANANA, MIRROR, TIN_WHISTLE, MAGIC_WHISTLE, EUCALYPTUS_LEAF, BELL, BELL_OF_OPENING, EXPENSIVE_CAMERA, TIN_OPENER, TALLOW_CANDLE, WAX_CANDLE, CANDELABRUM_OF_INVOCATION, POT_OIL, RIN_CONFLICT, MEAT_RING, OBJECT_BIMANUAL, LENSES, BLINDFOLD, TOWEL, FUMBLE_BOOTS, KICKING_BOOTS, MAGIC_MARKER, UNICORN_HORN, SHIELD_OF_REFLECTION, AMULET_OF_YENDOR, AMULET_OF_STRANGULATION, FAKE_AMULET_OF_YENDOR, SPE_NOVEL, OBJECT_DELAY, OBJECT_DESCRIPTIONS, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_WEIGHT, OBJECT_SUBTYPE, } from './object_data.js';
+import { SLING, BULLWHIP, GRAPPLING_HOOK, CREAM_PIE, EGG, LUMP_OF_ROYAL_JELLY, LOCK_PICK, CREDIT_CARD, STETHOSCOPE, LOADSTONE, GOLD_PIECE, BOULDER, ROCK, DILITHIUM_CRYSTAL, LUCKSTONE, TOUCHSTONE, LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK, BAG_OF_HOLDING, BAG_OF_TRICKS, BRASS_LANTERN, OIL_LAMP, MAGIC_LAMP, STATUE, RIN_PROTECTION, BANANA, MIRROR, TIN_WHISTLE, MAGIC_WHISTLE, EUCALYPTUS_LEAF, BELL, BELL_OF_OPENING, EXPENSIVE_CAMERA, TIN_OPENER, TALLOW_CANDLE, WAX_CANDLE, CANDELABRUM_OF_INVOCATION, POT_OIL, RIN_CONFLICT, MEAT_RING, OBJECT_BIMANUAL, HELM_OF_OPPOSITE_ALIGNMENT, GRAY_DRAGON_SCALES, LENSES, BLINDFOLD, TOWEL, FUMBLE_BOOTS, KICKING_BOOTS, MAGIC_MARKER, UNICORN_HORN, SHIELD_OF_REFLECTION, AMULET_OF_YENDOR, AMULET_OF_STRANGULATION, FAKE_AMULET_OF_YENDOR, SPE_NOVEL, OBJECT_DELAY, OBJECT_DESCRIPTIONS, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_WEIGHT, OBJECT_SUBTYPE, } from './object_data.js';
 import { CLR_WHITE, NO_COLOR, } from './terminal.js';
 import { MONSTER_COLOR, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, MONSTER_ALIGNMENT, MONSTER_ATTACKS, MONSTER_CLASS_EXPLAIN, requireMonsterData, monsterTypeName, monsterClassSymbol, monsterIsHumanoid, } from './monster_data.js';
 import { monsterStatusLine } from './monster_status.js';
@@ -160,6 +160,7 @@ import { heroIsBreathless, heroPassesWalls, heroSpecies } from './hero_species.j
 import { disturbBuriedZombies } from './object_impact.js';
 import { checkSlipperyIce } from './fumbling.js';
 import { MONSTER_BODY_META } from './monster_data.js';
+import { accessibleEquipment, equipmentClassification, wearingFullEquipment } from './equipment_selection.js';
 import { armorWearDecision } from './armor_wear.js';
 import { heroCanOoze } from './monster_perception.js';
 import { isPoolAt } from './terrain_properties.js';
@@ -4666,16 +4667,13 @@ async function dohelp() {
     game.context.move = 0;
 }
 async function doputon() {
-    const object = await chooseInventoryObject('put on', candidate => {
-        if ((candidate.owornmask ?? 0) & (W_ARMOR | W_ACCESSORY))
-            return GETOBJ_EXCLUDE_INACCESS;
-        if (candidate.oclass === 3)
-            return GETOBJ_DOWNPLAY;
-        if (candidate.oclass === 4 || candidate.oclass === 5
-            || isEyewear(candidate) || candidate.otyp === MEAT_RING)
-            return GETOBJ_SUGGEST;
-        return GETOBJ_EXCLUDE;
-    });
+    if (wearingFullEquipment()) {
+        const prefix = monsterIsHumanoid(heroSpecies(game)) ? 'ring-' : '';
+        await pline(`Your ${prefix}${makePlural(heroFingerName(game))} are full, and you're already wearing an amulet and ${game.ublindf?.otyp === LENSES ? 'some lenses' : 'a blindfold'}.`);
+        game.context.move = 0;
+        return;
+    }
+    const object = await chooseInventoryObject('put on', candidate => equipmentClassification(candidate, 'put on'));
     if (!object) {
         game.context.move = 0;
         return;
@@ -4793,32 +4791,26 @@ export async function finishArmorRemoval(object, { silent = false } = {}) {
 async function removeWornItem(action, itemAction = false) {
     const worn = (game.inventory || []).filter(object => object.worn);
     if (!worn.length) {
-        await pline(action === 'remove'
-            ? 'Not wearing any accessories or armor.'
-            : 'Not wearing any armor or accessories.');
+        await pline(action === 'take off' && game.uskin
+            ? `The dragon ${game.uskin.otyp >= GRAY_DRAGON_SCALES ? 'scales are' : 'scale mail is'} merged with your skin!`
+            : action === 'remove' ? 'Not wearing any accessories or armor.'
+                : 'Not wearing any armor or accessories.');
         game.context.move = 0;
         return;
     }
     let object;
     let inventoryPrompt = null;
-    const preferred = worn.filter(candidate => action === 'remove'
-        ? candidate.oclass === 4 || candidate.oclass === 5 || isEyewear(candidate)
-        : candidate.class === 'Armor' || candidate.oclass === 3);
+    const preferred = accessibleEquipment(action === 'remove');
     // C ia_dotakeoff() forces getobj() to consume the queued item letter,
     // even if another accessible piece is the only normal suggestion.
     if (preferred.length === 1 && !itemAction) {
         [object] = preferred;
     }
     else {
-        const letters = preferred.map(candidate => candidate.invlet).join('');
-        const prompt = `What do you want to ${action}? [${letters} or ?*] `;
-        inventoryPrompt = prompt;
-        const selection = await promptInventoryObject(prompt, worn);
-        if (selection.cancelled) {
-            game.context.move = 0;
-            return;
-        }
-        object = selection.object;
+        const suggested = game.inventory.filter(candidate => equipmentClassification(candidate, action, itemAction) === GETOBJ_SUGGEST);
+        const letters = compactInventoryLetters(suggested.map(candidate => candidate.invlet).join(''));
+        inventoryPrompt = `What do you want to ${action}? [${letters ? `${letters} or ?*` : '*'}] `;
+        object = await chooseInventoryObject(action, candidate => equipmentClassification(candidate, action, itemAction));
     }
     if (!object) {
         game.context.move = 0;
@@ -4904,6 +4896,16 @@ async function putOnArmorObject(object) {
     if (decision.refusal) {
         await pline(decision.refusal);
         game.context.move = 0;
+        return;
+    }
+    if (object.otyp === HELM_OF_OPPOSITE_ALIGNMENT && game.u.uz?.dnum === game.quest_dnum) {
+        await pline(game.u.ualignbase?.[0] === game.u.ualignbase?.[1]
+            ? 'You narrowly avoid losing all chance at your goal.'
+            : 'You are suddenly overcome with shame and change your mind.');
+        game.u.ublessed = 0;
+        learnObjectType(object.otyp, game);
+        game.context.botl = true;
+        game.context.move = 1;
         return;
     }
     const touch = await retouchHeroObject(object);
@@ -5075,16 +5077,12 @@ async function dowear() {
     }
     // wear_ok() downplays accessories but accepts them through the same
     // getobj transaction, including a queued inventory action.
-    const object = await chooseInventoryObject('wear', candidate => {
-        if ((candidate.owornmask ?? 0) & (W_ARMOR | W_ACCESSORY))
-            return GETOBJ_EXCLUDE_INACCESS;
-        if (candidate.oclass === 3)
-            return armorWearDecision(candidate).refusal ? GETOBJ_DOWNPLAY : GETOBJ_SUGGEST;
-        if (candidate.oclass === 4 || candidate.oclass === 5
-            || isEyewear(candidate) || candidate.otyp === MEAT_RING)
-            return GETOBJ_DOWNPLAY;
-        return GETOBJ_EXCLUDE;
-    });
+    if (wearingFullEquipment()) {
+        await pline('You are already wearing a full complement of armor.');
+        game.context.move = 0;
+        return;
+    }
+    const object = await chooseInventoryObject('wear', candidate => equipmentClassification(candidate, 'wear'));
     if (!object) {
         game.context.move = 0;
         return;
