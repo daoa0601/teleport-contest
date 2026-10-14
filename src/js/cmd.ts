@@ -7514,8 +7514,8 @@ async function domoveCore(dx: number, dy: number, explicitAttempt: boolean): Pro
         }
         if (!found) {
             endVoluntaryMultiTurn(game);
-            game.context.move = 0;
-            return false;
+            // Native nomul(0) ends repetition without clearing context.move.
+            return true;
         }
     }
 

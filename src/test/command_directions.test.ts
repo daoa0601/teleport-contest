@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { rhack } from '../js/cmd.js';
-import { A_CON, A_DEX, DOOR, D_CLOSED, D_ISOPEN } from '../js/const.js';
+import { A_CON, A_DEX, DOOR, D_CLOSED, D_ISOPEN, STONE } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { makeStunned } from '../js/hero_mental_status.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
@@ -68,4 +68,24 @@ void test('stunned grid-bug movement stays on the four cardinal axes', async () 
         await rhack('l'.charCodeAt(0));
         assert.equal(Math.abs(game.u.ux - 10) + Math.abs(game.u.uy - 10), 1);
     }
+});
+
+void test('exhausting stunned movement choices spends a turn and ends a counted walk', async () => {
+    const input = freshTurnRoom();
+    assert.ok(game.level);
+    for (let x = 9; x <= 11; x++) {
+        for (let y = 9; y <= 11; y++) {
+            if (x !== 10 || y !== 10) game.level.requireAt(x, y).typ = STONE;
+        }
+    }
+    await makeStunned(20, { talk: false });
+
+    input.feed('4l');
+    await rhack(0);
+
+    assert.equal(game.context.move, 1, 'the unsuccessful impaired attempt still takes time');
+    assert.equal(game.u.ux, 10);
+    assert.equal(game.u.uy, 10);
+    assert.equal(game.multi, 0);
+    assert.equal(game.context.mv, false);
 });
