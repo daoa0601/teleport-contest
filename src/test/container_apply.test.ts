@@ -90,7 +90,7 @@ for (const { selection, answers, putClubFirst, expectedMove } of [
             invlet: 'd', spe: 1,
         });
         installPagerInput(resetInputState(), {
-            expected: /You put .*club into the bag\.|magical explosion/,
+            expected: /You put .*club into the bag(?: of holding)?\.|magical explosion/,
             limit: 2,
         });
 

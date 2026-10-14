@@ -1,6 +1,6 @@
 // Container use and object transfer.
 // C refs: pickup.c use_container(), in_container(), out_container().
-import { withIndefiniteArticle } from './object_grammar.js';
+import { makePlural } from './object_grammar.js';
 import { bot, displayMessageWindow, redrawMap, flush_screen, pline, plineWithContinuation } from './display.js';
 import { touchArtifactByHero } from './artifact_touch.js';
 import { loseHeroHp } from './hero_damage.js';
@@ -11,7 +11,7 @@ import { finishInventoryRemoval, useUpInventoryStack } from './hero_inventory.js
 import { setPrimaryWeapon, setSecondaryWeapon, setQuiverObject } from './weapon_slots.js';
 import { inventoryItemDescription, inventoryPrimaryHandDetail } from './invent.js';
 import { compactInventoryLetters, promptInventoryObject } from './inventory_prompt.js';
-import { observeObjectForNaming } from './objnam.js';
+import { objectCombatName, observeObjectForNaming } from './objnam.js';
 import { inventoryClassOrder, lootSortMode, objectClassHeading, sortObjects } from './object_sort.js';
 import { OBJECT_CLASS_SYMBOLS, objectClassForType } from './object_knowledge.js';
 import { clearJustPicked } from './just_picked.js';
@@ -25,7 +25,7 @@ import { finishHeroMonsterKill, finishHeroMonsterKillOutcome } from './hero_mons
 import { startCorpseTimeout } from './mklev.js';
 import { MONSTER_NAME, MONSTER_SIZE } from './monster_data.js';
 import { deleteObject } from './object_delete.js';
-import { AMULET_OF_YENDOR, BAG_OF_HOLDING, BELL_OF_OPENING, BOULDER, BAG_OF_TRICKS, BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, CHEST, CORPSE, GOLD_PIECE, ICE_BOX, LARGE_BOX, LEASH, LOADSTONE, OBJECT_NAMES, OIL_LAMP, OILSKIN_SACK, POT_OIL, SACK, SPE_BOOK_OF_THE_DEAD, STATUE, TALLOW_CANDLE, WAN_CANCELLATION, WAX_CANDLE, } from './object_data.js';
+import { AMULET_OF_YENDOR, BAG_OF_HOLDING, BELL_OF_OPENING, BOULDER, BAG_OF_TRICKS, BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, CHEST, CORPSE, GOLD_PIECE, ICE_BOX, LARGE_BOX, LEASH, LOADSTONE, OBJECT_BIMANUAL, OBJECT_NAMES, OIL_LAMP, OILSKIN_SACK, POT_OIL, SACK, SPE_BOOK_OF_THE_DEAD, STATUE, TALLOW_CANDLE, WAN_CANCELLATION, WAX_CANDLE, } from './object_data.js';
 import { unlinkObject } from './object_location.js';
 import { objectQuantity, rejoinObjectStack, splitObjectStack, } from './object_stack.js';
 import { OBJECT_TIMER_KIND, stopObjectTimer, } from './object_timers.js';
@@ -36,7 +36,8 @@ import { getLine, promptChoice } from './query.js';
 import { touchPetrifyingCorpse } from './stoning.js';
 import { addPickedInventoryObject } from './pickup.js';
 import { nearCapacity, objectWeight, pickupLoadPrefix } from './weight.js';
-import { heroHasFreeHand } from './weapon_type.js';
+import { heroHasFreeHand, willWeld } from './weapon_type.js';
+import { heroHandName } from './body_parts.js';
 import { heroIsBlind } from './senses.js';
 import { addShopObjectToBill, currentShopResident, costlySpot } from './shk.js';
 import { stolenValue } from './shop_loss.js';
@@ -413,7 +414,7 @@ function cannotFit(object) {
 }
 function weldedPrimary(object, state) {
     const primary = state.uwep || state.u?.uwep;
-    return object === primary && !!object.cursed;
+    return object === primary && willWeld(object);
 }
 function rejectedPutMessage(container, object, state) {
     if (object === state.uball || object === state.uchain
@@ -429,22 +430,17 @@ function rejectedPutMessage(container, object, state) {
         return `The stone${quantity(object) === 1 ? '' : 's'} won't leave your person.`;
     }
     if (FORBIDDEN_CONTENTS.has(object.otyp)) {
-        const noun = OBJECT_NAMES[object.otyp] || object.name || 'object';
-        return `${withIndefiniteArticle(noun)} cannot be confined in such trappings.`;
+        return `The ${objectCombatName(object, { state })} cannot be confined in such trappings.`;
     }
     if (object.otyp === LEASH && object.leashmon) {
         observeObjectForNaming(object, { state });
-        return `${objectDescription(object)} is attached to your pet.`;
+        return `The ${objectCombatName(object, { state })} ${quantity(object) === 1 ? 'is' : 'are'} attached to your pet.`;
     }
     if (weldedPrimary(object, state)) {
         object.bknown = true;
         observeObjectForNaming(object, { state });
-        return `${objectDescription(object)} is welded to your hand!`;
-    }
-    if (cannotFit(object)) {
-        observeObjectForNaming(object, { state });
-        observeObjectForNaming(container, { state });
-        return `You cannot fit ${objectDescription(object)} into the ${containerNoun(container)}.`;
+        const hand = heroHandName(state);
+        return `Your ${objectCombatName(object, { state })} ${quantity(object) === 1 ? 'is' : 'are'} welded to your ${OBJECT_BIMANUAL[object.otyp] ? makePlural(hand) : hand}!`;
     }
     return null;
 }
@@ -468,10 +464,6 @@ async function restoreRejectedSplit(transfer, state) {
 export async function putIntoContainer(container, object, state = game, count = -1) {
     const transfer = splitForTransfer(object, count, state);
     object = transfer.object;
-    if (await touchPetrifyingCorpse(object)) {
-        await restoreRejectedSplit(transfer, state);
-        return { moved: false, stop: true, message: null };
-    }
     const rejected = rejectedPutMessage(container, object, state);
     if (rejected) {
         await restoreRejectedSplit(transfer, state);
@@ -483,6 +475,15 @@ export async function putIntoContainer(container, object, state = game, count = 
         await setSecondaryWeapon(null, state);
     if (state.uquiver === object)
         await setQuiverObject(null, state);
+    if (await touchPetrifyingCorpse(object)) {
+        await restoreRejectedSplit(transfer, state);
+        return { moved: false, stop: true, message: null };
+    }
+    if (cannotFit(object)) {
+        const message = `You cannot fit the ${objectCombatName(object, { state })} into the ${objectCombatName(container, { state })}.`;
+        await restoreRejectedSplit(transfer, state);
+        return { moved: false, message };
+    }
     state.inventory = state.inventory.filter(candidate => candidate !== object);
     object.where = 'free';
     await finishInventoryRemoval(object, state);
@@ -504,7 +505,7 @@ export async function putIntoContainer(container, object, state = game, count = 
     }
     observeObjectForNaming(container, { state });
     observeObjectForNaming(object, { state });
-    const message = `You put ${objectDescription(object)} into the ${containerNoun(container)}.`;
+    const message = `You put ${objectDescription(object)} into the ${objectCombatName(container, { state })}.`;
     await plineWithContinuation(message);
     if (floorShop && object.oclass === 12)
         await sellHeroDroppedObject(object, container.ox, container.oy, state);
