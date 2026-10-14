@@ -31,6 +31,7 @@ import { ALTAR } from './const.js';
 import { OBJECT_TIMER_KIND, stopObjectTimer } from './object_timers.js';
 import { attachCursedFigurineTimer } from './figurine_timer.js';
 import { resetBulkTakeoff } from './takeoff_state.js';
+import { adjustObjectLightAfterBlessing, objectLightRadius } from './light.js';
 
 const WEAPON_CLASS = 2;
 const ARMOR_CLASS = 3;
@@ -133,11 +134,13 @@ export async function curseObject(
     object: GameObject | null | undefined, { state = game }: { state?: GameState } = {},
 ): Promise<boolean> {
     const wasCursed = !!object?.cursed;
+    const oldLight = objectLightRadius(object, state);
     const changed = curseObjectState(object, state);
     if (object && object === (state.uswapwep || state.u.uswapwep) && state.u.twoweap)
         await dropCursedAlternateWeapon(object, state);
     if (object && changed && !wasCursed && object.oclass === 10)
         await bookCursed(object, { state });
+    if (object?.lamplit) await adjustObjectLightAfterBlessing(object, oldLight, state);
     return changed;
 }
 
