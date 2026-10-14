@@ -30,6 +30,8 @@ import {
     shopStocksObject,
 } from './shop_sell.js';
 import { canSeeMonster, canSenseMonster, pline, plineWithContinuation } from './display.js';
+import { currency } from './currency.js';
+import { objectName, objectCombatName, definiteName } from './objnam.js';
 import { rn2 } from './rng.js';
 import { detachHeroGold, heroGoldAmount } from './hero_gold.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
@@ -1068,18 +1070,24 @@ export async function addShopObjectToBill(object: GameObject, state: GameState =
 
     if (!heroIsDeaf(state) && !shopkeeperIsMuted(keeper) && !silent) {
         if (!ltmp) {
-            const name = OBJECT_NAMES[object.otyp] || object.name || 'thing';
-            await publish(`${shopkeeperName(keeper)} has no interest in the ${name}.`);
+            await publish(`${shopkeeperName(keeper, { capitalized: true })} has no interest in ${definiteName(objectCombatName(object, { state, includeCorpseSpecies: false }), state)}.`);
             return null;
         }
         if (!ininv) {
-            const name = OBJECT_NAMES[object.otyp] || object.name || 'thing';
+            const name = objectCombatName(object, { state, includeCorpseSpecies: false });
             const each = (object.quan ?? object.quantity ?? 1) > 1
                 ? ' each' : '';
-            await publish(`The ${name} will cost you ${ltmp} zorkmid${ltmp === 1 ? '' : 's'}${each}.`);
+            const subject = definiteName(name, state);
+            await publish(`${subject.charAt(0).toUpperCase()}${subject.slice(1)} will cost you ${ltmp} ${currency(ltmp, { state })}${each}.`);
         }
     }
-    return { resident: keeper, entry, object, offer: ltmp, contentscount };
+    const transaction = { resident: keeper, entry, object, offer: ltmp, contentscount };
+    if (!ininv && !silent && (heroIsDeaf(state) || shopkeeperIsMuted(keeper))) {
+        const quote = ltmp ? billedPickupQuote(transaction, state)
+            : `${shopkeeperName(keeper, { capitalized: true })} does not notice.`;
+        if (quote) await publish(quote);
+    }
+    return transaction;
 }
 
 function countUnpaidContents(container: GameObject): number {
@@ -1113,18 +1121,26 @@ function heroHonorific(state: GameState = game): string {
     return `${title} ${suffix}`;
 }
 
-export function billedPickupQuote(transaction: ShopTransaction | null, noun: string, state: GameState = game): string | null {
+export function billedPickupQuote(transaction: ShopTransaction | null, state: GameState = game): string | null {
     if (!transaction) return null;
-    const { resident } = transaction;
-    if (heroIsDeaf(state) || shopkeeperIsMuted(resident)) return null;
-    const price = transaction.offer;
-    const contentscount = transaction.contentscount ?? 0;
-    const suffix = contentscount > 1 ? ' for all of them' : '';
-    if (!resident.mpeaceful)
-        return `"For you, scum; ${price} zorkmid${price === 1 ? '' : 's'} for this ${noun}.${suffix}"`;
-    if (resident.eshk?.surcharge)
-        return `"For you, ${price} zorkmid${price === 1 ? '' : 's'} for this ${noun}.${suffix}"`;
-    return `"For you, ${heroHonorific(state)}; only ${price} zorkmid${price === 1 ? '' : 's'} for this ${noun}.${suffix}"`;
+    const { resident, object, offer: price, contentscount } = transaction;
+    if (heroIsDeaf(state) || shopkeeperIsMuted(resident)) {
+        const contents = contentscount && !object.unpaid ? 'the contents of ' : '';
+        const suffix = contentscount && object.unpaid ? ' and its contents' : '';
+        return `The list price of ${contents}${definiteName(objectCombatName(object, { state, includeCorpseSpecies: false }), state)}${suffix} is ${price} ${currency(price, { state })}${object.quan > 1 ? ' each' : ''}.`;
+    }
+    let greeting = '"For you,';
+    if (!resident.mpeaceful) greeting += ' scum;';
+    else if (!resident.eshk.surcharge) greeting += ` ${heroHonorific(state)}; only`;
+    const quantity = object.quan;
+    object.quan = 1;
+    try {
+        const unit = quantity > 1 ? 'per'
+            : contentscount && !object.unpaid ? 'for the contents of this' : 'for this';
+        return `${greeting} ${price} ${currency(price, { state })} ${unit} ${objectName(object, state)}${contentscount && object.unpaid ? ' and its contents' : ''}."`;
+    } finally {
+        object.quan = quantity;
+    }
 }
 
 function possessive(name: string): string {
