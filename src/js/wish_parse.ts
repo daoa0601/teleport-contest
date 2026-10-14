@@ -11,6 +11,13 @@ import { MONSTER_NAME } from './monster_data.js';
 import { GRAY_DRAGON_SCALES, YELLOW_DRAGON_SCALES, POT_WATER, TIN } from './object_data.js';
 import { parseTinPreparation } from './tin.js';
 
+interface ParsedFruitWish {
+    readonly name: string;
+    readonly count: number | null;
+    readonly buc: ObjectBlessing | null;
+    readonly partlyEaten: boolean;
+}
+
 export interface ParsedWish {
     count: number;
     explicitCount: number | null;
@@ -23,7 +30,7 @@ export interface ParsedWish {
     eroded: number | null;
     eroded2: number | null;
     greased: boolean;
-    fruitName: string;
+    fruit: ParsedFruitWish;
     name: string;
     lit: boolean;
     wetness: number;
@@ -57,7 +64,7 @@ export function parseWishText(text: string): ParsedWish {
     const parsed: ParsedWish = {
         count: 1, explicitCount: null, globSize: 0, enchantment: null,
         buc: null, recharged: null, charges: null, erodeproof: false,
-        eroded: null, eroded2: null, greased: false, fruitName: '', name: '',
+        eroded: null, eroded2: null, greased: false, fruit: parseFruitWish(original), name: '',
         lit: false, wetness: 0, unlabeled: false, poisoned: false,
         trapped: null, lock: null, partlyEaten: false, historic: false,
         diluted: false, empty: false, heavy: false, fakeAmulet: false,
@@ -162,7 +169,6 @@ export function parseWishText(text: string): ParsedWish {
     } else remaining = remaining.replace(/^sets? of /i, '');
     if (parsed.fakeAmulet && /amulet of yendor/i.test(remaining))
         remaining = 'cheap plastic imitation of the Amulet of Yendor';
-    parsed.fruitName = original.replace(/^(?:(?:a|an|blessed|cursed|uncursed) |\d+ |part(?:ly|ially) eaten )+/i, '');
     remaining = parseWishSpecies(remaining, parsed);
     const requested = remaining.toLowerCase();
     parsed.name = ['tricks', 'clothes'].includes(requested) ? requested : makeSingular(requested);
@@ -175,6 +181,45 @@ export function parseWishText(text: string): ParsedWish {
         parsed.directType = POT_WATER;
     }
     return parsed;
+}
+
+// Fruit names can contain ordinary object modifiers. C reparses only food
+// prefixes and restores these values after a case-sensitive fruit match.
+function parseFruitWish(text: string): ParsedFruitWish {
+    let name = text;
+    let count = 0;
+    let blessed = false;
+    let cursed = false;
+    let uncursed = false;
+    let partlyEaten = false;
+    for (;;) {
+        const lower = name.toLowerCase();
+        const number = /^\d+/.exec(name);
+        let prefixLength: number;
+        if (lower.startsWith('a ') || lower.startsWith('an ')) {
+            count = 1;
+            prefixLength = lower.startsWith('an ') ? 3 : 2;
+        } else if (!count && number) {
+            count = Number(number[0]);
+            name = name.slice(number[0].length).trimStart();
+            continue;
+        } else if (lower.startsWith('blessed ')) {
+            blessed = true;
+            prefixLength = 8;
+        } else if (lower.startsWith('cursed ')) {
+            cursed = true;
+            prefixLength = 7;
+        } else if (lower.startsWith('uncursed ')) {
+            uncursed = true;
+            prefixLength = 9;
+        } else if (lower.startsWith('partly eaten ') || lower.startsWith('partially eaten ')) {
+            partlyEaten = true;
+            prefixLength = lower.startsWith('partly eaten ') ? 13 : 16;
+        } else break;
+        name = name.slice(prefixLength);
+    }
+    return { name, count: count || null, partlyEaten,
+        buc: cursed ? 'cursed' : uncursed ? 'uncursed' : blessed ? 'blessed' : null };
 }
 
 function parseWishSpecies(text: string, parsed: ParsedWish): string {

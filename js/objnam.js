@@ -830,10 +830,12 @@ export async function readObjectName(text, { wizardWish = false } = {}) {
             matchedType = TIN;
         }
         if (matchedType === null) {
-            const match = matchWishedFruit(parsed.fruitName);
+            const match = matchWishedFruit(parsed.fruit.name);
             if (match) {
                 fruit = match.fruit;
-                parsed.count = parsed.explicitCount ?? match.count;
+                parsed.count = parsed.fruit.count ?? match.count;
+                parsed.buc = parsed.fruit.buc;
+                parsed.partlyEaten = parsed.fruit.partlyEaten;
                 matchedType = SLIME_MOLD;
             }
         }

@@ -6,7 +6,7 @@ import { addFruit } from '../js/fruit.js';
 import { game, requireGameLevel } from '../js/gstate.js';
 import { mayDig } from '../js/hero_digging.js';
 import { mksobj } from '../js/mklev.js';
-import { BAG_OF_TRICKS, GLOB_OF_GRAY_OOZE, LAND_MINE, POT_HEALING, RED_DRAGON_SCALES, SACK, SCR_LIGHT, SPEED_BOOTS, TIN, } from '../js/object_data.js';
+import { BAG_OF_TRICKS, GLOB_OF_GRAY_OOZE, LAND_MINE, POT_HEALING, RED_DRAGON_SCALES, SACK, SCR_LIGHT, SLIME_MOLD, SPEED_BOOTS, TIN, } from '../js/object_data.js';
 import { recordObjectCall } from '../js/object_knowledge.js';
 import { readObjectName } from '../js/objnam.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -93,6 +93,32 @@ void test('an explicit article requests one fruit even with a plural registered 
     assert.ok(result && !result.noWish);
     assert.equal(result.object.spe, fruit);
     assert.equal(result.object.quan, 1);
+});
+for (const [name, blessing, blessed, cursed] of [
+    ['holy Guava', 'uncursed', false, false],
+    ['unholy Guava', 'blessed', true, false],
+    ['Guava', 'cursed blessed', false, true],
+    ['Guava', 'uncursed blessed', false, false],
+]) {
+    void test(`a fruit wish restores ${blessing} when matching ${name}`, async () => {
+        freshObjectRoom();
+        const fruit = addFruit(name);
+        const result = await readObjectName(`${blessing} ${name}`, { wizardWish: true });
+        assert.ok(result && !result.noWish);
+        assert.equal(result.object.otyp, SLIME_MOLD);
+        assert.equal(result.object.spe, fruit);
+        assert.equal(result.object.blessed, blessed);
+        assert.equal(result.object.cursed, cursed);
+    });
+}
+void test('partly eaten within a registered fruit name does not consume that fruit', async () => {
+    freshObjectRoom();
+    const fruit = addFruit('greased partly eaten Guava');
+    const result = await readObjectName('greased partly eaten Guava', { wizardWish: true });
+    assert.ok(result && !result.noWish);
+    assert.equal(result.object.otyp, SLIME_MOLD);
+    assert.equal(result.object.spe, fruit);
+    assert.equal(result.object.oeaten ?? 0, 0);
 });
 void test('a neutral monster alias replaces a wished gender and can depict either sex', async () => {
     const genders = new Set();
