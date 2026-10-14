@@ -1537,11 +1537,15 @@ function randomMonsterPosition(mndx) {
     // scan.  Runtime callers first scan unseen squares; the compact vision
     // bit mirrors cansee() without introducing a level-generation cycle.
     const firstPass = game.in_mklev || game.blind ? 1 : 0;
+    const xOffset = x;
+    const yOffset = y;
     for (let visiblePass = firstPass; visiblePass < 2; visiblePass++) {
         for (let dx = 0; dx < COLNO; dx++) {
             for (let dy = 0; dy < ROWNO; dy++) {
-                const candidateX = ((dx + x) % (COLNO - 1)) + 1;
-                const candidateY = ((dy + y) % (ROWNO - 1)) + 1;
+                const candidateX = ((dx + xOffset) % (COLNO - 1)) + 1;
+                const candidateY = ((dy + yOffset) % (ROWNO - 1)) + 1;
+                x = candidateX;
+                y = candidateY;
                 if (!visiblePass
                     && !!((game.viz_array?.[candidateY]?.[candidateX] ?? 0) & 0x02)) {
                     continue;
@@ -1549,6 +1553,17 @@ function randomMonsterPosition(mndx) {
                 if (goodPosition(candidateX, candidateY, subject, { gpflags: GP_AVOID_MONPOS }))
                     return { x: candidateX, y: candidateY };
             }
+        }
+        if (!visiblePass && (mndx === null || MONSTER_MOVE[mndx])) {
+            for (let stair = game.stairs; stair; stair = stair.next) {
+                if (stair.tolev.dnum === game.u.uz?.dnum && !rn2(2)) {
+                    x = stair.sx;
+                    y = stair.sy;
+                    break;
+                }
+            }
+            if (goodPosition(x, y, subject, { gpflags: GP_AVOID_MONPOS }))
+                return { x, y };
         }
     }
     return null;
