@@ -8,6 +8,8 @@ import { makeStunned } from '../js/hero_mental_status.js';
 import { maketrap } from '../js/mklev.js';
 import { freshTurnRoom } from './support/playable-room.js';
 import { requireScreenCell } from './support/screen.js';
+import { DAGGER } from '../js/object_data.js';
+import { floorObject } from './support/game-objects.js';
 void test('the terrain view can retain a discovered trap', async () => {
     const input = freshTurnRoom({ flags: { tips: false } });
     const trap = await maketrap(14, 10, PIT);
@@ -47,6 +49,23 @@ void test('explore mode can inspect underlying terrain in an unseen area', async
         await input.waitUntilBlocked();
         assert.equal(requireScreenCell(29, 11).ch, '.');
         assert.equal(distant.seenv, 0, 'inspection does not explore the square');
+    }
+    finally {
+        input.feed('\x1b ');
+        await action;
+    }
+});
+void test('removing an object from a terrain view retains DECgraphics floor rendering', async () => {
+    const input = freshTurnRoom({ flags: { tips: false } });
+    game.symset = 'DECgraphics';
+    await floorObject(DAGGER, 14, 10);
+    newsym(14, 10);
+    input.feed('\x7fa');
+    const action = rhack(0);
+    try {
+        await input.waitUntilBlocked();
+        const floor = requireScreenCell(13, 11);
+        assert.equal(floor.ch, '·');
     }
     finally {
         input.feed('\x1b ');

@@ -107,16 +107,16 @@ async function revealTerrain(subset: number, describe: PositionDescription): Pro
 function terrainViewGlyph(location: MapLocation, x: number, y: number, subset: number, swallowed: boolean): DisplayGlyph {
     const level = requireGameLevel();
     const full = !!(subset & TER_FULL), keepObjects = !!(subset & TER_OBJ), keepTraps = !!(subset & TER_TRP);
-    const background = () => terrain_glyph({ ...location,
+    const background = () => terrainBackground({ ...location,
         typ: full ? location.typ : location.lastseentyp, seenv: full ? 255 : location.seenv }, x, y);
     const empty = (): DisplayGlyph => level.flags.arboreal
-        ? terrain_glyph({ ...location, typ: TREE, seenv: 255 }, x, y)
+        ? terrainBackground({ ...location, typ: TREE, seenv: 255 }, x, y)
         : { ch: ' ', color: NO_COLOR, decgfx: false,
             kind: 'terrain', terrainName: 'stone', glyph: cmapToGlyph(CmapSymbol.stone) };
-    if (full) return normalizeTerrainGlyph(terrain_glyph({ ...location, seenv: 255 }, x, y));
+    if (full) return normalizeTerrainGlyph(terrainBackground({ ...location, seenv: 255 }, x, y));
     const seen = level.flags.hero_memory !== false ? location.seenv : cansee(x, y);
     const remembered = level.flags.hero_memory !== false ? location.remembered_glyph
-        : seen ? terrain_glyph(location, x, y) : null;
+        : seen ? terrainBackground(location, x, y) : null;
     const displayed = location.disp_glyph;
     let glyph: DisplayGlyph = !swallowed && displayed ? {
         ...displayed, ch: location.disp_ch, color: location.disp_color, decgfx: location.disp_decgfx,
@@ -154,6 +154,12 @@ function terrainViewGlyph(location: MapLocation, x: number, y: number, subset: n
         }
     }
     return normalizeTerrainGlyph(glyph);
+}
+
+// back_to_glyph() retains the alternate character set with its glyph.
+function terrainBackground(location: MapLocation, x: number, y: number): DisplayGlyph {
+    const glyph = terrain_glyph(location, x, y);
+    return { ...glyph, decgfx: glyph.dec };
 }
 
 function normalizeTerrainGlyph(glyph: DisplayGlyph): DisplayGlyph {
