@@ -492,6 +492,8 @@ export async function changeMonsterForm(monster, forcedTargetMnum = null, state 
         removeMonsterWormBody(monster);
         placeMonsterAt(monster, monster.mx, monster.my);
     }
+    if (M_AP_TYPE(monster) && MONSTER_SYMBOL[targetMnum] !== 13)
+        revealMonsterAppearance(monster);
     const oldHp = Math.max(1, monster.mhp ?? 1);
     const oldMax = Math.max(1, monster.mhpmax ?? oldHp);
     const female = shapechangerGender(baseMnum, targetMnum, !!monster.female);
@@ -516,10 +518,6 @@ export async function changeMonsterForm(monster, forcedTargetMnum = null, state 
     if (!monster.perminvis || oldNaturallyInvisible)
         monster.perminvis = naturallyInvisible;
     monster.minvis = monster.invis_blkd ? 0 : !!monster.perminvis;
-    if (monster.m_ap_type && MONSTER_SYMBOL[targetMnum] !== 13) {
-        monster.m_ap_type = 0;
-        monster.mappearance = 0;
-    }
     if (monster.mundetected)
         await hideMonsterUnder(monster, state);
     if (state.u.ustuck === monster) {
