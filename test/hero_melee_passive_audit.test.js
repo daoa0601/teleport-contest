@@ -12,6 +12,8 @@ import { installPolymorphedHero } from './support/hero-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
+import { heroIsBlind } from '../js/senses.js';
+import { vision_recalc } from '../js/vision.js';
 async function meleeRoom(form, defender) {
     freshObjectRoom({
         flags: { verbose: true, bones: false, disclose: '-i -a -v -c -o' },
@@ -87,5 +89,28 @@ void test('a natural melee kick does not offer boots to an acid blob\'s object p
         messages += await attackEast(/acid blob|splashed|corrode/);
     assert.match(messages, /You kick the acid blob/);
     assert.equal(boots.oeroded2 ?? 0, 0, 'hmonas passes no contact object for a natural kick');
+});
+void test('an eyeless attacker feels an acid splash without seeing its source', async () => {
+    await meleeRoom('gray ooze', 'acid blob');
+    vision_recalc(0);
+    assert.equal(heroIsBlind(game), true, 'The ooze form has no eyes');
+    game.u.acidResistance = true;
+    initRng(41n);
+    let messages = '';
+    for (let attempt = 0; attempt < 8; attempt++)
+        messages += await attackEast(/bite|splashed/, true);
+    assert.match(messages, /You are splashed!/);
+    assert.doesNotMatch(messages, /splashed by/);
+});
+void test('a hallucinating attacker sees acid splashes as fanciful liquids', async () => {
+    await meleeRoom('newt', 'acid blob');
+    game.u.hallucinationTurns = 100;
+    game.u.acidResistance = true;
+    initRng(41n);
+    let messages = '';
+    for (let attempt = 0; attempt < 12; attempt++)
+        messages += await attackEast(/bite|splashed/);
+    assert.match(messages, /splashed by .*'s (?!acid!)[^!]+!/, 'Hallucination can change the perceived splash without changing its acidity');
+    assert.equal(game.u.mh, 200);
 });
 //# sourceMappingURL=hero_melee_passive_audit.test.js.map

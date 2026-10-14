@@ -1,7 +1,7 @@
 // A monster's passive response when the hero or an object strikes it.
 // C ref: uhitm.c passive() and passive_obj().
 
-import { heroIsHallucinating } from './senses.js';
+import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { makeStunned } from './hero_mental_status.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
@@ -13,7 +13,7 @@ import {
     Upolyd,
 } from './const.js';
 import {
-    canSeeMonster, plineWithContinuation, randomDisplayMonsterName, shieldeff,
+    canSeeMonster, displayLiquidName, plineWithContinuation, randomDisplayMonsterName, shieldeff,
 } from './display.js';
 import { finishHeroDeath } from './end.js';
 import { game } from './gstate.js';
@@ -180,11 +180,11 @@ async function applyAcidPassive({
     const splashed = hit && random(2) !== 0;
 
     if (splashed) {
-        if (state.u?.blind || state.flags?.verbose === false) {
+        if (heroIsBlind(state) || state.flags?.verbose === false) {
             await publish('You are splashed!');
         } else {
             await publish(
-                `You are splashed by ${possessiveMonsterName(monster)} acid!`,
+                `You are splashed by ${possessiveName(displayedMonsterName(monster, { state }))} ${displayLiquidName('acid', state)}!`,
             );
         }
 
