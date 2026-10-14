@@ -82,4 +82,26 @@ void test('Lua honors explicit gender for a named species but preserves a fixed 
     assert.equal(maleDwarf.female, false);
     assert.equal(nymph.female, true);
 });
+void test('a Lua vampire appearance changes its body back to a vampire', async (t) => {
+    const lua = await roomBindings(t);
+    requirePlayingGame(game);
+    initRng(2n);
+    await lua.executeAsync(`des.monster({ id = "vampire", x = 2, y = 1,
+        appear_as = "mon:vampire", group = 0, name = "Natural vampire" })`);
+    const vampire = game.level.monsters.find(monster => monster.mgivenname === 'Natural vampire');
+    assert.ok(vampire);
+    assert.equal(vampire.mnum, MONSTER_NAME.indexOf('vampire'));
+    assert.equal(vampire.m_ap_type ?? 0, 0, 'the requested body is a real form, not a disguise');
+    assert.equal(vampire.cham, MONSTER_NAME.indexOf('vampire'));
+});
+void test('a waiting Lua vampire starts in its natural body', async (t) => {
+    const lua = await roomBindings(t);
+    requirePlayingGame(game);
+    initRng(2n);
+    await lua.executeAsync(`des.monster({ id = "vampire", x = 2, y = 1,
+        waiting = 1, group = 0, name = "Waiting vampire" })`);
+    const vampire = game.level.monsters.find(monster => monster.mgivenname === 'Waiting vampire');
+    assert.ok(vampire);
+    assert.equal(vampire.mnum, MONSTER_NAME.indexOf('vampire'));
+});
 //# sourceMappingURL=lua_monster_gender.test.js.map

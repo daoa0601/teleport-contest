@@ -26,8 +26,11 @@ import { monsterHasMapPosition, monsterAtPosition, monsterOccupiesPosition } fro
 import { finishMonsterBirth } from './monster_birth.js';
 import { createParticularMonster } from './read_creation.js';
 import { setMonsterPermanentInvisibility } from './monster_invisibility.js';
+import { setMonsterSpecies } from './monster_species.js';
+import { monsterIsVampireShifter } from './monster_data.js';
 import { nameObjectFromTopten } from './topten.js';
 import { normalDemon } from './minion.js';
+import { ismnum } from './const.js';
 import { randomMonsterRelocation } from './teleport.js';
 import { sendMonsterToLimbo } from './monster_migration.js';
 import { monsterHasStoneResistance } from './monster_resistance.js';
@@ -181,7 +184,7 @@ import {
     adjustedMonsterLevel, newMonsterHitPoints,
 } from './monster_hit_points.js';
 import {
-    changeMonsterForm, initialShapechangedBirth, pickNastyShape,
+    changeMonsterForm, initialShapechangedBirth, pickNastyShape, shapechangerGender,
 } from './monster_polymorph.js';
 import {
     initializeMonsterWormBody, restoreMonsterWormHeads, validMonsterWormBodies,
@@ -1532,6 +1535,7 @@ const M2_GNOME = 0x00000040;
 const M2_ORC = 0x00000080;
 const M2_DEMON = 0x00000100;
 const M2_JEWELS = 0x20000000;
+const M2_SHAPESHIFTER = 0x00004000;
 const M2_LORD = 0x00000400;
 const M2_PRINCE = 0x00000800;
 const M2_MINION = 0x00001000;
@@ -6279,14 +6283,41 @@ async function createLuaObject(
 
 function applyLuaMonsterAppearance(monster: Monster | null | undefined, appearance: MonsterAppearance | null): void {
     if (!monster || !appearance) return;
+    const mimic = MONSTER_SYMBOL[monster.mnum] === S_MIMIC;
+    if (game.u.protectionFromShapeChangers || game.protectionFromShapeChangers
+        || !(mimic || (ismnum(monster.cham) && appearance.kind === 'monster'))) return;
     if (appearance.kind === 'object') {
         monster.m_ap_type = M_AP_OBJECT;
         monster.mappearance = appearance.type;
         return;
     }
     if (appearance.kind === 'monster') {
-        monster.m_ap_type = M_AP_MONSTER;
-        monster.mappearance = appearance.type;
+        let type = appearance.type;
+        if (monsterIsVampireShifter(monster)) {
+            const base = monster.cham;
+            if (base === PM_VLAD_THE_IMPALER
+                && monster.minvent?.some(object => object.otyp === CANDELABRUM_OF_INVOCATION)) {
+                type = base;
+            } else if ((MONSTER_FLAGS2[type] ?? 0) & M2_SHAPESHIFTER) {
+                if (!ismnum(base)) throw new Error('A vampire shape needs its natural species');
+                type = base;
+            } else if (!(type === PM_VAMPIRE_BAT
+                || type === MONSTER_NAME.indexOf('fog cloud')
+                || (type === MONSTER_NAME.indexOf('wolf') && base !== PM_VAMPIRE))) return;
+        }
+        if (type === monster.mnum) {
+            monster.m_ap_type = M_AP_NOTHING;
+            monster.mappearance = 0;
+        } else if (mimic || monster.iswiz) {
+            monster.m_ap_type = M_AP_MONSTER;
+            monster.mappearance = type;
+        } else {
+            const oldForm = monster.mnum;
+            monster.female = shapechangerGender(monster.cham ?? oldForm, type, !!monster.female);
+            setMonsterSpecies(monster, type);
+            if (!monster.perminvis || oldForm === PM_STALKER || oldForm === PM_BLACK_LIGHT)
+                monster.perminvis = type === PM_STALKER || type === PM_BLACK_LIGHT;
+        }
         return;
     }
     // C sp_lev.c:create_monster() stores the matching defsyms index,
@@ -6376,10 +6407,10 @@ async function createLuaMonster(context: SpecialLevelContext, options: DesMonste
     if (monster && options.waiting) {
         monster.mstrategy = (monster.mstrategy ?? 0) | STRAT_WAITFORU;
         monster.waiting = true;
-        if (monster.cham === PM_VAMPIRE_LEADER
-            && monster.mnum !== PM_VAMPIRE_LEADER
+        if (monsterIsVampireShifter(monster)
+            && monster.mnum !== monster.cham
             && options.appearance?.kind !== 'monster') {
-            await changeMonsterForm(monster, PM_VAMPIRE_LEADER);
+            await changeMonsterForm(monster, monster.cham ?? null);
         }
     }
     if (monster && options.seentraps)
