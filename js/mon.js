@@ -95,7 +95,7 @@ export async function killGenocidedMonsters(state = game) {
         throw new Error('genocide removal requires the live game state');
     const killed = [];
     const reshaped = [];
-    for (const monster of [...(state.level?.monsters || [])]) {
+    for (const monster of [...(state.level?.monsters || [])].reverse()) {
         if (monster.dead || (monster.mhp ?? 1) <= 0)
             continue;
         const baseWasGenocided = monster.cham !== undefined && Number.isInteger(monster.cham)
