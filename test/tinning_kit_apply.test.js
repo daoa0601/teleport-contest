@@ -1,10 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { HOMEMADE_TIN } from '../js/const.js';
+import { HOMEMADE_TIN, POOL } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { CORPSE, TIN, TINNING_KIT } from '../js/object_data.js';
-import { applyInventoryObject } from './support/commands.js';
+import { CORPSE, OBJECT_NAMES, TIN, TINNING_KIT } from '../js/object_data.js';
+import { grantIntrinsicProperty, grantWornProperty } from '../js/properties.js';
+import { applyInventoryObject, runExtendedCommand } from './support/commands.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 void test('a blessed tinning kit preserves one carried corpse as a known homemade tin', async () => {
@@ -40,4 +41,28 @@ void test('an empty tinning kit takes time without selecting or consuming a corp
     assert.equal(game._pending_message, 'You seem to be out of tins.');
     assert.equal(game.context.move, 1);
 });
+for (const source of ['intrinsic', 'amulet']) {
+    void test(`a flying hero with magical breathing from an ${source} can tin a corpse beneath water`, async () => {
+        const level = freshPlayableRoom();
+        level.requireAt(game.u.ux, game.u.uy).typ = POOL;
+        grantIntrinsicProperty('flying', 'outside');
+        if (source === 'intrinsic') {
+            grantIntrinsicProperty('magicalBreathing', 'outside');
+        }
+        else {
+            const amulet = await addInventoryObject(OBJECT_NAMES.indexOf('amulet of magical breathing'));
+            game.uamul = amulet;
+            grantWornProperty('magicalBreathing', amulet, 'uamul');
+        }
+        const kit = await addInventoryObject(TINNING_KIT, { spe: 2 });
+        const corpse = await floorObject(CORPSE, game.u.ux, game.u.uy, {
+            corpsenm: MONSTER_NAME.indexOf('newt'), quan: 2,
+        });
+        await runExtendedCommand('apply', `${kit.invlet}y`);
+        assert.ok(game.inventory.some(object => object.otyp === TIN));
+        assert.equal(corpse.quan, 1);
+        assert.equal(kit.spe, 1);
+        assert.equal(game.context.move, 1);
+    });
+}
 //# sourceMappingURL=tinning_kit_apply.test.js.map

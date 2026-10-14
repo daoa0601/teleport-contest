@@ -15,7 +15,7 @@ import { consumeObjectCharge } from './object_charge.js';
 import { CORPSE, TIN } from './object_data.js';
 import { withIndefiniteArticle } from './object_grammar.js';
 import { singularObjectName } from './objnam.js';
-import { heroSpecies } from './hero_species.js';
+import { heroIsBreathless, heroSpecies } from './hero_species.js';
 import { propertyIsActive } from './properties.js';
 import { promptChoice } from './query.js';
 import { costlySpot } from './shk.js';
@@ -85,7 +85,7 @@ async function chooseTinningCorpse(): Promise<GameObject | null> {
     const flags = MONSTER_FLAGS1[heroSpecies(game)] ?? 0;
     const aboveLiquid = (isPoolAt(hero.ux, hero.uy) || isLavaAt(hero.ux, hero.uy))
         && (propertyIsActive('waterWalking', game) || (flags & 0x10)
-            || propertyIsActive('flying', game) && !(flags & 0x400));
+            || propertyIsActive('flying', game) && !heroIsBreathless(game));
     if (!game.iflags.menu_requested && heroCanReachFloor(game, { checkPit: true }) && !aboveLiquid) {
         for (const corpse of game.level.objects[hero.ux]?.[hero.uy] ?? []) {
             if (!tinnable(corpse)) continue;
