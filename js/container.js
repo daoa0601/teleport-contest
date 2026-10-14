@@ -319,10 +319,12 @@ async function scatterBagContents(container, state, held) {
     }
 }
 // C pickup.c:in_container() names the trigger before either bag blows up.
-export async function explodeBag(container, trigger, state, { tipping = false, triggerHeld = true } = {}) {
+export async function explodeBag(container, trigger, state, { tipping = false, triggerHeld = true, rebillTrigger = false } = {}) {
     observeObjectForNaming(trigger, { state });
     await plineWithContinuation(tipping ? `As ${objectDescription(trigger)} ${trigger.quan === 1 ? 'tumbles' : 'tumble'} inside, you are blasted by a magical explosion!`
         : `As you put ${objectDescription(trigger)} inside, you are blasted by a magical explosion!`, { urgent: true });
+    if (rebillTrigger)
+        await addShopObjectToBill(trigger, state, { ininv: false, silent: true });
     if (trigger.otyp === BAG_OF_HOLDING)
         await scatterBagContents(trigger, state, triggerHeld);
     await deleteObject(trigger, state);
@@ -500,9 +502,7 @@ export async function putIntoContainer(container, object, state = game, count = 
         freezeObject(object, state);
     else if (container.otyp === BAG_OF_HOLDING
         && magicBagExplodes(object)) {
-        if (wasUnpaid && floorShop)
-            await addShopObjectToBill(object, state, { ininv: false, silent: true });
-        return await explodeBag(container, object, state);
+        return await explodeBag(container, object, state, { rebillTrigger: !!(wasUnpaid && floorShop) });
     }
     observeObjectForNaming(container, { state });
     observeObjectForNaming(object, { state });
