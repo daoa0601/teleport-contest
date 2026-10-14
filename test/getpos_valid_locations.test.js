@@ -1,12 +1,31 @@
 import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { HI_ZAP } from '../js/const.js';
+import { CORR, HI_ZAP } from '../js/const.js';
 import { flush_screen } from '../js/display.js';
 import { getposHelpUntilDismissed, selectMapPosition, } from '../js/getpos.js';
 import { requireGameDisplay, game } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { answerPrompts } from './support/input-boundaries.js';
+for (const key of ['z', 'Z']) {
+    void test(`menu mode offers valid locations for '${key}'`, async () => {
+        freshObjectRoom({ flags: { tips: false, verbose: false } });
+        const input = resetInputState();
+        input.feed(`!${key}`);
+        const selected = await answerPrompts(selectMapPosition({
+            start: { x: 10, y: 10 }, prompt: 'Where do you want to hit?',
+            goal: 'the spot to hit',
+            isValidLocation: (x, y) => y === 10 && (x === 10 || x === 12 || x === 13),
+            describe: () => 'floor of a room',
+        }), input, [
+            { prompt: /Pick a valid location[\s\S]*a - floor of a room[\s\S]*b - floor of a room/, keys: 'b' },
+            { prompt: /floor of a room/, keys: '.' },
+        ]);
+        assert.equal(selected?.x, 13);
+        assert.equal(selected?.y, 10);
+    });
+}
 async function selectedCoordinates(selection) {
     const result = await selection;
     assert.ok(result);
@@ -111,6 +130,25 @@ void test("'$' marks visible valid squares and leaves unseen ones unmarked", asy
     // S_goodpos marks use the HI_ZAP color from defsym.h.
     assert.equal(viewAfterInput(views, 1).colors[1], HI_ZAP);
     assert.equal(glyphAt(10, 11), '.');
+});
+void test("area filtering limits cycling but '$' still marks visible valid squares outside the area", async () => {
+    const level = freshObjectRoom();
+    for (let x = 13; x <= 16; x++) {
+        for (let y = 6; y <= 14; y++)
+            level.requireAt(x, y).typ = CORR;
+    }
+    const inside = { x: 10, y: 8 };
+    const outside = { x: 14, y: 10 };
+    const unseen = { x: 20, y: 10 };
+    const spots = [inside, outside, unseen];
+    const { selection, views } = await driveSelection('""$z.', {
+        sampleSpots: spots,
+        selectMapPosition: {
+            isValidLocation: (x, y) => spots.some(spot => spot.x === x && spot.y === y),
+        },
+    });
+    assert.deepEqual(await selectedCoordinates(selection), inside);
+    assert.deepEqual(viewAfterInput(views, 3).glyphs, ['$', '$', ' ']);
 });
 void test("marking leaves the hero '@' when the rule rejects the hero square", async () => {
     freshObjectRoom();

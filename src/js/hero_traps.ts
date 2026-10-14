@@ -812,8 +812,9 @@ async function triggerProjectileTrap(trap: Trap) {
 
 // C teleport.c:level_tele_trap(). The level prompt acknowledges the trap
 // announcement before accepting its first character.
-async function triggerLevelTeleportTrap(trap: Trap, gotoLevel: HeroTrapOptions['gotoLevel'],
+export async function triggerLevelTeleportTrap(trap: Trap, gotoLevel: HeroTrapOptions['gotoLevel'],
     intentional: boolean): Promise<void> {
+    requirePlayingGame(game);
     revealTrap(trap);
     const hero = game.u;
     // C hack.c:u_locomotion() gives the hero's active movement properties

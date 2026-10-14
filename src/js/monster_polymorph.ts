@@ -323,7 +323,7 @@ function selectSandestinForm(): number | null {
     return null;
 }
 
-function shapechangerGender(baseMnum: number, targetMnum: number, female: boolean): boolean {
+export function shapechangerGender(baseMnum: number, targetMnum: number, female: boolean): boolean {
     const flags = MONSTER_FLAGS2[targetMnum] ?? 0;
     if (flags & M2_MALE) return false;
     if (flags & M2_FEMALE) return true;

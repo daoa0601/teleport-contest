@@ -111,7 +111,7 @@ void test('a wrapped line prompt leaves covered status rows blank until the next
     }
     await bot();
     assert.match(game.nhDisplay.grid[22]?.map(cell => cell.ch).join('') ?? '', /^Lin/);
-    assert.match(game.nhDisplay.grid[23]?.map(cell => cell.ch).join('') ?? '', /^Dlvl:/);
+    assert.match(game.nhDisplay.grid[23]?.map(cell => cell.ch).join('') ?? '', /^Dl:1/);
 });
 void test('line input holds existing status until it returns', async () => {
     freshPlayableRoom();
@@ -148,7 +148,7 @@ void test('a wrapped confirmation restores the status rows it covered', async ()
         await answer;
     }
     assert.match(game.nhDisplay.grid[22]?.map(cell => cell.ch).join('') ?? '', /^Lin/);
-    assert.match(game.nhDisplay.grid[23]?.map(cell => cell.ch).join('') ?? '', /^Dlvl:/);
+    assert.match(game.nhDisplay.grid[23]?.map(cell => cell.ch).join('') ?? '', /^Dl:1/);
 });
 for (const length of [127, 128, 160]) {
     void test(`a ${length}-character confirmation ${length < 128 ? 'keeps the full question' : 'ends the shortened question with an ellipsis'}`, async () => {

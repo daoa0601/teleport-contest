@@ -13,9 +13,15 @@ import { artifactWarningFeedback } from './artifact_warning.js';
 import { currentAttribute } from './attrib.js';
 import { nhgetch } from './input.js';
 import { currentHungerState } from './hunger.js';
-import { heroIsSick } from './hero_illness.js';
-import { heroIsSliming } from './slime.js';
-import { heroIsPetrifying } from './stoning.js';
+import { rankOf } from './quest_pager.js';
+import { statusConditions } from './status_conditions.js';
+import { renderStatusLine2 } from './status_layout.js';
+import type { StatusLine2Fields } from './status_layout.js';
+import { armorStatus, weaponStatus } from './status_equipment.js';
+import { statusVersion } from './status_version.js';
+import { statusTerrain } from './status_terrain.js';
+import { hitpointBar } from './status_hitpoint_bar.js';
+import { criticallyLowHp } from './prayer_trouble.js';
 import { cansee, couldsee, set_seenv, vision_recalc } from './vision.js';
 import {
     A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, ACCESSIBLE, BC_BALL, BC_CHAIN,
@@ -25,13 +31,13 @@ import {
     TREE, IRONBARS, POOL, MOAT, WATER, LAVAPOOL, LAVAWALL, AIR, CLOUD,
     IS_POOL, IS_LAVA, IS_OBSTRUCTED, IS_ROOM, IS_WALL, LADDER, LA_DOWN, DBWALL, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN,
     D_NODOOR, D_ISOPEN, D_CLOSED, D_LOCKED, D_BROKEN,
-    SV0, SV1, SV2, SV3, SV4, SV5, SV6, SV7, SICK_VOMITABLE, SICK_NONVOMITABLE,
+    SV0, SV1, SV2, SV3, SV4, SV5, SV6, SV7,
     WM_X_TL, WM_X_TR, WM_X_BL, WM_X_BR, WM_X_TLBR, WM_X_BLTR,
     BEAR_TRAP, WEB, VIBRATING_SQUARE, CORPSTAT_GENDER, CORPSTAT_FEMALE,
     ENGRAVE, BURN, HEADSTONE,
     is_pit, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE,
     def_warnsyms, MON_STILL_ARRIVING,
-    In_endgame, Is_rogue_level, Is_waterlevel, Is_knox_level, In_sokoban, PLNMSG_UNKNOWN,
+    In_endgame, In_quest, Is_rogue_level, Is_waterlevel, Is_knox_level, In_sokoban, PLNMSG_UNKNOWN,
     MONSEEN_NORMAL, MONSEEN_SEEINVIS, MONSEEN_INFRAVIS, MONSEEN_TELEPAT,
     MONSEEN_XRAYVIS, MONSEEN_DETECT, MONSEEN_WARNMON, PICK_NONE, PICK_ONE, Upolyd, ismnum,
 } from './const.js';
@@ -67,6 +73,7 @@ import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import type { MapLocation, Trap, Engraving } from './map_types.js';
 import type { GameDisplay } from './game_display.js';
+import { ATR_BLINK } from './terminal_attributes.js';
 
 /** Message callers await publication but do not consume the producer's result. */
 export type MessagePublisher = (message: string, options?: ToplineOptions) => unknown;
@@ -2224,24 +2231,28 @@ function render_map_row(y: number) {
 export function _statusLine1() {
     const u = game.u;
     if (!u) return '';
-    const name = game.displayName || game.plname || 'Hero';
-    const level = u.ulevel ?? 1;
-    const rankIndex = level <= 2 ? 0
-        : level <= 30 ? Math.trunc((level + 2) / 4) : 8;
-    const rank = game.urole?.title?.[rankIndex];
-    const monsterTitle = (game.u?.mtimedone ?? 0) > 0
-        ? (MONSTER_NAME[game.u.umonnum ?? -1] || 'monster')
-            .replace(/\b\w/g, letter => letter.toUpperCase())
-        : null;
-    const role = monsterTitle || (game.flags?.female
-        ? (rank?.f || rank?.m || game.urole?.name?.f || game.urole?.name?.m)
-        : (rank?.m || game.urole?.name?.m));
+    let name = game.plname || game.displayName || 'Hero';
+    name = name.charAt(0).toUpperCase() + name.slice(1);
+    const role = Upolyd(u)
+        ? monsterTypeName(u.umonnum ?? -1, u.mfemale)
+            .replace(/(^| )[a-z]/g, letter => letter.toUpperCase())
+        : rankOf(u.ulevel ?? 1, game);
+    // bot_via_windowport() keeps the rank intact and at least 16 name
+    // characters, even when a long monster title then exceeds 30 columns.
+    if (name.length + 5 + role.length > 30)
+        name = name.slice(0, Math.max(16, 30 - 5 - role.length));
     const title = `${name} the ${role}`;
     const stats = `St:${formatStrength(currentAttribute(A_STR))} `
         + `Dx:${currentAttribute(A_DEX)} Co:${currentAttribute(A_CON)} `
         + `In:${currentAttribute(A_INT)} Wi:${currentAttribute(A_WIS)} `
         + `Ch:${currentAttribute(A_CHA)}`;
-    const align = u.ualign?.type === 0 ? 'Neutral' : (u.ualign?.type ?? -1) > 0 ? 'Lawful' : 'Chaotic';
+    const align = u.ualign?.type === -1 ? 'Chaotic' : u.ualign?.type === 0 ? 'Neutral' : 'Lawful';
+    if (game.flags.hitpointbar) {
+        const hp = Upolyd(u) ? u.mh : u.uhp;
+        const maximum = Upolyd(u) ? u.mhmax : u.uhpmax;
+        const critical = !!game.level && !!game.urole && !!game.urace && criticallyLowHp(true, game);
+        return `${hitpointBar(title, hp ?? 0, maximum ?? 0, critical)} ${stats} ${align}`;
+    }
     // C uses cursor-forward for gap between title and stats
     // C pads to align stats starting at a fixed column
     const gap = Math.max(1, 31 - title.length);
@@ -2249,7 +2260,7 @@ export function _statusLine1() {
     return `${title}${' '.repeat(gap)}${stats} ${align}`;
 }
 
-// C ref: botl.c strbuf(): strength values above 18 encode the exceptional
+// C ref: botl.c:get_strength_str(): strength values above 18 encode the exceptional
 // 18/xx range; 118 is the traditional 18/** maximum.
 export function formatStrength(value: number | null | undefined) {
     if (value == null) return '?';
@@ -2259,18 +2270,22 @@ export function formatStrength(value: number | null | undefined) {
     return `18/${String(value - 18).padStart(2, '0')}`;
 }
 
-export function _statusLine2(refreshLoad = true) {
+export function _statusLine2() {
+    const fields = statusLine2Fields(nearCapacity(game));
+    return fields ? renderStatusLine2(fields, game.nhDisplay?.cols ?? COLNO).text : '';
+}
+
+function statusLine2Fields(capacity: number): StatusLine2Fields | null {
     const u = game.u;
-    if (!u) return '';
+    if (!u) return null;
     const dungeonName = game.dungeons?.[u.uz?.dnum ?? 0]?.dname;
     const endgameLocation = endgameLevelName(u.uz)
         .replace(/^Plane of /, '');
     const location = Is_knox_level(u.uz) ? dungeonName ?? ''
-        : game._tutorialActive ? `Tutorial:${dungeonDepth(u.uz)}`
-        : dungeonName === 'The Quest' ? `Home ${u.uz?.dlevel ?? 1}`
+        : In_quest(u.uz) ? `Home ${u.uz?.dlevel ?? 1}`
             : In_endgame(u.uz) ? endgameLocation
-            : `Dlvl:${dungeonDepth(u.uz)}`;
-    const polymorphed = (u.mtimedone ?? 0) > 0;
+            : `${game._tutorialActive ? 'Tutorial' : 'Dlvl'}:${dungeonDepth(u.uz)}`;
+    const polymorphed = Upolyd(u);
     // botl.c bounds the printed numbers without changing combat state.
     const currentHp = (polymorphed ? u.mh : u.uhp) ?? 0;
     const displayedHp = Math.max(0, Math.min(currentHp, 9999));
@@ -2279,37 +2294,23 @@ export function _statusLine2(refreshLoad = true) {
     const maximumPower = Math.min(u.uenmax ?? 0, 9999);
     const goldSymbol = Is_rogue_level(u.uz) ? '*' : '$';
     const displayedAc = u.uac ?? 10;
-    const displayedGold = game._statusGoldOverride
-        ?? heroGoldAmount(game);
-    let line = `${location} ${goldSymbol}:${displayedGold} HP:${displayedHp}(${maximumHp}) Pw:${displayedPower}(${maximumPower}) AC:${displayedAc}`;
-    if (polymorphed) {
-        line += ` HD:${MONSTER_LEVEL[u.umonnum ?? -1] ?? 0}`;
-    } else {
-        line += ` Xp:${u.ulevel || 1}`;
-        if (game.flags?.showexp) line += `/${u.uexp || 0}`;
-    }
-    if (game.flags?.time)
-        line += ` T:${game.moves ?? 1}`;
+    const displayedGold = Math.max(0, Math.min(999999,
+        game._statusGoldOverride ?? heroGoldAmount(game)));
+    const experience = polymorphed ? `HD:${MONSTER_LEVEL[u.umonnum ?? -1] ?? 0}`
+        : `Xp:${u.ulevel || 1}${game.flags.showexp ? `/${u.uexp || 0}` : ''}`;
     const hungerLabel = ['Satiated', '', 'Hungry', 'Weak', 'Fainting', 'Fainted', 'Starved'][u.uhs ?? currentHungerState(game)];
-    if (hungerLabel) line += ` ${hungerLabel}`;
-    const load = refreshLoad ? encumbranceLabel(nearCapacity(game)) : u._encumbrance;
-    if (load) line += ` ${load}`;
-    // TTY places conditions after hunger and load, sorted by severity and name.
-    if (u.strangled || (u.strangledTurns ?? 0) > 0) line += ' Strngl';
-    const sick = heroIsSick(game);
-    if (sick && ((u.sickType ?? 0) & SICK_VOMITABLE)) line += ' FoodPois';
-    if (heroIsSliming(game)) line += ' Slime';
-    if (heroIsPetrifying(game)) line += ' Stone';
-    if (sick && ((u.sickType ?? 0) & SICK_NONVOMITABLE)) line += ' TermIll';
-    if (game.blind) line += ' Blind';
-    if ((u.confusionTurns ?? 0) > 0) line += ' Conf';
-    if (game.deaf) line += ' Deaf';
-    if (propertyIsActive('flying', game)) line += ' Fly';
-    if (heroIsHallucinating(game)) line += ' Hallu';
-    if (propertyIsActive('levitation', game)) line += ' Lev';
-    if (u.usteed) line += ' Ride';
-    if (u.stunned || (u.stunnedTurns ?? 0) > 0) line += ' Stun';
-    return line;
+    return {
+        location, gold: `${goldSymbol}:${displayedGold}`,
+        health: `HP:${displayedHp}(${maximumHp}) Pw:${displayedPower}(${maximumPower}) AC:${displayedAc}`,
+        experience, moves: game.flags.time ? game.moves : null,
+        hunger: hungerLabel ?? '',
+        capacity,
+        conditions: statusConditions(game),
+        equipment: [game.flags.weaponstatus ? weaponStatus(game) : '',
+            game.flags.armorstatus ? armorStatus(game) : '',
+            game.flags.terrainstatus ? statusTerrain(game) : ''].filter(text => text.length > 0),
+        version: game.flags.showvers ? statusVersion(game.flags.versinfo) : '',
+    };
 }
 
 // ── Serialize terminal grid for screen comparison ──
@@ -2359,7 +2360,18 @@ function writeStatusLines(display: GameDisplay, lines: readonly [string, string]
         const plain = text.replace(/\x1b\[(\d+)C/g,
             (_match, count) => ' '.repeat(Number(count)));
         display.clearRow(row);
-        display.putstr(0, row, plain.slice(0, display.cols), NO_COLOR);
+        let column = 0, attr = 0;
+        for (const part of plain.split(/(\x1b\[[0-9;]+m)/)) {
+            if (part.startsWith('\x1b[')) {
+                if (part === '\x1b[7m') attr |= ATR_INVERSE;
+                else if (part === '\x1b[5m') attr |= ATR_BLINK;
+                else if (part === '\x1b[0m') attr = 0;
+                continue;
+            }
+            const visible = part.slice(0, Math.max(0, display.cols - 1 - column));
+            display.putstr(column, row, visible, NO_COLOR, attr);
+            column += visible.length;
+        }
     }
 }
 
@@ -2511,13 +2523,30 @@ function refreshStatusLines(): void {
     const display = game.nhDisplay;
     if (!display || game._statusUpdatesDisabled || game.program_state.saving
         || game.program_state.windows_exited || game._suppressMapStatusForFlush) return;
-    game.context.botl = false;
-    game.context.time_botl = false;
-    if (game.u.uhp === -1) return;
-    game.u._encumbrance = encumbranceLabel(nearCapacity(game));
-    display.statusLines = [_statusLine1(), _statusLine2(false)];
+    if (game.u.uhp === -1) {
+        game.context.botl = false;
+        game.context.time_botl = false;
+        return;
+    }
+    const capacity = nearCapacity(game);
+    game.u._encumbrance = encumbranceLabel(capacity);
+    // botl.c notifies BL_CAP when its value changes; tty_status_update()
+    // then clears any blank left by earlier encumbrance shortening.
+    const capacityBlank = display.statusLine2Fields?.capacity === capacity
+        && display.statusCapacityBlank;
+    const fields = statusLine2Fields(capacity);
+    const levelPrefixChanged = display.statusLine2Fields?.location === fields?.location
+        && display.statusLevelPrefixChanged;
+    display.statusLine2Fields = fields;
+    const layout = display.statusLine2Fields
+        ? renderStatusLine2(display.statusLine2Fields, display.cols, capacityBlank, levelPrefixChanged) : null;
+    display.statusCapacityBlank = layout?.capacityBlank ?? false;
+    display.statusLevelPrefixChanged = layout?.levelPrefixChanged ?? false;
+    display.statusLines = [_statusLine1(), layout?.text ?? ''];
     display.statusVisible = true;
     writeStatusLines(display, display.statusLines);
+    game.context.botl = false;
+    game.context.time_botl = false;
 }
 
 // C botl.c:stat_update_time() notifies only BL_TIME. Other fields keep the
@@ -2526,11 +2555,16 @@ export function timebot(): void {
     if (game._statusUpdatesDisabled) return;
     game.context.time_botl = false;
     const display = game.nhDisplay;
-    if (!display?.statusLines || !game.flags.time
+    if (!display?.statusLines || !display.statusLine2Fields || !game.flags.time
         || game.program_state.saving || game.program_state.windows_exited
         || game._suppressMapStatusForFlush) return;
-    const [first, second] = display.statusLines;
-    display.statusLines = [first, second.replace(/\bT:\d+\b/, `T:${game.moves}`)];
+    const [first] = display.statusLines;
+    display.statusLine2Fields = { ...display.statusLine2Fields, moves: game.moves };
+    const layout = renderStatusLine2(display.statusLine2Fields, display.cols,
+        display.statusCapacityBlank, display.statusLevelPrefixChanged);
+    display.statusCapacityBlank = layout.capacityBlank;
+    display.statusLevelPrefixChanged = layout.levelPrefixChanged;
+    display.statusLines = [first, layout.text];
     display.statusVisible = true;
     writeStatusLines(display, display.statusLines);
 }

@@ -7,6 +7,7 @@ import { displayLiquidName, feel_newsym, newsym, plineWithContinuation, updateLa
 import { heroPassesWalls, heroFormSticks } from './hero_species.js';
 import { heroHasConflict } from './hero_conflict.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
+import { setHeroInWater } from './terrain_movement.js';
 import { monsterName } from './monster_name.js';
 import { beginHeroLifeSaving, completeHeroLifeSaving, finishHeroDeath, identifyLifeSavingAmulet, } from './end.js';
 import { placeObject, stack_object } from './floor_object.js';
@@ -710,7 +711,7 @@ async function leaveWater({ state, location, publish, resetVision, recalculateVi
     if (message)
         await publish(message);
     const wasUnderwater = !!state.underwater && !heroIsOnWaterLevel(state);
-    u.uinwater = 0;
+    await setHeroInWater(false, state);
     state.underwater = false;
     if (wasUnderwater) {
         resetVision();
@@ -819,7 +820,7 @@ export async function heroLiquidEffects(options = {}) {
             if (!heroIsOnWaterLevel(state))
                 await publish(heroIsHallucinating(state) ? 'Your keel hits the bottom.' : 'You touch bottom.');
         }
-        u.uinwater = 1;
+        await setHeroInWater(true, state);
         recalculateVision(1);
         return { entered: true, moved: false, died: false };
     }
@@ -877,7 +878,7 @@ export async function heroLiquidEffects(options = {}) {
         }
         await publish('But in vain.');
     }
-    u.uinwater = 1;
+    await setHeroInWater(true, state);
     await publish('You drown.');
     for (let attempt = 0; attempt < 2; attempt++) {
         const liquid = waterbodyName(u.ux, u.uy, state);
@@ -915,7 +916,7 @@ export async function heroLiquidEffects(options = {}) {
         }
         await publish("You're still drowning.");
     }
-    u.uinwater = 0;
+    await setHeroInWater(false, state);
     state.underwater = false;
     await announceTerrainRescue(DROWNING, state, publish);
     // C drown() returns TRUE after rescue even when no safe landing exists.

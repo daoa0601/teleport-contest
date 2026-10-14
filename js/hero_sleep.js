@@ -1,6 +1,6 @@
 // Hero sleep state.
 // C ref: timeout.c fall_asleep().
-import { endVoluntaryMultiTurn } from './command_state.js';
+import { endVoluntaryMultiTurn, heroHasInvoluntaryDelay } from './command_state.js';
 import { game } from './gstate.js';
 import { FAINTED } from './const.js';
 export function putHeroToSleep(turns, { state = game, reason = 'sleeping', doneMessage = 'You wake up.', } = {}) {
@@ -26,7 +26,7 @@ export function heroIsUnaware(state = game) {
 }
 // C trap.c:unconscious(), narrower than Unaware (which also includes fainting).
 export function heroIsUnconscious(state = game) {
-    if (!((state._helplessTurns ?? 0) > 0))
+    if (!heroHasInvoluntaryDelay(state))
         return false;
     const message = state._helplessDoneMessage || '';
     return !!state.u?.usleep || message.startsWith('You awake')

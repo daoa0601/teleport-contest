@@ -22,6 +22,7 @@ import { heroHasNoLimbs, heroIsPolymorphed, polymonHero, } from './polyself.js';
 import { removeIntrinsicProperty, setPropertyTimeout } from './properties.js';
 import { clearHeroSliming } from './slime.js';
 import { stopHeroOccupation } from './occupation.js';
+import { formatHeardMessage } from './hero_speech.js';
 import { openingTinMaySaveHero } from './tin.js';
 import { releaseWeaponSlots } from './weapon_slots.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
@@ -81,22 +82,26 @@ export async function applyMonsterStoningAttack(monster, { state = game, random 
         : hallucinating ? randomDisplayMonsterSubject() : monsterSentenceSubject(monster);
     const target = () => spotted ? subject().replace(/^The /u, 'the ') : 'it';
     const deaf = heroIsDeaf(state);
+    const hear = async (text) => {
+        const message = formatHeardMessage(text, state);
+        if (message)
+            await publish(message);
+    };
     if (monster.mcan) {
         if (!deaf)
-            await publish(`You hear a cough from ${target()}!`);
+            await hear(`a cough from ${target()}!`);
         return false;
     }
     const blind = heroIsBlind(state);
     if (hallucinating && !blind) {
-        if (!deaf)
-            await publish('You hear hissing.');
+        await hear('hissing.');
         await publish(`${subject()} appears to be blowing you a kiss...`);
     }
     else if (!deaf) {
         const name = target();
         const possessive = name === 'it' ? 'its'
             : name.endsWith('s') ? `${name}'` : `${name}'s`;
-        await publish(`You hear ${possessive} hissing!`);
+        await hear(`${possessive} hissing!`);
     }
     else if (!blind) {
         await publish(`${subject()} seems to grimace.`);

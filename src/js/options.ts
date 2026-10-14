@@ -2,6 +2,8 @@
 // C ref: options.c — handles OPTIONS=, BIND=, etc.
 
 import { game } from './gstate.js';
+import { setConditionOption } from './status_conditions.js';
+import { classifyStatusTerrain } from './status_terrain.js';
 import type { GameFlags, InterfaceFlags, LootSortMode, MenuStyle } from './flags.js';
 import { CommandBindings } from './command_bindings.js';
 import { changePreferredFruit, normalizePreferredFruitName } from './fruit.js';
@@ -284,9 +286,20 @@ function parseConfiguration(rc: string, result: ConfigurationSettings): Configur
             const negated = trimmed.startsWith('!');
             const stripped = negated ? trimmed.slice(1) : trimmed;
 
+            if (stripped.toLowerCase().startsWith('cond_')) {
+                const mask = setConditionOption(stripped, !negated, result.flags.statusConditionMask);
+                if (mask !== null) result.flags.statusConditionMask = mask;
+                continue;
+            }
+
             const colonIdx = stripped.indexOf(':');
             const bindingOption = (colonIdx < 0 ? stripped : stripped.slice(0, colonIdx)).trim().toLowerCase();
             const optionValue = colonIdx < 0 ? null : stripped.slice(colonIdx + 1).trim();
+            if (bindingOption === 'versinfo') {
+                const value = Number.parseInt(optionValue ?? '', 10);
+                if (!negated && value >= 1 && value <= 7) result.flags.versinfo = value;
+                continue;
+            }
             if (bindingOption === 'dogname' || bindingOption === 'catname' || bindingOption === 'horsename') {
                 if (negated) continue;
                 if (optionValue === 'none' || optionValue === '(none)')
@@ -628,8 +641,8 @@ const REQUEST_MENU_BOOLEAN_OPTIONS = [
     ['use_inverse', 'use_inverse', true],
     ['verbose', 'verbose', true],
     ['weaponstatus', 'weaponstatus', false],
-    ['whatis_menu', 'whatis_menu', false],
-    ['whatis_moveskip', 'whatis_moveskip', false],
+    ['whatis_menu', 'getloc_usemenu', false],
+    ['whatis_moveskip', 'getloc_moveskip', false],
 ] as const;
 
 type BooleanOption = typeof REQUEST_MENU_BOOLEAN_OPTIONS[number];
@@ -645,7 +658,8 @@ function requestBooleanValue(name: BooleanOptionName): boolean {
     const [, property, fallback] = option;
     if (property === '_monTelecontrol') return game._monTelecontrol ?? fallback;
     if (property === 'altmeta' || property === 'toptenwin' || property === 'menu_tab_sep'
-        || property === 'wc_eight_bit_input')
+        || property === 'wc_eight_bit_input' || property === 'autodescribe'
+        || property === 'getloc_usemenu' || property === 'getloc_moveskip')
         return game.iflags[property] ?? fallback;
     return game.flags[property] ?? fallback;
 }
@@ -654,7 +668,8 @@ function setConfigurationBoolean(settings: ConfigurationSettings, option: Boolea
     const [, property] = option;
     if (property === '_monTelecontrol') settings.monTelecontrol = value;
     else if (property === 'altmeta' || property === 'toptenwin' || property === 'menu_tab_sep'
-        || property === 'wc_eight_bit_input')
+        || property === 'wc_eight_bit_input' || property === 'autodescribe'
+        || property === 'getloc_usemenu' || property === 'getloc_moveskip')
         settings.iflags[property] = value;
     else settings.flags[property] = value;
 }
@@ -663,7 +678,8 @@ function setRequestBoolean(option: BooleanOption, value: boolean): void {
     const [, property] = option;
     if (property === '_monTelecontrol') game._monTelecontrol = value;
     else if (property === 'altmeta' || property === 'toptenwin' || property === 'menu_tab_sep'
-        || property === 'wc_eight_bit_input')
+        || property === 'wc_eight_bit_input' || property === 'autodescribe'
+        || property === 'getloc_usemenu' || property === 'getloc_moveskip')
         game.iflags[property] = value;
     else game.flags[property] = value;
 }
@@ -938,7 +954,9 @@ async function editPickupTypes(preserveStatus = false): Promise<void> {
 // changes need bot(); map-affecting changes defer the full docrt until all
 // selected options and their compound handlers have finished.
 function applyBooleanVisualChange(name: BooleanOptionName): boolean {
-    if (name === 'showexp' || name === 'time') game.context.botl = true;
+    if (name === 'terrainstatus') classifyStatusTerrain(game);
+    if (['showexp', 'time', 'showvers', 'weaponstatus', 'armorstatus', 'terrainstatus'].includes(name))
+        game.context.botl = true;
     if (name === 'dark_room' || name === 'lit_corridor') {
         vision_recalc(2);
         game.vision_full_recalc = 1;

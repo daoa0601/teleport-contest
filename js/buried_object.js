@@ -21,7 +21,8 @@ import { stolenValue } from './shop_loss.js';
 import { deleteObject } from './object_delete.js';
 import { endObjectBurn } from './light.js';
 import { unlinkObject } from './object_location.js';
-import { BOULDER, CORPSE, HEAVY_IRON_BALL, LEASH, OBJECT_MATERIAL, POT_OIL, ROCK, } from './object_data.js';
+import { BOULDER, CORPSE, HEAVY_IRON_BALL, LEASH, POT_OIL, ROCK, } from './object_data.js';
+import { objectMaterial } from './object_material.js';
 import { objectResistsDestruction } from './object_state.js';
 import { OBJECT_TIMER_KIND, scheduleObjectTimer, stopObjectTimer, } from './object_timers.js';
 import { rn1, rnd } from './rng.js';
@@ -130,7 +131,7 @@ function removeFloorReference(object, state) {
 function scheduleBuriedRot(object, underIce, state) {
     const canRot = underIce
         ? object.oclass === POTION_CLASS
-        : (OBJECT_MATERIAL[object.otyp] ?? Infinity) <= 8;
+        : objectMaterial(object, state) <= 8;
     if (object.otyp === CORPSE || !canRot
         || objectResistsDestruction(object, 5, 95)) {
         return;

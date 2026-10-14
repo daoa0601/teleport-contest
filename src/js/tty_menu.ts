@@ -6,11 +6,11 @@ import { nhgetch } from './input.js';
 import { bot, clearMessageWindow, docrt, flushPendingTopline, flush_screen } from './display.js';
 import { getLine } from './query.js';
 import { NO_COLOR } from './terminal.js';
-import type { TerminalCell } from './terminal.js';
+import type { TerminalCell, TerminalColor } from './terminal.js';
 import type { GameDisplay } from './game_display.js';
 
 const ATR_NONE = 0;
-export interface TextMenuLine { text: string; attr?: number; col?: number }
+export interface TextMenuLine { text: string; attr?: number; color?: TerminalColor; col?: number }
 export type MenuUnderlay = readonly (readonly TerminalCell[])[];
 export interface PaintedMenuRow extends TextMenuLine { attributeStart: number }
 export interface MenuLayout<T extends TextMenuLine> {
@@ -97,7 +97,8 @@ export function paintMenuPage<T extends TextMenuLine>(
     for (const [row, line] of rows.entries()) {
         for (let col = 0; col < line.text.length; col++) {
             const attr = col < line.attributeStart ? ATR_NONE : line.attr ?? ATR_NONE;
-            d.setCell(left + col, row, line.text.charAt(col), NO_COLOR, attr);
+            const color = col < line.attributeStart ? NO_COLOR : line.color ?? NO_COLOR;
+            d.setCell(left + col, row, line.text.charAt(col), color, attr);
         }
     }
     const marker = pageCount > 1 ? `(${page + 1} of ${pageCount})` : '(end) ';
@@ -179,6 +180,7 @@ export function tty_add_menu<T>(window: TtyMenuWindow<T>, entry: TtyMenuEntry<T>
     window.entries.push({
         text: entry.identifier === null ? entry.text : selectableMenuText(entry.selector || '?', entry.text),
         attr: entry.attr ?? ATR_NONE,
+        color: entry.color ?? NO_COLOR,
         identifier: entry.identifier,
         key: entry.selector ?? '',
         group: entry.group ?? '',
@@ -193,8 +195,9 @@ export function tty_end_menu<T>(window: TtyMenuWindow<T>, prompt: string | null 
     requireWindow(window);
     if (prompt !== null) {
         const heading: TtyMenuRow<T> = { text: prompt, attr: game.iflags.menu_headings?.attr ?? 1,
+            color: game.iflags.menu_headings?.color ?? NO_COLOR,
             identifier: null, key: '', group: '', itemflags: 0, selected: false, count: -1 };
-        window.entries.unshift(heading, { ...heading, text: '', attr: ATR_NONE });
+        window.entries.unshift(heading, { ...heading, text: '', attr: ATR_NONE, color: NO_COLOR });
     }
     const d = display();
     if (!d) return;

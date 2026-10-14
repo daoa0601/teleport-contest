@@ -62,10 +62,11 @@ export function validSavedAlignment(value) {
 }
 export function validSavedGameFlags(value) {
     return closedFieldsMatch(value, {
+        statusConditionMask: optional((entry) => typeof entry === 'number' && Number.isInteger(entry) && entry >= 0 && entry < 2 ** 30),
+        versinfo: optional((entry) => typeof entry === 'number' && Number.isInteger(entry) && entry >= 1 && entry <= 7),
         accessiblemsg: optional(boolean),
         acoustics: optional(boolean),
         armorstatus: optional(boolean),
-        autodescribe: optional(boolean),
         autodig: optional(boolean),
         autoopen: optional(boolean),
         pickup: optional(boolean),
@@ -126,8 +127,6 @@ export function validSavedGameFlags(value) {
         use_inverse: optional(boolean),
         verbose: optional(boolean),
         weaponstatus: optional(boolean),
-        whatis_menu: optional(boolean),
-        whatis_moveskip: optional(boolean),
         beginner: optional(boolean),
         blind: optional(boolean),
         bones: optional(boolean),

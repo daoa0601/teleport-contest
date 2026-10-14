@@ -80,7 +80,7 @@ import { stopRun } from './runmode.js';
 import { resolveMonsterGaze } from './monster_gaze.js';
 import { resolveMonsterMagicRay } from './monster_magic_ray.js';
 import { resolveMonsterSelfExplosion } from './monster_self_explosion.js';
-import { canSpotMonster, displayMessageWindow, docrt, redrawMap, bot, flush_screen, flushPendingTopline, pline, plineWithContinuation, newsym, map_invisible, randomDisplayMonsterName, see_monsters, see_objects, see_traps, show_glyph_cell, swallowed, _statusLine1, _statusLine2, canSeeMonster, monsterVisible, shieldeff, } from './display.js';
+import { canSpotMonster, displayMessageWindow, docrt, redrawMap, bot, flush_screen, flushPendingTopline, pline, plineWithContinuation, newsym, map_invisible, randomDisplayMonsterName, see_monsters, see_objects, see_traps, show_glyph_cell, swallowed, canSeeMonster, monsterVisible, shieldeff, } from './display.js';
 import { cansee, couldsee, vision_note_blocker_change, vision_recalc, vision_reset, hasLightSources, init_vision_globals, } from './vision.js';
 import { nhgetch } from './input.js';
 import { NO_COLOR, CLR_BRIGHT_BLUE } from './terminal.js';
@@ -101,7 +101,7 @@ import { claimNextDueObjectTimer, peekNextDueObjectTimer, } from './object_timer
 import { nativeRoleAt } from './roles.js';
 import { initializeRoleQuestGenders, initializeSourceStartup } from './startup.js';
 import { initialDungeonEntryText, recordGameLogEvent, } from './gamelog.js';
-import { allocateMonsterMovement, applyHeroSpellDamage, beginDeferredHeroCloneWizard, completeHeroAttackSlot, selectHeroItemForTheft, resumeDeferredHeroColdSpecial, resumeDeferredHeroContact, resumeDeferredHeroFireSpecial, resumeDeferredHeroElectricSpecial, resumeDeferredHeroLifeDrain, resumeDeferredHeroStun, resumeDeferredHeroSticking, resumeDeferredHeroEngulf, resumeDeferredHeroBlindness, resumeDeferredHeroLegs, resumeDeferredHeroReveal, rollDeferredHeroSpellDamage, resumeDeferredHeroSpell, resolveDeferredHeroSummonMonsters, resolveDeferredHeroHasteSelf, resolveDeferredHeroAggravation, finishDeferredMonsterMiscItem, finishDeferredHeroCloneWizard, resumeDeferredCovetousRelocation, resumeDeferredRestrictedTenguTeleport, resumeDeferredMovementSpell, resumeDeferredSpecialAttack, resumeDeferredMonsterTrap, resumeDeferredMonsterHideUnder, completeMonsterOffensiveAction, resumeDeferredPetAttack, resumeDeferredPetEating, resumeDeferredPetMove, resumeDeferredPetReluctance, resolveDeferredMonsterBreath, fumaroles, heroEveryturnEffect, runMonsterEveryturnEffects, beginMonsterMove, beginMonsterHeroAttack, runMonsterAction, monstersInFmonOrder, monsterDistressEvents, commitPetPickup, } from './monmove.js';
+import { allocateMonsterMovement, applyHeroSpellDamage, beginDeferredHeroCloneWizard, completeHeroAttackSlot, selectHeroItemForTheft, resumeDeferredHeroColdSpecial, resumeDeferredHeroContact, resumeDeferredHeroFireSpecial, resumeDeferredHeroElectricSpecial, resumeDeferredHeroLifeDrain, resumeDeferredHeroStun, resumeDeferredHeroEnchantment, resumeDeferredHeroSticking, resumeDeferredHeroEngulf, resumeDeferredHeroBlindness, resumeDeferredHeroLegs, resumeDeferredHeroReveal, rollDeferredHeroSpellDamage, resumeDeferredHeroSpell, resolveDeferredHeroSummonMonsters, resolveDeferredHeroHasteSelf, resolveDeferredHeroAggravation, finishDeferredMonsterMiscItem, finishDeferredHeroCloneWizard, resumeDeferredCovetousRelocation, resumeDeferredRestrictedTenguTeleport, resumeDeferredMovementSpell, resumeDeferredSpecialAttack, resumeDeferredMonsterTrap, resumeDeferredMonsterHideUnder, completeMonsterOffensiveAction, resumeDeferredPetAttack, resumeDeferredPetEating, resumeDeferredPetMove, resumeDeferredPetReluctance, resolveDeferredMonsterBreath, fumaroles, heroEveryturnEffect, runMonsterEveryturnEffects, beginMonsterMove, beginMonsterHeroAttack, runMonsterAction, monstersInFmonOrder, monsterDistressEvents, commitPetPickup, } from './monmove.js';
 import { finishEnvironmentalMonsterDeath, finishMonsterKilled, finishMonsterLiquidDeath, } from './monster_death.js';
 import { erodeArmor, erodeAttackingWeapon } from './object_erosion.js';
 import { monsterWieldedWeapon } from './monster_weapon.js';
@@ -163,15 +163,9 @@ function putLine(col, row, text, attr = 0) {
     for (let i = 0; i < text.length && col + i < display.cols; i++)
         display.setCell(col + i, row, text.charAt(i), NO_COLOR, attr);
 }
-function putStatusLines(snapshot = null) {
-    const line1 = snapshot?.[0] || _statusLine1();
-    const line2 = snapshot?.[1] || _statusLine2();
-    putLine(0, 22, line1.replace(/\x1b\[(\d+)C/g, (_match, count) => ' '.repeat(Number(count))));
-    putLine(0, 23, line2);
-}
 // C ref: com_pager("legacy") and dat/quest.lua.  The role-independent
 // creation story is laid out by the tty pager; role, rank, and god are live.
-async function showLegacy(statusSnapshot = null) {
+async function showLegacy() {
     const game = requireInitializedGame();
     // com_pager() creates a fresh Lua state, which loads nhlib.lua before
     // quest.lua and consumes the alignment shuffle from CORE.
@@ -228,7 +222,6 @@ async function showLegacy(statusSnapshot = null) {
     putLine(left, 15, outerLines[6]);
     putLine(left, 16, outerLines[7]);
     putLine(left, 17, outerLines[8]);
-    putStatusLines(statusSnapshot);
     d.setCursor(left + 8, 17);
     await nhgetch();
 }
@@ -2663,6 +2656,8 @@ async function presentMonsterAttackEffects(action, game, { random = rn2, rollDic
                     heroAttack.deferredDecayArmor = false;
                     heroAttack.deferredPostHit = true;
                 }
+                if (heroAttack.deferredEnchantment)
+                    await resumeDeferredHeroEnchantment(action, game, random);
                 if (heroAttack.drainMessage) {
                     const drainDismissal = await plineWithContinuation(heroAttack.drainMessage);
                     heroAttack.drainMessage = null;
@@ -3324,14 +3319,13 @@ export async function newgame() {
         await uInitInventoryAttrs();
         await bot();
     }
-    const preSkillsStatus = [_statusLine1(), _statusLine2()];
     // C applies equipment, spells, discoveries, skills, spell-power minimum,
     // and AC only after the final candidate has been accepted.  It does not
     // redraw bot() here, so the legacy overlay still retains the pre-skill
     // status row underneath it.
     await finishStartingDiscoveries();
     if (g.flags?.legacy)
-        await showLegacy(preSkillsStatus);
+        await showLegacy();
     g.program_state.something_worth_saving
         = Number(g.program_state.something_worth_saving || 0) + 1;
     // A new game begins with one complete hero movement ration.  No global

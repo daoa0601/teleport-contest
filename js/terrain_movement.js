@@ -1,5 +1,6 @@
 import { monsterHasMapPosition } from './monster_location.js';
 import { isPoolAt } from './terrain_properties.js';
+import { classifyStatusTerrain } from './status_terrain.js';
 // C hack.c:switch_terrain(), trap.c:float_up()/reset_utrap().
 import { D_CLOSED, D_LOCKED, DISMOUNT_FELL, DISMOUNT_GENERIC, DOOR, HOLE, IS_LAVA, IS_OBSTRUCTED, IS_ROOM, IS_WATERWALL, Is_airlevel, Is_waterlevel, LAVAWALL, STATUE_TRAP, TRAPDOOR, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, W_SADDLE, is_hole, is_pit, } from './const.js';
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
@@ -319,6 +320,14 @@ export async function resetHeroTrap(message = true, state = game) {
             await plineWithContinuation('You can fly.');
     }
 }
+// hack.c:set_uinwater(). Entering or leaving water also changes terrain
+// properties and the optional terrain status, even on the same square.
+export async function setHeroInWater(inWater, state = game) {
+    if (!!state.u.uinwater === inWater)
+        return;
+    state.u.uinwater = inWater ? 1 : 0;
+    await switchHeroTerrain(state);
+}
 export async function switchHeroTerrain(state = game) {
     const wasLevitating = propertyIsActive('levitation', state);
     const wasFlying = propertyIsActive('flying', state);
@@ -352,5 +361,7 @@ export async function switchHeroTerrain(state = game) {
     if (wasLevitating !== propertyIsActive('levitation', state)
         || wasFlying !== propertyIsActive('flying', state))
         state.context.botl = true;
+    if (state.flags.terrainstatus)
+        classifyStatusTerrain(state);
 }
 //# sourceMappingURL=terrain_movement.js.map

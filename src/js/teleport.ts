@@ -130,14 +130,16 @@ function wornRing(state: GameState, objectType: number) {
     ].some(ring => ring?.otyp === objectType);
 }
 
-function heroHasTeleportation(state: GameState) {
+export function heroHasTeleportation(state: GameState) {
     const u = state?.u;
+    if (u?._propertySources?.teleportation)
+        return propertyIsActive('teleportation', state);
     return !!(u?.teleporting || u?.teleportation
         || (u?.teleportingTurns ?? 0) > 0
         || wornRing(state, RIN_TELEPORTATION));
 }
 
-function heroFormCanTeleport(state: GameState) {
+export function heroFormCanTeleport(state: GameState) {
     return Upolyd(state.u) && state.u.umonnum !== undefined
         && !!((MONSTER_FLAGS1[state.u.umonnum] ?? 0) & M1_TPORT);
 }

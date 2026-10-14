@@ -5,10 +5,16 @@ import { waterDamageObject } from './trap.js';
 import { dip, dipInto } from './potion_dip.js';
 import { AKLYS, BOOMERANG, CRYSTAL_BALL } from './object_data.js';
 import { useCrystalBall } from './crystal_ball.js';
-import { monsterHiddenConditions } from './monster_status.js';
 import { visibleRegionAt } from './regions.js';
+import type { PageLocalMultiSelectItem } from './windows.js';
 import type { ChoiceMenuItem } from './windows.js';
 import { wizIntrinsic } from './wizard_intrinsics.js';
+import { wizFuzzer, wizPanic } from './wizard_debug_commands.js';
+import { wizSmell } from './wizard_smell.js';
+import { wizBury } from './wizard_bury.js';
+import { wizMigrateMonsters } from './wizard_migration.js';
+import { prepareWizardTeleportAtWill, wizardTeleportCommand } from './wizard_teleport.js';
+import { hurtleMonster } from './monster_hurtle.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
@@ -40,12 +46,32 @@ import { fruitName } from './fruit.js';
 import { encyclopediaEntries, encyclopediaMatches } from './encyclopedia.js';
 import { objectAtMapDescription } from './map_object_description.js';
 import { objectNeedsFullIdentification } from './invent.js';
+import { identifyPack } from './invent.js';
+import { DIED, KILLED_BY, MENU_ITEMFLAGS_SKIPINVERT, MGIVENNAME, NHW_MENU, PICK_ANY } from './const.js';
+import { AD_PHYS } from './monster_attack_types.js';
+import { finishMonsterKilled, finishMonsterLiquidDeath } from './monster_death.js';
+import { monsterIsNonliving } from './monster_data.js';
+import { Invocation_lev, Is_earthlevel, Is_firelevel, Is_knox_level, MAGIC_PORTAL, VIBRATING_SQUARE } from './const.js';
+import { map_engraving, map_trap } from './display.js';
+import { VAULT } from './const.js';
+import { somexyspace } from './mkroom.js';
+import { deleteTrap } from './trap_lifecycle.js';
+import { teleportHero } from './teleport.js';
+import { mapMagicLevel } from './magic_mapping.js';
+import {
+    tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow,
+    tty_end_menu, tty_select_menu, tty_start_menu,
+} from './tty_menu.js';
 import { LOOK_ONCE, LOOK_QUICK, LOOK_VERBOSE } from './const.js';
 import { waterbodyName } from './terrain_name.js';
 import { def_warnsyms } from './const.js';
 import { iceDescriptionAt } from './dungeon_feature.js';
 import { CmapSymbol, GlyphOffset, cmapToGlyph } from './glyph_numbers.js';
-import { MAP_SYMBOLS } from './map_symbols.js';
+import { lookAtMonster, monsterSeenDescription, offerMonsterSupplement, selfLookDetails, selfTrapDescription } from './pager_monsters.js';
+import { identifyTrap } from './pager_traps.js';
+import { showLookList } from './pager_lists.js';
+import { screenDescription } from './pager_description.js';
+import { lookGlyphAt, mapFeatureDescription } from './pager_features.js';
 import { typedSymbolDescription } from './look_symbols.js';
 import { isGrayStone, isWeaponTool } from './object_properties.js';
 import { applySuggestion } from './apply_selection.js';
@@ -136,7 +162,7 @@ import {
 } from './object_call.js';
 import { displayLiquidName, displayMessageWindow,
     newsym, feel_newsym, flushPendingTopline, flush_screen, pline, plineWithContinuation, moreUntilDismissed, docrt,
-    bot, terrain_glyph, cmapSymbolAppearance, glyphAt, canSeeMonster, canSpotMonster, canSenseMonster, canSpotHeroSelf,
+    bot, terrain_glyph, glyphAt, canSeeMonster, canSpotMonster, canSenseMonster, canSpotHeroSelf,
     unblindTelepathyRange,
     monsterHasWarningProjection, see_nearby_objects, show_glyph_cell, swallowed,
     randomDisplayMonsterName, randomDisplayMonsterSubject, see_monsters, see_objects,
@@ -197,8 +223,10 @@ import { continueTinOpening, useTinOpener } from './tin.js';
 import { PLAYABLE_INSTRUMENTS, playInstrument } from './music.js';
 import { dodiscovered } from './o_init.js';
 import { doattributes, doconduct } from './insight.js';
-import { doextversion } from './extversion.js';
-import { dosearch, mapLevel } from './detect.js';
+import { extendedCommandsHelp, keyBindingsHelp } from './command_help.js';
+import { contactHelp, displayHelpFile, menuControlsHelp, setOptionsCommand, whatdoes } from './pager_help.js';
+import { doextversion, NATIVE_VERSION } from './extversion.js';
+import { dosearch, findit } from './detect.js';
 import { detectMonsters } from './magic_detection.js';
 import { abusePetAfterHeroHit } from './dog.js';
 import {
@@ -277,7 +305,7 @@ import {
 } from './terminal.js';
 import {
     MONSTER_COLOR, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME,
-    MONSTER_SIZE, MONSTER_SYMBOL, MONSTER_SOUND, MONSTER_ALIGNMENT, MONSTER_ATTACKS, MONSTER_CLASS_EXPLAIN,
+    MONSTER_SIZE, MONSTER_SYMBOL, MONSTER_SOUND, MONSTER_ALIGNMENT, MONSTER_ATTACKS,
     requireMonsterData, monsterTypeName, monsterClassSymbol, monsterIsHumanoid,
 } from './monster_data.js';
 import { createParticularMonster } from './read_creation.js';
@@ -317,7 +345,7 @@ import {
 } from './monster_anger.js';
 import { publishMonsterNoise } from './monster_sound.js';
 import { doride, moveSteedWithHero, ridingPreventsMovement, stuckSteed } from './steed.js';
-import { currentAttribute, currentStrength, exerciseAttribute, exerciseWisdom } from './attrib.js';
+import { currentAttribute, currentStrength, exerciseAttribute, exerciseWisdom, reportHeroEncumbrance } from './attrib.js';
 import { spendHeroNutrition, updateHeroHunger } from './hunger.js';
 
 import { continueForceLock, doforce } from './lock.js';
@@ -325,7 +353,7 @@ import { doUntrap } from './untrap.js';
 import { dosit } from './sit.js';
 import { continueEngraving, doengrave } from './engrave_command.js';
 
-import { heroCanMoveFromTrap, triggerHeroTrapAt } from './hero_traps.js';
+import { heroCanMoveFromTrap, triggerHeroTrapAt, triggerLevelTeleportTrap } from './hero_traps.js';
 import { activateStatueTrapAt } from './statue_trap.js';
 import {
     applyDippedCoinFate, applyFountainDemonActor,
@@ -438,7 +466,7 @@ import { kickFloorObject } from './object_kick.js';
 import { kickWithMonsterForm } from './hero_form_kick.js';
 import {
     bringLeashedFollowers, heroTeleportDestinationOk, moveHeroByTeleport,
-    randomMonsterRelocation, safeTeleportDestination,
+    randomMonsterRelocation,
 } from './teleport.js';
 import { goodPosition, monsterTeleportRestricted } from './teleport_rules.js';
 import { removeWishGrantingMonster } from './monster_departure.js';
@@ -1278,7 +1306,7 @@ async function runCommandHandler(binding: CommandBinding, {
         return;
     }
     if (key === 20 && game.flags?.debug) { // Ctrl-T: wiztele()
-        await wizTeleportPosition();
+        await wizardTeleportCommand(wizTeleportPosition);
         return;
     }
     if (key === 6 && game.flags?.debug) { // Ctrl-F: wiz_map()
@@ -1355,6 +1383,10 @@ async function runCommandHandler(binding: CommandBinding, {
             // cmd_safety_prevention(); `m.` deliberately spends the turn.
             prepareTimedCommand(nextCommand);
             await performWaitCommand(true);
+        } else if (nextCommand.command?.handler === 'doextcmd'
+            || nextCommand.command && (nextCommand.command.flags & NATIVE_COMMAND_FLAGS.CMD_M_PREFIX)) {
+            prepareTimedCommand(nextCommand);
+            await executeCommandAction(nextCommand);
         } else {
             await pline("The 'm' prefix should be followed by a movement command.");
             game.context.move = 0;
@@ -1433,6 +1465,10 @@ async function runCommandHandler(binding: CommandBinding, {
         await doapply();
     } else if (ch === ':') {
         await dolook();
+    } else if (ch === 'V') {
+        await doversion();
+    } else if (ch === '&') {
+        await whatdoes();
     } else if (ch === '?') {
         await dohelp();
     } else if (ch === '#') {
@@ -2760,7 +2796,15 @@ async function dochat() {
 }
 
 async function wizWish() {
-    return makeWish();
+    const verbose = game.flags.verbose;
+    game.flags.verbose = false;
+    try {
+        await makeWish();
+    } finally {
+        if (verbose === undefined) delete game.flags.verbose;
+        else game.flags.verbose = verbose;
+    }
+    await reportHeroEncumbrance();
 }
 
 // C refs: cmd.c Ctrl-G/wizgenesis, wizcmds.c wiz_genesis(), and read.c
@@ -2776,48 +2820,147 @@ async function wizGenesis() {
     game.context.move = 0;
 }
 
+async function wizDetect() {
+    await findit();
+    game.context.move = 0;
+}
+
 async function wizKill() {
-    if (!game.flags?.debug) {
-        await pline('#wizkill: unknown extended command.');
-        game.context.move = 0;
-        return;
+    requirePlayingGame(game);
+    const level = requireGameLevel();
+    const here = { ...game.u.uz };
+    let cursor: Position = { x: game.u.ux, y: game.u.uy };
+    let prompt = 'Pick first monster to slay';
+    for (;;) {
+        await plineWithContinuation(`${prompt}:`);
+        prompt = 'Next monster';
+        const verbose = game.flags.verbose;
+        const autodescribe = game.iflags.autodescribe;
+        game.flags.verbose = false;
+        game.iflags.autodescribe = true;
+        let target;
+        try {
+            const tipShown = await showGetposTip();
+            target = await selectMapPosition({
+                start: cursor, prompt: tipShown ? 'Move cursor to a monster:' : game._pending_message,
+                goal: 'a monster', describe: farlookLocationDescription,
+            });
+        } finally {
+            if (verbose === undefined) delete game.flags.verbose;
+            else game.flags.verbose = verbose;
+            if (autodescribe === undefined) delete game.iflags.autodescribe;
+            else game.iflags.autodescribe = autodescribe;
+        }
+        if (!target) break;
+        cursor = target;
+        const monster = await wizardKillTarget(cursor);
+        if (monster === 'quit') break;
+        unmap_invisible(cursor.x, cursor.y);
+        if (!monster) {
+            await pline('There is no monster there.');
+            break;
+        }
+        const tame = !!monster.mtame;
+        const seen = canSpotMonster(monster) || !!game.u.uswallow && monster === game.u.ustuck;
+        const name = monsterName(monster, {
+            article: tame ? 'your' : seen ? 'the' : 'a',
+            ...(tame ? { adjective: seen ? 'poor' : 'poor, unseen' }
+                : seen ? {} : { adjective: 'unseen' }),
+            suppressIt: true, suppressHallucination: true,
+            suppressSaddle: tame && !!MGIVENNAME(monster),
+        });
+        const destroyed = monsterIsNonliving(monster.mnum);
+        if (game.iflags.menu_requested) {
+            game.context.mon_moving = true;
+            try {
+                await plineWithContinuation(`${name.charAt(0).toUpperCase()}${name.slice(1)} is ${destroyed ? 'destroyed' : 'killed'}.`);
+                await finishMonsterKilled(monster, game, { damageType: AD_PHYS, cause: null });
+            } finally {
+                game.context.mon_moving = false;
+            }
+        } else {
+            await plineWithContinuation(`You ${destroyed ? 'destroy' : 'kill'} ${name}!`);
+            await finishHeroMonsterKill(monster, monster.mx, monster.my, { showKillMessage: false });
+        }
+        if (game.program_state.gameover || game.u.utotype
+            || game.u.uz.dnum !== here.dnum || game.u.uz.dlevel !== here.dlevel) break;
     }
+    level.monsters = level.monsters.filter(monster => !monster.dead);
+    game.context.move = 0;
+}
 
-    const firstUse = shouldShowGetposTip();
-    if (firstUse) {
-        await pline('Pick first monster to slay:');
-        await showGetposTip();
+async function wizardKillTarget(cursor: Position): Promise<Monster | 'quit' | null> {
+    if (cursor.x === game.u.ux && cursor.y === game.u.uy) {
+        const steed = game.u.usteed;
+        if (steed) {
+            const answer = await promptYesNoQuit(`Kill ${monsterName(steed)}?`);
+            if (answer === 'q') return 'quit';
+            if (answer === 'y') return steed;
+        }
+        const question = game.urole?.key === 'samurai' ? 'Perform seppuku?' : 'Commit suicide?';
+        if (await paranoidQuery(true, question))
+            await finishHeroDeath({
+                killer: `${game.flags.female ? 'her' : 'his'} own player`,
+                killerFormat: KILLED_BY, deathType: DIED, deathLineShown: true,
+            });
+        return 'quit';
     }
+    if (game.u.uswallow)
+        return Math.abs(cursor.x - game.u.ux) <= 1 && Math.abs(cursor.y - game.u.uy) <= 1
+            ? game.u.ustuck ?? null : null;
+    return requireGameLevel().monsters.find(monster => monsterHasMapPosition(monster, game)
+        && (monster.mx === cursor.x && monster.my === cursor.y
+            || monster.wormSegments?.some(segment => segment.x === cursor.x && segment.y === cursor.y))
+        && !monster.dead && monster.mhp > 0) ?? null;
+}
 
-    const cursor = await selectMapPosition({
-        start: { x: game.u.ux, y: game.u.uy },
-        prompt: firstUse ? 'Move cursor to a monster:'
-            : 'Pick first monster to slay.',
-        goal: 'a monster',
-        describe: farlookLocationDescription,
-    });
-    if (!cursor) {
-        game.context.move = 0;
-        return;
-    }
-
-    game._pending_message = '';
-    game._retained_message = '';
-    const monster = requireGameLevel().monsters.find(candidate => monsterHasMapPosition(candidate, game) &&
-        candidate.mx === cursor.x && candidate.my === cursor.y
-        && !candidate.dead && (candidate.mhp ?? 1) > 0);
-    if (!monster) {
-        await pline('There is no monster there.');
-        game.context.move = 0;
-        return;
-    }
-
-    monster.mhp = 0;
-    const killed = await finishHeroMonsterKill(
-        monster, monster.mx, monster.my,
-    );
-    if (!killed)
-        game._cursorOverride = [monster.mx - 1, monster.my + 1];
+// C wizcmds.c:wiz_telekinesis(). The command keeps the cursor on a hurtled
+// actor and takes no time. rhack's reset_cmd_vars() clears hurtle's delay.
+async function wizTelekinesis(): Promise<void> {
+    requirePlayingGame(game);
+    let cursor: Position = { x: game.u.ux, y: game.u.uy };
+    await plineWithContinuation('Pick a monster to hurtle.');
+    do {
+        const tipShown = await showGetposTip();
+        if (game.flags.verbose) {
+            const helpKey = game.commandBindings.specialKey('getpos.help') ?? 63;
+            await plineWithContinuation(`(For instructions type a '${visibleCommandKey(helpKey)}')`);
+        }
+        if (tipShown) await plineWithContinuation('Move cursor to a monster:');
+        const target = await selectMapPosition({
+            start: cursor, goal: 'a monster', describe: farlookLocationDescription,
+            prompt: game._pending_message,
+        });
+        if (!target) break;
+        cursor = target;
+        const monster = monsterAtPosition(game.level, cursor.x, cursor.y);
+        const atHero = cursor.x === game.u.ux && cursor.y === game.u.uy;
+        if (!(monster && canSpotMonster(monster)) && !atHero) continue;
+        const direction = await promptDirection(() => readDirectionKey('which direction? '));
+        if (!direction) break;
+        if (monster) {
+            await hurtleMonster(monster, direction.dx, direction.dy, 6, {
+                finishMonsterDeath: finishHurtleMonsterDeath,
+                // minliquid() credits drowning and lava burning to the hero;
+                // rust and fatal damage to a fire-resistant monster use mondied().
+                finishLiquidDeath: (target, death) =>
+                    death.cause === 'drowning' || death.cause === 'lava-burning'
+                        ? finishHeroMonsterKillOutcome(target, target.mx, target.my, { showKillMessage: false })
+                        : finishMonsterLiquidDeath(target, death),
+            });
+            if (!monster.dead && monster.mhp > 0 && canSpotMonster(monster))
+                cursor = { x: monster.mx, y: monster.my };
+        } else {
+            await hurtleHero(direction.dx, direction.dy, 6, {
+                finishTeleport: finishTeleportArrival,
+                gotoLevel, chooseTeleportDestination: askTeleportDestination,
+                finishMonsterDeath: finishHurtleMonsterDeath,
+            });
+            cursor = { x: game.u.ux, y: game.u.uy };
+        }
+        if (game.program_state.gameover) break;
+    } while (!game.u.utotype);
+    if (game._helplessReason === 'moving through the air') game._helplessTurns = 0;
     game.context.move = 0;
 }
 
@@ -2860,15 +3003,18 @@ function branchKind(branch: DungeonBranch) {
 function branchMenuLabel(branch: DungeonBranch) {
     const child = game.dungeons?.[branch.end2.dnum];
     if (!child) return null;
-    const prefix = {
+    return `${branchTypeDescription(branch)} to ${child.dname}: ${dungeonDepth(
+        branch.end1.dnum, branch.end1.dlevel,
+    )}`;
+}
+
+function branchTypeDescription(branch: DungeonBranch) {
+    return {
         portal: 'Portal',
         no_end1: 'Connection',
         no_end2: 'One way stair',
         stair: 'Stair',
-    }[branchKind(branch)] || 'Stair';
-    return `${prefix} to ${child.dname}: ${dungeonDepth(
-        branch.end1.dnum, branch.end1.dlevel,
-    )}`;
+    }[branchKind(branch)];
 }
 
 function dungeonLayoutEvents(dnum: number): DungeonLayoutEvent[] {
@@ -2885,7 +3031,7 @@ function dungeonLayoutEvents(dnum: number): DungeonLayoutEvent[] {
         });
     }
     events.sort((a, b) => a.dlevel - b.dlevel
-        || (a.kind === 'branch' ? -1 : 1));
+        || Number(a.kind === 'special') - Number(b.kind === 'special'));
     return events;
 }
 
@@ -2938,6 +3084,7 @@ function wizardLevelMenu() {
     let choiceIndex = 0;
 
     for (let dnum = 0; dnum < (game.dungeons?.length || 0); dnum++) {
+        if (In_endgame(game.u.uz) && dnum !== game.astral_level?.dnum) continue;
         rows.push({ text: dungeonHeading(dnum), attr: ATR_INVERSE });
 
         for (const event of dungeonLayoutEvents(dnum)) {
@@ -2976,8 +3123,8 @@ function wizardLevelMenu() {
     return { rows, choices };
 }
 
-function wizardWherePages() {
-    const lines = [];
+function wizardWhereLines(): string[] {
+    const lines: string[] = [];
     for (let dnum = 0; dnum < (game.dungeons?.length || 0); dnum++) {
         lines.push(dungeonHeading(dnum));
         for (const event of dungeonLayoutEvents(dnum)) {
@@ -2991,20 +3138,39 @@ function wizardWherePages() {
                 if (event.name === 'castle')
                     label += ` (tune ${game.castleTune || ''})`;
             }
-            if (label) lines.push(`  ${label}`);
+            const current = event.kind === 'special'
+                && game.u.uz?.dnum === event.dnum && game.u.uz.dlevel === event.dlevel;
+            if (label) lines.push(`${current ? '*' : ' '} ${label}`);
         }
     }
-
-    const pages: TextPage[] = [];
-    for (let offset = 0; offset < lines.length; offset += 23) {
-        const pageLines = lines.slice(offset, offset + 23);
-        pageLines.push(' --More--');
-        pages.push({
-            lines: pageLines,
-            cursor: [9, pageLines.length - 1],
-        });
+    const floating = game.branches.filter(branch => branch.end1.dnum === game.dungeons.length);
+    if (floating.length) {
+        lines.push('', 'Floating branches');
+        for (const branch of floating) {
+            const child = game.dungeons[branch.end2.dnum];
+            if (!child) throw new Error(`Floating branch has no dungeon ${branch.end2.dnum}`);
+            lines.push(`   ${branchTypeDescription(branch)} to ${child.dname}`);
+        }
     }
-    return pages;
+    const hero = game.u;
+    if (Invocation_lev(hero.uz)) {
+        const position = game.level?.invocationPosition ?? { x: 0, y: 0 };
+        lines.push('', `Invocation position @ (${position.x},${position.y}), hero @ (${hero.ux},${hero.uy})`);
+    } else {
+        const portal = game.level?.traps.find(trap => trap.ttyp === MAGIC_PORTAL);
+        if (portal) lines.push('', `Portal @ (${portal.tx},${portal.ty}), hero @ (${hero.ux},${hero.uy})`);
+        else if (wizardLevelExpectsPortal()) lines.push('', 'No portal found.');
+    }
+    return lines;
+}
+
+function wizardLevelExpectsPortal(): boolean {
+    const here = game.u.uz;
+    return Is_earthlevel(here) || Is_airlevel(here) || Is_firelevel(here)
+        || Is_waterlevel(here) || Is_knox_level(here)
+        || !!here && (here.dnum === game.quest_dnum && here.dlevel === 1
+            || game.branches.some(branch => branch.end2.dnum === game.quest_dnum
+                && branch.end1.dnum === here.dnum && branch.end1.dlevel === here.dlevel));
 }
 
 // C refs: wizcmds.c:wiz_where() and dungeon.c:print_dungeon(FALSE).
@@ -3013,9 +3179,7 @@ function wizardWherePages() {
 async function wizWhere() {
     game._pending_message = '';
     game._retained_message = '';
-    await showTextPages(wizardWherePages(), {
-        validKeys: [27, 32, 10, 13],
-    });
+    await showDisclosureOverlay(wizardWhereLines(), { restoreUnderlay: true });
     await docrt();
     game.context.move = 0;
 }
@@ -3029,7 +3193,7 @@ export async function chooseWizardLevelDestination() {
     return { destination };
 }
 
-async function wizLevelTeleport({ menuRequested = false } = {}) {
+async function wizLevelTeleport({ menuRequested = !!game.iflags.menu_requested } = {}) {
     game.context.move = 0;
     await levelTeleport({ menuRequested });
 }
@@ -3144,6 +3308,13 @@ function completeExtendedCommand(prefix: string): string | null {
 
 const EXTENDED_COMMAND_HANDLERS = new Map<string, () => Promise<unknown>>([
     ['whatis', dowhatis],
+    ['help', dohelp],
+    ['?', extendedCommandsHelp],
+    ['glance', doFarlook],
+    ['whatdoes', whatdoes],
+    ['history', () => displayHelpFile('history')],
+    ['showtrap', identifyTrap],
+    ['versionshort', doversion],
     ['takeoffall', takeOffAll],
     ['conduct', doconduct],
     ['chronicle', doChronicle],
@@ -3181,6 +3352,8 @@ const EXTENDED_COMMAND_HANDLERS = new Map<string, () => Promise<unknown>>([
     ['wipe', dowipe],
     ['monster', domonability],
     ['polyself', wizPolyself],
+    ['panic', wizPanic],
+    ['debugfuzzer', wizFuzzer],
     ['annotate', doannotate],
     ['herecmdmenu', doherecmdmenu],
     ['adjust', doadjust],
@@ -3189,26 +3362,41 @@ const EXTENDED_COMMAND_HANDLERS = new Map<string, () => Promise<unknown>>([
     ['wizwhere', wizWhere],
     ['wizwish', wizWish],
     ['wizgenesis', wizGenesis],
+    ['wizdetect', wizDetect],
+    ['wizsmell', () => wizSmell(farlookLocationDescription)],
+    ['wizbury', wizBury],
+    ['wiztelekinesis', wizTelekinesis],
+    ['migratemons', wizMigrateMonsters],
     ['wizkill', wizKill],
     ['wizidentify', wizIdentify],
     ['wizintrinsic', wizIntrinsic],
     ['wizmap', wizMap],
 ]);
 
-async function runExtendedCommand(name: string) {
+async function runExtendedCommand(name: string): Promise<boolean> {
     const command = availableExtendedCommands().find(entry => entry.name === name);
     if (!command) {
         await pline(`#${name}: unknown extended command.`);
         game.context.move = 0;
-        return;
+        return false;
     }
     if (!await commandAllowed(command)) {
         // doextcmd() returns ECMD_OK; rhack clears queues only for a delay.
         resetCommandVariables(game.multi < 0);
-        return;
+        return false;
+    }
+    if (game.iflags.menu_requested && !(command.flags & NATIVE_COMMAND_FLAGS.CMD_M_PREFIX)) {
+        const prefix = visibleCommandKey(game.commandBindings.keyForCommand('reqmenu'));
+        await plineWithContinuation(`'${prefix}' prefix has no effect for the ${name} command.`);
+        game.iflags.menu_requested = false;
     }
     const key = commandExecutionKey(command.name)?.charCodeAt(0) ?? null;
-    return executeCommandAction({ key, command, parameter: null });
+    const binding = { key, command, parameter: null };
+    // doextlist returns to the editor inside doextcmd. rhack's command
+    // cleanup belongs to the final action, so the list retains its count.
+    if (name === '?') await runCommandHandler(binding);
+    else await executeCommandAction(binding);
+    return true;
 }
 
 // C refs: artifact.c:doinvoke(), invoke_ok(), arti_invoke().  getobj()
@@ -3479,13 +3667,17 @@ async function wizMap() {
 
     const savedConfusion = game.u?.confusionTurns ?? 0;
     const savedHallucination = game.u?.hallucinationTurns ?? 0;
-    if (game.u) {
-        game.u.confusionTurns = 0;
-        game.u.hallucinationTurns = 0;
-    }
-
-    mapLevel({ confused: false, revealAllTraps: true });
-    if (game.u) {
+    game.u.confusionTurns = 0;
+    game.u.hallucinationTurns = 0;
+    try {
+        for (const trap of requireGameLevel().traps) {
+            trap.tseen = true;
+            map_trap(trap, true);
+        }
+        for (const engraving of requireGameLevel().engravings ?? [])
+            map_engraving(engraving, true);
+        await mapMagicLevel({ confused: false });
+    } finally {
         game.u.confusionTurns = savedConfusion;
         game.u.hallucinationTurns = savedHallucination;
     }
@@ -4144,6 +4336,11 @@ function wizardIdentifyDescription(item: GameObject, primaryHandDetail: string |
 // iflags.override_ID set.  Fully identified inventories still open a short
 // PICK_NONE menu; the command does not collapse into a topline message.
 async function wizIdentify(): Promise<void> {
+    if (!game.inventory.length) {
+        await pline('Not carrying anything.');
+        game.context.move = 0;
+        return;
+    }
     const unidentified = game.inventory.filter(objectNeedsFullIdentification);
     if (!unidentified.length) {
         await showTextMenuOverlay([
@@ -4169,23 +4366,42 @@ async function wizIdentify(): Promise<void> {
                 };
             }),
     })).filter(section => section.items.length);
-    game._pending_message = '';
-    game.nhDisplay?.clearRow(0);
-    const selected = await showMultiSelectWindow({
-        title: `Debug Identify -- unidentified or partially identified item${
-            unidentified.length === 1 ? '' : 's'
-        }`,
-        introLines: [
-            `_ - select ${unidentified.length === 1
+    const allKey = game.commandBindings.keyForCommand('wizidentify') || 9;
+    const window = tty_create_nhwindow<GameObject | 'all'>(NHW_MENU);
+    let selected: (GameObject | 'all')[];
+    try {
+        await tty_start_menu(window);
+        tty_add_menu(window, {
+            identifier: null,
+            text: `Debug Identify -- unidentified or partially identified item${
+                unidentified.length === 1 ? '' : 's'}`,
+        });
+        tty_add_menu(window, {
+            identifier: 'all', selector: '_', group: String.fromCharCode(allKey),
+            itemflags: MENU_ITEMFLAGS_SKIPINVERT,
+            text: `select ${unidentified.length === 1
                 ? 'it' : 'any or all of them'} to permanently identify${
-                unidentified.length === 1 ? '' : ' (^I for all)'}`,
-        ],
-        sections,
-        blankAfterTitle: false,
-        titleAttr: ATR_NONE,
-    });
+                unidentified.length === 1 ? '' : ` (${visibleCommandKey(allKey)} for all)`}`,
+        });
+        for (const section of sections) {
+            tty_add_menu(window, { identifier: null, text: section.heading, attr: ATR_INVERSE });
+            for (const item of section.items)
+                tty_add_menu(window, { identifier: item.value, selector: item.key, text: item.text });
+        }
+        tty_end_menu(window);
+        const result = await tty_select_menu(window, PICK_ANY);
+        selected = result.selections.map(selection => selection.identifier);
+    } finally {
+        await tty_destroy_nhwindow(window);
+    }
     game._pending_message = '';
+    if (selected.includes('all')) {
+        await identifyPack(0);
+        game.context.move = 0;
+        return;
+    }
     for (const item of selected) {
+        if (item === 'all') continue;
         const learnedType = !objectTypeKnown(item);
         fullyIdentifyObject(item);
         if (learnedType) await exerciseAttribute(A_WIS, true);
@@ -4199,10 +4415,20 @@ async function wizIdentify(): Promise<void> {
     game.context.move = 0;
 }
 
+// C doextcmd() asks again after the list, until an action or cancellation.
+async function doextcmd(): Promise<void> {
+    for (;;) {
+        const command = await readExtendedCommand();
+        if (!command) return;
+        const executed = await runExtendedCommand(command);
+        if (!executed || command !== '?') return;
+    }
+}
+
 // TTY's extended-command line editor redraws the prompt at every input
 // boundary.  #enhance has AUTOCOMPLETE, so its unique initial "e" expands
 // visually while subsequent characters advance through that completed word.
-async function doextcmd(): Promise<void> {
+async function readExtendedCommand(): Promise<string | null> {
     let command = '';
     game._pending_message = '#';
     await flush_screen(1);
@@ -4248,7 +4474,7 @@ async function doextcmd(): Promise<void> {
             game._retained_message = '';
             game.nhDisplay?.clearRow(0);
             game.context.move = 0;
-            return;
+            return null;
         }
         if (key === 10 || key === 13) break;
         if (key === 8) {
@@ -4287,11 +4513,9 @@ async function doextcmd(): Promise<void> {
         game.nhDisplay?.clearRow(0);
         game.nhDisplay?.setCursor(game.u.ux - 1, game.u.uy + 1);
         game.context.move = 0;
-        return;
+        return null;
     }
-    await runExtendedCommand(
-        completeExtendedCommand(normalizedCommand) || normalizedCommand,
-    );
+    return completeExtendedCommand(normalizedCommand) || normalizedCommand;
 }
 
 async function wizardPositionDescription(x: number, y: number): Promise<string> {
@@ -4313,7 +4537,7 @@ async function wizardPositionDescription(x: number, y: number): Promise<string> 
         // self_lookat() includes invisibility while blind only when sensed.
         const prefix = invisible && (!blind || telepathy || detection)
             ? 'invisible ' : '';
-        const description = `${prefix}${form} called ${game.plname || 'player'}${punishment}`;
+        const description = `${prefix}${form} called ${game.plname || 'player'}${await selfLookDetails()}${punishment}${selfTrapDescription()}`;
         const unseen = invisible && !game.u.seeInvisible
             && (game.u.seeInvisibleTurns ?? 0) === 0;
         // lookat() treats touch while blind or swallowed as normal vision.
@@ -4406,69 +4630,61 @@ export async function askTeleportDestination({ onPrompt = null }: {
 // and priest.c intemple().  A successful Wizard position teleport returns
 // ECMD_TIME.  Its first getpos use still owns the shared Lua tutorial, while
 // the destination room separately owns entry effects after relocation.
-async function wizTeleportPosition(): Promise<void> {
-    const trap = game.level?.traps.find(candidate =>
+async function wizTeleportPosition(ignoreRestrictions: boolean): Promise<void> {
+    requirePlayingGame(game);
+    let trap = game.level.traps.find(candidate =>
         candidate.tx === game.u.ux && candidate.ty === game.u.uy);
-    if (trap?.tseen && trap.ttyp === TELEP_TRAP && !trap.once
-        && trap.teledest && isok(trap.teledest.x, trap.teledest.y)) {
+    if (!trap?.tseen) trap = undefined;
+    if (trap?.ttyp === LEVEL_TELEP) {
+        if (await promptYesNo('There is a level teleporter here. Trigger it?') === 'y') {
+            await triggerLevelTeleportTrap(trap, gotoLevel, true);
+            game.context.move = 1;
+            return;
+        }
+        trap = undefined;
+    } else if (trap?.ttyp === TELEP_TRAP) {
+        if (trap.once) {
+            await plineWithContinuation('This is a vault teleport, usable once only.');
+            if (await promptYesNo('Jump in?') === 'n') trap = undefined;
+            else {
+                deleteTrap(trap);
+                newsym(game.u.ux, game.u.uy);
+            }
+        }
+    } else trap = undefined;
+    if (trap) {
         const locomotion = propertyIsActive('levitation') ? 'float'
             : propertyIsActive('flying') ? 'fly'
                 : monsterLocomotion(heroSpecies(), 'jump');
         await plineWithContinuation(`You ${locomotion} onto the teleportation trap.`);
-        if (!await bringLeashedFollowers()) {
-            await plineWithContinuation('You shudder for a moment.');
-            game.context.move = 0;
-            return;
-        }
-        // dotele() calls teleds() directly for a fixed trap destination:
-        // no location prompt, travel-target clear, or nutrition cost.
-        const movement = await moveHeroByTeleport(trap.teledest.x, trap.teledest.y);
-        await finishTeleportArrival(movement);
-        if (game.program_state.gameover) return;
-        await bringLeashedFollowers();
-        game.context.move = 1;
-        return;
     }
-
+    if (!trap && !ignoreRestrictions && !await prepareWizardTeleportAtWill()) return;
     if (!await bringLeashedFollowers()) {
         await plineWithContinuation('You shudder for a moment.');
         game.context.move = 0;
         return;
     }
-    // dotele() clears travelcc only after next_to_u() allows tele().
-    game._travelTarget = null;
-    let destination = await askTeleportDestination();
-    if (!destination) {
-        // dotele(TRUE) still reaches morehungry(100) and returns a timed
-        // command when scrolltele()'s controlled getpos was cancelled.
+    if (trap?.once) {
+        const vault = game.level.rooms.find((room): room is Room => isRoom(room) && room.rtype === VAULT);
+        const point = { x: 0, y: 0 };
+        if (vault && somexyspace(vault, point)
+            && heroTeleportDestinationOk(point.x, point.y)) {
+            await finishTeleportArrival(await moveHeroByTeleport(point.x, point.y));
+        } else await teleportHero({ chooseDestination: askTeleportDestination });
+    } else if (trap?.teledest && isok(trap.teledest.x, trap.teledest.y)) {
+        // Native dotele() uses the fixed location directly, preserving travelcc.
+        await finishTeleportArrival(await moveHeroByTeleport(trap.teledest.x, trap.teledest.y));
+    } else {
+        // Travel suggestions are cleared only after next_to_u() succeeds.
+        game._travelTarget = null;
+        await teleportHero({ chooseDestination: askTeleportDestination });
+    }
+    if (game.program_state.gameover) return;
+    await bringLeashedFollowers();
+    if (!trap) {
         await spendHeroNutrition(100);
         if (game.program_state.gameover) return;
-        game.context.move = 1;
-        return;
     }
-
-    const acceptedChoice = heroTeleportDestinationOk(destination.x, destination.y);
-    if (!acceptedChoice) {
-        // teleport.c:scrolltele() rejects the controlled location before
-        // entering safe_teleds().  Keep "Sorry..." pending while the random
-        // selector and teleds() update the map; a destination floor pager can
-        // then suspend this line at the same tty boundary as C.
-        await pline('Sorry...');
-        destination = safeTeleportDestination();
-        if (!destination) {
-            await spendHeroNutrition(100);
-            if (game.program_state.gameover) return;
-            game.context.move = 1;
-            return;
-        }
-    }
-
-    const movement = await moveHeroByTeleport(destination.x, destination.y);
-    await finishTeleportArrival(movement);
-    if (game.program_state.gameover) return;
-    // C dotele() spends nutrition only after teleds() finishes its effects.
-    await spendHeroNutrition(100);
-    if (game.program_state.gameover) return;
     game.context.move = 1;
 }
 
@@ -4502,7 +4718,9 @@ function farlookDescribesHero(x: number, y: number): boolean {
 
 export async function farlookLocationDescription(x: number, y: number): Promise<string> {
     if (farlookDescribesHero(x, y)) return wizardPositionDescription(x, y);
-    const glyph = glyphAt(x, y);
+    if (game.u.uswallow && game.u.ustuck)
+        return `interior of ${monsterName(game.u.ustuck)}`;
+    const glyph = lookGlyphAt(x, y);
     if (!glyph || glyph.kind === 'unexplored') {
         if ((game.u.uinwater || game.underwater) && !Is_waterlevel(game.u.uz))
             return dist2(x, y, game.u.ux, game.u.uy) <= 2 ? 'land' : 'unknown';
@@ -4518,159 +4736,24 @@ export async function farlookLocationDescription(x: number, y: number): Promise<
         && glyph.terrainName === 'dark part of a room') return 'dark part of a room';
     const monster = game.level ? monsterAtPosition(game.level, x, y) : null;
     if (monster && glyph?.kind === 'monster') {
-        const hallucinating = heroIsHallucinating(game);
-        const prefix = hallucinating ? ''
-            : monster.mtame ? 'tame '
-                : monster.mpeaceful ? 'peaceful ' : '';
-        const name = distantMonsterName(monster);
-        let condition = '';
-        if (!hallucinating) {
-            if ((monster.mfrozen ?? 0) > 0)
-                condition = ", can't move (paralyzed or sleeping or busy)";
-            else if (monster.msleeping)
-                condition = ', asleep';
-            else if ((monster.mstrategy ?? 0) & STRAT_WAITMASK)
-                condition = ', meditating';
-        }
-        const tail = monster.mx !== x || monster.my !== y;
-        // look_at_monster() gates hidden details on the selected square,
-        // which can be a worm tail outside the head's cloud.
-        const hidden = monster.mundetected || M_AP_TYPE(monster) || visibleRegionAt(game, x, y)
-            ? await monsterHiddenConditions(monster, game, { showAlternateMonster: false })
-            : [];
-        const hiddenText = hidden.length ? `, ${hidden.join(', ')}` : '';
-        return `${tail ? 'tail of a ' : ''}${prefix}${name}${condition}${hiddenText}`;
+        return lookAtMonster(monster, x, y);
     }
     if (glyph.kind === 'object') return objectAtMapDescription(x, y, glyph);
     // Hallucinated statues project monster glyphs without a live monster.
     if (glyph?.kind === 'monster' && heroIsHallucinating(game))
         return randomDisplayMonsterName();
 
-    const trap = game.level?.traps?.find(candidate =>
-        candidate.tx === x && candidate.ty === y && candidate.tseen);
-    if (trap?.ttyp === DART_TRAP) return 'dart trap';
-    if (trap?.ttyp === BEAR_TRAP) return 'bear trap';
-    const loc = game.level?.at(x, y);
-    if (!loc) return '';
-    // pager.c:lookat() recognizes liquid cmap glyphs, including memory,
-    // then waterbody_name() describes the current surface at that square.
-    if (glyph?.kind === 'terrain' && [
-        CmapSymbol.pool, CmapSymbol.water, CmapSymbol.lava,
-        CmapSymbol.lavawall, CmapSymbol.ice,
-    ].some(symbol => glyph.glyph === cmapToGlyph(symbol))) {
-        const description = waterbodyName(x, y);
-        // do_screen_description() adds strength only to plain "ice";
-        // hallucinated frozen liquids retain their waterbody_name().
-        return description === 'ice' ? iceDescriptionAt(x, y) : description;
-    }
-    // do_screen_description() applies the Quest gate to the glyph's stair
-    // description, whether the stair is visible now or remembered.
-    if (glyph?.kind === 'terrain' && glyph.terrainName === 'staircase down'
-        && onQuestStart(game) && !okToQuest(game))
+    const description = mapFeatureDescription(x, y, glyph);
+    if (description === 'ice') return iceDescriptionAt(x, y);
+    if (description === 'staircase down' && onQuestStart(game) && !okToQuest(game))
         return 'blocked staircase down';
-    // pager.c:do_screen_description() recognizes the concrete S_cloud glyph
-    // before the generic '#' ambiguity list.  Moving elemental bubbles can
-    // therefore be "fog/vapor cloud" even though their tty character is the
-    // same as a remembered corridor.
-    if (loc.typ === CLOUD)
-        return Is_airlevel(game.u?.uz) ? 'cloudy area' : 'fog/vapor cloud';
-    // display.c:reglyph_darkroom() keeps an explored but never-lit room as
-    // GLYPH_NOTHING once it leaves sight.  The physical tty cell can still
-    // contain the DECgraphics floor character from an earlier getpos paint,
-    // but pager.c describes glyph_at(), hence "dark part of a room".
-    if (!cansee(x, y) && loc.typ === ROOM && loc.seenv && !loc.waslit)
-        return 'dark part of a room';
-    // pager.c describes the projected screen glyph.  A blind hero can retain
-    // a stone/blank memory over real corridor terrain, so consulting `typ`
-    // first leaks topology and produces the wrong automatic getpos label.
-    if (!cansee(x, y) && loc.remembered_glyph?.kind === 'terrain') {
-        const remembered = loc.remembered_glyph.ch;
-        if (remembered === ' ') return 'stone';
-        if (remembered === '#') return 'corridor';
-        if (remembered === '.') return 'floor of a room';
-        if (remembered === '<' || remembered === '>')
-            return loc.remembered_glyph.terrainName;
-        if (remembered === '{') return 'fountain';
-        if (remembered === '+') {
-            return loc.typ === DOOR && loc.doormask === D_ISOPEN
-                ? 'open door' : 'closed door';
-        }
-        return loc.remembered_glyph.terrainName;
-    }
-    if (loc.typ === FOUNTAIN) return 'fountain';
-    if (loc.typ === SINK) return 'sink';
-    if (loc.typ === STONE) return 'stone';
-    if (IS_WALL(loc.typ)) return 'wall';
-    if (loc.typ === DOOR)
-        return loc.doormask === D_ISOPEN ? 'open door' : 'closed door';
-    if (loc.typ === ROOM) return 'floor of a room';
-    if (loc.typ === CORR) return 'corridor';
-    return glyph?.kind === 'terrain' ? glyph.terrainName : travelLocationDescription(x, y);
+    return description;
 }
 
 // C apply.c:dojump(): the physical command shares the spell's jump owner.
 async function dojump(): Promise<void> {
     const result = await jumpHero(0);
     game.context.move = result.spentTime ? 1 : 0;
-}
-
-function verboseFarlookDescription(x: number, y: number, description: string): string {
-    const glyph = glyphAt(x, y);
-    if (glyph?.kind === 'terrain'
-        && (glyph.terrainName.includes('staircase') || glyph.terrainName.includes('ladder'))) {
-        const symbolIndex = MAP_SYMBOLS.findIndex((_definition, index) =>
-            index >= CmapSymbol.upstair && index <= CmapSymbol.brdnladder
-            && glyph.glyph === cmapToGlyph(index));
-        if (symbolIndex < 0) throw new Error(`Stair glyph ${glyph.glyph} has no dungeon symbol`);
-        const displayed = cmapSymbolAppearance(symbolIndex);
-        const descriptions: string[] = [];
-        // do_screen_description() lists meanings of the displayed symbol
-        // in defsyms[] order, then lookat() identifies the selected stairs.
-        for (let index = CmapSymbol.upstair; index <= CmapSymbol.brdnladder; index++) {
-            const candidate = cmapSymbolAppearance(index);
-            const definition = MAP_SYMBOLS[index];
-            if (definition && candidate.ch === displayed.ch && candidate.dec === displayed.dec)
-                descriptions.push(withIndefiniteArticle(definition.name));
-        }
-        const symbol = displayed.dec ? `\x0e${displayed.ch}\x0f` : displayed.ch;
-        return `${symbol}\x1b[8C${descriptions.join(' or ')} (${description})`;
-    }
-    if (farlookDescribesHero(x, y) && glyph?.kind === 'monster'
-        && glyph.mnum !== undefined) {
-        // C do_screen_description() classifies the displayed glyph. With
-        // showrace, that can differ from the role named by self_lookat().
-        const species = glyph.mnum;
-        const symbol = monsterClassSymbol(species);
-        const explanation = MONSTER_CLASS_EXPLAIN[MONSTER_SYMBOL[species] ?? 0];
-        if (!explanation) throw new Error(`Displayed species ${species} has no monster class description`);
-        const includesHero = symbol === '@' && !heroIsPolymorphed(game) && game.urace
-            && game.urace.name !== 'human' && game.urace.name !== 'elf';
-        // A blank also denotes stone, air, darkness, and unexplored squares.
-        // C collapses more than four meanings before appending self_lookat().
-        const classDescription = symbol === ' ' ? 'can be many things'
-            : withIndefiniteArticle(explanation) + (includesHero ? ' or you' : '');
-        return `${symbol}\x1b[8C${classDescription} (${description})`;
-    }
-    if (!glyph) return description;
-    const loc = game.level?.at(x, y);
-    const appearance = loc?.disp_glyph
-        ? { ch: loc.disp_ch, dec: loc.disp_decgfx }
-        : loc?.remembered_glyph;
-    if (!appearance) return description;
-    const symbol = appearance.dec ? `\x0e${appearance.ch}\x0f` : appearance.ch;
-    if (glyph.kind === 'unexplored' || glyph.kind === 'nothing'
-        || glyph.kind === 'terrain' && ['stone', 'corridor', 'lit corridor'].includes(glyph.terrainName)) {
-        return `${symbol}\x1b[8Ccan be many things (${description})`;
-    }
-    if (glyph.kind === 'terrain' && glyph.terrainName === 'wall')
-        return `${symbol}\x1b[8Cthe interior of a monster or a wall (${description})`;
-    if (glyph.kind === 'terrain' && glyph.terrainName === 'floor of a room') {
-        if (appearance.dec && appearance.ch === '~') {
-            return '\x0e~\x0f\x1b[8Ca doorway or the floor of a room'
-                + ` or the dark part of a room or ice (${description})`;
-        }
-    }
-    return description;
 }
 
 // C refs: cmd.c dotravel(), getpos.c getpos(), hack.c handle_tip(), and
@@ -4740,40 +4823,61 @@ async function dotravel(): Promise<void> {
 // Farlook spends no game time. Ordinary look retains its cursor between
 // selections; quick look returns after describing one selection.
 async function doFarlook(quick = true): Promise<void> {
-    let verbose = !!game.flags.verbose && !quick;
+    const savedVerbose = game.flags.verbose;
+    game.flags.verbose = !!savedVerbose && !quick;
+    let verbose = !!game.flags.verbose;
     let position = { x: game.u.ux, y: game.u.uy };
-    for (;;) {
-        await plineWithContinuation(verbose
-            ? 'Please move the cursor to a monster, object or location.'
-            : 'Pick a monster, object or location.');
-        const firstUse = shouldShowGetposTip();
-        if (firstUse) await showGetposTip();
-        if (verbose) {
-            const helpKey = game.commandBindings.specialKey('getpos.help');
-            if (helpKey === undefined) throw new Error('Map selection requires a getpos.help binding');
-            await plineWithContinuation(`(For instructions type a '${visibleCommandKey(helpKey)}')`);
+    try {
+        for (;;) {
+            await plineWithContinuation(verbose
+                ? 'Please move the cursor to a monster, object or location.'
+                : 'Pick a monster, object or location.');
+            const firstUse = shouldShowGetposTip();
+            if (firstUse) await showGetposTip();
+            if (verbose) {
+                const helpKey = game.commandBindings.specialKey('getpos.help');
+                if (helpKey === undefined) throw new Error('Map selection requires a getpos.help binding');
+                await plineWithContinuation(`(For instructions type a '${visibleCommandKey(helpKey)}')`);
+            }
+            if (firstUse) await plineWithContinuation('Move cursor to a monster, object or location:');
+    
+            const cursor = await selectMapPosition({
+                start: position, force: quick,
+                prompt: game._pending_message || game._retained_message,
+                goal: 'a monster, object or location',
+                describe: async (x, y) => {
+                    const screen = screenDescription(x, y, '');
+                    return screen.needsDetail ? await farlookLocationDescription(x, y) || screen.firstMatch : screen.firstMatch;
+                },
+            });
+            if (!cursor) break;
+            position = { x: cursor.x, y: cursor.y };
+            verbose = false;
+            game.flags.verbose = false;
+            // putmixed() returns the description to WIN_MESSAGE. A later
+            // checkfile() question or the next picker acknowledges that prose.
+            game._pending_message = '';
+            game._retained_message = '';
+            const basic = screenDescription(cursor.x, cursor.y, '');
+            const description = basic.needsDetail ? await farlookLocationDescription(cursor.x, cursor.y) : '';
+            const glyph = glyphAt(cursor.x, cursor.y);
+            const monster = basic.needsDetail && glyph?.kind === 'monster' && game.level
+                && !farlookDescribesHero(cursor.x, cursor.y)
+                ? monsterAtPosition(game.level, cursor.x, cursor.y) : null;
+            const seen = monster ? monsterSeenDescription(monster) : '';
+            const screen = basic.needsDetail ? screenDescription(cursor.x, cursor.y, description) : basic;
+            await plineWithContinuation(screen.count ? screen.text
+                + (seen ? ` [seen: ${seen}]` : '') : "I've never heard of such things.");
+            if (screen.count === 1 && cursor.pickType !== LOOK_QUICK && cursor.pickType !== LOOK_ONCE
+                && (cursor.pickType === LOOK_VERBOSE || !quick && game.flags.help !== false)) {
+                await offerFarlookInformation(screen.firstMatch, cursor.pickType === LOOK_VERBOSE);
+                if (monster) await offerMonsterSupplement(monster, cursor.pickType === LOOK_VERBOSE);
+            }
+            if (quick || cursor.pickType === LOOK_ONCE) break;
         }
-        if (firstUse) await plineWithContinuation('Move cursor to a monster, object or location:');
-
-        const cursor = await selectMapPosition({
-            start: position,
-            prompt: game._pending_message || game._retained_message,
-            goal: 'a monster, object or location',
-            describe: farlookLocationDescription,
-        });
-        if (!cursor) break;
-        position = { x: cursor.x, y: cursor.y };
-        verbose = false;
-        // putmixed() returns the description to WIN_MESSAGE. A later
-        // checkfile() question or the next picker acknowledges that prose.
-        game._pending_message = '';
-        game._retained_message = '';
-        const description = await farlookLocationDescription(cursor.x, cursor.y);
-        await plineWithContinuation(verboseFarlookDescription(cursor.x, cursor.y, description));
-        if (cursor.pickType !== LOOK_QUICK && cursor.pickType !== LOOK_ONCE
-            && (cursor.pickType === LOOK_VERBOSE || !quick && game.flags.help !== false))
-            await offerFarlookInformation(description, cursor.pickType === LOOK_VERBOSE);
-        if (quick || cursor.pickType === LOOK_ONCE) break;
+    } finally {
+        if (savedVerbose === undefined) delete game.flags.verbose;
+        else game.flags.verbose = savedVerbose;
     }
     game.context.move = 0;
 }
@@ -4800,32 +4904,51 @@ async function restoreHelpMap(): Promise<void> {
 // the map entry destroys it, restores the map, then hands input ownership to
 // the shared getpos/farlook transaction above.
 async function dowhatis(): Promise<void> {
-    const entries = [
-        { key: '/', text: 'something on the map' },
-        { key: 'i', text: "something you're carrying" },
-        { key: '?', text: 'something else (by symbol or name)' },
-        '',
-        { key: 'm', text: 'nearby monsters' },
-        { key: 'M', text: 'all monsters shown on map' },
-        { key: 'o', text: 'nearby objects' },
-        { key: 'O', text: 'all objects shown on map' },
-        { key: 't', text: 'nearby traps' },
-        { key: 'T', text: 'all seen or remembered traps' },
-        { key: 'e', text: 'nearby engravings' },
-        { key: 'E', text: 'all seen or remembered engravings' },
+    const choices = [
+        { key: '/', alias: 'y', text: 'something on the map' },
+        { key: 'i', alias: '', text: "something you're carrying" },
+        { key: '?', alias: 'n', text: 'something else (by symbol or name)' },
     ];
-    const validKeys = [
-        27, 32, 10, 13,
-        ...'/i?mMoOtTeE'.split('').map(char => char.charCodeAt(0)),
-    ];
+    if (!game.u.uswallow && !heroIsHallucinating(game)) choices.push(
+        { key: 'm', alias: '', text: 'nearby monsters' },
+        { key: 'M', alias: '', text: 'all monsters shown on map' },
+        { key: 'o', alias: '', text: 'nearby objects' },
+        { key: 'O', alias: '', text: 'all objects shown on map' },
+        { key: 't', alias: '^', text: 'nearby traps' },
+        { key: 'T', alias: '"', text: 'all seen or remembered traps' },
+        { key: 'e', alias: '`', text: 'nearby engravings' },
+        { key: 'E', alias: '|', text: 'all seen or remembered engravings' },
+    );
     const queuedKey = takeCommandKey();
-    const key = queuedKey ?? await showChoiceWindow({
-        title: 'What do you want to look at:',
-        entries,
-        validKeys,
-    });
-    if (queuedKey === undefined) await restoreHelpMap();
-    const choice = String.fromCharCode(key);
+    let choice = queuedKey === undefined ? '' : String.fromCharCode(queuedKey);
+    if (queuedKey === undefined) {
+        const lootabc = !!game.flags.lootabc;
+        const items: PageLocalMultiSelectItem<string>[] = [];
+        for (const [index, entry] of choices.entries()) {
+            if (index === 3) items.push({ selectable: false, text: '' });
+            items.push({ text: entry.text, value: entry.key,
+                ...(lootabc ? {} : { key: entry.key }),
+                groupAccelerator: lootabc ? ['i', 'e'].includes(entry.key) ? '' : entry.key : entry.alias });
+        }
+        const result = await showMultiSelectWindow({
+            title: 'What do you want to look at:', omitHeadings: true,
+            pickOne: true, pageLocalKeys: true,
+            sections: [{ items }],
+        });
+        choice = result[0] ?? '';
+        await restoreHelpMap();
+    }
+    if (choice === 'y') choice = '/';
+    const listKind = 'mM'.includes(choice) && choice ? 'monsters'
+        : 'oO'.includes(choice) && choice ? 'objects'
+            : 'tT'.includes(choice) && choice ? 'traps'
+                : 'eE'.includes(choice) && choice ? 'engravings' : null;
+    if (listKind) {
+        await showLookList(listKind, choice === choice.toLowerCase(),
+            () => wizardPositionDescription(game.u.ux, game.u.uy));
+        game.context.move = 0;
+        return;
+    }
     if (choice === '/') {
         await doFarlook(false);
         return;
@@ -4866,6 +4989,12 @@ async function showEncyclopediaInformation(name: string): Promise<void> {
     if (!entries.length) await pline("You don't have any information on those things.");
 }
 
+async function doversion(): Promise<void> {
+    if (game.iflags.menu_requested) await doextversion();
+    else await pline(NATIVE_VERSION);
+    game.context.move = 0;
+}
+
 // C pager.c:dohelp().
 async function dohelp(): Promise<void> {
     const entries = [
@@ -4877,18 +5006,18 @@ async function dohelp(): Promise<void> {
         { key: 'f', text: 'Info on what a given key does.' },
         { key: 'g', text: 'List of game options.' },
         { key: 'h', text: 'Longer explanation of game options.' },
-        { key: 'i', text: "Using the '#optionsfull' or 'm O' command to set options." },
+        { key: 'i', text: `Using the ${setOptionsCommand()} command to set options.` },
         { key: 'j', text: 'Full list of keyboard commands.' },
         { key: 'k', text: 'List of extended commands.' },
         { key: 'l', text: 'List menu control keys.' },
         { key: 'm', text: "Description of NetHack's command line." },
         { key: 'n', text: 'The NetHack license.' },
         { key: 'o', text: 'Support information.' },
-        { key: 'p', text: 'List of wizard-mode commands.' },
+        ...(game.flags.debug ? [{ key: 'p', text: 'List of wizard-mode commands.' }] : []),
     ];
     const validKeys = [
         27, 32, 10, 13,
-        ...'abcdefghijklmnop'.split('').map(char => char.charCodeAt(0)),
+        ...entries.map(entry => entry.key.charCodeAt(0)),
     ];
     const key = await showChoiceWindow({
         title: 'Select one item:',
@@ -4896,9 +5025,19 @@ async function dohelp(): Promise<void> {
         validKeys,
     });
     await restoreHelpMap();
-    if (String.fromCharCode(key) === 'e') {
-        await dowhatis();
-        return;
+    const choice = String.fromCharCode(key);
+    if (choice === 'a') await doextversion();
+    else if (choice === 'e') await dowhatis();
+    else if (choice === 'f') await whatdoes();
+    else if (choice === 'j') await keyBindingsHelp();
+    else if (choice === 'k') await extendedCommandsHelp();
+    else if (choice === 'l') await menuControlsHelp();
+    else if (choice === 'o') await contactHelp();
+    else {
+        const file = new Map([['b', 'help'], ['c', 'hh'], ['d', 'history'],
+            ['h', 'opthelp'], ['i', 'optmenu'], ['m', 'usagehlp'],
+            ['n', 'license'], ['p', 'wizhelp']]).get(choice);
+        if (file) await displayHelpFile(file);
     }
     game.context.move = 0;
 }
@@ -5515,30 +5654,31 @@ async function doclose(): Promise<void> {
         game.context.move = 0;
         return;
     }
-    const key = await readDirectionKey();
-    const direction = promptedDirectionKey(key, game.commandBindings);
-    if (!isMovementKey(direction)) {
-        const quitDirection = [27, 32, 10, 13].includes(key);
-        if (!quitDirection && game.flags?.cmdassist !== false) {
-            await showTextPages([directionAssistPage()], {
-                validKeys: [27, 32, 10, 13],
-            });
-            game._pending_message = '';
-            await restoreCommandMap();
-        } else if (!quitDirection) {
-            await pline('What a strange direction!');
-        }
+    const direction = await promptDirection();
+    if (!direction) {
         game.context.move = 0;
         return;
     }
 
-    const x = game.u.ux + DIR_DX[direction];
-    const y = game.u.uy + DIR_DY[direction];
+    const x = game.u.ux + direction.dx;
+    const y = game.u.uy + direction.dy;
+    if (x === game.u.ux && y === game.u.uy && !heroPassesWalls(game)) {
+        await pline('You are in the way!');
+        game.context.move = 1;
+        return;
+    }
+    if (!isok(x, y)) {
+        await pline(`You ${heroIsBlind(game) ? 'feel' : 'see'} no door there.`);
+        game.context.move = 0;
+        return;
+    }
     const loc = game.level?.at(x, y);
     if (await stumbleOnDoorMimic(x, y)) {
         game.context.move = 1;
         return;
     }
+    game.context.move = game.u.confused || game.u.confusionTurns
+        || game.u.stunned || game.u.stunnedTurns ? 1 : 0;
     if (loc?.typ !== DOOR) await pline('You see no door there.');
     else if (loc.doormask === D_NODOOR)
         await pline('This doorway has no door.');
@@ -5553,7 +5693,6 @@ async function doclose(): Promise<void> {
         game.context.move = 1;
         return;
     }
-    game.context.move = 0;
 }
 
 // C refs: lock.c doopen(); cmd.c get_adjacent_loc()/getdir().  Direction
@@ -5565,35 +5704,30 @@ async function doopen(): Promise<void> {
         game.context.move = 0;
         return;
     }
-    const key = await readDirectionKey();
-    const direction = promptedDirectionKey(key, game.commandBindings);
-    if (!isMovementKey(direction)) {
-        const quitDirection = [27, 32, 10, 13].includes(key);
-        if (!quitDirection && game.flags?.cmdassist !== false) {
-            await showTextPages([directionAssistPage()], {
-                validKeys: [27, 32, 10, 13],
-            });
-            game._pending_message = '';
-            await restoreCommandMap();
-        } else if (!quitDirection) {
-            await pline('What a strange direction!');
-        }
-        // lock.c:doopen_indir() uses cmd.c:get_adjacent_loc(), whose caller
-        // projection always follows a failed getdir() with Never_mind.
+    const direction = await promptDirection();
+    if (!direction) {
         await pline('Never mind.');
         game.context.move = 0;
         return;
     }
 
+    const x = game.u.ux + direction.dx;
+    const y = game.u.uy + direction.dy;
+    if (!isok(x, y)) {
+        game.context.move = 0;
+        return;
+    }
+    const loc = game.level?.at(x, y);
+    if (x === game.u.ux && y === game.u.uy
+        && (direction.dz > 0 || loc?.typ !== DOOR || !(loc.doormask & (D_CLOSED | D_LOCKED)))) {
+        await doloot();
+        return;
+    }
     if (game.u.utrap && game.u.utraptype === TT_PIT) {
         await pline("You can't reach over the edge of the pit.");
         game.context.move = 0;
         return;
     }
-
-    const x = game.u.ux + DIR_DX[direction];
-    const y = game.u.uy + DIR_DY[direction];
-    const loc = game.level?.at(x, y);
     if (await stumbleOnDoorMimic(x, y)) {
         game.context.move = 1;
         return;

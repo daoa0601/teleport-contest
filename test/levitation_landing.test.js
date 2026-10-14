@@ -270,7 +270,7 @@ void test('a controlled teleport escape lands where the hero chooses', async (t)
     game.level.requireAt(10, 10).typ = POOL;
     const gem = await floorObject(DIAMOND, 16, 10);
     game.u.levitationTurns = 5;
-    game.u.teleporting = true;
+    grantIntrinsicProperty('teleportation', 'outside');
     game.u.teleportControl = true;
     // teleport at will needs a seasoned hero with spell energy
     game.u.ulevel = 30;

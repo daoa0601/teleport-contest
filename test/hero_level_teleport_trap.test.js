@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { moveloop_core } from '../js/allmain.js';
+import { rhack } from '../js/cmd.js';
+import { finishScheduledLevelChange } from '../js/level_change.js';
 import { wearHeroArmor } from '../js/armor.js';
 import { DUST, LEVEL_TELEP, NO_MINVENT } from '../js/const.js';
 import { flush_screen, newsym, plineWithContinuation } from '../js/display.js';
@@ -165,12 +167,10 @@ void test('fuzzer level teleport to the current level preserves trap feedback', 
     const { source } = freshConnectedLevels({ destinationDepth: 1 });
     requirePlayingGame(game);
     game.iflags.debug_fuzzer = true;
-    game._moveloopStarted = true;
-    game.u.umovement = 12;
     const trap = addTrap(source, LEVEL_TELEP, 11, 10);
-    const input = resetInputState();
-    input.feed('l');
-    await moveloop_core();
+    // Choose the action directly; enabled fuzzing ignores keyboard input.
+    await rhack('l'.charCodeAt(0));
+    await finishScheduledLevelChange();
     await flush_screen(1);
     assert.equal(game.level, source, 'the hero stays on the departure level');
     assert.equal(game.u.ux, 11);

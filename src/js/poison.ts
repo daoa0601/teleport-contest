@@ -18,6 +18,7 @@ import { nameToMonster } from './mondata.js';
 import { MONSTER_FLAGS2, MONSTER_GENO } from './monster_data.js';
 import { definiteName } from './objnam.js';
 import { withIndefiniteArticle } from './object_grammar.js';
+import { formatFeltMessage } from './hero_speech.js';
 import { d, rn2, rnd } from './rng.js';
 import {
     encumbranceLabel, encumbranceMessage, nearCapacity,
@@ -67,12 +68,13 @@ export function poisonAttributeMessage(
 ): string {
     const punctuation = exclaim ? '!' : '.';
     if (attribute === A_STR && currentAttribute(A_STR, state) === 125)
-        return `You feel innately weaker${punctuation}`;
+        return formatFeltMessage(`innately weaker${punctuation}`, state);
     if (attribute === A_CON && currentAttribute(A_CON, state) === 25)
-        return `You feel sick inside${punctuation}`;
+        return formatFeltMessage(`sick inside${punctuation}`, state);
     const message = POISON_EFFECT[attribute];
     if (!message) throw new RangeError(`Unknown poisoned attribute ${attribute}.`);
-    return message.replace(/!$/u, punctuation);
+    const text = message.replace(/!$/u, punctuation);
+    return text.startsWith('You feel ') ? formatFeltMessage(text.slice(9), state) : text;
 }
 
 function adjustedDamageAfterMaxHpLoss(
