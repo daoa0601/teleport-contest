@@ -969,6 +969,10 @@ function prepareTimedCommand(binding) {
         game._occupation = { key: 'command', text, binding };
     }
 }
+async function redrawCommand() {
+    await restoreCommandMap();
+    game.context.move = 0;
+}
 async function performWaitCommand(force = game.iflags.menu_requested) {
     if (!await donull(force, !!game.multi))
         return;
@@ -3131,6 +3135,8 @@ const EXTENDED_COMMAND_HANDLERS = new Map([
     ['genocided', doGenocided],
     ['terrain', doTerrainOverview],
     ['retravel', dotravelTarget],
+    ['redraw', redrawCommand],
+    ['optionsfull', () => doOptions(!game.iflags.menu_requested)],
     ['version', doextversion],
     ['quit', doquit],
     ['twoweapon', dotwoweapon],

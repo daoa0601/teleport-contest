@@ -130,7 +130,10 @@ export async function showExtendedCommandList(): Promise<void> {
         else if (action === ':') {
             const phrase = await getLine('Extended command list search phrase:', (_ch, key) => key >= 32);
             search = phrase?.trim().replace(/\s+/g, ' ') ?? '';
-        } else return;
+        } else {
+            game.context.move = 0;
+            return;
+        }
     }
 }
 
