@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { LAVAPOOL, POOL, W_AMUL } from '../js/const.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { initializePet } from '../js/dog.js';
+import { setMonsterGivenName } from '../js/monster_given_name.js';
 import { flush_screen } from '../js/display.js';
 import { resetInputState } from '../js/input.js';
 import { resolveMonsterLiquid } from '../js/mon.js';
@@ -11,6 +12,32 @@ import { AMULET_OF_LIFE_SAVING, POT_HEALING } from '../js/object_data.js';
 import { knownObject } from './support/game-objects.js';
 import { createMonsterAt, createSaddledSteed, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+void test('lava describes a named water elemental by its body rather than its given name', async () => {
+    const level = freshObjectRoom();
+    requirePlayingGame(game);
+    const elemental = await createMonsterAt('water elemental', 12, 10);
+    setMonsterGivenName(elemental, 'Droplet');
+    level.requireAt(12, 10).typ = LAVAPOOL;
+    const messages = [];
+    await resolveMonsterLiquid(elemental, game, {
+        finishDeath: finishMonsterLiquidDeath,
+        announce: async (message) => messages.push(message),
+    });
+    assert.equal(messages[0], 'Droplet boils away.');
+});
+void test('a drowning invisible monster does not reveal its species', async () => {
+    const level = freshObjectRoom();
+    requirePlayingGame(game);
+    const monster = await createMonsterAt('giant', 12, 10);
+    monster.minvis = true;
+    level.requireAt(12, 10).typ = POOL;
+    const messages = [];
+    await resolveMonsterLiquid(monster, game, {
+        finishDeath: finishMonsterLiquidDeath,
+        announce: async (message) => messages.push(message),
+    });
+    assert.equal(messages[0], 'It drowns.');
+});
 for (const lava of [false, true]) {
     void test(`an unseen pet lost to ${lava ? 'lava' : 'drowning'} gives the native sad feeling`, async () => {
         const level = freshObjectRoom();

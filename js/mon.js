@@ -11,6 +11,8 @@ import { preventMonsterDeath } from './mondeath.js';
 import { splitMonster } from './monster_clone.js';
 import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL, monsterYoungerForm, } from './monster_data.js';
 import { changeMonsterForm } from './monster_polymorph.js';
+import { monsterName } from './monster_name.js';
+import { monsterFireDescription } from './monster_fire_description.js';
 import { monsterHasFireResistance } from './monster_resistance.js';
 import { EGG } from './object_data.js';
 import { OBJECT_TIMER_KIND, objectsInTimerGraph, stopObjectTimer, } from './object_timers.js';
@@ -20,7 +22,7 @@ import { monsterTeleportRestricted } from './teleport_rules.js';
 import { fireDamageChain } from './fire_damage.js';
 import { waterDamageChain } from './trap.js';
 import { cansee } from './vision.js';
-import { AD_COLD, AD_ELEC, AD_FIRE } from './monster_attack_types.js';
+import { AD_COLD, AD_ELEC, AD_FIRE, AT_NONE } from './monster_attack_types.js';
 import { adjustMonsterSpeed, monsterSpeedMessage } from './monster_speed.js';
 import { monsterSentenceSubject } from './monster_sound.js';
 const M1_SWIM = 0x00000002;
@@ -175,9 +177,6 @@ export function monsterLavaReaction(monster, state = game) {
     const fireResistant = monsterHasFireResistance(monster);
     return { kind: fireResistant ? 'scorch' : 'burn' };
 }
-function monsterLiquidName(monster) {
-    return monster?.name || MONSTER_NAME[monster?.mnum] || 'monster';
-}
 async function recoverMonsterFromLiquid(monster, state, { announce, random, rollOne, }) {
     monster.mhp = 0;
     return preventMonsterDeath(monster, {
@@ -235,11 +234,11 @@ export async function resolveMonsterLiquid(monster, state = game, { announce = a
             random, rollDice,
         });
         if (reaction.kind === 'rust') {
+            if (state === game && cansee(x, y))
+                await announce(`${monsterName(monster, { state, capitalized: true })} rusts.`);
             monster.mhp = (monster.mhp ?? 1) - reaction.damage;
             if (monster.mhpmax > reaction.damage)
                 monster.mhpmax -= reaction.damage;
-            if (state === game && cansee(x, y))
-                await announce(`The ${monsterLiquidName(monster)} rusts.`);
             if (monster.mhp <= 0) {
                 const recovery = await recoverMonsterFromLiquid(monster, state, {
                     announce, random, rollOne,
@@ -264,8 +263,8 @@ export async function resolveMonsterLiquid(monster, state = game, { announce = a
             }
             if (state === game && cansee(x, y))
                 await announce(monsterMoving
-                    ? `The ${monsterLiquidName(monster)} drowns.`
-                    : `You drown the ${monsterLiquidName(monster)}.`);
+                    ? `${monsterName(monster, { state, capitalized: true })} drowns.`
+                    : `You drown ${monsterName(monster, { state })}.`);
             monster.mhp = 0;
             const recovery = await recoverMonsterFromLiquid(monster, state, {
                 announce, random, rollOne,
@@ -309,18 +308,16 @@ export async function resolveMonsterLiquid(monster, state = game, { announce = a
                 if (state === game && cansee(x, y)) {
                     const verb = monster.mhp <= 0
                         ? 'surrenders to the fire' : 'burns slightly';
-                    await announce(`The ${monsterLiquidName(monster)} ${verb}.`);
+                    await announce(`${monsterName(monster, { state, capitalized: true })} ${verb}.`);
                 }
             }
             else {
                 monster.mhp = 0;
                 if (state === game && cansee(x, y)) {
-                    const name = monsterLiquidName(monster);
-                    const verb = ['water elemental', 'fog cloud', 'steam vortex']
-                        .includes(name) ? 'boils away'
-                        : ['ice vortex', 'glass golem'].includes(name)
-                            ? 'melts away' : 'burns to a crisp';
-                    await announce(`The ${name} ${verb}.`);
+                    const heat = monsterFireDescription(monster, AT_NONE);
+                    const verb = heat === 'boiling' ? 'boils away'
+                        : heat === 'melting' ? 'melts away' : 'burns to a crisp';
+                    await announce(`${monsterName(monster, { state, capitalized: true })} ${verb}.`);
                 }
             }
             if (monster.mhp <= 0) {
