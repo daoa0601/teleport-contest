@@ -58,6 +58,8 @@ export interface InterfaceFlags {
     debug_fuzzer?: boolean;
     debug_hunger?: boolean;
     getdir_click?: number;
+    remember_getpos?: boolean;
+    getloc_travelmode?: boolean;
     in_lava_effects?: number;
     menu_requested?: boolean;
     menu_headings?: { attr: number; color: number };

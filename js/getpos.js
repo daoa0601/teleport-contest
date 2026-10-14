@@ -11,6 +11,9 @@ import { CmapSymbol, GlyphOffset } from './glyph_numbers.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import { NO_COLOR } from './terminal.js';
 import { cansee } from './vision.js';
+import { NHW_MENU, PICK_ONE } from './const.js';
+import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu } from './tty_menu.js';
+import { rememberCommandKey, takeRepeatCommand } from './command_repeat.js';
 // defsym.h S_goodpos: the dollar sign doubles as the default getpos key
 // which toggles valid-position marking, so the mark glyph shares it.
 const GOODPOS_CH = '$';
@@ -324,6 +327,27 @@ function matchesGetposCycle(kind, x, y) {
         'water', 'molten lava', 'wall of lava', 'floor of a room',
         'dark part of a room', 'corridor', 'lit corridor'].includes(terrain);
 }
+// C getpos.c:getpos_menu(GLOC_INTERESTING), with GFILTER_VIEW for travel.
+export async function selectTravelMenuPosition(describe) {
+    const hero = game.u;
+    const spots = gatherValidLocations((x, y) => (x !== hero.ux || y !== hero.uy)
+        && cansee(x, y) && matchesGetposCycle('all', x, y));
+    if (!spots.length) {
+        await pline('You cannot see anything interesting.');
+        return null;
+    }
+    const window = tty_create_nhwindow(NHW_MENU);
+    await tty_start_menu(window);
+    for (const spot of spots) {
+        const description = await describe(spot.x, spot.y);
+        if (description)
+            tty_add_menu(window, { identifier: spot, text: description });
+    }
+    tty_end_menu(window, 'Pick an interesting thing in view for travel destination');
+    const result = await tty_select_menu(window, PICK_ONE);
+    await tty_destroy_nhwindow(window);
+    return result.selections[0]?.identifier ?? null;
+}
 export async function selectMapPosition({ start, prompt, goal, describe, afterPaint = null, isValidLocation = null, highlightHero = true, preserveMap = false, force = true, }) {
     const cursor = { ...start };
     const savedDirection = { dx: game.u.dx, dy: game.u.dy, dz: game.u.dz };
@@ -370,7 +394,12 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
             if (afterPaint)
                 await afterPaint(cursor, firstPaint);
             firstPaint = false;
-            let key = (await readchar('position')) & 255;
+            const queued = takeRepeatCommand();
+            if (queued && queued.kind !== 'key')
+                return null;
+            let key = queued ? queued.key : (await readchar('position')) & 255;
+            if (!queued && game.iflags.remember_getpos)
+                rememberCommandKey(key);
             let fast = false;
             if (key === game.commandBindings.keyForCommand('run')
                 || key === game.commandBindings.keyForCommand('rush')) {

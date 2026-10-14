@@ -110,6 +110,7 @@ import { nextObjectId } from './ident.js';
 import { clearCommandKeys, nhgetch, queueCommandKeys, takeCommandKey } from './input.js';
 import { readCommandInput } from './command_input.js';
 import { clearRepeatCommand, rememberCommand, takeRepeatCommand } from './command_repeat.js';
+import { selectTravelMenuPosition } from './getpos.js';
 import { showKeyBindings, whatDoesCommand } from './command_help.js';
 import { availableExtendedCommands, completeExtendedCommand, extendedCommandMenu, showExtendedCommandList } from './extended_commands.js';
 import { chooseInventoryObject, compactInventoryLetters, inventoryLetterOrder, promptInventoryObject, reassignInventoryLetters, } from './inventory_prompt.js';
@@ -3217,6 +3218,7 @@ const EXTENDED_COMMAND_HANDLERS = new Map([
     ['vanquished', doVanquished],
     ['genocided', doGenocided],
     ['terrain', doTerrainOverview],
+    ['retravel', dotravelTarget],
     ['version', doextversion],
     ['quit', doquit],
     ['twoweapon', dotwoweapon],
@@ -4770,23 +4772,27 @@ function verboseFarlookDescription(x, y, description) {
 // window own distinct input boundaries; after the tutorial, getpos retains
 // its cursor and accepts terrain-symbol cycling before one of the pick keys.
 async function dotravel() {
-    const firstUse = shouldShowGetposTip();
+    game.iflags.getloc_travelmode = true;
+    const firstUse = !game.iflags.menu_requested && shouldShowGetposTip();
     if (firstUse) {
         await pline('Where do you want to travel to?');
         await showGetposTip();
     }
-    const cursor = await selectMapPosition({
-        start: game._travelTarget
-            ? { ...game._travelTarget } : { x: game.u.ux, y: game.u.uy },
-        prompt: firstUse
-            ? "(For instructions type a '?')  Move cursor to the desired destination:"
-            : game.flags?.verbose
-                ? "Where do you want to travel to?  (For instructions type a '?')"
-                : 'Where do you want to travel to?',
-        goal: 'the desired destination',
-        describe: travelPositionDescription,
-    });
+    const cursor = game.iflags.menu_requested
+        ? await selectTravelMenuPosition(travelPositionDescription)
+        : await selectMapPosition({
+            start: game._travelTarget
+                ? { ...game._travelTarget } : { x: game.u.ux, y: game.u.uy },
+            prompt: firstUse
+                ? "(For instructions type a '?')  Move cursor to the desired destination:"
+                : game.flags?.verbose
+                    ? "Where do you want to travel to?  (For instructions type a '?')"
+                    : 'Where do you want to travel to?',
+            goal: 'the desired destination',
+            describe: travelPositionDescription,
+        });
     if (!cursor) {
+        game.iflags.getloc_travelmode = false;
         game.context.move = 0;
         return;
     }
@@ -4795,13 +4801,26 @@ async function dotravel() {
     // Silent travel can retain that row; a new attack must replace rather than
     // append to "staircase down".
     game._pending_message = '';
-    if (cursor.x === game.u.ux && cursor.y === game.u.uy) {
+    game._travelTarget = { x: cursor.x, y: cursor.y };
+    await dotravelTarget();
+}
+// C cmd.c:dotravel_target(). Keyboard travel and retravel share the first
+// movement transaction, including the time spent on an unreachable target.
+async function dotravelTarget() {
+    const target = game._travelTarget;
+    if (!target || !isok(target.x, target.y)) {
+        await pline('No travel destination set.');
+        game.context.move = 0;
+        return;
+    }
+    if (target.x === game.u.ux && target.y === game.u.uy) {
         game._travelTarget = null;
         await pline('You are already here.');
         game.context.move = 0;
         return;
     }
-    const state = startTravel(cursor.x, cursor.y);
+    game.iflags.getloc_travelmode = false;
+    const state = startTravel(target.x, target.y);
     const direction = findTravelDirection(state);
     if (!direction) {
         stopRun();
