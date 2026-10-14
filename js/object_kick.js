@@ -10,7 +10,7 @@ import { splitObjectStack } from './object_stack.js';
 import { game } from './gstate.js';
 import { hitMonsterWithKickedObject } from './hero_ranged_attack.js';
 import { breakFloorObject } from './object_breakage.js';
-import { KICKING_BOOTS, OBJECT_NAMES } from './object_data.js';
+import { BOULDER, KICKING_BOOTS, OBJECT_NAMES } from './object_data.js';
 import { rn2, rnd } from './rng.js';
 import { flyKickedObject } from './thrown_object.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
@@ -79,6 +79,9 @@ function kickRange(object, state, dx, dy, martial, rollOne) {
 export async function kickFloorObject(x, y, { state = game, dx = state.u?.dx ?? 0, dy = state.u?.dy ?? 0, publish = plineWithContinuation, random = rn2, rollOne = rnd, captureFlight = null, } = {}) {
     const object = state.level?.objects?.[x]?.[y]?.[0];
     if (!object)
+        return false;
+    if (object.otyp === BOULDER || object === state.uball || object === state.u.uball
+        || object === state.uchain || object === state.u.uchain)
         return false;
     const trap = trapAt(state, x, y);
     const passesWalls = state.u.passesWalls;

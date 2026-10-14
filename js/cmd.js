@@ -1936,11 +1936,16 @@ async function dokick() {
     // impact-centered wake after its attribute exercise draws.
     wakeMonstersNear(game.u.ux, game.u.uy, (game.u?.ulevel ?? 1) * 20);
     wipeHeroEngraving(2);
+    unmap_invisible(x, y);
+    if ((isPoolAt(x, y) || location?.typ === LAVAWALL) !== !!game.u.uinwater) {
+        await plineWithContinuation(`You splash some ${displayLiquidName(isPoolAt(x, y) ? 'water' : 'lava')} around.`);
+        game.context.move = 1;
+        return;
+    }
     const kickedObject = game.level?.objects?.[x]?.[y]?.[0];
-    const ball = game.uball || game.u?.uball;
-    const chain = game.uchain || game.u?.uchain;
-    if (kickedObject && kickedObject.otyp !== BOULDER
-        && kickedObject !== ball && kickedObject !== chain) {
+    const hasBoulder = game.level?.objects?.[x]?.[y]?.some(object => object.otyp === BOULDER);
+    if (kickedObject && (!game.u.levitating || Is_airlevel(game.u.uz)
+        || Is_waterlevel(game.u.uz) || hasBoulder)) {
         const trap = game.level?.traps?.find(candidate => candidate.tx === x && candidate.ty === y);
         if (trap?.ttyp === STATUE_TRAP) {
             await activateStatueTrapAt(x, y);
@@ -1958,6 +1963,8 @@ async function dokick() {
             return;
         if (!kicked)
             await kickOuch(x, y, killerObjectName(kickedObject));
+        else if (Is_airlevel(game.u.uz))
+            await recoilFromKick(1);
         game.context.move = 1;
         return;
     }
