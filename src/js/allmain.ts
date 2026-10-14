@@ -3725,6 +3725,10 @@ export async function moveloop_core() {
             if (!somebodyCanMove && g.u.umovement < NORMAL_SPEED) {
                 await advanceWorldTurn();
                 if (g.program_state?.gameover) return;
+                // Native encumber_msg() starts each further world round.
+                // Timers can remove weight while the hero is still too slow
+                // to act; acknowledge that relief before monsters act again.
+                if (g.u.umovement < NORMAL_SPEED) await reportHeroEncumbrance(g);
             }
             if (g.u.umovement < NORMAL_SPEED) continue;
             if (!g._interruptedMultiActionDebt) break;
