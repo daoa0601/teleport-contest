@@ -229,6 +229,7 @@ import {
 } from './object_timers.js';
 import { setMonsterApparentHeroPosition } from './monster_perception.js';
 import { objectWeight } from './weight.js';
+import { createOrcRaid, deliverOrcRaidLoot } from './orc_raid.js';
 import {
     curseObjectState, objectResistsDestruction,
 } from './object_state.js';
@@ -2762,6 +2763,7 @@ async function makemon(
     // terrain, trap, and corpse checks also apply during level creation.
     if (game.in_mklev && [19, 45, 57].includes(classIndex))
         await hideMonsterUnder(monster);
+    if (allowMonsterInventory) await deliverOrcRaidLoot(monster, game);
     return finishMonsterBirth(monster, mmflags);
 }
 
@@ -7482,6 +7484,9 @@ async function generateSpecialAndFixup(
     if (Is_stronghold(game.u.uz) || game.urole?.key === 'priest' && In_quest(game.u.uz))
         level.flags.graveyard = true;
     if (active?.baalzFixup) await fixupBaalz(active);
+    if (active.file === 'minetn-1.lua'
+        && game.dungeons[game.u.uz?.dnum ?? 0]?.dname === 'The Gnomish Mines')
+        await createOrcRaid();
     // sp_lev.c explicitly places deferred portals, stairs, and branches
     // before premap_detect(); otherwise their remembered glyphs retain the
     // underlying terrain even though the live level cell was updated.
