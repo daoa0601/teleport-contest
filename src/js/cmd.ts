@@ -5046,6 +5046,12 @@ async function removeWornItem(action: 'remove' | 'take off', itemAction = false)
         return;
     }
 
+    if (!((object.owornmask ?? 0) & (W_ARMOR | W_ACCESSORY))) {
+        await pline('You are not wearing that.');
+        game.context.move = 0;
+        return;
+    }
+
     const cloak = game.uarmc;
     const suit = game.uarm;
     if (object === game.uskin || object === suit && cloak

@@ -5,7 +5,8 @@ import { rhack } from '../js/cmd.js';
 import { PARANOID_REMOVE } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { LEATHER_CLOAK, RING_MAIL, HELM_OF_OPPOSITE_ALIGNMENT } from '../js/object_data.js';
+import { DAGGER, LEATHER_CLOAK, RING_MAIL, HELM_OF_OPPOSITE_ALIGNMENT } from '../js/object_data.js';
+import { setPrimaryWeapon } from '../js/weapon_slots.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 
@@ -35,6 +36,24 @@ void test('paranoid removal asks for the single armor piece instead of taking it
     assert.equal(game.uarmc, cloak);
     assert.equal(game.context.move, 0);
 });
+
+for (const command of ['T', 'R']) {
+    void test(`${command} rejects a wielded dagger without taking a turn`, async () => {
+        freshObjectRoom({ flags: { paranoia_bits: PARANOID_REMOVE } });
+        const cloak = await addInventoryObject(LEATHER_CLOAK);
+        wearHeroArmor(cloak);
+        const dagger = await addInventoryObject(DAGGER);
+        await setPrimaryWeapon(dagger);
+        resetInputState().feed(`${dagger.invlet} `);
+
+        await rhack(command.charCodeAt(0));
+
+        assert.equal(game._pending_message, 'You are not wearing that.');
+        assert.equal(game.context.move, 0);
+        assert.equal(game.uwep, dagger);
+        assert.equal(game.uarmc, cloak);
+    });
+}
 
 for (const command of ['W', 'P']) {
     void test(`${command} refuses an opposite-alignment helm in the quest and loses divine protection`, async () => {
