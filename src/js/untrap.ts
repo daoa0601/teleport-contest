@@ -85,6 +85,7 @@ type TrapEntry = (trap: Trap) => TrapEntryResult | Promise<TrapEntryResult>;
 
 export interface UntrapOptions {
     state?: GameState;
+    container?: GameObject | null;
     force?: boolean;
     enterTrap?: TrapEntry | null;
     chooseDirection?: () => DirectionSelection | null | Promise<DirectionSelection | null>;
@@ -223,6 +224,7 @@ export async function doUntrap({
 
 export async function untrap({
     state = game,
+    container = null,
     force = false,
     enterTrap = null,
     chooseDirection = promptDirection,
@@ -236,6 +238,10 @@ export async function untrap({
 }: UntrapOptions = {}): Promise<boolean> {
     if (!force && heroHasMagicKey(state)) force = true;
 
+    if (container) {
+        await inspectBox(container, { state, force, ask, publish, random, rollOne, rollDice });
+        return true;
+    }
     const direction = await chooseDirection();
     if (!direction) {
         state._pending_message = '';

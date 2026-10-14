@@ -80,6 +80,7 @@ export interface ForceLockOccupation {
 }
 
 export interface PickLockOccupation {
+    magicKey?: boolean;
     key: 'pick-lock';
     text: string;
     remaining: number;

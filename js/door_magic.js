@@ -1,3 +1,4 @@
+import { resetPick } from './lock_context.js';
 import { requirePlayingGame } from './gstate.js';
 // C lock.c:doorlock()/obstructed(). Traversal owns wand discovery, billable
 // shop damage, drawbridge effects, and the decision to target a door.
@@ -146,8 +147,10 @@ export async function changeDoorByMagic(source, x, y, { state = game } = {}) {
         if (roomsAt(state.level, x, y, SHOPBASE).length)
             addShopDamage(x, y, 0, state);
     }
-    if (changed && state._occupation?.key === 'pick-lock' && state._occupation.door === door)
+    if (changed && state._occupation?.key === 'pick-lock' && state._occupation.door === door) {
         await stopHeroOccupation(state);
+        resetPick(state);
+    }
     return changed;
 }
 export async function doorObstructed(x, y, quietly, state) {

@@ -60,6 +60,8 @@ for (const command of ['o', 'l'] as const) {
 void test('a fatal explosion while picking a shop lock leaves the door locked and unbilled', async () => {
     const { level, door } = await fatalDoor(D_LOCKED);
     const tool = await knownObject(LOCK_PICK);
+    game.u.dx = 1;
+    game.u.dy = 0;
     game._occupation = { key: 'pick-lock', text: 'picking the lock', remaining: 51,
         usedtime: 0, door, x: 11, y: 10, tool, chance: 100 };
     pushKeys(' '.repeat(100));

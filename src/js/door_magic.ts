@@ -1,3 +1,4 @@
+import { resetPick } from './lock_context.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import { requirePlayingGame } from './gstate.js';
@@ -123,8 +124,10 @@ export async function changeDoorByMagic(source: GameObject, x: number, y: number
         await wakeMonstersNearWithMessages(x, y, loudness, state);
         if (roomsAt(state.level, x, y, SHOPBASE).length) addShopDamage(x, y, 0, state);
     }
-    if (changed && state._occupation?.key === 'pick-lock' && state._occupation.door === door)
+    if (changed && state._occupation?.key === 'pick-lock' && state._occupation.door === door) {
         await stopHeroOccupation(state);
+        resetPick(state);
+    }
     return changed;
 }
 
