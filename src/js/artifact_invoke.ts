@@ -287,9 +287,9 @@ async function invokeHealing(
     const curesBlindness = (hero.blindTurns ?? 0) > cream;
     const permanent = permanentBlind(state) || hasIntrinsicProperty('blinded', null, state);
     const treatsIllness = heroIsSick(state) || heroIsSliming(state);
-    // The pinned helper emits this initial feedback separately from its
-    // timeout check, even when permanent blindness cannot be cured.
-    if (healing !== 0 || treatsIllness || heroIsBlinded(state) && (curesBlindness || permanent))
+    // The first native check compares boolean Blinded (0 or 1) with cream;
+    // the second compares the blindness timeout.
+    if (healing !== 0 || treatsIllness || Number(heroIsBlinded(state)) > cream)
         await publish('You feel better.');
     const helps = healing !== 0 || treatsIllness || curesBlindness;
 
