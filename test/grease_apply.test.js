@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import { W_ARM, W_ARMC, W_ARMG, W_ARMU } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { CAN_OF_GREASE, CLOAK_OF_PROTECTION, DAGGER, GAUNTLETS_OF_POWER, LEATHER_ARMOR, OBJECT_NAMES, POT_HEALING } from '../js/object_data.js';
+import { MONSTER_NAME } from '../js/monster_data.js';
+import { CAN_OF_GREASE, CLOAK_OF_PROTECTION, CORPSE, DAGGER, GAUNTLETS_OF_POWER, LEATHER_ARMOR, OBJECT_NAMES, POT_HEALING } from '../js/object_data.js';
 import { applyInventoryObject, runExtendedCommand } from './support/commands.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshPlayableRoom } from './support/playable-room.js';
@@ -126,6 +127,23 @@ for (const blind of [false, true]) {
         assert.equal(game._pending_message, `You cover your ${blind ? 'potion' : 'pink potion'} with a thick layer of grease.`);
         assert.equal(potion.dknown, !blind);
         assert.equal(potion.greased, true);
+        assert.equal(grease.spe, 2);
+        assert.equal(game.context.move, 1);
+    });
+}
+for (const blind of [false, true]) {
+    void test(`greasing a corpse leaves beatitude unknown to a ${blind ? 'blind' : 'sighted'} priest`, async () => {
+        freshPlayableRoom({ role: 'priest', hero: { permaBlind: blind } });
+        const grease = await addInventoryObject(CAN_OF_GREASE, { spe: 3 });
+        const corpse = await addInventoryObject(CORPSE, {
+            corpsenm: MONSTER_NAME.indexOf('newt'), blessed: true,
+            observed: false, bknown: false, dknown: false,
+        });
+        await runExtendedCommand('apply', `${grease.invlet}${corpse.invlet}`);
+        assert.equal(corpse.bknown, false, 'naming a grease target through cxname must not observe a corpse');
+        assert.equal(corpse.dknown, false);
+        assert.equal(corpse.greased, true);
+        assert.equal(game._pending_message, 'You cover your newt corpse with a thick layer of grease.');
         assert.equal(grease.spe, 2);
         assert.equal(game.context.move, 1);
     });

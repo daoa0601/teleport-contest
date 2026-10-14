@@ -7,6 +7,7 @@ import { game } from './gstate.js';
 import { dropInventoryObjectAtHero } from './hero_drop.js';
 import { compactInventoryLetters, inventoryLetterOrder, promptInventoryObject } from './inventory_prompt.js';
 import { consumeObjectCharge } from './object_charge.js';
+import { CORPSE } from './object_data.js';
 import { makePlural } from './object_grammar.js';
 import { objectName, observeObjectForNaming, ownedObjectName } from './objnam.js';
 import { objectQuantity } from './object_stack.js';
@@ -59,7 +60,8 @@ export async function useGrease(can) {
     await consumeObjectCharge(can);
     const old = game.u.glibTurns ?? 0;
     if (target) {
-        observeObjectForNaming(target);
+        if (target.otyp !== CORPSE)
+            observeObjectForNaming(target);
         await pline(`You cover ${ownedObjectName(target, game, { capitalized: false })} with a thick layer of grease.`);
         target.greased = true;
         if (can.cursed) {
