@@ -1,13 +1,12 @@
 // C pickup.c:able_to_loot(): floor-container admission for loot and tip.
-import { HOLE, TRAPDOOR, is_pit } from './const.js';
-import { floorReachProblem } from './floor_reach.js';
+import { is_pit } from './const.js';
+import { floorReachProblem, heroCanReachFloor } from './floor_reach.js';
 import { game, requireGameLevel } from './gstate.js';
 import { displayLiquidName, plineWithContinuation as pline } from './display.js';
 import { heroHasNoLimbs } from './polyself.js';
 import { heroHasFreeHand } from './weapon_type.js';
 import { heroHandName } from './body_parts.js';
-import { MONSTER_NAME } from './monster_data.js';
-import { heroIsBlind } from './senses.js';
+import { monsterName } from './monster_name.js';
 import { surfaceName } from './terrain_name.js';
 import { isLavaAt, isPoolAt } from './terrain_properties.js';
 export async function ableToLoot(x, y, looting) {
@@ -16,12 +15,11 @@ export async function ableToLoot(x, y, looting) {
     const reach = floorReachProblem(game, { checkPit: !!trap && is_pit(trap.ttyp) });
     if (reach) {
         if (reach === 'riding' && game.u.usteed) {
-            await pline(`You aren't skilled enough to reach from your ${MONSTER_NAME[game.u.usteed.mnum]}.`);
+            await pline(`You aren't skilled enough to reach from ${monsterName(game.u.usteed, { article: 'your' })}.`);
         }
         else {
-            const surface = trap?.ttyp === HOLE ? 'edge of the hole'
-                : trap?.ttyp === TRAPDOOR ? 'trap door' : surfaceName(x, y);
-            await pline(heroIsBlind(game) ? 'You cannot reach anything here.' : `You cannot reach the ${surface}.`);
+            const surface = heroCanReachFloor(game) ? 'bottom of the pit' : surfaceName(x, y);
+            await pline(`You can't reach the ${surface}.`);
         }
         return false;
     }
