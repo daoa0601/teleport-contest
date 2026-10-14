@@ -29,7 +29,7 @@ import {
     OBJECT_TIMER_KIND, objectsInTimerGraph, stopObjectTimer,
 } from './object_timers.js';
 import { d, rn2, rnd } from './rng.js';
-import { randomMonsterRelocation } from './teleport.js';
+import { dealWithMonsterOvercrowding, randomMonsterRelocation } from './teleport.js';
 import { monsterTeleportRestricted } from './teleport_rules.js';
 import { fireDamageChain } from './fire_damage.js';
 import { waterDamageChain } from './trap.js';
@@ -363,6 +363,8 @@ export async function resolveMonsterLiquid<DeathResult = MonsterLiquidDeathResul
             const relocation = await randomMonsterRelocation(monster, {
                 state, calls, random, rollOne, flags: RLOC_NOMSG,
             });
+            if (!relocation) await dealWithMonsterOvercrowding(monster, state);
+            if (state.program_state.gameover) return { heroDied: true };
             if (relocation && state === game) {
                 newsym(x, y);
                 newsym(monster.mx, monster.my);
@@ -431,6 +433,8 @@ export async function resolveMonsterLiquid<DeathResult = MonsterLiquidDeathResul
             const relocation = await randomMonsterRelocation(monster, {
                 state, calls, random, rollOne, flags: RLOC_MSG,
             });
+            if (!relocation) await dealWithMonsterOvercrowding(monster, state);
+            if (state.program_state.gameover) return { heroDied: true };
             if (relocation && state === game) {
                 newsym(x, y);
                 newsym(monster.mx, monster.my);

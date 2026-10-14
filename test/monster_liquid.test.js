@@ -24,6 +24,26 @@ void test('a drowning monster drops its potion into water only once', async () =
     assert.equal(potion.otyp, POT_HEALING);
     assert.equal(potion.odiluted, true);
 });
+for (const lava of [false, true]) {
+    void test(`a ${lava ? 'lava survivor' : 'life-saved drowning monster'} with nowhere safe to stand waits in limbo`, async () => {
+        const level = freshObjectRoom();
+        requirePlayingGame(game);
+        const monster = await createMonsterAt(lava ? 'fire ant' : 'giant', 12, 10);
+        if (!lava)
+            await equipMonsterObject(monster, await knownObject(AMULET_OF_LIFE_SAVING), W_AMUL);
+        for (let x = 7; x <= 16; x++)
+            for (let y = 6; y <= 14; y++)
+                level.requireAt(x, y).typ = lava ? LAVAPOOL : POOL;
+        resetInputState().feed(' '.repeat(20));
+        await resolveMonsterLiquid(monster, game, {
+            finishDeath: finishMonsterLiquidDeath,
+        });
+        assert.ok(monster.mhp > 0);
+        assert.equal(level.monsters.includes(monster), false);
+        assert.equal(game._migratingMonsters?.includes(monster), true);
+        assert.deepEqual(monster.migrationDestination, game.u.uz);
+    });
+}
 for (const property of ['flying', 'levitating']) {
     void test(`a ${property} rider keeps the steed and its equipment above lava`, async () => {
         const level = freshObjectRoom();
