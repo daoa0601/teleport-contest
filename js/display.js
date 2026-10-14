@@ -2227,10 +2227,11 @@ export function _statusLine2(refreshLoad = true) {
     const dungeonName = game.dungeons?.[u.uz?.dnum ?? 0]?.dname;
     const endgameLocation = endgameLevelName(u.uz)
         .replace(/^Plane of /, '');
-    const location = game._tutorialActive ? `Tutorial:${dungeonDepth(u.uz)}`
-        : dungeonName === 'The Quest' ? `Home ${u.uz?.dlevel ?? 1}`
-            : In_endgame(u.uz) ? endgameLocation
-                : `Dlvl:${dungeonDepth(u.uz)}`;
+    const location = Is_knox_level(u.uz) ? dungeonName ?? ''
+        : game._tutorialActive ? `Tutorial:${dungeonDepth(u.uz)}`
+            : dungeonName === 'The Quest' ? `Home ${u.uz?.dlevel ?? 1}`
+                : In_endgame(u.uz) ? endgameLocation
+                    : `Dlvl:${dungeonDepth(u.uz)}`;
     const polymorphed = (u.mtimedone ?? 0) > 0;
     // botl.c bounds the printed numbers without changing combat state.
     const currentHp = (polymorphed ? u.mh : u.uhp) ?? 0;
