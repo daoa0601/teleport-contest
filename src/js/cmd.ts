@@ -202,7 +202,9 @@ import { continueTinOpening, useTinOpener } from './tin.js';
 import { PLAYABLE_INSTRUMENTS, playInstrument } from './music.js';
 import { dodiscovered } from './o_init.js';
 import { doattributes, doconduct } from './insight.js';
-import { doextversion } from './extversion.js';
+import { extendedCommandsHelp, keyBindingsHelp } from './command_help.js';
+import { contactHelp, displayHelpFile, menuControlsHelp, whatdoes } from './pager_help.js';
+import { doextversion, NATIVE_VERSION } from './extversion.js';
 import { dosearch, mapLevel } from './detect.js';
 import { detectMonsters } from './magic_detection.js';
 import { abusePetAfterHeroHit } from './dog.js';
@@ -1438,6 +1440,10 @@ async function runCommandHandler(binding: CommandBinding, {
         await doapply();
     } else if (ch === ':') {
         await dolook();
+    } else if (ch === 'V') {
+        await doversion();
+    } else if (ch === '&') {
+        await whatdoes();
     } else if (ch === '?') {
         await dohelp();
     } else if (ch === '#') {
@@ -3149,6 +3155,12 @@ function completeExtendedCommand(prefix: string): string | null {
 
 const EXTENDED_COMMAND_HANDLERS = new Map<string, () => Promise<unknown>>([
     ['whatis', dowhatis],
+    ['help', dohelp],
+    ['?', extendedCommandsHelp],
+    ['glance', doFarlook],
+    ['whatdoes', whatdoes],
+    ['history', () => displayHelpFile('history')],
+    ['versionshort', doversion],
     ['takeoffall', takeOffAll],
     ['conduct', doconduct],
     ['chronicle', doChronicle],
@@ -4764,6 +4776,12 @@ async function showEncyclopediaInformation(name: string): Promise<void> {
     if (!entries.length) await pline("You don't have any information on those things.");
 }
 
+async function doversion(): Promise<void> {
+    if (game.iflags.menu_requested) await doextversion();
+    else await pline(NATIVE_VERSION);
+    game.context.move = 0;
+}
+
 // C pager.c:dohelp().
 async function dohelp(): Promise<void> {
     const entries = [
@@ -4782,11 +4800,11 @@ async function dohelp(): Promise<void> {
         { key: 'm', text: "Description of NetHack's command line." },
         { key: 'n', text: 'The NetHack license.' },
         { key: 'o', text: 'Support information.' },
-        { key: 'p', text: 'List of wizard-mode commands.' },
+        ...(game.flags.debug ? [{ key: 'p', text: 'List of wizard-mode commands.' }] : []),
     ];
     const validKeys = [
         27, 32, 10, 13,
-        ...'abcdefghijklmnop'.split('').map(char => char.charCodeAt(0)),
+        ...entries.map(entry => entry.key.charCodeAt(0)),
     ];
     const key = await showChoiceWindow({
         title: 'Select one item:',
@@ -4794,9 +4812,19 @@ async function dohelp(): Promise<void> {
         validKeys,
     });
     await restoreHelpMap();
-    if (String.fromCharCode(key) === 'e') {
-        await dowhatis();
-        return;
+    const choice = String.fromCharCode(key);
+    if (choice === 'a') await doextversion();
+    else if (choice === 'e') await dowhatis();
+    else if (choice === 'f') await whatdoes();
+    else if (choice === 'j') await keyBindingsHelp();
+    else if (choice === 'k') await extendedCommandsHelp();
+    else if (choice === 'l') await menuControlsHelp();
+    else if (choice === 'o') await contactHelp();
+    else {
+        const file = new Map([['b', 'help'], ['c', 'hh'], ['d', 'history'],
+            ['h', 'opthelp'], ['i', 'optmenu'], ['m', 'usagehlp'],
+            ['n', 'license'], ['p', 'wizhelp']]).get(choice);
+        if (file) await displayHelpFile(file);
     }
     game.context.move = 0;
 }
