@@ -53,6 +53,21 @@ for (const [request, count] of [['20 arrows', 20], ['7 wax candles', 7]] as cons
     });
 }
 
+for (const [request, count] of [
+    ['0 3 arrows', 3],
+    ['0 0 blessed 3 arrows', 3],
+    ['0 arrows', 2],
+    ['0 arrow', 1],
+] as const) {
+    void test(`a zero prefix leaves the wish count unset in "${request}"`, async () => {
+        freshObjectRoom();
+
+        const object = await wishObject(request);
+
+        assert.equal(object.quan, count);
+    });
+}
+
 void test('an excessive ammunition wish keeps the normal generated stack', async () => {
     freshObjectRoom({ gameplaySeed: 6104 });
     requirePlayingGame(game);

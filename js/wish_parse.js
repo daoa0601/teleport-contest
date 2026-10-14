@@ -38,8 +38,8 @@ export function parseWishText(text) {
         else if (word === 'the') {
             // The definite article does not set a count in C.
         }
-        else if (/^\d+$/.test(word) && parsed.explicitCount === null) {
-            parsed.count = Number(word) || 1;
+        else if (/^\d+$/.test(word) && !parsed.explicitCount) {
+            parsed.count = Number(word);
             parsed.explicitCount = parsed.count;
         }
         else if (/^[+-]\d*$/.test(word)) {
@@ -125,6 +125,8 @@ export function parseWishText(text) {
             break;
         remaining = rest;
     }
+    if (!parsed.count)
+        parsed.count = 1;
     parsed.heavy = intensity > 0;
     const prefixes = original.slice(0, original.length - remaining.length);
     remaining = parseWishCharges(remaining, parsed);
