@@ -1922,14 +1922,13 @@ async function kickLiveMonster(monster, x, y) {
 async function dokick() {
     if (!await admitHeroKick())
         return;
-    const key = await readDirectionKey();
-    const direction = promptedDirectionKey(key, game.commandBindings);
-    if (!isMovementKey(direction)) {
+    const direction = await promptDirection();
+    if (!direction || (!direction.dx && !direction.dy)) {
         game.context.move = 0;
         return;
     }
-    game.u.dx = DIR_DX[direction];
-    game.u.dy = DIR_DY[direction];
+    game.u.dx = direction.dx;
+    game.u.dy = direction.dy;
     const x = game.u.ux + game.u.dx;
     const y = game.u.uy + game.u.dy;
     // C dokick() records gk.kickedloc for every valid directed kick before
