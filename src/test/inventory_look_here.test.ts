@@ -4,6 +4,8 @@ import { rhack } from '../js/cmd.js';
 import { ALTAR, ICE, PIT, POOL } from '../js/const.js';
 import { displayLiquidName } from '../js/display.js';
 import { initRng } from '../js/rng.js';
+import { trapName } from '../js/trap_name.js';
+import { withIndefiniteArticle } from '../js/object_grammar.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { DAGGER } from '../js/object_data.js';
@@ -62,5 +64,34 @@ void test('each look at hallucinated ice chooses one liquid description', async 
         await rhack(':'.charCodeAt(0));
         assert.ok(game._pending_message.includes(`solid frozen ${liquid} here.`), game._pending_message);
     }
+});
+
+void test('looking at a seen trap on hallucinated ice chooses its name before the liquid', async t => {
+    const level = freshObjectRoom({ hero: { hallucinationTurns: 10 } });
+    level.requireAt(game.u.ux, game.u.uy).typ = ICE;
+    addTrap(level, PIT, game.u.ux, game.u.uy, { tseen: true });
+    initRng(71);
+    const trap = withIndefiniteArticle(trapName(PIT));
+    const liquid = displayLiquidName('water');
+    initRng(71);
+    const input = resetInputState();
+    const previousDisplay = input.display;
+    const messages: string[] = [];
+    input.display = {
+        async readKey() {
+            assert.equal(messages.length, 0, 'Looking here should page at most one description');
+            messages.push(game._pending_message);
+            return 32;
+        },
+    };
+    t.after(() => { input.display = previousDisplay; });
+
+    await rhack(':'.charCodeAt(0));
+
+    messages.push(game._pending_message);
+    const descriptions = messages.join('\n');
+    assert.ok(descriptions.includes(`There is ${trap} here.`), descriptions);
+    assert.ok(descriptions.includes(`solid frozen ${liquid} here.`), descriptions);
+    assert.equal(game.context.move, 0);
 });
 

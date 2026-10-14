@@ -829,14 +829,14 @@ export async function dolook() {
     const underwater = game.underwater || game.u.uinwater;
     const objects = isLavaAt(x, y) || isPoolAt(x, y) && !underwater ? [] : level.objects[x]?.[y] || [];
     const blind = heroIsBlind();
-    const featureName = dungeonFeatureAt(x, y);
-    let feature = dungeonFeatureSentence(featureName);
     const trap = level.traps.find(trap => trap.tx === x && trap.ty === y);
     const region = visibleRegionAt(game, x, y);
     if (region || trap?.tseen) {
         const cloud = region ? `a ${region.damage ? 'poison gas' : 'vapor'} cloud` : '';
         await plineWithContinuation(`There is ${cloud}${region && trap?.tseen ? ' and ' : ''}${trap?.tseen ? withIndefiniteArticle(trapName(trap.ttyp)) : ''} here.`);
     }
+    const featureName = dungeonFeatureAt(x, y);
+    let feature = dungeonFeatureSentence(featureName);
     if (blind) {
         const drift = Is_airlevel(game.u.uz) || Is_waterlevel(game.u.uz);
         const surface = surfaceName(x, y);
