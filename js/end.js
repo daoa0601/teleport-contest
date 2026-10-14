@@ -622,14 +622,25 @@ function scoreIdentity() {
         align,
     };
 }
-function deathCauseRecord(killer, deathVerb = 'died') {
+// topten.c:formatkiller() selects the cause prefix from the death type.
+// The final summary's verb describes the hero and is a separate choice.
+const DEATH_CAUSE_PREFIXES = [
+    'killed by ', 'choked on ', 'poisoned by ', 'died of ',
+    'drowned in ', 'burned by ', 'dissolved in ', 'crushed to death by ',
+    'petrified by ', 'turned to slime by ', 'killed by ',
+    '', '', '', '', '',
+];
+function deathCauseRecord(killer, deathVerb = 'died', deathType = null) {
     const raw = String(killer || 'unknown cause');
-    if (deathVerb !== 'died')
+    const prefix = deathType === null ? undefined : DEATH_CAUSE_PREFIXES[deathType];
+    if (prefix === '')
+        return raw;
+    if (prefix === undefined && deathVerb !== 'died')
         return `${deathVerb} by ${raw}`;
     if (/^(?:an?|the) /i.test(raw)
         || /^(?:Mr|Mrs|Ms|Miss|Sir|Lady|Lord)\.?\s/.test(raw))
-        return `killed by ${raw}`;
-    return `killed by ${withIndefiniteArticle(raw)}`;
+        return `${prefix ?? 'killed by '}${raw}`;
+    return `${prefix ?? 'killed by '}${withIndefiniteArticle(raw)}`;
 }
 // C topten.c:formatkiller() sanitizes killer names for every caller, including rip.c.
 function sanitizeDeathCause(cause) {
@@ -1160,10 +1171,10 @@ export async function finishOrdinaryDeath(options) {
     await completeOrdinaryDeath(options);
 }
 async function completeOrdinaryDeath({ killer, possessionAnswer = null, deathVerb = 'died', deathCause = null, deathType = null, }) {
+    deathCause ||= deathCauseRecord(killer, deathVerb, deathType);
     // topten.c:formatkiller() uses "poisoned by" for the cause; only
     // end.c:ends[POISONING] uses "were poisoned" in the final summary.
     if (deathType === POISONING) {
-        deathCause ||= deathCauseRecord(killer).replace(/^killed by /, 'poisoned by ');
         deathVerb = 'were poisoned';
     }
     game._deathKiller = killer;

@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { performMonsterHeroAttack } from '../js/allmain.js';
+import { STONING, TURNED_SLIME } from '../js/const.js';
 import { finishOrdinaryDeath } from '../js/end.js';
 import { game, requireGameDisplay, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
@@ -15,6 +16,27 @@ import { memoryStorage } from './support/memory-storage.js';
 import { installPagerInput } from './support/pager-input.js';
 function visibleText() {
     return requireGameDisplay().grid.map(row => row.map(cell => cell.ch).join('')).join('\n');
+}
+for (const death of [
+    { type: STONING, killer: 'cockatrice', verb: 'turned to stone', cause: 'petrified by a cockatrice', epitaph: /petrified by a/ },
+    { type: TURNED_SLIME, killer: 'green slime', verb: 'turned into slime', cause: 'turned to slime by a green slime', epitaph: /turned to slime/ },
+]) {
+    void test(`a ${death.killer} death uses its native cause on the tombstone and score entry`, async () => {
+        freshObjectRoom({ flags: { bones: false, disclose: '-i -a -v -c -o', tombstone: true } });
+        game.storage = memoryStorage();
+        game.u.urexp = 100;
+        game.iflags.toptenwin = false;
+        const input = resetInputState();
+        let tombstone = '';
+        input.beforeRead = () => {
+            if (visibleText().includes('REST'))
+                tombstone = visibleText();
+        };
+        installPagerInput(input, { expected: /revenant|Goodbye|points|You were/i, limit: 8 });
+        await finishOrdinaryDeath({ killer: death.killer, deathVerb: death.verb, deathType: death.type });
+        assert.match(tombstone, death.epitaph);
+        assert.equal(loadScoreRecords()[0]?.death, death.cause);
+    });
 }
 void test('an invisible monster keeps its invisibility in the tombstone and score entry', async () => {
     freshObjectRoom({ flags: { bones: false, disclose: '-i -a -v -c -o', tombstone: true } });
