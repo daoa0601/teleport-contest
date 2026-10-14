@@ -1,5 +1,5 @@
 // C wizcmds.c:wiz_panic()/wiz_fuzzer(). Both confirmations take no time.
-import { FUZZER_IMPOSSIBLE_CONTINUE, FUZZER_IMPOSSIBLE_PANIC } from './diagnostics.js';
+import { FUZZER_IMPOSSIBLE_CONTINUE, FUZZER_IMPOSSIBLE_PANIC, panic } from './diagnostics.js';
 import { plineWithContinuation } from './display.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { paranoidQuery, promptYesNo } from './query.js';
@@ -10,7 +10,7 @@ export async function wizPanic() {
         game.u.uen = game.u.uenmax = 1000;
     }
     else if (await paranoidQuery(true, 'Do you want to call panic() and end your game?')) {
-        await plineWithContinuation('Crash testing is unavailable in this runtime.');
+        await panic('Crash test (#panic).');
     }
     game.context.move = 0;
 }

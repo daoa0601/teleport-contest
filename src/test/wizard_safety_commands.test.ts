@@ -1,9 +1,25 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { game, requirePlayingGame } from '../js/gstate.js';
+import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { nhgetch, resetInputState } from '../js/input.js';
+import { PanicTermination } from '../js/panic_termination.js';
 import { runExtendedCommand } from './support/commands.js';
 import { freshGameplayRoom } from './support/playable-room.js';
+import { installPagerInput } from './support/pager-input.js';
+
+void test('accepting #panic terminates the command through the panic handler', async () => {
+    freshGameplayRoom({ flags: { debug: true } });
+    const input = resetInputState();
+    installPagerInput(input, { expected: /Oops/, limit: 2 });
+
+    await assert.rejects(runExtendedCommand('panic', 'yes\n'),
+        new PanicTermination('Crash test (#panic).'));
+
+    assert.equal(game.program_state.panicking, 1);
+    assert.equal(game.program_state.windows_exited, true);
+    const text = requireGameDisplay().grid.map(row => row.map(cell => cell.ch).join('')).join('\n');
+    assert.match(text, /Crash test \(#panic\)\./);
+});
 
 for (const [answer, mode] of [['n', 2], ['y', 1]] as const) {
     void test(`accepting #debugfuzzer asks about impossible() and selects mode ${mode}`, async () => {
