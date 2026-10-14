@@ -5028,25 +5028,6 @@ async function beginHeroAttackSlot(sequence, slot, state, random, rollOne, rollD
         // earlier hit line through tty.
         const armorProtection = magicNegation(state.u, state);
         const negated = !!monster.mcan || recordRandom(random, calls, 10) < 3 * armorProtection;
-        let drainedObject = null;
-        if (!negated) {
-            const target = selectHeroDisenchantmentTarget(state, random, calls);
-            if (await drainObjectEnchantment(target, {
-                state,
-                random: (range) => recordRandom(random, calls, range),
-            }))
-                drainedObject = target;
-        }
-        const quantity = drainedObject?.quantity ?? drainedObject?.quan ?? 1;
-        const drainTypeKnown = drainedObject &&
-            (drainedObject.typeKnown || state?._knownObjectTypes?.has(drainedObject.otyp));
-        const drainObjectClass = drainedObject?.oclass ?? drainedObject?.class;
-        const drainObjectName = drainedObject && drainTypeKnown && drainObjectClass === RING_CLASS
-            ? `ring of ${OBJECT_NAMES[drainedObject.otyp]}`
-            : drainedObject?.name || OBJECT_NAMES[drainedObject?.otyp ?? -1] || 'item';
-        const drainMessage = drainedObject
-            ? `Your ${drainObjectName} ${quantity === 1 ? 'seems' : 'seem'} less effective.`
-            : null;
         return {
             kind: 'hero-attack',
             roll,
@@ -5056,8 +5037,7 @@ async function beginHeroAttackSlot(sequence, slot, state, random, rollOne, rollD
             attackType,
             damageType,
             effect: negated ? 'cancelled-enchantment-natural' : 'enchantment-natural',
-            drainedObject,
-            drainMessage,
+            deferredEnchantment: !negated,
             deferredPostHit: true,
             oldFormMnum,
         };
@@ -5282,6 +5262,25 @@ export function resumeDeferredHeroElectricSpecial(action, state, random = rn2) {
     attack.deferredPostHit = true;
     attack.deferredElectricNegation = false;
     return action;
+}
+// C mhitm_ad_ench(): hitmsg() completes before armor selection and draining.
+export async function resumeDeferredHeroEnchantment(action, state, random = rn2) {
+    const attack = action.movement.heroAttackSequence?.current;
+    if (attack?.kind !== 'hero-attack' || !attack.deferredEnchantment)
+        return;
+    attack.deferredEnchantment = false;
+    const target = selectHeroDisenchantmentTarget(state, random, action.calls);
+    if (!await drainObjectEnchantment(target, { state,
+        random: range => recordRandom(random, action.calls, range),
+    }) || !target)
+        return;
+    attack.drainedObject = target;
+    const quantity = target.quan;
+    const known = target.typeKnown || state._knownObjectTypes?.has(target.otyp);
+    const name = known && target.oclass === RING_CLASS
+        ? `ring of ${OBJECT_NAMES[target.otyp]}`
+        : target.name || OBJECT_NAMES[target.otyp] || 'item';
+    attack.drainMessage = `Your ${name} ${quantity === 1 ? 'seems' : 'seem'} less effective.`;
 }
 // Resume mhitm_ad_drli() after hitmsg().  A selected level loss and its
 // message precede shared knockback and the touch's ordinary HP damage.
