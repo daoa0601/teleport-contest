@@ -1005,7 +1005,7 @@ void test('controlled lycanthrope decline completes an adjacent map throw',
         assert.equal(game.u.umonnum, 331);
         input.feed(' ');
         await input.waitUntilBlocked();
-        assert.equal(game._pending_message, 'The potion of water shatters!');
+        assert.equal(game._pending_message, 'A potion of unholy water shatters!');
         input.feed(' '); // The broken bottle's prose precedes the vapor question.
         await input.waitUntilBlocked();
         assert.match(game._pending_message, /change into a wolf/);

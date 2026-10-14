@@ -11,6 +11,7 @@ import { canSeeMonster, plineWithContinuation, randomDisplayMonsterName, shielde
 import { finishHeroDeath } from './end.js';
 import { game } from './gstate.js';
 import { healMonster } from './mon.js';
+import { observeObjectForNaming, ownedObjectAction } from './objnam.js';
 import { erodeArmor, erodeObject } from './object_erosion.js';
 import { MONSTER_ATTACKS, MONSTER_NAME, MONSTER_RESISTS, monsterTypeName, requireMonsterData, } from './monster_data.js';
 import { splitMonster } from './monster_clone.js';
@@ -419,11 +420,8 @@ export async function applyMonsterPassiveToObject(defender, object, { carried = 
         if (carried)
             state._armorClassDirty = true;
         if (carried && (object.known || object.typeKnown || object.oclass === 3)) {
-            const name = object.name || OBJECT_NAMES[object.otyp];
-            if (name == null)
-                throw new Error(`unnamed object type ${object.otyp}`);
-            const verb = objectIsPlural(object, name) ? 'seem' : 'seems';
-            await publish(`Your ${name} ${verb} less effective.`);
+            observeObjectForNaming(object, { state });
+            await publish(`${ownedObjectAction(object, 'seem', state)} less effective.`);
         }
         return;
     }
@@ -454,9 +452,5 @@ export async function applyMonsterPassiveToObject(defender, object, { carried = 
             ? { x: defender.ux, y: defender.uy }
             : { x: defender.mx, y: defender.my },
     });
-}
-function objectIsPlural(object, name) {
-    return (object.quan ?? object.quantity ?? 1) !== 1
-        || /(?:boots|shoes|gloves|gauntlets|lenses|scales)$/u.test(name);
 }
 //# sourceMappingURL=monster_passive.js.map
