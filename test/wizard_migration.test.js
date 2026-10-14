@@ -44,4 +44,16 @@ void test('a negative #migratemons count sends existing monsters to the next lev
     }
     assert.equal(game.context.move, 0);
 });
+void test('a negative #migratemons count starts with the most recently created monster', async () => {
+    const level = freshObjectRoom({ flags: { debug: true } });
+    requirePlayingGame(game);
+    game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 12 })];
+    const oldest = await createMonsterAt('lichen', 11, 10);
+    const newest = await createMonsterAt('lichen', 12, 10);
+    installPagerInput(resetInputState(), { expected: /migrating/, limit: 4 });
+    await runExtendedCommand('migratemons', ' -1\n');
+    assert.ok(level.monsters.includes(oldest), 'The older monster must stay on the current level');
+    assert.ok(game._migratingMonsters?.includes(newest), 'The newest monster must migrate first');
+    assert.equal(game.context.move, 0);
+});
 //# sourceMappingURL=wizard_migration.test.js.map

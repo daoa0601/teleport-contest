@@ -27,7 +27,8 @@ export async function wizMigrateMonsters(): Promise<void> {
     const count = Number.parseInt(input, 10) || 0;
     const limit = Math.min(Math.abs(count), (COLNO - 1) * ROWNO);
     for (let index = 0; index < limit; index++) {
-        const monster = count < 0 ? game.level.monsters[0]
+        // makemon appends here; native fmon prepends each new monster.
+        const monster = count < 0 ? game.level.monsters.at(-1)
             : await makemonAt(rndmonstAdj(), 0, 0, MM_NOMSG);
         if (monster) await migrateMonsterOffLevel(monster, game, { dst: destination }, { kind: 'level-migration' });
     }
