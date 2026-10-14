@@ -877,7 +877,6 @@ async function useContainerActions(container: GameObject, {
     const takeOut = [keys.takeOut, keys.both, keys.reverse].includes(action);
     const putIn = [keys.putIn, keys.both, keys.reverse].includes(action);
     const putInFirst = action === keys.reverse;
-    let stopped = false;
 
     if (takeOut && !putInFirst) {
         if (!container.contents.length) {
@@ -888,11 +887,10 @@ async function useContainerActions(container: GameObject, {
             const transfer = await takeSelectedObjects(container, resetJustPicked);
             if (transfer.spentTime) spentTime = true;
             tookOut = transfer.results.some(result => result.moved);
-            stopped = transfer.results.some(result => result.stop);
         }
     }
 
-    if (!stopped && (putIn || action === keys.stash)) {
+    if (!game.program_state.gameover && (putIn || action === keys.stash)) {
         const hasOtherInventory = (game.inventory || [])
             .some(object => object !== container);
         if (!hasOtherInventory) {
@@ -904,14 +902,13 @@ async function useContainerActions(container: GameObject, {
             );
             const results = transfer.results;
             if (transfer.spentTime) spentTime = true;
-            stopped = results.some(result => result.stop);
             if (results.some(result => result.destroyedContainer)) {
                 return { spentTime, container: null };
             }
         }
     }
 
-    if (!stopped && takeOut && putInFirst) {
+    if (!game.program_state.gameover && takeOut && putInFirst) {
         if (!container.contents.length) {
             if (!container.cknown) spentTime = true;
             container.cknown = true;
