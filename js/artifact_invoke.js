@@ -1,6 +1,5 @@
 // Artifact powers used by the #invoke command.
 // C ref: artifact.c arti_invoke() and its invoke_* helpers.
-import { heroIsHallucinating } from './senses.js';
 import { I_SPECIAL, In_endgame, In_hell, In_quest, P_EXPERT, TIMEOUT, Upolyd, W_ARTI, isok } from './const.js';
 import { newsym, pline } from './display.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
@@ -13,8 +12,8 @@ import { ACID_VENOM, ARROW, BLINDING_VENOM, SPE_CONE_OF_COLD, SPE_FIREBALL } fro
 import { captureLevitationState, hasInvokedProperty, hasIntrinsicProperty, propertyHasOtherSources, refreshProperty, setInvokedProperty, } from './properties.js';
 import { floatHeroDown, floatHeroUp } from './terrain_movement.js';
 import { applyHeroLocationEffects } from './cmd.js';
-import { d, rnd, rnz } from './rng.js';
-import { heroIsBlind, heroIsBlinded, permanentBlind } from './senses.js';
+import { d, rnd, rn2, rnz } from './rng.js';
+import { heroIsBlind, heroIsBlinded, heroIsHallucinating, permanentBlind } from './senses.js';
 import { clearHeroSliming, heroIsSliming } from './slime.js';
 import { untrap } from './untrap.js';
 import { objectWeight } from './weight.js';
@@ -23,7 +22,7 @@ import { doBlindingRay } from './flash.js';
 import { heroSpecies } from './hero_species.js';
 import { lightDamage, lightRoom } from './light.js';
 import { MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL } from './monster_data.js';
-import { definiteName, objectCombatName, objectName, objectNameIsPlural } from './objnam.js';
+import { definiteName, objectCombatName, objectNameIsPlural } from './objnam.js';
 import { flashBurn, makeBlinded } from './sight_change.js';
 import { promptDirection } from './tty_prompts.js';
 import { castSpell } from './spell.js';
@@ -37,7 +36,6 @@ import { showPagedPickOneMenu } from './windows.js';
 import { migrateMonsterToLevel } from './monster_migration.js';
 import { teleportMonsterByHero } from './monster_magic_response.js';
 import { couldsee } from './vision.js';
-import { rn2 } from './rng.js';
 import { throwOrdinaryObject } from './ordinary_throw.js';
 import { resolveSwallowedEggPieOrVenomThrow } from './swallowed_throw.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
@@ -125,7 +123,7 @@ async function beginInvocation(object, artifact, state, publish, rollDice, scale
     return true;
 }
 async function ignoringHero(object, state, publish) {
-    const subject = definiteName(objectName(object, state), state);
+    const subject = definiteName(objectCombatName(object, { state }), state);
     await publish(`You feel that ${subject} ${objectNameIsPlural(object, state) ? 'are' : 'is'} ignoring you.`);
 }
 async function invokeProperty(object, artifact, state, publish, rollDice, scaledRandom) {
