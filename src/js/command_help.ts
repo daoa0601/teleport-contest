@@ -17,6 +17,16 @@ function keyText(key: number): string {
 
 export function describeCommandKey(key: number): string | null {
     const bindings = game.commandBindings;
+    // key2extcmddesc() probes movecmd() in walk, rush, then run mode.
+    // Each probe updates u.dz, even when the key is not a movement command.
+    for (const mode of [0, 2, 1]) {
+        const movement = bindings.movementForKey(key, mode);
+        game.u.dz = movement?.dz ?? 0;
+        if (!movement) continue;
+        game.u.dx = movement.dx;
+        game.u.dy = movement.dy;
+        if (!movement.dz) break;
+    }
     if (key >= 48 && key <= 57 && !bindings.numberPad)
         return 'start of, or continuation of, a count';
     if (bindings.numberPad) {

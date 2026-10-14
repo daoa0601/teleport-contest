@@ -46,3 +46,42 @@ void test('the full key list shows configured command keys', async () => {
     }
     assert.equal(game.context.move, 0);
 });
+
+for (const [key, dx, dy, dz] of [
+    ['l', 1, 0, 0],
+    ['U', 1, -1, 0],
+    ['\x08', -1, 0, 0],
+    ['<', 0, 0, -1],
+    ['>', 0, 0, 1],
+    ['~', -1, 1, 0],
+    ['3', -1, 1, 0],
+    ['!', 1, 0, 0],
+] as const) {
+    void test(`whatdoes updates the hero direction while describing ${JSON.stringify(key)}`, async () => {
+        const input = freshTurnRoom();
+        game.u.dx = -1;
+        game.u.dy = 1;
+        game.u.dz = -1;
+        game.commandBindings.bindKey('!'.charCodeAt(0), 'moveeast');
+        input.feed('&');
+        const action = rhack(0);
+        try {
+            await input.waitUntilBlocked();
+            while (game.nhDisplay?.grid[0]?.map(cell => cell.ch).join('').includes('--More--')) {
+                input.feed(' ');
+                await input.waitUntilBlocked();
+            }
+            input.feed(key);
+            await action;
+            assert.equal(game.u.dx, dx);
+            assert.equal(game.u.dy, dy);
+            assert.equal(game.u.dz, dz);
+            assert.equal(game.u.ux, 10, 'describing movement must not move the hero');
+            assert.equal(game.u.uy, 10);
+            assert.equal(game.context.move, 0);
+        } finally {
+            input.feed('\x1b');
+            await action;
+        }
+    });
+}
