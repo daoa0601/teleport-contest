@@ -35,7 +35,7 @@ export async function useGrease(can) {
     const letters = compactInventoryLetters(suggested.map(object => object.invlet).join(''));
     const selection = await promptInventoryObject(`What do you want to grease? [- ${letters} or ?*] `, inventory, {
         verb: 'grease', classify: greaseSuggestion, allowNone: true,
-        noneDescription: 'grease your fingers', allowMenu: true, allowGold: true, menuItems: suggested,
+        noneDescription: `your ${fingers(false)}`, allowMenu: true, allowGold: true, menuItems: suggested,
     });
     if (selection.cancelled)
         return false;

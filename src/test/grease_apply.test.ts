@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { W_ARM, W_ARMC, W_ARMG, W_ARMU } from '../js/const.js';
-import { game } from '../js/gstate.js';
+import { game, requireGameDisplay } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { CAN_OF_GREASE, CLOAK_OF_PROTECTION, CORPSE, DAGGER, GAUNTLETS_OF_POWER, LEATHER_ARMOR, OBJECT_NAMES, POT_HEALING } from '../js/object_data.js';
@@ -194,7 +194,7 @@ for (const bareHands of [false, true]) {
 
         await runExtendedCommand('apply', `${grease.invlet}${bareHands ? '-' : dagger.invlet}`);
 
-        assert.match(targetMenu, /grease your fingers/);
+        assert.match(targetMenu, /- - your fingers\s*\n/);
         assert.match(targetMenu, /dagger/);
         assert.equal(grease.spe, 2);
         assert.equal(game.context.move, 1);
@@ -202,3 +202,24 @@ for (const bareHands of [false, true]) {
         else assert.equal(dagger.greased, true);
     });
 }
+
+void test('the grease hands menu names fingers even when the hero wears gloves', async () => {
+    freshPlayableRoom({ flags: { force_invmenu: true } });
+    const grease = await addInventoryObject(CAN_OF_GREASE, { spe: 3 });
+    const gloves = await addInventoryObject(GAUNTLETS_OF_POWER, { owornmask: W_ARMG });
+    game.uarmg = game.u.uarmg = gloves;
+    let fingersChoice = '';
+    resetInputState().beforeRead = () => {
+        const rows = requireGameDisplay().grid.map(row => row.map(cell => cell.ch).join('').trim());
+        if (rows.includes('What do you want to grease?'))
+            fingersChoice = rows.find(row => row.startsWith('- - ')) ?? '';
+    };
+
+    await runExtendedCommand('apply', `${grease.invlet}-`);
+
+    assert.equal(fingersChoice, '- - your fingers');
+    assert.equal(grease.spe, 2);
+    assert.equal(game.u.glib, true);
+    assert.equal(game._pending_message, 'You coat your gauntlets with grease.');
+    assert.equal(game.context.move, 1);
+});
