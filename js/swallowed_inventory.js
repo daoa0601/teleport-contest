@@ -15,6 +15,7 @@ import { heroIsPolymorphed } from './polyself.js';
 import { heroSpecies } from './hero_species.js';
 import { heroIsPunished } from './ball.js';
 import { propertyIsActive } from './properties.js';
+import { visibleRegionAt } from './regions.js';
 import { withIndefiniteArticle } from './object_grammar.js';
 import { showInventoryWindow } from './windows.js';
 export async function lookInsideSwallower(monster) {
@@ -65,6 +66,9 @@ function swallowedHeroDescription() {
     const invisible = propertyIsActive('invisible', game)
         && (!heroIsBlind() || unblindTelepathyRange() >= 0 || heroDetectsMonsters());
     let description = `${invisible ? 'invisible ' : ''}${race}${monsterTypeName(heroSpecies(game), !!(heroIsPolymorphed(game) ? game.u.mfemale : game.flags.female))} called ${game.plname}`;
+    const region = visibleRegionAt(game, game.u.ux, game.u.uy);
+    if (region)
+        description += `, in a cloud of ${region.damage ? 'poison gas' : 'vapor'}`;
     if (heroIsPunished()) {
         const ball = game.uball || game.u.uball;
         description += `, chained to ${ball ? withIndefiniteArticle(simpleObjectName(ball)) : 'nothing?'}`;
