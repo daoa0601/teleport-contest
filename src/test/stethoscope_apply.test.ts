@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { CORR, DOOR, M_AP_OBJECT, SCORR, SDOOR } from '../js/const.js';
+import { CORR, DOOR, M_AP_OBJECT, PIT, SCORR, SDOOR } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
@@ -10,6 +10,7 @@ import { applyInventoryObject } from './support/commands.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshPlayableRoom } from './support/playable-room.js';
+import { addTrap } from './support/level-state.js';
 
 const hiddenFeatures: [number, number, string][] = [[SDOOR, DOOR, 'door'], [SCORR, CORR, 'passage']];
 for (const [hidden, revealed, noun] of hiddenFeatures) {
@@ -106,3 +107,15 @@ for (const identified of [false, true]) {
         assert.equal(game.context.move, 0);
     });
 }
+
+void test('a stethoscope at a seen pit edge cannot reach the bottom of the pit', async () => {
+    const level = freshPlayableRoom();
+    addTrap(level, PIT, game.u.ux, game.u.uy, { tseen: true });
+    const stethoscope = await addInventoryObject(STETHOSCOPE);
+
+    await applyInventoryObject(stethoscope, '>');
+
+    assert.equal(game._pending_message, "You can't reach the bottom of the pit.");
+    assert.equal(game.u.utrap ?? 0, 0);
+    assert.equal(game.context.move, 0);
+});

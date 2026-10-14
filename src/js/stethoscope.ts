@@ -67,7 +67,7 @@ export async function useStethoscope(object: GameObject): Promise<boolean> {
         if (hero.uinwater || game.underwater) await pline('You hear faint splashing.');
         else if (direction.dz < 0 || !heroCanReachFloor(game, { checkPit: true })) {
             const destination = direction.dz < 0 ? ceilingName(hero.ux, hero.uy)
-                : heroCanReachFloor(game, { checkPit: true }) ? 'bottom of the pit' : surfaceName(hero.ux, hero.uy);
+                : heroCanReachFloor(game) ? 'bottom of the pit' : surfaceName(hero.ux, hero.uy);
             await pline(`You can't reach the ${destination}.`);
         } else {
             const corpse = await diagnoseFloorObjects(hero.ux, hero.uy);
