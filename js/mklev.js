@@ -226,6 +226,7 @@ const PM_VAMPIRE_LEADER = 227;
 const PM_VLAD_THE_IMPALER = 228;
 const PM_ARCHAEOLOGIST = 331;
 const PM_WIZARD_OF_YENDOR = 285;
+const PM_CROESUS = MONSTER_NAME.indexOf('Croesus');
 const PM_DEATH = 311;
 const PM_PESTILENCE = 312;
 const PM_FAMINE = 313;
@@ -1950,6 +1951,8 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
     };
     if (allowMonsterInventory && mndx === PM_VLAD_THE_IMPALER)
         await mongets(CANDELABRUM_OF_INVOCATION);
+    if (allowMonsterInventory && mndx === PM_CROESUS)
+        await mongets(TWO_HANDED_SWORD);
     if (isQuestNemesis) {
         // makemon() gives MS_NEMESIS the Bell before its level-generation
         // sleep gate and normal weapon/inventory initialization.
