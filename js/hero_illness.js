@@ -13,6 +13,7 @@ import { definiteName } from './objnam.js';
 import { nameToMonster } from './mondata.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { currentHungerState, spendHeroNutrition } from './hunger.js';
+import { stopHeroOccupation } from './occupation.js';
 import { meltIce } from './ice.js';
 import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_SYMBOL, } from './monster_data.js';
 import { heroMonsterForm } from './polyself.js';
@@ -185,10 +186,6 @@ export async function vomitHero({ state = game, publish = pline, angerAltar = al
     }
     return { spewed: true, cannotVomit: false };
 }
-function stopCountedAction(state) {
-    if (state._occupation?.key === 'command')
-        state._occupation = null;
-}
 function vomitingMessage(state, nextTurns) {
     const hero = state.u;
     if (nextTurns === 14)
@@ -218,21 +215,27 @@ export async function advanceHeroVomiting({ state = game, publish = pline, rollD
     if (!heroIsVomiting(state))
         return { active: false, vomited: false };
     const nextTurns = Math.max(0, (hero.vomitingTurns ?? 0) - 1);
-    if (nextTurns === 9) {
-        await makeConfused((hero.confusionTurns ?? 0) + rollDice(2, 4), { state, talk: false });
-        stopCountedAction(state);
-    }
-    else if (nextTurns === 6) {
+    if (nextTurns === 6) {
         await makeStunned((hero.stunnedTurns ?? 0) + rollDice(2, 4), { state, talk: false });
-        state._occupation = null;
+        // stop_occupation finishes an already swallowed last bite before
+        // abandoning the meal, including that food's digestion effects.
+        await stopHeroOccupation(state, publish);
+        if (state.program_state.gameover)
+            return { active: false, vomited: false, turns: nextTurns, died: true };
+    }
+    if (nextTurns === 6 || nextTurns === 9) {
         await makeConfused((hero.confusionTurns ?? 0) + rollDice(2, 4), { state, talk: false });
+        if (state.multi > 0)
+            endVoluntaryMultiTurn(state);
     }
     const message = vomitingMessage(state, nextTurns);
     if (message)
         await publish(message);
     let vomited = false;
     if (nextTurns === 0) {
-        state._occupation = null;
+        await stopHeroOccupation(state, publish);
+        if (state.program_state.gameover)
+            return { active: false, vomited: false, turns: nextTurns, died: true };
         if (!heroCannotVomit(state)) {
             await spendHeroNutrition(20, { state });
             if (state.program_state.gameover)
