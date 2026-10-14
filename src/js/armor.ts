@@ -5,7 +5,7 @@ import { heroDetectsMonsters, heroIsBlind, heroIsHallucinating } from './senses.
 import { makeHallucinated } from './hero_mental_status.js';
 import { game, requireLiveGame } from './gstate.js';
 import { corpseName, killerObjectName, observeObjectForNaming,
-    simpleObjectNameWithArticle, simpleObjectName, objectName } from './objnam.js';
+    simpleObjectName, objectName } from './objnam.js';
 import { heroHandName } from './body_parts.js';
 import { makePlural } from './object_grammar.js';
 import { displayColorName, newsym, plineWithContinuation, see_monsters } from './display.js';
@@ -297,7 +297,9 @@ export async function removeHeroArmor(object: GameObject, state: GameState = gam
             learnObjectType(object.otyp, state);
             await plineWithContinuation(`You feel yourself slow down${state.u.fast ? ' a bit' : ''}.`);
         }
-        if (dragonArmorColor(object) === 'blue' && !state.u.veryFast && !cancelledDon)
+        // Armor_off() clears cancelled_don before dragon handling, so an
+        // interrupted blue suit still reports its speed loss.
+        if (dragonArmorColor(object) === 'blue' && !state.u.veryFast)
             await plineWithContinuation('You slow down.');
         if (!cancelledDon && (object.otyp === ELVEN_CLOAK || object.otyp === ELVEN_BOOTS))
             await toggleArmorStealth(object, false, state);
@@ -1037,7 +1039,7 @@ export async function stopDonning(stolenObject: GameObject | null = null, state:
         progress.delay = 0;
         state.multi = 0;
         if (object !== stolenObject) {
-            const name = simpleObjectNameWithArticle(object, state).replace(/^(?:a|an) /, '');
+            const name = simpleObjectName(object, state);
             await plineWithContinuation(`You stop taking off the ${name}.`);
         }
         return false;
@@ -1047,7 +1049,7 @@ export async function stopDonning(stolenObject: GameObject | null = null, state:
     state.multi = 0;
     if (puttingOn || delayed.object !== stolenObject) {
         await plineWithContinuation(
-            `You stop ${puttingOn ? 'putting on' : 'taking off'} your ${armorSimpleName(delayed.object, state)}.`);
+            `You stop ${puttingOn ? 'putting on' : 'taking off'} the ${simpleObjectName(delayed.object, state)}.`);
     }
     if (puttingOn)
         await removeHeroArmor(delayed.object, state, { cancelledDon: true });

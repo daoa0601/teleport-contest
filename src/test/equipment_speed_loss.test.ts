@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { moveloop_core } from '../js/allmain.js';
 import { rhack } from '../js/cmd.js';
+import { stopDonning } from '../js/armor.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { OBJECT_NAMES } from '../js/object_data.js';
@@ -44,6 +45,24 @@ void test('losing blue dragon armor announces the loss of its extra speed', asyn
 
     assert.equal(game.u.veryFast, false);
     assert.match(messages, /You slow down\./);
+});
+
+void test('interrupted blue dragon mail dressing uses the native item name and armor-off feedback', async () => {
+    freshObjectRoom();
+    const mail = await addInventoryObject(OBJECT_NAMES.indexOf('blue dragon scale mail'), { known: false });
+    const input = resetInputState();
+    const messages: string[] = [];
+    input.beforeRead = () => { messages.push(game._pending_message); };
+    input.feed(`${mail.invlet}                `);
+    await rhack('W'.charCodeAt(0));
+
+    await stopDonning();
+
+    assert.equal(game.uarm, null);
+    assert.equal(!!game.u.veryFast, false);
+    const feedback = [...messages, game._pending_message].join(' ');
+    assert.match(feedback, /You stop putting on the blue dragon scale mail\./);
+    assert.match(feedback, /You slow down\./);
 });
 
 async function dress(command: 'W' | 'T', object: GameObject): Promise<string> {
