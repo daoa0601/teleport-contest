@@ -2,20 +2,20 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { wearHeroArmor } from '../js/armor.js';
 import { rhack } from '../js/cmd.js';
-import { MM_NOGRP, MM_NOWAIT, NO_MINVENT } from '../js/const.js';
+import { MM_NOGRP, MM_NOWAIT, NO_MINVENT, Upolyd } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { pushKey, resetInputState } from '../js/input.js';
-import { initRng } from '../js/rng.js';
+import { setMonsterGivenName } from '../js/monster_given_name.js';
 import { IRON_SHOES, LEATHER_GLOVES } from '../js/object_data.js';
+import { initRng } from '../js/rng.js';
+import { heroIsBlind } from '../js/senses.js';
+import { vision_recalc } from '../js/vision.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';
+import { memoryStorage } from './support/memory-storage.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
-import { heroIsBlind } from '../js/senses.js';
-import { vision_recalc } from '../js/vision.js';
-import { memoryStorage } from './support/memory-storage.js';
-import { setMonsterGivenName } from '../js/monster_given_name.js';
 
 async function meleeRoom(form: string, defender: string) {
     freshObjectRoom({
@@ -174,3 +174,19 @@ for (const { defender, reason } of [
             'The lasting reason names the true species even when the visible message uses a given name');
     });
 }
+
+void test('a hero explosion announces waking a distant sleeper before ending the monster form', async () => {
+    await meleeRoom('flaming sphere', 'hill giant');
+    const sleeper = await createMonsterAt('kobold', 16, 10, MM_NOGRP | MM_NOWAIT | NO_MINVENT);
+    sleeper.msleeping = 1;
+    initRng(41n);
+
+    const messages = await attackEast(/explode|Boom|hill giant|kobold|human|normal|return/, true);
+
+    assert.match(messages, /The kobold wakes up\./);
+    assert.equal(sleeper.msleeping, 0);
+    assert.equal(Upolyd(game.u), false);
+    const wake = messages.indexOf('The kobold wakes up.');
+    const restoration = messages.indexOf('You return to');
+    assert.ok(restoration > wake, 'The explosion wakes its neighbors before rehumanizing the hero');
+});
