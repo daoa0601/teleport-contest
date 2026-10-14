@@ -74,24 +74,11 @@ const alternateSpellings = [
     ['luck stone', objects.LUCKSTONE], ['load stone', objects.LOADSTONE],
     ['touch stone', objects.TOUCHSTONE], ['flintstone', objects.FLINT],
 ];
-export function lookupWishType(request, { wizardWish = false, state = game, } = {}) {
-    const original = request.trim();
-    let name = original.replace(/^pairs? of /i, '').replace(/^sets? of /i, '');
-    let callName = null;
-    let description = null;
-    const named = name.search(/ named /i);
-    if (named >= 0)
-        name = name.slice(0, named);
-    const called = name.search(/ called /i);
-    if (called >= 0) {
-        callName = name.slice(called + 8);
-        name = name.slice(0, called);
-    }
-    const label = / label(?:l)?ed /i.exec(name);
-    if (label?.index !== undefined) {
-        description = name.slice(label.index + label[0].length);
-        name = name.slice(0, label.index);
-    }
+export function lookupWishType(parsed, { wizardWish = false, state = game, } = {}) {
+    const original = parsed.name;
+    let name = original;
+    const callName = parsed.callName;
+    let description = parsed.description;
     const result = (type, oclass = 0) => ({ name, type, oclass: type === null ? oclass : objectClassForType(type) });
     const callRange = callName ? ranges.find(([range]) => range === name.toLowerCase()) : null;
     if (callRange)
@@ -181,7 +168,7 @@ export function lookupWishType(request, { wizardWish = false, state = game, } = 
             return result(type, oclass);
     }
     if (oclass === ARMOR_CLASS && !/mail/i.test(name)) {
-        const retry = lookupWishType(`${name} mail`, { wizardWish, state });
+        const retry = lookupWishType({ ...parsed, name: `${name} mail` }, { wizardWish, state });
         if (retry.type !== null)
             return retry;
     }

@@ -17,7 +17,7 @@ export function parseWishText(text) {
         lit: false, wetness: 0, unlabeled: false, poisoned: false,
         trapped: null, lock: null, partlyEaten: false, historic: false,
         diluted: false, empty: false, heavy: false, fakeAmulet: false,
-        personalName: null,
+        personalName: null, callName: null, description: null,
         gender: null, monsterSpecies: null, directType: null,
         tinVariety: null, spinach: false, zombifying: false,
         looted: false, door: null,
@@ -130,6 +130,16 @@ export function parseWishText(text) {
     if (named >= 0) {
         parsed.personalName = remaining.slice(named + 7);
         remaining = remaining.slice(0, named);
+    }
+    const called = remaining.search(/ called /i);
+    if (called >= 0) {
+        parsed.callName = remaining.slice(called + 8);
+        remaining = remaining.slice(0, called);
+    }
+    const label = / label(?:l)?ed /i.exec(remaining);
+    if (label) {
+        parsed.description = remaining.slice(label.index + label[0].length);
+        remaining = remaining.slice(0, label.index);
     }
     if (/^pair of /i.test(remaining)) {
         parsed.count *= 2;

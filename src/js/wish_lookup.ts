@@ -9,6 +9,7 @@ import * as objects from './object_data.js';
 import { makeSingular } from './object_grammar.js';
 import { OBJECT_CLASS_SYMBOLS, objectClassForType } from './object_knowledge.js';
 import { rn2 } from './rng.js';
+import type { ParsedWish } from './wish_parse.js';
 
 const WEAPON_CLASS = 2;
 const ARMOR_CLASS = 3;
@@ -86,25 +87,13 @@ export interface WishLookup {
     readonly type: number | null;
 }
 
-export function lookupWishType(request: string, {
+export function lookupWishType(parsed: ParsedWish, {
     wizardWish = false, state = game,
 }: { wizardWish?: boolean; state?: GameState } = {}): WishLookup {
-    const original = request.trim();
-    let name = original.replace(/^pairs? of /i, '').replace(/^sets? of /i, '');
-    let callName: string | null = null;
-    let description: string | null = null;
-    const named = name.search(/ named /i);
-    if (named >= 0) name = name.slice(0, named);
-    const called = name.search(/ called /i);
-    if (called >= 0) {
-        callName = name.slice(called + 8);
-        name = name.slice(0, called);
-    }
-    const label = / label(?:l)?ed /i.exec(name);
-    if (label?.index !== undefined) {
-        description = name.slice(label.index + label[0].length);
-        name = name.slice(0, label.index);
-    }
+    const original = parsed.name;
+    let name = original;
+    const callName = parsed.callName;
+    let description = parsed.description;
     const result = (type: number | null, oclass = 0): WishLookup =>
         ({ name, type, oclass: type === null ? oclass : objectClassForType(type) });
 
@@ -183,7 +172,7 @@ export function lookupWishType(request: string, {
         if (type !== null) return result(type, oclass);
     }
     if (oclass === ARMOR_CLASS && !/mail/i.test(name)) {
-        const retry = lookupWishType(`${name} mail`, { wizardWish, state });
+        const retry = lookupWishType({ ...parsed, name: `${name} mail` }, { wizardWish, state });
         if (retry.type !== null) return retry;
     }
     const classAlias = alternateSpellings.find(([alias, type]) =>

@@ -856,7 +856,7 @@ export async function readObjectName(
             ? OBJECT_NAMES.indexOf('blank paper')
             : parsed.unlabeled && /spellbook$/.test(parsed.name) ? SPE_BLANK_PAPER : null;
         const directType = parsed.directType ?? blankType;
-        const lookup = directType === null ? lookupWishType(parsed.name, { wizardWish })
+        const lookup = directType === null ? lookupWishType(parsed, { wizardWish })
             : { name: parsed.name, type: directType, oclass: objectClassForType(directType) };
         let matchedType = lookup.type
             ?? japaneseWishType(parsed.name);
