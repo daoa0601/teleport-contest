@@ -36,7 +36,7 @@ import { heroCannotTake } from './polyself.js';
 import { heroIsUnaware } from './hero_sleep.js';
 import { lookInsideSwallower } from './swallowed_inventory.js';
 import { addShopObjectToBill, billedPickupQuote, costlySpot } from './shk.js';
-import { SHOPBASE, A_WIS, STONE, DOOR, D_BROKEN, W_WEP, is_pit, LOST_NONE, LOST_THROWN, LOST_STOLEN, LOST_DROPPED, LOST_EXPLODING, } from './const.js';
+import { SHOPBASE, A_WIS, STONE, DOOR, D_BROKEN, ALTAR, W_WEP, is_pit, LOST_NONE, LOST_THROWN, LOST_STOLEN, LOST_DROPPED, LOST_EXPLODING, } from './const.js';
 export function pickupClassOrder() {
     return [...inventoryClassOrder(), 17, 0].map(objectClassHeading);
 }
@@ -112,7 +112,7 @@ async function choosePickupObjects(source, objects, count) {
         if (source.monster)
             await lookInsideSwallower(source.monster);
         else {
-            await plineWithContinuation(`You try to feel what is lying here on the ${surfaceName(source.x, source.y)}.`);
+            await plineWithContinuation(blindPickupInspectionMessage(source.x, source.y));
             await showFloorPile(source.objects, false, dungeonFeatureSentenceAt(source.x, source.y));
         }
         return [];
@@ -387,7 +387,7 @@ async function checkHere(source, pickedSome) {
         const first = source.objects[0];
         if (first)
             map_object(first, false, false);
-        await plineWithContinuation(`You try to feel what is lying here on the ${surfaceName(x, y)}.`);
+        await plineWithContinuation(blindPickupInspectionMessage(x, y));
     }
     return await showFloorPile(source.objects, pickedSome, feature, { automatic: true });
 }
@@ -398,6 +398,12 @@ async function describePickupDecor(loc) {
     if (brokenDoor)
         await pline('There is a broken door here.');
     return brokenDoor;
+}
+function blindPickupInspectionMessage(x, y) {
+    // look_here() leaves the altar description to the following floor display.
+    return requireGameLevel().at(x, y)?.typ === ALTAR
+        ? 'You try to feel what is here.'
+        : `You try to feel what is lying here on the ${surfaceName(x, y)}.`;
 }
 export function orderedPickupObjects(pile) {
     return sortObjects(pile, { mode: lootSortMode() });
