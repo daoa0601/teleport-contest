@@ -61,7 +61,7 @@ export async function summonMinion(alignment: number, talk = false): Promise<Mon
         MONSTER_NAME[mnum] ?? '',
     );
     const flags = MM_NOMSG | (specialRole ? 0 : MM_EMIN);
-    const monster = await makemonNear(mnum, game.u.ux, game.u.uy, flags, false);
+    const monster = await makemonNear(mnum, game.u.ux, game.u.uy, flags);
     if (!monster) return null;
     if (!specialRole) {
         monster.isminion = 1;
@@ -267,7 +267,7 @@ export async function msummon(monster: Monster | null = null): Promise<MonsterSu
 
     const created: Monster[] = [];
     while (count-- > 0) {
-        const summoned = await makemonNear(mnum, game.u.ux, game.u.uy, MM_EMIN | MM_NOMSG, false);
+        const summoned = await makemonNear(mnum, game.u.ux, game.u.uy, MM_EMIN | MM_NOMSG);
         if (!summoned) continue;
         summoned.emin = { min_align: 0, renegade: 0 };
         if (mnum === PM_ANGEL) {

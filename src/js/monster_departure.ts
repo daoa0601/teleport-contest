@@ -5,6 +5,7 @@ import type { GameObject } from './object_types.js';
 // C mon.c:mongone().
 
 import { prepareVaultGuardDeath } from './vault_guard.js';
+import { armorThiefGone } from './command_state.js';
 import { game, requireLiveGame } from './gstate.js';
 import { finishShopkeeperDeparture } from './shop_damage.js';
 import { releaseHeroFromMonster } from './hero_expulsion.js';
@@ -43,6 +44,7 @@ export async function removeMonsterFromGame(monster: Monster | null | undefined)
     if (!gameWasOver && game.program_state.gameover)
         return { removed: true, dropped, discarded, x, y };
     if (monster.iswiz) wizardDeadOrGone();
+    armorThiefGone(monster);
     if (monster.isshk) {
         if (!hasShopkeeperData(monster)) throw new Error('shopkeeper lacks shop history');
         finishShopkeeperDeparture(monster);

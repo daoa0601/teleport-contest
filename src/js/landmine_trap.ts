@@ -20,6 +20,7 @@ import { monsterWearsIronShoes } from './monworn.js';
 import { rn2, rnd } from './rng.js';
 import { monsterTrapVisibility } from './trap.js';
 import { monsterInAir } from './terrain_properties.js';
+import { monsterLearnsTrap, monstersSeeTrap } from './trap_knowledge.js';
 
 export interface MonsterLandMineEvent {
     kind: 'land-mine';
@@ -83,6 +84,11 @@ async function fallIntoMinePit(
     state: GameState,
     options: ActiveLandMineOptions,
 ) {
+    if (!trap) return;
+    // The recursive mintrap(FORCETRAP) teaches the new trap type before
+    // trapeffect_pit(), including when the victim is immune to the fall.
+    monsterLearnsTrap(monster, trap);
+    monstersSeeTrap(state, trap);
     const pit = beginMonsterPitTrap(monster, trap, state, { forced: true });
     if (!pit) return;
     await finishMonsterPitTrap(monster, pit, {

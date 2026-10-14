@@ -236,6 +236,7 @@ async function hitWithDisintegration(context: HeroRayContext) {
         }
         noteRayResistance(context, false);
         state.u.ugrave_arise = NON_PM;
+        // C zhitu() calls done() directly, without an ordinary HP-death line.
         const heroDied = await die({ killer: context.name || 'finger of death', deathLineShown: true });
         return { resisted: false, damage: 0, heroDied };
     }

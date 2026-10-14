@@ -266,6 +266,7 @@ export async function removeHeroArmor(object: GameObject, state: GameState = gam
     if (object?.otyp === FEDORA && state.urole?.key === 'archeologist')
         state.u.uluck = Math.max(LUCKMIN, (state.u.uluck ?? 0) - 1);
     const removed = await clearHeroArmor(object, state, { ...options, cancelledDon });
+    if (removed && !cancelledDon) await announceDisplacementLoss(object, state);
     if (losingGloves) {
         setSlipperyHands(0, state);
         await loseGloveProtection(object, state);
@@ -294,7 +295,7 @@ export async function removeHeroArmor(object: GameObject, state: GameState = gam
 }
 
 // C Cloak_off(): toggle_displacement() runs after the cloak's source is removed.
-export async function announceDisplacementLoss(object: GameObject, state: GameState = game): Promise<void> {
+async function announceDisplacementLoss(object: GameObject, state: GameState = game): Promise<void> {
     if (object.otyp !== CLOAK_OF_DISPLACEMENT) return;
     const hero = state.u;
     if (propertyIsActive('displaced', state)
@@ -523,7 +524,7 @@ export async function disintegrateWornArmor(armor: GameObject, {
     return true;
 }
 
-function simpleArmorName(armor: GameObject, slot: ArmorSlot, state: GameState): string {
+export function simpleArmorName(armor: GameObject, slot: ArmorSlot, state: GameState): string {
     const name = OBJECT_NAMES[armor.otyp];
     if (!name) throw new RangeError(`Missing name for armor type ${armor.otyp}`);
     const appearance = state.objectDescriptions?.[armor.otyp]
@@ -882,6 +883,7 @@ export function armorOffMessage(object: GameObject, state: GameState = game) {
 // interrupted removal leaves the item worn.
 export async function stopDonning(stolenObject: GameObject | null = null, state: GameState = game) {
     const delayed = state._delayedAction;
+    if (delayed?.kind === 'steal') return false;
     if (!delayed) {
         const progress = state.context.takeoff;
         const slot = progress?.current;

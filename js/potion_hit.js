@@ -7,17 +7,19 @@ import { makeConfused } from './hero_mental_status.js';
 import { makeBlinded } from './sight_change.js';
 import { makeDeaf } from './hero_hearing.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
+import { heroEyeCount, heroEyeName } from './body_parts.js';
+import { makePlural, verbForSubject, withIndefiniteArticle } from './object_grammar.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { heroHasFreeAction } from './armor.js';
-import { A_CON, A_DEX, A_WIS, M_SEEN_SLEEP, STRAT_WAITFORU, TIMEOUT, Upolyd, } from './const.js';
-import { canSeeMonster, canSpotMonster, map_invisible, newsym, plineWithContinuation, shieldeff, } from './display.js';
+import { A_CON, A_DEX, A_WIS, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, M_SEEN_SLEEP, PLNMSG_OBJ_GLOWS, STRAT_WAITFORU, TIMEOUT, Upolyd, } from './const.js';
+import { canSeeMonster, canSpotMonster, map_invisible, newsym, displayColorName, plineWithContinuation, shieldeff, } from './display.js';
 import { game } from './gstate.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { splitMonster as splitMonsterActor } from './monster_clone.js';
 import { tryCallObjectType } from './object_call.js';
 import { recordObjectEncounter, recordObjectKnowledge, } from './object_knowledge.js';
-import { OBJECT_DESCRIPTIONS, OBJECT_NAMES, POT_ACID, POT_BLINDNESS, POT_BOOZE, POT_CONFUSION, POT_EXTRA_HEALING, POT_FRUIT_JUICE, POT_FULL_HEALING, POT_GAIN_ABILITY, POT_GAIN_ENERGY, POT_GAIN_LEVEL, POT_HEALING, POT_INVISIBILITY, POT_HALLUCINATION, POT_LEVITATION, POT_MONSTER_DETECTION, POT_OBJECT_DETECTION, POT_POLYMORPH, POT_OIL, POT_RESTORE_ABILITY, POT_PARALYSIS, POT_SICKNESS, POT_SLEEPING, POT_SPEED, POT_WATER, TOWEL, } from './object_data.js';
-import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MAGIC_RESISTANCE, MONSTER_RESISTS, MONSTER_SOUND, monsterHatesBlessings, monsterIsHuman, monsterIsPlayerMonster, } from './monster_data.js';
+import { OBJECT_DESCRIPTIONS, OBJECT_NAMES, POT_ACID, POT_BLINDNESS, POT_BOOZE, POT_CONFUSION, POT_ENLIGHTENMENT, POT_EXTRA_HEALING, POT_FRUIT_JUICE, POT_FULL_HEALING, POT_GAIN_ABILITY, POT_GAIN_ENERGY, POT_GAIN_LEVEL, POT_HEALING, POT_INVISIBILITY, POT_HALLUCINATION, POT_LEVITATION, POT_MONSTER_DETECTION, POT_OBJECT_DETECTION, POT_POLYMORPH, POT_OIL, POT_RESTORE_ABILITY, POT_PARALYSIS, POT_SICKNESS, POT_SLEEPING, POT_SPEED, POT_WATER, TOWEL, } from './object_data.js';
+import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MAGIC_RESISTANCE, MONSTER_RESISTS, MONSTER_SOUND, MONSTER_SYMBOL, monsterHatesBlessings, monsterIsHuman, monsterIsPlayerMonster, } from './monster_data.js';
 import { polymorphMonsterFromMagic } from './monster_polymorph_attack.js';
 import { AD_DISE, AD_PEST, } from './monster_attack_types.js';
 import { monsterHasAcidResistance, monsterHasPoisonResistance, } from './monster_resistance.js';
@@ -36,6 +38,8 @@ import { cansee } from './vision.js';
 import { applyHeroWaterVaporChange, transformWereMonster, } from './were.js';
 import { heroHasProtectionFromShapeChangers, } from './polyself.js';
 import { heroFormSticks } from './hero_species.js';
+import { revealMonsterAppearance } from './monster_appearance.js';
+import { putMonsterToSleep } from './monster_sleep.js';
 const PM_PESTILENCE = 312;
 const PM_GREMLIN = 40;
 const PM_IRON_GOLEM = 259;
@@ -44,8 +48,10 @@ const M1_NOEYES = 0x00001000;
 const M1_NOHEAD = 0x00008000;
 const M2_WERE = 0x00000004;
 const MR_SLEEP = 0x04;
+const S_MIMIC = 13;
 export const INERT_MONSTER_POTION_TYPES = new Set([
     POT_GAIN_LEVEL,
+    POT_ENLIGHTENMENT,
     POT_GAIN_ENERGY,
     POT_LEVITATION,
     POT_FRUIT_JUICE,
@@ -158,25 +164,20 @@ async function applyPotionToSaddle({ state, monster, saddle, potion, targetVisib
     const owner = saddleOwnerPhrase(monster);
     const objectName = saddleName(saddle);
     let change = null;
-    let message = '';
     if (potion.otyp === POT_WATER && potion.blessed) {
         if (saddle.cursed) {
-            change = () => uncurseObjectState(saddle);
-            message = `${owner} ${objectName} glows amber.`;
+            change = { apply: () => uncurseObjectState(saddle), color: 'amber', aura: false };
         }
         else if (!saddle.blessed) {
-            change = () => blessObjectState(saddle);
-            message = `${owner} ${objectName} glows with a light blue aura.`;
+            change = { apply: () => blessObjectState(saddle), color: 'light blue', aura: true };
         }
     }
     else if (potion.otyp === POT_WATER && potion.cursed) {
         if (saddle.blessed) {
-            change = () => unblessObjectState(saddle);
-            message = `${owner} ${objectName} glows brown.`;
+            change = { apply: () => unblessObjectState(saddle), color: 'brown', aura: false };
         }
         else if (!saddle.cursed) {
-            change = () => curseObjectState(saddle);
-            message = `${owner} ${objectName} glows with a black aura.`;
+            change = { apply: () => curseObjectState(saddle), color: 'black', aura: true };
         }
     }
     if (!change) {
@@ -185,13 +186,16 @@ async function applyPotionToSaddle({ state, monster, saddle, potion, targetVisib
         return;
     }
     if (seen) {
-        await publish(message);
+        const color = displayColorName(change.color, state);
+        const glow = change.aura ? `with ${withIndefiniteArticle(color)} aura` : color;
+        await publish(`${owner} ${objectName} glows ${glow}.`);
+        state._lastPlineKind = PLNMSG_OBJ_GLOWS;
         saddle.bknown = !heroIsHallucinating(state);
     }
     else if (!potion.bknown || !potion.dknown) {
         saddle.bknown = false;
     }
-    change();
+    change.apply();
 }
 function healingCuresBlindness(potion) {
     if (potion.otyp === POT_FULL_HEALING)
@@ -269,8 +273,16 @@ function monsterHasSleepDefense(monster) {
         || !!monster?.defendedSleep;
 }
 async function installPotionHelplessness(state, duration, reason) {
-    endVoluntaryMultiTurn(state);
-    state._helplessTurns = duration;
+    // nomul() keeps a longer involuntary delay. The caller still replaces
+    // its reason and recovery message, even when nomul() returns early.
+    const remainingDelay = Math.max(state._helplessTurns ?? 0, -state.multi);
+    if (remainingDelay <= duration) {
+        endVoluntaryMultiTurn(state);
+        state.u.invulnerable = false;
+        state.u.usleep = 0;
+        state._helplessTurns = duration;
+        state.multi = -duration;
+    }
     state._helplessReason = reason;
     state._helplessDoneMessage = 'You can move again.';
     await exerciseAttribute(A_DEX, false, state);
@@ -329,20 +341,42 @@ async function finishPotionVaporKnowledge(state, potion, identifiesType) {
     }
     return await tryCallObjectType(potion, state);
 }
+function cursedVaporEyeMessage(state) {
+    const eye = heroEyeName(state);
+    const eyes = heroEyeCount(state) === 1 ? eye : makePlural(eye);
+    return `Your ${eyes} ${verbForSubject(eyes, 'sting')}!`;
+}
 // potionbreathe() is shared by monster contact and nearby floor breakage.
 // Its final knowledge transaction either identifies an unambiguous effect or
 // asks for a type-wide call name before the caller frees the potion identity.
-export async function applySupportedPotionVapor({ state = game, potion, publish = plineWithContinuation, monsterCanSeeHero = null, }) {
-    if (!SUPPORTED_MONSTER_POTION_TYPES.has(potion.otyp))
-        return null;
+// Potions without a vapor effect still reach that naming opportunity.
+export async function applySupportedPotionVapor(options) {
+    const potion = options.potion;
+    const inUse = potion.in_use;
+    potion.in_use = true;
+    let effect;
+    try {
+        effect = await applyPotionVaporEffect(options);
+    }
+    finally {
+        if (inUse === undefined)
+            delete potion.in_use;
+        else
+            potion.in_use = inUse;
+    }
+    if (!effect.received)
+        return effect;
+    const typeCall = await finishPotionVaporKnowledge(options.state ?? game, potion, effect.identifiesType ?? false);
+    return { ...effect, typeCall };
+}
+async function applyPotionVaporEffect({ state = game, potion, publish = plineWithContinuation, monsterCanSeeHero = null, }) {
     requirePlayingGame(state);
     const profile = heroPotionVaporProfile(state);
     if (!profile.canReceive)
         return { received: false };
     if (heroHasVaporShield(state)) {
         await publish('Some vapor passes harmlessly around you.');
-        const typeCall = await finishPotionVaporKnowledge(state, potion, false);
-        return { received: true, shielded: true, typeCall };
+        return { received: true, shielded: true };
     }
     let abilityStart = null;
     let confusionDuration = null;
@@ -357,7 +391,7 @@ export async function applySupportedPotionVapor({ state = game, potion, publish 
     if (ABILITY_POTION_TYPES.has(potion.otyp)) {
         if (potion.cursed) {
             await publish(profile.breathless
-                ? 'Your eyes sting!'
+                ? cursedVaporEyeMessage(state)
                 : 'Ulch!  That potion smells terrible!');
         }
         else {
@@ -467,7 +501,6 @@ export async function applySupportedPotionVapor({ state = game, potion, publish 
     else if (potion.otyp === POT_OIL) {
         // potionbreathe() has no oil case.
     }
-    const typeCall = await finishPotionVaporKnowledge(state, potion, identifiesType);
     return {
         received: true,
         abilityStart,
@@ -480,10 +513,13 @@ export async function applySupportedPotionVapor({ state = game, potion, publish 
         sightToggled,
         resisted,
         identifiesType,
-        typeCall,
     };
 }
-async function applySupportedDirectEffect({ state, monster, potion, targetVisible, targetSpotted, wakeMonster, publish, showShield, spotMonster, repaintMonster, rememberInvisible, wakeNearby, splitMonster, transformWere, finishKill, heroCaused, }) {
+async function applySupportedDirectEffect({ state, monster, potion, targetVisible, targetSpotted, wakeMonster: wakeAttackedTarget, publish, showShield, spotMonster, repaintMonster, rememberInvisible, wakeNearby, splitMonster, transformWere, finishKill, heroCaused, }) {
+    // Most effects inherit potionhit's your_fault flag. Invisibility has
+    // its own anger rule; polymorph delegates its contact to bhitm().
+    const wakeMonster = heroCaused || potion.otyp === POT_INVISIBILITY || potion.otyp === POT_POLYMORPH
+        ? wakeAttackedTarget : (target) => { target.msleeping = 0; };
     if (potion.otyp === POT_POLYMORPH) {
         const result = await polymorphMonsterFromMagic(monster, {
             state,
@@ -494,7 +530,7 @@ async function applySupportedDirectEffect({ state, monster, potion, targetVisibl
             finishDeath: finishKill,
         });
         return {
-            angered: true,
+            angered: heroCaused,
             healed: 0,
             curedBlindness: false,
             ...result,
@@ -516,7 +552,7 @@ async function applySupportedDirectEffect({ state, monster, potion, targetVisibl
         if (!killed && (await wakeMonster?.(monster))?.heroDied)
             return { heroDied: true };
         return {
-            angered: true,
+            angered: heroCaused,
             healed: 0,
             curedBlindness: false,
             explosionDamage,
@@ -552,7 +588,7 @@ async function applySupportedDirectEffect({ state, monster, potion, targetVisibl
         if (!killed && (await wakeMonster?.(monster))?.heroDied)
             return { heroDied: true };
         return {
-            angered: true,
+            angered: heroCaused,
             healed: 0,
             curedBlindness: false,
             acidResistant,
@@ -564,7 +600,7 @@ async function applySupportedDirectEffect({ state, monster, potion, targetVisibl
     if (potion.otyp === POT_WATER) {
         const affectedByHoliness = monsterHatesBlessings(monster)
             || monsterIsWere(monster);
-        let angered = true;
+        let angered = heroCaused;
         let waterDamage = 0;
         let waterHealing = 0;
         let transformedWere = false;
@@ -704,7 +740,7 @@ async function applySupportedDirectEffect({ state, monster, potion, targetVisibl
     if (potion.otyp === POT_PARALYSIS) {
         let paralyzed = false;
         let duration = 0;
-        if (monster.mcanmove !== 0) {
+        if (!!monster.mcanmove) {
             duration = rnd(25);
             monster.mcanmove = 0;
             monster.mfrozen = Math.min(duration, 127);
@@ -715,7 +751,7 @@ async function applySupportedDirectEffect({ state, monster, potion, targetVisibl
         if ((await wakeMonster?.(monster))?.heroDied)
             return { heroDied: true };
         return {
-            angered: true,
+            angered: heroCaused,
             healed: 0,
             curedBlindness: false,
             paralyzed,
@@ -724,6 +760,10 @@ async function applySupportedDirectEffect({ state, monster, potion, targetVisibl
     }
     if (potion.otyp === POT_SLEEPING) {
         const duration = rnd(12);
+        const appearance = M_AP_TYPE(monster);
+        if (!monster.msleeping && !monster.mfrozen && MONSTER_SYMBOL[monster.mnum] === S_MIMIC
+            && (appearance === M_AP_FURNITURE || appearance === M_AP_OBJECT))
+            revealMonsterAppearance(monster);
         const inherentOrDefended = monsterHasSleepDefense(monster);
         const resisted = inherentOrDefended
             || monsterResistsPotion(monster, state);
@@ -731,14 +771,9 @@ async function applySupportedDirectEffect({ state, monster, potion, targetVisibl
         if (resisted) {
             await showShield?.(monster);
         }
-        else if (monster.mcanmove !== 0) {
-            monster.mcanmove = 0;
-            monster.mfrozen = Math.min(duration + (monster.mfrozen ?? 0), 127);
-            monster.meating = 0;
+        else if (putMonsterToSleep(monster, duration)) {
             slept = true;
-            await publish(targetVisible
-                ? `${sentenceSubject(monster)} falls asleep.`
-                : 'It falls asleep.');
+            await publish(`${sentenceSubject(monster)} falls asleep.`);
             if (monster === state.u?.ustuck && !state.u?.uswallow
                 && !heroFormSticks(state)) {
                 await publish(`${possessive(sentenceSubject(monster))} grip relaxes.`);
@@ -748,7 +783,7 @@ async function applySupportedDirectEffect({ state, monster, potion, targetVisibl
         if ((await wakeMonster?.(monster))?.heroDied)
             return { heroDied: true };
         return {
-            angered: true,
+            angered: heroCaused,
             healed: 0,
             curedBlindness: false,
             resisted,
@@ -795,7 +830,7 @@ async function applySupportedDirectEffect({ state, monster, potion, targetVisibl
         if ((await wakeMonster?.(monster))?.heroDied)
             return { heroDied: true };
         return {
-            angered: true,
+            angered: heroCaused,
             healed: 0,
             curedBlindness: false,
             resisted,
@@ -811,7 +846,7 @@ async function applySupportedDirectEffect({ state, monster, potion, targetVisibl
         if ((await wakeMonster?.(monster))?.heroDied)
             return { heroDied: true };
         return {
-            angered: true,
+            angered: heroCaused,
             healed: 0,
             curedBlindness: false,
             resisted,
@@ -821,18 +856,18 @@ async function applySupportedDirectEffect({ state, monster, potion, targetVisibl
     if (potion.otyp === POT_SICKNESS && monster.mnum !== PM_PESTILENCE) {
         const oldHp = monster.mhp;
         if (sicknessCannotHarmMonster(monster)) {
-            if (targetVisible)
+            if (targetSpotted)
                 await publish(`${sentenceSubject(monster)} looks unharmed.`);
         }
         else if (monster.mhp > 2) {
             monster.mhp = Math.trunc(monster.mhp / 2);
-            if (targetVisible)
+            if (targetSpotted)
                 await publish(`${sentenceSubject(monster)} looks rather ill.`);
         }
         if ((await wakeMonster?.(monster))?.heroDied)
             return { heroDied: true };
         return {
-            angered: true,
+            angered: heroCaused,
             healed: monster.mhp - oldHp,
             curedBlindness: false,
         };
@@ -843,7 +878,7 @@ async function applySupportedDirectEffect({ state, monster, potion, targetVisibl
     if (!healsMonster) {
         if ((await wakeMonster?.(monster))?.heroDied)
             return { heroDied: true };
-        return { angered: true, healed: 0, curedBlindness: false };
+        return { angered: heroCaused, healed: 0, curedBlindness: false };
     }
     // Healing potions invert against Pestilence; gain/restore ability do not.
     if (monster.mnum === PM_PESTILENCE
@@ -851,13 +886,13 @@ async function applySupportedDirectEffect({ state, monster, potion, targetVisibl
         const oldHp = monster.mhp;
         if (monster.mhp > 2) {
             monster.mhp = Math.trunc(monster.mhp / 2);
-            if (targetVisible)
+            if (targetSpotted)
                 await publish(`${sentenceSubject(monster)} looks rather ill.`);
         }
         if ((await wakeMonster?.(monster))?.heroDied)
             return { heroDied: true };
         return {
-            angered: true,
+            angered: heroCaused,
             healed: monster.mhp - oldHp,
             curedBlindness: false,
         };
@@ -865,7 +900,7 @@ async function applySupportedDirectEffect({ state, monster, potion, targetVisibl
     const oldHp = monster.mhp;
     if (monster.mhp < monster.mhpmax) {
         monster.mhp = monster.mhpmax;
-        if (targetVisible)
+        if (targetSpotted)
             await publish(`${sentenceSubject(monster)} looks sound and hale again.`);
     }
     let curedBlindness = false;
@@ -873,7 +908,7 @@ async function applySupportedDirectEffect({ state, monster, potion, targetVisibl
         monster.mcansee = 1;
         monster.mblinded = 0;
         curedBlindness = true;
-        if (targetVisible
+        if (targetSpotted
             && !((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_NOEYES)) {
             await publish(`${sentenceSubject(monster)} can see again.`);
         }
@@ -947,7 +982,7 @@ export async function hitMonsterWithSupportedPotion({ state = game, monster, pot
             vaporEffect = await applySupportedPotionVapor({
                 state, potion, publish,
             });
-            breathedVapor = vaporEffect?.received !== false;
+            breathedVapor = vaporEffect.received;
         }
     }
     let typeCall = vaporEffect?.typeCall || null;

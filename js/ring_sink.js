@@ -32,7 +32,7 @@ function fruitNamePlural(state) {
     return makePlural(state.fruitName || FRUIT_DEFAULT);
 }
 // C do.c:403-455 polymorph_sink(), shared shape with the fountain owner.
-async function polymorphSink(state, publish) {
+export async function polymorphSink(state, publish) {
     const { ux, uy } = state.u;
     const level = requireGameLevel(state);
     const location = level.requireAt(ux, uy);

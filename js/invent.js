@@ -11,7 +11,7 @@ import { nhgetch } from './input.js';
 import { reassignInventoryLetters } from './inventory_prompt.js';
 import { inventoryClassOrder, inventorySortMode, objectClassHeading, sortObjects } from './object_sort.js';
 import { MENU_TRADITIONAL, MV_KNOWS_EGG, PICK_NONE, PICK_ONE, W_ACCESSORY, W_AMUL, W_ARMOR, W_RING, W_TOOL, is_pit, } from './const.js';
-import { ALCHEMY_SMOCK, ARROW as FIRST_OBJECT, BAG_OF_TRICKS, EGG, CHEST, FORTUNE_COOKIE, GOLD_PIECE, HAWAIIAN_SHIRT, LARGE_BOX, MAGIC_MARKER, HEAVY_IRON_BALL, OBJECT_BIMANUAL, OBJECT_INITIAL_KNOWN, OBJECT_NAMES, SCR_BLANK_PAPER, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_NOVEL, STATUE, TIN, TIN_OPENER, TOWEL, } from './object_data.js';
+import { ALCHEMY_SMOCK, ARROW as FIRST_OBJECT, BAG_OF_TRICKS, EGG, CHEST, FORTUNE_COOKIE, GOLD_PIECE, HAWAIIAN_SHIRT, LARGE_BOX, MAGIC_MARKER, HEAVY_IRON_BALL, LOCK_PICK, CREDIT_CARD, SKELETON_KEY, OBJECT_BIMANUAL, OBJECT_INITIAL_KNOWN, OBJECT_NAMES, SCR_BLANK_PAPER, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_NOVEL, STATUE, TIN, TIN_OPENER, TOWEL, } from './object_data.js';
 import { MONSTER_GROWTH_TARGET } from './monster_data.js';
 import { definiteName, objectCombatName, objectName, observeObjectForNaming, simpleObjectName, singularObjectName } from './objnam.js';
 import { learnObjectType, OBJECT_CLASS_SYMBOLS } from './object_knowledge.js';
@@ -457,6 +457,8 @@ function itemActionEntries(item, state, repairGold) {
     }
     else if (isContainer(item))
         entries.push({ key: 'a', text: 'Open this container' });
+    else if ([LOCK_PICK, CREDIT_CARD, SKELETON_KEY].includes(item.otyp))
+        entries.push({ key: 'a', text: 'Use this tool to pick a lock' });
     if (item.oclass !== COIN_CLASS && item.dknown !== false && !item.oartifact && item.otyp !== SPE_NOVEL)
         entries.push({ key: 'c', text: `Name ${stack ? 'this stack of' : 'this specific'} ${itemName}` });
     if (!alreadyWorn)

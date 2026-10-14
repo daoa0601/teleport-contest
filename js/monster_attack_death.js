@@ -180,12 +180,6 @@ export async function finishMonsterAttackDeath(monster, { pagerOwned = false, at
             await restoreHeroAfterDeath();
             if (game.program_state.gameover)
                 return true;
-            // end.c leaves a one-turn nomovemsg.  It is emitted
-            // only after the interrupted movemon() scan finishes;
-            // if combat has appended to this recovery line, the
-            // attempted third pline is what forces tty --More--.
-            game._deathSurvivedMessagePending = true;
-            game._deathSurvivalRunmodeDelayPending = true;
             return false;
         }
     }

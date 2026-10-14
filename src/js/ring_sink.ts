@@ -47,7 +47,7 @@ function fruitNamePlural(state: GameState): string {
 }
 
 // C do.c:403-455 polymorph_sink(), shared shape with the fountain owner.
-async function polymorphSink(state: GameState, publish: MessagePublisher): Promise<void> {
+export async function polymorphSink(state: GameState, publish: MessagePublisher): Promise<void> {
     const { ux, uy } = state.u;
     const level = requireGameLevel(state);
     const location = level.requireAt(ux, uy);

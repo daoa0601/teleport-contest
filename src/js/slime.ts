@@ -24,7 +24,7 @@ interface SlimeAdvanceOptions {
     publish?: MessagePublisher;
     repaint?: (x: number, y: number) => unknown;
     randomMonsterName?: () => string;
-    transform?: (species: number, options: { announceForm: false }) => unknown;
+    transform?: (species: number) => unknown;
     die?: DeathHandler;
 }
 
@@ -283,10 +283,13 @@ export async function advanceHeroSliming({
     // encounters the genocided body, as in C slimed_to_death().
     vitals.mvflags &= ~G_GENOD;
     try {
-        await transform(PM_GREEN_SLIME, { announceForm: false });
+        await transform(PM_GREEN_SLIME);
     } finally {
         vitals.mvflags = originalFlags;
     }
+    // C done_timeout() sets I_SPECIAL after polymon() cures the timeout.
+    // Keep the fatal condition visible through done() and final disclosure.
+    hero.slimed = true;
     const died = await die({
         killer,
         deathCause,
@@ -295,6 +298,7 @@ export async function advanceHeroSliming({
         deathType: TURNED_SLIME,
     });
     if (died) return { active: false, died: true, transformed: true, message };
+    clearHeroSliming(state);
 
     const genocided = !!(
         (state.mvitals?.[PM_GREEN_SLIME]?.mvflags ?? 0) & G_GENOD

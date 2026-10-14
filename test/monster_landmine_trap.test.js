@@ -2,13 +2,39 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { LANDMINE, PIT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { resumeDeferredMonsterTrap, triggerImmediateMonsterTrap, } from '../js/monmove.js';
+import { mfndpos, resumeDeferredMonsterTrap, triggerImmediateMonsterTrap, } from '../js/monmove.js';
+import { placeMonsterAt } from '../js/monster_location.js';
+import { tryMonsterTrapEscape } from '../js/monster_trap_escape.js';
 import { ROCK } from '../js/object_data.js';
 import { scatterFloorObjects } from '../js/scatter.js';
 import { floorObject } from './support/game-objects.js';
 import { floorObjectsAt } from './support/level-state.js';
 import { freshMonsterTrapRoom } from './support/monster-traps.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { createMonsterAt } from './support/monsters.js';
+for (const observer of [false, true]) {
+    void test(`${observer ? 'a sighted bystander' : 'a land mine survivor'} avoids the pit left by a mine explosion`, async () => {
+        const { monster, trap } = await freshMonsterTrapRoom(LANDMINE, {
+            gameplaySeed: 1n,
+            monster: { species: 'giant', hitPoints: 100 },
+        });
+        requirePlayingGame(game);
+        const bystander = observer ? await createMonsterAt('orc', 12, 11) : null;
+        const action = await triggerImmediateMonsterTrap(monster, game);
+        await resumeDeferredMonsterTrap(action, game, {
+            rollOne: () => 2, publish: () => { },
+        });
+        assert.equal(trap.ttyp, PIT);
+        await tryMonsterTrapEscape(monster, game, { random: () => 0, publish: () => { } });
+        assert.equal(monster.mtrapped, 0);
+        placeMonsterAt(monster, 12, 10);
+        const walker = bystander ?? monster;
+        walker.mux = game.u.ux;
+        walker.muy = game.u.uy;
+        const candidates = mfndpos(walker, game);
+        assert.equal(candidates.some(position => position.x === trap.tx && position.y === trap.ty), false, 'the monster should remember and avoid the pit created by the explosion');
+    });
+}
 void test('a heavy monster sets off a land mine and falls into the new pit', async () => {
     const { monster, trap } = await freshMonsterTrapRoom(LANDMINE, {
         gameplaySeed: 1n,

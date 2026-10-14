@@ -1,0 +1,37 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+import { game, requirePlayingGame } from '../js/gstate.js';
+import { resetInputState } from '../js/input.js';
+import { beginObjectBurn } from '../js/light.js';
+import { MONSTER_NAME } from '../js/monster_data.js';
+import { POT_OIL, POT_WATER } from '../js/object_data.js';
+import { grantIntrinsicProperty } from '../js/properties.js';
+import { initRng } from '../js/rng.js';
+import { setPrimaryWeapon } from '../js/weapon_slots.js';
+import { setHeroLycanthropy } from '../js/were.js';
+import { throwInventoryObject } from './support/commands.js';
+import { addInventoryObject } from './support/game-objects.js';
+import { floorObjects } from './support/level-state.js';
+import { freshObjectRoom } from './support/object-room.js';
+
+void test('boiling wielded unholy water keeps surviving bottles carried through a werewolf transformation', async () => {
+    freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
+    requirePlayingGame(game);
+    setHeroLycanthropy(MONSTER_NAME.indexOf('werewolf'));
+    grantIntrinsicProperty('fireResistance', 'outside');
+    const water = await addInventoryObject(POT_WATER, { cursed: true, quan: 20 });
+    await setPrimaryWeapon(water);
+    const oil = await addInventoryObject(POT_OIL, { age: 200 });
+    beginObjectBurn(oil);
+    resetInputState();
+    initRng(1n);
+
+    await throwInventoryObject(oil, '>', ' '.repeat(100));
+
+    assert.equal(game.u.umonnum, MONSTER_NAME.indexOf('werewolf'));
+    assert.ok(water.quan > 0 && water.quan < 20, 'Some bottles boil and the rest survive');
+    assert.equal(game.uwep, null, 'The beast releases the wielded bottle');
+    assert.equal(water.where, 'inventory', 'Transformation must leave the survivors with the inventory-damage caller');
+    assert.equal(game.inventory.includes(water), true);
+    assert.equal(floorObjects(game.level).includes(water), false);
+});

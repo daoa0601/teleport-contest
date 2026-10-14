@@ -7,7 +7,7 @@
 
 import {
     AMULET_OF_YENDOR, BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION,
-    BAG_OF_HOLDING, CORPSE, OBJECT_CHARGED, OBJECT_NAMES, OBJECT_SUBTYPE, SPE_BOOK_OF_THE_DEAD,
+    BAG_OF_HOLDING, CORPSE, FIGURINE, OBJECT_CHARGED, OBJECT_NAMES, OBJECT_SUBTYPE, SPE_BOOK_OF_THE_DEAD,
 } from './object_data.js';
 import { artifactById } from './artifacts.js';
 import { game, requireLiveGame } from './gstate.js';
@@ -20,6 +20,8 @@ import { bookCursed } from './spellbook_study.js';
 import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, W_ARMG, W_ARMH, W_RING } from './const.js';
 import type { AttributeIndex } from './attrib.js';
 import { bot } from './display.js';
+import { updateCarriedLuck } from './hero_inventory.js';
+import { OBJECT_TIMER_KIND, stopObjectTimer } from './object_timers.js';
 
 const WEAPON_CLASS = 2;
 const ARMOR_CLASS = 3;
@@ -75,8 +77,14 @@ function drainWornBonuses(object: GameObject, state: GameState): void {
     state.context.botl = true;
 }
 
-function updateStateDependentWeight(object: GameObject | null | undefined): void {
+function updateBlessingEffects(object: GameObject | null | undefined, state: GameState): void {
+    if (object && state.inventory.includes(object)) updateCarriedLuck(object, state);
     if (object?.otyp === BAG_OF_HOLDING) object.owt = objectWeight(object);
+}
+
+function stopFigurineTransformation(object: GameObject): void {
+    if (object.otyp === FIGURINE && object.timed)
+        stopObjectTimer(object, OBJECT_TIMER_KIND.FIG_TRANSFORM);
 }
 
 export function objectResistsDestruction(
@@ -95,13 +103,13 @@ export function objectResistsDestruction(
         ? artifactChance : ordinaryChance);
 }
 
-export function curseObjectState(object: GameObject | null | undefined): boolean {
+export function curseObjectState(object: GameObject | null | undefined, state: GameState = game): boolean {
     if (!object || object.oclass === COIN_CLASS) return false;
     const changed = !object.cursed || !!object.blessed;
     object.blessed = false;
     object.cursed = true;
     object.buc = 'cursed';
-    updateStateDependentWeight(object);
+    updateBlessingEffects(object, state);
     return changed;
 }
 
@@ -111,36 +119,38 @@ export async function curseObject(
     object: GameObject | null | undefined, { state = game }: { state?: GameState } = {},
 ): Promise<boolean> {
     const wasCursed = !!object?.cursed;
-    const changed = curseObjectState(object);
+    const changed = curseObjectState(object, state);
     if (object && changed && !wasCursed && object.oclass === 10)
         await bookCursed(object, { state });
     return changed;
 }
 
-export function blessObjectState(object: GameObject | null | undefined): boolean {
+export function blessObjectState(object: GameObject | null | undefined, state: GameState = game): boolean {
     if (!object || object.oclass === COIN_CLASS) return false;
     const changed = !object.blessed || !!object.cursed;
     object.blessed = true;
     object.cursed = false;
     object.buc = 'blessed';
-    updateStateDependentWeight(object);
+    updateBlessingEffects(object, state);
+    stopFigurineTransformation(object);
     return changed;
 }
 
-export function uncurseObjectState(object: GameObject | null | undefined): boolean {
+export function uncurseObjectState(object: GameObject | null | undefined, state: GameState = game): boolean {
     if (!object) return false;
     const changed = !!object.cursed;
     object.cursed = false;
     object.buc = object.blessed ? 'blessed' : 'uncursed';
-    updateStateDependentWeight(object);
+    updateBlessingEffects(object, state);
+    stopFigurineTransformation(object);
     return changed;
 }
 
-export function unblessObjectState(object: GameObject | null | undefined): boolean {
+export function unblessObjectState(object: GameObject | null | undefined, state: GameState = game): boolean {
     if (!object) return false;
     const changed = !!object.blessed;
     object.blessed = false;
     object.buc = object.cursed ? 'cursed' : 'uncursed';
-    updateStateDependentWeight(object);
+    updateBlessingEffects(object, state);
     return changed;
 }

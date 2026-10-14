@@ -1044,7 +1044,7 @@ export async function heroLiquidEffects(options: HeroLiquidOptions = {}): Promis
                 recalculateVision,
                 applyLandingEffects,
             });
-            if (!escape.died) await announceDrowningRescue(state, publish);
+            if (!escape.died) await announceTerrainRescue(DROWNING, state, publish);
             return escape;
         }
         await publish("You're still drowning.");
@@ -1052,21 +1052,28 @@ export async function heroLiquidEffects(options: HeroLiquidOptions = {}): Promis
 
     u.uinwater = 0;
     state.underwater = false;
-    await announceDrowningRescue(state, publish);
+    await announceTerrainRescue(DROWNING, state, publish);
     // C drown() returns TRUE after rescue even when no safe landing exists.
     return { entered: true, moved: true, died: false };
 }
 
-// C trap.c:rescued_from_terrain(DROWNING)/back_on_ground(TRUE).
-async function announceDrowningRescue(state: PlayingGameState, publish: MessagePublisher) {
+// C trap.c:rescued_from_terrain()/back_on_ground(TRUE).
+export async function announceTerrainRescue(
+    how: typeof DROWNING | typeof BURNING | typeof DISSOLVED,
+    state: PlayingGameState, publish: MessagePublisher = plineWithContinuation,
+) {
     const { ux, uy } = state.u;
     const location = state.level.requireAt(ux, uy);
-    if (isPoolAt(ux, uy, state)) {
+    if (how === DROWNING && isPoolAt(ux, uy, state)) {
         const position = heroIsOnWaterLevel(state) || IS_WATERWALL(location.typ)
             ? 'in the midst' : 'on top';
         await publish(`You find yourself ${position} of ${displayLiquidName('water', state)}.`);
-    } else if (IS_AIR(location.typ)) {
+    } else if (how === DROWNING && IS_AIR(location.typ)) {
         await publish(`You find yourself in ${heroIsOnWaterLevel(state) ? 'an air bubble' : 'mid air'}.`);
+    } else if (how !== DROWNING && isPoolAt(ux, uy, state)) {
+        await publish(`You find yourself ${state.u.uinwater ? 'in' : 'on'} ${displayLiquidName('water', state)}.`);
+    } else if (how !== DROWNING && isLavaAt(ux, uy, state)) {
+        await publish(`You find yourself on top of ${displayLiquidName('molten lava', state)}.`);
     } else {
         let surface = surfaceName(ux, uy, state);
         let preposition = state.u.levitating || state.u.levitation || state.u.flying ? 'over' : 'on';
@@ -1082,6 +1089,10 @@ async function announceDrowningRescue(state: PlayingGameState, publish: MessageP
             break;
         case 'stairs': case 'lava': case 'bottom':
             surface = `the ${surface}`;
+            break;
+        case 'air':
+            surface = 'the air';
+            preposition = 'in';
             break;
         default:
             surface = withIndefiniteArticle(surface);

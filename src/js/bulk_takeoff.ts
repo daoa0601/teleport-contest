@@ -1,6 +1,6 @@
 // C do_wear.c:doddoremarm(), select_off(), take_off(), do_takeoff().
 import { removeHeroAccessory } from './accessory.js';
-import { announceDisplacementLoss, armorOffMessage, armorSimpleName, findArmorClass, removeHeroArmor } from './armor.js';
+import { armorOffMessage, armorSimpleName, findArmorClass, removeHeroArmor } from './armor.js';
 import { heroFingerName, heroFootName, heroHandName, heroNeckName } from './body_parts.js';
 import {
     Is_airlevel, TT_BEARTRAP, TT_INFLOOR, P_LONG_SWORD, P_SHORT_SWORD,
@@ -147,7 +147,6 @@ async function removeSelectedSlot(slot: TakeoffSlot, state: GameState): Promise<
         // after the removal messages and the elapsed monster turns.
         await removeHeroArmor(object, state, { deferArmorClass: true });
         if (!state.program_state.gameover) {
-            await announceDisplacementLoss(object, state);
             await offMessage(object, state);
         }
     }

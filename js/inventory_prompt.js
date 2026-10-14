@@ -164,7 +164,7 @@ export function compactInventoryLetters(letters) {
     }
     return compact;
 }
-export async function promptInventoryObject(prompt, eligible, { verb = 'use', classify = () => GETOBJ_SUGGEST, allowGold = false, allowNone = false, noneDescription, noneSuggested = allowNone, allowMenu = false, allowCount = false, retainPromptOnCancel = false, menuItems = eligible, } = {}) {
+export async function promptInventoryObject(prompt, eligible, { verb = 'use', classify = () => GETOBJ_SUGGEST, allowGold = false, allowNone = false, noneDescription, noneSuggested = allowNone, allowMenu = false, allowCount = false, menuItems = eligible, } = {}) {
     // getobj() checks CQ_CANNED before invoking tty_yn_function(). A queued
     // choice neither acknowledges unread prose nor paints an item question.
     const queuedKey = takeCommandKey();
@@ -200,12 +200,12 @@ export async function promptInventoryObject(prompt, eligible, { verb = 'use', cl
         }
         const cancelled = [27, 32, 10, 13].includes(key);
         if (cancelled) {
-            if (!retainPromptOnCancel) {
+            // C getobj(): a silent cancellation leaves the question painted.
+            if (game.flags?.verbose !== false) {
                 game._pending_message = '';
                 game._retained_message = '';
-            }
-            if (!retainPromptOnCancel && game.flags?.verbose !== false)
                 await pline('Never mind.');
+            }
             return {
                 cancelled: true,
                 object: null,

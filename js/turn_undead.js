@@ -3,10 +3,12 @@ import { requirePlayingGame } from './gstate.js';
 // C ref: pray.c doturn() and maybe_turn_mon_iter().
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { exerciseAttribute } from './attrib.js';
+import { hallucinatedDeityName } from './alignment.js';
 import { A_WIS, BOLT_LIM, MAXULEV, } from './const.js';
-import { pline, shieldeff, } from './display.js';
+import { plineWithContinuation as pline, shieldeff, } from './display.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { game } from './gstate.js';
+import { recordGameLogEvent } from './gamelog.js';
 import { monsterName } from './monster_name.js';
 import { cansee } from './vision.js';
 import { heroCanChant } from './hero_speech.js';
@@ -26,14 +28,6 @@ const TURN_LEVEL_BY_CLASS = new Map([
     [54, 14], // ghost
     [38, 16], // lich
 ]);
-function deityName(state) {
-    const alignment = state.u?.ualign?.type ?? 0;
-    if (alignment > 0)
-        return state.urole?.gods?.lawful || 'your god';
-    if (alignment < 0)
-        return state.urole?.gods?.chaotic || 'your god';
-    return state.urole?.gods?.neutral || 'your god';
-}
 function heroIsDemonOrUndead(state) {
     const hero = state.u;
     const flags = MONSTER_FLAGS2[hero.umonnum] ?? 0;
@@ -43,7 +37,7 @@ function heroIsDemonOrUndead(state) {
 }
 function inGehennom(state) {
     const dnum = state.u?.uz?.dnum ?? -1;
-    return state.dungeons?.[dnum]?.dname === 'Gehennom';
+    return !!state.dungeons?.[dnum]?.flags.hellish;
 }
 function eligibleTarget(monster, heroLevel) {
     if (!monster || monster.dead || (monster.mhp ?? 1) <= 0
@@ -57,13 +51,6 @@ function eligibleTarget(monster, heroLevel) {
 async function turnOneMonster(monster, state, options) {
     const { finishMonsterKill, random } = options;
     const heroLevel = state.u?.ulevel ?? 1;
-    monster.msleeping = 0;
-    if (state.u?.confused || (state.u?.confusionTurns ?? 0) > 0) {
-        monster.mflee = 0;
-        monster.mfrozen = 0;
-        monster.mcanmove = 1;
-        return 'faltered';
-    }
     if (monsterResistsEffect(monster, heroLevel, random)) {
         await shieldeff(monster.mx, monster.my, state);
         if (cansee(monster.mx, monster.my))
@@ -91,12 +78,14 @@ export async function turnUndeadByCallingOnDeity(state = game, { finishMonsterKi
         state.u.uconduct = {};
     const priorCalls = state.u.uconduct.gnostic ?? 0;
     state.u.uconduct.gnostic = priorCalls + 1;
-    const deity = deityName(state);
+    if (!priorCalls)
+        recordGameLogEvent('rejected atheism by turning undead', { state });
+    const deity = hallucinatedDeityName(state.u.ualign.type, state);
     if (!heroCanChant(state)) {
         const strangled = state.u?.strangled
             || (state.u?.strangledTurns ?? 0) > 0;
-        const ability = strangled ? 'not able' : 'incapable';
-        await pline(`You are ${ability} of calling upon ${deity} to turn aside evilness.`);
+        const ability = strangled ? 'not able to call' : 'incapable of calling';
+        await pline(`You are ${ability} upon ${deity} to turn aside evilness.`);
         state.context.move = priorCalls === 0 ? 1 : 0;
         return [];
     }
@@ -110,7 +99,7 @@ export async function turnUndeadByCallingOnDeity(state = game, { finishMonsterKi
         return [];
     }
     if (inGehennom(state)) {
-        await pline(`Since you are in Gehennom, ${deity} can't help you.`);
+        await pline(`Since you are in Gehennom, ${deity} ${deity === 'Moloch' ? "won't" : "can't"} help you.`);
         aggravateMonsters(state, random);
         state.context.move = 1;
         return [];
@@ -129,17 +118,24 @@ export async function turnUndeadByCallingOnDeity(state = game, { finishMonsterKi
             || dx * dx + dy * dy > rangeSquared
             || !eligibleTarget(monster, state.u?.ulevel ?? 1))
             continue;
-        const result = await turnOneMonster(monster, state, {
-            finishMonsterKill,
-            random,
-        });
+        monster.msleeping = 0;
+        let result;
+        if (state.u.confused || (state.u.confusionTurns ?? 0) > 0) {
+            if (!falterMessageShown) {
+                await pline('Unfortunately, your voice falters.');
+                falterMessageShown = true;
+            }
+            monster.mflee = 0;
+            monster.mfrozen = 0;
+            monster.mcanmove = 1;
+            result = 'faltered';
+        }
+        else {
+            result = await turnOneMonster(monster, state, { finishMonsterKill, random });
+        }
         if (result === 'hero-died')
             return results;
         results.push({ monster, result });
-        if (result === 'faltered' && !falterMessageShown) {
-            await pline('Unfortunately, your voice falters.');
-            falterMessageShown = true;
-        }
     }
     endVoluntaryMultiTurn(state);
     state._helplessTurns = Math.max(1, 5 - Math.trunc(((state.u?.ulevel ?? 1) - 1) / 6));

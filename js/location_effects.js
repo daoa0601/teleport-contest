@@ -14,13 +14,13 @@ import { autopickupAtHero } from './pickup.js';
 import { checkSpecialRoom } from './shk.js';
 import { vision_recalc, vision_reset } from './vision.js';
 import { announceInvocationSquare } from './invocation.js';
-export async function finishTeleportArrival(movement) {
+export async function finishTeleportArrival(movement, { announceTeleport = true } = {}) {
     newsym(movement.oldx, movement.oldy);
     vision_reset();
     vision_recalc(0);
     await redrawMap();
     await bot();
-    if (game.flags.verbose !== false) {
+    if (announceTeleport && game.flags.verbose !== false) {
         const place = movement.oldx === movement.x && movement.oldy === movement.y
             ? 'the same' : 'a different';
         await plineWithContinuation(`You materialize in ${place} location!`);

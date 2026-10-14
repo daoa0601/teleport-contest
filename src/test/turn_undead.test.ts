@@ -9,6 +9,10 @@ import { resetInputState } from '../js/input.js';
 import { turnUndeadByCallingOnDeity } from '../js/turn_undead.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { runExtendedCommand } from './support/commands.js';
+import { initRng } from '../js/rng.js';
+import { gameLogEvents } from '../js/gamelog.js';
+import { setPropertyTimeout } from '../js/properties.js';
 
 const PM_HUMAN_MUMMY = 192;
 const PM_HUMAN_ZOMBIE = 244;
@@ -69,4 +73,85 @@ void test('a chaotic priest makes a weak undead monster peaceful', async () => {
     assert.ok(zombie.mhp > 0);
     assert.equal(zombie.mpeaceful, 1);
     assert.ok(!zombie.mflee);
+});
+
+void test('#turn is refused in any hellish dungeon, even with a different dungeon name', async () => {
+    freshPriest(1);
+    requirePlayingGame(game);
+    game.dungeons = [createDungeon({ dname: 'The Infernal Caves', flags: { hellish: true } })];
+    const zombie = await createMonsterAt('human zombie', 11, 10);
+    zombie.mpeaceful = false;
+
+    await runExtendedCommand('turn', '\x1b');
+
+    assert.match(game._pending_message, /Since you are in Gehennom, Athena can't help you\./);
+    assert.ok(game.level.monsters.includes(zombie));
+    assert.equal(game._helplessTurns ?? 0, 0);
+    assert.equal(game.context.move, 1);
+});
+
+void test('a hallucinating priest calls upon different imagined deities with #turn', async () => {
+    const invocations = new Set<string>();
+    for (let seed = 1n; seed <= 4n; seed++) {
+        freshPriest(1);
+        requirePlayingGame(game);
+        game.u.hallucinationTurns = 50;
+        initRng(seed);
+
+        await runExtendedCommand('turn');
+
+        assert.match(game._pending_message, /^Calling upon .+, you chant an arcane formula\./);
+        invocations.add(game._pending_message);
+    }
+    assert.ok(invocations.size > 1, 'hallucination must change the deity named by the invocation');
+});
+
+void test('an attempted #turn breaks atheism even when strangulation prevents chanting', async () => {
+    freshPriest(1);
+    requirePlayingGame(game);
+    setPropertyTimeout('strangled', 6);
+
+    await runExtendedCommand('turn');
+
+    assert.equal(game.u.uconduct.gnostic, 1);
+    assert.equal(game.context.move, 1);
+    assert.match(game._pending_message, /You are not able to call upon Athena to turn aside evilness\./);
+    assert.ok(gameLogEvents().some(event => event.text === 'rejected atheism by turning undead'));
+
+    await runExtendedCommand('turn', '\x1b');
+
+    assert.equal(game.u.uconduct.gnostic, 2);
+    assert.equal(game.context.move, 0);
+    assert.equal(gameLogEvents().filter(event => event.text === 'rejected atheism by turning undead').length, 1);
+});
+
+void test('a confused #turn wakes its target before the faltering voice is announced', async () => {
+    freshPriest(1);
+    requirePlayingGame(game);
+    const zombie = await createMonsterAt('human zombie', 11, 10);
+    zombie.mpeaceful = false;
+    zombie.msleeping = 1;
+    zombie.mfrozen = 5;
+    zombie.mcanmove = 0;
+    setPropertyTimeout('confusion', 10);
+    const input = resetInputState();
+    const turning = runExtendedCommand('turn');
+    try {
+        const boundary = await Promise.race([
+            turning.then(() => 'completed'), input.waitUntilBlocked().then(() => 'input'),
+        ]);
+        assert.equal(boundary, 'input', 'the invocation must be acknowledged before the faltering announcement');
+        assert.equal(zombie.msleeping, 0);
+        assert.equal(zombie.mfrozen, 5);
+        input.feed(' ');
+        await turning;
+    } finally {
+        input.feed('\x1b');
+        await turning;
+    }
+
+    assert.match(game._pending_message, /Unfortunately, your voice falters\./);
+    assert.equal(zombie.mfrozen, 0);
+    assert.equal(zombie.mcanmove, 1);
+    assert.equal(zombie.mflee, 0);
 });

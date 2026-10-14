@@ -9,6 +9,7 @@ import { revealMonsterAppearance } from './monster_appearance.js';
 import { MONSTER_ATTACKS, MONSTER_SYMBOL, monsterTypeName, requireMonsterData } from './monster_data.js';
 import { monsterName } from './monster_name.js';
 import { wakeMonster } from './monster_anger.js';
+import { monsterAtPosition } from './monster_location.js';
 import { heroIsBlind } from './senses.js';
 const S_VERTICAL_CLOSED_DOOR = 15;
 const S_HORIZONTAL_CLOSED_DOOR = 16;
@@ -73,6 +74,17 @@ export function isDoorMimic(monster, state = game) {
     return isObjectOrFurnitureMimic(monster, state)
         && M_AP_TYPE(monster) === M_AP_FURNITURE
         && monster.mappearance !== undefined && CLOSED_DOOR_APPEARANCES.has(monster.mappearance);
+}
+// lock.c checks the disguise itself, even when the hero senses the monster.
+export async function stumbleOnDoorMimic(x, y, state = game) {
+    if (!state.level || state.u.protectionFromShapeChangers || state.protectionFromShapeChangers)
+        return false;
+    const monster = monsterAtPosition(state.level, x, y);
+    if (!monster || M_AP_TYPE(monster) !== M_AP_FURNITURE
+        || monster.mappearance === undefined || !CLOSED_DOOR_APPEARANCES.has(monster.mappearance))
+        return false;
+    await stumbleOntoMimic(monster, state);
+    return true;
 }
 export async function revealMimic(monster, state = game, publish = pline) {
     if (!isObjectOrFurnitureMimic(monster, state))

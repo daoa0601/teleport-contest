@@ -2967,7 +2967,9 @@ export async function summonNastyMonsters(summoner, { onCreate = null } = {}) {
                 || (summonerClass === 30 && candidateClass === 56));
             if (makeindex == null)
                 continue;
-            const monster = await makemonNear(makeindex, summoner?.mux ?? game.u?.ux ?? 0, summoner?.muy ?? game.u?.uy ?? 0, MM_NOMSG);
+            // nasty() preselects a nearby square for a monster caster;
+            // that construction does not inherit the hero's position.
+            const monster = await makemonNear(makeindex, summoner?.mux ?? game.u?.ux ?? 0, summoner?.muy ?? game.u?.uy ?? 0, MM_NOMSG, !summoner);
             if (!monster) {
                 // C tries a random replacement only when direct construction
                 // fails (normally because the chosen species was genocided).

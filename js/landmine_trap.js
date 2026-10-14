@@ -14,6 +14,7 @@ import { monsterWearsIronShoes } from './monworn.js';
 import { rn2, rnd } from './rng.js';
 import { monsterTrapVisibility } from './trap.js';
 import { monsterInAir } from './terrain_properties.js';
+import { monsterLearnsTrap, monstersSeeTrap } from './trap_knowledge.js';
 function ordinaryMonsterName(monster) {
     return monster.name || MONSTER_NAME[monster.mnum] || 'monster';
 }
@@ -35,6 +36,12 @@ async function finishMineDeath(monster, event, state, options) {
     return false;
 }
 async function fallIntoMinePit(monster, trap, event, state, options) {
+    if (!trap)
+        return;
+    // The recursive mintrap(FORCETRAP) teaches the new trap type before
+    // trapeffect_pit(), including when the victim is immune to the fall.
+    monsterLearnsTrap(monster, trap);
+    monstersSeeTrap(state, trap);
     const pit = beginMonsterPitTrap(monster, trap, state, { forced: true });
     if (!pit)
         return;

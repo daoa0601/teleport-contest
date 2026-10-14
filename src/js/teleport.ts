@@ -333,7 +333,7 @@ export async function teleportHeroSafely() {
     const destination = safeTeleportDestination();
     if (!destination) return false;
     const movement = await moveHeroByTeleport(destination.x, destination.y);
-    await finishTeleportArrival(movement);
+    await finishTeleportArrival(movement, { announceTeleport: false });
     return true;
 }
 

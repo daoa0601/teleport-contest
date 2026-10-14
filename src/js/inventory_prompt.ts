@@ -22,7 +22,6 @@ export interface InventoryPromptOptions {
     noneSuggested?: boolean;
     allowMenu?: boolean;
     allowCount?: boolean;
-    retainPromptOnCancel?: boolean;
     menuItems?: readonly GameObject[];
 }
 
@@ -213,7 +212,6 @@ export async function promptInventoryObject(prompt: string, eligible: readonly G
     noneSuggested = allowNone,
     allowMenu = false,
     allowCount = false,
-    retainPromptOnCancel = false,
     menuItems = eligible,
 }: InventoryPromptOptions = {}): Promise<InventoryObjectSelection> {
     // getobj() checks CQ_CANNED before invoking tty_yn_function(). A queued
@@ -250,11 +248,12 @@ export async function promptInventoryObject(prompt: string, eligible: readonly G
         }
         const cancelled = [27, 32, 10, 13].includes(key);
         if (cancelled) {
-            if (!retainPromptOnCancel) {
+            // C getobj(): a silent cancellation leaves the question painted.
+            if (game.flags?.verbose !== false) {
                 game._pending_message = '';
                 game._retained_message = '';
+                await pline('Never mind.');
             }
-            if (!retainPromptOnCancel && game.flags?.verbose !== false) await pline('Never mind.');
             return {
                 cancelled: true,
                 object: null,

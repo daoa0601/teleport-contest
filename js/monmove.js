@@ -1,3 +1,6 @@
+import { moveMonsterNextToHero } from './teleport.js';
+import { monsterFireDescription } from './monster_fire_description.js';
+import { bot } from './display.js';
 import { launchRollingBoulder } from './rolling_boulder.js';
 import { recorderLocalHour } from './calendar.js';
 // Monster movement-ration state, movement, and combat.
@@ -74,6 +77,7 @@ import { heroHasDrainResistance, heroHasFreeAction, heroIsDisplaced } from './ar
 import { heroHasConflict } from './hero_conflict.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { checkMonsterHeroRange } from './monster_flee.js';
+import { chooseCovetousStrategy, pursueCovetousTarget } from './monster_covetous_target.js';
 import { retreatCovetousMonster } from './monster_covetous_retreat.js';
 import { monsterName as canonicalMonsterName, monsterPossessive, monsterSpellDeathReason, possessiveName, shopkeeperName, } from './monster_name.js';
 import { heroHasEyes, monsterHandName } from './body_parts.js';
@@ -94,10 +98,9 @@ import { heroGoldAmount, heroGoldObject } from './hero_gold.js';
 import { unplaceBallAndChain } from './ball.js';
 import { beginHeroEngulf, monsterCanEngulfHero, resolveHeroEngulf, } from './hero_engulf.js';
 import { splitObjectStack } from './object_stack.js';
-import { artifactById } from './artifacts.js';
 import { respondMedusa } from './monster_gaze.js';
 import { canSeeMonster, canSpotMonster, map_invisible, newsym, randomDisplayMonsterSubject, plineWithContinuation, } from './display.js';
-import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_FLAGS3, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SIZE, MONSTER_SYMBOL, monsterIsCovetous, monsterIsNoncorporeal, monsterIsUndead, monsterIsVampireShifter, monsterIsWhirly, monsterIsShade, monsterIsUnsolid, monsterIsThickSkinned, monsterTypeName, } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SIZE, MONSTER_SYMBOL, monsterIsCovetous, monsterIsNoncorporeal, monsterIsUndead, monsterIsVampireShifter, monsterIsWhirly, monsterIsShade, monsterIsUnsolid, monsterIsThickSkinned, monsterTypeName, } from './monster_data.js';
 import { AD_ACID, AD_BLND, AD_CLRC, AD_COLD, AD_CURS, AD_HEAL, AD_DRIN, AD_CORR, AD_DCAY, AD_DGST, AD_DREN, AD_DRLI, AD_ELEC, AD_ENCH, AD_FIRE, AD_LEGS, AD_PHYS, AD_POLY, AD_TLPT, AD_DISE, AD_PEST, AD_FAMN, AD_MAGM, AD_SPC2, AD_SAMU, AD_SEDU, AD_SGLD, AD_SSEX, AD_SITM, AD_SLIM, AD_SLOW, AD_SPEL, AD_STCK, AD_STON, AD_STUN, AD_WRAP, AD_PLYS, AD_WERE, AD_RUST, AT_BOOM, AT_BREA, AT_CLAW, AT_ENGL, AT_GAZE, AT_HUGS, AT_MAGC, AT_SPIT, AT_TUCH, AT_WEAP, AT_KICK, AT_BITE, AT_STNG, AT_BUTT, AT_TENT, AT_EXPL, } from './monster_attack_types.js';
 import { AMULET_OF_YENDOR, APPLE, BANANA, BELL_OF_OPENING, BULLWHIP, BOULDER, CARROT, CANDELABRUM_OF_INVOCATION, CLOVE_OF_GARLIC, CORPSE, DWARVISH_MATTOCK, EGG, FAKE_AMULET_OF_YENDOR, FLINT, ENORMOUS_MEATBALL, GOLD_PIECE, MEATBALL, MEAT_RING, MEAT_STICK, ARROW, AXE, BATTLE_AXE, DART, IRON_SHOES, OBJECT_MATERIAL, OBJECT_BIMANUAL, OBJECT_LARGE_DAMAGE, OBJECT_NAMES, OBJECT_SMALL_DAMAGE, OBJECT_SUBTYPE, PICK_AXE, ROCK, POT_GAIN_LEVEL, POT_HEALING, POT_INVISIBILITY, SLIME_MOLD, SPE_BOOK_OF_THE_DEAD, TIN, TRIPE_RATION, WAN_SPEED_MONSTER, } from './object_data.js';
 import { placeCreatedObject, placeObjectSynchronously, remove_object, stack_object, } from './floor_object.js';
@@ -188,7 +191,7 @@ import { stopHeroOccupation } from './occupation.js';
 import { rileShopkeeper, shopkeeperRepairsDamage } from './shop_damage.js';
 import { diggingTimeToHole } from './hero_digging.js';
 import { migrateMonsterOffLevel } from './monster_migration.js';
-import { RLOC_MSG, A_CHA, A_DEX, A_STR, A_CON, ALLOW_ALL, ALLOW_BARS, ALLOW_DIG, ALLOW_M, ALLOW_MDISP, ALLOW_ROCK, ALLOW_SANCT, MMOVE_NOTHING, MMOVE_MOVED, MMOVE_DIED, MMOVE_DONE, MMOVE_NOMOVES, MON_FLOOR, ALLOW_SSM, ALLOW_TM, ALLOW_TRAPS, ALLOW_U, ALLOW_WALL, ARROW_TRAP, BEAR_TRAP, BOLT_LIM, COLNO, CORR, DART_TRAP, DOOR, ROWNO, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, D_WARNED, FOUNTAIN, SDOOR, Is_firelevel, Is_waterlevel, IS_DOOR, IS_LAVA, IS_OBSTRUCTED, IS_POOL, IS_ROOM, IS_STWALL, IS_TREE, IS_WALL, IRONBARS, LAVAPOOL, LAVAWALL, BUSTDOOR, MAGIC_PORTAL, OPENDOOR, TELEP_TRAP, MIGR_RANDOM, MIGR_PORTAL, ANTI_MAGIC, FIRE_TRAP, HOLE, LANDMINE, MAGIC_TRAP, M_ATTK_AGR_DIED, M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, M_ATTK_AGR_DONE, M_AP_FURNITURE, M_AP_MONSTER, M_AP_NOTHING, M_AP_OBJECT, M_AP_TYPE, POLY_TRAP, RUST_TRAP, PIT, PL_NSIZ, ROCKTRAP, ROLLING_BOULDER_TRAP, ROOM, SLP_GAS_TRAP, STONE, SPIKED_PIT, SQKY_BOARD, STATUE_TRAP, TRAPDOOR, NEED_AXE, NEED_HTH_WEAPON, NEED_PICK_AXE, NEED_PICK_OR_AXE, NEED_WEAPON, NO_WEAPON_WANTED, MM_NOWAIT, NOGARLIC, NOTONL, SHOPBASE, TEMPLE, TRAPNUM, STRAT_APPEARMSG, STRAT_WAITFORU, STRAT_WAITMASK, UNLOCKDOOR, VIBRATING_SQUARE, WATER, W_ACCESSORY, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMOR, W_ARMS, W_ARMU, W_NONDIGGABLE, W_NONPASSWALL, Upolyd, isok, WEB, WT_TOOMUCH_DIAGONAL, } from './const.js';
+import { RLOC_MSG, A_CHA, A_DEX, A_STR, A_CON, ALLOW_ALL, ALLOW_BARS, ALLOW_DIG, ALLOW_M, ALLOW_MDISP, ALLOW_ROCK, ALLOW_SANCT, MMOVE_NOTHING, MMOVE_MOVED, MMOVE_DIED, MMOVE_DONE, MMOVE_NOMOVES, MON_FLOOR, ALLOW_SSM, ALLOW_TM, ALLOW_TRAPS, ALLOW_U, ALLOW_WALL, ARROW_TRAP, BEAR_TRAP, BOLT_LIM, COLNO, CORR, DART_TRAP, DOOR, ROWNO, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, D_WARNED, FOUNTAIN, SDOOR, Is_firelevel, Is_waterlevel, IS_DOOR, IS_LAVA, IS_OBSTRUCTED, IS_POOL, IS_ROOM, IS_STWALL, IS_TREE, IS_WALL, IRONBARS, LAVAPOOL, LAVAWALL, BUSTDOOR, MAGIC_PORTAL, OPENDOOR, TELEP_TRAP, MIGR_RANDOM, MIGR_PORTAL, ANTI_MAGIC, FIRE_TRAP, HOLE, LANDMINE, MAGIC_TRAP, M_ATTK_AGR_DIED, M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, M_ATTK_AGR_DONE, M_AP_FURNITURE, M_AP_MONSTER, M_AP_NOTHING, M_AP_OBJECT, M_AP_TYPE, POLY_TRAP, RUST_TRAP, PIT, PL_NSIZ, ROCKTRAP, ROLLING_BOULDER_TRAP, ROOM, SLP_GAS_TRAP, STONE, SPIKED_PIT, SQKY_BOARD, STATUE_TRAP, TRAPDOOR, NEED_AXE, NEED_HTH_WEAPON, NEED_PICK_AXE, NEED_PICK_OR_AXE, NEED_WEAPON, NO_WEAPON_WANTED, MM_NOWAIT, NOGARLIC, NOTONL, SHOPBASE, TEMPLE, TRAPNUM, STRAT_WAITFORU, STRAT_WAITMASK, UNLOCKDOOR, VIBRATING_SQUARE, WATER, W_ACCESSORY, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMOR, W_ARMS, W_ARMU, W_NONDIGGABLE, W_NONPASSWALL, Upolyd, isok, WEB, WT_TOOMUCH_DIAGONAL, } from './const.js';
 import { monsterIsScaredAt } from './monster_fear.js';
 import { monsterInAir, monsterFliesOrFloats, levelHasCeiling, isLavaAt, isPoolAt } from './terrain_properties.js';
 import { disturbBuriedZombies } from './object_impact.js';
@@ -244,11 +247,6 @@ const PM_AIR_ELEMENTAL = 154;
 const PM_SALAMANDER = 329;
 const M2_COLLECT = 0x40000000;
 const M2_MAGIC = 0x80000000;
-const M3_WANTSAMUL = 0x0001;
-const M3_WANTSBELL = 0x0002;
-const M3_WANTSBOOK = 0x0004;
-const M3_WANTSCAND = 0x0008;
-const M3_WANTSARTI = 0x0010;
 const PM_FOG_CLOUD = 106;
 const PM_TENGU = 55;
 const PM_BABY_PURPLE_WORM = 113;
@@ -434,14 +432,22 @@ async function readyMonsterDiggingWeapon(monster, state, x, y) {
         : false;
 }
 function monsterHasLauncherAndAmmo(monster) {
+    const launcher = monsterWieldedWeapon(monster);
+    if (!launcher)
+        return false;
     const inventory = monster.minvent || monster.inventory || [];
-    return inventory.some((ammo) => inventory.some((launcher) => ammunitionMatchesLauncher(ammo, launcher)));
+    return inventory.some(ammo => ammunitionMatchesLauncher(ammo, launcher));
 }
-function monsterHasAvailableDistanceAttack(monster) {
-    return (MONSTER_ATTACKS[monster?.mnum] || []).some(([attackType]) => attackType === AT_SPIT ||
-        attackType === AT_BREA ||
-        attackType === AT_MAGC ||
-        attackType === AT_GAZE);
+// mhitu.c:ranged_attk_available() excludes effects the hero has resisted.
+function monsterHasAvailableDistanceAttack(monster, random) {
+    for (const [method, damage] of MONSTER_ATTACKS[monster.mnum] ?? []) {
+        if (![AT_SPIT, AT_BREA, AT_MAGC, AT_GAZE].includes(method))
+            continue;
+        const damageType = damage === AD_RBRE ? AD_MAGM + random(8) : damage;
+        if (damageType >= 0 && !((monster.seen_resistance ?? 0) & seenResistanceForDamage(damageType)))
+            return true;
+    }
+    return false;
 }
 // C monmove.c:dochug() phase two.  A close weapon attacker may spend its
 // whole action readying carried equipment before phase-three movement.  This
@@ -1329,8 +1335,7 @@ async function finishHeroContactDamage(monster, damage, attackType, oldForm, sta
 }
 function heroHasNegativeMulti(state) {
     return (!!state?._delayedAction ||
-        (state?._helplessTurns ?? 0) > 0 ||
-        (state?._prayerTurnsRemaining ?? 0) > 0);
+        (state?._helplessTurns ?? 0) > 0);
 }
 function lineBlockingTerrain(state, x, y) {
     if (!isok(x, y))
@@ -1350,15 +1355,6 @@ function hostileLinedUp(monster, state, random, calls) {
 // A polymorphed hero's concealment test precedes the geometric line check.
 export function monsterLinedUpWithPerceivedHero(monster, state, random, calls) {
     return monsterLinedUpWithHero(monster, state, range => recordRandom(random, calls, range));
-}
-function isQuestArtifact(object, state) {
-    if (object?.questArtifact)
-        return true;
-    if (!(object?.artifact || object?.oartifact))
-        return false;
-    const roleName = state?.urole?.artifactName?.toLowerCase();
-    const objectName = (object?.artifactName || object?.oextra?.oname)?.toLowerCase();
-    return !!roleName && roleName === objectName;
 }
 function nearbyFloorObjects(monster, state) {
     const objects = [];
@@ -2580,7 +2576,7 @@ async function movePet(monster, state, random, rollDice, rollOne, calls, resumeA
 // use a ranged attack does not blindly close to melee range.  Ordinary
 // launchers, polearms, breath/spit/gaze, and spells back away; an aklys tries
 // to stay inside its squared-distance return band.
-function monsterApproachPolicy(monster, state, oldPolicy, targetX, targetY) {
+function monsterApproachPolicy(monster, state, oldPolicy, targetX, targetY, random) {
     const distance = dist2(monster.mx, monster.my, targetX, targetY);
     const heroInvisible = !!(state?.u?.invisible ||
         state?.u?.invis ||
@@ -2601,7 +2597,7 @@ function monsterApproachPolicy(monster, state, oldPolicy, targetX, targetY) {
     if (wieldedName === 'aklys')
         return { policy: -2, min: 4, max: 16 };
     const badlyHurt = (monster.mhp ?? 0) < Math.trunc(((monster.mhpmax ?? 0) + 1) / 3);
-    if (monsterHasAvailableDistanceAttack(monster) && (badlyHurt || !(monster.mspec_used ?? 0)))
+    if (monsterHasAvailableDistanceAttack(monster, random) && (badlyHurt || !(monster.mspec_used ?? 0)))
         return { policy: -1, min: 0, max: 0 };
     return { policy: oldPolicy, min: 0, max: 0 };
 }
@@ -2615,6 +2611,20 @@ async function moveHostile(monster, state, random, rollDice, rollOne, calls, cap
     if (!options.afterRestrictedTenguTeleport)
         setMonsterApparentHeroPosition(monster, state, random, calls);
     requirePerceivedHero(monster);
+    if (!monster.wormno && !options.afterRestrictedTenguTeleport && monsterIsCovetous(monster)
+        && monster.mgoal && isok(monster.mgoal.x, monster.mgoal.y)) {
+        const intruder = monsterAtPosition(state.level, monster.mgoal.x, monster.mgoal.y);
+        if (intruder && intruder !== monster
+            && dist2(monster.mx, monster.my, monster.mgoal.x, monster.mgoal.y) <= 2) {
+            const attack = await beginMonsterMeleeAttack(monster, intruder, state, random, rollDice, rollOne, calls, null, monster.mgoal);
+            return {
+                oldx, oldy, x: monster.mx, y: monster.my, moved: false, attack,
+                heroDied: !!attack.heroDied,
+                postMoveStatus: monsterAttackStopsAggressor(attack) ? MMOVE_DIED : MMOVE_MOVED,
+                movementStage: 'postmov',
+            };
+        }
+    }
     if (!monster.wormno && !options.afterRestrictedTenguTeleport) {
         const priestMovement = await movePriest(monster, state, random, rollDice, rollOne, calls);
         if (priestMovement)
@@ -2768,7 +2778,17 @@ async function moveHostile(monster, state, random, rollDice, rollOne, calls, cap
         recordRandom(random, calls, 3) === 0) {
         appr = 0;
     }
-    const approach = monsterApproachPolicy(monster, state, appr, monster.mux ?? gx, monster.muy ?? gy);
+    if (appr === 1 && monster.mnum === MONSTER_NAME.indexOf('leprechaun')) {
+        const carriedGold = monster.minvent?.find(object => object.otyp === GOLD_PIECE);
+        const heroGold = state.inventory.find(object => object.otyp === GOLD_PIECE);
+        // leppie_avoidance(): a richer leprechaun protects its own gold.
+        if (carriedGold && carriedGold.quan > (heroGold?.quan ?? 0))
+            appr = -1;
+    }
+    // Confused and engulfing monsters skip deliberate ranged movement.
+    const approach = monster.mconf || state.u.uswallow && state.u.ustuck === monster
+        ? { policy: appr, min: 0, max: 0 }
+        : monsterApproachPolicy(monster, state, appr, monster.mux ?? gx, monster.muy ?? gy, limit => recordRandom(random, calls, limit));
     appr = approach.policy;
     // Native lined_up() is evaluated for every admitted search, including
     // peaceful actors, before approach determines whether combat forbids it.
@@ -4163,9 +4183,8 @@ export async function finishImmediateMonsterTrap(action, state = requireInitiali
 // C steal.c:steal().  Inventory stacks are candidates as objects rather than
 // by quantity.  Worn armor and accessories receive five tickets; weapons
 // (including the primary and alternate weapon) still receive one.  Keep
-// selection in the synchronous hitmu() slice so its rn2() stays before any
-// removal prose can suspend on tty --More--.
-function selectHeroItemForTheft(state, random, calls) {
+// selection after an animal's hit message and before removal prose.
+export function selectHeroItemForTheft(state, random, calls) {
     const inventory = state?.inventory || [];
     const wornObjects = new Set([
         state?.uarm,
@@ -4199,20 +4218,26 @@ function selectHeroItemForTheft(state, random, calls) {
         total += weight;
     }
     if (!total)
-        return { object: null, total: 0, ticket: null };
+        return null;
     let ticket = recordRandom(random, calls, total);
-    const initialTicket = ticket;
     for (const candidate of candidates) {
         ticket -= candidate.weight;
         if (ticket < 0) {
-            return {
-                object: candidate.object,
-                total,
-                ticket: initialTicket,
-            };
+            return theftEquipmentTarget(candidate.object, state);
         }
     }
-    return { object: null, total, ticket: initialTicket };
+    return null;
+}
+function theftEquipmentTarget(object, state) {
+    if ((object === state.uleft || object === state.uright) && state.uarmg)
+        object = state.uarmg;
+    if (object === state.uarmg && state.uwep)
+        return state.uwep;
+    if (object === state.uarm && state.uarmc)
+        return state.uarmc;
+    if (object === state.uarmu)
+        return state.uarmc || state.uarm || object;
+    return object;
 }
 // C do_wear.c:some_armor().  Torso priority is deterministic; each later
 // occupied slot gets an independent one-in-four replacement opportunity.
@@ -4959,11 +4984,10 @@ async function beginHeroAttackSlot(sequence, slot, state, random, rollOne, rollD
             deferredElectricNegation: true,
         };
     }
-    else if (hit && damageType === AD_SITM) {
+    else if (hit && (damageType === AD_SITM || damageType === AD_SEDU)) {
         // hitmu() records the attack's declared zero dice before dispatching
-        // AD_SITM through mhitm_ad_sedu().  A successful nymph theft ends the
+        // both theft claws through mhitm_ad_sedu(). A successful theft ends the
         // aggressor's attack sequence, so do not retain its second claw slot.
-        const theft = selectHeroItemForTheft(state, random, calls);
         return {
             kind: 'hero-attack',
             roll,
@@ -4974,9 +4998,6 @@ async function beginHeroAttackSlot(sequence, slot, state, random, rollOne, rollD
             damageType,
             effect: 'item-theft',
             deferredItemTheft: true,
-            stolenObject: theft.object,
-            theftWeight: theft.total,
-            theftTicket: theft.ticket,
         };
     }
     else if (hit && damageType === AD_LEGS) {
@@ -5391,7 +5412,7 @@ export function resumeDeferredHeroFireSpecial(action, state, random = rn2) {
         attack.fireEffectMessage = 'You avoid harm.';
     }
     else {
-        attack.fireEffectMessage = "You're on fire!";
+        attack.fireEffectMessage = `You're ${monsterFireDescription({ mnum: heroSpecies(state) }, attack.attackType)}!`;
         if (state.u.fireResistance) {
             attack.damage = 0;
             attack.fireResistanceMessage = "The fire doesn't feel hot!";
@@ -5480,126 +5501,13 @@ export function resumeDeferredHeroStun(action, state, random = rn2) {
     attack.deferredPostHit = true;
     return action;
 }
-function covetousObjectMatchesMask(object, mask, state) {
-    if (!object)
-        return false;
-    if (mask === M3_WANTSAMUL)
-        return object.otyp === AMULET_OF_YENDOR;
-    if (mask === M3_WANTSBELL)
-        return object.otyp === BELL_OF_OPENING;
-    if (mask === M3_WANTSBOOK)
-        return object.otyp === SPE_BOOK_OF_THE_DEAD;
-    if (mask === M3_WANTSCAND)
-        return object.otyp === CANDELABRUM_OF_INVOCATION;
-    return mask === M3_WANTSARTI && isQuestArtifact(object, state);
-}
-function covetousExternalTargetExists(monster, state, mask) {
-    const speciesFlags = MONSTER_FLAGS3[monster?.mnum] ?? 0;
-    if (!(speciesFlags & mask))
-        return false;
-    const ownsTarget = (monster?.minvent || monster?.inventory || []).some((object) => covetousObjectMatchesMask(object, mask, state));
-    if (ownsTarget)
-        return false;
-    if ((state?.inventory || []).some((object) => covetousObjectMatchesMask(object, mask, state))) {
-        return true;
-    }
-    for (let x = 0; x < (state?.level?.objects?.length || 0); x++) {
-        const column = state.level.objects[x];
-        for (let y = 0; y < (column?.length || 0); y++) {
-            if ((column?.[y] || []).some((object) => covetousObjectMatchesMask(object, mask, state)))
-                return true;
-        }
-    }
-    return !!state?.level?.monsters?.some((candidate) => candidate !== monster &&
-        (candidate.mhp ?? 1) > 0 &&
-        (candidate.minvent || candidate.inventory || []).some((object) => covetousObjectMatchesMask(object, mask, state)));
-}
-function covetousTargetMasks(state) {
-    const invoked = !!state?.u?.uevent?.invoked;
-    const masks = state?.context?.made_amulet ? [M3_WANTSAMUL] : [];
-    masks.push(...(invoked
-        ? [M3_WANTSARTI, M3_WANTSBOOK, M3_WANTSBELL, M3_WANTSCAND]
-        : [M3_WANTSBOOK, M3_WANTSBELL, M3_WANTSCAND, M3_WANTSARTI]));
-    return masks;
-}
-// wizard.c:tactics(STRAT_GROUND).  When a covetous monster already occupies
-// the artifact square, rloc_to() is a no-op and mpickobj() transfers the
-// object before ordinary m_move().  Other ground/hero/monster target
-// relocations remain separate branches; this exact-square case owns no RNG.
-async function covetousPicksUpTargetUnderfoot(monster, state) {
-    if (!monsterIsCovetous(monster))
-        return null;
-    const pile = state?.level?.objects?.[monster.mx]?.[monster.my];
-    if (!Array.isArray(pile) || !pile.length)
-        return null;
-    for (const mask of covetousTargetMasks(state)) {
-        if (!((MONSTER_FLAGS3[monster.mnum] ?? 0) & mask))
-            continue;
-        const index = pile.findIndex((object) => covetousObjectMatchesMask(object, mask, state));
-        if (index < 0)
-            continue;
-        const object = pile[index];
-        remove_object(object, state);
-        await addObjectToMonsterInventory(monster, object, state, { atFront: true });
-        return object;
-    }
-    return null;
-}
-// C wizard.c strategy(): this predicate identifies the full-health,
-// no-artifact-target STRAT_NONE branch.  The wounded stair-healing and
-// concrete artifact pursuit branches have different relocation owners and
-// deliberately do not enter the harass roll below.
-function covetousUsesHarassStrategy(monster, state) {
-    if (!monsterIsCovetous(monster) ||
-        shopkeeperInOwnShop(monster, state) ||
-        priestIsInOwnTemple(monster, state))
-        return false;
-    const hp = Math.max(0, monster.mhp ?? 0);
-    const maxHp = Math.max(1, monster.mhpmax ?? hp);
-    if (Math.floor((hp * 3) / maxHp) !== 3)
-        return false;
-    return !covetousTargetMasks(state).some((mask) => covetousExternalTargetExists(monster, state, mask));
-}
-function covetousSeeksHealing(monster, state) {
-    if (!monsterIsCovetous(monster) || shopkeeperInOwnShop(monster, state)
-        || priestIsInOwnTemple(monster, state))
-        return false;
-    const health = Math.trunc(monster.mhp * 3 / monster.mhpmax);
-    if (health === 0 || (health === 1 && MONSTER_NAME[monster.mnum] !== 'Wizard of Yendor'))
-        return true;
-    return health < 3 && !covetousTargetMasks(state).some(mask => covetousExternalTargetExists(monster, state, mask));
-}
-async function runCovetousHarassTactics(monster, state, random, calls, rollOne, afterRetreat = false) {
-    if (!afterRetreat && !covetousUsesHarassStrategy(monster, state))
-        return null;
-    // tactics() replaces the previous strategy while retaining the two
-    // waiting bits and its one-shot relocation presentation bit.
-    if (!afterRetreat)
-        monster.mstrategy = (monster.mstrategy ?? 0) & (STRAT_WAITMASK | STRAT_APPEARMSG);
+async function runCovetousHarassTactics(monster, state, random, calls) {
     if (monsterTeleportRestricted(monster, state) ||
         recordRandom(random, calls, monster.mflee ? 33 : 5) !== 0) {
         return null;
     }
-    const destination = findNearbyMonsterPosition(monster.mnum, state.u.ux, state.u.uy, {
-        state,
-        random,
-        calls,
-    });
-    if (!destination)
-        return null;
-    const oldx = monster.mx;
-    const oldy = monster.my;
-    await relocateMonsterTo(monster, destination.x, destination.y, {
-        state, random, rollOne, calls, flags: RLOC_MSG,
-    });
-    return {
-        oldx,
-        oldy,
-        x: monster.mx,
-        y: monster.my,
-        moved: oldx !== monster.mx || oldy !== monster.my,
-        deferredCovetousRelocation: true,
-    };
+    const relocation = await moveMonsterNextToHero(monster, state, { flags: RLOC_MSG, random });
+    return relocation ? { ...relocation, deferredCovetousRelocation: true } : null;
 }
 async function knockHeroFromMonster(monster, attack, state, random, publish = plineWithContinuation) {
     const finishDeath = (target, options = {}) => finishEnvironmentalMonsterDeath(target, state, { ...options, publish });
@@ -5827,6 +5735,9 @@ export async function completeHeroAttackSlot(action, state, random = rn2, rollDi
             result |= M_ATTK_AGR_DONE;
     }
     sequence.results[attack.attackIndex] = result;
+    // C mattacku() commits pending status before the next attack slot.
+    if (state === game && state.context.botl)
+        await bot();
     if (attack.kind === 'hero-attack' && attack.skipBrainDrain)
         sequence.skipBrainDrain = true;
     if (result === M_ATTK_HIT &&
@@ -6532,7 +6443,7 @@ async function finishDochugAfterMovement(monster, movement, state, random, rollO
         if (monsterIsHelpless(monster))
             return;
         const canContinue = !range.nearby &&
-            (monsterHasAvailableDistanceAttack(monster) ||
+            (monsterHasAvailableDistanceAttack(monster, limit => recordRandom(random, calls, limit)) ||
                 speciesHasWeaponAttack(dochugContext.entryMnum) ||
                 selectMonsterOffensiveItem(monster, state, {
                     random: limit => recordRandom(random, calls, limit),
@@ -7001,15 +6912,25 @@ export async function takeMonsterTurn(monster, state, random = rn2, rollDice = d
     if (!options.afterCovetousRelocation) {
         setMonsterApparentHeroPosition(monster, state, random, calls);
         let tacticsMovement = null;
-        if (covetousSeeksHealing(monster, state)) {
-            const retreat = await retreatCovetousMonster(monster, state, random, rollOne);
-            if (retreat === 'harass')
-                tacticsMovement = await runCovetousHarassTactics(monster, state, random, calls, rollOne, true);
-        }
-        else {
-            const pickedTarget = await covetousPicksUpTargetUnderfoot(monster, state);
-            if (!pickedTarget)
-                tacticsMovement = await runCovetousHarassTactics(monster, state, random, calls, rollOne);
+        if (monsterIsCovetous(monster)) {
+            const strategy = chooseCovetousStrategy(monster, state);
+            if (strategy.kind === 'heal') {
+                const retreat = await retreatCovetousMonster(monster, state, random, rollOne);
+                if (retreat === 'harass')
+                    tacticsMovement = await runCovetousHarassTactics(monster, state, random, calls);
+            }
+            else if (strategy.kind === 'target') {
+                const result = await pursueCovetousTarget(monster, strategy.target, state);
+                if (result === 'blocked-ground' && recordRandom(random, calls, 5) === 0
+                    && !monsterTeleportRestricted(monster, state)) {
+                    const relocation = await moveMonsterNextToHero(monster, state, { flags: RLOC_MSG, random });
+                    if (relocation)
+                        tacticsMovement = { ...relocation, deferredCovetousRelocation: true };
+                }
+            }
+            else {
+                tacticsMovement = await runCovetousHarassTactics(monster, state, random, calls);
+            }
         }
         if (state.program_state.gameover) {
             return {
@@ -7020,6 +6941,14 @@ export async function takeMonsterTurn(monster, state, random = rn2, rollDice = d
                 },
             };
         }
+        if (monsterIsCovetous(monster) && (monster.mstate ?? MON_FLOOR) !== MON_FLOOR)
+            return {
+                calls, dochugContext,
+                movement: {
+                    oldx: monster.mx, oldy: monster.my, x: monster.mx, y: monster.my,
+                    moved: false, actorLeftLevel: true,
+                },
+            };
         if (tacticsMovement)
             return { calls, dochugContext, movement: tacticsMovement };
     }

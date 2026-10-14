@@ -28,10 +28,12 @@ interface HeroPotionImpactOptions {
     random?: typeof rn2;
     rollOne?: typeof rnd;
     rollDice?: typeof d;
+    source?: 'thrown' | 'propelled';
 }
 
 export async function hitHeroWithThrownPotion(potion: GameObject, {
     state = game, publish = plineWithContinuation, random = rn2, rollOne = rnd, rollDice = d,
+    source = 'thrown',
 }: HeroPotionImpactOptions = {}): Promise<{ heroDied: boolean }> {
     requireLiveGame(state);
     requirePlayingGame(state);
@@ -39,7 +41,7 @@ export async function hitHeroWithThrownPotion(potion: GameObject, {
         throw new TypeError('Thrown potion impact requires the free potion from projectile flight');
     const bottle = randomBottleName(state, random);
     await publish(`The ${bottle} crashes on your ${heroHeadName(state)} and breaks into shards.`);
-    let heroDied = await loseHeroHp(physicalDamage(rollOne(2), state), 'thrown potion', { state, publish });
+    let heroDied = await loseHeroHp(physicalDamage(rollOne(2), state), `${source} potion`, { state, publish });
     if (!heroDied) {
         if (potion.otyp !== POT_OIL && cansee(state.u.ux, state.u.uy))
             await publish(`The ${potionImpactObjectName(potion, state)} evaporates.`);
@@ -47,9 +49,7 @@ export async function hitHeroWithThrownPotion(potion: GameObject, {
     }
     if (!heroDied) {
         if (heroPotionVaporProfile(state).canReceive) {
-            const vapor = await applySupportedPotionVapor({ state, potion, publish });
-            // Potions without a vapor effect still reach native docall().
-            if (!vapor) await tryCallObjectType(potion, state);
+            await applySupportedPotionVapor({ state, potion, publish });
         } else if (potion.dknown && cansee(state.u.ux, state.u.uy)) {
             await tryCallObjectType(potion, state);
         }
