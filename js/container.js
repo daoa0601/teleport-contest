@@ -592,7 +592,10 @@ async function takeSelectedObjects(container) {
     let resetJustPicked = true;
     let previousCapacity = 0;
     for (const selection of selected) {
-        const result = await takeFromContainer(container, selection.value, game, selection.count, { resetJustPicked, previousCapacity });
+        const transfer = splitForTransfer(selection.value, selection.count, game);
+        const result = await takeFromContainer(container, transfer.object, game, -1, { resetJustPicked, previousCapacity });
+        if (!result.moved)
+            await restoreRejectedSplit(transfer, game);
         results.push(result);
         if (result.message)
             await plineWithContinuation(result.message);

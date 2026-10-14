@@ -257,7 +257,7 @@ async function takeSelectedObjects(source: PickupSource, selected: readonly Pick
         const remote = object.unpaid && shopRoom !== undefined && !savedShops.includes(shopRoom);
         const added = await addPickedInventoryObject(object);
         if (remote) await remoteBurglary(source.x, source.y);
-        const message = pickedInventoryDescription(added.object, added.count);
+        const message = pickedInventoryDescription(added.object, lift.count);
         const capacity = nearCapacity(game);
         const prefix = capacity === previousCapacity ? '' : pickupLoadPrefix(capacity);
         previousCapacity = capacity;
