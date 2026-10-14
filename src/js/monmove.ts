@@ -2382,6 +2382,7 @@ export async function commitPetPickup(monster: Monster, movement: PetInventoryAc
     if (!movement.pickupPending || !object) return;
     movement.pickupPending = false;
     remove_object(object, state);
+    newsym(monster.mx, monster.my);
     await addObjectToMonsterInventory(monster, object, state);
 }
 
