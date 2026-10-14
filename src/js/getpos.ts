@@ -19,6 +19,8 @@ import { MAP_SYMBOLS } from './map_symbols.js';
 import { NO_COLOR } from './terminal.js';
 import { cansee } from './vision.js';
 import { coordinateDescription } from './pager_lists.js';
+import { screenDescription } from './pager_description.js';
+import { farlookLocationDescription } from './cmd.js';
 import { showMultiSelectWindow } from './windows.js';
 import type { GameState } from './game_state.js';
 import type { Position } from './map_types.js';
@@ -304,6 +306,15 @@ export async function getposHelpUntilDismissed(
 
 async function describeSelectedPosition(describe: PositionDescription | null | undefined, cursor: Position, fallback: string): Promise<string> {
     return await describe?.(cursor.x, cursor.y) || fallback;
+}
+
+// getpos_menu() describes the displayed glyph even when the caller only
+// supplied a validity rule, such as spell or polearm targeting.
+async function describeMenuPosition({ x, y }: Position): Promise<string | null> {
+    const screen = screenDescription(x, y, '');
+    if (!screen.count) return null;
+    return screen.needsDetail
+        ? await farlookLocationDescription(x, y) || screen.firstMatch : screen.firstMatch;
 }
 
 // selection_force_newsyms() redraws by column, then row. Hallucinated glyphs
@@ -601,7 +612,8 @@ export async function selectMapPosition({
                     }
                     const items: { text: string; value: Position }[] = [];
                     for (const spot of spots) {
-                        const text = await describeSelectedPosition(describe, spot, 'unknown');
+                        const text = await describeMenuPosition(spot);
+                        if (text === null) continue;
                         const coordinates = coordinateDescription(spot.x, spot.y, game.iflags.getpos_coords ?? 'n');
                         items.push({ text: text + (coordinates ? ` ${coordinates}` : ''), value: spot });
                     }

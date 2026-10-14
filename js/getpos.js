@@ -12,6 +12,8 @@ import { MAP_SYMBOLS } from './map_symbols.js';
 import { NO_COLOR } from './terminal.js';
 import { cansee } from './vision.js';
 import { coordinateDescription } from './pager_lists.js';
+import { screenDescription } from './pager_description.js';
+import { farlookLocationDescription } from './cmd.js';
 import { showMultiSelectWindow } from './windows.js';
 // defsym.h S_goodpos: the dollar sign doubles as the default getpos key
 // which toggles valid-position marking, so the mark glyph shares it.
@@ -250,6 +252,15 @@ export async function getposHelpUntilDismissed(goal, { hasValidLocations = false
 }
 async function describeSelectedPosition(describe, cursor, fallback) {
     return await describe?.(cursor.x, cursor.y) || fallback;
+}
+// getpos_menu() describes the displayed glyph even when the caller only
+// supplied a validity rule, such as spell or polearm targeting.
+async function describeMenuPosition({ x, y }) {
+    const screen = screenDescription(x, y, '');
+    if (!screen.count)
+        return null;
+    return screen.needsDetail
+        ? await farlookLocationDescription(x, y) || screen.firstMatch : screen.firstMatch;
 }
 // selection_force_newsyms() redraws by column, then row. Hallucinated glyphs
 // consume display randomness in that order, independently of target cycling.
@@ -555,7 +566,9 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
                     }
                     const items = [];
                     for (const spot of spots) {
-                        const text = await describeSelectedPosition(describe, spot, 'unknown');
+                        const text = await describeMenuPosition(spot);
+                        if (text === null)
+                            continue;
                         const coordinates = coordinateDescription(spot.x, spot.y, game.iflags.getpos_coords ?? 'n');
                         items.push({ text: text + (coordinates ? ` ${coordinates}` : ''), value: spot });
                     }

@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { selectMapPosition } from '../js/getpos.js';
+import { FOUNTAIN } from '../js/const.js';
 import { rhack } from '../js/cmd.js';
 import { newsym } from '../js/display.js';
 import { game } from '../js/gstate.js';
@@ -105,4 +106,25 @@ void test('configuring autodescribe takes effect after the cursor toggle', async
     await answerPrompts(rhack(';'.charCodeAt(0)), input, [
         { prompt: /floor of a room/, keys: '\x1b' },
     ]);
+});
+
+void test('target menus describe displayed glyphs without a caller callback', async () => {
+    const level = freshObjectRoom({ flags: { tips: false, verbose: false } });
+    await createMonsterAt('kitten', 11, 10);
+    level.requireAt(12, 10).typ = FOUNTAIN;
+    newsym(11, 10);
+    newsym(12, 10);
+    const input = resetInputState();
+    input.feed('!m');
+
+    const selected = await answerPrompts(selectMapPosition({
+        start: { x: 10, y: 10 }, prompt: 'Pick a target.', goal: 'a target',
+    }), input, [
+        { prompt: /Pick a monster[\s\S]*a - kitten/, keys: 'a' },
+        { prompt: /Move cursor to a target:/, keys: 'a' },
+        { prompt: /Pick an interesting thing[\s\S]*a - kitten[\s\S]*b - fountain/, keys: 'b' },
+        { prompt: /Move cursor to a target:/, keys: '.' },
+    ]);
+    assert.equal(selected?.x, 12);
+    assert.equal(selected?.y, 10);
 });
