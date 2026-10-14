@@ -9,6 +9,7 @@ import { canSeeMonster, canSpotMonster, newsym, plineWithContinuation } from './
 import { recordGameLogEvent } from './gamelog.js';
 import { detachHeroGold, heroGoldAmount } from './hero_gold.js';
 import { heroSpecies } from './hero_species.js';
+import { heroIsUnaware } from './hero_sleep.js';
 import { resetHeroFaint } from './hunger.js';
 import { setMonsterMalign } from './monster_alignment.js';
 import { MONSTER_ALIGNMENT, MONSTER_FLAGS2, MONSTER_SYMBOL } from './monster_data.js';
@@ -52,7 +53,8 @@ export async function talkToDemon(monster, state, random = rn2, rollOne = rnd) {
     const weapon = state.uwep || state.u.uwep;
     if (['Excalibur', 'Demonbane'].includes(artifactById(weapon?.oartifact, state)?.name ?? '')) {
         await plineWithContinuation(canSpotMonster(monster)
-            ? `${subject()} looks very angry.` : 'You feel tension building.');
+            ? `${subject()} looks very angry.`
+            : heroIsUnaware(state) ? 'You dream that you feel tension building.' : 'You feel tension building.');
         monster.mtame = 0;
         angerDemon(monster, state);
         newsym(monster.mx, monster.my);

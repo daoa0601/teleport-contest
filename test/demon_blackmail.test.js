@@ -1,17 +1,19 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { NO_MINVENT } from '../js/const.js';
-import { game, requirePlayingGame } from '../js/gstate.js';
-import { runMonsterAction, resumeDeferredCovetousRelocation } from '../js/monmove.js';
-import { pushKey, pushKeys } from '../js/input.js';
 import { rhack } from '../js/cmd.js';
 import { talkToDemon } from '../js/demon_talk.js';
+import { game, requirePlayingGame } from '../js/gstate.js';
 import { heroGoldAmount, setHeroGoldAmount } from '../js/hero_gold.js';
+import { putHeroToSleep } from '../js/hero_sleep.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { monsterName } from '../js/monster_name.js';
-import { initRng } from '../js/rng.js';
+import { runMonsterAction, resumeDeferredCovetousRelocation } from '../js/monmove.js';
+import { pushKey, pushKeys } from '../js/input.js';
 import { RING_MAIL } from '../js/object_data.js';
-import { addInventoryObject } from './support/game-objects.js';
+import { initRng } from '../js/rng.js';
+import { setPrimaryWeapon } from '../js/weapon_slots.js';
+import { addInventoryObject, artifactObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('a peaceful invisible demon prince reveals itself and attacks a penniless hero', async () => {
@@ -84,5 +86,19 @@ void test('a demon greeting reports the force that prevents its teleport', async
     assert.equal(game._lastPlineMessage, 'A mysterious force prevents the water demon from teleporting!');
     assert.equal(demon.mx, 11);
     assert.equal(demon.my, 10);
+});
+void test('an unseen demon angered by Excalibur appears as tension in a sleeping hero\'s dream', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    const demon = await createMonsterAt('water demon', 11, 10, NO_MINVENT);
+    demon.minvis = true;
+    demon.mux = game.u.ux;
+    demon.muy = game.u.uy;
+    await setPrimaryWeapon(await artifactObject('Excalibur'));
+    putHeroToSleep(5);
+    game._pending_message = '';
+    await talkToDemon(demon, game);
+    assert.equal(game._lastPlineMessage, 'You dream that you feel tension building.');
+    assert.equal(!!demon.mpeaceful, false);
 });
 //# sourceMappingURL=demon_blackmail.test.js.map
