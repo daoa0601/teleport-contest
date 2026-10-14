@@ -219,6 +219,8 @@ export async function useUpTin(tin: GameObject, { state = game }: TinOptions = {
 }
 
 async function consumeTin(message: string, { state }: { state: PlayingGameState }) {
+    // Metal has already been swallowed when corpse effects change the form.
+    const alwaysEat = eatsMetal(state);
     let tin: GameObject | null = currentTin(state);
     const variety = tinVariety(tin);
     if (tin.otrapped || tin.cursed && variety !== HOMEMADE_TIN && rn2(8) === 0) {
@@ -229,7 +231,7 @@ async function consumeTin(message: string, { state }: { state: PlayingGameState 
     }
     await plineWithContinuation(message);
     if (variety === SPINACH_TIN) {
-        await consumeSpinach(tin, state);
+        await consumeSpinach(tin, alwaysEat, state);
         return;
     }
     const species = tinSpecies(tin);
@@ -241,11 +243,11 @@ async function consumeTin(message: string, { state }: { state: PlayingGameState 
         tin.known = true;
         tin = await costlyTin('open', state);
         await useUpTin(tin, { state });
-        if (eatsMetal(state)) await gainHeroNutrition(5, { state });
+        if (alwaysEat) await gainHeroNutrition(5, { state });
         return;
     }
     const smell = tinSmell(species, state);
-    if (!eatsMetal(state)) {
+    if (!alwaysEat) {
         await plineWithContinuation(`It smells like ${smell}.`);
         if (await promptYesNo('Eat it?') === 'n') {
             await discardTin(tin, state, !heroIsHallucinating(state));
@@ -267,7 +269,7 @@ async function consumeTin(message: string, { state }: { state: PlayingGameState 
     else {
         const nutrition = (variety === HOMEMADE_TIN
             ? Math.min(preparation.nutrition, requireMonsterData(MONSTER_BODY_META, species)[1])
-            : preparation.nutrition) + (eatsMetal(state) ? 5 : 0);
+            : preparation.nutrition) + (alwaysEat ? 5 : 0);
         await useUpTin(tin, { state });
         await gainHeroNutrition(nutrition, { state });
         if (state.program_state.gameover) return;
@@ -282,7 +284,7 @@ async function consumeTin(message: string, { state }: { state: PlayingGameState 
     if (tin) await useUpTin(tin, { state });
 }
 
-async function consumeSpinach(tin: GameObject, state: PlayingGameState) {
+async function consumeSpinach(tin: GameObject, alwaysEat: boolean, state: PlayingGameState) {
     await plineWithContinuation(tin.cursed
         ? `It contains some decaying${heroIsBlind(state) ? '' : ` ${displayColorName('green', state)}`} substance.`
         : 'It contains spinach.');
@@ -290,7 +292,7 @@ async function consumeSpinach(tin: GameObject, state: PlayingGameState) {
         observeObject(tin, state);
         tin.known = true;
     }
-    if (!eatsMetal(state) && await promptYesNo('Eat it?') === 'n') {
+    if (!alwaysEat && await promptYesNo('Eat it?') === 'n') {
         await discardTin(tin, state, false);
         return;
     }
@@ -304,7 +306,7 @@ async function consumeSpinach(tin: GameObject, state: PlayingGameState) {
     await gainHeroStrength(tin, 0, { state, giveMessage: false });
     tin = await costlyTin('open', state);
     const nutrition = (tin.blessed ? 600 : tin.cursed ? 200 + rnd(400) : 400 + rnd(200))
-        + (eatsMetal(state) ? 5 : 0);
+        + (alwaysEat ? 5 : 0);
     await useUpTin(tin, { state });
     await gainHeroNutrition(nutrition, { state });
 }
