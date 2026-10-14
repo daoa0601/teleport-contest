@@ -15,6 +15,7 @@ import { currentHungerState } from './hunger.js';
 import { heroIsSick } from './hero_illness.js';
 import { heroIsSliming } from './slime.js';
 import { heroIsPetrifying } from './stoning.js';
+import { rankOf } from './quest_pager.js';
 import { cansee, couldsee, set_seenv, vision_recalc } from './vision.js';
 import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, BC_BALL, BC_CHAIN, COLNO, ROWNO, STONE, ROOM, CORR, SCORR, SDOOR, DOOR, STAIRS, FOUNTAIN, THRONE, SINK, GRAVE, ALTAR, ICE, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER, CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL, TREE, IRONBARS, POOL, MOAT, WATER, LAVAPOOL, LAVAWALL, AIR, CLOUD, IS_POOL, IS_OBSTRUCTED, IS_ROOM, IS_WALL, LADDER, LA_DOWN, DBWALL, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN, D_NODOOR, D_ISOPEN, D_CLOSED, D_LOCKED, D_BROKEN, SV0, SV1, SV2, SV3, SV4, SV5, SV6, SV7, SICK_VOMITABLE, SICK_NONVOMITABLE, WM_X_TL, WM_X_TR, WM_X_BL, WM_X_BR, WM_X_TLBR, WM_X_BLTR, BEAR_TRAP, WEB, VIBRATING_SQUARE, CORPSTAT_GENDER, CORPSTAT_FEMALE, ENGRAVE, BURN, HEADSTONE, is_pit, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, def_warnsyms, MON_STILL_ARRIVING, In_endgame, Is_rogue_level, Is_waterlevel, Is_knox_level, In_sokoban, PLNMSG_UNKNOWN, MONSEEN_NORMAL, MONSEEN_SEEINVIS, MONSEEN_INFRAVIS, MONSEEN_TELEPAT, MONSEEN_XRAYVIS, MONSEEN_DETECT, MONSEEN_WARNMON, PICK_NONE, PICK_ONE, Upolyd, ismnum, } from './const.js';
 import { NO_COLOR, ATR_INVERSE, CLR_BLACK, CLR_RED, CLR_GREEN, CLR_GRAY, CLR_BROWN, CLR_MAGENTA, CLR_CYAN, CLR_WHITE, CLR_YELLOW, CLR_BLUE, CLR_ORANGE, CLR_BRIGHT_GREEN, CLR_BRIGHT_BLUE, CLR_BRIGHT_MAGENTA, DEC_TO_UNICODE, } from './terminal.js';
@@ -2181,18 +2182,16 @@ export function _statusLine1() {
     const u = game.u;
     if (!u)
         return '';
-    const name = game.displayName || game.plname || 'Hero';
-    const level = u.ulevel ?? 1;
-    const rankIndex = level <= 2 ? 0
-        : level <= 30 ? Math.trunc((level + 2) / 4) : 8;
-    const rank = game.urole?.title?.[rankIndex];
-    const monsterTitle = (game.u?.mtimedone ?? 0) > 0
-        ? (MONSTER_NAME[game.u.umonnum ?? -1] || 'monster')
-            .replace(/\b\w/g, letter => letter.toUpperCase())
-        : null;
-    const role = monsterTitle || (game.flags?.female
-        ? (rank?.f || rank?.m || game.urole?.name?.f || game.urole?.name?.m)
-        : (rank?.m || game.urole?.name?.m));
+    let name = game.plname || game.displayName || 'Hero';
+    name = name.charAt(0).toUpperCase() + name.slice(1);
+    const role = Upolyd(u)
+        ? monsterTypeName(u.umonnum ?? -1, u.mfemale)
+            .replace(/(^| )[a-z]/g, letter => letter.toUpperCase())
+        : rankOf(u.ulevel ?? 1, game);
+    // bot_via_windowport() keeps the rank intact and at least 16 name
+    // characters, even when a long monster title then exceeds 30 columns.
+    if (name.length + 5 + role.length > 30)
+        name = name.slice(0, Math.max(16, 30 - 5 - role.length));
     const title = `${name} the ${role}`;
     const stats = `St:${formatStrength(currentAttribute(A_STR))} `
         + `Dx:${currentAttribute(A_DEX)} Co:${currentAttribute(A_CON)} `
@@ -2230,7 +2229,7 @@ export function _statusLine2(refreshLoad = true) {
         : dungeonName === 'The Quest' ? `Home ${u.uz?.dlevel ?? 1}`
             : In_endgame(u.uz) ? endgameLocation
                 : `Dlvl:${dungeonDepth(u.uz)}`;
-    const polymorphed = (u.mtimedone ?? 0) > 0;
+    const polymorphed = Upolyd(u);
     // botl.c bounds the printed numbers without changing combat state.
     const currentHp = (polymorphed ? u.mh : u.uhp) ?? 0;
     const displayedHp = Math.max(0, Math.min(currentHp, 9999));

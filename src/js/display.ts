@@ -16,6 +16,7 @@ import { currentHungerState } from './hunger.js';
 import { heroIsSick } from './hero_illness.js';
 import { heroIsSliming } from './slime.js';
 import { heroIsPetrifying } from './stoning.js';
+import { rankOf } from './quest_pager.js';
 import { cansee, couldsee, set_seenv, vision_recalc } from './vision.js';
 import {
     A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, BC_BALL, BC_CHAIN,
@@ -2221,18 +2222,16 @@ function render_map_row(y: number) {
 export function _statusLine1() {
     const u = game.u;
     if (!u) return '';
-    const name = game.displayName || game.plname || 'Hero';
-    const level = u.ulevel ?? 1;
-    const rankIndex = level <= 2 ? 0
-        : level <= 30 ? Math.trunc((level + 2) / 4) : 8;
-    const rank = game.urole?.title?.[rankIndex];
-    const monsterTitle = (game.u?.mtimedone ?? 0) > 0
-        ? (MONSTER_NAME[game.u.umonnum ?? -1] || 'monster')
-            .replace(/\b\w/g, letter => letter.toUpperCase())
-        : null;
-    const role = monsterTitle || (game.flags?.female
-        ? (rank?.f || rank?.m || game.urole?.name?.f || game.urole?.name?.m)
-        : (rank?.m || game.urole?.name?.m));
+    let name = game.plname || game.displayName || 'Hero';
+    name = name.charAt(0).toUpperCase() + name.slice(1);
+    const role = Upolyd(u)
+        ? monsterTypeName(u.umonnum ?? -1, u.mfemale)
+            .replace(/(^| )[a-z]/g, letter => letter.toUpperCase())
+        : rankOf(u.ulevel ?? 1, game);
+    // bot_via_windowport() keeps the rank intact and at least 16 name
+    // characters, even when a long monster title then exceeds 30 columns.
+    if (name.length + 5 + role.length > 30)
+        name = name.slice(0, Math.max(16, 30 - 5 - role.length));
     const title = `${name} the ${role}`;
     const stats = `St:${formatStrength(currentAttribute(A_STR))} `
         + `Dx:${currentAttribute(A_DEX)} Co:${currentAttribute(A_CON)} `
@@ -2266,7 +2265,7 @@ export function _statusLine2(refreshLoad = true) {
         : dungeonName === 'The Quest' ? `Home ${u.uz?.dlevel ?? 1}`
             : In_endgame(u.uz) ? endgameLocation
             : `Dlvl:${dungeonDepth(u.uz)}`;
-    const polymorphed = (u.mtimedone ?? 0) > 0;
+    const polymorphed = Upolyd(u);
     // botl.c bounds the printed numbers without changing combat state.
     const currentHp = (polymorphed ? u.mh : u.uhp) ?? 0;
     const displayedHp = Math.max(0, Math.min(currentHp, 9999));
