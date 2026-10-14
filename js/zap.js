@@ -37,7 +37,7 @@ import { buryFloorObjectsAt } from './buried_object.js';
 import { fix_wall_spines, maketrap } from './mklev.js';
 import { monsterResistanceBits } from './monster_resistance.js';
 import { triggerImmediateMonsterTrap } from './monmove.js';
-import { makePlural } from './object_grammar.js';
+import { makePlural, withIndefiniteArticle } from './object_grammar.js';
 import { MONSTER_FLAGS1 } from './monster_data.js';
 import { DWARVISH_CLOAK, GLOB_OF_GREEN_SLIME, OBJECT_CHARGED, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_PROPERTY, POT_OIL, POT_WATER, RIN_SHOCK_RESISTANCE, SCR_FIRE, SPE_BOOK_OF_THE_DEAD, SPE_FIREBALL, WAN_LIGHTNING, WAN_STRIKING, } from './object_data.js';
 import { observeObject } from './object_knowledge.js';
@@ -58,7 +58,7 @@ import { chargeUnpaidUsage } from './shk.js';
 import { hasWornProperty } from './properties.js';
 import { closedRayDoor } from './ray.js';
 import { heroIsBlind } from './senses.js';
-import { killerObjectName, objectName, ownedObjectName, observeObjectForNaming, observeDistantObjectForNaming, } from './objnam.js';
+import { killerObjectName, objectName, ownedObjectName, observeObjectForNaming, observeDistantObjectForNaming, pluralizeObjectNoun, } from './objnam.js';
 import { delobj } from './object_delete.js';
 import { useUpFloorObject } from './floor_consumption.js';
 import { requirePlayingGame } from './gstate.js';
@@ -194,11 +194,16 @@ async function removeBurnedFloorQuantity(object, count, state, heroCaused, publi
     else
         await delobj(object, state);
 }
-function floorBurnMessage(object, destroyed) {
-    const name = object.name || OBJECT_NAMES[object.otyp] || 'object';
-    if (destroyed === 1)
-        return `A ${name} burns.`;
-    return `${destroyed} ${makePlural(name)} burn.`;
+function floorBurnMessage(object, destroyed, state) {
+    if (object.ox === state.u.ux && object.oy === state.u.uy)
+        observeObjectForNaming(object, { state });
+    else
+        observeDistantObjectForNaming(object, state);
+    const name = objectName({ ...object, quan: 1, quantity: 1 }, state);
+    if (destroyed > 1)
+        return `${destroyed} ${pluralizeObjectNoun(object, name)} burn.`;
+    const subject = withIndefiniteArticle(name);
+    return `${subject.charAt(0).toUpperCase()}${subject.slice(1)} burns.`;
 }
 export async function burnFloorObjectsAt(x, y, { state = game, giveFeedback = false, heroCaused = false, publish = plineWithContinuation, random = rn2, visible = cansee(x, y), repaint = newsym, } = {}) {
     const pile = state.level?.objects?.[x]?.[y] || [];
@@ -217,10 +222,11 @@ export async function burnFloorObjectsAt(x, y, { state = game, giveFeedback = fa
         }
         if (!destroyed)
             continue;
+        const feedback = giveFeedback ? floorBurnMessage(object, destroyed, state) : null;
         await removeBurnedFloorQuantity(object, destroyed, state, heroCaused, publish);
         burned += destroyed;
-        if (giveFeedback)
-            await publish(floorBurnMessage(object, destroyed));
+        if (feedback)
+            await publish(feedback);
     }
     await igniteItems(pile, {
         state,
