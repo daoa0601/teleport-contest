@@ -205,7 +205,7 @@ import { continueForceLock, doforce } from './lock.js';
 import { doUntrap } from './untrap.js';
 import { dosit } from './sit.js';
 import { continueEngraving, doengrave } from './engrave_command.js';
-import { heroCanMoveFromTrap, triggerHeroTrapAt } from './hero_traps.js';
+import { heroCanMoveFromTrap, triggerHeroTrapAt, triggerLevelTeleportTrap } from './hero_traps.js';
 import { activateStatueTrapAt } from './statue_trap.js';
 import { applyDippedCoinFate, applyFountainDemonActor, applyFountainGemDiscovery, applyFountainNymphActor, applyFountainSnakeActors, resolveDippedBucFate, resolveDippedSensationFate, } from './fountain_effects.js';
 import { dryFountainAt, gushForthFromFountain } from './fountain.js';
@@ -4456,7 +4456,7 @@ async function wizTeleportPosition() {
         trap = undefined;
     if (trap?.ttyp === LEVEL_TELEP) {
         if (await promptYesNo('There is a level teleporter here. Trigger it?') === 'y') {
-            await triggerHeroTrapAt(game.u.ux, game.u.uy, { forceTrap: true, gotoLevel });
+            await triggerLevelTeleportTrap(trap, gotoLevel, true);
             game.context.move = 1;
             return;
         }
