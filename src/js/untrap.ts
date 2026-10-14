@@ -18,7 +18,7 @@ import {
     MAXULEV, PIT, SPIKED_PIT, SQKY_BOARD, TRAP_EXPLANATIONS,
     WEB, isok,
 } from './const.js';
-import { newsym, pline, plineWithContinuation } from './display.js';
+import { displayMessageWindow, newsym, pline, plineWithContinuation } from './display.js';
 import { level_difficulty } from './dungeon.js';
 import {
     addExperience, checkExperienceLevel,
@@ -682,12 +682,13 @@ async function helpMonsterOut(monster: Monster, trap: Trap, options: FloorTrapOp
         && !(state.u.stoneResistance)) {
         const species = monsterTypeName(monster.mnum, !!monster.female);
         await publish(`You grab the trapped ${species} using your bare hands.`);
-        await resolveImmediatePetrification({
+        const contact = await resolveImmediatePetrification({
             state,
             killer: `trying to help ${article(species)} ${species} out of a pit`,
             publish: plineWithContinuation,
         });
-        return true;
+        if (contact.died || !contact.transformed) return true;
+        await displayMessageWindow();
     }
 
     if (failed) {
