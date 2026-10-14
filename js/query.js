@@ -143,8 +143,10 @@ export async function promptChoice(query, choices, defaultAnswer, { visibleChoic
         ? `${query.slice(0, QBUFSZ - 4)}...` : query;
     const message = `${question} [${visibleChoices}] (${defaultAnswer}) `;
     const preserveCase = choices.some(choice => /[A-Z]/.test(choice));
+    // tty_yn_function() honors WIN_STOP before clearing it for the question.
+    if (!game._suppressMessagesUntilInput)
+        await flushPendingTopline();
     game._suppressMessagesUntilInput = false;
-    await flushPendingTopline();
     await pline(message);
     await flush_screen(1);
     renderChoicePrompt(message);

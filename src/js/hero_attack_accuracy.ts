@@ -43,7 +43,7 @@ export async function findHeroMeleeHitThreshold(
     const hero = state.u;
     const polymorphed = Upolyd(hero);
     const species = heroSpecies(state);
-    const luck = hero.uluck ?? hero.luck ?? state.Luck ?? 0;
+    const luck = (hero.uluck ?? 0) + (hero.moreluck ?? 0);
     let threshold = 1 + heroAttributeHitBonus(state) + findMonsterArmorClass(monster)
         + (hero.uhitinc ?? 0) + Math.sign(luck) * Math.trunc((Math.abs(luck) + 2) / 3)
         + (polymorphed ? requireMonsterData(MONSTER_LEVEL, species) : hero.ulevel);

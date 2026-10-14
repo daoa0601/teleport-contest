@@ -11,7 +11,7 @@ import { game, requirePlayingGame } from './gstate.js';
 import { AD_BLND, AD_COLD, AD_ELEC, AD_FIRE, AD_HALU } from './monster_attack_types.js';
 import { MONSTER_FLAGS1 } from './monster_data.js';
 import { monsterName } from './monster_name.js';
-import { wakeMonstersNear } from './monster_wake.js';
+import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { d, rn2 } from './rng.js';
 import type { MessagePublisher } from './display.js';
 import type { GameState } from './game_state.js';
@@ -64,6 +64,6 @@ export async function resolveHeroCombatExplosion(
         if (targetDied) return { nativeResult, heroDied: false };
     }
 
-    wakeMonstersNear(state.u.ux, state.u.uy, 49, state);
+    await wakeMonstersNearWithMessages(state.u.ux, state.u.uy, 49, state, publish);
     return { nativeResult: M_ATTK_HIT, heroDied: false };
 }

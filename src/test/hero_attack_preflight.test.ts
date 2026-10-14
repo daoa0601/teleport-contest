@@ -100,6 +100,7 @@ void test('a visible monster disguise reports what it really is', async () => {
         m_ap_type: 3,
         mappearance: 0,
     });
+    newsym(monster.mx, monster.my);
 
     const result = await prepareAppliedWeaponAttack(monster, null);
 

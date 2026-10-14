@@ -7,7 +7,7 @@ import { M_AP_MONSTER, TURNED_SLIME } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { burnAwayHeroSlime } from '../js/hack.js';
 import {
-    beginHeroLifeSaving, completeHeroLifeSaving,
+    beginHeroLifeSaving, completeHeroLifeSaving, identifyLifeSavingAmulet,
 } from '../js/end.js';
 import { moveloop_core } from '../js/allmain.js';
 import { rhack } from '../js/cmd.js';
@@ -96,7 +96,9 @@ void test('the final slime turn changes form before invoking slime death',
                 deaths.push(details);
                 game.u.uhp = 0;
                 game.u.mh = 0;
-                await completeHeroLifeSaving(beginHeroLifeSaving(() => 0));
+                const lifeSaving = beginHeroLifeSaving();
+                identifyLifeSavingAmulet(() => 0);
+                await completeHeroLifeSaving(lifeSaving);
                 return false;
             },
         });
