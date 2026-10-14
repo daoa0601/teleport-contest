@@ -35,7 +35,7 @@ import { d, rn2 } from './rng.js';
 import { getLine, promptChoice } from './query.js';
 import { touchPetrifyingCorpse } from './stoning.js';
 import { addPickedInventoryObject } from './pickup.js';
-import { objectWeight } from './weight.js';
+import { nearCapacity, objectWeight, pickupLoadPrefix } from './weight.js';
 import { heroHasFreeHand } from './weapon_type.js';
 import { heroIsBlind } from './senses.js';
 import { addShopObjectToBill, currentShopResident, costlySpot } from './shk.js';
@@ -518,7 +518,7 @@ export async function putIntoContainer(container, object, state = game, count = 
         message,
     };
 }
-export async function takeFromContainer(container, object, state = game, count = -1, { resetJustPicked = false } = {}) {
+export async function takeFromContainer(container, object, state = game, count = -1, { resetJustPicked = false, previousCapacity = 0 } = {}) {
     if (!container.contents?.includes(object))
         return { moved: false, message: null };
     if (object.oartifact) {
@@ -561,14 +561,20 @@ export async function takeFromContainer(container, object, state = game, count =
         object.oy = container.oy;
         await addShopObjectToBill(object, state, { ininv: false });
     }
-    const { object: carried } = await addPickedInventoryObject(object);
+    const { object: carried, count: addedCount } = await addPickedInventoryObject(object);
     container.cknown = true;
     updateContainerWeights(container);
     state._capacityDirty = true;
     observeObjectForNaming(carried, { state });
+    const capacity = nearCapacity(state);
+    const prefix = capacity === previousCapacity ? '' : pickupLoadPrefix(capacity);
+    const added = { ...carried, quan: addedCount, quantity: addedCount };
+    const total = addedCount < quantity(carried) && state.flags.verbose !== false
+        ? ` (${quantity(carried)} in total).` : '.';
+    const description = `${carried.invlet || '$'} - ${objectDescription(added, inventoryPrimaryHandDetail(carried))}${total}`;
     return {
         moved: true,
-        message: `${carried.invlet || '$'} - ${objectDescription(carried)}.`,
+        message: prefix ? `${prefix} removing ${description}` : description,
     };
 }
 async function takeSelectedObjects(container) {
@@ -583,13 +589,18 @@ async function takeSelectedObjects(container) {
         : await chooseObjects('Take out what?', eligible, false);
     const results = [];
     let resetJustPicked = true;
+    let previousCapacity = 0;
     for (const selection of selected) {
-        const result = await takeFromContainer(container, selection.value, game, selection.count, { resetJustPicked });
+        const result = await takeFromContainer(container, selection.value, game, selection.count, { resetJustPicked, previousCapacity });
         results.push(result);
         if (result.message)
             await plineWithContinuation(result.message);
-        if (result.moved)
+        if (result.moved) {
             resetJustPicked = false;
+            previousCapacity = nearCapacity(game);
+            if (selection.value.oclass === 12)
+                await bot();
+        }
         if (result.stop)
             break;
     }
