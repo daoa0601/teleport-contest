@@ -17,7 +17,7 @@ import { heroPassesWalls, heroSpecies } from './hero_species.js';
 import { MONSTER_FLAGS1 } from './monster_data.js';
 import { monsterCorrodesBars, monsterPassesBars } from './monster_movement_traits.js';
 import { BOULDER, HEAVY_IRON_BALL, OBJECT_WEIGHT, requireObjectData } from './object_data.js';
-import { deleteObject } from './object_delete.js';
+import { delobj } from './object_delete.js';
 import { dissolveBars } from './projectile_bars.js';
 import { rnd } from './rng.js';
 import { inTown, roomsAt } from './room.js';
@@ -100,7 +100,7 @@ export async function continueChewingTerrain(x: number, y: number, state: Playin
     conduct.food = (conduct.food || 0) + 1;
     state.u.uhunger += rnd(20);
     if (boulder) {
-        await deleteObject(boulder, state);
+        await delobj(boulder, state);
         await pline('You eat the boulder.');
         const anotherBoulder = state.level.objects[x]?.[y]?.some(object => object.otyp === BOULDER);
         vision_note_blocker_change(x, y);
