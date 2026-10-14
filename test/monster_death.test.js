@@ -19,6 +19,18 @@ import { installPolymorphedHero } from './support/hero-state.js';
 import { addTrap, floorObjects, floorObjectsAt, } from './support/level-state.js';
 import { createMonsterAt, equipMonsterObject, requireMonsterVital, } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+void test('a zombie special corpse stays on the floor when its boulder fills a pit', async () => {
+    const level = freshObjectRoom();
+    requirePlayingGame(game);
+    const zombie = await createMonsterAt('giant zombie', 11, 10);
+    zombie.mtrapped = 1;
+    addTrap(level, PIT, 11, 10);
+    await equipMonsterObject(zombie, await knownObject(BOULDER), 0);
+    pushKeys(' '.repeat(20));
+    await finishHeroMonsterKill(zombie, 11, 10, { showKillMessage: false });
+    assert.equal(level.buriedObjects?.some(object => object.otyp === CORPSE) ?? false, false);
+    assert.equal(floorObjectsAt(level, 11, 10).some(object => object.otyp === CORPSE), true);
+});
 void test('a large monster leaves a corpse without a random chance', async () => {
     const level = freshObjectRoom();
     requirePlayingGame(game);

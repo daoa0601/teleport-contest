@@ -406,7 +406,7 @@ export async function createMonsterRemains(
     corpse.name = `${MONSTER_NAME[corpseForm] || 'monster'} corpse`;
     if (corpseForm !== monster.mnum)
         corpse.age = (corpse.age ?? state.moves ?? 1) - 51;
-    if (buried) {
+    if (buried && corpseForm === monster.mnum) {
         const result = await buryObject(corpse, state);
         if (result.outcome === 'absorbed') return null;
         if (result.outcome === 'buried') return corpse;
