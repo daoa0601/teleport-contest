@@ -7,6 +7,7 @@ import { canSpotMonster, feel_newsym, map_invisible, map_object, newsym, plineWi
 import { heroCanReachFloor } from './floor_reach.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { heroStatusLine } from './hero_status.js';
+import { formatHeardMessage } from './hero_speech.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
 import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_SIZE, monsterIsHumanoid, monsterIsWhirly, monsterTypeName } from './monster_data.js';
@@ -66,7 +67,7 @@ export async function useStethoscope(object) {
     }
     if (direction.dz) {
         if (hero.uinwater || game.underwater)
-            await pline('You hear faint splashing.');
+            await hear('faint splashing.');
         else if (direction.dz < 0 || !heroCanReachFloor(game, { checkPit: true })) {
             const destination = direction.dz < 0 ? ceilingName(hero.ux, hero.uy)
                 : heroCanReachFloor(game) ? 'bottom of the pit' : surfaceName(hero.ux, hero.uy);
@@ -77,14 +78,14 @@ export async function useStethoscope(object) {
             if (corpse.found)
                 spentTime ||= corpse.spentTime;
             else if (Is_stronghold(hero.uz))
-                await pline('You hear the crackling of hellfire.');
+                await hear('the crackling of hellfire.');
             else
                 await pline(`The ${surfaceName(hero.ux, hero.uy)} seems healthy enough.`);
         }
         return spentTime;
     }
     if (object.cursed && !rn2(2)) {
-        await pline('You hear your heart beat.');
+        await hear('your heart beat.');
         return spentTime;
     }
     // Native does a second confdir() after its cursed-heartbeat branch.
@@ -95,7 +96,7 @@ export async function useStethoscope(object) {
     }
     const x = hero.ux + (hero.dx ?? 0), y = hero.uy + (hero.dy ?? 0);
     if (!isok(x, y)) {
-        await pline('You hear a faint typing noise.');
+        await hear('a faint typing noise.');
         return false;
     }
     const monster = monsterAtPosition(game.level, x, y);
@@ -110,7 +111,7 @@ export async function useStethoscope(object) {
     const location = game.level.requireAt(x, y);
     if (location.typ === SDOOR || location.typ === SCORR) {
         const door = location.typ === SDOOR;
-        await pline(`You hear a hollow sound.  This must be a secret ${door ? 'door' : 'passage'}!`);
+        await hear(`a hollow sound.  This must be a secret ${door ? 'door' : 'passage'}!`);
         if (door)
             convertSecretDoor(location);
         else {
@@ -126,6 +127,11 @@ export async function useStethoscope(object) {
     if (!floor.found)
         await pline('You hear nothing special.');
     return spentTime || floor.spentTime;
+}
+async function hear(sound) {
+    const message = formatHeardMessage(sound);
+    if (message)
+        await pline(message);
 }
 async function diagnoseMonster(monster, x, y) {
     // C formats this even when only the later status line is printed.

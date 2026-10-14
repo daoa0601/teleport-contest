@@ -12,6 +12,7 @@ import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 import { addTrap } from './support/level-state.js';
+import { createSpecialLevel } from './support/topology.js';
 
 const hiddenFeatures: [number, number, string][] = [[SDOOR, DOOR, 'door'], [SCORR, CORR, 'passage']];
 for (const [hidden, revealed, noun] of hiddenFeatures) {
@@ -25,6 +26,68 @@ for (const [hidden, revealed, noun] of hiddenFeatures) {
 
         assert.equal(square.typ, revealed);
         assert.match(game._pending_message, new RegExp(`This must be a secret ${noun}!`));
+        assert.equal(game.context.move, 0);
+    });
+}
+
+for (const [hidden, revealed, noun] of hiddenFeatures) {
+    void test(`a stethoscope reveals a secret ${noun} with acoustics disabled`, async () => {
+        const level = freshPlayableRoom({ flags: { acoustics: false } });
+        const square = level.requireAt(game.u.ux + 1, game.u.uy);
+        square.typ = hidden;
+        const stethoscope = await addInventoryObject(STETHOSCOPE);
+
+        await runExtendedCommand('apply', `${stethoscope.invlet}l`);
+
+        assert.equal(square.typ, revealed);
+        assert.equal(game._pending_message, '');
+        assert.equal(game.context.move, 0);
+    });
+}
+
+for (const acoustics of [false, true]) {
+    void test(`an underwater stethoscope ${acoustics ? 'barely hears splashing' : 'suppresses splashing with acoustics disabled'}`, async () => {
+        freshPlayableRoom({ flags: { acoustics } });
+        game.underwater = true;
+        const stethoscope = await addInventoryObject(STETHOSCOPE);
+
+        await runExtendedCommand('apply', `${stethoscope.invlet}>`);
+
+        assert.equal(game._pending_message, acoustics ? 'You barely hear faint splashing.' : '');
+        assert.equal(game.context.move, 0);
+    });
+}
+
+void test('a stethoscope suppresses hellfire sounds with acoustics disabled', async () => {
+    freshPlayableRoom({ flags: { acoustics: false } });
+    game.stronghold_level = createSpecialLevel({ dnum: 0, dlevel: 1 });
+    const stethoscope = await addInventoryObject(STETHOSCOPE);
+
+    await runExtendedCommand('apply', `${stethoscope.invlet}>`);
+
+    assert.equal(game._pending_message, '');
+    assert.equal(game.context.move, 0);
+});
+
+void test('a stethoscope suppresses typing sounds at the map edge with acoustics disabled', async () => {
+    freshPlayableRoom({ heroX: 1, flags: { acoustics: false } });
+    const stethoscope = await addInventoryObject(STETHOSCOPE);
+
+    await runExtendedCommand('apply', `${stethoscope.invlet}h`);
+
+    assert.equal(game._pending_message, '');
+    assert.equal(game.context.move, 0);
+});
+
+for (const acoustics of [false, true]) {
+    void test(`a cursed stethoscope ${acoustics ? 'hears the hero\'s heartbeat' : 'suppresses the heartbeat with acoustics disabled'}`, async () => {
+        freshPlayableRoom({ flags: { acoustics } });
+        const stethoscope = await addInventoryObject(STETHOSCOPE, { cursed: true });
+        initRng(4);
+
+        await runExtendedCommand('apply', `${stethoscope.invlet}l`);
+
+        assert.equal(game._pending_message, acoustics ? 'You hear your heart beat.' : '');
         assert.equal(game.context.move, 0);
     });
 }
