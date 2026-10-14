@@ -491,10 +491,7 @@ export function simpleObjectTypeName(otyp: number, state: GameState = game): str
         ? 'koto' : state.objectDescriptions?.[otyp] ?? OBJECT_DESCRIPTIONS[otyp] ?? actual;
     const name = known ? actual : appearance;
     if (oclass === ARMOR_CLASS) return armorPresentationName(name, OBJECT_NAMES[otyp]);
-    if (oclass === GEM_CLASS) {
-        if (known) return OBJECT_MATERIAL[otyp] === 20 ? `${name} stone` : name;
-        return `${name} ${OBJECT_MATERIAL[otyp] === 21 ? 'stone' : 'gem'}`;
-    }
+    if (oclass === GEM_CLASS) return gemPresentationName(otyp, actual, known ? null : appearance);
     return name;
 }
 

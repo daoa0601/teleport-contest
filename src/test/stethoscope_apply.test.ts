@@ -4,7 +4,7 @@ import { CORR, DOOR, M_AP_OBJECT, PIT, SCORR, SDOOR } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { CORPSE, POT_HEALING, STATUE, STETHOSCOPE } from '../js/object_data.js';
+import { CORPSE, FLINT, POT_HEALING, RUBY, STATUE, STETHOSCOPE } from '../js/object_data.js';
 import { learnObjectType } from '../js/object_knowledge.js';
 import { initRng } from '../js/rng.js';
 import { applyInventoryObject, runExtendedCommand } from './support/commands.js';
@@ -132,3 +132,23 @@ void test('a visible monster receives a fresh hallucinated identity in its steth
     assert.match(game._pending_message, /^Status of the flaming sphere \(/);
     assert.equal(game.context.move, 0);
 });
+
+const identifiedGems: [number, string][] = [[RUBY, 'ruby'], [FLINT, 'flint stone']];
+for (const [type, name] of identifiedGems) {
+    void test(`a stethoscope names an identified ${name} disguise`, async () => {
+        freshPlayableRoom();
+        learnObjectType(type);
+        const mimic = await createMonsterAt('small mimic', game.u.ux + 1, game.u.uy);
+        mimic.m_ap_type = M_AP_OBJECT;
+        mimic.mappearance = type;
+        const stethoscope = await addInventoryObject(STETHOSCOPE);
+        const messages: string[] = [];
+        resetInputState().beforeRead = () => { messages.push(game._pending_message); };
+
+        await runExtendedCommand('apply', `${stethoscope.invlet}l   `);
+
+        assert.ok(messages.includes(`That ${name} is really a small mimic.`), messages.join('\n'));
+        assert.equal(mimic.m_ap_type, 0);
+        assert.equal(game.context.move, 0);
+    });
+}

@@ -460,11 +460,8 @@ export function simpleObjectTypeName(otyp, state = game) {
     const name = known ? actual : appearance;
     if (oclass === ARMOR_CLASS)
         return armorPresentationName(name, OBJECT_NAMES[otyp]);
-    if (oclass === GEM_CLASS) {
-        if (known)
-            return OBJECT_MATERIAL[otyp] === 20 ? `${name} stone` : name;
-        return `${name} ${OBJECT_MATERIAL[otyp] === 21 ? 'stone' : 'gem'}`;
-    }
+    if (oclass === GEM_CLASS)
+        return gemPresentationName(otyp, actual, known ? null : appearance);
     return name;
 }
 // C minimal_xname() builds a bare object so personal names, call names,
