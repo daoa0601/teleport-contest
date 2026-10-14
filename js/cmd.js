@@ -5,6 +5,7 @@ import { dip, dipInto } from './potion_dip.js';
 import { monsterHiddenConditions } from './monster_status.js';
 import { visibleRegionAt } from './regions.js';
 import { wizIntrinsic } from './wizard_intrinsics.js';
+import { wizFuzzer, wizPanic } from './wizard_debug_commands.js';
 import { isRoom } from './map_types.js';
 import { bookCursed, continueSpellbookStudy } from './spellbook_study.js';
 import { grantMonsterWish } from './potion_occupants.js';
@@ -3137,6 +3138,8 @@ const EXTENDED_COMMAND_HANDLERS = new Map([
     ['wipe', dowipe],
     ['monster', domonability],
     ['polyself', wizPolyself],
+    ['panic', wizPanic],
+    ['debugfuzzer', wizFuzzer],
     ['annotate', doannotate],
     ['herecmdmenu', doherecmdmenu],
     ['adjust', doadjust],
