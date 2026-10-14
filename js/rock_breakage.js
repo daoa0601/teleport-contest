@@ -60,6 +60,9 @@ export async function fractureRock(object, x, y, { state = game, random = rn2, p
     object.dknown = object.bknown = object.rknown = false;
     object.known = !OBJECT_USES_KNOWN[ROCK];
     delete object.oextra;
+    delete object.oname;
+    delete object.name;
+    delete object.plural;
     delete object.corpsenm;
     object.owt = objectWeight(object);
     if (object.where === 'floor') {
