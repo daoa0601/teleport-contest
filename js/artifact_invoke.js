@@ -9,7 +9,7 @@ import { hasNonArtifactInvisibility, invisibilityIsBlocked, syncHeroInvisibility
 import { cureHeroSickness, heroIsSick } from './hero_illness.js';
 import { showEnlightenment } from './insight.js';
 import { mksobj } from './mklev.js';
-import { ARROW, SPE_CONE_OF_COLD, SPE_FIREBALL } from './object_data.js';
+import { ACID_VENOM, ARROW, BLINDING_VENOM, SPE_CONE_OF_COLD, SPE_FIREBALL } from './object_data.js';
 import { captureLevitationState, hasInvokedProperty, propertyHasOtherSources, refreshProperty, setInvokedProperty, } from './properties.js';
 import { floatHeroDown, floatHeroUp } from './terrain_movement.js';
 import { applyHeroLocationEffects } from './cmd.js';
@@ -39,6 +39,9 @@ import { migrateMonsterToLevel } from './monster_migration.js';
 import { teleportMonsterByHero } from './monster_magic_response.js';
 import { couldsee } from './vision.js';
 import { rn2 } from './rng.js';
+import { throwOrdinaryObject } from './ordinary_throw.js';
+import { resolveSwallowedEggPieOrVenomThrow } from './swallowed_throw.js';
+import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 const M2_DEMON = 0x100;
 const M2_LORD = 0x400;
 const M2_PRINCE = 0x800;
@@ -57,6 +60,7 @@ const DIRECT_POWERS = [
     'level-teleport',
     'create-portal',
     'banish',
+    'fling-poison',
 ];
 function isDirectPower(power) {
     return DIRECT_POWERS.some((candidate) => candidate === power);
@@ -375,6 +379,26 @@ async function invokeBanish(state, publish) {
         await publish(`${amount} ${subject} ${vanished === 1 ? 'disappears' : 'disappear'} in a cloud of brimstone!`);
     }
 }
+async function invokeFlingPoison(object, state, publish) {
+    requireLiveGame(state);
+    const direction = await promptDirection();
+    if (!direction) {
+        await publish('Never mind.');
+        object.age = state.moves;
+        return false;
+    }
+    const venom = await mksobj(rn2(2) ? BLINDING_VENOM : ACID_VENOM, true, false);
+    venom.spe = 1;
+    if (!await resolveSwallowedEggPieOrVenomThrow({
+        state, item: venom, selectedQuantity: 1,
+        finishKill: monster => finishHeroMonsterKillOutcome(monster, monster.mx, monster.my),
+    })) {
+        await throwOrdinaryObject({
+            state, item: venom, quantity: 1, dx: direction.dx, dy: direction.dy,
+        });
+    }
+    return true;
+}
 export async function invokeArtifactPower(object, artifact, { state = game, publish = pline, rollDice = d, rollOne = rnd, scaledRandom = rnz, enterTrap = null, } = {}) {
     if (!artifact)
         return { used: false };
@@ -388,6 +412,12 @@ export async function invokeArtifactPower(object, artifact, { state = game, publ
     if (!ready)
         return { used: true, ready: false };
     switch (power) {
+        case 'fling-poison': {
+            const spentTime = await invokeFlingPoison(object, state, publish);
+            if (state.program_state.gameover)
+                return { used: true, heroDied: true };
+            return { used: true, ready: true, spentTime };
+        }
         case 'banish':
             await invokeBanish(state, publish);
             break;

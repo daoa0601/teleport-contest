@@ -21,7 +21,7 @@ import {
 import { cureHeroSickness, heroIsSick } from './hero_illness.js';
 import { showEnlightenment } from './insight.js';
 import { mksobj } from './mklev.js';
-import { ARROW, SPE_CONE_OF_COLD, SPE_FIREBALL } from './object_data.js';
+import { ACID_VENOM, ARROW, BLINDING_VENOM, SPE_CONE_OF_COLD, SPE_FIREBALL } from './object_data.js';
 import {
     captureLevitationState,
     hasInvokedProperty,
@@ -57,6 +57,9 @@ import { migrateMonsterToLevel } from './monster_migration.js';
 import { teleportMonsterByHero } from './monster_magic_response.js';
 import { couldsee } from './vision.js';
 import { rn2 } from './rng.js';
+import { throwOrdinaryObject } from './ordinary_throw.js';
+import { resolveSwallowedEggPieOrVenomThrow } from './swallowed_throw.js';
+import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 
 type PropertyPowerName = 'conflict' | 'invisibility' | 'levitation';
 type PropertyArtifact = Artifact & { invokePower: PropertyPowerName };
@@ -106,6 +109,7 @@ const DIRECT_POWERS = [
     'level-teleport',
     'create-portal',
     'banish',
+    'fling-poison',
 ] as const;
 
 function isDirectPower(power: ArtifactPower | null): power is (typeof DIRECT_POWERS)[number] {
@@ -458,6 +462,27 @@ async function invokeBanish(state: GameState, publish: MessagePublisher) {
     }
 }
 
+async function invokeFlingPoison(object: GameObject, state: GameState, publish: MessagePublisher) {
+    requireLiveGame(state);
+    const direction = await promptDirection();
+    if (!direction) {
+        await publish('Never mind.');
+        object.age = state.moves;
+        return false;
+    }
+    const venom = await mksobj(rn2(2) ? BLINDING_VENOM : ACID_VENOM, true, false);
+    venom.spe = 1;
+    if (!await resolveSwallowedEggPieOrVenomThrow({
+        state, item: venom, selectedQuantity: 1,
+        finishKill: monster => finishHeroMonsterKillOutcome(monster, monster.mx, monster.my),
+    })) {
+        await throwOrdinaryObject({
+            state, item: venom, quantity: 1, dx: direction.dx, dy: direction.dy,
+        });
+    }
+    return true;
+}
+
 export async function invokeArtifactPower(
     object: GameObject,
     artifact: Artifact | null | undefined,
@@ -480,6 +505,11 @@ export async function invokeArtifactPower(
     if (!ready) return { used: true, ready: false };
 
     switch (power) {
+        case 'fling-poison': {
+            const spentTime = await invokeFlingPoison(object, state, publish);
+            if (state.program_state.gameover) return { used: true, heroDied: true };
+            return { used: true, ready: true, spentTime };
+        }
         case 'banish':
             await invokeBanish(state, publish);
             break;
