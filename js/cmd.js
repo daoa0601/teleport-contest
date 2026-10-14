@@ -211,7 +211,7 @@ import { useStethoscope } from './stethoscope.js';
 import { useBagOfTricks } from './bag_of_tricks.js';
 import { useHornOfPlenty } from './horn_of_plenty.js';
 import { useTinningKit } from './tinning_kit.js';
-import { continueTrapSetting, useSettableTrap } from './trap_setting.js';
+import { continueTrapSetting, resetTrapSetting, useSettableTrap } from './trap_setting.js';
 import { useSaddle } from './steed.js';
 import { isRoyalJelly, useRoyalJelly, } from './royal_jelly.js';
 import { useBullwhip } from './bullwhip.js';
@@ -7093,6 +7093,7 @@ export async function applyHeroLocationEffects(publish = plineWithContinuation, 
 async function finishMovedHero({ oldx, oldy, newx, newy, loc, explicitAttempt, ballChainMove = null, trapOptions = {}, }) {
     const u = game.u;
     resetBulkTakeoff();
+    resetTrapSetting();
     // C hack.c:domove_core() sets this only in the common tail after map
     // coordinates changed.  The turn loop retains it through every global
     // allocation needed to settle this action, then clears it before the next

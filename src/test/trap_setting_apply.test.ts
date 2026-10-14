@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { continueCountedCommand } from '../js/cmd.js';
+import { continueCountedCommand, rhack } from '../js/cmd.js';
 import { BEAR_TRAP, LANDMINE } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
@@ -46,6 +46,28 @@ void test('trap setting can resume after an interruption on the same square', as
     assert.match(game._pending_message, /resume setting/);
     assert.ok(game._occupation);
     assert.equal(mine.where, 'inventory');
+});
+
+void test('walking away from an interrupted trap discards progress even after returning', async () => {
+    const level = freshPlayableRoom({ hero: { acurr: { a: [18, 10, 10, 18, 10, 10] } } });
+    const mine = await addInventoryObject(LAND_MINE);
+    await applyInventoryObject(mine);
+    await continueCountedCommand();
+    await stopHeroOccupation();
+    resetInputState();
+
+    await rhack('l'.charCodeAt(0));
+    await rhack('h'.charCodeAt(0));
+    assert.equal(game.u.ux, 10);
+    await applyInventoryObject(mine, ' ');
+
+    assert.match(game._pending_message, /begin setting/);
+    await continueCountedCommand();
+    assert.equal(level.traps.length, 0, 'returning must require the full preparation time');
+    assert.equal(mine.where, 'inventory');
+    await continueCountedCommand();
+    assert.equal(level.traps.length, 1);
+    assert.equal(mine.where, 'gone');
 });
 
 void test('a stunned hero cannot set a trap but the attempt still takes a turn', async () => {
