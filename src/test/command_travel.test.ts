@@ -1,13 +1,38 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { rhack } from '../js/cmd.js';
-import { CORR, GFILTER_AREA, LA_DOWN, STAIRS } from '../js/const.js';
+import { CORR, GFILTER_AREA, LA_DOWN, PIT, STAIRS } from '../js/const.js';
 import { newsym } from '../js/display.js';
 import { game } from '../js/gstate.js';
 import { nhgetch } from '../js/input.js';
 import type { InterfaceFlags } from '../js/flags.js';
 import { freshTurnRoom } from './support/playable-room.js';
 import { answerPrompts } from './support/input-boundaries.js';
+import { addTrap } from './support/level-state.js';
+
+void test('travel menu describes a discovered pit with coordinates and no path warning', async () => {
+    const input = freshTurnRoom({ flags: { tips: false } });
+    assert.ok(game.level);
+    const pit = addTrap(game.level, PIT, 14, 10);
+    pit.tseen = true;
+    newsym(14, 10);
+    game.iflags.getpos_coords = 'm';
+    input.feed('m_');
+
+    const action = rhack(0);
+    try {
+        await input.waitUntilBlocked();
+        assert.ok(game.nhDisplay);
+        const text = game.nhDisplay.grid.map(cells => cells.map(cell => cell.ch).join('')).join('\n');
+        assert.match(text, /a - pit <14,10>\s*\n/);
+    } finally {
+        input.feed('\x1b');
+        await action;
+    }
+
+    assert.equal(game.u.ux, 10);
+    assert.equal(game.context.move, 0);
+});
 
 const travelCoordinateModes: readonly {
     mode: NonNullable<InterfaceFlags['getpos_coords']>;

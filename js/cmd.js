@@ -4575,8 +4575,9 @@ async function dotravel() {
         await pline('Where do you want to travel to?');
         await showGetposTip();
     }
+    // getpos_menu() omits auto_describe()'s travel-path warning.
     const cursor = game.iflags.menu_requested
-        ? await selectTravelMenuPosition(travelPositionDescription)
+        ? await selectTravelMenuPosition(wizardPositionDescription)
         : await selectMapPosition({
             start: game._travelTarget
                 ? { ...game._travelTarget } : { x: game.u.ux, y: game.u.uy },
