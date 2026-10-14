@@ -20,7 +20,7 @@ export function parseWishText(text) {
         personalName: null, callName: null, description: null,
         gender: null, monsterSpecies: null, directType: null,
         tinVariety: null, spinach: false, zombifying: false,
-        looted: false, door: null,
+        looted: false, door: null, undiggable: false, unphaseable: false,
     };
     let remaining = original;
     let intensity = 0;
@@ -166,6 +166,9 @@ export function parseWishText(text) {
     parsed.name = ['tricks', 'clothes'].includes(requested) ? requested : makeSingular(requested);
     if (parsed.name !== requested && parsed.count === 1)
         parsed.count = 2;
+    // C wall properties use the remaining name and match case sensitively.
+    parsed.undiggable = remaining.includes('undiggable ') || remaining.includes('nondiggable ');
+    parsed.unphaseable = remaining.includes('unphaseable ') || remaining.includes('nonpasswall ');
     if (parsed.directType === null && /holy water$/i.test(parsed.name)) {
         parsed.buc = /unholy water$/i.test(parsed.name) ? 'cursed' : 'blessed';
         parsed.directType = POT_WATER;

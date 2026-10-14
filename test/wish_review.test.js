@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { CORPSTAT_FEMALE, CORPSTAT_MALE, TREE, TREE_LOOTED, TREE_SWARM } from '../js/const.js';
+import { CORPSTAT_FEMALE, CORPSTAT_MALE, TREE, TREE_LOOTED, TREE_SWARM, W_NONDIGGABLE, W_NONPASSWALL, } from '../js/const.js';
 import { placeCreatedObject } from '../js/floor_object.js';
 import { addFruit } from '../js/fruit.js';
 import { game, requireGameLevel } from '../js/gstate.js';
@@ -137,4 +137,16 @@ void test('a tree wish still honors an explicit undiggable property', async () =
     assert.ok(result?.noWish);
     assert.equal(mayDig(game.u.ux, game.u.uy), false);
 });
+for (const noun of ['wall', 'tree', 'iron bars']) {
+    for (const suffix of ['named', 'called', 'labeled']) {
+        void test(`a ${noun} wish ignores wall properties in its ${suffix} suffix`, async () => {
+            freshObjectRoom();
+            const result = await readObjectName(`${noun} ${suffix} undiggable unphaseable example`, { wizardWish: true });
+            assert.ok(result?.noWish);
+            const location = requireGameLevel().requireAt(game.u.ux, game.u.uy);
+            assert.equal(location.wall_info & (W_NONDIGGABLE | W_NONPASSWALL), 0);
+            assert.equal(mayDig(game.u.ux, game.u.uy), true);
+        });
+    }
+}
 //# sourceMappingURL=wish_review.test.js.map

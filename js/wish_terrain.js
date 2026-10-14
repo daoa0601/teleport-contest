@@ -154,13 +154,13 @@ export async function tryWizardTerrainWish(parsed) {
         location.typ = TREE;
         clearMapFlags(location);
         setLooted(location, parsed.looted ? TREE_LOOTED | TREE_SWARM : 0);
-        setWallProperties(location, parsed.fruitName);
+        setWallProperties(location, parsed);
         await say('A tree.');
     }
     else if (name.endsWith('bars')) {
         location.typ = IRONBARS;
         clearMapFlags(location);
-        setWallProperties(location, parsed.fruitName);
+        setWallProperties(location, parsed);
         await say('Iron bars.');
     }
     else if (name.endsWith('cloud')) {
@@ -183,7 +183,7 @@ export async function tryWizardTerrainWish(parsed) {
         location.typ = [level.at(x, y - 1), level.at(x, y + 1)]
             .some(neighbor => neighbor && IS_WALL(neighbor.typ)) ? VWALL : HWALL;
         clearMapFlags(location);
-        setWallProperties(location, parsed.fruitName);
+        setWallProperties(location, parsed);
         fix_wall_spines(Math.max(0, x - 1), Math.max(0, y - 1), Math.min(COLNO - 1, x + 1), Math.min(ROWNO - 1, y + 1));
         await say('A wall.');
     }
@@ -273,10 +273,9 @@ function setBridgeSurface(location, surface) {
     location.drawbridgemask = ((location.drawbridgemask ?? location.flags) & ~DB_UNDER) | surface;
     location.flags = location.drawbridgemask;
 }
-function setWallProperties(location, text) {
-    const undiggable = text.includes('undiggable ') || text.includes('nondiggable ');
-    const unphaseable = text.includes('unphaseable ') || text.includes('nonpasswall ');
-    location.wall_info |= (undiggable ? W_NONDIGGABLE : 0) | (unphaseable ? W_NONPASSWALL : 0);
+function setWallProperties(location, parsed) {
+    location.wall_info |= (parsed.undiggable ? W_NONDIGGABLE : 0)
+        | (parsed.unphaseable ? W_NONPASSWALL : 0);
     location.flags |= location.wall_info;
 }
 async function bridgeMessage(surface, type) {
