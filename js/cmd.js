@@ -1,6 +1,7 @@
 import { autokey, autoUnlockFlags, continuePicking, pickLock } from './lock_pick.js';
 import { resetPick } from './lock_context.js';
 import { petRefusesHeroSwap } from './hero_pet_displacement.js';
+import { airTurbulenceStopsHero, waterTurbulenceStopsHero } from './hero_movement_turbulence.js';
 import { AUTOUNLOCK_APPLY_KEY, AUTOUNLOCK_UNTRAP } from './const.js';
 import { findDrawbridgeAt } from './dbridge.js';
 import { doorObstructed } from './door_magic.js';
@@ -7261,6 +7262,8 @@ async function domoveCore(dx, dy, explicitAttempt) {
         u.uy = monster.my;
         return attackHostileMonster(monster, monster.mx, monster.my);
     }
+    if (await airTurbulenceStopsHero())
+        return true;
     checkSlipperyIce();
     // C hack.c:impaired_movement() always checks Confusion before deriving
     // the destination.  A nonzero rn2(5) keeps the requested direction; on
@@ -7301,6 +7304,10 @@ async function domoveCore(dx, dy, explicitAttempt) {
     // confdir() updates the same persistent vector selected by set_move_cmd().
     u.dx = dx;
     u.dy = dy;
+    if (await waterTurbulenceStopsHero())
+        return true;
+    dx = u.dx;
+    dy = u.dy;
     // C stores direction in u.dx/u.dy, so confdir() permanently changes the
     // pending Shift-direction run as well as this one destination.  The next
     // automatic step must retain that impaired direction; it may immediately
