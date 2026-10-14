@@ -11,7 +11,7 @@ import { canSeeMonster, displayLiquidName, feel_location, glyphAt, newsym, pline
 import { heroCanReachFloor } from './floor_reach.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { resetPick } from './lock_context.js';
-import { isDoorMimic, stumbleOntoMimic } from './mimic.js';
+import { hasDoorAppearance, stumbleOntoMimic } from './mimic.js';
 import { monsterAtPosition } from './monster_location.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { monsterName } from './monster_name.js';
@@ -227,7 +227,7 @@ async function pickDoorLock(tool, x, y, automatic, state) {
             : `I don't think ${monsterName(monster)} would appreciate that.`);
         return true;
     }
-    if (monster && isDoorMimic(monster, state)) {
+    if (hasDoorAppearance(monster)) {
         await stumbleOntoMimic(monster, state);
         if (tool)
             await absorbLockTool(monster, tool, state);

@@ -20,7 +20,7 @@ import { game, requirePlayingGame } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { Position } from './map_types.js';
 import { resetPick } from './lock_context.js';
-import { isDoorMimic, stumbleOntoMimic } from './mimic.js';
+import { hasDoorAppearance, stumbleOntoMimic } from './mimic.js';
 import { monsterAtPosition } from './monster_location.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { monsterName } from './monster_name.js';
@@ -226,7 +226,7 @@ async function pickDoorLock(tool: GameObject | null, x: number, y: number, autom
             : `I don't think ${monsterName(monster)} would appreciate that.`);
         return true;
     }
-    if (monster && isDoorMimic(monster, state)) {
+    if (hasDoorAppearance(monster)) {
         await stumbleOntoMimic(monster, state);
         if (tool) await absorbLockTool(monster, tool, state);
         return true;
