@@ -22,10 +22,12 @@ void test('inspecting a hallucinated swallowed hero changes the next perceived s
     game.u.ustuck = swallower;
     await redrawMap();
     game.u.hallucinationTurns = 20;
-    // Native inspection shows the object and the hero as two menu glyphs.
-    // Build those appearances with the real display APIs to predict the next name.
+    // Native inspection names the inventory owner even with a supplied title,
+    // then shows the object and hero as menu glyphs. These real display APIs
+    // give the next perceived name without inspecting the random-call log.
     initRng(142n);
     monsterName(swallower);
+    monsterName(swallower, { article: 'your', suppressIt: true, capitalized: true });
     transientObjectGlyph(club);
     transientMonsterGlyph({ mnum: heroSpecies(game) });
     const nextName = monsterName(swallower).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');

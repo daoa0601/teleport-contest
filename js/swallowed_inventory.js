@@ -1,6 +1,6 @@
 // C invent.c:look_here(): inspection touches corpses before showing inventory.
 import { game } from './gstate.js';
-import { CONTAINED_SYM } from './const.js';
+import { CONTAINED_SYM, MGIVENNAME } from './const.js';
 import { monsterStomachName } from './body_parts.js';
 import { heroDetectsMonsters, heroIsBlind } from './senses.js';
 import { consumeHallucinatedMenuObjectGlyph, plineWithContinuation, transientMonsterGlyph, unblindTelepathyRange } from './display.js';
@@ -31,6 +31,10 @@ export async function lookInsideSwallower(monster) {
         if (contact.died)
             return;
     }
+    // display_minventory() builds its default title even when look_here()
+    // supplies another title, so the perceived owner still changes.
+    monsterName(monster, { article: 'your', suppressIt: true, capitalized: true,
+        suppressSaddle: !!MGIVENNAME(monster) });
     const ordered = sortObjects(objects, { mode: lootSortMode() });
     const sections = [];
     let letter = 97;
