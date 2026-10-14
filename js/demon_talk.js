@@ -2,7 +2,7 @@
 // C minion.c:demon_talk()/bribe() and monmove.c:dochug().
 import { artifactById } from './artifacts.js';
 import { currentAttribute } from './attrib.js';
-import { endVoluntaryMultiTurn } from './command_state.js';
+import { endVoluntaryMultiTurn, heroHasInvoluntaryDelay } from './command_state.js';
 import { A_CHA, FAINTED, In_hell, NON_PM, RLOC_MSG, STRAT_APPEARMSG } from './const.js';
 import { currency } from './currency.js';
 import { canSeeMonster, canSpotMonster, newsym, plineWithContinuation } from './display.js';
@@ -87,7 +87,7 @@ export async function talkToDemon(monster, state, random = rn2, rollOne = rnd) {
     const atHome = In_hell(state.u.uz) && (monster.cham ?? NON_PM) === NON_PM;
     const sameAlignment = Math.sign(state.u.ualign.type) === Math.sign(MONSTER_ALIGNMENT[monster.mnum] ?? 0);
     let demand = Math.trunc(cash * (rollOne(80) + (atHome ? 20 : 0)) / (100 * (1 + Number(sameAlignment))));
-    if (!demand || (state.multi ?? 0) < 0 || (state._helplessTurns ?? 0) > 0) {
+    if (!demand || heroHasInvoluntaryDelay(state)) {
         angerDemon(monster, state);
         return false;
     }

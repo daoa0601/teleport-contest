@@ -3,7 +3,12 @@ import test from 'node:test';
 import { NO_MINVENT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { runMonsterAction, resumeDeferredCovetousRelocation } from '../js/monmove.js';
-import { pushKeys } from '../js/input.js';
+import { pushKey, pushKeys } from '../js/input.js';
+import { rhack } from '../js/cmd.js';
+import { talkToDemon } from '../js/demon_talk.js';
+import { heroGoldAmount, setHeroGoldAmount } from '../js/hero_gold.js';
+import { RING_MAIL } from '../js/object_data.js';
+import { addInventoryObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('a peaceful invisible demon prince reveals itself and attacks a penniless hero', async () => {
@@ -20,5 +25,26 @@ void test('a peaceful invisible demon prince reveals itself and attacks a pennil
     assert.equal(!!prince.minvis, false, 'the prince reveals itself before asking for payment');
     assert.equal(!!prince.perminvis, false);
     assert.equal(!!prince.mpeaceful, false, 'a hero without spendable gold cannot buy safe passage');
+});
+void test('a demon attacks a wealthy hero who is still putting on armor', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    const armor = await addInventoryObject(RING_MAIL);
+    pushKey(armor.invlet);
+    await rhack('W'.charCodeAt(0));
+    const dressing = game._delayedAction;
+    assert.ok(dressing && dressing.kind === 'wear' && dressing.remainingGlobalTurns > 0);
+    setHeroGoldAmount(game, 1000);
+    const demon = await createMonsterAt('water demon', 11, 10, NO_MINVENT);
+    demon.mpeaceful = 1;
+    demon.mux = game.u.ux;
+    demon.muy = game.u.uy;
+    game._pending_message = '';
+    pushKeys(' 9999\n' + ' '.repeat(20));
+    const satisfied = await talkToDemon(demon, game);
+    assert.equal(satisfied, false);
+    assert.equal(!!demon.mpeaceful, false);
+    assert.equal(heroGoldAmount(game), 1000, 'dressing prevents a bribe offer or payment');
+    assert.equal(game._delayedAction, dressing, 'the demon does not cancel dressing');
 });
 //# sourceMappingURL=demon_blackmail.test.js.map
