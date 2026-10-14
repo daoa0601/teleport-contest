@@ -3,7 +3,7 @@
 import { heroIsHallucinating } from './senses.js';
 import { I_SPECIAL, TIMEOUT, Upolyd, W_ARTI } from './const.js';
 import { newsym, pline } from './display.js';
-import { game, requireLiveGame } from './gstate.js';
+import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { hasNonArtifactConflict, syncHeroConflict } from './hero_conflict.js';
 import { hasNonArtifactInvisibility, invisibilityIsBlocked, syncHeroInvisibility, } from './hero_invisibility.js';
 import { cureHeroSickness, heroIsSick } from './hero_illness.js';
@@ -20,6 +20,13 @@ import { addInventoryItem } from './u_init.js';
 import { untrap } from './untrap.js';
 import { objectWeight } from './weight.js';
 import { chooseObjectToCharge, rechargeObject } from './recharge.js';
+import { doBlindingRay } from './flash.js';
+import { heroSpecies } from './hero_species.js';
+import { lightDamage, lightRoom } from './light.js';
+import { MONSTER_NAME } from './monster_data.js';
+import { objectName, objectNameIsPlural } from './objnam.js';
+import { flashBurn } from './sight_change.js';
+import { promptDirection } from './tty_prompts.js';
 const DIRECT_POWERS = [
     'healing',
     'energy-boost',
@@ -27,6 +34,7 @@ const DIRECT_POWERS = [
     'create-ammo',
     'untrap',
     'charge-object',
+    'blinding-ray',
 ];
 function isDirectPower(power) {
     return DIRECT_POWERS.some((candidate) => candidate === power);
@@ -71,14 +79,29 @@ async function nothingSpecial(object, state, publish) {
     }
 }
 async function beginInvocation(object, artifact, state, publish, rollDice, scaledRandom) {
+    requirePlayingGame(state);
     const turn = state.moves ?? 0;
     if ((object.age ?? 0) > turn) {
-        await publish(`You feel that ${artifact.name} is ignoring you.`);
-        object.age += rollDice(3, 10);
-        return false;
+        const energyCost = artifact.invokePower === 'blinding-ray'
+            || artifact.invokePower === 'fling-poison' ? 25 : -1;
+        if (energyCost < 0 || state.u.uen < energyCost) {
+            await ignoringHero(object, state, publish);
+            object.age += rollDice(3, 10);
+            return false;
+        }
+        await publish('You feel drained...');
+        state.u.uen -= energyCost;
+        state.context.botl = true;
     }
-    object.age = turn + scaledRandom(100);
+    else {
+        object.age = turn + scaledRandom(100);
+    }
     return true;
+}
+async function ignoringHero(object, state, publish) {
+    const name = objectName(object, state).replace(/^The /, 'the ');
+    const subject = /^[A-Z]/.test(name) || name.startsWith('the ') ? name : `the ${name}`;
+    await publish(`You feel that ${subject} ${objectNameIsPlural(object, state) ? 'are' : 'is'} ignoring you.`);
 }
 async function invokeProperty(object, artifact, state, publish, rollDice, scaledRandom) {
     // Artifact property toggles mutate the invoked source and the object's
@@ -95,7 +118,7 @@ async function invokeProperty(object, artifact, state, publish, rollDice, scaled
     if (on && (object.age ?? 0) > turn) {
         setInvokedProperty(power.property, object, false, state);
         power.sync(state);
-        await publish(`You feel that ${artifact.name} is ignoring you.`);
+        await ignoringHero(object, state, publish);
         object.age += rollDice(3, 10);
         return { used: true, ready: false, on: false };
     }
@@ -201,6 +224,34 @@ async function invokeCreateAmmo(object, rollOne) {
     arrows.owt = objectWeight(arrows);
     return await addInventoryItem(arrows);
 }
+async function invokeBlindingRay(object, state, publish) {
+    requireLiveGame(state);
+    const direction = await promptDirection();
+    if (!direction) {
+        await publish('Never mind.');
+        object.age = state.moves;
+        return false;
+    }
+    if (direction.dx || direction.dy) {
+        await doBlindingRay(object, direction, { state });
+    }
+    else if (direction.dz) {
+        await lightRoom(true, { radius: 0, source: object });
+        const spot = state.level?.at(state.u.ux, state.u.uy);
+        await publish(!heroIsBlind(state) && spot?.lit && !spot.waslit
+            ? 'It is lit here now.' : 'Nothing seems to happen.');
+    }
+    else {
+        const vulnerable = heroSpecies(state) === MONSTER_NAME.indexOf('gremlin');
+        const damage = object.blessed ? 15 : object.cursed ? 5 : 10;
+        if (vulnerable)
+            await lightDamage(object, true, 2 * damage, { state });
+        if (!state.program_state.gameover
+            && !await flashBurn(damage + rnd(damage), false, { state, publish }) && !vulnerable)
+            await publish('Nothing seems to happen.');
+    }
+    return true;
+}
 export async function invokeArtifactPower(object, artifact, { state = game, publish = pline, rollDice = d, rollOne = rnd, scaledRandom = rnz, enterTrap = null, } = {}) {
     if (!artifact)
         return { used: false };
@@ -214,6 +265,12 @@ export async function invokeArtifactPower(object, artifact, { state = game, publ
     if (!ready)
         return { used: true, ready: false };
     switch (power) {
+        case 'blinding-ray': {
+            const spentTime = await invokeBlindingRay(object, state, publish);
+            if (state.program_state.gameover)
+                return { used: true, heroDied: true };
+            return { used: true, ready: true, spentTime };
+        }
         case 'charge-object': {
             const target = await chooseObjectToCharge(state);
             if (!target) {

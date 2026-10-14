@@ -159,7 +159,7 @@ void test('turning an invoked property off starts its cooldown', async () => {
     assert.equal(heroIsInvisible(game), false);
     assert.equal(cooldown, 270);
     assert.equal(orb.age, 300);
-    assert.equal(messages.at(-1), 'You feel that The Orb of Detection is ignoring you.');
+    assert.equal(messages.at(-1), 'You feel that the crystal ball named the Orb of Detection is ignoring you.');
 });
 void test('another invisibility source stays active when the Orb is invoked', async () => {
     freshObjectRoom({ moves: 190 });
