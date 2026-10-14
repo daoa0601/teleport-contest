@@ -35,7 +35,8 @@ import { game, requireGameLevel, requirePlayingGame, requireInitializedGame } fr
 import { requireInitializedHero } from './hero_types.js';
 
 import { fruitName } from './fruit.js';
-import { encyclopediaEntries } from './encyclopedia.js';
+import { encyclopediaEntries, encyclopediaMatches } from './encyclopedia.js';
+import { LOOK_ONCE, LOOK_QUICK, LOOK_VERBOSE } from './const.js';
 import { waterbodyName } from './terrain_name.js';
 import { def_warnsyms } from './const.js';
 import { iceDescriptionAt } from './dungeon_feature.js';
@@ -4799,37 +4800,58 @@ async function dotravel(): Promise<void> {
 // cursor with travel, paints a short automatic description after movement,
 // then restores the gameplay cursor while showing the verbose selection.
 async function doFarlook(quick = true): Promise<void> {
-    const verbose = !!game.flags.verbose && !quick;
-    await plineWithContinuation(verbose
-        ? 'Please move the cursor to a monster, object or location.'
-        : 'Pick a monster, object or location.');
-    const firstUse = shouldShowGetposTip();
-    if (firstUse) await showGetposTip();
-    if (verbose) {
-        const helpKey = game.commandBindings.specialKey('getpos.help');
-        if (helpKey === undefined) throw new Error('Map selection requires a getpos.help binding');
-        await plineWithContinuation(`(For instructions type a '${visibleCommandKey(helpKey)}')`);
-    }
-    if (firstUse) await plineWithContinuation('Move cursor to a monster, object or location:');
+    let verbose = !!game.flags.verbose && !quick;
+    let position = { x: game.u.ux, y: game.u.uy };
+    for (;;) {
+        await plineWithContinuation(verbose
+            ? 'Please move the cursor to a monster, object or location.'
+            : 'Pick a monster, object or location.');
+        const firstUse = shouldShowGetposTip();
+        if (firstUse) await showGetposTip();
+        if (verbose) {
+            const helpKey = game.commandBindings.specialKey('getpos.help');
+            if (helpKey === undefined) throw new Error('Map selection requires a getpos.help binding');
+            await plineWithContinuation(`(For instructions type a '${visibleCommandKey(helpKey)}')`);
+        }
+        if (firstUse) await plineWithContinuation('Move cursor to a monster, object or location:');
 
-    const cursor = await selectMapPosition({
-        start: game._travelTarget
-            ? { ...game._travelTarget } : { x: game.u.ux, y: game.u.uy },
-        prompt: game._pending_message || game._retained_message,
-        goal: 'a monster, object or location',
-        describe: farlookLocationDescription,
-    });
-    if (!cursor) {
-        game.context.move = 0;
-        return;
+        const cursor = await selectMapPosition({
+            start: position,
+            prompt: game._pending_message || game._retained_message,
+            goal: 'a monster, object or location',
+            describe: farlookLocationDescription,
+        });
+        if (!cursor) break;
+        position = { x: cursor.x, y: cursor.y };
+        verbose = false;
+        // putmixed() returns the description to WIN_MESSAGE. A later
+        // checkfile() question or the next picker acknowledges that prose.
+        game._pending_message = '';
+        game._retained_message = '';
+        await plineWithContinuation(await verboseFarlookDescription(cursor.x, cursor.y));
+        if (cursor.pickType !== LOOK_QUICK && cursor.pickType !== LOOK_ONCE
+            && (cursor.pickType === LOOK_VERBOSE || !quick && game.flags.help !== false))
+            await offerFarlookInformation(cursor.x, cursor.y, cursor.pickType === LOOK_VERBOSE);
+        if (quick || cursor.pickType === LOOK_ONCE) break;
     }
-    // getpos has already handed its short automatic label back to the
-    // message window.  pager.c then uses putmixed(WIN_MESSAGE), whose long
-    // description wraps and calls tty more() before do_look() can return.
-    game._pending_message = '';
-    game._retained_message = '';
-    await plineWithContinuation(await verboseFarlookDescription(cursor.x, cursor.y));
     game.context.move = 0;
+}
+
+async function offerFarlookInformation(x: number, y: number, withoutAsking: boolean): Promise<void> {
+    const monster = game.level ? monsterAtPosition(game.level, x, y) : null;
+    const glyph = glyphAt(x, y);
+    // lookat() supplies the real monster type to checkfile() unless the
+    // hero is hallucinating. Gnomish wizards use the general Wizard entry.
+    const gnomishWizard = farlookDescribesHero(x, y) && !heroIsPolymorphed(game)
+        && game.urace?.name === 'gnome' && game.urole?.name.m === 'Wizard';
+    const name = gnomishWizard ? 'wizard'
+        : monster && glyph?.kind === 'monster' && !heroIsHallucinating(game)
+            ? monsterTypeName(monster.mnum)
+            : await farlookLocationDescription(x, y);
+    for (const match of encyclopediaMatches(name)) {
+        if (withoutAsking || await promptYesNo(`More info about "${match.name}"?`, 'n') === 'y')
+            await showDisclosureOverlay(match.entry.lines, { restoreUnderlay: true });
+    }
 }
 
 async function restoreHelpMap(): Promise<void> {
