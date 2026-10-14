@@ -6,9 +6,25 @@ import { AD_PHYS } from '../js/monster_attack_types.js';
 import { finishMonsterKilled } from '../js/monster_death.js';
 import { setMonsterGivenName } from '../js/monster_given_name.js';
 import { CORPSE, ROCK, STATUE } from '../js/object_data.js';
+import { initRng } from '../js/rng.js';
 import { floorObjectsAt } from './support/level-state.js';
 import { createMonsterAt, requireMonsterVital } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+void test('a revived invisible unicorn horn is described with the visible monster modifiers', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    const unicorn = await createMonsterAt('white unicorn', 11, 10, NO_MINVENT);
+    unicorn.minvis = true;
+    unicorn.mrevived = 1;
+    game.u.seeInvisible = true;
+    const messages = [];
+    initRng(1n);
+    await finishMonsterKilled(unicorn, game, {
+        damageType: AD_PHYS, cause: null,
+        publish: async (message) => messages.push(message),
+    });
+    assert.ok(messages.includes("The invisible white unicorn's recently regrown horn crumbles to dust."));
+});
 void test('material remains discard the dead golem given name', async () => {
     freshObjectRoom();
     requirePlayingGame(game);

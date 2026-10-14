@@ -156,14 +156,6 @@ export function monsterDeathSquareAllowsObjects(x: number, y: number, state: Gam
     return terrain !== undefined && (ACCESSIBLE(terrain) || IS_POOL(terrain));
 }
 
-export function monsterPossessiveName(monster: Monster, displayName: string | null = null): string {
-    const name = monster.name || displayName
-        || MONSTER_NAME[monster.mnum] || 'monster';
-    const usesArticle = !monster.name && !/^[A-Z]/.test(name);
-    const subject = usesArticle ? `The ${name}` : name;
-    return /s$/i.test(subject) ? `${subject}'` : `${subject}'s`;
-}
-
 export function monsterBodyCrumbles(monster: Monster): boolean {
     return monster.mnum === PM_VLAD_THE_IMPALER
         || MONSTER_SYMBOL[monster.mnum] === S_LICH;
@@ -340,8 +332,9 @@ async function createMonsterPart(monster: Monster, state: GameState, seen: boole
     if (mnum >= PM_WHITE_UNICORN && mnum <= PM_BLACK_UNICORN) {
         if (monster.mrevived && rn2(2)) {
             if (seen) {
+                const owner = possessiveName(monsterName(monster, { state, capitalized: true }));
                 await publish(
-                    `${monsterPossessiveName(monster)} recently regrown horn `
+                    `${owner} recently regrown horn `
                         + 'crumbles to dust.',
                 );
             }
