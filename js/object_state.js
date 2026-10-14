@@ -15,6 +15,7 @@ import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, W_ARMG, W_ARMH, W_RING } from
 import { bot } from './display.js';
 import { updateCarriedLuck } from './hero_inventory.js';
 import { OBJECT_TIMER_KIND, stopObjectTimer } from './object_timers.js';
+import { attachCursedFigurineTimer } from './figurine_timer.js';
 const WEAPON_CLASS = 2;
 const ARMOR_CLASS = 3;
 const TOOL_CLASS = 6;
@@ -110,6 +111,9 @@ export function curseObjectState(object, state = game) {
     object.cursed = true;
     object.buc = 'cursed';
     updateBlessingEffects(object, state);
+    if (object.otyp === FIGURINE
+        && (object.where === 'inventory' || object.where === 'minvent'))
+        attachCursedFigurineTimer(object, state);
     return changed;
 }
 // Live gameplay curses can interrupt an active study through its real input

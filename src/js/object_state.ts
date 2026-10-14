@@ -22,6 +22,7 @@ import type { AttributeIndex } from './attrib.js';
 import { bot } from './display.js';
 import { updateCarriedLuck } from './hero_inventory.js';
 import { OBJECT_TIMER_KIND, stopObjectTimer } from './object_timers.js';
+import { attachCursedFigurineTimer } from './figurine_timer.js';
 
 const WEAPON_CLASS = 2;
 const ARMOR_CLASS = 3;
@@ -110,6 +111,9 @@ export function curseObjectState(object: GameObject | null | undefined, state: G
     object.cursed = true;
     object.buc = 'cursed';
     updateBlessingEffects(object, state);
+    if (object.otyp === FIGURINE
+        && (object.where === 'inventory' || object.where === 'minvent'))
+        attachCursedFigurineTimer(object, state);
     return changed;
 }
 
