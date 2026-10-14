@@ -110,6 +110,7 @@ import { nextObjectId } from './ident.js';
 import { clearCommandKeys, nhgetch, queueCommandKeys, takeCommandKey } from './input.js';
 import { readCommandInput } from './command_input.js';
 import { clearRepeatCommand, rememberCommand, takeRepeatCommand } from './command_repeat.js';
+import { showKeyBindings, whatDoesCommand } from './command_help.js';
 import { availableExtendedCommands, completeExtendedCommand, extendedCommandMenu, showExtendedCommandList } from './extended_commands.js';
 import { chooseInventoryObject, compactInventoryLetters, inventoryLetterOrder, promptInventoryObject, reassignInventoryLetters, } from './inventory_prompt.js';
 import { AT_EXPL, AT_KICK } from './monster_attack_types.js';
@@ -3208,6 +3209,7 @@ async function lootLockedContainer(container) {
 }
 const EXTENDED_COMMAND_HANDLERS = new Map([
     ['?', showExtendedCommandList],
+    ['whatdoes', whatDoesCommand],
     ['whatis', dowhatis],
     ['takeoffall', takeOffAll],
     ['conduct', doconduct],
@@ -4993,6 +4995,14 @@ async function dohelp() {
     await restoreHelpMap();
     if (String.fromCharCode(key) === 'e') {
         await dowhatis();
+        return;
+    }
+    if (String.fromCharCode(key) === 'j') {
+        await showKeyBindings();
+        return;
+    }
+    if (String.fromCharCode(key) === 'k') {
+        await showExtendedCommandList();
         return;
     }
     game.context.move = 0;

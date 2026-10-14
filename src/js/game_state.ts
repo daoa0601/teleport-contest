@@ -323,6 +323,7 @@ export interface GameState {
     _commandKey?: number;
     _repeatCommands?: RepeatCommandEntry[];
     _inDoAgain?: boolean;
+    _whatdoesShown?: boolean;
     _alreadyFoundFlag?: number;
     _didNothingFlag?: number;
     _heroActionSeq?: number;
