@@ -57,6 +57,9 @@ export interface InterfaceFlags {
     debug_hunger?: boolean;
     getdir_click?: number;
     getpos_coords?: 'n' | 'm' | 's' | 'c' | 'f';
+    getloc_filter?: 0 | 1 | 2;
+    getloc_usemenu?: boolean;
+    getloc_moveskip?: boolean;
     in_lava_effects?: number;
     menu_requested?: boolean;
     menu_headings?: { attr: number; color: number };
