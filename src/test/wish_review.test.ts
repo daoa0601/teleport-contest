@@ -1,10 +1,11 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { CORPSTAT_FEMALE, CORPSTAT_MALE } from '../js/const.js';
+import { CORPSTAT_FEMALE, CORPSTAT_MALE, TREE, TREE_LOOTED, TREE_SWARM } from '../js/const.js';
 import { placeCreatedObject } from '../js/floor_object.js';
 import { addFruit } from '../js/fruit.js';
 import { game, requireGameLevel } from '../js/gstate.js';
+import { mayDig } from '../js/hero_digging.js';
 import { mksobj } from '../js/mklev.js';
 import {
     BAG_OF_TRICKS, LAND_MINE, POT_HEALING, RED_DRAGON_SCALES,
@@ -147,4 +148,27 @@ void test('luck can protect a floor scroll from water created by a wizard wish',
 
     assert.ok(result?.noWish);
     assert.equal(scroll.otyp, SCR_LIGHT, 'Luck should protect this scroll from blanking');
+});
+
+void test('a wished tree can be dug even when it replaces an undiggable wall', async () => {
+    freshObjectRoom();
+    await readObjectName('undiggable wall', { wizardWish: true });
+    assert.equal(mayDig(game.u.ux, game.u.uy), false);
+
+    const result = await readObjectName('looted tree', { wizardWish: true });
+
+    assert.ok(result?.noWish);
+    const tree = requireGameLevel().requireAt(game.u.ux, game.u.uy);
+    assert.equal(tree.typ, TREE);
+    assert.equal(tree.looted, TREE_LOOTED | TREE_SWARM);
+    assert.equal(mayDig(game.u.ux, game.u.uy), true);
+});
+
+void test('a tree wish still honors an explicit undiggable property', async () => {
+    freshObjectRoom();
+
+    const result = await readObjectName('undiggable tree', { wizardWish: true });
+
+    assert.ok(result?.noWish);
+    assert.equal(mayDig(game.u.ux, game.u.uy), false);
 });

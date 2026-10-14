@@ -152,6 +152,7 @@ export async function tryWizardTerrainWish(parsed) {
     }
     else if (name.endsWith('tree')) {
         location.typ = TREE;
+        clearMapFlags(location);
         setLooted(location, parsed.looted ? TREE_LOOTED | TREE_SWARM : 0);
         setWallProperties(location, parsed.fruitName);
         await say('A tree.');
