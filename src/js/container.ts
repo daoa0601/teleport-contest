@@ -751,7 +751,8 @@ async function showContents(container: GameObject): Promise<void> {
         '',
         ...contentLines(container),
     ];
-    await showDisclosureOverlay(lines, { pagerStyle: 'menu', restoreUnderlay: true });
+    // putstr() gives this NHW_MENU a text buffer; tty uses --More--.
+    await showDisclosureOverlay(lines, { pagerStyle: 'text', restoreUnderlay: true });
 }
 
 function actionKeys() {
