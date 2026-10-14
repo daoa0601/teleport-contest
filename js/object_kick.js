@@ -22,7 +22,7 @@ import { flyKickedObject, snuffThrownCandle } from './thrown_object.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { inventoryItemDescription } from './invent.js';
 import { objectDescription } from './object_description.js';
-import { killerObjectName, objectCombatName, objectNameIsPlural, observeObjectForNaming } from './objnam.js';
+import { corpseName, killerObjectName, objectCombatName, objectNameIsPlural, observeObjectForNaming } from './objnam.js';
 import { makePlural } from './object_grammar.js';
 import { costlyAdjacent, costlySpot, addShopObjectToBill, removeObjectAndContentsFromBill } from './shk.js';
 import { findObjectOwner, stolenValue } from './shop_loss.js';
@@ -111,7 +111,7 @@ export async function kickFloorObject(x, y, { state = game, dx = state.u?.dx ?? 
     }
     if (!(state.uarmf || state.u.uarmf) && object.otyp === CORPSE
         && touchPetrifies(object.corpsenm) && !heroResistsStoning(state)) {
-        await publish(`You kick the ${objectCombatName(object, { state })} with your bare ${makePlural(heroFootName(state))}.`);
+        await publish(`You kick ${corpseName(object, { definite: true })} with your bare ${makePlural(heroFootName(state))}.`);
         const result = await resolveImmediatePetrification({ state, publish,
             killer: `kicking ${killerObjectName(object, state)} barefoot` });
         if (result.died || state.program_state.gameover)
@@ -262,7 +262,7 @@ export async function kickFloorObject(x, y, { state = game, dx = state.u?.dx ?? 
             if (isGold)
                 await costlyGold(x, y, quantity(moving), { state, publish });
             else
-                await stolenValue(moving, x, y, !!owner.mpeaceful, { state, publish });
+                await stolenValue(moving, x, y, !!owner.mpeaceful, { state, publish, silent: false });
             costly = false;
         }
         const effects = await applyFloorEffects(moving, flight.x, flight.y, { state, publish, random, verb: 'fall' });

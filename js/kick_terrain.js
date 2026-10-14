@@ -1,6 +1,6 @@
 // Native dokick.c:kick_nondoor(), for terrain beyond doors and graves.
 import { exerciseAttribute } from './attrib.js';
-import { A_DEX, A_WIS, ALTAR, CORR, FOUNTAIN, G_GONE, IRONBARS, Is_stronghold, LADDER, LA_DOWN, MM_ANGRY, MM_FEMALE, MM_MALE, MM_NOMSG, ROOM, SCORR, SINK, STAIRS, S_LDWASHER, S_LPUDDING, THRONE, TREE, TREE_LOOTED, TREE_SWARM, T_LOOTED, } from './const.js';
+import { A_DEX, A_WIS, ALTAR, CORR, FOUNTAIN, G_GONE, IRONBARS, IS_TREE, Is_stronghold, LADDER, LA_DOWN, MM_ANGRY, MM_FEMALE, MM_MALE, MM_NOMSG, ROOM, SCORR, SINK, STAIRS, S_LDWASHER, S_LPUDDING, THRONE, TREE_LOOTED, TREE_SWARM, T_LOOTED, } from './const.js';
 import { displayColorName, displayMessageWindow, feel_newsym, newsym, plineWithContinuation as pline } from './display.js';
 import { placeCreatedObject } from './floor_object.js';
 import { game, requirePlayingGame } from './gstate.js';
@@ -44,7 +44,7 @@ export async function kickNonDoorTerrain(x, y, average, responses) {
     else if (location.typ === ALTAR || location.typ === FOUNTAIN) {
         await kickAltarOrFountain(x, y, location, responses);
     }
-    else if (location.typ === TREE) {
+    else if (IS_TREE(location.typ)) {
         await kickTree(x, y, location, responses);
     }
     else if (location.typ === SINK) {

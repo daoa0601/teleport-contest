@@ -3,7 +3,7 @@ import { resetPick } from './lock_context.js';
 import { AUTOUNLOCK_APPLY_KEY, AUTOUNLOCK_UNTRAP } from './const.js';
 import { findDrawbridgeAt } from './dbridge.js';
 import { doorObstructed } from './door_magic.js';
-import { DBWALL, DRAWBRIDGE_DOWN } from './const.js';
+import { DBWALL, DRAWBRIDGE_DOWN, IS_DRAWBRIDGE, IS_TREE, LADDER, STAIRS, THRONE } from './const.js';
 import { dipFountainSword } from './fountain_sword.js';
 import { washHands } from './dip_water.js';
 import { waterDamageObject } from './trap.js';
@@ -1707,7 +1707,19 @@ async function kickOuch(x, y, objectName = '') {
     await plineWithContinuation('Ouch!  That hurts!');
     await exerciseAttribute(A_DEX, false);
     await exerciseAttribute(A_STR, false);
-    wakeMonstersNear(x, y, 25);
+    if (isok(x, y)) {
+        if (heroIsBlind(game))
+            feel_location(x, y);
+        const location = game.level?.at(x, y);
+        const bridge = location && (location.typ === DOOR || location.typ === DBWALL)
+            ? findDrawbridgeAt(x, y) : null;
+        if (bridge) {
+            await plineWithContinuation('The drawbridge is unaffected.');
+            x = bridge.x;
+            y = bridge.y;
+        }
+        wakeMonstersNear(x, y, 25);
+    }
     if (rn2(3) === 0) {
         await woundHeroLegs('right', 5 + rnd(5));
     }
@@ -1723,17 +1735,35 @@ function kickCausesRecoil() {
         || game.u?.levitation || game.levitating;
 }
 function kickDeathReason(x, y) {
+    if (!isok(x, y))
+        return 'kicking nothing';
     const location = game.level?.at?.(x, y);
     if (!location)
         return 'kicking nothing';
     if (location.typ === DOOR)
         return 'kicking a door';
+    if (IS_TREE(location.typ))
+        return 'kicking a tree';
     if (IS_STWALL(location.typ))
         return 'kicking a wall';
-    if (location.typ === TREE)
-        return 'kicking a tree';
+    if (IS_OBSTRUCTED(location.typ))
+        return 'kicking a rock';
+    if (location.typ === THRONE)
+        return 'kicking a throne';
+    if (location.typ === FOUNTAIN)
+        return 'kicking a fountain';
     if (location.typ === GRAVE)
         return 'kicking a headstone';
+    if (location.typ === SINK)
+        return 'kicking a sink';
+    if (location.typ === ALTAR)
+        return 'kicking an altar';
+    if (IS_DRAWBRIDGE(location.typ))
+        return 'kicking a drawbridge';
+    if (location.typ === STAIRS)
+        return 'kicking the stairs';
+    if (location.typ === LADDER)
+        return 'kicking a ladder';
     if (location.typ === IRONBARS)
         return 'kicking an iron bar';
     return 'kicking something weird';
@@ -1913,10 +1943,21 @@ async function dokick() {
             + currentAttribute(A_DEX) + currentAttribute(A_CON)) / 3);
     const monster = monsterAtPosition(requireGameLevel(), x, y);
     if (monster) {
+        const cell = game.level?.at(x, y);
+        const oldGlyph = cell ? { ch: cell.disp_ch, color: cell.disp_color,
+            decgfx: cell.disp_decgfx, attr: cell.disp_attr, metadata: glyphAt(x, y) } : null;
         const recoilRange = kickRecoilRange(monster.mnum);
         if (!await kickLiveMonster(monster, x, y))
             return;
-        if (kickCausesRecoil() && game.context.move)
+        const glyph = glyphAt(x, y);
+        if (monster.dead || monster.mhp <= 0) {
+            if (oldGlyph && glyph?.kind === 'invisible' && oldGlyph.metadata?.kind !== 'invisible')
+                show_glyph_cell(x, y, oldGlyph.ch, oldGlyph.color, oldGlyph.decgfx, oldGlyph.attr, oldGlyph.metadata);
+        }
+        else if (!canSpotMonster(monster) && monster.mx === x && monster.my === y
+            && glyph?.kind !== 'invisible' && !(game.u.uswallow && game.u.ustuck === monster))
+            map_invisible(x, y);
+        if (!game.program_state.gameover && kickCausesRecoil() && game.context.move)
             await recoilFromKick(recoilRange);
         return;
     }
@@ -1926,6 +1967,11 @@ async function dokick() {
     // impact-centered wake after its attribute exercise draws.
     wakeMonstersNear(game.u.ux, game.u.uy, (game.u?.ulevel ?? 1) * 20);
     wipeHeroEngraving(2);
+    if (!isok(x, y)) {
+        await kickOuch(x, y);
+        game.context.move = 1;
+        return;
+    }
     unmap_invisible(x, y);
     if ((isPoolAt(x, y) || location?.typ === LAVAWALL) !== !!game.u.uinwater) {
         await plineWithContinuation(`You splash some ${displayLiquidName(isPoolAt(x, y) ? 'water' : 'lava')} around.`);
@@ -1952,7 +1998,7 @@ async function dokick() {
         game.context.move = 1;
         return;
     }
-    if (!location || IS_STWALL(location.typ)) {
+    if (!location || (IS_STWALL(location.typ) && !IS_TREE(location.typ))) {
         await kickOuch(x, y);
         game.context.move = 1;
         return;

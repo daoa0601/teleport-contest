@@ -392,6 +392,10 @@ async function flyPhysicalObject({
             break;
         }
 
+        if (kicked && object.oclass === 12 && state.level?.objects[x]?.[y]?.length) {
+            stoppedBy = 'terrain';
+            break;
+        }
         if (kicked && await shipObject(object, x, y, {
             state: requireInitializedGame(state),
             publish,
