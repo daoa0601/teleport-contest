@@ -18,10 +18,30 @@ export type LookListKind = 'monsters' | 'objects' | 'traps' | 'engravings';
 
 export async function showLookList(kind: LookListKind, nearby: boolean,
     describeHero: () => Promise<string>): Promise<void> {
+    if (!game.level) return;
+    const mode = game.iflags.getpos_coords === 'n' ? 'm' : game.iflags.getpos_coords ?? 'm';
+    const entries = lookListEntries(kind, nearby, mode, describeHero);
+    const first = await entries.next();
+    if (first.done) {
+        if (kind === 'monsters' || kind === 'objects')
+            await pline(`No ${kind} are currently shown ${nearby ? 'nearby' : 'on the map'}.`);
+        else await pline(`No ${kind} seen or remembered${nearby ? ' nearby' : ''}.`);
+        return;
+    }
+    const firstLine = first.value;
+    async function* content(): AsyncGenerator<string> {
+        yield listHeading(kind, nearby, mode);
+        yield '    ';
+        yield firstLine;
+        yield* entries;
+    }
+    await displayPagerText(content());
+}
+
+async function* lookListEntries(kind: LookListKind, nearby: boolean, mode: string,
+    describeHero: () => Promise<string>): AsyncGenerator<string> {
     const level = game.level;
     if (!level) return;
-    const mode = game.iflags.getpos_coords === 'n' ? 'm' : game.iflags.getpos_coords ?? 'm';
-    const lines: string[] = [];
     const lowX = nearby ? Math.max(1, game.u.ux - BOLT_LIM) : 1;
     const highX = nearby ? Math.min(COLNO - 1, game.u.ux + BOLT_LIM) : COLNO - 1;
     const lowY = nearby ? Math.max(0, game.u.uy - BOLT_LIM) : 0;
@@ -72,19 +92,14 @@ export async function showLookList(kind: LookListKind, nearby: boolean,
                 }
             }
             if (!description) continue;
-            if (!lines.length) lines.push(listHeading(kind, nearby, mode), '    ');
             let coordinates = coordinateDescription(x, y, mode);
             if (mode === 'm' && y < 10 && (kind === 'monsters' || kind === 'objects')) coordinates += ' ';
             const prefix = mode === 's' ? coordinates : coordinates.padStart(mode === 'm' ? 8 : 12);
             // Each encoded native glyph uses nine more bytes than its visible character.
             const limit = BUFSZ - 1 - 9 * (obscured ? 2 : 1);
-            lines.push(`${prefix}  ${symbol}${kind === 'engravings' ? ' ' : '  '}${description}`.slice(0, limit));
+            yield `${prefix}  ${symbol}${kind === 'engravings' ? ' ' : '  '}${description}`.slice(0, limit);
         }
     }
-    if (lines.length) await displayPagerText(lines);
-    else if (kind === 'monsters' || kind === 'objects')
-        await pline(`No ${kind} are currently shown ${nearby ? 'nearby' : 'on the map'}.`);
-    else await pline(`No ${kind} seen or remembered${nearby ? ' nearby' : ''}.`);
 }
 
 function listHeading(kind: LookListKind, nearby: boolean, mode: string): string {

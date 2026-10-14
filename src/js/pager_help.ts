@@ -26,7 +26,7 @@ export async function displayHelpFile(name: string, keyHelp = false): Promise<vo
 
 // tty_display_nhwindow(NHW_TEXT) forces full width. Its final More prompt
 // stays on the bottom row even when the text fits on a short last page.
-export async function displayPagerText(lines: readonly string[]): Promise<void> {
+export async function displayPagerText(lines: Iterable<string> | AsyncIterable<string>): Promise<void> {
     await displayMessageWindow();
     await showTextWindow(lines);
     await restoreCommandMap();

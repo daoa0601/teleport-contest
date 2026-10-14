@@ -4,7 +4,7 @@ import { rhack } from '../js/cmd.js';
 import { BEAR_TRAP, ENGRAVE } from '../js/const.js';
 import { newsym } from '../js/display.js';
 import { makeEngravingAt } from '../js/engrave.js';
-import { game } from '../js/gstate.js';
+import { game, requireGameDisplay } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { DAGGER } from '../js/object_data.js';
 import { floorObject } from './support/game-objects.js';
@@ -85,3 +85,37 @@ void test('look lists use a full-screen text window with a bottom-row pager', as
     input.feed(' ');
     await operation;
 });
+
+for (const dismiss of [' ', '\x1b']) {
+    void test(`object lists delay later observations until the first page is ${dismiss === ' ' ? 'advanced' : 'cancelled'}`, async () => {
+        freshObjectRoom({ left: 3, right: 18, flags: { tips: false } });
+        for (const y of [8, 9]) {
+            for (let x = 3; x <= (y === 8 ? 17 : 8); x++) {
+                await floorObject(DAGGER, x, y);
+                newsym(x, y);
+            }
+        }
+        const nextPageDagger = await floorObject(DAGGER, 9, 9, { dknown: false });
+        newsym(9, 9);
+        nextPageDagger.dknown = false;
+        const laterDagger = await floorObject(DAGGER, 11, 11, { dknown: false });
+        newsym(11, 11);
+        laterDagger.dknown = false;
+        const input = resetInputState();
+        input.feed('O');
+        const operation = rhack('/'.charCodeAt(0));
+        await input.waitUntilBlocked();
+        try {
+            assert.match(requireGameDisplay().grid[0]?.map(cell => cell.ch).join('') ?? '',
+                /All objects currently shown on the map:/);
+            assert.equal(nextPageDagger.dknown, true, 'The object which triggers the page flush has already been described');
+            assert.equal(laterDagger.dknown, false, 'A later adjacent object stays unobserved at the first pager');
+        } finally {
+            input.feed(dismiss === ' ' ? '  ' : dismiss);
+            await operation;
+        }
+        // look_all keeps iterating after Escape even though tty stops
+        // displaying the cancelled text window.
+        assert.equal(laterDagger.dknown, true, 'The list finishes observing its objects after pager input');
+    });
+}
