@@ -21,6 +21,21 @@ void test('real Fort Ludios walls use the yellow DECgraphics color', async () =>
     assert.equal(requireGameDisplay().grid[10]?.[9]?.color, CLR_YELLOW);
 });
 
+void test('real Fort Ludios walls use the default gray ASCII foreground', async () => {
+    const level = freshObjectRoom();
+    requirePlayingGame(game);
+    game.symset = '';
+    game.knox_level = createSpecialLevel(game.u.uz);
+    level.requireAt(10, 9).typ = HWALL;
+
+    newsym(10, 9);
+    await flush_screen(1);
+
+    const cell = requireGameDisplay().grid[10]?.[9];
+    assert.equal(cell?.ch, '-');
+    assert.equal(cell?.color, NO_COLOR);
+});
+
 for (const { branch, offset, color } of [
     { branch: 'The Gnomish Mines', offset: GlyphOffset.cmapMines, color: CLR_BROWN },
     { branch: 'Gehennom', offset: GlyphOffset.cmapGehennom, color: CLR_RED },
