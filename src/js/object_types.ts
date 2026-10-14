@@ -151,6 +151,7 @@ export interface GameObject {
     alternate?: boolean;
     ready?: boolean;
     _armorApplied?: boolean;
+    _waterWalkingWasInWater?: boolean;
     _levitationBeforeWear?: LevitationState;
     _displacementWasActive?: boolean;
     _grantsVeryFastFromArmor?: boolean;

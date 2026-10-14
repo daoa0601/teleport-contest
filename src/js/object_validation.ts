@@ -206,6 +206,7 @@ export function validSavedObject(value: unknown, context: SavedEntityContext): v
         ready: optional(boolean),
         _armorApplied: optional(boolean),
         _levitationBeforeWear: optional(validLevitationState),
+        _waterWalkingWasInWater: optional(boolean),
         _displacementWasActive: optional(boolean),
         _grantsVeryFastFromArmor: optional(boolean),
         quantity: optional(integer),

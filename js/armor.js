@@ -198,6 +198,8 @@ export function wearHeroArmor(object, state = game) {
     // callback needs the sources that existed before that installation.
     if (object.otyp === LEVITATION_BOOTS)
         object._levitationBeforeWear = captureLevitationState(state);
+    if (object.otyp === WATER_WALKING_BOOTS)
+        object._waterWalkingWasInWater = !!state.u.uinwater;
     if (object.otyp === CLOAK_OF_DISPLACEMENT)
         object._displacementWasActive = heroIsDisplaced(state);
     if (object.otyp === SPEED_BOOTS) {
@@ -356,6 +358,7 @@ export async function clearHeroArmor(object, state = game, { cancelledDon = stat
         refreshProperty('invisible', state);
     const hero = state.u;
     object._armorApplied = false;
+    delete object._waterWalkingWasInWater;
     if (object.otyp === GAUNTLETS_OF_POWER)
         state.context.botl = true;
     if (object.otyp === SPEED_BOOTS)
@@ -754,7 +757,7 @@ async function applyCloakOffEffects(object, state) {
 // their feedback are afternmv effects: they begin only when dressing reaches
 // multi == 0.  Return messages so allmain can preserve nomovemsg ordering.
 export async function applyArmorOnEffects(object, state = game, { initialDon = false } = {}) {
-    if (object?.otyp === LEVITATION_BOOTS)
+    if (object.otyp === LEVITATION_BOOTS || object.otyp === WATER_WALKING_BOOTS)
         requireLiveGame(state);
     const previousLevitation = object?._levitationBeforeWear
         ?? captureLevitationState(state);
@@ -771,6 +774,14 @@ export async function applyArmorOnEffects(object, state = game, { initialDon = f
         }
         else
             refreshMovementProperties(state);
+        return [];
+    }
+    if (object.otyp === WATER_WALKING_BOOTS) {
+        if (state.u.uinwater)
+            await applyHeroLocationEffects();
+        if (object._waterWalkingWasInWater && !state.u.uinwater)
+            learnObjectType(object.otyp, state);
+        delete object._waterWalkingWasInWater;
         return [];
     }
     if (object?.otyp === FEDORA && state.urole?.key === 'archeologist') {

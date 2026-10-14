@@ -234,6 +234,8 @@ export function wearHeroArmor(object: GameObject, state: GameState = game): Armo
     // callback needs the sources that existed before that installation.
     if (object.otyp === LEVITATION_BOOTS)
         object._levitationBeforeWear = captureLevitationState(state);
+    if (object.otyp === WATER_WALKING_BOOTS)
+        object._waterWalkingWasInWater = !!state.u.uinwater;
     if (object.otyp === CLOAK_OF_DISPLACEMENT)
         object._displacementWasActive = heroIsDisplaced(state);
     if (object.otyp === SPEED_BOOTS) {
@@ -381,6 +383,7 @@ export async function clearHeroArmor(object: GameObject, state: GameState = game
 
     const hero = state.u;
     object._armorApplied = false;
+    delete object._waterWalkingWasInWater;
     if (object.otyp === GAUNTLETS_OF_POWER) state.context.botl = true;
     if (object.otyp === SPEED_BOOTS) object._grantsVeryFastFromArmor = false;
     if ((object.otyp === FUMBLE_BOOTS || object.otyp === GAUNTLETS_OF_FUMBLING)
@@ -740,7 +743,7 @@ async function applyCloakOffEffects(object: GameObject, state: GameState): Promi
 // their feedback are afternmv effects: they begin only when dressing reaches
 // multi == 0.  Return messages so allmain can preserve nomovemsg ordering.
 export async function applyArmorOnEffects(object: GameObject, state: GameState = game, { initialDon = false }: ArmorOnOptions = {}): Promise<string[]> {
-    if (object?.otyp === LEVITATION_BOOTS) requireLiveGame(state);
+    if (object.otyp === LEVITATION_BOOTS || object.otyp === WATER_WALKING_BOOTS) requireLiveGame(state);
     const previousLevitation = object?._levitationBeforeWear
         ?? captureLevitationState(state);
     applyWornArmorProperty(object, state);
@@ -754,6 +757,13 @@ export async function applyArmorOnEffects(object: GameObject, state: GameState =
             if (propertyIsActive('levitation', state))
                 await applyHeroLocationEffects(undefined, { pick: false });
         } else refreshMovementProperties(state);
+        return [];
+    }
+    if (object.otyp === WATER_WALKING_BOOTS) {
+        if (state.u.uinwater) await applyHeroLocationEffects();
+        if (object._waterWalkingWasInWater && !state.u.uinwater)
+            learnObjectType(object.otyp, state);
+        delete object._waterWalkingWasInWater;
         return [];
     }
     if (object?.otyp === FEDORA && state.urole?.key === 'archeologist') {
