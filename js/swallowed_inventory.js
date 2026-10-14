@@ -3,7 +3,7 @@ import { game } from './gstate.js';
 import { CONTAINED_SYM } from './const.js';
 import { monsterStomachName } from './body_parts.js';
 import { heroDetectsMonsters, heroIsBlind } from './senses.js';
-import { consumeHallucinatedMenuObjectGlyph, plineWithContinuation, unblindTelepathyRange } from './display.js';
+import { consumeHallucinatedMenuObjectGlyph, plineWithContinuation, transientMonsterGlyph, unblindTelepathyRange } from './display.js';
 import { feelPetrifyingCorpse } from './stoning.js';
 import { inventoryClassOrder, lootSortMode, objectClassHeading, sortObjects } from './object_sort.js';
 import { inventoryItemDescription } from './invent.js';
@@ -47,6 +47,9 @@ export async function lookInsideSwallower(monster) {
                 return { key, text: inventoryItemDescription(object) };
             }) });
     }
+    // query_objlist() attaches a monster glyph even though tty only shows text.
+    transientMonsterGlyph({ mnum: heroSpecies(game),
+        female: !!(heroIsPolymorphed(game) ? game.u.mfemale : game.flags.female) });
     sections.push({ heading: `${monsterDigests(monster) ? 'Swallowed' : 'Engulfed'} Creatures`,
         items: [{ key: CONTAINED_SYM, text: withIndefiniteArticle(swallowedHeroDescription()) }] });
     await showInventoryWindow(sections, { title: blind ? 'You feel:'
