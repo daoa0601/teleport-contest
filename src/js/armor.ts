@@ -52,7 +52,12 @@ import { currentAttribute, reportHeroEncumbrance } from './attrib.js';
 import { curseObjectState } from './object_state.js';
 import type { AttributeIndex } from './attrib.js';
 
-interface ArmorRemovalOptions { cancelledDon?: boolean; deferArmorClass?: boolean }
+interface ArmorRemovalOptions {
+    cancelledDon?: boolean;
+    deferArmorClass?: boolean;
+    // Armor_off() is voluntary; polymorph uses Armor_gone().
+    voluntary?: boolean;
+}
 interface ArmorOnOptions { initialDon?: boolean }
 interface ArmorDestructionOptions { state?: GameState; publish?: MessagePublisher }
 export interface ArmorErosionDescription {
@@ -309,11 +314,11 @@ export async function removeHeroArmor(object: GameObject, state: GameState = gam
         if (object.otyp === GAUNTLETS_OF_POWER) learnObjectType(object.otyp, state);
         await reportHeroEncumbrance(state);
         setSlipperyHands(0, state);
-        await losePetrificationProtection(object, state);
+        await losePetrificationProtection(object, state, !state.context.mon_moving && !object.in_use);
         if (state.program_state?.gameover) return removed;
     }
     if (removed && dragonArmorColor(object) === 'yellow') {
-        await losePetrificationProtection(object, state);
+        await losePetrificationProtection(object, state, options.voluntary ?? true);
         if (state.program_state.gameover) return removed;
     }
     // C Boots_off(): identify before spoteffects(), which can kill the hero.
@@ -352,7 +357,7 @@ async function announceDisplacementLoss(object: GameObject, state: GameState = g
 
 // C wielding_corpse(): losing gloves or yellow dragon armor can expose a
 // petrifying weapon. Resolve life saving before the removal continues.
-async function losePetrificationProtection(armor: GameObject, state: GameState) {
+async function losePetrificationProtection(armor: GameObject, state: GameState, voluntary: boolean) {
     if (equippedObject(state, 'uarmg')) return;
     const armorSlot = armorSlotFor(armor.otyp);
     if (!armorSlot) return;
@@ -364,7 +369,6 @@ async function losePetrificationProtection(armor: GameObject, state: GameState) 
             || heroResistsStoning(state)) continue;
         await plineWithContinuation(`You ${armorSlot === 'uarmg' ? 'now wield' : 'are wielding'} ${corpseName(weapon, { includeArticle: true })} `
             + `in your bare ${makePlural(heroHandName(state))}.`);
-        const voluntary = armorSlot !== 'uarmg' || !state.context?.mon_moving && !armor.in_use;
         const protectionName = armorSlot === 'uarmg' ? simpleArmorName(armor, armorSlot, state)
             : simpleObjectName(armor, state).replace('set of ', '');
         const killer = `${voluntary ? 'removing' : 'losing'} ${protectionName} `
