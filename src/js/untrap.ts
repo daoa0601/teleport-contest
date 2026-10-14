@@ -14,7 +14,7 @@ import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { triggerChestTrap } from './chest_trap.js';
 import {
     A_CON, A_DEX, A_STR, A_WIS, ARROW_TRAP, BEAR_TRAP, DART_TRAP,
-    DOOR, D_BROKEN, D_ISOPEN, D_NODOOR, D_TRAPPED, LANDMINE,
+    DISMOUNT_FELL, DOOR, D_BROKEN, D_ISOPEN, D_NODOOR, D_TRAPPED, LANDMINE,
     MAXULEV, PIT, SPIKED_PIT, SQKY_BOARD, TRAP_EXPLANATIONS,
     WEB, isok,
 } from './const.js';
@@ -36,6 +36,8 @@ import { heroBadRock, heroTightDiagonalReason } from './hack.js';
 import { heroHasConflict } from './hero_conflict.js';
 import { heroCanSpinWeb } from './hero_web.js';
 import { triggerHeroTrap } from './hero_traps.js';
+import { maketrap } from './mklev.js';
+import { dismountHero } from './steed.js';
 import { compactInventoryLetters, promptInventoryObject } from './inventory_prompt.js';
 import { isDoorMimic, isObjectOrFurnitureMimic, revealMimic } from './mimic.js';
 import { buryFloorObjectsAt } from './buried_object.js';
@@ -507,8 +509,18 @@ async function failMonsterRescue(monster: Monster, trap: Trap, {
                 random, publish,
             });
         }
-    } else if (trap.ttyp === WEB && monster.mtrapped) {
-        await publish(`${capitalizedMonsterName(monster)} remains entangled.`);
+    } else if (trap.ttyp === WEB) {
+        if (!heroCanSpinWeb(state) && random(3) === 0) {
+            const existing = trapAt(state, state.u.ux, state.u.uy);
+            const web = existing ?? await maketrap(state.u.ux, state.u.uy, WEB);
+            if (web?.ttyp === WEB) {
+                await publish("The web sticks to you.  You're caught too!");
+                await triggerHeroTrap(web, { noWebMessage: true });
+                if (state.u.usteed && state.u.utrap) await dismountHero(DISMOUNT_FELL);
+            }
+        }
+        if (monster.mtrapped)
+            await publish(`${capitalizedMonsterName(monster)} remains entangled.`);
     }
 }
 
