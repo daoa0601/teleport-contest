@@ -151,7 +151,8 @@ async function lootMonster(monster: Monster): Promise<{ asked: boolean; spentTim
         if (answer === 'y') {
             if (heroHasNoLimbs(game)) { await pline("You can't do that without limbs."); return { asked, spentTime }; }
             if (saddle.cursed) {
-                await pline(`You can't.  The saddle seems to be stuck to ${name}.`);
+                await pline(`You can't.  The saddle seems to be stuck to ${
+                    monsterName(monster, { suppressSaddle: true })}.`);
                 game.context.move = 1;
                 return { asked, spentTime: true };
             }
