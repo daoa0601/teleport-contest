@@ -11,6 +11,21 @@ import { AMULET_OF_YENDOR, DAGGER } from '../js/object_data.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { knownObject } from './support/game-objects.js';
 
+void test('#migratemons stops reading the count at the first nonnumeric character', async () => {
+    const level = freshObjectRoom({ flags: { debug: true } });
+    requirePlayingGame(game);
+    game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 12 })];
+    const oldest = await createMonsterAt('lichen', 11, 10);
+    const newest = await createMonsterAt('lichen', 12, 10);
+    installPagerInput(resetInputState(), { expected: /migrating/, limit: 4 });
+
+    await runExtendedCommand('migratemons', ' -1x2\n');
+
+    assert.ok(level.monsters.includes(oldest), 'Only one monster should leave the level');
+    assert.ok(game._migratingMonsters?.includes(newest), 'The newest monster should migrate');
+    assert.equal(game._migratingMonsters?.length, 1);
+});
+
 void test('#migratemons lets a monster carry protected objects to its destination', async () => {
     const level = freshObjectRoom({ flags: { debug: true } });
     requirePlayingGame(game);
