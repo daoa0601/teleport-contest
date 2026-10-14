@@ -860,6 +860,10 @@ export async function readObjectName(
             : { name: parsed.name, type: directType, oclass: objectClassForType(directType) };
         let matchedType = lookup.type
             ?? japaneseWishType(parsed.name);
+        if (matchedType === null && parsed.name === 'spinach') {
+            parsed.spinach = true;
+            matchedType = TIN;
+        }
         if (matchedType === null) {
             const match = matchWishedFruit(parsed.fruitName);
             if (match) {

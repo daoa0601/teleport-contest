@@ -185,11 +185,6 @@ function parseWishSpecies(text, parsed) {
     // Globs have their own canonicalization and are never corpse species.
     if (/\bglobs?\b/i.test(text))
         return text;
-    if (text.toLowerCase() === 'spinach') {
-        parsed.spinach = true;
-        parsed.directType = TIN;
-        return 'tin';
-    }
     if (!/(?:wand |spellbook |gauntlets |gloves |finger )/i.test(text)) {
         const tin = /tin of (.+)/i.exec(text);
         if (tin?.[1]) {

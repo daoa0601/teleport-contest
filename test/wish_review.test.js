@@ -33,6 +33,21 @@ void test('tin contents take precedence over the holy-water potion suffix', asyn
     assert.equal(result.object.blessed, false);
     assert.equal(result.object.cursed, false);
 });
+void test('a bare spinach wish checks object call names before the tin fallback', async () => {
+    freshObjectRoom();
+    recordObjectCall(POT_HEALING, 'spinach');
+    const result = await readObjectName('spinach', { wizardWish: true });
+    assert.ok(result && !result.noWish);
+    assert.equal(result.object.otyp, POT_HEALING);
+});
+void test('a bare spinach wish produces a spinach tin when no object name matches', async () => {
+    freshObjectRoom();
+    const result = await readObjectName('spinach', { wizardWish: true });
+    assert.ok(result && !result.noWish);
+    assert.equal(result.object.otyp, TIN);
+    assert.equal(result.object.spe, 1);
+    assert.equal(result.object.corpsenm, -1);
+});
 void test('a call name does not arm a wished land mine', async () => {
     freshObjectRoom();
     const result = await readObjectName('land mine called digger', { wizardWish: true });
