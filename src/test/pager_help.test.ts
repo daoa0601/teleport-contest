@@ -40,6 +40,38 @@ void test('whatdoes describes the current binding of a key', async () => {
     assert.match(text ?? '', /x\s+search for traps and secret doors \(#search\)\./);
 });
 
+for (const [key, description] of [
+    ['.', 'rest one move while doing nothing'],
+    [' ', "rest one move via 'rest_on_space' option"],
+] as const) {
+    void test(`whatdoes describes waiting with ${key === ' ' ? 'space' : 'a period'}`, async () => {
+        freshObjectRoom();
+        game.commandBindings.setRestOnSpace(true);
+        const input = resetInputState();
+        const operation = rhack('&'.charCodeAt(0));
+        await input.waitUntilBlocked();
+        if (requireGameDisplay().grid[0]?.map(cell => cell.ch).join('').includes('--More--')) {
+            input.feed(' ');
+            await input.waitUntilBlocked();
+        }
+        input.feed(key);
+        await operation;
+        await flush_screen(1);
+        const text = requireGameDisplay().grid[0]?.map(cell => cell.ch).join('') ?? '';
+        assert.ok(text.includes(`${description} (#wait).`), `Waiting help shows "${description}"; got "${text.trim()}"`);
+    });
+}
+
+void test('the extended-command help list describes ordinary waiting', async () => {
+    freshObjectRoom();
+    const input = resetInputState();
+    input.feed('k:');
+    await answerPrompts(rhack('?'.charCodeAt(0)), input, [
+        { prompt: /Extended command list search phrase\?/, keys: 'wait\r' },
+        { prompt: /wait\s+\[.*\]\s+rest one move while doing nothing/, keys: '\x1b' },
+    ]);
+});
+
 for (const [key, text] of [['d', /NetHack.*--More--/s], ['o', /NetHack development team.*--More--/s],
     ['l', /Menu control keys:.*--More--/s], ['j', /Full Current Key Bindings List.*--More--/s],
     ['k', /Extended Commands List.*\(1 of /s]] as const) {

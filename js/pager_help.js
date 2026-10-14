@@ -1,5 +1,5 @@
 // C pager.c:dispfile_*, docontact(), dowhatdoes[_core](), domenucontrols().
-import { COMMAND_DESCRIPTIONS } from './command_descriptions.js';
+import { boundCommandDescription } from './command_descriptions.js';
 import { visibleCommandKey } from './command_keys.js';
 import { clearMessageWindow, displayMessageWindow, flushPendingTopline, pline, plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
@@ -103,7 +103,7 @@ export function commandDescription(key) {
     const command = bindings.lookup(key)?.command;
     if (!command?.name)
         return null;
-    const text = COMMAND_DESCRIPTIONS.get(command.name);
+    const text = boundCommandDescription(command);
     if (!text)
         return null;
     if (command.name === '#')

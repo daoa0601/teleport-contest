@@ -1,6 +1,6 @@
 // C cmd.c:dokeylist(), keylist_putcmds(), doextlist(). Lists use the live
 // bindings and native command flags, including commands without a key.
-import { COMMAND_DESCRIPTIONS } from './command_descriptions.js';
+import { boundCommandDescription, COMMAND_DESCRIPTIONS } from './command_descriptions.js';
 import { NATIVE_COMMANDS, NATIVE_COMMAND_FLAGS as F } from './command_data.js';
 import { visibleCommandKey } from './command_keys.js';
 import { game } from './gstate.js';
@@ -53,7 +53,7 @@ export async function keyBindingsHelp(): Promise<void> {
                 || !eligible.some(command => command.name === binding.command?.name)) continue;
             const name = binding.command.name;
             if (!name) continue;
-            rows.push(`${keyText(key).padEnd(7)} ${name.padEnd(13)} ${COMMAND_DESCRIPTIONS.get(name) ?? ''}${binding.parameter === null ? '' : ` "${binding.parameter}"`}`);
+            rows.push(`${keyText(key).padEnd(7)} ${name.padEnd(13)} ${boundCommandDescription(binding.command) ?? ''}${binding.parameter === null ? '' : ` "${binding.parameter}"`}`);
             used.add(key);
         }
         for (const command of eligible) {

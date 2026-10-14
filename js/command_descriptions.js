@@ -1,4 +1,3 @@
-// Descriptions from the pinned cmd.c:extcmdlist[].
 export const COMMAND_DESCRIPTIONS = new Map([
     ["#", "enter and perform an extended command"],
     ["?", "list all extended commands"],
@@ -106,7 +105,7 @@ export const COMMAND_DESCRIPTIONS = new Map([
     ["version", "list compile time options for this version of NetHack"],
     ["versionshort", "show version and date+time program was built"],
     ["vision", "show vision array"],
-    ["wait", "rest one move via 'rest_on_space' option"],
+    ["wait", "rest one move while doing nothing"],
     ["wear", "wear a piece of armor"],
     ["whatdoes", "tell what a command does"],
     ["whatis", "show what type of thing a symbol corresponds to"],
@@ -165,4 +164,10 @@ export const COMMAND_DESCRIPTIONS = new Map([
     ["runsouthwest", "run southwest (screen lower left)"],
     ["migratemons", "show migrating monsters"],
 ]);
+// update_rest_on_space() installs a distinct command entry for Space.
+export function boundCommandDescription(command) {
+    if (command.name === 'wait' && command.key === 32)
+        return "rest one move via 'rest_on_space' option";
+    return command.name ? COMMAND_DESCRIPTIONS.get(command.name) : undefined;
+}
 //# sourceMappingURL=command_descriptions.js.map
