@@ -3,7 +3,7 @@
 import { monsterGoldAmount, moneyToHero } from './shop_money.js';
 import { nameShopTransaction } from './shop_speech.js';
 import { objectDescription } from './object_description.js';
-import { objectCombatName, simpleObjectName } from './objnam.js';
+import { definiteName, objectCombatName, observeObjectForNaming, simpleObjectName } from './objnam.js';
 import { QBUFSZ, SHOPBASE } from './const.js';
 import { shopkeeperName } from './monster_name.js';
 import { canSpotMonster, plineWithContinuation } from './display.js';
@@ -365,12 +365,17 @@ function hasContents(object) {
 function askSell(question, { query }) {
     return query(question);
 }
-// C safe_qbuf(xname, simpleonames) reserves the prefix and suffix before
-// short_oname() abbreviates user names. Formatting views leave the sale
-// object and its full names intact while the hero answers the question.
-function cashSaleQuestion(object, prefix, suffix, one, state) {
+// C safe_qbuf() reserves the offer and question before short_oname()
+// abbreviates user names. Cash offers use xname/simpleonames; credit offers
+// use doname/thesimpleoname. The object's full names survive the question.
+function saleQuestion(object, prefix, suffix, one, state, kind) {
     const limit = QBUFSZ - 1 - prefix.length - suffix.length;
-    const describe = (item, nameState) => objectCombatName(item, { state: nameState, includeCorpseSpecies: false });
+    const describe = (item, nameState) => {
+        if (kind === 'cash')
+            return objectCombatName(item, { state: nameState, includeCorpseSpecies: false });
+        observeObjectForNaming(item, { state: nameState });
+        return objectDescription(item, { state: nameState });
+    };
     const question = (name) => `${prefix}${name}${suffix}`;
     let name = describe(object, state);
     if (name.length <= limit)
@@ -406,8 +411,11 @@ function cashSaleQuestion(object, prefix, suffix, one, state) {
     const plainObject = { ...(shortenBoth ? shortNamedObject : object),
         bknown: false, rknown: false, greased: false, oeroded: 0, oeroded2: 0 };
     name = describe(plainObject, nameState);
-    if (name.length > limit)
+    if (name.length > limit) {
         name = simpleObjectName(plainObject, nameState);
+        if (kind === 'credit')
+            name = definiteName(name, nameState);
+    }
     if (name.length > limit)
         name = one ? 'that' : 'those';
     return question(name);
@@ -532,7 +540,8 @@ export async function sellHeroDroppedObject(object, x, y, state = game, { publis
         else if (sellResponse !== 'n') {
             await publish(`${shopkeeperName(resident)} cannot pay you at present.`);
             recordObjectPriceQuote(object.otyp, Math.trunc(tmpcr / objectQuan(object)), 'sell');
-            answer = await askSell(`Will you accept ${zorkmids(tmpcr)} in credit for ${objectDescription(object, { state })}?`, { query });
+            const prefix = `Will you accept ${zorkmids(tmpcr)} in credit for `;
+            answer = await askSell(saleQuestion(object, prefix, '?', object.quan === 1, state, 'credit'), { query });
             if (answer === 'a') {
                 answer = 'y';
                 autoCredit = true;
@@ -584,7 +593,7 @@ export async function sellHeroDroppedObject(object, x, y, state = game, { publis
         const prefix = `${shopkeeperName(resident)} offers${shortFunds ? ' only' : ''} ${goldPieces(offer)} for ${cltmp && !ltmp
             ? (yourc === 1 ? 'your item in ' : 'your items in ') : ''}${object.unpaid ? 'the' : 'your'} `;
         const suffix = `${contentsSuffix}.  Sell ${one ? 'it' : 'them'}?`;
-        const question = cashSaleQuestion(object, prefix, suffix, one, state);
+        const question = saleQuestion(object, prefix, suffix, one, state, 'cash');
         const answer = await askSell(question, { query });
         if (answer === 'q')
             sellResponse = 'n';

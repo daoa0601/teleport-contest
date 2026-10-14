@@ -10,8 +10,51 @@ import { monsterGoldAmount } from '../js/shop_money.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createStaffedShop, setShopkeeperGold } from './support/shop.js';
+import { planInput } from './support/planned-input.js';
 const longCallName = 'the long and winding road through mountains to the distant sea';
 const longPersonalName = 'a second long winding road through mountains to distant seas';
+for (const { label, callName, personalName, expected } of [
+    { label: 'names that fit', callName: 'Keepsake', personalName: 'heirloom',
+        expected: /called Keepsake named heirloom\?/ },
+    { label: 'a long call name', callName: longCallName, personalName: 'heirloom',
+        expected: /called the long\.\.\. named heirloom\?/ },
+    { label: 'a long personal name', callName: 'Keepsake', personalName: longPersonalName,
+        expected: /called Keepsake named a second\.\.\.\?/ },
+    { label: 'two long names', callName: longCallName, personalName: longPersonalName,
+        expected: /called the long\.\.\. named a second\.\.\.\?/ },
+]) {
+    for (const quantity of [1, 2]) {
+        void test(`a credit offer for ${quantity === 1 ? 'a potion' : 'two potions'} with ${label} preserves the question`, async (t) => {
+            freshObjectRoom({ flags: { verbose: false } });
+            const potion = await addInventoryObject(POT_HEALING, {
+                quan: quantity, typeKnown: false, known: false,
+                oextra: { oname: personalName },
+            });
+            game._objectCallNames = { [POT_HEALING]: callName };
+            const { shopkeeper } = await createStaffedShop();
+            shopkeeper.eshk.shknam = 'Ada';
+            await setShopkeeperGold(shopkeeper, 0);
+            setHeroGoldAmount(game, 0);
+            const input = resetInputState();
+            const messages = [];
+            input.beforeRead = () => { messages.push(game._pending_message); };
+            planInput(input, t, [
+                { prompt: /cannot pay you at present.*--More--/, keys: ' ' },
+                { prompt: /Will you accept \d+ zorkmids in credit for .*\? \[ynaq\] \(y\)/s, keys: 'n' },
+            ]);
+            input.feed(potion.invlet);
+            await rhack('d'.charCodeAt(0));
+            assert.match(messages.join('\n'), expected);
+            assert.equal(potion.oextra?.oname, personalName);
+            assert.equal(game._objectCallNames[POT_HEALING], callName);
+            assert.equal(potion.where, 'floor');
+            assert.equal(potion.no_charge, true);
+            assert.equal(shopkeeper.eshk.credit ?? 0, 0);
+            assert.equal(heroGoldAmount(game), 0);
+            assert.equal(game.context.move, 1);
+        });
+    }
+}
 for (const { label, callName, personalName, expected } of [
     { label: 'names that fit', callName: 'Keepsake', personalName: 'heirloom',
         expected: /called Keepsake named heirloom/ },

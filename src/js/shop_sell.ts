@@ -4,7 +4,7 @@
 import { monsterGoldAmount, moneyToHero } from './shop_money.js';
 import { nameShopTransaction } from './shop_speech.js';
 import { objectDescription } from './object_description.js';
-import { objectCombatName, simpleObjectName } from './objnam.js';
+import { definiteName, objectCombatName, observeObjectForNaming, simpleObjectName } from './objnam.js';
 import { QBUFSZ, SHOPBASE } from './const.js';
 import { shopkeeperName } from './monster_name.js';
 import { canSpotMonster, plineWithContinuation } from './display.js';
@@ -412,14 +412,18 @@ function askSell(question: string, { query }: { query: SaleQuery }): SellAnswer 
     return query(question);
 }
 
-// C safe_qbuf(xname, simpleonames) reserves the prefix and suffix before
-// short_oname() abbreviates user names. Formatting views leave the sale
-// object and its full names intact while the hero answers the question.
-function cashSaleQuestion(object: GameObject, prefix: string, suffix: string,
-    one: boolean, state: GameState): string {
+// C safe_qbuf() reserves the offer and question before short_oname()
+// abbreviates user names. Cash offers use xname/simpleonames; credit offers
+// use doname/thesimpleoname. The object's full names survive the question.
+function saleQuestion(object: GameObject, prefix: string, suffix: string,
+    one: boolean, state: GameState, kind: 'cash' | 'credit'): string {
     const limit = QBUFSZ - 1 - prefix.length - suffix.length;
-    const describe = (item: GameObject, nameState: GameState): string =>
-        objectCombatName(item, { state: nameState, includeCorpseSpecies: false });
+    const describe = (item: GameObject, nameState: GameState): string => {
+        if (kind === 'cash')
+            return objectCombatName(item, { state: nameState, includeCorpseSpecies: false });
+        observeObjectForNaming(item, { state: nameState });
+        return objectDescription(item, { state: nameState });
+    };
     const question = (name: string): string => `${prefix}${name}${suffix}`;
     let name = describe(object, state);
     if (name.length <= limit) return question(name);
@@ -453,7 +457,10 @@ function cashSaleQuestion(object: GameObject, prefix: string, suffix: string,
     const plainObject = { ...(shortenBoth ? shortNamedObject : object),
         bknown: false, rknown: false, greased: false, oeroded: 0, oeroded2: 0 };
     name = describe(plainObject, nameState);
-    if (name.length > limit) name = simpleObjectName(plainObject, nameState);
+    if (name.length > limit) {
+        name = simpleObjectName(plainObject, nameState);
+        if (kind === 'credit') name = definiteName(name, nameState);
+    }
     if (name.length > limit) name = one ? 'that' : 'those';
     return question(name);
 }
@@ -585,9 +592,9 @@ export async function sellHeroDroppedObject(object: GameObject, x: number, y: nu
             await publish(`${shopkeeperName(resident)} cannot pay you at present.`);
             recordObjectPriceQuote(object.otyp,
                 Math.trunc(tmpcr / objectQuan(object)), 'sell');
-            answer = await askSell(
-                `Will you accept ${zorkmids(tmpcr)} in credit for ${
-                    objectDescription(object, { state })}?`, { query });
+            const prefix = `Will you accept ${zorkmids(tmpcr)} in credit for `;
+            answer = await askSell(saleQuestion(object, prefix, '?',
+                object.quan === 1, state, 'credit'), { query });
             if (answer === 'a') {
                 answer = 'y';
                 autoCredit = true;
@@ -643,7 +650,7 @@ export async function sellHeroDroppedObject(object: GameObject, x: number, y: nu
                 ? (yourc === 1 ? 'your item in ' : 'your items in ') : ''
         }${object.unpaid ? 'the' : 'your'} `;
         const suffix = `${contentsSuffix}.  Sell ${one ? 'it' : 'them'}?`;
-        const question = cashSaleQuestion(object, prefix, suffix, one, state);
+        const question = saleQuestion(object, prefix, suffix, one, state, 'cash');
         const answer = await askSell(question, { query });
         if (answer === 'q') sellResponse = 'n';
         if (answer === 'a') sellResponse = 'y';
