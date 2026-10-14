@@ -91,6 +91,25 @@ void test('closing #? returns to a fresh extended-command prompt', async () => {
     assert.match(text, /MacOS NetHack Version 5\.0\.0/);
     assert.equal(game.context.move, 0);
 });
+void test('closing a counted #? preserves the count for the selected wait command', async () => {
+    freshObjectRoom();
+    const input = resetInputState();
+    input.feed('3#?\r');
+    const operation = rhack(0);
+    await input.waitUntilBlocked();
+    try {
+        assert.match(requireGameDisplay().grid.map(row => row.map(cell => cell.ch).join('')).join('\n'), /Extended Commands List/);
+        input.feed('\x1b');
+        await input.waitUntilBlocked();
+        assert.equal(game.multi, 2, 'The resumed editor retains the two remaining waits');
+    }
+    finally {
+        input.feed('wait\r');
+        await operation;
+    }
+    assert.equal(game.context.move, 1);
+    assert.equal(game.multi, 2);
+});
 for (const configured of [false, true]) {
     void test(`extended-command headings use ${configured ? 'configured' : 'default'} highlighting`, async () => {
         freshObjectRoom({ flags: { debug: false } });

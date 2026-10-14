@@ -3225,7 +3225,11 @@ async function runExtendedCommand(name: string): Promise<boolean> {
         return false;
     }
     const key = commandExecutionKey(command.name)?.charCodeAt(0) ?? null;
-    await executeCommandAction({ key, command, parameter: null });
+    const binding = { key, command, parameter: null };
+    // doextlist returns to the editor inside doextcmd. rhack's command
+    // cleanup belongs to the final action, so the list retains its count.
+    if (name === '?') await runCommandHandler(binding);
+    else await executeCommandAction(binding);
     return true;
 }
 
