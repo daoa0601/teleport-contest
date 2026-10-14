@@ -83,12 +83,6 @@ const SLOT_MASK = Object.freeze({
     uarmu: W_ARMU,
 });
 
-// worn.c:m_dowear() visits these slots in this order.  A non-creation wear
-// can freeze the monster, causing every later slot in the same pass to stop.
-const WEAR_ORDER = Object.freeze([
-    'uamul', 'uarmu', 'uarmc', 'uarmh', 'uarms', 'uarmg', 'uarmf', 'uarm',
-] as const);
-
 function monsterCanDress(monster: Monster, creation: boolean): boolean {
     const flags = MONSTER_FLAGS1[monster?.mnum] ?? 0;
     const size = MONSTER_SIZE[monster?.mnum] ?? 0;
@@ -107,8 +101,7 @@ function monsterCanWearSuit(monster: Monster): boolean {
         && !monsterBreaksArmor(monster.mnum);
 }
 
-function monsterCreationWearSlots(monster: Monster): MonsterArmorSlot[] {
-    if (!monsterCanDress(monster, true)) return [];
+function monsterWearSlots(monster: Monster): MonsterArmorSlot[] {
     const canWearSuit = monsterCanWearSuit(monster);
     const weapon = monster?.mw;
     const slots: MonsterArmorSlot[] = ['uamul'];
@@ -215,9 +208,9 @@ function bestForSlot(monster: Monster, slot: MonsterArmorSlot, creation: boolean
 
 async function wearSlot(monster: Monster, slot: MonsterArmorSlot, creation: boolean, state: GameState, publish: MessagePublisher): Promise<MonsterArmorChange | null> {
     if (monster.mfrozen) return null;
-    // m_dowear_type() saves a name before checking the slot, even when
-    // creation suppresses dressing messages. Hallucination advances here.
-    if (creation) monsterName(monster, { state });
+    // Save the perceived identity before equipment can change visibility,
+    // including checks which find nothing to put on.
+    const previousName = monsterName(monster, { state, capitalized: !!state.u.seeInvisible });
     if (!slotAllowed(monster, slot)) return null;
     if (slot === 'uarmu' && ((monster.misc_worn_check ?? 0) & W_ARM))
         return null;
@@ -228,7 +221,6 @@ async function wearSlot(monster: Monster, slot: MonsterArmorSlot, creation: bool
 
     const wasVisible = canSeeMonster(monster);
     const sawSquare = cansee(monster.mx, monster.my);
-    const subject = monsterSentenceSubject(monster);
     const oldShining = old?.lamplit && artifactEmitsLight(old);
     const autocurse = !best.cursed
         && [DUNCE_CAP, HELM_OF_OPPOSITE_ALIGNMENT].includes(best.otyp);
@@ -248,9 +240,12 @@ async function wearSlot(monster: Monster, slot: MonsterArmorSlot, creation: bool
             let newName = inventoryItemDescription(best);
             if (newName.toLowerCase() === oldName.toLowerCase())
                 newName = newName.replace(/^an? /i, 'another ');
+            const subject = monsterName(monster, { state, capitalized: true });
             await publish(`${subject}${old ? ` removes ${oldName} and` : ''} puts on ${newName}.`);
-            if (autocurse)
-                await publish(`${subject}'s ${best.name} glows ${displayColorName('black', state)} for a moment.`);
+            if (autocurse) {
+                const owner = monsterName(monster, { state, capitalized: true });
+                await publish(`${owner}'s ${best.name} glows ${displayColorName('black', state)} for a moment.`);
+            }
         }
         delay += OBJECT_DELAY[best.otyp] ?? 0;
         monster.mfrozen = delay;
@@ -285,7 +280,7 @@ async function wearSlot(monster: Monster, slot: MonsterArmorSlot, creation: bool
     await updateMonsterEquipment(monster, best, true, state, { silently: creation, publish });
     if (!creation && wasVisible && !canSeeMonster(monster)
         && monster.minvis && !state.u.seeInvisible) {
-        await publish(`Suddenly you cannot see ${subject.replace(/^The /, 'the ')}.`);
+        await publish(`Suddenly you cannot see ${previousName}.`);
         learnObjectType(best.otyp, state);
     }
     return { slot, mask, old, best, delay };
@@ -295,7 +290,7 @@ export async function initializeMonsterArmor(monster: Monster, state: GameState 
     if (!monsterCanDress(monster, true)) return [];
     monster.misc_worn_check ??= 0;
     const changes = [];
-    for (const slot of monsterCreationWearSlots(monster)) {
+    for (const slot of monsterWearSlots(monster)) {
         const change = await wearSlot(monster, slot, true, state, plineWithContinuation);
         if (change) changes.push(change);
     }
@@ -466,7 +461,7 @@ export async function reassessMonsterArmor(monster: Monster | null | undefined, 
     monster.misc_worn_check = oldMask;
     let change: MonsterArmorChange | null = null;
     if (monsterCanDress(monster, false)) {
-        for (const slot of WEAR_ORDER) {
+        for (const slot of monsterWearSlots(monster)) {
             if ((monster.mfrozen ?? 0) > 0) break;
             const candidate = await wearSlot(monster, slot, false, state, publish);
             if (candidate && !change) change = candidate;
