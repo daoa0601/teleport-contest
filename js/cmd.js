@@ -285,6 +285,7 @@ import { abuseKickedPet, kickConductViolation, levitatingKickMisses, prepareKick
 import { kickFloorObject } from './object_kick.js';
 import { kickWithMonsterForm } from './hero_form_kick.js';
 import { admitHeroKick, kickCanReachTarget } from './kick_admission.js';
+import { kickNonDoorTerrain } from './kick_terrain.js';
 import { bringLeashedFollowers, heroTeleportDestinationOk, moveHeroByTeleport, randomMonsterRelocation, } from './teleport.js';
 import { goodPosition, monsterTeleportRestricted } from './teleport_rules.js';
 import { removeWishGrantingMonster } from './monster_departure.js';
@@ -2066,6 +2067,8 @@ async function dokick() {
         game.context.move = 1;
         return;
     }
+    if (await kickNonDoorTerrain(x, y, average, { ouch: kickOuch, dumb: kickDumb }))
+        return;
     await kickDumb(x, y);
     game.context.move = 1;
 }
