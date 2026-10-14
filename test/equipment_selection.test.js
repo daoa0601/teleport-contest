@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { wearHeroArmor } from '../js/armor.js';
 import { rhack } from '../js/cmd.js';
+import { PARANOID_REMOVE } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { LEATHER_CLOAK, RING_MAIL, HELM_OF_OPPOSITE_ALIGNMENT } from '../js/object_data.js';
@@ -18,6 +19,15 @@ void test('takeoff automatically chooses the single accessible outer layer', asy
     assert.equal(game.uarmc, null);
     assert.equal(game.uarm, suit);
     assert.equal(game.context.move, 1);
+});
+void test('paranoid removal asks for the single armor piece instead of taking it off automatically', async () => {
+    freshObjectRoom({ flags: { paranoia_bits: PARANOID_REMOVE } });
+    const cloak = await addInventoryObject(LEATHER_CLOAK);
+    wearHeroArmor(cloak);
+    resetInputState().feed('\x1b');
+    await rhack('T'.charCodeAt(0));
+    assert.equal(game.uarmc, cloak);
+    assert.equal(game.context.move, 0);
 });
 for (const command of ['W', 'P']) {
     void test(`${command} refuses an opposite-alignment helm in the quest and loses divine protection`, async () => {

@@ -38,7 +38,7 @@ import { speakArtifact } from './artifact_speech.js';
 import { lightCocktail, useCandelabrum, useCandle, useLamp } from './apply_light.js';
 import { useWhistle } from './whistle.js';
 import { retouchHeroObject } from './hero_retouch.js';
-import { GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, GETOBJ_SUGGEST } from './const.js';
+import { GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, PARANOID_REMOVE, GETOBJ_SUGGEST } from './const.js';
 import { TER_MON } from './const.js';
 import { senseBuriedObjects } from './buried_object.js';
 import { distantMonsterName, monsterInstanceDisplayName, monsterName, shopkeeperName } from './monster_name.js';
@@ -4803,7 +4803,7 @@ async function removeWornItem(action, itemAction = false) {
     const preferred = accessibleEquipment(action === 'remove');
     // C ia_dotakeoff() forces getobj() to consume the queued item letter,
     // even if another accessible piece is the only normal suggestion.
-    if (preferred.length === 1 && !itemAction) {
+    if (preferred.length === 1 && !itemAction && !((game.flags.paranoia_bits ?? 0) & PARANOID_REMOVE)) {
         [object] = preferred;
     }
     else {
