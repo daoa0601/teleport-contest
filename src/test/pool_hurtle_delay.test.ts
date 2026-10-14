@@ -7,6 +7,20 @@ import { hurtleHero } from '../js/hero_hurtle.js';
 import { putHeroToSleep } from '../js/hero_sleep.js';
 import { freshObjectRoom } from './support/object-room.js';
 
+void test('forced hurtling preserves the voluntary movement state and its starting square', async () => {
+    freshObjectRoom({ right: 20 });
+    game.u.umoved = false;
+    game.u.ux0 = 9;
+    game.u.uy0 = 10;
+
+    await hurtleHero(1, 0, 2);
+
+    assert.equal(game.u.ux, 12);
+    assert.equal(game.u.umoved, false, 'knockback alone must not trigger moving-only fumbling or exertion');
+    assert.equal(game.u.ux0, 9, 'forced steps retain the start of the voluntary action');
+    assert.equal(game.u.uy0, 10);
+});
+
 void test('a knockback cannot shorten an existing sleep', async () => {
     freshObjectRoom({ right: 20 });
     putHeroToSleep(8);

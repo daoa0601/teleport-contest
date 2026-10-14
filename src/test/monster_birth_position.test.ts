@@ -1,9 +1,12 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { MM_ADJACENTOK, MM_NOGRP, MM_NOMSG, NO_MINVENT, ROOM, STONE } from '../js/const.js';
+import { G_GENOD, MM_ADJACENTOK, MM_NOGRP, MM_NOMSG, NO_MINVENT, ROOM, STONE } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { makemonAt } from '../js/mklev.js';
-import { MONSTER_NAME } from '../js/monster_data.js';
+import { MONSTER_NAME, SPECIAL_PM } from '../js/monster_data.js';
+import { SCR_SCARE_MONSTER } from '../js/object_data.js';
+import { initRng } from '../js/rng.js';
+import { floorObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
@@ -58,4 +61,26 @@ void test('birth fails at an occupied explicit square without MM_ADJACENTOK', as
 
     assert.equal(await makemonAt(RAT, 12, 10, BIRTH_FLAGS), null);
     assert.equal(level.monsters.length, count);
+});
+
+void test('random birth on a scare scroll selects a species that does not fear it', async () => {
+    const goblin = MONSTER_NAME.indexOf('goblin');
+    const soldier = MONSTER_NAME.indexOf('soldier');
+    for (let seed = 1; seed <= 12; seed++) {
+        freshObjectRoom();
+        requirePlayingGame(game);
+        game.mvitals = Array.from({ length: SPECIAL_PM }, (_, species) => ({
+            mvflags: species === goblin || species === soldier ? 0 : G_GENOD,
+            born: 0, died: 0,
+        }));
+        await floorObject(SCR_SCARE_MONSTER, 12, 10);
+        initRng(seed);
+
+        const monster = await makemonAt(null, 12, 10, BIRTH_FLAGS);
+
+        assert.ok(monster, `a human can occupy the scroll square (seed ${seed})`);
+        assert.equal(monster.mnum, soldier, `a goblin cannot be born on the scare scroll (seed ${seed})`);
+        assert.equal(monster.mx, 12);
+        assert.equal(monster.my, 10);
+    }
 });

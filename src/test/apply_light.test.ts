@@ -49,6 +49,8 @@ import {
 } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createStaffedShop } from './support/shop.js';
+import { mksobj } from '../js/mklev.js';
+import { addInventoryItem } from '../js/u_init.js';
 
 function screen() {
     assert.ok(game.nhDisplay);
@@ -108,6 +110,26 @@ async function billed(object: GameObject, quantity = objectQuantity(object)) {
     });
     object.unpaid = true;
     return shopkeeper;
+}
+
+for (const initialize of [false, true]) {
+    void test(`a newly created oil potion burns for 400 turns with initialization ${initialize}`, async () => {
+        freshLight({ moves: 10 });
+        const oil = await addInventoryItem(await mksobj(POT_OIL, initialize, false));
+        await lightCocktail(oil);
+
+        game.moves = 409;
+        await runDueTimers();
+
+        assert.equal(oil.lamplit, true);
+        assert.ok(game.inventory.includes(oil));
+
+        game.moves = 410;
+        await runDueTimers();
+
+        assert.equal(oil.where, 'gone');
+        assert.equal(game.inventory.includes(oil), false);
+    });
 }
 
 for (const type of [TALLOW_CANDLE, WAX_CANDLE]) {
