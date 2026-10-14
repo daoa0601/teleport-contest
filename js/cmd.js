@@ -184,7 +184,7 @@ import { wakeMonstersNear } from './monster_wake.js';
 import { aggravateMonsters, angerAttackedMonster, wakeAttackedMonster, } from './monster_anger.js';
 import { publishMonsterNoise } from './monster_sound.js';
 import { doride, moveSteedWithHero, ridingPreventsMovement, stuckSteed } from './steed.js';
-import { currentAttribute, currentStrength, exerciseAttribute, exerciseWisdom } from './attrib.js';
+import { currentAttribute, currentStrength, exerciseAttribute, exerciseWisdom, reportHeroEncumbrance } from './attrib.js';
 import { spendHeroNutrition, updateHeroHunger } from './hunger.js';
 import { continueForceLock, doforce } from './lock.js';
 import { doUntrap } from './untrap.js';
@@ -2656,7 +2656,18 @@ async function dochat() {
     game.context.move = 0;
 }
 async function wizWish() {
-    return makeWish();
+    const verbose = game.flags.verbose;
+    game.flags.verbose = false;
+    try {
+        await makeWish();
+    }
+    finally {
+        if (verbose === undefined)
+            delete game.flags.verbose;
+        else
+            game.flags.verbose = verbose;
+    }
+    await reportHeroEncumbrance();
 }
 // C refs: cmd.c Ctrl-G/wizgenesis, wizcmds.c wiz_genesis(), and read.c
 // create_particular().  The debug command remains zero-time.
