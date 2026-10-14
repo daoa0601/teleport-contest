@@ -669,9 +669,12 @@ export async function selectMapPosition({
             if (feature) {
                 cursor.x = feature.x;
                 cursor.y = feature.y;
-                if (clearMessageOnExit) clearMessageWindow();
+                if (clearMessageOnExit) {
+                    clearMessageWindow();
+                    message = '';
+                }
                 clearMessageOnExit = false;
-                message = await movementMessage();
+                if (autoDescription()) message = await movementMessage();
                 continue;
             }
             message = getposFeatureMissMessage(ch);

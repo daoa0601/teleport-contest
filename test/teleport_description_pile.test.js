@@ -32,11 +32,53 @@ for (const subject of ['hero', 'monster']) {
                 input.feed('.');
                 await selection;
             }
-            await flush_screen(1);
             assert.equal(requireScreenRow(0).map(cell => cell.ch).join('').trim(), '');
         });
     }
 }
+void test('finding a stair by its symbol leaves the teleport message blank with autodescribe off', async () => {
+    const level = freshObjectRoom({
+        flags: { tips: false, verbose: false }, iflags: { autodescribe: false },
+    });
+    level.requireAt(11, 10).typ = STAIRS;
+    level.upstair = { x: 11, y: 10 };
+    const input = resetInputState();
+    input.feed('<');
+    const selection = askTeleportDestination();
+    await input.waitUntilBlocked();
+    try {
+        assert.equal(requireScreenRow(0).map(cell => cell.ch).join('').trim(), '', 'Finding the stair must clear the prompt before the next position input.');
+    }
+    finally {
+        input.feed('.');
+        await selection;
+    }
+    const destination = await selection;
+    assert.equal(destination?.x, 11);
+    assert.equal(destination?.y, 10);
+    assert.equal(requireScreenRow(0).map(cell => cell.ch).join('').trim(), '');
+});
+void test('a stair search after redraw preserves the restored targeting prompt with autodescribe off', async () => {
+    const level = freshObjectRoom({
+        flags: { tips: false, verbose: false }, iflags: { autodescribe: false },
+    });
+    level.requireAt(11, 10).typ = STAIRS;
+    level.upstair = { x: 11, y: 10 };
+    const input = resetInputState();
+    input.feed('<\x12<');
+    const selection = askTeleportDestination();
+    await input.waitUntilBlocked();
+    try {
+        assert.equal(requireScreenRow(0).map(cell => cell.ch).join('').trim(), 'Move cursor to the desired position:');
+    }
+    finally {
+        input.feed('.');
+        await selection;
+    }
+    const destination = await selection;
+    assert.equal(destination?.x, 11);
+    assert.equal(destination?.y, 10);
+});
 void test('a chosen teleport description remains visible beside a corner floor-pile window', async () => {
     const level = freshObjectRoom({ flags: { tips: false, verbose: false } });
     const location = level.requireAt(11, 10);

@@ -630,10 +630,13 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
             if (feature) {
                 cursor.x = feature.x;
                 cursor.y = feature.y;
-                if (clearMessageOnExit)
+                if (clearMessageOnExit) {
                     clearMessageWindow();
+                    message = '';
+                }
                 clearMessageOnExit = false;
-                message = await movementMessage();
+                if (autoDescription())
+                    message = await movementMessage();
                 continue;
             }
             message = getposFeatureMissMessage(ch);
