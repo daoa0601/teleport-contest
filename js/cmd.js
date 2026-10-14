@@ -1189,10 +1189,6 @@ async function runCommandHandler(binding, { cannedCommand = null, previousMessag
             // get-line editor and opens print_dungeon(TRUE) immediately.
             await wizLevelTeleport({ menuRequested: true });
         }
-        else if (nextCommand.command?.handler === 'doextcmd'
-            || nextCommand.command && (nextCommand.command.flags & NATIVE_COMMAND_FLAGS.CMD_M_PREFIX)) {
-            await executeCommandAction(nextCommand);
-        }
         else if (direction === 's') {
             // cmd.c marks search CMD_M_PREFIX: request-menu/move-no-pickup
             // does not alter its behavior, but the prefixed command still
@@ -1205,6 +1201,11 @@ async function runCommandHandler(binding, { cannedCommand = null, previousMessag
             // cmd_safety_prevention(); `m.` deliberately spends the turn.
             prepareTimedCommand(nextCommand);
             await performWaitCommand(true);
+        }
+        else if (nextCommand.command?.handler === 'doextcmd'
+            || nextCommand.command && (nextCommand.command.flags & NATIVE_COMMAND_FLAGS.CMD_M_PREFIX)) {
+            prepareTimedCommand(nextCommand);
+            await executeCommandAction(nextCommand);
         }
         else {
             await pline("The 'm' prefix should be followed by a movement command.");
@@ -3248,6 +3249,11 @@ async function runExtendedCommand(name) {
         // doextcmd() returns ECMD_OK; rhack clears queues only for a delay.
         resetCommandVariables(game.multi < 0);
         return;
+    }
+    if (game.iflags.menu_requested && !(command.flags & NATIVE_COMMAND_FLAGS.CMD_M_PREFIX)) {
+        const prefix = visibleCommandKey(game.commandBindings.keyForCommand('reqmenu'));
+        await plineWithContinuation(`'${prefix}' prefix has no effect for the ${name} command.`);
+        game.iflags.menu_requested = false;
     }
     const key = commandExecutionKey(command.name)?.charCodeAt(0) ?? null;
     return executeCommandAction({ key, command, parameter: null });
