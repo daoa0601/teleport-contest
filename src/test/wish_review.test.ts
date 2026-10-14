@@ -11,8 +11,9 @@ import { game, requireGameLevel } from '../js/gstate.js';
 import { mayDig } from '../js/hero_digging.js';
 import { mksobj } from '../js/mklev.js';
 import {
-    BAG_OF_TRICKS, GLOB_OF_GRAY_OOZE, LAND_MINE, MAGIC_MARKER, OBJECT_NAMES, POT_HEALING, RED_DRAGON_SCALES,
-    SACK, SCR_LIGHT, SLIME_MOLD, SPEED_BOOTS, TALLOW_CANDLE, TIN, WAX_CANDLE,
+    BAG_OF_TRICKS, GLOB_OF_GRAY_OOZE, LAND_MINE, MAGIC_MARKER, MIRROR, OBJECT_NAMES,
+    POT_HEALING, RED_DRAGON_SCALES, SACK, SCR_LIGHT, SLIME_MOLD, SPEED_BOOTS,
+    TALLOW_CANDLE, TIN, WAX_CANDLE,
 } from '../js/object_data.js';
 import { recordObjectCall } from '../js/object_knowledge.js';
 import { readObjectName } from '../js/objnam.js';
@@ -115,6 +116,16 @@ void test('broken glass is rejected instead of granting a glass gem', async () =
     const result = await readObjectName('broken glass', { wizardWish: true });
 
     assert.equal(result, null);
+});
+
+void test('looking glass wishes preserve the mirror description during glass parsing', async () => {
+    freshObjectRoom();
+    recordObjectCall(POT_HEALING, 'worthless piece of looking glass');
+
+    const result = await readObjectName('looking glass', { wizardWish: true });
+
+    assert.ok(result && !result.noWish);
+    assert.equal(result.object.otyp, MIRROR);
 });
 
 void test('an unmatched bag call name falls back to a bag description', async () => {
