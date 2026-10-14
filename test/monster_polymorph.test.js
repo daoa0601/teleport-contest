@@ -5,7 +5,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
 import { finishEnvironmentalMonsterDeath } from '../js/monster_death.js';
 import { wakeMonstersNear } from '../js/monster_wake.js';
-import { MONSTER_NAME } from '../js/monster_data.js';
+import { MONSTER_NAME, monsterClassSymbol } from '../js/monster_data.js';
 import { setMonsterGivenName } from '../js/monster_given_name.js';
 import { changeMonsterForm, decideMonsterShapeChange, } from '../js/monster_polymorph.js';
 import { BOULDER, CHAIN_MAIL, CLUB, DAGGER, ELVEN_CLOAK, HAWAIIAN_SHIRT, HELMET, LEASH, LEATHER_GLOVES, SADDLE, SMALL_SHIELD, SPEED_BOOTS, } from '../js/object_data.js';
@@ -14,6 +14,16 @@ import { presentWereChange, wereChange } from '../js/were.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+void test('a chameleon on the Rogue level retries a lowercase animal form', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    const monster = await createMonsterAt('jackal', 11, 10, NO_MINVENT);
+    monster.cham = MONSTER_NAME.indexOf('chameleon');
+    game.rogue_level = { ...game.u.uz };
+    initRng(14n);
+    await changeMonsterForm(monster, null, game);
+    assert.match(monsterClassSymbol(monster.mnum), /^[A-Z]$/);
+});
 void test('an endgame adventurer loses the rank in its name when polymorphed', async () => {
     freshObjectRoom();
     requirePlayingGame(game);

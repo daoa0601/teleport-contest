@@ -210,7 +210,9 @@ async function selectDoppelgangerFormOnce(monster) {
 async function selectDoppelgangerForm(monster) {
     for (let triesLeft = 20; triesLeft > 0; --triesLeft) {
         const targetMnum = await selectDoppelgangerFormOnce(monster);
-        if (acceptsShapechangerForm(PM_DOPPELGANGER, targetMnum))
+        const wantsUppercase = triesLeft > 15 && Is_rogue_level(game.u.uz);
+        if (acceptsShapechangerForm(PM_DOPPELGANGER, targetMnum)
+            && (!wantsUppercase || /^[A-Z]$/.test(monsterClassSymbol(targetMnum))))
             return targetMnum;
     }
     return null;
@@ -220,14 +222,26 @@ function selectChameleonForm() {
         .filter(mnum => (MONSTER_FLAGS1[mnum] ?? 0) & M1_ANIMAL);
     for (let triesLeft = 20; triesLeft > 0; --triesLeft) {
         const targetMnum = !rn2(3)
-            ? animals[rn2(animals.length)]
+            ? pickAnimalShape(animals)
             : randomShape(PM_CHAMELEON);
-        if (targetMnum === undefined)
-            throw new RangeError('Chameleon selection is outside its animal list');
-        if (acceptsShapechangerForm(PM_CHAMELEON, targetMnum))
+        const wantsUppercase = triesLeft > 15 && Is_rogue_level(game.u.uz);
+        if (acceptsShapechangerForm(PM_CHAMELEON, targetMnum)
+            && (!wantsUppercase || /^[A-Z]$/.test(monsterClassSymbol(targetMnum))))
             return targetMnum;
     }
     return null;
+}
+// C pick_animal() gives the Rogue level one extra animal draw. newcham()
+// then applies its usual first-five-attempt uppercase preference.
+function pickAnimalShape(animals) {
+    let species = animals[rn2(animals.length)];
+    if (species === undefined)
+        throw new RangeError('Chameleon selection is outside its animal list');
+    if (Is_rogue_level(game.u.uz) && !/^[A-Z]$/.test(monsterClassSymbol(species)))
+        species = animals[rn2(animals.length)];
+    if (species === undefined)
+        throw new RangeError('Chameleon selection is outside its animal list');
+    return species;
 }
 function selectSandestinForm() {
     for (let triesLeft = 20; triesLeft > 0; --triesLeft) {
