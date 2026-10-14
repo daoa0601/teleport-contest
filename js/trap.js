@@ -6,7 +6,7 @@ import { armorSimpleName, heroHasWaterWalking } from './armor.js';
 import { fireDamageObject } from './fire_damage.js';
 import { delobj } from './object_delete.js';
 import { objectDescription as fullObjectDescription } from './object_description.js';
-import { objectCombatName, observeObjectForNaming, ownedObjectName } from './objnam.js';
+import { objectCombatName, observeObjectForNaming, ownedObjectName, simpleObjectName } from './objnam.js';
 import { cansee } from './vision.js';
 import { endObjectBurn } from './light.js';
 import { game } from './gstate.js';
@@ -192,16 +192,6 @@ function objectDescription(object, fallback) {
 function objectContents(object) {
     return object.contents || [];
 }
-function explodingPotionMessage(object, state) {
-    const quantity = object.quan ?? object.quantity ?? 1;
-    const typeKnown = object.typeKnown
-        || state._knownObjectTypes?.has(object.otyp);
-    const noun = typeKnown ? `potion of ${OBJECT_NAMES[object.otyp] || 'acid'}`
-        : 'potion';
-    return quantity === 1
-        ? `A ${noun} explodes!`
-        : `Some ${noun}s explode!`;
-}
 function waterObjectName(object, description = null) {
     if (description)
         return description;
@@ -285,7 +275,7 @@ function rustMetalObject(object, description, luckRoll) {
         erosion: object.oeroded,
     };
 }
-export async function waterDamageObject(object, messages = [], state = game, { force = false, description = null, random = rn2, luckRoll = rnl, rollOne = rnd, publish, mentionWater } = {}) {
+export async function waterDamageObject(object, messages = [], state = game, { force = false, description = null, random = rn2, luckRoll = rnl, rollOne = rnd, publish, mentionWater, acidContext } = {}) {
     if (!object)
         return 'nothing';
     const emit = async (message) => {
@@ -327,7 +317,7 @@ export async function waterDamageObject(object, messages = [], state = game, { f
         }
         // C water_damage(): washed-off acid bypasses luck protection.
         if (object.otyp === POT_ACID)
-            return await destroyWetAcidPotion(object, carried, emit, state);
+            return await destroyWetAcidPotion(object, carried, emit, state, acidContext);
         return 'greased';
     }
     if (object.otyp >= LARGE_BOX && object.otyp <= BAG_OF_TRICKS) {
@@ -338,8 +328,8 @@ export async function waterDamageObject(object, messages = [], state = game, { f
                 if (!heroIsHallucinating(state))
                     mentionWater?.();
             }
-            for (const content of [...objectContents(object)])
-                await waterDamageObject(content, messages, state, { random, luckRoll, rollOne, publish: emit });
+            await damageWaterChain(objectContents(object), messages, state, { random, luckRoll, rollOne, publish: emit,
+                ...(acidContext ? { acidContext } : {}) });
         }
         else if (carried && !heroIsBlind(state) && !state.underwater) {
             await emit(`The ${displayLiquidName('water', state)} cannot get into your ${name}.`);
@@ -389,7 +379,7 @@ export async function waterDamageObject(object, messages = [], state = game, { f
     }
     if (object.oclass === 8) {
         if (object.otyp === POT_ACID) {
-            return await destroyWetAcidPotion(object, false, emit, state);
+            return await destroyWetAcidPotion(object, false, emit, state, acidContext);
         }
         if (object.odiluted) {
             if (carried)
@@ -413,10 +403,21 @@ export async function waterDamageObject(object, messages = [], state = game, { f
         grease: false, displayName: name });
 }
 // C pot_acid_damage(): water destroys the bottle without impact or vapors.
-async function destroyWetAcidPotion(object, described, emit, state) {
-    const plural = waterObjectIsPlural(object);
+async function destroyWetAcidPotion(object, described, emit, state, context) {
+    if (heroIsBlind(state) && !carriedByHero(object, state))
+        object.dknown = false;
+    const plural = object.quan !== 1;
+    const repeated = context?.valid && (object.dknown
+        ? context.knownExplosions : context.unknownExplosions) > 0;
+    const prefix = repeated ? plural ? 'More' : 'Another' : plural ? 'Some' : 'A';
     await emit(described ? `The potion${plural ? 's explode' : ' explodes'}!`
-        : explodingPotionMessage(object, state));
+        : `${prefix} ${simpleObjectName(object, state)} ${plural ? 'explode' : 'explodes'}!`);
+    if (context?.valid) {
+        if (object.dknown)
+            context.knownExplosions++;
+        else
+            context.unknownExplosions++;
+    }
     await removeHeroEquipment(object, state);
     await delobj(object, state);
     return 'destroyed';
@@ -424,15 +425,32 @@ async function destroyWetAcidPotion(object, described, emit, state) {
 export async function waterDamageChain(objects, messages = [], state = game) {
     if (!objects)
         return messages;
-    for (const object of [...objects]) {
-        const result = await waterDamageObject(object, messages, state);
-        if (result !== 'destroyed')
-            continue;
-        const index = objects.indexOf(object);
-        if (index >= 0)
-            objects.splice(index, 1);
-    }
+    await damageWaterChain(objects, messages, state, {});
     return messages;
+}
+async function damageWaterChain(objects, messages, state, options) {
+    if (!objects.length)
+        return;
+    const context = options.acidContext ?? {
+        valid: false, knownExplosions: 0, unknownExplosions: 0,
+    };
+    context.valid = true;
+    context.knownExplosions = context.unknownExplosions = 0;
+    try {
+        for (const object of [...objects]) {
+            const result = await waterDamageObject(object, messages, state, { ...options, acidContext: context });
+            if (result !== 'destroyed')
+                continue;
+            const index = objects.indexOf(object);
+            if (index >= 0)
+                objects.splice(index, 1);
+        }
+    }
+    finally {
+        // Native nested chains end the shared acid context rather than restoring it.
+        context.valid = false;
+        context.knownExplosions = context.unknownExplosions = 0;
+    }
 }
 function extinguishLitObject(object, monster, state) {
     if (!object?.lamplit)
@@ -477,38 +495,6 @@ function armorAt(monster, state, mask) {
         [W_ARMF]: state.uarmf,
         [W_ARMU]: state.uarmu,
     }[mask] || null;
-}
-function flammableArmor(object) {
-    if (!object)
-        return false;
-    const material = OBJECT_MATERIAL[object.otyp] ?? 0;
-    return (material >= 2 && material <= 8) || material === 18;
-}
-async function burnArmorObject(object, description, owner, emitMessage, calls) {
-    if (!object || !flammableArmor(object))
-        return false;
-    if (object.oerodeproof && object.rknown)
-        return false;
-    if (object.oerodeproof || (object.blessed && rnl(4) === 0)) {
-        calls?.push('rnl(4)');
-        if (object.oerodeproof)
-            object.rknown = true;
-        return false;
-    }
-    if (object.blessed)
-        calls?.push('rnl(4)');
-    const erosion = object.oeroded ?? 0;
-    if (erosion >= 3)
-        return false;
-    object.oeroded = erosion + 1;
-    if (owner && emitMessage) {
-        const suffix = erosion + 1 === 3 ? ' completely'
-            : erosion ? ' further' : '';
-        const verb = /(?:boots|gloves|shoes|scales)$/iu.test(description)
-            ? 'smoulder' : 'smoulders';
-        await emitMessage(`${owner()} ${description} ${verb}${suffix}!`);
-    }
-    return true;
 }
 export async function burnArmorByFire(victim, state, emitMessage, calls = [], random = rn2, { visible = victim === state.u, } = {}) {
     const monster = 'mnum' in victim ? victim : null;
@@ -563,12 +549,22 @@ export async function burnArmorByFire(victim, state, emitMessage, calls = [], ra
             object = armorAt(monster, state, W_ARMF);
             description = 'boots';
         }
-        const damaged = await burnArmorObject(object, description, owner, emitMessage, calls);
-        if (hero && damaged)
-            state._armorClassDirty = true;
+        const result = await erodeObject(object, 'burn', {
+            state,
+            random,
+            luckRandom: range => {
+                calls.push(`rnl(${range})`);
+                return rnl(range);
+            },
+            displayName: description,
+            publish: async (message) => {
+                if (emitMessage && (hero || visible))
+                    await emitMessage(message);
+            },
+        });
         if (torso)
             return true;
-        if (damaged)
+        if (result !== 'nothing')
             return false;
     }
 }

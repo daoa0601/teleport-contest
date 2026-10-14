@@ -11,8 +11,10 @@ import {
     MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL,
 } from './monster_data.js';
 import { monsterWearsIronShoes } from './monworn.js';
+import { monsterName } from './monster_name.js';
 import { rnd } from './rng.js';
-import { monsterTrapVisibility } from './trap.js';
+import { monsterTrapVisibility, seeTrap } from './trap.js';
+import { levelHasCeiling } from './terrain_properties.js';
 import type { Monster } from './monster_types.js';
 import type { GameState } from './game_state.js';
 import type { Trap } from './map_types.js';
@@ -29,6 +31,8 @@ export interface MonsterPitTrap {
     finished: boolean;
     inSight: boolean;
     seeSquare: boolean;
+    falls: boolean;
+    dragged: boolean;
     death?: MonsterDeathResult;
 }
 
@@ -51,15 +55,12 @@ function ordinaryMonsterSubject(monster: Monster): string {
     return `The ${monster.name || MONSTER_NAME[monster.mnum] || 'monster'}`;
 }
 
-function monsterIsUngrounded(monster: Monster): boolean {
+function monsterIsUngrounded(monster: Monster, state: GameState): boolean {
     const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
     const symbol = MONSTER_SYMBOL[monster.mnum];
-    return !!(flags & M1_FLY) || symbol === S_EYE || symbol === S_LIGHT;
-}
-
-export function monsterAvoidsPit(monster: Monster, { forced = false } = {}): boolean {
-    if (monsterIsUngrounded(monster)) return true;
-    return !forced && !!((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_CLING);
+    const clingsToCeiling = !!(flags & M1_CLING) && levelHasCeiling(state);
+    return !!(flags & M1_FLY) || clingsToCeiling || symbol === S_EYE || symbol === S_LIGHT
+        || !!monster.wormno && (monster.wormSegments?.length ?? 0) > 5;
 }
 
 export function beginMonsterPitTrap(
@@ -68,11 +69,16 @@ export function beginMonsterPitTrap(
     state: GameState = game,
     { forced = false } = {},
 ): MonsterPitTrap | null {
-    if (!trap || monsterAvoidsPit(monster, { forced })) return null;
+    if (!trap) return null;
+    const ungrounded = monsterIsUngrounded(monster, state);
+    const sokoban = !!state.level?.flags.sokoban_rules;
+    const falls = !(ungrounded && forced && !sokoban);
+    const inescapable = forced || sokoban && !trap.madeby_u;
+    if (ungrounded && falls && !inescapable) return null;
     const visibility = monsterTrapVisibility(monster, state);
     const spiked = trap.ttyp === SPIKED_PIT;
     const relevantSpikes = spiked && !monsterWearsIronShoes(monster);
-    if (!((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_WALLWALK))
+    if (falls && !((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_WALLWALK))
         monster.mtrapped = 1;
     return {
         kind: 'pit-trap',
@@ -83,6 +89,8 @@ export function beginMonsterPitTrap(
         killed: false,
         finished: false,
         ...visibility,
+        falls,
+        dragged: ungrounded && falls,
     };
 }
 
@@ -98,10 +106,18 @@ export async function finishMonsterPitTrap(
     }: PitTrapOptions = {},
 ): Promise<MonsterPitTrap | null> {
     if (!event || event.finished) return event;
+    if (!event.falls) {
+        if (event.inSight) {
+            seeTrap(event.trap, state);
+            await publish(`${monsterName(monster, { capitalized: true, state })} doesn't fall into the pit.`);
+        }
+        event.finished = true;
+        return event;
+    }
     if (event.inSight) {
         const owner = event.trap.madeby_u ? 'your' : 'a';
         await publish(
-            `${describeMonster(monster)} falls into ${owner} pit!`,
+            `${describeMonster(monster)} ${event.dragged ? 'is dragged' : 'falls'} into ${owner} pit!`,
         );
         event.trap.tseen = true;
         if (monster.mnum === PM_PIT_VIPER || monster.mnum === PM_PIT_FIEND)

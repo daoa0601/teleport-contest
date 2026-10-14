@@ -7,7 +7,7 @@ import { canSpotMonster, newsym, plineWithContinuation, transientObjectGlyph } f
 import { levelAtDepth } from './dungeon.js';
 import { deleteEngravingAt } from './engrave.js';
 import { applyFloorEffects } from './floor_effects.js';
-import { placeObject, stack_object } from './floor_object.js';
+import { placeObject, placeObjectSynchronously, stack_object } from './floor_object.js';
 import { requireInitializedGame, requirePlayingGame } from './gstate.js';
 import { depth, distmin } from './hacklib.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
@@ -46,6 +46,17 @@ import { rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero } from '.
 const M1_WALLWALK = 0x00000008;
 const M1_UNSOLID = 0x00100000;
 const M2_ROCKTHROW = 0x08000000;
+const activeLaunches = new WeakMap();
+// C launch_in_progress()/force_launch_placement(): bones retain the
+// in-flight object at its original launch square so the trap can fire again.
+export function restoreLaunchedObjectForBones(state) {
+    const launch = activeLaunches.get(state);
+    if (!launch)
+        return;
+    unlinkObject(launch.object, state);
+    launch.object.otrapped = false;
+    placeObjectSynchronously(launch.object, launch.origin.x, launch.origin.y, state);
+}
 export async function launchRollingBoulder(start, endpoint, { state = requireInitializedGame(), unseen = false, known = false, publish = plineWithContinuation, random = rn2, rollOne = rnd, rollDice = d, } = {}) {
     requirePlayingGame(state);
     const level = state.level;
@@ -86,6 +97,7 @@ export async function launchRollingBoulder(start, endpoint, { state = requireIni
     let transient = null;
     let usedUp = false;
     const glyph = transientObjectGlyph(boulder);
+    activeLaunches.set(state, { object: boulder, origin: { ...source } });
     try {
         while (remaining-- > 0 && !usedUp && !state.program_state.gameover) {
             transient = await animateRollingBoulderCell(boulder, glyph, position.x, position.y, transient);
@@ -237,6 +249,7 @@ export async function launchRollingBoulder(start, endpoint, { state = requireIni
     finally {
         if (transient)
             newsym(transient.x, transient.y);
+        activeLaunches.delete(state);
     }
     if (!usedUp && !state.program_state.gameover) {
         boulder.otrapped = false;

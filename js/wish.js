@@ -2,8 +2,8 @@
 // C refs: zap.c makewish(), objnam.c readobjnam(), and
 // invent.c hold_another_object().
 import { markArtifactFound } from './artifacts.js';
-import { ICE, IRONBARS, Is_airlevel, Is_waterlevel, POOL, WATER } from './const.js';
-import { bot, docrt, flushPendingTopline, flush_screen, newsym, pline, plineWithContinuation, } from './display.js';
+import { ICE, IRONBARS, Is_airlevel, Is_waterlevel } from './const.js';
+import { bot, docrt, flushPendingTopline, flush_screen, pline, plineWithContinuation, } from './display.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { holdAnotherObject } from './hero_hold_object.js';
 import { CORPSE } from './object_data.js';
@@ -44,7 +44,7 @@ async function showWishHelp(triesLeft) {
     await bot();
     await flush_screen(1);
 }
-export async function makeWish({ announce = false, allowWizardTerrain = false, } = {}) {
+export async function makeWish({ announce = false, } = {}) {
     requirePlayingGame(game);
     if (announce) {
         await plineWithContinuation('You may wish for an object.');
@@ -65,28 +65,6 @@ export async function makeWish({ announce = false, allowWizardTerrain = false, }
         result = await readObjectName(value ?? '', {
             wizardWish: !!game.flags.debug,
         });
-        const wizardTerrain = allowWizardTerrain
-            ? (value ?? '').trim().toLowerCase() : '';
-        const wizardTerrains = {
-            'iron bars': { typ: IRONBARS, message: 'Iron bars.' },
-            'wall of water': { typ: WATER, message: 'A wall of water.' },
-            pool: { typ: POOL, message: 'A pool of water.' },
-        };
-        const wizardTerrainSpec = wizardTerrains[wizardTerrain];
-        if (!result && wizardTerrainSpec) {
-            const loc = game.level?.at?.(game.u.ux, game.u.uy);
-            if (loc) {
-                loc.typ = wizardTerrainSpec.typ;
-                loc.flags = 0;
-                loc.doormask = 0;
-                loc.wall_info = 0;
-                loc.ladder = 0;
-                newsym(game.u.ux, game.u.uy);
-                await pline(wizardTerrainSpec.message);
-                game.context.move = 0;
-                return;
-            }
-        }
         if (result)
             break;
         await pline('Nothing fitting that description exists in the game.');

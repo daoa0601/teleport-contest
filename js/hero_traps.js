@@ -28,7 +28,7 @@ import { placeCreatedObject, placeObject, placeObjectSynchronously, remove_objec
 import { canFallThrough, splitHeroMonsterForm, } from './mklev.js';
 import { fillPitWithBoulderAt } from './pit_fill.js';
 import { somexyspace } from './mkroom.js';
-import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterTypeName, monsterIsAmorphous, monsterIsUnsolid, monsterIsWhirly, } from './monster_data.js';
+import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterTypeName, monsterIsAmorphous, monsterIsUnsolid, monsterIsWhirly, } from './monster_data.js';
 import { ARROW, BOULDER, DART, HEAVY_IRON_BALL, OBJECT_BIMANUAL, OBJECT_MATERIAL, OBJECT_NAMES, ROCK, } from './object_data.js';
 import { deleteObject } from './object_delete.js';
 import { unlinkObject } from './object_location.js';
@@ -74,7 +74,7 @@ import { resetHeroTrap } from './terrain_movement.js';
 import { monsterName } from './monster_name.js';
 import { withIndefiniteArticle } from './object_grammar.js';
 import { objectName, observeObjectForNaming, killerObjectName, ownedObjectName, simpleObjectNameWithArticle } from './objnam.js';
-import { trapTriggeredByFloor } from './monmove.js';
+import { finishImmediateMonsterTrap, trapTriggeredByFloor, triggerImmediateMonsterTrap } from './monmove.js';
 import { monsterLocomotion } from './monster_locomotion.js';
 import { askTeleportDestination } from './cmd.js';
 import { observeObject } from './object_knowledge.js';
@@ -92,6 +92,7 @@ const PM_IRON_GOLEM = 259;
 const PM_PIT_FIEND = 300;
 const IRON = 11;
 const MZ_HUGE = 4;
+const M2_STRONG = 0x04000000;
 function heroMonsterForm() {
     requirePlayingGame(game);
     return game.u.umonnum;
@@ -241,8 +242,7 @@ async function triggerPit(trap, { viaSitting = false, failedUntrap = false, took
     await exerciseAttribute(A_STR, false);
     await exerciseAttribute(A_DEX, false);
 }
-function webTrapDuration() {
-    const strength = currentAttribute(A_STR, game);
+function webTrapDuration(strength) {
     if (strength <= 3)
         return rn2(6) + 6;
     if (strength < 6)
@@ -260,6 +260,7 @@ function webTrapDuration() {
     return 0;
 }
 async function triggerWeb(trap, { viaSitting = false, failedUntrap = false, forceTrap = false, noWebMessage = false } = {}) {
+    requirePlayingGame(game);
     const hero = game.u;
     trap.tseen = true;
     const form = heroMonsterForm();
@@ -272,11 +273,37 @@ async function triggerWeb(trap, { viaSitting = false, failedUntrap = false, forc
                 : 'There is a spider web here.');
         return;
     }
-    if (!noWebMessage)
-        await plineWithContinuation(`You ${viaSitting || failedUntrap || forceTrap ? 'are caught by' : 'stumble into'} ${trap.madeby_u ? 'your' : 'a'} spider web!`);
-    const turns = webTrapDuration();
-    hero.utrap = turns;
+    const steed = hero.usteed;
+    if (!noWebMessage) {
+        const verb = viaSitting || failedUntrap || forceTrap ? 'are caught by'
+            : steed ? `lead ${monsterName(steed, {
+                article: steed.name && !heroIsHallucinating(game) ? 'none' : 'the',
+                adjective: 'poor', suppressSaddle: true,
+            })} into` : `${monsterLocomotion(form, 'stumble')} into`;
+        await plineWithContinuation(`You ${verb} ${trap.madeby_u ? 'your' : 'a'} spider web!`);
+    }
+    hero.utrap = 1;
     hero.utraptype = TT_WEB;
+    refreshMovementProperties(game);
+    game.context.botl = true;
+    let strength = currentAttribute(A_STR, game);
+    if (steed && !noWebMessage) {
+        steed.mx = hero.ux;
+        steed.my = hero.uy;
+        const action = await triggerImmediateMonsterTrap(steed, game, { force: forceTrap });
+        await finishImmediateMonsterTrap(action, game);
+        if (!steed.mtrapped) {
+            await resetHeroTrap(false);
+            return;
+        }
+        steed.mtrapped = 0;
+        if ((MONSTER_FLAGS2[steed.mnum] ?? 0) & M2_STRONG)
+            strength = 17;
+        noWebMessage = true;
+    }
+    const turns = webTrapDuration(strength);
+    hero.utrap = turns;
+    hero.utraptype = turns ? TT_WEB : 0;
     refreshMovementProperties(game);
     game.context.botl = true;
     if (!turns) {

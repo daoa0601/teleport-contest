@@ -115,6 +115,7 @@ async function resolveMineLiquid(
             options.finishDeath(victim, {
                 noCorpse: !death.leaveCorpse,
                 random: death.random,
+                sadFeeling: death.sadFeeling,
                 publish: options.publish,
             }),
     });

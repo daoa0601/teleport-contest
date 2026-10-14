@@ -130,19 +130,25 @@ function roleTitleMonster(name) {
             }
         }
     }
-    return best?.mnum ?? -1;
+    return best;
 }
 export function nameToMonster(value) {
     return resolveMonsterName(value)?.mnum ?? -1;
 }
 export function resolveMonsterName(value) {
+    const match = resolveMonsterNamePrefix(value);
+    return match ? { mnum: match.mnum, gender: match.gender } : null;
+}
+// name_to_monplus() lets wishes retain the object noun after a monster name.
+export function resolveMonsterNamePrefix(value) {
     const requested = normalizeMonsterName(value);
     if (!requested)
         return null;
+    const source = value.trim().replace(/\s+/g, ' ').replace(/^(?:a|an|the) /i, '');
     for (const [alias, match] of MONSTER_NAME_ALIASES) {
         if (requested.startsWith(alias)
             && acceptedNameRemainder(requested.slice(alias.length))) {
-            return match;
+            return { ...match, remainder: source.slice(alias.length), overridesGender: true };
         }
     }
     let best = null;
@@ -157,9 +163,15 @@ export function resolveMonsterName(value) {
         }
     }
     if (best)
-        return { mnum: best.mnum, gender: best.gender };
-    const mnum = roleTitleMonster(requested);
-    return mnum < 0 ? null : { mnum, gender: 2 };
+        return {
+            mnum: best.mnum, gender: best.gender,
+            remainder: source.slice(best.length), overridesGender: false,
+        };
+    const title = roleTitleMonster(requested);
+    return title ? {
+        mnum: title.mnum, gender: 2,
+        remainder: source.slice(title.length), overridesGender: false,
+    } : null;
 }
 function singularClassName(value) {
     const name = normalizeMonsterName(value);

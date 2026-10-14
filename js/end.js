@@ -33,6 +33,7 @@ import { A_CON, A_WIS, CHOKING, DIED, G_EXTINCT, G_GENOD, GENOCIDED, PANICKED, P
 import { AMULET_OF_LIFE_SAVING, AMULET_OF_YENDOR, BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION, JADE, OBJECT_COST, OBJECT_NAMES, SPE_BOOK_OF_THE_DEAD, } from './object_data.js';
 import { createBonesFromDeath } from './bones_death.js';
 import { canMakeBones } from './bones_admission.js';
+import { restoreLaunchedObjectForBones } from './rolling_boulder.js';
 import { heroIsBlind } from './senses.js';
 import { finishShopkeeperRepossession, settleShopkeepersOnExit } from './shop_settlement.js';
 import { payVaultGuardOnExit } from './vault_exit.js';
@@ -1148,6 +1149,8 @@ async function startGameExit(outcome, deathType = DIED) {
     }
     game._canMakeBones = outcome === 'died' && deathType < GENOCIDED
         && canMakeBones();
+    if (game._canMakeBones)
+        restoreLaunchedObjectForBones(game);
 }
 async function settleGameExit(outcome) {
     const silent = !!game.program_state.stopprint;

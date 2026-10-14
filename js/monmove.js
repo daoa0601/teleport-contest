@@ -86,7 +86,7 @@ import { applyMonsterAntiMagicTrap, finishMonsterAntiMagicTrap, monsterHasMagicR
 import { beginMonsterBearTrap, finishMonsterBearTrap } from './bear_trap.js';
 import { beginMonsterFireTrap, finishMonsterFireTrap } from './fire_trap.js';
 import { beginMonsterLandMine, finishMonsterLandMine, landMineNeedsResume, } from './landmine_trap.js';
-import { beginMonsterPitTrap, finishMonsterPitTrap, monsterAvoidsPit } from './monster_pit_trap.js';
+import { beginMonsterPitTrap, finishMonsterPitTrap } from './monster_pit_trap.js';
 import { beginMonsterRockTrap, finishMonsterRockTrap, rockTrapNeedsResume } from './rock_trap.js';
 import { beginMonsterProjectileTrap, finishMonsterProjectileTrap, projectileTrapNeedsResume, } from './projectile_trap.js';
 import { beginMonsterSleepGasTrap, finishMonsterSleepGasTrap, sleepGasTrapNeedsResume, } from './sleep_gas_trap.js';
@@ -3632,40 +3632,33 @@ async function triggerMonsterTrap(monster, state, movement, random, rollDice, ro
     const trap = trapAtMonster(monster, state);
     if (!trap || monster.mtrapped)
         return null;
-    const symbol = MONSTER_SYMBOL[monster.mnum];
-    const airborne = !!((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_FLY)
-        || symbol === S_EYE || symbol === S_LIGHT;
     const sokobanFall = state.level.flags.sokoban_rules && !trap.madeby_u
         && [PIT, SPIKED_PIT, HOLE, TRAPDOOR].includes(trap.ttyp);
-    if (!movement.forcedTrapLanding && !sokobanFall && airborne && trapTriggeredByFloor(trap))
-        return null;
-    if (trap.ttyp === STATUE_TRAP) {
-        // C mintrap() teaches the type before trapeffect_statue_trap()
-        // declines to animate statues for monsters.
-        if (monsterKnowsTrap(monster, trap) && !movement.forcedTrapLanding
-            && recordRandom(random, calls, 4) !== 0 && !movement.forcedTrapBungle) {
+    const fixedTeleport = trap.ttyp === TELEP_TRAP && trap.teledest
+        && isok(trap.teledest.x, trap.teledest.y);
+    const forced = movement.forcedTrapLanding || fixedTeleport;
+    if (monster !== state.u.usteed && !sokobanFall && !forced) {
+        if (monsterFliesOrFloats(monster) && trapTriggeredByFloor(trap))
+            return null;
+        const alreadyKnown = monsterKnowsTrap(monster, trap)
+            || trap.ttyp === HOLE && !((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_MINDLESS);
+        if (alreadyKnown && recordRandom(random, calls, 4) !== 0
+            && !movement.forcedTrapBungle) {
             const event = { kind: 'known-trap-avoided', trap, damage: 0 };
             movement.trap = event;
             return event;
         }
-        monsterLearnsTrap(monster, trap);
-        monstersSeeTrap(state, trap);
-        if (trap.madeby_u && rnl(5))
-            await angerMonster(monster);
+    }
+    monsterLearnsTrap(monster, trap);
+    monstersSeeTrap(state, trap);
+    if (trap.madeby_u && rnl(5))
+        await angerMonster(monster);
+    if (trap.ttyp === STATUE_TRAP) {
+        // C mintrap() teaches the type before trapeffect_statue_trap()
+        // declines to animate statues for monsters.
         return null;
     }
     if (trap.ttyp === MAGIC_PORTAL) {
-        if (monster !== state.u.usteed && monsterKnowsTrap(monster, trap)
-            && !movement.forcedTrapLanding
-            && recordRandom(random, calls, 4) !== 0 && !movement.forcedTrapBungle) {
-            const avoided = { kind: 'known-trap-avoided', trap, damage: 0 };
-            movement.trap = avoided;
-            return avoided;
-        }
-        monsterLearnsTrap(monster, trap);
-        monstersSeeTrap(state, trap);
-        if (trap.madeby_u && rnl(5))
-            await angerMonster(monster);
         const event = await teleportMonsterThroughPortal(monster, trap, {
             state, random, force: !!movement.forcedTrapLanding, publish,
         });
@@ -3678,15 +3671,6 @@ async function triggerMonsterTrap(monster, state, movement, random, rollDice, ro
         return event;
     }
     if (trap.ttyp === LEVEL_TELEP) {
-        if (monsterKnowsTrap(monster, trap) && !movement.forcedTrapLanding
-            && recordRandom(random, calls, 4) && !movement.forcedTrapBungle) {
-            const avoided = { kind: 'known-trap-avoided', trap, damage: 0 };
-            return avoided;
-        }
-        monsterLearnsTrap(monster, trap);
-        monstersSeeTrap(state, trap);
-        if (trap.madeby_u && rnl(5))
-            await angerMonster(monster);
         const event = await teleportMonsterToRandomLevel(monster, trap, {
             state, random, rollOne, force: !!movement.forcedTrapLanding,
         });
@@ -3699,19 +3683,6 @@ async function triggerMonsterTrap(monster, state, movement, random, rollDice, ro
         return event;
     }
     if (trap.ttyp === TELEP_TRAP) {
-        const fixedDestination = trap.teledest && isok(trap.teledest.x, trap.teledest.y);
-        if (!fixedDestination &&
-            monsterKnowsTrap(monster, trap) &&
-            !movement.forcedTrapLanding &&
-            recordRandom(random, calls, 4) !== 0 && !movement.forcedTrapBungle) {
-            const event = { kind: 'known-trap-avoided', trap, damage: 0 };
-            movement.trap = event;
-            return event;
-        }
-        monsterLearnsTrap(monster, trap);
-        monstersSeeTrap(state, trap);
-        if (trap.madeby_u && rnl(5))
-            await angerMonster(monster);
         const event = await teleportMonsterFromTrap(monster, trap, {
             state,
             calls,
@@ -3730,15 +3701,6 @@ async function triggerMonsterTrap(monster, state, movement, random, rollDice, ro
         return event;
     }
     if (trap.ttyp === RUST_TRAP) {
-        if (monsterKnowsTrap(monster, trap) &&
-            !movement.forcedTrapLanding &&
-            recordRandom(random, calls, 4) !== 0 && !movement.forcedTrapBungle) {
-            const event = { kind: 'known-trap-avoided', trap, damage: 0 };
-            movement.trap = event;
-            return event;
-        }
-        monsterLearnsTrap(monster, trap);
-        monstersSeeTrap(state, trap);
         const event = await beginMonsterRustTrap(monster, trap, state, {
             random: (range) => recordRandom(random, calls, range),
         });
@@ -3747,37 +3709,16 @@ async function triggerMonsterTrap(monster, state, movement, random, rollDice, ro
         return event;
     }
     if (trap.ttyp === PIT || trap.ttyp === SPIKED_PIT) {
-        if (monsterAvoidsPit(monster))
+        const event = beginMonsterPitTrap(monster, trap, state, {
+            forced: !!movement.forcedTrapLanding,
+        });
+        if (!event)
             return null;
-        if (monsterKnowsTrap(monster, trap) &&
-            !movement.forcedTrapLanding &&
-            recordRandom(random, calls, 4) !== 0 && !movement.forcedTrapBungle) {
-            const event = { kind: 'known-trap-avoided', trap, damage: 0 };
-            movement.trap = event;
-            return event;
-        }
-        monsterLearnsTrap(monster, trap);
-        monstersSeeTrap(state, trap);
-        const event = beginMonsterPitTrap(monster, trap, state);
         movement.trap = event;
         movement.deferredAfterMonsterTrap = true;
         return event;
     }
     if (trap.ttyp === HOLE || trap.ttyp === TRAPDOOR) {
-        // mintrap() grants thinking monsters implicit knowledge of holes
-        // (but not trap doors) even before mtrapseen records the type.  The
-        // destination remains legal to mfndpos(); this later gate usually
-        // declines the effect after the actor has entered the square.
-        const implicitlyKnowsHole = trap.ttyp === HOLE && !((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_MINDLESS);
-        if ((monsterKnowsTrap(monster, trap) || implicitlyKnowsHole) &&
-            !movement.forcedTrapLanding &&
-            recordRandom(random, calls, 4) !== 0 && !movement.forcedTrapBungle) {
-            const event = { kind: 'known-trap-avoided', trap, damage: 0 };
-            movement.trap = event;
-            return event;
-        }
-        monsterLearnsTrap(monster, trap);
-        monstersSeeTrap(state, trap);
         // mintrap() handles avoidance and learning before trapeffect_hole()
         // discovers that this level has nowhere to fall.
         if (!canFallThrough(state.u.uz))
@@ -3802,19 +3743,9 @@ async function triggerMonsterTrap(monster, state, movement, random, rollDice, ro
     }
     if (trap.ttyp === ROLLING_BOULDER_TRAP) {
         // trap.c:trapeffect_rolling_boulder_trap()->launch_obj().  Airborne
-        // actors do not depress the trigger.  A monster which already knows
-        // the trap gets mintrap()'s ordinary three-in-four avoidance chance.
+        // actors do not depress the trigger even when forced.
         if (monsterInAir(monster, state))
             return null;
-        if (monsterKnowsTrap(monster, trap) &&
-            !movement.forcedTrapLanding &&
-            recordRandom(random, calls, 4) !== 0 && !movement.forcedTrapBungle) {
-            const event = { kind: 'known-trap-avoided', trap, damage: 0 };
-            movement.trap = event;
-            return event;
-        }
-        monsterLearnsTrap(monster, trap);
-        monstersSeeTrap(state, trap);
         const inSight = state.u.usteed === monster
             || cansee(monster.mx, monster.my) && canSpotMonster(monster);
         const wasSeen = !!trap.tseen;
@@ -3845,33 +3776,11 @@ async function triggerMonsterTrap(monster, state, movement, random, rollDice, ro
         const event = beginMonsterSqueakyBoard(monster, trap, state);
         if (!event)
             return null;
-        if (monsterKnowsTrap(monster, trap) &&
-            !movement.forcedTrapLanding &&
-            recordRandom(random, calls, 4) !== 0 && !movement.forcedTrapBungle) {
-            const avoided = {
-                kind: 'known-trap-avoided',
-                trap,
-                damage: 0,
-            };
-            movement.trap = avoided;
-            return avoided;
-        }
-        monsterLearnsTrap(monster, trap);
-        monstersSeeTrap(state, trap);
         movement.trap = event;
         movement.deferredAfterMonsterTrap = true;
         return event;
     }
     if (trap.ttyp === SLP_GAS_TRAP) {
-        if (monsterKnowsTrap(monster, trap) &&
-            !movement.forcedTrapLanding &&
-            recordRandom(random, calls, 4) !== 0 && !movement.forcedTrapBungle) {
-            const event = { kind: 'known-trap-avoided', trap, damage: 0 };
-            movement.trap = event;
-            return event;
-        }
-        monsterLearnsTrap(monster, trap);
-        monstersSeeTrap(state, trap);
         const event = beginMonsterSleepGasTrap(monster, trap, state, {
             rollOne: (range) => {
                 const result = rollOne(range);
@@ -3885,15 +3794,6 @@ async function triggerMonsterTrap(monster, state, movement, random, rollDice, ro
         return event;
     }
     if (trap.ttyp === ARROW_TRAP || trap.ttyp === DART_TRAP) {
-        if (monsterKnowsTrap(monster, trap) &&
-            !movement.forcedTrapLanding &&
-            recordRandom(random, calls, 4) !== 0 && !movement.forcedTrapBungle) {
-            const event = { kind: 'known-trap-avoided', trap, damage: 0 };
-            movement.trap = event;
-            return event;
-        }
-        monsterLearnsTrap(monster, trap);
-        monstersSeeTrap(state, trap);
         const event = await beginMonsterProjectileTrap(monster, trap, state, {
             random: (range) => recordRandom(random, calls, range),
             rollOne: (range) => {
@@ -3908,15 +3808,6 @@ async function triggerMonsterTrap(monster, state, movement, random, rollDice, ro
         return event;
     }
     if (trap.ttyp === ROCKTRAP) {
-        if (monsterKnowsTrap(monster, trap) &&
-            !movement.forcedTrapLanding &&
-            recordRandom(random, calls, 4) !== 0 && !movement.forcedTrapBungle) {
-            const event = { kind: 'known-trap-avoided', trap, damage: 0 };
-            movement.trap = event;
-            return event;
-        }
-        monsterLearnsTrap(monster, trap);
-        monstersSeeTrap(state, trap);
         const event = await beginMonsterRockTrap(monster, trap, state, {
             random: (range) => recordRandom(random, calls, range),
             rollDice: (count, sides) => {
@@ -3931,15 +3822,6 @@ async function triggerMonsterTrap(monster, state, movement, random, rollDice, ro
         return event;
     }
     if (trap.ttyp === LANDMINE) {
-        if (monsterKnowsTrap(monster, trap) &&
-            !movement.forcedTrapLanding &&
-            recordRandom(random, calls, 4) !== 0 && !movement.forcedTrapBungle) {
-            const event = { kind: 'known-trap-avoided', trap, damage: 0 };
-            movement.trap = event;
-            return event;
-        }
-        monsterLearnsTrap(monster, trap);
-        monstersSeeTrap(state, trap);
         const event = beginMonsterLandMine(monster, trap, state, {
             random: (range) => recordRandom(random, calls, range),
             rollOne: (range) => {
@@ -3954,15 +3836,6 @@ async function triggerMonsterTrap(monster, state, movement, random, rollDice, ro
         return event;
     }
     if (trap.ttyp === FIRE_TRAP) {
-        if (monsterKnowsTrap(monster, trap) &&
-            !movement.forcedTrapLanding &&
-            recordRandom(random, calls, 4) !== 0 && !movement.forcedTrapBungle) {
-            const event = { kind: 'known-trap-avoided', trap, damage: 0 };
-            movement.trap = event;
-            return event;
-        }
-        monsterLearnsTrap(monster, trap);
-        monstersSeeTrap(state, trap);
         const event = beginMonsterFireTrap(monster, trap, state, {
             rollDice: (count, sides) => {
                 const result = rollDice(count, sides);
@@ -3979,15 +3852,6 @@ async function triggerMonsterTrap(monster, state, movement, random, rollDice, ro
         // knowledge, before delegating to trapeffect_web().  Only the effect
         // discovers that webmakers cross safely, so they still learn an
         // unknown web and own later avoidance probes.
-        if (monsterKnowsTrap(monster, trap) &&
-            !movement.forcedTrapLanding &&
-            recordRandom(random, calls, 4) !== 0 && !movement.forcedTrapBungle) {
-            const event = { kind: 'known-trap-avoided', trap, damage: 0 };
-            movement.trap = event;
-            return event;
-        }
-        monsterLearnsTrap(monster, trap);
-        monstersSeeTrap(state, trap);
         if ([94, 96].includes(monster.mnum))
             return null;
         const { inSight } = monsterTrapVisibility(monster, state);
@@ -4006,15 +3870,6 @@ async function triggerMonsterTrap(monster, state, movement, random, rollDice, ro
         // mintrap() still triggers traps which m_harmless_trap() allowed the
         // monster to enter.  A monster which has learned this trap type gets
         // the ordinary 3-in-4 avoidance check before the effect selector.
-        if (monsterKnowsTrap(monster, trap) &&
-            !movement.forcedTrapLanding &&
-            recordRandom(random, calls, 4) !== 0 && !movement.forcedTrapBungle) {
-            const event = { kind: 'known-trap-avoided', trap, damage: 0 };
-            movement.trap = event;
-            return event;
-        }
-        monsterLearnsTrap(monster, trap);
-        monstersSeeTrap(state, trap);
         const fire = recordRandom(random, calls, 21) === 0;
         if (fire) {
             const event = beginMonsterFireTrap(monster, trap, state, {
@@ -4038,15 +3893,6 @@ async function triggerMonsterTrap(monster, state, movement, random, rollDice, ro
         return event;
     }
     if (trap.ttyp === ANTI_MAGIC) {
-        if (monsterKnowsTrap(monster, trap) &&
-            !movement.forcedTrapLanding &&
-            recordRandom(random, calls, 4) !== 0 && !movement.forcedTrapBungle) {
-            const event = { kind: 'known-trap-avoided', trap, damage: 0 };
-            movement.trap = event;
-            return event;
-        }
-        monsterLearnsTrap(monster, trap);
-        monstersSeeTrap(state, trap);
         const effect = applyMonsterAntiMagicTrap(monster, {
             rollDice: (count, sides) => {
                 const result = rollDice(count, sides);
@@ -4081,15 +3927,6 @@ async function triggerMonsterTrap(monster, state, movement, random, rollDice, ro
         return event;
     }
     if (trap.ttyp === POLY_TRAP) {
-        if (monsterKnowsTrap(monster, trap) &&
-            !movement.forcedTrapLanding &&
-            recordRandom(random, calls, 4) !== 0 && !movement.forcedTrapBungle) {
-            const event = { kind: 'known-trap-avoided', trap, damage: 0 };
-            movement.trap = event;
-            return event;
-        }
-        monsterLearnsTrap(monster, trap);
-        monstersSeeTrap(state, trap);
         const event = await applyMonsterPolymorphTrap(monster, trap, state, {
             random: (range) => recordRandom(random, calls, range),
         });
@@ -4099,32 +3936,14 @@ async function triggerMonsterTrap(monster, state, movement, random, rollDice, ro
         return event;
     }
     if (trap.ttyp === VIBRATING_SQUARE) {
-        if (monsterKnowsTrap(monster, trap) &&
-            !movement.forcedTrapLanding &&
-            recordRandom(random, calls, 4) !== 0 && !movement.forcedTrapBungle) {
-            const event = { kind: 'known-trap-avoided', trap, damage: 0 };
-            movement.trap = event;
-            return event;
-        }
-        monsterLearnsTrap(monster, trap);
-        monstersSeeTrap(state, trap);
         const event = beginMonsterVibratingSquare(monster, trap, state);
         movement.trap = event;
         if (!event.finished)
             movement.deferredAfterMonsterTrap = true;
         return event;
     }
-    if (trap.ttyp !== BEAR_TRAP || (!movement.forcedTrapLanding && monsterInAir(monster, state)))
+    if (trap.ttyp !== BEAR_TRAP)
         return null;
-    if (monsterKnowsTrap(monster, trap) &&
-        !movement.forcedTrapLanding &&
-        recordRandom(random, calls, 4) !== 0 && !movement.forcedTrapBungle) {
-        const event = { kind: 'known-trap-avoided', trap, damage: 0 };
-        movement.trap = event;
-        return event;
-    }
-    monsterLearnsTrap(monster, trap);
-    monstersSeeTrap(state, trap);
     const event = beginMonsterBearTrap(monster, trap, state, {
         forced: !!movement.forcedTrapLanding,
     });
@@ -5518,7 +5337,10 @@ async function knockHeroFromMonster(monster, attack, state, random, publish = pl
         hit: attack.hit,
         weaponUsed: !!monsterWieldedWeapon(monster),
         finishMonsterDeath: finishDeath,
-        finishLiquidDeath: (target, liquid) => finishDeath(target, { noCorpse: !liquid.leaveCorpse, random: liquid.random }),
+        finishLiquidDeath: (target, liquid) => finishDeath(target, {
+            noCorpse: !liquid.leaveCorpse, random: liquid.random,
+            sadFeeling: liquid.sadFeeling,
+        }),
     });
 }
 // Continue an ordinary natural hit after its visible hit message has been
@@ -6684,7 +6506,7 @@ export async function resumeDeferredMonsterTrap(action, state, { random = rn2, r
             await finishMonsterWebTrap(action.monster, event.trap, {
                 state,
                 publish,
-                subject: describeMonster || monsterSentenceSubject,
+                ...(describeMonster ? { subject: describeMonster } : {}),
             });
             break;
         case 'bear-trap':

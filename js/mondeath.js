@@ -8,9 +8,9 @@ import { game, requireLiveGame } from './gstate.js';
 import { expelHero } from './hero_expulsion.js';
 import { nhgetch } from './input.js';
 import { checkMonsterGearNextTurn } from './monworn.js';
-import { monsterName, possessiveName } from './monster_name.js';
+import { monsterName, namelessMonsterName, possessiveName } from './monster_name.js';
 import { makePetWary } from './dog.js';
-import { MONSTER_ATTACKS, monsterIsAmorphous, monsterIsNoncorporeal, monsterIsNonliving, monsterIsVampire, monsterTypeName, } from './monster_data.js';
+import { MONSTER_ATTACKS, monsterIsAmorphous, monsterIsNoncorporeal, monsterIsNonliving, monsterIsVampire, } from './monster_data.js';
 import { changeMonsterForm } from './monster_polymorph.js';
 import { triggerMonsterDoorTrap } from './monster_door_trap.js';
 import { AMULET_OF_LIFE_SAVING } from './object_data.js';
@@ -140,21 +140,18 @@ export async function preventMonsterDeath(monster, { creditedKill, disintegrated
 function monsterSpeciesWasGenocided(monster, state = game) {
     return !!((state.mvitals?.[monster?.mnum]?.mvflags ?? 0) & G_GENOD);
 }
-function vampireRiseMessage(monster, oldMnum, disintegrated, unaware) {
-    const oldForm = { mnum: oldMnum };
-    const unusualBody = monsterIsNonliving(oldMnum)
-        || monsterIsNoncorporeal(oldForm) || monsterIsAmorphous(oldForm);
+function vampireRiseAction(monster, disintegrated, unaware, state) {
+    const unusualBody = monsterIsNonliving(monster.mnum)
+        || monsterIsNoncorporeal(monster) || monsterIsAmorphous(monster);
     const reconstitutes = disintegrated
-        || monsterIsNoncorporeal(oldForm) || monsterIsAmorphous(oldForm);
-    const oldName = monster.name
-        || monsterTypeName(oldMnum, !!monster.female);
-    const oldSubject = `${unusualBody ? '' : 'seemingly dead '}${oldName}`;
+        || monsterIsNoncorporeal(monster) || monsterIsAmorphous(monster);
+    const oldSubject = monsterName(monster, {
+        state, adjective: unusualBody ? '' : 'seemingly dead',
+        suppressInvisible: true, suppressSaddle: false, augmentIt: true,
+    });
     const action = reconstitutes ? 'reconstitutes' : 'transforms';
-    const newName = monsterTypeName(monster.mnum, !!monster.female);
-    if (unaware) {
-        return `You dream that the ${oldSubject} ${action} and rises as a ${newName}!`;
-    }
-    return `The ${oldSubject} suddenly ${action} and rises as a ${newName}!`;
+    const description = `${unaware ? 'you dream that ' : ''}${oldSubject} ${unaware ? '' : 'suddenly '}${action} and rises as`;
+    return description.charAt(0).toUpperCase() + description.slice(1);
 }
 function closedDoorAt(state, x, y) {
     const location = state.level?.at?.(x, y);
@@ -225,8 +222,8 @@ async function reviveShiftedVampire(monster, { visible, spotted, disintegrated, 
     }
     const x = monster.mx;
     const y = monster.my;
-    const oldMnum = monster.mnum;
     const unaware = heroIsUnaware(state);
+    const riseAction = vampireRiseAction(monster, disintegrated, unaware, state);
     monster.dead = false;
     monster.mcanmove = 1;
     monster.mfrozen = 0;
@@ -262,7 +259,10 @@ async function reviveShiftedVampire(monster, { visible, spotted, disintegrated, 
     const spottedAfter = state === game ? canSpotMonster(monster) : spotted;
     let messageShown = false;
     if (spottedAfter) {
-        await publish(vampireRiseMessage(monster, oldMnum, disintegrated, unaware));
+        const newName = namelessMonsterName(monster, {
+            state, article: 'a', suppressIt: true, suppressInvisible: true,
+        });
+        await publish(`${riseAction} ${newName}!`);
         messageShown = true;
     }
     const door = await smashDoorUnderVampire(monster, x, y, {

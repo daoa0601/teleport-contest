@@ -10,12 +10,13 @@ import {
     MM_NOTAIL, MM_NOWAIT, NO_MINVENT, STATUE_TRAP,
 } from './const.js';
 import {
-    canSpotMonster, newsym, plineWithContinuation as pline, randomDisplayMonsterName,
+    canSpotMonster, feel_newsym, map_invisible, newsym,
+    plineWithContinuation as pline, randomDisplayMonsterName,
 } from './display.js';
 import { makePetWary } from './dog.js';
 import { delobj } from './object_delete.js';
 import { removeWornHeroItem } from './hero_equipment.js';
-import { costlySpot } from './shk.js';
+import { costlySpot, objectOwnershipPrefix } from './shk.js';
 import { stolenValue } from './shop_loss.js';
 import { game, requireGameLevel } from './gstate.js';
 import type { GameState } from './game_state.js';
@@ -25,7 +26,7 @@ import { makemonAt, makemonNear } from './mklev.js';
 import { setMonsterMalign } from './monster_alignment.js';
 import {
     MONSTER_GENO, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL,
-    monsterIsNonliving, monsterIsVampireShifter, monsterTypeName,
+    monsterIsNonliving, monsterIsVampireShifter,
 } from './monster_data.js';
 import { addObjectToMonsterInventory } from './monster_inventory.js';
 import { changeMonsterForm, restoreMonsterShape } from './monster_polymorph.js';
@@ -35,6 +36,10 @@ import { initializeMonsterArmor } from './monworn.js';
 import { STATUE } from './object_data.js';
 import { heroFormHidesUnderObjects } from './polyself.js';
 import { markQuestLeaderAlive } from './quest.js';
+import { monsterName } from './monster_name.js';
+import { ownedObjectName } from './objnam.js';
+import { stopHeroOccupation } from './occupation.js';
+import { heroIsBlind } from './senses.js';
 import {
     bodyGenderFlags, PM_DOPPELGANGER, revivalReplacement,
 } from './revival_species.js';
@@ -110,13 +115,6 @@ async function createStatueMonster(statue: StatueObject, x: number, y: number, s
     return monster;
 }
 
-function statueDescription(statue: StatueObject, article: string): string {
-    const female = ((statue.spe ?? 0) & 0x03) === 1;
-    const species = monsterTypeName(statue.corpsenm, female);
-    const name = statue.oextra?.oname || statue.oname;
-    return `${article} statue of ${species}${name ? ` named ${name}` : ''}`;
-}
-
 function animationVerb(monster: Monster): string {
     if (!canSpotMonster(monster)) return 'disappears';
     if (monsterIsNonliving(monster.mnum)
@@ -130,7 +128,11 @@ async function describeAnimation(statue: StatueObject, monster: Monster, x: numb
         ? 'turns into flesh' : animationVerb(monster);
     const heroAtStatue = state.u?.ux === x && state.u?.uy === y;
     if (heroAtStatue || magic) {
-        await pline(`${statueDescription(statue, 'The')} ${verb}!`);
+        const keeper = costlySpot(monster.mx, monster.my, state)?.resident;
+        const description = magic && (monster !== keeper || statue.where === 'inventory')
+            ? ownedObjectName(statue, state)
+            : `${objectOwnershipPrefix(statue, state)}statue`;
+        await pline(`${description} ${verb}!`);
         return;
     }
     if (heroIsHallucinating(state)) {
@@ -141,16 +143,18 @@ async function describeAnimation(statue: StatueObject, monster: Monster, x: numb
     }
     if (shatter) {
         const description = cansee(x, y)
-            ? statueDescription(statue, 'the') : 'a statue';
+            ? ownedObjectName(statue, state, { capitalized: false }) : 'a statue';
         await pline(
             `Instead of shattering, ${description} suddenly ${verb}!`,
         );
         return;
     }
     const description = canSpotMonster(monster)
-        ? `a ${monsterTypeName(monster.mnum, !!monster.female)}`
+        ? monsterName(monster, { article: 'a', state })
         : 'something';
     await pline(`You find ${description} posing as a statue.`);
+    if (!canSpotMonster(monster) && heroIsBlind(state)) map_invisible(x, y);
+    await stopHeroOccupation(state);
 }
 
 function nameReleasedMonster(monster: Monster, statue: StatueObject): void {
@@ -205,11 +209,14 @@ export async function animateStatue(statue: GameObject, x: number, y: number, {
     if (!state.context?.mon_moving && (magic || shatter) && keeper !== monster
         && keeper && (statue.where === 'inventory' ? statue.unpaid : !statue.no_charge))
         await stolenValue(statue, x, y, !!keeper.mpeaceful, { silent: false, state });
-    if (!state.context?.mon_moving
-        && state.urole?.key === 'archeologist'
+    if (state.urole?.key === 'archeologist'
         && ((statue.spe ?? 0) & CORPSTAT_HISTORIC)) {
-        await pline('You feel guilty that the historic statue is now gone.');
-        adjustHeroAlignment(-1, state);
+        if (!state.context.mon_moving) {
+            await pline('You feel guilty that the historic statue is now gone.');
+            adjustHeroAlignment(-1, state);
+        } else if (cansee(x, y)) {
+            await pline('You feel regret that the historic statue is now gone.');
+        }
     }
     await transferStatueContents(statue, monster, state);
     if (statue.owornmask) await removeWornHeroItem(statue, state);
@@ -236,6 +243,6 @@ export async function activateStatueTrapAt(
         monster = result.monster;
         if (monster || !result.unique) break;
     }
-    newsym(x, y);
+    feel_newsym(x, y);
     return monster;
 }

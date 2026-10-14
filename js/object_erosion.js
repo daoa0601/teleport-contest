@@ -9,7 +9,7 @@ import { AD_CORR, AD_FIRE, AD_RUST } from './monster_attack_types.js';
 import { MONSTER_ATTACKS, MONSTER_NAME } from './monster_data.js';
 import { removeObjectFromMonsterInventory } from './monster_inventory.js';
 import { removeWornHeroItem } from './hero_equipment.js';
-import { monsterSentenceSubject } from './monster_sound.js';
+import { monsterName, possessiveName } from './monster_name.js';
 import { DWARVISH_CLOAK, OBJECT_NAMES, OBJECT_PROPERTY, OBJECT_SUBTYPE, SCR_BLANK_PAPER, TALLOW_CANDLE, WAN_FIRE, WAX_CANDLE, } from './object_data.js';
 import { delobj } from './object_delete.js';
 import { makePlural, verbForSubject } from './object_grammar.js';
@@ -82,11 +82,11 @@ export async function damageObjectWithAcid(object, { state = game, publish = pli
     if (view.hero && inventoryResists('corrosion', state, random))
         return;
     if (object.greased) {
-        await protectWithGrease(object, view, publish, random);
+        await protectWithGrease(object, view, state, publish, random);
     }
     else if (object.oclass === SCROLL_CLASS && object.otyp !== SCR_BLANK_PAPER) {
         if (!heroIsBlind(state) && (view.hero || view.monsterVisible))
-            await publish(`${view.subject} ${view.plural ? 'fade' : 'fades'}.`);
+            await publish(`${objectSubject(view, state)} ${view.plural ? 'fade' : 'fades'}.`);
         object.otyp = SCR_BLANK_PAPER;
         object.spe = 0;
         object.dknown = false;
@@ -112,7 +112,7 @@ export async function erodeObject(object, kind, { state = game, publish = plineW
     if (view.hero && inventoryResists(kind, state, random))
         return 'nothing';
     if (grease && kind !== 'burn' && kind !== 'rot' && object.greased) {
-        await protectWithGrease(object, view, publish, random);
+        await protectWithGrease(object, view, state, publish, random);
         return 'greased';
     }
     if (!erosionMatters(object))
@@ -120,14 +120,14 @@ export async function erodeObject(object, kind, { state = game, publish = plineW
     const tell = verbose && state.flags.verbose !== false;
     if (!objectIsVulnerableToErosion(object, kind, state) || (object.oerodeproof && object.rknown)) {
         if (tell && (view.hero || view.monsterVisible)) {
-            await publish(`${view.subject} ${agreement} not affected by ${rule.cause}.`);
+            await publish(`${objectSubject(view, state)} ${agreement} not affected by ${rule.cause}.`);
         }
         return 'nothing';
     }
     if (object.oerodeproof || (object.blessed && luckRandom(4) === 0)) {
         if (state.flags.verbose !== false
             && (verbose || object.oerodeproof) && view.visible) {
-            await publish(`Somehow, ${view.lowerSubject} ${agreement} not affected by the ${rule.cause}.`);
+            await publish(`Somehow, ${objectSubject(view, state, false)} ${agreement} not affected by the ${rule.cause}.`);
         }
         if (object.oerodeproof)
             object.rknown = true;
@@ -138,7 +138,7 @@ export async function erodeObject(object, kind, { state = game, publish = plineW
     if (erosion < 3) {
         const adverb = erosion === 2 ? ' completely' : erosion ? ' further' : '';
         if (view.visible)
-            await publish(`${view.subject} ${verb}${adverb}!`);
+            await publish(`${objectSubject(view, state)} ${verb}${adverb}!`);
         if (pay)
             await chargeAlteredUnpaidObject(object, rule.past, state);
         object[rule.field] = erosion + 1;
@@ -151,7 +151,7 @@ export async function erodeObject(object, kind, { state = game, publish = plineW
         const action = kind === 'crack'
             ? view.plural ? 'shatter' : 'shatters' : `${verb} away`;
         if (view.visible)
-            await publish(`${view.subject} ${action}!`);
+            await publish(`${objectSubject(view, state)} ${action}!`);
         if (pay)
             await chargeAlteredUnpaidObject(object, rule.past, state);
         if (object.owornmask) {
@@ -172,7 +172,7 @@ export async function erodeObject(object, kind, { state = game, publish = plineW
     }
     if (tell && view.visible) {
         const sense = view.hero && heroIsBlind(state) ? 'feel' : 'look';
-        await publish(`${view.subject} ${sense}${view.plural ? '' : 's'} completely ${rule.past}.`);
+        await publish(`${objectSubject(view, state)} ${sense}${view.plural ? '' : 's'} completely ${rule.past}.`);
     }
     return 'nothing';
 }
@@ -208,9 +208,13 @@ function inventoryResists(kind, state, random) {
     return kind === 'burn' && state.uarmc?.otyp === DWARVISH_CLOAK
         && random(100) < 90;
 }
-async function protectWithGrease(object, view, publish, random) {
+async function protectWithGrease(object, view, state, publish, random) {
     if (view.hero || view.monsterVisible) {
-        await publish(`${view.subject} ${view.plural ? 'are' : 'is'} protected by the layer of grease!`);
+        // Native grease feedback appends 's even when the name ends in s.
+        const subject = view.monsterVisible && view.carrier
+            ? `${monsterName(view.carrier, { state, capitalized: true })}'s ${view.name}`
+            : objectSubject(view, state);
+        await publish(`${subject} ${view.plural ? 'are' : 'is'} protected by the layer of grease!`);
     }
     if (random(2) === 0) {
         object.greased = false;
@@ -231,8 +235,6 @@ function objectView(object, state, position = { x: object.ox, y: object.oy }, di
     const floorVisible = !hero && !carrier && cansee(x, y)
         && (!isPoolAt(x, y, state) || (!!state.u.underwater
             && Math.max(Math.abs(state.u.ux - x), Math.abs(state.u.uy - y)) <= 1));
-    const owner = hero ? 'Your' : monsterVisible && carrier
-        ? `${monsterSentenceSubject(carrier)}'s` : 'The';
     let name = displayName;
     if (name === null) {
         name = object.name || object.description || OBJECT_NAMES[object.otyp] || 'object';
@@ -244,11 +246,18 @@ function objectView(object, state, position = { x: object.ox, y: object.oy }, di
     if (!hero && !monsterVisible)
         name = name.replace(/^the /iu, '');
     const plural = verbForSubject(name, 'are') === 'are';
-    const subject = `${owner} ${name}`;
     return {
-        hero, carrier, monsterVisible, plural, subject,
-        lowerSubject: subject.replace(/^(Your|The) /u, word => word.toLowerCase()),
+        hero, carrier, monsterVisible, plural, name,
         visible: hero || monsterVisible || floorVisible,
     };
+}
+function objectSubject(view, state, capitalized = true) {
+    if (view.hero)
+        return `${capitalized ? 'Your' : 'your'} ${view.name}`;
+    if (view.monsterVisible && view.carrier) {
+        const owner = monsterName(view.carrier, { state, capitalized });
+        return `${possessiveName(owner)} ${view.name}`;
+    }
+    return `${capitalized ? 'The' : 'the'} ${view.name}`;
 }
 //# sourceMappingURL=object_erosion.js.map

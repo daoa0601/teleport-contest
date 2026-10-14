@@ -122,9 +122,9 @@ async function changeInvocationSquare({ x, y }, distance, state) {
     vision_note_blocker_change(x, y);
     newsym(x, y);
 }
-function finishInvocationLiquidDeath(monster, { state, random, leaveCorpse, cause }) {
-    if (cause === 'drowning' || cause === 'lava-burning')
-        return finishHeroLiquidMonsterDeath(monster, { leaveCorpse });
-    return finishMonsterLiquidDeath(monster, { state, random, leaveCorpse });
+function finishInvocationLiquidDeath(monster, options) {
+    if (options.cause === 'drowning' || options.cause === 'lava-burning')
+        return finishHeroLiquidMonsterDeath(monster, options);
+    return finishMonsterLiquidDeath(monster, options);
 }
 //# sourceMappingURL=invocation_area.js.map

@@ -2,7 +2,7 @@
 // C refs: mon.c:select_newcham_form(), pickvampshape(), and newcham().
 
 import {
-    BOLT_LIM, DOOR, D_CLOSED, D_LOCKED, Is_rogue_level, STRAT_WAITFORU, W_ARM,
+    BOLT_LIM, DOOR, D_CLOSED, D_LOCKED, In_endgame, Is_rogue_level, MGIVENNAME, STRAT_WAITFORU, W_ARM,
     M_AP_MONSTER, M_AP_NOTHING, M_AP_TYPE, MON_FLOOR, NON_PM, ismnum,
 } from './const.js';
 import { canSeeMonster, canSpotMonster, newsym, plineWithContinuation, swallowed } from './display.js';
@@ -12,6 +12,8 @@ import { placeMonsterAt } from './monster_location.js';
 import { expelHero, releaseHeroFromMonster } from './hero_expulsion.js';
 import { heroFormSticks } from './hero_species.js';
 import { monsterName, monsterFormChangeName, namelessMonsterName } from './monster_name.js';
+import { setMonsterGivenName } from './monster_given_name.js';
+import { hideMonsterUnder } from './monster_hiding.js';
 import {
     monsterCanBeLeashed, releaseMonsterLeashWithFeedback,
 } from './monster_leash.js';
@@ -44,6 +46,7 @@ import { finishEnvironmentalMonsterDeath } from './monster_death.js';
 import { adjustRiderAfterSteedPolymorph } from './steed.js';
 import { BOULDER, CANDELABRUM_OF_INVOCATION } from './object_data.js';
 import { rn1, rn2 } from './rng.js';
+import { monsterEmitsLight } from './vision.js';
 import { isLavaAt, isPoolAt } from './terrain_properties.js';
 import { toptenMonsterForm } from './topten.js';
 import { findNearbyMonsterPosition } from './teleport_rules.js';
@@ -89,8 +92,6 @@ export type MonsterFormChange = MonsterFormChangeIdentity & (
 
 const M1_HUMANOID = 0x00020000;
 const M1_ANIMAL = 0x00040000;
-const M1_CONCEAL = 0x00000080;
-const M1_HIDE = 0x00000100;
 const M2_NOPOLY = 0x00000001;
 const M2_SHAPESHIFTER = 0x00004000;
 const M2_MALE = 0x00010000;
@@ -119,6 +120,9 @@ const PM_APPRENTICE = MONSTER_NAME.indexOf('apprentice');
 const PM_LONG_WORM = MONSTER_NAME.indexOf('long worm');
 const POLYMORPH_IMMUNE_MONSTERS = new Set([
     'Nazgul', 'erinys', 'Death', 'Pestilence', 'Famine',
+].map(monsterIndexByName));
+const PLACEHOLDER_MONSTERS = new Set([
+    'orc', 'giant', 'elf', 'human',
 ].map(monsterIndexByName));
 
 function monsterIndexByName(name: string): number {
@@ -201,7 +205,7 @@ function pickNastyCandidate(): number {
 
 function acceptsShapechangerForm(baseMnum: number, targetMnum: number): boolean {
     if (!Number.isInteger(targetMnum) || targetMnum < 0
-        || monsterIsGenocided(targetMnum)) return false;
+        || monsterIsGenocided(targetMnum) || PLACEHOLDER_MONSTERS.has(targetMnum)) return false;
     if (monsterIsPlayerMonster(targetMnum) || targetMnum === baseMnum)
         return true;
     return !((MONSTER_FLAGS2[targetMnum] ?? 0) & M2_NOPOLY);
@@ -272,7 +276,9 @@ async function selectDoppelgangerFormOnce(monster: Monster): Promise<number> {
 async function selectDoppelgangerForm(monster: Monster): Promise<number | null> {
     for (let triesLeft = 20; triesLeft > 0; --triesLeft) {
         const targetMnum = await selectDoppelgangerFormOnce(monster);
-        if (acceptsShapechangerForm(PM_DOPPELGANGER, targetMnum))
+        const wantsUppercase = triesLeft > 15 && Is_rogue_level(game.u.uz);
+        if (acceptsShapechangerForm(PM_DOPPELGANGER, targetMnum)
+            && (!wantsUppercase || /^[A-Z]$/.test(monsterClassSymbol(targetMnum))))
             return targetMnum;
     }
     return null;
@@ -283,14 +289,25 @@ function selectChameleonForm(): number | null {
         .filter(mnum => (MONSTER_FLAGS1[mnum] ?? 0) & M1_ANIMAL);
     for (let triesLeft = 20; triesLeft > 0; --triesLeft) {
         const targetMnum = !rn2(3)
-            ? animals[rn2(animals.length)]
+            ? pickAnimalShape(animals)
             : randomShape(PM_CHAMELEON);
-        if (targetMnum === undefined)
-            throw new RangeError('Chameleon selection is outside its animal list');
-        if (acceptsShapechangerForm(PM_CHAMELEON, targetMnum))
+        const wantsUppercase = triesLeft > 15 && Is_rogue_level(game.u.uz);
+        if (acceptsShapechangerForm(PM_CHAMELEON, targetMnum)
+            && (!wantsUppercase || /^[A-Z]$/.test(monsterClassSymbol(targetMnum))))
             return targetMnum;
     }
     return null;
+}
+
+// C pick_animal() gives the Rogue level one extra animal draw. newcham()
+// then applies its usual first-five-attempt uppercase preference.
+function pickAnimalShape(animals: readonly number[]): number {
+    let species = animals[rn2(animals.length)];
+    if (species === undefined) throw new RangeError('Chameleon selection is outside its animal list');
+    if (Is_rogue_level(game.u.uz) && !/^[A-Z]$/.test(monsterClassSymbol(species)))
+        species = animals[rn2(animals.length)];
+    if (species === undefined) throw new RangeError('Chameleon selection is outside its animal list');
+    return species;
 }
 
 function selectSandestinForm(): number | null {
@@ -571,15 +588,23 @@ export async function changeMonsterForm(
     } else if (targetMnum == null) {
         targetMnum = selectOrdinaryPolymorphForm(monster);
     }
-    if (targetMnum == null || targetMnum === monster.mnum) return null;
+    if (targetMnum == null || targetMnum === monster.mnum
+        || monsterIsGenocided(targetMnum)) return null;
 
     if (monster.wormno) {
         removeMonsterWormBody(monster);
         placeMonsterAt(monster, monster.mx, monster.my);
     }
+    if (M_AP_TYPE(monster) && MONSTER_SYMBOL[targetMnum] !== 13)
+        revealMonsterAppearance(monster);
     const oldHp = Math.max(1, monster.mhp ?? 1);
     const oldMax = Math.max(1, monster.mhpmax ?? oldHp);
     const female = shapechangerGender(baseMnum, targetMnum, !!monster.female);
+    if (In_endgame(state.u.uz) && monsterIsPlayerMonster(oldMnum)) {
+        const name = MGIVENNAME(monster);
+        const rank = name.indexOf(' the ');
+        if (rank >= 0) setMonsterGivenName(monster, name.slice(0, rank));
+    }
     const { level, hp } = newMonsterHitPoints(targetMnum);
     const scaledHp = Math.trunc(oldHp * hp / oldMax);
     const oldNaturallyInvisible = monster.mnum === PM_STALKER
@@ -599,17 +624,12 @@ export async function changeMonsterForm(
         await releaseMonsterLeashWithFeedback(monster, { state, publish });
         leashReleased = true;
     }
+    if (monsterEmitsLight(oldMnum) !== monsterEmitsLight(targetMnum))
+        state.vision_full_recalc = 1;
     if (!monster.perminvis || oldNaturallyInvisible)
         monster.perminvis = naturallyInvisible;
     monster.minvis = monster.invis_blkd ? 0 : !!monster.perminvis;
-    if (monster.m_ap_type && MONSTER_SYMBOL[targetMnum] !== 13) {
-        monster.m_ap_type = 0;
-        monster.mappearance = 0;
-    }
-    if (monster.mundetected
-        && !((MONSTER_FLAGS1[targetMnum] ?? 0) & (M1_CONCEAL | M1_HIDE))) {
-        monster.mundetected = 0;
-    }
+    if (monster.mundetected) await hideMonsterUnder(monster, state);
     if (state.u.ustuck === monster) {
         if (state.u.uswallow) {
             if (!monsterCanEngulf(monster)) {

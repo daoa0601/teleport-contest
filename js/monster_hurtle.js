@@ -174,6 +174,8 @@ export async function hurtleMonster(monster, dx, dy, distance, options = {}) {
         finishLiquidDeath: options.finishLiquidDeath || ((target, liquid) => finishMonsterDeath(target, {
             random: liquid.random,
             noCorpse: !liquid.leaveCorpse,
+            sadFeeling: liquid.sadFeeling,
+            publish: liquid.publish,
         })),
     };
     const waking = await wakeMonster();

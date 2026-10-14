@@ -1,45 +1,42 @@
 // Monster body and terrain rules.
 // C ref: mon.c.
 
-import { prepareVaultGuardDeath } from './vault_guard.js';
-import { game, requireGameLevel } from './gstate.js';
+import { game } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import type { MessagePublisher } from './display.js';
-import type { MonsterLiquidDeathResult } from './monster_death.js';
+import { finishEnvironmentalMonsterDeath } from './monster_death.js';
+import type { MonsterDeathResult, MonsterLiquidDeathResult } from './monster_death.js';
 import type { MonsterRelocation } from './monster_action_types.js';
 import { isLavaAt, isPoolAt, levelIsWaterLevel, monsterFliesOrFloats, monsterInAir } from './terrain_properties.js';
 import { makeMonsterFlee } from './monster_flee.js';
 import { RLOC_MSG, RLOC_NOMSG, FOUNTAIN, G_GENOD, MSLOW, STRAT_WAITFORU, WATER } from './const.js';
 import { dryFountainAt } from './fountain.js';
 import {
-    canSeeMonster, newsym, plineWithContinuation,
+    canSeeMonster, displayLiquidName, newsym, plineWithContinuation,
 } from './display.js';
-import {
-    lifeSaveMonster, preventMonsterDeath, wornMonsterLifeSaver,
-} from './mondeath.js';
+import { preventMonsterDeath } from './mondeath.js';
 import { splitMonster } from './monster_clone.js';
 import {
     MONSTER_FLAGS1, MONSTER_NAME,
     MONSTER_SYMBOL, monsterYoungerForm,
 } from './monster_data.js';
-import { releaseMonsterInventory } from './monster_drop.js';
-import { finishShopkeeperDeparture } from './shop_damage.js';
-import { hasShopkeeperData } from './shop_types.js';
 import { changeMonsterForm } from './monster_polymorph.js';
+import { monsterName } from './monster_name.js';
+import { monsterFireDescription } from './monster_fire_description.js';
 import { monsterHasFireResistance } from './monster_resistance.js';
 import { EGG } from './object_data.js';
 import {
     OBJECT_TIMER_KIND, objectsInTimerGraph, stopObjectTimer,
 } from './object_timers.js';
 import { d, rn2, rnd } from './rng.js';
-import { randomMonsterRelocation } from './teleport.js';
+import { dealWithMonsterOvercrowding, randomMonsterRelocation } from './teleport.js';
 import { monsterTeleportRestricted } from './teleport_rules.js';
 import { fireDamageChain } from './fire_damage.js';
 import { waterDamageChain } from './trap.js';
 import { cansee } from './vision.js';
-import { AD_COLD, AD_ELEC, AD_FIRE } from './monster_attack_types.js';
+import { AD_COLD, AD_ELEC, AD_FIRE, AT_NONE } from './monster_attack_types.js';
 import { adjustMonsterSpeed, monsterSpeedMessage } from './monster_speed.js';
 import { monsterSentenceSubject } from './monster_sound.js';
 
@@ -59,6 +56,9 @@ export interface MonsterLiquidDeathContext {
     random: (limit: number) => number;
     leaveCorpse: boolean;
     cause: 'rust' | 'drowning' | 'lava-scorch' | 'lava-burning';
+    // mondead() and xkilled() announce grief on opposite sides of cleanup.
+    sadFeeling: boolean;
+    publish: MessagePublisher;
 }
 
 export interface MonsterLiquidOptions<DeathResult = MonsterLiquidDeathResult> {
@@ -84,13 +84,8 @@ export type MonsterLiquidReaction =
 export type MonsterPoolReaction = { kind: 'safe' | 'drown' } | { kind: 'rust'; damage: number };
 export type MonsterLavaReaction = { kind: 'safe' | 'scorch' | 'burn' };
 
-interface GenocidedMonsterResult {
-    monster: Monster;
-    dropped: GameObject[];
-}
-
 interface GenocideRemovalResult {
-    killed: GenocidedMonsterResult[];
+    killed: MonsterDeathResult[];
     reshaped: Monster[];
     sterileEggs?: GameObject[];
     heroDied?: boolean;
@@ -147,37 +142,8 @@ function eggSpeciesWasGenocided(egg: GameObject, state: GameState): boolean {
         || speciesWasGenocided(monsterYoungerForm(mnum), state);
 }
 
-export async function killGenocidedMonster(monster: Monster, state: GameState): Promise<GenocidedMonsterResult> {
-    const lifeSaver = wornMonsterLifeSaver(monster);
-    if (lifeSaver) {
-        await lifeSaveMonster(monster, lifeSaver, {
-            genocided: true,
-        });
-    }
-
-    const x = monster.mx, y = monster.my;
-    monster.mhp = 0;
-    if (monster.isgd && !await prepareVaultGuardDeath(monster, state))
-        return { monster, dropped: [] };
-    const dropped = await releaseMonsterInventory(monster, state);
-    if (monster.isshk) {
-        if (!hasShopkeeperData(monster)) throw new Error('A shopkeeper must have shop data before departure.');
-        finishShopkeeperDeparture(monster, state);
-    }
-    monster.dead = true;
-    monster.mundetected = 0;
-    if (state.u?.usteed === monster) state.u.usteed = null;
-    if (state.u?.ustuck === monster) {
-        state.u.ustuck = null;
-        state.u.uswallow = false;
-        state.u.uswldtim = 0;
-    }
-    const level = requireGameLevel(state);
-    level.monsters = level.monsters.filter(
-        candidate => candidate !== monster,
-    );
-    newsym(x, y);
-    return { monster, dropped };
+export function killGenocidedMonster(monster: Monster, state: GameState): Promise<MonsterDeathResult> {
+    return finishEnvironmentalMonsterDeath(monster, state, { noCorpse: true });
 }
 
 // C mon.c:kill_genocided_monsters().  Genocide is not a hero kill: it drops
@@ -187,7 +153,7 @@ export async function killGenocidedMonsters(state: GameState = game): Promise<Ge
         throw new Error('genocide removal requires the live game state');
     const killed = [];
     const reshaped = [];
-    for (const monster of [...(state.level?.monsters || [])]) {
+    for (const monster of [...(state.level?.monsters || [])].reverse()) {
         if (monster.dead || (monster.mhp ?? 1) <= 0) continue;
         const baseWasGenocided = monster.cham !== undefined && Number.isInteger(monster.cham)
             && monster.cham >= 0
@@ -196,12 +162,14 @@ export async function killGenocidedMonsters(state: GameState = game): Promise<Ge
             && !baseWasGenocided) continue;
         if (monster.cham !== undefined && Number.isInteger(monster.cham) && monster.cham >= 0
             && !baseWasGenocided) {
-            const change = await changeMonsterForm(monster, null, state);
+            const change = await changeMonsterForm(monster, null, state, { showMessage: true });
             if (change?.heroDied) return { killed, reshaped, heroDied: true };
             if (change) reshaped.push(monster);
             continue;
         }
-        killed.push(await killGenocidedMonster(monster, state));
+        const death = await killGenocidedMonster(monster, state);
+        killed.push(death);
+        if (death.heroDied) return { killed, reshaped, heroDied: true };
     }
 
     const sterileEggs = [];
@@ -221,7 +189,7 @@ export function monsterSurvivesPool(monster: Monster, { waterWall = false } = {}
     return !!(flags & safeFlags);
 }
 
-function heroKeepsSteedAboveWater(monster: Monster, state: GameState, waterWall: boolean): boolean {
+function heroKeepsSteedAboveLiquid(monster: Monster, state: GameState, waterWall: boolean): boolean {
     if (waterWall || state.u?.usteed !== monster) return false;
     return !!(state.u?.flying || state.flying
         || state.u?.levitating || state.u?.levitation || state.levitating);
@@ -237,7 +205,7 @@ export function rollMonsterPoolReaction(
     const waterLevel = levelIsWaterLevel(state);
     const safelyAirborne = !waterWall && !waterLevel
         && monsterFliesOrFloats(monster);
-    if (heroKeepsSteedAboveWater(monster, state, waterWall)
+    if (heroKeepsSteedAboveLiquid(monster, state, waterWall)
         || safelyAirborne) {
         return { kind: 'safe' };
     }
@@ -271,10 +239,6 @@ export function monsterLavaReaction(monster: Monster, state: GameState = game): 
         return { kind: 'safe' };
     const fireResistant = monsterHasFireResistance(monster);
     return { kind: fireResistant ? 'scorch' : 'burn' };
-}
-
-function monsterLiquidName(monster: Monster): string {
-    return monster?.name || MONSTER_NAME[monster?.mnum] || 'monster';
 }
 
 async function recoverMonsterFromLiquid(
@@ -313,9 +277,15 @@ export async function resolveMonsterLiquid<DeathResult = MonsterLiquidDeathResul
     if (typeof finishDeath !== 'function') {
         throw new TypeError('minliquid requires the monster death handler');
     }
+    const sadFeeling = !!monster.mtame && !canSeeMonster(monster);
+    const finishFatalLiquid = async (cause: MonsterLiquidDeathContext['cause'], leaveCorpse: boolean) => {
+        return finishDeath(monster, { state, random, leaveCorpse, cause, sadFeeling, publish: announce });
+    };
 
     const waterLevel = levelIsWaterLevel(state);
     const waterWall = location.typ === WATER;
+    if (heroKeepsSteedAboveLiquid(monster, state, waterWall))
+        return { survived: true };
     const inPool = isPoolAt(x, y, state)
         && (!monsterFliesOrFloats(monster) || waterLevel);
     const inLava = isLavaAt(x, y, state) && !monsterFliesOrFloats(monster);
@@ -345,24 +315,20 @@ export async function resolveMonsterLiquid<DeathResult = MonsterLiquidDeathResul
             random, rollDice,
         });
         if (reaction.kind === 'rust') {
+            if (state === game && cansee(x, y))
+                await announce(`${monsterName(monster, { state, capitalized: true })} rusts.`);
             monster.mhp = (monster.mhp ?? 1) - reaction.damage;
             if (monster.mhpmax > reaction.damage)
                 monster.mhpmax -= reaction.damage;
-            if (state === game && cansee(x, y))
-                await announce(`The ${monsterLiquidName(monster)} rusts.`);
             if (monster.mhp <= 0) {
                 const recovery = await recoverMonsterFromLiquid(
                     monster, state, {
                         announce, random, rollOne,
                     },
                 );
+                if (recovery.heroDied) return { heroDied: true };
                 if (!recovery.survived) {
-                    await waterDamageChain(
-                        monster.minvent || monster.inventory || [], [], state,
-                    );
-                    return finishDeath(monster, {
-                        state, random, leaveCorpse: true, cause: 'rust',
-                    });
+                    return finishFatalLiquid('rust', true);
                 }
             }
             await waterDamageChain(
@@ -379,29 +345,31 @@ export async function resolveMonsterLiquid<DeathResult = MonsterLiquidDeathResul
             }
             if (state === game && cansee(x, y))
                 await announce(monsterMoving
-                    ? `The ${monsterLiquidName(monster)} drowns.`
-                    : `You drown the ${monsterLiquidName(monster)}.`);
+                    ? `${monsterName(monster, { state, capitalized: true })} drowns.`
+                    : `You drown ${monsterName(monster, { state })}.`);
+            if (state.u.uswallow && state.u.ustuck === monster) {
+                const name = monsterName(monster, { state, capitalized: true });
+                await announce(`${name} sinks as ${displayLiquidName('water', state)} rushes in and flushes you out.`);
+            }
             monster.mhp = 0;
             const recovery = await recoverMonsterFromLiquid(
                 monster, state, {
                     announce, random, rollOne,
                 },
             );
+            if (recovery.heroDied) return { heroDied: true };
             if (!recovery.survived) {
-                await waterDamageChain(
-                    monster.minvent || monster.inventory || [], [], state,
-                );
-                return finishDeath(monster, {
-                    state, random, leaveCorpse: true, cause: 'drowning',
-                });
+                return finishFatalLiquid('drowning', true);
             }
+            if (monsterInAir(monster, state)) return { survived: true };
             await waterDamageChain(
                 monster.minvent || monster.inventory || [], [], state,
             );
-            const relocation = monsterInAir(monster, state) ? null
-                : await randomMonsterRelocation(monster, {
-                    state, calls, random, rollOne, flags: RLOC_NOMSG,
-                });
+            const relocation = await randomMonsterRelocation(monster, {
+                state, calls, random, rollOne, flags: RLOC_NOMSG,
+            });
+            if (!relocation) await dealWithMonsterOvercrowding(monster, state);
+            if (state.program_state.gameover) return { heroDied: true };
             if (relocation && state === game) {
                 newsym(x, y);
                 newsym(monster.mx, monster.my);
@@ -425,17 +393,15 @@ export async function resolveMonsterLiquid<DeathResult = MonsterLiquidDeathResul
                 if (state === game && cansee(x, y)) {
                     const verb = monster.mhp <= 0
                         ? 'surrenders to the fire' : 'burns slightly';
-                    await announce(`The ${monsterLiquidName(monster)} ${verb}.`);
+                    await announce(`${monsterName(monster, { state, capitalized: true })} ${verb}.`);
                 }
             } else {
                 monster.mhp = 0;
                 if (state === game && cansee(x, y)) {
-                    const name = monsterLiquidName(monster);
-                    const verb = ['water elemental', 'fog cloud', 'steam vortex']
-                        .includes(name) ? 'boils away'
-                        : ['ice vortex', 'glass golem'].includes(name)
-                            ? 'melts away' : 'burns to a crisp';
-                    await announce(`The ${name} ${verb}.`);
+                    const heat = monsterFireDescription(monster, AT_NONE);
+                    const verb = heat === 'boiling' ? 'boils away'
+                        : heat === 'melting' ? 'melts away' : 'burns to a crisp';
+                    await announce(`${monsterName(monster, { state, capitalized: true })} ${verb}.`);
                 }
             }
 
@@ -445,14 +411,10 @@ export async function resolveMonsterLiquid<DeathResult = MonsterLiquidDeathResul
                         announce, random, rollOne,
                     },
                 );
+                if (recovery.heroDied) return { heroDied: true };
                 if (!recovery.survived) {
-                    return finishDeath(monster, {
-                        state,
-                        random,
-                        leaveCorpse: false,
-                        cause: lava.kind === 'scorch'
-                            ? 'lava-scorch' : 'lava-burning',
-                    });
+                    return finishFatalLiquid(lava.kind === 'scorch'
+                        ? 'lava-scorch' : 'lava-burning', false);
                 }
             }
             if (monsterInAir(monster, state) || monsterLikesLava(monster))
@@ -469,6 +431,8 @@ export async function resolveMonsterLiquid<DeathResult = MonsterLiquidDeathResul
             const relocation = await randomMonsterRelocation(monster, {
                 state, calls, random, rollOne, flags: RLOC_MSG,
             });
+            if (!relocation) await dealWithMonsterOvercrowding(monster, state);
+            if (state.program_state.gameover) return { heroDied: true };
             if (relocation && state === game) {
                 newsym(x, y);
                 newsym(monster.mx, monster.my);

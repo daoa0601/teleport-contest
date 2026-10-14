@@ -48,6 +48,7 @@ import {
 } from './object_data.js';
 import { createBonesFromDeath } from './bones_death.js';
 import { canMakeBones } from './bones_admission.js';
+import { restoreLaunchedObjectForBones } from './rolling_boulder.js';
 import { heroIsBlind } from './senses.js';
 import { finishShopkeeperRepossession, settleShopkeepersOnExit } from './shop_settlement.js';
 import type { ShopExitOutcome } from './shop_settlement.js';
@@ -1296,6 +1297,7 @@ async function startGameExit(outcome: ShopExitOutcome, deathType = DIED): Promis
     }
     game._canMakeBones = outcome === 'died' && deathType < GENOCIDED
         && canMakeBones();
+    if (game._canMakeBones) restoreLaunchedObjectForBones(game);
 }
 
 async function settleGameExit(outcome: ShopExitOutcome): Promise<boolean> {

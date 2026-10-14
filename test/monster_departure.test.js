@@ -16,11 +16,25 @@ import { addShopObjectToBill } from '../js/shk.js';
 import { itemizedShopBill } from '../js/shop_payment.js';
 import { addTrap, floorObjectsAt } from './support/level-state.js';
 import { freshGame } from './support/game-state.js';
-import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
+import { createMonsterAt, createSaddledSteed, equipMonsterObject, requireMonsterVital } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createStaffedShop } from './support/shop.js';
 import { installPagerInput } from './support/pager-input.js';
 import { memoryStorage } from './support/memory-storage.js';
+void test('a disappearing steed dismounts the rider without recording a death', async () => {
+    const level = freshObjectRoom();
+    requirePlayingGame(game);
+    const steed = await createSaddledSteed();
+    game.u.usteed = steed;
+    game.u.ugallop = 4;
+    const removal = await removeMonsterFromGame(steed);
+    assert.equal(removal.removed, true);
+    assert.equal(game.u.usteed, null);
+    assert.equal(game.u.ugallop, 0);
+    assert.equal(level.monsters.includes(steed), false);
+    assert.equal(requireMonsterVital(steed.mnum).died, 0);
+    assert.equal(floorObjectsAt(level, steed.mx, steed.my).some(object => object.otyp === CORPSE), false);
+});
 void test('removing a keeper after game over clears its room ownership and outstanding bill', async () => {
     const level = freshObjectRoom();
     requirePlayingGame(game);

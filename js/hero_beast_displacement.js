@@ -60,6 +60,7 @@ export async function settleBeastHeroDisplacement(beast, state) {
             announce: plineWithContinuation,
             finishDeath: (monster, options) => finishEnvironmentalMonsterDeath(monster, state, {
                 noCorpse: !options.leaveCorpse, random: options.random,
+                sadFeeling: options.sadFeeling, publish: options.publish,
             }),
         });
         if (!state.level.monsters.includes(beast) || beast.dead || beast.mhp <= 0

@@ -12,6 +12,7 @@ import { pushKeys, resetInputState } from '../js/input.js';
 import { addObjectToMonsterInventory, removeObjectFromMonsterInventory } from '../js/monster_inventory.js';
 import { initializeMonsterArmor } from '../js/monworn.js';
 import { finishEnvironmentalMonsterDeath } from '../js/monster_death.js';
+import { removeMonsterFromGame } from '../js/monster_departure.js';
 import { unwieldMonsterWeapon, wieldMonsterWeapon } from '../js/monster_weapon.js';
 import { OBJECT_NAMES, OIL_LAMP, WAX_CANDLE } from '../js/object_data.js';
 import { beginObjectBurn, endObjectBurn } from '../js/light.js';
@@ -37,6 +38,19 @@ function darkRoom() {
     vision_recalc(0);
     return level;
 }
+
+void test('a disappearing luminous monster stops lighting nearby floor', async () => {
+    darkRoom();
+    requireFixtureGame(game);
+    const elemental = await createMonsterAt('fire elemental', 14, 10, NO_MINVENT);
+    vision_recalc(0);
+    assert.equal(cansee(15, 10), true);
+
+    await removeMonsterFromGame(elemental);
+    await pline('You look around.');
+
+    assert.equal(cansee(15, 10), false);
+});
 
 void test('gold dragon mail lights the dungeon while worn and moves with the hero', async () => {
     darkRoom();
