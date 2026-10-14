@@ -6582,7 +6582,6 @@ async function dothrow(
             captureFlight: captureThrownObjectFlight,
             wakeMonster: wakeAttackedMonster,
             angerMonster: angerAttackedMonster,
-            adjustAlignment: adjustHeroAlignment,
         });
         game.context.move = 1;
         return;

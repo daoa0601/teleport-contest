@@ -45,7 +45,6 @@ import { revealTrap } from './trap_lifecycle.js';
 import { isIceAt, isPoolAt } from './terrain_properties.js';
 import { resolveGoldMonsterContact } from './gold_throw.js';
 import { angerAttackedMonster, wakeAttackedMonster } from './monster_anger.js';
-import { adjustHeroAlignment } from './alignment.js';
 import { surfaceName } from './terrain_name.js';
 import { scatterFloorObjects } from './scatter.js';
 import { objectWeight } from './weight.js';
@@ -272,8 +271,7 @@ export async function kickFloorObject(x: number, y: number, {
             if (isGold) {
                 if (await resolveGoldMonsterContact({ state, monster: flight.contact, gold: moving,
                     wakeMonster: actor => wakeAttackedMonster(actor),
-                    angerMonster: actor => angerAttackedMonster(actor),
-                    adjustAlignment: amount => adjustHeroAlignment(amount, state) })) return true;
+                    angerMonster: actor => angerAttackedMonster(actor) })) return true;
             } else {
                 const contact = await hitMonsterWithKickedObject(
                     flight.contact, moving, { state, target: { x: flight.x, y: flight.y } },

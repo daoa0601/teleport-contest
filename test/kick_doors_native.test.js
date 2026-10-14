@@ -23,7 +23,7 @@ void test('a giant breaks a closed door even with weak attributes', async () => 
     assert.equal(door.doormask, D_BROKEN);
 });
 void test('a deaf hero feels a failed door kick as a thwack', async () => {
-    const level = freshPlayableRoom({ seed: 11n, hero: { deaf: true } });
+    const level = freshPlayableRoom({ seed: 11n, hero: { deafTurns: 100 } });
     requirePlayingGame(game);
     for (const attribute of [A_STR, A_DEX, A_CON])
         game.u.acurr.a[attribute] = 3;
