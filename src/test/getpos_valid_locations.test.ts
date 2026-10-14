@@ -5,7 +5,7 @@ import type { MapPositionOptions } from '../js/getpos.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { HI_ZAP } from '../js/const.js';
+import { CORR, HI_ZAP } from '../js/const.js';
 import { flush_screen } from '../js/display.js';
 import {
     getposHelpUntilDismissed, selectMapPosition,
@@ -171,6 +171,27 @@ void test("'$' marks visible valid squares and leaves unseen ones unmarked",
         assert.equal(viewAfterInput(views, 1).colors[1], HI_ZAP);
         assert.equal(glyphAt(10, 11), '.');
     });
+
+void test("area filtering limits cycling but '$' still marks visible valid squares outside the area", async () => {
+    const level = freshObjectRoom();
+    for (let x = 13; x <= 16; x++) {
+        for (let y = 6; y <= 14; y++) level.requireAt(x, y).typ = CORR;
+    }
+    const inside = { x: 10, y: 8 };
+    const outside = { x: 14, y: 10 };
+    const unseen = { x: 20, y: 10 };
+    const spots = [inside, outside, unseen];
+
+    const { selection, views } = await driveSelection('""$z.', {
+        sampleSpots: spots,
+        selectMapPosition: {
+            isValidLocation: (x, y) => spots.some(spot => spot.x === x && spot.y === y),
+        },
+    });
+
+    assert.deepEqual(await selectedCoordinates(selection), inside);
+    assert.deepEqual(viewAfterInput(views, 3).glyphs, ['$', '$', ' ']);
+});
 
 void test("marking leaves the hero '@' when the rule rejects the hero square",
     async () => {

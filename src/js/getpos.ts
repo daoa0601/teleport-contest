@@ -49,9 +49,6 @@ interface LocationCycle {
     spots: Position[];
     index: number;
 }
-interface ValidLocationCycle extends LocationCycle {
-    marked: Position[];
-}
 type GetposCycleKind = 'mon' | 'obj' | 'door' | 'unexplored' | 'all' | 'valid';
 
 // defsym.h S_goodpos: the dollar sign doubles as the default getpos key
@@ -451,25 +448,23 @@ export async function selectMapPosition({
     let firstPaint = true;
     // garr[GLOC_VALID]/gidx and the hilite state live inside C getpos();
     // getpos_sethilite(NULL, NULL) resets them at its exit.
-    const validity: { cycle: ValidLocationCycle | null } = { cycle: null };
+    const validity: { cycle: LocationCycle | null } = { cycle: null };
     let markValid = false;
     const targetCycles = new Map<GetposCycleKind, LocationCycle>();
     const autoDescription = (): boolean => game.iflags.autodescribe ?? true;
     const movementMessage = async (): Promise<string> => autoDescription()
         ? await describeSelectedPosition(describe, cursor, movePrompt) : movePrompt;
 
-    const validLocations = (): ValidLocationCycle => {
+    const validLocations = (): LocationCycle => {
         if (!validity.cycle) {
             if (!isValidLocation) throw new Error('Valid-location selection requires a location predicate');
-            const marked = gatherValidLocations(isValidLocation);
+            const spots = gatherValidLocations(isValidLocation);
             const atHero = ({ x, y }: Position) => x === game.u.ux && y === game.u.uy;
             validity.cycle = {
                 // gather_locs() injects the hero square so the cycle is
-                // never empty and wraps visibly back to the hero; the
-                // marking list stays predicate-only.
-                spots: marked.some(atHero)
-                    ? marked : [{ x: game.u.ux, y: game.u.uy }, ...marked],
-                marked,
+                // never empty and wraps visibly back to the hero.
+                spots: spots.some(atHero)
+                    ? spots : [{ x: game.u.ux, y: game.u.uy }, ...spots],
                 index: 0,
             };
         }
@@ -483,8 +478,9 @@ export async function selectMapPosition({
             // bgcolors off (this port's default): '$' alternates between no
             // marking and the S_goodpos overlay.  The cycle-only hero
             // injection never paints unless the predicate accepts the hero.
+            // apply.c's hilite callbacks ignore the target gathering filter.
             const paintedSpots = isValidLocation && markValid
-                ? validLocations().marked.filter(({ x, y }) => cansee(x, y)
+                ? validMapSquares(isValidLocation).filter(({ x, y }) => cansee(x, y)
                     && (highlightHero || x !== game.u.ux || y !== game.u.uy))
                 : null;
             await paintGetposCursor(cursor, message, paintedSpots, preserveMap);

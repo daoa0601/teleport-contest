@@ -412,15 +412,13 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
         if (!validity.cycle) {
             if (!isValidLocation)
                 throw new Error('Valid-location selection requires a location predicate');
-            const marked = gatherValidLocations(isValidLocation);
+            const spots = gatherValidLocations(isValidLocation);
             const atHero = ({ x, y }) => x === game.u.ux && y === game.u.uy;
             validity.cycle = {
                 // gather_locs() injects the hero square so the cycle is
-                // never empty and wraps visibly back to the hero; the
-                // marking list stays predicate-only.
-                spots: marked.some(atHero)
-                    ? marked : [{ x: game.u.ux, y: game.u.uy }, ...marked],
-                marked,
+                // never empty and wraps visibly back to the hero.
+                spots: spots.some(atHero)
+                    ? spots : [{ x: game.u.ux, y: game.u.uy }, ...spots],
                 index: 0,
             };
         }
@@ -433,8 +431,9 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
             // bgcolors off (this port's default): '$' alternates between no
             // marking and the S_goodpos overlay.  The cycle-only hero
             // injection never paints unless the predicate accepts the hero.
+            // apply.c's hilite callbacks ignore the target gathering filter.
             const paintedSpots = isValidLocation && markValid
-                ? validLocations().marked.filter(({ x, y }) => cansee(x, y)
+                ? validMapSquares(isValidLocation).filter(({ x, y }) => cansee(x, y)
                     && (highlightHero || x !== game.u.ux || y !== game.u.uy))
                 : null;
             await paintGetposCursor(cursor, message, paintedSpots, preserveMap);
