@@ -1,14 +1,16 @@
 // C invent.c:look_here(): inspection touches corpses before showing inventory.
 import { game } from './gstate.js';
+import { CONTAINED_SYM } from './const.js';
 import { monsterStomachName } from './body_parts.js';
 import { heroDetectsMonsters, heroIsBlind } from './senses.js';
-import { plineWithContinuation, unblindTelepathyRange } from './display.js';
+import { consumeHallucinatedMenuObjectGlyph, plineWithContinuation, unblindTelepathyRange } from './display.js';
 import { feelPetrifyingCorpse } from './stoning.js';
 import { inventoryClassOrder, lootSortMode, objectClassHeading, sortObjects } from './object_sort.js';
 import { inventoryItemDescription } from './invent.js';
 import { observeObjectForNaming, simpleObjectName } from './objnam.js';
 import { monsterName, possessiveName } from './monster_name.js';
 import { monsterDigests, monsterTypeName } from './monster_data.js';
+import { GOLD_PIECE } from './object_data.js';
 import { heroIsPolymorphed } from './polyself.js';
 import { heroSpecies } from './hero_species.js';
 import { heroIsPunished } from './ball.js';
@@ -32,17 +34,21 @@ export async function lookInsideSwallower(monster) {
     const ordered = sortObjects(objects, { mode: lootSortMode() });
     const sections = [];
     let letter = 97;
+    let first = true;
     for (const oclass of [...inventoryClassOrder(), 17, 0]) {
         const items = ordered.filter(object => object.oclass === oclass);
         if (!items.length)
             continue;
         sections.push({ heading: objectClassHeading(oclass), items: items.map(object => {
                 observeObjectForNaming(object);
-                return { key: String.fromCharCode(letter++), text: inventoryItemDescription(object) };
+                consumeHallucinatedMenuObjectGlyph(object);
+                const key = first && object.otyp === GOLD_PIECE ? '$' : String.fromCharCode(letter++);
+                first = false;
+                return { key, text: inventoryItemDescription(object) };
             }) });
     }
     sections.push({ heading: `${monsterDigests(monster) ? 'Swallowed' : 'Engulfed'} Creatures`,
-        items: [{ key: '@', text: withIndefiniteArticle(swallowedHeroDescription()) }] });
+        items: [{ key: CONTAINED_SYM, text: withIndefiniteArticle(swallowedHeroDescription()) }] });
     await showInventoryWindow(sections, { title: blind ? 'You feel:'
             : `Contents of ${location}:` });
 }
