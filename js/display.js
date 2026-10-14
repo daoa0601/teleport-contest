@@ -2238,8 +2238,7 @@ export function _statusLine2(refreshLoad = true) {
     const maximumPower = Math.min(u.uenmax ?? 0, 9999);
     const goldSymbol = Is_rogue_level(u.uz) ? '*' : '$';
     const displayedAc = u.uac ?? 10;
-    const displayedGold = game._statusGoldOverride
-        ?? heroGoldAmount(game);
+    const displayedGold = Math.max(0, Math.min(999999, game._statusGoldOverride ?? heroGoldAmount(game)));
     let line = `${location} ${goldSymbol}:${displayedGold} HP:${displayedHp}(${maximumHp}) Pw:${displayedPower}(${maximumPower}) AC:${displayedAc}`;
     if (polymorphed) {
         line += ` HD:${MONSTER_LEVEL[u.umonnum ?? -1] ?? 0}`;
