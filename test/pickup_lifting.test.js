@@ -210,21 +210,27 @@ void test('a loadstone ignores the ordinary weight limit', async () => {
 void test('container removal uses the same partial-stack limit', async () => {
     freshPickupGame();
     requirePlayingGame(game);
-    await addCarriedRocks(150);
+    await addCarriedRocks(70);
     const chest = await floorObject(CHEST, 10, 10, {
         cknown: true, olocked: false, otrapped: false,
     });
     const darts = await knownObject(DART, {
         where: 'contained',
         container: chest,
-        quantity: 200,
+        quantity: 1000,
     });
     chest.contents = [darts];
-    pushKeys(`loot\noa\n${' '.repeat(5)}`);
-    await rhack('#'.charCodeAt(0));
+    const input = resetInputState();
+    pushKeys('loot\n');
+    await answerPrompts(rhack('#'.charCodeAt(0)), input, [
+        { prompt: /Do what with/, keys: 'o' },
+        { prompt: /Take out what\?/, keys: 'a\n' },
+        { prompt: /You can only carry[\s\S]*--More--/, keys: ' ' },
+        { prompt: /Continue\?/, keys: 'y' },
+    ]);
     const carried = game.inventory.find(object => object.otyp === DART);
     assert.ok(carried != null);
-    assert.equal(carried.quan, 149);
+    assert.equal(carried.quan, 949);
     assert.equal(darts.quan, 51);
     assert.deepEqual(chest.contents, [darts]);
 });

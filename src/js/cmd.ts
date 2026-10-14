@@ -94,6 +94,7 @@ import { shopkeeperBlockingDoor, shopkeeperBlockingEntry } from './shop_blocking
 import { poisonHeroStrengthAndHp } from './poison.js';
 import { isContainer, useContainer } from './container.js';
 import { tipCommand } from './container_tip.js';
+import { lootCommand } from './container_loot.js';
 import { adjustHeroAlignment } from './alignment.js';
 import { doOptions } from './options.js';
 import {
@@ -2477,15 +2478,6 @@ async function doname() {
     game.context.move = 0;
 }
 
-function monsterBeside(x: number, y: number) {
-    // C pickup.c:mon_beside() deliberately includes the hero's own square so
-    // a steed can make directional looting available too.
-    return (game.level?.monsters || []).some(monster =>
-        (monster.mhp ?? 1) > 0
-        && Math.abs(monster.mx - x) <= 1
-        && Math.abs(monster.my - y) <= 1);
-}
-
 async function getAdjacentLocation(prompt: string, errorMessage: string | null, x: number, y: number) {
     // C cmd.c:get_adjacent_loc() delegates input and command assistance to
     // getdir(), then turns its relative result into a checked map location.
@@ -3098,48 +3090,11 @@ async function wizLevelChange() {
 }
 
 async function doloot() {
-    // pickup.c:doloot_core() rejects body forms without hands before it
-    // inspects the floor, containers, or adjacent monsters.
-    if (heroHasNoHands(game)) {
-        await pline('You have no hands!');
-        game.context.move = 0;
-        return;
-    }
-    const x = game.u?.ux, y = game.u?.uy;
-    const pile = game.level?.objects?.[x]?.[y] || [];
-    const container = pile.find(isContainer);
-    if (!container && monsterBeside(x, y)) {
-        const target = await getAdjacentLocation(
-            'Loot in what direction?', 'Invalid loot location', x, y,
-        );
-        if (!target) return;
+    await lootCommand({ unlockContainer: lootLockedContainer, chooseDirection: getAdjacentLocation });
+}
 
-        const targetPile = game.level?.objects?.[target.x]?.[target.y] || [];
-        const targetContainer = targetPile.some(isContainer);
-        const targetMonster = game.level?.monsters?.find(monster => monsterHasMapPosition(monster, game) &&
-            (monster.mhp ?? 1) > 0
-            && monster.mx === target.x && monster.my === target.y);
-        if (target.dz < 0) {
-            await pline("You don't find anything to loot on the ceiling.");
-            game.context.move = 1;
-        } else if (targetContainer && (target.x !== x || target.y !== y)) {
-            await pline(targetMonster
-                ? "You can't loot anything there with a monster in the way."
-                : 'You have to be at a container to loot it.');
-            game.context.move = 0;
-        } else {
-            await pline(`You don't find anything ${target.x === x
-                && target.y === y ? 'here' : 'there'} to loot.`);
-            game.context.move = 0;
-        }
-        return;
-    }
-    if (!container) {
-        await pline("You don't find anything here to loot.");
-        game.context.move = 0;
-        return;
-    }
-
+async function lootLockedContainer(container: GameObject): Promise<void> {
+    const x = container.ox, y = container.oy;
     const containerName = container.otyp === SACK
         || container.otyp === OILSKIN_SACK
         || container.otyp === BAG_OF_HOLDING
@@ -3182,13 +3137,6 @@ async function doloot() {
         return;
     }
 
-    game._pending_message = '';
-    await flush_screen(1);
-    const result = await useContainer(container, {
-        underlay: snapshotMenuUnderlay(),
-    });
-    if (result.heroDied) return;
-    game.context.move = result.spentTime ? 1 : 0;
 }
 
 // C cmd.c:extcmds_match(): availability applies to both full names and

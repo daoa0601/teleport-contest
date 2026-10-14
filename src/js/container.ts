@@ -93,6 +93,7 @@ export interface ContainerUseResult {
     spentTime: boolean;
     container: GameObject | null;
     heroDied?: boolean;
+    stopLooting?: boolean;
 }
 interface ContainerUseOptions {
     held?: boolean;
@@ -818,6 +819,7 @@ async function useContainerActions(container: GameObject, {
         const trap = await triggerChestTrap(container);
         return {
             spentTime: true,
+            stopLooting: true,
             heroDied: !!trap && 'died' in trap && trap.died,
             container: trap?.destroyed ? null : container,
         };
@@ -895,5 +897,5 @@ async function useContainerActions(container: GameObject, {
     await redrawMap();
     await bot();
     await flush_screen(1);
-    return { spentTime, container };
+    return { spentTime, container, stopLooting: action === 'q' || action === '\x1b' };
 }
