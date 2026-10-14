@@ -174,6 +174,9 @@ export function objectName(object, state = game, { minimal = false } = {}) {
         noun = `poisoned ${noun}`;
     if (!minimal)
         noun = physicalObjectNoun(object, noun, state);
+    if (!minimal && oclass === FOOD_CLASS && object.otyp !== SLIME_MOLD
+        && state.iflags.partly_eaten_hack && object.oeaten)
+        noun = `partly eaten ${noun}`;
     if (minimal)
         return noun.replace(/^the /i, '');
     noun += objectDisclosureText(object, state);
@@ -274,8 +277,6 @@ export function killerObjectName(object, state = game) {
     }
     else {
         name = objectName(view, nameState);
-        if (view.oclass === FOOD_CLASS && state.iflags?.partly_eaten_hack && view.oeaten)
-            name = `partly eaten ${name}`;
         if (quantity !== 1)
             name = makePlural(name);
     }

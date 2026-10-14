@@ -53,7 +53,7 @@ export type ObjectNameView = Pick<GameObject, 'otyp' | 'oclass'> & Partial<Pick<
     'name' | 'known' | 'dknown' | 'bknown' | 'cknown' | 'lknown' | 'rknown'
     | 'typeKnown' | 'overrideIdentified' | 'oartifact' | 'oextra' | 'oname'
     | 'spe' | 'quan' | 'quantity' | 'corpsenm' | 'owt' | 'globby'
-    | 'blessed' | 'cursed' | 'odiluted' | 'opoisoned' | 'o_id' | 'oeroded' | 'oeroded2'>>;
+    | 'blessed' | 'cursed' | 'odiluted' | 'opoisoned' | 'o_id' | 'oeroded' | 'oeroded2' | 'oeaten'>>;
 
 type CorpseNameView = Pick<GameObject, 'otyp'> & Partial<Pick<GameObject,
     'corpsenm' | 'spe' | 'globby' | 'quan' | 'quantity'>>;
@@ -224,6 +224,9 @@ export function objectName(
     if (!minimal && oclass === WEAPON_CLASS && object.opoisoned && isPoisonableObject(object))
         noun = `poisoned ${noun}`;
     if (!minimal) noun = physicalObjectNoun(object, noun, state);
+    if (!minimal && oclass === FOOD_CLASS && object.otyp !== SLIME_MOLD
+        && state.iflags.partly_eaten_hack && object.oeaten)
+        noun = `partly eaten ${noun}`;
     if (minimal) return noun.replace(/^the /i, '');
     noun += objectDisclosureText(object, state);
     const individualName = object.oextra?.oname || object.oname;
@@ -322,8 +325,6 @@ export function killerObjectName(object: GameObject, state: GameState = game): s
         name = `deadly slime mold${quantity === 1 ? '' : 's'}`;
     } else {
         name = objectName(view, nameState);
-        if (view.oclass === FOOD_CLASS && state.iflags?.partly_eaten_hack && view.oeaten)
-            name = `partly eaten ${name}`;
         if (quantity !== 1) name = makePlural(name);
     }
     // A possessive unique monster name already supplies its own article.
