@@ -128,6 +128,7 @@ const transientFields = {
     vision_full_recalc: true,
     viz_array: true,
     warn_obj_cnt: true,
+    _magicKeyTrapWarningCount: true,
 };
 const persistentStateKeys = new Set(persistentNames);
 const persistentKeyNames = persistentStateKeys;

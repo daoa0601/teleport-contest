@@ -87,6 +87,8 @@ interface LifeDrainOptions {
 
 const PM_WATER_ELEMENTAL = 157;
 const PM_JABBERWOCK = MONSTER_NAME.indexOf('jabberwock');
+// Native fatal blows leave enough damage for the caller's AC reduction.
+const FATAL_DAMAGE_MODIFIER = 200;
 
 export async function applyArtifactHitToMonster(
     object: GameObject | null | undefined,
@@ -144,7 +146,7 @@ export async function applyArtifactHitToMonster(
             rollOne,
         });
     }
-    if (artifact.name === 'Magicbane' && dieRoll >= 1 && dieRoll <= 8) {
+    if (artifact.name === 'Magicbane' && dieRoll <= 8) {
         return applyMagicbaneHit(object, monster, damage, bonus > 0, {
             state,
             attacker,
@@ -256,7 +258,7 @@ async function applyBeheading(
         if (swallowed) {
             await publish(`You slice ${describeTarget()} wide open!`);
             return {
-                damage: 2 * (monster.mhp ?? 1) + 1,
+                damage: 2 * monster.mhp + FATAL_DAMAGE_MODIFIER,
                 specialMessage: true,
             };
         }
@@ -272,7 +274,7 @@ async function applyBeheading(
         await publish(`The razor-sharp blade cuts ${describeTarget()} in half!`);
         observeArtifactObject(object, state);
         return {
-            damage: 2 * (monster.mhp ?? 1) + 1,
+            damage: 2 * monster.mhp + FATAL_DAMAGE_MODIFIER,
             specialMessage: true,
         };
     }
@@ -302,7 +304,7 @@ async function applyBeheading(
     }
     observeArtifactObject(object, state);
     return {
-        damage: 2 * (monster.mhp ?? 1) + 1,
+        damage: 2 * monster.mhp + FATAL_DAMAGE_MODIFIER,
         specialMessage: true,
     };
 }
@@ -337,7 +339,7 @@ async function applyLifeDrain(
     }
 
     if (level === 0) {
-        damage = 2 * (monster.mhp ?? 1) + 1;
+        damage = 2 * monster.mhp + FATAL_DAMAGE_MODIFIER;
     } else {
         damage += drain;
         monster.mhpmax = maximumHitPoints - drain;

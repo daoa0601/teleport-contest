@@ -309,6 +309,8 @@ export async function teleportHeroAtWill({ state = game, random = rn2, rollOne =
         await publish('You shudder for a moment.');
         return { moved: false, died: false };
     }
+    // dotele() discards the prior travel suggestion before calling tele().
+    state._travelTarget = null;
     let destination = canChoose && chooseDestination ? await chooseDestination() : null;
     if (canChoose && !destination) {
         await spendHeroNutrition(100, { state });

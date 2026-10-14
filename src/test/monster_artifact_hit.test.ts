@@ -61,7 +61,7 @@ void test('monster Stormbringer drains a level-zero defender fatally and heals i
         attacker, state: game, random: () => 1, rollOne: maximumRoll,
     });
 
-    assert.equal(hit.damage, 9);
+    assert.equal(hit.damage, 208);
     assert.equal(defender.m_lev, 0);
     assert.equal(defender.mhpmax, 4);
     assert.equal(attacker.mhp, 3);

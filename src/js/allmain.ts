@@ -34,6 +34,7 @@ import { showInventoryWindow } from './windows.js';
 import type { InventoryMenuItem } from './windows.js';
 import { endVoluntaryMultiTurn, heroHasInvoluntaryDelay } from './command_state.js';
 import { dosounds } from './ambient_sounds.js';
+import { warnWithMasterKey } from './artifact_warning.js';
 import { regenerateHeroHp } from './hero_regeneration.js';
 import { ceilingName } from './terrain_name.js';
 import { tryCallObjectType } from './object_call.js';
@@ -591,6 +592,10 @@ async function enterTutorial() {
     await docrt();
     await checkSpecialRoom();
     await readEngravingAt(game.u.ux, game.u.uy, plineWithContinuation);
+    // maybe_do_tutorial() redraws after deferred_goto(), acknowledging the
+    // arrival engraving before the normal command loop starts.
+    vision_recalc(0);
+    await docrt();
     findArmorClass(game);
     await redrawMap();
     await flush_screen(1);
@@ -888,6 +893,7 @@ async function finishInitialTurnMaintenanceAfterAutomaticSearch({
     sourceTurn, moveAmount,
 }: Pick<TurnMaintenance, 'sourceTurn' | 'moveAmount'>): Promise<MaintenancePhase> {
     if (game.u.warning) await revealWarnedMonsters();
+    await warnWithMasterKey(game);
     // Each sound keeps its native message wait before later feature rolls.
     await dosounds();
     return finishInitialTurnMaintenanceAfterAmbient({ sourceTurn, moveAmount });

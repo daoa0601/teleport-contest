@@ -7,15 +7,25 @@ import { fruitFromName } from './fruit.js';
 import { makeSingular } from './object_grammar.js';
 
 export function encyclopediaEntries(name: string, state: GameState = game): readonly EncyclopediaEntry[] {
+    return encyclopediaMatches(name, state).map(match => match.entry);
+}
+
+export function encyclopediaMatches(name: string, state: GameState = game): readonly {
+    name: string; entry: EncyclopediaEntry;
+}[] {
     const { base, alternate } = lookupNames(name, state);
     const names = alternate === base ? [base] : [alternate, base];
     const found = new Set<EncyclopediaEntry>();
+    const matches: { name: string; entry: EncyclopediaEntry }[] = [];
     for (const candidate of names) {
         if (!candidate) continue;
         const entry = ENCYCLOPEDIA_ENTRIES.find(entry => entryMatches(entry, candidate));
-        if (entry) found.add(entry);
+        if (entry && !found.has(entry)) {
+            found.add(entry);
+            matches.push({ name: candidate, entry });
+        }
     }
-    return [...found];
+    return matches;
 }
 
 function lookupNames(name: string, state: GameState) {

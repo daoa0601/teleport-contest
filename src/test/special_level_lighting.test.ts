@@ -105,6 +105,22 @@ void test('a randomly placed themed map honors explicit lighting and lava light'
     assert.equal(game.level.requireAt(darkOrigin.x + 1, darkOrigin.y).lit, true);
 });
 
+void test('darkening a Lua selection preserves the permanent light of lava pools and walls', async t => {
+    const lua = await levelLua(t);
+    await lua.executeAsync(`
+        des.level_init({ style = "solidfill", fg = " ", lit = 1 })
+        des.map({ x = 10, y = 6, lit = true, map = [[.LZ.]] })
+        des.region(selection.area(0, 0, 3, 0), "unlit")
+    `);
+
+    requirePlayingGame(game);
+    assert.equal(game.level.requireAt(10, 6).lit, false);
+    assert.equal(game.level.requireAt(11, 6).lit, true, 'lava pools remain lit');
+    assert.equal(game.level.requireAt(12, 6).lit, true, 'lava walls remain lit');
+    assert.equal(game.level.requireAt(13, 6).lit, false);
+    assert.equal(game.level.requireAt(14, 6).lit, true, 'darkening does not grow the selection');
+});
+
 for (const lighting of [false, true]) {
     void test(`an irregular ${lighting ? 'lit' : 'unlit'} room changes its floor and preserves unrelated corridor lighting`, async t => {
         const lua = await levelLua(t);

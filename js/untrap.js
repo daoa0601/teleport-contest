@@ -9,6 +9,7 @@ import { SHOPBASE } from './const.js';
 import { triggerBoobyTrap } from './booby_trap.js';
 import { adjustHeroAlignment } from './alignment.js';
 import { artifactById } from './artifacts.js';
+import { heroHasMagicKey } from './monster_key.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { triggerChestTrap } from './chest_trap.js';
 import { A_CON, A_DEX, A_STR, A_WIS, ARROW_TRAP, BEAR_TRAP, DART_TRAP, DISMOUNT_FELL, DOOR, D_BROKEN, D_ISOPEN, D_NODOOR, D_TRAPPED, LANDMINE, MAXULEV, PIT, SPIKED_PIT, SQKY_BOARD, TRAP_EXPLANATIONS, WEB, isok, } from './const.js';
@@ -94,10 +95,6 @@ function article(noun) {
 function possessiveTrap(trap) {
     return trap?.madeby_u ? 'your' : 'the';
 }
-function hasMagicKey(state) {
-    return (state.inventory || []).some(object => artifactById(object.oartifact, state)?.name
-        === 'The Master Key of Thievery');
-}
 function weldedTwoHandedWeapon(state) {
     const weapon = state.uwep || state.u?.uwep;
     return !!(weapon?.cursed && (OBJECT_BIMANUAL[weapon.otyp]));
@@ -133,7 +130,7 @@ export async function doUntrap({ state = game, enterTrap = null, } = {}) {
     return spentTime;
 }
 export async function untrap({ state = game, force = false, enterTrap = null, chooseDirection = promptDirection, ask = promptYesNoQuit, chooseObject = promptInventoryObject, publish = pline, random = rn2, rollOne = rnd, rollDice = d, luckRandom = rnl, } = {}) {
-    if (!force && hasMagicKey(state))
+    if (!force && heroHasMagicKey(state))
         force = true;
     const direction = await chooseDirection();
     if (!direction) {

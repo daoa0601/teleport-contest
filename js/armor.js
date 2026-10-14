@@ -24,6 +24,7 @@ import { learnObjectType } from './object_knowledge.js';
 import { floatHeroDown, floatHeroUp } from './terrain_movement.js';
 import { applyHeroLocationEffects } from './cmd.js';
 import { artifactEmitsLight, heroHasArtifactDefense } from './artifacts.js';
+import { setWornArtifactProperties } from './artifact_properties.js';
 import { heroResistsLifeDrain } from './monster_resistance.js';
 import { beginObjectBurn, endObjectBurn, equipmentLightDescription, equipmentLightMessage } from './light.js';
 import { AMULET_OF_GUARDING, ALCHEMY_SMOCK, CLOAK_OF_DISPLACEMENT, CLOAK_OF_PROTECTION, CORPSE, CORNUTHAUM, DUNCE_CAP, ELVEN_BOOTS, ELVEN_CLOAK, GAUNTLETS_OF_FUMBLING, GAUNTLETS_OF_POWER, HELM_OF_OPPOSITE_ALIGNMENT, MUMMY_WRAPPING, FEDORA, FUMBLE_BOOTS, LEVITATION_BOOTS, RIN_FREE_ACTION, RIN_PROTECTION, GRAY_DRAGON_SCALE_MAIL, GRAY_DRAGON_SCALES, YELLOW_DRAGON_SCALE_MAIL, YELLOW_DRAGON_SCALES, SHIELD_OF_DRAIN_RESISTANCE, SHIELD_OF_REFLECTION, OBJECT_DESCRIPTIONS, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_PROPERTY, WATER_WALKING_BOOTS, } from './object_data.js';
@@ -181,6 +182,8 @@ export function armorSlotFor(otyp) {
 export function applyWornArmorProperty(object, state = game) {
     const slot = armorSlotFor(object?.otyp);
     const property = OBJECT_PROPERTY[object?.otyp];
+    if (slot)
+        setWornArtifactProperties(object, slot, true, state);
     if (!slot || !property)
         return null;
     grantWornProperty(property, object, slot, state);
@@ -929,6 +932,8 @@ export async function removeArmorProperties(object, state = game) {
     const extraProperty = color ? DRAGON_ARMOR_EXTRA_PROPERTY[color] : null;
     const ordinaryProperty = OBJECT_PROPERTY[object?.otyp];
     const slot = armorSlotFor(object?.otyp);
+    if (slot)
+        setWornArtifactProperties(object, slot, false, state);
     if (ordinaryProperty && slot)
         removeWornProperty(ordinaryProperty, object, slot, state);
     if (!extraProperty)

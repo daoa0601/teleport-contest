@@ -8,9 +8,9 @@ import { game } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import { artifactById, artifactEmitsLight } from './artifacts.js';
+import { recalculateTelepathyRange, setWornArtifactProperties } from './artifact_properties.js';
 import { makeHallucinated } from './hero_mental_status.js';
 import { setArtifactWarningWielded } from './artifact_warning.js';
-import { grantWornProperty, removeWornProperty } from './properties.js';
 import { endObjectBurn, equipmentLightMessage } from './light.js';
 import { plineWithContinuation } from './display.js';
 import { heroIsBlind } from './senses.js';
@@ -53,6 +53,7 @@ function clearSlot(
         endObjectBurn(object, state);
     object[flag] = false;
     object.owornmask = (object.owornmask ?? 0) & ~mask;
+    recalculateTelepathyRange(state);
     return object;
 }
 
@@ -65,6 +66,7 @@ function installSlot(
     object.alternate = flag === 'alternate';
     object.ready = flag === 'ready';
     object.owornmask = (object.owornmask ?? 0) | mask;
+    recalculateTelepathyRange(state);
 }
 
 async function replaceSlot(
@@ -82,10 +84,7 @@ export async function setWieldedArtifactProperties(
     object: GameObject, active: boolean, state: GameState,
 ): Promise<void> {
     const artifact = artifactById(object.oartifact, state);
-    if (artifact?.flags.includes('SPFX_SEARCH')) {
-        if (active) grantWornProperty('searching', object, 'uwep', state);
-        else removeWornProperty('searching', object, 'uwep', state);
-    }
+    setWornArtifactProperties(object, 'uwep', active, state);
     if (artifact?.flags.includes('SPFX_HALRES')) {
         await makeHallucinated(Number(!active), {
             state, talk: !state.program_state?.restoring,
@@ -191,6 +190,7 @@ export async function releaseWeaponSlots(
     object.alternate = false;
     object.ready = false;
     object.owornmask = (object.owornmask ?? 0) & ~W_WEAPONS;
+    recalculateTelepathyRange(state);
     // Direct setnotworn clears the pointer before warning feedback.
     if (primary) await setWieldedArtifactProperties(object, false, state);
 }

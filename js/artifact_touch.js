@@ -7,6 +7,7 @@ import { plineWithContinuation } from './display.js';
 import { finishHeroDeath } from './end.js';
 import { game } from './gstate.js';
 import { loseHeroHp } from './hero_damage.js';
+import { definiteName, objectCombatName, objectNameIsPlural } from './objnam.js';
 function heroCarries(object, state) {
     return object?.where === 'inventory' || (state.inventory || []).includes(object);
 }
@@ -17,7 +18,8 @@ export async function touchArtifactByHero(object, artifact = artifactById(object
     let died = false;
     let damage = 0;
     if (result.blasted) {
-        await publish(`You are blasted by ${artifact.name}'s power!`);
+        const name = definiteName(objectCombatName(object, { state }), state);
+        await publish(`You are blasted by ${name}${name.endsWith('s') ? "'" : "'s"} power!`);
         damage = rollHeroArtifactBlast(object, artifact, state);
         died = await loseHeroHp(damage, `touching ${artifact.name}`, {
             state,
@@ -28,9 +30,12 @@ export async function touchArtifactByHero(object, artifact = artifactById(object
             await exerciseAttribute(A_WIS, false, state);
     }
     if (!died && !result.allowed) {
+        const name = definiteName(objectCombatName(object, { state }), state);
+        const subject = name.charAt(0).toUpperCase() + name.slice(1);
+        const plural = objectNameIsPlural(object, state);
         await publish(heroCarries(object, state)
-            ? `${artifact.name} is beyond your control!`
-            : `${artifact.name} evades your grasp!`);
+            ? `${subject} ${plural ? 'are' : 'is'} beyond your control!`
+            : `${subject} ${plural ? 'evade' : 'evades'} your grasp!`);
     }
     return { ...result, damage, died };
 }

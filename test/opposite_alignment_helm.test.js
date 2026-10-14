@@ -46,7 +46,7 @@ void test('a fatal Excalibur blast stops helmet wear before cursing or discoveri
     const helmet = await addInventoryObject(HELM_OF_OPPOSITE_ALIGNMENT, { known: false, typeKnown: false });
     const messages = await dress('W', helmet);
     assert.equal(game.program_state.gameover, true);
-    assert.match(messages, /You are blasted by Excalibur's power!/);
+    assert.match(messages, /You are blasted by the long sword named Excalibur's power!/);
     assert.equal(helmet.cursed, false);
     assert.equal(objectTypeKnown(helmet), false);
     assert.doesNotMatch(messages, /glows black for a moment/);
@@ -67,7 +67,7 @@ void test('a fatal alignment blast during helmet removal leaves the helmet worn'
     game.u.uhp = game.u.uhpmax = 1;
     const messages = await dress('T', helmet);
     assert.equal(game.program_state.gameover, true);
-    assert.match(messages, /You are blasted by Stormbringer's power!/);
+    assert.match(messages, /You are blasted by the runesword named Stormbringer's power!/);
     assert.equal(game.u.ualign?.type, 1);
     assert.equal(game.uarmh, helmet, 'Death interrupts Helmet_off before it clears the slot');
     assert.equal(helmet.worn, true);

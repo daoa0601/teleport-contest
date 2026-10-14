@@ -6478,8 +6478,10 @@ function createLuaLevelSession() {
             const area = lit ? selection.grow() : selection;
             area.forEachXMajor((x, y) => {
                 const loc = requireGameLevel().at(x, y);
+                // sp_lev.c:sel_set_lit() preserves lava's own light even
+                // when the selected region is explicitly darkened.
                 if (loc)
-                    loc.lit = lit;
+                    loc.lit = IS_LAVA(loc.typ) || lit;
             });
         },
         roomRegion: async (options) => {

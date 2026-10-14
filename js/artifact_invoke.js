@@ -1,25 +1,50 @@
 // Artifact powers used by the #invoke command.
 // C ref: artifact.c arti_invoke() and its invoke_* helpers.
-import { heroIsHallucinating } from './senses.js';
-import { I_SPECIAL, TIMEOUT, Upolyd, W_ARTI } from './const.js';
+import { I_SPECIAL, In_endgame, In_hell, In_quest, P_EXPERT, TIMEOUT, Upolyd, W_ARTI, isok } from './const.js';
 import { newsym, pline } from './display.js';
-import { game, requireLiveGame } from './gstate.js';
+import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { hasNonArtifactConflict, syncHeroConflict } from './hero_conflict.js';
 import { hasNonArtifactInvisibility, invisibilityIsBlocked, syncHeroInvisibility, } from './hero_invisibility.js';
 import { cureHeroSickness, heroIsSick } from './hero_illness.js';
 import { showEnlightenment } from './insight.js';
 import { mksobj } from './mklev.js';
-import { ARROW } from './object_data.js';
-import { captureLevitationState, hasInvokedProperty, propertyHasOtherSources, refreshProperty, setInvokedProperty, } from './properties.js';
+import { ACID_VENOM, ARROW, BLINDING_VENOM, SPE_CONE_OF_COLD, SPE_FIREBALL } from './object_data.js';
+import { captureLevitationState, hasInvokedProperty, hasIntrinsicProperty, propertyHasOtherSources, refreshProperty, setInvokedProperty, } from './properties.js';
 import { floatHeroDown, floatHeroUp } from './terrain_movement.js';
 import { applyHeroLocationEffects } from './cmd.js';
-import { d, rnd, rnz } from './rng.js';
-import { heroIsBlind, setHeroBlindnessTurns } from './senses.js';
+import { d, rnd, rn2, rnz } from './rng.js';
+import { heroIsBlind, heroIsBlinded, heroIsHallucinating, permanentBlind } from './senses.js';
 import { clearHeroSliming, heroIsSliming } from './slime.js';
-import { addInventoryItem } from './u_init.js';
 import { untrap } from './untrap.js';
 import { objectWeight } from './weight.js';
 import { chooseObjectToCharge, rechargeObject } from './recharge.js';
+import { doBlindingRay } from './flash.js';
+import { heroSpecies } from './hero_species.js';
+import { lightDamage, lightRoom } from './light.js';
+import { MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL } from './monster_data.js';
+import { definiteName, objectCombatName, objectNameIsPlural } from './objnam.js';
+import { flashBurn, makeBlinded } from './sight_change.js';
+import { promptDirection } from './tty_prompts.js';
+import { castSpell } from './spell.js';
+import { spellSkillType } from './spell_casting_rules.js';
+import { ensureHeroSkills } from './skills.js';
+import { depth } from './hacklib.js';
+import { gotoLevel } from './level_change.js';
+import { levelTeleport } from './level_teleport.js';
+import { bringLeashedFollowers } from './teleport.js';
+import { showPagedPickOneMenu } from './windows.js';
+import { migrateMonsterToLevel } from './monster_migration.js';
+import { teleportMonsterByHero } from './monster_magic_response.js';
+import { couldsee } from './vision.js';
+import { throwOrdinaryObject } from './ordinary_throw.js';
+import { resolveSwallowedEggPieOrVenomThrow } from './swallowed_throw.js';
+import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
+import { holdAnotherObject } from './hero_hold_object.js';
+const M2_DEMON = 0x100;
+const M2_LORD = 0x400;
+const M2_PRINCE = 0x800;
+const S_IMP = 9;
+const MS_NEMESIS = 37;
 const DIRECT_POWERS = [
     'healing',
     'energy-boost',
@@ -27,6 +52,13 @@ const DIRECT_POWERS = [
     'create-ammo',
     'untrap',
     'charge-object',
+    'blinding-ray',
+    'snowstorm',
+    'firestorm',
+    'level-teleport',
+    'create-portal',
+    'banish',
+    'fling-poison',
 ];
 function isDirectPower(power) {
     return DIRECT_POWERS.some((candidate) => candidate === power);
@@ -71,14 +103,28 @@ async function nothingSpecial(object, state, publish) {
     }
 }
 async function beginInvocation(object, artifact, state, publish, rollDice, scaledRandom) {
+    requirePlayingGame(state);
     const turn = state.moves ?? 0;
     if ((object.age ?? 0) > turn) {
-        await publish(`You feel that ${artifact.name} is ignoring you.`);
-        object.age += rollDice(3, 10);
-        return false;
+        const energyCost = artifact.invokePower === 'blinding-ray'
+            || artifact.invokePower === 'fling-poison' ? 25 : -1;
+        if (energyCost < 0 || state.u.uen < energyCost) {
+            await ignoringHero(object, state, publish);
+            object.age += rollDice(3, 10);
+            return false;
+        }
+        await publish('You feel drained...');
+        state.u.uen -= energyCost;
+        state.context.botl = true;
     }
-    object.age = turn + scaledRandom(100);
+    else {
+        object.age = turn + scaledRandom(100);
+    }
     return true;
+}
+async function ignoringHero(object, state, publish) {
+    const subject = definiteName(objectCombatName(object, { state }), state);
+    await publish(`You feel that ${subject} ${objectNameIsPlural(object, state) ? 'are' : 'is'} ignoring you.`);
 }
 async function invokeProperty(object, artifact, state, publish, rollDice, scaledRandom) {
     // Artifact property toggles mutate the invoked source and the object's
@@ -95,7 +141,7 @@ async function invokeProperty(object, artifact, state, publish, rollDice, scaled
     if (on && (object.age ?? 0) > turn) {
         setInvokedProperty(power.property, object, false, state);
         power.sync(state);
-        await publish(`You feel that ${artifact.name} is ignoring you.`);
+        await ignoringHero(object, state, publish);
         object.age += rollDice(3, 10);
         return { used: true, ready: false, on: false };
     }
@@ -148,18 +194,25 @@ async function invokeHealing(object, state, publish) {
     const healing = Math.trunc((maximum + 1 - current) / 2);
     const cream = hero.ucreamed ?? 0;
     const curesBlindness = (hero.blindTurns ?? 0) > cream;
-    const helps = healing > 0 || heroIsSick(state) || heroIsSliming(state) || curesBlindness;
+    const permanent = permanentBlind(state) || hasIntrinsicProperty('blinded', null, state);
+    const treatsIllness = heroIsSick(state) || heroIsSliming(state);
+    // The first native check compares boolean Blinded (0 or 1) with cream;
+    // the second compares the blindness timeout.
+    if (healing !== 0 || treatsIllness || Number(heroIsBlinded(state)) > cream)
+        await publish('You feel better.');
+    const helps = healing !== 0 || treatsIllness || curesBlindness;
     if (!helps) {
         await nothingSpecial(object, state, publish);
         return;
     }
-    await publish('You feel better.');
+    await publish(!healing && !treatsIllness && permanent
+        ? 'You feel slightly better.' : 'You feel better.');
     if (healing > 0)
         hero[hitPoints] = current + healing;
     cureHeroSickness(state);
     clearHeroSliming(state);
     if (curesBlindness)
-        setHeroBlindnessTurns(cream, state);
+        await makeBlinded(cream, { state, talk: false, publish });
     state.context.botl = true;
 }
 async function invokeEnergyBoost(object, state, publish) {
@@ -178,7 +231,7 @@ async function invokeEnergyBoost(object, state, publish) {
     state.context.botl = true;
     await publish('You feel re-energized.');
 }
-async function invokeCreateAmmo(object, rollOne) {
+async function invokeCreateAmmo(object, rollOne, state, publish) {
     const arrows = await mksobj(ARROW, true, false);
     arrows.blessed = !!object.blessed;
     arrows.cursed = !!object.cursed;
@@ -199,7 +252,167 @@ async function invokeCreateAmmo(object, rollOne) {
     }
     arrows.quantity = arrows.quan;
     arrows.owt = objectWeight(arrows);
-    return await addInventoryItem(arrows);
+    await holdAnotherObject(arrows, {
+        state, publish,
+        dropMessage: `Suddenly ${arrows.quan} ${objectCombatName(arrows, { state })} fall out.`,
+    });
+}
+async function invokeBlindingRay(object, state, publish) {
+    requireLiveGame(state);
+    const direction = await promptDirection();
+    if (!direction) {
+        await publish('Never mind.');
+        object.age = state.moves;
+        return false;
+    }
+    if (direction.dx || direction.dy) {
+        await doBlindingRay(object, direction, { state });
+    }
+    else if (direction.dz) {
+        await lightRoom(true, { radius: 0, source: object,
+            finishMonsterKill: finishHeroMonsterKillOutcome });
+        const spot = state.level?.at(state.u.ux, state.u.uy);
+        await publish(!heroIsBlind(state) && spot?.lit && !spot.waslit
+            ? 'It is lit here now.' : 'Nothing seems to happen.');
+    }
+    else {
+        const vulnerable = heroSpecies(state) === MONSTER_NAME.indexOf('gremlin');
+        const damage = object.blessed ? 15 : object.cursed ? 5 : 10;
+        if (vulnerable)
+            await lightDamage(object, true, 2 * damage, { state });
+        if (!state.program_state.gameover
+            && !await flashBurn(damage + rnd(damage), false, { state, publish }) && !vulnerable)
+            await publish('Nothing seems to happen.');
+    }
+    return true;
+}
+async function invokeStorm(power, state) {
+    const spell = power === 'snowstorm' ? SPE_CONE_OF_COLD : SPE_FIREBALL;
+    const skill = ensureHeroSkills(state)?.[spellSkillType(spell)];
+    if (!skill)
+        throw new Error('Artifact storm requires initialized spell skills');
+    const previous = skill.skill;
+    skill.skill = P_EXPERT;
+    try {
+        await castSpell(spell, { force: true, state });
+    }
+    finally {
+        skill.skill = previous;
+    }
+}
+async function invokeCreatePortal(object, state, publish) {
+    requireLiveGame(state);
+    requirePlayingGame(state);
+    const tutorial = state.specialLevels?.get('tut-1')?.dnum;
+    const choices = new Map();
+    const rows = ['Open a portal to which dungeon?', ''];
+    let destinationIndex = 0;
+    for (const [index, dungeon] of state.dungeons.entries()) {
+        if (!dungeon.dunlev_ureached || index === tutorial)
+            continue;
+        const letter = String.fromCharCode(97 + choices.size);
+        choices.set(letter, index);
+        rows.push(`${letter} - ${dungeon.dname}`);
+        destinationIndex = index;
+    }
+    if (choices.size > 1) {
+        const selected = await showPagedPickOneMenu({ rows, choices });
+        if (selected === null) {
+            await nothingSpecial(object, state, publish);
+            return;
+        }
+        destinationIndex = selected;
+    }
+    const dungeon = state.dungeons[destinationIndex];
+    if (!dungeon)
+        throw new Error('Artifact portal requires an initialized destination dungeon');
+    const destination = {
+        dnum: destinationIndex,
+        dlevel: dungeon.depth_start >= depth(state.u.uz, state.dungeons)
+            ? dungeon.entry_lev : dungeon.dunlev_ureached,
+    };
+    if (state.u.uhave.amulet || In_endgame(state.u.uz) || In_endgame(destination)
+        || destination.dnum === state.u.uz.dnum || !await bringLeashedFollowers(state)) {
+        await publish('You feel very disoriented for a moment.');
+        return;
+    }
+    await publish(heroIsBlind(state)
+        ? 'You feel weightless for a moment.'
+        : 'You are surrounded by a shimmering sphere!');
+    await gotoLevel(destination);
+}
+async function invokeBanish(state, publish) {
+    requirePlayingGame(state);
+    const hell = state.valley_level;
+    const dungeon = hell && state.dungeons[hell.dnum];
+    if (!hell || !dungeon)
+        throw new Error('Demon banishment requires initialized Gehennom');
+    let vanished = 0;
+    let stayed = 0;
+    // fmon is newest first; removals and migration must preserve that order.
+    for (const monster of [...state.level.monsters].reverse()) {
+        if (monster.dead || monster.mhp <= 0 || !isok(monster.mx, monster.my))
+            continue;
+        const flags = MONSTER_FLAGS2[monster.mnum] ?? 0;
+        if (!(flags & M2_DEMON) && MONSTER_SYMBOL[monster.mnum] !== S_IMP)
+            continue;
+        if (!couldsee(monster.mx, monster.my) || MONSTER_SOUND[monster.mnum] === MS_NEMESIS)
+            continue;
+        let chance = 1;
+        if (In_quest(state.u.uz) && !state.quest_status?.killed_nemesis)
+            chance += 10;
+        if ((flags & (M2_DEMON | M2_PRINCE)) === (M2_DEMON | M2_PRINCE))
+            chance += 2;
+        if ((flags & (M2_DEMON | M2_LORD)) === (M2_DEMON | M2_LORD))
+            chance++;
+        monster.msleeping = monster.mtame = monster.mpeaceful = 0;
+        monster.pet = false;
+        if (chance > 1 && rn2(chance)) {
+            stayed++;
+            continue;
+        }
+        if (In_hell(state.u.uz, state)) {
+            await teleportMonsterByHero(monster, { state, giveFeedback: false });
+        }
+        else {
+            vanished++;
+            const rolledLevel = rn2(dungeon.num_dunlevs);
+            // C passes this through ledger_no() and migrate_to_level().
+            // Local level zero is the preceding dungeon's final ledger entry.
+            const dnum = rolledLevel === 0 ? hell.dnum - 1 : hell.dnum;
+            const destinationDungeon = state.dungeons[dnum];
+            if (!destinationDungeon)
+                throw new Error('Demon banishment requires a valid ledger destination');
+            await migrateMonsterToLevel(monster, {
+                dnum, dlevel: rolledLevel || destinationDungeon.num_dunlevs,
+            }, state);
+        }
+    }
+    if (vanished) {
+        const subject = vanished === 1 ? 'demon' : 'demons';
+        const amount = !stayed ? 'The' : vanished > stayed ? 'Most of the' : 'Some of the';
+        await publish(`${amount} ${subject} ${vanished === 1 ? 'disappears' : 'disappear'} in a cloud of brimstone!`);
+    }
+}
+async function invokeFlingPoison(object, state, publish) {
+    requireLiveGame(state);
+    const direction = await promptDirection();
+    if (!direction) {
+        await publish('Never mind.');
+        object.age = state.moves;
+        return false;
+    }
+    const venom = await mksobj(rn2(2) ? BLINDING_VENOM : ACID_VENOM, true, false);
+    venom.spe = 1;
+    if (!await resolveSwallowedEggPieOrVenomThrow({
+        state, item: venom, selectedQuantity: 1,
+        finishKill: monster => finishHeroMonsterKillOutcome(monster, monster.mx, monster.my),
+    })) {
+        await throwOrdinaryObject({
+            state, item: venom, quantity: 1, dx: direction.dx, dy: direction.dy,
+        });
+    }
+    return true;
 }
 export async function invokeArtifactPower(object, artifact, { state = game, publish = pline, rollDice = d, rollOne = rnd, scaledRandom = rnz, enterTrap = null, } = {}) {
     if (!artifact)
@@ -214,6 +427,37 @@ export async function invokeArtifactPower(object, artifact, { state = game, publ
     if (!ready)
         return { used: true, ready: false };
     switch (power) {
+        case 'fling-poison': {
+            const spentTime = await invokeFlingPoison(object, state, publish);
+            if (state.program_state.gameover)
+                return { used: true, heroDied: true };
+            return { used: true, ready: true, spentTime };
+        }
+        case 'banish':
+            await invokeBanish(state, publish);
+            break;
+        case 'level-teleport':
+            await levelTeleport({ state });
+            if (state.program_state.gameover)
+                return { used: true, heroDied: true };
+            break;
+        case 'create-portal':
+            await invokeCreatePortal(object, state, publish);
+            if (state.program_state.gameover)
+                return { used: true, heroDied: true };
+            break;
+        case 'snowstorm':
+        case 'firestorm':
+            await invokeStorm(power, state);
+            if (state.program_state.gameover)
+                return { used: true, heroDied: true };
+            break;
+        case 'blinding-ray': {
+            const spentTime = await invokeBlindingRay(object, state, publish);
+            if (state.program_state.gameover)
+                return { used: true, heroDied: true };
+            return { used: true, ready: true, spentTime };
+        }
         case 'charge-object': {
             const target = await chooseObjectToCharge(state);
             if (!target) {
@@ -239,7 +483,7 @@ export async function invokeArtifactPower(object, artifact, { state = game, publ
             await showEnlightenment({ basic: false, magic: true });
             break;
         case 'create-ammo':
-            await invokeCreateAmmo(object, rollOne);
+            await invokeCreateAmmo(object, rollOne, state, publish);
             break;
         case 'untrap': {
             const spentTime = await untrap({
@@ -255,6 +499,8 @@ export async function invokeArtifactPower(object, artifact, { state = game, publ
             return { used: true, ready: true, spentTime };
         }
     }
+    if (state.program_state.gameover)
+        return { used: true, heroDied: true };
     return { used: true, ready: true };
 }
 export async function deactivateArtifactProperty(object, artifact, { state = game, publish = pline, rollDice = d, scaledRandom = rnz, } = {}) {

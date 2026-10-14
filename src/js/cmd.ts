@@ -35,11 +35,16 @@ import { game, requireGameLevel, requirePlayingGame, requireInitializedGame } fr
 import { requireInitializedHero } from './hero_types.js';
 
 import { fruitName } from './fruit.js';
-import { encyclopediaEntries } from './encyclopedia.js';
+import { encyclopediaEntries, encyclopediaMatches } from './encyclopedia.js';
+import { objectAtMapDescription } from './map_object_description.js';
+import { objectNeedsFullIdentification } from './invent.js';
+import { LOOK_ONCE, LOOK_QUICK, LOOK_VERBOSE } from './const.js';
 import { waterbodyName } from './terrain_name.js';
 import { def_warnsyms } from './const.js';
 import { iceDescriptionAt } from './dungeon_feature.js';
 import { CmapSymbol, GlyphOffset, cmapToGlyph } from './glyph_numbers.js';
+import { MAP_SYMBOLS } from './map_symbols.js';
+import { typedSymbolDescription } from './look_symbols.js';
 import { isGrayStone, isWeaponTool } from './object_properties.js';
 import { applySuggestion } from './apply_selection.js';
 import { flipThroughBook } from './book_flip.js';
@@ -127,7 +132,7 @@ import {
 } from './object_call.js';
 import { displayLiquidName, displayMessageWindow,
     newsym, feel_newsym, flushPendingTopline, flush_screen, pline, plineWithContinuation, moreUntilDismissed, docrt,
-    bot, terrain_glyph, glyphAt, canSeeMonster, canSpotMonster, canSenseMonster, canSpotHeroSelf,
+    bot, terrain_glyph, cmapSymbolAppearance, glyphAt, canSeeMonster, canSpotMonster, canSenseMonster, canSpotHeroSelf,
     unblindTelepathyRange,
     monsterHasWarningProjection, see_nearby_objects, show_glyph_cell, swallowed,
     randomDisplayMonsterName, randomDisplayMonsterSubject, see_monsters, see_objects,
@@ -260,7 +265,7 @@ import {
     RIN_CONFLICT, MEAT_RING, OBJECT_BIMANUAL, HELM_OF_OPPOSITE_ALIGNMENT, GRAY_DRAGON_SCALES,
     LENSES, BLINDFOLD, TOWEL, FUMBLE_BOOTS, KICKING_BOOTS, MAGIC_MARKER, UNICORN_HORN,
     SHIELD_OF_REFLECTION, AMULET_OF_YENDOR,
-    AMULET_OF_STRANGULATION, FAKE_AMULET_OF_YENDOR, SPE_NOVEL, OBJECT_DELAY,
+    AMULET_OF_STRANGULATION, FAKE_AMULET_OF_YENDOR, SPE_NOVEL, OBJECT_DELAY, OBJECT_UNIQUE,
     OBJECT_DESCRIPTIONS, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_WEIGHT, OBJECT_SUBTYPE,
 } from './object_data.js';
 import {
@@ -279,6 +284,7 @@ import {
     removeHeroAccessory, wearHeroAccessory,
 } from './accessory.js';
 import { heroHasNoHead, heroPassesWalls, heroSpecies } from './hero_species.js';
+import { monsterLocomotion } from './monster_locomotion.js';
 import { disturbBuriedZombies } from './object_impact.js';
 import { checkSlipperyIce } from './fumbling.js';
 import { MONSTER_BODY_META } from './monster_data.js';
@@ -441,7 +447,7 @@ import {
     SPIKED_PIT, TT_PIT, HOLE, TRAPDOOR, DART_TRAP, MAGIC_TRAP, TELEP_TRAP, LEVEL_TELEP, STATUE_TRAP, WEB,
     ANTI_MAGIC, G_GONE, ER_NOTHING, ER_DAMAGED, M_AP_MONSTER, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE,
     STRAT_WAITMASK, MM_NOEXCLAM, MM_NOMSG, SHOPBASE, ROOMOFFSET, F_LOOTED, In_endgame,
-    Is_airlevel, Is_waterlevel, W_ARMOR, W_ACCESSORY, W_SADDLE, LOST_THROWN, WT_SPLASH_THRESHOLD,
+    Is_airlevel, Is_waterlevel, Is_rogue_level, In_hell, W_ARMOR, W_ACCESSORY, W_SADDLE, LOST_THROWN, WT_SPLASH_THRESHOLD,
     WT_SQUEEZABLE_INV, P_BOW, P_SLING, PARANOID_HIT, POLY_CONTROLLED, STR19, isok,
     ACCESSIBLE, AIR, DIGTYP_UNDIGGABLE, DRAWBRIDGE_UP,
 } from './const.js';
@@ -1808,7 +1814,10 @@ function showKnownTerrain() {
                 && (!loc.disp_ch || loc.disp_ch === ' '))) continue;
             const glyph = terrain_glyph(loc, x, y);
             loc.disp_ch = glyph.ch;
-            loc.disp_color = glyph.color;
+            // detect.c:reveal_terrain_getglyph() normalizes S_litcorr to
+            // S_corr even when the actual corridor is lit.
+            loc.disp_color = glyph.glyph === cmapToGlyph(CmapSymbol.litcorr)
+                ? NO_COLOR : glyph.color;
             loc.disp_decgfx = glyph.dec;
             loc.disp_attr = 0;
         }
@@ -3312,7 +3321,8 @@ async function runExtendedCommand(name: string) {
 // "Nothing happens." line.
 async function doinvoke() {
     const eligible = (game.inventory || []).filter(object =>
-        !!(object.oartifact || object.artifact));
+        !!(object.oartifact || object.artifact || OBJECT_UNIQUE[object.otyp]
+            || object.otyp === FAKE_AMULET_OF_YENDOR && !object.known));
     if (!eligible.length) {
         await pline("You don't have anything special to invoke.");
         game.context.move = 0;
@@ -3331,15 +3341,13 @@ async function doinvoke() {
 
     game._pending_message = '';
     const object = selection.object;
+    const touch = await retouchHeroObject(object);
+    if (touch.rejected || touch.died) {
+        game.context.move = 1;
+        return;
+    }
     const artifact = object.oartifact
         ? artifactById(object.oartifact) : null;
-    if (artifact) {
-        const touch = await touchArtifactByHero(object, artifact);
-        if (!touch.allowed || touch.died) {
-            game.context.move = 1;
-            return;
-        }
-    }
     if (!artifact || artifact.invokePower === null) {
         await pline('Nothing happens.');
         game.context.move = 1;
@@ -4227,11 +4235,6 @@ function inventoryCommandLetter(item: GameObject): string {
     return item.invlet;
 }
 
-function permanentlyIdentified(item: GameObject | null | undefined): boolean {
-    return !!(item?.typeKnown && item?.known && item?.dknown
-        && item?.bknown && item?.rknown);
-}
-
 function wizardIdentifyDescription(item: GameObject, primaryHandDetail: string | null): string {
     const override = game.iflags.override_ID;
     game.iflags.override_ID = true;
@@ -4247,8 +4250,7 @@ function wizardIdentifyDescription(item: GameObject, primaryHandDetail: string |
 // iflags.override_ID set.  Fully identified inventories still open a short
 // PICK_NONE menu; the command does not collapse into a topline message.
 async function wizIdentify(): Promise<void> {
-    const unidentified = (game.inventory || []).filter(item =>
-        !permanentlyIdentified(item));
+    const unidentified = game.inventory.filter(objectNeedsFullIdentification);
     if (!unidentified.length) {
         await showTextMenuOverlay([
             'Debug Identify',
@@ -4441,11 +4443,6 @@ async function wizardPositionDescription(x: number, y: number): Promise<string> 
     // C pager.c:do_screen_description() describes the displayed glyph, not
     // the terrain below it.  A visible (or still remembered) pile therefore
     // owns farlook before the room/corridor fallback.
-    const object = game.level?.objects?.[x]?.[y]?.[0];
-    if (object && glyph?.kind === 'object') {
-        observeDistantObjectForNaming(object);
-        return floorObjectDescription(object);
-    }
     return await farlookLocationDescription(x, y) || 'unexplored area';
 }
 
@@ -4516,6 +4513,36 @@ export async function askTeleportDestination({ onPrompt = null }: {
 // ECMD_TIME.  Its first getpos use still owns the shared Lua tutorial, while
 // the destination room separately owns entry effects after relocation.
 async function wizTeleportPosition(): Promise<void> {
+    const trap = game.level?.traps.find(candidate =>
+        candidate.tx === game.u.ux && candidate.ty === game.u.uy);
+    if (trap?.tseen && trap.ttyp === TELEP_TRAP && !trap.once
+        && trap.teledest && isok(trap.teledest.x, trap.teledest.y)) {
+        const locomotion = propertyIsActive('levitation') ? 'float'
+            : propertyIsActive('flying') ? 'fly'
+                : monsterLocomotion(heroSpecies(), 'jump');
+        await plineWithContinuation(`You ${locomotion} onto the teleportation trap.`);
+        if (!await bringLeashedFollowers()) {
+            await plineWithContinuation('You shudder for a moment.');
+            game.context.move = 0;
+            return;
+        }
+        // dotele() calls teleds() directly for a fixed trap destination:
+        // no location prompt, travel-target clear, or nutrition cost.
+        const movement = await moveHeroByTeleport(trap.teledest.x, trap.teledest.y);
+        await finishTeleportArrival(movement);
+        if (game.program_state.gameover) return;
+        await bringLeashedFollowers();
+        game.context.move = 1;
+        return;
+    }
+
+    if (!await bringLeashedFollowers()) {
+        await plineWithContinuation('You shudder for a moment.');
+        game.context.move = 0;
+        return;
+    }
+    // dotele() clears travelcc only after next_to_u() allows tele().
+    game._travelTarget = null;
     let destination = await askTeleportDestination();
     if (!destination) {
         // dotele(TRUE) still reaches morehungry(100) and returns a timed
@@ -4545,8 +4572,6 @@ async function wizTeleportPosition(): Promise<void> {
     const movement = await moveHeroByTeleport(destination.x, destination.y);
     await finishTeleportArrival(movement);
     if (game.program_state.gameover) return;
-    if (acceptedChoice && game.u.ux === game._travelTarget?.x
-        && game.u.uy === game._travelTarget?.y) game._travelTarget = null;
     // C dotele() spends nutrition only after teleds() finishes its effects.
     await spendHeroNutrition(100);
     if (game.program_state.gameover) return;
@@ -4584,6 +4609,11 @@ function farlookDescribesHero(x: number, y: number): boolean {
 export async function farlookLocationDescription(x: number, y: number): Promise<string> {
     if (farlookDescribesHero(x, y)) return wizardPositionDescription(x, y);
     const glyph = glyphAt(x, y);
+    if (!glyph || glyph.kind === 'unexplored') {
+        if ((game.u.uinwater || game.underwater) && !Is_waterlevel(game.u.uz))
+            return dist2(x, y, game.u.ux, game.u.uy) <= 2 ? 'land' : 'unknown';
+        return 'unexplored area';
+    }
     if (glyph?.kind === 'warning') {
         const index = glyph.glyph === undefined ? -1 : glyph.glyph - GlyphOffset.warning;
         const warning = def_warnsyms[index];
@@ -4617,6 +4647,7 @@ export async function farlookLocationDescription(x: number, y: number): Promise<
         const hiddenText = hidden.length ? `, ${hidden.join(', ')}` : '';
         return `${tail ? 'tail of a ' : ''}${prefix}${name}${condition}${hiddenText}`;
     }
+    if (glyph.kind === 'object') return objectAtMapDescription(x, y, glyph);
     // Hallucinated statues project monster glyphs without a live monster.
     if (glyph?.kind === 'monster' && heroIsHallucinating(game))
         return randomDisplayMonsterName();
@@ -4689,8 +4720,27 @@ async function dojump(): Promise<void> {
     game.context.move = result.spentTime ? 1 : 0;
 }
 
-async function verboseFarlookDescription(x: number, y: number): Promise<string> {
+function verboseFarlookDescription(x: number, y: number, description: string): string {
     const glyph = glyphAt(x, y);
+    if (glyph?.kind === 'terrain'
+        && (glyph.terrainName.includes('staircase') || glyph.terrainName.includes('ladder'))) {
+        const symbolIndex = MAP_SYMBOLS.findIndex((_definition, index) =>
+            index >= CmapSymbol.upstair && index <= CmapSymbol.brdnladder
+            && glyph.glyph === cmapToGlyph(index));
+        if (symbolIndex < 0) throw new Error(`Stair glyph ${glyph.glyph} has no dungeon symbol`);
+        const displayed = cmapSymbolAppearance(symbolIndex);
+        const descriptions: string[] = [];
+        // do_screen_description() lists meanings of the displayed symbol
+        // in defsyms[] order, then lookat() identifies the selected stairs.
+        for (let index = CmapSymbol.upstair; index <= CmapSymbol.brdnladder; index++) {
+            const candidate = cmapSymbolAppearance(index);
+            const definition = MAP_SYMBOLS[index];
+            if (definition && candidate.ch === displayed.ch && candidate.dec === displayed.dec)
+                descriptions.push(withIndefiniteArticle(definition.name));
+        }
+        const symbol = displayed.dec ? `\x0e${displayed.ch}\x0f` : displayed.ch;
+        return `${symbol}\x1b[8C${descriptions.join(' or ')} (${description})`;
+    }
     if (farlookDescribesHero(x, y) && glyph?.kind === 'monster'
         && glyph.mnum !== undefined) {
         // C do_screen_description() classifies the displayed glyph. With
@@ -4705,26 +4755,28 @@ async function verboseFarlookDescription(x: number, y: number): Promise<string> 
         // C collapses more than four meanings before appending self_lookat().
         const classDescription = symbol === ' ' ? 'can be many things'
             : withIndefiniteArticle(explanation) + (includesHero ? ' or you' : '');
-        return `${symbol}\x1b[8C${classDescription} (${await farlookLocationDescription(x, y)})`;
+        return `${symbol}\x1b[8C${classDescription} (${description})`;
     }
+    if (!glyph) return description;
     const loc = game.level?.at(x, y);
-    if (loc?.typ === CORR)
-        return `#\x1b[8Ccan be many things (corridor)`;
-    if (loc?.typ === STONE)
-        return `\x1b[9Ccan be many things (stone)`;
-    if (loc && IS_WALL(loc.typ)) {
-        const glyph = terrain_glyph(loc, x, y);
-        const symbol = glyph.dec ? `\x0e${glyph.ch}\x0f` : glyph.ch;
-        return `${symbol}\x1b[8Cthe interior of a monster or a wall (wall)`;
+    const appearance = loc?.disp_glyph
+        ? { ch: loc.disp_ch, dec: loc.disp_decgfx }
+        : loc?.remembered_glyph;
+    if (!appearance) return description;
+    const symbol = appearance.dec ? `\x0e${appearance.ch}\x0f` : appearance.ch;
+    if (glyph.kind === 'unexplored' || glyph.kind === 'nothing'
+        || glyph.kind === 'terrain' && ['stone', 'corridor', 'lit corridor'].includes(glyph.terrainName)) {
+        return `${symbol}\x1b[8Ccan be many things (${description})`;
     }
-    if (loc?.typ === ROOM) {
-        const glyph = terrain_glyph(loc, x, y);
-        if (glyph.dec && glyph.ch === '~') {
+    if (glyph.kind === 'terrain' && glyph.terrainName === 'wall')
+        return `${symbol}\x1b[8Cthe interior of a monster or a wall (${description})`;
+    if (glyph.kind === 'terrain' && glyph.terrainName === 'floor of a room') {
+        if (appearance.dec && appearance.ch === '~') {
             return '\x0e~\x0f\x1b[8Ca doorway or the floor of a room'
-                + ' or the dark part of a room or ice (floor of a room)';
+                + ` or the dark part of a room or ice (${description})`;
         }
     }
-    return farlookLocationDescription(x, y);
+    return description;
 }
 
 // C refs: cmd.c dotravel(), getpos.c getpos(), hack.c handle_tip(), and
@@ -4791,41 +4843,54 @@ async function dotravel(): Promise<void> {
 }
 
 // C refs: pager.c:dowhatis(), getpos.c:getpos(), pager.c:do_screen_description().
-// Quick far-look is a zero-time modal command.  It shares getpos's cached
-// cursor with travel, paints a short automatic description after movement,
-// then restores the gameplay cursor while showing the verbose selection.
+// Farlook spends no game time. Ordinary look retains its cursor between
+// selections; quick look returns after describing one selection.
 async function doFarlook(quick = true): Promise<void> {
-    const verbose = !!game.flags.verbose && !quick;
-    await plineWithContinuation(verbose
-        ? 'Please move the cursor to a monster, object or location.'
-        : 'Pick a monster, object or location.');
-    const firstUse = shouldShowGetposTip();
-    if (firstUse) await showGetposTip();
-    if (verbose) {
-        const helpKey = game.commandBindings.specialKey('getpos.help');
-        if (helpKey === undefined) throw new Error('Map selection requires a getpos.help binding');
-        await plineWithContinuation(`(For instructions type a '${visibleCommandKey(helpKey)}')`);
-    }
-    if (firstUse) await plineWithContinuation('Move cursor to a monster, object or location:');
+    let verbose = !!game.flags.verbose && !quick;
+    let position = { x: game.u.ux, y: game.u.uy };
+    for (;;) {
+        await plineWithContinuation(verbose
+            ? 'Please move the cursor to a monster, object or location.'
+            : 'Pick a monster, object or location.');
+        const firstUse = shouldShowGetposTip();
+        if (firstUse) await showGetposTip();
+        if (verbose) {
+            const helpKey = game.commandBindings.specialKey('getpos.help');
+            if (helpKey === undefined) throw new Error('Map selection requires a getpos.help binding');
+            await plineWithContinuation(`(For instructions type a '${visibleCommandKey(helpKey)}')`);
+        }
+        if (firstUse) await plineWithContinuation('Move cursor to a monster, object or location:');
 
-    const cursor = await selectMapPosition({
-        start: game._travelTarget
-            ? { ...game._travelTarget } : { x: game.u.ux, y: game.u.uy },
-        prompt: game._pending_message || game._retained_message,
-        goal: 'a monster, object or location',
-        describe: farlookLocationDescription,
-    });
-    if (!cursor) {
-        game.context.move = 0;
-        return;
+        const cursor = await selectMapPosition({
+            start: position,
+            prompt: game._pending_message || game._retained_message,
+            goal: 'a monster, object or location',
+            describe: farlookLocationDescription,
+        });
+        if (!cursor) break;
+        position = { x: cursor.x, y: cursor.y };
+        verbose = false;
+        // putmixed() returns the description to WIN_MESSAGE. A later
+        // checkfile() question or the next picker acknowledges that prose.
+        game._pending_message = '';
+        game._retained_message = '';
+        const description = await farlookLocationDescription(cursor.x, cursor.y);
+        await plineWithContinuation(verboseFarlookDescription(cursor.x, cursor.y, description));
+        if (cursor.pickType !== LOOK_QUICK && cursor.pickType !== LOOK_ONCE
+            && (cursor.pickType === LOOK_VERBOSE || !quick && game.flags.help !== false))
+            await offerFarlookInformation(description, cursor.pickType === LOOK_VERBOSE);
+        if (quick || cursor.pickType === LOOK_ONCE) break;
     }
-    // getpos has already handed its short automatic label back to the
-    // message window.  pager.c then uses putmixed(WIN_MESSAGE), whose long
-    // description wraps and calls tty more() before do_look() can return.
-    game._pending_message = '';
-    game._retained_message = '';
-    await plineWithContinuation(await verboseFarlookDescription(cursor.x, cursor.y));
     game.context.move = 0;
+}
+
+async function offerFarlookInformation(description: string, withoutAsking: boolean): Promise<void> {
+    // do_look() passes firstmatch with a null monster type. The selected
+    // description retains given names for checkfile()'s alternate lookup.
+    for (const match of encyclopediaMatches(description)) {
+        if (withoutAsking || await promptYesNo(`More info about "${match.name}"?`, 'n') === 'y')
+            await showDisclosureOverlay(match.entry.lines, { restoreUnderlay: true });
+    }
 }
 
 async function restoreHelpMap(): Promise<void> {
@@ -4877,6 +4942,23 @@ async function dowhatis(): Promise<void> {
         const item = game.inventory.find(item => item.invlet === String.fromCharCode(letter));
         if (item) await showEncyclopediaInformation(singularObjectName(item));
         else if (queuedLetter !== undefined) clearCommandKeys();
+    } else if (choice === '?') {
+        const typed = await getLine('Specify what? (type the word)', ch => ch >= ' ');
+        const name = typed === ' ' ? typed : typed?.trim().replace(/\s+/g, ' ');
+        if (name && name.length > 1) await showEncyclopediaInformation(name);
+        else if (name) {
+            const result = typedSymbolDescription(name, {
+                includeHero: !game.flags.showrace && !heroIsPolymorphed(game)
+                    && !!game.urace && game.urace.name !== 'human' && game.urace.name !== 'elf',
+                waterLevel: Is_waterlevel(game.u.uz),
+                inHell: In_hell(game.u.uz),
+                blind: heroIsBlind(game),
+            });
+            await plineWithContinuation(result.count
+                ? `${name}        ${result.text}` : "I've never heard of such things.");
+            if (result.count === 1 && game.flags.help !== false)
+                await offerFarlookInformation(result.firstMatch, false);
+        }
     }
     game.context.move = 0;
 }

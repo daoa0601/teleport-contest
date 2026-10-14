@@ -581,6 +581,10 @@ void test('holding a rejecting artifact uses its real blast and leaves it on the
     freshLight({ hero: { uhp: 200, uhpmax: 200, ualign: { type: -1, record: 0 } } });
     requirePlayingGame(game);
     const sword = await artifactObject('Excalibur', { where: 'free' });
+    installPagerInput(resetInputState(), {
+        expected: /You are blasted by the long sword named Excalibur's power!|The long sword named Excalibur evades your grasp!/,
+        limit: 2,
+    });
     const held = await holdAnotherObject(sword, { dropMessage: 'You drop the sword!' });
     assert.equal(held.heroDied, false);
     assert.equal(held.object, sword);

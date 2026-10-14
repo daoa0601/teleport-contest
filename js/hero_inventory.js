@@ -3,6 +3,7 @@
 import { artifactById, artifactByName } from './artifacts.js';
 import { recordAchievement } from './achievements.js';
 import { deactivateArtifactProperty } from './artifact_invoke.js';
+import { setCarriedArtifactProperties } from './artifact_properties.js';
 import { plineWithContinuation } from './display.js';
 import { game, requireLiveGame } from './gstate.js';
 import { recordGameLogEvent } from './gamelog.js';
@@ -114,6 +115,7 @@ export async function finishInventoryAddition(object, state = game) {
     if (object.oclass === COIN_CLASS)
         state.context.botl = true;
     updateCarriedFlags(object, true, state);
+    await setCarriedArtifactProperties(object, true, state);
     await reactToSeenInventoryObject(object, state);
 }
 // C addinv_core2(): the object is already linked, including after a merge.
@@ -152,6 +154,7 @@ export async function finishInventoryRemoval(object, state = game) {
         return;
     }
     updateCarriedFlags(object, false, state);
+    await setCarriedArtifactProperties(object, false, state);
     const artifact = artifactById(object.oartifact, state);
     if (artifact) {
         await deactivateArtifactProperty(object, artifact, {

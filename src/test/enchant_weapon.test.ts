@@ -449,7 +449,7 @@ void test('a tooth transformation does not include a user-supplied individual na
 void test('evaporating an invoked quest weapon ends its power and carried status', async () => {
     let destroyed = 0;
     for (let seed = 1; seed <= 12; seed++) {
-        freshObjectRoom({ role: 'caveman' });
+        freshObjectRoom({ role: 'caveman', hero: { ualign: { type: 1, record: 10 } } });
         requireFixtureGame(game);
         const artifact = artifactByName('The Sceptre of Might');
         assert.ok(artifact !== null && artifact !== undefined);
