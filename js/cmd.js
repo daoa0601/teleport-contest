@@ -1,5 +1,6 @@
 import { autokey, autoUnlockFlags, continuePicking, pickLock } from './lock_pick.js';
 import { resetPick } from './lock_context.js';
+import { petRefusesHeroSwap } from './hero_pet_displacement.js';
 import { AUTOUNLOCK_APPLY_KEY, AUTOUNLOCK_UNTRAP } from './const.js';
 import { findDrawbridgeAt } from './dbridge.js';
 import { doorObstructed } from './door_magic.js';
@@ -7437,10 +7438,7 @@ async function domoveCore(dx, dy, explicitAttempt) {
             await moveSteedWithHero();
             // C drag_ball() can pull the hero back before the swap check.
             // A refused swap still completes ball placement and its delay.
-            if (monster.mpeaceful && (!goodPosition(oldx, oldy, { kind: 'monster', monster }, { state: game })
-                || game.level.traps.some(trap => trap.tx === oldx && trap.ty === oldy))) {
-                const subjectName = monsterName(monster, { state: game, article: 'your', capitalized: true });
-                await plineWithContinuation(`You stop.  ${subjectName} doesn't want to swap places.`);
+            if (await petRefusesHeroSwap(monster, game)) {
                 u.ux = oldx;
                 u.uy = oldy;
                 if (u.usteed) {
