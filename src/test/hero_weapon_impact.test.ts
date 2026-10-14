@@ -5,13 +5,14 @@ import {
     P_ISRESTRICTED, P_LANCE, P_TWO_WEAPON_COMBAT, STONE,
 } from '../js/const.js';
 import { rhack } from '../js/cmd.js';
+import { initializePet } from '../js/dog.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { gameLogEvents } from '../js/gamelog.js';
 import { rollHeroJoust, resolveHeroJoust, tryHeroPuddingSplit } from '../js/hero_weapon_impact.js';
 import { resetInputState } from '../js/input.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { placeMonsterAt } from '../js/monster_location.js';
-import { DAGGER, GOLD_PIECE, OBJECT_NAMES } from '../js/object_data.js';
+import { DAGGER, GOLD_PIECE, OBJECT_NAMES, POT_ACID } from '../js/object_data.js';
 import { objectMaterial } from '../js/object_material.js';
 import { initRng } from '../js/rng.js';
 import { setPrimaryWeapon, setSecondaryWeapon, setTwoWeaponCombat } from '../js/weapon_slots.js';
@@ -175,6 +176,42 @@ void test('drowning during a joust finishes and credits death before the pending
     const firstHit = events.findIndex(text => text.includes('wielded weapon'));
     const firstKill = events.findIndex(text => text.includes('killed for the first time'));
     assert.ok(firstHit >= 0 && firstKill > firstHit, 'The in-game chronicle should record the hit before the kill.');
+});
+
+void test('jousting an unseen pet into water drops its inventory before announcing grief', async () => {
+    const { level, monster: pet, weapon } = await impactRoom('little dog');
+    initializePet(pet);
+    pet.minvis = true;
+    game.u.uluck = -5;
+    level.requireAt(12, 10).typ = POOL;
+    const acid = await knownObject(POT_ACID);
+    await addObjectToMonsterInventory(pet, acid);
+    const messages: string[] = [];
+    let griefPaged = false;
+    const input = resetInputState();
+    installPagerInput(input, {
+        expected: /joust|drown|potion.*explodes|sad feeling|thunder/,
+        limit: 8,
+    });
+    input.beforeRead = () => {
+        messages.push(game._pending_message);
+        if (game._pending_message.includes('sad feeling')) {
+            griefPaged = true;
+            assert.equal(acid.where, 'gone', 'Grief follows the dropped potion exploding.');
+            assert.equal(pet.minvent.length, 0, 'Grief follows releasing the pet inventory.');
+            assert.equal(level.monsters.includes(pet), false, 'Grief follows removing the pet from the map.');
+        }
+    };
+
+    const result = await resolveHeroJoust(pet, weapon, { damage: 10, joust: 1 });
+
+    assert.equal(result.alreadyKilled, true);
+    assert.equal(griefPaged, true, 'The hero must acknowledge the grief message.');
+    const text = [...messages, game._pending_message].join('\n');
+    const explosion = text.search(/potion.*explodes/);
+    const grief = text.indexOf('You have a sad feeling for a moment, then it passes.');
+    assert.ok(explosion >= 0 && grief > explosion,
+        `The potion must explode before grief is announced: ${text}`);
 });
 
 for (const secondary of [false, true]) {

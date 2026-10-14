@@ -352,9 +352,11 @@ export async function detachDeadMonster(monster, state, random, publish) {
     }
     return false;
 }
-export async function finishMonsterLiquidDeath(monster, { state = game, random = rn2, rollDice = d, leaveCorpse = false, publish = plineWithContinuation, } = {}) {
+export async function finishMonsterLiquidDeath(monster, { state = game, random = rn2, rollDice = d, leaveCorpse = false, sadFeeling = false, publish = plineWithContinuation, } = {}) {
     const x = monster.mx;
     const y = monster.my;
+    if (sadFeeling)
+        await publish('You have a sad feeling for a moment, then it passes.');
     if (await detachDeadMonster(monster, state, random, publish)) {
         return {
             oldx: x, oldy: y, x, y,
@@ -402,7 +404,8 @@ export async function finishMonsterKilled(monster, state, { damageType, cause = 
     const disintegrated = damageType === 'disintegration' || damageType === AD_DGST || burns;
     const death = await resolveMonsterDeath(monster, state, {
         ...options, publish, deathMessage, noCorpse: disintegrated,
-    }, { disintegrated, sadFeeling: !visible && !!monster.mtame });
+        sadFeeling: !visible && !!monster.mtame,
+    }, { disintegrated });
     if (death.survived || death.heroDied)
         return death;
     if (monster.mtame) {
@@ -418,7 +421,7 @@ export async function finishMonsterKilled(monster, state, { damageType, cause = 
 export function finishEnvironmentalMonsterDeath(monster, state, options = {}) {
     return resolveMonsterDeath(monster, state, options);
 }
-async function resolveMonsterDeath(monster, state, { deathMessage = null, noCorpse = false, noRevive = false, zombifyCorpse = false, random = rn2, rollDice = d, publish = plineWithContinuation, }, { disintegrated = false, sadFeeling = false } = {}) {
+async function resolveMonsterDeath(monster, state, { deathMessage = null, sadFeeling = false, noCorpse = false, noRevive = false, zombifyCorpse = false, random = rn2, rollDice = d, publish = plineWithContinuation, }, { disintegrated = false } = {}) {
     requireLiveGame(state);
     const recovery = await preventMonsterDeath(monster, {
         creditedKill: deathMessage,

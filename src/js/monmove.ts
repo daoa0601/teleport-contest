@@ -6474,7 +6474,10 @@ async function knockHeroFromMonster(
         weaponUsed: !!monsterWieldedWeapon(monster),
         finishMonsterDeath: finishDeath,
         finishLiquidDeath: (target: Monster, liquid: MonsterLiquidDeathContext) =>
-            finishDeath(target, { noCorpse: !liquid.leaveCorpse, random: liquid.random }),
+            finishDeath(target, {
+                noCorpse: !liquid.leaveCorpse, random: liquid.random,
+                sadFeeling: liquid.sadFeeling,
+            }),
     });
 }
 

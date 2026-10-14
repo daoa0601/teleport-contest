@@ -108,7 +108,7 @@ export async function finishHeroMonsterKill(monster, x, y, options = {}) {
     const outcome = await finishHeroMonsterKillOutcome(monster, x, y, options);
     return outcome.killed;
 }
-export async function finishHeroMonsterKillOutcome(monster, x, y, { hallucinating = heroIsHallucinating(game), showKillMessage = true, deathContext = null, noCorpse = false, recordConduct = true, zombifyCorpse = false, noRevive = false, petrified = false, publish = plineWithContinuation, } = {}) {
+export async function finishHeroMonsterKillOutcome(monster, x, y, { hallucinating = heroIsHallucinating(game), showKillMessage = true, deathContext = null, noCorpse = false, recordConduct = true, zombifyCorpse = false, noRevive = false, petrified = false, sadFeeling = false, publish = plineWithContinuation, } = {}) {
     requirePlayingGame(game);
     const wasInside = (game.u.uswallow && game.u.ustuck === monster)
         || deathContext?.kind === 'swallowed-projectile'
@@ -159,6 +159,9 @@ export async function finishHeroMonsterKillOutcome(monster, x, y, { hallucinatin
     const completedDeath = 'completedDeath' in recovery ? recovery.completedDeath : null;
     if (!completedDeath && await detachDeadMonster(monster, game, rn2, publish))
         return { killed: true, heroDied: true };
+    // xkilled() owns this message after mondead() has released the inventory.
+    if (sadFeeling)
+        await publish('You have a sad feeling for a moment, then it passes.');
     const levelAllowsDeathDrops = !petrified && !suppressRemains
         && levelAllowsMonsterDeathDrops(monster, game, rn2);
     const squareAllowsDeathObjects = monsterDeathSquareAllowsObjects(x, y, game);
@@ -293,9 +296,9 @@ export async function finishHeroMonsterKillOutcome(monster, x, y, { hallucinatin
 }
 // Drowning caused by the hero uses xkilled() without a second kill line.
 // Rust and fire-resistant scorching retain mon.c's environmental death owner.
-export async function finishHeroLiquidMonsterDeath(monster, { leaveCorpse = false, hallucinating = heroIsHallucinating(game), cause, } = {}) {
+export async function finishHeroLiquidMonsterDeath(monster, { leaveCorpse = false, hallucinating = heroIsHallucinating(game), cause, sadFeeling = false, publish = plineWithContinuation, } = {}) {
     if (cause === 'rust' || cause === 'lava-scorch') {
-        const death = await finishMonsterLiquidDeath(monster, { leaveCorpse });
+        const death = await finishMonsterLiquidDeath(monster, { leaveCorpse, sadFeeling, publish });
         return { ...death, heroDied: !!death.heroDied };
     }
     const x = monster.mx;
@@ -304,6 +307,8 @@ export async function finishHeroLiquidMonsterDeath(monster, { leaveCorpse = fals
         hallucinating,
         showKillMessage: false,
         noCorpse: !leaveCorpse,
+        sadFeeling,
+        publish,
     });
     return {
         oldx: x,

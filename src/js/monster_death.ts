@@ -62,6 +62,7 @@ import type { MessagePublisher } from './display.js';
 
 export interface MonsterDeathOptions {
     deathMessage?: string | null;
+    sadFeeling?: boolean;
     noCorpse?: boolean;
     noRevive?: boolean;
     zombifyCorpse?: boolean;
@@ -470,13 +471,16 @@ export async function finishMonsterLiquidDeath(
         random = rn2,
         rollDice = d,
         leaveCorpse = false,
+        sadFeeling = false,
         publish = plineWithContinuation,
     }: { state?: GameState; random?: (limit: number) => number;
         rollDice?: (count: number, sides: number) => number;
-        leaveCorpse?: boolean; publish?: MessagePublisher } = {},
+        leaveCorpse?: boolean; sadFeeling?: boolean; publish?: MessagePublisher } = {},
 ): Promise<MonsterLiquidDeathResult> {
     const x = monster.mx;
     const y = monster.my;
+    if (sadFeeling)
+        await publish('You have a sad feeling for a moment, then it passes.');
     if (await detachDeadMonster(monster, state, random, publish)) {
         return {
             oldx: x, oldy: y, x, y,
@@ -530,7 +534,8 @@ export async function finishMonsterKilled(
     const disintegrated = damageType === 'disintegration' || damageType === AD_DGST || burns;
     const death = await resolveMonsterDeath(monster, state, {
         ...options, publish, deathMessage, noCorpse: disintegrated,
-    }, { disintegrated, sadFeeling: !visible && !!monster.mtame });
+        sadFeeling: !visible && !!monster.mtame,
+    }, { disintegrated });
     if (death.survived || death.heroDied) return death;
     if (monster.mtame) {
         const epitaph = burns ? 'roast'
@@ -552,6 +557,7 @@ export function finishEnvironmentalMonsterDeath(
 async function resolveMonsterDeath(
     monster: Monster, state: GameState, {
         deathMessage = null,
+        sadFeeling = false,
         noCorpse = false,
         noRevive = false,
         zombifyCorpse = false,
@@ -559,8 +565,8 @@ async function resolveMonsterDeath(
         rollDice = d,
         publish = plineWithContinuation,
     }: MonsterDeathOptions,
-    { disintegrated = false, sadFeeling = false }: {
-        disintegrated?: boolean; sadFeeling?: boolean;
+    { disintegrated = false }: {
+        disintegrated?: boolean;
     } = {},
 ): Promise<MonsterDeathResult> {
     requireLiveGame(state);

@@ -10,7 +10,7 @@ import { flush_screen } from '../js/display.js';
 import { resetInputState } from '../js/input.js';
 import { resolveMonsterLiquid } from '../js/mon.js';
 import { finishMonsterLiquidDeath } from '../js/monster_death.js';
-import { AMULET_OF_LIFE_SAVING, POT_HEALING } from '../js/object_data.js';
+import { AMULET_OF_LIFE_SAVING, POT_ACID, POT_HEALING } from '../js/object_data.js';
 import { knownObject } from './support/game-objects.js';
 import { installSwallowedHero } from './support/hero-state.js';
 import { createMonsterAt, createSaddledSteed, equipMonsterObject } from './support/monsters.js';
@@ -89,21 +89,34 @@ void test('a drowning invisible monster does not reveal its species', async () =
 
 for (const lava of [false, true]) {
     void test(`an unseen pet lost to ${lava ? 'lava' : 'drowning'} gives the native sad feeling`, async () => {
-        const level = freshObjectRoom();
+        const level = freshObjectRoom({ hero: { uluck: -5 } });
         requirePlayingGame(game);
         const pet = await createMonsterAt('little dog', 12, 10);
         initializePet(pet);
         pet.minvis = true;
         level.requireAt(12, 10).typ = lava ? LAVAPOOL : POOL;
+        const acid = lava ? null : await equipMonsterObject(pet, await knownObject(POT_ACID), 0);
         const messages: string[] = [];
 
         await resolveMonsterLiquid(pet, game, {
             finishDeath: finishMonsterLiquidDeath,
-            announce: async message => messages.push(message),
+            announce: async message => {
+                messages.push(message);
+                if (acid && message.includes('sad feeling')) {
+                    assert.equal(acid.where, 'minvent', 'Monster-turn grief precedes the inventory drop.');
+                    assert.equal(level.monsters.includes(pet), true, 'Monster-turn grief precedes map removal.');
+                }
+            },
         });
 
         assert.equal(pet.dead, true);
-        assert.equal(messages.at(-1), 'You have a sad feeling for a moment, then it passes.');
+        const grief = messages.indexOf('You have a sad feeling for a moment, then it passes.');
+        assert.ok(grief >= 0);
+        if (acid) {
+            assert.equal(acid.where, 'gone');
+            assert.ok(messages.findIndex(message => /potion.*explodes/.test(message)) > grief,
+                `Monster-turn grief precedes the potion explosion: ${messages.join('\n')}`);
+        }
     });
 }
 

@@ -5337,7 +5337,10 @@ async function knockHeroFromMonster(monster, attack, state, random, publish = pl
         hit: attack.hit,
         weaponUsed: !!monsterWieldedWeapon(monster),
         finishMonsterDeath: finishDeath,
-        finishLiquidDeath: (target, liquid) => finishDeath(target, { noCorpse: !liquid.leaveCorpse, random: liquid.random }),
+        finishLiquidDeath: (target, liquid) => finishDeath(target, {
+            noCorpse: !liquid.leaveCorpse, random: liquid.random,
+            sadFeeling: liquid.sadFeeling,
+        }),
     });
 }
 // Continue an ordinary natural hit after its visible hit message has been

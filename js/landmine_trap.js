@@ -65,6 +65,7 @@ async function resolveMineLiquid(monster, state, options) {
         finishDeath: async (victim, death) => options.finishDeath(victim, {
             noCorpse: !death.leaveCorpse,
             random: death.random,
+            sadFeeling: death.sadFeeling,
             publish: options.publish,
         }),
     });

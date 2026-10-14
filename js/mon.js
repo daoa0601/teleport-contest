@@ -200,9 +200,7 @@ export async function resolveMonsterLiquid(monster, state = game, { announce = a
     }
     const sadFeeling = !!monster.mtame && !canSeeMonster(monster);
     const finishFatalLiquid = async (cause, leaveCorpse) => {
-        if (sadFeeling)
-            await announce('You have a sad feeling for a moment, then it passes.');
-        return finishDeath(monster, { state, random, leaveCorpse, cause });
+        return finishDeath(monster, { state, random, leaveCorpse, cause, sadFeeling, publish: announce });
     };
     const waterLevel = levelIsWaterLevel(state);
     const waterWall = location.typ === WATER;

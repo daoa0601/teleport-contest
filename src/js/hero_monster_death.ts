@@ -67,6 +67,7 @@ export interface HeroMonsterKillOptions {
     zombifyCorpse?: boolean;
     noRevive?: boolean;
     petrified?: boolean;
+    sadFeeling?: boolean;
     publish?: MessagePublisher;
 }
 
@@ -79,9 +80,9 @@ export type FinishHeroMonsterDeath = (
     monster: Monster, options?: HeroMonsterKillOptions,
 ) => Promise<HeroMonsterKillOutcome>;
 
-export interface HeroLiquidMonsterDeathOptions {
+export interface HeroLiquidMonsterDeathOptions extends Pick<HeroMonsterKillOptions,
+    'hallucinating' | 'sadFeeling' | 'publish'> {
     leaveCorpse?: boolean;
-    hallucinating?: boolean;
     cause?: MonsterLiquidDeathContext['cause'];
 }
 
@@ -200,6 +201,7 @@ export async function finishHeroMonsterKillOutcome(monster: Monster, x: number, 
     zombifyCorpse = false,
     noRevive = false,
     petrified = false,
+    sadFeeling = false,
     publish = plineWithContinuation,
 }: HeroMonsterKillOptions = {}): Promise<HeroMonsterKillOutcome> {
     requirePlayingGame(game);
@@ -258,6 +260,10 @@ export async function finishHeroMonsterKillOutcome(monster: Monster, x: number, 
     const completedDeath = 'completedDeath' in recovery ? recovery.completedDeath : null;
     if (!completedDeath && await detachDeadMonster(monster, game, rn2, publish))
         return { killed: true, heroDied: true };
+
+    // xkilled() owns this message after mondead() has released the inventory.
+    if (sadFeeling)
+        await publish('You have a sad feeling for a moment, then it passes.');
 
     const levelAllowsDeathDrops = !petrified && !suppressRemains
         && levelAllowsMonsterDeathDrops(monster, game, rn2);
@@ -396,10 +402,12 @@ export async function finishHeroLiquidMonsterDeath(
         leaveCorpse = false,
         hallucinating = heroIsHallucinating(game),
         cause,
+        sadFeeling = false,
+        publish = plineWithContinuation,
     }: HeroLiquidMonsterDeathOptions = {},
 ): Promise<HeroLiquidMonsterDeathOutcome> {
     if (cause === 'rust' || cause === 'lava-scorch') {
-        const death = await finishMonsterLiquidDeath(monster, { leaveCorpse });
+        const death = await finishMonsterLiquidDeath(monster, { leaveCorpse, sadFeeling, publish });
         return { ...death, heroDied: !!death.heroDied };
     }
     const x = monster.mx;
@@ -408,6 +416,8 @@ export async function finishHeroLiquidMonsterDeath(
         hallucinating,
         showKillMessage: false,
         noCorpse: !leaveCorpse,
+        sadFeeling,
+        publish,
     });
     return {
         oldx: x,

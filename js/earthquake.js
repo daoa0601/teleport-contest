@@ -103,13 +103,11 @@ async function flowLiquidIntoChasm(x, y, trap, liquid, monster) {
     }
     newsym(x, y);
 }
-function finishEarthquakeLiquidDeath(monster, { state, random, leaveCorpse, cause }) {
-    if (cause === 'drowning' || cause === 'lava-burning') {
-        return finishHeroLiquidMonsterDeath(monster, { leaveCorpse });
+function finishEarthquakeLiquidDeath(monster, options) {
+    if (options.cause === 'drowning' || options.cause === 'lava-burning') {
+        return finishHeroLiquidMonsterDeath(monster, options);
     }
-    return finishMonsterLiquidDeath(monster, {
-        state, random, leaveCorpse,
-    });
+    return finishMonsterLiquidDeath(monster, options);
 }
 function heroClingsToCeiling() {
     if (!heroIsPolymorphed(game))

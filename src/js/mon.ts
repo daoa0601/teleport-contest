@@ -56,6 +56,9 @@ export interface MonsterLiquidDeathContext {
     random: (limit: number) => number;
     leaveCorpse: boolean;
     cause: 'rust' | 'drowning' | 'lava-scorch' | 'lava-burning';
+    // mondead() and xkilled() announce grief on opposite sides of cleanup.
+    sadFeeling: boolean;
+    publish: MessagePublisher;
 }
 
 export interface MonsterLiquidOptions<DeathResult = MonsterLiquidDeathResult> {
@@ -276,9 +279,7 @@ export async function resolveMonsterLiquid<DeathResult = MonsterLiquidDeathResul
     }
     const sadFeeling = !!monster.mtame && !canSeeMonster(monster);
     const finishFatalLiquid = async (cause: MonsterLiquidDeathContext['cause'], leaveCorpse: boolean) => {
-        if (sadFeeling)
-            await announce('You have a sad feeling for a moment, then it passes.');
-        return finishDeath(monster, { state, random, leaveCorpse, cause });
+        return finishDeath(monster, { state, random, leaveCorpse, cause, sadFeeling, publish: announce });
     };
 
     const waterLevel = levelIsWaterLevel(state);
