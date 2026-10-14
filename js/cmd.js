@@ -1377,7 +1377,7 @@ async function runCommandHandler(binding, { cannedCommand = null, } = {}) {
         await dozap();
     }
     else if (ch === 'r') {
-        await doread({ gotoLevel });
+        await readCommand();
     }
     else if (ch === 'T' || ch === 'R') {
         await removeWornItem(ch === 'R' ? 'remove' : 'take off');
@@ -1462,6 +1462,11 @@ async function doquaff() {
     if (result.cancelled)
         resetCommandVariables(true);
     game.context.move = result.spentTime && !result.heroDied ? 1 : 0;
+}
+async function readCommand() {
+    const result = await doread({ gotoLevel });
+    if (result.cancelled)
+        resetCommandVariables(true);
 }
 function someGold(amount) {
     const gold = Math.min(0x7fffffff, Math.max(0, Math.trunc(amount ?? 0)));
@@ -2411,7 +2416,7 @@ async function runInventoryAction({ key, item }) {
             return;
         case 'r':
             queueCommandKeys(letter);
-            await doread({ gotoLevel });
+            await readCommand();
             return;
         case 'R':
             queueCommandKeys(letter);

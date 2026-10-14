@@ -33,7 +33,7 @@ export async function doread(options: Omit<ScrollEffectOptions, 'state'> = {}) {
         return finishRead(false);
     }
     const source = await chooseInventoryObject('read', classifyReadableObject, { forcePrompt: true });
-    if (!source) return finishRead(false);
+    if (!source) return finishRead(false, true);
     source.pickup_prev = false;
     const type = source.otyp;
 
@@ -102,8 +102,8 @@ async function announceScroll(source: GameObject, confused: boolean) {
         : `Being confused, you ${silently ? 'misunderstand' : 'mispronounce'} the magic words...`);
 }
 
-function finishRead(spentTime: boolean) {
+function finishRead(spentTime: boolean, cancelled = false) {
     const heroDied = !!game.program_state.gameover;
     game.context.move = Number(spentTime && !heroDied);
-    return { spentTime, heroDied };
+    return { spentTime, heroDied, cancelled };
 }

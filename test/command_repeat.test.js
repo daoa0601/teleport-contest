@@ -4,7 +4,7 @@ import { rhack } from '../js/cmd.js';
 import { A_CON, A_DEX, A_STR, DOOR, D_CLOSED, D_ISOPEN } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { nhgetch } from '../js/input.js';
-import { DAGGER, LOADSTONE, POT_HEALING } from '../js/object_data.js';
+import { DAGGER, LOADSTONE, POT_HEALING, SCR_BLANK_PAPER } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshTurnRoom } from './support/playable-room.js';
 import { startLuaCore } from './support/lua-game.js';
@@ -14,6 +14,31 @@ void test('repeat without a saved command reports why it cannot run', async () =
     await rhack(0);
     assert.equal(game._pending_message, 'There is no command available to repeat.');
     assert.equal(game.context.move, 0);
+});
+for (const command of ['r', '#read\n']) {
+    void test(`cancelling ${JSON.stringify(command)} clears read recall`, async () => {
+        const input = freshTurnRoom();
+        const scroll = await addInventoryObject(SCR_BLANK_PAPER);
+        input.feed(`${command}\x1b`);
+        await rhack(0);
+        input.feed('\x01\x1b');
+        await rhack(0);
+        assert.equal(game._pending_message, 'There is no command available to repeat.');
+        assert.equal(game.context.move, 0);
+        assert.equal(game.inventory.includes(scroll), true);
+        assert.equal(await nhgetch(), 27, 'repeat must not reopen the read prompt');
+    });
+}
+void test('a selected object with nothing to read remains available to repeat', async () => {
+    const input = freshTurnRoom();
+    const dagger = await addInventoryObject(DAGGER);
+    input.feed(`r${dagger.invlet}`);
+    await rhack(0);
+    input.feed('\x01h');
+    await rhack(0);
+    assert.equal(game._pending_message, 'That is a silly thing to read.');
+    assert.equal(game.context.move, 0);
+    assert.equal(await nhgetch(), 'h'.charCodeAt(0), 'repeat reuses the accepted object choice');
 });
 void test('repeat retains the chosen command when its old key is rebound', async () => {
     const input = freshTurnRoom();

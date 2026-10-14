@@ -1525,7 +1525,7 @@ async function runCommandHandler(binding: CommandBinding, {
     } else if (ch === 'z') {
         await dozap();
     } else if (ch === 'r') {
-        await doread({ gotoLevel });
+        await readCommand();
     } else if (ch === 'T' || ch === 'R') {
         await removeWornItem(ch === 'R' ? 'remove' : 'take off');
     } else if (ch === 'A') {
@@ -1588,6 +1588,11 @@ async function doquaff() {
     const result = await quaff();
     if (result.cancelled) resetCommandVariables(true);
     game.context.move = result.spentTime && !result.heroDied ? 1 : 0;
+}
+
+async function readCommand(): Promise<void> {
+    const result = await doread({ gotoLevel });
+    if (result.cancelled) resetCommandVariables(true);
 }
 
 type SpecialLayoutEvent = SpecialLevelDescriptor & {
@@ -2542,7 +2547,7 @@ async function runInventoryAction({ key, item }: InventoryAction): Promise<void>
         await doquaff();
         return;
     case 'Q': queueCommandKeys(letter); await doready(); return;
-    case 'r': queueCommandKeys(letter); await doread({ gotoLevel }); return;
+    case 'r': queueCommandKeys(letter); await readCommand(); return;
     case 'R':
         queueCommandKeys(letter);
         if ((item.owornmask ?? 0) & W_ACCESSORY) await removeWornItem('take off', true);
