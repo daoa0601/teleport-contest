@@ -144,7 +144,7 @@ export async function curseObject(object, { state = game } = {}) {
 // C wield.c:drop_uswapwep() and do.c:dropx(): announce before extraction,
 // then handle shipping and altar contact before placing the dropped weapon.
 async function dropCursedAlternateWeapon(object, state) {
-    await plineWithContinuation(`Your left ${heroHandName(state)} spasms and drops ${ownedObjectName(object, state, { capitalized: false })}!`);
+    await plineWithContinuation(`Your left ${heroHandName(state)} spasms and drops ${ownedObjectName(object, state, { capitalized: false, includeQuantity: true })}!`);
     await freeInventoryObject(object, state);
     if (!state.u.uswallow) {
         const initialized = requireInitializedGame(state);

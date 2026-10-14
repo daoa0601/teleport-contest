@@ -148,7 +148,7 @@ export async function curseObject(
 // then handle shipping and altar contact before placing the dropped weapon.
 async function dropCursedAlternateWeapon(object: GameObject, state: GameState): Promise<void> {
     await plineWithContinuation(`Your left ${heroHandName(state)} spasms and drops ${
-        ownedObjectName(object, state, { capitalized: false })}!`);
+        ownedObjectName(object, state, { capitalized: false, includeQuantity: true })}!`);
     await freeInventoryObject(object, state);
     if (!state.u.uswallow) {
         const initialized = requireInitializedGame(state);
