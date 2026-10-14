@@ -1,3 +1,7 @@
+import { findDrawbridgeAt } from './dbridge.js';
+import { doorObstructed } from './door_magic.js';
+import { DBWALL, DRAWBRIDGE_DOWN } from './const.js';
+import { updateLastSeenTerrain } from './display.js';
 import type { DipTarget } from './dip_water.js';
 import { dipFountainSword } from './fountain_sword.js';
 import { washHands } from './dip_water.js';
@@ -5726,20 +5730,56 @@ async function doclose(): Promise<void> {
     }
     game.context.move = game.u.confused || game.u.confusionTurns
         || game.u.stunned || game.u.stunnedTurns ? 1 : 0;
-    if (loc?.typ !== DOOR) await pline('You see no door there.');
-    else if (loc.doormask === D_NODOOR)
-        await pline('This doorway has no door.');
-    else if (loc.doormask === D_BROKEN)
-        await pline('This door is broken.');
-    else if (loc.doormask & (D_CLOSED | D_LOCKED))
-        await pline('This door is already closed.');
-    else {
-        loc.doormask = D_CLOSED;
-        newsym(x, y);
-        await pline('The door closes.');
-        game.context.move = 1;
+    if (loc && heroIsBlind(game)) {
+        const previousGlyph = glyphAt(x, y)?.glyph;
+        const previousTerrain = loc.lastseentyp;
+        updateLastSeenTerrain(x, y);
+        feel_location(x, y);
+        if (glyphAt(x, y)?.glyph !== previousGlyph || loc.lastseentyp !== previousTerrain)
+            game.context.move = 1;
+    }
+    const portcullis = loc && (loc.typ === DOOR || loc.typ === DBWALL)
+        && findDrawbridgeAt(x, y) !== null;
+    if (portcullis || loc?.typ !== DOOR) {
+        if (loc?.typ === DBWALL || loc?.typ === DRAWBRIDGE_UP)
+            await pline('The drawbridge is already closed.');
+        else if (portcullis || loc?.typ === DRAWBRIDGE_DOWN)
+            await pline('There is no obvious way to close the drawbridge.');
+        else await pline(`You ${heroIsBlind(game) ? 'feel' : 'see'} no door there.`);
         return;
     }
+    if (loc.doormask === D_NODOOR) {
+        await pline('This doorway has no door.');
+        return;
+    }
+    requirePlayingGame(game);
+    if (await doorObstructed(x, y, false, game)) return;
+    if (loc.doormask === D_BROKEN) {
+        await pline('This door is broken.');
+        return;
+    }
+    if (loc.doormask & (D_CLOSED | D_LOCKED)) {
+        await pline('This door is already closed.');
+        return;
+    }
+    if (loc.doormask === D_ISOPEN) {
+        if (heroIsVerySmall(game) && !game.u.usteed) {
+            await pline("You're too small to push the door closed.");
+            return;
+        }
+        const effort = Math.trunc((currentStrength()
+            + currentAttribute(A_DEX) + currentAttribute(A_CON)) / 3);
+        if (game.u.usteed || rn2(25) < effort) {
+            await pline('The door closes.');
+            loc.doormask = D_CLOSED;
+            feel_newsym(x, y);
+            vision_note_blocker_change(x, y);
+        } else {
+            await exerciseAttribute(A_STR, true);
+            await pline('The door resists!');
+        }
+    }
+    game.context.move = 1;
 }
 
 // C refs: lock.c doopen(); cmd.c get_adjacent_loc()/getdir().  Direction

@@ -51,7 +51,7 @@ export async function changeDoorByMagic(source: GameObject, x: number, y: number
             const visible = cansee(x, y);
             if (visible) await plineWithContinuation('A cloud of dust springs up in the older, more primitive doorway.');
             else await publishHeard('a swoosh.', state);
-            if (await obstructed(x, y, quietly, state)) {
+            if (await doorObstructed(x, y, quietly, state)) {
                 if (visible) await plineWithContinuation('The cloud quickly dissipates.');
                 return false;
             }
@@ -62,7 +62,7 @@ export async function changeDoorByMagic(source: GameObject, x: number, y: number
             newsym(x, y);
             return true;
         }
-        if (await obstructed(x, y, quietly, state)) return false;
+        if (await doorObstructed(x, y, quietly, state)) return false;
         if (state.level.traps.some(trap => trap.tx === x && trap.ty === y)) {
             await plineWithContinuation('A cloud of dust springs up in the doorway, but quickly dissipates.');
             return false;
@@ -128,7 +128,7 @@ export async function changeDoorByMagic(source: GameObject, x: number, y: number
     return changed;
 }
 
-async function obstructed(x: number, y: number, quietly: boolean, state: PlayingGameState) {
+export async function doorObstructed(x: number, y: number, quietly: boolean, state: PlayingGameState) {
     const occupant = monsterAtPosition(state.level, x, y);
     if (occupant && M_AP_TYPE(occupant) !== M_AP_FURNITURE) {
         if (M_AP_TYPE(occupant) === M_AP_OBJECT) {
