@@ -110,6 +110,7 @@ import { nextObjectId } from './ident.js';
 import { clearCommandKeys, nhgetch, queueCommandKeys, takeCommandKey } from './input.js';
 import { readCommandInput } from './command_input.js';
 import { clearRepeatCommand, rememberCommand, takeRepeatCommand } from './command_repeat.js';
+import { terrainCommand } from './terrain_view.js';
 import { selectTravelMenuPosition } from './getpos.js';
 import { showKeyBindings, whatDoesCommand } from './command_help.js';
 import { availableExtendedCommands, completeExtendedCommand, extendedCommandMenu, showExtendedCommandList } from './extended_commands.js';
@@ -1679,103 +1680,8 @@ export async function travelStairs(up) {
         game.context.move = 1;
     return changed !== false;
 }
-function captureMapDisplay() {
-    const snapshot = [];
-    for (let y = 0; y < ROWNO; y++) {
-        for (let x = 1; x < COLNO; x++) {
-            const loc = game.level?.at(x, y);
-            if (!loc)
-                continue;
-            snapshot.push([loc, loc.disp_ch, loc.disp_color,
-                loc.disp_decgfx, loc.disp_attr]);
-        }
-    }
-    return snapshot;
-}
-function restoreMapDisplay(snapshot) {
-    for (const [loc, ch, color, decgfx, attr] of snapshot) {
-        loc.disp_ch = ch;
-        loc.disp_color = color;
-        loc.disp_decgfx = decgfx;
-        loc.disp_attr = attr;
-    }
-}
-function showKnownTerrain() {
-    for (let y = 0; y < ROWNO; y++) {
-        for (let x = 1; x < COLNO; x++) {
-            const loc = game.level?.at(x, y);
-            if (!loc || (!loc.remembered_glyph
-                && (!loc.disp_ch || loc.disp_ch === ' ')))
-                continue;
-            const glyph = terrain_glyph(loc, x, y);
-            loc.disp_ch = glyph.ch;
-            // detect.c:reveal_terrain_getglyph() normalizes S_litcorr to
-            // S_corr even when the actual corridor is lit.
-            loc.disp_color = glyph.glyph === cmapToGlyph(CmapSymbol.litcorr)
-                ? NO_COLOR : glyph.color;
-            loc.disp_decgfx = glyph.dec;
-            loc.disp_attr = 0;
-        }
-    }
-}
 async function doTerrainOverview() {
-    const display = game.nhDisplay;
-    if (!display)
-        throw new Error('This command requires an initialized display.');
-    game._pending_message = '';
-    const left = 28;
-    // Short tty menus overlay only their right-side rectangle.  The message
-    // row is cleared globally, but lower rows retain map cells west of the
-    // one-column separator at left - 1.
-    display.clearRow(0);
-    for (let row = 1; row <= 5; row++) {
-        for (let col = left - 1; col < display.cols; col++)
-            display.setCell(col, row, ' ', NO_COLOR, 0);
-    }
-    putCommandLine(left, 0, 'View which?', ATR_INVERSE);
-    putCommandLine(left, 2, 'a * known map without monsters, objects, and traps');
-    putCommandLine(left, 3, 'b - known map without monsters and objects');
-    putCommandLine(left, 4, 'c - known map without monsters');
-    putCommandLine(left, 5, '(end)');
-    display.setCursor(34, 5);
-    const selection = await nhgetch();
-    if (selection === 27) {
-        game.context.move = 0;
-        return;
-    }
-    const displaySnapshot = captureMapDisplay();
-    showKnownTerrain();
-    const firstUse = shouldShowGetposTip();
-    if (firstUse) {
-        await pline('Showing known terrain only...');
-        await showGetposTip();
-    }
-    const cursor = { x: game.u.ux, y: game.u.uy };
-    let browseMessage = firstUse
-        ? "(For instructions type a '?')  Move cursor to anything of interest:"
-        : "Showing known terrain only...  (For instructions type a '?')";
-    for (;;) {
-        game._pending_message = browseMessage;
-        await flush_screen(1);
-        display.setCursor(cursor.x - 1, cursor.y + 1);
-        const browseKey = await nhgetch();
-        if (browseKey === 27)
-            break;
-        const delta = farlookDelta(browseKey);
-        if (delta) {
-            moveGetposCursor(cursor, delta.dx, delta.dy);
-            browseMessage = await farlookLocationDescription(cursor.x, cursor.y);
-            continue;
-        }
-        await plineWithContinuation('Done.');
-        break;
-    }
-    // C map_redisplay() reaches cls(), which displays WIN_MESSAGE before
-    // redrawing the map. Bare more() would leave an acknowledged Done line.
-    await displayMessageWindow();
-    restoreMapDisplay(displaySnapshot);
-    await flush_screen(1);
-    game.context.move = 0;
+    await terrainCommand(farlookLocationDescription);
 }
 async function kickOuch(x, y, objectName = '') {
     await plineWithContinuation('Ouch!  That hurts!');
