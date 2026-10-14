@@ -6,7 +6,8 @@ import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { CORPSE, POT_HEALING, STATUE, STETHOSCOPE } from '../js/object_data.js';
 import { learnObjectType } from '../js/object_knowledge.js';
-import { applyInventoryObject } from './support/commands.js';
+import { initRng } from '../js/rng.js';
+import { applyInventoryObject, runExtendedCommand } from './support/commands.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshPlayableRoom } from './support/playable-room.js';
@@ -117,5 +118,17 @@ void test('a stethoscope at a seen pit edge cannot reach the bottom of the pit',
 
     assert.equal(game._pending_message, "You can't reach the bottom of the pit.");
     assert.equal(game.u.utrap ?? 0, 0);
+    assert.equal(game.context.move, 0);
+});
+
+void test('a visible monster receives a fresh hallucinated identity in its stethoscope diagnosis', async () => {
+    freshPlayableRoom({ hero: { hallucination: true, hallucinationTurns: 12 } });
+    await createMonsterAt('newt', game.u.ux + 1, game.u.uy);
+    const stethoscope = await addInventoryObject(STETHOSCOPE);
+    initRng(1);
+
+    await runExtendedCommand('apply', `${stethoscope.invlet}l`);
+
+    assert.match(game._pending_message, /^Status of the flaming sphere \(/);
     assert.equal(game.context.move, 0);
 });

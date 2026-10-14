@@ -116,9 +116,11 @@ export async function useStethoscope(object: GameObject): Promise<boolean> {
 }
 
 async function diagnoseMonster(monster: Monster, x: number, y: number) {
-    const named = () => monsterName(monster, { article: 'a', suppressIt: true, suppressInvisible: true });
+    // C formats this even when only the later status line is printed.
+    // During hallucination each formatting selects a new perceived identity.
+    const name = monsterName(monster, { article: 'a', suppressIt: true, suppressInvisible: true });
     if (monster.mundetected) {
-        if (!canSpotMonster(monster)) await pline(`There is ${named()} hidden there.`);
+        if (!canSpotMonster(monster)) await pline(`There is ${name} hidden there.`);
         monster.mundetected = 0;
         newsym(monster.mx, monster.my);
     } else if (monster.mappearance) {
@@ -132,10 +134,9 @@ async function diagnoseMonster(monster: Monster, x: number, y: number) {
             plural = /boots|gloves/.test(what) || appearance === LENSES;
         } else if (type === M_AP_MONSTER) what = monsterTypeName(appearance, monster.female);
         else if (type === M_AP_FURNITURE) what = MAP_SYMBOLS[appearance]?.name ?? 'thing';
-        const real = named();
         revealMonsterAppearance(monster);
-        await pline(`${plural ? 'Those' : 'That'} ${what} ${plural ? 'are' : 'is'} really ${real}.`);
-    } else if (game.flags.verbose && !canSpotMonster(monster)) await pline(`There is ${named()} there.`);
+        await pline(`${plural ? 'Those' : 'That'} ${what} ${plural ? 'are' : 'is'} really ${name}.`);
+    } else if (game.flags.verbose && !canSpotMonster(monster)) await pline(`There is ${name} there.`);
     await pline(await monsterStatusLine(monster, { x, y }));
     if (!canSpotMonster(monster)) map_invisible(x, y);
 }

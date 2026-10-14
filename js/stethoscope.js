@@ -127,10 +127,12 @@ export async function useStethoscope(object) {
     return spentTime || floor.spentTime;
 }
 async function diagnoseMonster(monster, x, y) {
-    const named = () => monsterName(monster, { article: 'a', suppressIt: true, suppressInvisible: true });
+    // C formats this even when only the later status line is printed.
+    // During hallucination each formatting selects a new perceived identity.
+    const name = monsterName(monster, { article: 'a', suppressIt: true, suppressInvisible: true });
     if (monster.mundetected) {
         if (!canSpotMonster(monster))
-            await pline(`There is ${named()} hidden there.`);
+            await pline(`There is ${name} hidden there.`);
         monster.mundetected = 0;
         newsym(monster.mx, monster.my);
     }
@@ -148,12 +150,11 @@ async function diagnoseMonster(monster, x, y) {
             what = monsterTypeName(appearance, monster.female);
         else if (type === M_AP_FURNITURE)
             what = MAP_SYMBOLS[appearance]?.name ?? 'thing';
-        const real = named();
         revealMonsterAppearance(monster);
-        await pline(`${plural ? 'Those' : 'That'} ${what} ${plural ? 'are' : 'is'} really ${real}.`);
+        await pline(`${plural ? 'Those' : 'That'} ${what} ${plural ? 'are' : 'is'} really ${name}.`);
     }
     else if (game.flags.verbose && !canSpotMonster(monster))
-        await pline(`There is ${named()} there.`);
+        await pline(`There is ${name} there.`);
     await pline(await monsterStatusLine(monster, { x, y }));
     if (!canSpotMonster(monster))
         map_invisible(x, y);
