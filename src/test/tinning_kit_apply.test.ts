@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { HOMEMADE_TIN, POOL } from '../js/const.js';
 import { game } from '../js/gstate.js';
+import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { CORPSE, OBJECT_NAMES, TIN, TINNING_KIT } from '../js/object_data.js';
 import { grantIntrinsicProperty, grantWornProperty } from '../js/properties.js';
@@ -40,6 +41,28 @@ void test('a tinning kit offers a corpse underfoot and uses one from the floor s
     assert.ok(game.inventory.some(object => object.otyp === TIN));
     assert.equal(kit.spe, 1);
 });
+
+for (const blind of [false, true]) {
+    void test(`the floor tinning prompt reveals a corpse's blessing to a ${blind ? 'blind' : 'sighted'} priest`, async () => {
+        freshPlayableRoom({ role: 'priest', hero: { permaBlind: blind } });
+        const kit = await addInventoryObject(TINNING_KIT, { spe: 2 });
+        const corpse = await floorObject(CORPSE, game.u.ux, game.u.uy, {
+            corpsenm: MONSTER_NAME.indexOf('newt'), blessed: true, bknown: false, dknown: false,
+        });
+        let prompt = '';
+        resetInputState().beforeRead = () => {
+            if (game._pending_message.includes('here; tin')) prompt = game._pending_message;
+        };
+
+        await runExtendedCommand('apply', `${kit.invlet}q`);
+
+        assert.equal(corpse.bknown, true, 'the priest observes beatitude even when declining to tin');
+        assert.equal(corpse.dknown, !blind);
+        assert.match(prompt, /There is a blessed newt corpse here; tin it\?/);
+        assert.equal(corpse.where, 'floor');
+        assert.equal(kit.spe, 2);
+    });
+}
 
 void test('an empty tinning kit takes time without selecting or consuming a corpse', async () => {
     freshPlayableRoom();

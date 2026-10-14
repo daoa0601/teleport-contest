@@ -99,6 +99,7 @@ async function chooseTinningCorpse() {
                 return null;
             }
             const one = corpse.quan === 1;
+            observeObjectForNaming(corpse);
             const answer = await promptChoice(`There ${one ? 'is' : 'are'} ${inventoryItemDescription(corpse)} here; tin ${one ? 'it' : 'one'}?`, ['y', 'n', 'q'], 'n');
             if (answer === 'y')
                 return corpse;
