@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { rhack } from '../js/cmd.js';
-import { NO_MINVENT, WEB } from '../js/const.js';
+import { NO_MINVENT, WATER, WEB } from '../js/const.js';
 import { initializePet } from '../js/dog.js';
 import { flush_screen } from '../js/display.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
@@ -11,6 +11,8 @@ import { installPolymorphedHero } from './support/hero-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { addTrap } from './support/level-state.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { requireScreenRow } from './support/screen.js';
+import { resetInputState } from '../js/input.js';
 
 async function heldHero() {
     freshObjectRoom();
@@ -48,6 +50,26 @@ void test('a tame holder without conflict always lets the hero pull free', async
     assert.equal(game.u.ux, 11);
     assert.equal(game.u.ustuck, null);
     assert.match(await topline(), /You pull free from/);
+});
+
+void test('pulling free stays visible before refusing a step into a wall of water', async () => {
+    const holder = await heldHero();
+    holder.mtame = 10;
+    requirePlayingGame(game);
+    game.flags.tips = false;
+    game.level.requireAt(11, 10).typ = WATER;
+    const messages: string[] = [];
+    resetInputState().display = { async readKey() {
+        messages.push(requireScreenRow(0).map(cell => cell.ch).join('').trimEnd());
+        return 32;
+    } };
+
+    await rhack('l'.charCodeAt(0));
+
+    assert.ok(messages.some(line => /You pull free from.*--More--/.test(line)));
+    assert.match(await topline(), /You avoid stepping into the wall of water\./);
+    assert.equal(game.u.ux, 10);
+    assert.equal(game.u.ustuck, null);
 });
 
 void test('a holder that has moved away no longer restricts movement', async () => {
