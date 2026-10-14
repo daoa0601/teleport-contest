@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { selectMapPosition } from '../js/getpos.js';
-import { FOUNTAIN } from '../js/const.js';
+import { CORR, DOOR, D_NODOOR, FOUNTAIN, VWALL } from '../js/const.js';
 import { rhack } from '../js/cmd.js';
 import { newsym } from '../js/display.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
@@ -26,6 +26,32 @@ void test('getpos can use a menu to choose a shown monster', async () => {
     ]);
     assert.equal(selected?.x, 11);
     assert.equal(selected?.y, 10);
+});
+void test('quick-look menus gather the new area after reversing direction in a doorway', async () => {
+    const level = freshObjectRoom({ flags: { tips: false, verbose: false }, hero: { detectMonsters: true } });
+    for (let y = 6; y <= 14; y++) {
+        level.requireAt(10, y).typ = VWALL;
+        for (let x = 11; x <= 16; x++)
+            level.requireAt(x, y).typ = CORR;
+    }
+    const doorway = level.requireAt(10, 10);
+    doorway.typ = DOOR;
+    doorway.doormask = D_NODOOR;
+    await createMonsterAt('kitten', 11, 10);
+    await createMonsterAt('little dog', 8, 10);
+    newsym(11, 10);
+    newsym(8, 10);
+    game.iflags.getloc_filter = 2;
+    game.iflags.getloc_usemenu = true;
+    const input = resetInputState();
+    input.feed('lm');
+    await answerPrompts(rhack(';'.charCodeAt(0)), input, [
+        { prompt: /Pick a monster in this area[\s\S]*a - kitten/, keys: 'a' },
+        { prompt: /kitten/, keys: 'hm' },
+        { prompt: /Pick a monster in this area[\s\S]*a - peaceful little dog/, keys: 'a' },
+        { prompt: /little dog/, keys: '\x1b' },
+    ]);
+    assert.equal(game.context.move, 0);
 });
 void test('getpos toggles automatic descriptions off and on', async () => {
     freshObjectRoom({ flags: { tips: false, verbose: false } });

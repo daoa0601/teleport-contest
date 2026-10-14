@@ -622,18 +622,14 @@ export async function selectMapPosition({
             const target = getposCycleKind(key, !!isValidLocation);
             if (target) {
                 const kind = target.kind;
-                let cycle = kind === 'valid' ? validLocations() : targetCycles.get(kind);
-                if (!cycle) {
-                    const spots = gatherValidLocations((x, y) =>
-                        (x !== game.u.ux || y !== game.u.uy)
-                        && kind !== 'valid' && matchesGetposCycle(kind, x, y));
-                    cycle = {
-                        spots: [{ x: game.u.ux, y: game.u.uy }, ...spots], index: 0,
-                    };
-                    targetCycles.set(target.kind, cycle);
-                }
+                const gatherTargets = () => gatherValidLocations((x, y) =>
+                    (x !== game.u.ux || y !== game.u.uy)
+                    && (kind === 'valid' ? isValidLocation?.(x, y) ?? false
+                        : matchesGetposCycle(kind, x, y)));
                 if (game.iflags.getloc_usemenu) {
-                    const spots = cycle.spots.slice(1);
+                    // getpos_menu gathers each time; a doorway's area
+                    // follows the direction of the latest cursor movement.
+                    const spots = gatherTargets();
                     if (!spots.length) {
                         const things = { mon: 'any monsters', obj: 'any items', door: 'any doors', unexplored: 'any unexplored areas', all: 'anything interesting', valid: 'any valid locations' };
                         message = `You cannot ${game.iflags.getloc_filter === 1 ? 'see' : 'detect'} ${things[target.kind]}.`;
@@ -643,6 +639,13 @@ export async function selectMapPosition({
                     if (spot) { cursor.x = spot.x; cursor.y = spot.y; }
                     message = await movementMessage();
                     continue;
+                }
+                let cycle = kind === 'valid' ? validLocations() : targetCycles.get(kind);
+                if (!cycle) {
+                    cycle = {
+                        spots: [{ x: game.u.ux, y: game.u.uy }, ...gatherTargets()], index: 0,
+                    };
+                    targetCycles.set(kind, cycle);
                 }
                 cycle.index = (cycle.index + target.step + cycle.spots.length)
                     % cycle.spots.length;
