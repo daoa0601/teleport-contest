@@ -24,6 +24,18 @@ import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
+void test('random monster polymorph selects a species rather than a generic giant placeholder', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    const monster = await createMonsterAt('jackal', 11, 10, NO_MINVENT);
+    initRng(418n);
+
+    const change = await changeMonsterForm(monster, null, game);
+
+    assert.ok(change);
+    assert.notEqual(monster.mnum, MONSTER_NAME.indexOf('giant'));
+});
+
 void test('fire elementals have triple health on their home plane', async () => {
     const health = [];
     for (const home of [false, true]) {

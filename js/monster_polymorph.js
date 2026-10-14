@@ -66,6 +66,9 @@ const PM_LONG_WORM = MONSTER_NAME.indexOf('long worm');
 const POLYMORPH_IMMUNE_MONSTERS = new Set([
     'Nazgul', 'erinys', 'Death', 'Pestilence', 'Famine',
 ].map(monsterIndexByName));
+const PLACEHOLDER_MONSTERS = new Set([
+    'orc', 'giant', 'elf', 'human',
+].map(monsterIndexByName));
 function monsterIndexByName(name) {
     const mnum = MONSTER_NAME.indexOf(name);
     if (mnum < 0)
@@ -141,7 +144,7 @@ function pickNastyCandidate() {
 }
 function acceptsShapechangerForm(baseMnum, targetMnum) {
     if (!Number.isInteger(targetMnum) || targetMnum < 0
-        || monsterIsGenocided(targetMnum))
+        || monsterIsGenocided(targetMnum) || PLACEHOLDER_MONSTERS.has(targetMnum))
         return false;
     if (monsterIsPlayerMonster(targetMnum) || targetMnum === baseMnum)
         return true;
