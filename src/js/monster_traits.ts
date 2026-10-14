@@ -40,7 +40,7 @@ export function saveMonsterTraits(monster: Monster | null | undefined): SavedMon
         ...saved
     } = monster;
     saved.wormno = 0;
-    saved.mhpmax = Math.max(saved.mhpmax ?? 1, (saved.m_lev ?? 0) + 1);
+    saved.mhpmax = Math.max(saved.mhpmax ?? 1, (MONSTER_LEVEL[monster.mnum] ?? 0) + 1);
     saved.mhp = Math.max(0, Math.min(saved.mhp ?? 0, saved.mhpmax));
     if (monster.edog) saved.edog = copyPetData(monster.edog);
     if (monster.mextra) {
