@@ -2,6 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { nhgetch, resetInputState } from '../js/input.js';
+import { readCommandInput } from '../js/command_input.js';
+import { applyNethackrc } from '../js/options.js';
+import { initRng } from '../js/rng.js';
 import { PanicTermination } from '../js/panic_termination.js';
 import { runExtendedCommand } from './support/commands.js';
 import { freshGameplayRoom } from './support/playable-room.js';
@@ -49,4 +52,14 @@ for (const [command, prompt] of [
         assert.equal(game.context.move, 0);
     });
 }
+void test('#debugfuzzer supplies a literal Escape command when altmeta is enabled', async () => {
+    freshGameplayRoom({ flags: { debug: true, suppress_alert: '3.7.0' } });
+    applyNethackrc('OPTIONS=altmeta');
+    await runExtendedCommand('debugfuzzer', 'yes\nn');
+    // This fresh random stream starts with an Escape choice.
+    initRng(24);
+    const command = await readCommandInput();
+    assert.equal(command.key, 27, 'Generated Escape cancels instead of starting a Meta command');
+    assert.equal(command.count, 0);
+});
 //# sourceMappingURL=wizard_safety_commands.test.js.map

@@ -186,6 +186,9 @@ export async function nhgetch(inputState = 'other') {
 // C cmd.c:readchar_core(). Escape prefixes only have meaning in command,
 // direction, and position input. Ordinary prompts keep a literal Escape.
 export async function readchar(inputState = 'other') {
+    // Native fuzzer input skips the keyboard's NUL, EOF, and Escape decoding.
+    if (game.iflags.debug_fuzzer)
+        return activeInputGate.readKey(inputState);
     let key = await nhgetch(inputState);
     if (key === -1) {
         key = 27;
