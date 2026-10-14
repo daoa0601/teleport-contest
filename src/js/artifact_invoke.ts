@@ -34,7 +34,6 @@ import { applyHeroLocationEffects } from './cmd.js';
 import { d, rnd, rnz } from './rng.js';
 import { heroIsBlind, setHeroBlindnessTurns } from './senses.js';
 import { clearHeroSliming, heroIsSliming } from './slime.js';
-import { addInventoryItem } from './u_init.js';
 import { untrap } from './untrap.js';
 import { objectWeight } from './weight.js';
 import { chooseObjectToCharge, rechargeObject } from './recharge.js';
@@ -42,7 +41,7 @@ import { doBlindingRay } from './flash.js';
 import { heroSpecies } from './hero_species.js';
 import { lightDamage, lightRoom } from './light.js';
 import { MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL } from './monster_data.js';
-import { objectName, objectNameIsPlural } from './objnam.js';
+import { definiteName, objectName, objectNameIsPlural } from './objnam.js';
 import { flashBurn } from './sight_change.js';
 import { promptDirection } from './tty_prompts.js';
 import { castSpell } from './spell.js';
@@ -60,6 +59,7 @@ import { rn2 } from './rng.js';
 import { throwOrdinaryObject } from './ordinary_throw.js';
 import { resolveSwallowedEggPieOrVenomThrow } from './swallowed_throw.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
+import { holdAnotherObject } from './hero_hold_object.js';
 
 type PropertyPowerName = 'conflict' | 'invisibility' | 'levitation';
 type PropertyArtifact = Artifact & { invokePower: PropertyPowerName };
@@ -198,8 +198,7 @@ async function beginInvocation(
 }
 
 async function ignoringHero(object: GameObject, state: GameState, publish: MessagePublisher) {
-    const name = objectName(object, state).replace(/^The /, 'the ');
-    const subject = /^[A-Z]/.test(name) || name.startsWith('the ') ? name : `the ${name}`;
+    const subject = definiteName(objectName(object, state), state);
     await publish(`You feel that ${subject} ${objectNameIsPlural(object, state) ? 'are' : 'is'} ignoring you.`);
 }
 
@@ -324,7 +323,9 @@ async function invokeEnergyBoost(
 async function invokeCreateAmmo(
     object: GameObject,
     rollOne: (limit: number) => number,
-): Promise<GameObject> {
+    state: GameState,
+    publish: MessagePublisher,
+): Promise<void> {
     const arrows = await mksobj(ARROW, true, false);
     arrows.blessed = !!object.blessed;
     arrows.cursed = !!object.cursed;
@@ -341,7 +342,10 @@ async function invokeCreateAmmo(
     }
     arrows.quantity = arrows.quan;
     arrows.owt = objectWeight(arrows);
-    return await addInventoryItem(arrows);
+    await holdAnotherObject(arrows, {
+        state, publish,
+        dropMessage: `Suddenly ${arrows.quan} ${objectName(arrows, state)} fall out.`,
+    });
 }
 
 async function invokeBlindingRay(object: GameObject, state: GameState, publish: MessagePublisher) {
@@ -560,7 +564,7 @@ export async function invokeArtifactPower(
             await showEnlightenment({ basic: false, magic: true });
             break;
         case 'create-ammo':
-            await invokeCreateAmmo(object, rollOne);
+            await invokeCreateAmmo(object, rollOne, state, publish);
             break;
         case 'untrap': {
             const spentTime = await untrap({
@@ -574,6 +578,7 @@ export async function invokeArtifactPower(
             return { used: true, ready: true, spentTime };
         }
     }
+    if (state.program_state.gameover) return { used: true, heroDied: true };
     return { used: true, ready: true };
 }
 

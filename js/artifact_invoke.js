@@ -16,7 +16,6 @@ import { applyHeroLocationEffects } from './cmd.js';
 import { d, rnd, rnz } from './rng.js';
 import { heroIsBlind, setHeroBlindnessTurns } from './senses.js';
 import { clearHeroSliming, heroIsSliming } from './slime.js';
-import { addInventoryItem } from './u_init.js';
 import { untrap } from './untrap.js';
 import { objectWeight } from './weight.js';
 import { chooseObjectToCharge, rechargeObject } from './recharge.js';
@@ -24,7 +23,7 @@ import { doBlindingRay } from './flash.js';
 import { heroSpecies } from './hero_species.js';
 import { lightDamage, lightRoom } from './light.js';
 import { MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL } from './monster_data.js';
-import { objectName, objectNameIsPlural } from './objnam.js';
+import { definiteName, objectName, objectNameIsPlural } from './objnam.js';
 import { flashBurn } from './sight_change.js';
 import { promptDirection } from './tty_prompts.js';
 import { castSpell } from './spell.js';
@@ -42,6 +41,7 @@ import { rn2 } from './rng.js';
 import { throwOrdinaryObject } from './ordinary_throw.js';
 import { resolveSwallowedEggPieOrVenomThrow } from './swallowed_throw.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
+import { holdAnotherObject } from './hero_hold_object.js';
 const M2_DEMON = 0x100;
 const M2_LORD = 0x400;
 const M2_PRINCE = 0x800;
@@ -125,8 +125,7 @@ async function beginInvocation(object, artifact, state, publish, rollDice, scale
     return true;
 }
 async function ignoringHero(object, state, publish) {
-    const name = objectName(object, state).replace(/^The /, 'the ');
-    const subject = /^[A-Z]/.test(name) || name.startsWith('the ') ? name : `the ${name}`;
+    const subject = definiteName(objectName(object, state), state);
     await publish(`You feel that ${subject} ${objectNameIsPlural(object, state) ? 'are' : 'is'} ignoring you.`);
 }
 async function invokeProperty(object, artifact, state, publish, rollDice, scaledRandom) {
@@ -227,7 +226,7 @@ async function invokeEnergyBoost(object, state, publish) {
     state.context.botl = true;
     await publish('You feel re-energized.');
 }
-async function invokeCreateAmmo(object, rollOne) {
+async function invokeCreateAmmo(object, rollOne, state, publish) {
     const arrows = await mksobj(ARROW, true, false);
     arrows.blessed = !!object.blessed;
     arrows.cursed = !!object.cursed;
@@ -248,7 +247,10 @@ async function invokeCreateAmmo(object, rollOne) {
     }
     arrows.quantity = arrows.quan;
     arrows.owt = objectWeight(arrows);
-    return await addInventoryItem(arrows);
+    await holdAnotherObject(arrows, {
+        state, publish,
+        dropMessage: `Suddenly ${arrows.quan} ${objectName(arrows, state)} fall out.`,
+    });
 }
 async function invokeBlindingRay(object, state, publish) {
     requireLiveGame(state);
@@ -468,7 +470,7 @@ export async function invokeArtifactPower(object, artifact, { state = game, publ
             await showEnlightenment({ basic: false, magic: true });
             break;
         case 'create-ammo':
-            await invokeCreateAmmo(object, rollOne);
+            await invokeCreateAmmo(object, rollOne, state, publish);
             break;
         case 'untrap': {
             const spentTime = await untrap({
@@ -484,6 +486,8 @@ export async function invokeArtifactPower(object, artifact, { state = game, publ
             return { used: true, ready: true, spentTime };
         }
     }
+    if (state.program_state.gameover)
+        return { used: true, heroDied: true };
     return { used: true, ready: true };
 }
 export async function deactivateArtifactProperty(object, artifact, { state = game, publish = pline, rollDice = d, scaledRandom = rnz, } = {}) {
