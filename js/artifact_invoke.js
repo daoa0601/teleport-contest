@@ -1,7 +1,7 @@
 // Artifact powers used by the #invoke command.
 // C ref: artifact.c arti_invoke() and its invoke_* helpers.
 import { heroIsHallucinating } from './senses.js';
-import { I_SPECIAL, P_EXPERT, TIMEOUT, Upolyd, W_ARTI } from './const.js';
+import { I_SPECIAL, In_endgame, P_EXPERT, TIMEOUT, Upolyd, W_ARTI } from './const.js';
 import { newsym, pline } from './display.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { hasNonArtifactConflict, syncHeroConflict } from './hero_conflict.js';
@@ -30,6 +30,11 @@ import { promptDirection } from './tty_prompts.js';
 import { castSpell } from './spell.js';
 import { spellSkillType } from './spell_casting_rules.js';
 import { ensureHeroSkills } from './skills.js';
+import { depth } from './hacklib.js';
+import { gotoLevel } from './level_change.js';
+import { levelTeleport } from './level_teleport.js';
+import { bringLeashedFollowers } from './teleport.js';
+import { showPagedPickOneMenu } from './windows.js';
 const DIRECT_POWERS = [
     'healing',
     'energy-boost',
@@ -40,6 +45,8 @@ const DIRECT_POWERS = [
     'blinding-ray',
     'snowstorm',
     'firestorm',
+    'level-teleport',
+    'create-portal',
 ];
 function isDirectPower(power) {
     return DIRECT_POWERS.some((candidate) => candidate === power);
@@ -271,6 +278,47 @@ async function invokeStorm(power, state) {
         skill.skill = previous;
     }
 }
+async function invokeCreatePortal(object, state, publish) {
+    requireLiveGame(state);
+    requirePlayingGame(state);
+    const tutorial = state.specialLevels?.get('tut-1')?.dnum;
+    const choices = new Map();
+    const rows = ['Open a portal to which dungeon?', ''];
+    let destinationIndex = 0;
+    for (const [index, dungeon] of state.dungeons.entries()) {
+        if (!dungeon.dunlev_ureached || index === tutorial)
+            continue;
+        const letter = String.fromCharCode(97 + choices.size);
+        choices.set(letter, index);
+        rows.push(`${letter} - ${dungeon.dname}`);
+        destinationIndex = index;
+    }
+    if (choices.size > 1) {
+        const selected = await showPagedPickOneMenu({ rows, choices });
+        if (selected === null) {
+            await nothingSpecial(object, state, publish);
+            return;
+        }
+        destinationIndex = selected;
+    }
+    const dungeon = state.dungeons[destinationIndex];
+    if (!dungeon)
+        throw new Error('Artifact portal requires an initialized destination dungeon');
+    const destination = {
+        dnum: destinationIndex,
+        dlevel: dungeon.depth_start >= depth(state.u.uz, state.dungeons)
+            ? dungeon.entry_lev : dungeon.dunlev_ureached,
+    };
+    if (state.u.uhave.amulet || In_endgame(state.u.uz) || In_endgame(destination)
+        || destination.dnum === state.u.uz.dnum || !await bringLeashedFollowers(state)) {
+        await publish('You feel very disoriented for a moment.');
+        return;
+    }
+    await publish(heroIsBlind(state)
+        ? 'You feel weightless for a moment.'
+        : 'You are surrounded by a shimmering sphere!');
+    await gotoLevel(destination);
+}
 export async function invokeArtifactPower(object, artifact, { state = game, publish = pline, rollDice = d, rollOne = rnd, scaledRandom = rnz, enterTrap = null, } = {}) {
     if (!artifact)
         return { used: false };
@@ -284,6 +332,16 @@ export async function invokeArtifactPower(object, artifact, { state = game, publ
     if (!ready)
         return { used: true, ready: false };
     switch (power) {
+        case 'level-teleport':
+            await levelTeleport({ state });
+            if (state.program_state.gameover)
+                return { used: true, heroDied: true };
+            break;
+        case 'create-portal':
+            await invokeCreatePortal(object, state, publish);
+            if (state.program_state.gameover)
+                return { used: true, heroDied: true };
+            break;
         case 'snowstorm':
         case 'firestorm':
             await invokeStorm(power, state);
