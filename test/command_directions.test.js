@@ -5,7 +5,25 @@ import { A_CON, A_DEX, DOOR, D_CLOSED, D_ISOPEN, STONE } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { makeStunned } from '../js/hero_mental_status.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
+import { PICK_AXE } from '../js/object_data.js';
+import { initRng } from '../js/rng.js';
+import { addInventoryObject } from './support/game-objects.js';
 import { freshTurnRoom } from './support/playable-room.js';
+void test('a stunned pick swing digs in the direction chosen after the direction prompt', async () => {
+    const input = freshTurnRoom();
+    const pick = await addInventoryObject(PICK_AXE, { spe: 0 });
+    game.uwep = game.u.uwep = pick;
+    assert.ok(game.level);
+    game.level.requireAt(11, 10).typ = STONE;
+    await makeStunned(20, { talk: false });
+    initRng(1n);
+    input.feed(`a${pick.invlet}l`);
+    await rhack(0);
+    assert.equal(game._pending_message, 'You start digging.');
+    assert.equal(game.context.digging?.pos.x, 11);
+    assert.equal(game.context.digging?.pos.y, 10);
+    assert.equal(game.context.move, 1);
+});
 void test('opening while stunned redirects a self direction to an adjacent door', async () => {
     const input = freshTurnRoom({ flags: { cmdassist: false } });
     assert.ok(game.level);

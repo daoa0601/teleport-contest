@@ -23,6 +23,7 @@ import { ownedObjectAction, ownedObjectName } from './objnam.js';
 import { roomsAt, roomForRoomno } from './room.js';
 import { d, rn2, rnd } from './rng.js';
 import { ceilingName, surfaceName } from './terrain_name.js';
+import { confusePromptDirection } from './tty_prompts.js';
 import { heroStrengthDamageBonus } from './weapon_damage.js';
 import { isPick } from './weapon_type.js';
 import { connectPits } from './pit_connections.js';
@@ -30,7 +31,6 @@ const M1_WALLWALK = 0x00000008;
 const GRID_BUG = MONSTER_NAME.indexOf('grid bug');
 const LONG_WORM = MONSTER_NAME.indexOf('long worm');
 const DIRECTION_KEYS = ['h', 'y', 'k', 'u', 'l', 'n', 'j', 'b', '<', '>'];
-const IMPAIRED_DIRECTIONS = [0, 2, 4, 6, 1, 3, 5, 7];
 function compassVector(direction) {
     const dx = xdir[direction], dy = ydir[direction];
     if (dx === undefined || dy === undefined)
@@ -57,20 +57,6 @@ function impaired(state) {
         hero.stunned ||
         (hero.stunnedTurns ?? 0) > 0 ||
         heroIsHallucinating(state));
-}
-// C confdir(FALSE), called by getdir() and again by use_pick_axe2().
-function confuseDirection(state) {
-    const hero = state.u;
-    if (!(hero.stunned || (hero.stunnedTurns ?? 0) > 0) &&
-        !((hero.confused || (hero.confusionTurns ?? 0) > 0) && rn2(5) === 0))
-        return;
-    const count = hero.umonnum === GRID_BUG ? 4 : 8;
-    const direction = IMPAIRED_DIRECTIONS[rn2(count)];
-    if (direction === undefined)
-        throw new Error('Invalid confused digging direction.');
-    const vector = compassVector(direction);
-    hero.dx = vector.dx;
-    hero.dy = vector.dy;
 }
 function suggestedDirections(tool, state) {
     const hero = state.u;
@@ -239,12 +225,6 @@ export async function usePickAxe(tool, { state = game, ensureWielded, readDirect
     hero.dx = direction.dx;
     hero.dy = direction.dy;
     hero.dz = direction.dz;
-    if (state.u.umonnum === GRID_BUG && direction.dx && direction.dy) {
-        await plineWithContinuation("You can't orient yourself that direction.");
-        return { spentTime: false, cancelled: true };
-    }
-    if (!state.u.dz)
-        confuseDirection(state);
     return applyPickAxeDirection(tool, { state, attackMonster, payShopkeeper });
 }
 export async function applyPickAxeDirection(tool, { state = game, attackMonster, payShopkeeper }) {
@@ -271,7 +251,7 @@ export async function applyPickAxeDirection(tool, { state = game, attackMonster,
         await hurtHero(damage, `${state.flags.female ? 'her' : 'his'} own ${OBJECT_NAMES[tool.otyp]}`, state);
     }
     else if (!hero.dz) {
-        confuseDirection(state);
+        confusePromptDirection(hero);
         const x = hero.ux + hero.dx, y = hero.uy + hero.dy;
         if (!isok(x, y)) {
             await plineWithContinuation('Clash!');
