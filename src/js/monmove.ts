@@ -4670,7 +4670,7 @@ async function triggerMonsterTrap(
         && isok(trap.teledest.x, trap.teledest.y);
     const forced = movement.forcedTrapLanding || fixedTeleport;
     if (monster !== state.u.usteed && !sokobanFall && !forced) {
-        if (monsterInAir(monster, state) && trapTriggeredByFloor(trap)) return null;
+        if (monsterFliesOrFloats(monster) && trapTriggeredByFloor(trap)) return null;
         const alreadyKnown = monsterKnowsTrap(monster, trap)
             || trap.ttyp === HOLE && !((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_MINDLESS);
         if (alreadyKnown && recordRandom(random, calls, 4) !== 0
