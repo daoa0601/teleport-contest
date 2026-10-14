@@ -2533,7 +2533,7 @@ async function dochat() {
         refusal = "You can't speak.  You're choking!";
     else if (game.u.uswallow)
         refusal = "They won't hear you out there.";
-    else if (game.underwater)
+    else if (game.u.uinwater)
         refusal = 'Your speech is unintelligible underwater.';
     if (refusal) {
         await plineWithContinuation(refusal);

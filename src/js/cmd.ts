@@ -2674,7 +2674,7 @@ async function dochat() {
         refusal = `As ${withIndefiniteArticle(monsterTypeName(species, !!game.flags.female))}, you cannot speak.`;
     else if (propertyIsActive('strangled', game)) refusal = "You can't speak.  You're choking!";
     else if (game.u.uswallow) refusal = "They won't hear you out there.";
-    else if (game.underwater) refusal = 'Your speech is unintelligible underwater.';
+    else if (game.u.uinwater) refusal = 'Your speech is unintelligible underwater.';
     if (refusal) {
         await plineWithContinuation(refusal);
         game.context.move = 0;
