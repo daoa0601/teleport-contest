@@ -5,7 +5,7 @@ import { fruitFromIndex, fruitFromName, matchWishedFruit } from './fruit.js';
 import { objectOwnershipPrefix, objectTypeKnown } from './shk.js';
 import { rn2, rnd } from './rng.js';
 import { mkobj, mksobj, rndClass } from './mklev.js';
-import { CORPSTAT_FEMALE, CORPSTAT_HISTORIC, SPE_LIM } from './const.js';
+import { CORPSTAT_FEMALE, CORPSTAT_HISTORIC, PL_PSIZ, SPE_LIM } from './const.js';
 import { heroHandName } from './body_parts.js';
 import { plineWithContinuation } from './display.js';
 import { deleteObject } from './object_delete.js';
@@ -769,7 +769,7 @@ export async function readObjectName(text, { wizardWish = false } = {}) {
             finalOtyp: GOLD_PIECE, isGold: true,
         };
     }
-    const artifact = artifactByName(parsed.name);
+    let artifact = null;
     let lookupOtyp;
     let object;
     let fruit = null;
@@ -788,11 +788,13 @@ export async function readObjectName(text, { wizardWish = false } = {}) {
         lookupOtyp = object.otyp;
     }
     else {
-        const lookup = lookupWishType(parsed.name, { wizardWish });
         const blankType = parsed.unlabeled && /scroll$/.test(parsed.name)
             ? OBJECT_NAMES.indexOf('blank paper')
             : parsed.unlabeled && /spellbook$/.test(parsed.name) ? SPE_BLANK_PAPER : null;
-        let matchedType = parsed.directType ?? artifact?.baseType ?? blankType ?? lookup.type
+        const directType = parsed.directType ?? blankType;
+        const lookup = directType === null ? lookupWishType(parsed.name, { wizardWish })
+            : { name: parsed.name, type: directType, oclass: objectClassForType(directType) };
+        let matchedType = lookup.type
             ?? japaneseWishType(parsed.name);
         if (matchedType === null) {
             const match = matchWishedFruit(parsed.fruitName);
@@ -802,6 +804,10 @@ export async function readObjectName(text, { wizardWish = false } = {}) {
                     parsed.count = match.count;
                 matchedType = SLIME_MOLD;
             }
+        }
+        if (matchedType === null && !lookup.oclass) {
+            artifact = artifactByName(parsed.name);
+            matchedType = artifact?.baseType ?? null;
         }
         if (matchedType === null) {
             if (!lookup.oclass)
@@ -840,11 +846,19 @@ export async function readObjectName(text, { wizardWish = false } = {}) {
     }
     await applyWishProperties(object, parsed, wizardWish, luck);
     applyWishedTinVariety(object, parsed, wizardWish);
-    if (artifact) {
-        nameArtifact(object, artifact);
-        object.quan = 1;
-        game.u.uconduct ||= {};
-        game.u.uconduct.wisharti = (game.u.uconduct.wisharti || 0) + 1;
+    const personalName = artifact?.name ?? parsed.personalName;
+    if (personalName) {
+        const namedArtifact = artifactByName(personalName);
+        if (namedArtifact?.baseType === object.otyp) {
+            artifact = namedArtifact;
+            nameArtifact(object, artifact);
+            object.quan = 1;
+            game.u.uconduct ||= {};
+            game.u.uconduct.wisharti = (game.u.uconduct.wisharti || 0) + 1;
+        }
+        else if (!object.oartifact) {
+            object.oextra = { ...object.oextra, oname: personalName.slice(0, PL_PSIZ - 1) };
+        }
     }
     let deniedArtifact = false;
     if (object.oartifact) {
