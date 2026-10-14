@@ -478,38 +478,6 @@ function armorAt(monster, state, mask) {
         [W_ARMU]: state.uarmu,
     }[mask] || null;
 }
-function flammableArmor(object) {
-    if (!object)
-        return false;
-    const material = OBJECT_MATERIAL[object.otyp] ?? 0;
-    return (material >= 2 && material <= 8) || material === 18;
-}
-async function burnArmorObject(object, description, owner, emitMessage, calls) {
-    if (!object || !flammableArmor(object))
-        return false;
-    if (object.oerodeproof && object.rknown)
-        return false;
-    if (object.oerodeproof || (object.blessed && rnl(4) === 0)) {
-        calls?.push('rnl(4)');
-        if (object.oerodeproof)
-            object.rknown = true;
-        return false;
-    }
-    if (object.blessed)
-        calls?.push('rnl(4)');
-    const erosion = object.oeroded ?? 0;
-    if (erosion >= 3)
-        return false;
-    object.oeroded = erosion + 1;
-    if (owner && emitMessage) {
-        const suffix = erosion + 1 === 3 ? ' completely'
-            : erosion ? ' further' : '';
-        const verb = /(?:boots|gloves|shoes|scales)$/iu.test(description)
-            ? 'smoulder' : 'smoulders';
-        await emitMessage(`${owner()} ${description} ${verb}${suffix}!`);
-    }
-    return true;
-}
 export async function burnArmorByFire(victim, state, emitMessage, calls = [], random = rn2, { visible = victim === state.u, } = {}) {
     const monster = 'mnum' in victim ? victim : null;
     if (victim !== state.u && !monster)
@@ -563,12 +531,22 @@ export async function burnArmorByFire(victim, state, emitMessage, calls = [], ra
             object = armorAt(monster, state, W_ARMF);
             description = 'boots';
         }
-        const damaged = await burnArmorObject(object, description, owner, emitMessage, calls);
-        if (hero && damaged)
-            state._armorClassDirty = true;
+        const result = await erodeObject(object, 'burn', {
+            state,
+            random,
+            luckRandom: range => {
+                calls.push(`rnl(${range})`);
+                return rnl(range);
+            },
+            displayName: description,
+            publish: async (message) => {
+                if (emitMessage && (hero || visible))
+                    await emitMessage(message);
+            },
+        });
         if (torso)
             return true;
-        if (damaged)
+        if (result !== 'nothing')
             return false;
     }
 }
