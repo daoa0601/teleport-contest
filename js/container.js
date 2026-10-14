@@ -801,10 +801,18 @@ async function useContainerActions(container, { held = false, moreContainers = f
             }
         }
     }
-    if (!stopped && takeOut && putInFirst && container.contents?.length) {
-        const transfer = await takeSelectedObjects(container);
-        if (transfer.spentTime)
-            spentTime = true;
+    if (!stopped && takeOut && putInFirst) {
+        if (!container.contents.length) {
+            if (!container.cknown)
+                spentTime = true;
+            container.cknown = true;
+            await pline(`The ${containerNoun(container)} is empty.`);
+        }
+        else {
+            const transfer = await takeSelectedObjects(container);
+            if (transfer.spentTime)
+                spentTime = true;
+        }
     }
     if (game.program_state?.gameover)
         return { spentTime: true, container };
