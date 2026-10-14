@@ -1,12 +1,12 @@
 // C pickup.c: command pickup, automatic pickup, and floor inspection.
 import { game, requireGameLevel } from './gstate.js';
-import { isLavaAt, isPoolAt } from './terrain_properties.js';
+import { isIceAt, isLavaAt, isPoolAt } from './terrain_properties.js';
 import { objectName, observeObjectForNaming } from './objnam.js';
 import { inventoryClassOrder, lootSortMode, objectClassHeading, sortObjects } from './object_sort.js';
 import { floorObjectDescription, readFloorEngraving, showFloorPile, } from './floor_object_display.js';
 import { tryCallObjectType } from './object_call.js';
 import { newsym, flush_screen, pline, plineWithContinuation, map_object, } from './display.js';
-import { dungeonFeatureSentenceAt } from './dungeon_feature.js';
+import { dungeonFeatureSentenceAt, forceDescribeDecor } from './dungeon_feature.js';
 import { surfaceName } from './terrain_name.js';
 import { showMultiSelectWindow } from './windows.js';
 import { addInventoryItem } from './u_init.js';
@@ -35,9 +35,7 @@ import { touchPetrifyingCorpse, willFeelPetrifyingCorpse } from './stoning.js';
 import { heroCannotTake } from './polyself.js';
 import { heroIsUnaware } from './hero_sleep.js';
 import { lookInsideSwallower } from './swallowed_inventory.js';
-import { visibleRegionAt } from './regions.js';
-import { trapName } from './trap_name.js';
-import { withIndefiniteArticle } from './object_grammar.js';
+import { dolook } from './invent.js';
 import { addShopObjectToBill, billedPickupQuote, costlySpot } from './shk.js';
 import { SHOPBASE, A_WIS, STONE, DOOR, D_BROKEN, ALTAR, W_WEP, is_pit, LOST_NONE, LOST_THROWN, LOST_STOLEN, LOST_DROPPED, LOST_EXPLODING, } from './const.js';
 export function pickupClassOrder() {
@@ -127,11 +125,8 @@ async function choosePickupObjects(source, objects, count) {
             if (!count && willFeelPetrifyingCorpse(object)) {
                 if (source.monster)
                     await lookInsideSwallower(source.monster);
-                else {
-                    await announceFloorHazards(source.x, source.y);
-                    await plineWithContinuation(blindPickupInspectionMessage(source.x, source.y));
-                    await showFloorPile(source.objects, false, dungeonFeatureSentenceAt(source.x, source.y));
-                }
+                else
+                    await dolook();
                 return [];
             }
             const isFirstGold = object.otyp === GOLD_PIECE && !goldAcceleratorUsed;
@@ -386,11 +381,15 @@ async function checkHere(source, pickedSome) {
     // C check_here() flushes movement before look_here() can page a prior
     // message. The pager itself leaves pending map changes untouched.
     await flush_screen(1);
-    const feature = skipFeature ? '' : dungeonFeatureSentenceAt(x, y);
+    let feature = skipFeature ? '' : dungeonFeatureSentenceAt(x, y);
     if (heroIsBlind(game)) {
         const first = source.objects[0];
         if (first)
             map_object(first, false, false);
+        if (isIceAt(x, y)) {
+            await forceDescribeDecor();
+            feature = '';
+        }
         await plineWithContinuation(blindPickupInspectionMessage(x, y));
     }
     return await showFloorPile(source.objects, pickedSome, feature, { automatic: true });
@@ -405,19 +404,11 @@ async function describePickupDecor(loc) {
 }
 function blindPickupInspectionMessage(x, y) {
     // look_here() leaves the altar description to the following floor display.
+    if (isIceAt(x, y))
+        return 'You try to feel what is on it.';
     return requireGameLevel().at(x, y)?.typ === ALTAR
         ? 'You try to feel what is here.'
         : `You try to feel what is lying here on the ${surfaceName(x, y)}.`;
-}
-// C invent.c:look_here() announces these before starting touch inspection.
-async function announceFloorHazards(x, y) {
-    const region = visibleRegionAt(game, x, y);
-    const trap = requireGameLevel().traps.find(trap => trap.tx === x && trap.ty === y && trap.tseen);
-    if (!region && !trap)
-        return;
-    const cloud = region ? `a ${region.damage ? 'poison gas' : 'vapor'} cloud` : '';
-    const hazard = trap ? withIndefiniteArticle(trapName(trap.ttyp)) : '';
-    await plineWithContinuation(`There is ${cloud}${region && trap ? ' and ' : ''}${hazard} here.`);
 }
 export function orderedPickupObjects(pile) {
     return sortObjects(pile, { mode: lootSortMode() });
