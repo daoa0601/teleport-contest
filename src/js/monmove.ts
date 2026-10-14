@@ -8852,6 +8852,7 @@ export async function runMonsterAction(
         monster.mstrategy = (monster.mstrategy ?? 0) & ~STRAT_WAITFORU;
     }
     if ((monster.mstrategy ?? 0) & STRAT_WAITMASK) {
+        if (heroIsHallucinating(state)) newsym(monster.mx, monster.my);
         return {
             monster,
             calls,
@@ -8869,6 +8870,7 @@ export async function runMonsterAction(
     // shared hider, eel, and Conflict phases above.  In particular, a
     // sleeping piercer still owns restrap()'s one-in-three probe.
     if (monster.mcanmove === 0 || (monster.mfrozen ?? 0) > 0) {
+        if (heroIsHallucinating(state)) newsym(monster.mx, monster.my);
         return {
             monster,
             calls,
@@ -8888,6 +8890,7 @@ export async function runMonsterAction(
     if (monster.msleeping) {
         const woke = await disturbSleepingMonster(monster, state, random, calls);
         if (!woke) {
+            if (heroIsHallucinating(state)) newsym(monster.mx, monster.my);
             return {
                 monster,
                 calls,
