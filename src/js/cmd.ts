@@ -7,6 +7,7 @@ import { AKLYS, BOOMERANG, CRYSTAL_BALL } from './object_data.js';
 import { useCrystalBall } from './crystal_ball.js';
 import { monsterHiddenConditions } from './monster_status.js';
 import { visibleRegionAt } from './regions.js';
+import type { PageLocalMultiSelectItem } from './windows.js';
 import type { ChoiceMenuItem } from './windows.js';
 import { wizIntrinsic } from './wizard_intrinsics.js';
 import type { GameState } from './game_state.js';
@@ -47,6 +48,7 @@ import { iceDescriptionAt } from './dungeon_feature.js';
 import { CmapSymbol, GlyphOffset, cmapToGlyph } from './glyph_numbers.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import { lookAtMonster, monsterSeenDescription, selfLookDetails, selfTrapDescription } from './pager_monsters.js';
+import { showLookList } from './pager_lists.js';
 import { screenDescription } from './pager_description.js';
 import { lookGlyphAt, mapFeatureDescription } from './pager_features.js';
 import { typedSymbolDescription } from './look_symbols.js';
@@ -4677,32 +4679,51 @@ async function restoreHelpMap(): Promise<void> {
 // the map entry destroys it, restores the map, then hands input ownership to
 // the shared getpos/farlook transaction above.
 async function dowhatis(): Promise<void> {
-    const entries = [
-        { key: '/', text: 'something on the map' },
-        { key: 'i', text: "something you're carrying" },
-        { key: '?', text: 'something else (by symbol or name)' },
-        '',
-        { key: 'm', text: 'nearby monsters' },
-        { key: 'M', text: 'all monsters shown on map' },
-        { key: 'o', text: 'nearby objects' },
-        { key: 'O', text: 'all objects shown on map' },
-        { key: 't', text: 'nearby traps' },
-        { key: 'T', text: 'all seen or remembered traps' },
-        { key: 'e', text: 'nearby engravings' },
-        { key: 'E', text: 'all seen or remembered engravings' },
+    const choices = [
+        { key: '/', alias: 'y', text: 'something on the map' },
+        { key: 'i', alias: '', text: "something you're carrying" },
+        { key: '?', alias: 'n', text: 'something else (by symbol or name)' },
     ];
-    const validKeys = [
-        27, 32, 10, 13,
-        ...'/i?mMoOtTeE'.split('').map(char => char.charCodeAt(0)),
-    ];
+    if (!game.u.uswallow && !heroIsHallucinating(game)) choices.push(
+        { key: 'm', alias: '', text: 'nearby monsters' },
+        { key: 'M', alias: '', text: 'all monsters shown on map' },
+        { key: 'o', alias: '', text: 'nearby objects' },
+        { key: 'O', alias: '', text: 'all objects shown on map' },
+        { key: 't', alias: '^', text: 'nearby traps' },
+        { key: 'T', alias: '"', text: 'all seen or remembered traps' },
+        { key: 'e', alias: '`', text: 'nearby engravings' },
+        { key: 'E', alias: '|', text: 'all seen or remembered engravings' },
+    );
     const queuedKey = takeCommandKey();
-    const key = queuedKey ?? await showChoiceWindow({
-        title: 'What do you want to look at:',
-        entries,
-        validKeys,
-    });
-    if (queuedKey === undefined) await restoreHelpMap();
-    const choice = String.fromCharCode(key);
+    let choice = queuedKey === undefined ? '' : String.fromCharCode(queuedKey);
+    if (queuedKey === undefined) {
+        const lootabc = !!game.flags.lootabc;
+        const items: PageLocalMultiSelectItem<string>[] = [];
+        for (const [index, entry] of choices.entries()) {
+            if (index === 3) items.push({ selectable: false, text: '' });
+            items.push({ text: entry.text, value: entry.key,
+                ...(lootabc ? {} : { key: entry.key }),
+                groupAccelerator: lootabc ? ['i', 'e'].includes(entry.key) ? '' : entry.key : entry.alias });
+        }
+        const result = await showMultiSelectWindow({
+            title: 'What do you want to look at:', omitHeadings: true,
+            pickOne: true, pageLocalKeys: true,
+            sections: [{ items }],
+        });
+        choice = result[0] ?? '';
+        await restoreHelpMap();
+    }
+    if (choice === 'y') choice = '/';
+    const listKind = 'mM'.includes(choice) && choice ? 'monsters'
+        : 'oO'.includes(choice) && choice ? 'objects'
+            : 'tT'.includes(choice) && choice ? 'traps'
+                : 'eE'.includes(choice) && choice ? 'engravings' : null;
+    if (listKind) {
+        await showLookList(listKind, choice === choice.toLowerCase(),
+            () => wizardPositionDescription(game.u.ux, game.u.uy));
+        game.context.move = 0;
+        return;
+    }
     if (choice === '/') {
         await doFarlook(false);
         return;
