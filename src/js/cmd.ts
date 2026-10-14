@@ -3212,20 +3212,21 @@ const EXTENDED_COMMAND_HANDLERS = new Map<string, () => Promise<unknown>>([
     ['wizmap', wizMap],
 ]);
 
-async function runExtendedCommand(name: string) {
+async function runExtendedCommand(name: string): Promise<boolean> {
     const command = availableExtendedCommands().find(entry => entry.name === name);
     if (!command) {
         await pline(`#${name}: unknown extended command.`);
         game.context.move = 0;
-        return;
+        return false;
     }
     if (!await commandAllowed(command)) {
         // doextcmd() returns ECMD_OK; rhack clears queues only for a delay.
         resetCommandVariables(game.multi < 0);
-        return;
+        return false;
     }
     const key = commandExecutionKey(command.name)?.charCodeAt(0) ?? null;
-    return executeCommandAction({ key, command, parameter: null });
+    await executeCommandAction({ key, command, parameter: null });
+    return true;
 }
 
 // C refs: artifact.c:doinvoke(), invoke_ok(), arti_invoke().  getobj()
@@ -4216,10 +4217,20 @@ async function wizIdentify(): Promise<void> {
     game.context.move = 0;
 }
 
+// C doextcmd() asks again after the list, until an action or cancellation.
+async function doextcmd(): Promise<void> {
+    for (;;) {
+        const command = await readExtendedCommand();
+        if (!command) return;
+        const executed = await runExtendedCommand(command);
+        if (!executed || command !== '?') return;
+    }
+}
+
 // TTY's extended-command line editor redraws the prompt at every input
 // boundary.  #enhance has AUTOCOMPLETE, so its unique initial "e" expands
 // visually while subsequent characters advance through that completed word.
-async function doextcmd(): Promise<void> {
+async function readExtendedCommand(): Promise<string | null> {
     let command = '';
     game._pending_message = '#';
     await flush_screen(1);
@@ -4265,7 +4276,7 @@ async function doextcmd(): Promise<void> {
             game._retained_message = '';
             game.nhDisplay?.clearRow(0);
             game.context.move = 0;
-            return;
+            return null;
         }
         if (key === 10 || key === 13) break;
         if (key === 8) {
@@ -4304,11 +4315,9 @@ async function doextcmd(): Promise<void> {
         game.nhDisplay?.clearRow(0);
         game.nhDisplay?.setCursor(game.u.ux - 1, game.u.uy + 1);
         game.context.move = 0;
-        return;
+        return null;
     }
-    await runExtendedCommand(
-        completeExtendedCommand(normalizedCommand) || normalizedCommand,
-    );
+    return completeExtendedCommand(normalizedCommand) || normalizedCommand;
 }
 
 async function wizardPositionDescription(x: number, y: number): Promise<string> {

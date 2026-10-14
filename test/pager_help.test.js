@@ -66,4 +66,19 @@ void test('the extended-command help list supports wildcard searches', async () 
         { prompt: /zap\s+\[.*\]\s+zap a wand|zap\s+zap a wand/, keys: '\x1b' },
     ]);
 });
+void test('closing #? returns to a fresh extended-command prompt', async () => {
+    freshObjectRoom();
+    const input = resetInputState();
+    input.feed('?\r');
+    await answerPrompts(rhack('#'.charCodeAt(0)), input, [
+        { prompt: /Extended Commands List/, keys: '\x1b' },
+        { prompt: /^#\s+\n/, keys: '?\r' },
+        { prompt: /Extended Commands List/, keys: '\x1b' },
+        { prompt: /^#\s+\n/, keys: 'versionshort\r' },
+    ]);
+    await flush_screen(1);
+    const text = requireGameDisplay().grid[0]?.map(cell => cell.ch).join('') ?? '';
+    assert.match(text, /MacOS NetHack Version 5\.0\.0/);
+    assert.equal(game.context.move, 0);
+});
 //# sourceMappingURL=pager_help.test.js.map
