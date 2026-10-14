@@ -35,6 +35,9 @@ import { touchPetrifyingCorpse, willFeelPetrifyingCorpse } from './stoning.js';
 import { heroCannotTake } from './polyself.js';
 import { heroIsUnaware } from './hero_sleep.js';
 import { lookInsideSwallower } from './swallowed_inventory.js';
+import { visibleRegionAt } from './regions.js';
+import { trapName } from './trap_name.js';
+import { withIndefiniteArticle } from './object_grammar.js';
 import { addShopObjectToBill, billedPickupQuote, costlySpot } from './shk.js';
 import { SHOPBASE, A_WIS, STONE, DOOR, D_BROKEN, ALTAR, W_WEP, is_pit, LOST_NONE, LOST_THROWN, LOST_STOLEN, LOST_DROPPED, LOST_EXPLODING, } from './const.js';
 export function pickupClassOrder() {
@@ -125,6 +128,7 @@ async function choosePickupObjects(source, objects, count) {
                 if (source.monster)
                     await lookInsideSwallower(source.monster);
                 else {
+                    await announceFloorHazards(source.x, source.y);
                     await plineWithContinuation(blindPickupInspectionMessage(source.x, source.y));
                     await showFloorPile(source.objects, false, dungeonFeatureSentenceAt(source.x, source.y));
                 }
@@ -404,6 +408,16 @@ function blindPickupInspectionMessage(x, y) {
     return requireGameLevel().at(x, y)?.typ === ALTAR
         ? 'You try to feel what is here.'
         : `You try to feel what is lying here on the ${surfaceName(x, y)}.`;
+}
+// C invent.c:look_here() announces these before starting touch inspection.
+async function announceFloorHazards(x, y) {
+    const region = visibleRegionAt(game, x, y);
+    const trap = requireGameLevel().traps.find(trap => trap.tx === x && trap.ty === y && trap.tseen);
+    if (!region && !trap)
+        return;
+    const cloud = region ? `a ${region.damage ? 'poison gas' : 'vapor'} cloud` : '';
+    const hazard = trap ? withIndefiniteArticle(trapName(trap.ttyp)) : '';
+    await plineWithContinuation(`There is ${cloud}${region && trap ? ' and ' : ''}${hazard} here.`);
 }
 export function orderedPickupObjects(pile) {
     return sortObjects(pile, { mode: lootSortMode() });
