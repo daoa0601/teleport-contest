@@ -684,6 +684,8 @@ async function applyHelmetOnEffects(object, state) {
             object.known = true;
             const opposite = alignment === 1 ? -1 : alignment === -1 ? 1 : object.o_id % 2 ? -1 : 1;
             await changeHeroAlignmentFromHelmet(opposite, true, state);
+            if (state.program_state.gameover)
+                return;
         }
         const helmet = equippedObject(state, 'uarmh');
         if (helmet && !helmet.cursed) {

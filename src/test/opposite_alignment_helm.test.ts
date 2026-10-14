@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { moveloop_core } from '../js/allmain.js';
+import { artifactByName } from '../js/artifacts.js';
 import { rhack } from '../js/cmd.js';
 import { G_EXTINCT } from '../js/const.js';
 import { game } from '../js/gstate.js';
@@ -10,7 +11,9 @@ import { HELM_OF_OPPOSITE_ALIGNMENT } from '../js/object_data.js';
 import { uncurseObjectState } from '../js/object_state.js';
 import type { GameObject } from '../js/object_types.js';
 import { objectTypeKnown } from '../js/shk.js';
+import { setPrimaryWeapon } from '../js/weapon_slots.js';
 import { addInventoryObject } from './support/game-objects.js';
+import { memoryStorage } from './support/memory-storage.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createSpecialLevel } from './support/topology.js';
 
@@ -34,6 +37,28 @@ void test('an opposite-alignment helm changes alignment, confuses and curses, th
 
     assert.equal(game.u.ualign?.type, 1);
     assert.match(removal, /Your mind is back in sync with your body\./);
+});
+
+void test('a fatal Excalibur blast stops helmet wear before cursing or discovering its type', async () => {
+    freshObjectRoom({
+        role: 'knight',
+        hero: { uhp: 1, uhpmax: 1, ualign: { type: 1, record: 20, abuse: 0 }, ualignbase: [1, 1] },
+        flags: { bones: false, disclose: '-i -a -v -c -o', tombstone: false },
+    });
+    game.storage = memoryStorage();
+    const artifact = artifactByName('Excalibur');
+    assert.ok(artifact);
+    const sword = await addInventoryObject(artifact.baseType, { oartifact: artifact.id, oname: artifact.name });
+    await setPrimaryWeapon(sword);
+    const helmet = await addInventoryObject(HELM_OF_OPPOSITE_ALIGNMENT, { known: false, typeKnown: false });
+
+    const messages = await dress('W', helmet);
+
+    assert.equal(game.program_state.gameover, true);
+    assert.match(messages, /You are blasted by Excalibur's power!/);
+    assert.equal(helmet.cursed, false);
+    assert.equal(objectTypeKnown(helmet), false);
+    assert.doesNotMatch(messages, /glows black for a moment/);
 });
 
 for (const id of [2, 3]) {
