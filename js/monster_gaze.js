@@ -1,6 +1,6 @@
 // Active monster gazes. Native mhitu.c gazemu() and mon.c m_respond_medusa().
 import { heroResistsBlindingLight } from './blinding_attack.js';
-import { BOLT_LIM, M_ATTK_MISS, M_ATTK_AGR_DIED, M_SEEN_FIRE, STONING } from './const.js';
+import { BOLT_LIM, KILLED_BY, M_ATTK_MISS, M_ATTK_AGR_DIED, M_SEEN_FIRE, STONING } from './const.js';
 import { canSeeMonster, plineWithContinuation, shieldeff } from './display.js';
 import { finishHeroDeath } from './end.js';
 import { game, requirePlayingGame } from './gstate.js';
@@ -105,7 +105,8 @@ export async function resolveMonsterGaze(monster, attack, { state = game, publis
                 }
                 await publish('You turn to stone...', { urgent: true });
                 await finishHeroDeath({ killer: monsterTypeName(monster.mnum, !!monster.female),
-                    deathVerb: 'turned to stone', deathLineShown: true, deathType: STONING });
+                    killerFormat: KILLED_BY, deathVerb: 'turned to stone',
+                    deathLineShown: true, deathType: STONING });
             }
             break;
         case AD_CONF:

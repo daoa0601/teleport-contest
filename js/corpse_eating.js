@@ -1,7 +1,7 @@
 // Native eat.c:cprefx()/cpostfx(). The meal/tin owner retains the food identity.
 import { adjustAttribute, attributeChangeMessage, currentAttribute, exerciseWisdom, } from './attrib.js';
 import { applyCannibalPenalty, heroMayEatOwnKind } from './cannibalism.js';
-import { A_CHA, A_INT, DIED, STONING, Upolyd } from './const.js';
+import { A_CHA, A_INT, DIED, KILLED_BY, STONING, Upolyd } from './const.js';
 import { corpseEnergyBuzz, grantCorpseIntrinsic } from './corpse_intrinsics.js';
 import { reviveCorpseImmediately } from './corpse_revival.js';
 import { newsym, plineWithContinuation } from './display.js';
@@ -50,7 +50,8 @@ export async function applyCorpsePreEffects(mnum, { state = game, food = null, t
                 await useUpTin(tin, { state });
             await plineWithContinuation('You turn to stone.');
             const heroDied = await finishHeroDeath({
-                killer: `tasting ${requireMonsterData(MONSTER_NAME, mnum)} meat`, deathType: STONING,
+                killer: `tasting ${requireMonsterData(MONSTER_NAME, mnum)} meat`,
+                killerFormat: KILLED_BY, deathType: STONING,
                 deathVerb: 'turned to stone', deathLineShown: true,
             });
             if (!heroDied && state.context.victual?.piece)

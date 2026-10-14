@@ -2,12 +2,14 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { performMonsterHeroAttack } from '../js/allmain.js';
 import { STONING, TURNED_SLIME } from '../js/const.js';
+import { applyCorpsePreEffects } from '../js/corpse_eating.js';
 import { finishOrdinaryDeath } from '../js/end.js';
 import { useHeroGaze } from '../js/hero_gaze.js';
 import { game, requireGameDisplay, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { finishMonsterAttackDeath } from '../js/monster_attack_death.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
+import { respondMedusa } from '../js/monster_gaze.js';
 import { setMonsterGivenName } from '../js/monster_given_name.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { loadScoreRecords } from '../js/score_records.js';
@@ -42,6 +44,45 @@ for (const death of [
         assert.equal(loadScoreRecords()[0]?.death, death.cause);
     });
 }
+void test('tasting petrifying flesh keeps the native action phrase on the tombstone and score entry', async () => {
+    freshObjectRoom({ flags: { bones: false, disclose: '-i -a -v -c -o', tombstone: true } });
+    game.storage = memoryStorage();
+    game.u.urexp = 100;
+    game.iflags.toptenwin = false;
+    const input = resetInputState();
+    let tombstone = '';
+    input.beforeRead = () => {
+        if (visibleText().includes('REST'))
+            tombstone = visibleText();
+    };
+    installPagerInput(input, { expected: /stone|Goodbye|points|You were/i, limit: 8 });
+    await applyCorpsePreEffects(MONSTER_NAME.indexOf('cockatrice'));
+    assert.equal(loadScoreRecords()[0]?.death, 'petrified by tasting cockatrice meat');
+    assert.match(tombstone, /petrified by/);
+    assert.match(tombstone, /tasting/);
+    assert.doesNotMatch(tombstone, /petrified by a/);
+});
+void test("Medusa's attacking gaze keeps her proper name on the tombstone and score entry", async () => {
+    freshObjectRoom({ flags: { bones: false, disclose: '-i -a -v -c -o', tombstone: true } });
+    requirePlayingGame(game);
+    const medusa = await createMonsterAt('Medusa', 11, 10);
+    medusa.mpeaceful = 0;
+    game.storage = memoryStorage();
+    game.u.urexp = 100;
+    game.iflags.toptenwin = false;
+    const input = resetInputState();
+    let tombstone = '';
+    input.beforeRead = () => {
+        if (visibleText().includes('REST'))
+            tombstone = visibleText();
+    };
+    installPagerInput(input, { expected: /gaze|stone|Goodbye|points|You were/i, limit: 8 });
+    await respondMedusa(medusa);
+    assert.equal(loadScoreRecords()[0]?.death, 'petrified by Medusa');
+    assert.match(tombstone, /petrified by/);
+    assert.match(tombstone, /Medusa/);
+    assert.doesNotMatch(tombstone, /petrified by a/);
+});
 void test("deliberately meeting Medusa's gaze keeps the native phrase on the tombstone and score entry", async () => {
     freshMonsterAbilityRoom('umber hulk', {
         energy: 30,
