@@ -41,7 +41,7 @@ import { doBlindingRay } from './flash.js';
 import { heroSpecies } from './hero_species.js';
 import { lightDamage, lightRoom } from './light.js';
 import { MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL } from './monster_data.js';
-import { definiteName, objectName, objectNameIsPlural } from './objnam.js';
+import { definiteName, objectCombatName, objectName, objectNameIsPlural } from './objnam.js';
 import { flashBurn } from './sight_change.js';
 import { promptDirection } from './tty_prompts.js';
 import { castSpell } from './spell.js';
@@ -344,7 +344,7 @@ async function invokeCreateAmmo(
     arrows.owt = objectWeight(arrows);
     await holdAnotherObject(arrows, {
         state, publish,
-        dropMessage: `Suddenly ${arrows.quan} ${objectName(arrows, state)} fall out.`,
+        dropMessage: `Suddenly ${arrows.quan} ${objectCombatName(arrows, { state })} fall out.`,
     });
 }
 
