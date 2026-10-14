@@ -3214,6 +3214,7 @@ export async function maketrap(x: number, y: number, typ: number): Promise<Trap 
             statueMonster = rndmonnumAdj(3, 6);
         } while (--tryCount > 0
             && MONSTER_SYMBOL[statueMonster] === 21
+            && ((MONSTER_FLAGS2[statueMonster] ?? 0) & M2_JEWELS)
             && Math.sign(game.u?.ualign?.type ?? 0)
                 === Math.sign(MONSTER_ALIGNMENT[statueMonster] ?? 0));
         const statue = await createCorpstatAt(STATUE, null, statueMonster, x, y, 0);
