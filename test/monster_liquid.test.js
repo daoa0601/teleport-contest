@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { LAVAPOOL, POOL, W_AMUL } from '../js/const.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
+import { initializePet } from '../js/dog.js';
 import { flush_screen } from '../js/display.js';
 import { resetInputState } from '../js/input.js';
 import { resolveMonsterLiquid } from '../js/mon.js';
@@ -10,6 +11,23 @@ import { AMULET_OF_LIFE_SAVING, POT_HEALING } from '../js/object_data.js';
 import { knownObject } from './support/game-objects.js';
 import { createMonsterAt, createSaddledSteed, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+for (const lava of [false, true]) {
+    void test(`an unseen pet lost to ${lava ? 'lava' : 'drowning'} gives the native sad feeling`, async () => {
+        const level = freshObjectRoom();
+        requirePlayingGame(game);
+        const pet = await createMonsterAt('little dog', 12, 10);
+        initializePet(pet);
+        pet.minvis = true;
+        level.requireAt(12, 10).typ = lava ? LAVAPOOL : POOL;
+        const messages = [];
+        await resolveMonsterLiquid(pet, game, {
+            finishDeath: finishMonsterLiquidDeath,
+            announce: async (message) => messages.push(message),
+        });
+        assert.equal(pet.dead, true);
+        assert.equal(messages.at(-1), 'You have a sad feeling for a moment, then it passes.');
+    });
+}
 void test('a drowning monster drops its potion into water only once', async () => {
     const level = freshObjectRoom({ hero: { uluck: -5 } });
     requirePlayingGame(game);

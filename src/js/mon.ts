@@ -276,6 +276,12 @@ export async function resolveMonsterLiquid<DeathResult = MonsterLiquidDeathResul
     if (typeof finishDeath !== 'function') {
         throw new TypeError('minliquid requires the monster death handler');
     }
+    const sadFeeling = !!monster.mtame && !canSeeMonster(monster);
+    const finishFatalLiquid = async (cause: MonsterLiquidDeathContext['cause'], leaveCorpse: boolean) => {
+        if (sadFeeling)
+            await announce('You have a sad feeling for a moment, then it passes.');
+        return finishDeath(monster, { state, random, leaveCorpse, cause });
+    };
 
     const waterLevel = levelIsWaterLevel(state);
     const waterWall = location.typ === WATER;
@@ -323,9 +329,7 @@ export async function resolveMonsterLiquid<DeathResult = MonsterLiquidDeathResul
                 );
                 if (recovery.heroDied) return { heroDied: true };
                 if (!recovery.survived) {
-                    return finishDeath(monster, {
-                        state, random, leaveCorpse: true, cause: 'rust',
-                    });
+                    return finishFatalLiquid('rust', true);
                 }
             }
             await waterDamageChain(
@@ -352,9 +356,7 @@ export async function resolveMonsterLiquid<DeathResult = MonsterLiquidDeathResul
             );
             if (recovery.heroDied) return { heroDied: true };
             if (!recovery.survived) {
-                return finishDeath(monster, {
-                    state, random, leaveCorpse: true, cause: 'drowning',
-                });
+                return finishFatalLiquid('drowning', true);
             }
             if (monsterInAir(monster, state)) return { survived: true };
             await waterDamageChain(
@@ -410,13 +412,8 @@ export async function resolveMonsterLiquid<DeathResult = MonsterLiquidDeathResul
                 );
                 if (recovery.heroDied) return { heroDied: true };
                 if (!recovery.survived) {
-                    return finishDeath(monster, {
-                        state,
-                        random,
-                        leaveCorpse: false,
-                        cause: lava.kind === 'scorch'
-                            ? 'lava-scorch' : 'lava-burning',
-                    });
+                    return finishFatalLiquid(lava.kind === 'scorch'
+                        ? 'lava-scorch' : 'lava-burning', false);
                 }
             }
             if (monsterInAir(monster, state) || monsterLikesLava(monster))
