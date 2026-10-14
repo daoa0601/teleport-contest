@@ -471,6 +471,7 @@ import { kickFloorObject } from './object_kick.js';
 import { kickWithMonsterForm } from './hero_form_kick.js';
 import { admitHeroKick, kickCanReachTarget } from './kick_admission.js';
 import { kickNonDoorTerrain } from './kick_terrain.js';
+import { kickDoor } from './kick_door.js';
 import {
     bringLeashedFollowers, heroTeleportDestinationOk, moveHeroByTeleport,
     randomMonsterRelocation,
@@ -2164,43 +2165,8 @@ async function dokick() {
         game.context.move = 1;
         return;
     }
-    if (location?.typ === DOOR
-        && (location.doormask & (D_CLOSED | D_LOCKED))) {
-        if (game.u?.levitating) {
-            await kickOuch(x, y);
-            game.context.move = 1;
-            return;
-        }
-        await exerciseAttribute(A_DEX, true);
-        const strength = currentStrength();
-        if (rnl(35) < average) {
-            const shopDoor = roomsAt(game.level, x, y, SHOPBASE).length > 0;
-            if (location.doormask & D_TRAPPED) {
-                if (game.flags.verbose) await pline('You kick the door.');
-                await exerciseAttribute(A_STR, false);
-                location.doormask = D_NODOOR;
-                if (await triggerBoobyTrap('door', { bodypart: true })) return;
-            } else {
-                const shatters = strength > 18 && rn2(5) === 0 && !shopDoor;
-                location.doormask = shatters ? D_NODOOR : D_BROKEN;
-                await pline(shatters
-                    ? 'As you kick the door, it shatters to pieces!'
-                    : 'As you kick the door, it crashes open!');
-                await exerciseAttribute(A_STR, true);
-            }
-            feel_newsym(x, y);
-            // kick_door() defers sight refresh so billing sees the keeper's
-            // visibility before the door broke, as rloc_to_core() requires.
-            vision_note_blocker_change(x, y);
-            if (shopDoor) {
-                addShopDamage(x, y, SHOP_DOOR_COST);
-                await payForShopDamage('break');
-            }
-        } else {
-            await exerciseAttribute(A_STR, true);
-            await pline(rn2(3) === 0 ? 'Thwack!!' : 'Whammm!!');
-        }
-        game.context.move = 1;
+    if (location.typ === DOOR) {
+        await kickDoor(x, y, average, { ouch: kickOuch, dumb: kickDumb });
         return;
     }
     if (location.typ === SDOOR) {
