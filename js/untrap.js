@@ -368,9 +368,6 @@ async function tryDisarm(trap, { state, publish, random, rollOne, luckRandom, en
                 await publish(`Fortunately, you don't move ${preposition} it.`);
             }
         }
-        if (state.program_state.gameover)
-            return 1;
-        await exerciseAttribute(A_DEX, false, state);
     }
     else {
         const owner = trap.madeby_u ? 'Your' : here ? 'This' : 'That';
