@@ -2614,7 +2614,7 @@ export async function attackMonsterWithMonster(
             if (attack.attackType === AT_WEAP) await updateMonsterWeaponAfterPolymorph(aggressor, state);
             weapon = attack.attackType === AT_WEAP ? monsterWieldedWeapon(aggressor) ?? null : null;
             if (weapon) {
-                await swingMonsterWeapon(aggressor, weapon, state, { defender, random });
+                if (visible) await swingMonsterWeapon(aggressor, weapon, state, { defender, random });
                 threshold += weaponHitBonus(weapon, defender, { state, random, rollOne });
             }
             const attackThreshold = threshold;

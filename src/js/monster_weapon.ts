@@ -12,7 +12,7 @@ import {
 } from './objnam.js';
 import { artifactById, artifactEmitsLight, monsterCanTouchArtifact } from './artifacts.js';
 import { monsterHandName } from './body_parts.js';
-import { canSeeMonster, newsym, plineWithContinuation } from './display.js';
+import { canSeeMonster, monsterVisible, newsym, plineWithContinuation } from './display.js';
 import { applyFloorEffects } from './floor_effects.js';
 import { placeObject, stack_object } from './floor_object.js';
 import { game } from './gstate.js';
@@ -91,7 +91,7 @@ export async function swingMonsterWeapon(
     }: WeaponSwingOptions = {},
 ): Promise<void> {
     if (!state.flags.verbose || heroIsBlind(state)
-        || !canSeeMonster(monster)) return;
+        || !(defender ? monsterVisible(monster) : canSeeMonster(monster))) return;
     weapon.dknown = true;
     recordObjectEncounter(weapon.otyp, state);
     const x = defender ? defender.mx : state.u.ux;
@@ -105,11 +105,9 @@ export async function swingMonsterWeapon(
     const possessive = perceivedPossessivePronoun(monster, { state, random });
     let target = '';
     if (defender) {
-        const targetName = canSeeMonster(defender)
-            ? monsterSentenceSubject(defender).replace(/^The /, 'the ') : 'it';
-        target = ` at ${targetName}`;
+        target = ` at ${monsterName(defender, { state })}`;
     }
-    await publish(`${monsterSentenceSubject(monster)} ${verb} ${quantity}${possessive} ${name}${target}.`);
+    await publish(`${monsterName(monster, { state, capitalized: true })} ${verb} ${quantity}${possessive} ${name}${target}.`);
 }
 
 // mswings uses xname(), so it does not show BUC or enchantment.
