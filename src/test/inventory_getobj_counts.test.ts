@@ -26,6 +26,30 @@ void test('#adjust moves only the counted part of a stack', async t => {
     assert.equal(game.context.move, 0);
 });
 
+for (const forcedMenu of [false, true]) {
+    void test(`#adjust rejects an excessive count ${forcedMenu ? 'and keeps the forced-menu selection' : 'and asks for another selection'}`, async t => {
+        freshObjectRoom({ flags: { force_invmenu: forcedMenu } });
+        const dagger = await addInventoryObject(DAGGER, { quan: 4 });
+        const input = resetInputState();
+        input.feed('adjust\r');
+        planInput(input, t, [
+            { prompt: /What do you want to adjust\?/, keys: `6${dagger.invlet}` },
+            { prompt: /You don't have that many!  You have only 4\.--More--/, keys: ' ' },
+            ...(!forcedMenu ? [
+                { prompt: /What do you want to adjust\?/, keys: dagger.invlet },
+            ] : []),
+            { prompt: /Adjust letter to what/, keys: 'z' },
+        ]);
+
+        await rhack('#'.charCodeAt(0));
+
+        assert.equal(dagger.quan, 4);
+        assert.equal(game.inventory.length, 1);
+        assert.equal(game.inventory.find(object => object.invlet === 'z'), dagger);
+        assert.equal(game.context.move, 0);
+    });
+}
+
 void test('counted #adjust reveals a wielded stack curse and moves the whole stack', async t => {
     freshObjectRoom();
     const dagger = await addInventoryObject(DAGGER, {

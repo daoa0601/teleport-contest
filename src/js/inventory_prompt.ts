@@ -313,6 +313,9 @@ export async function promptInventoryObject(prompt: string, eligible: readonly G
                 await pline(
                     `You don't have that many!  You have only ${quantity}.`,
                 );
+                // C getobj() keeps the forced-menu letter and drops the count.
+                if (forcedMenu)
+                    return { cancelled: false, object, gold: false, none: false, count: null };
                 key = await askInventoryPrompt(prompt);
                 count = null;
                 continue;
