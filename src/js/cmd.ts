@@ -5722,28 +5722,33 @@ async function doclose(): Promise<void> {
 // C refs: lock.c doopen(); cmd.c get_adjacent_loc()/getdir().  Direction
 // validation is owned by the same modal assistance transaction as close;
 // the door mutation happens only after that transaction returns a direction.
-async function doopen(): Promise<void> {
+async function doopen(x = 0, y = 0): Promise<void> {
     if (heroHasNoHands(game)) {
         await pline("You can't open anything -- you have no hands!");
         game.context.move = 0;
         return;
     }
-    const direction = await promptDirection();
-    if (!direction) {
-        await pline('Never mind.');
-        game.context.move = 0;
-        return;
+    if (!(x > 0 && y >= 0)) {
+        const boxes = game.level?.objects[game.u.ux]?.[game.u.uy] ?? [];
+        const inPitWithContainer = game.u.utrap && game.u.utraptype === TT_PIT
+            && boxes.some(object => isContainer(object));
+        const direction = await promptDirection(inPitWithContainer
+            ? () => readDirectionKey('Open where? [.>] ') : readDirectionKey);
+        if (!direction) {
+            await pline('Never mind.');
+            game.context.move = 0;
+            return;
+        }
+        x = game.u.ux + direction.dx;
+        y = game.u.uy + direction.dy;
     }
-
-    const x = game.u.ux + direction.dx;
-    const y = game.u.uy + direction.dy;
     if (!isok(x, y)) {
         game.context.move = 0;
         return;
     }
     const loc = game.level?.at(x, y);
     if (x === game.u.ux && y === game.u.uy
-        && (direction.dz > 0 || loc?.typ !== DOOR || !(loc.doormask & (D_CLOSED | D_LOCKED)))) {
+        && ((game.u.dz ?? 0) > 0 || loc?.typ !== DOOR || !(loc.doormask & (D_CLOSED | D_LOCKED)))) {
         await doloot();
         return;
     }
@@ -5760,8 +5765,8 @@ async function doopen(): Promise<void> {
         || game.u.stunned || game.u.stunnedTurns);
     if (loc) {
         const previousGlyph = glyphAt(x, y)?.glyph;
-        recordMappedOverviewState();
         const previousTerrain = loc.lastseentyp;
+        updateLastSeenTerrain(x, y);
         newsym(x, y);
         // doopen_indir() uses a turn when looking at the target teaches
         // the hero something, even if the target has no door to open.
@@ -5769,7 +5774,17 @@ async function doopen(): Promise<void> {
             spentTime = true;
     }
     game.context.move = Number(spentTime);
-    if (loc?.typ !== DOOR) {
+    const portcullis = loc && (loc.typ === DOOR || loc.typ === DBWALL)
+        && findDrawbridgeAt(x, y) !== null;
+    if (portcullis || loc?.typ !== DOOR) {
+        if (loc?.typ === DBWALL || loc?.typ === DRAWBRIDGE_UP) {
+            await pline('There is no obvious way to open the drawbridge.');
+            return;
+        }
+        if (portcullis || loc?.typ === DRAWBRIDGE_DOWN) {
+            await pline('The drawbridge is already open.');
+            return;
+        }
         const floorPile = game.level?.objects[x]?.[y] ?? [];
         // Native Is_container includes a bag of tricks for this hint.
         const hasContainer = floorPile.some(object =>
@@ -5797,6 +5812,11 @@ async function doopen(): Promise<void> {
         return;
     }
 
+    if (heroIsVerySmall(game)) {
+        await pline("You're too small to pull the door open.");
+        return;
+    }
+
     if (rnl(20) < Math.trunc((currentStrength()
         + currentAttribute(A_DEX)
         + currentAttribute(A_CON)) / 3)) {
@@ -5820,9 +5840,8 @@ async function openClosedDoor(door: MapLocation, x: number, y: number): Promise<
         if (roomsAt(level, x, y, SHOPBASE).length)
             addShopDamage(x, y, SHOP_DOOR_COST);
     } else door.doormask = D_ISOPEN;
-    if (heroIsBlind(game)) feel_location(x, y);
-    else newsym(x, y);
-    vision_reset();
+    feel_newsym(x, y);
+    vision_note_blocker_change(x, y);
     vision_recalc(0);
 }
 
@@ -7798,26 +7817,8 @@ async function domoveCore(dx: number, dy: number, explicitAttempt: boolean): Pro
             }
             return false;
         }
-        // lock.c:doopen_indir() classifies a locked door before the ordinary
-        // closed-door strength roll.  test_move() reaches autoopen before its
-        // later diagonal-door restriction, so a diagonal attempt still owns
-        // this zero-time message.
-        if (loc.doormask & D_LOCKED) {
-            await openLockedDoor(newx, newy);
-            game.context.move = 0;
-            return false;
-        }
-        const openRoll = rnl(20);
-        const openThreshold = Math.trunc(
-            (currentStrength() + currentAttribute(A_DEX)
-                + currentAttribute(A_CON)) / 3,
-        );
-        if (openRoll >= openThreshold) {
-            await exerciseAttribute(A_STR, true);
-            await pline('The door resists!');
-            return false;
-        }
-        await openClosedDoor(loc, newx, newy);
+        await doopen(newx, newy);
+        game.context.move = 0;
         return false;
     }
 
