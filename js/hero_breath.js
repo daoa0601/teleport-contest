@@ -164,14 +164,18 @@ async function hitWithDisintegration(context) {
         const heroDied = await die({ killer: context.name || 'finger of death', deathLineShown: true });
         return { resisted: false, damage: 0, heroDied };
     }
+    // Native rolls inventory protection before checking the hero's resistance.
+    const protectedItems = hasWornProperty('disintegrationResistance', state)
+        && random(100) < 99;
     if (state.u.disintegrationResistance) {
         await publish('You are not disintegrated.');
+        noteRayResistance(context, true);
         return { resisted: true, damage: 0, heroDied: false };
     }
-    if (hasWornProperty('disintegrationResistance', state)
-        && random(100) < 99) {
+    if (protectedItems) {
         return { resisted: true, damage: 0, heroDied: false };
     }
+    noteRayResistance(context, false);
     const shield = wornObject(state, 'uarms');
     if (shield) {
         await disintegrateWornArmor(shield, { state, publish });
