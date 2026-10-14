@@ -1,6 +1,6 @@
 // C pickup.c:dotip(), choose_tip_container_menu(), tipcontainer(),
 // tipcontainer_gettarget(), and tipcontainer_checks().
-import { ALTAR, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, LOST_DROPPED, MENU_ITEMFLAGS_SELECTED, MENU_TRADITIONAL } from './const.js';
+import { ALTAR, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, LOST_DROPPED, MENU_ITEMFLAGS_SELECTED, MENU_TRADITIONAL, PLNMSG_OBJNAM_ONLY } from './const.js';
 import { game, requireGameLevel } from './gstate.js';
 import { plineWithContinuation as pline } from './display.js';
 import { isContainer, magicBagExplodes, explodeBag, loseMagicBagItem, thawObject } from './container.js';
@@ -274,8 +274,12 @@ async function tipContainer(source) {
                         const name = description(object);
                         await pline(terse ? `${name}${index + 1 < contents.length ? ',' : '.'}`
                             : `${name.charAt(0).toUpperCase()}${name.slice(1)} ${object.quan === 1 ? 'drops' : 'drop'} to the ${surfaceName(x, y)}.`);
+                        if (terse)
+                            game._lastPlineKind = PLNMSG_OBJNAM_ONLY;
                     }
                     await dropObjectAtHero(object);
+                    if (game._lastPlineKind !== PLNMSG_OBJNAM_ONLY)
+                        terse = false;
                 }
             }
         }

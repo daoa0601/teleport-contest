@@ -1,12 +1,25 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { game } from '../js/gstate.js';
-import { BAG_OF_HOLDING, CAN_OF_GREASE, CHEST, CLUB, HORN_OF_PLENTY, SACK, WAN_CANCELLATION } from '../js/object_data.js';
+import { LAVAPOOL } from '../js/const.js';
+import { BAG_OF_HOLDING, CAN_OF_GREASE, CHEST, CLUB, HORN_OF_PLENTY, ROCK, SACK, WAN_CANCELLATION } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { runExtendedCommand } from './support/commands.js';
 import { addInventoryObject, floorObject, knownObject } from './support/game-objects.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 import { floorObjectsAt } from './support/level-state.js';
+void test('tipping switches to full drop messages after an item burns in lava', async () => {
+    const level = freshPlayableRoom();
+    level.requireAt(10, 10).typ = LAVAPOOL;
+    const sack = await addInventoryObject(SACK, { invlet: 'a', initialize: false });
+    const club = await knownObject(CLUB, { where: 'contained', container: sack });
+    const rock = await knownObject(ROCK, { where: 'contained', container: sack });
+    sack.contents = [club, rock];
+    await runExtendedCommand('tip', 'a\n' + ' '.repeat(10));
+    assert.equal(club.where, 'gone');
+    assert.equal(floorObjectsAt(level, 10, 10).includes(rock), true);
+    assert.match(game._pending_message, /rock drops to the lava\./);
+});
 void test('tip empties a floor chest onto the floor without picking up its contents', async () => {
     const level = freshPlayableRoom();
     const chest = await floorObject(CHEST, 10, 10, {
