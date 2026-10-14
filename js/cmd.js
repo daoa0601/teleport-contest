@@ -6300,7 +6300,7 @@ async function dothrow(selectedItem = null, capabilityChecked = false, suppliedS
     }
     const item = selectedItem;
     if (!item) {
-        game.context.move = 0;
+        resetCommandVariables(true); // dothrow() returns ECMD_CANCEL without an object.
         return;
     }
     const previous = game.inventory[game.inventory.indexOf(item) - 1];
@@ -6312,8 +6312,7 @@ async function dothrow(selectedItem = null, capabilityChecked = false, suppliedS
     if (!direction) {
         if (splitParent)
             await rejoinObjectStack(splitParent, item, game);
-        clearRepeatCommand(); // dothrow.c:throw_obj() returns ECMD_CANCEL.
-        game.context.move = 0;
+        resetCommandVariables(true); // throw_obj() returns ECMD_CANCEL without a direction.
         game._pending_message = '';
         return;
     }
