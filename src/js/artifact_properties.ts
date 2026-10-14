@@ -43,18 +43,20 @@ export async function setCarriedArtifactProperties(
 ): Promise<void> {
     const artifact = artifactById(object.oartifact, state);
     if (!artifact) return;
-    for (const property of conferredProperties(artifact, true))
+    for (const property of conferredProperties(artifact, true)) {
         setCarriedProperty(property, object, active, state);
-    if (artifact.carriedFlags.includes('SPFX_ESP')
-        && (active || !hasCarriedProperty('telepathy', null, state))) {
-        recalculateArtifactTelepathyRange(state);
-        await see_monsters();
+        if (property === 'telepathy'
+            && (active || !hasCarriedProperty('telepathy', null, state))) {
+            recalculateArtifactTelepathyRange(state);
+            await see_monsters();
+        }
     }
 }
 
 export function setWornArtifactProperties(
     object: GameObject, slot: WornPropertySlot, active: boolean, state: GameState = game,
 ): void {
+    recalculateArtifactTelepathyRange(state);
     const artifact = artifactById(object.oartifact, state);
     if (!artifact) return;
     const properties = conferredProperties(artifact, false);
@@ -78,7 +80,7 @@ function recalculateArtifactTelepathyRange(state: GameState): void {
     const worn = [state.uarm, state.uarmc, state.uarmh, state.uarms,
         state.uarmg, state.uarmf, state.uarmu, state.uamul, state.uleft,
         state.uright, state.ublindf, state.uwep, state.uswapwep, state.uquiver];
-    const ordinary = worn.filter(object => object
+    const ordinary = worn.filter(object => object && object.owornmask
         && OBJECT_PROPERTY[object.otyp] === 'telepathy').length;
     const sources = ordinary + Number(hasCarriedProperty('telepathy', null, state));
     state.u.unblind_telepat_range = sources ? 64 * sources : -1;

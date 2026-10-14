@@ -4,9 +4,12 @@ import { rhack } from '../js/cmd.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { propertyIsActive } from '../js/properties.js';
-import { artifactObject, floorArtifact } from './support/game-objects.js';
+import { artifactObject, floorArtifact, knownObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { applyInventoryObject, dropInventoryObject } from './support/commands.js';
+import { OBJECT_NAMES } from '../js/object_data.js';
+import { addInventoryItem } from '../js/u_init.js';
+import { unblindTelepathyRange } from '../js/display.js';
 void test('wielding and unwielding the Staff enables and removes regeneration and drain resistance', async () => {
     freshObjectRoom({ role: 'healer' });
     requirePlayingGame(game);
@@ -54,5 +57,18 @@ void test('wearing the Eyes grants x-ray sight and magic resistance, removing th
     await applyInventoryObject(eyes, ' '.repeat(20));
     assert.equal(game.u.xray_range, -1);
     assert.equal(propertyIsActive('antimagic'), false);
+});
+void test('ordinary worn telepathy combines its range with carried artifact telepathy', async () => {
+    freshObjectRoom({ role: 'archeologist', hero: { ualign: { type: 1, record: 10 } } });
+    requirePlayingGame(game);
+    await addInventoryItem(await artifactObject('The Orb of Detection'));
+    const amulet = await knownObject(OBJECT_NAMES.indexOf('amulet of ESP'), { invlet: 'b', where: 'inventory' });
+    game.inventory.push(amulet);
+    pushKeys('b');
+    await rhack('P'.charCodeAt(0));
+    assert.equal(unblindTelepathyRange(), 128);
+    pushKeys('b' + ' '.repeat(20));
+    await rhack('R'.charCodeAt(0));
+    assert.equal(unblindTelepathyRange(), 64);
 });
 //# sourceMappingURL=artifact_properties.test.js.map
