@@ -47,6 +47,9 @@ export async function drainObjectEnchantment(object, { random = rn2, byHero = fa
         await chargeAlteredUnpaidObject(object, 'drain', state);
     object.spe--;
     object.enchantment = object.spe;
+    if (object.oclass === ARMOR_CLASS && state.inventory.includes(object)
+        && object.owornmask)
+        state._armorClassDirty = true;
     drainWornBonuses(object, state);
     if (state.context.botl) {
         requireLiveGame(state);
