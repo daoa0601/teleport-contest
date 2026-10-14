@@ -134,4 +134,51 @@ void test('the full key list identifies the rest_on_space option on the Space bi
     }
     assert.equal(game.context.move, 0);
 });
+for (const numberPad of [0, 1]) {
+    void test(`the full key list preserves the hero direction with number_pad=${numberPad}`, async () => {
+        const input = freshTurnRoom();
+        game.commandBindings.setNumberPad(numberPad);
+        game.u.dx = -1;
+        game.u.dy = 1;
+        game.u.dz = -1;
+        input.feed('?j');
+        const action = rhack(0);
+        try {
+            const waiting = await Promise.race([
+                input.waitUntilBlocked().then(() => true), action.then(() => false),
+            ]);
+            assert.equal(waiting, true, 'the key list must wait for dismissal');
+            const text = game.nhDisplay?.grid.map(row => row.map(cell => cell.ch).join('')).join('\n') ?? '';
+            assert.match(text, /<esc> +cancel current prompt or pending prefix/);
+            assert.equal(game.u.dx, -1);
+            assert.equal(game.u.dy, 1);
+            assert.equal(game.u.dz, -1, 'listing special keys must not probe movement');
+        }
+        finally {
+            input.feed('\x1b');
+            await action;
+        }
+        assert.equal(game.context.move, 0);
+    });
+}
+void test('whatdoes describes the fixed Escape key', async () => {
+    const input = freshTurnRoom();
+    input.feed('&');
+    const action = rhack(0);
+    try {
+        await input.waitUntilBlocked();
+        while (game.nhDisplay?.grid[0]?.map(cell => cell.ch).join('').includes('--More--')) {
+            input.feed(' ');
+            await input.waitUntilBlocked();
+        }
+        input.feed('\x1b');
+        await action;
+        assert.equal(game._pending_message, '<esc>   cancel current prompt or pending prefix.');
+        assert.equal(game.context.move, 0);
+    }
+    finally {
+        input.feed('\x1b');
+        await action;
+    }
+});
 //# sourceMappingURL=command_help.test.js.map

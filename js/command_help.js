@@ -8,6 +8,11 @@ import { rememberCommandKey, takeRepeatCommand } from './command_repeat.js';
 import { promptKey, restoreCommandMap } from './tty_prompts.js';
 import { showTextWindow } from './windows.js';
 import { KEY_HELP } from './keyhelp_data.js';
+// C misc_keys[] supplies descriptions to both key help and the bindings list.
+const miscellaneousKeys = [
+    { name: 'escape', description: 'cancel current prompt or pending prefix', numberPadOnly: false },
+    { name: 'count', description: 'Prefix: for digits when preceding a command with a count', numberPadOnly: true },
+];
 function keyText(key) {
     return key === 32 ? '<space>' : key === 27 ? '<esc>'
         : key === 10 ? '<enter>' : key === 127 ? '<del>' : visibleCommandKey(key);
@@ -34,10 +39,13 @@ export function describeCommandKey(key) {
         if (key === 48 || bindings.pcHack && key === 176)
             return "synonym for 'i'";
     }
-    if (key === 27)
-        return 'cancel current prompt or pending prefix';
-    if (bindings.numberPad && key === bindings.specialKey('count'))
-        return 'Prefix: for digits when preceding a command with a count';
+    for (const special of miscellaneousKeys) {
+        if (special.numberPadOnly && !bindings.numberPad)
+            continue;
+        const code = special.name === 'escape' ? 27 : bindings.specialKey(special.name);
+        if (key === code)
+            return special.description;
+    }
     const command = bindings.lookup(key)?.command;
     if (!command)
         return null;
@@ -90,12 +98,14 @@ export async function showKeyBindings() {
     if (!bindings.numberPad)
         lines.push('Ctrl+<direction> will run in specified direction until something very', '        interesting is seen.');
     lines.push(`${bindings.numberPad ? 'Meta' : 'Shift'}+<direction> will run in specified direction until you encounter`, '        an obstacle.', '', 'Miscellaneous keys:');
-    for (const special of bindings.numberPad ? ['escape', 'count'] : ['escape']) {
-        const code = special === 'escape' ? 27 : bindings.specialKey(special);
+    for (const special of miscellaneousKeys) {
+        if (special.numberPadOnly && !bindings.numberPad)
+            continue;
+        const code = special.name === 'escape' ? 27 : bindings.specialKey(special.name);
         if (!code || used.has(code))
             continue;
         used.add(code);
-        lines.push(`${keyText(code).padEnd(7)} ${describeCommandKey(code) ?? ''}`);
+        lines.push(`${keyText(code).padEnd(7)} ${special.description}`);
     }
     lines.push('^C      interrupt: break out of NetHack (SIGINT)', '', 'Menu control keys:');
     for (const [control, description] of [
