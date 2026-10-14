@@ -108,6 +108,35 @@ void test('moving away from the floor box ends picking without unlocking it', as
     assert.equal(box.olocked, true);
     assert.equal(game._occupation, null);
 });
+for (const target of ['box', 'door']) {
+    void test(`walking away and back requires a fresh ${target} lock attempt`, async () => {
+        const level = freshObjectRoom({ hero: { acurr: { a: [3, 3, 3, 3, 3, 3] } } });
+        const door = level.requireAt(11, 10);
+        door.typ = DOOR;
+        door.doormask = D_LOCKED;
+        const box = target === 'box' ? await floorObject(CHEST, 10, 10, { olocked: true }) : null;
+        await addInventoryObject(CREDIT_CARD, { invlet: 'a' });
+        const input = resetInputState();
+        pushKeys(`a${target === 'box' ? '.' : 'l'}`);
+        await answerPrompts(rhack('a'.charCodeAt(0)), input, [
+            { prompt: target === 'box' ? /here; unlock it\?/ : /Unlock it\?/, keys: 'y' },
+        ]);
+        initRng(1n);
+        await continueCountedCommand();
+        await stopHeroOccupation();
+        await answerPrompts(flushPendingTopline(), input, [{ prompt: /--More--/, keys: ' ' }]);
+        await rhack('h'.charCodeAt(0));
+        assert.equal(game.u.ux, 9);
+        await rhack('l'.charCodeAt(0));
+        assert.equal(game.u.ux, 10);
+        pushKeys(`a${target === 'box' ? '.' : 'l'}`);
+        await answerPrompts(rhack('a'.charCodeAt(0)), input, [
+            { prompt: target === 'box' ? /here; unlock it\?/ : /Unlock it\?/, keys: 'n' },
+        ]);
+        assert.equal(game._occupation, null);
+        assert.equal(target === 'box' ? box?.olocked : door.doormask, target === 'box' ? true : D_LOCKED);
+    });
+}
 void test('checking a door through autounlock ignores a floor trap on that square', async () => {
     const level = freshObjectRoom({ flags: { autounlock: AUTOUNLOCK_UNTRAP } });
     const door = level.requireAt(11, 10);

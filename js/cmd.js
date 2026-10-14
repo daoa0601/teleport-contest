@@ -1,4 +1,5 @@
 import { autokey, autoUnlockFlags, continuePicking, pickLock } from './lock_pick.js';
+import { resetPick } from './lock_context.js';
 import { AUTOUNLOCK_APPLY_KEY, AUTOUNLOCK_UNTRAP } from './const.js';
 import { findDrawbridgeAt } from './dbridge.js';
 import { doorObstructed } from './door_magic.js';
@@ -7155,6 +7156,7 @@ export async function applyHeroLocationEffects(publish = plineWithContinuation, 
 async function finishMovedHero({ oldx, oldy, newx, newy, loc, explicitAttempt, ballChainMove = null, trapOptions = {}, }) {
     const u = game.u;
     resetBulkTakeoff();
+    resetPick();
     resetTrapSetting();
     // C hack.c:domove_core() sets this only in the common tail after map
     // coordinates changed.  The turn loop retains it through every global
@@ -7499,6 +7501,7 @@ async function domoveCore(dx, dy, explicitAttempt) {
                 // C domove_core() resets occupations after restoring the
                 // hero's position, even when a peaceful refuses the swap.
                 resetBulkTakeoff();
+                resetPick();
                 resetTrapSetting();
                 await finishBallAndChainMove(ballChainMove);
                 if (ballChainMove?.causeDelay)

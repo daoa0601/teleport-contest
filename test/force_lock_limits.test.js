@@ -2,8 +2,9 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { continueCountedCommand, rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
+import { flushPendingTopline } from '../js/display.js';
 import { pushKeys, resetInputState } from '../js/input.js';
-import { CHEST, DAGGER, OBJECT_NAMES, BOULDER, TOWEL } from '../js/object_data.js';
+import { CHEST, CLUB, DAGGER, OBJECT_NAMES, BOULDER, TOWEL } from '../js/object_data.js';
 import { stopHeroOccupation } from '../js/occupation.js';
 import { initRng } from '../js/rng.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
@@ -54,6 +55,27 @@ void test('a stopped forcing attempt resumes without another chest question', as
     await rhack('#'.charCodeAt(0));
     assert.equal(game._occupation?.key, 'force-lock');
     assert.match(game._pending_message, /You resume your attempt to force the lock\./);
+});
+void test('walking away and back requires a fresh chest forcing question', async () => {
+    freshObjectRoom();
+    game.uwep = game.u.uwep = await addInventoryObject(CLUB);
+    const chest = await floorObject(CHEST, 10, 10, { olocked: true, obroken: false });
+    const input = resetInputState();
+    pushKeys('force\n');
+    await answerPrompts(rhack('#'.charCodeAt(0)), input, [{ prompt: /here; force its lock\?/, keys: 'y' }]);
+    initRng(1n);
+    await continueCountedCommand();
+    await stopHeroOccupation();
+    await answerPrompts(flushPendingTopline(), input, [{ prompt: /--More--/, keys: ' ' }]);
+    await rhack('h'.charCodeAt(0));
+    assert.equal(game.u.ux, 9);
+    await rhack('l'.charCodeAt(0));
+    assert.equal(game.u.ux, 10);
+    pushKeys('force\n');
+    await answerPrompts(rhack('#'.charCodeAt(0)), input, [{ prompt: /here; force its lock\?/, keys: 'n' }]);
+    assert.equal(game._occupation, null);
+    assert.equal(chest.olocked, true);
+    assert.equal(chest.obroken, false);
 });
 void test('breaking a shop chest lock bills only the chest', async () => {
     freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
