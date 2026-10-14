@@ -256,6 +256,10 @@ export async function promptInventoryObject(prompt, eligible, { verb, allowGold 
                 && (object.oclass !== 12 || count > quantity)) {
                 await pline(count > quantity ? `You only have ${quantity}${object.oclass !== 12 && quantity > 1 ? ' and can only throw one at a time' : ''}.`
                     : 'You can only throw one at a time.');
+                // C getobj() keeps the selected letter after the first forced
+                // menu, so its retry uses that object without the rejected count.
+                if (forcedMenu)
+                    return { cancelled: false, object, gold: false, none: false, count: null };
                 key = await askInventoryPrompt(prompt);
                 count = null;
                 continue;
