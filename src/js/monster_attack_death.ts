@@ -5,7 +5,7 @@ import type { Monster } from './monster_types.js';
 import { MGIVENNAME, M_AP_MONSTER, M_AP_TYPE, STONING, Upolyd, ismnum } from './const.js';
 import { canSpotMonster, flushPendingTopline, flush_screen, pline, plineWithContinuation } from './display.js';
 import {
-    beginHeroLifeSaving, completeHeroLifeSaving, finishOrdinaryDeath,
+    beginHeroLifeSaving, completeHeroLifeSaving, finishOrdinaryDeath, identifyLifeSavingAmulet,
     restoreHeroAfterDeath,
 } from './end.js';
 import { setHeroRemainsFromMonster } from './death_remains.js';
@@ -117,13 +117,12 @@ export async function finishMonsterAttackDeath(monster: Monster, {
     // life-saving transaction performs done()'s commit itself.
     const lifeSaving = beginHeroLifeSaving();
     if (lifeSaving) {
-        // done_in_by() writes the fatal line before done(); the
-        // latter appends both life-saving lines until the next
-        // message would overflow tty's top line.  Identification
-        // (and its Wisdom exercise draw) precedes that pager.
+        // "But wait..." can page the fatal line. Native makeknown()
+        // and its Wisdom exercise draw wait for that acknowledgement.
         const medallionEffect = heroIsBlind(game) ? 'feels warm' : 'begins to glow';
         if (announcesDeath && !petrificationAnnounced) await plineWithContinuation(fatalLine);
         await plineWithContinuation('But wait...');
+        identifyLifeSavingAmulet();
         await plineWithContinuation(`Your medallion ${medallionEffect}!`);
         const dismissal = await plineWithContinuation('You feel much better!');
         // ESC at tty --More-- sets WIN_STOP: the new overflow

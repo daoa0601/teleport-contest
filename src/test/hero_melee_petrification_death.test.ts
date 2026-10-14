@@ -106,3 +106,54 @@ void test('barehand contact petrification identifies the real invisible named cr
     assert.doesNotMatch(messages.join('\n'), /You die/);
     assert.equal(loadScoreRecords()[0]?.death, 'petrified by an invisible cockatrice called Birdie');
 });
+
+for (const command of ['movement', 'fight'] as const) {
+    void test(`${command} contact identifies a life-saving amulet after acknowledging the named bird's petrification`, async () => {
+        freshObjectRoom({
+            flags: { verbose: true },
+            hero: { uhitinc: 100, uhp: 40, uhpmax: 40 },
+        });
+        const bird = await createMonsterAt('cockatrice', 11, 10, MM_NOGRP | MM_NOWAIT | NO_MINVENT);
+        setMonsterGivenName(bird, 'Bird With An Impressive Name');
+        bird.mhp = bird.mhpmax = 2000;
+        bird.mpeaceful = false;
+        bird.msleeping = 0;
+        const amulet = await addInventoryObject(AMULET_OF_LIFE_SAVING, { known: false, typeKnown: false });
+        await wearHeroAccessory(amulet, 'uamul');
+        assert.equal(!!game._knownObjectTypes?.has(AMULET_OF_LIFE_SAVING), false);
+        const pages: Array<{ message: string; amuletKnown: boolean; hp: number | undefined }> = [];
+        const input = resetInputState();
+        installPagerInput(input, { expected: /Impressive Name|stone|But wait|medallion|feel much better/, limit: 8 });
+        const pager = input.display;
+        assert.ok(pager);
+        input.display = {
+            async readKey() {
+                pages.push({
+                    message: game._pending_message,
+                    amuletKnown: !!game._knownObjectTypes?.has(AMULET_OF_LIFE_SAVING),
+                    hp: game.u.uhp,
+                });
+                return pager.readKey();
+            },
+        };
+        if (command === 'fight') pushKey('l');
+        initRng(41n);
+
+        await rhack((command === 'fight' ? 'F' : 'l').charCodeAt(0));
+
+        const petrificationPage = pages[0];
+        assert.ok(petrificationPage);
+        assert.match(petrificationPage.message, /You hit .*Impressive Name\.  You turn to stone\.\.\./);
+        assert.doesNotMatch(petrificationPage.message, /But wait/,
+            'But wait must await this page before it appears');
+        assert.equal(petrificationPage.hp, 0, 'done() zeros HP before But wait pages the death announcement');
+        assert.equal(petrificationPage.amuletKnown, false,
+            'The hero has not discovered life saving while But wait awaits the death acknowledgement');
+        const glowPage = pages.find(page => page.message.includes('Your medallion begins to glow!'));
+        assert.ok(glowPage, 'The medallion glow must be shown after acknowledging petrification');
+        assert.equal(glowPage.amuletKnown, true, 'The medallion glow reveals the amulet type');
+        assert.equal(amulet.where, 'gone');
+        assert.ok((game.u.uhp ?? 0) > 0);
+        assert.equal(game.u.umortality, 1);
+    });
+}

@@ -125,15 +125,14 @@ export { SCORE_RECORD_STORAGE_KEY } from './score_records.js';
 const AMULET_CLASS = 5;
 const GEM_CLASS = 13;
 
-// C refs: end.c done()/savelife() and o_init.c makeknown().  The fatal-hit
-// caller owns tty suspension, but end.c owns the two state commits on either
-// side of that pager: identification before it and consumption/revival after.
-export function beginHeroLifeSaving(random = rn2): LifeSavingTransaction | null {
+// C end.c:done() records the fatal event before "But wait...". The caller
+// identifies the amulet after that message returns, then consumes it and
+// revives the hero after the crumble message.
+export function beginHeroLifeSaving(): LifeSavingTransaction | null {
     const amulet = game.uamul || game.u?.uamul;
     if (amulet?.otyp !== AMULET_OF_LIFE_SAVING) return null;
 
     recordHeroFatalEvent();
-    identifyLifeSavingAmulet(random);
     return { amulet };
 }
 
@@ -146,7 +145,7 @@ function recordHeroFatalEvent(): void {
     }
 }
 
-function identifyLifeSavingAmulet(random = rn2): void {
+export function identifyLifeSavingAmulet(random = rn2): void {
     if (!game._knownObjectTypes?.has(AMULET_OF_LIFE_SAVING)) {
         recordObjectKnowledge(AMULET_OF_LIFE_SAVING);
         const wisdom = game.u?.acurr?.a?.[A_WIS] ?? 10;
