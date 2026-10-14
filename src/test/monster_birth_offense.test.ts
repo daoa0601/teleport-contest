@@ -24,6 +24,34 @@ for (const noInventory of [false, true]) {
     });
 }
 
+for (const perception of ['invisible', 'displaced']) {
+    void test(`Croesus's fixed sword has the same properties beside a visible or ${perception} hero`, async () => {
+        for (let seed = 1; seed <= 16; seed++) {
+            freshObjectRoom({ gameplaySeed: seed });
+            requirePlayingGame(game);
+            game.rogue_level = { ...game.u.uz };
+            const visibleBirth = await createMonsterAt('Croesus', game.u.ux, game.u.uy);
+            const visibleSword = visibleBirth.minvent.find(object => object.otyp === TWO_HANDED_SWORD);
+            assert.ok(visibleSword, 'Croesus retains his fixed sword on the Rogue level');
+
+            freshObjectRoom({ gameplaySeed: seed });
+            requirePlayingGame(game);
+            game.rogue_level = { ...game.u.uz };
+            if (perception === 'invisible') game.u.invisibleTurns = 20;
+            else game.u.displaced = true;
+            const hiddenBirth = await createMonsterAt('Croesus', game.u.ux, game.u.uy);
+            const hiddenSword = hiddenBirth.minvent.find(object => object.otyp === TWO_HANDED_SWORD);
+            assert.ok(hiddenSword, 'Croesus retains his fixed sword beside the concealed hero');
+
+            const context = `${perception} hero, seed ${seed}`;
+            assert.equal(hiddenSword.spe, visibleSword.spe, `sword enchantment changed: ${context}`);
+            assert.equal(hiddenSword.blessed, visibleSword.blessed, `sword blessing changed: ${context}`);
+            assert.equal(hiddenSword.cursed, visibleSword.cursed, `sword curse changed: ${context}`);
+            assert.equal(hiddenSword.oartifact, visibleSword.oartifact, `sword artifact changed: ${context}`);
+        }
+    });
+}
+
 for (const species of ['kobold leader', 'hobbit', 'guard']) {
     void test(`a ${species} can be born with an offensive magic item alongside its ordinary equipment`, async () => {
         let armed = 0;

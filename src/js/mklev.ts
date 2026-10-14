@@ -1885,78 +1885,9 @@ async function makemon(
         return finishMonsterBirth(shaped, mmflags);
     }
 
-    // makemon.c owns this initialization when its original requested
-    // coordinate was the hero's occupied square.  enexto() has already moved
-    // the actor, so preserve that caller fact separately from final x/y.
-    if (requestedByHero) {
-        newsym(pendingMonster.mx, pendingMonster.my);
-        setMonsterApparentHeroPosition(pendingMonster, game, rn2);
-    }
-
-    // makemon() establishes these attitudes before inventory selection.
-    // Peaceful monsters decline invisibility items when the hero cannot see
-    // invisible, including princes made peaceful despite MM_ANGRY.
-    const bribingPrince = (genderFlags & M2_DEMON) !== 0 && (genderFlags & M2_PRINCE) !== 0
-        && MONSTER_SOUND[mndx] === MS_BRIBE;
-    const wieldedArtifact = game.uwep?.oartifact;
-    const baneWielded = wieldedArtifact !== undefined
-        && (wieldedArtifact === artifactByName('Excalibur')?.id || wieldedArtifact === artifactByName('Demonbane')?.id);
-    if (bribingPrince) {
-        pendingMonster.mpeaceful = baneWielded ? 0 : 1;
-        pendingMonster.minvis = pendingMonster.perminvis = true;
-        pendingMonster.mavenge = 0;
-    }
-    if (mndx === PM_RAVEN && game.uwep?.otyp === BEC_DE_CORBIN)
-        pendingMonster.mpeaceful = 1;
-
-    if (mndx === PM_LONG_WORM)
-        initializeMonsterWormBody(pendingMonster, {
-            allowTail: !(mmflags & MM_NOTAIL),
-        });
-
-    // C makemon() type setup: spiders and snakes born during level creation
-    // receive a random floor object before they hide beneath it.
-    if (game.in_mklev
-        && (MONSTER_SYMBOL[mndx] === 19 || MONSTER_SYMBOL[mndx] === 45)
-        && x && y) {
-        await mkobj_at(RANDOM_CLASS, x, y, true);
-    }
-
-    // Ordinary clerics always become roamers; ordinary Angels have a
-    // one-in-three chance. Callers requesting priest/minion data own its
-    // alignment themselves. This birth state also applies under NO_MINVENT.
     let roamingMinion: { min_align: number; renegade: boolean; mpeaceful: 0 | 1 } | null = null;
-    const becomesRoamer = [PM_ALIGNED_CLERIC, PM_HIGH_CLERIC].includes(mndx)
-        ? !(mmflags & (MM_EPRI | MM_EMIN))
-        : mndx === MONSTER_NAME.indexOf('Angel') && !(mmflags & MM_EMIN) && !rn2(3);
-    if (becomesRoamer) {
-        const minAlign = rn2(3) - 1;
-        const renegade = !!(mmflags & MM_ANGRY) || rn2(3) === 0;
-        const minionPeaceful = minAlign === (game.u?.ualign?.type ?? 0)
-            ? !renegade : renegade;
-        roamingMinion = {
-            min_align: minAlign,
-            renegade,
-            mpeaceful: minionPeaceful ? 1 : 0,
-        };
-        pendingMonster.isminion = 1;
-        pendingMonster.emin = { min_align: minAlign, renegade };
-        pendingMonster.mpeaceful = roamingMinion.mpeaceful;
-    }
-
-    if (mdat == null && !(mmflags & MM_NOGRP)) {
-        const geno = MONSTER_GENO[mndx] || 0;
-        if ((geno & G_SGROUP) && rn2(2)) {
-            await initMonsterGroup(mndx, x, y, 3, mmflags);
-        } else if (geno & G_LGROUP) {
-            await initMonsterGroup(mndx, x, y, rn2(3) ? 10 : 3, mmflags);
-        }
-    }
-
     let hasMonsterInventory = false;
     const allowMonsterInventory = !(mmflags & NO_MINVENT);
-    const initializeMonsterEquipment = allowMonsterInventory && !Is_rogue_level(game.u.uz);
-    let skipCommonMonsterInventory = false;
     // C makemon.c:mongets(). Normalize birth equipment before mpickobj().
     const mongets = async (otyp: number): Promise<GameObject | null> => {
         if (!otyp) return null;
@@ -2000,6 +1931,80 @@ async function makemon(
         hasMonsterInventory = true;
         return object.where === 'gone' ? null : object;
     };
+
+    // makemon() creates Croesus's fixed sword before apparent-target rolls.
+    if (allowMonsterInventory && mndx === PM_CROESUS)
+        await mongets(TWO_HANDED_SWORD);
+
+    // makemon.c owns this initialization when its original requested
+    // coordinate was the hero's occupied square.  enexto() has already moved
+    // the actor, so preserve that caller fact separately from final x/y.
+    if (requestedByHero) {
+        newsym(pendingMonster.mx, pendingMonster.my);
+        setMonsterApparentHeroPosition(pendingMonster, game, rn2);
+    }
+
+    // makemon() establishes these attitudes before inventory selection.
+    // Peaceful monsters decline invisibility items when the hero cannot see
+    // invisible, including princes made peaceful despite MM_ANGRY.
+    const bribingPrince = (genderFlags & M2_DEMON) !== 0 && (genderFlags & M2_PRINCE) !== 0
+        && MONSTER_SOUND[mndx] === MS_BRIBE;
+    const wieldedArtifact = game.uwep?.oartifact;
+    const baneWielded = wieldedArtifact !== undefined
+        && (wieldedArtifact === artifactByName('Excalibur')?.id || wieldedArtifact === artifactByName('Demonbane')?.id);
+    if (bribingPrince) {
+        pendingMonster.mpeaceful = baneWielded ? 0 : 1;
+        pendingMonster.minvis = pendingMonster.perminvis = true;
+        pendingMonster.mavenge = 0;
+    }
+    if (mndx === PM_RAVEN && game.uwep?.otyp === BEC_DE_CORBIN)
+        pendingMonster.mpeaceful = 1;
+
+    if (mndx === PM_LONG_WORM)
+        initializeMonsterWormBody(pendingMonster, {
+            allowTail: !(mmflags & MM_NOTAIL),
+        });
+
+    // C makemon() type setup: spiders and snakes born during level creation
+    // receive a random floor object before they hide beneath it.
+    if (game.in_mklev
+        && (MONSTER_SYMBOL[mndx] === 19 || MONSTER_SYMBOL[mndx] === 45)
+        && x && y) {
+        await mkobj_at(RANDOM_CLASS, x, y, true);
+    }
+
+    // Ordinary clerics always become roamers; ordinary Angels have a
+    // one-in-three chance. Callers requesting priest/minion data own its
+    // alignment themselves. This birth state also applies under NO_MINVENT.
+    const becomesRoamer = [PM_ALIGNED_CLERIC, PM_HIGH_CLERIC].includes(mndx)
+        ? !(mmflags & (MM_EPRI | MM_EMIN))
+        : mndx === MONSTER_NAME.indexOf('Angel') && !(mmflags & MM_EMIN) && !rn2(3);
+    if (becomesRoamer) {
+        const minAlign = rn2(3) - 1;
+        const renegade = !!(mmflags & MM_ANGRY) || rn2(3) === 0;
+        const minionPeaceful = minAlign === (game.u?.ualign?.type ?? 0)
+            ? !renegade : renegade;
+        roamingMinion = {
+            min_align: minAlign,
+            renegade,
+            mpeaceful: minionPeaceful ? 1 : 0,
+        };
+        pendingMonster.isminion = 1;
+        pendingMonster.emin = { min_align: minAlign, renegade };
+        pendingMonster.mpeaceful = roamingMinion.mpeaceful;
+    }
+
+    if (mdat == null && !(mmflags & MM_NOGRP)) {
+        const geno = MONSTER_GENO[mndx] || 0;
+        if ((geno & G_SGROUP) && rn2(2)) {
+            await initMonsterGroup(mndx, x, y, 3, mmflags);
+        } else if (geno & G_LGROUP) {
+            await initMonsterGroup(mndx, x, y, rn2(3) ? 10 : 3, mmflags);
+        }
+    }
+
+    const initializeMonsterEquipment = allowMonsterInventory && !Is_rogue_level(game.u.uz);
+    let skipCommonMonsterInventory = false;
     // C makemon.c:m_initthrow(). Throwing stacks bypass mongets(): the raw
     // mksobj() result goes straight into the inventory, so demons keep any
     // blessing, the quantity is replaced with rn1(oquan, 3), and orcish
@@ -2062,8 +2067,6 @@ async function makemon(
     };
     if (allowMonsterInventory && mndx === PM_VLAD_THE_IMPALER)
         await mongets(CANDELABRUM_OF_INVOCATION);
-    if (allowMonsterInventory && mndx === PM_CROESUS)
-        await mongets(TWO_HANDED_SWORD);
     if (isQuestNemesis) {
         // makemon() gives MS_NEMESIS the Bell before its level-generation
         // sleep gate and normal weapon/inventory initialization.
