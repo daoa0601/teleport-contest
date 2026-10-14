@@ -45,3 +45,11 @@ void test('an ordinary untrapped chest wish removes a generated trap', async () 
     assert.ok(result && !result.noWish);
     assert.equal(result.object.otrapped, false);
 });
+
+void test('broken glass is rejected instead of granting a glass gem', async () => {
+    freshObjectRoom();
+
+    const result = await readObjectName('broken glass', { wizardWish: true });
+
+    assert.equal(result, null);
+});

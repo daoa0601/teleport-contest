@@ -142,7 +142,7 @@ export function lookupWishType(parsed, { wizardWish = false, state = game, } = {
             oclass = GEM_CLASS;
         }
         else if (/ glass$/i.test(name) || /^glass$/i.test(name)) {
-            if (/broken/i.test(name))
+            if (parsed.lock === 'broken' || /broken/i.test(name))
                 return result(null);
             const glass = name.replace(/^worthless /i, '').replace(/^piece of /i, '')
                 .replace(/^colou?red /i, '');

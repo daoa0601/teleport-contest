@@ -148,7 +148,7 @@ export function lookupWishType(parsed: ParsedWish, {
             name = name.replace(/ (?:stone|gem)$/i, '');
             oclass = GEM_CLASS;
         } else if (/ glass$/i.test(name) || /^glass$/i.test(name)) {
-            if (/broken/i.test(name)) return result(null);
+            if (parsed.lock === 'broken' || /broken/i.test(name)) return result(null);
             const glass = name.replace(/^worthless /i, '').replace(/^piece of /i, '')
                 .replace(/^colou?red /i, '');
             if (glass.toLowerCase() === 'glass')
