@@ -4560,21 +4560,25 @@ function verboseFarlookDescription(x, y, description) {
             : withIndefiniteArticle(explanation) + (includesHero ? ' or you' : '');
         return `${symbol}\x1b[8C${classDescription} (${description})`;
     }
+    if (!glyph)
+        return description;
     const loc = game.level?.at(x, y);
-    if (loc?.typ === CORR)
-        return `#\x1b[8Ccan be many things (corridor)`;
-    if (loc?.typ === STONE)
-        return `\x1b[9Ccan be many things (stone)`;
-    if (loc && IS_WALL(loc.typ)) {
-        const glyph = terrain_glyph(loc, x, y);
-        const symbol = glyph.dec ? `\x0e${glyph.ch}\x0f` : glyph.ch;
-        return `${symbol}\x1b[8Cthe interior of a monster or a wall (wall)`;
+    const appearance = loc?.disp_glyph
+        ? { ch: loc.disp_ch, dec: loc.disp_decgfx }
+        : loc?.remembered_glyph;
+    if (!appearance)
+        return description;
+    const symbol = appearance.dec ? `\x0e${appearance.ch}\x0f` : appearance.ch;
+    if (glyph.kind === 'unexplored' || glyph.kind === 'nothing'
+        || glyph.kind === 'terrain' && ['stone', 'corridor', 'lit corridor'].includes(glyph.terrainName)) {
+        return `${symbol}\x1b[8Ccan be many things (${description})`;
     }
-    if (loc?.typ === ROOM) {
-        const glyph = terrain_glyph(loc, x, y);
-        if (glyph.dec && glyph.ch === '~') {
+    if (glyph.kind === 'terrain' && glyph.terrainName === 'wall')
+        return `${symbol}\x1b[8Cthe interior of a monster or a wall (${description})`;
+    if (glyph.kind === 'terrain' && glyph.terrainName === 'floor of a room') {
+        if (appearance.dec && appearance.ch === '~') {
             return '\x0e~\x0f\x1b[8Ca doorway or the floor of a room'
-                + ' or the dark part of a room or ice (floor of a room)';
+                + ` or the dark part of a room or ice (${description})`;
         }
     }
     return description;
