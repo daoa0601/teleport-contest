@@ -5,7 +5,7 @@ import { isPoolAt } from './terrain_properties.js';
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import { impossible } from './diagnostics.js';
 import { maybeUnhideAt } from './monster_hiding.js';
-import { clearMapDisplay, map_object, newsym, plineWithContinuation, } from './display.js';
+import { cls, map_object, newsym, plineWithContinuation, } from './display.js';
 import { moveObject, placeObjectSynchronously, remove_object, } from './floor_object.js';
 import { applyFloorEffects, landFloorObject } from './floor_effects.js';
 import { exerciseAttribute } from './attrib.js';
@@ -48,7 +48,7 @@ export async function dragBallDownStairs(state = game) {
         && (weapon === ball || !weapon || rn2(3) === 0);
     if (carried(ball, state) && !isWeldedPrimary(ball, state))
         await plineWithContinuation('You lose your grip on the iron ball.');
-    clearMapDisplay();
+    await cls();
     if (forward) {
         if (rn2(6)) {
             await plineWithContinuation('The iron ball drags you downstairs!');
