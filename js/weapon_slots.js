@@ -3,7 +3,7 @@
 import { W_QUIVER, W_SWAPWEP, W_WEAPONS, W_WEP, } from './const.js';
 import { game } from './gstate.js';
 import { artifactById, artifactEmitsLight } from './artifacts.js';
-import { setWornArtifactProperties } from './artifact_properties.js';
+import { recalculateTelepathyRange, setWornArtifactProperties } from './artifact_properties.js';
 import { makeHallucinated } from './hero_mental_status.js';
 import { setArtifactWarningWielded } from './artifact_warning.js';
 import { endObjectBurn, equipmentLightMessage } from './light.js';
@@ -38,6 +38,7 @@ function clearSlot(slot, mask, flag, state) {
         endObjectBurn(object, state);
     object[flag] = false;
     object.owornmask = (object.owornmask ?? 0) & ~mask;
+    recalculateTelepathyRange(state);
     return object;
 }
 function installSlot(object, slot, mask, flag, state) {
@@ -48,6 +49,7 @@ function installSlot(object, slot, mask, flag, state) {
     object.alternate = flag === 'alternate';
     object.ready = flag === 'ready';
     object.owornmask = (object.owornmask ?? 0) | mask;
+    recalculateTelepathyRange(state);
 }
 async function replaceSlot(object, slot, mask, flag, state) {
     const oldObject = slotObject(slot, state);
@@ -168,6 +170,7 @@ export async function releaseWeaponSlots(object, state = game) {
     object.alternate = false;
     object.ready = false;
     object.owornmask = (object.owornmask ?? 0) & ~W_WEAPONS;
+    recalculateTelepathyRange(state);
     // Direct setnotworn clears the pointer before warning feedback.
     if (primary)
         await setWieldedArtifactProperties(object, false, state);

@@ -8,7 +8,7 @@ import { game } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import { artifactById, artifactEmitsLight } from './artifacts.js';
-import { setWornArtifactProperties } from './artifact_properties.js';
+import { recalculateTelepathyRange, setWornArtifactProperties } from './artifact_properties.js';
 import { makeHallucinated } from './hero_mental_status.js';
 import { setArtifactWarningWielded } from './artifact_warning.js';
 import { endObjectBurn, equipmentLightMessage } from './light.js';
@@ -53,6 +53,7 @@ function clearSlot(
         endObjectBurn(object, state);
     object[flag] = false;
     object.owornmask = (object.owornmask ?? 0) & ~mask;
+    recalculateTelepathyRange(state);
     return object;
 }
 
@@ -65,6 +66,7 @@ function installSlot(
     object.alternate = flag === 'alternate';
     object.ready = flag === 'ready';
     object.owornmask = (object.owornmask ?? 0) | mask;
+    recalculateTelepathyRange(state);
 }
 
 async function replaceSlot(
@@ -188,6 +190,7 @@ export async function releaseWeaponSlots(
     object.alternate = false;
     object.ready = false;
     object.owornmask = (object.owornmask ?? 0) & ~W_WEAPONS;
+    recalculateTelepathyRange(state);
     // Direct setnotworn clears the pointer before warning feedback.
     if (primary) await setWieldedArtifactProperties(object, false, state);
 }

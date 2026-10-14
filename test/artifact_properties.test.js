@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { rhack } from '../js/cmd.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { pushKeys } from '../js/input.js';
+import { pushKeys, resetInputState } from '../js/input.js';
 import { grantIntrinsicProperty, propertyIsActive } from '../js/properties.js';
 import { artifactObject, floorArtifact, knownObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -115,5 +115,31 @@ void test('a wielded ESP amulet extends telepathy supplied by a carried artifact
     pushKeys('b');
     await rhack('w'.charCodeAt(0));
     assert.equal(canSenseMonster(goblin), true);
+});
+void test('emptying an ESP amulet quiver stops sensing monsters beyond the worn amulet range', async () => {
+    freshObjectRoom({ right: 22 });
+    requirePlayingGame(game);
+    const wornAmulet = await knownObject(OBJECT_NAMES.indexOf('amulet of ESP'), {
+        invlet: 'a', where: 'inventory',
+    });
+    const quiveredAmulet = await knownObject(OBJECT_NAMES.indexOf('amulet of ESP'), {
+        invlet: 'b', where: 'inventory',
+    });
+    game.inventory = [wornAmulet, quiveredAmulet];
+    const goblin = await createMonsterAt('goblin', 20, 10, MM_NOGRP | NO_MINVENT);
+    goblin.minvis = 1;
+    pushKeys('b');
+    await rhack('Q'.charCodeAt(0));
+    pushKeys('a' + ' '.repeat(20));
+    await rhack('P'.charCodeAt(0));
+    assert.equal(canSenseMonster(goblin), true, 'both amulets extend the telepathy range');
+    resetInputState();
+    pushKeys('-');
+    await rhack('Q'.charCodeAt(0));
+    assert.equal(game.uquiver, null);
+    assert.equal(game.uamul, wornAmulet);
+    assert.equal(canSenseMonster(goblin), false, 'the distant invisible monster leaves telepathy range');
+    assert.equal(unblindTelepathyRange(), 64);
+    assert.equal(game.context.move, 0);
 });
 //# sourceMappingURL=artifact_properties.test.js.map

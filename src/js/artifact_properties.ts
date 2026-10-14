@@ -47,7 +47,7 @@ export async function setCarriedArtifactProperties(
         setCarriedProperty(property, object, active, state);
         if (property === 'telepathy'
             && (active || !hasCarriedProperty('telepathy', null, state))) {
-            recalculateArtifactTelepathyRange(state);
+            recalculateTelepathyRange(state);
             await see_monsters();
         }
     }
@@ -56,7 +56,7 @@ export async function setCarriedArtifactProperties(
 export function setWornArtifactProperties(
     object: GameObject, slot: WornPropertySlot, active: boolean, state: GameState = game,
 ): void {
-    recalculateArtifactTelepathyRange(state);
+    recalculateTelepathyRange(state);
     const artifact = artifactById(object.oartifact, state);
     if (!artifact) return;
     const properties = conferredProperties(artifact, false);
@@ -76,7 +76,7 @@ export function setWornArtifactProperties(
 
 // worn.c counts all ordinary worn TELEPAT objects, plus one source for
 // every carried ESP artifact together, regardless of their number.
-function recalculateArtifactTelepathyRange(state: GameState): void {
+export function recalculateTelepathyRange(state: GameState): void {
     const worn = [state.uarm, state.uarmc, state.uarmh, state.uarms,
         state.uarmg, state.uarmf, state.uarmu, state.uamul, state.uleft,
         state.uright, state.ublindf, state.uwep, state.uswapwep, state.uquiver];
