@@ -27,6 +27,7 @@ import { getObjectLocation } from './object_location.js';
 import { objectDisclosureText } from './object_inscription.js';
 import { cansee } from './vision.js';
 import { BOGUS_MONSTERS } from './random_text_data.js';
+import { lookupWishType, randomTypeByDescription } from './wish_lookup.js';
 const WEAPON_CLASS = 2;
 const ARMOR_CLASS = 3;
 const RING_CLASS = 4;
@@ -664,67 +665,11 @@ function normalizeName(value) {
         .replace(/^(?:an?|the)\s+/i, '')
         .toLowerCase();
 }
-function classQualifiedName(otyp) {
-    if (otyp === SLIME_MOLD)
-        return 'fruit';
-    const name = requireObjectName(otyp);
-    switch (objectClass(otyp)) {
-        case RING_CLASS: return `ring of ${name}`;
-        case POTION_CLASS: return `potion of ${name}`;
-        case SCROLL_CLASS: return `scroll of ${name}`;
-        case SPBOOK_CLASS: return `spellbook of ${name}`;
-        case WAND_CLASS: return `wand of ${name}`;
-        default: return name;
-    }
-}
 function currentDescription(otyp) {
     return game.objectDescriptions?.[otyp] ?? OBJECT_DESCRIPTIONS[otyp];
 }
-function candidateNames(otyp) {
-    const name = otyp === SLIME_MOLD ? 'fruit' : OBJECT_NAMES[otyp];
-    const description = currentDescription(otyp);
-    const names = [name, classQualifiedName(otyp)];
-    if (description) {
-        names.push(description);
-        const cls = objectClass(otyp);
-        if (cls === RING_CLASS)
-            names.push(`${description} ring`);
-        else if (cls === AMULET_CLASS)
-            names.push(`${description} amulet`);
-        else if (cls === POTION_CLASS)
-            names.push(`${description} potion`);
-        else if (cls === SCROLL_CLASS)
-            names.push(`scroll labeled ${description}`);
-        else if (cls === SPBOOK_CLASS)
-            names.push(`${description} spellbook`);
-        else if (cls === WAND_CLASS)
-            names.push(`${description} wand`);
-    }
-    return names.filter((name) => typeof name === 'string' && name.length > 0)
-        .map(normalizeName);
-}
 function singularizeObjectName(value) {
-    const requested = normalizeName(value);
-    const isExactCandidate = (candidate) => japaneseWishType(candidate) !== null
-        || OBJECT_NAMES.some((name, otyp) => name && candidateNames(otyp).includes(candidate));
-    if (isExactCandidate(requested))
-        return requested;
-    const alternatives = [];
-    // readobjnam_postparse2() accepts plural class-qualified wishes even
-    // when the object name itself is not plural ("scrolls of punishment").
-    // Normalize the class noun before applying ordinary trailing-s rules.
-    const classSingular = requested.replace(/^(rings|amulets|potions|scrolls|spellbooks|wands) of\s+/, prefix => `${prefix.slice(0, -5)} of `);
-    if (classSingular !== requested)
-        alternatives.push(classSingular);
-    if (requested.startsWith('scrolls labeled '))
-        alternatives.push(`scroll labeled ${requested.slice(16)}`);
-    if (/[^aeiou]ies$/.test(requested))
-        alternatives.push(`${requested.slice(0, -3)}y`);
-    if (/(?:ches|shes|sses|xes|zes)$/.test(requested))
-        alternatives.push(requested.slice(0, -2));
-    if (requested.endsWith('s'))
-        alternatives.push(requested.slice(0, -1));
-    return alternatives.find(isExactCandidate) || requested;
+    return ['tricks', 'clothes'].includes(value) ? value : makeSingular(value);
 }
 // C readobjnam_postparse3(): Japanese aliases follow the ordinary name and
 // description lottery, regardless of the hero's role, without another draw.
@@ -750,21 +695,6 @@ function japaneseWishType(request) {
     return null;
 }
 const GENERIC_SCALE_MAIL = OBJECT_NAMES.findIndex(name => name === 'scale mail');
-const DRAGON_SCALE_MAIL_REMAP = new Map(OBJECT_NAMES.map((name, otyp) => [normalizeName(name), otyp])
-    .filter(([name]) => /^[a-z]+ dragon scale mail$/.test(name)));
-// C readobjnam_postparse1() recognizes a leading monster name before object
-// lookup.  For "blue dragon scale mail", name_to_monplus() retains the blue
-// dragon index and leaves "scale mail" for rnd_otyp_by_namedesc(); only after
-// constructing generic SCALE_MAIL does readobjnam() remap it to blue DSM.
-function namedLookupPlan(name) {
-    const requested = normalizeName(name)
-        .replace(/^pairs? of\s+/, '')
-        .replace(/^sets? of\s+/, '');
-    const finalType = DRAGON_SCALE_MAIL_REMAP.get(requested);
-    return finalType === undefined
-        ? { requested, lookupName: requested, finalType: null }
-        : { requested, lookupName: 'scale mail', finalType };
-}
 export function parseWishText(text) {
     let remaining = String(text || '').trim().replace(/\s+/g, ' ');
     const parsed = {
@@ -932,39 +862,7 @@ export function objectStatePrefix(object) {
 // C adds xtra_prob=1 for readobjnam() so 0%-generation objects remain
 // wishable.  The draw is over total probability, not candidate count.
 export function rndObjectTypeByName(name, xtraProb = 1) {
-    const target = namedLookupPlan(name).lookupName;
-    const matches = [];
-    const firstWeapon = OBJECT_BASES[WEAPON_CLASS];
-    if (firstWeapon === undefined)
-        throw new RangeError('Weapon class has no first object type');
-    for (let otyp = firstWeapon; otyp < OBJECT_NAMES.length; otyp++) {
-        if (!OBJECT_NAMES[otyp])
-            continue;
-        if (candidateNames(otyp).some(candidate => candidate === target))
-            matches.push(otyp);
-    }
-    if (!matches.length)
-        return null;
-    const total = matches.reduce((sum, otyp) => sum + requireObjectData(OBJECT_PROB, otyp) + xtraProb, 0);
-    if (total <= 0)
-        return null;
-    let roll = rn2(total);
-    for (const otyp of matches) {
-        roll -= requireObjectData(OBJECT_PROB, otyp) + xtraProb;
-        if (roll < 0)
-            return otyp;
-    }
-    return matches.at(-1) ?? null;
-}
-// C objnam.c:readobjnam_postparse3() checks exact canonical real-gem names
-// before the combined name/description lottery.  This disambiguates requests
-// such as bare "ruby" from a potion whose shuffled description is "ruby".
-function exactRealGemType(name) {
-    for (let otyp = DILITHIUM_CRYSTAL; otyp <= JADE; otyp++) {
-        if (normalizeName(OBJECT_NAMES[otyp]) === name)
-            return otyp;
-    }
-    return null;
+    return randomTypeByDescription(name, 0, xtraProb);
 }
 export async function readObjectName(text, { wizardWish = false } = {}) {
     const parsed = parseWishText(text);
@@ -1002,10 +900,9 @@ export async function readObjectName(text, { wizardWish = false } = {}) {
         lookupOtyp = object.otyp;
     }
     else {
-        const lookup = namedLookupPlan(parsed.name);
-        let matchedType = artifact?.baseType ?? exactRealGemType(lookup.lookupName)
-            ?? rndObjectTypeByName(lookup.lookupName, 1)
-            ?? japaneseWishType(lookup.lookupName);
+        const lookup = lookupWishType(parsed.name, { wizardWish });
+        let matchedType = artifact?.baseType ?? lookup.type
+            ?? japaneseWishType(parsed.name);
         if (matchedType === null) {
             const match = matchWishedFruit(parsed.fruitName);
             if (match) {
@@ -1015,14 +912,20 @@ export async function readObjectName(text, { wizardWish = false } = {}) {
                 matchedType = SLIME_MOLD;
             }
         }
-        if (matchedType === null)
-            return null;
-        lookupOtyp = matchedType;
+        if (matchedType === null) {
+            if (!lookup.oclass)
+                return null;
+            object = await mkobj(lookup.oclass, false);
+            lookupOtyp = object.otyp;
+        }
+        else {
+            lookupOtyp = matchedType;
+            const type = wizardWish ? lookupOtyp : permittedWishType(lookupOtyp);
+            if (type === null)
+                return null;
+            object = await mksobj(type, true, false);
+        }
         finalType = lookup.finalType;
-        const type = wizardWish ? lookupOtyp : permittedWishType(lookupOtyp);
-        if (type === null)
-            return null;
-        object = await mksobj(type, true, false);
         if (fruit)
             object.spe = fruit.fid;
     }
