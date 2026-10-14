@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
+import { addFruit } from '../js/fruit.js';
 import { requireGameLevel } from '../js/gstate.js';
 import { BAG_OF_TRICKS, LAND_MINE, POT_HEALING, SACK, SPEED_BOOTS } from '../js/object_data.js';
 import { recordObjectCall } from '../js/object_knowledge.js';
@@ -73,4 +74,15 @@ void test('a plural range noun keeps its class when resolving a call name', asyn
 
     assert.ok(result && !result.noWish);
     assert.equal(result.object.otyp, SPEED_BOOTS);
+});
+
+void test('an explicit article requests one fruit even with a plural registered label', async () => {
+    freshObjectRoom();
+    const fruit = addFruit('berries');
+
+    const result = await readObjectName('a berries', { wizardWish: true });
+
+    assert.ok(result && !result.noWish);
+    assert.equal(result.object.spe, fruit);
+    assert.equal(result.object.quan, 1);
 });

@@ -13,7 +13,7 @@ import { parseTinPreparation } from './tin.js';
 
 export interface ParsedWish {
     count: number;
-    countExplicit: boolean;
+    explicitCount: number | null;
     globSize: number;
     enchantment: number | null;
     buc: ObjectBlessing | null;
@@ -53,7 +53,7 @@ export interface ParsedWish {
 export function parseWishText(text: string): ParsedWish {
     const original = text.trim().replace(/\s+/g, ' ');
     const parsed: ParsedWish = {
-        count: 1, countExplicit: false, globSize: 0, enchantment: null,
+        count: 1, explicitCount: null, globSize: 0, enchantment: null,
         buc: null, recharged: null, charges: null, erodeproof: false,
         eroded: null, eroded2: null, greased: false, fruitName: '', name: '',
         lit: false, wetness: 0, unlabeled: false, poisoned: false,
@@ -73,12 +73,12 @@ export function parseWishText(text: string): ParsedWish {
         if (word === undefined || rest === undefined) break;
         if (word === 'a' || word === 'an') {
             parsed.count = 1;
-            parsed.countExplicit = true;
+            parsed.explicitCount = 1;
         } else if (word === 'the') {
             // The definite article does not set a count in C.
-        } else if (/^\d+$/.test(word) && !parsed.countExplicit) {
+        } else if (/^\d+$/.test(word) && parsed.explicitCount === null) {
             parsed.count = Number(word) || 1;
-            parsed.countExplicit = true;
+            parsed.explicitCount = parsed.count;
         } else if (/^[+-]\d*$/.test(word)) {
             parsed.enchantment = Number(word.slice(1)) * (word.startsWith('-') ? -1 : 1);
         } else if (word === 'blessed' || word === 'holy') parsed.buc = 'blessed';

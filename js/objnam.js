@@ -829,8 +829,7 @@ export async function readObjectName(text, { wizardWish = false } = {}) {
             const match = matchWishedFruit(parsed.fruitName);
             if (match) {
                 fruit = match.fruit;
-                if (!parsed.countExplicit)
-                    parsed.count = match.count;
+                parsed.count = parsed.explicitCount ?? match.count;
                 matchedType = SLIME_MOLD;
             }
         }
