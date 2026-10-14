@@ -434,6 +434,7 @@ void test('a swallowed hero cannot take the monster weapon', async () => {
     });
     const worm = await swallowHeroWith();
     await equipMonsterObject(worm, club, W_WEP);
+    pushKeys('a\n');
 
     await rhack(','.charCodeAt(0));
 

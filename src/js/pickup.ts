@@ -41,7 +41,7 @@ import {
 } from './object_knowledge.js';
 import { nearCapacity, pickupLoadPrefix } from './weight.js';
 import { heroIsBlind } from './senses.js';
-import { touchPetrifyingCorpse } from './stoning.js';
+import { touchPetrifyingCorpse, willFeelPetrifyingCorpse } from './stoning.js';
 import { heroCannotTake } from './polyself.js';
 import { heroIsUnaware } from './hero_sleep.js';
 import { addShopObjectToBill, billedPickupQuote, costlySpot } from './shk.js';
@@ -89,7 +89,7 @@ export async function pickupAtHero(): Promise<void> {
         game.context.move = 0;
         return;
     }
-    const selected = await choosePickupObjects(objects, count);
+    const selected = await choosePickupObjects(source, objects, count);
     const { attempted } = await takeSelectedObjects(source, selected);
     game.context.move = attempted ? 1 : 0;
 }
@@ -132,13 +132,18 @@ export async function autopickupAtHero(): Promise<void> {
     if (!monster && !game.program_state?.gameover) await checkHere(source, picked > 0);
 }
 
-async function choosePickupObjects(objects: readonly GameObject[], count: number): Promise<CountedSelection<GameObject>[]> {
+async function choosePickupObjects(source: PickupSource, objects: readonly GameObject[], count: number): Promise<CountedSelection<GameObject>[]> {
     const eligible = count
         ? objects.filter(object => objectQuantity(object) >= count) : objects;
     if (!eligible.length) return [];
     const onlyObject = eligible[0];
-    if (eligible.length === 1 && onlyObject)
+    if (eligible.length === 1 && onlyObject && !(source.monster && objects[0]?.owornmask))
         return [{ value: onlyObject, count: count || objectQuantity(onlyObject) }];
+    if (!count && !source.monster && eligible.some(object => willFeelPetrifyingCorpse(object))) {
+        await plineWithContinuation(`You try to feel what is lying here on the ${surfaceName(source.x, source.y)}.`);
+        await showFloorPile(source.objects, false, dungeonFeatureSentenceAt(source.x, source.y));
+        return [];
+    }
     const ordered = orderedPickupObjects(eligible);
     const sections: MultiSelectSection<GameObject>[] = [];
     let letterCode = 'a'.charCodeAt(0);
@@ -156,6 +161,7 @@ async function choosePickupObjects(objects: readonly GameObject[], count: number
                 observeObjectForNaming(object);
                 return {
                     key: isFirstGold ? '$' : String.fromCharCode(letterCode++),
+                    groupAccelerator: OBJECT_CLASS_SYMBOLS[object.oclass] || '',
                     text: floorObjectDescription(object),
                     value: object,
                 };
@@ -169,12 +175,17 @@ async function choosePickupObjects(objects: readonly GameObject[], count: number
         sections,
         omitHeadings: game.flags.sortpack === false,
     };
-    if (count) {
-        const selected = await showMultiSelectWindow({ ...menu, pickOne: true });
-        const first = selected[0];
-        return first ? [{ value: first, count }] : [];
+    const selected = count
+        ? (await showMultiSelectWindow({ ...menu, pickOne: true })).map(value => ({ value, count }))
+        : await showMultiSelectWindow({ ...menu, returnCounts: true });
+    const allowed: CountedSelection<GameObject>[] = [];
+    for (const selection of selected) {
+        if (source.monster && selection.value.owornmask) {
+            observeObjectForNaming(selection.value);
+            await plineWithContinuation(`You can't pick the ${objectName(selection.value)} up.`);
+        } else allowed.push(selection);
     }
-    return showMultiSelectWindow({ ...menu, returnCounts: true });
+    return allowed;
 }
 
 // C pickup.c:pickup_object(): remote tools lift the original floor stack.
