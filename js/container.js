@@ -36,9 +36,10 @@ import { addPickedInventoryObject } from './pickup.js';
 import { objectWeight } from './weight.js';
 import { heroHasFreeHand } from './weapon_type.js';
 import { heroIsBlind } from './senses.js';
-import { currentShopResident, costlySpot } from './shk.js';
+import { addShopObjectToBill, currentShopResident, costlySpot } from './shk.js';
 import { stolenValue } from './shop_loss.js';
 import { currency } from './currency.js';
+import { sellHeroDroppedObject, setSellDisposition, SELL_DELIBERATE, SELL_DONTSELL, SELL_NORMAL } from './shop_sell.js';
 import { restoreMenuUnderlay, showChoiceWindow, showMultiSelectWindow, } from './windows.js';
 import { MENU_FULL, MENU_ITEMFLAGS_SKIPINVERT, PARANOID_AUTOALL, PARANOID_CONFIRM, W_ACCESSORY, W_ARMOR, } from './const.js';
 export const CONTAINER_TYPES = new Set([
@@ -457,6 +458,9 @@ export async function putIntoContainer(container, object, state = game, count = 
         return { moved: false, stop: true, message: null };
     if (object.lamplit)
         endObjectBurn(object, state, state.moves ?? 0);
+    const floorShop = container.where !== 'inventory' && costlySpot(state.u.ux, state.u.uy, state);
+    if (floorShop && object.oclass !== 12)
+        await sellHeroDroppedObject(object, state.u.ux, state.u.uy, state);
     if (container.otyp === ICE_BOX)
         freezeObject(object, state);
     else if (container.otyp === BAG_OF_HOLDING
@@ -466,10 +470,14 @@ export async function putIntoContainer(container, object, state = game, count = 
     observeObjectForNaming(container, { state });
     observeObjectForNaming(object, { state });
     const message = `You put ${objectDescription(object)} into the ${containerNoun(container)}.`;
+    await plineWithContinuation(message);
+    if (floorShop && object.oclass === 12)
+        await sellHeroDroppedObject(object, container.ox, container.oy, state);
     await addObjectToContainer(container, object, state);
     container.cknown = true;
     updateContainerWeights(container);
     state._capacityDirty = true;
+    await bot();
     return {
         moved: true,
         message,
@@ -512,6 +520,12 @@ export async function takeFromContainer(container, object, state = game, count =
         thawObject(object, state);
     if (resetJustPicked)
         clearJustPicked(state);
+    if (!object.unpaid && container.where !== 'inventory'
+        && costlySpot(container.ox, container.oy, state)) {
+        object.ox = container.ox;
+        object.oy = container.oy;
+        await addShopObjectToBill(object, state, { ininv: false });
+    }
     const { object: carried } = await addPickedInventoryObject(object);
     container.cknown = true;
     updateContainerWeights(container);
@@ -570,7 +584,7 @@ async function putSelectedObjects(container, stashOne = false) {
             // and charges a turn regardless of in_container's result.
             const transfer = splitForTransfer(onePicked, categories.justPickedCount ?? -1, game);
             const result = await putIntoContainer(container, transfer.object);
-            if (result.message)
+            if (!result.moved && result.message)
                 await plineWithContinuation(result.message);
             return { results: [result], spentTime: true };
         }
@@ -585,7 +599,7 @@ async function putSelectedObjects(container, stashOne = false) {
     for (const selection of selected) {
         const result = await putIntoContainer(container, selection.value, game, selection.count);
         results.push(result);
-        if (result.message)
+        if (!result.moved && result.message)
             await plineWithContinuation(result.message);
         // Stashing one item costs a turn even when it destroys the bag.
         if (stashOne && result.destroyedContainer)
@@ -669,6 +683,15 @@ async function chooseAction(container, held, usedTime, moreContainers) {
     }));
 }
 export async function useContainer(container, { held = false, moreContainers = false, underlay = null, } = {}) {
+    setSellDisposition(container.no_charge ? SELL_DONTSELL : SELL_DELIBERATE);
+    try {
+        return await useContainerActions(container, { held, moreContainers, underlay });
+    }
+    finally {
+        setSellDisposition(SELL_NORMAL);
+    }
+}
+async function useContainerActions(container, { held = false, moreContainers = false, underlay = null, } = {}) {
     if (heroHasNoHands(game)) {
         await pline('You have no hands!');
         return { spentTime: false, container };

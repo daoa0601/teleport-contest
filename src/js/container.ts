@@ -50,9 +50,10 @@ import { addPickedInventoryObject } from './pickup.js';
 import { objectWeight } from './weight.js';
 import { heroHasFreeHand } from './weapon_type.js';
 import { heroIsBlind } from './senses.js';
-import { currentShopResident, costlySpot } from './shk.js';
+import { addShopObjectToBill, currentShopResident, costlySpot } from './shk.js';
 import { stolenValue } from './shop_loss.js';
 import { currency } from './currency.js';
+import { sellHeroDroppedObject, setSellDisposition, SELL_DELIBERATE, SELL_DONTSELL, SELL_NORMAL } from './shop_sell.js';
 import {
     restoreMenuUnderlay, showChoiceWindow,
     showMultiSelectWindow,
@@ -522,6 +523,9 @@ export async function putIntoContainer(
     if (state.program_state?.gameover)
         return { moved: false, stop: true, message: null };
     if (object.lamplit) endObjectBurn(object, state, state.moves ?? 0);
+    const floorShop = container.where !== 'inventory' && costlySpot(state.u.ux, state.u.uy, state);
+    if (floorShop && object.oclass !== 12)
+        await sellHeroDroppedObject(object, state.u.ux, state.u.uy, state);
     if (container.otyp === ICE_BOX) freezeObject(object, state);
     else if (container.otyp === BAG_OF_HOLDING
         && magicBagExplodes(object)) {
@@ -532,10 +536,14 @@ export async function putIntoContainer(
     observeObjectForNaming(object, { state });
     const message = `You put ${objectDescription(object)} into the ${
         containerNoun(container)}.`;
+    await plineWithContinuation(message);
+    if (floorShop && object.oclass === 12)
+        await sellHeroDroppedObject(object, container.ox, container.oy, state);
     await addObjectToContainer(container, object, state);
     container.cknown = true;
     updateContainerWeights(container);
     state._capacityDirty = true;
+    await bot();
     return {
         moved: true,
         message,
@@ -580,6 +588,13 @@ export async function takeFromContainer(
     unlinkObject(object, state);
     if (container.otyp === ICE_BOX) thawObject(object, state);
     if (resetJustPicked) clearJustPicked(state);
+
+    if (!object.unpaid && container.where !== 'inventory'
+        && costlySpot(container.ox, container.oy, state)) {
+        object.ox = container.ox;
+        object.oy = container.oy;
+        await addShopObjectToBill(object, state, { ininv: false });
+    }
 
     const { object: carried } = await addPickedInventoryObject(object);
     container.cknown = true;
@@ -642,7 +657,7 @@ async function putSelectedObjects(container: GameObject, stashOne = false): Prom
             // and charges a turn regardless of in_container's result.
             const transfer = splitForTransfer(onePicked, categories.justPickedCount ?? -1, game);
             const result = await putIntoContainer(container, transfer.object);
-            if (result.message) await plineWithContinuation(result.message);
+            if (!result.moved && result.message) await plineWithContinuation(result.message);
             return { results: [result], spentTime: true };
         }
         selected = categories.autoSelect
@@ -658,7 +673,7 @@ async function putSelectedObjects(container: GameObject, stashOne = false): Prom
             container, selection.value, game, selection.count,
         );
         results.push(result);
-        if (result.message) await plineWithContinuation(result.message);
+        if (!result.moved && result.message) await plineWithContinuation(result.message);
         // Stashing one item costs a turn even when it destroys the bag.
         if (stashOne && result.destroyedContainer) spentTime = true;
         if (result.destroyedContainer || result.stop) break;
@@ -737,6 +752,19 @@ async function chooseAction(container: GameObject, held: boolean, usedTime: bool
 }
 
 export async function useContainer(container: GameObject, {
+    held = false,
+    moreContainers = false,
+    underlay = null,
+}: ContainerUseOptions = {}): Promise<ContainerUseResult> {
+    setSellDisposition(container.no_charge ? SELL_DONTSELL : SELL_DELIBERATE);
+    try {
+        return await useContainerActions(container, { held, moreContainers, underlay });
+    } finally {
+        setSellDisposition(SELL_NORMAL);
+    }
+}
+
+async function useContainerActions(container: GameObject, {
     held = false,
     moreContainers = false,
     underlay = null,
