@@ -414,6 +414,8 @@ export async function loseMagicBagItem(object: GameObject, held: boolean, state:
     silent = false): Promise<number> {
     if (!silent) {
         const known = object.dknown;
+        // The message uses prior knowledge, but doname() observes the item.
+        observeObjectForNaming(object, { state });
         const name = objectDescription(object);
         await plineWithContinuation(known
             ? `${name.charAt(0).toUpperCase()}${name.slice(1)} ${object.quan === 1 ? 'has' : 'have'} vanished!`
