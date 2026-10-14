@@ -2935,9 +2935,14 @@ async function wizTelekinesis(): Promise<void> {
     await plineWithContinuation('Pick a monster to hurtle.');
     do {
         const tipShown = await showGetposTip();
+        if (game.flags.verbose) {
+            const helpKey = game.commandBindings.specialKey('getpos.help') ?? 63;
+            await plineWithContinuation(`(For instructions type a '${visibleCommandKey(helpKey)}')`);
+        }
+        if (tipShown) await plineWithContinuation('Move cursor to a monster:');
         const target = await selectMapPosition({
             start: cursor, goal: 'a monster', describe: farlookLocationDescription,
-            prompt: tipShown ? 'Move cursor to a monster:' : game._pending_message,
+            prompt: game._pending_message,
         });
         if (!target) break;
         cursor = target;
