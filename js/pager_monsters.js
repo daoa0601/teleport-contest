@@ -1,6 +1,6 @@
 // C pager.c:self_lookat(), look_at_monster(), monhealthdescr(). Native
 // monhealthdescr() is disabled, so wounded creatures have no health prefix.
-import { BEAR_TRAP, MGIVENNAME, M_AP_FURNITURE, M_AP_OBJECT, MONSEEN_NORMAL, MONSEEN_SEEINVIS, MONSEEN_INFRAVIS, MONSEEN_TELEPAT, MONSEEN_XRAYVIS, MONSEEN_DETECT, MONSEEN_WARNMON, STRAT_WAITMASK, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, WEB, is_pit, } from './const.js';
+import { BEAR_TRAP, M_AP_FURNITURE, M_AP_OBJECT, MONSEEN_NORMAL, MONSEEN_SEEINVIS, MONSEEN_INFRAVIS, MONSEEN_TELEPAT, MONSEEN_XRAYVIS, MONSEEN_DETECT, MONSEEN_WARNMON, STRAT_WAITMASK, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, WEB, is_pit, } from './const.js';
 import { displayLiquidName, glyphAt, howMonsterSeen } from './display.js';
 import { game } from './gstate.js';
 import { heroFormSticks, heroSpecies } from './hero_species.js';
@@ -129,10 +129,9 @@ export function selfTrapDescription() {
 }
 // C pager.c:do_supplemental_info(). The native without-asking branch does
 // not set yes_to_moreinfo, so verbose look does not open this extra window.
-export async function offerMonsterSupplement(monster, withoutAsking) {
+export async function offerMonsterSupplement(monster, name, withoutAsking) {
     if (withoutAsking || heroIsHallucinating() || !((MONSTER_FLAGS2[monster.mnum] ?? 0) & 0x80))
         return;
-    const name = MGIVENNAME(monster);
     if (!name || name.length >= 255)
         return;
     const gangIndex = name.toLowerCase().indexOf(' of ');

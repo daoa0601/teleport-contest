@@ -25,7 +25,7 @@ import { clearMessageWindow, feel_location } from './display.js';
 import { game, requireGameLevel, requirePlayingGame, requireInitializedGame } from './gstate.js';
 import { requireInitializedHero } from './hero_types.js';
 import { fruitName } from './fruit.js';
-import { encyclopediaEntries, encyclopediaMatches } from './encyclopedia.js';
+import { encyclopediaEntries, encyclopediaMatches, encyclopediaSupplementalName } from './encyclopedia.js';
 import { objectAtMapDescription } from './map_object_description.js';
 import { objectNeedsFullIdentification } from './invent.js';
 import { identifyPack } from './invent.js';
@@ -4749,7 +4749,7 @@ async function doFarlook(quick = true) {
                 && (cursor.pickType === LOOK_VERBOSE || !quick && game.flags.help !== false)) {
                 await offerFarlookInformation(screen.firstMatch, cursor.pickType === LOOK_VERBOSE);
                 if (monster)
-                    await offerMonsterSupplement(monster, cursor.pickType === LOOK_VERBOSE);
+                    await offerMonsterSupplement(monster, encyclopediaSupplementalName(screen.firstMatch), cursor.pickType === LOOK_VERBOSE);
             }
             if (quick || cursor.pickType === LOOK_ONCE)
                 break;
