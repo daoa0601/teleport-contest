@@ -4,6 +4,7 @@ import { washHands } from './dip_water.js';
 import { waterDamageObject } from './trap.js';
 import { dip, dipInto } from './potion_dip.js';
 import { AKLYS, BOOMERANG, CRYSTAL_BALL } from './object_data.js';
+import { useCrystalBall } from './crystal_ball.js';
 import { monsterHiddenConditions } from './monster_status.js';
 import { visibleRegionAt } from './regions.js';
 import type { ChoiceMenuItem } from './windows.js';
@@ -3304,7 +3305,8 @@ async function doinvoke() {
     const artifact = object.oartifact
         ? artifactById(object.oartifact) : null;
     if (!artifact || artifact.invokePower === null) {
-        await pline('Nothing happens.');
+        if (object.otyp === CRYSTAL_BALL) await useCrystalBall(object);
+        else await pline('Nothing happens.');
         game.context.move = 1;
         return;
     }
@@ -5818,6 +5820,11 @@ async function doapply(cannedInvlet: string | null = null): Promise<void> {
 async function applyTool(
     item: GameObject, underlay: ReturnType<typeof snapshotMenuUnderlay>,
 ): Promise<GameObject | null> {
+    if (item.otyp === CRYSTAL_BALL) {
+        const object = await useCrystalBall(item);
+        game.context.move = 1;
+        return object;
+    }
     if (item.otyp === LAND_MINE || item.otyp === BEARTRAP) {
         const object = await useSettableTrap(item);
         game.context.move = 1;
