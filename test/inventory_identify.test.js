@@ -228,4 +228,23 @@ void test('identify does not spend an identification on irrelevant potion erosio
     assert.equal(potion.rknown, false);
     assert.equal(club.known, true);
 });
+void test('wizard identification ignores irrelevant potion erosion knowledge', async () => {
+    freshGameplayRoom();
+    applyNethackrc('OPTIONS=playmode:debug');
+    const potion = await addInventoryObject(POT_HEALING, {
+        known: true, typeKnown: true, dknown: true, bknown: true, rknown: false,
+    });
+    const input = resetInputState();
+    const identifying = runExtendedCommand('wizidentify');
+    await input.waitUntilBlocked();
+    try {
+        const text = requireGameDisplay().grid.map(row => row.map(cell => cell.ch).join('')).join('\n');
+        assert.match(text, /all items are permanently identified already/);
+    }
+    finally {
+        input.feed('\x1b');
+        await identifying;
+    }
+    assert.equal(potion.rknown, false);
+});
 //# sourceMappingURL=inventory_identify.test.js.map

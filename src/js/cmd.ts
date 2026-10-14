@@ -37,6 +37,7 @@ import { requireInitializedHero } from './hero_types.js';
 import { fruitName } from './fruit.js';
 import { encyclopediaEntries, encyclopediaMatches } from './encyclopedia.js';
 import { objectAtMapDescription } from './map_object_description.js';
+import { objectNeedsFullIdentification } from './invent.js';
 import { LOOK_ONCE, LOOK_QUICK, LOOK_VERBOSE } from './const.js';
 import { waterbodyName } from './terrain_name.js';
 import { def_warnsyms } from './const.js';
@@ -4232,11 +4233,6 @@ function inventoryCommandLetter(item: GameObject): string {
     return item.invlet;
 }
 
-function permanentlyIdentified(item: GameObject | null | undefined): boolean {
-    return !!(item?.typeKnown && item?.known && item?.dknown
-        && item?.bknown && item?.rknown);
-}
-
 function wizardIdentifyDescription(item: GameObject, primaryHandDetail: string | null): string {
     const override = game.iflags.override_ID;
     game.iflags.override_ID = true;
@@ -4252,8 +4248,7 @@ function wizardIdentifyDescription(item: GameObject, primaryHandDetail: string |
 // iflags.override_ID set.  Fully identified inventories still open a short
 // PICK_NONE menu; the command does not collapse into a topline message.
 async function wizIdentify(): Promise<void> {
-    const unidentified = (game.inventory || []).filter(item =>
-        !permanentlyIdentified(item));
+    const unidentified = game.inventory.filter(objectNeedsFullIdentification);
     if (!unidentified.length) {
         await showTextMenuOverlay([
             'Debug Identify',
