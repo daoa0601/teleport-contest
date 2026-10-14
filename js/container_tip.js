@@ -32,6 +32,7 @@ import { setSellDisposition, SELL_NORMAL } from './shop_sell.js';
 import { showMultiSelectWindow } from './windows.js';
 import { rn2 } from './rng.js';
 import { currency } from './currency.js';
+import { tipWornHelmet } from './tip_hat.js';
 function description(object) {
     observeObjectForNaming(object);
     return inventoryItemDescription(object);
@@ -126,6 +127,9 @@ async function tipOrdinaryObject(object) {
     }
     else if (object.oclass === 8) {
         await pline(`The ${objectCombatName(object)} ${object.quan === 1 ? 'is' : 'are'} securely sealed.`);
+    }
+    else if (object === (game.uarmh || game.u.uarmh)) {
+        game.context.move = await tipWornHelmet(object) ? 1 : 0;
     }
     else
         await pline(object.otyp === STATUE ? 'Nothing interesting happens.' : 'Nothing happens.');
