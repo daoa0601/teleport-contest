@@ -197,15 +197,19 @@ export function rayBounceDirection(
     const previousY = y - dy;
     let bounce = 0;
     const vertical = state.level?.at(x, previousY);
+    const verticalAhead = state.level?.at(x + dx, previousY);
     if (vertical && rayPositionIsOpen(x, previousY, state)
         && (IS_ROOM(vertical.typ)
-            || rayPositionIsOpen(x + dx, previousY, state))) {
+            || rayPositionIsValid(x + dx, previousY)
+                && !!verticalAhead && ZAP_POS(verticalAhead.typ))) {
         bounce = 1;
     }
     const horizontal = state.level?.at(previousX, y);
+    const horizontalAhead = state.level?.at(previousX, y + dy);
     if (horizontal && rayPositionIsOpen(previousX, y, state)
         && (IS_ROOM(horizontal.typ)
-            || rayPositionIsOpen(previousX, y + dy, state))
+            || rayPositionIsValid(previousX, y + dy)
+                && !!horizontalAhead && ZAP_POS(horizontalAhead.typ))
         && (!bounce || random(2))) {
         bounce = 2;
     }
