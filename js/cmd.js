@@ -22,7 +22,10 @@ import { encyclopediaEntries, encyclopediaMatches } from './encyclopedia.js';
 import { objectAtMapDescription } from './map_object_description.js';
 import { objectNeedsFullIdentification } from './invent.js';
 import { identifyPack } from './invent.js';
-import { MENU_ITEMFLAGS_SKIPINVERT, NHW_MENU, PICK_ANY } from './const.js';
+import { DIED, KILLED_BY, MENU_ITEMFLAGS_SKIPINVERT, MGIVENNAME, NHW_MENU, PICK_ANY } from './const.js';
+import { AD_PHYS } from './monster_attack_types.js';
+import { finishMonsterKilled } from './monster_death.js';
+import { monsterIsNonliving } from './monster_data.js';
 import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu, } from './tty_menu.js';
 import { LOOK_ONCE, LOOK_QUICK, LOOK_VERBOSE } from './const.js';
 import { waterbodyName } from './terrain_name.js';
@@ -1173,6 +1176,10 @@ async function runCommandHandler(binding, { cannedCommand = null, previousMessag
             // iflags.menu_requested, so level_tele() skips its numeric
             // get-line editor and opens print_dungeon(TRUE) immediately.
             await wizLevelTeleport({ menuRequested: true });
+        }
+        else if (nextCommand.command?.handler === 'doextcmd'
+            || nextCommand.command && (nextCommand.command.flags & NATIVE_COMMAND_FLAGS.CMD_M_PREFIX)) {
+            await executeCommandAction(nextCommand);
         }
         else if (direction === 's') {
             // cmd.c marks search CMD_M_PREFIX: request-menu/move-no-pickup
@@ -2685,42 +2692,104 @@ async function wizDetect() {
     game.context.move = 0;
 }
 async function wizKill() {
-    if (!game.flags?.debug) {
-        await pline('#wizkill: unknown extended command.');
-        game.context.move = 0;
-        return;
+    requirePlayingGame(game);
+    const level = requireGameLevel();
+    const here = { ...game.u.uz };
+    let cursor = { x: game.u.ux, y: game.u.uy };
+    let prompt = 'Pick first monster to slay';
+    for (;;) {
+        await pline(`${prompt}:`);
+        prompt = 'Next monster';
+        const verbose = game.flags.verbose;
+        const autodescribe = game.iflags.autodescribe;
+        game.flags.verbose = false;
+        game.iflags.autodescribe = true;
+        let target;
+        try {
+            const tipShown = await showGetposTip();
+            target = await selectMapPosition({
+                start: cursor, prompt: tipShown ? 'Move cursor to a monster:'
+                    : await farlookLocationDescription(cursor.x, cursor.y) ?? `${prompt}:`,
+                goal: 'a monster', describe: farlookLocationDescription,
+            });
+        }
+        finally {
+            if (verbose === undefined)
+                delete game.flags.verbose;
+            else
+                game.flags.verbose = verbose;
+            if (autodescribe === undefined)
+                delete game.iflags.autodescribe;
+            else
+                game.iflags.autodescribe = autodescribe;
+        }
+        if (!target)
+            break;
+        cursor = target;
+        const monster = await wizardKillTarget(cursor);
+        if (monster === 'quit')
+            break;
+        unmap_invisible(cursor.x, cursor.y);
+        if (!monster) {
+            await pline('There is no monster there.');
+            break;
+        }
+        const tame = !!monster.mtame;
+        const seen = canSpotMonster(monster) || !!game.u.uswallow && monster === game.u.ustuck;
+        const name = monsterName(monster, {
+            article: tame ? 'your' : seen ? 'the' : 'a',
+            ...(tame ? { adjective: seen ? 'poor' : 'poor, unseen' }
+                : seen ? {} : { adjective: 'unseen' }),
+            suppressIt: true, suppressHallucination: true,
+            suppressSaddle: tame && !!MGIVENNAME(monster),
+        });
+        const destroyed = monsterIsNonliving(monster.mnum);
+        if (game.iflags.menu_requested) {
+            game.context.mon_moving = true;
+            try {
+                await plineWithContinuation(`${name.charAt(0).toUpperCase()}${name.slice(1)} is ${destroyed ? 'destroyed' : 'killed'}.`);
+                await finishMonsterKilled(monster, game, { damageType: AD_PHYS, cause: null });
+            }
+            finally {
+                game.context.mon_moving = false;
+            }
+        }
+        else {
+            await plineWithContinuation(`You ${destroyed ? 'destroy' : 'kill'} ${name}!`);
+            await finishHeroMonsterKill(monster, monster.mx, monster.my, { showKillMessage: false });
+        }
+        if (game.program_state.gameover || game.u.utotype
+            || game.u.uz.dnum !== here.dnum || game.u.uz.dlevel !== here.dlevel)
+            break;
     }
-    const firstUse = shouldShowGetposTip();
-    if (firstUse) {
-        await pline('Pick first monster to slay:');
-        await showGetposTip();
-    }
-    const cursor = await selectMapPosition({
-        start: { x: game.u.ux, y: game.u.uy },
-        prompt: firstUse ? 'Move cursor to a monster:'
-            : 'Pick first monster to slay.',
-        goal: 'a monster',
-        describe: farlookLocationDescription,
-    });
-    if (!cursor) {
-        game.context.move = 0;
-        return;
-    }
-    game._pending_message = '';
-    game._retained_message = '';
-    const monster = requireGameLevel().monsters.find(candidate => monsterHasMapPosition(candidate, game) &&
-        candidate.mx === cursor.x && candidate.my === cursor.y
-        && !candidate.dead && (candidate.mhp ?? 1) > 0);
-    if (!monster) {
-        await pline('There is no monster there.');
-        game.context.move = 0;
-        return;
-    }
-    monster.mhp = 0;
-    const killed = await finishHeroMonsterKill(monster, monster.mx, monster.my);
-    if (!killed)
-        game._cursorOverride = [monster.mx - 1, monster.my + 1];
+    level.monsters = level.monsters.filter(monster => !monster.dead);
     game.context.move = 0;
+}
+async function wizardKillTarget(cursor) {
+    if (cursor.x === game.u.ux && cursor.y === game.u.uy) {
+        const steed = game.u.usteed;
+        if (steed) {
+            const answer = await promptYesNoQuit(`Kill ${monsterName(steed)}?`);
+            if (answer === 'q')
+                return 'quit';
+            if (answer === 'y')
+                return steed;
+        }
+        const question = game.urole?.key === 'samurai' ? 'Perform seppuku?' : 'Commit suicide?';
+        if (await paranoidQuery(true, question))
+            await finishHeroDeath({
+                killer: `${game.flags.female ? 'her' : 'his'} own player`,
+                killerFormat: KILLED_BY, deathType: DIED, deathLineShown: true,
+            });
+        return 'quit';
+    }
+    if (game.u.uswallow)
+        return Math.abs(cursor.x - game.u.ux) <= 1 && Math.abs(cursor.y - game.u.uy) <= 1
+            ? game.u.ustuck ?? null : null;
+    return requireGameLevel().monsters.find(monster => monsterHasMapPosition(monster, game)
+        && (monster.mx === cursor.x && monster.my === cursor.y
+            || monster.wormSegments?.some(segment => segment.x === cursor.x && segment.y === cursor.y))
+        && !monster.dead && monster.mhp > 0) ?? null;
 }
 function menuLetter(index) {
     return index < 26
@@ -2922,7 +2991,7 @@ export async function chooseWizardLevelDestination() {
     await endgamePrerequisite(destination);
     return { destination };
 }
-async function wizLevelTeleport({ menuRequested = false } = {}) {
+async function wizLevelTeleport({ menuRequested = !!game.iflags.menu_requested } = {}) {
     game.context.move = 0;
     await levelTeleport({ menuRequested });
 }
