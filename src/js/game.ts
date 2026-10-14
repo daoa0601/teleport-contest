@@ -56,6 +56,8 @@ export class GameMap {
     declare bonesNames?: string[];
     declare upstair?: Position;
     declare dnstair?: Position;
+    // C svi.inv_pos survives removal of the vibrating-square trap.
+    declare invocationPosition?: Position;
     declare upTeleportRegion?: ArrivalRegion | null;
     declare downTeleportRegion?: ArrivalRegion | null;
     declare engravings?: Engraving[];

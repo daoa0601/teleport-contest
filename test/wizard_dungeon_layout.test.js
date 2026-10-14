@@ -2,11 +2,34 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { MAGIC_PORTAL } from '../js/const.js';
+import { MAGIC_PORTAL, VIBRATING_SQUARE } from '../js/const.js';
+import { makeInvocationArea } from '../js/invocation_area.js';
 import { runExtendedCommand } from './support/commands.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { addTrap } from './support/level-state.js';
 import { createDungeon, createSpecialLevel } from './support/topology.js';
+import { installPagerInput } from './support/pager-input.js';
+void test('#wizwhere retains the invocation position after the ritual removes its trap', async () => {
+    const level = freshObjectRoom({ left: 6, right: 26, top: 3, bottom: 19, heroX: 16, heroY: 11,
+        flags: { debug: true }, hero: { uz: { dnum: 0, dlevel: 8 } } });
+    game.dungeons = [createDungeon({ dname: 'Gehennom', num_dunlevs: 9, flags: { hellish: true } })];
+    game.valley_level = createSpecialLevel({ dnum: 0, dlevel: 1 });
+    level.invocationPosition = { x: 16, y: 11 };
+    addTrap(level, VIBRATING_SQUARE, 16, 11);
+    installPagerInput(resetInputState(), { expected: /floor shakes|walls around|stairwell/, limit: 4 });
+    await makeInvocationArea();
+    assert.equal(level.traps.some(trap => trap.ttyp === VIBRATING_SQUARE), false);
+    const diagnostics = [];
+    resetInputState().beforeRead = () => {
+        const line = requireGameDisplay().grid.map(row => row.map(cell => cell.ch).join(''))
+            .find(row => row.includes('Invocation position'));
+        if (line)
+            diagnostics.push(line.trim());
+    };
+    await runExtendedCommand('wizwhere', ' ');
+    assert.equal(diagnostics.at(-1), 'Invocation position @ (16,11), hero @ (16,11)');
+    assert.equal(game.context.move, 0);
+});
 void test('#wizwhere marks the current special level and reports a portal location', async () => {
     const level = freshObjectRoom({ flags: { debug: true } });
     requirePlayingGame(game);

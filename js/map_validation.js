@@ -189,6 +189,7 @@ export function restoreSavedMap(value, entities) {
         exclusionZones: arrayOf(validExclusion), flags: validFlags,
         bonesNames: optional(arrayOf(string)),
         upstair: optional(validSavedPosition), dnstair: optional(validSavedPosition),
+        invocationPosition: optional(validSavedPosition),
         upTeleportRegion: optional(nullable(validArrivalRegion)),
         downTeleportRegion: optional(nullable(validArrivalRegion)),
         engravings: optional(arrayOf(validEngraving)), damagelist: optional(arrayOf(validDamage)),

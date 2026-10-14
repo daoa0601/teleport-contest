@@ -7550,6 +7550,7 @@ function vibratingSquarePoint(): Position {
             && !occupied(point.x, point.y)) break;
     }
     if (!point) throw new Error('Vibrating square placement did not choose a position.');
+    level.invocationPosition = { ...point };
     return point;
 }
 

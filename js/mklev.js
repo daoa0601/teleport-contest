@@ -7355,6 +7355,7 @@ function vibratingSquarePoint() {
     }
     if (!point)
         throw new Error('Vibrating square placement did not choose a position.');
+    level.invocationPosition = { ...point };
     return point;
 }
 async function populateRandomMaze() {

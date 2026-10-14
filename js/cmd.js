@@ -3031,9 +3031,8 @@ function wizardWhereLines() {
     }
     const hero = game.u;
     if (Invocation_lev(hero.uz)) {
-        const square = game.level?.traps.find(trap => trap.ttyp === VIBRATING_SQUARE);
-        if (square)
-            lines.push('', `Invocation position @ (${square.tx},${square.ty}), hero @ (${hero.ux},${hero.uy})`);
+        const position = game.level?.invocationPosition ?? { x: 0, y: 0 };
+        lines.push('', `Invocation position @ (${position.x},${position.y}), hero @ (${hero.ux},${hero.uy})`);
     }
     else {
         const portal = game.level?.traps.find(trap => trap.ttyp === MAGIC_PORTAL);
