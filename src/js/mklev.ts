@@ -2191,10 +2191,10 @@ async function makemon(
         await giveOffensiveMonsterItem();
     } else if ([
         PM_SOLDIER, PM_SERGEANT, PM_LIEUTENANT, PM_CAPTAIN,
-        PM_WATCHMAN, PM_WATCH_CAPTAIN,
+        PM_WATCHMAN, PM_WATCH_CAPTAIN, PM_GUARD,
     ].includes(mndx)) {
         // C ref: makemon.c m_initweap()/m_initinv(), human mercenaries.
-        // Soldiers and Minetown's watch share one equipment constructor;
+        // Soldiers, the watch, and vault guards share an armor budget;
         // armor gained in each round gates whether later slots are attempted.
         let primaryWeapon = 0;
         let secondaryWeapon = 0;
@@ -2209,8 +2209,11 @@ async function makemon(
             primaryWeapon = rn2(2) ? 81 : MACE; // FLAIL
         } else if (mndx === PM_LIEUTENANT) {
             primaryWeapon = rn2(2) ? 52 : LONG_SWORD; // BROADSWORD
-        } else {
+        } else if (mndx === PM_CAPTAIN || mndx === PM_WATCH_CAPTAIN) {
             primaryWeapon = rn2(2) ? LONG_SWORD : SILVER_SABER;
+        } else {
+            if (!rn2(4)) primaryWeapon = DAGGER;
+            if (!rn2(7)) secondaryWeapon = SPEAR;
         }
         if (primaryWeapon) await mongets(primaryWeapon);
         if (!secondaryWeapon && primaryWeapon !== DAGGER && !rn2(4))
@@ -2222,7 +2225,8 @@ async function makemon(
             if (offensiveItem) await mongets(offensiveItem);
         }
 
-        let mercenaryAc = (mndx === PM_SOLDIER || mndx === PM_WATCHMAN) ? 3
+        let mercenaryAc = mndx === PM_GUARD ? -1
+            : (mndx === PM_SOLDIER || mndx === PM_WATCHMAN) ? 3
             : mndx === PM_SERGEANT ? 0
                 : (mndx === PM_LIEUTENANT
                     || mndx === PM_WATCH_CAPTAIN) ? -2 : -3;
@@ -2253,6 +2257,12 @@ async function makemon(
 
         if (mndx === PM_WATCHMAN) {
             if (rn2(3)) await mongets(TIN_WHISTLE);
+        } else if (mndx === PM_GUARD) {
+            const whistle = await mksobj(TIN_WHISTLE, true, false);
+            whistle.cursed = true;
+            whistle.buc = 'cursed';
+            await addCreatedObjectToMonsterInventory(pendingMonster, whistle, game);
+            hasMonsterInventory = true;
         } else if (mndx !== PM_WATCH_CAPTAIN) {
             if (!rn2(3)) await mongets(K_RATION);
             if (!rn2(2)) await mongets(C_RATION);
@@ -2262,40 +2272,6 @@ async function makemon(
             if (mndx === PM_SOLDIER && rn2(13))
                 skipCommonMonsterInventory = true;
         }
-    } else if (mndx === PM_GUARD) {
-        // C refs: makemon.c:m_initweap()/m_initinv(), PM_GUARD.  Vault
-        // guards use the default mercenary weapon branch, five sequential
-        // armor rounds, then receive a cursed tin whistle.
-        let primaryWeapon = 0;
-        let secondaryWeapon = 0;
-        if (!rn2(4)) primaryWeapon = DAGGER;
-        if (!rn2(7)) secondaryWeapon = SPEAR;
-        if (primaryWeapon) await mongets(primaryWeapon);
-        if (!secondaryWeapon && primaryWeapon !== DAGGER && !rn2(4))
-            secondaryWeapon = KNIFE;
-        if (secondaryWeapon) await mongets(secondaryWeapon);
-        await giveOffensiveMonsterItem();
-
-        if (rn2(5)) await mongets(rn2(3) ? SPLINT_MAIL : BANDED_MAIL);
-        else await mongets(LEATHER_ARMOR);
-
-        if (rn2(3)) await mongets(HELMET);
-        else if (rn2(2)) await mongets(DENTED_POT);
-
-        if (rn2(3)) await mongets(SMALL_SHIELD);
-        else if (rn2(2)) await mongets(LARGE_SHIELD);
-
-        if (rn2(3)) await mongets(LOW_BOOTS);
-        else if (rn2(2)) await mongets(HIGH_BOOTS);
-
-        if (rn2(3)) await mongets(LEATHER_GLOVES);
-        else if (rn2(2)) await mongets(LEATHER_CLOAK);
-
-        const whistle = await mksobj(TIN_WHISTLE, true, false);
-        whistle.cursed = true;
-        whistle.buc = 'cursed';
-        await addCreatedObjectToMonsterInventory(pendingMonster, whistle, game);
-        hasMonsterInventory = true;
     } else if (mndx === PM_SHOPKEEPER) {
         // C refs: makemon.c m_initweap() and m_initinv().  Shopkeepers have
         // no class-specific weapon, but are armed and therefore still reach
