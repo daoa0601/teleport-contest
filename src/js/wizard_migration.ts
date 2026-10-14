@@ -8,7 +8,7 @@ import { game, requirePlayingGame } from './gstate.js';
 import { depth } from './hacklib.js';
 import { makemonAt, rndmonstAdj } from './mklev.js';
 import { monsterTypeName } from './monster_data.js';
-import { migrateMonsterToLevel } from './monster_migration.js';
+import { migrateMonsterOffLevel } from './monster_migration.js';
 import type { Monster } from './monster_types.js';
 import { getLine, promptChoice } from './query.js';
 import { showTextWindow } from './windows.js';
@@ -29,7 +29,7 @@ export async function wizMigrateMonsters(): Promise<void> {
     for (let index = 0; index < limit; index++) {
         const monster = count < 0 ? game.level.monsters[0]
             : await makemonAt(rndmonstAdj(), 0, 0, MM_NOMSG);
-        if (monster) await migrateMonsterToLevel(monster, destination);
+        if (monster) await migrateMonsterOffLevel(monster, game, { dst: destination }, { kind: 'level-migration' });
     }
 }
 

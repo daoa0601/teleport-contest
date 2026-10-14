@@ -7,7 +7,7 @@ import { game, requirePlayingGame } from './gstate.js';
 import { depth } from './hacklib.js';
 import { makemonAt, rndmonstAdj } from './mklev.js';
 import { monsterTypeName } from './monster_data.js';
-import { migrateMonsterToLevel } from './monster_migration.js';
+import { migrateMonsterOffLevel } from './monster_migration.js';
 import { getLine, promptChoice } from './query.js';
 import { showTextWindow } from './windows.js';
 export async function wizMigrateMonsters() {
@@ -28,7 +28,7 @@ export async function wizMigrateMonsters() {
         const monster = count < 0 ? game.level.monsters[0]
             : await makemonAt(rndmonstAdj(), 0, 0, MM_NOMSG);
         if (monster)
-            await migrateMonsterToLevel(monster, destination);
+            await migrateMonsterOffLevel(monster, game, { dst: destination }, { kind: 'level-migration' });
     }
 }
 function nextMigrationLevel() {
