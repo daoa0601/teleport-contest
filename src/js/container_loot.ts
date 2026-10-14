@@ -16,7 +16,7 @@ import { removeObjectFromMonsterInventory } from './monster_inventory.js';
 import { holdAnotherObject } from './hero_hold_object.js';
 import { clearJustPicked, markJustPicked } from './just_picked.js';
 import { pickupAtHero } from './pickup.js';
-import { objectCombatName } from './objnam.js';
+import { objectCombatName, observeObjectForNaming } from './objnam.js';
 import { promptYesNoQuit } from './query.js';
 import { BAG_OF_TRICKS } from './object_data.js';
 import { learnObjectType } from './object_knowledge.js';
@@ -99,9 +99,11 @@ async function lootFloorContainers(x: number, y: number,
     }
     const selected = containers.length === 1 ? containers
         : await showMultiSelectWindow({ title: 'Loot which containers?', omitHeadings: true,
-            sections: [{ items: containers.map((object, index) => ({
-                key: String.fromCharCode(97 + index), text: inventoryItemDescription(object), value: object,
-            })) }], signalEscape: true });
+            sections: [{ items: containers.map((object, index) => {
+                observeObjectForNaming(object);
+                return { key: String.fromCharCode(97 + index),
+                    text: inventoryItemDescription(object), value: object };
+            }) }], signalEscape: true });
     if (selected === null) return true;
     if (!selected.length) return false;
     let spentTime = false;
