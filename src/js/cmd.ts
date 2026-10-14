@@ -46,7 +46,8 @@ import { def_warnsyms } from './const.js';
 import { iceDescriptionAt } from './dungeon_feature.js';
 import { CmapSymbol, GlyphOffset, cmapToGlyph } from './glyph_numbers.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
-import { mapFeatureDescription } from './pager_features.js';
+import { lookAtMonster, monsterSeenDescription, selfLookDetails, selfTrapDescription } from './pager_monsters.js';
+import { lookGlyphAt, mapFeatureDescription } from './pager_features.js';
 import { typedSymbolDescription } from './look_symbols.js';
 import { isGrayStone, isWeaponTool } from './object_properties.js';
 import { applySuggestion } from './apply_selection.js';
@@ -4314,7 +4315,7 @@ async function wizardPositionDescription(x: number, y: number): Promise<string> 
         // self_lookat() includes invisibility while blind only when sensed.
         const prefix = invisible && (!blind || telepathy || detection)
             ? 'invisible ' : '';
-        const description = `${prefix}${form} called ${game.plname || 'player'}${punishment}`;
+        const description = `${prefix}${form} called ${game.plname || 'player'}${await selfLookDetails()}${punishment}${selfTrapDescription()}`;
         const unseen = invisible && !game.u.seeInvisible
             && (game.u.seeInvisibleTurns ?? 0) === 0;
         // lookat() treats touch while blind or swallowed as normal vision.
@@ -4503,7 +4504,7 @@ function farlookDescribesHero(x: number, y: number): boolean {
 
 export async function farlookLocationDescription(x: number, y: number): Promise<string> {
     if (farlookDescribesHero(x, y)) return wizardPositionDescription(x, y);
-    const glyph = glyphAt(x, y);
+    const glyph = lookGlyphAt(x, y);
     if (!glyph || glyph.kind === 'unexplored') {
         if ((game.u.uinwater || game.underwater) && !Is_waterlevel(game.u.uz))
             return dist2(x, y, game.u.ux, game.u.uy) <= 2 ? 'land' : 'unknown';
@@ -4519,28 +4520,7 @@ export async function farlookLocationDescription(x: number, y: number): Promise<
         && glyph.terrainName === 'dark part of a room') return 'dark part of a room';
     const monster = game.level ? monsterAtPosition(game.level, x, y) : null;
     if (monster && glyph?.kind === 'monster') {
-        const hallucinating = heroIsHallucinating(game);
-        const prefix = hallucinating ? ''
-            : monster.mtame ? 'tame '
-                : monster.mpeaceful ? 'peaceful ' : '';
-        const name = distantMonsterName(monster);
-        let condition = '';
-        if (!hallucinating) {
-            if ((monster.mfrozen ?? 0) > 0)
-                condition = ", can't move (paralyzed or sleeping or busy)";
-            else if (monster.msleeping)
-                condition = ', asleep';
-            else if ((monster.mstrategy ?? 0) & STRAT_WAITMASK)
-                condition = ', meditating';
-        }
-        const tail = monster.mx !== x || monster.my !== y;
-        // look_at_monster() gates hidden details on the selected square,
-        // which can be a worm tail outside the head's cloud.
-        const hidden = monster.mundetected || M_AP_TYPE(monster) || visibleRegionAt(game, x, y)
-            ? await monsterHiddenConditions(monster, game, { showAlternateMonster: false })
-            : [];
-        const hiddenText = hidden.length ? `, ${hidden.join(', ')}` : '';
-        return `${tail ? 'tail of a ' : ''}${prefix}${name}${condition}${hiddenText}`;
+        return lookAtMonster(monster, x, y);
     }
     if (glyph.kind === 'object') return objectAtMapDescription(x, y, glyph);
     // Hallucinated statues project monster glyphs without a live monster.
@@ -4715,7 +4695,13 @@ async function doFarlook(quick = true): Promise<void> {
         game._pending_message = '';
         game._retained_message = '';
         const description = await farlookLocationDescription(cursor.x, cursor.y);
-        await plineWithContinuation(verboseFarlookDescription(cursor.x, cursor.y, description));
+        const glyph = glyphAt(cursor.x, cursor.y);
+        const monster = glyph?.kind === 'monster' && game.level
+            && !farlookDescribesHero(cursor.x, cursor.y)
+            ? monsterAtPosition(game.level, cursor.x, cursor.y) : null;
+        const seen = monster ? monsterSeenDescription(monster) : '';
+        await plineWithContinuation(verboseFarlookDescription(cursor.x, cursor.y, description)
+            + (seen ? ` [seen: ${seen}]` : ''));
         if (cursor.pickType !== LOOK_QUICK && cursor.pickType !== LOOK_ONCE
             && (cursor.pickType === LOOK_VERBOSE || !quick && game.flags.help !== false))
             await offerFarlookInformation(description, cursor.pickType === LOOK_VERBOSE);

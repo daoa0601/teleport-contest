@@ -3,10 +3,11 @@
 import {
     AM_SANCTUM, Amask2align, A_NONE, DOOR, D_BROKEN, D_TRAPPED,
     Is_airlevel, Is_astralevel, Is_waterlevel, SCORR, STONE,
-    TRAPPED_CHEST, TRAPPED_DOOR,
+    TER_MON, TER_OBJ, TRAPPED_CHEST, TRAPPED_DOOR,
 } from './const.js';
 import { findDrawbridgeAt } from './dbridge.js';
 import type { GlyphMetadata } from './display.js';
+import { glyphAt, terrain_glyph } from './display.js';
 import { game } from './gstate.js';
 import { CmapSymbol, cmapToGlyph } from './glyph_numbers.js';
 import { CHEST, LARGE_BOX } from './object_data.js';
@@ -15,6 +16,17 @@ import { rn2 } from './rng.js';
 import { heroIsHallucinating } from './senses.js';
 import { waterbodyName } from './terrain_name.js';
 import { trapName } from './trap_name.js';
+
+export function lookGlyphAt(x: number, y: number): GlyphMetadata | null {
+    const glyph = glyphAt(x, y);
+    const mode = game.iflags.terrainmode;
+    if (!mode || !glyph) return glyph;
+    const omitted = glyph.kind === 'monster' && !(mode & TER_MON)
+        || glyph.kind === 'object' && !(mode & TER_OBJ);
+    if (!omitted) return glyph;
+    const location = game.level?.at(x, y);
+    return location ? terrain_glyph(location, x, y) : null;
+}
 
 export function mapFeatureDescription(x: number, y: number, glyph: GlyphMetadata): string {
     if (glyph.kind === 'trap') return displayedTrapDescription(glyph.trapType, x, y);
