@@ -2,7 +2,7 @@
 // C refs: dog.c migrate_to_level(), mon_leave(), losedogs(), mon_arrive(),
 // mon_catchup_elapsed_time(), update_mlstmv(), discard_migrations();
 // mon.c m_into_limbo()/migrate_mon().
-import { RLOC_NOMSG, LARGEST_INT, MON_ARRIVE_BEFORE_YOU, MON_ARRIVE_WITH_YOU, MON_ARRIVE_AFTER_YOU, COLNO, In_endgame, MAGIC_PORTAL, MAX_NUM_WORMS, MIGR_APPROX_XY, MIGR_EXACT_XY, MIGR_LADDER_DOWN, MIGR_LADDER_UP, MIGR_PORTAL, MIGR_RANDOM, MIGR_SSTAIRS, MIGR_STAIRS_DOWN, MIGR_STAIRS_UP, MIGR_WITH_HERO, MON_LIMBO, MON_MIGRATING, MON_STILL_ARRIVING, ROWNO, STRAT_ARRIVE, } from './const.js';
+import { RLOC_NOMSG, LARGEST_INT, MON_ARRIVE_BEFORE_YOU, MON_ARRIVE_WITH_YOU, MON_ARRIVE_AFTER_YOU, COLNO, In_endgame, MAGIC_PORTAL, MAX_NUM_WORMS, MIGR_APPROX_XY, MIGR_EXACT_XY, MIGR_LADDER_DOWN, MIGR_LADDER_UP, MIGR_PORTAL, MIGR_RANDOM, MIGR_SSTAIRS, MIGR_STAIRS_DOWN, MIGR_STAIRS_UP, MIGR_WITH_HERO, MIGR_LEFTOVERS, MON_LIMBO, MON_MIGRATING, MON_STILL_ARRIVING, ROWNO, STRAT_ARRIVE, } from './const.js';
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import { healMonster } from './mon.js';
 import { finishMonsterEating } from './monster_eating.js';
@@ -24,6 +24,7 @@ import { roomForRoomno, roomsAt } from './room.js';
 import { makeShoppersHappy } from './shop_damage.js';
 import { restoreMonsterShape } from './monster_polymorph.js';
 import { detachMonsterFromLevel } from './monster_level_departure.js';
+import { deliverOrcRaidLoot } from './orc_raid.js';
 // C include/monflag.h M1 flags used by mon_catchup_elapsed_time().
 const M1_CARNIVORE = 0x20000000;
 const M1_HERBIVORE = 0x40000000;
@@ -370,6 +371,8 @@ export async function monsterArrive(monster, when, state) {
             xlocale = ylocale = 0;
             break;
     }
+    if ((monster.migflags ?? 0) & MIGR_LEFTOVERS)
+        await deliverOrcRaidLoot(monster, state, true);
     if (xlocale && wander) {
         const drifted = wanderLocale(state, xlocale, ylocale, wander);
         if (drifted)
