@@ -67,6 +67,7 @@ interface FormAttackSequence {
     weaponUsed: boolean;
     alternateWeapon: boolean;
     skipBrainDrain: boolean;
+    confirmationOverridden: boolean;
 }
 
 type FormStrike =
@@ -74,7 +75,9 @@ type FormStrike =
     | { kind: 'interrupted'; weapon: GameObject | null }
     | { kind: 'processed'; result: number; weapon: GameObject | null; heroDied: boolean; exploded?: boolean };
 
-export async function attackHeroInMonsterForm(monster: Monster, x: number, y: number): Promise<void> {
+export async function attackHeroInMonsterForm(monster: Monster, x: number, y: number, {
+    confirmationOverridden = false,
+}: { confirmationOverridden?: boolean } = {}): Promise<void> {
     requirePlayingGame(game);
     const results = Array<number>(6).fill(M_ATTK_MISS);
     let weaponCount = 0;
@@ -88,7 +91,7 @@ export async function attackHeroInMonsterForm(monster: Monster, x: number, y: nu
         state: game, monster, target: { x, y }, results, attempts: 0,
         multipleWeapons: weaponCount > 1, multipleHands: handCount > 1,
         twoHits: 0, oddClaw: true, weaponUsed: false,
-        alternateWeapon: false, skipBrainDrain: false,
+        alternateWeapon: false, skipBrainDrain: false, confirmationOverridden,
     };
     for (let index = 0; index < results.length; index++) {
         if (index > 0 && (monster.mhp <= 0
@@ -189,6 +192,7 @@ async function performFormWeaponAttack(sequence: FormAttackSequence, attack: Att
     const strike = await resolveHeroWeaponHit(monster, target.x, target.y, weapon, {
         attack, hit: chance.threshold > dieRoll || !!state.u.uswallow,
         threshold: chance.threshold, armorPenalty: chance.armorPenalty, dieRoll, twoHits: sequence.twoHits,
+        confirmationOverridden: sequence.confirmationOverridden,
     });
     const passiveWeapon = state[slot] || state.u[slot] || null;
     if (strike.heroDied || !strike.survived)

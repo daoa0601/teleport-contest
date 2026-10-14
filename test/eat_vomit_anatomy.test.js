@@ -1,0 +1,29 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { FAINTING, HUNGRY } from '../js/const.js';
+import { doeat } from '../js/eat.js';
+import { game, requirePlayingGame } from '../js/gstate.js';
+import { advanceHeroVomiting, startHeroVomiting } from '../js/hero_illness.js';
+import { resetInputState } from '../js/input.js';
+import { FOOD_RATION } from '../js/object_data.js';
+import { addInventoryObject } from './support/game-objects.js';
+import { installPolymorphedHero } from './support/hero-state.js';
+import { freshObjectRoom } from './support/object-room.js';
+import { installPagerInput } from './support/pager-input.js';
+void test('empty-stomach vomiting describes the current monster form anatomy', async () => {
+    freshObjectRoom({ gameplaySeed: 71n, hero: { uhunger: 100, uhs: HUNGRY } });
+    requirePlayingGame(game);
+    installPolymorphedHero('floating eye');
+    const ration = await addInventoryObject(FOOD_RATION, { age: game.moves });
+    const input = resetInputState();
+    installPagerInput(input, { expected: /food|ration|eating|faint|hungry|heaves/i, limit: 8 });
+    input.feed(ration.invlet);
+    await doeat();
+    game.u.uhunger = 0;
+    game.u.uhs = FAINTING;
+    startHeroVomiting({ turns: 1 });
+    await advanceHeroVomiting();
+    assert.equal(game._lastPlineMessage, 'Your interior heaves convulsively!');
+    assert.equal(ration.where, 'inventory');
+});
+//# sourceMappingURL=eat_vomit_anatomy.test.js.map

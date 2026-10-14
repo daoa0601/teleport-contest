@@ -5,7 +5,7 @@ import type { Monster } from './monster_types.js';
 import { MGIVENNAME, M_AP_MONSTER, M_AP_TYPE, STONING, Upolyd, ismnum } from './const.js';
 import { canSpotMonster, flushPendingTopline, flush_screen, pline, plineWithContinuation } from './display.js';
 import {
-    beginHeroLifeSaving, completeHeroLifeSaving, finishOrdinaryDeath,
+    beginHeroLifeSaving, completeHeroLifeSaving, finishOrdinaryDeath, identifyLifeSavingAmulet,
     restoreHeroAfterDeath,
 } from './end.js';
 import { setHeroRemainsFromMonster } from './death_remains.js';
@@ -30,16 +30,6 @@ export interface MonsterAttackDeathOptions {
     pagerOwned?: boolean;
     attribution?: MonsterDeathAttribution;
     deathType?: number | null;
-}
-
-async function waitForMonsterMore(message: string) {
-    // urgent_pline() still traverses tty's ordinary topline continuation.
-    // If an older line is pending, it may own a pager before this urgent line
-    // is installed.  display_nhwindow(WIN_MESSAGE, TRUE) then forces the new
-    // current line to own a second acknowledgement even when it fits.
-    const continuationDismissal = await plineWithContinuation(message);
-    if (continuationDismissal === 27) return continuationDismissal;
-    return waitForCurrentMonsterMore(message);
 }
 
 // C end.c:done_in_by(). Fatal attribution describes the real killer even
@@ -95,14 +85,19 @@ export async function finishMonsterAttackDeath(monster: Monster, {
 }: MonsterAttackDeathOptions = {}): Promise<boolean> {
     const customCause = attribution.kind === 'death-inflicted-by';
     const announcesDeath = !customCause || attribution.announcesDeath;
+    const fatalLine = deathType === STONING ? 'You turn to stone...' : 'You die...';
     const hpSaveSentinel = game.u.uhp === -1;
     const projectedFatalLine = !!game._pending_message
         && !game._suppressMessagesUntilInput;
-    if (projectedFatalLine && announcesDeath) {
+    if (projectedFatalLine && announcesDeath && deathType !== STONING) {
         // You("die...") flushes the raw injury before tty pages older prose.
         await flush_screen(1);
         await waitForCurrentMonsterMore();
     }
+    // Petrification can append to a short hit or page a longer one. Both
+    // happen in done_in_by(), before done() records zero HP for life saving.
+    const petrificationAnnounced = announcesDeath && deathType === STONING;
+    if (petrificationAnnounced) await plineWithContinuation(fatalLine);
     const fatalKiller = customCause ? attribution.killer : fatalMonsterDescription(monster);
     const fatalDeathCause = customCause
         ? attribution.deathCause ?? `killed by ${fatalKiller}`
@@ -122,15 +117,14 @@ export async function finishMonsterAttackDeath(monster: Monster, {
     // life-saving transaction performs done()'s commit itself.
     const lifeSaving = beginHeroLifeSaving();
     if (lifeSaving) {
-        // done_in_by() writes the fatal line before done(); the
-        // latter appends both life-saving lines until the next
-        // message would overflow tty's top line.  Identification
-        // (and its Wisdom exercise draw) precedes that pager.
+        // "But wait..." can page the fatal line. Native makeknown()
+        // and its Wisdom exercise draw wait for that acknowledgement.
         const medallionEffect = heroIsBlind(game) ? 'feels warm' : 'begins to glow';
-        const dismissal = await waitForMonsterMore(
-            `${announcesDeath ? 'You die...  ' : ''}But wait...  Your medallion ${medallionEffect}!`,
-        );
-        await pline('You feel much better!');
+        if (announcesDeath && !petrificationAnnounced) await plineWithContinuation(fatalLine);
+        await plineWithContinuation('But wait...');
+        identifyLifeSavingAmulet();
+        await plineWithContinuation(`Your medallion ${medallionEffect}!`);
+        const dismissal = await plineWithContinuation('You feel much better!');
         // ESC at tty --More-- sets WIN_STOP: the new overflow
         // message is still installed, but later messages in this
         // input transaction (starting with the crumble line) are
@@ -162,7 +156,7 @@ export async function finishMonsterAttackDeath(monster: Monster, {
     const previousStatusDisabled = game._statusUpdatesDisabled;
     if (hpSaveSentinel) game._statusUpdatesDisabled = true;
     try {
-        if (announcesDeath && game._suppressMessagesUntilInput) {
+        if (announcesDeath && game._suppressMessagesUntilInput && deathType !== STONING) {
             // tty update_topl() treats "You die" specially: it
             // replaces the logically stopped topline and clears
             // WIN_STOP rather than appending to the pline which
@@ -170,16 +164,17 @@ export async function finishMonsterAttackDeath(monster: Monster, {
             // actor's stopped pager yields directly to yn_function();
             // a pager owned by this same fatal contact still reaches
             // done()'s explicit message-window flush.
-            await pline('You die...');
+            await pline(fatalLine);
             game._suppressMessagesUntilInput = false;
             commitFatalEvent();
             if (pagerOwned)
-                await waitForCurrentMonsterMore('You die...');
+                await waitForCurrentMonsterMore(fatalLine);
         } else if (announcesDeath) {
-            await plineWithContinuation('You die...');
+            if (!petrificationAnnounced) await plineWithContinuation(fatalLine);
             commitFatalEvent();
-            if (game.flags?.debug || game.flags?.explore)
-                await waitForCurrentMonsterMore('You die...');
+            // tty_yn_function() skips more() while Escape's WIN_STOP is set.
+            if ((game.flags?.debug || game.flags?.explore) && !game._suppressMessagesUntilInput)
+                await waitForCurrentMonsterMore(fatalLine);
         } else {
             commitFatalEvent();
         }
@@ -198,6 +193,7 @@ export async function finishMonsterAttackDeath(monster: Monster, {
     }
     await finishOrdinaryDeath({
         killer: fatalKiller, deathCause: fatalDeathCause, deathType,
+        deathVerb: deathType === STONING ? 'were petrified' : 'died',
     });
     game.context.move = 0;
     return true;

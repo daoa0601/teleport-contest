@@ -3,6 +3,7 @@
 // slimed_to_death(), uhitm.c mhitm_ad_slim().
 
 import { heroIsHallucinating } from './senses.js';
+import { endVoluntaryMultiTurn } from './command_state.js';
 import { exerciseAttribute } from './attrib.js';
 import {
     A_DEX, GENOCIDED, G_GENOD, M_AP_MONSTER, TIMEOUT, TURNED_SLIME,
@@ -18,6 +19,7 @@ import { MONSTER_NAME, MONSTER_SYMBOL, requireMonsterData } from './monster_data
 import { heroHasNoLimbs, heroIsPolymorphed } from './polyself.js';
 import { removeIntrinsicProperty, setPropertyTimeout } from './properties.js';
 import { stopHeroOccupation } from './occupation.js';
+import { openingTinMaySaveHero } from './tin.js';
 
 interface SlimeAdvanceOptions {
     state?: GameState;
@@ -252,7 +254,8 @@ export async function advanceHeroSliming({
     const stage = Math.trunc(turns / 2);
     if (stage === 3) {
         removeHeroSpeed(state);
-        await stopHeroOccupation(state, publish);
+        if (!openingTinMaySaveHero('slimed', state)) await stopHeroOccupation(state, publish);
+        if (state.multi > 0) endVoluntaryMultiTurn(state);
     } else if (stage === 2
         && hero.deafTurns !== undefined && hero.deafTurns > 0
         && hero.deafTurns < 5) {

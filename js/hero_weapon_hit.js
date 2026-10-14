@@ -1,4 +1,5 @@
 import { game, requirePlayingGame } from './gstate.js';
+import { plineWithContinuation } from './display.js';
 import { hitMonsterWithHeroObject } from './hero_physical_hit.js';
 import { makeMonsterFlee } from './monster_flee.js';
 import { rnd, rn2 } from './rng.js';
@@ -7,8 +8,10 @@ import { showHeroMeleeMiss } from './hero_attack_accuracy.js';
 import { isWeaponTool } from './object_properties.js';
 import { isAxe, isBlade } from './weapon_type.js';
 import { cutWorm } from './monster_worm.js';
-export async function resolveHeroWeaponHit(monster, x, y, weapon, { attack, hit, threshold, armorPenalty, dieRoll, twoHits }) {
+export async function resolveHeroWeaponHit(monster, x, y, weapon, { attack, hit, threshold, armorPenalty, dieRoll, twoHits, confirmationOverridden = false }) {
     requirePlayingGame(game);
+    if (confirmationOverridden && game.flags.verbose)
+        await plineWithContinuation('Your bloodthirsty blade attacks!');
     if (!hit) {
         const miss = await showHeroMeleeMiss(monster, attack, threshold + armorPenalty > dieRoll);
         return { hit: false, survived: true, heroDied: miss.heroDied };
