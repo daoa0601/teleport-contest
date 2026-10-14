@@ -90,6 +90,7 @@ import {
 import { loseHeroHp } from './hero_damage.js';
 import { dopay } from './shop_pay_command.js';
 import { reportShopFinances } from './shop_finance.js';
+import { quoteShopGoods } from './shop_price_quote.js';
 import { poisonHeroStrengthAndHp } from './poison.js';
 import { isContainer, useContainer } from './container.js';
 import { adjustHeroAlignment } from './alignment.js';
@@ -2656,6 +2657,10 @@ async function doswapweapon() {
 }
 
 async function dochat() {
+    if (await quoteShopGoods()) {
+        game.context.move = 1;
+        return;
+    }
     const key = await readDirectionKey('Talk to whom? (in what direction) ');
     const direction = promptedDirectionKey(key, game.commandBindings);
     if (direction === '.') {
