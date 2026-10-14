@@ -424,7 +424,6 @@ async function freezeLiquidAt(x: number, y: number, state: GameState, publish: M
         startMeltIceTimer(x, y, 0, state);
         updateIceObjectTimersAt(x, y, state, { includeBuried: true });
     }
-    vision_note_blocker_change(x, y);
     return -3;
 }
 

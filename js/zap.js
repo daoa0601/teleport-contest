@@ -353,7 +353,6 @@ async function freezeLiquidAt(x, y, state, publish) {
         startMeltIceTimer(x, y, 0, state);
         updateIceObjectTimersAt(x, y, state, { includeBuried: true });
     }
-    vision_note_blocker_change(x, y);
     return -3;
 }
 async function evaporatePoolAt(x, y, state, publish, heroCaused) {
