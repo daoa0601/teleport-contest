@@ -30,7 +30,7 @@ import {
 } from './display.js';
 import { initializePet } from './dog.js';
 import { makemonNear, mksobj } from './mklev.js';
-import { wakeMonstersNear } from './monster_wake.js';
+import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import {
     monsterDigests, monsterIsWhirly, monsterTypeName,
 } from './monster_data.js';
@@ -285,18 +285,17 @@ export async function lightHitsGremlin(
     monster: Monster, damage: number,
     finishMonsterKill?: FinishMonsterKill,
 ): Promise<boolean | LightDeathOutcome | void> {
-    const name = monsterName(monster, { capitalized: true });
-    const dx = (monster.mx ?? 0) - (game.u?.ux ?? 0);
-    const dy = (monster.my ?? 0) - (game.u?.uy ?? 0);
+    const dx = monster.mx - game.u.ux;
+    const dy = monster.my - game.u.uy;
     if (!heroIsDeaf(game) && dx * dx + dy * dy <= 90) {
-        const reaction = damage > (monster.mhp ?? 1) / 2
+        const reaction = damage > monster.mhp / 2
             ? 'wails in agony' : 'cries out in pain';
-        await plineWithContinuation(`${name} ${reaction}!`);
+        await plineWithContinuation(`${monsterName(monster, { capitalized: true })} ${reaction}!`);
     } else if (canSeeMonster(monster)) {
-        await plineWithContinuation(`${name} recoils from the light!`);
+        await plineWithContinuation(`${monsterName(monster, { capitalized: true })} recoils from the light!`);
     }
-    monster.mhp = Math.max(0, (monster.mhp ?? 1) - damage);
-    wakeMonstersNear(monster.mx, monster.my, 30);
+    monster.mhp -= damage;
+    await wakeMonstersNearWithMessages(monster.mx, monster.my, 30);
     if (monster.mhp <= 0) {
         if (finishMonsterKill) return finishMonsterKill(monster, monster.mx, monster.my);
         if (game.context.mon_moving) return finishMonsterKilled(monster, game, {

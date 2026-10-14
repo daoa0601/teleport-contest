@@ -55,7 +55,7 @@ import { carveMazeFrom, createMaze } from './maze_terrain.js';
 import { DRY, HOT, NO_LOC_WARN, SOLID, WET, getLocationCoord } from './special_location.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import { cleanupSpecialLevelMap, removeSpecialLevelBoundaries } from './special_level_cleanup.js';
-import { A_CHA, COLNO, ROWNO, STONE, ROOM, CORR, DOOR, STAIRS, LADDER, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER, CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL, D_NODOOR, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_TRAPPED, OROOM, VAULT, COURT, SWAMP, BEEHIVE, MORGUE, BARRACKS, ZOO, TEMPLE, LEPREHALL, COCKNEST, ANTHOLE, DELPHI, THEMEROOM, SHOPBASE, ROOMOFFSET, MAXNROFROOMS, SHARED, SDOOR, SCORR, IRONBARS, FOUNTAIN, SINK, ALTAR, GRAVE, THRONE, HEADSTONE, ENGRAVE, BURN, MARK, DUST, ENGR_BLOOD, DIR_N, DIR_S, DIR_E, DIR_W, DIR_180, XL_UP, XL_DOWN, XL_LEFT, XL_RIGHT, ACCESSIBLE, IS_WALL, IS_STWALL, IS_DOOR, IS_ROOM, IS_OBSTRUCTED, ZAP_POS, IS_FURNITURE, IS_POOL, IS_AIR, IS_LAVA, In_endgame, Is_earthlevel, Is_botlevel, Is_stronghold, Invocation_lev, In_hell, In_quest, In_V_tower, Is_oracle_level, Is_waterlevel, Is_knox_level, Is_rogue_level, In_sokoban, SPACE_POS, isok, W_NONDIGGABLE, W_NONPASSWALL, FILL_NONE, FILL_NORMAL, ICE, MOAT, POOL, WATER, LAVAPOOL, LAVAWALL, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN, DBWALL, ICED_POOL, ICED_MOAT, DB_NORTH, DB_SOUTH, DB_EAST, DB_WEST, DB_MOAT, DB_LAVA, DB_UNDER, DB_FLOOR, SHOP_HOLE_COST, TREE, AIR, CLOUD, A_NONE, A_CHAOTIC, A_NEUTRAL, A_LAWFUL, P_SHORT_SWORD, P_SABER, AM_SHRINE, AM_SANCTUM, Align2amask, LR_DOWNSTAIR, LR_UPSTAIR, LR_UPTELE, LR_DOWNTELE, LR_TELE, LR_BRANCH, LR_PORTAL, M_AP_NOTHING, M_AP_FURNITURE, M_AP_OBJECT, M_AP_MONSTER, M_AP_TYPE, MM_ANGRY, MM_ASLEEP, MM_NONAME, MM_NOGRP, MM_EMIN, MM_EPRI, MM_NOWAIT, MM_NOTAIL, MM_IGNOREWATER, MM_ADJACENTOK, MM_NOCOUNTBIRTH, MM_NOMSG, MM_MALE, MM_FEMALE, MM_MINVIS, MM_EDOG, NO_MINVENT, G_EXTINCT, G_GENOD, G_GONE, G_NOCORPSE, ROT_AGE, TROLL_REVIVE_CHANCE, HEALTHY_TIN, RANDOM_TIN, CORPSTAT_FEMALE, CORPSTAT_MALE, CORPSTAT_NEUTER, CORPSTAT_HISTORIC, CORPSTAT_INIT, CORPSTAT_SPE_VAL, STRAT_APPEARMSG, STRAT_CLOSE, STRAT_WAITFORU, ANTI_MAGIC, TT_BURIEDBALL, TT_BEARTRAP, TT_WEB, TT_PIT, TT_LAVA, } from './const.js';
+import { A_CHA, COLNO, ROWNO, STONE, ROOM, CORR, DOOR, STAIRS, LADDER, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER, CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL, D_NODOOR, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_TRAPPED, OROOM, VAULT, COURT, SWAMP, BEEHIVE, MORGUE, BARRACKS, ZOO, TEMPLE, LEPREHALL, COCKNEST, ANTHOLE, DELPHI, THEMEROOM, SHOPBASE, ROOMOFFSET, MAXNROFROOMS, SHARED, SDOOR, SCORR, IRONBARS, FOUNTAIN, SINK, ALTAR, GRAVE, THRONE, HEADSTONE, ENGRAVE, BURN, MARK, DUST, ENGR_BLOOD, DIR_N, DIR_S, DIR_E, DIR_W, DIR_180, XL_UP, XL_DOWN, XL_LEFT, XL_RIGHT, ACCESSIBLE, IS_WALL, IS_STWALL, IS_DOOR, IS_ROOM, IS_OBSTRUCTED, ZAP_POS, IS_FURNITURE, IS_POOL, IS_AIR, IS_LAVA, In_endgame, Is_earthlevel, Is_botlevel, Is_stronghold, Invocation_lev, In_hell, In_quest, In_V_tower, Is_oracle_level, Is_waterlevel, Is_knox_level, Is_rogue_level, In_sokoban, SPACE_POS, isok, W_NONDIGGABLE, W_NONPASSWALL, FILL_NONE, FILL_NORMAL, ICE, MOAT, POOL, WATER, LAVAPOOL, LAVAWALL, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN, DBWALL, ICED_POOL, ICED_MOAT, DB_NORTH, DB_SOUTH, DB_EAST, DB_WEST, DB_MOAT, DB_LAVA, DB_UNDER, DB_FLOOR, SHOP_HOLE_COST, TREE, AIR, CLOUD, A_NONE, A_CHAOTIC, A_NEUTRAL, A_LAWFUL, P_SHORT_SWORD, P_SABER, AM_SHRINE, AM_SANCTUM, Align2amask, LR_DOWNSTAIR, LR_UPSTAIR, LR_UPTELE, LR_DOWNTELE, LR_TELE, LR_BRANCH, LR_PORTAL, M_AP_NOTHING, M_AP_FURNITURE, M_AP_OBJECT, M_AP_MONSTER, M_AP_TYPE, MM_ANGRY, MM_ASLEEP, MM_NONAME, MM_NOGRP, MM_EMIN, MM_EPRI, MM_NOWAIT, MM_NOTAIL, MM_IGNOREWATER, MM_ADJACENTOK, MM_NOCOUNTBIRTH, MM_NOMSG, MM_MALE, MM_FEMALE, MM_MINVIS, MM_EDOG, NO_MINVENT, G_EXTINCT, G_GENOD, G_GONE, G_NOCORPSE, ROT_AGE, TROLL_REVIVE_CHANCE, HEALTHY_TIN, RANDOM_TIN, MAX_OIL_IN_FLASK, CORPSTAT_FEMALE, CORPSTAT_MALE, CORPSTAT_NEUTER, CORPSTAT_HISTORIC, CORPSTAT_INIT, CORPSTAT_SPE_VAL, STRAT_APPEARMSG, STRAT_CLOSE, STRAT_WAITFORU, ANTI_MAGIC, TT_BURIEDBALL, TT_BEARTRAP, TT_WEB, TT_PIT, TT_LAVA, } from './const.js';
 import { getObjectClassBounds, getObjectDefinition, requireObjectData, OBJECT_BASES, OBJECT_PROB, OBJECT_MATERIAL, OBJECT_SPELL_LEVEL, OBJECT_MERGE, OBJECT_WEIGHT, OBJECT_COST, OBJECT_SUBTYPE, WORM_TOOTH, UNICORN_HORN, HELM_OF_OPPOSITE_ALIGNMENT, GAUNTLETS_OF_FUMBLING, FUMBLE_BOOTS, LEVITATION_BOOTS, AMULET_OF_STRANGULATION, AMULET_OF_RESTFUL_SLEEP, AMULET_OF_CHANGE, AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK, BAG_OF_HOLDING, BAG_OF_TRICKS, TALLOW_CANDLE, WAX_CANDLE, BRASS_LANTERN, OIL_LAMP, MAGIC_LAMP, EXPENSIVE_CAMERA, CRYSTAL_BALL, TINNING_KIT, CAN_OF_GREASE, FIGURINE, MAGIC_MARKER, MAGIC_FLUTE, FROST_HORN, FIRE_HORN, HORN_OF_PLENTY, MAGIC_HARP, DRUM_OF_EARTHQUAKE, CORPSE, EGG, MEAT_RING, GLOB_OF_GRAY_OOZE, GLOB_OF_BLACK_PUDDING, KELP_FROND, SLIME_MOLD, MELON, LUMP_OF_ROYAL_JELLY, CREAM_PIE, CANDY_BAR, TIN, GOLD_PIECE, SPE_NOVEL, SPE_BOOK_OF_THE_DEAD, DILITHIUM_CRYSTAL, LUCKSTONE, LOADSTONE, TOUCHSTONE, ROCK, BOULDER, STATUE, DART, DAGGER, SPEAR, SLING, ORCISH_DAGGER, MACE, QUARTERSTAFF, BULLWHIP, FEDORA, ELVEN_ARROW, ELVEN_SPEAR, ELVEN_DAGGER, ELVEN_SHORT_SWORD, ELVEN_BROADSWORD, ELVEN_BOW, ELVEN_LEATHER_HELM, ELVEN_MITHRIL_COAT, ELVEN_CLOAK, ELVEN_SHIELD, ELVEN_BOOTS, ORCISH_ARROW, ORCISH_SHORT_SWORD, ORCISH_BOW, ORCISH_HELM, ORCISH_CHAIN_MAIL, ORCISH_CLOAK, URUK_HAI_SHIELD, ORCISH_SHIELD, SCIMITAR, AXE, PICK_AXE, DWARVISH_SPEAR, DWARVISH_SHORT_SWORD, DWARVISH_MATTOCK, DWARVISH_IRON_HELM, DWARVISH_MITHRIL_COAT, DWARVISH_CLOAK, DWARVISH_ROUNDSHIELD, IRON_SHOES, HELMET, SPLINT_MAIL, RING_MAIL, SMALL_SHIELD, ROBE, CLOAK_OF_PROTECTION, CLOAK_OF_MAGIC_RESISTANCE, LEATHER_ARMOR, LEATHER_JACKET, LEATHER_GLOVES, MIRROR, POT_OBJECT_DETECTION, RIN_INVISIBILITY, SHIELD_OF_REFLECTION, SADDLE, WAN_CANCELLATION, WAN_LIGHT, WAN_LIGHTNING, } from './object_data.js';
 import { MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_DIFFICULTY, MONSTER_GENO, MONSTER_ALIGNMENT, MONSTER_LEVEL, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_FLAGS3, MONSTER_SYMBOL, MONSTER_SIZE, MONSTER_MOVE, MONSTER_SOUND, MONSTER_HAS_WEAPON_ATTACK, MONSTER_COLOR, MONSTER_NAME, MONSTER_RESISTS, SPECIAL_PM, monsterClassSymbol, monsterIsPlayerMonster, requireMonsterData, } from './monster_data.js';
 import { isReviver, isRider, zombieForm, } from './corpse_species.js';
@@ -68,7 +68,7 @@ import { nhgetch } from './input.js';
 import { canSeeMonster, canSenseMonster, flush_screen, newsym, pline, } from './display.js';
 import { premap_detect } from './detect.js';
 import { TRUE_RUMORS, FALSE_RUMORS, RANDOM_ENGRAVINGS, RANDOM_EPITAPHS, } from './random_text_data.js';
-import { makeEngravingAt, wipeEngravingAt, wipeoutText } from './engrave.js';
+import { deleteEngravingAt, makeEngravingAt, wipeEngravingAt, wipeoutText } from './engrave.js';
 import { registerQuestLeader } from './quest.js';
 import { armorBonus } from './armor.js';
 import { initializeMonsterArmor } from './monworn.js';
@@ -519,6 +519,9 @@ export async function mksobj(otyp, init, artif, { zombify = false } = {}) {
     if (init) {
         await mksobj_init(otmp, artif, definition);
     }
+    // Fuel is intrinsic to an oil flask even when random initialization is skipped.
+    if (otyp === POT_OIL)
+        otmp.age = MAX_OIL_IN_FLASK;
     if (otyp === CORPSE || otyp === STATUE || otyp === FIGURINE) {
         if (otmp.corpsenm == null) {
             otmp.corpsenm = rndmonnum();
@@ -1675,7 +1678,12 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
                 return null;
             ++tryCount;
         } while (tryCount <= 50
-            && !goodPosition(x, y, { kind: 'species', mnum: mndx }));
+            && ((tryCount === 1 && In_sokoban(game.u.uz)
+                && !!((MONSTER_FLAGS2[mndx] ?? 0) & 0x08000000)) // M2_ROCKTHROW
+                || !goodPosition(x, y, { kind: 'species', mnum: mndx }, {
+                    gpflags: GP_AVOID_MONPOS | GP_CHECKSCARY
+                        | (mmflags & MM_IGNOREWATER),
+                })));
     }
     if (mdat != null
         && ((game.mvitals?.[mndx]?.mvflags ?? 0) & G_GENOD))
@@ -4838,6 +4846,16 @@ export function finishSpecialRoamer(monster, alignment, peaceful) {
     monster.mtrapseen = 0x7fffffff;
     setMonsterMalign(monster);
 }
+// sp_lev.c:create_monster() replaces unavailable ordinary species, but
+// an extinct unique monster must not appear again in any form.
+function selectNamedSpecialMonster(mndx) {
+    if (mndx === null)
+        return { species: null };
+    const vitalFlags = game.mvitals?.[mndx]?.mvflags ?? 0;
+    if (((MONSTER_GENO[mndx] ?? 0) & 0x1000) && (vitalFlags & G_EXTINCT))
+        return null;
+    return { species: vitalFlags & G_GONE ? null : mndx };
+}
 // sp_lev.c:create_monster() searches before construction, including when
 // a worm's tail occupies the requested square. The result must stay in croom.
 async function createSpecialMonster(context, mndx, x, y, mmflags) {
@@ -4864,7 +4882,10 @@ async function specialMonsterAt(context, mndx, x, y, { randomGender = true, rand
         consumeSpecialMonsterAlignment();
     const alignment = typeof roamerAlignment === 'function'
         ? roamerAlignment() : roamerAlignment;
-    mndx = applyMinesSameRaceMonsterGate(mndx);
+    const selection = selectNamedSpecialMonster(mndx);
+    if (!selection)
+        return null;
+    mndx = applyMinesSameRaceMonsterGate(selection.species);
     const monster = await createSpecialMonster(context, mndx, context.xstart + x, context.ystart + y, mmflags);
     if (monster && requestedFemale !== null)
         monster.female = requestedFemale;
@@ -4945,7 +4966,10 @@ async function specialExplicitMonster(context, mndx, appearance = null, { random
         consumeSpecialMonsterAlignment();
     const alignment = typeof roamerAlignment === 'function'
         ? roamerAlignment() : roamerAlignment;
-    const selectedSpecies = applyMinesSameRaceMonsterGate(mndx);
+    const selection = selectNamedSpecialMonster(mndx);
+    if (!selection)
+        return null;
+    const selectedSpecies = applyMinesSameRaceMonsterGate(selection.species);
     const point = await specialMonsterRandomLocation(context, selectedSpecies);
     if (!point)
         return null;
@@ -7904,11 +7928,8 @@ async function makeRandomTemple(room) {
     return true;
 }
 async function markRandomSpecialRoom(roomType) {
-    // All zoo-family rooms use pick_room(FALSE); temples use the stricter
-    // stair exclusion.  Swamps have their own multi-room terrain transaction
-    // and remain a distinct downstream owner.
     if (roomType === SWAMP)
-        return false;
+        return makeSwamps();
     const room = pickSpecialRoom(roomType === TEMPLE);
     if (!room)
         return false;
@@ -7917,6 +7938,61 @@ async function markRandomSpecialRoom(roomType) {
     room.rtype = roomType;
     room.needfill = FILL_NORMAL;
     return true;
+}
+// C mkroom.c:mkswamp(). Room selection is with replacement; a room already
+// converted by an earlier attempt is skipped. The first pool has a resident.
+async function makeSwamps() {
+    const level = requireGameLevel();
+    let residents = 0;
+    let madeSwamp = false;
+    for (let attempt = 0; attempt < 5; attempt++) {
+        const roomIndex = rn2(level.nroom);
+        const room = level.rooms[roomIndex];
+        if (!isRoom(room) || room.hx < 0 || room.rtype !== OROOM
+            || roomHasStair(room, true) || roomHasStair(room, false))
+            continue;
+        room.rtype = SWAMP;
+        for (let x = room.lx; x <= room.hx; x++) {
+            for (let y = room.ly; y <= room.hy; y++) {
+                const location = level.requireAt(x, y);
+                if (!IS_ROOM(location.typ) || location.roomno !== roomIndex + ROOMOFFSET
+                    || level.objects[x]?.[y]?.length || monsterAtPosition(level, x, y)
+                    || level.traps.some(trap => trap.tx === x && trap.ty === y)
+                    || swampSquareBordersDoor(x, y))
+                    continue;
+                if ((x + y) % 2) {
+                    deleteEngravingAt(x, y, level);
+                    location.typ = POOL;
+                    if (!residents || !rn2(4)) {
+                        const species = rn2(5) ? PM_GIANT_EEL
+                            : rn2(2) ? MONSTER_NAME.indexOf('piranha')
+                                : MONSTER_NAME.indexOf('electric eel');
+                        await makemon(species, x, y, 0);
+                        residents++;
+                    }
+                }
+                else if (!rn2(4)) {
+                    await makemon(mkclass(32, 0), x, y, 0); // S_FUNGUS
+                }
+            }
+        }
+        level.flags.has_swamp = true;
+        madeSwamp = true;
+    }
+    return madeSwamp;
+}
+function swampSquareBordersDoor(x, y) {
+    const level = requireGameLevel();
+    for (let dx = -1; dx <= 1; dx++) {
+        for (let dy = -1; dy <= 1; dy++) {
+            if (!isok(x + dx, y + dy))
+                continue;
+            const location = level.at(x + dx, y + dy);
+            if (location && (IS_DOOR(location.typ) || location.typ === SDOOR))
+                return true;
+        }
+    }
+    return false;
 }
 // C ref: mklev.c makelevel() random-special-room else-if chain.  Every failed
 // depth-eligible predicate owns its draw; once one type is selected, room
@@ -8146,11 +8222,13 @@ async function stockShopRoom(sroom) {
     // ordinary humanoid observer; shkinit() establishes both together here.
     shopkeeper.isshk = 1;
     sroom.resident = shopkeeper;
-    // C ref: shkinit().  The gold object and possible charging scroll live
-    // in the shopkeeper's inventory even though only their RNG-visible
-    // initialization is needed by the current session.
-    shopkeeper.gold = 1000 + 30 * rnd(100);
-    await linkObjectToMonsterInventory(shopkeeper, await mksobj(GOLD_PIECE, false, false), { atFront: true });
+    // C shknam.c:shkinit()/makemon.c:mkmonmoney(). Initial capital is
+    // an ordinary coin stack in the keeper's inventory.
+    const capital = 1000 + 30 * rnd(100);
+    const coins = await mksobj(GOLD_PIECE, false, false);
+    coins.quan = coins.quantity = capital;
+    coins.owt = objectWeight(coins);
+    await linkObjectToMonsterInventory(shopkeeper, coins, { atFront: true });
     if (shopIndex === 6)
         await addObjectToMonsterInventory(shopkeeper, await mksobj(TOUCHSTONE, true, false), game, { atFront: true });
     if (shopIndex === 8 || shopIndex === 7

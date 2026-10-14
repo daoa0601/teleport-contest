@@ -1,36 +1,39 @@
 // A monster's passive response when the hero or an object strikes it.
 // C ref: uhitm.c passive() and passive_obj().
-import { heroIsHallucinating } from './senses.js';
+import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { makeStunned } from './hero_mental_status.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { heroHasFreeAction } from './armor.js';
 import { heroSpecies } from './hero_species.js';
-import { A_DEX, A_STR, A_WIS, M_SEEN_ACID, M_SEEN_COLD, M_SEEN_ELEC, M_SEEN_FIRE, M_SEEN_MAGR, Upolyd, } from './const.js';
-import { canSeeMonster, plineWithContinuation, randomDisplayMonsterName, shieldeff, } from './display.js';
-import { finishHeroDeath } from './end.js';
+import { A_DEX, A_STR, A_WIS, STONING, M_SEEN_ACID, M_SEEN_COLD, M_SEEN_ELEC, M_SEEN_FIRE, M_SEEN_MAGR, } from './const.js';
+import { canSeeMonster, displayLiquidName, plineWithContinuation, shieldeff, } from './display.js';
 import { game } from './gstate.js';
+import { damageHeroFromMonster } from './hero_damage.js';
 import { healMonster } from './mon.js';
+import { finishMonsterAttackDeath } from './monster_attack_death.js';
 import { observeObjectForNaming, ownedObjectAction } from './objnam.js';
 import { erodeArmor, erodeObject } from './object_erosion.js';
 import { MONSTER_ATTACKS, MONSTER_NAME, MONSTER_RESISTS, monsterTypeName, requireMonsterData, } from './monster_data.js';
 import { splitMonster } from './monster_clone.js';
+import { monsterName as displayedMonsterName, namelessMonsterName, possessiveName } from './monster_name.js';
 import { monstersForgetHeroResistance, monstersObserveHeroResistance, } from './monster_perception.js';
 import { AD_ACID, AD_COLD, AD_CORR, AD_ELEC, AD_ENCH, AD_FIRE, AD_MAGM, AD_PHYS, AD_PLYS, AD_RUST, AD_STON, AD_STUN, AT_BITE, AT_BOOM, AT_BREA, AT_BUTT, AT_CLAW, AT_EXPL, AT_GAZE, AT_HUGS, AT_KICK, AT_MAGC, AT_NONE, AT_SPIT, AT_STNG, AT_TUCH, AT_WEAP, } from './monster_attack_types.js';
 import { OBJECT_NAMES } from './object_data.js';
 import { drainObjectEnchantment } from './object_state.js';
 import { hasWornProperty } from './properties.js';
-import { applyHeroGolemEffects, heroMonsterForm, returnHeroToHumanForm, } from './polyself.js';
+import { applyHeroGolemEffects, heroMonsterForm, polymonHero, } from './polyself.js';
 import { heroReflectionSource, heroReflectsRay } from './ray.js';
 import { d, rn2 } from './rng.js';
-import { contactIsProtected, resolveImmediatePetrification } from './stoning.js';
+import { contactIsProtected, formCanBecomeStoneGolem } from './stoning.js';
 const MR_FIRE = 0x01;
 const MR_COLD = 0x02;
 const MR_ELEC = 0x10;
 const MR_ACID = 0x40;
 const MR_STONE = 0x80;
 const PM_FLOATING_EYE = MONSTER_NAME.indexOf('floating eye');
-export async function applyHeroContactPassive(monster, { hit, defenderSurvived = !monster.dead && monster.mhp > 0, attackType = AT_WEAP, weapon = null, weaponWasDestroyed = false, state = game, publish = plineWithContinuation, random = rn2, rollDice = d, die = finishHeroDeath, } = {}) {
+const PM_STONE_GOLEM = MONSTER_NAME.indexOf('stone golem');
+export async function applyHeroContactPassive(monster, { hit, defenderSurvived = !monster.dead && monster.mhp > 0, attackType = AT_WEAP, weapon = null, weaponWasDestroyed = false, state = game, publish = plineWithContinuation, random = rn2, rollDice = d, die, } = {}) {
     const attack = passiveAttack(monster);
     if (!attack)
         return { handled: false, heroDied: false };
@@ -50,7 +53,7 @@ export async function applyHeroContactPassive(monster, { hit, defenderSurvived =
         die,
     };
     const immediate = await applyImmediatePassive(context);
-    if (immediate.heroDied) {
+    if (immediate.heroDied || immediate.stopped) {
         return {
             handled: damageType !== AD_PHYS,
             damageType,
@@ -87,11 +90,11 @@ async function applyAcidPassive({ monster, damage, hit, attackType, weapon, stat
     let heroDied = false;
     const splashed = hit && random(2) !== 0;
     if (splashed) {
-        if (state.u?.blind || state.flags?.verbose === false) {
+        if (heroIsBlind(state) || state.flags?.verbose === false) {
             await publish('You are splashed!');
         }
         else {
-            await publish(`You are splashed by ${possessiveMonsterName(monster)} acid!`);
+            await publish(`You are splashed by ${possessiveName(displayedMonsterName(monster, { state }))} ${displayLiquidName('acid', state)}!`);
         }
         if (heroResistsAcid(state)) {
             monstersObserveHeroResistance(M_SEEN_ACID, state);
@@ -111,8 +114,8 @@ async function applyAcidPassive({ monster, damage, hit, attackType, weapon, stat
             });
         }
     }
-    const object = objectTouchedByAttack(state, attackType, weapon);
-    if (!heroDied && hit && object && random(6) === 0) {
+    const object = hit && weapon ? objectTouchedByAttack(state, attackType, weapon) : null;
+    if (!heroDied && object && random(6) === 0) {
         await erodeObject(object, 'corrosion', {
             state,
             publish,
@@ -137,18 +140,31 @@ async function applyEquipmentPassive(context) {
     });
     return { heroDied: false };
 }
-async function applyStonePassive({ monster, hit, attackType, weapon, weaponWasDestroyed, state, publish, die, }) {
+async function applyStonePassive({ monster, hit, attackType, weaponWasDestroyed, state, publish, die, }) {
     const wornMask = (state.inventory || []).reduce((mask, object) => mask | (object.owornmask ?? 0), 0);
-    if (!hit || contactIsProtected(attackType, wornMask, !!weapon || weaponWasDestroyed) || heroResists(state, 'stoneResistance', MR_STONE)) {
+    // hmonas turns a small caster's spell slot into a hand strike. Its
+    // contact needs the same insulation as a claw, rather than a spell.
+    const contactType = attackType === AT_MAGC ? AT_CLAW : attackType;
+    if (!hit || contactIsProtected(contactType, wornMask, !!(state.uwep || state.u.uwep) || weaponWasDestroyed) || heroResists(state, 'stoneResistance', MR_STONE)) {
         return { heroDied: false };
     }
-    const result = await resolveImmediatePetrification({
-        state,
-        killer: monsterName(monster),
-        publish,
-        die,
-    });
-    return { heroDied: result.died, transformed: result.transformed };
+    if (formCanBecomeStoneGolem(state.u.umonnum, state)) {
+        const result = await polymonHero(PM_STONE_GOLEM);
+        if (result.transformed || result.died)
+            return { heroDied: !!result.died, transformed: result.transformed };
+    }
+    if (die) {
+        await publish('You turn to stone...');
+        const heroDied = await die({
+            killer: monsterName(monster), deathVerb: 'turned to stone',
+            deathLineShown: true, deathType: STONING,
+        });
+        return { heroDied, stopped: true };
+    }
+    return {
+        heroDied: await finishMonsterAttackDeath(monster, { deathType: STONING }),
+        stopped: true,
+    };
 }
 async function applyMagicMissilePassive({ monster, damage, state, publish, die, }) {
     if (heroResistsMagic(state)) {
@@ -196,27 +212,29 @@ async function applyParalysisPassive({ monster, damage, state, publish, random, 
             await publish('You momentarily stiffen.');
             return { resisted: true, heroDied: false };
         }
-        await publish(`You are frozen by ${displayMonsterNameWithArticle(monster, state)}!`);
-        freezeHero(state, damage, `frozen by ${monsterName(monster)}`, true);
+        await publish(`You are frozen by ${displayedMonsterName(monster, { state })}!`);
+        freezeHero(state, damage, passiveParalysisReason(monster, state, false), true);
         await exerciseAttribute(A_DEX, false, state);
         return { stopped: true, heroDied: false };
     }
     if (!canSeeMonster(monster))
         return { heroDied: false };
     if (monster.mcansee !== 0) {
-        const owner = possessiveDisplayMonsterName(monster, state);
+        // C evaluates ureflects()'s name argument even when nothing reflects.
+        const reflectionOwner = possessiveName(displayedMonsterName(monster, { state, capitalized: true }));
         if (heroReflectsRay(state)) {
             const source = heroReflectionSource(state);
-            await publish(`${capitalize(owner)} gaze is reflected by your ${source?.noun || 'body'}.`);
+            await publish(`${reflectionOwner} gaze is reflected by your ${source?.noun || 'body'}.`);
             return { reflected: true, heroDied: false };
         }
         if (heroIsHallucinating(state) && random(4) !== 0) {
-            const first = random(2) === 0 ? '' : 'rather ';
-            const second = random(2) === 0 ? '' : 'rather ';
+            const subject = displayedMonsterName(monster, { state, capitalized: true });
+            const degree = random(2) === 0 ? '' : 'rather ';
             const reaction = random(2) === 0 ? 'numb' : 'stupefied';
-            await publish(`${displayMonsterSubject(monster, state)} looks ${first}${second}${reaction}.`);
+            await publish(`${subject} looks ${degree}${reaction}.`);
             return { hallucinatedEscape: true, heroDied: false };
         }
+        const owner = possessiveName(displayedMonsterName(monster, { state }));
         if (heroHasFreeAction(state)) {
             await publish(`You momentarily stiffen under ${owner} gaze!`);
             return { resisted: true, heroDied: false };
@@ -224,10 +242,10 @@ async function applyParalysisPassive({ monster, damage, state, publish, random, 
         await publish(`You are frozen by ${owner} gaze!`);
         const duration = currentAttribute(A_WIS, state) > 12
             || random(4) !== 0 ? damage : 127;
-        freezeHero(state, duration, `frozen by ${possessiveMonsterName(monster)} gaze`, false);
+        freezeHero(state, duration, passiveParalysisReason(monster, state, true), false);
         return { stopped: true, heroDied: false };
     }
-    await publish(`${displayMonsterSubject(monster, state)} cannot defend itself.`);
+    await publish(`${displayedMonsterName(monster, { state, capitalized: true, adjective: 'blind' })} cannot defend itself.`);
     if (random(500) === 0) {
         state.u.uluck = Math.max(-13, (state.u.uluck ?? 0) - 1);
     }
@@ -296,24 +314,11 @@ async function applyElectricPassive({ monster, damage, state, publish, die }) {
     return { appliedDamage: damage, heroDied };
 }
 async function damageHero(monster, amount, { state, publish, die }) {
-    state.context.botl = true;
-    if (amount <= 0)
-        return false;
-    const hero = state.u;
-    if (Upolyd(hero)) {
-        hero.mh = (hero.mh ?? 1) - amount;
-        if (hero.mh > 0)
-            return false;
-        if (hero.unchanging || state.unchanging) {
-            return die({ killer: 'killed while stuck in creature form' });
-        }
-        const restored = await returnHeroToHumanForm(state, { publish, die });
-        return restored.died;
-    }
-    hero.uhp = (hero.uhp ?? 1) - amount;
-    if (hero.uhp > 0)
-        return false;
-    return die({ killer: monsterName(monster) });
+    if (!die)
+        return damageHeroFromMonster(monster, amount, { state, publish });
+    return damageHeroFromMonster(monster, amount, {
+        state, publish, die: async (victim) => die({ killer: monsterName(victim) }),
+    });
 }
 function heroResists(state, property, mask) {
     const hero = state.u;
@@ -379,26 +384,12 @@ export function passiveDamage(level, attack, rollDice) {
 function monsterName(monster) {
     return monster.name || monsterTypeName(monster.mnum, !!monster.female);
 }
-function possessiveMonsterName(monster) {
-    const name = monster.name || `the ${monsterName(monster)}`;
-    return name.endsWith('s') ? `${name}'` : `${name}'s`;
-}
-function displayMonsterName(monster, state) {
-    return heroIsHallucinating(state)
-        ? randomDisplayMonsterName() : monsterName(monster);
-}
-function displayMonsterSubject(monster, state) {
-    return monster.name || `The ${displayMonsterName(monster, state)}`;
-}
-function displayMonsterNameWithArticle(monster, state) {
-    return monster.name || `the ${displayMonsterName(monster, state)}`;
-}
-function possessiveDisplayMonsterName(monster, state) {
-    const name = displayMonsterNameWithArticle(monster, state);
-    return name.endsWith('s') ? `${name}'` : `${name}'s`;
-}
-function capitalize(text) {
-    return `${text.charAt(0).toUpperCase()}${text.slice(1)}`;
+function passiveParalysisReason(monster, state, gaze) {
+    const species = namelessMonsterName(monster, {
+        state, article: 'a', suppressIt: true, suppressInvisible: true,
+        suppressHallucination: true, suppressSaddle: true,
+    });
+    return { monsterId: monster.m_id, text: `frozen by ${gaze ? `${possessiveName(species)} gaze` : species}` };
 }
 function isHeroDefender(defender, state) {
     return defender === state.u;

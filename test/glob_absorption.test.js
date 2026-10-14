@@ -123,6 +123,17 @@ void test('shop material mixed into a player glob remains owed through a used-up
     assert.equal(remainingCharge.useup, true);
     assert.ok(itemizedShopBill(shopkeeper).some(({ object }) => object.o_id === remainingCharge.bo_id && object.where === 'onbill'));
 });
+void test('mixing a billed glob into a player glob prints the native demand even for a deaf hero', async () => {
+    freshObjectRoom();
+    const { shopkeeper } = await createStaffedShop();
+    placeCreatedObject(await glob({ no_charge: true }), 12, 10);
+    const incoming = await billedGlob();
+    game.u.deafTurns = 10;
+    await land(incoming);
+    assert.match(game._lastPlineMessage, /You owe me .* for my .* that you just mixed with yours\./);
+    assert.equal(shopkeeper.eshk.billct, 1);
+    assert.equal(shopkeeper.eshk.bill[0]?.useup, true);
+});
 void test('merging two player globs inside a staffed shop creates no charge or credit', async () => {
     freshObjectRoom();
     const { shopkeeper } = await createStaffedShop();

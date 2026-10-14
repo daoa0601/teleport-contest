@@ -37,7 +37,7 @@ import { speakArtifact } from './artifact_speech.js';
 import { lightCocktail, useCandelabrum, useCandle, useLamp } from './apply_light.js';
 import { useWhistle } from './whistle.js';
 import { retouchHeroObject } from './hero_retouch.js';
-import { GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, GETOBJ_SUGGEST } from './const.js';
+import { GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, PARANOID_REMOVE, GETOBJ_SUGGEST } from './const.js';
 import { TER_MON } from './const.js';
 import { senseBuriedObjects } from './buried_object.js';
 import { distantMonsterName, monsterInstanceDisplayName, monsterName, shopkeeperName } from './monster_name.js';
@@ -63,8 +63,10 @@ import { heroCanEnterIronBars } from './iron_bars_meal.js';
 import { wormCrossesBetween } from './monster_worm.js';
 import { floorObjectDescription, } from './floor_object_display.js';
 import { loseHeroHp } from './hero_damage.js';
-import { itemizedShopBill, minimumShopPurchase, buyShopBillItem } from './shop_payment.js';
-import { paymentObjectDescription } from './object_description.js';
+import { dopay } from './shop_pay_command.js';
+import { reportShopFinances } from './shop_finance.js';
+import { quoteShopGoods } from './shop_price_quote.js';
+import { shopkeeperBlockingDoor, shopkeeperBlockingEntry } from './shop_blocking.js';
 import { poisonHeroStrengthAndHp } from './poison.js';
 import { isContainer, useContainer } from './container.js';
 import { adjustHeroAlignment } from './alignment.js';
@@ -147,17 +149,18 @@ import { objectName, singularObjectName, unseenObjectNoun, } from './objnam.js';
 import { artifactById, } from './artifacts.js';
 import { invokeArtifactPower, } from './artifact_invoke.js';
 import { touchArtifactByHero } from './artifact_touch.js';
-import { SLING, BULLWHIP, GRAPPLING_HOOK, CREAM_PIE, EGG, LUMP_OF_ROYAL_JELLY, LOCK_PICK, CREDIT_CARD, STETHOSCOPE, LOADSTONE, GOLD_PIECE, BOULDER, ROCK, DILITHIUM_CRYSTAL, LUCKSTONE, TOUCHSTONE, LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK, BAG_OF_HOLDING, BAG_OF_TRICKS, BRASS_LANTERN, OIL_LAMP, MAGIC_LAMP, STATUE, RIN_PROTECTION, BANANA, MIRROR, TIN_WHISTLE, MAGIC_WHISTLE, EUCALYPTUS_LEAF, BELL, BELL_OF_OPENING, EXPENSIVE_CAMERA, TIN_OPENER, FIGURINE, LEASH, CAN_OF_GREASE, SADDLE, HORN_OF_PLENTY, TINNING_KIT, LAND_MINE, BEARTRAP, TALLOW_CANDLE, WAX_CANDLE, CANDELABRUM_OF_INVOCATION, POT_OIL, RIN_CONFLICT, MEAT_RING, LENSES, BLINDFOLD, TOWEL, FUMBLE_BOOTS, KICKING_BOOTS, MAGIC_MARKER, UNICORN_HORN, SHIELD_OF_REFLECTION, AMULET_OF_YENDOR, AMULET_OF_STRANGULATION, FAKE_AMULET_OF_YENDOR, SPE_NOVEL, OBJECT_DELAY, OBJECT_UNIQUE, OBJECT_DESCRIPTIONS, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_WEIGHT, OBJECT_SUBTYPE, } from './object_data.js';
+import { SLING, BULLWHIP, GRAPPLING_HOOK, CREAM_PIE, EGG, LUMP_OF_ROYAL_JELLY, LOCK_PICK, CREDIT_CARD, STETHOSCOPE, LOADSTONE, GOLD_PIECE, BOULDER, ROCK, DILITHIUM_CRYSTAL, LUCKSTONE, TOUCHSTONE, LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK, BAG_OF_HOLDING, BAG_OF_TRICKS, BRASS_LANTERN, OIL_LAMP, MAGIC_LAMP, STATUE, RIN_PROTECTION, BANANA, MIRROR, TIN_WHISTLE, MAGIC_WHISTLE, EUCALYPTUS_LEAF, BELL, BELL_OF_OPENING, EXPENSIVE_CAMERA, TIN_OPENER, FIGURINE, LEASH, CAN_OF_GREASE, SADDLE, HORN_OF_PLENTY, TINNING_KIT, LAND_MINE, BEARTRAP, TALLOW_CANDLE, WAX_CANDLE, CANDELABRUM_OF_INVOCATION, POT_OIL, RIN_CONFLICT, MEAT_RING, OBJECT_BIMANUAL, HELM_OF_OPPOSITE_ALIGNMENT, GRAY_DRAGON_SCALES, LENSES, BLINDFOLD, TOWEL, FUMBLE_BOOTS, KICKING_BOOTS, MAGIC_MARKER, UNICORN_HORN, SHIELD_OF_REFLECTION, AMULET_OF_YENDOR, AMULET_OF_STRANGULATION, FAKE_AMULET_OF_YENDOR, SPE_NOVEL, OBJECT_DELAY, OBJECT_UNIQUE, OBJECT_DESCRIPTIONS, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_WEIGHT, OBJECT_SUBTYPE, } from './object_data.js';
 import { CLR_WHITE, NO_COLOR, } from './terminal.js';
-import { MONSTER_COLOR, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, MONSTER_ALIGNMENT, MONSTER_ATTACKS, MONSTER_CLASS_EXPLAIN, requireMonsterData, monsterTypeName, monsterClassSymbol, } from './monster_data.js';
+import { MONSTER_COLOR, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, MONSTER_SOUND, MONSTER_ALIGNMENT, MONSTER_ATTACKS, MONSTER_CLASS_EXPLAIN, requireMonsterData, monsterTypeName, monsterClassSymbol, monsterIsHumanoid, } from './monster_data.js';
 import { createParticularMonster } from './read_creation.js';
 import { addExperience, checkExperienceLevel, gainExperienceLevel, loseHeroExperience, } from './exper.js';
 import { removeHeroAccessory, wearHeroAccessory, } from './accessory.js';
-import { heroIsStrangled } from './hero_strangulation.js';
-import { heroIsBreathless, heroPassesWalls, heroSpecies } from './hero_species.js';
+import { heroHasNoHead, heroPassesWalls, heroSpecies } from './hero_species.js';
 import { disturbBuriedZombies } from './object_impact.js';
 import { checkSlipperyIce } from './fumbling.js';
 import { MONSTER_BODY_META } from './monster_data.js';
+import { accessibleEquipment, equipmentClassification, wearingFullEquipment } from './equipment_selection.js';
+import { armorWearDecision } from './armor_wear.js';
 import { heroCanOoze } from './monster_perception.js';
 import { isPoolAt } from './terrain_properties.js';
 import { drawbridgeUnderlyingType } from './drawbridge_terrain.js';
@@ -180,7 +183,7 @@ import { heroCanMoveFromTrap, triggerHeroTrapAt } from './hero_traps.js';
 import { activateStatueTrapAt } from './statue_trap.js';
 import { applyDippedCoinFate, applyFountainDemonActor, applyFountainGemDiscovery, applyFountainNymphActor, applyFountainSnakeActors, resolveDippedBucFate, resolveDippedSensationFate, } from './fountain_effects.js';
 import { dryFountainAt, gushForthFromFountain } from './fountain.js';
-import { heroArmName, heroHandName, heroNeckName } from './body_parts.js';
+import { heroArmName, heroFingerName, heroHandName } from './body_parts.js';
 import { armorUsesPairGrammar, withIndefiniteArticle, makePlural } from './object_grammar.js';
 import { objectWearMessage } from './object_wear_message.js';
 import { isWetTowel, willWeld } from './weapon_type.js';
@@ -200,7 +203,7 @@ import { finishDestinationSpotEffects, finishTeleportArrival } from './location_
 import { dosacrifice } from './sacrifice.js';
 import { detachHeroGold, heroGoldAmount, heroGoldObject, setHeroGoldAmount } from './hero_gold.js';
 import { resolveDirectGoldThrow, resolveQuiveredGoldThrow, } from './gold_throw.js';
-import { heroDetectsMonsters, heroIsBlind, heroIsHallucinating, } from './senses.js';
+import { heroDetectsMonsters, heroIsBlind, heroIsDeaf, heroIsHallucinating, } from './senses.js';
 import { beginBallAndChainMove, finishBallAndChainMove, heroIsPunished } from './ball.js';
 import { doquit, finishHeroDeath, vanquishedLines, listGenocided, } from './end.js';
 import { hasRecordedMonsterDeaths } from './monster_vitals.js';
@@ -227,7 +230,7 @@ import { continueHeroDigging, diggingTarget } from './hero_digging.js';
 import { checkHeroAttackOverexertion } from './hero_overexertion.js';
 import { wieldTool } from './wield_tool.js';
 import { doenhance, useHeroSkill, } from './skills.js';
-import { objectOwnershipPrefix, chargeUnpaidUsage, checkSpecialRoom, objectTypeKnown, payShopDebt, shopkeeperForHero, shopThankYouMessage, tendedShop, } from './shk.js';
+import { objectOwnershipPrefix, chargeUnpaidUsage, checkSpecialRoom, objectTypeKnown, shopkeeperForHero, tendedShop, } from './shk.js';
 import { gameLogEvents } from './gamelog.js';
 import { killerObjectName } from './objnam.js';
 import { GRAVE } from './const.js';
@@ -317,11 +320,22 @@ function heroOozesUnderDoor(destination) {
 }
 // C test_move(DO_MOVE): oozing bypasses only the doorway entry check.
 async function rejectHeroDiagonalDoorway(dx, dy, destination) {
-    const entryDoor = heroOozesUnderDoor(destination) ? null : destination;
-    if (!dx || !dy || heroPassesWalls(game)
-        || !blocksDiagonalDoor(game.level?.at(game.u.ux, game.u.uy), entryDoor))
+    if (!dx || !dy || heroPassesWalls(game))
         return false;
-    const entering = blocksDiagonalDoor(null, entryDoor);
+    const entryDoor = heroOozesUnderDoor(destination) ? null : destination;
+    const x = game.u.ux + dx, y = game.u.uy + dy;
+    const intactEntry = blocksDiagonalDoor(null, entryDoor);
+    const doorKeeper = !intactEntry && entryDoor?.typ === DOOR ? shopkeeperBlockingDoor(x, y) : null;
+    const entering = intactEntry || !!doorKeeper;
+    const intactExit = !entering && blocksDiagonalDoor(game.level?.at(game.u.ux, game.u.uy), null);
+    const entryKeeper = !entering && !intactExit ? shopkeeperBlockingEntry(x, y) : null;
+    if (!entering && !intactExit && !entryKeeper)
+        return false;
+    const keeper = doorKeeper ?? entryKeeper;
+    if (keeper) {
+        const invisible = propertyIsActive('invisible', game);
+        await plineWithContinuation(`${shopkeeperName(keeper, { capitalized: true })}${invisible ? ' senses your motion and' : ''} blocks your way!`);
+    }
     if (game.flags.mention_walls || entering && (game.u.uinwater || game.underwater)) {
         await plineWithContinuation(`You can't move diagonally ${entering ? 'into' : 'out of'} an intact doorway.`);
     }
@@ -1140,6 +1154,9 @@ async function runCommandHandler(binding, { cannedCommand = null, previousMessag
         else if (nextKey === 79) {
             await doOptions(true);
         }
+        else if (direction === 'p') {
+            await dopay();
+        }
         else if (nextKey === 22 && game.flags?.debug) {
             // cmd.c marks wiz_level_tele CMD_M_PREFIX. do_reqmenu() sets
             // iflags.menu_requested, so level_tele() skips its numeric
@@ -1571,6 +1588,7 @@ async function doWalletQuery() {
             ? `You are carrying a total of ${total} zorkmid${total === 1 ? '' : 's'}.`
             : 'You have no money.');
     }
+    await reportShopFinances();
     game.context.move = 0;
 }
 async function doWeaponQuery() {
@@ -2522,6 +2540,25 @@ async function doswapweapon() {
     game.context.move = 1;
 }
 async function dochat() {
+    const species = heroSpecies(game);
+    let refusal = null;
+    if (MONSTER_SOUND[species] === 0)
+        refusal = `As ${withIndefiniteArticle(monsterTypeName(species, !!game.flags.female))}, you cannot speak.`;
+    else if (propertyIsActive('strangled', game))
+        refusal = "You can't speak.  You're choking!";
+    else if (game.u.uswallow)
+        refusal = "They won't hear you out there.";
+    else if (game.u.uinwater)
+        refusal = 'Your speech is unintelligible underwater.';
+    if (refusal) {
+        await plineWithContinuation(refusal);
+        game.context.move = 0;
+        return;
+    }
+    if (await quoteShopGoods()) {
+        game.context.move = 1;
+        return;
+    }
     const key = await readDirectionKey('Talk to whom? (in what direction) ');
     const direction = promptedDirectionKey(key, game.commandBindings);
     if (direction === '.') {
@@ -2533,12 +2570,25 @@ async function dochat() {
         const x = game.u.ux + DIR_DX[direction];
         const y = game.u.uy + DIR_DY[direction];
         const monster = game.level?.monsters?.find(mon => monsterHasMapPosition(mon, game) && mon.mx === x && mon.my === y);
+        if (monster && !monster.ispriest && (monster.msleeping || !monster.mcanmove)) {
+            if (canSpotMonster(monster))
+                await plineWithContinuation(`${monsterName(monster, { capitalized: true })} seems not to notice you.`);
+            game.context.move = 0;
+            return;
+        }
         // sounds.c:dochat() prods any responsive target into action before
         // domonnoise()/quest_chat().  This clears both CLOSE and WAITFORU, so
         // the quest leader can take its ordinary scheduler turn immediately
         // after assigning the quest.
         if (monster)
             monster.mstrategy = (monster.mstrategy ?? 0) & ~STRAT_WAITMASK;
+        if (monster?.isshk && heroIsDeaf(game)) {
+            const response = (MONSTER_FLAGS1[species] ?? 0) & M1_HUMANOID
+                ? 'falls on deaf ears' : 'is inaudible';
+            await plineWithContinuation(`Any response${canSpotMonster(monster) ? ` from ${monsterName(monster)}` : ''} ${response}.`);
+            game.context.move = 0;
+            return;
+        }
         if (monster && await chatWithQuestLeader(monster, {
             exerciseWisdom,
         })) {
@@ -4678,34 +4728,19 @@ async function dohelp() {
     game.context.move = 0;
 }
 async function doputon() {
-    const accessories = (game.inventory || []).filter(object => (object.class === 'Rings' || object.oclass === 4
-        || object.class === 'Amulets' || object.oclass === 5
-        || object.otyp === RIN_CONFLICT
-        || object.otyp === LENSES
-        || object.otyp === BLINDFOLD || object.otyp === TOWEL)
-        && object !== game.uright && object !== game.uleft
-        && object !== game.uamul);
-    if (!accessories.length) {
-        await pline("You don't have anything appropriate to put on.");
+    if (wearingFullEquipment()) {
+        const prefix = monsterIsHumanoid(heroSpecies(game)) ? 'ring-' : '';
+        await pline(`Your ${prefix}${makePlural(heroFingerName(game))} are full, and you're already wearing an amulet and ${game.ublindf?.otyp === LENSES ? 'some lenses' : 'a blindfold'}.`);
         game.context.move = 0;
         return;
     }
-    const letters = accessories.map(object => object.invlet).join('');
-    const selection = String.fromCharCode(await promptKey(`What do you want to put on? [${letters} or ?*] `));
-    game._pending_message = '';
-    const inventoryObject = (game.inventory || []).find(candidate => candidate.invlet === selection);
-    const object = accessories.find(candidate => candidate === inventoryObject);
-    // do_wear.c:equip_ok() returns GETOBJ_DOWNPLAY for armor selected by P:
-    // it is omitted from the suggested-letter prompt but a direct inventory
-    // letter is accepted and enters the same armor-on transaction as W.
-    if (!object && inventoryObject
-        && (inventoryObject.class === 'Armor'
-            || inventoryObject.oclass === 3)) {
-        await putOnArmorObject(inventoryObject);
-        return;
-    }
+    const object = await chooseInventoryObject('put on', candidate => equipmentClassification(candidate, 'put on'));
     if (!object) {
         game.context.move = 0;
+        return;
+    }
+    if (object.oclass === 3) {
+        await putOnArmorObject(object);
         return;
     }
     await putOnAccessoryObject(object);
@@ -4720,6 +4755,13 @@ async function putOnAccessoryObject(object) {
         return;
     }
     if (isEyewear(object)) {
+        if (!heroHasNoHead(game) && !game.ublindf && !game.u.ublindf) {
+            const touch = await retouchHeroObject(object);
+            if (touch.rejected || touch.died) {
+                game.context.move = 1;
+                return;
+            }
+        }
         const worn = await wearEyewear(object);
         game.context.move = worn ? 1 : 0;
         return;
@@ -4730,29 +4772,75 @@ async function putOnAccessoryObject(object) {
             game.context.move = 0;
             return;
         }
+        const touch = await retouchHeroObject(object);
+        if (touch.rejected || touch.died) {
+            game.context.move = 1;
+            return;
+        }
         await wearHeroAccessory(object, 'uamul', game);
         game.context.move = 1;
         return;
     }
-    if ((object.oclass === 4 || object.class === 'Rings')
+    if ((object.oclass === 4 || object.class === 'Rings' || object.otyp === MEAT_RING)
         && heroHasNoLimbs(game)) {
         await pline('You cannot make the ring stick to your body.');
         game.context.move = 0;
         return;
     }
+    if (game.uleft && game.uright) {
+        const prefix = monsterIsHumanoid(heroSpecies(game)) ? 'ring-' : '';
+        await pline(`There are no more ${prefix}${makePlural(heroFingerName(game))} to fill.`);
+        game.context.move = 0;
+        return;
+    }
     let hand;
     if (!game.uleft && !game.uright) {
-        const finger = String.fromCharCode(await promptKey('Which ring-finger, Right or Left? [rl] ')).toLowerCase();
-        if (finger !== 'r' && finger !== 'l') {
-            game.context.move = 0;
-            return;
+        for (;;) {
+            const finger = String.fromCharCode(await promptKey(`Which ${monsterIsHumanoid(heroSpecies(game)) ? 'ring-' : ''}${heroFingerName(game)}, Right or Left? [rl] `)).toLowerCase();
+            // tty_yn_function() returns the zero default for quit keys.
+            if (['\x1b', '\0', ' ', '\r', '\n'].includes(finger)) {
+                game.context.move = 0;
+                return;
+            }
+            if (finger === 'r' || finger === 'l') {
+                hand = finger === 'r' ? 'right' : 'left';
+                break;
+            }
         }
-        hand = finger === 'r' ? 'right' : 'left';
     }
     else {
         hand = game.uright ? 'left' : 'right';
     }
     const ringSlot = hand === 'right' ? 'uright' : 'uleft';
+    const gloves = game.uarmg;
+    if (gloves && (game.u.glib || (game.u.glibTurns ?? 0) > 0)) {
+        await pline(`Your ${armorSimpleName(gloves)} are too slippery to remove, so you cannot put on the ring.`);
+        game.context.move = 1;
+        return;
+    }
+    if (gloves?.cursed) {
+        const discovered = !gloves.bknown;
+        gloves.bknown = true;
+        await pline('You cannot remove your gloves to put on the ring.');
+        game.context.move = discovered ? 1 : 0;
+        return;
+    }
+    const weapon = game.uwep;
+    const primary = game.u.rightHanded === false ? 'uleft' : 'uright';
+    if (weapon && (ringSlot === primary || OBJECT_BIMANUAL[weapon.otyp])
+        && isWeldedPrimary(weapon)) {
+        const discovered = !weapon.bknown;
+        weapon.bknown = true;
+        const handName = OBJECT_BIMANUAL[weapon.otyp] ? makePlural(heroHandName(game)) : heroHandName(game);
+        await pline(`You cannot free your weapon ${handName} to put on the ring.`);
+        game.context.move = discovered ? 1 : 0;
+        return;
+    }
+    const touch = await retouchHeroObject(object);
+    if (touch.rejected || touch.died) {
+        game.context.move = 1;
+        return;
+    }
     await wearHeroAccessory(object, ringSlot, game);
     // Sink effects can remove the ring inside Ring_on().
     if (game.uleft === object || game.uright === object) {
@@ -4777,34 +4865,33 @@ export async function finishArmorRemoval(object, { silent = false } = {}) {
 async function removeWornItem(action, itemAction = false) {
     const worn = (game.inventory || []).filter(object => object.worn);
     if (!worn.length) {
-        await pline(action === 'remove'
-            ? 'Not wearing any accessories or armor.'
-            : 'Not wearing any armor or accessories.');
+        await pline(action === 'take off' && game.uskin
+            ? `The dragon ${game.uskin.otyp >= GRAY_DRAGON_SCALES ? 'scales are' : 'scale mail is'} merged with your skin!`
+            : action === 'remove' ? 'Not wearing any accessories or armor.'
+                : 'Not wearing any armor or accessories.');
         game.context.move = 0;
         return;
     }
     let object;
     let inventoryPrompt = null;
-    const preferred = worn.filter(candidate => action === 'remove'
-        ? candidate.oclass === 4 || candidate.oclass === 5 || isEyewear(candidate)
-        : candidate.class === 'Armor' || candidate.oclass === 3);
+    const preferred = accessibleEquipment(action === 'remove');
     // C ia_dotakeoff() forces getobj() to consume the queued item letter,
     // even if another accessible piece is the only normal suggestion.
-    if (preferred.length === 1 && !itemAction) {
+    if (preferred.length === 1 && !itemAction && !((game.flags.paranoia_bits ?? 0) & PARANOID_REMOVE)) {
         [object] = preferred;
     }
     else {
-        const letters = preferred.map(candidate => candidate.invlet).join('');
-        const prompt = `What do you want to ${action}? [${letters} or ?*] `;
-        inventoryPrompt = prompt;
-        const selection = await promptInventoryObject(prompt, worn, { verb: action });
-        if (selection.cancelled) {
-            game.context.move = 0;
-            return;
-        }
-        object = selection.object;
+        const suggested = game.inventory.filter(candidate => equipmentClassification(candidate, action, itemAction) === GETOBJ_SUGGEST);
+        const letters = compactInventoryLetters(suggested.map(candidate => candidate.invlet).join(''));
+        inventoryPrompt = `What do you want to ${action}? [${letters ? `${letters} or ?*` : '*'}] `;
+        object = await chooseInventoryObject(action, candidate => equipmentClassification(candidate, action, itemAction));
     }
     if (!object) {
+        game.context.move = 0;
+        return;
+    }
+    if (!((object.owornmask ?? 0) & (W_ARMOR | W_ACCESSORY))) {
+        await pline('You are not wearing that.');
         game.context.move = 0;
         return;
     }
@@ -4836,8 +4923,6 @@ async function removeWornItem(action, itemAction = false) {
     }
     if (object === game.uamul || object === game.uleft
         || object === game.uright) {
-        const wasStrangled = object.otyp === AMULET_OF_STRANGULATION
-            && heroIsStrangled(game);
         // C armor_or_accessory_off(): a ring's off_msg() runs while it is
         // still worn, so the report keeps the "(on {right|left} hand)"
         // suffix and precedes Ring_off()'s side effects such as a
@@ -4848,16 +4933,6 @@ async function removeWornItem(action, itemAction = false) {
             await plineWithContinuation(armorOffMessage(object, game));
         }
         await removeHeroAccessory(object, game);
-        findArmorClass(game);
-        if (!ring && game.flags?.verbose !== false) {
-            await plineWithContinuation(armorOffMessage(object, game));
-        }
-        if (wasStrangled) {
-            await plineWithContinuation(heroIsBreathless(game)
-                ? `Your ${heroNeckName(game)} is no longer constricted!`
-                : 'You can breathe more easily!');
-            learnObjectType(AMULET_OF_STRANGULATION, game);
-        }
         game.context.move = 1;
         return;
     }
@@ -4892,6 +4967,29 @@ async function putOnArmorObject(object) {
     if (object.worn) {
         await pline('You are already wearing that!');
         game.context.move = 0;
+        return;
+    }
+    const decision = armorWearDecision(object);
+    if (decision.checkedWeldedWeapon)
+        decision.checkedWeldedWeapon.bknown = true;
+    if (decision.refusal) {
+        await pline(decision.refusal);
+        game.context.move = 0;
+        return;
+    }
+    if (object.otyp === HELM_OF_OPPOSITE_ALIGNMENT && game.u.uz?.dnum === game.quest_dnum) {
+        await pline(game.u.ualignbase?.[0] === game.u.ualignbase?.[1]
+            ? 'You narrowly avoid losing all chance at your goal.'
+            : 'You are suddenly overcome with shame and change your mind.');
+        game.u.ublessed = 0;
+        learnObjectType(object.otyp, game);
+        game.context.botl = true;
+        game.context.move = 1;
+        return;
+    }
+    const touch = await retouchHeroObject(object);
+    if (touch.rejected || touch.died) {
+        game.context.move = 1;
         return;
     }
     const hero = game.u;
@@ -4933,12 +5031,8 @@ async function putOnArmorObject(object) {
         const onMessage = objectWearMessage(object);
         for (const message of effectMessages)
             await plineWithContinuation(message);
-        if (onMessage) {
-            if (effectMessages.length)
-                await plineWithContinuation(onMessage);
-            else
-                await pline(onMessage);
-        }
+        if (onMessage)
+            await plineWithContinuation(onMessage);
     }
     // C accessory_or_armor_on() discards interrupted 'A' after armor wear.
     resetBulkTakeoff();
@@ -5051,6 +5145,17 @@ async function dowield() {
 // `multi`/afternmv completion in allmain.c.  Armor is installed in its worn
 // slot immediately, but its known state and completion message are delayed
 // until the required elapsed-turn scheduler round has finished.
+function classifyWearChoice(object, action) {
+    const classification = equipmentClassification(object, action);
+    // Native canwearobj() checks welded() even during getobj's silent fit
+    // check. Keep that knowledge change at the command boundary.
+    if (action === 'wear' && object.oclass === 3) {
+        const decision = armorWearDecision(object);
+        if (decision.checkedWeldedWeapon)
+            decision.checkedWeldedWeapon.bknown = true;
+    }
+    return classification;
+}
 async function dowear() {
     // do_wear.c:dowear() owns this form-capability check before getobj().
     // W therefore rejects the whole transaction without exposing either
@@ -5062,16 +5167,12 @@ async function dowear() {
     }
     // wear_ok() downplays accessories but accepts them through the same
     // getobj transaction, including a queued inventory action.
-    const object = await chooseInventoryObject('wear', candidate => {
-        if ((candidate.owornmask ?? 0) & (W_ARMOR | W_ACCESSORY))
-            return GETOBJ_EXCLUDE_INACCESS;
-        if (candidate.oclass === 3)
-            return GETOBJ_SUGGEST;
-        if (candidate.oclass === 4 || candidate.oclass === 5
-            || isEyewear(candidate) || candidate.otyp === MEAT_RING)
-            return GETOBJ_DOWNPLAY;
-        return GETOBJ_EXCLUDE;
-    });
+    if (wearingFullEquipment()) {
+        await pline('You are already wearing a full complement of armor.');
+        game.context.move = 0;
+        return;
+    }
+    const object = await chooseInventoryObject('wear', candidate => classifyWearChoice(candidate, 'wear'));
     if (!object) {
         game.context.move = 0;
         return;
@@ -5080,160 +5181,6 @@ async function dowear() {
         await putOnArmorObject(object);
     else
         await putOnAccessoryObject(object);
-}
-// C refs: shk.c:dopay(), rouse_shk(), menu_pick_pay_items(), pay(), and update_bill().
-// An empty bill takes a turn when the keeper can respond. A payment menu
-// takes no time until a debt or billed item is paid.
-async function dopay() {
-    game.multi = 0;
-    const shopkeepers = (game.level?.monsters || [])
-        .filter(monster => monster?.isshk && (monster.mhp ?? 1) > 0);
-    const adjacent = shopkeepers.filter(monster => distmin(monster.mx, monster.my, game.u?.ux, game.u?.uy) <= 1);
-    const resident = adjacent.length === 1
-        ? adjacent[0] : shopkeeperForHero();
-    const blind = !!game.blind || (game.u?.blindTurns ?? 0) > 0;
-    const blindTelepathy = !!(game.u?.blindTelepathy || game.u?.telepathy);
-    if (!resident) {
-        // shk.c:dopay() cannot conclude that there is no shopkeeper while a
-        // non-telepathic hero is blind.  An adjacent shopkeeper was selected
-        // above; otherwise the visibility failure precedes the no-resident
-        // message even when this level actually has no shopkeeper at all.
-        if (blind && !blindTelepathy) {
-            await pline("You can't see...");
-            game.context.move = 0;
-            return;
-        }
-        await pline('There appears to be no shopkeeper here to receive your payment.');
-        game.context.move = 0;
-        return;
-    }
-    if (resident.msleeping || !resident.mcanmove) {
-        // Outstanding charges rouse the keeper before payment can proceed.
-        if (resident.eshk?.robbed || resident.eshk?.billct || resident.eshk?.debit) {
-            if (canSpotMonster(resident)) {
-                const recovery = resident.msleeping ? 'wakes up' : 'can move again';
-                await plineWithContinuation(`${shopkeeperName(resident, { capitalized: true })} ${recovery}.`);
-            }
-            resident.msleeping = 0;
-            resident.mfrozen = 0;
-            resident.mcanmove = 1;
-        }
-        else {
-            const name = shopkeeperName(resident, { capitalized: true });
-            const response = rn2(2) ? 'seems to be napping' : "doesn't respond";
-            await plineWithContinuation(`${name} ${response}.`);
-            game.context.move = 0;
-            return;
-        }
-    }
-    if (resident !== shopkeeperForHero() && resident.mpeaceful && !resident.eshk?.robbed) {
-        await plineWithContinuation(`You do not owe ${shopkeeperName(resident)} anything.`);
-        game.context.move = 1;
-        return;
-    }
-    let paid = false;
-    const debt = Math.max(0, resident.eshk?.debit ?? 0);
-    if (debt) {
-        await pline(`You owe ${shopkeeperName(resident)} ${debt} zorkmid${debt === 1 ? '' : 's'} for the use of merchandise.`);
-        const payment = payShopDebt(resident, game);
-        if (!payment.paid) {
-            await pline("But you don't have enough gold or credit.");
-            game.context.move = 1;
-            return;
-        }
-        if (payment.creditUsed === payment.debt) {
-            await pline('Your debt is covered by your credit.');
-        }
-        else if (payment.creditUsed) {
-            await pline('That debt is partially offset by your credit.');
-            await pline('You pay the remainder.');
-        }
-        else {
-            await pline('You pay that debt.');
-        }
-        paid = true;
-    }
-    // pay_billed_items() checks the whole bill, including contained goods,
-    // before offering item selection. Stashed gold cannot fund this payment.
-    if (resident === shopkeeperForHero() && (resident.eshk?.billct ?? 0) > 0
-        && !heroGoldAmount(game) && !(resident.eshk?.credit ?? 0)) {
-        await plineWithContinuation(`You ${hiddenGold(game, true) ? 'seem to ' : ''}have no gold or credit${paid ? ' left' : ''}.`);
-        if (paid && resident.mpeaceful)
-            await plineWithContinuation(shopThankYouMessage(resident));
-        game.context.move = paid ? 1 : 0;
-        return;
-    }
-    if (resident === shopkeeperForHero()) {
-        const purchase = minimumShopPurchase(resident);
-        if (purchase && heroGoldAmount(game) + (resident.eshk?.credit ?? 0) < purchase.price) {
-            const items = purchase.multipleItems ? ' any of the items' : ' the item';
-            const bill = (resident.eshk?.billct ?? 0) > 1 ? "you've picked" : 'on your bill';
-            await plineWithContinuation(`You don't have enough gold to buy${items} ${bill}.`);
-            if (hiddenGold(game, true))
-                await plineWithContinuation('Maybe you have some gold stashed away?');
-            if (paid && resident.mpeaceful)
-                await plineWithContinuation(shopThankYouMessage(resident));
-            game.context.move = paid ? 1 : 0;
-            return;
-        }
-    }
-    const billed = itemizedShopBill(resident);
-    if (!billed.length) {
-        if (!paid) {
-            await plineWithContinuation(`You do not owe ${shopkeeperName(resident)} anything.`);
-            if (resident === shopkeeperForHero() && resident.mpeaceful && !heroGoldAmount(game))
-                await plineWithContinuation(`Moreover, you${hiddenGold(game, true) ? ' seem to' : ''} have no gold.`);
-            game.context.move = 1;
-            return;
-        }
-        await plineWithContinuation(shopThankYouMessage(resident));
-        game.context.move = 1;
-        return;
-    }
-    for (const item of billed)
-        observeObjectForNaming(item.object);
-    const priceWidth = String(Math.max(...billed.map(item => item.price))).length;
-    const used = billed.filter(item => item.kind === 'used');
-    const intact = billed.filter(item => item.kind !== 'used');
-    const sections = [used, intact].filter(items => items.length).map(items => ({
-        heading: used.length ? `${items === used ? 'Used up' : 'Unpaid'} item${items.length > 1 ? 's' : ''}:` : '',
-        items: items.map(item => ({
-            key: String.fromCharCode(97 + billed.indexOf(item)),
-            text: `${String(item.price).padStart(priceWidth)} Zm, ${paymentObjectDescription(item.object, item.quantity)}`,
-            value: item,
-        })),
-    }));
-    game._pending_message = '';
-    await flush_screen(1);
-    const selected = await showMultiSelectWindow({
-        title: 'Pay for which items?', sections,
-        omitHeadings: !used.length,
-    });
-    if (!selected.length) {
-        game.context.move = paid ? 1 : 0;
-        return;
-    }
-    let paidForItem = false;
-    let finished = true;
-    // Native queued selection buys in bill order, regardless of selection order.
-    for (const item of billed.filter(item => selected.includes(item))) {
-        const result = await buyShopBillItem(resident, item);
-        if (result === 'stop') {
-            finished = false;
-            break;
-        }
-        if (result === 'skip')
-            continue;
-        paidForItem = true;
-        await bot();
-    }
-    if (!paid && !paidForItem) {
-        game.context.move = 0;
-        return;
-    }
-    if (finished && resident.mpeaceful)
-        await plineWithContinuation(shopThankYouMessage(resident));
-    game.context.move = 1;
 }
 // C ref: cmd.c do_fight()/rhack().  F is a movement prefix whose next
 // direction key is collected without painting a separate tty prompt.  The
@@ -7435,7 +7382,9 @@ async function domoveCore(dx, dy, explicitAttempt) {
         const verdict = await prepareAppliedWeaponAttack(monster, game.uwep ?? null, { state: game, struckAt: { x: newx, y: newy } });
         if (!verdict.proceed)
             return verdict.spentTime;
-        if (await attackHostileMonster(monster, newx, newy))
+        if (await attackHostileMonster(monster, newx, newy, {
+            confirmationOverridden: verdict.confirmationOverridden ?? false,
+        }))
             return true;
     }
     // domove_core() snapshots the origin before test_move().  This includes

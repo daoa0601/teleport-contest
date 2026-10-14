@@ -42,7 +42,7 @@ import {
     monsterHasFireResistance, monsterHasPoisonResistance, monsterHasShockResistance,
     monsterResistsEffect,
 } from './monster_resistance.js';
-import { wakeMonstersNear } from './monster_wake.js';
+import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import {
     OBJECT_DIR, POT_OIL, SCR_FIRE, WAN_DIGGING, WAN_MAGIC_MISSILE, WAN_SLEEP,
 } from './object_data.js';
@@ -317,7 +317,7 @@ export async function explode(x: number, y: number, type: number, damage: number
         : damageType === AD_COLD ? 'shatter' : damageType === AD_DISN ? 'disintegrate' : 'destroy', { state });
     if (state.program_state.gameover) return { damage, heroDied: true };
     const noise = Math.max(50, damage * damage);
-    wakeMonstersNear(x, y, insideEngulfer ? Math.trunc((noise + 3) / 4) : noise, state);
+    await wakeMonstersNearWithMessages(x, y, insideEngulfer ? Math.trunc((noise + 3) / 4) : noise, state, publish);
     return { damage, heroDied: false };
 }
 

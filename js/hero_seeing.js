@@ -5,13 +5,18 @@ import { grantIntrinsicProperty, refreshProperty } from './properties.js';
 import { TIMEOUT } from './const.js';
 import { mimicBlocksLight, vision_note_blocker_change } from './vision.js';
 export async function refreshHeroSeeing({ state = game } = {}) {
+    await refreshInvisibleMonsters({ state });
+    newsym(state.u.ux, state.u.uy);
+}
+// see_monsters() includes the hero. Rings add a second hero redraw only
+// when the ring makes the hero visible or invisible to themselves.
+export async function refreshInvisibleMonsters({ state = game } = {}) {
     requireLiveGame(state);
     for (const monster of requireGameLevel(state).monsters) {
         if (!monster.dead && monster.minvis && mimicBlocksLight(monster))
             vision_note_blocker_change(monster.mx, monster.my);
     }
     await see_monsters();
-    newsym(state.u.ux, state.u.uy);
 }
 export async function grantHeroSeeInvisible({ permanent = false, duration = 0, state = game, } = {}) {
     requireLiveGame(state);

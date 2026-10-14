@@ -3,6 +3,7 @@ import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import type { AttackTuple } from './monster_action_types.js';
 import { game, requirePlayingGame } from './gstate.js';
+import { plineWithContinuation } from './display.js';
 import { hitMonsterWithHeroObject } from './hero_physical_hit.js';
 import { makeMonsterFlee } from './monster_flee.js';
 import { rnd, rn2 } from './rng.js';
@@ -19,6 +20,7 @@ interface HeroWeaponHitOptions {
     armorPenalty: number;
     dieRoll: number;
     twoHits: number;
+    confirmationOverridden?: boolean;
 }
 
 export interface HeroWeaponHitResult {
@@ -30,9 +32,11 @@ export interface HeroWeaponHitResult {
 
 export async function resolveHeroWeaponHit(
     monster: Monster, x: number, y: number, weapon: GameObject | null,
-    { attack, hit, threshold, armorPenalty, dieRoll, twoHits }: HeroWeaponHitOptions,
+    { attack, hit, threshold, armorPenalty, dieRoll, twoHits, confirmationOverridden = false }: HeroWeaponHitOptions,
 ): Promise<HeroWeaponHitResult> {
     requirePlayingGame(game);
+    if (confirmationOverridden && game.flags.verbose)
+        await plineWithContinuation('Your bloodthirsty blade attacks!');
     if (!hit) {
         const miss = await showHeroMeleeMiss(monster, attack, threshold + armorPenalty > dieRoll);
         return { hit: false, survived: true, heroDied: miss.heroDied };

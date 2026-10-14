@@ -28,7 +28,8 @@ import { AD_ELEC, AD_FIRE } from './monster_attack_types.js';
 import { AMULET_OF_UNCHANGING, ELVEN_MITHRIL_COAT, LEASH, LENSES, LOADSTONE, GRAY_DRAGON_SCALE_MAIL, GRAY_DRAGON_SCALES, OBJECT_MATERIAL, OBJECT_NAMES, RIN_POLYMORPH_CONTROL, RIN_PROTECTION_FROM_SHAPE_CHANGERS, } from './object_data.js';
 import { newsym, pline, plineWithContinuation, see_monsters, } from './display.js';
 import { deleteObject } from './object_delete.js';
-import { dragonFormForArmor, findArmorClass } from './armor.js';
+import { dragonFormForArmor, findArmorClass, removeHeroArmor } from './armor.js';
+import { endObjectBurn } from './light.js';
 import { encumbranceLabel, encumbranceMessage, nearCapacity, } from './weight.js';
 import { A_CHA, A_CON, A_DEX, A_STR, A_WIS, G_GENOD, I_SPECIAL, In_endgame, M_AP_NOTHING, STAIRS, STR18, STR19, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, Upolyd, POLY_CONTROLLED, POLY_LOW_CTRL, POLY_MONSTER, POLY_NOFLAGS, POLY_REVERT, W_ACCESSORY, W_ARMOR, W_SADDLE, } from './const.js';
 import { exerciseAttribute } from './attrib.js';
@@ -637,8 +638,13 @@ async function changeArmorForHeroForm(mnum) {
     let object;
     if (breaksArmor) {
         if ((object = worn('uarm'))) {
+            if (object.lamplit)
+                endObjectBurn(object, game);
             await plineWithContinuation('You break out of your armor!');
             await exerciseAttribute(A_STR, false);
+            await removeHeroArmor(object, game, { deferArmorClass: true, voluntary: false });
+            if (game.program_state.gameover)
+                return;
             await deleteObject(object);
         }
         if ((object = worn('uarmc'))
@@ -666,6 +672,9 @@ async function changeArmorForHeroForm(mnum) {
             && !(MONSTER_NAME[mnum] === 'hobbit'
                 && object.otyp === ELVEN_MITHRIL_COAT)) {
             await plineWithContinuation('Your armor falls around you!');
+            await removeHeroArmor(object, game, { deferArmorClass: true, voluntary: false });
+            if (game.program_state.gameover)
+                return;
             await dropCarriedObject(object);
             if (game.program_state.gameover)
                 return;

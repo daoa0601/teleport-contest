@@ -3,7 +3,7 @@
 
 import { HUNGRY, SHOPBASE } from './const.js';
 import { shopkeeperName } from './monster_name.js';
-import { canSpotMonster, plineWithContinuation } from './display.js';
+import { canSeeMonster, plineWithContinuation } from './display.js';
 import { game, requireLiveGame } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { MessagePublisher } from './display.js';
@@ -23,11 +23,12 @@ import {
 } from './object_data.js';
 import { monsterIsHelpless } from './monster_sleep.js';
 import { OBJECT_WEIGHT } from './object_data.js';
-import { roomForRoomno, roomsAt } from './room.js';
+import { roomsAt } from './room.js';
+import { currency } from './currency.js';
 import { heroIsDeaf } from './senses.js';
 import {
     costlySpot, insideShopRoomAt, removeOneObjectFromBill,
-    shopkeeperInOwnShop, shopObjectUnitCost,
+    shopResident, shopkeeperInOwnShop, shopObjectUnitCost, visitBilledShopkeepers,
 } from './shk.js';
 import {
     hotPursuitShopkeeper, makeAngryShopkeeper,
@@ -268,7 +269,7 @@ export function shopClaimsObject(object: GameObject, resident: Monster | null,
 
 // C shop_keeper(roomno) + inhishop(shkp).
 function validateShopkeeper(roomno: number, state: GameState): Shopkeeper | null {
-    const resident = roomForRoomno(state.level, roomno)?.resident ?? null;
+    const resident = shopResident(roomno, state);
     return hasShopkeeperData(resident) && shopkeeperInOwnShop(resident, state) ? resident : null;
 }
 
@@ -276,19 +277,16 @@ function validateShopkeeper(roomno: number, state: GameState): Shopkeeper | null
 // shop; otherwise the rooms containing (x,y) claim via bill then resident.
 export function findObjectOwner(object: GameObject, x: number, y: number, state: GameState): Shopkeeper | null {
     if (object.where === 'onbill') {
-        for (const room of state.level?.rooms || []) {
-            const resident = 'resident' in room ? room.resident : null;
-            if (hasShopkeeperData(resident) && onBillEntry(object, resident)) return resident;
-        }
+        for (const resident of visitBilledShopkeepers(state))
+            if (onBillEntry(object, resident)) return resident;
         return null;
     }
     let fallback: Shopkeeper | null = null;
     for (const roomno of roomsAt(state.level, x, y, SHOPBASE)) {
-        const resident = roomForRoomno(state.level, roomno)?.resident ?? null;
+        const resident = shopResident(roomno, state);
         if (!hasShopkeeperData(resident)) continue;
         if (onBillEntry(object, resident)) return resident;
-        if (!fallback && shopkeeperInOwnShop(resident, state))
-            fallback = resident;
+        if (!fallback) fallback = resident;
     }
     return fallback;
 }
@@ -334,7 +332,7 @@ async function stolenContainer(container: GameObject, resident: Shopkeeper,
 }
 
 function zorkmids(amount: number): string {
-    return `${amount} zorkmid${amount === 1 ? '' : 's'}`;
+    return `${amount} ${currency(amount)}`;
 }
 
 // C shk.c:3754 stolen_value().  World mutations (bills, credit, debit,
@@ -354,7 +352,7 @@ export async function stolenValue(object: GameObject, x: number, y: number, peac
     const wasUnpaid = !!object.unpaid;
     const container = !!(object.contents?.length);
     const cCount = container
-        ? countContents(object, { quantity: true, everything: true }, state) : 0;
+        ? countContents(object, { quantity: false, everything: true }, state) : 0;
     const uCount = container
         ? countContents(object, { quantity: false, everything: false }, state) : 0;
 
@@ -425,7 +423,7 @@ export async function stolenValue(object: GameObject, x: number, y: number, peac
     } else {
         resident.eshk.robbed = (resident.eshk.robbed ?? 0) + value;
         if (!silent) {
-            if (canSpotMonster(resident)) {
+            if (canSeeMonster(resident)) {
                 await publish(`${shopkeeperName(resident)} booms: "${state.plname || 'you'}, you are a thief!"`);
             } else if (!heroIsDeaf(state)) {
                 await publish('You hear a scream, "Thief!"');

@@ -240,7 +240,6 @@ function monsterFields(value: unknown, context: SavedEntityContext): Fields<Mons
         isminion: optional(flag),
         questLeader: optional(boolean),
         waiting: optional(boolean),
-        gold: optional(integer),
         malign: integer,
         maligntyp: optional(integer),
         edog: optional(pet),

@@ -42,9 +42,9 @@ void test('a keeper at home blocks a pick-carrying hero at the shop door', async
 void test('a peaceful keeper at home does not mill around an invisible hero', async () => {
     freshObjectRoom();
     requirePlayingGame(game);
+    const { shopkeeper } = await createStaffedShop({ keeperX: 12 });
     grantIntrinsicProperty('invisible', 'outside', game);
     syncHeroInvisibility();
-    const { shopkeeper } = await createStaffedShop({ keeperX: 12 });
     pushKeys('          ');
     await takeMonsterTurn(shopkeeper, game);
     assert.equal(shopkeeper.mx, 12);

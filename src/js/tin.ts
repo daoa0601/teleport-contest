@@ -26,7 +26,8 @@ import { heroSpecies } from './hero_species.js';
 import { gainHeroNutrition } from './hunger.js';
 import { inventoryItemDescription } from './invent.js';
 import { chooseInventoryObject } from './inventory_prompt.js';
-import { MONSTER_BODY_META, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, requireMonsterData } from './monster_data.js';
+import { AD_POLY } from './monster_attack_types.js';
+import { MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, requireMonsterData } from './monster_data.js';
 import { AXE, OBJECT_NAMES, PICK_AXE, TIN, TIN_OPENER } from './object_data.js';
 import { makePlural } from './object_grammar.js';
 import { observeObject } from './object_knowledge.js';
@@ -156,6 +157,34 @@ export async function continueTinOpening(opening: TinOpening, state: GameState =
     return true;
 }
 
+// C eat.c:Popeye(): do not interrupt opening a tin which might cure the
+// current threat. Unknown contents are given the benefit of the doubt.
+export function openingTinMaySaveHero(
+    threat: 'hunger' | 'stoned' | 'slimed' | 'sick' | 'vomiting', state: GameState = game,
+): boolean {
+    if (state._occupation?.key !== 'open-tin') return false;
+    const tin = state.context.tin?.tin;
+    if (!tin) return false;
+    const available = tin.where === 'inventory'
+        || tin.where === 'floor' && tin.ox === state.u.ux && tin.oy === state.u.uy
+            && state.level?.objects[tin.ox]?.[tin.oy]?.includes(tin)
+            && heroCanReachFloor(state, { checkPit: true });
+    if (!available) return false;
+    if (!tin.known) return true;
+    const species = tinSpecies(tin);
+    switch (threat) {
+    case 'hunger': return species !== -1 || tin.spe === 1;
+    case 'stoned':
+        return species >= 0 && (MONSTER_NAME[species] === 'lizard'
+            || !!(requireMonsterData(MONSTER_FLAGS1, species) & 0x08000000));
+    case 'slimed':
+        return species >= 0 && (!!(requireMonsterData(MONSTER_FLAGS2, species) & 0x00004000)
+            || requireMonsterData(MONSTER_ATTACKS, species).some(([, damage]) => damage === AD_POLY));
+    case 'sick':
+    case 'vomiting': return false;
+    }
+}
+
 export async function useTinOpener(tool: GameObject, { state = game, swapWeapons }: TinOpenerOptions = {}) {
     requireLiveGame(state);
     requirePlayingGame(state);
@@ -190,6 +219,8 @@ export async function useUpTin(tin: GameObject, { state = game }: TinOptions = {
 }
 
 async function consumeTin(message: string, { state }: { state: PlayingGameState }) {
+    // Metal has already been swallowed when corpse effects change the form.
+    const alwaysEat = eatsMetal(state);
     let tin: GameObject | null = currentTin(state);
     const variety = tinVariety(tin);
     if (tin.otrapped || tin.cursed && variety !== HOMEMADE_TIN && rn2(8) === 0) {
@@ -200,7 +231,7 @@ async function consumeTin(message: string, { state }: { state: PlayingGameState 
     }
     await plineWithContinuation(message);
     if (variety === SPINACH_TIN) {
-        await consumeSpinach(tin, state);
+        await consumeSpinach(tin, alwaysEat, state);
         return;
     }
     const species = tinSpecies(tin);
@@ -212,11 +243,11 @@ async function consumeTin(message: string, { state }: { state: PlayingGameState 
         tin.known = true;
         tin = await costlyTin('open', state);
         await useUpTin(tin, { state });
-        if (eatsMetal(state)) await gainHeroNutrition(5, { state });
+        if (alwaysEat) await gainHeroNutrition(5, { state });
         return;
     }
     const smell = tinSmell(species, state);
-    if (!eatsMetal(state)) {
+    if (!alwaysEat) {
         await plineWithContinuation(`It smells like ${smell}.`);
         if (await promptYesNo('Eat it?') === 'n') {
             await discardTin(tin, state, !heroIsHallucinating(state));
@@ -238,7 +269,7 @@ async function consumeTin(message: string, { state }: { state: PlayingGameState 
     else {
         const nutrition = (variety === HOMEMADE_TIN
             ? Math.min(preparation.nutrition, requireMonsterData(MONSTER_BODY_META, species)[1])
-            : preparation.nutrition) + (eatsMetal(state) ? 5 : 0);
+            : preparation.nutrition) + (alwaysEat ? 5 : 0);
         await useUpTin(tin, { state });
         await gainHeroNutrition(nutrition, { state });
         if (state.program_state.gameover) return;
@@ -253,7 +284,7 @@ async function consumeTin(message: string, { state }: { state: PlayingGameState 
     if (tin) await useUpTin(tin, { state });
 }
 
-async function consumeSpinach(tin: GameObject, state: PlayingGameState) {
+async function consumeSpinach(tin: GameObject, alwaysEat: boolean, state: PlayingGameState) {
     await plineWithContinuation(tin.cursed
         ? `It contains some decaying${heroIsBlind(state) ? '' : ` ${displayColorName('green', state)}`} substance.`
         : 'It contains spinach.');
@@ -261,7 +292,7 @@ async function consumeSpinach(tin: GameObject, state: PlayingGameState) {
         observeObject(tin, state);
         tin.known = true;
     }
-    if (!eatsMetal(state) && await promptYesNo('Eat it?') === 'n') {
+    if (!alwaysEat && await promptYesNo('Eat it?') === 'n') {
         await discardTin(tin, state, false);
         return;
     }
@@ -275,7 +306,7 @@ async function consumeSpinach(tin: GameObject, state: PlayingGameState) {
     await gainHeroStrength(tin, 0, { state, giveMessage: false });
     tin = await costlyTin('open', state);
     const nutrition = (tin.blessed ? 600 : tin.cursed ? 200 + rnd(400) : 400 + rnd(200))
-        + (eatsMetal(state) ? 5 : 0);
+        + (alwaysEat ? 5 : 0);
     await useUpTin(tin, { state });
     await gainHeroNutrition(nutrition, { state });
 }

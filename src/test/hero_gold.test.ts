@@ -1,4 +1,5 @@
-import { createStaffedShop } from './support/shop.js';
+import { monsterGoldAmount } from '../js/shop_money.js';
+import { createStaffedShop, setShopkeeperGold } from './support/shop.js';
 import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -169,7 +170,7 @@ void test('partial shop payment preserves the purse identity and exact remainder
         requireFixtureGame(game);
         const purse = await carriedGold(20, 28305);
         const { shopkeeper: resident } = await createStaffedShop();
-        resident.gold = 0;
+        await setShopkeeperGold(resident, 0);
         const merchandise = await addInventoryObject(SACK, { o_id: 28306 });
         await addShopObjectToBill(merchandise, game, { ininv: true, silent: true });
         const bill = billForObject(merchandise);
@@ -185,7 +186,7 @@ void test('partial shop payment preserves the purse identity and exact remainder
         assert.equal(heroGoldObject(game), purse);
         assert.equal(heroGoldAmount(game), 13);
         assert.equal(purse.quantity, 13);
-        assert.equal(resident.gold, 7);
+        assert.equal(monsterGoldAmount(resident), 7);
         assert.equal(merchandise.unpaid, false);
         assert.equal(resident.eshk.bill.length, 0);
     });

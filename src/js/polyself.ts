@@ -52,7 +52,8 @@ import {
     newsym, pline, plineWithContinuation, see_monsters,
 } from './display.js';
 import { deleteObject } from './object_delete.js';
-import { dragonFormForArmor, findArmorClass } from './armor.js';
+import { dragonFormForArmor, findArmorClass, removeHeroArmor } from './armor.js';
+import { endObjectBurn } from './light.js';
 import {
     encumbranceLabel, encumbranceMessage, nearCapacity,
 } from './weight.js';
@@ -727,8 +728,11 @@ async function changeArmorForHeroForm(mnum: number) {
 
     if (breaksArmor) {
         if ((object = worn('uarm'))) {
+            if (object.lamplit) endObjectBurn(object, game);
             await plineWithContinuation('You break out of your armor!');
             await exerciseAttribute(A_STR, false);
+            await removeHeroArmor(object, game, { deferArmorClass: true, voluntary: false });
+            if (game.program_state.gameover) return;
             await deleteObject(object);
         }
         if ((object = worn('uarmc'))
@@ -753,6 +757,8 @@ async function changeArmorForHeroForm(mnum: number) {
             && !(MONSTER_NAME[mnum] === 'hobbit'
                 && object.otyp === ELVEN_MITHRIL_COAT)) {
             await plineWithContinuation('Your armor falls around you!');
+            await removeHeroArmor(object, game, { deferArmorClass: true, voluntary: false });
+            if (game.program_state.gameover) return;
             await dropCarriedObject(object);
             if (game.program_state.gameover) return;
         }

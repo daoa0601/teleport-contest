@@ -1,3 +1,4 @@
+import { monsterGoldAmount } from '../js/shop_money.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { rhack } from '../js/cmd.js';
@@ -6,7 +7,7 @@ import { heroGoldAmount, setHeroGoldAmount } from '../js/hero_gold.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { initRng } from '../js/rng.js';
 import { freshObjectRoom } from './support/object-room.js';
-import { createStaffedShop } from './support/shop.js';
+import { createStaffedShop, setShopkeeperGold } from './support/shop.js';
 import { addCreatedObjectToContainer } from '../js/object_container.js';
 import { DAGGER, GOLD_PIECE, OBJECT_NAMES, SACK } from '../js/object_data.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
@@ -25,7 +26,7 @@ void test('a lower container quote cannot settle a higher agreed bill without en
     daggers.unpaid = true;
     game.u.acurr.a[A_CHA] = game.u.amax.a[A_CHA] = 20;
     setHeroGoldAmount(game, 4);
-    const keeperGold = shopkeeper.gold ?? 0;
+    const keeperGold = monsterGoldAmount(shopkeeper);
     const input = resetInputState();
     const messages: string[] = [];
     input.beforeRead = () => { messages.push(game._pending_message); };
@@ -38,7 +39,7 @@ void test('a lower container quote cannot settle a higher agreed bill without en
     assert.match(messages.join('\n'), /enough to pay for 2 .*daggers/);
     assert.match(messages.join('\n'), /remove any unpaid items from that .*sack and buy them separately/);
     assert.equal(heroGoldAmount(game), 4);
-    assert.equal(shopkeeper.gold ?? 0, keeperGold);
+    assert.equal(monsterGoldAmount(shopkeeper), keeperGold);
     assert.equal(shopkeeper.eshk.billct, 1);
     assert.equal(daggers.unpaid, true);
     assert.equal(game.context.move, 0);
@@ -59,7 +60,7 @@ void test('a container purchase keeps an unaffordable bill entry and buys later 
     dagger.unpaid = knife.unpaid = true;
     game.u.acurr.a[A_CHA] = game.u.amax.a[A_CHA] = 20;
     setHeroGoldAmount(game, 4);
-    const keeperGold = shopkeeper.gold ?? 0;
+    const keeperGold = monsterGoldAmount(shopkeeper);
     const input = resetInputState();
     input.feed('a\n');
 
@@ -71,7 +72,7 @@ void test('a container purchase keeps an unaffordable bill entry and buys later 
     assert.equal(shopkeeper.eshk.billct, 1);
     assert.equal(shopkeeper.eshk.bill[0]?.bo_id, dagger.o_id);
     assert.equal(heroGoldAmount(game), 2);
-    assert.equal(shopkeeper.gold, keeperGold + 2);
+    assert.equal(monsterGoldAmount(shopkeeper), keeperGold + 2);
     assert.equal(game.context.move, 1);
 });
 
@@ -140,7 +141,7 @@ void test('buying an unpaid sack and nested goods settles the whole group using 
     ] });
     sack.unpaid = daggers.unpaid = true;
     shopkeeper.eshk.credit = 3;
-    const goldBefore = shopkeeper.gold ?? 0;
+    const goldBefore = monsterGoldAmount(shopkeeper);
     setHeroGoldAmount(game, 7);
     const input = resetInputState();
     input.feed('a\n');
@@ -150,7 +151,7 @@ void test('buying an unpaid sack and nested goods settles the whole group using 
 
     assert.equal(shopkeeper.eshk.billct, 0);
     assert.equal(shopkeeper.eshk.credit, 0);
-    assert.equal(shopkeeper.gold, goldBefore + 7);
+    assert.equal(monsterGoldAmount(shopkeeper), goldBefore + 7);
     assert.equal(heroGoldAmount(game), 0);
     assert.equal(sack.unpaid, false);
     assert.equal(daggers.unpaid, false);

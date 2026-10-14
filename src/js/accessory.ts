@@ -2,13 +2,13 @@
 // C refs: worn.c:setworn(), do_wear.c:Ring_on(), Ring_off(), Amulet_on(),
 // and Amulet_off().
 
-import { A_CHA, A_CON, A_STR, Upolyd, W_AMUL, W_RINGL, W_RINGR } from './const.js';
+import { A_CHA, A_CON, A_STR, Is_airlevel, Upolyd, W_AMUL, W_RINGL, W_RINGR } from './const.js';
 import { attributeIsAtLimit, currentAttribute } from './attrib.js';
 import type { AttributeIndex } from './attrib.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { PropertyName } from './property_types.js';
-import { findArmorClass } from './armor.js';
+import { armorOffMessage, findArmorClass } from './armor.js';
 import { game, requireLiveGame } from './gstate.js';
 import { setWornArtifactProperties } from './artifact_properties.js';
 import {
@@ -17,17 +17,20 @@ import {
     OBJECT_PROPERTY, RIN_PROTECTION,
 } from './object_data.js';
 import { learnObjectType } from './object_knowledge.js';
+import { refreshInvisibleMonsters } from './hero_seeing.js';
+import { showInvisibilityMessage } from './hero_invisibility.js';
 import { heroIsBlind } from './senses.js';
 import { objectTypeKnown } from './shk.js';
 import {
     captureLevitationState, grantWornProperty, propertyIsActive,
-    refreshMovementProperties, removeWornProperty,
+    hasIntrinsicProperty, propertyIsBlocked, propertyTimeout,
+    refreshMovementProperties, removeWornProperty, setPropertyTimeout,
 } from './properties.js';
 import { isWeldedPrimary, releaseWeaponSlots } from './weapon_slots.js';
 import { cancelSlotTakeoff } from './takeoff_state.js';
-import { heroHasNoLimbs, heroIsUnchanging } from './polyself.js';
-import { changeHeroSex, heroPolyGender } from './hero_species.js';
-import { newsym, plineWithContinuation } from './display.js';
+import { heroFormFlags, heroHasNoLimbs, heroIsUnchanging } from './polyself.js';
+import { changeHeroSex, heroIsBreathless, heroPolyGender } from './hero_species.js';
+import { displayLiquidName, newsym, plineWithContinuation, see_monsters } from './display.js';
 import { consumeInventoryItem } from './invent.js';
 import { objectWearMessage } from './object_wear_message.js';
 import { tryCallObjectType } from './object_call.js';
@@ -37,9 +40,12 @@ import { experienceRankIndex } from './exper.js';
 import { clearHeroSliming, heroIsSliming } from './slime.js';
 import { heroIsInDangerousRegion } from './regions.js';
 import { rnd } from './rng.js';
+import { heroNeckName } from './body_parts.js';
+import { heroCanSwim } from './hack.js';
+import { isLavaAt, isPoolAt, levelIsWaterLevel } from './terrain_properties.js';
 import { monsterName } from './monster_name.js';
 import { floatHeroDown, floatHeroUp } from './terrain_movement.js';
-import { applyHeroLocationEffects } from './cmd.js';
+import { applyHeroLiquidEffects, applyHeroLocationEffects } from './cmd.js';
 import { restartMonsterShapechanging, restoreNaturalMonsterShapes } from './monster_polymorph.js';
 import {
     clearHeroStrangulation, heroIsStrangled, startAmuletStrangulation,
@@ -63,6 +69,12 @@ const RING_ATTRIBUTES = new Map<number, AttributeIndex>([
     [OBJECT_NAMES.indexOf('gain constitution'), A_CON],
     [OBJECT_NAMES.indexOf('adornment'), A_CHA],
 ]);
+const AMULET_OF_ESP = OBJECT_NAMES.indexOf('amulet of ESP');
+const AMULET_OF_FLYING = OBJECT_NAMES.indexOf('amulet of flying');
+const AMULET_OF_MAGICAL_BREATHING = OBJECT_NAMES.indexOf('amulet of magical breathing');
+const M1_AMPHIBIOUS = 0x00000200;
+const M1_BREATHLESS = 0x00000400;
+
 const RIN_INCREASE_ACCURACY = OBJECT_NAMES.indexOf('increase accuracy');
 const RIN_INCREASE_DAMAGE = OBJECT_NAMES.indexOf('increase damage');
 
@@ -93,6 +105,8 @@ export async function wearHeroAccessory(
         requireLiveGame(state);
     const previousLevitation = captureLevitationState(state);
     const wasStealthy = propertyIsActive('stealth', state);
+    const wasInvisible = propertyIsActive('invisible', state);
+    const wasSeeingInvisible = propertyIsActive('seeInvisible', state);
     const wasFlying = !!state.u.flying;
     const wasInGas = property === 'magicalBreathing' && heroIsInDangerousRegion(state);
     await releaseWeaponSlots(object, state);
@@ -107,6 +121,20 @@ export async function wearHeroAccessory(
     setWornArtifactProperties(object, slot, true, state);
     if (slot !== 'uamul') changeRingBonus(object, 1, state);
     if (slot === 'uamul') await applyAmuletOnEffects(object, state, { wasFlying, wasInGas });
+    if (property === 'warning') await see_monsters();
+    if (property === 'seeInvisible') {
+        await refreshInvisibleMonsters({ state });
+        if (propertyIsActive('invisible', state) && !wasSeeingInvisible && !heroIsBlind(state)) {
+            newsym(state.u.ux, state.u.uy);
+            await plineWithContinuation('Suddenly you are transparent, but there!');
+            learnRing(object, true, state);
+        }
+    } else if (property === 'invisible' && !wasInvisible
+        && !propertyIsBlocked('invisible', state) && !heroIsBlind(state)) {
+        learnRing(object, true, state);
+        newsym(state.u.ux, state.u.uy);
+        await showInvisibilityMessage(state);
+    }
     if (property === 'protectionFromShapeChangers')
         await restoreNaturalMonsterShapes(state);
     if (property === 'stealth' && !wasStealthy && propertyIsActive('stealth', state)) {
@@ -141,8 +169,8 @@ async function applyAmuletOnEffects(
     if (object.otyp === AMULET_OF_UNCHANGING && heroIsSliming(state)) clearHeroSliming(state);
     else if (object.otyp === AMULET_OF_RESTFUL_SLEEP) {
         const timeout = rnd(98) + 2;
-        const previous = state.u._sleepyTimeout || 0;
-        if (!previous || timeout < previous) state.u._sleepyTimeout = timeout;
+        const previous = propertyTimeout('sleepy', state);
+        if (!previous || timeout < previous) setPropertyTimeout('sleepy', timeout, state);
     } else if (object.otyp === AMULET_OF_STRANGULATION) {
         if (startAmuletStrangulation(state)) message = 'It constricts your throat!';
     } else if (OBJECT_PROPERTY[object.otyp] === 'magicalBreathing' && wasInGas) {
@@ -193,13 +221,28 @@ async function changeSexFromAmulet(object: GameObject, state: GameState): Promis
 export async function removeHeroAccessory(
     object: GameObject, state: GameState = game,
 ): Promise<PropertyName | null> {
+    if (state.uamul === object || state.u.uamul === object)
+        return removeAmulet(object, state);
     const objectProperty = OBJECT_PROPERTY[object.otyp];
     if (objectProperty === 'levitation' || objectProperty === 'protectionFromShapeChangers')
         requireLiveGame(state);
     const previousLevitation = captureLevitationState(state);
     const wasStealthy = propertyIsActive('stealth', state);
     const property = clearHeroAccessory(object, state);
-    if (property === 'flying') state.context.botl = true;
+    if (property === 'warning') await see_monsters();
+    if (property === 'seeInvisible') {
+        if (!propertyIsActive('seeInvisible', state)) await refreshInvisibleMonsters({ state });
+        if (propertyIsActive('invisible', state) && !propertyIsActive('seeInvisible', state) && !heroIsBlind(state)) {
+            newsym(state.u.ux, state.u.uy);
+            await plineWithContinuation('Suddenly you cannot see yourself.');
+            learnRing(object, true, state);
+        }
+    } else if (property === 'invisible' && !propertyIsActive('invisible', state)
+        && !propertyIsBlocked('invisible', state) && !heroIsBlind(state)) {
+        newsym(state.u.ux, state.u.uy);
+        await plineWithContinuation(`Your body seems to unfade${propertyIsActive('seeInvisible', state) ? ' completely' : '..'}.`);
+        learnRing(object, true, state);
+    }
     if (property === 'stealth' && wasStealthy && !propertyIsActive('stealth', state)) {
         learnRing(object, true, state);
         const steed = state.u.usteed;
@@ -219,6 +262,52 @@ export async function removeHeroAccessory(
             if (!propertyIsActive('levitation', state))
                 learnRing(object, true, state);
         } else refreshMovementProperties(state);
+    }
+    return property;
+}
+
+async function removeAmulet(object: GameObject, state: GameState): Promise<PropertyName | null> {
+    const strangled = heroIsStrangled(state);
+    const flying = propertyIsActive('flying', state);
+    const guarding = object.otyp === AMULET_OF_GUARDING;
+    // C Amulet_off() calculates guarding AC while the amulet is still worn.
+    if (guarding) findArmorClass(state);
+    const property = clearHeroAccessory(object, state);
+    if (guarding) state._armorClassDirty = true;
+    if (object.otyp === AMULET_OF_RESTFUL_SLEEP && !hasIntrinsicProperty('sleepy', null, state)
+        && !state.u._propertySources?.sleepy?.worn.length
+        && !state.u._propertySources?.sleepy?.carried.length) {
+        setPropertyTimeout('sleepy', 0, state);
+    }
+    const message = armorOffMessage(object, state);
+    if (message) await plineWithContinuation(message);
+    if (object.otyp === AMULET_OF_ESP) await see_monsters();
+    else if (object.otyp === AMULET_OF_STRANGULATION && strangled) {
+        await plineWithContinuation(heroIsBreathless(state)
+            ? `Your ${heroNeckName(state)} is no longer constricted!` : 'You can breathe more easily!');
+        learnObjectType(object.otyp, state);
+    } else if (object.otyp === AMULET_OF_MAGICAL_BREATHING) {
+        // C cant_drown() tests the form, not remaining magical breathing.
+        // drown() still runs for the warning and inventory water damage.
+        if (state.u.uinwater && !(heroFormFlags(state) & (M1_AMPHIBIOUS | M1_BREATHLESS))
+            && !heroCanSwim(state)) {
+            await plineWithContinuation(`You suddenly inhale an unhealthy amount of ${displayLiquidName('water')}!`);
+            await applyHeroLiquidEffects(undefined, { entry: 'drown' });
+            if (state.program_state.gameover) return property;
+            learnObjectType(object.otyp, state);
+        }
+        if (heroIsInDangerousRegion(state)) {
+            await plineWithContinuation('You are breathing poison gas!');
+            learnObjectType(object.otyp, state);
+        }
+    } else if (object.otyp === AMULET_OF_FLYING && flying && !propertyIsActive('flying', state)) {
+        state.context.botl = true;
+        const overLiquid = isPoolAt(state.u.ux, state.u.uy, state) || isLavaAt(state.u.ux, state.u.uy, state)
+            || levelIsWaterLevel(state) || Is_airlevel(state.u.uz);
+        await plineWithContinuation(overLiquid ? 'You stop flying.' : 'You land.');
+        await applyHeroLocationEffects();
+        if (state.program_state.gameover) return property;
+        learnObjectType(object.otyp, state);
     }
     return property;
 }

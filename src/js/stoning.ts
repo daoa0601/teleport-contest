@@ -39,6 +39,7 @@ import {
 import { removeIntrinsicProperty, setPropertyTimeout } from './properties.js';
 import { clearHeroSliming } from './slime.js';
 import { stopHeroOccupation } from './occupation.js';
+import { openingTinMaySaveHero } from './tin.js';
 import { releaseWeaponSlots } from './weapon_slots.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
 import { rn2 } from './rng.js';
@@ -251,7 +252,8 @@ export async function advanceHeroPetrification({
         removeHeroSpeed(state);
         if (state.multi > 0) endVoluntaryMultiTurn(state);
     } else if (turns === 4) {
-        await stopHeroOccupation(state, publish);
+        if (!openingTinMaySaveHero('stoned', state)) await stopHeroOccupation(state, publish);
+        if (state.multi > 0) endVoluntaryMultiTurn(state);
     } else if (turns === 3) {
         await stopHeroOccupation(state, publish);
         endVoluntaryMultiTurn(state);

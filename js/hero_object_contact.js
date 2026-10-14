@@ -72,7 +72,7 @@ export async function resolveHeroObjectContact(monster, object, { mode, state = 
             break;
         case MIRROR:
             if (objectBreaksOnImpact(object, random)) {
-                await publish(`You break ${ownedSimpleName(object, state)}. That's bad luck!`);
+                await publish(`You break ${ownedSimpleName(object, state)}.  That's bad luck!`);
                 state.u.uluck = Math.max(-13, (state.u.uluck ?? 0) - 2);
                 await consumeContactObject(object, state, false);
                 contact.getDamageBonus = false;
@@ -81,7 +81,7 @@ export async function resolveHeroObjectContact(monster, object, { mode, state = 
             contact.damage = 1;
             break;
         case EXPENSIVE_CAMERA:
-            await publish(`You succeed in destroying ${ownedSimpleName(object, state)}. Congratulations!`);
+            await publish(`You succeed in destroying ${ownedSimpleName(object, state)}.  Congratulations!`);
             await releaseCameraDemon(object, state.u.ux, state.u.uy, { state, publish, random });
             await consumeContactObject(object, state, false);
             return {

@@ -162,6 +162,7 @@ export interface PropertyHero extends HeroPropertyState {
     utraptype?: number;
     usteed?: { mnum: number } | null;
     uarmc?: PropertyObject | null;
+    clairvoyanceBlocked?: boolean;
     invisibilityBlocked?: boolean;
     invisBlocked?: boolean;
 }

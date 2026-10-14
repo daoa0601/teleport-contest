@@ -298,6 +298,9 @@ void test('an amulet transformation retains its live object while the wearing me
     const input = resetInputState();
     const transformation = poly_obj(amulet, AMULET_OF_CHANGE);
     await input.waitUntilBlocked();
+    assert.equal(!!game.uamul, false, 'the old amulet is removed before its removal feedback');
+    input.feed('  ');
+    await input.waitUntilBlocked();
     assert.ok(game.uamul);
     assert.equal(game.uamul.otyp, AMULET_OF_CHANGE);
     assert.ok(game.inventory.includes(game.uamul));
@@ -331,6 +334,7 @@ void test('a fixed-sex form retains its visible sex while the amulet changes the
     const input = resetInputState();
     planInput(input, t, [
         { prompt: /amulet.*--More--/s, keys: ' ' },
+        { prompt: /You were wearing .*amulet of ESP.*--More--/s, keys: ' ' },
         { prompt: /don.t feel like yourself.*--More--/s, keys: ' ' },
         { prompt: /The amulet disintegrates!.*--More--/s, keys: ' ' },
         { prompt: /Call .*amulet/, keys: '\n' },
@@ -345,12 +349,12 @@ void test('a transformed restful-sleep amulet starts its real sleep timeout', as
     requirePlayingGame(game);
     const amulet = await addInventoryObject(AMULET_OF_ESP);
     await wearHeroAccessory(amulet, 'uamul');
-    installPagerInput(resetInputState(), { expected: /amulet/i, limit: 1 });
+    installPagerInput(resetInputState(), { expected: /amulet/i, limit: 2 });
     const replacement = await poly_obj(amulet, AMULET_OF_RESTFUL_SLEEP);
     assert.ok(replacement);
     assert.equal(game.uamul, replacement);
-    assert.ok(game.u._sleepyTimeout !== undefined);
-    assert.ok(game.u._sleepyTimeout >= 3 && game.u._sleepyTimeout <= 100);
+    assert.ok(game.u.sleepyTurns !== undefined);
+    assert.ok(game.u.sleepyTurns >= 3 && game.u.sleepyTurns <= 100);
 });
 void test('a transformed amulet of unchanging cures an active sliming countdown', async () => {
     freshObjectRoom();
@@ -359,7 +363,7 @@ void test('a transformed amulet of unchanging cures an active sliming countdown'
     await wearHeroAccessory(amulet, 'uamul');
     startHeroSliming();
     assert.equal(heroIsSliming(), true);
-    installPagerInput(resetInputState(), { expected: /amulet|slime/i, limit: 1 });
+    installPagerInput(resetInputState(), { expected: /amulet|slime/i, limit: 2 });
     const replacement = await poly_obj(amulet, AMULET_OF_UNCHANGING);
     assert.ok(replacement);
     assert.equal(game.uamul, replacement);
@@ -370,7 +374,7 @@ void test('a transformed guarding amulet changes armor class and identifies itse
     requirePlayingGame(game);
     const amulet = await addInventoryObject(AMULET_OF_ESP);
     await wearHeroAccessory(amulet, 'uamul');
-    installPagerInput(resetInputState(), { expected: /amulet/i, limit: 1 });
+    installPagerInput(resetInputState(), { expected: /amulet/i, limit: 2 });
     const replacement = await poly_obj(amulet, AMULET_OF_GUARDING);
     assert.ok(replacement);
     assert.equal(game.uamul, replacement);
@@ -385,7 +389,7 @@ void test('a transformed magical-breathing amulet protects its wearer from an ex
     installPagerInput(resetInputState(), { expected: /amulet/i, limit: 1 });
     await createPoisonGasCloud(game, game.u.ux, game.u.uy, 1, 4);
     assert.equal(heroIsInDangerousRegion(), true);
-    installPagerInput(resetInputState(), { expected: /noxious gas|amulet|no longer bothered/i, limit: 2 });
+    installPagerInput(resetInputState(), { expected: /noxious gas|amulet|no longer bothered/i, limit: 3 });
     const replacement = await poly_obj(amulet, OBJECT_NAMES.indexOf('amulet of magical breathing'));
     assert.ok(replacement);
     assert.equal(game.uamul, replacement);

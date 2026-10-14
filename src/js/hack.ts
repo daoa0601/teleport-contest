@@ -16,7 +16,7 @@ import { heroHasConflict } from './hero_conflict.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { monsterName } from './monster_name.js';
 import {
-    beginHeroLifeSaving, completeHeroLifeSaving, finishHeroDeath,
+    beginHeroLifeSaving, completeHeroLifeSaving, finishHeroDeath, identifyLifeSavingAmulet,
 } from './end.js';
 import { placeObject, stack_object } from './floor_object.js';
 import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
@@ -395,9 +395,11 @@ export async function burnAwayHeroSlime(state: GameState, publish: MessagePublis
 }
 
 async function reviveHeroFromLiquid(state: PlayingGameState, publish: MessagePublisher, random: RandomBelow) {
-    const lifeSaving = state === game ? beginHeroLifeSaving(random) : null;
+    const lifeSaving = state === game ? beginHeroLifeSaving() : null;
     if (!lifeSaving) return false;
-    await publish('But wait...  Your medallion begins to glow!');
+    await publish('But wait...');
+    identifyLifeSavingAmulet(random);
+    await publish('Your medallion begins to glow!');
     await publish('You feel much better!');
     await publish('The medallion crumbles to dust!');
     await completeHeroLifeSaving(lifeSaving);

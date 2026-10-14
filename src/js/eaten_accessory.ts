@@ -21,7 +21,7 @@ import { heroIsPolymorphed, returnHeroToHumanForm } from './polyself.js';
 import {
     captureLevitationState, grantIntrinsicProperty, hasCarriedProperty,
     hasIntrinsicProperty, hasTimedProperty, hasInvokedProperty, hasWornProperty, propertyIsActive,
-    refreshProperty,
+    refreshProperty, propertyTimeout, setPropertyTimeout,
 } from './properties.js';
 import { d, rn2, rnd } from './rng.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
@@ -97,10 +97,10 @@ export async function digestAccessory(object: GameObject, { state = game }: { st
         await chokeHeroOnFood(object, { state });
     } else if (object.otyp === SLEEP) {
         const delay = rnd(100);
-        const oldDelay = state.u._sleepyTimeout || 0;
+        const oldDelay = propertyTimeout('sleepy', state);
         if (!hasIntrinsicProperty('sleepy', 'outside', state)) await accessoryEffectMessage(object);
         grantIntrinsicProperty('sleepy', 'outside', state);
-        if (!oldDelay || delay < oldDelay) state.u._sleepyTimeout = delay;
+        if (!oldDelay || delay < oldDelay) setPropertyTimeout('sleepy', delay, state);
     } else if (property) {
         if (!hasIntrinsicProperty(property, 'outside', state)) await accessoryEffectMessage(object);
         if (object.otyp === LEVITATION) {

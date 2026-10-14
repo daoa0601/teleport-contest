@@ -596,7 +596,7 @@ function finalAttributePages() {
         page2[2] = ` Your wisdom was ${stats[A_WIS]} (limit:${finalAttributeLimit(A_WIS)}).`;
         page2[3] = ` Your charisma was ${stats[A_CHA]} (limit:${finalAttributeLimit(A_CHA)}).`;
         page2[5] = 'Final Status:';
-        if ((u._sleepyTimeout || 0) > 0) {
+        if ((u.sleepyTurns || 0) > 0) {
             page2[6] = ' You fell asleep uncontrollably.';
             page2[7] = " You weren't hungry.";
             page2[8] = ' You were unencumbered.';

@@ -122,7 +122,7 @@ import {
     MM_NOWAIT, MM_NOTAIL, MM_IGNOREWATER, MM_ADJACENTOK,
     MM_NOCOUNTBIRTH, MM_NOMSG, MM_MALE, MM_FEMALE, MM_MINVIS, MM_EDOG, NO_MINVENT,
     G_EXTINCT, G_GENOD, G_GONE, G_NOCORPSE,
-    ROT_AGE, TROLL_REVIVE_CHANCE, HEALTHY_TIN, RANDOM_TIN,
+    ROT_AGE, TROLL_REVIVE_CHANCE, HEALTHY_TIN, RANDOM_TIN, MAX_OIL_IN_FLASK,
     CORPSTAT_FEMALE, CORPSTAT_MALE, CORPSTAT_NEUTER, CORPSTAT_HISTORIC, CORPSTAT_INIT, CORPSTAT_SPE_VAL,
     STRAT_APPEARMSG, STRAT_CLOSE, STRAT_WAITFORU,
     ANTI_MAGIC, TT_BURIEDBALL, TT_BEARTRAP, TT_WEB, TT_PIT, TT_LAVA,
@@ -196,7 +196,7 @@ import { premap_detect } from './detect.js';
 import {
     TRUE_RUMORS, FALSE_RUMORS, RANDOM_ENGRAVINGS, RANDOM_EPITAPHS,
 } from './random_text_data.js';
-import { makeEngravingAt, wipeEngravingAt, wipeoutText } from './engrave.js';
+import { deleteEngravingAt, makeEngravingAt, wipeEngravingAt, wipeoutText } from './engrave.js';
 import { registerQuestLeader } from './quest.js';
 import { armorBonus } from './armor.js';
 import { initializeMonsterArmor } from './monworn.js';
@@ -668,6 +668,8 @@ export async function mksobj(
     if (init) {
         await mksobj_init(otmp, artif, definition);
     }
+    // Fuel is intrinsic to an oil flask even when random initialization is skipped.
+    if (otyp === POT_OIL) otmp.age = MAX_OIL_IN_FLASK;
     if (otyp === CORPSE || otyp === STATUE || otyp === FIGURINE) {
         if (otmp.corpsenm == null) {
             otmp.corpsenm = rndmonnum();
@@ -1789,7 +1791,12 @@ async function makemon(
             if (mndx == null) return null;
             ++tryCount;
         } while (tryCount <= 50
-            && !goodPosition(x, y, { kind: 'species', mnum: mndx }));
+            && ((tryCount === 1 && In_sokoban(game.u.uz)
+                && !!((MONSTER_FLAGS2[mndx] ?? 0) & 0x08000000)) // M2_ROCKTHROW
+                || !goodPosition(x, y, { kind: 'species', mnum: mndx }, {
+                    gpflags: GP_AVOID_MONPOS | GP_CHECKSCARY
+                        | (mmflags & MM_IGNOREWATER),
+                })));
     }
     if (mdat != null
         && ((game.mvitals?.[mndx]?.mvflags ?? 0) & G_GENOD)) return null;
@@ -4904,6 +4911,16 @@ interface SpecialTrapOptions {
     victim?: boolean;
 }
 
+// sp_lev.c:create_monster() replaces unavailable ordinary species, but
+// an extinct unique monster must not appear again in any form.
+function selectNamedSpecialMonster(mndx: number | null): { species: number | null } | null {
+    if (mndx === null) return { species: null };
+    const vitalFlags = game.mvitals?.[mndx]?.mvflags ?? 0;
+    if (((MONSTER_GENO[mndx] ?? 0) & 0x1000) && (vitalFlags & G_EXTINCT))
+        return null;
+    return { species: vitalFlags & G_GONE ? null : mndx };
+}
+
 // sp_lev.c:create_monster() searches before construction, including when
 // a worm's tail occupies the requested square. The result must stay in croom.
 async function createSpecialMonster(
@@ -4939,7 +4956,9 @@ async function specialMonsterAt(
     if (randomAlignment) consumeSpecialMonsterAlignment();
     const alignment = typeof roamerAlignment === 'function'
         ? roamerAlignment() : roamerAlignment;
-    mndx = applyMinesSameRaceMonsterGate(mndx);
+    const selection = selectNamedSpecialMonster(mndx);
+    if (!selection) return null;
+    mndx = applyMinesSameRaceMonsterGate(selection.species);
     const monster = await createSpecialMonster(
         context, mndx, context.xstart + x, context.ystart + y, mmflags,
     );
@@ -5042,7 +5061,9 @@ async function specialExplicitMonster(
     if (randomAlignment) consumeSpecialMonsterAlignment();
     const alignment = typeof roamerAlignment === 'function'
         ? roamerAlignment() : roamerAlignment;
-    const selectedSpecies = applyMinesSameRaceMonsterGate(mndx);
+    const selection = selectNamedSpecialMonster(mndx);
+    if (!selection) return null;
+    const selectedSpecies = applyMinesSameRaceMonsterGate(selection.species);
     const point = await specialMonsterRandomLocation(context, selectedSpecies);
     if (!point) return null;
     const monster = await createSpecialMonster(context, selectedSpecies, point.x, point.y, mmflags);
@@ -8114,16 +8135,65 @@ async function makeRandomTemple(room: Room): Promise<boolean> {
 }
 
 async function markRandomSpecialRoom(roomType: number): Promise<boolean> {
-    // All zoo-family rooms use pick_room(FALSE); temples use the stricter
-    // stair exclusion.  Swamps have their own multi-room terrain transaction
-    // and remain a distinct downstream owner.
-    if (roomType === SWAMP) return false;
+    if (roomType === SWAMP) return makeSwamps();
     const room = pickSpecialRoom(roomType === TEMPLE);
     if (!room) return false;
     if (roomType === TEMPLE) return makeRandomTemple(room);
     room.rtype = roomType;
     room.needfill = FILL_NORMAL;
     return true;
+}
+
+// C mkroom.c:mkswamp(). Room selection is with replacement; a room already
+// converted by an earlier attempt is skipped. The first pool has a resident.
+async function makeSwamps(): Promise<boolean> {
+    const level = requireGameLevel();
+    let residents = 0;
+    let madeSwamp = false;
+    for (let attempt = 0; attempt < 5; attempt++) {
+        const roomIndex = rn2(level.nroom);
+        const room = level.rooms[roomIndex];
+        if (!isRoom(room) || room.hx < 0 || room.rtype !== OROOM
+            || roomHasStair(room, true) || roomHasStair(room, false)) continue;
+        room.rtype = SWAMP;
+        for (let x = room.lx; x <= room.hx; x++) {
+            for (let y = room.ly; y <= room.hy; y++) {
+                const location = level.requireAt(x, y);
+                if (!IS_ROOM(location.typ) || location.roomno !== roomIndex + ROOMOFFSET
+                    || level.objects[x]?.[y]?.length || monsterAtPosition(level, x, y)
+                    || level.traps.some(trap => trap.tx === x && trap.ty === y)
+                    || swampSquareBordersDoor(x, y)) continue;
+                if ((x + y) % 2) {
+                    deleteEngravingAt(x, y, level);
+                    location.typ = POOL;
+                    if (!residents || !rn2(4)) {
+                        const species = rn2(5) ? PM_GIANT_EEL
+                            : rn2(2) ? MONSTER_NAME.indexOf('piranha')
+                                : MONSTER_NAME.indexOf('electric eel');
+                        await makemon(species, x, y, 0);
+                        residents++;
+                    }
+                } else if (!rn2(4)) {
+                    await makemon(mkclass(32, 0), x, y, 0); // S_FUNGUS
+                }
+            }
+        }
+        level.flags.has_swamp = true;
+        madeSwamp = true;
+    }
+    return madeSwamp;
+}
+
+function swampSquareBordersDoor(x: number, y: number): boolean {
+    const level = requireGameLevel();
+    for (let dx = -1; dx <= 1; dx++) {
+        for (let dy = -1; dy <= 1; dy++) {
+            if (!isok(x + dx, y + dy)) continue;
+            const location = level.at(x + dx, y + dy);
+            if (location && (IS_DOOR(location.typ) || location.typ === SDOOR)) return true;
+        }
+    }
+    return false;
 }
 
 // C ref: mklev.c makelevel() random-special-room else-if chain.  Every failed
@@ -8333,13 +8403,13 @@ async function stockShopRoom(sroom: Room): Promise<void> {
     shopkeeper.isshk = 1;
     sroom.resident = shopkeeper;
 
-    // C ref: shkinit().  The gold object and possible charging scroll live
-    // in the shopkeeper's inventory even though only their RNG-visible
-    // initialization is needed by the current session.
-    shopkeeper.gold = 1000 + 30 * rnd(100);
-    await linkObjectToMonsterInventory(
-        shopkeeper, await mksobj(GOLD_PIECE, false, false), { atFront: true },
-    );
+    // C shknam.c:shkinit()/makemon.c:mkmonmoney(). Initial capital is
+    // an ordinary coin stack in the keeper's inventory.
+    const capital = 1000 + 30 * rnd(100);
+    const coins = await mksobj(GOLD_PIECE, false, false);
+    coins.quan = coins.quantity = capital;
+    coins.owt = objectWeight(coins);
+    await linkObjectToMonsterInventory(shopkeeper, coins, { atFront: true });
     if (shopIndex === 6)
         await addObjectToMonsterInventory(
             shopkeeper, await mksobj(TOUCHSTONE, true, false), game,

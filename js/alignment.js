@@ -1,13 +1,16 @@
 // Hero alignment record changes.
 // C ref: attrib.c adjalign().
 import { game, requireLiveGame } from './gstate.js';
-import { rn2Display } from './rng.js';
+import { rn1, rn2, rn2Display } from './rng.js';
 import { nativeRoleAt, roles } from './roles.js';
 import { heroIsHallucinating } from './senses.js';
-import { A_NONE } from './const.js';
+import { A_NONE, G_GONE, Is_astralevel, MM_ADJACENTOK, MM_NOWAIT } from './const.js';
 import { plineWithContinuation } from './display.js';
 import { recordGameLogEvent } from './gamelog.js';
 import { retouchEquipment } from './hero_retouch.js';
+import { makeConfused } from './hero_mental_status.js';
+import { makemonAt } from './mklev.js';
+import { MONSTER_NAME } from './monster_data.js';
 import { HELM_OF_OPPOSITE_ALIGNMENT } from './object_data.js';
 export function deityName(alignment, state = game) {
     if (alignment === A_NONE)
@@ -68,6 +71,45 @@ export async function convertHeroAlignment(alignment, state = game) {
     if (current.type !== previous) {
         current.record = 0;
         await retouchEquipment(0, { state });
+    }
+}
+// C attrib.c:uchangealign(A_CG_HELM_ON/A_CG_HELM_OFF). The base deity
+// stays unchanged; equipment is retouched after the alignment message.
+export async function changeHeroAlignmentFromHelmet(alignment, puttingOn, state = game) {
+    requireLiveGame(state);
+    const current = state.u.ualign;
+    if (!current)
+        throw new Error('A helmet alignment change requires initialized alignment');
+    const previous = current.type;
+    state.u.ublessed = 0;
+    state.context.botl = true;
+    current.type = alignment;
+    if (puttingOn) {
+        adjustHeroAlignment(-7, state);
+        await plineWithContinuation(`Your mind oscillates ${heroIsHallucinating(state) ? 'wildly' : 'briefly'}.`);
+        await makeConfused(rn1(2, 3), { state, talk: false });
+        const astral = Is_astralevel(state.u.uz);
+        if (astral || rn2(50) < (current.abuse ?? 0))
+            await summonFuries(astral ? 0 : 1, state);
+        recordGameLogEvent(`used a helm to turn ${alignment > 0 ? 'lawful' : alignment < 0 ? 'chaotic' : 'neutral'}`, { state });
+    }
+    else {
+        await plineWithContinuation(`Your mind is ${heroIsHallucinating(state)
+            ? 'much of a muchness' : 'back in sync with your body'}.`);
+    }
+    if (alignment !== previous) {
+        current.record = 0;
+        await retouchEquipment(0, { state });
+    }
+}
+// C makemon.c:summon_furies(). Erinyes are a real species with a birth
+// limit; makemon() updates that history, ending the unlimited Astral case.
+async function summonFuries(limit, state) {
+    const species = MONSTER_NAME.indexOf('erinys');
+    let created = 0;
+    while (!((state.mvitals?.[species]?.mvflags ?? 0) & G_GONE) && (created < limit || limit === 0)) {
+        await makemonAt(species, state.u.ux, state.u.uy, MM_ADJACENTOK | MM_NOWAIT);
+        created++;
     }
 }
 export function adjustHeroAlignment(amount, state = game) {
