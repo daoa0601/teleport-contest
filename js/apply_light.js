@@ -21,7 +21,7 @@ import { billDummyObject, carriedObjectOwner, chargeUnpaidUsage, costlySpot, } f
 import { impossible } from './diagnostics.js';
 import { objectWeight } from './weight.js';
 import { d, rn2 } from './rng.js';
-import { TIMEOUT } from './const.js';
+import { setSlipperyHands } from './towel.js';
 import { BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, MAGIC_LAMP, OBJECT_COST, OIL_LAMP, TALLOW_CANDLE, WAX_CANDLE, requireObjectData, } from './object_data.js';
 function result(object, state) {
     return { spentTime: true, heroDied: !!state.program_state?.gameover, object };
@@ -77,7 +77,7 @@ export async function useLamp(object, { state = game } = {}) {
             const gloves = state.uarmg || state.u.uarmg;
             const fingers = gloves ? armorSimpleName(gloves, state) : makePlural(heroFingerName(state));
             await plineWithContinuation(`The lamp spills and covers your ${fingers} with oil.`);
-            state.u.glibTurns = Math.min(TIMEOUT, (state.u.glibTurns ?? 0) + d(2, 10));
+            setSlipperyHands((state.u.glibTurns ?? 0) + d(2, 10), state);
         }
         else
             await plineWithContinuation(heroIsBlind(state) ? 'Nothing seems to happen.'

@@ -92,7 +92,7 @@ void test('a count entered before question mark survives single-item selection',
     freshObjectRoom();
     const arrows = await addInventoryObject(ARROW, { quan: 8 });
     const input = resetInputState();
-    const selected = await answerPrompts(promptInventoryObject('What do you want to drop? [a or ?*] ', game.inventory, { allowMenu: true, allowCount: true }), input, [
+    const selected = await answerPrompts(promptInventoryObject('What do you want to drop? [a or ?*] ', game.inventory, { verb: 'drop', allowMenu: true, allowCount: true }), input, [
         { prompt: /What do you want to drop\?/, keys: '3?' },
         { prompt: /a - 8 [^\n]*arrows\.--More--/, keys: arrows.invlet },
     ]);

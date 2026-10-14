@@ -32,6 +32,7 @@ import { MONSTER_FLAGS1 } from './monster_data.js';
 import { killGenocidedMonsters } from './mon.js';
 import { dismountHero, moveSteedWithHero } from './steed.js';
 import { clearHeroTrap } from './hero_traps.js';
+import { resetTrapSetting } from './trap_setting.js';
 import { dungeonDepth } from './hacklib.js';
 import { nearCapacity } from './weight.js';
 import { selfTouchPetrifyingWeapons } from './stoning.js';
@@ -154,6 +155,7 @@ export async function gotoLevel(targetDepth: Partial<DungeonLocation>, {
     }
 
     await currentLuaLifecycle().runCallbacks(game, 'level_leave');
+    resetTrapSetting();
 
     if (arrival === 'falling') await impactDrop(null, game.u.ux, game.u.uy, {
         destinationLevel: destinationDepth.dlevel, publish: plineWithContinuation,

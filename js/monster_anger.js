@@ -137,6 +137,21 @@ export async function publishMonsterYelp(monster) {
         stopRun();
     await wakeMonstersNearWithMessages(monster.mx, monster.my, (MONSTER_LEVEL[monster.mnum] ?? 0) * 12);
 }
+export async function publishMonsterWhimper(monster) {
+    const sound = MONSTER_SOUND[monster.mnum];
+    if (monster.msleeping || !monster.mcanmove || !sound)
+        return;
+    const verb = heroIsHallucinating()
+        ? HALLUCINATED_GROWL_VERBS[rn2(HALLUCINATED_GROWL_VERBS.length)]
+        : sound === MS_MEW || sound === MS_GROWL ? 'whimper'
+            : sound === MS_BARK ? 'whine' : sound === MS_SQEEK ? 'squeal' : null;
+    if (!verb)
+        return;
+    await plineWithContinuation(`${monsterName(monster, { capitalized: true })} ${thirdPersonSoundVerb(verb)}.`);
+    if (game.context.run)
+        stopRun();
+    await wakeMonstersNearWithMessages(monster.mx, monster.my, (MONSTER_LEVEL[monster.mnum] ?? 0) * 6);
+}
 export async function publishMonsterGrowl(monster) {
     const sound = MONSTER_SOUND[monster.mnum];
     if (monster.msleeping || !monster.mcanmove || !sound)
