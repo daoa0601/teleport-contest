@@ -1,6 +1,7 @@
 // botl.c: conditions[], condtests[], cond_cmp(), and bot_via_windowport().
 import { ICE, SICK_NONVOMITABLE, SICK_VOMITABLE, TT_BURIEDBALL, TT_LAVA } from './const.js';
 import type { GameState } from './game_state.js';
+import { heroHasInvoluntaryDelay } from './command_state.js';
 import { heroIsSick } from './hero_illness.js';
 import { heroIsUnconscious } from './hero_sleep.js';
 import { heroFormSticks } from './hero_species.js';
@@ -88,6 +89,7 @@ function conditionApplies(
     name: ConditionName, state: GameState, enabled: (name: ConditionName) => boolean,
 ): boolean {
     const hero = state.u;
+    const helpless = heroHasInvoluntaryDelay(state);
     const drowningHold = !!hero.ustuck && !hero.uswallow && !heroFormSticks(state)
         && monsterClassSymbol(hero.ustuck.mnum) === ';';
     const holding = !!hero.ustuck && !hero.uswallow && heroFormSticks(state);
@@ -100,7 +102,7 @@ function conditionApplies(
     switch (name) {
     case 'barehanded': return !state.uarmg && !state.uwep;
     case 'blind': return heroIsBlind(state);
-    case 'busy': return (state._helplessTurns ?? 0) > 0 && !unconscious && !paralyzed && !sleeping;
+    case 'busy': return helpless && !unconscious && !paralyzed && !sleeping;
     case 'conf': return propertyIsActive('confusion', state);
     case 'deaf': return heroIsDeaf(state);
     case 'iron': return false; // Native currently disables this test too.
@@ -113,9 +115,9 @@ function conditionApplies(
     case 'ice': return state.level?.at(hero.ux, hero.uy)?.typ === ICE;
     case 'lava': return !!hero.utrap && hero.utraptype === TT_LAVA;
     case 'levitate': return propertyIsActive('levitation', state);
-    case 'paralyzed': return (state._helplessTurns ?? 0) > 0 && !unconscious && paralyzed;
+    case 'paralyzed': return helpless && !unconscious && paralyzed;
     case 'ride': return !!hero.usteed;
-    case 'sleep': return (state._helplessTurns ?? 0) > 0 && !unconscious && !paralyzed && sleeping;
+    case 'sleep': return helpless && !unconscious && !paralyzed && sleeping;
     case 'slime': return heroIsSliming(state);
     case 'slip': return (hero.glibTurns ?? 0) > 0;
     case 'stone': return heroIsPetrifying(state);
@@ -127,7 +129,7 @@ function conditionApplies(
     case 'trap': return !!hero.utrap
         && !(enabled('lava') && hero.utraptype === TT_LAVA)
         && !(enabled('tethered') && hero.utraptype === TT_BURIEDBALL);
-    case 'unconscious': return (state._helplessTurns ?? 0) > 0 && unconscious;
+    case 'unconscious': return helpless && unconscious;
     case 'woundedlegs': return (hero._woundedLegTurns ?? 0) > 0 || !!hero._woundedLegSide;
     case 'holding': return holding;
     }
