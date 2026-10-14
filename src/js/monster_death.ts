@@ -387,8 +387,10 @@ export async function createMonsterRemains(
     await createMonsterPart(monster, state, seen, publish);
 
     const corpseForm = undeadToCorpse(monster.mnum);
+    const vitalFlags = state.mvitals?.[monster.mnum]?.mvflags
+        ?? MONSTER_GENO[monster.mnum] ?? 0;
     if (corpseForm === monster.mnum
-        && ((MONSTER_GENO[monster.mnum] ?? 0) & G_NOCORPSE)) {
+        && (vitalFlags & G_NOCORPSE)) {
         return null;
     }
     const leaderId = state.quest_status?.leader_m_id;
