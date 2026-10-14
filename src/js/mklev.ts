@@ -4909,6 +4909,16 @@ interface SpecialTrapOptions {
     victim?: boolean;
 }
 
+// sp_lev.c:create_monster() replaces unavailable ordinary species, but
+// an extinct unique monster must not appear again in any form.
+function selectNamedSpecialMonster(mndx: number | null): { species: number | null } | null {
+    if (mndx === null) return { species: null };
+    const vitalFlags = game.mvitals?.[mndx]?.mvflags ?? 0;
+    if (((MONSTER_GENO[mndx] ?? 0) & 0x1000) && (vitalFlags & G_EXTINCT))
+        return null;
+    return { species: vitalFlags & G_GONE ? null : mndx };
+}
+
 // sp_lev.c:create_monster() searches before construction, including when
 // a worm's tail occupies the requested square. The result must stay in croom.
 async function createSpecialMonster(
@@ -4944,7 +4954,9 @@ async function specialMonsterAt(
     if (randomAlignment) consumeSpecialMonsterAlignment();
     const alignment = typeof roamerAlignment === 'function'
         ? roamerAlignment() : roamerAlignment;
-    mndx = applyMinesSameRaceMonsterGate(mndx);
+    const selection = selectNamedSpecialMonster(mndx);
+    if (!selection) return null;
+    mndx = applyMinesSameRaceMonsterGate(selection.species);
     const monster = await createSpecialMonster(
         context, mndx, context.xstart + x, context.ystart + y, mmflags,
     );
@@ -5047,7 +5059,9 @@ async function specialExplicitMonster(
     if (randomAlignment) consumeSpecialMonsterAlignment();
     const alignment = typeof roamerAlignment === 'function'
         ? roamerAlignment() : roamerAlignment;
-    const selectedSpecies = applyMinesSameRaceMonsterGate(mndx);
+    const selection = selectNamedSpecialMonster(mndx);
+    if (!selection) return null;
+    const selectedSpecies = applyMinesSameRaceMonsterGate(selection.species);
     const point = await specialMonsterRandomLocation(context, selectedSpecies);
     if (!point) return null;
     const monster = await createSpecialMonster(context, selectedSpecies, point.x, point.y, mmflags);

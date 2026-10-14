@@ -4843,6 +4843,16 @@ export function finishSpecialRoamer(monster, alignment, peaceful) {
     monster.mtrapseen = 0x7fffffff;
     setMonsterMalign(monster);
 }
+// sp_lev.c:create_monster() replaces unavailable ordinary species, but
+// an extinct unique monster must not appear again in any form.
+function selectNamedSpecialMonster(mndx) {
+    if (mndx === null)
+        return { species: null };
+    const vitalFlags = game.mvitals?.[mndx]?.mvflags ?? 0;
+    if (((MONSTER_GENO[mndx] ?? 0) & 0x1000) && (vitalFlags & G_EXTINCT))
+        return null;
+    return { species: vitalFlags & G_GONE ? null : mndx };
+}
 // sp_lev.c:create_monster() searches before construction, including when
 // a worm's tail occupies the requested square. The result must stay in croom.
 async function createSpecialMonster(context, mndx, x, y, mmflags) {
@@ -4869,7 +4879,10 @@ async function specialMonsterAt(context, mndx, x, y, { randomGender = true, rand
         consumeSpecialMonsterAlignment();
     const alignment = typeof roamerAlignment === 'function'
         ? roamerAlignment() : roamerAlignment;
-    mndx = applyMinesSameRaceMonsterGate(mndx);
+    const selection = selectNamedSpecialMonster(mndx);
+    if (!selection)
+        return null;
+    mndx = applyMinesSameRaceMonsterGate(selection.species);
     const monster = await createSpecialMonster(context, mndx, context.xstart + x, context.ystart + y, mmflags);
     if (monster && requestedFemale !== null)
         monster.female = requestedFemale;
@@ -4950,7 +4963,10 @@ async function specialExplicitMonster(context, mndx, appearance = null, { random
         consumeSpecialMonsterAlignment();
     const alignment = typeof roamerAlignment === 'function'
         ? roamerAlignment() : roamerAlignment;
-    const selectedSpecies = applyMinesSameRaceMonsterGate(mndx);
+    const selection = selectNamedSpecialMonster(mndx);
+    if (!selection)
+        return null;
+    const selectedSpecies = applyMinesSameRaceMonsterGate(selection.species);
     const point = await specialMonsterRandomLocation(context, selectedSpecies);
     if (!point)
         return null;
