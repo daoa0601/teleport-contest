@@ -28,6 +28,9 @@ export function objectWeight(object) {
     // constructors still leave owt at the one-item metadata value after
     // changing quan, so reconstruct ordinary stack weight from the table.
     const base = requireObjectData(OBJECT_WEIGHT, object.otyp);
+    const count = quantity(object);
+    if (count < 1)
+        return 0;
     const species = object.corpsenm;
     const uneatenNutrition = object.oeaten ?? 0;
     // A top-level coin stack is treated specially by inv_weight(), but coin
@@ -40,30 +43,29 @@ export function objectWeight(object) {
     // precedes partly-eaten food scaling because oeaten is also glob mass.
     if (object.globby)
         return object.owt ?? base ?? 0;
-    if (object.otyp === CORPSE && species !== undefined && Number.isInteger(species)) {
+    if (object.otyp === CORPSE && species !== undefined
+        && Number.isInteger(species) && species >= 0 && species < MONSTER_BODY_META.length) {
         const [bodyWeight = 0, nutrition = 0] = MONSTER_BODY_META[species] || [];
-        const fullWeight = bodyWeight * quantity(object);
+        const fullWeight = Math.min(0x7fffffff, bodyWeight * count);
         if (uneatenNutrition > 0) {
-            const fullNutrition = nutrition * quantity(object);
-            return Math.max(1, fullNutrition > 0
-                ? Math.trunc(fullWeight * uneatenNutrition / fullNutrition)
+            return Math.max(1, nutrition > 0
+                ? Math.trunc(fullWeight * Math.min(uneatenNutrition, nutrition) / nutrition)
                 : 0);
         }
         return fullWeight;
     }
     // C mkobj.c:weight()->eaten_stat() scales partly eaten food by its
-    // remaining nutrition.  touchfood() splits stacks first, but retain the
-    // quantity-aware formula for restored objects and future constructors.
+    // remaining nutrition per item, including stacks of partly eaten wishes.
     if (object.oclass === 7 && uneatenNutrition > 0 && base > 0) {
-        const fullNutrition = (OBJECT_NUTRITION[object.otyp] ?? 0)
-            * quantity(object);
+        const fullNutrition = OBJECT_NUTRITION[object.otyp] ?? 0;
         if (fullNutrition > 0) {
-            return Math.max(1, Math.trunc(base * quantity(object) * uneatenNutrition / fullNutrition));
+            return Math.max(1, Math.trunc(base * count * Math.min(uneatenNutrition, fullNutrition) / fullNutrition));
         }
     }
     if (WEIGHTED_CONTENT_TYPES.has(object.otyp)) {
         let ownWeight = base || object.owt || 0;
-        if (object.otyp === STATUE && species !== undefined && Number.isInteger(species)) {
+        if (object.otyp === STATUE && species !== undefined
+            && Number.isInteger(species) && species >= 0 && species < MONSTER_BODY_META.length) {
             const bodyWeight = MONSTER_BODY_META[species]?.[0] ?? 0;
             const size = MONSTER_SIZE[species] ?? 0;
             ownWeight = Math.max(Math.trunc(3 * bodyWeight / 2), (2 * size + 1) * 100) * quantity(object);
@@ -82,7 +84,7 @@ export function objectWeight(object) {
         return (base || 0) + object.spe * (OBJECT_WEIGHT[TALLOW_CANDLE] || 0);
     if (base > 0)
         return base * quantity(object);
-    return object.owt ?? 0;
+    return Math.trunc((count + 1) / 2);
 }
 export function inventoryWeight(state) {
     const inventory = state.inventory || [];
