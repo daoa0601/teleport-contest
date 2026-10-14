@@ -2978,7 +2978,6 @@ async function presentMonsterAttackEffects(
                         && drainDismissal !== undefined) {
                         paging.pagerOwned = true;
                     }
-                    findArmorClass(game);
                 }
                 if (heroAttack.deferredLegEffect)
                     await resumeDeferredHeroLegs(action, game, { publish: publishEquipmentMessage });

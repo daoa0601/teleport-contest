@@ -7940,7 +7940,7 @@ async function domoveCore(dx: number, dy: number, explicitAttempt: boolean): Pro
             game._tipSwimShown = true;
             await pline("(Tip: use 'm' prefix to step in if you really want to.)");
         } else {
-            await pline(warning);
+            await plineWithContinuation(warning);
         }
         game.context.move = 0;
         return false;

@@ -2665,7 +2665,6 @@ async function presentMonsterAttackEffects(action, game, { random = rn2, rollDic
                         && drainDismissal !== undefined) {
                         paging.pagerOwned = true;
                     }
-                    findArmorClass(game);
                 }
                 if (heroAttack.deferredLegEffect)
                     await resumeDeferredHeroLegs(action, game, { publish: publishEquipmentMessage });

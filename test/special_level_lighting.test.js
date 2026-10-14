@@ -8,6 +8,8 @@ import { isRoom } from '../js/map_types.js';
 import { mklev } from '../js/mklev.js';
 import { init_objects } from '../js/o_init.js';
 import { initRng } from '../js/rng.js';
+import { TALLOW_CANDLE, WAX_CANDLE } from '../js/object_data.js';
+import { floorObjects } from './support/level-state.js';
 import { cansee, vision_recalc, vision_reset_new_level } from '../js/vision.js';
 import { freshGame } from './support/game-state.js';
 import { startLuaCore } from './support/lua-game.js';
@@ -23,6 +25,39 @@ async function levelLua(t) {
     game.level = new GameMap();
     game.in_mklev = true;
     return lua;
+}
+for (const lit of [false, true]) {
+    void test(`trap victim candles ${lit ? 'remain unlit on illuminated terrain' : 'illuminate dark terrain'}`, async (t) => {
+        const lua = await levelLua(t);
+        await lua.executeAsync(`
+            des.level_init({ style = "solidfill", fg = ".", lit = ${lit ? 1 : 0} })
+            for y = 3, 6 do
+                for x = 5, 64 do
+                    des.trap({ type = "falling rock", x = x, y = y })
+                end
+            end
+        `);
+        requirePlayingGame(game);
+        const candles = floorObjects(game.level).filter(object => object.otyp === TALLOW_CANDLE || object.otyp === WAX_CANDLE);
+        assert.ok(candles.length > 0, 'the shallow traps must include a gnome victim with a candle');
+        const burning = candles.filter(candle => candle.lamplit);
+        if (lit)
+            assert.equal(burning.length, 0);
+        if (!lit) {
+            const candle = burning[0];
+            assert.ok(candle, 'a gnome victim must leave a burning candle on dark terrain');
+            assert.equal(candle.quan, 1);
+            assert.equal(candle.quantity, 1);
+            assert.equal(candle.cursed, true);
+            game.in_mklev = false;
+            game.u.ux = candle.ox - 3;
+            game.u.uy = candle.oy;
+            vision_reset_new_level();
+            vision_recalc(0);
+            assert.equal(game.level.requireAt(candle.ox + 1, candle.oy).lit, false);
+            assert.equal(cansee(candle.ox + 1, candle.oy), true);
+        }
+    });
 }
 function mappedOrigin(lua) {
     const x = lua.getGlobal('map_x');

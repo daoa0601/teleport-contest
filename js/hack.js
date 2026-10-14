@@ -867,8 +867,6 @@ export async function heroLiquidEffects(options = {}) {
             // which resets the trap/hold state and drags the ball and chain
             // along, then runs the full destination effects below.
             await moveHeroByTeleport(destination.x, destination.y, state, { allowDrag: true });
-            repaint(x, y);
-            recalculateVision(1);
             const landing = await applyLandingEffects({
                 from: { x, y },
                 to: { x: u.ux, y: u.uy },

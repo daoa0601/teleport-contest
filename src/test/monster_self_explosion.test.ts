@@ -3,9 +3,14 @@ import { finishAtCommandInput, installPagerInput } from './support/pager-input.j
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { moveloop_core } from '../js/allmain.js';
+import { resolveMonsterSelfExplosion } from '../js/monster_self_explosion.js';
+import { MONSTER_ATTACKS, MONSTER_NAME } from '../js/monster_data.js';
+import { AT_EXPL } from '../js/monster_attack_types.js';
 import { D_CLOSED, D_NODOOR, DOOR, MM_ANGRY, MM_NOGRP, NO_MINVENT, NON_PM, PIT, POOL, TT_PIT, W_AMUL, W_WEP } from '../js/const.js';
 import { flushPendingTopline } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
+import { freshObjectRoom } from './support/object-room.js';
+
 import { heroIsBlind, heroIsHallucinating } from '../js/senses.js';
 import { freshTurnRoom } from './support/playable-room.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
@@ -20,8 +25,24 @@ import { loadScoreRecords } from '../js/score_records.js';
 import { createStaffedShop } from './support/shop.js';
 import { initRng } from '../js/rng.js';
 import { polymonHero } from '../js/polyself.js';
-import { MONSTER_NAME } from '../js/monster_data.js';
 import { createDungeon } from './support/topology.js';
+
+void test('a light exploding at the wrong location announces nearby monsters waking', async () => {
+    freshObjectRoom();
+    const light = await createMonsterAt('yellow light', 11, 10, NO_MINVENT);
+    const ogre = await createMonsterAt('ogre', 13, 10, NO_MINVENT);
+    ogre.msleeping = 1;
+    const attack = MONSTER_ATTACKS[light.mnum]?.find(([type]) => type === AT_EXPL);
+    assert.ok(attack);
+    const messages: string[] = [];
+
+    await resolveMonsterSelfExplosion(light, attack, {
+        foundHero: false, publish: async message => { messages.push(message); },
+    });
+
+    assert.equal(ogre.msleeping, 0);
+    assert.ok(messages.includes('The ogre wakes up.'));
+});
 
 const EXPLOSION_PROSE = /^$|freaked out|seem unaffected|reconstitutes|puff of smoke|stagger under your heavy load|rebalance your load|boots smoulder|survived that attempt on your life|explodes|Boom|caught in|medallion|But wait|fatal|feel|burn|frozen|cold|hot|electri|die|destroyed|killed|potion|scroll|pit|fall|evaporat|door|turn into|armor|Goodbye|points|experience|Do not pass Go/i;
 

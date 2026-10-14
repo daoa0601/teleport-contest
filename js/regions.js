@@ -10,7 +10,8 @@ import { monsterHasPoisonResistance } from './monster_resistance.js';
 import { heroIsBreathless } from './hero_species.js';
 import { refreshProperty } from './properties.js';
 import { teleportHeroSafely } from './teleport.js';
-import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_SOUND, MONSTER_SYMBOL, monsterIsNonliving, monsterIsVampireShifter, monsterTypeName, } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_SOUND, MONSTER_SYMBOL, monsterIsNonliving, monsterIsVampireShifter, } from './monster_data.js';
+import { monsterName } from './monster_name.js';
 import { AD_DRST, AD_RBRE, AT_BREA } from './monster_attack_types.js';
 import { d, rn2, rnd } from './rng.js';
 import { heroIsBlind } from './senses.js';
@@ -292,10 +293,6 @@ async function affectHeroWithGas(region, state, { publish, rollOne, wake, onHero
     }
     return event;
 }
-function monsterGasSubject(monster) {
-    return monster.name
-        || `The ${monsterTypeName(monster.mnum, !!monster.female)}`;
-}
 async function affectMonsterWithGas(region, monster, state, { publish, rollOne, wake, onAnger, onMonsterDeath }) {
     maintainCloudForFog(region, monster.mnum);
     if (region.damage < 1)
@@ -305,13 +302,10 @@ async function affectMonsterWithGas(region, monster, state, { publish, rollOne, 
     const nearHero = (monster.mx - state.u.ux) ** 2
         + (monster.my - state.u.uy) ** 2 < 8;
     const visible = canSeeMonster(monster);
-    if ((MONSTER_SOUND[monster.mnum] ?? 0) !== 0 && (visible || nearHero))
-        await publish(`${monsterGasSubject(monster)} coughs!`);
-    await wakeNearGas(monster.mx, monster.my, state, publish, wake);
-    if (!((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_NOEYES)
-        && monster.mcansee !== 0 && monster.mcansee !== false) {
-        monster.mblinded = 1;
-        monster.mcansee = 0;
+    if ((MONSTER_SOUND[monster.mnum] ?? 0) !== 0) {
+        if (cansee(monster.mx, monster.my) || nearHero)
+            await publish(`${monsterName(monster, { state, capitalized: true })} coughs!`);
+        await wakeNearGas(monster.mx, monster.my, state, publish, wake);
     }
     if (region.heroFault) {
         if (typeof onAnger !== 'function') {
@@ -319,10 +313,15 @@ async function affectMonsterWithGas(region, monster, state, { publish, rollOne, 
         }
         await onAnger(monster);
     }
+    if (!((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_NOEYES)
+        && monster.mcansee !== 0 && monster.mcansee !== false) {
+        monster.mblinded = 1;
+        monster.mcansee = 0;
+    }
     if (monsterGasTolerance(monster, state) === GAS_MINOR)
         return { kind: 'monster-gas', monster, resisted: true, damage: 0 };
     const damage = rollOne(region.damage) + 5;
-    monster.mhp = Math.max(0, (monster.mhp ?? 1) - damage);
+    monster.mhp -= damage;
     const event = {
         kind: 'monster-gas', monster, resisted: false, damage,
         heroFault: !!region.heroFault, visible,

@@ -1777,6 +1777,7 @@ export async function commitPetPickup(monster, movement, state) {
         return;
     movement.pickupPending = false;
     remove_object(object, state);
+    newsym(monster.mx, monster.my);
     await addObjectToMonsterInventory(monster, object, state);
 }
 function trapAt(state, x, y) {

@@ -47,6 +47,9 @@ export async function drainObjectEnchantment(object, { random = rn2, byHero = fa
         await chargeAlteredUnpaidObject(object, 'drain', state);
     object.spe--;
     object.enchantment = object.spe;
+    if (object.oclass === ARMOR_CLASS && state.inventory.includes(object)
+        && object.owornmask)
+        state._armorClassDirty = true;
     drainWornBonuses(object, state);
     if (state.context.botl) {
         requireLiveGame(state);
@@ -72,8 +75,10 @@ function drainWornBonuses(object, state) {
         else if (name === 'increase damage')
             state.u.udaminc = (state.u.udaminc ?? 0) - 1;
     }
-    if (ring && name === 'protection')
+    if (ring && name === 'protection') {
+        state._armorClassDirty = true;
         state.context.botl = true;
+    }
     if (name === 'helm of brilliance' && (worn & W_ARMH)
         && object === (state.uarmh || state.u.uarmh))
         attributes.push(A_INT, A_WIS);

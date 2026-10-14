@@ -12,7 +12,8 @@ import { depth } from './hacklib.js';
 import { levelAtDepth, insideWizardTower, levelIsWizardTower } from './dungeon.js';
 import { propertyIsActive } from './properties.js';
 import { finishTeleportArrival } from './location_effects.js';
-import { canSeeMonster, canSenseMonster, canSpotMonster, docrt, newsym, plineWithContinuation } from './display.js';
+import { canSeeMonster, canSenseMonster, canSpotMonster, docrt, newsym, plineWithContinuation, see_monsters } from './display.js';
+import { vision_recalc } from './vision.js';
 import {
     leashAttachedToMonster, releaseMonsterLeash,
 } from './monster_leash.js';
@@ -1028,6 +1029,10 @@ export async function moveHeroByTeleport(x: number, y: number, state = game, { a
     if (oldTrap && is_pit(oldTrap.ttyp)) await fillPitWithBoulderAt(oldx, oldy, state);
     const chain = state.uchain || u.uchain;
     if (ballActive && chain?.where === 'free') await placeBallAndChain(state);
+    newsym(oldx, oldy);
+    await see_monsters();
+    state.vision_full_recalc = 1;
+    vision_recalc(0);
     endVoluntaryMultiTurn(state);
     return { oldx, oldy, x, y };
 }

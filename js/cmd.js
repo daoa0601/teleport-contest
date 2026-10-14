@@ -7721,7 +7721,7 @@ async function domoveCore(dx, dy, explicitAttempt) {
             await pline("(Tip: use 'm' prefix to step in if you really want to.)");
         }
         else {
-            await pline(warning);
+            await plineWithContinuation(warning);
         }
         game.context.move = 0;
         return false;

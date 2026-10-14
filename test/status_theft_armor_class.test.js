@@ -13,6 +13,26 @@ import { addInventoryObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';
+void test('a disenchanter hit retains the old armor class through its effectiveness message', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    const shield = await addInventoryObject(SMALL_SHIELD, { spe: 3 });
+    wearHeroArmor(shield);
+    findArmorClass();
+    await bot();
+    const disenchanter = await createMonsterAt('disenchanter', 11, 10, MM_ANGRY | NO_MINVENT);
+    disenchanter.mux = game.u.ux;
+    disenchanter.muy = game.u.uy;
+    resetInputState().feed(' '.repeat(10));
+    await performMonsterHeroAttack(disenchanter, game, { random: () => 99, rollOne: () => 1 });
+    assert.equal(shield.spe, 2);
+    assert.equal(game.u.uac, 6);
+    await flush_screen(1);
+    assert.match(requireScreenRow(23).map(cell => cell.ch).join(''), /AC:6\b/);
+    findArmorClass();
+    await bot();
+    assert.match(requireScreenRow(23).map(cell => cell.ch).join(''), /AC:7\b/);
+});
 void test('a nymph stealing an accuracy ring preserves pending shield AC through its removal pager', async () => {
     freshObjectRoom();
     requirePlayingGame(game);
