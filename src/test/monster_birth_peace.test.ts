@@ -7,6 +7,7 @@ import { addInventoryObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshTurnRoom } from './support/playable-room.js';
 import { initRng } from '../js/rng.js';
+import { POT_INVISIBILITY, WAN_MAKE_INVISIBLE } from '../js/object_data.js';
 
 const BEC_DE_CORBIN = 70;
 
@@ -41,6 +42,22 @@ void test('Baalzebub is born hostile to a hero wielding Demonbane', async () => 
     assert.equal(!!prince.mpeaceful, false);
     assert.equal(!!prince.minvis, true, 'the bane changes peacefulness, not invisibility');
 });
+
+for (const species of ['Asmodeus', 'Baalzebub']) {
+    void test(`a peaceful ${species} receives no invisibility item when the hero cannot see invisible`, async () => {
+        for (let seed = 1; seed <= 64; seed++) {
+            freshTurnRoom({ role: 'wizard' });
+            initRng(BigInt(seed));
+
+            const prince = await createMonsterAt(species, 13, 10);
+
+            assert.equal(!!prince.mpeaceful, true);
+            assert.equal(prince.minvent.some(object =>
+                object.otyp === POT_INVISIBILITY || object.otyp === WAN_MAKE_INVISIBLE),
+            false, `${species} received an unusable invisibility item at seed ${seed}`);
+        }
+    });
+}
 
 void test('a raven is born peaceful to a hero wielding a bec de corbin', async () => {
     freshTurnRoom({ role: 'valkyrie' });

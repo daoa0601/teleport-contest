@@ -1774,6 +1774,21 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
         newsym(pendingMonster.mx, pendingMonster.my);
         setMonsterApparentHeroPosition(pendingMonster, game, rn2);
     }
+    // makemon() establishes these attitudes before inventory selection.
+    // Peaceful monsters decline invisibility items when the hero cannot see
+    // invisible, including princes made peaceful despite MM_ANGRY.
+    const bribingPrince = (genderFlags & M2_DEMON) !== 0 && (genderFlags & M2_PRINCE) !== 0
+        && MONSTER_SOUND[mndx] === MS_BRIBE;
+    const wieldedArtifact = game.uwep?.oartifact;
+    const baneWielded = wieldedArtifact !== undefined
+        && (wieldedArtifact === artifactByName('Excalibur')?.id || wieldedArtifact === artifactByName('Demonbane')?.id);
+    if (bribingPrince) {
+        pendingMonster.mpeaceful = baneWielded ? 0 : 1;
+        pendingMonster.minvis = pendingMonster.perminvis = true;
+        pendingMonster.mavenge = 0;
+    }
+    if (mndx === PM_RAVEN && game.uwep?.otyp === BEC_DE_CORBIN)
+        pendingMonster.mpeaceful = 1;
     if (mndx === PM_LONG_WORM)
         initializeMonsterWormBody(pendingMonster, {
             allowTail: !(mmflags & MM_NOTAIL),
@@ -2618,7 +2633,6 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
     // Stalkers and black lights are permanently invisible from birth.  Keep
     // both the current and permanent bits because later reveal/re-hide paths
     // distinguish them even though their initial projection is identical.
-    const monsterInvisible = mndx === PM_STALKER || mndx === PM_BLACK_LIGHT;
     // C makemon.c initializes strategic presentation state for waiting and
     // covetous species unless the caller explicitly supplies MM_NOWAIT.
     // STRAT_APPEARMSG is consumed by the first visible relocation message;
@@ -2640,17 +2654,6 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
     // pass through this birth-time branch.
     const hellishNativeBat = [PM_BAT, PM_GIANT_BAT, PM_VAMPIRE_BAT].includes(mndx)
         && !!game.dungeons?.[game.u?.uz?.dnum ?? 0]?.flags?.hellish;
-    // makemon.c: a bribe-demanding demon prince is born peaceful and
-    // permanently invisible unless the hero wields Excalibur or Demonbane;
-    // a raven is peaceful toward a hero wielding a bec de corbin.
-    const bribingPrince = (genderFlags & M2_DEMON) !== 0 && (genderFlags & M2_PRINCE) !== 0
-        && MONSTER_SOUND[mndx] === MS_BRIBE;
-    const wieldedArtifact = game.uwep?.oartifact;
-    const baneWielded = wieldedArtifact !== undefined
-        && (wieldedArtifact === artifactByName('Excalibur')?.id || wieldedArtifact === artifactByName('Demonbane')?.id);
-    const birthPeaceful = bribingPrince ? !baneWielded
-        : mndx === PM_RAVEN && game.uwep?.otyp === BEC_DE_CORBIN ? true : peaceful;
-    const birthInvisible = monsterInvisible || bribingPrince || !!pendingMonster.perminvis;
     const monster = {
         m_id: monsterId,
         mnum: mndx, cham: pendingMonster.cham ?? -1,
@@ -2658,15 +2661,16 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
         m_lev: baseLevel, female: monsterFemale,
         mwandexp: pendingMonster.mwandexp ?? false,
         msleeping: monsterSleeping,
-        mpeaceful: roamingMinion?.mpeaceful ?? (birthPeaceful ? 1 : 0),
+        mpeaceful: pendingMonster.mpeaceful,
+        mavenge: pendingMonster.mavenge ?? 0,
         malign: 0,
         mcanmove: 1, mcansee: 1,
         mgenmklev: !!game.in_mklev,
         seen_resistance: 0,
         mux: pendingMonster.mux, muy: pendingMonster.muy,
         mundetected: monsterUndetected,
-        minvis: birthInvisible,
-        perminvis: birthInvisible,
+        minvis: !!pendingMonster.minvis,
+        perminvis: !!pendingMonster.perminvis,
         movement: 0, mmove: MONSTER_MOVE[mndx] ?? 0,
         permspeed: hellishNativeBat ? 2 : 0,
         mspeed: hellishNativeBat ? 2 : 0,
