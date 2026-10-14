@@ -12,7 +12,7 @@ import { objectMaterial } from './object_material.js';
 import { withIndefiniteArticle } from './object_grammar.js';
 import { deleteObject, delobj } from './object_delete.js';
 import { unlinkObject } from './object_location.js';
-import { definiteName, objectName, ownedObjectName, pluralizeObjectNoun, singularObjectName } from './objnam.js';
+import { definiteName, objectName, observeObjectForNaming, ownedObjectName, pluralizeObjectNoun, singularObjectName } from './objnam.js';
 import { inventoryItemDescription } from './invent.js';
 import { heroCanReachFloor } from './floor_reach.js';
 import { surfaceName } from './terrain_name.js';
@@ -67,6 +67,7 @@ export async function doforce(state = game) {
         resetPick(state);
     let reportedOpenBox = false;
     for (const box of boxes) {
+        observeObjectForNaming(box, { state });
         if (box.obroken || !box.olocked) {
             box.lknown = false;
             const condition = box.obroken ? 'broken' : 'unlocked';

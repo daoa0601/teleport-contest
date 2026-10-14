@@ -197,6 +197,7 @@ async function pickBoxLock(tool, container, automatic, state) {
         else {
             const verb = box.obroken ? 'fix its lock' : !box.olocked ? 'lock it'
                 : tool?.otyp === LOCK_PICK ? 'pick its lock' : 'unlock it';
+            observeObjectForNaming(box, { state });
             const description = inventoryItemDescription(box);
             box.lknown = true;
             const answer = await promptYesNoQuit(`There is ${description} here; ${verb}?`);
