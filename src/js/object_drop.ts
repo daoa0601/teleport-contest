@@ -149,7 +149,7 @@ async function engulferDigestsFood(object: GameObject, { state, publish }: { sta
     return { digested: true, heroDied: false };
 }
 
-async function settleDropEncumbrance(state: GameState, publish: MessagePublisher) {
+export async function updateHeroEncumbrance(state: GameState, publish: MessagePublisher) {
     const capacity = nearCapacity(state);
     const baseline = state._encumbranceLevel;
     state._encumbranceLevel = capacity;
@@ -223,7 +223,7 @@ export async function dropObjectAtHero(
             map_object(stacked ?? object, false);
         newsym(hero.ux, hero.uy); // remap location under self
     }
-    await settleDropEncumbrance(state, publish);
+    await updateHeroEncumbrance(state, publish);
     return object;
 }
 

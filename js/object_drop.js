@@ -114,7 +114,7 @@ async function engulferDigestsFood(object, { state, publish }) {
     await deleteObject(object, state); // always used up
     return { digested: true, heroDied: false };
 }
-async function settleDropEncumbrance(state, publish) {
+export async function updateHeroEncumbrance(state, publish) {
     const capacity = nearCapacity(state);
     const baseline = state._encumbranceLevel;
     state._encumbranceLevel = capacity;
@@ -188,7 +188,7 @@ export async function dropObjectAtHero(object, { impact = false, state = game, p
             map_object(stacked ?? object, false);
         newsym(hero.ux, hero.uy); // remap location under self
     }
-    await settleDropEncumbrance(state, publish);
+    await updateHeroEncumbrance(state, publish);
     return object;
 }
 // C dothrow.c:606-647 hitfloor(): object hits floor at hero's feet.  The

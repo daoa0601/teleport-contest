@@ -271,7 +271,7 @@ function updateContainerWeights(container) {
         current = current.where === 'contained' ? current.container : null;
     }
 }
-function magicBagExplodes(object, depth = 0) {
+export function magicBagExplodes(object, depth = 0) {
     if ((object.otyp === WAN_CANCELLATION
         || object.otyp === BAG_OF_TRICKS)
         && (object.spe ?? 0) <= 0)

@@ -5,7 +5,7 @@ import { deleteTrap } from './trap_lifecycle.js';
 import { DOOR, D_CLOSED, D_LOCKED, SHOPBASE, SINK, STATUE_TRAP, ZAP_POS, isok, } from './const.js';
 import { newsym } from './display.js';
 import { applyFloorEffects, landFloorObject } from './floor_effects.js';
-import { placeObject, remove_object, stack_object, } from './floor_object.js';
+import { placeObject, stack_object, } from './floor_object.js';
 import { game, requireLiveGame } from './gstate.js';
 import { unlinkObject } from './object_location.js';
 import { wakeMonster } from './monster_anger.js';
@@ -47,10 +47,6 @@ async function placeOnFloor(object, x, y, state) {
     await placeObject(object, x, y, state);
     await stack_object(object, state);
     return object;
-}
-function removeFloorObject(object, state) {
-    remove_object(object, state);
-    object.where = 'free';
 }
 function squareIsVisible(state, x, y) {
     return !state.blind && !((state.u.blindTurns ?? 0) > 0)
@@ -251,7 +247,7 @@ async function fractureObject(object, x, y, state, options) {
     await placeOnFloor(object, x, y, state);
 }
 async function prepareScatteredObject(object, x, y, state, options) {
-    removeFloorObject(object, state);
+    unlinkObject(object, state);
     if (options.mayFracture
         && (object.otyp === BOULDER || object.otyp === STATUE)
         && options.random(10) !== 0) {
@@ -294,7 +290,7 @@ async function prepareScatteredObject(object, x, y, state, options) {
 }
 function nextObjectFromPile(pile, state, options) {
     const object = options.onlyObject || pile[0];
-    if (!object || !pile.includes(object))
+    if (!object || object.where === 'gone')
         return null;
     const quantity = object.quan ?? object.quantity ?? 1;
     if (quantity <= 1)
@@ -318,11 +314,14 @@ export async function scatterFloorObjects(x, y, force, { state = game, onlyObjec
     let lostGoods = false;
     const nodes = [];
     const pile = floorPile(state, x, y);
-    while (pile.length) {
+    // Native scatter can receive a contained or free object without a floor pile.
+    while (onlyObject !== null || pile.length > 0) {
         const next = nextObjectFromPile(pile, state, options);
         if (!next)
             break;
         const node = await prepareScatteredObject(next.object, x, y, state, options);
+        if (state.program_state.gameover)
+            return 0;
         if (node)
             nodes.push(node);
         if (onlyObject && next.lastPiece)

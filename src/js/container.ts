@@ -322,7 +322,7 @@ function updateContainerWeights(container: GameObject): void {
     }
 }
 
-function magicBagExplodes(object: GameObject, depth = 0): boolean {
+export function magicBagExplodes(object: GameObject, depth = 0): boolean {
     if ((object.otyp === WAN_CANCELLATION
             || object.otyp === BAG_OF_TRICKS)
         && (object.spe ?? 0) <= 0) return false;
