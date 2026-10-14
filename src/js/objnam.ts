@@ -241,13 +241,13 @@ export function singularObjectName(object: ObjectNameView, state: GameState = ga
 export function objectCombatName(object: GameObject, {
     state = game, includeCorpseSpecies = true,
 }: { state?: GameState; includeCorpseSpecies?: boolean } = {}): string {
+    if (object.otyp === CORPSE && includeCorpseSpecies) return corpseName(object);
     observeObjectForNaming(object, { state });
     if (objectHasPersonalName(object, state)) {
         const name = object.oextra?.oname || object.oname;
         if (!name) throw new Error('A personally named artifact needs its name');
         return name.replace(/^the /iu, '');
     }
-    if (object.otyp === CORPSE && includeCorpseSpecies) return corpseName(object);
     let name = objectName(object, state);
     if ((object.quan ?? object.quantity ?? 1) !== 1) name = pluralizeObjectNoun(object, name);
     return name.replace(/^the /iu, '');
@@ -576,6 +576,7 @@ export function simpleObjectNameWithArticle(object: ObjectNameView, state: GameS
 export function ownedObjectName(
     object: GameObject, state: GameState = game, { capitalized = true } = {},
 ): string {
+    if (object.otyp !== CORPSE) observeObjectForNaming(object, { state });
     // yname() omits ownership for most personal artifacts; quest artifacts retain it.
     const omitOwner = object.where === 'inventory'
         && objectHasPersonalName(object, state)
@@ -623,6 +624,7 @@ export function objectNameIsPlural(object: ObjectNameView, state: GameState = ga
 export function ownedObjectAction(
     object: GameObject, verb: string | null, state: GameState = game, { capitalized = true } = {},
 ): string {
+    if (object.otyp !== CORPSE) observeObjectForNaming(object, { state });
     const quantity = object.quan ?? object.quantity ?? 1;
     const personalName = object.oextra?.oname || object.oname;
     const personal = !!personalName && objectHasPersonalName(object, state);

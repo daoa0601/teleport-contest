@@ -203,6 +203,8 @@ export function singularObjectName(object, state = game) {
 // C cxname()/xname(): contact feedback observes the object and retains its
 // quantity, poison, physical details, and personal name without a count prefix.
 export function objectCombatName(object, { state = game, includeCorpseSpecies = true, } = {}) {
+    if (object.otyp === CORPSE && includeCorpseSpecies)
+        return corpseName(object);
     observeObjectForNaming(object, { state });
     if (objectHasPersonalName(object, state)) {
         const name = object.oextra?.oname || object.oname;
@@ -210,8 +212,6 @@ export function objectCombatName(object, { state = game, includeCorpseSpecies = 
             throw new Error('A personally named artifact needs its name');
         return name.replace(/^the /iu, '');
     }
-    if (object.otyp === CORPSE && includeCorpseSpecies)
-        return corpseName(object);
     let name = objectName(object, state);
     if ((object.quan ?? object.quantity ?? 1) !== 1)
         name = pluralizeObjectNoun(object, name);
@@ -551,6 +551,8 @@ export function simpleObjectNameWithArticle(object, state = game) {
     return withIndefiniteArticle(noun);
 }
 export function ownedObjectName(object, state = game, { capitalized = true } = {}) {
+    if (object.otyp !== CORPSE)
+        observeObjectForNaming(object, { state });
     // yname() omits ownership for most personal artifacts; quest artifacts retain it.
     const omitOwner = object.where === 'inventory'
         && objectHasPersonalName(object, state)
@@ -596,6 +598,8 @@ export function objectNameIsPlural(object, state = game) {
             && !!state._artifactDiscoveries?.includes(object.oartifact));
 }
 export function ownedObjectAction(object, verb, state = game, { capitalized = true } = {}) {
+    if (object.otyp !== CORPSE)
+        observeObjectForNaming(object, { state });
     const quantity = object.quan ?? object.quantity ?? 1;
     const personalName = object.oextra?.oname || object.oname;
     const personal = !!personalName && objectHasPersonalName(object, state);
