@@ -341,6 +341,7 @@ async function settleLiquid(options: HeroHurtleOptions, remaining: HurtleDistanc
         return null;
     }
 
+    game.multi = 0;
     game._helplessTurns = 0;
     game._helplessReason = null;
     game._helplessDoneMessage = null;

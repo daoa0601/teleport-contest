@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { heroHasInvoluntaryDelay } from '../js/command_state.js';
+import { POOL } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { hurtleHero } from '../js/hero_hurtle.js';
 import { putHeroToSleep } from '../js/hero_sleep.js';
@@ -19,5 +21,13 @@ void test('a second knockback cannot shorten time already spent moving through t
     await hurtleHero(1, 0, 1);
     assert.equal(game.u.ux, 13);
     assert.equal(game._helplessTurns, 2);
+});
+void test('hurtling into water releases a swimming hero from the movement delay', async () => {
+    const level = freshObjectRoom({ hero: { swimming: true } });
+    level.requireAt(11, 10).typ = POOL;
+    await hurtleHero(1, 0, 1);
+    assert.equal(game.u.ux, 11);
+    assert.equal(game.u.uinwater, 1);
+    assert.equal(heroHasInvoluntaryDelay(), false);
 });
 //# sourceMappingURL=pool_hurtle_delay.test.js.map

@@ -267,6 +267,7 @@ async function settleLiquid(options, remaining) {
         }
         return null;
     }
+    game.multi = 0;
     game._helplessTurns = 0;
     game._helplessReason = null;
     game._helplessDoneMessage = null;
