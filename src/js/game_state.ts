@@ -84,6 +84,7 @@ export interface GameContext extends FoodContext {
     no_of_wizards?: number;
     nopick?: boolean;
     novel?: { id: number; count: number; pasg: number[] };
+    objsplit?: { parent_oid: number; child_oid: number };
     obj_zapped?: boolean;
     polearm?: { hitmonId: number | null };
     poly_zapped?: number;

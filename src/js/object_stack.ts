@@ -59,6 +59,7 @@ export function splitObjectStack(
 
     setQuantity(object, total - count);
     setQuantity(split, count);
+    state.context.objsplit = { parent_oid: object.o_id, child_oid: split.o_id };
     linkObjectAfter(object, split, state);
     // C mkobj.c:494 splitobj(): an unpaid stack's bill follows the split.
     if (object.unpaid) splitObjectBill(object, split, state);
@@ -77,6 +78,13 @@ export function splitObjectStack(
 export async function rejoinObjectStack(
     parent: GameObject, split: GameObject, state: GameState = game,
 ): Promise<GameObject | null> {
+    const latest = state.context.objsplit;
+    if (latest?.parent_oid !== parent.o_id || latest.child_oid !== split.o_id)
+        return null;
     if (!sharesUnsplitChain(parent, split, state)) return null;
     return await mergeObjectStacks(parent, split, state);
+}
+
+export function clearSplitObjects(state: GameState = game): void {
+    state.context.objsplit = { parent_oid: 0, child_oid: 0 };
 }

@@ -45,6 +45,7 @@ export function splitObjectStack(object, count, state = game, objectId = null) {
     split.o_id = objectId ?? nextObjectId(object, split, state);
     setQuantity(object, total - count);
     setQuantity(split, count);
+    state.context.objsplit = { parent_oid: object.o_id, child_oid: split.o_id };
     linkObjectAfter(object, split, state);
     // C mkobj.c:494 splitobj(): an unpaid stack's bill follows the split.
     if (object.unpaid)
@@ -61,8 +62,14 @@ export function splitObjectStack(object, count, state = game, objectId = null) {
 }
 // C mkobj.c:unsplitobj(): floor, free, and other chains never rejoin.
 export async function rejoinObjectStack(parent, split, state = game) {
+    const latest = state.context.objsplit;
+    if (latest?.parent_oid !== parent.o_id || latest.child_oid !== split.o_id)
+        return null;
     if (!sharesUnsplitChain(parent, split, state))
         return null;
     return await mergeObjectStacks(parent, split, state);
+}
+export function clearSplitObjects(state = game) {
+    state.context.objsplit = { parent_oid: 0, child_oid: 0 };
 }
 //# sourceMappingURL=object_stack.js.map
