@@ -356,7 +356,9 @@ async function hitMonsterWithProjectile(defender, shot, remaining, context) {
     shot.target = defender;
     shot.heroTarget = false;
     shot.hit = accuracy >= rollOne(20);
-    const name = captureHeroProjectileName(object, state, volley);
+    // ohitmon() observes and names the missile only at a visible impact.
+    // An unseen miss must retain the description knowledge cleared at launch.
+    const name = visible ? captureHeroProjectileName(object, state, volley) : '';
     if (!shot.hit) {
         if (!disguised) {
             if (visible)
