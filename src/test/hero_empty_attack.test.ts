@@ -31,7 +31,7 @@ function emptyArena(form?: string) {
     return game;
 }
 
-async function command(keys: string, expected: RegExp): Promise<string> {
+async function command(keys: string, expected: RegExp, seed = 71n): Promise<string> {
     const messages: string[] = [];
     const input = resetInputState();
     installPagerInput(input, { expected, limit: 20 });
@@ -44,7 +44,7 @@ async function command(keys: string, expected: RegExp): Promise<string> {
         },
     };
     pushKeys(keys);
-    initRng(71n);
+    initRng(seed);
     await rhack(0);
     messages.push(game._pending_message);
     return messages.join('\n');
@@ -203,13 +203,16 @@ for (const waterPlane of [false, true]) {
         const state = emptyArena();
         state.u.uinwater = true;
         state.underwater = true;
+        state.level.requireAt(10, 10).typ = POOL;
         if (waterPlane) {
             state.water_level = { ...state.u.uz, flags: { town: false }, alignment: null };
             state.level.requireAt(11, 10).typ = AIR;
         }
         newsym(11, 10);
 
-        const messages = await command('Fl', /You attack/);
+        // Keep this attack aimed at the chosen terrain; turbulence has its
+        // own movement tests and can otherwise consume this attempt.
+        const messages = await command('Fl', /You attack/, 2n);
 
         assert.equal(messages, `You attack ${waterPlane ? 'an air bubble' : 'nothing'}.`);
         assert.equal(state.u.ux, 10);
