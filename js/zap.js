@@ -14,7 +14,8 @@ import { isIceAt, isLavaAt, isMoatAt, isPoolAt } from './terrain_properties.js';
 import { heroHasArtifactDefense } from './artifacts.js';
 import { exerciseAttribute } from './attrib.js';
 import { A_STR, COLNO, CORR, DB_FLOOR, DB_ICE, DB_UNDER, DOOR, DRAWBRIDGE_UP, FOUNTAIN, SHOP_BARS_COST, SHOP_DOOR_COST, ZAP_POS, D_BROKEN, D_CLOSED, D_LOCKED, D_NODOOR, HWALL, ICE, ICED_MOAT, ICED_POOL, IRONBARS, IS_WALL, IS_WATERWALL, Is_rogue_level, Is_waterlevel, ismnum, LAVAWALL, PIT, POOL, ROOM, ROWNO, SDOOR, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, Upolyd, VWALL, WEB, WM_MASK, W_NONDIGGABLE, W_RING } from './const.js';
-import { displayColorName, docrt, newsym, plineWithContinuation } from './display.js';
+import { displayColorName, displayLiquidName, docrt, newsym, plineWithContinuation } from './display.js';
+import { waterbodyName } from './terrain_name.js';
 import { game, requireLiveGame } from './gstate.js';
 import { monsterHasFireResistance, monsterHasShockResistance } from './monster_resistance.js';
 import { SHOPBASE } from './const.js';
@@ -281,13 +282,14 @@ async function freezeLiquidAt(x, y, state, publish) {
         || (lavaWall && rn2(Math.max(2, 5 + temperature * 10)) !== 0);
     if (briefFreeze) {
         if (visible) {
-            await publish(`The ${lavaWall ? 'lava' : 'water'} freezes for a moment.`);
+            await publish(`The ${displayLiquidName(lavaWall ? 'lava' : 'water', state)} freezes for a moment.`);
         }
         else if (!deaf) {
             await publish('You hear a soft crackling.');
         }
         return -1000;
     }
+    const waterbody = waterbodyName(x, y, state);
     const wasMoat = isMoatAt(x, y, state);
     if (location.typ === DRAWBRIDGE_UP) {
         location.drawbridgemask = (location.drawbridgemask ?? 0) & ~DB_UNDER;
@@ -310,9 +312,9 @@ async function freezeLiquidAt(x, y, state, publish) {
     await buryFloorObjectsAt(x, y, state, { publish });
     if (visible) {
         const message = lava
-            ? 'The lava cools and solidifies.'
-            : wasMoat ? 'The moat is bridged with ice!'
-                : 'The water freezes.';
+            ? `The ${displayLiquidName('lava', state)} cools and solidifies.`
+            : wasMoat ? `The ${waterbody} is bridged with ice!`
+                : `The ${displayLiquidName('water', state)} freezes.`;
         await publish(message, { noRepeat: true });
         newsym(x, y);
     }
