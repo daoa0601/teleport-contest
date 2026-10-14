@@ -331,7 +331,7 @@ export async function explodeBag(container, trigger, state, { tipping = false, t
     const held = container.where === 'inventory';
     if (!held && costlySpot(container.ox, container.oy, state)) {
         const noCharge = container.no_charge;
-        await addShopObjectToBill(container, state, { ininv: false, silent: true });
+        await addShopObjectToBill(container, state, { ininv: false });
         if (noCharge === undefined)
             delete container.no_charge;
         else

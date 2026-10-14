@@ -1,13 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { game } from '../js/gstate.js';
+import { resetInputState } from '../js/input.js';
 import { BAG_OF_HOLDING, CHEST, CLUB, WAN_CANCELLATION } from '../js/object_data.js';
 import { addShopObjectToBill } from '../js/shk.js';
 import { runExtendedCommand } from './support/commands.js';
 import { addInventoryObject, floorObject, knownObject } from './support/game-objects.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 import { createStaffedShop } from './support/shop.js';
-void test('a returned shop wand is named before explosion rebilling and remains owed', async () => {
+void test('a floor bag explosion names the returned trigger before quoting the bag price', async () => {
     freshPlayableRoom();
     game.u.uhp = game.u.uhpmax = 100;
     const { shopkeeper } = await createStaffedShop({ keeperX: 14 });
@@ -17,9 +18,15 @@ void test('a returned shop wand is named before explosion rebilling and remains 
     const wand = await addInventoryObject(WAN_CANCELLATION, { invlet: 'a', spe: 1 });
     await addShopObjectToBill(wand, game, { silent: true });
     assert.equal(wand.unpaid, true);
-    await runExtendedCommand('loot', 'sa' + ' '.repeat(10));
-    assert.match(game._lastPlineMessage, /^As you put .*wand.*magical explosion!$/);
-    assert.doesNotMatch(game._lastPlineMessage, /unpaid/);
+    const input = resetInputState();
+    const looting = runExtendedCommand('loot', 'sa');
+    await input.waitUntilBlocked();
+    const explosionMessage = game._pending_message;
+    input.feed(' '.repeat(10));
+    await looting;
+    assert.match(explosionMessage, /^As you put .*wand.*magical explosion!$/);
+    assert.doesNotMatch(explosionMessage, /unpaid/);
+    assert.match(game._lastPlineMessage, /^The bag(?: of holding)? will cost you \d+ zorkmids\.$/);
     assert.equal(bag.where, 'onbill');
     assert.equal(wand.where, 'onbill');
     const debt = shopkeeper.eshk.bill.find(entry => entry.bo_id === wand.o_id);
