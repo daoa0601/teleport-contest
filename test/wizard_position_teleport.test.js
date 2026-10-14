@@ -2,15 +2,16 @@ import { installPagerInput } from './support/pager-input.js';
 import { requirePlayingGame } from '../js/gstate.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { rhack } from '../js/cmd.js';
+import { askTeleportDestination, rhack } from '../js/cmd.js';
 import { BEAR_TRAP, PIT, TT_BEARTRAP, TT_PIT } from '../js/const.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { DIAMOND } from '../js/object_data.js';
+import { teleportHero } from '../js/teleport.js';
 import { floorObject } from './support/game-objects.js';
 import { addTrap } from './support/level-state.js';
 import { freshObjectRoom } from './support/object-room.js';
-async function teleportTo(keys) {
+async function teleportTo(keys, scroll = false) {
     const input = resetInputState();
     installPagerInput(input, { expected: /diamond|pit|bear trap|teleport|materialize in a different location/i, limit: 4 });
     const pager = input.display;
@@ -29,7 +30,10 @@ async function teleportTo(keys) {
             return first.charCodeAt(0);
         },
     };
-    await rhack(20);
+    if (scroll)
+        await teleportHero({ chooseDestination: askTeleportDestination });
+    else
+        await rhack(20);
     assert.equal(choosingDestination, false, 'Teleport must request a destination');
 }
 for (const [terrain, trapType, holdType] of [
@@ -63,18 +67,27 @@ for (const [terrain, trapType, holdType] of [
     });
 }
 for (const cancelFirst of [false, true]) {
-    void test(`controlled teleport recalls a travel destination${cancelFirst ? ' after cancellation' : ''}`, async () => {
+    void test(`controlled scroll teleport recalls a travel destination${cancelFirst ? ' after cancellation' : ''}`, async () => {
         freshObjectRoom({ flags: { debug: true, tips: false } });
         requirePlayingGame(game);
         pushKeys('lll.');
         await rhack('_'.charCodeAt(0));
         assert.equal(game.u.ux, 11, 'the first travel step leaves the target ahead');
         if (cancelFirst) {
-            await teleportTo('\x1b');
+            await teleportTo('\x1b', true);
         }
-        await teleportTo('.');
+        await teleportTo('.', true);
         assert.equal(game.u.ux, 13);
         assert.equal(game.u.uy, 10);
     });
 }
+void test('wizard position teleport clears the travel destination before choosing a location', async () => {
+    freshObjectRoom({ flags: { debug: true, tips: false } });
+    pushKeys('lll.');
+    await rhack('_'.charCodeAt(0));
+    assert.equal(game.u.ux, 11);
+    await teleportTo('.');
+    assert.equal(game.u.ux, 11, 'the unchanged cursor selects the hero rather than the travel target');
+    assert.equal(game.u.uy, 10);
+});
 //# sourceMappingURL=wizard_position_teleport.test.js.map

@@ -4301,6 +4301,9 @@ export async function askTeleportDestination({ onPrompt = null } = {}) {
 // ECMD_TIME.  Its first getpos use still owns the shared Lua tutorial, while
 // the destination room separately owns entry effects after relocation.
 async function wizTeleportPosition() {
+    // dotele() clears travelcc before tele() asks for a destination.
+    // Scroll teleportation calls scrolltele() directly and keeps its cache.
+    game._travelTarget = null;
     let destination = await askTeleportDestination();
     if (!destination) {
         // dotele(TRUE) still reaches morehungry(100) and returns a timed
@@ -4331,9 +4334,6 @@ async function wizTeleportPosition() {
     await finishTeleportArrival(movement);
     if (game.program_state.gameover)
         return;
-    if (acceptedChoice && game.u.ux === game._travelTarget?.x
-        && game.u.uy === game._travelTarget?.y)
-        game._travelTarget = null;
     // C dotele() spends nutrition only after teleds() finishes its effects.
     await spendHeroNutrition(100);
     if (game.program_state.gameover)
