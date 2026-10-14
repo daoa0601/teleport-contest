@@ -92,6 +92,7 @@ function fingers(simple) {
     return simple && gloves ? armorSimpleName(gloves, game) : makePlural(heroFingerName(game));
 }
 function canName(can) {
+    observeObjectForNaming(can);
     const name = objectName(can, game);
     return `The ${objectQuantity(can) > 1 ? makePlural(name) : name}`;
 }

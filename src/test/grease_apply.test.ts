@@ -71,6 +71,26 @@ void test('an empty known grease can reports that it is empty and takes time', a
     assert.equal(game.context.move, 1);
 });
 
+for (const blind of [false, true]) {
+    for (const slipping of [false, true]) {
+        void test(`naming ${slipping ? 'a slipping' : 'an empty'} grease can reveals its blessing to a ${blind ? 'blind' : 'sighted'} priest`, async () => {
+            freshPlayableRoom({ role: 'priest', hero: { permaBlind: blind, glib: slipping, glibTurns: slipping ? 8 : 0 } });
+            const grease = await addInventoryObject(CAN_OF_GREASE, {
+                observed: false, dknown: false, bknown: false, blessed: true, spe: slipping ? 3 : 0,
+            });
+
+            await runExtendedCommand('apply', grease.invlet);
+
+            assert.equal(grease.bknown, true, 'naming the can must reveal its blessing to a priest');
+            assert.equal(grease.dknown, !blind);
+            assert.equal(grease.where, slipping ? 'floor' : 'inventory');
+            assert.equal(game._pending_message, slipping
+                ? 'The can of grease slips from your fingers.' : 'The can of grease is empty.');
+            assert.equal(game.context.move, 1);
+        });
+    }
+}
+
 void test('a dropped grease can slips from the fingers even when gloves are worn', async () => {
     freshPlayableRoom({ hero: { glibTurns: 8, glib: true } });
     const grease = await addInventoryObject(CAN_OF_GREASE, { spe: 3 });

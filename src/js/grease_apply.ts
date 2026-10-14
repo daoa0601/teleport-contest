@@ -92,6 +92,7 @@ function fingers(simple: boolean): string {
 }
 
 function canName(can: GameObject): string {
+    observeObjectForNaming(can);
     const name = objectName(can, game);
     return `The ${objectQuantity(can) > 1 ? makePlural(name) : name}`;
 }
