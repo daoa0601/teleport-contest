@@ -14,7 +14,7 @@ import { inventoryItemDescription, inventoryPrimaryHandDetail } from './invent.j
 import { observeObjectForNaming } from './objnam.js';
 import { inventoryClassOrder, lootSortMode, objectClassHeading, sortObjects } from './object_sort.js';
 import { OBJECT_CLASS_SYMBOLS, objectClassForType } from './object_knowledge.js';
-import { clearJustPicked, markJustPicked } from './just_picked.js';
+import { clearJustPicked } from './just_picked.js';
 import { liftObject } from './lift_object.js';
 import { endObjectBurn } from './light.js';
 import { addObjectToContainer } from './object_container.js';
@@ -22,7 +22,7 @@ import { placeObject } from './floor_object.js';
 import { startCorpseTimeout } from './mklev.js';
 import { MONSTER_SIZE } from './monster_data.js';
 import { deleteObject } from './object_delete.js';
-import { AMULET_OF_YENDOR, BAG_OF_HOLDING, BELL_OF_OPENING, BOULDER, BAG_OF_TRICKS, CANDELABRUM_OF_INVOCATION, CHEST, CORPSE, GOLD_PIECE, ICE_BOX, LARGE_BOX, LEASH, LOADSTONE, OBJECT_NAMES, OILSKIN_SACK, SACK, SPE_BOOK_OF_THE_DEAD, STATUE, WAN_CANCELLATION, } from './object_data.js';
+import { AMULET_OF_YENDOR, BAG_OF_HOLDING, BELL_OF_OPENING, BOULDER, BAG_OF_TRICKS, BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, CHEST, CORPSE, GOLD_PIECE, ICE_BOX, LARGE_BOX, LEASH, LOADSTONE, OBJECT_NAMES, OIL_LAMP, OILSKIN_SACK, POT_OIL, SACK, SPE_BOOK_OF_THE_DEAD, STATUE, TALLOW_CANDLE, WAN_CANCELLATION, WAX_CANDLE, } from './object_data.js';
 import { unlinkObject } from './object_location.js';
 import { objectQuantity, rejoinObjectStack, splitObjectStack, } from './object_stack.js';
 import { OBJECT_TIMER_KIND, stopObjectTimer, } from './object_timers.js';
@@ -329,8 +329,12 @@ async function loseCursedBagContents(container, state) {
     }
     return true;
 }
+function ageStoresFuel(object) {
+    return [BRASS_LANTERN, OIL_LAMP, CANDELABRUM_OF_INVOCATION,
+        TALLOW_CANDLE, WAX_CANDLE, POT_OIL].includes(object.otyp);
+}
 function freezeObject(object, state) {
-    if (object.ageRelative)
+    if (ageStoresFuel(object) || object.ageRelative)
         return;
     object.age = (state.moves ?? 0) - (object.age ?? 0);
     object.ageRelative = true;
@@ -343,7 +347,7 @@ function freezeObject(object, state) {
     }
 }
 export function thawObject(object, state) {
-    if (!object.ageRelative)
+    if (ageStoresFuel(object) || !object.ageRelative)
         return;
     object.age = (state.moves ?? 0) - (object.age ?? 0);
     object.ageRelative = false;

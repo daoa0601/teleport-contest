@@ -16,7 +16,7 @@ import { inventoryItemDescription, inventoryPrimaryHandDetail } from './invent.j
 import { observeObjectForNaming } from './objnam.js';
 import { inventoryClassOrder, lootSortMode, objectClassHeading, sortObjects } from './object_sort.js';
 import { OBJECT_CLASS_SYMBOLS, objectClassForType } from './object_knowledge.js';
-import { clearJustPicked, markJustPicked } from './just_picked.js';
+import { clearJustPicked } from './just_picked.js';
 import { liftObject } from './lift_object.js';
 import { endObjectBurn } from './light.js';
 import { addObjectToContainer } from './object_container.js';
@@ -26,10 +26,11 @@ import { MONSTER_SIZE } from './monster_data.js';
 import { deleteObject } from './object_delete.js';
 import {
     AMULET_OF_YENDOR, BAG_OF_HOLDING, BELL_OF_OPENING, BOULDER,
-    BAG_OF_TRICKS, CANDELABRUM_OF_INVOCATION, CHEST, CORPSE, GOLD_PIECE,
+    BAG_OF_TRICKS, BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, CHEST, CORPSE, GOLD_PIECE,
     ICE_BOX,
     LARGE_BOX, LEASH, LOADSTONE, OBJECT_NAMES,
-    OILSKIN_SACK, SACK, SPE_BOOK_OF_THE_DEAD, STATUE, WAN_CANCELLATION,
+    OIL_LAMP, OILSKIN_SACK, POT_OIL, SACK, SPE_BOOK_OF_THE_DEAD, STATUE,
+    TALLOW_CANDLE, WAN_CANCELLATION, WAX_CANDLE,
 } from './object_data.js';
 import { unlinkObject } from './object_location.js';
 import {
@@ -385,8 +386,13 @@ async function loseCursedBagContents(container: GameObject, state: GameState): P
     return true;
 }
 
+function ageStoresFuel(object: GameObject): boolean {
+    return [BRASS_LANTERN, OIL_LAMP, CANDELABRUM_OF_INVOCATION,
+        TALLOW_CANDLE, WAX_CANDLE, POT_OIL].includes(object.otyp);
+}
+
 function freezeObject(object: GameObject, state: GameState): void {
-    if (object.ageRelative) return;
+    if (ageStoresFuel(object) || object.ageRelative) return;
     object.age = (state.moves ?? 0) - (object.age ?? 0);
     object.ageRelative = true;
     if (object.otyp === CORPSE) {
@@ -398,7 +404,7 @@ function freezeObject(object: GameObject, state: GameState): void {
 }
 
 export function thawObject(object: GameObject, state: GameState): void {
-    if (!object.ageRelative) return;
+    if (ageStoresFuel(object) || !object.ageRelative) return;
     object.age = (state.moves ?? 0) - (object.age ?? 0);
     object.ageRelative = false;
     if (object.otyp === CORPSE) {
