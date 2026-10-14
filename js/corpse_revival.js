@@ -56,7 +56,7 @@ function containerLocation(corpse, state) {
     const directContainer = parentContainer(corpse, state);
     if (!directContainer)
         return null;
-    let outer = corpse;
+    let outer = directContainer;
     let nesting = 0;
     const seen = new Set();
     while (outer?.where === 'contained' && !seen.has(outer)) {
@@ -67,6 +67,8 @@ function containerLocation(corpse, state) {
         outer = parent;
         nesting++;
     }
+    if (outer.where === 'buried')
+        return null;
     const location = objectLocation(outer, state);
     return location ? { ...location, directContainer, nesting, outer } : null;
 }

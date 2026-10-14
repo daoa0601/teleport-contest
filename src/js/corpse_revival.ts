@@ -148,7 +148,7 @@ function carryingMonster(object: GameObject, state: GameState) {
 function containerLocation(corpse: GameObject, state: GameState): ContainerRevivalLocation | null {
     const directContainer = parentContainer(corpse, state);
     if (!directContainer) return null;
-    let outer = corpse;
+    let outer = directContainer;
     let nesting = 0;
     const seen = new Set<GameObject>();
     while (outer?.where === 'contained' && !seen.has(outer)) {
@@ -158,6 +158,7 @@ function containerLocation(corpse: GameObject, state: GameState): ContainerReviv
         outer = parent;
         nesting++;
     }
+    if (outer.where === 'buried') return null;
     const location = objectLocation(outer, state);
     return location ? { ...location, directContainer, nesting, outer } : null;
 }
