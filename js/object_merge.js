@@ -60,10 +60,12 @@ export function mergable(otmp, obj, state = game) {
         return false;
     if (obj.globby || otmp.globby)
         return !!obj.globby && !!otmp.globby;
-    // C obj.h defines opoisoned as an alias of otrapped, so native mergable()'s
-    // otrapped test also keeps poisoned and plain weapons apart.
+    // C obj.h stores opoisoned in otrapped, odiluted in oeroded and norevive
+    // in oeroded2, so native mergable()'s tests of those fields also keep
+    // poisoned weapons, diluted potions and frozen corpses in their own stacks.
     for (const field of [
         'unpaid', 'no_charge', 'obroken', 'otrapped', 'opoisoned', 'lamplit',
+        'odiluted', 'norevive',
     ]) {
         if (!!otmp[field] !== !!obj[field])
             return false;

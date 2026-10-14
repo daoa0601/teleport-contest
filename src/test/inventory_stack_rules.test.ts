@@ -56,3 +56,18 @@ void test('#adjust keeps poisoned darts apart from plain darts', async t => {
     assert.equal(second.quan, 3);
     assert.equal(second.opoisoned, true);
 });
+
+void test('#adjust keeps diluted potions apart from full-strength potions', async t => {
+    freshObjectRoom();
+    const first = await addInventoryObject(POT_HEALING, { quan: 2 });
+    const second = await addInventoryObject(POT_HEALING, { quan: 3, odiluted: true, nomerge: true });
+    second.nomerge = false;
+    const input = resetInputState();
+    input.feed('adjust\r');
+    queueCommandKeys(first.invlet);
+    planInput(input, t, [{ prompt: /Adjust letter to what/, keys: first.invlet }]);
+    await rhack('#'.charCodeAt(0));
+    assert.equal(game.inventory.filter(object => object.otyp === POT_HEALING).length, 2);
+    assert.equal(first.quan, 2);
+    assert.equal(second.quan, 3);
+});
