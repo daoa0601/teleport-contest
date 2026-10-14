@@ -26,8 +26,9 @@ import { applyHeroLocationEffects } from './cmd.js';
 import { artifactEmitsLight, heroHasArtifactDefense } from './artifacts.js';
 import { heroResistsLifeDrain } from './monster_resistance.js';
 import { beginObjectBurn, endObjectBurn, equipmentLightDescription, equipmentLightMessage } from './light.js';
-import { AMULET_OF_GUARDING, ALCHEMY_SMOCK, CLOAK_OF_DISPLACEMENT, CLOAK_OF_PROTECTION, CORPSE, CORNUTHAUM, DUNCE_CAP, ELVEN_BOOTS, ELVEN_CLOAK, GAUNTLETS_OF_FUMBLING, GAUNTLETS_OF_POWER, MUMMY_WRAPPING, FEDORA, FUMBLE_BOOTS, LEVITATION_BOOTS, RIN_FREE_ACTION, RIN_PROTECTION, GRAY_DRAGON_SCALE_MAIL, GRAY_DRAGON_SCALES, YELLOW_DRAGON_SCALE_MAIL, YELLOW_DRAGON_SCALES, SHIELD_OF_DRAIN_RESISTANCE, SHIELD_OF_REFLECTION, OBJECT_DESCRIPTIONS, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_PROPERTY, WATER_WALKING_BOOTS, } from './object_data.js';
+import { AMULET_OF_GUARDING, ALCHEMY_SMOCK, CLOAK_OF_DISPLACEMENT, CLOAK_OF_PROTECTION, CORPSE, CORNUTHAUM, DUNCE_CAP, ELVEN_BOOTS, ELVEN_CLOAK, GAUNTLETS_OF_FUMBLING, GAUNTLETS_OF_POWER, HELM_OF_OPPOSITE_ALIGNMENT, MUMMY_WRAPPING, FEDORA, FUMBLE_BOOTS, LEVITATION_BOOTS, RIN_FREE_ACTION, RIN_PROTECTION, GRAY_DRAGON_SCALE_MAIL, GRAY_DRAGON_SCALES, YELLOW_DRAGON_SCALE_MAIL, YELLOW_DRAGON_SCALES, SHIELD_OF_DRAIN_RESISTANCE, SHIELD_OF_REFLECTION, OBJECT_DESCRIPTIONS, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_PROPERTY, WATER_WALKING_BOOTS, } from './object_data.js';
 import { rn2, rnd } from './rng.js';
+import { changeHeroAlignmentFromHelmet } from './alignment.js';
 import { currentAttribute, reportHeroEncumbrance } from './attrib.js';
 import { curseObjectState } from './object_state.js';
 import { monsterName } from './monster_name.js';
@@ -242,6 +243,12 @@ export async function removeHeroArmor(object, state = game, options = {}) {
         state.u.abon ??= { a: [0, 0, 0, 0, 0, 0] };
         state.u.abon.a[A_CHA] += state.urole?.key === 'wizard' ? -1 : 1;
         state.context.botl = true;
+    }
+    if (object.otyp === HELM_OF_OPPOSITE_ALIGNMENT) {
+        const alignment = state.u.ualignbase?.[0];
+        if (alignment === undefined)
+            throw new Error('Helmet removal requires the hero base alignment');
+        await changeHeroAlignmentFromHelmet(alignment, false, state);
     }
     const removed = await clearHeroArmor(object, state, { ...options, cancelledDon });
     if (removed && (object.otyp === HELM_OF_TELEPATHY || object.otyp === HELM_OF_CAUTION))
@@ -667,22 +674,36 @@ async function applyHelmetOnEffects(object, state) {
         state.context.botl = true;
         learnObjectType(object.otyp, state);
     }
-    else if (object.otyp === DUNCE_CAP) {
-        if (!object.cursed) {
+    else if (object.otyp === DUNCE_CAP || object.otyp === HELM_OF_OPPOSITE_ALIGNMENT) {
+        if (object.otyp === HELM_OF_OPPOSITE_ALIGNMENT) {
+            const alignment = state.u.ualign?.type;
+            if (alignment === undefined || object.o_id === undefined)
+                throw new Error('An opposite-alignment helm requires initialized alignment and object identity');
+            object.known = true;
+            const opposite = alignment === 1 ? -1 : alignment === -1 ? 1 : object.o_id % 2 ? -1 : 1;
+            await changeHeroAlignmentFromHelmet(opposite, true, state);
+        }
+        const helmet = equippedObject(state, 'uarmh');
+        if (helmet && !helmet.cursed) {
             const blind = heroIsBlind(state);
             const action = blind ? 'vibrates' : `glows ${displayColorName('black', state)}`;
-            await plineWithContinuation(`The ${objectName(object)} ${action} for a moment.`);
-            curseObjectState(object, state);
+            await plineWithContinuation(`The ${objectName(helmet)} ${action} for a moment.`);
+            curseObjectState(helmet, state);
             if (blind)
-                object.bknown = false;
+                helmet.bknown = false;
             else if (state.urole?.key === 'priest')
-                object.bknown = true;
+                helmet.bknown = true;
         }
         state.context.botl = true;
-        const intelligence = (state.u.acurr?.a[A_INT] ?? 10)
-            + (state.u.abon?.a[A_INT] ?? 0) + (state.u.atemp?.a[A_INT] ?? 0);
-        await plineWithContinuation(heroIsHallucinating(state) ? 'My brain hurts!'
-            : `You feel ${currentAttribute(A_INT, state) <= intelligence ? 'like sitting in a corner' : 'giddy'}.`);
+        if (heroIsHallucinating(state))
+            await plineWithContinuation('My brain hurts!');
+        else if (helmet?.otyp === DUNCE_CAP) {
+            const intelligence = (state.u.acurr?.a[A_INT] ?? 10)
+                + (state.u.abon?.a[A_INT] ?? 0) + (state.u.atemp?.a[A_INT] ?? 0);
+            await plineWithContinuation(`You feel ${currentAttribute(A_INT, state) <= intelligence ? 'like sitting in a corner' : 'giddy'}.`);
+        }
+        else
+            learnObjectType(HELM_OF_OPPOSITE_ALIGNMENT, state);
     }
     else if (object.otyp === HELM_OF_CAUTION)
         await see_monsters();
