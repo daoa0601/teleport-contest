@@ -6,14 +6,17 @@ import { askTeleportDestination, rhack } from '../js/cmd.js';
 import { BEAR_TRAP, PIT, TELEP_TRAP, TT_BEARTRAP, TT_PIT } from '../js/const.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
-import { DIAMOND } from '../js/object_data.js';
+import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { AMULET_OF_YENDOR, DIAMOND } from '../js/object_data.js';
 import { teleportHero } from '../js/teleport.js';
-import { floorObject } from './support/game-objects.js';
+import { runExtendedCommand } from './support/commands.js';
+import { floorObject, knownObject } from './support/game-objects.js';
 import { addTrap } from './support/level-state.js';
+import { createSaddledSteed } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 async function teleportTo(keys, scroll = false) {
     const input = resetInputState();
-    installPagerInput(input, { expected: /diamond|pit|bear trap|teleport|materialize in a different location/i, limit: 4 });
+    installPagerInput(input, { expected: /diamond|pit|bear trap|teleport|shudder|materialize in a different location/i, limit: 4 });
     const pager = input.display;
     assert.ok(pager);
     let choosingDestination = true;
@@ -24,7 +27,7 @@ async function teleportTo(keys, scroll = false) {
             const screen = requireGameDisplay().grid.map(row => row.map(cell => cell.ch).join('')).join('\n');
             if (/--More--/.test(screen))
                 return pager.readKey();
-            assert.match(screen, /Where do you want to be teleported/);
+            assert.match(screen, /Where do you(?: and .*)? want to be teleported/);
             choosingDestination = false;
             const first = keys[0];
             assert.ok(first);
@@ -90,6 +93,30 @@ void test('wizard position teleport clears the travel destination before choosin
     assert.equal(game.u.ux, 11);
     await teleportTo('.');
     assert.equal(game.u.ux, 11, 'the unchanged cursor selects the hero rather than the travel target');
+    assert.equal(game.u.uy, 10);
+});
+void test('a steed carrying the Amulet blocks wizard teleport without losing the travel destination', async () => {
+    freshObjectRoom({
+        role: 'knight', flags: { debug: true, tips: false }, hero: { ulevel: 30 },
+    });
+    requirePlayingGame(game);
+    pushKeys('lll.');
+    await rhack('_'.charCodeAt(0));
+    const steed = await createSaddledSteed();
+    await runExtendedCommand('ride', 'ly');
+    assert.equal(game.u.usteed, steed);
+    await addObjectToMonsterInventory(steed, await knownObject(AMULET_OF_YENDOR));
+    const x = game.u.ux;
+    const hunger = game.u.uhunger;
+    const input = resetInputState();
+    installPagerInput(input, { expected: /mount|shudder/, limit: 2 });
+    await rhack(20);
+    assert.equal(game.u.ux, x, 'the Amulet prevents relocation');
+    assert.equal(game.u.uy, 10);
+    assert.equal(game.context.move, 0, 'the refused command takes no time');
+    assert.equal(game.u.uhunger, hunger, 'the refused command spends no nutrition');
+    await teleportTo('.', true);
+    assert.equal(game.u.ux, 13, 'scroll teleport still suggests the saved travel destination');
     assert.equal(game.u.uy, 10);
 });
 void test('a seen fixed teleport trap preserves the travel destination for a later scroll', async () => {

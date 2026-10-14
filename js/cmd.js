@@ -4325,7 +4325,12 @@ async function wizTeleportPosition() {
         game.context.move = 1;
         return;
     }
-    // dotele() clears travelcc only on the route through tele().
+    if (!await bringLeashedFollowers()) {
+        await plineWithContinuation('You shudder for a moment.');
+        game.context.move = 0;
+        return;
+    }
+    // dotele() clears travelcc only after next_to_u() allows tele().
     game._travelTarget = null;
     let destination = await askTeleportDestination();
     if (!destination) {
