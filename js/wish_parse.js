@@ -20,6 +20,7 @@ export function parseWishText(text) {
         personalName: null,
         gender: null, monsterSpecies: null, directType: null,
         tinVariety: null, spinach: false, zombifying: false,
+        looted: false, door: null,
     };
     let remaining = original;
     let intensity = 0;
@@ -66,8 +67,17 @@ export function parseWishText(text) {
             parsed.poisoned = true;
         else if (word === 'trapped' || word === 'untrapped')
             parsed.trapped = word;
-        else if (word === 'locked' || word === 'unlocked' || word === 'broken')
+        else if (word === 'locked' || word === 'unlocked' || word === 'broken') {
             parsed.lock = word;
+            parsed.door = word === 'broken' ? null : 'closed';
+        }
+        else if (word === 'open' || word === 'closed' || word === 'doorless') {
+            parsed.door = word;
+            if (word === 'doorless' || parsed.lock !== 'unlocked')
+                parsed.lock = null;
+        }
+        else if (word === 'looted' || word === 'disturbed')
+            parsed.looted = true;
         else if (word === 'greased')
             parsed.greased = true;
         else if (word === 'male')

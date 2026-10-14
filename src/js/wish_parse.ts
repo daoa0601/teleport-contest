@@ -44,6 +44,8 @@ export interface ParsedWish {
     tinVariety: number | null;
     spinach: boolean;
     zombifying: boolean;
+    looted: boolean;
+    door: 'open' | 'closed' | 'doorless' | null;
 }
 
 export function parseWishText(text: string): ParsedWish {
@@ -58,6 +60,7 @@ export function parseWishText(text: string): ParsedWish {
         personalName: null,
         gender: null, monsterSpecies: null, directType: null,
         tinVariety: null, spinach: false, zombifying: false,
+        looted: false, door: null,
     };
     let remaining = original;
     let intensity = 0;
@@ -88,7 +91,13 @@ export function parseWishText(text: string): ParsedWish {
         else if (['unlabeled', 'unlabelled', 'blank'].includes(word)) parsed.unlabeled = true;
         else if (word === 'poisoned') parsed.poisoned = true;
         else if (word === 'trapped' || word === 'untrapped') parsed.trapped = word;
-        else if (word === 'locked' || word === 'unlocked' || word === 'broken') parsed.lock = word;
+        else if (word === 'locked' || word === 'unlocked' || word === 'broken') {
+            parsed.lock = word;
+            parsed.door = word === 'broken' ? null : 'closed';
+        } else if (word === 'open' || word === 'closed' || word === 'doorless') {
+            parsed.door = word;
+            if (word === 'doorless' || parsed.lock !== 'unlocked') parsed.lock = null;
+        } else if (word === 'looted' || word === 'disturbed') parsed.looted = true;
         else if (word === 'greased') parsed.greased = true;
         else if (word === 'male') parsed.gender = 0;
         else if (word === 'female') parsed.gender = 1;

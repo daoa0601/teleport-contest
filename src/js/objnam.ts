@@ -53,6 +53,7 @@ import { parseWishText, type ParsedWish } from './wish_parse.js';
 import { applyWishProperties, finishWishWeight, lightWishedObject } from './wish_properties.js';
 import { applyWishSpecies, applyWishedTinVariety, substituteWishedGlob } from './wish_species.js';
 import { lookupNovelTitle } from './novel_titles.js';
+import { tryWizardTerrainWish, wizardTrapRequest, wishForWizardTrap } from './wish_terrain.js';
 export { parseWishText } from './wish_parse.js';
 export type { ParsedWish } from './wish_parse.js';
 
@@ -800,6 +801,14 @@ export async function readObjectName(
     normalizeGlobWish(parsed);
     if (['nothing', 'nil', 'none'].includes(text.trim().toLowerCase()))
         return { noWish: true, parsed };
+    if (wizardWish) {
+        const trapType = wizardTrapRequest(parsed);
+        if (trapType !== null) {
+            if (game.program_state.wizkit_wishing) return null;
+            await wishForWizardTrap(trapType);
+            return { noWish: true, parsed };
+        }
+    }
     if (['gold piece', 'gold', 'money', 'coin', 'zorkmid'].includes(parsed.name)
         || parsed.name.startsWith('$')) {
         const object = await mksobj(GOLD_PIECE, false, false);
@@ -848,6 +857,8 @@ export async function readObjectName(
         if (matchedType === null && !lookup.oclass) {
             artifact = artifactByName(parsed.name);
             matchedType = artifact?.baseType ?? null;
+            if (matchedType === null && wizardWish && !game.program_state.wizkit_wishing
+                && await tryWizardTerrainWish(parsed)) return { noWish: true, parsed };
         }
         if (matchedType === null) {
             if (!lookup.oclass) return null;

@@ -2791,7 +2791,7 @@ async function dochat() {
 }
 
 async function wizWish() {
-    return makeWish({ allowWizardTerrain: true });
+    return makeWish();
 }
 
 // C refs: cmd.c Ctrl-G/wizgenesis, wizcmds.c wiz_genesis(), and read.c
