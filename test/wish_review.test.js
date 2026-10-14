@@ -1,9 +1,11 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { CORPSTAT_FEMALE, CORPSTAT_MALE } from '../js/const.js';
+import { placeCreatedObject } from '../js/floor_object.js';
 import { addFruit } from '../js/fruit.js';
-import { requireGameLevel } from '../js/gstate.js';
-import { BAG_OF_TRICKS, LAND_MINE, POT_HEALING, RED_DRAGON_SCALES, SACK, SPEED_BOOTS } from '../js/object_data.js';
+import { game, requireGameLevel } from '../js/gstate.js';
+import { mksobj } from '../js/mklev.js';
+import { BAG_OF_TRICKS, LAND_MINE, POT_HEALING, RED_DRAGON_SCALES, SACK, SCR_LIGHT, SPEED_BOOTS, } from '../js/object_data.js';
 import { recordObjectCall } from '../js/object_knowledge.js';
 import { readObjectName } from '../js/objnam.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -94,4 +96,12 @@ for (const [noun, oclass] of [['ring', 4], ['wand', 11]]) {
         assert.equal(result.object.oclass, oclass);
     });
 }
+void test('luck can protect a floor scroll from water created by a wizard wish', async () => {
+    freshObjectRoom({ gameplaySeed: 1, hero: { uluck: 13 } });
+    const scroll = await mksobj(SCR_LIGHT, false, false);
+    placeCreatedObject(scroll, game.u.ux, game.u.uy);
+    const result = await readObjectName('pool', { wizardWish: true });
+    assert.ok(result?.noWish);
+    assert.equal(scroll.otyp, SCR_LIGHT, 'Luck should protect this scroll from blanking');
+});
 //# sourceMappingURL=wish_review.test.js.map

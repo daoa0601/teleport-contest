@@ -100,7 +100,7 @@ export async function tryWizardTerrainWish(parsed: ParsedWish): Promise<boolean>
             await say(`${withIndefiniteArticle(waterbodyName(x, y, nameState))}.`);
         }
         for (const object of [...(level.objects[x]?.[y] ?? [])])
-            await waterDamageObject(object, [], game, { force: true, publish: plineWithContinuation });
+            await waterDamageObject(object, [], game, { force: false, publish: plineWithContinuation });
     } else if (name.endsWith('lava')) {
         if (bridge) setBridgeSurface(location, DB_LAVA);
         else {
