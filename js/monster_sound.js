@@ -3,10 +3,10 @@
 import { game, requireLiveGame } from './gstate.js';
 import { recorderLocalHour } from './calendar.js';
 import { canSpotMonster, glyphAt, map_invisible, plineWithContinuation } from './display.js';
-import { monsterName, monsterObjectPronoun, monsterSubjectPronoun, shopkeeperName } from './monster_name.js';
+import { monsterName } from './monster_name.js';
 import { wakeMonstersNear } from './monster_wake.js';
 import { heroIsDeaf, heroIsHallucinating } from './senses.js';
-import { heroArmName } from './body_parts.js';
+import { chatWithShopkeeper } from './shop_chat.js';
 import { rn2 } from './rng.js';
 import { MONSTER_NAME, MONSTER_FLAGS1, MONSTER_SOUND, monsterTypeName, } from './monster_data.js';
 const MS_SILENT = 0;
@@ -32,7 +32,7 @@ const MS_HUMANOID = 25;
 const MS_GROAN = 44;
 const M1_CARNIVORE = 0x20000000;
 const M1_HERBIVORE = 0x40000000;
-const COIN_CLASS = 12;
+const MS_SELL = 39;
 const PM_DINGO = MONSTER_NAME.indexOf('dingo');
 const PM_RAVEN = MONSTER_NAME.indexOf('raven');
 const PM_GECKO = MONSTER_NAME.indexOf('gecko');
@@ -94,18 +94,18 @@ export async function begForFood(monster, state) {
 export async function publishMonsterNoise(monster, state = game) {
     requireLiveGame(state);
     const sound = MONSTER_SOUND[monster.mnum] ?? MS_SILENT;
-    if (heroIsDeaf(state) || sound > MS_ANIMAL
+    if (heroIsDeaf(state) || sound > MS_ANIMAL && sound !== MS_SELL && !monster.isshk
         || sound === MS_SILENT && !monster.isshk)
         return false;
     const hallucinating = heroIsHallucinating(state);
     const wildBellow = sound === MS_MOO && !monster.mtame;
-    const selling = !!monster.isshk
+    const selling = !!monster.isshk || sound === MS_SELL
         || !wildBellow && hallucinating && looksLikeGecko(monster, state);
     if (!canSpotMonster(monster))
         map_invisible(monster.mx, monster.my);
     if (selling) {
         if (!hallucinating || sound === MS_SILENT || monster.isshk && rn2(2) === 0)
-            await publishAnimalShopkeeperGesture(monster, state);
+            await chatWithShopkeeper(monster, state);
         else
             await plineWithContinuation('"15 minutes could save you 15 zorkmids."');
         return true;
@@ -210,51 +210,5 @@ function looksLikeGecko(monster, state) {
         return false;
     const glyph = glyphAt(monster.mx, monster.my, state);
     return glyph?.kind === 'monster' && glyph.mnum === PM_GECKO;
-}
-// C shk.c:shk_chat() for keepers whose current form cannot speak. This
-// publisher is only reached through the animal/silent sound branch above.
-async function publishAnimalShopkeeperGesture(monster, state) {
-    const shop = monster.eshk;
-    if (!monster.isshk || !shop)
-        throw new Error('An animal-form shopkeeper needs its shop data.');
-    const name = () => shopkeeperName(monster, { state, capitalized: true });
-    const currency = (amount) => amount === 1 ? 'zorkmid' : 'zorkmids';
-    let message;
-    if (!monster.mpeaceful) {
-        message = `${name()} indicates how much ${monsterSubjectPronoun(monster, { state })} dislikes ${shop.robbed ? 'non-paying' : 'rude'} customers.`;
-    }
-    else if (shop.following) {
-        if (shop.customer !== state.plname) {
-            shop.following = 0;
-            return;
-        }
-        message = `${name()} taps you on the ${heroArmName(state)}.`;
-    }
-    else if (shop.billct) {
-        const total = (shop.bill ?? []).reduce((sum, item) => sum + item.bquan * item.price, 0)
-            + (shop.debit ?? 0);
-        message = `${name()} indicates that your bill comes to ${total} ${currency(total)}.`;
-    }
-    else if (shop.debit) {
-        message = `${name()} indicates that you owe ${monsterObjectPronoun(monster, {
-            state, noIt: true,
-        })} ${shop.debit} ${currency(shop.debit)}.`;
-    }
-    else if (shop.credit) {
-        message = `${name()} encourages you to use your ${shop.credit} ${currency(shop.credit)} of credit.`;
-    }
-    else if (shop.robbed) {
-        message = `${name()} indicates concern about a recent robbery.`;
-    }
-    else if (shop.surcharge) {
-        message = `${name()} indicates that ${monsterSubjectPronoun(monster, { state })} is watching you carefully.`;
-    }
-    else {
-        const money = monster.minvent?.find(object => object.oclass === COIN_CLASS)?.quan ?? 0;
-        if (money >= 50 && money <= 4000)
-            return;
-        message = `${name()} indicates that business is ${money < 50 ? 'bad' : 'good'}.`;
-    }
-    await plineWithContinuation(message);
 }
 //# sourceMappingURL=monster_sound.js.map

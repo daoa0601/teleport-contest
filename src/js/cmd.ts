@@ -351,7 +351,7 @@ import {
     resolveDirectGoldThrow, resolveQuiveredGoldThrow,
 } from './gold_throw.js';
 import {
-    heroDetectsMonsters, heroIsBlind, heroIsHallucinating,
+    heroDetectsMonsters, heroIsBlind, heroIsDeaf, heroIsHallucinating,
 } from './senses.js';
 import { beginBallAndChainMove, finishBallAndChainMove, heroIsPunished } from './ball.js';
 import {
@@ -2665,6 +2665,19 @@ async function dochat() {
         const x = game.u.ux + DIR_DX[direction];
         const y = game.u.uy + DIR_DY[direction];
         const monster = game.level?.monsters?.find(mon => monsterHasMapPosition(mon, game) && mon.mx === x && mon.my === y);
+        if (monster?.isshk) {
+            if (monster.msleeping || !monster.mcanmove) {
+                if (canSpotMonster(monster))
+                    await plineWithContinuation(`${monsterName(monster, { capitalized: true })} seems not to notice you.`);
+                game.context.move = 0;
+                return;
+            }
+            if (heroIsDeaf(game)) {
+                await plineWithContinuation(`Any response${canSpotMonster(monster) ? ` from ${monsterName(monster)}` : ''} falls on deaf ears.`);
+                game.context.move = 0;
+                return;
+            }
+        }
         // sounds.c:dochat() prods any responsive target into action before
         // domonnoise()/quest_chat().  This clears both CLOSE and WAITFORU, so
         // the quest leader can take its ordinary scheduler turn immediately
