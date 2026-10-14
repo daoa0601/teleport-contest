@@ -1111,7 +1111,10 @@ export async function rhack(key) {
             }
             prefix = selected;
             if (selected.handler === 'do_reqmenu') {
-                menuPrefix = true;
+                // rhack() tests the outer function, which remains doextcmd
+                // when #reqmenu supplies the selected prefix.
+                if (command.handler === 'do_reqmenu')
+                    menuPrefix = true;
                 game._silentPrefixRetainedTopline = !!previousMessage;
             }
             key = 0;

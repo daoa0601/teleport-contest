@@ -4,6 +4,8 @@ import { continueRun, rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
 import { nhgetch } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
+import { POT_HEALING } from '../js/object_data.js';
+import { addInventoryObject } from './support/game-objects.js';
 import { freshTurnRoom } from './support/playable-room.js';
 
 for (const [keys, message] of [
@@ -66,6 +68,19 @@ void test('a movement prefix can be entered as an extended command', async () =>
     assert.equal(game.u.ux, 11);
     assert.equal(game.context.run, 2);
     assert.equal(game.context.move, 1);
+});
+
+void test('an extended menu request rejects quaff as a nonmovement command', async () => {
+    const input = freshTurnRoom();
+    const potion = await addInventoryObject(POT_HEALING);
+    input.feed(`#reqmenu\nq${potion.invlet}`);
+
+    await rhack(0);
+
+    assert.equal(game._pending_message, "The 'm' prefix should be followed by a movement command.");
+    assert.equal(game.context.move, 0);
+    assert.equal(game.inventory.includes(potion), true);
+    assert.equal(await nhgetch(), potion.invlet.charCodeAt(0), 'the rejected command never opens the potion picker');
 });
 
 void test('a rebound menu prefix names its actual key when doubled', async () => {
