@@ -17,6 +17,9 @@ export function completeExtendedCommand(prefix) {
     return matches.length === 1 ? matches[0]?.name ?? null : null;
 }
 export function commandDescription(command) {
+    // update_rest_on_space() binds its own wait entry with a distinct description.
+    if (command.name === 'wait' && command.key === 32)
+        return "rest one move via 'rest_on_space' option";
     return COMMAND_DESCRIPTIONS.get(command.name ?? '') ?? '';
 }
 export async function extendedCommandMenu() {

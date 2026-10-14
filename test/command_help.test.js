@@ -84,4 +84,54 @@ for (const [key, dx, dy, dz] of [
         }
     });
 }
+void test('whatdoes distinguishes rest_on_space from the ordinary wait command', async () => {
+    const input = freshTurnRoom({ flags: { rest_on_space: true } });
+    game.commandBindings.setRestOnSpace(true);
+    input.feed('&');
+    const action = rhack(0);
+    try {
+        await input.waitUntilBlocked();
+        while (game.nhDisplay?.grid[0]?.map(cell => cell.ch).join('').includes('--More--')) {
+            input.feed(' ');
+            await input.waitUntilBlocked();
+        }
+        input.feed(' ');
+        await action;
+        assert.equal(game._pending_message, "<space> rest one move via 'rest_on_space' option (#wait).");
+        assert.equal(game.context.move, 0);
+        input.feed('&.');
+        await rhack(0);
+        assert.equal(game._pending_message, '.       rest one move while doing nothing (#wait).');
+    }
+    finally {
+        input.feed('\x1b');
+        await action;
+    }
+});
+void test('the full key list identifies the rest_on_space option on the Space binding', async () => {
+    const input = freshTurnRoom({ flags: { rest_on_space: true } });
+    game.commandBindings.setRestOnSpace(true);
+    input.feed('?j');
+    const action = rhack(0);
+    try {
+        for (let page = 0;; page++) {
+            assert.ok(page < 20, 'the key list must show the Space binding within twenty pages');
+            const waiting = await Promise.race([
+                input.waitUntilBlocked().then(() => true), action.then(() => false),
+            ]);
+            assert.equal(waiting, true, 'the key list ended without displaying the Space binding');
+            const text = game.nhDisplay?.grid.map(row => row.map(cell => cell.ch).join('')).join('\n') ?? '';
+            if (text.includes('<space>')) {
+                assert.match(text, /<space> +wait +rest one move via 'rest_on_space' option/);
+                break;
+            }
+            input.feed(' ');
+        }
+    }
+    finally {
+        input.feed('\x1b');
+        await action;
+    }
+    assert.equal(game.context.move, 0);
+});
 //# sourceMappingURL=command_help.test.js.map
