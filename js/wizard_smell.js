@@ -1,6 +1,7 @@
 // C wizcmds.c:wiz_smell(). The command can sniff visible or unseen actors
 // repeatedly, and updates remembered invisible markers without taking time.
 import { heroArmName } from './body_parts.js';
+import { visibleCommandKey } from './command_keys.js';
 import { glyphAt, map_invisible, plineWithContinuation, unmap_invisible } from './display.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { selectMapPosition, showGetposTip } from './getpos.js';
@@ -20,8 +21,12 @@ export async function wizSmell(describe) {
     for (;;) {
         await plineWithContinuation('Pick a monster to smell.');
         const tipShown = await showGetposTip();
-        if (game.flags.verbose)
-            await plineWithContinuation("(For instructions type a '?')");
+        if (game.flags.verbose) {
+            const helpKey = game.commandBindings.specialKey('getpos.help');
+            if (helpKey === undefined)
+                throw new Error('Smell targeting requires a getpos.help binding');
+            await plineWithContinuation(`(For instructions type a '${visibleCommandKey(helpKey)}')`);
+        }
         const target = await selectMapPosition({
             start: cursor, goal: 'a monster', describe,
             prompt: tipShown ? 'Move cursor to a monster:'
