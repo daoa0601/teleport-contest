@@ -137,7 +137,7 @@ for (const alignment of keyTouchAlignments) {
             { prompt: /This door is locked\.--More--/, keys: ' ' },
             { prompt: /Unlock it with your skeleton key named the Master Key of Thievery\?/, keys: 'y' },
             ...(alignment === 0 ? [{
-                    prompt: /You are blasted by The Master Key of Thievery's power!--More--/, keys: ' ',
+                    prompt: /You are blasted by the skeleton key named the Master Key of Thievery's power!\s*--More--/, keys: ' ',
                 }] : []),
         ]);
         assert.ok(game.u.uhp < 100, 'the artifact blast damages the hero');
@@ -147,8 +147,8 @@ for (const alignment of keyTouchAlignments) {
         assert.equal(door.doormask, D_LOCKED);
         assert.ok(game.inventory.includes(key), 'the rejected key remains carried');
         assert.match(game._pending_message, alignment === 0
-            ? /The Master Key of Thievery is beyond your control!/
-            : /You are blasted by The Master Key of Thievery's power!/);
+            ? /The skeleton key named the Master Key of Thievery is beyond your control!/
+            : /You are blasted by the skeleton key named the Master Key of Thievery's power!/);
     });
 }
 void test('autounlock names a fully identified quest key without inventory annotations', async () => {
