@@ -3712,6 +3712,8 @@ async function triggerMonsterTrap(monster, state, movement, random, rollDice, ro
         const event = beginMonsterPitTrap(monster, trap, state, {
             forced: !!movement.forcedTrapLanding,
         });
+        if (!event)
+            return null;
         movement.trap = event;
         movement.deferredAfterMonsterTrap = true;
         return event;
