@@ -88,12 +88,12 @@ export async function deleteObject(
     { mergeInto = null }: { mergeInto?: GameObject | null } = {},
 ): Promise<boolean> {
     if (!object || object.where === 'gone') return false;
-    maybeResetPick(object, state);
     bookDisappears(object, { state });
     if (object.otyp === LEASH && object.leashmon) releaseObjectLeash(object, state);
     if (object.oclass === FOOD_CLASS)
         clearVictualReference(object, state);
     await deleteObjectContents(object, state);
+    maybeResetPick(object, state);
     unlinkObject(object, state);
     // C obj_stop_timers() runs cleanup even when the object stays on a bill.
     stopObjectTimers(object, state);

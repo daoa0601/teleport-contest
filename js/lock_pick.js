@@ -5,8 +5,9 @@ import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { heroFingerName, heroHandName } from './body_parts.js';
 import { triggerChestTrap } from './chest_trap.js';
 import { A_DEX, A_WIS, AUTOUNLOCK_APPLY_KEY, AUTOUNLOCK_KICK, AUTOUNLOCK_UNTRAP, AUTOUNLOCK_FORCE, DOOR, D_NODOOR, D_ISOPEN, D_BROKEN, D_LOCKED, D_CLOSED, D_TRAPPED, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, SHOPBASE, TT_PIT, isok, SHOP_DOOR_COST, } from './const.js';
+import { recordMappedOverviewState } from './dungeon.js';
 import { findDrawbridgeAt } from './dbridge.js';
-import { canSeeMonster, displayLiquidName, feel_location, glyphAt, newsym, updateLastSeenTerrain, plineWithContinuation as pline, } from './display.js';
+import { canSeeMonster, displayLiquidName, feel_location, glyphAt, newsym, plineWithContinuation as pline, } from './display.js';
 import { heroCanReachFloor } from './floor_reach.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { resetPick } from './lock_context.js';
@@ -232,8 +233,8 @@ async function pickDoorLock(tool, x, y, automatic, state) {
     }
     if (door.typ !== DOOR) {
         const previousGlyph = glyphAt(x, y)?.glyph;
+        recordMappedOverviewState();
         const previousTerrain = door.lastseentyp;
-        updateLastSeenTerrain(x, y);
         feel_location(x, y);
         const learned = glyphAt(x, y)?.glyph !== previousGlyph || door.lastseentyp !== previousTerrain;
         const bridge = findDrawbridgeAt(x, y, state);

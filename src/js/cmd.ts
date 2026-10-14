@@ -3,7 +3,6 @@ import { AUTOUNLOCK_APPLY_KEY, AUTOUNLOCK_UNTRAP } from './const.js';
 import { findDrawbridgeAt } from './dbridge.js';
 import { doorObstructed } from './door_magic.js';
 import { DBWALL, DRAWBRIDGE_DOWN } from './const.js';
-import { updateLastSeenTerrain } from './display.js';
 import type { DipTarget } from './dip_water.js';
 import { dipFountainSword } from './fountain_sword.js';
 import { washHands } from './dip_water.js';
@@ -5669,8 +5668,8 @@ async function doclose(): Promise<void> {
         || game.u.stunned || game.u.stunnedTurns ? 1 : 0;
     if (loc && heroIsBlind(game)) {
         const previousGlyph = glyphAt(x, y)?.glyph;
+        recordMappedOverviewState();
         const previousTerrain = loc.lastseentyp;
-        updateLastSeenTerrain(x, y);
         feel_location(x, y);
         if (glyphAt(x, y)?.glyph !== previousGlyph || loc.lastseentyp !== previousTerrain)
             game.context.move = 1;
@@ -5765,8 +5764,8 @@ async function doopen(x = 0, y = 0): Promise<void> {
         || game.u.stunned || game.u.stunnedTurns);
     if (loc) {
         const previousGlyph = glyphAt(x, y)?.glyph;
+        recordMappedOverviewState();
         const previousTerrain = loc.lastseentyp;
-        updateLastSeenTerrain(x, y);
         newsym(x, y);
         // doopen_indir() uses a turn when looking at the target teaches
         // the hero something, even if the target has no door to open.
@@ -5842,7 +5841,6 @@ async function openClosedDoor(door: MapLocation, x: number, y: number): Promise<
     } else door.doormask = D_ISOPEN;
     feel_newsym(x, y);
     vision_note_blocker_change(x, y);
-    vision_recalc(0);
 }
 
 // C refs: write.c dowrite()/write_ok(); invent.c getobj().  The object picker
