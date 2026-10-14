@@ -300,7 +300,7 @@ void test('opening a cursed bag of holding can make its contents vanish', async 
     await applyInventoryObject('a', ' q');
     assert.deepEqual(bag.contents, []);
     assert.equal(club.where, 'gone');
-    assert.equal(game.context.move, 1);
+    assert.equal(game.context.move, 0, 'Loss of personal items alone does not charge a loot turn.');
 });
 void test('putting one bag of holding inside another destroys both bags', async () => {
     requirePlayingGame(game);

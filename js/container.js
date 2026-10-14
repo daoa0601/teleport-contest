@@ -35,6 +35,10 @@ import { NO_COLOR } from './terminal.js';
 import { addPickedInventoryObject } from './pickup.js';
 import { objectWeight } from './weight.js';
 import { heroHasFreeHand } from './weapon_type.js';
+import { heroIsBlind } from './senses.js';
+import { currentShopResident, costlySpot } from './shk.js';
+import { stolenValue } from './shop_loss.js';
+import { currency } from './currency.js';
 import { restoreMenuUnderlay, showChoiceWindow, showMultiSelectWindow, } from './windows.js';
 import { MENU_FULL, MENU_ITEMFLAGS_SKIPINVERT, PARANOID_AUTOALL, PARANOID_CONFIRM, W_ACCESSORY, W_ARMOR, } from './const.js';
 export const CONTAINER_TYPES = new Set([
@@ -310,25 +314,33 @@ export async function explodeBag(container, trigger, state, tipping = false) {
     await loseHeroHp(d(6, 6), 'magical explosion', { state });
     return { moved: false, destroyedContainer: true, message: null };
 }
+// C mbag_item_gone(): announce before settling the loss and freeing the item.
+export async function loseMagicBagItem(object, held, state = game, silent = false) {
+    if (!silent) {
+        const known = object.dknown;
+        const name = objectDescription(object);
+        await plineWithContinuation(known
+            ? `${name.charAt(0).toUpperCase()}${name.slice(1)} ${object.quan === 1 ? 'has' : 'have'} vanished!`
+            : `You ${heroIsBlind(state) ? 'notice' : 'see'} ${name} disappear!`);
+    }
+    const keeper = currentShopResident(state);
+    const loss = keeper && (held ? object.unpaid : costlySpot(state.u.ux, state.u.uy, state))
+        ? await stolenValue(object, state.u.ux, state.u.uy, keeper.mpeaceful, { state, silent: true }) : 0;
+    await deleteObject(object, state);
+    return loss;
+}
 async function loseCursedBagContents(container, state) {
     if (container.otyp !== BAG_OF_HOLDING || !container.cursed
         || !container.contents?.length)
-        return false;
-    const vanished = [];
+        return 0;
+    let loss = 0;
     for (const object of [...container.contents]) {
         if (rn2(13) !== 0)
             continue;
-        observeObjectForNaming(object, { state });
-        vanished.push(objectDescription(object));
-        await deleteObject(object, state);
+        unlinkObject(object, state);
+        loss += await loseMagicBagItem(object, container.where === 'inventory', state);
     }
-    if (!vanished.length)
-        return false;
-    updateContainerWeights(container);
-    for (const description of vanished) {
-        await plineWithContinuation(`${description.charAt(0).toUpperCase()}${description.slice(1)} vanished!`);
-    }
-    return true;
+    return loss;
 }
 function ageStoresFuel(object) {
     return [BRASS_LANTERN, OIL_LAMP, CANDELABRUM_OF_INVOCATION,
@@ -679,8 +691,12 @@ export async function useContainer(container, { held = false, moreContainers = f
         };
     }
     let spentTime = await observeQuantumCat(container);
-    if (await loseCursedBagContents(container, game))
+    const loss = await loseCursedBagContents(container, game);
+    if (loss) {
         spentTime = true;
+        await plineWithContinuation(`You owe ${loss} ${currency(loss)} for lost merchandise.`);
+        updateContainerWeights(container);
+    }
     const keys = actionKeys();
     let action;
     for (;;) {

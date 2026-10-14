@@ -3,7 +3,7 @@
 import { ALTAR, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, LOST_DROPPED, MENU_ITEMFLAGS_SELECTED, MENU_TRADITIONAL } from './const.js';
 import { game, requireGameLevel } from './gstate.js';
 import { plineWithContinuation as pline } from './display.js';
-import { isContainer, magicBagExplodes, explodeBag, thawObject } from './container.js';
+import { isContainer, magicBagExplodes, explodeBag, loseMagicBagItem, thawObject } from './container.js';
 import { ableToLoot } from './container_location.js';
 import { heroHasNoHands } from './polyself.js';
 import { heroHasFreeHand } from './weapon_type.js';
@@ -17,7 +17,6 @@ import { dropObjectAtHero, hitFloorWithObject } from './object_drop.js';
 import { landObjectOnAltar } from './altar_object.js';
 import { addObjectToContainer } from './object_container.js';
 import { unlinkObject } from './object_location.js';
-import { deleteObject } from './object_delete.js';
 import { isQuantumBox, observeQuantumCat } from './quantum_cat.js';
 import { triggerChestTrap } from './chest_trap.js';
 import { useBagOfTricks } from './bag_of_tricks.js';
@@ -32,6 +31,7 @@ import { addShopObjectToBill, chargeUnpaidUsage, costlySpot, objectTypeKnown, re
 import { setSellDisposition, SELL_NORMAL } from './shop_sell.js';
 import { showMultiSelectWindow } from './windows.js';
 import { rn2 } from './rng.js';
+import { currency } from './currency.js';
 function description(object) {
     observeObjectForNaming(object);
     return inventoryItemDescription(object);
@@ -233,6 +233,7 @@ async function tipContainer(source) {
     const altar = !game.u.uswallow && requireGameLevel().requireAt(x, y).typ === ALTAR;
     const shopGoods = !held && !!costlySpot(x, y);
     let terse = !(highDrop || altar || costlySpot(x, y));
+    let loss = 0;
     const contents = [...source.contents ?? []];
     source.cknown = true;
     await pline(target ? `${contents.length > 1 ? 'Objects tumble' : 'An object tumbles'} into the ${objectCombatName(target)}.`
@@ -245,9 +246,7 @@ async function tipContainer(source) {
         if (source.otyp === ICE_BOX)
             thawObject(object, game);
         else if (source.otyp === BAG_OF_HOLDING && source.cursed && !rn2(13)) {
-            const name = description(object);
-            await pline(`${name.charAt(0).toUpperCase()}${name.slice(1)} ${object.quan === 1 ? 'has' : 'have'} vanished!`);
-            await deleteObject(object);
+            loss += await loseMagicBagItem(object, held);
             terse = false;
             continue;
         }
@@ -289,6 +288,8 @@ async function tipContainer(source) {
         if (game.program_state.gameover)
             break;
     }
+    if (loss)
+        await pline(`You owe ${loss} ${currency(loss)} for lost merchandise.`);
     source.owt = objectWeight(source);
     if (target && target.where !== 'gone')
         target.owt = objectWeight(target);
