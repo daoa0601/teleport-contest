@@ -109,6 +109,7 @@ async function lootFloorContainers(x, y, unlock) {
     if (!selected.length)
         return false;
     let spentTime = false;
+    let resetJustPicked = true;
     for (const [index, container] of selected.entries()) {
         if (container.olocked) {
             await unlock(container);
@@ -129,7 +130,10 @@ async function lootFloorContainers(x, y, unlock) {
         await flush_screen(1);
         const result = await useContainer(container, {
             moreContainers: index + 1 < selected.length, underlay: snapshotMenuUnderlay(),
+            resetJustPicked,
         });
+        if (result.tookOut)
+            resetJustPicked = false;
         spentTime ||= result.spentTime;
         if (result.heroDied || result.stopLooting || !result.container)
             break;

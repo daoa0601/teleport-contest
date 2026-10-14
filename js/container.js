@@ -554,14 +554,14 @@ export async function takeFromContainer(container, object, state = game, count =
     unlinkObject(object, state);
     if (container.otyp === ICE_BOX)
         thawObject(object, state);
-    if (resetJustPicked)
-        clearJustPicked(state);
     if (!object.unpaid && container.where !== 'inventory'
         && costlySpot(container.ox, container.oy, state)) {
         object.ox = container.ox;
         object.oy = container.oy;
         await addShopObjectToBill(object, state, { ininv: false });
     }
+    if (resetJustPicked)
+        clearJustPicked(state);
     const { object: carried, count: addedCount } = await addPickedInventoryObject(object);
     container.cknown = true;
     updateContainerWeights(container);
@@ -578,7 +578,7 @@ export async function takeFromContainer(container, object, state = game, count =
         message: prefix ? `${prefix} removing ${description}` : description,
     };
 }
-async function takeSelectedObjects(container) {
+async function takeSelectedObjects(container, resetPicked) {
     if (!container.contents?.length)
         return { results: [], spentTime: false };
     const categories = await chooseCategories('Take out what type of objects?', container.contents);
@@ -589,7 +589,7 @@ async function takeSelectedObjects(container) {
         ? eligible.map(value => ({ value, count: -1 }))
         : await chooseObjects('Take out what?', eligible, false);
     const results = [];
-    let resetJustPicked = true;
+    let resetJustPicked = resetPicked;
     let previousCapacity = 0;
     for (const selection of selected) {
         const transfer = splitForTransfer(selection.value, selection.count, game);
@@ -730,16 +730,16 @@ async function chooseAction(container, held, usedTime, moreContainers) {
         return moreContainers ? 'n' : 'q';
     return chosen === 27 ? 'q' : String.fromCharCode(chosen);
 }
-export async function useContainer(container, { held = false, moreContainers = false, underlay = null, } = {}) {
+export async function useContainer(container, { held = false, moreContainers = false, underlay = null, resetJustPicked = false, } = {}) {
     setSellDisposition(container.no_charge ? SELL_DONTSELL : SELL_DELIBERATE);
     try {
-        return await useContainerActions(container, { held, moreContainers, underlay });
+        return await useContainerActions(container, { held, moreContainers, underlay, resetJustPicked });
     }
     finally {
         setSellDisposition(SELL_NORMAL);
     }
 }
-async function useContainerActions(container, { held = false, moreContainers = false, underlay = null, } = {}) {
+async function useContainerActions(container, { held = false, moreContainers = false, underlay = null, resetJustPicked = false, } = {}) {
     if (heroHasNoHands(game)) {
         await pline('You have no hands!');
         return { spentTime: false, container };
@@ -766,6 +766,7 @@ async function useContainerActions(container, { held = false, moreContainers = f
         };
     }
     let spentTime = await observeQuantumCat(container);
+    let tookOut = false;
     const loss = await loseCursedBagContents(container, game);
     if (loss) {
         spentTime = true;
@@ -807,9 +808,10 @@ async function useContainerActions(container, { held = false, moreContainers = f
             await pline(`The ${containerNoun(container)} is empty.`);
         }
         else {
-            const transfer = await takeSelectedObjects(container);
+            const transfer = await takeSelectedObjects(container, resetJustPicked);
             if (transfer.spentTime)
                 spentTime = true;
+            tookOut = transfer.results.some(result => result.moved);
             stopped = transfer.results.some(result => result.stop);
         }
     }
@@ -838,9 +840,10 @@ async function useContainerActions(container, { held = false, moreContainers = f
             await pline(`The ${containerNoun(container)} is empty.`);
         }
         else {
-            const transfer = await takeSelectedObjects(container);
+            const transfer = await takeSelectedObjects(container, resetJustPicked);
             if (transfer.spentTime)
                 spentTime = true;
+            tookOut = transfer.results.some(result => result.moved);
         }
     }
     if (game.program_state?.gameover)
@@ -852,6 +855,6 @@ async function useContainerActions(container, { held = false, moreContainers = f
     await redrawMap();
     await bot();
     await flush_screen(1);
-    return { spentTime, container, stopLooting: action === 'q' || action === '\x1b' };
+    return { spentTime, container, tookOut, stopLooting: action === 'q' || action === '\x1b' };
 }
 //# sourceMappingURL=container.js.map

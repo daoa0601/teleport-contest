@@ -123,7 +123,7 @@ void test('applying a carried chest can take its item back out', async () => {
     assert.equal(game.inventory.includes(club), true);
     assert.equal(club.where, 'inventory');
     assert.equal(club.container, null);
-    assert.equal(chest.pickup_prev, false);
+    assert.equal(chest.pickup_prev, true, 'Apply leaves the prior pickup batch intact.');
     assert.equal(club.pickup_prev, true);
     assert.equal(game.context.move, 1);
 });
