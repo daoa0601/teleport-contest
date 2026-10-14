@@ -61,7 +61,7 @@ import { OBJECT_CLASS_SYMBOLS, recordObjectEncounter } from './object_knowledge.
 import { heroGoldAmount } from './hero_gold.js';
 import { encumbranceLabel, nearCapacity } from './weight.js';
 import { heroCanReachFloor } from './floor_reach.js';
-import { propertyIsActive } from './properties.js';
+import { hasCarriedProperty, hasWornProperty, propertyIsActive } from './properties.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
@@ -176,6 +176,9 @@ export function senseWithTelepathy(monster: Monster | null | undefined) {
     if (!monster
         || ((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_MINDLESS)) return false;
     if (game.blind && game.u.telepathy) return true;
+    // C Unblind_telepat requires an extrinsic source even when worn.c counts
+    // a wielded non-weapon telepathy object toward the cached range.
+    if (!hasWornProperty('telepathy') && !hasCarriedProperty('telepathy')) return false;
     const range = unblindTelepathyRange();
     if (range < 0) return false;
     const dx = monster.mx - game.u.ux;

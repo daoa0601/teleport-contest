@@ -27,7 +27,7 @@ import { OBJECT_CLASS_SYMBOLS, recordObjectEncounter } from './object_knowledge.
 import { heroGoldAmount } from './hero_gold.js';
 import { encumbranceLabel, nearCapacity } from './weight.js';
 import { heroCanReachFloor } from './floor_reach.js';
-import { propertyIsActive } from './properties.js';
+import { hasCarriedProperty, hasWornProperty, propertyIsActive } from './properties.js';
 const HALLUCINATED_LIQUIDS = [
     'yoghurt', 'oobleck', 'clotted blood', 'diluted water',
     'purified water', 'instant coffee', 'tea', 'herbal infusion',
@@ -76,6 +76,10 @@ export function senseWithTelepathy(monster) {
         return false;
     if (game.blind && game.u.telepathy)
         return true;
+    // C Unblind_telepat requires an extrinsic source even when worn.c counts
+    // a wielded non-weapon telepathy object toward the cached range.
+    if (!hasWornProperty('telepathy') && !hasCarriedProperty('telepathy'))
+        return false;
     const range = unblindTelepathyRange();
     if (range < 0)
         return false;
