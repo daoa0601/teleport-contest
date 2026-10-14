@@ -18,7 +18,7 @@ import { nhgetch } from './input.js';
 import { reassignInventoryLetters } from './inventory_prompt.js';
 import { inventoryClassOrder, inventorySortMode, objectClassHeading, sortObjects } from './object_sort.js';
 import {
-    ALTAR, MENU_TRADITIONAL, MV_KNOWS_EGG, PICK_NONE, PICK_ONE,
+    ALTAR, ICE, Is_airlevel, Is_waterlevel, MENU_TRADITIONAL, MV_KNOWS_EGG, PICK_NONE, PICK_ONE,
     W_ACCESSORY, W_AMUL, W_ARMOR, W_RING, W_TOOL, is_pit,
 } from './const.js';
 import {
@@ -54,7 +54,10 @@ import { objectWeight } from './weight.js';
 import { readFloorEngraving, showFloorPile } from './floor_object_display.js';
 import { heroCanReachFloor } from './floor_reach.js';
 import { surfaceName } from './terrain_name.js';
-import { dungeonFeatureSentenceAt } from './dungeon_feature.js';
+import { dungeonFeatureAt, dungeonFeatureSentenceAt, forceDescribeDecor } from './dungeon_feature.js';
+import { visibleRegionAt } from './regions.js';
+import { trapName } from './trap_name.js';
+import { isLavaAt, isPoolAt } from './terrain_properties.js';
 import { impossible } from './diagnostics.js';
 import { armorSimpleName, armorSlotFor } from './armor.js';
 import { objectTypeKnown, currentShopResident, shopkeeperInOwnShop } from './shk.js';
@@ -816,14 +819,33 @@ export async function selectInventoryObject({
 export async function dolook() {
     const x = game.u.ux, y = game.u.uy;
     const level = requireGameLevel();
-    const objects = level.objects[x]?.[y] || [];
+    const underwater = game.underwater || game.u.uinwater;
+    const objects = isLavaAt(x, y) || isPoolAt(x, y) && !underwater ? [] : level.objects[x]?.[y] || [];
     const blind = heroIsBlind();
-    const feature = dungeonFeatureSentenceAt(x, y);
+    let feature = dungeonFeatureSentenceAt(x, y);
+    const featureName = dungeonFeatureAt(x, y);
+    const trap = level.traps.find(trap => trap.tx === x && trap.ty === y);
+    const region = visibleRegionAt(game, x, y);
+    if (region || trap?.tseen) {
+        const cloud = region ? `a ${region.damage ? 'poison gas' : 'vapor'} cloud` : '';
+        await plineWithContinuation(`There is ${cloud}${region && trap?.tseen ? ' and ' : ''}${
+            trap?.tseen ? withIndefiniteArticle(trapName(trap.ttyp)) : ''} here.`);
+    }
     if (blind) {
-        const where = heroCanReachFloor(game, { checkPit: true })
-            ? `lying here on the ${surfaceName(x, y)}` : 'lying beneath you';
-        await plineWithContinuation(`You try to feel what is ${where}.`);
-        const trap = level.traps.find(trap => trap.tx === x && trap.ty === y);
+        const drift = Is_airlevel(game.u.uz) || Is_waterlevel(game.u.uz);
+        const surface = surfaceName(x, y);
+        if (featureName?.startsWith('altar ')) {
+            await plineWithContinuation('You try to feel what is here.');
+        } else if (featureName && (featureName === 'ice' || featureName.endsWith(' ice'))) {
+            if (!game.flags.mention_decor || game._prevDecorType === ICE) await forceDescribeDecor();
+            await plineWithContinuation('You try to feel what is on it.');
+            feature = '';
+        } else {
+            const where = drift ? 'floating here' : heroCanReachFloor(game, { checkPit: true })
+                ? `lying here on the ${surface}` : 'lying beneath you';
+            await plineWithContinuation(`You try to feel what is ${where}.`);
+            if (!drift && featureName === surface) feature = '';
+        }
         if (!heroCanReachFloor(game, { checkPit: !!trap && is_pit(trap.ttyp) })) {
             await plineWithContinuation("But you can't reach it!");
             game.context.move = 0;

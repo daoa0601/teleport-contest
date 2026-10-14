@@ -10,7 +10,7 @@ import { showChoiceWindow, showInventoryWindow, showMultiSelectWindow, } from '.
 import { nhgetch } from './input.js';
 import { reassignInventoryLetters } from './inventory_prompt.js';
 import { inventoryClassOrder, inventorySortMode, objectClassHeading, sortObjects } from './object_sort.js';
-import { ALTAR, MENU_TRADITIONAL, MV_KNOWS_EGG, PICK_NONE, PICK_ONE, W_ACCESSORY, W_AMUL, W_ARMOR, W_RING, W_TOOL, is_pit, } from './const.js';
+import { ALTAR, ICE, Is_airlevel, Is_waterlevel, MENU_TRADITIONAL, MV_KNOWS_EGG, PICK_NONE, PICK_ONE, W_ACCESSORY, W_AMUL, W_ARMOR, W_RING, W_TOOL, is_pit, } from './const.js';
 import { ALCHEMY_SMOCK, ARROW as FIRST_OBJECT, BAG_OF_TRICKS, EGG, CHEST, FORTUNE_COOKIE, GOLD_PIECE, HAWAIIAN_SHIRT, LARGE_BOX, MAGIC_MARKER, HEAVY_IRON_BALL, LOCK_PICK, CREDIT_CARD, SKELETON_KEY, OBJECT_BIMANUAL, OBJECT_INITIAL_KNOWN, OBJECT_NAMES, SCR_BLANK_PAPER, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_NOVEL, STATUE, TIN, TIN_OPENER, TOWEL, AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, BEARTRAP, BELL, BELL_OF_OPENING, BLINDFOLD, BRASS_LANTERN, BULLWHIP, CANDELABRUM_OF_INVOCATION, CAN_OF_GREASE, CORPSE, CREAM_PIE, CRYSTAL_BALL, DRUM_OF_EARTHQUAKE, DWARVISH_MATTOCK, EUCALYPTUS_LEAF, EXPENSIVE_CAMERA, FIGURINE, GRAPPLING_HOOK, HORN_OF_PLENTY, LAND_MINE, LEASH, LENSES, MAGIC_LAMP, MAGIC_WHISTLE, MEAT_RING, MIRROR, OBJECT_DESCRIPTIONS, OBJECT_UNIQUE, OIL_LAMP, PICK_AXE, POT_OIL, SADDLE, STETHOSCOPE, TALLOW_CANDLE, TINNING_KIT, TIN_WHISTLE, UNICORN_HORN, WAX_CANDLE, WOODEN_FLUTE, } from './object_data.js';
 import { MONSTER_GROWTH_TARGET } from './monster_data.js';
 import { definiteName, objectCombatName, objectName, observeObjectForNaming, simpleObjectName, singularObjectName } from './objnam.js';
@@ -33,7 +33,10 @@ import { objectWeight } from './weight.js';
 import { readFloorEngraving, showFloorPile } from './floor_object_display.js';
 import { heroCanReachFloor } from './floor_reach.js';
 import { surfaceName } from './terrain_name.js';
-import { dungeonFeatureSentenceAt } from './dungeon_feature.js';
+import { dungeonFeatureAt, dungeonFeatureSentenceAt, forceDescribeDecor } from './dungeon_feature.js';
+import { visibleRegionAt } from './regions.js';
+import { trapName } from './trap_name.js';
+import { isLavaAt, isPoolAt } from './terrain_properties.js';
 import { impossible } from './diagnostics.js';
 import { armorSimpleName, armorSlotFor } from './armor.js';
 import { objectTypeKnown, currentShopResident, shopkeeperInOwnShop } from './shk.js';
@@ -823,14 +826,36 @@ export async function selectInventoryObject({ items, includeGold = true, title =
 export async function dolook() {
     const x = game.u.ux, y = game.u.uy;
     const level = requireGameLevel();
-    const objects = level.objects[x]?.[y] || [];
+    const underwater = game.underwater || game.u.uinwater;
+    const objects = isLavaAt(x, y) || isPoolAt(x, y) && !underwater ? [] : level.objects[x]?.[y] || [];
     const blind = heroIsBlind();
-    const feature = dungeonFeatureSentenceAt(x, y);
+    let feature = dungeonFeatureSentenceAt(x, y);
+    const featureName = dungeonFeatureAt(x, y);
+    const trap = level.traps.find(trap => trap.tx === x && trap.ty === y);
+    const region = visibleRegionAt(game, x, y);
+    if (region || trap?.tseen) {
+        const cloud = region ? `a ${region.damage ? 'poison gas' : 'vapor'} cloud` : '';
+        await plineWithContinuation(`There is ${cloud}${region && trap?.tseen ? ' and ' : ''}${trap?.tseen ? withIndefiniteArticle(trapName(trap.ttyp)) : ''} here.`);
+    }
     if (blind) {
-        const where = heroCanReachFloor(game, { checkPit: true })
-            ? `lying here on the ${surfaceName(x, y)}` : 'lying beneath you';
-        await plineWithContinuation(`You try to feel what is ${where}.`);
-        const trap = level.traps.find(trap => trap.tx === x && trap.ty === y);
+        const drift = Is_airlevel(game.u.uz) || Is_waterlevel(game.u.uz);
+        const surface = surfaceName(x, y);
+        if (featureName?.startsWith('altar ')) {
+            await plineWithContinuation('You try to feel what is here.');
+        }
+        else if (featureName && (featureName === 'ice' || featureName.endsWith(' ice'))) {
+            if (!game.flags.mention_decor || game._prevDecorType === ICE)
+                await forceDescribeDecor();
+            await plineWithContinuation('You try to feel what is on it.');
+            feature = '';
+        }
+        else {
+            const where = drift ? 'floating here' : heroCanReachFloor(game, { checkPit: true })
+                ? `lying here on the ${surface}` : 'lying beneath you';
+            await plineWithContinuation(`You try to feel what is ${where}.`);
+            if (!drift && featureName === surface)
+                feature = '';
+        }
         if (!heroCanReachFloor(game, { checkPit: !!trap && is_pit(trap.ttyp) })) {
             await plineWithContinuation("But you can't reach it!");
             game.context.move = 0;
