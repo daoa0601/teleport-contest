@@ -50,7 +50,7 @@ interface LocationCycle {
 interface ValidLocationCycle extends LocationCycle {
     marked: Position[];
 }
-type GetposCycleKind = 'mon' | 'obj' | 'door' | 'unexplored' | 'all';
+type GetposCycleKind = 'mon' | 'obj' | 'door' | 'unexplored' | 'all' | 'valid';
 
 // defsym.h S_goodpos: the dollar sign doubles as the default getpos key
 // which toggles valid-position marking, so the mark glyph shares it.
@@ -385,9 +385,10 @@ export function prepareMapPositionHighlights(isValidLocation: ValidLocation): vo
     for (const { x, y } of validMapSquares(isValidLocation)) newsym_force(x, y);
 }
 
-function getposCycleKind(key: number): { kind: GetposCycleKind; step: -1 | 1 } | null {
-    const kinds: readonly GetposCycleKind[] = ['mon', 'obj', 'door', 'unexplored', 'all'];
+function getposCycleKind(key: number, hasValidLocations: boolean): { kind: GetposCycleKind; step: -1 | 1 } | null {
+    const kinds: readonly GetposCycleKind[] = ['mon', 'obj', 'door', 'unexplored', 'all', 'valid'];
     for (const kind of kinds) {
+        if (kind === 'valid' && !hasValidLocations) continue;
         if (key === game.commandBindings.specialKey(`getpos.${kind}.next`))
             return { kind, step: 1 };
         if (key === game.commandBindings.specialKey(`getpos.${kind}.prev`))
@@ -396,7 +397,7 @@ function getposCycleKind(key: number): { kind: GetposCycleKind; step: -1 | 1 } |
     return null;
 }
 
-function matchesGetposCycle(kind: GetposCycleKind, x: number, y: number): boolean {
+function matchesGetposCycle(kind: Exclude<GetposCycleKind, 'valid'>, x: number, y: number): boolean {
     const glyph = glyphAt(x, y);
     if (kind === 'mon') return glyph?.kind === 'monster'
         && glyph.mnum !== MONSTER_NAME.indexOf('long worm tail');
@@ -577,39 +578,24 @@ export async function selectMapPosition({
                 message = await movementMessage();
                 continue;
             }
-            if (isValidLocation && (key === game.commandBindings.specialKey('getpos.valid.next')
-                || key === game.commandBindings.specialKey('getpos.valid.prev'))) {
-                // mMoOdDxX cycling precedes the feature-symbol search while
-                // a validity rule is installed (cmd.c defaults 'z'/'Z').
-                const cycle = validLocations();
-                cycle.index = key === game.commandBindings.specialKey('getpos.valid.next')
-                    ? (cycle.index + 1) % cycle.spots.length
-                    : cycle.index > 0
-                        ? cycle.index - 1 : cycle.spots.length - 1;
-                const spot = cycle.spots[cycle.index];
-                if (!spot) throw new Error('The selected valid location is missing');
-                cursor.x = spot.x;
-                cursor.y = spot.y;
-                message = await movementMessage();
-                continue;
-            }
-            const target = getposCycleKind(key);
+            const target = getposCycleKind(key, !!isValidLocation);
             if (target) {
-                let cycle = targetCycles.get(target.kind);
+                const kind = target.kind;
+                let cycle = kind === 'valid' ? validLocations() : targetCycles.get(kind);
                 if (!cycle) {
                     const spots = gatherValidLocations((x, y) =>
                         (x !== game.u.ux || y !== game.u.uy)
-                        && matchesGetposCycle(target.kind, x, y));
+                        && kind !== 'valid' && matchesGetposCycle(kind, x, y));
                     cycle = {
                         spots: [{ x: game.u.ux, y: game.u.uy }, ...spots], index: 0,
                     };
                     targetCycles.set(target.kind, cycle);
                 }
                 if (game.iflags.getloc_usemenu) {
-                    const names = { mon: 'monster', obj: 'item', door: 'door', unexplored: 'unexplored area', all: 'interesting thing' };
+                    const names = { mon: 'monster', obj: 'item', door: 'door', unexplored: 'unexplored area', all: 'interesting thing', valid: 'valid location' };
                     const spots = cycle.spots.slice(1);
                     if (!spots.length) {
-                        const things = { mon: 'any monsters', obj: 'any items', door: 'any doors', unexplored: 'any unexplored areas', all: 'anything interesting' };
+                        const things = { mon: 'any monsters', obj: 'any items', door: 'any doors', unexplored: 'any unexplored areas', all: 'anything interesting', valid: 'any valid locations' };
                         message = `You cannot ${game.iflags.getloc_filter === 1 ? 'see' : 'detect'} ${things[target.kind]}.`;
                         continue;
                     }

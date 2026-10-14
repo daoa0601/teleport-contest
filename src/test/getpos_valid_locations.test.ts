@@ -13,6 +13,27 @@ import {
 import { requireGameDisplay, game } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { answerPrompts } from './support/input-boundaries.js';
+
+for (const key of ['z', 'Z']) {
+    void test(`menu mode offers valid locations for '${key}'`, async () => {
+        freshObjectRoom({ flags: { tips: false, verbose: false } });
+        const input = resetInputState();
+        input.feed(`!${key}`);
+
+        const selected = await answerPrompts(selectMapPosition({
+            start: { x: 10, y: 10 }, prompt: 'Where do you want to hit?',
+            goal: 'the spot to hit',
+            isValidLocation: (x, y) => y === 10 && (x === 10 || x === 12 || x === 13),
+            describe: () => 'floor of a room',
+        }), input, [
+            { prompt: /Pick a valid location[\s\S]*a - floor of a room[\s\S]*b - floor of a room/, keys: 'b' },
+            { prompt: /floor of a room/, keys: '.' },
+        ]);
+        assert.equal(selected?.x, 13);
+        assert.equal(selected?.y, 10);
+    });
+}
 
 async function selectedCoordinates(selection: ReturnType<typeof selectMapPosition>) {
     const result = await selection;
