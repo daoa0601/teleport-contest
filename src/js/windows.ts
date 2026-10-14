@@ -80,8 +80,7 @@ export interface SelectableMenuItem<T> extends PageLocalMenuItem<T> {
     key: string;
 }
 
-export interface MenuLabel {
-    text: string;
+export interface MenuLabel extends TextMenuLine {
     selectable: false;
 }
 
@@ -469,7 +468,8 @@ export async function showMultiSelectWindow<T>({
             }
             for (const item of section.items) {
                 if (item.selectable === false) {
-                    tty_add_menu(window, { identifier: null, text: item.text });
+                    tty_add_menu(window, { identifier: null, text: item.text,
+                        attr: item.attr ?? ATR_NONE, color: item.color ?? NO_COLOR });
                     continue;
                 }
                 if (!pageLocalKeys && !item.key) throw new TypeError('The menu item requires a selector');

@@ -4,6 +4,7 @@ import { COMMAND_DESCRIPTIONS } from './command_descriptions.js';
 import { NATIVE_COMMANDS, NATIVE_COMMAND_FLAGS as F } from './command_data.js';
 import { visibleCommandKey } from './command_keys.js';
 import { game } from './gstate.js';
+import { ATR_INVERSE, NO_COLOR } from './terminal.js';
 import { patternMatches } from './encyclopedia.js';
 import { keyText, displayPagerText } from './pager_help.js';
 import { getLine } from './query.js';
@@ -93,8 +94,13 @@ export async function extendedCommandsHelp() {
                 const flags = `${command.flags & F.CMD_M_PREFIX ? 'm' : ''}${command.flags & F.AUTOCOMPLETE ? 'A' : ''}`;
                 items.push({ selectable: false, text: ` ${name.padEnd(14)} ${(flags ? `[${flags}]` : '').padStart(4)} ${description}` });
             }
-            if (items.length)
-                sections.push({ items: [{ selectable: false, text: pass ? 'Debugging Extended Commands' : 'Extended commands' }, ...items, { selectable: false, text: '' }] });
+            if (items.length) {
+                const style = game.program_state.gameover ? { attr: 0, color: NO_COLOR }
+                    : game.iflags.menu_headings ?? { attr: ATR_INVERSE, color: NO_COLOR };
+                sections.push({ items: [{ selectable: false,
+                            text: pass ? 'Debugging Extended Commands' : 'Extended commands',
+                            ...style }, ...items, { selectable: false, text: '' }] });
+            }
         }
         sections.push({ items: search && sections.length === 1 ? [{ selectable: false, text: 'no matches' }]
                 : [{ selectable: false, text: '[A] Command autocompletes' },

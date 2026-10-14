@@ -348,7 +348,8 @@ export async function showMultiSelectWindow({ title, sections, omitHeadings = fa
             }
             for (const item of section.items) {
                 if (item.selectable === false) {
-                    tty_add_menu(window, { identifier: null, text: item.text });
+                    tty_add_menu(window, { identifier: null, text: item.text,
+                        attr: item.attr ?? ATR_NONE, color: item.color ?? NO_COLOR });
                     continue;
                 }
                 if (!pageLocalKeys && !item.key)

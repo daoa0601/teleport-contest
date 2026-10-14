@@ -79,7 +79,8 @@ export function paintMenuPage(d, menu, page, rows, underlay) {
     for (const [row, line] of rows.entries()) {
         for (let col = 0; col < line.text.length; col++) {
             const attr = col < line.attributeStart ? ATR_NONE : line.attr ?? ATR_NONE;
-            d.setCell(left + col, row, line.text.charAt(col), NO_COLOR, attr);
+            const color = col < line.attributeStart ? NO_COLOR : line.color ?? NO_COLOR;
+            d.setCell(left + col, row, line.text.charAt(col), color, attr);
         }
     }
     const marker = pageCount > 1 ? `(${page + 1} of ${pageCount})` : '(end) ';
@@ -129,6 +130,7 @@ export function tty_add_menu(window, entry) {
     window.entries.push({
         text: entry.identifier === null ? entry.text : selectableMenuText(entry.selector || '?', entry.text),
         attr: entry.attr ?? ATR_NONE,
+        color: entry.color ?? NO_COLOR,
         identifier: entry.identifier,
         key: entry.selector ?? '',
         group: entry.group ?? '',
