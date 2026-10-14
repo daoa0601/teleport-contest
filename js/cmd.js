@@ -67,6 +67,7 @@ import { loseHeroHp } from './hero_damage.js';
 import { dopay } from './shop_pay_command.js';
 import { reportShopFinances } from './shop_finance.js';
 import { quoteShopGoods } from './shop_price_quote.js';
+import { shopkeeperBlockingDoor, shopkeeperBlockingEntry } from './shop_blocking.js';
 import { poisonHeroStrengthAndHp } from './poison.js';
 import { isContainer, useContainer } from './container.js';
 import { adjustHeroAlignment } from './alignment.js';
@@ -311,11 +312,22 @@ function heroOozesUnderDoor(destination) {
 }
 // C test_move(DO_MOVE): oozing bypasses only the doorway entry check.
 async function rejectHeroDiagonalDoorway(dx, dy, destination) {
-    const entryDoor = heroOozesUnderDoor(destination) ? null : destination;
-    if (!dx || !dy || heroPassesWalls(game)
-        || !blocksDiagonalDoor(game.level?.at(game.u.ux, game.u.uy), entryDoor))
+    if (!dx || !dy || heroPassesWalls(game))
         return false;
-    const entering = blocksDiagonalDoor(null, entryDoor);
+    const entryDoor = heroOozesUnderDoor(destination) ? null : destination;
+    const x = game.u.ux + dx, y = game.u.uy + dy;
+    const intactEntry = blocksDiagonalDoor(null, entryDoor);
+    const doorKeeper = !intactEntry && entryDoor?.typ === DOOR ? shopkeeperBlockingDoor(x, y) : null;
+    const entering = intactEntry || !!doorKeeper;
+    const intactExit = !entering && blocksDiagonalDoor(game.level?.at(game.u.ux, game.u.uy), null);
+    const entryKeeper = !entering && !intactExit ? shopkeeperBlockingEntry(x, y) : null;
+    if (!entering && !intactExit && !entryKeeper)
+        return false;
+    const keeper = doorKeeper ?? entryKeeper;
+    if (keeper) {
+        const invisible = propertyIsActive('invisible', game);
+        await plineWithContinuation(`${shopkeeperName(keeper, { capitalized: true })}${invisible ? ' senses your motion and' : ''} blocks your way!`);
+    }
     if (game.flags.mention_walls || entering && (game.u.uinwater || game.underwater)) {
         await plineWithContinuation(`You can't move diagonally ${entering ? 'into' : 'out of'} an intact doorway.`);
     }
