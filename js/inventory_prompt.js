@@ -39,13 +39,9 @@ export async function chooseInventoryObject(verb, classify, { forcePrompt = fals
     const menuItems = suggested.length ? suggested : downplayed.length ? downplayed : inventory;
     const selection = await promptInventoryObject(`What do you want to ${verb}? [${choices}] `, inventory, {
         verb, classify, allowCount,
-        allowMenu: true, allowNone: true,
+        allowMenu: true,
         allowGold: inventory.some(object => object.oclass === 12), menuItems,
     });
-    if (selection.none) {
-        await mimeInventoryAction(verb);
-        return null;
-    }
     const object = selection.object;
     if (object && selection.count !== null && selection.count < object.quan) {
         if (object.otyp === LOADSTONE && object.cursed)
@@ -141,13 +137,14 @@ export function compactInventoryLetters(letters) {
     }
     return compact;
 }
-export async function promptInventoryObject(prompt, eligible, { verb, classify = () => GETOBJ_SUGGEST, allowGold = false, allowNone = false, noneDescription, noneSuggested = allowNone, allowMenu = false, allowCount = false, menuItems = eligible, }) {
+export async function promptInventoryObject(prompt, eligible, { verb, allowGold = false, classify = object => eligible.includes(object) || allowGold && object.oclass === 12
+    ? GETOBJ_SUGGEST : GETOBJ_EXCLUDE, allowNone = false, noneDescription, noneSuggested = allowNone, allowMenu = false, allowCount = false, menuItems = eligible, }) {
     // getobj() checks CQ_CANNED before invoking tty_yn_function(). A queued
     // choice neither acknowledges unread prose nor paints an item question.
     const queuedKey = takeCommandKey();
     if (queuedKey !== undefined) {
         const letter = String.fromCharCode(queuedKey);
-        const object = eligible.find(candidate => candidate.invlet === letter
+        const object = game.inventory.find(candidate => candidate.invlet === letter
             && [GETOBJ_SUGGEST, GETOBJ_DOWNPLAY].includes(classify(candidate)));
         if (object)
             return { cancelled: false, object, gold: false, none: false, count: null };
@@ -221,7 +218,15 @@ export async function promptInventoryObject(prompt, eligible, { verb, classify =
         // queries have already been erased by promptKey()'s tty cleanup.
         game._pending_message = '';
         const letter = String.fromCharCode(key);
-        const object = eligible.find(candidate => candidate.invlet === letter);
+        if (letter === '-') {
+            if (!allowNone)
+                await mimeInventoryAction(verb);
+            return allowNone ? { cancelled: false, object: null, gold: false, none: true, count }
+                : { cancelled: true, object: null, gold: false, none: false, count: null };
+        }
+        const object = game.inventory.find(candidate => candidate.invlet === letter);
+        if (!object && count !== null && verb === 'throw')
+            return { cancelled: true, object: null, gold: false, none: false, count: null };
         if (object) {
             const classification = classify(object);
             // Interactive getobj() requests status even for non-gold items;
@@ -262,15 +267,6 @@ export async function promptInventoryObject(prompt, eligible, { verb, classify =
                 object,
                 gold: false,
                 none: false,
-                count,
-            };
-        }
-        if (allowNone && letter === '-') {
-            return {
-                cancelled: false,
-                object: null,
-                gold: false,
-                none: true,
                 count,
             };
         }

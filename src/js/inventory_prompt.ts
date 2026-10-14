@@ -84,13 +84,9 @@ export async function chooseInventoryObject(verb: string, classify: (object: Gam
     const selection = await promptInventoryObject(
         `What do you want to ${verb}? [${choices}] `, inventory, {
             verb, classify, allowCount,
-            allowMenu: true, allowNone: true,
+            allowMenu: true,
             allowGold: inventory.some(object => object.oclass === 12), menuItems,
         });
-    if (selection.none) {
-        await mimeInventoryAction(verb);
-        return null;
-    }
     const object = selection.object;
     if (object && selection.count !== null && selection.count < object.quan) {
         if (object.otyp === LOADSTONE && object.cursed) object.corpsenm = selection.count;
@@ -181,8 +177,9 @@ export function compactInventoryLetters(letters: string): string {
 
 export async function promptInventoryObject(prompt: string, eligible: readonly GameObject[], {
     verb,
-    classify = () => GETOBJ_SUGGEST,
     allowGold = false,
+    classify = object => eligible.includes(object) || allowGold && object.oclass === 12
+        ? GETOBJ_SUGGEST : GETOBJ_EXCLUDE,
     allowNone = false,
     noneDescription,
     noneSuggested = allowNone,
@@ -195,7 +192,7 @@ export async function promptInventoryObject(prompt: string, eligible: readonly G
     const queuedKey = takeCommandKey();
     if (queuedKey !== undefined) {
         const letter = String.fromCharCode(queuedKey);
-        const object = eligible.find(candidate => candidate.invlet === letter
+        const object = game.inventory.find(candidate => candidate.invlet === letter
             && [GETOBJ_SUGGEST, GETOBJ_DOWNPLAY].includes(classify(candidate)));
         if (object) return { cancelled: false, object, gold: false, none: false, count: null };
         if (allowNone && letter === '-')
@@ -267,7 +264,14 @@ export async function promptInventoryObject(prompt: string, eligible: readonly G
         // queries have already been erased by promptKey()'s tty cleanup.
         game._pending_message = '';
         const letter = String.fromCharCode(key);
-        const object = eligible.find(candidate => candidate.invlet === letter);
+        if (letter === '-') {
+            if (!allowNone) await mimeInventoryAction(verb);
+            return allowNone ? { cancelled: false, object: null, gold: false, none: true, count }
+                : { cancelled: true, object: null, gold: false, none: false, count: null };
+        }
+        const object = game.inventory.find(candidate => candidate.invlet === letter);
+        if (!object && count !== null && verb === 'throw')
+            return { cancelled: true, object: null, gold: false, none: false, count: null };
         if (object) {
             const classification = classify(object);
             // Interactive getobj() requests status even for non-gold items;
@@ -311,15 +315,6 @@ export async function promptInventoryObject(prompt: string, eligible: readonly G
                 object,
                 gold: false,
                 none: false,
-                count,
-            };
-        }
-        if (allowNone && letter === '-') {
-            return {
-                cancelled: false,
-                object: null,
-                gold: false,
-                none: true,
                 count,
             };
         }

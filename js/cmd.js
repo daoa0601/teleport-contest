@@ -2,7 +2,7 @@ import { dipFountainSword } from './fountain_sword.js';
 import { washHands } from './dip_water.js';
 import { waterDamageObject } from './trap.js';
 import { dip, dipInto } from './potion_dip.js';
-import { AKLYS, BOOMERANG } from './object_data.js';
+import { AKLYS, BOOMERANG, CRYSTAL_BALL } from './object_data.js';
 import { monsterHiddenConditions } from './monster_status.js';
 import { visibleRegionAt } from './regions.js';
 import { wizIntrinsic } from './wizard_intrinsics.js';
@@ -2229,7 +2229,7 @@ async function doname() {
             && (!objectTypeKnown(object)
                 || !!game._objectCallNames?.[object.otyp]));
         const letters = compactInventoryLetters(suggested.map(object => object.invlet).join(''));
-        const selection = await promptInventoryObject(`What do you want to call? [${letters} or ?*] `, eligible, { verb: 'call', allowMenu: true });
+        const selection = await promptInventoryObject(`What do you want to call? [${letters ? `${letters} or ?*` : '*'}] `, eligible, { verb: 'call', allowMenu: true, menuItems: suggested.length ? suggested : eligible });
         if (!selection.cancelled && selection.object) {
             const object = selection.object;
             if (object.dknown === false) {
@@ -3151,21 +3151,14 @@ async function runExtendedCommand(name) {
 // still consumes a turn after retouching, but its only effect is the ordinary
 // "Nothing happens." line.
 async function doinvoke() {
-    const eligible = (game.inventory || []).filter(object => !!(object.oartifact || object.artifact || OBJECT_UNIQUE[object.otyp]
-        || object.otyp === FAKE_AMULET_OF_YENDOR && !object.known));
-    if (!eligible.length) {
-        await pline("You don't have anything special to invoke.");
-        game.context.move = 0;
-        return;
-    }
-    const letters = eligible.map(object => object.invlet).join('');
-    const selection = await promptInventoryObject(`What do you want to invoke? [${compactInventoryLetters(letters)} or ?*] `, eligible, { verb: 'invoke', allowMenu: true });
-    if (selection.cancelled || !selection.object) {
+    const object = await chooseInventoryObject('invoke', candidate => candidate.oartifact || OBJECT_UNIQUE[candidate.otyp] || candidate.otyp === CRYSTAL_BALL
+        || candidate.otyp === FAKE_AMULET_OF_YENDOR && !candidate.known
+        ? GETOBJ_SUGGEST : GETOBJ_EXCLUDE, { forcePrompt: true });
+    if (!object) {
         game.context.move = 0;
         return;
     }
     game._pending_message = '';
-    const object = selection.object;
     const touch = await retouchHeroObject(object);
     if (touch.rejected || touch.died) {
         game.context.move = 1;
