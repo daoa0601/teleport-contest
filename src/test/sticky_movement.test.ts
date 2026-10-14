@@ -5,14 +5,13 @@ import { NO_MINVENT, WATER, WEB } from '../js/const.js';
 import { initializePet } from '../js/dog.js';
 import { flush_screen } from '../js/display.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
-import { pushKeys } from '../js/input.js';
+import { pushKeys, resetInputState } from '../js/input.js';
 import { initRng } from '../js/rng.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { addTrap } from './support/level-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';
-import { resetInputState } from '../js/input.js';
 
 async function heldHero() {
     freshObjectRoom();
