@@ -6,7 +6,7 @@ import { releaseCameraDemon } from './camera.js';
 import { applyHeroEggLuckPenalty, explodePyroliskEggAt, isPyroliskEgg, } from './egg_impact.js';
 import { explodeLitOilPotion } from './fire_explosion.js';
 import { game, requireLiveGame } from './gstate.js';
-import { deleteObject } from './object_delete.js';
+import { deleteObject, delobj } from './object_delete.js';
 import { makemonAt } from './mklev.js';
 import { objectResistsDestruction } from './object_state.js';
 import { applySupportedPotionVapor, heroPotionVaporProfile, potionImpactObjectName, } from './potion_hit.js';
@@ -192,7 +192,7 @@ export async function breakObjectAtLocation(object, { x = object.ox, y = object.
     }
     if (heroCaused)
         await settleBrokenShopObject(object, x, y, fromInventory, state, publish);
-    await deleteBrokenObject(object, state);
+    await delobj(object, state, random);
     newsym(x, y);
     if (eggExplosion) {
         await explodePyroliskEggAt(x, y, {
