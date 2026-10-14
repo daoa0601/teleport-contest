@@ -1,8 +1,8 @@
 // C pager.c:look_all(), look_traps(), look_engrs(), look_region_nearby().
-import { BOLT_LIM, COLNO, GRAVE, Is_airlevel, Is_waterlevel, ROWNO, def_warnsyms, } from './const.js';
+import { BOLT_LIM, COLNO, CORR, GRAVE, Is_airlevel, Is_waterlevel, ROWNO, def_warnsyms, } from './const.js';
 import { glyphAt, pline, transientTrapGlyph } from './display.js';
 import { game } from './gstate.js';
-import { CmapSymbol, GlyphOffset } from './glyph_numbers.js';
+import { GlyphOffset } from './glyph_numbers.js';
 import { objectAtMapDescription } from './map_object_description.js';
 import { monsterAtPosition } from './monster_location.js';
 import { displayedTrapDescription, quotedEngraving } from './pager_features.js';
@@ -67,12 +67,12 @@ export async function showLookList(kind, nearby, describeHero) {
                     continue;
                 const headstone = location.lastseentyp === GRAVE;
                 const suffix = quotedEngraving(x, y, headstone ? 'grave' : 'engraving', true);
-                description = headstone ? suffix.replace(/^ (with |whose )/, '')
-                    : suffix.startsWith(' with ') ? suffix.slice(6) : `engraving${suffix}`;
+                description = ' ' + (headstone ? suffix.replace(/^ (with |whose )/, '')
+                    : suffix.startsWith(' with ') ? suffix.slice(6) : `engraving${suffix}`);
                 const shown = glyph.kind === 'engraving' || glyph.kind === 'terrain' && glyph.terrainName === 'grave';
                 if (!shown) {
                     description += `, obscured by ${symbol}`;
-                    symbol = headstone ? '|' : location.lastseentyp === 24 ? '#' : '`';
+                    symbol = headstone ? '|' : location.lastseentyp === CORR ? '#' : '`';
                 }
             }
             if (!description)

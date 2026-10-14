@@ -2,6 +2,7 @@
 import { BOULDER } from './object_data.js';
 import { BUFSZ, In_hell, Upolyd, Is_rogue_level, Is_waterlevel, TER_DETECT, TER_MAP, TER_MON, TER_OBJ, TRAP_EXPLANATIONS, VIBRATING_SQUARE, WEB, def_warnsyms, } from './const.js';
 import { cmapSymbolAppearance } from './display.js';
+import { onQuestStart } from './quest.js';
 import { game } from './gstate.js';
 import { CmapSymbol, GlyphOffset, cmapToGlyph } from './glyph_numbers.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
@@ -74,7 +75,7 @@ export function screenDescription(x, y, description) {
             if (!name)
                 continue;
             needLook = true;
-            if (index === 15) {
+            if (index === 17) {
                 skippedVenom = true;
                 continue;
             }
@@ -101,9 +102,11 @@ export function screenDescription(x, y, description) {
                 : index === CmapSymbol.goodpos ? 'valid position' : '');
         if (!name)
             continue;
-        const candidate = definition ? cmapSymbolAppearance(index === CmapSymbol.darkroom && dec
-            ? CmapSymbol.room : index) : { ch: trap ? trapType === WEB ? '"'
-                : trapType === VIBRATING_SQUARE ? '~' : '^' : index === CmapSymbol.poisoncloud ? '#' : '$', dec: false };
+        const candidate = index === CmapSymbol.darkroom
+            ? game.flags.dark_room !== false && game.flags.color !== false
+                ? cmapSymbolAppearance(CmapSymbol.room) : { ch: ' ', dec: false }
+            : definition ? cmapSymbolAppearance(index) : { ch: trap ? trapType === WEB ? '"'
+                    : trapType === VIBRATING_SQUARE ? '~' : '^' : index === CmapSymbol.poisoncloud ? '#' : '$', dec: false };
         if (!sameSymbol(candidate))
             continue;
         if (index === CmapSymbol.darkroom && glyph.kind === 'nothing')
@@ -125,8 +128,13 @@ export function screenDescription(x, y, description) {
         append(!count && trap && trapType !== VIBRATING_SQUARE ? 'a trap' : article, name);
         if (trap && trapType !== VIBRATING_SQUARE)
             hitTrap = true;
-        if (index === CmapSymbol.pool)
-            append('moat', 'moat', false);
+        if (index === CmapSymbol.pool) {
+            const currentLevel = game.u.uz;
+            const here = (level) => !!level && !!currentLevel && level.dnum === currentLevel.dnum && level.dlevel === currentLevel.dlevel;
+            const moat = here(game.medusa_level) ? 'shallow sea' : here(game.juiblex_level) ? 'swamp'
+                : game.urole?.key === 'samurai' && onQuestStart(game) ? 'pond' : 'moat';
+            append(moat === 'pond' ? 'a pond' : moat, moat, false);
+        }
         if (index === CmapSymbol.altar || trap || index === CmapSymbol.engroom || index === CmapSymbol.engrcorr
             || index === CmapSymbol.grave || liquid && heroIsHallucinating(game))
             needLook = true;
@@ -149,6 +157,6 @@ export function screenDescription(x, y, description) {
             count = 1;
         }
     }
-    return { text: prefix + text.slice(0, BUFSZ - 10), count, firstMatch };
+    return { text: prefix + text.slice(0, BUFSZ - 19), count, firstMatch };
 }
 //# sourceMappingURL=pager_description.js.map
