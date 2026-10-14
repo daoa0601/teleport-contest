@@ -23,6 +23,7 @@ import { addFruit } from './fruit.js';
 import { setTinVariety } from './tin.js';
 import { setWallState } from './wall_topology.js';
 import { monsterHasMapPosition, monsterAtPosition, monsterOccupiesPosition } from './monster_location.js';
+import { hideMonsterUnder } from './monster_hiding.js';
 import { finishMonsterBirth } from './monster_birth.js';
 import { createParticularMonster } from './read_creation.js';
 import { setMonsterPermanentInvisibility } from './monster_invisibility.js';
@@ -443,21 +444,6 @@ const TRAPPED_CHEST = 25;
 
 function is_hole(t: number): boolean { return t === HOLE || t === TRAPDOOR; }
 function is_pit(t: number): boolean { return t === PIT || t === SPIKED_PIT; }
-
-function canMonsterHideUnderFloorObject(x: number, y: number): boolean {
-    const pile = game.level?.objects?.[x]?.[y] || [];
-    if (!pile.length) return false;
-    const trap = game.level?.traps?.find(candidate =>
-        candidate.tx === x && candidate.ty === y);
-    if (trap && !is_pit(trap.ttyp)) return false;
-    let coinQuantity = 0;
-    for (const object of pile) {
-        if (object.oclass !== COIN_CLASS) return true;
-        coinQuantity += object.quan ?? object.quantity ?? 1;
-        if (coinQuantity >= 10) return true;
-    }
-    return false;
-}
 
 // Stairway list management
 function stairway_add(x: number, y: number, up: boolean, isladder: boolean, dest: DungeonLocation): void {
@@ -2652,16 +2638,6 @@ async function makemon(
         }
     }
     const classIndex = MONSTER_SYMBOL[mndx] || 0;
-    // C makemon.c: during level creation, M1_CONCEAL actors hide under an
-    // object already present on their square and eel-class actors hide in
-    // pools.  Concealment is producer state: display may reveal it through
-    // telepathy, but must not infer the state from species at paint time.
-    const birthTerrain = level.at(x, y)?.typ;
-    const monsterUndetected = !!(game.in_mklev
-        && ((((MONSTER_FLAGS1[mndx] ?? 0) & 0x00000080)
-                && canMonsterHideUnderFloorObject(x, y))
-            || (classIndex === 57
-                && birthTerrain !== undefined && IS_POOL(birthTerrain)))); // M1_CONCEAL/S_EEL
     // C makemon.c initializes strategic presentation state for waiting and
     // covetous species unless the caller explicitly supplies MM_NOWAIT.
     // STRAT_APPEARMSG is consumed by the first visible relocation message;
@@ -2695,7 +2671,7 @@ async function makemon(
         mgenmklev: !!game.in_mklev,
         seen_resistance: 0,
         mux: pendingMonster.mux, muy: pendingMonster.muy,
-        mundetected: monsterUndetected,
+        mundetected: false,
         minvis: !!pendingMonster.minvis,
         perminvis: !!pendingMonster.perminvis,
         movement: 0, mmove: MONSTER_MOVE[mndx] ?? 0,
@@ -2763,6 +2739,10 @@ async function makemon(
     if (generatedGhostName != null) setMonsterGivenName(monster, generatedGhostName);
     registerQuestLeader(monster);
     level.monsters[monsterIndex] = monster;
+    // makemon() asks hideunder() for spiders, snakes, and eels. Its
+    // terrain, trap, and corpse checks also apply during level creation.
+    if (game.in_mklev && [19, 45, 57].includes(classIndex))
+        await hideMonsterUnder(monster);
     return finishMonsterBirth(monster, mmflags);
 }
 
