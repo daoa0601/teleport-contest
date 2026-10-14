@@ -1,6 +1,6 @@
 // C refs: getpos.c:getpos(), drawing.c:defsyms[], symbols.c:gs.showsyms[],
 // display.c:tmp_at() for the valid-location marking overlay.
-import { COLNO, D_ISOPEN, DOOR, HI_ZAP, LOOK_ONCE, LOOK_QUICK, LOOK_TRADITIONAL, LOOK_VERBOSE, ROWNO, VIBRATING_SQUARE, WEB, IS_WALL, TREE, } from './const.js';
+import { COLNO, D_ISOPEN, DOOR, HI_ZAP, LOOK_ONCE, LOOK_QUICK, LOOK_TRADITIONAL, LOOK_VERBOSE, NHW_MENU, PICK_ONE, ROWNO, VIBRATING_SQUARE, WEB, IS_WALL, TREE, } from './const.js';
 import { bot, clearMessageWindow, redrawMap, flush_screen, glyphAt, lastDirtyMapCursor, newsym_force, pline, plineWithContinuation, show_glyph_cell, terrain_glyph, } from './display.js';
 import { game } from './gstate.js';
 import { nhgetch, readchar } from './input.js';
@@ -14,7 +14,7 @@ import { cansee } from './vision.js';
 import { coordinateDescription } from './pager_lists.js';
 import { screenDescription } from './pager_description.js';
 import { farlookLocationDescription } from './cmd.js';
-import { showMultiSelectWindow } from './windows.js';
+import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu, } from './tty_menu.js';
 // defsym.h S_goodpos: the dollar sign doubles as the default getpos key
 // which toggles valid-position marking, so the mark glyph shares it.
 const GOODPOS_CH = '$';
@@ -252,6 +252,34 @@ export async function getposHelpUntilDismissed(goal, { hasValidLocations = false
 }
 async function describeSelectedPosition(describe, cursor, fallback) {
     return await describe?.(cursor.x, cursor.y) || fallback;
+}
+async function selectGetposMenu(spots, kind) {
+    const names = { mon: 'monster', obj: 'item', door: 'door', unexplored: 'unexplored area', all: 'interesting thing', valid: 'valid location' };
+    const name = names[kind];
+    const article = ['item', 'unexplored area', 'interesting thing'].includes(name) ? 'an' : 'a';
+    const filter = game.iflags.getloc_filter === 1 ? ' in view' : game.iflags.getloc_filter === 2 ? ' in this area' : '';
+    const window = tty_create_nhwindow(NHW_MENU);
+    try {
+        await tty_start_menu(window);
+        for (const spot of spots) {
+            const text = await describeMenuPosition(spot);
+            if (text === null)
+                continue;
+            const coordinates = coordinateDescription(spot.x, spot.y, game.iflags.getpos_coords ?? 'n');
+            tty_add_menu(window, { identifier: spot,
+                text: text + (coordinates ? ` ${coordinates}` : '') });
+        }
+        // getpos_menu() supplies an end_menu prompt, so the tty owner applies
+        // the configured prompt attributes and color while items stay plain.
+        tty_end_menu(window, `Pick ${article} ${name}${filter}`);
+        const result = await tty_select_menu(window, PICK_ONE);
+        if (result.cancelled)
+            return null;
+        return result.selections[0]?.identifier ?? null;
+    }
+    finally {
+        await tty_destroy_nhwindow(window);
+    }
 }
 // getpos_menu() describes the displayed glyph even when the caller only
 // supplied a validity rule, such as spell or polearm targeting.
@@ -556,26 +584,13 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
                     targetCycles.set(target.kind, cycle);
                 }
                 if (game.iflags.getloc_usemenu) {
-                    const names = { mon: 'monster', obj: 'item', door: 'door', unexplored: 'unexplored area', all: 'interesting thing', valid: 'valid location' };
                     const spots = cycle.spots.slice(1);
                     if (!spots.length) {
                         const things = { mon: 'any monsters', obj: 'any items', door: 'any doors', unexplored: 'any unexplored areas', all: 'anything interesting', valid: 'any valid locations' };
                         message = `You cannot ${game.iflags.getloc_filter === 1 ? 'see' : 'detect'} ${things[target.kind]}.`;
                         continue;
                     }
-                    const items = [];
-                    for (const spot of spots) {
-                        const text = await describeMenuPosition(spot);
-                        if (text === null)
-                            continue;
-                        const coordinates = coordinateDescription(spot.x, spot.y, game.iflags.getpos_coords ?? 'n');
-                        items.push({ text: text + (coordinates ? ` ${coordinates}` : ''), value: spot });
-                    }
-                    const filter = game.iflags.getloc_filter === 1 ? ' in view' : game.iflags.getloc_filter === 2 ? ' in this area' : '';
-                    const name = names[target.kind];
-                    const selection = await showMultiSelectWindow({ title: `Pick ${name === 'item' || name === 'unexplored area' || name === 'interesting thing' ? 'an' : 'a'} ${name}${filter}`,
-                        omitHeadings: true, pageLocalKeys: true, pickOne: true, sections: [{ items }] });
-                    const spot = selection[0];
+                    const spot = await selectGetposMenu(spots, kind);
                     if (spot) {
                         cursor.x = spot.x;
                         cursor.y = spot.y;

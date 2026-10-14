@@ -144,8 +144,9 @@ export function tty_end_menu(window, prompt = null) {
     requireWindow(window);
     if (prompt !== null) {
         const heading = { text: prompt, attr: game.iflags.menu_headings?.attr ?? 1,
+            color: game.iflags.menu_headings?.color ?? NO_COLOR,
             identifier: null, key: '', group: '', itemflags: 0, selected: false, count: -1 };
-        window.entries.unshift(heading, { ...heading, text: '', attr: ATR_NONE });
+        window.entries.unshift(heading, { ...heading, text: '', attr: ATR_NONE, color: NO_COLOR });
     }
     const d = display();
     if (!d)
