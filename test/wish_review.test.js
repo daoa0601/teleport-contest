@@ -6,7 +6,7 @@ import { addFruit } from '../js/fruit.js';
 import { game, requireGameLevel } from '../js/gstate.js';
 import { mayDig } from '../js/hero_digging.js';
 import { mksobj } from '../js/mklev.js';
-import { BAG_OF_TRICKS, GLOB_OF_GRAY_OOZE, LAND_MINE, POT_HEALING, RED_DRAGON_SCALES, SACK, SCR_LIGHT, SPEED_BOOTS, } from '../js/object_data.js';
+import { BAG_OF_TRICKS, GLOB_OF_GRAY_OOZE, LAND_MINE, POT_HEALING, RED_DRAGON_SCALES, SACK, SCR_LIGHT, SPEED_BOOTS, TIN, } from '../js/object_data.js';
 import { recordObjectCall } from '../js/object_knowledge.js';
 import { readObjectName } from '../js/objnam.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -24,6 +24,14 @@ void test('a potion call name is not interpreted as holy water', async () => {
     assert.ok(result && !result.noWish);
     assert.equal(result.object.otyp, POT_HEALING);
     assert.equal(result.object.blessed, false);
+});
+void test('tin contents take precedence over the holy-water potion suffix', async () => {
+    freshObjectRoom();
+    const result = await readObjectName('uncursed tin of holy water', { wizardWish: true });
+    assert.ok(result && !result.noWish);
+    assert.equal(result.object.otyp, TIN);
+    assert.equal(result.object.blessed, false);
+    assert.equal(result.object.cursed, false);
 });
 void test('a call name does not arm a wished land mine', async () => {
     freshObjectRoom();

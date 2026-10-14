@@ -165,15 +165,14 @@ export function parseWishText(text: string): ParsedWish {
     const requested = remaining.toLowerCase();
     parsed.name = ['tricks', 'clothes'].includes(requested) ? requested : makeSingular(requested);
     if (parsed.name !== requested && parsed.count === 1) parsed.count = 2;
+    if (parsed.directType === null && /holy water$/i.test(parsed.name)) {
+        parsed.buc = /unholy water$/i.test(parsed.name) ? 'cursed' : 'blessed';
+        parsed.directType = POT_WATER;
+    }
     return parsed;
 }
 
 function parseWishSpecies(text: string, parsed: ParsedWish): string {
-    if (/holy water$/i.test(text)) {
-        parsed.buc = /unholy water$/i.test(text) ? 'cursed' : 'blessed';
-        parsed.directType = POT_WATER;
-        return text;
-    }
     const depicted = /^(corpse|statue|figurine) of (?:an? |the )?(male|female|neuter) (.+)$/i.exec(text);
     if (depicted) {
         parsed.gender = depicted[2]?.toLowerCase() === 'male' ? 0
