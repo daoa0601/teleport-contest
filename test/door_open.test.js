@@ -114,4 +114,32 @@ for (const locked of [false, true]) {
         assert.equal(door.doormask, locked ? D_LOCKED : D_ISOPEN);
     });
 }
+void test('a stunned hero redirects an explicit opening away from the requested door', async () => {
+    const level = freshPlayableRoom({ seed: 1n, hero: { stunnedTurns: 5 } });
+    requireFixtureGame(game);
+    const door = level.requireAt(11, 10);
+    door.typ = DOOR;
+    door.doormask = D_CLOSED;
+    for (const attribute of [A_STR, A_DEX, A_CON])
+        game.u.acurr.a[attribute] = 25;
+    pushKeys('l');
+    await rhack('o'.charCodeAt(0));
+    assert.equal(door.doormask, D_CLOSED);
+    assert.equal(game._pending_message, 'You see no door there.');
+    assert.equal(game.context.move, 1, 'impaired direction selection spends the turn');
+});
+void test('opening toward yourself inspects the floor for loot', async () => {
+    freshObjectRoom({ flags: { cmdassist: false } });
+    pushKeys('.');
+    await rhack('o'.charCodeAt(0));
+    assert.equal(game._pending_message, "You don't find anything here to loot.");
+    assert.equal(game.context.move, 0);
+});
+void test('closing toward yourself spends a turn because the hero blocks the way', async () => {
+    freshObjectRoom({ flags: { cmdassist: false } });
+    pushKeys('.');
+    await rhack('c'.charCodeAt(0));
+    assert.equal(game._pending_message, 'You are in the way!');
+    assert.equal(game.context.move, 1);
+});
 //# sourceMappingURL=door_open.test.js.map
