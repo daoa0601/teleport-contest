@@ -120,7 +120,8 @@ export async function makeWish({ announce = false, allowWizardTerrain = false, }
 }
 function wishDropMessage(object) {
     const hero = game.u;
-    const slips = Is_airlevel(hero.uz) || !!hero.uinwater;
+    const airLevel = Is_airlevel(hero.uz);
+    const slips = airLevel || !!hero.uinwater;
     const dangerous = object.otyp === CORPSE && !!object.wishedfor;
     const verb = slips ? 'slip' : dangerous ? 'materialize' : 'drop';
     observeObjectForNaming(object);
@@ -132,7 +133,7 @@ function wishDropMessage(object) {
     if (hero.uswallow)
         return `Oops!  ${action} out of your reach!`;
     const terrain = game.level?.at(hero.ux, hero.uy)?.typ;
-    if (slips || Is_waterlevel(hero.uz) || terrain !== undefined && (terrain < IRONBARS || terrain >= ICE))
+    if (airLevel || Is_waterlevel(hero.uz) || terrain !== undefined && (terrain < IRONBARS || terrain >= ICE))
         return `Oops!  ${action} away from you!`;
     return dangerous ? `Careful! ${action} on the floor!` : `Oops!  ${action} to the floor!`;
 }
