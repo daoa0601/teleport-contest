@@ -13,7 +13,7 @@ import { finishInventoryRemoval, useUpInventoryStack } from './hero_inventory.js
 import { setPrimaryWeapon, setSecondaryWeapon, setQuiverObject } from './weapon_slots.js';
 import { inventoryItemDescription, inventoryPrimaryHandDetail } from './invent.js';
 import { compactInventoryLetters, promptInventoryObject } from './inventory_prompt.js';
-import { objectCombatName, observeObjectForNaming, ownedObjectAction } from './objnam.js';
+import { objectCombatName, objectNameIsPlural, observeObjectForNaming, ownedObjectAction } from './objnam.js';
 import { inventoryClassOrder, lootSortMode, objectClassHeading, sortObjects } from './object_sort.js';
 import { OBJECT_CLASS_SYMBOLS, objectClassForType } from './object_knowledge.js';
 import { clearJustPicked } from './just_picked.js';
@@ -418,7 +418,7 @@ export async function loseMagicBagItem(object: GameObject, held: boolean, state:
         observeObjectForNaming(object, { state });
         const name = objectDescription(object);
         await plineWithContinuation(known
-            ? `${name.charAt(0).toUpperCase()}${name.slice(1)} ${object.quan === 1 ? 'has' : 'have'} vanished!`
+            ? `${name.charAt(0).toUpperCase()}${name.slice(1)} ${objectNameIsPlural(object, state) ? 'have' : 'has'} vanished!`
             : `You ${heroIsBlind(state) ? 'notice' : 'see'} ${name} disappear!`);
     }
     const keeper = currentShopResident(state);

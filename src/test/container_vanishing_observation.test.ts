@@ -5,7 +5,7 @@ import { BAG_OF_HOLDING, CLUB, POT_HEALING } from '../js/object_data.js';
 import { resetInputState } from '../js/input.js';
 import { initRng } from '../js/rng.js';
 import { applyInventoryObject } from './support/commands.js';
-import { addInventoryObject, knownObject } from './support/game-objects.js';
+import { addInventoryObject, artifactObject, knownObject } from './support/game-objects.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 import { answerPrompts } from './support/input-boundaries.js';
 
@@ -37,3 +37,26 @@ for (const blind of [false, true]) {
         assert.equal(game.context.move, 0);
     });
 }
+
+void test('the discovered Eyes of the Overworld have vanished when a cursed bag consumes them', async () => {
+    freshPlayableRoom();
+    const bag = await addInventoryObject(BAG_OF_HOLDING, {
+        invlet: 'a', initialize: false, cursed: true, cknown: true,
+    });
+    const eyes = await artifactObject('The Eyes of the Overworld', {
+        where: 'contained', container: bag,
+    });
+    assert.ok(eyes.oartifact);
+    game._artifactDiscoveries = [eyes.oartifact];
+    bag.contents = [eyes];
+    await addInventoryObject(CLUB, { invlet: 'b' });
+    initRng(17n);
+    const input = resetInputState();
+
+    await answerPrompts(applyInventoryObject(bag), input, [
+        { prompt: /Eyes of the Overworld have vanished!/, keys: ' ' },
+        { prompt: /Do what with/, keys: 'q' },
+    ]);
+
+    assert.equal(eyes.where, 'gone');
+});
