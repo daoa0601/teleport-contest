@@ -3,7 +3,7 @@ import test from 'node:test';
 import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { MENU_FULL, MENU_PARTIAL } from '../js/const.js';
+import { MENU_COMBINATION, MENU_FULL, MENU_PARTIAL, MENU_TRADITIONAL } from '../js/const.js';
 import { DAGGER, POT_HEALING } from '../js/object_data.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -34,6 +34,22 @@ void test('traditional inventory ignores an invalid category key before acceptin
     await rhack('I'.charCodeAt(0));
     assert.equal(game.context.move, 0);
 });
+const promptMenuStyles = [MENU_TRADITIONAL, MENU_COMBINATION];
+for (const style of promptMenuStyles) {
+    void test(`inventory class prompts follow carried object order in menu style ${style}`, async (t) => {
+        freshObjectRoom({ flags: { menu_style: style } });
+        await addInventoryObject(POT_HEALING);
+        await addInventoryObject(DAGGER);
+        await addInventoryObject(POT_HEALING);
+        const input = resetInputState();
+        planInput(input, t, [{
+                prompt: /What type of object do you want an inventory of\? \[!\) /,
+                keys: '\x1b',
+            }]);
+        await rhack('I'.charCodeAt(0));
+        assert.equal(game.context.move, 0);
+    });
+}
 void test('inventory of unpaid objects reports the agreed shop price without spending time', async (t) => {
     freshObjectRoom({ flags: { menu_style: 0 } });
     const dagger = await addInventoryObject(DAGGER, { unpaid: true });

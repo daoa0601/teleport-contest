@@ -198,14 +198,15 @@ async function typeInventory(): Promise<InventoryAction | null> {
     const buried = unpaidObjects(level.buriedObjects ?? []);
     const statuses = new Set(game.inventory.map(beatitude));
     const picked = game.inventory.filter(object => object.pickup_prev);
-    const classes = [...inventoryClassOrder(), 17].filter(oclass => game.inventory.some(object => object.oclass === oclass));
+    const classes = [...new Set(game.inventory.map(object => object.oclass))];
     const extra = `${carried.length + floor.length + buried.length ? 'u' : ''}${bill.length ? 'x' : ''}${
         [...'BUCX'].filter(status => statuses.has(bucChoice(status))).join('')}${picked.length ? 'P' : ''}`;
     const prompt = 'What type of object do you want an inventory of?';
     let choice: string | number | null;
     const style = game.flags.menu_style ?? MENU_FULL;
     if (style === MENU_FULL || style === MENU_PARTIAL) {
-        choice = await inventoryCategoryMenu(classes, carried.length > 0, bill.length > 0, statuses, picked, prompt);
+        const menuClasses = [...inventoryClassOrder(), 17].filter(oclass => classes.includes(oclass));
+        choice = await inventoryCategoryMenu(menuClasses, carried.length > 0, bill.length > 0, statuses, picked, prompt);
     } else {
         const types = classes.map(oclass => OBJECT_CLASS_SYMBOLS[oclass]).join('') + (extra ? ` ${extra}` : '');
         choice = types;
