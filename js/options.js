@@ -2,6 +2,7 @@
 // C ref: options.c — handles OPTIONS=, BIND=, etc.
 import { game } from './gstate.js';
 import { setConditionOption } from './status_conditions.js';
+import { classifyStatusTerrain } from './status_terrain.js';
 import { CommandBindings } from './command_bindings.js';
 import { changePreferredFruit, normalizePreferredFruitName } from './fruit.js';
 import { bot, clearMessageWindow, docrt, flushPendingTopline, flush_screen, plineWithContinuation, reglyph_darkroom } from './display.js';
@@ -963,6 +964,8 @@ async function editPickupTypes(preserveStatus = false) {
 // changes need bot(); map-affecting changes defer the full docrt until all
 // selected options and their compound handlers have finished.
 function applyBooleanVisualChange(name) {
+    if (name === 'terrainstatus')
+        classifyStatusTerrain(game);
     if (['showexp', 'time', 'showvers', 'weaponstatus', 'armorstatus', 'terrainstatus'].includes(name))
         game.context.botl = true;
     if (name === 'dark_room' || name === 'lit_corridor') {

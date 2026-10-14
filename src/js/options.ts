@@ -3,6 +3,7 @@
 
 import { game } from './gstate.js';
 import { setConditionOption } from './status_conditions.js';
+import { classifyStatusTerrain } from './status_terrain.js';
 import type { GameFlags, InterfaceFlags, LootSortMode, MenuStyle } from './flags.js';
 import { CommandBindings } from './command_bindings.js';
 import { changePreferredFruit, normalizePreferredFruitName } from './fruit.js';
@@ -950,6 +951,7 @@ async function editPickupTypes(preserveStatus = false): Promise<void> {
 // changes need bot(); map-affecting changes defer the full docrt until all
 // selected options and their compound handlers have finished.
 function applyBooleanVisualChange(name: BooleanOptionName): boolean {
+    if (name === 'terrainstatus') classifyStatusTerrain(game);
     if (['showexp', 'time', 'showvers', 'weaponstatus', 'armorstatus', 'terrainstatus'].includes(name))
         game.context.botl = true;
     if (name === 'dark_room' || name === 'lit_corridor') {

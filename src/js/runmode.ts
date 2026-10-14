@@ -6,7 +6,8 @@ import type { GameState } from './game_state.js';
 import type { DirectionalRunMode, DirectionalRunState } from './command_types.js';
 import type { TerminalCell } from './terminal.js';
 import { flush_screen } from './display.js';
-import { COLNO, ROWNO } from './const.js';
+import { COLNO, MAX_TYPE, ROWNO } from './const.js';
+import { classifyStatusTerrain } from './status_terrain.js';
 
 // C refs: cmd.c set_move_cmd(run=1) and hack.c lookaround().
 export function startRun(dx: number, dy: number, g: GameState = game, mode: DirectionalRunMode = 1): DirectionalRunState {
@@ -22,9 +23,14 @@ export function startRun(dx: number, dy: number, g: GameState = game, mode: Dire
 }
 
 export function stopRun(g: GameState = game): void {
+    const running = !!g.context.run;
     if (g.context.run && g.flags.time) g.context.time_botl = true;
     g._runState = null;
     g.context.run = 0;
+    if (running && g.flags.terrainstatus) {
+        g.iflags.terrain_typ = MAX_TYPE;
+        classifyStatusTerrain(g);
+    }
     g.context.mv = false;
     g.context.travel = false;
     g.context.travel1 = false;

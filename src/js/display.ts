@@ -19,6 +19,7 @@ import { capacityIndex, renderStatusLine2 } from './status_layout.js';
 import type { StatusLine2Fields } from './status_layout.js';
 import { armorStatus, weaponStatus } from './status_equipment.js';
 import { statusVersion } from './status_version.js';
+import { statusTerrain } from './status_terrain.js';
 import { cansee, couldsee, set_seenv, vision_recalc } from './vision.js';
 import {
     A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, BC_BALL, BC_CHAIN,
@@ -2294,7 +2295,8 @@ function statusLine2Fields(refreshLoad: boolean): StatusLine2Fields | null {
         capacity: refreshLoad ? nearCapacity(game) : capacityIndex(u._encumbrance),
         conditions: statusConditions(game),
         equipment: [game.flags.weaponstatus ? weaponStatus(game) : '',
-            game.flags.armorstatus ? armorStatus(game) : ''].filter(text => text.length > 0),
+            game.flags.armorstatus ? armorStatus(game) : '',
+            game.flags.terrainstatus ? statusTerrain(game) : ''].filter(text => text.length > 0),
         version: game.flags.showvers ? statusVersion(game.flags.versinfo) : '',
     };
 }
@@ -2498,15 +2500,19 @@ function refreshStatusLines(): void {
     const display = game.nhDisplay;
     if (!display || game._statusUpdatesDisabled || game.program_state.saving
         || game.program_state.windows_exited || game._suppressMapStatusForFlush) return;
-    game.context.botl = false;
-    game.context.time_botl = false;
-    if (game.u.uhp === -1) return;
+    if (game.u.uhp === -1) {
+        game.context.botl = false;
+        game.context.time_botl = false;
+        return;
+    }
     game.u._encumbrance = encumbranceLabel(nearCapacity(game));
     display.statusLine2Fields = statusLine2Fields(false);
     display.statusLines = [_statusLine1(), display.statusLine2Fields
         ? renderStatusLine2(display.statusLine2Fields, display.cols) : ''];
     display.statusVisible = true;
     writeStatusLines(display, display.statusLines);
+    game.context.botl = false;
+    game.context.time_botl = false;
 }
 
 // C botl.c:stat_update_time() notifies only BL_TIME. Other fields keep the
