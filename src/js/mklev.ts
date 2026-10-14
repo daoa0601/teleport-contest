@@ -1246,7 +1246,8 @@ export function set_corpsenm(otmp: GameObject | null | undefined, pm: number): v
         ? Math.max(0, existingEggTimer.deadline - (game.moves ?? 0))
         : 0;
     // set_corpsenm() replaces timers which depend on the object's species.
-    stopAllObjectTimers(otmp);
+    if (otmp.otyp === EGG) stopObjectTimer(otmp, OBJECT_TIMER_KIND.HATCH_EGG);
+    else stopAllObjectTimers(otmp);
     if (otmp.otyp === CORPSE && otmp.oeaten) {
         const previous = otmp.corpsenm;
         const oldNutrition = previous === undefined ? 0 : MONSTER_BODY_META[previous]?.[1] ?? 0;
