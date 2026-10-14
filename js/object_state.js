@@ -4,7 +4,7 @@
 // NetHack stores blessed/cursed as boolean bits.  Older JavaScript inventory
 // producers can also attach a textual `buc` compatibility field, so every
 // shared transition must keep that projection synchronized.
-import { AMULET_OF_YENDOR, BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION, BAG_OF_HOLDING, CORPSE, FIGURINE, OBJECT_CHARGED, OBJECT_NAMES, OBJECT_SUBTYPE, SPE_BOOK_OF_THE_DEAD, } from './object_data.js';
+import { AMULET_OF_YENDOR, BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION, BAG_OF_HOLDING, CORPSE, FIGURINE, OBJECT_BIMANUAL, OBJECT_CHARGED, OBJECT_NAMES, OBJECT_SUBTYPE, SPE_BOOK_OF_THE_DEAD, } from './object_data.js';
 import { artifactById } from './artifacts.js';
 import { game, requireLiveGame } from './gstate.js';
 import { rn2 } from './rng.js';
@@ -16,6 +16,7 @@ import { bot } from './display.js';
 import { updateCarriedLuck } from './hero_inventory.js';
 import { OBJECT_TIMER_KIND, stopObjectTimer } from './object_timers.js';
 import { attachCursedFigurineTimer } from './figurine_timer.js';
+import { resetBulkTakeoff } from './takeoff_state.js';
 const WEAPON_CLASS = 2;
 const ARMOR_CLASS = 3;
 const TOOL_CLASS = 6;
@@ -110,6 +111,8 @@ export function curseObjectState(object, state = game) {
     object.blessed = false;
     object.cursed = true;
     object.buc = 'cursed';
+    if (object === (state.uwep || state.u.uwep) && OBJECT_BIMANUAL[object.otyp])
+        resetBulkTakeoff(state);
     updateBlessingEffects(object, state);
     if (object.otyp === FIGURINE
         && (object.where === 'inventory' || object.where === 'minvent'))
