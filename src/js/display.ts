@@ -15,7 +15,7 @@ import { nhgetch } from './input.js';
 import { currentHungerState } from './hunger.js';
 import { rankOf } from './quest_pager.js';
 import { statusConditions } from './status_conditions.js';
-import { capacityIndex, renderStatusLine2 } from './status_layout.js';
+import { renderStatusLine2 } from './status_layout.js';
 import type { StatusLine2Fields } from './status_layout.js';
 import { armorStatus, weaponStatus } from './status_equipment.js';
 import { statusVersion } from './status_version.js';
@@ -2256,7 +2256,7 @@ export function _statusLine1() {
     return `${title}${' '.repeat(gap)}${stats} ${align}`;
 }
 
-// C ref: botl.c strbuf(): strength values above 18 encode the exceptional
+// C ref: botl.c:get_strength_str(): strength values above 18 encode the exceptional
 // 18/xx range; 118 is the traditional 18/** maximum.
 export function formatStrength(value: number | null | undefined) {
     if (value == null) return '?';
@@ -2266,12 +2266,12 @@ export function formatStrength(value: number | null | undefined) {
     return `18/${String(value - 18).padStart(2, '0')}`;
 }
 
-export function _statusLine2(refreshLoad = true) {
-    const fields = statusLine2Fields(refreshLoad);
+export function _statusLine2() {
+    const fields = statusLine2Fields(nearCapacity(game));
     return fields ? renderStatusLine2(fields, game.nhDisplay?.cols ?? COLNO) : '';
 }
 
-function statusLine2Fields(refreshLoad: boolean): StatusLine2Fields | null {
+function statusLine2Fields(capacity: number): StatusLine2Fields | null {
     const u = game.u;
     if (!u) return null;
     const dungeonName = game.dungeons?.[u.uz?.dnum ?? 0]?.dname;
@@ -2300,7 +2300,7 @@ function statusLine2Fields(refreshLoad: boolean): StatusLine2Fields | null {
         health: `HP:${displayedHp}(${maximumHp}) Pw:${displayedPower}(${maximumPower}) AC:${displayedAc}`,
         experience, moves: game.flags.time ? game.moves : null,
         hunger: hungerLabel ?? '',
-        capacity: refreshLoad ? nearCapacity(game) : capacityIndex(u._encumbrance),
+        capacity,
         conditions: statusConditions(game),
         equipment: [game.flags.weaponstatus ? weaponStatus(game) : '',
             game.flags.armorstatus ? armorStatus(game) : '',
@@ -2525,8 +2525,9 @@ function refreshStatusLines(): void {
         game.context.time_botl = false;
         return;
     }
-    game.u._encumbrance = encumbranceLabel(nearCapacity(game));
-    display.statusLine2Fields = statusLine2Fields(false);
+    const capacity = nearCapacity(game);
+    game.u._encumbrance = encumbranceLabel(capacity);
+    display.statusLine2Fields = statusLine2Fields(capacity);
     display.statusLines = [_statusLine1(), display.statusLine2Fields
         ? renderStatusLine2(display.statusLine2Fields, display.cols) : ''];
     display.statusVisible = true;

@@ -3,9 +3,6 @@ const capacityText = [
     ['', 'Burden', 'Stress', 'Strain', 'Overtax', 'Overload'],
     ['', 'Brd', 'Strs', 'Strn', 'Ovtx', 'Ovld'],
 ];
-export function capacityIndex(label) {
-    return Math.max(0, capacityText[0]?.indexOf(label ?? '') ?? 0);
-}
 // wintty.c:make_things_fit() tries all condition abbreviations, then both
 // encumbrance abbreviations, then Dlvl -> Dl, before truncating at cols-1.
 export function renderStatusLine2(fields, columns) {
