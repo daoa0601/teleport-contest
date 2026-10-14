@@ -10240,8 +10240,12 @@ async function mktrap_victim(trap) {
             if (!rn2(10)) {
                 const otmp = await mksobj(rn2(4) ? TALLOW_CANDLE : WAX_CANDLE, true, false);
                 otmp.quan = 1;
+                otmp.quantity = 1;
+                otmp.owt = objectWeight(otmp);
                 curseObjectState(otmp);
                 placeCreatedObject(otmp, x, y);
+                if (!requireGameLevel().requireAt(x, y).lit)
+                    beginObjectBurn(otmp);
             }
             break;
         default:
