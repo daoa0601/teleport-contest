@@ -4953,7 +4953,6 @@ async function dowhatis(): Promise<void> {
                     && !!game.urace && game.urace.name !== 'human' && game.urace.name !== 'elf',
                 waterLevel: Is_waterlevel(game.u.uz),
                 inHell: In_hell(game.u.uz),
-                decGraphics: /^DECgraphics$/i.test(game.symset ?? '') && !Is_rogue_level(game.u.uz),
                 blind: heroIsBlind(game),
             });
             await plineWithContinuation(result.count

@@ -9,7 +9,6 @@ interface TypedLookContext {
     includeHero: boolean;
     waterLevel: boolean;
     inHell: boolean;
-    decGraphics: boolean;
     blind: boolean;
 }
 
@@ -32,10 +31,6 @@ export function typedSymbolDescription(symbol: string, context: TypedLookContext
         if (countMeaning) count++;
     };
 
-    // The swallow check uses the active symbols. DEC replaces the horizontal
-    // and vertical edges with alternate-font characters, retaining the slants.
-    if ((context.decGraphics ? '/\\' : '/-\\|').includes(symbol))
-        append('the interior of a monster', 'the interior of a monster');
     for (let index = 1; index < MONSTER_CLASS_SYMBOLS.length; index++) {
         const name = MONSTER_CLASS_EXPLAIN[index];
         if (symbol === MONSTER_CLASS_SYMBOLS[index] && name && name !== 'invisible monster')

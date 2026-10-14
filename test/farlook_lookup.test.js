@@ -52,7 +52,8 @@ void test('the typed-name look command opens the encyclopedia without asking for
 for (const [symbol, description] of [
     ['<', 'a staircase up or a ladder up or a branch staircase up or a branch ladder up'],
     ['a', 'an ant or other insect'],
-    ['/', 'the interior of a monster or a wand'],
+    ['/', 'a wand'],
+    ['\\', 'an opulent throne'],
     ['^', 'a trap'],
     [' ', 'a ghost or stone or air'],
     ['`', 'a boulder or an engraving'],
@@ -79,6 +80,24 @@ for (const [symbol, description] of [
         }
         assert.equal(game.context.move, 0);
     });
+}
+for (const symset of ['default', 'DECgraphics']) {
+    for (const [symbol, description, meaning] of [
+        ['/', 'a wand', 'wand'],
+        ['\\', 'an opulent throne', 'opulent throne'],
+    ]) {
+        void test(`typed ${JSON.stringify(symbol)} offers ${meaning} information using ${symset}`, async () => {
+            freshObjectRoom({ flags: { tips: false, help: true } });
+            game.symset = symset;
+            const input = resetInputState();
+            input.feed(`/?${symbol}\n`);
+            await answerPrompts(rhack(0), input, [
+                { prompt: new RegExp(`${description}--More--`), keys: ' ' },
+                { prompt: new RegExp(`More info about "${meaning}"\\?`), keys: 'n' },
+            ]);
+            assert.equal(game.context.move, 0);
+        });
+    }
 }
 for (const blind of [false, true]) {
     void test(`typed look describes an unseen creature with blindness=${blind}`, async () => {
