@@ -7,7 +7,7 @@ import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import { impossible } from './diagnostics.js';
 import { maybeUnhideAt } from './monster_hiding.js';
 import {
-    clearMapDisplay, map_object, newsym, plineWithContinuation,
+    cls, map_object, newsym, plineWithContinuation,
 } from './display.js';
 import {
     moveObject, placeObjectSynchronously, remove_object,
@@ -88,7 +88,7 @@ export async function dragBallDownStairs(state: GameState = game): Promise<boole
         && (weapon === ball || !weapon || rn2(3) === 0);
     if (carried(ball, state) && !isWeldedPrimary(ball, state))
         await plineWithContinuation('You lose your grip on the iron ball.');
-    clearMapDisplay();
+    await cls();
 
     if (forward) {
         if (rn2(6)) {
