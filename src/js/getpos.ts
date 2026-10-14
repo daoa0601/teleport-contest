@@ -442,7 +442,7 @@ export async function selectMapPosition({
     const validity: { cycle: ValidLocationCycle | null } = { cycle: null };
     let markValid = false;
     const targetCycles = new Map<GetposCycleKind, LocationCycle>();
-    const autoDescription = (): boolean => game.iflags.autodescribe ?? game.flags.autodescribe ?? true;
+    const autoDescription = (): boolean => game.iflags.autodescribe ?? true;
     const movementMessage = async (): Promise<string> => autoDescription()
         ? await describeSelectedPosition(describe, cursor, movePrompt) : movePrompt;
 

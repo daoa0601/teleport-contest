@@ -1,9 +1,11 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { selectMapPosition } from '../js/getpos.js';
+import { rhack } from '../js/cmd.js';
 import { newsym } from '../js/display.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
+import { applyNethackrc } from '../js/options.js';
 import { answerPrompts } from './support/input-boundaries.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -57,5 +59,41 @@ void test('getpos fast movement can stop at the end of similar terrain', async (
         start: { x: 11, y: 10 }, prompt: 'Pick a location.', goal: 'a location',
     });
     assert.equal(selected?.x, 16);
+});
+void test('configured whatis_menu opens the monster menu during quick look', async () => {
+    freshObjectRoom({ flags: { tips: false, verbose: false } });
+    await createMonsterAt('kitten', 11, 10);
+    newsym(11, 10);
+    applyNethackrc('OPTIONS=whatis_menu');
+    const input = resetInputState();
+    input.feed('m');
+    await answerPrompts(rhack(';'.charCodeAt(0)), input, [
+        { prompt: /Pick a monster[\s\S]*a - kitten/, keys: 'a' },
+        { prompt: /kitten/, keys: '\x1b' },
+    ]);
+    assert.equal(game.context.move, 0);
+});
+void test('configured whatis_moveskip stops fast movement at similar terrain', async () => {
+    freshObjectRoom({ flags: { tips: false, verbose: false } });
+    applyNethackrc('OPTIONS=whatis_moveskip');
+    resetInputState().feed('L.');
+    const selected = await selectMapPosition({
+        start: { x: 11, y: 10 }, prompt: 'Pick a location.', goal: 'a location',
+    });
+    assert.equal(selected?.x, 16);
+});
+void test('configuring autodescribe takes effect after the cursor toggle', async () => {
+    freshObjectRoom({ flags: { tips: false, verbose: false } });
+    applyNethackrc('OPTIONS=autodescribe');
+    const input = resetInputState();
+    input.feed('#');
+    await answerPrompts(rhack(';'.charCodeAt(0)), input, [
+        { prompt: /Automatic description is off\./, keys: '\x1b' },
+    ]);
+    applyNethackrc('OPTIONS=autodescribe');
+    input.feed('l');
+    await answerPrompts(rhack(';'.charCodeAt(0)), input, [
+        { prompt: /floor of a room/, keys: '\x1b' },
+    ]);
 });
 //# sourceMappingURL=getpos_controls.test.js.map
