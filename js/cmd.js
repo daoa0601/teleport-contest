@@ -7393,7 +7393,11 @@ async function domoveCore(dx, dy, explicitAttempt) {
     // diagonally across an intact doorway even though moving through that
     // same doorway would be rejected.
     const monster = game.level ? monsterAtPosition(game.level, newx, newy) : null;
-    if (monster) {
+    const hiddenCeilingMonster = monster?.mundetected && !game.context.forcefight
+        && !canSenseMonster(monster)
+        && !((MONSTER_FLAGS1[monster.mnum] ?? 0) & 0x80)
+        && MONSTER_SYMBOL[monster.mnum] !== 57;
+    if (monster && !hiddenCeilingMonster) {
         // C display.h:_is_safemon() deliberately stops treating even a
         // peaceful/tame monster as safe while the hero is confused,
         // hallucinating, or stunned.  domove_core() checks that predicate

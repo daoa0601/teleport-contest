@@ -20,6 +20,7 @@ import { checkSpecialRoom } from './shk.js';
 import { announceInvocationSquare } from './invocation.js';
 import { levelTimers, LEVEL_TIMER_KIND } from './object_timers.js';
 import { isIceAt } from './terrain_properties.js';
+import { finishCeilingMonsterArrival } from './ceiling_monster_arrival.js';
 
 export interface SpotEffectResult {
     died: boolean;
@@ -130,6 +131,7 @@ export async function finishDestinationSpotEffects({
             if (game.program_state.gameover) return { died: true };
         }
         await warnAboutMeltingIce(publish);
+        if (await finishCeilingMonsterArrival(game, publish)) return { died: true };
         if (explicitAttempt) maybeSmudgeEngravings(oldx, oldy, newx, newy);
         return { moved: false, died: !!game.program_state.gameover };
     } finally {
