@@ -1808,7 +1808,10 @@ function showKnownTerrain() {
                 && (!loc.disp_ch || loc.disp_ch === ' '))) continue;
             const glyph = terrain_glyph(loc, x, y);
             loc.disp_ch = glyph.ch;
-            loc.disp_color = glyph.color;
+            // detect.c:reveal_terrain_getglyph() normalizes S_litcorr to
+            // S_corr even when the actual corridor is lit.
+            loc.disp_color = glyph.glyph === cmapToGlyph(CmapSymbol.litcorr)
+                ? NO_COLOR : glyph.color;
             loc.disp_decgfx = glyph.dec;
             loc.disp_attr = 0;
         }
