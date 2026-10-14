@@ -1,11 +1,11 @@
 // C pager.c:dispfile_*, docontact(), dowhatdoes[_core](), domenucontrols().
 import { COMMAND_DESCRIPTIONS } from './command_descriptions.js';
 import { visibleCommandKey } from './command_keys.js';
-import { clearMessageWindow, flushPendingTopline, pline, plineWithContinuation } from './display.js';
+import { clearMessageWindow, displayMessageWindow, flushPendingTopline, pline, plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
 import { HELP_FILES } from './help_files.js';
 import { promptKey, restoreCommandMap } from './tty_prompts.js';
-import { showDisclosureOverlay, showTextWindow } from './windows.js';
+import { showTextWindow } from './windows.js';
 let whatdoesTipShown = false;
 export async function displayHelpFile(name, keyHelp = false) {
     clearMessageWindow();
@@ -19,9 +19,15 @@ export async function displayHelpFile(name, keyHelp = false) {
     const content = keyHelp ? lines.filter(line => !line.startsWith('#')).map(line => line.replace(/^[ \t]+/, ''))
         : lines.map(expandTabs);
     if (content.length)
-        await showTextWindow(content);
-    await restoreCommandMap();
+        await displayPagerText(content);
     game.context.move = 0;
+}
+// tty_display_nhwindow(NHW_TEXT) forces full width. Its final More prompt
+// stays on the bottom row even when the text fits on a short last page.
+export async function displayPagerText(lines) {
+    await displayMessageWindow();
+    await showTextWindow(lines);
+    await restoreCommandMap();
 }
 function expandTabs(line) {
     let text = '';
@@ -30,13 +36,13 @@ function expandTabs(line) {
     return text;
 }
 export async function contactHelp() {
-    await showDisclosureOverlay([
+    await displayPagerText([
         'To contact the NetHack development team directly,',
         "see the 'Contact' form on our website or email <devteam@nethack.org>.",
         '',
         'For more information on NetHack, or to report a bug,',
         'visit our website "https://www.nethack.org/".',
-    ], { restoreUnderlay: true });
+    ]);
 }
 export async function whatdoes() {
     if (!whatdoesTipShown) {
@@ -114,7 +120,7 @@ export function setOptionsCommand() {
 export async function menuControlsHelp() {
     const wholeAndPage = (label, whole, page) => `${label.padStart(8)}     ${whole.padEnd(6)} ${page}`;
     const goTo = (key, name) => wholeAndPage('', key, name);
-    await showDisclosureOverlay([
+    await displayPagerText([
         'Menu control keys:', '',
         '           Whole  Current', '            Menu   Page',
         wholeAndPage('Select', '.', ','), wholeAndPage('Invert', '@', '~'),
@@ -127,6 +133,6 @@ export async function menuControlsHelp() {
         '           Space    If not on last page, advance one page;',
         '                    when on last page, treat like Return',
         '           Escape   Cancel menu without making any choice(s)',
-    ], { restoreUnderlay: true });
+    ]);
 }
 //# sourceMappingURL=pager_help.js.map

@@ -69,4 +69,18 @@ for (const key of ['e', 'E']) {
         assert.equal(engraving.rememberedText, 'old words');
     });
 }
+void test('look lists use a full-screen text window with a bottom-row pager', async () => {
+    freshObjectRoom({ flags: { tips: false } });
+    await createMonsterAt('kitten', 11, 10);
+    newsym(11, 10);
+    const input = resetInputState();
+    input.feed('M');
+    const operation = rhack('/'.charCodeAt(0));
+    await input.waitUntilBlocked();
+    assert.ok(game.nhDisplay);
+    assert.equal(game.nhDisplay.cursorRow, game.nhDisplay.rows - 1);
+    assert.ok(game.nhDisplay.grid[0]?.map(cell => cell.ch).join('').startsWith('All monsters currently shown on the map:'));
+    input.feed(' ');
+    await operation;
+});
 //# sourceMappingURL=pager_lists.test.js.map

@@ -5,10 +5,10 @@ import { NATIVE_COMMANDS, NATIVE_COMMAND_FLAGS as F } from './command_data.js';
 import { visibleCommandKey } from './command_keys.js';
 import { game } from './gstate.js';
 import { patternMatches } from './encyclopedia.js';
-import { keyText } from './pager_help.js';
+import { keyText, displayPagerText } from './pager_help.js';
 import { getLine } from './query.js';
 import { restoreCommandMap } from './tty_prompts.js';
-import { showDisclosureOverlay, showMultiSelectWindow } from './windows.js';
+import { showMultiSelectWindow } from './windows.js';
 import type { PageLocalMultiSelectItem, PageLocalMultiSelectSection } from './windows.js';
 
 export async function keyBindingsHelp(): Promise<void> {
@@ -62,7 +62,7 @@ export async function keyBindingsHelp(): Promise<void> {
         }
         if (rows.length) lines.push('', category.title, ...rows);
     }
-    await showDisclosureOverlay(lines, { restoreUnderlay: true });
+    await displayPagerText(lines);
     game.context.move = 0;
 }
 

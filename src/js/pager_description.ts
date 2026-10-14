@@ -15,6 +15,9 @@ import { withIndefiniteArticle } from './object_grammar.js';
 import { quotedEngraving, lookGlyphAt } from './pager_features.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 
+// encglyph() occupies ten bytes in the native buffer, followed by eight spaces.
+const ENCODED_LOOK_PREFIX_LENGTH = 10 + 8;
+
 interface ScreenDescription { text: string; count: number; firstMatch: string; needsDetail: boolean }
 
 export function screenDescription(x: number, y: number, description: string): ScreenDescription {
@@ -142,5 +145,5 @@ export function screenDescription(x: number, y: number, description: string): Sc
             count = 1;
         }
     }
-    return { text: prefix + text.slice(0, BUFSZ - 19), count, firstMatch, needsDetail };
+    return { text: prefix + text.slice(0, BUFSZ - 1 - ENCODED_LOOK_PREFIX_LENGTH), count, firstMatch, needsDetail };
 }

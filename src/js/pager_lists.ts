@@ -1,8 +1,8 @@
 // C pager.c:look_all(), look_traps(), look_engrs(), look_region_nearby().
 import {
-    BOLT_LIM, COLNO, CORR, GRAVE, Is_airlevel, Is_waterlevel, ROWNO, def_warnsyms,
+    BOLT_LIM, BUFSZ, COLNO, CORR, GRAVE, Is_airlevel, Is_waterlevel, ROWNO, def_warnsyms,
 } from './const.js';
-import { glyphAt, pline, transientTrapGlyph } from './display.js';
+import { canSpotHeroSelf, glyphAt, pline, transientTrapGlyph } from './display.js';
 import { game } from './gstate.js';
 import { GlyphOffset } from './glyph_numbers.js';
 import { objectAtMapDescription } from './map_object_description.js';
@@ -12,7 +12,7 @@ import { lookAtMonster } from './pager_monsters.js';
 import { DEC_TO_UNICODE } from './terminal.js';
 import { trapName } from './trap_name.js';
 import { couldsee } from './vision.js';
-import { showDisclosureOverlay } from './windows.js';
+import { displayPagerText } from './pager_help.js';
 
 export type LookListKind = 'monsters' | 'objects' | 'traps' | 'engravings';
 
@@ -31,9 +31,10 @@ export async function showLookList(kind: LookListKind, nearby: boolean,
             const glyph = glyphAt(x, y);
             if (!glyph) continue;
             let symbol = mapSymbolAt(x, y), description = '';
+            let obscured = false;
             if (kind === 'monsters') {
                 if (glyph.kind === 'monster') {
-                    if (x === game.u.ux && y === game.u.uy) description = (await describeHero()).split(' [seen: ')[0] ?? '';
+                    if (x === game.u.ux && y === game.u.uy && canSpotHeroSelf()) description = (await describeHero()).split(' [seen: ')[0] ?? '';
                     else {
                         const monster = monsterAtPosition(level, x, y);
                         if (monster) description = await lookAtMonster(monster, x, y);
@@ -51,6 +52,7 @@ export async function showLookList(kind: LookListKind, nearby: boolean,
                     const trap = level.traps.find(t => t.tx === x && t.ty === y && t.tseen);
                     if (trap && (!(Is_waterlevel(game.u.uz) || Is_airlevel(game.u.uz)) || couldsee(x, y))) {
                         description = `${trapName(trap.ttyp)}, obscured by ${symbol}`;
+                        obscured = true;
                         symbol = transientTrapGlyph(trap).ch;
                     }
                 }
@@ -65,6 +67,7 @@ export async function showLookList(kind: LookListKind, nearby: boolean,
                 const shown = glyph.kind === 'engraving' || glyph.kind === 'terrain' && glyph.terrainName === 'grave';
                 if (!shown) {
                     description += `, obscured by ${symbol}`;
+                    obscured = true;
                     symbol = headstone ? '|' : location.lastseentyp === CORR ? '#' : '`';
                 }
             }
@@ -73,10 +76,12 @@ export async function showLookList(kind: LookListKind, nearby: boolean,
             let coordinates = coordinateDescription(x, y, mode);
             if (mode === 'm' && y < 10 && (kind === 'monsters' || kind === 'objects')) coordinates += ' ';
             const prefix = mode === 's' ? coordinates : coordinates.padStart(mode === 'm' ? 8 : 12);
-            lines.push(`${prefix}  ${symbol}${kind === 'engravings' ? ' ' : '  '}${description}`.slice(0, 255));
+            // Each encoded native glyph uses nine more bytes than its visible character.
+            const limit = BUFSZ - 1 - 9 * (obscured ? 2 : 1);
+            lines.push(`${prefix}  ${symbol}${kind === 'engravings' ? ' ' : '  '}${description}`.slice(0, limit));
         }
     }
-    if (lines.length) await showDisclosureOverlay(lines, { restoreUnderlay: true });
+    if (lines.length) await displayPagerText(lines);
     else if (kind === 'monsters' || kind === 'objects')
         await pline(`No ${kind} are currently shown ${nearby ? 'nearby' : 'on the map'}.`);
     else await pline(`No ${kind} seen or remembered${nearby ? ' nearby' : ''}.`);
@@ -87,7 +92,7 @@ function listHeading(kind: LookListKind, nearby: boolean, mode: string): string 
         return nearby ? `Nearby seen or remembered ${kind}:` : `Seen or remembered ${kind} on this level:`;
     if (!nearby) return `All ${kind} currently shown on the map:`;
     const name = kind.charAt(0).toUpperCase() + kind.slice(1);
-    return `${name} currently shown near ${mode === 'c' ? 'you' : coordinateDescription(game.u.ux, game.u.uy, mode)}:`;
+    return `${name} currently shown near ${mode === 'c' ? canSpotHeroSelf() ? 'you' : 'your position' : coordinateDescription(game.u.ux, game.u.uy, mode)}:`;
 }
 
 export function coordinateDescription(x: number, y: number, mode: string): string {

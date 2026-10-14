@@ -1,11 +1,11 @@
 // C pager.c:dispfile_*, docontact(), dowhatdoes[_core](), domenucontrols().
 import { COMMAND_DESCRIPTIONS } from './command_descriptions.js';
 import { visibleCommandKey } from './command_keys.js';
-import { clearMessageWindow, flushPendingTopline, pline, plineWithContinuation } from './display.js';
+import { clearMessageWindow, displayMessageWindow, flushPendingTopline, pline, plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
 import { HELP_FILES } from './help_files.js';
 import { promptKey, restoreCommandMap } from './tty_prompts.js';
-import { showDisclosureOverlay, showTextWindow } from './windows.js';
+import { showTextWindow } from './windows.js';
 
 let whatdoesTipShown = false;
 
@@ -20,9 +20,16 @@ export async function displayHelpFile(name: string, keyHelp = false): Promise<vo
     // discards comments and the leading indentation in KEYHELP.
     const content = keyHelp ? lines.filter(line => !line.startsWith('#')).map(line => line.replace(/^[ \t]+/, ''))
         : lines.map(expandTabs);
-    if (content.length) await showTextWindow(content);
-    await restoreCommandMap();
+    if (content.length) await displayPagerText(content);
     game.context.move = 0;
+}
+
+// tty_display_nhwindow(NHW_TEXT) forces full width. Its final More prompt
+// stays on the bottom row even when the text fits on a short last page.
+export async function displayPagerText(lines: readonly string[]): Promise<void> {
+    await displayMessageWindow();
+    await showTextWindow(lines);
+    await restoreCommandMap();
 }
 
 function expandTabs(line: string): string {
@@ -32,13 +39,13 @@ function expandTabs(line: string): string {
 }
 
 export async function contactHelp(): Promise<void> {
-    await showDisclosureOverlay([
+    await displayPagerText([
         'To contact the NetHack development team directly,',
         "see the 'Contact' form on our website or email <devteam@nethack.org>.",
         '',
         'For more information on NetHack, or to report a bug,',
         'visit our website "https://www.nethack.org/".',
-    ], { restoreUnderlay: true });
+    ]);
 }
 
 export async function whatdoes(): Promise<void> {
@@ -108,7 +115,7 @@ export async function menuControlsHelp(): Promise<void> {
     const wholeAndPage = (label: string, whole: string, page: string) =>
         `${label.padStart(8)}     ${whole.padEnd(6)} ${page}`;
     const goTo = (key: string, name: string) => wholeAndPage('', key, name);
-    await showDisclosureOverlay([
+    await displayPagerText([
         'Menu control keys:', '',
         '           Whole  Current', '            Menu   Page',
         wholeAndPage('Select', '.', ','), wholeAndPage('Invert', '@', '~'),
@@ -121,5 +128,5 @@ export async function menuControlsHelp(): Promise<void> {
         '           Space    If not on last page, advance one page;',
         '                    when on last page, treat like Return',
         '           Escape   Cancel menu without making any choice(s)',
-    ], { restoreUnderlay: true });
+    ]);
 }
