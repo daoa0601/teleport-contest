@@ -15,6 +15,7 @@ import { installPagerInput } from './support/pager-input.js';
 import { heroIsBlind } from '../js/senses.js';
 import { vision_recalc } from '../js/vision.js';
 import { memoryStorage } from './support/memory-storage.js';
+import { setMonsterGivenName } from '../js/monster_given_name.js';
 async function meleeRoom(form, defender) {
     freshObjectRoom({
         flags: { verbose: true, bones: false, disclose: '-i -a -v -c -o' },
@@ -130,6 +131,23 @@ for (const gloved of [false, true]) {
             assert.doesNotMatch(messages, /turn to stone/);
         else
             assert.match(messages, /You turn to stone/);
+    });
+}
+for (const { defender, reason } of [
+    { defender: 'gelatinous cube', reason: 'frozen by a gelatinous cube' },
+    { defender: 'floating eye', reason: "frozen by a floating eye's gaze" },
+]) {
+    void test(`paralysis from a named ${defender} retains its species in the lasting reason`, async () => {
+        const monster = await meleeRoom('newt', defender);
+        setMonsterGivenName(monster, 'My Named Foe');
+        initRng(41n);
+        for (let attempt = 0; attempt < 6 && !(game._helplessTurns ?? 0); attempt++)
+            await attackEast(/My Named Foe|frozen/);
+        assert.ok((game._helplessTurns ?? 0) > 0, 'The contact must leave the hero paralyzed');
+        const helplessness = game._helplessReason;
+        assert.ok(helplessness && typeof helplessness !== 'string', 'Paralysis retains the causing monster for later death attribution');
+        assert.equal(helplessness.monsterId, monster.m_id);
+        assert.equal(helplessness.text, reason, 'The lasting reason names the true species even when the visible message uses a given name');
     });
 }
 //# sourceMappingURL=hero_melee_passive_audit.test.js.map

@@ -7,7 +7,7 @@ import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { heroHasFreeAction } from './armor.js';
 import { heroSpecies } from './hero_species.js';
 import { A_DEX, A_STR, A_WIS, M_SEEN_ACID, M_SEEN_COLD, M_SEEN_ELEC, M_SEEN_FIRE, M_SEEN_MAGR, Upolyd, } from './const.js';
-import { canSeeMonster, displayLiquidName, plineWithContinuation, randomDisplayMonsterName, shieldeff, } from './display.js';
+import { canSeeMonster, displayLiquidName, plineWithContinuation, shieldeff, } from './display.js';
 import { finishHeroDeath } from './end.js';
 import { game } from './gstate.js';
 import { healMonster } from './mon.js';
@@ -15,7 +15,7 @@ import { observeObjectForNaming, ownedObjectAction } from './objnam.js';
 import { erodeArmor, erodeObject } from './object_erosion.js';
 import { MONSTER_ATTACKS, MONSTER_NAME, MONSTER_RESISTS, monsterTypeName, requireMonsterData, } from './monster_data.js';
 import { splitMonster } from './monster_clone.js';
-import { monsterName as displayedMonsterName, possessiveName } from './monster_name.js';
+import { monsterName as displayedMonsterName, namelessMonsterName, possessiveName } from './monster_name.js';
 import { monstersForgetHeroResistance, monstersObserveHeroResistance, } from './monster_perception.js';
 import { AD_ACID, AD_COLD, AD_CORR, AD_ELEC, AD_ENCH, AD_FIRE, AD_MAGM, AD_PHYS, AD_PLYS, AD_RUST, AD_STON, AD_STUN, AT_BITE, AT_BOOM, AT_BREA, AT_BUTT, AT_CLAW, AT_EXPL, AT_GAZE, AT_HUGS, AT_KICK, AT_MAGC, AT_NONE, AT_SPIT, AT_STNG, AT_TUCH, AT_WEAP, } from './monster_attack_types.js';
 import { OBJECT_NAMES } from './object_data.js';
@@ -200,8 +200,8 @@ async function applyParalysisPassive({ monster, damage, state, publish, random, 
             await publish('You momentarily stiffen.');
             return { resisted: true, heroDied: false };
         }
-        await publish(`You are frozen by ${displayMonsterNameWithArticle(monster, state)}!`);
-        freezeHero(state, damage, `frozen by ${monsterName(monster)}`, true);
+        await publish(`You are frozen by ${displayedMonsterName(monster, { state })}!`);
+        freezeHero(state, damage, passiveParalysisReason(monster, state, false), true);
         await exerciseAttribute(A_DEX, false, state);
         return { stopped: true, heroDied: false };
     }
@@ -229,7 +229,7 @@ async function applyParalysisPassive({ monster, damage, state, publish, random, 
         await publish(`You are frozen by ${owner} gaze!`);
         const duration = currentAttribute(A_WIS, state) > 12
             || random(4) !== 0 ? damage : 127;
-        freezeHero(state, duration, `frozen by ${possessiveMonsterName(monster)} gaze`, false);
+        freezeHero(state, duration, passiveParalysisReason(monster, state, true), false);
         return { stopped: true, heroDied: false };
     }
     await publish(`${displayedMonsterName(monster, { state, capitalized: true, adjective: 'blind' })} cannot defend itself.`);
@@ -384,16 +384,12 @@ export function passiveDamage(level, attack, rollDice) {
 function monsterName(monster) {
     return monster.name || monsterTypeName(monster.mnum, !!monster.female);
 }
-function possessiveMonsterName(monster) {
-    const name = monster.name || `the ${monsterName(monster)}`;
-    return name.endsWith('s') ? `${name}'` : `${name}'s`;
-}
-function displayMonsterName(monster, state) {
-    return heroIsHallucinating(state)
-        ? randomDisplayMonsterName() : monsterName(monster);
-}
-function displayMonsterNameWithArticle(monster, state) {
-    return monster.name || `the ${displayMonsterName(monster, state)}`;
+function passiveParalysisReason(monster, state, gaze) {
+    const species = namelessMonsterName(monster, {
+        state, article: 'a', suppressIt: true, suppressInvisible: true,
+        suppressHallucination: true, suppressSaddle: true,
+    });
+    return { monsterId: monster.m_id, text: `frozen by ${gaze ? `${possessiveName(species)} gaze` : species}` };
 }
 function isHeroDefender(defender, state) {
     return defender === state.u;
