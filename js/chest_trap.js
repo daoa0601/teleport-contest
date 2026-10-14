@@ -13,6 +13,7 @@ import { loseHeroHp } from './hero_damage.js';
 import { wakeMonstersNear } from './monster_wake.js';
 import { deleteObject, deleteObjectContents, } from './object_delete.js';
 import { OBJECT_NAMES } from './object_data.js';
+import { objectName as formattedObjectName } from './objnam.js';
 import { objectResistsDestruction } from './object_state.js';
 import { poisonHero } from './poison.js';
 import { createPoisonGasCloud } from './regions.js';
@@ -95,8 +96,9 @@ async function settleExplosionDamage(location, objects, state, publish) {
     return loss;
 }
 async function explodeContainer(container, location, state, publish, rollDice) {
-    await publish(`The ${objectName(container)} explodes!`);
-    const killer = `exploding ${objectName(container)}`;
+    const name = formattedObjectName(container, state);
+    await publish(`The ${name} explodes!`);
+    const killer = `exploding ${name}`;
     const contents = [...(container.contents || [])];
     const pile = [...(state.level?.objects?.[location.x]?.[location.y] || [])];
     const destroyed = [...new Set([container, ...contents, ...pile])];

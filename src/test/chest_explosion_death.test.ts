@@ -39,3 +39,20 @@ for (const lifeSaving of [false, true]) {
         } else assert.equal(game._deathKiller, 'exploding chest');
     });
 }
+
+void test('disarming a named chest preserves its name in the fatal explosion', async () => {
+    freshObjectRoom({ hero: { uluck: -13, uhp: 1, uhpmax: 80, fumbling: true } });
+    requirePlayingGame(game);
+    await floorObject(CHEST, 10, 10, {
+        otrapped: true, tknown: true, dknown: true, oname: 'Treasure',
+    });
+    const input = resetInputState();
+    input.feed('untrap\n.y');
+    input.beforeRead = () => input.feed(' ');
+    initRng(1n);
+
+    await rhack('#'.charCodeAt(0));
+
+    assert.equal(game.program_state.gameover, true);
+    assert.equal(game._deathKiller, 'exploding chest named Treasure');
+});

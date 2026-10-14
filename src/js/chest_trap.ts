@@ -23,6 +23,7 @@ import {
     deleteObject, deleteObjectContents,
 } from './object_delete.js';
 import { OBJECT_NAMES } from './object_data.js';
+import { objectName as formattedObjectName } from './objnam.js';
 import { objectResistsDestruction } from './object_state.js';
 import { poisonHero } from './poison.js';
 import { createPoisonGasCloud } from './regions.js';
@@ -139,8 +140,9 @@ async function settleExplosionDamage(location: Position, objects: readonly GameO
 async function explodeContainer(
     container: GameObject, location: Position, state: GameState, publish: MessagePublisher, rollDice: RollDice,
 ): Promise<ChestTrapResult> {
-    await publish(`The ${objectName(container)} explodes!`);
-    const killer = `exploding ${objectName(container)}`;
+    const name = formattedObjectName(container, state);
+    await publish(`The ${name} explodes!`);
+    const killer = `exploding ${name}`;
     const contents = [...(container.contents || [])];
     const pile = [...(state.level?.objects?.[location.x]?.[location.y] || [])];
     const destroyed = [...new Set([container, ...contents, ...pile])];
