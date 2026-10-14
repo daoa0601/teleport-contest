@@ -43,9 +43,9 @@ import { resurrectWizard } from './wizard.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 // C do.c:schedule_goto(). The current command or monster finishes using
 // the departure level; utotype stops the next monster from moving.
-export function scheduleLevelChange(args, changeLevel = gotoLevel) {
+export function scheduleLevelChange(args, changeLevel = gotoLevel, preMessage = '') {
     requirePlayingGame(game);
-    game._scheduledLevelChange = { args, changeLevel };
+    game._scheduledLevelChange = { args, changeLevel, preMessage };
     game.u.utolev = { ...game.u.uz, ...args[0] };
     game.u.utotype = UTOTYPE_DEFERRED;
 }
@@ -60,8 +60,11 @@ export async function finishScheduledLevelChange() {
     delete game._scheduledLevelChange;
     // C do.c:deferred_goto() preserves the topline when travel stays here.
     if (game.u.uz.dnum !== destination.dnum
-        || game.u.uz.dlevel !== destination.dlevel)
+        || game.u.uz.dlevel !== destination.dlevel) {
+        if (travel.preMessage)
+            await plineWithContinuation(travel.preMessage);
         await travel.changeLevel(...travel.args);
+    }
     game.u.utotype = 0;
 }
 export async function gotoLevel(targetDepth, { arrival = 'random', ladder = false, postMessage = '', } = {}) {

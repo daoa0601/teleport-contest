@@ -16,7 +16,7 @@ import { promptKey } from './tty_prompts.js';
 import { heroHandName } from './body_parts.js';
 import { makePlural } from './object_grammar.js';
 import { possessiveName } from './monster_name.js';
-import { objectName, observeObjectForNaming, simpleObjectName } from './objnam.js';
+import { distantObjectName, objectName, observeObjectForNaming, simpleObjectName } from './objnam.js';
 import { OBJECT_CLASS_SYMBOLS } from './object_knowledge.js';
 import { currency } from './currency.js';
 import { heroGoldAmount, heroGoldObject } from './hero_gold.js';
@@ -322,7 +322,8 @@ async function showBill(bill: readonly BillLine[]): Promise<void> {
     for (const line of bill) {
         if (!line.object && total) lines.push('');
         lines.push(pricedInventoryLine(line.object, line.object ? 'x' : '$', line.price,
-            line.object ? null : 'usage charges and/or other fees', line.quantity, false));
+            line.object ? null : 'usage charges and/or other fees',
+            { quantity: line.quantity, useInvlet: false, distant: false }));
         total += line.price;
     }
     lines.push('', pricedInventoryLine(null, '*', total, 'Total:'));
@@ -381,15 +382,19 @@ function unknownContainer(object: GameObject): boolean {
 }
 
 function pricedInventoryLine(object: GameObject | null, letter: string, price: number,
-    text: string | null = null, quantity = 0, useInvlet = true): string {
+    text: string | null = null, { quantity = 0, useInvlet = true, distant = true }:
+    { quantity?: number; useInvlet?: boolean; distant?: boolean } = {}): string {
     const suppress = game.iflags.suppress_price;
     game.iflags.suppress_price = true;
     const saved = object?.quan;
     try {
         if (object) {
             if (quantity) object.quan = quantity;
-            observeObjectForNaming(object);
-            text ??= inventoryItemDescription(object);
+            if (distant) text ??= distantObjectName(object, inventoryItemDescription);
+            else {
+                observeObjectForNaming(object);
+                text ??= inventoryItemDescription(object);
+            }
             if (useInvlet && game.flags.fixinv !== false && letter !== '>') letter = object.invlet ?? letter;
         }
         const tab = game.iflags.menu_tab_sep;

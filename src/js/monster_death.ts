@@ -97,8 +97,8 @@ export interface MonsterLiquidDeathResult {
     x: number;
     y: number;
     moved: false;
-    dead: true;
-    actionCompleted: true;
+    dead: boolean;
+    actionCompleted: boolean;
     corpse: GameObject | null;
     heroDied?: boolean;
 }
@@ -469,16 +469,26 @@ export async function finishMonsterLiquidDeath(
     monster: Monster, {
         state = game,
         random = rn2,
+        rollOne = rnd,
         rollDice = d,
         leaveCorpse = false,
         sadFeeling = false,
         publish = plineWithContinuation,
-    }: { state?: GameState; random?: (limit: number) => number;
+    }: { state?: GameState; random?: (limit: number) => number; rollOne?: (sides: number) => number;
         rollDice?: (count: number, sides: number) => number;
         leaveCorpse?: boolean; sadFeeling?: boolean; publish?: MessagePublisher } = {},
 ): Promise<MonsterLiquidDeathResult> {
     const x = monster.mx;
     const y = monster.my;
+    const recovery = await preventMonsterDeath(monster, { state, random, rollOne, publish });
+    if (recovery.survived || recovery.heroDied || recovery.completedDeath) {
+        return {
+            oldx: x, oldy: y, x, y, moved: false,
+            dead: !recovery.survived, actionCompleted: !recovery.survived,
+            corpse: recovery.completedDeath?.corpse ?? null,
+            ...(recovery.heroDied ? { heroDied: true } : {}),
+        };
+    }
     if (sadFeeling)
         await publish('You have a sad feeling for a moment, then it passes.');
     if (await detachDeadMonster(monster, state, random, publish)) {

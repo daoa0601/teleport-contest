@@ -5,7 +5,7 @@ import { bot, flush_screen, plineWithContinuation } from '../js/display.js';
 import { game } from '../js/gstate.js';
 import { triggerHeroTrap } from '../js/hero_traps.js';
 import { resetInputState } from '../js/input.js';
-import { gotoLevel } from '../js/level_change.js';
+import { finishScheduledLevelChange, gotoLevel } from '../js/level_change.js';
 import { activateMagicPortal } from '../js/magic_portal.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
 import { answerPrompts } from './support/input-boundaries.js';
@@ -46,6 +46,7 @@ void test('a magic portal displays stun while its activation awaits acknowledgme
         },
     };
     await activateMagicPortal(portal, gotoLevel);
+    await finishScheduledLevelChange();
     assert.equal(activationSeen, true);
     assert.equal(game.level, destination);
 });
