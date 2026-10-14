@@ -5,6 +5,7 @@ import { ALTAR, AM_LAWFUL, D_BROKEN, D_TRAPPED, DOOR, PIT, WEB } from '../js/con
 import { flush_screen, newsym } from '../js/display.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
+import { answerPrompts } from './support/input-boundaries.js';
 import { DAGGER } from '../js/object_data.js';
 import { floorObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -53,5 +54,9 @@ void test('quick look describes a broken doorway even when its trap bit is set',
     door.doormask = D_BROKEN | D_TRAPPED;
     newsym(11, 10);
 
-    assert.match(await lookEast(), /broken door/);
+    const input = resetInputState();
+    input.feed('l.');
+    await answerPrompts(rhack(';'.charCodeAt(0)), input, [
+        { prompt: /broken door[\s\S]*--More--/, keys: ' ' },
+    ]);
 });

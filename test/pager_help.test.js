@@ -19,6 +19,7 @@ void test('whatdoes describes the current binding of a key', async () => {
     game.commandBindings.bindKey('x'.charCodeAt(0), 'search');
     const input = resetInputState();
     await answerPrompts(rhack('&'.charCodeAt(0)), input, [
+        { prompt: /Ask about '&' or '\?' to get more info\.[\s\S]*--More--/, keys: ' ' },
         { prompt: /What command\?/, keys: 'x' },
     ]);
     await flush_screen(1);

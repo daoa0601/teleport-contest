@@ -1,7 +1,7 @@
 // C pager.c:dispfile_*, docontact(), dowhatdoes[_core](), domenucontrols().
 import { COMMAND_DESCRIPTIONS } from './command_descriptions.js';
 import { visibleCommandKey } from './command_keys.js';
-import { clearMessageWindow, pline, plineWithContinuation } from './display.js';
+import { clearMessageWindow, flushPendingTopline, pline, plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
 import { HELP_FILES } from './help_files.js';
 import { promptKey, restoreCommandMap } from './tty_prompts.js';
@@ -46,6 +46,7 @@ export async function whatdoes(): Promise<void> {
         await pline(`Ask about '&' or '?' to get more info.${game.iflags.altmeta ? '  (For ESC, type it twice.)' : ''}`);
         whatdoesTipShown = true;
     }
+    await flushPendingTopline();
     let key = (await promptKey('What command?')) & 255;
     if (!key) key = 27;
     if (key === 27 && game.iflags.altmeta) {
