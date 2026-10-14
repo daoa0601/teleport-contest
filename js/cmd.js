@@ -5070,6 +5070,17 @@ async function dowield() {
 // `multi`/afternmv completion in allmain.c.  Armor is installed in its worn
 // slot immediately, but its known state and completion message are delayed
 // until the required elapsed-turn scheduler round has finished.
+function classifyWearChoice(object, action) {
+    const classification = equipmentClassification(object, action);
+    // Native canwearobj() checks welded() even during getobj's silent fit
+    // check. Keep that knowledge change at the command boundary.
+    if (action === 'wear' && object.oclass === 3) {
+        const decision = armorWearDecision(object);
+        if (decision.checkedWeldedWeapon)
+            decision.checkedWeldedWeapon.bknown = true;
+    }
+    return classification;
+}
 async function dowear() {
     // do_wear.c:dowear() owns this form-capability check before getobj().
     // W therefore rejects the whole transaction without exposing either
@@ -5086,7 +5097,7 @@ async function dowear() {
         game.context.move = 0;
         return;
     }
-    const object = await chooseInventoryObject('wear', candidate => equipmentClassification(candidate, 'wear'));
+    const object = await chooseInventoryObject('wear', candidate => classifyWearChoice(candidate, 'wear'));
     if (!object) {
         game.context.move = 0;
         return;

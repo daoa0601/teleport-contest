@@ -6,7 +6,7 @@ import { pushKeys } from '../js/input.js';
 import { wearHeroArmor } from '../js/armor.js';
 import { wearHeroAccessory } from '../js/accessory.js';
 import { TT_BEARTRAP } from '../js/const.js';
-import { GAUNTLETS_OF_POWER, LEATHER_CLOAK, MEAT_RING, OBJECT_NAMES, RIN_PROTECTION, RING_MAIL, SMALL_SHIELD, TWO_HANDED_SWORD, } from '../js/object_data.js';
+import { DAGGER, GAUNTLETS_OF_POWER, LEATHER_CLOAK, MEAT_RING, OBJECT_NAMES, RIN_PROTECTION, RING_MAIL, SMALL_SHIELD, TWO_HANDED_SWORD, } from '../js/object_data.js';
 import { setPrimaryWeapon } from '../js/weapon_slots.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { addInventoryObject } from './support/game-objects.js';
@@ -100,5 +100,16 @@ void test('puton keeps asking for a ring hand after an invalid answer', async ()
     await rhack('P'.charCodeAt(0));
     assert.equal(game.uleft, ring);
     assert.equal(game.context.move, 1);
+});
+void test('checking wearable armor reveals a welded weapon curse even if wear is cancelled', async () => {
+    freshObjectRoom();
+    const dagger = await addInventoryObject(DAGGER, { cursed: true, bknown: false });
+    await setPrimaryWeapon(dagger);
+    const boots = await addInventoryObject(OBJECT_NAMES.indexOf('low boots'));
+    pushKeys('\x1b');
+    await rhack('W'.charCodeAt(0));
+    assert.equal(dagger.bknown, true);
+    assert.equal(!!boots.worn, false);
+    assert.equal(game.context.move, 0);
 });
 //# sourceMappingURL=armor_wear_refusals.test.js.map

@@ -1,6 +1,6 @@
 // armor.js — Hero armor-class projection.
 // C refs: do_wear.c find_ac() and hack.h ARM_BONUS().
-import { heroDetectsMonsters, heroIsBlind } from './senses.js';
+import { heroDetectsMonsters, heroIsBlind, heroIsHallucinating } from './senses.js';
 import { makeHallucinated } from './hero_mental_status.js';
 import { game, requireLiveGame } from './gstate.js';
 import { corpseName, killerObjectName, observeObjectForNaming, simpleObjectNameWithArticle, simpleObjectName, objectName } from './objnam.js';
@@ -26,11 +26,10 @@ import { applyHeroLocationEffects } from './cmd.js';
 import { artifactEmitsLight, heroHasArtifactDefense } from './artifacts.js';
 import { heroResistsLifeDrain } from './monster_resistance.js';
 import { beginObjectBurn, endObjectBurn, equipmentLightDescription, equipmentLightMessage } from './light.js';
-import { AMULET_OF_GUARDING, ALCHEMY_SMOCK, CLOAK_OF_DISPLACEMENT, CLOAK_OF_PROTECTION, CORPSE, ELVEN_BOOTS, ELVEN_CLOAK, GAUNTLETS_OF_FUMBLING, GAUNTLETS_OF_POWER, CORNUTHAUM, DUNCE_CAP, MUMMY_WRAPPING, FEDORA, FUMBLE_BOOTS, LEVITATION_BOOTS, RIN_FREE_ACTION, RIN_PROTECTION, GRAY_DRAGON_SCALE_MAIL, GRAY_DRAGON_SCALES, YELLOW_DRAGON_SCALE_MAIL, YELLOW_DRAGON_SCALES, SHIELD_OF_DRAIN_RESISTANCE, SHIELD_OF_REFLECTION, OBJECT_DESCRIPTIONS, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_PROPERTY, WATER_WALKING_BOOTS, } from './object_data.js';
+import { AMULET_OF_GUARDING, ALCHEMY_SMOCK, CLOAK_OF_DISPLACEMENT, CLOAK_OF_PROTECTION, CORPSE, CORNUTHAUM, DUNCE_CAP, ELVEN_BOOTS, ELVEN_CLOAK, GAUNTLETS_OF_FUMBLING, GAUNTLETS_OF_POWER, MUMMY_WRAPPING, FEDORA, FUMBLE_BOOTS, LEVITATION_BOOTS, RIN_FREE_ACTION, RIN_PROTECTION, GRAY_DRAGON_SCALE_MAIL, GRAY_DRAGON_SCALES, YELLOW_DRAGON_SCALE_MAIL, YELLOW_DRAGON_SCALES, SHIELD_OF_DRAIN_RESISTANCE, SHIELD_OF_REFLECTION, OBJECT_DESCRIPTIONS, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_PROPERTY, WATER_WALKING_BOOTS, } from './object_data.js';
 import { rn2, rnd } from './rng.js';
 import { currentAttribute, reportHeroEncumbrance } from './attrib.js';
 import { curseObjectState } from './object_state.js';
-import { heroIsHallucinating } from './senses.js';
 import { monsterName } from './monster_name.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { captureLevitationState, grantWornProperty, hasIntrinsicProperty, hasWornProperty, propertyIsActive, propertyIsBlocked, propertyTimeout, refreshMovementProperties, refreshProperty, removeWornProperty, setPropertyTimeout, } from './properties.js';
@@ -329,7 +328,9 @@ async function losePetrificationProtection(armor, state) {
         await plineWithContinuation(`You ${armorSlot === 'uarmg' ? 'now wield' : 'are wielding'} ${corpseName(weapon, { includeArticle: true })} `
             + `in your bare ${makePlural(heroHandName(state))}.`);
         const voluntary = armorSlot !== 'uarmg' || !state.context?.mon_moving && !armor.in_use;
-        const killer = `${voluntary ? 'removing' : 'losing'} ${armorSlot === 'uarmg' ? simpleArmorName(armor, armorSlot, state) : simpleObjectName(armor, state).replace('set of ', '')} `
+        const protectionName = armorSlot === 'uarmg' ? simpleArmorName(armor, armorSlot, state)
+            : simpleObjectName(armor, state).replace('set of ', '');
+        const killer = `${voluntary ? 'removing' : 'losing'} ${protectionName} `
             + `while wielding ${killerObjectName(weapon, state)}`;
         const result = await resolveImmediatePetrification({ killer, state });
         if (result.died)
@@ -372,7 +373,6 @@ export async function clearHeroArmor(object, state = game, { cancelledDon = stat
         removeWornProperty('acidResistance', object, 'uarmc', state);
     if (object.otyp === MUMMY_WRAPPING)
         refreshProperty('invisible', state);
-    const hero = state.u;
     object._armorApplied = false;
     delete object._waterWalkingWasInWater;
     if (object.otyp === GAUNTLETS_OF_POWER)
@@ -911,7 +911,6 @@ export async function removeArmorProperties(object, state = game) {
         return;
     if (color !== 'gold')
         removeWornProperty(extraProperty, object, 'uarm', state);
-    const hero = state.u;
     if (color === 'blue') {
         object._grantsVeryFastFromArmor = false;
     }

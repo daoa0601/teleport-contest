@@ -29,12 +29,11 @@ export function armorWearDecision(object, state = game) {
     }
     if ((object.owornmask ?? 0) & W_ARMOR)
         return refuse('You are already wearing that!');
-    if (slot === 'uarm' || slot === 'uarmu') {
-        if (isWeldedPrimary(weapon, state))
-            checkedWeldedWeapon = weapon;
-        if (checkedWeldedWeapon && OBJECT_BIMANUAL[checkedWeldedWeapon.otyp])
-            return refuse(`You cannot do that while holding your ${isSword(checkedWeldedWeapon) ? 'sword' : 'weapon'}.`);
-    }
+    if (isWeldedPrimary(weapon, state))
+        checkedWeldedWeapon = weapon;
+    if (checkedWeldedWeapon && OBJECT_BIMANUAL[checkedWeldedWeapon.otyp]
+        && (slot === 'uarm' || slot === 'uarmu'))
+        return refuse(`You cannot do that while holding your ${isSword(checkedWeldedWeapon) ? 'sword' : 'weapon'}.`);
     if (!slot)
         return refuse("You can't wear that!");
     if (slot === 'uarm' && state.uarmc)
