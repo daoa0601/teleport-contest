@@ -7198,6 +7198,10 @@ async function generateSpecialAndFixup(generator, active) {
     if (active?.elementalBubbles)
         await setupElementalBubbles();
     await fixupSpecialRegions(active);
+    // fixup_special() reduces undead remains throughout the Castle and the
+    // Priest quest, even after the hero has entered any morgue rooms.
+    if (Is_stronghold(game.u.uz) || game.urole?.key === 'priest' && In_quest(game.u.uz))
+        level.flags.graveyard = true;
     if (active?.baalzFixup)
         await fixupBaalz(active);
     // sp_lev.c explicitly places deferred portals, stairs, and branches
