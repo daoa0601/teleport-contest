@@ -12,6 +12,7 @@
 //   // display.topMessage, display.putstr_message are NetHack-specific
 
 import { Terminal, CLR_GRAY } from './terminal.js';
+import type { StatusLine2Fields } from './status_layout.js';
 import type { KeyMapper, InterruptHandler, TerminalReadKeyOptions, TerminalColor, TerminalFlags } from './terminal.js';
 
 const TOPLINE_EMPTY = 0;
@@ -26,6 +27,7 @@ export class GameDisplay {
     messageWinFlags: number;
     // WIN_STATUS retains its fields independently of map and message redraws.
     statusLines: readonly [string, string] | null = null;
+    statusLine2Fields: StatusLine2Fields | null = null;
     statusVisible = true;
 
     constructor(terminalOrContainerId: Terminal | string | HTMLElement | null = null) {

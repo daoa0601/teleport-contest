@@ -15,6 +15,8 @@ import { nhgetch } from './input.js';
 import { currentHungerState } from './hunger.js';
 import { rankOf } from './quest_pager.js';
 import { statusConditions } from './status_conditions.js';
+import { capacityIndex, renderStatusLine2 } from './status_layout.js';
+import type { StatusLine2Fields } from './status_layout.js';
 import { cansee, couldsee, set_seenv, vision_recalc } from './vision.js';
 import {
     A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, BC_BALL, BC_CHAIN,
@@ -2254,8 +2256,13 @@ export function formatStrength(value: number | null | undefined) {
 }
 
 export function _statusLine2(refreshLoad = true) {
+    const fields = statusLine2Fields(refreshLoad);
+    return fields ? renderStatusLine2(fields, game.nhDisplay?.cols ?? COLNO) : '';
+}
+
+function statusLine2Fields(refreshLoad: boolean): StatusLine2Fields | null {
     const u = game.u;
-    if (!u) return '';
+    if (!u) return null;
     const dungeonName = game.dungeons?.[u.uz?.dnum ?? 0]?.dname;
     const endgameLocation = endgameLevelName(u.uz)
         .replace(/^Plane of /, '');
@@ -2274,21 +2281,17 @@ export function _statusLine2(refreshLoad = true) {
     const displayedAc = u.uac ?? 10;
     const displayedGold = Math.max(0, Math.min(999999,
         game._statusGoldOverride ?? heroGoldAmount(game)));
-    let line = `${location} ${goldSymbol}:${displayedGold} HP:${displayedHp}(${maximumHp}) Pw:${displayedPower}(${maximumPower}) AC:${displayedAc}`;
-    if (polymorphed) {
-        line += ` HD:${MONSTER_LEVEL[u.umonnum ?? -1] ?? 0}`;
-    } else {
-        line += ` Xp:${u.ulevel || 1}`;
-        if (game.flags?.showexp) line += `/${u.uexp || 0}`;
-    }
-    if (game.flags?.time)
-        line += ` T:${game.moves ?? 1}`;
+    const experience = polymorphed ? `HD:${MONSTER_LEVEL[u.umonnum ?? -1] ?? 0}`
+        : `Xp:${u.ulevel || 1}${game.flags.showexp ? `/${u.uexp || 0}` : ''}`;
     const hungerLabel = ['Satiated', '', 'Hungry', 'Weak', 'Fainting', 'Fainted', 'Starved'][u.uhs ?? currentHungerState(game)];
-    if (hungerLabel) line += ` ${hungerLabel}`;
-    const load = refreshLoad ? encumbranceLabel(nearCapacity(game)) : u._encumbrance;
-    if (load) line += ` ${load}`;
-    for (const condition of statusConditions(game)) line += ` ${condition[0]}`;
-    return line;
+    return {
+        location, gold: `${goldSymbol}:${displayedGold}`,
+        health: `HP:${displayedHp}(${maximumHp}) Pw:${displayedPower}(${maximumPower}) AC:${displayedAc}`,
+        experience, moves: game.flags.time ? game.moves : null,
+        hunger: hungerLabel ?? '',
+        capacity: refreshLoad ? nearCapacity(game) : capacityIndex(u._encumbrance),
+        conditions: statusConditions(game),
+    };
 }
 
 // ── Serialize terminal grid for screen comparison ──
@@ -2338,7 +2341,7 @@ function writeStatusLines(display: GameDisplay, lines: readonly [string, string]
         const plain = text.replace(/\x1b\[(\d+)C/g,
             (_match, count) => ' '.repeat(Number(count)));
         display.clearRow(row);
-        display.putstr(0, row, plain.slice(0, display.cols), NO_COLOR);
+        display.putstr(0, row, plain.slice(0, Math.max(0, display.cols - 1)), NO_COLOR);
     }
 }
 
@@ -2494,7 +2497,9 @@ function refreshStatusLines(): void {
     game.context.time_botl = false;
     if (game.u.uhp === -1) return;
     game.u._encumbrance = encumbranceLabel(nearCapacity(game));
-    display.statusLines = [_statusLine1(), _statusLine2(false)];
+    display.statusLine2Fields = statusLine2Fields(false);
+    display.statusLines = [_statusLine1(), display.statusLine2Fields
+        ? renderStatusLine2(display.statusLine2Fields, display.cols) : ''];
     display.statusVisible = true;
     writeStatusLines(display, display.statusLines);
 }
@@ -2505,11 +2510,12 @@ export function timebot(): void {
     if (game._statusUpdatesDisabled) return;
     game.context.time_botl = false;
     const display = game.nhDisplay;
-    if (!display?.statusLines || !game.flags.time
+    if (!display?.statusLines || !display.statusLine2Fields || !game.flags.time
         || game.program_state.saving || game.program_state.windows_exited
         || game._suppressMapStatusForFlush) return;
-    const [first, second] = display.statusLines;
-    display.statusLines = [first, second.replace(/\bT:\d+\b/, `T:${game.moves}`)];
+    const [first] = display.statusLines;
+    display.statusLine2Fields = { ...display.statusLine2Fields, moves: game.moves };
+    display.statusLines = [first, renderStatusLine2(display.statusLine2Fields, display.cols)];
     display.statusVisible = true;
     writeStatusLines(display, display.statusLines);
 }

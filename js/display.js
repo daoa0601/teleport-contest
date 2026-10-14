@@ -14,6 +14,7 @@ import { nhgetch } from './input.js';
 import { currentHungerState } from './hunger.js';
 import { rankOf } from './quest_pager.js';
 import { statusConditions } from './status_conditions.js';
+import { capacityIndex, renderStatusLine2 } from './status_layout.js';
 import { cansee, couldsee, set_seenv, vision_recalc } from './vision.js';
 import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, BC_BALL, BC_CHAIN, COLNO, ROWNO, STONE, ROOM, CORR, SCORR, SDOOR, DOOR, STAIRS, FOUNTAIN, THRONE, SINK, GRAVE, ALTAR, ICE, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER, CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL, TREE, IRONBARS, POOL, MOAT, WATER, LAVAPOOL, LAVAWALL, AIR, CLOUD, IS_POOL, IS_OBSTRUCTED, IS_ROOM, IS_WALL, LADDER, LA_DOWN, DBWALL, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN, D_NODOOR, D_ISOPEN, D_CLOSED, D_LOCKED, D_BROKEN, SV0, SV1, SV2, SV3, SV4, SV5, SV6, SV7, WM_X_TL, WM_X_TR, WM_X_BL, WM_X_BR, WM_X_TLBR, WM_X_BLTR, BEAR_TRAP, WEB, VIBRATING_SQUARE, CORPSTAT_GENDER, CORPSTAT_FEMALE, ENGRAVE, BURN, HEADSTONE, is_pit, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, def_warnsyms, MON_STILL_ARRIVING, In_endgame, In_quest, Is_rogue_level, Is_waterlevel, Is_knox_level, In_sokoban, PLNMSG_UNKNOWN, MONSEEN_NORMAL, MONSEEN_SEEINVIS, MONSEEN_INFRAVIS, MONSEEN_TELEPAT, MONSEEN_XRAYVIS, MONSEEN_DETECT, MONSEEN_WARNMON, PICK_NONE, PICK_ONE, Upolyd, ismnum, } from './const.js';
 import { NO_COLOR, ATR_INVERSE, CLR_BLACK, CLR_RED, CLR_GREEN, CLR_GRAY, CLR_BROWN, CLR_MAGENTA, CLR_CYAN, CLR_WHITE, CLR_YELLOW, CLR_BLUE, CLR_ORANGE, CLR_BRIGHT_GREEN, CLR_BRIGHT_BLUE, CLR_BRIGHT_MAGENTA, DEC_TO_UNICODE, } from './terminal.js';
@@ -2217,9 +2218,13 @@ export function formatStrength(value) {
     return `18/${String(value - 18).padStart(2, '0')}`;
 }
 export function _statusLine2(refreshLoad = true) {
+    const fields = statusLine2Fields(refreshLoad);
+    return fields ? renderStatusLine2(fields, game.nhDisplay?.cols ?? COLNO) : '';
+}
+function statusLine2Fields(refreshLoad) {
     const u = game.u;
     if (!u)
-        return '';
+        return null;
     const dungeonName = game.dungeons?.[u.uz?.dnum ?? 0]?.dname;
     const endgameLocation = endgameLevelName(u.uz)
         .replace(/^Plane of /, '');
@@ -2237,26 +2242,17 @@ export function _statusLine2(refreshLoad = true) {
     const goldSymbol = Is_rogue_level(u.uz) ? '*' : '$';
     const displayedAc = u.uac ?? 10;
     const displayedGold = Math.max(0, Math.min(999999, game._statusGoldOverride ?? heroGoldAmount(game)));
-    let line = `${location} ${goldSymbol}:${displayedGold} HP:${displayedHp}(${maximumHp}) Pw:${displayedPower}(${maximumPower}) AC:${displayedAc}`;
-    if (polymorphed) {
-        line += ` HD:${MONSTER_LEVEL[u.umonnum ?? -1] ?? 0}`;
-    }
-    else {
-        line += ` Xp:${u.ulevel || 1}`;
-        if (game.flags?.showexp)
-            line += `/${u.uexp || 0}`;
-    }
-    if (game.flags?.time)
-        line += ` T:${game.moves ?? 1}`;
+    const experience = polymorphed ? `HD:${MONSTER_LEVEL[u.umonnum ?? -1] ?? 0}`
+        : `Xp:${u.ulevel || 1}${game.flags.showexp ? `/${u.uexp || 0}` : ''}`;
     const hungerLabel = ['Satiated', '', 'Hungry', 'Weak', 'Fainting', 'Fainted', 'Starved'][u.uhs ?? currentHungerState(game)];
-    if (hungerLabel)
-        line += ` ${hungerLabel}`;
-    const load = refreshLoad ? encumbranceLabel(nearCapacity(game)) : u._encumbrance;
-    if (load)
-        line += ` ${load}`;
-    for (const condition of statusConditions(game))
-        line += ` ${condition[0]}`;
-    return line;
+    return {
+        location, gold: `${goldSymbol}:${displayedGold}`,
+        health: `HP:${displayedHp}(${maximumHp}) Pw:${displayedPower}(${maximumPower}) AC:${displayedAc}`,
+        experience, moves: game.flags.time ? game.moves : null,
+        hunger: hungerLabel ?? '',
+        capacity: refreshLoad ? nearCapacity(game) : capacityIndex(u._encumbrance),
+        conditions: statusConditions(game),
+    };
 }
 // ── Serialize terminal grid for screen comparison ──
 export function serialize_terminal_grid(display) {
@@ -2320,7 +2316,7 @@ function writeStatusLines(display, lines) {
         const row = 22 + index;
         const plain = text.replace(/\x1b\[(\d+)C/g, (_match, count) => ' '.repeat(Number(count)));
         display.clearRow(row);
-        display.putstr(0, row, plain.slice(0, display.cols), NO_COLOR);
+        display.putstr(0, row, plain.slice(0, Math.max(0, display.cols - 1)), NO_COLOR);
     }
 }
 // ── Build screen output ──
@@ -2483,7 +2479,9 @@ function refreshStatusLines() {
     if (game.u.uhp === -1)
         return;
     game.u._encumbrance = encumbranceLabel(nearCapacity(game));
-    display.statusLines = [_statusLine1(), _statusLine2(false)];
+    display.statusLine2Fields = statusLine2Fields(false);
+    display.statusLines = [_statusLine1(), display.statusLine2Fields
+            ? renderStatusLine2(display.statusLine2Fields, display.cols) : ''];
     display.statusVisible = true;
     writeStatusLines(display, display.statusLines);
 }
@@ -2494,12 +2492,13 @@ export function timebot() {
         return;
     game.context.time_botl = false;
     const display = game.nhDisplay;
-    if (!display?.statusLines || !game.flags.time
+    if (!display?.statusLines || !display.statusLine2Fields || !game.flags.time
         || game.program_state.saving || game.program_state.windows_exited
         || game._suppressMapStatusForFlush)
         return;
-    const [first, second] = display.statusLines;
-    display.statusLines = [first, second.replace(/\bT:\d+\b/, `T:${game.moves}`)];
+    const [first] = display.statusLines;
+    display.statusLine2Fields = { ...display.statusLine2Fields, moves: game.moves };
+    display.statusLines = [first, renderStatusLine2(display.statusLine2Fields, display.cols)];
     display.statusVisible = true;
     writeStatusLines(display, display.statusLines);
 }
