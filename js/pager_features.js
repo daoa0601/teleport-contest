@@ -1,6 +1,6 @@
 // C pager.c:lookat() and trap_description(). Describe the displayed glyph;
 // the current square is consulted only where the native glyph needs context.
-import { AM_SANCTUM, Amask2align, A_NONE, DOOR, D_BROKEN, D_TRAPPED, Is_airlevel, Is_astralevel, Is_waterlevel, SCORR, STONE, TER_MON, TER_OBJ, TRAPPED_CHEST, TRAPPED_DOOR, } from './const.js';
+import { ALTAR, AM_SANCTUM, Amask2align, A_NONE, DOOR, D_BROKEN, D_TRAPPED, Is_airlevel, Is_astralevel, Is_waterlevel, SCORR, STONE, M_AP_FURNITURE, M_AP_TYPE, TER_MON, TER_OBJ, TRAPPED_CHEST, TRAPPED_DOOR, } from './const.js';
 import { findDrawbridgeAt } from './dbridge.js';
 import { glyphAt, terrain_glyph } from './display.js';
 import { game } from './gstate.js';
@@ -57,7 +57,12 @@ export function mapFeatureDescription(x, y, glyph) {
     if (!location)
         return 'unexplored area';
     if (glyph.terrainName === 'altar') {
-        const mask = location.altarmask ?? location.flags;
+        // pray.c:altarmask_at() gives the disguise priority over terrain.
+        const monster = game.level ? monsterAtPosition(game.level, x, y) : null;
+        const mask = monster && M_AP_TYPE(monster) === M_AP_FURNITURE
+            && monster.mappearance === CmapSymbol.altar
+            ? monster.mcorpsenm ?? monster.mextra?.mcorpsenm ?? 0
+            : location.typ === ALTAR ? location.altarmask ?? location.flags : 0;
         const alignment = Amask2align(mask);
         const distant = Is_astralevel(game.u.uz) && !adjacentToHero(x, y)
             && !!(mask & AM_SANCTUM);
