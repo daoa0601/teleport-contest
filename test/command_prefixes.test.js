@@ -7,6 +7,23 @@ import { MONSTER_NAME } from '../js/monster_data.js';
 import { POT_HEALING } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshTurnRoom } from './support/playable-room.js';
+import { createMonsterAt } from './support/monsters.js';
+for (const keys of ['Fgl', 'gFl', 'FGl', 'GFl']) {
+    void test(`${keys} stops before a visible hostile without attacking or spending time`, async () => {
+        const input = freshTurnRoom();
+        const monster = await createMonsterAt('jackal', 11, 10);
+        monster.mpeaceful = false;
+        monster.msleeping = 1;
+        const hitPoints = monster.mhp;
+        input.feed(keys);
+        await rhack(0);
+        assert.equal(game.u.ux, 10);
+        assert.equal(game.context.move, 0);
+        assert.equal(monster.mhp, hitPoints);
+        assert.equal(monster.msleeping, 1, 'stopping must not wake the target');
+        assert.equal(await continueRun(), false);
+    });
+}
 for (const [keys, message] of [
     ['mm', 'Double m prefix, canceled.'],
     ['FF', 'Double fight prefix, canceled.'],

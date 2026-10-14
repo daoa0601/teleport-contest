@@ -7514,11 +7514,12 @@ async function domoveCore(dx: number, dy: number, explicitAttempt: boolean): Pro
             && !confused
             && !heroIsHallucinating(game)
             && !stunned;
-        // hack.c stops a run only for a visible or sensed actor.  Seeing the
+        // hack.c checks context.run even when F makes this a single step.
+        // It stops only for a visible or sensed actor. Seeing the
         // destination terrain is insufficient when minvis hides its occupant;
         // that case must reach attack_checks() and install the invisible
         // marker instead.
-        if (game._runState && !safeMonster
+        if (game.context.run && !safeMonster
             && canSpotMonster(monster)) {
             stopRun(game);
             return false;
