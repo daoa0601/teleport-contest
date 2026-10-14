@@ -659,15 +659,9 @@ function canObserveDisplacement(state: GameState): boolean {
         || heroDetectsMonsters(state);
 }
 
-async function applyCloakOnEffects(object: GameObject, initialDon: boolean, state: GameState): Promise<void> {
+async function applyCloakOnEffects(object: GameObject, state: GameState): Promise<void> {
     switch (object.otyp) {
     case CLOAK_OF_PROTECTION: learnObjectType(object.otyp, state); break;
-    case CLOAK_OF_DISPLACEMENT:
-        if (!initialDon && !object._displacementWasActive && canObserveDisplacement(state)) {
-            learnObjectType(object.otyp, state);
-            await plineWithContinuation('You feel that monsters have difficulty pinpointing your location.');
-        }
-        break;
     case MUMMY_WRAPPING:
         if (armorHasOtherPropertySource('invisible', object, state) && !heroIsBlind(state)) {
             newsym(state.u.ux, state.u.uy);
@@ -746,8 +740,12 @@ export async function applyArmorOnEffects(object: GameObject, state: GameState =
         if (!initialDon) await toggleArmorStealth(object, true, state);
         return [];
     }
+    if (object.otyp === CLOAK_OF_DISPLACEMENT) {
+        return !initialDon && !object._displacementWasActive && canObserveDisplacement(state)
+            ? ['You feel that monsters have difficulty pinpointing your location.'] : [];
+    }
     if (armorSlotFor(object.otyp) === 'uarmc') {
-        await applyCloakOnEffects(object, initialDon, state);
+        await applyCloakOnEffects(object, state);
         return [];
     }
 

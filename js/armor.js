@@ -662,16 +662,10 @@ function canObserveDisplacement(state) {
         || blind && (propertyIsActive('telepathy', state) || !!state.u.blindTelepathy)
         || heroDetectsMonsters(state);
 }
-async function applyCloakOnEffects(object, initialDon, state) {
+async function applyCloakOnEffects(object, state) {
     switch (object.otyp) {
         case CLOAK_OF_PROTECTION:
             learnObjectType(object.otyp, state);
-            break;
-        case CLOAK_OF_DISPLACEMENT:
-            if (!initialDon && !object._displacementWasActive && canObserveDisplacement(state)) {
-                learnObjectType(object.otyp, state);
-                await plineWithContinuation('You feel that monsters have difficulty pinpointing your location.');
-            }
             break;
         case MUMMY_WRAPPING:
             if (armorHasOtherPropertySource('invisible', object, state) && !heroIsBlind(state)) {
@@ -755,8 +749,12 @@ export async function applyArmorOnEffects(object, state = game, { initialDon = f
             await toggleArmorStealth(object, true, state);
         return [];
     }
+    if (object.otyp === CLOAK_OF_DISPLACEMENT) {
+        return !initialDon && !object._displacementWasActive && canObserveDisplacement(state)
+            ? ['You feel that monsters have difficulty pinpointing your location.'] : [];
+    }
     if (armorSlotFor(object.otyp) === 'uarmc') {
-        await applyCloakOnEffects(object, initialDon, state);
+        await applyCloakOnEffects(object, state);
         return [];
     }
     // SPEED_BOOTS' Fast extrinsic is active as soon as setworn() installs
