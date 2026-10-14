@@ -112,25 +112,19 @@ function monsterNames(mnum) {
     return names.filter(candidate => candidate.name.length > 0);
 }
 function roleTitleMonster(name) {
-    let best = null;
+    // botl.c:title_to_mon() takes the first rank prefix in role order.
+    // The whole-word and longest-name rules above apply to species names,
+    // while rank prefixes deliberately accept an attached suffix.
     for (const role of roles) {
         for (const title of role.title || []) {
             for (const value of [title.m, title.f]) {
                 const candidate = value?.toLowerCase();
-                if (!candidate || !name.startsWith(candidate)
-                    || !acceptedNameRemainder(name.slice(candidate.length))) {
-                    continue;
-                }
-                if (!best || candidate.length > best.length) {
-                    best = {
-                        length: candidate.length,
-                        mnum: SPECIAL_PM + 1 + role.mnum,
-                    };
-                }
+                if (candidate && name.startsWith(candidate))
+                    return { length: candidate.length, mnum: SPECIAL_PM + 1 + role.mnum };
             }
         }
     }
-    return best;
+    return null;
 }
 export function nameToMonster(value) {
     return resolveMonsterName(value)?.mnum ?? -1;
