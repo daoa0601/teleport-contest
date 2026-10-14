@@ -48,6 +48,7 @@ import { DIED, KILLED_BY, MENU_ITEMFLAGS_SKIPINVERT, MGIVENNAME, NHW_MENU, PICK_
 import { AD_PHYS } from './monster_attack_types.js';
 import { finishMonsterKilled } from './monster_death.js';
 import { monsterIsNonliving } from './monster_data.js';
+import { Invocation_lev, Is_earthlevel, Is_firelevel, Is_knox_level, MAGIC_PORTAL, VIBRATING_SQUARE } from './const.js';
 import { map_engraving, map_trap } from './display.js';
 import { mapMagicLevel } from './magic_mapping.js';
 import {
@@ -2998,15 +2999,18 @@ function branchKind(branch: DungeonBranch) {
 function branchMenuLabel(branch: DungeonBranch) {
     const child = game.dungeons?.[branch.end2.dnum];
     if (!child) return null;
-    const prefix = {
+    return `${branchTypeDescription(branch)} to ${child.dname}: ${dungeonDepth(
+        branch.end1.dnum, branch.end1.dlevel,
+    )}`;
+}
+
+function branchTypeDescription(branch: DungeonBranch) {
+    return {
         portal: 'Portal',
         no_end1: 'Connection',
         no_end2: 'One way stair',
         stair: 'Stair',
-    }[branchKind(branch)] || 'Stair';
-    return `${prefix} to ${child.dname}: ${dungeonDepth(
-        branch.end1.dnum, branch.end1.dlevel,
-    )}`;
+    }[branchKind(branch)];
 }
 
 function dungeonLayoutEvents(dnum: number): DungeonLayoutEvent[] {
@@ -3023,7 +3027,7 @@ function dungeonLayoutEvents(dnum: number): DungeonLayoutEvent[] {
         });
     }
     events.sort((a, b) => a.dlevel - b.dlevel
-        || (a.kind === 'branch' ? -1 : 1));
+        || Number(a.kind === 'special') - Number(b.kind === 'special'));
     return events;
 }
 
@@ -3076,6 +3080,7 @@ function wizardLevelMenu() {
     let choiceIndex = 0;
 
     for (let dnum = 0; dnum < (game.dungeons?.length || 0); dnum++) {
+        if (In_endgame(game.u.uz) && dnum !== game.astral_level?.dnum) continue;
         rows.push({ text: dungeonHeading(dnum), attr: ATR_INVERSE });
 
         for (const event of dungeonLayoutEvents(dnum)) {
@@ -3114,8 +3119,8 @@ function wizardLevelMenu() {
     return { rows, choices };
 }
 
-function wizardWherePages() {
-    const lines = [];
+function wizardWhereLines(): string[] {
+    const lines: string[] = [];
     for (let dnum = 0; dnum < (game.dungeons?.length || 0); dnum++) {
         lines.push(dungeonHeading(dnum));
         for (const event of dungeonLayoutEvents(dnum)) {
@@ -3129,20 +3134,39 @@ function wizardWherePages() {
                 if (event.name === 'castle')
                     label += ` (tune ${game.castleTune || ''})`;
             }
-            if (label) lines.push(`  ${label}`);
+            const current = event.kind === 'special'
+                && game.u.uz?.dnum === event.dnum && game.u.uz.dlevel === event.dlevel;
+            if (label) lines.push(`${current ? '*' : ' '} ${label}`);
         }
     }
-
-    const pages: TextPage[] = [];
-    for (let offset = 0; offset < lines.length; offset += 23) {
-        const pageLines = lines.slice(offset, offset + 23);
-        pageLines.push(' --More--');
-        pages.push({
-            lines: pageLines,
-            cursor: [9, pageLines.length - 1],
-        });
+    const floating = game.branches.filter(branch => branch.end1.dnum === game.dungeons.length);
+    if (floating.length) {
+        lines.push('', 'Floating branches');
+        for (const branch of floating) {
+            const child = game.dungeons[branch.end2.dnum];
+            if (!child) throw new Error(`Floating branch has no dungeon ${branch.end2.dnum}`);
+            lines.push(`   ${branchTypeDescription(branch)} to ${child.dname}`);
+        }
     }
-    return pages;
+    const hero = game.u;
+    if (Invocation_lev(hero.uz)) {
+        const square = game.level?.traps.find(trap => trap.ttyp === VIBRATING_SQUARE);
+        if (square) lines.push('', `Invocation position @ (${square.tx},${square.ty}), hero @ (${hero.ux},${hero.uy})`);
+    } else {
+        const portal = game.level?.traps.find(trap => trap.ttyp === MAGIC_PORTAL);
+        if (portal) lines.push('', `Portal @ (${portal.tx},${portal.ty}), hero @ (${hero.ux},${hero.uy})`);
+        else if (wizardLevelExpectsPortal()) lines.push('', 'No portal found.');
+    }
+    return lines;
+}
+
+function wizardLevelExpectsPortal(): boolean {
+    const here = game.u.uz;
+    return Is_earthlevel(here) || Is_airlevel(here) || Is_firelevel(here)
+        || Is_waterlevel(here) || Is_knox_level(here)
+        || !!here && (here.dnum === game.quest_dnum && here.dlevel === 1
+            || game.branches.some(branch => branch.end2.dnum === game.quest_dnum
+                && branch.end1.dnum === here.dnum && branch.end1.dlevel === here.dlevel));
 }
 
 // C refs: wizcmds.c:wiz_where() and dungeon.c:print_dungeon(FALSE).
@@ -3151,9 +3175,7 @@ function wizardWherePages() {
 async function wizWhere() {
     game._pending_message = '';
     game._retained_message = '';
-    await showTextPages(wizardWherePages(), {
-        validKeys: [27, 32, 10, 13],
-    });
+    await showDisclosureOverlay(wizardWhereLines(), { restoreUnderlay: true });
     await docrt();
     game.context.move = 0;
 }
