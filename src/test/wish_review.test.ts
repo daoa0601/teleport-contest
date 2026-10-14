@@ -11,12 +11,22 @@ import { game, requireGameLevel } from '../js/gstate.js';
 import { mayDig } from '../js/hero_digging.js';
 import { mksobj } from '../js/mklev.js';
 import {
-    BAG_OF_TRICKS, GLOB_OF_GRAY_OOZE, LAND_MINE, POT_HEALING, RED_DRAGON_SCALES,
+    BAG_OF_TRICKS, GLOB_OF_GRAY_OOZE, LAND_MINE, OBJECT_NAMES, POT_HEALING, RED_DRAGON_SCALES,
     SACK, SCR_LIGHT, SLIME_MOLD, SPEED_BOOTS, TIN,
 } from '../js/object_data.js';
 import { recordObjectCall } from '../js/object_knowledge.js';
 import { readObjectName } from '../js/objnam.js';
 import { freshObjectRoom } from './support/object-room.js';
+
+void test('retrying plate armor as plate mail keeps the armor class restriction', async () => {
+    freshObjectRoom({ gameplaySeed: 1 });
+    recordObjectCall(POT_HEALING, 'plate mail');
+
+    const result = await readObjectName('plate armor', { wizardWish: true });
+
+    assert.ok(result && !result.noWish);
+    assert.equal(result.object.otyp, OBJECT_NAMES.indexOf('plate mail'));
+});
 
 void test('a glob wish excludes matching call names from other object classes', async () => {
     freshObjectRoom({ gameplaySeed: 1 });

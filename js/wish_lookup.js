@@ -141,53 +141,57 @@ export function lookupWishType(parsed, { wizardWish = false, state = game, } = {
             }
         }
     }
-    if (!oclass) {
-        const range = ranges.find(([range]) => range === name.toLowerCase());
-        if (range)
-            return result(rndClass(range[2], range[3]));
-        if (/ (?:stone|gem)$/i.test(name)) {
-            name = name.replace(/ (?:stone|gem)$/i, '');
-            oclass = GEM_CLASS;
+    let retryingArmor = false;
+    for (;;) {
+        if (!oclass || retryingArmor) {
+            const range = ranges.find(([range]) => range === name.toLowerCase());
+            if (range)
+                return result(rndClass(range[2], range[3]));
+            if (/ (?:stone|gem)$/i.test(name)) {
+                name = name.replace(/ (?:stone|gem)$/i, '');
+                oclass = GEM_CLASS;
+            }
+            else if (/ glass$/i.test(name) || /^glass$/i.test(name)) {
+                if (parsed.lock === 'broken' || /broken/i.test(name))
+                    return result(null);
+                const glass = name.replace(/^worthless /i, '').replace(/^piece of /i, '')
+                    .replace(/^colou?red /i, '');
+                if (glass.toLowerCase() === 'glass')
+                    return result(objects.WORTHLESS_PIECE_OF_WHITE_GLASS + rn2(9));
+                name = `worthless piece of ${glass}`;
+            }
+            actual = name;
+            description ??= actual;
         }
-        else if (/ glass$/i.test(name) || /^glass$/i.test(name)) {
-            if (parsed.lock === 'broken' || /broken/i.test(name))
-                return result(null);
-            const glass = name.replace(/^worthless /i, '').replace(/^piece of /i, '')
-                .replace(/^colou?red /i, '');
-            if (glass.toLowerCase() === 'glass')
-                return result(objects.WORTHLESS_PIECE_OF_WHITE_GLASS + rn2(9));
-            name = `worthless piece of ${glass}`;
+        if (!oclass && actual) {
+            for (let type = objects.DILITHIUM_CRYSTAL; type <= objects.JADE; type++)
+                if (actual.toLowerCase() === objects.OBJECT_NAMES[type]?.toLowerCase())
+                    return result(type);
+            if (actual.toLowerCase() === 'tin')
+                return result(objects.TIN);
         }
-        actual = name;
-        description ??= actual;
+        const candidates = [actual, description !== actual ? description : null, callName,
+            original !== actual ? original : null];
+        for (const candidate of candidates) {
+            const type = randomTypeByDescription(candidate, oclass, 1, state);
+            if (type !== null)
+                return result(type, oclass);
+        }
+        if (oclass === ARMOR_CLASS && !/mail/i.test(name)) {
+            // C retries postparse2 with the chosen class still in effect.
+            name += ' mail';
+            retryingArmor = true;
+            continue;
+        }
+        const classAlias = alternateSpellings.find(([alias, type]) => objectClassForType(type) === oclass && wishMatches(name, alias, true));
+        if (classAlias)
+            return result(classAlias[1]);
+        if (!oclass && /^polearm/i.test(name))
+            return result(randomWeaponBySkill(P_POLEARMS));
+        if (!oclass && /^hammer/i.test(name))
+            return result(randomWeaponBySkill(P_HAMMER));
+        return result(null, oclass);
     }
-    if (!oclass && actual) {
-        for (let type = objects.DILITHIUM_CRYSTAL; type <= objects.JADE; type++)
-            if (actual.toLowerCase() === objects.OBJECT_NAMES[type]?.toLowerCase())
-                return result(type);
-        if (actual.toLowerCase() === 'tin')
-            return result(objects.TIN);
-    }
-    const candidates = [actual, description !== actual ? description : null, callName,
-        original !== actual ? original : null];
-    for (const candidate of candidates) {
-        const type = randomTypeByDescription(candidate, oclass, 1, state);
-        if (type !== null)
-            return result(type, oclass);
-    }
-    if (oclass === ARMOR_CLASS && !/mail/i.test(name)) {
-        const retry = lookupWishType({ ...parsed, name: `${name} mail` }, { wizardWish, state });
-        if (retry.type !== null)
-            return retry;
-    }
-    const classAlias = alternateSpellings.find(([alias, type]) => objectClassForType(type) === oclass && wishMatches(name, alias, true));
-    if (classAlias)
-        return result(classAlias[1]);
-    if (!oclass && /^polearm/i.test(name))
-        return result(randomWeaponBySkill(P_POLEARMS));
-    if (!oclass && /^hammer/i.test(name))
-        return result(randomWeaponBySkill(P_HAMMER));
-    return result(null, oclass);
 }
 export function randomTypeByDescription(name, oclass = 0, extraProbability = 1, state = game) {
     if (!name)
