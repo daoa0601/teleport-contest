@@ -3765,6 +3765,7 @@ async function doadjust(selected: GameObject | null = null, splitting: GameObjec
         }
         purse.invlet = '$';
         game.inventory.sort((a, b) => inventoryLetterRank(a) - inventoryLetterRank(b));
+        if (game.flags.fixinv === false) reassignInventoryLetters();
         observeObjectForNaming(purse);
         await pline(`${action}: $ - ${inventoryItemDescription(purse)}.`);
         game.context.move = 0;
@@ -3889,10 +3890,11 @@ async function doadjust(selected: GameObject | null = null, splitting: GameObjec
     }
     game.inventory.sort((a, b) =>
         inventoryLetterRank(a) - inventoryLetterRank(b));
+    if (game.flags.fixinv === false) reassignInventoryLetters();
     game._pending_message = '';
     observeObjectForNaming(object);
     await pline(
-        `${action} ${destination} - ${
+        `${action} ${object.invlet} - ${
             inventoryItemDescription(object, {
                 primaryHandDetail: inventoryPrimaryHandDetail(object),
             })}.`,
