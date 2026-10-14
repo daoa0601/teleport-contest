@@ -7933,7 +7933,7 @@ export async function resumeDeferredMonsterTrap(
             await finishMonsterWebTrap(action.monster, event.trap, {
                 state,
                 publish,
-                subject: describeMonster || monsterSentenceSubject,
+                ...(describeMonster ? { subject: describeMonster } : {}),
             });
             break;
         case 'bear-trap':

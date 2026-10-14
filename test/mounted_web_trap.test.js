@@ -26,4 +26,30 @@ void test('a strong mount determines how long a weak rider stays caught in a web
     assert.ok((game.u.utrap ?? 0) >= 1 && (game.u.utrap ?? 0) <= 2);
     assert.equal(horse.mtrapped ?? 0, 0);
 });
+void test('a hallucinating rider sees an imaginary mount in both web messages', async () => {
+    const level = freshObjectRoom({ role: 'knight', hero: { ulevel: 30 } });
+    requirePlayingGame(game);
+    const horse = await createSaddledSteed('horse');
+    horse.name = 'Bucephalus';
+    await runExtendedCommand('ride', 'l');
+    assert.equal(game.u.usteed, horse);
+    game.u.hallucinationTurns = 20;
+    addTrap(level, WEB, 12, 10);
+    const input = resetInputState();
+    const messages = [];
+    input.beforeRead = () => {
+        messages.push(game._pending_message || '');
+        input.feed(' ');
+    };
+    initRng(1n);
+    await rhack('l'.charCodeAt(0));
+    messages.push(game._pending_message || '');
+    const riderMessage = messages.find(message => /You lead .* into a spider web!/.test(message));
+    const steedMessage = messages.find(message => /is caught in a spider web\./.test(message));
+    assert.ok(riderMessage, 'Entering the web must describe the rider leading the mount');
+    assert.ok(steedMessage, 'The web must also describe catching the mount');
+    assert.doesNotMatch(riderMessage, /Bucephalus|horse/);
+    assert.doesNotMatch(steedMessage, /Bucephalus|horse/);
+    assert.equal(game.u.utraptype, TT_WEB);
+});
 //# sourceMappingURL=mounted_web_trap.test.js.map
