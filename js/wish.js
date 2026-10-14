@@ -1,14 +1,13 @@
 // Wishes from wands, monsters, the Amulet, and debug commands.
 // C refs: zap.c makewish(), objnam.c readobjnam(), and
 // invent.c hold_another_object().
-import { makePlural } from './object_grammar.js';
 import { markArtifactFound } from './artifacts.js';
 import { ICE, IRONBARS, Is_airlevel, Is_waterlevel, POOL, WATER } from './const.js';
 import { bot, docrt, flushPendingTopline, flush_screen, newsym, pline, plineWithContinuation, } from './display.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { holdAnotherObject } from './hero_hold_object.js';
 import { CORPSE } from './object_data.js';
-import { corpseName, definiteName, objectName, observeObjectForNaming, readObjectName, } from './objnam.js';
+import { corpseName, definiteName, objectName, observeObjectForNaming, pluralizeObjectNoun, readObjectName, } from './objnam.js';
 import { getLine } from './query.js';
 import { rn2 } from './rng.js';
 import { heroResistsStoning, touchPetrifies } from './stoning.js';
@@ -127,7 +126,7 @@ function wishDropMessage(object) {
     observeObjectForNaming(object);
     const quantity = object.quan;
     const noun = object.otyp === CORPSE ? corpseName(object) : objectName(object);
-    const plural = object.otyp === CORPSE ? noun : makePlural(noun);
+    const plural = object.otyp === CORPSE ? noun : pluralizeObjectNoun(object, noun);
     const subject = definiteName(quantity === 1 ? noun : `${quantity} ${plural}`);
     const action = `${subject.charAt(0).toUpperCase()}${subject.slice(1)} ${verb}${quantity === 1 ? 's' : ''}`;
     if (hero.uswallow)
