@@ -42,6 +42,7 @@ import { heroIsBlind } from './senses.js';
 import { addShopObjectToBill, currentShopResident, costlySpot } from './shk.js';
 import { stolenValue } from './shop_loss.js';
 import { currency } from './currency.js';
+import { warnAboutRemovedPick } from './container_shop.js';
 import { heroGoldObject } from './hero_gold.js';
 import { sellHeroDroppedObject, setSellDisposition, SELL_DELIBERATE, SELL_DONTSELL, SELL_NORMAL } from './shop_sell.js';
 import { restoreMenuUnderlay, showChoiceWindow, showDisclosureOverlay, showMultiSelectWindow, showTextWindow, } from './windows.js';
@@ -560,6 +561,7 @@ export async function takeFromContainer(container, object, state = game, count =
         object.oy = container.oy;
         await addShopObjectToBill(object, state, { ininv: false });
     }
+    await warnAboutRemovedPick(object, state);
     if (resetJustPicked)
         clearJustPicked(state);
     const { object: carried, count: addedCount } = await addPickedInventoryObject(object);
