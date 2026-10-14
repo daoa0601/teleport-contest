@@ -701,6 +701,8 @@ async function mksobj_init(otmp, artif, definition) {
             }
             break;
         case AMULET_CLASS:
+            if (otyp === AMULET_OF_YENDOR)
+                game.context.made_amulet = true;
             if (rn2(10) && (otyp === AMULET_OF_STRANGULATION
                 || otyp === AMULET_OF_CHANGE
                 || otyp === AMULET_OF_RESTFUL_SLEEP))

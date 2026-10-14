@@ -832,6 +832,7 @@ async function mksobj_init(
         }
         break;
     case AMULET_CLASS:
+        if (otyp === AMULET_OF_YENDOR) game.context.made_amulet = true;
         if (rn2(10) && (otyp === AMULET_OF_STRANGULATION
             || otyp === AMULET_OF_CHANGE
             || otyp === AMULET_OF_RESTFUL_SLEEP)) otmp.cursed = true;
