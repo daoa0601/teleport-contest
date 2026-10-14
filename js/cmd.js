@@ -285,6 +285,7 @@ import { announceInvocationSquare } from './invocation.js';
 import { abuseKickedPet, kickConductViolation, levitatingKickMisses, prepareKick, prepareKickDamage, rollKickDamage, tryKickEvasion, tryKickReel, } from './monster_kick.js';
 import { kickFloorObject } from './object_kick.js';
 import { kickWithMonsterForm } from './hero_form_kick.js';
+import { admitHeroKick, kickCanReachTarget } from './kick_admission.js';
 import { bringLeashedFollowers, heroTeleportDestinationOk, moveHeroByTeleport, randomMonsterRelocation, } from './teleport.js';
 import { goodPosition, monsterTeleportRestricted } from './teleport_rules.js';
 import { removeWishGrantingMonster } from './monster_departure.js';
@@ -1900,15 +1901,8 @@ async function kickLiveMonster(monster, x, y) {
     game.context.move = 1;
 }
 async function dokick() {
-    if ((game.u?._woundedLegTurns ?? 0) > 0) {
-        const side = game.u._woundedLegSide;
-        const leg = side === 'both' ? 'legs are' : `${side || 'right'} leg is`;
-        await moreUntilDismissed(`Your ${leg} in no shape for kicking.`);
-        game._pending_message = '';
-        game._retained_message = '';
-        game.context.move = 0;
+    if (!await admitHeroKick())
         return;
-    }
     const key = await readDirectionKey();
     const direction = promptedDirectionKey(key, game.commandBindings);
     if (!isMovementKey(direction)) {
@@ -1923,6 +1917,8 @@ async function dokick() {
     // dispatching the target.  Peaceful monsters and pets consult it during
     // this same elapsed turn so they do not step into the square just kicked.
     game._kickedLoc = { x, y };
+    if (!await kickCanReachTarget())
+        return;
     const average = game.uarmf?.otyp === KICKING_BOOTS ? 99
         : Math.trunc((currentStrength()
             + currentAttribute(A_DEX) + currentAttribute(A_CON)) / 3);

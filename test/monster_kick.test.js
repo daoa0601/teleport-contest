@@ -1,7 +1,7 @@
 import { initializePet } from '../js/dog.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { BEAR_TRAP, COULD_SEE, IN_SIGHT, STATUE_TRAP, STONE, W_AMUL, WEB, } from '../js/const.js';
+import { BEAR_TRAP, COULD_SEE, DOOR, D_ISOPEN, IN_SIGHT, STATUE_TRAP, STONE, W_AMUL, WEB, } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { hurtleHero } from '../js/hero_hurtle.js';
 import { pushKey } from '../js/input.js';
@@ -86,6 +86,9 @@ void test('a levitating hero can miss a tiny monster and recoil', async () => {
     const garterSnake = await installKickArena(214);
     requirePlayingGame(game);
     game.u.levitating = true;
+    // An open doorway provides a brace without blocking the recoil.
+    game.level.requireAt(9, 10).typ = DOOR;
+    game.level.requireAt(9, 10).doormask = D_ISOPEN;
     initRng(2n);
     await kickDirection('l', [' ']);
     assert.equal(garterSnake.mhp, 20);
@@ -122,6 +125,9 @@ void test('kicking a wall while levitating throws the hero backward', async () =
     game.level.requireAt(11, 10).typ = STONE;
     vision_reset();
     game.u.levitating = true;
+    // An open doorway provides a brace without blocking the recoil.
+    game.level.requireAt(9, 10).typ = DOOR;
+    game.level.requireAt(9, 10).doormask = D_ISOPEN;
     game.u.uhp = game.u.uhpmax = 100;
     initRng(19n);
     await kickDirection('l', [' ', ' ']);
@@ -167,6 +173,9 @@ void test('a cockatrice hero recoiling into an unarmored monster leaves a statue
     await equipMonsterObject(human, club, 0);
     game.level.requireAt(11, 10).typ = STONE;
     game.u.levitating = true;
+    // An open doorway provides a brace without blocking the recoil.
+    game.level.requireAt(9, 10).typ = DOOR;
+    game.level.requireAt(9, 10).doormask = D_ISOPEN;
     game.u.mtimedone = 100;
     game.u.umonnum = 10;
     game.u.mh = game.u.mhmax = 20;
@@ -190,6 +199,9 @@ void test('a worn life-saving amulet saves a monster from petrifying recoil', as
     await equipMonsterObject(human, amulet, W_AMUL);
     game.level.requireAt(11, 10).typ = STONE;
     game.u.levitating = true;
+    // An open doorway provides a brace without blocking the recoil.
+    game.level.requireAt(9, 10).typ = DOOR;
+    game.level.requireAt(9, 10).doormask = D_ISOPEN;
     game.u.mtimedone = 100;
     game.u.umonnum = 10;
     game.u.mh = game.u.mhmax = 20;
