@@ -220,10 +220,11 @@ async function applyParalysisPassive({ monster, damage, state, publish, random, 
     if (!canSeeMonster(monster))
         return { heroDied: false };
     if (monster.mcansee !== 0) {
+        // C evaluates ureflects()'s name argument even when nothing reflects.
+        const reflectionOwner = possessiveName(displayedMonsterName(monster, { state, capitalized: true }));
         if (heroReflectsRay(state)) {
-            const owner = possessiveName(displayedMonsterName(monster, { state, capitalized: true }));
             const source = heroReflectionSource(state);
-            await publish(`${owner} gaze is reflected by your ${source?.noun || 'body'}.`);
+            await publish(`${reflectionOwner} gaze is reflected by your ${source?.noun || 'body'}.`);
             return { reflected: true, heroDied: false };
         }
         if (heroIsHallucinating(state) && random(4) !== 0) {

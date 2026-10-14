@@ -6,6 +6,7 @@ import { MM_NOGRP, MM_NOWAIT, NO_MINVENT, Upolyd } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { pushKey, resetInputState } from '../js/input.js';
 import { setMonsterGivenName } from '../js/monster_given_name.js';
+import { monsterName, possessiveName } from '../js/monster_name.js';
 import { DAGGER, ELVEN_LEATHER_HELM, IRON_SHOES, LEATHER_GLOVES } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { heroIsBlind } from '../js/senses.js';
@@ -74,6 +75,41 @@ void test('hallucination lets an attacker see a floating eye look numb or stupef
         assert.match(reaction, /^(?:rather )?(?:numb|stupefied)$/,
             'The eye reaction has one optional adjective');
     assert.equal(game._helplessTurns ?? 0, 0);
+});
+
+void test('an unreflected floating eye uses a fresh hallucinated name after checking its gaze', async () => {
+    const eye = await meleeRoom('newt', 'floating eye');
+    game.u.hallucinationTurns = 100;
+    game.u.freeAction = true;
+    let reactions = 0;
+    let resistedGazes = 0;
+
+    for (let seed = 41n; seed < 49n; seed++) {
+        initRng(seed);
+        monsterName(eye); // The bite names its target.
+        // C passive() names the gaze's owner even without reflection,
+        // then names the eye again for its reaction or the resisted gaze.
+        monsterName(eye, { capitalized: true });
+        const gazeName = monsterName(eye);
+        const reactionName = gazeName.charAt(0).toUpperCase() + gazeName.slice(1);
+        initRng(seed);
+
+        const messages = await attackEast(/bite|looks|stiffen/, true);
+
+        if (messages.includes(' looks ')) {
+            reactions++;
+            assert.ok(messages.includes(`${reactionName} looks `),
+                `Expected a reaction from ${reactionName}: ${messages}`);
+        } else if (messages.includes('stiffen under')) {
+            resistedGazes++;
+            assert.ok(messages.includes(`stiffen under ${possessiveName(gazeName)} gaze!`),
+                `Expected a resisted gaze from ${gazeName}: ${messages}`);
+        }
+        assert.equal(game._helplessTurns ?? 0, 0);
+    }
+
+    assert.ok(reactions > 0, 'Some gazes must provoke a hallucinated reaction');
+    assert.ok(resistedGazes > 0, 'Free action must also resist a gaze without a hallucinated escape');
 });
 
 void test('a blind floating eye cannot freeze the hero who strikes it', async () => {
