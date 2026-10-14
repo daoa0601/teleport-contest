@@ -46,7 +46,7 @@ import { heroHasNoHands } from './polyself.js';
 import { observeQuantumCat } from './quantum_cat.js';
 import { d, rn2 } from './rng.js';
 
-import { getLine, promptChoice } from './query.js';
+import { paranoidYesNoQuit, promptChoice } from './query.js';
 import { touchPetrifyingCorpse } from './stoning.js';
 import { addPickedInventoryObject } from './pickup.js';
 import { nearCapacity, objectWeight, pickupLoadPrefix } from './weight.js';
@@ -246,21 +246,6 @@ function categoryMatcher(filters: readonly ContainerCategory[]): ObjectMatcher {
     };
 }
 
-async function confirmAutoSelection(): Promise<'y' | 'n' | 'q'> {
-    if (!((game.flags.paranoia_bits ?? 0) & PARANOID_CONFIRM))
-        return promptChoice('Really autoselect All?', ['y', 'n', 'q'], 'n');
-    let prefix = '';
-    for (let tries = 0; tries < 6; tries++) {
-        const answer = (await getLine(`${prefix}Really autoselect All? [yes|no|quit]`,
-            (_character, key) => key >= 32 && key < 127))?.trim().toLowerCase();
-        if (answer === 'yes') return 'y';
-        if (answer === 'no') return 'n';
-        if (answer === undefined || answer === 'quit') return 'q';
-        prefix = '"Yes" or "No": ';
-    }
-    return 'n';
-}
-
 async function chooseCategories(title: string, objects: readonly GameObject[]): Promise<CategorySelection> {
     if (game.flags.menu_style !== undefined && game.flags.menu_style !== MENU_FULL)
         return { matchers: [() => true], autoSelect: false };
@@ -281,7 +266,10 @@ async function chooseCategories(title: string, objects: readonly GameObject[]): 
     const matchers: ObjectMatcher[] = filters.length ? [categoryMatcher(filters)] : [];
     if (autoSelect) {
         if ((game.flags.paranoia_bits ?? 0) & PARANOID_AUTOALL) {
-            const answer = await confirmAutoSelection();
+            const answer = await paranoidYesNoQuit(
+                !!((game.flags.paranoia_bits ?? 0) & PARANOID_CONFIRM),
+                'Really autoselect All?',
+            );
             if (answer === 'q') return { matchers: [], autoSelect: false };
             autoSelect = answer === 'y';
             if (!matchers.length) matchers.push(() => true);
