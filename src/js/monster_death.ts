@@ -32,6 +32,7 @@ import { AD_DCAY, AD_DGST, AD_FIRE, AD_RUST } from './monster_attack_types.js';
 import type { DamageType } from './monster_attack_types.js';
 import { recordMonsterDeath } from './monster_vitals.js';
 import { monsterName, possessiveName } from './monster_name.js';
+import { setMonsterGivenName } from './monster_given_name.js';
 import { createSteamVortexDeathCloud } from './monster_death_cloud.js';
 import { returnDeadKop } from './monster_return.js';
 import { restoreMonsterTrueSpecies } from './monster_species.js';
@@ -61,6 +62,7 @@ import type { MessagePublisher } from './display.js';
 
 export interface MonsterDeathOptions {
     deathMessage?: string | null;
+    sadFeeling?: boolean;
     noCorpse?: boolean;
     noRevive?: boolean;
     zombifyCorpse?: boolean;
@@ -153,14 +155,6 @@ export function levelAllowsMonsterDeathDrops(
 export function monsterDeathSquareAllowsObjects(x: number, y: number, state: GameState = game): boolean {
     const terrain = state.level?.at?.(x, y)?.typ;
     return terrain !== undefined && (ACCESSIBLE(terrain) || IS_POOL(terrain));
-}
-
-export function monsterPossessiveName(monster: Monster, displayName: string | null = null): string {
-    const name = monster.name || displayName
-        || MONSTER_NAME[monster.mnum] || 'monster';
-    const usesArticle = !monster.name && !/^[A-Z]/.test(name);
-    const subject = usesArticle ? `The ${name}` : name;
-    return /s$/i.test(subject) ? `${subject}'` : `${subject}'s`;
 }
 
 export function monsterBodyCrumbles(monster: Monster): boolean {
@@ -288,7 +282,6 @@ async function createGolemRemains(monster: Monster, state: GameState): Promise<G
         remains = await mkcorpstat(
             STATUE, null, monster.mnum, x, y, corpseFlags(monster, false), { state },
         );
-        if (monster.name) remains.oname = monster.name;
         break;
     case PM_WOOD_GOLEM:
         for (let count = d(2, 4); count > 0; count--)
@@ -313,8 +306,8 @@ async function createGolemRemains(monster: Monster, state: GameState): Promise<G
         break;
     }
 
-    if (monster.mnum !== PM_STONE_GOLEM) delete monster.name;
-    return remains ? await stack_object(remains, state) : null;
+    if (monster.mnum !== PM_STONE_GOLEM) setMonsterGivenName(monster, null);
+    return remains;
 }
 
 async function placeMonsterPart(type: number, monster: Monster, state: GameState, initialize = true): Promise<GameObject> {
@@ -340,8 +333,9 @@ async function createMonsterPart(monster: Monster, state: GameState, seen: boole
     if (mnum >= PM_WHITE_UNICORN && mnum <= PM_BLACK_UNICORN) {
         if (monster.mrevived && rn2(2)) {
             if (seen) {
+                const owner = possessiveName(monsterName(monster, { state, capitalized: true }));
                 await publish(
-                    `${monsterPossessiveName(monster)} recently regrown horn `
+                    `${owner} recently regrown horn `
                         + 'crumbles to dust.',
                 );
             }
@@ -363,7 +357,7 @@ async function createPuddingGlob(monster: Monster, state: GameState, publish: Me
         GLOB_OF_GRAY_OOZE + monster.mnum - PM_GRAY_OOZE,
         monster, state,
     );
-    delete monster.name;
+    setMonsterGivenName(monster, null);
     return meldNearbyFloorGlobs(glob, { state, publish });
 }
 
@@ -378,16 +372,20 @@ export async function createMonsterRemains(
 ): Promise<GameObject | null> {
     const x = monster.mx;
     const y = monster.my;
-    if (SPECIAL_GOLEM_REMAINS.has(monster.mnum))
-        return await createGolemRemains(monster, state);
+    if (SPECIAL_GOLEM_REMAINS.has(monster.mnum)) {
+        const remains = await createGolemRemains(monster, state);
+        return remains ? await finishMonsterRemains(remains, monster, state) : null;
+    }
     if (monster.mnum >= PM_GRAY_OOZE && monster.mnum <= PM_BLACK_PUDDING)
         return createPuddingGlob(monster, state, publish);
 
     await createMonsterPart(monster, state, seen, publish);
 
     const corpseForm = undeadToCorpse(monster.mnum);
+    const vitalFlags = state.mvitals?.[monster.mnum]?.mvflags
+        ?? MONSTER_GENO[monster.mnum] ?? 0;
     if (corpseForm === monster.mnum
-        && ((MONSTER_GENO[monster.mnum] ?? 0) & G_NOCORPSE)) {
+        && (vitalFlags & G_NOCORPSE)) {
         return null;
     }
     const leaderId = state.quest_status?.leader_m_id;
@@ -400,16 +398,28 @@ export async function createMonsterRemains(
         },
     );
     corpse.name = `${MONSTER_NAME[corpseForm] || 'monster'} corpse`;
-    if (state.context?.bypasses) corpse.bypass = true;
-    if (monster.name) corpse.oname = monster.name;
     if (corpseForm !== monster.mnum)
         corpse.age = (corpse.age ?? state.moves ?? 1) - 51;
-    if (buried) {
+    if (buried && corpseForm === monster.mnum) {
         const result = await buryObject(corpse, state);
         if (result.outcome === 'absorbed') return null;
         if (result.outcome === 'buried') return corpse;
     }
-    return await stack_object(corpse, state);
+    return await finishMonsterRemains(corpse, monster, state);
+}
+
+// Special golem objects share make_corpse's tail with ordinary corpses.
+// In particular, the beam which killed a monster must skip its new remains.
+async function finishMonsterRemains(
+    remains: GameObject, monster: Monster, state: GameState,
+): Promise<GameObject> {
+    if (state.context.bypasses) remains.bypass = true;
+    if (monster.name) remains.oname = monster.name;
+    const stacked = await stack_object(remains, state);
+    newsym(monster.mx, monster.my);
+    if (stacked.ox !== monster.mx || stacked.oy !== monster.my)
+        newsym(stacked.ox, stacked.oy);
+    return stacked;
 }
 
 // Native mondead() after recovery has failed. Kill credit and remains belong
@@ -461,13 +471,16 @@ export async function finishMonsterLiquidDeath(
         random = rn2,
         rollDice = d,
         leaveCorpse = false,
+        sadFeeling = false,
         publish = plineWithContinuation,
     }: { state?: GameState; random?: (limit: number) => number;
         rollDice?: (count: number, sides: number) => number;
-        leaveCorpse?: boolean; publish?: MessagePublisher } = {},
+        leaveCorpse?: boolean; sadFeeling?: boolean; publish?: MessagePublisher } = {},
 ): Promise<MonsterLiquidDeathResult> {
     const x = monster.mx;
     const y = monster.my;
+    if (sadFeeling)
+        await publish('You have a sad feeling for a moment, then it passes.');
     if (await detachDeadMonster(monster, state, random, publish)) {
         return {
             oldx: x, oldy: y, x, y,
@@ -521,7 +534,8 @@ export async function finishMonsterKilled(
     const disintegrated = damageType === 'disintegration' || damageType === AD_DGST || burns;
     const death = await resolveMonsterDeath(monster, state, {
         ...options, publish, deathMessage, noCorpse: disintegrated,
-    }, { disintegrated, sadFeeling: !visible && !!monster.mtame });
+        sadFeeling: !visible && !!monster.mtame,
+    }, { disintegrated });
     if (death.survived || death.heroDied) return death;
     if (monster.mtame) {
         const epitaph = burns ? 'roast'
@@ -543,6 +557,7 @@ export function finishEnvironmentalMonsterDeath(
 async function resolveMonsterDeath(
     monster: Monster, state: GameState, {
         deathMessage = null,
+        sadFeeling = false,
         noCorpse = false,
         noRevive = false,
         zombifyCorpse = false,
@@ -550,8 +565,8 @@ async function resolveMonsterDeath(
         rollDice = d,
         publish = plineWithContinuation,
     }: MonsterDeathOptions,
-    { disintegrated = false, sadFeeling = false }: {
-        disintegrated?: boolean; sadFeeling?: boolean;
+    { disintegrated = false }: {
+        disintegrated?: boolean;
     } = {},
 ): Promise<MonsterDeathResult> {
     requireLiveGame(state);

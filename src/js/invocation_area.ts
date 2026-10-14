@@ -119,9 +119,9 @@ async function changeInvocationSquare({ x, y }: Position, distance: number, stat
 }
 
 function finishInvocationLiquidDeath(
-    monster: Monster, { state, random, leaveCorpse, cause }: MonsterLiquidDeathContext,
+    monster: Monster, options: MonsterLiquidDeathContext,
 ): Promise<MonsterLiquidDeathResult | HeroLiquidMonsterDeathOutcome> {
-    if (cause === 'drowning' || cause === 'lava-burning')
-        return finishHeroLiquidMonsterDeath(monster, { leaveCorpse });
-    return finishMonsterLiquidDeath(monster, { state, random, leaveCorpse });
+    if (options.cause === 'drowning' || options.cause === 'lava-burning')
+        return finishHeroLiquidMonsterDeath(monster, options);
+    return finishMonsterLiquidDeath(monster, options);
 }

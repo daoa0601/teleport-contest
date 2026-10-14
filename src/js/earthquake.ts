@@ -137,14 +137,12 @@ async function flowLiquidIntoChasm(x: number, y: number, trap: Trap, liquid: num
 }
 
 function finishEarthquakeLiquidDeath(
-    monster: Monster, { state, random, leaveCorpse, cause }: MonsterLiquidDeathContext,
+    monster: Monster, options: MonsterLiquidDeathContext,
 ) {
-    if (cause === 'drowning' || cause === 'lava-burning') {
-        return finishHeroLiquidMonsterDeath(monster, { leaveCorpse });
+    if (options.cause === 'drowning' || options.cause === 'lava-burning') {
+        return finishHeroLiquidMonsterDeath(monster, options);
     }
-    return finishMonsterLiquidDeath(monster, {
-        state, random, leaveCorpse,
-    });
+    return finishMonsterLiquidDeath(monster, options);
 }
 
 function heroClingsToCeiling() {

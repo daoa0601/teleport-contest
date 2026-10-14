@@ -19,7 +19,7 @@ import { preventMonsterDeath } from './mondeath.js';
 import { prepareMonsterPetrification } from './monster_stoning.js';
 import { MONSTER_ALIGNMENT, MONSTER_FLAGS2, MONSTER_SIZE, monsterIsAlwaysHostile, monsterIsHuman, monsterIsKop, monsterIsNonliving, monsterIsPlainHuman, monsterIsPlayerMonster, monsterIsQuestGuardian, monsterIsQuestNemesis, monsterIsUnicorn, } from './monster_data.js';
 import { monsterDeathCount, } from './monster_vitals.js';
-import { createMonsterRemains, detachDeadMonster, levelAllowsMonsterDeathDrops, monsterBodyCrumbles, monsterBodyCrumblesMessage, monsterDeathSquareAllowsObjects, monsterLeavesCorpse, } from './monster_death.js';
+import { createMonsterRemains, detachDeadMonster, finishMonsterLiquidDeath, levelAllowsMonsterDeathDrops, monsterBodyCrumbles, monsterBodyCrumblesMessage, monsterDeathSquareAllowsObjects, monsterLeavesCorpse, } from './monster_death.js';
 import { resolveMonsterDeathExplosion, monsterDeathSwallower, rollMonsterDeathExplosion, } from './monster_explosion.js';
 import { addObjectToMonsterInventory, } from './monster_inventory.js';
 import { BOULDER, FIGURINE, OBJECT_BIMANUAL, } from './object_data.js';
@@ -108,7 +108,7 @@ export async function finishHeroMonsterKill(monster, x, y, options = {}) {
     const outcome = await finishHeroMonsterKillOutcome(monster, x, y, options);
     return outcome.killed;
 }
-export async function finishHeroMonsterKillOutcome(monster, x, y, { hallucinating = heroIsHallucinating(game), showKillMessage = true, deathContext = null, noCorpse = false, recordConduct = true, zombifyCorpse = false, noRevive = false, petrified = false, publish = plineWithContinuation, } = {}) {
+export async function finishHeroMonsterKillOutcome(monster, x, y, { hallucinating = heroIsHallucinating(game), showKillMessage = true, deathContext = null, noCorpse = false, recordConduct = true, zombifyCorpse = false, noRevive = false, petrified = false, sadFeeling = false, publish = plineWithContinuation, } = {}) {
     requirePlayingGame(game);
     const wasInside = (game.u.uswallow && game.u.ustuck === monster)
         || deathContext?.kind === 'swallowed-projectile'
@@ -159,6 +159,9 @@ export async function finishHeroMonsterKillOutcome(monster, x, y, { hallucinatin
     const completedDeath = 'completedDeath' in recovery ? recovery.completedDeath : null;
     if (!completedDeath && await detachDeadMonster(monster, game, rn2, publish))
         return { killed: true, heroDied: true };
+    // xkilled() owns this message after mondead() has released the inventory.
+    if (sadFeeling)
+        await publish('You have a sad feeling for a moment, then it passes.');
     const levelAllowsDeathDrops = !petrified && !suppressRemains
         && levelAllowsMonsterDeathDrops(monster, game, rn2);
     const squareAllowsDeathObjects = monsterDeathSquareAllowsObjects(x, y, game);
@@ -291,15 +294,21 @@ export async function finishHeroMonsterKillOutcome(monster, x, y, { hallucinatin
     adjustHeroAlignment(monster.malign);
     return { killed: true, heroDied: false };
 }
-// When the hero creates water under a monster, minliquid() calls xkilled()
-// without printing a second kill line.
-export async function finishHeroLiquidMonsterDeath(monster, { leaveCorpse = false, hallucinating = heroIsHallucinating(game), } = {}) {
+// Drowning caused by the hero uses xkilled() without a second kill line.
+// Rust and fire-resistant scorching retain mon.c's environmental death owner.
+export async function finishHeroLiquidMonsterDeath(monster, { leaveCorpse = false, hallucinating = heroIsHallucinating(game), cause, sadFeeling = false, publish = plineWithContinuation, } = {}) {
+    if (cause === 'rust' || cause === 'lava-scorch') {
+        const death = await finishMonsterLiquidDeath(monster, { leaveCorpse, sadFeeling, publish });
+        return { ...death, heroDied: !!death.heroDied };
+    }
     const x = monster.mx;
     const y = monster.my;
     const { killed, heroDied } = await finishHeroMonsterKillOutcome(monster, x, y, {
         hallucinating,
         showKillMessage: false,
         noCorpse: !leaveCorpse,
+        sadFeeling,
+        publish,
     });
     return {
         oldx: x,

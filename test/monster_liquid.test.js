@@ -2,14 +2,159 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { LAVAPOOL, POOL, W_AMUL } from '../js/const.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
+import { finishHeroLiquidMonsterDeath } from '../js/hero_monster_death.js';
+import { initializePet } from '../js/dog.js';
+import { setMonsterGivenName } from '../js/monster_given_name.js';
 import { flush_screen } from '../js/display.js';
 import { resetInputState } from '../js/input.js';
 import { resolveMonsterLiquid } from '../js/mon.js';
 import { finishMonsterLiquidDeath } from '../js/monster_death.js';
-import { AMULET_OF_LIFE_SAVING } from '../js/object_data.js';
+import { AMULET_OF_LIFE_SAVING, POT_ACID, POT_HEALING } from '../js/object_data.js';
 import { knownObject } from './support/game-objects.js';
-import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
+import { installSwallowedHero } from './support/hero-state.js';
+import { createMonsterAt, createSaddledSteed, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+for (const lava of [false, true]) {
+    void test(`${lava ? 'lava scorching' : 'iron golem rust'} on the hero turn gives no hero kill credit`, async () => {
+        const level = freshObjectRoom();
+        requirePlayingGame(game);
+        const monster = await createMonsterAt(lava ? 'fire ant' : 'iron golem', 12, 10);
+        monster.mhp = 1;
+        level.requireAt(12, 10).typ = lava ? LAVAPOOL : POOL;
+        const experience = game.u.uexp;
+        const kills = game.u.uconduct.killer;
+        await resolveMonsterLiquid(monster, game, {
+            monsterMoving: false, finishDeath: finishHeroLiquidMonsterDeath,
+            random: () => 0, rollDice: () => 2,
+        });
+        assert.equal(monster.dead, true);
+        assert.equal(game.u.uconduct.killer, kills);
+        assert.equal(game.u.uexp, experience);
+    });
+}
+void test('a drowning engulfer announces the water flushing the hero out', async () => {
+    const level = freshObjectRoom();
+    requirePlayingGame(game);
+    const worm = await createMonsterAt('purple worm', 12, 10);
+    installSwallowedHero(worm);
+    level.requireAt(worm.mx, worm.my).typ = POOL;
+    const messages = [];
+    await resolveMonsterLiquid(worm, game, {
+        finishDeath: finishMonsterLiquidDeath,
+        announce: async (message) => messages.push(message),
+    });
+    assert.ok(messages.includes('The purple worm sinks as water rushes in and flushes you out.'));
+    assert.equal(!!game.u.uswallow, false);
+    assert.equal(game.u.ustuck, null);
+});
+void test('lava describes a named water elemental by its body rather than its given name', async () => {
+    const level = freshObjectRoom();
+    requirePlayingGame(game);
+    const elemental = await createMonsterAt('water elemental', 12, 10);
+    setMonsterGivenName(elemental, 'Droplet');
+    level.requireAt(12, 10).typ = LAVAPOOL;
+    const messages = [];
+    await resolveMonsterLiquid(elemental, game, {
+        finishDeath: finishMonsterLiquidDeath,
+        announce: async (message) => messages.push(message),
+    });
+    assert.equal(messages[0], 'Droplet boils away.');
+});
+void test('a drowning invisible monster does not reveal its species', async () => {
+    const level = freshObjectRoom();
+    requirePlayingGame(game);
+    const monster = await createMonsterAt('giant', 12, 10);
+    monster.minvis = true;
+    level.requireAt(12, 10).typ = POOL;
+    const messages = [];
+    await resolveMonsterLiquid(monster, game, {
+        finishDeath: finishMonsterLiquidDeath,
+        announce: async (message) => messages.push(message),
+    });
+    assert.equal(messages[0], 'It drowns.');
+});
+for (const lava of [false, true]) {
+    void test(`an unseen pet lost to ${lava ? 'lava' : 'drowning'} gives the native sad feeling`, async () => {
+        const level = freshObjectRoom({ hero: { uluck: -5 } });
+        requirePlayingGame(game);
+        const pet = await createMonsterAt('little dog', 12, 10);
+        initializePet(pet);
+        pet.minvis = true;
+        level.requireAt(12, 10).typ = lava ? LAVAPOOL : POOL;
+        const acid = lava ? null : await equipMonsterObject(pet, await knownObject(POT_ACID), 0);
+        const messages = [];
+        await resolveMonsterLiquid(pet, game, {
+            finishDeath: finishMonsterLiquidDeath,
+            announce: async (message) => {
+                messages.push(message);
+                if (acid && message.includes('sad feeling')) {
+                    assert.equal(acid.where, 'minvent', 'Monster-turn grief precedes the inventory drop.');
+                    assert.equal(level.monsters.includes(pet), true, 'Monster-turn grief precedes map removal.');
+                }
+            },
+        });
+        assert.equal(pet.dead, true);
+        const grief = messages.indexOf('You have a sad feeling for a moment, then it passes.');
+        assert.ok(grief >= 0);
+        if (acid) {
+            assert.equal(acid.where, 'gone');
+            assert.ok(messages.findIndex(message => /potion.*explodes/.test(message)) > grief, `Monster-turn grief precedes the potion explosion: ${messages.join('\n')}`);
+        }
+    });
+}
+void test('a drowning monster drops its potion into water only once', async () => {
+    const level = freshObjectRoom({ hero: { uluck: -5 } });
+    requirePlayingGame(game);
+    level.requireAt(12, 10).typ = POOL;
+    const giant = await createMonsterAt('giant', 12, 10);
+    const potion = await equipMonsterObject(giant, await knownObject(POT_HEALING), 0);
+    await resolveMonsterLiquid(giant, game, {
+        finishDeath: finishMonsterLiquidDeath,
+    });
+    assert.equal(giant.dead, true);
+    assert.equal(potion.where, 'floor');
+    assert.equal(potion.otyp, POT_HEALING);
+    assert.equal(potion.odiluted, true);
+});
+for (const lava of [false, true]) {
+    void test(`a ${lava ? 'lava survivor' : 'life-saved drowning monster'} with nowhere safe to stand waits in limbo`, async () => {
+        const level = freshObjectRoom();
+        requirePlayingGame(game);
+        const monster = await createMonsterAt(lava ? 'fire ant' : 'giant', 12, 10);
+        if (!lava)
+            await equipMonsterObject(monster, await knownObject(AMULET_OF_LIFE_SAVING), W_AMUL);
+        for (let x = 7; x <= 16; x++)
+            for (let y = 6; y <= 14; y++)
+                level.requireAt(x, y).typ = lava ? LAVAPOOL : POOL;
+        resetInputState().feed(' '.repeat(20));
+        await resolveMonsterLiquid(monster, game, {
+            finishDeath: finishMonsterLiquidDeath,
+        });
+        assert.ok(monster.mhp > 0);
+        assert.equal(level.monsters.includes(monster), false);
+        assert.equal(game._migratingMonsters?.includes(monster), true);
+        assert.deepEqual(monster.migrationDestination, game.u.uz);
+    });
+}
+for (const property of ['flying', 'levitating']) {
+    void test(`a ${property} rider keeps the steed and its equipment above lava`, async () => {
+        const level = freshObjectRoom();
+        requirePlayingGame(game);
+        const steed = await createSaddledSteed();
+        game.u.usteed = steed;
+        game.u[property] = true;
+        level.requireAt(steed.mx, steed.my).typ = LAVAPOOL;
+        const health = steed.mhp;
+        const saddle = steed.saddle;
+        await resolveMonsterLiquid(steed, game, {
+            finishDeath: finishMonsterLiquidDeath,
+        });
+        assert.equal(steed.mhp, health);
+        assert.equal(game.u.usteed, steed);
+        assert.equal(level.monsters.includes(steed), true);
+        assert.ok(saddle && steed.minvent.includes(saddle));
+    });
+}
 void test('an iron golem can rust in a pool despite being breathless', async () => {
     const level = freshObjectRoom();
     requirePlayingGame(game);

@@ -16,6 +16,7 @@ import { game, requirePlayingGame } from './gstate.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import type { MessagePublisher } from './display.js';
+import type { MonsterLiquidDeathContext } from './mon.js';
 import { finishDestinationSpotEffects } from './location_effects.js';
 import { mkobj } from './mklev.js';
 import { angerQuestGuardiansAfterLeaderDeath } from './monster_anger.js';
@@ -35,7 +36,7 @@ import {
     monsterDeathCount,
 } from './monster_vitals.js';
 import {
-    createMonsterRemains, detachDeadMonster, levelAllowsMonsterDeathDrops,
+    createMonsterRemains, detachDeadMonster, finishMonsterLiquidDeath, levelAllowsMonsterDeathDrops,
     monsterBodyCrumbles, monsterBodyCrumblesMessage, monsterDeathSquareAllowsObjects,
     monsterLeavesCorpse,
 } from './monster_death.js';
@@ -66,6 +67,7 @@ export interface HeroMonsterKillOptions {
     zombifyCorpse?: boolean;
     noRevive?: boolean;
     petrified?: boolean;
+    sadFeeling?: boolean;
     publish?: MessagePublisher;
 }
 
@@ -78,9 +80,10 @@ export type FinishHeroMonsterDeath = (
     monster: Monster, options?: HeroMonsterKillOptions,
 ) => Promise<HeroMonsterKillOutcome>;
 
-export interface HeroLiquidMonsterDeathOptions {
+export interface HeroLiquidMonsterDeathOptions extends Pick<HeroMonsterKillOptions,
+    'hallucinating' | 'sadFeeling' | 'publish'> {
     leaveCorpse?: boolean;
-    hallucinating?: boolean;
+    cause?: MonsterLiquidDeathContext['cause'];
 }
 
 export interface HeroLiquidMonsterDeathOutcome {
@@ -198,6 +201,7 @@ export async function finishHeroMonsterKillOutcome(monster: Monster, x: number, 
     zombifyCorpse = false,
     noRevive = false,
     petrified = false,
+    sadFeeling = false,
     publish = plineWithContinuation,
 }: HeroMonsterKillOptions = {}): Promise<HeroMonsterKillOutcome> {
     requirePlayingGame(game);
@@ -256,6 +260,10 @@ export async function finishHeroMonsterKillOutcome(monster: Monster, x: number, 
     const completedDeath = 'completedDeath' in recovery ? recovery.completedDeath : null;
     if (!completedDeath && await detachDeadMonster(monster, game, rn2, publish))
         return { killed: true, heroDied: true };
+
+    // xkilled() owns this message after mondead() has released the inventory.
+    if (sadFeeling)
+        await publish('You have a sad feeling for a moment, then it passes.');
 
     const levelAllowsDeathDrops = !petrified && !suppressRemains
         && levelAllowsMonsterDeathDrops(monster, game, rn2);
@@ -387,20 +395,29 @@ export async function finishHeroMonsterKillOutcome(monster: Monster, x: number, 
     return { killed: true, heroDied: false };
 }
 
-// When the hero creates water under a monster, minliquid() calls xkilled()
-// without printing a second kill line.
+// Drowning caused by the hero uses xkilled() without a second kill line.
+// Rust and fire-resistant scorching retain mon.c's environmental death owner.
 export async function finishHeroLiquidMonsterDeath(
     monster: Monster, {
         leaveCorpse = false,
         hallucinating = heroIsHallucinating(game),
+        cause,
+        sadFeeling = false,
+        publish = plineWithContinuation,
     }: HeroLiquidMonsterDeathOptions = {},
 ): Promise<HeroLiquidMonsterDeathOutcome> {
+    if (cause === 'rust' || cause === 'lava-scorch') {
+        const death = await finishMonsterLiquidDeath(monster, { leaveCorpse, sadFeeling, publish });
+        return { ...death, heroDied: !!death.heroDied };
+    }
     const x = monster.mx;
     const y = monster.my;
     const { killed, heroDied } = await finishHeroMonsterKillOutcome(monster, x, y, {
         hallucinating,
         showKillMessage: false,
         noCorpse: !leaveCorpse,
+        sadFeeling,
+        publish,
     });
     return {
         oldx: x,

@@ -156,7 +156,7 @@ for (const [species, damageType, name, epitaph] of [
         else {
             assert.ok(remains.every(object => objectMaterial(object) === objectMaterial(QUARTERSTAFF)), 'the rotted wood golem must leave wooden equipment');
         }
-        assert.ok([...messages, game._pending_message].join('\n').includes(`May ${name} ${epitaph} in peace.`));
+        assert.ok([...messages, game._pending_message].join('\n').includes(`May the ${species} ${epitaph} in peace.`));
     });
 }
 void test('disintegration lets a shifted vampire pet recover without remains or grief', async () => {
