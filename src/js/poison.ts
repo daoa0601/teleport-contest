@@ -174,6 +174,7 @@ export async function poisonHero({
         // The pinned C code checks human health here, even while polymorphed.
         if (hero.uhp <= damage) {
             hero.uhp = -1;
+            state.context.botl = true;
             await line('The poison was deadly...');
         } else {
             const oldHp = hero.uhp;
@@ -206,6 +207,7 @@ export async function poisonHero({
 
     if (hero.uhp < 1 && await die({
         killer,
+        deathLineShown: true,
         deathType: /poison/iu.test(killer) ? DIED : POISONING,
         deathCause: /poison/iu.test(killer) ? hpDeathCause : `poisoned by ${attributedKiller}`,
     })) return { damage, died: true, pagerOwned };
