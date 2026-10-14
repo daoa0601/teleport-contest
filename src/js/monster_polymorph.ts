@@ -12,6 +12,7 @@ import { placeMonsterAt } from './monster_location.js';
 import { expelHero, releaseHeroFromMonster } from './hero_expulsion.js';
 import { heroFormSticks } from './hero_species.js';
 import { monsterName, monsterFormChangeName, namelessMonsterName } from './monster_name.js';
+import { hideMonsterUnder } from './monster_hiding.js';
 import {
     monsterCanBeLeashed, releaseMonsterLeashWithFeedback,
 } from './monster_leash.js';
@@ -89,8 +90,6 @@ export type MonsterFormChange = MonsterFormChangeIdentity & (
 
 const M1_HUMANOID = 0x00020000;
 const M1_ANIMAL = 0x00040000;
-const M1_CONCEAL = 0x00000080;
-const M1_HIDE = 0x00000100;
 const M2_NOPOLY = 0x00000001;
 const M2_SHAPESHIFTER = 0x00004000;
 const M2_MALE = 0x00010000;
@@ -607,10 +606,7 @@ export async function changeMonsterForm(
         monster.m_ap_type = 0;
         monster.mappearance = 0;
     }
-    if (monster.mundetected
-        && !((MONSTER_FLAGS1[targetMnum] ?? 0) & (M1_CONCEAL | M1_HIDE))) {
-        monster.mundetected = 0;
-    }
+    if (monster.mundetected) await hideMonsterUnder(monster, state);
     if (state.u.ustuck === monster) {
         if (state.u.uswallow) {
             if (!monsterCanEngulf(monster)) {
