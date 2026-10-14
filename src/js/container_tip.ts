@@ -207,6 +207,7 @@ async function tipContainer(source: GameObject): Promise<void> {
     if (target && !await tipChecks(target, null, true)) return;
     const { ux: x, uy: y } = game.u;
     const held = source.where === 'inventory';
+    const targetHeld = target?.where === 'inventory';
     const highDrop = !game.u.uswallow && !heroCanReachFloor(game, { checkPit: true });
     const altar = !game.u.uswallow && requireGameLevel().requireAt(x, y).typ === ALTAR;
     const shopGoods = !held && !!costlySpot(x, y);
@@ -262,5 +263,5 @@ async function tipContainer(source: GameObject): Promise<void> {
     if (loss) await pline(`You owe ${loss} ${currency(loss)} for lost merchandise.`);
     source.owt = objectWeight(source);
     if (target && target.where !== 'gone') target.owt = objectWeight(target);
-    if (held || target?.where === 'inventory') await reportHeroEncumbrance();
+    if (held || targetHeld) await reportHeroEncumbrance();
 }

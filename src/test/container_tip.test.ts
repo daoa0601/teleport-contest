@@ -5,6 +5,8 @@ import { LAVAPOOL } from '../js/const.js';
 import { BAG_OF_HOLDING, CAN_OF_GREASE, CHEST, CLUB, HORN_OF_PLENTY, ROCK, SACK,
     WAN_CANCELLATION } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
+import { reportHeroEncumbrance } from '../js/attrib.js';
+import { nearCapacity, objectWeight, SLT_ENCUMBER, UNENCUMBERED } from '../js/weight.js';
 import { runExtendedCommand } from './support/commands.js';
 import { addInventoryObject, artifactObject, floorObject, knownObject } from './support/game-objects.js';
 import { freshPlayableRoom } from './support/playable-room.js';
@@ -151,6 +153,30 @@ void test('tipping a cancellation wand into a bag destroys the target and stops 
     assert.equal(wand.where, 'gone');
     assert.equal(sack.contents.includes(club), true);
     assert.ok(game.u.uhp < 100);
+});
+
+void test('tipping a floor chest into a carried bag reports the lighter load after an explosion', async () => {
+    freshPlayableRoom({ hero: { uhp: 100, uhpmax: 100 } });
+    const chest = await floorObject(CHEST, 10, 10, {
+        initialize: false, olocked: false, otrapped: false,
+    });
+    const wand = await knownObject(WAN_CANCELLATION, {
+        where: 'contained', container: chest, spe: 1,
+    });
+    chest.contents = [wand];
+    const bag = await addInventoryObject(BAG_OF_HOLDING, { invlet: 'a', initialize: false });
+    const rocks = await knownObject(ROCK, { where: 'contained', container: bag, quan: 120 });
+    bag.contents = [rocks];
+    bag.owt = objectWeight(bag);
+    assert.equal(nearCapacity(game), SLT_ENCUMBER);
+    await reportHeroEncumbrance();
+
+    await runExtendedCommand('tip', 'ya' + ' '.repeat(20));
+
+    assert.equal(bag.where, 'gone');
+    assert.equal(nearCapacity(game), UNENCUMBERED);
+    assert.equal(game.u._encumbrance, '');
+    assert.match(game._pending_message, /Your movements are now unencumbered\./);
 });
 
 void test('tip can transfer a carried sack into another carried container', async () => {
