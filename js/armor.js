@@ -201,9 +201,6 @@ export function wearHeroArmor(object, state = game) {
     if (object.otyp === CLOAK_OF_DISPLACEMENT)
         object._displacementWasActive = heroIsDisplaced(state);
     if (object.otyp === SPEED_BOOTS) {
-        object._speedBootsHadOtherExtrinsic = !!hero.veryFastFromArmor;
-        object._speedBootsHadTimedVeryFast = (hero.veryFastTurns ?? 0) > 0;
-        object._speedBootsHadIntrinsicFast = !!hero.fast;
         object._grantsVeryFastFromArmor = true;
         hero.veryFastFromArmor = true;
         hero.veryFast = true;
@@ -249,6 +246,12 @@ export async function removeHeroArmor(object, state = game, options = {}) {
         if (!cancelledDon)
             await announceDisplacementLoss(object, state);
         await applyCloakOffEffects(object, state);
+        if (object.otyp === SPEED_BOOTS && !state.u.veryFast && !cancelledDon) {
+            learnObjectType(object.otyp, state);
+            await plineWithContinuation(`You feel yourself slow down${state.u.fast ? ' a bit' : ''}.`);
+        }
+        if (dragonArmorColor(object) === 'blue' && !state.u.veryFast && !cancelledDon)
+            await plineWithContinuation('You slow down.');
         if (!cancelledDon && (object.otyp === ELVEN_CLOAK || object.otyp === ELVEN_BOOTS))
             await toggleArmorStealth(object, false, state);
     }
@@ -355,13 +358,8 @@ export async function clearHeroArmor(object, state = game, { cancelledDon = stat
     object._armorApplied = false;
     if (object.otyp === GAUNTLETS_OF_POWER)
         state.context.botl = true;
-    if (object.otyp === SPEED_BOOTS) {
+    if (object.otyp === SPEED_BOOTS)
         object._grantsVeryFastFromArmor = false;
-        hero.veryFastFromArmor = (state.inventory || []).some(candidate => candidate !== object && candidate.worn
-            && candidate._grantsVeryFastFromArmor);
-        hero.veryFast = hero.veryFastFromArmor
-            || (hero.veryFastTurns ?? 0) > 0;
-    }
     if ((object.otyp === FUMBLE_BOOTS || object.otyp === GAUNTLETS_OF_FUMBLING)
         && !fumblingHasPermanentOrEquipmentSource(state))
         setPropertyTimeout('fumbling', 0, state);
@@ -810,15 +808,12 @@ export async function applyArmorOnEffects(object, state = game, { initialDon = f
         await applyCloakOnEffects(object, state);
         return [];
     }
-    // SPEED_BOOTS' Fast extrinsic is active as soon as setworn() installs
-    // W_ARMF.  Boots_on() runs only after the dressing delay and owns
-    // identification plus feedback, so do not grant the property here.
-    if (object?.otyp === SPEED_BOOTS) {
-        if (!object._speedBootsHadOtherExtrinsic
-            && !object._speedBootsHadTimedVeryFast) {
-            return [
-                `You feel yourself speed up${object._speedBootsHadIntrinsicFast ? ' a bit more' : ''}.`,
-            ];
+    if (object.otyp === SPEED_BOOTS) {
+        const sources = state.u._propertySources?.fast;
+        const otherEquipment = sources?.worn.some(source => source.slot !== 'uarmf')
+            || !!sources?.invoked || !!sources?.carried.length;
+        if (!otherEquipment && propertyTimeout('fast', state) === 0) {
+            return [`You feel yourself speed up${hasIntrinsicProperty('fast', null, state) ? ' a bit more' : ''}.`];
         }
         return [];
     }
@@ -892,10 +887,6 @@ export async function removeArmorProperties(object, state = game) {
     const hero = state.u;
     if (color === 'blue') {
         object._grantsVeryFastFromArmor = false;
-        hero.veryFastFromArmor = (state.inventory || []).some(candidate => candidate !== object && candidate.worn
-            && candidate._grantsVeryFastFromArmor);
-        hero.veryFast = hero.veryFastFromArmor
-            || (hero.veryFastTurns ?? 0) > 0;
     }
     else if (color === 'gold') {
         await makeHallucinated(1, {

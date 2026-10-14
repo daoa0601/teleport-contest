@@ -153,9 +153,6 @@ export interface GameObject {
     _armorApplied?: boolean;
     _levitationBeforeWear?: LevitationState;
     _displacementWasActive?: boolean;
-    _speedBootsHadOtherExtrinsic?: boolean;
-    _speedBootsHadTimedVeryFast?: boolean;
-    _speedBootsHadIntrinsicFast?: boolean;
     _grantsVeryFastFromArmor?: boolean;
 
     // Inventory presentation is attached to the same object identity. These
