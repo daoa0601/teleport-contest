@@ -412,6 +412,7 @@ void test('a crowded doorway resident is displaced to limbo and re-arrives', asy
     // Leave the shop before filling its walkable squares with residents.
     game.u.ux = 5;
     game.u.uy = 5;
+    await checkSpecialRoom();
     // The keeper's home square becomes a pool, so the square it vacates is
     // unusable for the displaced kobold; with every other walkable square
     // filled, the resident truly has nowhere to go.
@@ -453,6 +454,7 @@ void test('a deaf damage complaint uses the possessive of the keeper current for
     const { shopkeeper } = await damageShop();
     shopkeeper.mnum = MONSTER_NAME.indexOf('red naga');
     shopkeeper.female = true;
+    game.u.deafTurns = 10;
     game.deaf = true;
     addShopDamage(9, 10, SHOP_DOOR_COST);
     await payForShopDamage('break', { cantMollify: true });
@@ -498,5 +500,14 @@ void test('telepathy does not reveal an unheard shop repair incantation', async 
     assert.equal(game._lastPlineMessage, before);
     assert.ok(!level.traps.some(trap => trap.tx === 12 && trap.ty === 11));
     assert.equal(level.damagelist.length, 0);
+});
+void test('a damage complaint uses the hero current deafness before a status refresh', async () => {
+    const { shopkeeper } = await damageShop();
+    game.u.deafTurns = 10;
+    game.deaf = false;
+    addShopDamage(9, 10, SHOP_DOOR_COST);
+    await payForShopDamage('break', { cantMollify: true });
+    assert.match(game._lastPlineMessage, /that you decided to break .* door!/);
+    assert.equal(shopkeeper.eshk.following, 1);
 });
 //# sourceMappingURL=shop_damage.test.js.map

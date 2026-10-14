@@ -1,3 +1,5 @@
+import { heroIsDeaf } from './senses.js';
+import { propertyIsActive } from './properties.js';
 // shop_damage.js — Shop-damage bookkeeping owned by the shop system.
 // C refs: shk.c add_damage() [4399], shopdig() [5019], pay_for_damage() and
 // its static getcad() [5138-5346], repair_damage() and its litter helpers
@@ -127,14 +129,6 @@ function monsterSound(monster: Monster): number {
 // C shk.c muteshk(): a keeper who cannot speak up.
 function muteShopkeeper(monster: Monster): boolean {
     return monsterHelpless(monster) || monsterSound(monster) <= MS_ANIMAL;
-}
-
-function heroIsDeafNow(state: GameState): boolean {
-    return !!(state.u?.deaf || state.deaf);
-}
-
-function heroIsInvisible(state: GameState): boolean {
-    return !!(state.u?.invisible || state.u?.invis);
 }
 
 async function verbalize(message: string): Promise<void> {
@@ -565,7 +559,7 @@ async function getcad(
         if (animal && !monsterHelpless(keeper))
             await publishMonsterYelp(keeper);
     } else if (pursue || uinshp || !umDist(state, x, y, 1)) {
-        if (!heroIsDeafNow(state)) {
+        if (!heroIsDeaf(state)) {
             await verbalize(
                 `How dare you ${dmgstr} my ${dugwall ? 'shop' : 'door'}?`);
         } else {
@@ -573,7 +567,7 @@ async function getcad(
             } that you decided to ${dmgstr} ${monsterPossessive(keeper, { state, noIt: true })
             } ${dugwall ? 'shop' : 'door'}!`);
         }
-    } else if (!heroIsDeafNow(state)) {
+    } else if (!heroIsDeaf(state)) {
         await pline(`${shopkeeperName(keeper, { state, capitalized: true })} shouts:`);
         await verbalize(
             `Who dared ${dmgstr} my ${dugwall ? 'shop' : 'door'}?`);
@@ -592,6 +586,7 @@ export async function payForShopDamage(
     { cantMollify = false, state = game }: { cantMollify?: boolean; state?: GameState } = {},
 ) {
     requireShopGame(state);
+    const uinshp = state.u.ushops.length > 0;
     let keeper: Shopkeeper | null = null;
     let appearHere: ShopDamage | null = null;
     let costOfDamage = 0;
@@ -652,12 +647,11 @@ export async function payForShopDamage(
     if (shopRoomnosAt(state, keeper.mx, keeper.my).length === 0) {
         if (!cansee(keeper.mx, keeper.my)) return;
         pursue = true;
-        await getcad(keeper, verb, x, y, { uinshp: false, animal, pursue },
+        await getcad(keeper, verb, x, y, { uinshp, animal, pursue },
             state);
         return;
     }
 
-    const uinshp = shopRoomnosAt(state, state.u.ux, state.u.uy).length > 0;
     if (uinshp) {
         if (umDist(state, keeper.mx, keeper.my, 1)
             && !umDist(state, keeper.mx, keeper.my, 3)) {
@@ -676,7 +670,7 @@ export async function payForShopDamage(
         const blocker = monsterAt(state, x, y);
         if (blocker) {
             if (!animal) {
-                if (!heroIsDeafNow(state)
+                if (!heroIsDeaf(state)
                     && !muteShopkeeper(keeper)) {
                     await pline('You hear an angry voice:');
                     await verbalize('Out of my way, scum!');
@@ -696,7 +690,7 @@ export async function payForShopDamage(
         return;
     }
 
-    if (heroIsInvisible(state))
+    if (propertyIsActive('invisible', state))
         await pline(`Your invisibility does not fool ${shopkeeperName(keeper, { state })}!`);
 
     const question = `${
@@ -728,7 +722,7 @@ export async function payForShopDamage(
         }
     } else {
         if (!animal) {
-            if (!heroIsDeafNow(state)
+            if (!heroIsDeaf(state)
                 && !muteShopkeeper(keeper)) {
                 await verbalize("Oh, yes!  You'll pay!");
             } else {
@@ -767,7 +761,7 @@ export async function shopDig(fall: number | boolean, state: GameState = game): 
             : monsterSound(keeper) >= MS_HUMANOID ? 2 : 0;
 
     if (!fall) {
-        if (lang === 2 && !heroIsDeafNow(state)
+        if (lang === 2 && !heroIsDeaf(state)
             && !muteShopkeeper(keeper)) {
             const address = state.flags?.female ? 'madam' : 'sir';
             if (state.u.utraptype === TT_PIT) {
@@ -1009,7 +1003,7 @@ async function litterScatter(
         && ((chain?.ox === x && chain?.oy === y)
             || (ball?.where === 'floor' && ball?.ox === x
                 && ball?.oy === y))) {
-        if (!heroIsDeafNow(state) && !muteShopkeeper(keeper))
+        if (!heroIsDeaf(state) && !muteShopkeeper(keeper))
             await verbalize('Get your junk out of my wall!');
         unplaceBallAndChain(state);
         await placeBallAndChain(state);
@@ -1171,7 +1165,7 @@ export async function repairShopDamage(
         if (insideShop(state, state.u.ux, state.u.uy)
             === keeper.eshk.shoproom) {
             await pline('You feel more claustrophobic than before.');
-        } else if (!heroIsDeafNow(state) && rn2(10) === 0) {
+        } else if (!heroIsDeaf(state) && rn2(10) === 0) {
             await pline('The dungeon acoustics noticeably change.');
         }
     }
@@ -1197,7 +1191,7 @@ export async function shopkeeperRepairsDamage(
     if (canSeeMonster(keeper)) {
         await pline(`${shopkeeperName(keeper, { capitalized: true })} whispers ${
             shkCloseby ? 'an incantation' : 'something'}.`);
-    } else if (!heroIsDeafNow(state) && shkCloseby) {
+    } else if (!heroIsDeaf(state) && shkCloseby) {
         await pline('You hear someone muttering an incantation.');
     }
 
