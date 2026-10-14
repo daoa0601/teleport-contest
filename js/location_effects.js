@@ -13,6 +13,8 @@ import { gotoLevel } from './level_change.js';
 import { autopickupAtHero } from './pickup.js';
 import { checkSpecialRoom } from './shk.js';
 import { announceInvocationSquare } from './invocation.js';
+import { levelTimers, LEVEL_TIMER_KIND } from './object_timers.js';
+import { isIceAt } from './terrain_properties.js';
 export async function finishTeleportArrival(movement, { announceTeleport = true } = {}) {
     await bot();
     if (announceTeleport && game.flags.verbose !== false) {
@@ -100,6 +102,7 @@ export async function finishDestinationSpotEffects({ oldx, oldy, newx, newy, exp
             if (game.program_state.gameover)
                 return { died: true };
         }
+        await warnAboutMeltingIce(publish);
         if (explicitAttempt)
             maybeSmudgeEngravings(oldx, oldy, newx, newy);
         return { moved: false, died: !!game.program_state.gameover };
@@ -108,5 +111,17 @@ export async function finishDestinationSpotEffects({ oldx, oldy, newx, newy, exp
         if (--spotDepth === 0)
             activeSpot = null;
     }
+}
+async function warnAboutMeltingIce(publish) {
+    const { ux: x, uy: y } = game.u;
+    if (!propertyIsActive('warning', game) || !isIceAt(x, y, game))
+        return;
+    const timer = levelTimers(game).find(candidate => candidate.kind === LEVEL_TIMER_KIND.MELT_ICE_AWAY && candidate.x === x && candidate.y === y);
+    const remaining = timer ? timer.deadline - game.moves : 0;
+    if (!remaining || remaining >= 15)
+        return;
+    await publish(remaining < 5 ? 'The ice, is gonna BREAK!'
+        : remaining < 10 ? 'You feel the ice shift beneath you!'
+            : 'The ice seems very soft and slushy.');
 }
 //# sourceMappingURL=location_effects.js.map
