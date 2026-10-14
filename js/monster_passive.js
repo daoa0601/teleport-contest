@@ -6,10 +6,11 @@ import { endVoluntaryMultiTurn } from './command_state.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { heroHasFreeAction } from './armor.js';
 import { heroSpecies } from './hero_species.js';
-import { A_DEX, A_STR, A_WIS, M_SEEN_ACID, M_SEEN_COLD, M_SEEN_ELEC, M_SEEN_FIRE, M_SEEN_MAGR, Upolyd, } from './const.js';
+import { A_DEX, A_STR, A_WIS, M_SEEN_ACID, M_SEEN_COLD, M_SEEN_ELEC, M_SEEN_FIRE, M_SEEN_MAGR, } from './const.js';
 import { canSeeMonster, displayLiquidName, plineWithContinuation, shieldeff, } from './display.js';
 import { finishHeroDeath } from './end.js';
 import { game } from './gstate.js';
+import { damageHeroFromMonster } from './hero_damage.js';
 import { healMonster } from './mon.js';
 import { observeObjectForNaming, ownedObjectAction } from './objnam.js';
 import { erodeArmor, erodeObject } from './object_erosion.js';
@@ -21,7 +22,7 @@ import { AD_ACID, AD_COLD, AD_CORR, AD_ELEC, AD_ENCH, AD_FIRE, AD_MAGM, AD_PHYS,
 import { OBJECT_NAMES } from './object_data.js';
 import { drainObjectEnchantment } from './object_state.js';
 import { hasWornProperty } from './properties.js';
-import { applyHeroGolemEffects, heroMonsterForm, returnHeroToHumanForm, } from './polyself.js';
+import { applyHeroGolemEffects, heroMonsterForm, } from './polyself.js';
 import { heroReflectionSource, heroReflectsRay } from './ray.js';
 import { d, rn2 } from './rng.js';
 import { contactIsProtected, resolveImmediatePetrification } from './stoning.js';
@@ -31,7 +32,7 @@ const MR_ELEC = 0x10;
 const MR_ACID = 0x40;
 const MR_STONE = 0x80;
 const PM_FLOATING_EYE = MONSTER_NAME.indexOf('floating eye');
-export async function applyHeroContactPassive(monster, { hit, defenderSurvived = !monster.dead && monster.mhp > 0, attackType = AT_WEAP, weapon = null, weaponWasDestroyed = false, state = game, publish = plineWithContinuation, random = rn2, rollDice = d, die = finishHeroDeath, } = {}) {
+export async function applyHeroContactPassive(monster, { hit, defenderSurvived = !monster.dead && monster.mhp > 0, attackType = AT_WEAP, weapon = null, weaponWasDestroyed = false, state = game, publish = plineWithContinuation, random = rn2, rollDice = d, die, } = {}) {
     const attack = passiveAttack(monster);
     if (!attack)
         return { handled: false, heroDied: false };
@@ -150,7 +151,7 @@ async function applyStonePassive({ monster, hit, attackType, weapon, weaponWasDe
         state,
         killer: monsterName(monster),
         publish,
-        die,
+        die: die ?? finishHeroDeath,
     });
     return { heroDied: result.died, transformed: result.transformed };
 }
@@ -301,24 +302,11 @@ async function applyElectricPassive({ monster, damage, state, publish, die }) {
     return { appliedDamage: damage, heroDied };
 }
 async function damageHero(monster, amount, { state, publish, die }) {
-    state.context.botl = true;
-    if (amount <= 0)
-        return false;
-    const hero = state.u;
-    if (Upolyd(hero)) {
-        hero.mh = (hero.mh ?? 1) - amount;
-        if (hero.mh > 0)
-            return false;
-        if (hero.unchanging || state.unchanging) {
-            return die({ killer: 'killed while stuck in creature form' });
-        }
-        const restored = await returnHeroToHumanForm(state, { publish, die });
-        return restored.died;
-    }
-    hero.uhp = (hero.uhp ?? 1) - amount;
-    if (hero.uhp > 0)
-        return false;
-    return die({ killer: monsterName(monster) });
+    if (!die)
+        return damageHeroFromMonster(monster, amount, { state, publish });
+    return damageHeroFromMonster(monster, amount, {
+        state, publish, die: async (victim) => die({ killer: monsterName(victim) }),
+    });
 }
 function heroResists(state, property, mask) {
     const hero = state.u;

@@ -10,13 +10,13 @@ import { heroSpecies } from './hero_species.js';
 import {
     A_DEX, A_STR, A_WIS,
     M_SEEN_ACID, M_SEEN_COLD, M_SEEN_ELEC, M_SEEN_FIRE, M_SEEN_MAGR,
-    Upolyd,
 } from './const.js';
 import {
     canSeeMonster, displayLiquidName, plineWithContinuation, shieldeff,
 } from './display.js';
 import { finishHeroDeath } from './end.js';
 import { game } from './gstate.js';
+import { damageHeroFromMonster } from './hero_damage.js';
 import { healMonster } from './mon.js';
 import { observeObjectForNaming, ownedObjectAction } from './objnam.js';
 import { erodeArmor, erodeObject } from './object_erosion.js';
@@ -40,7 +40,7 @@ import { OBJECT_NAMES } from './object_data.js';
 import { drainObjectEnchantment } from './object_state.js';
 import { hasWornProperty } from './properties.js';
 import {
-    applyHeroGolemEffects, heroMonsterForm, returnHeroToHumanForm,
+    applyHeroGolemEffects, heroMonsterForm,
 } from './polyself.js';
 import { heroReflectionSource, heroReflectsRay } from './ray.js';
 import { d, rn2 } from './rng.js';
@@ -79,7 +79,7 @@ interface PassiveContext {
     state: GameState;
     publish: MessagePublisher;
     random: (limit: number) => number;
-    die: DeathHandler;
+    die: DeathHandler | undefined;
 }
 
 export interface PassiveEffect {
@@ -116,7 +116,7 @@ export async function applyHeroContactPassive(monster: Monster, {
     publish = plineWithContinuation,
     random = rn2,
     rollDice = d,
-    die = finishHeroDeath,
+    die,
 }: PassiveOptions = {}): Promise<HeroContactPassiveResult> {
     const attack = passiveAttack(monster);
     if (!attack) return { handled: false, heroDied: false };
@@ -254,7 +254,7 @@ async function applyStonePassive({
         state,
         killer: monsterName(monster),
         publish,
-        die,
+        die: die ?? finishHeroDeath,
     });
     return { heroDied: result.died, transformed: result.transformed };
 }
@@ -440,22 +440,10 @@ async function applyElectricPassive({ monster, damage, state, publish, die }: Pa
 }
 
 async function damageHero(monster: Monster, amount: number, { state, publish, die }: Pick<PassiveContext, 'state' | 'publish' | 'die'>): Promise<boolean> {
-    state.context.botl = true;
-    if (amount <= 0) return false;
-    const hero = state.u;
-    if (Upolyd(hero)) {
-        hero.mh = (hero.mh ?? 1) - amount;
-        if (hero.mh > 0) return false;
-        if (hero.unchanging || state.unchanging) {
-            return die({ killer: 'killed while stuck in creature form' });
-        }
-        const restored = await returnHeroToHumanForm(state, { publish, die });
-        return restored.died;
-    }
-
-    hero.uhp = (hero.uhp ?? 1) - amount;
-    if (hero.uhp > 0) return false;
-    return die({ killer: monsterName(monster) });
+    if (!die) return damageHeroFromMonster(monster, amount, { state, publish });
+    return damageHeroFromMonster(monster, amount, {
+        state, publish, die: async victim => die({ killer: monsterName(victim) }),
+    });
 }
 
 function heroResists(state: GameState, property: 'acidResistance' | 'coldResistance' | 'fireResistance' | 'shockResistance' | 'stoneResistance', mask: number): boolean {
