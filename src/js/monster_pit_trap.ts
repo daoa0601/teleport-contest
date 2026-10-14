@@ -13,6 +13,7 @@ import {
 import { monsterWearsIronShoes } from './monworn.js';
 import { rnd } from './rng.js';
 import { monsterTrapVisibility } from './trap.js';
+import { levelHasCeiling } from './terrain_properties.js';
 import type { Monster } from './monster_types.js';
 import type { GameState } from './game_state.js';
 import type { Trap } from './map_types.js';
@@ -53,10 +54,11 @@ function ordinaryMonsterSubject(monster: Monster): string {
     return `The ${monster.name || MONSTER_NAME[monster.mnum] || 'monster'}`;
 }
 
-function monsterIsUngrounded(monster: Monster): boolean {
+function monsterIsUngrounded(monster: Monster, state: GameState): boolean {
     const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
     const symbol = MONSTER_SYMBOL[monster.mnum];
-    return !!(flags & (M1_FLY | M1_CLING)) || symbol === S_EYE || symbol === S_LIGHT
+    const clingsToCeiling = !!(flags & M1_CLING) && levelHasCeiling(state);
+    return !!(flags & M1_FLY) || clingsToCeiling || symbol === S_EYE || symbol === S_LIGHT
         || !!monster.wormno && (monster.wormSegments?.length ?? 0) > 5;
 }
 
@@ -67,7 +69,7 @@ export function beginMonsterPitTrap(
     { forced = false } = {},
 ): MonsterPitTrap | null {
     if (!trap) return null;
-    const ungrounded = monsterIsUngrounded(monster);
+    const ungrounded = monsterIsUngrounded(monster, state);
     const sokoban = !!state.level?.flags.sokoban_rules;
     const falls = !(ungrounded && forced && !sokoban);
     const inescapable = forced || sokoban && !trap.madeby_u;
