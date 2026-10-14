@@ -38,7 +38,7 @@ import { rn2 } from './rng.js';
 import { currency } from './currency.js';
 import { tipWornHelmet } from './tip_hat.js';
 import type { GameObject } from './object_types.js';
-import type { MultiSelectItem } from './windows.js';
+import type { MultiSelectItem, PageLocalMultiSelectItem } from './windows.js';
 
 function description(object: GameObject): string {
     observeObjectForNaming(object);
@@ -58,15 +58,16 @@ export async function tipCommand(): Promise<void> {
         else canTip = await ableToLoot(x, y, false);
         if (canTip) {
             if (containers.length > 1) {
-                const items: MultiSelectItem<GameObject | null>[] = containers.map((object, index) => ({
-                    key: String.fromCharCode(97 + index), text: description(object), value: object,
+                const items: PageLocalMultiSelectItem<GameObject | null>[] = containers.map(object => ({
+                    text: description(object), value: object,
                 }));
                 if (game.inventory.length) items.push({ selectable: false, text: '' }, {
-                    key: containers.length <= 8 && !game.flags.lootabc ? 'i' : String.fromCharCode(97 + containers.length),
+                    ...(containers.length <= 8 && !game.flags.lootabc ? { key: 'i' } : {}),
                     text: 'tip something being carried', value: null, itemFlags: MENU_ITEMFLAGS_SELECTED,
                 });
                 const picked = await showMultiSelectWindow({ title: 'Tip which container?',
-                    sections: [{ items }], omitHeadings: true, pickOne: true, signalEscape: true });
+                    sections: [{ items }], pageLocalKeys: true,
+                    omitHeadings: true, pickOne: true, signalEscape: true });
                 if (picked === null) return;
                 const source = picked.find(object => object !== null);
                 if (source) { await tipContainer(source); game.context.move = 1; return; }

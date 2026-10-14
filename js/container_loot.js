@@ -102,10 +102,10 @@ async function lootFloorContainers(x, y, unlock) {
     }
     const selected = containers.length === 1 ? containers
         : await showMultiSelectWindow({ title: 'Loot which containers?', omitHeadings: true,
-            sections: [{ items: containers.map((object, index) => {
+            pageLocalKeys: true,
+            sections: [{ items: containers.map(object => {
                         observeObjectForNaming(object);
-                        return { key: String.fromCharCode(97 + index),
-                            text: inventoryItemDescription(object), value: object };
+                        return { text: inventoryItemDescription(object), value: object };
                     }) }], signalEscape: true });
     if (selected === null)
         return true;
