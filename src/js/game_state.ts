@@ -74,6 +74,7 @@ export interface GameContext extends FoodContext {
     time_botl?: boolean;
     bypasses?: boolean;
     current_fruit?: number;
+    deathNotice?: boolean;
     digging?: DiggingContext;
     forcefight?: boolean | number;
     jingle?: string;

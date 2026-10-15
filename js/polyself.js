@@ -11,7 +11,7 @@ import { genocideDeathOptions, heroHasBeenGenocided, takePolymorphGenocide } fro
 import { refreshHeroSeeing } from './hero_seeing.js';
 import { makeBlinded } from './sight_change.js';
 import { learnObjectType, observeObject } from './object_knowledge.js';
-import { minimalObjectName } from './objnam.js';
+import { minimalObjectName, ownedObjectName, simpleObjectName } from './objnam.js';
 import { monsterName } from './monster_name.js';
 import { surfaceName } from './terrain_name.js';
 import { updateHeroHunger } from './hunger.js';
@@ -22,21 +22,22 @@ import { d, rnd, rn1, rn2 } from './rng.js';
 import { adjustLevelAbilities, experienceRankIndex, randomExperience, } from './exper.js';
 import { recordGameLogEvent } from './gamelog.js';
 import { withIndefiniteArticle } from './object_grammar.js';
-import { reportHeroEncumbrance } from './attrib.js';
-import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, SPECIAL_PM, monsterBreaksArmor, monsterHasNoHands, monsterHornCount, monsterIsBat, monsterIsCentaur, monsterIsAmorphous, monsterIsSlithy, monsterIsUnsolid, monsterIsVampire, monsterIsVerySmall, monsterIsWhirly, monsterSlipsArmor, monsterTypeName, monsterWrappingAllowed, validVampireShiftForm, } from './monster_data.js';
-import { AD_ELEC, AD_FIRE } from './monster_attack_types.js';
-import { AMULET_OF_UNCHANGING, ELVEN_MITHRIL_COAT, LEASH, LENSES, LOADSTONE, GRAY_DRAGON_SCALE_MAIL, GRAY_DRAGON_SCALES, OBJECT_MATERIAL, OBJECT_NAMES, RIN_POLYMORPH_CONTROL, RIN_PROTECTION_FROM_SHAPE_CHANGERS, } from './object_data.js';
-import { newsym, pline, plineWithContinuation, see_monsters, } from './display.js';
+import { currentAttribute, reportHeroEncumbrance } from './attrib.js';
+import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL, SPECIAL_PM, monsterBreaksArmor, monsterHasNoHands, monsterHornCount, monsterIsBat, monsterIsCentaur, monsterIsAmorphous, monsterIsSlithy, monsterIsUnsolid, monsterIsMindFlayer, monsterIsUnicorn, monsterIsVampire, monsterIsVerySmall, monsterIsWhirly, monsterSlipsArmor, monsterTypeName, monsterWrappingAllowed, validVampireShiftForm, } from './monster_data.js';
+import { AD_ELEC, AD_FIRE, AT_BREA, AT_GAZE, AT_SPIT } from './monster_attack_types.js';
+import { AMULET_OF_UNCHANGING, ELVEN_MITHRIL_COAT, LEASH, LENSES, LOADSTONE, GRAY_DRAGON_SCALE_MAIL, GRAY_DRAGON_SCALES, OBJECT_NAMES, RIN_POLYMORPH_CONTROL, RIN_PROTECTION_FROM_SHAPE_CHANGERS, } from './object_data.js';
+import { canSpotMonster, newsym, pline, plineWithContinuation, see_monsters, } from './display.js';
 import { deleteObject } from './object_delete.js';
-import { dragonFormForArmor, findArmorClass, removeHeroArmor } from './armor.js';
-import { endObjectBurn } from './light.js';
+import { dragonFormForArmor, findArmorClass, removeHeroArmor, simpleArmorName } from './armor.js';
+import { isFlimsyObject } from './object_properties.js';
+import { adjustObjectLightAfterBlessing as adjustObjectLight, endObjectBurn, objectLightRadius, } from './light.js';
 import { encumbranceLabel, encumbranceMessage, nearCapacity, } from './weight.js';
-import { A_CHA, A_CON, A_DEX, A_STR, A_WIS, G_GENOD, I_SPECIAL, In_endgame, M_AP_NOTHING, STR18, STR19, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, Upolyd, POLY_CONTROLLED, POLY_LOW_CTRL, POLY_MONSTER, POLY_NOFLAGS, POLY_REVERT, W_ACCESSORY, W_ARMOR, W_SADDLE, } from './const.js';
+import { A_CHA, A_CON, A_DEX, A_STR, A_WIS, G_GENOD, I_SPECIAL, In_endgame, M_AP_NOTHING, M_AP_OBJECT, STR18, STR19, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, Upolyd, POLY_CONTROLLED, POLY_LOW_CTRL, POLY_MONSTER, POLY_NOFLAGS, POLY_REVERT, W_ACCESSORY, W_ARMOR, W_SADDLE, } from './const.js';
 import { exerciseAttribute } from './attrib.js';
 import { heroIsBlind, setHeroBlindnessTurns, syncBlindness } from './senses.js';
 import { nameToMonster, nameToMonsterClass } from './mondata.js';
 import { counterWereSpecies } from './monster_species.js';
-import { wereBeastForSpecies } from './were.js';
+import { isWereMonster, wereBeastForSpecies } from './were.js';
 import { getLine, promptYesNo } from './query.js';
 import { golemHitPoints, isHomeElemental } from './monster_hit_points.js';
 import { races } from './roles.js';
@@ -50,13 +51,15 @@ import { loseHeroHp } from './hero_damage.js';
 import { isWeldedPrimary, losePrimaryWeapon, setSecondaryWeapon } from './weapon_slots.js';
 import { dropInventoryObjectAtHero } from './hero_drop.js';
 import { heroCanUseTwoWeapons, stopTwoWeaponCombat } from './two_weapon.js';
-import { vision_recalc } from './vision.js';
+import { isBeingTakenOff } from './takeoff_state.js';
 import { heroIsPunished } from './ball.js';
 import { unpunishHero } from './punishment.js';
 import { clearHeroTrap, freeHeroFromBuriedBall } from './hero_traps.js';
 import { handleRidingAfterFormChange } from './steed.js';
+import { hideHeroUnder } from './monster_hiding.js';
+import { learnEggType } from './invent.js';
 import { heroCanSpinWeb } from './hero_web.js';
-import { expelHero, holdingMonsterSubject, releaseHeroGrip, } from './hero_expulsion.js';
+import { expelHero, releaseHeroGrip, } from './hero_expulsion.js';
 import { applyHeroLocationEffects } from './cmd.js';
 import { restartAmuletStrangulation, stopStrangulationInImmuneForm, } from './hero_strangulation.js';
 import { clearHeroSliming, heroIsFlaming, heroIsSliming, resetHeroSlimingCountdown, } from './slime.js';
@@ -84,13 +87,15 @@ const G_HELL = 0x0400;
 const G_NOHELL = 0x0800;
 const G_UNIQ = 0x1000;
 const S_MIMIC = 13;
+const S_NYMPH = 14;
 const S_DRAGON = 30;
+const S_EEL = 57;
+const MS_SHRIEK = 18;
 const MZ_SMALL = 1;
 const MZ_HUGE = 4;
 const MAXULEV = 30;
 const MUMMY_WRAPPING = 138;
 const ALCHEMY_SMOCK = 144;
-const LEATHER = 7;
 const PM_HUMAN = MONSTER_NAME.indexOf('human');
 const PM_WOLF = MONSTER_NAME.indexOf('wolf');
 const PM_FOG_CLOUD = MONSTER_NAME.indexOf('fog cloud');
@@ -344,15 +349,32 @@ async function finishHumanFormChange(restored, state, publish) {
     await see_monsters();
     return false;
 }
-async function dropCarriedObject(object) {
+async function dropCarriedObject(object, options = {}) {
     if (!object)
         return;
-    await removeWornHeroItem(object, game);
+    await removeWornHeroItem(object, game, options);
     if (game.program_state?.gameover)
         return;
     if (!game.inventory.includes(object))
         return;
     await dropInventoryObjectAtHero(object);
+}
+function cancelPolymorphDressing(object) {
+    const delayed = game._delayedAction;
+    const cancelledDon = delayed?.object === object && delayed.kind === 'wear';
+    if (delayed?.object === object) {
+        game._delayedAction = null;
+        game.multi = 0;
+    }
+    if (isBeingTakenOff(object)) {
+        const progress = game.context.takeoff;
+        if (progress) {
+            progress.current = null;
+            progress.delay = 0;
+        }
+        game.multi = 0;
+    }
+    return { cancelledDon };
 }
 async function beginMonsterForm(mnum, { sexChangeAllowed = false, announceForm = true, } = {}) {
     requirePlayingGame(game);
@@ -366,7 +388,12 @@ async function beginMonsterForm(mnum, { sexChangeAllowed = false, announceForm =
     }
     if (!u.uconduct)
         u.uconduct = {};
+    const firstPolymorph = !u.uconduct.polyselfs;
     u.uconduct.polyselfs = (u.uconduct.polyselfs || 0) + 1;
+    if (firstPolymorph) {
+        const form = monsterTypeName(mnum, game.flags.female);
+        recordGameLogEvent(`changed form for the first time, becoming ${withIndefiniteArticle(form)}`);
+    }
     // polymon() exercises the human attributes before installing the
     // monster form, so these two calls belong ahead of duration and HP.
     await exerciseAttribute(A_CON, false);
@@ -377,6 +404,13 @@ async function beginMonsterForm(mnum, { sexChangeAllowed = false, announceForm =
         if (game.flags)
             game.flags.female = !!u.mfemale;
     }
+    if (heroHasInvoluntaryDelay(game) && u.m_ap_type === M_AP_OBJECT
+        && MONSTER_SYMBOL[previousMnum] !== S_MIMIC)
+        await finishHeroHelplessness('', game);
+    if (MONSTER_SYMBOL[mnum] !== S_MIMIC) {
+        u.m_ap_type = M_AP_NOTHING;
+        u.mappearance = 0;
+    }
     const genderFlags = MONSTER_FLAGS2[mnum] ?? 0;
     const female = !!game.flags.female;
     if (genderFlags & M2_MALE)
@@ -386,6 +420,8 @@ async function beginMonsterForm(mnum, { sexChangeAllowed = false, announceForm =
     else if (!(genderFlags & M2_NEUTER) && mnum !== u.ulycn
         && sexChangeAllowed && rn2(10) === 0)
         game.flags.female = !female;
+    const holderName = u.ustuck
+        ? monsterName(u.ustuck, { capitalized: true, augmentIt: true }) : '';
     if (announceForm) {
         const sexChanged = female !== game.flags.female;
         const gendered = genderFlags & (M2_MALE | M2_FEMALE);
@@ -404,8 +440,6 @@ async function beginMonsterForm(mnum, { sexChangeAllowed = false, announceForm =
     }
     u.mtimedone = rn1(500, 500);
     setHeroSpecies(mnum, game);
-    u.m_ap_type = 0;
-    u.mappearance = 0;
     const strong = !!((MONSTER_FLAGS2[mnum] ?? 0) & M2_STRONG);
     const maximumStrength = formMaximumStrength(mnum);
     u.amax.a[A_STR] = maximumStrength;
@@ -453,7 +487,7 @@ async function beginMonsterForm(mnum, { sexChangeAllowed = false, announceForm =
     // polymon() does not repaint the accepted form until break_armor() has
     // completed.  A garment pager can therefore still expose the old hero
     // glyph even though monster HP and status metadata are already live.
-    return mnum;
+    return { mnum, holderName };
 }
 // C polyself.c:uasmon_maxStr(). Racial limits also apply to undead relatives,
 // but living giants are stronger than giant zombies and mummies.
@@ -486,13 +520,15 @@ export async function polymonHero(mnum, options = {}) {
     if (!Number.isInteger(mnum) || mnum < 0 || mnum >= MONSTER_NAME.length)
         throw new RangeError(`Invalid polymorph species: ${mnum}`);
     if ((game.mvitals?.[mnum]?.mvflags ?? 0) & G_GENOD) {
-        await plineWithContinuation(`You feel rather ${MONSTER_NAME[mnum]}-ish.`);
+        await plineWithContinuation(`You feel rather ${monsterTypeName(mnum, game.flags.female)}-ish.`);
         await exerciseAttribute(A_WIS, true);
         return { transformed: false };
     }
     const wasHolding = game.u.ustuck && !game.u.uswallow && heroFormSticks(game);
     const wasBlind = heroIsBlind(game);
-    mnum = await beginMonsterForm(mnum, options);
+    const wasHidingUnder = game.u.uundetected && heroFormHidesUnderObjects(game);
+    const body = await beginMonsterForm(mnum, options);
+    mnum = body.mnum;
     if (game.uskin && dragonFormForArmor(game.uskin) !== mnum)
         await restoreDragonArmor(game);
     await changeArmorForHeroForm(mnum);
@@ -502,15 +538,24 @@ export async function polymonHero(mnum, options = {}) {
     if (game.program_state.gameover)
         return { transformed: true, mnum, died: true };
     findArmorClass(game);
+    if (wasHidingUnder)
+        hideHeroUnder(game);
     if (game.u.utrap && game.u.utraptype === TT_PIT)
         game.u.utrap = rn1(6, 2);
     if (wasBlind && !heroIsBlind(game)) {
-        vision_recalc(0);
-        await plineWithContinuation('You can see again.');
+        setHeroBlindnessTurns(1, game);
+        await makeBlinded(0, { state: game });
     }
     game.vision_full_recalc = 1;
     newsym(game.u.ux, game.u.uy);
     const hero = game.u;
+    if ((MONSTER_FLAGS1[hero.umonnum] ?? 0) & M1_OVIPAROUS) {
+        learnEggType(hero.umonnum, game);
+        const name = MONSTER_NAME[hero.umonnum];
+        const ordinaryEgg = name === 'queen bee' ? nameToMonster('killer bee')
+            : name === 'winged gargoyle' ? nameToMonster('gargoyle') : hero.umonnum;
+        learnEggType(ordinaryEgg, game);
+    }
     const holder = hero.ustuck;
     const unsolid = monsterIsUnsolid({ mnum: hero.umonnum });
     let wasExpelled = false;
@@ -524,7 +569,9 @@ export async function polymonHero(mnum, options = {}) {
         if (unsolid || size >= MZ_HUGE
             || (size > holderSize && !monsterIsWhirly(holder))) {
             if (unsolid) {
-                await plineWithContinuation(`${holdingMonsterSubject(holder)} can no longer contain you.`);
+                const subject = canSpotMonster(holder)
+                    ? monsterName(holder, { capitalized: true }) : body.holderName;
+                await plineWithContinuation(`${subject} can no longer contain you.`);
             }
             const result = await expelHero(holder, { message: !unsolid });
             if (result.died)
@@ -533,8 +580,10 @@ export async function polymonHero(mnum, options = {}) {
         }
     }
     else if (holder && !wasHolding && (heroFormSticks() || unsolid)) {
+        const subject = canSpotMonster(holder)
+            ? monsterName(holder, { capitalized: true }) : body.holderName;
         hero.ustuck = null;
-        await plineWithContinuation(`${holdingMonsterSubject(holder)} loses its grip on you.`);
+        await plineWithContinuation(`${subject} loses its grip on you.`);
     }
     else if (wasHolding && !heroFormSticks()) {
         await releaseHeroGrip();
@@ -565,20 +614,50 @@ export async function polymonHero(mnum, options = {}) {
         : await selfTouchPetrifyingWeapons();
     if (selfTouch.died)
         return { transformed: true, mnum, died: true };
-    const currentForm = game.u.umonnum;
-    const canBreathe = (MONSTER_ATTACKS[currentForm] || [])
-        .some(([attackType]) => attackType === 12);
-    if (game.flags.verbose !== false && canBreathe) {
-        await plineWithContinuation('Use the command #monster to use your breath weapon.');
-    }
-    const laysEggs = !!((MONSTER_FLAGS1[currentForm] ?? 0) & M1_OVIPAROUS);
-    const aquaticEel = MONSTER_NAME[currentForm] === 'giant eel'
-        || MONSTER_NAME[currentForm] === 'electric eel';
-    if (game.flags.verbose !== false && laysEggs
-        && game.flags.female && !aquaticEel) {
-        await plineWithContinuation('Use the command #sit to lay an egg.');
-    }
+    if (game.flags.verbose !== false)
+        await explainFormAbilities();
     return { transformed: true, mnum };
+}
+async function explainFormAbilities() {
+    requirePlayingGame(game);
+    const form = game.u.umonnum;
+    const attacks = MONSTER_ATTACKS[form] ?? [];
+    const hasAttack = (type) => attacks.some(([attack]) => attack === type);
+    const explain = (action) => plineWithContinuation(`Use the command #monster to ${action}.`);
+    const mightHide = heroFormHidesUnderObjects() || heroFormHidesWithoutCover();
+    const webmaker = heroCanSpinWeb();
+    if (hasAttack(AT_BREA))
+        await explain('use your breath weapon');
+    if (hasAttack(AT_SPIT))
+        await explain('spit venom');
+    if (MONSTER_SYMBOL[form] === S_NYMPH)
+        await explain('remove an iron ball');
+    if (hasAttack(AT_GAZE))
+        await explain('gaze at monsters');
+    if (mightHide && webmaker)
+        await explain('hide or to spin a web');
+    else if (mightHide)
+        await explain('hide');
+    else if (webmaker)
+        await explain('spin a web');
+    if (isWereMonster({ mnum: form }))
+        await explain('summon help');
+    if (MONSTER_NAME[form] === 'gremlin')
+        await explain('multiply in a fountain');
+    if (monsterIsUnicorn(form))
+        await explain('use your horn');
+    if (monsterIsMindFlayer(form))
+        await explain('emit a mental blast');
+    if (MONSTER_SOUND[form] === MS_SHRIEK)
+        await explain('shriek');
+    if (heroCanChangeVampireShape())
+        await explain('change shape');
+    const laysEggs = !!((MONSTER_FLAGS1[form] ?? 0) & M1_OVIPAROUS);
+    const name = MONSTER_NAME[form];
+    if (laysEggs && game.flags.female && name !== 'giant eel' && name !== 'electric eel') {
+        const waterEggs = MONSTER_SYMBOL[form] === S_EEL && game.u.swimming;
+        await plineWithContinuation(`Use the command #sit to ${waterEggs ? 'spawn in the water' : 'lay an egg'}.`);
+    }
 }
 async function escapeTrapsAfterFormChange() {
     requirePlayingGame(game);
@@ -637,11 +716,12 @@ async function changeArmorForHeroForm(mnum) {
     let object;
     if (breaksArmor) {
         if ((object = worn('uarm'))) {
+            const dressing = cancelPolymorphDressing(object);
             if (object.lamplit)
                 endObjectBurn(object, game);
             await plineWithContinuation('You break out of your armor!');
             await exerciseAttribute(A_STR, false);
-            await removeHeroArmor(object, game, { deferArmorClass: true, voluntary: false });
+            await removeHeroArmor(object, game, { ...dressing, deferArmorClass: true, voluntary: false });
             if (game.program_state.gameover)
                 return;
             await deleteObject(object);
@@ -649,13 +729,13 @@ async function changeArmorForHeroForm(mnum) {
         if ((object = worn('uarmc'))
             && !(object.otyp === MUMMY_WRAPPING && monsterWrappingAllowed(mnum))) {
             if (object.otyp === MUMMY_WRAPPING) {
-                await plineWithContinuation('Your wrapping tears apart!');
+                await plineWithContinuation(`Your ${simpleArmorName(object, 'uarmc', game)} tears apart!`);
                 await deleteObject(object);
             }
             else {
-                await plineWithContinuation(object.otyp === ALCHEMY_SMOCK
-                    ? 'The knot on your apron is pulled apart!'
-                    : 'The clasp on your cloak breaks open!');
+                const fastening = object.otyp === ALCHEMY_SMOCK ? 'knot' : 'clasp';
+                const action = object.otyp === ALCHEMY_SMOCK ? 'is pulled apart' : 'breaks open';
+                await plineWithContinuation(`The ${fastening} on your ${simpleArmorName(object, 'uarmc', game)} ${action}!`);
                 await dropCarriedObject(object);
                 if (game.program_state.gameover)
                     return;
@@ -670,8 +750,9 @@ async function changeArmorForHeroForm(mnum) {
         if ((object = worn('uarm'))
             && !(MONSTER_NAME[mnum] === 'hobbit'
                 && object.otyp === ELVEN_MITHRIL_COAT)) {
+            const dressing = cancelPolymorphDressing(object);
             await plineWithContinuation('Your armor falls around you!');
-            await removeHeroArmor(object, game, { deferArmorClass: true, voluntary: false });
+            await removeHeroArmor(object, game, { ...dressing, deferArmorClass: true, voluntary: false });
             if (game.program_state.gameover)
                 return;
             await dropCarriedObject(object);
@@ -680,9 +761,10 @@ async function changeArmorForHeroForm(mnum) {
         }
         if ((object = worn('uarmc'))
             && !(object.otyp === MUMMY_WRAPPING && monsterWrappingAllowed(mnum))) {
+            const name = simpleArmorName(object, 'uarmc', game);
             await plineWithContinuation(whirly
-                ? 'Your cloak falls, unsupported!'
-                : 'You shrink out of your cloak!');
+                ? `Your ${name} falls, unsupported!`
+                : `You shrink out of your ${name}!`);
             await dropCarriedObject(object);
             if (game.program_state.gameover)
                 return;
@@ -698,24 +780,26 @@ async function changeArmorForHeroForm(mnum) {
     }
     const hornCount = monsterHornCount(mnum);
     if (hornCount && (object = worn('uarmh'))) {
-        const material = OBJECT_MATERIAL[object.otyp];
-        if (material !== undefined && material <= LEATHER) {
-            await plineWithContinuation(`Your ${hornCount === 1 ? 'horn pierces' : 'horns pierce'} through your ${object.name}.`);
+        if (isFlimsyObject(object, game) && game._delayedAction?.object !== object
+            && !isBeingTakenOff(object)) {
+            await plineWithContinuation(`Your ${hornCount === 1 ? 'horn pierces' : 'horns pierce'} through ${ownedObjectName(object, game, { capitalized: false })}.`);
         }
         else {
-            await plineWithContinuation(`Your helm falls to the ${surfaceName(game.u.ux, game.u.uy)}!`);
-            await dropCarriedObject(object);
+            const dressing = cancelPolymorphDressing(object);
+            await plineWithContinuation(`Your ${simpleArmorName(object, 'uarmh', game)} falls to the ${surfaceName(game.u.ux, game.u.uy)}!`);
+            await dropCarriedObject(object, dressing);
             if (game.program_state.gameover)
                 return;
         }
     }
     if (noHands || verySmall) {
         if ((object = worn('uarmg'))) {
+            const dressing = cancelPolymorphDressing(object);
             await plineWithContinuation(`You drop your gloves${worn('uwep') ? ' and weapon' : ''}!`);
             await dropPolymorphWeapons(false);
             if (game.program_state.gameover)
                 return;
-            await dropCarriedObject(object);
+            await dropCarriedObject(object, dressing);
             if (game.program_state.gameover)
                 return;
         }
@@ -726,25 +810,27 @@ async function changeArmorForHeroForm(mnum) {
                 return;
         }
         if ((object = worn('uarmh'))) {
-            await plineWithContinuation(`Your helm falls to the ${surfaceName(game.u.ux, game.u.uy)}!`);
-            await dropCarriedObject(object);
+            const dressing = cancelPolymorphDressing(object);
+            await plineWithContinuation(`Your ${simpleArmorName(object, 'uarmh', game)} falls to the ${surfaceName(game.u.ux, game.u.uy)}!`);
+            await dropCarriedObject(object, dressing);
             if (game.program_state.gameover)
                 return;
         }
     }
     if ((noHands || verySmall || monsterIsSlithy(mnum) || monsterIsCentaur(mnum))
         && (object = worn('uarmf'))) {
+        const dressing = cancelPolymorphDressing(object);
         await plineWithContinuation(whirly
             ? 'Your boots fall away!'
             : verySmall
                 ? 'Your boots slide off your feet!'
                 : 'Your boots are pushed off your feet!');
-        await dropCarriedObject(object);
+        await dropCarriedObject(object, dressing);
         if (game.program_state.gameover)
             return;
     }
     if (heroHasNoHead(game) && (object = worn('ublindf'))) {
-        const name = (object.name || 'blindfold').replace(/^pair of /, '');
+        const name = simpleObjectName(object, game).replace(/^pair of /, '');
         await plineWithContinuation(`Your ${name} ${name.endsWith('s') ? 'fall' : 'falls'} off!`);
         await removeEyewear();
         if (game.program_state.gameover)
@@ -812,8 +898,9 @@ function canDropPolymorphWeapon(object) {
     }
     return !(object.otyp === LEASH && object.leashmon);
 }
-function roundDivPositive(numerator, denominator) {
-    return Math.trunc((numerator + Math.trunc(denominator / 2)) / denominator);
+function roundDiv(numerator, denominator) {
+    const magnitude = Math.trunc((Math.abs(numerator) + Math.trunc(denominator / 2)) / denominator);
+    return Math.sign(numerator) * magnitude;
 }
 function humanAttributeArrays() {
     requirePlayingGame(game);
@@ -870,7 +957,7 @@ function newmanHpIncrement(level) {
             hp += rnd(role[randomKey]);
         if ((race[randomKey] || 0) > 0)
             hp += rnd(race[randomKey]);
-        hp += constitutionHpBonus(game.u?.acurr?.a?.[A_CON] || 0);
+        hp += constitutionHpBonus(currentAttribute(A_CON));
     }
     hp = Math.max(1, hp);
     if (level < MAXULEV)
@@ -915,7 +1002,7 @@ function newmanPowerIncrement(level) {
         const lower = level < (game.urole?.xlev ?? 10);
         const fixedKey = lower ? 'lofix' : 'hifix';
         const randomKey = lower ? 'lornd' : 'hirnd';
-        const range = Math.trunc((game.u?.acurr?.a?.[A_WIS] || 0) / 2)
+        const range = Math.trunc(currentAttribute(A_WIS) / 2)
             + (role[randomKey] || 0) + (race[randomKey] || 0);
         const fixed = (role[fixedKey] || 0) + (race[fixedKey] || 0);
         power = energyModifier(rn2(range) + fixed);
@@ -953,28 +1040,28 @@ async function renewHumanForm(sexChangeAllowed = true) {
     let hpMaximum = u.uhpmax ?? 1;
     for (let i = 0; i < oldLevel; i++)
         hpMaximum -= Number(u.uhpinc?.[i] || 0);
-    hpMaximum = roundDivPositive(hpMaximum * (rn2(4) + 8), 10);
+    hpMaximum = roundDiv(hpMaximum * (rn2(4) + 8), 10);
     for (let i = 0; i < newLevel; i++) {
         u.ulevel = i;
         hpMaximum += newmanHpIncrement(i);
     }
     u.ulevel = newLevel;
     hpMaximum = Math.max(hpMaximum, newLevel);
-    u.uhp = roundDivPositive((u.uhp ?? 1) * hpMaximum, Math.max(1, u.uhpmax ?? 1));
+    u.uhp = roundDiv((u.uhp ?? 1) * hpMaximum, Math.max(1, u.uhpmax ?? 1));
     u.uhpmax = hpMaximum;
     u.uhp = Math.min(u.uhp, u.uhpmax);
     u.uhppeak = Math.max(u.uhppeak ?? 0, u.uhpmax);
     let powerMaximum = u.uenmax ?? 0;
     for (let i = 0; i < oldLevel; i++)
         powerMaximum -= Number(u.ueninc?.[i] || 0);
-    powerMaximum = roundDivPositive(powerMaximum * (rn2(4) + 8), 10);
+    powerMaximum = roundDiv(powerMaximum * (rn2(4) + 8), 10);
     for (let i = 0; i < newLevel; i++) {
         u.ulevel = i;
         powerMaximum += newmanPowerIncrement(i);
     }
     u.ulevel = newLevel;
     powerMaximum = Math.max(powerMaximum, newLevel);
-    u.uen = roundDivPositive((u.uen ?? 0) * powerMaximum, Math.max(1, u.uenmax ?? 0));
+    u.uen = roundDiv((u.uen ?? 0) * powerMaximum, Math.max(1, u.uenmax ?? 0));
     u.uenmax = powerMaximum;
     u.uen = Math.min(u.uen, u.uenmax);
     u.uhunger = 500 + rn2(500);
@@ -1073,7 +1160,7 @@ export async function polymorphHero(flags = POLY_NOFLAGS) {
     let mnum = -1;
     if (!heroHasPolymorphControl(game) && !forced
         && dragon === null && !lycanthrope && !vampire
-        && rn2(20) > hero.acurr.a[A_CON]) {
+        && rn2(20) > currentAttribute(A_CON)) {
         await plineWithContinuation('You shudder for a moment.');
         const died = await loseHeroHp(rnd(30), 'system shock');
         if (!died)
@@ -1289,27 +1376,27 @@ async function mergeDragonArmor(armor, mnum) {
     if (!armor)
         throw new Error('Merging with a dragon form requires worn dragon armor');
     if (!((game.mvitals?.[mnum]?.mvflags ?? 0) & G_GENOD)) {
+        const oldLight = objectLightRadius(armor);
         if (armor.otyp >= GRAY_DRAGON_SCALES) {
             await plineWithContinuation('You merge with your scaly armor.');
         }
         else {
-            const armorName = OBJECT_NAMES[armor.otyp];
-            if (!armorName)
-                throw new Error(`Unknown dragon armor type: ${armor.otyp}`);
-            const name = armorName.replace(' dragon ', ' ');
+            const name = simpleObjectName(armor).replace(' dragon ', ' ');
             await plineWithContinuation(`Your ${name} reverts to scales as you merge with them.`);
             armor.otyp += GRAY_DRAGON_SCALES - GRAY_DRAGON_SCALE_MAIL;
             const scaleName = OBJECT_NAMES[armor.otyp];
             if (!scaleName)
                 throw new Error(`Unknown dragon scales type: ${armor.otyp}`);
             armor.name = scaleName;
-            if (!heroIsBlind(game))
-                armor.dknown = true;
+            observeObject(armor, game);
+            game.context.botl = true;
         }
         game.uskin = armor;
         game.uarm = game.u.uarm = null;
         armor.owornmask = (armor.owornmask ?? 0) | I_SPECIAL;
         armor.wornSlot = 'uskin';
+        if (armor.lamplit)
+            await adjustObjectLight(armor, oldLight);
     }
     return polymonHero(mnum);
 }
@@ -1317,10 +1404,13 @@ async function restoreDragonArmor(state = game, publish = plineWithContinuation)
     const armor = state.uskin;
     if (!armor)
         return;
+    const oldLight = objectLightRadius(armor, state);
     await publish('Your skin returns to its original form.');
     state.uarm = state.u.uarm = armor;
     state.uskin = null;
     armor.owornmask = (armor.owornmask ?? 0) & ~I_SPECIAL;
     armor.wornSlot = 'uarm';
+    if (armor.lamplit)
+        await adjustObjectLight(armor, oldLight, state);
 }
 //# sourceMappingURL=polyself.js.map

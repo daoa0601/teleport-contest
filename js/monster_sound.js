@@ -1,14 +1,18 @@
 // Pet begging and animal noises shared by #chat and mounted breath fallback.
 // C ref: sounds.c domonnoise().
-import { game, requireLiveGame } from './gstate.js';
+import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
+import { heroSpecies } from './hero_species.js';
+import { publishMonsterConversation } from './monster_conversation.js';
 import { recorderLocalHour } from './calendar.js';
 import { canSpotMonster, glyphAt, map_invisible, plineWithContinuation } from './display.js';
 import { monsterName } from './monster_name.js';
-import { wakeMonstersNear } from './monster_wake.js';
+import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { chatWithShopkeeper } from './shop_chat.js';
+import { chatWithQuestLeader } from './quest.js';
+import { roles } from './roles.js';
 import { rn2 } from './rng.js';
-import { MONSTER_NAME, MONSTER_FLAGS1, MONSTER_SOUND, monsterTypeName, } from './monster_data.js';
+import { MONSTER_NAME, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_SOUND, monsterTypeName, } from './monster_data.js';
 const MS_SILENT = 0;
 const MS_BARK = 1;
 const MS_MEW = 2;
@@ -29,6 +33,9 @@ const MS_BURBLE = 16;
 const MS_TRUMPET = 17;
 const MS_ANIMAL = 17;
 const MS_HUMANOID = 25;
+const MS_ORC = 24;
+const MS_LEADER = 36;
+const MS_GUARDIAN = 38;
 const MS_GROAN = 44;
 const M1_CARNIVORE = 0x20000000;
 const M1_HERBIVORE = 0x40000000;
@@ -89,27 +96,46 @@ export async function begForFood(monster, state) {
         })} seems famished.`);
     }
 }
-// The animal branch of C sounds.c:domonnoise(), including its map and wake
-// effects. A true result spends a chat turn even when a dingo stays quiet.
-export async function publishMonsterNoise(monster, state = game) {
+// C sounds.c:domonnoise(). A true result spends a chat turn even if quiet.
+export async function publishMonsterNoise(monster, state = game, { exerciseWisdom } = {}) {
     requireLiveGame(state);
-    const sound = MONSTER_SOUND[monster.mnum] ?? MS_SILENT;
-    if (heroIsDeaf(state) || sound > MS_ANIMAL && sound !== MS_SELL && !monster.isshk
-        || sound === MS_SILENT && !monster.isshk)
+    requirePlayingGame(state);
+    let sound = MONSTER_SOUND[monster.mnum] ?? MS_SILENT;
+    if (heroIsDeaf(state) || sound === MS_SILENT && !monster.isshk)
         return false;
     const hallucinating = heroIsHallucinating(state);
-    const wildBellow = sound === MS_MOO && !monster.mtame;
-    const selling = !!monster.isshk || sound === MS_SELL
-        || !wildBellow && hallucinating && looksLikeGecko(monster, state);
+    if (monster.m_id === state.quest_status?.leader_m_id && sound > MS_ANIMAL)
+        sound = MS_LEADER;
+    else if (sound === MS_GUARDIAN && monster.mnum !== state.urole.guardnum) {
+        const role = roles.find(role => role.guardnum === monster.mnum);
+        if (!role)
+            throw new Error(`Quest guardian ${monster.mnum} has no role`);
+        sound = MONSTER_SOUND[MONSTER_NAME.indexOf('archeologist') + role.mnum] ?? MS_SILENT;
+    }
+    else if (monster.isshk)
+        sound = MS_SELL;
+    else if (sound === MS_ORC && (hallucinating
+        || ((MONSTER_FLAGS2[heroSpecies(state)] ?? 0) | (MONSTER_FLAGS2[state.urace.mnum] ?? 0)) & 0x80))
+        sound = MS_HUMANOID;
+    else if (sound === MS_MOO && !monster.mtame)
+        sound = MS_BELLOW;
+    else if (hallucinating && looksLikeGecko(monster, state))
+        sound = MS_SELL;
     if (!canSpotMonster(monster))
         map_invisible(monster.mx, monster.my);
-    if (selling) {
-        if (!hallucinating || sound === MS_SILENT || monster.isshk && rn2(2) === 0)
+    if (sound === MS_LEADER) {
+        await chatWithQuestLeader(monster, { exerciseWisdom: exerciseWisdom ?? null }, state);
+        return true;
+    }
+    if (sound === MS_SELL) {
+        if (!hallucinating || MONSTER_SOUND[monster.mnum] === MS_SILENT || monster.isshk && rn2(2) === 0)
             await chatWithShopkeeper(monster, state);
         else
             await plineWithContinuation('"15 minutes could save you 15 zorkmids."');
         return true;
     }
+    if (sound > MS_ANIMAL)
+        return publishMonsterConversation(monster, sound, state);
     let noise;
     switch (sound) {
         case MS_BARK:
@@ -169,7 +195,7 @@ export async function publishMonsterNoise(monster, state = game) {
             break;
         case MS_TRUMPET:
             noise = 'trumpets!';
-            wakeMonstersNear(monster.mx, monster.my, 11 * 11, state);
+            await wakeMonstersNearWithMessages(monster.mx, monster.my, 11 * 11, state);
             break;
         default:
             return false;

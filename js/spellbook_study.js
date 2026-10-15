@@ -253,10 +253,10 @@ export async function cursedBook(book, { state = game } = {}) {
         case 6:
             if (state.u.antimagic || propertyIsActive('antimagic', state)) {
                 await shieldeff(state.u.ux, state.u.uy);
-                await pline('The book explodes, but you are unharmed!');
+                await pline('The book radiates explosive energy, but you are unharmed!');
             }
             else {
-                await pline(`As you read the book, it explodes in your ${heroFaceName(state)}!`);
+                await pline(`As you read the book, it radiates explosive energy in your ${heroFaceName(state)}!`);
                 const damage = 2 * rnd(10) + 5;
                 await loseHeroHp(state.u.halfPhysicalDamage ? Math.ceil(damage / 2) : damage, 'exploding rune', { state });
             }

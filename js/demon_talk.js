@@ -7,17 +7,16 @@ import { A_CHA, FAINTED, In_hell, NON_PM, RLOC_MSG, STRAT_APPEARMSG } from './co
 import { currency } from './currency.js';
 import { canSeeMonster, canSpotMonster, newsym, plineWithContinuation } from './display.js';
 import { recordGameLogEvent } from './gamelog.js';
-import { detachHeroGold, heroGoldAmount } from './hero_gold.js';
+import { heroGoldAmount } from './hero_gold.js';
 import { heroSpecies } from './hero_species.js';
 import { heroIsUnaware } from './hero_sleep.js';
 import { resetHeroFaint } from './hunger.js';
 import { setMonsterMalign } from './monster_alignment.js';
 import { MONSTER_ALIGNMENT, MONSTER_FLAGS2, MONSTER_SYMBOL } from './monster_data.js';
 import { removeMonsterFromGame } from './monster_departure.js';
-import { addObjectToMonsterInventory } from './monster_inventory.js';
+import { offerGoldToMonster } from './monster_bribe.js';
 import { monsterName } from './monster_name.js';
 import { stopHeroOccupation } from './occupation.js';
-import { getLine } from './query.js';
 import { rn2, rnd } from './rng.js';
 import { heroIsDeaf } from './senses.js';
 import { randomMonsterRelocation } from './teleport.js';
@@ -32,24 +31,24 @@ function angerDemon(monster, state) {
     setMonsterMalign(monster, state);
 }
 export async function talkToDemon(monster, state, random = rn2, rollOne = rnd) {
-    const subject = () => monsterName(monster, { state, capitalized: true, article: 'a' });
-    const heroIsDemon = MONSTER_SYMBOL[heroSpecies(state)] === S_DEMON;
-    const relocate = async () => {
-        if (!await reportMonsterTeleportRestriction(monster, { state }))
-            await randomMonsterRelocation(monster, { state, flags: RLOC_MSG, random, rollOne });
-    };
     if (monster.mux !== state.u.ux || monster.muy !== state.u.uy) {
         await plineWithContinuation(`${cansee(monster.mux ?? 0, monster.muy ?? 0)
             ? monsterName(monster, { state, capitalized: true }) : 'It'} whispers at thin air.`);
         if ((MONSTER_FLAGS2[heroSpecies(state)] ?? 0) & M2_DEMON)
-            await relocate();
+            await relocateDemon(monster, state, random, rollOne);
         else {
             monster.minvis = monster.perminvis = false;
-            await plineWithContinuation(`${subject()} gets angry!`);
+            await plineWithContinuation(`${monsterName(monster, { state, capitalized: true, article: 'a' })} gets angry!`);
             angerDemon(monster, state);
         }
         return false;
     }
+    return demandDemonBribe(monster, state, random, rollOne);
+}
+// C minion.c:demon_talk() starts here; only a monster turn checks mux/muy.
+export async function demandDemonBribe(monster, state, random = rn2, rollOne = rnd) {
+    const subject = () => monsterName(monster, { state, capitalized: true, article: 'a' });
+    const heroIsDemon = MONSTER_SYMBOL[heroSpecies(state)] === S_DEMON;
     const weapon = state.uwep || state.u.uwep;
     if (['Excalibur', 'Demonbane'].includes(artifactById(weapon?.oartifact, state)?.name ?? '')) {
         await plineWithContinuation(canSpotMonster(monster)
@@ -82,7 +81,7 @@ export async function talkToDemon(monster, state, random = rn2, rollOne = rnd) {
             await plineWithContinuation(`${subject()} says, "Good hunting, ${state.flags.female ? 'Sister' : 'Brother'}."`);
         else if (canSeeMonster(monster))
             await plineWithContinuation(`${subject()} says something.`);
-        await relocate();
+        await relocateDemon(monster, state, random, rollOne);
         return true;
     }
     const cash = heroGoldAmount(state);
@@ -99,7 +98,7 @@ export async function talkToDemon(monster, state, random = rn2, rollOne = rnd) {
         await plineWithContinuation(`${subject()} demands ${demand} ${currency(demand, { state, random })} for safe passage.`);
     else if (canSeeMonster(monster))
         await plineWithContinuation(`${subject()} seems to be demanding something.`);
-    const offer = deaf ? 0 : await bribeDemon(monster, state, random);
+    const offer = deaf ? 0 : await offerGoldToMonster(monster, 'How much will you offer?', state, random);
     if (!deaf && offer >= demand)
         await plineWithContinuation(`${subject()} vanishes, laughing about cowardly mortals.`);
     else if (offer > 0 && rollOne(5 * currentAttribute(A_CHA, state)) > demand - offer)
@@ -113,32 +112,8 @@ export async function talkToDemon(monster, state, random = rn2, rollOne = rnd) {
     await removeMonsterFromGame(monster);
     return true;
 }
-async function bribeDemon(monster, state, random) {
-    const text = await getLine('How much will you offer?', () => true);
-    const digits = /^\s*[+-]?\d+/u.exec(text ?? '');
-    let offer = digits ? Number(digits[0]) : 0;
-    if (!Number.isFinite(offer))
-        offer = 0;
-    if (offer < 0) {
-        await plineWithContinuation(`You try to shortchange ${monsterName(monster, { state })}, but fumble.`);
-        return 0;
-    }
-    if (!offer) {
-        await plineWithContinuation('You refuse.');
-        return 0;
-    }
-    const name = monsterName(monster, { state });
-    const cash = heroGoldAmount(state);
-    if (offer >= cash) {
-        await plineWithContinuation(`You give ${name} all your gold.`);
-        offer = cash;
-    }
-    else
-        await plineWithContinuation(`You give ${name} ${offer} ${currency(offer, { state, random })}.`);
-    const gold = detachHeroGold(state, offer);
-    if (gold)
-        await addObjectToMonsterInventory(monster, gold, state);
-    state.context.botl = true;
-    return offer;
+async function relocateDemon(monster, state, random, rollOne) {
+    if (!await reportMonsterTeleportRestriction(monster, { state }))
+        await randomMonsterRelocation(monster, { state, flags: RLOC_MSG, random, rollOne });
 }
 //# sourceMappingURL=demon_talk.js.map

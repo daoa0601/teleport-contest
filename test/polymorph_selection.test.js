@@ -111,4 +111,14 @@ void test('genocide prevents dragon armor from merging into the hero', async () 
     assert.equal(armor.otyp, RED_DRAGON_SCALE_MAIL);
     assert.ok(!game.uskin);
 });
+void test('a genocided form refusal uses the current female species name', async () => {
+    freshObjectRoom({ flags: { debug: true, female: true } });
+    const vital = game.mvitals?.[nameToMonster('gnome king')];
+    assert.ok(vital);
+    vital.mvflags |= G_GENOD;
+    pushKeys('polyself\ngnome king\n                        ');
+    await rhack('#'.charCodeAt(0));
+    assert.match(game._pending_message, /You feel rather gnome queen-ish\./);
+    assert.equal(game.u.umonnum, game.u.umonster);
+});
 //# sourceMappingURL=polymorph_selection.test.js.map

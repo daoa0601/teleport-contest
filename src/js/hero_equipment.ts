@@ -37,7 +37,8 @@ export async function removeHeroEquipment(object: GameObject, state: GameState =
 // very item whose removal is still in progress.
 export async function removeWornHeroItem(object: GameObject, state: GameState = game, {
     unchainBall = true,
-}: { unchainBall?: boolean } = {}): Promise<void> {
+    ...armorOptions
+}: { unchainBall?: boolean; cancelledDon?: boolean } = {}): Promise<void> {
     const wasInUse = object.in_use;
     object.in_use = true;
     try {
@@ -46,6 +47,7 @@ export async function removeWornHeroItem(object: GameObject, state: GameState = 
             // Native *_off() clears worn sources; the command loop owns find_ac().
             await removeHeroArmor(object, state, {
                 deferArmorClass: true,
+                ...armorOptions,
             });
         }
         await removeHeroAccessory(object, state);

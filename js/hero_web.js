@@ -3,17 +3,20 @@
 import { isLavaAt, isPoolAt } from './terrain_properties.js';
 import { deleteTrap } from './trap_lifecycle.js';
 import { exerciseAttribute } from './attrib.js';
-import { ANTI_MAGIC, ARROW_TRAP, A_DEX, BEAR_TRAP, DART_TRAP, FIRE_TRAP, HOLE, IS_AIR, LADDER, LANDMINE, LEVEL_TELEP, MAGIC_PORTAL, MAGIC_TRAP, PIT, POLY_TRAP, ROCKTRAP, ROLLING_BOULDER_TRAP, RUST_TRAP, SLP_GAS_TRAP, SPIKED_PIT, SQKY_BOARD, STAIRS, TELEP_TRAP, TRAPDOOR, VIBRATING_SQUARE, WEB, } from './const.js';
+import { ANTI_MAGIC, ARROW_TRAP, A_DEX, BEAR_TRAP, DART_TRAP, FIRE_TRAP, HOLE, IS_AIR, LADDER, LANDMINE, LEVEL_TELEP, MAGIC_PORTAL, SHOPBASE, SHOP_WEB_COST, MAGIC_TRAP, PIT, POLY_TRAP, ROCKTRAP, ROLLING_BOULDER_TRAP, RUST_TRAP, SLP_GAS_TRAP, SPIKED_PIT, SQKY_BOARD, STAIRS, TELEP_TRAP, TRAPDOOR, VIBRATING_SQUARE, WEB, } from './const.js';
 import { newsym, plineWithContinuation } from './display.js';
 import { expelHero } from './hero_expulsion.js';
 import { triggerHeroTrap } from './hero_traps.js';
 import { game } from './gstate.js';
 import { buryFloorObjectsAt } from './buried_object.js';
 import { maketrap } from './mklev.js';
-import { MONSTER_ATTACKS, MONSTER_NAME, monsterIsAnimal, monsterIsWhirly, monsterTypeName, } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_NAME, monsterIsAnimal, monsterIsWhirly, } from './monster_data.js';
+import { monsterName } from './monster_name.js';
 import { AD_COLD, AD_ELEC, AD_FIRE, AT_ENGL, } from './monster_attack_types.js';
 import { heroMonsterForm } from './polyself.js';
 import { promptKey } from './tty_prompts.js';
+import { roomsAt } from './room.js';
+import { addShopDamage } from './shop_damage.js';
 const PM_CAVE_SPIDER = MONSTER_NAME.indexOf('cave spider');
 const PM_GIANT_SPIDER = MONSTER_NAME.indexOf('giant spider');
 const TRAPS_TRIGGERED_BY_WEBBING = new Set([
@@ -43,10 +46,6 @@ export async function chooseSpiderAbility(readKey = promptKey) {
 function trapAtHero(state) {
     return state.level?.traps?.find(trap => trap.tx === state.u.ux && trap.ty === state.u.uy) || null;
 }
-function monsterName(monster) {
-    return monster?.name
-        || monsterTypeName(monster?.mnum, !!monster?.female);
-}
 function engulfingAttack(monster) {
     return (MONSTER_ATTACKS[monster?.mnum] || []).find(([attackType]) => attackType === AT_ENGL);
 }
@@ -65,8 +64,7 @@ async function spinWhileSwallowed(state, publish, refresh) {
     const monster = state.u.ustuck;
     if (!monster)
         throw new Error('A swallowed hero must have an engulfing monster');
-    const name = monsterName(monster);
-    await publish(`You release web fluid inside the ${name}.`);
+    await publish(`You release web fluid inside ${monsterName(monster, { state })}.`);
     if (monsterIsAnimal(monster)) {
         await expelHero(monster, { state, publish, refresh });
     }
@@ -74,7 +72,7 @@ async function spinWhileSwallowed(state, publish, refresh) {
         await publish(whirlyWebMessage(monster));
     }
     else {
-        await publish(`The web dissolves into the ${name}.`);
+        await publish(`The web dissolves into ${monsterName(monster, { state })}.`);
     }
 }
 export async function useHeroWeb({ state = game, publish = plineWithContinuation, refresh = newsym, createTrap = maketrap, activateTrap = triggerHeroTrap, } = {}) {
@@ -149,10 +147,12 @@ export async function useHeroWeb({ state = game, publish = plineWithContinuation
     }
     const web = await createTrap(x, y, WEB);
     if (web) {
+        await publish('You spin a web.');
         web.madeby_u = 1;
         web.tseen = true;
         refresh(x, y);
-        await publish('You spin a web.');
+        if (roomsAt(state.level, x, y, SHOPBASE).length)
+            addShopDamage(x, y, SHOP_WEB_COST, state);
     }
     return { used: true, spentTime: true, trap: web };
 }

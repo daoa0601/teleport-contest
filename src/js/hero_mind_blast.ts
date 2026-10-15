@@ -11,9 +11,9 @@ import { game } from './gstate.js';
 import { dist2 } from './hacklib.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { wakeMonster } from './monster_anger.js';
+import { monsterName, possessiveName } from './monster_name.js';
 import {
     monsterIsMindFlayer, monsterIsMindless, monsterIsTelepathic,
-    monsterTypeName,
 } from './monster_data.js';
 import { rn2, rnd } from './rng.js';
 
@@ -62,7 +62,7 @@ export async function useHeroMindBlast({
         const damage = rollDamage(15);
         await wake(monster, { attacked: damage > monster.mhp });
         await publish(
-            `You lock in on ${possessive(monsterName(monster))} ${sense}.`,
+            `You lock in on ${possessiveName(monsterName(monster, { state }))} ${sense}.`,
         );
         monster.mhp -= damage;
         hitCount++;
@@ -89,13 +89,4 @@ function mindBlastSense(monster: Monster, random: typeof rn2) {
     if (random(10) === 0)
         return telepathic ? 'latent telepathy' : 'mind';
     return null;
-}
-
-function monsterName(monster: Monster) {
-    return monster.name
-        || `the ${monsterTypeName(monster.mnum, !!monster.female)}`;
-}
-
-function possessive(name: string) {
-    return /s$/iu.test(name) ? `${name}'` : `${name}'s`;
 }

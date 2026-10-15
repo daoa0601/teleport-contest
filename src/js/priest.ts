@@ -103,7 +103,7 @@ export async function clearNonlocalPriestsOnExit(): Promise<void> {
     }
 }
 
-function hasShrine(priest: Monster, state: GameState = game): boolean {
+export function priestHasShrine(priest: Monster, state: GameState = game): boolean {
     const epri = priestData(priest);
     if (!priest.ispriest || !epri) return false;
     const altar = state.level?.at(epri.shrpos.x, epri.shrpos.y);
@@ -131,7 +131,7 @@ export function inHeroSanctuary(
     if (roomno == null || roomsAt(state.level, x, y, TEMPLE)[0] !== roomno)
         return false;
     const priest = findPriest(roomno, state);
-    return !!priest && hasShrine(priest, state)
+    return !!priest && priestHasShrine(priest, state)
         && priestIsCoaligned(priest, state) && !!priest.mpeaceful;
 }
 
@@ -144,7 +144,7 @@ export async function ghodHitsu(priest: Monster, {
     const { u, level } = requireInitializedGame(state);
     const roomno = u.urooms.find(number =>
         roomForRoomno(level, number)?.rtype === TEMPLE);
-    if (!roomno || !hasShrine(priest, state)) return { heroDied: false };
+    if (!roomno || !priestHasShrine(priest, state)) return { heroDied: false };
 
     const shrine = priestData(priest);
     const room = roomForRoomno(level, roomno);
@@ -269,7 +269,7 @@ export async function intemple(roomno: number, state: GameState = game): Promise
     epri.hostile_time ??= 0;
     const moves = state.moves ?? 0;
     const canSpeak = priestCanSpeak(priest, state);
-    const shrined = hasShrine(priest, state);
+    const shrined = priestHasShrine(priest, state);
 
     if (canSpeak && moves >= epri.intone_time) {
         await plineWithContinuation(

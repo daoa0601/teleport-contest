@@ -26,6 +26,7 @@ export function validSavedGameContext(
         time_botl: optional(boolean),
         bypasses: optional(boolean),
         current_fruit: optional(integer),
+        deathNotice: optional(boolean),
         digging: optional(validDiggingContext),
         forcefight: optional((entry): entry is boolean | number => boolean(entry) || integer(entry)),
         jingle: optional(string),

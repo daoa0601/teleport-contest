@@ -9,7 +9,7 @@ import { deleteTrap } from './trap_lifecycle.js';
 import { exerciseAttribute } from './attrib.js';
 import {
     ANTI_MAGIC, ARROW_TRAP, A_DEX, BEAR_TRAP, DART_TRAP, FIRE_TRAP,
-    HOLE, IS_AIR, LADDER, LANDMINE, LEVEL_TELEP, MAGIC_PORTAL,
+    HOLE, IS_AIR, LADDER, LANDMINE, LEVEL_TELEP, MAGIC_PORTAL, SHOPBASE, SHOP_WEB_COST,
     MAGIC_TRAP, PIT, POLY_TRAP, ROCKTRAP, ROLLING_BOULDER_TRAP,
     RUST_TRAP, SLP_GAS_TRAP, SPIKED_PIT, SQKY_BOARD, STAIRS,
     TELEP_TRAP, TRAPDOOR, VIBRATING_SQUARE, WEB,
@@ -23,13 +23,16 @@ import { buryFloorObjectsAt } from './buried_object.js';
 import { maketrap } from './mklev.js';
 import {
     MONSTER_ATTACKS, MONSTER_NAME, monsterIsAnimal,
-    monsterIsWhirly, monsterTypeName,
+    monsterIsWhirly,
 } from './monster_data.js';
+import { monsterName } from './monster_name.js';
 import {
     AD_COLD, AD_ELEC, AD_FIRE, AT_ENGL,
 } from './monster_attack_types.js';
 import { heroMonsterForm } from './polyself.js';
 import { promptKey } from './tty_prompts.js';
+import { roomsAt } from './room.js';
+import { addShopDamage } from './shop_damage.js';
 
 const PM_CAVE_SPIDER = MONSTER_NAME.indexOf('cave spider');
 const PM_GIANT_SPIDER = MONSTER_NAME.indexOf('giant spider');
@@ -63,11 +66,6 @@ function trapAtHero(state: GameState) {
         trap.tx === state.u.ux && trap.ty === state.u.uy) || null;
 }
 
-function monsterName(monster: Monster) {
-    return monster?.name
-        || monsterTypeName(monster?.mnum, !!monster?.female);
-}
-
 function engulfingAttack(monster: Monster) {
     return (MONSTER_ATTACKS[monster?.mnum] || []).find(
         ([attackType]) => attackType === AT_ENGL,
@@ -86,14 +84,13 @@ function whirlyWebMessage(monster: Monster) {
 async function spinWhileSwallowed(state: GameState, publish: MessagePublisher, refresh: typeof newsym) {
     const monster = state.u.ustuck;
     if (!monster) throw new Error('A swallowed hero must have an engulfing monster');
-    const name = monsterName(monster);
-    await publish(`You release web fluid inside the ${name}.`);
+    await publish(`You release web fluid inside ${monsterName(monster, { state })}.`);
     if (monsterIsAnimal(monster)) {
         await expelHero(monster, { state, publish, refresh });
     } else if (monsterIsWhirly(monster)) {
         await publish(whirlyWebMessage(monster));
     } else {
-        await publish(`The web dissolves into the ${name}.`);
+        await publish(`The web dissolves into ${monsterName(monster, { state })}.`);
     }
 }
 
@@ -191,10 +188,12 @@ export async function useHeroWeb({
 
     const web = await createTrap(x, y, WEB);
     if (web) {
+        await publish('You spin a web.');
         web.madeby_u = 1;
         web.tseen = true;
         refresh(x, y);
-        await publish('You spin a web.');
+        if (roomsAt(state.level, x, y, SHOPBASE).length)
+            addShopDamage(x, y, SHOP_WEB_COST, state);
     }
     return { used: true, spentTime: true, trap: web };
 }

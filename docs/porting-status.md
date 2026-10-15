@@ -130,7 +130,7 @@ existing tests needed their setup corrected:
   `commitPetPickup()` and checks that the dagger stays on the floor until
   then.
 
-## Parallel batches 1–20 (`5d9d67d`)
+## Parallel batches 1–21 (`f3efac3`)
 
 Units ran in worktrees under `docs/orchestration.md` (Codex; each diff reviewed
 by Codex against the C source, then merged only if the full suite adds no
@@ -282,11 +282,18 @@ seed2200-wizard-quaff-zap-read matches every random call but differs at
 the option-help screen, which prints the recording host's configuration
 file path; that path is not part of the session input.
 
+Batch 21: C-source audits of **audit-timeout** (`timeout.c`: countdown
+dialogues, light sources, egg hatching, timers), **audit-polyself**
+(`polyself.c`: polymorph, form abilities) and **audit-do** (`do.c`:
+dropping, stairs, level changes), and **test-clock** (every fresh test game
+uses a fixed date; the suite passes with the host clock at midnight and
+noon).
+
 ## Verification
 
-`npm test` at `5d9d67d`: **10,699/10,699**. Merges require a fully green suite;
+`npm test` at `f3efac3`: **10,820/10,820**. Merges require a fully green suite;
 batch runs also compare matched screens per session with the previous batch
-(no screen regression in batch 20, eval, public or pool).
+(no screen regression in batch 21, eval, public or pool).
 
 ## Most recent native diagnostics
 
@@ -296,9 +303,9 @@ batch runs also compare matched screens per session with the previous batch
 | Native eval sample | 300/300 | 50,586/50,586 | 3,616,669/3,616,669 | 0 |
 | Holdout-dev pool | 2,500/2,500 | | | 0 |
 
-Runs: `.cache/generalization/batch20-5d9d67d-{eval,public}` and
-`triage-5d9d67d` (pool) in the verify worktree (baseline `base-06d7e73`:
-143/300; batch 19: 300/300, pool 2,500/2,500). No verified random call was
+Runs: `.cache/generalization/batch21-f3efac3-{eval,public}` and
+`triage-f3efac3` (pool) in the verify worktree (baseline `base-06d7e73`:
+143/300; batch 20: 300/300, pool 2,500/2,500). No verified random call was
 lost; the ledgers now hold 350 eval and 363 public functions. The
 state oracle finds all 300 sessions matching C state throughout.
 
@@ -306,8 +313,8 @@ state oracle finds all 300 sessions matching C state throughout.
 
 Every eval-sample and pool session completes and public matches every random
 call, so new work comes from C-source audits of files the corpora barely
-run. In flight: `timeout.c` (audit-timeout), `polyself.c` (audit-polyself),
-`do.c` (audit-do) and test-clock. review-debt-3's turn-loop restructuring
+run. In flight: `sp_lev.c` and the level scripts (audit-splev), `steal.c`
+(audit-steal), `spell.c` (audit-spell) and review-debt-8. review-debt-3's turn-loop restructuring
 (delayed armor removal, `stealarm()`, prayer delay) is parked unmerged: it
 broke save/restore twice. `.cache/agents/queue.md` holds accepted review
 findings.

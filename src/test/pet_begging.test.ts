@@ -153,7 +153,7 @@ void test('a hungry mumak trumpets and wakes sleepers within its noise radius', 
 
     await begForFood(monster, game);
 
-    assert.equal(await messageLine(), 'The mumak trumpets!');
+    assert.equal(await messageLine(), 'The little dog wakes up.  The mumak trumpets!');
     assert.equal(nearby.msleeping, 0);
 });
 

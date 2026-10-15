@@ -399,9 +399,9 @@ async function createRevivedMonster(corpse: CorpseObject, location: CorpseReviva
     return { monster, twitchMessage: null };
 }
 
-function retryRevival(
-    corpse: CorpseObject, state: GameState, currentTurn: number, messages: string[],
-): CorpseRevivalRetry {
+async function retryRevival(
+    corpse: CorpseObject, state: GameState, currentTurn: number,
+): Promise<CorpseRevivalRetry> {
     let kind: ObjectTimerKind;
     let delay: number;
     if (isRider(corpse.corpsenm) && rn2(99)) {
@@ -409,9 +409,8 @@ function retryRevival(
         delay = riderRevivalTime(corpse, true);
     } else {
         kind = OBJECT_TIMER_KIND.ROT_CORPSE;
-        if (isRider(corpse.corpsenm)
-            && !objectTimers(corpse).some(timer => timer.kind === kind)) {
-            messages.push('You feel much less hassled.');
+        if (!objectTimers(corpse).some(timer => timer.kind === kind)) {
+            await plineWithContinuation(`You feel ${isRider(corpse.corpsenm) ? 'much ' : ''}less hassled.`);
         }
         delay = Math.max(
             1,
@@ -592,6 +591,7 @@ export async function runClaimedCorpseRevivalTimer(
     await displaceRevivalBlocker(corpse, state, currentTurn);
     const event = await reviveCorpse(corpse, state);
     if (event.kind === 'revived') return event;
-    const retry = retryRevival(corpse, state, currentTurn, event.messages);
-    return { kind: 'failed', corpse, ...event, retry };
+    for (const message of event.messages) await plineWithContinuation(message);
+    const retry = await retryRevival(corpse, state, currentTurn);
+    return { kind: 'failed', corpse, ...event, messages: [], retry };
 }
