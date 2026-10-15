@@ -46,7 +46,7 @@ import { monsterAtPosition } from './monster_location.js';
 import { placeHeroAtRandomArrival } from './level_change.js';
 import { monsterName, monsterSpellDeathReason, possessiveName, quietMonsterName } from './monster_name.js';
 import { touchHeroWithDeath } from './monster_death_touch.js';
-import { divideHeroFromWeaponHit } from './monster_weapon_contact.js';
+import { resolveMonsterWeaponContact } from './monster_weapon_contact.js';
 import { finishMonsterAttackDeath, waitForCurrentMonsterMore } from './monster_attack_death.js';
 import { monsterMissMessage } from './monster_miss.js';
 import { monsterIsAnimal } from './monster_data.js';
@@ -2759,7 +2759,7 @@ async function presentMonsterAttackEffects(
                 };
                 if (heroAttack.hit && heroAttack.effect === 'physical-weapon') {
                     const weapon = monsterWieldedWeapon(monster);
-                    if (weapon) heroAttack.damage = await divideHeroFromWeaponHit(monster, weapon,
+                    if (weapon) heroAttack.damage = await resolveMonsterWeaponContact(monster, weapon,
                         heroAttack.damage ?? 0, game, publishEquipmentMessage, rollOne);
                     await erodeAttackingWeapon(game.u, weapon, {
                         publish: publishEquipmentMessage,

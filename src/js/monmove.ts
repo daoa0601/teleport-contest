@@ -455,7 +455,7 @@ import { MONSTER_DIFFICULTY } from './monster_data.js';
 import { depth } from './hacklib.js';
 import { objectMaterial } from './object_material.js';
 import { artifactById } from './artifacts.js';
-import { divideHeroFromWeaponHit } from './monster_weapon_contact.js';
+import { resolveMonsterWeaponContact } from './monster_weapon_contact.js';
 import { monsterHatesBlessings, monsterHatesSilver } from './monster_data.js';
 import { canHeroRiseUp, levelAtDepth } from './dungeon.js';
 import { LEVEL_TELEP } from './const.js';
@@ -5639,7 +5639,7 @@ async function beginHeroAttackSlot(
                 deferredPostHit: true,
             };
         }
-        damage = await divideHeroFromWeaponHit(monster, contactWeapon, damage, state,
+        damage = await resolveMonsterWeaponContact(monster, contactWeapon, damage, state,
             plineWithContinuation, rollOne);
         await erodeAttackingWeapon(state.u, contactWeapon, { state, random });
         if (poison) {
