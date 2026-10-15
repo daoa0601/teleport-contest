@@ -138,7 +138,8 @@ export function objectsInTimerGraph(state: GameState = game): GameObject[] {
     for (const object of state._tutorialState?.inventory || []) visit(object);
     for (const reference of state._luaObjectRefs || []) visit(reference.deref());
     for (const object of state.migratingObjects || []) visit(object);
-    for (const monster of [...state.level?.monsters || [], ...state._migratingMonsters || []]) {
+    const monsters = (state.level?.monsters ?? []).concat(state._migratingMonsters ?? []);
+    for (const monster of monsters) {
         for (const object of monster.minvent || []) visit(object);
         for (const object of monster.inventory || []) visit(object);
     }
@@ -213,7 +214,11 @@ export function copyObjectTimers(
     source: GameObject | null | undefined, destination: GameObject,
     state: GameState = game,
 ): ObjectTimer[] {
-    for (const timer of objectTimers(source)) {
+    // C obj_split_timers() walks the queue in expiry order, including its
+    // newest-first order for ties, before assigning the copied timer IDs.
+    const timers = objectTimers(source).sort((left, right) =>
+        left.deadline - right.deadline || right.id - left.id);
+    for (const timer of timers) {
         scheduleObjectTimer(
             destination, timer.kind, timer.deadline, state,
         );
