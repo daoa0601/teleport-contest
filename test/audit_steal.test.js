@@ -1,11 +1,12 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { performMonsterHeroAttack } from '../js/allmain.js';
+import { wearHeroAccessory } from '../js/accessory.js';
 import { MM_ANGRY, MM_NOGRP, NO_MINVENT } from '../js/const.js';
 import { flushPendingTopline } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { GOLD_PIECE } from '../js/object_data.js';
+import { DAGGER, GOLD_PIECE, OBJECT_NAMES } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -16,6 +17,19 @@ async function nearbyThief(species = 'water nymph') {
     thief.muy = game.u.uy;
     return thief;
 }
+void test('a nymph takes a worn adornment ring before ordinary possessions', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    const ring = await addInventoryObject(OBJECT_NAMES.indexOf('adornment'));
+    await wearHeroAccessory(ring, 'uleft');
+    const dagger = await addInventoryObject(DAGGER);
+    const thief = await nearbyThief();
+    theftMessages();
+    await performMonsterHeroAttack(thief, game, { random: limit => limit - 1, rollOne: () => 1 });
+    assert.ok(thief.minvent.includes(ring), 'Adornment bypasses the ordinary weighted selection');
+    assert.ok(game.inventory.includes(dagger));
+    assert.equal(game.uleft, null);
+});
 function theftMessages() {
     const messages = [];
     const input = resetInputState();

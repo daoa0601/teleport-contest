@@ -1846,7 +1846,10 @@ async function resolveDeferredHeroItemTheft(
         }
         return false;
     }
-    const object = selectHeroItemForTheft(game, random, action.calls);
+    const adornment = !animal && !game.uarmg
+        ? [game.uleft, game.uright].find(ring => ring?.otyp === OBJECT_NAMES.indexOf('adornment'))
+        : null;
+    const object = adornment ?? selectHeroItemForTheft(game, random, action.calls);
     if (!object) {
         const subject = canSpotMonster(monster)
             ? monsterName(monster, { state: game, capitalized: true })
