@@ -5,7 +5,7 @@ import { endVoluntaryMultiTurn } from './command_state.js';
 import { artifactById } from './artifacts.js';
 import { makeMonsterFlee } from './monster_flee.js';
 import { heroIsPunished } from './ball.js';
-import { BEAR_TRAP, DIGTYP_UNDIGGABLE, IRONBARS, IS_OBSTRUCTED, IS_TREE, IS_WATERWALL, Is_airlevel, Is_waterlevel, LANDMINE, LAVAWALL, SHOPBASE, TT_PIT, TT_WEB, WEB, is_hole, is_pit, isok, xdir, ydir, } from './const.js';
+import { BEAR_TRAP, DIGTYP_UNDIGGABLE, IRONBARS, IS_OBSTRUCTED, IS_TREE, IS_WATERWALL, Is_airlevel, Is_waterlevel, KILLED_BY, LANDMINE, LAVAWALL, SHOPBASE, TT_PIT, TT_WEB, WEB, is_hole, is_pit, isok, xdir, ydir, } from './const.js';
 import { canSpotMonster, newsym, plineWithContinuation } from './display.js';
 import { wipeHeroEngraving } from './engrave.js';
 import { fireDamageObject } from './fire_damage.js';
@@ -141,7 +141,7 @@ async function attackWithTool(tool, monster, attackMonster, payShopkeeper, state
 async function hurtHero(amount, killer, state) {
     if (state.u.halfPhysicalDamage)
         amount = Math.trunc((amount + 1) / 2);
-    await loseHeroHp(amount, killer, { state });
+    await loseHeroHp(amount, killer, { state, killerFormat: KILLED_BY });
 }
 async function wakeNearby(state) {
     await wakeMonstersNearWithMessages(state.u.ux, state.u.uy, (state.u.ulevel ?? 1) * 20, state);

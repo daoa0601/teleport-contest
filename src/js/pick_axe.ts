@@ -15,6 +15,7 @@ import {
     IS_WATERWALL,
     Is_airlevel,
     Is_waterlevel,
+    KILLED_BY,
     LANDMINE,
     LAVAWALL,
     SHOPBASE,
@@ -216,7 +217,7 @@ async function attackWithTool(
 
 async function hurtHero(amount: number, killer: string, state: GameState) {
     if (state.u.halfPhysicalDamage) amount = Math.trunc((amount + 1) / 2);
-    await loseHeroHp(amount, killer, { state });
+    await loseHeroHp(amount, killer, { state, killerFormat: KILLED_BY });
 }
 
 async function wakeNearby(state: GameState) {

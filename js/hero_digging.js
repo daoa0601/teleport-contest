@@ -3,7 +3,7 @@
 // mkcavepos()/mkcavearea(); hack.c may_dig(); weapon.c abon().
 import { monsterHasMapPosition } from './monster_location.js';
 import { deleteTrap } from './trap_lifecycle.js';
-import { RLOC_NOMSG, A_STR, A_DEX, COULD_SEE, CORR, DBWALL, D_BROKEN, D_CLOSED, D_LOCKED, D_NODOOR, D_TRAPPED, DIGTYP_BOULDER, DIGTYP_DOOR, DIGTYP_ROCK, DIGTYP_STATUE, DIGTYP_TREE, DIGTYP_UNDIGGABLE, DOOR, IN_SIGHT, IS_ALTAR, IS_DOOR, IS_OBSTRUCTED, IS_STWALL, IS_TREE, IS_WALL, LANDMINE, BEAR_TRAP, HOLE, TRAPDOOR, MM_NOMSG, ROOM, SCORR, SDOOR, SHOPBASE, SHOP_DOOR_COST, SHOP_PIT_COST, STONE, TRAP_EXPLANATIONS, TT_PIT, Upolyd, W_NONDIGGABLE, Is_earthlevel, is_pit, } from './const.js';
+import { RLOC_NOMSG, A_STR, A_DEX, COULD_SEE, CORR, DBWALL, D_BROKEN, D_CLOSED, D_LOCKED, D_NODOOR, D_TRAPPED, DIGTYP_BOULDER, DIGTYP_DOOR, DIGTYP_ROCK, DIGTYP_STATUE, DIGTYP_TREE, DIGTYP_UNDIGGABLE, DOOR, IN_SIGHT, IS_ALTAR, IS_DOOR, IS_OBSTRUCTED, IS_STWALL, IS_TREE, IS_WALL, LANDMINE, BEAR_TRAP, HOLE, KILLED_BY, TRAPDOOR, MM_NOMSG, ROOM, SCORR, SDOOR, SHOPBASE, SHOP_DOOR_COST, SHOP_PIT_COST, STONE, TRAP_EXPLANATIONS, TT_PIT, Upolyd, W_NONDIGGABLE, Is_earthlevel, is_pit, } from './const.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { convertSecretDoor } from './detect.js';
 import { altarWrath } from './pray.js';
@@ -471,7 +471,7 @@ export async function continueHeroDigging(state = game) {
                 else if (state.uarmf || state.u?.uarmf)
                     damage = Math.trunc((damage + 1) / 2);
                 await pline(`You hit yourself in the ${heroFootName(state)}.`);
-                await loseHeroHp(maybeHalfPhysical(damage, state), `chopping off your own ${heroFootName(state)}`, { state });
+                await loseHeroHp(maybeHalfPhysical(damage, state), `chopping off ${state.flags.female ? 'her' : 'his'} own ${heroFootName(state)}`, { state, killerFormat: KILLED_BY });
             }
             else {
                 await pline(`You destroy the bear trap with ${ownedObjectName(uwep, state, { capitalized: false, includeQuantity: true })}.`);

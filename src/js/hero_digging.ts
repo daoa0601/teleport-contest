@@ -10,7 +10,7 @@ import {
     D_NODOOR, D_TRAPPED, DIGTYP_BOULDER, DIGTYP_DOOR, DIGTYP_ROCK,
     DIGTYP_STATUE, DIGTYP_TREE, DIGTYP_UNDIGGABLE, DOOR, IN_SIGHT,
     IS_ALTAR, IS_DOOR, IS_OBSTRUCTED, IS_STWALL, IS_TREE, IS_WALL,
-    LANDMINE, BEAR_TRAP, HOLE, TRAPDOOR, MM_NOMSG, ROOM, SCORR,
+    LANDMINE, BEAR_TRAP, HOLE, KILLED_BY, TRAPDOOR, MM_NOMSG, ROOM, SCORR,
     SDOOR, SHOPBASE, SHOP_DOOR_COST, SHOP_PIT_COST, STONE,
     TRAP_EXPLANATIONS, TT_PIT, Upolyd, W_NONDIGGABLE, Is_earthlevel, is_pit,
 } from './const.js';
@@ -543,8 +543,8 @@ export async function continueHeroDigging(state = game): Promise<boolean> {
                 await pline(`You hit yourself in the ${heroFootName(state)}.`);
                 await loseHeroHp(
                     maybeHalfPhysical(damage, state),
-                    `chopping off your own ${heroFootName(state)}`,
-                    { state },
+                    `chopping off ${state.flags.female ? 'her' : 'his'} own ${heroFootName(state)}`,
+                    { state, killerFormat: KILLED_BY },
                 );
             } else {
                 await pline(
