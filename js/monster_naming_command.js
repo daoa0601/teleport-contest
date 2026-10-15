@@ -1,5 +1,6 @@
 // C do_name.c:do_mgivenname()/alreadynamed().
 import { M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, MGIVENNAME } from './const.js';
+import { visibleCommandKey } from './command_keys.js';
 import { canSenseMonster, canSpotMonster, glyphAt, monsterVisible, plineWithContinuation as pline, seeMonsterWithInfrared } from './display.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { GlyphOffset } from './glyph_numbers.js';
@@ -20,8 +21,12 @@ export async function nameChosenMonster() {
     }
     const goal = 'the monster you want to name';
     const tip = await showGetposTip();
-    if (game.flags.verbose)
-        await pline("(For instructions type a '?')");
+    if (game.flags.verbose) {
+        const helpKey = game.commandBindings.specialKey('getpos.help');
+        if (helpKey === undefined)
+            throw new Error('Monster naming requires a getpos.help binding');
+        await pline(`(For instructions type a '${visibleCommandKey(helpKey)}')`);
+    }
     if (tip)
         await pline(`Move cursor to ${goal}:`);
     const selected = await selectMapPosition({

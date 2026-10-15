@@ -1,5 +1,6 @@
 // C do_name.c:namefloorobj().
 import { Upolyd } from './const.js';
+import { visibleCommandKey } from './command_keys.js';
 import { glyphAt, plineWithContinuation as pline, randomBogusMonsterName } from './display.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { describeGetposLocation, selectMapPosition, showGetposTip } from './getpos.js';
@@ -17,7 +18,11 @@ export async function nameFloorObject(): Promise<void> {
     requirePlayingGame(game);
     const goal = `object on map (or '.' for one ${game.u.uundetected && heroFormHidesUnderObjects(game) ? 'over' : 'under'} you)`;
     const tip = await showGetposTip();
-    if (game.flags.verbose) await pline("(For instructions type a '?')");
+    if (game.flags.verbose) {
+        const helpKey = game.commandBindings.specialKey('getpos.help');
+        if (helpKey === undefined) throw new Error('Floor naming requires a getpos.help binding');
+        await pline(`(For instructions type a '${visibleCommandKey(helpKey)}')`);
+    }
     if (tip) await pline(`Move cursor to ${goal}:`);
     const selected = await selectMapPosition({
         start: { x: game.u.ux, y: game.u.uy }, goal, force: false,
