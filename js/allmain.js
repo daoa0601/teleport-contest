@@ -107,7 +107,7 @@ import { allocateMonsterMovement, applyHeroSpellDamage, beginDeferredHeroCloneWi
 import { finishEnvironmentalMonsterDeath, finishMonsterKilled, finishMonsterLiquidDeath, } from './monster_death.js';
 import { erodeArmor, erodeAttackingWeapon } from './object_erosion.js';
 import { monsterWieldedWeapon } from './monster_weapon.js';
-import { killGenocidedMonster, resolveMonsterLiquid, } from './mon.js';
+import { resolveMonsterLiquid } from './mon.js';
 import { wakeMonstersNear, wakeMonstersNearWithMessages, } from './monster_wake.js';
 import { applyHeroWereChange, presentWereChange } from './were.js';
 import { sessionIsNight } from './monster_sound.js';
@@ -1876,7 +1876,7 @@ async function presentMonsterGrowth(monster, growth) {
     finishMonsterGrowth(monster, growth);
     newsym(monster.mx, monster.my);
     if (growth.genocided)
-        await killGenocidedMonster(monster, game);
+        await finishEnvironmentalMonsterDeath(monster, game);
 }
 async function resolveErosionFormRehumanization(heroAttack, effectMessage) {
     const game = requireInitializedGame();

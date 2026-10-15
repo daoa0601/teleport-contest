@@ -6,7 +6,6 @@ import { isZombieMaker, zombieForm } from './corpse_species.js';
 import { canSeeMonster, canSpotMonster, newsym, plineWithContinuation } from './display.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { tryKnockback } from './knockback.js';
-import { killGenocidedMonster } from './mon.js';
 import { AD_ACID, AD_BLND, AD_CLRC, AD_COLD, AD_CONF, AD_CORR, AD_CURS, AD_DCAY, AD_DETH, AD_DGST, AD_DISE, AD_DISN, AD_DRCO, AD_DREN, AD_DRIN, AD_DRLI, AD_DRST, AD_DRDX, AD_ELEC, AD_ENCH, AD_FAMN, AD_FIRE, AD_HALU, AD_HEAL, AD_LEGS, AD_MAGM, AD_PEST, AD_PHYS, AD_PLYS, AD_POLY, AD_RBRE, AD_RUST, AD_SAMU, AD_SEDU, AD_SGLD, AD_SITM, AD_SLEE, AD_SLIM, AD_SLOW, AD_SPC1, AD_SPC2, AD_SPEL, AD_SSEX, AD_STCK, AD_STON, AD_STUN, AD_TLPT, AD_WERE, AD_WRAP, AT_BITE, AT_CLAW, AT_TUCH, AT_WEAP, } from './monster_attack_types.js';
 import { resolveMonsterBrainAttack } from './monster_brain_attack.js';
 import { applyMonsterDigestionEffect, finishMonsterDigestion } from './monster_combat_digestion.js';
@@ -60,7 +59,7 @@ export async function resolveMonsterCombatDamage(attacker, defender, attack, { s
             finishMonsterGrowth(attacker, growth);
             newsym(attacker.mx, attacker.my);
             if (growth.genocided)
-                await killGenocidedMonster(attacker, state);
+                await finishDeath(attacker);
         }
         return { survived: growth.alive && attacker.mhp > 0 && !attacker.dead,
             heroDied: !!state.program_state.gameover };

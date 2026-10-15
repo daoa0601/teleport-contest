@@ -66,6 +66,7 @@ export interface MonsterGrowthOptions {
 const M1_HUMANOID = 0x00020000;
 const M2_MALE = 0x00010000;
 const M2_FEMALE = 0x00020000;
+const M2_SHAPESHIFTER = 0x00004000;
 const S_GOLEM = 55;
 const PM_KILLER_BEE = 1;
 const PM_QUEEN_BEE = 5;
@@ -227,7 +228,17 @@ export function growMonster(
         levelLimit = monster.m_lev;
     }
 
-    if (!speciesChange?.genocided && monster.m_lev > levelLimit) {
+    if (speciesChange?.genocided) return {
+        ...speciesChange,
+        alive: false,
+        changedSpecies: true,
+        oldType,
+        newType,
+        leveled: monster.m_lev > oldLevel,
+        maxIncrease: increase.maximum,
+        currentIncrease: increase.current,
+    };
+    if (monster.m_lev > levelLimit) {
         monster.m_lev--;
         if (monster.mhpmax === increase.hpThreshold + 1)
             monster.mhpmax--;
@@ -263,8 +274,13 @@ export function growMonster(
 export function finishMonsterGrowth(monster: Monster, growth: MonsterGrowth | null | undefined): boolean {
     if (!growth?.changedSpecies || growth.applied) return false;
     setMonsterSpecies(monster, growth.newType);
-    if (monster.cham === growth.oldType) monster.cham = growth.newType;
-    monster.female = growth.newFemale;
+    // Fatal growth calls mondied before the normal form-change tail.
+    if (!growth.genocided) {
+        if (monster.cham === growth.oldType
+            && ((MONSTER_FLAGS2[growth.newType] ?? 0) & M2_SHAPESHIFTER))
+            monster.cham = growth.newType;
+        monster.female = growth.newFemale;
+    }
     growth.applied = true;
     return true;
 }

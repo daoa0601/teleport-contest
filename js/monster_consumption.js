@@ -4,7 +4,7 @@ import { canSeeMonster, canSpotMonster, newsym, plineWithContinuation } from './
 import { applyFloorEffects } from './floor_effects.js';
 import { placeObject } from './floor_object.js';
 import { game } from './gstate.js';
-import { healMonster, killGenocidedMonster } from './mon.js';
+import { healMonster } from './mon.js';
 import { AD_POLY } from './monster_attack_types.js';
 import { grantMonsterCorpseIntrinsic } from './monster_corpse_intrinsic.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_NAME } from './monster_data.js';
@@ -96,7 +96,7 @@ async function growAfterFood(monster, state, { publish = plineWithContinuation, 
     finishMonsterGrowth(monster, growth);
     newsym(monster.mx, monster.my);
     if (growth.genocided)
-        await killGenocidedMonster(monster, state);
+        await finishEnvironmentalMonsterDeath(monster, state, { publish, random });
 }
 function foodSpecies(object) {
     return [CORPSE, EGG, TIN].includes(object.otyp)
