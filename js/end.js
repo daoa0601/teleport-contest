@@ -1412,7 +1412,7 @@ export async function finishLivingGame(outcome) {
         lines.push(`${names.length ? '' : 'You '}${action} with ${summary.score} point${plur(summary.score)},`);
         lines.push(...await finalPossessionLines(possessions));
         lines.push(`and ${summary.gold} piece${summary.gold === 1 ? '' : 's'} of gold, after ${summary.moves} move${summary.moves === 1 ? '' : 's'}.`);
-        lines.push(`You were level ${game.u.ulevel} with a maximum of ${game.u.uhpmax} hit points when you ${outcome}.`);
+        lines.push(`You were level ${game.u.ulevel} with a maximum of ${game.u.uhpmax} hit point${plur(game.u.uhpmax)} when you ${outcome}.`);
         const pages = [];
         for (let first = 0; first < lines.length; first += 22) {
             const page = lines.slice(first, first + 22);

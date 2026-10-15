@@ -40,4 +40,19 @@ void test('a diagonally adjacent grid bug cannot accompany an escape', async () 
     assert.equal(bug.mx, 11);
     assert.equal(bug.my, 11);
 });
+void test('ascension pluralizes the final maximum hit point count', async () => {
+    freshObjectRoom({ hero: { uhp: 1, uhpmax: 1 }, flags: { bones: false, disclose: 'none' } });
+    game.iflags.toptenwin = false;
+    let summary = '';
+    const input = resetInputState();
+    input.display = {
+        async readKey() {
+            summary = requireGameDisplay().grid.map(row => row.map(cell => cell.ch).join('')).join('\n');
+            assert.match(summary, /You were level/, 'Ascension should reach its summary page');
+            return 32;
+        },
+    };
+    await finishLivingGame('ascended');
+    assert.match(summary, /a maximum of 1 hit point when you ascended\./);
+});
 //# sourceMappingURL=end_living.test.js.map
