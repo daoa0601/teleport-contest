@@ -92,7 +92,7 @@ import { flipCoin } from './coin_flip.js';
 import { useGrayStone } from './gray_stone.js';
 import { useMirror } from './mirror.js';
 import { useCamera } from './camera.js';
-import { useTowel } from './towel.js';
+import { dryTowel, useTowel } from './towel.js';
 import { useBell } from './apply_bell.js';
 import { breakWand } from './wand_break.js';
 import { speakArtifact } from './artifact_speech.js';
@@ -6628,6 +6628,8 @@ async function throwCommand(
         return;
     }
     wipeHeroEngraving(2);
+
+    if (isWetTowel(item)) await dryTowel(item, -1);
 
     if (selectedIsGold && item === game.uquiver) {
         const previousCapacity = game._encumbranceLevel

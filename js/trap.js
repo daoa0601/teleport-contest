@@ -11,7 +11,6 @@ import { objectCombatName, observeObjectForNaming, ownedObjectName, simpleObject
 import { cansee } from './vision.js';
 import { endObjectBurn } from './light.js';
 import { game } from './gstate.js';
-import { monsterName, possessiveName } from './monster_name.js';
 import { removeHeroEquipment, removeWornHeroItem } from './hero_equipment.js';
 import { useUpInventoryStack } from './hero_inventory.js';
 import { getObjectLocation } from './object_location.js';
@@ -31,6 +30,7 @@ import { impossible } from './diagnostics.js';
 import { stopAllObjectTimers } from './object_timers.js';
 import { rnl, rn2, rnd } from './rng.js';
 import { canSeeMonster, newsym } from './display.js';
+import { dryTowel, wetTowel } from './towel.js';
 // C trap.c:seetrap(). Discovering a trap refreshes the nonliving layer;
 // any object or monster still covering it keeps its usual display priority.
 export function seeTrap(trap, state = game) {
@@ -300,12 +300,7 @@ export async function waterDamageObject(object, messages = [], state = game, { f
     if (object.otyp === CAN_OF_GREASE && spe > 0)
         return 'nothing';
     if (object.otyp === TOWEL && spe < 7) {
-        const wetness = spe + rollOne(7 - spe);
-        if (carried) {
-            const adjective = wetness < 3 ? spe ? 'damper' : 'damp' : spe ? 'wetter' : 'wet';
-            await emit(`${ownedObjectName(object, state)} gets ${adjective}.`);
-        }
-        object.spe = wetness;
+        await wetTowel(object, -rollOne(7 - spe), { state, verbose: true, publish: emit });
         return 'nothing';
     }
     if (object.greased) {
@@ -502,8 +497,6 @@ export async function burnArmorByFire(victim, state, emitMessage, calls = [], ra
     if (victim !== state.u && !monster)
         throw new TypeError('Armor damage requires the live hero or a monster.');
     const hero = monster === null;
-    const owner = !monster ? () => 'Your'
-        : visible ? () => possessiveName(monsterName(monster, { state, capitalized: true })) : null;
     const inventory = monster ? inventoryOf(monster) : state.inventory;
     for (const towel of inventory) {
         const wetness = towel.otyp === TOWEL ? towel.spe ?? 0 : 0;
@@ -512,10 +505,7 @@ export async function burnArmorByFire(victim, state, emitMessage, calls = [], ra
         const newWetness = recordRoll(random, calls, wetness + 1);
         if (newWetness === wetness)
             continue;
-        towel.spe = newWetness;
-        if (visible && owner && emitMessage) {
-            await emitMessage(`${owner()} towel dries${newWetness ? '' : ' out'}.`);
-        }
+        await dryTowel(towel, newWetness, { state, verbose: visible, publish: emitMessage ?? null });
         break;
     }
     for (;;) {
