@@ -305,7 +305,7 @@ import {
     invokeArtifactPower,
 } from './artifact_invoke.js';
 import {
-    SLING, BULLWHIP, GRAPPLING_HOOK, CREAM_PIE, EGG, LUMP_OF_ROYAL_JELLY, LOCK_PICK,
+    SLING, BULLWHIP, GRAPPLING_HOOK, CREAM_PIE, CORPSE, EGG, LUMP_OF_ROYAL_JELLY, LOCK_PICK,
     CREDIT_CARD, STETHOSCOPE, LOADSTONE, GOLD_PIECE, BOULDER, ROCK, DILITHIUM_CRYSTAL,
     LUCKSTONE, TOUCHSTONE, LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK,
     BAG_OF_HOLDING, BAG_OF_TRICKS, BRASS_LANTERN, OIL_LAMP, MAGIC_LAMP, STATUE, RIN_PROTECTION,
@@ -458,7 +458,8 @@ import {
     tendedShop,
 } from './shk.js';
 import { gameLogEvents } from './gamelog.js';
-import { killerObjectName } from './objnam.js';
+import { corpseName, killerObjectName } from './objnam.js';
+import { heroResistsStoning, resolveImmediatePetrification, touchPetrifies } from './stoning.js';
 import { GRAVE } from './const.js';
 import { disturbGrave } from './grave.js';
 import { deleteEngravingAt, maybeSmudgeEngravings, wipeHeroEngraving } from './engrave.js';
@@ -6711,6 +6712,16 @@ async function throwCommand(
         return;
     }
     wipeHeroEngraving(2);
+
+    if (!(game.uarmg || game.u.uarmg) && item.otyp === CORPSE
+        && touchPetrifies(item.corpsenm) && !heroResistsStoning(game)) {
+        await plineWithContinuation(`You throw ${corpseName(item, { definite: true })} with your bare ${makePlural(heroHandName(game))}.`);
+        const result = await resolveImmediatePetrification({
+            state: game,
+            killer: `throwing ${killerObjectName(item, game)} bare-handed`,
+        });
+        if (result.died || game.program_state.gameover) return;
+    }
 
     if (isWetTowel(item)) await dryTowel(item, -1);
 
