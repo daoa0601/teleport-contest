@@ -7440,8 +7440,7 @@ async function fixupMedusa(active: ActiveSpecialLevel): Promise<void> {
     if (!isRoom(room)) return;
     for (let count = rnd(4); count > 0; count--) {
         const point = medusaRoomPoint(room);
-        const loc = level.at(point.x, point.y);
-        if (!loc || !SPACE_POS(loc.typ)) continue;
+        if (!goodPosition(point.x, point.y, null)) continue;
         const statue = await createToptenObject(STATUE, point.x, point.y);
         for (let tries = 0; tries < 99
             && !medusaPetrifiable(statue.corpsenm); tries++)
@@ -7579,6 +7578,11 @@ async function generateSpecialAndFixup(
     generator: (active: ActiveSpecialLevel) => Promise<void>, active: ActiveSpecialLevel,
 ): Promise<void> {
     await generator(active);
+    await fixupSpecial(active);
+}
+
+// C mkmaze.c:fixup_special(), after the Lua level has finished construction.
+export async function fixupSpecial(active: ActiveSpecialLevel): Promise<void> {
     const level = requireGameLevel();
     const arrivalRegion = (
         region: StairRegion | null | undefined, exclude: Rectangle | null | undefined,
