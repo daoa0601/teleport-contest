@@ -5,9 +5,9 @@ import { heroLocomotion } from './hero_locomotion.js';
 import { monsterHasMapPosition, placeMonsterAt } from './monster_location.js';
 import {
     RLOC_ERR, RLOC_NOMSG,
-    ACCESSIBLE, D_CLOSED, D_LOCKED, DISMOUNT_BONES, DISMOUNT_BYCHOICE,
+    D_CLOSED, D_LOCKED, DISMOUNT_BONES, DISMOUNT_BYCHOICE,
     DISMOUNT_ENGULFED, DISMOUNT_FELL, DISMOUNT_KNOCKED, DISMOUNT_POLY, DISMOUNT_THROWN,
-    DOOR, IS_OBSTRUCTED, MGIVENNAME, M_AP_FURNITURE, M_AP_OBJECT,
+    DOOR, IRONBARS, IS_OBSTRUCTED, LAVAWALL, MGIVENNAME, M_AP_FURNITURE, M_AP_OBJECT,
     M_AP_TYPMASK, NO_KILLER_PREFIX, P_RIDING, A_CHA, A_DEX, A_WIS, P_BASIC, P_SKILLED, P_EXPERT,
     TRAP_EXPLANATIONS, TT_BEARTRAP, TT_PIT, TT_WEB, Upolyd, VIBRATING_SQUARE,
     W_SADDLE, isok,
@@ -45,6 +45,13 @@ import { monsterName, monsterReflexiveAction, monsterSubjectPronoun } from './mo
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { heroHandName } from './body_parts.js';
 import { heroHasFreeHand } from './weapon_type.js';
+import { heroPassesWalls, heroSpecies } from './hero_species.js';
+import { heroCanOoze } from './monster_perception.js';
+import { monsterPassesBars } from './monster_movement_traits.js';
+import { wormCrossesBetween } from './monster_worm.js';
+import { shopkeeperBlockingDoor, shopkeeperBlockingEntry } from './shop_blocking.js';
+import { shopkeeperName } from './monster_name.js';
+import { heroKnowsLavaWalking, heroKnowsWaterWalking } from './armor.js';
 import { removeWornHeroItem } from './hero_equipment.js';
 import { freeInventoryObject } from './hero_inventory.js';
 import { propertyIsActive } from './properties.js';
@@ -63,7 +70,7 @@ import { encumbranceLabel, encumbranceMessage, nearCapacity, SLT_ENCUMBER } from
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { monsterIsHelpless } from './monster_sleep.js';
 import {
-    blocksDiagonalDoor, heroBadRock, heroTightDiagonalReason,
+    blocksDiagonalDoor, heroBadRock, heroCanPassWallAt, heroTightDiagonalReason,
 } from './hack.js';
 import { applyHeroLocationEffects, heroCouldMoveOntoBoulder } from './cmd.js';
 import { finishDestinationSpotEffects } from './location_effects.js';
@@ -71,7 +78,7 @@ import { adjustHeroAlignment } from './alignment.js';
 import { resetCommandVariables } from './command_state.js';
 
 import { resumeDeferredMonsterTrap, triggerImmediateMonsterTrap } from './monmove.js';
-import { levelHasCeiling, isLavaAt, isPoolAt } from './terrain_properties.js';
+import { levelHasCeiling, isAccessibleAt, isLavaAt, isPoolAt, isWaterwallAt } from './terrain_properties.js';
 import { isPolearm } from './weapon_type.js';
 
 export type DismountReason = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
@@ -122,6 +129,8 @@ const M1_CLING = 0x00000010;
 const M1_SWIM = 0x00000002;
 const M1_HUMANOID = 0x00020000;
 const M1_SLITHY = 0x00080000;
+const M1_TUNNEL = 0x00000020;
+const M1_NEEDPICK = 0x00000040;
 const M2_DOMESTIC = 0x00400000;
 const M2_ROCKTHROW = 0x08000000;
 const MZ_SMALL = 1;
@@ -234,18 +243,72 @@ export async function moveSteedWithHero() {
     }
 }
 
-function ridingStepIsClear(state: PlayingGameState, x: number, y: number) {
+// C hack.c:test_move(TEST_MOVE) checks reach without opening, chewing, or
+// pushing anything. Boulders normally pass this test; landing_spot() makes
+// its own decision about avoiding them on its first two passes.
+async function ridingStepIsClear(
+    state: PlayingGameState, x: number, y: number,
+    publish: MessagePublisher = plineWithContinuation,
+): Promise<boolean> {
     const hero = state.u;
     const location = state.level.at(x, y);
-    if (!location || IS_OBSTRUCTED(location.typ)
-        || (location.typ === DOOR && (location.doormask & (D_CLOSED | D_LOCKED))))
-        return false;
-    if (x !== hero.ux && y !== hero.uy) {
-        if (blocksDiagonalDoor(state.level.at(hero.ux, hero.uy), location)) return false;
-        if (heroBadRock(state, hero.ux, y) && heroBadRock(state, x, hero.uy)
-            && heroTightDiagonalReason(state)) return false;
+    if (!location) return false;
+    const passesWalls = heroPassesWalls(state);
+    const flags = MONSTER_FLAGS1[heroSpecies(state)] ?? 0;
+    const chews = !!(flags & M1_TUNNEL) && !(flags & M1_NEEDPICK);
+    const closedDoor = location.typ === DOOR
+        && !!(location.doormask & (D_CLOSED | D_LOCKED));
+    if (IS_OBSTRUCTED(location.typ) || location.typ === IRONBARS) {
+        if (!heroCanPassWallAt(state, x, y)) {
+            if (hero.uinwater) return false;
+            if (location.typ === IRONBARS) {
+                if (!passesWalls && !monsterPassesBars({ mnum: heroSpecies(state) })) return false;
+            } else if (!chews) return false;
+        }
+    } else if (closedDoor && !passesWalls && !heroCanOoze(state)) {
+        if (hero.uinwater || !chews) return false;
+    }
+    const diagonal = x !== hero.ux && y !== hero.uy;
+    if (diagonal) {
+        if (location.typ === DOOR && !closedDoor && !passesWalls) {
+            if (blocksDiagonalDoor(null, location)) return false;
+            const keeper = shopkeeperBlockingDoor(x, y, state);
+            if (keeper) {
+                await publish(`${shopkeeperName(keeper, { state, capitalized: true })}${
+                    propertyIsActive('invisible', state) ? ' senses your motion and' : ''
+                } blocks your way!`);
+                return false;
+            }
+        }
+        if (heroBadRock(state, hero.ux, y) && heroBadRock(state, x, hero.uy)) {
+            if (heroTightDiagonalReason(state)) return false;
+        } else if (wormCrossesBetween(hero.ux, hero.uy, x, y, state)) return false;
+    }
+    const runMode = state._runState?.mode ?? 0;
+    if (runMode === 8 && (x !== hero.ux || y !== hero.uy)) {
+        if (state.level.traps.some(trap => trap.tx === x && trap.ty === y
+            && trap.tseen && trap.ttyp !== VIBRATING_SQUARE)) return false;
+        const pool = isPoolAt(x, y, state), lava = isLavaAt(x, y, state);
+        const staysAboveLiquid = hero.levitation || hero.flying
+            || (pool ? heroKnowsWaterWalking(state)
+                : heroKnowsLavaWalking(state) && isLavaAt(hero.ux, hero.uy, state));
+        if (location.seenv && (pool || lava)
+            && (isWaterwallAt(x, y, state) || location.typ === LAVAWALL
+                || !staysAboveLiquid)) return false;
+    }
+    if (diagonal && !passesWalls) {
+        if (blocksDiagonalDoor(state.level.at(hero.ux, hero.uy), null)) return false;
+        const keeper = shopkeeperBlockingEntry(x, y, state);
+        if (keeper) {
+            await publish(`${shopkeeperName(keeper, { state, capitalized: true })}${
+                propertyIsActive('invisible', state) ? ' senses your motion and' : ''
+            } blocks your way!`);
+            return false;
+        }
     }
     return !(state.level.objects[x]?.[y] || []).some(object => object.otyp === BOULDER)
+        || passesWalls && !state.level.flags.sokoban_rules
+        || runMode < 2 || heroIsBlind(state) || heroIsHallucinating(state)
         || heroCouldMoveOntoBoulder(x, y, state);
 }
 
@@ -290,7 +353,7 @@ async function mountSteed(steed: Monster | undefined, force: boolean, [dx, dy]: 
     }
     const punished = game.uball || hero.uball;
     if (hero.uswallow || hero.ustuck || hero.utrap || punished
-        || !ridingStepIsClear(game, steed.mx, steed.my)) {
+        || !await ridingStepIsClear(game, steed.mx, steed.my)) {
         await pline(punished || !(hero.uswallow || hero.ustuck || hero.utrap)
             ? `You are unable to swing your ${heroLegName()} over.`
             : 'You are stuck here for now.');
@@ -520,20 +583,22 @@ const DISMOUNT_DIRECTIONS: readonly DirectionVector[] = [
     [1, 0], [1, 1], [0, 1], [-1, 1],
 ];
 
-function openLandingSquare(state: PlayingGameState, x: number, y: number, steed: Monster) {
+async function openLandingSquare(
+    state: PlayingGameState, x: number, y: number, steed: Monster,
+    publish: MessagePublisher,
+): Promise<boolean> {
     if (!isok(x, y)) return false;
-    const location = state.level?.at?.(x, y);
-    if (!location || !ACCESSIBLE(location.typ)) return false;
-    if (!ridingStepIsClear(state, x, y)) return false;
-    return !(state.level?.monsters || []).some(monster => monsterHasMapPosition(monster, state) && monster !== steed
-        && !monster.dead && (monster.mhp ?? 1) > 0
-        && monster.mx === x && monster.my === y);
+    if (!isAccessibleAt(x, y, state)) return false;
+    const occupant = monsterAtPosition(state.level, x, y);
+    if (occupant && occupant !== steed) return false;
+    return ridingStepIsClear(state, x, y, publish);
 }
 
-function landingSpot(
+async function landingSpot(
     state: PlayingGameState, steed: Monster, reason: DismountReason,
     random: (range: number) => number, force = false,
-): Position | null {
+    publish: MessagePublisher = plineWithContinuation,
+): Promise<Position | null> {
     const avoidHazards = reason === DISMOUNT_BYCHOICE
         && !(state.u.stunned || (state.u.stunnedTurns ?? 0) > 0
             || (state.u.confusionTurns ?? 0) > 0 || state.u.fumbling || (state.u.fumblingTurns ?? 0) > 0);
@@ -564,7 +629,7 @@ function landingSpot(
         for (const [index, [dx, dy]] of directions.entries()) {
             const x = state.u.ux + dx;
             const y = state.u.uy + dy;
-            if (!openLandingSquare(state, x, y, steed)) continue;
+            if (!await openLandingSquare(state, x, y, steed, publish)) continue;
             viable++;
 
             const distance = dx * dx + dy * dy;
@@ -650,7 +715,7 @@ export async function dismountHero(
     const previousCapacity = nearCapacity(state);
     const wasTrapped = !!hero.utrap;
     let repairLegs = (hero._woundedLegTurns ?? 0) > 0;
-    let landing = landingSpot(state, steed, reason, random);
+    let landing = await landingSpot(state, steed, reason, random, false, announce);
     hero.usteed = null;
     refreshMovementProperties(state);
     const inAir = hero.levitation || hero.flying;
@@ -661,7 +726,7 @@ export async function dismountHero(
     if ([DISMOUNT_THROWN, DISMOUNT_KNOCKED, DISMOUNT_FELL].includes(reason)) {
         const verb = reason === DISMOUNT_THROWN ? 'are thrown' : fallingVerb;
         await announce(`You ${verb} off of ${monsterName(steed)}!`);
-        landing ||= landingSpot(state, steed, reason, random, true);
+        landing ||= await landingSpot(state, steed, reason, random, true, announce);
         if (!inAir) {
             let damage = rn1(10, 10);
             if (hero.halfPhysicalDamage) damage = Math.trunc((damage + 1) / 2);
@@ -672,7 +737,7 @@ export async function dismountHero(
         }
     } else if (reason === DISMOUNT_POLY) {
         await announce(`You can no longer ride ${monsterName(steed)}.`);
-        landing ||= landingSpot(state, steed, reason, random, true);
+        landing ||= await landingSpot(state, steed, reason, random, true, announce);
     }
 
     if (reason === DISMOUNT_BYCHOICE) {
