@@ -1090,6 +1090,7 @@ export function startCorpseTimeout(body, { zombify = false } = {}) {
     scheduleObjectTimer(body, kind, (game.moves ?? 0) + delay, game);
 }
 function attachEggHatchTimer(egg, remaining = 0) {
+    stopObjectTimer(egg, OBJECT_TIMER_KIND.HATCH_EGG);
     if (remaining > 0) {
         scheduleObjectTimer(egg, OBJECT_TIMER_KIND.HATCH_EGG, (game.moves ?? 0) + remaining, game);
         return;

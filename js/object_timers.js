@@ -39,9 +39,10 @@ function allocateTimerId(state = game) {
 export function scheduleObjectTimer(object, kind, deadline, state = game) {
     if (!object || !OBJECT_TIMER_KINDS.has(kind) || !Number.isFinite(deadline))
         return null;
-    stopObjectTimer(object, kind);
-    const timer = { kind, deadline, id: allocateTimerId(state) };
     const timers = timersFor(object);
+    if (timers.some(timer => timer.kind === kind))
+        return null;
+    const timer = { kind, deadline, id: allocateTimerId(state) };
     timers.push(timer);
     object.timed = timers.length;
     return timer;
@@ -51,11 +52,13 @@ export function scheduleLevelTimer(x, y, kind, deadline, state = game) {
         || !Number.isInteger(x) || !Number.isInteger(y)
         || !Number.isFinite(deadline))
         return null;
-    stopLevelTimer(x, y, kind, state);
+    const timers = levelTimersFor(state);
+    if (timers.some(timer => timer.x === x && timer.y === y && timer.kind === kind))
+        return null;
     const timer = {
         kind, deadline, id: allocateTimerId(state), x, y,
     };
-    levelTimersFor(state).push(timer);
+    timers.push(timer);
     return timer;
 }
 export function stopLevelTimer(x, y, kind, state = game) {

@@ -15,7 +15,7 @@ import {
 import { makePlural } from './object_grammar.js';
 import { absorbGlob, mergable } from './object_merge.js';
 import {
-    OBJECT_TIMER_KIND, objectsInTimerGraph, scheduleObjectTimer,
+    OBJECT_TIMER_KIND, objectsInTimerGraph, scheduleObjectTimer, stopObjectTimer,
 } from './object_timers.js';
 import { rn2 } from './rng.js';
 import { cansee } from './vision.js';
@@ -152,6 +152,7 @@ export async function meldNearbyFloorGlobs(glob: GameObject, {
 }
 
 function scheduleNextGlobAttempt(glob: GameObject, state: GameState, currentTurn: number, delay = 0): ObjectTimer | null {
+    stopObjectTimer(glob, OBJECT_TIMER_KIND.SHRINK_GLOB);
     const turns = delay > 0 ? delay : 23 + rn2(5);
     return scheduleObjectTimer(
         glob, OBJECT_TIMER_KIND.SHRINK_GLOB,

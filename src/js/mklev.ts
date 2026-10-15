@@ -1198,6 +1198,7 @@ export function startCorpseTimeout(body: GameObject | null | undefined, { zombif
 }
 
 function attachEggHatchTimer(egg: GameObject, remaining = 0): void {
+    stopObjectTimer(egg, OBJECT_TIMER_KIND.HATCH_EGG);
     if (remaining > 0) {
         scheduleObjectTimer(
             egg, OBJECT_TIMER_KIND.HATCH_EGG,

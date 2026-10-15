@@ -499,11 +499,12 @@ export function beginObjectBurn(
         && (object.spe ?? 0) <= 0) return false;
     if ((object.age ?? 0) <= 0) return false;
     const turns = objectBurnTurns(object);
-    object.lamplit = true;
-    object.age -= turns;
-    scheduleObjectTimer(
+    const timer = scheduleObjectTimer(
         object, OBJECT_TIMER_KIND.BURN_OBJECT, currentTurn + turns, state,
     );
+    object.lamplit = !!timer;
+    if (!timer) return false;
+    object.age -= turns;
     if (!alreadyLit) state.vision_full_recalc = 1;
     return true;
 }
