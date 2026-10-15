@@ -12,7 +12,7 @@ import { canSeeMonster, flush_screen, pline, plineWithContinuation } from './dis
 import {
     MIN_QUEST_ALIGN, MIN_QUEST_LEVEL, STRAT_CLOSE, STRAT_WAITMASK, MAGIC_PORTAL,
 } from './const.js';
-import { MONSTER_NAME, MONSTER_SOUND, monsterIsQuestNemesis } from './monster_data.js';
+import { MONSTER_NAME, MONSTER_SOUND } from './monster_data.js';
 import { displayQuestText, prepareQuestText, qtPager, comPager } from './quest_pager.js';
 import type { QuestText } from './quest_pager.js';
 import { artifactByName } from './artifacts.js';
@@ -34,6 +34,13 @@ import { impossible } from './diagnostics.js';
 
 const MS_NEMESIS = 37;
 const MS_GUARDIAN = 38;
+const MS_LEADER = 36;
+
+// role_init() changes the selected nemesis's sound. The Master of Thieves
+// is otherwise a quest leader, so the Tourist needs this per-game override.
+export function questMonsterSound(species: number, state: GameState = game): number {
+    return species === state.urole?.neminum ? MS_NEMESIS : MONSTER_SOUND[species] ?? 0;
+}
 
 // C struct q_score is global game state, not a property inferred from the
 // current special level.  Keeping the complete shape here makes the state
@@ -71,7 +78,7 @@ export function ensureQuestStatus(g: GameState = game): QuestStatus {
 
 // C quest.c:quest_stat_check(), before dochug() returns for an inactive actor.
 export function checkQuestMonsterStatus(monster: Monster, state: GameState = game): void {
-    if (!monsterIsQuestNemesis(monster.mnum)) return;
+    if (questMonsterSound(monster.mnum, state) !== MS_NEMESIS) return;
     ensureQuestStatus(state).in_battle = !monster.msleeping && !!monster.mcanmove
         && (monster.mx !== state.u.ux || monster.my !== state.u.uy)
         && Math.abs(monster.mx - state.u.ux) <= 1
@@ -107,11 +114,13 @@ export function isQuestLeader(
 export function markQuestLeaderDead(
     monster: Monster | null | undefined, g: GameState = game,
 ): boolean {
-    if (!isQuestLeader(monster, g)) return false;
+    if (!monster) return false;
     const status = ensureQuestStatus(g);
-    status.leader_is_dead = true;
-    status.killed_leader = true;
-    return true;
+    const ownLeader = isQuestLeader(monster, g);
+    if (ownLeader) status.leader_is_dead = true;
+    const leaderSpecies = questMonsterSound(monster.mnum, g) === MS_LEADER;
+    if (leaderSpecies) status.killed_leader = true;
+    return ownLeader || leaderSpecies;
 }
 
 export function markQuestLeaderAlive(
@@ -126,7 +135,7 @@ export async function markQuestNemesisDead(
     monster: Monster | null | undefined, g: GameState = game,
     x = monster?.mx ?? 0, y = monster?.my ?? 0,
 ): Promise<boolean> {
-    if (!monster || !monsterIsQuestNemesis(monster.mnum)) return false;
+    if (!monster || questMonsterSound(monster.mnum, g) !== MS_NEMESIS) return false;
     const status = ensureQuestStatus(g);
     if (!status.killed_nemesis) {
         status.killed_nemesis = true;
@@ -463,13 +472,13 @@ export async function chatWithQuestCharacter(monster: Monster, state: GameState 
     if (isQuestLeader(monster, state)) {
         await chatWithQuestLeader(monster, state);
         if (status.pissed_off) await angerMonster(monster);
-    } else if (MONSTER_SOUND[monster.mnum] === MS_NEMESIS) {
+    } else if (questMonsterSound(monster.mnum, state) === MS_NEMESIS) {
         await qtPager('discourage', state);
         status.met_nemesis = true;
-    } else if (MONSTER_SOUND[monster.mnum] === MS_GUARDIAN) {
+    } else if (questMonsterSound(monster.mnum, state) === MS_GUARDIAN) {
         await qtPager(state.u.uhave?.questart && status.killed_nemesis
             ? 'guardtalk_after' : 'guardtalk_before', state);
-    }
+    } else await impossible(`quest_chat: Unknown quest character ${monsterName(monster, { state })}.`, { state });
 }
 
 export async function talkQuestCharacter(monster: Monster, state: GameState = game): Promise<void> {
@@ -483,7 +492,7 @@ export async function talkQuestCharacter(monster: Monster, state: GameState = ga
         if (onQuestStart(state) && !status.pissed_off) await chatWithQuestLeader(monster, state);
         return;
     }
-    if (MONSTER_SOUND[monster.mnum] === MS_NEMESIS) {
+    if (questMonsterSound(monster.mnum, state) === MS_NEMESIS) {
         if (status.in_battle) {
             if (!rn2(5)) await qtPager('discourage', state);
             return;

@@ -99,6 +99,17 @@ void test('chatting with the nemesis provokes a threat and records the meeting',
     assert.equal(game.context.move, 1);
 });
 
+void test('the Tourist recognizes the Master of Thieves as the nemesis when chatting', async () => {
+    freshObjectRoom({ role: 'tourist' });
+    const nemesis = await createMonsterAt('Master of Thieves', 11, 10);
+    nemesis.msleeping = 0;
+
+    await runExtendedCommand('chat', 'l');
+
+    assert.equal(ensureQuestStatus().met_nemesis, true);
+    assert.match(game._pending_message, /^".+"$/);
+});
+
 void test('a quest guardian discusses the aftermath when the artifact has been recovered', async () => {
     freshObjectRoom({ role: 'healer', hero: { uhave: { questart: 1 } } });
     const guardian = await createMonsterAt('attendant', 11, 10);
@@ -137,6 +148,18 @@ void test('a dying Archeologist nemesis leaves the noxious cloud described by th
     assert.ok(cloud);
     assert.equal(cloud.heroFault, false);
     assert.equal(cloud.damage, 8);
+});
+
+void test('a different role leader death counts as killing a leader without losing the hero own leader', async () => {
+    freshObjectRoom({ role: 'healer' });
+    const leader = await createMonsterAt('Pelias', 11, 10);
+    const input = resetInputState();
+    input.display = { async readKey() { return 32; } };
+
+    await finishMonsterKilled(leader, game, { damageType: AD_PHYS });
+
+    assert.equal(ensureQuestStatus().killed_leader, true);
+    assert.equal(ensureQuestStatus().leader_is_dead, false);
 });
 
 void test('a waiting prisoner frees itself when the hero approaches and pleases the hero deity', async () => {

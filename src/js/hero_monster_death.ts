@@ -22,6 +22,7 @@ import { mkobj } from './mklev.js';
 import { angerQuestGuardiansAfterLeaderDeath } from './monster_anger.js';
 import {
     isQuestLeader,
+    questMonsterSound,
 } from './quest.js';
 import { delobj } from './object_delete.js';
 import { preventMonsterDeath } from './mondeath.js';
@@ -30,7 +31,7 @@ import {
     MONSTER_ALIGNMENT, MONSTER_FLAGS2,
     MONSTER_SIZE, monsterIsAlwaysHostile, monsterIsHuman, monsterIsKop,
     monsterIsNonliving, monsterIsPlainHuman, monsterIsPlayerMonster,
-    monsterIsQuestGuardian, monsterIsQuestNemesis, monsterIsUnicorn,
+    monsterIsQuestGuardian, monsterIsUnicorn,
 } from './monster_data.js';
 import {
     monsterDeathCount,
@@ -377,7 +378,7 @@ export async function finishHeroMonsterKillOutcome(monster: Monster, x: number, 
 
     if (isQuestLeader(monster, game)) {
         await punishQuestLeaderKill();
-    } else if (monsterIsQuestNemesis(monster.mnum)) {
+    } else if (questMonsterSound(monster.mnum, game) === 37) {
         rewardQuestNemesisKill();
     } else if (monsterIsQuestGuardian(monster.mnum)) {
         await punishQuestGuardianKill(hallucinating);

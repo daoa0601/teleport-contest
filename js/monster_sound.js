@@ -9,7 +9,7 @@ import { monsterName } from './monster_name.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { chatWithShopkeeper } from './shop_chat.js';
-import { chatWithQuestCharacter } from './quest.js';
+import { chatWithQuestCharacter, questMonsterSound } from './quest.js';
 import { consultOracle } from './rumor.js';
 import { roles } from './roles.js';
 import { rn2 } from './rng.js';
@@ -103,7 +103,7 @@ export async function begForFood(monster, state) {
 export async function publishMonsterNoise(monster, state = game) {
     requireLiveGame(state);
     requirePlayingGame(state);
-    let sound = MONSTER_SOUND[monster.mnum] ?? MS_SILENT;
+    let sound = questMonsterSound(monster.mnum, state);
     if (heroIsDeaf(state) || sound === MS_SILENT && !monster.isshk)
         return false;
     const hallucinating = heroIsHallucinating(state);
