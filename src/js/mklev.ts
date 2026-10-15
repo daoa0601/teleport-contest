@@ -2102,13 +2102,14 @@ async function makemon(
         await addCreatedObjectToMonsterInventory(pendingMonster, object, game);
         hasMonsterInventory = true;
     };
-    const mkmonmoney = async (amount: number): Promise<GameObject> => {
+    const mkmonmoney = async (amount: number): Promise<void> => {
+        if (amount <= 0) return;
         const gold = await mksobj(GOLD_PIECE, false, false);
         gold.quan = amount;
         gold.quantity = amount;
+        gold.owt = objectWeight(gold);
         await linkCreatedObjectToMonsterInventory(pendingMonster, gold);
         hasMonsterInventory = true;
-        return gold;
     };
     const giveOffensiveMonsterItem = async () => {
         const offensiveRoll = rn2(75);
