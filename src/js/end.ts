@@ -45,7 +45,8 @@ import { heroGoldAmount } from './hero_gold.js';
 import { doneObjectCleanup } from './object_cleanup.js';
 import { restoreHeroNutrition } from './hunger.js';
 import {
-    A_CON, A_WIS, CHOKING, DIED, G_EXTINCT, G_GENOD, GENOCIDED, PANICKED, STARVING, STONING,
+    A_CON, A_WIS, ASCENDED, BURNING, CHOKING, DIED, ESCAPED, G_EXTINCT, G_GENOD, GENOCIDED,
+    PANICKED, QUIT, STARVING, STONING, TRICKED,
     In_endgame, In_quest, Is_astralevel, KILLED_BY, KILLED_BY_AN, NO_KILLER_PREFIX, PICK_ONE, STRAT_WAITFORU, TT_LAVA, Upolyd,
 } from './const.js';
 import {
@@ -244,17 +245,30 @@ export async function finishHeroDeath({
     deathLineShown = false,
     deathType = null,
 }: FinishHeroDeathOptions): Promise<boolean> {
+    const how = deathType ?? DIED;
+    if (how === TRICKED && game.flags.debug) {
+        delete game._deathKiller;
+        return false;
+    }
+    if (how === QUIT) {
+        await finishOrdinaryQuit();
+        return true;
+    }
+    if (how === ESCAPED || how === ASCENDED) {
+        await finishLivingGame(how === ESCAPED ? 'escaped' : 'ascended');
+        return true;
+    }
     // losehp() announces the fatal hit before done() changes mortality or
     // identifies a life-saving amulet. tty keeps this message on its own line.
-    if (!deathLineShown) {
+    if (!deathLineShown && how < PANICKED) {
         await plineWithContinuation('You die...', { urgent: true });
     }
     // done() forces status while HP is still raw, then normalizes it for
     // recovery and disclosure. A later pline owns the next status update.
-    await bot();
-    recordHeroFatalEvent();
+    if (how !== PANICKED && !game.program_state.panicking) await bot();
+    if (how < PANICKED) recordHeroFatalEvent();
     const amulet = game.uamul || game.u?.uamul;
-    if (amulet?.otyp === AMULET_OF_LIFE_SAVING) {
+    if (how <= GENOCIDED && amulet?.otyp === AMULET_OF_LIFE_SAVING) {
         await plineWithContinuation('But wait...');
         identifyLifeSavingAmulet();
         await plineWithContinuation(`Your medallion ${heroIsBlind() ? 'feels warm' : 'begins to glow'}!`);
@@ -270,10 +284,10 @@ export async function finishHeroDeath({
         }
     }
 
-    if (game.flags?.debug || game.flags?.explore) {
+    if (how <= GENOCIDED && (game.flags?.debug || game.flags?.explore || game.discover)) {
         const answer = await paranoidQuery(!!((game.flags.paranoia_bits ?? 0) & PARANOID_DIE), 'Die?');
         if (!answer) {
-            await plineWithContinuation("OK, so you don't die.");
+            await plineWithContinuation(`OK, so you don't ${how === CHOKING ? 'choke' : 'die'}.`);
             game._lastPlineKind = PLNMSG_OK_DONT_DIE;
             await restoreHeroAfterDeath({ deathType });
             if (game.program_state.gameover) return true;
@@ -281,7 +295,7 @@ export async function finishHeroDeath({
         }
     }
 
-    await beforeFinalDeath?.();
+    if (how !== PANICKED) await beforeFinalDeath?.();
     setHeroRemainsFromDeath(deathType, game);
     await finishOrdinaryDeath({ killer, killerFormat, deathCause, deathVerb, deathType });
     return true;
@@ -614,7 +628,7 @@ function overviewLines(killer: string, deathVerb = 'killed', deathCause: string 
     return lines;
 }
 
-function gameSummaryValues(outcome: ScoreOutcome): GameSummary {
+function gameSummaryValues(outcome: ScoreOutcome, deathType = DIED): GameSummary {
     requireInitializedHero(game.u);
     const visibleGold = heroGoldAmount(game);
     const gold = visibleGold + hiddenGold(game, true);
@@ -626,7 +640,7 @@ function gameSummaryValues(outcome: ScoreOutcome): GameSummary {
     if (deepest > 20)
         depthBonus += 1000 * (deepest > 30 ? 10 : deepest - 20);
     let score = (game.u?.urexp || 0) + gain + depthBonus;
-    if (outcome === 'died') score -= Math.trunc(gain / 10);
+    if (outcome === 'died' && deathType < PANICKED) score -= Math.trunc(gain / 10);
     const original = game.u.ualignbase?.[1] ?? game.u.ualign.type;
     const current = game.u.ualignbase?.[0] ?? game.u.ualign.type;
     if (outcome === 'ascended' && game.u.ualign.type === original)
@@ -659,6 +673,12 @@ const ENDINGS: readonly string[] = [
     'dissolved in the lava', 'were crushed', 'turned to stone',
     'turned into slime', 'were genocided', 'panicked', 'were tricked',
     'quit', 'escaped', 'ascended',
+];
+
+const DEATH_NAMES: readonly string[] = [
+    'died', 'choked', 'poisoned', 'starvation', 'drowning', 'burning',
+    'dissolving under the heat and pressure', 'crushed', 'turned to stone',
+    'turned into slime', 'genocided', 'panic', 'trickery', 'quit', 'escaped', 'ascended',
 ];
 
 function finalLocationLine(verb: string, score: number): string {
@@ -1329,7 +1349,7 @@ function stopDisclosure(): false {
 async function startGameExit(outcome: ShopExitOutcome, deathType = DIED): Promise<void> {
     game.program_state.gameover = true;
     game.program_state.something_worth_saving = false;
-    await doneObjectCleanup();
+    if (deathType !== PANICKED && !game.program_state.panicking) await doneObjectCleanup();
     if (outcome === 'died' && deathType < PANICKED
         && game.moves <= 1 && !game.program_state.stopprint) {
         // done() has committed zero HP; this pline refreshes that status.
@@ -1363,18 +1383,28 @@ async function completeOrdinaryDeath({
     killer, possessionAnswer = null, deathVerb = 'died', deathCause = null,
     deathType = null, killerFormat = KILLED_BY_AN,
 }: OrdinaryDeathOptions): Promise<void> {
+    const how = deathType ?? DIED;
+    if (!killer && how === GENOCIDED) killerFormat = NO_KILLER_PREFIX;
+    if (!killer && (how === STARVING || how === BURNING)) killerFormat = KILLED_BY;
+    if (!killer || how >= PANICKED) killer = DEATH_NAMES[how] ?? 'died';
+    if (how >= PANICKED) deathCause = killer;
     deathCause ||= deathCauseRecord(killer, deathVerb, deathType, killerFormat);
     if (deathType !== null) deathVerb = ENDINGS[deathType] ?? deathVerb;
     game._deathKiller = killer;
-    const taken = await settleGameExit('died');
-
-    const showSummary = await discloseGame({ killer, deathVerb, deathCause, possessionAnswer, taken });
+    const taken = how === PANICKED ? false : await settleGameExit('died');
+    let showSummary: boolean;
+    if (how === PANICKED) {
+        await displayMessageWindow();
+        showSummary = !game.program_state.stopprint;
+    } else {
+        showSummary = await discloseGame({ killer, deathVerb, deathCause, possessionAnswer, taken });
+    }
 
     if (game._canMakeBones && taken)
         await finishShopkeeperRepossession();
     // really_done() counts remaining loose and contained gold before bones
     // removes the inventory. Repossessed gold has already left the hero.
-    const summary = gameSummaryValues('died');
+    const summary = gameSummaryValues('died', how);
     game.u.urexp = summary.score;
     const arise = game.u.ugrave_arise;
     if (arise !== undefined && arise >= 0 && !game.program_state.stopprint) {
