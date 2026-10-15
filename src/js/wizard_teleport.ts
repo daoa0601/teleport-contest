@@ -103,7 +103,7 @@ async function withTeleportMode(mode: Exclude<TeleportMode, 'w'>, action: () => 
 
 // A spell completes dotele() itself. Direct intrinsic teleport continues in
 // the caller after energy is spent; all refusals leave its time result here.
-export async function prepareWizardTeleportAtWill(): Promise<boolean> {
+export async function prepareTeleportAtWill(): Promise<boolean> {
     requirePlayingGame(game);
     const hero = game.u;
     const teleportation = heroHasTeleportation(game);
