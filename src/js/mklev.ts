@@ -203,7 +203,7 @@ import { premap_detect } from './detect.js';
 import {
     TRUE_RUMORS, FALSE_RUMORS, RANDOM_ENGRAVINGS, RANDOM_EPITAPHS,
 } from './random_text_data.js';
-import { deleteEngravingAt, makeEngravingAt, wipeEngravingAt, wipeoutText } from './engrave.js';
+import { deleteEngravingAt, makeEngravingAt, restoreEngravings, wipeEngravingAt, wipeoutText } from './engrave.js';
 import { registerQuestLeader } from './quest.js';
 import { armorBonus } from './armor.js';
 import { initializeMonsterArmor } from './monworn.js';
@@ -3893,6 +3893,7 @@ async function getbones(): Promise<boolean> {
     if (!validMonsterWormBodies(payload.level)) return false;
 
     restoreMonsterWormHeads(payload.level);
+    restoreEngravings(payload.level);
     const sourceDisplayLevel = game.level;
     game.level = payload.level;
     game.stairs = payload.stairs || null;

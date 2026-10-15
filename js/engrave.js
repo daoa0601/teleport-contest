@@ -189,8 +189,9 @@ export function rewindEngravingsForSave(level) {
         delete engraving.rememberedPrefix;
     }
 }
-// C engrave.c:rest_engravings(). The three text buffers are saved separately.
-export function restoreEngravingPointers(level) {
+// C engrave.c:rest_engravings(). Restored text is complete in this game's
+// timeline, even when an ancestor wrote it much later in a different game.
+export function restoreEngravings(level, moves = game.moves) {
     for (const engraving of level?.engravings ?? []) {
         const text = engraving.text.replace(/^ +/, '');
         engraving.erasedPrefix = (engraving.erasedPrefix ?? '')
@@ -200,6 +201,7 @@ export function restoreEngravingPointers(level) {
         engraving.rememberedPrefix = (engraving.rememberedPrefix ?? '')
             + engraving.rememberedText.slice(0, engraving.rememberedText.length - rememberedText.length);
         engraving.rememberedText = rememberedText;
+        engraving.epoch = moves;
     }
 }
 // C engrave.c:u_wipe_engr().
