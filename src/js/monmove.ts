@@ -458,8 +458,9 @@ import { MONSTER_SOUND } from './monster_data.js';
 import { MONSTER_DIFFICULTY } from './monster_data.js';
 import { depth } from './hacklib.js';
 import { objectMaterial } from './object_material.js';
+import { artifactById } from './artifacts.js';
 import { divideHeroFromWeaponHit } from './monster_weapon_contact.js';
-import { monsterHatesSilver } from './monster_data.js';
+import { monsterHatesBlessings, monsterHatesSilver } from './monster_data.js';
 import { canHeroRiseUp, levelAtDepth } from './dungeon.js';
 import { LEVEL_TELEP } from './const.js';
 import { teleportMonsterThroughPortal, teleportMonsterToRandomLevel } from './teleport.js';
@@ -1854,6 +1855,7 @@ function monsterAttackThreshold(
 // hit: once attack effects and knockback finish, it reduces positive damage
 // by rnd(-uac), with a floor of one.  This is not the AC_VALUE to-hit draw.
 function reduceHeroContactDamage(
+    monster: Monster,
     damage: number,
     state: PlayingGameState,
     rollOne: RollOne,
@@ -1868,7 +1870,10 @@ function reduceHeroContactDamage(
     }
     // mhitu.c:hitmu() applies Half_physical_damage only after negative-AC
     // reduction and rounds odd positive damage upward.
-    if (appliedDamage > 0 && state?.u?.halfPhysicalDamage) {
+    const mitreProtects = state.urole.key === 'priest'
+        && artifactById(state.uarmh?.oartifact, state)?.questArtifact
+        && monsterHatesBlessings(monster);
+    if (appliedDamage > 0 && (state.u.halfPhysicalDamage || mitreProtects)) {
         appliedDamage = Math.trunc((appliedDamage + 1) / 2);
     }
     return appliedDamage;
@@ -5669,7 +5674,7 @@ async function beginHeroAttackSlot(
         );
         if (knockback.defenderDied)
             return { kind: 'hero-attack', hit, damage: 0, heroDied: true, attackType, damageType };
-        damage = reduceHeroContactDamage(damage, state, rollOne, calls);
+        damage = reduceHeroContactDamage(monster, damage, state, rollOne, calls);
         const passive = await finishHeroContactDamage(
             monster,
             damage,
@@ -5713,7 +5718,7 @@ async function beginHeroAttackSlot(
         );
         if (knockback.defenderDied)
             return { kind: 'hero-attack', hit, damage: 0, heroDied: true, attackType, damageType };
-        damage = reduceHeroContactDamage(damage, state, rollOne, calls);
+        damage = reduceHeroContactDamage(monster, damage, state, rollOne, calls);
         const passive = await finishHeroContactDamage(
             monster,
             damage,
@@ -5785,7 +5790,7 @@ async function beginHeroAttackSlot(
         );
         if (knockback.defenderDied)
             return { kind: 'hero-attack', hit, damage: 0, heroDied: true, attackType, damageType };
-        damage = reduceHeroContactDamage(damage, state, rollOne, calls);
+        damage = reduceHeroContactDamage(monster, damage, state, rollOne, calls);
         const passive = await finishHeroContactDamage(
             monster,
             damage,
@@ -6199,7 +6204,7 @@ async function beginHeroAttackSlot(
         );
         if (knockback.defenderDied)
             return { kind: 'hero-attack', hit, damage: 0, heroDied: true, attackType, damageType };
-        damage = reduceHeroContactDamage(damage, state, rollOne, calls);
+        damage = reduceHeroContactDamage(monster, damage, state, rollOne, calls);
         const passive = await finishHeroContactDamage(
             monster,
             damage,
@@ -6623,7 +6628,7 @@ export async function resumeDeferredHeroContact(
         attack.deferredPostHit = false;
         return action;
     }
-    attack.appliedDamage = reduceHeroContactDamage(attack.damage ?? 0, state, rollOne, calls);
+    attack.appliedDamage = reduceHeroContactDamage(action.monster, attack.damage ?? 0, state, rollOne, calls);
     if (attack.permanentDamage && attack.appliedDamage > 0) {
         const damage = attack.appliedDamage;
         let drain = recordRandom(random, calls, Math.trunc(damage / 2) + 1);
