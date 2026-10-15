@@ -397,7 +397,7 @@ export async function digActualHole(x, y, madeBy, ttyp, { state = game } = {}) {
     }
     const shopdoor = IS_DOOR(oldTyp)
         && roomsAt(state.level, x, y, SHOPBASE).length > 0;
-    const oldObjects = [...pileAt(x, y, state)];
+    const oldTopObject = pileAt(x, y, state)[0] ?? null;
     const trap = await maketrap(x, y, ttyp);
     if (!trap)
         return;
@@ -442,8 +442,7 @@ export async function digActualHole(x, y, madeBy, ttyp, { state = game } = {}) {
     if (herosFault && oldTyp === ALTAR) {
         await desecrateAltar(false, oldAltarAlignment, state);
     }
-    const objectsAppeared = newObjects.length !== oldObjects.length
-        || newObjects.some((object, index) => object !== oldObjects[index]);
+    const objectsAppeared = (newObjects[0] ?? null) !== oldTopObject;
     if (ttyp === PIT) {
         if (shopdoor && herosFault) {
             await payForShopDamage('ruin', { state });
