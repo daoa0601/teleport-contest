@@ -2807,7 +2807,7 @@ async function dochat() {
     }
     monster.mstrategy = (monster.mstrategy ?? 0) & ~STRAT_WAITMASK;
     if (!heroIsDeaf(game) && monster.mtame && monster.meating) {
-        if (!canSpotMonster(monster)) map_invisible(x, y);
+        if (!canSpotMonster(monster)) map_invisible(monster.mx, monster.my);
         await plineWithContinuation(`${monsterName(monster, { capitalized: true })} is eating noisily.`);
         return;
     }

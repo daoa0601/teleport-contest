@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { M_AP_OBJECT, STRAT_WAITFORU } from '../js/const.js';
 import { game } from '../js/gstate.js';
+import { glyphAt } from '../js/display.js';
 import { runExtendedCommand } from './support/commands.js';
 import { createMonsterAt, createSaddledSteed } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -54,6 +55,18 @@ void test('chatting at a long worm tail rouses its waiting head without a reply'
     worm.msleeping = 0;
     await runExtendedCommand('chat', 'l');
     assert.equal(worm.mstrategy, 0);
+    assert.equal(game.context.move, 0);
+});
+void test('an unseen eating worm reveals its head when addressed through its tail', async () => {
+    freshObjectRoom();
+    const worm = await createMonsterAt('long worm', 13, 10);
+    worm.wormSegments = [{ x: 12, y: 10 }, { x: 11, y: 10 }];
+    worm.msleeping = 0;
+    worm.mtame = 10;
+    worm.minvis = true;
+    worm.meating = 3;
+    await runExtendedCommand('chat', 'l');
+    assert.equal(glyphAt(13, 10)?.kind, 'invisible');
     assert.equal(game.context.move, 0);
 });
 //# sourceMappingURL=chat_targets.test.js.map
