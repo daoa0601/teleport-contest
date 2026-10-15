@@ -127,7 +127,9 @@ export function quietMonsterName(monster: Pick<Monster, 'mnum' | 'female' | 'sad
 export function monsterName(monster: Monster, {
     capitalized = false, state = game, article = 'the', adjective = '',
     called = false,
-    suppressIt = false, suppressSaddle = !!MGIVENNAME(monster), augmentIt = false,
+    suppressIt = false, suppressSaddle = !!MGIVENNAME(monster)
+        || article === 'your' && !suppressIt && monster === state.u.usteed,
+    augmentIt = false,
     suppressInvisible = false, suppressHallucination = false, exact = false,
 }: MonsterNameOptions = {}): string {
     requireLiveGame(state);

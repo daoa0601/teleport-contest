@@ -87,6 +87,14 @@ void test('a saddle is named on an unnamed mount but not on a named one', async 
     assert.equal(monsterName(pony), 'Penny');
 });
 
+void test('the hero’s own mount name omits its redundant saddle', async () => {
+    freshObjectRoom();
+    const pony = await createSaddledSteed();
+    game.u.usteed = pony;
+
+    assert.equal(monsterName(pony, { article: 'your' }), 'your pony');
+});
+
 void test('a pet quickmimic is named for its borrowed monster appearance', async () => {
     freshObjectRoom();
     requirePlayingGame(game);
