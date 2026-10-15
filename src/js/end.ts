@@ -1,7 +1,7 @@
 // end.js — End-of-game disclosure and terminal presentation.
 // C refs: end.c disclose()/really_done(), insight.c, dungeon.c.
 
-import { PARANOID_DIE, PARANOID_QUIT } from './const.js';
+import { PARANOID_DIE, PARANOID_QUIT, PLNMSG_OK_DONT_DIE } from './const.js';
 import { PanicTermination } from './panic_termination.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { achievementEntries } from './achievements.js';
@@ -261,6 +261,7 @@ export async function finishHeroDeath({
         const answer = await paranoidQuery(!!((game.flags.paranoia_bits ?? 0) & PARANOID_DIE), 'Die?');
         if (!answer) {
             await plineWithContinuation("OK, so you don't die.");
+            game._lastPlineKind = PLNMSG_OK_DONT_DIE;
             await restoreHeroAfterDeath({ deathType });
             if (game.program_state.gameover) return true;
             return false;

@@ -4,7 +4,7 @@
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { exerciseAttribute } from './attrib.js';
-import { A_DEX, GENOCIDED, G_GENOD, M_AP_MONSTER, TIMEOUT, TURNED_SLIME, } from './const.js';
+import { A_DEX, GENOCIDED, G_GENOD, M_AP_MONSTER, PLNMSG_OK_DONT_DIE, TIMEOUT, TURNED_SLIME, } from './const.js';
 import { game, requireLiveGame } from './gstate.js';
 import { heroSpecies } from './hero_species.js';
 import { displayColorName, plineWithContinuation, randomDisplayMonsterName } from './display.js';
@@ -277,7 +277,9 @@ export async function advanceHeroSliming({ state = game, publish = plineWithCont
     if (!genocided) {
         return { active: false, died: false, transformed: true };
     }
-    await publish('Unfortunately, green slime has been genocided...');
+    await publish(state._lastPlineKind === PLNMSG_OK_DONT_DIE
+        ? 'Yes, you do.  Green slime has been genocided...'
+        : 'Unfortunately, green slime has been genocided...', { urgent: true });
     const genocidedDeath = await die({
         killer: 'slimicide',
         deathVerb: 'were genocided',
