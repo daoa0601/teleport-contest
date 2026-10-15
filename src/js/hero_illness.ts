@@ -8,6 +8,7 @@ import type { Hero } from './hero_types.js';
 import type { MessagePublisher } from './display.js';
 import type { DeathHandler } from './end.js';
 import { heroIsHallucinating } from './senses.js';
+import { isIceAt } from './terrain_properties.js';
 import { heroIsUnaware } from './hero_sleep.js';
 import { makeConfused, makeStunned } from './hero_mental_status.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
@@ -16,7 +17,7 @@ import {
     adjustAttribute, currentAttribute, exerciseAttribute,
 } from './attrib.js';
 import {
-    A_CON, ALTAR, FAINTING, ICE, POISONING, SICK_ALL,
+    A_CON, ALTAR, FAINTING, POISONING, SICK_ALL,
     SICK_NONVOMITABLE, SICK_VOMITABLE, TIMEOUT,
 } from './const.js';
 import { pline, plineWithContinuation } from './display.js';
@@ -233,7 +234,7 @@ export async function vomitHero({
     const form = heroMonsterForm(state);
     if (form != null
         && ((MONSTER_FLAGS1[form] ?? 0) & M1_ACID)
-        && state.level?.at(x, y)?.typ === ICE) {
+        && isIceAt(x, y, state)) {
         await melt(x, y, {
             message: 'Your stomach acid melts straight through the ice!',
         });
