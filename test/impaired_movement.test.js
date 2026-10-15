@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { rhack } from '../js/cmd.js';
-import { STONE } from '../js/const.js';
+import { ROOM, STONE, W_NONDIGGABLE } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { initRng } from '../js/rng.js';
 import { installPolymorphedHero } from './support/hero-state.js';
@@ -34,5 +34,23 @@ void test('a stunned grid bug chooses only cardinal movement', async () => {
     initRng(1n);
     await rhack('l'.charCodeAt(0));
     assert.equal(Math.abs(game.u.ux - 10) + Math.abs(game.u.uy - 10), 1);
+});
+void test('a stunned tunnelling hero rerolls undiggable stone to reach an open square', async () => {
+    const level = freshObjectRoom({ hero: { stunnedTurns: 10 } });
+    installPolymorphedHero('rock mole');
+    for (let x = 9; x <= 11; x++) {
+        for (let y = 9; y <= 11; y++) {
+            if (x === 10 && y === 10)
+                continue;
+            const neighbor = level.requireAt(x, y);
+            neighbor.typ = STONE;
+            neighbor.wall_info |= W_NONDIGGABLE;
+        }
+    }
+    level.requireAt(11, 10).typ = ROOM;
+    initRng(1n);
+    await rhack('l'.charCodeAt(0));
+    assert.deepEqual([game.u.ux, game.u.uy], [11, 10]);
+    assert.equal(game.context.move, 1);
 });
 //# sourceMappingURL=impaired_movement.test.js.map

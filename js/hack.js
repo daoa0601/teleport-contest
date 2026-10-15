@@ -179,7 +179,7 @@ export function heroBadRock(state, x, y) {
     if (!IS_OBSTRUCTED(location.typ))
         return false;
     const flags = heroFormFlags(state);
-    const mayDig = !((IS_WALL(location.typ) || location.typ === TREE)
+    const mayDig = !((IS_STWALL(location.typ) || location.typ === TREE)
         && ((location.wall_info ?? 0) & W_NONDIGGABLE));
     const cannotTunnel = !(flags & M1_TUNNEL)
         || !!(flags & M1_NEEDPICK) || !mayDig;
