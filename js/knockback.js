@@ -1,9 +1,8 @@
 // A physical blow can throw a much smaller opponent backward.
 // C uhitm.c:mhitm_knockback() and m_is_steadfast().
-import { heroIsHallucinating } from './senses.js';
 import { artifactById } from './artifacts.js';
-import { D_BROKEN, DISMOUNT_KNOCKED, DOOR, IS_POOL, Is_airlevel, Is_waterlevel, MM_IGNORELAVA, MM_IGNOREWATER, W_SADDLE, isok, } from './const.js';
-import { canSeeMonster, canSpotMonster, plineWithContinuation, randomDisplayMonsterSubject, } from './display.js';
+import { D_BROKEN, DISMOUNT_KNOCKED, DOOR, IS_POOL, Is_airlevel, Is_waterlevel, MGIVENNAME, MM_IGNORELAVA, MM_IGNOREWATER, W_SADDLE, isok, } from './const.js';
+import { canSeeMonster, plineWithContinuation } from './display.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { requireInitializedHero } from './hero_types.js';
 import { canKnockHeroToward, hurtleHero } from './hero_hurtle.js';
@@ -11,7 +10,6 @@ import { AD_PHYS, AD_STCK, AD_WRAP, AT_BUTT, AT_CLAW, AT_ENGL, AT_HUGS, AT_KICK,
 import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_SIZE, MONSTER_SYMBOL } from './monster_data.js';
 import { hurtleMonster, willMonsterHurtle } from './monster_hurtle.js';
 import { setMonsterApparentHeroPosition } from './monster_perception.js';
-import { monsterSentenceSubject } from './monster_sound.js';
 import { monsterName } from './monster_name.js';
 import { monsterWieldedWeapon } from './monster_weapon.js';
 import { LOADSTONE } from './object_data.js';
@@ -56,19 +54,10 @@ export function isSteadfast(actor, state) {
         || (actor === state.u.usteed
             && state.inventory.some(object => object.otyp === LOADSTONE));
 }
-function monsterObjectName(monster) {
-    if (!canSpotMonster(monster))
-        return 'something';
-    const name = monsterSubject(monster).replace(/^The /u, 'the ');
-    return monster.mtame ? name.replace(/^the /u, 'your ') : name;
-}
-function monsterSubject(monster) {
-    if (!canSpotMonster(monster))
-        return 'It';
-    return heroIsHallucinating(game)
-        ? randomDisplayMonsterSubject() : monsterSentenceSubject(monster);
-}
-export async function tryKnockback(attacker, defender, attack, { state = game, random = rn2, publish = plineWithContinuation, weaponUsed = false, hit = true, finishMonsterDeath, finishLiquidDeath, nameMonster = monsterObjectName, wakeDefender, } = {}) {
+export async function tryKnockback(attacker, defender, attack, { state = game, random = rn2, publish = plineWithContinuation, weaponUsed = false, hit = true, finishMonsterDeath, finishLiquidDeath, nameMonster = monster => monsterName(monster, {
+    state, article: 'your',
+    suppressSaddle: !!MGIVENNAME(monster) || monster === state.u.usteed,
+}), wakeDefender, } = {}) {
     requirePlayingGame(state);
     const distance = random(3) ? 1 : 2;
     const weapon = weaponUsed ? wieldedWeapon(attacker, state) : null;
@@ -133,7 +122,7 @@ export async function tryKnockback(attacker, defender, attack, { state = game, r
                 ? `You and ${nameMonster(state.u.usteed)} don't budge.` : "You don't budge.");
         }
         else if (target && canSeeMonster(target)) {
-            await publish(`${monsterSubject(target)} doesn't budge.`);
+            await publish(`${monsterName(target, { state, capitalized: true })} doesn't budge.`);
         }
         return { knocked: false };
     }
@@ -144,7 +133,7 @@ export async function tryKnockback(attacker, defender, attack, { state = game, r
         : target && willMonsterHurtle(target, state, x + dx, y + dy);
     const how = dismount ? 'out of your saddle' : openPath ? 'backward' : 'back';
     if (movingHero || (target && canSeeMonster(target))) {
-        const subject = attackerMonster ? monsterSubject(attackerMonster) : 'You';
+        const subject = attackerMonster ? monsterName(attackerMonster, { state, capitalized: true }) : 'You';
         let object = target ? nameMonster(target) : 'you';
         if (heroTarget && target)
             object = `you and ${nameMonster(target)}`;
