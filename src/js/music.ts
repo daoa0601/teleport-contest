@@ -209,22 +209,20 @@ async function charmSnakes(distance: number) {
             || monster.mcanmove === 0
             || monsterDistance(monster) >= distance) continue;
         const wasPeaceful = !!monster.mpeaceful;
-        const wasVisible = cansee(monster.mx, monster.my)
-            && !monster.mundetected;
+        const wasVisible = canSeeMonster(monster);
         monster.mpeaceful = 1;
         monster.mavenge = 0;
         monster.mstrategy = (monster.mstrategy || 0) & ~STRAT_WAITMASK;
         monster.mundetected = 0;
         newsym(monster.mx, monster.my);
-        if (!cansee(monster.mx, monster.my)) continue;
-        const name = MONSTER_NAME[monster.mnum] || 'snake';
+        if (!canSeeMonster(monster)) continue;
         if (!wasVisible) {
             await plineWithContinuation(
-                `You notice a ${name}, swaying with the music.`,
+                `You notice ${monsterName(monster, { article: 'a' })}, swaying with the music.`,
             );
         } else {
             await plineWithContinuation(
-                `The ${name} freezes, then sways with the music${
+                `${monsterName(monster, { capitalized: true })} freezes, then sways with the music${
                     wasPeaceful ? '' : ', and now seems quieter'
                 }.`,
             );
@@ -241,10 +239,9 @@ async function calmNymphs(distance: number) {
         monster.mpeaceful = 1;
         monster.mavenge = 0;
         monster.mstrategy = (monster.mstrategy || 0) & ~STRAT_WAITMASK;
-        if (cansee(monster.mx, monster.my)) {
-            const name = MONSTER_NAME[monster.mnum] || 'nymph';
+        if (canSeeMonster(monster)) {
             await plineWithContinuation(
-                `The ${name} listens cheerfully to the music, then seems quieter.`,
+                `${monsterName(monster, { capitalized: true })} listens cheerfully to the music, then seems quieter.`,
             );
         }
     }

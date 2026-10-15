@@ -3,7 +3,7 @@ import test from 'node:test';
 import { moveloop_core } from '../js/allmain.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
-import { MAGIC_FLUTE } from '../js/object_data.js';
+import { MAGIC_FLUTE, WOODEN_FLUTE, WOODEN_HARP } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { finishAtCommandInput, installPagerInput } from './support/pager-input.js';
@@ -23,4 +23,22 @@ void test('an applied magic flute puts a grabbing monster into wakeable sleep an
     assert.ok((owlbear.mfrozen ?? 0) > 0);
     assert.equal(game.u.ustuck, null);
 });
+for (const [species, instrument] of [['snake', 'flute'], ['water nymph', 'harp']]) {
+    void test(`playing a wooden ${instrument} calms an invisible ${species} without describing it`, async () => {
+        const input = freshTurnRoom({ heroLevel: 30 });
+        const target = await createMonsterAt(species, 11, 10);
+        target.minvis = true;
+        target.mpeaceful = 0;
+        const object = await addInventoryObject(instrument === 'flute' ? WOODEN_FLUTE : WOODEN_HARP);
+        const messages = [];
+        input.beforeRead = () => { messages.push(game._pending_message); };
+        installPagerInput(input, { expected: /playing|trills|melody|sways|listens/, limit: 8 });
+        pushKeys(`a${object.invlet}y`);
+        await moveloop_core();
+        await finishAtCommandInput(input, moveloop_core, /playing|trills|melody|sways|listens|^$/);
+        messages.push(game._pending_message);
+        assert.equal(target.mpeaceful, 1);
+        assert.doesNotMatch(messages.join('\n'), /sways with the music|listens cheerfully/);
+    });
+}
 //# sourceMappingURL=music_native.test.js.map
