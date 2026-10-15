@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { CORR, HWALL, ROOM, STONE } from '../js/const.js';
+import { CORR, GRAVE, HEADSTONE, HWALL, ROOM, STONE } from '../js/const.js';
 import { init_dungeons } from '../js/dungeon.js';
 import { GameMap } from '../js/game.js';
 import { game, requireGameLevel } from '../js/gstate.js';
@@ -128,5 +128,23 @@ void test('swamp initialization chooses lighting when omitted and maze grids def
     assert.equal(lighting.size, 2, 'unspecified swamp lighting can be lit or unlit');
     await lua.executeAsync('des.level_init({ style = "mazegrid" })');
     assert.equal(requireGameLevel().requireAt(20, 10).typ, STONE);
+});
+void test('Lua graves place their epitaphs and leave trapped squares unchanged', async (t) => {
+    const lua = await levelLua(t);
+    await lua.executeAsync(`
+        des.map({ x = 10, y = 5, map = [[...]] })
+        des.grave(0, 0, "Remembered here")
+        des.trap({ x = 1, y = 0, type = "pit", victim = false })
+        des.grave({ coord = {1, 0}, text = "Cannot be placed" })
+        des.grave({ coord = {2, 0}, text = "Another epitaph" })
+    `);
+    const level = requireGameLevel();
+    assert.equal(level.requireAt(10, 5).typ, GRAVE);
+    assert.equal(level.requireAt(11, 5).typ, ROOM);
+    assert.equal(level.requireAt(12, 5).typ, GRAVE);
+    const epitaph = level.engravings?.find(engraving => engraving.x === 10 && engraving.y === 5);
+    assert.ok(epitaph, 'the grave should have a headstone');
+    assert.equal(epitaph.engr_type, HEADSTONE);
+    assert.equal(epitaph.text, 'Remembered here');
 });
 //# sourceMappingURL=special_level_selection.test.js.map

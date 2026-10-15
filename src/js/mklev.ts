@@ -6774,6 +6774,14 @@ function createLuaLevelSession() {
         },
         engraving: options => createLuaEngraving(context, options),
         gold: async options => await createLuaGold(context, options),
+        grave: async options => {
+            const point = await getLocationCoord(context, options.point, DRY);
+            const level = requireGameLevel();
+            if (!isok(point.x, point.y)
+                || level.traps.some(trap => trap.tx === point.x && trap.ty === point.y)) return;
+            level.requireAt(point.x, point.y).typ = GRAVE;
+            make_grave(point.x, point.y, options.text ?? null);
+        },
         feature: options => createLuaFeature(context, options),
         altar: options => createLuaAltar(context, options),
         nonDiggable: selection => selection

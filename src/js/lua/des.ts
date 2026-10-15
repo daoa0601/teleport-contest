@@ -173,6 +173,7 @@ export interface DesOperations {
     drawbridge(options: DesOptions): DesOperationResult;
     engraving(options: PositionedDesOptions & { type: string; text: string }): DesOperationResult;
     gold(options: PositionedDesOptions): DesOperationResult;
+    grave(options: PositionedDesOptions): DesOperationResult;
     feature(options: { type: string; point: LuaPoint | null }): DesOperationResult;
     altar(options: DesOptions): DesOperationResult;
     nonDiggable(selection: SpecialSelection | null): DesOperationResult;
@@ -664,6 +665,15 @@ export function createDesBindings(
             engravingOptions(value, type, text),
         ),
         gold: (value: LuaValue, x: LuaValue, y: LuaValue) => operations.gold(goldOptions(value, x, y)),
+        grave: (value: LuaValue, y: LuaValue, text: LuaValue) => {
+            const options = value instanceof LuaTable ? tableOptions(value) : {};
+            return operations.grave({
+                ...options,
+                ...(text == null ? {} : { text: String(text) }),
+                point: point(options.coord) ?? point(options.x, options.y)
+                    ?? point(luaArgument(value), luaArgument(y)),
+            });
+        },
         feature: (type: LuaValue, x: LuaValue, y: LuaValue) => operations.feature({
             type: String(type),
             point: point(luaArgument(x), luaArgument(y)),

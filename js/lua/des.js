@@ -464,6 +464,15 @@ export function createDesBindings(operations, wrapSelection) {
         drawbridge: (value) => operations.drawbridge(tableOptions(value)),
         engraving: (value, type, text) => operations.engraving(engravingOptions(value, type, text)),
         gold: (value, x, y) => operations.gold(goldOptions(value, x, y)),
+        grave: (value, y, text) => {
+            const options = value instanceof LuaTable ? tableOptions(value) : {};
+            return operations.grave({
+                ...options,
+                ...(text == null ? {} : { text: String(text) }),
+                point: point(options.coord) ?? point(options.x, options.y)
+                    ?? point(luaArgument(value), luaArgument(y)),
+            });
+        },
         feature: (type, x, y) => operations.feature({
             type: String(type),
             point: point(luaArgument(x), luaArgument(y)),
