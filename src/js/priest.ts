@@ -10,6 +10,8 @@ import type { DungeonLocation } from './dungeon_types.js';
 import type { Monster, PriestData, MinionData } from './monster_types.js';
 import type { Room } from './map_types.js';
 import { deityName } from './alignment.js';
+import { recordAchievement } from './achievements.js';
+import { setMonsterMalign } from './monster_alignment.js';
 import { angerMonster, wakeMonster } from './monster_anger.js';
 import { canSeeMonster, plineWithContinuation } from './display.js';
 import type { MessagePublisher } from './display.js';
@@ -20,12 +22,13 @@ import { cansee, couldsee } from './vision.js';
 import { d, rn2 } from './rng.js';
 import {
     A_NONE, A_WIS, AM_SHRINE, Amask2align, BOLT_LIM, D_CLOSED, D_LOCKED,
-    IS_ALTAR, IS_DOOR, IS_OBSTRUCTED, LAVAWALL, TEMPLE, WATER,
+    ACH_TMPL, In_endgame, IS_ALTAR, IS_DOOR, IS_OBSTRUCTED, LAVAWALL, TEMPLE, WATER,
 } from './const.js';
 import { roomForRoomno, roomsAt } from './room.js';
 import { MONSTER_FLAGS2 } from './monster_data.js';
 import { removeMonsterFromGame } from './monster_departure.js';
 import { monsterName } from './monster_name.js';
+import { heroIsHallucinating } from './senses.js';
 
 const M2_MINION = 0x00001000;
 const PM_DEATH = 311, PM_PESTILENCE = 312, PM_FAMINE = 313;
@@ -262,6 +265,7 @@ export async function intemple(roomno: number, state: GameState = game): Promise
         return null;
     }
 
+    recordAchievement(state, ACH_TMPL);
     const epri = priestData(priest);
     if (!epri) throw new Error('Temple entry requires the resident shrine record.');
     epri.intone_time ??= 0;
@@ -271,21 +275,41 @@ export async function intemple(roomno: number, state: GameState = game): Promise
     const moves = state.moves ?? 0;
     const canSpeak = priestCanSpeak(priest, state);
     const shrined = priestHasShrine(priest, state);
+    const inSanctum = !!state.sanctum_level && sameLevel(state.sanctum_level, state.u.uz);
+    const sanctum = priest.mnum === 276 && (inSanctum || In_endgame(state.u.uz));
 
     if (canSpeak && moves >= epri.intone_time) {
-        await plineWithContinuation(
-            `${visiblePriestName(priest, state)} intones:`,
-        );
+        const wasPriest = priest.ispriest;
+        try {
+            if (sanctum && !heroIsHallucinating(state)) priest.ispriest = 0;
+            await plineWithContinuation(`${visiblePriestName(priest, state)} intones:`);
+        } finally {
+            if (wasPriest === undefined) delete priest.ispriest;
+            else priest.ispriest = wasPriest;
+        }
         epri.intone_time = moves + d(10, 500);
         epri.enter_time = 0;
     }
 
-    if (moves >= epri.enter_time && canSpeak) {
-        await plineWithContinuation(
-            `"Pilgrim, you enter a ${shrined ? 'sacred' : 'desecrated'} place!"`,
-        );
+    let greeting: string | null = null;
+    let followup: string | null = null;
+    if (sanctum && inSanctum) {
+        if (priest.mpeaceful) {
+            greeting = "Infidel, you have entered Moloch's Sanctum!";
+            followup = 'Be gone!';
+            priest.mpeaceful = 0;
+            setMonsterMalign(priest, state);
+        } else greeting = 'You desecrate this place by your presence!';
+    } else if (moves >= epri.enter_time) {
+        greeting = `Pilgrim, you enter a ${shrined ? 'sacred' : 'desecrated'} place!`;
+    }
+    if (greeting && canSpeak) {
+        await plineWithContinuation(`"${greeting}"`);
+        if (followup) await plineWithContinuation(`"${followup}"`);
         epri.enter_time = moves + d(10, 100);
     }
+
+    if (sanctum) return priest;
 
     const coaligned = priestIsCoaligned(priest, state);
     const forbidding = !shrined || !coaligned
