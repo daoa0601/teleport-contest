@@ -35,6 +35,7 @@ export interface DesOptions {
     buc?: string;
     dir?: string;
     direction?: string;
+    destwall?: string;
     fg?: string;
     filling?: string;
     fromterrain?: string;
@@ -43,6 +44,7 @@ export interface DesOptions {
     mapfragment?: string;
     name?: string;
     state?: string;
+    srcwall?: string;
     style?: string;
     text?: string;
     toterrain?: string;
@@ -57,6 +59,8 @@ export interface DesOptions {
     chance?: number;
     corrwid?: number;
     damage?: number;
+    destdoor?: number;
+    destroom?: number;
     eroded?: number;
     filled?: number;
     fleeing?: number;
@@ -72,6 +76,8 @@ export interface DesOptions {
     recharged?: number;
     seentraps?: number;
     spe?: number;
+    srcdoor?: number;
+    srcroom?: number;
     ttl?: number;
     w?: number;
     wallthick?: number;
@@ -192,6 +198,7 @@ export interface DesOperations {
     exclusion(options: DesOptions): DesOperationResult;
     gasCloud(options: DesSelectionOptions): DesOperationResult;
     randomCorridors(): DesOperationResult;
+    corridor(options: DesOptions): DesOperationResult;
     mazeWalk(options: DesOptions & { dir: string; stocked: boolean }): DesOperationResult;
     object(options: DesObjectOptions): LuaValue | Promise<LuaValue>;
     trap(options: PositionedDesOptions & { trapType: number | null }): DesOperationResult;
@@ -233,8 +240,8 @@ function tableOptions(value: LuaValue | undefined): DesOptions {
     const options: DesOptions = {};
     for (const key of [
         'id', 'class', 'montype', 'appear_as', 'align', 'bg', 'buc', 'dir',
-        'direction', 'fg', 'filling', 'fromterrain', 'halign', 'map', 'mapfragment',
-        'name', 'state', 'style', 'text', 'toterrain', 'typ', 'type', 'valign',
+        'direction', 'destwall', 'fg', 'filling', 'fromterrain', 'halign', 'map', 'mapfragment',
+        'name', 'state', 'srcwall', 'style', 'text', 'toterrain', 'typ', 'type', 'valign',
         'wall', 'xalign', 'yalign'
     ] as const) {
         const entry = value.get(key);
@@ -244,9 +251,9 @@ function tableOptions(value: LuaValue | undefined): DesOptions {
         options[key] = entry;
     }
     for (const key of [
-        'amount', 'blinded', 'chance', 'corrwid', 'damage', 'eroded', 'filled', 'fleeing',
+        'amount', 'blinded', 'chance', 'corrwid', 'damage', 'destdoor', 'destroom', 'eroded', 'filled', 'fleeing',
         'gem_prob', 'gold_prob', 'h', 'kelp_moat', 'kelp_pool', 'm_lev_adj',
-        'paralyzed', 'pos', 'quantity', 'recharged', 'seentraps', 'spe', 'ttl', 'w',
+        'paralyzed', 'pos', 'quantity', 'recharged', 'seentraps', 'spe', 'srcdoor', 'srcroom', 'ttl', 'w',
         'wallthick', 'x', 'x1', 'x2', 'y', 'y1', 'y2'
     ] as const) {
         const entry = value.get(key);
@@ -714,6 +721,7 @@ export function createDesBindings(
             });
         },
         random_corridors: () => operations.randomCorridors(),
+        corridor: (value: LuaValue) => operations.corridor(tableOptions(value)),
         mazewalk: (value: LuaValue, y: LuaValue, direction: LuaValue) => operations.mazeWalk(
             mazeWalkOptions(value, y, direction),
         ),

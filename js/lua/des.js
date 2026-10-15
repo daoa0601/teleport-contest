@@ -39,8 +39,8 @@ function tableOptions(value) {
     const options = {};
     for (const key of [
         'id', 'class', 'montype', 'appear_as', 'align', 'bg', 'buc', 'dir',
-        'direction', 'fg', 'filling', 'fromterrain', 'halign', 'map', 'mapfragment',
-        'name', 'state', 'style', 'text', 'toterrain', 'typ', 'type', 'valign',
+        'direction', 'destwall', 'fg', 'filling', 'fromterrain', 'halign', 'map', 'mapfragment',
+        'name', 'state', 'srcwall', 'style', 'text', 'toterrain', 'typ', 'type', 'valign',
         'wall', 'xalign', 'yalign'
     ]) {
         const entry = value.get(key);
@@ -51,9 +51,9 @@ function tableOptions(value) {
         options[key] = entry;
     }
     for (const key of [
-        'amount', 'blinded', 'chance', 'corrwid', 'damage', 'eroded', 'filled', 'fleeing',
+        'amount', 'blinded', 'chance', 'corrwid', 'damage', 'destdoor', 'destroom', 'eroded', 'filled', 'fleeing',
         'gem_prob', 'gold_prob', 'h', 'kelp_moat', 'kelp_pool', 'm_lev_adj',
-        'paralyzed', 'pos', 'quantity', 'recharged', 'seentraps', 'spe', 'ttl', 'w',
+        'paralyzed', 'pos', 'quantity', 'recharged', 'seentraps', 'spe', 'srcdoor', 'srcroom', 'ttl', 'w',
         'wallthick', 'x', 'x1', 'x2', 'y', 'y1', 'y2'
     ]) {
         const entry = value.get(key);
@@ -499,6 +499,7 @@ export function createDesBindings(operations, wrapSelection) {
             });
         },
         random_corridors: () => operations.randomCorridors(),
+        corridor: (value) => operations.corridor(tableOptions(value)),
         mazewalk: (value, y, direction) => operations.mazeWalk(mazeWalkOptions(value, y, direction)),
         trap: (type, x, y) => operations.trap(trapOptions(type, x, y)),
         monster: (id, x, y) => operations.monster(monsterOptions(id, x, y)),

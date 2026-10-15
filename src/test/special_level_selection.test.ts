@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import type { TestContext } from 'node:test';
 
 import { CLOUD, CORR, D_CLOSED, FOUNTAIN, F_LOOTED, F_WARNED, GRAVE, HEADSTONE, HWALL,
-    ROOM, SDOOR, STONE, S_LDWASHER, S_LPUDDING, S_LRING, T_LOOTED,
+    ROOM, SCORR, SDOOR, STONE, S_LDWASHER, S_LPUDDING, S_LRING, T_LOOTED,
     TREE_LOOTED, TREE_SWARM } from '../js/const.js';
 import { init_dungeons } from '../js/dungeon.js';
 import { GameMap } from '../js/game.js';
@@ -261,4 +261,23 @@ void test('Lua terrain closes and orients secret doors and removes engravings un
     assert.equal(door.horizontal, true);
     assert.equal(level.requireAt(13, 5).typ, CLOUD);
     assert.equal(level.engravings?.some(engraving => engraving.x === 13 && engraving.y === 5), false);
+});
+
+void test('Lua corridors join the requested doors of two rooms', async t => {
+    const lua = await levelLua(t);
+    await lua.executeAsync(`
+        des.map({ x = 10, y = 5, map = [[---     ---
+|.|     |.|
+---     ---]] })
+        des.region({ region = {1,1,1,1}, irregular = true, lit = 0 })
+        des.region({ region = {9,1,9,1}, irregular = true, lit = 0 })
+        des.door("open", 2, 1)
+        des.door("open", 8, 1)
+        des.corridor({ srcroom = 0, srcdoor = 0, srcwall = "east",
+            destroom = 1, destdoor = 0, destwall = "west" })
+    `);
+    const level = requireGameLevel();
+    for (let x = 13; x <= 17; x++)
+        assert.ok([CORR, SCORR].includes(level.requireAt(x, 6).typ), `corridor should reach ${x},6`);
+    assert.equal(level.requireAt(15, 7).typ, STONE);
 });

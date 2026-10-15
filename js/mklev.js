@@ -5975,6 +5975,48 @@ function createLuaDoor(context, { state, point, wall = 'all', pos = -1, }) {
         throw new Error(`unknown Lua door state ${state}`);
     return specialDoorAt(context, mask, point.x, point.y);
 }
+async function createLuaCorridor(options) {
+    const { srcroom, srcdoor, destroom, destdoor } = options;
+    if (srcroom === undefined || srcdoor === undefined || destroom === undefined || destdoor === undefined)
+        throw new TypeError('des.corridor requires source and destination rooms and door indices');
+    if (srcroom === -1) {
+        await makecorridors();
+        return;
+    }
+    const srcwall = options.srcwall ?? 'all', destwall = options.destwall ?? 'all';
+    if (['all', 'random'].includes(srcwall) || ['all', 'random'].includes(destwall)) {
+        await impossible('create_corridor to/from a random wall');
+        return;
+    }
+    const level = requireGameLevel();
+    const source = level.rooms[srcroom], destination = level.rooms[destroom];
+    if (!isRoom(source) || !isRoom(destination))
+        return;
+    const start = corridorDoorEndpoint(source, srcwall, srcdoor);
+    const end = corridorDoorEndpoint(destination, destwall, destdoor);
+    if (start && end)
+        await dig_corridor(start, end, null, false, CORR, STONE);
+}
+// sp_lev.c:search_door() numbers doors along a wall in increasing map order.
+function corridorDoorEndpoint(room, wall, door) {
+    if (!['north', 'south', 'east', 'west'].includes(wall))
+        throw new TypeError(`Unknown corridor wall: ${wall}`);
+    const vertical = wall === 'east' || wall === 'west';
+    const dx = wall === 'east' ? 1 : wall === 'west' ? -1 : 0;
+    const dy = wall === 'south' ? 1 : wall === 'north' ? -1 : 0;
+    let x = wall === 'east' ? room.hx + 1 : room.lx + dx;
+    let y = wall === 'south' ? room.hy + 1 : room.ly + dy;
+    while (x <= room.hx + 1 && y <= room.hy + 1) {
+        const cell = requireGameLevel().at(x, y);
+        if (cell && (IS_DOOR(cell.typ) || cell.typ === SDOOR) && door-- <= 0)
+            return { x: x + dx, y: y + dy };
+        if (vertical)
+            y++;
+        else
+            x++;
+    }
+    return null;
+}
 function createLuaDrawbridge(context, options) {
     const coordinate = luaCoordinate(options);
     if (!coordinate)
@@ -6620,8 +6662,6 @@ function createLuaLevelSession() {
             });
         },
         roomRegion: async (options) => {
-            if (roomFailed)
-                return null;
             const room = await createLuaRoomRegion(context, options);
             if (!room || !options.contents)
                 return room;
@@ -6747,6 +6787,7 @@ function createLuaLevelSession() {
             return cloud;
         },
         randomCorridors: async () => await makecorridors(),
+        corridor: createLuaCorridor,
         mineralize: options => mineralize(options.kelp_pool ?? -1, options.kelp_moat ?? -1, options.gold_prob ?? -1, options.gem_prob ?? -1, true),
         mazeWalk: async (options) => {
             const directions = ['north', 'south', 'east', 'west'];
