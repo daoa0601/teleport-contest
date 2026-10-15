@@ -1764,7 +1764,18 @@ export async function travelStairs(up) {
             game.context.move = 1;
             return true;
         }
-        await pline(`You can't go ${up ? 'up' : 'down'} here.`);
+        const pick = game.uwep || game.u.uwep;
+        if (!up && game.flags.autodig && !game.context.nopick && pick && isPick(pick)) {
+            const result = await applyPickAxeDirection(pick, {
+                state: game,
+                attackMonster: (target) => attackHostileMonster(target, target.mx, target.my),
+                payShopkeeper: dopay,
+            });
+            game.context.move = result.spentTime ? 1 : 0;
+            return result.spentTime;
+        }
+        const vibratingSquare = !up && level.traps.some(trap => trap.tx === game.u.ux && trap.ty === game.u.uy && trap.ttyp === VIBRATING_SQUARE);
+        await pline(`You can't go ${up ? 'up' : 'down'} here${vibratingSquare ? ' yet' : ''}.`);
         game.context.move = 0;
         return false;
     }
