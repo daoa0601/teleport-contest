@@ -6,12 +6,14 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { addInventoryItem } from '../js/u_init.js';
 import { setPrimaryWeapon } from '../js/weapon_slots.js';
 import { runClaimedGlobTimer } from '../js/glob.js';
+import { beginObjectBurn } from '../js/light.js';
+import { punishHero } from '../js/punishment.js';
 import { placeCreatedObject } from '../js/floor_object.js';
 import { moveloop_core } from '../js/allmain.js';
 import { giveSpecialMonsterObject, makemonAt, mksobj, } from '../js/mklev.js';
 import { commitPetPickup, finishDeferredMonsterMiscItem, takeMonsterTurn, } from '../js/monmove.js';
 import { addObjectToMonsterInventory, linkObjectToMonsterInventory, removeObjectFromMonsterInventory, } from '../js/monster_inventory.js';
-import { BULLWHIP, DAGGER, FIGURINE, GLOB_OF_GRAY_OOZE, GOLD_PIECE, LUCKSTONE, MACE, SCR_IDENTIFY, SKELETON_KEY, SPEED_BOOTS, SPE_BOOK_OF_THE_DEAD, WAN_STRIKING, } from '../js/object_data.js';
+import { BULLWHIP, DAGGER, FIGURINE, GLOB_OF_GRAY_OOZE, GOLD_PIECE, LUCKSTONE, MACE, SCR_IDENTIFY, SKELETON_KEY, SPEED_BOOTS, OIL_LAMP, SPE_BOOK_OF_THE_DEAD, TALLOW_CANDLE, WAN_STRIKING, } from '../js/object_data.js';
 import { claimNextDueObjectTimer, OBJECT_TIMER_KIND, objectTimers, objectsInTimerGraph, scheduleObjectTimer, stopAllObjectTimers, } from '../js/object_timers.js';
 import { initRng } from '../js/rng.js';
 import { pushKeys, resetInputState } from '../js/input.js';
@@ -22,6 +24,59 @@ import { createMonsterAt, createSaddledSteed, equipMonsterObject } from './suppo
 import { freshObjectRoom } from './support/object-room.js';
 import { corpseObject, floorObject, knownObject } from './support/game-objects.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
+for (const flight of ['_thrownObject', '_kickedObject']) {
+    void test(`monster pickup releases the ${flight === '_thrownObject' ? 'thrown' : 'kicked'} object from flight`, async () => {
+        freshObjectRoom();
+        requirePlayingGame(game);
+        const monster = await createMonsterAt('soldier', 11, 10, NO_MINVENT);
+        const dagger = await knownObject(DAGGER);
+        game[flight] = dagger;
+        await addObjectToMonsterInventory(monster, dagger, game);
+        assert.ok(game[flight] === null, 'The flight can no longer place a monster-owned object');
+        assert.equal(dagger.where, 'minvent');
+        assert.ok(monster.minvent.includes(dagger));
+    });
+}
+for (const light of [
+    { type: OIL_LAMP, quantity: 1, message: 'The oil lamp goes out.' },
+    { type: TALLOW_CANDLE, quantity: 3, message: 'The tallow candles go out.' },
+]) {
+    void test(`an engulfed hero sees ${light.quantity === 1 ? 'a lamp' : 'a candle stack'} go out before pickup`, async () => {
+        freshObjectRoom();
+        requirePlayingGame(game);
+        const monster = await createMonsterAt('purple worm', 11, 10, NO_MINVENT);
+        game.u.uswallow = 1;
+        game.u.ustuck = monster;
+        const source = await knownObject(light.type, { age: 300, quan: light.quantity });
+        beginObjectBurn(source);
+        const input = resetInputState();
+        installPagerInput(input, { expected: /lamp|candles/, limit: 4 });
+        await addObjectToMonsterInventory(monster, source, game);
+        assert.equal(source.lamplit, false);
+        assert.equal(source.where, 'minvent');
+        assert.equal(game._pending_message, light.message);
+    });
+}
+for (const part of ['ball', 'chain']) {
+    void test(`monster pickup refuses the hero's attached ${part} without disturbing punishment`, async () => {
+        freshObjectRoom();
+        requirePlayingGame(game);
+        const monster = await createMonsterAt('soldier', 11, 10, NO_MINVENT);
+        installPagerInput(resetInputState(), {
+            expected: /punished|monster .*attached|Program in disorder|Please report/,
+            limit: 8,
+        });
+        await punishHero();
+        const object = part === 'ball' ? game.uball : game.uchain;
+        assert.ok(object);
+        const pickup = await addObjectToMonsterInventory(monster, object, game);
+        assert.ok(pickup === null);
+        assert.equal(object.where, 'floor');
+        assert.equal(game.u.punished, true);
+        assert.ok(monster.minvent.length === 0);
+        assert.ok(part === 'ball' ? game.uball === object : game.uchain === object);
+    });
+}
 void test('a pet returns a fetched item but keeps its worn saddle', async () => {
     freshObjectRoom();
     requirePlayingGame(game);
