@@ -1,13 +1,14 @@
 // What an altar reveals when an object lands on it.
 // C ref: do.c doaltarobj().
 
-import { plineWithContinuation } from './display.js';
+import { displayColorName, plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
 import { inventoryItemDescription } from './invent.js';
 import {
     simpleObjectNameWithArticle, observeObjectForNaming,
 } from './objnam.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
+import { withIndefiniteArticle } from './object_grammar.js';
 
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
@@ -62,10 +63,8 @@ export async function landObjectOnAltar(
     const plural = quantity > 1;
     const hallucinating = heroIsHallucinating(state);
     if (object.blessed || object.cursed) {
-        const color = hallucinating
-            ? 'multicolored' : object.blessed ? 'amber' : 'black';
-        const article = /^[aeiou]/i.test(color) ? 'an' : 'a';
-        await publish(`There is ${article} ${color} flash as ${
+        const color = displayColorName(object.blessed ? 'amber' : 'black', state);
+        await publish(`There is ${withIndefiniteArticle(color)} flash as ${
             description
         } ${plural ? 'hit' : 'hits'} the altar.`);
         if (!hallucinating) rememberBlessingOrCurse(object);
