@@ -8,7 +8,7 @@ import {
     W_ARMG, W_ARMS, W_WEP,
 } from './const.js';
 import {
-    objectName, observeObjectForNaming, observeDistantObjectForNaming, ownedObjectName,
+    objectName, objectCombatName, observeObjectForNaming, observeDistantObjectForNaming, ownedObjectName,
 } from './objnam.js';
 import { artifactById, artifactEmitsLight, monsterCanTouchArtifact } from './artifacts.js';
 import { monsterHandName } from './body_parts.js';
@@ -26,12 +26,10 @@ import { monsterCanTouchObject } from './monster_carry.js';
 import { unlinkMonsterObject } from './monster_inventory.js';
 import { monsterName, monsterPossessive as perceivedPossessivePronoun } from './monster_name.js';
 import { monsterSentenceSubject } from './monster_sound.js';
-import { isPoisonableObject } from './object_properties.js';
-import { recordObjectEncounter } from './object_knowledge.js';
 import {
     AKLYS, AXE, BATTLE_AXE, BOULDER, BOW, BULLWHIP, CLUB, CORPSE, CREAM_PIE,
     CROSSBOW, DART, DWARVISH_MATTOCK, EGG, ELVEN_BOW, LOADSTONE,
-    OBJECT_BIMANUAL, OBJECT_DESCRIPTIONS, OBJECT_NAMES, OBJECT_SUBTYPE,
+    OBJECT_BIMANUAL, OBJECT_NAMES, OBJECT_SUBTYPE,
     ORCISH_BOW, PICK_AXE, SLING, YUMI, requireObjectData,
 } from './object_data.js';
 import { makePlural } from './object_grammar.js';
@@ -92,8 +90,6 @@ export async function swingMonsterWeapon(
 ): Promise<void> {
     if (!state.flags.verbose || heroIsBlind(state)
         || !(defender ? monsterVisible(monster) : canSeeMonster(monster))) return;
-    weapon.dknown = true;
-    recordObjectEncounter(weapon.otyp, state);
     const x = defender ? defender.mx : state.u.ux;
     const y = defender ? defender.my : state.u.uy;
     const bash = isPolearm(weapon)
@@ -103,29 +99,9 @@ export async function swingMonsterWeapon(
     const verb = monsterWeaponSwingVerb(weapon, bash, random);
     const quantity = weapon.quan > 1 ? 'one of ' : '';
     const possessive = perceivedPossessivePronoun(monster, { state, random });
-    const name = meleeWeaponName(weapon, state);
+    const name = objectCombatName(weapon, { state, includeCorpseSpecies: false });
     const target = defender ? ` at ${monsterName(defender, { state })}` : '';
     await publish(`${subject} ${verb} ${quantity}${possessive} ${name}${target}.`);
-}
-
-// mswings uses xname(), so it does not show BUC or enchantment.
-function meleeWeaponName(weapon: GameObject, state: GameState): string {
-    const artifact = artifactById(weapon.oartifact, state);
-    if (artifact) return artifact.name;
-    const known = weapon.typeKnown || state._knownObjectTypes?.has(weapon.otyp);
-    const appearance = state.objectDescriptions?.[weapon.otyp] ?? OBJECT_DESCRIPTIONS[weapon.otyp];
-    const baseName = requireObjectData(OBJECT_NAMES, weapon.otyp);
-    if (baseName === null) throw new Error(`Weapon ${weapon.o_id} has no native object name`);
-    let name = known ? baseName : appearance || baseName;
-    if (weapon.otyp === CORPSE) {
-        if (weapon.corpsenm === undefined)
-            throw new Error(`Corpse weapon ${weapon.o_id} has no species`);
-        name = `${requireMonsterData(MONSTER_NAME, weapon.corpsenm)} corpse`;
-    }
-    if (weapon.quan > 1) name = makePlural(name);
-    if (weapon.opoisoned && isPoisonableObject(weapon)) name = `poisoned ${name}`;
-    if (weapon.oextra?.oname) name += ` named ${weapon.oextra.oname}`;
-    return name;
 }
 
 // C weapon.c:rwep[] order. A melee weapon is not automatically a missile.
