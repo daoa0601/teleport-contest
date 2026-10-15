@@ -1,7 +1,7 @@
 // Musical instruments and their effects.
 // C ref: music.c.
 import { formatFeltMessage } from './hero_speech.js';
-import { heroIsHallucinating } from './senses.js';
+import { heroIsBlind, heroIsDeaf, heroIsHallucinating, syncDeafness } from './senses.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { A_DEX, A_WIS, COLNO, In_endgame, In_sokoban, In_V_tower, Is_astralevel, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, ROWNO, STRAT_WAITMASK, } from './const.js';
 import { tameMonster } from './monster_taming.js';
@@ -27,7 +27,6 @@ import { askForTune, playTune } from './passtune.js';
 import { heroCanBlow, heroFormSticks } from './hero_species.js';
 import { d, rnd, rn2 } from './rng.js';
 import { promptYesNoQuit } from './query.js';
-import { syncDeafness } from './senses.js';
 import { promptDirection } from './tty_prompts.js';
 import { zapRayWithObject } from './zap.js';
 const G_UNIQ = 0x1000;
@@ -105,9 +104,6 @@ function improvisedNotes() {
         notes += noteNames[rn2(noteNames.length)];
     game.context.jingle = notes;
     return { notes, familiar: false };
-}
-function heroIsDeaf() {
-    return !!(game.deaf || (game.u?.deafTurns ?? 0) > 0);
 }
 function heroIsImpaired() {
     const hero = game.u;
@@ -311,7 +307,7 @@ async function playElementalHorn(instrument, element) {
         }
     }
     else {
-        if (!(game.blind || (game.u?.blindTurns ?? 0) > 0)) {
+        if (!heroIsBlind()) {
             await plineWithContinuation(`A bolt of ${element} blasts out of the horn!`);
         }
         result = await zapRayWithObject(instrument);

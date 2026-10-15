@@ -17,10 +17,7 @@ import { game } from './gstate.js';
 import type { GameObject } from './object_types.js';
 import { definiteName, objectCombatName } from './objnam.js';
 import { getLine, promptYesNoQuit } from './query.js';
-
-function heroIsDeaf() {
-    return !!(game.deaf || (game.u?.deafTurns ?? 0) > 0);
-}
+import { heroIsDeaf } from './senses.js';
 
 function nearbyDrawbridge() {
     for (let y = (game.u?.uy || 0) - 1;

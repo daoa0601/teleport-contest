@@ -9,9 +9,7 @@ import { pline, plineWithContinuation, } from './display.js';
 import { game } from './gstate.js';
 import { definiteName, objectCombatName } from './objnam.js';
 import { getLine, promptYesNoQuit } from './query.js';
-function heroIsDeaf() {
-    return !!(game.deaf || (game.u?.deafTurns ?? 0) > 0);
-}
+import { heroIsDeaf } from './senses.js';
 function nearbyDrawbridge() {
     for (let y = (game.u?.uy || 0) - 1; y <= (game.u?.uy || 0) + 1; y++) {
         for (let x = (game.u?.ux || 0) - 1; x <= (game.u?.ux || 0) + 1; x++) {
