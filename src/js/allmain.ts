@@ -282,7 +282,7 @@ import {
     getHungry, recoverHeroFromFainting, regainHearingAfterHelplessness,
 } from './hunger.js';
 import { chatWithQuestLeader, isQuestLeader } from './quest.js';
-import { deliverCommonQuestInsult } from './quest_pager.js';
+import { publishMonsterCuss } from './monster_cuss.js';
 import { monsterAlignmentType } from './monster_alignment.js';
 import { moveElementalBubbles } from './elemental.js';
 import {
@@ -2037,81 +2037,13 @@ function visibleMonsterSubject(monster: Monster): string {
     return monsterName(monster, { capitalized: true });
 }
 
-const M2_MINION = 0x00001000;
-
-const WIZARD_CUSS_INSULTS = [
-    'antic', 'blackguard', 'caitiff', 'chucklehead', 'coistrel', 'craven',
-    'cretin', 'cur', 'dastard', 'demon fodder', 'dimwit', 'dolt', 'fool',
-    'footpad', 'imbecile', 'knave', 'maledict', 'miscreant', 'niddering',
-    'poltroon', 'rattlepate', 'reprobate', 'scapegrace', 'varlet', 'villein',
-    'wittol', 'worm', 'wretch',
-];
-const WIZARD_CUSS_MALEDICTIONS = [
-    'Hell shall soon claim thy remains,',
-    'I chortle at thee, thou pathetic',
-    'Prepare to die, thou',
-    'Resistance is useless,',
-    'Surrender or die, thou',
-    'There shall be no mercy, thou',
-    'Thou shalt repent of thy cunning,',
-    'Thou art as a flea to me,',
-    'Thou art doomed,',
-    'Thy fate is sealed,',
-    'Verily, thou shalt be one dead',
-];
-
 async function presentMonsterCuss(action: MonsterAction): Promise<void> {
-    const game = requireInitializedGame();
-    if (heroIsDeaf(game)) return;
-    const monster = action.monster;
-    const minion = !!((MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_MINION);
-    if (monster.iswiz) {
-        await plineWithContinuation(selectWizardCussMessage(action, monster));
-    } else if (minion && monsterAlignmentType(monster) === 1
-        && !(monster.isminion && monster.emin?.renegade)) {
-        await deliverCommonQuestInsult('angel_cuss', game);
-    } else {
-        const ancestry = rn2(minion ? 100 : 5) === 0;
-        action.calls.push(`rn2(${minion ? 100 : 5})`);
-        if (ancestry)
-            await plineWithContinuation(`${visibleMonsterSubject(monster)} casts aspersions on your ancestry.`);
-        else await deliverCommonQuestInsult('demon_cuss', game);
-    }
-    wakeMonstersNear(monster.mx, monster.my, 25);
+    await publishMonsterCuss(action.monster, requireInitializedGame(), sides => {
+        action.calls.push(`rn2(${sides})`);
+        return rn2(sides);
+    });
 }
 
-function selectWizardCussMessage(action: MonsterAction, monster: Monster): string {
-    const game = requireInitializedGame();
-    const roll = (sides: number): number => {
-        const value = rn2(sides);
-        action.calls.push('rn2(' + sides + ')');
-        return value;
-    };
-    if (roll(5) === 0)
-        return visibleMonsterSubject(monster) + ' laughs fiendishly.';
-    if (game.u?.uhave?.amulet
-        && roll(WIZARD_CUSS_INSULTS.length) === 0) {
-        return '"Relinquish the amulet, '
-            + WIZARD_CUSS_INSULTS[roll(WIZARD_CUSS_INSULTS.length)] + '!"';
-    }
-    if ((game.u?.uhp ?? 1) < 5 && roll(2) === 0) {
-        const line = roll(2)
-            ? 'Even now thy life force ebbs, '
-            : 'Savor thy breath, ';
-        const suffix = line.startsWith('Savor')
-            ? ', it be thy last!' : '!';
-        return '"' + line
-            + WIZARD_CUSS_INSULTS[roll(WIZARD_CUSS_INSULTS.length)]
-            + suffix + '"';
-    }
-    if ((monster.mhp ?? 1) < 5 && roll(2) === 0)
-        return roll(2) ? '"I shall return."' : '"I\'ll be back."';
-    return '"' + WIZARD_CUSS_MALEDICTIONS[
-        roll(WIZARD_CUSS_MALEDICTIONS.length)
-    ] + ' ' + WIZARD_CUSS_INSULTS[
-        roll(WIZARD_CUSS_INSULTS.length)
-    ] + '!"';
-}
 
 function distantMonsterObjectName(object: GameObject): string {
     observeDistantObjectForNaming(object);
@@ -2152,6 +2084,7 @@ async function resolveErosionFormRehumanization(
     heroAttack.deferredPostHit = !restored.died;
     return pagerOwned;
 }
+
 
 // mcastu.c:castmu() elemental spells use spell protection and floor effects;
 // they never enter hitmu()'s armor cancellation or contact/passive tail.

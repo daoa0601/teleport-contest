@@ -48,6 +48,7 @@ const minion: Check<MinionData> = (value): value is MinionData => closedFieldsMa
 
 const priest: Check<PriestData> = (value): value is PriestData => closedFieldsMatch<PriestData>(value, {
     parentmid: integer,
+    cheapskate_count: optional(integer),
     shroom: integer,
     shralign: integer,
     shrpos: position,

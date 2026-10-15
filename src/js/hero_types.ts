@@ -253,6 +253,7 @@ export interface Hero extends HeroCoordinates, HeroPropertyState,
     ugifts?: number;
     ugangr?: number;
     ublessed?: number;
+    ucleansed?: number;
     udg_cnt?: number;
     ugrave_arise?: number;
     uluck?: number;

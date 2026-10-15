@@ -71,6 +71,14 @@ void test('deafness suppresses level ambient sounds', async () => {
     await dosounds();
     assert.equal(await topline(), '');
 });
+void test('submersion suppresses the fountain ambience', async () => {
+    const level = soundRoom(0);
+    level.flags.nfountains = 1;
+    game.u.uinwater = true;
+    initRng(262);
+    await dosounds();
+    assert.equal(await topline(), '');
+});
 for (const [type, species, flag, message] of [
     [COURT, 'goblin', 'has_court', /You hear a sceptre pounded in judgment\./],
     [MORGUE, 'human zombie', 'has_morgue', /(You suddenly realize it is unnaturally quiet|The hair on the back of your neck stands up)\./],

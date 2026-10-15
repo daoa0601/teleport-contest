@@ -89,7 +89,7 @@ export async function clearNonlocalPriestsOnExit() {
             await removeMonsterFromGame(priest);
     }
 }
-function hasShrine(priest, state = game) {
+export function priestHasShrine(priest, state = game) {
     const epri = priestData(priest);
     if (!priest.ispriest || !epri)
         return false;
@@ -116,7 +116,7 @@ export function inHeroSanctuary(monster, x, y, state = game) {
     if (roomno == null || roomsAt(state.level, x, y, TEMPLE)[0] !== roomno)
         return false;
     const priest = findPriest(roomno, state);
-    return !!priest && hasShrine(priest, state)
+    return !!priest && priestHasShrine(priest, state)
         && priestIsCoaligned(priest, state) && !!priest.mpeaceful;
 }
 // C priest.c:ghod_hitsu(). The original shrine supplies the deity, while
@@ -125,7 +125,7 @@ export async function ghodHitsu(priest, { state = game, publish = plineWithConti
     requireLiveGame(state);
     const { u, level } = requireInitializedGame(state);
     const roomno = u.urooms.find(number => roomForRoomno(level, number)?.rtype === TEMPLE);
-    if (!roomno || !hasShrine(priest, state))
+    if (!roomno || !priestHasShrine(priest, state))
         return { heroDied: false };
     const shrine = priestData(priest);
     const room = roomForRoomno(level, roomno);
@@ -280,7 +280,7 @@ export async function intemple(roomno, state = game) {
     epri.hostile_time ??= 0;
     const moves = state.moves ?? 0;
     const canSpeak = priestCanSpeak(priest, state);
-    const shrined = hasShrine(priest, state);
+    const shrined = priestHasShrine(priest, state);
     if (canSpeak && moves >= epri.intone_time) {
         await plineWithContinuation(`${visiblePriestName(priest, state)} intones:`);
         epri.intone_time = moves + d(10, 500);
