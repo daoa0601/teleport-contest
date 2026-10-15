@@ -91,7 +91,7 @@ void test('gas obstructs monster targeting but permits the hero-target terrain f
     const target = await createMonsterAt('pony', 9, 10, TEST_MONSTER_FLAGS);
     source.mux = game.u.ux;
     source.muy = game.u.uy;
-    createHarmlessGasCloudSelection(game, [{ x: 12, y: 10 }]);
+    await createHarmlessGasCloudSelection(game, [{ x: 12, y: 10 }]);
     vision_recalc(0);
     assert.equal(monsterLinedUpWithMonster(source, target, game), false);
     assert.equal(monsterLinedUpWithHero(source, game, range => range - 1), true);

@@ -154,7 +154,7 @@ void test('detecting a distant worm does not draw its tail over a steam cloud', 
     const { worm, tail } = await wormWithOnlyTailVisible();
     requirePlayingGame(game);
     grantIntrinsicProperty('detectMonsters', 'potion');
-    createSteamCloud(game, tail.x, tail.y, 1);
+    await createSteamCloud(game, tail.x, tail.y, 1);
     vision_recalc(0);
     assert.ok(cansee(tail.x, tail.y));
 

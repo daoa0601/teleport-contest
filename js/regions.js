@@ -38,12 +38,16 @@ function uniqueXMajorCells(cells) {
     return [...points.values()].sort((left, right) => left.x - right.x || left.y - right.y);
 }
 // Store the cells and lifetime shared by harmless and poisonous gas clouds.
-export function createHarmlessGasCloudSelection(state, cells, { ttl = -1 } = {}) {
-    return createGasCloudSelection(state, cells, ttl, 0);
+export async function createHarmlessGasCloudSelection(state, cells, { ttl = -1 } = {}) {
+    return await createGasCloudSelection(state, cells, ttl, 0);
 }
-export function createGasCloudSelection(state, cells, ttl, damage) {
+export async function createGasCloudSelection(state, cells, ttl, damage, publish = plineWithContinuation) {
+    return await makeGasCloud(state, cells, ttl, damage, false, publish);
+}
+async function makeGasCloud(state, cells, ttl, damage, silent, publish) {
     if (!state?.level)
         return null;
+    const inside = state.level.regions.some(region => regionContains(region, state.u.ux, state.u.uy));
     const orderedCells = uniqueXMajorCells(cells);
     const monsterIds = new Set();
     for (const cell of orderedCells) {
@@ -55,6 +59,7 @@ export function createGasCloudSelection(state, cells, ttl, damage) {
     }
     const region = {
         kind: 'gas-cloud',
+        heroFault: !state.in_mklev && !state.context.mon_moving,
         visible: true,
         damage,
         ttl,
@@ -76,6 +81,11 @@ export function createGasCloudSelection(state, cells, ttl, damage) {
                     newsym(x, y);
             }
         }
+    }
+    if (!state.in_mklev && !inside && !silent
+        && regionContains(region, state.u.ux, state.u.uy)) {
+        await publish(`You are enveloped in a cloud of ${damage ? 'noxious gas' : 'steam'}!`);
+        state._lastPlineKind = PLNMSG_ENVELOPED_IN_GAS;
     }
     return region;
 }
@@ -128,29 +138,17 @@ function gasCloudCells(state, x, y, cloudSize, random) {
 function gasCloudTtl(cloudSize, cellCount, random) {
     return Math.trunc((4 + random(3)) * cloudSize / cellCount);
 }
-export function createSteamCloud(state, x, y, cloudSize, random = rn2) {
-    const cells = gasCloudCells(state, x, y, cloudSize, random);
-    const ttl = gasCloudTtl(cloudSize, cells.length, random);
-    return createHarmlessGasCloudSelection(state, cells, { ttl });
+export async function createSteamCloud(state, x, y, cloudSize, random = rn2) {
+    return await createPoisonGasCloud(state, x, y, cloudSize, 0, random);
 }
 export async function createPoisonGasCloud(state, x, y, cloudSize, damage, random = rn2, publish = plineWithContinuation) {
     if (!state?.level)
         return null;
-    const inside = (state.level.regions || []).some(region => region.kind === 'gas-cloud' && regionContains(region, state.u.ux, state.u.uy));
     const silentSingleCell = !state.context?.mon_moving
         && x === state.u.ux && y === state.u.uy && cloudSize === 1
         && (!damage || heroGasTolerance(state) === GAS_OK);
     const cells = gasCloudCells(state, x, y, cloudSize, random);
-    const region = createGasCloudSelection(state, cells, gasCloudTtl(cloudSize, cells.length, random), damage);
-    if (!region)
-        return null;
-    region.heroFault = !state.in_mklev && !state.context?.mon_moving;
-    if (!state.in_mklev && !inside && !silentSingleCell
-        && regionContains(region, state.u.ux, state.u.uy)) {
-        await publish(`You are enveloped in a cloud of ${damage ? 'noxious gas' : 'steam'}!`);
-        state._lastPlineKind = PLNMSG_ENVELOPED_IN_GAS;
-    }
-    return region;
+    return await makeGasCloud(state, cells, gasCloudTtl(cloudSize, cells.length, random), damage, silentSingleCell, publish);
 }
 function regionContains(region, x, y) {
     return region.cells?.some(cell => cell.x === x && cell.y === y);

@@ -1,3 +1,4 @@
+import { currency } from './currency.js';
 // Native shop exit, robbery, and the responding watch and Keystone Kops.
 // C refs: shk.c u_left_shop(), rob_shop(), call_kops(), makekops();
 // wizard.c choose_stairs(). Billing and pursuit use the existing shop owners.
@@ -24,7 +25,6 @@ import { shopResident, shopkeeperInOwnShop } from './shk.js';
 import { findNearbyMonsterPosition } from './teleport_rules.js';
 const kopSpecies = ['Keystone Kop', 'Kop Sergeant', 'Kop Lieutenant', 'Kop Kaptain']
     .map(name => MONSTER_NAME.indexOf(name));
-const currency = (amount) => amount === 1 ? 'zorkmid' : 'zorkmids';
 // An empty room list denotes stepping onto the shop boundary. An actual
 // departed room denotes leaving outright, including departure to a new level.
 export async function leaveHeroShop(roomnos, { newLevel = false, state = game } = {}) {
@@ -75,7 +75,7 @@ async function robShop(keeper, state) {
         + (shop.debit || 0);
     const credit = shop.credit || 0;
     if (credit >= total) {
-        await plineWithContinuation(`Your credit of ${credit} ${currency(credit)} is used to cover your shopping bill.`);
+        await plineWithContinuation(`Your credit of ${credit} ${currency(credit, { state })} is used to cover your shopping bill.`);
         total = 0;
     }
     else {
@@ -86,11 +86,11 @@ async function robShop(keeper, state) {
     if (!total)
         return false;
     shop.robbed = (shop.robbed || 0) + total;
-    await plineWithContinuation(`You stole ${total} ${currency(total)} worth of merchandise.`);
+    await plineWithContinuation(`You stole ${total} ${currency(total, { state })} worth of merchandise.`);
     const shopType = SHOP_TYPES[shop.shoptype - SHOPBASE];
     if (!shopType)
         throw new Error(`Shopkeeper ${keeper.m_id} has invalid shop type ${shop.shoptype}`);
-    recordGameLogEvent(`stole ${total} ${currency(total)} worth of merchandise from ${possessiveName(shopkeeperName(keeper, { state }))} ${shopType.name}`, { state });
+    recordGameLogEvent(`stole ${total} ${currency(total, { state })} worth of merchandise from ${possessiveName(shopkeeperName(keeper, { state }))} ${shopType.name}`, { state });
     if (!state.urole || !state.u.ualign)
         throw new Error('Shop robbery requires hero role and alignment');
     if (state.urole.key !== 'rogue')

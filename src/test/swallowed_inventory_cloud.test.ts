@@ -25,9 +25,10 @@ for (const poisonous of [false, true]) {
         await addObjectToMonsterInventory(worm, await knownObject(CORPSE, {
             initialize: false, corpsenm: MONSTER_NAME.indexOf('cockatrice'),
         }));
-        const cloud = createHarmlessGasCloudSelection(game, [{ x: 10, y: 10 }]);
+        const cloud = await createHarmlessGasCloudSelection(game, [{ x: 10, y: 10 }]);
         assert.ok(cloud);
         cloud.damage = poisonous ? 8 : 0;
+        cloud.heroFault = false;
         game.u.uswallow = 1;
         game.u.ustuck = worm;
         const input = resetInputState();

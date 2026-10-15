@@ -60,9 +60,10 @@ for (const startsInside of [false, true]) {
             { x: 9, y: 10 },
             { x: 9, y: 11 }, { x: 10, y: 11 }, { x: 11, y: 11 },
         ];
-        const cloud = createHarmlessGasCloudSelection(game, cells, { ttl: 10 });
+        const cloud = await createHarmlessGasCloudSelection(game, cells, { ttl: 10 });
         assert.ok(cloud);
         cloud.damage = 8;
+        cloud.heroFault = false;
         initRng(7n);
         await kickDirection('l', ' '.repeat(20));
         assert.match(game._pending_message, /evading your kick/);
@@ -239,9 +240,10 @@ for (const startsInside of [false, true]) {
         for (let seed = 1; seed <= 30 && !reeled; seed++) {
             const monster = await installKickArena('goblin', 'monk');
             monster.mhp = 100;
-            const cloud = createHarmlessGasCloudSelection(game, [{ x: startsInside ? 11 : 12, y: 10 }], { ttl: 10 });
+            const cloud = await createHarmlessGasCloudSelection(game, [{ x: startsInside ? 11 : 12, y: 10 }], { ttl: 10 });
             assert.ok(cloud);
             cloud.damage = 8;
+            cloud.heroFault = false;
             initRng(BigInt(seed));
             await kickDirection('l', ' '.repeat(20));
             reeled = monster.mx === 12;

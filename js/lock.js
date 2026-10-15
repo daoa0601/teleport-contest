@@ -1,3 +1,4 @@
+import { currency } from './currency.js';
 // Lock forcing.
 // C ref: lock.c doforce(), forcelock(), and breakchestlock().
 import { exerciseAttribute } from './attrib.js';
@@ -294,7 +295,7 @@ export async function breakChestLock(box, destroyIt, state) {
         loss += await stolenValue(box, x, y, peacefulShopkeeper, { silent: true, state });
     }
     if (loss) {
-        await plineWithContinuation(`You owe ${loss} ${loss === 1 ? 'zorkmid' : 'zorkmids'} for objects destroyed.`);
+        await plineWithContinuation(`You owe ${loss} ${currency(loss, { state })} for objects destroyed.`);
     }
     await delobj(box, state);
 }

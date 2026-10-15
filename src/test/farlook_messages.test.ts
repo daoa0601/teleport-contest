@@ -39,7 +39,7 @@ void test('farlook at a clear worm tail does not report the cloud around its hea
     const worm = await createMonsterAt('long worm', 11, 10, MM_NOGRP | MM_NOTAIL | NO_MINVENT);
     worm.mpeaceful = false;
     worm.wormSegments = [{ x: 12, y: 10 }];
-    createHarmlessGasCloudSelection(game, [{ x: 11, y: 10 }]);
+    await createHarmlessGasCloudSelection(game, [{ x: 11, y: 10 }]);
     newsym(11, 10);
     newsym(12, 10);
 

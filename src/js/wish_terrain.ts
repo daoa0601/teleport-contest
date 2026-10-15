@@ -1,3 +1,4 @@
+import { canOverwriteTerrain } from './terrain_properties.js';
 // C objnam.c:wizterrainwish(). Terrain wishes use the ordinary map, trap,
 // light, and liquid-effect owners, then refresh the hero's changed square.
 import {
@@ -6,9 +7,9 @@ import {
     D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, DOOR,
     DRAWBRIDGE_UP, F_LOOTED, FOUNTAIN, GRAVE, HWALL, ICE, ICED_MOAT, ICED_POOL,
     IRONBARS, IS_DRAWBRIDGE, IS_FURNITURE, IS_WALL, is_hole, Is_rogue_level,
-    LADDER, LANDMINE, LAVAPOOL, LAVAWALL, MAGIC_PORTAL, MOAT, POOL, ROCKTRAP,
+    LANDMINE, LAVAPOOL, LAVAWALL, MAGIC_PORTAL, MOAT, POOL, ROCKTRAP,
     ROOM, ROWNO, SCORR, SDOOR, SINK, S_LDWASHER, S_LPUDDING, S_LRING,
-    STAIRS, THRONE, T_LOOTED, TRAPNUM, TREE, TREE_LOOTED, TREE_SWARM,
+    THRONE, T_LOOTED, TRAPNUM, TREE, TREE_LOOTED, TREE_SWARM,
     TT_LAVA, VWALL, WATER, WM_MASK, W_NONDIGGABLE, W_NONPASSWALL,
 } from './const.js';
 import { applyHeroLiquidEffects } from './cmd.js';
@@ -185,7 +186,7 @@ export async function tryWizardTerrainWish(parsed: ParsedWish): Promise<boolean>
         location.typ = SCORR;
         await say('Secret corridor.');
     } else if (name.endsWith('room') || name.endsWith('floor') || name.endsWith('ground')) {
-        if (previousType === ROOM || IS_FURNITURE(previousType) && previousType !== STAIRS && previousType !== LADDER
+        if (previousType === ROOM || IS_FURNITURE(previousType) && canOverwriteTerrain(previousType)
             || previousType === ICE || isPoolAt(x, y) || isLavaAt(x, y)) {
             location.typ = ROOM;
             await say('Room floor.');

@@ -210,7 +210,7 @@ void test('a cursed levitation potion on an up staircase carries the hero up a l
         const row = game.nhDisplay?.grid[0];
         assert.ok(row);
         const topline = row.map(cell => cell.ch).join('');
-        assert.match(topline, /float in the air!.*climb up the stairs\.--More--/);
+        assert.match(topline, /float in the air!.*float up the stairs\.--More--/);
         assert.equal(game.u.uz.dlevel, 1);
     } finally {
         // Native arrival docrt()/cls() flushes the old level's message.

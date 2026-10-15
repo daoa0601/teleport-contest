@@ -1,3 +1,4 @@
+import { currency } from './currency.js';
 // Pet begging and animal noises shared by #chat and mounted breath fallback.
 // C ref: sounds.c domonnoise().
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
@@ -131,7 +132,7 @@ export async function publishMonsterNoise(monster, state = game, { exerciseWisdo
         if (!hallucinating || MONSTER_SOUND[monster.mnum] === MS_SILENT || monster.isshk && rn2(2) === 0)
             await chatWithShopkeeper(monster, state);
         else
-            await plineWithContinuation('"15 minutes could save you 15 zorkmids."');
+            await plineWithContinuation(`"15 minutes could save you 15 ${currency(15, { state })}."`);
         return true;
     }
     if (sound > MS_ANIMAL)

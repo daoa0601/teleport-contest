@@ -1,3 +1,4 @@
+import { currency } from './currency.js';
 // insight.js — Basic enlightenment / attributes command.
 // C ref: insight.c — doattributes(), enlightenment().
 
@@ -67,14 +68,13 @@ export function goldInsightLines(final: boolean, indent = '  '): [string, ...str
     const purse = heroGoldAmount(game);
     const stashed = hiddenGold(game, final);
     let wallet = purse
-        ? `Your wallet ${final ? 'contained' : 'contains'} ${purse} zorkmid${
-            purse === 1 ? '' : 's'}`
+        ? `Your wallet ${final ? 'contained' : 'contains'} ${purse} ${currency(purse)}`
         : `Your wallet ${final ? 'was' : 'is'} empty`;
     wallet += stashed ? purse ? ', and' : ', but' : '.';
     const lines: [string, ...string[]] = [`${indent}${wallet}`];
     if (stashed) {
         lines.push(`${indent}you ${final ? 'had' : 'have'} ${stashed} ${
-            purse ? 'more' : `zorkmid${stashed === 1 ? '' : 's'}`
+            purse ? 'more' : currency(stashed)
         } stashed away in your pack.`);
     }
     return lines;

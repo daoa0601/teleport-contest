@@ -703,7 +703,7 @@ async function finishInitialTurnMaintenanceAfterIntervention(
     // reuses the same fumarole sampler as initial arrival.
     if (Is_airlevel(game.u?.uz) || Is_waterlevel(game.u?.uz))
         await moveElementalBubbles();
-    else if (game.level?.flags?.fumaroles) fumaroles(game);
+    else if (game.level?.flags?.fumaroles) await fumaroles(game);
     const delayedAction = game._delayedAction;
     if (delayedAction && delayedAction.kind !== 'steal' && delayedAction.remainingGlobalTurns > 0) {
         delayedAction.remainingGlobalTurns--;
@@ -3325,7 +3325,7 @@ async function executeMonsterTurns(): Promise<boolean | undefined> {
         if (!level.monsters.includes(actor) || (actor.mhp ?? 1) <= 0 || actor.mx === 0
             || (actor.mstate ?? MON_FLOOR) !== MON_FLOOR)
             continue;
-        runMonsterEveryturnEffects([actor], game, rn2, { fmonOrdered: true });
+        await runMonsterEveryturnEffects([actor], game, rn2, { fmonOrdered: true });
         if (actor.movement === undefined)
             throw new Error(`Monster ${actor.m_id} entered a turn before movement initialization.`);
         if (actor.movement < NORMAL_SPEED) continue;
@@ -3845,7 +3845,7 @@ export async function moveloop_core() {
         g.vision_full_recalc = 0;
     }
     await flush_screen(1);
-    heroEveryturnEffect(g);
+    await heroEveryturnEffect(g);
 
     // A negative C `multi` suppresses rhack() but still leaves context.move
     // set, so the next moveloop invocation spends another hero action.  Once
