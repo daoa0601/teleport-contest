@@ -16,7 +16,7 @@ import {
 import { artifactById } from './artifacts.js';
 import { mapLevel } from './detect.js';
 import {
-    map_background, newsym, newsym_force, plineWithContinuation, see_monsters, shieldeff,
+    displayColorName, map_background, newsym, newsym_force, plineWithContinuation, see_monsters, shieldeff,
 } from './display.js';
 import { finishHeroDeath } from './end.js';
 import { loseHeroExperience } from './exper.js';
@@ -41,7 +41,7 @@ import {
     courtMonsterType, makemonNear,
 } from './mklev.js';
 import { MONSTER_FLAGS2, MONSTER_SYMBOL } from './monster_data.js';
-import { OBJECT_NAMES } from './object_data.js';
+import { definiteName, objectCombatName, objectNameIsPlural, ownedObjectAction } from './objnam.js';
 import { curseObject, unblessObjectState } from './object_state.js';
 import {
     grantIntrinsicProperty, hasPermanentIntrinsicProperty,
@@ -485,8 +485,9 @@ export async function rndcurse({
             candidate.oclass !== COIN_CLASS)[index];
         if (!object || object.cursed) continue;
         if (artifactById(object.oartifact)?.selfWilled && rn2(10) < 8) {
-            const name = object.name || OBJECT_NAMES[object.otyp] || 'object';
-            await publish(`The ${name} resists!`);
+            const name = definiteName(objectCombatName(object, { includeCorpseSpecies: false }));
+            const subject = name.charAt(0).toUpperCase() + name.slice(1);
+            await publish(`${subject} ${objectNameIsPlural(object) ? 'resist' : 'resists'}!`);
             continue;
         }
         if (object.blessed) unblessObjectState(object);
@@ -504,11 +505,12 @@ export async function rndcurse({
     if (saddle && !saddle.cursed) {
         if (saddle.blessed) unblessObjectState(saddle);
         else await curseObject(saddle);
-        if (state.blind) {
+        if (heroIsBlind(state)) {
             saddle.bknown = false;
         } else {
-            const color = saddle.cursed ? 'black' : 'brown';
-            await publish(`The saddle glows ${color}.`);
+            const subject = ownedObjectAction(saddle, 'glow', state);
+            const color = displayColorName(saddle.cursed ? 'black' : 'brown', state);
+            await publish(`${subject} ${color}.`);
             saddle.bknown = !(heroIsHallucinating(state));
         }
         changed.push(saddle);
