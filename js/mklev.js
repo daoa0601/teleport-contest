@@ -29,7 +29,7 @@ import { exerciseWisdom } from './attrib.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { impossible } from './diagnostics.js';
 import { LUA_SOURCES } from './generated/lua_sources.js';
-import { createDesBindings, mapOrigin, objectTypeForName, regionCoordinates, } from './lua/des.js';
+import { createDesBindings, mapOrigin, objectTypeForName, regionCoordinates, tablePoint, } from './lua/des.js';
 import { luaInteger, luaString } from './lua/arguments.js';
 import { createSelectionApi } from './lua/selection.js';
 import { luaTableToArray, objectToLuaTable, } from './lua/runtime.js';
@@ -5803,20 +5803,9 @@ function specialRoomAt(x, y, roomType) {
     const roomNumber = roomsAt(level, x, y, roomType)[0];
     return roomNumber === undefined ? null : roomForIndex(level, roomNumber - ROOMOFFSET);
 }
-function luaCoordinate(options) {
-    if (Array.isArray(options.coord))
-        return { x: options.coord[0], y: options.coord[1] };
-    if (options.coord && Number.isInteger(options.coord.x)
-        && Number.isInteger(options.coord.y))
-        return options.coord;
-    if (typeof options.x === 'number' && typeof options.y === 'number'
-        && Number.isInteger(options.x) && Number.isInteger(options.y))
-        return { x: options.x, y: options.y };
-    return null;
-}
 async function createLuaAltar(context, options) {
     const level = requireGameLevel();
-    const coordinate = luaCoordinate(options);
+    const coordinate = tablePoint(options);
     const point = context._room
         ? await getFreeRoomLocation(context, coordinate, context._room)
         : await getLocationCoord(context, coordinate, DRY);
@@ -5931,7 +5920,9 @@ async function createLuaRoomRegion(context, options) {
     return room;
 }
 function luaRoomSpec(options) {
-    const coordinate = luaCoordinate(options);
+    const coordinate = tablePoint(options);
+    if (coordinate && (coordinate.x === -1) !== (coordinate.y === -1))
+        throw new TypeError('Room must have both x and y');
     const horizontal = {
         left: 1, 'half-left': 2, center: 3, 'half-right': 4, right: 5,
         none: -1, random: -1,
@@ -6029,7 +6020,7 @@ function corridorDoorEndpoint(room, wall, door) {
     return null;
 }
 async function createLuaDrawbridge(context, options) {
-    const coordinate = luaCoordinate(options);
+    const coordinate = tablePoint(options);
     if (!coordinate || !isok(coordinate.x, coordinate.y))
         throw new TypeError('des.drawbridge requires coordinates');
     const directions = {
@@ -6429,7 +6420,7 @@ async function createLuaTrap(context, options) {
         spiderOnWeb: options.spider_on_web !== false,
     };
     const trap = await specialTrapOfType(context, trapType ?? NO_TRAP, construction, point);
-    const teleportDestination = luaCoordinate({ coord: options.teledest });
+    const teleportDestination = options.teledest ? tablePoint({ coord: options.teledest }) : null;
     if (trap && teleportDestination) {
         trap.teledest = {
             x: context.xstart + teleportDestination.x,
