@@ -1,3 +1,4 @@
+import { ensureQuestStatus } from '../js/quest.js';
 import { finishAtCommandInput, installPagerInput } from './support/pager-input.js';
 import type { RoleKey } from '../js/roles.js';
 import test from 'node:test';
@@ -155,6 +156,7 @@ void test('a carried Orb of Detection keeps protection when temporary half spell
     for (const protection of ['orb', 'orb with expiring timeout'] as const) {
         const { input } = magicRoom('archeologist');
         requirePlayingGame(game);
+        ensureQuestStatus().touched_artifact = true;
         await addInventoryItem(await artifactObject('The Orb of Detection'));
         if (protection === 'orb with expiring timeout') {
             game.u.halfSpellDamage = true;

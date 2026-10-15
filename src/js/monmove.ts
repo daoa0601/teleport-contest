@@ -99,7 +99,7 @@ import { loseGuardianAngel } from './guardian_angel.js';
 import { shiftMonsterForDoor, resolveMonsterDoorPassage } from './monster_door_passage.js';
 import { heroSpecies } from './hero_species.js';
 import { releaseHeroFromMonster, releaseMonsterHold } from './hero_expulsion.js';
-import { checkQuestMonsterStatus } from './quest.js';
+import { checkQuestMonsterStatus, talkQuestCharacter } from './quest.js';
 import { placeHeroOnLevel } from './hero_location.js';
 import { swallowed } from './display.js';
 import { Is_rogue_level } from './const.js';
@@ -588,7 +588,7 @@ import {
     TEMPLE,
     TRAPNUM,
     STRAT_WAITFORU,
-    STRAT_WAITMASK,
+    STRAT_WAITMASK, STRAT_CLOSE,
     STRAT_ARRIVE,
     UNLOCKDOOR,
     VIBRATING_SQUARE,
@@ -8868,6 +8868,9 @@ export async function runMonsterAction(
     checkQuestMonsterStatus(monster, state);
     if ((monster.mstrategy ?? 0) & STRAT_WAITMASK) {
         if (heroIsHallucinating(state)) newsym(monster.mx, monster.my);
+        if (monster.mcanmove && (monster.mstrategy ?? 0) & STRAT_CLOSE
+            && !monster.msleeping && nextToHero)
+            await talkQuestCharacter(monster, state);
         return {
             monster,
             calls,

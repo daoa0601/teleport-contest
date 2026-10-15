@@ -1,3 +1,4 @@
+import { ensureQuestStatus } from '../js/quest.js';
 import { installPagerInput } from './support/pager-input.js';
 import { inventoryLetter } from './support/commands.js';
 import test from 'node:test';
@@ -72,6 +73,7 @@ function captureMessages() {
     return messages;
 }
 async function gainArtifact(name) {
+    ensureQuestStatus().touched_artifact = true;
     const wish = await readObjectName(name, { wizardWish: true });
     assert.ok(wish && !wish.noWish);
     assert.ok(wish.object.oartifact, `wish did not create ${name}`);

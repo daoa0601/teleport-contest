@@ -14,7 +14,7 @@ import { artifactById } from './artifacts.js';
 import { pickedContainer } from './shop_loss.js';
 import { deallocateObject } from './object_delete.js';
 import { initializeHeroRoomMembership } from './room.js';
-import { finishInventoryAddition, recordHeroPrizeAcquisition, useUpInventoryStack } from './hero_inventory.js';
+import { prepareInventoryAddition, finishInventoryAddition, recordHeroPrizeAcquisition, useUpInventoryStack } from './hero_inventory.js';
 import { japaneseItemName, wishedObjectPresentation } from './objnam.js';
 import { setHeroSpecies } from './hero_species.js';
 import { seeMonsterCloseup } from './monster_observation.js';
@@ -1098,6 +1098,7 @@ async function finishAddedInventoryItem(item: GameObject, recoveredThrownStack =
 export async function addInventoryItem(raw: GameObject, presentation: ItemPresentation | null = null, observe = true): Promise<GameObject> {
     const wasThrown = raw.how_lost === LOST_THROWN;
     let item = prepareInventoryItem(raw, presentation, observe);
+    await prepareInventoryAddition(item, game);
     const existing = game.uquiver && mergable(game.uquiver, item, game) ? game.uquiver
         : game.inventory.find(other => mergable(other, item, game));
     const added = existing ? await mergeObjectStacks(existing, item, game)
@@ -1111,6 +1112,7 @@ export async function addCreatedInventoryItem(raw: GameObject, presentation: Ite
     assertCreatedObject(raw, game);
     const wasThrown = raw.how_lost === LOST_THROWN;
     let item = prepareInventoryItem(raw, presentation, observe);
+    await prepareInventoryAddition(item, game);
     const existing = game.uquiver && mergable(game.uquiver, item, game) ? game.uquiver
         : game.inventory.find(other => mergable(other, item, game));
     const added = existing ? await mergeCreatedObjectStacks(existing, item, game)

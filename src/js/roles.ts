@@ -69,10 +69,10 @@ export interface Role {
     guardianName?: string;
     guardianPlural?: string;
     artifactName: string;
-    enemy1num?: number | null;
-    enemy1sym?: number;
-    enemy2num?: number;
-    enemy2sym?: number;
+    enemy1num: number | null;
+    enemy1sym: number;
+    enemy2num: number;
+    enemy2sym: number;
     greeting: string;
     goodbye: string;
     spellcasting: Spellcasting;
@@ -212,6 +212,10 @@ const roleRecords: Omit<Role, 'spellcasting'>[] = [
       homebase: 'the Caves of the Ancestors',
       intermediate: "the Dragon's Lair",
       artifactName: 'the Sceptre of Might',
+      enemy1num: 45,
+      enemy1sym: 8,
+      enemy2num: 171,
+      enemy2sym: 34,
       greeting: 'Hello', goodbye: 'Goodbye' },
     { key: 'healer', filecode: 'Hea', name: { m: 'Healer', f: 'Healer' }, mnum: 3,
       title: [
@@ -244,6 +248,10 @@ const roleRecords: Omit<Role, 'spellcasting'>[] = [
       homebase: 'the Temple of Epidaurus',
       intermediate: 'the Temple of Coeus',
       artifactName: 'the Staff of Aesculapius',
+      enemy1num: 89,
+      enemy1sym: 18,
+      enemy2num: 215,
+      enemy2sym: 51,
       greeting: 'Hello', goodbye: 'Goodbye' },
     { key: 'knight', filecode: 'Kni', name: { m: 'Knight', f: 'Knight' }, mnum: 4,
       title: [
@@ -278,6 +286,10 @@ const roleRecords: Omit<Role, 'spellcasting'>[] = [
       guardianName: 'page',
       guardianPlural: 'pages',
       artifactName: 'the Magic Mirror of Merlin',
+      enemy1num: 54,
+      enemy1sym: 9,
+      enemy2num: 58,
+      enemy2sym: 10,
       greeting: 'Salutations', goodbye: 'Fare thee well' },
     { key: 'monk', filecode: 'Mon', name: { m: 'Monk', f: 'Monk' }, mnum: 5,
       title: [
@@ -312,6 +324,10 @@ const roleRecords: Omit<Role, 'spellcasting'>[] = [
       homebase: 'the Monastery of Chan-Sune',
       intermediate: 'the Monastery of the Earth-Lord',
       artifactName: 'the Eyes of the Overworld',
+      enemy1num: 156,
+      enemy1sym: 31,
+      enemy2num: 232,
+      enemy2sym: 50,
       greeting: 'Hello', goodbye: 'Goodbye' },
     { key: 'priest', filecode: 'Pri', name: { m: 'Priest', f: 'Priestess' }, mnum: 6,
       title: [
@@ -344,6 +360,10 @@ const roleRecords: Omit<Role, 'spellcasting'>[] = [
       guardianName: 'Acolyte',
       guardianPlural: 'Acolytes',
       artifactName: 'the Mitre of Holiness',
+      enemy1num: 244,
+      enemy1sym: 52,
+      enemy2num: 230,
+      enemy2sym: 49,
       greeting: 'Hello', goodbye: 'Goodbye' },
     { key: 'ranger', filecode: 'Ran', name: { m: 'Ranger', f: 'Ranger' }, mnum: 7,
       title: [
@@ -376,6 +396,10 @@ const roleRecords: Omit<Role, 'spellcasting'>[] = [
       homebase: "Orion's camp",
       intermediate: 'the cave of the wumpus',
       artifactName: 'the Longbow of Diana',
+      enemy1num: 131,
+      enemy1sym: 29,
+      enemy2num: 97,
+      enemy2sym: 19,
       greeting: 'Hello', goodbye: 'Goodbye' },
     { key: 'rogue', filecode: 'Rog', name: { m: 'Rogue', f: 'Rogue' }, mnum: 8,
       title: [
@@ -407,6 +431,10 @@ const roleRecords: Omit<Role, 'spellcasting'>[] = [
       homebase: "the Thieves' Guild Hall",
       intermediate: "the Assassins' Guild Hall",
       artifactName: 'the Master Key of Thievery',
+      enemy1num: 63,
+      enemy1sym: 14,
+      enemy2num: 202,
+      enemy2sym: 40,
       greeting: 'Hello', goodbye: 'Goodbye' },
     { key: 'samurai', filecode: 'Sam', name: { m: 'Samurai', f: 'Samurai' }, mnum: 9,
       title: [
@@ -442,6 +470,10 @@ const roleRecords: Omit<Role, 'spellcasting'>[] = [
       homebase: 'the Castle of the Taro Clan',
       intermediate: "the Shogun's Castle",
       artifactName: 'the Tsurugi of Muramasa',
+      enemy1num: 20,
+      enemy1sym: 4,
+      enemy2num: 153,
+      enemy2sym: 31,
       greeting: 'Konnichi wa', goodbye: 'Sayonara' },
     { key: 'tourist', filecode: 'Tou', name: { m: 'Tourist', f: 'Tourist' }, mnum: 10,
       title: [
@@ -474,6 +506,10 @@ const roleRecords: Omit<Role, 'spellcasting'>[] = [
       homebase: 'Ankh-Morpork',
       intermediate: "the Thieves' Guild Hall",
       artifactName: 'the Platinum Yendorian Express Card',
+      enemy1num: 96,
+      enemy1sym: 19,
+      enemy2num: 131,
+      enemy2sym: 29,
       greeting: 'Aloha', goodbye: 'Aloha',
     },
     { key: 'valkyrie', filecode: 'Val', name: { m: 'Valkyrie', f: 'Valkyrie' }, mnum: 11,
@@ -506,6 +542,10 @@ const roleRecords: Omit<Role, 'spellcasting'>[] = [
       homebase: 'the Shrine of Destiny',
       intermediate: 'the cave of Surtur',
       artifactName: 'the Orb of Fate',
+      enemy1num: 3,
+      enemy1sym: 1,
+      enemy2num: 172,
+      enemy2sym: 34,
       greeting: 'Velkommen', goodbye: 'Farvel' },
     { key: 'wizard', filecode: 'Wiz', name: { m: 'Wizard', f: 'Wizard' }, mnum: 12,
       title: [
@@ -542,7 +582,7 @@ const roleRecords: Omit<Role, 'spellcasting'>[] = [
       enemy1num: 129,
       enemy1sym: 28,
       enemy2num: 232,
-      enemy2sym: 39,
+      enemy2sym: 49,
       greeting: 'Hello', goodbye: 'Goodbye' },
 ];
 

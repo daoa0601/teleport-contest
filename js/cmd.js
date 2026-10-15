@@ -2669,7 +2669,7 @@ async function dochat() {
             game.context.move = 1;
         }
         else {
-            game.context.move = Number(await publishMonsterNoise(steed, game, { exerciseWisdom }));
+            game.context.move = Number(await publishMonsterNoise(steed, game));
         }
         return;
     }
@@ -2732,7 +2732,7 @@ async function dochat() {
         await plineWithContinuation(`Any response${canSpotMonster(monster) ? ` from ${monsterName(monster)}` : ''} ${response}.`);
         return;
     }
-    game.context.move = Number(await publishMonsterNoise(monster, game, { exerciseWisdom }));
+    game.context.move = Number(await publishMonsterNoise(monster, game));
 }
 async function wizWish() {
     const verbose = game.flags.verbose;

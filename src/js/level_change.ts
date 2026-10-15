@@ -260,12 +260,11 @@ export async function gotoLevel(targetDepth: Partial<DungeonLocation>, {
         && destinationDepth.dnum === tutorialDnum;
     // Quest text preparation can run Lua, so finish it before a message
     // pauses for player input.
-    const questArrival = prepareQuestArrival({
+    const questArrival = await prepareQuestArrival({
         fromDepth: oldDepth,
-        firstVisit: !cached,
     });
     const questPortalCall = arrival === 'portal' ? null
-        : prepareMainQuestPortalCall({ firstVisit: !cached });
+        : await prepareMainQuestPortalCall({ firstVisit: !cached });
     const oldDungeon = game.dungeons?.[oldDepth.dnum ?? 0];
     const newDungeon = game.dungeons?.[newDepth.dnum ?? 0];
     recordDungeonEntryAchievements(game, oldDepth, newDepth);

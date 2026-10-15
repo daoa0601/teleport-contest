@@ -14,7 +14,7 @@ import { delobj, deleteObjectContents, stopObjectTimers } from './object_delete.
 import { objectResistsDestruction } from './object_state.js';
 import { erosionMatters, objectIsVulnerableToErosion } from './object_erosion.js';
 import { isPoisonableObject } from './object_properties.js';
-import { finishInventoryAddition, finishInventoryRemoval } from './hero_inventory.js';
+import { prepareInventoryAddition, finishInventoryAddition, finishInventoryRemoval } from './hero_inventory.js';
 import { removeWornHeroItem } from './hero_equipment.js';
 import { applyArmorOnEffects, armorSlotFor, wearHeroArmor } from './armor.js';
 import { wearHeroAccessory } from './accessory.js';
@@ -136,6 +136,7 @@ export async function poly_obj(object, id = STRANGE_OBJECT, { state = game } = {
         await finishInventoryRemoval(object, state);
         if (state.program_state.gameover)
             return replacement;
+        await prepareInventoryAddition(replacement, state);
         await finishInventoryAddition(replacement, state);
         if (oldWornMask)
             replacement = await replaceWornItem(object, replacement, oldWornMask, state);

@@ -1,3 +1,4 @@
+import { ensureQuestStatus } from '../js/quest.js';
 import { finishAtCommandInput, installPagerInput } from './support/pager-input.js';
 import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
@@ -98,6 +99,7 @@ void test('the real Eyes retain sight and a hidden timeout inside a dust vortex'
     game.u.ualign.type = 0;
     const messages = [];
     recordMessages(messages);
+    ensureQuestStatus().touched_artifact = true;
     const eyes = await addInventoryItem(await artifactObject('The Eyes of the Overworld'));
     await applyInventoryObject(eyes);
     assert.equal(game.ublindf, eyes);

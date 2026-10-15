@@ -11,7 +11,7 @@ import { game } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import { removeHeroEquipment } from './hero_equipment.js';
-import { finishInventoryAddition, finishInventoryRemoval } from './hero_inventory.js';
+import { prepareInventoryAddition, finishInventoryAddition, finishInventoryRemoval } from './hero_inventory.js';
 import { deleteObject } from './object_delete.js';
 import { syncBlindness } from './senses.js';
 import { assignInventoryLetter } from './u_init.js';
@@ -91,6 +91,7 @@ async function restoreTutorialState(state: GameState): Promise<void> {
     for (const object of saved.inventory) {
         if (object.where === 'gone') continue;
         assignInventoryLetter(object);
+        await prepareInventoryAddition(object, state);
         object.where = 'inventory';
         // addinv_nomerge() must keep each original identity and stack.
         state.inventory.push(object);

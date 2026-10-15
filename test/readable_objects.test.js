@@ -1,3 +1,4 @@
+import { ensureQuestStatus } from '../js/quest.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { wearHeroArmor } from '../js/armor.js';
@@ -176,6 +177,7 @@ void test('blind credit-card reading exposes its embossed number and counts lite
 void test('an artifact credit card bears the platinum label', async () => {
     const { messages } = readingRoom();
     requirePlayingGame(game);
+    ensureQuestStatus().touched_artifact = true;
     const card = await addInventoryItem(await artifactObject('The Platinum Yendorian Express Card'));
     await readOrdinaryObject(card);
     assert.match(await readingOutput(messages), /Yendorian Express - Platinum Card/);
@@ -197,6 +199,7 @@ for (const blind of [false, true]) {
 void test('the Orb of Fate signature can be read by touch', async () => {
     const { messages } = readingRoom({ role: 'valkyrie' });
     requirePlayingGame(game);
+    ensureQuestStatus().touched_artifact = true;
     const orb = await addInventoryItem(await artifactObject('The Orb of Fate'));
     setHeroBlindnessTurns(10);
     await readOrdinaryObject(orb);

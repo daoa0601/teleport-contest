@@ -13,27 +13,104 @@ import { makePlural, makeSingular, withIndefiniteArticle } from './object_gramma
 import { heroIsBlind } from './senses.js';
 import type { AlignmentName } from './roles.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
-import { plineWithContinuation } from './display.js';
 import { rn2 } from './rng.js';
-import { COMMON_QUEST_INSULTS } from './common_quest_insults.js';
+import { QUEST_LUA_SOURCE } from './quest_data.js';
+import { LuaTable } from './lua/runtime.js';
+import { flushPendingTopline, plineWithContinuation } from './display.js';
+import { showTextWindow, showTextMenuOverlay } from './windows.js';
 
 const M2_PNAME = 0x00080000;
+
+export interface QuestText {
+    lines: readonly string[];
+    raw: string;
+    output: 'pline' | 'text' | 'menu';
+    synopsis: string | null;
+}
+
+// C com_pager_core(): each attempted section opens its own Lua state,
+// including nhlib's alignment shuffle, before resolving a fallback or choice.
+async function prepareSection(section: string, messageId: string, state: GameState): Promise<QuestText | null> {
+    if (state.program_state.wizkit_wishing) return null;
+    const lua = currentLuaLifecycle().createSpecialState(state);
+    try {
+        lua.execute(QUEST_LUA_SOURCE, 'quest.lua');
+        const quest = lua.getGlobal('questtext');
+        if (!(quest instanceof LuaTable)) throw new Error('quest.lua has no questtext table');
+        const messages = quest.get(section);
+        if (!(messages instanceof LuaTable)) return null;
+        let entry = messages.get(messageId);
+        if (!(entry instanceof LuaTable)) {
+            const fallbacks = quest.get('msg_fallbacks');
+            const fallback = fallbacks instanceof LuaTable ? fallbacks.get(messageId) : null;
+            if (typeof fallback === 'string') entry = messages.get(fallback);
+        }
+        if (!(entry instanceof LuaTable)) return null;
+        let text = entry.get('text');
+        if (typeof text !== 'string') {
+            const count = entry.length();
+            if (count < 2) throw new Error(`Quest message ${section}.${messageId} has no text or choices`);
+            text = entry.get(rn2(count) + 1);
+        }
+        if (typeof text !== 'string') throw new Error(`Quest message ${section}.${messageId} is not text`);
+        const how = entry.get('output');
+        const output = how === 'menu' ? 'menu'
+            : how === 'text' || how === 'window' ? 'text'
+                : how === 'pline' ? 'pline'
+                    : text.includes('\n') || text.length >= 255 ? 'text' : 'pline';
+        const summary = entry.get('synopsis');
+        const synopsis = typeof summary === 'string' ? summary
+            : output === 'text' && (how === null || how === 'default')
+                ? `[${text.slice(0, 253).replaceAll('\n', ' ')}]` : null;
+        const lines = text.split('\n');
+        if (text.endsWith('\n')) lines.pop();
+        return {
+            lines: lines.map(line => convertQuestLine(line, state)), output, raw: text,
+            synopsis: synopsis === null ? null : convertQuestLine(synopsis, state),
+        };
+    } finally {
+        await lua.destroy();
+    }
+}
+
+export async function prepareQuestText(messageId: string, state: GameState = game, common = false): Promise<QuestText | null> {
+    if (common) return prepareSection('common', messageId, state);
+    return await prepareSection(state.urole?.filecode ?? '', messageId, state)
+        ?? await prepareSection('common', messageId, state);
+}
+
+export async function displayQuestText(text: QuestText | null, state: GameState = game): Promise<boolean> {
+    if (!text) return false;
+    if (text.output === 'pline') {
+        for (const line of text.lines) await plineWithContinuation(line);
+    } else {
+        if (state._pending_message && !state._pending_message.endsWith('--More--'))
+            await flushPendingTopline();
+        state._pending_message = '';
+        state._retained_message = '';
+        if (text.output === 'menu') await showTextMenuOverlay(text.lines);
+        else await showTextWindow(text.lines);
+        state._pending_message = '';
+        state._retained_message = '';
+    }
+    if (text.synopsis) state.nhDisplay?.messages.push(text.synopsis);
+    return true;
+}
+
+export async function qtPager(messageId: string, state: GameState = game): Promise<boolean> {
+    return displayQuestText(await prepareQuestText(messageId, state), state);
+}
+
+export async function comPager(messageId: string, state: GameState = game): Promise<boolean> {
+    return displayQuestText(await prepareQuestText(messageId, state, true), state);
+}
 
 // C questpgr.c:com_pager_core(). Each insult opens a fresh quest.lua state,
 // so nhlib's initialization precedes selection and message delivery.
 export async function deliverCommonQuestInsult(
     messageId: 'angel_cuss' | 'demon_cuss', state: GameState = game,
 ): Promise<void> {
-    if (state.program_state.wizkit_wishing) return;
-    const lua = currentLuaLifecycle().createSpecialState(state);
-    try {
-        const choices = COMMON_QUEST_INSULTS[messageId];
-        const selected = choices[rn2(choices.length)];
-        if (selected === undefined) throw new RangeError(`No ${messageId} insult was selected`);
-        await plineWithContinuation(convertQuestLine(selected, state));
-    } finally {
-        await lua.destroy();
-    }
+    await comPager(messageId, state);
 }
 
 // C questpgr.c:ldrname()/neminame() use the role's named species directly

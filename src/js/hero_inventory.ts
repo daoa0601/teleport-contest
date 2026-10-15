@@ -1,6 +1,7 @@
 // C invent.c:freeinv_core()/addinv_core1()/addinv_core2()/learn_unseen_invent()
 // and attrib.c:set_moreluck().
 
+import { isQuestArtifact, touchQuestArtifact } from './quest.js';
 import { artifactById, artifactByName } from './artifacts.js';
 import { recordAchievement } from './achievements.js';
 import { deactivateArtifactProperty } from './artifact_invoke.js';
@@ -119,7 +120,8 @@ export function recordHeroPrizeAcquisition(object: GameObject, state: GameState 
     object.nomerge = false;
 }
 
-export async function finishInventoryAddition(object: GameObject, state: GameState = game) {
+// C addinv_core1(): these effects precede merging and inventory insertion.
+export async function prepareInventoryAddition(object: GameObject, state: GameState = game) {
     if (object.oclass === COIN_CLASS) state.context.botl = true;
     updateCarriedFlags(object, true, state);
     const achievement = object.otyp === AMULET_OF_YENDOR ? ACH_AMUL
@@ -127,7 +129,12 @@ export async function finishInventoryAddition(object: GameObject, state: GameSta
             : object.otyp === CANDELABRUM_OF_INVOCATION ? ACH_CNDL
                 : object.otyp === SPE_BOOK_OF_THE_DEAD ? ACH_BOOK : null;
     if (achievement !== null) recordAchievement(state, achievement);
+    if (isQuestArtifact(object, state)) await touchQuestArtifact(object, state);
     await setCarriedArtifactProperties(object, true, state);
+}
+
+// C addinv_core2(): the surviving object is now in the inventory chain.
+export async function finishInventoryAddition(object: GameObject, state: GameState = game) {
     await reactToSeenInventoryObject(object, state);
 }
 

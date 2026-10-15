@@ -4,6 +4,7 @@ import { arrayOf, boolean, closedFieldsMatch, integer, mapOf, nullable, numericR
 import { createSavedEntityChecks } from './entity_validation.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { OBJECT_SPELL_CATEGORY } from './object_data.js';
+import { ORACLE_TEXT } from './oracle_data.js';
 import { validSavedHero, validSavedPropertyName } from './hero_validation.js';
 import { validSavedAlignment, validSavedGameFlags, validSavedRace, validSavedRole, } from './character_validation.js';
 import { restoreSavedMap, validSavedDungeonLocation, validSavedPosition, validSavedStairways, } from './map_validation.js';
@@ -96,7 +97,7 @@ function validPersistentState(value, entities) {
         _preserveLeadingStyledBlanks: optional(boolean),
         _prevDecorType: optional(integer),
         _priestPantheonIndex: optional(integer),
-        _questExpulsionPending: optional(nullable((pending) => closedFieldsMatch(pending, { seal: boolean }))),
+        _questExpulsionPending: optional(nullable((pending) => closedFieldsMatch(pending, { seal: boolean, portal: optional(boolean) }))),
         _restoredBones: optional(boolean),
         _rndmonstAlignment: optional(nullable(validSavedSpecialLevel)),
         _rndmonstAlignmentMove: optional(integer),
@@ -161,6 +162,9 @@ function validPersistentState(value, entities) {
         objectMaterials: optional(arrayOf(integer)),
         objectToughness: optional(arrayOf(integer)),
         oracle_level: optional(validSavedSpecialLevel),
+        oracleRemaining: optional((records) => arrayOf(integer)(records) && records.length > 0 && records[0] === 0
+            && new Set(records).size === records.length
+            && records.every(record => record >= 0 && record < ORACLE_TEXT.length)),
         plname: string,
         polymorphControl: optional(boolean),
         preferred_pet: optional(string),

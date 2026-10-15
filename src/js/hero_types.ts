@@ -55,6 +55,8 @@ export interface HeroEvents {
     amulet_wish?: HeroEventFlag;
     gehennom_entered?: HeroEventFlag;
     invoked?: HeroEventFlag;
+    minor_oracle?: HeroEventFlag;
+    major_oracle?: HeroEventFlag;
     qcalled?: HeroEventFlag;
     qcompleted?: HeroEventFlag;
     qexpelled?: HeroEventFlag;

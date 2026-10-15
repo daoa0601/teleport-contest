@@ -23,6 +23,7 @@ import { installPagerInput } from './support/pager-input.js';
 import { installHeroChainedToBuriedBall } from './support/hero-state.js';
 import { invokeInventoryObject } from './support/commands.js';
 import { heroHasConflict } from '../js/hero_conflict.js';
+import { ensureQuestStatus } from '../js/quest.js';
 
 async function nearbyThief(species = 'water nymph') {
     const thief = await createMonsterAt(species, 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
@@ -119,6 +120,7 @@ function theftMessages() {
 void test('stealing the invoked Sceptre checks retaliation before its conflict power ends', async () => {
     freshObjectRoom({ role: 'caveman', hero: { ualign: { type: 1, record: 10 } } });
     requirePlayingGame(game);
+    ensureQuestStatus().touched_artifact = true;
     const sceptre = await addInventoryItem(await artifactObject('The Sceptre of Might'));
     theftMessages();
     await invokeInventoryObject(sceptre);
