@@ -4,6 +4,7 @@ import type {
 } from './roles.js';
 import type { GameFlags } from './flags.js';
 import { ismnum } from './const.js';
+import { MONSTER_SYMBOL } from './monster_data.js';
 import {
     arrayOf, boolean, closedFieldsMatch, integer, nullable, oneOf, optional, string,
 } from './saved_validation.js';
@@ -35,14 +36,18 @@ export function validSavedRole(value: unknown): value is Role {
         guardianName: optional(string),
         guardianPlural: optional(string),
         artifactName: string,
-        enemy1num: nullable(integer),
-        enemy1sym: integer,
-        enemy2num: integer,
-        enemy2sym: integer,
+        enemy1num: nullable(ismnum),
+        enemy1sym: validQuestMonsterClass,
+        enemy2num: ismnum,
+        enemy2sym: validQuestMonsterClass,
         greeting: string,
         goodbye: string,
         spellcasting: validSpellcasting,
     });
+}
+
+function validQuestMonsterClass(value: unknown): value is number {
+    return typeof value === 'number' && MONSTER_SYMBOL.includes(value);
 }
 
 export function validSavedRace(value: unknown): value is Race {
