@@ -3997,7 +3997,7 @@ export async function triggerImmediateMonsterTrap(monster, state = requireInitia
     return { monster, movement, event, calls };
 }
 // Complete mintrap() for a source effect without running a movement tail.
-export async function finishImmediateMonsterTrap(action, state = requireInitializedGame(), { publish = plineWithContinuation, random = rn2, rollOne = rnd, rollDice = d, finishDeath } = {}) {
+export async function finishImmediateMonsterTrap(action, state = requireInitializedGame(), { publish = plineWithContinuation, random = rn2, rollOne = rnd, rollDice = d, finishDeath, describeMonster } = {}) {
     if (action.movement.escapingTrap)
         return action;
     if (action.event?.kind === 'rolling-boulder')
@@ -4005,6 +4005,7 @@ export async function finishImmediateMonsterTrap(action, state = requireInitiali
     await resumeDeferredMonsterTrap(action, state, {
         publish, random, rollOne, rollDice,
         ...(finishDeath ? { finishDeath } : {}),
+        ...(describeMonster ? { describeMonster } : {}),
     });
     return action;
 }

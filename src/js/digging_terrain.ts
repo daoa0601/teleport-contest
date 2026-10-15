@@ -66,12 +66,13 @@ import { gotoLevel } from './level_change.js';
 import { resolveMonsterLiquid } from './mon.js';
 import { angerAttackedMonster } from './monster_anger.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
-import { triggerImmediateMonsterTrap } from './monmove.js';
+import { finishImmediateMonsterTrap, triggerImmediateMonsterTrap } from './monmove.js';
 import { migrateMonsterOffLevel } from './monster_migration.js';
 import {
-    MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SIZE,
+    MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_SIZE,
 } from './monster_data.js';
 import { monsterResistsEffect } from './monster_resistance.js';
+import { monsterName } from './monster_name.js';
 import {
     monstersForgetHeroResistance, monstersObserveHeroResistance,
 } from './monster_perception.js';
@@ -176,9 +177,8 @@ function liquidName(typ: number): string {
     return typ === LAVAPOOL ? 'lava' : 'water';
 }
 
-function monsterSubject(monster: Monster): string {
-    if (monster.name) return monster.name;
-    return `The ${MONSTER_NAME[monster.mnum] || 'monster'}`;
+function monsterSubject(monster: Monster, state: GameState = game): string {
+    return monsterName(monster, { state, capitalized: true });
 }
 
 // C dig.c:dig_check().  Pure classification; no messages, no randomness.
@@ -555,7 +555,10 @@ export async function digActualHole(
                         + `${flying ? 'flies' : 'floats'} over the pit.`);
                 }
             } else if (victim !== madeBy) {
-                await triggerImmediateMonsterTrap(victim, state);
+                const fall = await triggerImmediateMonsterTrap(victim, state);
+                await finishImmediateMonsterTrap(fall, state, {
+                    describeMonster: monster => monsterSubject(monster, state),
+                });
             }
         }
     } else { /* was TRAPDOOR, now a HOLE */

@@ -25,10 +25,11 @@ import { gotoLevel } from './level_change.js';
 import { resolveMonsterLiquid } from './mon.js';
 import { angerAttackedMonster } from './monster_anger.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
-import { triggerImmediateMonsterTrap } from './monmove.js';
+import { finishImmediateMonsterTrap, triggerImmediateMonsterTrap } from './monmove.js';
 import { migrateMonsterOffLevel } from './monster_migration.js';
-import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SIZE, } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_SIZE, } from './monster_data.js';
 import { monsterResistsEffect } from './monster_resistance.js';
+import { monsterName } from './monster_name.js';
 import { monstersForgetHeroResistance, monstersObserveHeroResistance, } from './monster_perception.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
 import { publishMonsterYelp } from './monster_anger.js';
@@ -107,10 +108,8 @@ function alignmentWord(alignment) {
 function liquidName(typ) {
     return typ === LAVAPOOL ? 'lava' : 'water';
 }
-function monsterSubject(monster) {
-    if (monster.name)
-        return monster.name;
-    return `The ${MONSTER_NAME[monster.mnum] || 'monster'}`;
+function monsterSubject(monster, state = game) {
+    return monsterName(monster, { state, capitalized: true });
 }
 // C dig.c:dig_check().  Pure classification; no messages, no randomness.
 export function digCheck(madeBy, x, y, state = game) {
@@ -482,7 +481,10 @@ export async function digActualHole(x, y, madeBy, ttyp, { state = game } = {}) {
                 }
             }
             else if (victim !== madeBy) {
-                await triggerImmediateMonsterTrap(victim, state);
+                const fall = await triggerImmediateMonsterTrap(victim, state);
+                await finishImmediateMonsterTrap(fall, state, {
+                    describeMonster: monster => monsterSubject(monster, state),
+                });
             }
         }
     }
