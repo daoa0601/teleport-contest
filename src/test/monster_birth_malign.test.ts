@@ -7,12 +7,13 @@ import {
 } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
-import { fillSpecialRoom, makemonAt, summonNastyMonsters } from '../js/mklev.js';
+import { fillSpecialRoom, makemonAt } from '../js/mklev.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import type { AlignmentValue } from '../js/roles.js';
 import type { Room } from '../js/map_types.js';
 import { makedog } from '../js/u_init.js';
 import { createMonsterAt } from './support/monsters.js';
+import { finishSpellTurn, prepareSpellCaster } from './support/monster-spells.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 for (const peaceful of [true, false]) {
@@ -124,21 +125,26 @@ void test('killing a co-aligned centaur forced hostile by court stocking rewards
 });
 
 void test('killing a co-aligned elemental forced hostile by nasty summoning rewards the hero', async () => {
-    freshObjectRoom({ gameplaySeed: 22n });
-    requirePlayingGame(game);
-    game.in_mklev = true;
-    const { created } = await summonNastyMonsters(null);
-    const elemental = created.find(monster =>
-        MONSTER_NAME[monster.mnum] === 'fire elemental');
-    assert.ok(elemental, 'summoning should create a fire elemental');
-    assert.equal(elemental.mpeaceful, 0);
-    game.in_mklev = false;
+    let killedElemental = false;
+    // Both the spell and species are random; the alignment rule must not
+    // depend on one fixed draw producing an elemental during level creation.
+    for (let seed = 1; seed <= 1024 && !killedElemental; seed++) {
+        await prepareSpellCaster('arch-lich', 17);
+        requirePlayingGame(game);
+        await finishSpellTurn(seed);
+        const elemental = game.level.monsters.find(monster =>
+            !monster.dead && MONSTER_NAME[monster.mnum] === 'fire elemental');
+        if (!elemental) continue;
+        assert.equal(elemental.mpeaceful, 0);
 
-    await finishHeroMonsterKill(elemental, elemental.mx, elemental.my, {
-        showKillMessage: false, noCorpse: true,
-    });
+        await finishHeroMonsterKill(elemental, elemental.mx, elemental.my, {
+            showKillMessage: false, noCorpse: true,
+        });
 
-    assert.equal(game.u.ualign.record, 3);
+        assert.equal(game.u.ualign.record, 3);
+        killedElemental = true;
+    }
+    assert.ok(killedElemental, 'The hero should encounter a summoned fire elemental');
 });
 
 for (const species of ['little dog', 'kitten', 'pony']) {
