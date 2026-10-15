@@ -10,7 +10,8 @@ import { triggerHeroTrap } from './hero_traps.js';
 import { game } from './gstate.js';
 import { buryFloorObjectsAt } from './buried_object.js';
 import { maketrap } from './mklev.js';
-import { MONSTER_ATTACKS, MONSTER_NAME, monsterIsAnimal, monsterIsWhirly, monsterTypeName, } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_NAME, monsterIsAnimal, monsterIsWhirly, } from './monster_data.js';
+import { monsterName } from './monster_name.js';
 import { AD_COLD, AD_ELEC, AD_FIRE, AT_ENGL, } from './monster_attack_types.js';
 import { heroMonsterForm } from './polyself.js';
 import { promptKey } from './tty_prompts.js';
@@ -43,10 +44,6 @@ export async function chooseSpiderAbility(readKey = promptKey) {
 function trapAtHero(state) {
     return state.level?.traps?.find(trap => trap.tx === state.u.ux && trap.ty === state.u.uy) || null;
 }
-function monsterName(monster) {
-    return monster?.name
-        || monsterTypeName(monster?.mnum, !!monster?.female);
-}
 function engulfingAttack(monster) {
     return (MONSTER_ATTACKS[monster?.mnum] || []).find(([attackType]) => attackType === AT_ENGL);
 }
@@ -65,8 +62,8 @@ async function spinWhileSwallowed(state, publish, refresh) {
     const monster = state.u.ustuck;
     if (!monster)
         throw new Error('A swallowed hero must have an engulfing monster');
-    const name = monsterName(monster);
-    await publish(`You release web fluid inside the ${name}.`);
+    const name = monsterName(monster, { state });
+    await publish(`You release web fluid inside ${name}.`);
     if (monsterIsAnimal(monster)) {
         await expelHero(monster, { state, publish, refresh });
     }
@@ -74,7 +71,7 @@ async function spinWhileSwallowed(state, publish, refresh) {
         await publish(whirlyWebMessage(monster));
     }
     else {
-        await publish(`The web dissolves into the ${name}.`);
+        await publish(`The web dissolves into ${name}.`);
     }
 }
 export async function useHeroWeb({ state = game, publish = plineWithContinuation, refresh = newsym, createTrap = maketrap, activateTrap = triggerHeroTrap, } = {}) {

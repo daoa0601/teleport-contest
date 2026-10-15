@@ -1,0 +1,45 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { STONE } from '../js/const.js';
+import { game } from '../js/gstate.js';
+import { resetInputState } from '../js/input.js';
+import { vision_recalc, vision_reset_new_level } from '../js/vision.js';
+import { runMonsterAbilityCommand } from './support/commands.js';
+import { freshMonsterAbilityRoom, installSwallowedHero } from './support/hero-state.js';
+import { createMonsterAt } from './support/monsters.js';
+void test('a psychic blast does not reveal the species of an unseen telepath', async () => {
+    freshMonsterAbilityRoom('mind flayer', { energy: 20 });
+    const eye = await createMonsterAt('floating eye', 14, 10);
+    eye.mhp = eye.mhpmax = 100;
+    eye.mcansee = 0;
+    eye.minvis = 1;
+    eye.mpeaceful = 0;
+    const wall = game.level?.requireAt(12, 10);
+    assert.ok(wall);
+    wall.typ = STONE;
+    vision_reset_new_level();
+    vision_recalc(0);
+    const input = resetInputState();
+    const messages = [];
+    input.beforeRead = () => { messages.push(game._pending_message); };
+    await runMonsterAbilityCommand('                        ');
+    messages.push(game._pending_message);
+    assert.ok(eye.mhp < 100);
+    assert.match(messages.join('\n'), /You lock in on its telepathy\./);
+    assert.doesNotMatch(messages.join('\n'), /floating eye/);
+});
+void test('web fluid inside a named engulfer uses its proper name', async () => {
+    freshMonsterAbilityRoom('giant spider');
+    const worm = await createMonsterAt('purple worm', 11, 10);
+    worm.mgivenname = 'Wriggle';
+    installSwallowedHero(worm);
+    const input = resetInputState();
+    const messages = [];
+    input.beforeRead = () => { messages.push(game._pending_message); };
+    await runMonsterAbilityCommand('                        ');
+    messages.push(game._pending_message);
+    assert.match(messages.join('\n'), /You release web fluid inside Wriggle\./);
+    assert.equal(game.u.uswallow, 0);
+    assert.equal(game.context.move, 0);
+});
+//# sourceMappingURL=polymorph_ability_targets.test.js.map

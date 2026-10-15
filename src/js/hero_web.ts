@@ -23,8 +23,9 @@ import { buryFloorObjectsAt } from './buried_object.js';
 import { maketrap } from './mklev.js';
 import {
     MONSTER_ATTACKS, MONSTER_NAME, monsterIsAnimal,
-    monsterIsWhirly, monsterTypeName,
+    monsterIsWhirly,
 } from './monster_data.js';
+import { monsterName } from './monster_name.js';
 import {
     AD_COLD, AD_ELEC, AD_FIRE, AT_ENGL,
 } from './monster_attack_types.js';
@@ -63,11 +64,6 @@ function trapAtHero(state: GameState) {
         trap.tx === state.u.ux && trap.ty === state.u.uy) || null;
 }
 
-function monsterName(monster: Monster) {
-    return monster?.name
-        || monsterTypeName(monster?.mnum, !!monster?.female);
-}
-
 function engulfingAttack(monster: Monster) {
     return (MONSTER_ATTACKS[monster?.mnum] || []).find(
         ([attackType]) => attackType === AT_ENGL,
@@ -86,14 +82,14 @@ function whirlyWebMessage(monster: Monster) {
 async function spinWhileSwallowed(state: GameState, publish: MessagePublisher, refresh: typeof newsym) {
     const monster = state.u.ustuck;
     if (!monster) throw new Error('A swallowed hero must have an engulfing monster');
-    const name = monsterName(monster);
-    await publish(`You release web fluid inside the ${name}.`);
+    const name = monsterName(monster, { state });
+    await publish(`You release web fluid inside ${name}.`);
     if (monsterIsAnimal(monster)) {
         await expelHero(monster, { state, publish, refresh });
     } else if (monsterIsWhirly(monster)) {
         await publish(whirlyWebMessage(monster));
     } else {
-        await publish(`The web dissolves into the ${name}.`);
+        await publish(`The web dissolves into ${name}.`);
     }
 }
 
