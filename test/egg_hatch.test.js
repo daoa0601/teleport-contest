@@ -63,7 +63,7 @@ void test('fresh floor egg hatches visibly, teaches its type, and is deleted', a
     assert.equal(egg.quan, 0);
     assert.equal(egg.where, 'floor');
     assert.ok(game.level.monsters.some(monster => monster.mnum === 94));
-    finishEggHatchTimer(event, game, game.moves);
+    await finishEggHatchTimer(event, game, game.moves);
     assert.equal(egg.where, 'gone');
     assert.equal(floorObjectsAt(requireGameLevel(game), 12, 10).includes(egg), false);
     assert.equal(objectTimers(egg).length, 0);
@@ -85,7 +85,7 @@ void test('floor egg stack hatches a younger form and schedules its remainder', 
     assert.equal(event.mnum, 325); // baby crocodile
     assert.equal(event.message, 'You see a baby crocodile hatch.');
     assert.equal(egg.quan, 1);
-    finishEggHatchTimer(event, game, game.moves);
+    await finishEggHatchTimer(event, game, game.moves);
     assert.equal(egg.where, 'floor');
     assert.equal(egg.owt, objectWeight(egg));
     const remainder = hatchTimer(egg);
@@ -105,7 +105,7 @@ void test('overdue floor hatching is silent and does not teach egg identity', as
     assert.ok(event, 'The due object timer must produce its effect.');
     assert.equal(event.message, null);
     assert.equal(event.hatched, 1);
-    finishEggHatchTimer(event, game, game.moves);
+    await finishEggHatchTimer(event, game, game.moves);
     assert.equal(egg.where, 'gone');
     assert.equal((game.mvitals[egg.corpsenm]?.mvflags ?? 0) & MV_KNOWS_EGG, 0);
 });
@@ -142,7 +142,7 @@ void test('unowned carried egg hatches beside a female hero before pack deletion
     assert.equal(event.hatched, 1);
     assert.ok(game.inventory.includes(egg));
     assert.ok(game.level.monsters.some(monster => monster.mnum === 94));
-    finishEggHatchTimer(event, game, game.moves);
+    await finishEggHatchTimer(event, game, game.moves);
     assert.equal(egg.where, 'gone');
     assert.equal(game.inventory.includes(egg), false);
     assert.ok((game.mvitals[egg.corpsenm]?.mvflags ?? 0) & MV_KNOWS_EGG);
@@ -162,7 +162,7 @@ void test('blind carried hatching uses tactile prose and does not teach identity
     const event = await runClaimedEggHatchTimer(claimNextDueObjectTimer(game, game.moves), game, game.moves);
     assert.ok(event, 'The due object timer must produce its effect.');
     assert.equal(event.message, 'You feel something drop from your pack!');
-    finishEggHatchTimer(event, game, game.moves);
+    await finishEggHatchTimer(event, game, game.moves);
     assert.equal((game.mvitals[egg.corpsenm]?.mvflags ?? 0) & MV_KNOWS_EGG, 0);
 });
 void test('carried egg stack keeps its remainder and short timer after pack prose', async () => {
@@ -180,7 +180,7 @@ void test('carried egg stack keeps its remainder and short timer after pack pros
     assert.equal(event.message, 'You see a baby crocodile drop out of your pack!');
     assert.equal(egg.quan, 1);
     assert.equal(objectTimers(egg).length, 0);
-    finishEggHatchTimer(event, game, game.moves);
+    await finishEggHatchTimer(event, game, game.moves);
     assert.ok(game.inventory.includes(egg));
     assert.equal(egg.where, 'inventory');
     assert.ok(hatchTimer(egg).deadline >= game.moves + 1);
@@ -198,7 +198,7 @@ void test('a hero-laid floor egg hatches a tame monster', async () => {
     assert.ok('monster' in event && event.monster);
     assert.ok((event.monster.mtame ?? 0) > 0);
     assert.equal(event.monster.mpeaceful, 1);
-    finishEggHatchTimer(event, game, game.moves);
+    await finishEggHatchTimer(event, game, game.moves);
 });
 void test('a dragon egg in the pack hatches a tame dragon', async () => {
     freshEggState(2);
@@ -216,8 +216,8 @@ void test('a dragon egg in the pack hatches a tame dragon', async () => {
     assert.equal(event.mnum, 133); // baby gray dragon
     assert.ok('monster' in event && event.monster);
     assert.ok((event.monster.mtame ?? 0) > 0);
-    assert.equal(event.followupMessage, 'Gleep!');
-    finishEggHatchTimer(event, game, game.moves);
+    assert.equal(event.followupMessage, '"Gleep!"');
+    await finishEggHatchTimer(event, game, game.moves);
 });
 void test('an egg hatches out of a visible monster pack', async () => {
     freshEggState(2);
@@ -231,7 +231,7 @@ void test('an egg hatches out of a visible monster pack', async () => {
     const event = await runClaimedEggHatchTimer(claimNextDueObjectTimer(game, game.moves), game, game.moves);
     assert.ok(event, 'The due object timer must produce its effect.');
     assert.equal(event.message, "You see a cave spider drop out of a human's pack!");
-    finishEggHatchTimer(event, game, game.moves);
+    await finishEggHatchTimer(event, game, game.moves);
     assert.equal(carrier.minvent.includes(egg), false);
     assert.equal(egg.where, 'gone');
 });

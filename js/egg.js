@@ -3,11 +3,13 @@
 import { G_EXTINCT, G_GENOD, IS_POOL, MM_NOMSG, MV_KNOWS_EGG, NO_MINVENT, } from './const.js';
 import { canSeeMonster, newsym } from './display.js';
 import { tameMonster } from './monster_taming.js';
-import { remove_object } from './floor_object.js';
+import { useUpInventoryStack } from './hero_inventory.js';
+import { deleteObject } from './object_delete.js';
+import { hideMonsterUnder } from './monster_hiding.js';
+import { monsterAtPosition } from './monster_location.js';
 import { game } from './gstate.js';
 import { makemonNear } from './mklev.js';
-import { MONSTER_FLAGS1, MONSTER_GENO, MONSTER_MOVE, MONSTER_SOUND, MONSTER_SYMBOL, monsterTypeName, monsterYoungerForm, } from './monster_data.js';
-import { unlinkMonsterObject } from './monster_inventory.js';
+import { MONSTER_FLAGS1, MONSTER_GENO, MONSTER_GROWTH_TARGET, MONSTER_MOVE, MONSTER_SOUND, MONSTER_SYMBOL, monsterTypeName, monsterYoungerForm, } from './monster_data.js';
 import { EGG } from './object_data.js';
 import { makePlural, withIndefiniteArticle } from './object_grammar.js';
 import { OBJECT_TIMER_KIND, scheduleObjectTimer, } from './object_timers.js';
@@ -208,9 +210,11 @@ export async function runClaimedEggHatchTimer(claimed, state = game, currentTurn
                 monster.mtame = 20;
         }
         lastMonster = monster;
-        hatched++;
+        // C breaks before the for-loop decrement when this birth reaches
+        // extinction. Its hatch count therefore excludes that last newborn.
         if ((state.mvitals?.[mnum]?.mvflags ?? 0) & G_EXTINCT)
             break;
+        hatched++;
     }
     if (!lastMonster) {
         return {
@@ -231,7 +235,7 @@ export async function runClaimedEggHatchTimer(claimed, state = game, currentTurn
         knowsEgg = true;
     }
     else if (location.kind === 'minvent' && visible) {
-        const presentation = monsterInventoryHatchMessage(mnum, hatched, location.carrier, x, y, state);
+        const presentation = monsterInventoryHatchMessage(mnum, hatched, location.carrier, lastMonster.mx, lastMonster.my, state);
         message = presentation.message;
         knowsEgg = presentation.knowsEgg;
     }
@@ -242,7 +246,7 @@ export async function runClaimedEggHatchTimer(claimed, state = game, currentTurn
         }
         else if (MONSTER_SYMBOL[mnum] === S_DRAGON
             && !heroIsDeaf(state)) {
-            followupMessage = 'Gleep!';
+            followupMessage = '"Gleep!"';
         }
     }
     return {
@@ -253,16 +257,15 @@ export async function runClaimedEggHatchTimer(claimed, state = game, currentTurn
         finishPending: true,
     };
 }
-export function finishEggHatchTimer(event, state = game, currentTurn = state.moves) {
+export async function finishEggHatchTimer(event, state = game, currentTurn = state.moves) {
     if (!event?.finishPending || !event.egg)
         return event;
     const egg = event.egg;
+    const carried = egg.where === 'inventory';
     if (event.learnPending) {
         if (!Array.isArray(state.mvitals))
             state.mvitals = [];
-        const adult = egg.corpsenm;
-        if (adult === undefined)
-            throw new Error('Hatched egg has no adult species');
+        const adult = MONSTER_GROWTH_TARGET[event.mnum] ?? event.mnum;
         const vital = state.mvitals[adult]
             || (state.mvitals[adult] = { mvflags: 0, born: 0, died: 0 });
         vital.mvflags = (vital.mvflags ?? 0) | MV_KNOWS_EGG;
@@ -271,25 +274,17 @@ export function finishEggHatchTimer(event, state = game, currentTurn = state.mov
         scheduleObjectTimer(egg, OBJECT_TIMER_KIND.HATCH_EGG, currentTurn + rnd(12), state);
         egg.owt = objectWeight(egg);
     }
-    else {
-        if (egg.where === 'floor') {
-            remove_object(egg);
-        }
-        else if (egg.where === 'inventory') {
-            const index = (state.inventory || []).indexOf(egg);
-            if (index >= 0)
-                state.inventory.splice(index, 1);
-        }
-        else if (egg.where === 'minvent') {
-            const carrier = event.carrier || eggCarrier(egg, state);
-            if (carrier)
-                unlinkMonsterObject(carrier, egg);
-        }
-        egg.where = 'gone';
-        egg.ocarry = null;
-        delete egg.carrierMid;
-        egg.ox = egg.oy = 0;
+    else if (carried) {
+        await useUpInventoryStack(egg, state);
     }
+    else {
+        await deleteObject(egg, state);
+        const monster = state.level && monsterAtPosition(state.level, event.x, event.y);
+        if (monster && !await hideMonsterUnder(monster, state) && cansee(event.x, event.y))
+            event.redraw = true;
+    }
+    if (carried)
+        state._capacityDirty = true;
     if (event.redraw)
         newsym(event.x, event.y);
     event.finishPending = false;
