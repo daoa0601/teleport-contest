@@ -56,3 +56,16 @@ void test('chatting upward gives the native refusal without spending a turn', as
     assert.equal(game._pending_message, "They won't hear you up there.");
     assert.equal(game.context.move, 0);
 });
+
+void test('chatting at a long worm tail rouses its waiting head without a reply', async () => {
+    freshObjectRoom();
+    const worm = await createMonsterAt('long worm', 13, 10);
+    worm.wormSegments = [{ x: 12, y: 10 }, { x: 11, y: 10 }];
+    worm.mstrategy = STRAT_WAITFORU;
+    worm.msleeping = 0;
+
+    await runExtendedCommand('chat', 'l');
+
+    assert.equal(worm.mstrategy, 0);
+    assert.equal(game.context.move, 0);
+});

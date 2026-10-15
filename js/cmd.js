@@ -2684,7 +2684,7 @@ async function dochat() {
     const y = game.u.uy + direction.dy;
     if (!isok(x, y))
         return;
-    const monster = game.level?.monsters.find(mon => monsterHasMapPosition(mon, game) && mon.mx === x && mon.my === y);
+    const monster = game.level ? monsterAtPosition(game.level, x, y) : null;
     if (!monster || monster.mundetected) {
         const topObject = game.level?.objects[x]?.[y]?.[0];
         const loc = game.level?.at(x, y);
