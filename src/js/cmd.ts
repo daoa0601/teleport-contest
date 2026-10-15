@@ -382,7 +382,7 @@ import { objectWearMessage } from './object_wear_message.js';
 import { isWetTowel, willWeld } from './weapon_type.js';
 import { announceWeaponWeld, explainTwoWeaponEnd, refuseWeldedPrimary } from './weapon_feedback.js';
 import { dropCursedSecondaryWeapon, toggleTwoWeaponCombat } from './two_weapon.js';
-import { dist2, distmin, dungeonDepth } from './hacklib.js';
+import { dist2, distmin, dungeonDepth, ledgerNo } from './hacklib.js';
 import { triggerBoobyTrap } from './booby_trap.js';
 import { addShopDamage, payForShopDamage } from './shop_damage.js';
 import { convertSecretDoor } from './detect.js';
@@ -1892,6 +1892,19 @@ export async function travelStairs(up: boolean) {
         game.context.move = 0;
         return false;
     }
+    if (!up && game.valley_level?.dnum === game.u.uz.dnum
+        && game.valley_level.dlevel === game.u.uz.dlevel
+        && !game.u.uevent?.gehennom_entered) {
+        await plineWithContinuation('You are standing at the gate to Gehennom.');
+        await plineWithContinuation('Unspeakable cruelty and harm lurk down there.');
+        if (await promptYesNo('Are you sure you want to enter?') !== 'y') {
+            game.context.move = 0;
+            return false;
+        }
+        await plineWithContinuation('So be it.');
+        const events = game.u.uevent ?? (game.u.uevent = {});
+        events.gehennom_entered = 1;
+    }
     if (up && await stuckSteed(true, game)) {
         game.context.move = 0;
         return false;
@@ -1901,6 +1914,11 @@ export async function travelStairs(up: boolean) {
         await plineWithContinuation(`Your load is too heavy to climb the ${
             level.requireAt(game.u.ux, game.u.uy).typ === STAIRS ? 'stairs' : 'ladder'}.`);
         game.context.move = 1;
+        return false;
+    }
+    if (up && ledgerNo(game.u.uz) === 1
+        && await promptYesNo('Beware, there will be no return!  Still climb?') !== 'y') {
+        game.context.move = 0;
         return false;
     }
     if (!await bringLeashedFollowers()) {
