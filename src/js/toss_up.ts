@@ -7,6 +7,7 @@ import { heroFaceName, heroHeadName } from './body_parts.js';
 import { KILLED_BY, STONING, Upolyd, WT_TO_DMG } from './const.js';
 import { plineWithContinuation } from './display.js';
 import { finishHeroDeath } from './end.js';
+import { hitHeroWithFallingArtifact } from './falling_artifact.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { loseHeroHp } from './hero_damage.js';
 import { hitHeroWithThrownPotion } from './hero_potion_hit.js';
@@ -109,8 +110,15 @@ export async function tossObjectUp(object: GameObject, {
     let harmless = object.oclass !== RING_CLASS && (material === GEMSTONE || material === MINERAL)
         && !!(formFlags & M1_WALLWALK) && !(formFlags & M1_UNSOLID);
     let damage = rollPhysicalWeaponDamageAgainstHero(object, state, { rollOne });
-    // Hero-target artifact_hit effects are still absent from the shared
-    // artifact owner. Ordinary falling damage remains the caller's work.
+    let artifactMessage = false;
+    if (object.oartifact && !harmless) {
+        const artifact = await hitHeroWithFallingArtifact(object, damage, {
+            state, publish, random, rollOne, dieRoll: random(18) + 2,
+        });
+        if (artifact.heroDied) return object;
+        damage = artifact.damage;
+        artifactMessage = artifact.specialMessage;
+    }
     if (!damage) {
         const weightDamage = Math.max(1, Math.ceil(object.owt / WT_TO_DMG));
         damage = Math.min(6, weightDamage <= 1 ? 1 : rollOne(weightDamage));
@@ -127,7 +135,7 @@ export async function tossObjectUp(object: GameObject, {
         const helmetName = simpleArmorName(helmet, 'uarmh', state);
         const hp = Upolyd(hero) ? hero.mh : hero.uhp;
         if ((lessDamage && damage < hp) || harmless) {
-            await publish(harmless
+            if (!artifactMessage) await publish(harmless
                 ? `Unfortunately, you are wearing ${withIndefiniteArticle(helmetName)}.`
                 : 'Fortunately, you are wearing a hard helmet.');
         } else if (!petrifier && state.flags.verbose !== false) {
