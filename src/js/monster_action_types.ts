@@ -372,7 +372,6 @@ export interface HeroSpellAttack extends HeroAttackProgress {
     confusedHero?: boolean;
     paralyzed?: boolean;
     stunnedHero?: boolean;
-    toggledBlindness?: boolean;
     cloneWizard?: Monster;
     summonedMonsters?: Monster[];
     aggravatedMonsters?: Monster[];

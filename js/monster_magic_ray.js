@@ -14,6 +14,7 @@ import { seenResistanceForDamage } from './monster_perception.js';
 import { monsterLinedUpWithPerceivedHero } from './monmove.js';
 import { d, rn2, rnd } from './rng.js';
 import { displayRayName } from './ray_name.js';
+import { heroIsDeaf } from './senses.js';
 import { couldsee } from './vision.js';
 const M1_SEE_INVIS = 0x01000000;
 const STRANGE_OBJECT = 0;
@@ -35,8 +36,8 @@ async function curseDirectedSpell(monster, state, publish, random) {
     }
     else if (!(state.moves % 4) || !random(4)) {
         const message = 'You hear a mumbled curse.';
-        if (!state.deaf && !(state._pending_message || '').endsWith(message))
-            await publish(message);
+        if (!heroIsDeaf(state))
+            await publish(message, { noRepeat: true });
     }
 }
 export async function resolveMonsterMagicRay(monster, attack, { state = game, publish = plineWithContinuation, random = rn2, rollDice = d, rollOne = rnd, calls = [], die = finishHeroDeath, } = {}) {
