@@ -13,7 +13,7 @@ import { finishMonsterHideUnder } from './monster_hiding.js';
 import { heroIsHallucinating } from './senses.js';
 import { mcalcmove } from './monster_speed.js';
 import { learnWand } from './wand_charge.js';
-import { makeBlinded } from './sight_change.js';
+import { flashBurn, makeBlinded } from './sight_change.js';
 import { makeConfused, makeHallucinated, makeStunned } from './hero_mental_status.js';
 import { heroHasHalfSpellDamage } from './spell_damage.js';
 import { advanceSpellProtection } from './spell_misc_effects.js';
@@ -99,12 +99,12 @@ import { canSpotMonster, displayColorName, displayMessageWindow, docrt, redrawMa
 import { cansee, couldsee, vision_note_blocker_change, vision_recalc, vision_reset, hasLightSources, init_vision_globals, } from './vision.js';
 import { nhgetch } from './input.js';
 import { NO_COLOR, CLR_BRIGHT_BLUE } from './terminal.js';
-import { ACID_VENOM, BOULDER, CORPSE, LEASH, GOLD_PIECE, OBJECT_BIMANUAL, OBJECT_NAMES, SHIELD_OF_REFLECTION, } from './object_data.js';
+import { ACID_VENOM, BOULDER, CORPSE, LEASH, GOLD_PIECE, OBJECT_BIMANUAL, OBJECT_NAMES, } from './object_data.js';
 import { makePlural, verbForSubject, withIndefiniteArticle } from './object_grammar.js';
 import { monsterLocomotion } from './monster_locomotion.js';
 import { monsterFliesOrFloats } from './terrain_properties.js';
 import { observeDistantObjectForNaming, observeObjectForNaming, ownedObjectName, } from './objnam.js';
-import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, BOLT_LIM, COLNO, ROWNO, DOOR, D_CLOSED, D_LOCKED, HOLE, M_SEEN_FIRE, M_SEEN_MAGR, STONE, ZAP_POS, M_ATTK_AGR_DIED, M_ATTK_AGR_DONE, W_ARMG, UNENCUMBERED, MOD_ENCUMBER, HVY_ENCUMBER, EXT_ENCUMBER, W_ACCESSORY, W_WEAPONS, ismnum, Upolyd, Is_airlevel, Is_waterlevel, LUCKMIN, LUCKMAX, TT_BURIEDBALL, TT_LAVA, } from './const.js';
+import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, BOLT_LIM, COLNO, ROWNO, DOOR, D_CLOSED, D_LOCKED, HOLE, M_SEEN_ELEC, M_SEEN_FIRE, M_SEEN_MAGR, M_SEEN_REFL, STONE, ZAP_POS, M_ATTK_AGR_DIED, M_ATTK_AGR_DONE, W_ARMG, UNENCUMBERED, MOD_ENCUMBER, HVY_ENCUMBER, EXT_ENCUMBER, W_ACCESSORY, W_WEAPONS, ismnum, Upolyd, Is_airlevel, Is_waterlevel, LUCKMIN, LUCKMAX, TT_BURIEDBALL, TT_LAVA, } from './const.js';
 import { uInitMisc, makedog, uInitInventoryAttrs, finishStartingDiscoveries, } from './u_init.js';
 import { makeDeaf } from './hero_hearing.js';
 import { heroIsBlind, heroIsDeaf, syncBlindness } from './senses.js';
@@ -112,7 +112,7 @@ import { syncHeroInvisibility } from './hero_invisibility.js';
 import { refreshHeroSeeing } from './hero_seeing.js';
 import { igniteItems } from './light.js';
 import { applyRayFloorFeatures, destroyColdInventory, destroyElectricInventory, destroyFireInventory, } from './zap.js';
-import { discoverReflectingShield } from './ray.js';
+import { discoverHeroReflectionSource, heroReflectionSource } from './ray.js';
 import { addObjectToMonsterInventory, } from './monster_inventory.js';
 import { claimNextDueObjectTimer, peekNextDueObjectTimer, } from './object_timers.js';
 import { nativeRoleAt } from './roles.js';
@@ -2047,20 +2047,29 @@ async function resolveDeferredHeroLightningSpell(action, heroAttack, publish) {
     const game = requireInitializedGame();
     if (!heroAttack?.deferredLightningSpell)
         return;
-    const reflectedByShield = game.uarms?.otyp === SHIELD_OF_REFLECTION;
-    if (reflectedByShield) {
-        await publish('It bounces off your shield.');
-        discoverReflectingShield();
-        d(8, 6);
-        action.calls.push('d(8,6)');
+    const reflection = heroReflectionSource(game);
+    if (reflection) {
+        await publish(`It bounces off your ${reflection.noun}.`);
+        discoverHeroReflectionSource(reflection, game);
+    }
+    const originalDamage = d(8, 6);
+    action.calls.push('d(8,6)');
+    const shockResistant = !!game.u.shockResistance;
+    if (reflection || shockResistant)
+        await shieldeff(game.u.ux, game.u.uy, game);
+    if (reflection) {
+        monstersObserveHeroResistance(M_SEEN_REFL, game);
         heroAttack.appliedDamage = 0;
         heroAttack.reflectedLightning = true;
         heroAttack.deferredLightningSpell = false;
         return;
     }
-    const originalDamage = d(8, 6);
-    action.calls.push('d(8,6)');
-    const shockResistant = !!(game.u.shockResistance);
+    if (shockResistant) {
+        monstersForgetHeroResistance(M_SEEN_REFL, game);
+        monstersObserveHeroResistance(M_SEEN_ELEC, game);
+    }
+    else
+        monstersForgetHeroResistance(M_SEEN_ELEC | M_SEEN_REFL, game);
     let appliedDamage = shockResistant ? 0 : originalDamage;
     if (heroHasHalfSpellDamage(game))
         appliedDamage = Math.trunc((appliedDamage + 1) / 2);
@@ -2071,13 +2080,12 @@ async function resolveDeferredHeroLightningSpell(action, heroAttack, publish) {
     });
     if (items.heroDied)
         return;
+    await applyRayFloorFeatures('lightning', game.u.ux, game.u.uy, game, {
+        rayNoun: 'spell', heroCaused: false, publish,
+    });
     const flashDuration = rnd(100);
     action.calls.push('rnd(100)');
-    await publish('You are blinded by the flash!');
-    game.u.blindTurns = (game.u.blindTurns ?? 0) + flashDuration;
-    syncBlindness(game);
-    game.vision_full_recalc = 1;
-    vision_recalc(0);
+    await flashBurn(flashDuration, true, { state: game, publish });
     applyHeroSpellDamage(heroAttack, appliedDamage, game);
     heroAttack.deferredLightningSpell = false;
 }
