@@ -1,4 +1,4 @@
-import { publishHeardMessage } from './hero_speech.js';
+import { formatFeltMessage, publishHeardMessage } from './hero_speech.js';
 import { ingSuffix } from './hacklib.js';
 import { heroLocomotion } from './hero_locomotion.js';
 import { autokey, autoUnlockFlags, continuePicking, pickLock } from './lock_pick.js';
@@ -241,7 +241,7 @@ import { continueFoodMeal, doeat } from './eat.js';
 import { continueTinOpening, useTinOpener } from './tin.js';
 import { PLAYABLE_INSTRUMENTS, playInstrument } from './music.js';
 import { dodiscovered } from './o_init.js';
-import { doattributes, doconduct } from './insight.js';
+import { doattributes, doconduct, showEnlightenment } from './insight.js';
 import { contactHelp, displayHelpFile, menuControlsHelp, setOptionsCommand } from './pager_help.js';
 import { doextversion, NATIVE_VERSION } from './extversion.js';
 import { dosearch, findit } from './detect.js';
@@ -1783,6 +1783,12 @@ export async function drinkFountain(loc: MapLocation) {
         await updateHeroHunger(false);
         if (game.program_state.gameover) return true;
         if (blessed) return false;
+    } else if (fate === 19) {
+        await plineWithContinuation(formatFeltMessage('self-knowledgeable...'));
+        await flushPendingTopline();
+        await showEnlightenment({ basic: false, magic: true });
+        await exerciseAttribute(A_WIS, true);
+        await plineWithContinuation('The feeling subsides.');
     } else if (fate === 20) {
         await plineWithContinuation('The water is foul!  You gag and vomit.');
         // C refs: fountain.c:drinkfountain(), eat.c:vomit(), and
