@@ -2,15 +2,15 @@
 // C ref: sit.c dosit() and lay_an_egg().
 
 import {
-    A_STR, A_WIS, ALTAR, DRAWBRIDGE_DOWN, FOUNTAIN, GRAVE, ICE, ROOM,
+    A_STR, A_WIS, ALTAR, DRAWBRIDGE_DOWN, FOUNTAIN, GRAVE, ICE,
     IS_LAVA, IS_POOL, Is_waterlevel, is_hole, is_pit, LADDER, SINK, SPIKED_PIT, STAIRS, THRONE,
     TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB,
 } from './const.js';
 import { exerciseAttribute } from './attrib.js';
-import { plineWithContinuation as pline } from './display.js';
+import { displayLiquidName, plineWithContinuation as pline } from './display.js';
+import { heroFootName } from './body_parts.js';
 import { game, requireInitializedGame } from './gstate.js';
 import type { GameObject } from './object_types.js';
-import type { Monster } from './monster_types.js';
 import type { Trap } from './map_types.js';
 import type { HeroTrapOptions } from './hero_traps.js';
 import type { ThroneOptions } from './throne.js';
@@ -25,7 +25,7 @@ import {
     mksobj, set_corpsenm,
 } from './mklev.js';
 import {
-    MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME,
+    MONSTER_FLAGS1,
     MONSTER_SYMBOL,
 } from './monster_data.js';
 import {
@@ -34,6 +34,8 @@ import {
 } from './object_data.js';
 import { observeObject } from './object_knowledge.js';
 import { objectCombatName, definiteName } from './objnam.js';
+import { monsterName, monsterPossessive } from './monster_name.js';
+import { surfaceName } from './terrain_name.js';
 import { heroGoldAmount } from './hero_gold.js';
 import {
     heroFormFlags, heroFormHidesWithoutCover,
@@ -56,7 +58,6 @@ const M1_AMORPHOUS = 0x00000004;
 const M1_HUMANOID = 0x00020000;
 const M1_SLITHY = 0x00080000;
 const M1_OVIPAROUS = 0x00400000;
-const M2_NEUTER = 0x00040000;
 const S_DRAGON = 30;
 const S_EEL = 57;
 const PM_QUEEN_BEE = 5;
@@ -71,22 +72,6 @@ const PM_GIANT_EEL = 319;
 const PM_ELECTRIC_EEL = 320;
 const PM_SALAMANDER = 329;
 
-function monsterName(monster: Monster): string {
-    return monster?.name || MONSTER_NAME[monster?.mnum] || 'monster';
-}
-
-function holderSubject(monster: Monster): string {
-    const name = monsterName(monster);
-    return monster?.name
-        ? name.charAt(0).toUpperCase() + name.slice(1)
-        : `The ${name}`;
-}
-
-function holderPossessive(monster: Monster): string {
-    if ((MONSTER_FLAGS2[monster?.mnum] ?? 0) & M2_NEUTER) return 'its';
-    return monster?.female ? 'her' : 'his';
-}
-
 function formIsHumanoid() {
     return heroMonsterForm(game) == null
         || !!(heroFormFlags(game) & M1_HUMANOID);
@@ -94,18 +79,6 @@ function formIsHumanoid() {
 
 function objectQuantity(object: GameObject): number {
     return object?.quan ?? object?.quantity ?? 1;
-}
-
-function surfaceName(typ: number): string {
-    if (IS_POOL(typ)) return 'water';
-    if (IS_LAVA(typ)) return 'lava';
-    if (typ === ICE) return 'ice';
-    if (typ === DRAWBRIDGE_DOWN) return 'bridge';
-    if (typ === ALTAR) return 'altar';
-    if (typ === GRAVE) return 'headstone';
-    if (typ === FOUNTAIN) return 'fountain';
-    if (typ === STAIRS || typ === LADDER) return 'stairs';
-    return typ >= ROOM ? 'floor' : 'ground';
 }
 
 function waterEggLayer() {
@@ -199,7 +172,7 @@ async function sitWhileTrapped(trap: Trap | null): Promise<boolean> {
     if (u.utrap === undefined) throw new Error('Sitting while trapped requires an active trap duration.');
     await exerciseAttribute(A_WIS, false);
     if (u.utraptype === TT_BEARTRAP) {
-        await pline("You can't sit down with your foot in the bear trap.");
+        await pline(`You can't sit down with your ${heroFootName()} in the bear trap.`);
         u.utrap++;
     } else if (u.utraptype === TT_PIT) {
         if (trap?.ttyp === SPIKED_PIT) {
@@ -217,7 +190,7 @@ async function sitWhileTrapped(trap: Trap | null): Promise<boolean> {
         await pline('You sit in the spider web and get entangled further!');
         u.utrap += 5 + rn2(10);
     } else if (u.utraptype === TT_LAVA) {
-        await pline('You sit in the lava!');
+        await pline(`You sit in the ${displayLiquidName('lava')}!`);
         await burnAwayHeroSlime(game, pline);
         u.utrap += rnd(4);
         if (await loseHeroHp(d(2, 10), 'sitting in lava',
@@ -231,7 +204,7 @@ async function sitWhileTrapped(trap: Trap | null): Promise<boolean> {
 }
 
 async function sitInWater() {
-    await pline('You sit in the water.');
+    await pline(`You sit in the ${displayLiquidName('water')}.`);
     if (heroMonsterForm(game) === PM_GREMLIN) {
         await splitSittingGremlin();
         return;
@@ -289,11 +262,10 @@ export async function dosit({
     if (u?.ustuck && !heroFormSticks(game)) {
         const holder = u.ustuck;
         const humanoid = (MONSTER_FLAGS1[holder.mnum] ?? 0) & M1_HUMANOID;
+        const subject = monsterName(holder, { capitalized: true });
         await pline(humanoid
-            ? `${holderSubject(holder)} won't offer ${
-                holderPossessive(holder)
-            } lap.`
-            : `${holderSubject(holder)} has no lap.`);
+            ? `${subject} won't offer ${monsterPossessive(holder)} lap.`
+            : `${subject} has no lap.`);
         game.context.move = 0;
         return;
     }
@@ -344,12 +316,12 @@ export async function dosit({
     } else if (typ === LADDER) {
         await pline('You sit on the ladder.');
     } else if (IS_LAVA(typ)) {
-        await pline('You sit on the lava.');
+        await pline(`You sit on the ${displayLiquidName('lava')}.`);
         await burnAwayHeroSlime(game, pline);
         if (formLikesLava()) {
-            await pline('The lava feels warm.');
+            await pline(`The ${displayLiquidName('lava')} feels warm.`);
         } else {
-            await pline('The lava burns you!');
+            await pline(`The ${displayLiquidName('lava')} burns you!`);
             const dice = u?.fireResistance ? 2 : 10;
             if (await loseHeroHp(d(dice, 10), 'sitting on lava',
                 { deathCause: 'killed by sitting on lava' })) return;
@@ -369,7 +341,7 @@ export async function dosit({
             return;
         }
     } else {
-        await pline(`Having fun sitting on the ${surfaceName(typ)}?`);
+        await pline(`Having fun sitting on the ${surfaceName(x, y)}?`);
     }
     game.context.move = 1;
 }
