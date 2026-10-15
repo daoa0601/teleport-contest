@@ -2261,6 +2261,7 @@ async function resolveDeferredHeroFirePillar(
     await applyRayFloorFeatures('fire', game.u.ux, game.u.uy, game, {
         rayNoun: 'spell', heroCaused: false, publish,
     });
+    if (game.program_state.gameover) return;
 
     applyHeroSpellDamage(heroAttack, appliedDamage, game);
     heroAttack.deferredFirePillar = false;
@@ -2306,6 +2307,7 @@ async function resolveDeferredHeroLightningSpell(
     await applyRayFloorFeatures('lightning', game.u.ux, game.u.uy, game, {
         rayNoun: 'spell', heroCaused: false, publish,
     });
+    if (game.program_state.gameover) return;
 
     const flashDuration = rnd(100);
     action.calls.push('rnd(100)');
