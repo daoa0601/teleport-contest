@@ -130,7 +130,7 @@ existing tests needed their setup corrected:
   `commitPetPickup()` and checks that the dagger stays on the floor until
   then.
 
-## Parallel batches 1–19 (`09ee6a4`)
+## Parallel batches 1–20 (`5d9d67d`)
 
 Units ran in worktrees under `docs/orchestration.md` (Codex; each diff reviewed
 by Codex against the C source, then merged only if the full suite adds no
@@ -272,36 +272,45 @@ boulders, arrival effects), **audit-kick** (`dokick.c`), **audit-mhitu**
 (`mhitu.c`: monster attacks on the hero) and **audit-dig** (`dig.c`:
 digging, holes, burial), and **review-debt-6** (accepted review findings).
 
+Batch 20: C-source audits of **audit-monmove** (`monmove.c`), **audit-mhitm**
+(`mhitm.c`: monster-versus-monster combat), **audit-muse** (`muse.c`:
+monster item use) and **audit-dog** (`dog.c`, `dogmove.c`), **public-6**
+(option help, a hidden-monster attack order) and **review-debt-7**. Two
+Mitre tests read the host clock through `night()`/`midnight()`; they now pin
+noon, and test-clock is making every fresh test game use a fixed date.
+seed2200-wizard-quaff-zap-read matches every random call but differs at
+the option-help screen, which prints the recording host's configuration
+file path; that path is not part of the session input.
+
 ## Verification
 
-`npm test` at `09ee6a4`: **10,605/10,605**. Merges require a fully green suite;
+`npm test` at `5d9d67d`: **10,699/10,699**. Merges require a fully green suite;
 batch runs also compare matched screens per session with the previous batch
-(no screen regression in batch 19, eval, public or pool).
+(no screen regression in batch 20, eval, public or pool).
 
 ## Most recent native diagnostics
 
 | Diagnostic | Complete | Matched screens | Matched random calls | Crashes |
 | --- | ---: | ---: | ---: | ---: |
-| Public | 42/44 | 11,211/11,405 | 787,533/792,838 | 0 |
+| Public | 43/44 | 11,396/11,405 | 792,838/792,838 | 0 |
 | Native eval sample | 300/300 | 50,586/50,586 | 3,616,669/3,616,669 | 0 |
 | Holdout-dev pool | 2,500/2,500 | | | 0 |
 
-Runs: `.cache/generalization/batch19-09ee6a4-{eval,public}` and
-`triage-09ee6a4` (pool) in the verify worktree (baseline `base-06d7e73`:
-143/300; batch 18: 300/300, pool 2,500/2,500). No verified random call was
-lost; the ledgers now hold 350 eval and 296 public functions. The
+Runs: `.cache/generalization/batch20-5d9d67d-{eval,public}` and
+`triage-5d9d67d` (pool) in the verify worktree (baseline `base-06d7e73`:
+143/300; batch 19: 300/300, pool 2,500/2,500). No verified random call was
+lost; the ledgers now hold 350 eval and 363 public functions. The
 state oracle finds all 300 sessions matching C state throughout.
 
 ## Next work
 
-Every eval-sample and pool session now completes, so new work comes from
-C-source audits of files the corpora barely run. In flight: `dog.c` and
-`dogmove.c` (audit-dog), `muse.c` (audit-muse), public-6 (option help and a
-hidden-monster attack order in the last two public sessions) and
-review-debt-7; audit-monmove (`monmove.c`) has merged after this checkpoint.
-review-debt-3's turn-loop restructuring (delayed armor removal, `stealarm()`,
-prayer delay) is parked unmerged: it broke save/restore twice.
-`.cache/agents/queue.md` holds accepted review findings.
+Every eval-sample and pool session completes and public matches every random
+call, so new work comes from C-source audits of files the corpora barely
+run. In flight: `timeout.c` (audit-timeout), `polyself.c` (audit-polyself),
+`do.c` (audit-do) and test-clock. review-debt-3's turn-loop restructuring
+(delayed armor removal, `stealarm()`, prayer delay) is parked unmerged: it
+broke save/restore twice. `.cache/agents/queue.md` holds accepted review
+findings.
 
 `splitObjectStack()` now links the new piece right after the original in
 whichever chain owns it (floor pile, hero or monster inventory, container,
