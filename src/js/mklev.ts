@@ -96,7 +96,7 @@ import { MAP_SYMBOLS } from './map_symbols.js';
 import { cleanupSpecialLevelMap, removeSpecialLevelBoundaries } from './special_level_cleanup.js';
 import {
     A_CHA,
-    COLNO, ROWNO, STONE, ROOM, CORR, DOOR, STAIRS, LADDER,
+    COLNO, ROWNO, STONE, MAX_TYPE, ROOM, CORR, DOOR, STAIRS, LADDER,
     HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER,
     CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL,
     D_NODOOR, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_TRAPPED,
@@ -252,7 +252,7 @@ import {
     specialSelectionFillRect,
     specialSelectionMatch,
 } from './selvar.js';
-import { isIceAt, isLavaAt, isPoolAt } from './terrain_properties.js';
+import { canOverwriteTerrain, isIceAt, isLavaAt, isPoolAt } from './terrain_properties.js';
 
 // Object/class constants (normally from objects.js, not in contest template)
 const RANDOM_CLASS = 0;
@@ -3139,7 +3139,7 @@ export async function maketrap(x: number, y: number, typ: number): Promise<Trap 
         // particular, Wiz-strt's random trap can land in a cloud: the Lua
         // location owner accepts that dry square, but maketrap() rejects
         // IS_AIR and its caller must not run the later victim-chance draw.
-        if (terrain === STAIRS || terrain === LADDER
+        if (terrain !== undefined && !canOverwriteTerrain(terrain)
             || isPoolAt(x, y) || isLavaAt(x, y)
             || (terrain !== undefined && IS_FURNITURE(terrain)
                 && typ !== PIT && typ !== HOLE)
@@ -3440,7 +3440,7 @@ export function make_grave(x: number, y: number, text: string | null): void {
     const loc = game.level?.at(x, y);
     const trapped = game.level?.traps?.some(trap => trap.tx === x && trap.ty === y);
     if (!loc || (loc.typ !== ROOM && loc.typ !== GRAVE) || trapped) return;
-    loc.typ = GRAVE;
+    if (!setLevelTerrainType(x, y, GRAVE)) return;
     const epitaph = text ?? getRandomTextLine(RANDOM_EPITAPHS);
     make_engr_at(x, y, epitaph, null, 0, HEADSTONE);
 }
@@ -4059,6 +4059,7 @@ async function specialRandomLocation(
 // terrain operation requested SET_LIT_NOCHANGE.  Callers may subsequently
 // replace the terrain again without implicitly clearing that light bit.
 function setLevelTerrainType(x: number, y: number, typ: number): boolean {
+    if (!isok(x, y) || typ < STONE || typ >= MAX_TYPE) return false;
     const loc = game.level?.at?.(x, y);
     if (!loc) return false;
     if (loc.typ === SDOOR && typ === AIR) {
@@ -4066,7 +4067,13 @@ function setLevelTerrainType(x: number, y: number, typ: number): boolean {
         return true;
     }
     const oldType = loc.typ;
+    if (!canOverwriteTerrain(oldType)) return false;
+    const wasIce = isIceAt(x, y);
     loc.typ = typ;
+    if (wasIce && typ !== ICE) {
+        updateIceObjectTimersAt(x, y, game, { includeBuried: true });
+        stopLevelTimer(x, y, LEVEL_TIMER_KIND.MELT_ICE_AWAY);
+    }
     if (IS_LAVA(typ)) loc.lit = true;
     if (typ === ICE && game._activeSpecialLevel?.levelInitialized) {
         loc.icedpool = game._activeSpecialLevel.icedPools
@@ -5495,7 +5502,7 @@ function createSpecialRoomDoor(
     if (!found) return;
     const loc = level.at(x, y);
     if (!loc) return;
-    loc.typ = secret ? SDOOR : DOOR;
+    if (!setLevelTerrainType(x, y, secret ? SDOOR : DOOR)) return;
     loc.doormask = mask;
 }
 
@@ -5925,7 +5932,7 @@ async function createLuaAltar(context: SpecialLevelContext, options: DesOptions)
         ? await getFreeRoomLocation(context, coordinate, context._room)
         : await getLocationCoord(context, coordinate, DRY);
     const altar = level.at(point.x, point.y);
-    if (!altar || altar.typ === STAIRS || altar.typ === LADDER) return;
+    if (!altar) return;
     if (!setLevelTerrainType(point.x, point.y, ALTAR)) return;
     const alignment = luaSpecialAlignment(options.align);
     altar.flags = Align2amask(alignment);
@@ -9955,7 +9962,7 @@ export function mkstairs(x: number, y: number, up: boolean | 0 | 1, croom: Room 
         return;
     const loc = level.at(x, y);
     if (loc) {
-        loc.typ = STAIRS;
+        setLevelTerrainType(x, y, STAIRS);
         loc.ladder = up ? 1 : 2;
     }
     const dest = {
@@ -10068,7 +10075,7 @@ async function makeniche(trap_type: number): Promise<void> {
             } else {
                 const loc = level.at(xx, yy);
                 if (!rn2(5) && loc && IS_WALL(loc.typ)) {
-                    loc.typ = IRONBARS;
+                    setLevelTerrainType(xx, yy, IRONBARS);
                     if (rn2(3)) {
                         const S_HUMAN = 53;
                         const human = mkclass(S_HUMAN, 0);
@@ -10145,7 +10152,7 @@ async function placeBranchAt(branchp: DungeonBranch | null, x: number, y: number
         const goes_up = on_end1 ? !!branchp.end1_up : !branchp.end1_up;
         const loc = g.level?.at(x, y);
         if (loc) {
-            loc.typ = STAIRS;
+            setLevelTerrainType(x, y, STAIRS);
             loc.ladder = goes_up ? 1 : 2;
         }
         stairway_add(x, y, goes_up, false,
@@ -10484,7 +10491,7 @@ function mkaltar(croom: Room | null): void {
     if (!find_okay_roompos(croom, pos)) return;
     const loc = game.level?.at(pos.x, pos.y);
     if (!loc) return;
-    loc.typ = ALTAR;
+    if (!setLevelTerrainType(pos.x, pos.y, ALTAR)) return;
     const al = rn2(A_LAWFUL + 2) - 1;
     loc.flags = Align2amask(al);
 }
