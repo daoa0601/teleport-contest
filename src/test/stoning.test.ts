@@ -1,3 +1,4 @@
+import { advanceHeroPetrification } from './support/condition-turn.js';
 import type { DeathHandler } from '../js/end.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -10,9 +11,7 @@ import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { FOOD_RATION } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
-import {
-    advanceHeroPetrification, startHeroPetrification,
-} from '../js/stoning.js';
+import { startHeroPetrification } from '../js/stoning.js';
 import { freshHeroConditionRoom } from './support/hero-state.js';
 
 void test('petrification stops actions as the hero stiffens', async () => {

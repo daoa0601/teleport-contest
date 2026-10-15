@@ -230,16 +230,16 @@ import { heroIsUnchanging, polymonHero, polymorphHero, returnHeroToHumanForm } f
 import { healHeroLegs } from './hero_legs.js';
 import {
     advanceHeroSickness, advanceHeroVomiting, heroIsSick,
-    heroIsVomiting,
+    heroIsVomiting, sicknessDialogue, vomitingDialogue,
 } from './hero_illness.js';
 import {
     advanceHeroSliming, clearHeroSliming,
-    finishDeferredHeroSlime, heroIsSliming, resumeDeferredHeroSlime,
+    finishDeferredHeroSlime, heroIsSliming, resumeDeferredHeroSlime, slimeDialogue,
 } from './slime.js';
 import {
-    advanceHeroPetrification, heroIsPetrifying,
+    advanceHeroPetrification, heroIsPetrifying, petrificationDialogue,
 } from './stoning.js';
-import { advanceHeroStrangulation } from './hero_strangulation.js';
+import { advanceHeroStrangulation, strangulationDialogue } from './hero_strangulation.js';
 import { initTrack, setTrack } from './track.js';
 import { autopickupAtHero } from './pickup.js';
 import { clearJustPicked } from './just_picked.js';
@@ -1102,23 +1102,12 @@ async function finishInitialTurnMaintenanceAfterMonsterDistress(
     // expires.
     const sourceTurn = game.moves;
     if (game.u.mtimedone !== undefined && game.u.mtimedone > 0) game.u.mtimedone--;
-    if (peekNextDueObjectTimer(game, sourceTurn)) {
-        if (!deferAmbientMessage) {
-            throw new Error(
-                'due object timer requires source-ordered async maintenance',
-            );
-        }
-        return {
-            kind: 'object-timers',
-            sourceTurn, moveAmount, capacity, deferAmbientMessage, polymorphed,
-        };
-    }
-    return finishInitialTurnMaintenanceAfterObjectTimers({
+    return finishInitialTurnMaintenanceBeforeTimeouts({
         sourceTurn, moveAmount, capacity, deferAmbientMessage, polymorphed,
     });
 }
 
-async function finishInitialTurnMaintenanceAfterObjectTimers({
+async function finishInitialTurnMaintenanceBeforeTimeouts({
     sourceTurn, moveAmount, capacity, deferAmbientMessage, polymorphed,
 }: TurnMaintenance): Promise<MaintenancePhase> {
     const game = requireInitializedGame();
@@ -1132,44 +1121,39 @@ async function finishInitialTurnMaintenanceAfterObjectTimers({
     recoverTimedLuck(game);
     const prayerTimeoutFreeze = !!game.u?.invulnerable;
     if (!prayerTimeoutFreeze && heroIsPetrifying(game)) {
-        await advanceHeroPetrification({
+        await petrificationDialogue({
             state: game,
             publish: plineWithContinuation,
-            die: finishHeroDeath,
         });
         if (game.program_state?.gameover) return { kind: 'complete', moveAmount };
     }
     if (!prayerTimeoutFreeze && heroIsSliming(game)) {
-        await advanceHeroSliming({
+        await slimeDialogue({
             state: game,
             publish: plineWithContinuation,
             repaint: newsym,
             randomMonsterName: randomDisplayMonsterName,
-            transform: polymonHero,
-            die: finishHeroDeath,
         });
         if (game.program_state?.gameover) return { kind: 'complete', moveAmount };
     }
     if (!prayerTimeoutFreeze && heroIsVomiting(game)) {
-        await advanceHeroVomiting({
+        await vomitingDialogue({
             state: game,
             publish: plineWithContinuation,
         });
     }
     if (!prayerTimeoutFreeze
         && game.u.strangledTurns !== undefined && game.u.strangledTurns > 0) {
-        await advanceHeroStrangulation({
+        await strangulationDialogue({
             state: game,
             publish: plineWithContinuation,
-            die: finishHeroDeath,
         });
         if (game.program_state?.gameover) return { kind: 'complete', moveAmount };
     }
     if (!prayerTimeoutFreeze && heroIsSick(game)) {
-        await advanceHeroSickness({
+        await sicknessDialogue({
             state: game,
             publish: plineWithContinuation,
-            die: finishHeroDeath,
         });
         if (game.program_state?.gameover) return { kind: 'complete', moveAmount };
     }
@@ -1284,8 +1268,23 @@ async function finishInitialTurnMaintenanceAfterConfusion({
         } else game.u.deafTurns--;
     }
 
+    if (!prayerTimeoutFreeze) {
+        await advanceHeroSickness({ publish: plineWithContinuation });
+        if (game.program_state.gameover) return { kind: 'complete', moveAmount };
+        await advanceHeroPetrification();
+        if (game.program_state.gameover) return { kind: 'complete', moveAmount };
+        await advanceHeroStrangulation();
+        if (game.program_state.gameover) return { kind: 'complete', moveAmount };
+        advanceHeroVomiting();
+    }
+
     if (!prayerTimeoutFreeze && advancePropertyTimeout('glib', game))
         setSlipperyHands(0, game);
+
+    if (!prayerTimeoutFreeze) {
+        await advanceHeroSliming({ transform: polymonHero, die: finishHeroDeath });
+        if (game.program_state.gameover) return { kind: 'complete', moveAmount };
+    }
 
     if (!prayerTimeoutFreeze
         && game.u.hallucinationTurns !== undefined && game.u.hallucinationTurns > 0) {
@@ -1457,9 +1456,11 @@ async function finishInitialTurnMaintenanceAfterFumbling({
             'reflection', 'freeAction', 'sustainAbility', 'lifeSaving',
         ], game);
 
-    return finishInitialTurnMaintenanceAfterTimeout({
+    return {
+        kind: !prayerTimeoutFreeze && peekNextDueObjectTimer(game, sourceTurn)
+            ? 'object-timers' : 'regions',
         sourceTurn, moveAmount, capacity, deferAmbientMessage, polymorphed,
-    });
+    };
 }
 
 // C timeout.c decrements every intrinsic timeout in prop.h order. These
@@ -1495,15 +1496,6 @@ async function advanceWorldTurn(): Promise<void> {
     if (initialPhase.kind === 'hero-died') return;
     let phase: MaintenancePhase = initialPhase;
     const completedTurn = game.moves;
-    while (phase.kind === 'object-timers') {
-        const claimed = claimNextDueObjectTimer(
-            game, phase.sourceTurn,
-        );
-        if (claimed) await runObjectTimer(claimed, phase.sourceTurn);
-        if (peekNextDueObjectTimer(game, phase.sourceTurn)) continue;
-        phase = await finishInitialTurnMaintenanceAfterObjectTimers(phase);
-    }
-    if (game.program_state?.gameover) return;
     while (phase.kind === 'timeout-message') {
         if (phase.timeoutKind === 'stun') {
             await makeStunned(0);
@@ -1514,6 +1506,14 @@ async function advanceWorldTurn(): Promise<void> {
             await stopHeroOccupation(game);
             phase = await finishInitialTurnMaintenanceAfterConfusion(phase);
         }
+    }
+    while (phase.kind === 'object-timers') {
+        const claimed = claimNextDueObjectTimer(
+            game, phase.sourceTurn,
+        );
+        if (claimed) await runObjectTimer(claimed, phase.sourceTurn);
+        if (peekNextDueObjectTimer(game, phase.sourceTurn)) continue;
+        phase = finishInitialTurnMaintenanceAfterTimeout(phase);
     }
     if (game.program_state?.gameover) return;
     while (phase.kind === 'regions') {

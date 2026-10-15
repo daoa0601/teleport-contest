@@ -211,7 +211,7 @@ function vomitingMessage(state, nextTurns) {
     }
     return null;
 }
-export async function advanceHeroVomiting({ state = game, publish = pline, rollDice = d, } = {}) {
+export async function vomitingDialogue({ state = game, publish = pline, rollDice = d, } = {}) {
     requirePlayingGame(state);
     const hero = state.u;
     if (!heroIsVomiting(state))
@@ -252,9 +252,14 @@ export async function advanceHeroVomiting({ state = game, publish = pline, rollD
         vomited = true;
     }
     await exerciseAttribute(A_CON, false, state);
+    return { active: heroIsVomiting(state), vomited, turns: nextTurns };
+}
+export function advanceHeroVomiting({ state = game } = {}) {
+    const hero = state.u;
+    const nextTurns = Math.max(0, (hero.vomitingTurns ?? 0) - 1);
     hero.vomitingTurns = nextTurns;
     hero.vomiting = nextTurns > 0;
-    return { active: hero.vomiting, vomited, turns: nextTurns };
+    return { active: hero.vomiting, turns: nextTurns };
 }
 function sicknessMessage(hero) {
     const turns = hero.sickTurns ?? 0;
@@ -269,14 +274,18 @@ function sicknessMessage(hero) {
         return `Your ${noun} is severe.`;
     return stage === 1 ? "You are at Death's door." : null;
 }
+export async function sicknessDialogue({ state = game, publish = pline, } = {}) {
+    if (!heroIsSick(state))
+        return;
+    const message = sicknessMessage(state.u);
+    if (message)
+        await publish(message);
+    await exerciseAttribute(A_CON, false, state);
+}
 export async function advanceHeroSickness({ state = game, publish = pline, die = finishHeroDeath, random = rn2, } = {}) {
     const hero = state.u;
     if (!heroIsSick(state))
         return { active: false, died: false };
-    const message = sicknessMessage(hero);
-    if (message)
-        await publish(message);
-    await exerciseAttribute(A_CON, false, state);
     hero.sickTurns = Math.max(0, (hero.sickTurns ?? 0) - 1);
     if (hero.sickTurns > 0)
         return { active: true, died: false, turns: hero.sickTurns };

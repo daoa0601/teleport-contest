@@ -1,3 +1,4 @@
+import { advanceHeroSliming } from './support/condition-turn.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { wearHeroArmor } from '../js/armor.js';
@@ -7,7 +8,6 @@ import { finishHeroDeath } from '../js/end.js';
 import { resetInputState } from '../js/input.js';
 import { LEATHER_CLOAK } from '../js/object_data.js';
 import { polymonHero } from '../js/polyself.js';
-import { advanceHeroSliming } from '../js/slime.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';

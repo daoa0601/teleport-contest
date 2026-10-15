@@ -197,11 +197,11 @@ function petrificationMessage(turns, state) {
         return 'You have turned to stone.';
     return turns === 1 ? 'You are a statue.' : null;
 }
-export async function advanceHeroPetrification({ state = game, publish = pline, die = finishHeroDeath, } = {}) {
+export async function petrificationDialogue({ state = game, publish = pline, } = {}) {
     const hero = state.u;
     const turns = hero.stonedTurns ?? 0;
     if (turns <= 0)
-        return { active: false, died: false };
+        return;
     const message = petrificationMessage(turns, state);
     if (message)
         await publish(message);
@@ -232,6 +232,12 @@ export async function advanceHeroPetrification({ state = game, publish = pline, 
         clearHeroSliming(state);
     }
     await exerciseAttribute(A_DEX, false, state);
+}
+export async function advanceHeroPetrification({ state = game, die = finishHeroDeath, } = {}) {
+    const hero = state.u;
+    const turns = hero.stonedTurns ?? 0;
+    if (turns <= 0)
+        return { active: false, died: false };
     hero.stonedTurns = turns - 1;
     if (hero.stonedTurns > 0)
         return { active: true, died: false, turns: hero.stonedTurns };

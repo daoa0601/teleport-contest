@@ -1,9 +1,10 @@
+import { advanceHeroVomiting } from './support/condition-turn.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { FAINTING, HUNGRY } from '../js/const.js';
 import { doeat } from '../js/eat.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { advanceHeroVomiting, startHeroVomiting } from '../js/hero_illness.js';
+import { startHeroVomiting } from '../js/hero_illness.js';
 import { resetInputState } from '../js/input.js';
 import { FOOD_RATION } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';

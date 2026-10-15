@@ -88,14 +88,13 @@ export async function restartAmuletStrangulation(
     learnObjectType(AMULET_OF_STRANGULATION, state);
 }
 
-export async function advanceHeroStrangulation({
+export async function strangulationDialogue({
     state = game,
     publish = plineWithContinuation,
-    die = finishHeroDeath,
-}: { state?: GameState; publish?: MessagePublisher; die?: DeathHandler } = {}) {
+}: { state?: GameState; publish?: MessagePublisher } = {}): Promise<void> {
     const hero = state.u;
     const turns = hero.strangledTurns || 0;
-    if (turns <= 0) return { died: false };
+    if (turns <= 0) return;
 
     if (turns <= 5) {
         const index = 5 - turns;
@@ -116,6 +115,14 @@ export async function advanceHeroStrangulation({
         }
     }
     await exerciseAttribute(A_STR, false, state);
+}
+
+export async function advanceHeroStrangulation({
+    state = game, publish = plineWithContinuation, die = finishHeroDeath,
+}: { state?: GameState; publish?: MessagePublisher; die?: DeathHandler } = {}) {
+    const hero = state.u;
+    const turns = hero.strangledTurns ?? 0;
+    if (turns <= 0) return { died: false };
     hero.strangledTurns = turns - 1;
     if (hero.strangledTurns > 0) return { died: false };
 

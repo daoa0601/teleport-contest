@@ -262,7 +262,7 @@ function vomitingMessage(state: GameState, nextTurns: number) {
     return null;
 }
 
-export async function advanceHeroVomiting({
+export async function vomitingDialogue({
     state = game,
     publish = pline,
     rollDice = d,
@@ -307,9 +307,15 @@ export async function advanceHeroVomiting({
     }
 
     await exerciseAttribute(A_CON, false, state);
+    return { active: heroIsVomiting(state), vomited, turns: nextTurns };
+}
+
+export function advanceHeroVomiting({ state = game }: { state?: GameState } = {}) {
+    const hero = state.u;
+    const nextTurns = Math.max(0, (hero.vomitingTurns ?? 0) - 1);
     hero.vomitingTurns = nextTurns;
     hero.vomiting = nextTurns > 0;
-    return { active: hero.vomiting, vomited, turns: nextTurns };
+    return { active: hero.vomiting, turns: nextTurns };
 }
 
 function sicknessMessage(hero: Hero) {
@@ -321,6 +327,15 @@ function sicknessMessage(hero: Hero) {
     if (stage === 3) return `Your ${noun} feels worse.`;
     if (stage === 2) return `Your ${noun} is severe.`;
     return stage === 1 ? "You are at Death's door." : null;
+}
+
+export async function sicknessDialogue({
+    state = game, publish = pline,
+}: { state?: GameState; publish?: MessagePublisher } = {}): Promise<void> {
+    if (!heroIsSick(state)) return;
+    const message = sicknessMessage(state.u);
+    if (message) await publish(message);
+    await exerciseAttribute(A_CON, false, state);
 }
 
 export async function advanceHeroSickness({
@@ -336,10 +351,6 @@ export async function advanceHeroSickness({
 } = {}) {
     const hero = state.u;
     if (!heroIsSick(state)) return { active: false, died: false };
-
-    const message = sicknessMessage(hero);
-    if (message) await publish(message);
-    await exerciseAttribute(A_CON, false, state);
 
     hero.sickTurns = Math.max(0, (hero.sickTurns ?? 0) - 1);
     if (hero.sickTurns > 0)

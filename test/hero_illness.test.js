@@ -1,3 +1,4 @@
+import { advanceHeroSickness, advanceHeroVomiting } from './support/condition-turn.js';
 import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -10,7 +11,7 @@ import { loadScoreRecords } from '../js/score_records.js';
 import { initRng } from '../js/rng.js';
 import { useUnicornHorn } from '../js/unicorn_horn.js';
 import { memoryStorage } from './support/memory-storage.js';
-import { advanceHeroSickness, advanceHeroVomiting, startHeroSickness, startHeroVomiting, vomitHero, } from '../js/hero_illness.js';
+import { startHeroSickness, startHeroVomiting, vomitHero } from '../js/hero_illness.js';
 import { CHAIN_MAIL, LONG_SWORD, UNICORN_HORN } from '../js/object_data.js';
 import { addInventoryObject, addInventoryWeapon, } from './support/game-objects.js';
 import { freshHeroConditionRoom, installPolymorphedHero, } from './support/hero-state.js';

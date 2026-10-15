@@ -1,9 +1,10 @@
+import { advanceHeroVomiting } from './support/condition-turn.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { NO_MINVENT } from '../js/const.js';
 import { bot, flush_screen } from '../js/display.js';
 import { game } from '../js/gstate.js';
-import { advanceHeroVomiting, startHeroVomiting } from '../js/hero_illness.js';
+import { startHeroVomiting } from '../js/hero_illness.js';
 import { pushKeys } from '../js/input.js';
 import { tryKnockback } from '../js/knockback.js';
 import { AD_PHYS, AT_WEAP } from '../js/monster_attack_types.js';

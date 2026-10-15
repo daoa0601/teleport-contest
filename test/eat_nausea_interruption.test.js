@@ -1,3 +1,4 @@
+import { advanceHeroVomiting } from './support/condition-turn.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { continueCountedCommand } from '../js/cmd.js';
@@ -5,7 +6,7 @@ import { NOT_HUNGRY } from '../js/const.js';
 import { flushPendingTopline } from '../js/display.js';
 import { doeat } from '../js/eat.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { advanceHeroVomiting, startHeroVomiting } from '../js/hero_illness.js';
+import { startHeroVomiting } from '../js/hero_illness.js';
 import { makeConfused } from '../js/hero_mental_status.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';

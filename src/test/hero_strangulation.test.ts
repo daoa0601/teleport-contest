@@ -1,3 +1,4 @@
+import { advanceHeroStrangulation } from './support/condition-turn.js';
 import { requireFixtureGame } from './support/game-state.js';
 import type { GameObject } from '../js/object_types.js';
 import test from 'node:test';
@@ -9,9 +10,7 @@ import { rhack } from '../js/cmd.js';
 import { _statusLine2, flushPendingTopline } from '../js/display.js';
 import { game } from '../js/gstate.js';
 import { loseHeroHp } from '../js/hero_damage.js';
-import {
-    advanceHeroStrangulation, heroIsStrangled,
-} from '../js/hero_strangulation.js';
+import { heroIsStrangled } from '../js/hero_strangulation.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { AMULET_OF_STRANGULATION, LEATHER_ARMOR } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';

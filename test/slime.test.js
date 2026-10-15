@@ -1,3 +1,4 @@
+import { advanceHeroSliming } from './support/condition-turn.js';
 import { requirePlayingGame } from '../js/gstate.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -10,7 +11,7 @@ import { rhack } from '../js/cmd.js';
 import { pushKeys } from '../js/input.js';
 import { polymonHero } from '../js/polyself.js';
 import { AMULET_OF_LIFE_SAVING, LEATHER_ARMOR, } from '../js/object_data.js';
-import { advanceHeroSliming, PM_GREEN_SLIME, startHeroSliming, } from '../js/slime.js';
+import { PM_GREEN_SLIME, startHeroSliming } from '../js/slime.js';
 import { createMonsterAt } from './support/monsters.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshHeroConditionRoom } from './support/hero-state.js';

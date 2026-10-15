@@ -241,14 +241,13 @@ function petrificationMessage(turns: number, state: GameState): string | null {
     return turns === 1 ? 'You are a statue.' : null;
 }
 
-export async function advanceHeroPetrification({
+export async function petrificationDialogue({
     state = game,
     publish = pline,
-    die = finishHeroDeath,
-}: { state?: GameState; publish?: MessagePublisher; die?: DeathHandler } = {}): Promise<PetrificationAdvanceResult> {
+}: { state?: GameState; publish?: MessagePublisher } = {}): Promise<void> {
     const hero = state.u;
     const turns = hero.stonedTurns ?? 0;
-    if (turns <= 0) return { active: false, died: false };
+    if (turns <= 0) return;
 
     const message = petrificationMessage(turns, state);
     if (message) await publish(message);
@@ -274,7 +273,14 @@ export async function advanceHeroPetrification({
         clearHeroSliming(state);
     }
     await exerciseAttribute(A_DEX, false, state);
+}
 
+export async function advanceHeroPetrification({
+    state = game, die = finishHeroDeath,
+}: { state?: GameState; die?: DeathHandler } = {}): Promise<PetrificationAdvanceResult> {
+    const hero = state.u;
+    const turns = hero.stonedTurns ?? 0;
+    if (turns <= 0) return { active: false, died: false };
     hero.stonedTurns = turns - 1;
     if (hero.stonedTurns > 0)
         return { active: true, died: false, turns: hero.stonedTurns };

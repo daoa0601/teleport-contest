@@ -230,17 +230,15 @@ function cancelHeroPetrification(state: GameState): void {
     delete hero.stoneKillerFormat;
 }
 
-export async function advanceHeroSliming({
+export async function slimeDialogue({
     state = game,
     publish = async () => {},
     repaint = () => {},
     randomMonsterName = () => 'green slime',
-    transform,
-    die,
-}: SlimeAdvanceOptions = {}): Promise<SlimeAdvanceResult> {
+}: SlimeAdvanceOptions = {}): Promise<void> {
     const hero = state.u;
     const turns = hero.slimedTurns ?? 0;
-    if (turns <= 0) return { active: false, died: false };
+    if (turns <= 0) return;
 
     if (turns === 1) {
         hero.m_ap_type = M_AP_MONSTER;
@@ -264,11 +262,18 @@ export async function advanceHeroSliming({
         cancelHeroPetrification(state);
     }
     await exerciseAttribute(A_DEX, false, state);
+}
 
+export async function advanceHeroSliming({
+    state = game, publish = plineWithContinuation, transform, die,
+}: SlimeAdvanceOptions = {}): Promise<SlimeAdvanceResult> {
+    const hero = state.u;
+    const turns = hero.slimedTurns ?? 0;
+    if (turns <= 0) return { active: false, died: false };
     hero.slimedTurns = turns - 1;
     if (hero.slimedTurns > 0) {
         hero.slimed = true;
-        return { active: true, died: false, turns: hero.slimedTurns, message };
+        return { active: true, died: false, turns: hero.slimedTurns };
     }
 
     const killer = hero.slimeKiller || 'turned into green slime';
@@ -300,14 +305,14 @@ export async function advanceHeroSliming({
         deathLineShown: true,
         deathType: TURNED_SLIME,
     });
-    if (died) return { active: false, died: true, transformed: true, message };
+    if (died) return { active: false, died: true, transformed: true };
     clearHeroSliming(state);
 
     const genocided = !!(
         (state.mvitals?.[PM_GREEN_SLIME]?.mvflags ?? 0) & G_GENOD
     );
     if (!genocided) {
-        return { active: false, died: false, transformed: true, message };
+        return { active: false, died: false, transformed: true };
     }
 
     await publish('Unfortunately, green slime has been genocided...');
@@ -322,6 +327,5 @@ export async function advanceHeroSliming({
         died: genocidedDeath,
         transformed: true,
         genocided: true,
-        message,
     };
 }
