@@ -45,6 +45,7 @@ import { revealMonsterAppearance } from './monster_appearance.js';
 import { MONSTER_FLAGS1, MONSTER_SYMBOL } from './monster_data.js';
 import { monsterName } from './monster_name.js';
 import { NO_COLOR } from './terminal.js';
+import { visibleRegionAt } from './regions.js';
 
 // C ref: detect.c premap_detect().  Sokoban's Lua `premapped` flag maps the
 // finalized background, boulders, and traps before deferred room filling.
@@ -187,7 +188,7 @@ async function searchAdjacentSecrets(automatic = false): Promise<AutomaticSearch
             if (x === u.ux && y === u.uy) continue;
             const loc = game.level?.at(x, y);
             if (!loc) continue;
-            if (!automatic && blind) feel_location(x, y);
+            if (!automatic && (blind || visibleRegionAt(game, x, y))) feel_location(x, y);
             if (loc.typ === SDOOR) {
                 if (rnl(7 - bonus)) continue;
                 revealSecretDoor(x, y);
@@ -205,7 +206,7 @@ async function searchAdjacentSecrets(automatic = false): Promise<AutomaticSearch
                 revealSecretCorridor(x, y);
                 exerciseWisdom();
                 endVoluntaryMultiTurn(game);
-                newsym(x, y);
+                feel_newsym(x, y);
                 await plineWithContinuation('You find a hidden passage.');
                 found = true;
                 continue;
