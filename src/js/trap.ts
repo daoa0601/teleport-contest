@@ -4,7 +4,7 @@
 
 import { formatSeenMessage } from './hero_speech.js';
 import {
-    IS_POOL, Is_waterlevel, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH,
+    Is_waterlevel, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH,
     W_ARMS, W_ARMU, W_SWAPWEP, W_WEP, isok,
 } from './const.js';
 import { armorSimpleName, heroHasWaterWalking } from './armor.js';
@@ -21,7 +21,7 @@ import { useUpInventoryStack } from './hero_inventory.js';
 import { getObjectLocation } from './object_location.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { heroIsFlying } from './polyself.js';
-import { monsterFliesOrFloats } from './terrain_properties.js';
+import { isPoolAt, monsterFliesOrFloats } from './terrain_properties.js';
 import { objectOwnershipPrefix } from './shk.js';
 import { MONSTER_FLAGS1, monsterIsHumanoid } from './monster_data.js';
 import { splitMonster } from './monster_clone.js';
@@ -335,8 +335,7 @@ function carriedByHero(object: GameObject, state: GameState): boolean {
 }
 
 function heroLanternIsDunked(state: GameState): boolean {
-    const location = state.level?.at?.(state.u?.ux, state.u?.uy);
-    if (!location || !IS_POOL(location.typ)) return false;
+    if (!isPoolAt(state.u.ux, state.u.uy, state)) return false;
     return Is_waterlevel(state.u.uz)
         || !(state.u?.levitating || state.levitating
             || heroIsFlying(state) || heroHasWaterWalking(state));
@@ -364,8 +363,7 @@ export function splashLitObject(object: GameObject | null | undefined, messages:
             visible = !!position && cansee(position.x, position.y);
             audible = couldsee(carrier.mx, carrier.my)
                 && (carrier.mx - state.u.ux) ** 2 + (carrier.my - state.u.uy) ** 2 < 25;
-            const location = state.level?.at(carrier.mx, carrier.my);
-            dunkedLantern = !!location && IS_POOL(location.typ)
+            dunkedLantern = isPoolAt(carrier.mx, carrier.my, state)
                 && (!monsterFliesOrFloats(carrier) || Is_waterlevel(state.u.uz));
             snuff = false;
         }
