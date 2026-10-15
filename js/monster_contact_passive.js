@@ -1,6 +1,6 @@
 // A monster's passive response to another monster's melee attack.
 // C mhitm.c:passivemm() and paralyze_monst().
-import { canSeeMonster, canSpotMonster, plineWithContinuation } from './display.js';
+import { canSeeMonster, canSpotMonster, displayLiquidName, plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
 import { applyMonsterGolemEffects, healMonster, paralyzeMonster } from './mon.js';
 import { AD_ACID, AD_COLD, AD_ELEC, AD_ENCH, AD_FIRE, AD_PLYS, AD_STUN, } from './monster_attack_types.js';
@@ -10,7 +10,7 @@ import { finishMonsterKilled } from './monster_death.js';
 import { staggerVerb } from './monster_hurtle.js';
 import { passiveAttack, passiveDamage } from './monster_passive.js';
 import { monsterHasAcidResistance, monsterHasColdResistance, monsterHasFireResistance, monsterHasShockResistance, } from './monster_resistance.js';
-import { monsterSentenceSubject } from './monster_sound.js';
+import { monsterName, possessiveName } from './monster_name.js';
 import { monsterWieldedWeapon } from './monster_weapon.js';
 import { damageObjectWithAcid, erodeArmor } from './object_erosion.js';
 import { learnObjectType } from './object_knowledge.js';
@@ -29,11 +29,14 @@ export async function applyMonsterContactPassive(attacker, defender, { hit, weap
     const visible = canSeeMonster(attacker);
     if (type === AD_ACID) {
         if (hit && random(2) === 0) {
-            if (visible)
-                await publish(`${monsterSentenceSubject(attacker)} is splashed by ${possessive(defender)} acid!`);
+            const subject = monsterName(attacker, { state, capitalized: true });
+            if (visible) {
+                const owner = possessiveName(monsterName(defender, { state }));
+                await publish(`${subject} is splashed by ${owner} ${displayLiquidName('acid', state)}!`);
+            }
             if (monsterHasAcidResistance(attacker)) {
                 if (visible)
-                    await publish(`${monsterSentenceSubject(attacker)} is not affected.`);
+                    await publish(`${monsterName(attacker, { state, capitalized: true })} is not affected.`);
                 damage = 0;
             }
         }
@@ -66,7 +69,7 @@ export async function applyMonsterContactPassive(attacker, defender, { hit, weap
                     if (resists(attacker)) {
                         if (visible) {
                             const feeling = type === AD_COLD ? 'chilly' : type === AD_FIRE ? 'warmed' : 'tingled';
-                            await publish(`${monsterSentenceSubject(attacker)} is mildly ${feeling}.`);
+                            await publish(`${monsterName(attacker, { state, capitalized: true })} is mildly ${feeling}.`);
                             await applyMonsterGolemEffects(attacker, type, damage, { state, publish });
                         }
                         damage = 0;
@@ -75,15 +78,18 @@ export async function applyMonsterContactPassive(attacker, defender, { hit, weap
                         if (visible) {
                             const feeling = type === AD_COLD ? 'suddenly very cold'
                                 : type === AD_FIRE ? 'suddenly very hot' : 'jolted with electricity';
-                            await publish(`${monsterSentenceSubject(attacker)} is ${feeling}!`);
+                            await publish(`${monsterName(attacker, { state, capitalized: true })} is ${feeling}!`);
                         }
                         if (type === AD_COLD) {
                             const healing = Math.trunc(damage / 2);
                             healMonster(defender, healing, healing);
                             if (defender.mhpmax > (defender.m_lev + 1) * 8) {
+                                // split_mon saves the source of heat before cloning can
+                                // change what the hero sees on the map.
+                                const owner = possessiveName(monsterName(attacker, { state }));
                                 const clone = await splitMonster(defender, state, { monsterMoving: true, random });
                                 if (clone && canSpotMonster(defender))
-                                    await publish(`${monsterSentenceSubject(defender)} multiplies from ${possessive(attacker)} heat!`);
+                                    await publish(`${monsterName(defender, { state, capitalized: true })} multiplies from ${owner} heat!`);
                             }
                         }
                     }
@@ -93,7 +99,7 @@ export async function applyMonsterContactPassive(attacker, defender, { hit, weap
                     if (!attacker.mstun) {
                         attacker.mstun = 1;
                         if (visible)
-                            await publish(`${monsterSentenceSubject(attacker)} ${staggerVerb(attacker.mnum)}...`);
+                            await publish(`${monsterName(attacker, { state, capitalized: true })} ${staggerVerb(attacker.mnum)}...`);
                     }
                     damage = 0;
                     break;
@@ -118,27 +124,27 @@ async function paralyzeAttacker(attacker, defender, duration, { state, random, p
             // passivemm returns M_ATTK_HIT here even after a missed attack.
             return { stopped: false, hit: true };
         }
+        // Native constructs this name even when there is no reflection.
+        const gazeOwner = possessiveName(monsterName(defender, { state, capitalized: true }));
         const reflection = monsterReflectionSource(attacker, state);
         if (reflection) {
             if (visible) {
-                await publish(`${possessive(defender, true)} gaze is reflected by ${possessive(attacker)} ${reflection.noun}.`);
+                await publish(`${gazeOwner} gaze is reflected by ${possessiveName(monsterName(attacker, { state }))} ${reflection.noun}.`);
                 if (reflection.object && ['shield', 'amulet'].includes(reflection.noun))
                     learnObjectType(reflection.object.otyp, state);
             }
             return { stopped: false, hit };
         }
+        const subject = monsterName(attacker, { state, capitalized: true });
         if (visible)
-            await publish(`${monsterSentenceSubject(attacker)} is frozen by ${possessive(defender)} gaze!`);
+            await publish(`${subject} is frozen by ${possessiveName(monsterName(defender, { state }))} gaze!`);
     }
-    else if (visible) {
-        await publish(`${monsterSentenceSubject(attacker)} is frozen by ${monsterSentenceSubject(defender).replace(/^The /u, 'the ')}.`);
+    else {
+        const subject = monsterName(attacker, { state, capitalized: true });
+        if (visible)
+            await publish(`${subject} is frozen by ${monsterName(defender, { state })}.`);
     }
     paralyzeMonster(attacker, duration);
     return { stopped: true, hit };
-}
-function possessive(monster, capitalized = false) {
-    const subject = monsterSentenceSubject(monster);
-    const name = capitalized ? subject : subject.replace(/^The /u, 'the ');
-    return name.endsWith('s') ? `${name}'` : `${name}'s`;
 }
 //# sourceMappingURL=monster_contact_passive.js.map
