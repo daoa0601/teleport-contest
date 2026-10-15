@@ -1853,6 +1853,13 @@ export async function drinkFountain(loc: MapLocation) {
         await discoverFountainGem(loc);
     } else if (fate === 27 || fate === 28) {
         await summonFountainNymph();
+    } else if (fate === 29) {
+        await plineWithContinuation(`This ${displayLiquidName('water')} gives you bad breath!`);
+        for (const monster of [...requireGameLevel().monsters].reverse()) {
+            if (monster.dead || monster.mhp <= 0) continue;
+            if ((await makeMonsterFlee(monster, { announce: false })).heroDied)
+                return true;
+        }
     } else if (fate === 30) {
         fountainMessage = (await gushForthFromFountain({ drinking: true })).join('  ');
     } else if (fate >= 10) {
