@@ -291,7 +291,7 @@ async function mountSteed(steed, force, [dx, dy]) {
     }
     if (MONSTER_NAME[steed.mnum] === 'long worm'
         && (hero.ux + dx !== steed.mx || hero.uy + dy !== steed.my)) {
-        await pline("You couldn't ride a long worm, let alone its tail.");
+        await pline(`You couldn't ride ${monsterName(steed, { article: 'a' })}, let alone its tail.`);
         return false;
     }
     const punished = game.uball || hero.uball;
