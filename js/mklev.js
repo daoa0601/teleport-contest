@@ -5690,15 +5690,22 @@ function setLuaLevelFlags(active, flags) {
             throw new Error(`unknown Lua level flag ${flag}`);
     }
 }
-function replaceLuaTerrain(context, options) {
+async function replaceLuaTerrain(context, options) {
     const level = requireGameLevel();
+    const explicit = [
+        options.x1 ?? -1, options.y1 ?? -1, options.x2 ?? -1, options.y2 ?? -1,
+    ];
+    const rectangle = explicit.some(value => value !== -1) ? explicit : options.region;
     let selection = options.selection;
-    if (!selection && Array.isArray(options.region)) {
-        selection = specialSelectionFillRect(context, ...options.region);
+    if (rectangle && rectangle.some(value => value !== -1)) {
+        const start = await getLocation(context, { x: rectangle[0], y: rectangle[1] }, ANY_LOC);
+        const end = await getLocation(context, { x: rectangle[2], y: rectangle[3] }, ANY_LOC);
+        selection = new SpecialSelection();
+        for (let x = Math.max(1, start.x); x <= Math.min(COLNO - 1, end.x); x++)
+            for (let y = Math.max(0, start.y); y <= Math.min(ROWNO - 1, end.y); y++)
+                selection.add(x, y);
     }
-    if (!selection) {
-        selection = specialSelectionFillRect({ xstart: 0, ystart: 0, width: COLNO, height: ROWNO }, 1, 0, COLNO - 1, ROWNO - 1);
-    }
+    selection ??= new SpecialSelection().negate();
     const fromType = mapCharacterType(options.fromterrain ?? '');
     const toType = mapCharacterType(options.toterrain ?? '');
     const fragment = fromType === undefined && options.mapfragment != null
@@ -5715,8 +5722,6 @@ function replaceLuaTerrain(context, options) {
         if (!matches || rn2(100) >= chance)
             return;
         setLevelTerrainLit(x, y, toType, lit);
-        if (loc && (toType === IRONBARS || toType === HWALL))
-            loc.horizontal = true;
     });
 }
 async function createLuaFeature(context, options) {

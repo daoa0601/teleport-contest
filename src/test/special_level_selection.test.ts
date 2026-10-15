@@ -335,3 +335,18 @@ void test('Lua line and rectangle methods extend copies and randline accepts a n
     assert.equal(level.requireAt(20, 6).typ, ROOM);
     assert.equal(level.requireAt(26, 6).typ, CORR);
 });
+
+void test('Lua terrain replacement honors explicit rectangle fields before a selection', async t => {
+    const lua = await levelLua(t);
+    await lua.executeAsync(`
+        des.map({ x = 10, y = 5, map = [[.....]] })
+        des.replace_terrain({ x1 = 1, y1 = 0, x2 = 2, y2 = 0,
+            selection = selection.area(0, 0, 4, 0), fromterrain = ".", toterrain = "-" })
+    `);
+    const level = requireGameLevel();
+    assert.equal(level.requireAt(10, 5).typ, ROOM);
+    assert.equal(level.requireAt(11, 5).typ, HWALL);
+    assert.equal(level.requireAt(12, 5).typ, HWALL);
+    assert.equal(level.requireAt(13, 5).typ, ROOM);
+    assert.equal(level.requireAt(11, 5).horizontal, false, 'replacement preserves the old orientation flag');
+});
