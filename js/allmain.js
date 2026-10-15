@@ -2385,8 +2385,11 @@ async function presentMonsterAttackEffects(action, game, { random = rn2, rollDic
                     }
                     if (heroAttack.deferredAggravation)
                         resolveDeferredHeroAggravation(action, game);
-                    if (heroAttack.deferredDeathTouch)
+                    if (heroAttack.deferredDeathTouch) {
                         await resolveDeferredHeroDeathTouch(action, heroAttack, publishSpellMessage);
+                        if (heroAttack.heroDied)
+                            return { heroDied: true };
+                    }
                     if (heroAttack.deferredDestroyArmor)
                         await resolveDeferredHeroDestroyArmor(heroAttack);
                     if (heroAttack.deferredGeyserSpell)

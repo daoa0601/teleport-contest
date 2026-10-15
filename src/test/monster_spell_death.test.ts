@@ -164,7 +164,9 @@ for (const hpMax of [10, 500] as const) {
         const text = messages.join('\n');
         assert.match(text, /using the touch of death/);
         assert.equal(game.program_state.gameover, true, text);
+        assert.equal(game.u.umortality, 1, 'Death touch completes death once');
         const records = loadScoreRecords(game);
+        assert.equal(records.length, 1, 'Death touch records one completed game');
         assert.ok(records[0], 'Death records the completed game');
         assert.equal(records[0].death, 'killed by the touch of death inflicted by an arch-lich');
         if (hpMax === 10) assert.doesNotMatch(text, /You die/);
