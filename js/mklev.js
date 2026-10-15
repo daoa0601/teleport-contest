@@ -4819,6 +4819,8 @@ async function fillCourtRoom(room) {
         ruler.mpeaceful = 0;
         setMonsterMalign(ruler);
         const mace = await mksobj(MACE, true, false);
+        // All four rulers are princes; mongets() upgrades their weapons.
+        mace.spe = Math.max(1, mace.spe);
         await addObjectToMonsterInventory(ruler, mace, game, { atFront: true });
     }
     const entrance = room.doorct
