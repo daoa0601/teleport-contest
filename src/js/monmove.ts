@@ -3929,6 +3929,15 @@ export async function beginMonsterHeroAttack(
     state.notonhead = false;
     if (dist2(monster.mx, monster.my, state.u.ux, state.u.uy) <= 3)
         endVoluntaryMultiTurn(state);
+    if (monster.dead || monster.mhp <= 0) return { heroAttackResult: 1 };
+    if ((state.underwater || state.u.underwater)
+        && !((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_SWIM)) return {};
+    if (state.u.uswallow) {
+        if (state.u.ustuck !== monster) return {};
+        monster.mux = state.u.ux;
+        monster.muy = state.u.uy;
+        if (state.u.invulnerable) return {};
+    }
     if (monster === state.u.usteed) return {};
     if (!state.u.uswallow && state.u.usteed) {
         const steed = state.u.usteed;
