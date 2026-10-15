@@ -1,9 +1,9 @@
 import { formatFeltMessage } from './hero_speech.js';
 import { monsterHasMapPosition } from './monster_location.js';
-import { isPoolAt } from './terrain_properties.js';
+import { isLavaAt, isPoolAt } from './terrain_properties.js';
 import { classifyStatusTerrain } from './status_terrain.js';
 // C hack.c:switch_terrain(), trap.c:float_up()/reset_utrap().
-import { D_CLOSED, D_LOCKED, DISMOUNT_FELL, DISMOUNT_GENERIC, DOOR, HOLE, IS_LAVA, IS_OBSTRUCTED, IS_ROOM, IS_WATERWALL, Is_airlevel, Is_waterlevel, LAVAWALL, STATUE_TRAP, TRAPDOOR, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, W_SADDLE, is_hole, is_pit, } from './const.js';
+import { D_CLOSED, D_LOCKED, DISMOUNT_FELL, DISMOUNT_GENERIC, DOOR, HOLE, IS_OBSTRUCTED, IS_ROOM, IS_WATERWALL, Is_airlevel, Is_waterlevel, LAVAWALL, STATUE_TRAP, TRAPDOOR, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, W_SADDLE, is_hole, is_pit, } from './const.js';
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { newsym, plineWithContinuation } from './display.js';
@@ -214,7 +214,7 @@ export async function floatHeroDown(hmask = 0, emask = 0, state = game, previous
             noMsg = !!liquid?.moved; // C drown(): TRUE after relocation or rescue
         }
         const location = requireGameLevel(state).requireAt(hero.ux, hero.uy);
-        if (IS_LAVA(location.typ) && !state.iflags?.in_lava_effects) {
+        if (isLavaAt(hero.ux, hero.uy, state) && !state.iflags?.in_lava_effects) {
             const lava = await applyHeroLiquidEffects(plineWithContinuation, { entry: 'float-down' });
             if (lava?.died || state.program_state?.gameover)
                 return 1;

@@ -9,8 +9,8 @@ import {
 } from './ball.js';
 import {
     D_CLOSED, D_ISOPEN, D_LOCKED, DOOR, FIRE_TRAP, IRONBARS,
-    IS_LAVA, IS_OBSTRUCTED, IS_POOL, IS_WATERWALL, Is_waterlevel,
-    MAGIC_PORTAL, MOAT, TREE, TRAP_EXPLANATIONS,
+    IS_OBSTRUCTED, Is_waterlevel,
+    MAGIC_PORTAL, TREE, TRAP_EXPLANATIONS,
     TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_WEB, Upolyd,
     VIBRATING_SQUARE, W_NONPASSWALL,
     is_hole, is_pit, isok,
@@ -54,6 +54,7 @@ import { inventoryWeight } from './weight.js';
 import { vision_recalc } from './vision.js';
 import { switchHeroTerrain } from './terrain_movement.js';
 import { walkPathCells } from './path_walk.js';
+import { isLavaAt, isMoatAt, isPoolAt, isWaterwallAt } from './terrain_properties.js';
 
 export interface HeroTeleportMovement {
     oldx: number;
@@ -319,23 +320,22 @@ async function applyForcedLandingEffects(options: HeroHurtleOptions) {
 
 async function settleLiquid(options: HeroHurtleOptions, remaining: HurtleDistance) {
     requirePlayingGame(game);
-    const location = game.level?.at?.(game.u.ux, game.u.uy);
-    if (!location) return null;
-    if (IS_LAVA(location.typ)) {
+    const { ux: x, uy: y } = game.u;
+    if (isLavaAt(x, y)) {
         if (!options.jumping || remaining.value >= 2)
             await plineWithContinuation('You move over some lava.', { noRepeat: true });
         return null;
     }
-    if (!IS_POOL(location.typ) || game.u?.uinwater) return null;
+    if (!isPoolAt(x, y) || game.u.uinwater) return null;
 
     const staysAboveWater = game.u?.levitating || game.u?.levitation
         || game.u.flying
         || heroHasWaterWalking(game) || options.jumping;
-    if (!IS_WATERWALL(location.typ) && staysAboveWater) {
+    if (!isWaterwallAt(x, y) && staysAboveWater) {
         if (!Is_waterlevel(game.u?.uz)
             && (!options.jumping || remaining.value >= 2)) {
             await plineWithContinuation(
-                `You move over ${location.typ === MOAT ? 'a moat' : 'a pool'}.`,
+                `You move over ${isMoatAt(x, y) ? 'a moat' : 'a pool'}.`,
                 { noRepeat: true },
             );
         }

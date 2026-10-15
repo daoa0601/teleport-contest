@@ -2,7 +2,7 @@
 // cases of nhTimeout().  The allmain turn hook owns the ordering: dialogue
 // runs in the pre-countdown dialogue block (timeout.c:633-634), expiry runs
 // in the property loop at C property order, levitation before flying.
-import { ACCESSIBLE, IS_LAVA, IS_POOL, I_SPECIAL, Is_waterlevel, TIMEOUT, } from './const.js';
+import { ACCESSIBLE, I_SPECIAL, Is_waterlevel, TIMEOUT, } from './const.js';
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import { plineWithContinuation } from './display.js';
 import { captureLevitationState, hasCarriedProperty, hasInvokedProperty, hasWornProperty, propertyIsActive, refreshProperty, } from './properties.js';
@@ -10,6 +10,7 @@ import { floatHeroDown } from './terrain_movement.js';
 import { stopHeroOccupation } from './occupation.js';
 import { applyHeroLocationEffects } from './cmd.js';
 import { surfaceName } from './terrain_name.js';
+import { isPoolOrLavaAt } from './terrain_properties.js';
 const LEVITATION_TEXTS = [
     'You float slightly lower.',
     'You wobble unsteadily %s the %s.',
@@ -28,7 +29,7 @@ export async function levitationDialogue(state = game, { publish = plineWithCont
         || hasCarriedProperty('levitation', null, state))
         return null;
     const terrain = requireGameLevel(state).requireAt(hero.ux, hero.uy);
-    const poolOrLava = IS_POOL(terrain.typ) || IS_LAVA(terrain.typ);
+    const poolOrLava = isPoolOrLavaAt(hero.ux, hero.uy, state);
     if (!ACCESSIBLE(terrain.typ) && !poolOrLava)
         return null;
     if (turns % 2 === 1 && index > 0 && index <= LEVITATION_TEXTS.length) {
