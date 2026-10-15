@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import type { TestContext } from 'node:test';
 
-import { ROOM, STONE } from '../js/const.js';
+import { CORR, HWALL, ROOM, STONE } from '../js/const.js';
 import { init_dungeons } from '../js/dungeon.js';
 import { GameMap } from '../js/game.js';
 import { game, requireGameLevel } from '../js/gstate.js';
@@ -105,4 +105,24 @@ void test('Lua level initialization defaults to solid floor and accepts Rogue ro
     game.level = new GameMap();
     await lua.executeAsync('des.level_init({ style = "rogue" })');
     assert.ok(requireGameLevel().nroom > 0, 'Rogue style builds its room grid');
+});
+
+void test('solid initialization resets cell metadata within the native maze boundaries', async t => {
+    const lua = await levelLua(t);
+    const level = requireGameLevel();
+    const previous = level.requireAt(20, 10);
+    previous.flags = 3;
+    previous.roomno = 4;
+    previous.edge = true;
+    previous.horizontal = true;
+    level.requireAt(1, 5).typ = CORR;
+    level.requireAt(79, 5).typ = HWALL;
+    await lua.executeAsync('des.level_init({ style = "solidfill", fg = ".", lit = 0 })');
+    assert.equal(previous.typ, ROOM);
+    assert.equal(previous.flags, 0);
+    assert.equal(previous.roomno, 0);
+    assert.equal(previous.edge, false);
+    assert.equal(previous.horizontal, false);
+    assert.equal(level.requireAt(1, 5).typ, CORR);
+    assert.equal(level.requireAt(79, 5).typ, HWALL);
 });

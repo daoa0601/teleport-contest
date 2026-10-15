@@ -90,7 +90,7 @@ void test('a string map replaces lit fill with a dark room that arrival does not
     assert.equal(distant.remembered_glyph, undefined, 'arrival must not remember unseen floor');
     assert.equal(distant.disp_ch, ' ');
     assert.equal(cansee(x + 2, y + 2), true, 'adjacent floor remains visible in the dark');
-    assert.equal(game.level.requireAt(1, 0).lit, true, 'the map only replaces its own cells');
+    assert.equal(game.level.requireAt(2, 0).lit, true, 'the map only replaces its own cells');
 });
 for (const lighting of [undefined, false, true]) {
     void test(`a positioned map uses ${lighting === undefined ? 'unlit by default' : lighting ? 'explicit light' : 'explicit darkness'}`, async (t) => {

@@ -5562,8 +5562,25 @@ function specialMapRows(source) {
         rows.pop();
     return rows;
 }
-async function fillSpecialLevel(options, active) {
+function fillSpecialSolid(type, lit) {
     const level = requireGameLevel();
+    for (let x = 2; x <= ((COLNO - 1) & ~1); x++) {
+        for (let y = 0; y <= ((ROWNO - 1) & ~1); y++) {
+            if (!setLevelTerrainLit(x, y, type, lit))
+                continue;
+            const cell = level.requireAt(x, y);
+            cell.flags = cell.doormask = cell.wall_info = cell.icedpool = 0;
+            cell.altarmask = cell.ladder = cell.looted = cell.drawbridgemask = 0;
+            cell.emptygrave = false;
+            cell.blessedftn = false;
+            cell.disturbed = false;
+            cell.horizontal = false;
+            cell.roomno = 0;
+            cell.edge = false;
+        }
+    }
+}
+async function fillSpecialLevel(options, active) {
     active.levelInitialized = true;
     const style = options.style ?? 'solidfill';
     if (style === 'rogue') {
@@ -5617,12 +5634,7 @@ async function fillSpecialLevel(options, active) {
     if (type === undefined)
         throw new Error(`unknown Lua map character ${options.fg}`);
     active.defaultLit = options.lit == null ? !!rn2(2) : !!options.lit;
-    for (let x = 0; x < COLNO; x++) {
-        for (let y = 0; y < ROWNO; y++) {
-            setLevelTerrainType(x, y, type);
-            level.requireAt(x, y).lit = active.defaultLit;
-        }
-    }
+    fillSpecialSolid(type, active.defaultLit);
     return;
 }
 function setLuaLevelFlags(active, flags) {
@@ -6991,22 +7003,6 @@ function lightSpecialArea(context, x1, y1, x2, y2, lit) {
             const loc = level.at(x, y);
             if (loc)
                 loc.lit = lit || IS_LAVA(loc.typ);
-        }
-    }
-}
-function fillSpecialSolid(filling = STONE, lit = false) {
-    const level = requireGameLevel();
-    for (let x = 1; x < COLNO; x++) {
-        for (let y = 0; y < ROWNO; y++) {
-            const loc = level.at(x, y);
-            if (!loc)
-                continue;
-            loc.typ = filling;
-            loc.lit = !!lit;
-            loc.flags = 0;
-            loc.roomno = 0;
-            loc.edge = false;
-            loc.horizontal = false;
         }
     }
 }
