@@ -5058,16 +5058,6 @@ export async function giveSpecialMonsterObject(
     );
 }
 
-function specialNonPasswall(context: SpecialLevelContext): void {
-    const level = requireGameLevel();
-    for (let dx = 0; dx < context.width; dx++) {
-        for (let dy = 0; dy < context.height; dy++) {
-            const loc = level.at(context.xstart + dx, context.ystart + dy);
-            if (loc && IS_WALL(loc.typ)) loc.wall_info |= W_NONPASSWALL;
-        }
-    }
-}
-
 async function specialMonsterRandomLocation(
     context: SpecialLevelContext, mndx: number | null,
 ): Promise<Position | null> {
@@ -6856,9 +6846,9 @@ function createLuaLevelSession() {
         nonDiggable: selection => selection
             ? specialSelectionNonDiggable(selection)
             : specialNonDiggable(),
-        nonPasswall: selection => selection
-            ? markSpecialSelectionWallProperty(selection, W_NONPASSWALL)
-            : specialNonPasswall(context),
+        nonPasswall: selection => markSpecialSelectionWallProperty(
+            selection ?? new SpecialSelection().negate(), W_NONPASSWALL,
+        ),
         wallify: () => wallifyMap(
             context.xstart - 1,
             context.ystart - 1,

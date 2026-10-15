@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { CLOUD, CORR, D_CLOSED, FOUNTAIN, F_LOOTED, F_WARNED, GRAVE, HEADSTONE, HWALL, ROOM, SCORR, SDOOR, STONE, S_LDWASHER, S_LPUDDING, S_LRING, T_LOOTED, TREE_LOOTED, TREE_SWARM } from '../js/const.js';
+import { CLOUD, CORR, D_CLOSED, FOUNTAIN, F_LOOTED, F_WARNED, GRAVE, HEADSTONE, HWALL, ROOM, SCORR, SDOOR, STONE, S_LDWASHER, S_LPUDDING, S_LRING, T_LOOTED, TREE_LOOTED, TREE_SWARM, W_NONPASSWALL } from '../js/const.js';
 import { init_dungeons } from '../js/dungeon.js';
 import { GameMap } from '../js/game.js';
 import { game, requireGameLevel } from '../js/gstate.js';
@@ -260,5 +260,16 @@ void test('Lua corridors join the requested doors of two rooms', async (t) => {
     for (let x = 13; x <= 17; x++)
         assert.ok([CORR, SCORR].includes(level.requireAt(x, 6).typ), `corridor should reach ${x},6`);
     assert.equal(level.requireAt(15, 7).typ, STONE);
+});
+void test('non_passwall without a selection protects all solid terrain on the level', async (t) => {
+    const lua = await levelLua(t);
+    await lua.executeAsync(`
+        des.map({ x = 10, y = 5, map = [[T.F|]] })
+        des.non_passwall()
+    `);
+    const level = requireGameLevel();
+    for (const { x, y } of [{ x: 10, y: 5 }, { x: 12, y: 5 }, { x: 13, y: 5 }, { x: 30, y: 10 }])
+        assert.ok((level.requireAt(x, y).wall_info & W_NONPASSWALL) !== 0, `solid terrain at ${x},${y}`);
+    assert.equal(level.requireAt(11, 5).wall_info & W_NONPASSWALL, 0);
 });
 //# sourceMappingURL=special_level_selection.test.js.map

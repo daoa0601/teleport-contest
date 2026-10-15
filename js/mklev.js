@@ -4983,16 +4983,6 @@ export async function giveSpecialMonsterObject(context, monster, otyp, spe) {
     remove_object(object, game);
     return await addObjectToMonsterInventory(monster, object, game, { atFront: true });
 }
-function specialNonPasswall(context) {
-    const level = requireGameLevel();
-    for (let dx = 0; dx < context.width; dx++) {
-        for (let dy = 0; dy < context.height; dy++) {
-            const loc = level.at(context.xstart + dx, context.ystart + dy);
-            if (loc && IS_WALL(loc.typ))
-                loc.wall_info |= W_NONPASSWALL;
-        }
-    }
-}
 async function specialMonsterRandomLocation(context, mndx) {
     // create_monster() has no species humidity to retry when selection
     // falls back to a random monster; it goes directly through DRY.
@@ -6735,9 +6725,7 @@ function createLuaLevelSession() {
         nonDiggable: selection => selection
             ? specialSelectionNonDiggable(selection)
             : specialNonDiggable(),
-        nonPasswall: selection => selection
-            ? markSpecialSelectionWallProperty(selection, W_NONPASSWALL)
-            : specialNonPasswall(context),
+        nonPasswall: selection => markSpecialSelectionWallProperty(selection ?? new SpecialSelection().negate(), W_NONPASSWALL),
         wallify: () => wallifyMap(context.xstart - 1, context.ystart - 1, context.xstart + context.width + 1, context.ystart + context.height + 1),
         teleportRegion: options => {
             const region = regionCoordinates(context, options.region, options.region_islev);
