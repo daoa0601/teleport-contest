@@ -23,7 +23,7 @@ import {
     DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, FOUNTAIN, F_WARNED, GRAVE, HOLE, ICE,
     IS_ALTAR, IS_DOOR, IS_FURNITURE, IS_GRAVE, IS_OBSTRUCTED,
     IS_ROOM, IS_STWALL, IS_THRONE, Is_airlevel, Is_botlevel,
-    Is_earthlevel, Is_waterlevel, LADDER, LANDMINE, LAVAPOOL, MAGIC_PORTAL,
+    Is_earthlevel, Is_stronghold, Is_waterlevel, LADDER, LANDMINE, LAVAPOOL, MAGIC_PORTAL,
     MIGR_RANDOM, M_SEEN_MAGR, MM_NOMSG, PIT, POOL, ROOM, SDOOR, SHOPBASE,
     SHOP_PIT_COST, SINK,
     STAIRS, TT_BURIEDBALL, TT_INFLOOR, TT_PIT, VIBRATING_SQUARE,
@@ -37,6 +37,8 @@ import {
     plineWithContinuation, show_glyph_cell, unmap_invisible,
 } from './display.js';
 import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
+import { levelAtDepth } from './dungeon.js';
+import { depth } from './hacklib.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { InitializedHero } from './hero_types.js';
 import type { GameObject } from './object_types.js';
@@ -609,7 +611,8 @@ export async function digActualHole(
                 if (victim === state.u.ustuck) return; /* vortex kludge */
                 if (!await teleportPetVictim(victim, state)) return;
 
-                if (Is_botlevel(state.u.uz)) {
+                const stronghold = Is_stronghold(state.u.uz);
+                if (!stronghold && Is_botlevel(state.u.uz)) {
                     if (canSeeMonster(victim)) {
                         await plineWithContinuation(
                             `${monsterSubject(victim)} avoids the trap.`);
@@ -621,7 +624,10 @@ export async function digActualHole(
                         throw new Error('A falling shopkeeper requires its shop records');
                     await makeAngryShopkeeper(victim, state);
                 }
-                await migrateMonsterOffLevel(victim, state, trap, {
+                const destination = stronghold ? state.valley_level
+                    : levelAtDepth(depth(state.u.uz, state.dungeons) + 1, { state });
+                if (!destination) throw new Error('A hole in the Castle requires the Valley destination.');
+                await migrateMonsterOffLevel(victim, state, { dst: destination }, {
                     kind: 'level-fall-migration',
                     mode: MIGR_RANDOM,
                 });

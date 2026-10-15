@@ -35,3 +35,22 @@ void test('a visible ceiling-clinger stays above a hole made by a broken digging
     assert.equal(wumpus.my, 10);
     assert.equal(wand.where, 'gone');
 });
+
+void test('a monster drops only one level when a digging wand opens a hole beneath it', async () => {
+    const level = freshObjectRoom({ hero: { uhp: 500, uhpmax: 500 } });
+    game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 30 })];
+    const goblin = await createMonsterAt('goblin', 11, 10);
+    goblin.mhp = goblin.mhpmax = 500;
+    grantIntrinsicProperty('levitation', 'outside');
+    const wand = await addInventoryObject(WAN_DIGGING, { spe: 10 });
+    const input = resetInputState();
+    installPagerInput(input, { expected: /wand|pit|hole|Boom|blast|caught|goblin/i, limit: 30 });
+    input.feed(`${wand.invlet}y`);
+    initRng(19n);
+
+    await rhack('a'.charCodeAt(0));
+
+    assert.equal(level.traps.find(trap => trap.tx === 11 && trap.ty === 10)?.ttyp, HOLE);
+    assert.equal(level.monsters.includes(goblin), false);
+    assert.deepEqual(goblin.migrationDestination, { dnum: 0, dlevel: 9 });
+});

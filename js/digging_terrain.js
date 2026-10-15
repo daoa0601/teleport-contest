@@ -8,10 +8,12 @@ import { deleteTrap } from './trap_lifecycle.js';
 import { AD_DGST, AD_STCK, AD_WRAP, AT_ENGL, AT_HUGS, } from './monster_attack_types.js';
 import { adjustHeroAlignment } from './alignment.js';
 import { exerciseAttribute } from './attrib.js';
-import { A_LAWFUL, A_STR, A_WIS, ALTAR, AM_MASK, AM_SANCTUM, Amask2align, BEAR_TRAP, DBWALL, DB_ICE, DB_LAVA, DB_MOAT, DB_UNDER, DIGCHECK_FAIL_AIRLEVEL, DIGCHECK_FAIL_ALTAR, DIGCHECK_FAIL_BOULDER, DIGCHECK_FAIL_CANTDIG, DIGCHECK_FAIL_ONLADDER, DIGCHECK_FAIL_ONSTAIRS, DIGCHECK_FAIL_OBJ_POOL_OR_TRAP, DIGCHECK_FAIL_THRONE, DIGCHECK_FAIL_TOOHARD, DIGCHECK_FAIL_UNDESTROYABLETRAP, DIGCHECK_FAIL_WATERLEVEL, DIGCHECK_FAILED, DIGCHECK_PASSED, DIGCHECK_PASSED_DESTROY_TRAP, DIGCHECK_PASSED_PITONLY, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, FOUNTAIN, F_WARNED, GRAVE, HOLE, ICE, IS_ALTAR, IS_DOOR, IS_FURNITURE, IS_GRAVE, IS_OBSTRUCTED, IS_ROOM, IS_STWALL, IS_THRONE, Is_airlevel, Is_botlevel, Is_earthlevel, Is_waterlevel, LADDER, LANDMINE, LAVAPOOL, MAGIC_PORTAL, MIGR_RANDOM, M_SEEN_MAGR, MM_NOMSG, PIT, POOL, ROOM, SDOOR, SHOPBASE, SHOP_PIT_COST, SINK, STAIRS, TT_BURIEDBALL, TT_INFLOOR, TT_PIT, VIBRATING_SQUARE, W_NONDIGGABLE, is_hole, is_magical_trap, is_pit, isok, } from './const.js';
+import { A_LAWFUL, A_STR, A_WIS, ALTAR, AM_MASK, AM_SANCTUM, Amask2align, BEAR_TRAP, DBWALL, DB_ICE, DB_LAVA, DB_MOAT, DB_UNDER, DIGCHECK_FAIL_AIRLEVEL, DIGCHECK_FAIL_ALTAR, DIGCHECK_FAIL_BOULDER, DIGCHECK_FAIL_CANTDIG, DIGCHECK_FAIL_ONLADDER, DIGCHECK_FAIL_ONSTAIRS, DIGCHECK_FAIL_OBJ_POOL_OR_TRAP, DIGCHECK_FAIL_THRONE, DIGCHECK_FAIL_TOOHARD, DIGCHECK_FAIL_UNDESTROYABLETRAP, DIGCHECK_FAIL_WATERLEVEL, DIGCHECK_FAILED, DIGCHECK_PASSED, DIGCHECK_PASSED_DESTROY_TRAP, DIGCHECK_PASSED_PITONLY, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, FOUNTAIN, F_WARNED, GRAVE, HOLE, ICE, IS_ALTAR, IS_DOOR, IS_FURNITURE, IS_GRAVE, IS_OBSTRUCTED, IS_ROOM, IS_STWALL, IS_THRONE, Is_airlevel, Is_botlevel, Is_earthlevel, Is_stronghold, Is_waterlevel, LADDER, LANDMINE, LAVAPOOL, MAGIC_PORTAL, MIGR_RANDOM, M_SEEN_MAGR, MM_NOMSG, PIT, POOL, ROOM, SDOOR, SHOPBASE, SHOP_PIT_COST, SINK, STAIRS, TT_BURIEDBALL, TT_INFLOOR, TT_PIT, VIBRATING_SQUARE, W_NONDIGGABLE, is_hole, is_magical_trap, is_pit, isok, } from './const.js';
 import { addShopDamage, makeAngryShopkeeper, payForShopDamage, shopDig, } from './shop_damage.js';
 import { canSeeMonster, canSpotMonster, flush_screen, map_invisible, newsym, plineWithContinuation, show_glyph_cell, unmap_invisible, } from './display.js';
 import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
+import { levelAtDepth } from './dungeon.js';
+import { depth } from './hacklib.js';
 import { monsterHasMagicResistance } from './anti_magic_trap.js';
 import { hasShopkeeperData } from './shop_types.js';
 import { convertTrapToObject } from './trap_object.js';
@@ -532,7 +534,8 @@ export async function digActualHole(x, y, madeBy, ttyp, { state = game } = {}) {
                     return; /* vortex kludge */
                 if (!await teleportPetVictim(victim, state))
                     return;
-                if (Is_botlevel(state.u.uz)) {
+                const stronghold = Is_stronghold(state.u.uz);
+                if (!stronghold && Is_botlevel(state.u.uz)) {
                     if (canSeeMonster(victim)) {
                         await plineWithContinuation(`${monsterSubject(victim)} avoids the trap.`);
                     }
@@ -543,7 +546,11 @@ export async function digActualHole(x, y, madeBy, ttyp, { state = game } = {}) {
                         throw new Error('A falling shopkeeper requires its shop records');
                     await makeAngryShopkeeper(victim, state);
                 }
-                await migrateMonsterOffLevel(victim, state, trap, {
+                const destination = stronghold ? state.valley_level
+                    : levelAtDepth(depth(state.u.uz, state.dungeons) + 1, { state });
+                if (!destination)
+                    throw new Error('A hole in the Castle requires the Valley destination.');
+                await migrateMonsterOffLevel(victim, state, { dst: destination }, {
                     kind: 'level-fall-migration',
                     mode: MIGR_RANDOM,
                 });
