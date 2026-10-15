@@ -1,5 +1,6 @@
 // C dokick.c:dokick(): refusals precede the direction prompt.
 import { displayMessageWindow, plineWithContinuation as pline } from './display.js';
+import { resetCommandVariables } from './command_state.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { heroLegName } from './body_parts.js';
 import { IS_DOOR, IS_OBSTRUCTED, Is_airlevel, TT_BEARTRAP, TT_PIT, TT_WEB } from './const.js';
@@ -60,7 +61,7 @@ export async function admitHeroKick() {
         if (refusal)
             await pline(refusal);
         await displayMessageWindow();
-        game.context.move = 0;
+        resetCommandVariables(true);
         return false;
     }
     else if (!heroPassesWalls()
@@ -71,7 +72,7 @@ export async function admitHeroKick() {
         return true;
     await pline(refusal);
     await displayMessageWindow();
-    game.context.move = 0;
+    resetCommandVariables(true);
     return false;
 }
 // These checks use the chosen direction but do not reach the target square.

@@ -2,7 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { TT_BEARTRAP, TT_PIT, TT_WEB, STONE } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { BOULDER } from '../js/object_data.js';
+import { rhack } from '../js/cmd.js';
+import { pushKeys, queueCommandKeys } from '../js/input.js';
+import { BOULDER, CLUB } from '../js/object_data.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { setHeroSpecies } from '../js/hero_species.js';
 import { kickDirection } from './support/commands.js';
@@ -72,3 +74,25 @@ void test('levitation requires a surface behind the hero for bracing', async () 
     assert.equal(game.u.uhp, 100);
     assert.equal(game._lastPlineMessage, 'You have nothing to brace yourself against.');
 });
+
+for (const trapped of [false, true]) {
+    void test(`a kick refused for ${trapped ? 'a bear trap' : 'wounded legs'} discards its queued direction`, async () => {
+        freshPlayableRoom({ hero: trapped
+            ? { utrap: 4, utraptype: TT_BEARTRAP }
+            : { _woundedLegTurns: 4 } });
+        requirePlayingGame(game);
+        const westClub = await floorObject(CLUB, 9, 10, { initialize: false });
+        const eastClub = await floorObject(CLUB, 11, 10, { initialize: false });
+        queueCommandKeys('l');
+        pushKeys(' ');
+
+        await rhack(4);
+        assert.equal(game.context.move, 0);
+        game.u.utrap = 0;
+        game.u._woundedLegTurns = 0;
+        await kickDirection('h', ' '.repeat(10));
+
+        assert.ok(westClub.ox < 9, 'The next westward kick moves the club west of the hero.');
+        assert.equal(eastClub.ox, 11, 'The discarded eastward direction leaves the eastern club alone.');
+    });
+}
