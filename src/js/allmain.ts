@@ -37,7 +37,7 @@ import type {
     RandomBelow, RollDice, RollOne,
 } from './monster_action_types.js';
 import { clearImmediateZapBypasses } from './immediate_zap.js';
-import { MON_FLOOR, PICK_ONE } from './const.js';
+import { MON_FLOOR, PICK_ONE, PLNMSG_MON_TAKES_OFF_ITEM } from './const.js';
 import { showInventoryWindow } from './windows.js';
 import type { InventoryMenuItem } from './windows.js';
 import { endVoluntaryMultiTurn, heroHasInvoluntaryDelay } from './command_state.js';
@@ -2019,7 +2019,10 @@ async function resolveDeferredHeroItemTheft(
             : wasAccessory ? 'removes' : 'takes off';
         removalMessage = `${subject} ${verb} ${description}.`;
     }
-    if (removalMessage && !charmed) await plineWithContinuation(removalMessage);
+    if (removalMessage && !charmed) {
+        await plineWithContinuation(removalMessage);
+        game._lastPlineKind = PLNMSG_MON_TAKES_OFF_ITEM;
+    }
     if (removalItem !== object) await removeWornHeroItem(removalItem, game);
     await removeWornHeroItem(object, game);
     if (game.program_state?.gameover || !game.inventory.includes(object)) {
@@ -2044,8 +2047,8 @@ async function resolveDeferredHeroItemTheft(
     }
     observeObjectForNaming(object);
     const stolenObjectDescription = inventoryItemDescription(object);
-    const thief = removalMessage && !animal
-        ? 'She' : subject;
+    const thief = charmed || (game._lastPlineKind === PLNMSG_MON_TAKES_OFF_ITEM
+        && MONSTER_SYMBOL[monster.mnum] === 14) ? 'She' : subject;
     // urgent_pline() does not force a pager for its newly installed line.
     // It can first suspend while clearing the older worn-removal line; after
     // that acknowledgement, rloc() may append its own message to this one.

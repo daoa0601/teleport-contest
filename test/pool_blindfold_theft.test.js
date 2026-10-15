@@ -34,4 +34,21 @@ void test('a monkey stealing a blindfold is named once the hero can see it', asy
     assert.match(prose, /The monkey tries to run away/);
     assert.doesNotMatch(prose, /Something (?:stole|tries to run away)/);
 });
+void test('a nymph names herself again after blindfold removal produces sight feedback', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    const blindfold = await addInventoryObject(BLINDFOLD);
+    await applyInventoryObject(blindfold);
+    const nymph = await createMonsterAt('water nymph', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
+    nymph.mux = game.u.ux;
+    nymph.muy = game.u.uy;
+    const input = resetInputState();
+    installPagerInput(input, { expected: /Someone|nymph|blindfold|see again/, limit: 12 });
+    const messages = [];
+    input.beforeRead = () => { messages.push(game._pending_message); };
+    await performMonsterHeroAttack(nymph, game, { random: () => 0, rollOne: () => 1 });
+    messages.push(game._pending_message);
+    assert.ok(nymph.minvent.includes(blindfold));
+    assert.match(messages.join('\n'), /You can see again\.[\s\S]*The water nymph stole/);
+});
 //# sourceMappingURL=pool_blindfold_theft.test.js.map

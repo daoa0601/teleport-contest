@@ -23,7 +23,7 @@ import { advanceCorpseResistanceTimeouts } from './corpse_intrinsics.js';
 import { game, requireGameLevel, requireInitializedGame, requireGameDisplay, requireLiveGame } from './gstate.js';
 import { isRoom } from './map_types.js';
 import { clearImmediateZapBypasses } from './immediate_zap.js';
-import { MON_FLOOR, PICK_ONE } from './const.js';
+import { MON_FLOOR, PICK_ONE, PLNMSG_MON_TAKES_OFF_ITEM } from './const.js';
 import { showInventoryWindow } from './windows.js';
 import { endVoluntaryMultiTurn, heroHasInvoluntaryDelay } from './command_state.js';
 import { dosounds } from './ambient_sounds.js';
@@ -1800,8 +1800,10 @@ async function resolveDeferredHeroItemTheft(action, monster, attack, random) {
             : wasAccessory ? 'removes' : 'takes off';
         removalMessage = `${subject} ${verb} ${description}.`;
     }
-    if (removalMessage && !charmed)
+    if (removalMessage && !charmed) {
         await plineWithContinuation(removalMessage);
+        game._lastPlineKind = PLNMSG_MON_TAKES_OFF_ITEM;
+    }
     if (removalItem !== object)
         await removeWornHeroItem(removalItem, game);
     await removeWornHeroItem(object, game);
@@ -1828,8 +1830,8 @@ async function resolveDeferredHeroItemTheft(action, monster, attack, random) {
     }
     observeObjectForNaming(object);
     const stolenObjectDescription = inventoryItemDescription(object);
-    const thief = removalMessage && !animal
-        ? 'She' : subject;
+    const thief = charmed || (game._lastPlineKind === PLNMSG_MON_TAKES_OFF_ITEM
+        && MONSTER_SYMBOL[monster.mnum] === 14) ? 'She' : subject;
     // urgent_pline() does not force a pager for its newly installed line.
     // It can first suspend while clearing the older worn-removal line; after
     // that acknowledgement, rloc() may append its own message to this one.
