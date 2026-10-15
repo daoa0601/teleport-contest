@@ -14,7 +14,7 @@ import { ALTAR, ICE, Is_airlevel, Is_waterlevel, MENU_TRADITIONAL, MV_KNOWS_EGG,
 import { ALCHEMY_SMOCK, ARROW as FIRST_OBJECT, BAG_OF_TRICKS, EGG, CHEST, FORTUNE_COOKIE, GOLD_PIECE, HAWAIIAN_SHIRT, LARGE_BOX, MAGIC_MARKER, HEAVY_IRON_BALL, LOCK_PICK, CREDIT_CARD, SKELETON_KEY, OBJECT_BIMANUAL, OBJECT_INITIAL_KNOWN, OBJECT_NAMES, SCR_BLANK_PAPER, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_NOVEL, STATUE, TIN, TIN_OPENER, TOWEL, AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, BEARTRAP, BELL, BELL_OF_OPENING, BLINDFOLD, BRASS_LANTERN, BULLWHIP, CANDELABRUM_OF_INVOCATION, CAN_OF_GREASE, CORPSE, CREAM_PIE, CRYSTAL_BALL, DRUM_OF_EARTHQUAKE, DWARVISH_MATTOCK, EUCALYPTUS_LEAF, EXPENSIVE_CAMERA, FIGURINE, GRAPPLING_HOOK, HORN_OF_PLENTY, LAND_MINE, LEASH, LENSES, MAGIC_LAMP, MAGIC_WHISTLE, MEAT_RING, MIRROR, OBJECT_DESCRIPTIONS, OBJECT_UNIQUE, OIL_LAMP, PICK_AXE, POT_OIL, SADDLE, STETHOSCOPE, TALLOW_CANDLE, TINNING_KIT, TIN_WHISTLE, UNICORN_HORN, WAX_CANDLE, WOODEN_FLUTE, } from './object_data.js';
 import { MONSTER_GROWTH_TARGET } from './monster_data.js';
 import { definiteName, objectCombatName, objectLooksUnique, objectName, observeObjectForNaming, simpleObjectName, singularObjectName } from './objnam.js';
-import { learnObjectType, OBJECT_CLASS_SYMBOLS } from './object_knowledge.js';
+import { learnObjectType, OBJECT_CLASS_SYMBOLS, recordObjectEncounter, recordObjectKnowledge } from './object_knowledge.js';
 import { getLine, promptYesNoAllQuit } from './query.js';
 import { isGrayStone, isWeaponTool, objectUsesCharges } from './object_properties.js';
 import { ammunitionMatchesLauncher, isBlade, isTwoWeaponObject } from './weapon_type.js';
@@ -761,24 +761,32 @@ export async function selectUsedInventoryLetter(avoidLetter) {
 // Keep that state transition separate from the ordinary `i` command, whose
 // descriptions are still constrained by what the hero learned in play.
 export async function showIdentifiedInventory() {
-    for (const item of game.inventory || []) {
-        item.typeKnown = true;
-        item.known = true;
-        item.bknown = true;
-        item.dknown = true;
-        item.rknown = true;
-        item.overrideIdentified = true;
-        const redundantNeutral = item.oclass === 2 || item.oclass === 11
-            || (item.oclass === 6 && objectUsesCharges(item));
-        item.buc = item.blessed ? 'blessed' : item.cursed ? 'cursed'
-            : !redundantNeutral
-                && [3, 4, 5, 6, 7, 8, 9, 10, 13].includes(item.oclass)
-                ? 'uncursed' : '';
-        const canonicalName = OBJECT_NAMES[item.otyp];
-        if (item.oclass === 13 && canonicalName)
-            item.name = canonicalName;
-    }
+    for (const item of game.inventory)
+        identifyObjectForDisclosure(item);
     return selectInventoryObject({ headingAttr: 0, pickMode: PICK_NONE });
+}
+export function identifyObjectForDisclosure(item) {
+    recordObjectEncounter(item.otyp);
+    recordObjectKnowledge(item.otyp);
+    item.typeKnown = true;
+    item.known = true;
+    item.bknown = true;
+    item.dknown = true;
+    item.rknown = true;
+    item.overrideIdentified = true;
+    if (isContainer(item) || item.otyp === STATUE)
+        item.cknown = item.lknown = true;
+    else if (item.otyp === TIN)
+        item.cknown = true;
+    const redundantNeutral = item.oclass === 2 || item.oclass === 11
+        || (item.oclass === 6 && objectUsesCharges(item));
+    item.buc = item.blessed ? 'blessed' : item.cursed ? 'cursed'
+        : !redundantNeutral
+            && [3, 4, 5, 6, 7, 8, 9, 10, 13].includes(item.oclass)
+            ? 'uncursed' : '';
+    const canonicalName = OBJECT_NAMES[item.otyp];
+    if (item.oclass === 13 && canonicalName)
+        item.name = canonicalName;
 }
 export async function selectInventoryObject({ items, includeGold = true, title = null, extraChoice = null, pickMode = PICK_ONE, headingAttr, menuOptions = [], } = {}) {
     const filtered = !!items?.length;

@@ -1,6 +1,7 @@
 // Container use and object transfer.
 // C refs: pickup.c use_container(), in_container(), out_container().
 import { makePlural } from './object_grammar.js';
+import { containerContents } from './container_contents.js';
 import { bot, displayMessageWindow, redrawMap, flush_screen, pline, plineWithContinuation } from './display.js';
 import { touchArtifactByHero } from './artifact_touch.js';
 import { loseHeroHp } from './hero_damage.js';
@@ -662,26 +663,8 @@ async function putSelectedObjects(container, stashOne = false) {
     }
     return { results, spentTime: spentTime || results.some(result => result.moved) };
 }
-function contentLines(container) {
-    return sortObjects(container.contents || [], { mode: lootSortMode() })
-        .map(object => `  ${objectDescription(object)}`);
-}
 async function showContents(container) {
-    container.cknown = true;
-    if (!container.contents?.length) {
-        await pline(`The ${containerNoun(container)} is empty.`);
-        await displayMessageWindow();
-        return;
-    }
-    for (const object of container.contents)
-        observeObjectForNaming(object);
-    const lines = [
-        `Contents of the ${containerNoun(container)}:`,
-        '',
-        ...contentLines(container),
-    ];
-    // putstr() gives this NHW_MENU a text buffer; tty uses --More--.
-    await showDisclosureOverlay(lines, { pagerStyle: 'text', restoreUnderlay: true });
+    await containerContents([container], false, false, true);
 }
 function actionKeys() {
     const menuStyle = game.flags.menu_style ?? MENU_FULL;

@@ -18,7 +18,8 @@ import { nhgetch } from './input.js';
 import {
     bot, clearMessageWindow, displayMessageWindow, flush_screen, pline, plineWithContinuation,
 } from './display.js';
-import { consumeInventoryItem, showIdentifiedInventory } from './invent.js';
+import { consumeInventoryItem, identifyObjectForDisclosure, showIdentifiedInventory } from './invent.js';
+import { containerContents } from './container_contents.js';
 import { finalConductLines, showFinalAttributes } from './insight.js';
 import {
     ATR_INVERSE, ATR_NONE, showDisclosureOverlay, showInventoryWindow, showTextPages, showTextWindow,
@@ -1199,6 +1200,7 @@ async function discloseGame({
     // Disclosure uses committed HP after that message has been acknowledged.
     let livingCat = false;
     for (const object of game.inventory) {
+        identifyObjectForDisclosure(object);
         if (!isQuantumBox(object)) continue;
         if (livingCat) object.spe = 0;
         else {
@@ -1216,7 +1218,11 @@ async function discloseGame({
             possessionAnswer = ask ? await ynQuestion(question, 'ynq', defquery)
                 : defquery;
         }
-        if (possessionAnswer === 'y') await showIdentifiedInventory();
+        if (possessionAnswer === 'y') {
+            game.flags.force_invmenu = false;
+            await showIdentifiedInventory();
+            await containerContents(game.inventory, true, true, false);
+        }
         if (possessionAnswer === 'q') return stopDisclosure();
     }
 

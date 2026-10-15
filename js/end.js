@@ -15,7 +15,8 @@ import { heroFormSticks } from './hero_species.js';
 import { monsterName } from './monster_name.js';
 import { nhgetch } from './input.js';
 import { bot, clearMessageWindow, displayMessageWindow, flush_screen, pline, plineWithContinuation, } from './display.js';
-import { consumeInventoryItem, showIdentifiedInventory } from './invent.js';
+import { consumeInventoryItem, identifyObjectForDisclosure, showIdentifiedInventory } from './invent.js';
+import { containerContents } from './container_contents.js';
 import { finalConductLines, showFinalAttributes } from './insight.js';
 import { ATR_INVERSE, ATR_NONE, showDisclosureOverlay, showInventoryWindow, showTextPages, showTextWindow, } from './windows.js';
 import { artifactById } from './artifacts.js';
@@ -1055,6 +1056,7 @@ async function discloseGame({ killer = '', deathVerb = 'died', deathCause = null
     // Disclosure uses committed HP after that message has been acknowledged.
     let livingCat = false;
     for (const object of game.inventory) {
+        identifyObjectForDisclosure(object);
         if (!isQuantumBox(object))
             continue;
         if (livingCat)
@@ -1075,8 +1077,11 @@ async function discloseGame({ killer = '', deathVerb = 'died', deathCause = null
             possessionAnswer = ask ? await ynQuestion(question, 'ynq', defquery)
                 : defquery;
         }
-        if (possessionAnswer === 'y')
+        if (possessionAnswer === 'y') {
+            game.flags.force_invmenu = false;
             await showIdentifiedInventory();
+            await containerContents(game.inventory, true, true, false);
+        }
         if (possessionAnswer === 'q')
             return stopDisclosure();
     }
