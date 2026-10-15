@@ -6131,6 +6131,8 @@ async function doquiverCore(verb) {
     const initialQuantity = item.quantity ?? item.quan ?? 1;
     const partialCount = requestedCount !== null
         && requestedCount < initialQuantity;
+    if (partialCount && item.otyp === LOADSTONE && item.cursed)
+        item.corpsenm = requestedCount;
     if (item === game.uquiver) {
         // C getobj() splits before doquiver_core() notices the readied parent.
         if (partialCount && splittableForQuiver(item)) {
