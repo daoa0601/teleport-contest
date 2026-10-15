@@ -1829,7 +1829,8 @@ async function resolveDeferredHeroItemTheft(action, monster, attack, random) {
     // urgent_pline() does not force a pager for its newly installed line.
     // It can first suspend while clearing the older worn-removal line; after
     // that acknowledgement, rloc() may append its own message to this one.
-    await plineWithContinuation(`${thief} stole ${stolenObjectDescription}.`);
+    await plineWithContinuation(`${thief} stole ${stolenObjectDescription}.`, { urgent: true });
+    await reportHeroEncumbrance(game);
     const couldPetrify = object.otyp === CORPSE && touchPetrifies(object.corpsenm);
     object.how_lost = LOST_STOLEN;
     await addObjectToMonsterInventory(monster, object, game);

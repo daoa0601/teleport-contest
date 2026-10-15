@@ -3,6 +3,7 @@ import test from 'node:test';
 import { performMonsterHeroAttack } from '../js/allmain.js';
 import { continueFoodMeal, doeat } from '../js/eat.js';
 import { wearHeroAccessory } from '../js/accessory.js';
+import { reportHeroEncumbrance } from '../js/attrib.js';
 import { MM_ANGRY, MM_NOGRP, NO_MINVENT, W_AMUL } from '../js/const.js';
 import { flushPendingTopline } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
@@ -11,7 +12,7 @@ import { pushKeys, resetInputState } from '../js/input.js';
 import { punishHero } from '../js/punishment.js';
 import { unlinkObject } from '../js/object_location.js';
 import { addInventoryItem } from '../js/u_init.js';
-import { AMULET_OF_LIFE_SAVING, BOULDER, DAGGER, GOLD_PIECE, LEASH, OBJECT_NAMES, STATUE } from '../js/object_data.js';
+import { AMULET_OF_LIFE_SAVING, BOULDER, DAGGER, GOLD_PIECE, LEASH, LOADSTONE, OBJECT_NAMES, STATUE } from '../js/object_data.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { addInventoryObject, knownObject, untimedCorpse } from './support/game-objects.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
@@ -94,9 +95,24 @@ function theftMessages() {
     const messages = [];
     const input = resetInputState();
     input.beforeRead = () => { messages.push(game._pending_message); };
-    installPagerInput(input, { expected: /nymph|monkey|Somebody|She|Something|Someone|punished|chain|anchor|amulet|eating|corpse|petrified/, limit: 25 });
+    installPagerInput(input, { expected: /nymph|monkey|Somebody|She|Something|Someone|punished|chain|anchor|amulet|eating|corpse|petrified|load|unencumbered/, limit: 25 });
     return messages;
 }
+void test('item theft announces the lighter load before the nymph tries to teleport', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    game.level.flags.noteleport = true;
+    const thief = await nearbyThief();
+    await addInventoryObject(LOADSTONE, { quan: 3 });
+    theftMessages();
+    await reportHeroEncumbrance(game);
+    assert.ok((game._encumbranceLevel ?? 0) > 0);
+    const messages = theftMessages();
+    await performMonsterHeroAttack(thief, game, { random: () => 0, rollOne: () => 1 });
+    messages.push(game._pending_message);
+    assert.match(messages.join('\n'), /stole[\s\S]*Your movements are now unencumbered\.[\s\S]*prevents the water nymph from teleporting/);
+    assert.equal(game._encumbranceLevel, 0);
+});
 void test('a monkey cannot steal the last bite of a finished meal and flees before biting', async () => {
     freshObjectRoom();
     requirePlayingGame(game);
