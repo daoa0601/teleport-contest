@@ -607,16 +607,6 @@ function monsterRelocationCandidates(monster: Monster, state: LevelGameState) {
     return candidates;
 }
 
-function monsterVisibleAt(monster: Monster, state: GameState, x = monster.mx, y = monster.my) {
-    const inSight = !state?.viz_array
-        || !!((state.viz_array?.[y]?.[x] ?? 0) & 0x2);
-    const canSeeInvisible = !!(state?.u?.seeInvisible
-       );
-    return !state?.blind && !((state.u.blindTurns ?? 0) > 0)
-        && inSight && !monster.mundetected
-        && (!monster.minvis || canSeeInvisible);
-}
-
 // C teleport.c:rloc_to_core(). Direct placements suppress messages by default.
 export async function relocateMonsterTo(monster: Monster, x: number, y: number, {
     state = game, random = rn2, rollOne = rnd, calls = null, flags = RLOC_NOMSG,
@@ -933,7 +923,7 @@ export async function teleportMonsterFromTrap(
     const event: MonsterTeleportTrapEvent = {
         kind: 'teleport-trap', trap,
         trapSquare: { x: monster.mx, y: monster.my },
-        visible: monsterVisibleAt(monster, state),
+        visible: canSeeMonster(monster) || monster === state.u.usteed,
         relocation: null,
         damage: 0,
         killed: false,
