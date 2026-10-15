@@ -4,6 +4,7 @@
 import { monsterAtPosition, monsterHasMapPosition } from './monster_location.js';
 import { A_STR, BOLT_LIM, DOOR, D_CLOSED, D_LOCKED, IRONBARS, IS_LAVA, IS_POOL, IS_SOFT, IS_WATERWALL, Is_airlevel, LAVAWALL, LOST_THROWN, M_AP_OBJECT, M_AP_TYPE, P_CROSSBOW, SINK, WEB, ZAP_POS, isok, } from './const.js';
 import { monsterName } from './monster_name.js';
+import { artifactById } from './artifacts.js';
 import { dropBall } from './ball.js';
 import { containerImpactDamage } from './container_impact.js';
 import { currentAttribute } from './attrib.js';
@@ -21,7 +22,7 @@ import { impactDisturbsZombies } from './object_impact.js';
 import { isPick } from './weapon_type.js';
 import { MONSTER_MOVE, MONSTER_NAME } from './monster_data.js';
 import { breakObjectAtLocation, objectBreaksOnImpact } from './object_breakage.js';
-import { CANDELABRUM_OF_INVOCATION, HEAVY_IRON_BALL, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_SUBTYPE, TALLOW_CANDLE, WAX_CANDLE, } from './object_data.js';
+import { BOULDER, CANDELABRUM_OF_INVOCATION, HEAVY_IRON_BALL, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_SUBTYPE, TALLOW_CANDLE, WAX_CANDLE, } from './object_data.js';
 import { objectClassForType } from './object_knowledge.js';
 import { isLauncherAmmunition, launcherMatchesAmmo, } from './object_properties.js';
 import { shipObject } from './object_migration.js';
@@ -101,13 +102,18 @@ export function heroThrowTrajectory(object, state = game, launcher = null) {
     }
     const floating = Is_airlevel(state.u?.uz)
         || state.u?.levitating || state.u?.levitation || state.levitating;
-    if (!floating)
-        return { range, recoil: 0 };
-    const recoil = Math.max(1, unweightedRange - range);
-    return {
-        range: Math.max(1, range - recoil),
-        recoil,
-    };
+    const recoil = floating ? Math.max(1, unweightedRange - range) : 0;
+    if (floating)
+        range = Math.max(1, range - recoil);
+    // Native applies special-object limits after calculating recoil, and
+    // water has the final say even for a giant throwing a boulder.
+    if (object.otyp === BOULDER)
+        range = 20;
+    else if (artifactById(object.oartifact, state)?.name === 'Mjollnir')
+        range = Math.trunc((range + 1) / 2);
+    if (state.underwater || state.u.uinwater)
+        range = 1;
+    return { range, recoil };
 }
 export function prepareHeroThrownTarget(monster, random = rn2) {
     const immobilized = monster.mcanmove === 0 || monster.mcanmove === false;

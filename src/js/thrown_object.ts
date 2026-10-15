@@ -26,6 +26,7 @@ import {
     isok,
 } from './const.js';
 import { monsterName } from './monster_name.js';
+import { artifactById } from './artifacts.js';
 import { dropBall } from './ball.js';
 import { containerImpactDamage } from './container_impact.js';
 import { currentAttribute } from './attrib.js';
@@ -56,7 +57,7 @@ import { isPick } from './weapon_type.js';
 import { MONSTER_MOVE, MONSTER_NAME } from './monster_data.js';
 import { breakObjectAtLocation, objectBreaksOnImpact } from './object_breakage.js';
 import {
-    CANDELABRUM_OF_INVOCATION, HEAVY_IRON_BALL, OBJECT_MATERIAL,
+    BOULDER, CANDELABRUM_OF_INVOCATION, HEAVY_IRON_BALL, OBJECT_MATERIAL,
     OBJECT_NAMES, OBJECT_SUBTYPE, TALLOW_CANDLE, WAX_CANDLE,
 } from './object_data.js';
 import { objectClassForType } from './object_knowledge.js';
@@ -201,13 +202,16 @@ export function heroThrowTrajectory(
 
     const floating = Is_airlevel(state.u?.uz)
         || state.u?.levitating || state.u?.levitation || state.levitating;
-    if (!floating) return { range, recoil: 0 };
+    const recoil = floating ? Math.max(1, unweightedRange - range) : 0;
+    if (floating) range = Math.max(1, range - recoil);
 
-    const recoil = Math.max(1, unweightedRange - range);
-    return {
-        range: Math.max(1, range - recoil),
-        recoil,
-    };
+    // Native applies special-object limits after calculating recoil, and
+    // water has the final say even for a giant throwing a boulder.
+    if (object.otyp === BOULDER) range = 20;
+    else if (artifactById(object.oartifact, state)?.name === 'Mjollnir')
+        range = Math.trunc((range + 1) / 2);
+    if (state.underwater || state.u.uinwater) range = 1;
+    return { range, recoil };
 }
 
 export function prepareHeroThrownTarget(monster: Monster, random: typeof rn2 = rn2): void {
