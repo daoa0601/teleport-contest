@@ -2,6 +2,7 @@
 import { heroBloodName } from './body_parts.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { Upolyd, In_endgame } from './const.js';
+import { demandDemonBribe } from './demon_talk.js';
 import { plineWithContinuation as pline } from './display.js';
 import { heroGoldAmount } from './hero_gold.js';
 import { monsterAlignmentType } from './monster_alignment.js';
@@ -35,6 +36,7 @@ const MS_DJINNI = 29;
 const MS_NURSE = 30;
 const MS_SEDUCE = 31;
 const MS_VAMPIRE = 32;
+const MS_BRIBE = 33;
 const MS_CUSS = 34;
 const MS_RIDER = 35;
 const MS_SPELL = 42;
@@ -125,6 +127,16 @@ export async function publishMonsterConversation(monster, sound, state) {
             break;
         case MS_VAMPIRE:
             reply.speech = vampireReply(monster, state);
+            break;
+        case MS_BRIBE:
+            if (monster.mpeaceful && !monster.mtame) {
+                await demandDemonBribe(monster, state);
+                break;
+            }
+            if (!monster.mpeaceful)
+                await publishMonsterCuss(monster, state);
+            else
+                reply.speech = "We're all doomed.";
             break;
         case MS_CUSS:
             if (!monster.mpeaceful)
