@@ -663,9 +663,6 @@ async function putSelectedObjects(container, stashOne = false) {
     }
     return { results, spentTime: spentTime || results.some(result => result.moved) };
 }
-async function showContents(container) {
-    await containerContents([container], false, false, true);
-}
 function actionKeys() {
     const menuStyle = game.flags.menu_style ?? MENU_FULL;
     return game.flags.lootabc && (menuStyle === MENU_PARTIAL || menuStyle === MENU_FULL)
@@ -781,7 +778,7 @@ async function useContainerActions(container, { held = false, moreContainers = f
             break;
         if (!container.cknown)
             spentTime = true;
-        await showContents(container);
+        await containerContents([container], false, false, true);
         if (underlay)
             restoreMenuUnderlay(underlay);
     }

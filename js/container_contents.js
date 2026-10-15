@@ -1,7 +1,8 @@
 // C end.c:container_contents(), shared by final disclosure and #loot ':'.
 import { isContainer } from './container.js';
 import { displayMessageWindow, plineWithContinuation } from './display.js';
-import { identifyObjectForDisclosure, inventoryItemDescription } from './invent.js';
+import { identifyObjectForDisclosure } from './invent.js';
+import { objectDescription } from './object_description.js';
 import { BAG_OF_TRICKS, STATUE } from './object_data.js';
 import { definiteName, objectName, observeObjectForNaming, simpleObjectName } from './objnam.js';
 import { lootSortMode, sortObjects } from './object_sort.js';
@@ -27,7 +28,7 @@ export async function containerContents(list, identified, allContainers, reportE
                     for (const object of sortObjects(box.contents, { mode: lootSortMode() })) {
                         if (identified)
                             identifyObjectForDisclosure(object);
-                        lines.push(`  ${inventoryItemDescription(object)}`);
+                        lines.push(`  ${objectDescription(object, { withPrice: true })}`);
                     }
                 }
                 await showDisclosureOverlay(lines, { pagerStyle: 'text', restoreUnderlay: true });
