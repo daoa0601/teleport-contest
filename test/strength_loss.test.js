@@ -6,7 +6,7 @@ import { loseHeroStrength } from '../js/attrib.js';
 import { wearHeroAccessory } from '../js/accessory.js';
 import { AMULET_OF_LIFE_SAVING, ROCK } from '../js/object_data.js';
 import { resetInputState } from '../js/input.js';
-import { flushPendingTopline } from '../js/display.js';
+import { flushPendingTopline, plineWithContinuation } from '../js/display.js';
 import { installPagerInput, finishAtCommandInput } from './support/pager-input.js';
 import { answerPrompts } from './support/input-boundaries.js';
 import { requireScreenRow } from './support/screen.js';
@@ -183,6 +183,26 @@ void test('lost strength immediately reports a newly burdensome load during play
     await addInventoryObject(ROCK, { quan: 62 });
     assert.equal(await answerPrompts(loseHeroStrength(3, null), input, []), false);
     assert.equal(game.u._encumbrance, 'Burdened');
+    assert.match(game._pending_message, /Your movements are slowed slightly because of your load/);
+});
+void test('strength loss finishes its load warning before remembering the new capacity', async () => {
+    const input = freshTurnRoom();
+    requirePlayingGame(game);
+    game.u.acurr.a[A_STR] = 12;
+    game.u.acurr.a[A_CON] = 12;
+    game._encumbranceLevel = 0;
+    await addInventoryObject(ROCK, { quan: 62 });
+    await plineWithContinuation('You pause to consider the heavy rocks you are carrying.');
+    const loss = loseHeroStrength(3, null);
+    try {
+        await input.waitUntilBlocked();
+        assert.equal(game._encumbranceLevel, 0, 'the load warning has not finished yet');
+    }
+    finally {
+        input.feed(' ');
+        assert.equal(await loss, false);
+    }
+    assert.equal(game._encumbranceLevel, 1);
     assert.match(game._pending_message, /Your movements are slowed slightly because of your load/);
 });
 //# sourceMappingURL=strength_loss.test.js.map
