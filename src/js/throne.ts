@@ -8,10 +8,10 @@ import { makeBlinded } from './sight_change.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { heroHasHalfSpellDamage } from './spell_damage.js';
 import {
-    A_CON, A_MAX, ROOM,
+    A_CON, A_MAX, A_STR, ROOM,
 } from './const.js';
 import {
-    adjustAttribute, attributeChangeMessage, changeHeroLuck, exerciseAttribute,
+    adjustAttribute, attributeChangeMessage, changeHeroLuck, exerciseAttribute, reportHeroEncumbrance,
 } from './attrib.js';
 import { artifactById } from './artifacts.js';
 import { mapLevel } from './detect.js';
@@ -114,6 +114,9 @@ async function announceAttributeChange(attribute: number, amount: number, condit
         && game.flags?.verbose === false) return result;
     const message = attributeChangeMessage(attribute, result);
     if (message) await plineWithContinuation(message);
+    if (result.changed && game._moveloopStarted
+        && (attribute === A_STR || attribute === A_CON))
+        await reportHeroEncumbrance(game);
     return result;
 }
 

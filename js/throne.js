@@ -6,8 +6,8 @@ import { makeConfused } from './hero_mental_status.js';
 import { makeBlinded } from './sight_change.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { heroHasHalfSpellDamage } from './spell_damage.js';
-import { A_CON, A_MAX, ROOM, } from './const.js';
-import { adjustAttribute, attributeChangeMessage, changeHeroLuck, exerciseAttribute, } from './attrib.js';
+import { A_CON, A_MAX, A_STR, ROOM, } from './const.js';
+import { adjustAttribute, attributeChangeMessage, changeHeroLuck, exerciseAttribute, reportHeroEncumbrance, } from './attrib.js';
 import { artifactById } from './artifacts.js';
 import { mapLevel } from './detect.js';
 import { displayColorName, map_background, newsym, newsym_force, plineWithContinuation, see_monsters, shieldeff, } from './display.js';
@@ -91,6 +91,9 @@ async function announceAttributeChange(attribute, amount, conditional) {
     const message = attributeChangeMessage(attribute, result);
     if (message)
         await plineWithContinuation(message);
+    if (result.changed && game._moveloopStarted
+        && (attribute === A_STR || attribute === A_CON))
+        await reportHeroEncumbrance(game);
     return result;
 }
 async function healHeroCompletely() {

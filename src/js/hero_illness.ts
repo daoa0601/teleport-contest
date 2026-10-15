@@ -14,7 +14,7 @@ import { makeConfused, makeStunned } from './hero_mental_status.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { heroStomachName } from './body_parts.js';
 import {
-    adjustAttribute, currentAttribute, exerciseAttribute,
+    adjustAttribute, currentAttribute, exerciseAttribute, reportHeroEncumbrance,
 } from './attrib.js';
 import {
     A_CON, ALTAR, FAINTING, POISONING, SICK_ALL,
@@ -378,7 +378,8 @@ export async function advanceHeroSickness({
         await publish('You have recovered from your illness.');
         cureHeroSickness(state);
         await exerciseAttribute(A_CON, false, state);
-        adjustAttribute(A_CON, -1, state);
+        const change = adjustAttribute(A_CON, -1, state);
+        if (change.changed && state._moveloopStarted) await reportHeroEncumbrance(state);
         return { active: false, died: false, recovered: true, turns: 0 };
     }
 

@@ -1,8 +1,8 @@
 import { formatFeltMessage } from './hero_speech.js';
 // C potion.c: bodily quaff effects. The drink transaction owns the bottle.
-import { adjustAttribute, exerciseAttribute } from './attrib.js';
+import { adjustAttribute, exerciseAttribute, reportHeroEncumbrance } from './attrib.js';
 import { heroFaceName } from './body_parts.js';
-import { A_CON, A_MAX, A_WIS, POLY_CONTROLLED, POLY_LOW_CTRL, POLY_NOFLAGS } from './const.js';
+import { A_CON, A_MAX, A_STR, A_WIS, POLY_CONTROLLED, POLY_LOW_CTRL, POLY_NOFLAGS } from './const.js';
 import { displayLiquidName, plineWithContinuation } from './display.js';
 import { canHeroRiseUp, levelAtDepth } from './dungeon.js';
 import { gainExperienceLevel, randomExperience } from './exper.js';
@@ -146,7 +146,10 @@ async function drinkSickness(source, state) {
             const contaminant = `${resisted ? 'mildly ' : ''}contaminated ${source.fromsink ? 'tap water' : 'potion'}`;
             if (!hero.fixedAbilities && !propertyIsActive('sustainAbility', state)) {
                 await plineWithContinuation(poisonAttributeMessage(attribute, state, false));
-                adjustAttribute(attribute, resisted ? -1 : -rn1(4, 3), state);
+                const change = adjustAttribute(attribute, resisted ? -1 : -rn1(4, 3), state);
+                if (change.changed && state._moveloopStarted
+                    && (attribute === A_STR || attribute === A_CON))
+                    await reportHeroEncumbrance(state);
             }
             const damage = resisted ? 1 + rn2(2) : rnd(10) + 5 * Number(!!source.cursed);
             if (await loseHeroHp(damage, contaminant, {
