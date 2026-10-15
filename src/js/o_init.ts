@@ -7,7 +7,14 @@
 import { game } from './gstate.js';
 import type { TextMenuEntry, TextPage } from './windows.js';
 import { rn2 } from './rng.js';
-import { bot, docrt, flush_screen } from './display.js';
+import { bot, docrt, flush_screen, plineWithContinuation } from './display.js';
+import { NHW_MENU, PICK_ONE } from './const.js';
+import { callObjectType, objectTypeIsCallable } from './object_call.js';
+import {
+    tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu,
+    tty_select_menu, tty_start_menu,
+} from './tty_menu.js';
+import type { GameObject } from './object_types.js';
 import { ATR_INVERSE, showTextPages } from './windows.js';
 import {
     FLINT,
@@ -20,6 +27,7 @@ import {
     OBJECT_NAMES,
     OBJECT_TOUGH,
     OBJECT_INITIAL_KNOWN,
+    OBJECT_USES_KNOWN,
     OBJECT_UNIQUE,
     requireObjectData,
 } from './object_data.js';
@@ -194,6 +202,53 @@ function formattedDiscovery(otyp: number): string | null {
         name += ` (${appearance})`;
     const prefix = encountered ? '  ' : '* ';
     return `${prefix}${name}${priceQuoteSuffix(otyp)}`;
+}
+
+// C o_init.c:rename_disco(). The selection is a type, not a newly made
+// object: its temporary prompt view must not allocate an object identity.
+export async function renameDiscoveredType(): Promise<void> {
+    const window = tty_create_nhwindow<number>(NHW_MENU);
+    try {
+        await tty_start_menu(window);
+        let discoveries = 0, nameable = 0;
+        for (const oclass of inventoryClassOrder()) {
+            let heading = false;
+            for (const type of game._objectDiscoveryOrder ?? []) {
+                if (objectClassForType(type) !== oclass) continue;
+                const description = formattedDiscovery(type);
+                if (!description) continue;
+                discoveries++;
+                if (!objectTypeIsCallable({ otyp: type, oclass })) continue;
+                if (!heading) {
+                    tty_add_menu(window, { identifier: null, text: OBJECT_CLASS_LABELS[oclass] ?? 'Objects', attr: ATR_INVERSE });
+                    heading = true;
+                }
+                nameable++;
+                tty_add_menu(window, { identifier: type, text: description.slice(2) });
+            }
+        }
+        if (!discoveries) {
+            await plineWithContinuation("You haven't discovered anything yet...");
+            return;
+        }
+        if (!nameable) {
+            await plineWithContinuation('None of your discoveries can be assigned names...');
+            return;
+        }
+        tty_end_menu(window, 'Pick an object type to name');
+        const result = await tty_select_menu(window, PICK_ONE);
+        const type = result.selections[0]?.identifier;
+        if (type === undefined) return;
+        const sample: GameObject = {
+            otyp: type, oclass: objectClassForType(type), o_id: 0, ox: 0, oy: 0,
+            quan: 1, where: 'free', age: 0, owt: 0, spe: 0, recharged: 0,
+            dknown: true, known: !OBJECT_USES_KNOWN[type], blessed: false,
+            cursed: false, olocked: false, artifact: false,
+        };
+        await callObjectType(sample);
+    } finally {
+        await tty_destroy_nhwindow(window);
+    }
 }
 
 // C ref: o_init.c dodiscovered() — show discoveries grouped by object class.

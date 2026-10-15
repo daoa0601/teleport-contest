@@ -172,7 +172,7 @@ import { doread } from './read.js';
 import { continueFoodMeal, doeat } from './eat.js';
 import { continueTinOpening, useTinOpener } from './tin.js';
 import { PLAYABLE_INSTRUMENTS, playInstrument } from './music.js';
-import { dodiscovered } from './o_init.js';
+import { dodiscovered, renameDiscoveredType } from './o_init.js';
 import { doattributes, doconduct, showEnlightenment } from './insight.js';
 import { contactHelp, displayHelpFile, menuControlsHelp, setOptionsCommand } from './pager_help.js';
 import { doextversion, NATIVE_VERSION } from './extversion.js';
@@ -2427,6 +2427,9 @@ async function doname() {
     }
     else if (choice === 'f') {
         await nameFloorObject();
+    }
+    else if (choice === 'd') {
+        await renameDiscoveredType();
     }
     else if (choice === 'a') {
         await queryCurrentLevelAnnotation();
