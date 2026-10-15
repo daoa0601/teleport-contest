@@ -59,7 +59,7 @@ import {
 } from './weight.js';
 import {
     A_CHA, A_CON, A_DEX, A_STR, A_WIS, G_GENOD, I_SPECIAL, In_endgame, M_AP_NOTHING,
-    STR18, STR19, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR,
+    M_AP_OBJECT, STR18, STR19, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR,
     TT_LAVA, TT_PIT, TT_WEB, Upolyd,
     POLY_CONTROLLED, POLY_LOW_CTRL, POLY_MONSTER, POLY_NOFLAGS, POLY_REVERT,
     W_ACCESSORY, W_ARMOR, W_SADDLE,
@@ -91,6 +91,7 @@ import { unpunishHero } from './punishment.js';
 import { clearHeroTrap, freeHeroFromBuriedBall } from './hero_traps.js';
 
 import { handleRidingAfterFormChange } from './steed.js';
+import { hideHeroUnder } from './monster_hiding.js';
 import { heroCanSpinWeb } from './hero_web.js';
 import {
     expelHero, holdingMonsterSubject, releaseHeroGrip,
@@ -467,6 +468,14 @@ async function beginMonsterForm(mnum: number, {
         if (game.flags) game.flags.female = !!u.mfemale;
     }
 
+    if (heroHasInvoluntaryDelay(game) && u.m_ap_type === M_AP_OBJECT
+        && MONSTER_SYMBOL[previousMnum] !== S_MIMIC)
+        await finishHeroHelplessness('', game);
+    if (MONSTER_SYMBOL[mnum] !== S_MIMIC) {
+        u.m_ap_type = M_AP_NOTHING;
+        u.mappearance = 0;
+    }
+
     const genderFlags = MONSTER_FLAGS2[mnum] ?? 0;
     const female = !!game.flags.female;
     if (genderFlags & M2_MALE) game.flags.female = false;
@@ -494,8 +503,6 @@ async function beginMonsterForm(mnum: number, {
     }
     u.mtimedone = rn1(500, 500);
     setHeroSpecies(mnum, game);
-    u.m_ap_type = 0;
-    u.mappearance = 0;
     const strong = !!((MONSTER_FLAGS2[mnum] ?? 0) & M2_STRONG);
     const maximumStrength = formMaximumStrength(mnum);
     u.amax.a[A_STR] = maximumStrength;
@@ -581,6 +588,7 @@ export async function polymonHero(mnum: number, options: PolymonOptions = {}) {
 
     const wasHolding = game.u.ustuck && !game.u.uswallow && heroFormSticks(game);
     const wasBlind = heroIsBlind(game);
+    const wasHidingUnder = game.u.uundetected && heroFormHidesUnderObjects(game);
     mnum = await beginMonsterForm(mnum, options);
     if (game.uskin && dragonFormForArmor(game.uskin) !== mnum)
         await restoreDragonArmor(game);
@@ -589,6 +597,7 @@ export async function polymonHero(mnum: number, options: PolymonOptions = {}) {
     await dropPolymorphWeapons(true);
     if (game.program_state.gameover) return { transformed: true, mnum, died: true };
     findArmorClass(game);
+    if (wasHidingUnder) hideHeroUnder(game);
     if (game.u.utrap && game.u.utraptype === TT_PIT)
         game.u.utrap = rn1(6, 2);
     if (wasBlind && !heroIsBlind(game)) {
