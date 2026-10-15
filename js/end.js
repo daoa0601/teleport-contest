@@ -8,7 +8,7 @@ import { resetHeroTrap } from './terrain_movement.js';
 import { PARANOID_DIE, PARANOID_QUIT, PLNMSG_OK_DONT_DIE } from './const.js';
 import { PanicTermination } from './panic_termination.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
-import { achievementEntries } from './achievements.js';
+import { achievementEntries, recordAchievement } from './achievements.js';
 import { game, requireGameLevel, requireInitializedGame } from './gstate.js';
 import { expelHero, releaseHeroFromMonster } from './hero_expulsion.js';
 import { heroFormSticks } from './hero_species.js';
@@ -36,7 +36,7 @@ import { hiddenGold } from './gold.js';
 import { heroGoldAmount } from './hero_gold.js';
 import { doneObjectCleanup } from './object_cleanup.js';
 import { restoreHeroNutrition } from './hunger.js';
-import { A_CON, A_WIS, ASCENDED, BURNING, CHOKING, DIED, ESCAPED, G_EXTINCT, G_GENOD, GENOCIDED, PANICKED, QUIT, STARVING, STONING, TRICKED, In_endgame, In_quest, Is_astralevel, KILLED_BY, KILLED_BY_AN, NO_KILLER_PREFIX, PICK_ONE, STRAT_WAITFORU, TT_LAVA, Upolyd, } from './const.js';
+import { A_CON, A_WIS, ACH_BLND, ACH_NUDE, ACH_UWIN, ASCENDED, BURNING, CHOKING, DIED, ESCAPED, G_EXTINCT, G_GENOD, GENOCIDED, PANICKED, QUIT, STARVING, STONING, TRICKED, In_endgame, In_quest, Is_astralevel, KILLED_BY, KILLED_BY_AN, NO_KILLER_PREFIX, PICK_ONE, STRAT_WAITFORU, TT_LAVA, Upolyd, } from './const.js';
 import { AMULET_OF_LIFE_SAVING, AMULET_OF_YENDOR, BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION, JADE, OBJECT_COST, OBJECT_NAMES, SPE_BOOK_OF_THE_DEAD, } from './object_data.js';
 import { createBonesFromDeath } from './bones_death.js';
 import { canMakeBones } from './bones_admission.js';
@@ -1203,6 +1203,14 @@ async function startGameExit(outcome, deathType = DIED) {
     game.program_state.something_worth_saving = false;
     if (deathType !== PANICKED && !game.program_state.panicking)
         await doneObjectCleanup();
+    if (achievementEntries(game).length || !game.flags.beginner) {
+        if (game.u.uroleplay?.blind)
+            recordAchievement(game, ACH_BLND);
+        if (game.u.uroleplay?.nudist)
+            recordAchievement(game, ACH_NUDE);
+    }
+    if (outcome === 'ascended')
+        recordAchievement(game, ACH_UWIN);
     if (outcome === 'died' && deathType < PANICKED
         && game.moves <= 1 && !game.program_state.stopprint) {
         // done() has committed zero HP; this pline refreshes that status.
