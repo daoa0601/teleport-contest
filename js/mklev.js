@@ -5739,7 +5739,8 @@ async function createLuaFeature(context, options) {
     const featureType = types[type];
     if (featureType === undefined)
         throw new Error(`unknown Lua feature ${type}`);
-    const location = await getLocationCoord(context, point, point ? ANY_LOC : DRY);
+    const random = !point || (point.x === -1 && point.y === -1);
+    const location = await getLocationCoord(context, point, random ? DRY : ANY_LOC);
     if (!isok(location.x, location.y))
         return;
     const cell = level.requireAt(location.x, location.y);
@@ -6776,7 +6777,8 @@ function createLuaLevelSession() {
         },
         exclusion: options => createLuaExclusion(context, options),
         gasCloud: async (options) => {
-            const point = luaCoordinate(options);
+            const coordinate = luaCoordinate(options);
+            const point = coordinate?.x === -1 && coordinate.y === -1 ? null : coordinate;
             const damage = options.damage ?? 0;
             const cloud = point
                 ? await createPoisonGasCloud(game, point.x, point.y, 1, damage)

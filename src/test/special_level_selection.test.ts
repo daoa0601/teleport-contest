@@ -416,3 +416,17 @@ void test('a named Lua novel retains the requested title when read', async t => 
     assert.ok(book, 'the level should contain its named novel');
     assert.equal(novelTitle(book), "The Shepherd's Crown");
 });
+
+void test('explicit absent coordinates keep native random-feature and selection-cloud semantics', async t => {
+    const lua = await levelLua(t);
+    await lua.executeAsync(`
+        des.map({ x = 10, y = 5, map = [[ . ]] })
+        for i = 1, 10 do des.feature({ type = "fountain", coord = {-1, -1} }) end
+        des.gas_cloud({ x = -1, y = -1, selection = selection.area(1, 0, 1, 0), ttl = 10 })
+    `);
+    const level = requireGameLevel();
+    assert.equal(level.requireAt(10, 5).typ, STONE);
+    assert.equal(level.requireAt(11, 5).typ, FOUNTAIN);
+    assert.equal(level.requireAt(12, 5).typ, STONE);
+    assert.deepEqual(level.regions?.[0]?.cells, [{ x: 11, y: 5 }]);
+});
