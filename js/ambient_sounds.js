@@ -1,11 +1,11 @@
 // Level ambience and its resident checks. C ref: sounds.c:dosounds().
 import { hallucinatedDeityName } from './alignment.js';
 import { heroHairName, heroHeadName, heroNeckName } from './body_parts.js';
-import { BARRACKS, BEEHIVE, COURT, Is_astralevel, MON_FLOOR, MORGUE, ROOMOFFSET, SHOPBASE, TEMPLE, VAULT, ZOO, } from './const.js';
+import { ANY_SHOP, BARRACKS, BEEHIVE, COURT, Is_astralevel, MON_FLOOR, MORGUE, ROOMOFFSET, SHOPBASE, TEMPLE, VAULT, ZOO, } from './const.js';
 import { canSeeMonster, plineWithContinuation } from './display.js';
 import { requireInitializedGame } from './gstate.js';
 import { publishHeardMessage } from './hero_speech.js';
-import { isRoom } from './map_types.js';
+import { searchSpecial } from './mkroom.js';
 import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL, monsterIsAnimal, monsterIsUndead, monsterIsVampireShifter, } from './monster_data.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { GOLD_PIECE } from './object_data.js';
@@ -57,7 +57,7 @@ export async function dosounds(state = requireInitializedGame()) {
         return;
     }
     if (flags.has_vault && !rn2(200)) {
-        const vault = findSpecialRoom(VAULT, state);
+        const vault = searchSpecial(VAULT, state);
         if (!vault) {
             flags.has_vault = false;
             return;
@@ -137,7 +137,7 @@ export async function dosounds(state = requireInitializedGame()) {
         }
     }
     if (flags.has_shop && !rn2(200)) {
-        const shop = findSpecialRoom(SHOPBASE, state);
+        const shop = searchSpecial(ANY_SHOP, state);
         if (!shop) {
             flags.has_shop = false;
             return;
@@ -206,9 +206,6 @@ function monInRoom(monster, type, state) {
 }
 function heroOccupies(type, state) {
     return state.u.urooms.find(roomno => roomForRoomno(state.level, roomno)?.rtype === type);
-}
-function findSpecialRoom(type, state) {
-    return [...state.level.rooms, ...(state.level.subrooms ?? [])].find((room) => isRoom(room) && (type === SHOPBASE ? room.rtype >= SHOPBASE : room.rtype === type));
 }
 function choice(messages, selection) {
     const message = messages[selection];

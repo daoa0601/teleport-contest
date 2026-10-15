@@ -6,15 +6,29 @@ import { isPoolOrLavaAt } from './terrain_properties.js';
 import { rn1 } from './rng.js';
 import { CmapSymbol } from './glyph_numbers.js';
 import {
-    AIR, ALTAR, BLCORNER, BRCORNER, CLOUD, CORR, CROSSWALL,
+    AIR, ALTAR, ANY_SHOP, ANY_TYPE, BLCORNER, BRCORNER, CLOUD, CORR, CROSSWALL,
     DBWALL, DOOR, DRAWBRIDGE_DOWN, FOUNTAIN, GRAVE, HWALL, ICE, IRONBARS,
-    IS_FURNITURE, IS_WALL, LADDER, LAVAPOOL, LAVAWALL, POOL,
-    ROOM, ROOMOFFSET, SINK, STAIRS, STONE, TDWALL, THRONE,
+    IS_FURNITURE, IS_WALL, LADDER, LAVAPOOL, LAVAWALL, OROOM, POOL,
+    ROOM, ROOMOFFSET, SHOPBASE, SINK, STAIRS, STONE, TDWALL, THRONE,
     TLCORNER, TLWALL, TRCORNER, TREE, TRWALL, TUWALL, VWALL, WATER, isok,
 } from './const.js';
 import { insideRoom } from './room.js';
 import type { GameState } from './game_state.js';
 import type { Position, Rectangle, Room } from './map_types.js';
+import { isRoom } from './map_types.js';
+
+// C search_special(): search ordinary rooms first, then their subrooms.
+export function searchSpecial(type: number, state: GameState = game): Room | null {
+    for (const rooms of [state.level?.rooms ?? [], state.level?.subrooms ?? []]) {
+        for (const room of rooms) {
+            if (!isRoom(room) || room.hx < 0) break;
+            if ((type === ANY_TYPE && room.rtype !== OROOM)
+                || (type === ANY_SHOP && room.rtype >= SHOPBASE)
+                || room.rtype === type) return room;
+        }
+    }
+    return null;
+}
 
 // C mkroom.c:cmap_to_type(). Display symbols and terrain have separate
 // number spaces, including symbols with several appearances for one terrain.
