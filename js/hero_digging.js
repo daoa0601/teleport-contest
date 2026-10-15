@@ -3,8 +3,9 @@
 // mkcavepos()/mkcavearea(); hack.c may_dig(); weapon.c abon().
 import { monsterHasMapPosition } from './monster_location.js';
 import { deleteTrap } from './trap_lifecycle.js';
-import { RLOC_NOMSG, A_STR, A_DEX, COULD_SEE, CORR, DBWALL, D_BROKEN, D_CLOSED, D_LOCKED, D_NODOOR, D_TRAPPED, DIGTYP_BOULDER, DIGTYP_DOOR, DIGTYP_ROCK, DIGTYP_STATUE, DIGTYP_TREE, DIGTYP_UNDIGGABLE, DOOR, IN_SIGHT, IS_ALTAR, IS_DOOR, IS_OBSTRUCTED, IS_STWALL, IS_TREE, IS_WALL, LANDMINE, BEAR_TRAP, HOLE, TRAPDOOR, MM_NOMSG, ROOM, SCORR, SDOOR, SHOPBASE, SHOP_DOOR_COST, SHOP_PIT_COST, STONE, TRAP_EXPLANATIONS, TT_PIT, Upolyd, W_NONDIGGABLE, Is_earthlevel, is_pit, } from './const.js';
+import { RLOC_NOMSG, A_STR, A_DEX, COULD_SEE, CORR, DBWALL, D_BROKEN, D_CLOSED, D_LOCKED, D_NODOOR, D_TRAPPED, DIGTYP_BOULDER, DIGTYP_DOOR, DIGTYP_ROCK, DIGTYP_STATUE, DIGTYP_TREE, DIGTYP_UNDIGGABLE, DOOR, IN_SIGHT, IS_ALTAR, IS_DOOR, IS_OBSTRUCTED, IS_STWALL, IS_TREE, IS_WALL, LANDMINE, BEAR_TRAP, HOLE, KILLED_BY, TRAPDOOR, MM_NOMSG, ROOM, SCORR, SDOOR, SHOPBASE, SHOP_DOOR_COST, SHOP_PIT_COST, STONE, TRAP_EXPLANATIONS, TT_PIT, Upolyd, W_NONDIGGABLE, Is_earthlevel, is_pit, } from './const.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
+import { convertSecretDoor } from './detect.js';
 import { altarWrath } from './pray.js';
 import { adjustHeroAlignment } from './alignment.js';
 import { angerTemplePriest } from './priest.js';
@@ -20,13 +21,12 @@ import { triggerHeroTrap } from './hero_traps.js';
 import { resetHeroTrap } from './terrain_movement.js';
 import { dist2, isok } from './hacklib.js';
 import { triggerBoobyTrap } from './booby_trap.js';
-import { carriedObjectOwner } from './shk.js';
 import { makemonAt, mksobj } from './mklev.js';
 import { MONSTER_FLAGS1, MONSTER_NAME, monsterTypeName, requireMonsterData } from './monster_data.js';
 import { adjustedMonsterLevel } from './monster_hit_points.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { APPLE, BANANA, BOULDER, EUCALYPTUS_LEAF, OBJECT_BIMANUAL, ORANGE, PEAR, STATUE, } from './object_data.js';
-import { objectName, ownedObjectAction } from './objnam.js';
+import { definiteName, objectName, ownedObjectAction, ownedObjectName, simpleObjectName } from './objnam.js';
 import { heroMonsterForm, heroIsFlying, } from './polyself.js';
 import { randomMonsterRelocation } from './teleport.js';
 import { inTown, roomsAt } from './room.js';
@@ -175,8 +175,8 @@ function heroAttackBonus(state) {
     let bonus = strength < 6 ? -2
         : strength < 8 ? -1
             : strength < 17 ? 0
-                : strength < 1850 ? 1
-                    : strength < 1900 ? 2 : 3;
+                : strength < 68 ? 1 // STR18(50)
+                    : strength < 118 ? 2 : 3; // STR18(100)
     if ((state.u?.ulevel ?? 1) < 3)
         bonus++;
     return bonus + (dexterity < 4 ? -3
@@ -198,13 +198,6 @@ function feelNewsym(x, y, state) {
         feel_location(x, y);
     else
         newsym(x, y);
-}
-// C objnam.c yname()/yobjnam(): mid-sentence "your pick-axe".
-// carriedObjectOwner() yields the sentence-start possessive, including the
-// shopkeeper form for unpaid goods; lowercase it for use after a verb.
-function ownedNameMidSentence(object, state) {
-    const owner = carriedObjectOwner(object, state);
-    return `${owner.charAt(0).toLowerCase()}${owner.slice(1)} ${objectName(object, state)}`;
 }
 function articleFor(name) {
     return /^[aeiou]/i.test(name) ? `an ${name}` : `a ${name}`;
@@ -416,10 +409,12 @@ export async function continueHeroDigging(state = game) {
         switch (rn2(3)) {
             case 0:
                 if (!willWeld(uwep)) {
-                    await pline(`You fumble and drop ${ownedNameMidSentence(uwep, state)}.`);
+                    await pline(`You fumble and drop ${ownedObjectName(uwep, state, { capitalized: false })}.`);
                     await dropInventoryObjectAtHero(uwep, { state });
                 }
                 else {
+                    // welded() identifies a curse when the hero cannot let go.
+                    uwep.bknown = true;
                     const plural = (uwep.quan ?? uwep.quantity ?? 1) > 1;
                     const bounced = ownedObjectAction(uwep, 'bounce', state);
                     if (hero.usteed) {
@@ -435,7 +430,7 @@ export async function continueHeroDigging(state = game) {
                 }
                 break;
             case 1:
-                await pline(`Bang!  You hit with the broad side of ${objectName(uwep, state)}!`);
+                await pline(`Bang!  You hit with the broad side of ${definiteName(objectName(uwep, state), state)}!`);
                 await wakeMonstersNearWithMessages(hero.ux, hero.uy, (hero.ulevel ?? 1) * 20, state);
                 break;
             default:
@@ -445,7 +440,7 @@ export async function continueHeroDigging(state = game) {
         return false;
     }
     digging.effort += 10 + rn2(5) + heroAttackBonus(state) + (uwep.spe ?? 0)
-        - greatestErosion(uwep) + (state.udaminc ?? 0);
+        - greatestErosion(uwep) + (hero.udaminc ?? 0);
     if (state.urace?.name === 'dwarf')
         digging.effort *= 2;
     if (digging.down) {
@@ -476,10 +471,10 @@ export async function continueHeroDigging(state = game) {
                 else if (state.uarmf || state.u?.uarmf)
                     damage = Math.trunc((damage + 1) / 2);
                 await pline(`You hit yourself in the ${heroFootName(state)}.`);
-                await loseHeroHp(maybeHalfPhysical(damage, state), `chopping off your own ${heroFootName(state)}`, { state });
+                await loseHeroHp(maybeHalfPhysical(damage, state), `chopping off ${state.flags.female ? 'her' : 'his'} own ${heroFootName(state)}`, { state, killerFormat: KILLED_BY });
             }
             else {
-                await pline(`You destroy the bear trap with ${ownedNameMidSentence(uwep, state)}.`);
+                await pline(`You destroy the bear trap with ${ownedObjectName(uwep, state, { capitalized: false, includeQuantity: true })}.`);
                 deleteTrap(trap, state);
                 // C reset_utrap(TRUE): falling out of the trap may settle
                 // flight/levitation state before the dig resumes.
@@ -491,7 +486,7 @@ export async function continueHeroDigging(state = game) {
         else if (trap && dcresult === DIGCHECK_PASSED_DESTROY_TRAP) {
             const trapName = TRAP_EXPLANATIONS[trap.ttyp] ?? 'trap';
             if (ispick) {
-                await pline(`You destroy ${trap.tseen ? `the ${trapName}` : articleFor(trapName)} with ${ownedNameMidSentence(uwep, state)}.`);
+                await pline(`You destroy ${trap.tseen ? `the ${trapName}` : articleFor(trapName)} with ${ownedObjectName(uwep, state, { capitalized: false, includeQuantity: true })}.`);
             }
             deleteTrap(trap, state);
             digging.effort = 0;
@@ -582,14 +577,13 @@ export async function continueHeroDigging(state = game) {
             digtxt = 'You make an opening in the wall.';
         }
         else if (location.typ === SDOOR) {
-            // cvt_sdoor_to_door(): the hidden door becomes a real one.
-            location.typ = DOOR;
+            convertSecretDoor(location, state);
             digtxt = 'You break through a secret door!';
             if (!((location.doormask ?? 0) & D_TRAPPED))
                 location.doormask = D_BROKEN;
         }
         else if (closedDoorAt(location)) {
-            digtxt = `You break through the door with your ${objectName(uwep, state)}.`;
+            digtxt = `You break through the door with your ${simpleObjectName(uwep, state)}.`;
             if (shopedge) {
                 await addShopDamage(dpx, dpy, SHOP_DOOR_COST, state);
                 dmgtxt = 'break';

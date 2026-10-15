@@ -5,7 +5,7 @@ import { endVoluntaryMultiTurn } from './command_state.js';
 import { artifactById } from './artifacts.js';
 import { makeMonsterFlee } from './monster_flee.js';
 import { heroIsPunished } from './ball.js';
-import { BEAR_TRAP, DIGTYP_UNDIGGABLE, IRONBARS, IS_LAVA, IS_OBSTRUCTED, IS_POOL, IS_TREE, IS_WATERWALL, Is_airlevel, Is_waterlevel, LANDMINE, LAVAWALL, SHOPBASE, TT_PIT, TT_WEB, WEB, is_hole, is_pit, isok, xdir, ydir, } from './const.js';
+import { BEAR_TRAP, DIGTYP_UNDIGGABLE, IRONBARS, IS_OBSTRUCTED, IS_TREE, IS_WATERWALL, Is_airlevel, Is_waterlevel, KILLED_BY, LANDMINE, LAVAWALL, SHOPBASE, TT_PIT, TT_WEB, WEB, is_hole, is_pit, isok, xdir, ydir, } from './const.js';
 import { canSpotMonster, newsym, plineWithContinuation } from './display.js';
 import { wipeHeroEngraving } from './engrave.js';
 import { fireDamageObject } from './fire_damage.js';
@@ -27,6 +27,7 @@ import { confusePromptDirection } from './tty_prompts.js';
 import { heroStrengthDamageBonus } from './weapon_damage.js';
 import { isPick } from './weapon_type.js';
 import { connectPits } from './pit_connections.js';
+import { isLavaAt, isPoolAt } from './terrain_properties.js';
 const M1_WALLWALK = 0x00000008;
 const GRID_BUG = MONSTER_NAME.indexOf('grid bug');
 const LONG_WORM = MONSTER_NAME.indexOf('long worm');
@@ -140,7 +141,7 @@ async function attackWithTool(tool, monster, attackMonster, payShopkeeper, state
 async function hurtHero(amount, killer, state) {
     if (state.u.halfPhysicalDamage)
         amount = Math.trunc((amount + 1) / 2);
-    await loseHeroHp(amount, killer, { state });
+    await loseHeroHp(amount, killer, { state, killerFormat: KILLED_BY });
 }
 async function wakeNearby(state) {
     await wakeMonstersNearWithMessages(state.u.ux, state.u.uy, (state.u.ulevel ?? 1) * 20, state);
@@ -275,9 +276,8 @@ export async function applyPickAxeDirection(tool, { state = game, attackMonster,
     else if (!heroCanReachFloor(state)) {
         await plineWithContinuation(`You can't reach the ${surfaceName(hero.ux, hero.uy, state)}.`);
     }
-    else if (IS_POOL(diggingLocation(hero.ux, hero.uy, state).typ) ||
-        IS_LAVA(diggingLocation(hero.ux, hero.uy, state).typ)) {
-        await plineWithContinuation(`You cannot stay under${IS_POOL(diggingLocation(hero.ux, hero.uy, state).typ) ? 'water' : ' the lava'} long enough.`);
+    else if (isPoolAt(hero.ux, hero.uy, state) || isLavaAt(hero.ux, hero.uy, state)) {
+        await plineWithContinuation(`You cannot stay under${isPoolAt(hero.ux, hero.uy, state) ? 'water' : ' the lava'} long enough.`);
     }
     else {
         const trap = trapAt(hero.ux, hero.uy, state);

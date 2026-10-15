@@ -9,7 +9,7 @@ import { placeCreatedObject } from './floor_object.js';
 import { requireLiveGame } from './gstate.js';
 import { placeTreeFruit } from './hero_digging.js';
 import { heroIsUnaware } from './hero_sleep.js';
-import { formatHeardMessage } from './hero_speech.js';
+import { formatFeltMessage, formatHeardMessage } from './hero_speech.js';
 import { mksobj } from './mklev.js';
 import { triggerMonsterDoorTrap } from './monster_door_trap.js';
 import { BOULDER, ROCK } from './object_data.js';
@@ -91,11 +91,11 @@ export async function digMonsterTunnel(monster, state, { random = rn2, rollOne =
 }
 function draftMessage(unexpected, state, random) {
     if (!heroIsHallucinating(state))
-        return unexpected ? 'You feel an unexpected draft.' : 'You feel a draft.';
+        return formatFeltMessage(unexpected ? 'an unexpected draft.' : 'a draft.', state);
     if (unexpected) {
         const unfit = [A_STR, A_DEX, A_CON, A_CHA, A_INT, A_WIS]
             .some(attribute => currentAttribute(attribute, state) < 6);
-        return `You feel like you are ${unfit ? '4-F' : '1-A'}.`;
+        return formatFeltMessage(`like you are ${unfit ? '4-F' : '1-A'}.`, state);
     }
     const alignment = Math.sign(state.u.ualign.type);
     let reaction = random(2) + 1 - alignment;
@@ -104,6 +104,6 @@ function draftMessage(unexpected, state, random) {
     const description = ['enlisting', 'marching', 'protesting', 'fleeing'][reaction];
     if (!description)
         throw new RangeError(`Invalid hallucinated draft reaction ${reaction}`);
-    return `You feel like ${description}.`;
+    return formatFeltMessage(`like ${description}.`, state);
 }
 //# sourceMappingURL=monster_tunnel.js.map

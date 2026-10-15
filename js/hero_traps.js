@@ -496,7 +496,7 @@ export async function freeHeroFromBuriedBall(state = game) {
     unlinkObject(ball, state);
     placeObjectSynchronously(ball, x, y, state);
     await stack_object(ball, state);
-    clearHeroTrap(state);
+    await resetHeroTrap(true, state);
     const level = requireGameLevel(state);
     level.engravings = (level.engravings || []).filter(engraving => engraving.x !== x || engraving.y !== y);
     newsym(x, y);

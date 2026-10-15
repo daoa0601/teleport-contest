@@ -10,13 +10,12 @@ import {
     BEAR_TRAP,
     DIGTYP_UNDIGGABLE,
     IRONBARS,
-    IS_LAVA,
     IS_OBSTRUCTED,
-    IS_POOL,
     IS_TREE,
     IS_WATERWALL,
     Is_airlevel,
     Is_waterlevel,
+    KILLED_BY,
     LANDMINE,
     LAVAWALL,
     SHOPBASE,
@@ -50,6 +49,7 @@ import { confusePromptDirection } from './tty_prompts.js';
 import { heroStrengthDamageBonus } from './weapon_damage.js';
 import { isPick } from './weapon_type.js';
 import { connectPits } from './pit_connections.js';
+import { isLavaAt, isPoolAt } from './terrain_properties.js';
 
 import type { GameState } from './game_state.js';
 import type { Hero } from './hero_types.js';
@@ -217,7 +217,7 @@ async function attackWithTool(
 
 async function hurtHero(amount: number, killer: string, state: GameState) {
     if (state.u.halfPhysicalDamage) amount = Math.trunc((amount + 1) / 2);
-    await loseHeroHp(amount, killer, { state });
+    await loseHeroHp(amount, killer, { state, killerFormat: KILLED_BY });
 }
 
 async function wakeNearby(state: GameState) {
@@ -375,12 +375,11 @@ export async function applyPickAxeDirection(
     } else if (!heroCanReachFloor(state)) {
         await plineWithContinuation(`You can't reach the ${surfaceName(hero.ux, hero.uy, state)}.`);
     } else if (
-        IS_POOL(diggingLocation(hero.ux, hero.uy, state).typ) ||
-        IS_LAVA(diggingLocation(hero.ux, hero.uy, state).typ)
+        isPoolAt(hero.ux, hero.uy, state) || isLavaAt(hero.ux, hero.uy, state)
     ) {
         await plineWithContinuation(
             `You cannot stay under${
-                IS_POOL(diggingLocation(hero.ux, hero.uy, state).typ) ? 'water' : ' the lava'
+                isPoolAt(hero.ux, hero.uy, state) ? 'water' : ' the lava'
             } long enough.`,
         );
     } else {

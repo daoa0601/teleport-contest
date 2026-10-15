@@ -2,22 +2,17 @@
 // C ref: dig.c:fillholetyp().
 
 import {
-    COLNO, DB_LAVA, DB_MOAT, DB_UNDER, DRAWBRIDGE_UP,
-    LAVAPOOL, MOAT, POOL, ROOM, ROWNO, WATER,
+    COLNO, LAVAPOOL, MOAT, POOL, ROOM, ROWNO,
 } from './const.js';
 import { game } from './gstate.js';
 import type { GameState } from './game_state.js';
 import { rn2 } from './rng.js';
+import { isLavaAt, isMoatAt, isPoolAt } from './terrain_properties.js';
 
 function nearbyTerrain(x: number, y: number, state: GameState) {
-    const location = state.level?.at?.(x, y);
-    if (!location) return null;
-    const bridgeLiquid = location.typ === DRAWBRIDGE_UP
-        ? (location.drawbridgemask ?? 0) & DB_UNDER
-        : null;
-    if (location.typ === MOAT || bridgeLiquid === DB_MOAT) return 'moat';
-    if (location.typ === POOL || location.typ === WATER) return 'pool';
-    if (location.typ === LAVAPOOL || bridgeLiquid === DB_LAVA) return 'lava';
+    if (isMoatAt(x, y, state)) return 'moat';
+    if (isPoolAt(x, y, state)) return 'pool';
+    if (isLavaAt(x, y, state)) return 'lava';
     return null;
 }
 
@@ -44,9 +39,9 @@ export function liquidForHole(
     }
 
     if (!fillIfAny) pools = Math.trunc(pools / 3);
-    if (lava && (fillIfAny || (lava > moats + pools && random(lava + 1))))
+    if ((lava > moats + pools && random(lava + 1)) || (lava && fillIfAny))
         return LAVAPOOL;
-    if (moats && (fillIfAny || random(moats + 1))) return MOAT;
-    if (pools && (fillIfAny || random(pools + 1))) return POOL;
+    if ((moats > 0 && random(moats + 1)) || (moats && fillIfAny)) return MOAT;
+    if ((pools > 0 && random(pools + 1)) || (pools && fillIfAny)) return POOL;
     return ROOM;
 }

@@ -3,15 +3,17 @@
 // digactualhole(), liquid_flow(), dig_up_grave(), and the shared furniture
 // dispatch.  The digging effort loop itself lives in hero_digging.js.
 import { monsterHasMapPosition } from './monster_location.js';
-import { heroIsHallucinating } from './senses.js';
+import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { deleteTrap } from './trap_lifecycle.js';
 import { AD_DGST, AD_STCK, AD_WRAP, AT_ENGL, AT_HUGS, } from './monster_attack_types.js';
 import { adjustHeroAlignment } from './alignment.js';
 import { exerciseAttribute } from './attrib.js';
-import { A_LAWFUL, A_STR, A_WIS, ALTAR, AM_MASK, AM_SANCTUM, Amask2align, BEAR_TRAP, DBWALL, DB_ICE, DB_LAVA, DB_MOAT, DB_UNDER, DIGCHECK_FAIL_AIRLEVEL, DIGCHECK_FAIL_ALTAR, DIGCHECK_FAIL_BOULDER, DIGCHECK_FAIL_CANTDIG, DIGCHECK_FAIL_ONLADDER, DIGCHECK_FAIL_ONSTAIRS, DIGCHECK_FAIL_OBJ_POOL_OR_TRAP, DIGCHECK_FAIL_THRONE, DIGCHECK_FAIL_TOOHARD, DIGCHECK_FAIL_UNDESTROYABLETRAP, DIGCHECK_FAIL_WATERLEVEL, DIGCHECK_FAILED, DIGCHECK_PASSED, DIGCHECK_PASSED_DESTROY_TRAP, DIGCHECK_PASSED_PITONLY, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, FOUNTAIN, F_WARNED, GRAVE, HOLE, ICE, IS_ALTAR, IS_DOOR, IS_FURNITURE, IS_GRAVE, IS_LAVA, IS_OBSTRUCTED, IS_POOL, IS_ROOM, IS_STWALL, IS_THRONE, Is_airlevel, Is_botlevel, Is_earthlevel, Is_waterlevel, LADDER, LANDMINE, LAVAPOOL, MAGIC_PORTAL, MIGR_RANDOM, M_SEEN_MAGR, MM_NOMSG, PIT, POOL, ROOM, SDOOR, SHOPBASE, SHOP_PIT_COST, SINK, STAIRS, TT_BURIEDBALL, TT_INFLOOR, TT_PIT, VIBRATING_SQUARE, W_NONDIGGABLE, is_hole, is_magical_trap, is_pit, isok, } from './const.js';
+import { A_LAWFUL, A_STR, A_WIS, ALTAR, AM_MASK, AM_SANCTUM, Amask2align, BEAR_TRAP, DBWALL, DB_ICE, DB_LAVA, DB_MOAT, DB_UNDER, DIGCHECK_FAIL_AIRLEVEL, DIGCHECK_FAIL_ALTAR, DIGCHECK_FAIL_BOULDER, DIGCHECK_FAIL_CANTDIG, DIGCHECK_FAIL_ONLADDER, DIGCHECK_FAIL_ONSTAIRS, DIGCHECK_FAIL_OBJ_POOL_OR_TRAP, DIGCHECK_FAIL_THRONE, DIGCHECK_FAIL_TOOHARD, DIGCHECK_FAIL_UNDESTROYABLETRAP, DIGCHECK_FAIL_WATERLEVEL, DIGCHECK_FAILED, DIGCHECK_PASSED, DIGCHECK_PASSED_DESTROY_TRAP, DIGCHECK_PASSED_PITONLY, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, FOUNTAIN, F_WARNED, GRAVE, HOLE, ICE, IS_ALTAR, IS_DOOR, IS_FURNITURE, IS_GRAVE, IS_OBSTRUCTED, IS_ROOM, IS_STWALL, IS_THRONE, Is_airlevel, Is_botlevel, Is_earthlevel, Is_stronghold, Is_waterlevel, LADDER, LANDMINE, LAVAPOOL, MAGIC_PORTAL, MIGR_RANDOM, M_SEEN_MAGR, MM_NOMSG, PIT, POOL, ROOM, SDOOR, SHOPBASE, SHOP_PIT_COST, SINK, STAIRS, TT_BURIEDBALL, TT_INFLOOR, TT_PIT, VIBRATING_SQUARE, W_NONDIGGABLE, is_hole, is_magical_trap, is_pit, isok, } from './const.js';
 import { addShopDamage, makeAngryShopkeeper, payForShopDamage, shopDig, } from './shop_damage.js';
-import { canSeeMonster, canSpotMonster, flush_screen, map_invisible, newsym, plineWithContinuation, show_glyph_cell, unmap_invisible, } from './display.js';
+import { canSeeMonster, canSpotMonster, flush_screen, map_invisible, map_trap, newsym, plineWithContinuation, show_glyph_cell, unmap_invisible, } from './display.js';
 import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
+import { levelAtDepth } from './dungeon.js';
+import { depth } from './hacklib.js';
 import { monsterHasMagicResistance } from './anti_magic_trap.js';
 import { hasShopkeeperData } from './shop_types.js';
 import { convertTrapToObject } from './trap_object.js';
@@ -23,10 +25,11 @@ import { gotoLevel } from './level_change.js';
 import { resolveMonsterLiquid } from './mon.js';
 import { angerAttackedMonster } from './monster_anger.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
-import { triggerImmediateMonsterTrap } from './monmove.js';
+import { finishImmediateMonsterTrap, triggerImmediateMonsterTrap } from './monmove.js';
 import { migrateMonsterOffLevel } from './monster_migration.js';
-import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SIZE, } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_SIZE, } from './monster_data.js';
 import { monsterResistsEffect } from './monster_resistance.js';
+import { monsterName } from './monster_name.js';
 import { monstersForgetHeroResistance, monstersObserveHeroResistance, } from './monster_perception.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
 import { publishMonsterYelp } from './monster_anger.js';
@@ -34,7 +37,8 @@ import { leashAttachedToMonster, releaseMonsterLeash, } from './monster_leash.js
 import { finishMonsterLiquidDeath } from './monster_death.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { loseHeroHp } from './hero_damage.js';
-import { canDigDown, deleteFloorTrap, maketrap, makemonAt, mkclassAligned, mksobj, set_corpsenm, } from './mklev.js';
+import { delobj } from './object_delete.js';
+import { canDigDown, createToptenObject, deleteFloorTrap, maketrap, makemonAt, mkclassAligned, } from './mklev.js';
 import { buriedBallToPunishment, unearthFloorObjectsAt, } from './buried_object.js';
 import { dryFountainAt, gushForthFromFountain } from './fountain.js';
 import { breakSinkAt } from './sink_terrain.js';
@@ -44,7 +48,7 @@ import { refreshMovementProperties } from './properties.js';
 import { resetHeroTrap, switchHeroTerrain } from './terrain_movement.js';
 import { impactDrop } from './object_migration.js';
 import { BEARTRAP, BOULDER, CORPSE, LAND_MINE, } from './object_data.js';
-import { LEVEL_TIMER_KIND, stopAllObjectTimers, stopLevelTimer, } from './object_timers.js';
+import { LEVEL_TIMER_KIND, stopLevelTimer, } from './object_timers.js';
 import { autopickupAtHero } from './pickup.js';
 import { roomsAt } from './room.js';
 import { d, rn2 } from './rng.js';
@@ -54,17 +58,16 @@ import { fireDamageChain } from './fire_damage.js';
 import { cansee } from './vision.js';
 import { CLR_BLUE } from './terminal.js';
 import { isAxe } from './weapon_type.js';
-import { placeCreatedObject, placeObject, stack_object, updateIceObjectTimersAt, } from './floor_object.js';
+import { updateIceObjectTimersAt } from './floor_object.js';
 import { deleteEngravingAt } from './engrave.js';
-import { monsterInAir } from './terrain_properties.js';
+import { isLavaAt, isPoolAt, levelHasCeiling, monsterFliesOrFloats } from './terrain_properties.js';
 const S_ZOMBIE = 52;
 const S_MUMMY = 39;
 const EXPL_ROWS = [['/', '-', '\\'], ['|', ' ', '|'], ['\\', '-', '/']];
 const SHIELD_ROWS = ['0', '#', '@', '#', '0', '#', '*'];
 const MZ_HUGE = 4;
 const M1_FLY = 0x00000001;
-const PM_ARCHEOLOGIST = MONSTER_NAME.indexOf('archeologist');
-const PM_WIZARD = MONSTER_NAME.indexOf('wizard');
+const M1_CLING = 0x00000010;
 function trapAt(x, y, state) {
     return (state.level?.traps || []).find(trap => trap.tx === x && trap.ty === y) || null;
 }
@@ -80,8 +83,7 @@ function pileAt(x, y, state) {
     return state.level?.objects?.[x]?.[y] || [];
 }
 function isPoolOrLava(x, y, state) {
-    const typ = state.level?.at?.(x, y)?.typ;
-    return typ !== undefined && (IS_POOL(typ) || IS_LAVA(typ));
+    return isPoolAt(x, y, state) || isLavaAt(x, y, state);
 }
 function heroIsAirborne(state) {
     return !!(state.u?.levitating || state.u?.levitation
@@ -106,10 +108,8 @@ function alignmentWord(alignment) {
 function liquidName(typ) {
     return typ === LAVAPOOL ? 'lava' : 'water';
 }
-function monsterSubject(monster) {
-    if (monster.name)
-        return monster.name;
-    return `The ${MONSTER_NAME[monster.mnum] || 'monster'}`;
+function monsterSubject(monster, state = game) {
+    return monsterName(monster, { state, capitalized: true });
 }
 // C dig.c:dig_check().  Pure classification; no messages, no randomness.
 export function digCheck(madeBy, x, y, state = game) {
@@ -214,6 +214,8 @@ async function furnitureHandled(x, y, madeByYou, state) {
         await breakSinkAt(x, y, state);
         return true;
     }
+    if (location.typ === DRAWBRIDGE_UP)
+        return false;
     const bridge = findDrawbridgeAt(x, y, state);
     if (location.typ === DRAWBRIDGE_DOWN || bridge) {
         // If under the portcullis, the bridge is adjacent.
@@ -223,17 +225,6 @@ async function furnitureHandled(x, y, madeByYou, state) {
         return true;
     }
     return false;
-}
-function deleteBoulder(boulder, state) {
-    const pile = requireGameLevel(state).objects[boulder.ox]?.[boulder.oy];
-    const index = pile?.indexOf(boulder) ?? -1;
-    if (pile && index >= 0)
-        pile.splice(index, 1);
-    stopAllObjectTimers(boulder);
-    boulder.where = 'gone';
-    boulder.buried = false;
-    boulder.ox = 0;
-    boulder.oy = 0;
 }
 // C dig.c:dighole().  Returns true when the digging changed the terrain.
 export async function digHole({ pitOnly = false, byMagic = false, coordinate = null, state = game, } = {}) {
@@ -275,7 +266,7 @@ export async function digHole({ pitOnly = false, byMagic = false, coordinate = n
         newsym(digX, digY);
     }
     else if (isPoolOrLava(digX, digY, state)) {
-        const liquid = IS_LAVA(oldTyp) ? 'lava' : 'water';
+        const liquid = isLavaAt(digX, digY, state) ? 'lava' : 'water';
         await plineWithContinuation(`The ${liquid} `
             + 'sloshes furiously for a moment, then subsides.');
         await wakeMonstersNearWithMessages(state.u.ux, state.u.uy, (state.u.ulevel ?? 1) * 20, state);
@@ -305,7 +296,7 @@ export async function digHole({ pitOnly = false, byMagic = false, coordinate = n
             await wakeMonstersNearWithMessages(state.u.ux, state.u.uy, (state.u.ulevel ?? 1) * 20, state);
             await deleteFloorTrap(trap, state);
         }
-        deleteBoulder(boulder, state);
+        await delobj(boulder, state);
     }
     else if (IS_GRAVE(oldTyp)) {
         await digActualHole(digX, digY, 'you', PIT, { state });
@@ -405,15 +396,19 @@ export async function digActualHole(x, y, madeBy, ttyp, { state = game } = {}) {
     }
     const shopdoor = IS_DOOR(oldTyp)
         && roomsAt(state.level, x, y, SHOPBASE).length > 0;
-    const oldObjects = [...pileAt(x, y, state)];
+    const oldTopObject = pileAt(x, y, state)[0] ?? null;
     const trap = await maketrap(x, y, ttyp);
     if (!trap)
         return;
     const newObjects = pileAt(x, y, state);
     trap.madeby_u = herosFault;
     trap.tseen = 0;
-    if (cansee(x, y) || madeByYou)
+    if (cansee(x, y))
         trap.tseen = 1;
+    else if (madeByYou) {
+        trap.tseen = 1;
+        map_trap(trap, true);
+    }
     newsym(x, y);
     const trapWord = ttyp === HOLE ? 'hole' : 'pit';
     const through = ttyp === HOLE ? 'through' : 'in';
@@ -446,8 +441,7 @@ export async function digActualHole(x, y, madeBy, ttyp, { state = game } = {}) {
     if (herosFault && oldTyp === ALTAR) {
         await desecrateAltar(false, oldAltarAlignment, state);
     }
-    const objectsAppeared = newObjects.length !== oldObjects.length
-        || newObjects.some((object, index) => object !== oldObjects[index]);
+    const objectsAppeared = (newObjects[0] ?? null) !== oldTopObject;
     if (ttyp === PIT) {
         if (shopdoor && herosFault) {
             await payForShopDamage('ruin', { state });
@@ -476,7 +470,7 @@ export async function digActualHole(x, y, madeBy, ttyp, { state = game } = {}) {
                 await autopickupAtHero();
         }
         else if (victim) {
-            if (monsterInAir(victim, state)) {
+            if (monsterFliesOrFloats(victim)) {
                 if (canSeeMonster(victim)) {
                     // C is_flyer() vs is_floater(): floaters also carry
                     // M1_FLY in the pinned data, so they report "flies".
@@ -487,7 +481,10 @@ export async function digActualHole(x, y, madeBy, ttyp, { state = game } = {}) {
                 }
             }
             else if (victim !== madeBy) {
-                await triggerImmediateMonsterTrap(victim, state);
+                const fall = await triggerImmediateMonsterTrap(victim, state);
+                await finishImmediateMonsterTrap(fall, state, {
+                    describeMonster: monster => monsterSubject(monster, state),
+                });
             }
         }
     }
@@ -533,7 +530,10 @@ export async function digActualHole(x, y, madeBy, ttyp, { state = game } = {}) {
                 await impactDrop(null, x, y, { state, publish: plineWithContinuation });
             }
             if (victim) {
-                if (monsterInAir(victim, state)
+                const clingsToCeiling = !!((MONSTER_FLAGS1[victim.mnum] ?? 0) & M1_CLING)
+                    && levelHasCeiling(state);
+                if (monsterFliesOrFloats(victim)
+                    || clingsToCeiling
                     || (victim.wormSegments?.length ?? 0) > 5
                     || (MONSTER_SIZE[victim.mnum] ?? 2) >= MZ_HUGE) {
                     return;
@@ -542,7 +542,8 @@ export async function digActualHole(x, y, madeBy, ttyp, { state = game } = {}) {
                     return; /* vortex kludge */
                 if (!await teleportPetVictim(victim, state))
                     return;
-                if (Is_botlevel(state.u.uz)) {
+                const stronghold = Is_stronghold(state.u.uz);
+                if (!stronghold && Is_botlevel(state.u.uz)) {
                     if (canSeeMonster(victim)) {
                         await plineWithContinuation(`${monsterSubject(victim)} avoids the trap.`);
                     }
@@ -553,7 +554,11 @@ export async function digActualHole(x, y, madeBy, ttyp, { state = game } = {}) {
                         throw new Error('A falling shopkeeper requires its shop records');
                     await makeAngryShopkeeper(victim, state);
                 }
-                await migrateMonsterOffLevel(victim, state, trap, {
+                const destination = stronghold ? state.valley_level
+                    : levelAtDepth(depth(state.u.uz, state.dungeons) + 1, { state });
+                if (!destination)
+                    throw new Error('A hole in the Castle requires the Valley destination.');
+                await migrateMonsterOffLevel(victim, state, { dst: destination }, {
                     kind: 'level-fall-migration',
                     mode: MIGR_RANDOM,
                 });
@@ -583,8 +588,7 @@ async function teleportPetVictim(monster, state) {
 }
 // C dig.c:liquid_flow().  The caller has already changed the terrain type.
 export async function liquidFlow(x, y, typ, trap, fillMessage, { state = game } = {}) {
-    const location = state.level?.at?.(x, y);
-    if (!location || !(IS_POOL(location.typ) || IS_LAVA(location.typ)))
+    if (!isPoolOrLava(x, y, state))
         return;
     requirePlayingGame(state);
     if (trap)
@@ -659,18 +663,13 @@ export async function digUpGrave(coordinate = null, { state = game } = {}) {
             adjustHeroAlignment(-1, state);
         await plineWithContinuation('You have violated the sanctity of this grave!');
     }
-    const blind = state.blind || (state.u?.blindTurns ?? 0) > 0;
+    const blind = heroIsBlind(state);
     const hallucinating = heroIsHallucinating(state);
     const whatHappens = location.emptygrave ? -1 : rn2(5);
     if (whatHappens === 0 || whatHappens === 1) {
         await plineWithContinuation('You unearth a corpse.');
-        const corpse = await mksobj(CORPSE, true, false);
-        // mk_tt_object() names the corpse after a scoreboard player; without
-        // one it forces a random player species.
-        set_corpsenm(corpse, PM_ARCHEOLOGIST + rn2(PM_WIZARD - PM_ARCHEOLOGIST + 1));
-        placeCreatedObject(corpse, digX, digY, state);
+        const corpse = await createToptenObject(CORPSE, digX, digY);
         corpse.age -= 51; /* TAINT_AGE + 1: this is an *OLD* corpse */
-        await stack_object(corpse, state);
     }
     else if (whatHappens === 2) {
         if (!blind) {
@@ -686,8 +685,8 @@ export async function digUpGrave(coordinate = null, { state = game } = {}) {
     else if (whatHappens === 3) {
         if (!blind) {
             await plineWithContinuation(hallucinating
-                ? 'I want my mummy'
-                : "You've disturbed a tomb");
+                ? 'I want my mummy!'
+                : "You've disturbed a tomb!");
         }
         const species = mkclassAligned(S_MUMMY, 0);
         if (species !== null) {

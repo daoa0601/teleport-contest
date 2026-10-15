@@ -5046,13 +5046,14 @@ export async function triggerImmediateMonsterTrap(
 export async function finishImmediateMonsterTrap(
     action: MonsterMovementAction,
     state: PlayingGameState = requireInitializedGame(),
-    { publish = plineWithContinuation, random = rn2, rollOne = rnd, rollDice = d, finishDeath }: MonsterTrapResumeOptions = {},
+    { publish = plineWithContinuation, random = rn2, rollOne = rnd, rollDice = d, finishDeath, describeMonster }: MonsterTrapResumeOptions = {},
 ) {
     if (action.movement.escapingTrap) return action;
     if (action.event?.kind === 'rolling-boulder') return action;
     await resumeDeferredMonsterTrap(action, state, {
         publish, random, rollOne, rollDice,
         ...(finishDeath ? { finishDeath } : {}),
+        ...(describeMonster ? { describeMonster } : {}),
     });
     return action;
 }
