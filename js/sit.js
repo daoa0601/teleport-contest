@@ -7,13 +7,14 @@ import { game, requireInitializedGame } from './gstate.js';
 import { spendHeroNutrition } from './hunger.js';
 import { heroCanReachFloor } from './floor_reach.js';
 import { burnAwayHeroSlime } from './hack.js';
-import { placeCreatedObject, stack_object } from './floor_object.js';
+import { stack_object } from './floor_object.js';
+import { dropObjectAtHero } from './object_drop.js';
 import { useUpFloorObject } from './floor_consumption.js';
-import { heroIsDeaf } from './senses.js';
+import { heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { mksobj, set_corpsenm, } from './mklev.js';
 import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL, } from './monster_data.js';
 import { CHEST, CORPSE, CREAM_PIE, EGG, LARGE_BOX, OBJECT_MATERIAL, OBJECT_NUTRITION, TOWEL, WATER_WALKING_BOOTS, } from './object_data.js';
-import { recordObjectEncounter } from './object_knowledge.js';
+import { observeObject } from './object_knowledge.js';
 import { objectCombatName, definiteName } from './objnam.js';
 import { heroGoldAmount } from './hero_gold.js';
 import { heroFormFlags, heroFormHidesWithoutCover, heroMonsterForm, } from './polyself.js';
@@ -108,7 +109,9 @@ async function layEgg() {
     if (form === null)
         throw new Error('Laying an egg requires an egg-laying monster form.');
     if (game.flags?.female !== true) {
-        await pline('Males can\'t lay eggs!');
+        await pline(`${heroIsHallucinating()
+            ? 'You may think you are a platypus, but a male still'
+            : 'Males'} can't lay eggs!`);
         return false;
     }
     const nutrition = OBJECT_NUTRITION[EGG] ?? 0;
@@ -132,12 +135,12 @@ async function layEgg() {
     egg.quan = egg.quantity = 1;
     set_corpsenm(egg, eggTypeFromParent(form));
     egg.known = true;
-    egg.dknown = true;
     egg.owt = objectWeight(egg);
-    recordObjectEncounter(EGG);
+    observeObject(egg);
     await pline(`You ${waterEggLayer() ? 'spawn' : 'lay'} an egg.`);
-    placeCreatedObject(egg, game.u.ux, game.u.uy);
-    await stack_object(egg);
+    await dropObjectAtHero(egg);
+    if (egg.where === 'floor')
+        await stack_object(egg);
     await spendHeroNutrition(nutrition);
     return !game.program_state.gameover;
 }
