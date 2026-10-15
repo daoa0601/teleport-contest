@@ -2,6 +2,7 @@
 // C refs: hack.c invocation_message() and trap.c
 // trapeffect_vibrating_square().
 
+import { formatFeltMessage } from './hero_speech.js';
 import { heroFootName } from './body_parts.js';
 import { VIBRATING_SQUARE } from './const.js';
 import { newsym, plineWithContinuation } from './display.js';
@@ -38,7 +39,7 @@ export async function announceInvocationSquare(): Promise<boolean> {
 
     stopRun();
     await plineWithContinuation(
-        `You feel a strange vibration ${heroPositionDescription()}.`,
+        formatFeltMessage(`a strange vibration ${heroPositionDescription()}.`),
     );
     if (!game.u.uevent) game.u.uevent = {};
     game.u.uevent.uvibrated = 1;

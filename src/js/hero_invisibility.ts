@@ -1,6 +1,7 @@
 // Temporary and intrinsic hero invisibility.
 // C refs: potion.c peffect_invisibility() and zap.c zapyourself().
 
+import { formatFeltMessage } from './hero_speech.js';
 import type { GameState } from './game_state.js';
 import { heroIsHallucinating } from './senses.js';
 import { TIMEOUT } from './const.js';
@@ -62,7 +63,7 @@ export async function applyPotionLikeInvisibility({
     rollDice = d,
 } = {}) {
     if (spell && invisibilityIsBlocked(state) && wearsMummyWrapping(state)) {
-        await pline('You feel rather itchy under your mummy wrapping.');
+        await pline(formatFeltMessage('rather itchy under your mummy wrapping.', state));
         return {
             blocked: true,
             showedInvisibility: false,
@@ -110,7 +111,7 @@ export async function zapHeroInvisible(
     state = game, random = rn2,
 ) {
     if (invisibilityIsBlocked(state) && wearsMummyWrapping(state)) {
-        await pline('You feel rather itchy under your mummy wrapping.');
+        await pline(formatFeltMessage('rather itchy under your mummy wrapping.', state));
         return false;
     }
     const observed = !heroIsInvisible(state) && !heroIsBlind(state)

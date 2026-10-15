@@ -1,3 +1,4 @@
+import { formatFeltMessage } from './hero_speech.js';
 import { requirePlayingGame } from './gstate.js';
 // C zap.c:zap_map(). Terrain is affected before occupants and floor piles.
 import { ANTI_MAGIC, COLNO, CORR, DBWALL, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, ENGRAVE, EXPL_MAGICAL, HEADSTONE, ICE, Invocation_lev, IS_FURNITURE, Is_rogue_level, LEVEL_TELEP, MAGIC_PORTAL, MAGIC_TRAP, POLY_TRAP, ROWNO, SCORR, SDOOR, TELEP_TRAP, TRAP_EXPLODE, VIBRATING_SQUARE, } from './const.js';
@@ -170,7 +171,7 @@ async function probeTerrain(x, y, trap, learned, state) {
             learned = true;
         }
         else if (Is_rogue_level(state.u.uz))
-            await pline('You feel a draft.');
+            await pline(formatFeltMessage('a draft.', state));
     }
     else if (surface === SCORR) {
         location.typ = CORR;

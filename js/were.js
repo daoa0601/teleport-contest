@@ -1,8 +1,8 @@
 // Were-creature transformations and hero lycanthropy.
 // C refs: were.c counter_were(), new_were(), you_unwere();
 // mondata.c set_mon_data().
+import { formatFeltMessage, formatHeardMessage } from './hero_speech.js';
 import { heroIsHallucinating } from './senses.js';
-import { heroIsUnaware } from './hero_sleep.js';
 import { exerciseAttribute } from './attrib.js';
 import { A_WIS, PARANOID_WERECHANGE } from './const.js';
 import { tameMonster } from './monster_taming.js';
@@ -170,7 +170,7 @@ export async function applyHeroWereChange({ state = game, publish = plineWithCon
 export async function revertHeroWereForm({ state = game, publish = plineWithContinuation, purify = false, } = {}) {
     requirePlayingGame(state);
     if (purify) {
-        await publish('You feel purified.');
+        await publish(formatFeltMessage('purified.', state));
         setHeroLycanthropy(-1, state);
     }
     if (!isWereMonster({ mnum: state.u.umonnum }))
@@ -226,8 +226,7 @@ export async function summonWereAttackHelp(monster, state = game, random = rn2) 
         await plineWithContinuation(`${monsterName(monster, { state, capitalized: true })} summons help!`);
     const helpers = await summonWerePack(monster.mnum, false, state, random);
     const visible = helpers.filter(helper => canSeeMonster(helper)).length;
-    const hemmedIn = heroIsUnaware(state)
-        ? 'You dream that you feel hemmed in.' : 'You feel hemmed in.';
+    const hemmedIn = formatFeltMessage('hemmed in.', state);
     if (seen) {
         if (!helpers.length)
             await plineWithContinuation('But none comes.');
@@ -314,7 +313,7 @@ export async function wereChange(monster, state = game, random = rn2, { publish 
         oldMnum,
         newMnum: monster.mnum,
         howlMessage: howler
-            ? `You hear a ${howler} howling at the moon.` : null,
+            ? formatHeardMessage(`a ${howler} howling at the moon.`, state) : null,
         wakeDistance: howler ? 16 : 0,
     };
 }

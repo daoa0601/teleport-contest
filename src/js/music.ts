@@ -1,6 +1,7 @@
 // Musical instruments and their effects.
 // C ref: music.c.
 
+import { formatFeltMessage } from './hero_speech.js';
 import { heroIsHallucinating } from './senses.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import {
@@ -161,11 +162,11 @@ async function announceImprovisation(instrument: GameObject) {
         );
     } else if (mode === 1) {
         await plineWithContinuation(heroIsDeaf()
-            ? 'You feel a monotonous vibration.'
+            ? formatFeltMessage('a monotonous vibration.')
             : 'You radiate an obnoxious droning sound.');
     } else if (mode === 2) {
         await plineWithContinuation(heroIsDeaf()
-            ? 'You feel a jarring vibration.'
+            ? formatFeltMessage('a jarring vibration.')
             : 'You generate a raucous noise.');
     } else if (mode === 4) {
         await plineWithContinuation(
@@ -300,9 +301,9 @@ async function playWoodenFlute(instrument: GameObject, familiar: boolean, canUse
         );
     } else {
         await plineWithContinuation(
-            `You feel your ${instrumentName(instrument)} ${
+            formatFeltMessage(`your ${instrumentName(instrument)} ${
                 succeeds ? 'trill' : 'toot'
-            }.`,
+            }.`),
         );
     }
     if (succeeds) await charmSnakes((game.u?.ulevel || 1) * 3);
@@ -385,7 +386,7 @@ async function playBugle(instrument: GameObject, familiar: boolean): Promise<Ins
 async function playMagicHarp(instrument: GameObject, familiar: boolean) {
     instrument.spe--;
     await plineWithContinuation(heroIsDeaf()
-        ? 'You feel very soothing vibrations.'
+        ? formatFeltMessage('very soothing vibrations.')
         : `Your ${instrumentName(instrument)} produces very attractive${
             familiar ? ' and familiar' : ''
         } music.`);
@@ -398,7 +399,7 @@ async function playWoodenHarp(instrument: GameObject, familiar: boolean, canUseS
         + (game.u?.ulevel || 1) > 25;
     const succeeds = canUseSpecial && skilledRoll;
     if (heroIsDeaf()) {
-        await plineWithContinuation('You feel soothing vibrations.');
+        await plineWithContinuation(formatFeltMessage('soothing vibrations.'));
     } else {
         const action = succeeds
             ? `produces a ${familiar ? 'familiar, ' : ''}lilting melody`

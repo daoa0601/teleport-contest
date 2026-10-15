@@ -1,3 +1,4 @@
+import { formatFeltMessage } from './hero_speech.js';
 import { requirePlayingGame } from './gstate.js';
 // Undead turning for actual monsters, objects, inventories, and the hero.
 // C zap.c:bhitm(), bhito(), unturn_dead(), and unturn_you().
@@ -132,7 +133,7 @@ export async function turnHeroWithUndeadMagic(state = game, { roll = rnd } = {})
     await turnCarriedObjects(state.inventory, state);
     if (monsterIsUndead(state.u?.umonnum)) {
         const alreadyStunned = (state.u?.stunnedTurns ?? 0) > 0;
-        await pline(`You feel frightened and ${alreadyStunned ? 'even more ' : ''}stunned.`);
+        await pline(formatFeltMessage(`frightened and ${alreadyStunned ? 'even more ' : ''}stunned.`, state));
         await makeStunned((state.u.stunnedTurns ?? 0) + roll(30), { state, talk: false });
     }
     else {

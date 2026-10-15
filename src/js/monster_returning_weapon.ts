@@ -1,5 +1,6 @@
 // C mthrowu.c:return_from_mtoss(). A failed catch can hurt the thrower.
 
+import { publishHeardMessage } from './hero_speech.js';
 import { heroArmName, monsterFootName, monsterHandName } from './body_parts.js';
 import { IS_POOL, LAVAPOOL, W_WEP } from './const.js';
 import { canSeeMonster, canSpotMonster, newsym, plineWithContinuation } from './display.js';
@@ -75,7 +76,7 @@ export async function returnMonsterWeapon(monster: Monster, weapon: GameObject, 
                 const feet = makePlural(monsterFootName(monster.mnum));
                 await publish(`${weaponAction('return')} back to ${name()}, landing at ${monsterPossessive(monster, { state })} ${feet}.`);
             } else if (!heroIsDeaf(state)) {
-                await publish(`You hear something land near ${name()}.`);
+                await publishHeardMessage(`something land near ${name()}.`, publish, state);
             }
         } else {
             damage += rollOne(3);
@@ -85,7 +86,7 @@ export async function returnMonsterWeapon(monster: Monster, weapon: GameObject, 
                     heroArmName(state)
                 }!`);
             } else if (!heroIsDeaf(state)) {
-                await publish(`You hear something hit ${name()} with a thud!`);
+                await publishHeardMessage(`something hit ${name()} with a thud!`, publish, state);
             }
             monster.mhp -= damage;
             if (monster.mhp <= 0) {
@@ -95,8 +96,8 @@ export async function returnMonsterWeapon(monster: Monster, weapon: GameObject, 
                 });
             }
         }
-    } else if (!heroIsDeaf(state)) {
-        await publish('You hear a loud snap!');
+    } else {
+        await publishHeardMessage('a loud snap!', publish, state);
     }
 
     const options = { state: requireInitializedGame(state), publish, random };

@@ -1,3 +1,4 @@
+import { formatFeltMessage, publishHeardMessage } from './hero_speech.js';
 import { recorderLocalEpochSeconds } from './calendar.js';
 import type { MessagePublisher } from './display.js';
 import { slipOrTrip } from './fumbling.js';
@@ -740,7 +741,7 @@ async function finishInitialTurnMaintenanceRng(sourceTurn: number): Promise<void
         if ((game.u.udg_cnt ?? 0) === 0) {
             const intervention = rn2(6);
             if (intervention <= 1) {
-                appendTurnMessage('You feel vaguely nervous.');
+                appendTurnMessage(formatFeltMessage('vaguely nervous.'));
                 delete game._unresolvedDemigodIntervention;
             } else if (intervention === 2) {
                 appendTurnMessage('You notice a black glow surrounding you.');
@@ -1219,7 +1220,8 @@ async function finishInitialTurnMaintenanceBeforeTimeouts({
             game.u.stunnedTurns = 0;
             game.context.botl = true;
             refreshProperty('stunned', game);
-            appendTurnMessage('You feel a bit steadier now.');
+            if (!heroIsUnaware(game))
+                appendTurnMessage(formatFeltMessage(heroIsHallucinating(game) ? 'less wobbly now.' : 'a bit steadier now.'));
         } else game.u.stunnedTurns = remaining;
     }
 
@@ -1238,8 +1240,6 @@ function finishInitialTurnMaintenanceAfterStun({
         && game.u.confusionTurns !== undefined && game.u.confusionTurns > 0) {
         const remaining = game.u.confusionTurns - 1;
         if (remaining === 0) {
-            const message = heroIsHallucinating(game)
-                ? 'You feel less trippy now.' : 'You feel less confused now.';
             if (deferAmbientMessage) {
                 return {
                     kind: 'timeout-message',
@@ -1251,7 +1251,8 @@ function finishInitialTurnMaintenanceAfterStun({
             game.u.confusionTurns = 0;
             game.context.botl = true;
             refreshProperty('confusion', game);
-            appendTurnMessage(message);
+            if (!heroIsUnaware(game))
+                appendTurnMessage(formatFeltMessage(heroIsHallucinating(game) ? 'less trippy now.' : 'less confused now.'));
         } else game.u.confusionTurns = remaining;
     }
 
@@ -1458,9 +1459,7 @@ async function finishInitialTurnMaintenanceAfterFumbling({
         setPropertyTimeout('fast', game.u.veryFastTurns - 1, game);
         if (game.u.veryFastTurns === 0) {
             if (!game.u.veryFast)
-                await plineWithContinuation(game.u.fast
-                    ? 'You feel yourself slow down a bit.'
-                    : 'You feel yourself slow down.');
+                await plineWithContinuation(formatFeltMessage(game.u.fast ? 'yourself slow down a bit.' : 'yourself slow down.'));
         }
     }
 
@@ -2505,8 +2504,9 @@ async function presentMonsterAttackEffects(
                     if (heroAttack.kind === 'hero-breath') {
                         const breath = heroAttack.breath;
                         if (breath.cough && !game.deaf) {
-                            await publishSlotMessage(canSeeMonster(monster)
-                                ? `The ${quietMonsterName(monster)} coughs.` : 'You hear a cough.');
+                            if (canSeeMonster(monster))
+                                await publishSlotMessage(`The ${quietMonsterName(monster)} coughs.`);
+                            else await publishHeardMessage('a cough.', publishSlotMessage);
                         }
                         if (breath.launched) {
                             await resolveDeferredMonsterBreath(action, breath, game, publishSlotMessage);

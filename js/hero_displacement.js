@@ -1,4 +1,5 @@
 // Native do_wear.c:toggle_displacement() for eating and timeout expiry.
+import { formatFeltMessage } from './hero_speech.js';
 import { heroIsDisplaced } from './armor.js';
 import { TIMEOUT } from './const.js';
 import { plineWithContinuation } from './display.js';
@@ -35,6 +36,6 @@ async function announceDisplacementChange(on, state) {
         || (hero.monsterDetectionTurns ?? 0) > 0;
     if (hero.displacementBlocked || hero.displacedBlocked || !(seesSelf || sensesMonsters))
         return;
-    await plineWithContinuation(`You feel that monsters${on ? '' : ' no longer'} have difficulty pinpointing your location.`);
+    await plineWithContinuation(formatFeltMessage(`that monsters${on ? '' : ' no longer'} have difficulty pinpointing your location.`, state));
 }
 //# sourceMappingURL=hero_displacement.js.map

@@ -1,5 +1,6 @@
 // The hero's carried gold is the COIN_CLASS object in inventory.
 // C refs: hack.c money_cnt(), invent.c addinv()/freeinv()/splitobj().
+import { formatFeltMessage } from './hero_speech.js';
 import { plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
 import { createObjectBase } from './object_constructor.js';
@@ -23,7 +24,7 @@ export async function takeHeroGold(state = game) {
     }
     await plineWithContinuation(lostMoney
         ? 'You notice you have no gold!'
-        : 'You feel a strange sensation.');
+        : formatFeltMessage('a strange sensation.', state));
 }
 function quantity(object) {
     return Math.max(0, Math.trunc(object?.quan ?? object?.quantity ?? 0));

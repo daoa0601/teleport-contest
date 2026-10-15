@@ -1,3 +1,4 @@
+import { formatFeltMessage } from './hero_speech.js';
 import { monsterAtPosition, monsterHasMapPosition } from './monster_location.js';
 import { isPoolAt } from './terrain_properties.js';
 // ball.js — Punishment ball-and-chain movement.
@@ -663,7 +664,7 @@ export async function beginBallAndChainMove(targetX: number, targetY: number, op
             candidate.tx === chain.ox && candidate.ty === chain.oy);
         if (chainPullsFromWater || trap && (is_pit(trap.ttyp) || is_hole(trap.ttyp))) {
             if (propertyIsActive('levitation', state)) {
-                await plineWithContinuation('You feel a tug from the iron ball.');
+                await plineWithContinuation(formatFeltMessage('a tug from the iron ball.', state));
                 if (trap) trap.tseen = true;
             } else {
                 await jerkHeroBackToChain(plan, state);

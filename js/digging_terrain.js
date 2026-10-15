@@ -2,6 +2,7 @@
 // C refs: dig.c dig_check(), digcheck_fail_message(), dighole(),
 // digactualhole(), liquid_flow(), dig_up_grave(), and the shared furniture
 // dispatch.  The digging effort loop itself lives in hero_digging.js.
+import { formatFeltMessage, publishHeardMessage } from './hero_speech.js';
 import { monsterHasMapPosition } from './monster_location.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { deleteTrap } from './trap_lifecycle.js';
@@ -652,7 +653,7 @@ export async function digUpGrave(coordinate = null, { state = game } = {}) {
     await exerciseAttribute(A_WIS, false, state);
     if (state.urole?.key === 'archeologist') {
         adjustHeroAlignment(-Math.sign(state.u.ualign.type) * 3, state);
-        await plineWithContinuation('You feel like a despicable grave-robber!');
+        await plineWithContinuation(formatFeltMessage('like a despicable grave-robber!', state));
     }
     else if (state.urole?.key === 'samurai') {
         adjustHeroAlignment(-Math.sign(state.u.ualign.type), state);
@@ -810,7 +811,7 @@ async function explodeMagicalTrapAt(x, y, state) {
             newsym(cell.x, cell.y);
     }
     else if (!deaf) {
-        await plineWithContinuation('You hear a blast.');
+        await publishHeardMessage('a blast.', plineWithContinuation, state);
     }
     if (visible && !deaf) {
         await plineWithContinuation('Boom!');

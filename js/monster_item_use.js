@@ -4,7 +4,7 @@ import { impossible } from './diagnostics.js';
 import { canSeeMonster, canSenseMonster, canSpotMonster, cls, displayMessageWindow, displaySelf, docrt, flashGlyphAt, map_invisible, newsym, plineWithContinuation, randomDisplayMonsterName, show_glyph_cell, transientMonsterGlyph, } from './display.js';
 import { heroSpecies } from './hero_species.js';
 import { heroIsUnconscious } from './hero_sleep.js';
-import { formatHeardMessage } from './hero_speech.js';
+import { formatHeardMessage, formatFeltMessage } from './hero_speech.js';
 import { inventoryItemDescription } from './invent.js';
 import { AD_RBRE } from './monster_attack_types.js';
 import { MONSTER_GENO } from './monster_data.js';
@@ -52,7 +52,7 @@ export async function revealAggravatingMonster(monster, state) {
     const glyph = transientMonsterGlyph(monster);
     show_glyph_cell(monster.mx, monster.my, glyph.ch, glyph.color, glyph.decgfx, 0, glyph);
     displaySelf();
-    await plineWithContinuation(`You feel aggravated at ${monsterName(monster, { state, article: 'your', suppressIt: true })}.`);
+    await plineWithContinuation(formatFeltMessage(`aggravated at ${monsterName(monster, { state, article: 'your', suppressIt: true })}.`, state));
     await displayMessageWindow();
     await docrt();
     if (heroIsUnconscious(state)) {

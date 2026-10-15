@@ -144,7 +144,7 @@ void test('healing commits HP and removes cream before awaiting regained-sight f
     assert.equal(game.u.sickTurns, 0);
 });
 
-void test('unconscious healing suppresses sight, hearing and nausea feedback but reports the sickness cure', async () => {
+void test('unconscious healing suppresses sight, hearing and nausea feedback but dreams the sickness cure', async () => {
     freshObjectRoom();
     requireFixtureGame(game);
     ailHero();
@@ -154,7 +154,7 @@ void test('unconscious healing suppresses sight, hearing and nausea feedback but
     assert.equal(game.u.deafTurns, 0);
     assert.equal(game.u.vomitingTurns, 0);
     assert.equal(game.u.sickTurns, 0);
-    assert.equal(game._pending_message, 'You feel cured.  What a relief!');
+    assert.equal(game._pending_message, 'You dream that you feel cured.  What a relief!');
 });
 
 for (const [type, name, extra] of [[POT_HEALING, 'healing', 1], [POT_EXTRA_HEALING, 'extra healing', 2]] as const) {

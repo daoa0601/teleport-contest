@@ -1,5 +1,6 @@
 // Shared statue/boulder fracture owner.
 // C refs: zap.c fracture_rock() and break_statue(), trap.c sokoban_guilt().
+import { formatFeltMessage } from './hero_speech.js';
 import { CORPSTAT_HISTORIC } from './const.js';
 import { shopkeeperName } from './monster_name.js';
 import { newsym, pline } from './display.js';
@@ -91,7 +92,7 @@ export async function breakStatue(statue, x, y, { state = game, random = rn2, pu
         return false;
     await dropStatueContents(statue, x, y, state);
     if (byYou && state.urole?.key === 'archeologist' && (statue.spe ?? 0) & CORPSTAT_HISTORIC) {
-        await publish('You feel guilty about damaging such a historic statue.');
+        await publish(formatFeltMessage('guilty about damaging such a historic statue.', state));
         adjustHeroAlignment(-1, state);
     }
     statue.spe = 0;

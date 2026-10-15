@@ -1,4 +1,5 @@
 // C uhitm.c:mhitm_ad_drin() and eat.c:eat_brains(), hero defender.
+import { formatFeltMessage } from './hero_speech.js';
 import { armorSimpleName } from './armor.js';
 import { adjustAttribute, attributeChangeMessage, exerciseWisdom } from './attrib.js';
 import { A_INT } from './const.js';
@@ -58,7 +59,7 @@ export async function drainHeroBrain(monster, attack, state, publish, random = r
             return;
     }
     const change = adjustAttribute(A_INT, -rollOne(2), state);
-    const message = attributeChangeMessage(A_INT, change);
+    const message = attributeChangeMessage(A_INT, change, state);
     if (message && (change.changed || change.blockedByDunceCap || state.flags.verbose))
         await publish(message);
     if (!random(5)) {
@@ -109,7 +110,7 @@ async function eatHeroBrain(monster, attack, state, publish, rollOne) {
             return false;
         }
         attributes[A_INT] = minimum + 2;
-        await publish('You feel like a scarecrow.');
+        await publish(formatFeltMessage('like a scarecrow.', state));
     }
     exerciseWisdom(false, state);
     if (monster.mtame && !monster.isminion) {

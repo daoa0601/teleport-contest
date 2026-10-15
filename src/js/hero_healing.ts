@@ -1,5 +1,6 @@
 // Native potion.c:healup(). Healing applies to the body currently occupied.
 
+import { formatFeltMessage } from './hero_speech.js';
 import type { GameState } from './game_state.js';
 import { Upolyd } from './const.js';
 import { plineWithContinuation } from './display.js';
@@ -33,7 +34,7 @@ export async function healHero(amount: number, extraMaximum: number, {
     }
     if (cureSickness) {
         if (cureHeroVomiting(state) && !heroIsUnaware(state))
-            await plineWithContinuation('You feel much less nauseated now.');
+            await plineWithContinuation(formatFeltMessage('much less nauseated now.', state));
         await cureHeroSicknessWithMessages(state);
     }
     state.context.botl = true;

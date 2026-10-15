@@ -1,5 +1,6 @@
 // armor.js — Hero armor-class projection.
 // C refs: do_wear.c find_ac() and hack.h ARM_BONUS().
+import { formatFeltMessage } from './hero_speech.js';
 import { heroDetectsMonsters, heroIsBlind, heroIsHallucinating } from './senses.js';
 import { makeHallucinated } from './hero_mental_status.js';
 import { game, requireLiveGame } from './gstate.js';
@@ -264,7 +265,7 @@ export async function removeHeroArmor(object, state = game, options = {}) {
         await applyCloakOffEffects(object, state);
         if (object.otyp === SPEED_BOOTS && !state.u.veryFast && !cancelledDon) {
             learnObjectType(object.otyp, state);
-            await plineWithContinuation(`You feel yourself slow down${state.u.fast ? ' a bit' : ''}.`);
+            await plineWithContinuation(formatFeltMessage(`yourself slow down${state.u.fast ? ' a bit' : ''}.`, state));
         }
         // Armor_off() clears cancelled_don before dragon handling, so an
         // interrupted blue suit still reports its speed loss.
@@ -322,7 +323,7 @@ async function announceDisplacementLoss(object, state = game) {
     if (!canObserveDisplacement(state))
         return;
     learnObjectType(object.otyp, state);
-    await plineWithContinuation('You feel that monsters no longer have difficulty pinpointing your location.');
+    await plineWithContinuation(formatFeltMessage('that monsters no longer have difficulty pinpointing your location.', state));
 }
 // C wielding_corpse(): losing gloves or yellow dragon armor can expose a
 // petrifying weapon. Resolve life saving before the removal continues.
@@ -705,7 +706,7 @@ async function applyHelmetOnEffects(object, state) {
         else if (helmet?.otyp === DUNCE_CAP) {
             const intelligence = (state.u.acurr?.a[A_INT] ?? 10)
                 + (state.u.abon?.a[A_INT] ?? 0) + (state.u.atemp?.a[A_INT] ?? 0);
-            await plineWithContinuation(`You feel ${currentAttribute(A_INT, state) <= intelligence ? 'like sitting in a corner' : 'giddy'}.`);
+            await plineWithContinuation(formatFeltMessage(`${currentAttribute(A_INT, state) <= intelligence ? 'like sitting in a corner' : 'giddy'}.`, state));
         }
         else
             learnObjectType(HELM_OF_OPPOSITE_ALIGNMENT, state);
@@ -856,7 +857,7 @@ export async function applyArmorOnEffects(object, state = game, { initialDon = f
     }
     if (object.otyp === CLOAK_OF_DISPLACEMENT) {
         return !initialDon && !object._displacementWasActive && canObserveDisplacement(state)
-            ? ['You feel that monsters have difficulty pinpointing your location.'] : [];
+            ? [formatFeltMessage('that monsters have difficulty pinpointing your location.', state)] : [];
     }
     if (armorSlotFor(object.otyp) === 'uarmc') {
         await applyCloakOnEffects(object, state);
@@ -867,7 +868,7 @@ export async function applyArmorOnEffects(object, state = game, { initialDon = f
         const otherEquipment = sources?.worn.some(source => source.slot !== 'uarmf')
             || !!sources?.invoked || !!sources?.carried.length;
         if (!otherEquipment && propertyTimeout('fast', state) === 0) {
-            return [`You feel yourself speed up${hasIntrinsicProperty('fast', null, state) ? ' a bit more' : ''}.`];
+            return [formatFeltMessage(`yourself speed up${hasIntrinsicProperty('fast', null, state) ? ' a bit more' : ''}.`, state)];
         }
         return [];
     }

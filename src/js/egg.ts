@@ -1,6 +1,7 @@
 // Egg hatch timers.
 // C refs: timeout.c attach_egg_hatch_timeout()/hatch_egg().
 
+import { formatSeenMessage, formatFeltMessage } from './hero_speech.js';
 import {
     G_EXTINCT, G_GENOD, IS_POOL, MM_NOMSG, MV_KNOWS_EGG, NO_MINVENT,
 } from './const.js';
@@ -79,11 +80,9 @@ const S_DRAGON = 30;
 const S_LIGHT = 25;
 const S_EEL = 57;
 
-function floorHatchMessage(mnum: number, count: number): string {
+function floorHatchMessage(mnum: number, count: number, state: GameState): string {
     const name = monsterTypeName(mnum);
-    return count > 1
-        ? `You see some ${makePlural(name)} hatch.`
-        : `You see ${withIndefiniteArticle(name)} hatch.`;
+    return formatSeenMessage(count > 1 ? `some ${makePlural(name)} hatch.` : `${withIndefiniteArticle(name)} hatch.`, state);
 }
 
 function hatchLocomotion(mnum: number): string {
@@ -98,14 +97,14 @@ function hatchLocomotion(mnum: number): string {
     return 'drop';
 }
 
-function inventoryHatchMessage(mnum: number, count: number, visible: boolean): string {
+function inventoryHatchMessage(mnum: number, count: number, visible: boolean, state: GameState): string {
     const motion = hatchLocomotion(mnum);
-    if (!visible) return `You feel something ${motion} from your pack!`;
+    if (!visible) return formatFeltMessage(`something ${motion} from your pack!`, state);
     const name = monsterTypeName(mnum);
     const newborn = count > 1
         ? `some ${makePlural(name)}`
         : withIndefiniteArticle(name);
-    return `You see ${newborn} ${motion} out of your pack!`;
+    return formatSeenMessage(`${newborn} ${motion} out of your pack!`, state);
 }
 
 function possessive(noun: string): string {
@@ -169,7 +168,7 @@ function monsterInventoryHatchMessage(
         source = 'thin air';
     }
     return {
-        message: `You see ${newborn} ${hatchLocomotion(mnum)} out of ${source}!`,
+        message: formatSeenMessage(`${newborn} ${hatchLocomotion(mnum)} out of ${source}!`, state),
         knowsEgg: carrierIsVisible,
     };
 }
@@ -283,10 +282,10 @@ export async function runClaimedEggHatchTimer(
     let message: string | null = null;
     let knowsEgg = false;
     if (location.kind === 'floor' && visible) {
-        message = floorHatchMessage(mnum, hatched);
+        message = floorHatchMessage(mnum, hatched, state);
         knowsEgg = true;
     } else if (location.kind === 'inventory') {
-        message = inventoryHatchMessage(mnum, hatched, visible);
+        message = inventoryHatchMessage(mnum, hatched, visible, state);
         knowsEgg = true;
     } else if (location.kind === 'minvent' && visible) {
         const presentation = monsterInventoryHatchMessage(

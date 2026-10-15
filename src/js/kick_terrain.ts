@@ -1,4 +1,5 @@
 // Native dokick.c:kick_nondoor(), for terrain beyond doors and graves.
+import { publishHeardMessage } from './hero_speech.js';
 import { exerciseAttribute } from './attrib.js';
 import {
     A_DEX, A_WIS, ALTAR, CORR, FOUNTAIN, G_GONE, IRONBARS, IS_TREE, Is_stronghold, LADDER,
@@ -159,7 +160,7 @@ function speciesGone(species: number): boolean {
 async function kickTree(x: number, y: number, location: MapLocation, responses: TerrainKickResponses): Promise<void> {
     const bee = MONSTER_NAME.indexOf('killer bee');
     if (rn2(3) !== 0) {
-        if (rn2(6) === 0 && !speciesGone(bee) && !heroIsDeaf()) await pline('You hear a low buzzing.');
+        if (rn2(6) === 0 && !speciesGone(bee)) await publishHeardMessage('a low buzzing.', pline);
         await responses.ouch(x, y);
         return;
     }
@@ -214,7 +215,7 @@ async function kickSink(x: number, y: number, location: MapLocation, responses: 
     const demon = MONSTER_NAME.indexOf('amorous demon');
     if (!((location.looted ?? 0) & S_LPUDDING) && rn2(3) === 0 && !speciesGone(pudding)) {
         if (!heroIsBlind()) await pline(`A ${displayColorName('black')} ooze gushes up from the drain!`);
-        else if (!heroIsDeaf()) await pline('You hear a gushing sound.');
+        else if (!heroIsDeaf()) await publishHeardMessage('a gushing sound.', pline);
         await makemonAt(pudding, x, y, MM_NOMSG);
         await exerciseAttribute(A_DEX, true);
         newsym(x, y);
