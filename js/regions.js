@@ -41,7 +41,7 @@ function uniqueXMajorCells(cells) {
 export function createHarmlessGasCloudSelection(state, cells, { ttl = -1 } = {}) {
     return createGasCloudSelection(state, cells, ttl, 0);
 }
-function createGasCloudSelection(state, cells, ttl, damage) {
+export function createGasCloudSelection(state, cells, ttl, damage) {
     if (!state?.level)
         return null;
     const orderedCells = uniqueXMajorCells(cells);

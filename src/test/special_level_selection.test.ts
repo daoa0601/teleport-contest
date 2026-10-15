@@ -1,0 +1,543 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import type { TestContext } from 'node:test';
+
+import { CLOUD, CORR, DB_DIR, DB_WEST, DBWALL, DRAWBRIDGE_UP, D_CLOSED,
+    FOUNTAIN, F_LOOTED, F_WARNED, GRAVE, HEADSTONE, HWALL,
+    ROOM, SCORR, SDOOR, STONE, S_LDWASHER, S_LPUDDING, S_LRING, T_LOOTED,
+    TREE_LOOTED, TREE_SWARM, VWALL, W_NONPASSWALL } from '../js/const.js';
+import { init_dungeons } from '../js/dungeon.js';
+import { GameMap } from '../js/game.js';
+import { game, requireGameLevel } from '../js/gstate.js';
+import { currentLuaLifecycle } from '../js/lua/lifecycle.js';
+import { mklev } from '../js/mklev.js';
+import { init_objects } from '../js/o_init.js';
+import { initRng } from '../js/rng.js';
+import { MONSTER_NAME } from '../js/monster_data.js';
+import { DAGGER, OBJECT_NAMES } from '../js/object_data.js';
+import { freshGame } from './support/game-state.js';
+import { startLuaCore } from './support/lua-game.js';
+import { floorObjects } from './support/level-state.js';
+import { novelTitle } from '../js/novel_titles.js';
+import { resetInputState } from '../js/input.js';
+import { moveloop_core } from '../js/allmain.js';
+import { freshTurnRoom } from './support/playable-room.js';
+
+async function levelLua(t: TestContext) {
+    freshGame({ flags: { bones: false } });
+    initRng(731n);
+    init_objects();
+    await init_dungeons();
+    await startLuaCore(t);
+    await mklev();
+    const lua = currentLuaLifecycle().getThemedState(game, 0);
+    assert.ok(lua, 'level creation should install the Lua selection API');
+    game.level = new GameMap();
+    game.in_mklev = true;
+    return lua;
+}
+
+void test('Lua circles and ellipses carve outlines or filled areas relative to their map', async t => {
+    const lua = await levelLua(t);
+    await lua.executeAsync(`
+        des.map({ x = 10, y = 5, map = [[xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx]] })
+        des.terrain(selection.circle(4, 4, 2), ".")
+        des.terrain(selection.circle(12, 4, 2, 1), ".")
+        local oval = selection.new()
+        oval:ellipse(21, 4, 3, 1, 1)
+        des.terrain(oval, ".")
+    `);
+    const level = requireGameLevel();
+    assert.equal(level.requireAt(14, 9).typ, STONE, 'an outline leaves its center intact');
+    assert.equal(level.requireAt(14, 7).typ, ROOM);
+    assert.equal(level.requireAt(22, 9).typ, ROOM, 'a filled circle includes its center');
+    assert.equal(level.requireAt(31, 9).typ, ROOM, 'method form updates its selection');
+    assert.equal(level.requireAt(34, 9).typ, ROOM, 'the ellipse reaches its horizontal radius');
+    assert.equal(level.requireAt(31, 11).typ, STONE, 'the ellipse respects its vertical radius');
+});
+
+void test('an exhausted Lua selection returns the absent-coordinate sentinel', async t => {
+    const lua = await levelLua(t);
+    await lua.executeAsync(`
+        des.map({ x = 10, y = 5, map = [[...]] })
+        local remaining = selection.area(1, 0, 1, 0)
+        local first = remaining:rndcoord(1)
+        des.object({ id = "rock", coord = first })
+        local absent = remaining:rndcoord()
+        absent_x, absent_y = absent.x, absent.y
+    `);
+    assert.equal(lua.getGlobal('absent_x'), -1);
+    assert.equal(lua.getGlobal('absent_y'), -1);
+    assert.equal(requireGameLevel().objects[11]?.[5]?.length, 1);
+});
+
+void test('Lua gradients carve the guaranteed center and exclude terrain beyond their radius', async t => {
+    const lua = await levelLua(t);
+    await lua.executeAsync(`
+        local radial = selection.gradient({ x = 15, y = 8, x2 = 15, y2 = 8,
+            mindist = 2, maxdist = 2 })
+        des.terrain(radial, ".")
+        local square = selection.gradient({ type = "square", x = 35, y = 8,
+            x2 = 35, y2 = 8, mindist = 2, maxdist = 2 })
+        des.terrain(square, ".")
+    `);
+    const level = requireGameLevel();
+    assert.equal(level.requireAt(16, 8).typ, ROOM);
+    assert.equal(level.requireAt(18, 10).typ, STONE, 'radial guaranteed center is circular');
+    assert.equal(level.requireAt(38, 10).typ, ROOM, 'square guaranteed center includes its corners');
+    assert.equal(level.requireAt(16, 13).typ, STONE);
+    assert.equal(level.requireAt(36, 13).typ, STONE);
+});
+
+void test('Lua level selections preserve point values and support coordinate-table reads', async t => {
+    const lua = await levelLua(t);
+    await lua.executeAsync(`
+        des.map({ x = 10, y = 5, map = [[...]] })
+        local points = selection.set(1, 0)
+        points:set(2, 0, 7)
+        first_value = points:get({1, 0})
+        second_value = points:get(2, 0)
+        points:set(1, 0, 0)
+        cleared_value = points:get({x = 1, y = 0})
+        des.terrain(points, "#")
+    `);
+    assert.equal(lua.getGlobal('first_value'), 1);
+    assert.equal(lua.getGlobal('second_value'), 7);
+    assert.equal(lua.getGlobal('cleared_value'), 0);
+    assert.equal(requireGameLevel().requireAt(11, 5).typ, ROOM);
+    assert.notEqual(requireGameLevel().requireAt(12, 5).typ, ROOM);
+});
+
+void test('Lua level initialization defaults to solid floor and accepts Rogue rooms', async t => {
+    const lua = await levelLua(t);
+    await lua.executeAsync('des.level_init({ lit = 0 })');
+    assert.equal(requireGameLevel().requireAt(20, 10).typ, ROOM);
+    game.level = new GameMap();
+    await lua.executeAsync('des.level_init({ style = "rogue" })');
+    assert.ok(requireGameLevel().nroom > 0, 'Rogue style builds its room grid');
+});
+
+void test('solid initialization resets cell metadata within the native maze boundaries', async t => {
+    const lua = await levelLua(t);
+    const level = requireGameLevel();
+    const previous = level.requireAt(20, 10);
+    previous.flags = 3;
+    previous.roomno = 4;
+    previous.edge = true;
+    previous.horizontal = true;
+    level.requireAt(1, 5).typ = CORR;
+    level.requireAt(79, 5).typ = HWALL;
+    await lua.executeAsync('des.level_init({ style = "solidfill", fg = ".", lit = 0 })');
+    assert.equal(previous.typ, ROOM);
+    assert.equal(previous.flags, 0);
+    assert.equal(previous.roomno, 0);
+    assert.equal(previous.edge, false);
+    assert.equal(previous.horizontal, false);
+    assert.equal(level.requireAt(1, 5).typ, CORR);
+    assert.equal(level.requireAt(79, 5).typ, HWALL);
+});
+
+void test('swamp initialization chooses lighting when omitted and maze grids default to stone', async t => {
+    const lua = await levelLua(t);
+    const lighting = new Set<boolean>();
+    for (let seed = 1; seed <= 8; seed++) {
+        initRng(seed);
+        await lua.executeAsync('des.level_init({ style = "swamp" })');
+        lighting.add(requireGameLevel().requireAt(20, 10).lit);
+    }
+    assert.equal(lighting.size, 2, 'unspecified swamp lighting can be lit or unlit');
+    await lua.executeAsync('des.level_init({ style = "mazegrid" })');
+    assert.equal(requireGameLevel().requireAt(20, 10).typ, STONE);
+});
+
+void test('Lua graves place their epitaphs and leave trapped squares unchanged', async t => {
+    const lua = await levelLua(t);
+    await lua.executeAsync(`
+        des.map({ x = 10, y = 5, map = [[...]] })
+        des.grave(0, 0, "Remembered here")
+        des.trap({ x = 1, y = 0, type = "pit", victim = false })
+        des.grave({ coord = {1, 0}, text = "Cannot be placed" })
+        des.grave({ coord = {2, 0}, text = "Another epitaph" })
+    `);
+    const level = requireGameLevel();
+    assert.equal(level.requireAt(10, 5).typ, GRAVE);
+    assert.equal(level.requireAt(11, 5).typ, ROOM);
+    assert.equal(level.requireAt(12, 5).typ, GRAVE);
+    const epitaph = level.engravings?.find(engraving => engraving.x === 10 && engraving.y === 5);
+    assert.ok(epitaph, 'the grave should have a headstone');
+    assert.equal(epitaph.engr_type, HEADSTONE);
+    assert.equal(epitaph.text, 'Remembered here');
+});
+
+void test('Lua grave and feature tables prefer explicit coordinates and fall back when both are absent', async t => {
+    const lua = await levelLua(t);
+    await lua.executeAsync(`
+        des.map({ x = 10, y = 5, map = [[......]] })
+        des.grave({ x = 0, y = 0, coord = {1, 0}, text = "Explicit grave" })
+        des.feature({ type = "fountain", x = 2, y = 0, coord = {3, 0} })
+        des.grave({ x = -1, y = -1, coord = {4, 0}, text = "Fallback grave" })
+        des.feature({ type = "fountain", x = -1, y = -1, coord = {5, 0} })
+    `);
+    const level = requireGameLevel();
+    assert.equal(level.requireAt(10, 5).typ, GRAVE);
+    assert.equal(level.requireAt(11, 5).typ, ROOM);
+    assert.equal(level.requireAt(12, 5).typ, FOUNTAIN);
+    assert.equal(level.requireAt(13, 5).typ, ROOM);
+    assert.equal(level.requireAt(14, 5).typ, GRAVE);
+    assert.equal(level.requireAt(15, 5).typ, FOUNTAIN);
+});
+
+void test('Lua feature tables set and clear the native looted-state flags', async t => {
+    const lua = await levelLua(t);
+    await lua.executeAsync(`
+        des.map({ x = 10, y = 5, map = [[....]] })
+        des.feature({ type = "fountain", coord = {0, 0}, looted = true, warned = true })
+        des.feature({ type = "sink", x = 1, y = 0, pudding = true, dishwasher = true, ring = true })
+        des.feature({ type = "throne", x = 2, y = 0, looted = true })
+        des.feature({ type = "tree", x = 3, y = 0, looted = true, swarm = true })
+    `);
+    const level = requireGameLevel();
+    assert.equal(level.requireAt(10, 5).looted, F_LOOTED | F_WARNED);
+    assert.equal(level.requireAt(11, 5).looted, S_LPUDDING | S_LDWASHER | S_LRING);
+    assert.equal(level.requireAt(12, 5).looted, T_LOOTED);
+    assert.equal(level.requireAt(13, 5).looted, TREE_LOOTED | TREE_SWARM);
+    await lua.executeAsync(`
+        des.feature({ type = "fountain", x = 0, y = 0, looted = false })
+        des.feature({ type = "sink", x = 0, y = 0, ring = true })
+    `);
+    assert.equal(level.requireAt(10, 5).typ, FOUNTAIN, 'another feature cannot replace furniture');
+    assert.equal(level.requireAt(10, 5).looted, F_WARNED, 'omitted flags retain their values');
+});
+
+void test('numeric false in Lua monster options suppresses birth counting', async t => {
+    const lua = await levelLua(t);
+    const species = MONSTER_NAME.indexOf('orc');
+    const births = game.mvitals?.[species]?.born ?? 0;
+    await lua.executeAsync(`
+        des.map({ x = 10, y = 5, map = [[...]] })
+        des.monster({ id = "orc", x = 1, y = 0, group = 0, countbirth = 0 })
+    `);
+    assert.equal(game.mvitals?.[species]?.born ?? 0, births);
+    assert.equal(requireGameLevel().monsters.length, 1);
+});
+
+void test('Lua gas clouds retain their damage and lifetime and accept point placement', async t => {
+    const lua = await levelLua(t);
+    await lua.executeAsync(`
+        des.map({ x = 10, y = 5, map = [[...]] })
+        des.gas_cloud({ selection = selection.area(0, 0, 1, 0), damage = 7, ttl = 12 })
+        des.gas_cloud({ x = 20, y = 8, damage = 3, ttl = 9 })
+    `);
+    const [area, point] = requireGameLevel().regions ?? [];
+    assert.ok(area && point, 'both cloud forms should create a region');
+    assert.equal(area.damage, 7);
+    assert.equal(area.ttl, 12);
+    assert.equal(point.damage, 3);
+    assert.equal(point.ttl, 9);
+    assert.deepEqual(point.cells, [{ x: 20, y: 8 }]);
+});
+
+void test('Lua gas clouds prefer explicit coordinates and use coord when both axes are absent', async t => {
+    const lua = await levelLua(t);
+    await lua.executeAsync(`
+        des.map({ x = 10, y = 5, map = [[...]] })
+        des.gas_cloud({ x = 20, y = 8, coord = {30, 9} })
+        des.gas_cloud({ x = -1, y = -1, coord = {x = 30, y = 9} })
+        des.gas_cloud({ coord = {40, 10} })
+    `);
+    const [explicit, absent, omitted] = requireGameLevel().regions ?? [];
+    assert.ok(explicit && absent && omitted, 'each coordinate form should create a cloud');
+    assert.deepEqual(explicit.cells, [{ x: 20, y: 8 }]);
+    assert.deepEqual(absent.cells, [{ x: 30, y: 9 }]);
+    assert.deepEqual(omitted.cells, [{ x: 40, y: 10 }]);
+});
+
+for (const source of ['hero', 'level generation', 'monster'] as const) {
+    void test(`a Lua selection cloud created by ${source} ${source === 'hero' ? 'angers' : 'does not anger'} its victim`, async t => {
+        const lua = await levelLua(t);
+        const input = freshTurnRoom();
+        await lua.executeAsync(`
+            des.map({ x = 10, y = 10, map = [[...]] })
+            des.monster({ id = "jackal", x = 1, y = 0, peaceful = true, group = false })
+        `);
+        const victim = requireGameLevel().monsters[0];
+        assert.ok(victim);
+        victim.mhp = victim.mhpmax = 100;
+        victim.mcanmove = 0;
+        victim.movement = 0;
+        game.in_mklev = source === 'level generation';
+        game.context.mon_moving = source === 'monster';
+        await lua.executeAsync(`
+            des.gas_cloud({ selection = selection.area(1, 0, 1, 0), damage = 8, ttl = 10 })
+        `);
+        game.in_mklev = false;
+        game.context.mon_moving = false;
+        input.feed('.' + ' '.repeat(20));
+
+        await moveloop_core();
+        await moveloop_core();
+
+        assert.ok(victim.mhp < 100, 'the cloud must hurt its occupant');
+        assert.equal(Boolean(victim.mpeaceful), source !== 'hero');
+    });
+}
+
+void test('a hero-created Lua selection cloud awards kill credit and experience', async t => {
+    const lua = await levelLua(t);
+    const input = freshTurnRoom();
+    await lua.executeAsync(`
+        des.map({ x = 10, y = 10, map = [[...]] })
+        des.monster({ id = "jackal", x = 1, y = 0, peaceful = false, group = false })
+        des.gas_cloud({ selection = selection.area(1, 0, 1, 0), damage = 8, ttl = 10 })
+    `);
+    const victim = requireGameLevel().monsters[0];
+    assert.ok(victim);
+    victim.mhp = 1;
+    victim.mcanmove = 0;
+    victim.movement = 0;
+    const experience = game.u.uexp ?? 0;
+    input.feed('.' + ' '.repeat(20));
+
+    await moveloop_core();
+    await moveloop_core();
+
+    assert.equal(requireGameLevel().monsters.includes(victim), false);
+    assert.equal(game.u.uconduct?.killer, 1);
+    assert.ok((game.u.uexp ?? 0) > experience);
+});
+
+void test('Lua quantities create separate nonstacking objects and one stack of mergeable objects', async t => {
+    const lua = await levelLua(t);
+    await lua.executeAsync(`
+        des.map({ x = 10, y = 5, map = [[...]] })
+        des.object({ id = "plate mail", x = 0, y = 0, quantity = 3 })
+        des.object({ id = "dagger", x = 1, y = 0, quantity = 4 })
+    `);
+    const level = requireGameLevel();
+    const armorType = OBJECT_NAMES.indexOf('plate mail');
+    const armor = (level.objects[10]?.[5] ?? []).filter(object => object.otyp === armorType);
+    assert.equal(armor.length, 3);
+    assert.ok(armor.every(object => object.quan === 1));
+    const daggers = (level.objects[11]?.[5] ?? []).filter(object => object.otyp === DAGGER);
+    assert.equal(daggers.length, 1);
+    assert.equal(daggers[0]?.quan, 4);
+});
+
+void test('Lua object fields honor poison, dilution, revival and known-trap aliases', async t => {
+    const lua = await levelLua(t);
+    await lua.executeAsync(`
+        des.map({ x = 10, y = 5, map = [[....]] })
+        des.object({ id = "arrow", x = 0, y = 0, trapped = true })
+        des.object({ id = "potion of healing", x = 1, y = 0, eroded = 1 })
+        des.object({ id = "corpse", montype = "troll", x = 2, y = 0, eroded = 4 })
+        des.object({ id = "chest", x = 3, y = 0, trapped = true, trap_known = true })
+    `);
+    const level = requireGameLevel();
+    assert.equal(level.objects[10]?.[5]?.[0]?.opoisoned, true);
+    assert.equal(level.objects[11]?.[5]?.[0]?.odiluted, true);
+    assert.equal(level.objects[12]?.[5]?.[0]?.norevive, true);
+    assert.equal(level.objects[13]?.[5]?.[0]?.tknown, true);
+});
+
+void test('Lua terrain closes and orients secret doors and removes engravings under clouds', async t => {
+    const lua = await levelLua(t);
+    await lua.executeAsync(`
+        des.map({ x = 10, y = 5, map = [[-...]] })
+        des.engraving({ x = 3, y = 0, text = "No surface in a cloud", degrade = false })
+        des.terrain(1, 0, "S")
+        des.terrain(selection.area(3, 0, 3, 0), "C")
+    `);
+    const level = requireGameLevel();
+    const door = level.requireAt(11, 5);
+    assert.equal(door.typ, SDOOR);
+    assert.equal(door.doormask, D_CLOSED);
+    assert.equal(door.horizontal, true);
+    assert.equal(level.requireAt(13, 5).typ, CLOUD);
+    assert.equal(level.engravings?.some(engraving => engraving.x === 13 && engraving.y === 5), false);
+});
+
+void test('Lua corridors join the requested doors of two rooms', async t => {
+    const lua = await levelLua(t);
+    await lua.executeAsync(`
+        des.map({ x = 10, y = 5, map = [[---     ---
+|.|     |.|
+---     ---]] })
+        des.region({ region = {1,1,1,1}, irregular = true, lit = 0 })
+        des.region({ region = {9,1,9,1}, irregular = true, lit = 0 })
+        des.door("open", 2, 1)
+        des.door("open", 8, 1)
+        des.corridor({ srcroom = 0, srcdoor = 0, srcwall = "east",
+            destroom = 1, destdoor = 0, destwall = "west" })
+    `);
+    const level = requireGameLevel();
+    for (let x = 13; x <= 17; x++)
+        assert.ok([CORR, SCORR].includes(level.requireAt(x, 6).typ), `corridor should reach ${x},6`);
+    assert.equal(level.requireAt(15, 7).typ, STONE);
+});
+
+void test('non_passwall without a selection protects all solid terrain on the level', async t => {
+    const lua = await levelLua(t);
+    await lua.executeAsync(`
+        des.map({ x = 10, y = 5, map = [[T.F|]] })
+        des.non_passwall()
+    `);
+    const level = requireGameLevel();
+    for (const { x, y } of [{ x: 10, y: 5 }, { x: 12, y: 5 }, { x: 13, y: 5 }, { x: 30, y: 10 }])
+        assert.ok((level.requireAt(x, y).wall_info & W_NONPASSWALL) !== 0, `solid terrain at ${x},${y}`);
+    assert.equal(level.requireAt(11, 5).wall_info & W_NONPASSWALL, 0);
+});
+
+void test('Lua wall_property applies its rectangle relative to the last map', async t => {
+    const lua = await levelLua(t);
+    await lua.executeAsync(`
+        des.map({ x = 10, y = 5, map = [[|||]] })
+        des.wall_property({ region = {0, 0, 1, 0}, property = "nonpasswall" })
+    `);
+    const level = requireGameLevel();
+    assert.ok(level.requireAt(10, 5).wall_info & W_NONPASSWALL);
+    assert.ok(level.requireAt(11, 5).wall_info & W_NONPASSWALL);
+    assert.equal(level.requireAt(12, 5).wall_info & W_NONPASSWALL, 0);
+});
+
+void test('Lua wallify honors an explicit rectangle in level coordinates', async t => {
+    const lua = await levelLua(t);
+    await lua.executeAsync(`
+        des.map({ x = 10, y = 5, map = [[.x]] })
+        des.wallify({ x1 = 9, y1 = 4, x2 = 10, y2 = 6 })
+    `);
+    const level = requireGameLevel();
+    assert.equal(level.requireAt(9, 5).typ, VWALL);
+    assert.equal(level.requireAt(11, 5).typ, STONE, 'terrain outside the rectangle stays unchanged');
+});
+
+void test('Lua line and rectangle methods extend copies and randline accepts a new selection', async t => {
+    const lua = await levelLua(t);
+    await lua.executeAsync(`
+        des.map({ x = 10, y = 5, map = [[xxxxxxxxxxxxxxxxxxxx]] })
+        local original = selection.area(0, 0, 0, 0)
+        local rooms = original:fillrect(2, 1, 4, 2):rect(6, 1, 8, 3):line(10, 1, 12, 1)
+        original_count = original:numpoints()
+        des.terrain(rooms, ".")
+        des.terrain(selection.randline(14, 1, 18, 1, 0), "#")
+    `);
+    const level = requireGameLevel();
+    assert.equal(lua.getGlobal('original_count'), 1, 'drawing returns a copy of the original selection');
+    assert.equal(level.requireAt(10, 5).typ, ROOM);
+    assert.equal(level.requireAt(13, 7).typ, ROOM);
+    assert.equal(level.requireAt(17, 7).typ, STONE, 'an outlined rectangle leaves its center alone');
+    assert.equal(level.requireAt(20, 6).typ, ROOM);
+    assert.equal(level.requireAt(26, 6).typ, CORR);
+});
+
+void test('Lua terrain replacement honors explicit rectangle fields before a selection', async t => {
+    const lua = await levelLua(t);
+    await lua.executeAsync(`
+        des.map({ x = 10, y = 5, map = [[.....]] })
+        des.replace_terrain({ x1 = 1, y1 = 0, x2 = 2, y2 = 0,
+            selection = selection.area(0, 0, 4, 0), fromterrain = ".", toterrain = "-" })
+    `);
+    const level = requireGameLevel();
+    assert.equal(level.requireAt(10, 5).typ, ROOM);
+    assert.equal(level.requireAt(11, 5).typ, HWALL);
+    assert.equal(level.requireAt(12, 5).typ, HWALL);
+    assert.equal(level.requireAt(13, 5).typ, ROOM);
+    assert.equal(level.requireAt(11, 5).horizontal, false, 'replacement preserves the old orientation flag');
+});
+
+void test('Lua level flags accept native case-insensitive names and enable shrouded memory', async t => {
+    const lua = await levelLua(t);
+    requireGameLevel().flags.hero_memory = false;
+    await lua.executeAsync('des.level_flags("ShRoUd", "NoTeLePoRt")');
+    assert.equal(requireGameLevel().flags.hero_memory, true);
+    assert.equal(requireGameLevel().flags.noteleport, true);
+});
+
+void test('named Lua objects do not become random artifacts before receiving their names', async t => {
+    const lua = await levelLua(t);
+    await lua.executeAsync(`
+        des.level_init({ style = "solidfill", fg = ".", lit = 0 })
+        for i = 1, 80 do
+            des.object({ id = "long sword", name = "Ceremonial blade" })
+        end
+    `);
+    const swords = floorObjects(requireGameLevel())
+        .filter(object => object.oextra?.oname === 'Ceremonial blade');
+    assert.equal(swords.length, 80);
+    assert.equal(swords.filter(object => object.oartifact).length, 0);
+});
+
+void test('Lua blessing options leave gold uncursed and unblessed', async t => {
+    const lua = await levelLua(t);
+    await lua.executeAsync(`
+        des.map({ x = 10, y = 5, map = [[..]] })
+        des.object({ id = "gold piece", x = 0, y = 0, buc = "cursed", quantity = 5 })
+        des.object({ id = "gold piece", x = 1, y = 0, buc = "blessed", quantity = 5 })
+    `);
+    for (const object of floorObjects(requireGameLevel())) {
+        assert.equal(!!object.cursed, false);
+        assert.equal(!!object.blessed, false);
+    }
+});
+
+void test('Lua species-bearing objects accept native empty tokens and egg ownership', async t => {
+    const lua = await levelLua(t);
+    await lua.executeAsync(`
+        des.map({ x = 10, y = 5, map = [[.....]] })
+        des.object({ id = "tin", montype = "empty", x = 0, y = 0 })
+        des.object({ id = "tin", montype = "spinach", x = 1, y = 0 })
+        des.object({ id = "egg", montype = "red dragon", x = 2, y = 0, laid_by_you = 1 })
+        des.object({ id = "figurine", montype = "newt", x = 3, y = 0, spe = 9 })
+        des.object({ id = "dagger", x = 4, y = 0, spe = "random", quantity = "random" })
+    `);
+    const level = requireGameLevel();
+    assert.equal(level.objects[10]?.[5]?.[0]?.spe, 0);
+    assert.equal(level.objects[11]?.[5]?.[0]?.spe, 1);
+    assert.equal(level.objects[12]?.[5]?.[0]?.spe, 1, 'an egg laid by the hero retains that ownership');
+    assert.equal(level.objects[13]?.[5]?.[0]?.spe, 0, 'figurines reserve spe rather than accepting an enchantment');
+    assert.equal(level.objects[14]?.[5]?.length, 1);
+});
+
+void test('a named Lua novel retains the requested title when read', async t => {
+    const lua = await levelLua(t);
+    await lua.executeAsync(`
+        des.map({ x = 10, y = 5, map = [[.x]] })
+        des.object({ id = "novel", name = "The Shepherd's Crown", x = 0, y = 0 })
+    `);
+    const book = floorObjects(requireGameLevel())[0];
+    assert.ok(book, 'the level should contain its named novel');
+    assert.equal(novelTitle(book), "The Shepherd's Crown");
+});
+
+void test('explicit absent coordinates keep native random-feature and selection-cloud semantics', async t => {
+    const lua = await levelLua(t);
+    await lua.executeAsync(`
+        des.map({ x = 10, y = 5, map = [[ . ]] })
+        for i = 1, 10 do des.feature({ type = "fountain", coord = {-1, -1} }) end
+        des.gas_cloud({ x = -1, y = -1, selection = selection.area(1, 0, 1, 0), ttl = 10 })
+    `);
+    const level = requireGameLevel();
+    assert.equal(level.requireAt(10, 5).typ, STONE);
+    assert.equal(level.requireAt(11, 5).typ, FOUNTAIN);
+    assert.equal(level.requireAt(12, 5).typ, STONE);
+    assert.deepEqual(level.regions?.[0]?.cells, [{ x: 11, y: 5 }]);
+});
+
+void test('Lua drawbridges require an adjacent wall and preserve the native default direction', async t => {
+    const lua = await levelLua(t);
+    resetInputState().feed(Array.from({ length: 16 }, () => ' '));
+    await lua.executeAsync(`
+        des.map({ x = 10, y = 5, map = [[...]] })
+        des.drawbridge({ x = 1, y = 0, dir = "north", state = "closed" })
+    `);
+    const level = requireGameLevel();
+    assert.equal(level.requireAt(11, 5).typ, ROOM, 'a bridge cannot create its own supporting wall');
+    assert.equal(level.requireAt(11, 4).typ, STONE);
+    await lua.executeAsync(`
+        des.map({ x = 10, y = 5, map = [[--
+|.]] })
+        des.drawbridge({ x = 1, y = 1, state = "closed" })
+    `);
+    assert.equal(level.requireAt(11, 6).typ, DRAWBRIDGE_UP);
+    assert.equal(level.requireAt(10, 6).typ, DBWALL);
+    assert.equal((level.requireAt(11, 6).drawbridgemask ?? 0) & DB_DIR, DB_WEST);
+});
