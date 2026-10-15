@@ -10,10 +10,12 @@ import type { DungeonLocation } from './dungeon_types.js';
 import type { Monster, PriestData, MinionData } from './monster_types.js';
 import type { Room } from './map_types.js';
 import { deityName } from './alignment.js';
+import { heroSpineName } from './body_parts.js';
+import { endVoluntaryMultiTurn } from './command_state.js';
 import { recordAchievement } from './achievements.js';
 import { setMonsterMalign } from './monster_alignment.js';
 import { angerMonster, wakeMonster } from './monster_anger.js';
-import { canSeeMonster, plineWithContinuation } from './display.js';
+import { canSeeMonster, canSpotMonster, plineWithContinuation } from './display.js';
 import type { MessagePublisher } from './display.js';
 import { exerciseAttribute } from './attrib.js';
 import { castMonsterSpellRay } from './breath_ray.js';
@@ -22,13 +24,14 @@ import { cansee, couldsee } from './vision.js';
 import { d, rn2 } from './rng.js';
 import {
     A_NONE, A_WIS, AM_SHRINE, Amask2align, BOLT_LIM, D_CLOSED, D_LOCKED,
-    ACH_TMPL, In_endgame, IS_ALTAR, IS_DOOR, IS_OBSTRUCTED, LAVAWALL, TEMPLE, WATER,
+    ACH_TMPL, In_endgame, IS_ALTAR, IS_DOOR, IS_OBSTRUCTED, LAVAWALL, MM_NOMSG, TEMPLE, WATER,
 } from './const.js';
 import { roomForRoomno, roomsAt } from './room.js';
 import { MONSTER_FLAGS2 } from './monster_data.js';
 import { removeMonsterFromGame } from './monster_departure.js';
 import { monsterName } from './monster_name.js';
 import { heroIsHallucinating } from './senses.js';
+import { makemonAt } from './mklev.js';
 
 const M2_MINION = 0x00001000;
 const PM_DEATH = 311, PM_PESTILENCE = 312, PM_FAMINE = 313;
@@ -258,10 +261,24 @@ export async function intemple(roomno: number, state: GameState = game): Promise
         else if (eerie === 1)
             await plineWithContinuation(formatFeltMessage('like you are being watched.', state));
         else if (eerie === 2)
-            await plineWithContinuation('A shiver runs down your spine.');
-        // Ghost creation remains with the monster-construction owner.  Keep
-        // the source gate in stream even when it does not fire.
-        rn2(5);
+            await plineWithContinuation(`A shiver runs down your ${heroSpineName(state)}.`);
+        if (!rn2(5)) {
+            const ghost = await makemonAt(287, state.u.ux, state.u.uy, MM_NOMSG);
+            if (ghost) {
+                const born = state.mvitals?.[287]?.born ?? 0;
+                await plineWithContinuation(canSpotMonster(ghost)
+                    ? `A${born < 5 ? 'n enormous' : ''} ghost appears next to you${born < 10 ? '!' : '.'}`
+                    : 'You sense a presence close by!');
+                ghost.mpeaceful = 0;
+                setMonsterMalign(ghost, state);
+                if (state.flags.verbose)
+                    await plineWithContinuation('You are frightened to death, and unable to move.');
+                endVoluntaryMultiTurn(state);
+                state._helplessTurns = Math.max(state._helplessTurns ?? 0, 3);
+                state._helplessReason = 'being terrified of a ghost';
+                state._helplessDoneMessage = 'You regain your composure.';
+            }
+        }
         return null;
     }
 
