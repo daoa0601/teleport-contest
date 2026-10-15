@@ -7,6 +7,7 @@ import { initializeHeroSpecies } from '../../js/u_init.js';
 import { initializeHeroRoomMembership } from '../../js/room.js';
 import { initializeMonsterVitals } from '../../js/monster_population.js';
 import { initializeFruitRegistry } from '../../js/fruit.js';
+import { DEFAULT_TEST_DATETIME } from './calendar.js';
 export function requireFixtureGame(state) {
     requirePlayingGame(state);
     if (!state.mvitals)
@@ -20,7 +21,7 @@ function attributes(value) {
 function visibleGrid() {
     return Array.from({ length: ROWNO }, () => new Uint8Array(COLNO).fill(COULD_SEE | IN_SIGHT));
 }
-export function freshGame({ level = new GameMap(), role = 'archeologist', race = races.find(candidate => candidate.name === 'human'), heroX = 10, heroY = 10, hero = {}, flags = { verbose: true, autoopen: true, pickup: false }, iflags = {}, context = { move: 0, forcefight: false, nopick: false }, moves = 1, inventory = [], } = {}) {
+export function freshGame({ datetime = DEFAULT_TEST_DATETIME, level = new GameMap(), role = 'archeologist', race = races.find(candidate => candidate.name === 'human'), heroX = 10, heroY = 10, hero = {}, flags = { verbose: true, autoopen: true, pickup: false }, iflags = {}, context = { move: 0, forcefight: false, nopick: false }, moves = 1, inventory = [], } = {}) {
     if (!race)
         throw new Error('The native human race is required');
     const roleKey = typeof role === 'string' ? role : role.key;
@@ -52,6 +53,7 @@ export function freshGame({ level = new GameMap(), role = 'archeologist', race =
         weaponSkills: null, skillRecord: [], weapon_slots: 0,
     };
     const state = resetGame();
+    state.datetime = datetime;
     state.level = level;
     state.u = u;
     state.urole = typeof role === 'string' ? roleData : role;

@@ -5,12 +5,14 @@ import { resetGame } from '../../js/gstate.js';
 import { init_objects } from '../../js/o_init.js';
 import { initRng } from '../../js/rng.js';
 import { aligns, races, roles } from '../../js/roles.js';
+import { DEFAULT_TEST_DATETIME } from './calendar.js';
 import {
     finishStartingDiscoveries, uInitInventoryAttrs, uInitMisc,
 } from '../../js/u_init.js';
 
 export interface HeroStartupOptions {
     role: RoleKey | Role;
+    datetime?: string;
     race?: RaceName | Race;
     alignment?: AlignmentName | Alignment;
     flags?: GameState['flags'];
@@ -31,12 +33,14 @@ function namedEntry<T extends { key?: string; name: string | { m: string; f: str
 
 export function prepareHeroStartup({
     role,
+    datetime = DEFAULT_TEST_DATETIME,
     race = 'human',
     alignment = 'chaotic',
     flags = {},
     seed = 123n,
 }: HeroStartupOptions) {
     const state = resetGame();
+    state.datetime = datetime;
     const selectedRole = namedEntry(roles, role, 'role');
     const selectedRace = namedEntry(races, race, 'race');
     const selectedAlignment = namedEntry(aligns, alignment, 'alignment');

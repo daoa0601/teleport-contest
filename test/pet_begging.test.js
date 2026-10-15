@@ -106,7 +106,8 @@ void test('a peaceful hissing pet is silent after revealing its unseen position'
 for (const [hour, message] of [
     ['05', 'howls.'], ['06', 'whines.'], ['21', 'whines.'], ['22', 'howls.'],
 ]) {
-    void test(`a hungry dog follows full-moon night rules at ${hour}:00`, async () => {
+    void test(`a hungry dog follows full-moon night rules at ${hour}:00`, async (context) => {
+        context.mock.timers.enable({ apis: ['Date'], now: Date.UTC(2026, 6, 1, 12) });
         const monster = await hungryPet('little dog');
         game.flags.moonphase = 4;
         game.datetime = `20261010${hour}0000`;
