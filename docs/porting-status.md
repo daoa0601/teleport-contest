@@ -284,7 +284,7 @@ batch runs also compare matched screens per session with the previous batch
 Runs: `.cache/generalization/batch18-89a6e24-{eval,public}` and
 `triage-89a6e24` (pool) in the verify worktree (baseline `base-06d7e73`:
 143/300; batch 17: 299/300, pool 2,492/2,500). No verified random call was
-lost; the ledgers now hold 350 eval and 191 public functions. The
+lost; the ledgers now hold 350 eval and 296 public functions. The
 state oracle finds all 300 sessions matching C state throughout.
 
 ## Next work
