@@ -1,6 +1,5 @@
 // C timeout.c:do_storms(), after ambient sounds and before hunger.
 import { castMonsterSpellRay } from './breath_ray.js';
-import { endVoluntaryMultiTurn } from './command_state.js';
 import { CLOUD, COLNO, ROWNO } from './const.js';
 import { plineWithContinuation } from './display.js';
 import { game, requirePlayingGame } from './gstate.js';
@@ -48,9 +47,11 @@ export async function doStorms(state = game): Promise<void> {
     if (state.u.invulnerable) return;
     await stopHeroOccupation(state);
     if ((state._helplessTurns ?? 0) <= 3) {
-        stopRun(state);
-        endVoluntaryMultiTurn(state);
+        // nomul(-3) clears sleep when it accepts the thunder's delay.
+        state.u.usleep = 0;
+        state.multi = -3;
         state._helplessTurns = 3;
+        stopRun(state);
     }
     state._helplessReason = 'hiding from thunderstorm';
     delete state._helplessDoneMessage;
