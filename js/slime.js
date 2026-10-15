@@ -189,6 +189,8 @@ function removeHeroSpeed(state) {
 }
 function cancelHeroPetrification(state) {
     const hero = state.u;
+    if (hero.stoned || (hero.stonedTurns ?? 0) > 0)
+        state.context.botl = true;
     hero.stonedTurns = 0;
     hero.stoned = false;
     delete hero.stoneKiller;
@@ -234,6 +236,10 @@ export async function advanceHeroSliming({ state = game, publish = plineWithCont
     if (hero.slimedTurns > 0) {
         hero.slimed = true;
         return { active: true, died: false, turns: hero.slimedTurns };
+    }
+    if (heroIsGreenSlime(state)) {
+        clearHeroSliming(state);
+        return { active: false, died: false };
     }
     const killer = hero.slimeKiller || 'turned into green slime';
     const deathCause = hero.slimeKiller ? null : 'turned into green slime';
