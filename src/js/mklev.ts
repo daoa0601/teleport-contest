@@ -2822,9 +2822,6 @@ async function makemon(
         if (pendingMonster.mcorpsenm != null)
             monster.mcorpsenm = pendingMonster.mcorpsenm;
     }
-    if (mndx === PM_SHOPKEEPER) {
-        monster.mpeaceful = 1;
-    }
     if (generatedGhostName != null) setMonsterGivenName(monster, generatedGhostName);
     registerQuestLeader(monster);
     level.monsters[monsterIndex] = monster;
