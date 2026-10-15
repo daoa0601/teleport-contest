@@ -1,3 +1,4 @@
+import { changeHeroLuck } from './attrib.js';
 // C uhitm.c:hmon_hitmon_potion() and hmon_hitmon_misc_obj(). This phase
 // resolves the object's own effects; hmon owns bonuses and remaining damage.
 import {
@@ -118,7 +119,7 @@ export async function resolveHeroObjectContact(
     case MIRROR:
         if (objectBreaksOnImpact(object, random)) {
             await publish(`You break ${ownedSimpleName(object, state)}.  That's bad luck!`);
-            state.u.uluck = Math.max(-13, (state.u.uluck ?? 0) - 2);
+            changeHeroLuck(-2, state);
             await consumeContactObject(object, state, false);
             contact.getDamageBonus = false;
             contact.specialMessage = true;

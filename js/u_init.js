@@ -506,6 +506,8 @@ export function uInitMisc(handednessRoll) {
     // disclosure; combat and enlightenment must share the same owner.
     if (g.urole && ['barbarian', 'healer'].includes(g.urole.key))
         grantIntrinsicProperty('poisonResistance', 'role', g);
+    if (g.urole?.key === 'valkyrie')
+        grantIntrinsicProperty('coldResistance', 'role', g);
     if (g.urace?.name === 'orc')
         grantIntrinsicProperty('poisonResistance', 'race', g);
     if (g.urole?.key === 'rogue')
@@ -999,9 +1001,23 @@ async function finishAddedInventoryItem(item, recoveredThrownStack = false) {
     return item;
 }
 export async function addInventoryItem(raw, presentation = null, observe = true) {
+    return await addInventoryItemCore(raw, presentation, observe, null);
+}
+export async function addInventoryItemBefore(raw, next) {
+    return await addInventoryItemCore(raw, null, true, next);
+}
+async function addInventoryItemCore(raw, presentation, observe, next) {
     const wasThrown = raw.how_lost === LOST_THROWN;
     let item = prepareInventoryItem(raw, presentation, observe);
     await prepareInventoryAddition(item, game);
+    const nextIndex = next ? game.inventory.indexOf(next) : -1;
+    // C addinv_core0(): reinsertion needs a predecessor and skips both
+    // merging and autoquivering, including with fixed inventory letters.
+    if (nextIndex > 0) {
+        item.where = 'inventory';
+        game.inventory.splice(nextIndex, 0, item);
+        return await finishAddedInventoryItem(item);
+    }
     const existing = game.uquiver && mergable(game.uquiver, item, game) ? game.uquiver
         : game.inventory.find(other => mergable(other, item, game));
     const added = existing ? await mergeObjectStacks(existing, item, game)

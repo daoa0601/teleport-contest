@@ -4,7 +4,7 @@ import { formatFeltMessage } from './hero_speech.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { makeStunned } from './hero_mental_status.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
-import { currentAttribute, exerciseAttribute } from './attrib.js';
+import { changeHeroLuck, currentAttribute, exerciseAttribute } from './attrib.js';
 import { heroHasFreeAction } from './armor.js';
 import { heroSpecies } from './hero_species.js';
 import { A_DEX, A_STR, A_WIS, STONING, M_SEEN_ACID, M_SEEN_COLD, M_SEEN_ELEC, M_SEEN_FIRE, M_SEEN_MAGR, } from './const.js';
@@ -248,7 +248,7 @@ async function applyParalysisPassive({ monster, damage, state, publish, random, 
     }
     await publish(`${displayedMonsterName(monster, { state, capitalized: true, adjective: 'blind' })} cannot defend itself.`);
     if (random(500) === 0) {
-        state.u.uluck = Math.max(-13, (state.u.uluck ?? 0) - 1);
+        changeHeroLuck(-1, state);
     }
     return { heroDied: false };
 }

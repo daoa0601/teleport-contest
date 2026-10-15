@@ -8,10 +8,10 @@ import { makeBlinded } from './sight_change.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { heroHasHalfSpellDamage } from './spell_damage.js';
 import {
-    A_CON, A_MAX, ROOM,
+    A_CON, A_MAX, A_STR, ROOM,
 } from './const.js';
 import {
-    adjustAttribute, attributeChangeMessage, exerciseAttribute,
+    adjustAttribute, attributeChangeMessage, changeHeroLuck, exerciseAttribute, reportHeroEncumbrance,
 } from './attrib.js';
 import { artifactById } from './artifacts.js';
 import { mapLevel } from './detect.js';
@@ -94,10 +94,6 @@ function heroLuck() {
     return naturalLuck() + (game.u.moreluck ?? 0);
 }
 
-function changeLuck(amount: number): void {
-    game.u.uluck = Math.max(-13, Math.min(13, naturalLuck() + amount));
-}
-
 function inVladsTower() {
     return (game.u.uz ? game.dungeons[game.u.uz.dnum]?.dname : undefined) === "Vlad's Tower";
 }
@@ -118,6 +114,9 @@ async function announceAttributeChange(attribute: number, amount: number, condit
         && game.flags?.verbose === false) return result;
     const message = attributeChangeMessage(attribute, result);
     if (message) await plineWithContinuation(message);
+    if (result.changed && game._moveloopStarted
+        && (attribute === A_STR || attribute === A_CON))
+        await reportHeroEncumbrance(game);
     return result;
 }
 
@@ -199,7 +198,7 @@ async function normalThroneEffect(
     case 6:
         if (naturalLuck() + rn2(5) < 0) {
             await plineWithContinuation(formatFeltMessage('your luck is changing.'));
-            changeLuck(1);
+            changeHeroLuck(1);
         } else {
             await makeWish({ announce: game.flags?.verbose !== false });
         }
@@ -223,7 +222,7 @@ async function normalThroneEffect(
         );
         if (heroLuck() > 0) {
             await makeBlinded((game.u.blindTurns ?? 0) + rn1(100, 250));
-            changeLuck(heroLuck() > 1 ? -rnd(2) : -1);
+            changeHeroLuck(heroLuck() > 1 ? -rnd(2) : -1);
         } else {
             await rndcurse();
         }

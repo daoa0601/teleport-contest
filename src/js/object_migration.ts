@@ -1,3 +1,4 @@
+import { changeHeroLuck } from './attrib.js';
 // Objects which fall through downward passages and arrive on another level.
 // C refs: dokick.c down_gate(), impact_drop(), ship_object(), obj_delivery(),
 // and teleport.c rloco().
@@ -235,13 +236,10 @@ async function breaksInTransit(object: GameObject, state: PlayingGameState, publ
     if (!objectBreaksOnImpact(object, random)) return false;
 
     if (object.otyp === MIRROR)
-        state.u.uluck = Math.max(-13, (state.u?.uluck ?? 0) - 2);
+        changeHeroLuck(-2, state);
     if (object.otyp === EGG && object.spe
         && object.corpsenm !== undefined && Number.isInteger(object.corpsenm) && object.corpsenm >= 0) {
-        state.u.uluck = Math.max(
-            -13,
-            (state.u?.uluck ?? 0) - Math.min(quantity(object), 5),
-        );
+        changeHeroLuck(-Math.min(quantity(object), 5), state);
     }
     const crash = OBJECT_MATERIAL[object.otyp] === GLASS
         || object.otyp === EXPENSIVE_CAMERA;

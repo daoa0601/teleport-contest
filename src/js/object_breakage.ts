@@ -1,3 +1,4 @@
+import { changeHeroLuck } from './attrib.js';
 // Object breakage and its immediate effects.
 // C refs: dothrow.c breaktest(), hero_breaks(), and breakobj().
 
@@ -257,9 +258,7 @@ export async function breakObjectAtLocation(object: GameObject, {
     if (showBreakMessage)
         await publishBreakMessage(object, visible, publish, state);
     if (heroCaused && object.otyp === MIRROR) {
-        state.u.uluck = Math.max(
-            -13, Math.min(13, (state.u.uluck ?? 0) - 2),
-        );
+        changeHeroLuck(-2, state);
     }
     const cameraDemon = object.otyp === EXPENSIVE_CAMERA
         ? await releaseCameraDemon(object, x, y, {

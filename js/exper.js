@@ -309,18 +309,17 @@ export async function loseHeroExperience(drainer = null, { state = game, publish
     state.context.botl = true;
     return false;
 }
-export function monsterExperience(monster, { killCount = 1, amphibious = false, } = {}) {
+export function monsterExperience(monster, { killCount = 1, amphibious = false, armorClass, } = {}) {
     const mnum = monster?.mnum ?? -1;
     const storedLevel = monster?.m_lev;
     const level = storedLevel !== undefined && Number.isFinite(storedLevel)
         ? storedLevel : (MONSTER_LEVEL[mnum] ?? 0);
     const [baseAc = 10, attackBonus = 0, levelMultiplier = 0, flatBonus = 0, eelWrap = 0] = MONSTER_EXPERIENCE_META[mnum] || [];
-    const armorClass = monster?.mac !== undefined && Number.isFinite(monster.mac) ? monster.mac
-        : monster?.ac !== undefined && Number.isFinite(monster.ac) ? monster.ac : baseAc;
-    const speed = MONSTER_MOVE[mnum] ?? monster?.mmove ?? NORMAL_SPEED;
+    const effectiveAc = armorClass ?? baseAc;
+    const speed = MONSTER_MOVE[mnum] ?? NORMAL_SPEED;
     let award = 1 + level * level;
-    if (armorClass < 3)
-        award += (7 - armorClass) * (armorClass < 0 ? 2 : 1);
+    if (effectiveAc < 3)
+        award += (7 - effectiveAc) * (effectiveAc < 0 ? 2 : 1);
     if (speed > NORMAL_SPEED)
         award += speed > (3 * NORMAL_SPEED / 2) ? 5 : 3;
     award += attackBonus + flatBonus + levelMultiplier * level;
@@ -343,8 +342,8 @@ export function monsterExperience(monster, { killCount = 1, amphibious = false, 
     }
     return award;
 }
-export function awardMonsterExperience(monster, { state = game, killCount = 1, amphibious = false, } = {}) {
-    const award = monsterExperience(monster, { killCount, amphibious });
+export function awardMonsterExperience(monster, { state = game, ...options } = {}) {
+    const award = monsterExperience(monster, options);
     addExperience(award, 0, state);
     return award;
 }

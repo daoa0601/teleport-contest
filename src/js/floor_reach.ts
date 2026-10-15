@@ -46,8 +46,9 @@ function trapAtHero(state: GameState): Trap | null {
         trap.tx === hero?.ux && trap.ty === hero?.uy) || null;
 }
 
-function heroTeetersAtPit(state: GameState, trap: Trap | null): boolean {
+export function heroTeetersAtPit(state: GameState, trap: Trap | null): boolean {
     return !!trap && is_pit(trap.ttyp) && !!trap.tseen
+        && trap.tx === state.u.ux && trap.ty === state.u.uy
         && !(state.u?.utrap && state.u.utraptype === TT_PIT);
 }
 

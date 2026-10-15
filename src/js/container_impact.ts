@@ -20,6 +20,7 @@ import {
     chargeDestroyedShopContent, settleDestroyedShopCharges,
 } from './shop_loss.js';
 import { objectWeight } from './weight.js';
+import { changeHeroLuck } from './attrib.js';
 
 export interface ContainerImpactOptions {
     state?: GameState;
@@ -30,11 +31,6 @@ export interface ContainerImpactOptions {
 
 const GEM_CLASS = 13;
 const GLASS = 19;
-
-function adjustLuck(state: GameState, delta: number): void {
-    const hero = state.u;
-    hero.uluck = Math.max(-13, Math.min(13, (hero.uluck ?? 0) + delta));
-}
 
 export async function containerImpactDamage(
     container: GameObject, x: number, y: number, {
@@ -73,11 +69,11 @@ export async function containerImpactDamage(
             continue;
 
         if (content.otyp === MIRROR)
-            adjustLuck(state, -2);
+            changeHeroLuck(-2, state);
         /* eggs laid by you: always exactly 1 breaks (dokick.c:447-450) */
         if (content.otyp === EGG && content.spe
             && eggHasMonsterSpecies(content))
-            adjustLuck(state, -1);
+            changeHeroLuck(-1, state);
 
         // C You_hear(): suppression and prefixes without skipping the
         // destruction itself.

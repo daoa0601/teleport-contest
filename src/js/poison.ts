@@ -92,11 +92,13 @@ async function updateEncumbrance(
     previous: number, state: GameState, publish: MessagePublisher,
 ): Promise<boolean> {
     const current = nearCapacity(state);
+    const message = encumbranceMessage(previous, current);
+    const dismissal = message ? await publish(message) : undefined;
+    // C encumber_msg() commits both the redraw request and oldcap after
+    // its message returns, including when that message opens a pager.
+    if (previous !== current) state.context.botl = true;
     state._encumbranceLevel = current;
     state.u._encumbrance = encumbranceLabel(current);
-    const message = encumbranceMessage(previous, current);
-    if (!message) return false;
-    const dismissal = await publish(message);
     return dismissal !== null && dismissal !== undefined;
 }
 

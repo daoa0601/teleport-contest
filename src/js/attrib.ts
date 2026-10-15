@@ -14,9 +14,10 @@ import { encumbranceLabel, encumbranceMessage, nearCapacity } from './weight.js'
 import { MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
 import { rn2, rnd } from './rng.js';
 import { propertyIsActive } from './properties.js';
+import { formMaximumStrength } from './polyself.js';
 import { DUNCE_CAP, GAUNTLETS_OF_POWER } from './object_data.js';
 import {
-    A_CHA, A_CON, A_DEX, A_INT, A_MAX, A_STR, A_WIS, Upolyd,
+    A_CHA, A_CON, A_DEX, A_INT, A_MAX, A_STR, A_WIS, LUCKMAX, LUCKMIN, Upolyd,
 } from './const.js';
 
 export type AttributeIndex = 0 | 1 | 2 | 3 | 4 | 5;
@@ -69,6 +70,11 @@ const ATTRIBUTE_NAME = [
 export const ATTRIBUTE_DISPLAY_ORDER: readonly AttributeIndex[] = Object.freeze([
     A_STR, A_DEX, A_CON, A_INT, A_WIS, A_CHA,
 ] as const);
+
+// C attrib.c:change_luck(). The carried Luck bonus is separate from uluck.
+export function changeHeroLuck(amount: number, state: GameState = game): void {
+    state.u.uluck = Math.max(LUCKMIN, Math.min(LUCKMAX, (state.u.uluck ?? 0) + amount));
+}
 
 function wornObject(state: GameState, slot: 'uarmg' | 'uwep' | 'uarmh'): GameObject | null {
     return state?.[slot] || state?.u?.[slot] || null;
@@ -133,7 +139,7 @@ export function adjustAttribute(attribute: number, amount: number, state: GameSt
     const oldBase = current[attribute];
     const oldMaximum = maximum[attribute];
     const raceMinimum = state.urace?.attrmin?.[attribute] ?? 3;
-    const raceMaximum = state.urace?.attrmax?.[attribute] ?? 18;
+    const raceMaximum = maximumAttribute(attribute, state);
 
     current[attribute] += amount;
     if (amount > 0 && current[attribute] > maximum[attribute]) {
@@ -165,6 +171,17 @@ export function adjustAttribute(attribute: number, amount: number, state: GameSt
         baseChanged: current[attribute] !== oldBase,
         maximumChanged: maximum[attribute] !== oldMaximum,
     };
+}
+
+// C attrib.h:ATTRMAX(). Only polymorphed Strength uses the creature's
+// limit; every other attribute keeps the hero's racial limit.
+export function maximumAttribute(attribute: AttributeIndex, state: GameState = game): number {
+    if (attribute === A_STR && Upolyd(state.u)) {
+        const species = state.u.umonnum;
+        if (species === undefined) throw new Error('Polymorphed Strength requires a creature form');
+        return formMaximumStrength(species);
+    }
+    return state.urace?.attrmax[attribute] ?? 18;
 }
 
 // C attrib.c:gainstr(). Random gains use base strength even when equipment
@@ -247,11 +264,14 @@ export function attributeChangeMessage(attribute: number, result: AttributeChang
     const word = result.amount > 0
         ? ATTRIBUTE_GAIN_WORD[attribute] : ATTRIBUTE_LOSS_WORD[attribute];
     if (!result.changed) {
+        if (state.flags.verbose === false) return null;
         if (result.baseChanged || result.maximumChanged) {
             const direction = result.amount > 0 ? 'improved' : 'declined';
             return `Your innate ${ATTRIBUTE_NAME[attribute]} has ${direction}.`;
         }
-        return `You're already as ${word} as you can get.`;
+        const bonus = state.u.abon?.a[attribute] ?? 0;
+        const opposingBonus = result.amount > 0 ? bonus < 0 : bonus > 0;
+        return `You're ${opposingBonus ? 'currently' : 'already'} as ${word} as you can get.`;
     }
     const emphasis = Math.abs(result.amount) > 1 ? 'very ' : '';
     return formatFeltMessage(`${emphasis}${word}!`, state);
@@ -312,7 +332,7 @@ export async function checkAttributeExercise(sourceTurn: number, state: GameStat
         if (!accumulated) continue;
         const direction = Math.sign(accumulated);
         const minimum = state.urace?.attrmin?.[attribute] ?? 3;
-        const maximum = Math.min(18, state.urace?.attrmax?.[attribute] ?? 18);
+        const maximum = Math.min(18, maximumAttribute(attribute, state));
         const base = hero.acurr.a[attribute];
         const withinLimit = direction > 0 ? base < maximum : base > minimum;
         const canExercise = attribute === A_WIS || !Upolyd(hero);

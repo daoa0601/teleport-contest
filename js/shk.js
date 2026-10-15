@@ -24,6 +24,7 @@ import { propertyIsActive } from './properties.js';
 import { publishMonsterWake } from './monster_wake.js';
 import { A_CHA, A_WIS, ANTHOLE, BARRACKS, BEEHIVE, COCKNEST, COURT, DELPHI, In_mines, LEPREHALL, M_AP_NOTHING, M_AP_MONSTER, M_AP_TYPE, MORGUE, OROOM, ROOMOFFSET, SHOPBASE, SWAMP, TEMPLE, THRONE, Upolyd, MGIVENNAME, ZOO, } from './const.js';
 import { insideRoom, inTown, roomForRoomno, roomsAt, updateHeroRoomMembership } from './room.js';
+import { searchSpecial } from './mkroom.js';
 import { intemple } from './priest.js';
 import { recordDiscoveredRoom } from './dungeon.js';
 import { BAG_OF_TRICKS, BRASS_LANTERN, CAN_OF_GREASE, CHEST, CORPSE, CRYSTAL_BALL, DRUM_OF_EARTHQUAKE, EXPENSIVE_CAMERA, HORN_OF_PLENTY, ICE_BOX, LARGE_BOX, MAGIC_FLUTE, MAGIC_LAMP, MAGIC_MARKER, OBJECT_CHARGED, OBJECT_COST, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_INITIAL_KNOWN, DUNCE_CAP, OIL_LAMP, POT_OIL, TINNING_KIT, WORTHLESS_PIECE_OF_WHITE_GLASS, } from './object_data.js';
@@ -1257,8 +1258,7 @@ export async function checkSpecialRoom({ newLevel = false } = {}) {
         }
         if (room.rtype !== OROOM || type === OROOM)
             continue;
-        const remainingRooms = [...game.level.rooms, ...(game.level.subrooms ?? [])];
-        if (!remainingRooms.some(candidate => 'rtype' in candidate && candidate.rtype === type)) {
+        if (!searchSpecial(type)) {
             switch (type) {
                 case COURT:
                     game.level.flags.has_court = false;

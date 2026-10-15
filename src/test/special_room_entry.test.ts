@@ -59,9 +59,9 @@ void test('a court with a throne is announced as a throne room', async () => {
 
 for (const entry of [
     { description: 'includes a throne in its subroom', irregular: false,
-        throneX: 13, throneRoomno: ROOMOFFSET + MAXNROFROOMS, edge: false, hasThrone: true },
+        throneX: 13, throneRoomno: ROOMOFFSET + MAXNROFROOMS + 1, edge: false, hasThrone: true },
     { description: 'excludes another room from its irregular shape', irregular: true,
-        throneX: 13, throneRoomno: ROOMOFFSET + MAXNROFROOMS, edge: false, hasThrone: false },
+        throneX: 13, throneRoomno: ROOMOFFSET + MAXNROFROOMS + 1, edge: false, hasThrone: false },
     { description: 'excludes an edge square from its irregular shape', irregular: true,
         throneX: 13, throneRoomno: ROOMOFFSET, edge: true, hasThrone: false },
     { description: 'excludes a throne beyond its bounds', irregular: false,
@@ -76,7 +76,7 @@ for (const entry of [
         };
         const subroom: Room = {
             ...room, lx: 12, hx: 14, ly: 9, hy: 11, rtype: OROOM,
-            irregular: false, sbrooms: [], nsubrooms: 0, roomnoidx: MAXNROFROOMS,
+            irregular: false, sbrooms: [], nsubrooms: 0, roomnoidx: MAXNROFROOMS + 1,
         };
         room.sbrooms = [subroom];
         level.rooms = [room];
@@ -111,7 +111,7 @@ for (const [type, flag] of [
         };
         const subroom: Room = {
             ...room, lx: 13, hx: 15, ly: 9, hy: 11,
-            sbrooms: [], nsubrooms: 0, roomnoidx: MAXNROFROOMS,
+            sbrooms: [], nsubrooms: 0, roomnoidx: MAXNROFROOMS + 1,
         };
         room.sbrooms = [subroom];
         level.rooms = [room];
@@ -120,7 +120,7 @@ for (const [type, flag] of [
         level.nsubroom = 1;
         level.flags[flag] = true;
         level.requireAt(game.u.ux, game.u.uy).roomno = ROOMOFFSET;
-        level.requireAt(14, 10).roomno = ROOMOFFSET + MAXNROFROOMS;
+        level.requireAt(14, 10).roomno = ROOMOFFSET + MAXNROFROOMS + 1;
         game.u.urooms = [];
         game.u.ushops = [];
 

@@ -22,7 +22,7 @@ import { AMULET_OF_YENDOR, LEASH, OBJECT_SPELL_LEVEL, RIN_TELEPORTATION, RIN_TEL
 import { currentAttribute } from './attrib.js';
 import { spendHeroNutrition } from './hunger.js';
 import { beginBallAndChainMove, finishBallAndChainMove, heroIsPunished, placeBallAndChain, unplaceBallAndChain, } from './ball.js';
-import { somexyspace } from './mkroom.js';
+import { searchSpecial, somexyspace } from './mkroom.js';
 import { priestIsInOwnTemple } from './priest.js';
 import { checkSpecialRoom, costlySpot, shopkeeperInOwnShop } from './shk.js';
 import { makeAngryShopkeeper } from './shop_damage.js';
@@ -53,7 +53,6 @@ import { endVoluntaryMultiTurn } from './command_state.js';
 import { fillPitWithBoulderAt } from './pit_fill.js';
 import { seeTrap } from './trap.js';
 import { learnObjectType } from './object_knowledge.js';
-import { isRoom } from './map_types.js';
 import { hasShopkeeperData } from './shop_types.js';
 function requireLevel(state) {
     if (!state.level)
@@ -823,10 +822,10 @@ export async function teleportMonsterFromTrap(monster, trap, { state = game, cal
     const fixedDestination = trap.teledest
         && isok(trap.teledest.x, trap.teledest.y);
     if (trap.once) {
-        const vault = state.level.rooms.find(room => isRoom(room) && room.rtype === VAULT);
-        if (vault && isRoom(vault)) {
+        const vault = searchSpecial(VAULT, state);
+        if (vault) {
             const square = { x: 0, y: 0 };
-            if (somexyspace(vault, square)
+            if (somexyspace(vault, square, state)
                 && goodPosition(square.x, square.y, { kind: 'monster', monster }, { state, random })) {
                 event.relocation = await relocateMonsterTo(monster, square.x, square.y, { state, random, rollOne, calls });
             }
