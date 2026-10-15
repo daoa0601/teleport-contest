@@ -17,7 +17,7 @@ for (const woundedHp of [85, 50]) {
         freshObjectRoom({ left: 8, right: 45 });
         await init_dungeons();
         requirePlayingGame(game);
-        mkstairs(40, 10, true, null);
+        await mkstairs(40, 10, true, null);
         const lich = await createMonsterAt('master lich', 11, 10, NO_MINVENT);
         lich.mhpmax = 90;
         lich.mhp = woundedHp;
@@ -37,7 +37,7 @@ void test('cosmic stasis keeps a covetous retreat at its current square', async 
     const level = freshObjectRoom({ left: 8, right: 45 });
     await init_dungeons();
     requirePlayingGame(game);
-    mkstairs(40, 10, true, null);
+    await mkstairs(40, 10, true, null);
     level.flags.stasis_until = game.moves + 5;
     const lich = await createMonsterAt('master lich', 11, 10, NO_MINVENT);
     lich.mhpmax = 90;
@@ -54,7 +54,7 @@ void test('wounded Juiblex swallowing the hero on its retreat stairs keeps its e
     freshObjectRoom();
     await init_dungeons();
     requirePlayingGame(game);
-    mkstairs(10, 10, true, null);
+    await mkstairs(10, 10, true, null);
     const juiblex = await createMonsterAt('Juiblex', 10, 10, NO_MINVENT);
     placeMonsterAt(juiblex, game.u.ux, game.u.uy);
     juiblex.m_id = 2;
@@ -81,7 +81,7 @@ void test('Juiblex returns to its pre-expulsion square when blocked stairs leave
     const expulsionSquare = level.at(9, 9);
     assert.ok(expulsionSquare);
     expulsionSquare.typ = ROOM;
-    mkstairs(40, 10, true, null);
+    await mkstairs(40, 10, true, null, true);
     await floorObject(BOULDER, 40, 10);
     const juiblex = await createMonsterAt('Juiblex', 10, 10, NO_MINVENT);
     placeMonsterAt(juiblex, game.u.ux, game.u.uy);

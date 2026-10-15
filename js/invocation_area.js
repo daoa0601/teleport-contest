@@ -62,7 +62,7 @@ export async function makeInvocationArea({ state = game } = {}) {
             await flush_screen(1);
     }
     await pline('You are standing at the top of a stairwell leading down!');
-    mkstairs(state.u.ux, state.u.uy, false, null);
+    await mkstairs(state.u.ux, state.u.uy, false, null);
     newsym(state.u.ux, state.u.uy);
     state.vision_full_recalc = 1;
 }

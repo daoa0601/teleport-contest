@@ -71,7 +71,7 @@ import { initializeMonsterWormBody, restoreMonsterWormHeads, validMonsterWormBod
 import { monsterAlignmentType, setMonsterMalign } from './monster_alignment.js';
 import { saveMonsterTraits } from './monster_traits.js';
 import { nhgetch } from './input.js';
-import { canSeeMonster, canSenseMonster, flush_screen, newsym, pline, } from './display.js';
+import { canSeeMonster, canSenseMonster, flush_screen, newsym, pline, terrain_glyph, } from './display.js';
 import { premap_detect } from './detect.js';
 import { TRUE_RUMORS, FALSE_RUMORS, RANDOM_ENGRAVINGS, RANDOM_EPITAPHS, } from './random_text_data.js';
 import { deleteEngravingAt, forgetEngravings, makeEngravingAt, restoreEngravings, sanitizeEngravings, wipeEngravingAt, wipeoutText, } from './engrave.js';
@@ -439,7 +439,7 @@ async function putLregionHere(x, y, nlx, nly, nhx, nhy, type, oneshot, destinati
         await placeBranchAt(is_branchlev(), x, y);
     }
     else if (type === LR_DOWNSTAIR || type === LR_UPSTAIR) {
-        mkstairs(x, y, type === LR_UPSTAIR, null);
+        await mkstairs(x, y, type === LR_UPSTAIR, null);
     }
     return true;
 }
@@ -4316,7 +4316,7 @@ function specialMonsterHumidity(mndx) {
 async function specialStair(context, up) {
     const point = await specialRandomLocation(context, loc => loc.typ === ROOM || loc.typ === CORR || loc.typ === ICE);
     if (point)
-        mkstairs(point.x, point.y, up, null);
+        await mkstairs(point.x, point.y, up, null);
     return point;
 }
 function specialNonDiggable(context = null) {
@@ -4962,8 +4962,8 @@ function loadSpecialAsciiMap(rows, lit, origin = null) {
     }
     return context;
 }
-function specialStairAt(context, x, y, up) {
-    mkstairs(context.xstart + x, context.ystart + y, up, null, true);
+async function specialStairAt(context, x, y, up) {
+    await mkstairs(context.xstart + x, context.ystart + y, up, null, true);
 }
 function specialLadderAt(context, x, y, up) {
     const ladderX = context.xstart + x;
@@ -6078,7 +6078,7 @@ async function createLuaStair(context, { direction, point }) {
     const up = direction === 'up';
     if (!point)
         return await specialStair(context, up);
-    specialStairAt(context, point.x, point.y, up);
+    await specialStairAt(context, point.x, point.y, up);
     return { x: context.xstart + point.x, y: context.ystart + point.y };
 }
 function createLuaDoor(context, { state, point, wall = 'all', pos = -1, }) {
@@ -7635,14 +7635,14 @@ export async function generateRandomMaze() {
     if (!level.flags.corrmaze)
         wallification(2, 2, (COLNO - 1) & ~1, (ROWNO - 1) & ~1);
     const up = mazeFloorPoint();
-    mkstairs(up.x, up.y, true, null);
+    await mkstairs(up.x, up.y, true, null);
     if (invocation) {
         const square = vibratingSquarePoint();
         await maketrap(square.x, square.y, VIBRATING_SQUARE);
     }
     else {
         const down = mazeFloorPoint();
-        mkstairs(down.x, down.y, false, null);
+        await mkstairs(down.x, down.y, false, null);
     }
     await place_branch(is_branchlev());
     await populateRandomMaze();
@@ -10066,14 +10066,22 @@ function generate_stairs_find_room() {
     const selected = level.rooms[rn2(level.nroom)];
     return isRoom(selected) ? selected : null;
 }
-export function mkstairs(x, y, up, croom, force = false) {
+export async function mkstairs(x, y, up, croom, force = false) {
     const g = game;
     const level = requireGameLevel();
-    const loc = level.at(x, y);
+    if (!isok(x, y)) {
+        await impossible(`mkstairs:  bogus stair attempt at <${x},${y}>`);
+        return;
+    }
+    const loc = level.requireAt(x, y);
     // Explicit Lua coordinates force floor even when this dungeon endpoint
     // subsequently prevents creation of the requested stairs.
-    if (force && loc)
+    if (force)
         loc.typ = ROOM;
+    if (loc.typ !== ROOM && loc.typ !== CORR && loc.typ !== ICE) {
+        const terrain = terrain_glyph(loc, x, y).terrainName;
+        await impossible(`mkstairs:  placing stairs ${up ? 'up' : 'down'} on ${terrain} at <${x},${y}>`);
+    }
     const currentLevel = g.u?.uz?.dlevel ?? 1;
     const dungeonLevels = g.dungeons?.[g.u?.uz?.dnum ?? 0]?.num_dunlevs
         ?? currentLevel;
@@ -10082,15 +10090,13 @@ export function mkstairs(x, y, up, croom, force = false) {
     if ((up && currentLevel === 1)
         || (!up && currentLevel === dungeonLevels))
         return;
-    if (loc) {
-        setLevelTerrainType(x, y, STAIRS);
-        loc.ladder = up ? 1 : 2;
-    }
     const dest = {
         dnum: g.u?.uz?.dnum ?? 0,
         dlevel: currentLevel + (up ? -1 : 1),
     };
     stairway_add(x, y, !!up, false, dest);
+    setLevelTerrainType(x, y, STAIRS);
+    loc.ladder = up ? 1 : 2;
     if (up)
         level.upstair = { x, y };
     else
@@ -10107,7 +10113,7 @@ async function generate_stairs() {
                 pos.x = somex(croom);
                 pos.y = somey(croom);
             }
-            mkstairs(pos.x, pos.y, 0, croom);
+            await mkstairs(pos.x, pos.y, 0, croom);
         }
     }
     // Up stairs only if not level 1
@@ -10118,7 +10124,7 @@ async function generate_stairs() {
                 pos.x = somex(croom);
                 pos.y = somey(croom);
             }
-            mkstairs(pos.x, pos.y, 1, croom);
+            await mkstairs(pos.x, pos.y, 1, croom);
         }
     }
 }
