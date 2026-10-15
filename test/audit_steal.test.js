@@ -15,12 +15,14 @@ import { unlinkObject } from '../js/object_location.js';
 import { addInventoryItem } from '../js/u_init.js';
 import { AMULET_OF_LIFE_SAVING, BOULDER, DAGGER, GOLD_PIECE, LEASH, LOADSTONE, OBJECT_NAMES, STATUE } from '../js/object_data.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { addInventoryObject, knownObject, untimedCorpse } from './support/game-objects.js';
+import { addInventoryObject, artifactObject, knownObject, untimedCorpse } from './support/game-objects.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { floorObjectsAt } from './support/level-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 import { installHeroChainedToBuriedBall } from './support/hero-state.js';
+import { invokeInventoryObject } from './support/commands.js';
+import { heroHasConflict } from '../js/hero_conflict.js';
 async function nearbyThief(species = 'water nymph') {
     const thief = await createMonsterAt(species, 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
     thief.mux = game.u.ux;
@@ -96,9 +98,22 @@ function theftMessages() {
     const messages = [];
     const input = resetInputState();
     input.beforeRead = () => { messages.push(game._pending_message); };
-    installPagerInput(input, { expected: /nymph|monkey|Somebody|She|Something|Someone|punished|chain|anchor|amulet|eating|corpse|petrified|load|unencumbered/, limit: 25 });
+    installPagerInput(input, { expected: /nymph|monkey|Somebody|She|Something|Someone|punished|chain|anchor|amulet|eating|corpse|petrified|load|unencumbered|rabble-rouser|tension decrease/, limit: 25 });
     return messages;
 }
+void test('stealing the invoked Sceptre checks retaliation before its conflict power ends', async () => {
+    freshObjectRoom({ role: 'caveman', hero: { ualign: { type: 1, record: 10 } } });
+    requirePlayingGame(game);
+    const sceptre = await addInventoryItem(await artifactObject('The Sceptre of Might'));
+    theftMessages();
+    await invokeInventoryObject(sceptre);
+    assert.equal(heroHasConflict(game), true);
+    const thief = await nearbyThief();
+    await performMonsterHeroAttack(thief, game, { random: () => 0, rollOne: () => 1 });
+    assert.ok(thief.minvent.includes(sceptre));
+    assert.equal(heroHasConflict(game), false);
+    assert.ok(!thief.mavenge, 'The theft began under Conflict, before losing the carried power');
+});
 void test('item theft announces the lighter load before the nymph tries to teleport', async () => {
     freshObjectRoom();
     requirePlayingGame(game);

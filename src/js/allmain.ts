@@ -2033,6 +2033,7 @@ async function resolveDeferredHeroItemTheft(
     // C yname() observes and names ownership before the shop bill is cleared.
     observeObjectForNaming(object);
     const stolenName = ownedObjectName(object, game, { capitalized: false });
+    if (!heroHasConflict(game) && !(wasPunished && !game.uball)) monster.mavenge = 1;
     if (object.unpaid)
         removeObjectAndContentsFromBill(object, game, { resident: currentShopResident(game) });
     unlinkObject(object, game);
@@ -2041,8 +2042,6 @@ async function resolveDeferredHeroItemTheft(
         attack.theftResolved = true;
         return true;
     }
-    if (!heroHasConflict(game) && !(wasPunished && !game.uball)) monster.mavenge = 1;
-
     observeObjectForNaming(object);
     const stolenObjectDescription = inventoryItemDescription(object);
     const thief = removalMessage && !animal
