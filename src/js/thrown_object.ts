@@ -20,11 +20,14 @@ import {
     P_CROSSBOW,
     SINK,
     WEB,
+    WT_SPLASH_THRESHOLD,
     ZAP_POS,
     isok,
 } from './const.js';
 import { monsterName } from './monster_name.js';
-import { isPoolOrLavaAt } from './terrain_properties.js';
+import { isLavaAt, isPoolAt, isPoolOrLavaAt } from './terrain_properties.js';
+import { objectIsVulnerableToErosion } from './object_erosion.js';
+import { objectWeight } from './weight.js';
 import { dropBall } from './ball.js';
 import { containerImpactDamage } from './container_impact.js';
 import { currentAttribute } from './attrib.js';
@@ -66,7 +69,7 @@ import { shipObject } from './object_migration.js';
 import { splitObjectStack } from './object_stack.js';
 import { projectileHitsIronBars } from './projectile_bars.js';
 import { rn2 } from './rng.js';
-import { heroIsBlind } from './senses.js';
+import { heroIsBlind, heroIsDeaf } from './senses.js';
 import { settleThrownShopObject } from './shk.js';
 import { objectNoLongerHeld } from './object_release.js';
 import { cansee } from './vision.js';
@@ -259,6 +262,12 @@ export async function finishHeroThrownObjectLanding({
             state, publish, random,
         });
         if (state.program_state?.gameover || destroyed) return null;
+    }
+
+    if (!heroIsDeaf(state) && !(state.underwater || state.u.uinwater)
+        && (isPoolAt(x, y, state)
+            || isLavaAt(x, y, state) && !objectIsVulnerableToErosion(object, 'burn', state))) {
+        await publish(objectWeight(object) > WT_SPLASH_THRESHOLD ? 'Splash!' : 'Plop!');
     }
 
     const floorEffect = await applyFloorEffects(object, x, y, {

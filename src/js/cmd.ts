@@ -503,7 +503,7 @@ import {
     SPIKED_PIT, TT_PIT, HOLE, TRAPDOOR, DART_TRAP, MAGIC_TRAP, TELEP_TRAP, LEVEL_TELEP, STATUE_TRAP, WEB,
     ANTI_MAGIC, G_GONE, ER_NOTHING, ER_DAMAGED, M_AP_MONSTER, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE,
     STRAT_WAITMASK, MM_NOEXCLAM, MM_NOMSG, SHOPBASE, ROOMOFFSET, F_LOOTED, In_endgame,
-    Is_airlevel, Is_waterlevel, Is_rogue_level, In_hell, W_ARMOR, W_ACCESSORY, W_SADDLE, LOST_THROWN, WT_SPLASH_THRESHOLD,
+    Is_airlevel, Is_waterlevel, Is_rogue_level, In_hell, W_ARMOR, W_ACCESSORY, W_SADDLE, LOST_THROWN,
     WT_SQUEEZABLE_INV, P_BOW, P_SLING, PARANOID_HIT, POLY_CONTROLLED, STR19, isok,
     ACCESSIBLE, AIR, DIGTYP_UNDIGGABLE, DRAWBRIDGE_UP,
 } from './const.js';
@@ -6991,7 +6991,7 @@ async function throwCommand(
                 }
 
                 if (remaining === skipRangeStart && allowSkip) {
-                    if (loc?.typ === POOL && !monster) {
+                    if (isPoolAt(x, y) && !monster) {
                         skipping = true;
                         await plineWithContinuation('The rock skips.');
                     } else if (skipRangeStart > skipRangeEnd + 1) {
@@ -7157,12 +7157,6 @@ async function throwCommand(
                 return;
             }
 
-            const endpoint = game.level?.at?.(x, y);
-            if (endpoint?.typ === POOL) {
-                await plineWithContinuation(
-                    unitWeight > WT_SPLASH_THRESHOLD ? 'Splash!' : 'Plop!',
-                );
-            }
             await landThrownMineral(x, y);
             game.context.move = 1;
             return;
