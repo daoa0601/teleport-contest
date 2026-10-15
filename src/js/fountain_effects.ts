@@ -1,9 +1,8 @@
-// Source-shaped fountain effect reducers.
-// C refs: fountain.c fountain actor helpers and dipfountain() cases 16 through
-// 20, 21 through 24, 26 through 27, and 29.
+// Fountain sensations, treasure, and spawned creatures.
+// C refs: fountain.c actor helpers, dofindgem(), and dipfountain() cases
+// 21 through 24, 26 through 27, and 29.
 
 import { formatFeltMessage, formatHeardMessage } from './hero_speech.js';
-import { curseObjectState, uncurseObjectState } from './object_state.js';
 import { rn2, rnd } from './rng.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
@@ -12,48 +11,22 @@ import type { MessagePublisher } from './display.js';
 
 type DescribedPart = string | (() => string);
 
-interface FountainActorOptions<TrapResult> {
+interface FountainTrapResult {
+    heroDied: boolean;
+}
+
+interface FountainActorOptions {
     gone?: boolean;
     blind?: boolean;
     createMonster?: () => Monster | null | Promise<Monster | null>;
     announce?: MessagePublisher;
     trapAt?: (monster: Monster) => boolean;
-    triggerTrap?: (monster: Monster) => TrapResult | null | Promise<TrapResult | null>;
+    triggerTrap?: (monster: Monster) => FountainTrapResult | null | Promise<FountainTrapResult | null>;
 }
 
 
 function resolvedLiquidName(liquidName: DescribedPart): string {
     return typeof liquidName === 'function' ? liquidName() : liquidName;
-}
-
-export function resolveDippedBucFate({
-    fate,
-    object,
-    isHands = false,
-    blind = false,
-    liquidName = 'water',
-}: { fate: number; object: GameObject | null; isHands?: boolean; blind?: boolean; liquidName?: DescribedPart }) {
-    if (fate === 16) {
-        if (!isHands && object && !object.cursed)
-            curseObjectState(object);
-        return { handled: true, message: '' };
-    }
-
-    if (fate >= 17 && fate <= 20) {
-        if (!isHands && object?.cursed) {
-            const message = blind
-                ? ''
-                : `The ${resolvedLiquidName(liquidName)} glows for a moment.`;
-            uncurseObjectState(object);
-            return { handled: true, message };
-        }
-        return {
-            handled: true,
-            message: 'A feeling of loss comes over you.',
-        };
-    }
-
-    return { handled: false, message: '' };
 }
 
 function resolvedArmName(armName: DescribedPart): string {
@@ -192,14 +165,18 @@ async function announceFountainActor(message: string | null, announce: MessagePu
     return message;
 }
 
-async function triggerFountainActorTrap<TrapResult>(monster: Monster, trapAt: (monster: Monster) => boolean, triggerTrap: (monster: Monster) => TrapResult | null | Promise<TrapResult | null>): Promise<TrapResult | null> {
+async function triggerFountainActorTrap(
+    monster: Monster,
+    trapAt: (monster: Monster) => boolean,
+    triggerTrap: NonNullable<FountainActorOptions['triggerTrap']>,
+): Promise<FountainTrapResult | null> {
     if (!monster || !trapAt(monster)) return null;
     return triggerTrap(monster);
 }
 
 // fountain.c:dowaternymph().  Placement, trap effects, and presentation stay
 // injected subsystem owners; this reducer owns only their source ordering.
-export async function applyFountainNymphActor<TrapResult = never>({
+export async function applyFountainNymphActor({
     gone = false,
     blind = false,
     createMonster = async () => null,
@@ -208,7 +185,7 @@ export async function applyFountainNymphActor<TrapResult = never>({
     wakeMonster = monster => { monster.msleeping = 0; },
     trapAt = () => false,
     triggerTrap = async () => null,
-}: FountainActorOptions<TrapResult> & { nymphDescription?: (monster: Monster) => string; wakeMonster?: (monster: Monster) => void }) {
+}: FountainActorOptions & { nymphDescription?: (monster: Monster) => string; wakeMonster?: (monster: Monster) => void }) {
     const monster = gone ? null : await createMonster();
     if (!monster) {
         const message = blind
@@ -235,7 +212,7 @@ export async function applyFountainNymphActor<TrapResult = never>({
 // fountain.c:dowaterdemon().  The wish roll is eligible only after a
 // successful construction and its release message; a winning grant replaces
 // immediate trap entry because mongrantswish() removes the actor first.
-export async function applyFountainDemonActor<TrapResult = never>({
+export async function applyFountainDemonActor({
     gone = false,
     blind = false,
     difficulty = 1,
@@ -247,7 +224,7 @@ export async function applyFountainDemonActor<TrapResult = never>({
     grantWish = async () => {},
     trapAt = () => false,
     triggerTrap = async () => null,
-}: FountainActorOptions<TrapResult> & {
+}: FountainActorOptions & {
     difficulty?: number; random?: (sides: number) => number;
     demonIndefiniteName?: (monster: Monster) => string;
     demonPronouns?: (monster: Monster) => { possessive: string; pronoun: string };
@@ -300,7 +277,7 @@ export async function applyFountainDemonActor<TrapResult = never>({
 // fountain.c:dowatersnakes().  Unlike the other helpers, rn1(5,2) is paid
 // before G_GONE.  Each requested actor independently constructs and enters a
 // trap before the next request begins.
-export async function applyFountainSnakeActors<TrapResult = never>({
+export async function applyFountainSnakeActors({
     gone = false,
     blind = false,
     hallucinating = false,
@@ -310,7 +287,7 @@ export async function applyFountainSnakeActors<TrapResult = never>({
     createMonster = async () => null,
     trapAt = () => false,
     triggerTrap = async () => null,
-}: Omit<FountainActorOptions<TrapResult>, 'createMonster'> & {
+}: Omit<FountainActorOptions, 'createMonster'> & {
     hallucinating?: boolean; random?: (limit: number) => number;
     hallucinatedPlural?: () => string;
     createMonster?: (index: number) => Monster | null | Promise<Monster | null>;
@@ -341,6 +318,7 @@ export async function applyFountainSnakeActors<TrapResult = never>({
             monster, trapAt, triggerTrap,
         );
         if (trap != null) traps.push({ monster, trap });
+        if (trap?.heroDied) break;
     }
     return { requested, created, message, traps, fallback: false };
 }
