@@ -37,7 +37,7 @@ import { monsterMovementBaseFlags, monsterCanOpenDoor, monsterCanUnlockDoor, mon
 import { loseGuardianAngel } from './guardian_angel.js';
 import { shiftMonsterForDoor, resolveMonsterDoorPassage } from './monster_door_passage.js';
 import { heroSpecies } from './hero_species.js';
-import { releaseMonsterHold } from './hero_expulsion.js';
+import { releaseHeroFromMonster, releaseMonsterHold } from './hero_expulsion.js';
 import { placeHeroOnLevel } from './hero_location.js';
 import { swallowed } from './display.js';
 import { Is_rogue_level } from './const.js';
@@ -6261,6 +6261,11 @@ async function finishDochugAfterMovement(monster, movement, state, random, rollO
         || movement.postMoveStatus === MMOVE_DONE || movement.postMoveStatus === MMOVE_NOMOVES))
         newsym(monster.mx, monster.my);
     if (movement.postMoveStatus === MMOVE_MOVED) {
+        const dx = Math.abs(monster.mx - state.u.ux);
+        const dy = Math.abs(monster.my - state.u.uy);
+        const nextToHero = dx <= 1 && dy <= 1 && !(monster.mnum === PM_GRID_BUG && dx && dy);
+        if (state.u.ustuck === monster && !nextToHero)
+            await releaseHeroFromMonster(monster, { state, rollOne });
         const flags = MONSTER_FLAGS1[dochugContext.entryMnum] ?? 0;
         if (!monsterFliesOrFloats({ mnum: dochugContext.entryMnum })
             && (!(flags & M1_CLING) || !levelHasCeiling(state)))
