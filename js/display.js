@@ -100,7 +100,7 @@ export function monsterVisible(monster) {
         || (game.u?.seeInvisibleTurns ?? 0) > 0);
     return (!monster.minvis || seesInvisible) && !monster.mundetected;
 }
-function seeMonsterWithInfrared(monster) {
+export function seeMonsterWithInfrared(monster) {
     return !game.blind && !!game.u?.infravision
         && !!((MONSTER_FLAGS3[monster.mnum] ?? 0) & M3_INFRAVISIBLE)
         && couldsee(monster.mx, monster.my);

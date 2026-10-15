@@ -1,9 +1,11 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { rhack } from '../js/cmd.js';
-import { NO_MINVENT } from '../js/const.js';
+import { MM_NOTAIL, NO_MINVENT } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { queueCommandKeys, resetInputState } from '../js/input.js';
+import { initializeMonsterWormBody } from '../js/monster_worm.js';
+import { cansee, vision_recalc } from '../js/vision.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { planInput } from './support/planned-input.js';
@@ -45,4 +47,32 @@ void test('unique monsters reject a different name', async (t) => {
     assert.equal(medusa.mgivenname, undefined);
     assert.equal(game._pending_message, "Medusa doesn't like being called names!");
 });
+for (const { lit, sensed } of [
+    { lit: false, sensed: false }, { lit: true, sensed: false }, { lit: false, sensed: true },
+]) {
+    void test(`monster naming through a ${lit ? 'lit' : 'dark'} worm tail ${sensed ? 'with' : 'without'} detection`, async (t) => {
+        const level = freshObjectRoom({
+            flags: { tips: false, verbose: true }, hero: { detectMonsters: sensed },
+        });
+        const worm = await createMonsterAt('long worm', 11, 10, NO_MINVENT | MM_NOTAIL);
+        initializeMonsterWormBody(worm, { segmentCount: 0 });
+        worm.wormSegments = [{ x: 12, y: 10 }, { x: 13, y: 10 }];
+        level.requireAt(13, 10).lit = lit;
+        vision_recalc(0);
+        assert.ok(cansee(worm.mx, worm.my), 'The head remains visible');
+        assert.equal(!!cansee(13, 10), lit, 'Only the selected tail square changes lighting');
+        const input = resetInputState();
+        input.feed('name\r');
+        queueCommandKeys('m');
+        planInput(input, t, [
+            { prompt: /instructions/, keys: 'lll.' },
+            ...(lit || sensed ? [{ prompt: /What do you want to call the long worm\?/, keys: 'Coil\r' }] : []),
+        ]);
+        await rhack('#'.charCodeAt(0));
+        assert.equal(worm.mgivenname, lit || sensed ? 'Coil' : undefined);
+        if (!lit && !sensed)
+            assert.equal(game._pending_message, 'I see no monster there.');
+        assert.equal(game.context.move, 0);
+    });
+}
 //# sourceMappingURL=monster_naming_command.test.js.map

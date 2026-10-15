@@ -1,6 +1,6 @@
 // C do_name.c:do_mgivenname()/alreadynamed().
 import { M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, MGIVENNAME } from './const.js';
-import { canSeeMonster, canSenseMonster, canSpotMonster, glyphAt, plineWithContinuation as pline } from './display.js';
+import { canSenseMonster, canSpotMonster, glyphAt, monsterVisible, plineWithContinuation as pline, seeMonsterWithInfrared } from './display.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { GlyphOffset } from './glyph_numbers.js';
 import { describeGetposLocation, selectMapPosition, showGetposTip } from './getpos.js';
@@ -11,6 +11,7 @@ import { setMonsterGivenName } from './monster_given_name.js';
 import { monsterAtPosition } from './monster_location.js';
 import { distantMonsterName, monsterPossessive, monsterSubjectPronoun, shopkeeperName } from './monster_name.js';
 import { heroIsDeaf, heroIsHallucinating } from './senses.js';
+import { cansee } from './vision.js';
 import type { Monster } from './monster_types.js';
 
 export async function nameChosenMonster(): Promise<void> {
@@ -48,8 +49,10 @@ export async function nameChosenMonster(): Promise<void> {
             swallowed = true;
         }
     }
+    // Seeing another part of a worm does not reveal the selected square.
     if (!monster || !swallowed && !canSenseMonster(monster)
-        && (!canSeeMonster(monster) || monster.mundetected
+        && (!(cansee(selected.x, selected.y) || seeMonsterWithInfrared(monster))
+            || !monsterVisible(monster)
             || [M_AP_FURNITURE, M_AP_OBJECT].includes(M_AP_TYPE(monster)))) {
         await pline('I see no monster there.');
         return;
