@@ -433,7 +433,8 @@ export async function chatWithQuestLeader(monster, g = game) {
             await comPager('banished', g);
             status.pissed_off = true;
             await scheduleQuestExpulsion(false, g);
-            recordGameLogEvent(`${monsterName(monster, { state: g })} has expelled you from the quest`, { state: g });
+            const leaderName = monsterName(monster, { state: g, article: 'your', suppressIt: true });
+            recordGameLogEvent(`${leaderName} has expelled you from the quest`, { state: g });
         }
         else if (purity === 0) {
             await qtPager('badalign', g);
@@ -445,7 +446,8 @@ export async function chatWithQuestLeader(monster, g = game) {
             await qtPager('assignquest', g);
             exerciseQuestWisdom(true, g);
             status.got_quest = true;
-            recordGameLogEvent(`${monsterName(monster, { state: g })} has granted access to proceed deeper into the quest`, { state: g });
+            const leaderName = monsterName(monster, { state: g, article: 'your', suppressIt: true });
+            recordGameLogEvent(`${leaderName} has granted access to proceed deeper into the quest`, { state: g });
         }
     }
     return true;

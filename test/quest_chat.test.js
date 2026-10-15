@@ -19,7 +19,8 @@ import { moveloop_core } from '../js/allmain.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
 import { addTrap } from './support/level-state.js';
 import { MAGIC_PORTAL } from '../js/const.js';
-import { heroIsBlind } from '../js/senses.js';
+import { heroIsBlind, setHeroBlindnessTurns } from '../js/senses.js';
+import { gameLogEvents } from '../js/gamelog.js';
 async function questLeader(level = 14, record = 20) {
     freshObjectRoom({ role: 'healer', hero: { ulevel: level, ualign: { type: 0, record }, ualignbase: [0, 0] } });
     game.dungeons = [createDungeon({ dname: 'The Quest' })];
@@ -44,6 +45,21 @@ void test('a returning worthy hero can receive the quest after an earlier reject
     await runExtendedCommand('chat', 'l');
     assert.equal(status.got_quest, true);
     assert.equal(game.context.move, 1);
+});
+void test('a blind hero records the leader name when receiving the quest', async () => {
+    await questLeader();
+    setHeroBlindnessTurns(100);
+    await runExtendedCommand('chat', 'l');
+    assert.equal(ensureQuestStatus().got_quest, true);
+    assert.equal(gameLogEvents().at(-1)?.text, 'Hippocrates has granted access to proceed deeper into the quest');
+});
+void test('a blind converted hero records the leader name when expelled', async () => {
+    await questLeader();
+    setHeroBlindnessTurns(100);
+    game.u.ualignbase = [1, 0];
+    await runExtendedCommand('chat', 'l');
+    assert.equal(ensureQuestStatus().pissed_off, true);
+    assert.equal(gameLogEvents().at(-1)?.text, 'Hippocrates has expelled you from the quest');
 });
 void test('the leader rejects an inexperienced hero and schedules expulsion', async () => {
     const { pages } = await questLeader(13);
