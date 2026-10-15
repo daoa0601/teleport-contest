@@ -9,6 +9,7 @@ export function validSavedGameContext(value, entities) {
         time_botl: optional(boolean),
         bypasses: optional(boolean),
         current_fruit: optional(integer),
+        deathNotice: optional(boolean),
         digging: optional(validDiggingContext),
         forcefight: optional((entry) => boolean(entry) || integer(entry)),
         jingle: optional(string),

@@ -3,6 +3,7 @@ import { heroBloodName } from './body_parts.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { Upolyd, In_endgame } from './const.js';
 import { demandDemonBribe } from './demon_talk.js';
+import { DEATH_QUOTES } from './death_quotes.js';
 import { plineWithContinuation as pline } from './display.js';
 import type { PlayingGameState } from './game_state.js';
 import { heroGoldAmount } from './hero_gold.js';
@@ -17,6 +18,9 @@ import { resolveHeroSeduction } from './monster_seduction.js';
 import { sessionIsNight } from './monster_sound.js';
 import type { Monster } from './monster_types.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
+import { novelTitle } from './novel_titles.js';
+import { selectTributePassage } from './novel_tribute.js';
+import { SPE_NOVEL } from './object_data.js';
 import { withIndefiniteArticle } from './object_grammar.js';
 import { isWeaponTool } from './object_properties.js';
 import { recorderLocalHour } from './calendar.js';
@@ -174,9 +178,7 @@ export async function publishMonsterConversation(
         ] : ['Resistance is useless!', "You're dog meat!", 'Surrender!']);
         break;
     case MS_RIDER:
-        // Death needs the persistent tribute passage selection used by files.c.
-        if (species === 'Death') return false;
-        reply.speech = 'Who do you think you are, War?';
+        reply = species === 'Death' ? deathReply(state) : { speech: 'Who do you think you are, War?' };
         break;
     default:
         return false;
@@ -184,7 +186,7 @@ export async function publishMonsterConversation(
     if (reply.action)
         await pline(`${monsterName(monster, { capitalized: true, state })} ${reply.action}`);
     else if (reply.speech)
-        await pline(`"${reply.speech}"`);
+        await pline(species === 'Death' ? reply.speech.toUpperCase() : `"${reply.speech}"`);
     return true;
 }
 
@@ -269,6 +271,24 @@ function vampireReply(monster: Monster, state: PlayingGameState): string {
     const race = state.urace.name === 'human' ? state.flags.female ? 'woman' : 'man' : state.urace.noun;
     const target = Upolyd(state.u) ? monsterTypeName(heroSpecies(state), !!state.flags.female) : race;
     return `I vill come after ${withIndefiniteArticle(target)} without regret!`;
+}
+
+function deathReply(state: PlayingGameState): MonsterReply {
+    const book = state.context.deathNotice ? undefined : state.inventory.find(object => object.otyp === SPE_NOVEL);
+    if (book) {
+        const title = novelTitle(book);
+        state.context.deathNotice = true;
+        return { speech: `Ah, so you have a copy of /${title}/.${title === 'Snuff' || title === 'The Wee Free Men'
+            ? '' : '  I may have been misquoted there.'}` };
+    }
+    if (rn2(3)) {
+        const passage = selectTributePassage(DEATH_QUOTES.length, 1, state);
+        const speech = DEATH_QUOTES[passage - 1];
+        if (speech === undefined) throw new RangeError(`Death has no tribute passage ${passage}`);
+        return { speech };
+    }
+    return !rn2(10) ? { action: 'is busy reading a copy of Sandman #8.' }
+        : { speech: 'Who do you think you are, War?' };
 }
 
 function select(messages: readonly string[]): string {

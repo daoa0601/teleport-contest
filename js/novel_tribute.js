@@ -4,7 +4,7 @@ import { plineWithContinuation } from './display.js';
 import { rn2 } from './rng.js';
 import { NOVEL_PASSAGES } from './tribute_data.js';
 import { showTextMenuOverlay } from './windows.js';
-function choosePassage(count, bookId, state) {
+export function selectTributePassage(count, bookId, state) {
     const tracking = state.context.novel ||= { id: 0, count: 0, pasg: [] };
     if (tracking.id !== bookId || !tracking.count) {
         tracking.id = bookId;
@@ -33,7 +33,7 @@ export async function readNovelTribute(book, title, state = game) {
         await plineWithContinuation(`It seems to be an incomprehensible foreign translation of "${title}"!`);
         return false;
     }
-    const passage = choosePassage(passages.length, book.o_id, state);
+    const passage = selectTributePassage(passages.length, book.o_id, state);
     const lines = passages[passage - 1];
     if (!lines)
         throw new Error(`Novel ${title} has no passage ${passage}`);
