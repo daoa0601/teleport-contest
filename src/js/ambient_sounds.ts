@@ -36,7 +36,7 @@ const MS_ANIMAL = 17;
 
 export async function dosounds(state: PlayingGameState = requireInitializedGame()): Promise<void> {
     if (heroIsDeaf(state) || state.flags.acoustics === false
-        || state.u.uswallow || state.u.underwater || state.underwater) return;
+        || state.u.uswallow || state.u.uinwater || state.u.underwater || state.underwater) return;
     const flags = state.level.flags;
     const hallu = Number(heroIsHallucinating(state));
     if (flags.nfountains && !rn2(400))
