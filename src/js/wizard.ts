@@ -12,6 +12,7 @@ import {
 import { AMULET_OF_YENDOR } from './object_data.js';
 import { rn2 } from './rng.js';
 import { definiteName, objectName } from './objnam.js';
+import { heroIsDeaf } from './senses.js';
 
 const WIZARD = 285;
 
@@ -54,20 +55,13 @@ export function wizardDeadOrGone(state: GameState = game, random = rn2): void {
 }
 
 function carriesAmulet(monster: Monster): boolean {
-    // C mon.c:mon_has_amulet(): inventory search including containers.
-    const objects = monster.minvent || monster.inventory || [];
-    for (const object of objects) {
-        if (object.otyp === AMULET_OF_YENDOR) return true;
-        for (const content of object.contents || [])
-            if (content.otyp === AMULET_OF_YENDOR) return true;
-    }
-    return false;
+    // C wizard.c:mon_has_amulet() searches only the top-level inventory.
+    return (monster.minvent ?? []).some(object => object.otyp === AMULET_OF_YENDOR);
 }
 
 function monsterHelpless(monster: Monster): boolean {
     // C mon.c:helpless().
-    return !monster.mcanmove || !!monster.msleeping
-        || (monster.mfrozen ?? 0) > 0;
+    return !monster.mcanmove || !!monster.msleeping;
 }
 
 function recallMigratingWizard(): Promise<Monster | null> | null {
@@ -98,10 +92,6 @@ function recallMigratingWizard(): Promise<Monster | null> | null {
 }
 
 export async function resurrectWizard(): Promise<Monster | null> {
-    const existing = game.level?.monsters?.find(monster =>
-        !monster.dead && monster.iswiz);
-    if (existing) return existing;
-
     let wizard: Monster | null = null;
     let verb = 'kill';
     if (!game.context?.no_of_wizards) {
@@ -122,12 +112,9 @@ export async function resurrectWizard(): Promise<Monster | null> {
         wizard.mtame = 0;
         wizard.mpeaceful = 0;
         setMonsterMalign(wizard);
-        if (!game.deaf && !game.u?.deaf) {
-            await plineWithContinuation(
-                `A voice booms out...  "So thou thought thou couldst ${
-                    verb
-                } me, fool."`,
-            );
+        if (!heroIsDeaf(game)) {
+            await plineWithContinuation('A voice booms out...');
+            await plineWithContinuation(`"So thou thought thou couldst ${verb} me, fool."`);
         }
     }
     return wizard;

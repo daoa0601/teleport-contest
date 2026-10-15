@@ -8,6 +8,7 @@ import { catchUpMonster, monsterArrive, WIZ_ARRIVE, } from './monster_migration.
 import { AMULET_OF_YENDOR } from './object_data.js';
 import { rn2 } from './rng.js';
 import { definiteName, objectName } from './objnam.js';
+import { heroIsDeaf } from './senses.js';
 const WIZARD = 285;
 // C wizard.c:amulet(). Called once per global turn while carrying the Amulet.
 export async function amuletTurn(state) {
@@ -48,21 +49,12 @@ export function wizardDeadOrGone(state = game, random = rn2) {
     }
 }
 function carriesAmulet(monster) {
-    // C mon.c:mon_has_amulet(): inventory search including containers.
-    const objects = monster.minvent || monster.inventory || [];
-    for (const object of objects) {
-        if (object.otyp === AMULET_OF_YENDOR)
-            return true;
-        for (const content of object.contents || [])
-            if (content.otyp === AMULET_OF_YENDOR)
-                return true;
-    }
-    return false;
+    // C wizard.c:mon_has_amulet() searches only the top-level inventory.
+    return (monster.minvent ?? []).some(object => object.otyp === AMULET_OF_YENDOR);
 }
 function monsterHelpless(monster) {
     // C mon.c:helpless().
-    return !monster.mcanmove || !!monster.msleeping
-        || (monster.mfrozen ?? 0) > 0;
+    return !monster.mcanmove || !!monster.msleeping;
 }
 function recallMigratingWizard() {
     // C wizard.c:resurrect() migrating_mons scan.  Returns a placed wizard
@@ -97,9 +89,6 @@ function recallMigratingWizard() {
     return null;
 }
 export async function resurrectWizard() {
-    const existing = game.level?.monsters?.find(monster => !monster.dead && monster.iswiz);
-    if (existing)
-        return existing;
     let wizard = null;
     let verb = 'kill';
     if (!game.context?.no_of_wizards) {
@@ -120,8 +109,9 @@ export async function resurrectWizard() {
         wizard.mtame = 0;
         wizard.mpeaceful = 0;
         setMonsterMalign(wizard);
-        if (!game.deaf && !game.u?.deaf) {
-            await plineWithContinuation(`A voice booms out...  "So thou thought thou couldst ${verb} me, fool."`);
+        if (!heroIsDeaf(game)) {
+            await plineWithContinuation('A voice booms out...');
+            await plineWithContinuation(`"So thou thought thou couldst ${verb} me, fool."`);
         }
     }
     return wizard;
