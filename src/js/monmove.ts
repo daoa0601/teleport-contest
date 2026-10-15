@@ -589,6 +589,7 @@ import {
     TRAPNUM,
     STRAT_WAITFORU,
     STRAT_WAITMASK,
+    STRAT_ARRIVE,
     UNLOCKDOOR,
     VIBRATING_SQUARE,
     WATER,
@@ -8853,6 +8854,8 @@ export async function runMonsterAction(
         if (conflictFight?.heroDied || conflictFight?.consumed)
             return { monster, calls, conflictFight };
     }
+    // C m_arrival() always clears arrival, even for an inactive monster.
+    monster.mstrategy = (monster.mstrategy ?? 0) & ~STRAT_ARRIVE;
     // monmove.c:dochug() checks the strategy wait mask before ordinary
     // sleep disturbance.  A squeaky board wakes indeterminate sleep, but
     // wake_nearto() deliberately preserves meditation for unique
