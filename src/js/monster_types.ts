@@ -39,6 +39,7 @@ export interface MinionData {
 
 export interface PriestData {
     parentmid: number;
+    cheapskate_count?: number;
     shroom: number;
     shralign: number;
     shrpos: Position;

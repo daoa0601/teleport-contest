@@ -25,6 +25,7 @@ import { recorderLocalHour } from './calendar.js';
 import { rn2, rnd } from './rng.js';
 import { seductionCompatibility } from './seduction_compatibility.js';
 import { heroIsHallucinating } from './senses.js';
+import { talkToPriest } from './priest_talk.js';
 const MS_SHRIEK = 18;
 const MS_BONES = 19;
 const MS_LAUGH = 20;
@@ -43,6 +44,7 @@ const MS_VAMPIRE = 32;
 const MS_BRIBE = 33;
 const MS_CUSS = 34;
 const MS_RIDER = 35;
+const MS_PRIEST = 41;
 const MS_SPELL = 42;
 const MS_BOAST = 43;
 const MS_GROAN = 44;
@@ -56,6 +58,9 @@ export async function publishMonsterConversation(monster, sound, state) {
     const species = MONSTER_NAME[monster.mnum];
     let reply = {};
     switch (sound) {
+        case MS_PRIEST:
+            await talkToPriest(monster, state);
+            break;
         case MS_GROAN:
             if (!rn2(3))
                 reply.action = 'groans.';

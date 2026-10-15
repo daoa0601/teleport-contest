@@ -26,6 +26,7 @@ const minion = (value) => closedFieldsMatch(value, {
 });
 const priest = (value) => closedFieldsMatch(value, {
     parentmid: integer,
+    cheapskate_count: optional(integer),
     shroom: integer,
     shralign: integer,
     shrpos: position,
