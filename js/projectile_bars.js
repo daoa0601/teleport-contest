@@ -8,8 +8,9 @@ import { game, requireGameLevel } from './gstate.js';
 import { MONSTER_SIZE, requireMonsterData } from './monster_data.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { breakFloorObject } from './object_breakage.js';
-import { BAG_OF_HOLDING, BAG_OF_TRICKS, BOULDER, CORPSE, CREDIT_CARD, ENORMOUS_MEATBALL, EUCALYPTUS_LEAF, FORTUNE_COOKIE, HEAVY_IRON_BALL, KELP_FROND, LENSES, LOCK_PICK, MAGIC_WHISTLE, MEAT_STICK, OBJECT_NAMES, OBJECT_SUBTYPE, OILSKIN_SACK, PANCAKE, POT_ACID, SACK, SKELETON_KEY, SLING, SPRIG_OF_WOLFSBANE, STATUE, TALLOW_CANDLE, TIN_WHISTLE, WAR_HAMMER, WAX_CANDLE, requireObjectData, } from './object_data.js';
+import { BOULDER, CORPSE, CREDIT_CARD, ENORMOUS_MEATBALL, HEAVY_IRON_BALL, LENSES, LOCK_PICK, MAGIC_WHISTLE, MEAT_STICK, OBJECT_NAMES, OBJECT_SUBTYPE, POT_ACID, SKELETON_KEY, STATUE, TALLOW_CANDLE, TIN_WHISTLE, WAR_HAMMER, WAX_CANDLE, requireObjectData, } from './object_data.js';
 import { objectMaterial } from './object_material.js';
+import { harmlessMissile } from './projectile.js';
 import { roomsAt } from './room.js';
 import { rn2 } from './rng.js';
 import { heroIsDeaf, heroIsHallucinating } from './senses.js';
@@ -19,7 +20,6 @@ const WEAPON_CLASS = 2;
 const ARMOR_CLASS = 3;
 const TOOL_CLASS = 6;
 const FOOD_CLASS = 7;
-const SCROLL_CLASS = 9;
 const SPBOOK_CLASS = 10;
 const WAND_CLASS = 11;
 const COIN_CLASS = 12;
@@ -27,7 +27,6 @@ const ROCK_CLASS = 14;
 const BALL_CLASS = 15;
 const CHAIN_CLASS = 16;
 const ARM_GLOVES = 3;
-const CLOTH = 6;
 const LEATHER = 7;
 const SILVER = 14;
 const GOLD = 15;
@@ -112,26 +111,6 @@ function corpseSize(object) {
     if (object.corpsenm === undefined)
         throw new Error('A corpse or statue hitting iron bars needs its species.');
     return requireMonsterData(MONSTER_SIZE, object.corpsenm);
-}
-function harmlessMissile(object, state) {
-    switch (object.otyp) {
-        case SLING:
-        case EUCALYPTUS_LEAF:
-        case KELP_FROND:
-        case SPRIG_OF_WOLFSBANE:
-        case FORTUNE_COOKIE:
-        case PANCAKE:
-            return true;
-        case RUBBER_HOSE:
-        case BAG_OF_TRICKS:
-            return object.spe < 1;
-        case SACK:
-        case OILSKIN_SACK:
-        case BAG_OF_HOLDING:
-            return !object.contents?.length;
-        default:
-            return object.oclass === SCROLL_CLASS || objectMaterial(object, state) === CLOTH;
-    }
 }
 // C monmove.c:dissolve_bars(). Bars already transmit light; callers which
 // also remove opaque terrain or objects own any blocker recalculation.

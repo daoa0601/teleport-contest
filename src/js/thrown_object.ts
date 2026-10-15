@@ -25,13 +25,12 @@ import {
     isok,
 } from './const.js';
 import { monsterName } from './monster_name.js';
-import { isLavaAt, isPoolAt, isPoolOrLavaAt } from './terrain_properties.js';
-import { objectIsVulnerableToErosion } from './object_erosion.js';
-import { objectWeight } from './weight.js';
+import { artifactById } from './artifacts.js';
 import { dropBall } from './ball.js';
 import { containerImpactDamage } from './container_impact.js';
 import { currentAttribute } from './attrib.js';
 import {
+    canSpotMonster,
     flush_screen,
     lastDirtyMapCursor,
     newsym,
@@ -46,33 +45,37 @@ import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
 import type { MapLocation, Position, Trap } from './map_types.js';
-import type { MessagePublisher } from './display.js';
+import type { DisplayGlyph, MessagePublisher } from './display.js';
 import { costlySpot } from './shk.js';
 import { removeWornHeroItem } from './hero_equipment.js';
 import { finishInventoryRemoval } from './hero_inventory.js';
 import { endObjectBurn, objectShedsLight } from './light.js';
 import { addObjectToMonsterInventory } from './monster_inventory.js';
-import { objectName } from './objnam.js';
+import { objectName, ownedObjectName } from './objnam.js';
 import { impactDisturbsZombies } from './object_impact.js';
 import { isPick } from './weapon_type.js';
-import { MONSTER_MOVE, MONSTER_NAME } from './monster_data.js';
+import { MONSTER_FLAGS1, MONSTER_MOVE, MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
 import { breakObjectAtLocation, objectBreaksOnImpact } from './object_breakage.js';
 import {
-    CANDELABRUM_OF_INVOCATION, HEAVY_IRON_BALL, OBJECT_MATERIAL,
-    OBJECT_NAMES, OBJECT_SUBTYPE, TALLOW_CANDLE, WAX_CANDLE,
+    BOULDER, CANDELABRUM_OF_INVOCATION, HEAVY_IRON_BALL, OBJECT_MATERIAL,
+    OBJECT_NAMES, OBJECT_SUBTYPE, ROCK, TALLOW_CANDLE, WAX_CANDLE,
 } from './object_data.js';
 import { objectClassForType } from './object_knowledge.js';
+import { objectIsVulnerableToErosion } from './object_erosion.js';
 import {
     isLauncherAmmunition, launcherMatchesAmmo,
 } from './object_properties.js';
 import { shipObject } from './object_migration.js';
 import { splitObjectStack } from './object_stack.js';
 import { projectileHitsIronBars } from './projectile_bars.js';
-import { rn2 } from './rng.js';
+import { rn2, rnd } from './rng.js';
+import { publishHeardMessage } from './hero_speech.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
 import { settleThrownShopObject } from './shk.js';
+import { isLavaAt, isPoolAt, isPoolOrLavaAt } from './terrain_properties.js';
 import { objectNoLongerHeld } from './object_release.js';
 import { cansee } from './vision.js';
+import { objectWeight } from './weight.js';
 
 const VENOM_CLASS = 17;
 
@@ -101,7 +104,7 @@ export interface ThrownObjectLandingOptions extends Position {
 }
 
 export type ProjectileFlightCapture = (
-    object: GameObject, path: readonly Position[], state: GameState,
+    object: GameObject, path: readonly Position[], state: GameState, glyph?: DisplayGlyph,
 ) => Promise<void>;
 
 export interface ProjectileFlightOptions {
@@ -203,13 +206,16 @@ export function heroThrowTrajectory(
 
     const floating = Is_airlevel(state.u?.uz)
         || state.u?.levitating || state.u?.levitation || state.levitating;
-    if (!floating) return { range, recoil: 0 };
+    const recoil = floating ? Math.max(1, unweightedRange - range) : 0;
+    if (floating) range = Math.max(1, range - recoil);
 
-    const recoil = Math.max(1, unweightedRange - range);
-    return {
-        range: Math.max(1, range - recoil),
-        recoil,
-    };
+    // Native applies special-object limits after calculating recoil, and
+    // water has the final say even for a giant throwing a boulder.
+    if (object.otyp === BOULDER) range = 20;
+    else if (artifactById(object.oartifact, state)?.name === 'Mjollnir')
+        range = Math.trunc((range + 1) / 2);
+    if (state.underwater || state.u.uinwater) range = 1;
+    return { range, recoil };
 }
 
 export function prepareHeroThrownTarget(monster: Monster, random: typeof rn2 = rn2): void {
@@ -264,7 +270,8 @@ export async function finishHeroThrownObjectLanding({
         if (state.program_state?.gameover || destroyed) return null;
     }
 
-    if (!heroIsDeaf(state) && !(state.underwater || state.u.uinwater)
+    // throwit() announces liquid impact before floor effects can consume the object.
+    if (!heroIsDeaf(state) && !state.underwater && !state.u.uinwater
         && (isPoolAt(x, y, state)
             || isLavaAt(x, y, state) && !objectIsVulnerableToErosion(object, 'burn', state))) {
         await publish(objectWeight(object) > WT_SPLASH_THRESHOLD ? 'Splash!' : 'Plop!');
@@ -343,6 +350,11 @@ async function flyPhysicalObject({
     let destroyed = false;
     let migrated = false;
     const steps = kicked ? Math.max(0, range - 1) : range;
+    let skip = !kicked && object.otyp === ROCK ? rockSkipRange(range) : null;
+    const allowSkip = skip !== null && random(3) === 0;
+    const glyph = transientObjectGlyph(object);
+    let skipping = false;
+    let skips = 0;
 
     for (let step = 0; step < steps && (dx || dy); step++) {
         const nextX = x + dx;
@@ -382,8 +394,8 @@ async function flyPhysicalObject({
             }
         }
 
-        contact = projectileMonsterAt(state, object, x, y);
-        const web = contact ? null : webAt(state, x, y);
+        let monster = liveMonsterAt(state, x, y);
+        const web = monster ? null : webAt(state, x, y);
         if (web && random(3) === 0) {
             if (cansee(x, y)) {
                 await publish(
@@ -395,6 +407,29 @@ async function flyPhysicalObject({
             stoppedBy = 'web';
             break;
         }
+        const remaining = steps - step - 1;
+        if (skip && skip.start && remaining === skip.start && allowSkip) {
+            if (isPoolAt(x, y, state) && !monster) {
+                skipping = true;
+                if (!heroIsBlind(state))
+                    await publish(`${ownedObjectName(object, state)} skips${skips ? ' again' : ''}.`);
+                else await publishHeardMessage(`${ownedObjectName(object, state, { capitalized: false })} skip.`, publish, state);
+                skips++;
+            } else if (skip.start > skip.end + 1) {
+                skip.start--;
+            }
+        }
+        if (skipping && skip) {
+            if (remaining <= skip.end) {
+                skipping = false;
+                if (remaining > 3) skip = rockSkipRange(remaining);
+            } else if (monster && rockSkipsOverMonster(monster)) {
+                if (!heroIsBlind(state) && canSpotMonster(monster))
+                    await publish(`${ownedObjectName(object, state)} passes over ${monsterName(monster, { state })}.`);
+                monster = null;
+            }
+        }
+        contact = monster ? projectileMonsterAt(state, object, x, y) : null;
         if (contact) {
             stoppedBy = 'monster';
             break;
@@ -434,9 +469,25 @@ async function flyPhysicalObject({
         }
     }
 
-    if (captureFlight && path.length)
-        await captureFlight(object, path, state);
+    if (captureFlight)
+        await captureFlight(object, path, state, glyph);
     return { x, y, path, contact, stoppedBy, destroyed, migrated };
+}
+
+function rockSkipRange(range: number): { start: number; end: number } {
+    const quarter = Math.trunc(range / 4);
+    const start = range - (quarter > 0 ? rnd(quarter) : 0);
+    const end = start - Math.trunc(start / 4) * rnd(3);
+    return { start, end: end >= start ? start - 1 : end };
+}
+
+function rockSkipsOverMonster(monster: Monster): boolean {
+    const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
+    const swimming = 0x00000002;
+    const amphibious = 0x00000200;
+    const breathless = 0x00000400;
+    return MONSTER_SYMBOL[monster.mnum] === 57
+        || !!(flags & (swimming | amphibious | breathless));
 }
 
 export function flyHeroThrownObject(options: ProjectileFlightOptions): Promise<ProjectileFlight> {
@@ -490,8 +541,8 @@ export async function detachThrownUnit(
 
 export async function captureThrownObjectFlight(
     object: GameObject, flightPath: readonly Position[], state: GameState = game,
+    glyph = transientObjectGlyph(object),
 ): Promise<void> {
-    const glyph = transientObjectGlyph(object);
     let transientCell: Position | null = null;
     let transientCursor: [number, number] | null = null;
     try {

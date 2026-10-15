@@ -95,7 +95,7 @@ export function heroCanBeBlindedByVenom(state = game) {
 function heroCanBeBlindedByCreamPie(state) {
     return heroHasEyes(state) && !blindfolded(state);
 }
-function heroCanBeBlindedByObject(objectType, state) {
+export function heroCanBeBlindedByObject(objectType, state) {
     if (objectType === CREAM_PIE)
         return heroCanBeBlindedByCreamPie(state);
     if (objectType === BLINDING_VENOM)

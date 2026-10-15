@@ -29,6 +29,7 @@ import { hitMonsterWithThrownEggPieOrVenom } from './hero_thrown_egg_pie_venom.j
 import { rangedTargetHitBonus } from './weapon_accuracy.js';
 import { isAxe } from './weapon_type.js';
 import { catchQuestObject } from './quest_leader_catch.js';
+import { offerUnicornGem } from './unicorn_gift.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
@@ -114,7 +115,7 @@ function baseRangedHitThreshold(monster: Monster, weapon: GameObject, state: Pla
         : state.u?.ulevel ?? 1;
     const targetFlags = MONSTER_FLAGS2[monster.mnum] ?? 0;
     const threshold = -1
-        + (state.u?.uluck ?? state.u?.luck ?? state.Luck ?? 0)
+        + (state.u.uluck ?? 0) + (state.u.moreluck ?? 0)
         + findMonsterArmorClass(monster)
         + (state.u?.uhitinc ?? 0)
         + heroLevel
@@ -165,6 +166,8 @@ async function hitMonsterWithRangedObject(
     if (applied && checkCaitiff) await applyCaitiffPenalty(monster, state);
     let threshold = baseRangedHitThreshold(monster, object, state);
     if (guaranteedHit) threshold += 1000;
+    const gift = await offerUnicornGem(monster, object, state);
+    if (gift !== null) return { hit: true, consumed: gift };
     if (!applied) {
         const caught = await catchQuestObject(monster, object, state);
         if (caught !== null) return { hit: caught, consumed: caught };

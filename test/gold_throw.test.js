@@ -5,8 +5,13 @@ import { IRONBARS, STONE, WEB } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { heroGoldAmount, heroGoldObject } from '../js/hero_gold.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { GOLD_PIECE } from '../js/object_data.js';
+import { DIAMOND, GOLD_PIECE } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
+import { resetInputState } from '../js/input.js';
+import { throwInventoryObject } from './support/commands.js';
+import { addInventoryObject } from './support/game-objects.js';
+import { createMonsterAt } from './support/monsters.js';
+import { freshObjectRoom } from './support/object-room.js';
 import { createGoldMonster, carriedGold, throwGold, } from './support/gold-arena.js';
 import { addTrap, floorObjects, floorObjectsAt, } from './support/level-state.js';
 import { freshGameplayRoom } from './support/playable-room.js';
@@ -15,6 +20,30 @@ const PM_GUARD = 272;
 const PM_ALIGNED_CLERIC = MONSTER_NAME.indexOf('aligned cleric');
 const PM_SOLDIER = 277;
 const PM_WATCHMAN = 282;
+void test('gold blocked by an adjacent wall leaves later hallucinated appearances unchanged', async () => {
+    const catchNames = [];
+    for (const direction of ['>', 'l']) {
+        const level = freshObjectRoom({ hero: { hallucinationTurns: 20 } });
+        level.flags.noteleport = true;
+        level.requireAt(11, 10).typ = STONE;
+        const purse = await carriedGold(100);
+        await createMonsterAt('gray unicorn', 10, 11);
+        const gem = await addInventoryObject(DIAMOND);
+        const messages = [];
+        resetInputState().beforeRead = () => { messages.push(game._pending_message); };
+        initRng(42n);
+        await throwInventoryObject(purse, direction);
+        await throwInventoryObject(gem, 'j', ' '.repeat(20));
+        assert.equal(purse.where, 'floor');
+        assert.equal(purse.ox, 10);
+        assert.equal(purse.oy, 10);
+        const text = messages.join('\n') + '\n' + game._pending_message;
+        const name = text.match(/([^\n]+) catches the diamond\./)?.[1];
+        assert.ok(name, text);
+        catchNames.push(name);
+    }
+    assert.equal(catchNames[1], catchNames[0], 'a purse that cannot leave the hero has no hallucinated flight appearance');
+});
 function monsterGoldAmount(monster) {
     return (monster.minvent ?? [])
         .filter(object => object.otyp === GOLD_PIECE)

@@ -146,7 +146,7 @@ void test('an upward quivered coin falls back, hurts the hero, and leaves the pa
     const level = freshGameplayRoom();
     const purse = await quiver(5, 29113);
     const hpBefore = game.u.uhp;
-    await fireQuiveredGold('<');
+    await fireQuiveredGold('<', ' ');
     const coin = detachedCoin(level, purse);
     assert.ok(hpBefore != null);
     assert.equal(game.u.uhp, hpBefore - 1);
@@ -154,6 +154,7 @@ void test('an upward quivered coin falls back, hurts the hero, and leaves the pa
     assert.equal(game.uquiver, purse);
     assert.deepEqual([coin.ox, coin.oy], [10, 10]);
     assert.equal(floorObjectsAt(level, 10, 10).includes(coin), true);
+    assert.match(game._pending_message, /gold piece hits the floor\.$/);
     assert.equal(game.context.move, 1);
 });
 void test('a greased quivered coin can slip into a one-coin floor drop', async () => {

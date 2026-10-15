@@ -34,8 +34,9 @@ import { plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
 import { dist2 } from './hacklib.js';
 import { hurtleHero } from './hero_hurtle.js';
-import { monsterTypeName } from './monster_data.js';
 import { hitFloorWithObject } from './object_drop.js';
+import { tossObjectUp } from './toss_up.js';
+import { monsterTypeName } from './monster_data.js';
 import {
     hitMonsterWithSupportedPotion, potionImpactObjectName,
     SUPPORTED_MONSTER_POTION_TYPES,
@@ -132,7 +133,11 @@ export async function resolveMapPotionThrow({
                 state.context.move = 1;
                 return true;
             }
-            await hitFloorWithObject(thrown, { state, publish });
+            if (state.u.dz > 0) {
+                await hitFloorWithObject(thrown, { state, publish });
+            } else {
+                await tossObjectUp(thrown, { state, publish });
+            }
             state.context.move = 1;
             return true;
         }
