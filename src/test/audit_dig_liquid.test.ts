@@ -61,11 +61,13 @@ void test('one Juiblex swamp square cannot fill an ordinary downward hole', asyn
     const input = resetInputState();
     installPagerInput(input, { expected: /dig|hole|water/, limit: 10 });
     input.feed(`${wand.invlet}>`);
-    initRng(2n);
+    // Ordinary moat water would flood this hole; one swamp pool cannot.
+    initRng(4n);
 
     await rhack('z'.charCodeAt(0));
 
-    assert.equal(level.requireAt(10, 10).typ, ROOM);
+    assert.equal(level.requireAt(10, 10).typ, ROOM,
+        'A single swamp pool cannot supply enough water to flood the hole.');
     assert.equal(level.traps.find(trap => trap.tx === 10 && trap.ty === 10)?.ttyp, HOLE);
 });
 
