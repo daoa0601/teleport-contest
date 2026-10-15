@@ -2797,8 +2797,10 @@ export async function plineWithContinuation(msg, { noRepeat = false, urgent = fa
     const wraps = toplineRows(msg, columns).length > 1;
     if (!urgent && game._suppressMessagesUntilInput) {
         const stopped = game.nhDisplay?.stoppedTopline ?? pending;
-        const fits = toplineRows(pending, columns).length === 1
-            && visibleLength(msg) + visibleLength(stopped) + 3 < columns - 8;
+        // Escape's more() resets the message cursor to row zero. Hidden
+        // prose changes gt.toplines without moving that cursor, even if
+        // pending still holds an earlier wrapped message.
+        const fits = visibleLength(msg) + visibleLength(stopped) + 3 < columns - 8;
         const restarts = fits && msg.startsWith('You die');
         // Even hidden prose appends to or replaces gt.toplines. Native only
         // compares "You die" after the length check, so a long stopped line

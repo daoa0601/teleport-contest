@@ -147,4 +147,23 @@ void test('suppressed combat prose keeps a long death topline stopped before the
     }
     assert.ok(game.u.uhp > 0, 'declining death restores the hero');
 });
+void test('death resumes output after escaped wrapped prose and a short hidden hit', async () => {
+    freshObjectRoom({ flags: { debug: true } });
+    requirePlayingGame(game);
+    const giant = await createMonsterAt('stone giant', 11, 10, NO_MINVENT);
+    const input = resetInputState();
+    await plineWithContinuation('You hear a heavy door slamming shut in the distance.');
+    input.beforeRead = () => input.feed('\x1b');
+    await plineWithContinuation('You stumble into the path of a stone giant swinging a huge club while another giant blocks the doorway.');
+    await plineWithContinuation('The giant hits!');
+    game.u.uhp = -4;
+    const deathPages = [];
+    input.beforeRead = () => {
+        deathPages.push(topline());
+        input.feed(topline().startsWith('Die?') ? 'n' : ' ');
+    };
+    await finishMonsterAttackDeath(giant, { pagerOwned: true });
+    assert.ok(deathPages.includes('You die...--More--'), 'The short hidden hit lets death restart output and require acknowledgment');
+    assert.ok(game.u.uhp > 0, 'declining death restores the hero');
+});
 //# sourceMappingURL=tty_topline_lifecycle.test.js.map
