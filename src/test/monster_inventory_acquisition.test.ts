@@ -30,7 +30,7 @@ import {
 import {
     BULLWHIP, DAGGER, FIGURINE, GLOB_OF_GRAY_OOZE,
     GOLD_PIECE, LUCKSTONE, MACE, SCR_IDENTIFY, SKELETON_KEY, SPEED_BOOTS,
-    OIL_LAMP, SPE_BOOK_OF_THE_DEAD, WAN_STRIKING,
+    OIL_LAMP, SPE_BOOK_OF_THE_DEAD, TALLOW_CANDLE, WAN_STRIKING,
 } from '../js/object_data.js';
 import {
     claimNextDueObjectTimer, OBJECT_TIMER_KIND, objectTimers, objectsInTimerGraph,
@@ -62,23 +62,28 @@ for (const flight of ['_thrownObject', '_kickedObject'] as const) {
     });
 }
 
-void test('an engulfed hero sees a lamp go out before the engulfer takes it', async () => {
-    freshObjectRoom();
-    requirePlayingGame(game);
-    const monster = await createMonsterAt('purple worm', 11, 10, NO_MINVENT);
-    game.u.uswallow = 1;
-    game.u.ustuck = monster;
-    const lamp = await knownObject(OIL_LAMP, { age: 300 });
-    beginObjectBurn(lamp);
-    const input = resetInputState();
-    installPagerInput(input, { expected: /lamp/, limit: 4 });
+for (const light of [
+    { type: OIL_LAMP, quantity: 1, message: 'The oil lamp goes out.' },
+    { type: TALLOW_CANDLE, quantity: 3, message: 'The tallow candles go out.' },
+]) {
+    void test(`an engulfed hero sees ${light.quantity === 1 ? 'a lamp' : 'a candle stack'} go out before pickup`, async () => {
+        freshObjectRoom();
+        requirePlayingGame(game);
+        const monster = await createMonsterAt('purple worm', 11, 10, NO_MINVENT);
+        game.u.uswallow = 1;
+        game.u.ustuck = monster;
+        const source = await knownObject(light.type, { age: 300, quan: light.quantity });
+        beginObjectBurn(source);
+        const input = resetInputState();
+        installPagerInput(input, { expected: /lamp|candles/, limit: 4 });
 
-    await addObjectToMonsterInventory(monster, lamp, game);
+        await addObjectToMonsterInventory(monster, source, game);
 
-    assert.equal(lamp.lamplit, false);
-    assert.equal(lamp.where, 'minvent');
-    assert.match(game._pending_message, /The oil lamp goes out\./);
-});
+        assert.equal(source.lamplit, false);
+        assert.equal(source.where, 'minvent');
+        assert.equal(game._pending_message, light.message);
+    });
+}
 
 for (const part of ['ball', 'chain'] as const) {
     void test(`monster pickup refuses the hero's attached ${part} without disturbing punishment`, async () => {

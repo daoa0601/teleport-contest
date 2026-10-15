@@ -14,13 +14,15 @@ import { deleteObject } from './object_delete.js';
 import { removeObjectAndContentsFromBill } from './shk.js';
 import { artifactEmitsLight } from './artifacts.js';
 import { endObjectBurn, objectShedsLight } from './light.js';
-import { monsterCanEngulf } from './monster_data.js';
-import { monsterTypeName } from './monster_data.js';
+import { monsterCanEngulf, monsterTypeName } from './monster_data.js';
 import { impossible } from './diagnostics.js';
 import { canSeeMonster, plineWithContinuation } from './display.js';
 import { updateMonsterEquipment } from './monster_equipment.js';
 import { unwieldMonsterWeapon } from './monster_weapon.js';
-import { observeObjectForNaming, objectName, objectNameIsPlural, simpleObjectName } from './objnam.js';
+import {
+    definiteName, observeObjectForNaming, objectName, objectNameIsPlural,
+    pluralizeObjectNoun, simpleObjectName,
+} from './objnam.js';
 import { heroIsBlind } from './senses.js';
 import {
     ELVEN_SHIELD, GLOB_OF_BLACK_PUDDING, GLOB_OF_GRAY_OOZE,
@@ -102,8 +104,10 @@ async function prepareMonsterPickup(
     const snuff = objectShedsLight(object) && monsterCanEngulf(monster);
     if (snuff && state.u.uswallow && state.u.ustuck === monster && !heroIsBlind(state)) {
         observeObjectForNaming(object, { state });
-        const name = objectName(object, state);
-        await plineWithContinuation(`The ${name} ${objectNameIsPlural(object, state) ? 'go' : 'goes'} out.`);
+        const noun = objectName(object, state);
+        const name = definiteName(object.quan > 1 ? pluralizeObjectNoun(object, noun) : noun, state);
+        const subject = name.charAt(0).toUpperCase() + name.slice(1);
+        await plineWithContinuation(`${subject} ${objectNameIsPlural(object, state) ? 'go' : 'goes'} out.`);
     }
     object.no_charge = false;
     if (!monster.mtame && monster !== state.u?.ustuck
