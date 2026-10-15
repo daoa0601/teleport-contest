@@ -36,7 +36,7 @@ import { hiddenGold } from './gold.js';
 import { heroGoldAmount } from './hero_gold.js';
 import { doneObjectCleanup } from './object_cleanup.js';
 import { restoreHeroNutrition } from './hunger.js';
-import { A_CON, A_WIS, CHOKING, DIED, G_EXTINCT, G_GENOD, GENOCIDED, PANICKED, POISONING, STARVING, STONING, Is_astralevel, KILLED_BY, KILLED_BY_AN, NO_KILLER_PREFIX, PICK_ONE, STRAT_WAITFORU, TT_LAVA, Upolyd, } from './const.js';
+import { A_CON, A_WIS, CHOKING, DIED, G_EXTINCT, G_GENOD, GENOCIDED, PANICKED, STARVING, STONING, In_endgame, In_quest, Is_astralevel, KILLED_BY, KILLED_BY_AN, NO_KILLER_PREFIX, PICK_ONE, STRAT_WAITFORU, TT_LAVA, Upolyd, } from './const.js';
 import { AMULET_OF_LIFE_SAVING, AMULET_OF_YENDOR, BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION, JADE, OBJECT_COST, OBJECT_NAMES, SPE_BOOK_OF_THE_DEAD, } from './object_data.js';
 import { createBonesFromDeath } from './bones_death.js';
 import { canMakeBones } from './bones_admission.js';
@@ -541,6 +541,28 @@ function currentDungeonName() {
         || game.dungeons?.[0]?.dname
         || 'The Dungeons of Doom';
 }
+// C end.c:ends[] describes the outcome, separately from killer attribution.
+const ENDINGS = [
+    'died', 'choked', 'were poisoned', 'starved', 'drowned', 'burned',
+    'dissolved in the lava', 'were crushed', 'turned to stone',
+    'turned into slime', 'were genocided', 'panicked', 'were tricked',
+    'quit', 'escaped', 'ascended',
+];
+function finalLocationLine(verb, score) {
+    const here = game.u.uz;
+    let text;
+    if (here?.dnum === 0 && here.dlevel <= 0) {
+        text = `You ${here.dlevel < 0 ? 'passed away' : verb} beyond the confines of the dungeon`;
+    }
+    else {
+        const where = Is_astralevel(here) ? 'The Astral Plane'
+            : game._tutorialActive ? 'The Tutorial' : currentDungeonName();
+        text = `You ${verb} in ${where}`;
+        if (!In_endgame(here) && game.dungeons[here?.dnum ?? 0]?.num_dunlevs !== 1)
+            text += ` on dungeon level ${In_quest(here) ? here?.dlevel : depth(here)}`;
+    }
+    return `${text} with ${score} point${plur(score)},`;
+}
 // C end.c:genl_outrip().  The stone receives up to four cause rows, each at
 // most sixteen characters, split backward at a word boundary when possible.
 function tombstoneDeathRows(cause) {
@@ -565,14 +587,12 @@ function tombstoneDeathRows(cause) {
     }
     return rows;
 }
-function deathSummaryLines(killer, { gold, score, depth, moves }, { deathVerb = 'died', deathCause = null, deathType = null, } = {}) {
+function deathSummaryLines(killer, { gold, score, moves }, { deathVerb = 'died', deathCause = null, deathType = null, } = {}) {
     const name = game.plname || 'player';
     const year = String(game.datetime || '').slice(0, 4) || '2026';
     const role = game.flags?.female && game.urole?.name?.f
         ? game.urole.name.f : game.urole?.name?.m || 'Adventurer';
     const goodbye = game.urole?.goodbye || 'Goodbye';
-    const deathDungeon = game._tutorialActive
-        ? 'The Tutorial' : currentDungeonName();
     const causeRows = tombstoneDeathRows(sanitizeDeathCause(deathCause || deathCauseRecord(killer, deathVerb)));
     const stone = [
         [23, '----------'],
@@ -596,7 +616,7 @@ function deathSummaryLines(killer, { gold, score, depth, moves }, { deathVerb = 
     return [
         ...(tombstone ? ['', ...stone.map(([col, text]) => ' '.repeat(col) + text), '', ''] : []),
         `${goodbye} ${name} the ${role}...`, '',
-        `You ${deathVerb} in ${deathDungeon} on dungeon level ${depth} with ${score} point${plur(score)},`,
+        finalLocationLine(deathVerb, score),
         `and ${gold} piece${plur(gold)} of gold, after ${moves} move${plur(moves)}.`,
         `You were level ${game.u?.ulevel || 1} with a maximum of ${game.u?.uhpmax || 1} hit point${plur(game.u?.uhpmax || 1)} when you ${deathVerb}.`,
         '',
@@ -613,12 +633,12 @@ function roleName() {
     return game.flags?.female && game.urole?.name?.f
         ? game.urole.name.f : game.urole?.name?.m || 'Adventurer';
 }
-function renderQuitSummaryPage({ gold, score, depth, moves }) {
+function renderQuitSummaryPage({ gold, score, moves }) {
     const display = game.nhDisplay;
     display?.clearScreen();
     game._preserveLeadingStyledBlanks = false;
     terminalLine(0, 0, `${roleGoodbye()} ${game.plname || 'player'} the ${roleName()}...`);
-    terminalLine(2, 0, `You quit in ${currentDungeonName()} on dungeon level ${depth} with ${score} point${plur(score)},`);
+    terminalLine(2, 0, finalLocationLine('quit', score));
     terminalLine(3, 0, `and ${gold} piece${plur(gold)} of gold, after ${moves} move${plur(moves)}.`);
     terminalLine(4, 0, `You were level ${game.u?.ulevel || 1} with a maximum of ${game.u?.uhpmax || 1} hit point${plur(game.u?.uhpmax || 1)} when you quit.`);
     terminalLine(23, 0, '--More--');
@@ -1191,11 +1211,8 @@ export async function finishOrdinaryDeath(options) {
 }
 async function completeOrdinaryDeath({ killer, possessionAnswer = null, deathVerb = 'died', deathCause = null, deathType = null, killerFormat = KILLED_BY_AN, }) {
     deathCause ||= deathCauseRecord(killer, deathVerb, deathType, killerFormat);
-    // topten.c:formatkiller() uses "poisoned by" for the cause; only
-    // end.c:ends[POISONING] uses "were poisoned" in the final summary.
-    if (deathType === POISONING) {
-        deathVerb = 'were poisoned';
-    }
+    if (deathType !== null)
+        deathVerb = ENDINGS[deathType] ?? deathVerb;
     game._deathKiller = killer;
     const taken = await settleGameExit('died');
     const showSummary = await discloseGame({ killer, deathVerb, deathCause, possessionAnswer, taken });
