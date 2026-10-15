@@ -132,7 +132,7 @@ export function randomTeleportDepth(state = game, random = rn2, rollOne = rnd) {
     const hero = state.u;
     const current = depth(hero.uz, state.dungeons);
     const dungeon = dungeonAt(state, hero.uz.dnum);
-    if (!random(5) || dungeon.num_dunlevs === 1 || In_endgame(hero.uz))
+    if (!random(5) || atKnox(state) || In_endgame(hero.uz))
         return current;
     let minimum = 1;
     let maximum = dungeon.depth_start + dungeon.num_dunlevs - 1;

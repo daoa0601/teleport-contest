@@ -124,6 +124,16 @@ void test('invalid level input repeats the prompt and Escape leaves the level in
     assert.equal(game.u.uz.dlevel, 1);
 });
 
+void test('random level teleport stays at Knox based on its identity rather than the dungeon size', () => {
+    freshConnectedLevels({ destinationDepth: 3 });
+    requirePlayingGame(game);
+    game.knox_level = createSpecialLevel({ ...game.u.uz });
+
+    const destination = randomTeleportDepth(game, () => 1, () => 1);
+
+    assert.equal(destination, 1);
+});
+
 void test('Nowhere confirmation can be declined without killing or moving the hero', async () => {
     const { source } = freshConnectedLevels();
     grantIntrinsicProperty('teleportControl', 'outside');
