@@ -234,7 +234,7 @@ export function heroGasTolerance(state = game) {
     const mnum = Upolyd(hero) ? hero.umonnum : null;
     if (hero.uinvulnerable || hero.invulnerable
         || hero.breathless || hero.magicalBreathing
-        || hero.underwater
+        || hero.uinwater
         || poisonGasImmuneSpecies(mnum, state, hero.ux, hero.uy)) {
         return GAS_OK;
     }
