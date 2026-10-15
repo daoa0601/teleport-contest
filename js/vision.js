@@ -7,7 +7,7 @@ import { newsym } from './display.js';
 import { BOULDER } from './object_data.js';
 import { MONSTER_SYMBOL } from './monster_data.js';
 import { objectLightRadius } from './light.js';
-import { isPoolAt } from './terrain_properties.js';
+import { isMoatAt, isPoolAt } from './terrain_properties.js';
 import { isRoom } from './map_types.js';
 export function mimicBlocksLight(monster) {
     if (monster.mappearance === undefined)
@@ -193,6 +193,8 @@ export function visionCellBlocksLight(level, x, y) {
     // exposed the tutorial cells beyond the lava curtain.
     if (typ < POOL || typ === TREE || typ === WATER
         || typ === LAVAWALL || typ === CLOUD)
+        return true;
+    if ((game.underwater || game.u.uinwater) && isMoatAt(x, y))
         return true;
     if (typ === DOOR) {
         const mask = loc.doormask ?? 0;
