@@ -30,7 +30,7 @@ import { adjustedMonsterLevel } from './monster_hit_points.js';
 import { deleteObject } from './object_delete.js';
 import { makePlural, withIndefiniteArticle } from './object_grammar.js';
 import { objectName } from './objnam.js';
-import { objectClassForType, recordObjectKnowledge } from './object_knowledge.js';
+import { objectClassForType, recordObjectEncounter, recordObjectKnowledge } from './object_knowledge.js';
 import { isQuantumBox, observeQuantumCat } from './quantum_cat.js';
 import { deepestLevelReached, depth } from './hacklib.js';
 import { recordGameLogEvent } from './gamelog.js';
@@ -74,13 +74,13 @@ function recordHeroFatalEvent() {
     }
 }
 export function identifyLifeSavingAmulet(random = rn2) {
+    recordObjectEncounter(AMULET_OF_LIFE_SAVING);
     if (!game._knownObjectTypes?.has(AMULET_OF_LIFE_SAVING)) {
         recordObjectKnowledge(AMULET_OF_LIFE_SAVING);
-        const wisdom = game.u?.acurr?.a?.[A_WIS] ?? 10;
-        const amount = random(19) > wisdom ? 1 : 0;
         if (!game.u._exercise)
             game.u._exercise = [0, 0, 0, 0, 0, 0];
-        game.u._exercise[A_WIS] += amount;
+        if (Math.abs(game.u._exercise[A_WIS]) < 50)
+            game.u._exercise[A_WIS] += random(19) > currentAttribute(A_WIS) ? 1 : 0;
     }
 }
 export async function completeHeroLifeSaving(transaction, { deathType = null } = {}) {
