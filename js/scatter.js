@@ -457,6 +457,8 @@ export async function scatterFloorObjects(x, y, force, { state = game, onlyObjec
             }
             node.x = nextX;
             node.y = nextY;
+            state._thrownObject = node.object;
+            state.bhitpos = { x: nextX, y: nextY };
             const monster = monsterAt(state, nextX, nextY);
             if (monster) {
                 if (mayHitMonsters) {
@@ -472,6 +474,7 @@ export async function scatterFloorObjects(x, y, force, { state = game, onlyObjec
                 return 0;
             if (state.level?.at(nextX, nextY)?.typ === SINK)
                 node.stopped = true;
+            state._thrownObject = null;
         }
     }
     let moved = 0;
