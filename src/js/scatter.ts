@@ -5,7 +5,7 @@ import { currency } from './currency.js';
 
 import { deleteTrap } from './trap_lifecycle.js';
 import {
-    DOOR, D_CLOSED, D_LOCKED, M_AP_MONSTER, M_AP_TYPE, SHOPBASE, SINK, STATUE_TRAP,
+    DOOR, D_CLOSED, D_LOCKED, LARGEST_INT, M_AP_MONSTER, M_AP_TYPE, SHOPBASE, SINK, STATUE_TRAP,
     ZAP_POS, isok,
 } from './const.js';
 import { canSpotMonster, displayLiquidName, newsym } from './display.js';
@@ -442,7 +442,7 @@ function nextObjectFromPile(pile: GameObject[], state: GameState, options: Scatt
     const quantity = object.quan ?? object.quantity ?? 1;
     if (quantity <= 1) return { object, lastPiece: true };
     const part = splitObjectStack(
-        object, options.rollOne(quantity - 1), state,
+        object, options.rollOne(Math.min(quantity - 1, LARGEST_INT)), state,
     );
     if (!part) throw new Error(`Cannot split scattered object ${object.o_id}.`);
     return { object: part, lastPiece: false };
