@@ -17,8 +17,7 @@ for (const species of ['goblin', 'giant eel']) {
         monster.mcan = 1;
         monster.mux = game.u.ux;
         monster.muy = game.u.uy;
-        game.underwater = true;
-        game.u.underwater = true;
+        game.u.uinwater = 1;
         installPagerInput(resetInputState(), { expected: /eel|goblin/, limit: 8 });
 
         await performMonsterHeroAttack(monster, game, {

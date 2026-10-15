@@ -3932,7 +3932,7 @@ export async function beginMonsterHeroAttack(
     if (dist2(monster.mx, monster.my, state.u.ux, state.u.uy) <= 3)
         endVoluntaryMultiTurn(state);
     if (monster.dead || monster.mhp <= 0) return { heroAttackResult: 1 };
-    if ((state.underwater || state.u.underwater)
+    if ((state.underwater || state.u.uinwater)
         && !((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_SWIM)) return {};
     if (state.u.uswallow) {
         if (state.u.ustuck !== monster) return {};
