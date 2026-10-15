@@ -4,6 +4,7 @@ import { moveloop_core } from '../js/allmain.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { POT_WATER, SCR_SCARE_MONSTER } from '../js/object_data.js';
+import { initializeMonsterWormBody } from '../js/monster_worm.js';
 import { heroIsPolymorphed } from '../js/polyself.js';
 import { setHeroLycanthropy } from '../js/were.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
@@ -25,5 +26,22 @@ void test('holy water permits a werebeast to return to human form beside a monst
     await finishAtCommandInput(input, moveloop_core, /unencumbered|awe|purified|burns|affinity|return|flee|^$/);
     assert.equal(heroIsPolymorphed(game), false);
     assert.equal(game.u.ulycn, -1);
+});
+void test('holy water leaves a werebeast in its current body when a hostile worm tail is adjacent', async () => {
+    const input = freshTurnRoom({ hero: { uhp: 1000, uhpmax: 1000 } });
+    const hero = installPolymorphedHero('wererat', { hitPoints: 100 });
+    setHeroLycanthropy(hero.umonnum);
+    const worm = await createMonsterAt('long worm', 14, 10);
+    initializeMonsterWormBody(worm, { segmentCount: 0 });
+    worm.wormSegments = [{ x: 11, y: 10 }, { x: 12, y: 10 }, { x: 13, y: 10 }];
+    worm.mpeaceful = 0;
+    const water = await addInventoryObject(POT_WATER, { blessed: true });
+    const expected = /awe|purified|return|unencumbered|worm|bite|miss|hit/;
+    installPagerInput(input, { expected, limit: 20 });
+    pushKeys(`q${water.invlet}`);
+    await moveloop_core();
+    assert.equal(heroIsPolymorphed(game), true);
+    assert.equal(game.u.ulycn, -1);
+    await finishAtCommandInput(input, moveloop_core, expected);
 });
 //# sourceMappingURL=were_safe_cure.test.js.map

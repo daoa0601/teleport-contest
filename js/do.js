@@ -6,13 +6,14 @@ import { game } from './gstate.js';
 import { canSpotMonster, pline, plineWithContinuation, } from './display.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS1 } from './monster_data.js';
 import { monsterIsScaredAt } from './monster_fear.js';
-import { monsterHasMapPosition } from './monster_location.js';
+import { monsterHasMapPosition, monsterOccupiesPosition } from './monster_location.js';
 import { AT_BOOM } from './monster_attack_types.js';
-import { M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE } from './const.js';
+import { isok, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE } from './const.js';
 import { setHeroBlindnessTurns } from './senses.js';
 import { makeBlinded } from './sight_change.js';
 import { gulpBlindnessCheck } from './engulf_blindness.js';
 import { heroFaceName } from './body_parts.js';
+const M1_HIDE = 0x00000100;
 function monsterHasActiveAttack(monster) {
     return (MONSTER_ATTACKS[monster?.mnum] || [])
         .some(([attackType]) => attackType && attackType !== AT_BOOM);
@@ -29,24 +30,28 @@ export function threateningMonsterNearby(state = game) {
     if (!u)
         return false;
     const hallucinating = heroIsHallucinating(state);
-    return (state.level?.monsters || []).some(monster => {
-        if (!monster || monster.dead || (monster.mhp ?? 1) <= 0
-            || monsterIsHelpless(monster)
-            || M_AP_TYPE(monster) === M_AP_FURNITURE
-            || M_AP_TYPE(monster) === M_AP_OBJECT
-            || !monsterHasMapPosition(monster, state)
-            || ((MONSTER_FLAGS1[monster.mnum] ?? 0) & 0x00000100)
-                && monster.mundetected
-            || (monster.mx === u.ux && monster.my === u.uy)
-            || Math.abs(monster.mx - u.ux) > 1
-            || Math.abs(monster.my - u.uy) > 1
-            || monsterIsScaredAt(monster, state, u.ux, u.uy)
-            || !canSpotMonster(monster)) {
-            return false;
+    for (let x = u.ux - 1; x <= u.ux + 1; x++) {
+        for (let y = u.uy - 1; y <= u.uy + 1; y++) {
+            if (!isok(x, y) || x === u.ux && y === u.uy)
+                continue;
+            const monster = state.level?.monsters.find(candidate => monsterHasMapPosition(candidate, state)
+                && monsterOccupiesPosition(candidate, x, y));
+            if (!monster || monster.dead || monster.mhp <= 0)
+                continue;
+            const appearance = M_AP_TYPE(monster);
+            if (appearance === M_AP_FURNITURE || appearance === M_AP_OBJECT)
+                continue;
+            if (!hallucinating && (monster.mpeaceful || !monsterHasActiveAttack(monster)))
+                continue;
+            const hider = (MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_HIDE;
+            if (hider && monster.mundetected || monsterIsHelpless(monster)
+                || monsterIsScaredAt(monster, state, u.ux, u.uy)
+                || !canSpotMonster(monster))
+                continue;
+            return true;
         }
-        return hallucinating
-            || (!monster.mpeaceful && monsterHasActiveAttack(monster));
-    });
+    }
+    return false;
 }
 function dangerousHeroProperties() {
     const u = game.u;
