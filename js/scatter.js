@@ -458,9 +458,11 @@ export async function scatterFloorObjects(x, y, force, { state = game, onlyObjec
             node.x = nextX;
             node.y = nextY;
             const monster = monsterAt(state, nextX, nextY);
-            if (monster && mayHitMonsters) {
-                node.range--;
-                await hitMonster(monster, node, state, options);
+            if (monster) {
+                if (mayHitMonsters) {
+                    node.range--;
+                    await hitMonster(monster, node, state, options);
+                }
             }
             else if (state.u?.ux === nextX && state.u?.uy === nextY
                 && mayHitHero) {
