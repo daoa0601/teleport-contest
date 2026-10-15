@@ -64,7 +64,7 @@ import { monsterCanCarryObject } from './monster_carry.js';
 import { releaseObjectLeash } from './monster_leash.js';
 import { petrifyMonsterImmediately } from './monster_stoning.js';
 import { touchPetrifies } from './stoning.js';
-import { armorSimpleName, stopDonning } from './armor.js';
+import { armorSimpleName, heroHasFreeAction, stopDonning } from './armor.js';
 import { isBeingTakenOff } from './takeoff_state.js';
 import { OBJECT_DELAY } from './object_data.js';
 import { heroIsUnaware } from './hero_sleep.js';
@@ -162,7 +162,7 @@ import {
 } from './objnam.js';
 import {
     A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS,
-    BOLT_LIM, COLNO, ROWNO, DOOR, D_CLOSED, D_LOCKED, HOLE, M_SEEN_MAGR,
+    BOLT_LIM, COLNO, ROWNO, DOOR, D_CLOSED, D_LOCKED, HOLE, M_SEEN_FIRE, M_SEEN_MAGR,
     STONE, ZAP_POS,
     M_ATTK_AGR_DIED, M_ATTK_AGR_DONE, W_ARMG,
     UNENCUMBERED, MOD_ENCUMBER, HVY_ENCUMBER, EXT_ENCUMBER, W_ACCESSORY, W_WEAPONS,
@@ -2227,6 +2227,19 @@ async function resolveDeferredHeroDirectSpell(
     if (damage && !state.program_state.gameover) applyHeroSpellDamage(attack, damage, state);
 }
 
+async function prepareMonsterSpellResistance(attack: HeroSpellAttack, state: PlayingGameState): Promise<void> {
+    if (!attack.spell || !['psi-bolt', 'open-wounds', 'stun-you', 'paralyze', 'confuse-you', 'weaken-you'].includes(attack.spell))
+        return;
+    const resisted = state.u.antimagic
+        || (attack.spell === 'stun-you' || attack.spell === 'paralyze') && heroHasFreeAction(state);
+    if (resisted) {
+        await shieldeff(state.u.ux, state.u.uy, state);
+        monstersObserveHeroResistance(M_SEEN_MAGR, state);
+    } else if (attack.spell === 'psi-bolt' || attack.spell === 'open-wounds') {
+        monstersForgetHeroResistance(M_SEEN_MAGR, state);
+    }
+}
+
 async function resolveDeferredHeroFirePillar(
     action: MonsterAction, heroAttack: HeroSpellAttack,
     publish: typeof plineWithContinuation,
@@ -2236,6 +2249,10 @@ async function resolveDeferredHeroFirePillar(
     const originalDamage = d(8, 6);
     action.calls.push('d(8,6)');
     const fireResistant = !!(game.u.fireResistance);
+    if (fireResistant) {
+        await shieldeff(game.u.ux, game.u.uy, game);
+        monstersObserveHeroResistance(M_SEEN_FIRE, game);
+    } else monstersForgetHeroResistance(M_SEEN_FIRE, game);
     let appliedDamage = fireResistant ? 0 : originalDamage;
     if (heroHasHalfSpellDamage(game))
         appliedDamage = Math.trunc((appliedDamage + 1) / 2);
@@ -2345,12 +2362,17 @@ async function resolveDeferredHeroDeathTouch(
         succeeds = successRoll > 12;
     }
     if (!succeeds) {
+        if (antimagic) {
+            await shieldeff(u.ux, u.uy, game);
+            monstersObserveHeroResistance(M_SEEN_MAGR, game);
+        }
         await publish("Lucky for you, it didn't work!");
         heroAttack.deferredDeathTouch = false;
         return;
     }
     if (heroIsHallucinating(game)) {
         await publish('You have an out of body experience.');
+        monstersForgetHeroResistance(M_SEEN_MAGR, game);
         heroAttack.deferredDeathTouch = false;
         return;
     }
@@ -2359,6 +2381,7 @@ async function resolveDeferredHeroDeathTouch(
         action.calls.push(`d(${count},${sides})`);
         return d(count, sides);
     });
+    monstersForgetHeroResistance(M_SEEN_MAGR, game);
     heroAttack.deferredDeathTouch = false;
 }
 
@@ -2596,6 +2619,7 @@ async function presentMonsterAttackEffects(
                         }
                         if (heroAttack.deferredSpellDamage)
                             rollDeferredHeroSpellDamage(action, game, rollDice);
+                        await prepareMonsterSpellResistance(heroAttack, game);
                         let effectMessage = heroAttack.spellEffectMessage;
                         if (heroAttack.spell === 'cure-self'
                             && canSeeMonster(monster)) {
@@ -2668,6 +2692,7 @@ async function presentMonsterAttackEffects(
                                 heroDied = true;
                                 break;
                             }
+                            monstersForgetHeroResistance(M_SEEN_MAGR, game);
                         }
                         if (heroAttack.deferredFirePillar)
                             await resolveDeferredHeroFirePillar(

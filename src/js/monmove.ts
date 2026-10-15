@@ -67,8 +67,8 @@ import { displayRayName } from './ray_name.js';
 import { castNativeRay } from './ray_attack.js';
 import { breathWeaponName } from './breath_ray.js';
 import { AD_RBRE, AD_SLEE } from './monster_attack_types.js';
-import { M_SEEN_REFL } from './const.js';
-import { seenResistanceForDamage } from './monster_perception.js';
+import { M_SEEN_MAGR, M_SEEN_REFL } from './const.js';
+import { monstersForgetHeroResistance, seenResistanceForDamage } from './monster_perception.js';
 import { watchDigging } from './digging_watch.js';
 
 import { heroDetectsMonsters, heroIsBlind, heroIsHallucinating } from './senses.js';
@@ -6851,6 +6851,7 @@ export function resumeDeferredHeroSpell(
         state._helplessDoneMessage = 'You can move again.';
         applyHeroSpellDamage(attack, duration, state);
         attack.paralyzed = true;
+        if (!resisted) monstersForgetHeroResistance(M_SEEN_MAGR, state);
         return attack;
     }
     if (attack.spell === 'confuse-you') {
@@ -6861,6 +6862,7 @@ export function resumeDeferredHeroSpell(
             if (heroHasHalfSpellDamage(state)) duration = Math.trunc((duration + 1) / 2);
             if (!state.u.confusionTurns && duration) state.context.botl = true;
             state.u.confusionTurns = (state.u.confusionTurns ?? 0) + duration;
+            monstersForgetHeroResistance(M_SEEN_MAGR, state);
         }
         attack.appliedDamage = 0;
         attack.confusedHero = !antimagic;
@@ -6941,6 +6943,7 @@ export function resumeDeferredHeroSpell(
         attack.stunnedHero = true;
         attack.stunDuration = duration;
         attack.appliedDamage = 0;
+        if (!resisted) monstersForgetHeroResistance(M_SEEN_MAGR, state);
         return attack;
     }
     if (attack.spell === 'destroy-armor') {
