@@ -298,6 +298,8 @@ const GLAIVE = 62;
 const LUCERN_HAMMER = 69;
 const AKLYS = 80;
 const CLUB = 77;
+const RUBBER_HOSE = 78;
+const SHURIKEN = 25;
 const BOW = 83;
 const CROSSBOW = 88;
 const PLATE_MAIL = 121;
@@ -363,8 +365,6 @@ const PM_MINOTAUR = 177;
 const PM_ETTIN = 174;
 const PM_ALIGNED_CLERIC = 275;
 const PM_HIGH_CLERIC = 276;
-const PM_ARCH_PRIEST = 350;
-const PM_ACOLYTE = 375;
 const PM_HUMAN_ZOMBIE = 244;
 const PM_WRAITH = 230;
 const PM_DWARF = 44;
@@ -393,9 +393,6 @@ const PM_DEATH = 311;
 const PM_PESTILENCE = 312;
 const PM_FAMINE = 313;
 const PM_WIZARD = 343;
-const PM_STUDENT = 369;
-const PM_CHIEFTAIN = 370;
-const PM_APPRENTICE = 382;
 const PM_SALAMANDER = 329;
 const S_MIMIC = 13;
 const G_UNIQ_MASK = 0x1000;
@@ -1651,6 +1648,16 @@ const M_INITWEAP_SWITCH_CLASSES = new Set([
     56, // S_DEMON
 ]);
 
+function questMonsterRepresentsRole(mndx: number, role: 'priest' | 'monk'): boolean {
+    return MONSTER_SYMBOL[mndx] === 53 && game.urole?.key === role
+        && (MONSTER_SOUND[mndx] === 36 || MONSTER_SOUND[mndx] === 37);
+}
+
+function receivesClericEquipment(mndx: number): boolean {
+    return MONSTER_SYMBOL[mndx] === 53
+        && (MONSTER_SOUND[mndx] === 41 || questMonsterRepresentsRole(mndx, 'priest'));
+}
+
 function levelMonsterAt(x: number, y: number, ignore: Monster | null = null): Monster | undefined {
     return game.level?.monsters?.find(monster => monsterHasMapPosition(monster, game) && monster !== ignore
         && (monster?.mhp ?? 1) > 0 && monsterOccupiesPosition(monster, x, y));
@@ -2377,8 +2384,7 @@ async function makemon(
             await mongets(81); // FLAIL
         }
         await giveGeneralMonsterWeapon();
-    } else if (mndx === PM_ARCH_PRIEST || mndx === PM_ALIGNED_CLERIC
-        || mndx === PM_HIGH_CLERIC) {
+    } else if (receivesClericEquipment(mndx)) {
         // C ref: makemon.c m_initweap(), Priest/Cleric quest-leader branch.
         // This intentionally bypasses ordinary object initialization.
         const mace = await mksobj(MACE, false, false);
@@ -2394,20 +2400,19 @@ async function makemon(
             const offensiveItem = randomOffensiveMonsterItem(pendingMonster);
             if (offensiveItem) await mongets(offensiveItem);
         }
-    } else if (mndx === PM_STUDENT || mndx === PM_ACOLYTE
-        || mndx === PM_APPRENTICE) {
-        // C ref: makemon.c m_initweap(), MS_GUARDIAN novice equipment.
-        // Students, acolytes, and apprentices share the same low-tier
-        // guardian armament graph; keeping it constructor-owned also covers
-        // their respective quest-start level programs.
+    } else if (mndx === MONSTER_NAME.indexOf('ninja')) {
+        await mongets(rn2(4) ? SHURIKEN : DART);
+        await mongets(rn2(4) ? SHORT_SWORD : AXE);
+        await giveOffensiveMonsterItem();
+    } else if (['student', 'attendant', 'abbot', 'acolyte', 'guide', 'apprentice']
+        .includes(MONSTER_NAME[mndx] ?? '')) {
+        // C m_initweap(), novice quest guardians.
         if (rn2(2)) await mongets(rn2(3) ? DAGGER : KNIFE);
         if (rn2(5)) await mongets(rn2(3) ? LEATHER_JACKET : LEATHER_CLOAK);
         if (rn2(3)) await mongets(rn2(3) ? LOW_BOOTS : HIGH_BOOTS);
         if (rn2(3)) await mongets(POT_HEALING);
         await giveOffensiveMonsterItem();
-    } else if (mndx === PM_CHIEFTAIN) {
-        // C ref: makemon.c m_initweap(), the armed MS_GUARDIAN tier used by
-        // chieftains, pages, roshi, and warriors.
+    } else if (['chieftain', 'page', 'roshi', 'warrior'].includes(MONSTER_NAME[mndx] ?? '')) {
         await mongets(rn2(3) ? LONG_SWORD : SHORT_SWORD);
         await mongets(rn2(3) ? CHAIN_MAIL : LEATHER_ARMOR);
         if (rn2(2)) await mongets(rn2(2) ? LOW_BOOTS : HIGH_BOOTS);
@@ -2416,6 +2421,26 @@ async function makemon(
             await mongets(BOW);
             await mInitthrow(ARROW, 12);
         }
+        await giveOffensiveMonsterItem();
+    } else if (mndx === MONSTER_NAME.indexOf('hunter')) {
+        await mongets(rn2(3) ? SHORT_SWORD : DAGGER);
+        if (rn2(2)) await mongets(rn2(2) ? LEATHER_JACKET : LEATHER_ARMOR);
+        await mongets(BOW);
+        await mInitthrow(ARROW, 12);
+        await giveOffensiveMonsterItem();
+    } else if (mndx === MONSTER_NAME.indexOf('thug')) {
+        await mongets(CLUB);
+        await mongets(rn2(3) ? DAGGER : KNIFE);
+        if (rn2(2)) await mongets(LEATHER_GLOVES);
+        await mongets(rn2(2) ? LEATHER_JACKET : LEATHER_ARMOR);
+        await giveOffensiveMonsterItem();
+    } else if (mndx === MONSTER_NAME.indexOf('neanderthal')) {
+        await mongets(CLUB);
+        await mongets(LEATHER_ARMOR);
+        await giveOffensiveMonsterItem();
+    } else if (MONSTER_SYMBOL[mndx] === 37) { // S_KOP
+        if (!rn2(4)) await mInitthrow(CREAM_PIE, 2);
+        if (!rn2(3)) await mongets(rn2(2) ? CLUB : RUBBER_HOSE);
         await giveOffensiveMonsterItem();
     } else if (MONSTER_SYMBOL[mndx] === 15
         && MONSTER_HAS_WEAPON_ATTACK.has(mndx)) { // S_ORC
@@ -2552,14 +2577,14 @@ async function makemon(
     // m_initinv(), m_dowear(), and the domestic-saddle probe share the same
     // allow_minvent gate.  NO_MINVENT must consume none of their RNG and must
     // leave an empty minvent even for species with fixed starting objects.
-    if (initializeMonsterEquipment
-        && (mndx === PM_ARCH_PRIEST || mndx === PM_ALIGNED_CLERIC
-            || mndx === PM_HIGH_CLERIC)) {
+    if (initializeMonsterEquipment && receivesClericEquipment(mndx)) {
         // C ref: makemon.c m_initinv(), Priest/Cleric quest-leader branch.
         await mongets(rn2(7) ? ROBE
             : rn2(3) ? CLOAK_OF_PROTECTION : CLOAK_OF_MAGIC_RESISTANCE);
         await mongets(SMALL_SHIELD);
         await mkmonmoney(rn1(10, 20));
+    } else if (initializeMonsterEquipment && questMonsterRepresentsRole(mndx, 'monk')) {
+        await mongets(rn2(11) ? ROBE : CLOAK_OF_MAGIC_RESISTANCE);
     }
 
     if (initializeMonsterEquipment && MONSTER_SYMBOL[mndx] === 14) { // S_NYMPH
