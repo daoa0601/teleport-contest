@@ -7,7 +7,9 @@ import { game, requireInitializedGame } from './gstate.js';
 import { spendHeroNutrition } from './hunger.js';
 import { heroCanReachFloor } from './floor_reach.js';
 import { burnAwayHeroSlime } from './hack.js';
-import { placeCreatedObject, remove_object, stack_object } from './floor_object.js';
+import { placeCreatedObject, stack_object } from './floor_object.js';
+import { useUpFloorObject } from './floor_consumption.js';
+import { heroIsDeaf } from './senses.js';
 import { mksobj, set_corpsenm, } from './mklev.js';
 import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL, } from './monster_data.js';
 import { CHEST, CORPSE, CREAM_PIE, EGG, LARGE_BOX, OBJECT_MATERIAL, OBJECT_NUTRITION, TOWEL, WATER_WALKING_BOOTS, } from './object_data.js';
@@ -160,12 +162,9 @@ async function sitOnObject(object) {
         await pline("It's squishy...");
     }
     else if (object.otyp === CREAM_PIE) {
-        if (!(game.deaf || game.u?.deaf))
+        if (!heroIsDeaf())
             await pline('Squelch!');
-        remove_object(object);
-        object.quan = object.quantity = 0;
-        object.where = 'gone';
-        object.ox = object.oy = 0;
+        await useUpFloorObject(object, object.quan);
     }
     else if (object.otyp !== LARGE_BOX && object.otyp !== CHEST
         && OBJECT_MATERIAL[object.otyp] !== CLOTH) {

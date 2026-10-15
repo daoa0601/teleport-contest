@@ -17,7 +17,9 @@ import type { ThroneOptions } from './throne.js';
 import { spendHeroNutrition } from './hunger.js';
 import { heroCanReachFloor } from './floor_reach.js';
 import { burnAwayHeroSlime } from './hack.js';
-import { placeCreatedObject, remove_object, stack_object } from './floor_object.js';
+import { placeCreatedObject, stack_object } from './floor_object.js';
+import { useUpFloorObject } from './floor_consumption.js';
+import { heroIsDeaf } from './senses.js';
 import {
     mksobj, set_corpsenm,
 } from './mklev.js';
@@ -180,11 +182,8 @@ async function sitOnObject(object: GameObject): Promise<void> {
         && (MONSTER_FLAGS1[object.corpsenm ?? -1] ?? 0) & M1_AMORPHOUS) {
         await pline("It's squishy...");
     } else if (object.otyp === CREAM_PIE) {
-        if (!(game.deaf || game.u?.deaf)) await pline('Squelch!');
-        remove_object(object);
-        object.quan = object.quantity = 0;
-        object.where = 'gone';
-        object.ox = object.oy = 0;
+        if (!heroIsDeaf()) await pline('Squelch!');
+        await useUpFloorObject(object, object.quan);
     } else if (object.otyp !== LARGE_BOX && object.otyp !== CHEST
         && OBJECT_MATERIAL[object.otyp] !== CLOTH) {
         await pline("It's not very comfortable...");
