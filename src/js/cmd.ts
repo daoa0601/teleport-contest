@@ -6904,7 +6904,7 @@ async function throwCommand(
         || adjacentHelplessRealGemMiss;
     const mineralFirstTyp = game.level
         ?.at?.(game.u.ux + dx, game.u.uy + dy)?.typ;
-    if (supportedGemProjectile
+    if (!verticalThrow && supportedGemProjectile
         && (mineralFirstTyp === POOL || mineralFirstTyp === ROOM
             || mineralFirstTyp === CORR || mineralFirstTyp === DOOR
             || mineralFirstTyp === ALTAR || mineralFirstTyp === IRONBARS

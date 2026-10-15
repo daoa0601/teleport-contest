@@ -9,7 +9,6 @@ import type { Position } from './map_types.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import type { ProjectileFlightCapture } from './thrown_object.js';
-import { heroCanBeBlindedByVenom } from './blinding_attack.js';
 import { IS_SOFT, LOST_THROWN } from './const.js';
 import { newsym, plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
@@ -34,14 +33,12 @@ import {
 } from './object_data.js';
 import { heroMonsterForm } from './polyself.js';
 import { rn2, rnd } from './rng.js';
-import { heroIsBlind } from './senses.js';
-import { makeBlinded } from './sight_change.js';
 import { surfaceName } from './terrain_name.js';
 import {
     captureThrownObjectFlight, flyHeroThrownObject, heroThrowTrajectory,
 } from './thrown_object.js';
 import { promptDirection } from './tty_prompts.js';
-import { levelHasCeiling } from './terrain_properties.js';
+import { tossObjectUp } from './toss_up.js';
 
 export function heroSpitAttack(state = game) {
     const form = heroMonsterForm(state);
@@ -101,53 +98,6 @@ async function dropVenomAtHero(
     });
     if (!result.destroyed) await settleVenom(venom, x, y, state);
     return result;
-}
-
-export async function tossVenomUp(
-    venom: GameObject, state: GameState, publish: MessagePublisher = plineWithContinuation,
-    random: typeof rn2 = rn2, rollOne: typeof rnd = rnd,
-) {
-    const underwater = state.underwater || state.u?.uinwater;
-    const hitsRoof = random(5) !== 0 && !underwater;
-    const hasCeiling = levelHasCeiling(state);
-    const ceiling = hasCeiling ? 'ceiling'
-        : underwater ? 'water above' : 'sky';
-
-    venom.ox = state.u.ux;
-    venom.oy = state.u.uy;
-    if (hasCeiling && hitsRoof && objectBreaksOnImpact(venom, random)) {
-        await publish(`A splash of venom hits the ${ceiling}.`);
-        return breakObjectAtLocation(venom, {
-            fromInventory: true, state, publish, random,
-        });
-    }
-
-    const action = hasCeiling
-        ? hitsRoof ? 'hits' : 'almost hits'
-        : 'flies up into';
-    await publish(
-        `A splash of venom ${action} the ${ceiling}, then falls back on top of your head.`,
-    );
-
-    if (objectBreaksOnImpact(venom, random)) {
-        const canBlind = venom.otyp === BLINDING_VENOM
-            && heroCanBeBlindedByVenom(state);
-        const blindIncrement = canBlind ? rollOne(25) : 0;
-        const wasBlind = heroIsBlind(state);
-        await breakObjectAtLocation(venom, {
-            fromInventory: true, state, publish, random,
-        });
-        if (venom.otyp === BLINDING_VENOM) {
-            await publish("You've got it all over your face!");
-            if (blindIncrement) {
-                if (!wasBlind) await publish('It blinds you!');
-                state.u.ucreamed = (state.u.ucreamed ?? 0) + blindIncrement;
-                await makeBlinded((state.u.blindTurns ?? 0) + blindIncrement, { state, talk: false, publish });
-            }
-        }
-        return { destroyed: true };
-    }
-    return dropVenomAtHero(venom, state, publish, random, false);
 }
 
 interface VenomImpactOptions {
@@ -298,7 +248,8 @@ export async function useHeroSpit({
             captureFlight, recoilHero, finishMonsterKill,
         });
     } else if (direction.dz < 0) {
-        result = await tossVenomUp(venom, state, publish, random, rollOne);
+        const landed = await tossObjectUp(venom, { state, publish, random, rollOne });
+        result = { destroyed: landed === null };
     } else if (direction.dz > 0) {
         result = await dropVenomAtHero(
             venom, state, publish, random, true,

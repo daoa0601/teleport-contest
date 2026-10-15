@@ -2,16 +2,15 @@ import { currency } from './currency.js';
 // gold_throw.js — Hero-gold flight and direct/quivered contact ownership.
 // C refs: dothrow.c:throw_gold()/throwit()/thitmonst(), zap.c:bhit(),
 // dokick.c:ghitm().
-import { A_CHA, IS_SOFT, Is_airlevel, Is_waterlevel, LOST_THROWN, Upolyd, } from './const.js';
-import { objectIsHardHelmet } from './armor.js';
-import { loseHeroHp } from './hero_damage.js';
+import { A_CHA, IS_SOFT, Is_airlevel, Is_waterlevel, LOST_THROWN, } from './const.js';
+import { hitFloorWithObject } from './object_drop.js';
+import { tossObjectUp } from './toss_up.js';
 import { monsterName } from './monster_name.js';
 import { currentAttribute } from './attrib.js';
 import { canSeeMonster, canSpotMonster, newsym, pline, plineWithContinuation } from './display.js';
 import { placeObjectSynchronously, stack_object } from './floor_object.js';
 import { hiddenGold } from './gold.js';
 import { freeInventoryObject } from './hero_inventory.js';
-import { requirePlayingGame } from './gstate.js';
 import { detachHeroGold, heroGoldAmount, heroGoldObject, } from './hero_gold.js';
 import { addObjectToMonsterInventory, linkObjectToMonsterInventory, } from './monster_inventory.js';
 import { MONSTER_FLAGS2 } from './monster_data.js';
@@ -177,12 +176,10 @@ export async function resolveDirectGoldThrow({ state, gold, dx = 0, dy = 0, dz =
         await linkObjectToMonsterInventory(state.u.ustuck, gold, { state });
         return true;
     }
-    const heroX = state.u?.ux ?? 0;
-    const heroY = state.u?.uy ?? 0;
     if (dz) {
         if (dz > 0)
             await pline('The gold hits the floor.');
-        await settleGoldOnFloor(state, gold, heroX, heroY);
+        await settleGoldOnFloor(state, gold, state.u.ux, state.u.uy);
         return true;
     }
     const range = heroThrowRange(gold, state);
@@ -223,59 +220,12 @@ export async function resolveQuiveredGoldThrow({ state, gold, dx = 0, dy = 0, dz
             swallowed: true, wakeMonster,
         });
     }
-    const heroX = state.u?.ux ?? 0;
-    const heroY = state.u?.uy ?? 0;
     if (dz) {
         if (dz < 0) {
-            // toss_up() consumes the roof probe even when underwater.  The
-            // represented ordinary coin is a non-weapon of weight one, so it
-            // deals one point before hitfloor() leaves that identity here.
-            const roofProbe = rn2(5) !== 0
-                && !(state.underwater || state.u?.uinwater);
-            const hasCeiling = !Is_airlevel(state.u?.uz)
-                && !Is_waterlevel(state.u?.uz);
-            const hitsRoof = hasCeiling && roofProbe;
-            // Coins cannot break, but each breaktest() still consumes its
-            // obj_resists() percentage draw: once at the roof when struck,
-            // once on the hero, and once more on a hard floor via hitfloor().
-            if (hitsRoof)
-                rn2(100);
-            const upwardAction = !hasCeiling
-                ? 'flies up into the sky above'
-                : hitsRoof ? 'hits the ceiling' : 'almost hits the ceiling';
-            await pline(`The gold piece ${upwardAction}, then falls back on top of your head.`);
-            rn2(100);
-            // A coin is a non-weapon too light for weight-based damage, so
-            // toss_up() starts from one point before the hero's modifiers.
-            let damage = Math.max(0, 1 + (state.u.udaminc ?? 0));
-            if (state.u.halfPhysicalDamage)
-                damage = Math.trunc((damage + 1) / 2);
-            const helmet = state.uarmh || state.u.uarmh;
-            if (helmet) {
-                requirePlayingGame(state);
-                const hardHelmet = objectIsHardHelmet(helmet);
-                const hp = Upolyd(state.u) ? state.u.mh : state.u.uhp;
-                if (hardHelmet && damage < hp) {
-                    await plineWithContinuation('Fortunately, you are wearing a hard helmet.');
-                }
-                else if (state.flags.verbose !== false) {
-                    await plineWithContinuation(`Your ${hardHelmet ? 'helm' : 'hat'} does not protect you.`);
-                }
-            }
-            const floor = state.level?.at?.(heroX, heroY);
-            if (!(state.underwater || state.u?.uinwater)
-                && floor && !IS_SOFT(floor.typ))
-                rn2(100);
-            await settleGoldOnFloor(state, gold, heroX, heroY);
-            await loseHeroHp(damage, 'falling object', { state });
+            await tossObjectUp(gold, { state });
         }
         else {
-            await pline('The gold piece hits the floor.');
-            const floor = state.level?.at?.(heroX, heroY);
-            if (!(state.underwater || state.u?.uinwater)
-                && floor && !IS_SOFT(floor.typ))
-                rn2(100);
-            await settleGoldOnFloor(state, gold, heroX, heroY);
+            await hitFloorWithObject(gold, { state });
         }
         return true;
     }
