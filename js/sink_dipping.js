@@ -11,7 +11,7 @@ import { consumeInventoryItem } from './invent.js';
 import { mkobj } from './mklev.js';
 import { tryCallObjectType } from './object_call.js';
 import { POT_ACID, POT_FRUIT_JUICE, POT_GAIN_ENERGY, POT_GAIN_LEVEL, POT_LEVITATION, POT_MONSTER_DETECTION, POT_OBJECT_DETECTION, POT_OIL, POT_POLYMORPH, POT_WATER } from './object_data.js';
-import { objectCombatName } from './objnam.js';
+import { definiteName, objectCombatName } from './objnam.js';
 import { objectQuantity } from './object_stack.js';
 import { applySupportedPotionVapor, heroPotionVaporProfile } from './potion_hit.js';
 import { polymorphSink } from './ring_sink.js';
@@ -36,12 +36,12 @@ export async function dipSink(object) {
         return;
     }
     if (object.oclass !== 8) {
-        await pline(`You hold the ${objectCombatName(object, { includeCorpseSpecies: false })} under the tap.`);
+        await pline(`You hold ${definiteName(objectCombatName(object, { includeCorpseSpecies: false }))} under the tap.`);
         if (await waterDamageObject(object, [], game, { force: true, publish: pline }) === 'nothing')
             await pline('Nothing seems to happen.');
         return;
     }
-    await pline(`You pour ${objectQuantity(object) > 1 ? 'one of ' : ''}the ${objectCombatName(object)} down the drain.`);
+    await pline(`You pour ${objectQuantity(object) > 1 ? 'one of ' : ''}${definiteName(objectCombatName(object))} down the drain.`);
     let tryCall = false;
     switch (object.otyp) {
         case POT_POLYMORPH:

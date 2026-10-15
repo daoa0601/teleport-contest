@@ -2,16 +2,14 @@
 // C ref: music.c do_earthquake() and do_pit().
 
 import { publishHeardMessage } from './hero_speech.js';
-import { monsterHasMapPosition } from './monster_location.js';
-import { deleteTrap } from './trap_lifecycle.js';
-import { adjustHeroAlignment } from './alignment.js';
+import { monsterAtPosition } from './monster_location.js';
+import { desecrateAltar } from './divine_wrath.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import {
-    A_DEX, ALTAR, AM_MASK, AM_SANCTUM, Amask2align, COLNO, CORR,
+    A_DEX, ALTAR, AM_MASK, AM_SANCTUM, Amask2align, COLNO, CORR, MGIVENNAME,
     DOOR, D_NODOOR,
-    FOUNTAIN, GRAVE, LAVAPOOL, MOAT, PIT, POOL, ROOM, ROWNO,
-    SCORR, SDOOR, SINK, THRONE, TT_BURIEDBALL, TT_PIT, is_pit,
-    M_AP_MONSTER, M_AP_NOTHING, M_AP_TYPE, STRAT_WAITMASK,
+    FOUNTAIN, GRAVE, LAVAPOOL, PIT, ROOM, ROWNO,
+    NO_KILLER_PREFIX, SCORR, SDOOR, SHOPBASE, SINK, THRONE, TT_BURIEDBALL, TT_PIT, is_pit,
 } from './const.js';
 import {
     newsym, plineWithContinuation,
@@ -29,41 +27,42 @@ import {
     finishHeroLiquidMonsterDeath, finishHeroMonsterKill,
 } from './hero_monster_death.js';
 import { liquidForHole } from './hole.js';
-import { remove_object } from './floor_object.js';
-import { buryFloorObjectsAt } from './buried_object.js';
-import { maketrap } from './mklev.js';
+import { remove_object, updateIceObjectTimersAt } from './floor_object.js';
+import { unearthFloorObjectsAt } from './buried_object.js';
+import { applyFloorEffects } from './floor_effects.js';
+import { deleteFloorTrap, maketrap } from './mklev.js';
 import { resolveMonsterLiquid } from './mon.js';
 import {
-    MONSTER_FLAGS1, MONSTER_NAME, monsterIsHumanoid,
+    MONSTER_FLAGS1, monsterIsHumanoid, monsterSpeciesHidesOnCeiling,
 } from './monster_data.js';
 import { finishMonsterLiquidDeath } from './monster_death.js';
 import { monsterSelfTouch } from './monster_stoning.js';
 import { BOULDER } from './object_data.js';
-import { stopAllObjectTimers } from './object_timers.js';
 import { heroHasNoLimbs, heroIsPolymorphed } from './polyself.js';
 import { selfTouchPetrifyingWeapons } from './stoning.js';
 import { rnl, rnd, rn2 } from './rng.js';
 import { waterDamageChain } from './trap.js';
 import { fireDamageChain } from './fire_damage.js';
 import { cansee, vision_note_blocker_change } from './vision.js';
-import { monsterInAir } from './terrain_properties.js';
+import { refreshMovementProperties } from './properties.js';
+import { resetHeroTrap } from './terrain_movement.js';
+import { wakeMonster } from './monster_anger.js';
+import { monsterName } from './monster_name.js';
+import { convertSecretDoor } from './detect.js';
+import { roomsAt } from './room.js';
+import { addShopDamage } from './shop_damage.js';
 
+const M1_FLY = 0x00000001;
 const M1_CLING = 0x00000010;
 const M1_SLITHY = 0x00080000;
 
 function monsterAt(x: number, y: number) {
-    return game.level?.monsters?.find(monster => monsterHasMapPosition(monster, game) &&
-        (monster.mhp ?? 1) > 0 && monster.mx === x && monster.my === y,
-    ) || null;
+    return game.level ? monsterAtPosition(game.level, x, y) : null;
 }
 
 function trapAt(x: number, y: number) {
     return game.level?.traps?.find(trap => trap.tx === x && trap.ty === y)
         || null;
-}
-
-function terrainAfterPit(originalType: number): number {
-    return originalType === CORR || originalType === SCORR ? CORR : ROOM;
 }
 
 function boulderAt(x: number, y: number) {
@@ -72,7 +71,7 @@ function boulderAt(x: number, y: number) {
     ) || null;
 }
 
-async function fillChasmWithBoulder(x: number, y: number, trap: Trap, boulder: GameObject, monster: Monster | null): Promise<void> {
+async function fillChasmWithBoulder(x: number, y: number, boulder: GameObject, monster: Monster | null): Promise<void> {
     if (cansee(x, y)) {
         await plineWithContinuation(
             `KADOOM!  The boulder falls into a chasm${
@@ -82,13 +81,7 @@ async function fillChasmWithBoulder(x: number, y: number, trap: Trap, boulder: G
     }
     if (monster) monster.mtrapped = 0;
     remove_object(boulder);
-    stopAllObjectTimers(boulder);
-    boulder.where = 'gone';
-    boulder.ox = 0;
-    boulder.oy = 0;
-    deleteTrap(trap);
-    await buryFloorObjectsAt(x, y, game);
-    newsym(x, y);
+    await applyFloorEffects(boulder, x, y);
 }
 
 async function damageFloorObjectsWithWater(x: number, y: number) {
@@ -102,16 +95,14 @@ async function damageFloorObjectsWithWater(x: number, y: number) {
 }
 
 async function flowLiquidIntoChasm(x: number, y: number, trap: Trap, liquid: number, monster: Monster | null): Promise<void> {
-    deleteTrap(trap);
-    if (monster) monster.mtrapped = 0;
-    if (game.u?.ux === x && game.u?.uy === y) {
-        game.u.utrap = 0;
-        game.u.utraptype = 0;
-    }
     const location = requireGameLevel(game).at(x, y);
     if (!location) throw new RangeError(`Earthquake square ${x},${y} is outside the level.`);
     location.typ = liquid;
     location.flags = 0;
+    if (liquid === LAVAPOOL) location.lit = true;
+    await deleteFloorTrap(trap);
+    updateIceObjectTimersAt(x, y, game);
+    await unearthFloorObjectsAt(x, y, game);
     if (liquid === LAVAPOOL) {
         await fireDamageChain(
             game.level?.objects?.[x]?.[y] || [],
@@ -161,6 +152,8 @@ function heroIsAirborne() {
 function trapHeroInChasm() {
     game.u.utrap = rn2(6) + 2;
     game.u.utraptype = TT_PIT;
+    refreshMovementProperties(game);
+    game.context.botl = true;
 }
 
 function physicalDamage(amount: number): number {
@@ -171,8 +164,7 @@ function physicalDamage(amount: number): number {
 async function dropHeroIntoChasm(hadPitBeforeEarthquake: boolean): Promise<void> {
     if (game.u?.utrap && game.u.utraptype === TT_BURIEDBALL) {
         await plineWithContinuation('Your chain breaks!');
-        game.u.utrap = 0;
-        game.u.utraptype = 0;
+        await resetHeroTrap(true);
     }
     if (heroIsAirborne()) {
         if (!hadPitBeforeEarthquake) {
@@ -188,6 +180,7 @@ async function dropHeroIntoChasm(hadPitBeforeEarthquake: boolean): Promise<void>
         trapHeroInChasm();
         if (await loseHeroHp(physicalDamage(rnd(6)), 'fell into a chasm', {
             deathCause: 'fell into a chasm',
+            killerFormat: NO_KILLER_PREFIX,
         })) return;
         await selfTouchPetrifyingWeapons({ messageStart: 'Falling, you' });
         return;
@@ -203,6 +196,7 @@ async function dropHeroIntoChasm(hadPitBeforeEarthquake: boolean): Promise<void>
     trapHeroInChasm();
     if (await loseHeroHp(physicalDamage(rnd(keepsFooting ? 2 : 4)), 'hurt in a chasm', {
         deathCause: 'hurt in a chasm',
+        killerFormat: NO_KILLER_PREFIX,
     })) return;
     if (keepsFooting) await exerciseAttribute(A_DEX, true);
     else {
@@ -224,20 +218,19 @@ function finishEarthquakeStoning(monster: Monster, options: HeroMonsterKillOptio
 }
 
 function earthquakeMonsterName(monster: Monster): string {
-    const pity = monster.mtame ? 'poor ' : '';
-    if (monster.name) return `${pity}${monster.name}`;
-    return `the ${pity}${MONSTER_NAME[monster.mnum] || 'monster'}`;
+    return monster.mtame
+        ? monsterName(monster, { adjective: 'poor', suppressSaddle: !!MGIVENNAME(monster) })
+        : monsterName(monster);
 }
 
-async function dropMonsterIntoChasm(monster: Monster | null, x: number, y: number): Promise<void> {
-    const flags = MONSTER_FLAGS1[monster?.mnum ?? -1] || 0;
-    if (!monster || monsterInAir(monster, game) || (flags & M1_CLING)) return;
+async function dropMonsterIntoChasm(monster: Monster, x: number, y: number): Promise<void> {
+    const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
+    if (flags & (M1_FLY | M1_CLING)) return;
     const wasTrapped = !!monster.mtrapped;
     monster.mtrapped = 1;
     if (!wasTrapped) {
         if (cansee(x, y)) {
-            const name = MONSTER_NAME[monster.mnum] || 'monster';
-            await plineWithContinuation(`The ${name} falls into a chasm!`);
+            await plineWithContinuation(`${monsterName(monster, { capitalized: true })} falls into a chasm!`);
         } else if (monsterIsHumanoid(monster.mnum)) {
             await publishHeardMessage('a scream!', plineWithContinuation);
         }
@@ -267,17 +260,14 @@ async function openChasm(
 ): Promise<boolean> {
     const location = requireGameLevel(game).at(x, y);
     if (!location) throw new RangeError(`Earthquake square ${x},${y} is outside the level.`);
-    const originalType = location.typ;
     const chasm = await maketrap(x, y, PIT);
     if (!chasm) return false;
     chasm.tseen = 1;
-    location.typ = terrainAfterPit(originalType);
-    location.flags = 0;
 
     const monster = monsterAt(x, y);
     const boulder = boulderAt(x, y);
     if (boulder) {
-        await fillChasmWithBoulder(x, y, chasm, boulder, monster);
+        await fillChasmWithBoulder(x, y, boulder, monster);
         return true;
     }
 
@@ -287,51 +277,38 @@ async function openChasm(
         return true;
     }
 
-    await dropMonsterIntoChasm(monster, x, y);
-    if (game.u?.ux === x && game.u?.uy === y)
+    if (monster)
+        await dropMonsterIntoChasm(monster, x, y);
+    else if (game.u?.ux === x && game.u?.uy === y)
         await dropHeroIntoChasm(hadPitBeforeEarthquake);
     else
         newsym(x, y);
     return true;
 }
 
-async function wakeMonsterForEarthquake(monster: Monster | null): Promise<void> {
-    if (!monster || (monster.mhp ?? 1) <= 0) return;
-    const flags = MONSTER_FLAGS1[monster.mnum] || 0;
-    monster.msleeping = 0;
-    monster.mfrozen = 0;
-    monster.mcanmove = 1;
-    monster.mstrategy = (monster.mstrategy || 0) & ~STRAT_WAITMASK;
-    if (!monster.mtame) monster.mpeaceful = 0;
+async function wakeMonsterForEarthquake(monster: Monster | null): Promise<boolean> {
+    if (!monster) return false;
+    if ((await wakeMonster(monster, { attacked: true })).heroDied) return true;
     if (monster.mundetected) {
         monster.mundetected = 0;
         newsym(monster.mx, monster.my);
-        if ((flags & M1_CLING) && cansee(monster.mx, monster.my)) {
-            const name = MONSTER_NAME[monster.mnum] || 'monster';
-            await plineWithContinuation(
-                `The ${name} is shaken loose from the ceiling!`,
-            );
+        if (monsterSpeciesHidesOnCeiling(monster.mnum)) {
+            if (cansee(monster.mx, monster.my)) {
+                await plineWithContinuation(
+                    `${monsterName(monster, { article: 'a', capitalized: true })} is shaken loose from the ceiling!`,
+                );
+            } else if (!((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_FLY)) {
+                await publishHeardMessage('a thump.', plineWithContinuation);
+            }
         }
     }
-    const appearance = M_AP_TYPE(monster);
-    if (appearance !== M_AP_NOTHING && appearance !== M_AP_MONSTER) {
-        monster.m_ap_type = M_AP_NOTHING;
-        monster.mappearance = 0;
-        newsym(monster.mx, monster.my);
-    }
+    return false;
 }
 
 function altarName(location: MapLocation): string {
-    const alignment = Amask2align((location.flags || 0) & AM_MASK);
+    const alignment = Amask2align(location.flags & AM_MASK);
     return alignment > 0 ? 'lawful'
         : alignment < 0 ? 'chaotic' : alignment === 0 ? 'neutral' : 'unaligned';
-}
-
-function punishAltarDestruction(location: MapLocation): void {
-    const altarAlignment = Amask2align((location.flags || 0) & AM_MASK);
-    if (altarAlignment !== game.u?.ualign?.type) return;
-    adjustHeroAlignment(-20, game);
-    game.u.ugangr = (game.u.ugangr || 0) + 5;
 }
 
 async function shakeTerrain(x: number, y: number, hadPitBeforeEarthquake: boolean): Promise<boolean> {
@@ -348,19 +325,22 @@ async function shakeTerrain(x: number, y: number, hadPitBeforeEarthquake: boolea
         return await openChasm(x, y, hadPitBeforeEarthquake);
     }
     if (location.typ === ALTAR) {
-        if ((location.flags || 0) & AM_SANCTUM) return false;
+        const mask = location.flags;
+        if (mask & AM_SANCTUM) return false;
         if (cansee(x, y)) {
             await plineWithContinuation(
                 `The ${altarName(location)} altar falls into a chasm.`,
             );
         }
-        punishAltarDestruction(location);
+        await desecrateAltar(false, Amask2align(mask & AM_MASK));
+        if (game.program_state.gameover) return false;
         return await openChasm(x, y, hadPitBeforeEarthquake);
     }
     if (location.typ === GRAVE || location.typ === THRONE) {
         const feature = location.typ === GRAVE ? 'headstone' : 'throne';
+        const action = location.typ === GRAVE ? 'topples' : 'falls';
         if (cansee(x, y))
-            await plineWithContinuation(`The ${feature} falls into a chasm.`);
+            await plineWithContinuation(`The ${feature} ${action} into a chasm.`);
         return await openChasm(x, y, hadPitBeforeEarthquake);
     }
     if (location.typ === SCORR) {
@@ -373,7 +353,7 @@ async function shakeTerrain(x: number, y: number, hadPitBeforeEarthquake: boolea
         return await openChasm(x, y, hadPitBeforeEarthquake);
     }
     if (location.typ === SDOOR) {
-        location.typ = DOOR;
+        convertSecretDoor(location);
         if (cansee(x, y))
             await plineWithContinuation('A secret door is revealed.');
     }
@@ -386,6 +366,8 @@ async function shakeTerrain(x: number, y: number, hadPitBeforeEarthquake: boolea
     newsym(x, y);
     if (cansee(x, y))
         await plineWithContinuation('The door collapses.');
+    if (roomsAt(game.level, x, y, SHOPBASE).length)
+        addShopDamage(x, y, 0);
     return true;
 }
 
@@ -403,7 +385,8 @@ export async function createEarthquake(requestedForce: number) {
 
     for (let x = startX; x <= endX; x++) {
         for (let y = startY; y <= endY; y++) {
-            await wakeMonsterForEarthquake(monsterAt(x, y));
+            if (await wakeMonsterForEarthquake(monsterAt(x, y)))
+                return { changed, force, heroDied: true };
             if (rn2(14 - force) !== 0) continue;
             if (await shakeTerrain(x, y, hadPitBeforeEarthquake)) changed++;
             if (game.program_state?.gameover) return { changed, force, heroDied: true };

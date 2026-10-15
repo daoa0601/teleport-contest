@@ -1,32 +1,10 @@
-// Source-shaped fountain effect reducers.
-// C refs: fountain.c fountain actor helpers and dipfountain() cases 16 through
-// 20, 21 through 24, 26 through 27, and 29.
+// Fountain sensations, treasure, and spawned creatures.
+// C refs: fountain.c actor helpers, dofindgem(), and dipfountain() cases
+// 21 through 24, 26 through 27, and 29.
 import { formatFeltMessage, formatHeardMessage } from './hero_speech.js';
-import { curseObjectState, uncurseObjectState } from './object_state.js';
 import { rn2, rnd } from './rng.js';
 function resolvedLiquidName(liquidName) {
     return typeof liquidName === 'function' ? liquidName() : liquidName;
-}
-export function resolveDippedBucFate({ fate, object, isHands = false, blind = false, liquidName = 'water', }) {
-    if (fate === 16) {
-        if (!isHands && object && !object.cursed)
-            curseObjectState(object);
-        return { handled: true, message: '' };
-    }
-    if (fate >= 17 && fate <= 20) {
-        if (!isHands && object?.cursed) {
-            const message = blind
-                ? ''
-                : `The ${resolvedLiquidName(liquidName)} glows for a moment.`;
-            uncurseObjectState(object);
-            return { handled: true, message };
-        }
-        return {
-            handled: true,
-            message: 'A feeling of loss comes over you.',
-        };
-    }
-    return { handled: false, message: '' };
 }
 function resolvedArmName(armName) {
     return typeof armName === 'function' ? armName() : armName;
@@ -207,6 +185,8 @@ export async function applyFountainSnakeActors({ gone = false, blind = false, ha
         const trap = await triggerFountainActorTrap(monster, trapAt, triggerTrap);
         if (trap != null)
             traps.push({ monster, trap });
+        if (trap?.heroDied)
+            break;
     }
     return { requested, created, message, traps, fallback: false };
 }

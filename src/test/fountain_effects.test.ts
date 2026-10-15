@@ -1,128 +1,64 @@
-import { freshObjectRoom } from './support/object-room.js';
-import { knownObject } from './support/game-objects.js';
-import { GOLD_PIECE, POT_HEALING, LEATHER_ARMOR } from '../js/object_data.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { FOUNTAIN } from '../js/const.js';
+import { game } from '../js/gstate.js';
+import { LEATHER_ARMOR, ROCK } from '../js/object_data.js';
+import { initRng } from '../js/rng.js';
+import { setHeroBlindnessTurns } from '../js/senses.js';
+import { resolveDippedSensationFate } from '../js/fountain_effects.js';
+import { addInventoryObject } from './support/game-objects.js';
+import { runExtendedCommand } from './support/commands.js';
+import { freshObjectRoom } from './support/object-room.js';
 
-import {
-    resolveDippedBucFate, resolveDippedSensationFate,
-} from '../js/fountain_effects.js';
+void test('dipping in a fountain can curse a blessed possession', async () => {
+    const level = freshObjectRoom();
+    level.requireAt(10, 10).typ = FOUNTAIN;
+    const rock = await addInventoryObject(ROCK, { blessed: true });
+    initRng(1n);
 
-void test('dip fountain fate16 silently curses an eligible object', async () => {
-    freshObjectRoom();
-    const object = await knownObject(POT_HEALING, {
-        blessed: true,
-        cursed: false,
-        buc: 'blessed',
-    });
+    await runExtendedCommand('dip', rock.invlet + 'y' + ' '.repeat(10));
 
-    const effect = resolveDippedBucFate({ fate: 16, object });
-
-    assert.deepEqual(effect, { handled: true, message: '' });
-    assert.deepEqual(
-        [object.blessed, object.cursed, object.buc],
-        [false, true, 'cursed'],
-    );
+    assert.equal(rock.blessed, false);
+    assert.equal(rock.cursed, true);
 });
 
-void test('dip fountain fate16 leaves coins unchanged', async () => {
-    freshObjectRoom();
-    const coin = await knownObject(GOLD_PIECE, {
-        blessed: true,
-        cursed: false,
-        buc: 'blessed',
+for (const seed of [74n, 60n, 16n, 91n]) {
+    void test(`a fountain removes a curse with draught seed ${seed}`, async () => {
+        const level = freshObjectRoom();
+        level.requireAt(10, 10).typ = FOUNTAIN;
+        const armor = await addInventoryObject(LEATHER_ARMOR, { cursed: true });
+        initRng(seed);
+
+        await runExtendedCommand('dip', armor.invlet + 'y' + ' '.repeat(10));
+
+        assert.equal(armor.cursed, false);
+        assert.match(game._pending_message, /water glows for a moment/);
     });
+}
 
-    const effect = resolveDippedBucFate({ fate: 16, object: coin });
+void test('a blind fountain dip removes a curse without a visible glow', async () => {
+    const level = freshObjectRoom();
+    level.requireAt(10, 10).typ = FOUNTAIN;
+    const armor = await addInventoryObject(LEATHER_ARMOR, { cursed: true });
+    setHeroBlindnessTurns(30);
+    initRng(74n);
 
-    assert.deepEqual(effect, { handled: true, message: '' });
-    assert.deepEqual(
-        [coin.blessed, coin.cursed, coin.buc],
-        [true, false, 'blessed'],
-    );
+    await runExtendedCommand('dip', armor.invlet + 'y' + ' '.repeat(10));
+
+    assert.equal(armor.cursed, false);
+    assert.doesNotMatch(game._pending_message, /glows/);
 });
 
-void test('dip fountain fates17 through20 visibly uncurse an object', async () => {
-    freshObjectRoom();
-    for (const fate of [17, 18, 19, 20] as const) {
-        const object = await knownObject(LEATHER_ARMOR, {
-            blessed: false,
-            cursed: true,
-            buc: 'cursed',
-        });
+void test('a fountain dip feels like a loss when there is no curse to remove', async () => {
+    const level = freshObjectRoom();
+    level.requireAt(10, 10).typ = FOUNTAIN;
+    const armor = await addInventoryObject(LEATHER_ARMOR);
+    initRng(74n);
 
-        const effect = resolveDippedBucFate({
-            fate,
-            object,
-            liquidName: 'water',
-        });
+    await runExtendedCommand('dip', armor.invlet + 'y' + ' '.repeat(10));
 
-        assert.deepEqual(effect, {
-            handled: true,
-            message: 'The water glows for a moment.',
-        });
-        assert.deepEqual(
-            [object.blessed, object.cursed, object.buc],
-            [false, false, 'uncursed'],
-        );
-    }
-});
-
-void test('blind fate17 uncurses without resolving or printing liquid text', async () => {
-    freshObjectRoom();
-    const object = await knownObject(LEATHER_ARMOR, {
-        blessed: false,
-        cursed: true,
-        buc: 'cursed',
-    });
-    const effect = resolveDippedBucFate({
-        fate: 17,
-        object,
-        blind: true,
-        liquidName() {
-            throw new Error('blind glow must not resolve liquid text');
-        },
-    });
-
-    assert.deepEqual(effect, { handled: true, message: '' });
-    assert.deepEqual(
-        [object.blessed, object.cursed, object.buc],
-        [false, false, 'uncursed'],
-    );
-});
-
-void test('fates17 through20 report loss when no curse can be removed', async () => {
-    freshObjectRoom();
-    for (const fate of [17, 18, 19, 20] as const) {
-        const object = await knownObject(LEATHER_ARMOR, {
-            blessed: false,
-            cursed: false,
-            buc: 'uncursed',
-        });
-        const effect = resolveDippedBucFate({ fate, object });
-        assert.deepEqual(effect, {
-            handled: true,
-            message: 'A feeling of loss comes over you.',
-        });
-        assert.deepEqual(
-            [object.blessed, object.cursed, object.buc],
-            [false, false, 'uncursed'],
-        );
-    }
-});
-
-void test('hands receive the loss message instead of a BUC mutation', async () => {
-    freshObjectRoom();
-    const effect = resolveDippedBucFate({
-        fate: 20,
-        object: null,
-        isHands: true,
-    });
-
-    assert.deepEqual(effect, {
-        handled: true,
-        message: 'A feeling of loss comes over you.',
-    });
+    assert.equal(armor.cursed, false);
+    assert.match(game._pending_message, /A feeling of loss comes over you/);
 });
 
 void test('fate26 resolves the current arm noun into the exact tingling line', async () => {
