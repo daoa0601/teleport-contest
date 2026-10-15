@@ -1,3 +1,4 @@
+import { formatFeltMessage } from './hero_speech.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
@@ -154,7 +155,7 @@ export async function turnHeroWithUndeadMagic(state: GameState = game, { roll = 
     if (monsterIsUndead(state.u?.umonnum)) {
         const alreadyStunned = (state.u?.stunnedTurns ?? 0) > 0;
         await pline(
-            `You feel frightened and ${alreadyStunned ? 'even more ' : ''}stunned.`,
+            formatFeltMessage(`frightened and ${alreadyStunned ? 'even more ' : ''}stunned.`, state),
         );
         await makeStunned((state.u.stunnedTurns ?? 0) + roll(30), { state, talk: false });
     } else {

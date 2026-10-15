@@ -1,5 +1,6 @@
 // Peaceful demons demand payment before letting the hero pass.
 // C minion.c:demon_talk()/bribe() and monmove.c:dochug().
+import { formatFeltMessage } from './hero_speech.js';
 import { artifactById } from './artifacts.js';
 import { currentAttribute } from './attrib.js';
 import { endVoluntaryMultiTurn, heroHasInvoluntaryDelay } from './command_state.js';
@@ -9,7 +10,6 @@ import { canSeeMonster, canSpotMonster, newsym, plineWithContinuation } from './
 import { recordGameLogEvent } from './gamelog.js';
 import { heroGoldAmount } from './hero_gold.js';
 import { heroSpecies } from './hero_species.js';
-import { heroIsUnaware } from './hero_sleep.js';
 import { resetHeroFaint } from './hunger.js';
 import { setMonsterMalign } from './monster_alignment.js';
 import { MONSTER_ALIGNMENT, MONSTER_FLAGS2, MONSTER_SYMBOL } from './monster_data.js';
@@ -53,7 +53,7 @@ export async function demandDemonBribe(monster, state, random = rn2, rollOne = r
     if (['Excalibur', 'Demonbane'].includes(artifactById(weapon?.oartifact, state)?.name ?? '')) {
         await plineWithContinuation(canSpotMonster(monster)
             ? `${subject()} looks very angry.`
-            : heroIsUnaware(state) ? 'You dream that you feel tension building.' : 'You feel tension building.');
+            : formatFeltMessage('tension building.', state));
         monster.mtame = 0;
         angerDemon(monster, state);
         newsym(monster.mx, monster.my);

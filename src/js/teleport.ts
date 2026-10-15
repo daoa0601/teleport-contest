@@ -1,6 +1,7 @@
 // teleport.js - same-level teleportation.
 // C ref: teleport.c teleok(), safe_teleds(), teleds(), and tele_trap().
 
+import { formatFeltMessage } from './hero_speech.js';
 import { monsterHasMapPosition, monsterAtPosition, placeMonsterAt } from './monster_location.js';
 import { updateMonsterRegions } from './regions.js';
 import { clearMonsterWormFromMap, placeMonsterWormTailRandomly } from './monster_worm.js';
@@ -294,7 +295,7 @@ export async function teleportHero({ chooseDestination, source = null, discover 
     if (!heroIsBlind(game)) setHeroBlindnessTurns(0, game);
     const onWizardTower = levelIsWizardTower();
     if ((game.u.uhave?.amulet || onWizardTower) && !rn2(3)) {
-        await plineWithContinuation('You feel disoriented for a moment.');
+        await plineWithContinuation(formatFeltMessage('disoriented for a moment.'));
         if (!game.flags.debug || await promptYesNo('Override?', 'n') !== 'y')
             return { moved: false, died: false };
     }
@@ -752,7 +753,7 @@ export async function dealWithMonsterOvercrowding(monster: Monster, state = game
     }
     const previous = state._elementalClogMessageMove || 0;
     if (!previous || state.moves - previous > 200) {
-        if (!previous || rn2(2)) await plineWithContinuation('You feel besieged.');
+        if (!previous || rn2(2)) await plineWithContinuation(formatFeltMessage('besieged.', state));
         state._elementalClogMessageMove = state.moves;
     }
     const victim = overcrowdingVictim(monster, state);
@@ -891,7 +892,7 @@ export async function bringLeashedFollowers(state = game, random = rn2) {
         releaseMonsterLeash(monster, state);
         const leashedCount = requireGameLevel(state).monsters.filter(candidate =>
             candidate.mleashed).length;
-        await plineWithContinuation(`You feel ${leashedCount > 1 ? 'a' : 'the'} leash go slack.`);
+        await plineWithContinuation(formatFeltMessage(`${leashedCount > 1 ? 'a' : 'the'} leash go slack.`, state));
     }
 
     const steed = state.u?.usteed;

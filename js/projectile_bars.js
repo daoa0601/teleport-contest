@@ -1,4 +1,5 @@
 // Shared missile contact with iron bars. C mthrowu.c:hits_bars()/hit_bars().
+import { publishHeardMessage } from './hero_speech.js';
 import { currentStrength } from './attrib.js';
 import { CORR, DOOR, P_BOW, P_CROSSBOW, P_DART, P_KNIFE, P_SHURIKEN, P_SPEAR, ROOM, W_NONDIGGABLE, WT_IRON_BALL_INCR, } from './const.js';
 import { newsym, plineWithContinuation } from './display.js';
@@ -52,9 +53,8 @@ export async function projectileHitsIronBars(object, { x, y, barsX, barsY, force
         if (object.otyp === POT_ACID) {
             if (cansee(barsX, barsY) && !nondiggable)
                 await publish('The iron bars are dissolved!');
-            else if (!heroIsDeaf(state))
-                await publish(heroIsHallucinating(state)
-                    ? 'You hear angry snakes!' : 'You hear a hissing noise.');
+            else
+                await publishHeardMessage(heroIsHallucinating(state) ? 'angry snakes!' : 'a hissing noise.', publish, state);
             if (!nondiggable)
                 await dissolveBars(barsX, barsY, state);
         }

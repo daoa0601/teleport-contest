@@ -1,3 +1,4 @@
+import { publishHeardMessage } from './hero_speech.js';
 import { currency } from './currency.js';
 // Floor objects thrown outward by an explosion or collapsing structure.
 // C ref: explode.c:scatter() and mthrowu.c:ohitmon().
@@ -290,10 +291,8 @@ async function fractureObject(object: GameObject, x: number, y: number, state: G
     if (squareIsVisible(state, x, y)) {
         const verb = object.otyp === BOULDER ? 'breaks apart' : 'crumbles';
         await options.publish(`The ${objectName(object)} ${verb}.`);
-    } else if (!state.u?.deaf && !state.deaf) {
-        await options.publish(object.otyp === BOULDER
-            ? 'You hear stone breaking.'
-            : 'You hear stone crumbling.');
+    } else {
+        await publishHeardMessage(object.otyp === BOULDER ? 'stone breaking.' : 'stone crumbling.', options.publish, state);
     }
 
     if (object.otyp === STATUE) {

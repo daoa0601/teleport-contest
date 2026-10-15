@@ -1,5 +1,6 @@
 // Native zap.c:zapyourself(). Effects return damage for their caller to apply;
 // item destruction, form changes and instant death complete here.
+import { formatFeltMessage } from './hero_speech.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { findArmorClass, heroHasDrainResistance } from './armor.js';
 import { heroHasArtifactDefense } from './artifacts.js';
@@ -178,7 +179,7 @@ export async function zapHeroWithObject(object, { ordinary = true, state = game 
         case SPE_EXTRA_HEALING: {
             const extra = object.otyp === SPE_EXTRA_HEALING;
             await healHero(d(6, extra ? 8 : 4), 0, { state, cureBlindness: object.blessed || extra });
-            await pline(`You feel ${extra ? 'much ' : ''}better.`);
+            await pline(formatFeltMessage(`${extra ? 'much ' : ''}better.`, state));
             break;
         }
         case WAN_LIGHT:
@@ -247,7 +248,7 @@ async function elementalSelfZap(kind, damageType, memory, resistance, state) {
     if (resisted) {
         await shieldeff(hero.ux, hero.uy);
         await pline(kind === 'electric' ? 'You zap yourself, but seem unharmed.'
-            : kind === 'fire' ? 'You feel rather warm.' : 'You feel a little chill.');
+            : formatFeltMessage(kind === 'fire' ? 'rather warm.' : 'a little chill.', state));
         monstersObserveHeroResistance(memory, state);
         await applyHeroGolemEffects(damageType, damage, { state });
     }
@@ -283,7 +284,7 @@ export async function cancelHeroMagic(state = game) {
         return;
     if (state.u.umonnum === CLAY_GOLEM) {
         await pline(heroIsBlind(state)
-            ? `You feel ${heroIsHallucinating(state) ? 'dark' : 'light'} headed.`
+            ? formatFeltMessage(`${heroIsHallucinating(state) ? 'dark' : 'light'} headed.`, state)
             : 'Some writing vanishes from your head!');
         state.u.mh = 0;
     }

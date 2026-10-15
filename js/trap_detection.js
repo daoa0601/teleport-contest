@@ -1,5 +1,6 @@
 // C detect.c:trap_detect(), detect_obj_traps(), display_trap_map(), sense_trap().
 // The caller owns strange_feeling's naming prompt and source consumption.
+import { formatFeltMessage } from './hero_speech.js';
 import { D_TRAPPED, SDOOR, TER_DETECT, TER_MON, TER_OBJ, TER_TRP, TRAPPED_CHEST, TRAPPED_DOOR, isok, } from './const.js';
 import { heroToeName } from './body_parts.js';
 import { glyphAt, map_object, map_trap, newsym, pline } from './display.js';
@@ -75,7 +76,7 @@ async function displayTrapMap(cursed, state) {
             newsym(state.u.ux, state.u.uy);
             mode |= TER_MON;
         }
-        await pline(`You feel ${cursed ? 'very greedy' : 'entrapped'}.`);
+        await pline(formatFeltMessage(`${cursed ? 'very greedy' : 'entrapped'}.`, state));
         await browseDetectionMap(mode, cursed ? 'gold' : 'trap of interest', { objects, state });
     }
     finally {

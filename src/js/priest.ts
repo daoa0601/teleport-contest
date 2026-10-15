@@ -3,6 +3,7 @@
 // owns the room, altar, and resident; this module owns their live relationship
 // with the hero after movement or a level transition.
 
+import { formatFeltMessage } from './hero_speech.js';
 import { game, requireGameLevel, requireInitializedGame, requireLiveGame } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { DungeonLocation } from './dungeon_types.js';
@@ -252,7 +253,7 @@ export async function intemple(roomno: number, state: GameState = game): Promise
         if (eerie === 0)
             await plineWithContinuation('You have an eerie feeling...');
         else if (eerie === 1)
-            await plineWithContinuation('You feel like you are being watched.');
+            await plineWithContinuation(formatFeltMessage('like you are being watched.', state));
         else if (eerie === 2)
             await plineWithContinuation('A shiver runs down your spine.');
         // Ghost creation remains with the monster-construction owner.  Keep

@@ -2,6 +2,7 @@
 // C ref: trap.c lava_effects(), burnarmor(), trapeffect_rust_trap(),
 // water_damage(), and erode_obj().
 
+import { formatSeenMessage } from './hero_speech.js';
 import {
     IS_POOL, Is_waterlevel, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH,
     W_ARMS, W_ARMU, W_SWAPWEP, W_WEP, isok,
@@ -263,7 +264,7 @@ export async function destroyLavaFloorObjects(
                     await publish(object.quan === 1 ? 'It burns up!' : 'They burn up!');
                 } else {
                     observeObjectForNaming(object, { state });
-                    await publish(`You see ${fullObjectDescription(object, { state })} hit lava and burn up!`);
+                    await publish(formatSeenMessage(`${fullObjectDescription(object, { state })} hit lava and burn up!`, state));
                 }
             }
             await delobj(object, state, random);

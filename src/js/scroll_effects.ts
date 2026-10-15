@@ -13,7 +13,7 @@ import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { makeConfused } from './hero_mental_status.js';
 import { heroSpecies } from './hero_species.js';
-import { formatHeardMessage } from './hero_speech.js';
+import { formatFeltMessage, formatHeardMessage } from './hero_speech.js';
 import { freeHeroFromBuriedBall } from './hero_traps.js';
 import { consumeInventoryItem, identifyPack } from './invent.js';
 import { detectFood, detectGold, mapMagicLevel } from './magic_detection.js';
@@ -210,7 +210,7 @@ async function scrollEffect(
         return teleportScrollEffect(source, { state, gotoLevel: hooks.gotoLevel });
     case SCR_PUNISHMENT:
         if (source.blessed || (state.u.confusionTurns ?? 0) > 0)
-            await plineWithContinuation('You feel guilty.');
+            await plineWithContinuation(formatFeltMessage('guilty.', state));
         else await punishHero(source);
         return { known: true };
     case SCR_BLANK_PAPER:
@@ -239,7 +239,7 @@ async function detectionEffect(source: GameObject, state: PlayingGameState): Pro
 async function chargingEffect(source: GameObject, state: PlayingGameState): Promise<ScrollEffectChange | undefined> {
     const blessing = source.cursed ? -1 : source.blessed ? 1 : 0;
     if ((state.u.confusionTurns ?? 0) > 0) {
-        await plineWithContinuation(source.cursed ? 'You feel discharged.' : 'You feel charged up!');
+        await plineWithContinuation(formatFeltMessage(source.cursed ? 'discharged.' : 'charged up!', state));
         if (source.cursed) state.u.uen = 0;
         else {
             state.u.uen += d(source.blessed ? 6 : 4, 4);
@@ -278,7 +278,7 @@ async function confuseMonsterEffect(source: GameObject, state: PlayingGameState)
         && !(hero.seeInvisible || (hero.seeInvisibleTurns ?? 0) > 0));
     const hands = makePlural(heroHandName(state));
     if (MONSTER_SYMBOL[heroSpecies(state)] !== S_HUMAN || source.cursed) {
-        if (!hero.confusionTurns) await plineWithContinuation('You feel confused.');
+        if (!hero.confusionTurns) await plineWithContinuation(formatFeltMessage('confused.', state));
         await makeConfused((hero.confusionTurns ?? 0) + rnd(100), { state, talk: false });
         return;
     }
@@ -495,7 +495,7 @@ export async function removeCurseEffect({
 }: RemoveCurseOptions = {}): Promise<GameObject[]> {
     requireLiveGame(state);
     requirePlayingGame(state);
-    if (announce) await publish(`You feel ${removeCurseFeeling(confused)}`);
+    if (announce) await publish(formatFeltMessage(removeCurseFeeling(confused), state));
     if (cursed && announce) await publish('The scroll disintegrates.');
 
     const changed: GameObject[] = [];

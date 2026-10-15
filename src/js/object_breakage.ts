@@ -1,6 +1,7 @@
 // Object breakage and its immediate effects.
 // C refs: dothrow.c breaktest(), hero_breaks(), and breakobj().
 
+import { publishHeardMessage } from './hero_speech.js';
 import {
     ACID_VENOM, BLINDING_VENOM, BOULDER, CREAM_PIE, EGG, EXPENSIVE_CAMERA,
     CRYSTAL_BALL, LENSES, MELON, MIRROR, OBJECT_MATERIAL, OBJECT_NAMES,
@@ -95,7 +96,7 @@ function objectName(object: GameObject) {
     return object.name || OBJECT_NAMES[object.otyp] || 'object';
 }
 
-async function publishBreakMessage(object: GameObject, visible: boolean, audible: boolean, publish: MessagePublisher, state: GameState) {
+async function publishBreakMessage(object: GameObject, visible: boolean, publish: MessagePublisher, state: GameState) {
     if ([EGG, MELON].includes(object.otyp)) {
         await publish('Splat!');
         return;
@@ -109,7 +110,7 @@ async function publishBreakMessage(object: GameObject, visible: boolean, audible
         return;
     }
     if (!visible) {
-        if (audible) await publish('You hear something shatter!');
+        await publishHeardMessage('something shatter!', publish, state);
         return;
     }
 
@@ -254,7 +255,7 @@ export async function breakObjectAtLocation(object: GameObject, {
     }
 
     if (showBreakMessage)
-        await publishBreakMessage(object, visible, audible, publish, state);
+        await publishBreakMessage(object, visible, publish, state);
     if (heroCaused && object.otyp === MIRROR) {
         state.u.uluck = Math.max(
             -13, Math.min(13, (state.u.uluck ?? 0) - 2),

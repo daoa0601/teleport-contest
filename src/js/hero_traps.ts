@@ -1,3 +1,4 @@
+import { formatFeltMessage, formatSeenMessage, publishHeardMessage } from './hero_speech.js';
 import { heroLocomotion } from './hero_locomotion.js';
 // Trap effects on the hero.
 // C refs: trap.c dotrap(), trapeffect_*(), launch_obj(), and teleport.c
@@ -216,7 +217,7 @@ async function triggerPit(
     if (!sokoban && (formFlags & M1_CLING) && !plunged) {
         if (alreadyKnown) {
             await plineWithContinuation(
-                `You see ${trap.madeby_u ? 'your' : 'a'} ${trap.ttyp === SPIKED_PIT ? 'spiked ' : ''}pit below you.`);
+                formatSeenMessage(`${trap.madeby_u ? 'your' : 'a'} ${trap.ttyp === SPIKED_PIT ? 'spiked ' : ''}pit below you.`));
         } else {
             await plineWithContinuation(
                 `${trap.madeby_u ? 'Your' : 'A'} pit ${trap.ttyp === SPIKED_PIT ? 'full of spikes ' : ''}opens up under you!`);
@@ -683,7 +684,7 @@ async function triggerTeleportTrap(trap: Trap, finishTeleport: HeroTrapOptions['
         if (blocked) {
             if (blocked === 'antimagic')
                 await shieldeff(game.u.ux, game.u.uy);
-            await plineWithContinuation('You feel a wrenching sensation.');
+            await plineWithContinuation(formatFeltMessage('a wrenching sensation.'));
             return true;
         }
 
@@ -760,7 +761,6 @@ async function triggerMagicTrap(trap: Trap) {
 async function triggerProjectileTrap(trap: Trap) {
     const hero = game.u;
     const blind = !!game.blind || heroIsBlind(game);
-    const deaf = !!game.deaf || heroIsDeaf(game);
     const arrowTrap = trap.ttyp === ARROW_TRAP;
     const objectType = arrowTrap ? ARROW : DART;
     const noun = arrowTrap ? 'arrow' : 'little dart';
@@ -768,11 +768,7 @@ async function triggerProjectileTrap(trap: Trap) {
     const attackLevel = arrowTrap ? 8 : 7;
 
     if (trap.once && trap.tseen && rn2(15) === 0) {
-        if (!deaf) {
-            await plineWithContinuation(
-                arrowTrap ? 'You hear a loud click!' : 'You hear a soft click.',
-            );
-        }
+        await publishHeardMessage(arrowTrap ? 'a loud click!' : 'a soft click.', plineWithContinuation);
         deleteTrap(trap);
         newsym(trap.tx, trap.ty);
         return;
@@ -829,7 +825,7 @@ export async function triggerLevelTeleportTrap(trap: Trap, gotoLevel: HeroTrapOp
     await plineWithContinuation(`You ${verb} a level teleport trap!`);
     if (hero.antimagic && !intentional) await shieldeff(hero.ux, hero.uy);
     if (hero.antimagic && !intentional || In_endgame(hero.uz)) {
-        await plineWithContinuation('You feel a wrenching sensation.');
+        await plineWithContinuation(formatFeltMessage('a wrenching sensation.'));
         return;
     }
     deleteTrap(trap);
@@ -842,7 +838,7 @@ export async function triggerLevelTeleportTrap(trap: Trap, gotoLevel: HeroTrapOp
     if (heroIsHallucinating(game) || controlled) {
         await plineWithContinuation(`You briefly feel ${heroIsHallucinating(game) ? 'oriented' : 'centered'}.`);
     } else {
-        await plineWithContinuation(`You feel ${(hero.confusionTurns ?? 0) > 0 || hero.confused ? 'even more ' : ''}disoriented.`);
+        await plineWithContinuation(formatFeltMessage(`${(hero.confusionTurns ?? 0) > 0 || hero.confused ? 'even more ' : ''}disoriented.`));
     }
     if (!controlled) await makeConfused((hero.confusionTurns ?? 0) + 3, { talk: false });
 }

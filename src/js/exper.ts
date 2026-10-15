@@ -1,6 +1,7 @@
 // exper.js — Hero levels, monster experience, and score awards.
 // C refs: exper.c pluslvl()/experience()/more_experienced(), mon.c xkilled().
 
+import { formatFeltMessage } from './hero_speech.js';
 import { game, requireLiveGame, requirePlayingGame, requireInitializedGame } from './gstate.js';
 import { heroResistsLifeDrain } from './monster_resistance.js';
 import { finishHeroDeath } from './end.js';
@@ -152,7 +153,7 @@ export async function gainExperienceLevel({
     requireLiveGame(state);
     requirePlayingGame(state);
     const hero = state.u;
-    if (!incremental) await publish('You feel more experienced.');
+    if (!incremental) await publish(formatFeltMessage('more experienced.', state));
 
     if (Upolyd(hero)) {
         const formGain = monsterHitPointsPerLevel({ mnum: hero.umonnum, m_lev: 0 });
@@ -268,14 +269,14 @@ async function adjustAbilities(abilities: readonly LevelAbility[], origin: Intri
             grantIntrinsicProperty(property, origin, game);
             changed = true;
             if (!alreadyIntrinsic && gainMessage)
-                await publish(`You feel ${gainMessage}!`);
+                await publish(formatFeltMessage(`${gainMessage}!`));
         } else if (oldLevel >= level && newLevel < level) {
             changed = revokeIntrinsicProperty(property, origin, game);
             if (changed && !hasPermanentIntrinsicProperty(property, game)) {
                 const message = lossMessage || (gainMessage
                     ? `less ${gainMessage}` : '');
                 if (message)
-                    await publish(`You feel ${message}!`);
+                    await publish(formatFeltMessage(`${message}!`));
             }
         }
         if (changed && (property === 'warning' || property === 'seeInvisible'))

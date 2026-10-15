@@ -1,6 +1,7 @@
 // Effects of entering the hero's current square.
 // C ref: hack.c pooleffects() and trap.c drown().
 
+import { formatFeltMessage } from './hero_speech.js';
 import { monsterHasMapPosition } from './monster_location.js';
 import { heroIsHallucinating } from './senses.js';
 import {
@@ -407,7 +408,7 @@ async function reviveHeroFromLiquid(state: PlayingGameState, publish: MessagePub
     await publish('But wait...');
     identifyLifeSavingAmulet(random);
     await publish('Your medallion begins to glow!');
-    await publish('You feel much better!');
+    await publish(formatFeltMessage('much better!', state));
     await publish('The medallion crumbles to dust!');
     await completeHeroLifeSaving(lifeSaving);
     return true;

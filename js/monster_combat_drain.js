@@ -1,4 +1,5 @@
 // C uhitm.c:mhitm_ad_drli/dren/deth/pest/famn/dise/curs(), monster defenders.
+import { publishHeardMessage } from './hero_speech.js';
 import { M_ATTK_AGR_DIED, M_ATTK_DEF_DIED, M_ATTK_MISS, STRAT_WAITFORU } from './const.js';
 import { canSeeMonster, canSpotMonster } from './display.js';
 import { monsterCombatDefense } from './monster_combat_defense.js';
@@ -134,7 +135,7 @@ async function curseDefender(attacker, defender, context, result) {
     }
     if (!heroIsDeaf(state)) {
         if (!visible)
-            await publish('You hear laughter.');
+            await publishHeardMessage('laughter.', publish, state);
         else if (canSeeMonster(attacker)) {
             await publish(`${monsterName(attacker, { state, capitalized: true })} chuckles.`);
         }

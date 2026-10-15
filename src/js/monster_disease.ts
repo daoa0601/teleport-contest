@@ -1,4 +1,6 @@
 // C mhitu.c:diseasemu(). Disease bypasses cancellation and magic negation.
+
+import { formatFeltMessage } from './hero_speech.js';
 import { currentAttribute } from './attrib.js';
 import { A_CON, SICK_NONVOMITABLE } from './const.js';
 import type { MessagePublisher } from './display.js';
@@ -12,7 +14,7 @@ export async function infectHeroWithMonsterDisease(
     monster: Monster, state: PlayingGameState, publish: MessagePublisher, random: typeof rn2,
 ): Promise<boolean> {
     if (state.u.sicknessResistance) {
-        await publish('You feel a slight illness.');
+        await publish(formatFeltMessage('a slight illness.', state));
         return false;
     }
     const turns = state.u.sickTurns ? Math.trunc(state.u.sickTurns / 3) + 1

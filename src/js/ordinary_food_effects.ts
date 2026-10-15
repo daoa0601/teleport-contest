@@ -1,5 +1,7 @@
 // Ordinary food first bites, finishing effects, and rotten-food illness.
 // C refs: eat.c fprefx(), fpostfx(), rottenfood(), and garlic_breath().
+
+import { formatFeltMessage, publishHeardMessage } from './hero_speech.js';
 import { heroLightHeadedFeeling, heroStomachName } from './body_parts.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { EXPL_FIERY, Is_airlevel, Is_waterlevel, MON_FLOOR, TIMEOUT } from './const.js';
@@ -68,7 +70,7 @@ export async function applyRottenFood(food: GameObject, { state = game }: FoodEf
     const rottable = material <= WOOD && material !== LIQUID || material === DRAGON_HIDE;
     await pline(`Blecch!  ${rottable ? 'Rotten' : 'Awful'} ${foodWord(food, state)}!`);
     if (!rn2(4)) {
-        await pline(`You feel rather ${heroIsHallucinating(state) ? 'trippy' : heroLightHeadedFeeling(state)}.`);
+        await pline(formatFeltMessage(`rather ${heroIsHallucinating(state) ? 'trippy' : heroLightHeadedFeeling(state)}.`, state));
         await makeConfused((state.u.confusionTurns || 0) + d(2, 4), { state, talk: false });
     } else if (!rn2(4) && !heroIsBlind(state)) {
         await pline('Everything suddenly goes dark.');
@@ -167,7 +169,7 @@ export async function applyOrdinaryFoodPostEffects(food: GameObject, { state = g
         if (!food.cursed) {
             await cureHeroSicknessWithMessages(state);
             if (cureHeroVomiting(state) && !heroIsUnaware(state))
-                await pline('You feel much less nauseated now.');
+                await pline(formatFeltMessage('much less nauseated now.', state));
         }
         break;
     case APPLE:
@@ -177,7 +179,7 @@ export async function applyOrdinaryFoodPostEffects(food: GameObject, { state = g
             else if (heroIsDeaf(state) || state.flags.acoustics === false)
                 await pline('You fall asleep.');
             else
-                await pline('You hear sinister laughter as you fall asleep...');
+                await publishHeardMessage('sinister laughter as you fall asleep...', pline, state);
             putHeroToSleep(rn1(11, 20), { state });
         }
         break;

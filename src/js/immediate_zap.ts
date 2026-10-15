@@ -1,3 +1,4 @@
+import { formatFeltMessage, publishHeardMessage } from './hero_speech.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import { requirePlayingGame } from './gstate.js';
@@ -56,7 +57,7 @@ export function beginImmediateZap(state: GameState = game) {
 }
 
 export async function finishImmediateZap(state: GameState = game) {
-    if (state.context?.obj_zapped) await pline('You feel shuddering vibrations.');
+    if (state.context?.obj_zapped) await pline(formatFeltMessage('shuddering vibrations.', state));
     state.context.obj_zapped = false;
 }
 
@@ -227,7 +228,7 @@ async function reviveFloorCorpse(object: GameObject, state: PlayingGameState) {
         if (state.urole.key === 'healer' && !heroIsDeaf(state) && !monsterIsNonliving(species)) {
             const corpse = (MONSTER_FLAGS2[species] ?? 0) & 0x80000
                 ? corpseName : withIndefiniteArticle(corpseName);
-            await pline(`You hear ${heroIsHallucinating(state) ? 'a defibrillator' : `${corpse} reviving`}.`);
+            await publishHeardMessage(`${heroIsHallucinating(state) ? 'a defibrillator' : `${corpse} reviving`}.`, pline, state);
             learned = !state.context?.mon_moving || !!state.context.zap_oseen;
         }
         if (canSpotMonster(monster)) await pline(`${monsterName(monster, { capitalized: true })} appears.`);

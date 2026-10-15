@@ -1,6 +1,7 @@
 // Artifact powers used by the #invoke command.
 // C ref: artifact.c arti_invoke() and its invoke_* helpers.
 
+import { formatFeltMessage } from './hero_speech.js';
 import type { Artifact } from './artifacts.js';
 import type { ArtifactPower } from './data_types.js';
 import type { GameObject } from './object_types.js';
@@ -165,7 +166,7 @@ async function nothingSpecial(
     publish: MessagePublisher,
 ): Promise<void> {
     if ((state.inventory || []).includes(object)) {
-        await publish('You feel a surge of power, but nothing seems to happen.');
+        await publish(formatFeltMessage('a surge of power, but nothing seems to happen.', state));
     }
 }
 
@@ -187,7 +188,7 @@ async function beginInvocation(
             object.age += rollDice(3, 10);
             return false;
         }
-        await publish('You feel drained...');
+        await publish(formatFeltMessage('drained...', state));
         state.u.uen -= energyCost;
         state.context.botl = true;
     } else {
@@ -198,7 +199,7 @@ async function beginInvocation(
 
 async function ignoringHero(object: GameObject, state: GameState, publish: MessagePublisher) {
     const subject = definiteName(objectCombatName(object, { state }), state);
-    await publish(`You feel that ${subject} ${objectNameIsPlural(object, state) ? 'are' : 'is'} ignoring you.`);
+    await publish(formatFeltMessage(`that ${subject} ${objectNameIsPlural(object, state) ? 'are' : 'is'} ignoring you.`, state));
 }
 
 async function invokeProperty(
@@ -239,7 +240,7 @@ async function invokeProperty(
 
     if (artifact.invokePower === 'conflict') {
         await publish(
-            on ? 'You feel like a rabble-rouser.' : 'You feel the tension decrease around you.',
+            formatFeltMessage(on ? 'like a rabble-rouser.' : 'the tension decrease around you.', state),
         );
         return { used: true, ready: true, on };
     }
@@ -290,15 +291,14 @@ async function invokeHealing(
     // The first native check compares boolean Blinded (0 or 1) with cream;
     // the second compares the blindness timeout.
     if (healing !== 0 || treatsIllness || Number(heroIsBlinded(state)) > cream)
-        await publish('You feel better.');
+        await publish(formatFeltMessage('better.', state));
     const helps = healing !== 0 || treatsIllness || curesBlindness;
 
     if (!helps) {
         await nothingSpecial(object, state, publish);
         return;
     }
-    await publish(!healing && !treatsIllness && permanent
-        ? 'You feel slightly better.' : 'You feel better.');
+    await publish(formatFeltMessage(!healing && !treatsIllness && permanent ? 'slightly better.' : 'better.', state));
     if (healing > 0) hero[hitPoints] = current + healing;
     cureHeroSickness(state);
     clearHeroSliming(state);
@@ -323,7 +323,7 @@ async function invokeEnergyBoost(
     }
     hero.uen = (hero.uen ?? 0) + restored;
     state.context.botl = true;
-    await publish('You feel re-energized.');
+    await publish(formatFeltMessage('re-energized.', state));
 }
 
 async function invokeCreateAmmo(
@@ -425,11 +425,11 @@ async function invokeCreatePortal(object: GameObject, state: GameState, publish:
     };
     if (state.u.uhave.amulet || In_endgame(state.u.uz) || In_endgame(destination)
         || destination.dnum === state.u.uz.dnum || !await bringLeashedFollowers(state)) {
-        await publish('You feel very disoriented for a moment.');
+        await publish(formatFeltMessage('very disoriented for a moment.', state));
         return;
     }
     await publish(heroIsBlind(state)
-        ? 'You feel weightless for a moment.'
+        ? formatFeltMessage('weightless for a moment.', state)
         : 'You are surrounded by a shimmering sphere!');
     await gotoLevel(destination);
 }
