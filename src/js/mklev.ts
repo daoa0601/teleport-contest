@@ -6157,7 +6157,6 @@ async function createLuaObject(
     parentContainer: GameObject | null, parentMonster: Monster | null,
     invokeContents: (callback: LuaValue, object: GameObject) => Promise<void>,
 ): Promise<GameObject | null> {
-    const { point, objectClass, objectType } = options;
     // lspo_object() resolves montype before create_object() chooses a
     // coordinate or initializes the object's random attributes.
     let corpseSpecies = options.monsterType;
@@ -6165,6 +6164,24 @@ async function createLuaObject(
         corpseSpecies = mkclass(options.monsterClass, G_NOGEN | G_IGNORE);
         if (corpseSpecies === null) throw new Error('Unknown montype');
     }
+    const quantity = options.quantity ?? 1;
+    const count = options.objectType !== null && !OBJECT_MERGE[options.objectType]
+        && Number.isInteger(quantity) ? Math.max(1, quantity) : 1;
+    let object: GameObject | null = null;
+    for (let index = 0; index < count; index++) {
+        object = await createLuaObjectPiece(context, options, corpseSpecies,
+            parentContainer, parentMonster);
+    }
+    if (object && options.contents && typeof options.contents === 'object')
+        await invokeContents(options.contents, object);
+    return object;
+}
+
+async function createLuaObjectPiece(
+    context: SpecialLevelContext, options: DesObjectOptions, corpseSpecies: number | null,
+    parentContainer: GameObject | null, parentMonster: Monster | null,
+): Promise<GameObject | null> {
+    const { point, objectClass, objectType } = options;
     let object: GameObject | null;
     const randomMedusaStatue = objectType === STATUE
         && game._activeSpecialLevel?.prototype === 'medusa'
@@ -6288,8 +6305,6 @@ async function createLuaObject(
         if (options.buried && (await buryObject(object)).outcome === 'absorbed') object = null;
     }
     if (!object) return null;
-    if (options.contents && typeof options.contents === 'object')
-        await invokeContents(options.contents, object);
     return object;
 }
 

@@ -9,6 +9,7 @@ import { mklev } from '../js/mklev.js';
 import { init_objects } from '../js/o_init.js';
 import { initRng } from '../js/rng.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
+import { DAGGER, OBJECT_NAMES } from '../js/object_data.js';
 import { freshGame } from './support/game-state.js';
 import { startLuaCore } from './support/lua-game.js';
 async function levelLua(t) {
@@ -194,5 +195,21 @@ void test('Lua gas clouds retain their damage and lifetime and accept point plac
     assert.equal(point.damage, 3);
     assert.equal(point.ttl, 9);
     assert.deepEqual(point.cells, [{ x: 20, y: 8 }]);
+});
+void test('Lua quantities create separate nonstacking objects and one stack of mergeable objects', async (t) => {
+    const lua = await levelLua(t);
+    await lua.executeAsync(`
+        des.map({ x = 10, y = 5, map = [[...]] })
+        des.object({ id = "plate mail", x = 0, y = 0, quantity = 3 })
+        des.object({ id = "dagger", x = 1, y = 0, quantity = 4 })
+    `);
+    const level = requireGameLevel();
+    const armorType = OBJECT_NAMES.indexOf('plate mail');
+    const armor = (level.objects[10]?.[5] ?? []).filter(object => object.otyp === armorType);
+    assert.equal(armor.length, 3);
+    assert.ok(armor.every(object => object.quan === 1));
+    const daggers = (level.objects[11]?.[5] ?? []).filter(object => object.otyp === DAGGER);
+    assert.equal(daggers.length, 1);
+    assert.equal(daggers[0]?.quan, 4);
 });
 //# sourceMappingURL=special_level_selection.test.js.map

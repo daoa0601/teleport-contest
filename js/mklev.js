@@ -6018,7 +6018,6 @@ async function createLuaGold(context, options) {
     return await mkgold(amount, point.x, point.y);
 }
 async function createLuaObject(context, options, parentContainer, parentMonster, invokeContents) {
-    const { point, objectClass, objectType } = options;
     // lspo_object() resolves montype before create_object() chooses a
     // coordinate or initializes the object's random attributes.
     let corpseSpecies = options.monsterType;
@@ -6027,6 +6026,19 @@ async function createLuaObject(context, options, parentContainer, parentMonster,
         if (corpseSpecies === null)
             throw new Error('Unknown montype');
     }
+    const quantity = options.quantity ?? 1;
+    const count = options.objectType !== null && !OBJECT_MERGE[options.objectType]
+        && Number.isInteger(quantity) ? Math.max(1, quantity) : 1;
+    let object = null;
+    for (let index = 0; index < count; index++) {
+        object = await createLuaObjectPiece(context, options, corpseSpecies, parentContainer, parentMonster);
+    }
+    if (object && options.contents && typeof options.contents === 'object')
+        await invokeContents(options.contents, object);
+    return object;
+}
+async function createLuaObjectPiece(context, options, corpseSpecies, parentContainer, parentMonster) {
+    const { point, objectClass, objectType } = options;
     let object;
     const randomMedusaStatue = objectType === STATUE
         && game._activeSpecialLevel?.prototype === 'medusa'
@@ -6167,8 +6179,6 @@ async function createLuaObject(context, options, parentContainer, parentMonster,
     }
     if (!object)
         return null;
-    if (options.contents && typeof options.contents === 'object')
-        await invokeContents(options.contents, object);
     return object;
 }
 function applyLuaMonsterAppearance(monster, appearance) {
