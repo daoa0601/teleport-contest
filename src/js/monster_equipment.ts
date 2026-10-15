@@ -6,10 +6,10 @@ import { game } from './gstate.js';
 import {
     ALCHEMY_SMOCK, MUMMY_WRAPPING, OBJECT_PROPERTY, SADDLE, requireObjectData,
 } from './object_data.js';
-import { learnObjectType } from './object_knowledge.js';
-import { monsterSentenceSubject } from './monster_sound.js';
+import { monsterName } from './monster_name.js';
 import { adjustMonsterSpeed, monsterSpeedMessage } from './monster_speed.js';
 import { dismountHero } from './steed.js';
+import { learnWand } from './wand_charge.js';
 import type { MessagePublisher } from './display.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
@@ -79,12 +79,11 @@ export async function updateMonsterEquipment(
 ): Promise<void> {
     const wasVisible = canSeeMonster(monster);
     const speed = applyMonsterEquipmentProperties(monster, object, on);
-    if (!silently && !state.in_mklev && speed && canSeeMonster(monster)) {
-        const message = monsterSpeedMessage(speed, monsterSentenceSubject(monster));
+    if (!silently && !state.in_mklev && speed?.changed && speed.canDescribe && canSeeMonster(monster)) {
+        const message = monsterSpeedMessage(speed, monsterName(monster, { state, capitalized: true }), state);
         if (message) {
             await publish(message);
-            object.dknown = true;
-            learnObjectType(object.otyp, state);
+            learnWand(object, { state });
         }
     }
     if (!on && state.u.usteed === monster && object.otyp === SADDLE)
