@@ -19,7 +19,7 @@ import { objectDescription } from './object_description.js';
 import { dropObjectAtHero, hitFloorWithObject } from './object_drop.js';
 import { withIndefiniteArticle } from './object_grammar.js';
 import { objectMaterial } from './object_material.js';
-import { objectName, observeObjectForNaming } from './objnam.js';
+import { observeObjectForNaming, simpleObjectName } from './objnam.js';
 import { polymonHero } from './polyself.js';
 import { harmlessMissile } from './projectile.js';
 import { rn2, rnd } from './rng.js';
@@ -145,7 +145,7 @@ export async function tossObjectUp(object: GameObject, {
     } else if (petrifier && !heroResistsStoning(state)
         && await petrifyFromFallingObject(object, null, state, publish)) return object;
     if (silver && hatesSilver) await publish('The silver sears you!');
-    if (harmless) await publish(`The ${objectName(object, state)} hits you but doesn't hurt.`);
+    if (harmless) await publish(`The ${simpleObjectName(object, state)} hits you but doesn't hurt.`);
     const landed = await hitFloor(true);
     state._thrownObject = null;
     if (!harmless && !state.program_state.gameover)

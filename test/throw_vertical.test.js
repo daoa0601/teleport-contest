@@ -87,4 +87,18 @@ for (const wearHelmet of [false, true]) {
         assert.equal(rock.oy, game.u.uy);
     });
 }
+void test('a named rock falling harmlessly through a xorn uses its simple name for the hit', async () => {
+    freshObjectRoom();
+    installPolymorphedHero('xorn');
+    const rock = await addInventoryObject(ROCK, { oname: 'Ripple' });
+    const messages = [];
+    resetInputState().beforeRead = () => { messages.push(game._pending_message); };
+    await throwInventoryObject(rock, '<', ' '.repeat(20));
+    const text = messages.join('\n') + '\n' + game._pending_message;
+    assert.match(text, /rock named Ripple (?:almost )?hits the ceiling/);
+    assert.match(text, /The rock hits you but doesn't hurt\./);
+    assert.equal(game.u.mh, 40);
+    assert.equal(rock.where, 'floor');
+    assert.equal(rock.oname, 'Ripple');
+});
 //# sourceMappingURL=throw_vertical.test.js.map
