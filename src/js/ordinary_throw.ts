@@ -22,7 +22,7 @@ import { definiteName, objectName, observeObjectForNaming } from './objnam.js';
 import { propertyIsActive } from './properties.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { ceilingName } from './terrain_name.js';
-import { addInventoryItem } from './u_init.js';
+import { addInventoryItemBefore } from './u_init.js';
 import {
     setPrimaryWeapon, setQuiverObject, setSecondaryWeapon, setTwoWeaponCombat,
 } from './weapon_slots.js';
@@ -180,14 +180,8 @@ async function returnUpwardThrowToInventory(
     }
 
     object.nomerge = true;
-    const returned = await addInventoryItem(object);
+    const returned = await addInventoryItemBefore(object, oldSlot);
     returned.nomerge = false;
-    if (state.flags.fixinv === false) {
-        state.inventory.splice(state.inventory.indexOf(returned), 1);
-        const index = oldSlot ? state.inventory.indexOf(oldSlot) : -1;
-        // C addinv_core0() inserts before oldSlot only when it has a predecessor.
-        state.inventory.splice(index > 0 ? index : state.inventory.length, 0, returned);
-    }
     const quivered = !!((returned.owornmask ?? 0) & W_QUIVER);
     const held = !!(((returned.owornmask ?? 0) | weaponMask) & (W_WEP | W_SWAPWEP));
     if (quivered && held)

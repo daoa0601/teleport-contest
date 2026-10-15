@@ -74,6 +74,26 @@ void test('catching an upward-thrown singleton from the inventory head moves it 
     assert.equal(game.uwep, aklys);
 });
 
+for (const fixinv of [false, true]) {
+    void test(`catching an unworn boomerang from the middle of inventory leaves the quiver empty with ${fixinv ? 'fixed' : 'floating'} letters`, async () => {
+        freshObjectRoom({ flags: { fixinv, pickup_thrown: true } });
+        const club = await addInventoryWeapon(CLUB);
+        const boomerang = await addInventoryWeapon(BOOMERANG);
+        const rock = await addInventoryObject(ROCK);
+
+        await throwInventoryObject(boomerang, '<', ' '.repeat(20));
+        resetInputState().feed(' ');
+        await rhack('i'.charCodeAt(0));
+
+        assert.equal(game.uquiver, null, 'catching the boomerang must not ready it for firing');
+        assert.equal(boomerang.where, 'inventory');
+        assert.equal(boomerang.quan, 1);
+        assert.equal(club.invlet, 'a');
+        assert.equal(boomerang.invlet, 'b');
+        assert.equal(rock.invlet, 'c');
+    });
+}
+
 void test('throwing downward announces the object hitting the floor at the hero', async () => {
     freshObjectRoom();
     const club = await addInventoryWeapon(CLUB);

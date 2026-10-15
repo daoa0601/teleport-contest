@@ -1096,9 +1096,28 @@ async function finishAddedInventoryItem(item: GameObject, recoveredThrownStack =
 }
 
 export async function addInventoryItem(raw: GameObject, presentation: ItemPresentation | null = null, observe = true): Promise<GameObject> {
+    return await addInventoryItemCore(raw, presentation, observe, null);
+}
+
+export async function addInventoryItemBefore(raw: GameObject, next: GameObject | null): Promise<GameObject> {
+    return await addInventoryItemCore(raw, null, true, next);
+}
+
+async function addInventoryItemCore(
+    raw: GameObject, presentation: ItemPresentation | null, observe: boolean,
+    next: GameObject | null,
+): Promise<GameObject> {
     const wasThrown = raw.how_lost === LOST_THROWN;
     let item = prepareInventoryItem(raw, presentation, observe);
     await prepareInventoryAddition(item, game);
+    const nextIndex = next ? game.inventory.indexOf(next) : -1;
+    // C addinv_core0(): reinsertion needs a predecessor and skips both
+    // merging and autoquivering, including with fixed inventory letters.
+    if (nextIndex > 0) {
+        item.where = 'inventory';
+        game.inventory.splice(nextIndex, 0, item);
+        return await finishAddedInventoryItem(item);
+    }
     const existing = game.uquiver && mergable(game.uquiver, item, game) ? game.uquiver
         : game.inventory.find(other => mergable(other, item, game));
     const added = existing ? await mergeObjectStacks(existing, item, game)
