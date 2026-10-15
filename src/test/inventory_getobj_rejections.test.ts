@@ -11,6 +11,9 @@ import { planInput } from './support/planned-input.js';
 void test('calling the Amulet uses its special rejection instead of denying ownership', async t => {
     freshObjectRoom();
     const amulet = await addInventoryObject(AMULET_OF_YENDOR);
+    // A callable item keeps getobj available; the typed Amulet still takes
+    // the special rejection path rather than the empty-candidate shortcut.
+    await addInventoryObject(CRYSTAL_BALL);
     const input = resetInputState();
     input.feed('call\r');
     planInput(input, t, [
