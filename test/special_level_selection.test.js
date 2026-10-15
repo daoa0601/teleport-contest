@@ -90,4 +90,12 @@ void test('Lua level selections preserve point values and support coordinate-tab
     assert.equal(requireGameLevel().requireAt(11, 5).typ, ROOM);
     assert.notEqual(requireGameLevel().requireAt(12, 5).typ, ROOM);
 });
+void test('Lua level initialization defaults to solid floor and accepts Rogue rooms', async (t) => {
+    const lua = await levelLua(t);
+    await lua.executeAsync('des.level_init({ lit = 0 })');
+    assert.equal(requireGameLevel().requireAt(20, 10).typ, ROOM);
+    game.level = new GameMap();
+    await lua.executeAsync('des.level_init({ style = "rogue" })');
+    assert.ok(requireGameLevel().nroom > 0, 'Rogue style builds its room grid');
+});
 //# sourceMappingURL=special_level_selection.test.js.map

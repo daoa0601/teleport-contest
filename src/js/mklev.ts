@@ -5708,7 +5708,12 @@ async function fillSpecialLevel(
 ): Promise<void> {
     const level = requireGameLevel();
     active.levelInitialized = true;
-    if (options.style === 'mines') {
+    const style = options.style ?? 'solidfill';
+    if (style === 'rogue') {
+        await makeroguerooms();
+        return;
+    }
+    if (style === 'mines') {
         const foreground = mapCharacterType(options.fg ?? '.');
         const background = mapCharacterType(options.bg ?? ' ');
         if (foreground === undefined || background === undefined)
@@ -5726,7 +5731,7 @@ async function fillSpecialLevel(
         active.defaultLit = lit;
         return;
     }
-    if (options.style === 'swamp') {
+    if (style === 'swamp') {
         const foreground = mapCharacterType(options.fg ?? '.');
         const background = mapCharacterType(options.bg ?? '}');
         if (foreground === undefined || background === undefined)
@@ -5736,7 +5741,7 @@ async function fillSpecialLevel(
         active.defaultLit = lit;
         return;
     }
-    if (options.style === 'mazegrid') {
+    if (style === 'mazegrid') {
         const type = mapCharacterType(options.bg ?? '-');
         if (type === undefined)
             throw new Error(`unknown Lua map character ${options.bg}`);
@@ -5744,7 +5749,7 @@ async function fillSpecialLevel(
         active.defaultLit = false;
         return;
     }
-    if (options.style === 'maze') {
+    if (style === 'maze') {
         createMaze(
             options.corrwid ?? -1,
             options.wallthick ?? -1,
@@ -5753,8 +5758,8 @@ async function fillSpecialLevel(
         active.defaultLit = false;
         return;
     }
-    if (options.style !== 'solidfill')
-        throw new Error(`unsupported Lua level style ${options.style}`);
+    if (style !== 'solidfill')
+        throw new Error(`unsupported Lua level style ${style}`);
     const type = mapCharacterType(options.filling ?? options.fg ?? '.');
     if (type === undefined)
         throw new Error(`unknown Lua map character ${options.fg}`);
