@@ -1,14 +1,19 @@
 // Tame monster state.
 // C refs: dog.c tamedog(), newedog(), initedog(), and abuse_dog().
 import { currentAttribute } from './attrib.js';
-import { A_CHA, W_ARMS } from './const.js';
-import { newsym } from './display.js';
+import { A_CHA, DISMOUNT_THROWN, W_ARMS } from './const.js';
+import { heroEyeName, heroHasEyes } from './body_parts.js';
+import { canSpotMonster, newsym, plineWithContinuation } from './display.js';
 import { game, requireLiveGame } from './gstate.js';
 import { recordGameLogEvent } from './gamelog.js';
 import { withIndefiniteArticle } from './object_grammar.js';
 import { heroHasConflict } from './hero_conflict.js';
 import { publishMonsterYelp, publishMonsterGrowl, } from './monster_anger.js';
-import { releaseMonsterLeash, releaseMonsterLeashWithFeedback, } from './monster_leash.js';
+import { releaseMonsterLeashWithFeedback, } from './monster_leash.js';
+import { finishMonsterEating } from './monster_eating.js';
+import { monsterName } from './monster_name.js';
+import { dismountHero } from './steed.js';
+import { cansee } from './vision.js';
 import { MONSTER_FLAGS1, MONSTER_FLAGS2, monsterHasNoHands, monsterIsVerySmall, monsterTypeName, } from './monster_data.js';
 import { CREDIT_CARD, DWARVISH_MATTOCK, LOCK_PICK, PICK_AXE, RIN_AGGRAVATE_MONSTER, SKELETON_KEY, UNICORN_HORN, } from './object_data.js';
 import { rn2, rnd } from './rng.js';
@@ -171,10 +176,10 @@ export function initializePet(monster, { state = game, everything = true } = {})
     state.u.uconduct.pets = (state.u.uconduct.pets || 0) + 1;
     return true;
 }
-export function makePetWary(monster, { wasDead = true, state = game, random = rn2 } = {}) {
+export async function makePetWary(monster, { wasDead = true, state = game, random = rn2, publish = plineWithContinuation, repaint = newsym, } = {}) {
     if (!monster)
         return;
-    monster.meating = 0;
+    finishMonsterEating(monster, state);
     if (monster.mtame === undefined || monster.mtame <= 0)
         return;
     const dog = monster.isminion
@@ -191,6 +196,13 @@ export function makePetWary(monster, { wasDead = true, state = game, random = rn
             && random((dog.abuse ?? 0) + 1) === 0) {
             monster.mpeaceful = 1;
         }
+        if (!wasDead && cansee(monster.mx, monster.my) && heroHasEyes(state)) {
+            const subject = monsterName(monster, { state, capitalized: true });
+            const hasEyes = !((MONSTER_FLAGS1[monster.mnum] ?? 0) & 0x1000);
+            await publish(hasEyes
+                ? `${subject} ${monster.mpeaceful ? 'seems unable' : 'refuses'} to look you in the ${heroEyeName(state)}.`
+                : `${subject} avoids your gaze.`);
+        }
     }
     else {
         monster.mtame = random(monster.mtame + 1);
@@ -199,18 +211,16 @@ export function makePetWary(monster, { wasDead = true, state = game, random = rn
     }
     monster.pet = monster.mtame > 0;
     if (!monster.mtame) {
-        releaseMonsterLeash(monster, state);
-        if (state.u?.usteed === monster)
-            state.u.usteed = null;
-        if (state.u?.ustuck === monster) {
-            state.u.ustuck = null;
-            state.u.uswallow = false;
+        if (!wasDead && canSpotMonster(monster)) {
+            const subject = monsterName(monster, { state, capitalized: true });
+            await publish(`${subject} ${monster.mpeaceful ? 'is no longer tame' : 'has become feral'}.`);
         }
-        return {
-            tame: false,
-            disposition: monster.mpeaceful
-                ? 'is no longer tame' : 'has become feral',
-        };
+        repaint(monster.mx, monster.my);
+        if (monster.mleashed)
+            await releaseMonsterLeashWithFeedback(monster, { state, publish });
+        if (state.u.usteed === monster)
+            await dismountHero(DISMOUNT_THROWN, { state, announce: publish });
+        return;
     }
     if (dog) {
         dog.revivals = (dog.revivals ?? 0) + 1;
@@ -227,7 +237,6 @@ export function makePetWary(monster, { wasDead = true, state = game, random = rn
             dog.apport = 5;
         }
     }
-    return { tame: true };
 }
 // C newedog() allocates a zeroed record and sets its parent before initedog().
 function newPetData(monster) {

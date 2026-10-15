@@ -41,18 +41,6 @@ function monsterReconstitutesAfterLifeSaving(monster) {
     return (MONSTER_ATTACKS[monster?.mnum] || [])
         .some(attack => attack[0] === 13 || attack[0] === 14);
 }
-async function waryDogAfterLifeSaving(monster, { wasDead = false, line = pline, repaint = newsym, state = game, } = {}) {
-    if (!((monster.mtame ?? 0) > 0))
-        return;
-    const result = makePetWary(monster, { wasDead, state });
-    if (result?.tame !== false)
-        return;
-    if (!wasDead && canSpotMonster(monster)) {
-        const subject = monsterName(monster, { capitalized: true });
-        await line(`${subject} ${result.disposition}.`);
-    }
-    repaint(monster.mx, monster.my);
-}
 // The caller supplies any credited kill line. The amulet is consumed and the
 // monster is restored before any caller can remove it from the level.
 export async function lifeSaveMonster(monster, amulet, { creditedKill, retainCursor = false, genocided = false, continueLine = plineWithContinuation, page = lifeSavingPage, line = pline, repaint = newsym, } = {}) {
@@ -95,9 +83,9 @@ export async function lifeSaveMonster(monster, amulet, { creditedKill, retainCur
     monster.mcanmove = 1;
     monster.mfrozen = 0;
     if ((monster.mtame ?? 0) > 0 && !monster.isminion) {
-        await waryDogAfterLifeSaving(monster, {
+        await makePetWary(monster, {
             wasDead: genocided,
-            line, repaint, state: game,
+            publish: continueLine, repaint, state: game,
         });
     }
     monster.mhpmax = Math.max(monster.mhpmax ?? 1, (monster.m_lev ?? 0) + 1, 10);

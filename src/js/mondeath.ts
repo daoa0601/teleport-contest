@@ -106,23 +106,6 @@ function monsterReconstitutesAfterLifeSaving(monster: Monster): boolean {
         .some(attack => attack[0] === 13 || attack[0] === 14);
 }
 
-async function waryDogAfterLifeSaving(
-    monster: Monster, {
-        wasDead = false,
-        line = pline, repaint = newsym, state = game,
-    }: { wasDead?: boolean; line?: MessagePublisher;
-        repaint?: (x: number, y: number) => unknown; state?: GameState } = {},
-): Promise<void> {
-    if (!((monster.mtame ?? 0) > 0)) return;
-    const result = makePetWary(monster, { wasDead, state });
-    if (result?.tame !== false) return;
-    if (!wasDead && canSpotMonster(monster)) {
-        const subject = monsterName(monster, { capitalized: true });
-        await line(`${subject} ${result.disposition}.`);
-    }
-    repaint(monster.mx, monster.my);
-}
-
 // The caller supplies any credited kill line. The amulet is consumed and the
 // monster is restored before any caller can remove it from the level.
 export async function lifeSaveMonster(
@@ -173,9 +156,9 @@ export async function lifeSaveMonster(
     monster.mcanmove = 1;
     monster.mfrozen = 0;
     if ((monster.mtame ?? 0) > 0 && !monster.isminion) {
-        await waryDogAfterLifeSaving(monster, {
+        await makePetWary(monster, {
             wasDead: genocided,
-            line, repaint, state: game,
+            publish: continueLine, repaint, state: game,
         });
     }
     monster.mhpmax = Math.max(

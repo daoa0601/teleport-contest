@@ -385,7 +385,7 @@ async function createRevivedMonster(corpse: CorpseObject, location: CorpseReviva
         newsym(monster.mx, monster.my);
         await restoreMonsterShape(monster, state);
         if (monster.mtame && !monster.isminion)
-            makePetWary(monster, { wasDead: true, state });
+            await makePetWary(monster, { wasDead: true, state });
     } else if (replacement === PM_DOPPELGANGER) {
         if (monster.cham === PM_DOPPELGANGER)
             await changeMonsterForm(monster, originalMnum);
