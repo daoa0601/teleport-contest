@@ -28,7 +28,7 @@ export async function removeHeroEquipment(object, state = game, { deferArmorClas
 }
 // C steal.c:remove_worn_item(). Landing can otherwise disrobe or burn the
 // very item whose removal is still in progress.
-export async function removeWornHeroItem(object, state = game) {
+export async function removeWornHeroItem(object, state = game, { unchainBall = true, } = {}) {
     const wasInUse = object.in_use;
     object.in_use = true;
     try {
@@ -48,7 +48,7 @@ export async function removeWornHeroItem(object, state = game) {
         if (state.uwep === object || state.u?.uwep === object)
             await losePrimaryWeapon(state);
         await removeHeroEquipment(object, state);
-        if ((object.owornmask ?? 0) & (W_BALL | W_CHAIN))
+        if (unchainBall && ((object.owornmask ?? 0) & (W_BALL | W_CHAIN)))
             await unpunishHero(state);
     }
     finally {

@@ -466,7 +466,7 @@ export async function detachThrownUnit(
         thrown = split;
         thrown.invlet = null;
     } else {
-        await removeWornHeroItem(item, state);
+        await removeWornHeroItem(item, state, { unchainBall: false });
         if (state.program_state?.gameover) return thrown;
     }
     const index = state.inventory.indexOf(thrown);
