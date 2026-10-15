@@ -9,6 +9,7 @@ import { grantIntrinsicProperty } from '../js/properties.js';
 import { floorObject } from './support/game-objects.js';
 import { addTrap } from './support/level-state.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { createMonsterAt } from './support/monsters.js';
 
 void test('normal ^T spends energy and nutrition after controlled teleport and pickup', async () => {
     freshObjectRoom({ flags: { tips: false, pickup: true }, hero: { ulevel: 12, uen: 50, uhunger: 900 } });
@@ -50,4 +51,27 @@ void test('normal ^T uses a seen fixed trap without intrinsic teleport or resour
     assert.equal(game.u.uen, 0);
     assert.equal(game.u.uhunger, 900);
     assert.equal(game.context.move, 1);
+});
+
+void test('teleporting out of an engulfer ends digestion without giving it an escape cooldown', async () => {
+    const level = freshObjectRoom({ flags: { debug: true, tips: false } });
+    requirePlayingGame(game);
+    const worm = await createMonsterAt('purple worm', 11, 10);
+    game.u.ux = worm.mx;
+    game.u.uy = worm.my;
+    game.u.ustuck = worm;
+    game.u.uswallow = 1;
+    game.u.uswldtim = 8;
+    worm.mspec_used = 0;
+    addTrap(level, TELEP_TRAP, 11, 10, { tseen: true, teledest: { x: 14, y: 10 } });
+    pushKeys(' '.repeat(20));
+
+    await rhack(20);
+
+    assert.equal(game.u.ux, 14);
+    assert.equal(game.u.ustuck, null);
+    assert.equal(!!game.u.uswallow, false);
+    assert.equal(game.u.uswldtim, 0);
+    assert.equal(worm.mspec_used, 0);
+    assert.equal(worm.mx, 11);
 });

@@ -880,7 +880,9 @@ export async function moveHeroByTeleport(x, y, state = game, { allowDrag = false
     clearHeroTrap(state);
     const wasSwallowed = u.uswallow;
     u.ustuck = null;
-    u.uswallow = false;
+    u.uswallow = state.uswallow = 0;
+    u.uswldtim = 0;
+    state.context.botl = true;
     u.ux0 = oldx;
     u.uy0 = oldy;
     // Native hideunder() cannot conceal a mimic: these forms have M1_HIDE,
