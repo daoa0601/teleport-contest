@@ -1542,11 +1542,13 @@ function fountainTrapAt(monster) {
 async function triggerFountainTrap(monster) {
     const state = requireInitializedGame();
     const action = await triggerImmediateMonsterTrap(monster, state);
-    await resumeDeferredMonsterTrap(action, state, {
-        describeMonster: fountainActorVisibleSubject,
-        publish: plineWithContinuation,
-    });
-    return action;
+    if (!state.program_state.gameover) {
+        await resumeDeferredMonsterTrap(action, state, {
+            describeMonster: fountainActorVisibleSubject,
+            publish: plineWithContinuation,
+        });
+    }
+    return { heroDied: !!state.program_state.gameover };
 }
 async function summonFountainNymph() {
     return applyFountainNymphActor({
@@ -1729,6 +1731,8 @@ export async function drinkFountain(loc) {
         fountainMessage =
             `This tepid ${displayLiquidName('water')} is tasteless.`;
     }
+    if (game.program_state.gameover)
+        return true;
     if (fountainMessage)
         await plineWithContinuation(fountainMessage);
     await dryFountainAt(game.u.ux, game.u.uy);
@@ -4082,6 +4086,8 @@ async function dipFountain(object, loc) {
     else if ((fate < 16 || fate === 30) && result === 'nothing') {
         eventMessage = 'Nothing seems to happen.';
     }
+    if (game.program_state.gameover)
+        return;
     if (eventMessage)
         await plineWithContinuation(eventMessage);
     await dryFountainAt(game.u.ux, game.u.uy);

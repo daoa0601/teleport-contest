@@ -185,6 +185,8 @@ export async function applyFountainSnakeActors({ gone = false, blind = false, ha
         const trap = await triggerFountainActorTrap(monster, trapAt, triggerTrap);
         if (trap != null)
             traps.push({ monster, trap });
+        if (trap?.heroDied)
+            break;
     }
     return { requested, created, message, traps, fallback: false };
 }
