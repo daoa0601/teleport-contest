@@ -15,8 +15,7 @@ import { artifactEmitsLight } from './artifacts.js';
 import { beginObjectBurn, endObjectBurn, equipmentLightDescription } from './light.js';
 import { cansee, vision_recalc } from './vision.js';
 import { surfaceName } from './terrain_name.js';
-import { monsterSentenceSubject } from './monster_sound.js';
-import { monsterName, monsterObjectPronoun, monsterPossessive } from './monster_name.js';
+import { monsterName, monsterObjectPronoun, monsterPossessive, possessiveName } from './monster_name.js';
 import { dismountHero, heroCanRideSteed } from './steed.js';
 import { resolveImmediatePetrification, touchPetrifies } from './stoning.js';
 import { rnl } from './rng.js';
@@ -309,11 +308,8 @@ export async function adjustMonsterClothingAfterPolymorph(
     const owner = monsterPossessive(monster, { state });
     const wrappingFits = monsterWrappingAllowed(mnum);
     const visible = cansee(monster.mx, monster.my);
-    const name = () => monsterSentenceSubject(monster);
-    const possessive = () => {
-        const subject = name();
-        return `${subject}${subject.endsWith('s') ? "'" : "'s"}`;
-    };
+    const name = () => monsterName(monster, { state, capitalized: true });
+    const possessive = () => possessiveName(name());
     const cloakName = (object: GameObject): string => object.otyp === ROBE ? 'robe'
         : object.otyp === MUMMY_WRAPPING ? 'mummy wrapping'
             : object.otyp === ALCHEMY_SMOCK ? 'apron' : 'cloak';
@@ -426,10 +422,9 @@ export async function adjustMonsterClothingAfterPolymorph(
     }
     if (state.u.usteed === monster
         && (!monsterCanBeSaddled(monster) || !heroCanRideSteed(monster, state))) {
-        const steed = name();
-        await publish(`You can no longer ride ${steed.charAt(0).toLowerCase()}${steed.slice(1)}.`);
+        await publish(`You can no longer ride ${monsterName(monster, { state })}.`);
         if (touchPetrifies(mnum) && !state.u.stoneResistance && rnl(3)) {
-            await publish(`You touch ${steed.charAt(0).toLowerCase()}${steed.slice(1)}.`);
+            await publish(`You touch ${monsterName(monster, { state })}.`);
             await resolveImmediatePetrification({ state, publish,
                 killer: `falling off a ${monsterTypeName(mnum, !!monster.female)}` });
         }
