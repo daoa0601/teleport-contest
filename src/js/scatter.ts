@@ -23,8 +23,7 @@ import type { GameObject } from './object_types.js';
 import type { MessagePublisher } from './display.js';
 import type { MonsterDeathHandler } from './monster_death.js';
 import type { finishHeroMonsterKill, HeroMonsterKillOptions, HeroMonsterKillOutcome } from './hero_monster_death.js';
-import { wakeMonster } from './monster_anger.js';
-import { angerAttackedMonster } from './monster_anger.js';
+import { angerAttackedMonster, wakeAttackedMonster } from './monster_anger.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
 import { applyMonsterBlindness, monsterCanBeBlindedByObject } from './blinding_attack.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
@@ -217,9 +216,7 @@ async function hitMonster(monster: Monster, node: ScatterNode, state: GameState,
             resolveVapor: true,
             distance: dist2(state.u.ux, state.u.uy, monster.mx, monster.my),
             publish: options.publish,
-            wakeMonster: target => wakeMonster(target, {
-                attacked: options.heroCaused,
-            }),
+            wakeMonster: wakeAttackedMonster,
             wakeNearby: (nearX, nearY, distance) =>
                 wakeMonstersNear(nearX, nearY, distance, state),
             finishKill: (target, deathOptions = {}) =>
@@ -227,7 +224,8 @@ async function hitMonster(monster: Monster, node: ScatterNode, state: GameState,
                     target, target.mx, target.my,
                     deathOptions, state, options,
                 ),
-            heroCaused: options.heroCaused,
+            // ohitmon() passes POTHIT_OTHER_THROW even for a hero-caused blast.
+            heroCaused: false,
         };
         const impact = await hitMonsterWithSupportedPotion(potionOptions);
         if (impact?.heroDied) return true;

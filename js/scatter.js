@@ -9,8 +9,7 @@ import { applyFloorEffects } from './floor_effects.js';
 import { placeObject, stack_object, } from './floor_object.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { unlinkObject } from './object_location.js';
-import { wakeMonster } from './monster_anger.js';
-import { angerAttackedMonster } from './monster_anger.js';
+import { angerAttackedMonster, wakeAttackedMonster } from './monster_anger.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
 import { applyMonsterBlindness, monsterCanBeBlindedByObject } from './blinding_attack.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
@@ -165,12 +164,11 @@ async function hitMonster(monster, node, state, options) {
             resolveVapor: true,
             distance: dist2(state.u.ux, state.u.uy, monster.mx, monster.my),
             publish: options.publish,
-            wakeMonster: target => wakeMonster(target, {
-                attacked: options.heroCaused,
-            }),
+            wakeMonster: wakeAttackedMonster,
             wakeNearby: (nearX, nearY, distance) => wakeMonstersNear(nearX, nearY, distance, state),
             finishKill: (target, deathOptions = {}) => finishScatteredMonsterDeath(target, target.mx, target.my, deathOptions, state, options),
-            heroCaused: options.heroCaused,
+            // ohitmon() passes POTHIT_OTHER_THROW even for a hero-caused blast.
+            heroCaused: false,
         };
         const impact = await hitMonsterWithSupportedPotion(potionOptions);
         if (impact?.heroDied)

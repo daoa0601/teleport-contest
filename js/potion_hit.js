@@ -543,7 +543,8 @@ async function applySupportedDirectEffect({ state, monster, potion, targetVisibl
         if (potion.lamplit) {
             const explosion = await explodeLitOilPotion(potion, monster.mx, monster.my, {
                 state,
-                heroCaused,
+                // explode() attributes damage by the active turn.
+                heroCaused: !state.context.mon_moving,
                 publish,
             });
             if (explosion.heroDied)
