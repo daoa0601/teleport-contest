@@ -59,4 +59,18 @@ for (const type of [MAGIC_FLUTE, MAGIC_HARP, FIRE_HORN, FROST_HORN, DRUM_OF_EART
         await finishAtCommandInput(input, moveloop_core, /playing|music|usage fee|thunderous|shaking|chasm|horn|wakes|angry|collapses|cold|fire|^$/);
     });
 }
+void test('playing an unidentified magic flute describes its appearance without revealing its type', async () => {
+    const input = freshTurnRoom();
+    const flute = await addInventoryObject(MAGIC_FLUTE, { spe: 2, known: false, typeKnown: false, oname: 'Silver Song' });
+    const messages = [];
+    input.beforeRead = () => { messages.push(game._pending_message); };
+    installPagerInput(input, { expected: /playing|music/, limit: 5 });
+    pushKeys(`a${flute.invlet}y`);
+    await moveloop_core();
+    await finishAtCommandInput(input, moveloop_core, /playing|music|^$/);
+    messages.push(game._pending_message);
+    assert.match(messages.join('\n'), /You start playing your flute named Silver Song\./);
+    assert.doesNotMatch(messages.join('\n'), /magic flute/);
+    assert.equal(game._knownObjectTypes?.has(MAGIC_FLUTE) ?? false, false);
+});
 //# sourceMappingURL=music_native.test.js.map
