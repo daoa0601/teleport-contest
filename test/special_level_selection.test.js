@@ -13,6 +13,7 @@ import { DAGGER, OBJECT_NAMES } from '../js/object_data.js';
 import { freshGame } from './support/game-state.js';
 import { startLuaCore } from './support/lua-game.js';
 import { floorObjects } from './support/level-state.js';
+import { novelTitle } from '../js/novel_titles.js';
 async function levelLua(t) {
     freshGame({ flags: { bones: false } });
     initRng(731n);
@@ -374,5 +375,15 @@ void test('Lua species-bearing objects accept native empty tokens and egg owners
     assert.equal(level.objects[12]?.[5]?.[0]?.spe, 1, 'an egg laid by the hero retains that ownership');
     assert.equal(level.objects[13]?.[5]?.[0]?.spe, 0, 'figurines reserve spe rather than accepting an enchantment');
     assert.equal(level.objects[14]?.[5]?.length, 1);
+});
+void test('a named Lua novel retains the requested title when read', async (t) => {
+    const lua = await levelLua(t);
+    await lua.executeAsync(`
+        des.map({ x = 10, y = 5, map = [[.]] })
+        des.object({ id = "novel", name = "The Shepherd's Crown", x = 0, y = 0 })
+    `);
+    const book = floorObjects(requireGameLevel())[0];
+    assert.ok(book, 'the level should contain its named novel');
+    assert.equal(novelTitle(book), "The Shepherd's Crown");
 });
 //# sourceMappingURL=special_level_selection.test.js.map

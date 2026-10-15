@@ -18,7 +18,7 @@ import { createObjectBase } from './object_constructor.js';
 import { deleteTrap, finishSokobanIfSolved } from './trap_lifecycle.js';
 import { randomGhostName, setMonsterGivenName } from './monster_given_name.js';
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
-import { novelTitle } from './novel_titles.js';
+import { lookupNovelTitle, novelTitle } from './novel_titles.js';
 import { addFruit } from './fruit.js';
 import { setTinVariety } from './tin.js';
 import { setWallState } from './wall_topology.js';
@@ -6314,6 +6314,7 @@ async function createLuaObjectPiece(
                 ...(object.oextra || {}), oname: String(options.name),
             };
         }
+        if (object.otyp === SPE_NOVEL) lookupNovelTitle(options.name, object);
     }
     if (options.quantity !== undefined && Number.isInteger(options.quantity) && options.quantity > 0
         && OBJECT_MERGE[object.otyp]) {
