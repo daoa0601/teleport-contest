@@ -18,7 +18,7 @@ import { genocideDeathOptions, heroHasBeenGenocided, takePolymorphGenocide } fro
 import { refreshHeroSeeing } from './hero_seeing.js';
 import { makeBlinded } from './sight_change.js';
 import { learnObjectType, observeObject } from './object_knowledge.js';
-import { minimalObjectName } from './objnam.js';
+import { minimalObjectName, ownedObjectName, simpleObjectName } from './objnam.js';
 import { monsterName } from './monster_name.js';
 import { surfaceName } from './terrain_name.js';
 import { updateHeroHunger } from './hunger.js';
@@ -45,14 +45,15 @@ import {
 import { AD_ELEC, AD_FIRE, AT_BREA, AT_GAZE, AT_SPIT } from './monster_attack_types.js';
 import {
     AMULET_OF_UNCHANGING, ELVEN_MITHRIL_COAT, LEASH, LENSES, LOADSTONE,
-    GRAY_DRAGON_SCALE_MAIL, GRAY_DRAGON_SCALES, OBJECT_MATERIAL, OBJECT_NAMES,
+    GRAY_DRAGON_SCALE_MAIL, GRAY_DRAGON_SCALES, OBJECT_NAMES,
     RIN_POLYMORPH_CONTROL, RIN_PROTECTION_FROM_SHAPE_CHANGERS,
 } from './object_data.js';
 import {
     newsym, pline, plineWithContinuation, see_monsters,
 } from './display.js';
 import { deleteObject } from './object_delete.js';
-import { dragonFormForArmor, findArmorClass, removeHeroArmor } from './armor.js';
+import { dragonFormForArmor, findArmorClass, removeHeroArmor, simpleArmorName } from './armor.js';
+import { isFlimsyObject } from './object_properties.js';
 import { endObjectBurn } from './light.js';
 import {
     encumbranceLabel, encumbranceMessage, nearCapacity,
@@ -139,7 +140,6 @@ const MZ_HUGE = 4;
 const MAXULEV = 30;
 const MUMMY_WRAPPING = 138;
 const ALCHEMY_SMOCK = 144;
-const LEATHER = 7;
 const PM_HUMAN = MONSTER_NAME.indexOf('human');
 const PM_WOLF = MONSTER_NAME.indexOf('wolf');
 const PM_FOG_CLOUD = MONSTER_NAME.indexOf('fog cloud');
@@ -771,12 +771,12 @@ async function changeArmorForHeroForm(mnum: number) {
         if ((object = worn('uarmc'))
             && !(object.otyp === MUMMY_WRAPPING && monsterWrappingAllowed(mnum))) {
             if (object.otyp === MUMMY_WRAPPING) {
-                await plineWithContinuation('Your wrapping tears apart!');
+                await plineWithContinuation(`Your ${simpleArmorName(object, 'uarmc', game)} tears apart!`);
                 await deleteObject(object);
             } else {
-                await plineWithContinuation(object.otyp === ALCHEMY_SMOCK
-                    ? 'The knot on your apron is pulled apart!'
-                    : 'The clasp on your cloak breaks open!');
+                const fastening = object.otyp === ALCHEMY_SMOCK ? 'knot' : 'clasp';
+                const action = object.otyp === ALCHEMY_SMOCK ? 'is pulled apart' : 'breaks open';
+                await plineWithContinuation(`The ${fastening} on your ${simpleArmorName(object, 'uarmc', game)} ${action}!`);
                 await dropCarriedObject(object);
                 if (game.program_state.gameover) return;
             }
@@ -797,9 +797,10 @@ async function changeArmorForHeroForm(mnum: number) {
         }
         if ((object = worn('uarmc'))
             && !(object.otyp === MUMMY_WRAPPING && monsterWrappingAllowed(mnum))) {
+            const name = simpleArmorName(object, 'uarmc', game);
             await plineWithContinuation(whirly
-                ? 'Your cloak falls, unsupported!'
-                : 'You shrink out of your cloak!');
+                ? `Your ${name} falls, unsupported!`
+                : `You shrink out of your ${name}!`);
             await dropCarriedObject(object);
             if (game.program_state.gameover) return;
         }
@@ -814,14 +815,13 @@ async function changeArmorForHeroForm(mnum: number) {
 
     const hornCount = monsterHornCount(mnum);
     if (hornCount && (object = worn('uarmh'))) {
-        const material = OBJECT_MATERIAL[object.otyp];
-        if (material !== undefined && material <= LEATHER) {
+        if (isFlimsyObject(object, game) && game._delayedAction?.object !== object) {
             await plineWithContinuation(
-                `Your ${hornCount === 1 ? 'horn pierces' : 'horns pierce'} through your ${object.name}.`,
+                `Your ${hornCount === 1 ? 'horn pierces' : 'horns pierce'} through ${ownedObjectName(object, game, { capitalized: false })}.`,
             );
         } else {
             await plineWithContinuation(
-                `Your helm falls to the ${surfaceName(game.u.ux, game.u.uy)}!`,
+                `Your ${simpleArmorName(object, 'uarmh', game)} falls to the ${surfaceName(game.u.ux, game.u.uy)}!`,
             );
             await dropCarriedObject(object);
             if (game.program_state.gameover) return;
@@ -844,7 +844,7 @@ async function changeArmorForHeroForm(mnum: number) {
         }
         if ((object = worn('uarmh'))) {
             await plineWithContinuation(
-                `Your helm falls to the ${surfaceName(game.u.ux, game.u.uy)}!`,
+                `Your ${simpleArmorName(object, 'uarmh', game)} falls to the ${surfaceName(game.u.ux, game.u.uy)}!`,
             );
             await dropCarriedObject(object);
             if (game.program_state.gameover) return;
@@ -861,7 +861,7 @@ async function changeArmorForHeroForm(mnum: number) {
         if (game.program_state.gameover) return;
     }
     if (heroHasNoHead(game) && (object = worn('ublindf'))) {
-        const name = (object.name || 'blindfold').replace(/^pair of /, '');
+        const name = simpleObjectName(object, game).replace(/^pair of /, '');
         await plineWithContinuation(
             `Your ${name} ${name.endsWith('s') ? 'fall' : 'falls'} off!`,
         );
