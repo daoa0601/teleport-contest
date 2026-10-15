@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { ALTAR, G_GENOD, MM_EPRI, PIT, POOL, STONE } from '../js/const.js';
+import { ALTAR, G_GENOD, LUCKMIN, MM_EPRI, PIT, POOL, STONE } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
 import { pushKeys, resetInputState } from '../js/input.js';
@@ -190,7 +190,7 @@ void test('killing the quest leader punishes the hero and angers guardians', asy
     }, {
         alignment: -26,
         anger: 7,
-        luck: -20,
+        luck: LUCKMIN,
         killedLeader: true,
         guardianPeaceful: 0,
     });
