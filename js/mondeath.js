@@ -85,7 +85,7 @@ export async function lifeSaveMonster(monster, amulet, { creditedKill, retainCur
     if ((monster.mtame ?? 0) > 0 && !monster.isminion) {
         await makePetWary(monster, {
             wasDead: genocided,
-            publish: line, repaint, state: game,
+            publish: continueLine, repaint, state: game,
         });
     }
     monster.mhpmax = Math.max(monster.mhpmax ?? 1, (monster.m_lev ?? 0) + 1, 10);
