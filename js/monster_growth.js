@@ -73,11 +73,11 @@ function recordRoll(calls, text) {
 function growthFromKill(monster, victim, state, rollOne, random, calls) {
     const level = monster.m_lev ?? MONSTER_LEVEL[monster.mnum] ?? 0;
     let hpThreshold = level ? level * 8 : 4;
-    if (MONSTER_SYMBOL[monster.mnum] === S_GOLEM) {
+    if (level && MONSTER_SYMBOL[monster.mnum] === S_GOLEM) {
         hpThreshold = (Math.trunc((monster.mhpmax ?? 1) / 10) + 1)
             * 10 - 1;
     }
-    else if (isHomeElemental(monster.mnum, state)) {
+    else if (level && isHomeElemental(monster.mnum, state)) {
         hpThreshold *= 3;
     }
     const victimLevel = victim.m_lev ?? MONSTER_LEVEL[victim.mnum] ?? 0;
