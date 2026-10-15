@@ -54,7 +54,7 @@ export function adjustMonsterSpeed(monster, amount) {
     if (amount === 2) {
         monster.permspeed = MFAST;
     }
-    else if (amount > 0) {
+    else if (amount === 1) {
         monster.permspeed = monster.permspeed === MSLOW ? 0 : MFAST;
     }
     else if (amount === -1) {
@@ -79,11 +79,12 @@ export function adjustMonsterSpeed(monster, amount) {
             && !(monster.mfrozen ?? 0) && !monster.msleeping,
     };
 }
-export function monsterSpeedMessage(change, subject) {
-    if ((!change.changed && change.amount !== -3) || !change.canDescribe)
+export function monsterSpeedMessage(change, subject, state = game) {
+    if (state.in_mklev || [2, -2, -4].includes(change.amount)
+        || (!change.changed && change.amount !== -3) || !change.canDescribe)
         return null;
     if (change.amount === -3)
-        return `${subject} is slowing down.`;
+        return state.flags.verbose ? `${subject} is slowing down.` : null;
     const much = change.much ? 'much ' : '';
     if (change.amount > 0 || change.speed === MFAST)
         return `${subject} is suddenly moving ${much}faster.`;
