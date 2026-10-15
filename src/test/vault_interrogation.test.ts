@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { CORR, VAULT, VWALL } from '../js/const.js';
+import { CORR, DOOR, ROOMOFFSET, SHARED, VAULT, VWALL } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { continueVaultGuardArrival, maintainVaultResidence } from '../js/vault.js';
@@ -12,6 +12,8 @@ function arrivingGuard() {
     const level = freshObjectRoom({ left: 9, right: 10, top: 9, bottom: 10 });
     requirePlayingGame(game);
     level.rooms.push(createRoom({ lx: 9, hx: 10, ly: 9, hy: 10, rtype: VAULT }));
+    for (let x = 9; x <= 10; x++)
+        for (let y = 9; y <= 10; y++) level.requireAt(x, y).roomno = ROOMOFFSET;
     level.requireAt(16, 10).typ = CORR;
     level.requireAt(11, 10).typ = VWALL;
     game.u.uinvault = 29;
@@ -48,4 +50,26 @@ void test('a lawful hero loses alignment for lying to a vault guard', async () =
     ]);
 
     assert.equal(game.u.ualign.record, 4);
+});
+
+void test('a hero in the vault doorway is questioned from a neighboring wall', async () => {
+    const level = arrivingGuard();
+    game._vaultGuardArrivalPending = null;
+    game.u.uinvault = 29;
+    game.u.ux = 11;
+    level.requireAt(11, 10).typ = DOOR;
+    level.requireAt(11, 10).roomno = SHARED;
+    level.requireAt(11, 11).typ = VWALL;
+    const input = resetInputState();
+
+    assert.equal(maintainVaultResidence(), true);
+    await answerPrompts(continueVaultGuardArrival(), input, [
+        { prompt: /Suddenly one of the Vault's guards enters!--More--/, keys: ' ' },
+        { prompt: /Hello stranger, who are you\?/, keys: 'TestHero\n' },
+    ]);
+
+    const guard = level.monsters.find(monster => monster.isgd);
+    assert.ok(guard);
+    assert.equal(guard.mx, 11);
+    assert.equal(guard.my, 11);
 });

@@ -52,6 +52,7 @@ import { fractureRock } from './rock_breakage.js';
 import { rn2 } from './rng.js';
 import { formatSeenMessage, publishHeardMessage } from './hero_speech.js';
 import { M_AP_OBJECT, M_AP_TYPE, NEED_HTH_WEAPON } from './const.js';
+import { roomForRoomno, roomsAt } from './room.js';
 
 const PM_GUARD = 272;
 const VAULT_GUARD_TIME = 30;
@@ -67,17 +68,8 @@ export function summonVaultGuardSoon(state: GameState = game) {
 }
 
 function vaultRoomAt(x: number, y: number, level: GameMap | null = game.level): Room | null {
-    return (
-        level?.rooms?.find(
-            (room): room is Room =>
-                isRoom(room) &&
-                room.rtype === VAULT &&
-                x >= room.lx &&
-                x <= room.hx &&
-                y >= room.ly &&
-                y <= room.hy,
-        ) || null
-    );
+    const roomno = roomsAt(level, x, y, VAULT)[0];
+    return roomno === undefined ? null : roomForRoomno(level, roomno);
 }
 
 // Called from the synchronous once-per-global-turn owner.  Returning true
@@ -133,6 +125,15 @@ function guardEntryToward(destination: Position) {
         if (Math.abs(destination.x - x) >= Math.abs(destination.y - y)) x += dx;
         else y += dy;
     }
+    if (x === game.u.ux && y === game.u.uy) {
+        const horizontalEntry = (x: number, y: number) => [HWALL, DOOR].includes(level.requireAt(x, y).typ);
+        const verticalEntry = (x: number, y: number) => [VWALL, DOOR].includes(level.requireAt(x, y).typ);
+        if (horizontalEntry(x + 1, y)) x++;
+        else if (horizontalEntry(x - 1, y)) x--;
+        else if (verticalEntry(x, y + 1)) y++;
+        else if (verticalEntry(x, y - 1)) y--;
+        else return null;
+    }
     return { x, y };
 }
 
@@ -156,6 +157,7 @@ export async function continueVaultGuardArrival(state: GameState = game) {
     const destination = await guardDestination(state);
     if (!destination) return false;
     const entry = guardEntryToward(destination);
+    if (!entry) return false;
     const original = requireGameLevel(state).at(entry.x, entry.y);
     if (!original) return false;
 
