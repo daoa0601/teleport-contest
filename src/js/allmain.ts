@@ -64,7 +64,7 @@ import { monsterCanCarryObject } from './monster_carry.js';
 import { releaseObjectLeash } from './monster_leash.js';
 import { petrifyMonsterImmediately } from './monster_stoning.js';
 import { touchPetrifies } from './stoning.js';
-import { armorSimpleName, heroHasFreeAction, stopDonning } from './armor.js';
+import { armorSimpleName, heroHasFreeAction, heroIsDisplaced, stopDonning } from './armor.js';
 import { isBeingTakenOff } from './takeoff_state.js';
 import { OBJECT_DELAY } from './object_data.js';
 import { heroIsUnaware } from './hero_sleep.js';
@@ -174,7 +174,7 @@ import { uInitMisc, makedog, uInitInventoryAttrs,
 } from './u_init.js';
 import { makeDeaf } from './hero_hearing.js';
 import { heroIsBlind, heroIsDeaf, syncBlindness } from './senses.js';
-import { syncHeroInvisibility } from './hero_invisibility.js';
+import { heroIsInvisible, syncHeroInvisibility } from './hero_invisibility.js';
 import { refreshHeroSeeing } from './hero_seeing.js';
 import { igniteItems } from './light.js';
 import {
@@ -2562,8 +2562,8 @@ async function presentMonsterAttackEffects(
                         continue;
                     }
                     if (heroAttack.kind === 'hero-spell') {
-                        const publishSpellMessage: typeof plineWithContinuation = async message => {
-                            const dismissal = await plineWithContinuation(message);
+                        const publishSpellMessage: typeof plineWithContinuation = async (message, options) => {
+                            const dismissal = await plineWithContinuation(message, options);
                             if (dismissal != null) paging.pagerOwned = true;
                             return dismissal;
                         };
@@ -2573,7 +2573,7 @@ async function presentMonsterAttackEffects(
                                 const water = game.level.at(monster.mux ?? 0, monster.muy ?? 0)?.typ === WATER;
                                 const caster = canSeeMonster(monster) ? visibleMonsterSubject(monster) : 'Something';
                                 curseMessage = `${caster} casts a spell at ${water ? 'empty water' : 'thin air'}!`;
-                            } else if (heroAttack.fumbled && !game.deaf
+                            } else if (heroAttack.fumbled && !heroIsDeaf(game)
                                 && canSeeMonster(monster)) {
                                 curseMessage = `The air crackles around ${monsterName(monster)}.`;
                             } else if (heroAttack.curseKind === 'audible') {
@@ -2589,13 +2589,8 @@ async function presentMonsterAttackEffects(
                                             ? `${caster} points and curses at your displaced image.`
                                             : `${caster} points at you, then curses.`;
                             }
-                            const repeatedAudibleCurse
-                                = heroAttack.curseKind === 'audible'
-                                && curseMessage !== null
-                                && (game._pending_message || '')
-                                    .endsWith(curseMessage);
-                            if (curseMessage && !repeatedAudibleCurse)
-                                await publishSpellMessage(curseMessage);
+                            if (curseMessage)
+                                await publishSpellMessage(curseMessage, { noRepeat: heroAttack.curseKind === 'audible' });
                             previousHeroAttack = heroAttack;
                             heroAttack = await completeHeroAttackSlot(
                                 action, game,
@@ -2605,10 +2600,13 @@ async function presentMonsterAttackEffects(
                         const caster = canSpotMonster(monster) ? visibleMonsterSubject(monster) : 'Something';
                         const casterVisible = canSpotMonster(monster);
                         if (casterVisible || heroAttack.directed) {
+                            const misplaced = monster.mux !== game.u.ux || monster.muy !== game.u.uy;
+                            const target = !heroAttack.directed ? ''
+                                : heroIsInvisible(game) && !((MONSTER_FLAGS1[monster.mnum] ?? 0) & 0x01000000) && misplaced
+                                    ? ' at a spot near you'
+                                    : heroIsDisplaced(game) && misplaced ? ' at your displaced image' : ' at you';
                             await publishSpellMessage(
-                                `${caster} casts a spell${
-                                    heroAttack.directed ? ' at you' : ''
-                                }!`,
+                                `${caster} casts a spell${target}!`,
                             );
                         }
                         if (heroAttack.deferredSpellDamage)

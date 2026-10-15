@@ -5900,7 +5900,7 @@ function monsterCurseKind(monster, undirected, state, random, calls) {
         if (undirected)
             return 'visible-undirected';
         const wrongTarget = monster.mux !== state.u.ux || monster.muy !== state.u.uy;
-        if (state.u.invisible && !((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_SEE_INVIS) && wrongTarget
+        if (heroIsInvisible(state) && !((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_SEE_INVIS) && wrongTarget
             || M_AP_TYPE(state.u) === M_AP_OBJECT && state.u.mappearance === 0 || state.u.uundetected)
             return 'visible-general';
         if (heroIsDisplaced(state) && wrongTarget)
@@ -5997,7 +5997,7 @@ async function monsterSummonSpellEffect(monster, state) {
             const heroY = state?.u?.uy ?? monster?.muy;
             const wrongTarget = monster?.mux !== heroX || monster?.muy !== heroY;
             const cannotSeeInvisible = !((MONSTER_FLAGS1[monster?.mnum] ?? 0) & M1_SEE_INVIS);
-            if ((state?.invisible || state?.u?.invisible) && cannotSeeInvisible && wrongTarget) {
+            if (heroIsInvisible(state) && cannotSeeInvisible && wrongTarget) {
                 effect.message = `${appearance} ${one ? 'at' : 'around'} a spot near you!`;
             }
             else if (heroIsDisplaced(state) && wrongTarget) {
