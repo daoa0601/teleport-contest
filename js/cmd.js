@@ -25,7 +25,7 @@ import { wizFuzzer, wizPanic } from './wizard_debug_commands.js';
 import { wizSmell } from './wizard_smell.js';
 import { wizBury } from './wizard_bury.js';
 import { wizMigrateMonsters } from './wizard_migration.js';
-import { prepareWizardTeleportAtWill, wizardTeleportCommand } from './wizard_teleport.js';
+import { prepareTeleportAtWill, wizardTeleportCommand } from './wizard_teleport.js';
 import { hurtleMonster } from './monster_hurtle.js';
 import { isRoom } from './map_types.js';
 import { continueSpellbookStudy } from './spellbook_study.js';
@@ -1325,8 +1325,11 @@ async function runCommandHandler(binding, { cannedCommand = null, } = {}) {
         await wizGenesis();
         return;
     }
-    if (key === 20 && game.flags?.debug) { // Ctrl-T: wiztele()
-        await wizardTeleportCommand(wizTeleportPosition);
+    if (key === 20) { // Ctrl-T: dotelecmd()
+        if (game.flags.debug)
+            await wizardTeleportCommand(teleportAtWillCommand);
+        else
+            await teleportAtWillCommand(false);
         return;
     }
     if (key === 6 && game.flags?.debug) { // Ctrl-F: wiz_map()
@@ -1506,7 +1509,7 @@ async function doquaff() {
     game.context.move = result.spentTime && !result.heroDied ? 1 : 0;
 }
 async function readCommand() {
-    const result = await doread({ gotoLevel });
+    const result = await doread();
     if (result.cancelled)
         resetCommandVariables(true);
 }
@@ -4528,10 +4531,10 @@ export async function askTeleportDestination({ onPrompt = null } = {}) {
     return destination;
 }
 // C refs: cmd.c dotelecmd(), teleport.c dotele()/teleds(), getpos.c getpos(),
-// and priest.c intemple().  A successful Wizard position teleport returns
+// and priest.c intemple(). A successful position teleport returns
 // ECMD_TIME.  Its first getpos use still owns the shared Lua tutorial, while
 // the destination room separately owns entry effects after relocation.
-async function wizTeleportPosition(ignoreRestrictions) {
+async function teleportAtWillCommand(ignoreRestrictions) {
     requirePlayingGame(game);
     let trap = game.level.traps.find(candidate => candidate.tx === game.u.ux && candidate.ty === game.u.uy);
     if (!trap?.tseen)
@@ -4561,7 +4564,7 @@ async function wizTeleportPosition(ignoreRestrictions) {
         const locomotion = heroLocomotion('jump');
         await plineWithContinuation(`You ${locomotion} onto the teleportation trap.`);
     }
-    if (!trap && !ignoreRestrictions && !await prepareWizardTeleportAtWill())
+    if (!trap && !ignoreRestrictions && !await prepareTeleportAtWill())
         return;
     if (!await bringLeashedFollowers()) {
         await plineWithContinuation('You shudder for a moment.');

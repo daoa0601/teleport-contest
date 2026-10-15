@@ -271,6 +271,7 @@ void test('striking opens a closed door and continues into the room', async () =
 
 void test('a striking ray passes over a raised bridge then destroys its portcullis', async () => {
     const { source, wand, options, level } = await wandRoom();
+    const beyondPortcullis = await targetAt(12);
     const bridge = level.requireAt(9, 10);
     bridge.typ = DRAWBRIDGE_UP;
     bridge.drawbridgemask = DB_EAST | DB_MOAT;
@@ -284,7 +285,7 @@ void test('a striking ray passes over a raised bridge then destroys its portcull
     assert.equal(result.heroDied, false);
     assert.notEqual(bridge.typ, DRAWBRIDGE_UP);
     assert.notEqual(wall.typ, DBWALL);
-    assert.equal(game.bhitpos.x, 9);
+    assert.equal(beyondPortcullis.mhp, 100);
 });
 
 void test('teleportation relocates a monster and every floor object at its old square', async () => {

@@ -52,7 +52,7 @@ import { encodeSavedGraph } from './saved_graph.js';
 import { decodeBonesPayload } from './bones_validation.js';
 import { rn2, rnd, rn1, rne, rnz, d } from './rng.js';
 import { SHOP_TYPES, RANDOM_SHOP_TYPES } from './shop_data.js';
-import { GP_AVOID_MONPOS, GP_CHECKSCARY, RLOC_ERR, RLOC_NOMSG, In_mines, PL_NSIZ } from './const.js';
+import { GP_ALLOW_XY, GP_AVOID_MONPOS, GP_CHECKSCARY, RLOC_ERR, RLOC_NOMSG, In_mines, PL_NSIZ } from './const.js';
 import { init_rect, rnd_rect, get_rect, split_rects } from './rect.js';
 import { depth as depth_of_level, ledgerNo, maxLedgerNo, } from './hacklib.js';
 import { inducedAlignment, level_difficulty, specialLevelAt } from './dungeon.js';
@@ -86,7 +86,7 @@ import { insideRoom, inTown, roomForIndex, roomsAt } from './room.js';
 import { insideShopRoomAt } from './shk.js';
 import { convertSecretDoor } from './detect.js';
 import { occupied, somex, somey, somexy, somexyspace, } from './mkroom.js';
-import { createGasCloudSelection, createPoisonGasCloud } from './regions.js';
+import { createGasCloudSelection, createPoisonGasCloud, restoreLevelRegions } from './regions.js';
 import { F_LOOTED, F_WARNED, S_LDWASHER, S_LPUDDING, S_LRING, T_LOOTED, TREE_LOOTED, TREE_SWARM } from './const.js';
 import { beginObjectBurn } from './light.js';
 import { LEVEL_TIMER_KIND, OBJECT_TIMER_KIND, objectTimers, objectsInTimerGraph, scheduleLevelTimer, scheduleObjectTimer, stopAllObjectTimers, stopObjectTimer, stopLevelTimer, } from './object_timers.js';
@@ -240,6 +240,8 @@ const PM_FAMINE = 313;
 const PM_WIZARD = 343;
 const PM_SALAMANDER = 329;
 const S_MIMIC = 13;
+const S_ANGEL = 27;
+const S_DEMON = 56;
 const G_UNIQ_MASK = 0x1000;
 const FLINT = 473;
 const PM_HOBBIT = 43;
@@ -2895,6 +2897,9 @@ function findMonsterNearPositionCore(mnum, centerX, centerY, gpflags, state) {
         if (goodPosition(pos.x, pos.y, subject, { state, gpflags }))
             return pos;
     }
+    if ((gpflags & GP_ALLOW_XY)
+        && goodPosition(centerX, centerY, subject, { state, gpflags }))
+        return { x: centerX, y: centerY };
     return null;
 }
 // C teleport.c:enexto().  The first complete search avoids scary squares;
@@ -2903,7 +2908,7 @@ function findMonsterNearPositionCore(mnum, centerX, centerY, gpflags, state) {
 // from a later makemon()/make_familiar() construction failure.
 export function findMonsterNearPosition(mnum, centerX, centerY, { ignoreWater = false, gpflags = 0, state = game } = {}) {
     const flags = gpflags | (ignoreWater ? MM_IGNOREWATER : 0);
-    return findMonsterNearPositionCore(mnum, centerX, centerY, flags | GP_CHECKSCARY, state) || findMonsterNearPositionCore(mnum, centerX, centerY, flags & ~GP_CHECKSCARY, state);
+    return findMonsterNearPositionCore(mnum, centerX, centerY, flags | GP_CHECKSCARY, state) || findMonsterNearPositionCore(mnum, centerX, centerY, flags, state);
 }
 // C potion.c:split_mon() halves maximum HP after cloneu() divides current HP.
 export async function splitHeroMonsterForm(state = game) {
@@ -3036,10 +3041,11 @@ export async function createCritters(count, mnum = null, neverAsk = false) {
 // A monster-cast summon deliberately chooses an explicit high-difficulty
 // species, asks enexto() for a square around the caster's apparent hero
 // position, then runs the ordinary makemon() constructor.  The created
-// actors are returned so the caller can repaint them at the same runtime
-// boundary where C's makemon() calls newsym().
-export async function summonNastyMonsters(summoner, { onCreate = null } = {}) {
+// actors retain the normal constructor's messages and display updates.
+export async function summonNastyMonsters(summoner) {
     const created = [];
+    const census = nastyMonsterCensus();
+    const flags = summoner ? MM_NOMSG : 0;
     const inHell = !!game.dungeons?.[game.u?.uz?.dnum ?? 0]?.flags?.hellish;
     // wizard.c:nasty() occasionally delegates to demon.c:msummon().  The
     // caller handles that different summoning path.
@@ -3075,36 +3081,43 @@ export async function summonNastyMonsters(summoner, { onCreate = null } = {}) {
                 && (MONSTER_DIFFICULTY[makeindex] ?? 0)
                     >= difficultyCap
                 && (MONSTER_ATTACKS[makeindex] || []).some(([attackType]) => attackType === 255))
-                || (summonerClass === 56 && candidateClass === 30)
-                || (summonerClass === 30 && candidateClass === 56));
+                || (summonerClass === S_DEMON && candidateClass === S_ANGEL)
+                || (summonerClass === S_ANGEL && candidateClass === S_DEMON));
             if (makeindex == null)
                 continue;
-            // nasty() preselects a nearby square for a monster caster;
-            // that construction does not inherit the hero's position.
-            const monster = await makemonNear(makeindex, summoner?.mux ?? game.u?.ux ?? 0, summoner?.muy ?? game.u?.uy ?? 0, MM_NOMSG, !summoner);
-            if (!monster) {
-                // C tries a random replacement only when direct construction
-                // fails (normally because the chosen species was genocided).
-                // The current constructor does not yet expose that distinct
-                // failure reason, so leave the replacement cone explicit.
+            const position = summoner ? findMonsterNearPosition(makeindex, summoner.mux ?? game.u.ux, summoner.muy ?? game.u.uy)
+                : { x: game.u.ux, y: game.u.uy };
+            if (!position)
                 continue;
+            let monster = await makemon(makeindex, position.x, position.y, flags);
+            if (monster) {
+                monster.msleeping = 0;
+                monster.mpeaceful = 0;
+                monster.mtame = 0;
+                setMonsterMalign(monster);
             }
-            // C makemon() calls newsym() before nasty() overrides attitude.
-            // Preserve that birth-time projection state for the spell owner;
-            // the actor becomes hostile below without an immediate repaint.
-            monster._nastyBirthPeaceful = monster.mpeaceful;
-            if (onCreate)
-                await onCreate(monster);
-            monster.msleeping = 0;
-            monster.mpeaceful = 0;
-            monster.mtame = 0;
-            setMonsterMalign(monster);
-            monster.mspec_used = rnd(4);
-            created.push(monster);
+            else {
+                monster = await makemon(null, position.x, position.y, flags);
+                if (monster) {
+                    const replacementClass = MONSTER_SYMBOL[monster.mnum] ?? 0;
+                    if ((difficultyCap > 0 && (MONSTER_DIFFICULTY[monster.mnum] ?? 0) >= difficultyCap
+                        && rn2(In_endgame(game.u.uz) ? 3 : 7)
+                        && (MONSTER_ATTACKS[monster.mnum] ?? []).some(([type]) => type === 255))
+                        || (summonerClass === S_DEMON && replacementClass === S_ANGEL)
+                        || (summonerClass === S_ANGEL && replacementClass === S_DEMON)) {
+                        await unmakeNastySubstitute(monster);
+                        monster = null;
+                    }
+                }
+            }
+            if (!monster)
+                continue;
             if (monster.mnum === archLich || monster.mnum === archon) {
                 if (!difficultyCap || difficultyCap > lowerArchDifficulty)
                     difficultyCap = lowerArchDifficulty;
             }
+            monster.mspec_used = rnd(4);
+            created.push(monster);
             const monsterAlignment = MONSTER_ALIGNMENT[monster.mnum] ?? 0;
             if (created.length >= 10
                 || monsterAlignment === 0
@@ -3113,7 +3126,25 @@ export async function summonNastyMonsters(summoner, { onCreate = null } = {}) {
             }
         }
     }
-    return { count: created.length, created };
+    return { count: created.length ? nastyMonsterCensus() - census : 0, created };
+}
+function nastyMonsterCensus() {
+    return game.level?.monsters.filter(monster => !monster.dead && monster.mhp > 0
+        && !(monster.isgd && monster.mx === 0)).length ?? 0;
+}
+// C makemon.c:unmakemon(). Rejected substitutes undo their counted birth
+// and artifact creation before the ordinary non-death removal.
+async function unmakeNastySubstitute(monster) {
+    const vital = game.mvitals?.[monster.mnum];
+    if (vital) {
+        if (vital.born > 0 && vital.born < 255)
+            vital.born--;
+        if ((MONSTER_GENO[monster.mnum] ?? 0) & G_UNIQ_MASK)
+            vital.mvflags &= ~G_EXTINCT;
+    }
+    monster.mhp = 0;
+    await discardMonsterInventory(monster, true);
+    await removeMonsterFromGame(monster);
 }
 export async function maketrap(x, y, typ) {
     // trap.c:maketrap() treats the two pseudo-types returned by rndtrap()
@@ -3847,6 +3878,7 @@ async function getbones() {
     }));
     await renewBonesIdentities(game.level, payload.fruits);
     await restoreBonesMonsters(game.level, game);
+    restoreLevelRegions(game, 0);
     restoreBonesObjects(game.level);
     restoreBonesMonsterAttitudes(game.level);
     sanitizeEngravings(game.level);

@@ -9,7 +9,7 @@ import { level_difficulty } from '../js/dungeon.js';
 import { placeCreatedObject, remove_object } from '../js/floor_object.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { putHeroToSleep } from '../js/hero_sleep.js';
-import { gotoLevel } from '../js/level_change.js';
+import { finishScheduledLevelChange, gotoLevel } from '../js/level_change.js';
 import { resetInputState } from '../js/input.js';
 import { beginObjectBurn } from '../js/light.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
@@ -68,7 +68,10 @@ void test('wizard level teleport places the hero before acknowledging the Amulet
     await docrt();
     await flush_screen(1);
     const input = resetInputState();
-    const changing = rhack(22);
+    const changing = (async () => {
+        await rhack(22);
+        await finishScheduledLevelChange();
+    })();
     await input.waitUntilBlocked();
     input.feed('?\r');
     await input.waitUntilBlocked();

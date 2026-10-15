@@ -210,7 +210,6 @@ export interface Monster extends MonsterPosition {
     eshk?: ShopkeeperData;
     mextra?: MonsterExtra;
     _egd?: VaultGuardData;
-    _nastyBirthPeaceful?: MonsterFlag;
 
     wormno?: number;
     wormHead?: Position | null;
