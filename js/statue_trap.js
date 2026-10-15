@@ -79,7 +79,7 @@ async function createStatueMonster(statue, x, y, state, magic) {
         newsym(monster.mx, monster.my);
         await restoreMonsterShape(monster, state);
         if (monster.mtame && !monster.isminion)
-            makePetWary(monster, { wasDead: true, state });
+            await makePetWary(monster, { wasDead: true, state });
     }
     else if (replacement === PM_DOPPELGANGER
         && monster.cham === PM_DOPPELGANGER) {
