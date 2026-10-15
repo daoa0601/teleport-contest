@@ -6189,27 +6189,13 @@ async function finishSplittingCarriedStack(object: GameObject): Promise<void> {
     object.nomerge = nomerge;
 }
 
-async function reportWeldedPrimary(item: GameObject): Promise<boolean> {
-    const newlyKnown = !item.bknown;
-    item.bknown = true;
-    observeObjectForNaming(item);
-    const hand = item.bimanual ? 'hands' : 'hand';
-    await pline(
-        `${inventoryItemDescription(item)} is welded to your ${hand}!`,
-    );
-    return newlyKnown;
-}
-
 function splittableForQuiver(item: GameObject): boolean {
     return !(item?.otyp === LOADSTONE && item.cursed)
         && !isWeldedPrimary(item);
 }
 
 function hasFreeBasicInventoryLetter(): boolean {
-    const basicLetters = new Set((game.inventory || [])
-        .map(item => item.invlet)
-        .filter(letter => /^[a-zA-Z]$/.test(letter || '')));
-    return basicLetters.size < 52;
+    return game.inventory.filter(item => item.oclass !== 12).length < 52;
 }
 
 async function doquiverCore(verb: 'ready' | 'fire'): Promise<QuiverCommandResult> {
@@ -6219,6 +6205,7 @@ async function doquiverCore(verb: 'ready' | 'fire'): Promise<QuiverCommandResult
         game.context.move = 0;
         return { item: null, spentTime: false, cancelled: false };
     }
+    clearSplitObjects();
     const suggestions = game.inventory.filter(item => readySuggestion(item, game));
     const letters = suggestions.map(item => item.invlet).join('');
     const noneSuggested = !!game.uquiver;
@@ -6255,7 +6242,12 @@ async function doquiverCore(verb: 'ready' | 'fire'): Promise<QuiverCommandResult
     }
 
     if (isWeldedPrimary(item)) {
-        const spentTime = await reportWeldedPrimary(item);
+        // getobj() tests splittable() first for a partial count. That test
+        // reveals the weld before doquiver_core() checks whether it is new.
+        if (selection.count !== null && selection.count < item.quan) item.bknown = true;
+        const spentTime = !item.bknown;
+        await refuseWeldedPrimary();
+        resetBulkTakeoff();
         game.context.move = spentTime ? 1 : 0;
         return {
             item: null, spentTime, cancelled: false,
