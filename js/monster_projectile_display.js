@@ -1,4 +1,4 @@
-// Native m_throw's tmp_at flight. Impacts run between frames, so a suspended
+// Native m_throw() and bhit() tmp_at flight. Impacts run between frames, so a suspended
 // hit message retains the last flight cell until the input resumes.
 import { flush_screen, lastDirtyMapCursor, newsym, show_glyph_cell, transientObjectGlyph } from './display.js';
 import { COLNO, isok } from './const.js';
@@ -34,6 +34,7 @@ export function monsterProjectileDisplay(object, state, { tethered = false, } = 
         previous = null;
     }
     return {
+        glyph,
         async show(position) {
             if (!isok(position.x, position.y))
                 return;

@@ -288,6 +288,7 @@ import {
 import { launcherMatchesAmmo } from './object_properties.js';
 import { resolveMapPotionThrow } from './potion_throw.js';
 import { throwOrdinaryObject } from './ordinary_throw.js';
+import { isAutoReturningThrow } from './returning_throw.js';
 import { chooseHeroVolleyCount } from './hero_multishot.js';
 import {
     captureThrownObjectFlight,
@@ -6479,6 +6480,12 @@ async function dofire(cannedShotLimit: number | null = null): Promise<void> {
     if (!await okToThrow()) return;
 
     let fireObject = game.uquiver;
+    const weapon = game.uwep;
+    const throwWielded = weapon && isAutoReturningThrow(weapon, weapon.owornmask ?? 0, game)
+        && (artifactById(weapon.oartifact, game)?.name !== 'Mjollnir'
+            || currentAttribute(A_STR) >= STR19(25))
+        && (!fireObject || isAmmunition(fireObject));
+    if (throwWielded) fireObject = weapon;
     let quiverSelectionSpentTime = false;
     if (!fireObject) {
         if (game.flags?.autoquiver) {
@@ -6531,7 +6538,7 @@ async function dofire(cannedShotLimit: number | null = null): Promise<void> {
         const matchingLauncher = (launcher: GameObject | null | undefined) =>
             launcherMatchesAmmo(fireObject, launcher);
         const alternate = game.uswapwep || game.u?.uswapwep || null;
-        const fireassist = game.flags?.fireassist !== false;
+        const fireassist = !throwWielded && game.flags?.fireassist !== false;
         if (fireassist && isAmmunition(fireObject) && game.uwep && isPolearm(game.uwep)
             && couldPoleMonster(game.uwep, { state: game })) {
             return applyPolearm(game.uwep, true);

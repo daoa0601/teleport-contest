@@ -328,7 +328,7 @@ void test('an unwielded bow can be thrown at a swallowing monster', async () => 
     assert.strictEqual(engulfer.minvent[0], bow);
 });
 
-void test('a swallowed boomerang hits before return flight can begin', async () => {
+void test('a swallowed boomerang hits its engulfer before returning to the hero', async () => {
     const engulfer = await freshSwallowedState(PM_TRAPPER);
     requirePlayingGame(game);
     const boomerang = await addInventoryWeapon(BOOMERANG);
@@ -338,7 +338,9 @@ void test('a swallowed boomerang hits before return flight can begin', async () 
     await throwInventoryObject(boomerang, 'l');
 
     assert.ok(engulfer.mhp < 40);
-    assert.equal(engulfer.minvent.includes(boomerang), true);
+    assert.equal(engulfer.minvent.includes(boomerang), false);
+    assert.equal(boomerang.where, 'inventory');
+    assert.equal(game.uwep, boomerang);
 });
 
 void test('a swallowed weapon can hurt the pet that engulfed the hero', async () => {
