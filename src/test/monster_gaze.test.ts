@@ -7,7 +7,7 @@ import { wearHeroAccessory } from '../js/accessory.js';
 import { polymonHero } from '../js/polyself.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { findArmorClass, wearHeroArmor } from '../js/armor.js';
-import { MM_ANGRY, MM_NOGRP, NO_MINVENT, POOL, W_AMUL } from '../js/const.js';
+import { MM_ANGRY, MM_NOGRP, MM_NOWAIT, NO_MINVENT, POOL, W_AMUL } from '../js/const.js';
 import { flushPendingTopline } from '../js/display.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { OBJECT_NAMES, SHIELD_OF_REFLECTION, STATUE } from '../js/object_data.js';
@@ -113,7 +113,7 @@ void test('an underwater reflection does not petrify Medusa', async () => {
     await wearHeroAccessory(await addInventoryObject(OBJECT_NAMES.indexOf('amulet of magical breathing')), 'uamul');
     wearHeroArmor(await addInventoryObject(SHIELD_OF_REFLECTION));
     findArmorClass();
-    const medusa = await createMonsterAt('Medusa', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
+    const medusa = await createMonsterAt('Medusa', 11, 10, MM_ANGRY | MM_NOGRP | MM_NOWAIT | NO_MINVENT);
     medusa.msleeping = 0;
     medusa.movement = 12;
     game.level.requireAt(10, 10).typ = POOL;

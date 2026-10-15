@@ -18,17 +18,18 @@ import { rn2 } from './rng.js';
 import { heroIsDeaf } from './senses.js';
 import { randomMonsterRelocation, relocateMonsterTo } from './teleport.js';
 import { findNearbyMonsterPosition, monsterTeleportRestricted } from './teleport_rules.js';
-export async function respondToImmediateMagic(monster, state = game) {
+// C mon.c:m_respond(), shared by dochug() and immediate monster magic.
+export async function respondToImmediateMagic(monster, state = game, { random = rn2, publish = pline, ...gazeOptions } = {}) {
     requirePlayingGame(state);
     const distance = Math.max(Math.abs(monster.mx - state.u.ux), Math.abs(monster.my - state.u.uy));
     if (MONSTER_SOUND[monster.mnum] === 18 && distance <= 1) {
         if (!heroIsDeaf(state)) {
-            await pline(`${monsterName(monster, { capitalized: true })} shrieks.`);
-            await stopHeroOccupation();
+            await publish(`${monsterName(monster, { state, capitalized: true })} shrieks.`);
+            await stopHeroOccupation(state);
         }
-        if (!rn2(10)) {
+        if (!random(10)) {
             let species = null;
-            if (!rn2(13)) {
+            if (!random(13)) {
                 const adult = MONSTER_NAME.indexOf('purple worm');
                 const maximum = Math.trunc((level_difficulty() + state.u.ulevel) / 2);
                 species = (MONSTER_DIFFICULTY[adult] ?? 0) > maximum
@@ -36,12 +37,13 @@ export async function respondToImmediateMagic(monster, state = game) {
             }
             await makemonAt(species, 0, 0);
         }
-        aggravateMonsters(state);
+        aggravateMonsters(state, random);
     }
-    await respondMedusa(monster, { state });
+    const response = await respondMedusa(monster, { state, random, publish, ...gazeOptions });
     if (MONSTER_NAME[monster.mnum] === 'erinys' && !monster.mpeaceful
         && monsterHasLineOfSightToHero(monster, state))
-        aggravateMonsters(state);
+        aggravateMonsters(state, random);
+    return response;
 }
 export async function teleportMonsterByHero(monster, { state = game, giveFeedback = true, } = {}) {
     requirePlayingGame(state);

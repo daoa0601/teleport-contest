@@ -14,6 +14,21 @@ import { applyHeroLocationEffects } from './cmd.js';
 import { rnd, rn2 } from './rng.js';
 import { findNearbyMonsterPosition } from './teleport_rules.js';
 import { vision_reset } from './vision.js';
+// C monmove.c:release_hero(). A monster can end its own hold, but cannot
+// release a sticky hero's grip. Expulsion also settles the hero's landing.
+export async function releaseMonsterHold(monster, { state = game, publish = plineWithContinuation, random = rn2, rollOne = rnd, } = {}) {
+    if (state.u.ustuck !== monster)
+        return false;
+    if (state.u.uswallow) {
+        const result = await expelHero(monster, { state, publish, random, rollOne });
+        return !!result.died;
+    }
+    if (!heroFormSticks(state)) {
+        await releaseHeroFromMonster(monster, { state, publish, rollOne });
+        await publish('You get released!');
+    }
+    return false;
+}
 export function holdingMonsterName(monster) {
     const givenName = MGIVENNAME(monster);
     if (givenName)

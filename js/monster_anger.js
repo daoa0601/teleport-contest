@@ -84,7 +84,8 @@ const WATCH_NAMES = new Set(['watchman', 'watch captain']);
 export function aggravateMonsters(state = game, random = rn2) {
     const heroInsideTower = insideWizardTower(state.u?.ux, state.u?.uy, state);
     const awakened = [];
-    for (const monster of state.level?.monsters || []) {
+    // Native fmon visits the most recently created monster first.
+    for (const monster of Array.from(state.level?.monsters || []).reverse()) {
         if (!monster || monster.dead || (monster.mhp ?? 1) <= 0)
             continue;
         if (insideWizardTower(monster.mx, monster.my, state)
