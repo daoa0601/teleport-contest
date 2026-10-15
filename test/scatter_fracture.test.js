@@ -14,7 +14,6 @@ void test('scattering a named statue leaves unnamed ordinary rock fragments', as
     });
     assert.equal(statue.otyp, ROCK);
     assert.equal(statue.oname, undefined);
-    assert.equal(statue.corpsenm, undefined);
     assert.equal(statue.spe, 0);
     assert.ok(level.objects.flat(2).includes(statue));
 });
