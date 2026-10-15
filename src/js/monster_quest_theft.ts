@@ -1,6 +1,5 @@
 // C steal.c:stealamulet() and worn_item_removal().
 import { artifactById } from './artifacts.js';
-import { stopDonning } from './armor.js';
 import { reportHeroEncumbrance } from './attrib.js';
 import { RLOC_MSG, W_ACCESSORY, W_WEAPONS } from './const.js';
 import type { MessagePublisher } from './display.js';
@@ -83,6 +82,5 @@ async function removeForQuestTheft(
     const mask = object.owornmask ?? 0;
     const verb = mask & W_WEAPONS ? 'disarms' : mask & W_ACCESSORY ? 'removes' : 'takes off';
     await publish(`${monsterName(monster, { state, capitalized: true, augmentIt: true })} ${verb} ${description}.`);
-    await stopDonning(object, state);
     await removeWornHeroItem(object, state);
 }
