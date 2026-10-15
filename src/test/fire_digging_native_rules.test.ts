@@ -25,7 +25,7 @@ void test('fire dries a wet towel carried by the hero', async () => {
 
     assert.ok(game.inventory.includes(towel));
     assert.ok(towel.spe < 7, 'Fire should reduce the carried towel\'s wetness.');
-    assert.ok(messages.some(message => message.startsWith('Your towel dries')));
+    assert.ok(messages.some(message => message.startsWith('Your wet towel dries')));
 });
 
 void test('an Earth cave-in leaves a wall-walking xorn inside the new rock',
