@@ -423,10 +423,9 @@ export function prepareMapPositionHighlights(isValidLocation: ValidLocation): vo
     for (const { x, y } of validMapSquares(isValidLocation)) newsym_force(x, y);
 }
 
-function getposCycleKind(key: number, hasValidLocations: boolean): { kind: GetposCycleKind; step: -1 | 1 } | null {
+function getposCycleKind(key: number): { kind: GetposCycleKind; step: -1 | 1 } | null {
     const kinds: readonly GetposCycleKind[] = ['mon', 'obj', 'door', 'unexplored', 'all', 'valid'];
     for (const kind of kinds) {
-        if (kind === 'valid' && !hasValidLocations) continue;
         if (key === game.commandBindings.specialKey(`getpos.${kind}.next`))
             return { kind, step: 1 };
         if (key === game.commandBindings.specialKey(`getpos.${kind}.prev`))
@@ -664,9 +663,12 @@ export async function selectMapPosition({
                 message = await movementMessage();
                 continue;
             }
-            const target = getposCycleKind(key, !!isValidLocation);
+            const target = getposCycleKind(key);
             if (target) {
-                const kind = target.kind;
+                // GLOC_VALID falls through to GLOC_INTERESTING when no
+                // caller has installed a validity predicate.
+                const kind = target.kind === 'valid' && !isValidLocation
+                    ? 'all' : target.kind;
                 const gatherTargets = () => gatherValidLocations((x, y) =>
                     (x !== game.u.ux || y !== game.u.uy)
                     && (kind === 'valid' ? isValidLocation?.(x, y) ?? false
