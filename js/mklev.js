@@ -57,7 +57,7 @@ import { depth as depth_of_level, ledgerNo, maxLedgerNo, } from './hacklib.js';
 import { inducedAlignment, level_difficulty, specialLevelAt } from './dungeon.js';
 import { mkmap } from './mkmap.js';
 import { carveMazeFrom, createMaze } from './maze_terrain.js';
-import { ANY_LOC, DRY, HOT, NO_LOC_WARN, SOLID, WET, getLocationCoord } from './special_location.js';
+import { ANY_LOC, DRY, HOT, NO_LOC_WARN, SOLID, WET, getLocation, getLocationCoord } from './special_location.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import { cleanupSpecialLevelMap, removeSpecialLevelBoundaries } from './special_level_cleanup.js';
 import { A_CHA, COLNO, ROWNO, STONE, ROOM, CORR, DOOR, STAIRS, LADDER, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER, CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL, D_NODOOR, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_TRAPPED, OROOM, VAULT, COURT, SWAMP, BEEHIVE, MORGUE, BARRACKS, ZOO, TEMPLE, LEPREHALL, COCKNEST, ANTHOLE, DELPHI, THEMEROOM, SHOPBASE, ROOMOFFSET, MAXNROFROOMS, SHARED, SDOOR, SCORR, IRONBARS, FOUNTAIN, SINK, ALTAR, GRAVE, THRONE, HEADSTONE, ENGRAVE, BURN, MARK, DUST, ENGR_BLOOD, DIR_N, DIR_S, DIR_E, DIR_W, DIR_180, XL_UP, XL_DOWN, XL_LEFT, XL_RIGHT, ACCESSIBLE, IS_WALL, IS_STWALL, IS_DOOR, IS_ROOM, IS_OBSTRUCTED, ZAP_POS, IS_FURNITURE, IS_POOL, IS_AIR, IS_LAVA, In_endgame, Is_earthlevel, Is_botlevel, Is_stronghold, Invocation_lev, In_hell, In_quest, In_V_tower, Is_oracle_level, Is_waterlevel, Is_knox_level, Is_rogue_level, In_sokoban, SPACE_POS, isok, W_NONDIGGABLE, W_NONPASSWALL, FILL_NONE, FILL_NORMAL, ICE, MOAT, POOL, WATER, LAVAPOOL, LAVAWALL, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN, DBWALL, ICED_POOL, ICED_MOAT, DB_NORTH, DB_SOUTH, DB_EAST, DB_WEST, DB_MOAT, DB_LAVA, DB_UNDER, DB_FLOOR, SHOP_HOLE_COST, TREE, AIR, CLOUD, A_NONE, A_CHAOTIC, A_NEUTRAL, A_LAWFUL, P_SHORT_SWORD, P_SABER, AM_SHRINE, AM_SANCTUM, Align2amask, LR_DOWNSTAIR, LR_UPSTAIR, LR_UPTELE, LR_DOWNTELE, LR_TELE, LR_BRANCH, LR_PORTAL, M_AP_NOTHING, M_AP_FURNITURE, M_AP_OBJECT, M_AP_MONSTER, M_AP_TYPE, MM_ANGRY, MM_ASLEEP, MM_NONAME, MM_NOGRP, MM_EMIN, MM_EPRI, MM_NOWAIT, MM_NOTAIL, MM_IGNOREWATER, MM_ADJACENTOK, MM_NOCOUNTBIRTH, MM_NOMSG, MM_MALE, MM_FEMALE, MM_MINVIS, MM_EDOG, NO_MINVENT, G_EXTINCT, G_GENOD, G_GONE, G_NOCORPSE, ROT_AGE, TROLL_REVIVE_CHANCE, HEALTHY_TIN, RANDOM_TIN, MAX_OIL_IN_FLASK, CORPSTAT_FEMALE, CORPSTAT_MALE, CORPSTAT_NEUTER, CORPSTAT_HISTORIC, CORPSTAT_INIT, CORPSTAT_SPE_VAL, STRAT_APPEARMSG, STRAT_CLOSE, STRAT_WAITFORU, ANTI_MAGIC, TT_BURIEDBALL, TT_BEARTRAP, TT_WEB, TT_PIT, TT_LAVA, } from './const.js';
@@ -6726,6 +6726,7 @@ function createLuaLevelSession() {
             ? specialSelectionNonDiggable(selection)
             : specialNonDiggable(),
         nonPasswall: selection => markSpecialSelectionWallProperty(selection ?? new SpecialSelection().negate(), W_NONPASSWALL),
+        wallProperty: options => createLuaWallProperty(currentLevel().context ?? wholeLevel, options),
         wallify: () => wallifyMap(context.xstart - 1, context.ystart - 1, context.xstart + context.width + 1, context.ystart + context.height + 1),
         teleportRegion: options => {
             const region = regionCoordinates(context, options.region, options.region_islev);
@@ -7035,6 +7036,31 @@ function markSpecialSelectionWallProperty(selection, property) {
             || loc.typ === IRONBARS))
             loc.wall_info |= property;
     });
+}
+async function createLuaWallProperty(context, options) {
+    const property = options.property ?? 'nondiggable';
+    if (property !== 'nondiggable' && property !== 'nonpasswall')
+        throw new TypeError(`Unknown wall property: ${property}`);
+    const explicit = [
+        options.x1 ?? -1, options.y1 ?? -1, options.x2 ?? -1, options.y2 ?? -1,
+    ];
+    const useRegion = explicit.every(value => value === -1);
+    if (useRegion && !options.region)
+        throw new TypeError('des.wall_property requires a rectangle');
+    const [x1, y1, x2, y2] = useRegion && options.region ? options.region : explicit;
+    const start = await getLocation(context, {
+        x: x1 === -1 ? context.xstart - 1 : x1,
+        y: y1 === -1 ? context.ystart - 1 : y1,
+    }, ANY_LOC);
+    const end = await getLocation(context, {
+        x: x2 === -1 ? context.xstart + context.width + 1 : x2,
+        y: y2 === -1 ? context.ystart + context.height + 1 : y2,
+    }, ANY_LOC);
+    const area = new SpecialSelection();
+    for (let x = Math.max(1, start.x); x <= Math.min(COLNO - 1, end.x); x++)
+        for (let y = Math.max(0, start.y); y <= Math.min(ROWNO - 1, end.y); y++)
+            area.add(x, y);
+    markSpecialSelectionWallProperty(area, property === 'nondiggable' ? W_NONDIGGABLE : W_NONPASSWALL);
 }
 async function generateElementalPlane(active) {
     active.file = `${active.prototype}.lua`;

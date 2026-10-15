@@ -272,4 +272,15 @@ void test('non_passwall without a selection protects all solid terrain on the le
         assert.ok((level.requireAt(x, y).wall_info & W_NONPASSWALL) !== 0, `solid terrain at ${x},${y}`);
     assert.equal(level.requireAt(11, 5).wall_info & W_NONPASSWALL, 0);
 });
+void test('Lua wall_property applies its rectangle relative to the last map', async (t) => {
+    const lua = await levelLua(t);
+    await lua.executeAsync(`
+        des.map({ x = 10, y = 5, map = [[|||]] })
+        des.wall_property({ region = {0, 0, 1, 0}, property = "nonpasswall" })
+    `);
+    const level = requireGameLevel();
+    assert.ok(level.requireAt(10, 5).wall_info & W_NONPASSWALL);
+    assert.ok(level.requireAt(11, 5).wall_info & W_NONPASSWALL);
+    assert.equal(level.requireAt(12, 5).wall_info & W_NONPASSWALL, 0);
+});
 //# sourceMappingURL=special_level_selection.test.js.map

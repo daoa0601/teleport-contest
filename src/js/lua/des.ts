@@ -43,6 +43,7 @@ export interface DesOptions {
     map?: string;
     mapfragment?: string;
     name?: string;
+    property?: string;
     state?: string;
     srcwall?: string;
     style?: string;
@@ -192,6 +193,7 @@ export interface DesOperations {
     altar(options: DesOptions): DesOperationResult;
     nonDiggable(selection: SpecialSelection | null): DesOperationResult;
     nonPasswall(selection: SpecialSelection | null): DesOperationResult;
+    wallProperty(options: DesOptions): DesOperationResult;
     wallify(): DesOperationResult;
     teleportRegion(options: DesOptions): DesOperationResult;
     levelRegion(options: DesOptions): DesOperationResult;
@@ -241,7 +243,7 @@ function tableOptions(value: LuaValue | undefined): DesOptions {
     for (const key of [
         'id', 'class', 'montype', 'appear_as', 'align', 'bg', 'buc', 'dir',
         'direction', 'destwall', 'fg', 'filling', 'fromterrain', 'halign', 'map', 'mapfragment',
-        'name', 'state', 'srcwall', 'style', 'text', 'toterrain', 'typ', 'type', 'valign',
+        'name', 'property', 'state', 'srcwall', 'style', 'text', 'toterrain', 'typ', 'type', 'valign',
         'wall', 'xalign', 'yalign'
     ] as const) {
         const entry = value.get(key);
@@ -707,6 +709,7 @@ export function createDesBindings(
         non_passwall: (selection: LuaValue) => operations.nonPasswall(
             selection == null ? null : unwrapSelection(selection),
         ),
+        wall_property: (value: LuaValue) => operations.wallProperty(tableOptions(value)),
         wallify: () => operations.wallify(),
         teleport_region: (value: LuaValue) => operations.teleportRegion(
             tableOptions(value),

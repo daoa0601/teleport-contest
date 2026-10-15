@@ -91,7 +91,7 @@ import {
 import { inducedAlignment, level_difficulty, specialLevelAt } from './dungeon.js';
 import { mkmap } from './mkmap.js';
 import { carveMazeFrom, createMaze } from './maze_terrain.js';
-import { ANY_LOC, DRY, HOT, NO_LOC_WARN, SOLID, WET, getLocationCoord } from './special_location.js';
+import { ANY_LOC, DRY, HOT, NO_LOC_WARN, SOLID, WET, getLocation, getLocationCoord } from './special_location.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import { cleanupSpecialLevelMap, removeSpecialLevelBoundaries } from './special_level_cleanup.js';
 import {
@@ -6849,6 +6849,7 @@ function createLuaLevelSession() {
         nonPasswall: selection => markSpecialSelectionWallProperty(
             selection ?? new SpecialSelection().negate(), W_NONPASSWALL,
         ),
+        wallProperty: options => createLuaWallProperty(currentLevel().context ?? wholeLevel, options),
         wallify: () => wallifyMap(
             context.xstart - 1,
             context.ystart - 1,
@@ -7200,6 +7201,30 @@ function markSpecialSelectionWallProperty(selection: SpecialSelection, property:
             || loc.typ === IRONBARS))
             loc.wall_info |= property;
     });
+}
+
+async function createLuaWallProperty(context: SpecialLevelContext, options: DesOptions): Promise<void> {
+    const property = options.property ?? 'nondiggable';
+    if (property !== 'nondiggable' && property !== 'nonpasswall')
+        throw new TypeError(`Unknown wall property: ${property}`);
+    const explicit: [number, number, number, number] = [
+        options.x1 ?? -1, options.y1 ?? -1, options.x2 ?? -1, options.y2 ?? -1,
+    ];
+    const useRegion = explicit.every(value => value === -1);
+    if (useRegion && !options.region) throw new TypeError('des.wall_property requires a rectangle');
+    const [x1, y1, x2, y2] = useRegion && options.region ? options.region : explicit;
+    const start = await getLocation(context, {
+        x: x1 === -1 ? context.xstart - 1 : x1,
+        y: y1 === -1 ? context.ystart - 1 : y1,
+    }, ANY_LOC);
+    const end = await getLocation(context, {
+        x: x2 === -1 ? context.xstart + context.width + 1 : x2,
+        y: y2 === -1 ? context.ystart + context.height + 1 : y2,
+    }, ANY_LOC);
+    const area = new SpecialSelection();
+    for (let x = Math.max(1, start.x); x <= Math.min(COLNO - 1, end.x); x++)
+        for (let y = Math.max(0, start.y); y <= Math.min(ROWNO - 1, end.y); y++) area.add(x, y);
+    markSpecialSelectionWallProperty(area, property === 'nondiggable' ? W_NONDIGGABLE : W_NONPASSWALL);
 }
 
 async function generateElementalPlane(active: ActiveSpecialLevel): Promise<void> {

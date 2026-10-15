@@ -40,7 +40,7 @@ function tableOptions(value) {
     for (const key of [
         'id', 'class', 'montype', 'appear_as', 'align', 'bg', 'buc', 'dir',
         'direction', 'destwall', 'fg', 'filling', 'fromterrain', 'halign', 'map', 'mapfragment',
-        'name', 'state', 'srcwall', 'style', 'text', 'toterrain', 'typ', 'type', 'valign',
+        'name', 'property', 'state', 'srcwall', 'style', 'text', 'toterrain', 'typ', 'type', 'valign',
         'wall', 'xalign', 'yalign'
     ]) {
         const entry = value.get(key);
@@ -487,6 +487,7 @@ export function createDesBindings(operations, wrapSelection) {
         altar: (value) => operations.altar(tableOptions(value)),
         non_diggable: (selection) => operations.nonDiggable(selection == null ? null : unwrapSelection(selection)),
         non_passwall: (selection) => operations.nonPasswall(selection == null ? null : unwrapSelection(selection)),
+        wall_property: (value) => operations.wallProperty(tableOptions(value)),
         wallify: () => operations.wallify(),
         teleport_region: (value) => operations.teleportRegion(tableOptions(value)),
         levregion: (value) => operations.levelRegion(tableOptions(value)),
