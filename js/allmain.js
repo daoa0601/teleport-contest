@@ -1,6 +1,7 @@
 import { recorderLocalEpochSeconds } from './calendar.js';
 import { slipOrTrip } from './fumbling.js';
 import { recoverTimedLuck } from './timeout_luck.js';
+import { advanceBodyTimeouts, advanceGallopingTimeout } from './timeout_body.js';
 import { invWeight } from './weight.js';
 import { rewindEngravingsForSave } from './engrave.js';
 import { finishMonsterHideUnder } from './monster_hiding.js';
@@ -898,8 +899,6 @@ async function finishInitialTurnMaintenanceAfterMonsterDistress(capacity, deferA
     // disposable: bear-trap leg damage lowers Dexterity until this countdown
     // expires.
     const sourceTurn = game.moves;
-    if (game.u.mtimedone !== undefined && game.u.mtimedone > 0)
-        game.u.mtimedone--;
     return finishInitialTurnMaintenanceBeforeTimeouts({
         sourceTurn, moveAmount, capacity, deferAmbientMessage, polymorphed,
     });
@@ -958,8 +957,17 @@ async function finishInitialTurnMaintenanceBeforeTimeouts({ sourceTurn, moveAmou
     }
     if (!prayerTimeoutFreeze)
         await levitationDialogue(game);
+    if (!prayerTimeoutFreeze) {
+        if (propertyTimeout('sleepy', game) === 4)
+            await plineWithContinuation('You yawn.');
+        await advanceBodyTimeouts(game);
+        if (game.program_state.gameover)
+            return { kind: 'complete', moveAmount };
+    }
     if (!prayerTimeoutFreeze)
         await advanceSpellProtection(game);
+    if (!prayerTimeoutFreeze)
+        await advanceGallopingTimeout(game);
     if (!prayerTimeoutFreeze) {
         if (advancePropertyTimeout('fireResistance', game)
             && !propertyIsActive('fireResistance', game))
