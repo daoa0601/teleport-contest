@@ -1,6 +1,6 @@
 // #sit and the immediate consequences of sitting down.
 // C ref: sit.c dosit() and lay_an_egg().
-import { A_STR, A_WIS, ALTAR, DRAWBRIDGE_DOWN, FOUNTAIN, GRAVE, ICE, ROOM, IS_LAVA, IS_POOL, Is_waterlevel, LADDER, SINK, SPIKED_PIT, STAIRS, THRONE, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, } from './const.js';
+import { A_STR, A_WIS, ALTAR, DRAWBRIDGE_DOWN, FOUNTAIN, GRAVE, ICE, ROOM, IS_LAVA, IS_POOL, Is_waterlevel, is_hole, is_pit, LADDER, SINK, SPIKED_PIT, STAIRS, THRONE, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, } from './const.js';
 import { exerciseAttribute } from './attrib.js';
 import { plineWithContinuation as pline } from './display.js';
 import { game, requireInitializedGame } from './gstate.js';
@@ -280,7 +280,9 @@ export async function dosit({ finishTeleport = null, gotoLevel = null, chooseTel
         return;
     }
     const object = game.level?.objects?.[x]?.[y]?.[0];
-    if (object) {
+    const atPitEdge = trap?.tseen && (is_hole(trap.ttyp)
+        || is_pit(trap.ttyp) && !(u.utrap && u.utraptype === TT_PIT));
+    if (object && !atPitEdge) {
         await sitOnObject(object);
     }
     else if (trap || (u?.utrap && (u.utraptype ?? 0) >= TT_LAVA)) {
