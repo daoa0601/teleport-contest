@@ -21,6 +21,7 @@ import { heroEyeCount, heroEyeName, heroHeadName } from './body_parts.js';
 import { makePlural, verbForSubject } from './object_grammar.js';
 import { loseHeroHp } from './hero_damage.js';
 import { cureHeroSickness } from './hero_illness.js';
+import { adjustObjectLightAfterBlessing, objectLightRadius } from './light.js';
 import { healHeroLegs } from './hero_legs.js';
 import { takeHeroGold } from './hero_gold.js';
 import { identifyPack } from './invent.js';
@@ -429,8 +430,11 @@ export async function rndcurse({ publish = plineWithContinuation, } = {}) {
             await publish(`${subject} ${objectNameIsPlural(object) ? 'resist' : 'resists'}!`);
             continue;
         }
-        if (object.blessed)
-            unblessObjectState(object);
+        if (object.blessed) {
+            const oldRadius = objectLightRadius(object, state);
+            unblessObjectState(object, state);
+            await adjustObjectLightAfterBlessing(object, oldRadius, state);
+        }
         else {
             await curseObject(object);
             await dropCursedSecondaryWeapon(object, state);
