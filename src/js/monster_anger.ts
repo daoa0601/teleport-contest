@@ -109,7 +109,8 @@ export function aggravateMonsters(state: GameState = game, random = rn2): Monste
     );
     const awakened = [];
 
-    for (const monster of state.level?.monsters || []) {
+    // Native fmon visits the most recently created monster first.
+    for (const monster of Array.from(state.level?.monsters || []).reverse()) {
         if (!monster || monster.dead || (monster.mhp ?? 1) <= 0) continue;
         if (insideWizardTower(monster.mx, monster.my, state)
             !== heroInsideTower) continue;
