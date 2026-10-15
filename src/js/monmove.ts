@@ -85,6 +85,7 @@ import { useMonsterOffensiveItem } from './monster_offensive_item.js';
 import { searchMonsterItems } from './monster_item_search.js';
 import type { MonsterApproach } from './monster_item_search.js';
 import { monsterCouldReachItem } from './monster_item_reach.js';
+import { isLevelPrize } from './level_prize.js';
 import { consumeMonsterFloorObjects } from './monster_floor_consumption.js';
 import { digestGelatinousCubeInventory, feedBeeRoyalJelly } from './monster_consumption.js';
 import { pickUpMonsterFloorObject } from './monster_pickup.js';
@@ -2355,7 +2356,7 @@ async function petInventoryAction(
         object.oclass !== BALL_CLASS &&
         object.oclass !== CHAIN_CLASS &&
         object.oclass !== ROCK_CLASS;
-    if (!fetchableClass) return null;
+    if (!fetchableClass || isLevelPrize(object, state)) return null;
     const edible = dogFood(monster, object, random, calls, state);
     if ((edible <= CADAVER || monster.edog?.mhpmax_penalty && edible === ACCFOOD)
         && monsterCouldReachItem(monster, monster.mx, monster.my, state)) {
