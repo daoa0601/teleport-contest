@@ -57,6 +57,10 @@ export function clearImmediateZapBypasses(state = game) {
         }
     };
     clearChain(state.billObjects);
+    if (state.uball)
+        state.uball.bypass = false;
+    if (state.uchain)
+        state.uchain.bypass = false;
     for (const monster of state._migratingMonsters || [])
         clearChain(monster.minvent || monster.inventory);
     for (const monster of state.level?.monsters || []) {
