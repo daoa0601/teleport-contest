@@ -3181,7 +3181,8 @@ export async function maketrap(x, y, typ) {
             || (terrain !== undefined && IS_FURNITURE(terrain)
                 && typ !== PIT && typ !== HOLE)
             || (terrain === DRAWBRIDGE_UP && typ === MAGIC_PORTAL)
-            || (terrain !== undefined && IS_AIR(terrain) && typ !== MAGIC_PORTAL)) {
+            || (terrain !== undefined && IS_AIR(terrain) && typ !== MAGIC_PORTAL)
+            || (typ === LEVEL_TELEP && Is_knox_level(game.u.uz))) {
             return null;
         }
     }
