@@ -43,7 +43,7 @@ import { MONSTER_FLAGS2, MONSTER_SYMBOL } from './monster_data.js';
 import { OBJECT_NAMES } from './object_data.js';
 import { curseObject, unblessObjectState } from './object_state.js';
 import {
-    grantIntrinsicProperty, hasIntrinsicProperty, hasPermanentIntrinsicProperty,
+    grantIntrinsicProperty, hasPermanentIntrinsicProperty,
     removePermanentIntrinsicProperty,
 } from './properties.js';
 import { syncHeroInvisibility } from './hero_invisibility.js';
@@ -84,12 +84,16 @@ function currentForm(): number | null {
     return species !== undefined && Number.isInteger(species) ? species : null;
 }
 
-function heroLuck() {
+function naturalLuck() {
     return game.u?.uluck ?? game.u?.luck ?? 0;
 }
 
+function heroLuck() {
+    return naturalLuck() + (game.u.moreluck ?? 0);
+}
+
 function changeLuck(amount: number): void {
-    game.u.uluck = Math.max(-13, Math.min(13, heroLuck() + amount));
+    game.u.uluck = Math.max(-13, Math.min(13, naturalLuck() + amount));
 }
 
 function inVladsTower() {
@@ -190,7 +194,7 @@ async function normalThroneEffect(
         await takeHeroGold();
         break;
     case 6:
-        if (heroLuck() + rn2(5) < 0) {
+        if (naturalLuck() + rn2(5) < 0) {
             await plineWithContinuation(formatFeltMessage('your luck is changing.'));
             changeLuck(1);
         } else {
@@ -223,7 +227,7 @@ async function normalThroneEffect(
         break;
     case 10:
         if (heroLuck() < 0
-            || hasIntrinsicProperty('seeInvisible', null, game)) {
+            || hasPermanentIntrinsicProperty('seeInvisible', game)) {
             if (game.level?.flags?.nommap) {
                 await plineWithContinuation(
                     'A terrible drone fills your head!',
