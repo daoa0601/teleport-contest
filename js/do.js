@@ -20,7 +20,7 @@ function monsterHasActiveAttack(monster) {
 }
 function monsterIsHelpless(monster) {
     return !!(monster.msleeping
-        || monster?.mcanmove === 0 || (monster?.mfrozen ?? 0) > 0);
+        || !monster.mcanmove || (monster?.mfrozen ?? 0) > 0);
 }
 // C hack.c:monster_nearby().  This is the shared threat predicate used by
 // both safe waiting and safe searching; it is intentionally stricter than
@@ -44,7 +44,7 @@ export function threateningMonsterNearby(state = game) {
             if (!hallucinating && (monster.mpeaceful || !monsterHasActiveAttack(monster)))
                 continue;
             const hider = (MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_HIDE;
-            if (hider && monster.mundetected || monsterIsHelpless(monster)
+            if ((hider && monster.mundetected) || monsterIsHelpless(monster)
                 || monsterIsScaredAt(monster, state, u.ux, u.uy)
                 || !canSpotMonster(monster))
                 continue;

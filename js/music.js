@@ -22,7 +22,7 @@ import { monsterIsScaredAt } from './monster_fear.js';
 import { BUGLE, DRUM_OF_EARTHQUAKE, FIRE_HORN, FROST_HORN, LEATHER_DRUM, MAGIC_FLUTE, MAGIC_HARP, TOOLED_HORN, WOODEN_FLUTE, WOODEN_HARP, } from './object_data.js';
 import { learnObjectType } from './object_knowledge.js';
 import { consumeObjectCharge } from './object_charge.js';
-import { definiteName, objectCombatName, objectNameIsPlural, ownedObjectName, simpleObjectName } from './objnam.js';
+import { definiteName, objectCombatName, objectNameIsPlural, ownedObjectName, simpleObjectName, } from './objnam.js';
 import { verbForSubject } from './object_grammar.js';
 import { askForTune, playTune } from './passtune.js';
 import { heroCanBlow, heroFormSticks } from './hero_species.js';
@@ -168,7 +168,7 @@ async function putMonstersToSleep(distance) {
 async function charmSnakes(distance) {
     for (const monster of liveMonsters()) {
         if (MONSTER_SYMBOL[monster.mnum] !== S_SNAKE
-            || monster.mcanmove === 0
+            || !monster.mcanmove
             || monsterDistance(monster) >= distance)
             continue;
         const wasPeaceful = !!monster.mpeaceful;
@@ -191,7 +191,7 @@ async function charmSnakes(distance) {
 async function calmNymphs(distance) {
     for (const monster of liveMonsters()) {
         if (MONSTER_SYMBOL[monster.mnum] !== S_NYMPH
-            || monster.mcanmove === 0
+            || !monster.mcanmove
             || monsterDistance(monster) >= distance)
             continue;
         monster.msleeping = 0;

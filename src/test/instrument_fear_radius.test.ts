@@ -24,4 +24,3 @@ void test('an empty earthquake drum wakes an adjacent monster without frightenin
     assert.equal(goblin.msleeping, 0);
     assert.equal(Boolean(goblin.mflee), false);
 });
-

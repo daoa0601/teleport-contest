@@ -73,4 +73,22 @@ void test('playing an unidentified magic flute describes its appearance without 
     assert.doesNotMatch(messages.join('\n'), /magic flute/);
     assert.equal(game._knownObjectTypes?.has(MAGIC_FLUTE) ?? false, false);
 });
+for (const canMove of [false, 0]) {
+    for (const [species, type] of [['snake', WOODEN_FLUTE], ['water nymph', WOODEN_HARP]]) {
+        void test(`a wooden instrument cannot calm an immobilized ${species} with movement flag ${canMove}`, async () => {
+            const input = freshTurnRoom({ heroLevel: 30 });
+            const monster = await createMonsterAt(species, 11, 10);
+            monster.mpeaceful = 0;
+            monster.mcanmove = canMove;
+            monster.mfrozen = 20;
+            const object = await addInventoryObject(type);
+            const expected = /playing|trill|melody|sways|listens/;
+            installPagerInput(input, { expected, limit: 8 });
+            pushKeys(`a${object.invlet}y`);
+            await moveloop_core();
+            await finishAtCommandInput(input, moveloop_core, expected);
+            assert.equal(monster.mpeaceful, 0);
+        });
+    }
+}
 //# sourceMappingURL=music_native.test.js.map

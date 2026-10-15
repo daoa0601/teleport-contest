@@ -35,7 +35,9 @@ import {
 } from './object_data.js';
 import { learnObjectType } from './object_knowledge.js';
 import { consumeObjectCharge } from './object_charge.js';
-import { definiteName, objectCombatName, objectNameIsPlural, ownedObjectName, simpleObjectName } from './objnam.js';
+import {
+    definiteName, objectCombatName, objectNameIsPlural, ownedObjectName, simpleObjectName,
+} from './objnam.js';
 import { verbForSubject } from './object_grammar.js';
 import { askForTune, playTune } from './passtune.js';
 import { heroCanBlow, heroFormSticks } from './hero_species.js';
@@ -203,7 +205,7 @@ async function putMonstersToSleep(distance: number) {
 async function charmSnakes(distance: number) {
     for (const monster of liveMonsters()) {
         if (MONSTER_SYMBOL[monster.mnum] !== S_SNAKE
-            || monster.mcanmove === 0
+            || !monster.mcanmove
             || monsterDistance(monster) >= distance) continue;
         const wasPeaceful = !!monster.mpeaceful;
         const wasVisible = canSeeMonster(monster);
@@ -230,7 +232,7 @@ async function charmSnakes(distance: number) {
 async function calmNymphs(distance: number) {
     for (const monster of liveMonsters()) {
         if (MONSTER_SYMBOL[monster.mnum] !== S_NYMPH
-            || monster.mcanmove === 0
+            || !monster.mcanmove
             || monsterDistance(monster) >= distance) continue;
         monster.msleeping = 0;
         monster.mpeaceful = 1;

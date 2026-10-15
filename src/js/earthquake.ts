@@ -8,7 +8,7 @@ import { currentAttribute, exerciseAttribute } from './attrib.js';
 import {
     A_DEX, ALTAR, AM_MASK, AM_SANCTUM, Amask2align, COLNO, CORR, MGIVENNAME,
     DOOR, D_NODOOR,
-    FOUNTAIN, GRAVE, LAVAPOOL, MOAT, PIT, POOL, ROOM, ROWNO,
+    FOUNTAIN, GRAVE, LAVAPOOL, PIT, ROOM, ROWNO,
     NO_KILLER_PREFIX, SCORR, SDOOR, SHOPBASE, SINK, THRONE, TT_BURIEDBALL, TT_PIT, is_pit,
 } from './const.js';
 import {
@@ -52,6 +52,7 @@ import { convertSecretDoor } from './detect.js';
 import { roomsAt } from './room.js';
 import { addShopDamage } from './shop_damage.js';
 
+const M1_FLY = 0x00000001;
 const M1_CLING = 0x00000010;
 const M1_SLITHY = 0x00080000;
 
@@ -224,7 +225,7 @@ function earthquakeMonsterName(monster: Monster): string {
 
 async function dropMonsterIntoChasm(monster: Monster, x: number, y: number): Promise<void> {
     const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
-    if (flags & (0x01 | M1_CLING)) return;
+    if (flags & (M1_FLY | M1_CLING)) return;
     const wasTrapped = !!monster.mtrapped;
     monster.mtrapped = 1;
     if (!wasTrapped) {
@@ -296,7 +297,7 @@ async function wakeMonsterForEarthquake(monster: Monster | null): Promise<boolea
                 await plineWithContinuation(
                     `${monsterName(monster, { article: 'a', capitalized: true })} is shaken loose from the ceiling!`,
                 );
-            } else if (!((MONSTER_FLAGS1[monster.mnum] ?? 0) & 0x01)) {
+            } else if (!((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_FLY)) {
                 await publishHeardMessage('a thump.', plineWithContinuation);
             }
         }

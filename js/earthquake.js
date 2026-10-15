@@ -4,7 +4,7 @@ import { publishHeardMessage } from './hero_speech.js';
 import { monsterAtPosition } from './monster_location.js';
 import { desecrateAltar } from './divine_wrath.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
-import { A_DEX, ALTAR, AM_MASK, AM_SANCTUM, Amask2align, COLNO, CORR, MGIVENNAME, DOOR, D_NODOOR, FOUNTAIN, GRAVE, LAVAPOOL, MOAT, PIT, POOL, ROOM, ROWNO, NO_KILLER_PREFIX, SCORR, SDOOR, SHOPBASE, SINK, THRONE, TT_BURIEDBALL, TT_PIT, is_pit, } from './const.js';
+import { A_DEX, ALTAR, AM_MASK, AM_SANCTUM, Amask2align, COLNO, CORR, MGIVENNAME, DOOR, D_NODOOR, FOUNTAIN, GRAVE, LAVAPOOL, PIT, ROOM, ROWNO, NO_KILLER_PREFIX, SCORR, SDOOR, SHOPBASE, SINK, THRONE, TT_BURIEDBALL, TT_PIT, is_pit, } from './const.js';
 import { newsym, plineWithContinuation, } from './display.js';
 import { loseHeroHp } from './hero_damage.js';
 import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
@@ -33,6 +33,7 @@ import { monsterName } from './monster_name.js';
 import { convertSecretDoor } from './detect.js';
 import { roomsAt } from './room.js';
 import { addShopDamage } from './shop_damage.js';
+const M1_FLY = 0x00000001;
 const M1_CLING = 0x00000010;
 const M1_SLITHY = 0x00080000;
 function monsterAt(x, y) {
@@ -186,7 +187,7 @@ function earthquakeMonsterName(monster) {
 }
 async function dropMonsterIntoChasm(monster, x, y) {
     const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
-    if (flags & (0x01 | M1_CLING))
+    if (flags & (M1_FLY | M1_CLING))
         return;
     const wasTrapped = !!monster.mtrapped;
     monster.mtrapped = 1;
@@ -254,7 +255,7 @@ async function wakeMonsterForEarthquake(monster) {
             if (cansee(monster.mx, monster.my)) {
                 await plineWithContinuation(`${monsterName(monster, { article: 'a', capitalized: true })} is shaken loose from the ceiling!`);
             }
-            else if (!((MONSTER_FLAGS1[monster.mnum] ?? 0) & 0x01)) {
+            else if (!((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_FLY)) {
                 await publishHeardMessage('a thump.', plineWithContinuation);
             }
         }
