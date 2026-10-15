@@ -3,18 +3,17 @@ import { currency } from './currency.js';
 // Floor objects thrown outward by an explosion or collapsing structure.
 // C ref: explode.c:scatter() and mthrowu.c:ohitmon().
 
-import { monsterHasMapPosition } from './monster_location.js';
 import { deleteTrap } from './trap_lifecycle.js';
 import {
-    DOOR, D_CLOSED, D_LOCKED, SHOPBASE, SINK, STATUE_TRAP,
+    DOOR, D_CLOSED, D_LOCKED, M_AP_MONSTER, M_AP_TYPE, SHOPBASE, SINK, STATUE_TRAP,
     ZAP_POS, isok,
 } from './const.js';
-import { newsym } from './display.js';
-import { applyFloorEffects, landFloorObject } from './floor_effects.js';
+import { canSpotMonster, displayLiquidName, newsym } from './display.js';
+import { applyFloorEffects } from './floor_effects.js';
 import {
     placeObject, stack_object,
 } from './floor_object.js';
-import { game, requireLiveGame } from './gstate.js';
+import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { unlinkObject } from './object_location.js';
 import type { Monster } from './monster_types.js';
 import type { Position } from './map_types.js';
@@ -25,6 +24,16 @@ import type { MessagePublisher } from './display.js';
 import type { MonsterDeathHandler } from './monster_death.js';
 import type { finishHeroMonsterKill, HeroMonsterKillOptions, HeroMonsterKillOutcome } from './hero_monster_death.js';
 import { wakeMonster } from './monster_anger.js';
+import { angerAttackedMonster } from './monster_anger.js';
+import { revealMonsterAppearance } from './monster_appearance.js';
+import { applyMonsterBlindness, monsterCanBeBlindedByObject } from './blinding_attack.js';
+import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
+import { finishEnvironmentalMonsterDeath } from './monster_death.js';
+import { monsterAtPosition } from './monster_location.js';
+import { monsterName, monsterObjectPronoun, possessiveName } from './monster_name.js';
+import { applyMonsterPassiveToObject } from './monster_passive.js';
+import { monsterHasAcidResistance, monsterHasPoisonResistance, monsterHasStoneResistance } from './monster_resistance.js';
+import { petrifyMonsterFromContact } from './monster_stoning.js';
 import { wakeMonstersNear } from './monster_wake.js';
 import { heroSpecies } from './hero_species.js';
 import { hideHeroUnder, maybeUnhideAt } from './monster_hiding.js';
@@ -35,22 +44,30 @@ import { stopHeroOccupation } from './occupation.js';
 import { unpunishHero } from './punishment.js';
 import { addShopObjectToBill, costlySpot } from './shk.js';
 import { roomsAt } from './room.js';
-import { MONSTER_FLAGS1, MONSTER_SIZE, MONSTER_NAME } from './monster_data.js';
+import { MONSTER_FLAGS1, MONSTER_SIZE, MONSTER_NAME, monsterHatesSilver,
+    monsterIsAmorphous, monsterIsNoncorporeal, monsterIsNonliving, monsterIsVampireShifter } from './monster_data.js';
 import { findMonsterArmorClass } from './monworn.js';
 import {
-    BOULDER, EGG, GOLD_PIECE, OBJECT_MATERIAL, OBJECT_NAMES,
-    STATUE,
+    ACID_VENOM, BOULDER, CREAM_PIE, EGG, GOLD_PIECE, OBJECT_MATERIAL, OBJECT_NAMES, STATUE,
 } from './object_data.js';
 import {
     breakFloorObject,
 } from './object_breakage.js';
 import { splitObjectStack } from './object_stack.js';
 import { hitMonsterWithSupportedPotion } from './potion_hit.js';
+import { delobj } from './object_delete.js';
+import { observeObject } from './object_knowledge.js';
+import { objectMaterial } from './object_material.js';
+import { shipObject } from './object_migration.js';
+import { isPoisonableObject } from './object_properties.js';
+import { shouldMulchMissile } from './projectile.js';
+import { touchPetrifies } from './stoning.js';
+import { cansee } from './vision.js';
 import { d, rn2, rnd } from './rng.js';
 import { breakStatue, fractureRock } from './rock_breakage.js';
 import { objectCombatName, objectNameIsPlural } from './objnam.js';
-import { verbForSubject } from './object_grammar.js';
-import { capitalizedDefiniteName } from './ray_hit_message.js';
+import { verbForSubject, withIndefiniteArticle } from './object_grammar.js';
+import { capitalizedDefiniteName, rayHitMessage, rayMissMessage } from './ray_hit_message.js';
 import {
     rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero,
 } from './weapon_damage.js';
@@ -100,12 +117,6 @@ function floorPile(state: GameState, x: number, y: number): GameObject[] {
     return state.level?.objects?.[x]?.[y] || [];
 }
 
-async function placeOnFloor(object: GameObject, x: number, y: number, state: GameState): Promise<GameObject> {
-    await placeObject(object, x, y, state);
-    await stack_object(object, state);
-    return object;
-}
-
 function removeFloorObject(object: GameObject, state: GameState): void {
     unlinkObject(object, state);
 }
@@ -115,16 +126,8 @@ function squareIsVisible(state: GameState, x: number, y: number): boolean {
         && (!state.viz_array || !!((state.viz_array?.[y]?.[x] ?? 0) & 0x2));
 }
 
-function monsterIsVisible(monster: Monster, state: GameState): boolean {
-    const seesInvisible = !!state.u.seeInvisible;
-    return squareIsVisible(state, monster.mx, monster.my)
-        && !monster.mundetected && (!monster.minvis || seesInvisible);
-}
-
 function monsterAt(state: GameState, x: number, y: number): Monster | null {
-    return state.level?.monsters?.find(monster => monsterHasMapPosition(monster, state) &&
-        !monster.dead && (monster.mhp ?? 1) > 0
-        && monster.mx === x && monster.my === y) || null;
+    return monsterAtPosition(requireGameLevel(state), x, y);
 }
 
 function openFlightSquare(state: GameState, x: number, y: number): boolean {
@@ -144,16 +147,15 @@ async function finishScatteredMonsterDeath(
     monster: Monster, x: number, y: number, death: HeroMonsterKillOptions,
     state: GameState, options: ScatterSettings,
 ): Promise<HeroMonsterKillOutcome> {
-    if (options.finishMonsterKill) {
+    if (options.heroCaused && options.finishMonsterKill) {
         const killed = await options.finishMonsterKill(monster, x, y, death);
         return { killed, heroDied: !!state.program_state.gameover };
     }
-    if (!options.finishMonsterDeath) {
-        throw new TypeError(
-            'lethal scattered object requires a monster death handler',
-        );
-    }
-    const result = await options.finishMonsterDeath(monster, {
+    if (!options.finishMonsterDeath && options.heroCaused)
+        return finishHeroMonsterKillOutcome(monster, x, y, { ...death, publish: options.publish });
+    const finish = options.finishMonsterDeath
+        || ((victim: Monster, deathOptions: HeroMonsterKillOptions) => finishEnvironmentalMonsterDeath(victim, state, deathOptions));
+    const result = await finish(monster, {
         ...death,
         random: options.random,
         publish: options.publish,
@@ -161,48 +163,58 @@ async function finishScatteredMonsterDeath(
     return { killed: !result.survived, heroDied: !!result.heroDied };
 }
 
-async function breakAtRest(object: GameObject, state: GameState, options: ScatterSettings & Position): Promise<boolean> {
-    object.ox = options.x;
-    object.oy = options.y;
-    const result = await breakFloorObject(object, {
-        state,
-        heroCaused: options.heroCaused,
-        publish: options.publish,
-        random: options.random,
-        rollDice: options.rollDice,
+// C drop_throw(): an impact can mulch ammunition, ship it through a gate,
+// or expose it to the defender's passive effect before floor stacking.
+async function landAfterMonsterHit(object: GameObject, node: Position, state: GameState, options: ScatterSettings): Promise<void> {
+    requirePlayingGame(state);
+    const broken = object.otyp === CREAM_PIE || object.oclass === 17 || object.otyp === EGG
+        || shouldMulchMissile(object, { monsterMoving: !!state.context.mon_moving });
+    if (broken) {
+        await delobj(object, state, options.random);
+        return;
+    }
+    if (await shipObject(object, node.x, node.y, { state, publish: options.publish, random: options.random })) return;
+    const actor = monsterAtPosition(state.level, node.x, node.y)
+        || (node.x === state.u.ux && node.y === state.u.uy ? state.u : null);
+    const floor = await applyFloorEffects(object, node.x, node.y, {
+        state, publish: options.publish, random: options.random, verb: 'fall',
     });
-    if (result.destroyed) return true;
-    // A fatal vapor or oil blast ends the scatter even though the bottle
-    // itself reports not destroyed.
-    if (state.program_state?.gameover) return true;
-    await placeOnFloor(object, options.x, options.y, state);
-    return false;
+    if (floor.finished || state.program_state.gameover) return;
+    await placeObject(object, node.x, node.y, state);
+    if (actor) await applyMonsterPassiveToObject(actor, object, {
+        state, publish: options.publish, random: options.random,
+    });
+    if (!state.program_state.gameover) await stack_object(object, state);
 }
 
 async function hitMonster(monster: Monster, node: ScatterNode, state: GameState, options: ScatterSettings): Promise<boolean> {
     const object = node.object;
     if (!object) return false;
-    const visible = monsterIsVisible(monster, state);
+    const visible = cansee(node.x, node.y);
+    const disguised = M_AP_TYPE(monster) !== 0 && M_AP_TYPE(monster) !== M_AP_MONSTER;
+    state.notonhead = node.x !== monster.mx || node.y !== monster.my;
+    if (visible) observeObject(object, state);
     const threshold = 5 + findMonsterArmorClass(monster)
         + rangedTargetHitBonus(object, monster, {
             state, random: options.random, rollOne: options.rollOne,
         });
     if (threshold < options.rollOne(20)) {
-        if (visible)
-            await options.publish(`The ${objectName(object)} misses the ${
-                MONSTER_NAME[monster.mnum] || 'monster'
-            }.`);
+        if (visible && !disguised)
+            await options.publish(rayMissMessage(objectCombatName(object, { state }), monster, { ...node, state }));
         return false;
     }
 
-    const name = MONSTER_NAME[monster.mnum] || 'monster';
     if (object.oclass === POTION_CLASS) {
+        if (disguised) revealMonsterAppearance(monster);
+        monster.msleeping = 0;
         const potionOptions: PotionHitOptions = {
             state,
             monster,
             potion: object,
-            targetVisible: visible,
-            targetSpotted: visible,
+            target: node,
+            targetVisible: cansee(monster.mx, monster.my),
+            targetSpotted: canSpotMonster(monster),
+            resolveVapor: true,
             publish: options.publish,
             wakeMonster: target => wakeMonster(target, {
                 attacked: options.heroCaused,
@@ -218,44 +230,86 @@ async function hitMonster(monster: Monster, node: ScatterNode, state: GameState,
         };
         const impact = await hitMonsterWithSupportedPotion(potionOptions);
         if (impact?.heroDied) return true;
-        if (!impact) {
-            await breakAtRest(object, state, {
-                ...options,
-                x: node.x,
-                y: node.y,
-            });
-        }
+        if (!impact) throw new Error(`Unsupported scattered potion ${object.otyp}`);
         node.object = null;
         node.stopped = true;
         return true;
     }
 
-    if (visible)
-        await options.publish(`The ${objectName(object)} hits the ${name}.`);
-    const damage = rollPhysicalWeaponDamage(object, monster, {
-        rollOne: options.rollOne,
+    const material = objectMaterial(object, state);
+    const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
+    const harmless = object.oclass !== 4 && (material === 20 || material === 21)
+        && !!(flags & 0x8) && !(flags & 0x00100000);
+    let damage = rollPhysicalWeaponDamage(object, monster, {
+        state, rollOne: options.rollOne, rollDice: options.rollDice,
     });
-    monster.mhp = Math.max(0, (monster.mhp ?? 1) - damage);
+    if (object.otyp === ACID_VENOM && monsterHasAcidResistance(monster)) damage = 0;
+    if (disguised) revealMonsterAppearance(monster);
     monster.msleeping = 0;
-    if (monster.mhp <= 0) {
-        if (!options.finishMonsterDeath) {
-            throw new TypeError(
-                'lethal scattered object requires a monster death handler',
-            );
+    if (visible) {
+        if (object.otyp === EGG) {
+            const species = object.corpsenm === undefined ? 'unknown' : MONSTER_NAME[object.corpsenm] ?? 'unknown';
+            const egg = object.known ? `${withIndefiniteArticle(species)} egg` : 'an egg';
+            await options.publish(`Splat!  ${monsterName(monster, { state, capitalized: true })} is hit with ${egg}!`);
+        } else {
+            await options.publish(rayHitMessage(objectCombatName(object, { state }), monster, {
+                ...node, state, damage,
+                ...(harmless ? { ending: ` but passes harmlessly through ${monsterObjectPronoun(monster, { state })}.` } : {}),
+            }));
         }
-        await options.finishMonsterDeath(monster, {
-            deathMessage: visible ? `The ${name} is killed!` : null,
-            random: options.random,
-            publish: options.publish,
-        });
-    } else {
-        await wakeMonster(monster, { attacked: options.heroCaused });
     }
-    await breakAtRest(object, state, {
-        ...options,
-        x: node.x,
-        y: node.y,
-    });
+    if (object.opoisoned && isPoisonableObject(object)) {
+        if (monsterHasPoisonResistance(monster)) {
+            if (visible) await options.publish(`The poison doesn't seem to affect ${monsterName(monster, { state })}.`);
+        } else if (options.random(30) !== 0) damage += options.rollOne(6);
+        else {
+            if (visible) await options.publish('The poison was deadly...');
+            damage = monster.mhp;
+        }
+    }
+    if (material === 14 && monsterHatesSilver(monster) && visible) {
+        const flesh = !monsterIsNoncorporeal(monster) && !monsterIsAmorphous(monster);
+        const name = monsterName(monster, { state });
+        await options.publish(`The silver sears ${flesh ? `${possessiveName(name)} flesh` : name}!`);
+    }
+    if (object.otyp === ACID_VENOM && cansee(monster.mx, monster.my) && visible) {
+        await options.publish(monsterHasAcidResistance(monster)
+            ? `${monsterName(monster, { state, capitalized: true })} is unaffected.`
+            : `The ${displayLiquidName('acid', state)} burns ${monsterName(monster, { state })}!`);
+    }
+    if (object.otyp === EGG && touchPetrifies(object.corpsenm)) {
+        const stone = await petrifyMonsterFromContact(monster, {
+            state, publish: options.publish, rollOne: options.rollOne,
+            finishDeath: (victim, death = {}) => finishScatteredMonsterDeath(
+                victim, victim.mx, victim.my, death, state, options,
+            ),
+        });
+        if (stone.heroDied) return true;
+        if (monsterHasStoneResistance(monster)) damage = 0;
+    }
+    if (!harmless && monster.mhp > 0) {
+        monster.mhp -= damage;
+        if (monster.mhp <= 0) {
+            if (visible) {
+                const destroyed = monsterIsNonliving(monster.mnum) || monsterIsVampireShifter(monster)
+                    || !canSpotMonster(monster);
+                await options.publish(`${monsterName(monster, { state, capitalized: true })} is ${destroyed ? 'destroyed' : 'killed'}!`);
+            }
+            await finishScatteredMonsterDeath(monster, monster.mx, monster.my, {
+                showKillMessage: false,
+            }, state, options);
+            if (state.program_state.gameover) return true;
+        }
+    }
+    if (monster.mhp > 0 && monsterCanBeBlindedByObject(monster, object.otyp, { state })) {
+        if (visible && monster.mcansee) {
+            const cause = object.oclass === 17 ? 'venom' : object.otyp === CREAM_PIE ? 'pie' : objectCombatName(object, { state });
+            await options.publish(`${monsterName(monster, { state, capitalized: true })} is blinded by the ${cause}.`);
+        }
+        applyMonsterBlindness(monster, options.rollOne(25) + 20);
+    }
+    if (monster.mhp > 0 && options.heroCaused) await angerAttackedMonster(monster);
+    if (!state.program_state.gameover) await landAfterMonsterHit(object, node, state, options);
     node.object = null;
     node.stopped = true;
     return true;
