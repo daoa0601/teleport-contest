@@ -1564,22 +1564,7 @@ async function advanceWorldTurn(): Promise<void> {
             await resurrectWizard();
             delete game._unresolvedDemigodIntervention;
         } else if (intervention.kind === 4) {
-            let effect = await summonNastyMonsters(null, {
-                onCreate: async (monster: Monster) => {
-                    newsym(monster.mx, monster.my);
-                    const name = quietMonsterName(monster);
-                    const article = /^[aeiou]/i.test(name) ? 'An' : 'A';
-                    const adjacent = Math.max(
-                        Math.abs(monster.mx - (game.u?.ux ?? monster.mx)),
-                        Math.abs(monster.my - (game.u?.uy ?? monster.my)),
-                    ) <= 1;
-                    const message = `${article} ${name} suddenly appears ${
-                        adjacent ? 'next to you' : 'close by'
-                    }!`;
-                    if (game._pending_message !== message)
-                        await plineWithContinuation(message);
-                },
-            });
+            let effect = await summonNastyMonsters(null);
             if (effect.deferredDemonSummon) effect = await msummon();
             game._lastDemigodNasty = (effect.created || []).map(monster =>
                 monster.m_id);

@@ -5970,14 +5970,6 @@ async function monsterSummonSpellEffect(monster, state) {
         // nasty() delegates to msummon(NULL), using the Wizard's demon choices.
         ...(summoned.deferredDemonSummon ? await msummon() : summoned),
     };
-    for (const created of effect.created || []) {
-        const hostileState = created.mpeaceful;
-        if (created._nastyBirthPeaceful !== undefined)
-            created.mpeaceful = created._nastyBirthPeaceful;
-        newsym(created.mx, created.my);
-        created.mpeaceful = hostileState;
-        delete created._nastyBirthPeaceful;
-    }
     if (effect.count > 0) {
         if (monster?.iswiz) {
             effect.message = `"Destroy the thief, my pet${effect.count === 1 ? '' : 's'}!"`;

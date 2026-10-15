@@ -249,7 +249,6 @@ function monsterFields(value: unknown, context: SavedEntityContext): Fields<Mons
         eshk: optional(shopkeeper),
         mextra: optional(extra(representation)),
         _egd: optional(guard(context)),
-        _nastyBirthPeaceful: optional(flag),
         wormno: optional(integer),
         wormHead: optional(nullable(position)),
         wormGrowTime: optional(integer),
