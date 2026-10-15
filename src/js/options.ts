@@ -2,6 +2,7 @@
 // C ref: options.c — handles OPTIONS=, BIND=, etc.
 
 import { game } from './gstate.js';
+import { displayPagerText } from './pager_help.js';
 import { setConditionOption } from './status_conditions.js';
 import { classifyStatusTerrain } from './status_terrain.js';
 import type { GameFlags, InterfaceFlags, LootSortMode, MenuStyle } from './flags.js';
@@ -16,7 +17,7 @@ import { NO_COLOR } from './terminal.js';
 import { ATR_INVERSE, restoreMenuUnderlay, showChoiceWindow, showInventoryWindow, showMultiSelectWindow, snapshotMenuUnderlay } from './windows.js';
 import type { MenuLabel, PageLocalMenuItem, PageLocalMultiSelectSection } from './windows.js';
 import {
-    MENU_FULL, PICK_ONE, PL_PSIZ,
+    COLNO, MENU_FULL, PICK_ONE, PL_PSIZ,
     PARANOID_AUTOALL, PARANOID_BONES, PARANOID_BREAKWAND, PARANOID_CONFIRM,
     PARANOID_DIE, PARANOID_EATING, PARANOID_HIT, PARANOID_PRAY,
     PARANOID_QUIT, PARANOID_REMOVE, PARANOID_SWIM, PARANOID_TRAP,
@@ -644,6 +645,132 @@ const REQUEST_MENU_BOOLEAN_OPTIONS = [
     ['whatis_menu', 'getloc_usemenu', false],
     ['whatis_moveskip', 'getloc_moveskip', false],
 ] as const;
+
+// C options.c:option_help(), next_opt(); descriptions from include/optlist.h.
+export async function option_help(): Promise<void> {
+    const lines = [
+        '', '                 NetHack Options Help:', '',
+        // Replay configuration supplies contents without a host file path.
+        'Set options as OPTIONS=<options> in .nethackrc',
+        'or use `NETHACKOPTIONS="<options>"\' in your environment',
+        '(<options> is a list of options separated by commas)',
+        'or press "O" while playing and use the menu.', '',
+        'Boolean options (which can be negated by prefixing them with \'!\' or "no"):',
+    ];
+    const wizardNames = new Set(['menu_tab_sep', 'monpolycontrol', 'montelecontrol',
+        'sanity_check', 'travel_debug', 'wizmgender', 'wizweight']);
+    const debugNames = ['debug_hunger', 'debug_mongen', 'debug_overwrite_stairs'];
+    const booleanNames = [
+        ...REQUEST_MENU_BOOLEAN_OPTIONS.map(([name]) => name),
+        'bgcolors', 'blind', 'bones', 'deaf', 'female', 'idlecheckpoint', 'legacy',
+        'monpolycontrol', 'news', 'nudist', 'pauper', 'reroll', 'sanity_check',
+        'selectsaved', 'sounds', 'status_updates', 'travel_debug', 'tutorial',
+        'use_darkgray', 'use_truecolor', 'voices', 'wizmgender', 'wizweight',
+        ...(game.flags.debug && !game.iflags.debug_fuzzer ? debugNames : []),
+    ].filter(name => game.flags.debug || !wizardNames.has(name))
+        .sort((left, right) => left.toLowerCase() < right.toLowerCase() ? -1
+            : left.toLowerCase() > right.toLowerCase() ? 1 : 0);
+    let row = '';
+    for (const name of booleanNames) {
+        if (row.length + name.length + 2 > COLNO - 2) {
+            lines.push(row);
+            row = '';
+        }
+        row += `${name}, `;
+    }
+    lines.push(row.replace(/, $/, '.'), '', 'Compound options:');
+    for (const [index, [name, description]] of OPTION_HELP_COMPOUNDS.entries()) {
+        // The final native table entry is the font prefix, even on tty.
+        lines.push(`${("`" + name + "'").padEnd(20)} - ${description}${index === OPTION_HELP_COMPOUNDS.length - 1 ? '.' : ','}`);
+    }
+    lines.push('', 'Other settings:',
+        ...['autocompletions', 'autopickup exceptions', 'bind keys', 'menu colors',
+            'message types', 'status condition fields', 'status highlight rules'].map(name => ` ${name}`),
+        '', '',
+        'Some of the options can only be set before the game is started;',
+        "those items will not be selectable in the 'O' command's menu.",
+        "Some options are stored in a game's save file, and will keep saved",
+        'values when restoring that game even if you have updated your config-',
+        'uration file to change them.  Such changes will matter for new games.',
+        'The "other settings" can be set with \'O\', but when set within the',
+        'configuration file they use their own directives rather than OPTIONS.',
+        'See NetHack\'s "Guidebook" for details.');
+    await displayPagerText(lines);
+}
+
+const OPTION_HELP_COMPOUNDS: readonly (readonly [string, string])[] = [
+    ["windowtype", "windowing system to use (should be specified first)"],
+    ["playmode", "normal play, non-scoring explore mode, or debug mode"],
+    ["name", "your character's name (e.g., name:Merlin-W)"],
+    ["role", "your starting role (e.g., Barbarian, Valkyrie)"],
+    ["race", "your starting race (e.g., Human, Elf)"],
+    ["gender", "your starting gender (male or female)"],
+    ["alignment", "your starting alignment (lawful, neutral, or chaotic)"],
+    ["altkeyhandling", "(not applicable)"],
+    ["autounlock", "action to take when encountering locked door or chest"],
+    ["boulder", "deprecated (use S_boulder in sym file instead)"],
+    ["catname", "name of your starting pet if it is a kitten"],
+    ["crash_email", "email address for reporting"],
+    ["crash_name", "your name for reporting"],
+    ["crash_urlmax", "length of longest url we can generate"],
+    ["DECgraphics", "load DECGraphics display symbols into symset"],
+    ["disclose", "the kinds of information to disclose at end of game"],
+    ["dogname", "name of your starting pet if it is a little dog"],
+    ["dungeon", "list of symbols to use in drawing the dungeon map"],
+    ["effects", "list of symbols to use in drawing special effects"],
+    ["fruit", "name of a fruit you enjoy eating"],
+    ["glyph", "set representation of a glyph to a unicode value and color"],
+    ["hilite_status", "a status highlighting rule (can occur multiple times)"],
+    ["horsename", "name of your starting pet if it is a pony"],
+    ["IBMgraphics", "load IBMGraphics display symbols into symset"],
+    ["menu_deselect_all", "deselect all items in a menu"],
+    ["menu_deselect_page", "deselect all items on this page of a menu"],
+    ["menu_first_page", "jump to the first page in a menu"],
+    ["menu_headings", "display style for menu headings"],
+    ["menu_invert_all", "invert all items in a menu"],
+    ["menu_invert_page", "invert all items on this page of a menu"],
+    ["menu_last_page", "jump to the last page in a menu"],
+    ["menu_next_page", "go to the next menu page"],
+    ["menu_objsyms", "show object symbols in menus"],
+    ["menu_previous_page", "go to the previous menu page"],
+    ["menu_search", "search for a menu item"],
+    ["menu_select_all", "select all items in a menu"],
+    ["menu_select_page", "select all items on this page of a menu"],
+    ["menu_shift_left", "pan current menu page left"],
+    ["menu_shift_right", "pan current menu page right"],
+    ["menuinvertmode", "experimental behavior of menu inverts"],
+    ["menustyle", "user interface for object selection"],
+    ["monsters", "list of symbols to use for monsters"],
+    ["msg_window", "control of \"view previous message(s)\" (^P) behavior"],
+    ["msghistory", "number of top line messages to save"],
+    ["number_pad", "use the number pad for movement"],
+    ["objects", "list of symbols to use for objects"],
+    ["packorder", "the inventory order of the items in your pack"],
+    ["paranoid_confirmation", "extra prompting in certain situations"],
+    ["petattr", "attributes for highlighting pets"],
+    ["pettype", "your preferred initial pet type"],
+    ["pickup_burden", "maximum burden picked up before prompt"],
+    ["pickup_types", "types of objects to pick up automatically"],
+    ["pile_limit", "threshold for \"there are many objects here\""],
+    ["roguesymset", "load a set of rogue display symbols from symbols file"],
+    ["runmode", "display frequency when `running' or `travelling'"],
+    ["scores", "the parts of the score list you wish to see"],
+    ["sortdiscoveries", "preferred order when displaying discovered objects"],
+    ["sortloot", "sort object selection lists by description"],
+    ["sortvanquished", "preferred order when displaying vanquished monsters"],
+    ["soundlib", "soundlib interface to use (if any)"],
+    ["statushilites", "0=no status highlighting, N=show highlights for N turns"],
+    ["statuslines", "2 or 3 lines for status display"],
+    ["suppress_alert", "suppress alerts about version-specific features"],
+    ["symset", "load a set of display symbols from symbols file"],
+    ["traps", "list of symbols to use in drawing traps"],
+    ["versinfo", "extra information for 'showvers'"],
+    ["warnings", "display characters for warnings"],
+    ["whatis_coord", "show coordinates when auto-describing cursor position"],
+    ["whatis_filter", "filter coordinate locations when targeting next or previous"],
+    ["cond_", "prefix for cond_ options"],
+    ["font", "prefix for font options"],
+];
 
 type BooleanOption = typeof REQUEST_MENU_BOOLEAN_OPTIONS[number];
 type BooleanOptionName = BooleanOption[0];

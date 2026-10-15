@@ -109,7 +109,7 @@ import { isContainer, useContainer } from './container.js';
 import { tipCommand } from './container_tip.js';
 import { lootCommand } from './container_loot.js';
 import { adjustHeroAlignment } from './alignment.js';
-import { doOptions } from './options.js';
+import { doOptions, option_help } from './options.js';
 import { blocksDiagonalDoor, blocksMove, escapeFromStickyMonster, heroBadRock, heroCanPassWallAt, heroLiquidEffects, heroShouldAvoidLiquid, heroTightDiagonalReason, } from './hack.js';
 import { commandExecutionKey, controlRushDirection, visibleCommandKey } from './command_keys.js';
 import { NATIVE_COMMAND_FLAGS, NATIVE_COMMANDS } from './command_data.js';
@@ -4801,6 +4801,8 @@ async function dohelp() {
         await dowhatis();
     else if (choice === 'f')
         await whatDoesCommand();
+    else if (choice === 'g')
+        await option_help();
     else if (choice === 'j')
         await showKeyBindings();
     else if (choice === 'k')
