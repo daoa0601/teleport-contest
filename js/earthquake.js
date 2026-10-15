@@ -263,7 +263,7 @@ async function wakeMonsterForEarthquake(monster) {
     return false;
 }
 function altarName(location) {
-    const alignment = Amask2align((location.altarmask ?? location.flags) & AM_MASK);
+    const alignment = Amask2align(location.flags & AM_MASK);
     return alignment > 0 ? 'lawful'
         : alignment < 0 ? 'chaotic' : alignment === 0 ? 'neutral' : 'unaligned';
 }
@@ -282,7 +282,7 @@ async function shakeTerrain(x, y, hadPitBeforeEarthquake) {
         return await openChasm(x, y, hadPitBeforeEarthquake);
     }
     if (location.typ === ALTAR) {
-        const mask = location.altarmask ?? location.flags;
+        const mask = location.flags;
         if (mask & AM_SANCTUM)
             return false;
         if (cansee(x, y)) {

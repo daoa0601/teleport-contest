@@ -21,8 +21,9 @@ for (const high of [false, true]) {
                 const location = game.level?.requireAt(x, y);
                 assert.ok(location);
                 location.typ = ALTAR;
-                location.altarmask = 1 | (high ? AM_SANCTUM : 0);
-                location.flags = location.altarmask;
+                // Creating an altar after digging can leave the separate alias at zero.
+                location.altarmask = 0;
+                location.flags = 1 | (high ? AM_SANCTUM : 0);
                 altars.push(location);
             }
         }
