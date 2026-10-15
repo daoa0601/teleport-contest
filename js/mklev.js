@@ -4866,9 +4866,10 @@ async function fillCourtRoom(room) {
     const gold = await mksobj(GOLD_PIECE, true, false);
     gold.quan = rn1(50 * difficulty, 10);
     gold.quantity = gold.quan;
-    gold.owt = (OBJECT_WEIGHT[GOLD_PIECE] ?? 0) * gold.quan;
+    gold.owt = objectWeight(gold);
     const chest = await mksobj_at(CHEST, cofferPosition.x, cofferPosition.y, true, false);
-    chest.contents = [gold];
+    await addToContainer(chest, gold);
+    chest.owt = objectWeight(chest);
     chest.spe = 2;
     level.flags.has_court = true;
 }
