@@ -742,14 +742,9 @@ export async function finishDeferredMonsterMiscItem(action, state = requireIniti
         return misc;
     }
     if (misc.kind === 'wand-speed-monster' || misc.kind === 'potion-speed') {
-        if (misc.kind === 'wand-speed-monster') {
-        }
-        else {
-            await consumeMonsterItem(monster, misc.object, state);
-        }
         const speed = adjustMonsterSpeed(monster, 1);
         misc.oldSpeed = speed.oldSpeed;
-        misc.speedChanged = speed.changed && speed.canDescribe && monster.mcanmove !== 0;
+        misc.speedChanged = speed.changed && speed.canDescribe && !state.in_mklev;
         misc.speedMuch = speed.much;
         misc.effectApplied = true;
         return misc;
