@@ -29,7 +29,6 @@ import {
     TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB,
     Is_waterlevel, is_hole, is_pit,
 } from './const.js';
-import { OBJECT_NAMES } from './object_data.js';
 import { encumbranceMessage, nearCapacity, SLT_ENCUMBER, weightCapacity } from './weight.js';
 import { propertyIsActive } from './properties.js';
 import { heroIsBlind } from './senses.js';
@@ -509,14 +508,12 @@ function dragBothPlan(plan: BallChainMove, targetX: number, targetY: number, sta
     return plan;
 }
 
-/**
- * Compute ball.c:drag_ball()'s floor geometry without mutating the floor
- * piles.  beginBallAndChainMove() performs move_bc(before), and
- * finishBallAndChainMove() performs move_bc(after).
- */
-export function planBallAndChainMove(targetX: number, targetY: number, {
+// C drag_ball(): lift the pair before choosing the chain route. A route
+// blocked by rock must restore that move before trying to drag the ball.
+export async function beginBallAndChainMove(targetX: number, targetY: number, {
     state = game, allowDrag = true,
-}: BallMoveOptions = {}): BallMovePlan | null {
+}: BallMoveOptions = {}): Promise<BallMovePlan | null> {
+    requireLiveGame(state);
     const ball = state.uball || state.u?.uball;
     const chain = state.uchain || state.u?.uchain;
     if (!ball || !chain || state.u?.uswallow) return null;
@@ -535,12 +532,16 @@ export function planBallAndChainMove(targetX: number, targetY: number, {
 
     // The chain already reaches the destination.  move_bc still temporarily
     // unplaces both objects so the hero and vision layers can move first.
-    if (dist2(targetX, targetY, chain.ox, chain.oy) <= 2) return plan;
+    if (dist2(targetX, targetY, chain.ox, chain.oy) <= 2) {
+        await unplaceMovingBallAndChain(plan, state);
+        return plan;
+    }
 
     // If the ball is close enough, only the chain changes squares.
     if (carried(ball, state)
         || distmin(targetX, targetY, ball.ox, ball.oy) <= 2) {
         plan.control = BC_CHAIN;
+        await unplaceMovingBallAndChain(plan, state);
         if (carried(ball, state)) {
             if (distmin(targetX, targetY, chain.ox, chain.oy) > 1) {
                 plan.chainx = state.u.ux;
@@ -663,6 +664,9 @@ export function planBallAndChainMove(targetX: number, targetY: number, {
             break;
         }
         if (!fallBackToDrag) return plan;
+        plan.chainx = oldChainX;
+        plan.chainy = oldChainY;
+        await finishBallAndChainMove(plan, state);
     }
 
     if (nearCapacity(state) > SLT_ENCUMBER
@@ -674,38 +678,35 @@ export function planBallAndChainMove(targetX: number, targetY: number, {
                 : 'You cannot drag the heavy iron ball.',
         };
     }
-    return dragBothPlan(plan, targetX, targetY, state);
+    return beginDraggingBall(plan, targetX, targetY, state);
 }
 
-export async function beginBallAndChainMove(targetX: number, targetY: number, options: BallMoveOptions = {}): Promise<BallMovePlan | null> {
-    const state = options.state || game;
-    requireLiveGame(state);
-    const plan = planBallAndChainMove(targetX, targetY, options);
-    if (!plan || plan.blocked) return plan;
-    if (plan.control === (BC_BALL | BC_CHAIN)) {
-        const { ball, chain } = plan;
-        const level = requireGameLevel(state);
-        const chainPullsFromWater = isPoolAt(chain.ox, chain.oy, state)
-            && (level.requireAt(chain.ox, chain.oy).typ === POOL
-                || !isPoolAt(ball.ox, ball.oy, state)
-                || level.requireAt(ball.ox, ball.oy).typ === POOL);
-        const trap = chainPullsFromWater ? null : level.traps.find(candidate =>
-            candidate.tx === chain.ox && candidate.ty === chain.oy);
-        if (chainPullsFromWater || trap && (is_pit(trap.ttyp) || is_hole(trap.ttyp))) {
-            if (propertyIsActive('levitation', state)) {
-                await plineWithContinuation(formatFeltMessage('a tug from the iron ball.', state));
-                if (trap) trap.tseen = true;
-            } else {
-                await jerkHeroBackToChain(plan, state);
-                return {
-                    ...plan, blocked: true, consumedTurn: true,
-                    blockedMessage: null, causeDelay: false,
-                };
-            }
+async function beginDraggingBall(
+    plan: BallChainMove, targetX: number, targetY: number, state: GameState,
+): Promise<BallMovePlan> {
+    const { ball, chain } = plan;
+    const level = requireGameLevel(state);
+    const chainPullsFromWater = isPoolAt(chain.ox, chain.oy, state)
+        && (level.requireAt(chain.ox, chain.oy).typ === POOL
+            || !isPoolAt(ball.ox, ball.oy, state)
+            || level.requireAt(ball.ox, ball.oy).typ === POOL);
+    const trap = chainPullsFromWater ? null : level.traps.find(candidate =>
+        candidate.tx === chain.ox && candidate.ty === chain.oy);
+    if (chainPullsFromWater || trap && (is_pit(trap.ttyp) || is_hole(trap.ttyp))) {
+        if (propertyIsActive('levitation', state)) {
+            await plineWithContinuation(formatFeltMessage('a tug from the iron ball.', state));
+            if (trap) trap.tseen = true;
+        } else {
+            await jerkHeroBackToChain(plan, state);
+            return {
+                ...plan, blocked: true, consumedTurn: true,
+                blockedMessage: null, causeDelay: false,
+            };
         }
     }
+    plan.control = BC_BALL | BC_CHAIN;
     await unplaceMovingBallAndChain(plan, state);
-    return plan;
+    return dragBothPlan(plan, targetX, targetY, state);
 }
 
 async function jerkHeroBackToChain(plan: BallChainMove, state: GameState): Promise<void> {
