@@ -1,20 +1,15 @@
 // Liquid which can flow into a newly opened hole.
 // C ref: dig.c:fillholetyp().
-import { COLNO, DB_LAVA, DB_MOAT, DB_UNDER, DRAWBRIDGE_UP, LAVAPOOL, MOAT, POOL, ROOM, ROWNO, WATER, } from './const.js';
+import { COLNO, LAVAPOOL, MOAT, POOL, ROOM, ROWNO, } from './const.js';
 import { game } from './gstate.js';
 import { rn2 } from './rng.js';
+import { isLavaAt, isMoatAt, isPoolAt } from './terrain_properties.js';
 function nearbyTerrain(x, y, state) {
-    const location = state.level?.at?.(x, y);
-    if (!location)
-        return null;
-    const bridgeLiquid = location.typ === DRAWBRIDGE_UP
-        ? (location.drawbridgemask ?? 0) & DB_UNDER
-        : null;
-    if (location.typ === MOAT || bridgeLiquid === DB_MOAT)
+    if (isMoatAt(x, y, state))
         return 'moat';
-    if (location.typ === POOL || location.typ === WATER)
+    if (isPoolAt(x, y, state))
         return 'pool';
-    if (location.typ === LAVAPOOL || bridgeLiquid === DB_LAVA)
+    if (isLavaAt(x, y, state))
         return 'lava';
     return null;
 }

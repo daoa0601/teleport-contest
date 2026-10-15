@@ -27,6 +27,7 @@ import { confusePromptDirection } from './tty_prompts.js';
 import { heroStrengthDamageBonus } from './weapon_damage.js';
 import { isPick } from './weapon_type.js';
 import { connectPits } from './pit_connections.js';
+import { isLavaAt, isPoolAt } from './terrain_properties.js';
 const M1_WALLWALK = 0x00000008;
 const GRID_BUG = MONSTER_NAME.indexOf('grid bug');
 const LONG_WORM = MONSTER_NAME.indexOf('long worm');
@@ -275,9 +276,8 @@ export async function applyPickAxeDirection(tool, { state = game, attackMonster,
     else if (!heroCanReachFloor(state)) {
         await plineWithContinuation(`You can't reach the ${surfaceName(hero.ux, hero.uy, state)}.`);
     }
-    else if (IS_POOL(diggingLocation(hero.ux, hero.uy, state).typ) ||
-        IS_LAVA(diggingLocation(hero.ux, hero.uy, state).typ)) {
-        await plineWithContinuation(`You cannot stay under${IS_POOL(diggingLocation(hero.ux, hero.uy, state).typ) ? 'water' : ' the lava'} long enough.`);
+    else if (isPoolAt(hero.ux, hero.uy, state) || isLavaAt(hero.ux, hero.uy, state)) {
+        await plineWithContinuation(`You cannot stay under${isPoolAt(hero.ux, hero.uy, state) ? 'water' : ' the lava'} long enough.`);
     }
     else {
         const trap = trapAt(hero.ux, hero.uy, state);

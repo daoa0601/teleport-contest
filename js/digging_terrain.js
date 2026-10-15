@@ -56,7 +56,7 @@ import { CLR_BLUE } from './terminal.js';
 import { isAxe } from './weapon_type.js';
 import { placeCreatedObject, placeObject, stack_object, updateIceObjectTimersAt, } from './floor_object.js';
 import { deleteEngravingAt } from './engrave.js';
-import { monsterInAir } from './terrain_properties.js';
+import { isLavaAt, isPoolAt, monsterInAir } from './terrain_properties.js';
 const S_ZOMBIE = 52;
 const S_MUMMY = 39;
 const EXPL_ROWS = [['/', '-', '\\'], ['|', ' ', '|'], ['\\', '-', '/']];
@@ -80,8 +80,7 @@ function pileAt(x, y, state) {
     return state.level?.objects?.[x]?.[y] || [];
 }
 function isPoolOrLava(x, y, state) {
-    const typ = state.level?.at?.(x, y)?.typ;
-    return typ !== undefined && (IS_POOL(typ) || IS_LAVA(typ));
+    return isPoolAt(x, y, state) || isLavaAt(x, y, state);
 }
 function heroIsAirborne(state) {
     return !!(state.u?.levitating || state.u?.levitation
@@ -275,7 +274,7 @@ export async function digHole({ pitOnly = false, byMagic = false, coordinate = n
         newsym(digX, digY);
     }
     else if (isPoolOrLava(digX, digY, state)) {
-        const liquid = IS_LAVA(oldTyp) ? 'lava' : 'water';
+        const liquid = isLavaAt(digX, digY, state) ? 'lava' : 'water';
         await plineWithContinuation(`The ${liquid} `
             + 'sloshes furiously for a moment, then subsides.');
         await wakeMonstersNearWithMessages(state.u.ux, state.u.uy, (state.u.ulevel ?? 1) * 20, state);
@@ -583,8 +582,7 @@ async function teleportPetVictim(monster, state) {
 }
 // C dig.c:liquid_flow().  The caller has already changed the terrain type.
 export async function liquidFlow(x, y, typ, trap, fillMessage, { state = game } = {}) {
-    const location = state.level?.at?.(x, y);
-    if (!location || !(IS_POOL(location.typ) || IS_LAVA(location.typ)))
+    if (!isPoolOrLava(x, y, state))
         return;
     requirePlayingGame(state);
     if (trap)

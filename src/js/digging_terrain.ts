@@ -21,8 +21,8 @@ import {
     DIGCHECK_FAIL_WATERLEVEL, DIGCHECK_FAILED, DIGCHECK_PASSED,
     DIGCHECK_PASSED_DESTROY_TRAP, DIGCHECK_PASSED_PITONLY,
     DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, FOUNTAIN, F_WARNED, GRAVE, HOLE, ICE,
-    IS_ALTAR, IS_DOOR, IS_FURNITURE, IS_GRAVE, IS_LAVA, IS_OBSTRUCTED,
-    IS_POOL, IS_ROOM, IS_STWALL, IS_THRONE, Is_airlevel, Is_botlevel,
+    IS_ALTAR, IS_DOOR, IS_FURNITURE, IS_GRAVE, IS_OBSTRUCTED,
+    IS_ROOM, IS_STWALL, IS_THRONE, Is_airlevel, Is_botlevel,
     Is_earthlevel, Is_waterlevel, LADDER, LANDMINE, LAVAPOOL, MAGIC_PORTAL,
     MIGR_RANDOM, M_SEEN_MAGR, MM_NOMSG, PIT, POOL, ROOM, SDOOR, SHOPBASE,
     SHOP_PIT_COST, SINK,
@@ -114,7 +114,7 @@ import {
     placeCreatedObject, placeObject, stack_object, updateIceObjectTimersAt,
 } from './floor_object.js';
 import { deleteEngravingAt } from './engrave.js';
-import { monsterInAir } from './terrain_properties.js';
+import { isLavaAt, isPoolAt, monsterInAir } from './terrain_properties.js';
 
 const S_ZOMBIE = 52;
 const S_MUMMY = 39;
@@ -146,8 +146,7 @@ function pileAt(x: number, y: number, state: GameState): GameObject[] {
 }
 
 function isPoolOrLava(x: number, y: number, state: GameState): boolean {
-    const typ = state.level?.at?.(x, y)?.typ;
-    return typ !== undefined && (IS_POOL(typ) || IS_LAVA(typ));
+    return isPoolAt(x, y, state) || isLavaAt(x, y, state);
 }
 
 function heroIsAirborne(state: GameState): boolean {
@@ -350,7 +349,7 @@ export async function digHole({
         deleteTrap(trap, state);
         newsym(digX, digY);
     } else if (isPoolOrLava(digX, digY, state)) {
-        const liquid = IS_LAVA(oldTyp) ? 'lava' : 'water';
+        const liquid = isLavaAt(digX, digY, state) ? 'lava' : 'water';
         await plineWithContinuation(`The ${liquid} `
             + 'sloshes furiously for a moment, then subsides.');
         await wakeMonstersNearWithMessages(
@@ -664,8 +663,7 @@ export async function liquidFlow(
     x: number, y: number, typ: number, trap: Trap | null, fillMessage: string | null,
     { state = game }: DiggingOptions = {},
 ) {
-    const location = state.level?.at?.(x, y);
-    if (!location || !(IS_POOL(location.typ) || IS_LAVA(location.typ))) return;
+    if (!isPoolOrLava(x, y, state)) return;
     requirePlayingGame(state);
 
     if (trap) await deleteFloorTrap(trap, state);
