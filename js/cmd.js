@@ -7397,19 +7397,16 @@ async function domoveCore(dx, dy, explicitAttempt) {
         && !canSenseMonster(monster)
         && !((MONSTER_FLAGS1[monster.mnum] ?? 0) & 0x80)
         && MONSTER_SYMBOL[monster.mnum] !== 57;
-    if (monster && !hiddenCeilingMonster) {
-        // C display.h:_is_safemon() deliberately stops treating even a
-        // peaceful/tame monster as safe while the hero is confused,
-        // hallucinating, or stunned.  domove_core() checks that predicate
-        // after impaired_movement() has changed u.dx/u.dy; a Shift-run which
-        // is redirected into the pet therefore stops before do_attack() and
-        // its one-in-seven displacement refusal roll.
-        const safeMonster = (game.flags.safe_dog ?? true) && !!monster.mpeaceful
-            && canSpotMonster(monster)
-            && !game.context?.forcefight
-            && !confused
-            && !heroIsHallucinating(game)
-            && !stunned;
+    // C display.h:_is_safemon() requires a spotted peaceful monster and
+    // an unimpaired hero. Concealed ceiling monsters still cancel running
+    // here, before domove_attackmon_at() leaves their reveal to arrival.
+    const safeMonster = !!monster && (game.flags.safe_dog ?? true) && !!monster.mpeaceful
+        && canSpotMonster(monster)
+        && !game.context?.forcefight
+        && !confused
+        && !heroIsHallucinating(game)
+        && !stunned;
+    if (monster) {
         // hack.c stops a run only for a visible or sensed actor.  Seeing the
         // destination terrain is insufficient when minvis hides its occupant;
         // that case must reach attack_checks() and install the invisible
@@ -7433,6 +7430,8 @@ async function domoveCore(dx, dy, explicitAttempt) {
             stopRun(game);
         if (await bumpIntoMonster(monster, newx, newy))
             return true;
+    }
+    if (monster && !hiddenCeilingMonster) {
         if (beastChoosesHeroDisplacement(monster, game, newx, newy)) {
             const ballChainMove = await beginBallAndChainMove(newx, newy);
             if (ballChainMove?.blocked) {

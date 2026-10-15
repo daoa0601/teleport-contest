@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { rhack } from '../js/cmd.js';
+import { continueRun, rhack } from '../js/cmd.js';
 import { MM_NOGRP, NO_MINVENT } from '../js/const.js';
 import { initializePet } from '../js/dog.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
@@ -50,4 +50,21 @@ void test('surprising a peaceful ceiling hider makes it hostile', async () => {
     assert.deepEqual([game.u.ux, game.u.uy], [11, 10]);
     assert.equal(lurker.mpeaceful, 0);
     assert.equal(game._lastPlineMessage, 'You surprise a lurker above!');
+});
+
+void test('a concealed piercer stops running even when its fall misses the hero', async () => {
+    freshObjectRoom({ hero: { uac: -20 } });
+    const piercer = await createMonsterAt('rock piercer', 11, 10, MM_NOGRP | NO_MINVENT);
+    piercer.mpeaceful = 0;
+    piercer.mundetected = 1;
+    pushKeys(' '.repeat(10));
+    const health = game.u.uhp;
+
+    await rhack('L'.charCodeAt(0));
+
+    assert.deepEqual([game.u.ux, game.u.uy], [11, 10]);
+    assert.equal(game.u.uhp, health, 'the surprise ends running without needing damage');
+    assert.equal(game.context.run, 0);
+    assert.equal(await continueRun(), false);
+    assert.deepEqual([game.u.ux, game.u.uy], [11, 10]);
 });
