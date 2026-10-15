@@ -13,7 +13,8 @@ import {
 import {
     moveObject, placeObjectSynchronously, remove_object,
 } from './floor_object.js';
-import { applyFloorEffects, landFloorObject } from './floor_effects.js';
+import { applyFloorEffects } from './floor_effects.js';
+import { hitFloorWithObject } from './object_drop.js';
 import { exerciseAttribute } from './attrib.js';
 import { objectIsHardHelmet } from './armor.js';
 import { heroHeadName } from './body_parts.js';
@@ -21,7 +22,6 @@ import { loseHeroHp } from './hero_damage.js';
 import { removeHeroEquipment } from './hero_equipment.js';
 import { canLetGo, finishInventoryRemoval } from './hero_inventory.js';
 import { unlinkObject } from './object_location.js';
-import { makePlural } from './object_grammar.js';
 import { isWeldedPrimary } from './weapon_slots.js';
 import { rn1, rn2, rnd } from './rng.js';
 import {
@@ -40,7 +40,7 @@ import { fillPitWithBoulderAt } from './pit_fill.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { hitMonsterWithHeroObject } from './hero_physical_hit.js';
 import { findMonsterArmorClass } from './monworn.js';
-import { objectName } from './objnam.js';
+import { objectName, ownedObjectName } from './objnam.js';
 import { rayMissMessage } from './ray_hit_message.js';
 import { rangedTargetHitBonus } from './weapon_accuracy.js';
 
@@ -160,17 +160,14 @@ async function scatterCarriedItems(state: GameState): Promise<void> {
         if (object === ball || rnd(capacity) > object.owt
             || !await canLetGo(object, '', state)) continue;
         const plural = object.quan !== 1;
-        const name = object.name || OBJECT_NAMES[object.otyp];
         await plineWithContinuation(
-            `You drop your ${plural ? makePlural(name) : name} and `
+            `You drop ${ownedObjectName(object, state, { capitalized: false })} and `
             + `${plural ? 'they fall' : 'it falls'} down the stairs with you.`,
         );
         await removeHeroEquipment(object, state);
         unlinkObject(object, state);
         await finishInventoryRemoval(object, state);
-        await landFloorObject(object, state.u.ux, state.u.uy, {
-            state, publish: plineWithContinuation,
-        });
+        await hitFloorWithObject(object, { verbose: false, state });
         if (state.program_state?.gameover) return;
     }
 }
