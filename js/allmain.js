@@ -1621,7 +1621,19 @@ async function resolveDeferredHeroItemTheft(action, monster, attack, random) {
         return false;
     }
     const object = selectHeroItemForTheft(game, random, action.calls);
-    if (!object || !(game.inventory || []).includes(object))
+    if (!object) {
+        const subject = canSpotMonster(monster)
+            ? monsterName(monster, { state: game, capitalized: true })
+            : animal ? 'Something' : 'Someone';
+        await plineWithContinuation(heroIsBlind(game)
+            ? 'Somebody tries to rob you, but finds nothing to steal.'
+            : game.inventory.some(item => item.oclass === 12)
+                ? `${subject} tries to rob you, but isn't interested in gold.`
+                : `${subject} tries to rob you, but there is nothing to steal!`);
+        await retreatAfterItemTheft(action, monster, attack, animal);
+        return true;
+    }
+    if (!game.inventory.includes(object))
         return false;
     if (game._delayedAction?.kind === 'steal' && game._delayedAction.object === object)
         return false;
@@ -1646,10 +1658,7 @@ async function resolveDeferredHeroItemTheft(action, monster, attack, random) {
             : ownedObjectName(object, game, { capitalized: false });
         await plineWithContinuation(`${subject} tries to ${verbs[draw(4)]} ${name} but gives up.`);
         if (draw(Math.trunc(game.inventory.filter(item => item.oclass !== 12).length / 5) + 2) === 0) {
-            if (!animal && !await reportMonsterTeleportRestriction(monster, { state: game }))
-                await randomMonsterRelocation(monster, { calls: action.calls, flags: RLOC_MSG });
-            await makeMonsterFlee(monster, { announce: false });
-            attack.attackerDone = true;
+            await retreatAfterItemTheft(action, monster, attack, animal);
         }
         return false;
     };
@@ -1773,8 +1782,13 @@ async function resolveDeferredHeroItemTheft(action, monster, attack, random) {
     attack.theftResolved = true;
     if (heroHasInvoluntaryDelay(game))
         return true;
+    await retreatAfterItemTheft(action, monster, attack, animal, stolenName);
+    return true;
+}
+async function retreatAfterItemTheft(action, monster, attack, animal, stolenName) {
+    const game = requireInitializedGame();
     if (animal) {
-        if (canSeeMonster(monster))
+        if (stolenName && canSeeMonster(monster))
             await plineWithContinuation(`${monsterName(monster, { state: game,
                 capitalized: true })} tries to run away with ${stolenName}.`);
     }
@@ -1783,13 +1797,12 @@ async function resolveDeferredHeroItemTheft(action, monster, attack, random) {
             calls: action.calls, flags: RLOC_MSG,
         });
         if (relocation && 'died' in relocation && relocation.died)
-            return true;
+            return;
     }
     const flight = await makeMonsterFlee(monster, { announce: false });
     if (flight.heroDied)
-        return true;
+        return;
     attack.attackerDone = true;
-    return true;
 }
 // C steal.c:stealarm(). The armor is already unworn; transfer
 // waits until the removal delay finishes and requires the same nearby thief.
