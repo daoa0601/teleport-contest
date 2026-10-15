@@ -2,8 +2,8 @@
 // display.c:tmp_at() for the valid-location marking overlay.
 
 import {
-    COLNO, D_ISOPEN, DOOR, HI_ZAP, LOOK_ONCE, LOOK_QUICK,
-    LOOK_TRADITIONAL, LOOK_VERBOSE, NHW_MENU, PICK_ONE, ROWNO, VIBRATING_SQUARE, WEB, IS_WALL, TREE,
+    COLNO, D_ISOPEN, DOOR, GFILTER_NONE, GFILTER_VIEW, HI_ZAP, LOOK_ONCE, LOOK_QUICK,
+    LOOK_TRADITIONAL, LOOK_VERBOSE, NHW_MENU, PICK_ONE, ROWNO, SCORR, STONE, VIBRATING_SQUARE, WEB, IS_WALL, TREE,
 } from './const.js';
 import {
     bot, clearMessageWindow, redrawMap, flush_screen, glyphAt, lastDirtyMapCursor,
@@ -27,6 +27,7 @@ import {
 } from './tty_menu.js';
 import type { GameState } from './game_state.js';
 import type { Position } from './map_types.js';
+import { rememberCommandKey, takeRepeatCommand } from './command_repeat.js';
 
 export type MapPositionPickType = typeof LOOK_TRADITIONAL | typeof LOOK_QUICK
     | typeof LOOK_ONCE | typeof LOOK_VERBOSE;
@@ -390,7 +391,7 @@ function getposArea(state: GameState): ReadonlySet<number> {
     const classify = (tx: number, ty: number): number | null => {
         const location = state.level?.at(tx, ty);
         if (!location?.seenv || tx < 1 || tx >= COLNO || ty < 0 || ty >= ROWNO) return null;
-        if (IS_WALL(location.typ) || location.typ === TREE) return 2;
+        if (location.typ === STONE || location.typ === SCORR || IS_WALL(location.typ) || location.typ === TREE) return 2;
         const symbol = getposGlyphSymbol(terrain_glyph(location, tx, ty).glyph);
         if (symbol === null) return 0;
         if (symbol >= CmapSymbol.room && symbol <= CmapSymbol.darkroom
@@ -459,6 +460,38 @@ function matchesGetposCycle(kind: Exclude<GetposCycleKind, 'valid'>, x: number, 
         'dark part of a room', 'corridor', 'lit corridor'].includes(terrain);
 }
 
+// C getpos.c:getpos_menu(GLOC_INTERESTING), with GFILTER_VIEW for travel.
+export async function selectTravelMenuPosition(describe: PositionDescription): Promise<Position | null> {
+    // cmd.c:dotravel() uses GFILTER_VIEW only for this menu, then restores
+    // the player's target filter even when no destination is selected.
+    const previousFilter = game.iflags.getloc_filter ?? GFILTER_NONE;
+    game.iflags.getloc_filter = GFILTER_VIEW;
+    try {
+        const hero = game.u;
+        const spots = gatherValidLocations((x, y) => (x !== hero.ux || y !== hero.uy)
+            && cansee(x, y) && matchesGetposCycle('all', x, y));
+        if (!spots.length) {
+            await pline('You cannot see anything interesting.');
+            return null;
+        }
+        const window = tty_create_nhwindow<Position>(NHW_MENU);
+        await tty_start_menu(window);
+        for (const spot of spots) {
+            const description = await describe(spot.x, spot.y);
+            if (!description) continue;
+            const coordinates = coordinateDescription(spot.x, spot.y, game.iflags.getpos_coords ?? 'n');
+            tty_add_menu(window, { identifier: spot,
+                text: description + (coordinates ? ` ${coordinates}` : '') });
+        }
+        tty_end_menu(window, 'Pick an interesting thing in view for travel destination');
+        const result = await tty_select_menu(window, PICK_ONE);
+        await tty_destroy_nhwindow(window);
+        return result.selections[0]?.identifier ?? null;
+    } finally {
+        game.iflags.getloc_filter = previousFilter;
+    }
+}
+
 export async function selectMapPosition({
     start,
     prompt,
@@ -520,7 +553,10 @@ export async function selectMapPosition({
             if (afterPaint) await afterPaint(cursor, firstPaint);
             firstPaint = false;
 
-            let key = (await readchar('position')) & 255;
+            const queued = takeRepeatCommand();
+            if (queued && queued.kind !== 'key') return null;
+            let key = queued ? queued.key : (await readchar('position')) & 255;
+            if (!queued && game.iflags.remember_getpos) rememberCommandKey(key);
             if (autoDescription()) clearMessageOnExit = false;
             let fast = false;
             if (key === game.commandBindings.keyForCommand('run')

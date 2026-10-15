@@ -1,9 +1,9 @@
-import { requireScreenCell } from './support/screen.js';
+import { requireScreenCell, requireScreenRow } from './support/screen.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { feel_location, flush_screen, glyphAt, newsym } from '../js/display.js';
+import { bot, feel_location, flush_screen, glyphAt, newsym } from '../js/display.js';
 import { initializePet } from '../js/dog.js';
-import { ATR_INVERSE, CLR_WHITE, NO_COLOR } from '../js/terminal.js';
+import { ATR_INVERSE, CLR_WHITE, NO_COLOR, Terminal } from '../js/terminal.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { CORR, NO_MINVENT, RLOC_NOMSG, ROOM } from '../js/const.js';
 import { initRng } from '../js/rng.js';
@@ -79,6 +79,18 @@ void test('Enter applies a selected advanced boolean without spending a turn', a
     await chooseOption('time', true);
     assert.equal(game.flags.time, true);
     assert.equal(game.context.move, 0);
+});
+void test('toggling the hit point bar reassesses shortened status fields', async () => {
+    freshObjectRoom({ moves: 100000000, flags: { time: true }, hero: { uhs: 1 } });
+    game._tutorialActive = true;
+    game.nhDisplay = new GameDisplay(new Terminal(null, { cols: 52, rows: 24 }));
+    await bot();
+    assert.match(requireScreenRow(23).map(cell => cell.ch).join(''), /^Dl:8 /);
+    game.moves = 9;
+    await bot();
+    await chooseOption('hitpointbar', true);
+    assert.equal(game.flags.hitpointbar, true);
+    assert.match(requireScreenRow(23).map(cell => cell.ch).join(''), /^Tutorial:8 /);
 });
 void test('Escape cancels changes selected in the advanced options menu', async () => {
     freshObjectRoom();

@@ -219,6 +219,7 @@ export interface Monster extends MonsterPosition {
     migrationMode?: number;
     migrationArrival?: number;
     migrationFlags?: number;
+    migflags?: number;
     migrationSource?: Position;
     migrationOrigin?: MonsterLevel;
     migrationDestination?: MonsterLevel;

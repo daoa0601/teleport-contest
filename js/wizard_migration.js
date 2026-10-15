@@ -19,7 +19,7 @@ export async function wizMigrateMonsters() {
         await plineWithContinuation("Can't get there from here.");
         return;
     }
-    const input = await getLine('How many random monsters to migrate to next level? [0]');
+    const input = await getLine('How many random monsters to migrate to next level? [0]', ch => ch >= ' ');
     if (!input)
         return;
     const count = Number.parseInt(input, 10) || 0;

@@ -226,6 +226,7 @@ function monsterFields(value, context) {
         migrationMode: optional(integer),
         migrationArrival: optional(integer),
         migrationFlags: optional(integer),
+        migflags: optional(integer),
         migrationSource: optional(position),
         migrationOrigin: optional(level),
         migrationDestination: optional(level),

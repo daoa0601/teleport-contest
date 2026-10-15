@@ -1,7 +1,5 @@
-// Descriptions from the pinned cmd.c:extcmdlist[].
-import type { NativeCommand } from './command_types.js';
-
-export const COMMAND_DESCRIPTIONS: ReadonlyMap<string, string> = new Map([
+// Player-facing descriptions from pinned cmd.c:extcmdlist.
+export const COMMAND_DESCRIPTIONS = new Map<string, string>([
     ["#", "enter and perform an extended command"],
     ["?", "list all extended commands"],
     ["adjust", "adjust inventory letters"],
@@ -167,10 +165,3 @@ export const COMMAND_DESCRIPTIONS: ReadonlyMap<string, string> = new Map([
     ["runsouthwest", "run southwest (screen lower left)"],
     ["migratemons", "show migrating monsters"],
 ]);
-
-// update_rest_on_space() installs a distinct command entry for Space.
-export function boundCommandDescription(command: NativeCommand): string | undefined {
-    if (command.name === 'wait' && command.key === 32)
-        return "rest one move via 'rest_on_space' option";
-    return command.name ? COMMAND_DESCRIPTIONS.get(command.name) : undefined;
-}

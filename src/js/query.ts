@@ -6,6 +6,7 @@ import { clearMessageWindow, flushPendingTopline, flush_screen, pline } from './
 import { game } from './gstate.js';
 import { nhgetch } from './input.js';
 import { NO_COLOR } from './terminal.js';
+import { rememberCommandKey, takeRepeatCommand } from './command_repeat.js';
 
 interface LineInputOptions {
     suppressStatus?: boolean;
@@ -142,8 +143,14 @@ function renderChoicePrompt(message: string): void {
 // the displayed default. Invalid keys leave the same question active.
 export async function promptChoice<Choice extends string>(
     query: string, choices: readonly Choice[], defaultAnswer: Choice,
-    { visibleChoices = choices.join('') }: { visibleChoices?: string } = {},
+    { visibleChoices = choices.join(''), addCommandQueue = true }: { visibleChoices?: string; addCommandQueue?: boolean } = {},
 ): Promise<Choice> {
+    if (addCommandQueue) {
+        const queued = takeRepeatCommand();
+        if (queued) return queued.kind === 'key'
+            ? choices.find(choice => choice === String.fromCharCode(queued.key)) ?? defaultAnswer
+            : defaultAnswer;
+    }
     // cmd.c:yn_function() reserves the last three query characters for an
     // ellipsis when the caller exceeds the native question buffer.
     const question = query.length >= QBUFSZ
@@ -168,6 +175,7 @@ export async function promptChoice<Choice extends string>(
             answer = defaultAnswer;
         } else answer = choices.find(choice => choice === character);
         if (answer === undefined) continue;
+        if (addCommandQueue) rememberCommandKey(answer.charCodeAt(0));
         if (game.nhDisplay) game.nhDisplay.toplines = message + answer;
         // nhgetch marks the question as seen. tty_yn_function keeps a
         // one-line question visible and clears only prompts covering the map.
@@ -176,8 +184,8 @@ export async function promptChoice<Choice extends string>(
     }
 }
 
-export function promptYesNo(message: string, defaultAnswer: 'y' | 'n' = 'n'): Promise<'y' | 'n'> {
-    return promptChoice(message, ['y', 'n'], defaultAnswer);
+export function promptYesNo(message: string, defaultAnswer: 'y' | 'n' = 'n', addCommandQueue = true): Promise<'y' | 'n'> {
+    return promptChoice(message, ['y', 'n'], defaultAnswer, { addCommandQueue });
 }
 
 export function promptYesNoQuit(message: string, defaultAnswer: 'y' | 'n' | 'q' = 'q'): Promise<'y' | 'n' | 'q'> {
@@ -195,24 +203,35 @@ export async function paranoidQuery(
     beParanoid: boolean,
     prompt: string,
     paranoiaBits = game.flags?.paranoia_bits ?? 0,
-) {
-    if (!beParanoid)
-        return await promptYesNo(prompt) === 'y';
+): Promise<boolean> {
+    return await paranoidYesNoQuit(beParanoid, prompt, false, paranoiaBits) === 'y';
+}
 
+// C cmd.c:paranoid_ynq(). Confirmation answers are deliberately excluded
+// from command recall: every repeated dangerous action asks again.
+export async function paranoidYesNoQuit(
+    beParanoid: boolean, prompt: string, acceptQuit = true,
+    paranoiaBits = game.flags?.paranoia_bits ?? 0,
+): Promise<'y' | 'n' | 'q'> {
+    if (!beParanoid) return acceptQuit
+        ? promptChoice(prompt, ['y', 'n', 'q'], 'n', { addCommandQueue: false })
+        : promptYesNo(prompt, 'n', false);
     const confirmAll = !!(paranoiaBits & PARANOID_CONFIRM);
-    const responseType = confirmAll ? '[yes|no]' : '[yes|n] (n)';
-    let prefix = '';
-    let tries = 6;
-    do {
-        const line = await getLine(
-            `${prefix}${prompt} ${responseType}`,
-            (_ch, key) => key >= 32 && key < 127,
-        );
-        if (line === null) return false;
+    const responseType = confirmAll ? acceptQuit ? '[yes|no|quit]' : '[yes|no]'
+        : acceptQuit ? '[yes|n|q] (n)' : '[yes|n] (n)';
+    let prefix = '', question = prompt.slice(0, 255);
+    for (let attempt = 0; attempt < 6; attempt++) {
+        const extra = prefix.length + 1 + responseType.length;
+        if (question.length + extra > QBUFSZ - 1)
+            question = question.slice(0, QBUFSZ - 1 - extra - 4) + '...?';
+        const line = await getLine(`${prefix}${question} ${responseType}`,
+            (_ch, key) => key >= 32 && key < 127);
+        if (line === null) return acceptQuit ? 'q' : 'n';
         const answer = line.trim().replace(/\s+/g, ' ').toLowerCase();
-        if (answer === 'yes') return true;
-        if (!confirmAll || answer === 'no' || answer === 'quit') return false;
+        if (answer === 'yes') return 'y';
+        if (answer === 'quit') return acceptQuit ? 'q' : 'n';
+        if (!confirmAll || answer === 'no') return 'n';
         prefix = '"Yes" or "No": ';
-    } while (--tries);
-    return false;
+    }
+    return 'n';
 }

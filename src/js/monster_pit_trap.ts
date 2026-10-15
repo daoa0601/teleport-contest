@@ -119,9 +119,9 @@ export async function finishMonsterPitTrap(
         await publish(
             `${describeMonster(monster)} ${event.dragged ? 'is dragged' : 'falls'} into ${owner} pit!`,
         );
-        event.trap.tseen = true;
         if (monster.mnum === PM_PIT_VIPER || monster.mnum === PM_PIT_FIEND)
             await publish("How pitiful.  Isn't that the pits?");
+        seeTrap(event.trap, state);
     }
 
     const selfTouch = await monsterSelfTouch(monster, {

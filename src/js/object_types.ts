@@ -64,6 +64,7 @@ export interface ObjectMigration {
     source: { dnum: number; dlevel: number };
     destination: { dnum: number; dlevel: number };
     arrival: number;
+    speciesFlags?: number;
 }
 
 // The core fields are installed by mksobj before class-specific initialization.

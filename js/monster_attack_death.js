@@ -1,14 +1,14 @@
 // Monster-attributed hero death and its terminal continuations.
 // C refs: end.c done_in_by()/done()/savelife(), tty message windows.
 import { game } from './gstate.js';
-import { MGIVENNAME, M_AP_MONSTER, M_AP_TYPE, STONING, Upolyd, ismnum } from './const.js';
+import { PARANOID_DIE, MGIVENNAME, M_AP_MONSTER, M_AP_TYPE, STONING, Upolyd, ismnum } from './const.js';
 import { canSpotMonster, flushPendingTopline, flush_screen, pline, plineWithContinuation } from './display.js';
 import { beginHeroLifeSaving, completeHeroLifeSaving, finishOrdinaryDeath, identifyLifeSavingAmulet, restoreHeroAfterDeath, } from './end.js';
 import { setHeroRemainsFromMonster } from './death_remains.js';
 import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, monsterTypeName } from './monster_data.js';
 import { monsterName } from './monster_name.js';
 import { withIndefiniteArticle } from './object_grammar.js';
-import { promptYesNo } from './query.js';
+import { paranoidQuery } from './query.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { shopkeeperKillerName } from './shk.js';
 const G_UNIQ = 0x1000;
@@ -174,8 +174,8 @@ export async function finishMonsterAttackDeath(monster, { pagerOwned = false, at
             game._statusUpdatesDisabled = previousStatusDisabled;
     }
     if (game.flags?.debug || game.flags?.explore) {
-        const die = await promptYesNo('Die?');
-        if (die !== 'y') {
+        const die = await paranoidQuery(!!((game.flags.paranoia_bits ?? 0) & PARANOID_DIE), 'Die?');
+        if (!die) {
             await plineWithContinuation("OK, so you don't die.");
             await restoreHeroAfterDeath();
             if (game.program_state.gameover)

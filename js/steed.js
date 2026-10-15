@@ -1,7 +1,7 @@
 // steed.js — Saddling, mounting, riding, and dismounting.
 // C ref: steed.c.
 import { monsterHasMapPosition, placeMonsterAt } from './monster_location.js';
-import { RLOC_ERR, RLOC_NOMSG, ACCESSIBLE, D_CLOSED, D_LOCKED, DISMOUNT_BONES, DISMOUNT_BYCHOICE, DISMOUNT_ENGULFED, DISMOUNT_FELL, DISMOUNT_KNOCKED, DISMOUNT_POLY, DISMOUNT_THROWN, DOOR, DIRECTION_KEYS, IS_OBSTRUCTED, MGIVENNAME, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPMASK, P_RIDING, A_CHA, A_DEX, A_WIS, P_BASIC, P_SKILLED, P_EXPERT, TRAP_EXPLANATIONS, TT_BEARTRAP, TT_PIT, TT_WEB, Upolyd, VIBRATING_SQUARE, W_SADDLE, isok, } from './const.js';
+import { RLOC_ERR, RLOC_NOMSG, ACCESSIBLE, D_CLOSED, D_LOCKED, DISMOUNT_BONES, DISMOUNT_BYCHOICE, DISMOUNT_ENGULFED, DISMOUNT_FELL, DISMOUNT_KNOCKED, DISMOUNT_POLY, DISMOUNT_THROWN, DOOR, IS_OBSTRUCTED, MGIVENNAME, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPMASK, P_RIDING, A_CHA, A_DEX, A_WIS, P_BASIC, P_SKILLED, P_EXPERT, TRAP_EXPLANATIONS, TT_BEARTRAP, TT_PIT, TT_WEB, Upolyd, VIBRATING_SQUARE, W_SADDLE, isok, } from './const.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { levitationAtWill, refreshMovementProperties } from './properties.js';
 import { floatHeroDown } from './terrain_movement.js';
@@ -31,7 +31,7 @@ import { rn1, rn2, rnd, rnl } from './rng.js';
 import { useHeroSkill } from './skills.js';
 import { moveHeroByTeleport, randomMonsterRelocation, relocateMonsterTo } from './teleport.js';
 import { findNearbyMonsterPosition } from './teleport_rules.js';
-import { promptDirection, readDirectionKey } from './tty_prompts.js';
+import { promptDirection } from './tty_prompts.js';
 import { promptYesNo } from './query.js';
 import { vision_recalc } from './vision.js';
 import { heroLegName } from './body_parts.js';
@@ -45,6 +45,7 @@ import { blocksDiagonalDoor, heroBadRock, heroTightDiagonalReason, } from './hac
 import { applyHeroLocationEffects, heroCouldMoveOntoBoulder } from './cmd.js';
 import { finishDestinationSpotEffects } from './location_effects.js';
 import { adjustHeroAlignment } from './alignment.js';
+import { resetCommandVariables } from './command_state.js';
 import { resumeDeferredMonsterTrap, triggerImmediateMonsterTrap } from './monmove.js';
 import { levelHasCeiling, isLavaAt, isPoolAt } from './terrain_properties.js';
 import { isPolearm } from './weapon_type.js';
@@ -82,19 +83,17 @@ export async function doride() {
         game.context.move = 1;
         return;
     }
-    const direction = String.fromCharCode(await readDirectionKey()).toLowerCase();
-    const vector = DIRECTION_KEYS[direction];
-    if (!vector) {
-        game.context.move = 0;
+    const direction = await promptDirection();
+    if (!direction) {
+        resetCommandVariables(true); // doride() returns ECMD_CANCEL.
         return;
     }
-    const [dx, dy] = vector;
-    hero.dx = dx;
-    hero.dy = dy;
+    const { dx, dy } = direction;
+    const vector = [dx, dy];
     const x = hero.ux + dx;
     const y = hero.uy + dy;
     if (!isok(x, y)) {
-        game.context.move = 0;
+        resetCommandVariables(true);
         return;
     }
     const force = !!game.flags.debug

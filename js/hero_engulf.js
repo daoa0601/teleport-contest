@@ -19,6 +19,7 @@ import { applyHeroGolemEffects } from './polyself.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { endObjectBurn } from './light.js';
 import { releaseAllMonsterLeashes } from './monster_leash.js';
+import { resetPick } from './lock_context.js';
 import { monsterName } from './monster_name.js';
 import { monsterHasStoneResistance } from './monster_resistance.js';
 import { petrifyMonsterImmediately } from './monster_stoning.js';
@@ -93,6 +94,7 @@ export async function beginHeroEngulf(monster, attack, { state = game, random = 
         await publish(`${subject} ${verb}!`, { urgent: true });
     }
     await stopHeroOccupation(state, publish);
+    resetPick(state); // gulpmu() resets occupations as if the hero had moved.
     if (state.program_state.gameover)
         return { captured: false, died: true };
     if (hero.utrap) {

@@ -94,6 +94,7 @@ function validMigration(value: unknown): value is ObjectMigration {
         source: location,
         destination: location,
         arrival: integer,
+        speciesFlags: optional(integer),
     });
 }
 

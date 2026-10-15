@@ -12,6 +12,7 @@ import { rn2 } from './rng.js';
 import { showTextPages } from './windows.js';
 import type { TextPage } from './windows.js';
 import type { Hero } from './hero_types.js';
+import { rememberCommandKey, takeRepeatCommand } from './command_repeat.js';
 
 export interface DirectionSelection {
     key: string;
@@ -46,9 +47,14 @@ export async function promptKey(message: string, cursorOffset = 0): Promise<numb
 // C cmd.c:getdir() removes its query immediately after receiving a key,
 // before interpreting that key as a direction, cancellation, or help.
 export async function readDirectionKey(message = 'In what direction? ') {
-    // C getdir() consumes CMDQ_KEY before entering tty_yn_function().
-    const queuedKey = takeCommandKey();
-    if (queuedKey !== undefined) return queuedKey;
+    // C cmdq_pop() selects CQ_REPEAT during do-again, otherwise CQ_CANNED.
+    if (game._inDoAgain) {
+        const queued = takeRepeatCommand();
+        if (queued) return queued.kind === 'key' ? queued.key : 27;
+    } else {
+        const queuedKey = takeCommandKey();
+        if (queuedKey !== undefined) return queuedKey;
+    }
     // tty_yn_function() skips an unread topline stopped by Escape, then
     // clears WIN_STOP before painting its question.
     if (game._suppressMessagesUntilInput) clearMessageWindow();
@@ -56,6 +62,8 @@ export async function readDirectionKey(message = 'In what direction? ') {
     game._suppressMessagesUntilInput = false;
     await paintKeyPrompt(message);
     const key = (await readchar('direction')) & 255;
+    if (game.commandBindings.lookup(key)?.command?.handler !== 'doredraw')
+        rememberCommandKey(key);
     clearMessageWindow();
     return key;
 }
@@ -135,10 +143,10 @@ async function promptClickDirection(): Promise<DirectionSelection | null> {
 }
 
 // C getdir() calls confdir(FALSE) even for self, but never for up/down.
-export function confusePromptDirection(hero: Hero): void {
+export function confusePromptDirection(hero: Hero, forceImpairment = false): void {
     const stunned = hero.stunned || (hero.stunnedTurns ?? 0) > 0;
     const confused = hero.confused || (hero.confusionTurns ?? 0) > 0;
-    if (!stunned && !(confused && !rn2(5))) return;
+    if (!forceImpairment && !stunned && !(confused && !rn2(5))) return;
     const count = hero.umonnum === GRID_BUG ? 4 : 8;
     const vector = impairedDirections[rn2(count)];
     if (!vector) throw new Error('The confused direction is outside the movement table');
@@ -157,7 +165,7 @@ export function directionAssistPage(invalidDirection = true): TextPage {
     const bindings = game.commandBindings;
     const key = (direction: number) => visibleCommandKey(bindings.keyForDirection(direction) ?? 0);
     const lines = invalidDirection ? ['cmdassist: Invalid direction key!', ''] : [];
-    lines.push('Valid direction keys are:');
+    lines.push(`Valid direction keys${game.u.umonnum === GRID_BUG ? ' in your current form' : ''} are:`);
     if (game.u.umonnum === GRID_BUG) {
         lines.push(`             ${key(2)}   `, '             |   ',
             `          ${key(0)}- . -${key(4)}`, '             |   ',

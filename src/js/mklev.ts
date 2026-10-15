@@ -165,7 +165,7 @@ import {
     DWARVISH_CLOAK, DWARVISH_ROUNDSHIELD, IRON_SHOES,
     HELMET, SPLINT_MAIL, RING_MAIL, SMALL_SHIELD, ROBE,
     CLOAK_OF_PROTECTION, CLOAK_OF_MAGIC_RESISTANCE,
-    LEATHER_ARMOR, LEATHER_JACKET, LEATHER_GLOVES,
+    LEATHER_ARMOR, LEATHER_JACKET, LEATHER_GLOVES, LEATHER_CLOAK,
     MIRROR, POT_OBJECT_DETECTION, RIN_INVISIBILITY, SHIELD_OF_REFLECTION,
     SADDLE,
     WAN_CANCELLATION, WAN_LIGHT, WAN_LIGHTNING,
@@ -229,6 +229,7 @@ import {
 } from './object_timers.js';
 import { setMonsterApparentHeroPosition } from './monster_perception.js';
 import { objectWeight } from './weight.js';
+import { createOrcRaid, deliverOrcRaidLoot } from './orc_raid.js';
 import {
     curseObjectState, objectResistsDestruction,
 } from './object_state.js';
@@ -304,7 +305,6 @@ const STUDDED_LEATHER_ARMOR = 131;
 const LARGE_SHIELD = 156;
 const LOW_BOOTS = 163;
 const HIGH_BOOTS = 165;
-const LEATHER_CLOAK = 146;
 const MUMMY_WRAPPING = 138;
 const TIN_WHISTLE = 245;
 const SPE_LIGHT = 372;
@@ -2749,6 +2749,11 @@ async function makemon(
         // Branch knowledge survives puzzle completion.
         monster.mtrapseen = (1 << (PIT - 1)) | (1 << (HOLE - 1));
     }
+    if (Is_stronghold(game.u.uz) && !(requireMonsterData(MONSTER_FLAGS1, mndx) & M1_MINDLESS))
+        monster.mtrapseen = (monster.mtrapseen ?? 0) | (1 << (TRAPDOOR - 1));
+    // Native quest leaders and nemeses know every trap type at birth.
+    if (MONSTER_SOUND[mndx] === 36 || MONSTER_SOUND[mndx] === 37)
+        monster.mtrapseen = -1;
     if (mndx === PM_SHOPKEEPER) {
         monster.mpeaceful = 1;
     }
@@ -2762,6 +2767,7 @@ async function makemon(
     // terrain, trap, and corpse checks also apply during level creation.
     if (game.in_mklev && [19, 45, 57].includes(classIndex))
         await hideMonsterUnder(monster);
+    if (allowMonsterInventory) await deliverOrcRaidLoot(monster, game);
     return finishMonsterBirth(monster, mmflags);
 }
 
@@ -7482,6 +7488,8 @@ async function generateSpecialAndFixup(
     if (Is_stronghold(game.u.uz) || game.urole?.key === 'priest' && In_quest(game.u.uz))
         level.flags.graveyard = true;
     if (active?.baalzFixup) await fixupBaalz(active);
+    if (active.file === 'minetn-1.lua' && In_mines(game.u.uz))
+        await createOrcRaid();
     // sp_lev.c explicitly places deferred portals, stairs, and branches
     // before premap_detect(); otherwise their remembered glyphs retain the
     // underlying terrain even though the live level cell was updated.

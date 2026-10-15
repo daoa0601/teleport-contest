@@ -6,6 +6,7 @@ import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 import { stopRun } from './runmode.js';
 import { clearCommandKeys } from './input.js';
+import { clearRepeatCommand } from './command_repeat.js';
 
 // C cmd.c:reset_cmd_vars(). Full command_count belongs to the next parse.
 export function resetCommandVariables(clearQueues: boolean): void {
@@ -15,9 +16,11 @@ export function resetCommandVariables(clearQueues: boolean): void {
     game.context.move = 0;
     game.multi = 0;
     game.iflags.menu_requested = false;
+    game._movementAttempt = null;
     if (clearQueues) {
         game._cannedCommands = [];
         clearCommandKeys();
+        clearRepeatCommand();
     }
 }
 

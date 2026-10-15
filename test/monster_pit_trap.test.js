@@ -2,6 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { PIT, SPIKED_PIT, W_AMUL, W_WEP } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
+import { newsym } from '../js/display.js';
+import { beginMonsterPitTrap, finishMonsterPitTrap } from '../js/monster_pit_trap.js';
 import { pushKeys } from '../js/input.js';
 import { resumeDeferredMonsterTrap, triggerImmediateMonsterTrap, } from '../js/monmove.js';
 import { AMULET_OF_LIFE_SAVING, CORPSE, STATUE, } from '../js/object_data.js';
@@ -10,6 +12,20 @@ import { MONSTER_NAME } from '../js/monster_data.js';
 import { floorObjectsAt } from './support/level-state.js';
 import { equipMonsterObject } from './support/monsters.js';
 import { freshMonsterTrapRoom } from './support/monster-traps.js';
+void test('discovering a pit beneath a hallucinated monster redraws the monster', async () => {
+    const { level, monster, trap } = await freshMonsterTrapRoom(PIT, {
+        monster: { species: 'kitten', hitPoints: 20 },
+    });
+    requirePlayingGame(game);
+    game.u.hallucinationTurns = 20;
+    newsym(monster.mx, monster.my);
+    const original = level.requireAt(monster.mx, monster.my).disp_glyph?.glyph;
+    await finishMonsterPitTrap(monster, beginMonsterPitTrap(monster, trap), {
+        publish: () => { }, rollOne: () => 1,
+    });
+    assert.equal(trap.tseen, true);
+    assert.notEqual(level.requireAt(monster.mx, monster.my).disp_glyph?.glyph, original);
+});
 for (const seen of [false, true]) {
     void test(`a monster falling into a ${seen ? 'known' : 'unknown'} spiked pit is announced as falling into a pit`, async () => {
         const { monster, trap } = await freshMonsterTrapRoom(SPIKED_PIT, {

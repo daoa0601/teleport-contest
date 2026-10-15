@@ -346,6 +346,8 @@ async function hitMonsterWithProjectile(defender, shot, remaining, context) {
     state.notonhead = point.x !== defender.mx || point.y !== defender.my;
     const disguised = M_AP_TYPE(defender) !== 0 && M_AP_TYPE(defender) !== M_AP_MONSTER;
     const visible = cansee(point.x, point.y);
+    if (visible)
+        observeObject(object, state);
     let accuracy = 5 + findMonsterArmorClass(defender)
         + rangedTargetHitBonus(object, defender, { state, random, rollOne });
     if (archer && defender === target) {
@@ -358,11 +360,12 @@ async function hitMonsterWithProjectile(defender, shot, remaining, context) {
     shot.target = defender;
     shot.heroTarget = false;
     shot.hit = accuracy >= rollOne(20);
-    const name = captureHeroProjectileName(object, state, volley);
     if (!shot.hit) {
         if (!disguised) {
-            if (visible)
+            if (visible) {
+                const name = captureHeroProjectileName(object, state, volley);
                 await publish(rayMissMessage(name, defender, { ...point, state }));
+            }
             else if (!target)
                 await publish('It is missed.');
         }
@@ -407,6 +410,7 @@ async function hitMonsterWithProjectile(defender, shot, remaining, context) {
             await publish(`Splat!  ${monsterName(defender, { state, capitalized: true })} is hit with ${egg}!`);
         }
         else {
+            const name = captureHeroProjectileName(object, state, volley);
             await publish(rayHitMessage(name, defender, {
                 ...point, state, damage,
                 ...(harmless ? { ending: ` but passes harmlessly through ${monsterObjectPronoun(defender, { state })}.` } : {}),

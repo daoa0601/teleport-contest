@@ -817,8 +817,8 @@ export const HEADSTONE = 6;
 export const N_ENGRAVE = 6;
 // ===== flag.h =====
 export const GFILTER_NONE = 0;
-export const GFILTER_VIEW = (GFILTER_NONE + 1);
-export const GFILTER_AREA = (GFILTER_VIEW + 1);
+export const GFILTER_VIEW = 1;
+export const GFILTER_AREA = 2;
 export const NUM_GFILTER = (GFILTER_AREA + 1);
 export const WC_COUNT = 0;
 export const PLNMSG_UNKNOWN = 0;
