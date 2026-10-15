@@ -23,7 +23,7 @@ import { d, rnd, rn1, rn2 } from './rng.js';
 import { adjustLevelAbilities, experienceRankIndex, randomExperience, } from './exper.js';
 import { recordGameLogEvent } from './gamelog.js';
 import { withIndefiniteArticle } from './object_grammar.js';
-import { currentAttribute, reportHeroEncumbrance } from './attrib.js';
+import { currentAttribute, maximumAttribute, reportHeroEncumbrance } from './attrib.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL, SPECIAL_PM, monsterBreaksArmor, monsterHasNoHands, monsterHornCount, monsterIsBat, monsterIsCentaur, monsterIsAmorphous, monsterIsSlithy, monsterIsUnsolid, monsterIsMindFlayer, monsterIsUnicorn, monsterIsVampire, monsterIsVerySmall, monsterIsWhirly, monsterSlipsArmor, monsterTypeName, monsterWrappingAllowed, validVampireShiftForm, } from './monster_data.js';
 import { AD_ELEC, AD_FIRE, AT_BREA, AT_GAZE, AT_SPIT } from './monster_attack_types.js';
 import { AMULET_OF_UNCHANGING, ELVEN_MITHRIL_COAT, LEASH, LENSES, LOADSTONE, GRAY_DRAGON_SCALE_MAIL, GRAY_DRAGON_SCALES, OBJECT_NAMES, RIN_POLYMORPH_CONTROL, RIN_PROTECTION_FROM_SHAPE_CHANGERS, } from './object_data.js';
@@ -492,7 +492,7 @@ async function beginMonsterForm(mnum, { sexChangeAllowed = false, announceForm =
 }
 // C polyself.c:uasmon_maxStr(). Racial limits also apply to undead relatives,
 // but living giants are stronger than giant zombies and mummies.
-function formMaximumStrength(mnum) {
+export function formMaximumStrength(mnum) {
     const flags = MONSTER_FLAGS2[mnum] ?? 0;
     let race;
     if (flags & M2_ORC) {
@@ -917,7 +917,7 @@ function redistributeActiveAttributes() {
     for (const index of [A_STR, A_DEX, A_CON, A_CHA]) {
         const oldMax = max[index] || 1;
         const raceMin = game.urace?.attrmin?.[index] ?? 3;
-        const raceMax = game.urace?.attrmax?.[index] ?? 18;
+        const raceMax = maximumAttribute(index);
         max[index] = Math.max(raceMin, Math.min(raceMax, oldMax + rn2(5) - 2));
         base[index] = Math.max(raceMin, Math.trunc((base[index] || raceMin) * max[index] / oldMax));
     }

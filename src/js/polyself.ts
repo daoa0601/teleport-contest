@@ -33,7 +33,7 @@ import {
 } from './exper.js';
 import { recordGameLogEvent } from './gamelog.js';
 import { withIndefiniteArticle } from './object_grammar.js';
-import { currentAttribute, reportHeroEncumbrance } from './attrib.js';
+import { currentAttribute, maximumAttribute, reportHeroEncumbrance } from './attrib.js';
 import {
     MONSTER_ATTACKS, MONSTER_FLAGS1,
     MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME,
@@ -591,7 +591,7 @@ async function beginMonsterForm(mnum: number, {
 
 // C polyself.c:uasmon_maxStr(). Racial limits also apply to undead relatives,
 // but living giants are stronger than giant zombies and mummies.
-function formMaximumStrength(mnum: number) {
+export function formMaximumStrength(mnum: number) {
     const flags = MONSTER_FLAGS2[mnum] ?? 0;
     let race;
     if (flags & M2_ORC) {
@@ -989,7 +989,7 @@ function redistributeActiveAttributes() {
     for (const index of [A_STR, A_DEX, A_CON, A_CHA] as const) {
         const oldMax = max[index] || 1;
         const raceMin = game.urace?.attrmin?.[index] ?? 3;
-        const raceMax = game.urace?.attrmax?.[index] ?? 18;
+        const raceMax = maximumAttribute(index);
         max[index] = Math.max(
             raceMin,
             Math.min(raceMax, oldMax + rn2(5) - 2),

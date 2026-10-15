@@ -14,6 +14,7 @@ import { encumbranceLabel, encumbranceMessage, nearCapacity } from './weight.js'
 import { MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
 import { rn2, rnd } from './rng.js';
 import { propertyIsActive } from './properties.js';
+import { formMaximumStrength } from './polyself.js';
 import { DUNCE_CAP, GAUNTLETS_OF_POWER } from './object_data.js';
 import {
     A_CHA, A_CON, A_DEX, A_INT, A_MAX, A_STR, A_WIS, Upolyd,
@@ -133,7 +134,7 @@ export function adjustAttribute(attribute: number, amount: number, state: GameSt
     const oldBase = current[attribute];
     const oldMaximum = maximum[attribute];
     const raceMinimum = state.urace?.attrmin?.[attribute] ?? 3;
-    const raceMaximum = state.urace?.attrmax?.[attribute] ?? 18;
+    const raceMaximum = maximumAttribute(attribute, state);
 
     current[attribute] += amount;
     if (amount > 0 && current[attribute] > maximum[attribute]) {
@@ -165,6 +166,17 @@ export function adjustAttribute(attribute: number, amount: number, state: GameSt
         baseChanged: current[attribute] !== oldBase,
         maximumChanged: maximum[attribute] !== oldMaximum,
     };
+}
+
+// C attrib.h:ATTRMAX(). Only polymorphed Strength uses the creature's
+// limit; every other attribute keeps the hero's racial limit.
+export function maximumAttribute(attribute: AttributeIndex, state: GameState = game): number {
+    if (attribute === A_STR && Upolyd(state.u)) {
+        const species = state.u.umonnum;
+        if (species === undefined) throw new Error('Polymorphed Strength requires a creature form');
+        return formMaximumStrength(species);
+    }
+    return state.urace?.attrmax[attribute] ?? 18;
 }
 
 // C attrib.c:gainstr(). Random gains use base strength even when equipment
@@ -312,7 +324,7 @@ export async function checkAttributeExercise(sourceTurn: number, state: GameStat
         if (!accumulated) continue;
         const direction = Math.sign(accumulated);
         const minimum = state.urace?.attrmin?.[attribute] ?? 3;
-        const maximum = Math.min(18, state.urace?.attrmax?.[attribute] ?? 18);
+        const maximum = Math.min(18, maximumAttribute(attribute, state));
         const base = hero.acurr.a[attribute];
         const withinLimit = direction > 0 ? base < maximum : base > minimum;
         const canExercise = attribute === A_WIS || !Upolyd(hero);
