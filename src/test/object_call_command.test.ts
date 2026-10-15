@@ -35,3 +35,20 @@ void test('an empty type-name answer keeps the existing call name', async () => 
 
     assert.equal(game._objectCallNames?.[RIN_PROTECTION], 'Defense');
 });
+
+void test('erasing a call name keeps the unidentified ring in encountered discoveries', async t => {
+    freshObjectRoom();
+    await addInventoryObject(RIN_PROTECTION, { invlet: 'a', typeKnown: false });
+    recordObjectCall(RIN_PROTECTION, 'Defense');
+    const input = resetInputState();
+    input.feed('name\r');
+    queueCommandKeys('oa');
+    planInput(input, t, [
+        { prompt: /Call a ring called Defense:/, keys: '   \r' },
+        { prompt: /\n  ring \([a-z ]+\) *\n[\s\S]*--More--/, keys: ' ' },
+    ]);
+
+    await rhack('#'.charCodeAt(0));
+    assert.equal(game._objectCallNames?.[RIN_PROTECTION], undefined);
+    await rhack('\\'.charCodeAt(0));
+});

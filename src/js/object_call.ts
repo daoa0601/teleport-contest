@@ -78,10 +78,9 @@ export async function callObjectType(object: GameObject, state: GameState = game
     if (!callName) {
         if (state._objectCallNames?.[object.otyp]) {
             delete state._objectCallNames[object.otyp];
-            if (!objectTypeKnown(object, state)) {
+            if (!objectTypeKnown(object, state) && !state._encounteredObjectTypes?.has(object.otyp)) {
                 if (state._objectDiscoveryOrder)
                     state._objectDiscoveryOrder = state._objectDiscoveryOrder.filter(type => type !== object.otyp);
-                state._encounteredObjectTypes?.delete(object.otyp);
             }
         }
         return { prompted: true, named: false, callName: null };
