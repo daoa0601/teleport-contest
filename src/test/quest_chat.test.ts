@@ -19,6 +19,7 @@ import { moveloop_core } from '../js/allmain.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
 import { addTrap } from './support/level-state.js';
 import { MAGIC_PORTAL } from '../js/const.js';
+import { heroIsBlind } from '../js/senses.js';
 
 async function questLeader(level = 14, record = 20) {
     freshObjectRoom({ role: 'healer', hero: { ulevel: level, ualign: { type: 0, record }, ualignbase: [0, 0] } });
@@ -123,14 +124,17 @@ void test('a quest guardian discusses the aftermath when the artifact has been r
 });
 
 void test('picking up the quest artifact while blind describes it and records the touch', async () => {
-    freshObjectRoom({ role: 'healer', hero: { blind: true } });
+    freshObjectRoom({ role: 'healer', hero: { blindTurns: 100 } });
+    assert.equal(heroIsBlind(), true);
     const artifact = await floorArtifact('The Staff of Aesculapius', 10, 10, { dknown: false });
+    assert.equal(artifact.dknown, false);
     const input = resetInputState();
     let awaitingInventoryInsertion = false;
     input.display = { async readKey() {
         if (ensureQuestStatus().touched_artifact && !game.inventory.includes(artifact)) {
             assert.equal(artifact.where, 'free');
             assert.equal(game.u.uhave?.questart, true);
+            assert.equal(artifact.dknown, true);
             awaitingInventoryInsertion = true;
         }
         return 32;
