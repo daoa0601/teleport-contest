@@ -1,10 +1,10 @@
 // Monster-versus-hero engulf admission, capture, and per-slot effects.
 // C mhitm.c:engulf_target() and mhitu.c:gulpmu().
-import { A_CON, A_STR, DISMOUNT_ENGULFED, DOOR, D_CLOSED, D_LOCKED, IRONBARS, IS_OBSTRUCTED, IS_TREE, SICK_NONVOMITABLE, TT_WEB, is_pit, } from './const.js';
+import { A_CON, A_STR, DISMOUNT_ENGULFED, DOOR, D_CLOSED, D_LOCKED, IRONBARS, IS_OBSTRUCTED, IS_TREE, TT_WEB, is_pit, } from './const.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { heroIsBreathless, heroPassesWalls, heroSpecies } from './hero_species.js';
 import { AD_ACID, AD_BLND, AD_COLD, AD_DGST, AD_DISE, AD_DREN, AD_ELEC, AD_FIRE, AD_PHYS, } from './monster_attack_types.js';
-import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SIZE, monsterDigests, monsterEnfolds, monsterIsAmorphous, monsterIsAnimal, monsterIsWhirly, monsterTypeName, } from './monster_data.js';
+import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SIZE, monsterDigests, monsterEnfolds, monsterIsAmorphous, monsterIsAnimal, monsterIsWhirly, } from './monster_data.js';
 import { BOULDER, BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, LEASH, MAGIC_LAMP, OIL_LAMP, POT_OIL, TALLOW_CANDLE, WAX_CANDLE, } from './object_data.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { moveSwallowedBallAndChain, placeBallAndChain } from './ball.js';
@@ -14,11 +14,12 @@ import { burnAwayHeroSlime } from './hack.js';
 import { damageHeroFromMonster } from './hero_damage.js';
 import { drainHeroEnergy } from './hero_energy.js';
 import { expelHero } from './hero_expulsion.js';
-import { startHeroSickness } from './hero_illness.js';
+import { infectHeroWithMonsterDisease } from './monster_disease.js';
 import { applyHeroGolemEffects } from './polyself.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { endObjectBurn } from './light.js';
 import { releaseAllMonsterLeashes } from './monster_leash.js';
+import { resetPick } from './lock_context.js';
 import { monsterName } from './monster_name.js';
 import { monsterHasStoneResistance } from './monster_resistance.js';
 import { petrifyMonsterImmediately } from './monster_stoning.js';
@@ -93,6 +94,7 @@ export async function beginHeroEngulf(monster, attack, { state = game, random = 
         await publish(`${subject} ${verb}!`, { urgent: true });
     }
     await stopHeroOccupation(state, publish);
+    resetPick(state); // gulpmu() resets occupations as if the hero had moved.
     if (state.program_state.gameover)
         return { captured: false, died: true };
     if (hero.utrap) {
@@ -234,19 +236,8 @@ export async function resolveHeroEngulf(monster, damageType, damage, { state = g
             }
             break;
         case AD_DISE:
-            if (hero.sicknessResistance) {
-                await publish('You feel a slight illness.');
+            if (!await infectHeroWithMonsterDisease(monster, state, publish, random))
                 damage = 0;
-            }
-            else {
-                const turns = hero.sickTurns
-                    ? Math.trunc(hero.sickTurns / 3) + 1
-                    : random(currentAttribute(A_CON, state)) + 20;
-                await startHeroSickness({
-                    state, turns, cause: monsterTypeName(monster.mnum),
-                    type: SICK_NONVOMITABLE, publish,
-                });
-            }
             break;
         case AD_DREN:
             if (!monster.mcan && random(4)) {

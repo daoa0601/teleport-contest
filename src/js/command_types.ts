@@ -13,6 +13,11 @@ export interface CommandBinding {
     parameter: string | null;
 }
 
+export type RepeatCommandEntry =
+    | { kind: 'command'; binding: CommandBinding }
+    | { kind: 'key'; key: number }
+    | { kind: 'count'; count: number };
+
 export type CannedCommand =
     | { kind: 'rub' | 'apply' | 'wield'; invlet: string }
     | { kind: 'swap-weapon' }
@@ -20,6 +25,11 @@ export type CannedCommand =
     | { kind: 'fire'; shotLimit: number };
 
 export type DirectionalRunMode = 0 | 1 | 2 | 3;
+
+export interface MovementAttempt {
+    walk: boolean;
+    rush: boolean;
+}
 
 export interface DirectionalRunState {
     mode: DirectionalRunMode;

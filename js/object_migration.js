@@ -7,13 +7,21 @@ import { placeObject, remove_object, stack_object, } from './floor_object.js';
 import { game } from './gstate.js';
 import { requireInitializedGame } from './gstate.js';
 import { removeWornHeroItem } from './hero_equipment.js';
+import { isContainer } from './container.js';
+import { maybeResetPick } from './lock_context.js';
+import { unlinkObject } from './object_location.js';
+import { maybeUnhideAt } from './monster_hiding.js';
+import { angerWatchGuards } from './monster_anger.js';
+import { hotPursuitShopkeeper } from './shop_damage.js';
+import { shopkeeperName } from './monster_name.js';
+import { corpseName, objectCombatName, objectNameIsPlural } from './objnam.js';
+import { currency } from './currency.js';
 import { costlySpot, objectIsUnpaid } from './shk.js';
 import { pickedContainer, stolenValue } from './shop_loss.js';
 import { roomsAt } from './room.js';
 import { deleteObject, delobj } from './object_delete.js';
 import { relocateObjectRandomly } from './object_teleport.js';
-import { BOULDER, EGG, EXPENSIVE_CAMERA, MIRROR, OBJECT_MATERIAL, OBJECT_NAMES, ROCK, } from './object_data.js';
-import { makePlural } from './object_grammar.js';
+import { BOULDER, CORPSE, EGG, EXPENSIVE_CAMERA, MIRROR, OBJECT_MATERIAL, ROCK, } from './object_data.js';
 import { onQuestStart, okToQuest } from './quest.js';
 import { rn2, rnd } from './rng.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
@@ -96,14 +104,10 @@ function downwardGate(state, x, y) {
 function quantity(object) {
     return object.quan ?? object.quantity ?? 1;
 }
-function objectNoun(object) {
-    return object.oextra?.oname || object.oname
-        || object.name || OBJECT_NAMES[object.otyp] || 'object';
-}
-function transitSubject(object) {
-    const count = quantity(object);
-    const noun = objectNoun(object);
-    return count === 1 ? `The ${noun}` : `The ${count} ${makePlural(noun)}`;
+function transitSubject(object, state) {
+    const subject = object.otyp === CORPSE ? corpseName(object, { definite: true })
+        : `the ${objectCombatName(object, { state })}`;
+    return subject.charAt(0).toUpperCase() + subject.slice(1);
 }
 function squareIsVisible(state, x, y) {
     if (heroIsBlind(state))
@@ -130,6 +134,8 @@ function pileImpact(state, object, x, y) {
 }
 function addToMigration(object, gate, state) {
     object.no_charge = false;
+    if (isContainer(object))
+        maybeResetPick(object, state);
     object.where = 'migrating';
     object.migration = {
         destination: { ...gate.destination },
@@ -141,13 +147,13 @@ function addToMigration(object, gate, state) {
     state.migratingObjects ||= [];
     state.migratingObjects.unshift(object);
 }
-async function publishTransitMessage(object, gate, stays, impact, publish) {
+async function publishTransitMessage(object, gate, stays, impact, publish, state) {
+    const plural = objectNameIsPlural(object, state);
     if (!impact.count && !impact.chainThere) {
         if (!stays)
-            await publish(`${transitSubject(object)} falls ${gate.text}.`);
+            await publish(`${transitSubject(object, state)} ${plural ? 'fall' : 'falls'} ${gate.text}.`);
         return;
     }
-    const plural = quantity(object) !== 1;
     const verb = impact.count ? (plural ? 'hit' : 'hits')
         : (plural ? 'rattle' : 'rattles');
     const target = impact.count
@@ -155,7 +161,7 @@ async function publishTransitMessage(object, gate, stays, impact, publish) {
         : 'your chain';
     const fall = stays ? '.'
         : ` and ${plural ? 'fall' : 'falls'} ${gate.text}.`;
-    await publish(`${transitSubject(object)} ${verb} ${target}${fall}`);
+    await publish(`${transitSubject(object, state)} ${verb} ${target}${fall}`);
 }
 async function breaksInTransit(object, state, publish, random) {
     const { objectBreaksOnImpact } = await import('./object_breakage.js');
@@ -184,6 +190,12 @@ export async function impactDrop(missile, x, y, { state = requireInitializedGame
         gate.destination = { ...gate.destination, dlevel: destinationLevel };
     }
     const pile = [...pileAt(state, x, y)];
+    const shop = costlySpot(x, y, state);
+    const owner = shop?.resident;
+    const debit = owner?.eshk.debit ?? 0;
+    const robbed = owner?.eshk.robbed ?? 0;
+    const angry = owner && !owner.mpeaceful;
+    let price = 0;
     const total = pile.reduce((count, object) => count + (object === missile ? 0 : quantity(object)), 0);
     let fallen = 0;
     for (const object of pile) {
@@ -196,6 +208,15 @@ export async function impactDrop(missile, x, y, { state = requireInitializedGame
         if (random(object.otyp === BOULDER ? 30 : 3) !== 0)
             continue;
         remove_object(object, state);
+        if (shop) {
+            const sameShop = !!costlySpot(state.u.ux, state.u.uy, state)
+                && state.u.urooms.includes(shop.roomno);
+            price += await stolenValue(object, x, y, sameShop, { state, publish, silent: true });
+            if (object.contents?.length)
+                pickedContainer(object);
+            if (object.oclass !== COIN_CLASS)
+                object.no_charge = false;
+        }
         addToMigration(object, gate, state);
         fallen += quantity(object);
     }
@@ -204,8 +225,8 @@ export async function impactDrop(missile, x, y, { state = requireInitializedGame
         const what = fallen === 1 ? 'object falls' : 'objects fall';
         if (missile) {
             const article = all ? 'the '
-                : fallen === 1 ? 'an ' : '';
-            await publish(`From the impact, ${article}${what} ${gate.text}.`);
+                : fallen === 1 ? 'an' : '';
+            await publish(`From the impact, ${article}other ${what}.`);
         }
         else {
             const subject = all
@@ -216,6 +237,24 @@ export async function impactDrop(missile, x, y, { state = requireInitializedGame
                     : 'Some of the adjacent objects');
             await publish(`${subject} ${fallen === 1
                 ? 'falls' : 'fall'} ${gate.text}.`);
+        }
+    }
+    if (owner && price > 0) {
+        if ((owner.eshk.robbed ?? 0) > robbed) {
+            await publish(`You removed ${price} ${currency(price)} worth of goods!`);
+            if (squareIsVisible(state, owner.mx, owner.my)) {
+                owner.eshk.customer ||= state.plname || 'player';
+                await publish(angry ? `${shopkeeperName(owner, { state, capitalized: true })} is infuriated!`
+                    : `"${state.plname || 'player'}, you are a thief!"`);
+            }
+            else if (!heroIsDeaf(state))
+                await publish('You hear a scream, "Thief!"');
+            hotPursuitShopkeeper(owner, state);
+            await angerWatchGuards(false, { state, publish });
+        }
+        else if ((owner.eshk.debit ?? 0) > debit) {
+            const amount = (owner.eshk.debit ?? 0) - debit;
+            await publish(`You owe ${shopkeeperName(owner, { state })} ${amount} ${currency(amount)} for goods lost.`);
         }
     }
     return fallen;
@@ -241,11 +280,12 @@ export async function shipObject(object, x, y, { state = requireInitializedGame(
         return false;
     }
     if (squareIsVisible(state, x, y)) {
-        await publishTransitMessage(object, gate, stays, impact, publish);
+        await publishTransitMessage(object, gate, stays, impact, publish, state);
     }
     if (stays) {
         if (impact.count) {
             await impactDrop(object, x, y, { state, publish, random });
+            maybeUnhideAt(x, y, state);
         }
         return false;
     }
@@ -293,22 +333,18 @@ function arrivalStairway(state, migration, ladder) {
     }
     return null;
 }
-function removeFromMigration(object, state) {
-    const index = state.migratingObjects?.indexOf(object) ?? -1;
-    if (index >= 0)
-        state.migratingObjects?.splice(index, 1);
-    object.where = 'free';
-}
-async function breaksOnArrival(object, state, x, y, random, noBreak) {
+async function breaksOnArrival(object, state, x, y, random, noBreak, withHero, publish) {
     const location = state.level.at(x, y);
     if (noBreak || (location !== null && IS_SOFT(location.typ)))
         return false;
-    const { objectBreaksOnImpact } = await import('./object_breakage.js');
+    const { objectBreaksOnImpact, breakFloorObject } = await import('./object_breakage.js');
+    if (withHero) {
+        const result = await breakFloorObject(object, { state, x, y, publish, random, heroCaused: false });
+        return result.destroyed || !!state.program_state.gameover;
+    }
     if (!objectBreaksOnImpact(object, random))
         return false;
-    remove_object(object, state);
-    await deleteObject(object, state);
-    newsym(x, y);
+    await delobj(object, state);
     return true;
 }
 async function deliverAtRandomPosition(object, state, random, publish, noBreak) {
@@ -321,14 +357,14 @@ async function deliverAtRandomPosition(object, state, random, publish, noBreak) 
         await delobj(object, state);
 }
 async function deliverAtPassage(object, migration, state, position, publish, random, rollOne, noBreak) {
+    const arrival = migration.arrival & ~(MIGR_NOBREAK | MIGR_NOSCATTER);
     await placeObject(object, position.x, position.y, state);
-    if (await breaksOnArrival(object, state, position.x, position.y, random, noBreak))
+    if (await breaksOnArrival(object, state, position.x, position.y, random, noBreak, arrival === MIGR_WITH_HERO, publish))
         return;
     const landed = await stack_object(object, state);
-    const arrival = migration.arrival
-        & ~(MIGR_NOBREAK | MIGR_NOSCATTER);
-    if ((migration.arrival & MIGR_NOSCATTER)
-        || arrival === MIGR_WITH_HERO) {
+    // The pinned C tests this mask before removing migration flags. Its
+    // stair and ladder codes share a bit with MIGR_WITH_HERO too.
+    if (migration.arrival & MIGR_WITH_HERO) {
         newsym(position.x, position.y);
         return;
     }
@@ -347,6 +383,7 @@ async function deliverAtPassage(object, migration, state, position, publish, ran
 }
 export async function deliverMigratingObjects(state = requireInitializedGame(), { nearHero = false, publish = async () => { }, random = rn2, rollOne = rnd, } = {}) {
     let delivered = 0;
+    let position = null;
     for (const object of [...(state.migratingObjects || [])]) {
         const migration = object.migration;
         if (!migration || !sameLevel(migration.destination, state.u?.uz))
@@ -357,7 +394,8 @@ export async function deliverMigratingObjects(state = requireInitializedGame(), 
             & ~(MIGR_NOBREAK | MIGR_NOSCATTER);
         if (nearHero !== (arrival === MIGR_WITH_HERO))
             continue;
-        removeFromMigration(object, state);
+        unlinkObject(object, state);
+        object.owornmask = 0;
         delete object.migration;
         let passage = null;
         if ([MIGR_STAIRS_UP, MIGR_SSTAIRS].includes(arrival))
@@ -367,9 +405,13 @@ export async function deliverMigratingObjects(state = requireInitializedGame(), 
         else if (arrival === MIGR_WITH_HERO) {
             passage = { x: state.u.ux, y: state.u.uy };
         }
+        else
+            position = null;
+        if (passage)
+            position = 'sx' in passage ? { x: passage.sx, y: passage.sy } : passage;
         const noBreak = !!(migration.arrival & MIGR_NOBREAK);
-        if (passage) {
-            await deliverAtPassage(object, migration, state, 'sx' in passage ? { x: passage.sx, y: passage.sy } : passage, publish, random, rollOne, noBreak);
+        if (position) {
+            await deliverAtPassage(object, migration, state, position, publish, random, rollOne, noBreak);
         }
         else {
             await deliverAtRandomPosition(object, state, random, publish, noBreak);

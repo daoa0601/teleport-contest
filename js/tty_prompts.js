@@ -9,6 +9,7 @@ import { promptedDirectionKey, visibleCommandKey } from './command_keys.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { rn2 } from './rng.js';
 import { showTextPages } from './windows.js';
+import { rememberCommandKey, takeRepeatCommand } from './command_repeat.js';
 const GRID_BUG = MONSTER_NAME.indexOf('grid bug');
 const impairedDirections = [
     [-1, 0], [0, -1], [1, 0], [0, 1],
@@ -33,6 +34,17 @@ export async function promptKey(message, cursorOffset = 0) {
 // C cmd.c:getdir() removes its query immediately after receiving a key,
 // before interpreting that key as a direction, cancellation, or help.
 export async function readDirectionKey(message = 'In what direction? ') {
+    // C cmdq_pop() selects CQ_REPEAT during do-again, otherwise CQ_CANNED.
+    if (game._inDoAgain) {
+        const queued = takeRepeatCommand();
+        if (queued)
+            return queued.kind === 'key' ? queued.key : 27;
+    }
+    else {
+        const queuedKey = takeCommandKey();
+        if (queuedKey !== undefined)
+            return queuedKey;
+    }
     // tty_yn_function() skips an unread topline stopped by Escape, then
     // clears WIN_STOP before painting its question.
     if (game._suppressMessagesUntilInput)
@@ -42,6 +54,8 @@ export async function readDirectionKey(message = 'In what direction? ') {
     game._suppressMessagesUntilInput = false;
     await paintKeyPrompt(message);
     const key = (await readchar('direction')) & 255;
+    if (game.commandBindings.lookup(key)?.command?.handler !== 'doredraw')
+        rememberCommandKey(key);
     clearMessageWindow();
     return key;
 }
@@ -124,10 +138,10 @@ async function promptClickDirection() {
     return { key: '_', dx: hero.dx, dy: hero.dy, dz: hero.dz };
 }
 // C getdir() calls confdir(FALSE) even for self, but never for up/down.
-export function confusePromptDirection(hero) {
+export function confusePromptDirection(hero, forceImpairment = false) {
     const stunned = hero.stunned || (hero.stunnedTurns ?? 0) > 0;
     const confused = hero.confused || (hero.confusionTurns ?? 0) > 0;
-    if (!stunned && !(confused && !rn2(5)))
+    if (!forceImpairment && !stunned && !(confused && !rn2(5)))
         return;
     const count = hero.umonnum === GRID_BUG ? 4 : 8;
     const vector = impairedDirections[rn2(count)];
@@ -146,7 +160,7 @@ export function directionAssistPage(invalidDirection = true) {
     const bindings = game.commandBindings;
     const key = (direction) => visibleCommandKey(bindings.keyForDirection(direction) ?? 0);
     const lines = invalidDirection ? ['cmdassist: Invalid direction key!', ''] : [];
-    lines.push('Valid direction keys are:');
+    lines.push(`Valid direction keys${game.u.umonnum === GRID_BUG ? ' in your current form' : ''} are:`);
     if (game.u.umonnum === GRID_BUG) {
         lines.push(`             ${key(2)}   `, '             |   ', `          ${key(0)}- . -${key(4)}`, '             |   ', `             ${key(6)}   `);
     }

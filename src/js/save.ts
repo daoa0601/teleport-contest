@@ -202,6 +202,9 @@ export function restoreGame(
         game._monsterEngulf = null;
         game._commandCount = 0;
         game._commandKey = 0;
+        game._repeatCommands = [];
+        game._inDoAgain = false;
+        game._movementAttempt = null;
         game._occupation = null;
         game._lockAttempt = null;
         game._runState = null;

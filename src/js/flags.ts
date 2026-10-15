@@ -58,6 +58,8 @@ export interface InterfaceFlags {
     debug_fuzzer?: boolean;
     debug_hunger?: boolean;
     getdir_click?: number;
+    remember_getpos?: boolean;
+    getloc_travelmode?: boolean;
     getpos_coords?: 'n' | 'm' | 's' | 'c' | 'f';
     getloc_filter?: 0 | 1 | 2;
     getloc_usemenu?: boolean;

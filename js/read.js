@@ -27,7 +27,7 @@ export async function doread(options = {}) {
     }
     const source = await chooseInventoryObject('read', classifyReadableObject, { forcePrompt: true });
     if (!source)
-        return finishRead(false);
+        return finishRead(false, true);
     source.pickup_prev = false;
     const type = source.otyp;
     const ordinary = await readOrdinaryObject(source);
@@ -101,9 +101,9 @@ async function announceScroll(source, confused) {
         await pline(heroIsHallucinating() ? 'Being so trippy, you screw up...'
             : `Being confused, you ${silently ? 'misunderstand' : 'mispronounce'} the magic words...`);
 }
-function finishRead(spentTime) {
+function finishRead(spentTime, cancelled = false) {
     const heroDied = !!game.program_state.gameover;
     game.context.move = Number(spentTime && !heroDied);
-    return { spentTime, heroDied };
+    return { spentTime, heroDied, cancelled };
 }
 //# sourceMappingURL=read.js.map

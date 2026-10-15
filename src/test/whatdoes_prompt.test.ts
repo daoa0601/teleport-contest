@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { rhack } from '../js/cmd.js';
 import { requireGameDisplay } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { whatdoes } from '../js/pager_help.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';
 
@@ -19,7 +19,7 @@ void test('command help leaves a space between its question and the typed respon
         } else input.feed(' ');
     };
 
-    await whatdoes();
+    await rhack('&'.charCodeAt(0));
 
     assert.equal(asked, true);
 });

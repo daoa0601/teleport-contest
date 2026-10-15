@@ -260,12 +260,10 @@ export interface HeroContactAttack extends HeroAttackProgress {
     deferredSpecialContact?: boolean;
     skipBrainDrain?: boolean;
     contactDone?: boolean;
+    permanentDamage?: boolean;
     deferredRevealUnder?: boolean;
     revealUnderMessage?: string;
     poison?: { attribute: number; fatal?: number; chance?: number } | null;
-    deferredAmuletTheftGate?: boolean;
-    deferredAmuletTheft?: boolean;
-    amuletTheftTarget?: GameObject | null;
     deferredStickingAfterHit?: boolean;
     stuckHero?: boolean;
     stickingMessage?: string | null;
@@ -370,8 +368,6 @@ export interface HeroSpellAttack extends HeroAttackProgress {
     summonedInsects?: Monster[];
     fatalAttribution?: { kind: 'death-inflicted-by'; killer: string; announcesDeath: boolean };
     rehumanize?: boolean;
-    deathTouchDamage?: number;
-    deathTouchDrain?: number;
     cursedInventory?: Awaited<ReturnType<typeof rndcurse>>;
     confusedHero?: boolean;
     paralyzed?: boolean;

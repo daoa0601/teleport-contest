@@ -6,7 +6,7 @@ import { announceRunLiquid, announceRunTrap, knownRunTrap, runLiquidIsDangerous 
 import { AUTOUNLOCK_APPLY_KEY, AUTOUNLOCK_UNTRAP } from './const.js';
 import { findDrawbridgeAt } from './dbridge.js';
 import { doorObstructed } from './door_magic.js';
-import { DBWALL, DRAWBRIDGE_DOWN } from './const.js';
+import { DBWALL, DRAWBRIDGE_DOWN, IS_DRAWBRIDGE, IS_TREE, LADDER, STAIRS, THRONE } from './const.js';
 import type { DipTarget } from './dip_water.js';
 import { dipFountainSword } from './fountain_sword.js';
 import { washHands } from './dip_water.js';
@@ -36,7 +36,7 @@ import type { LiquidEffectResult } from './hack.js';
 import type { SpotEffectResult } from './location_effects.js';
 import type { DungeonBranch, DungeonLocation, OverviewRecord, SpecialLevelDescriptor } from './dungeon_types.js';
 import type {
-    CannedCommand, CommandBinding, NativeCommand, RunState, TravelRunState,
+    CannedCommand, CommandBinding, DirectionalRunMode, MovementAttempt, NativeCommand, RunState, TravelRunState,
 } from './command_types.js';
 import { bookCursed, continueSpellbookStudy } from './spellbook_study.js';
 import { grantMonsterWish } from './potion_occupants.js';
@@ -102,6 +102,8 @@ import { senseBuriedObjects } from './buried_object.js';
 import { distantMonsterName, monsterInstanceDisplayName, monsterName, shopkeeperName } from './monster_name.js';
 import { attackHostileMonster } from './hero_melee.js';
 import { prepareAppliedWeaponAttack } from './hero_attack_preflight.js';
+import { applyCaitiffPenalty } from './hero_attack_conduct.js';
+import { revealMonsterAppearance } from './monster_appearance.js';
 import { beastChoosesHeroDisplacement, settleBeastHeroDisplacement } from './hero_beast_displacement.js';
 import { hasDoorAppearance, stumbleOnDoorMimic, stumbleOntoMimic } from './mimic.js';
 import { monsterHasMapPosition, monsterAtPosition } from './monster_location.js';
@@ -144,7 +146,7 @@ import {
     heroShouldAvoidLiquid,
     heroTightDiagonalReason,
 } from './hack.js';
-import { commandExecutionKey, controlRushDirection, promptedDirectionKey, visibleCommandKey } from './command_keys.js';
+import { commandExecutionKey, controlRushDirection, visibleCommandKey } from './command_keys.js';
 import { NATIVE_COMMAND_FLAGS, NATIVE_COMMANDS } from './command_data.js';
 import { stopHeroOccupation } from './occupation.js';
 import { canSelectOff, continueBulkTakeoff, takeOffAll } from './bulk_takeoff.js';
@@ -153,13 +155,18 @@ import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { nextObjectId } from './ident.js';
 import { clearCommandKeys, nhgetch, queueCommandKeys, takeCommandKey } from './input.js';
 import { readCommandInput } from './command_input.js';
+import { clearRepeatCommand, rememberCommand, takeRepeatCommand } from './command_repeat.js';
+import { terrainCommand } from './terrain_view.js';
+import { selectTravelMenuPosition } from './getpos.js';
+import { showKeyBindings, whatDoesCommand } from './command_help.js';
+import { availableExtendedCommands, completeExtendedCommand, extendedCommandMenu, showExtendedCommandList } from './extended_commands.js';
 import {
     chooseInventoryObject, compactInventoryLetters, inventoryLetterOrder,
     promptInventoryObject, reassignInventoryLetters,
 } from './inventory_prompt.js';
 import { AT_EXPL, AT_KICK } from './monster_attack_types.js';
 import {
-    directionAssistPage, promptDirection, promptKey, readDirectionKey,
+    confusePromptDirection, promptDirection, promptKey, readDirectionKey,
     restoreCommandMap,
 } from './tty_prompts.js';
 import {
@@ -232,8 +239,7 @@ import { continueTinOpening, useTinOpener } from './tin.js';
 import { PLAYABLE_INSTRUMENTS, playInstrument } from './music.js';
 import { dodiscovered } from './o_init.js';
 import { doattributes, doconduct } from './insight.js';
-import { extendedCommandsHelp, keyBindingsHelp } from './command_help.js';
-import { contactHelp, displayHelpFile, menuControlsHelp, setOptionsCommand, whatdoes } from './pager_help.js';
+import { contactHelp, displayHelpFile, menuControlsHelp, setOptionsCommand } from './pager_help.js';
 import { doextversion, NATIVE_VERSION } from './extversion.js';
 import { dosearch, findit } from './detect.js';
 import { detectMonsters } from './magic_detection.js';
@@ -363,7 +369,6 @@ import { dosit } from './sit.js';
 import { continueEngraving, doengrave } from './engrave_command.js';
 
 import { heroCanMoveFromTrap, triggerHeroTrapAt, triggerLevelTeleportTrap } from './hero_traps.js';
-import { activateStatueTrapAt } from './statue_trap.js';
 import {
     applyDippedCoinFate, applyFountainDemonActor,
     applyFountainGemDiscovery, applyFountainNymphActor,
@@ -455,7 +460,7 @@ import { deleteEngravingAt, maybeSmudgeEngravings, wipeHeroEngraving } from './e
 import { canLetGo, finishInventoryRemoval } from './hero_inventory.js';
 import { removeHeroEquipment } from './hero_equipment.js';
 import {
-    shouldShowGetposTip, showGetposTip, moveGetposCursor, selectMapPosition,
+    shouldShowGetposTip, showGetposTip, selectMapPosition,
 } from './getpos.js';
 import { chatWithQuestLeader, onQuestStart, okToQuest } from './quest.js';
 import {
@@ -467,12 +472,16 @@ import type { HeroMonsterKillOptions } from './hero_monster_death.js';
 
 import { announceInvocationSquare } from './invocation.js';
 import {
-    abuseKickedPet, kickConductViolation, levitatingKickMisses,
+    abuseKickedPet, levitatingKickMisses,
     prepareKick, prepareKickDamage, rollKickDamage, tryKickEvasion,
     tryKickReel,
 } from './monster_kick.js';
 import { kickFloorObject } from './object_kick.js';
 import { kickWithMonsterForm } from './hero_form_kick.js';
+import { admitHeroKick, kickCanReachTarget } from './kick_admission.js';
+import { kickNonDoorTerrain } from './kick_terrain.js';
+import { kickDoor } from './kick_door.js';
+import { heroHasMartialKick } from './kick_rules.js';
 import {
     bringLeashedFollowers, heroTeleportDestinationOk, moveHeroByTeleport,
     randomMonsterRelocation,
@@ -1155,6 +1164,11 @@ function prepareTimedCommand(binding: CommandBinding): void {
     }
 }
 
+async function redrawCommand(): Promise<void> {
+    await restoreCommandMap();
+    game.context.move = 0;
+}
+
 async function performWaitCommand(force = game.iflags.menu_requested) {
     if (!await donull(force, !!game.multi)) return;
     game._pending_message = '';
@@ -1178,66 +1192,219 @@ async function commandAllowed(command: NativeCommand | null | undefined): Promis
         && (command.flags & NATIVE_COMMAND_FLAGS.NOFUZZERCMD));
 }
 
-// C ref: cmd.c rhack — main command dispatcher
+// C cmd.c:rhack(). Prefixes are commands; each consumes another parse in
+// the same dispatch, so counts and configured keys work at every position.
 export async function rhack(key: number): Promise<void> {
     requirePlayingGame(game);
-    // C cmd.c:rhack() resets the request-menu/movement-prefix bit for each
-    // top-level command.  An `m` prefix below sets it only while dispatching
-    // the following movement key.
     game.context.nopick = false;
     game.iflags.menu_requested = false;
     if (key !== 0) delete game._cursorOverride;
     game._heroMeleeThisCommand = false;
-    // A prior silent-prefix marker belongs to the monster phase following
-    // that command.  Reaching a new top-level dispatch acknowledges it.
     game._silentPrefixRetainedTopline = false;
-    const cannedCommand = game._cannedCommands?.shift() ?? null;
     const previousMessage = game._pending_message;
-    if (key === 0 && !cannedCommand) {
-        const input = await readCommandInput();
-        key = input.key;
-        delete game._cursorOverride;
+    const movement = game._movementAttempt ?? { walk: false, rush: false };
+    game._movementAttempt = movement;
+    let prefix: NativeCommand | null = null;
+    let menuPrefix = false;
+
+    for (;;) {
+        const repeated = takeRepeatCommand();
+        const cannedCommand = game._inDoAgain ? null : game._cannedCommands?.shift() ?? null;
+        if (key === 0 && !cannedCommand && !repeated) {
+            key = (await readCommandInput()).key;
+            delete game._cursorOverride;
+        }
+        delete game._statusGoldOverride;
+        if (!cannedCommand && !repeated && [0, -1, 255, 27].includes(key)) {
+            resetCommandVariables(true);
+            return;
+        }
+        if (repeated && repeated.kind !== 'command') {
+            resetCommandVariables(true);
+            return;
+        }
+        const configured = repeated?.binding ?? configuredCommand(key);
+        if (!cannedCommand) {
+            game._pending_message = '';
+            game._retained_message = '';
+        }
+        const cannedName = cannedCommand?.kind === 'swap-weapon'
+            ? 'swap' : cannedCommand?.kind;
+        const command = cannedCommand?.kind === 'inventory-action'
+            ? inventoryActionCommand(cannedCommand.action)
+            : cannedCommand
+                ? NATIVE_COMMANDS.find(entry => entry.name === cannedName) ?? null
+                : configured.command;
+        if (!command) {
+            await pline(`Unknown command '${visibleCommandKey(key)}'.`);
+            // Unlike a rejected known command, C's unknown-key tail keeps
+            // pending movement flags until the next command resolves them.
+            game._cannedCommands = [];
+            clearCommandKeys();
+            clearRepeatCommand();
+            game.context.move = 0;
+            game.multi = 0;
+            return;
+        }
+        if (!await commandAllowed(command)) {
+            resetCommandVariables(true);
+            return;
+        }
+        if (prefix && !(command.flags & NATIVE_COMMAND_FLAGS.PREFIXCMD)
+            && !(command.flags & (menuPrefix ? NATIVE_COMMAND_FLAGS.CMD_M_PREFIX
+                : NATIVE_COMMAND_FLAGS.CMD_gGF_PREFIX))) {
+            const prefixKey = game.commandBindings.keyForCommand(prefix.name ?? '');
+            const which = prefixKey ? visibleCommandKey(prefixKey)
+                : prefix.handler === 'do_reqmenu'
+                    ? 'move-no-pickup or request-menu' : prefix.name;
+            if (menuPrefix)
+                await pline(`The ${command.name} command does not accept '${which}' prefix.`);
+            else {
+                const vertical = command.handler === 'doup' || command.handler === 'dodown';
+                await pline(`The '${which}' prefix should be followed by a movement command${vertical ? ' other than up or down' : ''}.`);
+            }
+            resetCommandVariables(true);
+            return;
+        }
+        let binding: CommandBinding = { ...configured, command };
+        prepareTimedCommand(binding);
+        if (command.handler === 'doextcmd') {
+            clearRepeatCommand();
+            const { selected, lastExecuted } = await readExtendedCommand();
+            if (!selected || !await commandAllowed(selected)) {
+                // doextcmd() leaves ext_tlist pointing at the last list it
+                // executed when the following editor quits or is rejected.
+                if (lastExecuted) rememberCommand({
+                    key: commandExecutionKey(lastExecuted.name)?.charCodeAt(0) ?? null,
+                    command: lastExecuted, parameter: null,
+                }, false);
+                resetCommandVariables(false);
+                return;
+            }
+            if (game.iflags.menu_requested && !(selected.flags & NATIVE_COMMAND_FLAGS.CMD_M_PREFIX)) {
+                const prefixKey = visibleCommandKey(game.commandBindings.keyForCommand('reqmenu'));
+                await plineWithContinuation(`'${prefixKey}' prefix has no effect for the ${selected.name} command.`);
+                game.iflags.menu_requested = false;
+            }
+            binding = {
+                key: commandExecutionKey(selected.name)?.charCodeAt(0) ?? null,
+                command: selected, parameter: null,
+            };
+        }
+        const selected = binding.command;
+        if (!selected) throw new Error('Command dispatch lost its selected command');
+        if (selected.handler === 'do_repeat') {
+            await repeatLastCommand();
+            // The outer rhack() dispatches do_repeat, not dokick.
+            if (game.context.move) game._kickedLoc = null;
+            return;
+        }
+        rememberCommand(binding, !!prefix && command.handler !== 'doextcmd');
+        if (selected.flags & NATIVE_COMMAND_FLAGS.PREFIXCMD) {
+            if (!await applyMovementPrefix(selected, movement)) {
+                resetCommandVariables(true);
+                return;
+            }
+            prefix = selected;
+            if (selected.handler === 'do_reqmenu') {
+                // rhack() tests the outer function, which remains doextcmd
+                // when #reqmenu supplies the selected prefix.
+                if (command.handler === 'do_reqmenu') menuPrefix = true;
+                game._silentPrefixRetainedTopline = !!previousMessage;
+            }
+            key = 0;
+            continue;
+        }
+        if (selected.flags & NATIVE_COMMAND_FLAGS.MOVEMENTCMD) {
+            await dispatchMovement(binding, movement);
+            return;
+        }
+        await executeCommandAction(binding, { cannedCommand });
+        return;
     }
-    // Status rows beneath a tty pager remain physically unchanged even when
-    // the suspended command has already mutated the wallet.  The next real
-    // top-level command read makes that state eligible for a fresh botl.
-    delete game._statusGoldOverride;
-    if (!cannedCommand && (key === 0 || key === -1 || key === 255 || key === 27)) {
+}
+
+// C cmd.c:do_repeat(). Preserve the saved queue even when its execution
+// cancels, so another repeat makes the same attempt in the new context.
+async function repeatLastCommand(): Promise<void> {
+    if (game._inDoAgain) return;
+    const saved = [...(game._repeatCommands ?? [])];
+    if (!saved.length) {
+        await pline('There is no command available to repeat.');
         resetCommandVariables(true);
         return;
     }
-    const inputKey = key;
-    const configured = configuredCommand(key);
-
-    // A player command acknowledges the previous topline. A canned command
-    // bypasses parse(), so unread prose and cmd_before output remain pending.
-    if (!cannedCommand) {
-        game._pending_message = '';
-        game._retained_message = '';
+    game._inDoAgain = true;
+    try {
+        await rhack(0);
+    } finally {
+        game._inDoAgain = false;
+        game._repeatCommands = saved;
+        game.iflags.menu_requested = false;
     }
+}
 
-    if (!cannedCommand && !configured.command) {
-        game.multi = 0;
-        game._cannedCommands = [];
-        game.context.move = 0;
-        await pline(`Unknown command '${visibleCommandKey(inputKey)}'.`);
-        return;
+async function applyMovementPrefix(command: NativeCommand, movement: MovementAttempt): Promise<boolean> {
+    if (command.handler === 'do_reqmenu') {
+        if (game.iflags.menu_requested) {
+            const key = visibleCommandKey(game.commandBindings.keyForCommand('reqmenu'));
+            await pline(`Double ${key} prefix, canceled.`);
+            return false;
+        }
+        game.iflags.menu_requested = true;
+        return true;
     }
+    if (command.handler === 'do_fight') {
+        if (game.context.forcefight) {
+            await pline('Double fight prefix, canceled.');
+            return false;
+        }
+        game.context.forcefight = true;
+        movement.walk = true;
+        return true;
+    }
+    if (command.handler === 'do_rush' || command.handler === 'do_run') {
+        if (movement.rush) {
+            await pline(`Double ${command.handler === 'do_rush' ? 'rush' : 'run'} prefix, canceled.`);
+            return false;
+        }
+        game.context.run = command.handler === 'do_rush' ? 2 : 3;
+        movement.rush = true;
+        return true;
+    }
+    throw new Error(`Unimplemented movement prefix: ${command.name}`);
+}
 
-    const cannedName = cannedCommand?.kind === 'swap-weapon'
-        ? 'swap' : cannedCommand?.kind;
-    const command = cannedCommand?.kind === 'inventory-action'
-        ? inventoryActionCommand(cannedCommand.action)
-        : cannedCommand
-            ? NATIVE_COMMANDS.find(entry => entry.name === cannedName) ?? null
-            : configured.command;
-    if (!await commandAllowed(command)) {
+async function dispatchMovement(binding: CommandBinding, prefixes: MovementAttempt): Promise<void> {
+    const key = binding.key ?? 0;
+    const ch = String.fromCharCode(key);
+    const direction = controlRushDirection(key) || ch.toLowerCase();
+    if (!isMovementKey(direction)) throw new Error('Movement command has no direction');
+    const hero = game.u;
+    hero.dx = DIR_DX[direction];
+    hero.dy = DIR_DY[direction];
+    hero.dz = 0;
+    if (MONSTER_NAME[hero.umonnum ?? -1] === 'grid bug' && hero.dx && hero.dy) {
+        hero.dx = hero.dy = 0;
+        await pline("You can't get there from here...");
         resetCommandVariables(true);
         return;
     }
-    const binding = { ...configured, command };
-    prepareTimedCommand(binding);
-    await executeCommandAction(binding, { cannedCommand, previousMessage });
+    const mode: DirectionalRunMode = prefixes.walk || prefixes.rush
+        ? game.context.run === 2 ? 2 : game.context.run === 3 ? 3 : 0
+        : controlRushDirection(key) ? 3 : ch !== ch.toLowerCase() ? 1 : 0;
+    game.context.run = mode;
+    if (game.iflags.menu_requested) game.context.nopick = true;
+    if (game.multi > 0 || (mode && !prefixes.walk))
+        startRun(hero.dx, hero.dy, game, mode);
+    const moved = await domove(hero.dx, hero.dy);
+    if (game.program_state.gameover) return;
+    if (mode && !prefixes.walk && moved)
+        await captureRunmodeDelay(game, !!game._runState);
+    game.context.move = moved ? 1 : 0;
+    if (!moved) stopRun();
+    if (!mode || prefixes.walk) game.context.forcefight = false;
+    game.iflags.menu_requested = false;
 }
 
 // C cmd.c:rhack() clears kickedloc after an elapsed non-kick action.
@@ -1255,13 +1422,12 @@ async function executeCommandAction(binding: CommandBinding, options: CommandAct
 
 interface CommandActionOptions {
     cannedCommand?: CannedCommand | null;
-    previousMessage?: string;
 }
 
 // Admission belongs to the caller. Keep the selected binding, including its
 // parameter, rather than looking up a possibly rebound key inside the action.
 async function runCommandHandler(binding: CommandBinding, {
-    cannedCommand = null, previousMessage = game._pending_message,
+    cannedCommand = null,
 }: CommandActionOptions = {}): Promise<void> {
     const { key, command } = binding;
     const ch = key === null ? '' : String.fromCharCode(key);
@@ -1310,7 +1476,7 @@ async function runCommandHandler(binding: CommandBinding, {
     }
 
     if (key === 22 && game.flags?.debug) { // Ctrl-V: wiz_level_tele()
-        await wizLevelTeleport();
+        await wizLevelTeleport({ menuRequested: game.iflags.menu_requested });
         return;
     }
     if (key === 23 && game.flags?.debug) { // Ctrl-W: wiz_wish()
@@ -1330,84 +1496,7 @@ async function runCommandHandler(binding: CommandBinding, {
         return;
     }
 
-    if (ch === 'F') {
-        await doforcefight();
-    } else if (isMovementKey(ch) || (/[HJKLYUBN]/.test(ch))
-        || controlRushDirection(key ?? 0)) {
-        const rushDirection = controlRushDirection(key ?? 0);
-        const direction = rushDirection || ch.toLowerCase();
-        if (!isMovementKey(direction)) return;
-        const running = /[HJKLYUBN]/.test(ch) || !!rushDirection;
-        if (running || game.multi > 0) startRun(
-            DIR_DX[direction], DIR_DY[direction], game,
-            running ? (rushDirection ? 3 : 1) : 0,
-        );
-        const moved = await domove(DIR_DX[direction], DIR_DY[direction]);
-        if (game.program_state.gameover) return;
-        if (running && moved)
-            await captureRunmodeDelay(game, !!game._runState);
-        game.context.move = moved ? 1 : 0;
-        if (!moved) stopRun();
-    } else if (ch === 'm') {
-        game.iflags.menu_requested = true;
-        // `m` is both request-menu and move-without-pickup.  Movement is the
-        // live owner here: parse the next key inside the same command, so tty
-        // exposes the unchanged map at the intermediate input boundary.
-        // tty has accepted `m` as an incomplete command, not acknowledged
-        // the previous topline as a completed command.  If the prefixed
-        // action later dies during its monster phase, the first fatal pager
-        // can therefore project the status row from before contact.
-        game._silentPrefixRetainedTopline = !!previousMessage;
-        const input = await readCommandInput();
-        const nextCommand = configuredCommand(input.key);
-        const nextKey = nextCommand.key;
-        const direction = nextKey === null ? '' : String.fromCharCode(nextKey).toLowerCase();
-        game._pending_message = '';
-        if (!await commandAllowed(nextCommand.command)) {
-            resetCommandVariables(true);
-            return;
-        }
-        if (isMovementKey(direction)) {
-            game.context.nopick = true;
-            if (game.multi > 0)
-                startRun(DIR_DX[direction], DIR_DY[direction], game, 0);
-            const moved = await domove(
-                DIR_DX[direction], DIR_DY[direction], true,
-            );
-            if (game.program_state.gameover) return;
-            game.context.move = moved ? 1 : 0;
-            if (!moved) stopRun();
-        } else if (nextKey === 79) {
-            await doOptions(true);
-        } else if (direction === 'p') {
-            await dopay();
-        } else if (nextKey !== null && '$)[="(*'.includes(String.fromCharCode(nextKey))) {
-            await runCommandHandler(nextCommand);
-        } else if (nextKey === 22 && game.flags?.debug) {
-            // cmd.c marks wiz_level_tele CMD_M_PREFIX. do_reqmenu() sets
-            // iflags.menu_requested, so level_tele() skips its numeric
-            // get-line editor and opens print_dungeon(TRUE) immediately.
-            await wizLevelTeleport({ menuRequested: true });
-        } else if (direction === 's') {
-            // cmd.c marks search CMD_M_PREFIX: request-menu/move-no-pickup
-            // does not alter its behavior, but the prefixed command still
-            // consumes a normal search turn.
-            prepareTimedCommand(nextCommand);
-            await dosearch(true);
-        } else if (direction === '.') {
-            // do_reqmenu() is the source-level override advertised by
-            // cmd_safety_prevention(); `m.` deliberately spends the turn.
-            prepareTimedCommand(nextCommand);
-            await performWaitCommand(true);
-        } else if (nextCommand.command?.handler === 'doextcmd'
-            || nextCommand.command && (nextCommand.command.flags & NATIVE_COMMAND_FLAGS.CMD_M_PREFIX)) {
-            prepareTimedCommand(nextCommand);
-            await executeCommandAction(nextCommand);
-        } else {
-            await pline("The 'm' prefix should be followed by a movement command.");
-            game.context.move = 0;
-        }
-    } else if (ch === 'i') {
+    if (ch === 'i') {
         enqueueInventoryAction(await ddoinv());
     } else if (ch === 'I') {
         enqueueInventoryAction(await inventoryReport('type'));
@@ -1416,7 +1505,7 @@ async function runCommandHandler(binding: CommandBinding, {
     } else if (ch === '*') {
         enqueueInventoryAction(await inventoryReport('inuse'));
     } else if (ch === 'O') {
-        await doOptions();
+        await doOptions(game.iflags.menu_requested);
     } else if (ch === 'Z') {
         await docast();
     } else if (ch === '+') {
@@ -1464,7 +1553,7 @@ async function runCommandHandler(binding: CommandBinding, {
     } else if (ch === 'z') {
         await dozap();
     } else if (ch === 'r') {
-        await doread({ gotoLevel });
+        await readCommand();
     } else if (ch === 'T' || ch === 'R') {
         await removeWornItem(ch === 'R' ? 'remove' : 'take off');
     } else if (ch === 'A') {
@@ -1484,11 +1573,11 @@ async function runCommandHandler(binding: CommandBinding, {
     } else if (ch === 'V') {
         await doversion();
     } else if (ch === '&') {
-        await whatdoes();
+        await whatDoesCommand();
     } else if (ch === '?') {
         await dohelp();
     } else if (ch === '#') {
-        await doextcmd();
+        await rhack(game.commandBindings.keyForCommand('#'));
     } else if (ch === 'Q') {
         await doready();
     } else if (ch === 't') {
@@ -1529,13 +1618,15 @@ function enqueueInventoryAction(action: InventoryAction | null): void {
 
 async function doquaff() {
     const result = await quaff();
+    if (result.cancelled) resetCommandVariables(true);
     game.context.move = result.spentTime && !result.heroDied ? 1 : 0;
 }
 
-type MapDisplaySnapshot = Array<[
-    location: MapLocation, character: string, color: number,
-    decGraphics: boolean, attributes: number,
-]>;
+async function readCommand(): Promise<void> {
+    const result = await doread({ gotoLevel });
+    if (result.cancelled) resetCommandVariables(true);
+}
+
 type SpecialLayoutEvent = SpecialLevelDescriptor & {
     kind: 'special'; name: string;
 };
@@ -1726,13 +1817,6 @@ export async function drinkFountain(loc: MapLocation) {
     return false;
 }
 
-function farlookDelta(key: number) {
-    const movement = game.commandBindings.movementForKey(key);
-    if (!movement || movement.dz) return null;
-    const distance = movement.mode === 0 ? 1 : 8;
-    return { dx: movement.dx * distance, dy: movement.dy * distance };
-}
-
 export async function travelStairs(up: boolean) {
     const level = requireGameLevel();
     requireInitializedHero(game.u);
@@ -1788,111 +1872,26 @@ export async function travelStairs(up: boolean) {
     return changed !== false;
 }
 
-function captureMapDisplay(): MapDisplaySnapshot {
-    const snapshot: MapDisplaySnapshot = [];
-    for (let y = 0; y < ROWNO; y++) {
-        for (let x = 1; x < COLNO; x++) {
-            const loc = game.level?.at(x, y);
-            if (!loc) continue;
-            snapshot.push([loc, loc.disp_ch, loc.disp_color,
-                loc.disp_decgfx, loc.disp_attr]);
-        }
-    }
-    return snapshot;
-}
-
-function restoreMapDisplay(snapshot: MapDisplaySnapshot) {
-    for (const [loc, ch, color, decgfx, attr] of snapshot) {
-        loc.disp_ch = ch;
-        loc.disp_color = color;
-        loc.disp_decgfx = decgfx;
-        loc.disp_attr = attr;
-    }
-}
-
-function showKnownTerrain() {
-    for (let y = 0; y < ROWNO; y++) {
-        for (let x = 1; x < COLNO; x++) {
-            const loc = game.level?.at(x, y);
-            if (!loc || (!loc.remembered_glyph
-                && (!loc.disp_ch || loc.disp_ch === ' '))) continue;
-            const glyph = terrain_glyph(loc, x, y);
-            loc.disp_ch = glyph.ch;
-            // detect.c:reveal_terrain_getglyph() normalizes S_litcorr to
-            // S_corr even when the actual corridor is lit.
-            loc.disp_color = glyph.glyph === cmapToGlyph(CmapSymbol.litcorr)
-                ? NO_COLOR : glyph.color;
-            loc.disp_decgfx = glyph.dec;
-            loc.disp_attr = 0;
-        }
-    }
-}
-
-async function doTerrainOverview() {
-    const display = game.nhDisplay;
-    if (!display) throw new Error('This command requires an initialized display.');
-    game._pending_message = '';
-    const left = 28;
-    // Short tty menus overlay only their right-side rectangle.  The message
-    // row is cleared globally, but lower rows retain map cells west of the
-    // one-column separator at left - 1.
-    display.clearRow(0);
-    for (let row = 1; row <= 5; row++) {
-        for (let col = left - 1; col < display.cols; col++)
-            display.setCell(col, row, ' ', NO_COLOR, 0);
-    }
-    putCommandLine(left, 0, 'View which?', ATR_INVERSE);
-    putCommandLine(left, 2, 'a * known map without monsters, objects, and traps');
-    putCommandLine(left, 3, 'b - known map without monsters and objects');
-    putCommandLine(left, 4, 'c - known map without monsters');
-    putCommandLine(left, 5, '(end)');
-    display.setCursor(34, 5);
-    const selection = await nhgetch();
-    if (selection === 27) {
-        game.context.move = 0;
-        return;
-    }
-
-    const displaySnapshot = captureMapDisplay();
-    showKnownTerrain();
-    const firstUse = shouldShowGetposTip();
-    if (firstUse) {
-        await pline('Showing known terrain only...');
-        await showGetposTip();
-    }
-    const cursor = { x: game.u.ux, y: game.u.uy };
-    let browseMessage = firstUse
-        ? "(For instructions type a '?')  Move cursor to anything of interest:"
-        : "Showing known terrain only...  (For instructions type a '?')";
-    for (;;) {
-        game._pending_message = browseMessage;
-        await flush_screen(1);
-        display.setCursor(cursor.x - 1, cursor.y + 1);
-        const browseKey = await nhgetch();
-        if (browseKey === 27) break;
-        const delta = farlookDelta(browseKey);
-        if (delta) {
-            moveGetposCursor(cursor, delta.dx, delta.dy);
-            browseMessage = await farlookLocationDescription(cursor.x, cursor.y);
-            continue;
-        }
-        await plineWithContinuation('Done.');
-        break;
-    }
-
-    // C map_redisplay() reaches cls(), which displays WIN_MESSAGE before
-    // redrawing the map. Bare more() would leave an acknowledged Done line.
-    await displayMessageWindow();
-    restoreMapDisplay(displaySnapshot);
-    await flush_screen(1);
-    game.context.move = 0;
+async function doTerrainOverview(): Promise<void> {
+    await terrainCommand(farlookLocationDescription);
 }
 
 async function kickOuch(x: number, y: number, objectName = '') {
     await plineWithContinuation('Ouch!  That hurts!');
     await exerciseAttribute(A_DEX, false);
     await exerciseAttribute(A_STR, false);
-    wakeMonstersNear(x, y, 25);
+    if (isok(x, y)) {
+        if (heroIsBlind(game)) feel_location(x, y);
+        const location = game.level?.at(x, y);
+        const bridge = location && (location.typ === DOOR || location.typ === DBWALL)
+            ? findDrawbridgeAt(x, y) : null;
+        if (bridge) {
+            await plineWithContinuation('The drawbridge is unaffected.');
+            x = bridge.x;
+            y = bridge.y;
+        }
+        wakeMonstersNear(x, y, 25);
+    }
     if (rn2(3) === 0) {
         await woundHeroLegs('right', 5 + rnd(5));
     }
@@ -1910,12 +1909,21 @@ function kickCausesRecoil() {
 }
 
 function kickDeathReason(x: number, y: number) {
+    if (!isok(x, y)) return 'kicking nothing';
     const location = game.level?.at?.(x, y);
     if (!location) return 'kicking nothing';
     if (location.typ === DOOR) return 'kicking a door';
+    if (IS_TREE(location.typ)) return 'kicking a tree';
     if (IS_STWALL(location.typ)) return 'kicking a wall';
-    if (location.typ === TREE) return 'kicking a tree';
+    if (IS_OBSTRUCTED(location.typ)) return 'kicking a rock';
+    if (location.typ === THRONE) return 'kicking a throne';
+    if (location.typ === FOUNTAIN) return 'kicking a fountain';
     if (location.typ === GRAVE) return 'kicking a headstone';
+    if (location.typ === SINK) return 'kicking a sink';
+    if (location.typ === ALTAR) return 'kicking an altar';
+    if (IS_DRAWBRIDGE(location.typ)) return 'kicking a drawbridge';
+    if (location.typ === STAIRS) return 'kicking the stairs';
+    if (location.typ === LADDER) return 'kicking a ladder';
     if (location.typ === IRONBARS) return 'kicking an iron bar';
     return 'kicking something weird';
 }
@@ -1948,26 +1956,6 @@ async function recoilFromKick(range: number) {
     });
 }
 
-function kickPromptTargetName(monster: Monster) {
-    if (monster.name) return monster.name;
-    const article = (monster.mtame ?? 0) > 0 ? 'your' : 'the';
-    return `${article} ${monsterInstanceDisplayName(monster)}`;
-}
-
-async function confirmKickTarget(monster: Monster) {
-    const hero = game.u;
-    const impaired = hero?.confused || (hero?.confusionTurns ?? 0) > 0
-        || heroIsHallucinating(game)
-        || hero?.stunned || (hero?.stunnedTurns ?? 0) > 0;
-    if (game.flags?.confirm === false || !monster.mpeaceful || impaired
-        || game.context?.forcefight || !canSpotMonster(monster)) return true;
-
-    const paranoid = !!((game.flags?.paranoia_bits ?? 0) & PARANOID_HIT);
-    return paranoidQuery(
-        paranoid, `Really attack ${kickPromptTargetName(monster)}?`,
-    );
-}
-
 function applyKickPassive(monster: Monster, hit: boolean) {
     return applyHeroContactPassive(monster, {
         hit,
@@ -1980,17 +1968,21 @@ function applyKickPassive(monster: Monster, hit: boolean) {
 // Form-specific attacks share the command admission rules. Projection affects only the
 // target noun: dokick() still targets m_at(x,y) when the actor is invisible.
 async function kickLiveMonster(monster: Monster, x: number, y: number) {
-    const helplessBeforeKick = !!(monster.msleeping
-        || monster.mcanmove === 0 || (monster.mfrozen ?? 0) > 0);
-    const fleeingFromBehind = !!(monster.mflee && !monster.mavenge);
-    monster.mstrategy = (monster.mstrategy ?? 0) & ~STRAT_WAITMASK;
-    if (!await confirmKickTarget(monster)) {
-        game.context.move = 0;
-        return;
-    }
-    if (await checkHeroAttackOverexertion()) {
-        game.context.move = 1;
-        return;
+    const forcefight = game.context.forcefight;
+    try {
+        if (!monster.mpeaceful || !canSpotMonster(monster)) game.context.forcefight = true;
+        const permission = await prepareAppliedWeaponAttack(monster, null, { struckAt: { x, y } });
+        if (!permission.proceed) {
+            game.context.move = permission.spentTime ? 1 : 0;
+            return false;
+        }
+        if (await checkHeroAttackOverexertion()) {
+            game.context.move = 1;
+            return false;
+        }
+    } finally {
+        if (forcefight === undefined) delete game.context.forcefight;
+        else game.context.forcefight = forcefight;
     }
 
     wakeMonstersNear(
@@ -2001,16 +1993,16 @@ async function kickLiveMonster(monster: Monster, x: number, y: number) {
 
     if (await levitatingKickMisses(monster)) {
         await pline('Floating in the air, you miss wildly!');
+        await exerciseAttribute(A_DEX, false);
         await applyKickPassive(monster, false);
         game.context.move = 1;
-        return;
+        return true;
     }
 
     if (monster.mundetected
         || (M_AP_TYPE(monster) && M_AP_TYPE(monster) !== M_AP_MONSTER)) {
         monster.mundetected = 0;
-        monster.m_ap_type = 0;
-        monster.mappearance = 0;
+        revealMonsterAppearance(monster);
         if (canSpotMonster(monster)) {
             newsym(x, y);
             const name = monsterInstanceDisplayName(monster);
@@ -2025,12 +2017,11 @@ async function kickLiveMonster(monster: Monster, x: number, y: number) {
 
     if (await kickWithMonsterForm(monster, x, y)) {
         game.context.move = 1;
-        return;
+        return true;
     }
 
     const target = monsterName(monster);
-    const martial = game.urole?.key === 'monk' || game.urole?.key === 'samurai'
-        || game.uarmf?.otyp === KICKING_BOOTS;
+    const martial = heroHasMartialKick();
     const kick = await prepareKick({
         martial,
         announce: pline,
@@ -2038,7 +2029,7 @@ async function kickLiveMonster(monster: Monster, x: number, y: number) {
     if (kick.stopped) {
         await applyKickPassive(monster, false);
         game.context.move = 1;
-        return;
+        return true;
     }
 
     await plineWithContinuation(`You kick ${target}.`);
@@ -2054,7 +2045,7 @@ async function kickLiveMonster(monster: Monster, x: number, y: number) {
         if (monster.mx === x && monster.my === y
             && !canSpotMonster(monster)) map_invisible(x, y);
         game.context.move = 1;
-        return;
+        return true;
     }
 
     const preparedDamage = prepareKickDamage(monster, {
@@ -2062,24 +2053,18 @@ async function kickLiveMonster(monster: Monster, x: number, y: number) {
     });
     if (preparedDamage.passesThroughShade) {
         await plineWithContinuation(
-            'The kick passes harmlessly through the shade.',
+            'The kick passes harmlessly through.',
         );
         game.context.move = 1;
-        return;
+        return true;
     }
-    const conductMessage = kickConductViolation(monster, {
-        helpless: helplessBeforeKick,
-        fleeingFromBehind,
-    });
-    if (conductMessage) {
-        await plineWithContinuation(conductMessage);
-        adjustHeroAlignment(-1);
-    }
+    revealMonsterAppearance(monster);
+    await applyCaitiffPenalty(monster);
     const petReaction = await abuseKickedPet(monster, preparedDamage.potentialDamage);
-    if (petReaction.heroDied) return;
+    if (petReaction.heroDied) return true;
     const damage = await rollKickDamage(preparedDamage, { martial });
     if (damage.damage > 0)
-        monster.mhp = Math.max(0, (monster.mhp ?? 1) - damage.damage);
+        monster.mhp -= damage.damage;
 
     const reel = await tryKickReel(
         monster,
@@ -2092,11 +2077,11 @@ async function kickLiveMonster(monster: Monster, x: number, y: number) {
         },
     );
 
-    if (reel?.heroDied) return;
+    if (reel?.heroDied) return true;
     const passive = await applyKickPassive(monster, true);
     if (passive.heroDied) {
         game.context.move = 1;
-        return;
+        return true;
     }
     if ((monster.mhp ?? 1) <= 0 && !reel?.dead) {
         await finishHeroMonsterKill(monster, monster.mx, monster.my, {
@@ -2108,42 +2093,43 @@ async function kickLiveMonster(monster: Monster, x: number, y: number) {
     }
     if (damage.trainSkill) await useHeroSkill(35);
     game.context.move = 1;
+    return true;
 }
 
 async function dokick() {
-    if ((game.u?._woundedLegTurns ?? 0) > 0) {
-        const side = game.u._woundedLegSide;
-        const leg = side === 'both' ? 'legs are' : `${side || 'right'} leg is`;
-        await moreUntilDismissed(
-            `Your ${leg} in no shape for kicking.`,
-        );
-        game._pending_message = '';
-        game._retained_message = '';
-        game.context.move = 0;
+    if (!await admitHeroKick()) return;
+    const direction = await promptDirection();
+    if (!direction || (!direction.dx && !direction.dy)) {
+        resetCommandVariables(true); // dokick() returns ECMD_CANCEL.
         return;
     }
-    const key = await readDirectionKey();
-    const direction = promptedDirectionKey(key, game.commandBindings);
-    if (!isMovementKey(direction)) {
-        game.context.move = 0;
-        return;
-    }
-    game.u.dx = DIR_DX[direction];
-    game.u.dy = DIR_DY[direction];
+    game.u.dx = direction.dx;
+    game.u.dy = direction.dy;
     const x = game.u.ux + game.u.dx;
     const y = game.u.uy + game.u.dy;
     // C dokick() records gk.kickedloc for every valid directed kick before
     // dispatching the target.  Peaceful monsters and pets consult it during
     // this same elapsed turn so they do not step into the square just kicked.
     game._kickedLoc = { x, y };
+    if (!await kickCanReachTarget()) return;
     const average = game.uarmf?.otyp === KICKING_BOOTS ? 99
         : Math.trunc((currentStrength()
             + currentAttribute(A_DEX) + currentAttribute(A_CON)) / 3);
     const monster = monsterAtPosition(requireGameLevel(), x, y);
     if (monster) {
+        const cell = game.level?.at(x, y);
+        const oldGlyph = cell ? { ch: cell.disp_ch, color: cell.disp_color,
+            decgfx: cell.disp_decgfx, attr: cell.disp_attr, metadata: glyphAt(x, y) } : null;
         const recoilRange = kickRecoilRange(monster.mnum);
-        await kickLiveMonster(monster, x, y);
-        if (kickCausesRecoil() && game.context.move)
+        if (!await kickLiveMonster(monster, x, y)) return;
+        const glyph = glyphAt(x, y);
+        if (monster.dead || monster.mhp <= 0) {
+            if (oldGlyph && glyph?.kind === 'invisible' && oldGlyph.metadata?.kind !== 'invisible')
+                show_glyph_cell(x, y, oldGlyph.ch, oldGlyph.color, oldGlyph.decgfx, oldGlyph.attr, oldGlyph.metadata);
+        } else if (!canSpotMonster(monster) && monster.mx === x && monster.my === y
+            && glyph?.kind !== 'invisible' && !(game.u.uswallow && game.u.ustuck === monster))
+            map_invisible(x, y);
+        if (!game.program_state.gameover && kickCausesRecoil() && game.context.move)
             await recoilFromKick(recoilRange);
         return;
     }
@@ -2155,18 +2141,22 @@ async function dokick() {
         game.u.ux, game.u.uy, (game.u?.ulevel ?? 1) * 20,
     );
     wipeHeroEngraving(2);
+    if (!isok(x, y)) {
+        await kickOuch(x, y);
+        game.context.move = 1;
+        return;
+    }
+    unmap_invisible(x, y);
+    if ((isPoolAt(x, y) || location?.typ === LAVAWALL) !== !!game.u.uinwater) {
+        await plineWithContinuation(`You splash some ${displayLiquidName(
+            isPoolAt(x, y) ? 'water' : 'lava')} around.`);
+        game.context.move = 1;
+        return;
+    }
     const kickedObject = game.level?.objects?.[x]?.[y]?.[0];
-    const ball = game.uball || game.u?.uball;
-    const chain = game.uchain || game.u?.uchain;
-    if (kickedObject && kickedObject.otyp !== BOULDER
-        && kickedObject !== ball && kickedObject !== chain) {
-        const trap = game.level?.traps?.find(candidate =>
-            candidate.tx === x && candidate.ty === y);
-        if (trap?.ttyp === STATUE_TRAP) {
-            await activateStatueTrapAt(x, y);
-            game.context.move = 1;
-            return;
-        }
+    const hasBoulder = game.level?.objects?.[x]?.[y]?.some(object => object.otyp === BOULDER);
+    if (kickedObject && (!game.u.levitating || Is_airlevel(game.u.uz)
+        || Is_waterlevel(game.u.uz) || hasBoulder)) {
         const kicked = await kickFloorObject(x, y, {
             state: game,
             dx: game.u.dx,
@@ -2176,10 +2166,11 @@ async function dokick() {
         });
         if (game.program_state.gameover) return;
         if (!kicked) await kickOuch(x, y, killerObjectName(kickedObject));
+        else if (Is_airlevel(game.u.uz)) await recoilFromKick(1);
         game.context.move = 1;
         return;
     }
-    if (!location || IS_STWALL(location.typ)) {
+    if (!location || (IS_STWALL(location.typ) && !IS_TREE(location.typ))) {
         await kickOuch(x, y);
         game.context.move = 1;
         return;
@@ -2212,43 +2203,8 @@ async function dokick() {
         game.context.move = 1;
         return;
     }
-    if (location?.typ === DOOR
-        && (location.doormask & (D_CLOSED | D_LOCKED))) {
-        if (game.u?.levitating) {
-            await kickOuch(x, y);
-            game.context.move = 1;
-            return;
-        }
-        await exerciseAttribute(A_DEX, true);
-        const strength = currentStrength();
-        if (rnl(35) < average) {
-            const shopDoor = roomsAt(game.level, x, y, SHOPBASE).length > 0;
-            if (location.doormask & D_TRAPPED) {
-                if (game.flags.verbose) await pline('You kick the door.');
-                await exerciseAttribute(A_STR, false);
-                location.doormask = D_NODOOR;
-                if (await triggerBoobyTrap('door', { bodypart: true })) return;
-            } else {
-                const shatters = strength > 18 && rn2(5) === 0 && !shopDoor;
-                location.doormask = shatters ? D_NODOOR : D_BROKEN;
-                await pline(shatters
-                    ? 'As you kick the door, it shatters to pieces!'
-                    : 'As you kick the door, it crashes open!');
-                await exerciseAttribute(A_STR, true);
-            }
-            feel_newsym(x, y);
-            // kick_door() defers sight refresh so billing sees the keeper's
-            // visibility before the door broke, as rloc_to_core() requires.
-            vision_note_blocker_change(x, y);
-            if (shopDoor) {
-                addShopDamage(x, y, SHOP_DOOR_COST);
-                await payForShopDamage('break');
-            }
-        } else {
-            await exerciseAttribute(A_STR, true);
-            await pline(rn2(3) === 0 ? 'Thwack!!' : 'Whammm!!');
-        }
-        game.context.move = 1;
+    if (location.typ === DOOR) {
+        await kickDoor(x, y, average, { ouch: kickOuch, dumb: kickDumb });
         return;
     }
     if (location.typ === SDOOR) {
@@ -2272,6 +2228,7 @@ async function dokick() {
         game.context.move = 1;
         return;
     }
+    if (await kickNonDoorTerrain(x, y, average, { ouch: kickOuch, dumb: kickDumb })) return;
     await kickDumb(x, y);
     game.context.move = 1;
 }
@@ -2280,8 +2237,7 @@ async function kickDumb(x: number, y: number): Promise<void> {
     // dokick.c:kick_dumb() always abuses Dexterity before deciding whether
     // an unremarkable floor kick is merely empty or strains a muscle.
     await exerciseAttribute(A_DEX, false);
-    const martial = game.urole?.key === 'monk' || game.urole?.key === 'samurai'
-        || game.uarmf?.otyp === KICKING_BOOTS;
+    const martial = heroHasMartialKick();
     if (martial || currentAttribute(A_DEX) >= 16 || rn2(3) !== 0) {
         await pline('You kick at empty space.');
         if (heroIsBlind(game)) feel_location(x, y);
@@ -2492,45 +2448,13 @@ async function doname() {
 async function getAdjacentLocation(prompt: string, errorMessage: string | null, x: number, y: number) {
     // C cmd.c:get_adjacent_loc() delegates input and command assistance to
     // getdir(), then turns its relative result into a checked map location.
-    const key = await readDirectionKey(`${prompt} `);
-    const ch = promptedDirectionKey(key, game.commandBindings);
-    let dx = 0, dy = 0, dz = 0;
-    let validDirection = true;
-    if (isMovementKey(ch)) {
-        dx = DIR_DX[ch];
-        dy = DIR_DY[ch];
-    } else if (ch === '.' || ch === 's') {
-        // Direct at the hero's square.
-    } else if (ch === '<') {
-        dz = -1;
-    } else if (ch === '>') {
-        dz = 1;
-    } else {
-        validDirection = false;
-    }
-
-    if (!validDirection) {
-        // Space, Return, and Escape are getdir() quitchars.  Other invalid
-        // keys open cmdassist by default; the tty text window accepts only a
-        // real More dismissal before get_adjacent_loc() reports cancellation.
-        const quitDirection = [27, 32, 10, 13].includes(key);
-        if (!quitDirection && game.flags?.cmdassist !== false) {
-            await showTextPages([directionAssistPage()], {
-                validKeys: [27, 32, 10, 13],
-            });
-            game._pending_message = '';
-            await restoreCommandMap();
-        } else if (!quitDirection) {
-            await pline('What a strange direction!');
-        }
+    const direction = await promptDirection(() => readDirectionKey(`${prompt} `));
+    if (!direction) {
         await pline('Never mind.');
         game.context.move = 0;
         return null;
     }
-
-    game.u.dx = dx;
-    game.u.dy = dy;
-    game.u.dz = dz;
+    const { dx, dy, dz } = direction;
     const target = { x: x + dx, y: y + dy, dx, dy, dz };
     if (target.x < 1 || target.x >= COLNO
         || target.y < 0 || target.y >= ROWNO) {
@@ -2624,7 +2548,7 @@ async function runInventoryAction({ key, item }: InventoryAction): Promise<void>
         await doquaff();
         return;
     case 'Q': queueCommandKeys(letter); await doready(); return;
-    case 'r': queueCommandKeys(letter); await doread({ gotoLevel }); return;
+    case 'r': queueCommandKeys(letter); await readCommand(); return;
     case 'R':
         queueCommandKeys(letter);
         if ((item.owornmask ?? 0) & W_ACCESSORY) await removeWornItem('take off', true);
@@ -2728,16 +2652,19 @@ async function dochat() {
         game.context.move = 1;
         return;
     }
-    const key = await readDirectionKey('Talk to whom? (in what direction) ');
-    const direction = promptedDirectionKey(key, game.commandBindings);
-    if (direction === '.') {
+    const direction = await promptDirection(() => readDirectionKey('Talk to whom? (in what direction) '));
+    if (!direction) {
+        resetCommandVariables(true); // sounds.c:dochat() returns ECMD_CANCEL.
+        return;
+    }
+    if (!direction.dx && !direction.dy && !direction.dz) {
         await pline('Talking to yourself is a bad habit for a dungeoneer.');
         game.context.move = 0;
         return;
     }
-    if (isMovementKey(direction)) {
-        const x = game.u.ux + DIR_DX[direction];
-        const y = game.u.uy + DIR_DY[direction];
+    if (direction.dx || direction.dy) {
+        const x = game.u.ux + direction.dx;
+        const y = game.u.uy + direction.dy;
         const monster = game.level?.monsters?.find(mon => monsterHasMapPosition(mon, game) && mon.mx === x && mon.my === y);
         if (monster && !monster.ispriest && (monster.msleeping || !monster.mcanmove)) {
             if (canSpotMonster(monster))
@@ -3270,29 +3197,12 @@ async function lootLockedContainer(container: GameObject): Promise<void> {
     else game.context.move = 0;
 }
 
-// C cmd.c:extcmds_match(): availability applies to both full names and
-// completion; AUTOCOMPLETE only limits the latter.
-function availableExtendedCommands() {
-    return NATIVE_COMMANDS.filter(command =>
-        !(command.flags & (NATIVE_COMMAND_FLAGS.CMD_NOT_AVAILABLE
-            | NATIVE_COMMAND_FLAGS.INTERNALCMD))
-        && (game.flags.debug || !(command.flags & NATIVE_COMMAND_FLAGS.WIZMODECMD)));
-}
-
-function completeExtendedCommand(prefix: string): string | null {
-    const matches = availableExtendedCommands().filter(command =>
-        !!(command.flags & NATIVE_COMMAND_FLAGS.AUTOCOMPLETE)
-        && command.name !== null
-        && command.name.startsWith(prefix));
-    return matches.length === 1 ? matches[0]?.name ?? null : null;
-}
-
 const EXTENDED_COMMAND_HANDLERS = new Map<string, () => Promise<unknown>>([
+    ['?', showExtendedCommandList],
+    ['whatdoes', whatDoesCommand],
     ['whatis', dowhatis],
     ['help', dohelp],
-    ['?', extendedCommandsHelp],
     ['glance', doFarlook],
-    ['whatdoes', whatdoes],
     ['history', () => displayHelpFile('history')],
     ['showtrap', identifyTrap],
     ['versionshort', doversion],
@@ -3302,6 +3212,9 @@ const EXTENDED_COMMAND_HANDLERS = new Map<string, () => Promise<unknown>>([
     ['vanquished', doVanquished],
     ['genocided', doGenocided],
     ['terrain', doTerrainOverview],
+    ['retravel', dotravelTarget],
+    ['redraw', redrawCommand],
+    ['optionsfull', () => doOptions(!game.iflags.menu_requested)],
     ['version', doextversion],
     ['quit', doquit],
     ['twoweapon', dotwoweapon],
@@ -3353,32 +3266,6 @@ const EXTENDED_COMMAND_HANDLERS = new Map<string, () => Promise<unknown>>([
     ['wizintrinsic', wizIntrinsic],
     ['wizmap', wizMap],
 ]);
-
-async function runExtendedCommand(name: string): Promise<boolean> {
-    const command = availableExtendedCommands().find(entry => entry.name === name);
-    if (!command) {
-        await pline(`#${name}: unknown extended command.`);
-        game.context.move = 0;
-        return false;
-    }
-    if (!await commandAllowed(command)) {
-        // doextcmd() returns ECMD_OK; rhack clears queues only for a delay.
-        resetCommandVariables(game.multi < 0);
-        return false;
-    }
-    if (game.iflags.menu_requested && !(command.flags & NATIVE_COMMAND_FLAGS.CMD_M_PREFIX)) {
-        const prefix = visibleCommandKey(game.commandBindings.keyForCommand('reqmenu'));
-        await plineWithContinuation(`'${prefix}' prefix has no effect for the ${name} command.`);
-        game.iflags.menu_requested = false;
-    }
-    const key = commandExecutionKey(command.name)?.charCodeAt(0) ?? null;
-    const binding = { key, command, parameter: null };
-    // doextlist returns to the editor inside doextcmd. rhack's command
-    // cleanup belongs to the final action, so the list retains its count.
-    if (name === '?') await runCommandHandler(binding);
-    else await executeCommandAction(binding);
-    return true;
-}
 
 // C refs: artifact.c:doinvoke(), invoke_ok(), arti_invoke().  getobj()
 // suggests artifacts and other unique objects; an artifact with inv_prop 0
@@ -4396,30 +4283,46 @@ async function wizIdentify(): Promise<void> {
     game.context.move = 0;
 }
 
-// C doextcmd() asks again after the list, until an action or cancellation.
-async function doextcmd(): Promise<void> {
+interface ExtendedCommandInput {
+    selected: NativeCommand | null;
+    lastExecuted: NativeCommand | null;
+}
+
+// C cmd.c:doextcmd() runs the list inside its editor loop and retains the
+// last executed command separately from the next editor selection.
+async function readExtendedCommand(): Promise<ExtendedCommandInput> {
+    let lastExecuted: NativeCommand | null = null;
     for (;;) {
-        const command = await readExtendedCommand();
-        if (!command) return;
-        const executed = await runExtendedCommand(command);
-        if (!executed || command !== '?') return;
+        const statusDisabled = game._statusUpdatesDisabled;
+        game._statusUpdatesDisabled = true;
+        let selected: NativeCommand | null;
+        try {
+            selected = game.flags.extmenu ? await extendedCommandMenu() : await editExtendedCommand();
+        } finally {
+            if (statusDisabled === undefined) delete game._statusUpdatesDisabled;
+            else game._statusUpdatesDisabled = statusDisabled;
+        }
+        if (selected?.handler !== 'doextlist') return { selected, lastExecuted };
+        if (!await commandAllowed(selected)) return { selected: null, lastExecuted };
+        await showExtendedCommandList();
+        lastExecuted = selected;
     }
 }
 
 // TTY's extended-command line editor redraws the prompt at every input
-// boundary.  #enhance has AUTOCOMPLETE, so its unique initial "e" expands
-// visually while subsequent characters advance through that completed word.
-async function readExtendedCommand(): Promise<string | null> {
+// boundary. Completion expands visually while typed input advances the cursor.
+async function editExtendedCommand(): Promise<NativeCommand | null> {
     let command = '';
-    game._pending_message = '#';
+    let completion: string | null = null;
+    const initiator = visibleCommandKey(game.commandBindings.keyForCommand('#'));
+    game._pending_message = initiator;
     await flush_screen(1);
-    game.nhDisplay?.setCursor(2, 0);
+    game.nhDisplay?.setCursor(initiator.length + 1, 0);
 
     const redrawCommand = async () => {
-        const completion = completeExtendedCommand(command.toLowerCase());
         const displayedCommand = completion || command;
         game._pending_message = command
-            ? `# ${displayedCommand}` : '#';
+            ? `${initiator} ${displayedCommand}` : initiator;
         await flush_screen(1);
         const display = game.nhDisplay;
         const columns = display?.cols ?? COLNO;
@@ -4434,7 +4337,7 @@ async function readExtendedCommand(): Promise<string | null> {
         }
         // NEWAUTOCOMP leaves the insertion pointer immediately after the
         // physically typed prefix, not after its displayed suffix.
-        const insertion = command.length + 2;
+        const insertion = command.length + initiator.length + 1;
         if (insertion > columns - 1)
             display?.setCursor(insertion - (columns - 1), 1);
         else
@@ -4448,6 +4351,7 @@ async function readExtendedCommand(): Promise<string | null> {
             // at an already empty prompt cancels the extended command.
             if (command) {
                 command = '';
+                completion = null;
                 await redrawCommand();
                 continue;
             }
@@ -4458,18 +4362,19 @@ async function readExtendedCommand(): Promise<string | null> {
             return null;
         }
         if (key === 10 || key === 13) break;
-        if (key === 8) {
+        if (key === 8 || key === 127) {
             if (command) {
                 command = command.slice(0, -1);
+                completion = null;
                 await redrawCommand();
             }
             continue;
         }
-        if (key === 127) {
-            // DEL is tty's kill character in the recorder sessions.  It
-            // removes both the typed prefix and the visible completion.
+        if (key === 21) {
+            // The tty kill character clears both typed text and completion.
             if (command) {
                 command = '';
+                completion = null;
                 await redrawCommand();
             }
             continue;
@@ -4477,6 +4382,7 @@ async function readExtendedCommand(): Promise<string | null> {
         const ch = String.fromCharCode(key);
         if (key < 32 || key === 127 || command.length >= COLNO) continue;
         command += ch;
+        completion = completeExtendedCommand(command);
         await redrawCommand();
     }
 
@@ -4485,7 +4391,7 @@ async function readExtendedCommand(): Promise<string | null> {
     game._pending_message = '';
     game._retained_message = '';
     game.nhDisplay?.clearRow(0);
-    const normalizedCommand = command
+    const normalizedCommand = (completion || command)
         .trim()
         .replace(/\s+/g, ' ')
         .toLowerCase();
@@ -4496,7 +4402,9 @@ async function readExtendedCommand(): Promise<string | null> {
         game.context.move = 0;
         return null;
     }
-    return completeExtendedCommand(normalizedCommand) || normalizedCommand;
+    const selected = availableExtendedCommands().find(entry => entry.name === normalizedCommand);
+    if (!selected) await pline(`${initiator}${normalizedCommand.slice(0, 60)}: unknown extended command.`);
+    return selected ?? null;
 }
 
 async function wizardPositionDescription(x: number, y: number): Promise<string> {
@@ -4740,13 +4648,17 @@ async function dojump(): Promise<void> {
 // window own distinct input boundaries; after the tutorial, getpos retains
 // its cursor and accepts terrain-symbol cycling before one of the pick keys.
 async function dotravel(): Promise<void> {
-    const firstUse = shouldShowGetposTip();
+    game.iflags.getloc_travelmode = true;
+    const firstUse = !game.iflags.menu_requested && shouldShowGetposTip();
     if (firstUse) {
         await pline('Where do you want to travel to?');
         await showGetposTip();
     }
 
-    const cursor = await selectMapPosition({
+    // getpos_menu() omits auto_describe()'s travel-path warning.
+    const cursor = game.iflags.menu_requested
+        ? await selectTravelMenuPosition(wizardPositionDescription)
+        : await selectMapPosition({
         start: game._travelTarget
             ? { ...game._travelTarget } : { x: game.u.ux, y: game.u.uy },
         prompt: firstUse
@@ -4758,7 +4670,11 @@ async function dotravel(): Promise<void> {
         describe: travelPositionDescription,
     });
     if (!cursor) {
-        game.context.move = 0;
+        game.iflags.getloc_travelmode = false;
+        // dotravel() returns ECMD_OK for menu dismissal, ECMD_CANCEL for ESC
+        // in getpos(). Only the latter discards both command queues.
+        if (game.iflags.menu_requested) game.context.move = 0;
+        else resetCommandVariables(true);
         return;
     }
 
@@ -4767,13 +4683,27 @@ async function dotravel(): Promise<void> {
     // Silent travel can retain that row; a new attack must replace rather than
     // append to "staircase down".
     game._pending_message = '';
-    if (cursor.x === game.u.ux && cursor.y === game.u.uy) {
+    game._travelTarget = { x: cursor.x, y: cursor.y };
+    await dotravelTarget();
+}
+
+// C cmd.c:dotravel_target(). Keyboard travel and retravel share the first
+// movement transaction, including the time spent on an unreachable target.
+async function dotravelTarget(): Promise<void> {
+    const target = game._travelTarget;
+    if (!target || !isok(target.x, target.y)) {
+        await pline('No travel destination set.');
+        game.context.move = 0;
+        return;
+    }
+    if (target.x === game.u.ux && target.y === game.u.uy) {
         game._travelTarget = null;
         await pline('You are already here.');
         game.context.move = 0;
         return;
     }
-    const state = startTravel(cursor.x, cursor.y);
+    game.iflags.getloc_travelmode = false;
+    const state = startTravel(target.x, target.y);
     const direction = findTravelDirection(state);
     if (!direction) {
         stopRun();
@@ -4819,7 +4749,7 @@ async function doFarlook(quick = true): Promise<void> {
                 await plineWithContinuation(`(For instructions type a '${visibleCommandKey(helpKey)}')`);
             }
             if (firstUse) await plineWithContinuation('Move cursor to a monster, object or location:');
-    
+
             const cursor = await selectMapPosition({
                 start: position, force: quick,
                 prompt: game._pending_message || game._retained_message,
@@ -5008,9 +4938,9 @@ async function dohelp(): Promise<void> {
     const choice = String.fromCharCode(key);
     if (choice === 'a') await doextversion();
     else if (choice === 'e') await dowhatis();
-    else if (choice === 'f') await whatdoes();
-    else if (choice === 'j') await keyBindingsHelp();
-    else if (choice === 'k') await extendedCommandsHelp();
+    else if (choice === 'f') await whatDoesCommand();
+    else if (choice === 'j') await showKeyBindings();
+    else if (choice === 'k') await showExtendedCommandList();
     else if (choice === 'l') await menuControlsHelp();
     else if (choice === 'o') await contactHelp();
     else {
@@ -5508,44 +5438,6 @@ async function dowear(): Promise<void> {
     else await putOnAccessoryObject(object);
 }
 
-// C ref: cmd.c do_fight()/rhack().  F is a movement prefix whose next
-// direction key is collected without painting a separate tty prompt.  The
-// direction still enters domove(); context.forcefight changes how that shared
-// movement transaction treats actors and empty destinations.
-async function doforcefight(): Promise<void> {
-    game._pending_message = '';
-    // The direction read is its own tty input boundary.  C clears the old
-    // message window before collecting that key, so make the cleared row
-    // visible before nhgetch() captures the nested prompt screen.
-    const input = await readCommandInput();
-    const nextCommand = configuredCommand(input.key);
-    if (!await commandAllowed(nextCommand.command)) {
-        resetCommandVariables(true);
-        return;
-    }
-    const direction = nextCommand.key === null ? ''
-        : String.fromCharCode(nextCommand.key).toLowerCase();
-    if (!isMovementKey(direction)) {
-        await pline(
-            "The 'F' prefix should be followed by a movement command.",
-        );
-        game.context.move = 0;
-        return;
-    }
-    game.context.forcefight = true;
-    if (game.multi > 0)
-        startRun(DIR_DX[direction], DIR_DY[direction], game, 0);
-    try {
-        const moved = await domove(
-            DIR_DX[direction], DIR_DY[direction], true,
-        );
-        if (game.program_state.gameover) return;
-        game.context.move = moved ? 1 : 0;
-    } finally {
-        if (!game.program_state.gameover) game.context.forcefight = false;
-    }
-}
-
 function droppedObjectDescription(object: GameObject): string {
     const quantity = objectQuantity(object);
     // C do.c:drop() delegates to objnam.c:doname(), which keeps beatitude
@@ -5575,7 +5467,7 @@ async function dodrop(): Promise<void> {
         const gold = heroGoldObject(game);
         if (!inventory.length) {
             await pline("You don't have anything to drop.");
-            game.context.move = 0;
+            resetCommandVariables(true);
             return;
         }
         const letters = inventory.filter(object => object !== gold)
@@ -5586,12 +5478,12 @@ async function dodrop(): Promise<void> {
             allowGold: true, allowMenu: true, allowCount: true,
         });
         if (selection.cancelled) {
-            game.context.move = 0;
+            resetCommandVariables(true);
             return;
         }
         let object = selection.gold ? gold : selection.object;
         if (!object) {
-            game.context.move = 0;
+            resetCommandVariables(true);
             return;
         }
         if (selection.count !== null
@@ -5607,13 +5499,16 @@ async function dodrop(): Promise<void> {
         const spentTime = await dropHeroObject(object, {
             state: game, publish: plineWithContinuation,
         });
-        game.context.move = spentTime ? 1 : 0;
-        if (spentTime) {
-            resetBulkTakeoff();
-            resetPick();
-            resetTrapSetting();
+        if (!spentTime) {
+            // do.c:drop() returns ECMD_FAIL for every refusal.
+            resetCommandVariables(true);
+            return;
         }
-        if (spentTime && game._occupation?.key === 'pick-lock')
+        game.context.move = 1;
+        resetBulkTakeoff();
+        resetPick();
+        resetTrapSetting();
+        if (game._occupation?.key === 'pick-lock')
             game._occupation = null;
     } finally {
         if (inShop) setSellDisposition(SELL_NORMAL);
@@ -5636,10 +5531,10 @@ async function doclose(): Promise<void> {
     }
     const direction = await promptDirection();
     if (!direction) {
+        clearRepeatCommand(); // lock.c:doclose() returns ECMD_CANCEL.
         game.context.move = 0;
         return;
     }
-
     const x = game.u.ux + direction.dx;
     const y = game.u.uy + direction.dy;
     if (x === game.u.ux && y === game.u.uy && !heroPassesWalls(game)) {
@@ -5749,6 +5644,7 @@ async function doopen(x = 0, y = 0): Promise<void> {
         game.context.move = 0;
         return;
     }
+
     if (await stumbleOnDoorMimic(x, y)) {
         game.context.move = 1;
         return;
@@ -5878,28 +5774,7 @@ async function useMagicMarker(): Promise<void> {
 }
 
 async function pickAxeDirection(prompt: string): Promise<{ dx: number; dy: number; dz: number } | null> {
-    for (;;) {
-        const rawKey = await readDirectionKey(`${prompt} `);
-        const key = rawKey;
-        const ch = promptedDirectionKey(key, game.commandBindings);
-        if (isMovementKey(ch))
-            return { dx: DIR_DX[ch], dy: DIR_DY[ch], dz: 0 };
-        if (ch === '.' || ch === 's') return { dx: 0, dy: 0, dz: 0 };
-        if (ch === '<' || ch === '>')
-            return { dx: 0, dy: 0, dz: ch === '<' ? -1 : 1 };
-        if ([27, 32, 10, 13].includes(key)) return null;
-        if (key === 18) {
-            await restoreCommandMap();
-            continue;
-        }
-        if (key === game.commandBindings.specialKey('getdir.help') || game.flags?.cmdassist !== false) {
-            await showTextPages([directionAssistPage()], {
-                validKeys: [27, 32, 10, 13],
-            });
-            await restoreCommandMap();
-        } else await pline('What a strange direction!');
-        if (key !== game.commandBindings.specialKey('getdir.help')) return null;
-    }
+    return promptDirection(() => readDirectionKey(`${prompt} `));
 }
 
 async function applyPickAxe(item: GameObject): Promise<void> {
@@ -5915,6 +5790,7 @@ async function applyPickAxe(item: GameObject): Promise<void> {
         ),
     });
     if ('died' in result && result.died) return;
+    if (result.cancelled) resetCommandVariables(true);
     if ('resume' in result && result.resume) {
         game._cannedCommands ||= [];
         game._cannedCommands.push({ kind: 'apply', invlet: inventoryCommandLetter(item) });
@@ -5961,7 +5837,7 @@ async function doapply(cannedInvlet: string | null = null): Promise<void> {
         : game.inventory.find(object => object.invlet === cannedInvlet
             && [GETOBJ_SUGGEST, GETOBJ_DOWNPLAY].includes(applySuggestion(object)));
     if (!item) {
-        game.context.move = 0;
+        resetCommandVariables(true); // doapply() returns ECMD_CANCEL without an object.
         return;
     }
     const touch = await retouchHeroObject(item);
@@ -6529,9 +6405,12 @@ async function dofire(cannedShotLimit: number | null = null): Promise<void> {
                 return;
             }
         }
-        await dothrow(fireObject, true, shotLimit);
-        if (quiverSelectionSpentTime && !game.context.move)
+        const throwResult = await throwCommand(fireObject, true, shotLimit);
+        // dofire() returns the time spent unwielding even if throw_obj()
+        // cancels. Only a cancellation without that elapsed turn clears recall.
+        if (quiverSelectionSpentTime)
             game.context.move = 1;
+        else if (throwResult === 'cancelled') resetCommandVariables(true);
         return;
     }
 }
@@ -6563,9 +6442,13 @@ async function finishOrdinaryMapPotionKill(monster: Monster, death: HeroMonsterK
     return finishHeroMonsterKillOutcome(monster, monster.mx, monster.my, death);
 }
 
-async function dothrow(
+async function dothrow(selectedItem: GameObject | null = null): Promise<void> {
+    if (await throwCommand(selectedItem) === 'cancelled') resetCommandVariables(true);
+}
+
+async function throwCommand(
     selectedItem: GameObject | null = null, capabilityChecked = false, suppliedShotLimit: number | null = null,
-) {
+): Promise<'cancelled' | void> {
     const shotLimit = suppliedShotLimit === null
         ? Math.max(0, game._commandCount || 0)
         : Math.max(0, suppliedShotLimit || 0);
@@ -6580,7 +6463,6 @@ async function dothrow(
     const launcher = game.uwep;
     const wieldingSling = !!launcher
         && OBJECT_SUBTYPE[launcher.otyp] === OBJECT_SUBTYPE[SLING];
-    if (!selectedItem && game.flags.fixinv === false) reassignInventoryLetters();
     // C getobj() sorts its candidates independently of the carried chain.
     const throwClassification = (item: GameObject) => {
         const objectClass = item.oclass || objectClassForType(item.otyp);
@@ -6600,41 +6482,22 @@ async function dothrow(
     }
     const item = selectedItem;
     if (!item) {
-        game.context.move = 0;
-        return;
+        return 'cancelled';
     }
     const previous = game.inventory[game.inventory.indexOf(item) - 1];
     const splitParent = previous && previous.invlet === item.invlet ? previous : null;
     const selectedObjectClass = item.oclass || objectClassForType(item.otyp);
     const selectedIsGold = selectedObjectClass === 12;
     const directGoldThrow = selectedIsGold && item !== game.uquiver;
-    const directionKey = await readDirectionKey();
-    const direction = promptedDirectionKey(directionKey, game.commandBindings);
-    const selfThrow = direction === '.';
-    const verticalThrow = direction === '<' || direction === '>';
-    if (!isMovementKey(direction) && !verticalThrow && !selfThrow) {
+    const direction = await promptDirection();
+    if (!direction) {
         if (splitParent) await rejoinObjectStack(splitParent, item, game);
-        const quitDirection = [27, 32, 10, 13].includes(directionKey);
-        if (!quitDirection && game.flags?.cmdassist !== false) {
-            await showTextPages([directionAssistPage()], {
-                validKeys: [27, 32, 10, 13],
-            });
-            await restoreCommandMap();
-        } else if (!quitDirection) {
-            await pline('What a strange direction!');
-        }
-        game.context.move = 0;
         game._pending_message = '';
-        return;
+        return 'cancelled';
     }
-    // getdir() commits the source direction before throw_obj() detaches an
-    // identity.  throwit() may later rewrite it for slip or low stamina.
-    const dx = isMovementKey(direction) ? DIR_DX[direction] : 0;
-    const dy = isMovementKey(direction) ? DIR_DY[direction] : 0;
-    const dz = direction === '<' ? -1 : direction === '>' ? 1 : 0;
-    game.u.dx = dx;
-    game.u.dy = dy;
-    game.u.dz = dz;
+    const { dx, dy, dz } = direction;
+    const selfThrow = !dx && !dy && !dz;
+    const verticalThrow = !!dz;
 
     if (directGoldThrow) {
         if (selfThrow) {
@@ -6650,7 +6513,6 @@ async function dothrow(
             captureFlight: captureThrownObjectFlight,
             wakeMonster: wakeAttackedMonster,
             angerMonster: angerAttackedMonster,
-            adjustAlignment: adjustHeroAlignment,
         });
         game.context.move = 1;
         return;
@@ -7446,7 +7308,10 @@ async function delayAfterDraggingBall(): Promise<void> {
 // C hack.c:domove() clears kickedloc after even an unsuccessful attempt.
 async function domove(dx: number, dy: number, explicitAttempt = true): Promise<boolean> {
     const moved = await domoveCore(dx, dy, explicitAttempt);
-    if (!game.program_state.gameover) game._kickedLoc = null;
+    if (!game.program_state.gameover) {
+        game._kickedLoc = null;
+        game._movementAttempt = null;
+    }
     return moved;
 }
 
@@ -7553,33 +7418,23 @@ async function domoveCore(dx: number, dy: number, explicitAttempt: boolean): Pro
     const confused = (u?.confusionTurns || 0) > 0;
     const stunned = !!(u?.stunned || (u?.stunnedTurns || 0) > 0);
     if (stunned || (confused && rn2(5) === 0)) {
-        const impairedDirections: readonly (readonly [number, number])[] = [
-            [-1, 0], [0, -1], [1, 0], [0, 1],
-            [-1, -1], [1, -1], [1, 1], [-1, 1],
-        ];
-        const directionCount = MONSTER_NAME[u.umonnum] === 'grid bug' ? 4 : 8;
-        let foundDirection = false;
+        let found = false;
         for (let tries = 0; tries <= 50; tries++) {
-            const candidateDirection = impairedDirections[rn2(directionCount)];
-            if (!candidateDirection) throw new Error('Movement RNG produced an invalid direction.');
-            const [candidateDx, candidateDy] = candidateDirection;
-            const candidateX = u.ux + candidateDx;
-            const candidateY = u.uy + candidateDy;
-            u.dx = candidateDx;
-            u.dy = candidateDy;
-            if (candidateX < 1 || candidateX >= COLNO
-                || candidateY < 0 || candidateY >= ROWNO
-                || heroBadRock(game, candidateX, candidateY)) continue;
-            dx = candidateDx;
-            dy = candidateDy;
-            foundDirection = true;
+            confusePromptDirection(u, true);
+            dx = u.dx ?? 0;
+            dy = u.dy ?? 0;
+            const x = u.ux + dx, y = u.uy + dy;
+            if (!isok(x, y) || heroBadRock(game, x, y)) continue;
+            found = true;
             break;
         }
-        if (!foundDirection) {
+        if (!found) {
             endVoluntaryMultiTurn(game);
+            // Native nomul(0) ends repetition without clearing context.move.
             return true;
         }
     }
+
     // confdir() updates the same persistent vector selected by set_move_cmd().
     u.dx = dx;
     u.dy = dy;
@@ -7633,11 +7488,12 @@ async function domoveCore(dx: number, dy: number, explicitAttempt: boolean): Pro
         && !heroIsHallucinating(game)
         && !stunned;
     if (monster) {
-        // hack.c stops a run only for a visible or sensed actor.  Seeing the
+        // hack.c checks context.run even when F makes this a single step.
+        // It stops only for a visible or sensed actor. Seeing the
         // destination terrain is insufficient when minvis hides its occupant;
         // that case must reach attack_checks() and install the invisible
         // marker instead.
-        if (game._runState && !safeMonster
+        if (game.context.run && !safeMonster
             && canSpotMonster(monster)) {
             stopRun(game);
             return false;

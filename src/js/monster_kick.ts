@@ -5,7 +5,6 @@ import { makeMonsterFlee } from './monster_flee.js';
 import { updateMonsterRegions } from './regions.js';
 import { game, requirePlayingGame } from './gstate.js';
 import type { Monster } from './monster_types.js';
-import type { GameObject } from './object_types.js';
 import type { GameState } from './game_state.js';
 import type { MessagePublisher } from './display.js';
 
@@ -24,17 +23,17 @@ export interface PreparedKickDamage {
 }
 
 import { abusePet } from './dog.js';
-import { A_CON, A_DEX, A_STR } from './const.js';
-import { currentAttribute, exerciseAttribute } from './attrib.js';
+import { A_CON, A_DEX, W_ARMF } from './const.js';
+import { currentAttribute, currentStrength, exerciseAttribute } from './attrib.js';
+import { specialContactDamage } from './contact_damage.js';
+import { setMonsterApparentHeroPosition } from './monster_perception.js';
 import { couldsee } from './vision.js';
 import { newsym, unmap_invisible } from './display.js';
 import {
-    MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_MOVE, MONSTER_SIZE,
-    MONSTER_SYMBOL, monsterHatesBlessings,
-    monsterHatesSilver,
+    MONSTER_FLAGS1, MONSTER_MOVE, MONSTER_SIZE, MONSTER_SYMBOL,
 } from './monster_data.js';
 import {
-    KICKING_BOOTS, OBJECT_BIMANUAL, OBJECT_MATERIAL,
+    KICKING_BOOTS, OBJECT_BIMANUAL,
 } from './object_data.js';
 import { rnd, rn2 } from './rng.js';
 import {
@@ -54,13 +53,11 @@ const M1_NOLIMBS = 0x00006000;
 const M1_SLITHY = 0x00080000;
 const M1_THICK_HIDE = 0x00200000;
 const M1_TPORT = 0x02000000;
-const M2_UNDEAD = 0x00000002;
 const S_EYE = 5;
 const S_LIGHT = 25;
 const S_EEL = 57;
 const PM_GRID_BUG = 116;
 const PM_SHADE = 288;
-const SILVER = 14;
 
 // C mon.c:maybe_mnexto() uses rloc_to() after choosing an accessible square.
 async function nextOpenSquareNearHero(monster: Monster, state: GameState) {
@@ -91,32 +88,6 @@ function evasionVerb(monster: Monster, state: GameState): string {
     return 'jumps';
 }
 
-function specialBootDamage(monster: Monster, boots: GameObject | null | undefined): number {
-    if (!boots) return 0;
-    let damage = 0;
-    if (boots.blessed && monsterHatesBlessings(monster)) damage += rnd(4);
-    if (OBJECT_MATERIAL[boots.otyp] === SILVER
-        && monsterHatesSilver(monster))
-        damage += rnd(20);
-    return damage;
-}
-
-export function kickConductViolation(monster: Monster, {
-    helpless = false,
-    fleeingFromBehind = false,
-    state = game,
-}: { helpless?: boolean; fleeingFromBehind?: boolean; state?: GameState } = {}): string | null {
-    if ((state.u?.ualign?.record ?? 0) <= -10) return null;
-    const role = state.urole?.key;
-    const lawful = (state.u?.ualign?.type ?? 0) > 0;
-    const undead = !!((MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_UNDEAD);
-    if (role === 'knight' && lawful && !undead
-        && (helpless || fleeingFromBehind)) return 'You caitiff!';
-    if (role === 'samurai' && monster.mpeaceful)
-        return 'You dishonorably attack the innocent!';
-    return null;
-}
-
 export async function abuseKickedPet(monster: Monster, potentialDamage: number, {
     state = game,
 }: { state?: GameState } = {}) {
@@ -140,17 +111,17 @@ export async function prepareKick({
     const capacity = weightCapacity(state);
     const unusedCapacity = -invWeight(state);
 
-    if (unusedCapacity < (capacity * 3) / 10) {
-        const noDamageRange = unusedCapacity < capacity / 10 ? 2
-            : unusedCapacity < capacity / 5 ? 3 : 4;
+    if (unusedCapacity < Math.trunc((capacity * 3) / 10)) {
+        const noDamageRange = unusedCapacity < Math.trunc(capacity / 10) ? 2
+            : unusedCapacity < Math.trunc(capacity / 5) ? 3 : 4;
         if (rn2(noDamageRange) === 0) {
             if (martial) return { stopped: false, clumsy: false };
             await announce('Your clumsy kick does no damage.');
             return { stopped: true, clumsy: false };
         }
-        if (unusedCapacity < capacity / 10) {
+        if (unusedCapacity < Math.trunc(capacity / 10)) {
             clumsy = true;
-        } else if (rn2(unusedCapacity < capacity / 5 ? 2 : 3) === 0) {
+        } else if (rn2(unusedCapacity < Math.trunc(capacity / 5) ? 2 : 3) === 0) {
             clumsy = true;
         }
     }
@@ -173,7 +144,6 @@ export async function levitatingKickMisses(monster: Monster, state: GameState = 
     if (!levitating || rn2(3) !== 0) return false;
     if ((MONSTER_SIZE[monster.mnum] ?? 2) >= 1
         || ((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_FLY)) return false;
-    await exerciseAttribute(A_DEX, false, state);
     return true;
 }
 
@@ -220,7 +190,7 @@ export function prepareKickDamage(monster: Monster, {
 }: KickOptions = {}) {
     const boots = state.uarmf || state.u?.uarmf;
     let damage = Math.trunc(
-        (currentAttribute(A_STR, state) + currentAttribute(A_DEX, state)
+        (currentStrength(state) + currentAttribute(A_DEX, state)
             + currentAttribute(A_CON, state)) / 15,
     );
     if (boots?.otyp === KICKING_BOOTS) damage += 5;
@@ -229,7 +199,7 @@ export function prepareKickDamage(monster: Monster, {
     const thickSkinned = !!((MONSTER_FLAGS1[monster.mnum] ?? 0)
         & M1_THICK_HIDE);
     if (thickSkinned || monster.mnum === PM_SHADE) damage = 0;
-    const specialDamage = specialBootDamage(monster, boots);
+    const specialDamage = specialContactDamage(state.u, monster, W_ARMF, { state }).damage;
     if (monster.mnum === PM_SHADE && specialDamage === 0) {
         return {
             potentialDamage: 0,
@@ -286,6 +256,7 @@ export async function tryKickReel(monster: Monster, dx: number, dy: number, {
     monster.my = y;
     newsym(oldx, oldy);
     newsym(x, y);
+    setMonsterApparentHeroPosition(monster, state, rn2);
     const trap = await triggerImmediateMonsterTrap(monster, state);
     await resumeDeferredMonsterTrap(trap, state, {
         publish: announce, describeMonster: nameMonster,

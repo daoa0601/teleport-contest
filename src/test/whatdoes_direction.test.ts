@@ -48,7 +48,7 @@ void test('asking about west movement selects the west side of a doorway for are
     assert.equal(game.context.move, 0);
 });
 
-for (const [key, dx, dy] of [['H', -1, 0], ['\x0c', 1, 0], ['>', 0, 0], ['s', 1, -1]] as const) {
+for (const [key, dx, dy, dz] of [['H', -1, 0, 0], ['\x0c', 1, 0, 0], ['>', 0, 0, 1], ['s', 1, -1, 0]] as const) {
     void test(`asking about ${key === '\x0c' ? '^L' : key} updates the remembered direction without taking a turn`, async () => {
         freshObjectRoom({ hero: { dx: 1, dy: -1, dz: 1 } });
 
@@ -56,7 +56,7 @@ for (const [key, dx, dy] of [['H', -1, 0], ['\x0c', 1, 0], ['>', 0, 0], ['s', 1,
 
         assert.equal(game.u.dx, dx);
         assert.equal(game.u.dy, dy);
-        assert.equal(game.u.dz, 0);
+        assert.equal(game.u.dz, dz);
         assert.equal(game.context.move, 0);
     });
 }

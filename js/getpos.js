@@ -1,6 +1,6 @@
 // C refs: getpos.c:getpos(), drawing.c:defsyms[], symbols.c:gs.showsyms[],
 // display.c:tmp_at() for the valid-location marking overlay.
-import { COLNO, D_ISOPEN, DOOR, HI_ZAP, LOOK_ONCE, LOOK_QUICK, LOOK_TRADITIONAL, LOOK_VERBOSE, NHW_MENU, PICK_ONE, ROWNO, SCORR, STONE, VIBRATING_SQUARE, WEB, IS_WALL, TREE, } from './const.js';
+import { COLNO, D_ISOPEN, DOOR, GFILTER_NONE, GFILTER_VIEW, HI_ZAP, LOOK_ONCE, LOOK_QUICK, LOOK_TRADITIONAL, LOOK_VERBOSE, NHW_MENU, PICK_ONE, ROWNO, SCORR, STONE, VIBRATING_SQUARE, WEB, IS_WALL, TREE, } from './const.js';
 import { bot, clearMessageWindow, redrawMap, flush_screen, glyphAt, lastDirtyMapCursor, newsym_force, pline, plineWithContinuation, show_glyph_cell, terrain_glyph, } from './display.js';
 import { game } from './gstate.js';
 import { nhgetch, readchar } from './input.js';
@@ -15,6 +15,7 @@ import { coordinateDescription } from './pager_lists.js';
 import { screenDescription } from './pager_description.js';
 import { farlookLocationDescription } from './cmd.js';
 import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu, } from './tty_menu.js';
+import { rememberCommandKey, takeRepeatCommand } from './command_repeat.js';
 // defsym.h S_goodpos: the dollar sign doubles as the default getpos key
 // which toggles valid-position marking, so the mark glyph shares it.
 const GOODPOS_CH = '$';
@@ -422,6 +423,39 @@ function matchesGetposCycle(kind, x, y) {
         'water', 'molten lava', 'wall of lava', 'floor of a room',
         'dark part of a room', 'corridor', 'lit corridor'].includes(terrain);
 }
+// C getpos.c:getpos_menu(GLOC_INTERESTING), with GFILTER_VIEW for travel.
+export async function selectTravelMenuPosition(describe) {
+    // cmd.c:dotravel() uses GFILTER_VIEW only for this menu, then restores
+    // the player's target filter even when no destination is selected.
+    const previousFilter = game.iflags.getloc_filter ?? GFILTER_NONE;
+    game.iflags.getloc_filter = GFILTER_VIEW;
+    try {
+        const hero = game.u;
+        const spots = gatherValidLocations((x, y) => (x !== hero.ux || y !== hero.uy)
+            && cansee(x, y) && matchesGetposCycle('all', x, y));
+        if (!spots.length) {
+            await pline('You cannot see anything interesting.');
+            return null;
+        }
+        const window = tty_create_nhwindow(NHW_MENU);
+        await tty_start_menu(window);
+        for (const spot of spots) {
+            const description = await describe(spot.x, spot.y);
+            if (!description)
+                continue;
+            const coordinates = coordinateDescription(spot.x, spot.y, game.iflags.getpos_coords ?? 'n');
+            tty_add_menu(window, { identifier: spot,
+                text: description + (coordinates ? ` ${coordinates}` : '') });
+        }
+        tty_end_menu(window, 'Pick an interesting thing in view for travel destination');
+        const result = await tty_select_menu(window, PICK_ONE);
+        await tty_destroy_nhwindow(window);
+        return result.selections[0]?.identifier ?? null;
+    }
+    finally {
+        game.iflags.getloc_filter = previousFilter;
+    }
+}
 export async function selectMapPosition({ start, prompt, goal, describe, afterPaint = null, isValidLocation = null, highlightHero = true, preserveMap = false, force = true, }) {
     const cursor = { ...start };
     const savedDirection = { dx: game.u.dx, dy: game.u.dy, dz: game.u.dz };
@@ -473,7 +507,12 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
             if (afterPaint)
                 await afterPaint(cursor, firstPaint);
             firstPaint = false;
-            let key = (await readchar('position')) & 255;
+            const queued = takeRepeatCommand();
+            if (queued && queued.kind !== 'key')
+                return null;
+            let key = queued ? queued.key : (await readchar('position')) & 255;
+            if (!queued && game.iflags.remember_getpos)
+                rememberCommandKey(key);
             if (autoDescription())
                 clearMessageOnExit = false;
             let fast = false;

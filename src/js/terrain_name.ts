@@ -61,7 +61,7 @@ export function surfaceName(x: number, y: number, state: GameState = game): stri
     }
     if (IS_WALL(type) || type === SDOOR) return 'wall';
     if (type === DOOR) return 'doorway';
-    return IS_ROOM(type) ? 'floor' : 'ground';
+    return IS_ROOM(type) && !Is_earthlevel(state.u.uz) ? 'floor' : 'ground';
 }
 
 // C ref: dungeon.c ceiling().

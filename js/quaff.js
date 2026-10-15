@@ -53,11 +53,11 @@ export async function quaff({ state = game } = {}) {
     }
     if (declinedSource && !state.inventory.some(object => object.oclass === 8)) {
         await pline("You don't have anything else to drink.");
-        return outcome(false, state);
+        return { ...outcome(false, state), cancelled: true };
     }
     let source = await chooseInventoryObject('drink', object => object.oclass === 8 ? GETOBJ_SUGGEST : GETOBJ_EXCLUDE);
     if (!source)
-        return outcome(false, state);
+        return { ...outcome(false, state), cancelled: true };
     if (source.owornmask) {
         if (objectQuantity(source) > 1) {
             const original = source;
@@ -121,6 +121,6 @@ async function consumePotion(source, state) {
     state._capacityDirty = true;
 }
 function outcome(spentTime, state, object = null) {
-    return { spentTime, heroDied: !!state.program_state.gameover, object };
+    return { spentTime, heroDied: !!state.program_state.gameover, object, cancelled: false };
 }
 //# sourceMappingURL=quaff.js.map

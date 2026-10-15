@@ -26,6 +26,7 @@ function validMigration(value) {
         source: location,
         destination: location,
         arrival: integer,
+        speciesFlags: optional(integer),
     });
 }
 function validLevitationState(value) {
