@@ -5,7 +5,8 @@ import { MM_ANGRY, MM_NOGRP, NO_MINVENT, W_WEP } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { finishDeferredMonsterMiscItem, takeMonsterTurn } from '../js/monmove.js';
-import { BULLWHIP, DAGGER, HEAVY_IRON_BALL } from '../js/object_data.js';
+import { MONSTER_NAME } from '../js/monster_data.js';
+import { BULLWHIP, CORPSE, DAGGER, HEAVY_IRON_BALL } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { setPrimaryWeapon, setSecondaryWeapon, setTwoWeaponCombat } from '../js/weapon_slots.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
@@ -53,6 +54,31 @@ void test('a bullwhip can snatch a cursed secondary weapon because it is not wel
     assert.equal(secondary.ocarry, monster);
     assert.equal(game.uwep, primary);
     assert.equal(game.uswapwep, null);
+});
+void test('monster bullwhip messages omit the wielded corpse species', async () => {
+    const outcomes = [
+        { destination: 0, announcement: 'The whip slips free.' },
+        { destination: 1, announcement: 'The soldier yanks the corpse from your hand!' },
+        { destination: 2, announcement: 'The soldier yanks the corpse to the floor!' },
+        { destination: 3, announcement: 'The soldier snatches the corpse!' },
+    ];
+    for (const { destination, announcement } of outcomes) {
+        freshObjectRoom({ heroX: 10, heroY: 10 });
+        requirePlayingGame(game);
+        const monster = await createMonsterAt('soldier', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
+        await equipMonsterObject(monster, await knownObject(BULLWHIP), W_WEP);
+        const corpse = await addInventoryObject(CORPSE, { corpsenm: MONSTER_NAME.indexOf('lizard') });
+        await setPrimaryWeapon(corpse);
+        const input = resetInputState();
+        const messages = [];
+        input.beforeRead = () => { messages.push(game._pending_message); };
+        installPagerInput(input, { expected: /soldier|whip|corpse/, limit: 6 });
+        const turn = await takeMonsterTurn(monster, game, range => range === 4 ? destination : 0);
+        await finishDeferredMonsterMiscItem({ monster, ...turn }, game);
+        messages.push(game._pending_message);
+        assert.ok(messages.some(message => message.includes("The bullwhip wraps around the corpse you're wielding!")), `Missing corpse wrap message for destination ${destination}: ${messages.join('\n')}`);
+        assert.equal(game._lastPlineMessage, announcement);
+    }
 });
 void test('a named weapon remains free while the disarm announcement waits for input', async () => {
     let sawFreeWeapon = false;

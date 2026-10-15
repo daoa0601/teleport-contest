@@ -27,7 +27,7 @@ export async function useMonsterBullwhip(
 ): Promise<void> {
     const seen = canSeeMonster(monster);
     const whip = seen ? 'The bullwhip' : 'A whip';
-    const weapon = definiteName(objectCombatName(target, { state }), state);
+    const weapon = definiteName(objectCombatName(target, { state, includeCorpseSpecies: false }), state);
     const hand = heroHandName(state);
     const hands = OBJECT_BIMANUAL[target.otyp] ? makePlural(hand) : hand;
     if (seen)
