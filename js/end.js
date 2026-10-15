@@ -9,7 +9,7 @@ import { PARANOID_DIE, PARANOID_QUIT, PLNMSG_OK_DONT_DIE } from './const.js';
 import { PanicTermination } from './panic_termination.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { achievementEntries, recordAchievement } from './achievements.js';
-import { game, requireGameLevel, requireInitializedGame } from './gstate.js';
+import { game, requireInitializedGame } from './gstate.js';
 import { expelHero, releaseHeroFromMonster } from './hero_expulsion.js';
 import { heroFormSticks } from './hero_species.js';
 import { monsterName } from './monster_name.js';
@@ -1109,7 +1109,7 @@ async function discloseGame({ killer = '', deathVerb = 'died', deathCause = null
     // Disclosure uses committed HP after that message has been acknowledged.
     let livingCat = false;
     for (const object of game.inventory) {
-        identifyObjectForDisclosure(object);
+        identifyObjectForDisclosure(object, true);
         if (!isQuantumBox(object))
             continue;
         if (livingCat)

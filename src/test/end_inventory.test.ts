@@ -5,7 +5,7 @@ import { game, requireGameDisplay } from '../js/gstate.js';
 import { loseHeroHp } from '../js/hero_damage.js';
 import { resetInputState } from '../js/input.js';
 import { addObjectToContainer } from '../js/object_container.js';
-import { LARGE_BOX, POT_HEALING, SACK, WAN_FIRE } from '../js/object_data.js';
+import { LARGE_BOX, POT_HEALING, SACK, TIN, WAN_FIRE } from '../js/object_data.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { memoryStorage } from './support/memory-storage.js';
@@ -65,4 +65,18 @@ void test('quitting discloses and identifies nested container contents after the
     assert.equal(box.lknown, true);
     assert.equal(sack.cknown, true);
     assert.equal(sack.lknown, true);
+});
+
+void test('disclosure identifies a contained tin without learning its preparation', async () => {
+    endingRoom('+i -a -v -g -c -o');
+    const box = await addInventoryObject(LARGE_BOX);
+    const carriedTin = await addInventoryObject(TIN, { cknown: false });
+    const containedTin = await knownObject(TIN, { where: 'free', cknown: false });
+    await addObjectToContainer(box, containedTin);
+
+    await doquit();
+
+    assert.equal(carriedTin.cknown, true);
+    assert.equal(containedTin.known, true);
+    assert.equal(containedTin.cknown, false);
 });

@@ -3,7 +3,7 @@ import { isContainer } from './container.js';
 import { displayMessageWindow, plineWithContinuation } from './display.js';
 import { identifyObjectForDisclosure, inventoryItemDescription } from './invent.js';
 import { BAG_OF_TRICKS, STATUE } from './object_data.js';
-import { definiteName, objectName, simpleObjectName } from './objnam.js';
+import { definiteName, objectName, observeObjectForNaming, simpleObjectName } from './objnam.js';
 import { lootSortMode, sortObjects } from './object_sort.js';
 import { isQuantumBox } from './quantum_cat.js';
 import { showDisclosureOverlay } from './windows.js';
@@ -22,6 +22,8 @@ export async function containerContents(
                 if (isQuantumBox(box)) {
                     lines.push("  Schroedinger's cat!");
                 } else {
+                    if (!identified)
+                        for (const object of box.contents) observeObjectForNaming(object);
                     for (const object of sortObjects(box.contents, { mode: lootSortMode() })) {
                         if (identified) identifyObjectForDisclosure(object);
                         lines.push(`  ${inventoryItemDescription(object)}`);

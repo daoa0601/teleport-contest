@@ -754,11 +754,11 @@ export async function selectUsedInventoryLetter(avoidLetter: string | null): Pro
 // Keep that state transition separate from the ordinary `i` command, whose
 // descriptions are still constrained by what the hero learned in play.
 export async function showIdentifiedInventory() {
-    for (const item of game.inventory) identifyObjectForDisclosure(item);
+    for (const item of game.inventory) identifyObjectForDisclosure(item, true);
     return selectInventoryObject({ headingAttr: 0, pickMode: PICK_NONE });
 }
 
-export function identifyObjectForDisclosure(item: GameObject): void {
+export function identifyObjectForDisclosure(item: GameObject, identifyTinContents = false): void {
     recordObjectEncounter(item.otyp);
     recordObjectKnowledge(item.otyp);
     item.typeKnown = true;
@@ -766,10 +766,9 @@ export function identifyObjectForDisclosure(item: GameObject): void {
     item.bknown = true;
     item.dknown = true;
     item.rknown = true;
-    item.overrideIdentified = true;
     if (isContainer(item) || item.otyp === STATUE)
         item.cknown = item.lknown = true;
-    else if (item.otyp === TIN) item.cknown = true;
+    else if (identifyTinContents && item.otyp === TIN) item.cknown = true;
     const redundantNeutral = item.oclass === 2 || item.oclass === 11
         || (item.oclass === 6 && objectUsesCharges(item));
     item.buc = item.blessed ? 'blessed' : item.cursed ? 'cursed'
