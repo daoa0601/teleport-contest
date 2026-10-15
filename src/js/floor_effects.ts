@@ -119,8 +119,8 @@ function fallenObjectSubject(object: GameObject): string {
 async function handleHeroShaftEdge(
     object: GameObject, trap: Trap | undefined, x: number, y: number,
     state: GameState, publish: MessagePublisher, random: typeof rn2,
-): Promise<boolean> {
-    if (!trap || state.u.ux !== x || state.u.uy !== y || !trap.tseen) return false;
+): Promise<FloorEffectResult | null> {
+    if (!trap || state.u.ux !== x || state.u.uy !== y || !trap.tseen) return null;
     if (is_pit(trap.ttyp)
         && !(state.u?.utrap && state.u.utraptype === TT_PIT)) {
         const noun = object.oextra?.oname || object.oname
@@ -133,12 +133,13 @@ async function handleHeroShaftEdge(
             await publish(`${fallenObjectSubject(object)} ${verb} into ${
                 trap.madeby_u ? 'your' : 'the'} pit.`);
         }
-        return false;
+        return { finished: false, object };
     }
-    if (!is_hole(trap.ttyp)) return false;
-    return shipObject(object, x, y, {
+    if (!is_hole(trap.ttyp)) return null;
+    const shipped = await shipObject(object, x, y, {
         state: requireInitializedGame(state), publish, random,
     });
+    return shipped ? { finished: true, object: null } : { finished: false, object };
 }
 
 export async function applyFloorEffects(
@@ -182,6 +183,7 @@ export async function applyFloorEffects(
         });
         if (!landed.includes(object))
             return { finished: true, object: null };
+        return { finished: false, object };
     } else if (isPoolAt(x, y, state)) {
         const airborne = state.u.levitating || state.u.flying;
         if ((heroIsBlind(state) || airborne) && !heroIsDeaf(state)
@@ -203,11 +205,13 @@ export async function applyFloorEffects(
             await deleteObject(object, state);
             return { finished: true, object: null };
         }
+        return { finished: false, object };
     }
 
-    if (await handleHeroShaftEdge(
+    const shaftLanding = await handleHeroShaftEdge(
         object, trap, x, y, state, publish, random,
-    )) return { finished: true, object: null };
+    );
+    if (shaftLanding) return shaftLanding;
 
     if (object.globby) {
         const merged = await meldLandingGlob(object, x, y, {

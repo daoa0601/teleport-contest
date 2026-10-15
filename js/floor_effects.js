@@ -81,7 +81,7 @@ function fallenObjectSubject(object) {
 }
 async function handleHeroShaftEdge(object, trap, x, y, state, publish, random) {
     if (!trap || state.u.ux !== x || state.u.uy !== y || !trap.tseen)
-        return false;
+        return null;
     if (is_pit(trap.ttyp)
         && !(state.u?.utrap && state.u.utraptype === TT_PIT)) {
         const noun = object.oextra?.oname || object.oname
@@ -93,13 +93,14 @@ async function handleHeroShaftEdge(object, trap, x, y, state, publish, random) {
                 ? 'tumbles' : 'tumble';
             await publish(`${fallenObjectSubject(object)} ${verb} into ${trap.madeby_u ? 'your' : 'the'} pit.`);
         }
-        return false;
+        return { finished: false, object };
     }
     if (!is_hole(trap.ttyp))
-        return false;
-    return shipObject(object, x, y, {
+        return null;
+    const shipped = await shipObject(object, x, y, {
         state: requireInitializedGame(state), publish, random,
     });
+    return shipped ? { finished: true, object: null } : { finished: false, object };
 }
 export async function applyFloorEffects(object, x, y, { state = game, publish = plineWithContinuation, random = rn2, luckRoll = rnl, verb = '', } = {}) {
     requireLiveGame(state);
@@ -128,6 +129,7 @@ export async function applyFloorEffects(object, x, y, { state = game, publish = 
         });
         if (!landed.includes(object))
             return { finished: true, object: null };
+        return { finished: false, object };
     }
     else if (isPoolAt(x, y, state)) {
         const airborne = state.u.levitating || state.u.flying;
@@ -152,9 +154,11 @@ export async function applyFloorEffects(object, x, y, { state = game, publish = 
             await deleteObject(object, state);
             return { finished: true, object: null };
         }
+        return { finished: false, object };
     }
-    if (await handleHeroShaftEdge(object, trap, x, y, state, publish, random))
-        return { finished: true, object: null };
+    const shaftLanding = await handleHeroShaftEdge(object, trap, x, y, state, publish, random);
+    if (shaftLanding)
+        return shaftLanding;
     if (object.globby) {
         const merged = await meldLandingGlob(object, x, y, {
             state, publish, random,
