@@ -25,6 +25,7 @@ import { offerThrownFood } from './thrown_food.js';
 import { hitMonsterWithThrownEggPieOrVenom } from './hero_thrown_egg_pie_venom.js';
 import { rangedTargetHitBonus } from './weapon_accuracy.js';
 import { isAxe } from './weapon_type.js';
+import { catchQuestObject } from './quest_leader_catch.js';
 const M2_ELF = 0x00000010;
 const M2_ORC = 0x00000080;
 const WEAPON_CLASS = 2;
@@ -124,6 +125,11 @@ async function hitMonsterWithRangedObject(monster, object, state, mode, { guaran
     let threshold = baseRangedHitThreshold(monster, object, state);
     if (guaranteedHit)
         threshold += 1000;
+    if (!applied) {
+        const caught = await catchQuestObject(monster, object, state);
+        if (caught !== null)
+            return { hit: caught, consumed: caught };
+    }
     const dieRoll = rnd(20);
     const weaponHit = rangedObjectUsesWeaponHit(object);
     const heavyObject = object.otyp === BOULDER || object.otyp === HEAVY_IRON_BALL;
