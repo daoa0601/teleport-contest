@@ -7,7 +7,7 @@ import { flushPendingTopline } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { setHeroSpecies } from '../js/hero_species.js';
 import { resetInputState } from '../js/input.js';
-import { DAGGER, GOLD_PIECE, OBJECT_NAMES } from '../js/object_data.js';
+import { BOULDER, DAGGER, GOLD_PIECE, OBJECT_NAMES } from '../js/object_data.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
@@ -20,6 +20,21 @@ async function nearbyThief(species = 'water nymph') {
     thief.muy = game.u.uy;
     return thief;
 }
+
+void test('a nymph gives up on a boulder instead of carrying it away', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    const boulder = await addInventoryObject(BOULDER);
+    const thief = await nearbyThief();
+    const messages = theftMessages();
+
+    await performMonsterHeroAttack(thief, game, { random: () => 0, rollOne: () => 1 });
+    messages.push(game._pending_message);
+
+    assert.ok(game.inventory.includes(boulder));
+    assert.equal(thief.minvent.length, 0);
+    assert.match(messages.join('\n'), /tries to steal your boulder but gives up/);
+});
 
 void test('a nymph takes a worn adornment ring before ordinary possessions', async () => {
     freshObjectRoom();

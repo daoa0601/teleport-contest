@@ -142,7 +142,7 @@ import {
 import { nhgetch } from './input.js';
 import { NO_COLOR, CLR_BRIGHT_BLUE } from './terminal.js';
 import {
-    ACID_VENOM, CORPSE,
+    ACID_VENOM, BOULDER, CORPSE,
     GOLD_PIECE,
     OBJECT_BIMANUAL, OBJECT_NAMES,
     SHIELD_OF_REFLECTION,
@@ -1863,7 +1863,16 @@ async function resolveDeferredHeroItemTheft(
     const adornment = !animal && !game.uarmg
         ? [game.uleft, game.uright].find(ring => ring?.otyp === OBJECT_NAMES.indexOf('adornment'))
         : null;
-    const object = adornment ?? selectHeroItemForTheft(game, random, action.calls);
+    let object = adornment ?? selectHeroItemForTheft(game, random, action.calls);
+    const throwsRocks = !!((MONSTER_FLAGS2[monster.mnum] ?? 0) & 0x08000000);
+    let retriedBoulder = false;
+    while (object) {
+        if (game._delayedAction?.kind === 'steal' && game._delayedAction.object === object)
+            return false;
+        if (object.otyp !== BOULDER || throwsRocks || retriedBoulder) break;
+        retriedBoulder = true;
+        object = selectHeroItemForTheft(game, random, action.calls);
+    }
     if (!object) {
         const subject = canSpotMonster(monster)
             ? monsterName(monster, { state: game, capitalized: true })
@@ -1877,8 +1886,6 @@ async function resolveDeferredHeroItemTheft(
         return true;
     }
     if (!game.inventory.includes(object)) return false;
-    if (game._delayedAction?.kind === 'steal' && game._delayedAction.object === object)
-        return false;
 
     const equipmentSlots = heroEquipmentSlots();
     const occupiedSlots = equipmentSlots.filter(slot => game[slot] === object);
@@ -1907,6 +1914,7 @@ async function resolveDeferredHeroItemTheft(
         }
         return false;
     };
+    if (object.otyp === BOULDER && !throwsRocks) return refuse();
     if (animal) {
         let stuck = !!object.cursed && wasWorn
             && object !== game.uquiver && !(object === game.uswapwep && !game.u.twoweap);
