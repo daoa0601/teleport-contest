@@ -12,7 +12,8 @@ import { doorObstructed } from './door_magic.js';
 import { DBWALL, DRAWBRIDGE_DOWN, IS_DRAWBRIDGE, IS_TREE, LADDER, STAIRS, THRONE } from './const.js';
 import { dipFountainSword } from './fountain_sword.js';
 import { washHands } from './dip_water.js';
-import { curseObject } from './object_state.js';
+import { curseObject, uncurseObjectState } from './object_state.js';
+import { adjustObjectLightAfterBlessing, objectLightRadius } from './light.js';
 import { waterDamageObject } from './trap.js';
 import { dip, dipInto } from './potion_dip.js';
 import { AKLYS, BOOMERANG, CRYSTAL_BALL } from './object_data.js';
@@ -26,7 +27,7 @@ import { wizMigrateMonsters } from './wizard_migration.js';
 import { prepareWizardTeleportAtWill, wizardTeleportCommand } from './wizard_teleport.js';
 import { hurtleMonster } from './monster_hurtle.js';
 import { isRoom } from './map_types.js';
-import { bookCursed, continueSpellbookStudy } from './spellbook_study.js';
+import { continueSpellbookStudy } from './spellbook_study.js';
 import { grantMonsterWish } from './potion_occupants.js';
 import { quaff } from './quaff.js';
 import { tameMonster } from './monster_taming.js';
@@ -233,14 +234,14 @@ import { doUntrap } from './untrap.js';
 import { dosit } from './sit.js';
 import { continueEngraving, doengrave } from './engrave_command.js';
 import { climbOutOfPit, heroCanMoveFromTrap, triggerHeroTrapAt, triggerLevelTeleportTrap } from './hero_traps.js';
-import { applyDippedCoinFate, applyFountainDemonActor, applyFountainGemDiscovery, applyFountainNymphActor, applyFountainSnakeActors, resolveDippedBucFate, resolveDippedSensationFate, } from './fountain_effects.js';
+import { applyDippedCoinFate, applyFountainDemonActor, applyFountainGemDiscovery, applyFountainNymphActor, applyFountainSnakeActors, resolveDippedSensationFate, } from './fountain_effects.js';
 import { dryFountainAt, gushForthFromFountain } from './fountain.js';
 import { heroArmName, heroFingerName, heroHandName } from './body_parts.js';
 import { armorUsesPairGrammar, withIndefiniteArticle, makePlural } from './object_grammar.js';
 import { objectWearMessage } from './object_wear_message.js';
 import { isWetTowel, willWeld } from './weapon_type.js';
 import { announceWeaponWeld, explainTwoWeaponEnd, refuseWeldedPrimary } from './weapon_feedback.js';
-import { dropCursedSecondaryWeapon, toggleTwoWeaponCombat } from './two_weapon.js';
+import { toggleTwoWeaponCombat } from './two_weapon.js';
 import { dist2, distmin, dungeonDepth, ledgerNo } from './hacklib.js';
 import { triggerBoobyTrap } from './booby_trap.js';
 import { addShopDamage, payForShopDamage } from './shop_damage.js';
@@ -4001,19 +4002,24 @@ async function dipFountain(object, loc) {
     }
     const fate = rnd(30);
     let eventMessage = '';
-    const wasCursed = object !== 'hands' && object.cursed;
-    const bucEffect = object === 'hands' ? { handled: fate >= 16 && fate <= 20,
-        message: fate >= 17 && fate <= 20 ? 'A feeling of loss comes over you.' : '' } : resolveDippedBucFate({
-        fate,
-        object,
-        blind: heroIsBlind(),
-        liquidName: () => displayLiquidName('water'),
-    });
-    if (object !== 'hands' && !wasCursed && object.cursed) {
-        await dropCursedSecondaryWeapon(object);
-        if (game.program_state.gameover)
-            return;
-        await bookCursed(object);
+    if (fate >= 16 && fate <= 20) {
+        if (fate === 16) {
+            if (object !== 'hands' && object.oclass !== 12 && !object.cursed)
+                await curseObject(object);
+        }
+        else if (object !== 'hands' && object.cursed) {
+            if (!heroIsBlind())
+                await plineWithContinuation(`The ${displayLiquidName('water')} glows for a moment.`);
+            const oldRadius = objectLightRadius(object);
+            uncurseObjectState(object);
+            await adjustObjectLightAfterBlessing(object, oldRadius);
+        }
+        else {
+            await plineWithContinuation('A feeling of loss comes over you.');
+        }
+        if (!game.program_state.gameover)
+            await dryFountainAt(game.u.ux, game.u.uy);
+        return;
     }
     const sensationEffect = resolveDippedSensationFate({
         fate,
@@ -4035,10 +4041,7 @@ async function dipFountain(object, loc) {
         exerciseWisdom,
         repaint: () => newsym(game.u.ux, game.u.uy),
     });
-    if (bucEffect.handled) {
-        eventMessage = bucEffect.message;
-    }
-    else if (sensationEffect.handled) {
+    if (sensationEffect.handled) {
         eventMessage = sensationEffect.message;
     }
     else if (coinEffect.handled) {

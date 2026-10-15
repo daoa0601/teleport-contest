@@ -3,7 +3,6 @@
 // 20, 21 through 24, 26 through 27, and 29.
 
 import { formatFeltMessage, formatHeardMessage } from './hero_speech.js';
-import { curseObjectState, uncurseObjectState } from './object_state.js';
 import { rn2, rnd } from './rng.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
@@ -24,36 +23,6 @@ interface FountainActorOptions<TrapResult> {
 
 function resolvedLiquidName(liquidName: DescribedPart): string {
     return typeof liquidName === 'function' ? liquidName() : liquidName;
-}
-
-export function resolveDippedBucFate({
-    fate,
-    object,
-    isHands = false,
-    blind = false,
-    liquidName = 'water',
-}: { fate: number; object: GameObject | null; isHands?: boolean; blind?: boolean; liquidName?: DescribedPart }) {
-    if (fate === 16) {
-        if (!isHands && object && !object.cursed)
-            curseObjectState(object);
-        return { handled: true, message: '' };
-    }
-
-    if (fate >= 17 && fate <= 20) {
-        if (!isHands && object?.cursed) {
-            const message = blind
-                ? ''
-                : `The ${resolvedLiquidName(liquidName)} glows for a moment.`;
-            uncurseObjectState(object);
-            return { handled: true, message };
-        }
-        return {
-            handled: true,
-            message: 'A feeling of loss comes over you.',
-        };
-    }
-
-    return { handled: false, message: '' };
 }
 
 function resolvedArmName(armName: DescribedPart): string {
