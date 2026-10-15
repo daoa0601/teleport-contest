@@ -53,6 +53,18 @@ void test('searching feels an adjacent object hidden by a visible cloud', async 
     assert.equal(game.context.move, 1);
 });
 
+void test('blind searching at the western edge does not feel the unused map column', async () => {
+    const level = freshObjectRoom({ heroX: 1, left: 1, right: 8 });
+    await makeBlinded(100, { talk: false });
+    const outside = level.requireAt(0, 10);
+    assert.equal(outside.seenv, 0);
+
+    await rhack('s'.charCodeAt(0));
+
+    assert.equal(outside.seenv, 0);
+    assert.equal(game.context.move, 1);
+});
+
 void test('finding a trap under a visible monster keeps the map and needs no acknowledgement', async () => {
     const level = freshObjectRoom();
     requirePlayingGame(game);

@@ -10,7 +10,7 @@ import { artifactById } from './artifacts.js';
 import { heroIsBlind } from './senses.js';
 import { exerciseWisdom } from './attrib.js';
 import { canSpotMonster, canSenseMonster, monsterHasWarningProjection, flushPendingTopline, feel_location, glyphAt, magic_map_background, map_background, map_engraving, map_invisible, map_object, map_trap, newsym, pline, show_glyph_cell, unmap_invisible, plineWithContinuation, flashGlyphAt, terrain_glyph, transientMonsterGlyph, transientTrapGlyph, cls, displaySelf, docrt, feel_newsym, } from './display.js';
-import { BOLT_LIM, COLNO, ROWNO, ROOMOFFSET, STONE, SDOOR, SCORR, DOOR, CORR, M_AP_TYPE, Is_airlevel, Is_waterlevel, IS_FURNITURE, D_CLOSED, D_LOCKED, D_TRAPPED, STATUE_TRAP, TRAPPED_CHEST, TRAPPED_DOOR, TRAP_EXPLANATIONS, W_NONDIGGABLE, W_NONPASSWALL, WM_MASK, } from './const.js';
+import { BOLT_LIM, COLNO, ROWNO, ROOMOFFSET, STONE, SDOOR, SCORR, DOOR, CORR, M_AP_TYPE, Is_airlevel, Is_waterlevel, isok, IS_FURNITURE, D_CLOSED, D_LOCKED, D_TRAPPED, STATUE_TRAP, TRAPPED_CHEST, TRAPPED_DOOR, TRAP_EXPLANATIONS, W_NONDIGGABLE, W_NONPASSWALL, WM_MASK, } from './const.js';
 import { BOULDER, CHEST, LARGE_BOX, LENSES, GOLD_PIECE, OBJECT_BASES, OBJECT_MERGE, OBJECT_NAMES } from './object_data.js';
 import { objectClassForType, observeObject } from './object_knowledge.js';
 import { activateStatueTrapAt } from './statue_trap.js';
@@ -161,6 +161,8 @@ async function searchAdjacentSecrets(automatic = false) {
     let found = false;
     for (let x = u.ux - 1; x <= u.ux + 1; x++) {
         for (let y = u.uy - 1; y <= u.uy + 1; y++) {
+            if (!isok(x, y))
+                continue;
             if (x === u.ux && y === u.uy)
                 continue;
             const loc = game.level?.at(x, y);

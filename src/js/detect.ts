@@ -28,7 +28,7 @@ import {
 } from './display.js';
 import {
     BOLT_LIM, COLNO, ROWNO, ROOMOFFSET, STONE, SDOOR, SCORR, DOOR, CORR,
-    M_AP_TYPE, Is_airlevel, Is_waterlevel,
+    M_AP_TYPE, Is_airlevel, Is_waterlevel, isok,
     IS_FURNITURE,
     D_CLOSED, D_LOCKED, D_TRAPPED,
     STATUE_TRAP, TRAPPED_CHEST, TRAPPED_DOOR, TRAP_EXPLANATIONS,
@@ -185,6 +185,7 @@ async function searchAdjacentSecrets(automatic = false): Promise<AutomaticSearch
     let found = false;
     for (let x = u.ux - 1; x <= u.ux + 1; x++) {
         for (let y = u.uy - 1; y <= u.uy + 1; y++) {
+            if (!isok(x, y)) continue;
             if (x === u.ux && y === u.uy) continue;
             const loc = game.level?.at(x, y);
             if (!loc) continue;
