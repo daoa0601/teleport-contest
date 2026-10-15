@@ -9,6 +9,7 @@ import { impossible } from './diagnostics.js';
 import { askMonsterTeleportDestination, askTeleportDestination } from './cmd.js';
 import { randomTeleportDepth } from './level_teleport.js';
 import { depth } from './hacklib.js';
+import { clampHoleDestination } from './hole_destination.js';
 import { levelAtDepth, insideWizardTower, levelIsWizardTower } from './dungeon.js';
 import { propertyIsActive } from './properties.js';
 import { finishTeleportArrival } from './location_effects.js';
@@ -976,20 +977,7 @@ export async function teleportMonsterThroughHole(monster, trap, { state = game, 
         }
         if (!trap.dst)
             throw new Error('A monster fall requires a hole destination');
-        const dungeon = state.dungeons[trap.dst.dnum];
-        if (!dungeon)
-            throw new Error(`Hole leads to absent dungeon ${trap.dst.dnum}`);
-        let bottom = dungeon.num_dunlevs;
-        if (In_quest(trap.dst)) {
-            const locate = state.specialLevels?.get('x-loca');
-            if (!locate)
-                throw new Error('Quest falls require the locate level');
-            if (dungeon.dunlev_ureached < locate.dlevel)
-                bottom = locate.dlevel;
-        }
-        else if (In_hell(trap.dst) && !state.u.uevent?.invoked)
-            bottom--;
-        destination = { dnum: trap.dst.dnum, dlevel: Math.min(trap.dst.dlevel, bottom) };
+        destination = clampHoleDestination(trap.dst, state);
     }
     if (seen) {
         const effect = trap.ttyp === HOLE ? 'falls into a hole' : 'falls through a trap door';

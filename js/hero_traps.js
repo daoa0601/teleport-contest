@@ -26,6 +26,8 @@ import { levelTeleport } from './level_teleport.js';
 import { gotoLevel as changeLevel, scheduleLevelChange } from './level_change.js';
 import { heroLiquidEffects } from './hack.js';
 import { dungeonDepth } from './hacklib.js';
+import { clampHoleDestination } from './hole_destination.js';
+import { shopDig } from './shop_damage.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { explodeLandMine } from './landmine_explosion.js';
 import { placeCreatedObject, placeObject, placeObjectSynchronously, remove_object, stack_object, } from './floor_object.js';
@@ -1067,17 +1069,16 @@ export async function prepareHoleFall(trap, { tookPlunge = false } = {}) {
     if ((flying || clinging) && tookPlunge)
         await plineWithContinuation(`You ${flying ? 'swoop' : 'deliberately drop'} down `
             + `${trap.ttyp === TRAPDOOR ? 'through the trap door' : 'into the gaping hole'}!`);
-    const current = game.u?.uz || { dnum: 0, dlevel: 1 };
-    const destination = Is_stronghold(current) && game.valley_level
-        ? { ...game.valley_level }
-        : {
-            dnum: trap.dst?.dnum ?? current.dnum,
-            dlevel: trap.dst?.dlevel ?? current.dlevel + 1,
-        };
-    const dungeon = game.dungeons[destination.dnum];
-    if (!dungeon)
-        throw new Error(`Hole leads to absent dungeon ${destination.dnum}`);
-    destination.dlevel = Math.min(destination.dlevel, dungeon.num_dunlevs);
+    if (game.u.ushops?.length)
+        await shopDig(1);
+    const current = game.u.uz;
+    if (Is_stronghold(current)) {
+        if (!game.valley_level)
+            throw new Error('A Castle trapdoor requires the Valley destination');
+        return { destination: { ...game.valley_level }, arrival: flying ? 'random' : 'falling' };
+    }
+    const destination = clampHoleDestination(trap.dst
+        ?? { dnum: current.dnum, dlevel: current.dlevel + 1 });
     const distance = dungeonDepth(destination.dnum, destination.dlevel)
         - dungeonDepth(current.dnum, current.dlevel);
     if (distance > 1)
