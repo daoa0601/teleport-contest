@@ -34,6 +34,7 @@ import { plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
 import { dist2 } from './hacklib.js';
 import { hurtleHero } from './hero_hurtle.js';
+import { hitFloorWithObject } from './object_drop.js';
 import { monsterTypeName } from './monster_data.js';
 import {
     hitMonsterWithSupportedPotion, potionImpactObjectName,
@@ -136,16 +137,14 @@ export async function resolveMapPotionThrow({
                 state.context.move = 1;
                 return true;
             }
-            await publish(
-                `${indefiniteObjectName(thrown, state)} hits the floor.`,
-            );
-            await finishHeroThrownObjectLanding({
-                state,
-                object: thrown,
-                x: state.u.ux,
-                y: state.u.uy,
-                publish,
-            });
+            if (state.u.dz > 0) {
+                await hitFloorWithObject(thrown, { state, publish });
+            } else {
+                await publish(`${indefiniteObjectName(thrown, state)} hits the floor.`);
+                await finishHeroThrownObjectLanding({
+                    state, object: thrown, x: state.u.ux, y: state.u.uy, publish,
+                });
+            }
             state.context.move = 1;
             return true;
         }

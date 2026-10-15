@@ -30,7 +30,7 @@ export async function throwOrdinaryObject({ state = game, item, quantity, splitO
                 const { destroyed } = await tossVenomUp(thrown, state);
                 return { object: thrown, landed: destroyed ? null : thrown, stoppedBy: 'vertical' };
             }
-            const landed = isVenom
+            const landed = state.u.dz > 0 || isVenom
                 ? await hitFloorWithObject(thrown, { state })
                 : await finishHeroThrownObjectLanding({
                     state,
