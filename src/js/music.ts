@@ -120,7 +120,7 @@ async function awakenMonsters(distance: number): Promise<InstrumentEffectResult>
     for (const monster of liveMonsters()) {
         const distanceFromHero = monsterDistance(monster);
         if (distanceFromHero >= distance) continue;
-        const flight = await awakenMonster(monster, distanceFromHero < distance / 3);
+        const flight = await awakenMonster(monster, distanceFromHero < Math.trunc(distance / 3));
         if (flight?.heroDied) return flight;
     }
 }
@@ -271,7 +271,7 @@ export async function awakenSoldiers(distance: number, bugler: Monster | null = 
             }
         } else if (dist < distance) {
             const flight = await awakenMonster(
-                monster, dist < distance / 3,
+                monster, dist < Math.trunc(distance / 3),
             );
             if (flight?.heroDied) return flight;
         }
