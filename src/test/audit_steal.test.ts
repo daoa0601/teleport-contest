@@ -5,8 +5,10 @@ import { wearHeroAccessory } from '../js/accessory.js';
 import { MM_ANGRY, MM_NOGRP, NO_MINVENT } from '../js/const.js';
 import { flushPendingTopline } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
+import { setHeroSpecies } from '../js/hero_species.js';
 import { resetInputState } from '../js/input.js';
 import { DAGGER, GOLD_PIECE, OBJECT_NAMES } from '../js/object_data.js';
+import { MONSTER_NAME } from '../js/monster_data.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -34,6 +36,30 @@ void test('a nymph takes a worn adornment ring before ordinary possessions', asy
     assert.ok(game.inventory.includes(dagger));
     assert.equal(game.uleft, null);
 });
+
+for (const deaf of [false, true]) {
+    void test(`a nymph talks to a ${deaf ? 'deaf' : 'hearing'} fellow seducer instead of stealing`, async () => {
+        freshObjectRoom({ hero: { deafTurns: deaf ? 20 : 0 } });
+        requirePlayingGame(game);
+        setHeroSpecies(MONSTER_NAME.indexOf('wood nymph'), game);
+        game.u.mh = game.u.mhmax = 40;
+        game.level.flags.noteleport = true;
+        const dagger = await addInventoryObject(DAGGER);
+        const thief = await nearbyThief();
+        thief.mcan = 1;
+        const messages = theftMessages();
+
+        await performMonsterHeroAttack(thief, game, { random: () => 0, rollOne: () => 1 });
+        messages.push(game._pending_message);
+
+        assert.ok(game.inventory.includes(dagger));
+        assert.match(messages.join('\n'), deaf
+            ? /says something but you can't hear it/
+            : /makes some remarks about how difficult theft is lately/);
+        assert.match(messages.join('\n'), /prevents the water nymph from teleporting/);
+        assert.ok(!thief.mflee, 'Conversation ends the attack without starting flight');
+    });
+}
 
 function theftMessages() {
     const messages: string[] = [];

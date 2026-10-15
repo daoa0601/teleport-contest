@@ -48,7 +48,8 @@ import { armorSimpleName, stopDonning } from './armor.js';
 import { isBeingTakenOff } from './takeoff_state.js';
 import { OBJECT_DELAY } from './object_data.js';
 import { heroIsUnaware } from './hero_sleep.js';
-import { AD_COLD, AD_DGST, AD_DRST, AD_FIRE, AD_MAGM, AD_SITM, AD_STCK } from './monster_attack_types.js';
+import { heroSpecies } from './hero_species.js';
+import { AD_COLD, AD_DGST, AD_DRST, AD_FIRE, AD_MAGM, AD_SEDU, AD_SITM, AD_SSEX, AD_STCK } from './monster_attack_types.js';
 import { monstersForgetHeroResistance, monstersObserveHeroResistance, seenResistanceForDamage, } from './monster_perception.js';
 import { engravingAt, wipeEngravingAt } from './engrave.js';
 import { finishScheduledLevelChange } from './level_change.js';
@@ -1603,6 +1604,17 @@ async function resolveDeferredHeroItemTheft(action, monster, attack, random) {
         action.calls.push(`rn2(${limit})`);
         return random(limit);
     };
+    if (!animal && MONSTER_ATTACKS[heroSpecies(game)]?.some(attack => attack[1] === AD_SEDU || attack[1] === AD_SSEX)) {
+        const subject = monsterName(monster, { state: game, capitalized: true });
+        await plineWithContinuation(`${subject} ${heroIsDeaf(game)
+            ? "says something but you can't hear it"
+            : (monster.minvent || monster.inventory || []).length ? 'brags about the goods some dungeon explorer provided'
+                : 'makes some remarks about how difficult theft is lately'}.`);
+        if (!await reportMonsterTeleportRestriction(monster, { state: game }))
+            await randomMonsterRelocation(monster, { calls: action.calls, flags: RLOC_MSG });
+        attack.attackerDone = true;
+        return true;
+    }
     if (monster.mcan) {
         if (animal)
             return false;
