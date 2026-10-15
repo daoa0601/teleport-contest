@@ -7268,12 +7268,8 @@ async function finishWizardClone(clone: Monster, state: PlayingGameState,
 
 function monsterHasteSelfEffect(monster: Monster, state: PlayingGameState) {
     const speed = adjustMonsterSpeed(monster, 1);
-    const blind = !!state?.blind || (state?.u?.blindTurns ?? 0) > 0;
-    const inSight = !blind && !!((state?.viz_array?.[monster.my]?.[monster.mx] ?? 0) & 0x2);
-    const canSeeInvisible = !!state?.u?.seeInvisible;
-    const visible = inSight && !monster.mundetected && (!monster.minvis || canSeeInvisible);
     const message = speed.changed && speed.canDescribe && !state.in_mklev
-        && visible && monster.mcanmove !== 0
+        && canSeeMonster(monster)
         ? monsterSpeedMessage(speed, canonicalMonsterName(monster, { state, capitalized: true }))
         : null;
     return { message, oldSpeed: speed.oldSpeed, speed: speed.speed };
