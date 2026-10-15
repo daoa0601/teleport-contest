@@ -603,6 +603,8 @@ export function uInitMisc(handednessRoll: number): void {
     // disclosure; combat and enlightenment must share the same owner.
     if (g.urole && ['barbarian', 'healer'].includes(g.urole.key))
         grantIntrinsicProperty('poisonResistance', 'role', g);
+    if (g.urole?.key === 'valkyrie')
+        grantIntrinsicProperty('coldResistance', 'role', g);
     if (g.urace?.name === 'orc')
         grantIntrinsicProperty('poisonResistance', 'race', g);
     if (g.urole?.key === 'rogue')
