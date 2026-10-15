@@ -29,4 +29,3 @@ void test('a blind hero remembers a new pit beyond a conjoined pit after a diggi
     assert.ok(level.traps.find(trap => trap.tx === 12 && trap.ty === 10)?.tseen);
     assert.equal(level.requireAt(12, 10).disp_ch, '^');
 });
-
