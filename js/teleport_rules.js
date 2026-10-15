@@ -5,7 +5,7 @@ import { canSeeMonster, plineWithContinuation } from './display.js';
 import { monsterName } from './monster_name.js';
 import { collectNearbyCoords } from './u_init.js';
 import { rn2 } from './rng.js';
-import { ACCESSIBLE, ALTAR, D_CLOSED, D_LOCKED, DOOR, IS_STWALL, GP_ALLOW_U, GP_AVOID_MONPOS, GP_CHECKSCARY, MM_IGNORELAVA, MM_IGNOREWATER, WATER, W_NONPASSWALL, isok, } from './const.js';
+import { ACCESSIBLE, ALTAR, D_CLOSED, D_LOCKED, DOOR, IS_STWALL, GP_ALLOW_U, GP_ALLOW_XY, GP_AVOID_MONPOS, GP_CHECKSCARY, MM_IGNORELAVA, MM_IGNOREWATER, WATER, W_NONPASSWALL, isok, } from './const.js';
 import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_SYMBOL, monsterIsCovetous, } from './monster_data.js';
 import { BOULDER, SCR_SCARE_MONSTER } from './object_data.js';
 import { hasCompletedEngraving } from './engrave.js';
@@ -169,14 +169,14 @@ export function goodPosition(x, y, subject, { state = game, gpflags = 0, random 
 }
 // C teleport.c:enexto()/enexto_core(). Search nearby first, then the rest
 // of the map. Only ignore scary squares after both searches fail.
-export function findNearbyMonsterPosition(mnum, x, y, { state = game, random = rn2, calls = null, } = {}) {
+export function findNearbyMonsterPosition(mnum, x, y, { state = game, gpflags = 0, random = rn2, calls = null, } = {}) {
     const species = mnum ?? state.u.umonster;
     if (species === undefined)
         throw new Error('Nearby placement requires a monster species.');
     const subject = { kind: 'species', mnum: species };
-    for (const gpflags of [GP_CHECKSCARY, 0]) {
+    for (const flags of [gpflags | GP_CHECKSCARY, gpflags]) {
         const nearby = collectNearbyCoords(x, y, 3, random, calls);
-        const fits = (point) => goodPosition(point.x, point.y, subject, { state, gpflags, random });
+        const fits = (point) => goodPosition(point.x, point.y, subject, { state, gpflags: flags, random });
         const close = nearby.find(fits);
         if (close)
             return close;
@@ -184,6 +184,8 @@ export function findNearbyMonsterPosition(mnum, x, y, { state = game, random = r
         const distant = all.slice(nearby.length).find(fits);
         if (distant)
             return distant;
+        if ((flags & GP_ALLOW_XY) && fits({ x, y }))
+            return { x, y };
     }
     return null;
 }

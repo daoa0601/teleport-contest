@@ -84,7 +84,7 @@ import { decodeBonesPayload } from './bones_validation.js';
 import type { BonesPayload } from './bones_validation.js';
 import { rn2, rnd, rn1, rne, rnz, d } from './rng.js';
 import { SHOP_TYPES, RANDOM_SHOP_TYPES } from './shop_data.js';
-import { GP_AVOID_MONPOS, GP_CHECKSCARY, RLOC_ERR, RLOC_NOMSG, In_mines, PL_NSIZ } from './const.js';
+import { GP_ALLOW_XY, GP_AVOID_MONPOS, GP_CHECKSCARY, RLOC_ERR, RLOC_NOMSG, In_mines, PL_NSIZ } from './const.js';
 import { init_rect, rnd_rect, get_rect, split_rects } from './rect.js';
 import {
     depth as depth_of_level, ledgerNo, maxLedgerNo,
@@ -2903,6 +2903,9 @@ function findMonsterNearPositionCore(
         if (goodPosition(pos.x, pos.y, subject, { state, gpflags }))
             return pos;
     }
+    if ((gpflags & GP_ALLOW_XY)
+        && goodPosition(centerX, centerY, subject, { state, gpflags }))
+        return { x: centerX, y: centerY };
     return null;
 }
 
@@ -2920,7 +2923,7 @@ export function findMonsterNearPosition(
     return findMonsterNearPositionCore(
         mnum, centerX, centerY, flags | GP_CHECKSCARY, state,
     ) || findMonsterNearPositionCore(
-        mnum, centerX, centerY, flags & ~GP_CHECKSCARY, state,
+        mnum, centerX, centerY, flags, state,
     );
 }
 

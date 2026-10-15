@@ -52,7 +52,7 @@ import { encodeSavedGraph } from './saved_graph.js';
 import { decodeBonesPayload } from './bones_validation.js';
 import { rn2, rnd, rn1, rne, rnz, d } from './rng.js';
 import { SHOP_TYPES, RANDOM_SHOP_TYPES } from './shop_data.js';
-import { GP_AVOID_MONPOS, GP_CHECKSCARY, RLOC_ERR, RLOC_NOMSG, In_mines, PL_NSIZ } from './const.js';
+import { GP_ALLOW_XY, GP_AVOID_MONPOS, GP_CHECKSCARY, RLOC_ERR, RLOC_NOMSG, In_mines, PL_NSIZ } from './const.js';
 import { init_rect, rnd_rect, get_rect, split_rects } from './rect.js';
 import { depth as depth_of_level, ledgerNo, maxLedgerNo, } from './hacklib.js';
 import { inducedAlignment, level_difficulty, specialLevelAt } from './dungeon.js';
@@ -2895,6 +2895,9 @@ function findMonsterNearPositionCore(mnum, centerX, centerY, gpflags, state) {
         if (goodPosition(pos.x, pos.y, subject, { state, gpflags }))
             return pos;
     }
+    if ((gpflags & GP_ALLOW_XY)
+        && goodPosition(centerX, centerY, subject, { state, gpflags }))
+        return { x: centerX, y: centerY };
     return null;
 }
 // C teleport.c:enexto().  The first complete search avoids scary squares;
@@ -2903,7 +2906,7 @@ function findMonsterNearPositionCore(mnum, centerX, centerY, gpflags, state) {
 // from a later makemon()/make_familiar() construction failure.
 export function findMonsterNearPosition(mnum, centerX, centerY, { ignoreWater = false, gpflags = 0, state = game } = {}) {
     const flags = gpflags | (ignoreWater ? MM_IGNOREWATER : 0);
-    return findMonsterNearPositionCore(mnum, centerX, centerY, flags | GP_CHECKSCARY, state) || findMonsterNearPositionCore(mnum, centerX, centerY, flags & ~GP_CHECKSCARY, state);
+    return findMonsterNearPositionCore(mnum, centerX, centerY, flags | GP_CHECKSCARY, state) || findMonsterNearPositionCore(mnum, centerX, centerY, flags, state);
 }
 // C potion.c:split_mon() halves maximum HP after cloneu() divides current HP.
 export async function splitHeroMonsterForm(state = game) {
