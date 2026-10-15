@@ -240,6 +240,8 @@ const PM_FAMINE = 313;
 const PM_WIZARD = 343;
 const PM_SALAMANDER = 329;
 const S_MIMIC = 13;
+const S_ANGEL = 27;
+const S_DEMON = 56;
 const G_UNIQ_MASK = 0x1000;
 const FLINT = 473;
 const PM_HOBBIT = 43;
@@ -3079,8 +3081,8 @@ export async function summonNastyMonsters(summoner) {
                 && (MONSTER_DIFFICULTY[makeindex] ?? 0)
                     >= difficultyCap
                 && (MONSTER_ATTACKS[makeindex] || []).some(([attackType]) => attackType === 255))
-                || (summonerClass === 56 && candidateClass === 30)
-                || (summonerClass === 30 && candidateClass === 56));
+                || (summonerClass === S_DEMON && candidateClass === S_ANGEL)
+                || (summonerClass === S_ANGEL && candidateClass === S_DEMON));
             if (makeindex == null)
                 continue;
             const position = summoner ? findMonsterNearPosition(makeindex, summoner.mux ?? game.u.ux, summoner.muy ?? game.u.uy)
@@ -3101,8 +3103,8 @@ export async function summonNastyMonsters(summoner) {
                     if ((difficultyCap > 0 && (MONSTER_DIFFICULTY[monster.mnum] ?? 0) >= difficultyCap
                         && rn2(In_endgame(game.u.uz) ? 3 : 7)
                         && (MONSTER_ATTACKS[monster.mnum] ?? []).some(([type]) => type === 255))
-                        || summonerClass === 56 && replacementClass === 30
-                        || summonerClass === 30 && replacementClass === 56) {
+                        || (summonerClass === S_DEMON && replacementClass === S_ANGEL)
+                        || (summonerClass === S_ANGEL && replacementClass === S_DEMON)) {
                         await unmakeNastySubstitute(monster);
                         monster = null;
                     }
