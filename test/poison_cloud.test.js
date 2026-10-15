@@ -41,7 +41,7 @@ void test('a poison cloud blinds and hurts a breathing hero', async () => {
     const events = await runLevelRegions(game, {
         rollOne: () => 3,
         publish: async (message) => { messages.push(message); },
-        onHeroDeath: async () => {
+        die: async () => {
             throw new Error('the surviving hero must not enter death handling');
         },
     });

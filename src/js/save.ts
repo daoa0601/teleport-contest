@@ -26,6 +26,7 @@ import { weaponNeedsBashingMessage } from './weapon_type.js';
 import { GRAPPLING_HOOK, PICK_AXE } from './object_data.js';
 import { forgetTempleEntry } from './priest.js';
 import { restoreElementalBubbles } from './elemental.js';
+import { restoreLevelRegions } from './regions.js';
 
 const SAVE_PREFIX = 'teleport-save:';
 const ERROR_SAVE_PREFIX = 'teleport-error-save:';
@@ -231,6 +232,7 @@ export function restoreGame(
         game._shopFollowMessageTurn = 0;
         game.program_state = { something_worth_saving: true };
         game.fmon = game.level?.monsters[0] ?? null;
+        restoreLevelRegions(game, 0);
         // C restore.c:dorecover() rebuilds transient vision after loading the
         // level. No old sight bits may suppress its first terrain repaint.
         vision_reset_new_level();

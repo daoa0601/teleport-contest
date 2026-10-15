@@ -86,7 +86,7 @@ import { insideRoom, inTown, roomForIndex, roomsAt } from './room.js';
 import { insideShopRoomAt } from './shk.js';
 import { convertSecretDoor } from './detect.js';
 import { occupied, somex, somey, somexy, somexyspace, } from './mkroom.js';
-import { createGasCloudSelection, createPoisonGasCloud } from './regions.js';
+import { createGasCloudSelection, createPoisonGasCloud, restoreLevelRegions } from './regions.js';
 import { F_LOOTED, F_WARNED, S_LDWASHER, S_LPUDDING, S_LRING, T_LOOTED, TREE_LOOTED, TREE_SWARM } from './const.js';
 import { beginObjectBurn } from './light.js';
 import { LEVEL_TIMER_KIND, OBJECT_TIMER_KIND, objectTimers, objectsInTimerGraph, scheduleLevelTimer, scheduleObjectTimer, stopAllObjectTimers, stopObjectTimer, stopLevelTimer, } from './object_timers.js';
@@ -3850,6 +3850,7 @@ async function getbones() {
     }));
     await renewBonesIdentities(game.level, payload.fruits);
     await restoreBonesMonsters(game.level, game);
+    restoreLevelRegions(game, 0);
     restoreBonesObjects(game.level);
     restoreBonesMonsterAttitudes(game.level);
     sanitizeEngravings(game.level);

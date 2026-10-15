@@ -224,7 +224,7 @@ import { convertSecretDoor } from './detect.js';
 import {
     occupied, somex, somey, somexy, somexyspace,
 } from './mkroom.js';
-import { createGasCloudSelection, createPoisonGasCloud } from './regions.js';
+import { createGasCloudSelection, createPoisonGasCloud, restoreLevelRegions } from './regions.js';
 import { F_LOOTED, F_WARNED, S_LDWASHER, S_LPUDDING, S_LRING,
     T_LOOTED, TREE_LOOTED, TREE_SWARM } from './const.js';
 import { beginObjectBurn } from './light.js';
@@ -3906,6 +3906,7 @@ async function getbones(): Promise<boolean> {
     }));
     await renewBonesIdentities(game.level, payload.fruits);
     await restoreBonesMonsters(game.level, game);
+    restoreLevelRegions(game, 0);
     restoreBonesObjects(game.level);
     restoreBonesMonsterAttitudes(game.level);
     sanitizeEngravings(game.level);
