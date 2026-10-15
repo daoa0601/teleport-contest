@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { CORR, FOUNTAIN, F_LOOTED, F_WARNED, GRAVE, HEADSTONE, HWALL, ROOM, STONE, S_LDWASHER, S_LPUDDING, S_LRING, T_LOOTED, TREE_LOOTED, TREE_SWARM } from '../js/const.js';
+import { CLOUD, CORR, D_CLOSED, FOUNTAIN, F_LOOTED, F_WARNED, GRAVE, HEADSTONE, HWALL, ROOM, SDOOR, STONE, S_LDWASHER, S_LPUDDING, S_LRING, T_LOOTED, TREE_LOOTED, TREE_SWARM } from '../js/const.js';
 import { init_dungeons } from '../js/dungeon.js';
 import { GameMap } from '../js/game.js';
 import { game, requireGameLevel } from '../js/gstate.js';
@@ -226,5 +226,21 @@ void test('Lua object fields honor poison, dilution, revival and known-trap alia
     assert.equal(level.objects[11]?.[5]?.[0]?.odiluted, true);
     assert.equal(level.objects[12]?.[5]?.[0]?.norevive, true);
     assert.equal(level.objects[13]?.[5]?.[0]?.tknown, true);
+});
+void test('Lua terrain closes and orients secret doors and removes engravings under clouds', async (t) => {
+    const lua = await levelLua(t);
+    await lua.executeAsync(`
+        des.map({ x = 10, y = 5, map = [[-...]] })
+        des.engraving({ x = 3, y = 0, text = "No surface in a cloud", degrade = false })
+        des.terrain(1, 0, "S")
+        des.terrain(selection.area(3, 0, 3, 0), "C")
+    `);
+    const level = requireGameLevel();
+    const door = level.requireAt(11, 5);
+    assert.equal(door.typ, SDOOR);
+    assert.equal(door.doormask, D_CLOSED);
+    assert.equal(door.horizontal, true);
+    assert.equal(level.requireAt(13, 5).typ, CLOUD);
+    assert.equal(level.engravings?.some(engraving => engraving.x === 13 && engraving.y === 5), false);
 });
 //# sourceMappingURL=special_level_selection.test.js.map

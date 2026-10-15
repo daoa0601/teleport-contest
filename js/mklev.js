@@ -4017,13 +4017,28 @@ function setLevelTerrainLit(x, y, typ, lit = -2) {
     return true;
 }
 function specialSelectionTerrain(selection, typ, lit = -2) {
+    selection.forEachXMajor((x, y) => setSpecialTerrain(x, y, typ, lit));
+}
+// sp_lev.c:sel_set_ter() applies these effects to both coordinate and
+// selection forms of des.terrain(). replace_terrain() only changes the type.
+function setSpecialTerrain(x, y, typ, lit) {
     const level = requireGameLevel();
-    selection.forEachXMajor((x, y) => {
-        if (!setLevelTerrainLit(x, y, typ, lit))
-            return;
-        if (typ === IRONBARS || typ === HWALL)
-            level.requireAt(x, y).horizontal = true;
-    });
+    if (!setLevelTerrainLit(x, y, typ, lit))
+        return;
+    const cell = level.requireAt(x, y);
+    if (cell.typ === SDOOR || IS_DOOR(cell.typ)) {
+        if (cell.typ === SDOOR)
+            cell.flags = cell.doormask = D_CLOSED;
+        const left = level.at(x - 1, y);
+        if (left && (IS_WALL(left.typ) || left.horizontal))
+            cell.horizontal = true;
+    }
+    else if (cell.typ === IRONBARS || cell.typ === HWALL) {
+        cell.horizontal = true;
+    }
+    else if (cell.typ === CLOUD) {
+        deleteEngravingAt(x, y, level);
+    }
 }
 function specialMazeWalk(context, mapX, mapY, direction, passageType = ROOM) {
     const level = requireGameLevel();
@@ -6590,7 +6605,7 @@ function createLuaLevelSession() {
             const type = mapCharacterType(character);
             if (type === undefined)
                 throw new Error(`unknown Lua terrain ${character}`);
-            setLevelTerrainLit(context.xstart + x, context.ystart + y, type, lit ?? -2);
+            setSpecialTerrain(context.xstart + x, context.ystart + y, type, lit ?? -2);
         },
         replaceTerrain: options => replaceLuaTerrain(context, options),
         region: (selection, lighting) => {
