@@ -1,35 +1,39 @@
 // Musical instruments and their effects.
 // C ref: music.c.
 import { formatFeltMessage } from './hero_speech.js';
-import { heroIsHallucinating } from './senses.js';
+import { heroIsBlind, heroIsDeaf, heroIsHallucinating, syncDeafness } from './senses.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
-import { A_DEX, A_WIS, COLNO, In_endgame, In_sokoban, In_V_tower, Is_astralevel, ROWNO, STRAT_WAITMASK, } from './const.js';
+import { A_DEX, A_WIS, COLNO, In_endgame, In_sokoban, In_V_tower, Is_astralevel, KILLED_BY, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, ROWNO, STRAT_WAITMASK, } from './const.js';
 import { tameMonster } from './monster_taming.js';
-import { canSeeMonster, newsym, pline, plineWithContinuation, } from './display.js';
+import { canSeeMonster, newsym, pline, plineWithContinuation, shieldeff, } from './display.js';
 import { finishHeroDeath } from './end.js';
 import { createEarthquake } from './earthquake.js';
 import { game } from './gstate.js';
 import { loseHeroHp } from './hero_damage.js';
 import { zapHeroWithObject } from './hero_self_zap.js';
-import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_MAGIC_RESISTANCE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SYMBOL, } from './monster_data.js';
-import { monsterName } from './monster_name.js';
-import { wakeMonstersNearWithMessages } from './monster_wake.js';
+import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_SYMBOL, } from './monster_data.js';
+import { monsterName, possessiveName } from './monster_name.js';
+import { revealMonsterAppearance } from './monster_appearance.js';
+import { monsterResistsSleep, putMonsterToSleep } from './monster_sleep.js';
+import { monsterResistsEffect } from './monster_resistance.js';
+import { releaseHeroFromMonster } from './hero_expulsion.js';
 import { makeMonsterFlee } from './monster_flee.js';
 import { monsterIsScaredAt } from './monster_fear.js';
-import { BUGLE, DRUM_OF_EARTHQUAKE, FIRE_HORN, FROST_HORN, LEATHER_DRUM, MAGIC_FLUTE, MAGIC_HARP, OBJECT_NAMES, TOOLED_HORN, WOODEN_FLUTE, WOODEN_HARP, } from './object_data.js';
+import { BUGLE, DRUM_OF_EARTHQUAKE, FIRE_HORN, FROST_HORN, LEATHER_DRUM, MAGIC_FLUTE, MAGIC_HARP, TOOLED_HORN, WOODEN_FLUTE, WOODEN_HARP, } from './object_data.js';
 import { learnObjectType } from './object_knowledge.js';
+import { consumeObjectCharge } from './object_charge.js';
+import { definiteName, objectCombatName, objectNameIsPlural, ownedObjectName, simpleObjectName, } from './objnam.js';
+import { verbForSubject } from './object_grammar.js';
 import { askForTune, playTune } from './passtune.js';
-import { heroCanBlow } from './hero_species.js';
+import { heroCanBlow, heroFormSticks } from './hero_species.js';
 import { d, rnd, rn2 } from './rng.js';
 import { promptYesNoQuit } from './query.js';
-import { syncDeafness } from './senses.js';
 import { promptDirection } from './tty_prompts.js';
-import { cansee } from './vision.js';
 import { zapRayWithObject } from './zap.js';
 const G_UNIQ = 0x1000;
 const M1_MINDLESS = 0x00010000;
 const M2_MERC = 0x00000200;
-const MR_SLEEP = 0x04;
+const S_MIMIC = 13;
 const S_NYMPH = 14;
 const S_SNAKE = 45;
 const PM_GUARD = 272;
@@ -42,8 +46,11 @@ const DRUMS = new Set([LEATHER_DRUM, DRUM_OF_EARTHQUAKE]);
 const WIND_INSTRUMENTS = new Set([
     WOODEN_FLUTE, MAGIC_FLUTE, TOOLED_HORN, FROST_HORN, FIRE_HORN, BUGLE,
 ]);
-function instrumentName(instrument) {
-    return instrument.name || OBJECT_NAMES[instrument.otyp] || 'instrument';
+// C Tobjnam(): name the visible instrument with a definite article.
+function instrumentAction(instrument, verb) {
+    const name = definiteName(objectCombatName(instrument));
+    const action = objectNameIsPlural(instrument) ? verb : verbForSubject(null, verb);
+    return `${name.charAt(0).toUpperCase()}${name.slice(1)} ${action}`;
 }
 function monsterDistance(monster) {
     const dx = (monster.mx ?? 0) - (game.u?.ux ?? 0);
@@ -55,9 +62,7 @@ function liveMonsters() {
     return Array.from(game.level?.monsters || []).reverse().filter(monster => monster && (monster.mhp ?? 1) > 0);
 }
 function monsterResistsInstrument(monster) {
-    const defenseLevel = Math.max(1, Math.min(50, monster.m_lev || 1));
-    const magicResistance = MONSTER_MAGIC_RESISTANCE[monster.mnum] || 0;
-    return rn2(100 + TOOL_ATTACK_LEVEL - defenseLevel) < magicResistance;
+    return monsterResistsEffect(monster, TOOL_ATTACK_LEVEL);
 }
 function instrumentCanScare(monster) {
     return monsterIsScaredAt(monster, game, 0, 0);
@@ -84,7 +89,7 @@ async function awakenMonsters(distance) {
         const distanceFromHero = monsterDistance(monster);
         if (distanceFromHero >= distance)
             continue;
-        const flight = await awakenMonster(monster, distanceFromHero < distance / 3);
+        const flight = await awakenMonster(monster, distanceFromHero < Math.trunc(distance / 3));
         if (flight?.heroDied)
             return flight;
     }
@@ -98,9 +103,6 @@ function improvisedNotes() {
         notes += noteNames[rn2(noteNames.length)];
     game.context.jingle = notes;
     return { notes, familiar: false };
-}
-function heroIsDeaf() {
-    return !!(game.deaf || (game.u?.deafTurns ?? 0) > 0);
 }
 function heroIsImpaired() {
     const hero = game.u;
@@ -122,7 +124,7 @@ async function announceImprovisation(instrument) {
             mode = 4;
     }
     if (mode === 0) {
-        await plineWithContinuation(`You start playing your ${instrumentName(instrument)}.`);
+        await plineWithContinuation(`You start playing ${ownedObjectName(instrument, game, { capitalized: false })}.`);
     }
     else if (mode === 1) {
         await plineWithContinuation(heroIsDeaf()
@@ -146,54 +148,58 @@ async function putMonstersToSleep(distance) {
         if (monsterDistance(monster) >= distance)
             continue;
         const duration = d(10, 10);
-        const sleepResistant = !!((MONSTER_RESISTS[monster.mnum] || 0)
-            & MR_SLEEP) || monster.defendedSleep;
-        if (sleepResistant || monsterResistsInstrument(monster)
-            || monster.mcanmove === 0)
+        if (MONSTER_SYMBOL[monster.mnum] === S_MIMIC
+            && !monster.msleeping && !monster.mfrozen
+            && [M_AP_FURNITURE, M_AP_OBJECT].includes(M_AP_TYPE(monster)))
+            revealMonsterAppearance(monster);
+        if (monsterResistsSleep(monster) || monsterResistsInstrument(monster)) {
+            await shieldeff(monster.mx, monster.my);
             continue;
-        monster.mcanmove = 0;
-        monster.mfrozen = Math.min(duration + (monster.mfrozen || 0), 127);
-        monster.meating = 0;
+        }
+        if (!putMonsterToSleep(monster, duration))
+            continue;
+        monster.msleeping = 1;
+        if (monster === game.u.ustuck && !game.u.uswallow && !heroFormSticks()) {
+            await plineWithContinuation(`${possessiveName(monsterName(monster, { capitalized: true }))} grip relaxes.`);
+            await releaseHeroFromMonster(monster);
+        }
     }
 }
 async function charmSnakes(distance) {
     for (const monster of liveMonsters()) {
         if (MONSTER_SYMBOL[monster.mnum] !== S_SNAKE
-            || monster.mcanmove === 0
+            || !monster.mcanmove
             || monsterDistance(monster) >= distance)
             continue;
         const wasPeaceful = !!monster.mpeaceful;
-        const wasVisible = cansee(monster.mx, monster.my)
-            && !monster.mundetected;
+        const wasVisible = canSeeMonster(monster);
         monster.mpeaceful = 1;
         monster.mavenge = 0;
         monster.mstrategy = (monster.mstrategy || 0) & ~STRAT_WAITMASK;
         monster.mundetected = 0;
         newsym(monster.mx, monster.my);
-        if (!cansee(monster.mx, monster.my))
+        if (!canSeeMonster(monster))
             continue;
-        const name = MONSTER_NAME[monster.mnum] || 'snake';
         if (!wasVisible) {
-            await plineWithContinuation(`You notice a ${name}, swaying with the music.`);
+            await plineWithContinuation(`You notice ${monsterName(monster, { article: 'a' })}, swaying with the music.`);
         }
         else {
-            await plineWithContinuation(`The ${name} freezes, then sways with the music${wasPeaceful ? '' : ', and now seems quieter'}.`);
+            await plineWithContinuation(`${monsterName(monster, { capitalized: true })} freezes, then sways with the music${wasPeaceful ? '' : ', and now seems quieter'}.`);
         }
     }
 }
 async function calmNymphs(distance) {
     for (const monster of liveMonsters()) {
         if (MONSTER_SYMBOL[monster.mnum] !== S_NYMPH
-            || monster.mcanmove === 0
+            || !monster.mcanmove
             || monsterDistance(monster) >= distance)
             continue;
         monster.msleeping = 0;
         monster.mpeaceful = 1;
         monster.mavenge = 0;
         monster.mstrategy = (monster.mstrategy || 0) & ~STRAT_WAITMASK;
-        if (cansee(monster.mx, monster.my)) {
-            const name = MONSTER_NAME[monster.mnum] || 'nymph';
-            await plineWithContinuation(`The ${name} listens cheerfully to the music, then seems quieter.`);
+        if (canSeeMonster(monster)) {
+            await plineWithContinuation(`${monsterName(monster, { capitalized: true })} listens cheerfully to the music, then seems quieter.`);
         }
     }
 }
@@ -217,7 +223,7 @@ export async function awakenSoldiers(distance, bugler = null) {
             }
         }
         else if (dist < distance) {
-            const flight = await awakenMonster(monster, dist < distance / 3);
+            const flight = await awakenMonster(monster, dist < Math.trunc(distance / 3));
             if (flight?.heroDied)
                 return flight;
         }
@@ -233,7 +239,7 @@ async function charmMonsters(distance) {
     }
 }
 async function playMagicFlute(instrument, familiar) {
-    instrument.spe--;
+    await consumeObjectCharge(instrument);
     await plineWithContinuation(`You ${heroIsDeaf() ? 'seem to ' : ''}produce ${heroIsHallucinating() ? 'piped' : 'soft'}${familiar ? ', familiar' : ''} music.`);
     await putMonstersToSleep((game.u?.ulevel || 1) * 5);
     await exerciseAttribute(A_DEX, true);
@@ -243,10 +249,10 @@ async function playWoodenFlute(instrument, familiar, canUseSpecial) {
         + (game.u?.ulevel || 1) > 25;
     const succeeds = canUseSpecial && skilledRoll;
     if (!heroIsDeaf()) {
-        await plineWithContinuation(`Your ${instrumentName(instrument)} ${succeeds ? 'trills' : 'toots'}${familiar ? ' a familiar tune' : ''}.`);
+        await plineWithContinuation(`${instrumentAction(instrument, succeeds ? 'trill' : 'toot')}${familiar ? ' a familiar tune' : ''}.`);
     }
     else {
-        await plineWithContinuation(`You feel your ${instrumentName(instrument)} ${succeeds ? 'trill' : 'toot'}.`);
+        await plineWithContinuation(formatFeltMessage(`${ownedObjectName(instrument, game, { capitalized: false })} ${succeeds ? 'trill' : 'toot'}.`));
     }
     if (succeeds)
         await charmSnakes((game.u?.ulevel || 1) * 3);
@@ -282,10 +288,10 @@ function learnInstrumentType(instrument) {
     instrument.typeKnown = true;
 }
 async function playElementalHorn(instrument, element) {
-    instrument.spe--;
+    await consumeObjectCharge(instrument);
     const direction = await readHornDirection();
     if (direction === null) {
-        await plineWithContinuation(`The ${instrumentName(instrument)} vibrates.`);
+        await plineWithContinuation(`${instrumentAction(instrument, 'vibrate')}.`);
         return;
     }
     let result;
@@ -295,12 +301,12 @@ async function playElementalHorn(instrument, element) {
             return result;
         if (result.damage) {
             const cause = `using a magical horn on ${game.flags.female ? 'herself' : 'himself'}`;
-            if (await loseHeroHp(result.damage, cause))
+            if (await loseHeroHp(result.damage, cause, { killerFormat: KILLED_BY }))
                 return { heroDied: true };
         }
     }
     else {
-        if (!(game.blind || (game.u?.blindTurns ?? 0) > 0)) {
+        if (!heroIsBlind()) {
             await plineWithContinuation(`A bolt of ${element} blasts out of the horn!`);
         }
         result = await zapRayWithObject(instrument);
@@ -315,17 +321,17 @@ async function playElementalHorn(instrument, element) {
 async function playBugle(instrument, familiar) {
     await plineWithContinuation(heroIsDeaf()
         ? 'You blow into the bugle.'
-        : `You extract a loud${familiar ? ', familiar' : ''} noise from your ${instrumentName(instrument)}.`);
+        : `You extract a loud${familiar ? ', familiar' : ''} noise from ${ownedObjectName(instrument, game, { capitalized: false })}.`);
     const flight = await awakenSoldiers((game.u?.ulevel || 1) * 30);
     if (flight?.heroDied)
         return flight;
     await exerciseAttribute(A_WIS, false);
 }
 async function playMagicHarp(instrument, familiar) {
-    instrument.spe--;
+    await consumeObjectCharge(instrument);
     await plineWithContinuation(heroIsDeaf()
         ? formatFeltMessage('very soothing vibrations.')
-        : `Your ${instrumentName(instrument)} produces very attractive${familiar ? ' and familiar' : ''} music.`);
+        : `${instrumentAction(instrument, 'produce')} very attractive${familiar ? ' and familiar' : ''} music.`);
     await charmMonsters(Math.trunc(((game.u?.ulevel || 1) - 1) / 3) + 1);
     await exerciseAttribute(A_DEX, true);
 }
@@ -340,7 +346,7 @@ async function playWoodenHarp(instrument, familiar, canUseSpecial) {
         const action = succeeds
             ? `produces a ${familiar ? 'familiar, ' : ''}lilting melody`
             : `twangs${familiar ? ' a familiar tune' : ''}`;
-        await plineWithContinuation(`Your ${instrumentName(instrument)} ${action}.`);
+        await plineWithContinuation(`${ownedObjectName(instrument)} ${action}.`);
     }
     if (succeeds)
         await calmNymphs((game.u?.ulevel || 1) * 3);
@@ -389,7 +395,7 @@ function levelDescription() {
     return 'dungeon';
 }
 async function playEarthquakeDrum(instrument) {
-    instrument.spe--;
+    await consumeObjectCharge(instrument);
     await plineWithContinuation('You produce a heavy, thunderous rolling!');
     await plineWithContinuation(`The entire ${levelDescription()} is shaking around you!`);
     const force = Math.trunc(((game.u?.ulevel || 1) - 1) / 3) + 1;
@@ -454,7 +460,7 @@ export async function playInstrument(instrument, options = {}) {
         return;
     }
     if (WIND_INSTRUMENTS.has(instrument.otyp) && !heroCanBlow()) {
-        await pline(`You are incapable of playing the ${instrumentName(instrument)}.`);
+        await pline(`You are incapable of playing ${definiteName(simpleObjectName(instrument))}.`);
         game.context.move = 0;
         return;
     }

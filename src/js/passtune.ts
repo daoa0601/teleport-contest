@@ -15,16 +15,9 @@ import {
 } from './display.js';
 import { game } from './gstate.js';
 import type { GameObject } from './object_types.js';
-import { OBJECT_NAMES } from './object_data.js';
+import { definiteName, objectCombatName } from './objnam.js';
 import { getLine, promptYesNoQuit } from './query.js';
-
-function instrumentName(instrument: GameObject): string {
-    return instrument.name || OBJECT_NAMES[instrument.otyp] || 'instrument';
-}
-
-function heroIsDeaf() {
-    return !!(game.deaf || (game.u?.deafTurns ?? 0) > 0);
-}
+import { heroIsDeaf } from './senses.js';
 
 function nearbyDrawbridge() {
     for (let y = (game.u?.uy || 0) - 1;
@@ -106,9 +99,10 @@ function recordKnownPasstune() {
 }
 
 export async function playTune(instrument: GameObject, tune: string, options: Parameters<typeof toggleDrawbridge>[3] = {}): Promise<void> {
+    const name = definiteName(objectCombatName(instrument));
     await pline(heroIsDeaf()
-        ? `You can feel your ${instrumentName(instrument)} emitting vibrations.`
-        : `You extract a strange sound from your ${instrumentName(instrument)}!`);
+        ? `You can feel ${name} emitting vibrations.`
+        : `You extract a strange sound from ${name}!`);
 
     if (!Is_stronghold(game.u?.uz)) {
         game.context.move = 1;
@@ -117,9 +111,11 @@ export async function playTune(instrument: GameObject, tune: string, options: Pa
     await exerciseAttribute(A_WIS, true);
     const expected = game.castleTune || '';
     const bridge = nearbyDrawbridge();
-    if (tune === expected && bridge) {
-        recordKnownPasstune();
-        await toggleDrawbridge(bridge.x, bridge.y, game, options);
+    if (tune === expected) {
+        if (bridge) {
+            recordKnownPasstune();
+            await toggleDrawbridge(bridge.x, bridge.y, game, options);
+        }
         game.context.move = 1;
         return;
     }
