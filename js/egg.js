@@ -86,7 +86,7 @@ function hatchLocation(egg, state) {
     }
     if (egg.where === 'minvent') {
         const carrier = eggCarrier(egg, state);
-        if (carrier) {
+        if (carrier?.mx) {
             return {
                 kind: 'minvent',
                 x: carrier.mx,

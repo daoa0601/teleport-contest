@@ -138,7 +138,7 @@ function hatchLocation(egg: GameObject, state: GameState): HatchLocation | null 
     }
     if (egg.where === 'minvent') {
         const carrier = eggCarrier(egg, state);
-        if (carrier) {
+        if (carrier?.mx) {
             return {
                 kind: 'minvent',
                 x: carrier.mx,

@@ -119,7 +119,7 @@ export function objectsInTimerGraph(state = game) {
         visit(reference.deref());
     for (const object of state.migratingObjects || [])
         visit(object);
-    for (const monster of state.level?.monsters || []) {
+    for (const monster of [...state.level?.monsters || [], ...state._migratingMonsters || []]) {
         for (const object of monster.minvent || [])
             visit(object);
         for (const object of monster.inventory || [])
