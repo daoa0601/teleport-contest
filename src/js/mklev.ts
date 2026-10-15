@@ -2650,16 +2650,15 @@ async function makemon(
     if (initializeMonsterEquipment && MONSTER_SYMBOL[mndx] === 33) { // S_GNOME
         // C ref: makemon.c m_initinv(), S_GNOME.  During Mines generation
         // the candle chance is 1/20 (1/60 elsewhere).
-        const dungeonName = game.dungeons?.[game.u?.uz?.dnum ?? 0]?.dname;
-        const candleChance = game.in_mklev
-            && dungeonName === 'The Gnomish Mines' ? 20 : 60;
+        const candleChance = game.in_mklev && In_mines(game.u.uz) ? 20 : 60;
         if (!rn2(candleChance)) {
-            const candle = await mongets(rn2(4) ? TALLOW_CANDLE : WAX_CANDLE);
-            if (candle) {
-                candle.quan = 1;
-                candle.quantity = 1;
-                candle.lamplit = !level.at(x, y)?.lit;
-            }
+            const candle = await mksobj(rn2(4) ? TALLOW_CANDLE : WAX_CANDLE, true, false);
+            candle.quan = candle.quantity = 1;
+            candle.owt = objectWeight(candle);
+            await addCreatedObjectToMonsterInventory(pendingMonster, candle, game);
+            hasMonsterInventory = true;
+            if (candle.where !== 'gone' && !level.at(x, y)?.lit)
+                beginObjectBurn(candle);
         }
     }
     if (initializeMonsterEquipment && MONSTER_SYMBOL[mndx] === 43) { // S_QUANTMECH
