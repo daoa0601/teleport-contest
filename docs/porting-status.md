@@ -130,7 +130,7 @@ existing tests needed their setup corrected:
   `commitPetPickup()` and checks that the dagger stays on the floor until
   then.
 
-## Parallel batches 1–18 (`89a6e24`)
+## Parallel batches 1–19 (`09ee6a4`)
 
 Units ran in worktrees under `docs/orchestration.md` (Codex; each diff reviewed
 by Codex against the C source, then merged only if the full suite adds no
@@ -267,11 +267,16 @@ public-5's floor-pile change exposed that `lift_object()` never cleared its
 burden question (`pickup.c`); that is fixed. The eval sample and the pool now
 complete every session.
 
+Batch 19: C-source audits of **audit-hack** (`hack.c`: movement, running,
+boulders, arrival effects), **audit-kick** (`dokick.c`), **audit-mhitu**
+(`mhitu.c`: monster attacks on the hero) and **audit-dig** (`dig.c`:
+digging, holes, burial), and **review-debt-6** (accepted review findings).
+
 ## Verification
 
-`npm test` at `89a6e24`: **10,431/10,431**. Merges require a fully green suite;
+`npm test` at `09ee6a4`: **10,605/10,605**. Merges require a fully green suite;
 batch runs also compare matched screens per session with the previous batch
-(no screen regression in batch 18, eval, public or pool).
+(no screen regression in batch 19, eval, public or pool).
 
 ## Most recent native diagnostics
 
@@ -281,19 +286,19 @@ batch runs also compare matched screens per session with the previous batch
 | Native eval sample | 300/300 | 50,586/50,586 | 3,616,669/3,616,669 | 0 |
 | Holdout-dev pool | 2,500/2,500 | | | 0 |
 
-Runs: `.cache/generalization/batch18-89a6e24-{eval,public}` and
-`triage-89a6e24` (pool) in the verify worktree (baseline `base-06d7e73`:
-143/300; batch 17: 299/300, pool 2,492/2,500). No verified random call was
+Runs: `.cache/generalization/batch19-09ee6a4-{eval,public}` and
+`triage-09ee6a4` (pool) in the verify worktree (baseline `base-06d7e73`:
+143/300; batch 18: 300/300, pool 2,500/2,500). No verified random call was
 lost; the ledgers now hold 350 eval and 296 public functions. The
 state oracle finds all 300 sessions matching C state throughout.
 
 ## Next work
 
 Every eval-sample and pool session now completes, so new work comes from
-C-source audits of files the corpora barely run. In flight: `dokick.c`
-(audit-kick), `hack.c` (audit-hack), `mhitu.c` (audit-mhitu) and `dig.c`
-(audit-dig); review-debt-6 has merged after this checkpoint. Public still
-fails seed2200-wizard-quaff-zap-read and seed4500-knight-coverage.
+C-source audits of files the corpora barely run. In flight: `dog.c` and
+`dogmove.c` (audit-dog), `muse.c` (audit-muse), public-6 (option help and a
+hidden-monster attack order in the last two public sessions) and
+review-debt-7; audit-monmove (`monmove.c`) has merged after this checkpoint.
 review-debt-3's turn-loop restructuring (delayed armor removal, `stealarm()`,
 prayer delay) is parked unmerged: it broke save/restore twice.
 `.cache/agents/queue.md` holds accepted review findings.
