@@ -11,8 +11,9 @@ import { heroIsBlind } from './senses.js';
 import { heroIsUnconscious, putHeroToSleep } from './hero_sleep.js';
 import { retouchEquipment } from './hero_retouch.js';
 import { specialAttackNegated } from './magic_negation.js';
-import { AD_ACID, AD_CURS, AD_DISE, AD_HEAL, AD_PLYS, AD_POLY, AD_SGLD, AD_SLEE, AD_SLOW, AD_SSEX, AD_TLPT, AD_WERE, AD_WRAP } from './monster_attack_types.js';
+import { AD_ACID, AD_CONF, AD_CURS, AD_DISE, AD_HEAL, AD_PLYS, AD_POLY, AD_SGLD, AD_SLEE, AD_SLOW, AD_SSEX, AD_TLPT, AD_WERE, AD_WRAP } from './monster_attack_types.js';
 import { infectHeroWithMonsterDisease } from './monster_disease.js';
+import { makeConfused } from './hero_mental_status.js';
 import { resolveHeroSeduction } from './monster_seduction.js';
 import { stealHeroGold } from './monster_gold_theft.js';
 import { heroHasRemovableSpeed, slowHero } from './hero_speed.js';
@@ -83,6 +84,16 @@ export async function resolveMonsterContactEffect(
         await resolveHeroSeduction(monster, attack, state, publish, random, rollOne);
     else if (attack.damageType === AD_DISE) {
         if (!await infectHeroWithMonsterDisease(monster, state, publish, random)) attack.damage = 0;
+    }
+    else if (attack.damageType === AD_CONF) {
+        const duration = attack.damage ?? 0;
+        if (!monster.mcan && random(4) === 0 && !monster.mspec_used) {
+            monster.mspec_used = duration + random(6);
+            await publish(state.u.confusionTurns ? 'You are getting even more confused.'
+                : 'You are getting confused.');
+            await makeConfused((state.u.confusionTurns ?? 0) + duration, { state, publish, talk: false });
+        }
+        attack.damage = 0;
     }
     else throw new Error(`Damage type ${attack.damageType} has no deferred contact effect`);
     attack.deferredPostHit = true;

@@ -252,6 +252,7 @@ import {
     AD_DCAY,
     AD_DGST,
     AD_DREN,
+    AD_CONF,
     AD_DRLI,
     AD_ELEC,
     AD_ENCH,
@@ -5816,7 +5817,8 @@ async function beginHeroAttackSlot(
         || damageType === AD_POLY || damageType === AD_TLPT || damageType === AD_PLYS
         || damageType === AD_WRAP || damageType === AD_DRIN || damageType === AD_CURS
         || damageType === AD_HEAL || damageType === AD_ACID || damageType === AD_SLOW
-        || damageType === AD_SGLD || damageType === AD_SSEX || damageType === AD_DISE)) {
+        || damageType === AD_SGLD || damageType === AD_SSEX || damageType === AD_DISE
+        || damageType === AD_CONF)) {
         const negated = damageType === AD_SLOW
             ? specialAttackNegated(monster, state.u, { state, random })
             : damageType === AD_POLY
