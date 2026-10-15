@@ -49,12 +49,24 @@ export async function doStorms(state = game) {
     if (state.u.invulnerable)
         return;
     await stopHeroOccupation(state);
-    if ((state._helplessTurns ?? 0) <= 3) {
+    const dressing = state._delayedAction;
+    const remainingTurns = Math.max(state._helplessTurns ?? 0, dressing && dressing.kind !== 'steal' ? dressing.remainingGlobalTurns : 0);
+    if (remainingTurns <= 3) {
         // nomul(-3) clears sleep when it accepts the thunder's delay.
         state.u.usleep = 0;
         state.multi = -3;
         state._helplessTurns = 3;
         stopRun(state);
+    }
+    if (dressing && dressing.kind !== 'steal') {
+        // Dressing's afternmv callback shares native multi with hiding.
+        // Thunder also replaces its completion text, even for a longer delay.
+        const duration = Math.max(remainingTurns, 3);
+        dressing.remainingGlobalTurns = duration;
+        dressing.ready = false;
+        dressing.finishMessage = '';
+        state._helplessTurns = duration;
+        state.multi = -duration;
     }
     state._helplessReason = 'hiding from thunderstorm';
     delete state._helplessDoneMessage;
