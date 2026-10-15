@@ -495,7 +495,7 @@ import {
 import { goodPosition, monsterTeleportRestricted } from './teleport_rules.js';
 import { removeWishGrantingMonster } from './monster_departure.js';
 import {
-    RLOC_MSG, A_CON, A_DEX, A_STR, A_WIS, BOLT_LIM, COLNO, ROWNO, STONE, SCORR, SDOOR, DOOR, CORR, ROOM,
+    RLOC_MSG, A_CON, A_DEX, A_MAX, A_STR, A_WIS, BOLT_LIM, COLNO, ROWNO, STONE, SCORR, SDOOR, DOOR, CORR, ROOM,
     ICE, POOL, CLOUD, IRONBARS, FOUNTAIN, SINK, ALTAR, WATER, MOAT, LAVAWALL, TREE, D_NODOOR,
     D_BROKEN, D_ISOPEN, D_CLOSED, D_LOCKED, D_TRAPPED, SHOP_DOOR_COST, IS_WALL, IS_STWALL, IS_OBSTRUCTED, IS_FURNITURE,
     IS_AIR, IS_POOL, IS_LAVA, IS_ROOM, ZAP_POS, SQKY_BOARD, BEAR_TRAP, LANDMINE, FIRE_TRAP, PIT,
@@ -1881,9 +1881,9 @@ async function blessedFountainDraught(loc: MapLocation): Promise<void> {
         }
     }
     const littleLuck = (hero.uluck ?? 0) < 4;
-    const start = rn2(6);
-    for (let offset = 0; offset < 6; offset++) {
-        const attribute = (start + offset) % 6;
+    const start = rn2(A_MAX);
+    for (let offset = 0; offset < A_MAX; offset++) {
+        const attribute = (start + offset) % A_MAX;
         const change = adjustAttribute(attribute, 1, state);
         if (change.changed || !littleLuck
             && (change.blockedByDunceCap || state.flags.verbose !== false)) {

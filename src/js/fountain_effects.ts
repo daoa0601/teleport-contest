@@ -1,6 +1,6 @@
-// Source-shaped fountain effect reducers.
-// C refs: fountain.c fountain actor helpers and dipfountain() cases 16 through
-// 20, 21 through 24, 26 through 27, and 29.
+// Fountain sensations, treasure, and spawned creatures.
+// C refs: fountain.c actor helpers, dofindgem(), and dipfountain() cases
+// 21 through 24, 26 through 27, and 29.
 
 import { formatFeltMessage, formatHeardMessage } from './hero_speech.js';
 import { rn2, rnd } from './rng.js';

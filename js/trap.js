@@ -19,7 +19,7 @@ import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { heroIsFlying } from './polyself.js';
 import { monsterFliesOrFloats } from './terrain_properties.js';
 import { objectOwnershipPrefix } from './shk.js';
-import { MONSTER_FLAGS1 } from './monster_data.js';
+import { MONSTER_FLAGS1, monsterIsHumanoid } from './monster_data.js';
 import { splitMonster } from './monster_clone.js';
 import { monsterWieldedWeapon } from './monster_weapon.js';
 import { BAG_OF_TRICKS, BRASS_LANTERN, CAN_OF_GREASE, CANDELABRUM_OF_INVOCATION, CHEST, ICE_BOX, FIRE_HORN, LARGE_BOX, OBJECT_BIMANUAL, OBJECT_MATERIAL, OBJECT_MATERIAL_NAMES, OBJECT_NAMES, OBJECT_PROPERTY, OILSKIN_SACK, MAGIC_LAMP, OIL_LAMP, POT_ACID, POT_OIL, POT_WATER, RED_DRAGON_SCALE_MAIL, RED_DRAGON_SCALES, RIN_FIRE_RESISTANCE, SCR_BLANK_PAPER, SCR_FIRE, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_FIREBALL, SPE_NOVEL, TALLOW_CANDLE, TOWEL, WAN_FIRE, WAX_CANDLE, } from './object_data.js';
@@ -243,7 +243,7 @@ export function splashLitObject(object, messages = [], state = game) {
             snuff = false;
         }
         else if (object.where === 'minvent' && object.ocarry
-            && ((MONSTER_FLAGS1[object.ocarry.mnum] ?? 0) & 0x00020000)) {
+            && monsterIsHumanoid(object.ocarry.mnum)) {
             const carrier = object.ocarry;
             const position = getObjectLocation(object, state);
             visible = !!position && cansee(position.x, position.y);

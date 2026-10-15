@@ -23,7 +23,7 @@ import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { heroIsFlying } from './polyself.js';
 import { monsterFliesOrFloats } from './terrain_properties.js';
 import { objectOwnershipPrefix } from './shk.js';
-import { MONSTER_FLAGS1 } from './monster_data.js';
+import { MONSTER_FLAGS1, monsterIsHumanoid } from './monster_data.js';
 import { splitMonster } from './monster_clone.js';
 import { monsterWieldedWeapon } from './monster_weapon.js';
 import {
@@ -358,7 +358,7 @@ export function splashLitObject(object: GameObject | null | undefined, messages:
             dunkedLantern = heroLanternIsDunked(state);
             snuff = false;
         } else if (object.where === 'minvent' && object.ocarry
-            && ((MONSTER_FLAGS1[object.ocarry.mnum] ?? 0) & 0x00020000)) {
+            && monsterIsHumanoid(object.ocarry.mnum)) {
             const carrier = object.ocarry;
             const position = getObjectLocation(object, state);
             visible = !!position && cansee(position.x, position.y);
