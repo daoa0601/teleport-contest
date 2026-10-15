@@ -272,7 +272,8 @@ export async function vomitingDialogue({
     const hero = state.u;
     if (!heroIsVomiting(state)) return { active: false, vomited: false };
 
-    const nextTurns = Math.max(0, (hero.vomitingTurns ?? 0) - 1);
+    // Untimed nausea has no countdown stage; only timeout 1 triggers vomiting.
+    const nextTurns = (hero.vomitingTurns ?? 0) - 1;
     if (nextTurns === 6) {
         await makeStunned((hero.stunnedTurns ?? 0) + rollDice(2, 4), { state, talk: false });
         // stop_occupation finishes an already swallowed last bite before
