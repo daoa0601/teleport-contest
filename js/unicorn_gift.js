@@ -31,6 +31,7 @@ export async function offerUnicornGem(monster, object, state) {
     await plineWithContinuation(`${subject} catches${monster.mtame ? ' and drops' : ''} ${gem}.`);
     if (monster.mtame)
         return false;
+    const reactionSubject = monsterName(monster, { state, capitalized: true });
     monster.mpeaceful = 1;
     monster.mavenge = 0;
     const aligned = Math.sign(MONSTER_ALIGNMENT[monster.mnum] ?? 0)
@@ -64,7 +65,7 @@ export async function offerUnicornGem(monster, object, state) {
         await addObjectToMonsterInventory(monster, object, state);
     }
     if (!heroIsBlind(state))
-        await plineWithContinuation(subject + reaction);
+        await plineWithContinuation(reactionSubject + reaction);
     if (!await reportMonsterTeleportRestriction(monster, { state }))
         await randomMonsterRelocation(monster, { state, flags: RLOC_MSG });
     return accepted;

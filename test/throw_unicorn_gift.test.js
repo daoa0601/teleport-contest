@@ -56,4 +56,19 @@ void test('a blind hero receives Luck for a unicorn gift without seeing its reac
     assert.equal(game.u.uluck, 5);
     assert.doesNotMatch(messages.join('\n') + game._pending_message, /accepts your gift/);
 });
+void test('a hallucinating hero sees a new unicorn identity when it accepts a gem', async () => {
+    const level = freshObjectRoom({ hero: { hallucinationTurns: 20 } });
+    level.flags.noteleport = true;
+    await createMonsterAt('gray unicorn', 11, 10);
+    const gem = await addInventoryObject(DIAMOND);
+    const messages = [];
+    resetInputState().beforeRead = () => { messages.push(game._pending_message); };
+    await throwInventoryObject(gem, 'l', ' '.repeat(20));
+    const text = messages.join('\n') + '\n' + game._pending_message;
+    const catchName = text.match(/([^\n]+) catches the diamond\./)?.[1];
+    const reactionName = text.match(/([^\n]+) gratefully accepts your gift\./)?.[1];
+    assert.ok(catchName, text);
+    assert.ok(reactionName, text);
+    assert.notEqual(reactionName, catchName);
+});
 //# sourceMappingURL=throw_unicorn_gift.test.js.map
