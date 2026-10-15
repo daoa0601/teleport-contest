@@ -21,8 +21,7 @@ import type { MessagePublisher } from './display.js';
 import type { DirectionVector } from './const.js';
 import { levitationAtWill, refreshMovementProperties } from './properties.js';
 import { floatHeroDown } from './terrain_movement.js';
-import { canSpotMonster, newsym, pline, plineWithContinuation } from './display.js';
-import { monsterSurvivesPool } from './mon.js';
+import { canSpotMonster, displayLiquidName, newsym, pline, plineWithContinuation } from './display.js';
 import { finishMonsterKilled } from './monster_death.js';
 import { AD_PHYS } from './monster_attack_types.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
@@ -41,7 +40,7 @@ import { applyMonsterEquipmentProperties } from './monster_equipment.js';
 import { objectMaterial } from './object_material.js';
 import { makePlural, withIndefiniteArticle } from './object_grammar.js';
 import { monsterAtPosition } from './monster_location.js';
-import { monsterName, monsterReflexiveAction, monsterSubjectPronoun } from './monster_name.js';
+import { monsterName, monsterReflexiveAction, monsterSubjectPronoun, shopkeeperName } from './monster_name.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { heroHandName } from './body_parts.js';
 import { heroHasFreeHand } from './weapon_type.js';
@@ -50,7 +49,6 @@ import { heroCanOoze } from './monster_perception.js';
 import { monsterPassesBars } from './monster_movement_traits.js';
 import { wormCrossesBetween } from './monster_worm.js';
 import { shopkeeperBlockingDoor, shopkeeperBlockingEntry } from './shop_blocking.js';
-import { shopkeeperName } from './monster_name.js';
 import { heroKnowsLavaWalking, heroKnowsWaterWalking } from './armor.js';
 import { removeWornHeroItem } from './hero_equipment.js';
 import { freeInventoryObject } from './hero_inventory.js';
@@ -80,6 +78,7 @@ import { resetCommandVariables } from './command_state.js';
 import { resumeDeferredMonsterTrap, triggerImmediateMonsterTrap } from './monmove.js';
 import { levelHasCeiling, isAccessibleAt, isLavaAt, isPoolAt, isWaterwallAt } from './terrain_properties.js';
 import { isPolearm } from './weapon_type.js';
+import { surfaceName } from './terrain_name.js';
 
 export type DismountReason = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
 
@@ -127,6 +126,8 @@ export type StrikeSteedResult = { struck: false } | {
 const M1_FLY = 0x00000001;
 const M1_CLING = 0x00000010;
 const M1_SWIM = 0x00000002;
+const M1_BREATHLESS = 0x00000400;
+const M1_AMPHIBIOUS = 0x00000200;
 const M1_HUMANOID = 0x00020000;
 const M1_SLITHY = 0x00080000;
 const M1_TUNNEL = 0x00000020;
@@ -927,10 +928,12 @@ async function dropSteedIntoLiquid(
     const { ux: x, uy: y } = state.u;
     let fatal = false;
     if (isPoolAt(x, y, state)) {
-        if (!state.u.uinwater) await announce(`${monsterName(steed, { capitalized: true })} falls into the water!`);
-        fatal = !monsterSurvivesPool(steed);
+        if (!state.u.uinwater)
+            await announce(`${monsterName(steed, { capitalized: true })} falls into the ${surfaceName(x, y, state)}!`);
+        const flags = MONSTER_FLAGS1[steed.mnum] ?? 0;
+        fatal = !(flags & (M1_SWIM | M1_AMPHIBIOUS | M1_BREATHLESS));
     } else if (isLavaAt(x, y, state)) {
-        await announce(`${monsterName(steed, { capitalized: true })} is pulled into the lava!`);
+        await announce(`${monsterName(steed, { capitalized: true })} is pulled into the ${displayLiquidName('lava', state)}!`);
         fatal = !['fire elemental', 'salamander'].includes(MONSTER_NAME[steed.mnum] ?? '');
     } else return null;
     if (!fatal) return { dead: false };
