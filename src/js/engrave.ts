@@ -11,11 +11,11 @@ import type { MessagePublisher } from './display.js';
 import { exerciseWisdom } from './attrib.js';
 import { heroCanReachFloor } from './floor_reach.js';
 import { rn2, rnd } from './rng.js';
-import { BUFSZ, DUST, ENGRAVE, BURN, MARK, ENGR_BLOOD, HEADSTONE, ICE, N_ENGRAVE } from './const.js';
+import { BUFSZ, DUST, ENGRAVE, BURN, MARK, ENGR_BLOOD, HEADSTONE, N_ENGRAVE } from './const.js';
 import { surfaceName } from './terrain_name.js';
+import { isIceAt } from './terrain_properties.js';
 
 type EngravingStore = Pick<GameMap, 'engravings'>;
-type EngravingTerrain = EngravingStore & Partial<Pick<GameMap, 'at'>>;
 
 const RUBOUTS = new Map([
     ['A', '^'],
@@ -191,13 +191,13 @@ export function wipeEngravingAt(
     y: number,
     count: number,
     magical = false,
-    level: EngravingTerrain | null = game.level,
+    level: GameMap | null = game.level,
 ): boolean {
     if (!level?.engravings) return false;
     const engraving = engravingAt(x, y, level);
     if (!engraving || engraving.engr_type === HEADSTONE || engraving.nowipeout) return false;
 
-    const onIce = level?.at?.(x, y)?.typ === ICE;
+    const onIce = isIceAt(x, y, { level });
     if (engraving.engr_type === BURN && !onIce && !(magical && rn2(2) === 0)) return false;
 
     if (engraving.engr_type !== DUST && engraving.engr_type !== ENGR_BLOOD) {
@@ -274,7 +274,7 @@ function readingMessages(
         case DUST:
             if (!blind)
                 first = `Something is written here in the ${
-                    game.level?.at?.(x, y)?.typ === ICE ? 'frost' : 'dust'
+                    isIceAt(x, y) ? 'frost' : 'dust'
                 }.`;
             break;
         case ENGRAVE:
@@ -284,7 +284,7 @@ function readingMessages(
         case BURN:
             if (!blind || canFeel)
                 first = `Some text has been ${
-                    game.level?.at?.(x, y)?.typ === ICE ? 'melted' : 'burned'
+                    isIceAt(x, y) ? 'melted' : 'burned'
                 } into the ${surface} here.`;
             break;
         case MARK:
