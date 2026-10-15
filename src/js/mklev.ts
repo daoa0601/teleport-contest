@@ -10018,14 +10018,7 @@ async function makecorridors(): Promise<void> {
 function generate_stairs_room_good(croom: Room | null | undefined, phase: number): boolean {
     if (!croom || croom.hx < 0) return false;
     if (!croom.needjoining && phase >= 0) return false;
-    let hasDown = false, hasUp = false;
-    for (let st = game.stairs; st; st = st.next) {
-        const inRoom = st.sx >= croom.lx && st.sx <= croom.hx
-            && st.sy >= croom.ly && st.sy <= croom.hy;
-        if (!inRoom) continue;
-        if (st.up) hasUp = true; else hasDown = true;
-    }
-    if (phase >= 1 && (hasDown || hasUp)) return false;
+    if (phase >= 1 && (roomHasStair(croom, false) || roomHasStair(croom, true))) return false;
     if (croom.rtype !== OROOM && !(phase < 2 && croom.rtype === THEMEROOM)) return false;
     return true;
 }
@@ -10080,7 +10073,7 @@ async function generate_stairs(): Promise<void> {
     const g = game;
     const pos = { x: 0, y: 0 };
     // Down stairs
-    {
+    if (!Is_botlevel(g.u.uz)) {
         const croom = generate_stairs_find_room();
         if (croom) {
             if (!somexyspace(croom, pos)) {
