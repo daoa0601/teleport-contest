@@ -12,6 +12,8 @@ import {
 } from './display.js';
 import { game, requireGameLevel } from './gstate.js';
 import { monsterAtPosition } from './monster_location.js';
+import { loseHeroHp } from './hero_damage.js';
+import type { DeathHandler } from './end.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
@@ -85,7 +87,7 @@ export interface RegionTurnOptions {
     publish?: MessagePublisher;
     rollOne?: (sides: number) => number;
     wake?: WakeNearGas;
-    onHeroDeath?: ((event: HeroGasDamage) => boolean | Promise<boolean>) | undefined;
+    die?: DeathHandler | undefined;
     onMonsterDeath?: ((monster: Monster, event: MonsterGasDamage)
         => MonsterGasDeath | Promise<MonsterGasDeath>) | undefined;
     onAnger?: ((monster: Monster) => unknown) | undefined;
@@ -350,15 +352,6 @@ function halfHeroGasDamage(damage: number, state: GameState): number {
     return damage;
 }
 
-function damageHero(damage: number, state: GameState): number {
-    state.context.botl = true;
-    const hitPoints = Upolyd(state.u) ? 'mh' : 'uhp';
-    state.u[hitPoints] = Math.max(
-        0, (state.u[hitPoints] ?? 1) - damage,
-    );
-    return state.u[hitPoints];
-}
-
 async function wakeNearGas(
     x: number, y: number, state: GameState,
     publish: MessagePublisher, wake: WakeNearGas,
@@ -368,7 +361,7 @@ async function wakeNearGas(
 
 async function affectHeroWithGas(
     region: GasCloud, state: GameState,
-    { publish, rollOne, wake, onHeroDeath }: RegionTurnHandlers,
+    { publish, rollOne, wake, die }: RegionTurnHandlers,
 ): Promise<RegionEvent | null> {
     if (!regionContains(region, state.u.ux, state.u.uy)) return null;
     if (Upolyd(state.u)) maintainCloudForFog(region, state.u.umonnum);
@@ -390,14 +383,9 @@ async function affectHeroWithGas(
     await publish('You cough and spit blood!');
     await wakeNearGas(state.u.ux, state.u.uy, state, publish, wake);
     const damage = halfHeroGasDamage(rollOne(region.damage) + 5, state);
-    const hitPoints = damageHero(damage, state);
     const event: HeroGasDamage = { kind: 'hero-gas', resisted: false, damage };
-    if (hitPoints <= 0) {
-        if (typeof onHeroDeath !== 'function') {
-            throw new TypeError('poison gas requires the hero death handler');
-        }
-        event.died = await onHeroDeath(event);
-    }
+    const died = await loseHeroHp(damage, 'gas cloud', { state, publish, ...(die ? { die } : {}) });
+    if (died) event.died = true;
     return event;
 }
 
@@ -508,7 +496,7 @@ export async function runLevelRegions(state: GameState | null | undefined, {
     publish = plineWithContinuation,
     rollOne = rnd,
     wake = async () => {},
-    onHeroDeath,
+    die,
     onMonsterDeath,
     onAnger,
 }: RegionTurnOptions = {}): Promise<RegionEvent[]> {
@@ -518,7 +506,7 @@ export async function runLevelRegions(state: GameState | null | undefined, {
     for (const region of state.level.regions) {
         if (region.ttl > 0) region.ttl--;
         const hero = await affectHeroWithGas(region, state, {
-            publish, rollOne, wake, onHeroDeath,
+            publish, rollOne, wake, die,
         });
         if (hero) events.push(hero);
         if (state.program_state?.gameover) break;

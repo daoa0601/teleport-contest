@@ -7,6 +7,7 @@ import { ACCESSIBLE, PLNMSG_ENVELOPED_IN_GAS, Upolyd, isok, } from './const.js';
 import { canSeeMonster, newsym, plineWithContinuation, } from './display.js';
 import { game, requireGameLevel } from './gstate.js';
 import { monsterAtPosition } from './monster_location.js';
+import { loseHeroHp } from './hero_damage.js';
 import { monsterHasPoisonResistance } from './monster_resistance.js';
 import { heroIsBreathless } from './hero_species.js';
 import { heroEyeName, heroLungName } from './body_parts.js';
@@ -252,16 +253,10 @@ function halfHeroGasDamage(damage, state) {
         damage = Math.trunc((damage + 1) / 2);
     return damage;
 }
-function damageHero(damage, state) {
-    state.context.botl = true;
-    const hitPoints = Upolyd(state.u) ? 'mh' : 'uhp';
-    state.u[hitPoints] = Math.max(0, (state.u[hitPoints] ?? 1) - damage);
-    return state.u[hitPoints];
-}
 async function wakeNearGas(x, y, state, publish, wake) {
     await wake(x, y, 2, state, publish);
 }
-async function affectHeroWithGas(region, state, { publish, rollOne, wake, onHeroDeath }) {
+async function affectHeroWithGas(region, state, { publish, rollOne, wake, die }) {
     if (!regionContains(region, state.u.ux, state.u.uy))
         return null;
     if (Upolyd(state.u))
@@ -284,14 +279,10 @@ async function affectHeroWithGas(region, state, { publish, rollOne, wake, onHero
     await publish('You cough and spit blood!');
     await wakeNearGas(state.u.ux, state.u.uy, state, publish, wake);
     const damage = halfHeroGasDamage(rollOne(region.damage) + 5, state);
-    const hitPoints = damageHero(damage, state);
     const event = { kind: 'hero-gas', resisted: false, damage };
-    if (hitPoints <= 0) {
-        if (typeof onHeroDeath !== 'function') {
-            throw new TypeError('poison gas requires the hero death handler');
-        }
-        event.died = await onHeroDeath(event);
-    }
+    const died = await loseHeroHp(damage, 'gas cloud', { state, publish, ...(die ? { die } : {}) });
+    if (died)
+        event.died = true;
     return event;
 }
 async function affectMonsterWithGas(region, monster, state, { publish, rollOne, wake, onAnger, onMonsterDeath }) {
@@ -396,7 +387,7 @@ function maintainCloudForFog(region, species) {
     if (region.ttl < 20 && species === PM_FOG_CLOUD)
         region.ttl += 5;
 }
-export async function runLevelRegions(state, { publish = plineWithContinuation, rollOne = rnd, wake = async () => { }, onHeroDeath, onMonsterDeath, onAnger, } = {}) {
+export async function runLevelRegions(state, { publish = plineWithContinuation, rollOne = rnd, wake = async () => { }, die, onMonsterDeath, onAnger, } = {}) {
     if (!state?.level?.regions?.length)
         return [];
     await expireRegions(state, publish);
@@ -405,7 +396,7 @@ export async function runLevelRegions(state, { publish = plineWithContinuation, 
         if (region.ttl > 0)
             region.ttl--;
         const hero = await affectHeroWithGas(region, state, {
-            publish, rollOne, wake, onHeroDeath,
+            publish, rollOne, wake, die,
         });
         if (hero)
             events.push(hero);

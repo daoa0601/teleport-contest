@@ -809,7 +809,6 @@ async function runLevelRegionTurn() {
     const game = requireInitializedGame();
     return runLevelRegions(game, {
         wake: wakeMonstersNearWithMessages,
-        onHeroDeath: () => finishHeroDeath({ killer: 'gas cloud' }),
         onAnger: (monster) => angerMonster(monster, { attacked: true }),
         onMonsterDeath: async (monster, event) => {
             if (event.heroFault) {
