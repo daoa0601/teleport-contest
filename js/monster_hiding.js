@@ -1,5 +1,6 @@
 // Shared hiding decisions. C refs: mon.c restrap(), hideunder(), hide_monst(),
 // maybe_unhide_at(), and monmove.c can_hide_under_obj().
+import { formatSeenMessage } from './hero_speech.js';
 import { COULD_SEE, IN_SIGHT, MGIVENNAME, M_AP_TYPE, PLNMSG_HIDE_UNDER, ROOM, is_pit, } from './const.js';
 import { canSeeMonster, canSenseMonster, newsym, plineWithContinuation } from './display.js';
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
@@ -93,7 +94,7 @@ export function beginMonsterHideUnder(monster, state = game) {
         });
         if (place.undetected && cover) {
             const verb = place.water ? 'dive' : hidingLocomotion(monster.mnum);
-            message = `You see ${subject} ${verb} under ${cover}.`;
+            message = formatSeenMessage(`${subject} ${verb} under ${cover}.`, state);
         }
     }
     const oldUndetected = !!monster.mundetected;

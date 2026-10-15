@@ -3,7 +3,7 @@
 import { DOOR, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, IRONBARS, SHOPBASE, W_NONDIGGABLE, } from './const.js';
 import { canSeeMonster, canSpotMonster, displayMessageWindow, newsym, plineWithContinuation, } from './display.js';
 import { requireLiveGame } from './gstate.js';
-import { formatHeardMessage } from './hero_speech.js';
+import { formatHeardMessage, formatSeenMessage } from './hero_speech.js';
 import { MONSTER_FLAGS1, MONSTER_MOVE, MONSTER_NAME, MONSTER_SYMBOL, monsterHasNoLimbs, monsterIsAmorphous, monsterIsSlithy, } from './monster_data.js';
 import { triggerMonsterDoorTrap } from './monster_door_trap.js';
 import { monsterHasMagicKey } from './monster_key.js';
@@ -16,7 +16,6 @@ import { makePlural } from './object_grammar.js';
 import { dissolveBars } from './projectile_bars.js';
 import { roomsAt } from './room.js';
 import { rn2, rnd } from './rng.js';
-import { heroIsDeaf } from './senses.js';
 import { addShopDamage } from './shop_damage.js';
 import { cansee, vision_note_blocker_change, vision_recalc } from './vision.js';
 const M1_FLY = 0x00000001;
@@ -120,8 +119,8 @@ export async function resolveMonsterDoorPassage(monster, state, { canOpen, canUn
             : action === 'open' ? 'open' : 'crash open';
         const message = seesDoor && canSpotMonster(monster)
             ? `${monsterName(monster, { state, capitalized: true })} ${actorAction} a door.`
-            : seesDoor ? `You see a door ${doorAction}.`
-                : !heroIsDeaf(state) ? formatHeardMessage(`a door ${doorAction}.`, state) : null;
+            : seesDoor ? formatSeenMessage(`a door ${doorAction}.`, state)
+                : formatHeardMessage(`a door ${doorAction}.`, state);
         if (message)
             await publish(message);
     }

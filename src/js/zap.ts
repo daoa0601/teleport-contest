@@ -2,6 +2,7 @@
 // C ref: zap.c dobuzz(), zap_over_floor(), zhitm(), zhitu(), and
 // destroy_items().
 
+import { formatFeltMessage, publishHeardMessage } from './hero_speech.js';
 import { monsterHasMapPosition } from './monster_location.js';
 import { chooseInventoryObject } from './inventory_prompt.js';
 import { applyWandEffect } from './wand_effects.js';
@@ -352,7 +353,6 @@ async function freezeLiquidAt(x: number, y: number, state: GameState, publish: M
     if (!isPoolAt(x, y, state) && !lava) return 0;
 
     const visible = cansee(x, y);
-    const deaf = !!(state.u?.deaf || state.deaf);
     const temperature = state.level?.flags?.temperature || 0;
     const briefFreeze = IS_WATERWALL(location.typ)
         || (lavaWall && rn2(Math.max(2, 5 + temperature * 10)) !== 0);
@@ -361,8 +361,8 @@ async function freezeLiquidAt(x: number, y: number, state: GameState, publish: M
             await publish(
                 `The ${displayLiquidName(lavaWall ? 'lava' : 'water', state)} freezes for a moment.`,
             );
-        } else if (!deaf) {
-            await publish('You hear a soft crackling.');
+        } else {
+            await publishHeardMessage('a soft crackling.', publish, state);
         }
         return -1000;
     }
@@ -395,8 +395,8 @@ async function freezeLiquidAt(x: number, y: number, state: GameState, publish: M
                 : `The ${displayLiquidName('water', state)} freezes.`;
         await publish(message, { noRepeat: true });
         newsym(x, y);
-    } else if (!lava && !deaf) {
-        await publish('You hear a crackling sound.');
+    } else if (!lava) {
+        await publishHeardMessage('a crackling sound.', publish, state);
     }
 
     if (state.u?.ux === x && state.u?.uy === y) {
@@ -576,15 +576,12 @@ export async function applyRayFloorFeatures(
                 await publish('You feel a burst of cool air.');
             } else if (kind === RAY_FIRE) {
                 await publish('You smell smoke.');
-            } else if (!(state.u?.deaf || state.deaf)
-                && kind === RAY_COLD) {
-                await publish(
-                    'You hear a deep cracking sound.',
-                );
-            } else if (!(state.u?.deaf || state.deaf)) {
-                await publish(kind === RAY_DISINTEGRATION
-                    ? 'You hear crashing wood.'
-                    : 'You hear crackling.');
+            } else if (kind === RAY_COLD) {
+                await publishHeardMessage('a deep cracking sound.', publish, state);
+            } else {
+                await publishHeardMessage(kind === RAY_DISINTEGRATION
+                    ? 'crashing wood.'
+                    : 'crackling.', publish, state);
             }
             const occupation = state._occupation;
             if (occupation?.key === 'pick-lock' && occupation.door === location) {
@@ -595,7 +592,7 @@ export async function applyRayFloorFeatures(
             await publish(wandType ? 'The door remains intact.'
                 : `The door absorbs ${yourRay ? 'your' : 'the'} ${rayNoun}!`);
         } else {
-            await publish('You feel vibrations.');
+            await publish(formatFeltMessage('vibrations.', state));
         }
     }
     if (absorbed) rangeChange = -1000;

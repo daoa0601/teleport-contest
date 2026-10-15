@@ -13,7 +13,7 @@ import { heroIsInvisible } from './hero_invisibility.js';
 import { makeConfused } from './hero_mental_status.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { heroPolyGender, heroSpecies } from './hero_species.js';
-import { formatHeardMessage } from './hero_speech.js';
+import { formatHeardMessage, formatFeltMessage } from './hero_speech.js';
 import { paralyzeMonster } from './mon.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL, monsterIsHumanoid, monsterIsUnicorn, monsterIsVampire, monsterIsVampireShifter, monsterTypeName, } from './monster_data.js';
 import { makeMonsterFlee } from './monster_flee.js';
@@ -264,7 +264,7 @@ async function showMonsterReflection(monster, object, mirror, invisible, state) 
         && !((MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_DEMON) && (!monster.minvis || perceives) && rn2(5)) {
         if (monster.mfrozen) {
             await pline(visible ? `You discern no obvious reaction from ${monsterName(monster)}.`
-                : 'You feel a bit silly gesturing the mirror in that direction.');
+                : formatFeltMessage('a bit silly gesturing the mirror in that direction.', state));
         }
         else {
             if (visible)

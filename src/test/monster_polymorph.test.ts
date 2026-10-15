@@ -277,6 +277,31 @@ void test('an unseen werejackal howls and wakes nearby monsters', async () => {
     assert.equal(sleeper.msleeping, 0);
 });
 
+for (const [species, humanForm] of [['werejackal', 262], ['werewolf', 263]] as const) {
+    void test(`an unseen ${species} wakes nearby monsters with acoustics disabled`, async () => {
+        freshObjectRoom({ flags: { acoustics: false } });
+        requirePlayingGame(game);
+        const howler = await createMonsterAt(humanForm, 11, 10, NO_MINVENT);
+        howler.minvis = 1;
+        const nearby = await createMonsterAt('goblin', 12, 10, NO_MINVENT);
+        const distant = await createMonsterAt('goblin', 15, 10, NO_MINVENT);
+        nearby.msleeping = 1;
+        distant.msleeping = 1;
+        const messages: string[] = [];
+
+        const change = await wereChange(howler, game, () => 0);
+        await presentWereChange(change, {
+            publish: async (message: string) => messages.push(message),
+            wakeNearby: wakeMonstersNear,
+        });
+
+        assert.equal(howler.mnum, MONSTER_NAME.indexOf(species));
+        assert.deepEqual(messages, []);
+        assert.equal(nearby.msleeping, 0, 'the howl wakes the nearby goblin');
+        assert.equal(distant.msleeping, 1, 'the howl does not reach four squares away');
+    });
+}
+
 void test('a wounded vampire shape returns to its natural form', async () => {
     freshObjectRoom();
     requirePlayingGame(game);

@@ -1,3 +1,4 @@
+import { formatFeltMessage, publishHeardMessage } from './hero_speech.js';
 import { requirePlayingGame } from './gstate.js';
 // Immediate magic owns each actual target; beam traversal and wand breakage
 // choose those targets. C refs: zap.c bhito(), bhitpile(), zapsetup/wrapup().
@@ -42,7 +43,7 @@ export function beginImmediateZap(state = game) {
 }
 export async function finishImmediateZap(state = game) {
     if (state.context?.obj_zapped)
-        await pline('You feel shuddering vibrations.');
+        await pline(formatFeltMessage('shuddering vibrations.', state));
     state.context.obj_zapped = false;
 }
 // Native clear_bypasses runs once per turn, after the complete zap transaction.
@@ -235,7 +236,7 @@ async function reviveFloorCorpse(object, state) {
         if (state.urole.key === 'healer' && !heroIsDeaf(state) && !monsterIsNonliving(species)) {
             const corpse = (MONSTER_FLAGS2[species] ?? 0) & 0x80000
                 ? corpseName : withIndefiniteArticle(corpseName);
-            await pline(`You hear ${heroIsHallucinating(state) ? 'a defibrillator' : `${corpse} reviving`}.`);
+            await publishHeardMessage(`${heroIsHallucinating(state) ? 'a defibrillator' : `${corpse} reviving`}.`, pline, state);
             learned = !state.context?.mon_moving || !!state.context.zap_oseen;
         }
         if (canSpotMonster(monster))

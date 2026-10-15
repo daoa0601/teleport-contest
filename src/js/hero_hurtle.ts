@@ -1,6 +1,7 @@
 // Moving the hero through the air after a forceful action.
 // C ref: dothrow.c hurtle() and hurtle_step().
 
+import { formatFeltMessage } from './hero_speech.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { heroHasWaterWalking } from './armor.js';
 import {
@@ -354,7 +355,7 @@ async function settleLiquid(options: HeroHurtleOptions, remaining: HurtleDistanc
 async function moveOneSquare(x: number, y: number, options: HeroHurtleOptions, remaining: HurtleDistance): Promise<boolean> {
     requirePlayingGame(game);
     if (!isok(x, y)) {
-        await plineWithContinuation('You feel the spirits holding you back.');
+        await plineWithContinuation(formatFeltMessage('the spirits holding you back.'));
         return false;
     }
     if (!remaining.value) return false;
@@ -443,7 +444,7 @@ export async function hurtleHero(dx: number, dy: number, range: number, {
     const ball = game.uball || game.u.uball;
     if (heroIsPunished()
         && (!ball || !game.inventory.includes(ball))) {
-        await plineWithContinuation('You feel a tug from the iron ball.');
+        await plineWithContinuation(formatFeltMessage('a tug from the iron ball.'));
         stopHurtle();
         return false;
     }

@@ -91,7 +91,7 @@ void test('an aggravating potion revelation wakes a sleeping hero after its ackn
             assert.equal(heroIsUnconscious(game), true, 'the hero remains asleep during the revelation pagers');
             const screen = game.nhDisplay?.grid.map(row => row.map(cell => cell.ch).join('')).join('\n') ?? '';
             assert.match(screen, /--More--/);
-            if (screen.startsWith('You feel aggravated at the goblin.'))
+            if (screen.startsWith('You dream that you feel aggravated at the goblin.'))
                 acknowledgedRevelation = true;
             return 32;
         },

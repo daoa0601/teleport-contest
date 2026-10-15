@@ -1,5 +1,6 @@
 // Monster-attributed hero death and its terminal continuations.
 // C refs: end.c done_in_by()/done()/savelife(), tty message windows.
+import { formatFeltMessage } from './hero_speech.js';
 import { game } from './gstate.js';
 import type { Monster } from './monster_types.js';
 import { PARANOID_DIE, MGIVENNAME, M_AP_MONSTER, M_AP_TYPE, STONING, Upolyd, ismnum } from './const.js';
@@ -124,7 +125,7 @@ export async function finishMonsterAttackDeath(monster: Monster, {
         await plineWithContinuation('But wait...');
         identifyLifeSavingAmulet();
         await plineWithContinuation(`Your medallion ${medallionEffect}!`);
-        const dismissal = await plineWithContinuation('You feel much better!');
+        const dismissal = await plineWithContinuation(formatFeltMessage('much better!'));
         // ESC at tty --More-- sets WIN_STOP: the new overflow
         // message is still installed, but later messages in this
         // input transaction (starting with the crumble line) are

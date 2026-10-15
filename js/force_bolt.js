@@ -1,3 +1,4 @@
+import { publishHeardMessage } from './hero_speech.js';
 // Point-target striking and force-bolt damage. C zap.c:bhitm()/bhito().
 // The wand effect owner chooses targets and handles traversal and terrain.
 import { monsterHasMagicResistance } from './anti_magic_trap.js';
@@ -69,8 +70,8 @@ export async function hitFloorObjectWithForce(object, { state = game, random = r
     if (object.otyp === BOULDER) {
         if (cansee(x, y))
             await pline('The boulder falls apart.');
-        else if (!heroIsDeaf(state))
-            await pline('You hear a crumbling sound.');
+        else
+            await publishHeardMessage('a crumbling sound.', pline, state);
         await fractureRock(object, x, y, { state, random });
         return { affected: 1, learned };
     }
@@ -80,8 +81,8 @@ export async function hitFloorObjectWithForce(object, { state = game, random = r
                 const subject = heroIsHallucinating(state) ? randomDisplayMonsterName() : 'statue';
                 await pline(`The ${subject} shatters.`);
             }
-            else if (!heroIsDeaf(state))
-                await pline('You hear a crumbling sound.');
+            else
+                await publishHeardMessage('a crumbling sound.', pline, state);
         }
         return { affected: 1, learned };
     }

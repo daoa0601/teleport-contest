@@ -1,3 +1,4 @@
+import { publishHeardMessage } from './hero_speech.js';
 import type { HeroMonsterKillOptions } from './hero_monster_death.js';
 interface ForceHitOptions {
     x?: number; y?: number; roll: (sides: number) => number;
@@ -88,7 +89,7 @@ export async function hitFloorObjectWithForce(object: GameObject, {
     let learned = cansee(x, y) || !heroIsDeaf(state);
     if (object.otyp === BOULDER) {
         if (cansee(x, y)) await pline('The boulder falls apart.');
-        else if (!heroIsDeaf(state)) await pline('You hear a crumbling sound.');
+        else await publishHeardMessage('a crumbling sound.', pline, state);
         await fractureRock(object, x, y, { state, random });
         return { affected: 1, learned };
     }
@@ -97,7 +98,7 @@ export async function hitFloorObjectWithForce(object: GameObject, {
             if (cansee(x, y)) {
                 const subject = heroIsHallucinating(state) ? randomDisplayMonsterName() : 'statue';
                 await pline(`The ${subject} shatters.`);
-            } else if (!heroIsDeaf(state)) await pline('You hear a crumbling sound.');
+            } else await publishHeardMessage('a crumbling sound.', pline, state);
         }
         return { affected: 1, learned };
     }

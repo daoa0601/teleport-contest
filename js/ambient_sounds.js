@@ -1,10 +1,10 @@
 // Level ambience and its resident checks. C ref: sounds.c:dosounds().
+import { publishHeardMessage } from './hero_speech.js';
 import { hallucinatedDeityName } from './alignment.js';
 import { heroHairName, heroHeadName, heroNeckName } from './body_parts.js';
 import { BARRACKS, BEEHIVE, COURT, Is_astralevel, MON_FLOOR, MORGUE, ROOMOFFSET, SHOPBASE, TEMPLE, VAULT, ZOO, } from './const.js';
 import { canSeeMonster, plineWithContinuation } from './display.js';
 import { requireInitializedGame } from './gstate.js';
-import { heroIsUnaware } from './hero_sleep.js';
 import { isRoom } from './map_types.js';
 import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL, monsterIsAnimal, monsterIsUndead, monsterIsVampireShifter, } from './monster_data.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
@@ -220,6 +220,6 @@ async function hearChoice(state, messages, selection) {
     await hear(state, choice(messages, selection));
 }
 async function hear(state, message) {
-    await plineWithContinuation(`${heroIsUnaware(state) ? 'You dream that you hear' : 'You hear'} ${message}`);
+    await publishHeardMessage(message, plineWithContinuation, state);
 }
 //# sourceMappingURL=ambient_sounds.js.map

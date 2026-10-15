@@ -1,4 +1,5 @@
 // Native dokick.c:kick_door(), including witnessed town vandalism.
+import { publishHeardMessage } from './hero_speech.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { triggerBoobyTrap } from './booby_trap.js';
 import { A_DEX, A_STR, D_BROKEN, D_ISOPEN, D_NODOOR, D_TRAPPED, D_WARNED, SHOPBASE, SHOP_DOOR_COST, Upolyd } from './const.js';
@@ -90,6 +91,7 @@ async function watchmanYells(monster: Monster, shout: string): Promise<void> {
             await pline(`${name} angrily waves ${monster.female ? 'her' : 'his'} arms!`);
         return;
     }
-    await pline(canSpotMonster(monster) ? `${name} yells:` : 'You hear someone yell:');
+    if (canSpotMonster(monster)) await pline(`${name} yells:`);
+    else await publishHeardMessage('someone yell:', pline);
     await pline(`"${shout}"`);
 }

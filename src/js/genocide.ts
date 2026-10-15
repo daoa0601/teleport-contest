@@ -1,4 +1,5 @@
 // C read.c:do_genocide() and do_class_genocide().
+import { formatFeltMessage } from './hero_speech.js';
 import { adjustHeroAlignment } from './alignment.js';
 import { G_EXTINCT, G_GENOD, G_NOCORPSE, MM_NOMSG, NO_MINVENT, POLY_REVERT, Upolyd } from './const.js';
 import { plineWithContinuation } from './display.js';
@@ -66,7 +67,7 @@ export async function doGenocide(how: number, {
             : how & GENOCIDE_ON_THRONE ? 'throne' : 'scroll';
         if (Upolyd(state.u) && species !== heroSpecies(state)) {
             rememberPolymorphGenocide(cause, state);
-            await plineWithContinuation(`You feel ${feelingAfterSelfGenocide(state)} inside.`);
+            await plineWithContinuation(formatFeltMessage(`${feelingAfterSelfGenocide(state)} inside.`, state));
         } else {
             await finishHeroDeath(genocideDeathOptions(cause));
             if (state.program_state.gameover) return true;
@@ -124,7 +125,7 @@ export async function doClassGenocide({
                 state.u.uhp = -1;
                 if (Upolyd(state.u)) {
                     if (!feltDead)
-                        await plineWithContinuation(`You feel ${feelingAfterSelfGenocide(state)} inside.`);
+                        await plineWithContinuation(formatFeltMessage(`${feelingAfterSelfGenocide(state)} inside.`, state));
                 } else {
                     if (!feltDead) await plineWithContinuation('You die.', { urgent: true });
                     doomed = true;

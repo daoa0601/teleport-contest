@@ -1,4 +1,5 @@
 // C mhitu.c:doseduce(), mayberem(), and uhitm.c:mhitm_ad_ssex().
+import { formatFeltMessage } from './hero_speech.js';
 import { removeHeroAccessory, wearHeroAccessory } from './accessory.js';
 import { adjustHeroAlignment } from './alignment.js';
 import { armorSimpleName, armorSlotFor, heroHasDrainResistance, stopDonning } from './armor.js';
@@ -46,7 +47,7 @@ export async function resolveHeroSeduction(monster, attack, state, publish, rand
         return;
     }
     const visible = canSeeMonster(monster);
-    await publish(visible ? `You feel very attracted to ${monsterName(monster, { state })}.`
+    await publish(visible ? formatFeltMessage(`very attracted to ${monsterName(monster, { state })}.`, state)
         : 'Someone caresses you...');
     const context = { monster, state, level: state.level, publish, random, rollOne,
         female, who: visible ? monsterName(monster, { state, capitalized: true }) : female ? 'She' : 'He' };
@@ -251,7 +252,7 @@ async function seductionOutcome(context) {
         await publish(`${monsterName(monster, { state, article: 'your', suppressIt: true, capitalized: true })} seems to have enjoyed it more than you...`);
         const outcome = random(5);
         if (outcome === 0) {
-            await publish('You feel drained of energy.');
+            await publish(formatFeltMessage('drained of energy.', state));
             hero.uen = 0;
             hero.uenmax -= rollOne(hero.halfPhysicalDamage ? 5 : 10);
             await exerciseAttribute(A_CON, false, state);
@@ -268,7 +269,7 @@ async function seductionOutcome(context) {
         }
         else if (outcome === 3) {
             if (!heroHasDrainResistance(state)) {
-                await publish('You feel out of shape.');
+                await publish(formatFeltMessage('out of shape.', state));
                 await loseHeroExperience('overexertion', { state, publish });
             }
             else
@@ -278,7 +279,7 @@ async function seductionOutcome(context) {
             await exerciseAttribute(A_WIS, false, state);
         }
         else {
-            await publish('You feel exhausted.');
+            await publish(formatFeltMessage('exhausted.', state));
             await exerciseAttribute(A_STR, false, state);
             const damage = 6 + random(10);
             await loseHeroHp(hero.halfPhysicalDamage ? Math.ceil(damage / 2) : damage, 'exhaustion', { state, publish });
@@ -289,14 +290,14 @@ async function seductionOutcome(context) {
     await publish(`You seem to have enjoyed it more than ${monsterName(monster, { state, article: 'your', suppressIt: true })}...`);
     const outcome = random(5);
     if (outcome === 0) {
-        await publish('You feel raised to your full potential.');
+        await publish(formatFeltMessage('raised to your full potential.', state));
         await exerciseAttribute(A_CON, true, state);
         hero.uenmax += rollOne(5);
         hero.uen = hero.uenmax;
         hero.uenpeak = Math.max(hero.uenpeak, hero.uenmax);
     }
     else if (outcome === 1 || outcome === 2) {
-        await publish(outcome === 1 ? 'You feel good enough to do it again.'
+        await publish(outcome === 1 ? formatFeltMessage('good enough to do it again.', state)
             : `You will always remember ${monsterName(monster, { state, article: 'your', suppressIt: true })}...`);
         const attribute = outcome === 1 ? A_CON : A_WIS;
         const change = adjustAttribute(attribute, 1, state);
@@ -311,7 +312,7 @@ async function seductionOutcome(context) {
         await exerciseAttribute(A_WIS, true, state);
     }
     else {
-        await publish('You feel restored to health!');
+        await publish(formatFeltMessage('restored to health!', state));
         hero.uhp = hero.uhpmax;
         if (Upolyd(hero))
             hero.mh = hero.mhmax;

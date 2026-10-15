@@ -1,6 +1,7 @@
 // Offerings at altars.
 // C pray.c:dosacrifice(), offer_corpse(), and the Amulet offering helpers.
 
+import { formatFeltMessage, publishHeardMessage } from './hero_speech.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { observeObjectForNaming } from './objnam.js';
 import { adjustHeroAlignment, convertHeroAlignment, deityName } from './alignment.js';
@@ -216,8 +217,7 @@ async function offeringValue(corpse: CorpseOffering, alignment: number): Promise
         }
         if (hero.ualign.type === alignment) {
             const name = alignment > 0 ? 'lawful' : alignment < 0 ? 'chaotic' : 'neutral';
-            await pline(hero.ualign.record < alignmentLimit()
-                ? `You feel appropriately ${name}.` : 'You feel you are thoroughly on the right path.');
+            await pline(formatFeltMessage(hero.ualign.record < alignmentLimit() ? `appropriately ${name}.` : 'you are thoroughly on the right path.'));
             adjustHeroAlignment(5);
             value += 3;
         } else if (unicornAlignment === hero.ualign.type) {
@@ -300,7 +300,7 @@ async function offerToAnotherGod(corpse: CorpseOffering, alignment: number): Pro
     await consumeOffering(corpse);
     await pline(`You sense a conflict between ${deityName(hero.ualign.type)} and ${deityName(alignment)}.`);
     if (rn2(8 + hero.ulevel) > 5) {
-        await pline(`You feel the power of ${deityName(hero.ualign.type)} increase.`);
+        await pline(formatFeltMessage(`the power of ${deityName(hero.ualign.type)} increase.`));
         await exerciseAttribute(A_WIS, true);
         changeLuck(1);
         const altar = game.level.requireAt(hero.ux, hero.uy);
@@ -404,7 +404,7 @@ async function rewardOffering(value: number): Promise<void> {
         }
     } else if (hero.ualign.record < 0) {
         adjustHeroAlignment(Math.min(value, MAX_VALUE, -hero.ualign.record));
-        await pline('You feel partially absolved.');
+        await pline(formatFeltMessage('partially absolved.'));
     } else if (hero.ublesscnt > 0) {
         const previous = hero.ublesscnt;
         hero.ublesscnt = Math.max(0, previous - Math.trunc(value * (hero.ualign.type === -1 ? 500 : 300) / MAX_VALUE));
@@ -478,8 +478,8 @@ async function bestowArtifact(value: number): Promise<boolean> {
 async function offerAmuletTooSoon(alignment: number): Promise<void> {
     const game = requireInitializedGame();
     if (alignment === A_NONE && inHell()) await godsUpset(A_NONE);
-    else await pline(`You feel ${heroIsHallucinating(game) ? 'homesick'
-        : alignment === game.u.ualign.type ? 'an urge to return to the surface' : 'ashamed'}.`);
+    else await pline(formatFeltMessage(`${heroIsHallucinating(game) ? 'homesick'
+        : alignment === game.u.ualign.type ? 'an urge to return to the surface' : 'ashamed'}.`));
 }
 
 async function offerFakeAmulet(amulet: GameObject, highAltar: boolean, alignment: number): Promise<void> {
@@ -488,7 +488,7 @@ async function offerFakeAmulet(amulet: GameObject, highAltar: boolean, alignment
         await offerAmuletTooSoon(alignment);
         return;
     }
-    if (!heroIsDeaf(game)) await pline('You hear a nearby thunderclap.');
+    await publishHeardMessage('a nearby thunderclap.', pline);
     if (!amulet.known) {
         await pline(`You realize you have made a ${heroIsHallucinating(game) ? 'boo-boo' : 'mistake'}.`);
         amulet.known = true;

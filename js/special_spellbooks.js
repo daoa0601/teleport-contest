@@ -1,5 +1,6 @@
 // Special spellbooks. C spell.c:deadbook(), deadbook_pacify_undead(),
 // and the novel branch of study_book(). Ordinary study owns its occupation.
+import { publishHeardMessage } from './hero_speech.js';
 import { ACH_INVK, ACH_NOVL, recordAchievement } from './achievements.js';
 import { heroSpineName } from './body_parts.js';
 import { reviveCorpseImmediately } from './corpse_revival.js';
@@ -22,7 +23,7 @@ import { BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION, CORPSE } from './object_dat
 import { learnObjectType, observeObject } from './object_knowledge.js';
 import { NO_MINVENT } from './const.js';
 import { d, rnd, rn2 } from './rng.js';
-import { heroIsBlind, heroIsDeaf } from './senses.js';
+import { heroIsBlind } from './senses.js';
 import { chargeUnpaidUsage } from './shk.js';
 import { turnCarriedObjects } from './undead_turning.js';
 import { cansee } from './vision.js';
@@ -67,8 +68,8 @@ async function invokeBook(book, state) {
     }
     if (!state.u.uhave.bell || !state.u.uhave.menorah) {
         await pline(`A chill runs down your ${heroSpineName(state)}.`);
-        if (!state.u.uhave.bell && !heroIsDeaf(state))
-            await pline('You hear a faint chime...');
+        if (!state.u.uhave.bell)
+            await publishHeardMessage('a faint chime...', pline, state);
         if (!state.u.uhave.menorah)
             await pline("Vlad's doppelganger is amused.");
         return;

@@ -1,4 +1,5 @@
 // C fountain.c:drinksink(). Admission and action time belong to quaffing.
+import { publishHeardMessage } from './hero_speech.js';
 import { currentAttribute, exerciseWisdom } from './attrib.js';
 import { A_CON, G_GONE, MM_NOMSG, M_SEEN_FIRE, POLY_NOFLAGS, S_LRING, } from './const.js';
 import { canSpotMonster, displayColorName, displayLiquidName, newsym, plineWithContinuation as pline, } from './display.js';
@@ -7,7 +8,6 @@ import { placeCreatedObject } from './floor_object.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { loseHeroHp } from './hero_damage.js';
 import { vomitHero } from './hero_illness.js';
-import { heroIsUnaware } from './hero_sleep.js';
 import { spendHeroNutrition } from './hunger.js';
 import { floatingAbove } from './levitation_commands.js';
 import { makemonNear, mkobj } from './mklev.js';
@@ -22,7 +22,7 @@ import { propertyIsActive } from './properties.js';
 import { drinkPotion } from './quaff.js';
 import { createPoisonGasCloud } from './regions.js';
 import { rn1, rn2, rnd } from './rng.js';
-import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
+import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { breakSinkAt } from './sink_terrain.js';
 const PM_SEWER_RAT = MONSTER_NAME.indexOf('sewer rat');
 const PM_WATER_ELEMENTAL = MONSTER_NAME.indexOf('water elemental');
@@ -159,12 +159,7 @@ async function drinkFaucetPotion(state) {
     }
 }
 async function hearSink(message, state) {
-    const unaware = heroIsUnaware(state);
-    if (heroIsDeaf(state) && !unaware || state.flags.acoustics === false)
-        return;
-    const prefix = state.u.uinwater || state.underwater ? 'You barely hear'
-        : unaware ? 'You dream that you hear' : 'You hear';
-    await pline(`${prefix} ${message}`);
+    await publishHeardMessage(message, pline, state);
 }
 async function releaseSinkGas(state) {
     const { ux, uy } = state.u;

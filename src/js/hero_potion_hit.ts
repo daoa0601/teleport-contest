@@ -1,4 +1,5 @@
 // Native potion.c:potionhit(&youmonst, ..., POTHIT_MONST_THROW).
+import { formatFeltMessage } from './hero_speech.js';
 import { heroHeadName } from './body_parts.js';
 import { plineWithContinuation } from './display.js';
 import { explodeLitOilPotion } from './fire_explosion.js';
@@ -76,7 +77,7 @@ async function applyDirectHeroPotion(
         return explosion.heroDied;
     }
     if (potion.otyp === POT_POLYMORPH) {
-        await publish(`You feel a little ${heroIsHallucinating(state) ? 'normal' : 'strange'}.`);
+        await publish(formatFeltMessage(`a little ${heroIsHallucinating(state) ? 'normal' : 'strange'}.`, state));
         if (!heroIsUnchanging(state) && !propertyIsActive('antimagic', state)) await polymorphHero();
         return !!state.program_state.gameover;
     }

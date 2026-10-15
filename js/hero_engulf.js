@@ -1,5 +1,6 @@
 // Monster-versus-hero engulf admission, capture, and per-slot effects.
 // C mhitm.c:engulf_target() and mhitu.c:gulpmu().
+import { formatFeltMessage } from './hero_speech.js';
 import { A_CON, A_STR, DISMOUNT_ENGULFED, DOOR, D_CLOSED, D_LOCKED, IRONBARS, IS_OBSTRUCTED, IS_TREE, TT_WEB, is_pit, } from './const.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { heroIsBreathless, heroPassesWalls, heroSpecies } from './hero_species.js';
@@ -224,7 +225,7 @@ export async function resolveHeroEngulf(monster, damageType, damage, { state = g
                 const fire = damageType === AD_FIRE;
                 if (fire ? hero.fireResistance : hero.coldResistance) {
                     await shieldeff(hero.ux, hero.uy, state);
-                    await publish(fire ? 'You feel mildly hot.' : 'You feel mildly chilly.');
+                    await publish(formatFeltMessage(fire ? 'mildly hot.' : 'mildly chilly.', state));
                     await applyHeroGolemEffects(damageType, damage, { state, publish });
                     damage = 0;
                 }

@@ -1,4 +1,5 @@
 // Native eat.c:eatcorpse(). Admission prepares the meal before its first bite.
+import { formatFeltMessage } from './hero_speech.js';
 import { applyCannibalPenalty } from './cannibalism.js';
 import { SICK_VOMITABLE } from './const.js';
 import { plineWithContinuation as pline } from './display.js';
@@ -63,7 +64,7 @@ export async function prepareCorpseMeal(food: GameObject, { state = game }: Corp
     } else if ((rotted > 5 || rotted > 3 && rn2(5))
         && !propertyIsActive('sicknessResistance', state)) {
         tastedHazard = true;
-        await pline(`You feel ${heroIsSick(state) ? 'very ' : ''}sick.`);
+        await pline(formatFeltMessage(`${heroIsSick(state) ? 'very ' : ''}sick.`, state));
         await loseHeroHp(rnd(8), glob ? 'rotted glob' : 'cadaver', { state });
     }
     if (state.program_state.gameover) return 'dead';

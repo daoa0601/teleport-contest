@@ -1,5 +1,6 @@
 // C pray.c:in_trouble(), worst_cursed_item(), and fix_worst_trouble().
 
+import { formatFeltMessage } from './hero_speech.js';
 import { makeConfused, makeHallucinated, makeStunned } from './hero_mental_status.js';
 import { ringRemovalObstacle } from './accessory.js';
 import { simpleArmorName } from './armor.js';
@@ -240,14 +241,14 @@ export async function fixPrayerTrouble(trouble: PrayerTrouble, state: GameState 
         state.context.botl = true;
         return;
     case Trouble.SICK:
-        await pline('You feel better.');
+        await pline(formatFeltMessage('better.', state));
         cureHeroSickness(state);
         return;
     case Trouble.REGION:
         await rescueHeroFromRegion(state);
         return;
     case Trouble.HIT:
-        await pline('You feel much better.');
+        await pline(formatFeltMessage('much better.', state));
         if (Upolyd(hero)) {
             hero.mhmax = Math.max(6, hero.mhmax + rnd(5));
             hero.mh = hero.mhmax;
@@ -259,7 +260,7 @@ export async function fixPrayerTrouble(trouble: PrayerTrouble, state: GameState 
         state.context.botl = true;
         return;
     case Trouble.COLLAPSING:
-        await pline(`You feel ${hero.amax.a[A_STR] - hero.acurr.a[A_STR] > 6 ? 'much ' : ''}stronger.`);
+        await pline(formatFeltMessage(`${hero.amax.a[A_STR] - hero.acurr.a[A_STR] > 6 ? 'much ' : ''}stronger.`, state));
         hero.acurr.a[A_STR] = hero.amax.a[A_STR];
         state.context.botl = true;
         object = ringRemovalObstacle(state.uleft, RIN_SUSTAIN_ABILITY, state)
@@ -271,7 +272,7 @@ export async function fixPrayerTrouble(trouble: PrayerTrouble, state: GameState 
         else {
             hero.passesWallsTurns = d(4, 4) + 4;
             refreshProperty('passesWalls', state);
-            await pline('You feel much slimmer.');
+            await pline(formatFeltMessage('much slimmer.', state));
         }
         return;
     case Trouble.LEVITATION:
@@ -308,7 +309,7 @@ export async function fixPrayerTrouble(trouble: PrayerTrouble, state: GameState 
         await uncursePrayerObject(requirePrayerObject(object), ringGlow(object, state), state);
         return;
     case Trouble.POISONED: {
-        await pline(heroIsHallucinating(state) ? "There's a tiger in your tank." : 'You feel in good health again.');
+        await pline(heroIsHallucinating(state) ? "There's a tiger in your tank." : formatFeltMessage('in good health again.', state));
         const before = nearCapacity(state);
         for (const index of attributeIndices)
             hero.acurr.a[index] = Math.max(hero.acurr.a[index], hero.amax.a[index]);

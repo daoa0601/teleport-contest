@@ -1,6 +1,7 @@
 // Intrinsics and magical energy conveyed by flesh.
 // C refs: eat.c:corpse_intrinsic(), givit(), and eye_of_newt_buzz().
 
+import { formatFeltMessage } from './hero_speech.js';
 import { gainHeroStrength } from './attrib.js';
 import { heroHandName } from './body_parts.js';
 import { TIMEOUT } from './const.js';
@@ -112,29 +113,25 @@ function intrinsicMessage(property: CorpseIntrinsic, state: GameState): string {
     switch (property) {
     case 'fireResistance':
         return hallucinating ? "You be chillin'." : 'You feel a momentary chill.';
-    case 'coldResistance': return 'You feel full of hot air.';
-    case 'sleepResistance': return 'You feel wide awake.';
+    case 'coldResistance': return formatFeltMessage('full of hot air.', state);
+    case 'sleepResistance': return formatFeltMessage('wide awake.', state);
     case 'disintegrationResistance':
-        return hallucinating ? 'You feel totally together, man.' : 'You feel very firm.';
+        return formatFeltMessage(hallucinating ? 'totally together, man.' : 'very firm.', state);
     case 'shockResistance':
-        return hallucinating ? 'You feel grounded in reality.'
+        return hallucinating ? formatFeltMessage('grounded in reality.', state)
             : 'Your health currently feels amplified!';
     case 'poisonResistance':
-        return state.u.poisonResistance ? 'You feel especially healthy.' : 'You feel healthy.';
+        return formatFeltMessage(state.u.poisonResistance ? 'especially healthy.' : 'healthy.', state);
     case 'telepathy':
-        return hallucinating ? 'You feel in touch with the cosmos.'
-            : 'You feel a strange mental acuity.';
+        return formatFeltMessage(hallucinating ? 'in touch with the cosmos.' : 'a strange mental acuity.', state);
     case 'teleportation':
-        return hallucinating ? 'You feel diffuse.' : 'You feel very jumpy.';
+        return formatFeltMessage(hallucinating ? 'diffuse.' : 'very jumpy.', state);
     case 'teleportControl':
-        return hallucinating ? 'You feel centered in your personal space.'
-            : 'You feel in control of yourself.';
+        return formatFeltMessage(hallucinating ? 'centered in your personal space.' : 'in control of yourself.', state);
     case 'acidResistance':
-        return hallucinating ? 'You feel secure from flashbacks.'
-            : 'You feel less concerned about being harmed by acid.';
+        return formatFeltMessage(hallucinating ? 'secure from flashbacks.' : 'less concerned about being harmed by acid.', state);
     case 'stoneResistance':
-        return hallucinating ? 'You feel unusually limber.'
-            : 'You feel less concerned about becoming petrified.';
+        return formatFeltMessage(hallucinating ? 'unusually limber.' : 'less concerned about becoming petrified.', state);
     }
 }
 
@@ -153,7 +150,7 @@ export async function corpseEnergyBuzz({ state = game }: CorpseIntrinsicOptions 
         hero.uen = hero.uenmax;
     }
     if (hero.uen !== previousEnergy) {
-        await plineWithContinuation('You feel a mild buzz.');
+        await plineWithContinuation(formatFeltMessage('a mild buzz.', state));
         state.context.botl = true;
     }
 }

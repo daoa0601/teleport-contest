@@ -10,7 +10,7 @@ import {
 import type { MessagePublisher } from './display.js';
 import type { PlayingGameState } from './game_state.js';
 import { requireLiveGame } from './gstate.js';
-import { formatHeardMessage } from './hero_speech.js';
+import { formatHeardMessage, formatSeenMessage } from './hero_speech.js';
 import type { Position } from './map_types.js';
 import {
     MONSTER_FLAGS1, MONSTER_MOVE, MONSTER_NAME, MONSTER_SYMBOL,
@@ -28,7 +28,6 @@ import { makePlural } from './object_grammar.js';
 import { dissolveBars } from './projectile_bars.js';
 import { roomsAt } from './room.js';
 import { rn2, rnd } from './rng.js';
-import { heroIsDeaf } from './senses.js';
 import { addShopDamage } from './shop_damage.js';
 import { cansee, vision_note_blocker_change, vision_recalc } from './vision.js';
 
@@ -161,8 +160,8 @@ export async function resolveMonsterDoorPassage(monster: Monster, state: Playing
             : action === 'open' ? 'open' : 'crash open';
         const message = seesDoor && canSpotMonster(monster)
             ? `${monsterName(monster, { state, capitalized: true })} ${actorAction} a door.`
-            : seesDoor ? `You see a door ${doorAction}.`
-                : !heroIsDeaf(state) ? formatHeardMessage(`a door ${doorAction}.`, state) : null;
+            : seesDoor ? formatSeenMessage(`a door ${doorAction}.`, state)
+                : formatHeardMessage(`a door ${doorAction}.`, state);
         if (message) await publish(message);
     }
     if (action === 'break' && roomsAt(state.level, x, y, SHOPBASE).length)

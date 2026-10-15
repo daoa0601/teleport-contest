@@ -1,5 +1,6 @@
 // Egg hatch timers.
 // C refs: timeout.c attach_egg_hatch_timeout()/hatch_egg().
+import { formatSeenMessage, formatFeltMessage } from './hero_speech.js';
 import { G_EXTINCT, G_GENOD, IS_POOL, MM_NOMSG, MV_KNOWS_EGG, NO_MINVENT, } from './const.js';
 import { canSeeMonster, newsym } from './display.js';
 import { tameMonster } from './monster_taming.js';
@@ -25,11 +26,9 @@ const S_EYE = 5;
 const S_DRAGON = 30;
 const S_LIGHT = 25;
 const S_EEL = 57;
-function floorHatchMessage(mnum, count) {
+function floorHatchMessage(mnum, count, state) {
     const name = monsterTypeName(mnum);
-    return count > 1
-        ? `You see some ${makePlural(name)} hatch.`
-        : `You see ${withIndefiniteArticle(name)} hatch.`;
+    return formatSeenMessage(count > 1 ? `some ${makePlural(name)} hatch.` : `${withIndefiniteArticle(name)} hatch.`, state);
 }
 function hatchLocomotion(mnum) {
     const flags = MONSTER_FLAGS1[mnum] ?? 0;
@@ -48,15 +47,15 @@ function hatchLocomotion(mnum) {
         return 'crawl';
     return 'drop';
 }
-function inventoryHatchMessage(mnum, count, visible) {
+function inventoryHatchMessage(mnum, count, visible, state) {
     const motion = hatchLocomotion(mnum);
     if (!visible)
-        return `You feel something ${motion} from your pack!`;
+        return formatFeltMessage(`something ${motion} from your pack!`, state);
     const name = monsterTypeName(mnum);
     const newborn = count > 1
         ? `some ${makePlural(name)}`
         : withIndefiniteArticle(name);
-    return `You see ${newborn} ${motion} out of your pack!`;
+    return formatSeenMessage(`${newborn} ${motion} out of your pack!`, state);
 }
 function possessive(noun) {
     return /s$/i.test(noun) ? `${noun}'` : `${noun}'s`;
@@ -116,7 +115,7 @@ function monsterInventoryHatchMessage(mnum, count, carrier, x, y, state) {
         source = 'thin air';
     }
     return {
-        message: `You see ${newborn} ${hatchLocomotion(mnum)} out of ${source}!`,
+        message: formatSeenMessage(`${newborn} ${hatchLocomotion(mnum)} out of ${source}!`, state),
         knowsEgg: carrierIsVisible,
     };
 }
@@ -227,11 +226,11 @@ export async function runClaimedEggHatchTimer(claimed, state = game, currentTurn
     let message = null;
     let knowsEgg = false;
     if (location.kind === 'floor' && visible) {
-        message = floorHatchMessage(mnum, hatched);
+        message = floorHatchMessage(mnum, hatched, state);
         knowsEgg = true;
     }
     else if (location.kind === 'inventory') {
-        message = inventoryHatchMessage(mnum, hatched, visible);
+        message = inventoryHatchMessage(mnum, hatched, visible, state);
         knowsEgg = true;
     }
     else if (location.kind === 'minvent' && visible) {
