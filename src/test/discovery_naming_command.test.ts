@@ -4,7 +4,7 @@ import { rhack } from '../js/cmd.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { queueCommandKeys, resetInputState } from '../js/input.js';
 import { RIN_PROTECTION } from '../js/object_data.js';
-import { recordObjectCall } from '../js/object_knowledge.js';
+import { recordObjectCall, recordObjectKnowledge } from '../js/object_knowledge.js';
 import { renameDiscoveredType } from '../js/o_init.js';
 import { ATR_BOLD, ATR_INVERSE, CLR_RED, NO_COLOR } from '../js/terminal.js';
 import { addInventoryObject } from './support/game-objects.js';
@@ -27,6 +27,31 @@ void test('discovery naming can replace a previously assigned type name', async 
 
     assert.equal(game._objectCallNames?.[RIN_PROTECTION], 'Ward');
 });
+
+for (const { outcome, blindTurns, discovery } of [
+    { outcome: 'marks a sighted discovery as encountered', blindTurns: 0,
+        discovery: /\n  ring of protection \([a-z ]+\) *\n/ },
+    { outcome: 'keeps a blind discovery unencountered', blindTurns: 10,
+        discovery: /\n\* ring of protection \([a-z ]+\) *\n/ },
+]) {
+    void test(`cancelling a rename ${outcome}`, async t => {
+        freshObjectRoom({ hero: { blindTurns } });
+        recordObjectKnowledge(RIN_PROTECTION);
+        const input = resetInputState();
+        input.feed('name\r');
+        queueCommandKeys('d');
+        planInput(input, t, [
+            { prompt: /Pick an object type to name/, keys: 'a' },
+            { prompt: /Call a ring of protection:/, keys: '\x1b' },
+            { prompt: discovery, keys: ' ' },
+        ]);
+
+        await rhack('#'.charCodeAt(0));
+        assert.equal(game._objectCallNames?.[RIN_PROTECTION], undefined);
+        await rhack('\\'.charCodeAt(0));
+        assert.equal(game.context.move, 0);
+    });
+}
 
 for (const { style, configured, gameover } of [
     { style: 'default', configured: false, gameover: false },

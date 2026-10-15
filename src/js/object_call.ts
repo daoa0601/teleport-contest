@@ -12,7 +12,7 @@ import { recordObjectCall, recordObjectEncounter } from './object_knowledge.js';
 import { getLine } from './query.js';
 import { flush_screen } from './display.js';
 import { objectTypeKnown } from './shk.js';
-import { objectName } from './objnam.js';
+import { objectName, observeObjectForNaming } from './objnam.js';
 import type { GameObject } from './object_types.js';
 import type { GameState } from './game_state.js';
 
@@ -65,12 +65,15 @@ export async function callObjectType(object: GameObject, state: GameState = game
     else if (sample.otyp === FIGURINE) sample.corpsenm = -1;
     else if (sample.otyp === HEAVY_IRON_BALL) sample.owt = OBJECT_WEIGHT[HEAVY_IRON_BALL] ?? sample.owt;
     else if (sample.oclass === 7 && sample.globby) sample.owt = 120;
-    const noun = objectName(sample, state);
-    const appearance = state.objectDescriptions?.[object.otyp] ?? OBJECT_DESCRIPTIONS[object.otyp];
-    const prompt =
-        object.oclass === 8 && object.fromsink
-            ? `Call a stream of ${appearance} fluid:`
-            : `Call ${withIndefiniteArticle(noun)}:`;
+    let prompt: string;
+    if (object.oclass === 8 && object.fromsink) {
+        const appearance = state.objectDescriptions?.[object.otyp] ?? OBJECT_DESCRIPTIONS[object.otyp];
+        prompt = `Call a stream of ${appearance} fluid:`;
+    } else {
+        // C docall_xname() observes the prompt's sample before player input.
+        observeObjectForNaming(sample, { state });
+        prompt = `Call ${withIndefiniteArticle(objectName(sample, state))}:`;
+    }
     const input = await getLine(prompt, (_ch, key) => key >= 32 && key < 127);
     if (input === null || input === '')
         return { prompted: true, named: false, callName: null };
