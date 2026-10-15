@@ -1,5 +1,8 @@
 import { autokey, autoUnlockFlags, continuePicking, pickLock } from './lock_pick.js';
 import { resetPick } from './lock_context.js';
+import { petRefusesHeroSwap } from './hero_pet_displacement.js';
+import { airTurbulenceStopsHero, waterTurbulenceStopsHero } from './hero_movement_turbulence.js';
+import { announceRunLiquid, announceRunTrap, knownRunTrap, runLiquidIsDangerous } from './run_hazards.js';
 import { AUTOUNLOCK_APPLY_KEY, AUTOUNLOCK_UNTRAP } from './const.js';
 import { findDrawbridgeAt } from './dbridge.js';
 import { doorObstructed } from './door_magic.js';
@@ -81,7 +84,7 @@ import { prepareAppliedWeaponAttack } from './hero_attack_preflight.js';
 import { applyCaitiffPenalty } from './hero_attack_conduct.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
 import { beastChoosesHeroDisplacement, settleBeastHeroDisplacement } from './hero_beast_displacement.js';
-import { stumbleOnDoorMimic, stumbleOntoMimic } from './mimic.js';
+import { hasDoorAppearance, stumbleOnDoorMimic, stumbleOntoMimic } from './mimic.js';
 import { monsterHasMapPosition, monsterAtPosition } from './monster_location.js';
 import { SHOP_TYPES } from './shop_data.js';
 import { observeBucForNaming } from './object_knowledge.js';
@@ -96,7 +99,7 @@ import { gotoLevel } from './level_change.js';
 import { levelTeleport } from './level_teleport.js';
 import { confirmHeroStep } from './hero_step_confirmation.js';
 import { monsterPassesBars } from './monster_movement_traits.js';
-import { heroCanEnterIronBars } from './iron_bars_meal.js';
+import { continueChewingTerrain, heroCanEnterIronBars } from './iron_bars_meal.js';
 import { wormCrossesBetween } from './monster_worm.js';
 import { floorObjectDescription, } from './floor_object_display.js';
 import { loseHeroHp } from './hero_damage.js';
@@ -308,6 +311,8 @@ const PM_WATER_DEMON = 289;
 const PM_WATER_MOCCASIN = 216;
 const M2_ROCKTHROW = 0x08000000;
 const M1_HUMANOID = 0x00020000;
+const M1_TUNNEL = 0x20;
+const M1_NEEDPICK = 0x40;
 const MAT_GEMSTONE = 20;
 const MAT_MINERAL = 21;
 function isMovementKey(ch) {
@@ -645,13 +650,18 @@ function startTravel(targetX, targetY, g = game) {
     g.context.nopick = true;
     return g._runState;
 }
-// Source-order subset of lookaround() for run mode 1.  It ignores rooms and
-// rock, follows an unambiguous corridor bend, and lets domove() encounter an
-// obstacle when the path does not turn.  Front monsters stop the run before
-// an automatic attack, matching the C in-front check for every run mode.
-export function lookaroundRun(state = game._runState, g = game) {
+// C hack.c:lookaround(). Count nearby corridor choices before deciding
+// whether to turn, and stop for visible actors, known traps, or liquid edges.
+export async function lookaroundRun(state = game._runState, g = game) {
     if (!state || state.mode === 8 || !g.u || !g.level)
         return false;
+    const noDiagonal = MONSTER_NAME[g.u.umonnum ?? -1] === 'grid bug';
+    if (noDiagonal && state.dx && state.dy) {
+        await plineWithContinuation('You cannot move diagonally.');
+        return false;
+    }
+    if (heroIsBlind(g))
+        return true;
     if (state.mode === 0)
         return true;
     const u = g.u;
@@ -666,6 +676,8 @@ export function lookaroundRun(state = game._runState, g = game) {
             if (x < 1 || x >= COLNO || y < 0 || y >= ROWNO
                 || (x === u.ux && y === u.uy))
                 continue;
+            if (noDiagonal && x !== u.ux && y !== u.uy)
+                continue;
             const infront = x === targetX && y === targetY;
             const monster = g.level.monsters?.find(mon => monsterHasMapPosition(mon, g) &&
                 mon.mx === x && mon.my === y);
@@ -673,13 +685,20 @@ export function lookaroundRun(state = game._runState, g = game) {
             // its mon_visible() branch.  An invisible monster directly in
             // front must reach domove()/attack_checks(), which remembers the
             // unseen occupant instead of silently ending the run.
-            const visibleMonster = monster
+            const visibleMonster = monster && M_AP_TYPE(monster) !== M_AP_FURNITURE
+                && M_AP_TYPE(monster) !== M_AP_OBJECT
                 && canSeeRunMonster(monster, monster.mx, monster.my, g);
-            const visibleHostile = visibleMonster && !monster.pet
-                && !monster.mpeaceful;
+            const safeMonster = monster && (g.flags.safe_dog ?? true)
+                && monster.mpeaceful && !g.context.forcefight
+                && !(u.confusionTurns ?? 0) && !u.stunned && !(u.stunnedTurns ?? 0)
+                && !heroIsHallucinating(g);
+            const visibleHostile = visibleMonster && !safeMonster;
             if (visibleMonster && (infront
-                || (state.mode !== 1 && visibleHostile)))
+                || (state.mode !== 1 && visibleHostile))) {
+                if (g.flags.mention_walls)
+                    await plineWithContinuation(`${monsterName(monster, { state: g, article: 'a', capitalized: true })} blocks your path.`);
                 return false;
+            }
             const loc = g.level.at(x, y);
             if (!loc)
                 continue;
@@ -688,17 +707,29 @@ export function lookaroundRun(state = game._runState, g = game) {
                 continue;
             if (x === u.ux - state.dx && y === u.uy - state.dy)
                 continue;
-            if (IS_OBSTRUCTED(typ) || typ === ROOM || IS_AIR(typ)
-                || typ === ICE)
-                continue;
             let corridorLike = false;
-            if (typ === DOOR) {
-                const closed = !!(loc.doormask & (D_CLOSED | D_LOCKED));
+            const trap = knownRunTrap(x, y, g);
+            if (trap && state.mode !== 1 && infront) {
+                await announceRunTrap(trap, g);
+                return false;
+            }
+            if (trap && state.mode === 1) {
+                corridorLike = true;
+            }
+            else if (IS_OBSTRUCTED(typ) || typ === ROOM || IS_AIR(typ)
+                || typ === ICE) {
+                continue;
+            }
+            else if (typ === DOOR || hasDoorAppearance(monster)) {
+                const closed = hasDoorAppearance(monster) || !!(loc.doormask & (D_CLOSED | D_LOCKED));
                 if (closed) {
                     if (x !== u.ux && y !== u.uy)
                         continue;
-                    if (state.mode !== 1)
+                    if (state.mode !== 1) {
+                        if (g.flags.mention_walls)
+                            await plineWithContinuation('You stop in front of the door.');
                         return false;
+                    }
                     corridorLike = true;
                 }
                 else if (state.mode === 1) {
@@ -724,6 +755,10 @@ export function lookaroundRun(state = game._runState, g = game) {
                 corridorLike = true;
             }
             else if (IS_POOL(typ) || IS_LAVA(typ)) {
+                if (infront && runLiquidIsDangerous(x, y, g)) {
+                    await announceRunLiquid(x, y, g);
+                    return false;
+                }
                 continue;
             }
             else {
@@ -748,21 +783,28 @@ export function lookaroundRun(state = game._runState, g = game) {
             }
             if (!corridorLike || currentTyp === ROOM)
                 continue;
-            const distance = runDist2(x, y, targetX, targetY);
-            if (distance > 2)
-                continue;
-            if (corrct === 1 && runDist2(x, y, x0, y0) !== 1)
-                noturn = true;
-            if (distance < i0) {
-                i0 = distance;
-                x0 = x;
-                y0 = y;
-                m0 = monster ? 1 : 0;
+            if (state.mode === 1 || state.mode === 3) {
+                const distance = runDist2(x, y, targetX, targetY);
+                if (distance > 2)
+                    continue;
+                if (corrct === 1 && runDist2(x, y, x0, y0) !== 1)
+                    noturn = true;
+                if (distance < i0) {
+                    i0 = distance;
+                    x0 = x;
+                    y0 = y;
+                    m0 = monster ? 1 : 0;
+                }
             }
             corrct++;
         }
     }
-    if (!noturn && !m0 && i0
+    if (corrct > 1 && state.mode === 2) {
+        if (g.flags.mention_walls)
+            await plineWithContinuation('The corridor widens here.');
+        return false;
+    }
+    if ((state.mode === 1 || state.mode === 3) && !noturn && !m0 && i0
         && (corrct === 1 || (corrct === 2 && i0 === 1))) {
         let turn;
         if (i0 === 2) {
@@ -832,7 +874,7 @@ export async function continueRun(g = game) {
             stopRun(g);
         return moved;
     }
-    if (!state || !lookaroundRun(state, g)) {
+    if (!state || !await lookaroundRun(state, g)) {
         stopRun(g);
         g.context.move = 0;
         return false;
@@ -7099,6 +7141,15 @@ async function bumpIntoMonster(monster, x, y) {
     }
     return true;
 }
+// C hack.c:u_rooted(). An immobile form may attack but cannot take a step.
+async function rootedHeroCannotMove() {
+    if (MONSTER_MOVE[heroSpecies(game)] !== 0)
+        return false;
+    const inPlace = game.u.levitating || Is_airlevel(game.u.uz) || Is_waterlevel(game.u.uz);
+    await plineWithContinuation(`You are rooted ${inPlace ? 'in place' : 'to the ground'}.`);
+    endVoluntaryMultiTurn(game);
+    return true;
+}
 async function domoveCore(dx, dy, explicitAttempt) {
     requirePlayingGame(game);
     const u = game.u;
@@ -7146,11 +7197,13 @@ async function domoveCore(dx, dy, explicitAttempt) {
         u.uy = monster.my;
         return attackHostileMonster(monster, monster.mx, monster.my);
     }
+    if (await airTurbulenceStopsHero())
+        return true;
     checkSlipperyIce();
     // C hack.c:impaired_movement() always checks Confusion before deriving
     // the destination.  A nonzero rn2(5) keeps the requested direction; on
     // impairment, confdir(TRUE) chooses cardinals first and retries only an
-    // out-of-bounds or solid-rock result.
+    // out-of-bounds square or rock this body cannot traverse.
     const confused = (u?.confusionTurns || 0) > 0;
     const stunned = !!(u?.stunned || (u?.stunnedTurns || 0) > 0);
     if (stunned || (confused && rn2(5) === 0)) {
@@ -7174,6 +7227,10 @@ async function domoveCore(dx, dy, explicitAttempt) {
     // confdir() updates the same persistent vector selected by set_move_cmd().
     u.dx = dx;
     u.dy = dy;
+    if (await waterTurbulenceStopsHero())
+        return true;
+    dx = u.dx;
+    dy = u.dy;
     // C stores direction in u.dx/u.dy, so confdir() permanently changes the
     // pending Shift-direction run as well as this one destination.  The next
     // automatic step must retain that impaired direction; it may immediately
@@ -7186,6 +7243,22 @@ async function domoveCore(dx, dy, explicitAttempt) {
     const newy = u.uy + dy;
     if (!isok(newx, newy))
         return moveOutOfBounds(newx, newy);
+    if (game.context.run) {
+        const trap = knownRunTrap(newx, newy, game);
+        const liquid = heroIsBlind(game) && runLiquidIsDangerous(newx, newy, game);
+        if (trap || liquid) {
+            const stopBeforeStep = game.context.run >= 2;
+            if (stopBeforeStep) {
+                if (trap)
+                    await announceRunTrap(trap, game);
+                else
+                    await announceRunLiquid(newx, newy, game);
+            }
+            endVoluntaryMultiTurn(game);
+            if (stopBeforeStep)
+                return false;
+        }
+    }
     if (await escapeFromStickyMonster(newx, newy))
         return true;
     const loc = game.level?.at(newx, newy);
@@ -7194,19 +7267,20 @@ async function domoveCore(dx, dy, explicitAttempt) {
     // diagonally across an intact doorway even though moving through that
     // same doorway would be rejected.
     const monster = game.level ? monsterAtPosition(game.level, newx, newy) : null;
+    const hiddenCeilingMonster = monster?.mundetected && !game.context.forcefight
+        && !canSenseMonster(monster)
+        && !((MONSTER_FLAGS1[monster.mnum] ?? 0) & 0x80)
+        && MONSTER_SYMBOL[monster.mnum] !== 57;
+    // C display.h:_is_safemon() requires a spotted peaceful monster and
+    // an unimpaired hero. Concealed ceiling monsters still cancel running
+    // here, before domove_attackmon_at() leaves their reveal to arrival.
+    const safeMonster = !!monster && (game.flags.safe_dog ?? true) && !!monster.mpeaceful
+        && canSpotMonster(monster)
+        && !game.context?.forcefight
+        && !confused
+        && !heroIsHallucinating(game)
+        && !stunned;
     if (monster) {
-        // C display.h:_is_safemon() deliberately stops treating even a
-        // peaceful/tame monster as safe while the hero is confused,
-        // hallucinating, or stunned.  domove_core() checks that predicate
-        // after impaired_movement() has changed u.dx/u.dy; a Shift-run which
-        // is redirected into the pet therefore stops before do_attack() and
-        // its one-in-seven displacement refusal roll.
-        const safeMonster = (game.flags.safe_dog ?? true) && !!monster.mpeaceful
-            && canSpotMonster(monster)
-            && !game.context?.forcefight
-            && !confused
-            && !heroIsHallucinating(game)
-            && !stunned;
         // hack.c checks context.run even when F makes this a single step.
         // It stops only for a visible or sensed actor. Seeing the
         // destination terrain is insufficient when minvis hides its occupant;
@@ -7231,6 +7305,8 @@ async function domoveCore(dx, dy, explicitAttempt) {
             stopRun(game);
         if (await bumpIntoMonster(monster, newx, newy))
             return true;
+    }
+    if (monster && !hiddenCeilingMonster) {
         if (beastChoosesHeroDisplacement(monster, game, newx, newy)) {
             const ballChainMove = await beginBallAndChainMove(newx, newy);
             if (ballChainMove?.blocked) {
@@ -7292,6 +7368,8 @@ async function domoveCore(dx, dy, explicitAttempt) {
             }
             // C domove_core() confirms a yielded step before either actor
             // changes position or the hero tries to escape a current trap.
+            if (await rootedHeroCannotMove())
+                return true;
             if (heroCanConfirmStep(newx, newy) && !await confirmHeroStep(newx, newy))
                 return false;
             if (u.utrap
@@ -7320,10 +7398,7 @@ async function domoveCore(dx, dy, explicitAttempt) {
             await moveSteedWithHero();
             // C drag_ball() can pull the hero back before the swap check.
             // A refused swap still completes ball placement and its delay.
-            if (monster.mpeaceful && (!goodPosition(oldx, oldy, { kind: 'monster', monster }, { state: game })
-                || game.level.traps.some(trap => trap.tx === oldx && trap.ty === oldy))) {
-                const subjectName = monsterName(monster, { state: game, article: 'your', capitalized: true });
-                await plineWithContinuation(`You stop.  ${subjectName} doesn't want to swap places.`);
+            if (await petRefusesHeroSwap(monster, game)) {
                 u.ux = oldx;
                 u.uy = oldy;
                 if (u.usteed) {
@@ -7378,6 +7453,8 @@ async function domoveCore(dx, dy, explicitAttempt) {
         stopRun(game);
         return true;
     }
+    if (await rootedHeroCannotMove())
+        return true;
     if (heroCanConfirmStep(newx, newy) && !await confirmHeroStep(newx, newy))
         return false;
     if (!await heroCanMoveFromTrap(newx, newy))
@@ -7392,6 +7469,18 @@ async function domoveCore(dx, dy, explicitAttempt) {
     }
     if (!await heroCanEnterIronBars(newx, newy, game))
         return false;
+    const formFlags = MONSTER_FLAGS1[heroSpecies(game)] ?? 0;
+    const tunnels = !!(formFlags & M1_TUNNEL) && !(formFlags & M1_NEEDPICK);
+    if (loc && (IS_OBSTRUCTED(loc.typ)
+        || loc.typ === DOOR && !!(loc.doormask & (D_CLOSED | D_LOCKED)))
+        && !heroCanPassWallAt(game, newx, newy) && !heroOozesUnderDoor(loc)) {
+        if (u.uinwater || game.underwater) {
+            await pline('There is an obstacle there.');
+            return false;
+        }
+        if (tunnels && await continueChewingTerrain(newx, newy, game))
+            return false;
+    }
     const oozingUnderDoor = heroOozesUnderDoor(loc);
     if (oozingUnderDoor)
         await pline('You ooze under the door.');
@@ -7486,15 +7575,20 @@ async function domoveCore(dx, dy, explicitAttempt) {
         game.context.move = 0;
         return false;
     }
-    if (boulder && !await pushBoulder(boulder, newx, newy, dx, dy)) {
-        game.context.move = 0;
-        return false;
-    }
-    if (boulder && game._runState) {
-        // hack.c:dopush() cancels multi after the successful push.  The hero
-        // still enters the boulder's vacated square, but Shift-direction
-        // running must not auto-push the same boulder down the whole corridor.
-        stopRun(game);
+    if (boulder) {
+        if (tunnels && !game.level.flags.sokoban_rules) {
+            if (await continueChewingTerrain(newx, newy, game))
+                return false;
+        }
+        else {
+            if (!await pushBoulder(boulder, newx, newy, dx, dy)) {
+                game.context.move = 0;
+                return false;
+            }
+            // C moverock_core() stops running for a push; still_chewing() does not.
+            if (game._runState)
+                stopRun(game);
+        }
     }
     // C hack.c:swim_move_danger().  Known walking equipment and the swim
     // confirmation option decide whether a visible liquid edge stops us.

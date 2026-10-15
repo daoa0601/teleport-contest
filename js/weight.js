@@ -4,6 +4,7 @@ import { BAG_OF_HOLDING, BOULDER, CANDELABRUM_OF_INVOCATION, CHEST, CORPSE, HEAV
 import { MONSTER_BODY_META, MONSTER_FLAGS2, MONSTER_SIZE, MONSTER_SYMBOL, } from './monster_data.js';
 import { A_CON, Is_airlevel, LARGEST_INT } from './const.js';
 import { currentAttribute, currentStrength } from './attrib.js';
+import { flyingSupportsLoad, levitationSupportsLoad } from './properties.js';
 export const UNENCUMBERED = 0;
 export const SLT_ENCUMBER = 1;
 export const MOD_ENCUMBER = 2;
@@ -125,13 +126,18 @@ export function weightCapacity(state) {
     const steedMnum = state.u?.usteed?.mnum;
     const strongSteed = steedMnum !== undefined && Number.isInteger(steedMnum)
         && !!((MONSTER_FLAGS2[steedMnum] ?? 0) & M2_STRONG);
-    const levitating = !!(state.u?.levitating || state.u?.levitation || state.levitating);
+    const dressing = state._delayedAction;
+    const bootsPending = dressing?.kind === 'wear'
+        && dressing.object === (state.uarmf ?? state.u.uarmf);
+    const levitating = levitationSupportsLoad(bootsPending, state)
+        || !bootsPending && !!(state.u.levitating || state.u.levitation || state.levitating);
     if (levitating || Is_airlevel(state.u?.uz) || strongSteed) {
         capacity = 1000;
     }
     else {
         capacity = Math.min(1000, capacity);
-        const flying = state.u?.flying || state.flying;
+        const flying = flyingSupportsLoad(bootsPending, state)
+            || !bootsPending && !!(state.u.flying || state.flying);
         if (!flying) {
             if (state.u?._woundedLegSide === 'both')
                 capacity -= 200;

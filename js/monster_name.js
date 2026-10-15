@@ -78,10 +78,10 @@ export function quietMonsterName(monster) {
     const name = monsterTypeName(monster?.mnum, !!monster?.female);
     return monster?.saddled ? `saddled ${name}` : name;
 }
-export function monsterName(monster, { capitalized = false, state = game, article = 'the', adjective = '', suppressIt = false, suppressSaddle = !!MGIVENNAME(monster), augmentIt = false, suppressInvisible = false, suppressHallucination = false, exact = false, } = {}) {
+export function monsterName(monster, { capitalized = false, state = game, article = 'the', adjective = '', called = false, suppressIt = false, suppressSaddle = !!MGIVENNAME(monster), augmentIt = false, suppressInvisible = false, suppressHallucination = false, exact = false, } = {}) {
     requireLiveGame(state);
     const name = formatMonsterName(monster, state, {
-        article, adjective, suppressIt: suppressIt || exact,
+        article, adjective, called, suppressIt: suppressIt || exact,
         suppressSaddle: suppressSaddle || exact, augmentIt,
         suppressInvisible: suppressInvisible || exact,
         suppressHallucination: suppressHallucination || exact, suppressAppearance: exact,
