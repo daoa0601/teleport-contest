@@ -13,7 +13,7 @@ import {
     COLNO, In_endgame, MAGIC_PORTAL, MAX_NUM_WORMS, MIGR_APPROX_XY,
     MIGR_EXACT_XY, MIGR_LADDER_DOWN, MIGR_LADDER_UP, MIGR_PORTAL,
     MIGR_RANDOM, MIGR_SSTAIRS, MIGR_STAIRS_DOWN, MIGR_STAIRS_UP,
-    MIGR_WITH_HERO, MON_LIMBO, MON_MIGRATING, MON_STILL_ARRIVING, ROWNO, STRAT_ARRIVE,
+    MIGR_WITH_HERO, MIGR_LEFTOVERS, MON_LIMBO, MON_MIGRATING, MON_STILL_ARRIVING, ROWNO, STRAT_ARRIVE,
 } from './const.js';
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import { healMonster } from './mon.js';
@@ -40,6 +40,7 @@ import { roomForRoomno, roomsAt } from './room.js';
 import { makeShoppersHappy } from './shop_damage.js';
 import { restoreMonsterShape } from './monster_polymorph.js';
 import { detachMonsterFromLevel } from './monster_level_departure.js';
+import { deliverOrcRaidLoot } from './orc_raid.js';
 
 export type MonsterMigrationKind = 'level-fall-migration' | 'magic-portal-migration'
     | 'level-migration' | 'limbo-migration' | 'shop-return';
@@ -444,6 +445,8 @@ export async function monsterArrive(monster: Monster, when: MonsterArrivalPhase,
         break;
     }
 
+    if ((monster.migflags ?? 0) & MIGR_LEFTOVERS)
+        await deliverOrcRaidLoot(monster, state, true);
     if (xlocale && wander) {
         const drifted = wanderLocale(state, xlocale, ylocale, wander);
         if (drifted) xlocale = drifted.x, ylocale = drifted.y;

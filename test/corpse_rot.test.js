@@ -115,4 +115,30 @@ void test('turn maintenance reports relief when a corpse rots inside a carried s
     assert.equal(game._encumbranceLevel, 0);
     assert.equal(game.u._encumbrance, '');
 });
+void test('a slowed hero acknowledges corpse-weight relief before another monster round', async () => {
+    freshObjectRoom({ flags: { verbose: true } });
+    requirePlayingGame(game);
+    const corpse = await corpseObject(MONSTER_NAME.indexOf('human zombie'), { where: 'inventory' });
+    game.inventory.push(corpse);
+    stopAllObjectTimers(corpse);
+    const deadline = game.moves + 1;
+    scheduleObjectTimer(corpse, OBJECT_TIMER_KIND.ROT_CORPSE, deadline);
+    game._encumbranceLevel = nearCapacity(game);
+    assert.ok(game._encumbranceLevel >= 2 && game._encumbranceLevel <= 4);
+    game._capacityDirty = false;
+    game._moveloopStarted = true;
+    game._heroTimePending = true;
+    game.u.umovement = 0;
+    const input = resetInputState();
+    let acknowledgedRot = false;
+    input.beforeRead = () => {
+        if (game._pending_message === 'Your human zombie corpse rots away.') {
+            assert.equal(game.moves, deadline, 'relief must be announced before a further global turn');
+            acknowledgedRot = true;
+        }
+    };
+    installPagerInput(input, { expected: /corpse|unencumbered/, limit: 4 });
+    await finishAtCommandInput(input, moveloop_core, /unencumbered/);
+    assert.equal(acknowledgedRot, true);
+});
 //# sourceMappingURL=corpse_rot.test.js.map

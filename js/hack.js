@@ -163,6 +163,8 @@ export function heroCanPassWallAt(state, x, y) {
 }
 function doorlessDoor(location) {
     return location?.typ === DOOR
+        // Rogue doorways have no doors but retain diagonal restrictions.
+        && !game.level?.flags.is_rogue_level
         && !((location.doormask || 0) & ~D_BROKEN);
 }
 export function blocksDiagonalDoor(current, destination) {
