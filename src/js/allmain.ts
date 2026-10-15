@@ -162,7 +162,7 @@ import {
     A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS,
     BOLT_LIM, COLNO, ROWNO, DOOR, D_CLOSED, D_LOCKED, HOLE, M_SEEN_MAGR,
     STONE, ZAP_POS,
-    STRAT_CLOSE, STRAT_WAITFORU, M_ATTK_AGR_DIED, W_ARMG,
+    STRAT_CLOSE, STRAT_WAITFORU, M_ATTK_AGR_DIED, M_ATTK_AGR_DONE, W_ARMG,
     UNENCUMBERED, MOD_ENCUMBER, HVY_ENCUMBER, EXT_ENCUMBER, W_ACCESSORY, W_WEAPONS,
     ismnum, Upolyd, Is_airlevel, Is_waterlevel, LUCKMIN, LUCKMAX,
     TT_BURIEDBALL, TT_LAVA,
@@ -1848,6 +1848,8 @@ async function resolveDeferredHeroItemTheft(
         if (!await reportMonsterTeleportRestriction(monster, { state: game }))
             await randomMonsterRelocation(monster, { calls: action.calls, flags: RLOC_MSG });
         attack.attackerDone = true;
+        attack.contactDone = true;
+        attack.nativeResult = M_ATTK_AGR_DONE;
         return true;
     }
     if (monster.mcan) {
@@ -1863,6 +1865,8 @@ async function resolveDeferredHeroItemTheft(
             if (!await reportMonsterTeleportRestriction(monster, { state: game }))
                 await randomMonsterRelocation(monster, { calls: action.calls, flags: RLOC_MSG });
             attack.attackerDone = true;
+            attack.contactDone = true;
+            attack.nativeResult = M_ATTK_AGR_DONE;
         }
         return false;
     }
@@ -2060,6 +2064,7 @@ async function resolveDeferredHeroItemTheft(
             ),
         });
         attack.nativeResult = M_ATTK_AGR_DIED;
+        attack.contactDone = true;
         return true;
     }
 
@@ -2089,6 +2094,8 @@ async function retreatAfterItemTheft(
     const flight = await makeMonsterFlee(monster, { announce: false });
     if (flight.heroDied) return;
     attack.attackerDone = true;
+    attack.contactDone = true;
+    attack.nativeResult = M_ATTK_AGR_DONE;
 }
 
 // C steal.c:stealarm(). The armor is already unworn; transfer

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { performMonsterHeroAttack } from '../js/allmain.js';
 import { continueFoodMeal, doeat } from '../js/eat.js';
+import { rhack } from '../js/cmd.js';
 import { wearHeroAccessory } from '../js/accessory.js';
 import { reportHeroEncumbrance } from '../js/attrib.js';
 import { MM_ANGRY, MM_NOGRP, NO_MINVENT, W_AMUL } from '../js/const.js';
@@ -129,6 +130,23 @@ void test('item theft announces the lighter load before the nymph tries to telep
 
     assert.match(messages.join('\n'), /stole[\s\S]*Your movements are now unencumbered\.[\s\S]*prevents the water nymph from teleporting/);
     assert.equal(game._encumbranceLevel, 0);
+});
+
+void test('an empty-handed nymph robbery leaves the searching occupation intact', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    game.level.flags.noteleport = true;
+    const thief = await nearbyThief();
+    resetInputState().feed('5s');
+    await rhack(0);
+    assert.ok(game._occupation);
+    theftMessages();
+
+    await performMonsterHeroAttack(thief, game, { random: () => 0, rollOne: () => 1 });
+
+    assert.equal(game._occupation?.text, 'searching');
+    assert.equal(game.multi, 0, 'mattacku cancels repetition before the theft attack');
+    assert.ok(thief.mflee);
 });
 
 void test('a monkey cannot steal the last bite of a finished meal and flees before biting', async () => {

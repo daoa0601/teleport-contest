@@ -102,7 +102,7 @@ import { makePlural, verbForSubject, withIndefiniteArticle } from './object_gram
 import { monsterLocomotion } from './monster_locomotion.js';
 import { monsterFliesOrFloats } from './terrain_properties.js';
 import { observeDistantObjectForNaming, observeObjectForNaming, ownedObjectName, } from './objnam.js';
-import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, BOLT_LIM, COLNO, ROWNO, DOOR, D_CLOSED, D_LOCKED, HOLE, M_SEEN_MAGR, STONE, ZAP_POS, STRAT_CLOSE, STRAT_WAITFORU, M_ATTK_AGR_DIED, W_ARMG, UNENCUMBERED, MOD_ENCUMBER, HVY_ENCUMBER, EXT_ENCUMBER, W_ACCESSORY, W_WEAPONS, ismnum, Upolyd, Is_airlevel, Is_waterlevel, LUCKMIN, LUCKMAX, TT_BURIEDBALL, TT_LAVA, } from './const.js';
+import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, BOLT_LIM, COLNO, ROWNO, DOOR, D_CLOSED, D_LOCKED, HOLE, M_SEEN_MAGR, STONE, ZAP_POS, STRAT_CLOSE, STRAT_WAITFORU, M_ATTK_AGR_DIED, M_ATTK_AGR_DONE, W_ARMG, UNENCUMBERED, MOD_ENCUMBER, HVY_ENCUMBER, EXT_ENCUMBER, W_ACCESSORY, W_WEAPONS, ismnum, Upolyd, Is_airlevel, Is_waterlevel, LUCKMIN, LUCKMAX, TT_BURIEDBALL, TT_LAVA, } from './const.js';
 import { uInitMisc, makedog, uInitInventoryAttrs, finishStartingDiscoveries, } from './u_init.js';
 import { makeDeaf } from './hero_hearing.js';
 import { heroIsBlind, heroIsDeaf, syncBlindness } from './senses.js';
@@ -1619,6 +1619,8 @@ async function resolveDeferredHeroItemTheft(action, monster, attack, random) {
         if (!await reportMonsterTeleportRestriction(monster, { state: game }))
             await randomMonsterRelocation(monster, { calls: action.calls, flags: RLOC_MSG });
         attack.attackerDone = true;
+        attack.contactDone = true;
+        attack.nativeResult = M_ATTK_AGR_DONE;
         return true;
     }
     if (monster.mcan) {
@@ -1635,6 +1637,8 @@ async function resolveDeferredHeroItemTheft(action, monster, attack, random) {
             if (!await reportMonsterTeleportRestriction(monster, { state: game }))
                 await randomMonsterRelocation(monster, { calls: action.calls, flags: RLOC_MSG });
             attack.attackerDone = true;
+            attack.contactDone = true;
+            attack.nativeResult = M_ATTK_AGR_DONE;
         }
         return false;
     }
@@ -1840,6 +1844,7 @@ async function resolveDeferredHeroItemTheft(action, monster, attack, random) {
             finishDeath: (target, death = {}) => finishHeroMonsterKill(target, target.mx, target.my, { ...death, showKillMessage: false, recordConduct: false }),
         });
         attack.nativeResult = M_ATTK_AGR_DIED;
+        attack.contactDone = true;
         return true;
     }
     // steal() returns zero while an involuntary delay is still active.
@@ -1868,6 +1873,8 @@ async function retreatAfterItemTheft(action, monster, attack, animal, stolenName
     if (flight.heroDied)
         return;
     attack.attackerDone = true;
+    attack.contactDone = true;
+    attack.nativeResult = M_ATTK_AGR_DONE;
 }
 // C steal.c:stealarm(). The armor is already unworn; transfer
 // waits until the removal delay finishes and requires the same nearby thief.
