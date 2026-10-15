@@ -230,9 +230,12 @@ async function hitMonster(monster, node, state, options) {
             : `The ${displayLiquidName('acid', state)} burns ${monsterName(monster, { state })}!`);
     }
     if (object.otyp === EGG && touchPetrifies(object.corpsenm)) {
+        // ohitmon() uses minstapetrify(FALSE), even for hero-caused scatter.
         const stone = await petrifyMonsterFromContact(monster, {
             state, publish: options.publish, rollOne: options.rollOne,
-            finishDeath: (victim, death = {}) => finishScatteredMonsterDeath(victim, victim.mx, victim.my, death, state, options),
+            finishDeath: (victim, death = {}) => finishEnvironmentalMonsterDeath(victim, state, {
+                ...death, random: options.random, publish: options.publish,
+            }),
         });
         if (stone.heroDied)
             return true;
