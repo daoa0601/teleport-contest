@@ -5,10 +5,26 @@ import { rhack } from '../js/cmd.js';
 import { PIT, TT_PIT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
+import { grantIntrinsicProperty } from '../js/properties.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { addTrap } from './support/level-state.js';
 import { installPagerInput } from './support/pager-input.js';
+
+void test('a hidden trapper with granted flight descends instead of coming off the ceiling', async () => {
+    const { destination } = freshConnectedLevels();
+    requirePlayingGame(game);
+    installPolymorphedHero('trapper');
+    grantIntrinsicProperty('flying', 'outside');
+    game.u.uundetected = true;
+    installPagerInput(resetInputState(), { expected: /stairs/, limit: 2 });
+
+    await rhack('>'.charCodeAt(0));
+
+    assert.ok(game.level === destination, 'a trapper hides on the floor even when it can fly');
+    assert.equal(game.u.uz.dlevel, 2);
+    assert.equal(game.context.move, 1);
+});
 
 void test('down reveals a lurker above before a later command can use the stairs', async () => {
     const { source } = freshConnectedLevels();

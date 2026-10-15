@@ -322,6 +322,7 @@ import {
     MONSTER_COLOR, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME,
     MONSTER_SIZE, MONSTER_SYMBOL, MONSTER_SOUND, MONSTER_ALIGNMENT, MONSTER_ATTACKS,
     requireMonsterData, monsterTypeName, monsterClassSymbol, monsterIsHumanoid, monsterDigests,
+    monsterSpeciesHidesOnCeiling,
 } from './monster_data.js';
 import { createParticularMonster } from './read_creation.js';
 import {
@@ -419,7 +420,7 @@ import {
 } from './monster_passive.js';
 import {
     heroCannotTake, heroHasNoHands, heroHasNoLimbs, heroIsPolymorphed, heroIsVerySmall,
-    heroCanChangeVampireShape, heroHidesOnCeiling, polymorphHero, returnHeroToHumanForm,
+    heroCanChangeVampireShape, polymorphHero, returnHeroToHumanForm,
 } from './polyself.js';
 import {
     applyEyewear, isEyewear, removeEyewear, wearEyewear,
@@ -1865,7 +1866,8 @@ export async function travelStairs(up: boolean) {
             game.context.move = descent.spentTurn ? 1 : 0;
             return descent.spentTurn;
         }
-        if (heroIsPolymorphed(game) && heroHidesOnCeiling(game)) {
+        if (heroIsPolymorphed(game) && game.u.uundetected
+            && monsterSpeciesHidesOnCeiling(game.u.umonnum)) {
             game.u.uundetected = 0;
             if (game.u.flying) await plineWithContinuation('You fly out of hiding.');
             else {
