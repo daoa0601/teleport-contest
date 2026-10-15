@@ -24,7 +24,8 @@ import { advanceCorpseResistanceTimeouts } from './corpse_intrinsics.js';
 import { game, requireGameLevel, requireInitializedGame, requireGameDisplay, requireLiveGame } from './gstate.js';
 import { isRoom } from './map_types.js';
 import { clearImmediateZapBypasses } from './immediate_zap.js';
-import { MON_FLOOR, PICK_ONE, PLNMSG_MON_TAKES_OFF_ITEM } from './const.js';
+import { In_endgame, MON_FLOOR, PICK_ONE, PLNMSG_MON_TAKES_OFF_ITEM } from './const.js';
+import { mapVicinity } from './magic_mapping.js';
 import { showInventoryWindow } from './windows.js';
 import { endVoluntaryMultiTurn, heroHasInvoluntaryDelay } from './command_state.js';
 import { dosounds } from './ambient_sounds.js';
@@ -497,19 +498,22 @@ function interruptCountedActivity(message) {
 // loop has allocated as many global turns as the hero needs.  Burden can make
 // one action span two allocations; seer_turn is checked only after the last
 // one, against the final `moves` value.
-function finishHeroTookTimeRng(sourceTurn) {
+async function finishHeroTookTime(sourceTurn) {
     const game = requireInitializedGame();
     if (sourceTurn >= (game.seer_turn ?? Infinity)) {
+        if ((game.u.uhave.amulet || propertyIsActive('clairvoyant', game))
+            && !In_endgame(game.u.uz) && !propertyIsBlocked('clairvoyant', game))
+            await mapVicinity(null, { state: game });
         game.seer_turn = sourceTurn + 15 + rn2(31);
     }
 }
-function finishOrDeferHeroTookTimeRng(sourceTurn) {
+async function finishOrDeferHeroTookTime(sourceTurn) {
     const game = requireInitializedGame();
     if (game._vaultMaintenanceContinuation) {
         game._vaultHeroTookTimePending = sourceTurn;
         return;
     }
-    finishHeroTookTimeRng(sourceTurn);
+    await finishHeroTookTime(sourceTurn);
 }
 async function finishInitialTurnMaintenanceAfterIntervention(sourceTurn) {
     const game = requireInitializedGame();
@@ -3380,7 +3384,7 @@ export async function moveloop_core() {
         // C moveloop_core() checks again after nh_timeout() can remove weight.
         await reportHeroEncumbrance(g);
         if (!g.program_state?.gameover)
-            finishOrDeferHeroTookTimeRng(g.moves || 1);
+            await finishOrDeferHeroTookTime(g.moves || 1);
     }
     if (movementRationActionPending && !g.program_state?.gameover) {
         await settleHeroLiquidAfterAction();
@@ -3474,7 +3478,7 @@ export async function moveloop_core() {
             await finishInitialTurnMaintenanceRng(continuation.sourceTurn);
             g._vaultMaintenanceContinuation = null;
             if (g._vaultHeroTookTimePending != null) {
-                finishHeroTookTimeRng(g._vaultHeroTookTimePending);
+                await finishHeroTookTime(g._vaultHeroTookTimePending);
                 g._vaultHeroTookTimePending = null;
             }
         }
