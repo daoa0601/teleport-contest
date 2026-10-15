@@ -8479,23 +8479,27 @@ async function maybeMakeSpecialRoom(roomThreshold: number): Promise<boolean> {
         return mkshop();
     if (uDepth > 4 && !rn2(6))
         return markRandomSpecialRoom(COURT);
-    if (uDepth > 5 && !rn2(8))
+    if (uDepth > 5 && !rn2(8)
+        && !((game.mvitals?.[MONSTER_NAME.indexOf('leprechaun')]?.mvflags ?? 0) & G_GONE))
         return markRandomSpecialRoom(LEPREHALL);
     if (uDepth > 6 && !rn2(7))
         return markRandomSpecialRoom(ZOO);
     if (uDepth > 8 && !rn2(5))
         return markRandomSpecialRoom(TEMPLE);
-    if (uDepth > 9 && !rn2(5))
+    if (uDepth > 9 && !rn2(5)
+        && !((game.mvitals?.[MONSTER_NAME.indexOf('killer bee')]?.mvflags ?? 0) & G_GONE))
         return markRandomSpecialRoom(BEEHIVE);
     if (uDepth > 11 && !rn2(6))
         return markRandomSpecialRoom(MORGUE);
-    if (uDepth > 12 && !rn2(8))
+    if (uDepth > 12 && !rn2(8) && antholeMonsterType() !== null)
         return markRandomSpecialRoom(ANTHOLE);
-    if (uDepth > 14 && !rn2(4))
+    if (uDepth > 14 && !rn2(4)
+        && !((game.mvitals?.[PM_SOLDIER]?.mvflags ?? 0) & G_GONE))
         return markRandomSpecialRoom(BARRACKS);
     if (uDepth > 15 && !rn2(6))
         return markRandomSpecialRoom(SWAMP);
-    if (uDepth > 16 && !rn2(8))
+    if (uDepth > 16 && !rn2(8)
+        && !((game.mvitals?.[MONSTER_NAME.indexOf('cockatrice')]?.mvflags ?? 0) & G_GONE))
         return markRandomSpecialRoom(COCKNEST);
     return false;
 }
