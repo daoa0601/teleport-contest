@@ -20,6 +20,8 @@ import { startLuaCore } from './support/lua-game.js';
 import { floorObjects } from './support/level-state.js';
 import { novelTitle } from '../js/novel_titles.js';
 import { resetInputState } from '../js/input.js';
+import { moveloop_core } from '../js/allmain.js';
+import { freshTurnRoom } from './support/playable-room.js';
 
 async function levelLua(t: TestContext) {
     freshGame({ flags: { bones: false } });
@@ -215,6 +217,60 @@ void test('Lua gas clouds retain their damage and lifetime and accept point plac
     assert.equal(point.damage, 3);
     assert.equal(point.ttl, 9);
     assert.deepEqual(point.cells, [{ x: 20, y: 8 }]);
+});
+
+for (const source of ['hero', 'level generation', 'monster'] as const) {
+    void test(`a Lua selection cloud created by ${source} ${source === 'hero' ? 'angers' : 'does not anger'} its victim`, async t => {
+        const lua = await levelLua(t);
+        const input = freshTurnRoom();
+        await lua.executeAsync(`
+            des.map({ x = 10, y = 10, map = [[...]] })
+            des.monster({ id = "jackal", x = 1, y = 0, peaceful = true, group = false })
+        `);
+        const victim = requireGameLevel().monsters[0];
+        assert.ok(victim);
+        victim.mhp = victim.mhpmax = 100;
+        victim.mcanmove = 0;
+        victim.movement = 0;
+        game.in_mklev = source === 'level generation';
+        game.context.mon_moving = source === 'monster';
+        await lua.executeAsync(`
+            des.gas_cloud({ selection = selection.area(1, 0, 1, 0), damage = 8, ttl = 10 })
+        `);
+        game.in_mklev = false;
+        game.context.mon_moving = false;
+        input.feed('.' + ' '.repeat(20));
+
+        await moveloop_core();
+        await moveloop_core();
+
+        assert.ok(victim.mhp < 100, 'the cloud must hurt its occupant');
+        assert.equal(Boolean(victim.mpeaceful), source !== 'hero');
+    });
+}
+
+void test('a hero-created Lua selection cloud awards kill credit and experience', async t => {
+    const lua = await levelLua(t);
+    const input = freshTurnRoom();
+    await lua.executeAsync(`
+        des.map({ x = 10, y = 10, map = [[...]] })
+        des.monster({ id = "jackal", x = 1, y = 0, peaceful = false, group = false })
+        des.gas_cloud({ selection = selection.area(1, 0, 1, 0), damage = 8, ttl = 10 })
+    `);
+    const victim = requireGameLevel().monsters[0];
+    assert.ok(victim);
+    victim.mhp = 1;
+    victim.mcanmove = 0;
+    victim.movement = 0;
+    const experience = game.u.uexp ?? 0;
+    input.feed('.' + ' '.repeat(20));
+
+    await moveloop_core();
+    await moveloop_core();
+
+    assert.equal(requireGameLevel().monsters.includes(victim), false);
+    assert.equal(game.u.uconduct?.killer, 1);
+    assert.ok((game.u.uexp ?? 0) > experience);
 });
 
 void test('Lua quantities create separate nonstacking objects and one stack of mergeable objects', async t => {

@@ -6794,6 +6794,7 @@ function createLuaLevelSession() {
                 : options.selection ? createGasCloudSelection(game, luaSelectionCoordinates(options.selection), -1, damage) : null;
             if (!cloud)
                 throw new TypeError('des.gas_cloud requires a coordinate or selection');
+            cloud.heroFault = !game.in_mklev && !game.context.mon_moving;
             if (options.ttl !== undefined && options.ttl > -2)
                 cloud.ttl = options.ttl;
             return cloud;
