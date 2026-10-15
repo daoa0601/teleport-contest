@@ -120,7 +120,7 @@ void test('a hungry mumak trumpets and wakes sleepers within its noise radius', 
     const nearby = await createMonsterAt('little dog', 12, 10, MM_NOGRP | MM_NOWAIT | NO_MINVENT);
     nearby.msleeping = 1;
     await begForFood(monster, game);
-    assert.equal(await messageLine(), 'The mumak trumpets!');
+    assert.equal(await messageLine(), 'The little dog wakes up.  The mumak trumpets!');
     assert.equal(nearby.msleeping, 0);
 });
 void test('a hallucinated gecko gives its sales pitch instead of begging noises', async () => {
