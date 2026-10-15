@@ -112,7 +112,8 @@ export function recordHeroPrizeAcquisition(object, state = game) {
         prizes.soko_prize_oid = 0;
     object.nomerge = false;
 }
-export async function finishInventoryAddition(object, state = game) {
+// C addinv_core1(): these effects precede merging and inventory insertion.
+export async function prepareInventoryAddition(object, state = game) {
     if (object.oclass === COIN_CLASS)
         state.context.botl = true;
     updateCarriedFlags(object, true, state);
@@ -125,6 +126,9 @@ export async function finishInventoryAddition(object, state = game) {
     if (isQuestArtifact(object, state))
         await touchQuestArtifact(object, state);
     await setCarriedArtifactProperties(object, true, state);
+}
+// C addinv_core2(): the surviving object is now in the inventory chain.
+export async function finishInventoryAddition(object, state = game) {
     await reactToSeenInventoryObject(object, state);
 }
 // C addinv_core2(): the object is already linked, including after a merge.

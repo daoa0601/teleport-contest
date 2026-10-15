@@ -103,11 +103,20 @@ void test('picking up the quest artifact while blind describes it and records th
     freshObjectRoom({ role: 'healer', hero: { blind: true } });
     const artifact = await floorArtifact('The Staff of Aesculapius', 10, 10, { dknown: false });
     const input = resetInputState();
-    input.display = { async readKey() { return 32; } };
+    let awaitingInventoryInsertion = false;
+    input.display = { async readKey() {
+            if (ensureQuestStatus().touched_artifact && !game.inventory.includes(artifact)) {
+                assert.equal(artifact.where, 'free');
+                assert.equal(game.u.uhave?.questart, true);
+                awaitingInventoryInsertion = true;
+            }
+            return 32;
+        } };
     await rhack(','.charCodeAt(0));
     assert.ok(game.inventory.includes(artifact));
     assert.equal(ensureQuestStatus().touched_artifact, true);
     assert.equal(artifact.dknown, true);
+    assert.equal(awaitingInventoryInsertion, true);
 });
 void test('a dying Archeologist nemesis leaves the noxious cloud described by the quest text', async () => {
     freshObjectRoom({ role: 'archeologist' });
