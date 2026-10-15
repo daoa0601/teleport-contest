@@ -22,6 +22,22 @@ import { floorObject } from './support/game-objects.js';
 
 const PM_JACKAL = 12;
 
+void test('hallucinating search describes discovered traps with imaginary names', async () => {
+    const descriptions = new Set<string>();
+    for (let seed = 1; seed <= 80 && descriptions.size < 2; seed++) {
+        const level = freshObjectRoom({ hero: { hallucinationTurns: 100 } });
+        const trap = addTrap(level, ARROW_TRAP, 9, 9, { tseen: false });
+        installPagerInput(resetInputState(), { expected: /You find/, limit: 1 });
+        initRng(seed);
+
+        await rhack('s'.charCodeAt(0));
+
+        if (trap.tseen) descriptions.add(game._lastPlineMessage);
+    }
+    assert.ok(descriptions.size > 1,
+        `Hallucinated discoveries should vary; received ${[...descriptions].join('; ')}`);
+});
+
 void test('blind searching remembers a discovered secret corridor by touch', async () => {
     const level = freshObjectRoom({ gameplaySeed: 811n });
     const passage = level.requireAt(9, 10);

@@ -10,7 +10,7 @@ import { artifactById } from './artifacts.js';
 import { heroIsBlind } from './senses.js';
 import { exerciseWisdom } from './attrib.js';
 import { canSpotMonster, canSenseMonster, monsterHasWarningProjection, flushPendingTopline, feel_location, glyphAt, magic_map_background, map_background, map_engraving, map_invisible, map_object, map_trap, newsym, pline, show_glyph_cell, unmap_invisible, plineWithContinuation, flashGlyphAt, terrain_glyph, transientMonsterGlyph, transientTrapGlyph, cls, displaySelf, docrt, feel_newsym, } from './display.js';
-import { BOLT_LIM, COLNO, ROWNO, ROOMOFFSET, STONE, SDOOR, SCORR, DOOR, CORR, M_AP_TYPE, Is_airlevel, Is_waterlevel, isok, IS_FURNITURE, D_CLOSED, D_LOCKED, D_TRAPPED, STATUE_TRAP, TRAPPED_CHEST, TRAPPED_DOOR, TRAP_EXPLANATIONS, W_NONDIGGABLE, W_NONPASSWALL, WM_MASK, } from './const.js';
+import { BOLT_LIM, COLNO, ROWNO, ROOMOFFSET, STONE, SDOOR, SCORR, DOOR, CORR, M_AP_TYPE, Is_airlevel, Is_waterlevel, isok, IS_FURNITURE, D_CLOSED, D_LOCKED, D_TRAPPED, STATUE_TRAP, TRAPPED_CHEST, TRAPPED_DOOR, W_NONDIGGABLE, W_NONPASSWALL, WM_MASK, } from './const.js';
 import { BOULDER, CHEST, LARGE_BOX, LENSES, GOLD_PIECE, OBJECT_BASES, OBJECT_MERGE, OBJECT_NAMES } from './object_data.js';
 import { objectClassForType, observeObject } from './object_knowledge.js';
 import { activateStatueTrapAt } from './statue_trap.js';
@@ -23,6 +23,8 @@ import { MONSTER_FLAGS1, MONSTER_SYMBOL } from './monster_data.js';
 import { monsterName } from './monster_name.js';
 import { NO_COLOR } from './terminal.js';
 import { visibleRegionAt } from './regions.js';
+import { trapName } from './trap_name.js';
+import { withIndefiniteArticle } from './object_grammar.js';
 // C ref: detect.c premap_detect().  Sokoban's Lua `premapped` flag maps the
 // finalized background, boulders, and traps before deferred room filling.
 export function premap_detect() {
@@ -103,9 +105,7 @@ export function showMapSpot(x, y, { state = game, confused = false, revealAllTra
         recordDiscoveredRoom(loc.roomno - ROOMOFFSET, { state });
 }
 function foundTrapMessage(trap) {
-    const name = TRAP_EXPLANATIONS[trap?.ttyp] || 'trap';
-    const article = /^[aeiou]/i.test(name) ? 'an' : 'a';
-    return `You find ${article} ${name}.`;
+    return `You find ${withIndefiniteArticle(trapName(trap.ttyp))}.`;
 }
 // C detect.c:cvt_sdoor_to_door(). Callers own visibility and discovery.
 export function convertSecretDoor(location, state = game) {
