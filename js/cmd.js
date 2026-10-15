@@ -6666,10 +6666,6 @@ async function throwCommand(selectedItem = null, capabilityChecked = false, supp
         // Allocate at C's split point; detachThrownUnit owns the actual split.
         splitObjectId = nextObjectId(item, item, game);
     }
-    const adjacentMonster = game.level?.monsters?.find(candidate => monsterHasMapPosition(candidate, game) &&
-        !candidate.dead && (candidate.mhp ?? 1) > 0
-        && candidate.mx === game.u.ux + dx
-        && candidate.my === game.u.uy + dy);
     if (await resolveSwallowedEggPieOrVenomThrow({
         state: game,
         item,
@@ -6755,29 +6751,11 @@ async function throwCommand(selectedItem = null, capabilityChecked = false, supp
     }
     // C refs: dothrow.c:throwit(), zap.c:bhit()/skiprange(), and
     // dothrow.c:drop_throw().  This bounded slice owns GEM_CLASS flight for a
-    // mineral ROCK/TOUCHSTONE, the established unicorn gift matrix, and a gem
+    // mineral ROCK/TOUCHSTONE and a gem
     // launched by a matching sling.  Only ROCK initializes skiprange; magic
-    // TOUCHSTONE bypasses should_mulch_missile().  A wielded sling excludes a
-    // non-MINERAL gem from gift handling before ordinary accuracy.
+    // TOUCHSTONE bypasses should_mulch_missile().
     const mineralProjectile = item.otyp === ROCK || item.otyp === TOUCHSTONE;
-    const adjacentUnicornNonMineralGem = thrownObjectClass === 13
-        && OBJECT_MATERIAL[item.otyp] !== MAT_MINERAL
-        && adjacentMonster
-        && ['white unicorn', 'gray unicorn', 'black unicorn'].includes(MONSTER_NAME[adjacentMonster.mnum] ?? '');
-    const adjacentGiftEligibleGem = adjacentUnicornNonMineralGem
-        && !wieldingSling;
-    const adjacentHelplessRealGemMiss = adjacentGiftEligibleGem
-        && (adjacentMonster.mcanmove === 0
-            || adjacentMonster.msleeping);
-    const adjacentTameRealGemCatch = adjacentGiftEligibleGem
-        && !adjacentHelplessRealGemMiss
-        && (adjacentMonster.mtame ?? 0) > 0;
-    const adjacentRealGemGift = adjacentGiftEligibleGem
-        && !adjacentHelplessRealGemMiss
-        && !adjacentMonster.mtame;
-    const supportedGemProjectile = mineralProjectile || matchingSlingGem
-        || adjacentRealGemGift || adjacentTameRealGemCatch
-        || adjacentHelplessRealGemMiss;
+    const supportedGemProjectile = mineralProjectile || matchingSlingGem;
     const mineralFirstTyp = game.level
         ?.at?.(game.u.ux + dx, game.u.uy + dy)?.typ;
     if (!verticalThrow && supportedGemProjectile
@@ -6816,24 +6794,6 @@ async function throwCommand(selectedItem = null, capabilityChecked = false, supp
                     contactedMonster: contact,
                     publish: plineWithContinuation,
                 });
-                const thrownGemDisplayName = () => {
-                    const callName = game._objectCallNames?.[thrownMineral.otyp];
-                    const perceivedName = callName
-                        && !objectTypeKnown(thrownMineral)
-                        && thrownMineral.oclass === 13
-                        ? `gem called ${callName}`
-                        : thrownMineral.dknown === false
-                            ? unseenObjectNoun(thrownMineral)
-                            : objectTypeKnown(thrownMineral)
-                                ? OBJECT_NAMES[thrownMineral.otyp] || 'gem'
-                                : thrownMineral.name
-                                    || OBJECT_NAMES[thrownMineral.otyp] || 'gem';
-                    const individualName = thrownMineral.oextra?.oname
-                        || thrownMineral.oname;
-                    return individualName
-                        ? `${perceivedName} named ${individualName}`
-                        : perceivedName;
-                };
                 // C zap.c:bhit() initializes tmp_at() from obj_to_glyph() once
                 // before traversing the path.  Hallucination makes that temporary
                 // glyph consume one display-stream draw even when animation is not
@@ -6889,116 +6849,6 @@ async function throwCommand(selectedItem = null, capabilityChecked = false, supp
                     }
                 }
                 if (contact) {
-                    if (adjacentHelplessRealGemMiss
-                        && contact === adjacentMonster) {
-                        const monsterBaseName = MONSTER_NAME[contact.mnum]
-                            || 'unicorn';
-                        const targetName = contact.name
-                            ? contact.name : `the ${monsterBaseName}`;
-                        const gemName = thrownGemDisplayName();
-                        // C dothrow.c:thitmonst()->tmiss(obj, mon, FALSE).  Sleeping
-                        // or immobile unicorns receive an ordinary visible miss but
-                        // no wake probe; returning zero leaves landing to throwit().
-                        await plineWithContinuation(`The ${gemName} misses ${targetName}.`);
-                        await landThrownMineral(x, y);
-                        game.context.move = 1;
-                        return;
-                    }
-                    if (adjacentTameRealGemCatch && contact === adjacentMonster) {
-                        const monsterBaseName = MONSTER_NAME[contact.mnum]
-                            || 'unicorn';
-                        const subject = contact.name
-                            ? contact.name : `The ${monsterBaseName}`;
-                        const gemName = thrownGemDisplayName();
-                        // C dothrow.c:thitmonst().  A mobile tame unicorn catches a
-                        // real gem but declines gem_accept(): no Luck, inventory
-                        // transfer, or relocation.  Returning zero lets throwit()
-                        // continue through ordinary breaktest and floor settlement.
-                        await plineWithContinuation(`${subject} catches and drops the ${gemName}.`);
-                        await landThrownMineral(x, y);
-                        game.context.move = 1;
-                        return;
-                    }
-                    if (adjacentRealGemGift && contact === adjacentMonster) {
-                        const monsterBaseName = MONSTER_NAME[contact.mnum]
-                            || 'unicorn';
-                        const subject = contact.name
-                            ? contact.name : `The ${monsterBaseName}`;
-                        const gemName = thrownGemDisplayName();
-                        // C dothrow.c:thitmonst()->gem_accept().  The first pline is
-                        // still pending while value/alignment policy commits, so the
-                        // second pline is what exposes the catch pager.
-                        await plineWithContinuation(`${subject} catches the ${gemName}.`);
-                        contact.mpeaceful = 1;
-                        contact.mavenge = 0;
-                        const isBuddy = Math.sign(MONSTER_ALIGNMENT[contact.mnum] ?? 0) === Math.sign(game.u?.ualign?.type ?? 0);
-                        const isGemstone = OBJECT_MATERIAL[thrownMineral.otyp]
-                            === MAT_GEMSTONE;
-                        const properlyIdentified = thrownMineral.dknown !== false
-                            && objectTypeKnown(thrownMineral);
-                        const guessedValue = !!(thrownMineral.oextra?.oname
-                            || thrownMineral.oname
-                            || game._objectCallNames?.[thrownMineral.otyp]);
-                        let accepted = true;
-                        let policy = '';
-                        let luckDelta = null;
-                        if (properlyIdentified) {
-                            if (isGemstone) {
-                                policy = isBuddy ? ' gratefully' : ' hesitatingly';
-                                luckDelta = isBuddy ? 5 : rn2(7) - 3;
-                            }
-                            else {
-                                accepted = false;
-                                policy = ' is not interested in your junk.';
-                            }
-                        }
-                        else if (guessedValue) {
-                            if (isGemstone) {
-                                policy = isBuddy ? ' gratefully' : ' hesitatingly';
-                                luckDelta = isBuddy ? 2 : rn2(3) - 1;
-                            }
-                            else {
-                                accepted = false;
-                                policy = ' is not interested in your junk.';
-                            }
-                        }
-                        else if (isGemstone) {
-                            policy = isBuddy ? ' gratefully' : ' hesitatingly';
-                            luckDelta = isBuddy ? 1 : rn2(3) - 1;
-                        }
-                        else {
-                            policy = ' graciously';
-                        }
-                        if (luckDelta !== null) {
-                            game.u.uluck = Math.max(-13, Math.min(13, (game.u.uluck || 0) + luckDelta));
-                        }
-                        if (accepted) {
-                            // dothrow.c:gem_accept()->mpickobj() gives the gem to the
-                            // unicorn before printing the result and relocating it.
-                            await addObjectToMonsterInventory(contact, thrownMineral, game);
-                        }
-                        await plineWithContinuation(accepted
-                            ? `${subject}${policy} accepts your gift.`
-                            : `${subject}${policy}`);
-                        // teleport.c:rloc() runs after the acceptance message. A
-                        // later vanish message waits for that first message.
-                        const teleportRestricted = monsterTeleportRestricted(contact, game);
-                        if (teleportRestricted && canSeeMonster(contact)) {
-                            const restrictedName = contact.name
-                                ? contact.name : `the ${monsterBaseName}`;
-                            await plineWithContinuation(`A mysterious force prevents ${restrictedName} from teleporting!`);
-                        }
-                        if (!teleportRestricted) {
-                            const relocation = await randomMonsterRelocation(contact, { flags: RLOC_MSG });
-                            if (relocation && 'died' in relocation && relocation.died)
-                                return;
-                        }
-                        if (!accepted) {
-                            await landThrownMineral(x, y);
-                        }
-                        game.context.move = 1;
-                        return;
-                    }
                     const hit = await hitMonsterWithThrownObject(contact, thrownMineral, {
                         state: game, target: { x, y },
                         volley: { count: volleyCount, index: shotNumber, objectType: item.otyp },

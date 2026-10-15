@@ -26,6 +26,7 @@ import { hitMonsterWithThrownEggPieOrVenom } from './hero_thrown_egg_pie_venom.j
 import { rangedTargetHitBonus } from './weapon_accuracy.js';
 import { isAxe } from './weapon_type.js';
 import { catchQuestObject } from './quest_leader_catch.js';
+import { offerUnicornGem } from './unicorn_gift.js';
 const M2_ELF = 0x00000010;
 const M2_ORC = 0x00000080;
 const WEAPON_CLASS = 2;
@@ -124,6 +125,9 @@ async function hitMonsterWithRangedObject(monster, object, state, mode, { guaran
     let threshold = baseRangedHitThreshold(monster, object, state);
     if (guaranteedHit)
         threshold += 1000;
+    const gift = await offerUnicornGem(monster, object, state);
+    if (gift !== null)
+        return { hit: true, consumed: gift };
     if (!applied) {
         const caught = await catchQuestObject(monster, object, state);
         if (caught !== null)
