@@ -205,7 +205,7 @@ import {
 } from './random_text_data.js';
 import {
     deleteEngravingAt, forgetEngravings, makeEngravingAt, restoreEngravings,
-    wipeEngravingAt, wipeoutText,
+    sanitizeEngravings, wipeEngravingAt, wipeoutText,
 } from './engrave.js';
 import { registerQuestLeader } from './quest.js';
 import { armorBonus } from './armor.js';
@@ -3908,6 +3908,7 @@ async function getbones(): Promise<boolean> {
     await restoreBonesMonsters(game.level, game);
     restoreBonesObjects(game.level);
     restoreBonesMonsterAttitudes(game.level);
+    sanitizeEngravings(game.level);
     game.fmon = game.level.monsters?.[0] || null;
     game._restoredBones = true;
 

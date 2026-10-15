@@ -14,6 +14,7 @@ import { rn2, rnd } from './rng.js';
 import { BUFSZ, DUST, ENGRAVE, BURN, MARK, ENGR_BLOOD, HEADSTONE, N_ENGRAVE } from './const.js';
 import { surfaceName } from './terrain_name.js';
 import { isIceAt } from './terrain_properties.js';
+import { sanitizeBonesName } from './bones_name.js';
 
 type EngravingStore = Pick<GameMap, 'engravings'>;
 
@@ -251,6 +252,13 @@ export function forgetEngravings(level: EngravingStore | null = game.level): voi
         engraving.eread = false;
         engraving.erevealed = false;
     }
+}
+
+// C engrave.c:sanitize_engravings(). Only actual text is displayed; the
+// remembered and pristine buffers retain the ancestor's original bytes.
+export function sanitizeEngravings(level: EngravingStore | null = game.level): void {
+    for (const engraving of level?.engravings ?? [])
+        engraving.text = sanitizeBonesName(engraving.text);
 }
 
 // C engrave.c:u_wipe_engr().

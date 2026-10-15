@@ -74,7 +74,7 @@ import { nhgetch } from './input.js';
 import { canSeeMonster, canSenseMonster, flush_screen, newsym, pline, } from './display.js';
 import { premap_detect } from './detect.js';
 import { TRUE_RUMORS, FALSE_RUMORS, RANDOM_ENGRAVINGS, RANDOM_EPITAPHS, } from './random_text_data.js';
-import { deleteEngravingAt, forgetEngravings, makeEngravingAt, restoreEngravings, wipeEngravingAt, wipeoutText, } from './engrave.js';
+import { deleteEngravingAt, forgetEngravings, makeEngravingAt, restoreEngravings, sanitizeEngravings, wipeEngravingAt, wipeoutText, } from './engrave.js';
 import { registerQuestLeader } from './quest.js';
 import { armorBonus } from './armor.js';
 import { initializeMonsterArmor } from './monworn.js';
@@ -3852,6 +3852,7 @@ async function getbones() {
     await restoreBonesMonsters(game.level, game);
     restoreBonesObjects(game.level);
     restoreBonesMonsterAttitudes(game.level);
+    sanitizeEngravings(game.level);
     game.fmon = game.level.monsters?.[0] || null;
     game._restoredBones = true;
     if (game.flags?.debug) {

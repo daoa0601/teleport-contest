@@ -9,6 +9,7 @@ import { rn2, rnd } from './rng.js';
 import { BUFSZ, DUST, ENGRAVE, BURN, MARK, ENGR_BLOOD, HEADSTONE, N_ENGRAVE } from './const.js';
 import { surfaceName } from './terrain_name.js';
 import { isIceAt } from './terrain_properties.js';
+import { sanitizeBonesName } from './bones_name.js';
 const RUBOUTS = new Map([
     ['A', '^'],
     ['B', 'Pb['],
@@ -211,6 +212,12 @@ export function forgetEngravings(level = game.level) {
         engraving.eread = false;
         engraving.erevealed = false;
     }
+}
+// C engrave.c:sanitize_engravings(). Only actual text is displayed; the
+// remembered and pristine buffers retain the ancestor's original bytes.
+export function sanitizeEngravings(level = game.level) {
+    for (const engraving of level?.engravings ?? [])
+        engraving.text = sanitizeBonesName(engraving.text);
 }
 // C engrave.c:u_wipe_engr().
 export function wipeHeroEngraving(count, state = game) {
