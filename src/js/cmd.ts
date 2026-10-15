@@ -1,4 +1,4 @@
-import { formatFeltMessage, publishHeardMessage } from './hero_speech.js';
+import { formatFeltMessage, formatSeenMessage, publishHeardMessage } from './hero_speech.js';
 import { ingSuffix } from './hacklib.js';
 import { heroLocomotion } from './hero_locomotion.js';
 import { autokey, autoUnlockFlags, continuePicking, pickLock } from './lock_pick.js';
@@ -121,7 +121,7 @@ import { woundHeroLegs } from './hero_legs.js';
 import { makeMonsterFlee } from './monster_flee.js';
 import { descendFromLevitation, floatingAbove } from './levitation_commands.js';
 import { endVoluntaryMultiTurn, resetCommandVariables } from './command_state.js';
-import { propertyIsActive } from './properties.js';
+import { grantIntrinsicProperty, propertyIsActive } from './properties.js';
 import {
     addPickedInventoryObject, pickupAtHero, pickupObjectClass, pickupClassOrder,
 } from './pickup.js';
@@ -1830,8 +1830,24 @@ export async function drinkFountain(loc: MapLocation) {
                 if (game.program_state.gameover) return true;
             }
         }
+    } else if (fate === 25) {
+        if (heroIsBlind()) {
+            if (propertyIsActive('invisible') && !propertyIsActive('seeInvisible')) {
+                await plineWithContinuation('You feel transparent.');
+            } else {
+                await plineWithContinuation('You feel very self-conscious.');
+                await plineWithContinuation('Then it passes.');
+            }
+        } else {
+            await plineWithContinuation(formatSeenMessage('an image of someone stalking you.'));
+            await plineWithContinuation('But it disappears.');
+        }
+        grantIntrinsicProperty('seeInvisible', 'outside');
+        newsym(game.u.ux, game.u.uy);
+        await exerciseAttribute(A_WIS, true);
     } else if (fate === 26) {
-        await detectMonsters(null);
+        if ((await detectMonsters(null)).result)
+            await plineWithContinuation(`The ${displayLiquidName('water')} tastes like nothing.`);
         await exerciseAttribute(A_WIS, true);
     } else if (fate === 27 && !((loc.looted ?? 0) & 1)) {
         await discoverFountainGem(loc);
