@@ -4853,8 +4853,7 @@ async function fillCourtRoom(room: Room): Promise<void> {
             // square and makemon() then rejects it without constructor RNG.
             if (loc.typ === THRONE) continue;
             const mndx = courtMonsterType();
-            const monster = mndx == null ? null
-                : await makemon(mndx, x, y, MM_ASLEEP | MM_NOGRP);
+            const monster = await makemon(mndx, x, y, MM_ASLEEP | MM_NOGRP);
             if (monster) {
                 monster.msleeping = 1;
                 if (monster.mpeaceful) {
@@ -8855,8 +8854,7 @@ async function fillBarracksRoom(room: Room): Promise<void> {
                 continue;
             }
             const mndx = barracksMonsterType();
-            const monster = mndx == null ? null
-                : await makemon(mndx, x, y, MM_ASLEEP | MM_NOGRP);
+            const monster = await makemon(mndx, x, y, MM_ASLEEP | MM_NOGRP);
             if (monster) monster.msleeping = 1;
             if (!rn2(20)) {
                 await mksobj_at(
