@@ -53,6 +53,21 @@ import { hiddenGold } from './gold.js';
 import { heroGoldAmount } from './hero_gold.js';
 import { resetHeroFaint } from './hunger.js';
 import { heroIsDeaf } from './senses.js';
+import { heroIsBlind } from './senses.js';
+import { adjustHeroAlignment } from './alignment.js';
+import { endVoluntaryMultiTurn, heroHasInvoluntaryDelay } from './command_state.js';
+import { canSpotMonster, map_invisible } from './display.js';
+import { MONSTER_SOUND } from './monster_data.js';
+import { angerMonster } from './monster_anger.js';
+import { setMonsterMalign } from './monster_alignment.js';
+import { removeMonsterFromGame } from './monster_departure.js';
+import { monsterName, monsterPossessive, monsterSubjectPronoun } from './monster_name.js';
+import { monsterWieldedWeapon, wieldMonsterWeapon } from './monster_weapon.js';
+import { BOULDER, GOLD_PIECE, OBJECT_NAMES } from './object_data.js';
+import { fractureRock } from './rock_breakage.js';
+import { rn2 } from './rng.js';
+import { formatSeenMessage, publishHeardMessage } from './hero_speech.js';
+import { M_AP_OBJECT, M_AP_TYPE, NEED_HTH_WEAPON } from './const.js';
 
 const PM_GUARD = 272;
 const VAULT_GUARD_TIME = 30;
@@ -91,7 +106,10 @@ export function maintainVaultResidence(state: GameState = game) {
         return false;
     }
 
-    state.u.uinvault = (state.u.uinvault || 0) + 1;
+    const deaths = state.mvitals?.[PM_GUARD]?.died ?? 0;
+    state.u.uinvault ??= 0;
+    if (deaths < 2 || deaths < 50 && !rn2(deaths * deaths))
+        state.u.uinvault = (state.u.uinvault || 0) + 1;
     if (
         state.u.uinvault < VAULT_GUARD_TIME ||
         state.u.uinvault % (VAULT_GUARD_TIME / 2) !== 0 ||
@@ -101,9 +119,6 @@ export function maintainVaultResidence(state: GameState = game) {
         return false;
 
     state._vaultGuardArrivalPending = { vault };
-    // C increments again immediately after successful creation so a guard
-    // killed during its greeting cannot respawn on the following turn.
-    state.u.uinvault++;
     return true;
 }
 
@@ -163,11 +178,6 @@ function guardEntryToward(destination: Position) {
         else y += dy;
     }
     return { x, y };
-}
-
-async function morePrompt(message: string) {
-    await plineWithContinuation(message);
-    await displayMessageWindow();
 }
 
 async function readGuardName() {
@@ -390,6 +400,7 @@ export async function continueVaultGuardArrival(state: GameState = game) {
     if (!guard) return false;
     guard.isgd = 1;
     guard.mpeaceful = 1;
+    setMonsterMalign(guard, state);
     const heroLevel = state.u.uz;
     if (!heroLevel) throw new Error('Vault guard arrival requires the hero dungeon location.');
     const corridor: VaultGuardData = {
@@ -400,31 +411,90 @@ export async function continueVaultGuardArrival(state: GameState = game) {
         gdx: destination.x,
         gdy: destination.y,
         vault: pending.vault,
-        warncnt: 1,
+        warncnt: 0,
         fcbeg: 0,
         fcend: 0,
         fakecorr: [],
         dropgoldcnt: 0,
     };
     guard._egd = corridor;
+    state.u.uinvault = (state.u.uinvault ?? 0) + 1;
     await resetHeroFaint({ state });
-    game._occupation = null;
+    const boulders = requireGameLevel(state).objects[entry.x]?.[entry.y]?.filter(object => object.otyp === BOULDER) ?? [];
+    for (const boulder of boulders) await fractureRock(boulder, entry.x, entry.y, { state });
+    if (boulders.length) {
+        const description = `${boulders.length === 1 ? 'a boulder' : 'boulders'} shatter.`;
+        if (heroIsBlind(state)) await publishHeardMessage(description, plineWithContinuation, state);
+        else await plineWithContinuation(formatSeenMessage(description, state));
+    }
     newsym(entry.x, entry.y);
     await redrawMap();
     await bot();
 
-    await morePrompt("Suddenly one of the Vault's guards enters!");
-    await readGuardName();
-
-    await plineWithContinuation('"I don\'t know you."');
-    const gold = heroGoldAmount(game);
-    const stashedGold = hiddenGold(game, true);
+    const spotted = canSpotMonster(guard);
+    await plineWithContinuation(spotted ? "Suddenly one of the Vault's guards enters!" : 'Someone else has entered the Vault.');
+    if (!spotted) map_invisible(entry.x, entry.y);
+    const deaf = heroIsDeaf(state), blind = heroIsBlind(state);
+    const name = () => monsterName(guard, { state, capitalized: true, suppressIt: true });
+    if (state.u.uswallow) {
+        if (!deaf) await plineWithContinuation(`"What's going on here?"`);
+        if (!spotted) await plineWithContinuation('The other presence vanishes.');
+        await removeMonsterFromGame(guard);
+        return true;
+    }
+    if (M_AP_TYPE(state.u) === M_AP_OBJECT || state.u.uundetected) {
+        if (!deaf && M_AP_TYPE(state.u) === M_AP_OBJECT && state.u.mappearance !== GOLD_PIECE)
+            await plineWithContinuation(`"Hey!  Who left that ${OBJECT_NAMES[state.u.mappearance ?? 0] ?? 'object'} in here?"`);
+        await plineWithContinuation(`Puzzled, ${monsterSubjectPronoun(guard, { state })} turns around and leaves.`);
+        await removeMonsterFromGame(guard);
+        return true;
+    }
+    if (state.u.strangled || (state.u.strangledTurns ?? 0) > 0
+        || MONSTER_SOUND[state.u.umonnum ?? state.u.umonster ?? 260] === 0 || heroHasInvoluntaryDelay(state)) {
+        await plineWithContinuation(deaf ? `${name()} huffs and turns to leave.`
+            : `"I'll be back when you're ready to speak to me!"`);
+        await removeMonsterFromGame(guard);
+        return true;
+    }
+    state._occupation = null;
+    if ((state.multi ?? 0) > 0) endVoluntaryMultiTurn(state);
+    await displayMessageWindow();
+    const response = await readGuardName();
+    if (state.u.ualign?.type === 1 && !response.toLowerCase().startsWith(state.plname.toLowerCase()))
+        adjustHeroAlignment(-1, state);
+    if (['croesus', 'kroisos', 'creosote'].includes(response.toLowerCase())) {
+        if (!(state.mvitals?.[286]?.died ?? 0)) {
+            if (!deaf) await plineWithContinuation('"Oh, yes, of course.  Sorry to have disturbed you."');
+            else if (!blind) await plineWithContinuation(`${name()} waves goodbye.`);
+            await removeMonsterFromGame(guard);
+        } else {
+            await angerMonster(guard);
+            if (!deaf) await plineWithContinuation(`"Back from the dead, are you?  I'll remedy that!"`);
+            else if (!blind) await plineWithContinuation(`${name()} mouths something and looks very angry!`);
+            if (!monsterWieldedWeapon(guard)) {
+                guard.weaponCheck = NEED_HTH_WEAPON;
+                await wieldMonsterWeapon(guard, state);
+            }
+        }
+        return true;
+    }
+    await plineWithContinuation(deaf ? `${name()} doesn't ${blind ? '' : 'appear to '}recognize you.` : `"I don't know you."`);
+    const gold = heroGoldAmount(state);
+    const stashedGold = hiddenGold(state, true);
     if (!gold && !stashedGold) {
-        await plineWithContinuation('"Please follow me."');
+        await plineWithContinuation(deaf ? `${name()} stomps${blind ? '' : ' and beckons'}.` : '"Please follow me."');
     } else {
-        if (!gold) await plineWithContinuation('"You have hidden gold."');
-        await plineWithContinuation('"Most likely all your gold was stolen from this vault."');
-        await plineWithContinuation('"Please drop that gold and follow me."');
+        if (!gold) {
+            if (!deaf) await plineWithContinuation('"You have hidden gold."');
+            else if (!blind) await plineWithContinuation(`${name()} glares at you${state.inventory.length ? 'r stuff' : ''}.`);
+        }
+        if (!deaf) {
+            await plineWithContinuation('"Most likely all your gold was stolen from this vault."');
+            await plineWithContinuation('"Please drop that gold and follow me."');
+        } else if (!blind) {
+            const possessive = monsterPossessive(guard, { state, noIt: true });
+            await plineWithContinuation(`${name()} holds out ${possessive} palm and beckons with ${monsterPossessive(guard, { state, noIt: true })} other hand.`);
+        }
         corridor.dropgoldcnt++;
     }
 
@@ -447,6 +517,7 @@ export async function continueVaultGuardArrival(state: GameState = game) {
         flags: original.wall_info,
     });
     corridor.fcend = 1;
+    corridor.warncnt = 1;
     stopLevelTimer(entry.x, entry.y, LEVEL_TIMER_KIND.MELT_ICE_AWAY, state);
     original.typ = DOOR;
     original.flags = original.wall_info = original.doormask = D_NODOOR;
