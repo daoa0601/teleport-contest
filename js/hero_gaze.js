@@ -12,7 +12,8 @@ import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { igniteItems } from './light.js';
 import { angerAttackedMonster } from './monster_anger.js';
 import { AD_CONF, AD_FIRE, AT_GAZE, } from './monster_attack_types.js';
-import { MONSTER_ATTACKS, MONSTER_FLAGS1, monsterTypeName, } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_FLAGS1 } from './monster_data.js';
+import { monsterName, possessiveName } from './monster_name.js';
 import { heroMonsterForm } from './polyself.js';
 import { promptYesNo } from './query.js';
 import { d, rn2 } from './rng.js';
@@ -37,22 +38,6 @@ function heroCanSeeInvisible(state) {
 function heroIsConfused(state) {
     return !!(state.u?.confused || (state.u?.confusionTurns ?? 0) > 0);
 }
-function monsterName(monster) {
-    return monster.name
-        || monsterTypeName(monster.mnum, !!monster.female);
-}
-function monsterSubject(monster) {
-    const name = monsterName(monster);
-    return monster.name ? name : `The ${name}`;
-}
-function monsterObject(monster) {
-    const name = monsterName(monster);
-    return monster.name ? name : `the ${name}`;
-}
-function monsterPossessive(monster) {
-    const name = monsterObject(monster);
-    return /s$/i.test(name) ? `${name}'` : `${name}'s`;
-}
 function gazeCannotAffect(monster) {
     const helpless = monster.msleeping || monster.mcanmove === 0
         || monster.mcanmove === false
@@ -68,9 +53,8 @@ function floatingEyeFreezeDuration(monster, state, random, rollDice) {
     return rollDice((monster.m_lev ?? 0) + 1, attack[3] ?? 1);
 }
 async function applyGazePassive(monster, state, publish, random, rollDice, die) {
-    const name = monsterName(monster);
     if (monster.mnum === PM_FLOATING_EYE && !monster.mcan) {
-        const owner = monsterPossessive(monster);
+        const owner = possessiveName(monsterName(monster, { state }));
         if (heroHasFreeAction(state)) {
             await publish(`You stiffen momentarily under ${owner} gaze.`);
             return { heroDied: false };
@@ -85,6 +69,7 @@ async function applyGazePassive(monster, state, publish, random, rollDice, die) 
     }
     if (monster.mnum !== PM_MEDUSA || monster.mcan)
         return { heroDied: false };
+    const name = monsterName(monster, { state, article: 'none' });
     await publish(`Gazing at the awake ${name} is not a very good idea.`);
     await publish('You turn to stone...');
     const heroDied = await die({
@@ -96,15 +81,15 @@ async function applyGazePassive(monster, state, publish, random, rollDice, die) 
     });
     return { heroDied, stopped: heroDied };
 }
-async function applyConfusingGaze(monster, publish) {
+async function applyConfusingGaze(monster, state, publish) {
     if (!monster.mconf)
-        await publish(`Your gaze confuses ${monsterObject(monster)}!`);
+        await publish(`Your gaze confuses ${monsterName(monster, { state })}!`);
     else
-        await publish(`${monsterSubject(monster)} is getting more and more confused.`);
+        await publish(`${monsterName(monster, { state, capitalized: true })} is getting more and more confused.`);
     monster.mconf = 1;
 }
 async function applyFieryGaze({ monster, state, publish, random, rollDice, finishMonsterKill, }) {
-    const name = monsterObject(monster);
+    const name = monsterName(monster, { state });
     const originalDamage = rollDice(2, 6);
     let damage = originalDamage;
     await publish(`You attack ${name} with a fiery gaze!`);
@@ -126,15 +111,15 @@ async function applyFieryGaze({ monster, state, publish, random, rollDice, finis
             visible: canSeeMonster(monster),
         });
     }
-    monster.mhp = Math.max(0, (monster.mhp ?? 1) - damage);
+    monster.mhp -= damage;
     if (monster.mhp > 0)
         return false;
     await finishMonsterKill(monster, monster.mx, monster.my);
-    return true;
+    return monster.mhp <= 0 || !!monster.dead;
 }
-async function confirmPeacefulGaze(monster, damageType) {
+async function confirmPeacefulGaze(monster, damageType, state) {
     const action = damageType === AD_CONF ? 'confuse' : 'attack';
-    return await promptYesNo(`Really ${action} ${monsterObject(monster)}?`) === 'y';
+    return await promptYesNo(`Really ${action} ${monsterName(monster, { state })}?`) === 'y';
 }
 export async function useHeroGaze({ state = game, attack = heroGazeAttack(state), publish = plineWithContinuation, random = rn2, rollDice = d, finishMonsterKill = finishHeroMonsterKill, die = finishHeroDeath, } = {}) {
     if (!attack)
@@ -166,11 +151,11 @@ export async function useHeroGaze({ state = game, attack = heroGazeAttack(state)
         looked++;
         if (heroIsInvisible(state)
             && !((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_SEE_INVIS)) {
-            await publish(`${monsterSubject(monster)} seems not to notice your gaze.`);
+            await publish(`${monsterName(monster, { state, capitalized: true })} seems not to notice your gaze.`);
             continue;
         }
         if (monster.minvis && !heroCanSeeInvisible(state)) {
-            await publish(`You can't see where to gaze at ${monsterObject(monster)}.`);
+            await publish(`You can't see where to gaze at ${monsterName(monster, { state, capitalized: true })}.`);
             continue;
         }
         if (M_AP_TYPE(monster) === M_AP_FURNITURE
@@ -179,14 +164,13 @@ export async function useHeroGaze({ state = game, attack = heroGazeAttack(state)
             continue;
         }
         if (state.flags?.safe_dog && monster.mtame && !heroIsConfused(state)) {
-            const target = monster.name
-                ? monster.name : `your ${monsterName(monster)}`;
+            const target = monsterName(monster, { state, article: 'your' });
             await publish(`You avoid gazing at ${target}.`);
             continue;
         }
         if (state.flags?.confirm && monster.mpeaceful
             && !heroIsConfused(state)
-            && !await confirmPeacefulGaze(monster, damageType))
+            && !await confirmPeacefulGaze(monster, damageType, state))
             continue;
         await angerAttackedMonster(monster);
         if (gazeCannotAffect(monster)) {
@@ -195,7 +179,7 @@ export async function useHeroGaze({ state = game, attack = heroGazeAttack(state)
         }
         let killed = false;
         if (damageType === AD_CONF)
-            await applyConfusingGaze(monster, publish);
+            await applyConfusingGaze(monster, state, publish);
         else {
             killed = await applyFieryGaze({
                 monster, state, publish, random, rollDice,

@@ -169,6 +169,8 @@ export function monsterHandName(mnum) {
 }
 export function monsterHeadName(mnum) {
     const symbol = MONSTER_SYMBOL[mnum];
+    if (MONSTER_NAME[mnum] === 'stalker')
+        return 'head';
     if (symbol === S_JELLY || symbol === S_PUDDING || symbol === S_BLOB)
         return 'cerebral area';
     if (symbol === S_EYE || symbol === S_LIGHT)
@@ -236,6 +238,75 @@ export function heroToeName(state = game) {
 }
 export function heroHandName(state = game) {
     return monsterHandName(currentHeroMonsterNumber(state));
+}
+export function heroHandedName(state = game) {
+    const mnum = currentHeroMonsterNumber(state);
+    const symbol = MONSTER_SYMBOL[mnum];
+    const flags = MONSTER_FLAGS1[mnum] ?? 0;
+    if (symbol === S_DOG || symbol === S_FELINE || symbol === S_RODENT
+        || mnum === PM_OWLBEAR)
+        return 'pawed';
+    if (symbol === S_YETI)
+        return 'handed';
+    if (flags & M1_HUMANOID)
+        return humanoidHasClaws(mnum) ? 'clawed' : 'handed';
+    if (symbol === S_COCKATRICE || mnum === PM_RAVEN)
+        return 'winged';
+    if (symbol === S_CENTAUR || symbol === S_UNICORN
+        || mnum === PM_KI_RIN || mnum === PM_ROTHE)
+        return 'hooved';
+    if (symbol === S_LIGHT)
+        return 'rayed';
+    if (symbol === S_EEL && mnum !== PM_JELLYFISH)
+        return 'finned';
+    if (symbol === S_WORM)
+        return 'segmented';
+    if (symbol === S_SPIDER)
+        return 'palped';
+    if (flags & M1_SLITHY)
+        return 'scale gapped';
+    if (symbol === S_EYE)
+        return 'tentacled';
+    if (symbol === S_JELLY || symbol === S_PUDDING || symbol === S_BLOB
+        || mnum === PM_JELLYFISH)
+        return 'grasped';
+    if (symbol === S_VORTEX || symbol === S_ELEMENTAL)
+        return 'swirled';
+    return symbol === S_FUNGUS ? 'stranded' : 'clawed';
+}
+export function heroBloodName(state = game) {
+    const mnum = currentHeroMonsterNumber(state);
+    const symbol = MONSTER_SYMBOL[mnum];
+    if (symbol === S_LIGHT)
+        return 'beam';
+    if (symbol === S_SPIDER)
+        return 'hemolymph';
+    if (symbol === S_EYE || symbol === S_VORTEX || symbol === S_ELEMENTAL)
+        return 'life force';
+    if (symbol === S_FUNGUS || symbol === S_JELLY || symbol === S_PUDDING
+        || symbol === S_BLOB || mnum === PM_JELLYFISH)
+        return 'juices';
+    return 'blood';
+}
+export function heroLungName(state = game) {
+    const mnum = currentHeroMonsterNumber(state);
+    const symbol = MONSTER_SYMBOL[mnum];
+    if (symbol === S_LIGHT)
+        return 'beam';
+    if (symbol === S_EEL && mnum !== PM_JELLYFISH)
+        return 'gill';
+    if (symbol === S_WORM)
+        return 'skin';
+    if (symbol === S_SPIDER)
+        return 'book lung';
+    if (symbol === S_EYE)
+        return 'retina';
+    if (symbol === S_JELLY || symbol === S_PUDDING || symbol === S_BLOB
+        || mnum === PM_JELLYFISH)
+        return 'surface';
+    if (symbol === S_VORTEX || symbol === S_ELEMENTAL)
+        return 'center';
+    return symbol === S_FUNGUS ? 'gill' : 'lung';
 }
 // C mbodypart(FINGER). A clawed humanoid still has fingers; HAND's
 // special claw rule does not apply to this part.

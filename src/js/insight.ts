@@ -2,6 +2,7 @@
 // C ref: insight.c — doattributes(), enlightenment().
 
 import { heroIsHallucinating } from './senses.js';
+import { heroHandedName } from './body_parts.js';
 import { canPraySafely } from './pray.js';
 import { deityName } from './alignment.js';
 import { withIndefiniteArticle } from './object_grammar.js';
@@ -435,6 +436,12 @@ function paginateAttributeLines(lines: readonly string[]): TextPage[] {
     return pages;
 }
 
+function handednessDescription() {
+    const normally = heroHandedName() === 'handed' ? '' : 'normally ';
+    const hand = game.u.rightHanded ? 'right' : 'left';
+    return `${normally}${hand}-handed`;
+}
+
 function basicEnlightenmentLines(roleName: string) {
     const { u } = requireInitializedGame();
     const rank = (game.flags?.female && game.urole?.rank?.f)
@@ -489,7 +496,7 @@ function basicEnlightenmentLines(roleName: string) {
     lines.push(
         `  You are ${align}, on a mission for ${currentGod}`,
         `  who is opposed by ${opponents[0]} and ${opponents[1]}.`,
-        `  You are ${u.rightHanded ? 'right' : 'left'}-handed.`,
+        `  You are ${handednessDescription()}.`,
         location,
         entered,
     );
@@ -657,7 +664,7 @@ function finalAttributePages(): TextPage[] {
         page1[3] = ` You were ${withIndefiniteArticle(rank)}, a level ${u.ulevel} ${gender} ${race} ${roleName}.`;
         page1[4] = ` You were ${align}, on a mission for ${gods[align]}`;
         page1[5] = ` who was opposed by ${opponents[0]} and ${opponents[1]}.`;
-        page1[6] = ` You were ${u.rightHanded ? 'right' : 'left'}-handed.`;
+        page1[6] = ` You were ${handednessDescription()}.`;
         page1[7] = ` You were in ${dungeonName}, on level ${dungeonDepth(u.uz)}.`;
         page1[8] = ` You entered the dungeon ${sourceTurn} ${plural(sourceTurn, 'turn')} ago.`;
         if (nighttime) page1[9] = ' It was nighttime.';
@@ -779,7 +786,7 @@ function finalAttributePages(): TextPage[] {
         ` You were ${withIndefiniteArticle(rank)}, a level ${u.ulevel} ${gender} ${race} ${roleName}.`,
         ` You were ${align}, on a mission for ${gods[align]}`,
         ` who was opposed by ${opponents[0]} and ${opponents[1]}.`,
-        ` You were ${u.rightHanded ? 'right' : 'left'}-handed.`,
+        ` You were ${handednessDescription()}.`,
         ` You were in ${dungeonName}, on level ${dungeonDepth(u.uz)}.`,
         ` You entered the dungeon ${sourceTurn} ${plural(sourceTurn, 'turn')} ago.`,
     ];

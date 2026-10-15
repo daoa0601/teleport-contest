@@ -80,7 +80,7 @@ void test('digestion ends a polymorphed cube turn before the next monster attack
     assert.equal(remainingHp[1], remainingHp[0], 'digestion must not add a curse attempt before the giant attacks');
 });
 void test('a queued were change waits until the hero wakes up', async () => {
-    const input = freshTurnRoom();
+    const input = freshTurnRoom({ flags: { verbose: false } });
     requirePlayingGame(game);
     const beast = MONSTER_NAME.indexOf('werejackal');
     const human = game.u.umonnum;
@@ -98,7 +98,7 @@ void test('a queued were change waits until the hero wakes up', async () => {
     assert.equal(game.u.umonnum, beast, 'the deferred transformation resumes after waking');
 });
 void test('an infected human changes into its were form during ordinary turn maintenance', async () => {
-    const input = freshTurnRoom({ seed: 81n });
+    const input = freshTurnRoom({ seed: 81n, flags: { verbose: false } });
     requirePlayingGame(game);
     game.datetime = '20010601120000';
     const beast = MONSTER_NAME.indexOf('werejackal');

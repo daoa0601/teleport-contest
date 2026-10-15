@@ -8,6 +8,8 @@ import { game, requireGameLevel } from './gstate.js';
 import { monsterAtPosition } from './monster_location.js';
 import { monsterHasPoisonResistance } from './monster_resistance.js';
 import { heroIsBreathless } from './hero_species.js';
+import { heroEyeName, heroLungName } from './body_parts.js';
+import { makePlural } from './object_grammar.js';
 import { refreshProperty } from './properties.js';
 import { teleportHeroSafely } from './teleport.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_SOUND, MONSTER_SYMBOL, monsterIsNonliving, monsterIsVampireShifter, } from './monster_data.js';
@@ -271,7 +273,7 @@ async function affectHeroWithGas(region, state, { publish, rollOne, wake, onHero
     if (tolerance === GAS_OK)
         return null;
     if (!heroIsBlind(state)) {
-        await publish('Your eyes sting.');
+        await publish(`Your ${makePlural(heroEyeName(state))} sting.`);
         await makeBlinded(1, { state, talk: false, publish });
     }
     if (tolerance === GAS_MINOR) {
@@ -279,7 +281,7 @@ async function affectHeroWithGas(region, state, { publish, rollOne, wake, onHero
         await wakeNearGas(state.u.ux, state.u.uy, state, publish, wake);
         return { kind: 'hero-gas', resisted: true, damage: 0 };
     }
-    await publish('Something is burning your lungs!');
+    await publish(`Something is burning your ${makePlural(heroLungName(state))}!`);
     await publish('You cough and spit blood!');
     await wakeNearGas(state.u.ux, state.u.uy, state, publish, wake);
     const damage = halfHeroGasDamage(rollOne(region.damage) + 5, state);
