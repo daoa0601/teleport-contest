@@ -2,7 +2,7 @@
 // C refs: potion.c make_slimed(), timeout.c slime_dialogue() and
 // slimed_to_death(), uhitm.c mhitm_ad_slim().
 
-import { heroIsHallucinating } from './senses.js';
+import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { exerciseAttribute } from './attrib.js';
 import {
@@ -14,7 +14,7 @@ import type { GameState } from './game_state.js';
 import type { MessagePublisher } from './display.js';
 import type { DeathHandler } from './end.js';
 import type { MonsterAction } from './monster_action_types.js';
-import { plineWithContinuation } from './display.js';
+import { displayColorName, plineWithContinuation, randomDisplayMonsterName } from './display.js';
 import { MONSTER_NAME, MONSTER_SYMBOL, requireMonsterData } from './monster_data.js';
 import { heroHasNoLimbs, heroIsPolymorphed } from './polyself.js';
 import { removeIntrinsicProperty, setPropertyTimeout } from './properties.js';
@@ -200,8 +200,8 @@ function articleFor(name: string): string {
 
 function slimeMessage(turns: number, state: GameState, randomMonsterName: () => string): string | null {
     if (turns === 9) {
-        return state.blind || (state.u?.blindTurns ?? 0) > 0
-            ? null : 'You are turning a little green.';
+        return heroIsBlind(state)
+            ? null : `You are turning a little ${displayColorName('green', state)}.`;
     }
     if (turns === 7) {
         return heroHasNoLimbs(state)
@@ -234,7 +234,7 @@ export async function slimeDialogue({
     state = game,
     publish = async () => {},
     repaint = () => {},
-    randomMonsterName = () => 'green slime',
+    randomMonsterName = randomDisplayMonsterName,
 }: SlimeAdvanceOptions = {}): Promise<void> {
     const hero = state.u;
     const turns = hero.slimedTurns ?? 0;

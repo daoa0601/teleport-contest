@@ -1,13 +1,13 @@
 // Hero transformation into green slime.
 // C refs: potion.c make_slimed(), timeout.c slime_dialogue() and
 // slimed_to_death(), uhitm.c mhitm_ad_slim().
-import { heroIsHallucinating } from './senses.js';
+import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { exerciseAttribute } from './attrib.js';
 import { A_DEX, GENOCIDED, G_GENOD, M_AP_MONSTER, TIMEOUT, TURNED_SLIME, } from './const.js';
 import { game, requireLiveGame } from './gstate.js';
 import { heroSpecies } from './hero_species.js';
-import { plineWithContinuation } from './display.js';
+import { displayColorName, plineWithContinuation, randomDisplayMonsterName } from './display.js';
 import { MONSTER_NAME, MONSTER_SYMBOL, requireMonsterData } from './monster_data.js';
 import { heroHasNoLimbs, heroIsPolymorphed } from './polyself.js';
 import { removeIntrinsicProperty, setPropertyTimeout } from './properties.js';
@@ -165,8 +165,8 @@ function articleFor(name) {
 }
 function slimeMessage(turns, state, randomMonsterName) {
     if (turns === 9) {
-        return state.blind || (state.u?.blindTurns ?? 0) > 0
-            ? null : 'You are turning a little green.';
+        return heroIsBlind(state)
+            ? null : `You are turning a little ${displayColorName('green', state)}.`;
     }
     if (turns === 7) {
         return heroHasNoLimbs(state)
@@ -194,7 +194,7 @@ function cancelHeroPetrification(state) {
     delete hero.stoneKiller;
     delete hero.stoneKillerFormat;
 }
-export async function slimeDialogue({ state = game, publish = async () => { }, repaint = () => { }, randomMonsterName = () => 'green slime', } = {}) {
+export async function slimeDialogue({ state = game, publish = async () => { }, repaint = () => { }, randomMonsterName = randomDisplayMonsterName, } = {}) {
     const hero = state.u;
     const turns = hero.slimedTurns ?? 0;
     if (turns <= 0)

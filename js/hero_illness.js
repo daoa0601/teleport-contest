@@ -277,7 +277,14 @@ function sicknessMessage(hero) {
 export async function sicknessDialogue({ state = game, publish = pline, } = {}) {
     if (!heroIsSick(state))
         return;
-    const message = sicknessMessage(state.u);
+    let message = sicknessMessage(state.u);
+    if (message === "You are at Death's door." && heroIsHallucinating(state)) {
+        // C mhe() uses the core RNG for hallucinated pronouns.
+        const invitation = ['He is', 'She is', 'It is', 'They are'][rn2(4)];
+        if (!invitation)
+            throw new Error('Sickness dialogue chose no pronoun');
+        message += `  ${invitation} inviting you in.`;
+    }
     if (message)
         await publish(message);
     await exerciseAttribute(A_CON, false, state);
