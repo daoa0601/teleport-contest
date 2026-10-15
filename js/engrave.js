@@ -239,15 +239,14 @@ export function maybeSmudgeEngravings(x1, y1, x2, y2) {
         wipeEngravingAt(x2, y2, rnd(5), false);
     }
 }
-function readingMessages(engraving, x, y) {
+function readingMessages(engraving, surface, icy) {
     const blind = !!game.blind;
     const canFeel = heroCanReachFloor(game, { checkPit: true });
-    const surface = surfaceName(x, y, game);
     let first = null;
     switch (engraving.engr_type) {
         case DUST:
             if (!blind)
-                first = `Something is written here in the ${isIceAt(x, y) ? 'frost' : 'dust'}.`;
+                first = `Something is written here in the ${icy ? 'frost' : 'dust'}.`;
             break;
         case ENGRAVE:
         case HEADSTONE:
@@ -256,7 +255,7 @@ function readingMessages(engraving, x, y) {
             break;
         case BURN:
             if (!blind || canFeel)
-                first = `Some text has been ${isIceAt(x, y) ? 'melted' : 'burned'} into the ${surface} here.`;
+                first = `Some text has been ${icy ? 'melted' : 'burned'} into the ${surface} here.`;
             break;
         case MARK:
             if (!blind)
@@ -287,9 +286,10 @@ function readingMessages(engraving, x, y) {
 // whether each fits beside earlier prose before it asks for acknowledgement.
 export async function readEngravingAt(x, y, publish) {
     const engraving = engravingAt(x, y);
+    const surface = surfaceName(x, y, game);
     if (!engraving?.text)
         return false;
-    const messages = readingMessages(engraving, x, y);
+    const messages = readingMessages(engraving, surface, isIceAt(x, y));
     if (!messages)
         return false;
     await publish(messages.first);

@@ -282,18 +282,17 @@ export function maybeSmudgeEngravings(x1: number, y1: number, x2: number, y2: nu
 
 function readingMessages(
     engraving: Engraving,
-    x: number,
-    y: number,
+    surface: string,
+    icy: boolean,
 ): { first: string; second: string } | null {
     const blind = !!game.blind;
     const canFeel = heroCanReachFloor(game, { checkPit: true });
-    const surface = surfaceName(x, y, game);
     let first = null;
     switch (engraving.engr_type) {
         case DUST:
             if (!blind)
                 first = `Something is written here in the ${
-                    isIceAt(x, y) ? 'frost' : 'dust'
+                    icy ? 'frost' : 'dust'
                 }.`;
             break;
         case ENGRAVE:
@@ -303,7 +302,7 @@ function readingMessages(
         case BURN:
             if (!blind || canFeel)
                 first = `Some text has been ${
-                    isIceAt(x, y) ? 'melted' : 'burned'
+                    icy ? 'melted' : 'burned'
                 } into the ${surface} here.`;
             break;
         case MARK:
@@ -339,8 +338,9 @@ export async function readEngravingAt(
     publish: MessagePublisher,
 ): Promise<boolean> {
     const engraving = engravingAt(x, y);
+    const surface = surfaceName(x, y, game);
     if (!engraving?.text) return false;
-    const messages = readingMessages(engraving, x, y);
+    const messages = readingMessages(engraving, surface, isIceAt(x, y));
     if (!messages) return false;
     await publish(messages.first);
     await publish(messages.second);
