@@ -199,11 +199,11 @@ import { invokeArtifactPower, } from './artifact_invoke.js';
 import { touchArtifactByHero } from './artifact_touch.js';
 import { SLING, BULLWHIP, GRAPPLING_HOOK, CREAM_PIE, EGG, LUMP_OF_ROYAL_JELLY, LOCK_PICK, CREDIT_CARD, STETHOSCOPE, LOADSTONE, GOLD_PIECE, BOULDER, ROCK, DILITHIUM_CRYSTAL, LUCKSTONE, TOUCHSTONE, LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK, BAG_OF_HOLDING, BAG_OF_TRICKS, BRASS_LANTERN, OIL_LAMP, MAGIC_LAMP, STATUE, RIN_PROTECTION, BANANA, MIRROR, TIN_WHISTLE, MAGIC_WHISTLE, EUCALYPTUS_LEAF, BELL, BELL_OF_OPENING, EXPENSIVE_CAMERA, TIN_OPENER, FIGURINE, LEASH, CAN_OF_GREASE, SADDLE, HORN_OF_PLENTY, TINNING_KIT, LAND_MINE, BEARTRAP, TALLOW_CANDLE, WAX_CANDLE, CANDELABRUM_OF_INVOCATION, POT_OIL, RIN_CONFLICT, MEAT_RING, OBJECT_BIMANUAL, HELM_OF_OPPOSITE_ALIGNMENT, GRAY_DRAGON_SCALES, LENSES, BLINDFOLD, TOWEL, FUMBLE_BOOTS, KICKING_BOOTS, MAGIC_MARKER, UNICORN_HORN, SHIELD_OF_REFLECTION, AMULET_OF_YENDOR, AMULET_OF_STRANGULATION, FAKE_AMULET_OF_YENDOR, SPE_NOVEL, OBJECT_DELAY, OBJECT_UNIQUE, OBJECT_DESCRIPTIONS, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_WEIGHT, OBJECT_SUBTYPE, } from './object_data.js';
 import { CLR_WHITE, NO_COLOR, } from './terminal.js';
-import { MONSTER_COLOR, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, MONSTER_SOUND, MONSTER_ALIGNMENT, MONSTER_ATTACKS, requireMonsterData, monsterTypeName, monsterClassSymbol, monsterIsHumanoid, } from './monster_data.js';
+import { MONSTER_COLOR, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, MONSTER_SOUND, MONSTER_ALIGNMENT, MONSTER_ATTACKS, requireMonsterData, monsterTypeName, monsterClassSymbol, monsterIsHumanoid, monsterDigests, } from './monster_data.js';
 import { createParticularMonster } from './read_creation.js';
 import { addExperience, checkExperienceLevel, gainExperienceLevel, loseHeroExperience, } from './exper.js';
 import { removeHeroAccessory, wearHeroAccessory, } from './accessory.js';
-import { heroHasNoHead, heroPassesWalls, heroSpecies } from './hero_species.js';
+import { heroFormSticks, heroHasNoHead, heroPassesWalls, heroSpecies } from './hero_species.js';
 import { monsterLocomotion } from './monster_locomotion.js';
 import { disturbBuriedZombies } from './object_impact.js';
 import { checkSlipperyIce } from './fumbling.js';
@@ -1672,6 +1672,26 @@ export async function drinkFountain(loc) {
     await dryFountainAt(game.u.ux, game.u.uy);
     return false;
 }
+// C do.c:u_stuck_cannot_go(). A sticky hero releases its captive, while
+// being held or swallowed prevents even an attempt to use the floor below.
+async function monsterPreventsStairTravel(up) {
+    const holder = game.u.ustuck;
+    if (!holder)
+        return false;
+    if (game.u.uswallow || !heroFormSticks(game)) {
+        const condition = !game.u.uswallow ? 'being held'
+            : monsterDigests(holder) ? 'swallowed' : 'engulfed';
+        await plineWithContinuation(`You are ${condition}, and cannot go ${up ? 'up' : 'down'}.`);
+        game.context.move = 1;
+        return true;
+    }
+    game.u.ustuck = null;
+    game.u.uswallow = 0;
+    game.u.uswldtim = 0;
+    game.context.botl = true;
+    await plineWithContinuation(`You release ${monsterName(holder)}.`);
+    return false;
+}
 export async function travelStairs(up) {
     const level = requireGameLevel();
     requireInitializedHero(game.u);
@@ -1695,6 +1715,8 @@ export async function travelStairs(up) {
             game.context.move = descent.spentTurn ? 1 : 0;
             return descent.spentTurn;
         }
+        if (await monsterPreventsStairTravel(false))
+            return false;
     }
     let stairs = game.stairs;
     while (stairs && (stairs.sx !== game.u.ux || stairs.sy !== game.u.uy
@@ -1714,6 +1736,8 @@ export async function travelStairs(up) {
         game.context.move = 0;
         return false;
     }
+    if (up && await monsterPreventsStairTravel(true))
+        return false;
     if (!await bringLeashedFollowers()) {
         await plineWithContinuation('You are held back by your pet!');
         game.context.move = 0;

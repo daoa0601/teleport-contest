@@ -321,7 +321,7 @@ import {
 import {
     MONSTER_COLOR, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME,
     MONSTER_SIZE, MONSTER_SYMBOL, MONSTER_SOUND, MONSTER_ALIGNMENT, MONSTER_ATTACKS,
-    requireMonsterData, monsterTypeName, monsterClassSymbol, monsterIsHumanoid,
+    requireMonsterData, monsterTypeName, monsterClassSymbol, monsterIsHumanoid, monsterDigests,
 } from './monster_data.js';
 import { createParticularMonster } from './read_creation.js';
 import {
@@ -330,7 +330,7 @@ import {
 import {
     removeHeroAccessory, wearHeroAccessory,
 } from './accessory.js';
-import { heroHasNoHead, heroPassesWalls, heroSpecies } from './hero_species.js';
+import { heroFormSticks, heroHasNoHead, heroPassesWalls, heroSpecies } from './hero_species.js';
 import { monsterLocomotion } from './monster_locomotion.js';
 import { disturbBuriedZombies } from './object_impact.js';
 import { checkSlipperyIce } from './fumbling.js';
@@ -1816,6 +1816,26 @@ export async function drinkFountain(loc: MapLocation) {
     return false;
 }
 
+// C do.c:u_stuck_cannot_go(). A sticky hero releases its captive, while
+// being held or swallowed prevents even an attempt to use the floor below.
+async function monsterPreventsStairTravel(up: boolean): Promise<boolean> {
+    const holder = game.u.ustuck;
+    if (!holder) return false;
+    if (game.u.uswallow || !heroFormSticks(game)) {
+        const condition = !game.u.uswallow ? 'being held'
+            : monsterDigests(holder) ? 'swallowed' : 'engulfed';
+        await plineWithContinuation(`You are ${condition}, and cannot go ${up ? 'up' : 'down'}.`);
+        game.context.move = 1;
+        return true;
+    }
+    game.u.ustuck = null;
+    game.u.uswallow = 0;
+    game.u.uswldtim = 0;
+    game.context.botl = true;
+    await plineWithContinuation(`You release ${monsterName(holder)}.`);
+    return false;
+}
+
 export async function travelStairs(up: boolean) {
     const level = requireGameLevel();
     requireInitializedHero(game.u);
@@ -1839,6 +1859,7 @@ export async function travelStairs(up: boolean) {
             game.context.move = descent.spentTurn ? 1 : 0;
             return descent.spentTurn;
         }
+        if (await monsterPreventsStairTravel(false)) return false;
     }
     let stairs = game.stairs;
     while (stairs && (stairs.sx !== game.u.ux || stairs.sy !== game.u.uy
@@ -1857,6 +1878,7 @@ export async function travelStairs(up: boolean) {
         game.context.move = 0;
         return false;
     }
+    if (up && await monsterPreventsStairTravel(true)) return false;
     if (!await bringLeashedFollowers()) {
         await plineWithContinuation('You are held back by your pet!');
         game.context.move = 0;
