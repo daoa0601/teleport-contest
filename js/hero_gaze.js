@@ -126,11 +126,11 @@ async function applyFieryGaze({ monster, state, publish, random, rollDice, finis
             visible: canSeeMonster(monster),
         });
     }
-    monster.mhp = Math.max(0, (monster.mhp ?? 1) - damage);
+    monster.mhp -= damage;
     if (monster.mhp > 0)
         return false;
     await finishMonsterKill(monster, monster.mx, monster.my);
-    return true;
+    return monster.mhp <= 0 || !!monster.dead;
 }
 async function confirmPeacefulGaze(monster, damageType) {
     const action = damageType === AD_CONF ? 'confuse' : 'attack';
