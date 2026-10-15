@@ -143,6 +143,7 @@ import { callObjectType, objectTypeIsCallable, } from './object_call.js';
 import { nameIndividualObject } from './individual_naming.js';
 import { nameChosenMonster } from './monster_naming_command.js';
 import { nameFloorObject } from './floor_naming.js';
+import { chooseNamingCategory } from './naming_categories.js';
 import { displayLiquidName, displayMessageWindow, newsym, feel_newsym, flushPendingTopline, flush_screen, pline, plineWithContinuation, moreUntilDismissed, docrt, bot, terrain_glyph, glyphAt, canSeeMonster, canSpotMonster, canSenseMonster, canSpotHeroSelf, unblindTelepathyRange, monsterHasWarningProjection, see_nearby_objects, show_glyph_cell, swallowed, randomDisplayMonsterName, randomDisplayMonsterSubject, see_monsters, see_objects, see_traps, transientObjectGlyph, map_invisible, unmap_invisible, map_object, unmapObject, } from './display.js';
 import { cansee, couldsee, vision_note_blocker_change, vision_recalc, vision_reset } from './vision.js';
 import { transformMagicLampToOilLamp } from './light.js';
@@ -2401,21 +2402,8 @@ async function doname() {
     // docallcmd() consumes a canned category before creating its menu.
     // Unread callback prose then belongs to the later naming prompt.
     const queuedChoice = takeCommandKey();
-    const key = queuedChoice ?? await showChoiceWindow({
-        title: 'What do you want to name?',
-        entries: [
-            { key: 'm', text: 'a monster' },
-            ...(game.inventory.length ? [
-                { key: 'i', text: 'a particular object in inventory' },
-                { key: 'o', text: 'the type of an object in inventory' },
-            ] : []),
-            { key: 'f', text: 'the type of an object upon the floor' },
-            { key: 'd', text: 'the type of an object on discoveries list' },
-            { key: 'a', text: 'record an annotation for the current level' },
-        ],
-        validKeys: [27, 32, 10, 13, ...'miofda'.split('').map(char => char.charCodeAt(0))],
-    });
-    const choice = String.fromCharCode(key).toLowerCase();
+    const choice = queuedChoice === undefined ? await chooseNamingCategory()
+        : String.fromCharCode(queuedChoice);
     if (queuedChoice === undefined)
         await restoreCommandMap();
     // C refs: do_name.c:docallcmd()/do_oname() and
