@@ -88,6 +88,7 @@ import { loseHeroHp } from './hero_damage.js';
 import { isWeldedPrimary, losePrimaryWeapon, setSecondaryWeapon } from './weapon_slots.js';
 import { dropInventoryObjectAtHero } from './hero_drop.js';
 import { heroCanUseTwoWeapons, stopTwoWeaponCombat } from './two_weapon.js';
+import { isBeingTakenOff } from './takeoff_state.js';
 import { heroIsPunished } from './ball.js';
 import { unpunishHero } from './punishment.js';
 import { clearHeroTrap, freeHeroFromBuriedBall } from './hero_traps.js';
@@ -433,12 +434,32 @@ async function finishHumanFormChange(
     return false;
 }
 
-async function dropCarriedObject(object: GameObject | null | undefined) {
+async function dropCarriedObject(
+    object: GameObject | null | undefined, options: { cancelledDon?: boolean } = {},
+) {
     if (!object) return;
-    await removeWornHeroItem(object, game);
+    await removeWornHeroItem(object, game, options);
     if (game.program_state?.gameover) return;
     if (!game.inventory.includes(object)) return;
     await dropInventoryObjectAtHero(object);
+}
+
+function cancelPolymorphDressing(object: GameObject) {
+    const delayed = game._delayedAction;
+    const cancelledDon = delayed?.object === object && delayed.kind === 'wear';
+    if (delayed?.object === object) {
+        game._delayedAction = null;
+        game.multi = 0;
+    }
+    if (isBeingTakenOff(object)) {
+        const progress = game.context.takeoff;
+        if (progress) {
+            progress.current = null;
+            progress.delay = 0;
+        }
+        game.multi = 0;
+    }
+    return { cancelledDon };
 }
 
 export interface PolymonOptions {
@@ -774,10 +795,11 @@ async function changeArmorForHeroForm(mnum: number) {
 
     if (breaksArmor) {
         if ((object = worn('uarm'))) {
+            const dressing = cancelPolymorphDressing(object);
             if (object.lamplit) endObjectBurn(object, game);
             await plineWithContinuation('You break out of your armor!');
             await exerciseAttribute(A_STR, false);
-            await removeHeroArmor(object, game, { deferArmorClass: true, voluntary: false });
+            await removeHeroArmor(object, game, { ...dressing, deferArmorClass: true, voluntary: false });
             if (game.program_state.gameover) return;
             await deleteObject(object);
         }
@@ -802,8 +824,9 @@ async function changeArmorForHeroForm(mnum: number) {
         if ((object = worn('uarm'))
             && !(MONSTER_NAME[mnum] === 'hobbit'
                 && object.otyp === ELVEN_MITHRIL_COAT)) {
+            const dressing = cancelPolymorphDressing(object);
             await plineWithContinuation('Your armor falls around you!');
-            await removeHeroArmor(object, game, { deferArmorClass: true, voluntary: false });
+            await removeHeroArmor(object, game, { ...dressing, deferArmorClass: true, voluntary: false });
             if (game.program_state.gameover) return;
             await dropCarriedObject(object);
             if (game.program_state.gameover) return;
@@ -828,26 +851,29 @@ async function changeArmorForHeroForm(mnum: number) {
 
     const hornCount = monsterHornCount(mnum);
     if (hornCount && (object = worn('uarmh'))) {
-        if (isFlimsyObject(object, game) && game._delayedAction?.object !== object) {
+        if (isFlimsyObject(object, game) && game._delayedAction?.object !== object
+            && !isBeingTakenOff(object)) {
             await plineWithContinuation(
                 `Your ${hornCount === 1 ? 'horn pierces' : 'horns pierce'} through ${ownedObjectName(object, game, { capitalized: false })}.`,
             );
         } else {
+            const dressing = cancelPolymorphDressing(object);
             await plineWithContinuation(
                 `Your ${simpleArmorName(object, 'uarmh', game)} falls to the ${surfaceName(game.u.ux, game.u.uy)}!`,
             );
-            await dropCarriedObject(object);
+            await dropCarriedObject(object, dressing);
             if (game.program_state.gameover) return;
         }
     }
     if (noHands || verySmall) {
         if ((object = worn('uarmg'))) {
+            const dressing = cancelPolymorphDressing(object);
             await plineWithContinuation(
                 `You drop your gloves${worn('uwep') ? ' and weapon' : ''}!`,
             );
             await dropPolymorphWeapons(false);
             if (game.program_state.gameover) return;
-            await dropCarriedObject(object);
+            await dropCarriedObject(object, dressing);
             if (game.program_state.gameover) return;
         }
         if ((object = worn('uarms'))) {
@@ -856,21 +882,23 @@ async function changeArmorForHeroForm(mnum: number) {
             if (game.program_state.gameover) return;
         }
         if ((object = worn('uarmh'))) {
+            const dressing = cancelPolymorphDressing(object);
             await plineWithContinuation(
                 `Your ${simpleArmorName(object, 'uarmh', game)} falls to the ${surfaceName(game.u.ux, game.u.uy)}!`,
             );
-            await dropCarriedObject(object);
+            await dropCarriedObject(object, dressing);
             if (game.program_state.gameover) return;
         }
     }
     if ((noHands || verySmall || monsterIsSlithy(mnum) || monsterIsCentaur(mnum))
         && (object = worn('uarmf'))) {
+        const dressing = cancelPolymorphDressing(object);
         await plineWithContinuation(whirly
             ? 'Your boots fall away!'
             : verySmall
                 ? 'Your boots slide off your feet!'
                 : 'Your boots are pushed off your feet!');
-        await dropCarriedObject(object);
+        await dropCarriedObject(object, dressing);
         if (game.program_state.gameover) return;
     }
     if (heroHasNoHead(game) && (object = worn('ublindf'))) {

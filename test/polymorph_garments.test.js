@@ -39,4 +39,25 @@ void test('horns knock off an unfinished cloth hat rather than piercing it', asy
     assert.equal(hat.where, 'floor');
     assert.equal(game._delayedAction, null);
 });
+void test('polymorph cancels dressing before the dropped-hat message waits for input', async () => {
+    freshObjectRoom({ role: 'wizard', flags: { debug: true } });
+    const robe = await addInventoryObject(ROBE);
+    wearHeroArmor(robe);
+    const hat = await addInventoryObject(CORNUTHAUM);
+    pushKeys(hat.invlet);
+    await rhack('W'.charCodeAt(0));
+    const input = resetInputState();
+    input.feed('polyself\nminotaur\n');
+    const changing = rhack('#'.charCodeAt(0));
+    try {
+        await input.waitUntilBlocked();
+        assert.match(game._pending_message, /You turn into a (?:male |female )?minotaur!/);
+        assert.equal(game.multi, 0);
+        assert.equal(game._delayedAction, null);
+    }
+    finally {
+        input.feed('                        ');
+        await changing;
+    }
+});
 //# sourceMappingURL=polymorph_garments.test.js.map

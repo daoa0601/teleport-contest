@@ -27,7 +27,7 @@ export async function removeHeroEquipment(object, state = game, { deferArmorClas
 }
 // C steal.c:remove_worn_item(). Landing can otherwise disrobe or burn the
 // very item whose removal is still in progress.
-export async function removeWornHeroItem(object, state = game) {
+export async function removeWornHeroItem(object, state = game, options = {}) {
     const wasInUse = object.in_use;
     object.in_use = true;
     try {
@@ -36,6 +36,7 @@ export async function removeWornHeroItem(object, state = game) {
             // Native *_off() clears worn sources; the command loop owns find_ac().
             await removeHeroArmor(object, state, {
                 deferArmorClass: true,
+                ...options,
             });
         }
         await removeHeroAccessory(object, state);
