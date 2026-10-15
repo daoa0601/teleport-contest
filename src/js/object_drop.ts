@@ -197,7 +197,7 @@ export async function dropObjectAtHero(
         }
     } else {
         const floor = await applyFloorEffects(object, hero.ux, hero.uy, {
-            state, publish,
+            state, publish, verb: 'drop',
         });
         // Floor effects (lava destruction, water damage) can be fatal;
         // a dead hero gets no placement, selling, or encumbrance work.

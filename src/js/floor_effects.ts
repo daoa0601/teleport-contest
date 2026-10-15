@@ -3,7 +3,7 @@
 
 import {
     ALTAR, CORR, ROOM,
-    TT_PIT, is_hole, is_pit,
+    TT_PIT, WT_SPLASH_THRESHOLD, is_hole, is_pit,
 } from './const.js';
 import { landObjectOnAltar } from './altar_object.js';
 import { dropBoulderIntoLiquid } from './boulder_pool.js';
@@ -13,7 +13,7 @@ import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Trap } from './map_types.js';
 import type { MessagePublisher } from './display.js';
-import { plineWithContinuation } from './display.js';
+import { map_background, newsym, plineWithContinuation } from './display.js';
 import { meldLandingGlob } from './glob.js';
 import { breakObjectAtLocation } from './object_breakage.js';
 import { deleteObject } from './object_delete.js';
@@ -27,6 +27,7 @@ import { rnl, rn2 } from './rng.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
 import { destroyLavaFloorObjects, waterDamageObject } from './trap.js';
 import { cansee } from './vision.js';
+import { objectWeight } from './weight.js';
 import { isLavaAt, isPoolAt } from './terrain_properties.js';
 
 export interface FloorEffectOptions {
@@ -118,8 +119,8 @@ function fallenObjectSubject(object: GameObject): string {
 async function handleHeroShaftEdge(
     object: GameObject, trap: Trap | undefined, x: number, y: number,
     state: GameState, publish: MessagePublisher, random: typeof rn2,
-): Promise<boolean> {
-    if (!trap || state.u.ux !== x || state.u.uy !== y || !trap.tseen) return false;
+): Promise<FloorEffectResult | null> {
+    if (!trap || state.u.ux !== x || state.u.uy !== y || !trap.tseen) return null;
     if (is_pit(trap.ttyp)
         && !(state.u?.utrap && state.u.utraptype === TT_PIT)) {
         const noun = object.oextra?.oname || object.oname
@@ -132,12 +133,13 @@ async function handleHeroShaftEdge(
             await publish(`${fallenObjectSubject(object)} ${verb} into ${
                 trap.madeby_u ? 'your' : 'the'} pit.`);
         }
-        return false;
+        return { finished: false, object };
     }
-    if (!is_hole(trap.ttyp)) return false;
-    return shipObject(object, x, y, {
+    if (!is_hole(trap.ttyp)) return null;
+    const shipped = await shipObject(object, x, y, {
         state: requireInitializedGame(state), publish, random,
     });
+    return shipped ? { finished: true, object: null } : { finished: false, object };
 }
 
 export async function applyFloorEffects(
@@ -181,7 +183,18 @@ export async function applyFloorEffects(
         });
         if (!landed.includes(object))
             return { finished: true, object: null };
+        return { finished: false, object };
     } else if (isPoolAt(x, y, state)) {
+        const airborne = state.u.levitating || state.u.flying;
+        if ((heroIsBlind(state) || airborne) && !heroIsDeaf(state)
+            && state.u.ux === x && state.u.uy === y) {
+            if (!state.u.uinwater) {
+                if (objectWeight(object) > WT_SPLASH_THRESHOLD) await publish('Splash!');
+                else if (airborne) await publish('Plop!');
+            }
+            map_background(x, y, false);
+            newsym(x, y);
+        }
         const messages: string[] = [];
         const result = await waterDamageObject(object, messages, state, {
             random,
@@ -192,11 +205,13 @@ export async function applyFloorEffects(
             await deleteObject(object, state);
             return { finished: true, object: null };
         }
+        return { finished: false, object };
     }
 
-    if (await handleHeroShaftEdge(
+    const shaftLanding = await handleHeroShaftEdge(
         object, trap, x, y, state, publish, random,
-    )) return { finished: true, object: null };
+    );
+    if (shaftLanding) return shaftLanding;
 
     if (object.globby) {
         const merged = await meldLandingGlob(object, x, y, {

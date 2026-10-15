@@ -72,7 +72,7 @@ import {
     tty_end_menu, tty_select_menu, tty_start_menu,
 } from './tty_menu.js';
 import { LOOK_ONCE, LOOK_QUICK, LOOK_VERBOSE } from './const.js';
-import { waterbodyName } from './terrain_name.js';
+import { surfaceName, waterbodyName } from './terrain_name.js';
 import { def_warnsyms } from './const.js';
 import { iceDescriptionAt } from './dungeon_feature.js';
 import { CmapSymbol, GlyphOffset, cmapToGlyph } from './glyph_numbers.js';
@@ -321,7 +321,8 @@ import {
 import {
     MONSTER_COLOR, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME,
     MONSTER_SIZE, MONSTER_SYMBOL, MONSTER_SOUND, MONSTER_ALIGNMENT, MONSTER_ATTACKS,
-    requireMonsterData, monsterTypeName, monsterClassSymbol, monsterIsHumanoid,
+    requireMonsterData, monsterTypeName, monsterClassSymbol, monsterIsHumanoid, monsterDigests,
+    monsterSpeciesHidesOnCeiling,
 } from './monster_data.js';
 import { createParticularMonster } from './read_creation.js';
 import {
@@ -330,15 +331,16 @@ import {
 import {
     removeHeroAccessory, wearHeroAccessory,
 } from './accessory.js';
-import { heroHasNoHead, heroPassesWalls, heroSpecies } from './hero_species.js';
+import { heroFormSticks, heroHasNoHead, heroPassesWalls, heroSpecies } from './hero_species.js';
 import { monsterLocomotion } from './monster_locomotion.js';
+import { autopickupAtHero } from './pickup.js';
 import { disturbBuriedZombies } from './object_impact.js';
 import { checkSlipperyIce } from './fumbling.js';
 import { MONSTER_BODY_META } from './monster_data.js';
 import { accessibleEquipment, equipmentClassification, wearingFullEquipment } from './equipment_selection.js';
 import { armorWearDecision } from './armor_wear.js';
 import { heroCanOoze } from './monster_perception.js';
-import { isPoolAt } from './terrain_properties.js';
+import { isLavaAt, isPoolAt } from './terrain_properties.js';
 import { drawbridgeUnderlyingType } from './drawbridge_terrain.js';
 import { dosave } from './save.js';
 import { captureRunmodeDelay, startRun, stopRun } from './runmode.js';
@@ -368,7 +370,7 @@ import { doUntrap } from './untrap.js';
 import { dosit } from './sit.js';
 import { continueEngraving, doengrave } from './engrave_command.js';
 
-import { heroCanMoveFromTrap, triggerHeroTrapAt, triggerLevelTeleportTrap } from './hero_traps.js';
+import { climbOutOfPit, heroCanMoveFromTrap, triggerHeroTrapAt, triggerLevelTeleportTrap } from './hero_traps.js';
 import {
     applyDippedCoinFate, applyFountainDemonActor,
     applyFountainGemDiscovery, applyFountainNymphActor,
@@ -382,7 +384,7 @@ import { objectWearMessage } from './object_wear_message.js';
 import { isWetTowel, willWeld } from './weapon_type.js';
 import { announceWeaponWeld, explainTwoWeaponEnd, refuseWeldedPrimary } from './weapon_feedback.js';
 import { dropCursedSecondaryWeapon, toggleTwoWeaponCombat } from './two_weapon.js';
-import { dist2, distmin, dungeonDepth } from './hacklib.js';
+import { dist2, distmin, dungeonDepth, ledgerNo } from './hacklib.js';
 import { triggerBoobyTrap } from './booby_trap.js';
 import { addShopDamage, payForShopDamage } from './shop_damage.js';
 import { convertSecretDoor } from './detect.js';
@@ -1816,6 +1818,26 @@ export async function drinkFountain(loc: MapLocation) {
     return false;
 }
 
+// C do.c:u_stuck_cannot_go(). A sticky hero releases its captive, while
+// being held or swallowed prevents even an attempt to use the floor below.
+async function monsterPreventsStairTravel(up: boolean): Promise<boolean> {
+    const holder = game.u.ustuck;
+    if (!holder) return false;
+    if (game.u.uswallow || !heroFormSticks(game)) {
+        const condition = !game.u.uswallow ? 'being held'
+            : monsterDigests(holder) ? 'swallowed' : 'engulfed';
+        await plineWithContinuation(`You are ${condition}, and cannot go ${up ? 'up' : 'down'}.`);
+        game.context.move = 1;
+        return true;
+    }
+    game.u.ustuck = null;
+    game.u.uswallow = 0;
+    game.u.uswldtim = 0;
+    game.context.botl = true;
+    await plineWithContinuation(`You release ${monsterName(holder)}.`);
+    return false;
+}
+
 export async function travelStairs(up: boolean) {
     const level = requireGameLevel();
     requireInitializedHero(game.u);
@@ -1829,7 +1851,12 @@ export async function travelStairs(up: boolean) {
         game.context.move = 1;
         return false;
     }
-    if (await stuckSteed(true, game)) {
+    if (up && game.u.utrap && game.u.utraptype === TT_PIT) {
+        await climbOutOfPit();
+        game.context.move = 1;
+        return true;
+    }
+    if (!up && await stuckSteed(true, game)) {
         game.context.move = 0;
         return false;
     }
@@ -1839,11 +1866,40 @@ export async function travelStairs(up: boolean) {
             game.context.move = descent.spentTurn ? 1 : 0;
             return descent.spentTurn;
         }
+        if (heroIsPolymorphed(game) && game.u.uundetected
+            && monsterSpeciesHidesOnCeiling(game.u.umonnum)) {
+            game.u.uundetected = 0;
+            if (game.u.flying) await plineWithContinuation('You fly out of hiding.');
+            else {
+                await plineWithContinuation(`You drop to the ${surfaceName(game.u.ux, game.u.uy)}.`);
+                if (isPoolAt(game.u.ux, game.u.uy) || isLavaAt(game.u.ux, game.u.uy)) {
+                    await applyHeroLiquidEffects();
+                } else {
+                    await autopickupAtHero();
+                    if (!game.program_state.gameover)
+                        await triggerHeroTrapAt(game.u.ux, game.u.uy, {
+                            finishTeleport: finishTeleportArrival, gotoLevel, tookPlunge: true,
+                        });
+                }
+            }
+            game.context.move = 1;
+            return true;
+        }
+        if (await monsterPreventsStairTravel(false)) return false;
     }
     let stairs = game.stairs;
     while (stairs && (stairs.sx !== game.u.ux || stairs.sy !== game.u.uy
         || !!stairs.up !== up)) stairs = stairs.next;
     if (!stairs) {
+        const pit = !up && level.traps.find(trap =>
+            trap.tx === game.u.ux && trap.ty === game.u.uy
+            && (trap.ttyp === PIT || trap.ttyp === SPIKED_PIT) && trap.tseen
+            && !(game.u.utrap && game.u.utraptype === TT_PIT));
+        if (pit) {
+            await triggerHeroTrapAt(game.u.ux, game.u.uy, { gotoLevel, tookPlunge: true });
+            game.context.move = 1;
+            return true;
+        }
         const hole = !up && level.traps.find(trap =>
             trap.tx === game.u.ux && trap.ty === game.u.uy
             && (trap.ttyp === HOLE || trap.ttyp === TRAPDOOR) && trap.tseen);
@@ -1853,7 +1909,48 @@ export async function travelStairs(up: boolean) {
             game.context.move = 1;
             return true;
         }
-        await pline(`You can't go ${up ? 'up' : 'down'} here.`);
+        const pick = game.uwep || game.u.uwep;
+        if (!up && game.flags.autodig && !game.context.nopick && pick && isPick(pick)) {
+            const result = await applyPickAxeDirection(pick, {
+                state: game,
+                attackMonster: (target: Monster) => attackHostileMonster(target, target.mx, target.my),
+                payShopkeeper: dopay,
+            });
+            game.context.move = result.spentTime ? 1 : 0;
+            return result.spentTime;
+        }
+        const vibratingSquare = !up && level.traps.some(trap =>
+            trap.tx === game.u.ux && trap.ty === game.u.uy && trap.ttyp === VIBRATING_SQUARE);
+        await plineWithContinuation(`You can't go ${up ? 'up' : 'down'} here${vibratingSquare ? ' yet' : ''}.`);
+        game.context.move = 0;
+        return false;
+    }
+    if (!up && game.valley_level?.dnum === game.u.uz.dnum
+        && game.valley_level.dlevel === game.u.uz.dlevel
+        && !game.u.uevent?.gehennom_entered) {
+        await plineWithContinuation('You are standing at the gate to Gehennom.');
+        await plineWithContinuation('Unspeakable cruelty and harm lurk down there.');
+        if (await promptYesNo('Are you sure you want to enter?') !== 'y') {
+            game.context.move = 0;
+            return false;
+        }
+        await plineWithContinuation('So be it.');
+        const events = game.u.uevent ?? (game.u.uevent = {});
+        events.gehennom_entered = 1;
+    }
+    if (up && await stuckSteed(true, game)) {
+        game.context.move = 0;
+        return false;
+    }
+    if (up && await monsterPreventsStairTravel(true)) return false;
+    if (up && nearCapacity(game) > SLT_ENCUMBER) {
+        await plineWithContinuation(`Your load is too heavy to climb the ${
+            level.requireAt(game.u.ux, game.u.uy).typ === STAIRS ? 'stairs' : 'ladder'}.`);
+        game.context.move = 1;
+        return false;
+    }
+    if (up && ledgerNo(game.u.uz) === 1
+        && await promptYesNo('Beware, there will be no return!  Still climb?') !== 'y') {
         game.context.move = 0;
         return false;
     }

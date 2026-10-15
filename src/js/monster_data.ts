@@ -109,7 +109,10 @@ const M2_HUMAN = 0x00000008;
 const M2_DEMON = 0x00000100;
 const M2_ALWAYS_HOSTILE = 0x00100000;
 const M2_JEWELS = 0x20000000;
+const M1_FLY = 0x00000001;
 const M1_AMORPHOUS = 0x00000004;
+const M1_CLING = 0x00000010;
+const M1_HIDE = 0x00000100;
 const M1_NOHANDS = 0x00002000;
 const M1_NOLIMBS = 0x00004000;
 const M1_NOHEAD = 0x00008000;
@@ -142,6 +145,7 @@ const PM_WIZARD = MONSTER_NAME.indexOf('wizard');
 const PM_WINGED_GARGOYLE = MONSTER_NAME.indexOf('winged gargoyle');
 const PM_MARILITH = MONSTER_NAME.indexOf('marilith');
 const S_IMP = 9;
+const S_MIMIC = 13;
 const S_QUADRUPED = 17;
 const S_UNICORN = 21;
 const S_VORTEX = 22;
@@ -192,6 +196,14 @@ const SADDLE_CLASSES = new Set([
 
 export function monsterClassSymbol(mnum: number) {
     return MONSTER_CLASS_SYMBOLS[MONSTER_SYMBOL[mnum] ?? 0] ?? '?';
+}
+
+// C mondata.h:ceiling_hider() uses species traits, even for a flying hero.
+export function monsterSpeciesHidesOnCeiling(mnum: number): boolean {
+    const flags = MONSTER_FLAGS1[mnum] ?? 0;
+    return !!(flags & M1_HIDE)
+        && (!!(flags & M1_FLY)
+            || !!(flags & M1_CLING) && MONSTER_SYMBOL[mnum] !== S_MIMIC);
 }
 
 export function monsterIsUndead(mnum: number) {
