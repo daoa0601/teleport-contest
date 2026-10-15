@@ -372,7 +372,8 @@ export async function waterDamageObject(object, messages = [], state = game, { f
         }
         return 'damaged';
     }
-    if (!force && (state.u.uluck ?? 0) + 5 > random(20))
+    const luck = (state.u.uluck ?? 0) + (state.u.moreluck ?? 0);
+    if (!force && luck + 5 > random(20))
         return 'nothing';
     if (object.oclass === 9) {
         if (object.otyp === SCR_BLANK_PAPER)

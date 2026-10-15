@@ -486,7 +486,8 @@ export async function waterDamageObject(
         }
         return 'damaged';
     }
-    if (!force && (state.u.uluck ?? 0) + 5 > random(20)) return 'nothing';
+    const luck = (state.u.uluck ?? 0) + (state.u.moreluck ?? 0);
+    if (!force && luck + 5 > random(20)) return 'nothing';
     if (object.oclass === 9) {
         if (object.otyp === SCR_BLANK_PAPER) return 'nothing';
         if (carried) await emit(`Your ${name} ${plural ? 'fade' : 'fades'}.`);
