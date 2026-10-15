@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { LEVEL_TELEP, SCORR, TELEP_TRAP, TRAPDOOR, VAULT } from '../js/const.js';
+import { DUST, LEVEL_TELEP, SCORR, TELEP_TRAP, TRAPDOOR, VAULT } from '../js/const.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { isRoom } from '../js/map_types.js';
 import { mklev } from '../js/mklev.js';
@@ -68,5 +68,21 @@ void test('vaults on no-teleport levels do not receive teleport niches', async (
         assert.ok(!level.traps.some(trap => trap.ttyp === TELEP_TRAP), `a no-teleport vault must not create a teleport niche (seed ${seed})`);
     }
     assert.ok(vaults > 0, 'the generated levels must exercise vault placement');
+});
+void test('a rejected niche trap leaves no misleading treasure warning', async (t) => {
+    await ordinaryRooms(t, 18);
+    requirePlayingGame(game);
+    game.knox_level = { ...game.u.uz, flags: { town: false }, alignment: null };
+    for (let seed = 1; seed <= 24; seed++) {
+        initRng(seed);
+        await mklev();
+        const level = requireGameLevel();
+        for (const warning of level.engravings ?? []) {
+            if (warning.engr_type !== DUST || warning.pristine !== 'ad aerarium')
+                continue;
+            assert.ok(level.traps.some(trap => (trap.ttyp === TELEP_TRAP || trap.ttyp === LEVEL_TELEP)
+                && trap.tx === warning.x && Math.abs(trap.ty - warning.y) === 2), `a treasure warning must lead to an actual teleport trap (seed ${seed})`);
+        }
+    }
 });
 //# sourceMappingURL=mklev_niches.test.js.map

@@ -10162,7 +10162,7 @@ async function makeniche(trap_type: number): Promise<void> {
                     ? 'Vlad was here'
                     : (actualTrap === TELEP_TRAP || actualTrap === LEVEL_TELEP)
                         ? 'ad aerarium' : null;
-                if (trapEngraving) {
+                if (trap && trapEngraving) {
                     // Creation preserves the original punctuation before wear.
                     makeEngravingAt(xx, yy - dy, trapEngraving, null, 0, DUST);
                     wipeEngravingAt(xx, yy - dy, 5);
