@@ -4,7 +4,7 @@ import { formatFeltMessage } from './hero_speech.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { heroHasWaterWalking } from './armor.js';
 import { beginBallAndChainMove, finishBallAndChainMove, heroIsPunished, } from './ball.js';
-import { D_CLOSED, D_ISOPEN, D_LOCKED, DOOR, FIRE_TRAP, IRONBARS, IS_LAVA, IS_OBSTRUCTED, IS_POOL, IS_WATERWALL, Is_waterlevel, MAGIC_PORTAL, MOAT, TREE, TRAP_EXPLANATIONS, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_WEB, Upolyd, VIBRATING_SQUARE, W_NONPASSWALL, is_hole, is_pit, isok, } from './const.js';
+import { D_CLOSED, D_ISOPEN, D_LOCKED, DOOR, FIRE_TRAP, IRONBARS, IS_OBSTRUCTED, Is_waterlevel, MAGIC_PORTAL, TREE, TRAP_EXPLANATIONS, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_WEB, Upolyd, VIBRATING_SQUARE, W_NONPASSWALL, is_hole, is_pit, isok, } from './const.js';
 import { canSpotMonster, flush_screen, glyphAt, map_invisible, newsym, plineWithContinuation, } from './display.js';
 import { finishHeroDeath } from './end.js';
 import { game, requirePlayingGame } from './gstate.js';
@@ -28,6 +28,7 @@ import { inventoryWeight } from './weight.js';
 import { vision_recalc } from './vision.js';
 import { switchHeroTerrain } from './terrain_movement.js';
 import { walkPathCells } from './path_walk.js';
+import { isLavaAt, isMoatAt, isPoolAt, isWaterwallAt } from './terrain_properties.js';
 const M1_WALLWALK = 0x00000008;
 const HUMAN_WEIGHT = 1450;
 function heroForm() {
@@ -248,23 +249,21 @@ async function applyForcedLandingEffects(options) {
 }
 async function settleLiquid(options, remaining) {
     requirePlayingGame(game);
-    const location = game.level?.at?.(game.u.ux, game.u.uy);
-    if (!location)
-        return null;
-    if (IS_LAVA(location.typ)) {
+    const { ux: x, uy: y } = game.u;
+    if (isLavaAt(x, y)) {
         if (!options.jumping || remaining.value >= 2)
             await plineWithContinuation('You move over some lava.', { noRepeat: true });
         return null;
     }
-    if (!IS_POOL(location.typ) || game.u?.uinwater)
+    if (!isPoolAt(x, y) || game.u.uinwater)
         return null;
     const staysAboveWater = game.u?.levitating || game.u?.levitation
         || game.u.flying
         || heroHasWaterWalking(game) || options.jumping;
-    if (!IS_WATERWALL(location.typ) && staysAboveWater) {
+    if (!isWaterwallAt(x, y) && staysAboveWater) {
         if (!Is_waterlevel(game.u?.uz)
             && (!options.jumping || remaining.value >= 2)) {
-            await plineWithContinuation(`You move over ${location.typ === MOAT ? 'a moat' : 'a pool'}.`, { noRepeat: true });
+            await plineWithContinuation(`You move over ${isMoatAt(x, y) ? 'a moat' : 'a pool'}.`, { noRepeat: true });
         }
         return null;
     }

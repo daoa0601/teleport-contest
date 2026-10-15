@@ -10,8 +10,6 @@ import {
     D_CLOSED,
     D_LOCKED,
     IRONBARS,
-    IS_LAVA,
-    IS_POOL,
     IS_SOFT,
     IS_WATERWALL,
     Is_airlevel,
@@ -74,7 +72,7 @@ import { rn2, rnd } from './rng.js';
 import { publishHeardMessage } from './hero_speech.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
 import { settleThrownShopObject } from './shk.js';
-import { isLavaAt, isPoolAt } from './terrain_properties.js';
+import { isLavaAt, isPoolAt, isPoolOrLavaAt } from './terrain_properties.js';
 import { objectNoLongerHeld } from './object_release.js';
 import { cansee } from './vision.js';
 import { objectWeight } from './weight.js';
@@ -461,7 +459,7 @@ async function flyPhysicalObject({
         }
 
         path.push({ x, y });
-        if (kicked && (IS_POOL(location.typ) || IS_LAVA(location.typ))) {
+        if (kicked && isPoolOrLavaAt(x, y, state)) {
             stoppedBy = 'liquid';
             break;
         }

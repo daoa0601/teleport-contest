@@ -5,7 +5,7 @@ import { game, requirePlayingGame } from './gstate.js';
 import { heroCanChant } from './hero_speech.js';
 import { consumeInventoryItem } from './invent.js';
 import { chooseInventoryObject } from './inventory_prompt.js';
-import { gotoLevel as changeLevel } from './level_change.js';
+import { gotoLevel as changeLevel, scheduleLevelChange } from './level_change.js';
 import { recordLiteracy } from './literacy.js';
 import { tryCallObjectType } from './object_call.js';
 import { OBJECT_INITIAL_KNOWN, OBJECT_NAMES, SCR_BLANK_PAPER, SCR_FIRE, SCR_REMOVE_CURSE, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_NOVEL, } from './object_data.js';
@@ -19,7 +19,7 @@ import { exceedsActionCapacity } from './weight.js';
 const SCROLL_CLASS = 9, SPBOOK_CLASS = 10;
 const SCR_MAIL = OBJECT_NAMES.indexOf('mail');
 export async function doread(options = {}) {
-    const { gotoLevel = changeLevel, ...hooks } = options;
+    const { gotoLevel = (...args) => { scheduleLevelChange(args); }, ...hooks } = options;
     requirePlayingGame(game);
     if (exceedsActionCapacity(game)) {
         await pline("You can't do that while carrying so much stuff.");

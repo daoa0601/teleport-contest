@@ -130,7 +130,7 @@ existing tests needed their setup corrected:
   `commitPetPickup()` and checks that the dagger stays on the floor until
   then.
 
-## Parallel batches 1–23 (`dc24e88`)
+## Parallel batches 1–25 (`d01e49c`)
 
 Units ran in worktrees under `docs/orchestration.md` (Codex; each diff reviewed
 by Codex against the C source, then merged only if the full suite adds no
@@ -302,11 +302,21 @@ Batch 23: **sensory-helpers** (the redone `You_hear()`/`You_see()`/
 of **audit-quest** (`quest.c`, `questpgr.c`, Oracle consultations) and
 **audit-priest** (`priest.c`, `vault.c`), and **review-debt-9**.
 
+Batch 24: C-source audits of **audit-makemon** (`makemon.c`),
+**audit-mkmaze** (`mkmaze.c`, fumaroles), **audit-fountain**
+(`fountain.c`/`sit.c`), **audit-music** (`music.c`), **audit-weapon**
+(`weapon.c`/`wield.c`) and **audit-ball** (`ball.c`).
+
+Batch 25: C-source audits of **audit-engrave** (`engrave.c`),
+**audit-detect** (`detect.c` detection, searching and mapping) and
+**audit-teleport** (`teleport.c`), and **review-debt-10** (underlay-aware
+terrain predicates in place of raw `IS_POOL()`-style type tests).
+
 ## Verification
 
-`npm test` at `dc24e88`: **11,018/11,018**. Merges require a fully green suite;
+`npm test` at `d01e49c`: **11,301/11,301**. Merges require a fully green suite;
 batch runs also compare matched screens per session with the previous batch
-(no screen regression in batch 23, eval, public or pool).
+(no screen regression in batch 25, eval, public or pool).
 
 ## Most recent native diagnostics
 
@@ -316,9 +326,9 @@ batch runs also compare matched screens per session with the previous batch
 | Native eval sample | 300/300 | 50,586/50,586 | 3,616,669/3,616,669 | 0 |
 | Holdout-dev pool | 2,500/2,500 | | | 0 |
 
-Runs: `.cache/generalization/batch23-dc24e88-{eval,public}` and
-`triage-dc24e88` (pool) in the verify worktree (baseline `base-06d7e73`:
-143/300; batch 22: 300/300, pool 2,500/2,500). No verified random call was
+Runs: `.cache/generalization/batch25-d01e49c-{eval,public}` and
+`triage-d01e49c` (pool) in the verify worktree (baseline `base-06d7e73`:
+143/300; batch 24: 300/300, pool 2,500/2,500). No verified random call was
 lost; the ledgers now hold 350 eval and 363 public functions. The
 state oracle finds all 300 sessions matching C state throughout.
 
@@ -326,9 +336,9 @@ state oracle finds all 300 sessions matching C state throughout.
 
 Every eval-sample and pool session completes and public matches every random
 call, so new work comes from C-source audits of files the corpora barely
-run. In flight: `makemon.c` (audit-makemon), `fountain.c`/`sit.c`
-(audit-fountain), `mkmaze.c` (audit-mkmaze) and `weapon.c`/`wield.c`
-(audit-weapon). review-debt-3's turn-loop restructuring
+run. In flight: `dothrow.c`/`mthrowu.c` (audit-throw), `region.c`/
+`explode.c` (audit-region), `worn.c`/`do_name.c` (audit-worn) and
+`mcastu.c`/`wizard.c` (audit-mcastu). review-debt-3's turn-loop restructuring
 (delayed armor removal, `stealarm()`, prayer delay) is parked unmerged: it
 broke save/restore twice. `.cache/agents/queue.md` holds accepted review
 findings.

@@ -1,11 +1,10 @@
 // Fire damage to object chains.
 // C refs: trap.c fire_damage() and fire_damage_chain().
-import { IS_LAVA } from './const.js';
+import { applyFloorEffects } from './floor_effects.js';
 import { placeObject } from './floor_object.js';
 import { game } from './gstate.js';
 import { heroIsBlind } from './senses.js';
 import { igniteItems } from './light.js';
-import { destroyLavaFloorObjects } from './trap.js';
 import { delobj } from './object_delete.js';
 import { objectResistsDestruction } from './object_state.js';
 import { erodeObject } from './object_erosion.js';
@@ -62,20 +61,13 @@ async function dropContents(container, context) {
     for (const object of contents) {
         object.container = null;
         object.where = 'free';
-        const location = context.state.level?.at(context.x, context.y);
-        if (location && IS_LAVA(location.typ)) {
-            const landed = [object];
-            await destroyLavaFloorObjects(landed, {
-                state: context.state,
-                x: context.x,
-                y: context.y,
-                publish: context.publish,
-                random: context.random,
-                visible: context.state === game && cansee(context.x, context.y),
-            });
-            if (!landed.length)
-                continue;
-        }
+        const result = await applyFloorEffects(object, context.x, context.y, {
+            state: context.state,
+            publish: context.publish,
+            random: context.random,
+        });
+        if (result.finished)
+            continue;
         // Burned-container contents may include nested containers under
         // hero-caused fire: the awaited placement handles the charge path.
         await placeObject(object, context.x, context.y, context.state);

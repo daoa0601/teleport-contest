@@ -3,10 +3,11 @@
 
 import { monsterHasMapPosition } from './monster_location.js';
 import { heroIsUnaware } from './hero_sleep.js';
+import { isDrawbridgeWallAt, isLavaAt, isPoolAt, isPoolOrLavaAt } from './terrain_properties.js';
 import {
-    DBWALL, DB_FLOOR, DB_ICE, DB_LAVA, DB_MOAT, DB_UNDER,
-    DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, ICE, IS_LAVA, LAVAPOOL, MOAT, POOL,
-    ROOM, WATER,
+    DB_FLOOR, DB_ICE, DB_LAVA, DB_MOAT, DB_UNDER,
+    DRAWBRIDGE_DOWN, ICE, LAVAPOOL, MOAT,
+    ROOM,
 } from './const.js';
 import {
     canSeeMonster, canSpotMonster, newsym, plineWithContinuation,
@@ -147,24 +148,11 @@ function bridgeUnderlyingTerrain(bridge: DrawbridgeSquare): number {
     return ROOM;
 }
 
-function terrainAtEntity(entity: DrawbridgeEntity, bridge: DrawbridgeSquare, state: GameState): number {
-    const location = occupiedLocation(entity, state);
-    if (entity.x === bridge.x && entity.y === bridge.y
-        && location.typ === DRAWBRIDGE_UP) {
-        return bridgeUnderlyingTerrain(bridge);
-    }
-    return location.typ;
-}
-
 function occupiedLocation(entity: DrawbridgeEntity, state: GameState): MapLocation {
     const location = state.level?.at(entity.x, entity.y);
     if (!location)
         throw new Error(`Drawbridge occupant has no map cell at (${entity.x}, ${entity.y}).`);
     return location;
-}
-
-function terrainIsPool(terrain: number): boolean {
-    return terrain === POOL || terrain === MOAT || terrain === WATER;
 }
 
 function heroSurvivesPool(state: GameState): boolean {
@@ -182,14 +170,13 @@ function monsterSurvivesPool(entity: DrawbridgeEntity, state: GameState): boolea
         || entityIsFloating(entity, state);
 }
 
-function entitySurvivesAt(entity: DrawbridgeEntity, bridge: DrawbridgeSquare, state: GameState): boolean {
+function entitySurvivesAt(entity: DrawbridgeEntity, state: GameState): boolean {
     if (entityIsNoncorporeal(entity, state)) return true;
-    const terrain = terrainAtEntity(entity, bridge, state);
-    if (terrainIsPool(terrain)) {
+    if (isPoolAt(entity.x, entity.y, state)) {
         return entity.hero
             ? heroSurvivesPool(state) : monsterSurvivesPool(entity, state);
     }
-    if (terrain === LAVAPOOL || IS_LAVA(terrain)) {
+    if (isLavaAt(entity.x, entity.y, state)) {
         if (entity.hero)
             return !!(state.u?.levitating || state.u?.levitation
                 || state.u?.flying);
@@ -197,7 +184,7 @@ function entitySurvivesAt(entity: DrawbridgeEntity, bridge: DrawbridgeSquare, st
             || entity.actor.mnum === PM_FIRE_ELEMENTAL
             || entity.actor.mnum === PM_SALAMANDER;
     }
-    if (terrain === DBWALL) return entityPassesWalls(entity, state);
+    if (isDrawbridgeWallAt(entity.x, entity.y, state)) return entityPassesWalls(entity, state);
     return true;
 }
 
@@ -214,10 +201,8 @@ function entityMissed(entity: DrawbridgeEntity, state: GameState, chunks = false
     if (entityIsFlying(entity, state) && flyingCanReact)
         misses = 5;
     else if (entityIsFloating(entity, state)) misses = 3;
-    else if (chunks && terrainIsPool(
-        occupiedLocation(entity, state).typ,
-    )) misses = 2;
-    if (occupiedLocation(entity, state).typ === DBWALL) misses -= 3;
+    else if (chunks && isPoolAt(entity.x, entity.y, state)) misses = 2;
+    if (isDrawbridgeWallAt(entity.x, entity.y, state)) misses -= 3;
     return misses >= rnd(8);
 }
 
@@ -234,7 +219,7 @@ function entityJumps(entity: DrawbridgeEntity, state: GameState): boolean {
     let chances = 4;
     if (entityIsConfused(entity, state)) chances -= 2;
     if (entityIsStunned(entity, state)) chances -= 3;
-    if (occupiedLocation(entity, state).typ === DBWALL) chances -= 2;
+    if (isDrawbridgeWallAt(entity.x, entity.y, state)) chances -= 2;
     return chances >= rnd(10);
 }
 
@@ -257,8 +242,8 @@ function moveEntity(entity: DrawbridgeEntity, destination: Position, state: Game
     newsym(destination.x, destination.y);
 }
 
-async function moveSurvivingHeroAway(entity: DrawbridgeEntity, bridge: DrawbridgeSquare, state: GameState): Promise<void> {
-    if (entitySurvivesAt(entity, bridge, state)) return;
+async function moveSurvivingHeroAway(entity: DrawbridgeEntity, state: GameState): Promise<void> {
+    if (entitySurvivesAt(entity, state)) return;
     const destination = safeTeleportDestination(state);
     if (!destination) return;
     await plineWithContinuation('A strange force teleports you away...');
@@ -295,7 +280,7 @@ async function crushEntity(
     if (entity.hero) {
         state.u.uhp = 0;
         const died = await finishHeroDeath({ killer });
-        if (!died) await moveSurvivingHeroAway(entity, bridge, state);
+        if (!died) await moveSurvivingHeroAway(entity, state);
         return;
     }
     const monster = entity.actor;
@@ -320,7 +305,7 @@ async function settleEntityOnBridge(
     options: DrawbridgeOptions,
 ): Promise<void> {
     const under = bridgeUnderlyingTerrain(bridge);
-    if (!terrainIsPool(under) && under !== LAVAPOOL) return;
+    if (!isPoolOrLavaAt(entity.x, entity.y, state)) return;
     const location = bridge.location;
     const drawbridgeType = location.typ;
     location.typ = under;
@@ -355,9 +340,9 @@ async function handleEntity(
     if (!entity || handled.has(entity.actor)) return;
     handled.add(entity.actor);
     const location = occupiedLocation(entity, state);
-    let atPortcullis = location.typ === DBWALL;
+    let atPortcullis = isDrawbridgeWallAt(entity.x, entity.y, state);
     if (entityAutomaticallyMissed(entity, state)
-        && entitySurvivesAt(entity, bridge, state)) {
+        && entitySurvivesAt(entity, state)) {
         if (entityIsVisible(entity)) {
             await plineWithContinuation(
                 `The ${atPortcullis ? 'portcullis' : 'drawbridge'} passes through ${
@@ -376,7 +361,7 @@ async function handleEntity(
                 `The portcullis misses ${entityName(entity)}!`,
             );
         }
-        if (entitySurvivesAt(entity, bridge, state)) return;
+        if (entitySurvivesAt(entity, state)) return;
         if (atPortcullis) mustJump = true;
         else relocates = true;
     } else if (location.typ === DRAWBRIDGE_DOWN) {
@@ -432,15 +417,15 @@ async function handleEntity(
             moveEntity(entity, destination, state);
     }
 
-    atPortcullis = occupiedLocation(entity, state).typ === DBWALL;
+    atPortcullis = isDrawbridgeWallAt(entity.x, entity.y, state);
     if (atPortcullis) {
-        if (entitySurvivesAt(entity, bridge, state)) return;
+        if (entitySurvivesAt(entity, state)) return;
         await crushEntity(entity, bridge, state, options, 'closing drawbridge', {
             showKillMessage: false, noCorpse: false,
         });
         return;
     }
-    if (entitySurvivesAt(entity, bridge, state)) {
+    if (entitySurvivesAt(entity, state)) {
         if (entityIsVisible(entity)
             && !entityIsFlying(entity, state)
             && !entityIsFloating(entity, state)) {
@@ -472,8 +457,7 @@ export async function moveDrawbridgeOccupants(
 }
 
 async function settleEntityAfterCollapse(entity: DrawbridgeEntity, state: GameState): Promise<void> {
-    const terrain = occupiedLocation(entity, state).typ;
-    if (!terrainIsPool(terrain) && terrain !== LAVAPOOL) return;
+    if (!isPoolOrLavaAt(entity.x, entity.y, state)) return;
     if (entity.hero) {
         await heroLiquidEffects({
             state,

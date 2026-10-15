@@ -1,5 +1,7 @@
 import { formatFeltMessage, formatSeenMessage, publishHeardMessage } from './hero_speech.js';
 import { heroLocomotion } from './hero_locomotion.js';
+import { isLavaAt } from './terrain_properties.js';
+import { surfaceName } from './terrain_name.js';
 // Trap effects on the hero.
 // C refs: trap.c dotrap(), trapeffect_*(), launch_obj(), and teleport.c
 // tele_trap().
@@ -11,7 +13,7 @@ import { maybeDestroyWeb } from './web_trap.js';
 import { currentAttribute, exerciseAttribute, } from './attrib.js';
 import { armorSimpleName, objectIsHardHelmet } from './armor.js';
 import { heroArmName, heroFootName, heroHeadName, heroLegName, monsterFootName } from './body_parts.js';
-import { A_CON, A_DEX, A_STR, ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, DART_TRAP, FIRE_TRAP, DISMOUNT_POLY, In_endgame, In_quest, is_pit, HOLE, ICE, IS_LAVA, IS_POOL, M_SEEN_SLEEP, LANDMINE, LEVEL_TELEP, MAGIC_PORTAL, MAGIC_TRAP, PIT, POLY_TRAP, ROCKTRAP, ROLLING_BOULDER_TRAP, RUST_TRAP, SLP_GAS_TRAP, SPIKED_PIT, SQKY_BOARD, STATUE_TRAP, TRAPDOOR, TELEP_TRAP, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, VAULT, VIBRATING_SQUARE, WEB, isok, Is_stronghold, squeakyBoardNoteWithArticle, } from './const.js';
+import { A_CON, A_DEX, A_STR, ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, DART_TRAP, FIRE_TRAP, DISMOUNT_POLY, In_endgame, In_quest, is_pit, HOLE, M_SEEN_SLEEP, LANDMINE, LEVEL_TELEP, MAGIC_PORTAL, MAGIC_TRAP, PIT, POLY_TRAP, ROCKTRAP, ROLLING_BOULDER_TRAP, RUST_TRAP, SLP_GAS_TRAP, SPIKED_PIT, SQKY_BOARD, STATUE_TRAP, TRAPDOOR, TELEP_TRAP, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, VAULT, VIBRATING_SQUARE, WEB, isok, Is_stronghold, squeakyBoardNoteWithArticle, } from './const.js';
 import { flush_screen, lastDirtyMapCursor, map_trap, newsym, pline, plineWithContinuation, shieldeff, show_glyph_cell, } from './display.js';
 import { game, requirePlayingGame, requireGameLevel } from './gstate.js';
 import { isRoom } from './map_types.js';
@@ -479,18 +481,6 @@ async function struggleInWeb() {
         await repeatableTrapMessage('You are stuck to the web.');
     }
 }
-function surfaceAtHero() {
-    const terrain = requireGameLevel(game).at(game.u.ux, game.u.uy)?.typ;
-    if (terrain === undefined)
-        throw new Error('The hero has no terrain location.');
-    if (IS_LAVA(terrain))
-        return 'lava';
-    if (IS_POOL(terrain))
-        return 'water';
-    if (terrain === ICE)
-        return 'ice';
-    return 'floor';
-}
 // C dig.c:buried_ball_to_freedom(). The ball stays where it was buried,
 // which may be beside the hero rather than directly underneath them.
 export async function freeHeroFromBuriedBall(state = game) {
@@ -526,7 +516,7 @@ async function struggleInFloor(targetX, targetY, anchored) {
         if (game.flags?.verbose !== false) {
             const message = anchored
                 ? 'You are chained to the buried ball.'
-                : `You are stuck in the ${surfaceAtHero()}.`;
+                : `You are stuck in the ${surfaceName(hero.ux, hero.uy)}.`;
             await repeatableTrapMessage(message);
         }
         return false;
@@ -575,7 +565,7 @@ export async function heroCanMoveFromTrap(targetX, targetY) {
         case TT_LAVA:
             if (game.flags?.verbose !== false)
                 await repeatableTrapMessage('You are stuck in the lava.');
-            if (!IS_LAVA(game.level.at(targetX, targetY)?.typ ?? -1)) {
+            if (!isLavaAt(targetX, targetY)) {
                 hero.utrap--;
                 if ((hero.utrap & 0xff) === 0) {
                     clearHeroTrap();

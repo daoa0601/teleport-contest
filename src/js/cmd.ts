@@ -28,7 +28,7 @@ import { wizFuzzer, wizPanic } from './wizard_debug_commands.js';
 import { wizSmell } from './wizard_smell.js';
 import { wizBury } from './wizard_bury.js';
 import { wizMigrateMonsters } from './wizard_migration.js';
-import { prepareWizardTeleportAtWill, wizardTeleportCommand } from './wizard_teleport.js';
+import { prepareTeleportAtWill, wizardTeleportCommand } from './wizard_teleport.js';
 import { hurtleMonster } from './monster_hurtle.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
@@ -340,7 +340,7 @@ import { MONSTER_BODY_META } from './monster_data.js';
 import { accessibleEquipment, equipmentClassification, wearingFullEquipment } from './equipment_selection.js';
 import { armorWearDecision } from './armor_wear.js';
 import { heroCanOoze } from './monster_perception.js';
-import { isLavaAt, isPoolAt } from './terrain_properties.js';
+import { isLavaAt, isPoolAt, isPoolOrLavaAt } from './terrain_properties.js';
 import { drawbridgeUnderlyingType } from './drawbridge_terrain.js';
 import { dosave } from './save.js';
 import { captureRunmodeDelay, startRun, stopRun } from './runmode.js';
@@ -496,7 +496,7 @@ import {
     RLOC_MSG, A_CON, A_DEX, A_MAX, A_STR, A_WIS, BOLT_LIM, COLNO, ROWNO, STONE, SCORR, SDOOR, DOOR, CORR, ROOM,
     ICE, POOL, CLOUD, IRONBARS, FOUNTAIN, SINK, ALTAR, WATER, MOAT, LAVAWALL, TREE, D_NODOOR,
     D_BROKEN, D_ISOPEN, D_CLOSED, D_LOCKED, D_TRAPPED, SHOP_DOOR_COST, IS_WALL, IS_STWALL, IS_OBSTRUCTED, IS_FURNITURE,
-    IS_AIR, IS_POOL, IS_LAVA, IS_ROOM, ZAP_POS, SQKY_BOARD, BEAR_TRAP, LANDMINE, FIRE_TRAP, PIT,
+    IS_AIR, IS_ROOM, ZAP_POS, SQKY_BOARD, BEAR_TRAP, LANDMINE, FIRE_TRAP, PIT,
     SPIKED_PIT, TT_PIT, HOLE, TRAPDOOR, DART_TRAP, MAGIC_TRAP, TELEP_TRAP, LEVEL_TELEP, STATUE_TRAP, WEB,
     ANTI_MAGIC, G_GONE, ER_NOTHING, ER_DAMAGED, M_AP_MONSTER, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE,
     STRAT_WAITMASK, MM_NOEXCLAM, MM_NOMSG, SHOPBASE, ROOMOFFSET, F_LOOTED, In_endgame,
@@ -665,7 +665,7 @@ function travelStepAllowed(fromX: number, fromY: number, toX: number, toY: numbe
     if (trap) return false;
     const typ = g.level?.at(toX, toY)?.typ;
     if (typ === undefined) return false;
-    if (IS_POOL(typ) || IS_LAVA(typ)) return false;
+    if (isPoolOrLavaAt(toX, toY, g)) return false;
     return true;
 }
 
@@ -950,7 +950,7 @@ export async function lookaroundRun(state: RunState | null | undefined = game._r
                 }
             } else if (typ === CORR) {
                 corridorLike = true;
-            } else if (IS_POOL(typ) || IS_LAVA(typ)) {
+            } else if (isPoolOrLavaAt(x, y, g)) {
                 if (infront && runLiquidIsDangerous(x, y, g)) {
                     await announceRunLiquid(x, y, g);
                     return false;
@@ -1488,8 +1488,9 @@ async function runCommandHandler(binding: CommandBinding, {
         await wizGenesis();
         return;
     }
-    if (key === 20 && game.flags?.debug) { // Ctrl-T: wiztele()
-        await wizardTeleportCommand(wizTeleportPosition);
+    if (key === 20) { // Ctrl-T: dotelecmd()
+        if (game.flags.debug) await wizardTeleportCommand(teleportAtWillCommand);
+        else await teleportAtWillCommand(false);
         return;
     }
     if (key === 6 && game.flags?.debug) { // Ctrl-F: wiz_map()
@@ -1624,7 +1625,7 @@ async function doquaff() {
 }
 
 async function readCommand(): Promise<void> {
-    const result = await doread({ gotoLevel });
+    const result = await doread();
     if (result.cancelled) resetCommandVariables(true);
 }
 
@@ -4652,10 +4653,10 @@ export async function askTeleportDestination({ onPrompt = null }: {
 }
 
 // C refs: cmd.c dotelecmd(), teleport.c dotele()/teleds(), getpos.c getpos(),
-// and priest.c intemple().  A successful Wizard position teleport returns
+// and priest.c intemple(). A successful position teleport returns
 // ECMD_TIME.  Its first getpos use still owns the shared Lua tutorial, while
 // the destination room separately owns entry effects after relocation.
-async function wizTeleportPosition(ignoreRestrictions: boolean): Promise<void> {
+async function teleportAtWillCommand(ignoreRestrictions: boolean): Promise<void> {
     requirePlayingGame(game);
     let trap = game.level.traps.find(candidate =>
         candidate.tx === game.u.ux && candidate.ty === game.u.uy);
@@ -4681,7 +4682,7 @@ async function wizTeleportPosition(ignoreRestrictions: boolean): Promise<void> {
         const locomotion = heroLocomotion('jump');
         await plineWithContinuation(`You ${locomotion} onto the teleportation trap.`);
     }
-    if (!trap && !ignoreRestrictions && !await prepareWizardTeleportAtWill()) return;
+    if (!trap && !ignoreRestrictions && !await prepareTeleportAtWill()) return;
     if (!await bringLeashedFollowers()) {
         await plineWithContinuation('You shudder for a moment.');
         game.context.move = 0;

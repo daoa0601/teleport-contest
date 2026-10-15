@@ -5,7 +5,7 @@ import { game, requirePlayingGame } from './gstate.js';
 import { heroCanChant } from './hero_speech.js';
 import { consumeInventoryItem } from './invent.js';
 import { chooseInventoryObject } from './inventory_prompt.js';
-import { gotoLevel as changeLevel } from './level_change.js';
+import { gotoLevel as changeLevel, scheduleLevelChange } from './level_change.js';
 import { recordLiteracy } from './literacy.js';
 import { tryCallObjectType } from './object_call.js';
 import {
@@ -26,7 +26,10 @@ const SCROLL_CLASS = 9, SPBOOK_CLASS = 10;
 const SCR_MAIL = OBJECT_NAMES.indexOf('mail');
 
 export async function doread(options: Omit<ScrollEffectOptions, 'state'> = {}) {
-    const { gotoLevel = changeLevel, ...hooks } = options;
+    const {
+        gotoLevel = (...args: Parameters<typeof changeLevel>) => { scheduleLevelChange(args); },
+        ...hooks
+    } = options;
     requirePlayingGame(game);
     if (exceedsActionCapacity(game)) {
         await pline("You can't do that while carrying so much stuff.");

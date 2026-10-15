@@ -13,8 +13,8 @@ import { displayRayName } from './ray_name.js';
 import { castNativeRay } from './ray_attack.js';
 import { breathWeaponName } from './breath_ray.js';
 import { AD_RBRE, AD_SLEE } from './monster_attack_types.js';
-import { M_SEEN_REFL } from './const.js';
-import { seenResistanceForDamage } from './monster_perception.js';
+import { M_SEEN_MAGR, M_SEEN_REFL } from './const.js';
+import { monstersForgetHeroResistance, seenResistanceForDamage } from './monster_perception.js';
 import { watchDigging } from './digging_watch.js';
 import { heroDetectsMonsters, heroIsBlind, heroIsHallucinating } from './senses.js';
 import { objectDescription } from './object_description.js';
@@ -23,7 +23,8 @@ import { senseWithTelepathy } from './display.js';
 import { heroHasHalfSpellDamage } from './spell_damage.js';
 import { useMonsterMindBlast } from './monster_mind_blast.js';
 import { monsterIsMindFlayer } from './monster_data.js';
-import { endVoluntaryMultiTurn } from './command_state.js';
+import { endVoluntaryMultiTurn, heroHasInvoluntaryDelay } from './command_state.js';
+import { stopRun } from './runmode.js';
 import { d, rn2, rnd, rnl } from './rng.js';
 import { game, requireInitializedGame, requireLiveGame } from './gstate.js';
 import { performMonsterHeroAttack } from './allmain.js';
@@ -74,7 +75,7 @@ import { releaseMonsterLeash } from './monster_leash.js';
 import { ammunitionMatchesLauncher, isPick, isPolearm, returningWeaponRangeSquared, willWeld, } from './weapon_type.js';
 import { growMonster } from './monster_growth.js';
 import { monsterLocomotion } from './monster_locomotion.js';
-import { verbForSubject } from './object_grammar.js';
+import { makePlural, verbForSubject } from './object_grammar.js';
 import { drainObjectEnchantment } from './object_state.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { initializeMonsterMovement, mcalcmove, naturalMonsterSpeed } from './monster_speed.js';
@@ -85,7 +86,7 @@ import { checkMonsterHeroRange } from './monster_flee.js';
 import { chooseCovetousStrategy, pursueCovetousTarget } from './monster_covetous_target.js';
 import { retreatCovetousMonster } from './monster_covetous_retreat.js';
 import { monsterName as canonicalMonsterName, monsterPossessive, monsterSpellDeathReason, possessiveName, shopkeeperName, } from './monster_name.js';
-import { heroHasEyes, monsterHandName } from './body_parts.js';
+import { heroEyeCount, heroEyeName, heroHasEyes, heroHeadName, monsterHandName } from './body_parts.js';
 import { monsterIsHelpless, monsterResistsSleep } from './monster_sleep.js';
 import { applyMonsterAntiMagicTrap, finishMonsterAntiMagicTrap, monsterHasMagicResistance, } from './anti_magic_trap.js';
 import { beginMonsterBearTrap, finishMonsterBearTrap } from './bear_trap.js';
@@ -104,7 +105,7 @@ import { unplaceBallAndChain } from './ball.js';
 import { beginHeroEngulf, monsterCanEngulfHero, resolveHeroEngulf, } from './hero_engulf.js';
 import { splitObjectStack } from './object_stack.js';
 import { respondToImmediateMagic } from './monster_magic_response.js';
-import { canSeeMonster, canSpotMonster, map_invisible, newsym, randomDisplayMonsterSubject, plineWithContinuation, } from './display.js';
+import { canSeeMonster, canSpotMonster, map_invisible, newsym, plineWithContinuation, } from './display.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SIZE, MONSTER_SYMBOL, monsterIsCovetous, monsterIsNoncorporeal, monsterIsUndead, monsterIsVampireShifter, monsterIsWhirly, monsterIsShade, monsterIsUnsolid, monsterIsThickSkinned, monsterTypeName, } from './monster_data.js';
 import { AD_ACID, AD_BLND, AD_CLRC, AD_COLD, AD_CURS, AD_HEAL, AD_DRIN, AD_CORR, AD_DCAY, AD_DGST, AD_DREN, AD_DETH, AD_CONF, AD_DRLI, AD_ELEC, AD_ENCH, AD_FIRE, AD_LEGS, AD_PHYS, AD_POLY, AD_TLPT, AD_DISE, AD_PEST, AD_FAMN, AD_MAGM, AD_SPC2, AD_SAMU, AD_SEDU, AD_SGLD, AD_SSEX, AD_SITM, AD_SLIM, AD_SLOW, AD_SPEL, AD_STCK, AD_STON, AD_STUN, AD_WRAP, AD_PLYS, AD_WERE, AD_RUST, AT_BOOM, AT_BREA, AT_CLAW, AT_ENGL, AT_GAZE, AT_HUGS, AT_MAGC, AT_SPIT, AT_TUCH, AT_WEAP, AT_KICK, AT_BITE, AT_STNG, AT_BUTT, AT_TENT, AT_EXPL, } from './monster_attack_types.js';
 import { APPLE, BANANA, BULLWHIP, BOULDER, CARROT, CLOVE_OF_GARLIC, CORPSE, DWARVISH_MATTOCK, EGG, FAKE_AMULET_OF_YENDOR, FLINT, ENORMOUS_MEATBALL, GOLD_PIECE, MEATBALL, MEAT_RING, MEAT_STICK, ARROW, AXE, BATTLE_AXE, DART, IRON_SHOES, OBJECT_MATERIAL, OBJECT_BIMANUAL, OBJECT_LARGE_DAMAGE, OBJECT_NAMES, OBJECT_SMALL_DAMAGE, OBJECT_SUBTYPE, PICK_AXE, ROCK, POT_GAIN_LEVEL, POT_HEALING, POT_INVISIBILITY, SLIME_MOLD, TIN, TRIPE_RATION, WAN_SPEED_MONSTER, } from './object_data.js';
@@ -134,7 +135,7 @@ import { checkMonsterGearNextTurn, findMonsterArmorClass } from './monworn.js';
 import { inTown, roomsAt } from './room.js';
 import { addShopDamage } from './shop_damage.js';
 import { createPoisonGasCloud, GAS_OK, monsterGasTolerance, visibleRegionAt, updateMonsterRegions, } from './regions.js';
-import { heroIsDeaf, syncBlindness } from './senses.js';
+import { heroIsBlinded, heroIsDeaf } from './senses.js';
 import { makeBlinded } from './sight_change.js';
 import { applyMonsterStoningAttack, startHeroPetrificationFromMonster, touchPetrifies, } from './stoning.js';
 import { monsterHasFireResistance, monsterHasStoneResistance } from './monster_resistance.js';
@@ -177,7 +178,7 @@ import { resolveMonsterWeaponContact } from './monster_weapon_contact.js';
 import { monsterHatesBlessings } from './monster_data.js';
 import { canHeroRiseUp, levelAtDepth } from './dungeon.js';
 import { LEVEL_TELEP } from './const.js';
-import { teleportMonsterThroughPortal, teleportMonsterToRandomLevel } from './teleport.js';
+import { teleportMonsterThroughHole, teleportMonsterThroughPortal, teleportMonsterToRandomLevel } from './teleport.js';
 import { learnObjectType } from './object_knowledge.js';
 import { changeMonsterForm } from './monster_polymorph.js';
 import { rndmonstAdj } from './mklev.js';
@@ -200,7 +201,7 @@ import { stopHeroOccupation } from './occupation.js';
 import { rileShopkeeper, shopkeeperRepairsDamage } from './shop_damage.js';
 import { diggingTimeToHole } from './hero_digging.js';
 import { migrateMonsterOffLevel } from './monster_migration.js';
-import { RLOC_MSG, A_CHA, A_DEX, A_STR, A_CON, ALLOW_ALL, ALLOW_BARS, ALLOW_DIG, ALLOW_M, ALLOW_MDISP, ALLOW_ROCK, ALLOW_SANCT, MMOVE_NOTHING, MMOVE_MOVED, MMOVE_DIED, MMOVE_DONE, MMOVE_NOMOVES, MON_FLOOR, ALLOW_SSM, ALLOW_TM, ALLOW_TRAPS, ALLOW_U, ALLOW_WALL, ARROW_TRAP, BEAR_TRAP, BOLT_LIM, COLNO, CORR, DART_TRAP, DOOR, ROWNO, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, D_WARNED, FOUNTAIN, SDOOR, Is_firelevel, Is_waterlevel, IS_DOOR, IS_LAVA, IS_OBSTRUCTED, IS_POOL, IS_ROOM, IS_STWALL, IS_TREE, IS_WALL, IRONBARS, LAVAPOOL, LAVAWALL, BUSTDOOR, MAGIC_PORTAL, OPENDOOR, TELEP_TRAP, MIGR_RANDOM, ANTI_MAGIC, FIRE_TRAP, HOLE, LANDMINE, MAGIC_TRAP, M_ATTK_AGR_DIED, M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, M_ATTK_AGR_DONE, M_AP_FURNITURE, M_AP_MONSTER, M_AP_NOTHING, M_AP_OBJECT, M_AP_TYPE, POLY_TRAP, RUST_TRAP, PIT, PL_NSIZ, ROCKTRAP, ROLLING_BOULDER_TRAP, ROOM, SLP_GAS_TRAP, STONE, SPIKED_PIT, SQKY_BOARD, STATUE_TRAP, TRAPDOOR, NEED_AXE, NEED_HTH_WEAPON, NEED_PICK_AXE, NEED_PICK_OR_AXE, NEED_WEAPON, NO_WEAPON_WANTED, MM_NOWAIT, NOGARLIC, NOTONL, SHOPBASE, TEMPLE, TRAPNUM, STRAT_WAITFORU, STRAT_WAITMASK, STRAT_CLOSE, STRAT_ARRIVE, UNLOCKDOOR, VIBRATING_SQUARE, WATER, W_ACCESSORY, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMOR, W_ARMS, W_ARMU, W_NONDIGGABLE, W_NONPASSWALL, Upolyd, isok, WEB, WT_TOOMUCH_DIAGONAL, } from './const.js';
+import { RLOC_MSG, A_CHA, A_DEX, A_STR, A_CON, ALLOW_ALL, ALLOW_BARS, ALLOW_DIG, ALLOW_M, ALLOW_MDISP, ALLOW_ROCK, ALLOW_SANCT, MMOVE_NOTHING, MMOVE_MOVED, MMOVE_DIED, MMOVE_DONE, MMOVE_NOMOVES, MON_FLOOR, ALLOW_SSM, ALLOW_TM, ALLOW_TRAPS, ALLOW_U, ALLOW_WALL, ARROW_TRAP, BEAR_TRAP, BOLT_LIM, COLNO, CORR, DART_TRAP, DOOR, ROWNO, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, D_WARNED, FOUNTAIN, SDOOR, Is_firelevel, Is_waterlevel, IS_DOOR, IS_OBSTRUCTED, IS_ROOM, IS_STWALL, IS_TREE, IS_WALL, IRONBARS, LAVAPOOL, LAVAWALL, BUSTDOOR, MAGIC_PORTAL, OPENDOOR, TELEP_TRAP, ANTI_MAGIC, FIRE_TRAP, HOLE, LANDMINE, MAGIC_TRAP, M_ATTK_AGR_DIED, M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, M_ATTK_AGR_DONE, M_AP_FURNITURE, M_AP_MONSTER, M_AP_NOTHING, M_AP_OBJECT, M_AP_TYPE, POLY_TRAP, RUST_TRAP, PIT, PL_NSIZ, ROCKTRAP, ROLLING_BOULDER_TRAP, ROOM, SLP_GAS_TRAP, STONE, SPIKED_PIT, SQKY_BOARD, STATUE_TRAP, TRAPDOOR, NEED_AXE, NEED_HTH_WEAPON, NEED_PICK_AXE, NEED_PICK_OR_AXE, NEED_WEAPON, NO_WEAPON_WANTED, MM_NOWAIT, NOGARLIC, NOTONL, SHOPBASE, TEMPLE, TRAPNUM, STRAT_WAITFORU, STRAT_WAITMASK, STRAT_CLOSE, STRAT_ARRIVE, UNLOCKDOOR, VIBRATING_SQUARE, WATER, W_ACCESSORY, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMOR, W_ARMS, W_ARMU, W_NONDIGGABLE, W_NONPASSWALL, Upolyd, isok, WEB, WT_TOOMUCH_DIAGONAL, } from './const.js';
 import { monsterIsScaredAt } from './monster_fear.js';
 import { monsterInAir, monsterFliesOrFloats, levelHasCeiling, isLavaAt, isPoolAt } from './terrain_properties.js';
 import { disturbBuriedZombies } from './object_impact.js';
@@ -336,14 +337,15 @@ function monsterSpellEffectPreview(spell, damage, state) {
         effectDamage = Math.trunc((effectDamage + 1) / 2);
     let effectMessage = null;
     if (spell.key === 'psi-bolt') {
+        const head = heroHeadName(state);
         effectMessage =
             effectDamage <= 5
-                ? 'You get a slight headache.'
+                ? `You get a slight ${head}ache.`
                 : effectDamage <= 10
                     ? 'Your brain is on fire!'
                     : effectDamage <= 20
-                        ? 'Your head suddenly aches painfully!'
-                        : 'Your head suddenly aches very painfully!';
+                        ? `Your ${head} suddenly aches painfully!`
+                        : `Your ${head} suddenly aches very painfully!`;
     }
     else if (spell.key === 'open-wounds') {
         effectMessage =
@@ -356,11 +358,13 @@ function monsterSpellEffectPreview(spell, damage, state) {
                         : 'Your body is covered with painful wounds!';
     }
     else if (spell.key === 'blind-you') {
-        effectMessage = 'Scales cover your eyes!';
+        const eye = heroEyeName(state);
+        effectMessage = `Scales cover your ${heroEyeCount(state) === 1 ? eye : makePlural(eye)}!`;
     }
     else if (spell.key === 'paralyze') {
         const resisted = !!(state?.u?.antimagic || heroHasFreeAction(state));
-        effectMessage = resisted ? 'You stiffen briefly.' : 'You are frozen in place!';
+        if (!heroHasInvoluntaryDelay(state))
+            effectMessage = resisted ? 'You stiffen briefly.' : 'You are frozen in place!';
     }
     else if (spell.key === 'confuse-you') {
         if (antimagic) {
@@ -3666,17 +3670,6 @@ async function placeAndStackTrapMissile(object, state, x, y) {
     placeObjectSynchronously(object, x, y, state);
     return await stack_object(object, state);
 }
-// C teleport.c:mlevel_tele_trap() announces the exit while the monster
-// still occupies its square. The acknowledgement precedes seetrap() and
-// migrate_to_level(), so input observers must retain that monster too.
-async function announceTrapLevelDeparture(monster, trap, state, publish) {
-    if (!canSeeMonster(monster) && monster !== state.u.usteed)
-        return;
-    const effect = trap.ttyp === HOLE ? 'falls into a hole'
-        : trap.ttyp === TRAPDOOR ? 'falls through a trap door' : 'disappears out of sight';
-    await publish(`Suddenly, ${canonicalMonsterName(monster, { state })} ${effect}.`);
-    seeTrap(trap, state);
-}
 async function triggerMonsterTrap(monster, state, movement, random, rollDice, rollOne, calls, publish = plineWithContinuation) {
     const trap = trapAtMonster(monster, state);
     if (!trap || monster.mtrapped)
@@ -3772,18 +3765,33 @@ async function triggerMonsterTrap(monster, state, movement, random, rollDice, ro
         // discovers that this level has nowhere to fall.
         if (!canFallThrough(state.u.uz))
             return null;
-        const airborne = !!((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_FLY);
+        const clinging = !!((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_CLING) && levelHasCeiling(state);
+        const airborne = monsterFliesOrFloats(monster) || clinging;
         const tooLarge = (MONSTER_SIZE[monster.mnum] ?? 2) >= 4;
-        if (airborne || tooLarge || !trap.dst)
-            return null;
-        // TODO: offer to release an uncursed leash before migration.
-        if (monster.mleashed)
-            return null;
-        await announceTrapLevelDeparture(monster, trap, state, publish);
-        const event = await migrateMonsterOffLevel(monster, state, trap, {
-            kind: 'level-fall-migration',
-            mode: MIGR_RANDOM,
+        const longWorm = !!monster.wormno && (monster.wormSegments?.length ?? 0) > 5;
+        if (airborne || tooLarge || longWorm) {
+            const seen = canSeeMonster(monster) || monster === state.u.usteed;
+            if (movement.forcedTrapLanding && !state.level.flags.sokoban_rules) {
+                if (seen) {
+                    seeTrap(trap, state);
+                    await publish(trap.ttyp === TRAPDOOR
+                        ? `A trap door opens, but ${canonicalMonsterName(monster, { state })} doesn't fall through.`
+                        : `${canonicalMonsterName(monster, { state, capitalized: true })} doesn't fall through the hole.`);
+                }
+                return null;
+            }
+            if (!movement.forcedTrapLanding && !sokobanFall)
+                return null;
+            if (seen) {
+                await publish(`${canonicalMonsterName(monster, { state, capitalized: true })} seems to be yanked down!`);
+                seeTrap(trap, state);
+            }
+        }
+        const event = await teleportMonsterThroughHole(monster, trap, {
+            state, force: !!movement.forcedTrapLanding, publish,
         });
+        if (!event)
+            return null;
         movement.trap = event;
         movement.actorLeftLevel = true;
         movement.postMoveStatus = MMOVE_DIED;
@@ -4462,7 +4470,7 @@ async function beginHeroAttackSlot(sequence, slot, state, random, rollOne, rollD
                 if (heroIsBlind(state) && !object.dknown) {
                     what = 'something';
                 }
-                else if (IS_POOL(state.level?.at(monster.mx, monster.my)?.typ ?? STONE)
+                else if (isPoolAt(monster.mx, monster.my, state)
                     && !state.u.underwater) {
                     what = 'the water';
                 }
@@ -5663,30 +5671,29 @@ export function resumeDeferredHeroSpell(action, state, random = rn2, rollOne = r
     if (attack?.kind !== 'hero-spell' || !attack.deferredSpellEffect)
         return null;
     attack.deferredSpellEffect = false;
-    if (attack.spell === 'blind-you') {
-        const turns = heroHasHalfSpellDamage(state) ? 100 : 200;
-        const wasBlind = !!state.blind || (state.u?.blindTurns ?? 0) > 0;
-        state.u.blindTurns = turns;
-        syncBlindness(state);
-        state.vision_full_recalc = 1;
-        attack.toggledBlindness = !wasBlind;
-        if (!wasBlind && state.blind)
-            state.context.botl = true;
-        attack.appliedDamage = 0;
-        return attack;
-    }
     if (attack.spell === 'paralyze') {
         const resisted = !!(state.u?.antimagic || heroHasFreeAction(state));
         const monsterLevel = action.monster?.m_lev ?? MONSTER_LEVEL[action.monster?.mnum] ?? 0;
         let duration = resisted ? 1 : 4 + monsterLevel;
         if (heroHasHalfSpellDamage(state))
             duration = Math.trunc((duration + 1) / 2);
-        endVoluntaryMultiTurn(state);
-        state._helplessTurns = duration;
+        const existingDelay = Math.max(0, state._helplessTurns ?? 0, -state.multi);
+        if (duration >= existingDelay) {
+            if (!existingDelay)
+                state.context.botl = true;
+            state.u.invulnerable = false;
+            state.u.usleep = 0;
+            state.multi = -duration;
+            state._helplessTurns = duration;
+            stopRun(state);
+            state._cannedCommands = [];
+        }
         state._helplessReason = 'paralyzed by a monster';
-        state._helplessDoneMessage = 'You can move again.';
+        state._helplessDoneMessage = null;
         applyHeroSpellDamage(attack, duration, state);
         attack.paralyzed = true;
+        if (!resisted)
+            monstersForgetHeroResistance(M_SEEN_MAGR, state);
         return attack;
     }
     if (attack.spell === 'confuse-you') {
@@ -5780,6 +5787,8 @@ export function resumeDeferredHeroSpell(action, state, random = rn2, rollOne = r
         attack.stunnedHero = true;
         attack.stunDuration = duration;
         attack.appliedDamage = 0;
+        if (!resisted)
+            monstersForgetHeroResistance(M_SEEN_MAGR, state);
         return attack;
     }
     if (attack.spell === 'destroy-armor') {
@@ -5840,7 +5849,7 @@ function monsterSpellUseless(monster, spell, state, random = rn2, calls = []) {
     if (spell.key === 'cure-self')
         return (monster.mhp ?? 0) >= (monster.mhpmax ?? 0);
     if (spell.key === 'blind-you')
-        return !!state?.blind || (state?.u?.blindTurns ?? 0) > 0;
+        return heroIsBlinded(state);
     if (spell.key === 'haste-self')
         return monster.permspeed === MFAST;
     if (spell.key === 'disappear') {
@@ -5890,7 +5899,7 @@ function monsterCurseKind(monster, undirected, state, random, calls) {
         if (undirected)
             return 'visible-undirected';
         const wrongTarget = monster.mux !== state.u.ux || monster.muy !== state.u.uy;
-        if (state.u.invisible && !((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_SEE_INVIS) && wrongTarget
+        if (heroIsInvisible(state) && !((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_SEE_INVIS) && wrongTarget
             || M_AP_TYPE(state.u) === M_AP_OBJECT && state.u.mappearance === 0 || state.u.uundetected)
             return 'visible-general';
         if (heroIsDisplaced(state) && wrongTarget)
@@ -5919,6 +5928,11 @@ async function movementSpellSelections(monster, state, random, calls) {
     for (const [attackType, damageType] of MONSTER_ATTACKS[monster.mnum] || []) {
         if (attackType !== AT_MAGC || (damageType !== AD_CLRC && damageType !== AD_SPEL))
             continue;
+        const monsterLevel = monster.m_lev ?? MONSTER_LEVEL[monster.mnum] ?? 0;
+        if (!monsterLevel) {
+            await publishMonsterSpellFailure(monster, MONSTER_WIZARD_SPELLS[0], state, random, calls);
+            continue;
+        }
         const spell = chooseMonsterSpell(monster, damageType, state, random, calls);
         if (!spell)
             continue;
@@ -5928,8 +5942,7 @@ async function movementSpellSelections(monster, state, random, calls) {
         if (!(spell.flags & MCF_INDIRECT) ||
             monsterSpellUseless(monster, spell, state, random, calls))
             continue;
-        const monsterLevel = monster.m_lev ?? MONSTER_LEVEL[monster.mnum] ?? 0;
-        if (monster.mcan || monster.mspec_used || !monsterLevel) {
+        if (monster.mcan || monster.mspec_used) {
             await publishMonsterSpellFailure(monster, spell, state, random, calls);
             return {
                 spell: spell.key,
@@ -5972,14 +5985,6 @@ async function monsterSummonSpellEffect(monster, state) {
         // nasty() delegates to msummon(NULL), using the Wizard's demon choices.
         ...(summoned.deferredDemonSummon ? await msummon() : summoned),
     };
-    for (const created of effect.created || []) {
-        const hostileState = created.mpeaceful;
-        if (created._nastyBirthPeaceful !== undefined)
-            created.mpeaceful = created._nastyBirthPeaceful;
-        newsym(created.mx, created.my);
-        created.mpeaceful = hostileState;
-        delete created._nastyBirthPeaceful;
-    }
     if (effect.count > 0) {
         if (monster?.iswiz) {
             effect.message = `"Destroy the thief, my pet${effect.count === 1 ? '' : 's'}!"`;
@@ -5991,7 +5996,7 @@ async function monsterSummonSpellEffect(monster, state) {
             const heroY = state?.u?.uy ?? monster?.muy;
             const wrongTarget = monster?.mux !== heroX || monster?.muy !== heroY;
             const cannotSeeInvisible = !((MONSTER_FLAGS1[monster?.mnum] ?? 0) & M1_SEE_INVIS);
-            if ((state?.invisible || state?.u?.invisible) && cannotSeeInvisible && wrongTarget) {
+            if (heroIsInvisible(state) && cannotSeeInvisible && wrongTarget) {
                 effect.message = `${appearance} ${one ? 'at' : 'around'} a spot near you!`;
             }
             else if (heroIsDisplaced(state) && wrongTarget) {
@@ -6031,28 +6036,12 @@ export async function beginDeferredHeroCloneWizard(action, state) {
     const attack = action?.movement?.heroAttackSequence?.current;
     if (attack?.kind !== 'hero-spell' || !attack.deferredCloneWizard || attack.cloneWizard)
         return null;
-    const birth = await createWizardClone(state);
-    if (birth)
-        attack.cloneWizard = birth.clone;
+    const clone = await makemonNear(285, state.u.ux, state.u.uy, MM_NOWAIT);
+    if (clone)
+        attack.cloneWizard = clone;
     else
         attack.deferredCloneWizard = false;
-    return birth;
-}
-async function createWizardClone(state) {
-    const clone = await makemonNear(285, state.u?.ux ?? 0, state.u?.uy ?? 0, MM_NOWAIT);
-    if (!clone)
-        return null;
-    newsym(clone.mx, clone.my);
-    const hallucinating = heroIsHallucinating(state);
-    // makemon() repaints after the complete creation wear pass, then formats
-    // its visible announcement.  clonewiz() performs another repaint later,
-    // after fake-Amulet and wizapp state have been installed.
-    newsym(clone.mx, clone.my);
-    const subject = hallucinating ? randomDisplayMonsterSubject(true) : 'The Wizard of Yendor';
-    return {
-        clone,
-        message: `${subject} suddenly appears next to you!`,
-    };
+    return clone;
 }
 export async function finishDeferredHeroCloneWizard(action, state, random = rn2) {
     const attack = action?.movement?.heroAttackSequence?.current;
@@ -6086,12 +6075,8 @@ async function finishWizardClone(clone, state, random, calls) {
 }
 function monsterHasteSelfEffect(monster, state) {
     const speed = adjustMonsterSpeed(monster, 1);
-    const blind = !!state?.blind || (state?.u?.blindTurns ?? 0) > 0;
-    const inSight = !blind && !!((state?.viz_array?.[monster.my]?.[monster.mx] ?? 0) & 0x2);
-    const canSeeInvisible = !!state?.u?.seeInvisible;
-    const visible = inSight && !monster.mundetected && (!monster.minvis || canSeeInvisible);
     const message = speed.changed && speed.canDescribe && !state.in_mklev
-        && visible && monster.mcanmove !== 0
+        && canSeeMonster(monster)
         ? monsterSpeedMessage(speed, canonicalMonsterName(monster, { state, capitalized: true }))
         : null;
     return { message, oldSpeed: speed.oldSpeed, speed: speed.speed };
@@ -6125,11 +6110,10 @@ export async function resumeDeferredMovementSpell(action, state, random = rn2, r
     let effect = { count: 0, created: [], message: null };
     if (spellCast.spell === 'clone-wizard') {
         await publish('Double Trouble...');
-        const birth = await createWizardClone(state);
-        if (birth) {
-            await publish(birth.message);
-            await finishWizardClone(birth.clone, state, random, action.calls);
-            effect = { count: 1, created: [birth.clone], message: null };
+        const clone = await makemonNear(285, state.u.ux, state.u.uy, MM_NOWAIT);
+        if (clone) {
+            await finishWizardClone(clone, state, random, action.calls);
+            effect = { count: 1, created: [clone], message: null };
         }
     }
     else if (spellCast.spell === 'cure-self') {

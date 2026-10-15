@@ -11,6 +11,7 @@ import { game, requireGameDisplay } from '../js/gstate.js';
 import { SCORE_RECORD_STORAGE_KEY } from '../js/end.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { levelDepthByName, levelTeleport, randomTeleportDepth } from '../js/level_teleport.js';
+import { finishScheduledLevelChange } from '../js/level_change.js';
 import { AMULET_OF_LIFE_SAVING, DIAMOND, SCR_TELEPORTATION } from '../js/object_data.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { initRng } from '../js/rng.js';
@@ -74,6 +75,7 @@ void test('a cursed scroll changes levels when the hero controls teleportation',
     pushKeys('2\n' + ' '.repeat(20));
 
     const result = await teleportScrollEffect(scroll);
+    await finishScheduledLevelChange();
 
     assert.equal(game.level, destination);
     assert.ok(game.u.uz !== undefined && game.u.uz !== null, 'Expected game.u.uz to be initialized');
@@ -105,6 +107,7 @@ void test('controlled level teleport accepts a visited annotation', async () => 
     pushKeys('safe camp\n' + ' '.repeat(20));
 
     await levelTeleport();
+    await finishScheduledLevelChange();
 
     assert.equal(game.level, destination);
 });
@@ -119,6 +122,16 @@ void test('invalid level input repeats the prompt and Escape leaves the level in
     assert.equal(game.level, source);
     assert.ok(game.u.uz !== undefined && game.u.uz !== null, 'Expected game.u.uz to be initialized');
     assert.equal(game.u.uz.dlevel, 1);
+});
+
+void test('random level teleport stays at Knox based on its identity rather than the dungeon size', () => {
+    freshConnectedLevels({ destinationDepth: 3 });
+    requirePlayingGame(game);
+    game.knox_level = createSpecialLevel({ ...game.u.uz });
+
+    const destination = randomTeleportDepth(game, () => 1, () => 1);
+
+    assert.equal(destination, 1);
 });
 
 void test('Nowhere confirmation can be declined without killing or moving the hero', async () => {
@@ -202,6 +215,7 @@ void test('controlled Gehennom teleport stops above the Sanctum until invocation
     pushKeys('99\n' + ' '.repeat(20));
 
     await levelTeleport();
+    await finishScheduledLevelChange();
 
     assert.equal(game.level, destination);
     assert.equal(game.u.uz.dlevel, 5);
@@ -217,6 +231,7 @@ void test('a negative destination lets a flying hero escape with an actual game 
     pushKeys('-1\n' + ' '.repeat(30));
 
     await levelTeleport();
+    await finishScheduledLevelChange();
 
     assert.equal(game.program_state.gameover, true);
     const records = loadScoreRecords(game);
@@ -234,6 +249,7 @@ void test('Quest controlled input uses Home levels rather than absolute dungeon 
     pushKeys('2\n' + ' '.repeat(20));
 
     await levelTeleport();
+    await finishScheduledLevelChange();
 
     assert.equal(game.level, destination);
     assert.ok(game.u.uz !== undefined && game.u.uz !== null, 'Expected game.u.uz to be initialized');
@@ -256,6 +272,7 @@ void test('requesting below the main dungeon arrives at the Gehennom entrance', 
     pushKeys('99\n' + ' '.repeat(30));
 
     await levelTeleport();
+    await finishScheduledLevelChange();
 
     assert.equal(game.level, destination);
     assert.ok(game.u.uz !== undefined && game.u.uz !== null, 'Expected game.u.uz to be initialized');
@@ -287,6 +304,7 @@ void test('the wizard level-teleport command uses the shared numeric destination
     pushKeys('2\n' + ' '.repeat(20));
 
     await rhack(22);
+    await finishScheduledLevelChange();
 
     assert.equal(game.level, destination);
     assert.ok(game.u.uz !== undefined && game.u.uz !== null, 'Expected game.u.uz to be initialized');
@@ -302,6 +320,7 @@ void test('the wizard destination menu bypasses confused numeric input', async (
     pushKeys('a' + ' '.repeat(20));
 
     await levelTeleport({ menuRequested: true });
+    await finishScheduledLevelChange();
 
     assert.equal(game.level, destination);
     assert.deepEqual(game.u.uz, { dnum: 0, dlevel: 2 });

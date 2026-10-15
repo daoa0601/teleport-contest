@@ -6,7 +6,7 @@ import { monsterHasMapPosition } from './monster_location.js';
 import { heroIsHallucinating } from './senses.js';
 import {
     BURNING, D_BROKEN, D_CLOSED, D_LOCKED, DISMOUNT_FELL, DISMOUNT_GENERIC, DISSOLVED, DROWNING,
-    DOOR, ICE, IS_AIR, IS_OBSTRUCTED, IS_STWALL, IS_WALL, IS_WATERWALL,
+    DOOR, IS_AIR, IS_OBSTRUCTED, IS_STWALL, IS_WALL, IS_WATERWALL,
     Is_waterlevel, LAVAPOOL, LAVAWALL, PARANOID_SWIM, POOL, ROOM, STONE,
     FAINTED, TREE, TT_LAVA, Upolyd, WATER, W_NONDIGGABLE, W_NONPASSWALL,
     WT_TOOMUCH_DIAGONAL,
@@ -796,10 +796,35 @@ async function finishLiquidTeleport(
     return { entered: true, moved: true, died: !!landing?.died, from, to };
 }
 
-function drySurface(location: MapLocation | null) {
-    if (location?.typ === ICE) return 'ice';
-    if (location?.typ === DOOR) return 'a doorway';
-    return 'solid ground';
+// C trap.c:back_on_ground(). Both ordinary pool exit and rescue name
+// the current surface, including ice beneath a raised drawbridge.
+function backOnGroundMessage(rescued: boolean, state: GameState): string {
+    const { ux, uy } = state.u;
+    let surface = surfaceName(ux, uy, state);
+    let preposition = state.u.levitating || state.u.levitation || state.u.flying ? 'over' : 'on';
+    switch (surface) {
+    case 'floor': case 'ground':
+        surface = 'solid ground';
+        break;
+    case 'ice':
+        surface = iceDescriptionAt(ux, uy, { state });
+        break;
+    case 'bridge': case 'altar': case 'headstone':
+        surface = withIndefiniteArticle(surface);
+        break;
+    case 'stairs': case 'lava': case 'bottom':
+        surface = `the ${surface}`;
+        break;
+    case 'air':
+        surface = 'the air';
+        preposition = 'in';
+        break;
+    default:
+        surface = withIndefiniteArticle(surface);
+        preposition = 'in';
+    }
+    const subject = rescued ? 'You find yourself' : state.flags.verbose ? 'You are back' : 'Back';
+    return `${subject} ${preposition} ${surface}.`;
 }
 
 async function leaveWater({
@@ -816,9 +841,7 @@ async function leaveWater({
         } else if (isLavaAt(u.ux, u.uy, state)) {
             message = 'You leave the water...';
         } else {
-            const preposition = u.levitating || u.levitation
-                || u.flying ? 'over' : 'on';
-            message = `You are back ${preposition} ${drySurface(location)}.`;
+            message = backOnGroundMessage(false, state);
         }
     } else if (heroIsOnWaterLevel(state)) {
         stillInWater = true;
@@ -1086,30 +1109,7 @@ export async function announceTerrainRescue(
     } else if (how !== DROWNING && isLavaAt(ux, uy, state)) {
         await publish(`You find yourself on top of ${displayLiquidName('molten lava', state)}.`);
     } else {
-        let surface = surfaceName(ux, uy, state);
-        let preposition = state.u.levitating || state.u.levitation || state.u.flying ? 'over' : 'on';
-        switch (surface) {
-        case 'floor': case 'ground':
-            surface = 'solid ground';
-            break;
-        case 'ice':
-            surface = iceDescriptionAt(ux, uy, { state });
-            break;
-        case 'bridge': case 'altar': case 'headstone':
-            surface = withIndefiniteArticle(surface);
-            break;
-        case 'stairs': case 'lava': case 'bottom':
-            surface = `the ${surface}`;
-            break;
-        case 'air':
-            surface = 'the air';
-            preposition = 'in';
-            break;
-        default:
-            surface = withIndefiniteArticle(surface);
-            preposition = 'in';
-        }
-        await publish(`You find yourself ${preposition} ${surface}.`);
+        await publish(backOnGroundMessage(true, state));
     }
     if (state === game) updateLastSeenTerrain(ux, uy);
 }

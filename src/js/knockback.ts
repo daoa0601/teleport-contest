@@ -4,7 +4,7 @@
 import { formatFeltMessage } from './hero_speech.js';
 import { artifactById } from './artifacts.js';
 import {
-    D_BROKEN, DISMOUNT_KNOCKED, DOOR, IS_POOL, Is_airlevel, Is_waterlevel,
+    D_BROKEN, DISMOUNT_KNOCKED, DOOR, Is_airlevel, Is_waterlevel,
     MGIVENNAME, MM_IGNORELAVA, MM_IGNOREWATER,
     W_SADDLE, isok,
 } from './const.js';
@@ -32,6 +32,7 @@ import { rn2 } from './rng.js';
 import { dismountHero } from './steed.js';
 import { makeStunned } from './hero_mental_status.js';
 import { goodPosition } from './teleport_rules.js';
+import { isPoolAt } from './terrain_properties.js';
 
 const M1_FLY = 0x00000001;
 const M1_UNSOLID = 0x00100000;
@@ -93,7 +94,7 @@ export function isSteadfast(actor: PhysicalActor, state: GameState): boolean {
             || [S_EYE, S_LIGHT].includes(MONSTER_SYMBOL[mnum] ?? -1);
     if (floating || Is_airlevel(state.u.uz)
         || (Is_waterlevel(state.u.uz)
-            && !IS_POOL(state.level.requireAt(state.u.ux, state.u.uy).typ))) return false;
+            && !isPoolAt(state.u.ux, state.u.uy, state))) return false;
     if (artifactById(wieldedWeapon(actor, state)?.oartifact)?.name === 'Giantslayer')
         return true;
     return inventory(actor, state).some(object => object.otyp === LOADSTONE)

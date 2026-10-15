@@ -2,7 +2,8 @@
 // C refs: mkobj.c start_glob_timeout()/shrink_glob().
 
 import { newsym, plineWithContinuation } from './display.js';
-import { ICE, isok } from './const.js';
+import { isok } from './const.js';
+import { isIceAt } from './terrain_properties.js';
 import { deallocateObject } from './object_delete.js';
 import { unlinkObject } from './object_location.js';
 import { game, requireLiveGame } from './gstate.js';
@@ -215,7 +216,7 @@ function objectLocation(object: GameObject, state: GameState): Position | null {
 function globIceState(glob: GameObject, state: GameState): 'none' | 'buried' | 'on-ice' {
     const outer = outermostContainer(glob, state);
     if (!outer || !['floor', 'buried'].includes(outer.where)) return 'none';
-    if (state.level?.at?.(outer.ox, outer.oy)?.typ !== ICE) return 'none';
+    if (!isIceAt(outer.ox, outer.oy, state)) return 'none';
     return outer.where === 'buried' ? 'buried' : 'on-ice';
 }
 

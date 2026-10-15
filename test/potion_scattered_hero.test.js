@@ -31,4 +31,13 @@ void test('an environmental potion impact leaves the monster eating its meal', a
     });
     assert.equal(dog.meating, 7);
 });
+void test('a scattered potion interrupts the hero occupation when its bottle hits', async () => {
+    freshObjectRoom();
+    game._occupation = { key: 'wipe-face', text: 'wiping your face', remaining: 8 };
+    await floorObject(POT_FRUIT_JUICE, 11, 10);
+    await scatterFloorObjects(11, 10, 2, {
+        mayDestroy: false, random: () => 0, rollOne: () => 1,
+    });
+    assert.equal(game._occupation, null);
+});
 //# sourceMappingURL=potion_scattered_hero.test.js.map

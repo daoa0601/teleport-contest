@@ -1,8 +1,9 @@
 // C ref: do.c dodown() levitation branch (1146-1202) and fountain.c
 // floating_above().  The '>' command owner calls this before its stair
 // lookup and maps spentTurn to context.move.
-import { I_SPECIAL, IS_POOL, Is_airlevel, Is_waterlevel, TT_INFLOOR, TT_LAVA, TIMEOUT, W_ARTI, } from './const.js';
-import { game, requireGameLevel, requireLiveGame } from './gstate.js';
+import { I_SPECIAL, Is_airlevel, Is_waterlevel, TT_INFLOOR, TT_LAVA, TIMEOUT, W_ARTI, } from './const.js';
+import { game, requireLiveGame } from './gstate.js';
+import { isPoolAt } from './terrain_properties.js';
 import { glyphAt, plineWithContinuation } from './display.js';
 import { hasIntrinsicProperty, hasInvokedProperty, hasRawLevitationSource, propertyIsBlocked, } from './properties.js';
 import { floatHeroDown } from './terrain_movement.js';
@@ -93,7 +94,7 @@ export async function descendFromLevitation(state = game, { publish = plineWithC
         await publish(`You are floating in the ${surfaceName(state.u.ux, state.u.uy, state)}.`);
     }
     else if (Is_waterlevel(state.u.uz)) {
-        await publish(`You are floating in ${IS_POOL(requireGameLevel(state).requireAt(state.u.ux, state.u.uy).typ)
+        await publish(`You are floating in ${isPoolAt(state.u.ux, state.u.uy, state)
             ? 'the water' : 'a bubble of air'}.`);
     }
     else {

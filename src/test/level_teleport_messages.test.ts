@@ -5,6 +5,7 @@ import { makeEngravingAt } from '../js/engrave.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { levelTeleport } from '../js/level_teleport.js';
+import { finishScheduledLevelChange } from '../js/level_change.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
 import { answerPrompts } from './support/input-boundaries.js';
 import { createStaffedShop } from './support/shop.js';
@@ -30,7 +31,7 @@ void test('an endgame Amulet grant is acknowledged once and preserves the shop d
     shopkeeper.eshk.credit = 12;
     const input = resetInputState();
 
-    await answerPrompts(levelTeleport({ menuRequested: true }), input, [
+    await answerPrompts(completeLevelTeleport({ menuRequested: true }), input, [
         { prompt: /Level teleport to where:/, keys: 'a' },
         { prompt: /Endgame prerequisite: .*the Amulet of Yendor\.--More--/, keys: ' ' },
         { prompt: /Your credit of 12 zorkmids is used to cover your shopping bill\.--More--/, keys: ' ' },
@@ -52,7 +53,7 @@ void test('level teleport announces materialization before reading an arrival en
     game.level = source;
     const input = resetInputState();
 
-    await answerPrompts(levelTeleport(), input, [
+    await answerPrompts(completeLevelTeleport(), input, [
         { prompt: /To what level do you want to teleport\?/, keys: '2\r' },
         { prompt: /You materialize on a different level!--More--/, keys: ' ' },
         { prompt: /There's some graffiti on the floor here\.--More--/, keys: ' ' },
@@ -75,7 +76,7 @@ void test('level teleport announces materialization before the shopkeeper welcom
     game.u.uz = { dnum: 0, dlevel: 1 };
     const input = resetInputState();
 
-    await answerPrompts(levelTeleport(), input, [
+    await answerPrompts(completeLevelTeleport(), input, [
         { prompt: /To what level do you want to teleport\?/, keys: '2\r' },
         { prompt: /You materialize on a different level!--More--/, keys: ' ' },
     ]);
@@ -84,3 +85,8 @@ void test('level teleport announces materialization before the shopkeeper welcom
     assert.match(game._pending_message, /Welcome to/);
     assert.equal(shopkeeper.eshk.visitct, 1);
 });
+
+async function completeLevelTeleport(options: Parameters<typeof levelTeleport>[0] = {}): Promise<void> {
+    await levelTeleport(options);
+    await finishScheduledLevelChange();
+}

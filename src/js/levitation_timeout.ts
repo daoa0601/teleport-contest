@@ -4,7 +4,7 @@
 // in the property loop at C property order, levitation before flying.
 
 import {
-    ACCESSIBLE, IS_LAVA, IS_POOL, I_SPECIAL, Is_waterlevel, TIMEOUT,
+    ACCESSIBLE, I_SPECIAL, Is_waterlevel, TIMEOUT,
 } from './const.js';
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import type { GameState } from './game_state.js';
@@ -18,6 +18,7 @@ import { floatHeroDown } from './terrain_movement.js';
 import { stopHeroOccupation } from './occupation.js';
 import { applyHeroLocationEffects } from './cmd.js';
 import { surfaceName } from './terrain_name.js';
+import { isPoolOrLavaAt } from './terrain_properties.js';
 
 export type LevitationTimeoutResult =
     | { active: false; expired: false; flyingBypassed: false }
@@ -53,7 +54,7 @@ export async function levitationDialogue(
         return null;
 
     const terrain = requireGameLevel(state).requireAt(hero.ux, hero.uy);
-    const poolOrLava = IS_POOL(terrain.typ) || IS_LAVA(terrain.typ);
+    const poolOrLava = isPoolOrLavaAt(hero.ux, hero.uy, state);
     if (!ACCESSIBLE(terrain.typ) && !poolOrLava)
         return null;
 

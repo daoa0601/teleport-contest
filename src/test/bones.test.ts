@@ -181,6 +181,21 @@ void test('a monster restored from bones retains its gas exposure under its new 
     assert.equal(requireGameLevel().regions[0]?.heroFault, false);
 });
 
+void test('bones discard expired gas clouds without extending a thick cloud', async () => {
+    const storage = memoryStorage();
+    freshBonesRoom(storage);
+    const cloud = await createHarmlessGasCloudSelection(game, [{ x: 12, y: 10 }], { ttl: 0 });
+    assert.ok(cloud);
+    cloud.damage = 8;
+    assert.equal(saveBonesLevel(), true);
+    freshBonesRoom(storage);
+    pushKeys('yn');
+
+    await mklev();
+
+    assert.equal(requireGameLevel().regions.length, 0);
+});
+
 void test('bones restore resets old hero state and repairs entity links',
     async () => {
         const storage = memoryStorage();

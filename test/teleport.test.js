@@ -88,7 +88,7 @@ void test('fixed teleport clears its destination before moving the hero', async 
     assert.deepEqual({ x: steed.mx, y: steed.my }, { x: 20, y: 10 });
     assert.equal(state.u.utrap, 0);
     assert.equal(state.u.ustuck, null);
-    assert.equal(state.u.uswallow, false);
+    assert.equal(!!state.u.uswallow, false);
     assert.equal(state.context.run, 0);
     assert.equal(state.context.travel, false);
 });

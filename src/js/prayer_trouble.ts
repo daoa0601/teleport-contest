@@ -1,13 +1,14 @@
 // C pray.c:in_trouble(), worst_cursed_item(), and fix_worst_trouble().
 
 import { formatFeltMessage } from './hero_speech.js';
+import { isPoolOrLavaAt } from './terrain_properties.js';
 import { makeConfused, makeHallucinated, makeStunned } from './hero_mental_status.js';
 import { ringRemovalObstacle } from './accessory.js';
 import { simpleArmorName } from './armor.js';
 import { heroEyeCount, heroEyeName, heroStomachName } from './body_parts.js';
 import {
-    A_STR, DISSOLVED, EXT_ENCUMBER, HUNGRY, HVY_ENCUMBER, IS_LAVA, IS_OBSTRUCTED,
-    IS_POOL, PLNMSG_OBJ_GLOWS, SCORR, SDOOR, TT_BURIEDBALL, TT_LAVA, Upolyd, WEAK, W_SADDLE, isok,
+    A_STR, DISSOLVED, EXT_ENCUMBER, HUNGRY, HVY_ENCUMBER, IS_OBSTRUCTED,
+    PLNMSG_OBJ_GLOWS, SCORR, SDOOR, TT_BURIEDBALL, TT_LAVA, Upolyd, WEAK, W_SADDLE, isok,
 } from './const.js';
 import { displayColorName, docrt, plineWithContinuation as pline } from './display.js';
 import { game, requirePlayingGame } from './gstate.js';
@@ -174,7 +175,7 @@ function blockedByBoulders(dx: number, dy: number, state: PlayingGameState) {
     if (!count) return false;
     const x = hero.ux + 2 * dx, y = hero.uy + 2 * dy;
     const type = isok(x, y) ? state.level.requireAt(x, y).typ : null;
-    if (count > 1 && !(count === 2 && type !== null && (IS_POOL(type) || IS_LAVA(type)))) return true;
+    if (count > 1 && !(count === 2 && type !== null && isPoolOrLavaAt(x, y, state))) return true;
     if (dx && dy && state.level.flags.sokoban_rules) return true;
     return type === null || IS_OBSTRUCTED(type) || bouldersAt(x, y) > 0;
 }

@@ -17,7 +17,7 @@ import { finishMonsterHideUnder } from './monster_hiding.js';
 import { heroIsHallucinating } from './senses.js';
 import { mcalcmove } from './monster_speed.js';
 import { learnWand } from './wand_charge.js';
-import { makeBlinded } from './sight_change.js';
+import { flashBurn, makeBlinded } from './sight_change.js';
 import { makeConfused, makeHallucinated, makeStunned } from './hero_mental_status.js';
 import { heroHasHalfSpellDamage } from './spell_damage.js';
 import { advanceSpellProtection } from './spell_misc_effects.js';
@@ -38,7 +38,8 @@ import type {
     RandomBelow, RollDice, RollOne,
 } from './monster_action_types.js';
 import { clearImmediateZapBypasses } from './immediate_zap.js';
-import { MON_FLOOR, PICK_ONE, PLNMSG_MON_TAKES_OFF_ITEM } from './const.js';
+import { In_endgame, Is_astralevel, MON_FLOOR, PICK_ONE, PLNMSG_MON_TAKES_OFF_ITEM } from './const.js';
+import { mapVicinity } from './magic_mapping.js';
 import { showInventoryWindow } from './windows.js';
 import type { InventoryMenuItem } from './windows.js';
 import { endVoluntaryMultiTurn, heroHasInvoluntaryDelay } from './command_state.js';
@@ -53,7 +54,7 @@ import { consumeMonsterItem, presentMonsterQuaff as publishMonsterQuaff, present
 import { moveMonsterNextToHero, randomMonsterRelocation } from './teleport.js';
 import { monsterAtPosition } from './monster_location.js';
 import { placeHeroAtRandomArrival } from './level_change.js';
-import { monsterName, monsterSpellDeathReason, possessiveName, quietMonsterName } from './monster_name.js';
+import { monsterName, monsterSpellDeathReason, monsterSubjectPronoun, possessiveName, quietMonsterName } from './monster_name.js';
 import { touchHeroWithDeath } from './monster_death_touch.js';
 import { resolveMonsterWeaponContact } from './monster_weapon_contact.js';
 import { finishMonsterAttackDeath, waitForCurrentMonsterMore } from './monster_attack_death.js';
@@ -63,7 +64,7 @@ import { monsterCanCarryObject } from './monster_carry.js';
 import { releaseObjectLeash } from './monster_leash.js';
 import { petrifyMonsterImmediately } from './monster_stoning.js';
 import { touchPetrifies } from './stoning.js';
-import { armorSimpleName, stopDonning } from './armor.js';
+import { armorSimpleName, heroHasFreeAction, heroIsDisplaced, stopDonning } from './armor.js';
 import { isBeingTakenOff } from './takeoff_state.js';
 import { OBJECT_DELAY } from './object_data.js';
 import { heroIsUnaware } from './hero_sleep.js';
@@ -112,7 +113,7 @@ import {
 } from './cmd.js';
 import { finishDestinationSpotEffects } from './location_effects.js';
 import { performQuestExpulsion } from './quest.js';
-import { resurrectWizard } from './wizard.js';
+import { amuletTurn, resurrectWizard } from './wizard.js';
 import {
     finishHeroLiquidMonsterDeath, finishHeroMonsterKill,
 } from './hero_monster_death.js';
@@ -125,7 +126,7 @@ import { resolveMonsterGaze } from './monster_gaze.js';
 import { resolveMonsterMagicRay } from './monster_magic_ray.js';
 import { resolveMonsterSelfExplosion } from './monster_self_explosion.js';
 import {
-    canSpotMonster, displayMessageWindow, docrt, redrawMap,
+    canSpotMonster, displayColorName, displayMessageWindow, docrt, redrawMap,
     bot,
     flush_screen, flushPendingTopline,
     pline,
@@ -151,7 +152,6 @@ import {
     ACID_VENOM, BOULDER, CORPSE, LEASH,
     GOLD_PIECE,
     OBJECT_BIMANUAL, OBJECT_NAMES,
-    SHIELD_OF_REFLECTION,
 } from './object_data.js';
 import { makePlural, verbForSubject, withIndefiniteArticle } from './object_grammar.js';
 import { monsterLocomotion } from './monster_locomotion.js';
@@ -161,7 +161,8 @@ import {
 } from './objnam.js';
 import {
     A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS,
-    BOLT_LIM, COLNO, ROWNO, DOOR, D_CLOSED, D_LOCKED, HOLE, M_SEEN_MAGR,
+    BOLT_LIM, COLNO, ROWNO, DOOR, D_CLOSED, D_LOCKED, HOLE,
+    M_SEEN_ELEC, M_SEEN_FIRE, M_SEEN_MAGR, M_SEEN_REFL,
     STONE, ZAP_POS,
     M_ATTK_AGR_DIED, M_ATTK_AGR_DONE, W_ARMG,
     UNENCUMBERED, MOD_ENCUMBER, HVY_ENCUMBER, EXT_ENCUMBER, W_ACCESSORY, W_WEAPONS,
@@ -173,13 +174,13 @@ import { uInitMisc, makedog, uInitInventoryAttrs,
 } from './u_init.js';
 import { makeDeaf } from './hero_hearing.js';
 import { heroIsBlind, heroIsDeaf, syncBlindness } from './senses.js';
-import { syncHeroInvisibility } from './hero_invisibility.js';
+import { heroIsInvisible, syncHeroInvisibility } from './hero_invisibility.js';
 import { refreshHeroSeeing } from './hero_seeing.js';
 import { igniteItems } from './light.js';
 import {
     applyRayFloorFeatures, destroyColdInventory, destroyElectricInventory, destroyFireInventory,
 } from './zap.js';
-import { discoverReflectingShield } from './ray.js';
+import { discoverHeroReflectionSource, heroReflectionSource } from './ray.js';
 import {
     addObjectToMonsterInventory,
 } from './monster_inventory.js';
@@ -585,6 +586,7 @@ async function enterTutorial() {
     game.level = tutorialLevel;
     game.stairs = tutorialStairs;
     game.u.uz = { ...target };
+    game.u.uz0 = { ...target };
     const tutorialHero = game.u;
     tutorialHero.ux = tutorialPosition.x;
     tutorialHero.uy = tutorialPosition.y;
@@ -679,20 +681,23 @@ function interruptCountedActivity(message: string): void {
 // loop has allocated as many global turns as the hero needs.  Burden can make
 // one action span two allocations; seer_turn is checked only after the last
 // one, against the final `moves` value.
-function finishHeroTookTimeRng(sourceTurn: number): void {
+async function finishHeroTookTime(sourceTurn: number): Promise<void> {
     const game = requireInitializedGame();
     if (sourceTurn >= (game.seer_turn ?? Infinity)) {
+        if ((game.u.uhave.amulet || propertyIsActive('clairvoyant', game))
+            && !In_endgame(game.u.uz) && !propertyIsBlocked('clairvoyant', game))
+            await mapVicinity(null, { state: game });
         game.seer_turn = sourceTurn + 15 + rn2(31);
     }
 }
 
-function finishOrDeferHeroTookTimeRng(sourceTurn: number): void {
+async function finishOrDeferHeroTookTime(sourceTurn: number): Promise<void> {
     const game = requireInitializedGame();
     if (game._vaultMaintenanceContinuation) {
         game._vaultHeroTookTimePending = sourceTurn;
         return;
     }
-    finishHeroTookTimeRng(sourceTurn);
+    await finishHeroTookTime(sourceTurn);
 }
 
 async function finishInitialTurnMaintenanceAfterIntervention(
@@ -737,6 +742,7 @@ async function finishInitialTurnMaintenanceAfterIntervention(
 // monster generation, ambient feature sounds, hunger, and engraving wear.
 async function finishInitialTurnMaintenanceRng(sourceTurn: number): Promise<void> {
     const game = requireInitializedGame();
+    if (game.u.uhave.amulet) await amuletTurn(game);
     if (!rn2(40 + currentAttribute(A_DEX) * 3)) wipeHeroEngraving(rnd(3));
     // allmain.c's demigod intervention clock advances after engraving wear
     // and before environmental level motion.  Nervous outcomes 0/1 are
@@ -745,12 +751,13 @@ async function finishInitialTurnMaintenanceRng(sourceTurn: number): Promise<void
     if (game.u?.uevent?.udemigod && !game.u?.invulnerable) {
         if (game.u.udg_cnt !== undefined && game.u.udg_cnt > 0) game.u.udg_cnt--;
         if ((game.u.udg_cnt ?? 0) === 0) {
-            const intervention = rn2(6);
+            const intervention = Is_astralevel(game.u.uz) ? rnd(4) : rn2(6);
             if (intervention <= 1) {
                 appendTurnMessage(formatFeltMessage('vaguely nervous.'));
                 delete game._unresolvedDemigodIntervention;
             } else if (intervention === 2) {
-                appendTurnMessage('You notice a black glow surrounding you.');
+                if (!heroIsBlind(game))
+                    appendTurnMessage(`You notice a ${displayColorName('black', game)} glow surrounding you.`);
                 game._pendingDemigodIntervention = {
                     kind: intervention, sourceTurn,
                 };
@@ -1006,7 +1013,6 @@ async function runLevelRegionTurn() {
     const game = requireInitializedGame();
     return runLevelRegions(game, {
         wake: wakeMonstersNearWithMessages,
-        onHeroDeath: () => finishHeroDeath({ killer: 'gas cloud' }),
         onAnger: (monster: Monster) => angerMonster(monster, { attacked: true }),
         onMonsterDeath: async (monster: Monster, event: { heroFault: boolean; visible: boolean }) => {
             if (event.heroFault) {
@@ -1557,22 +1563,7 @@ async function advanceWorldTurn(): Promise<void> {
             await resurrectWizard();
             delete game._unresolvedDemigodIntervention;
         } else if (intervention.kind === 4) {
-            let effect = await summonNastyMonsters(null, {
-                onCreate: async (monster: Monster) => {
-                    newsym(monster.mx, monster.my);
-                    const name = quietMonsterName(monster);
-                    const article = /^[aeiou]/i.test(name) ? 'An' : 'A';
-                    const adjacent = Math.max(
-                        Math.abs(monster.mx - (game.u?.ux ?? monster.mx)),
-                        Math.abs(monster.my - (game.u?.uy ?? monster.my)),
-                    ) <= 1;
-                    const message = `${article} ${name} suddenly appears ${
-                        adjacent ? 'next to you' : 'close by'
-                    }!`;
-                    if (game._pending_message !== message)
-                        await plineWithContinuation(message);
-                },
-            });
+            let effect = await summonNastyMonsters(null);
             if (effect.deferredDemonSummon) effect = await msummon();
             game._lastDemigodNasty = (effect.created || []).map(monster =>
                 monster.m_id);
@@ -2220,6 +2211,19 @@ async function resolveDeferredHeroDirectSpell(
     if (damage && !state.program_state.gameover) applyHeroSpellDamage(attack, damage, state);
 }
 
+async function prepareMonsterSpellResistance(attack: HeroSpellAttack, state: PlayingGameState): Promise<void> {
+    if (!attack.spell || !['psi-bolt', 'open-wounds', 'stun-you', 'paralyze', 'confuse-you', 'weaken-you'].includes(attack.spell))
+        return;
+    const resisted = state.u.antimagic
+        || (attack.spell === 'stun-you' || attack.spell === 'paralyze') && heroHasFreeAction(state);
+    if (resisted) {
+        await shieldeff(state.u.ux, state.u.uy, state);
+        monstersObserveHeroResistance(M_SEEN_MAGR, state);
+    } else if (attack.spell === 'psi-bolt' || attack.spell === 'open-wounds') {
+        monstersForgetHeroResistance(M_SEEN_MAGR, state);
+    }
+}
+
 async function resolveDeferredHeroFirePillar(
     action: MonsterAction, heroAttack: HeroSpellAttack,
     publish: typeof plineWithContinuation,
@@ -2229,6 +2233,10 @@ async function resolveDeferredHeroFirePillar(
     const originalDamage = d(8, 6);
     action.calls.push('d(8,6)');
     const fireResistant = !!(game.u.fireResistance);
+    if (fireResistant) {
+        await shieldeff(game.u.ux, game.u.uy, game);
+        monstersObserveHeroResistance(M_SEEN_FIRE, game);
+    } else monstersForgetHeroResistance(M_SEEN_FIRE, game);
     let appliedDamage = fireResistant ? 0 : originalDamage;
     if (heroHasHalfSpellDamage(game))
         appliedDamage = Math.trunc((appliedDamage + 1) / 2);
@@ -2249,6 +2257,10 @@ async function resolveDeferredHeroFirePillar(
         state: game,
         publish,
     });
+    await applyRayFloorFeatures('fire', game.u.ux, game.u.uy, game, {
+        rayNoun: 'spell', heroCaused: false, publish,
+    });
+    if (game.program_state.gameover) return;
 
     applyHeroSpellDamage(heroAttack, appliedDamage, game);
     heroAttack.deferredFirePillar = false;
@@ -2260,20 +2272,27 @@ async function resolveDeferredHeroLightningSpell(
 ): Promise<void> {
     const game = requireInitializedGame();
     if (!heroAttack?.deferredLightningSpell) return;
-    const reflectedByShield = game.uarms?.otyp === SHIELD_OF_REFLECTION;
-    if (reflectedByShield) {
-        await publish('It bounces off your shield.');
-        discoverReflectingShield();
-        d(8, 6);
-        action.calls.push('d(8,6)');
+    const reflection = heroReflectionSource(game);
+    if (reflection) {
+        await publish(`It bounces off your ${reflection.noun}.`);
+        discoverHeroReflectionSource(reflection, game);
+    }
+    const originalDamage = d(8, 6);
+    action.calls.push('d(8,6)');
+    const shockResistant = !!game.u.shockResistance;
+    if (reflection || shockResistant)
+        await shieldeff(game.u.ux, game.u.uy, game);
+    if (reflection) {
+        monstersObserveHeroResistance(M_SEEN_REFL, game);
         heroAttack.appliedDamage = 0;
         heroAttack.reflectedLightning = true;
         heroAttack.deferredLightningSpell = false;
         return;
     }
-    const originalDamage = d(8, 6);
-    action.calls.push('d(8,6)');
-    const shockResistant = !!(game.u.shockResistance);
+    if (shockResistant) {
+        monstersForgetHeroResistance(M_SEEN_REFL, game);
+        monstersObserveHeroResistance(M_SEEN_ELEC, game);
+    } else monstersForgetHeroResistance(M_SEEN_ELEC | M_SEEN_REFL, game);
     let appliedDamage = shockResistant ? 0 : originalDamage;
     if (heroHasHalfSpellDamage(game))
         appliedDamage = Math.trunc((appliedDamage + 1) / 2);
@@ -2284,14 +2303,14 @@ async function resolveDeferredHeroLightningSpell(
         die: finishHeroDeathAfterMonsterMessage,
     });
     if (items.heroDied) return;
+    await applyRayFloorFeatures('lightning', game.u.ux, game.u.uy, game, {
+        rayNoun: 'spell', heroCaused: false, publish,
+    });
+    if (game.program_state.gameover) return;
 
     const flashDuration = rnd(100);
     action.calls.push('rnd(100)');
-    await publish('You are blinded by the flash!');
-    game.u.blindTurns = (game.u.blindTurns ?? 0) + flashDuration;
-    syncBlindness(game);
-    game.vision_full_recalc = 1;
-    vision_recalc(0);
+    await flashBurn(flashDuration, true, { state: game, publish });
 
     applyHeroSpellDamage(heroAttack, appliedDamage, game);
     heroAttack.deferredLightningSpell = false;
@@ -2338,12 +2357,17 @@ async function resolveDeferredHeroDeathTouch(
         succeeds = successRoll > 12;
     }
     if (!succeeds) {
+        if (antimagic) {
+            await shieldeff(u.ux, u.uy, game);
+            monstersObserveHeroResistance(M_SEEN_MAGR, game);
+        }
         await publish("Lucky for you, it didn't work!");
         heroAttack.deferredDeathTouch = false;
         return;
     }
     if (heroIsHallucinating(game)) {
         await publish('You have an out of body experience.');
+        monstersForgetHeroResistance(M_SEEN_MAGR, game);
         heroAttack.deferredDeathTouch = false;
         return;
     }
@@ -2352,6 +2376,7 @@ async function resolveDeferredHeroDeathTouch(
         action.calls.push(`d(${count},${sides})`);
         return d(count, sides);
     });
+    if (!heroAttack.heroDied) monstersForgetHeroResistance(M_SEEN_MAGR, game);
     heroAttack.deferredDeathTouch = false;
 }
 
@@ -2538,8 +2563,8 @@ async function presentMonsterAttackEffects(
                         continue;
                     }
                     if (heroAttack.kind === 'hero-spell') {
-                        const publishSpellMessage: typeof plineWithContinuation = async message => {
-                            const dismissal = await plineWithContinuation(message);
+                        const publishSpellMessage: typeof plineWithContinuation = async (message, options) => {
+                            const dismissal = await plineWithContinuation(message, options);
                             if (dismissal != null) paging.pagerOwned = true;
                             return dismissal;
                         };
@@ -2549,7 +2574,7 @@ async function presentMonsterAttackEffects(
                                 const water = game.level.at(monster.mux ?? 0, monster.muy ?? 0)?.typ === WATER;
                                 const caster = canSeeMonster(monster) ? visibleMonsterSubject(monster) : 'Something';
                                 curseMessage = `${caster} casts a spell at ${water ? 'empty water' : 'thin air'}!`;
-                            } else if (heroAttack.fumbled && !game.deaf
+                            } else if (heroAttack.fumbled && !heroIsDeaf(game)
                                 && canSeeMonster(monster)) {
                                 curseMessage = `The air crackles around ${monsterName(monster)}.`;
                             } else if (heroAttack.curseKind === 'audible') {
@@ -2565,13 +2590,8 @@ async function presentMonsterAttackEffects(
                                             ? `${caster} points and curses at your displaced image.`
                                             : `${caster} points at you, then curses.`;
                             }
-                            const repeatedAudibleCurse
-                                = heroAttack.curseKind === 'audible'
-                                && curseMessage !== null
-                                && (game._pending_message || '')
-                                    .endsWith(curseMessage);
-                            if (curseMessage && !repeatedAudibleCurse)
-                                await publishSpellMessage(curseMessage);
+                            if (curseMessage)
+                                await publishSpellMessage(curseMessage, { noRepeat: heroAttack.curseKind === 'audible' });
                             previousHeroAttack = heroAttack;
                             heroAttack = await completeHeroAttackSlot(
                                 action, game,
@@ -2581,14 +2601,18 @@ async function presentMonsterAttackEffects(
                         const caster = canSpotMonster(monster) ? visibleMonsterSubject(monster) : 'Something';
                         const casterVisible = canSpotMonster(monster);
                         if (casterVisible || heroAttack.directed) {
+                            const misplaced = monster.mux !== game.u.ux || monster.muy !== game.u.uy;
+                            const target = !heroAttack.directed ? ''
+                                : heroIsInvisible(game) && !((MONSTER_FLAGS1[monster.mnum] ?? 0) & 0x01000000) && misplaced
+                                    ? ' at a spot near you'
+                                    : heroIsDisplaced(game) && misplaced ? ' at your displaced image' : ' at you';
                             await publishSpellMessage(
-                                `${caster} casts a spell${
-                                    heroAttack.directed ? ' at you' : ''
-                                }!`,
+                                `${caster} casts a spell${target}!`,
                             );
                         }
                         if (heroAttack.deferredSpellDamage)
                             rollDeferredHeroSpellDamage(action, game, rollDice);
+                        await prepareMonsterSpellResistance(heroAttack, game);
                         let effectMessage = heroAttack.spellEffectMessage;
                         if (heroAttack.spell === 'cure-self'
                             && canSeeMonster(monster)) {
@@ -2597,14 +2621,7 @@ async function presentMonsterAttackEffects(
                             } looks better.`;
                         }
                         if (heroAttack.spell === 'death-touch') {
-                            let pronoun;
-                            if (heroIsHallucinating(game)) {
-                                const gender = rn2(4);
-                                action.calls.push('rn2(4)');
-                                pronoun = ['he', 'she', 'it', 'they'][gender];
-                            } else {
-                                pronoun = monster.female ? 'she' : 'he';
-                            }
+                            const pronoun = monsterSubjectPronoun(monster, { state: game });
                             effectMessage = 'Oh no, ' + pronoun
                                 + "'s using the touch of death!";
                         }
@@ -2629,8 +2646,16 @@ async function presentMonsterAttackEffects(
                         const effectDismissal = effectMessage
                             ? await publishSpellMessage(effectMessage)
                             : null;
+                        if (heroAttack.spell === 'confuse-you' && !game.u.antimagic)
+                            monstersForgetHeroResistance(M_SEEN_MAGR, game);
                         if (heroAttack.deferredSpellEffect) {
-                            if (heroAttack.spell)
+                            if (heroAttack.spell === 'blind-you') {
+                                heroAttack.deferredSpellEffect = false;
+                                heroAttack.appliedDamage = 0;
+                                await makeBlinded(heroHasHalfSpellDamage(game) ? 100 : 200,
+                                    { state: game, talk: false, publish: publishSpellMessage });
+                                if (!heroIsBlind(game)) await publishSpellMessage('Your vision clears.');
+                            } else if (heroAttack.spell)
                                 resumeDeferredHeroSpell(action, game);
                             else await resolveDeferredHeroDirectSpell(
                                 action, heroAttack, game, publishSpellMessage, random, rollDice,
@@ -2661,6 +2686,7 @@ async function presentMonsterAttackEffects(
                                 heroDied = true;
                                 break;
                             }
+                            monstersForgetHeroResistance(M_SEEN_MAGR, game);
                         }
                         if (heroAttack.deferredFirePillar)
                             await resolveDeferredHeroFirePillar(
@@ -2688,12 +2714,7 @@ async function presentMonsterAttackEffects(
                         }
                         if (heroAttack.deferredCloneWizard) {
                             await publishSpellMessage('Double Trouble...');
-                            const clone
-                                = await beginDeferredHeroCloneWizard(
-                                    action, game,
-                                );
-                            if (clone?.message)
-                                await publishSpellMessage(clone.message);
+                            await beginDeferredHeroCloneWizard(action, game);
                             await finishDeferredHeroCloneWizard(action, game);
                         }
                         if (heroAttack.deferredHasteSelf) {
@@ -2718,8 +2739,6 @@ async function presentMonsterAttackEffects(
                         if (heroAttack.deferredGeyserSpell)
                             resolveDeferredHeroGeyser(action, heroAttack);
                         if (heroAttack.paralyzed) stopRun(game);
-                        if (heroAttack.toggledBlindness)
-                            vision_recalc(0);
                         if (heroAttack.monsterDisappeared) {
                             newsym(monster.mx, monster.my);
                             if (cansee(monster.mx, monster.my)
@@ -3704,7 +3723,7 @@ export async function moveloop_core() {
         // C moveloop_core() checks again after nh_timeout() can remove weight.
         await reportHeroEncumbrance(g);
         if (!g.program_state?.gameover)
-            finishOrDeferHeroTookTimeRng(g.moves || 1);
+            await finishOrDeferHeroTookTime(g.moves || 1);
     }
 
     if (movementRationActionPending && !g.program_state?.gameover) {
@@ -3802,7 +3821,7 @@ export async function moveloop_core() {
             await finishInitialTurnMaintenanceRng(continuation.sourceTurn);
             g._vaultMaintenanceContinuation = null;
             if (g._vaultHeroTookTimePending != null) {
-                finishHeroTookTimeRng(g._vaultHeroTookTimePending);
+                await finishHeroTookTime(g._vaultHeroTookTimePending);
                 g._vaultHeroTookTimePending = null;
             }
         }

@@ -1,9 +1,11 @@
 // Terrain and airborne predicates shared by placement, movement, and traps.
 // C refs: mon.c:m_in_air(), has_ceiling(), Is_waterlevel().
 import { game } from './gstate.js';
+import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 import {
     ACCESSIBLE, DB_LAVA, DB_MOAT, DB_UNDER, DOOR, D_CLOSED, D_LOCKED, DRAWBRIDGE_UP,
+    DBWALL, IS_WATERWALL,
     DB_ICE, ICE, LADDER, STAIRS, LAVAPOOL, LAVAWALL, MOAT, POOL, WATER, isok,
 } from './const.js';
 import { MONSTER_FLAGS1, MONSTER_SYMBOL } from './monster_data.js';
@@ -78,8 +80,33 @@ export function isLavaAt(x: number, y: number, state = game) {
         && ((location.drawbridgemask ?? 0) & DB_UNDER) === DB_LAVA;
 }
 
+// C dbridge.c:is_pool_or_lava().
+export function isPoolOrLavaAt(x: number, y: number, state = game) {
+    return isPoolAt(x, y, state) || isLavaAt(x, y, state);
+}
+
+// C dbridge.c:is_waterwall(). WATER remains a wall on the Plane of Water.
+export function isWaterwallAt(x: number, y: number, state = game) {
+    if (!isok(x, y)) return false;
+    const location = state.level?.at(x, y);
+    return !!location && IS_WATERWALL(location.typ);
+}
+
+// C dbridge.c:is_db_wall(): only the closed portcullis, not its span.
+export function isDrawbridgeWallAt(x: number, y: number, state = game) {
+    return state.level?.at(x, y)?.typ === DBWALL;
+}
+
+// C display.h:covers_objects()/covers_traps(). Unlike is_lava(), the
+// lava check here deliberately excludes lava beneath a raised bridge.
+export function terrainCoversObjectsAt(x: number, y: number, state = game) {
+    const type = state.level?.at(x, y)?.typ;
+    return (isPoolAt(x, y, state) && !(state.underwater || state.u.uinwater))
+        || type === LAVAPOOL || type === LAVAWALL;
+}
+
 // C dbridge.c:is_ice(). A lowered drawbridge covers its frozen water.
-export function isIceAt(x: number, y: number, state = game) {
+export function isIceAt(x: number, y: number, state: Pick<GameState, 'level'> = game) {
     if (!isok(x, y)) return false;
     const location = state.level?.at(x, y);
     if (!location) return false;

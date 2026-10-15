@@ -4,7 +4,7 @@ import { monsterAtPosition } from './monster_location.js';
 import { currentAttribute } from './attrib.js';
 import { observeObjectForNaming } from './objnam.js';
 import { heroFootName, heroHandName, monsterHandName, } from './body_parts.js';
-import { A_DEX, IS_FURNITURE, IS_LAVA, IS_POOL, IS_WATERWALL, Is_airlevel, Is_waterlevel, LAVAWALL, TT_PIT, isok, } from './const.js';
+import { A_DEX, IS_FURNITURE, IS_WATERWALL, Is_airlevel, Is_waterlevel, LAVAWALL, TT_PIT, isok, } from './const.js';
 import { canSpotMonster, map_invisible, newsym, pline, plineWithContinuation, } from './display.js';
 import { placeObject, remove_object, stack_object, } from './floor_object.js';
 import { objectNoLongerHeld } from './object_release.js';
@@ -27,6 +27,7 @@ import { rnl, rn2, rnd } from './rng.js';
 import { strikeSteed } from './steed.js';
 import { touchPetrifyingCorpse } from './stoning.js';
 import { ceilingName, surfaceName } from './terrain_name.js';
+import { isLavaAt, isPoolOrLavaAt } from './terrain_properties.js';
 import { moveHeroByTeleport } from './teleport.js';
 import { resetHeroTrap } from './terrain_movement.js';
 import { vision_recalc, vision_reset } from './vision.js';
@@ -358,10 +359,11 @@ export async function useBullwhip(whip, direction, { state = game, attackMonster
             await strikeSteed({ state, announce: pline });
             return { spentTime: true };
         }
-        const heroLocation = state.level?.at(hero.ux, hero.uy);
-        if (heroLocation && (IS_POOL(heroLocation.typ) || IS_LAVA(heroLocation.typ))) {
+        if (isPoolOrLavaAt(hero.ux, hero.uy, state)
+            || (targetLocation && (IS_WATERWALL(targetLocation.typ)
+                || targetLocation.typ === LAVAWALL))) {
             await pline('You cause a small splash.');
-            if (IS_LAVA(heroLocation.typ)) {
+            if (isLavaAt(hero.ux, hero.uy, state)) {
                 await fireDamageObject(whip, {
                     state, x: hero.ux, y: hero.uy, publish: plineWithContinuation,
                 });

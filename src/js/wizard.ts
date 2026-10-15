@@ -1,18 +1,47 @@
 // C wizard.c:wizdeadorgone() and resurrect().
 import { game } from './gstate.js';
-import type { GameState } from './game_state.js';
+import type { GameState, PlayingGameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 import { plineWithContinuation } from './display.js';
 import { makemonNear } from './mklev.js';
 import { setMonsterMalign } from './monster_alignment.js';
-import { STRAT_WAITMASK, MM_NOWAIT } from './const.js';
+import { MAGIC_PORTAL, STRAT_WAITMASK, MM_NOWAIT } from './const.js';
 import {
     catchUpMonster, monsterArrive, WIZ_ARRIVE,
 } from './monster_migration.js';
 import { AMULET_OF_YENDOR } from './object_data.js';
 import { rn2 } from './rng.js';
+import { definiteName, objectName } from './objnam.js';
+import { heroIsDeaf } from './senses.js';
 
 const WIZARD = 285;
+
+// C wizard.c:amulet(). Called once per global turn while carrying the Amulet.
+export async function amuletTurn(state: PlayingGameState): Promise<void> {
+    const amulet = state.uamul?.otyp === AMULET_OF_YENDOR ? state.uamul
+        : state.uwep?.otyp === AMULET_OF_YENDOR ? state.uwep : null;
+    if (amulet && !rn2(15)) {
+        const portal = [...state.level.traps].reverse().find(trap => trap.ttyp === MAGIC_PORTAL);
+        if (portal) {
+            const dx = portal.tx - state.u.ux, dy = portal.ty - state.u.uy;
+            const distance = dx * dx + dy * dy;
+            const warmth = distance <= 9 ? 'hot!' : distance <= 64 ? 'very warm.'
+                : distance <= 144 ? 'warm.' : null;
+            if (warmth) {
+                const name = definiteName(objectName(amulet, state), state);
+                await plineWithContinuation(`${name.charAt(0).toUpperCase()}${name.slice(1)} feels ${warmth}`);
+            }
+        }
+    }
+    if (!state.context.no_of_wizards) return;
+    for (const monster of [...state.level.monsters].reverse()) {
+        if (monster.dead || monster.mhp <= 0 || !monster.iswiz || !monster.msleeping || rn2(40)) continue;
+        monster.msleeping = 0;
+        if (Math.max(Math.abs(monster.mx - state.u.ux), Math.abs(monster.my - state.u.uy)) > 1)
+            await plineWithContinuation('You get the creepy feeling that somebody noticed your taking the Amulet.');
+        return;
+    }
+}
 
 // Removal counts even when the Wizard leaves alive. The first removal starts
 // demigod intervention; later deaths must not restart an existing countdown.
@@ -26,20 +55,13 @@ export function wizardDeadOrGone(state: GameState = game, random = rn2): void {
 }
 
 function carriesAmulet(monster: Monster): boolean {
-    // C mon.c:mon_has_amulet(): inventory search including containers.
-    const objects = monster.minvent || monster.inventory || [];
-    for (const object of objects) {
-        if (object.otyp === AMULET_OF_YENDOR) return true;
-        for (const content of object.contents || [])
-            if (content.otyp === AMULET_OF_YENDOR) return true;
-    }
-    return false;
+    // C wizard.c:mon_has_amulet() searches only the top-level inventory.
+    return (monster.minvent ?? []).some(object => object.otyp === AMULET_OF_YENDOR);
 }
 
 function monsterHelpless(monster: Monster): boolean {
     // C mon.c:helpless().
-    return !monster.mcanmove || !!monster.msleeping
-        || (monster.mfrozen ?? 0) > 0;
+    return !monster.mcanmove || !!monster.msleeping;
 }
 
 function recallMigratingWizard(): Promise<Monster | null> | null {
@@ -70,10 +92,6 @@ function recallMigratingWizard(): Promise<Monster | null> | null {
 }
 
 export async function resurrectWizard(): Promise<Monster | null> {
-    const existing = game.level?.monsters?.find(monster =>
-        !monster.dead && monster.iswiz);
-    if (existing) return existing;
-
     let wizard: Monster | null = null;
     let verb = 'kill';
     if (!game.context?.no_of_wizards) {
@@ -94,12 +112,9 @@ export async function resurrectWizard(): Promise<Monster | null> {
         wizard.mtame = 0;
         wizard.mpeaceful = 0;
         setMonsterMalign(wizard);
-        if (!game.deaf && !game.u?.deaf) {
-            await plineWithContinuation(
-                `A voice booms out...  "So thou thought thou couldst ${
-                    verb
-                } me, fool."`,
-            );
+        if (!heroIsDeaf(game)) {
+            await plineWithContinuation('A voice booms out...');
+            await plineWithContinuation(`"So thou thought thou couldst ${verb} me, fool."`);
         }
     }
     return wizard;

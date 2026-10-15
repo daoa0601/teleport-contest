@@ -1,8 +1,9 @@
 // Egg hatch timers.
 // C refs: timeout.c attach_egg_hatch_timeout()/hatch_egg().
 import { formatFeltMessage, formatSeenMessage } from './hero_speech.js';
-import { G_EXTINCT, G_GENOD, IS_POOL, MM_NOMSG, MV_KNOWS_EGG, NO_MINVENT, } from './const.js';
+import { G_EXTINCT, G_GENOD, MM_NOMSG, MV_KNOWS_EGG, NO_MINVENT, } from './const.js';
 import { canSeeMonster, newsym } from './display.js';
+import { isPoolAt } from './terrain_properties.js';
 import { tameMonster } from './monster_taming.js';
 import { useUpInventoryStack } from './hero_inventory.js';
 import { deleteObject } from './object_delete.js';
@@ -104,11 +105,10 @@ function monsterInventoryHatchMessage(mnum, count, carrier, x, y, state) {
     const carrierIsVisible = canSeeMonster(carrier)
         && (!carrier.wormno || cansee(carrier.mx, carrier.my));
     let source;
-    const terrain = state.level?.at(x, y)?.typ;
     if (carrierIsVisible) {
         source = monsterPackName(carrier);
     }
-    else if (terrain !== undefined && IS_POOL(terrain)) {
+    else if (isPoolAt(x, y, state)) {
         source = 'empty water';
     }
     else {

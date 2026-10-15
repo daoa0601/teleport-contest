@@ -1,6 +1,6 @@
 // #sit and the immediate consequences of sitting down.
 // C ref: sit.c dosit() and lay_an_egg().
-import { A_STR, A_WIS, ALTAR, DRAWBRIDGE_DOWN, FOUNTAIN, GRAVE, ICE, IS_LAVA, IS_POOL, Is_waterlevel, is_hole, is_pit, LADDER, SINK, SPIKED_PIT, STAIRS, THRONE, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, } from './const.js';
+import { A_STR, A_WIS, ALTAR, DRAWBRIDGE_DOWN, FOUNTAIN, GRAVE, Is_waterlevel, is_hole, is_pit, LADDER, SINK, SPIKED_PIT, STAIRS, THRONE, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, } from './const.js';
 import { exerciseAttribute } from './attrib.js';
 import { displayLiquidName, plineWithContinuation as pline } from './display.js';
 import { heroFootName } from './body_parts.js';
@@ -19,6 +19,7 @@ import { observeObject } from './object_knowledge.js';
 import { objectCombatName, definiteName } from './objnam.js';
 import { monsterName, monsterPossessive } from './monster_name.js';
 import { surfaceName } from './terrain_name.js';
+import { isIceAt, isLavaAt, isPoolAt } from './terrain_properties.js';
 import { heroGoldAmount } from './hero_gold.js';
 import { heroFormFlags, heroFormHidesWithoutCover, heroMonsterForm, } from './polyself.js';
 import { heroFormSticks } from './hero_species.js';
@@ -240,7 +241,7 @@ export async function dosit({ finishTeleport = null, gotoLevel = null, chooseTel
         game.context.move = 0;
         return;
     }
-    const onPool = IS_POOL(typ);
+    const onPool = isPoolAt(x, y);
     if ((onPool && !(game.underwater || u?.uinwater))
         || (heroMonsterForm(game) === PM_GREMLIN
             && (typ === FOUNTAIN || onPool))) {
@@ -296,7 +297,7 @@ export async function dosit({ finishTeleport = null, gotoLevel = null, chooseTel
     else if (typ === LADDER) {
         await pline('You sit on the ladder.');
     }
-    else if (IS_LAVA(typ)) {
+    else if (isLavaAt(x, y)) {
         await pline(`You sit on the ${displayLiquidName('lava')}.`);
         await burnAwayHeroSlime(game, pline);
         if (formLikesLava()) {
@@ -309,7 +310,7 @@ export async function dosit({ finishTeleport = null, gotoLevel = null, chooseTel
                 return;
         }
     }
-    else if (typ === ICE) {
+    else if (isIceAt(x, y)) {
         await pline('You sit on the ice.');
         if (!u?.coldResistance)
             await pline('The ice feels cold.');

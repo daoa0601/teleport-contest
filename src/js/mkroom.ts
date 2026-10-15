@@ -2,9 +2,10 @@
 // C refs: mkroom.c somexy(), somexyspace(); mklev.c occupied().
 
 import { game } from './gstate.js';
+import { isPoolOrLavaAt } from './terrain_properties.js';
 import { rn1 } from './rng.js';
 import {
-    CORR, ICE, IS_FURNITURE, IS_LAVA, IS_POOL, IS_WALL,
+    CORR, ICE, IS_FURNITURE, IS_WALL,
     ROOM, ROOMOFFSET, isok,
 } from './const.js';
 import { insideRoom } from './room.js';
@@ -25,7 +26,7 @@ export function occupied(x: number, y: number, state: GameState = game): boolean
     const trapped = state.level?.traps?.some(trap =>
         trap.tx === x && trap.ty === y);
     return !!(trapped || IS_FURNITURE(location.typ)
-        || IS_LAVA(location.typ) || IS_POOL(location.typ));
+        || isPoolOrLavaAt(x, y, state));
 }
 
 export function somexy(room: Room, coordinate: Position, state: GameState = game): boolean {

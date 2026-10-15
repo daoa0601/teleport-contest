@@ -2,7 +2,7 @@
 // C ref: apply.c use_grapple().
 
 import {
-    IS_AIR, IS_POOL, KILLED_BY, P_BASIC, P_SKILLED, isok,
+    IS_AIR, KILLED_BY, P_BASIC, P_SKILLED, isok,
 } from './const.js';
 import { newsym, pline } from './display.js';
 import { wipeHeroEngraving } from './engrave.js';
@@ -25,6 +25,7 @@ import { OBJECT_SUBTYPE } from './object_data.js';
 import { rn2, rnd } from './rng.js';
 import { ensureHeroSkills } from './skills.js';
 import { surfaceName } from './terrain_name.js';
+import { isPoolAt } from './terrain_properties.js';
 import { cansee, couldsee } from './vision.js';
 import { showPagedPickOneMenu } from './windows.js';
 import type { PositionDescription } from './getpos.js';
@@ -239,7 +240,7 @@ export async function useGrapplingHook(hook: GameObject, {
         if (!location) throw new Error('The hook target is outside the dungeon map.');
         const terrain = location.typ;
         const surface = surfaceName(target.x, target.y, state);
-        if (IS_AIR(terrain) || IS_POOL(terrain)) {
+        if (IS_AIR(terrain) || isPoolAt(target.x, target.y, state)) {
             await pline(`The hook slices through the ${surface}.`);
         } else {
             await pline(`You are yanked toward the ${surface}!`);

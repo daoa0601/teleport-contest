@@ -172,6 +172,14 @@ for (const [type, name, killer] of [
         await dieWith(() => hitHeroWithObject(missile, 1, 8, { name, rollOne: () => 1 }), `killed by ${killer}`);
     });
 }
+void test('a fatal scattered object is retained on the floor during death cleanup', async () => {
+    lowHitPointRoom();
+    const club = await floorObject(CLUB, 11, 10);
+    await dieWith(() => scatterFloorObjects(11, 10, 1, {
+        mayDestroy: false, random: () => 0, rollOne: () => 1,
+    }), 'killed by a club');
+    assert.equal(club.where, 'floor');
+});
 void test('a fatal single corpse hit uses a generic hit name and a species-specific killer', async () => {
     lowHitPointRoom();
     const corpse = await knownObject(CORPSE, { corpsenm: MONSTER_NAME.indexOf('newt') });

@@ -1,11 +1,13 @@
 // C ref: dungeon.c surface().
-import { ALTAR, CLOUD, DOOR, DRAWBRIDGE_DOWN, FOUNTAIN, GRAVE, ICE, IS_AIR, IS_LAVA, IS_POOL, IS_ROOM, IS_WALL, Is_waterlevel, Is_earthlevel, Is_firelevel, In_quest, SHOPBASE, TEMPLE, VAULT, SDOOR, DRAWBRIDGE_UP, LAVAPOOL, LAVAWALL, MOAT, POOL, WATER, isok, } from './const.js';
+import { ALTAR, CLOUD, DOOR, DRAWBRIDGE_DOWN, FOUNTAIN, GRAVE, ICE, IS_AIR, IS_ROOM, IS_WALL, Is_waterlevel, Is_earthlevel, Is_firelevel, In_quest, SHOPBASE, TEMPLE, VAULT, SDOOR, DRAWBRIDGE_UP, LAVAPOOL, LAVAWALL, MOAT, POOL, WATER, isok, } from './const.js';
 import { game, requireGameLevel } from './gstate.js';
 import { displayLiquidName } from './display.js';
 import { drawbridgeUnderlyingType } from './drawbridge_terrain.js';
+import { isIceAt, isLavaAt, isPoolAt } from './terrain_properties.js';
 import { onQuestStart } from './quest.js';
 import { heroIsHallucinating } from './senses.js';
 import { roomsAt } from './room.js';
+import { monsterDigests, monsterEnfolds, monsterIsAnimal } from './monster_data.js';
 // C pager.c:waterbody_name(). The liquid name is chosen before a caller
 // changes terrain, even when that caller will not print it.
 export function waterbodyName(x, y, state = game) {
@@ -43,16 +45,23 @@ export function waterbodyName(x, y, state = game) {
     return 'water';
 }
 export function surfaceName(x, y, state = game) {
-    const type = state.level?.at?.(x, y)?.typ;
-    if (type === undefined)
+    const location = state.level?.at(x, y);
+    if (!location)
         return 'ground';
+    const type = location.typ === DRAWBRIDGE_UP
+        ? drawbridgeUnderlyingType(location.drawbridgemask ?? 0) : location.typ;
+    const engulfer = state.u.ustuck;
+    if (x === state.u.ux && y === state.u.uy && state.u.uswallow
+        && engulfer && monsterIsAnimal(engulfer))
+        return monsterDigests(engulfer) ? 'maw' : monsterEnfolds(engulfer) ? 'husk' : 'nonesuch';
     if (IS_AIR(type))
-        return type === CLOUD ? 'cloud' : 'air';
-    if (IS_POOL(type))
-        return state.underwater || state.u?.uinwater ? 'bottom' : 'water';
-    if (type === ICE)
+        return Is_waterlevel(state.u.uz) ? 'air bubble' : type === CLOUD ? 'cloud' : 'air';
+    if (isPoolAt(x, y, state))
+        return (state.underwater || state.u.uinwater) && !Is_waterlevel(state.u.uz)
+            ? 'bottom' : displayLiquidName('water', state);
+    if (isIceAt(x, y, state))
         return 'ice';
-    if (IS_LAVA(type))
+    if (isLavaAt(x, y, state))
         return displayLiquidName('lava', state);
     if (type === DRAWBRIDGE_DOWN)
         return 'bridge';

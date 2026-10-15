@@ -2,7 +2,7 @@ import { requirePlayingGame } from './gstate.js';
 // C detect.c:do_mapping(), do_vicinity_map().
 import { monsterHasMapPosition } from './monster_location.js';
 import { exerciseWisdom } from './attrib.js';
-import { COLNO, IN_SIGHT, IS_POOL, LAVAPOOL, LAVAWALL, ROWNO, TER_DETECT, TER_MAP, TER_MON, TER_OBJ, TER_TRP, } from './const.js';
+import { COLNO, IN_SIGHT, ROWNO, TER_DETECT, TER_MAP, TER_MON, TER_OBJ, TER_TRP, } from './const.js';
 import { mapLevel, showMapSpot } from './detect.js';
 import { canSpotMonster, docrt, flush_screen, glyphAt, map_invisible, map_object, pline, see_monsters, } from './display.js';
 import { game, requireLiveGame } from './gstate.js';
@@ -10,6 +10,7 @@ import { browseDetectionMap, mapDetectedMonster, reconstrainMap, redisplayDetect
 import { MONSTER_NAME } from './monster_data.js';
 import { observeObject } from './object_knowledge.js';
 import { propertyIsActive } from './properties.js';
+import { terrainCoversObjectsAt } from './terrain_properties.js';
 const LONG_WORM_TAIL = MONSTER_NAME.indexOf('long worm tail');
 const MAP_MODE = TER_DETECT | TER_MAP | TER_TRP | TER_OBJ;
 export async function mapMagicLevel({ state = game, confused = (state.u.confusionTurns ?? 0) > 0, revealAllTraps = false } = {}) {
@@ -61,7 +62,7 @@ export async function mapVicinity(source, { state = game } = {}) {
                     map_object(object, true);
                     shownObjects.set(`${x},${y}`, object);
                     if (glyphChanged(oldGlyph, glyphAt(x, y, state))
-                        && coversObjects(x, y, state))
+                        && terrainCoversObjectsAt(x, y, state))
                         detectedObject = true;
                 }
                 const monster = state.level.monsters.find(actor => monsterHasMapPosition(actor, state) &&
@@ -131,10 +132,6 @@ function glyphChanged(before, after) {
     if (before.kind === 'trap' && after.kind === 'trap')
         return before.trapType !== after.trapType;
     return false;
-}
-function coversObjects(x, y, state) {
-    const typ = state.level.requireAt(x, y).typ;
-    return IS_POOL(typ) && !state.u.uinwater || typ === LAVAPOOL || typ === LAVAWALL;
 }
 function glyphCharacter(glyph) {
     return glyph && 'ch' in glyph && typeof glyph.ch === 'string' ? glyph.ch : undefined;
