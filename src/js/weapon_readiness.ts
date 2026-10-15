@@ -14,6 +14,7 @@ import { AKLYS, BATTLE_AXE, CORPSE, OBJECT_BIMANUAL, OBJECT_SUBTYPE } from './ob
 import { makePlural } from './object_grammar.js';
 import { corpseName, killerObjectName, objectName, observeObjectForNaming } from './objnam.js';
 import { insideShopRoomAt, shopResident } from './shk.js';
+import { statusConditionEnabled } from './status_conditions.js';
 import { heroResistsStoning, resolveImmediatePetrification, touchPetrifies } from './stoning.js';
 import { announceWeaponWeld, explainTwoWeaponEnd } from './weapon_feedback.js';
 import { setPrimaryWeapon } from './weapon_slots.js';
@@ -32,6 +33,14 @@ export function emptyHandedDescription(state: GameState = game): string {
 export async function readyHeroWeapon(
     weapon: GameObject | null, state: GameState = game,
 ): Promise<boolean> {
+    const hadWeapon = !!(state.uwep || state.u.uwep);
+    const spentTime = await readySelectedWeapon(weapon, state);
+    if (hadWeapon !== !!(state.uwep || state.u.uwep)
+        && statusConditionEnabled('barehanded', state)) state.context.botl = true;
+    return spentTime;
+}
+
+async function readySelectedWeapon(weapon: GameObject | null, state: GameState): Promise<boolean> {
     requirePlayingGame(state);
     const previous = state.uwep || state.u.uwep;
     const wasTwoWeapon = state.u.twoweap;
