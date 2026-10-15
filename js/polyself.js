@@ -51,7 +51,6 @@ import { loseHeroHp } from './hero_damage.js';
 import { isWeldedPrimary, losePrimaryWeapon, setSecondaryWeapon } from './weapon_slots.js';
 import { dropInventoryObjectAtHero } from './hero_drop.js';
 import { heroCanUseTwoWeapons, stopTwoWeaponCombat } from './two_weapon.js';
-import { vision_recalc } from './vision.js';
 import { heroIsPunished } from './ball.js';
 import { unpunishHero } from './punishment.js';
 import { clearHeroTrap, freeHeroFromBuriedBall } from './hero_traps.js';
@@ -518,8 +517,8 @@ export async function polymonHero(mnum, options = {}) {
     if (game.u.utrap && game.u.utraptype === TT_PIT)
         game.u.utrap = rn1(6, 2);
     if (wasBlind && !heroIsBlind(game)) {
-        vision_recalc(0);
-        await plineWithContinuation('You can see again.');
+        setHeroBlindnessTurns(1, game);
+        await makeBlinded(0, { state: game });
     }
     game.vision_full_recalc = 1;
     newsym(game.u.ux, game.u.uy);
