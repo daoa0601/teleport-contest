@@ -10196,10 +10196,11 @@ async function makeniche(trap_type: number): Promise<void> {
 }
 
 async function make_niches(): Promise<void> {
-    const g = game;
-    let ct = rnd(Math.trunc(requireGameLevel().nroom / 2) + 1);
-    let ltptr = ((g.u?.uz?.dlevel ?? 1) > 15);
-    let vamp = ((g.u?.uz?.dlevel ?? 1) > 5 && (g.u?.uz?.dlevel ?? 1) < 25);
+    const level = requireGameLevel();
+    let ct = rnd(Math.trunc(level.nroom / 2) + 1);
+    const depth = depth_of_level(game.u.uz);
+    let ltptr = !level.flags.noteleport && depth > 15;
+    let vamp = depth > 5 && depth < 25;
     while (ct--) {
         if (ltptr && !rn2(6)) {
             ltptr = false;
