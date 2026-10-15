@@ -50,6 +50,8 @@ import { isBeingTakenOff } from './takeoff_state.js';
 import { OBJECT_DELAY } from './object_data.js';
 import { heroIsUnaware } from './hero_sleep.js';
 import { heroSpecies } from './hero_species.js';
+import { heroHasConflict } from './hero_conflict.js';
+import { openHoldingTrap } from './trap_magic.js';
 import { AD_COLD, AD_DGST, AD_DRST, AD_FIRE, AD_MAGM, AD_SEDU, AD_SITM, AD_SSEX, AD_STCK } from './monster_attack_types.js';
 import { monstersForgetHeroResistance, monstersObserveHeroResistance, seenResistanceForDamage, } from './monster_perception.js';
 import { engravingAt, wipeEngravingAt } from './engrave.js';
@@ -98,7 +100,7 @@ import { makePlural, verbForSubject, withIndefiniteArticle } from './object_gram
 import { monsterLocomotion } from './monster_locomotion.js';
 import { monsterFliesOrFloats } from './terrain_properties.js';
 import { observeDistantObjectForNaming, observeObjectForNaming, ownedObjectName, } from './objnam.js';
-import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, BOLT_LIM, COLNO, ROWNO, DOOR, D_CLOSED, D_LOCKED, HOLE, M_SEEN_MAGR, STONE, ZAP_POS, STRAT_CLOSE, STRAT_WAITFORU, UNENCUMBERED, MOD_ENCUMBER, HVY_ENCUMBER, EXT_ENCUMBER, W_ACCESSORY, W_WEAPONS, ismnum, Upolyd, Is_airlevel, Is_waterlevel, LUCKMIN, LUCKMAX, TT_LAVA, } from './const.js';
+import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, BOLT_LIM, COLNO, ROWNO, DOOR, D_CLOSED, D_LOCKED, HOLE, M_SEEN_MAGR, STONE, ZAP_POS, STRAT_CLOSE, STRAT_WAITFORU, UNENCUMBERED, MOD_ENCUMBER, HVY_ENCUMBER, EXT_ENCUMBER, W_ACCESSORY, W_WEAPONS, ismnum, Upolyd, Is_airlevel, Is_waterlevel, LUCKMIN, LUCKMAX, TT_BURIEDBALL, TT_LAVA, } from './const.js';
 import { uInitMisc, makedog, uInitInventoryAttrs, finishStartingDiscoveries, } from './u_init.js';
 import { makeDeaf } from './hero_hearing.js';
 import { heroIsBlind, heroIsDeaf, syncBlindness } from './senses.js';
@@ -1578,7 +1580,7 @@ function wornTheftObjectDescription(object) {
     // C steal.c:worn_item_removal() starts from doname(), then massages only
     // the ownership and equipment-location suffix for its pre-removal line.
     let description = inventoryItemDescription(object)
-        .replace(/^(?:the|an|a) /, 'your ')
+        .replace(/^(?:the|an|a) /, object === game.uchain ? 'the ' : 'your ')
         .replace(' (being worn)', '')
         .replace(' (alternate weapon; not wielded)', '');
     description = description.replace(/ \(on (left|right) hand\)$/, ' (from $1 hand)');
@@ -1601,6 +1603,7 @@ async function resolveDeferredHeroItemTheft(action, monster, attack, random) {
         return false;
     attack.deferredItemTheft = false;
     const animal = monsterIsAnimal(monster);
+    const wasPunished = !!game.uball;
     const draw = (limit) => {
         action.calls.push(`rn2(${limit})`);
         return random(limit);
@@ -1651,11 +1654,20 @@ async function resolveDeferredHeroItemTheft(action, monster, attack, random) {
         const subject = canSpotMonster(monster)
             ? monsterName(monster, { state: game, capitalized: true })
             : animal ? 'Something' : 'Someone';
-        await plineWithContinuation(heroIsBlind(game)
-            ? 'Somebody tries to rob you, but finds nothing to steal.'
-            : game.inventory.some(item => item.oclass === 12)
-                ? `${subject} tries to rob you, but isn't interested in gold.`
-                : `${subject} tries to rob you, but there is nothing to steal!`);
+        if (!animal && game.uchain && draw(4)) {
+            await plineWithContinuation(`${subject} takes off ${wornTheftObjectDescription(game.uchain)}.`);
+            await removeWornHeroItem(game.uchain, game);
+        }
+        else if (!animal && game.u.utrap && game.u.utraptype === TT_BURIEDBALL && !draw(4)) {
+            await plineWithContinuation(`${subject} takes off your unseen chain.`);
+            await openHoldingTrap(game.u, { state: game });
+        }
+        else
+            await plineWithContinuation(heroIsBlind(game)
+                ? 'Somebody tries to rob you, but finds nothing to steal.'
+                : game.inventory.some(item => item.oclass === 12)
+                    ? `${subject} tries to rob you, but isn't interested in gold.`
+                    : `${subject} tries to rob you, but there is nothing to steal!`);
         await retreatAfterItemTheft(action, monster, attack, animal);
         return true;
     }
@@ -1689,8 +1701,8 @@ async function resolveDeferredHeroItemTheft(action, monster, attack, random) {
     if (object.otyp === BOULDER && !throwsRocks)
         return refuse();
     if (animal) {
-        let stuck = !!object.cursed && wasWorn
-            && object !== game.uquiver && !(object === game.uswapwep && !game.u.twoweap);
+        let stuck = object === game.uball || (!!object.cursed && wasWorn
+            && object !== game.uquiver && !(object === game.uswapwep && !game.u.twoweap));
         const weapon = game.uwep;
         const ring = object === game.uleft || object === game.uright;
         if (!stuck && ring && weapon && isWeldedPrimary(weapon, game)) {
@@ -1769,14 +1781,18 @@ async function resolveDeferredHeroItemTheft(action, monster, attack, random) {
             }
         }
     }
+    const removalItem = object === game.uball && game.uchain ? game.uchain : object;
     if (!charmed && (wasWeapon || stillWorn)) {
-        observeObjectForNaming(object);
-        const description = wornTheftObjectDescription(object);
-        const verb = wasWeapon ? 'disarms' : wasAccessory ? 'removes' : 'takes off';
+        observeObjectForNaming(removalItem);
+        const description = wornTheftObjectDescription(removalItem);
+        const verb = removalItem === object && wasWeapon ? 'disarms'
+            : wasAccessory ? 'removes' : 'takes off';
         removalMessage = `${subject} ${verb} ${description}.`;
     }
     if (removalMessage && !charmed)
         await plineWithContinuation(removalMessage);
+    if (removalItem !== object)
+        await removeWornHeroItem(removalItem, game);
     await removeWornHeroItem(object, game);
     if (game.program_state?.gameover || !game.inventory.includes(object)) {
         attack.theftResolved = true;
@@ -1797,7 +1813,8 @@ async function resolveDeferredHeroItemTheft(action, monster, attack, random) {
         attack.theftResolved = true;
         return true;
     }
-    monster.mavenge = 1;
+    if (!heroHasConflict(game) && !(wasPunished && !game.uball))
+        monster.mavenge = 1;
     observeObjectForNaming(object);
     const stolenObjectDescription = inventoryItemDescription(object);
     const thief = removalMessage && !animal

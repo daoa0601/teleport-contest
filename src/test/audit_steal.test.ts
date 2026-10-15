@@ -7,12 +7,16 @@ import { flushPendingTopline } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { setHeroSpecies } from '../js/hero_species.js';
 import { resetInputState } from '../js/input.js';
+import { punishHero } from '../js/punishment.js';
+import { unlinkObject } from '../js/object_location.js';
+import { addInventoryItem } from '../js/u_init.js';
 import { BOULDER, DAGGER, GOLD_PIECE, LEASH, OBJECT_NAMES } from '../js/object_data.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
+import { installHeroChainedToBuriedBall } from './support/hero-state.js';
 
 async function nearbyThief(species = 'water nymph') {
     const thief = await createMonsterAt(species, 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
@@ -102,9 +106,51 @@ function theftMessages() {
     const messages: string[] = [];
     const input = resetInputState();
     input.beforeRead = () => { messages.push(game._pending_message); };
-    installPagerInput(input, { expected: /nymph|monkey|Somebody|She|Something|Someone/, limit: 25 });
+    installPagerInput(input, { expected: /nymph|monkey|Somebody|She|Something|Someone|punished|chain|anchor/, limit: 25 });
     return messages;
 }
+
+for (const carried of [false, true]) {
+    void test(`a nymph unlocks punishment ${carried ? 'and steals a carried ball' : 'when the hero has no inventory'}`, async () => {
+        freshObjectRoom();
+        requirePlayingGame(game);
+        const messages = theftMessages();
+        await punishHero();
+        const ball = game.uball;
+        assert.ok(ball);
+        if (carried) {
+            unlinkObject(ball, game);
+            await addInventoryItem(ball);
+        }
+        const thief = await nearbyThief();
+
+        await performMonsterHeroAttack(thief, game, { random: limit => Math.min(1, limit - 1), rollOne: () => 1 });
+        messages.push(game._pending_message);
+
+        assert.equal(game.u.punished, false);
+        assert.equal(game.uchain, null);
+        assert.equal(game.uball, null);
+        assert.equal(thief.minvent.includes(ball), carried);
+        assert.equal(ball.where, carried ? 'minvent' : 'floor');
+        assert.match(messages.join('\n'), /takes off the iron chain/);
+        assert.ok(!thief.mavenge, 'Unpunishing the hero does not grant retaliation against the nymph');
+    });
+}
+
+void test('a nymph releases an empty-handed hero from a buried punishment ball', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    await installHeroChainedToBuriedBall({ x: 9, y: 10 });
+    const thief = await nearbyThief();
+    const messages = theftMessages();
+
+    await performMonsterHeroAttack(thief, game, { random: () => 0, rollOne: () => 1 });
+    messages.push(game._pending_message);
+
+    assert.equal(game.u.utrap, 0);
+    assert.match(messages.join('\n'), /takes off your unseen chain\.[\s\S]*released from your anchor/);
+    assert.equal(thief.minvent.length, 0);
+});
 
 for (const possessions of ['nothing', 'gold', 'blind'] as const) {
     void test(`a nymph announces an unsuccessful robbery with ${possessions} and flees`, async () => {
