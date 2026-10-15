@@ -2,7 +2,7 @@
 // C refs: end.c done_in_by()/done()/savelife(), tty message windows.
 import { game } from './gstate.js';
 import { PARANOID_DIE, MGIVENNAME, M_AP_MONSTER, M_AP_TYPE, STONING, Upolyd, ismnum } from './const.js';
-import { canSpotMonster, flushPendingTopline, flush_screen, pline, plineWithContinuation } from './display.js';
+import { canSpotMonster, flushPendingTopline, flush_screen, plineWithContinuation } from './display.js';
 import { beginHeroLifeSaving, completeHeroLifeSaving, finishOrdinaryDeath, identifyLifeSavingAmulet, restoreHeroAfterDeath, } from './end.js';
 import { setHeroRemainsFromMonster } from './death_remains.js';
 import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, monsterTypeName } from './monster_data.js';
@@ -142,17 +142,9 @@ export async function finishMonsterAttackDeath(monster, { pagerOwned = false, at
         game._statusUpdatesDisabled = true;
     try {
         if (announcesDeath && game._suppressMessagesUntilInput && deathType !== STONING) {
-            // tty update_topl() treats "You die" specially: it
-            // replaces the logically stopped topline and clears
-            // WIN_STOP rather than appending to the pline which
-            // triggered Escape.  In debug/explore mode an earlier
-            // actor's stopped pager yields directly to yn_function();
-            // a pager owned by this same fatal contact still reaches
-            // done()'s explicit message-window flush.
-            await pline(fatalLine);
-            game._suppressMessagesUntilInput = false;
+            await plineWithContinuation(fatalLine);
             commitFatalEvent();
-            if (pagerOwned)
+            if (pagerOwned && !game._suppressMessagesUntilInput)
                 await waitForCurrentMonsterMore(fatalLine);
         }
         else if (announcesDeath) {

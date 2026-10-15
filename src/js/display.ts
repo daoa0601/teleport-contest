@@ -2594,6 +2594,8 @@ export async function pline(msg: string) {
     // flushes the map or negotiates tty's previous-topline pager.
     if (game.vision_full_recalc) vision_recalc(0);
     if (game.u.ux) await flush_screen(1);
+    if (game.nhDisplay)
+        game.nhDisplay.stoppedTopline = game._suppressMessagesUntilInput ? msg : null;
     game._pending_message = msg;
     game._retained_message = '';
     game._last_message = msg;
@@ -2799,13 +2801,27 @@ export async function plineWithContinuation(msg: string, { noRepeat = false, urg
     // acknowledgment. Direct message-window display does not do this.
     if (game.vision_full_recalc) vision_recalc(0);
     if (game.u.ux) await flush_screen(1);
-    // Escape stops tty prose after vpline has refreshed the display.
-    if (!urgent && game._suppressMessagesUntilInput) return;
     const pending = game._pending_message || '';
     const visibleLength = (message: string) => /[\x0e\x0f]|\x1b\[[0-9;]*C/.test(message)
         ? decodeMixedTopline(message).length : message.length;
     const columns = game.nhDisplay?.cols ?? 80;
     const wraps = toplineRows(msg, columns).length > 1;
+    if (!urgent && game._suppressMessagesUntilInput) {
+        const stopped = game.nhDisplay?.stoppedTopline ?? pending;
+        const fits = toplineRows(pending, columns).length === 1
+            && visibleLength(msg) + visibleLength(stopped) + 3 < columns - 8;
+        const restarts = fits && msg.startsWith('You die');
+        // Even hidden prose appends to or replaces gt.toplines. Native only
+        // compares "You die" after the length check, so a long stopped line
+        // keeps WIN_STOP set through the following survival question.
+        if (game.nhDisplay)
+            game.nhDisplay.stoppedTopline = fits && !restarts ? `${stopped}  ${msg}` : msg;
+        game._lastPlineMessage = msg;
+        if (!restarts) return;
+        game._suppressMessagesUntilInput = false;
+        await pline(msg);
+        return wraps ? await pageTopline(msg) : null;
+    }
     let dismissal;
     if (!pending) {
         await pline(msg);

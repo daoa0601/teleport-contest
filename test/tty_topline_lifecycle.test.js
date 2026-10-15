@@ -9,6 +9,9 @@ import { game } from '../js/gstate.js';
 import { nhgetch, resetInputState } from '../js/input.js';
 import { promptKey, readDirectionKey } from '../js/tty_prompts.js';
 import { DART } from '../js/object_data.js';
+import { NO_MINVENT } from '../js/const.js';
+import { finishMonsterAttackDeath } from '../js/monster_attack_death.js';
+import { createMonsterAt } from './support/monsters.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 function topline() {
@@ -117,5 +120,31 @@ void test('a successful ordinary throw leaves no answered direction query on the
     assert.equal(topline(), '');
     assert.equal(game.context.move, 1);
     assert.equal(dart.where, 'floor');
+});
+void test('suppressed combat prose keeps a long death topline stopped before the wizard survival question', async () => {
+    freshObjectRoom({ flags: { debug: true } });
+    requirePlayingGame(game);
+    const giant = await createMonsterAt('stone giant', 11, 10, NO_MINVENT);
+    const input = resetInputState();
+    await plineWithContinuation('You stumble into the path of a stone giant swinging a huge club.');
+    const death = (async () => {
+        await plineWithContinuation('The stone giant hits!');
+        await plineWithContinuation('The stone giant hits!');
+        await plineWithContinuation('The stone giant hits!');
+        game.u.uhp = -4;
+        return finishMonsterAttackDeath(giant);
+    })();
+    try {
+        await input.waitUntilBlocked();
+        assert.match(topline(), /swinging a huge club\.--More--$/);
+        input.feed('\x1b');
+        await input.waitUntilBlocked();
+        assert.equal(topline(), 'Die? [yn] (n)');
+    }
+    finally {
+        input.feed(' n');
+        await death;
+    }
+    assert.ok(game.u.uhp > 0, 'declining death restores the hero');
 });
 //# sourceMappingURL=tty_topline_lifecycle.test.js.map
