@@ -3,7 +3,7 @@
 import { formatFeltMessage } from './hero_speech.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating, syncDeafness } from './senses.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
-import { A_DEX, A_WIS, COLNO, In_endgame, In_sokoban, In_V_tower, Is_astralevel, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, ROWNO, STRAT_WAITMASK, } from './const.js';
+import { A_DEX, A_WIS, COLNO, In_endgame, In_sokoban, In_V_tower, Is_astralevel, KILLED_BY, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, ROWNO, STRAT_WAITMASK, } from './const.js';
 import { tameMonster } from './monster_taming.js';
 import { canSeeMonster, newsym, pline, plineWithContinuation, shieldeff, } from './display.js';
 import { finishHeroDeath } from './end.js';
@@ -302,7 +302,7 @@ async function playElementalHorn(instrument, element) {
             return result;
         if (result.damage) {
             const cause = `using a magical horn on ${game.flags.female ? 'herself' : 'himself'}`;
-            if (await loseHeroHp(result.damage, cause))
+            if (await loseHeroHp(result.damage, cause, { killerFormat: KILLED_BY }))
                 return { heroDied: true };
         }
     }

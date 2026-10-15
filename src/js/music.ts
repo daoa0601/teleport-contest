@@ -6,7 +6,7 @@ import { heroIsBlind, heroIsDeaf, heroIsHallucinating, syncDeafness } from './se
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import {
     A_DEX, A_WIS, COLNO, In_endgame, In_sokoban, In_V_tower,
-    Is_astralevel, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, ROWNO, STRAT_WAITMASK,
+    Is_astralevel, KILLED_BY, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, ROWNO, STRAT_WAITMASK,
 } from './const.js';
 import { tameMonster } from './monster_taming.js';
 import {
@@ -358,7 +358,8 @@ async function playElementalHorn(
         if (result.heroDied) return result;
         if (result.damage) {
             const cause = `using a magical horn on ${game.flags.female ? 'herself' : 'himself'}`;
-            if (await loseHeroHp(result.damage, cause)) return { heroDied: true };
+            if (await loseHeroHp(result.damage, cause, { killerFormat: KILLED_BY }))
+                return { heroDied: true };
         }
     } else {
         if (!heroIsBlind()) {
