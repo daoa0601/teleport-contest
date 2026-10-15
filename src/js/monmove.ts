@@ -221,7 +221,6 @@ import {
     canSpotMonster,
     map_invisible,
     newsym,
-    randomDisplayMonsterSubject,
     plineWithContinuation,
 } from './display.js';
 import {
@@ -7209,26 +7208,10 @@ export async function beginDeferredHeroCloneWizard(
     const attack = action?.movement?.heroAttackSequence?.current;
     if (attack?.kind !== 'hero-spell' || !attack.deferredCloneWizard || attack.cloneWizard)
         return null;
-    const birth = await createWizardClone(state);
-    if (birth) attack.cloneWizard = birth.clone;
+    const clone = await makemonNear(285, state.u.ux, state.u.uy, MM_NOWAIT);
+    if (clone) attack.cloneWizard = clone;
     else attack.deferredCloneWizard = false;
-    return birth;
-}
-
-async function createWizardClone(state: PlayingGameState) {
-    const clone = await makemonNear(285, state.u?.ux ?? 0, state.u?.uy ?? 0, MM_NOWAIT);
-    if (!clone) return null;
-    newsym(clone.mx, clone.my);
-    const hallucinating = heroIsHallucinating(state);
-    // makemon() repaints after the complete creation wear pass, then formats
-    // its visible announcement.  clonewiz() performs another repaint later,
-    // after fake-Amulet and wizapp state have been installed.
-    newsym(clone.mx, clone.my);
-    const subject = hallucinating ? randomDisplayMonsterSubject(true) : 'The Wizard of Yendor';
-    return {
-        clone,
-        message: `${subject} suddenly appears next to you!`,
-    };
+    return clone;
 }
 
 export async function finishDeferredHeroCloneWizard(
@@ -7328,11 +7311,10 @@ export async function resumeDeferredMovementSpell(
     let effect: MonsterSpellEffect = { count: 0, created: [], message: null };
     if (spellCast.spell === 'clone-wizard') {
         await publish('Double Trouble...');
-        const birth = await createWizardClone(state);
-        if (birth) {
-            await publish(birth.message);
-            await finishWizardClone(birth.clone, state, random, action.calls);
-            effect = { count: 1, created: [birth.clone], message: null };
+        const clone = await makemonNear(285, state.u.ux, state.u.uy, MM_NOWAIT);
+        if (clone) {
+            await finishWizardClone(clone, state, random, action.calls);
+            effect = { count: 1, created: [clone], message: null };
         }
     } else if (spellCast.spell === 'cure-self') {
         if (action.monster.mhp < action.monster.mhpmax) {

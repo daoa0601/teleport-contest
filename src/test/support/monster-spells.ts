@@ -43,6 +43,6 @@ export async function finishSpellTurn(seed: number): Promise<string> {
     input.feed('m.');
     await moveloop_core();
     await moveloop_core();
-    messages.push(game._pending_message);
+    if (messages.at(-1) !== game._pending_message) messages.push(game._pending_message);
     return messages.join('\n');
 }

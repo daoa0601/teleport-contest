@@ -2461,9 +2461,7 @@ async function presentMonsterAttackEffects(action, game, { random = rn2, rollDic
                     }
                     if (heroAttack.deferredCloneWizard) {
                         await publishSpellMessage('Double Trouble...');
-                        const clone = await beginDeferredHeroCloneWizard(action, game);
-                        if (clone?.message)
-                            await publishSpellMessage(clone.message);
+                        await beginDeferredHeroCloneWizard(action, game);
                         await finishDeferredHeroCloneWizard(action, game);
                     }
                     if (heroAttack.deferredHasteSelf) {
