@@ -1,3 +1,4 @@
+import { heroLocomotion } from './hero_locomotion.js';
 // steed.js — Saddling, mounting, riding, and dismounting.
 // C ref: steed.c.
 
@@ -26,7 +27,7 @@ import { finishMonsterKilled } from './monster_death.js';
 import { AD_PHYS } from './monster_attack_types.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
 import {
-    MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL,
+    MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL,
     monsterCanBeSaddled, monsterTypeName,
 } from './monster_data.js';
 import { addObjectToMonsterInventory } from './monster_inventory.js';
@@ -121,8 +122,6 @@ const M1_CLING = 0x00000010;
 const M1_SWIM = 0x00000002;
 const M1_HUMANOID = 0x00020000;
 const M1_SLITHY = 0x00080000;
-const M1_AMORPHOUS = 0x00000004;
-const M1_NOLIMBS = 0x00006000;
 const M2_DOMESTIC = 0x00400000;
 const M2_ROCKTHROW = 0x08000000;
 const MZ_SMALL = 1;
@@ -655,7 +654,7 @@ export async function dismountHero(
     hero.usteed = null;
     refreshMovementProperties(state);
     const inAir = hero.levitation || hero.flying;
-    const fallingVerb = dismountFallVerb(state);
+    const fallingVerb = heroLocomotion('fall', state);
     hero.usteed = steed;
     refreshMovementProperties(state);
 
@@ -846,19 +845,6 @@ export async function dismountHero(
         location,
         died: !!location?.died || !!state.program_state?.gameover,
     };
-}
-
-function dismountFallVerb(state: PlayingGameState) {
-    const hero = state.u;
-    const flags = MONSTER_FLAGS1[hero.umonnum] ?? 0;
-    const symbol = MONSTER_SYMBOL[hero.umonnum];
-    if (hero.levitation || symbol === S_EYE || symbol === S_LIGHT) return 'float';
-    if (hero.flying || (flags & M1_FLY)) return 'fly';
-    if (flags & M1_SLITHY) return 'slither';
-    if (flags & M1_AMORPHOUS) return 'ooze';
-    if (!MONSTER_MOVE[hero.umonnum]) return 'wiggle';
-    if ((flags & M1_NOLIMBS) === M1_NOLIMBS) return 'crawl';
-    return 'fall';
 }
 
 async function dropSteedIntoLiquid(

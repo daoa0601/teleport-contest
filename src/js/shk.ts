@@ -1,3 +1,4 @@
+import { heroLocomotion } from './hero_locomotion.js';
 // shk.js — Runtime shop ownership and entry policy.
 // C refs: hack.c move_update()/check_special_room(), shk.c inhishop(),
 // shop_keeper(), and u_entered_shop().  Lua/mklev owns room construction and
@@ -1338,8 +1339,12 @@ function specialRoomEntryMessage(room: Room, roomno: number): string | null {
         return `You enter an opulent${throne ? ' throne' : ''} room!`;
     }
     case LEPREHALL: return 'You enter a leprechaun hall!';
-    case MORGUE: return Number(String(game.datetime || '').slice(8, 10)) === 0
-        ? 'Run away!  Run away!' : 'You have an uncanny feeling...';
+    case MORGUE: {
+        if (Number(String(game.datetime || '').slice(8, 10)) !== 0)
+            return 'You have an uncanny feeling...';
+        const verb = heroLocomotion('Run');
+        return `${verb} away!  ${verb} away!`;
+    }
     case BEEHIVE: return 'You enter a giant beehive!';
     case COCKNEST: return 'You enter a disgusting nest!';
     case ANTHOLE: return 'You enter an anthole!';
