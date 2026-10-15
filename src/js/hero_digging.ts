@@ -37,7 +37,6 @@ import { triggerHeroTrap } from './hero_traps.js';
 import { resetHeroTrap } from './terrain_movement.js';
 import { dist2, isok } from './hacklib.js';
 import { triggerBoobyTrap } from './booby_trap.js';
-import { carriedObjectOwner } from './shk.js';
 import { makemonAt, mksobj } from './mklev.js';
 import { MONSTER_FLAGS1, MONSTER_NAME, monsterTypeName, requireMonsterData } from './monster_data.js';
 import { adjustedMonsterLevel } from './monster_hit_points.js';
@@ -46,7 +45,7 @@ import {
     APPLE, BANANA, BOULDER, EUCALYPTUS_LEAF, OBJECT_BIMANUAL, ORANGE, PEAR,
     STATUE,
 } from './object_data.js';
-import { objectName, ownedObjectAction } from './objnam.js';
+import { definiteName, objectName, ownedObjectAction, ownedObjectName, simpleObjectName } from './objnam.js';
 import {
     heroMonsterForm, heroIsFlying,
 } from './polyself.js';
@@ -243,16 +242,6 @@ function feelNewsym(x: number, y: number, state: GameState): void {
     // C display.c feel_newsym(): blind heroes feel the changed location.
     if (heroIsBlind(state)) feel_location(x, y);
     else newsym(x, y);
-}
-
-// C objnam.c yname()/yobjnam(): mid-sentence "your pick-axe".
-// carriedObjectOwner() yields the sentence-start possessive, including the
-// shopkeeper form for unpaid goods; lowercase it for use after a verb.
-function ownedNameMidSentence(object: GameObject, state: GameState): string {
-    const owner = carriedObjectOwner(object, state);
-    return `${
-        owner.charAt(0).toLowerCase()}${owner.slice(1)
-    } ${objectName(object, state)}`;
 }
 
 function articleFor(name: string): string {
@@ -478,7 +467,7 @@ export async function continueHeroDigging(state = game): Promise<boolean> {
             if (!willWeld(uwep)) {
                 await pline(
                     `You fumble and drop ${
-                        ownedNameMidSentence(uwep, state)
+                        ownedObjectName(uwep, state, { capitalized: false })
                     }.`,
                 );
                 await dropInventoryObjectAtHero(uwep, { state });
@@ -503,7 +492,7 @@ export async function continueHeroDigging(state = game): Promise<boolean> {
         case 1:
             await pline(
                 `Bang!  You hit with the broad side of ${
-                    objectName(uwep, state)
+                    definiteName(objectName(uwep, state), state)
                 }!`,
             );
             await wakeMonstersNearWithMessages(
@@ -557,7 +546,7 @@ export async function continueHeroDigging(state = game): Promise<boolean> {
             } else {
                 await pline(
                     `You destroy the bear trap with ${
-                        ownedNameMidSentence(uwep, state)
+                        ownedObjectName(uwep, state, { capitalized: false, includeQuantity: true })
                     }.`,
                 );
                 deleteTrap(trap, state);
@@ -572,7 +561,7 @@ export async function continueHeroDigging(state = game): Promise<boolean> {
             if (ispick) {
                 await pline(`You destroy ${
                     trap.tseen ? `the ${trapName}` : articleFor(trapName)
-                } with ${ownedNameMidSentence(uwep, state)}.`);
+                } with ${ownedObjectName(uwep, state, { capitalized: false, includeQuantity: true })}.`);
             }
             deleteTrap(trap, state);
             digging.effort = 0;
@@ -667,7 +656,7 @@ export async function continueHeroDigging(state = game): Promise<boolean> {
                 location.doormask = D_BROKEN;
         } else if (closedDoorAt(location)) {
             digtxt = `You break through the door with your ${
-                objectName(uwep, state)
+                simpleObjectName(uwep, state)
             }.`;
             if (shopedge) {
                 await addShopDamage(dpx, dpy, SHOP_DOOR_COST, state);
