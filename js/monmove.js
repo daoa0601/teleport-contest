@@ -85,7 +85,7 @@ import { checkMonsterHeroRange } from './monster_flee.js';
 import { chooseCovetousStrategy, pursueCovetousTarget } from './monster_covetous_target.js';
 import { retreatCovetousMonster } from './monster_covetous_retreat.js';
 import { monsterName as canonicalMonsterName, monsterPossessive, monsterSpellDeathReason, possessiveName, shopkeeperName, } from './monster_name.js';
-import { heroEyeCount, heroEyeName, heroHasEyes, monsterHandName } from './body_parts.js';
+import { heroEyeCount, heroEyeName, heroHasEyes, heroHeadName, monsterHandName } from './body_parts.js';
 import { monsterIsHelpless, monsterResistsSleep } from './monster_sleep.js';
 import { applyMonsterAntiMagicTrap, finishMonsterAntiMagicTrap, monsterHasMagicResistance, } from './anti_magic_trap.js';
 import { beginMonsterBearTrap, finishMonsterBearTrap } from './bear_trap.js';
@@ -336,14 +336,15 @@ function monsterSpellEffectPreview(spell, damage, state) {
         effectDamage = Math.trunc((effectDamage + 1) / 2);
     let effectMessage = null;
     if (spell.key === 'psi-bolt') {
+        const head = heroHeadName(state);
         effectMessage =
             effectDamage <= 5
-                ? 'You get a slight headache.'
+                ? `You get a slight ${head}ache.`
                 : effectDamage <= 10
                     ? 'Your brain is on fire!'
                     : effectDamage <= 20
-                        ? 'Your head suddenly aches painfully!'
-                        : 'Your head suddenly aches very painfully!';
+                        ? `Your ${head} suddenly aches painfully!`
+                        : `Your ${head} suddenly aches very painfully!`;
     }
     else if (spell.key === 'open-wounds') {
         effectMessage =

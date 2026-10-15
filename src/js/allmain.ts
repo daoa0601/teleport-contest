@@ -54,7 +54,7 @@ import { consumeMonsterItem, presentMonsterQuaff as publishMonsterQuaff, present
 import { moveMonsterNextToHero, randomMonsterRelocation } from './teleport.js';
 import { monsterAtPosition } from './monster_location.js';
 import { placeHeroAtRandomArrival } from './level_change.js';
-import { monsterName, monsterSpellDeathReason, possessiveName, quietMonsterName } from './monster_name.js';
+import { monsterName, monsterSpellDeathReason, monsterSubjectPronoun, possessiveName, quietMonsterName } from './monster_name.js';
 import { touchHeroWithDeath } from './monster_death_touch.js';
 import { resolveMonsterWeaponContact } from './monster_weapon_contact.js';
 import { finishMonsterAttackDeath, waitForCurrentMonsterMore } from './monster_attack_death.js';
@@ -2622,14 +2622,7 @@ async function presentMonsterAttackEffects(
                             } looks better.`;
                         }
                         if (heroAttack.spell === 'death-touch') {
-                            let pronoun;
-                            if (heroIsHallucinating(game)) {
-                                const gender = rn2(4);
-                                action.calls.push('rn2(4)');
-                                pronoun = ['he', 'she', 'it', 'they'][gender];
-                            } else {
-                                pronoun = monster.female ? 'she' : 'he';
-                            }
+                            const pronoun = monsterSubjectPronoun(monster, { state: game });
                             effectMessage = 'Oh no, ' + pronoun
                                 + "'s using the touch of death!";
                         }
