@@ -1927,6 +1927,14 @@ async function makemon(
     };
     const monsterIndex = level.monsters.push(pendingMonster) - 1;
     allocateMonsterBirthExtensions(pendingMonster, mmflags);
+    if (!(requireMonsterData(MONSTER_FLAGS1, mndx) & M1_MINDLESS)) {
+        if (In_sokoban(game.u.uz))
+            pendingMonster.mtrapseen = (1 << (PIT - 1)) | (1 << (HOLE - 1));
+        if (Is_stronghold(game.u.uz))
+            pendingMonster.mtrapseen = (pendingMonster.mtrapseen ?? 0) | (1 << (TRAPDOOR - 1));
+    }
+    if (MONSTER_SOUND[mndx] === 36 || MONSTER_SOUND[mndx] === 37)
+        pendingMonster.mtrapseen = -1; // quest leaders and nemeses know every trap
     if (mmflags & MM_MINVIS) {
         setMonsterPermanentInvisibility(pendingMonster);
         newsym(pendingMonster.mx, pendingMonster.my);
@@ -2774,6 +2782,8 @@ async function makemon(
     if (pendingMonster._egd) monster._egd = pendingMonster._egd;
     if (pendingMonster.mcorpsenm !== undefined)
         monster.mcorpsenm = pendingMonster.mcorpsenm;
+    if (pendingMonster.mtrapseen !== undefined)
+        monster.mtrapseen = pendingMonster.mtrapseen;
     if (roamingMinion) {
         monster.isminion = 1;
         monster.emin = {
@@ -2809,15 +2819,6 @@ async function makemon(
         if (pendingMonster.mcorpsenm != null)
             monster.mcorpsenm = pendingMonster.mcorpsenm;
     }
-    if (In_sokoban(game.u.uz) && !(requireMonsterData(MONSTER_FLAGS1, mndx) & M1_MINDLESS)) {
-        // Branch knowledge survives puzzle completion.
-        monster.mtrapseen = (1 << (PIT - 1)) | (1 << (HOLE - 1));
-    }
-    if (Is_stronghold(game.u.uz) && !(requireMonsterData(MONSTER_FLAGS1, mndx) & M1_MINDLESS))
-        monster.mtrapseen = (monster.mtrapseen ?? 0) | (1 << (TRAPDOOR - 1));
-    // Native quest leaders and nemeses know every trap type at birth.
-    if (MONSTER_SOUND[mndx] === 36 || MONSTER_SOUND[mndx] === 37)
-        monster.mtrapseen = -1;
     if (mndx === PM_SHOPKEEPER) {
         monster.mpeaceful = 1;
     }

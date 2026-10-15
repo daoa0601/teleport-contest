@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { DB_LAVA, DB_MOAT, DRAWBRIDGE_UP, G_GENOD, LAVAPOOL, MM_NOMSG, MM_NOTAIL, NO_MINVENT, POOL, WATER, } from '../js/const.js';
+import { DB_LAVA, DB_MOAT, DRAWBRIDGE_UP, G_GENOD, LAVAPOOL, MM_NOMSG, MM_NOTAIL, NO_MINVENT, PIT, HOLE, POOL, WATER, } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { glyphAt } from '../js/display.js';
 import { makemonAt } from '../js/mklev.js';
@@ -10,6 +10,17 @@ import { initRng } from '../js/rng.js';
 import { requireMonsterVital } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 const species = (name) => MONSTER_NAME.indexOf(name);
+void test('a vampire born in Sokoban retains pit and hole knowledge after shapechanging', async () => {
+    freshObjectRoom({ gameplaySeed: 1n });
+    requirePlayingGame(game);
+    game.sokoban_dnum = game.u.uz.dnum;
+    const vampire = await makemonAt(species('vampire'), 12, 10, MM_NOMSG | NO_MINVENT);
+    assert.ok(vampire);
+    assert.notEqual(vampire.mnum, species('vampire'));
+    const traps = vampire.mtrapseen ?? 0;
+    assert.ok(traps & (1 << (PIT - 1)), 'the original vampire already knew about Sokoban pits');
+    assert.ok(traps & (1 << (HOLE - 1)), 'changing its birth form must not erase hole knowledge');
+});
 for (const name of ['vampire', 'vampire leader']) {
     void test(`${name} stays in its native form when its alternate forms are genocided`, async () => {
         freshObjectRoom();
