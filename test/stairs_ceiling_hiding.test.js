@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { rhack } from '../js/cmd.js';
-import { PIT, TT_PIT } from '../js/const.js';
+import { PIT, TELEP_TRAP, TT_PIT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
@@ -45,6 +45,24 @@ void test('a piercer coming down triggers the trap below its hiding place', asyn
     assert.equal(game.u.uundetected, 0);
     assert.equal(game.u.utraptype, TT_PIT);
     assert.ok((game.u.utrap ?? 0) > 0, 'landing triggers the pit trap');
+    assert.equal(game.context.move, 1);
+});
+void test('a piercer coming down onto a teleport trap completes its arrival', async () => {
+    const { source } = freshConnectedLevels();
+    requirePlayingGame(game);
+    installPolymorphedHero('rock piercer');
+    game.u.uundetected = true;
+    const trap = addTrap(source, TELEP_TRAP, game.u.ux, game.u.uy, {
+        teledest: { x: 14, y: 10 },
+    });
+    installPagerInput(resetInputState(), { expected: /drop to|materialize/, limit: 3 });
+    await rhack('>'.charCodeAt(0));
+    assert.ok(game.level === source, 'the teleport stays on the current level');
+    assert.equal(game.u.uundetected, 0);
+    assert.equal(trap.tseen, true);
+    assert.equal(game.u.ux, 14);
+    assert.equal(game.u.uy, 10);
+    assert.match(game._pending_message, /You materialize in a different location!$/);
     assert.equal(game.context.move, 1);
 });
 //# sourceMappingURL=stairs_ceiling_hiding.test.js.map

@@ -1734,7 +1734,9 @@ export async function travelStairs(up) {
                 else {
                     await autopickupAtHero();
                     if (!game.program_state.gameover)
-                        await triggerHeroTrapAt(game.u.ux, game.u.uy, { gotoLevel, tookPlunge: true });
+                        await triggerHeroTrapAt(game.u.ux, game.u.uy, {
+                            finishTeleport: finishTeleportArrival, gotoLevel, tookPlunge: true,
+                        });
                 }
             }
             game.context.move = 1;
