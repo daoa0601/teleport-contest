@@ -8,6 +8,8 @@ import { resetInputState } from '../js/input.js';
 import { monsterGoldAmount } from '../js/shop_money.js';
 import { GOLD_PIECE } from '../js/object_data.js';
 import { rn2 } from '../js/rng.js';
+import { moveHeroByTeleport } from '../js/teleport.js';
+import { finishTeleportArrival } from '../js/location_effects.js';
 import { moveVaultGuard } from '../js/vault.js';
 import { floorObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
@@ -87,4 +89,14 @@ void test('a finished parked escort removes its corridor on a later world turn',
 
     assert.equal(level.monsters.includes(guard), false);
     assert.equal(level.requireAt(12, 10).typ, STONE);
+});
+
+void test('teleporting away with vault gold releases an angry guard immediately', async () => {
+    const { guard } = await escort();
+    setHeroGoldAmount(game, 50);
+
+    const movement = await moveHeroByTeleport(15, 10);
+    await finishTeleportArrival(movement);
+
+    assert.equal(guard.mpeaceful, 0);
 });

@@ -7,7 +7,7 @@ import type { HeroTeleportMovement } from './teleport.js';
 import type { MessagePublisher } from './display.js';
 import type { HeroTrapOptions } from './hero_traps.js';
 import type { Trap, Position } from './map_types.js';
-import { MAX_TYPE, IS_SINK, I_SPECIAL, TIMEOUT, is_pit } from './const.js';
+import { MAX_TYPE, IS_SINK, I_SPECIAL, TIMEOUT, VAULT, is_pit } from './const.js';
 import { applyHeroLiquidEffects } from './cmd.js';
 import { floatHeroDown, switchHeroTerrain } from './terrain_movement.js';
 import { levitationIsPurelyTimed, propertyIsActive } from './properties.js';
@@ -21,6 +21,9 @@ import { announceInvocationSquare } from './invocation.js';
 import { levelTimers, LEVEL_TIMER_KIND } from './object_timers.js';
 import { isIceAt } from './terrain_properties.js';
 import { finishCeilingMonsterArrival } from './ceiling_monster_arrival.js';
+import { roomsAt } from './room.js';
+import { findVaultGuard } from './vault_guard.js';
+import { noticeVaultEscape } from './vault_escort.js';
 
 export interface SpotEffectResult {
     died: boolean;
@@ -57,6 +60,11 @@ export async function finishTeleportArrival(
         const place = movement.oldx === movement.x && movement.oldy === movement.y
             ? 'the same' : 'a different';
         await plineWithContinuation(`You materialize in ${place} location!`);
+    }
+    if (roomsAt(game.level, movement.oldx, movement.oldy, VAULT).length
+        && !roomsAt(game.level, game.u.ux, game.u.uy, VAULT).length) {
+        const guard = findVaultGuard(game);
+        if (guard) await noticeVaultEscape(guard, game);
     }
     const result = await finishDestinationSpotEffects({
         ...movement, newx: movement.x, newy: movement.y, explicitAttempt: false,

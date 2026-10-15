@@ -38,6 +38,7 @@ import { clearVaultCorridor, inVaultCorridor, parkVaultGuard, requireVaultGuard 
 import type { VaultGuard } from './vault_guard.js';
 import { cansee, vision_note_blocker_change } from './vision.js';
 import { setWallStateAt } from './wall_topology.js';
+import { askTeleportDestination } from './cmd.js';
 
 export function findGuardDestination(state: GameState = game, guard: Monster | null = null) {
     const level = requireGameLevel(state);
@@ -237,9 +238,24 @@ export async function guardDestination(state: GameState, guard: Monster | null =
     const destination = findGuardDestination(state, guard);
     if (!destination) {
         await impossible('Not a single corridor on this level?', { state });
-        await teleportHero();
+        await teleportHero({ chooseDestination: askTeleportDestination });
     }
     return destination;
+}
+
+// C uleftvault(): warn before the destination's room-entry feedback.
+export async function noticeVaultEscape(guard: VaultGuard, state: GameState): Promise<void> {
+    if (guard.mhp <= 0 || !guard.isgd) {
+        await impossible('escaping vault without guard?', { state });
+        return;
+    }
+    if (!carriedGold(state)
+        || Math.max(Math.abs(guard.mx - state.u.ux), Math.abs(guard.my - state.u.uy)) <= 1) return;
+    if (guard.mpeaceful) {
+        if (canSpotMonster(guard)) await pline(`${monsterName(guard, { state, capitalized: true })} becomes irate.`);
+        guard.mpeaceful = 0;
+    }
+    if (!inVaultCorridor(guard, state.u.ux, state.u.uy)) await moveVaultGuard(guard, state, rn2);
 }
 
 function guardName(guard: Monster, state: GameState) {
