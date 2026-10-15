@@ -2766,6 +2766,11 @@ async function moveHostile(monster, state, random, rollDice, rollOne, calls, cap
         recordRandom(random, calls, 11) !== 0) {
         appr = 0;
     }
+    const heroObjectAppearance = M_AP_TYPE(state.u) === M_AP_OBJECT ? state.u.mappearance : null;
+    if (heroObjectAppearance === 0 || state.u.uundetected
+        || (heroObjectAppearance === GOLD_PIECE
+            && !((MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_GREEDY)))
+        appr = 0;
     if (monster.mpeaceful)
         appr = 0;
     // set_apparxy() has already established mux/muy.  m_move() never
