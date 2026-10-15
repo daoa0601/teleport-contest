@@ -1490,20 +1490,16 @@ function rndmonnumAdj(minAdjustment = 0, maxAdjustment = 0): number {
     return species;
 }
 
+// C questpgr.c:qt_montype(). The chosen role supplies both species and
+// fallback classes; a genocided preferred species still spends rn2(5).
 function questMonsterType(): number | null {
     const role = game.urole;
-    if (rn2(5)) {
-        const qpm = role?.enemy1num
-            ?? (role?.filecode === 'Pri' ? PM_HUMAN_ZOMBIE : null);
-        if (qpm != null && qpm >= 0 && rn2(5)
-            && !((game.mvitals?.[qpm]?.mvflags ?? 0) & G_GENOD)) return qpm;
-        return mkclass(role?.enemy1sym ?? 52, 0);
-    }
-    const qpm = role?.enemy2num
-        ?? (role?.filecode === 'Pri' ? 230 : null);
-    if (qpm != null && qpm >= 0 && rn2(5)
-        && !((game.mvitals?.[qpm]?.mvflags ?? 0) & G_GENOD)) return qpm;
-    return mkclass(role?.enemy2sym ?? 49, 0);
+    if (!role) throw new Error('Quest monsters require an initialized role');
+    const first = rn2(5) !== 0;
+    const species = first ? role.enemy1num : role.enemy2num;
+    if (species !== null && rn2(5) && !((game.mvitals?.[species]?.mvflags ?? 0) & G_GENOD))
+        return species;
+    return mkclass(first ? role.enemy1sym : role.enemy2sym, 0);
 }
 
 export function rndmonstAdj(minAdjustment = 0, maxAdjustment = 0): number | null {
