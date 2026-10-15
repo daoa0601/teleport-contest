@@ -385,7 +385,6 @@ import { inTown, roomsAt } from './room.js';
 import { addShopDamage } from './shop_damage.js';
 import {
     createPoisonGasCloud,
-    createSteamCloud,
     GAS_OK,
     monsterGasTolerance,
     visibleRegionAt,
@@ -4196,8 +4195,8 @@ function maybeBreatheAtHero(
     };
 }
 
-// C ref: mkmaze.c:fumaroles(). Steam vents use the same cloud builder as
-// fire striking water.
+// C ref: mkmaze.c:fumaroles(). Lava vents leave damaging gas even though
+// fire striking water leaves harmless steam.
 export async function fumaroles(state: PlayingGameState = requireInitializedGame()) {
     let cloudCount = rn2(3);
     let minimumSize = 5;
@@ -4216,13 +4215,16 @@ export async function fumaroles(state: PlayingGameState = requireInitializedGame
         const x = rn2(COLNO - 4) + 3;
         const y = rn2(ROWNO - 4) + 3;
         if (state.level?.at?.(x, y)?.typ !== LAVAPOOL) continue;
-        const cloud = await createSteamCloud(state, x, y, rn2(10) + minimumSize, rn2);
+        const cloud = await createPoisonGasCloud(state, x, y,
+            rn2(10) + minimumSize, rn2(10) + 5);
         if (cloud) cloud.heroFault = false;
         heard = true;
         const dx = x - (state.u?.ux ?? 0);
         const dy = y - (state.u?.uy ?? 0);
         if (dx * dx + dy * dy < 15) loud = true;
     }
+    if (heard && !heroIsDeaf(state))
+        await plineWithContinuation(`You hear a ${loud ? 'loud ' : ''}whoosh!`, { noRepeat: true });
     return { heard, loud };
 }
 

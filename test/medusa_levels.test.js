@@ -2,11 +2,13 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { MAGIC_TRAP } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { generateMedusaLevel } from '../js/mklev.js';
+import { fixupSpecial, generateMedusaLevel } from '../js/mklev.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { BOULDER, CRYSTAL_BALL, EGG, STATUE, } from '../js/object_data.js';
 import { floorObjects, levelStairs } from './support/level-state.js';
 import { freshSpecialLevel } from './support/special-level.js';
+import { floorObject } from './support/game-objects.js';
+import { isRoom } from '../js/map_types.js';
 const monsterType = (name) => MONSTER_NAME.indexOf(name);
 async function buildMedusa(variant, seed = variant * 71) {
     const active = freshSpecialLevel({
@@ -38,6 +40,19 @@ void test('all four Medusa scripts build their island and stair pair', async () 
         assert.ok(medusa, `variant ${variant} Medusa`);
         assert.deepEqual([medusa.mx, medusa.my], [down.sx, down.sy], `variant ${variant} downstairs`);
     }
+});
+void test('Medusa skips blocked statue trials but still places the final statue', async () => {
+    await buildMedusa(1);
+    requirePlayingGame(game);
+    const room = game.level.rooms[0];
+    assert.ok(isRoom(room));
+    for (let x = room.lx; x <= room.hx; x++)
+        for (let y = room.ly; y <= room.hy; y++)
+            await floorObject(BOULDER, x, y);
+    const before = floorObjects(game.level).filter(object => object.otyp === STATUE).length;
+    await fixupSpecial({ prototype: 'medusa', file: 'medusa-1.lua' });
+    const after = floorObjects(game.level).filter(object => object.otyp === STATUE).length;
+    assert.equal(after - before, 1, 'only the unconditional final statue may share a boulder square');
 });
 void test('the second island contains its guards, statues, and fixed hazard', async () => {
     await buildMedusa(2);

@@ -592,15 +592,24 @@ async function putLregionHere(
         u_on_newpos(x, y);
     } else if (type === LR_PORTAL) {
         if (!destination) throw new Error('Portal region requires a destination');
-        const portal = await maketrap(x, y, MAGIC_PORTAL);
-        if (!portal) throw new Error(`Portal region could not place a trap at ${x},${y}`);
-        portal.dst = { ...destination };
+        await mkportal(x, y, destination.dnum, destination.dlevel);
     } else if (type === LR_BRANCH) {
         await placeBranchAt(is_branchlev(), x, y);
     } else if (type === LR_DOWNSTAIR || type === LR_UPSTAIR) {
         mkstairs(x, y, type === LR_UPSTAIR, null);
     }
     return true;
+}
+
+// C mkmaze.c:mkportal(). Only the destination coordinates belong to the
+// trap; special-level metadata belongs to the dungeon's level descriptor.
+export async function mkportal(x: number, y: number, dnum: number, dlevel: number): Promise<void> {
+    const portal = await maketrap(x, y, MAGIC_PORTAL);
+    if (!portal) {
+        await impossible('portal on top of portal?');
+        return;
+    }
+    portal.dst = { dnum, dlevel };
 }
 
 // C stairs.c:u_on_upstairs() uses downward travel rules for random arrivals.
@@ -7487,8 +7496,7 @@ async function fixupMedusa(active: ActiveSpecialLevel): Promise<void> {
     if (!isRoom(room)) return;
     for (let count = rnd(4); count > 0; count--) {
         const point = medusaRoomPoint(room);
-        const loc = level.at(point.x, point.y);
-        if (!loc || !SPACE_POS(loc.typ)) continue;
+        if (!goodPosition(point.x, point.y, null)) continue;
         const statue = await createToptenObject(STATUE, point.x, point.y);
         for (let tries = 0; tries < 99
             && !medusaPetrifiable(statue.corpsenm); tries++)
@@ -7626,6 +7634,11 @@ async function generateSpecialAndFixup(
     generator: (active: ActiveSpecialLevel) => Promise<void>, active: ActiveSpecialLevel,
 ): Promise<void> {
     await generator(active);
+    await fixupSpecial(active);
+}
+
+// C mkmaze.c:fixup_special(), after the Lua level has finished construction.
+export async function fixupSpecial(active: ActiveSpecialLevel): Promise<void> {
     const level = requireGameLevel();
     const arrivalRegion = (
         region: StairRegion | null | undefined, exclude: Rectangle | null | undefined,
@@ -10200,9 +10213,7 @@ async function placeBranchAt(branchp: DungeonBranch | null, x: number, y: number
         && branchp.end1?.dlevel === g.u?.uz?.dlevel;
     const dest = on_end1 ? branchp.end2 : branchp.end1;
     if (branchp.type === 'portal') {
-        const portal = await maketrap(x, y, MAGIC_PORTAL);
-        if (!portal) throw new Error('Dungeon branch portal could not be created.');
-        portal.dst = { ...dest };
+        await mkportal(x, y, dest.dnum, dest.dlevel);
     } else if (branchp.type !== (on_end1 ? 'no_end1' : 'no_end2')) {
         const goes_up = on_end1 ? !!branchp.end1_up : !branchp.end1_up;
         const loc = g.level?.at(x, y);

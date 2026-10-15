@@ -4,17 +4,22 @@
 // Level construction owns the bubble list. goto_level() and the ordinary
 // movement loop share movement of that same persistent list.
 
-import { monsterHasMapPosition } from './monster_location.js';
-import { game, requireGameLevel } from './gstate.js';
+import { monsterAtPosition } from './monster_location.js';
+import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
 import type { ElementalBubble, MapLocation, Position } from './map_types.js';
-import type { Monster } from './monster_types.js';
 import {
-    AIR, CLOUD, COLNO, ROWNO, STONE, WATER,
+    AIR, CLOUD, COLNO, MON_BUBBLEMOVE, RLOC_NOMSG, ROWNO, STONE, WATER,
     Is_airlevel, Is_waterlevel,
 } from './const.js';
 import { rn2 } from './rng.js';
-import { CLR_BRIGHT_BLUE, CLR_GRAY } from './terminal.js';
-import { mergable, mergeObjectStacks } from './object_merge.js';
+import { CLR_BRIGHT_BLUE, CLR_CYAN, CLR_GRAY } from './terminal.js';
+import { newsym } from './display.js';
+import { placeObject, remove_object, stack_object } from './floor_object.js';
+import { placeHeroOnLevel } from './hero_location.js';
+import { clearMonsterWormFromMap } from './monster_worm.js';
+import { mnearto } from './shop_damage.js';
+import { dealWithMonsterOvercrowding, moveMonsterNextToHero } from './teleport.js';
+import { vision_recalc, vision_reset } from './vision.js';
 
 const BUBBLE_MASKS = [
     { width: 2, height: 1, rows: [0x3] },
@@ -43,6 +48,18 @@ function setElementalCell(loc: MapLocation | null, typ: number, lit: boolean): v
     loc.horizontal = false;
     loc.edge = false;
     loc.wall_info = 0;
+    // C replaces the whole rm, including fields which share flags,
+    // horizontal, and candig. JS keeps those terrain aliases separately.
+    loc.icedpool = 0;
+    loc.altarmask = 0;
+    loc.ladder = 0;
+    loc.drawbridgemask = 0;
+    loc.looted = 0;
+    loc.emptygrave = false;
+    loc.blessedftn = false;
+    loc.disturbed = false;
+    loc.candig = false;
+    loc.arboreal_sdoor = false;
     // movebubbles() resets old air clouds to an Air cell remembered as Cloud,
     // and old water bubbles to a Water cell remembered as Water.
     const water = typ === WATER;
@@ -64,63 +81,25 @@ function bubbleCells(bubble: ElementalBubble): Position[] {
     return cells;
 }
 
-function livingMonsterAt(x: number, y: number, except: Monster | null = null): Monster | null {
-    return game.level?.monsters?.find(monster => monsterHasMapPosition(monster, game) && monster !== except
-        && !monster.dead && (monster.mhp ?? 1) > 0
-        && monster.mx === x && monster.my === y) || null;
-}
-
-function restoreBubbleMonster(monster: Monster, targetX: number, targetY: number): void {
-    let destination: Position | null = { x: targetX, y: targetY };
-    if (livingMonsterAt(targetX, targetY, monster)
-        || (game.u?.ux === targetX && game.u?.uy === targetY)) {
-        destination = null;
-        for (let radius = 1; radius <= 3 && !destination; radius++) {
-            for (let y = targetY - radius;
-                y <= targetY + radius && !destination; y++) {
-                for (let x = targetX - radius;
-                    x <= targetX + radius; x++) {
-                    if (x < 1 || x >= COLNO || y < 0 || y >= ROWNO)
-                        continue;
-                    if (x !== targetX - radius && x !== targetX + radius
-                        && y !== targetY - radius && y !== targetY + radius)
-                        continue;
-                    if (livingMonsterAt(x, y, monster)
-                        || (game.u?.ux === x && game.u?.uy === y)) continue;
-                    destination = { x, y };
-                    break;
-                }
-            }
-        }
-    }
-    if (!destination) return;
-    monster.mx = destination.x;
-    monster.my = destination.y;
-}
-
 async function restoreBubbleContents(bubble: ElementalBubble, dx: number, dy: number): Promise<void> {
+    requirePlayingGame(game);
     const level = requireGameLevel();
     for (const content of bubble.contents || []) {
         const x = content.x + dx, y = content.y + dy;
         if (content.kind === 'objects') {
-            const column = level.objects[x] ??= [];
-            const pile = column[y] ??= [];
             for (const object of content.items) {
-                object.ox = x;
-                object.oy = y;
-                object.where = 'floor';
-                pile.push(object);
-                const existing = pile.find(candidate => candidate !== object
-                    && mergable(object, candidate, game));
-                if (existing) {
-                    await mergeObjectStacks(object, existing, game);
-                }
+                await placeObject(object, x, y);
+                await stack_object(object);
             }
         } else if (content.kind === 'monster') {
-            restoreBubbleMonster(content.monster, x, y);
+            if (!await mnearto(content.monster, x, y, game, { moveOther: true, flags: RLOC_NOMSG }))
+                await dealWithMonsterOvercrowding(content.monster);
         } else if (content.kind === 'hero') {
-            game.u.ux = x;
-            game.u.uy = y;
+            const occupant = monsterAtPosition(level, x, y);
+            const oldx = game.u.ux, oldy = game.u.uy;
+            await placeHeroOnLevel(x, y);
+            newsym(oldx, oldy);
+            if (occupant) await moveMonsterNextToHero(occupant, game, { flags: RLOC_NOMSG });
         } else if (content.kind === 'trap') {
             content.trap.tx = x;
             content.trap.ty = y;
@@ -135,22 +114,28 @@ function collectWaterBubbleContents(bubble: ElementalBubble): void {
     for (const { x, y } of bubbleCells(bubble)) {
         const pile = level.objects[x]?.[y];
         if (pile?.length) {
-            const items = pile.splice(0, pile.length);
-            for (const object of items) {
+            const items = [];
+            for (const object of [...pile]) {
+                remove_object(object);
                 object.ox = 0;
                 object.oy = 0;
-                object.where = 'free';
+                items.unshift(object);
             }
             bubble.contents.unshift({ kind: 'objects', x, y, items });
         }
-        const monster = livingMonsterAt(x, y);
+        const monster = monsterAtPosition(level, x, y);
         if (monster) {
             bubble.contents.unshift({ kind: 'monster', x, y, monster });
+            if (monster.wormno) clearMonsterWormFromMap(monster);
             monster.mx = 0;
             monster.my = 0;
+            monster.mstate = (monster.mstate ?? 0) | MON_BUBBLEMOVE;
+            newsym(x, y);
         }
-        if (!game.u?.uswallow && game.u?.ux === x && game.u?.uy === y)
+        if (!game.u?.uswallow && game.u?.ux === x && game.u?.uy === y) {
             bubble.contents.unshift({ kind: 'hero', x, y });
+            game._heroBubble = bubble;
+        }
         const trap = level.traps.find(candidate =>
             candidate.tx === x && candidate.ty === y);
         if (trap)
@@ -176,9 +161,18 @@ function drawBubble(bubble: ElementalBubble): void {
             }
         }
     }
+    vision_reset();
 }
 
 async function moveBubble(bubble: ElementalBubble, requestedDx: number, requestedDy: number, initial: boolean): Promise<void> {
+    const motion = moveBubblePosition(bubble, requestedDx, requestedDy);
+    drawBubble(bubble);
+    if (Is_waterlevel(game.u?.uz) && !initial)
+        await restoreBubbleContents(bubble, motion.dx, motion.dy);
+    changeBubbleDirection(bubble, motion.collision, initial);
+}
+
+function moveBubblePosition(bubble: ElementalBubble, requestedDx: number, requestedDy: number) {
     let dx = requestedDx;
     let dy = requestedDy;
     let collision = 0;
@@ -216,16 +210,28 @@ async function moveBubble(bubble: ElementalBubble, requestedDx: number, requeste
         bubble.y += dy;
     }
 
-    drawBubble(bubble);
-    if (Is_waterlevel(game.u?.uz) && !initial)
-        await restoreBubbleContents(bubble, dx, dy);
+    return { dx, dy, collision };
+}
 
+function changeBubbleDirection(bubble: ElementalBubble, collision: number, initial: boolean): void {
     if (collision & 1) bubble.dy = -bubble.dy;
     if (collision & 2) bubble.dx = -bubble.dx;
     if (!collision && !initial
         && rn2(bubble.dx || bubble.dy ? 20 : 5) === 0) {
         bubble.dx = 1 - rn2(3);
         bubble.dy = 1 - rn2(3);
+    }
+}
+
+// C restore_waterlevel() redraws each saved bubble through mv_bubble(...,
+// TRUE), including its Air-plane movement roll and border-direction bounce.
+export function restoreElementalBubbles(): void {
+    if (!Is_airlevel(game.u.uz) && !Is_waterlevel(game.u.uz)) return;
+    game._heroBubble = null;
+    for (const bubble of game.level?.elementalBubbles ?? []) {
+        const motion = moveBubblePosition(bubble, 0, 0);
+        drawBubble(bubble);
+        changeBubbleDirection(bubble, motion.collision, true);
     }
 }
 
@@ -260,8 +266,13 @@ export async function setupElementalBubbles(): Promise<void> {
     for (let x = 1; x < COLNO; x++) {
         for (let y = 0; y < ROWNO; y++) {
             const loc = level.at(x, y);
-            if (loc?.typ === STONE && baseTerrain != null)
-                loc.typ = baseTerrain;
+            if (!loc) continue;
+            if (loc.typ === STONE) loc.typ = baseTerrain;
+            const water = baseTerrain === WATER;
+            loc.remembered_glyph = {
+                ch: water ? '}' : ' ', color: water ? CLR_BRIGHT_BLUE : CLR_CYAN,
+                decgfx: false, kind: 'terrain', terrainName: water ? 'water' : 'air',
+            };
         }
     }
 
@@ -278,6 +289,9 @@ export async function moveElementalBubbles(): Promise<void> {
     const bubbles = game.level?.elementalBubbles;
     if (!Array.isArray(bubbles) || !bubbles.length) return;
     const level = requireGameLevel();
+
+    vision_recalc(2);
+    game._heroBubble = null;
 
     const traversalUp = !!game._bubbleTraversalUp;
     if (Is_waterlevel(game.u?.uz)) {
@@ -313,4 +327,16 @@ export async function moveElementalBubbles(): Promise<void> {
         await moveBubble(bubble, dx, dy, false);
     }
     game.vision_full_recalc = 1;
+}
+
+// C mkmaze.c:maybe_adjust_hero_bubble(). The bubble last carrying the hero
+// remains sticky for subsequent steps until movebubbles() collects again.
+export function maybeAdjustHeroBubble(): void {
+    const hero = game.u;
+    if (!Is_waterlevel(hero.uz) || (!hero.dx && !hero.dy)) return;
+    const bubble = game._heroBubble;
+    if (bubble && game.level?.elementalBubbles?.includes(bubble) && !rn2(2)) {
+        bubble.dx = hero.dx ?? 0;
+        bubble.dy = hero.dy ?? 0;
+    }
 }
