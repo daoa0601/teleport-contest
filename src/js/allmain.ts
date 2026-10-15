@@ -2670,7 +2670,13 @@ async function presentMonsterAttackEffects(
                             ? await publishSpellMessage(effectMessage)
                             : null;
                         if (heroAttack.deferredSpellEffect) {
-                            if (heroAttack.spell)
+                            if (heroAttack.spell === 'blind-you') {
+                                heroAttack.deferredSpellEffect = false;
+                                heroAttack.appliedDamage = 0;
+                                await makeBlinded(heroHasHalfSpellDamage(game) ? 100 : 200,
+                                    { state: game, talk: false, publish: publishSpellMessage });
+                                if (!heroIsBlind(game)) await publishSpellMessage('Your vision clears.');
+                            } else if (heroAttack.spell)
                                 resumeDeferredHeroSpell(action, game);
                             else await resolveDeferredHeroDirectSpell(
                                 action, heroAttack, game, publishSpellMessage, random, rollDice,
@@ -2759,8 +2765,6 @@ async function presentMonsterAttackEffects(
                         if (heroAttack.deferredGeyserSpell)
                             resolveDeferredHeroGeyser(action, heroAttack);
                         if (heroAttack.paralyzed) stopRun(game);
-                        if (heroAttack.toggledBlindness)
-                            vision_recalc(0);
                         if (heroAttack.monsterDisappeared) {
                             newsym(monster.mx, monster.my);
                             if (cansee(monster.mx, monster.my)

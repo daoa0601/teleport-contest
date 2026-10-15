@@ -156,7 +156,7 @@ import {
 } from './weapon_type.js';
 import { growMonster } from './monster_growth.js';
 import { monsterLocomotion } from './monster_locomotion.js';
-import { verbForSubject } from './object_grammar.js';
+import { makePlural, verbForSubject } from './object_grammar.js';
 import { drainObjectEnchantment } from './object_state.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { initializeMonsterMovement, mcalcmove, naturalMonsterSpeed } from './monster_speed.js';
@@ -174,7 +174,7 @@ import {
     possessiveName,
     shopkeeperName,
 } from './monster_name.js';
-import { heroHasEyes, monsterHandName } from './body_parts.js';
+import { heroEyeCount, heroEyeName, heroHasEyes, monsterHandName } from './body_parts.js';
 import { monsterIsHelpless, monsterResistsSleep } from './monster_sleep.js';
 import {
     applyMonsterAntiMagicTrap,
@@ -390,7 +390,7 @@ import {
     visibleRegionAt,
     updateMonsterRegions,
 } from './regions.js';
-import { heroIsDeaf, syncBlindness } from './senses.js';
+import { heroIsBlinded, heroIsDeaf } from './senses.js';
 import { makeBlinded } from './sight_change.js';
 import {
     applyMonsterStoningAttack,
@@ -773,7 +773,8 @@ function monsterSpellEffectPreview(
                     ? 'Severe wounds appear on your body!'
                     : 'Your body is covered with painful wounds!';
     } else if (spell.key === 'blind-you') {
-        effectMessage = 'Scales cover your eyes!';
+        const eye = heroEyeName(state);
+        effectMessage = `Scales cover your ${heroEyeCount(state) === 1 ? eye : makePlural(eye)}!`;
     } else if (spell.key === 'paralyze') {
         const resisted = !!(state?.u?.antimagic || heroHasFreeAction(state));
         effectMessage = resisted ? 'You stiffen briefly.' : 'You are frozen in place!';
@@ -6829,17 +6830,6 @@ export function resumeDeferredHeroSpell(
     const attack = action?.movement?.heroAttackSequence?.current;
     if (attack?.kind !== 'hero-spell' || !attack.deferredSpellEffect) return null;
     attack.deferredSpellEffect = false;
-    if (attack.spell === 'blind-you') {
-        const turns = heroHasHalfSpellDamage(state) ? 100 : 200;
-        const wasBlind = !!state.blind || (state.u?.blindTurns ?? 0) > 0;
-        state.u.blindTurns = turns;
-        syncBlindness(state);
-        state.vision_full_recalc = 1;
-        attack.toggledBlindness = !wasBlind;
-        if (!wasBlind && state.blind) state.context.botl = true;
-        attack.appliedDamage = 0;
-        return attack;
-    }
     if (attack.spell === 'paralyze') {
         const resisted = !!(state.u?.antimagic || heroHasFreeAction(state));
         const monsterLevel = action.monster?.m_lev ?? MONSTER_LEVEL[action.monster?.mnum] ?? 0;
@@ -7011,7 +7001,7 @@ function monsterSpellUseless(
     if (spell.flags & MCF_HOSTILE && monster.mpeaceful) return true;
     if (spell.flags & MCF_SIGHT && !couldsee(monster.mx, monster.my)) return true;
     if (spell.key === 'cure-self') return (monster.mhp ?? 0) >= (monster.mhpmax ?? 0);
-    if (spell.key === 'blind-you') return !!state?.blind || (state?.u?.blindTurns ?? 0) > 0;
+    if (spell.key === 'blind-you') return heroIsBlinded(state);
     if (spell.key === 'haste-self') return monster.permspeed === MFAST;
     if (spell.key === 'disappear') {
         return (
