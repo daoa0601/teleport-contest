@@ -264,9 +264,6 @@ export interface HeroContactAttack extends HeroAttackProgress {
     deferredRevealUnder?: boolean;
     revealUnderMessage?: string;
     poison?: { attribute: number; fatal?: number; chance?: number } | null;
-    deferredAmuletTheftGate?: boolean;
-    deferredAmuletTheft?: boolean;
-    amuletTheftTarget?: GameObject | null;
     deferredStickingAfterHit?: boolean;
     stuckHero?: boolean;
     stickingMessage?: string | null;

@@ -300,14 +300,11 @@ import {
     AT_EXPL,
 } from './monster_attack_types.js';
 import {
-    AMULET_OF_YENDOR,
     APPLE,
     BANANA,
-    BELL_OF_OPENING,
     BULLWHIP,
     BOULDER,
     CARROT,
-    CANDELABRUM_OF_INVOCATION,
     CLOVE_OF_GARLIC,
     CORPSE,
     DWARVISH_MATTOCK,
@@ -336,7 +333,6 @@ import {
     POT_HEALING,
     POT_INVISIBILITY,
     SLIME_MOLD,
-    SPE_BOOK_OF_THE_DEAD,
     TIN,
     TRIPE_RATION,
     WAN_SPEED_MONSTER,
@@ -5814,30 +5810,13 @@ async function beginHeroAttackSlot(
             passive,
             heroDied: !!passive.heroDied,
         };
-    } else if (hit && damageType === AD_SAMU && dice > 0 && sides > 0) {
-        // uhitm.c:mhitm_ad_samu() retains ordinary claw damage.  After
-        // hitmsg(), it always spends the one-in-twenty theft gate; a hero
-        // without quest/invocation objects simply has nothing to steal.
-        return {
-            kind: 'hero-attack',
-            roll,
-            threshold,
-            hit,
-            damage,
-            attackType,
-            damageType,
-            effect: 'amulet-theft-natural',
-            deferredAmuletTheftGate: true,
-            deferredPostHit: true,
-            oldFormMnum,
-        };
     } else if (hit && (damageType === AD_WERE || damageType === AD_SLEE
         || damageType === AD_POLY || damageType === AD_TLPT || damageType === AD_PLYS
         || damageType === AD_WRAP || damageType === AD_DRIN || damageType === AD_CURS
         || damageType === AD_HEAL || damageType === AD_ACID || damageType === AD_SLOW
         || damageType === AD_SGLD || damageType === AD_SSEX || damageType === AD_DISE
         || damageType === AD_CONF || damageType === AD_PEST || damageType === AD_FAMN
-        || damageType === AD_DETH)) {
+        || damageType === AD_DETH || damageType === AD_SAMU)) {
         const negated = damageType === AD_SLOW
             ? specialAttackNegated(monster, state.u, { state, random })
             : damageType === AD_POLY
@@ -6551,29 +6530,6 @@ export async function resumeDeferredHeroContact(
             return action;
         }
     }
-    if (attack.deferredAmuletTheftGate) {
-        const stealGate = recordRandom(random, calls, 20);
-        attack.deferredAmuletTheftGate = false;
-        const theftTarget = (state.inventory || []).find(
-            (object) =>
-                object?.questArtifact ||
-                [
-                    AMULET_OF_YENDOR,
-                    BELL_OF_OPENING,
-                    SPE_BOOK_OF_THE_DEAD,
-                    CANDELABRUM_OF_INVOCATION,
-                ].includes(object?.otyp),
-        );
-        if (stealGate === 0 && theftTarget) {
-            // Actual worn-item removal, theft, and relocation remain a named
-            // continuation.  A successful gate with no special target is a
-            // source no-op and must continue into knockback/passive handling.
-            attack.deferredAmuletTheft = true;
-            attack.amuletTheftTarget = theftTarget;
-            return action;
-        }
-    }
-    if (attack.deferredAmuletTheft) return action;
     if (attack.deferredColdInventory) {
         const destructionGate = recordRandom(random, calls, 20);
         const attackerLevel = action.monster?.m_lev ?? MONSTER_LEVEL[action.monster?.mnum] ?? 0;
