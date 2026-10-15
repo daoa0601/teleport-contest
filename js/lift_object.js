@@ -1,6 +1,6 @@
 // Decide how much of a floor or container stack the hero can lift.
 // C refs: pickup.c carry_count() and lift_object().
-import { plineWithContinuation } from './display.js';
+import { clearMessageWindow, plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
 import { heroGoldAmount } from './hero_gold.js';
 import { inventoryItemDescription } from './invent.js';
@@ -194,6 +194,9 @@ export async function liftObject({ object, container = null, count = objectQuant
         const action = container ? 'removing' : 'lifting';
         observeObjectForNaming(object, { state });
         const answer = await promptYesNoQuit(`${pickupLoadPrefix(nextBurden)} ${action} ${itemDescription(object, liftedCount)}.  Continue?`);
+        // pickup.c lift_object() clears WIN_MESSAGE after every answer, so
+        // the question is gone before any later floor-pile window.
+        clearMessageWindow();
         if (answer !== 'y') {
             resetRejectedScareScroll(object, container);
             return {
