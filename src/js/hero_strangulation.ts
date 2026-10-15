@@ -105,12 +105,12 @@ export async function strangulationDialogue({
         if (heroIsBreathless(state) || rn2(50) === 0) {
             await publish(constriction.replace(
                 '%s', heroNeckName(state),
-            ));
+            ), { urgent: true });
         } else {
             let message = choking;
             if (message.includes('%s'))
                 message = message.replace('%s', displayColorName('blue', state));
-            await publish(message);
+            await publish(message, { urgent: true });
             await stopHeroOccupation(state, publish);
         }
     }

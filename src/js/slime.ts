@@ -233,7 +233,7 @@ function cancelHeroPetrification(state: GameState): void {
 
 export async function slimeDialogue({
     state = game,
-    publish = async () => {},
+    publish = plineWithContinuation,
     repaint = () => {},
     randomMonsterName = randomDisplayMonsterName,
 }: SlimeAdvanceOptions = {}): Promise<void> {
@@ -248,7 +248,7 @@ export async function slimeDialogue({
     }
 
     const message = slimeMessage(turns, state, randomMonsterName);
-    if (message) await publish(message);
+    if (message) await publish(message, { urgent: true });
 
     const stage = Math.trunc(turns / 2);
     if (stage === 3) {

@@ -243,14 +243,14 @@ function petrificationMessage(turns: number, state: GameState): string | null {
 
 export async function petrificationDialogue({
     state = game,
-    publish = pline,
+    publish = plineWithContinuation,
 }: { state?: GameState; publish?: MessagePublisher } = {}): Promise<void> {
     const hero = state.u;
     const turns = hero.stonedTurns ?? 0;
     if (turns <= 0) return;
 
     const message = petrificationMessage(turns, state);
-    if (message) await publish(message);
+    if (message) await publish(message, { urgent: true });
 
     if (turns === 5) {
         removeHeroSpeed(state);

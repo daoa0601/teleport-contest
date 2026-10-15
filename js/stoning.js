@@ -197,14 +197,14 @@ function petrificationMessage(turns, state) {
         return 'You have turned to stone.';
     return turns === 1 ? 'You are a statue.' : null;
 }
-export async function petrificationDialogue({ state = game, publish = pline, } = {}) {
+export async function petrificationDialogue({ state = game, publish = plineWithContinuation, } = {}) {
     const hero = state.u;
     const turns = hero.stonedTurns ?? 0;
     if (turns <= 0)
         return;
     const message = petrificationMessage(turns, state);
     if (message)
-        await publish(message);
+        await publish(message, { urgent: true });
     if (turns === 5) {
         removeHeroSpeed(state);
         if (state.multi > 0)

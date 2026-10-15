@@ -274,7 +274,7 @@ function sicknessMessage(hero) {
         return `Your ${noun} is severe.`;
     return stage === 1 ? "You are at Death's door." : null;
 }
-export async function sicknessDialogue({ state = game, publish = pline, } = {}) {
+export async function sicknessDialogue({ state = game, publish = plineWithContinuation, } = {}) {
     if (!heroIsSick(state))
         return;
     let message = sicknessMessage(state.u);
@@ -286,7 +286,7 @@ export async function sicknessDialogue({ state = game, publish = pline, } = {}) 
         message += `  ${invitation} inviting you in.`;
     }
     if (message)
-        await publish(message);
+        await publish(message, { urgent: true });
     await exerciseAttribute(A_CON, false, state);
 }
 export async function advanceHeroSickness({ state = game, publish = pline, die = finishHeroDeath, random = rn2, } = {}) {
@@ -305,7 +305,7 @@ export async function advanceHeroSickness({ state = game, publish = pline, die =
         adjustAttribute(A_CON, -1, state);
         return { active: false, died: false, recovered: true, turns: 0 };
     }
-    await publish('You die from your illness.');
+    await publish('You die from your illness.', { urgent: true });
     let killer = hero.sickCause || 'illness';
     const species = nameToMonster(killer);
     const personal = species >= 0 && !!((MONSTER_FLAGS2[species] ?? 0) & 0x00080000);

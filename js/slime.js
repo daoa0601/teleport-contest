@@ -196,7 +196,7 @@ function cancelHeroPetrification(state) {
     delete hero.stoneKiller;
     delete hero.stoneKillerFormat;
 }
-export async function slimeDialogue({ state = game, publish = async () => { }, repaint = () => { }, randomMonsterName = randomDisplayMonsterName, } = {}) {
+export async function slimeDialogue({ state = game, publish = plineWithContinuation, repaint = () => { }, randomMonsterName = randomDisplayMonsterName, } = {}) {
     const hero = state.u;
     const turns = hero.slimedTurns ?? 0;
     if (turns <= 0)
@@ -208,7 +208,7 @@ export async function slimeDialogue({ state = game, publish = async () => { }, r
     }
     const message = slimeMessage(turns, state, randomMonsterName);
     if (message)
-        await publish(message);
+        await publish(message, { urgent: true });
     const stage = Math.trunc(turns / 2);
     if (stage === 3) {
         removeHeroSpeed(state);

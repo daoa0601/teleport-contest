@@ -330,7 +330,7 @@ function sicknessMessage(hero: Hero) {
 }
 
 export async function sicknessDialogue({
-    state = game, publish = pline,
+    state = game, publish = plineWithContinuation,
 }: { state?: GameState; publish?: MessagePublisher } = {}): Promise<void> {
     if (!heroIsSick(state)) return;
     let message = sicknessMessage(state.u);
@@ -340,7 +340,7 @@ export async function sicknessDialogue({
         if (!invitation) throw new Error('Sickness dialogue chose no pronoun');
         message += `  ${invitation} inviting you in.`;
     }
-    if (message) await publish(message);
+    if (message) await publish(message, { urgent: true });
     await exerciseAttribute(A_CON, false, state);
 }
 
@@ -372,7 +372,7 @@ export async function advanceHeroSickness({
         return { active: false, died: false, recovered: true, turns: 0 };
     }
 
-    await publish('You die from your illness.');
+    await publish('You die from your illness.', { urgent: true });
     let killer = hero.sickCause || 'illness';
     const species = nameToMonster(killer);
     const personal = species >= 0 && !!((MONSTER_FLAGS2[species] ?? 0) & 0x00080000);
