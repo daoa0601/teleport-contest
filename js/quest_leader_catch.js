@@ -56,7 +56,8 @@ export async function catchQuestObject(monster, object, state) {
         }
         await captureThrownObjectFlight(object, path, state);
     }
-    await addInventoryItem(object);
+    // C addinv() preserves knowledge gained by xname() and finish_quest().
+    await addInventoryItem(object, null, false);
     await reportHeroEncumbrance(state);
     return true;
 }
