@@ -4,13 +4,19 @@ import { artifactById } from './artifacts.js';
 import { heroHasFreeAction } from './armor.js';
 import { exerciseAttribute } from './attrib.js';
 import { endVoluntaryMultiTurn, heroHasInvoluntaryDelay } from './command_state.js';
-import { A_CON, A_DEX, A_STR, M_SEEN_ACID, M_SEEN_SLEEP, Upolyd } from './const.js';
+import { A_CON, A_DEX, A_STR, FAINTED, M_SEEN_ACID, M_SEEN_SLEEP, Upolyd } from './const.js';
 import { displayLiquidName, shieldeff } from './display.js';
 import { heroIsBlind } from './senses.js';
 import { heroIsUnconscious, putHeroToSleep } from './hero_sleep.js';
 import { retouchEquipment } from './hero_retouch.js';
 import { specialAttackNegated } from './magic_negation.js';
-import { AD_ACID, AD_CURS, AD_HEAL, AD_PLYS, AD_POLY, AD_SGLD, AD_SLEE, AD_SLOW, AD_SSEX, AD_TLPT, AD_WERE, AD_WRAP } from './monster_attack_types.js';
+import { AD_ACID, AD_CONF, AD_CURS, AD_DETH, AD_DISE, AD_FAMN, AD_HEAL, AD_PEST, AD_PLYS, AD_POLY, AD_SGLD, AD_SLEE, AD_SLOW, AD_SSEX, AD_TLPT, AD_WERE, AD_WRAP } from './monster_attack_types.js';
+import { resolveDeathTouchContact } from './monster_death_touch.js';
+import { AD_SAMU } from './monster_attack_types.js';
+import { stealHeroQuestObject } from './monster_quest_theft.js';
+import { infectHeroWithMonsterDisease } from './monster_disease.js';
+import { makeConfused } from './hero_mental_status.js';
+import { spendHeroNutrition } from './hunger.js';
 import { resolveHeroSeduction } from './monster_seduction.js';
 import { stealHeroGold } from './monster_gold_theft.js';
 import { heroHasRemovableSpeed, slowHero } from './hero_speed.js';
@@ -61,6 +67,33 @@ export async function resolveMonsterContactEffect(monster, attack, { state, publ
         await stealHeroGold(monster, state, publish, random, rollOne);
     else if (attack.damageType === AD_SSEX)
         await resolveHeroSeduction(monster, attack, state, publish, random, rollOne);
+    else if (attack.damageType === AD_DISE) {
+        if (!await infectHeroWithMonsterDisease(monster, state, publish, random))
+            attack.damage = 0;
+    }
+    else if (attack.damageType === AD_PEST)
+        await infectHeroWithMonsterDisease(monster, state, publish, random);
+    else if (attack.damageType === AD_DETH)
+        await resolveDeathTouchContact(monster, attack, state, publish, random, rollDice);
+    else if (attack.damageType === AD_SAMU) {
+        if (random(20) === 0)
+            await stealHeroQuestObject(monster, state, publish, random, rollOne);
+    }
+    else if (attack.damageType === AD_FAMN) {
+        await exerciseAttribute(A_CON, false, state);
+        if (state.u.uhs !== FAINTED)
+            await spendHeroNutrition(random(40) + 40, { state });
+    }
+    else if (attack.damageType === AD_CONF) {
+        const duration = attack.damage ?? 0;
+        if (!monster.mcan && random(4) === 0 && !monster.mspec_used) {
+            monster.mspec_used = duration + random(6);
+            await publish(state.u.confusionTurns ? 'You are getting even more confused.'
+                : 'You are getting confused.');
+            await makeConfused((state.u.confusionTurns ?? 0) + duration, { state, publish, talk: false });
+        }
+        attack.damage = 0;
+    }
     else
         throw new Error(`Damage type ${attack.damageType} has no deferred contact effect`);
     attack.deferredPostHit = true;
