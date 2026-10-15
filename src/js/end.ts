@@ -15,6 +15,7 @@ import { expelHero, releaseHeroFromMonster } from './hero_expulsion.js';
 import { heroFormSticks } from './hero_species.js';
 import { monsterName } from './monster_name.js';
 import { collectLevelFollowers } from './monster_followers.js';
+import { scheduleLevelChange } from './level_change.js';
 import { nhgetch } from './input.js';
 import {
     bot, clearMessageWindow, displayMessageWindow, flush_screen, pline, plineWithContinuation,
@@ -1449,7 +1450,9 @@ function fixupDeath(how: number): void {
 }
 
 export async function doquit() {
-    const answer = await paranoidQuery(
+    const abandonTutorial = !!game._tutorialActive
+        && await promptChoice('Switch from the tutorial back to regular play?', ['y', 'n'], 'n') === 'y';
+    const answer = !abandonTutorial && await paranoidQuery(
         !!((game.flags.paranoia_bits ?? 0) & PARANOID_QUIT), 'Really quit without saving?',
     );
     if (!answer) {
@@ -1464,6 +1467,11 @@ export async function doquit() {
         }
         await flush_screen(1);
         game.context.move = 0;
+        if (abandonTutorial) {
+            const prior = game.u.ucamefrom;
+            if (!prior) throw new Error('Tutorial exit has no prior dungeon level');
+            scheduleLevelChange([prior, { arrival: 'stairs' }], undefined, 'Resuming regular play.');
+        }
         return;
     }
     if (game.flags.debug) {
