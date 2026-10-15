@@ -19,7 +19,7 @@ import { unlinkObject } from './object_location.js';
 import { makePlural } from './object_grammar.js';
 import { isWeldedPrimary } from './weapon_slots.js';
 import { rn1, rn2, rnd } from './rng.js';
-import { A_STR, BC_BALL, BC_CHAIN, D_CLOSED, D_LOCKED, DOOR, IS_OBSTRUCTED, LEFT_SIDE, POOL, RIGHT_SIDE, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, Is_waterlevel, is_hole, is_pit, } from './const.js';
+import { A_STR, BC_BALL, BC_CHAIN, D_CLOSED, D_LOCKED, DOOR, IS_OBSTRUCTED, KILLED_BY_AN, LEFT_SIDE, NO_KILLER_PREFIX, POOL, RIGHT_SIDE, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, Is_waterlevel, is_hole, is_pit, } from './const.js';
 import { OBJECT_NAMES } from './object_data.js';
 import { encumbranceMessage, nearCapacity, SLT_ENCUMBER, weightCapacity } from './weight.js';
 import { propertyIsActive } from './properties.js';
@@ -53,7 +53,7 @@ export async function dragBallDownStairs(state = game) {
     if (forward) {
         if (rn2(6)) {
             await plineWithContinuation('The iron ball drags you downstairs!');
-            if (await ballDamage(rnd(6), 'dragged downstairs by an iron ball', state))
+            if (await ballDamage(rnd(6), 'dragged downstairs by an iron ball', state, NO_KILLER_PREFIX))
                 return true;
             await scatterCarriedItems(state);
         }
@@ -69,7 +69,7 @@ export async function dragBallDownStairs(state = game) {
         }
         if (dragChance >= rnd(6)) {
             await plineWithContinuation('The iron ball drags you downstairs!');
-            if (await ballDamage(rnd(3), 'dragged downstairs by an iron ball', state))
+            if (await ballDamage(rnd(3), 'dragged downstairs by an iron ball', state, NO_KILLER_PREFIX))
                 return true;
             await exerciseAttribute(A_STR, false);
             await scatterCarriedItems(state);
@@ -103,12 +103,12 @@ export async function fallWithIronBall(state = game) {
             await plineWithContinuation(`Your ${helmet.name || OBJECT_NAMES[helmet.otyp]} does not protect you.`);
         }
     }
-    return ballDamage(damage, 'crunched in the head by an iron ball', state);
+    return ballDamage(damage, 'crunched in the head by an iron ball', state, NO_KILLER_PREFIX);
 }
-async function ballDamage(amount, killer, state) {
+async function ballDamage(amount, killer, state, killerFormat = KILLED_BY_AN) {
     if (state.u.halfPhysicalDamage)
         amount = Math.trunc((amount + 1) / 2);
-    return loseHeroHp(amount, killer, { state });
+    return loseHeroHp(amount, killer, { state, killerFormat });
 }
 async function scatterCarriedItems(state) {
     const capacity = weightCapacity(state);
