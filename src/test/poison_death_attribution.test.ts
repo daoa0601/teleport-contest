@@ -1,9 +1,10 @@
+import { advanceHeroSickness } from './support/condition-turn.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { A_STR, SICK_NONVOMITABLE } from '../js/const.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { advanceHeroSickness, startHeroSickness } from '../js/hero_illness.js';
+import { startHeroSickness } from '../js/hero_illness.js';
 import { poisonHero } from '../js/poison.js';
 import { LUMP_OF_ROYAL_JELLY } from '../js/object_data.js';
 import { eatRoyalJelly } from '../js/royal_jelly.js';

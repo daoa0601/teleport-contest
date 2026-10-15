@@ -76,11 +76,11 @@ export async function restartAmuletStrangulation(state = game, publish = plineWi
     await publish(`Your ${name} ${action} your ${heroNeckName(state)}!`);
     learnObjectType(AMULET_OF_STRANGULATION, state);
 }
-export async function advanceHeroStrangulation({ state = game, publish = plineWithContinuation, die = finishHeroDeath, } = {}) {
+export async function strangulationDialogue({ state = game, publish = plineWithContinuation, } = {}) {
     const hero = state.u;
     const turns = hero.strangledTurns || 0;
     if (turns <= 0)
-        return { died: false };
+        return;
     if (turns <= 5) {
         const index = 5 - turns;
         const constriction = CONSTRICTION_MESSAGES[index];
@@ -88,17 +88,23 @@ export async function advanceHeroStrangulation({ state = game, publish = plineWi
         if (constriction === undefined || choking === undefined)
             throw new RangeError(`Invalid strangulation countdown: ${turns}`);
         if (heroIsBreathless(state) || rn2(50) === 0) {
-            await publish(constriction.replace('%s', heroNeckName(state)));
+            await publish(constriction.replace('%s', heroNeckName(state)), { urgent: true });
         }
         else {
             let message = choking;
             if (message.includes('%s'))
                 message = message.replace('%s', displayColorName('blue', state));
-            await publish(message);
+            await publish(message, { urgent: true });
             await stopHeroOccupation(state, publish);
         }
     }
     await exerciseAttribute(A_STR, false, state);
+}
+export async function advanceHeroStrangulation({ state = game, publish = plineWithContinuation, die = finishHeroDeath, } = {}) {
+    const hero = state.u;
+    const turns = hero.strangledTurns ?? 0;
+    if (turns <= 0)
+        return { died: false };
     hero.strangledTurns = turns - 1;
     if (hero.strangledTurns > 0)
         return { died: false };

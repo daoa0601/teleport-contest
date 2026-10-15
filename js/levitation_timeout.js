@@ -47,7 +47,7 @@ export async function levitationDialogue(state = game, { publish = plineWithCont
         else {
             message = template;
         }
-        await publish(message);
+        await publish(message, { urgent: template.includes('%') });
         await stopHeroOccupation(state, publish);
         return message;
     }

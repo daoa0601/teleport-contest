@@ -11,7 +11,7 @@ import { reconcileObjectDeletionBill } from './shk.js';
 import { GLOB_OF_BLACK_PUDDING, GLOB_OF_GRAY_OOZE, OBJECT_NAMES, } from './object_data.js';
 import { makePlural } from './object_grammar.js';
 import { absorbGlob, mergable } from './object_merge.js';
-import { OBJECT_TIMER_KIND, objectsInTimerGraph, scheduleObjectTimer, } from './object_timers.js';
+import { OBJECT_TIMER_KIND, objectsInTimerGraph, scheduleObjectTimer, stopObjectTimer, } from './object_timers.js';
 import { rn2 } from './rng.js';
 import { cansee } from './vision.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
@@ -94,6 +94,7 @@ export async function meldNearbyFloorGlobs(glob, { state = game, publish = pline
     }
 }
 function scheduleNextGlobAttempt(glob, state, currentTurn, delay = 0) {
+    stopObjectTimer(glob, OBJECT_TIMER_KIND.SHRINK_GLOB);
     const turns = delay > 0 ? delay : 23 + rn2(5);
     return scheduleObjectTimer(glob, OBJECT_TIMER_KIND.SHRINK_GLOB, currentTurn + turns, state);
 }

@@ -2,6 +2,7 @@
 // C refs: potion.c make_sick(), make_vomiting();
 // timeout.c sickness_dialogue(), vomiting_dialogue(); eat.c vomit().
 import { heroIsHallucinating } from './senses.js';
+import { heroIsUnaware } from './hero_sleep.js';
 import { makeConfused, makeStunned } from './hero_mental_status.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { heroStomachName } from './body_parts.js';
@@ -21,6 +22,7 @@ import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_SYMBOL, } from '.
 import { heroMonsterForm } from './polyself.js';
 import { altarWrath } from './pray.js';
 import { d, rn2 } from './rng.js';
+import { propertyIsActive } from './properties.js';
 import { heroAcidBreathAttack, hitHeroWithRay, } from './hero_breath.js';
 const S_RODENT = 18;
 const M1_ACID = 0x08000000;
@@ -189,15 +191,14 @@ export async function vomitHero({ state = game, publish = pline, angerAltar = al
     return { spewed: true, cannotVomit: false };
 }
 function vomitingMessage(state, nextTurns) {
-    const hero = state.u;
     if (nextTurns === 14)
         return 'You are feeling mildly nauseated.';
     if (nextTurns === 11) {
-        return (hero.confusionTurns ?? 0) > 0
+        return propertyIsActive('confusion', state)
             ? 'You feel slightly more confused.' : 'You feel slightly confused.';
     }
     if (nextTurns === 8) {
-        return (hero.stunnedTurns ?? 0) > 0
+        return propertyIsActive('stunned', state)
             ? "You can't think straight."
             : "You can't seem to think straight.";
     }
@@ -211,12 +212,13 @@ function vomitingMessage(state, nextTurns) {
     }
     return null;
 }
-export async function advanceHeroVomiting({ state = game, publish = pline, rollDice = d, } = {}) {
+export async function vomitingDialogue({ state = game, publish = pline, rollDice = d, } = {}) {
     requirePlayingGame(state);
     const hero = state.u;
     if (!heroIsVomiting(state))
         return { active: false, vomited: false };
-    const nextTurns = Math.max(0, (hero.vomitingTurns ?? 0) - 1);
+    // Untimed nausea has no countdown stage; only timeout 1 triggers vomiting.
+    const nextTurns = (hero.vomitingTurns ?? 0) - 1;
     if (nextTurns === 6) {
         await makeStunned((hero.stunnedTurns ?? 0) + rollDice(2, 4), { state, talk: false });
         // stop_occupation finishes an already swallowed last bite before
@@ -252,9 +254,22 @@ export async function advanceHeroVomiting({ state = game, publish = pline, rollD
         vomited = true;
     }
     await exerciseAttribute(A_CON, false, state);
+    return { active: heroIsVomiting(state), vomited, turns: nextTurns };
+}
+export async function advanceHeroVomiting({ state = game, publish = plineWithContinuation, } = {}) {
+    const hero = state.u;
+    const turns = hero.vomitingTurns ?? 0;
+    if (turns <= 0)
+        return { active: heroIsVomiting(state), turns: 0 };
+    const nextTurns = turns - 1;
     hero.vomitingTurns = nextTurns;
-    hero.vomiting = nextTurns > 0;
-    return { active: hero.vomiting, vomited, turns: nextTurns };
+    hero.vomiting = propertyIsActive('vomiting', state);
+    if (nextTurns === 0) {
+        state.context.botl = true;
+        if (hero.vomiting && !heroIsUnaware(state))
+            await publish('You feel much less nauseated now.');
+    }
+    return { active: hero.vomiting, turns: nextTurns };
 }
 function sicknessMessage(hero) {
     const turns = hero.sickTurns ?? 0;
@@ -269,14 +284,25 @@ function sicknessMessage(hero) {
         return `Your ${noun} is severe.`;
     return stage === 1 ? "You are at Death's door." : null;
 }
+export async function sicknessDialogue({ state = game, publish = plineWithContinuation, } = {}) {
+    if (!heroIsSick(state))
+        return;
+    let message = sicknessMessage(state.u);
+    if (message === "You are at Death's door." && heroIsHallucinating(state)) {
+        // C mhe() uses the core RNG for hallucinated pronouns.
+        const invitation = ['He is', 'She is', 'It is', 'They are'][rn2(4)];
+        if (!invitation)
+            throw new Error('Sickness dialogue chose no pronoun');
+        message += `  ${invitation} inviting you in.`;
+    }
+    if (message)
+        await publish(message, { urgent: true });
+    await exerciseAttribute(A_CON, false, state);
+}
 export async function advanceHeroSickness({ state = game, publish = pline, die = finishHeroDeath, random = rn2, } = {}) {
     const hero = state.u;
     if (!heroIsSick(state))
         return { active: false, died: false };
-    const message = sicknessMessage(hero);
-    if (message)
-        await publish(message);
-    await exerciseAttribute(A_CON, false, state);
     hero.sickTurns = Math.max(0, (hero.sickTurns ?? 0) - 1);
     if (hero.sickTurns > 0)
         return { active: true, died: false, turns: hero.sickTurns };
@@ -289,7 +315,7 @@ export async function advanceHeroSickness({ state = game, publish = pline, die =
         adjustAttribute(A_CON, -1, state);
         return { active: false, died: false, recovered: true, turns: 0 };
     }
-    await publish('You die from your illness.');
+    await publish('You die from your illness.', { urgent: true });
     let killer = hero.sickCause || 'illness';
     const species = nameToMonster(killer);
     const personal = species >= 0 && !!((MONSTER_FLAGS2[species] ?? 0) & 0x00080000);

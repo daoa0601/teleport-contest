@@ -1,13 +1,13 @@
 // Hero transformation into green slime.
 // C refs: potion.c make_slimed(), timeout.c slime_dialogue() and
 // slimed_to_death(), uhitm.c mhitm_ad_slim().
-import { heroIsHallucinating } from './senses.js';
+import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { exerciseAttribute } from './attrib.js';
-import { A_DEX, GENOCIDED, G_GENOD, M_AP_MONSTER, TIMEOUT, TURNED_SLIME, } from './const.js';
+import { A_DEX, GENOCIDED, G_GENOD, M_AP_MONSTER, PLNMSG_OK_DONT_DIE, TIMEOUT, TURNED_SLIME, } from './const.js';
 import { game, requireLiveGame } from './gstate.js';
 import { heroSpecies } from './hero_species.js';
-import { plineWithContinuation } from './display.js';
+import { displayColorName, plineWithContinuation, randomDisplayMonsterName } from './display.js';
 import { MONSTER_NAME, MONSTER_SYMBOL, requireMonsterData } from './monster_data.js';
 import { heroHasNoLimbs, heroIsPolymorphed } from './polyself.js';
 import { removeIntrinsicProperty, setPropertyTimeout } from './properties.js';
@@ -165,8 +165,8 @@ function articleFor(name) {
 }
 function slimeMessage(turns, state, randomMonsterName) {
     if (turns === 9) {
-        return state.blind || (state.u?.blindTurns ?? 0) > 0
-            ? null : 'You are turning a little green.';
+        return heroIsBlind(state)
+            ? null : `You are turning a little ${displayColorName('green', state)}.`;
     }
     if (turns === 7) {
         return heroHasNoLimbs(state)
@@ -189,16 +189,18 @@ function removeHeroSpeed(state) {
 }
 function cancelHeroPetrification(state) {
     const hero = state.u;
+    if (hero.stoned || (hero.stonedTurns ?? 0) > 0)
+        state.context.botl = true;
     hero.stonedTurns = 0;
     hero.stoned = false;
     delete hero.stoneKiller;
     delete hero.stoneKillerFormat;
 }
-export async function advanceHeroSliming({ state = game, publish = async () => { }, repaint = () => { }, randomMonsterName = () => 'green slime', transform, die, } = {}) {
+export async function slimeDialogue({ state = game, publish = plineWithContinuation, repaint = () => { }, randomMonsterName = randomDisplayMonsterName, } = {}) {
     const hero = state.u;
     const turns = hero.slimedTurns ?? 0;
     if (turns <= 0)
-        return { active: false, died: false };
+        return;
     if (turns === 1) {
         hero.m_ap_type = M_AP_MONSTER;
         hero.mappearance = PM_GREEN_SLIME;
@@ -206,7 +208,7 @@ export async function advanceHeroSliming({ state = game, publish = async () => {
     }
     const message = slimeMessage(turns, state, randomMonsterName);
     if (message)
-        await publish(message);
+        await publish(message, { urgent: true });
     const stage = Math.trunc(turns / 2);
     if (stage === 3) {
         removeHeroSpeed(state);
@@ -224,10 +226,20 @@ export async function advanceHeroSliming({ state = game, publish = async () => {
         cancelHeroPetrification(state);
     }
     await exerciseAttribute(A_DEX, false, state);
+}
+export async function advanceHeroSliming({ state = game, publish = plineWithContinuation, transform, die, } = {}) {
+    const hero = state.u;
+    const turns = hero.slimedTurns ?? 0;
+    if (turns <= 0)
+        return { active: false, died: false };
     hero.slimedTurns = turns - 1;
     if (hero.slimedTurns > 0) {
         hero.slimed = true;
-        return { active: true, died: false, turns: hero.slimedTurns, message };
+        return { active: true, died: false, turns: hero.slimedTurns };
+    }
+    if (heroIsGreenSlime(state)) {
+        clearHeroSliming(state);
+        return { active: false, died: false };
     }
     const killer = hero.slimeKiller || 'turned into green slime';
     const deathCause = hero.slimeKiller ? null : 'turned into green slime';
@@ -259,13 +271,15 @@ export async function advanceHeroSliming({ state = game, publish = async () => {
         deathType: TURNED_SLIME,
     });
     if (died)
-        return { active: false, died: true, transformed: true, message };
+        return { active: false, died: true, transformed: true };
     clearHeroSliming(state);
     const genocided = !!((state.mvitals?.[PM_GREEN_SLIME]?.mvflags ?? 0) & G_GENOD);
     if (!genocided) {
-        return { active: false, died: false, transformed: true, message };
+        return { active: false, died: false, transformed: true };
     }
-    await publish('Unfortunately, green slime has been genocided...');
+    await publish(state._lastPlineKind === PLNMSG_OK_DONT_DIE
+        ? 'Yes, you do.  Green slime has been genocided...'
+        : 'Unfortunately, green slime has been genocided...', { urgent: true });
     const genocidedDeath = await die({
         killer: 'slimicide',
         deathVerb: 'were genocided',
@@ -277,7 +291,6 @@ export async function advanceHeroSliming({ state = game, publish = async () => {
         died: genocidedDeath,
         transformed: true,
         genocided: true,
-        message,
     };
 }
 //# sourceMappingURL=slime.js.map

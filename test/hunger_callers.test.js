@@ -1,3 +1,4 @@
+import { advanceHeroVomiting } from './support/condition-turn.js';
 import { floorObjectsAt } from './support/level-state.js';
 import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
@@ -7,7 +8,7 @@ import { rhack } from '../js/cmd.js';
 import { wearEyewear } from '../js/eyewear.js';
 import { placeCreatedObject } from '../js/floor_object.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
-import { advanceHeroVomiting, startHeroVomiting } from '../js/hero_illness.js';
+import { startHeroVomiting } from '../js/hero_illness.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { BLINDFOLD, DIAMOND, EGG, OBJECT_NUTRITION, POT_BOOZE, POT_FRUIT_JUICE, } from '../js/object_data.js';

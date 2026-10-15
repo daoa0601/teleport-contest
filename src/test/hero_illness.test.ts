@@ -1,3 +1,4 @@
+import { advanceHeroSickness, advanceHeroVomiting } from './support/condition-turn.js';
 import type { FinishHeroDeathOptions } from '../js/end.js';
 import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
@@ -14,10 +15,7 @@ import { loadScoreRecords } from '../js/score_records.js';
 import { initRng } from '../js/rng.js';
 import { useUnicornHorn } from '../js/unicorn_horn.js';
 import { memoryStorage } from './support/memory-storage.js';
-import {
-    advanceHeroSickness, advanceHeroVomiting, startHeroSickness,
-    startHeroVomiting, vomitHero,
-} from '../js/hero_illness.js';
+import { startHeroSickness, startHeroVomiting, vomitHero } from '../js/hero_illness.js';
 import { CHAIN_MAIL, LONG_SWORD, UNICORN_HORN } from '../js/object_data.js';
 import {
     addInventoryObject, addInventoryWeapon,

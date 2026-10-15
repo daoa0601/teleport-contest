@@ -1090,6 +1090,7 @@ export function startCorpseTimeout(body, { zombify = false } = {}) {
     scheduleObjectTimer(body, kind, (game.moves ?? 0) + delay, game);
 }
 function attachEggHatchTimer(egg, remaining = 0) {
+    stopObjectTimer(egg, OBJECT_TIMER_KIND.HATCH_EGG);
     if (remaining > 0) {
         scheduleObjectTimer(egg, OBJECT_TIMER_KIND.HATCH_EGG, (game.moves ?? 0) + remaining, game);
         return;
@@ -6730,7 +6731,11 @@ function createLuaLevelSession() {
                 const timerName = luaString(kind);
                 if (timerName !== 'melt-ice' && timerName !== LEVEL_TIMER_KIND.MELT_ICE_AWAY)
                     throw new TypeError(`Unknown level timer: ${timerName}`);
-                scheduleLevelTimer(context.xstart + luaInteger(x), context.ystart + luaInteger(y), LEVEL_TIMER_KIND.MELT_ICE_AWAY, (game.moves ?? 0) + luaInteger(timeout), game);
+                const timerX = context.xstart + luaInteger(x);
+                const timerY = context.ystart + luaInteger(y);
+                const deadline = (game.moves ?? 0) + luaInteger(timeout);
+                stopLevelTimer(timerX, timerY, LEVEL_TIMER_KIND.MELT_ICE_AWAY, game);
+                scheduleLevelTimer(timerX, timerY, LEVEL_TIMER_KIND.MELT_ICE_AWAY, deadline, game);
             },
         },
         des: createDesBindings(operations, selectionApi.wrap),

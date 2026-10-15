@@ -1198,6 +1198,7 @@ export function startCorpseTimeout(body: GameObject | null | undefined, { zombif
 }
 
 function attachEggHatchTimer(egg: GameObject, remaining = 0): void {
+    stopObjectTimer(egg, OBJECT_TIMER_KIND.HATCH_EGG);
     if (remaining > 0) {
         scheduleObjectTimer(
             egg, OBJECT_TIMER_KIND.HATCH_EGG,
@@ -6880,11 +6881,14 @@ function createLuaLevelSession() {
                 const timerName = luaString(kind);
                 if (timerName !== 'melt-ice' && timerName !== LEVEL_TIMER_KIND.MELT_ICE_AWAY)
                     throw new TypeError(`Unknown level timer: ${timerName}`);
+                const timerX = context.xstart + luaInteger(x);
+                const timerY = context.ystart + luaInteger(y);
+                const deadline = (game.moves ?? 0) + luaInteger(timeout);
+                stopLevelTimer(timerX, timerY, LEVEL_TIMER_KIND.MELT_ICE_AWAY, game);
                 scheduleLevelTimer(
-                    context.xstart + luaInteger(x),
-                    context.ystart + luaInteger(y),
+                    timerX, timerY,
                     LEVEL_TIMER_KIND.MELT_ICE_AWAY,
-                    (game.moves ?? 0) + luaInteger(timeout),
+                    deadline,
                     game,
                 );
             },

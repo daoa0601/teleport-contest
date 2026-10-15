@@ -440,9 +440,11 @@ export function beginObjectBurn(object, state = game, currentTurn = state.moves 
     if ((object.age ?? 0) <= 0)
         return false;
     const turns = objectBurnTurns(object);
-    object.lamplit = true;
+    const timer = scheduleObjectTimer(object, OBJECT_TIMER_KIND.BURN_OBJECT, currentTurn + turns, state);
+    object.lamplit = !!timer;
+    if (!timer)
+        return false;
     object.age -= turns;
-    scheduleObjectTimer(object, OBJECT_TIMER_KIND.BURN_OBJECT, currentTurn + turns, state);
     if (!alreadyLit)
         state.vision_full_recalc = 1;
     return true;

@@ -1,3 +1,4 @@
+import { advanceHeroPetrification } from './support/condition-turn.js';
 import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -11,7 +12,7 @@ import { freshTurnRoom } from './support/playable-room.js';
 import { game } from '../js/gstate.js';
 import { healHeroLegs, woundHeroLegs } from '../js/hero_legs.js';
 import { FOOD_RATION, HEAVY_IRON_BALL } from '../js/object_data.js';
-import { advanceHeroPetrification, startHeroPetrification } from '../js/stoning.js';
+import { startHeroPetrification } from '../js/stoning.js';
 import { nearCapacity } from '../js/weight.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';

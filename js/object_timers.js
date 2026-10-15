@@ -39,9 +39,10 @@ function allocateTimerId(state = game) {
 export function scheduleObjectTimer(object, kind, deadline, state = game) {
     if (!object || !OBJECT_TIMER_KINDS.has(kind) || !Number.isFinite(deadline))
         return null;
-    stopObjectTimer(object, kind);
-    const timer = { kind, deadline, id: allocateTimerId(state) };
     const timers = timersFor(object);
+    if (timers.some(timer => timer.kind === kind))
+        return null;
+    const timer = { kind, deadline, id: allocateTimerId(state) };
     timers.push(timer);
     object.timed = timers.length;
     return timer;
@@ -51,11 +52,13 @@ export function scheduleLevelTimer(x, y, kind, deadline, state = game) {
         || !Number.isInteger(x) || !Number.isInteger(y)
         || !Number.isFinite(deadline))
         return null;
-    stopLevelTimer(x, y, kind, state);
+    const timers = levelTimersFor(state);
+    if (timers.some(timer => timer.x === x && timer.y === y && timer.kind === kind))
+        return null;
     const timer = {
         kind, deadline, id: allocateTimerId(state), x, y,
     };
-    levelTimersFor(state).push(timer);
+    timers.push(timer);
     return timer;
 }
 export function stopLevelTimer(x, y, kind, state = game) {
@@ -116,7 +119,8 @@ export function objectsInTimerGraph(state = game) {
         visit(reference.deref());
     for (const object of state.migratingObjects || [])
         visit(object);
-    for (const monster of state.level?.monsters || []) {
+    const monsters = (state.level?.monsters ?? []).concat(state._migratingMonsters ?? []);
+    for (const monster of monsters) {
         for (const object of monster.minvent || [])
             visit(object);
         for (const object of monster.inventory || [])
@@ -184,7 +188,10 @@ export function objectTimers(object) {
     return timersFor(object).map(timer => ({ ...timer }));
 }
 export function copyObjectTimers(source, destination, state = game) {
-    for (const timer of objectTimers(source)) {
+    // C obj_split_timers() walks the queue in expiry order, including its
+    // newest-first order for ties, before assigning the copied timer IDs.
+    const timers = objectTimers(source).sort((left, right) => left.deadline - right.deadline || right.id - left.id);
+    for (const timer of timers) {
         scheduleObjectTimer(destination, timer.kind, timer.deadline, state);
     }
     return objectTimers(destination);
