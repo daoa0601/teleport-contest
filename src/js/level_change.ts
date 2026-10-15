@@ -449,7 +449,7 @@ async function arriveOnLevel(from: DungeonLocation, { arrival, ladder, followers
         if (game.program_state?.gameover) return true;
         await resolveHeroArrivalCollision();
         if (Is_airlevel(game.u.uz) || Is_waterlevel(game.u.uz)) await moveElementalBubbles();
-        else if (game.level.flags.fumaroles) fumaroles(game);
+        else if (game.level.flags.fumaroles) await fumaroles(game);
         vision_reset_new_level();
         await docrt({ beforeGlow });
         return false;

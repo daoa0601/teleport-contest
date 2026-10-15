@@ -319,7 +319,7 @@ void test('probe status describes engulfment and omits the outside gas cloud', a
     requireFixtureGame(game);
     const cloud = await createMonsterAt('fog cloud', 11, 10);
     installSwallowedHero(cloud);
-    createHarmlessGasCloudSelection(game, [{ x: game.u.ux, y: game.u.uy }], { ttl: 10 });
+    await createHarmlessGasCloudSelection(game, [{ x: game.u.ux, y: game.u.uy }], { ttl: 10 });
     const status = heroStatusLine();
     assert.match(status, /engulfed by the fog cloud/);
     assert.doesNotMatch(status, /in a cloud of vapor/);

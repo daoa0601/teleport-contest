@@ -152,8 +152,8 @@ void test('expired gas clears the view beyond it while overlapping gas still blo
     freshObjectRoom({ left: 8, right: 18, top: 10, bottom: 10 });
     requirePlayingGame(game);
     const cells = [{ x: 12, y: 10 }];
-    const first = createHarmlessGasCloudSelection(game, cells, { ttl: 0 });
-    const second = createHarmlessGasCloudSelection(game, cells, { ttl: 1 });
+    const first = await createHarmlessGasCloudSelection(game, cells, { ttl: 0 });
+    const second = await createHarmlessGasCloudSelection(game, cells, { ttl: 1 });
     assert.ok(first && second);
     vision_recalc(0);
     assert.equal(couldsee(14, 10), false);

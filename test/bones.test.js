@@ -139,9 +139,10 @@ void test('a monster restored from bones retains its gas exposure under its new 
     freshBonesRoom(storage);
     const soldier = await createMonsterAt('soldier', 12, 10);
     soldier.mhp = soldier.mhpmax = 100;
-    const cloud = createHarmlessGasCloudSelection(game, [{ x: 12, y: 10 }]);
+    const cloud = await createHarmlessGasCloudSelection(game, [{ x: 12, y: 10 }]);
     assert.ok(cloud);
     cloud.damage = 8;
+    cloud.heroFault = false;
     cloud.heroFault = true;
     assert.equal(saveBonesLevel(), true);
     freshBonesRoom(storage);

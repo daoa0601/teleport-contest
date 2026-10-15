@@ -78,7 +78,7 @@ void test('zero hit points do not remove a monster glyph before map detachment',
 void test('an invisible marker takes precedence over a visible cloud', async () => {
     freshObjectRoom();
     map_invisible(11, 10);
-    createHarmlessGasCloudSelection(game, [{ x: 11, y: 10 }]);
+    await createHarmlessGasCloudSelection(game, [{ x: 11, y: 10 }]);
 
     newsym(11, 10);
     await flush_screen(1);

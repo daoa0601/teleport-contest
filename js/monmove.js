@@ -131,7 +131,7 @@ import { shopkeeperIsMuted } from './shop_loss.js';
 import { checkMonsterGearNextTurn, findMonsterArmorClass } from './monworn.js';
 import { inTown, roomsAt } from './room.js';
 import { addShopDamage } from './shop_damage.js';
-import { createHarmlessGasCloudSelection, createPoisonGasCloud, createSteamCloud, GAS_OK, monsterGasTolerance, visibleRegionAt, updateMonsterRegions, } from './regions.js';
+import { createPoisonGasCloud, createSteamCloud, GAS_OK, monsterGasTolerance, visibleRegionAt, updateMonsterRegions, } from './regions.js';
 import { heroIsDeaf, syncBlindness } from './senses.js';
 import { makeBlinded } from './sight_change.js';
 import { applyMonsterStoningAttack, startHeroPetrificationFromMonster, touchPetrifies, } from './stoning.js';
@@ -755,32 +755,32 @@ export async function finishDeferredMonsterMiscItem(action, state = requireIniti
 export function monstersInFmonOrder(monsters = []) {
     return Array.from(monsters).reverse();
 }
-function createFogEveryturnRegion(state, x, y, random = rn2) {
+async function createFogEveryturnRegion(state, x, y, random = rn2) {
     const cell = state.level.at(x, y);
     if (!cell || (IS_DOOR(cell.typ) && cell.doormask & (D_CLOSED | D_LOCKED))
         || visibleRegionAt(state, x, y))
         return null;
-    return createHarmlessGasCloudSelection(state, [{ x, y }], { ttl: 4 + random(3) });
+    return await createPoisonGasCloud(state, x, y, 1, 0, random);
 }
 // C monmove.c:m_everyturn_effect().  movemon_singlemon() runs this before its
 // movement-ration check, so an otherwise stationary fog cloud still leaves a
 // one-cell harmless vapor region.  A size-one create_gas_cloud() owns only the
 // rn1(3,4) TTL draw; the region then suppresses another cloud at that square.
-function monsterEveryturnEffect(monster, state, random = rn2) {
+async function monsterEveryturnEffect(monster, state, random = rn2) {
     if (!state?.level ||
         monster?.mnum !== PM_FOG_CLOUD ||
         visibleRegionAt(state, monster.mx, monster.my))
         return null;
-    return createFogEveryturnRegion(state, monster.mx, monster.my, random);
+    return await createFogEveryturnRegion(state, monster.mx, monster.my, random);
 }
-export function runMonsterEveryturnEffects(monsters, state, random = rn2, { fmonOrdered = false } = {}) {
+export async function runMonsterEveryturnEffects(monsters, state, random = rn2, { fmonOrdered = false } = {}) {
     const effects = [];
     const visits = fmonOrdered ? Array.from(monsters || []) : monstersInFmonOrder(monsters || []);
     for (const monster of visits) {
         initializeMonsterMovement(monster);
         if (!schedulable(monster))
             continue;
-        const effect = monsterEveryturnEffect(monster, state, random);
+        const effect = await monsterEveryturnEffect(monster, state, random);
         if (effect)
             effects.push({ monster, effect });
     }
@@ -789,10 +789,10 @@ export function runMonsterEveryturnEffects(monsters, state, random = rn2, { fmon
 // C allmain.c invokes the same species hook for `youmonst` after status
 // projection and before accepting the next command.  The region persists on
 // the level and suppresses another TTL draw while it covers the hero square.
-export function heroEveryturnEffect(state = requireInitializedGame(), random = rn2) {
+export async function heroEveryturnEffect(state = requireInitializedGame(), random = rn2) {
     if ((state.u?.mtimedone ?? 0) <= 0 || state.u?.umonnum !== PM_FOG_CLOUD)
         return null;
-    return createFogEveryturnRegion(state, state.u.ux, state.u.uy, random);
+    return await createFogEveryturnRegion(state, state.u.ux, state.u.uy, random);
 }
 // C ref: mon.c mcalcdistress()/m_calcdistress(). JS appends monsters while C
 // prepends them to fmon, so this once-per-global-turn phase traverses the
@@ -3314,7 +3314,7 @@ function maybeBreatheAtHero(monster, attack, state, random, calls) {
 }
 // C ref: mkmaze.c:fumaroles(). Steam vents use the same cloud builder as
 // fire striking water.
-export function fumaroles(state = requireInitializedGame()) {
+export async function fumaroles(state = requireInitializedGame()) {
     let cloudCount = rn2(3);
     let minimumSize = 5;
     if (Is_firelevel(state.u?.uz)) {
@@ -3332,7 +3332,7 @@ export function fumaroles(state = requireInitializedGame()) {
         const y = rn2(ROWNO - 4) + 3;
         if (state.level?.at?.(x, y)?.typ !== LAVAPOOL)
             continue;
-        createSteamCloud(state, x, y, rn2(10) + minimumSize, rn2);
+        await createSteamCloud(state, x, y, rn2(10) + minimumSize, rn2);
         heard = true;
         const dx = x - (state.u?.ux ?? 0);
         const dy = y - (state.u?.uy ?? 0);

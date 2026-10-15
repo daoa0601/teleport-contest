@@ -6907,7 +6907,7 @@ function createLuaLevelSession() {
             const damage = options.damage ?? 0;
             const cloud = point
                 ? await createPoisonGasCloud(game, point.x, point.y, 1, damage)
-                : options.selection ? createGasCloudSelection(
+                : options.selection ? await createGasCloudSelection(
                     game, luaSelectionCoordinates(options.selection), -1, damage,
                 ) : null;
             if (!cloud) throw new TypeError('des.gas_cloud requires a coordinate or selection');

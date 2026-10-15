@@ -62,7 +62,7 @@ void test('a cancelled steam vortex leaves no vapor', async () => {
     assert.equal(level.regions.length, 0);
 });
 
-void test('a polymorphed fog cloud flowing through a closed door does not leave gas', () => {
+void test('a polymorphed fog cloud flowing through a closed door does not leave gas', async () => {
     const level = freshObjectRoom();
     requirePlayingGame(game);
     game.u.umonnum = 106;
@@ -71,7 +71,7 @@ void test('a polymorphed fog cloud flowing through a closed door does not leave 
     door.typ = DOOR;
     door.doormask = D_CLOSED;
 
-    heroEveryturnEffect(game);
+    await heroEveryturnEffect(game);
 
     assert.equal(level.regions.length, 0);
 });

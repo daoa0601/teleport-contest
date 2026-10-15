@@ -22,9 +22,10 @@ for (const blind of [false, true]) {
         game.u.uswallow = 1;
         game.u.ustuck = worm;
         addTrap(level, PIT, game.u.ux, game.u.uy, { tseen: true });
-        const cloud = createHarmlessGasCloudSelection(game, [{ x: game.u.ux, y: game.u.uy }]);
+        const cloud = await createHarmlessGasCloudSelection(game, [{ x: game.u.ux, y: game.u.uy }]);
         assert.ok(cloud);
         cloud.damage = 8;
+        cloud.heroFault = false;
         const dagger = await floorObject(DAGGER, game.u.ux, game.u.uy, { dknown: false });
         const input = resetInputState();
         planInput(input, t, [{

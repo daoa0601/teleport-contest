@@ -417,7 +417,7 @@ async function arriveOnLevel(from, { arrival, ladder, followers, beforeGlow }) {
         if (Is_airlevel(game.u.uz) || Is_waterlevel(game.u.uz))
             await moveElementalBubbles();
         else if (game.level.flags.fumaroles)
-            fumaroles(game);
+            await fumaroles(game);
         vision_reset_new_level();
         await docrt({ beforeGlow });
         return false;

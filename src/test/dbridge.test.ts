@@ -148,10 +148,11 @@ for (const startsInside of [false, true]) {
         monster.mcanmove = 0;
         monster.msleeping = 1;
         monster.mhp = 100;
-        const cloud = createHarmlessGasCloudSelection(game,
+        const cloud = await createHarmlessGasCloudSelection(game,
             [{ x: 12, y: startsInside ? 9 : 10 }], { ttl: 10 });
         assert.ok(cloud);
         cloud.damage = 8;
+        cloud.heroFault = false;
         pushKeys(' '.repeat(20));
 
         await openDrawbridge(12, 10);
