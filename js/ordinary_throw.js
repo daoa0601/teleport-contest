@@ -2,7 +2,9 @@
 // C refs: dothrow.c throwit() and thitmonst(), zap.c bhit().
 import { game } from './gstate.js';
 import { artifactById } from './artifacts.js';
-import { W_QUIVER, W_SWAPWEP, W_WEP } from './const.js';
+import { A_DEX, Is_airlevel, W_QUIVER, W_SWAPWEP, W_WEP } from './const.js';
+import { exerciseAttribute } from './attrib.js';
+import { flyBoomerang } from './boomerang.js';
 import { plineWithContinuation } from './display.js';
 import { hitMonsterWithThrownEggPieOrVenom, } from './hero_thrown_egg_pie_venom.js';
 import { hitMonsterWithThrownObject } from './hero_ranged_attack.js';
@@ -60,16 +62,31 @@ export async function throwOrdinaryObject({ state = game, item, quantity, splitO
                 return { heroDied: true };
             return { object: thrown, landed, stoppedBy: 'vertical' };
         }
+        const boomerang = thrown.otyp === BOOMERANG
+            && !state.underwater && !state.u.uinwater;
+        if (boomerang && (Is_airlevel(state.u.uz) || propertyIsActive('levitation', state)))
+            await hurtleHero(-actualDx, -actualDy, 1, { verbose: true });
         const trajectory = heroThrowTrajectory(thrown, state, state.uwep);
-        const flight = await flyHeroThrownObject({
-            state,
-            object: thrown,
-            dx: actualDx,
-            dy: actualDy,
-            range: trajectory.range,
-            captureFlight: captureThrownObjectFlight,
-        });
-        if (trajectory.recoil) {
+        const flight = boomerang
+            ? await flyBoomerang(thrown, actualDx, actualDy, state, volley)
+            : await flyHeroThrownObject({
+                state,
+                object: thrown,
+                dx: actualDx,
+                dy: actualDy,
+                range: trajectory.range,
+                captureFlight: captureThrownObjectFlight,
+            });
+        if ('heroDied' in flight && flight.heroDied)
+            return { heroDied: true };
+        if ('caught' in flight && flight.caught) {
+            await exerciseAttribute(A_DEX, true, state);
+            const returned = await returnUpwardThrowToInventory(thrown, weaponMask, twoWeapons, oldSlot, state);
+            return { ...flight, object: thrown, landed: returned };
+        }
+        if ('consumed' in flight && flight.consumed)
+            return { ...flight, consumed: true };
+        if (!boomerang && trajectory.recoil) {
             await hurtleHero(-actualDx, -actualDy, trajectory.recoil, { verbose: true });
         }
         if (flight.destroyed || flight.migrated)

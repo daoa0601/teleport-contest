@@ -6876,6 +6876,7 @@ async function throwCommand(
         game._encumbranceLevel = currentCapacity;
         game.u._encumbrance = encumbranceLabel(currentCapacity);
         if (game.program_state?.gameover) break;
+        if ('stopVolley' in shotResult && shotResult.stopVolley) break;
     }
     game.context.move = 1;
 }

@@ -18,7 +18,7 @@ export enum CmapSymbol {
     pool = 38, ice = 39, lava = 40, lavawall = 41,
     vodbridge = 42, hodbridge = 43, vcdbridge = 44, hcdbridge = 45,
     air = 46, cloud = 47, water = 48, arrowTrap = 49,
-    digbeam = 78, poisoncloud = 86, goodpos = 87,
+    digbeam = 78, boomleft = 80, boomright = 81, poisoncloud = 86, goodpos = 87,
 }
 
 const NUMMONS = MONSTER_COLOR.length;
