@@ -275,7 +275,7 @@ import {
 import type { FinishHeroDeathOptions } from './end.js';
 import { runLevelRegions } from './regions.js';
 import {
-    maintainVaultResidence, continueVaultGuardArrival,
+    maintainVaultResidence, continueVaultGuardArrival, moveVaultGuard,
 } from './vault.js';
 import {
     observeObject, recordObjectEncounter,
@@ -3209,16 +3209,6 @@ async function presentPetMovementPrelude(
 
 async function presentMonsterMoveMessage(action: MonsterMovementAction, game: PlayingGameState): Promise<void> {
     const movement = action.movement;
-    if (movement?.guardFinished && !game._suppressMessagesUntilInput) {
-        const message = 'Suddenly, the guard disappears.--More--';
-        await pline(message);
-        await flush_screen(1);
-        game.nhDisplay?.setCursor(message.length, 0);
-        let key;
-        do key = await nhgetch();
-        while (key !== 27 && key !== 32 && key !== 10 && key !== 13);
-        game._pending_message = '';
-    }
     if (movement?.message) await plineWithContinuation(movement.message);
 }
 
@@ -3322,7 +3312,17 @@ async function executeMonsterTurns(): Promise<boolean | undefined> {
             somebodyCanMove = false;
             break;
         }
-        if (!level.monsters.includes(actor) || (actor.mhp ?? 1) <= 0 || actor.mx === 0
+        if (!level.monsters.includes(actor)) continue;
+        // C movemon_singlemon(): parked guards keep removing their corridor
+        // once per world turn, even after death or completion of the escort.
+        if (actor.isgd && !actor.mx && (actor.mstate ?? MON_FLOOR) === MON_FLOOR) {
+            if (game.moves > (actor.mlstmv ?? 0)) {
+                await moveVaultGuard(actor, game, rn2);
+                actor.mlstmv = game.moves;
+            }
+            continue;
+        }
+        if ((actor.mhp ?? 1) <= 0 || actor.mx === 0
             || (actor.mstate ?? MON_FLOOR) !== MON_FLOOR)
             continue;
         await runMonsterEveryturnEffects([actor], game, rn2, { fmonOrdered: true });

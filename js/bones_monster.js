@@ -75,6 +75,13 @@ export async function restoreBonesMonsters(level, state) {
     // purging it. Inventory drops during purge must not affect admission
     // of an actor later in that chain.
     for (const monster of level?.monsters || []) {
+        // C priest.c:restpriest(): bones belong to the receiving level.
+        if (monster.ispriest && state.u.uz?.dlevel) {
+            const shrine = monster.epri ?? monster.mextra?.epri;
+            if (!shrine)
+                throw new Error(`Bones priest ${monster.m_id} has no shrine record.`);
+            shrine.shrlevel = { ...state.u.uz };
+        }
         const species = typeof monster.cham === 'number' && Number.isInteger(monster.cham) && monster.cham >= 0
             ? monster.cham : monster.mnum;
         if (!propagateMonsterSpecies(species, true, true, state))

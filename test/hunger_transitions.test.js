@@ -2,7 +2,7 @@ import { createRoom } from './support/topology.js';
 import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { A_STR, CORR, FAINTED, FAINTING, HUNGRY, NOT_HUNGRY, POOL, SATIATED, STARVED, VAULT, VWALL, WEAK, } from '../js/const.js';
+import { A_STR, CORR, FAINTED, FAINTING, HUNGRY, NOT_HUNGRY, POOL, ROOMOFFSET, SATIATED, STARVED, VAULT, VWALL, WEAK, } from '../js/const.js';
 import { currentAttribute } from '../js/attrib.js';
 import { moveloop_core } from '../js/allmain.js';
 import { wearHeroAccessory } from '../js/accessory.js';
@@ -262,6 +262,9 @@ void test('a real vault guard revives the fainted hero before asking for a name'
     });
     requireFixtureGame(game);
     level.rooms.push(createRoom({ lx: 9, hx: 10, ly: 9, hy: 10, rtype: VAULT }));
+    for (let x = 9; x <= 10; x++)
+        for (let y = 9; y <= 10; y++)
+            level.requireAt(x, y).roomno = ROOMOFFSET;
     level.requireAt(16, 10).typ = CORR;
     level.requireAt(11, 10).typ = VWALL;
     game.u.uinvault = 29;
