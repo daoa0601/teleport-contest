@@ -14,6 +14,8 @@ for (const role of ['priest', 'wizard'] as const) {
         void test(`the Mitre of Holiness ${role === 'priest' && species === 'human zombie' ? 'halves' : 'does not reduce'} a ${species} hit against a ${role}`, async () => {
             freshObjectRoom({ role, hero: { uhp: 100, uhpmax: 100, uac: 10 } });
             requirePlayingGame(game);
+            // Noon isolates the Mitre's reduction from undead midnight damage.
+            game.datetime = '20000101120000';
             const monster = await createMonsterAt(species, 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
             monster.mux = game.u.ux;
             monster.muy = game.u.uy;
