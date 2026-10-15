@@ -76,13 +76,18 @@ export function setConditionOption(option: string, enabled: boolean, mask = defa
 
 export function statusConditions(state: GameState): readonly ConditionText[] {
     const mask = state.flags.statusConditionMask ?? defaultMask;
-    const enabled = (name: ConditionName) => definitions.some((condition, index) =>
-        condition.option === name && (mask & (1 << index)) !== 0);
+    const enabled = (name: ConditionName) => statusConditionEnabled(name, state);
     const selected = definitions.filter((condition, index) =>
         (mask & (1 << index)) !== 0 && conditionApplies(condition.option, state, enabled));
     selected.sort((left, right) => left.rank - right.rank
         || (left.option.toLowerCase() < right.option.toLowerCase() ? -1 : 1));
     return selected.map(condition => condition.text);
+}
+
+export function statusConditionEnabled(name: ConditionName, state: GameState): boolean {
+    const mask = state.flags.statusConditionMask ?? defaultMask;
+    return definitions.some((condition, index) =>
+        condition.option === name && (mask & (1 << index)) !== 0);
 }
 
 function conditionApplies(

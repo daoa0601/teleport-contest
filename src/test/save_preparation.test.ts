@@ -86,7 +86,7 @@ for (const [kind, save, key] of [
         game.plname = 'Preparation';
         const storage = memoryStorage();
         await punishHero(await knownObject(HEAVY_IRON_BALL));
-        unplaceBallAndChain();
+        await unplaceBallAndChain();
 
         assert.equal(await save(storage), true);
 

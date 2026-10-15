@@ -8,12 +8,13 @@ import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import { impossible } from './diagnostics.js';
 import { maybeUnhideAt } from './monster_hiding.js';
 import {
-    cls, map_object, newsym, plineWithContinuation,
+    cls, displayLiquidName, map_object, newsym, plineWithContinuation,
 } from './display.js';
 import {
     moveObject, placeObjectSynchronously, remove_object,
 } from './floor_object.js';
-import { applyFloorEffects, landFloorObject } from './floor_effects.js';
+import { applyFloorEffects } from './floor_effects.js';
+import { hitFloorWithObject } from './object_drop.js';
 import { exerciseAttribute } from './attrib.js';
 import { objectIsHardHelmet } from './armor.js';
 import { heroHeadName } from './body_parts.js';
@@ -21,15 +22,13 @@ import { loseHeroHp } from './hero_damage.js';
 import { removeHeroEquipment } from './hero_equipment.js';
 import { canLetGo, finishInventoryRemoval } from './hero_inventory.js';
 import { unlinkObject } from './object_location.js';
-import { makePlural } from './object_grammar.js';
 import { isWeldedPrimary } from './weapon_slots.js';
 import { rn1, rn2, rnd } from './rng.js';
 import {
-    A_STR, BC_BALL, BC_CHAIN, D_CLOSED, D_LOCKED, DOOR, IS_OBSTRUCTED, LEFT_SIDE, POOL, RIGHT_SIDE,
+    A_STR, BC_BALL, BC_CHAIN, D_CLOSED, D_LOCKED, DOOR, IS_OBSTRUCTED, KILLED_BY_AN, LEFT_SIDE, NO_KILLER_PREFIX, POOL, RIGHT_SIDE,
     TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB,
     Is_waterlevel, is_hole, is_pit,
 } from './const.js';
-import { OBJECT_NAMES } from './object_data.js';
 import { encumbranceMessage, nearCapacity, SLT_ENCUMBER, weightCapacity } from './weight.js';
 import { propertyIsActive } from './properties.js';
 import { heroIsBlind } from './senses.js';
@@ -40,7 +39,7 @@ import { fillPitWithBoulderAt } from './pit_fill.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { hitMonsterWithHeroObject } from './hero_physical_hit.js';
 import { findMonsterArmorClass } from './monworn.js';
-import { objectName } from './objnam.js';
+import { objectName, ownedObjectName } from './objnam.js';
 import { rayMissMessage } from './ray_hit_message.js';
 import { rangedTargetHitBonus } from './weapon_accuracy.js';
 
@@ -51,6 +50,7 @@ import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
 import type { MapLocation } from './map_types.js';
 import type { MessagePublisher } from './display.js';
+import type { KillerFormat } from './end.js';
 
 interface BallMoveGeometry {
     ball: GameObject;
@@ -66,8 +66,6 @@ export interface BallChainMove extends BallMoveGeometry { blocked: false }
 export interface BlockedBallMove extends BallMoveGeometry {
     blocked: true;
     consumedTurn: boolean;
-    // Null means drag_ball already presented and resolved the interruption.
-    blockedMessage: string | null;
 }
 export type BallMovePlan = BallChainMove | BlockedBallMove;
 export interface BallMoveOptions { state?: GameState; allowDrag?: boolean }
@@ -94,7 +92,7 @@ export async function dragBallDownStairs(state: GameState = game): Promise<boole
     if (forward) {
         if (rn2(6)) {
             await plineWithContinuation('The iron ball drags you downstairs!');
-            if (await ballDamage(rnd(6), 'dragged downstairs by an iron ball', state))
+            if (await ballDamage(rnd(6), 'dragged downstairs by an iron ball', state, NO_KILLER_PREFIX))
                 return true;
             await scatterCarriedItems(state);
         }
@@ -108,7 +106,7 @@ export async function dragBallDownStairs(state: GameState = game): Promise<boole
         }
         if (dragChance >= rnd(6)) {
             await plineWithContinuation('The iron ball drags you downstairs!');
-            if (await ballDamage(rnd(3), 'dragged downstairs by an iron ball', state))
+            if (await ballDamage(rnd(3), 'dragged downstairs by an iron ball', state, NO_KILLER_PREFIX))
                 return true;
             await exerciseAttribute(A_STR, false);
             await scatterCarriedItems(state);
@@ -129,7 +127,7 @@ export async function fallWithIronBall(state: GameState = game): Promise<boolean
     await releaseCarriedBall(state, true);
     if (!hits) return false;
 
-    let damage = rn2(7) + 25;
+    let damage = rn1(7, 25);
     await plineWithContinuation(`The iron ball falls on your ${heroHeadName(state)}.`);
     const helmet = state.uarmh || state.u.uarmh;
     if (helmet) {
@@ -138,16 +136,18 @@ export async function fallWithIronBall(state: GameState = game): Promise<boolean
             damage = 3;
         } else if (state.flags.verbose !== false) {
             await plineWithContinuation(
-                `Your ${helmet.name || OBJECT_NAMES[helmet.otyp]} does not protect you.`,
+                `${ownedObjectName(helmet, state)} does not protect you.`,
             );
         }
     }
-    return ballDamage(damage, 'crunched in the head by an iron ball', state);
+    return ballDamage(damage, 'crunched in the head by an iron ball', state, NO_KILLER_PREFIX);
 }
 
-async function ballDamage(amount: number, killer: string, state: GameState): Promise<boolean> {
+async function ballDamage(
+    amount: number, killer: string, state: GameState, killerFormat: KillerFormat = KILLED_BY_AN,
+): Promise<boolean> {
     if (state.u.halfPhysicalDamage) amount = Math.trunc((amount + 1) / 2);
-    return loseHeroHp(amount, killer, { state });
+    return loseHeroHp(amount, killer, { state, killerFormat });
 }
 
 async function scatterCarriedItems(state: GameState): Promise<void> {
@@ -157,17 +157,14 @@ async function scatterCarriedItems(state: GameState): Promise<void> {
         if (object === ball || rnd(capacity) > object.owt
             || !await canLetGo(object, '', state)) continue;
         const plural = object.quan !== 1;
-        const name = object.name || OBJECT_NAMES[object.otyp];
         await plineWithContinuation(
-            `You drop your ${plural ? makePlural(name) : name} and `
+            `You drop ${ownedObjectName(object, state, { capitalized: false })} and `
             + `${plural ? 'they fall' : 'it falls'} down the stairs with you.`,
         );
         await removeHeroEquipment(object, state);
         unlinkObject(object, state);
         await finishInventoryRemoval(object, state);
-        await landFloorObject(object, state.u.ux, state.u.uy, {
-            state, publish: plineWithContinuation,
-        });
+        await hitFloorWithObject(object, { verbose: false, state });
         if (state.program_state?.gameover) return;
     }
 }
@@ -188,7 +185,26 @@ async function releaseCarriedBall(state: GameState, showMessage = false): Promis
 
 // C unplacebc()/placebc(): swallowing removes the floor pair but leaves a
 // carried ball in the pack. Expulsion returns the chain to the hero's square.
-export function unplaceBallAndChain(state: GameState = game): void {
+export async function unplaceBallAndChain(state: GameState = game): Promise<void> {
+    if (state._ballChainRestriction) {
+        await impossible('unplacebc denied, restriction in place', { state });
+        return;
+    }
+    unplaceBallAndChainCore(state);
+}
+
+export async function reserveBallAndChainPlacement(state: GameState = game): Promise<number> {
+    if (state._ballChainRestriction) {
+        await impossible('unplacebc_and_covet_placebc denied, already restricted', { state });
+        return 0;
+    }
+    const pin = rnd(400);
+    state._ballChainRestriction = pin;
+    unplaceBallAndChainCore(state);
+    return pin;
+}
+
+function unplaceBallAndChainCore(state: GameState): void {
     requireLiveGame(state);
     const ball = state.uball || state.u.uball;
     const chain = state.uchain || state.u.uchain;
@@ -232,7 +248,16 @@ export function moveSwallowedBallAndChain(monster: Monster, state: GameState = g
 export async function placeBallAndChain(
     state: GameState = game, publish: MessagePublisher = plineWithContinuation,
 ): Promise<void> {
+    if (state._ballChainRestriction) return;
+    await restoreBallAndChainPlacement(0, state, publish);
+}
+
+// A negative pin overrides the restriction during terminal object cleanup.
+export async function restoreBallAndChainPlacement(
+    pin: number, state: GameState = game, publish: MessagePublisher = plineWithContinuation,
+): Promise<void> {
     requireLiveGame(state);
+    if (state._ballChainRestriction && pin !== -1 && pin !== state._ballChainRestriction) return;
     const ball = state.uball || state.u.uball;
     const chain = state.uchain || state.u.uchain;
     if (chain && chain.where !== 'free') {
@@ -255,6 +280,7 @@ export async function placeBallAndChain(
     placeObjectSynchronously(chain, x, y, state);
     state.u.bglyph = state.u.cglyph = rememberedGlyphAt(x, y, state);
     newsym(x, y);
+    state._ballChainRestriction = 0;
 }
 
 function dist2(x1: number, y1: number, x2: number, y2: number): number {
@@ -311,7 +337,7 @@ export async function dropBall(x: number, y: number, { state = game, publish = p
                 if (web) level.traps.splice(
                     level.traps.indexOf(web), 1);
             } else if (hero.utraptype === TT_LAVA) {
-                await publish(`${pullmsg}lava!`);
+                await publish(`${pullmsg}${displayLiquidName('lava', state)}!`);
             } else if (hero.utraptype === TT_BEARTRAP) {
                 const side = rn2(3) ? LEFT_SIDE : RIGHT_SIDE;
                 await publish(`${pullmsg}bear trap!`);
@@ -480,14 +506,12 @@ function dragBothPlan(plan: BallChainMove, targetX: number, targetY: number, sta
     return plan;
 }
 
-/**
- * Compute ball.c:drag_ball()'s floor geometry without mutating the floor
- * piles.  beginBallAndChainMove() performs move_bc(before), and
- * finishBallAndChainMove() performs move_bc(after).
- */
-export function planBallAndChainMove(targetX: number, targetY: number, {
+// C drag_ball(): lift the pair before choosing the chain route. A route
+// blocked by rock must restore that move before trying to drag the ball.
+export async function beginBallAndChainMove(targetX: number, targetY: number, {
     state = game, allowDrag = true,
-}: BallMoveOptions = {}): BallMovePlan | null {
+}: BallMoveOptions = {}): Promise<BallMovePlan | null> {
+    requireLiveGame(state);
     const ball = state.uball || state.u?.uball;
     const chain = state.uchain || state.u?.uchain;
     if (!ball || !chain || state.u?.uswallow) return null;
@@ -506,12 +530,16 @@ export function planBallAndChainMove(targetX: number, targetY: number, {
 
     // The chain already reaches the destination.  move_bc still temporarily
     // unplaces both objects so the hero and vision layers can move first.
-    if (dist2(targetX, targetY, chain.ox, chain.oy) <= 2) return plan;
+    if (dist2(targetX, targetY, chain.ox, chain.oy) <= 2) {
+        await unplaceMovingBallAndChain(plan, state);
+        return plan;
+    }
 
     // If the ball is close enough, only the chain changes squares.
     if (carried(ball, state)
         || distmin(targetX, targetY, ball.ox, ball.oy) <= 2) {
         plan.control = BC_CHAIN;
+        await unplaceMovingBallAndChain(plan, state);
         if (carried(ball, state)) {
             if (distmin(targetX, targetY, chain.ox, chain.oy) > 1) {
                 plan.chainx = state.u.ux;
@@ -634,49 +662,50 @@ export function planBallAndChainMove(targetX: number, targetY: number, {
             break;
         }
         if (!fallBackToDrag) return plan;
+        plan.chainx = oldChainX;
+        plan.chainy = oldChainY;
+        await finishBallAndChainMove(plan, state);
     }
 
     if (nearCapacity(state) > SLT_ENCUMBER
         && dist2(targetX, targetY, state.u.ux, state.u.uy) <= 2) {
+        await plineWithContinuation(state.inventory.length
+            ? 'You cannot carry all that and also drag the heavy iron ball.'
+            : 'You cannot drag the heavy iron ball.');
+        endVoluntaryMultiTurn(state);
         return {
             ...plan, blocked: true, consumedTurn: false,
-            blockedMessage: state.inventory.length
-                ? 'You cannot carry all that and also drag the heavy iron ball.'
-                : 'You cannot drag the heavy iron ball.',
         };
     }
-    return dragBothPlan(plan, targetX, targetY, state);
+    return beginDraggingBall(plan, targetX, targetY, state);
 }
 
-export async function beginBallAndChainMove(targetX: number, targetY: number, options: BallMoveOptions = {}): Promise<BallMovePlan | null> {
-    const state = options.state || game;
-    requireLiveGame(state);
-    const plan = planBallAndChainMove(targetX, targetY, options);
-    if (!plan || plan.blocked) return plan;
-    if (plan.control === (BC_BALL | BC_CHAIN)) {
-        const { ball, chain } = plan;
-        const level = requireGameLevel(state);
-        const chainPullsFromWater = isPoolAt(chain.ox, chain.oy, state)
-            && (level.requireAt(chain.ox, chain.oy).typ === POOL
-                || !isPoolAt(ball.ox, ball.oy, state)
-                || level.requireAt(ball.ox, ball.oy).typ === POOL);
-        const trap = chainPullsFromWater ? null : level.traps.find(candidate =>
-            candidate.tx === chain.ox && candidate.ty === chain.oy);
-        if (chainPullsFromWater || trap && (is_pit(trap.ttyp) || is_hole(trap.ttyp))) {
-            if (propertyIsActive('levitation', state)) {
-                await plineWithContinuation(formatFeltMessage('a tug from the iron ball.', state));
-                if (trap) trap.tseen = true;
-            } else {
-                await jerkHeroBackToChain(plan, state);
-                return {
-                    ...plan, blocked: true, consumedTurn: true,
-                    blockedMessage: null, causeDelay: false,
-                };
-            }
+async function beginDraggingBall(
+    plan: BallChainMove, targetX: number, targetY: number, state: GameState,
+): Promise<BallMovePlan> {
+    const { ball, chain } = plan;
+    const level = requireGameLevel(state);
+    const chainPullsFromWater = isPoolAt(chain.ox, chain.oy, state)
+        && (level.requireAt(chain.ox, chain.oy).typ === POOL
+            || !isPoolAt(ball.ox, ball.oy, state)
+            || level.requireAt(ball.ox, ball.oy).typ === POOL);
+    const trap = chainPullsFromWater ? null : level.traps.find(candidate =>
+        candidate.tx === chain.ox && candidate.ty === chain.oy);
+    if (chainPullsFromWater || trap && (is_pit(trap.ttyp) || is_hole(trap.ttyp))) {
+        if (propertyIsActive('levitation', state)) {
+            await plineWithContinuation(formatFeltMessage('a tug from the iron ball.', state));
+            if (trap) trap.tseen = true;
+        } else {
+            await jerkHeroBackToChain(plan, state);
+            return {
+                ...plan, blocked: true, consumedTurn: true,
+                causeDelay: false,
+            };
         }
     }
+    plan.control = BC_BALL | BC_CHAIN;
     await unplaceMovingBallAndChain(plan, state);
-    return plan;
+    return dragBothPlan(plan, targetX, targetY, state);
 }
 
 async function jerkHeroBackToChain(plan: BallChainMove, state: GameState): Promise<void> {

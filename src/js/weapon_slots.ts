@@ -34,7 +34,9 @@ export function isWeldedPrimary(
 }
 
 export function setTwoWeaponCombat(enabled: boolean, state: GameState = game): void {
+    if (state.u.twoweap === enabled) return;
     state.u.twoweap = enabled;
+    if (state.flags.weaponstatus) state.context.botl = true;
 }
 
 function slotObject(slot: WeaponSlot, state: GameState): GameObject | null {
@@ -99,6 +101,7 @@ export async function setPrimaryWeapon(
 ): Promise<GameObject | null> {
     const previous = slotObject('uwep', state);
     if (previous === object) return previous;
+    if (state.flags.weaponstatus) state.context.botl = true;
     if (previous) cancelSlotTakeoff('uwep', state);
     // Semantic unwielding retains the old pointer while its warning stops.
     if (previous) {
@@ -146,6 +149,7 @@ export async function setQuiverObject(
 export async function losePrimaryWeapon(state: GameState = game): Promise<void> {
     const object = slotObject('uwep', state);
     if (!object) return;
+    if (state.flags.weaponstatus) state.context.botl = true;
     cancelSlotTakeoff('uwep', state);
     if (object.lamplit && artifactEmitsLight(object)) {
         endObjectBurn(object, state);
@@ -169,6 +173,7 @@ export async function releaseWeaponSlots(
     const secondary = state.uswapwep === object
         || state.u?.uswapwep === object;
     const quivered = state.uquiver === object || state.u?.uquiver === object;
+    if (primary && state.flags.weaponstatus) state.context.botl = true;
 
     if (primary) cancelSlotTakeoff('uwep', state);
     if (secondary) cancelSlotTakeoff('uswapwep', state);

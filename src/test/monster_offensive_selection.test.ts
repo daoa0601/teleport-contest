@@ -87,7 +87,7 @@ void test('peaceful monsters do not select an offensive item', async () => {
 void test('monsters outside an engulfer do not target the swallowed hero', async () => {
     const { give, select } = await offensiveRoom();
     await give(WAN_STRIKING);
-    installSwallowedHero(await createMonsterAt('purple worm', 11, 10, MONSTER_FLAGS));
+    await installSwallowedHero(await createMonsterAt('purple worm', 11, 10, MONSTER_FLAGS));
 
     assert.equal(select(), null);
 });

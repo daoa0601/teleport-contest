@@ -74,7 +74,7 @@ import { nhgetch } from './input.js';
 import { canSeeMonster, canSenseMonster, flush_screen, newsym, pline, } from './display.js';
 import { premap_detect } from './detect.js';
 import { TRUE_RUMORS, FALSE_RUMORS, RANDOM_ENGRAVINGS, RANDOM_EPITAPHS, } from './random_text_data.js';
-import { deleteEngravingAt, makeEngravingAt, wipeEngravingAt, wipeoutText } from './engrave.js';
+import { deleteEngravingAt, forgetEngravings, makeEngravingAt, restoreEngravings, sanitizeEngravings, wipeEngravingAt, wipeoutText, } from './engrave.js';
 import { registerQuestLeader } from './quest.js';
 import { armorBonus } from './armor.js';
 import { initializeMonsterArmor } from './monworn.js';
@@ -2824,9 +2824,6 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
         if (pendingMonster.mcorpsenm != null)
             monster.mcorpsenm = pendingMonster.mcorpsenm;
     }
-    if (mndx === PM_SHOPKEEPER) {
-        monster.mpeaceful = 1;
-    }
     if (generatedGhostName != null)
         setMonsterGivenName(monster, generatedGhostName);
     registerQuestLeader(monster);
@@ -3592,6 +3589,7 @@ export function saveBonesLevel() {
     catch (_error) {
         return false;
     }
+    forgetEngravings(payload.level);
     // savebones() records the final role, race, gender, and alignment in
     // cemetery.who. These suffixes also participate in bones_include_name().
     const alignment = game.u.ualign.type === 1 ? 'Law'
@@ -3840,6 +3838,7 @@ async function getbones() {
     if (!validMonsterWormBodies(payload.level))
         return false;
     restoreMonsterWormHeads(payload.level);
+    restoreEngravings(payload.level);
     const sourceDisplayLevel = game.level;
     game.level = payload.level;
     game.stairs = payload.stairs || null;
@@ -3850,6 +3849,7 @@ async function getbones() {
     await restoreBonesMonsters(game.level, game);
     restoreBonesObjects(game.level);
     restoreBonesMonsterAttitudes(game.level);
+    sanitizeEngravings(game.level);
     game.fmon = game.level.monsters?.[0] || null;
     game._restoredBones = true;
     if (game.flags?.debug) {

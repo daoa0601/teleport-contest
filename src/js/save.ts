@@ -21,7 +21,7 @@ import { resolveDungeonIdentities } from './dungeon.js';
 import { restoreMonsterInventoryOwnership } from './monster_inventory.js';
 import { FULL_MOON, LUCKMAX, LUCKMIN } from './const.js';
 import { vision_reset_new_level } from './vision.js';
-import { rewindEngravingsForSave, restoreEngravingPointers } from './engrave.js';
+import { rewindEngravingsForSave, restoreEngravings } from './engrave.js';
 import { weaponNeedsBashingMessage } from './weapon_type.js';
 import { GRAPPLING_HOOK, PICK_AXE } from './object_data.js';
 import { forgetTempleEntry } from './priest.js';
@@ -45,17 +45,17 @@ function snapshotState(): SavedGame {
     };
 }
 
-function restoreLevelMonsters(level: GameMap): void {
-    restoreEngravingPointers(level);
+function restoreLevelMonsters(level: GameMap, moves: number): void {
+    restoreEngravings(level, moves);
     if (!validMonsterWormBodies(level)) throw new Error('Invalid saved worm bodies');
     restoreMonsterWormHeads(level);
     for (const monster of level.monsters) restoreMonsterInventoryOwnership(monster);
 }
 
 function restoreSavedMonsters(state: PersistentState): void {
-    if (state.level) restoreLevelMonsters(state.level);
+    if (state.level) restoreLevelMonsters(state.level, state.moves);
     for (const cached of state._levelCache?.values() ?? [])
-        restoreLevelMonsters(cached.level);
+        restoreLevelMonsters(cached.level, state.moves);
     for (const monster of state._migratingMonsters || [])
         restoreMonsterInventoryOwnership(monster);
     if (state.u.usteed) restoreMonsterInventoryOwnership(state.u.usteed);

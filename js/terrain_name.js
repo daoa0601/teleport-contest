@@ -7,6 +7,7 @@ import { isIceAt, isLavaAt, isPoolAt } from './terrain_properties.js';
 import { onQuestStart } from './quest.js';
 import { heroIsHallucinating } from './senses.js';
 import { roomsAt } from './room.js';
+import { monsterDigests, monsterEnfolds, monsterIsAnimal } from './monster_data.js';
 // C pager.c:waterbody_name(). The liquid name is chosen before a caller
 // changes terrain, even when that caller will not print it.
 export function waterbodyName(x, y, state = game) {
@@ -49,9 +50,12 @@ export function surfaceName(x, y, state = game) {
         return 'ground';
     const type = location.typ === DRAWBRIDGE_UP
         ? drawbridgeUnderlyingType(location.drawbridgemask ?? 0) : location.typ;
+    const engulfer = state.u.ustuck;
+    if (x === state.u.ux && y === state.u.uy && state.u.uswallow
+        && engulfer && monsterIsAnimal(engulfer))
+        return monsterDigests(engulfer) ? 'maw' : monsterEnfolds(engulfer) ? 'husk' : 'nonesuch';
     if (IS_AIR(type))
-        return Is_waterlevel(state.u.uz)
-            ? 'air bubble' : type === CLOUD ? 'cloud' : 'air';
+        return Is_waterlevel(state.u.uz) ? 'air bubble' : type === CLOUD ? 'cloud' : 'air';
     if (isPoolAt(x, y, state))
         return (state.underwater || state.u.uinwater) && !Is_waterlevel(state.u.uz)
             ? 'bottom' : displayLiquidName('water', state);

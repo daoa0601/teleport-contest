@@ -1,7 +1,7 @@
 // C end.c:done_object_cleanup(), shared by terminal outcomes and saves.
 import { isok } from './const.js';
 import { game } from './gstate.js';
-import { placeBallAndChain } from './ball.js';
+import { restoreBallAndChainPlacement } from './ball.js';
 import { consumeInventoryItem } from './invent.js';
 import { placeObjectSynchronously, stack_object } from './floor_object.js';
 import { isAccessibleAt } from './terrain_properties.js';
@@ -33,6 +33,6 @@ export async function doneObjectCleanup() {
     }
     const chain = game.uchain || game.u.uchain;
     if (chain?.where === 'free')
-        await placeBallAndChain();
+        await restoreBallAndChainPlacement(-1);
 }
 //# sourceMappingURL=object_cleanup.js.map

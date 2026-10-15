@@ -304,8 +304,6 @@ async function moveOneSquare(x, y, options, remaining) {
     }
     const ballAndChain = await beginBallAndChainMove(x, y);
     if (ballAndChain?.blocked) {
-        if (ballAndChain.blockedMessage)
-            await plineWithContinuation(ballAndChain.blockedMessage);
         if (!options.jumping)
             return false;
     }

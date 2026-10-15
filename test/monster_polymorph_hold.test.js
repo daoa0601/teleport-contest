@@ -31,7 +31,7 @@ void test('a swallowed hero breaks out when a named engulfer becomes solid and c
     requirePlayingGame(game);
     const worm = await createMonsterAt('purple worm', 11, 10);
     setMonsterGivenName(worm, 'Maw');
-    installSwallowedHero(worm);
+    await installSwallowedHero(worm);
     initRng(17n);
     const input = resetInputState();
     const changing = changeMonsterForm(worm, MONSTER_NAME.indexOf('little dog'), game, { showMessage: true });
@@ -59,7 +59,7 @@ void test('a light form releases the swallowed hero without breakout damage', as
     freshObjectRoom();
     requirePlayingGame(game);
     const worm = await createMonsterAt('purple worm', 11, 10);
-    installSwallowedHero(worm);
+    await installSwallowedHero(worm);
     initRng(17n);
     pushKeys(' '.repeat(12));
     await changeMonsterForm(worm, MONSTER_NAME.indexOf('yellow light'), game, { showMessage: true });
@@ -93,7 +93,7 @@ for (const saved of [false, true]) {
         freshObjectRoom({ hero: { uhp: 1 } });
         requirePlayingGame(game);
         const worm = await createMonsterAt('purple worm', 11, 10);
-        installSwallowedHero(worm);
+        await installSwallowedHero(worm);
         let amulet;
         if (saved) {
             amulet = await addInventoryObject(AMULET_OF_LIFE_SAVING);
@@ -128,7 +128,7 @@ void test('a new engulfing form repaints the stomach without releasing or moving
     freshObjectRoom({ flags: { color: true } });
     requirePlayingGame(game);
     const worm = await createMonsterAt('purple worm', 11, 10);
-    installSwallowedHero(worm);
+    await installSwallowedHero(worm);
     swallowed(true);
     await flush_screen();
     const x = game.u.ux, y = game.u.uy;
@@ -150,7 +150,7 @@ for (const saved of [false, true]) {
         freshObjectRoom({ hero: { uhp: 1 } });
         requirePlayingGame(game);
         const worm = await createMonsterAt('purple worm', 11, 10);
-        installSwallowedHero(worm);
+        await installSwallowedHero(worm);
         let amulet;
         if (saved) {
             amulet = await addInventoryObject(AMULET_OF_LIFE_SAVING);
@@ -187,7 +187,7 @@ void test('a swallowed vampire reversion preserves the native nameless suffix', 
     const vampire = await createMonsterAt('vampire', 11, 10);
     await changeMonsterForm(vampire, MONSTER_NAME.indexOf('fog cloud'));
     assert.equal(vampire.cham, MONSTER_NAME.indexOf('vampire'));
-    installSwallowedHero(vampire);
+    await installSwallowedHero(vampire);
     const input = resetInputState();
     const changing = changeMonsterForm(vampire, MONSTER_NAME.indexOf('vampire'));
     const blocked = await Promise.race([
@@ -212,7 +212,7 @@ for (const saved of [false, true]) {
         requirePlayingGame(game);
         const vampire = await createMonsterAt('vampire', 11, 10);
         await changeMonsterForm(vampire, MONSTER_NAME.indexOf('fog cloud'));
-        installSwallowedHero(vampire);
+        await installSwallowedHero(vampire);
         const baseForm = vampire.cham;
         assert.equal(baseForm, MONSTER_NAME.indexOf('vampire'));
         let amulet;
@@ -246,7 +246,7 @@ for (const saved of [false, true]) {
         observer.mcanmove = 0;
         const vampire = await createMonsterAt('vampire', 11, 10);
         await changeMonsterForm(vampire, MONSTER_NAME.indexOf('fog cloud'));
-        installSwallowedHero(vampire);
+        await installSwallowedHero(vampire);
         vampire.mhp = 1;
         for (const monster of game.level.monsters)
             monster.movement = 0;
@@ -278,7 +278,7 @@ for (const saved of [false, true]) {
         requirePlayingGame(game);
         const shifter = await createMonsterAt('sandestin', 11, 10, NO_MINVENT);
         await changeMonsterForm(shifter, MONSTER_NAME.indexOf('purple worm'));
-        installSwallowedHero(shifter);
+        await installSwallowedHero(shifter);
         assert.equal(shifter.cham, MONSTER_NAME.indexOf('sandestin'));
         assert.equal(monsterHasStoneResistance(shifter), false);
         let amulet;

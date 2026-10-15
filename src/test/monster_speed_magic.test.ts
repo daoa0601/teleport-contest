@@ -29,7 +29,7 @@ void test('slowing an engulfing cloud releases the hero', async () => {
     requirePlayingGame(game);
     await learnSpell(SPE_SLOW_MONSTER);
     const cloud = await createMonsterAt('fog cloud', game.u.ux + 1, game.u.uy);
-    installSwallowedHero(cloud);
+    await installSwallowedHero(cloud);
     pushKeys('l                                ');
 
     await castSpell(SPE_SLOW_MONSTER);

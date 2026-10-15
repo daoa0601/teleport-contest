@@ -56,11 +56,15 @@ export function setConditionOption(option, enabled, mask = defaultMask) {
 }
 export function statusConditions(state) {
     const mask = state.flags.statusConditionMask ?? defaultMask;
-    const enabled = (name) => definitions.some((condition, index) => condition.option === name && (mask & (1 << index)) !== 0);
+    const enabled = (name) => statusConditionEnabled(name, state);
     const selected = definitions.filter((condition, index) => (mask & (1 << index)) !== 0 && conditionApplies(condition.option, state, enabled));
     selected.sort((left, right) => left.rank - right.rank
         || (left.option.toLowerCase() < right.option.toLowerCase() ? -1 : 1));
     return selected.map(condition => condition.text);
+}
+export function statusConditionEnabled(name, state) {
+    const mask = state.flags.statusConditionMask ?? defaultMask;
+    return definitions.some((condition, index) => condition.option === name && (mask & (1 << index)) !== 0);
 }
 function conditionApplies(name, state, enabled) {
     const hero = state.u;

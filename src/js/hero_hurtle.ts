@@ -383,8 +383,6 @@ async function moveOneSquare(x: number, y: number, options: HeroHurtleOptions, r
 
     const ballAndChain = await beginBallAndChainMove(x, y);
     if (ballAndChain?.blocked) {
-        if (ballAndChain.blockedMessage)
-            await plineWithContinuation(ballAndChain.blockedMessage);
         if (!options.jumping) return false;
     }
     if (ballAndChain && !ballAndChain.blocked)

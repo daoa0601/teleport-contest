@@ -1,6 +1,7 @@
 // Terrain and airborne predicates shared by placement, movement, and traps.
 // C refs: mon.c:m_in_air(), has_ceiling(), Is_waterlevel().
 import { game } from './gstate.js';
+import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 import {
     ACCESSIBLE, DB_LAVA, DB_MOAT, DB_UNDER, DOOR, D_CLOSED, D_LOCKED, DRAWBRIDGE_UP,
@@ -105,7 +106,7 @@ export function terrainCoversObjectsAt(x: number, y: number, state = game) {
 }
 
 // C dbridge.c:is_ice(). A lowered drawbridge covers its frozen water.
-export function isIceAt(x: number, y: number, state = game) {
+export function isIceAt(x: number, y: number, state: Pick<GameState, 'level'> = game) {
     if (!isok(x, y)) return false;
     const location = state.level?.at(x, y);
     if (!location) return false;

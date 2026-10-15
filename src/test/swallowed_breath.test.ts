@@ -67,7 +67,7 @@ void test('a swallowed wolf breathes into its engulfer without ending the engulf
     requirePlayingGame(game);
     const worm = await createMonsterAt('purple worm', 11, 10);
     worm.mhp = worm.mhpmax = 100;
-    installSwallowedHero(worm);
+    await installSwallowedHero(worm);
     initRng(1n);
 
     installPagerInput(resetInputState(), { expected: /blast of frost|purple worm/i, limit: 3 });
@@ -84,7 +84,7 @@ void test('monster breath does not cross the map while the hero is swallowed', a
     freshMonsterAbilityRoom('winter wolf cub', { energy: 30 });
     requirePlayingGame(game);
     const worm = await createMonsterAt('purple worm', 11, 10);
-    installSwallowedHero(worm);
+    await installSwallowedHero(worm);
     const dragon = await createMonsterAt('red dragon', 8, 12);
     const target = await createMonsterAt('goblin', 10, 12);
     const targetArmor = await knownObject(LEATHER_ARMOR, { initialize: false,

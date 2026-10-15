@@ -7,6 +7,7 @@ import { resetInputState } from '../js/input.js';
 import { artifactObject } from './support/game-objects.js';
 import { addTrap } from './support/level-state.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { finishAtCommandInput, installPagerInput } from './support/pager-input.js';
 void test('the wielded Master Key warms when a nearby hidden trap enters its census', async () => {
     const level = freshObjectRoom({ role: 'rogue', hero: { ualign: { type: -1, record: 10 } } });
     requirePlayingGame(game);
@@ -18,9 +19,10 @@ void test('the wielded Master Key warms when a nearby hidden trap enters its cen
     const input = resetInputState();
     const messages = [];
     input.beforeRead = () => { messages.push(game._pending_message); };
-    input.feed('wa .');
+    installPagerInput(input, { expected: /Master Key|whispers|^"|The Key feels/, limit: 8 });
+    input.feed('wa');
     await moveloop_core();
-    await moveloop_core();
+    await finishAtCommandInput(input, () => moveloop_core(), /The Key feels slightly warm\./);
     assert.ok(messages.some(message => message.includes('The Key feels slightly warm.')), `Expected native trap warmth feedback: ${messages.join(' | ')}`);
 });
 //# sourceMappingURL=artifact_key_warning.test.js.map

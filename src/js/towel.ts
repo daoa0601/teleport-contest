@@ -2,14 +2,16 @@
 import { armorSimpleName } from './armor.js';
 import { heroFaceName, heroHandName } from './body_parts.js';
 import { TIMEOUT } from './const.js';
-import { plineWithContinuation as pline } from './display.js';
+import { canSeeMonster, plineWithContinuation as pline } from './display.js';
+import type { MessagePublisher } from './display.js';
 import { gulpBlindnessCheck } from './engulf_blindness.js';
 import { removeEyewear } from './eyewear.js';
 import { game, requireLiveGame } from './gstate.js';
 import { dropInventoryObjectAtHero } from './hero_drop.js';
 import { LENSES } from './object_data.js';
 import { makePlural } from './object_grammar.js';
-import { ownedObjectName } from './objnam.js';
+import { objectName, ownedObjectName } from './objnam.js';
+import { monsterName, possessiveName } from './monster_name.js';
 import { rn2, rn1 } from './rng.js';
 import { heroIsBlinded, setHeroBlindnessTurns } from './senses.js';
 import { makeBlinded } from './sight_change.js';
@@ -55,7 +57,8 @@ export async function useTowel(object: GameObject, { state = game }: { state?: G
         }
         if (mishap) {
             result.spentTime = true;
-            if (!state.program_state.gameover) await dryTowel(object, -1, { state, verbose: object === state.uwep });
+            if (!state.program_state.gameover && isWetTowel(object))
+                await dryTowel(object, -1, { state, verbose: object === state.uwep });
             result.heroDied = !!state.program_state.gameover;
             return result;
         }
@@ -80,7 +83,8 @@ export async function useTowel(object: GameObject, { state = game }: { state?: G
     }
     result.spentTime = true;
     result.heroDied = !!state.program_state.gameover;
-    if (!result.heroDied) await dryTowel(object, -1, { state, verbose: object === state.uwep });
+    if (!result.heroDied && isWetTowel(object))
+        await dryTowel(object, -1, { state, verbose: object === state.uwep });
     return result;
 }
 
@@ -92,14 +96,47 @@ export function setSlipperyHands(turns: number, state: GameState = game) {
     state.u.glib = state.u.glibTurns > 0;
 }
 
+interface TowelChangeOptions {
+    state?: GameState;
+    verbose?: boolean;
+    publish?: MessagePublisher | null;
+}
+
+export async function wetTowel(
+    object: GameObject, amount: number,
+    { state = game, verbose = false, publish = pline }: TowelChangeOptions = {},
+): Promise<void> {
+    const wetness = amount <= 0 ? object.spe - amount : amount;
+    if (wetness > object.spe && verbose && publish) {
+        const adjective = wetness < 3 ? object.spe ? 'damper' : 'damp'
+            : object.spe ? 'wetter' : 'wet';
+        await reportTowelChange(object, `gets ${adjective}.`, state, publish);
+    }
+    if (wetness !== object.spe) finishTowelChange(object, wetness, state);
+}
+
 export async function dryTowel(
     object: GameObject, amount: number,
-    { state = game, verbose = false }: { state?: GameState; verbose?: boolean } = {},
-) {
-    if (!isWetTowel(object)) return;
+    { state = game, verbose = false, publish = pline }: TowelChangeOptions = {},
+): Promise<void> {
     const wetness = amount < 0 ? object.spe + amount : amount;
-    if (wetness < object.spe && verbose)
-        await pline(`${ownedObjectName(object, state)} dries${wetness ? '' : ' out'}.`);
+    if (wetness < object.spe && verbose && publish)
+        await reportTowelChange(object, `dries${wetness ? '' : ' out'}.`, state, publish);
+    if (wetness !== object.spe) finishTowelChange(object, wetness, state);
+}
+
+async function reportTowelChange(
+    object: GameObject, change: string, state: GameState, publish: MessagePublisher,
+): Promise<void> {
+    if (object.where === 'inventory') {
+        await publish(`${ownedObjectName(object, state, { includeQuantity: true })} ${change}`);
+    } else if (object.where === 'minvent' && object.ocarry && canSeeMonster(object.ocarry)) {
+        const owner = possessiveName(monsterName(object.ocarry, { state, capitalized: true }));
+        await publish(`${owner} ${objectName(object, state)} ${change}`);
+    }
+}
+
+function finishTowelChange(object: GameObject, wetness: number, state: GameState): void {
     object.spe = Math.max(0, Math.min(7, wetness));
     if (object === state.uwep || object === state.u.uwep) state._unweapon = !isWetTowel(object);
 }

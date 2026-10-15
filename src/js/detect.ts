@@ -28,10 +28,10 @@ import {
 } from './display.js';
 import {
     BOLT_LIM, COLNO, ROWNO, ROOMOFFSET, STONE, SDOOR, SCORR, DOOR, CORR,
-    M_AP_TYPE, Is_airlevel, Is_waterlevel,
+    M_AP_TYPE, Is_airlevel, Is_waterlevel, isok,
     IS_FURNITURE,
     D_CLOSED, D_LOCKED, D_TRAPPED,
-    STATUE_TRAP, TRAPPED_CHEST, TRAPPED_DOOR, TRAP_EXPLANATIONS,
+    STATUE_TRAP, TRAPPED_CHEST, TRAPPED_DOOR,
     W_NONDIGGABLE, W_NONPASSWALL, WM_MASK,
 } from './const.js';
 import { BOULDER, CHEST, LARGE_BOX, LENSES, GOLD_PIECE, OBJECT_BASES, OBJECT_MERGE, OBJECT_NAMES } from './object_data.js';
@@ -45,6 +45,9 @@ import { revealMonsterAppearance } from './monster_appearance.js';
 import { MONSTER_FLAGS1, MONSTER_SYMBOL } from './monster_data.js';
 import { monsterName } from './monster_name.js';
 import { NO_COLOR } from './terminal.js';
+import { visibleRegionAt } from './regions.js';
+import { trapName } from './trap_name.js';
+import { withIndefiniteArticle } from './object_grammar.js';
 
 // C ref: detect.c premap_detect().  Sokoban's Lua `premapped` flag maps the
 // finalized background, boulders, and traps before deferred room filling.
@@ -125,9 +128,7 @@ export function showMapSpot(x: number, y: number, {
 }
 
 function foundTrapMessage(trap: DetectionTrap) {
-    const name = TRAP_EXPLANATIONS[trap?.ttyp] || 'trap';
-    const article = /^[aeiou]/i.test(name) ? 'an' : 'a';
-    return `You find ${article} ${name}.`;
+    return `You find ${withIndefiniteArticle(trapName(trap.ttyp))}.`;
 }
 
 // C detect.c:cvt_sdoor_to_door(). Callers own visibility and discovery.
@@ -184,10 +185,11 @@ async function searchAdjacentSecrets(automatic = false): Promise<AutomaticSearch
     let found = false;
     for (let x = u.ux - 1; x <= u.ux + 1; x++) {
         for (let y = u.uy - 1; y <= u.uy + 1; y++) {
+            if (!isok(x, y)) continue;
             if (x === u.ux && y === u.uy) continue;
             const loc = game.level?.at(x, y);
             if (!loc) continue;
-            if (!automatic && blind) feel_location(x, y);
+            if (!automatic && (blind || visibleRegionAt(game, x, y))) feel_location(x, y);
             if (loc.typ === SDOOR) {
                 if (rnl(7 - bonus)) continue;
                 revealSecretDoor(x, y);
@@ -205,7 +207,7 @@ async function searchAdjacentSecrets(automatic = false): Promise<AutomaticSearch
                 revealSecretCorridor(x, y);
                 exerciseWisdom();
                 endVoluntaryMultiTurn(game);
-                newsym(x, y);
+                feel_newsym(x, y);
                 await plineWithContinuation('You find a hidden passage.');
                 found = true;
                 continue;
@@ -341,7 +343,8 @@ function senseDetectedTrap(trap: DetectionTrap) {
 
 function showFoundFeature(x: number, y: number, glyph: GlyphMetadata) {
     const location = requireGameLevel(game).requireAt(x, y);
-    if (!glyph.kind || glyph.kind === 'terrain') location.seenv = 0xff;
+    if (glyph.kind === 'terrain' || glyph.kind === 'trap'
+        || glyph.kind === 'unexplored') location.seenv = 0xff;
     const vision = game.viz_array?.[y];
     const previousVision = vision?.[x];
     if (!vision || previousVision === undefined) throw new Error(`No vision cell at ${x},${y}`);

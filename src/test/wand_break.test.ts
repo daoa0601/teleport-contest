@@ -249,7 +249,7 @@ for (const swallowed of [false, true]) {
         requirePlayingGame(game);
         const object = await wand(WAN_OPENING);
         const holder = await bystander(swallowed ? 'purple worm' : 'owlbear', 11, 10);
-        if (swallowed) installSwallowedHero(holder);
+        if (swallowed) await installSwallowedHero(holder);
         else game.u.ustuck = holder;
         input.feed('y');
 

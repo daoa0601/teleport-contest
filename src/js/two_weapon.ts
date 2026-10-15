@@ -78,7 +78,7 @@ export async function canBeginTwoWeaponCombat(state: GameState): Promise<boolean
         const slot = object === primary ? 'primary' : 'secondary';
         const plural = objectNameIsPlural(object, state);
         await plineWithContinuation(`${weaponName(object, state)} ${
-            plural ? "aren't" : "isn't a"} suitable ${slot} weapon${plural ? 's' : ''}.`);
+            plural ? "aren't" : "isn't a"} suitable ${slot} weapon${object.quan === 1 ? '' : 's'}.`);
         return false;
     }
     if (OBJECT_BIMANUAL[primary.otyp] || OBJECT_BIMANUAL[secondary.otyp]) {

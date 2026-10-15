@@ -14,6 +14,11 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshSpecialLevel } from './support/special-level.js';
 import { createSpecialLevel } from './support/topology.js';
 import { memoryStorage } from './support/memory-storage.js';
+import { punishHero } from '../js/punishment.js';
+import { moveObject } from '../js/floor_object.js';
+import { addInventoryItem } from '../js/u_init.js';
+import { unlinkObject } from '../js/object_location.js';
+import { pushKeys } from '../js/input.js';
 async function waterPlane() {
     const active = freshSpecialLevel({ prototype: 'water', seed: 1907, depth: 2 });
     requirePlayingGame(game);
@@ -42,6 +47,56 @@ async function waterPlane() {
     game.u.uy = 10;
     return bubble;
 }
+void test('a water bubble brings an attached ball and chain back under its transported hero', async () => {
+    await waterPlane();
+    requirePlayingGame(game);
+    await punishHero();
+    const ball = game.uball;
+    const chain = game.uchain;
+    assert.ok(ball && chain);
+    await moveObject(ball, 19, 10);
+    initRng(2n);
+    await moveElementalBubbles();
+    for (const attachment of [ball, chain]) {
+        assert.equal(attachment.where, 'floor');
+        assert.equal(attachment.ox, game.u.ux);
+        assert.equal(attachment.oy, game.u.uy);
+        assert.ok(game.level.objects[game.u.ux]?.[game.u.uy]?.includes(attachment));
+    }
+});
+void test('water bubble transport leaves a carried punishment ball in inventory', async () => {
+    await waterPlane();
+    requirePlayingGame(game);
+    await punishHero();
+    const ball = game.uball;
+    const chain = game.uchain;
+    assert.ok(ball && chain);
+    unlinkObject(ball);
+    await addInventoryItem(ball);
+    await moveElementalBubbles();
+    assert.equal(ball.where, 'inventory');
+    assert.ok(game.inventory.includes(ball));
+    assert.equal(chain.ox, game.u.ux);
+    assert.equal(chain.oy, game.u.uy);
+});
+void test('water bubble transport replaces swallowed punishment beneath the transported swallower', async () => {
+    await waterPlane();
+    requirePlayingGame(game);
+    pushKeys('     ');
+    await punishHero();
+    const ball = game.uball;
+    const chain = game.uchain;
+    assert.ok(ball && chain);
+    const swallower = await createMonsterAt('purple worm', 20, 10, NO_MINVENT);
+    await installSwallowedHero(swallower);
+    await moveElementalBubbles();
+    assert.equal(game.u.ustuck, swallower);
+    for (const attachment of [ball, chain]) {
+        assert.equal(attachment.where, 'floor');
+        assert.equal(attachment.ox, game.u.ux);
+        assert.equal(attachment.oy, game.u.uy);
+    }
+});
 void test('a water bubble transports a floor crysknife and can revert it to a worm tooth', async () => {
     const bubble = await waterPlane();
     requirePlayingGame(game);
@@ -76,7 +131,7 @@ void test('a water bubble carries a mounted hero and exposes their hiding place'
 void test('a swallowed hero travels with the monster carried by a water bubble', async () => {
     const bubble = await waterPlane();
     const swallower = await createMonsterAt('purple worm', 20, 10, NO_MINVENT);
-    installSwallowedHero(swallower);
+    await installSwallowedHero(swallower);
     initRng(2n);
     await moveElementalBubbles();
     assert.equal(swallower.mx, bubble.x);

@@ -908,7 +908,7 @@ async function litterScatter(litter, x, y, keeper, state) {
                 && ball?.oy === y))) {
         if (!heroIsDeaf(state) && !muteShopkeeper(keeper))
             await verbalize('Get your junk out of my wall!');
-        unplaceBallAndChain(state);
+        await unplaceBallAndChain(state);
         await placeBallAndChain(state);
     }
     for (;;) {

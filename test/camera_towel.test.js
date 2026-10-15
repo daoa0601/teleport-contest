@@ -17,7 +17,7 @@ import { flashBurn } from '../js/sight_change.js';
 import { wearEyewear } from '../js/eyewear.js';
 import { setPrimaryWeapon } from '../js/weapon_slots.js';
 import { initRng } from '../js/rng.js';
-import { canSeeMonster, newsym } from '../js/display.js';
+import { canSeeMonster, flushPendingTopline, newsym } from '../js/display.js';
 import { vision_recalc } from '../js/vision.js';
 import { makedog } from '../js/u_init.js';
 import { saveGame, restoreGame } from '../js/save.js';
@@ -32,6 +32,7 @@ import { memoryStorage } from './support/memory-storage.js';
 import { createStaffedShop } from './support/shop.js';
 import { createMonsterAt, equipMonsterObject, requireMonsterVital } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { installPagerInput } from './support/pager-input.js';
 async function camera(properties = {}) {
     return addInventoryObject(EXPENSIVE_CAMERA, { spe: 3, ...properties });
 }
@@ -277,6 +278,32 @@ void test('a wielded wet towel removes slippery hands and dries one step', async
     assert.equal(game._unweapon, true);
     assert.match(game._pending_message, /moist towel dries out/);
 });
+for (const cursed of [false, true]) {
+    void test(`applying a wielded dry ${cursed ? 'cursed ' : ''}towel does not announce drying`, async () => {
+        freshObjectRoom({ hero: { glibTurns: 8, glib: true } });
+        requirePlayingGame(game);
+        const object = await towel({ cursed });
+        await setPrimaryWeapon(object);
+        const input = resetInputState();
+        installPagerInput(input, { expected: /towel|hands/, limit: 5 });
+        const messages = [];
+        input.beforeRead = () => { messages.push(game._pending_message); };
+        initRng(4n); // The cursed towel makes already slippery hands filthier.
+        await applyInventoryObject(object);
+        await flushPendingTopline();
+        assert.equal(game.context.move, 1);
+        assert.equal(object.spe, 0);
+        if (cursed) {
+            assert.ok((game.u.glibTurns ?? 0) > 8);
+            assert.match(messages.join('\n'), /Your hands are filthier than ever!/);
+        }
+        else {
+            assert.equal(game.u.glibTurns, 0);
+            assert.match(messages.join('\n'), /You wipe off your hands\./);
+        }
+        assert.doesNotMatch(messages.join('\n'), /towel dries/);
+    });
+}
 void test('cleaning hands leaves face grime for a second towel application', async () => {
     freshObjectRoom({ hero: { glibTurns: 8, ucreamed: 6 } });
     requirePlayingGame(game);

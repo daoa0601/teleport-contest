@@ -1,7 +1,7 @@
 import { heroLocomotion } from './hero_locomotion.js';
 import { maybeResetPick } from './lock_context.js';
 // C do.c:goto_level(): departure, destination creation or restoration, and arrival.
-import { rewindEngravingsForSave, restoreEngravingPointers } from './engrave.js';
+import { rewindEngravingsForSave, restoreEngravings } from './engrave.js';
 import { monsterHasMapPosition } from './monster_location.js';
 import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
 import { addExperience, checkExperienceLevel } from './exper.js';
@@ -130,7 +130,7 @@ export async function gotoLevel(targetDepth, { arrival = 'random', ladder = fals
     // object identity while removing both objects from the departing floor.
     // placebc() installs them on the destination after hero placement.
     if (heroIsPunished())
-        unplaceBallAndChain(game);
+        await unplaceBallAndChain(game);
     clearHeroTrap(game);
     game.u.ustuck = null;
     // goto_level() calls set_ustuck(NULL), which requests a status update.
@@ -183,7 +183,7 @@ export async function gotoLevel(targetDepth, { arrival = 'random', ladder = fals
         game.program_state.in_getlev = true;
         try {
             game.level = cached.level;
-            restoreEngravingPointers(cached.level);
+            restoreEngravings(cached.level);
             game.stairs = cached.stairs;
             restoreCachedLevelMetadata(cached);
             await restoreCachedMonsterState(cached);

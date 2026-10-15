@@ -1,16 +1,17 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { MM_ANGRY, MOAT, NO_MINVENT, PIT, TT_PIT, WEB, W_AMUL } from '../js/const.js';
+import { MM_ANGRY, MOAT, NO_MINVENT, PIT, STONE, TT_PIT, WEB, W_AMUL } from '../js/const.js';
 import { rhack } from '../js/cmd.js';
 import { initializePet } from '../js/dog.js';
 import { moveObject } from '../js/floor_object.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { monsterAtPosition } from '../js/monster_location.js';
-import { AMULET_OF_LIFE_SAVING } from '../js/object_data.js';
+import { AMULET_OF_LIFE_SAVING, ROCK } from '../js/object_data.js';
 import { punishHero } from '../js/punishment.js';
 import { initRng } from '../js/rng.js';
-import { knownObject } from './support/game-objects.js';
+import { addInventoryObject, knownObject } from './support/game-objects.js';
+import { weightCapacity } from '../js/weight.js';
 import { addTrap, floorObjectsAt } from './support/level-state.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -34,6 +35,35 @@ async function readyToDrag() {
     initRng(75003n);
     return { ball, chain };
 }
+void test('a blocked chain route restores the chain above the ball before refusing a heavy drag', async () => {
+    const level = freshObjectRoom({ heroX: 9, heroY: 11, flags: { pickup: false } });
+    requirePlayingGame(game);
+    installPagerInput(resetInputState(), { expected: /punish|cannot.*drag/, limit: 5 });
+    await punishHero();
+    const ball = game.uball, chain = game.uchain;
+    assert.ok(ball && chain);
+    await moveObject(chain, 8, 10);
+    await moveObject(ball, 8, 10);
+    level.requireAt(9, 10).typ = STONE;
+    await addInventoryObject(ROCK, { quantity: Math.ceil(weightCapacity(game) * 1.6 / 10) });
+    await rhack('u'.charCodeAt(0));
+    assert.equal(game.u.ux, 9);
+    assert.equal(game.u.uy, 11);
+    assert.match(game._last_message, /cannot carry all that and also drag/);
+    assert.equal(floorObjectsAt(level, 8, 10)[0], chain, 'restoring the attempted chain move puts the chain on top');
+    assert.equal(game.context.move, 0);
+});
+void test('a refused heavy drag clears temporary invulnerability and the remaining counted moves', async () => {
+    await readyToDrag();
+    await addInventoryObject(ROCK, { quantity: Math.ceil(weightCapacity(game) * 1.6 / 10) });
+    game.u.invulnerable = true;
+    await rhack('4'.charCodeAt(0));
+    await rhack('l'.charCodeAt(0));
+    assert.equal(game.u.ux, 10);
+    assert.equal(game.multi, 0);
+    assert.equal(game.u.invulnerable, false);
+    assert.equal(game.context.move, 0);
+});
 void test('a pit under the chain pulls the hero backward and places the ball in the pit', async () => {
     const { ball, chain } = await readyToDrag();
     requirePlayingGame(game);

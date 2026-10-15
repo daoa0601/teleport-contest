@@ -12,7 +12,8 @@ import { flushPendingTopline, pline } from '../js/display.js';
 import { gainExperienceLevel } from '../js/exper.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { SPE_FIREBALL, SPE_FINGER_OF_DEATH, SPE_FORCE_BOLT } from '../js/object_data.js';
+import { DAGGER, SPE_FIREBALL, SPE_FINGER_OF_DEATH, SPE_FORCE_BOLT } from '../js/object_data.js';
+import { knownObject } from './support/game-objects.js';
 import {
     adjustWeaponSkillSlots, advanceHeroSkill, canAdvanceHeroSkill, doenhance,
     ensureHeroSkills, practiceNeededToAdvance, useHeroSkill, weaponSkillHitBonus,
@@ -184,7 +185,8 @@ void test('ordinary enhancement trains the selected skill, spends slots, and cha
     await useHeroSkill(P_DAGGER, 20);
     const input = resetInputState();
     await dismissFeedback(input);
-    const before = weaponSkillHitBonus(game, P_DAGGER);
+    const dagger = await knownObject(DAGGER);
+    const before = weaponSkillHitBonus(dagger);
     const enhancing = doenhance();
     await input.waitUntilBlocked();
     assert.match(menuText(), /Pick a skill to advance:/);
@@ -206,7 +208,7 @@ void test('ordinary enhancement trains the selected skill, spends slots, and cha
     assert.equal(game.u.weaponSkills[P_DAGGER].skill, P_BASIC);
     assert.equal(game.u.weapon_slots, 1);
     assert.equal(game.u.skillRecord[0], P_DAGGER);
-    assert.ok(weaponSkillHitBonus(game, P_DAGGER) > before);
+    assert.ok(weaponSkillHitBonus(dagger) > before);
     assert.match(game._pending_message, /now more skilled in dagger/);
     assert.equal(game.context.move, 0);
 });

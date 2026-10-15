@@ -6,8 +6,10 @@ import { game } from './gstate.js';
 import { exerciseWisdom } from './attrib.js';
 import { heroCanReachFloor } from './floor_reach.js';
 import { rn2, rnd } from './rng.js';
-import { BUFSZ, DUST, ENGRAVE, BURN, MARK, ENGR_BLOOD, HEADSTONE, ICE, N_ENGRAVE } from './const.js';
+import { BUFSZ, DUST, ENGRAVE, BURN, MARK, ENGR_BLOOD, HEADSTONE, N_ENGRAVE } from './const.js';
 import { surfaceName } from './terrain_name.js';
+import { isIceAt } from './terrain_properties.js';
+import { sanitizeBonesName } from './bones_name.js';
 const RUBOUTS = new Map([
     ['A', '^'],
     ['B', 'Pb['],
@@ -159,7 +161,7 @@ export function wipeEngravingAt(x, y, count, magical = false, level = game.level
     const engraving = engravingAt(x, y, level);
     if (!engraving || engraving.engr_type === HEADSTONE || engraving.nowipeout)
         return false;
-    const onIce = level?.at?.(x, y)?.typ === ICE;
+    const onIce = isIceAt(x, y, { level });
     if (engraving.engr_type === BURN && !onIce && !(magical && rn2(2) === 0))
         return false;
     if (engraving.engr_type !== DUST && engraving.engr_type !== ENGR_BLOOD) {
@@ -188,8 +190,9 @@ export function rewindEngravingsForSave(level) {
         delete engraving.rememberedPrefix;
     }
 }
-// C engrave.c:rest_engravings(). The three text buffers are saved separately.
-export function restoreEngravingPointers(level) {
+// C engrave.c:rest_engravings(). Restored text is complete in this game's
+// timeline, even when an ancestor wrote it much later in a different game.
+export function restoreEngravings(level, moves = game.moves) {
     for (const engraving of level?.engravings ?? []) {
         const text = engraving.text.replace(/^ +/, '');
         engraving.erasedPrefix = (engraving.erasedPrefix ?? '')
@@ -199,7 +202,22 @@ export function restoreEngravingPointers(level) {
         engraving.rememberedPrefix = (engraving.rememberedPrefix ?? '')
             + engraving.rememberedText.slice(0, engraving.rememberedText.length - rememberedText.length);
         engraving.rememberedText = rememberedText;
+        engraving.epoch = moves;
     }
+}
+// C engrave.c:forget_engravings(). Reading belongs to the current hero;
+// an ancestor's bones retain the text, but not knowledge of its presence.
+export function forgetEngravings(level = game.level) {
+    for (const engraving of level?.engravings ?? []) {
+        engraving.eread = false;
+        engraving.erevealed = false;
+    }
+}
+// C engrave.c:sanitize_engravings(). Only actual text is displayed; the
+// remembered and pristine buffers retain the ancestor's original bytes.
+export function sanitizeEngravings(level = game.level) {
+    for (const engraving of level?.engravings ?? [])
+        engraving.text = sanitizeBonesName(engraving.text);
 }
 // C engrave.c:u_wipe_engr().
 export function wipeHeroEngraving(count, state = game) {
@@ -229,7 +247,7 @@ function readingMessages(engraving, x, y) {
     switch (engraving.engr_type) {
         case DUST:
             if (!blind)
-                first = `Something is written here in the ${game.level?.at?.(x, y)?.typ === ICE ? 'frost' : 'dust'}.`;
+                first = `Something is written here in the ${isIceAt(x, y) ? 'frost' : 'dust'}.`;
             break;
         case ENGRAVE:
         case HEADSTONE:
@@ -238,7 +256,7 @@ function readingMessages(engraving, x, y) {
             break;
         case BURN:
             if (!blind || canFeel)
-                first = `Some text has been ${game.level?.at?.(x, y)?.typ === ICE ? 'melted' : 'burned'} into the ${surface} here.`;
+                first = `Some text has been ${isIceAt(x, y) ? 'melted' : 'burned'} into the ${surface} here.`;
             break;
         case MARK:
             if (!blind)

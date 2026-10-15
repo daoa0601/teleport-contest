@@ -192,7 +192,7 @@ void test('a swallowed skilled cold spell is cut short into repeated self-zaps',
     const { input, messages } = spellRoom();
     requirePlayingGame(game);
     const swallower = await target('purple worm', 11, 10);
-    installSwallowedHero(swallower);
+    await installSwallowedHero(swallower);
     const pseudo = await knownObject(SPE_CONE_OF_COLD, { initialize: false });
     input.feed('.');
 
@@ -269,7 +269,7 @@ void test('chain lightning inside a swallower keeps the native no-damage behavio
     spellRoom();
     requirePlayingGame(game);
     const swallower = await target('purple worm', 11, 10);
-    installSwallowedHero(swallower);
+    await installSwallowedHero(swallower);
 
     await castChainLightning();
 

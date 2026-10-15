@@ -5562,7 +5562,7 @@ async function beginHeroAttackSlot(
         }
         const engulfOldX = monster.mx;
         const engulfOldY = monster.my;
-        unplaceBallAndChain(state);
+        await unplaceBallAndChain(state);
         monster.mtrapped = 0;
         monster.mx = state.u.ux;
         monster.my = state.u.uy;

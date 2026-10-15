@@ -61,7 +61,7 @@ void test('writing inside a jelly names the stack of daggers in the plural', asy
     freshObjectRoom();
     requireFixtureGame(game);
     const jelly = await createMonsterAt('ochre jelly', game.u.ux + 1, game.u.uy);
-    installSwallowedHero(jelly);
+    await installSwallowedHero(jelly);
     const daggers = await addInventoryWeapon(DAGGER, { quan: 3 });
     const input = resetInputState();
     input.feed(daggers.invlet);

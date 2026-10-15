@@ -1,0 +1,32 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+import { rhack } from '../js/cmd.js';
+import { game, requirePlayingGame } from '../js/gstate.js';
+import { pushKeys } from '../js/input.js';
+import { unlinkObject } from '../js/object_location.js';
+import { POT_WATER } from '../js/object_data.js';
+import { punishHero } from '../js/punishment.js';
+import { initRng } from '../js/rng.js';
+import { addInventoryItem } from '../js/u_init.js';
+import { freshConnectedLevels } from './support/connected-levels.js';
+import { addInventoryObject } from './support/game-objects.js';
+
+void test('potions scattered by the iron ball shatter on the downstairs landing', async () => {
+    const { destination } = freshConnectedLevels();
+    requirePlayingGame(game);
+    game.u.uhp = game.u.uhpmax = 1000;
+    pushKeys(' '.repeat(30));
+    await punishHero();
+    const ball = game.uball;
+    assert.ok(ball);
+    unlinkObject(ball);
+    await addInventoryItem(ball);
+    const potions = await addInventoryObject(POT_WATER, { quantity: 40 });
+    initRng(1n);
+
+    await rhack('>'.charCodeAt(0));
+
+    assert.equal(game.level, destination);
+    assert.equal(potions.where, 'gone', 'falling potions must undergo hitfloor impact effects');
+    assert.ok(!game.inventory.includes(potions));
+});
