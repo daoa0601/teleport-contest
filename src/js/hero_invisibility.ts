@@ -7,6 +7,7 @@ import { TIMEOUT } from './const.js';
 import { newsym, plineWithContinuation as pline } from './display.js';
 import { game } from './gstate.js';
 import { MUMMY_WRAPPING } from './object_data.js';
+import { ownedObjectName } from './objnam.js';
 import {
     grantIntrinsicProperty, hasIntrinsicProperty, propertyHasOtherSources,
     propertyIsActive, propertyIsBlocked, refreshProperty, revokeIntrinsicProperty,
@@ -16,11 +17,6 @@ import { heroIsBlind } from './senses.js';
 
 export function invisibilityIsBlocked(state = game) {
     return propertyIsBlocked('invisible', state);
-}
-
-function wearsMummyWrapping(state: GameState) {
-    const cloak = state.uarmc || state.u?.uarmc;
-    return cloak?.otyp === MUMMY_WRAPPING;
 }
 
 export function hasInternalInvisibility(state = game) {
@@ -61,8 +57,9 @@ export async function applyPotionLikeInvisibility({
     random = rn2,
     rollDice = d,
 } = {}) {
-    if (spell && invisibilityIsBlocked(state) && wearsMummyWrapping(state)) {
-        await pline('You feel rather itchy under your mummy wrapping.');
+    const cloak = state.uarmc || state.u.uarmc;
+    if (spell && invisibilityIsBlocked(state) && cloak?.otyp === MUMMY_WRAPPING) {
+        await pline(`You feel rather itchy under ${ownedObjectName(cloak, state, { capitalized: false })}.`);
         return {
             blocked: true,
             showedInvisibility: false,
@@ -109,8 +106,9 @@ export async function applyPotionLikeInvisibility({
 export async function zapHeroInvisible(
     state = game, random = rn2,
 ) {
-    if (invisibilityIsBlocked(state) && wearsMummyWrapping(state)) {
-        await pline('You feel rather itchy under your mummy wrapping.');
+    const cloak = state.uarmc || state.u.uarmc;
+    if (invisibilityIsBlocked(state) && cloak?.otyp === MUMMY_WRAPPING) {
+        await pline(`You feel rather itchy under ${ownedObjectName(cloak, state, { capitalized: false })}.`);
         return false;
     }
     const observed = !heroIsInvisible(state) && !heroIsBlind(state)
