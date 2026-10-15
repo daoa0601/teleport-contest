@@ -244,6 +244,15 @@ export function restoreEngravings(level: EngravingStore | null, moves = game.mov
     }
 }
 
+// C engrave.c:forget_engravings(). Reading belongs to the current hero;
+// an ancestor's bones retain the text, but not knowledge of its presence.
+export function forgetEngravings(level: EngravingStore | null = game.level): void {
+    for (const engraving of level?.engravings ?? []) {
+        engraving.eread = false;
+        engraving.erevealed = false;
+    }
+}
+
 // C engrave.c:u_wipe_engr().
 export function wipeHeroEngraving(count: number, state: GameState = game): boolean {
     if (!heroCanReachFloor(state, { checkPit: true })) return false;
