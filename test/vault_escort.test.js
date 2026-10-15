@@ -1,18 +1,21 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { moveloop_core } from '../js/allmain.js';
+import { rhack } from '../js/cmd.js';
 import { CORR, ROOMOFFSET, STONE, VAULT, VWALL, NO_MINVENT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { setHeroGoldAmount } from '../js/hero_gold.js';
 import { resetInputState } from '../js/input.js';
 import { monsterGoldAmount } from '../js/shop_money.js';
 import { GOLD_PIECE } from '../js/object_data.js';
+import { grantIntrinsicProperty } from '../js/properties.js';
 import { rn2 } from '../js/rng.js';
 import { moveHeroByTeleport } from '../js/teleport.js';
 import { finishTeleportArrival } from '../js/location_effects.js';
 import { moveVaultGuard } from '../js/vault.js';
 import { runMonsterAction } from '../js/monmove.js';
 import { floorObject } from './support/game-objects.js';
+import { installPolymorphedHero } from './support/hero-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createRoom } from './support/topology.js';
@@ -89,6 +92,33 @@ void test('teleporting away with vault gold releases an angry guard immediately'
     setHeroGoldAmount(game, 50);
     const movement = await moveHeroByTeleport(15, 10);
     await finishTeleportArrival(movement);
+    assert.equal(guard.mpeaceful, 0);
+});
+void test('teleporting into rock blocks levitation before the vault guard reacts', async () => {
+    const { level, guard } = await escort();
+    game.flags.debug = true;
+    game.flags.tips = false;
+    game.flags.verbose = false;
+    installPolymorphedHero('xorn');
+    grantIntrinsicProperty('levitation', 'outside');
+    setHeroGoldAmount(game, 50);
+    level.requireAt(15, 10).typ = STONE;
+    const messages = [];
+    const input = resetInputState();
+    input.beforeRead = () => {
+        const message = game.nhDisplay?.grid.slice(0, 3)
+            .map(row => row.map(cell => cell.ch).join('')).join('') ?? '';
+        messages.push(message);
+        input.feed(message.includes('Where do you want to be teleported') ? 'lllll.' : ' ');
+    };
+    await rhack(20);
+    messages.push(game._pending_message);
+    const text = messages.join('\n');
+    const terrain = text.indexOf("You can't levitate in here.");
+    const alarm = text.search(/guard becomes irate|angry guard|angry shouting/);
+    assert.ok(terrain >= 0 && alarm > terrain, `Terrain feedback must precede the guard's reaction:\n${text}`);
+    assert.equal(game.u.ux, 15);
+    assert.equal(game.u.levitation, false);
     assert.equal(guard.mpeaceful, 0);
 });
 void test('a live parked guard reports its invalid map update before other monsters act', async () => {

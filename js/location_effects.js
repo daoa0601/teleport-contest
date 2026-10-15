@@ -20,12 +20,16 @@ import { roomsAt } from './room.js';
 import { findVaultGuard } from './vault_guard.js';
 import { noticeVaultEscape } from './vault_escort.js';
 export async function finishTeleportArrival(movement, { announceTeleport = true } = {}) {
+    requirePlayingGame(game);
     await bot();
     if (announceTeleport && game.flags.verbose !== false) {
         const place = movement.oldx === movement.x && movement.oldy === movement.y
             ? 'the same' : 'a different';
         await plineWithContinuation(`You materialize in ${place} location!`);
     }
+    if (game.level.requireAt(game.u.ux, game.u.uy).typ
+        !== game.level.requireAt(movement.oldx, movement.oldy).typ)
+        await switchHeroTerrain(game);
     if (roomsAt(game.level, movement.oldx, movement.oldy, VAULT).length
         && !roomsAt(game.level, game.u.ux, game.u.uy, VAULT).length) {
         const guard = findVaultGuard(game);
