@@ -411,8 +411,9 @@ export async function presentWereChange(change: WereChange | null | undefined, {
     wakeNearby,
 }: WereChangePresentationOptions = {}) {
     if (!change) return null;
-    if (change.howlMessage) {
-        await publish(change.howlMessage);
+    if (change.howlMessage) await publish(change.howlMessage);
+    // C were_change(): suppressed hearing prose does not silence the howl.
+    if (change.wakeDistance > 0) {
         if (typeof wakeNearby !== 'function') {
             throw new TypeError(
                 'presentWereChange requires wakeNearby for an unseen howl',

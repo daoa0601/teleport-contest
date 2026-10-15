@@ -320,8 +320,10 @@ export async function wereChange(monster, state = game, random = rn2, { publish 
 export async function presentWereChange(change, { publish = plineWithContinuation, wakeNearby, } = {}) {
     if (!change)
         return null;
-    if (change.howlMessage) {
+    if (change.howlMessage)
         await publish(change.howlMessage);
+    // C were_change(): suppressed hearing prose does not silence the howl.
+    if (change.wakeDistance > 0) {
         if (typeof wakeNearby !== 'function') {
             throw new TypeError('presentWereChange requires wakeNearby for an unseen howl');
         }
