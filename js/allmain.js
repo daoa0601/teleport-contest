@@ -1313,6 +1313,8 @@ async function advanceWorldTurn() {
         const claimed = claimNextDueObjectTimer(game, phase.sourceTurn);
         if (claimed)
             await runObjectTimer(claimed, phase.sourceTurn);
+        if (game.program_state.gameover)
+            return;
         if (peekNextDueObjectTimer(game, phase.sourceTurn))
             continue;
         phase = finishInitialTurnMaintenanceAfterTimeout(phase);
