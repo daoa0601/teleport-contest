@@ -8255,7 +8255,6 @@ function shrinePosition(room) {
 async function makeRandomTemple(room) {
     const level = requireGameLevel();
     room.rtype = TEMPLE;
-    room.needfill = FILL_NORMAL;
     const shrine = shrinePosition(room);
     const altar = level.at(shrine.x, shrine.y);
     if (!altar)
