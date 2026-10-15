@@ -53,6 +53,19 @@ void test('a sleeping priest wakes and becomes angry when chatted with', async (
     assert.equal(game.context.move, 1);
 });
 
+void test('a priest whose shrine was destroyed refuses donations and becomes hostile', async () => {
+    const priest = await templePriest();
+    requirePlayingGame(game);
+    game.level.requireAt(12, 10).flags = Align2amask(0);
+    setHeroGoldAmount(game, 1000);
+
+    await runExtendedCommand('chat', 'l');
+
+    assert.equal(priest.mpeaceful, 0);
+    assert.equal(heroGoldAmount(game), 1000);
+    assert.match(game._lastPlineMessage ?? '', /Thou wouldst have words|Here is what I have to say|speak no longer/);
+});
+
 void test('refusing a temple donation costs alignment and leaves the purse intact', async () => {
     await templePriest();
     setHeroGoldAmount(game, 1000);
