@@ -56,6 +56,7 @@ export interface DesOptions {
     blinded?: number;
     chance?: number;
     corrwid?: number;
+    damage?: number;
     eroded?: number;
     filled?: number;
     fleeing?: number;
@@ -71,6 +72,7 @@ export interface DesOptions {
     recharged?: number;
     seentraps?: number;
     spe?: number;
+    ttl?: number;
     w?: number;
     wallthick?: number;
     x?: number;
@@ -188,7 +190,7 @@ export interface DesOperations {
     teleportRegion(options: DesOptions): DesOperationResult;
     levelRegion(options: DesOptions): DesOperationResult;
     exclusion(options: DesOptions): DesOperationResult;
-    gasCloud(options: DesSelectionOptions & { selection: SpecialSelection }): DesOperationResult;
+    gasCloud(options: DesSelectionOptions): DesOperationResult;
     randomCorridors(): DesOperationResult;
     mazeWalk(options: DesOptions & { dir: string; stocked: boolean }): DesOperationResult;
     object(options: DesObjectOptions): LuaValue | Promise<LuaValue>;
@@ -242,9 +244,9 @@ function tableOptions(value: LuaValue | undefined): DesOptions {
         options[key] = entry;
     }
     for (const key of [
-        'amount', 'blinded', 'chance', 'corrwid', 'eroded', 'filled', 'fleeing',
+        'amount', 'blinded', 'chance', 'corrwid', 'damage', 'eroded', 'filled', 'fleeing',
         'gem_prob', 'gold_prob', 'h', 'kelp_moat', 'kelp_pool', 'm_lev_adj',
-        'paralyzed', 'pos', 'quantity', 'recharged', 'seentraps', 'spe', 'w',
+        'paralyzed', 'pos', 'quantity', 'recharged', 'seentraps', 'spe', 'ttl', 'w',
         'wallthick', 'x', 'x1', 'x2', 'y', 'y1', 'y2'
     ] as const) {
         const entry = value.get(key);
@@ -708,7 +710,7 @@ export function createDesBindings(
             const options = tableOptions(value);
             return operations.gasCloud({
                 ...options,
-                selection: unwrapSelection(options.selection),
+                selection: options.selection == null ? null : unwrapSelection(options.selection),
             });
         },
         random_corridors: () => operations.randomCorridors(),

@@ -111,7 +111,7 @@ export function createHarmlessGasCloudSelection(
     return createGasCloudSelection(state, cells, ttl, 0);
 }
 
-function createGasCloudSelection(
+export function createGasCloudSelection(
     state: GameState | null | undefined, cells: readonly Position[], ttl: number, damage: number,
 ): GasCloud | null {
     if (!state?.level) return null;

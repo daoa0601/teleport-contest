@@ -219,7 +219,7 @@ import { convertSecretDoor } from './detect.js';
 import {
     occupied, somex, somey, somexy, somexyspace,
 } from './mkroom.js';
-import { createHarmlessGasCloudSelection } from './regions.js';
+import { createGasCloudSelection, createPoisonGasCloud } from './regions.js';
 import { F_LOOTED, F_WARNED, S_LDWASHER, S_LPUDDING, S_LRING,
     T_LOOTED, TREE_LOOTED, TREE_SWARM } from './const.js';
 import { beginObjectBurn } from './light.js';
@@ -6834,9 +6834,18 @@ function createLuaLevelSession() {
             });
         },
         exclusion: options => createLuaExclusion(context, options),
-        gasCloud: options => createHarmlessGasCloudSelection(
-            game, luaSelectionCoordinates(options.selection), { ttl: -1 },
-        ),
+        gasCloud: async options => {
+            const point = luaCoordinate(options);
+            const damage = options.damage ?? 0;
+            const cloud = point
+                ? await createPoisonGasCloud(game, point.x, point.y, 1, damage)
+                : options.selection ? createGasCloudSelection(
+                    game, luaSelectionCoordinates(options.selection), -1, damage,
+                ) : null;
+            if (!cloud) throw new TypeError('des.gas_cloud requires a coordinate or selection');
+            if (options.ttl !== undefined && options.ttl > -2) cloud.ttl = options.ttl;
+            return cloud;
+        },
         randomCorridors: async () => await makecorridors(),
         mineralize: options => mineralize(
             options.kelp_pool ?? -1, options.kelp_moat ?? -1,

@@ -180,4 +180,19 @@ void test('numeric false in Lua monster options suppresses birth counting', asyn
     assert.equal(game.mvitals?.[species]?.born ?? 0, births);
     assert.equal(requireGameLevel().monsters.length, 1);
 });
+void test('Lua gas clouds retain their damage and lifetime and accept point placement', async (t) => {
+    const lua = await levelLua(t);
+    await lua.executeAsync(`
+        des.map({ x = 10, y = 5, map = [[...]] })
+        des.gas_cloud({ selection = selection.area(0, 0, 1, 0), damage = 7, ttl = 12 })
+        des.gas_cloud({ x = 20, y = 8, damage = 3, ttl = 9 })
+    `);
+    const [area, point] = requireGameLevel().regions ?? [];
+    assert.ok(area && point, 'both cloud forms should create a region');
+    assert.equal(area.damage, 7);
+    assert.equal(area.ttl, 12);
+    assert.equal(point.damage, 3);
+    assert.equal(point.ttl, 9);
+    assert.deepEqual(point.cells, [{ x: 20, y: 8 }]);
+});
 //# sourceMappingURL=special_level_selection.test.js.map

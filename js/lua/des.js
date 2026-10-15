@@ -51,9 +51,9 @@ function tableOptions(value) {
         options[key] = entry;
     }
     for (const key of [
-        'amount', 'blinded', 'chance', 'corrwid', 'eroded', 'filled', 'fleeing',
+        'amount', 'blinded', 'chance', 'corrwid', 'damage', 'eroded', 'filled', 'fleeing',
         'gem_prob', 'gold_prob', 'h', 'kelp_moat', 'kelp_pool', 'm_lev_adj',
-        'paralyzed', 'pos', 'quantity', 'recharged', 'seentraps', 'spe', 'w',
+        'paralyzed', 'pos', 'quantity', 'recharged', 'seentraps', 'spe', 'ttl', 'w',
         'wallthick', 'x', 'x1', 'x2', 'y', 'y1', 'y2'
     ]) {
         const entry = value.get(key);
@@ -495,7 +495,7 @@ export function createDesBindings(operations, wrapSelection) {
             const options = tableOptions(value);
             return operations.gasCloud({
                 ...options,
-                selection: unwrapSelection(options.selection),
+                selection: options.selection == null ? null : unwrapSelection(options.selection),
             });
         },
         random_corridors: () => operations.randomCorridors(),
