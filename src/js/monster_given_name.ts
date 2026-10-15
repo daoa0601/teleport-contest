@@ -42,5 +42,9 @@ export function randomGhostName(state: GameState = game): string {
 }
 
 export function roguePlayerName(): string {
+    const options = typeof process === 'undefined' ? undefined : process.env.ROGUEOPTS;
+    const start = options?.indexOf('name=') ?? -1;
+    if (options !== undefined && start >= 0)
+        return options.slice(start + 5).split(',', 1)[0] ?? '';
     return rn2(3) ? (rn2(2) ? 'Michael Toy' : 'Kenneth Arnold') : 'Glenn Wichman';
 }
