@@ -10,6 +10,7 @@ import { M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE } from './const.js';
 import { setHeroBlindnessTurns } from './senses.js';
 import { makeBlinded } from './sight_change.js';
 import { gulpBlindnessCheck } from './engulf_blindness.js';
+import { heroFaceName } from './body_parts.js';
 function monsterHasActiveAttack(monster) {
     return (MONSTER_ATTACKS[monster?.mnum] || [])
         .some(([attackType]) => attackType && attackType !== AT_BOOM);
@@ -100,12 +101,12 @@ export async function dowipe(state = game) {
         state._occupation = {
             key: 'wipe-face',
             remaining: 1,
-            text: 'wiping off your face',
+            text: `wiping off your ${heroFaceName(state)}`,
         };
         state.context.move = 1;
         return;
     }
-    await pline('Your face is already clean.');
+    await pline(`Your ${heroFaceName(state)} is already clean.`);
     state.context.move = 1;
 }
 export async function continueWipingFace(occupation, state = game) {
@@ -125,7 +126,7 @@ export async function continueWipingFace(occupation, state = game) {
         state._occupation = null;
     }
     else if ((state.u?.ucreamed ?? 0) === 0) {
-        await pline('Your face feels clean now.');
+        await pline(`Your ${heroFaceName(state)} feels clean now.`);
         state._occupation = null;
     }
     else if (occupation.remaining <= 0) {
