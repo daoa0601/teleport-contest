@@ -121,7 +121,7 @@ export interface DesOptions {
     stunned?: LuaFlag;
     swarm?: LuaFlag;
     tail?: LuaFlag;
-    tknown?: LuaFlag;
+    trap_known?: LuaFlag;
     trapped?: LuaFlag;
     victim?: LuaFlag;
     waiting?: LuaFlag;
@@ -261,7 +261,7 @@ function tableOptions(value: LuaValue | undefined): DesOptions {
         'exclude_islev', 'female', 'greased', 'group', 'guardobjects', 'historic',
         'ignorewater', 'invisible', 'irregular', 'joined', 'keep_default_invent',
         'lit', 'locked', 'looted', 'male', 'peaceful', 'pudding', 'region_islev', 'revived', 'ring', 'seen',
-        'smoothed', 'spider_on_web', 'stocked', 'stunned', 'swarm', 'tail', 'tknown',
+        'smoothed', 'spider_on_web', 'stocked', 'stunned', 'swarm', 'tail', 'trap_known',
         'trapped', 'victim', 'waiting', 'walled', 'warned'
     ] as const) {
         const entry = value.get(key);

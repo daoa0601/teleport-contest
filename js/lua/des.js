@@ -69,7 +69,7 @@ function tableOptions(value) {
         'exclude_islev', 'female', 'greased', 'group', 'guardobjects', 'historic',
         'ignorewater', 'invisible', 'irregular', 'joined', 'keep_default_invent',
         'lit', 'locked', 'looted', 'male', 'peaceful', 'pudding', 'region_islev', 'revived', 'ring', 'seen',
-        'smoothed', 'spider_on_web', 'stocked', 'stunned', 'swarm', 'tail', 'tknown',
+        'smoothed', 'spider_on_web', 'stocked', 'stunned', 'swarm', 'tail', 'trap_known',
         'trapped', 'victim', 'waiting', 'walled', 'warned'
     ]) {
         const entry = value.get(key);

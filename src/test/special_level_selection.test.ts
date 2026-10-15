@@ -229,3 +229,19 @@ void test('Lua quantities create separate nonstacking objects and one stack of m
     assert.equal(daggers.length, 1);
     assert.equal(daggers[0]?.quan, 4);
 });
+
+void test('Lua object fields honor poison, dilution, revival and known-trap aliases', async t => {
+    const lua = await levelLua(t);
+    await lua.executeAsync(`
+        des.map({ x = 10, y = 5, map = [[....]] })
+        des.object({ id = "arrow", x = 0, y = 0, trapped = true })
+        des.object({ id = "potion of healing", x = 1, y = 0, eroded = 1 })
+        des.object({ id = "corpse", montype = "troll", x = 2, y = 0, eroded = 4 })
+        des.object({ id = "chest", x = 3, y = 0, trapped = true, trap_known = true })
+    `);
+    const level = requireGameLevel();
+    assert.equal(level.objects[10]?.[5]?.[0]?.opoisoned, true);
+    assert.equal(level.objects[11]?.[5]?.[0]?.odiluted, true);
+    assert.equal(level.objects[12]?.[5]?.[0]?.norevive, true);
+    assert.equal(level.objects[13]?.[5]?.[0]?.tknown, true);
+});

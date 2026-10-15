@@ -6234,23 +6234,29 @@ async function createLuaObjectPiece(
         } else {
             object.oeroded = options.eroded % 4;
             object.oeroded2 = (options.eroded >> 2) % 4;
+            object.orotten = object.odiluted = !!object.oeroded;
+            object.norevive = !!object.oeroded2;
         }
     } else {
         object.oeroded = 0;
         object.oeroded2 = 0;
+        object.orotten = object.odiluted = object.norevive = false;
         object.oerodeproof = false;
     }
-    if (options.recharged)
+    if (options.recharged) {
         object.recharged = options.recharged % 8;
+        object.on_ice = !!object.recharged;
+    }
     if (Object.hasOwn(options, 'trapped'))
-        object.otrapped = !!options.trapped;
+        object.otrapped = object.opoisoned = !!options.trapped;
     if (Object.hasOwn(options, 'locked')) object.olocked = !!options.locked;
     else if (options.broken) {
         object.obroken = true;
+        object.degraded_horn = 1;
         object.olocked = false;
     }
-    if (options.trapped && Object.hasOwn(options, 'tknown'))
-        object.tknown = !!options.tknown;
+    if (options.trapped !== false && Object.hasOwn(options, 'trap_known'))
+        object.tknown = !!options.trap_known;
     object.greased = !!options.greased;
     if (objectType === STATUE || objectType === CORPSE) {
         object.spe = (options.historic ? CORPSTAT_HISTORIC : 0)
