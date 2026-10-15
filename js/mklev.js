@@ -1976,7 +1976,7 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
             mpeaceful: minionPeaceful ? 1 : 0,
         };
         pendingMonster.isminion = 1;
-        pendingMonster.emin = { min_align: minAlign, renegade };
+        pendingMonster.emin = { parentmid: monsterId, min_align: minAlign, renegade };
         pendingMonster.mpeaceful = roamingMinion.mpeaceful;
     }
     // Native creation finishes attitude and kill credit before group members
@@ -2791,10 +2791,6 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
         monster.mtrapseen = pendingMonster.mtrapseen;
     if (roamingMinion) {
         monster.isminion = 1;
-        monster.emin = {
-            min_align: roamingMinion.min_align,
-            renegade: roamingMinion.renegade,
-        };
         monster.maligntyp = roamingMinion.min_align;
     }
     if (mndx === PM_LONG_WORM) {
