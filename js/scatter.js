@@ -22,6 +22,7 @@ import { monsterHasAcidResistance, monsterHasPoisonResistance, monsterHasStoneRe
 import { petrifyMonsterFromContact } from './monster_stoning.js';
 import { wakeMonstersNear } from './monster_wake.js';
 import { heroSpecies } from './hero_species.js';
+import { captureHeroProjectileName } from './hero_physical_messages.js';
 import { hideHeroUnder, maybeUnhideAt } from './monster_hiding.js';
 import { hitHeroWithObject } from './hero_object_hit.js';
 import { hitHeroWithThrownPotion } from './hero_potion_hit.js';
@@ -146,7 +147,7 @@ async function hitMonster(monster, node, state, options) {
         });
     if (threshold < options.rollOne(20)) {
         if (visible && !disguised)
-            await options.publish(rayMissMessage(objectCombatName(object, { state }), monster, { ...node, state }));
+            await options.publish(rayMissMessage(captureHeroProjectileName(object, state), monster, { ...node, state }));
         return false;
     }
     if (object.oclass === POTION_CLASS) {
@@ -197,7 +198,7 @@ async function hitMonster(monster, node, state, options) {
             await options.publish(`Splat!  ${monsterName(monster, { state, capitalized: true })} is hit with ${egg}!`);
         }
         else {
-            await options.publish(rayHitMessage(objectCombatName(object, { state }), monster, {
+            await options.publish(rayHitMessage(captureHeroProjectileName(object, state), monster, {
                 ...node, state, damage,
                 ...(harmless ? { ending: ` but passes harmlessly through ${monsterObjectPronoun(monster, { state })}.` } : {}),
             }));

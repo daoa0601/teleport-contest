@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { game } from '../js/gstate.js';
 import { flush_screen } from '../js/display.js';
 import { finishEnvironmentalMonsterDeath } from '../js/monster_death.js';
-import { DART, DAGGER, ROCK } from '../js/object_data.js';
+import { CORPSE, DART, DAGGER, ROCK } from '../js/object_data.js';
 import { scatterFloorObjects } from '../js/scatter.js';
 import { floorObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
@@ -34,6 +34,18 @@ void test('a weapon landing after a fatal scatter hit is drawn on the vacated sq
     assert.equal(dagger.where, 'floor');
     assert.equal(dagger.ox, 13);
     assert.equal(requireScreenRow(11)[12]?.ch, ')');
+});
+void test('a scattered corpse hit names the projectile without its species', async () => {
+    freshObjectRoom({ flags: { verbose: true } });
+    const soldier = await createMonsterAt('soldier', 13, 10);
+    soldier.mhp = soldier.mhpmax = 100;
+    await floorObject(CORPSE, 14, 10, { corpsenm: 0 });
+    const messages = [];
+    await scatterFloorObjects(14, 10, 2, {
+        mayDestroy: false, random: () => 0, rollOne: () => 1,
+        publish: async (message) => { messages.push(message); },
+    });
+    assert.equal(messages[0], 'The corpse hits the soldier.');
 });
 void test('a scattered stone passes harmlessly through a xorn', async () => {
     freshObjectRoom();
