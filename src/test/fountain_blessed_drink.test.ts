@@ -28,6 +28,28 @@ for (const luck of [0, 4]) {
     });
 }
 
+void test('Escape during a blessed fountain drink finishes the reward without another acknowledgment', async () => {
+    freshObjectRoom({ hero: { uluck: 4 } });
+    requirePlayingGame(game);
+    const fountain = game.level.requireAt(10, 10);
+    fountain.typ = FOUNTAIN;
+    fountain.blessedftn = 1;
+    const input = resetInputState();
+    input.feed('y\x1b');
+    input.display = {
+        async readKey() {
+            assert.fail(`Drinking asks for more input after Escape: ${game._pending_message}`);
+        },
+    };
+    initRng(6n);
+
+    await rhack('q'.charCodeAt(0));
+
+    assert.ok(game.u.acurr.a.every(value => value === 13));
+    assert.equal(fountain.blessedftn, 0);
+    assert.equal(game.context.move, 1);
+});
+
 void test('a refreshing drink preserves the blessing and cannot dry the fountain', async () => {
     freshObjectRoom();
     requirePlayingGame(game);

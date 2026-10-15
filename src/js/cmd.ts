@@ -1895,7 +1895,7 @@ async function blessedFountainDraught(loc: MapLocation): Promise<void> {
             await reportHeroEncumbrance(state);
         if (change.changed && littleLuck) break;
     }
-    await flushPendingTopline();
+    await displayMessageWindow();
     await plineWithContinuation('A wisp of vapor escapes the fountain...');
     await exerciseAttribute(A_WIS, true);
     loc.blessedftn = 0;
