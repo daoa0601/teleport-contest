@@ -3,12 +3,57 @@ import test from 'node:test';
 import { rhack } from '../js/cmd.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { CLUB, CREAM_PIE, HELMET, POT_WATER, ROCK, SCR_IDENTIFY } from '../js/object_data.js';
-import { setQuiverObject } from '../js/weapon_slots.js';
+import { STR19, W_WEP } from '../js/const.js';
+import { AKLYS, BOOMERANG, CLUB, CREAM_PIE, HELMET, POT_WATER, ROCK, SCR_IDENTIFY } from '../js/object_data.js';
+import { addInventoryItem } from '../js/u_init.js';
+import { setPrimaryWeapon, setQuiverObject, setSecondaryWeapon, setTwoWeaponCombat } from '../js/weapon_slots.js';
 import { throwInventoryObject } from './support/commands.js';
-import { addInventoryObject, addInventoryWeapon } from './support/game-objects.js';
+import { addInventoryObject, addInventoryWeapon, artifactObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { freshObjectRoom } from './support/object-room.js';
+void test('unimpaired upward throws catch returning weapons and restore their equipment slots', async () => {
+    for (const weapon of ['aklys', 'Mjollnir', 'boomerang']) {
+        freshObjectRoom({
+            role: 'valkyrie', flags: { fixinv: false },
+            hero: { acurr: { a: [STR19(25), 12, 12, 12, 12, 12] } },
+        });
+        const item = weapon === 'Mjollnir'
+            ? await addInventoryItem(await artifactObject(weapon, { overrideIdentified: true }))
+            : await addInventoryWeapon(weapon === 'aklys' ? AKLYS : BOOMERANG, { quan: weapon === 'boomerang' ? 3 : 1 });
+        const alternate = await addInventoryWeapon(CLUB);
+        await setSecondaryWeapon(alternate);
+        if (weapon === 'boomerang')
+            await setQuiverObject(item);
+        else {
+            await setPrimaryWeapon(item);
+            setTwoWeaponCombat(true);
+        }
+        const letter = item.invlet;
+        if (weapon === 'boomerang') {
+            resetInputState().feed('<' + ' '.repeat(20));
+            await rhack('f'.charCodeAt(0));
+        }
+        else {
+            await throwInventoryObject(item, '<', ' '.repeat(20));
+        }
+        assert.equal(game.u.uhp, 40, `${weapon} must be caught without injury`);
+        assert.equal(game._pending_message, `${weapon === 'Mjollnir' ? weapon : `The ${weapon}`} hits the ceiling and returns to your hand!`);
+        assert.equal(item.where, 'inventory');
+        assert.equal(item.invlet, letter);
+        assert.equal(game.inventory[0], item, 'return preserves unfixed inventory order');
+        assert.equal(game.uswapwep, alternate);
+        if (weapon === 'boomerang') {
+            assert.equal(game.uquiver, item);
+            assert.equal(item.quan, 3, 'the returning piece rejoins its original stack');
+        }
+        else {
+            assert.equal(game.uwep, item);
+            assert.equal((item.owornmask ?? 0) & W_WEP, W_WEP);
+            assert.equal(game.u.twoweap, true);
+        }
+        assert.equal(game.context.move, 1);
+    }
+});
 void test('throwing downward announces the object hitting the floor at the hero', async () => {
     freshObjectRoom();
     const club = await addInventoryWeapon(CLUB);
