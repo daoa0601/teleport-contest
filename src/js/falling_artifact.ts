@@ -55,7 +55,8 @@ export async function hitHeroWithFallingArtifact(
         } else {
             await publish(applied ? 'The massive hammer hits!  Lightning strikes you!'
                 : 'The massive hammer hits you.');
-            if (applied) wakeMonstersNear(state.u.ux, state.u.uy, 16, state);
+            // artifact_hit() uses youmonst's coordinates, which stay (0, 0).
+            if (applied) wakeMonstersNear(0, 0, 16, state);
         }
         if (random(type === 'shock' ? 5 : 4) === 0) {
             const element = type === 'shock' ? INVENTORY_DAMAGE.ELECTRIC

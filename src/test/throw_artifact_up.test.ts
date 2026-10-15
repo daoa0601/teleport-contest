@@ -1,13 +1,36 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { STR19 } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { HELMET, LONG_SWORD } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { addInventoryItem } from '../js/u_init.js';
+import { setPrimaryWeapon } from '../js/weapon_slots.js';
 import { throwInventoryObject } from './support/commands.js';
 import { addInventoryObject, addInventoryWeapon, artifactObject } from './support/game-objects.js';
+import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+
+void test('falling Mjollnir wakes sleepers near the map origin rather than the hero', async () => {
+    freshObjectRoom({
+        left: 1, top: 1,
+        hero: { acurr: { a: [STR19(25), 12, 12, 12, 12, 12] } },
+    });
+    const nearOrigin = await createMonsterAt('goblin', 1, 1);
+    const beyondOriginRadius = await createMonsterAt('goblin', 3, 3);
+    const nearHero = await createMonsterAt('goblin', 11, 10);
+    for (const monster of [nearOrigin, beyondOriginRadius, nearHero]) monster.msleeping = 1;
+    const hammer = await addInventoryItem(await artifactObject('Mjollnir', { spe: 0 }));
+    await setPrimaryWeapon(hammer);
+
+    await throwInventoryObject(hammer, '<', ' '.repeat(30));
+
+    assert.equal(hammer.where, 'floor', 'Mjollnir must fall back onto the hero');
+    assert.equal(nearOrigin.msleeping, 0, 'lightning wakes monsters within four squares of (0, 0)');
+    assert.equal(beyondOriginRadius.msleeping, 1, 'the wake-up radius excludes squared distances of 16 or more');
+    assert.equal(nearHero.msleeping, 1, 'the hero position does not center this lightning wake-up');
+});
 
 void test('Excalibur falling onto the hero adds its artifact damage to ordinary sword damage', async () => {
     const wounds: number[] = [];
