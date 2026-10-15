@@ -78,4 +78,3 @@ function selectWizardCussMessage(monster: Monster, game: PlayingGameState, roll:
         roll(WIZARD_CUSS_INSULTS.length)
     ] + '!"';
 }
-

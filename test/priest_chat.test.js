@@ -7,6 +7,8 @@ import { resetInputState } from '../js/input.js';
 import { hasPermanentIntrinsicProperty, propertyTimeout } from '../js/properties.js';
 import { monsterGoldAmount } from '../js/shop_money.js';
 import { initRng } from '../js/rng.js';
+import { MONSTER_NAME } from '../js/monster_data.js';
+import { changeMonsterForm } from '../js/monster_polymorph.js';
 import { runExtendedCommand } from './support/commands.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -70,5 +72,15 @@ void test('a pious donation grants temporary clairvoyance', async () => {
     await runExtendedCommand('chat', 'l 250\n');
     assert.ok(propertyTimeout('clairvoyant', game) >= 500);
     assert.equal(heroGoldAmount(game), 150);
+});
+void test('a monster in a coaligned cleric form rejects a hero who has strayed', async () => {
+    freshObjectRoom({ hero: { ualign: { type: 0, record: -1 } } });
+    const priest = await createMonsterAt('goblin', 11, 10, NO_MINVENT);
+    const changed = await changeMonsterForm(priest, MONSTER_NAME.indexOf('aligned cleric'));
+    assert.ok(changed);
+    priest.mpeaceful = 1;
+    await runExtendedCommand('chat', 'l');
+    assert.match(game._pending_message, /doesn't want anything to do with you!$/);
+    assert.equal(priest.mpeaceful, 0);
 });
 //# sourceMappingURL=priest_chat.test.js.map

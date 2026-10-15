@@ -7,14 +7,15 @@ import { plineWithContinuation as pline } from './display.js';
 import { recordGameLogEvent } from './gamelog.js';
 import { heroGoldAmount } from './hero_gold.js';
 import { offerGoldToMonster } from './monster_bribe.js';
+import { monsterAlignmentType } from './monster_alignment.js';
 import { monsterName, monsterPossessive } from './monster_name.js';
-import { priestHasShrine, priestIsCoaligned, priestIsInOwnTemple } from './priest.js';
+import { priestHasShrine, priestIsInOwnTemple } from './priest.js';
 import { grantIntrinsicProperty, hasPermanentIntrinsicProperty, propertyTimeout, setPropertyTimeout } from './properties.js';
 import { rn1, rn2 } from './rng.js';
 import { heroIsHallucinating } from './senses.js';
 import { moneyToHero, monsterGoldAmount } from './shop_money.js';
 export async function talkToPriest(priest, state) {
-    const coaligned = priestIsCoaligned(priest, state);
+    const coaligned = state.u.ualign.type === monsterAlignmentType(priest);
     const strayed = state.u.ualign.record < 0;
     const shrine = priest.epri ?? priest.mextra?.epri;
     const conduct = state.u.uconduct ||= {};
