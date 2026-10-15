@@ -8121,8 +8121,7 @@ function roomHasStair(croom, up) {
     for (let stair = game.stairs; stair; stair = stair.next) {
         if (!!stair.up !== !!up)
             continue;
-        if (stair.sx >= croom.lx && stair.sx <= croom.hx
-            && stair.sy >= croom.ly && stair.sy <= croom.hy)
+        if (insideRoom(game.level, croom, stair.sx, stair.sy))
             return true;
     }
     return false;
