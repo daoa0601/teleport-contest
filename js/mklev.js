@@ -7057,13 +7057,20 @@ async function beginLuaThemerooms() {
     const lifecycle = currentLuaLifecycle();
     const dungeonNumber = game.u?.uz?.dnum ?? 0;
     let state = lifecycle.getThemedState(game, dungeonNumber);
+    const filename = game.dungeons[dungeonNumber]?.themeRooms;
+    if (!state && !filename) {
+        activeThemes.delete(game);
+        return false;
+    }
     let session = state ? themedLuaSessions.get(state) : null;
-    const active = { prototype: 'themerms', file: 'themerms.lua' };
+    const active = { prototype: 'themerms', file: filename ?? '' };
     if (!session) {
+        if (!filename)
+            throw new Error('Themed room initialization requires a source file.');
         const createdSession = createLuaLevelSession();
         session = createdSession;
         createdSession.beginLevel(active, { special: false });
-        state = await lifecycle.createThemedState(game, dungeonNumber, 'themerms.lua', createdSession.bindings, created => createdSession.bindState(created));
+        state = await lifecycle.createThemedState(game, dungeonNumber, filename, createdSession.bindings, created => createdSession.bindState(created));
         themedLuaSessions.set(state, session);
     }
     else {
@@ -7073,6 +7080,7 @@ async function beginLuaThemerooms() {
         throw new Error('Themed room initialization did not create a Lua state.');
     activeThemes.set(game, { state, session });
     await state.callValueAsync(state.getGlobal('pre_themerooms_generate'), []);
+    return true;
 }
 async function callLuaThemerooms(name, args = []) {
     const state = activeThemes.get(game)?.state;
@@ -8003,8 +8011,8 @@ async function makelevel() {
         return;
     }
     // Regular level generation
-    await beginLuaThemerooms();
-    await makerooms();
+    const themedRooms = await beginLuaThemerooms();
+    await makerooms(themedRooms);
     if (level.nroom <= 0)
         return;
     sort_rooms();
@@ -8084,11 +8092,12 @@ async function makelevel() {
     for (const croom of level.rooms.slice(0, level.nroom))
         if (isRoom(croom))
             await fillSpecialRoom(croom);
-    await callLuaThemerooms('post_level_generate');
-    // A loaded theme interpreter always wallifies the complete level, not
-    // only rooms created from des.map().  Dynamic terrain callbacks such as
-    // "Pillars" rely on this pass for their internal wall spines.
-    wallification(1, 0, COLNO - 1, ROWNO - 1);
+    if (themedRooms) {
+        await callLuaThemerooms('post_level_generate');
+        // A loaded theme interpreter wallifies the complete level, including
+        // walls placed inside rooms by terrain callbacks such as "Pillars".
+        wallification(1, 0, COLNO - 1, ROWNO - 1);
+    }
 }
 // C ref: mklev.c mk_knox_portal().  Fort Ludios starts with an out-of-range
 // source dnum.  Each otherwise eligible vault owns one deferral draw until a
@@ -9078,7 +9087,7 @@ async function makerogueghost() {
     }
 }
 // C ref: mklev.c makerooms()
-async function makerooms() {
+async function makerooms(themedRooms) {
     const g = game;
     const level = requireGameLevel();
     let tried_vault = false;
@@ -9094,7 +9103,7 @@ async function makerooms() {
                     level.rooms[level.nroom] = { ...reserved, hx: -1 };
             }
         }
-        else {
+        else if (themedRooms) {
             g.in_mk_themerooms = true;
             const generated = await themerooms_generate();
             g.in_mk_themerooms = false;
@@ -9104,9 +9113,12 @@ async function makerooms() {
                     break;
             }
         }
+        else if (!create_room(-1, -1, -1, -1, -1, -1, OROOM, -1))
+            break;
     }
     g.in_mk_themerooms = false;
-    await callLuaThemerooms('post_themerooms_generate');
+    if (themedRooms)
+        await callLuaThemerooms('post_themerooms_generate');
 }
 function themedMapTerrain(ch) {
     if (ch === '.')

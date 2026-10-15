@@ -97,6 +97,9 @@ async function mineralizingLua(t: TestContext) {
     game.specialLevels.clear();
     game.flags.bones = false;
     game.medusa_level = { dnum: 0, dlevel: 20, flags: { town: false }, alignment: null };
+    const dungeon = game.dungeons[0];
+    assert.ok(dungeon);
+    dungeon.themeRooms = 'themerms.lua';
     await startLuaCore(t);
     await mklev();
     const lua = currentLuaLifecycle().getThemedState(game, 0);
