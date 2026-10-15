@@ -1253,6 +1253,7 @@ async function completeOrdinaryDeath({ killer, possessionAnswer = null, deathVer
     if (deathType !== null)
         deathVerb = ENDINGS[deathType] ?? deathVerb;
     game._deathKiller = killer;
+    fixupDeath(how);
     const taken = how === PANICKED ? false : await settleGameExit('died');
     let showSummary;
     if (how === PANICKED) {
@@ -1284,6 +1285,20 @@ async function completeOrdinaryDeath({ killer, possessionAnswer = null, deathVer
         killer, deathVerb, deathCause, deathType,
     }), { stopPrinting: !showSummary });
     game.context.move = 0;
+}
+// C end.c:fixup_death(). These reasons describe the fatal process rather
+// than an independent condition which stopped the hero from acting.
+function fixupDeath(how) {
+    const reason = game._helplessReason;
+    const text = typeof reason === 'string' ? reason : reason?.text;
+    if (how === STONING && text === 'getting stoned') {
+        game._helplessReason = null;
+        game._helplessTurns = 0;
+        game.multi = 0;
+    }
+    else if (how === STARVING && text === 'fainted from lack of food') {
+        game._helplessReason = 'fainted';
+    }
 }
 export async function doquit() {
     const answer = await paranoidQuery(!!((game.flags.paranoia_bits ?? 0) & PARANOID_QUIT), 'Really quit without saving?');
