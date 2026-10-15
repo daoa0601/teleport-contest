@@ -39,9 +39,9 @@ export function liquidForHole(
     }
 
     if (!fillIfAny) pools = Math.trunc(pools / 3);
-    if (lava && (fillIfAny || (lava > moats + pools && random(lava + 1))))
+    if ((lava > moats + pools && random(lava + 1)) || (lava && fillIfAny))
         return LAVAPOOL;
-    if (moats && (fillIfAny || random(moats + 1))) return MOAT;
-    if (pools && (fillIfAny || random(pools + 1))) return POOL;
+    if ((moats > 0 && random(moats + 1)) || (moats && fillIfAny)) return MOAT;
+    if ((pools > 0 && random(pools + 1)) || (pools && fillIfAny)) return POOL;
     return ROOM;
 }

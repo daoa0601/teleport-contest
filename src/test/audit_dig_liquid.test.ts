@@ -5,10 +5,10 @@ import { DB_FLOOR, DB_LAVA, DRAWBRIDGE_UP, HOLE, MOAT, PIT, POOL, ROOM, TT_PIT, 
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { maketrap } from '../js/mklev.js';
-import { PICK_AXE, WAN_DIGGING } from '../js/object_data.js';
+import { PICK_AXE, POT_HEALING, WAN_DIGGING } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
-import { addInventoryObject } from './support/game-objects.js';
+import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 import { createSpecialLevel } from './support/topology.js';
@@ -84,4 +84,23 @@ void test('a pick can start digging into solid ground under a raised drawbridge'
     assert.equal(game._occupation?.key, 'dig');
     assert.equal(game._pending_message, 'You start digging downward.');
     assert.equal(game.context.move, 1);
+});
+
+void test('forced pit flooding still tests the liquid supply before wetting floor objects', async () => {
+    const level = freshObjectRoom({ hero: { swimming: true } });
+    level.requireAt(12, 10).typ = POOL;
+    await maketrap(10, 10, PIT);
+    game.u.utrap = 5;
+    game.u.utraptype = TT_PIT;
+    const potion = await floorObject(POT_HEALING, 11, 10, { initialize: false });
+    const wand = await addInventoryObject(WAN_DIGGING, { spe: 2 });
+    const input = resetInputState();
+    installPagerInput(input, { expected: /pit|water|dig|pool|bottom/, limit: 10 });
+    input.feed(`${wand.invlet}l`);
+    initRng(1n);
+
+    await rhack('z'.charCodeAt(0));
+
+    assert.equal(level.requireAt(11, 10).typ, POOL);
+    assert.equal(potion.odiluted, true, 'The flooded potion receives native water damage.');
 });
