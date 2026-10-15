@@ -28,7 +28,7 @@ for (const { species, surface } of [
     void test(`the surface around a hero engulfed by a ${species} is its ${surface}`, async () => {
         freshObjectRoom();
         const engulfer = await createMonsterAt(species, 11, 10);
-        installSwallowedHero(engulfer);
+        await installSwallowedHero(engulfer);
         assert.equal(surfaceName(10, 10), surface);
         assert.equal(surfaceName(11, 10), 'floor');
     });
