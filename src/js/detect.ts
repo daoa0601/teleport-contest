@@ -140,6 +140,7 @@ export function convertSecretDoor(location: MapLocation, state: GameState = game
     location.doormask = isRogueLevel
         ? 0 : retained | ((retained & D_LOCKED) ? 0 : D_CLOSED);
     location.arboreal_sdoor = 0;
+    location.candig = false;
 }
 
 export function revealSecretDoor(x: number, y: number) {

@@ -1,10 +1,11 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { continueCountedCommand, rhack } from '../js/cmd.js';
-import { DOOR, D_CLOSED, D_BROKEN, D_TRAPPED, HWALL, SDOOR, W_WEP } from '../js/const.js';
+import { DOOR, D_CLOSED, D_BROKEN, D_TRAPPED, HWALL, PIT, SDOOR, W_WEP } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { PICK_AXE } from '../js/object_data.js';
+import { PICK_AXE, WAN_DIGGING } from '../js/object_data.js';
+import { grantIntrinsicProperty } from '../js/properties.js';
 import { initRng } from '../js/rng.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -93,4 +94,30 @@ void test('breaking a Rogue-level secret door clears the obsolete door trap befo
     assert.equal(door.typ, DOOR);
     assert.equal(door.doormask, D_BROKEN);
     assert.equal(game.u.uhp, hp);
+});
+
+void test('a revealed secret door cannot retain an old trapdoor permission to dig through a hard floor', async () => {
+    const level = freshObjectRoom();
+    level.flags.hardfloor = true;
+    const door = level.requireAt(11, 10);
+    door.typ = SDOOR;
+    door.candig = true;
+    door.arboreal_sdoor = 1;
+    const pick = await addInventoryObject(PICK_AXE, { spe: 0, owornmask: W_WEP });
+    const wand = await addInventoryObject(WAN_DIGGING, { spe: 2 });
+    game.uwep = game.u.uwep = pick;
+    grantIntrinsicProperty('levitation', 'outside');
+    const input = resetInputState();
+    installPagerInput(input, { expected: /dig|door|pit|hole/, limit: 10 });
+    input.feed(`${pick.invlet}l`);
+
+    await rhack('a'.charCodeAt(0));
+    for (let swing = 0; game._occupation && swing < 20; swing++)
+        await continueCountedCommand();
+    await rhack('l'.charCodeAt(0));
+    input.feed(`${wand.invlet}>`);
+    await rhack('z'.charCodeAt(0));
+
+    assert.equal(game.u.ux, 11);
+    assert.equal(level.traps.find(trap => trap.tx === 11 && trap.ty === 10)?.ttyp, PIT);
 });
