@@ -4,7 +4,7 @@ import type { TestContext } from 'node:test';
 
 import { CLOUD, CORR, D_CLOSED, FOUNTAIN, F_LOOTED, F_WARNED, GRAVE, HEADSTONE, HWALL,
     ROOM, SCORR, SDOOR, STONE, S_LDWASHER, S_LPUDDING, S_LRING, T_LOOTED,
-    TREE_LOOTED, TREE_SWARM, W_NONPASSWALL } from '../js/const.js';
+    TREE_LOOTED, TREE_SWARM, VWALL, W_NONPASSWALL } from '../js/const.js';
 import { init_dungeons } from '../js/dungeon.js';
 import { GameMap } from '../js/game.js';
 import { game, requireGameLevel } from '../js/gstate.js';
@@ -304,4 +304,15 @@ void test('Lua wall_property applies its rectangle relative to the last map', as
     assert.ok(level.requireAt(10, 5).wall_info & W_NONPASSWALL);
     assert.ok(level.requireAt(11, 5).wall_info & W_NONPASSWALL);
     assert.equal(level.requireAt(12, 5).wall_info & W_NONPASSWALL, 0);
+});
+
+void test('Lua wallify honors an explicit rectangle in level coordinates', async t => {
+    const lua = await levelLua(t);
+    await lua.executeAsync(`
+        des.map({ x = 10, y = 5, map = [[.]] })
+        des.wallify({ x1 = 9, y1 = 4, x2 = 10, y2 = 6 })
+    `);
+    const level = requireGameLevel();
+    assert.equal(level.requireAt(9, 5).typ, VWALL);
+    assert.equal(level.requireAt(11, 5).typ, STONE, 'terrain outside the rectangle stays unchanged');
 });

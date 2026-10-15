@@ -488,7 +488,7 @@ export function createDesBindings(operations, wrapSelection) {
         non_diggable: (selection) => operations.nonDiggable(selection == null ? null : unwrapSelection(selection)),
         non_passwall: (selection) => operations.nonPasswall(selection == null ? null : unwrapSelection(selection)),
         wall_property: (value) => operations.wallProperty(tableOptions(value)),
-        wallify: () => operations.wallify(),
+        wallify: (value) => operations.wallify(value == null ? null : tableOptions(value)),
         teleport_region: (value) => operations.teleportRegion(tableOptions(value)),
         levregion: (value) => operations.levelRegion(tableOptions(value)),
         exclusion: (value) => operations.exclusion(tableOptions(value)),

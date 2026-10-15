@@ -6727,7 +6727,12 @@ function createLuaLevelSession() {
             : specialNonDiggable(),
         nonPasswall: selection => markSpecialSelectionWallProperty(selection ?? new SpecialSelection().negate(), W_NONPASSWALL),
         wallProperty: options => createLuaWallProperty(currentLevel().context ?? wholeLevel, options),
-        wallify: () => wallifyMap(context.xstart - 1, context.ystart - 1, context.xstart + context.width + 1, context.ystart + context.height + 1),
+        wallify: options => {
+            const map = currentLevel().context ?? wholeLevel;
+            const x1 = options?.x1 ?? -1, y1 = options?.y1 ?? -1;
+            const x2 = options?.x2 ?? -1, y2 = options?.y2 ?? -1;
+            wallifyMap(x1 < 0 ? map.xstart - 1 : x1, y1 < 0 ? map.ystart - 1 : y1, x2 < 0 ? map.xstart + map.width + 1 : x2, y2 < 0 ? map.ystart + map.height + 1 : y2);
+        },
         teleportRegion: options => {
             const region = regionCoordinates(context, options.region, options.region_islev);
             const exclude = options.exclude

@@ -194,7 +194,7 @@ export interface DesOperations {
     nonDiggable(selection: SpecialSelection | null): DesOperationResult;
     nonPasswall(selection: SpecialSelection | null): DesOperationResult;
     wallProperty(options: DesOptions): DesOperationResult;
-    wallify(): DesOperationResult;
+    wallify(options: DesOptions | null): DesOperationResult;
     teleportRegion(options: DesOptions): DesOperationResult;
     levelRegion(options: DesOptions): DesOperationResult;
     exclusion(options: DesOptions): DesOperationResult;
@@ -710,7 +710,7 @@ export function createDesBindings(
             selection == null ? null : unwrapSelection(selection),
         ),
         wall_property: (value: LuaValue) => operations.wallProperty(tableOptions(value)),
-        wallify: () => operations.wallify(),
+        wallify: (value: LuaValue) => operations.wallify(value == null ? null : tableOptions(value)),
         teleport_region: (value: LuaValue) => operations.teleportRegion(
             tableOptions(value),
         ),
