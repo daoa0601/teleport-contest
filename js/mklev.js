@@ -8132,7 +8132,7 @@ function roomHasStair(croom, up) {
 }
 // C ref: mkroom.c invalid_shop_shape().  A shopkeeper must have more than a
 // one-square cul-de-sac immediately inside the selected room's only door.
-function invalidShopShape(croom) {
+async function invalidShopShape(croom) {
     const level = requireGameLevel();
     const door = level.doors[croom.fdoor];
     if (!door)
@@ -8147,8 +8147,10 @@ function invalidShopShape(croom) {
             }
         }
     }
-    if (insideCount < 1 || !inside)
+    if (insideCount < 1 || !inside) {
+        await impossible('invalid_shop_shape: no squares inside door?');
         return true;
+    }
     if (insideCount > 1)
         return false;
     let exits = 0;
@@ -8162,14 +8164,21 @@ function invalidShopShape(croom) {
     }
     return exits === 1;
 }
-function mkshop() {
+async function mkshop() {
     const level = requireGameLevel();
     const rooms = level.rooms.slice(0, level.nroom);
-    const sroom = rooms.find((room) => isRoom(room) && room.rtype === OROOM
-        && !roomHasStair(room, false)
-        && !roomHasStair(room, true)
-        && room.doorct === 1
-        && !invalidShopShape(room));
+    let sroom = null;
+    for (const room of rooms) {
+        if (!isRoom(room) || room.hx < 0)
+            return false;
+        if (room.rtype !== OROOM || roomHasStair(room, false)
+            || roomHasStair(room, true) || room.doorct !== 1)
+            continue;
+        if (await invalidShopShape(room))
+            continue;
+        sroom = room;
+        break;
+    }
     if (!sroom)
         return false;
     if (!sroom.rlit) {
