@@ -78,14 +78,34 @@ export function hasRawLevitationSource(state: PropertyState = game) {
     return propertySourceIsActive('levitation', state);
 }
 
-// C hack.c:weight_cap() ignores the trap block on levitation, and defers
-// the carrying benefit of boots whose Boots_on callback has not run yet.
-export function levitationSupportsLoad(ignoreBoots: boolean, state: PropertyState = game): boolean {
+function levitationSourceIsActive(ignoreBoots: boolean, state: PropertyState): boolean {
     const record = existingPropertyRecord('levitation', state);
-    if (record?.blockedByTerrain) return false;
     return intrinsicSourceIsActive(record) || !!record?.invoked
         || !!record?.carried.length || timedSourceIsActive('levitation', state.u)
         || !!record?.worn.some(source => !ignoreBoots || source.slot !== 'uarmf');
+}
+
+// C hack.c:weight_cap() ignores the trap block on levitation, and defers
+// the carrying benefit of boots whose Boots_on callback has not run yet.
+export function levitationSupportsLoad(ignoreBoots: boolean, state: PropertyState = game): boolean {
+    return !existingPropertyRecord('levitation', state)?.blockedByTerrain
+        && levitationSourceIsActive(ignoreBoots, state);
+}
+
+// Removing pending boots' levitation for weight_cap() also restores flight
+// through float_vs_flight(). Query that temporary state without changing the
+// abilities projected onto the hero while the boots are actually worn.
+export function flyingSupportsLoad(ignoreBoots: boolean, state: PropertyState = game): boolean {
+    if (!ignoreBoots) return propertyIsActive('flying', state);
+    if (existingPropertyRecord('flying', state)?.blockedByTerrain
+        || levitationSourceIsActive(true, state)) return false;
+    const flying = propertySourceIsActive('flying', state);
+    const hero = state.u;
+    const trapped = (hero.utrap ?? 0) > 0 && hero.utraptype !== TT_PIT;
+    if (flying && trapped) return false;
+    const steedFlies = hero.usteed
+        && !!((MONSTER_FLAGS1[hero.usteed.mnum] ?? 0) & 0x01);
+    return flying || !!steedFlies;
 }
 
 export function propertyIsBlocked(property: PropertyName, state: PropertyState = game) {

@@ -13,7 +13,7 @@ import { A_CON, Is_airlevel, LARGEST_INT } from './const.js';
 import { currentAttribute, currentStrength } from './attrib.js';
 import type { GameObject } from './object_types.js';
 import type { GameState } from './game_state.js';
-import { levitationSupportsLoad } from './properties.js';
+import { flyingSupportsLoad, levitationSupportsLoad } from './properties.js';
 
 // Weight is also queried for a proposed quantity before a real stack splits.
 export interface WeightObject extends Pick<GameObject, 'otyp'>, Partial<Pick<GameObject,
@@ -158,7 +158,8 @@ export function weightCapacity(state: GameState): number {
         capacity = 1000;
     } else {
         capacity = Math.min(1000, capacity);
-        const flying = state.u?.flying || state.flying;
+        const flying = flyingSupportsLoad(bootsPending, state)
+            || !bootsPending && !!(state.u.flying || state.flying);
         if (!flying) {
             if (state.u?._woundedLegSide === 'both') capacity -= 200;
             else if (state.u?._woundedLegSide) capacity -= 100;

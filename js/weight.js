@@ -4,7 +4,7 @@ import { BAG_OF_HOLDING, BOULDER, CANDELABRUM_OF_INVOCATION, CHEST, CORPSE, HEAV
 import { MONSTER_BODY_META, MONSTER_FLAGS2, MONSTER_SIZE, MONSTER_SYMBOL, } from './monster_data.js';
 import { A_CON, Is_airlevel, LARGEST_INT } from './const.js';
 import { currentAttribute, currentStrength } from './attrib.js';
-import { levitationSupportsLoad } from './properties.js';
+import { flyingSupportsLoad, levitationSupportsLoad } from './properties.js';
 export const UNENCUMBERED = 0;
 export const SLT_ENCUMBER = 1;
 export const MOD_ENCUMBER = 2;
@@ -136,7 +136,8 @@ export function weightCapacity(state) {
     }
     else {
         capacity = Math.min(1000, capacity);
-        const flying = state.u?.flying || state.flying;
+        const flying = flyingSupportsLoad(bootsPending, state)
+            || !bootsPending && !!(state.u.flying || state.flying);
         if (!flying) {
             if (state.u?._woundedLegSide === 'both')
                 capacity -= 200;
