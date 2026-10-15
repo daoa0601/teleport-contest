@@ -6,10 +6,12 @@ import { moveElementalBubbles } from '../js/elemental.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { generateWaterLevel } from '../js/mklev.js';
 import { initRng } from '../js/rng.js';
+import { restoreGame, saveGame } from '../js/save.js';
 import { installSwallowedHero } from './support/hero-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshSpecialLevel } from './support/special-level.js';
 import { createSpecialLevel } from './support/topology.js';
+import { memoryStorage } from './support/memory-storage.js';
 async function waterPlane() {
     const active = freshSpecialLevel({ prototype: 'water', seed: 1907, depth: 2 });
     requirePlayingGame(game);
@@ -81,5 +83,20 @@ void test('walking inside a water bubble can steer its next drift', async () => 
     }
     assert.equal(bubble.dx, -1, 'a successful westward step can turn the occupied bubble west');
     assert.equal(bubble.dy, 0);
+});
+void test('restoring a water level applies the initial border bounce to its bubbles', async () => {
+    const bubble = await waterPlane();
+    requirePlayingGame(game);
+    bubble.x = 4;
+    bubble.dx = -1;
+    game.plname = 'BubbleSaver';
+    const storage = memoryStorage();
+    assert.equal(await saveGame(storage), true);
+    assert.equal(restoreGame('BubbleSaver', storage), true);
+    const restored = game.level.elementalBubbles?.[0];
+    assert.ok(restored);
+    assert.equal(restored.x, 4, 'restoration paints the bubble without translating it');
+    assert.equal(restored.dx, 1, 'the initial draw bounces a bubble touching the western border');
+    assert.equal(game.level.requireAt(4, 10).typ, AIR);
 });
 //# sourceMappingURL=elemental_transport.test.js.map

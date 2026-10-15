@@ -153,6 +153,14 @@ function drawBubble(bubble: ElementalBubble): void {
 }
 
 async function moveBubble(bubble: ElementalBubble, requestedDx: number, requestedDy: number, initial: boolean): Promise<void> {
+    const motion = moveBubblePosition(bubble, requestedDx, requestedDy);
+    drawBubble(bubble);
+    if (Is_waterlevel(game.u?.uz) && !initial)
+        await restoreBubbleContents(bubble, motion.dx, motion.dy);
+    changeBubbleDirection(bubble, motion.collision, initial);
+}
+
+function moveBubblePosition(bubble: ElementalBubble, requestedDx: number, requestedDy: number) {
     let dx = requestedDx;
     let dy = requestedDy;
     let collision = 0;
@@ -190,16 +198,28 @@ async function moveBubble(bubble: ElementalBubble, requestedDx: number, requeste
         bubble.y += dy;
     }
 
-    drawBubble(bubble);
-    if (Is_waterlevel(game.u?.uz) && !initial)
-        await restoreBubbleContents(bubble, dx, dy);
+    return { dx, dy, collision };
+}
 
+function changeBubbleDirection(bubble: ElementalBubble, collision: number, initial: boolean): void {
     if (collision & 1) bubble.dy = -bubble.dy;
     if (collision & 2) bubble.dx = -bubble.dx;
     if (!collision && !initial
         && rn2(bubble.dx || bubble.dy ? 20 : 5) === 0) {
         bubble.dx = 1 - rn2(3);
         bubble.dy = 1 - rn2(3);
+    }
+}
+
+// C restore_waterlevel() redraws each saved bubble through mv_bubble(...,
+// TRUE), including its Air-plane movement roll and border-direction bounce.
+export function restoreElementalBubbles(): void {
+    if (!Is_airlevel(game.u.uz) && !Is_waterlevel(game.u.uz)) return;
+    game._heroBubble = null;
+    for (const bubble of game.level?.elementalBubbles ?? []) {
+        const motion = moveBubblePosition(bubble, 0, 0);
+        drawBubble(bubble);
+        changeBubbleDirection(bubble, motion.collision, true);
     }
 }
 
