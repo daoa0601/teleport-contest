@@ -6,9 +6,22 @@ import { makeBlinded } from '../js/sight_change.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { createHarmlessGasCloudSelection, createPoisonGasCloud, runLevelRegions } from '../js/regions.js';
 import { pushKeys } from '../js/input.js';
-import { CLR_BRIGHT_GREEN, CLR_CYAN } from '../js/terminal.js';
+import { CLR_BRIGHT_GREEN, CLR_CYAN, CLR_GRAY } from '../js/terminal.js';
 import { cansee } from '../js/vision.js';
 import { freshObjectRoom } from './support/object-room.js';
+for (const symset of ['ASCII', 'DECgraphics']) {
+    void test(`ordinary map rendering shows harmless gas in gray with ${symset} symbols`, async () => {
+        freshObjectRoom();
+        game.symset = symset;
+        createHarmlessGasCloudSelection(game, [{ x: 11, y: 10 }]);
+        newsym(11, 10);
+        await flush_screen(1);
+        const cell = requireGameDisplay().grid[11]?.[10];
+        assert.ok(cell);
+        assert.equal(cell.ch, '#');
+        assert.equal(cell.color, CLR_GRAY);
+    });
+}
 void test('a newly created gas cloud redraws its visible floor before any later vision refresh', async () => {
     const level = freshObjectRoom();
     requirePlayingGame(game);
