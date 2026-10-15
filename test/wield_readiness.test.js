@@ -8,10 +8,12 @@ import { game } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { AKLYS, AMULET_OF_LIFE_SAVING, BATTLE_AXE, CORPSE, DAGGER, LEATHER_GLOVES, OBJECT_NAMES, SMALL_SHIELD, } from '../js/object_data.js';
+import { pickupAtHero } from '../js/pickup.js';
 import { setPrimaryWeapon, setSecondaryWeapon } from '../js/weapon_slots.js';
-import { addInventoryObject } from './support/game-objects.js';
+import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
+import { createStaffedShop } from './support/shop.js';
 function readinessRoom() {
     freshObjectRoom({ role: 'rogue' });
     const messages = [];
@@ -115,4 +117,20 @@ void test('wielding an uncursed aklys secures its tether', async () => {
     assert.equal(game.uwep, aklys);
     assert.match(messages.join('\n'), /You secure the tether\./);
 });
+for (const quantity of [1, 5]) {
+    void test(`wielding ${quantity} unpaid dagger${quantity === 1 ? '' : 's'} names the shopkeeper's goods with the right number`, async () => {
+        readinessRoom();
+        const { shopkeeper } = await createStaffedShop();
+        shopkeeper.eshk.shknam = 'Izchak';
+        const daggers = await floorObject(DAGGER, game.u.ux, game.u.uy, { quan: quantity });
+        await pickupAtHero();
+        assert.ok(daggers.unpaid, 'Picking up shop stock must leave it unpaid');
+        assert.ok(daggers.invlet, 'The shop goods need an inventory selection letter');
+        pushKeys(daggers.invlet);
+        await rhack('w'.charCodeAt(0));
+        assert.equal(game.uwep, daggers);
+        assert.equal(game.context.move, 1);
+        assert.equal(game._pending_message, `Izchak says "You be careful with my ${quantity === 1 ? 'dagger' : 'daggers'}!"`);
+    });
+}
 //# sourceMappingURL=wield_readiness.test.js.map

@@ -12,7 +12,7 @@ import { MONSTER_FLAGS1, requireMonsterData } from './monster_data.js';
 import { shopkeeperName } from './monster_name.js';
 import { AKLYS, BATTLE_AXE, CORPSE, OBJECT_BIMANUAL, OBJECT_SUBTYPE } from './object_data.js';
 import { makePlural } from './object_grammar.js';
-import { corpseName, killerObjectName, objectName, observeObjectForNaming } from './objnam.js';
+import { corpseName, killerObjectName, objectCombatName, observeObjectForNaming } from './objnam.js';
 import { insideShopRoomAt, shopResident } from './shk.js';
 import { statusConditionEnabled } from './status_conditions.js';
 import { heroResistsStoning, resolveImmediatePetrification, touchPetrifies } from './stoning.js';
@@ -81,7 +81,10 @@ async function readySelectedWeapon(weapon: GameObject | null, state: GameState):
     if (weapon.unpaid) {
         const shop = insideShopRoomAt(state, state.u.ux, state.u.uy);
         const keeper = shopResident(shop?.roomno, state);
-        if (keeper) await pline(`${shopkeeperName(keeper, { state })} says "You be careful with my ${objectName(weapon, state)}!"`);
+        if (keeper) {
+            const name = objectCombatName(weapon, { state, includeCorpseSpecies: false });
+            await pline(`${shopkeeperName(keeper, { state })} says "You be careful with my ${name}!"`);
+        }
     }
     return true;
 }
