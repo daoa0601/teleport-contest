@@ -254,30 +254,31 @@ void test('a monster that sees invisibility attacks the invisible displaced imag
 void test('an underwater miss describes reflections and preserves occupation', async () => {
     const level = freshObjectRoom({ flags: { verbose: true } });
     requirePlayingGame(game);
-    const bug = await createMonsterAt('grid bug', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
-    bug.mux = 12;
-    bug.muy = 10;
+    const elemental = await createMonsterAt('water elemental', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
+    elemental.mux = 12;
+    elemental.muy = 10;
     for (const x of [10, 11, 12]) level.requireAt(x, 10).typ = POOL;
     game.underwater = true;
     game.u.uinwater = true;
     vision_recalc(0);
     const occupation = await startSearching();
-    const messages = observeMessages(/grid bug/);
+    const messages = observeMessages(/water elemental/);
 
-    await performMonsterHeroAttack(bug, game);
+    await performMonsterHeroAttack(elemental, game);
 
-    assert.match(messages(), /The grid bug is fooled by water reflections and misses!/);
+    assert.match(messages(), /The water elemental is fooled by water reflections and misses!/);
     assert.equal(game._occupation, occupation);
 });
 
 for (const reason of ['invisibility', 'displacement', 'underwater']) {
-    void test(`a seductive ${reason} wild miss uses its own feedback without interrupting`, async () => {
+    void test(`a seducer's ${reason} wild miss uses its own feedback without interrupting`, async () => {
         const level = freshObjectRoom({ flags: { verbose: true, female: false } });
         requirePlayingGame(game);
-        const demon = await createMonsterAt('amorous demon', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
-        demon.female = true;
-        demon.mux = 12;
-        demon.muy = 10;
+        const seducer = await createMonsterAt(reason === 'underwater' ? 'water nymph' : 'amorous demon',
+            11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
+        seducer.female = true;
+        seducer.mux = 12;
+        seducer.muy = 10;
         if (reason === 'invisibility') grantIntrinsicProperty('invisible', 'outside');
         if (reason === 'displacement') game.u.displaced = true;
         if (reason === 'underwater') {
@@ -287,15 +288,15 @@ for (const reason of ['invisibility', 'displacement', 'underwater']) {
             vision_recalc(0);
         }
         const occupation = await startSearching();
-        const messages = observeMessages(/succubus/);
+        const messages = observeMessages(/succubus|water nymph/);
         const hp = game.u.uhp;
 
-        await performMonsterHeroAttack(demon, game);
+        await performMonsterHeroAttack(seducer, game);
 
         const text = messages();
         if (reason === 'invisibility') assert.match(text, /tries to touch you and misses!/);
         if (reason === 'displacement') assert.match(text, /smiles seductively at your displaced image\.\.\./);
-        if (reason === 'underwater') assert.match(text, /reaches towards your distorted image\./);
+        if (reason === 'underwater') assert.match(text, /The water nymph is fooled by water reflections and misses!/);
         assert.equal(game._occupation, occupation);
         assert.equal(game.u.uhp, hp, 'the wrong location suppresses the later claw attacks too');
     });
