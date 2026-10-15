@@ -40,6 +40,7 @@ export interface MonsterNameOptions {
 }
 
 interface NameFormatOptions extends Omit<MonsterNameOptions, 'state' | 'capitalized' | 'exact'> {
+    exact?: boolean;
     suppressName?: boolean;
     suppressShopkeeper?: boolean;
     suppressAppearance?: boolean;
@@ -134,7 +135,7 @@ export function monsterName(monster: Monster, {
         article, adjective, called, suppressIt: suppressIt || exact,
         suppressSaddle: suppressSaddle || exact, augmentIt,
         suppressInvisible: suppressInvisible || exact,
-        suppressHallucination: suppressHallucination || exact, suppressAppearance: exact,
+        suppressHallucination: suppressHallucination || exact, suppressAppearance: exact, exact,
     });
     return capitalized ? name.charAt(0).toUpperCase() + name.slice(1) : name;
 }
@@ -191,6 +192,7 @@ function formatMonsterName(monster: Monster, state: GameState, {
     suppressSaddle = !!MGIVENNAME(monster), suppressIt = false,
     suppressShopkeeper = false, augmentIt = false, suppressInvisible = false,
     suppressHallucination = false, suppressAppearance = false,
+    exact = false,
 }: NameFormatOptions = {}): string {
     const gameover = !!state.program_state?.gameover;
     const engulfing = state.u.uswallow && state.u.ustuck === monster;
@@ -209,7 +211,7 @@ function formatMonsterName(monster: Monster, state: GameState, {
     const invisible = !!monster.minvis && !engulfing && !suppressInvisible;
     const mimicking = !suppressAppearance && M_AP_TYPE(monster) === M_AP_MONSTER;
     if ((monster.ispriest || monster.isminion) && !mimicking) {
-        const name = priestName(monster, { article, hallucinating, invisible, state });
+        const name = priestName(monster, { article, hallucinating, invisible, state, exact });
         return article === 'none' ? name.replace(/^the /, '') : name;
     }
 
@@ -292,8 +294,8 @@ export function possessiveName(name: string): string {
 }
 
 // C priest.c:priestname().
-function priestName(monster: Monster, { article, hallucinating, invisible, state }: {
-    article: MonsterArticle; hallucinating: boolean; invisible: boolean; state: GameState;
+function priestName(monster: Monster, { article, hallucinating, invisible, state, exact }: {
+    article: MonsterArticle; hallucinating: boolean; invisible: boolean; state: GameState; exact: boolean;
 }): string {
     const aligned = monster.mnum === PM_ALIGNED_CLERIC;
     const high = monster.mnum === PM_HIGH_CLERIC;
@@ -326,7 +328,7 @@ function priestName(monster: Monster, { article, hallucinating, invisible, state
     }
     const nearby = Math.abs(monster.mx - state.u.ux) <= 1
         && Math.abs(monster.my - state.u.uy) <= 1;
-    if (hallucinating || !high || !Is_astralevel(state.u.uz)
+    if (exact || hallucinating || !high || !Is_astralevel(state.u.uz)
         || nearby || state.program_state?.gameover)
         name += ` of ${hallucinatedDeityName(priestAlignment(monster), state, hallucinating)}`;
     return prefix + name;

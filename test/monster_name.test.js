@@ -156,6 +156,11 @@ void test('a hallucinated Astral priest is a grand poohbah with a deity even at 
     const name = monsterName(priest);
     assert.match(name, /^(?:the )?grand poohbah of .+$/);
 });
+void test('an exact Astral priest name includes its deity even at a distance', async () => {
+    const priest = await createAstralPriest();
+    standOnEmptyFloor(priest, false);
+    assert.match(monsterName(priest, { exact: true }), / of Quetzalcoatl$/);
+});
 void test('Lua-assigned player-monster names remain visible after saving and restoring', async () => {
     freshSpecialLevel({ prototype: 'Wiz-goal', seed: 2501, depth: 11 });
     requirePlayingGame(game);
