@@ -2753,85 +2753,82 @@ async function dochat() {
         resetCommandVariables(true); // sounds.c:dochat() returns ECMD_CANCEL.
         return;
     }
-    if (!direction.dx && !direction.dy && !direction.dz) {
-        await pline('Talking to yourself is a bad habit for a dungeoneer.');
-        game.context.move = 0;
+    const steed = game.u.usteed;
+    if (steed && direction.dz > 0) {
+        if (steed.msleeping || !steed.mcanmove) {
+            await plineWithContinuation(`${monsterName(steed, { capitalized: true })} seems not to notice you.`);
+            game.context.move = 1;
+        } else {
+            game.context.move = Number(await publishMonsterNoise(steed, game));
+        }
         return;
     }
-    if (direction.dx || direction.dy) {
-        const x = game.u.ux + direction.dx;
-        const y = game.u.uy + direction.dy;
-        const monster = game.level?.monsters?.find(mon => monsterHasMapPosition(mon, game) && mon.mx === x && mon.my === y);
-        if (monster && !monster.ispriest && (monster.msleeping || !monster.mcanmove)) {
-            if (canSpotMonster(monster))
-                await plineWithContinuation(`${monsterName(monster, { capitalized: true })} seems not to notice you.`);
-            game.context.move = 0;
-            return;
-        }
-        // sounds.c:dochat() prods any responsive target into action before
-        // domonnoise()/quest_chat().  This clears both CLOSE and WAITFORU, so
-        // the quest leader can take its ordinary scheduler turn immediately
-        // after assigning the quest.
-        if (monster) monster.mstrategy = (monster.mstrategy ?? 0) & ~STRAT_WAITMASK;
-        if (monster?.isshk && heroIsDeaf(game)) {
-            const response = (MONSTER_FLAGS1[species] ?? 0) & M1_HUMANOID
-                ? 'falls on deaf ears' : 'is inaudible';
-            await plineWithContinuation(`Any response${canSpotMonster(monster) ? ` from ${monsterName(monster)}` : ''} ${response}.`);
-            game.context.move = 0;
-            return;
-        }
-        if (monster && await chatWithQuestLeader(monster, {
-            exerciseWisdom,
-        })) {
-            game.context.move = 1;
-            return;
-        }
-        if (monster?.mnum === PM_WATER_NYMPH) {
-            // sounds.c:domonnoise(MS_SEDUCE) returns ECMD_TIME, so ordinary
-            // monster movement follows this line.
-            await pline('The water nymph cajoles you.');
-            game.context.move = 1;
-            return;
-        }
-        if (monster?.pet && monster.meating) {
-            await pline(`${monsterName(monster, { capitalized: true })} is eating noisily.`);
-        } else if (monster && await publishMonsterNoise(monster, game)) {
-            game.context.move = 1;
-            return;
-        } else if (monster?.name) await pline(`${monster.name} does not seem to notice you.`);
-        else if (!monster) {
-            const statue = (game.level?.objects?.[x]?.[y] || [])
-                .find(object => object.otyp === STATUE);
-            const loc = game.level?.at(x, y);
-            const deaf = !!(game.deaf || game.u?.deaf);
-            const hallucinating = heroIsHallucinating();
-            if (statue && !game.blind) {
-                await pline('The statue seems not to notice you.');
-            } else if (!deaf && loc && (IS_WALL(loc.typ) || loc.typ === SDOOR)
-                && (!game.blind || !!loc?.seenv)) {
-                if (!hallucinating) {
-                    await pline("It's like talking to a wall.");
-                } else {
-                    const wallTalk = [
-                        'gripes about its job.',
-                        'tells you a funny joke!',
-                        'insults your heritage!',
-                        'chuckles.',
-                        'guffaws merrily!',
-                        'deprecates your exploration efforts.',
-                        'suggests a stint of rehab...',
-                        "doesn't seem to be interested.",
-                    ];
-                    await pline(`The wall ${wallTalk[
-                        Math.min(rn2(10), wallTalk.length - 1)
-                    ]}`);
-                }
-            } else {
-                game._pending_message = '';
-            }
-        } else game._pending_message = '';
-    }
     game.context.move = 0;
+    if (direction.dz) {
+        await plineWithContinuation(`They won't hear you ${direction.dz < 0 ? 'up' : 'down'} there.`);
+        return;
+    }
+    if (!direction.dx && !direction.dy) {
+        await plineWithContinuation('Talking to yourself is a bad habit for a dungeoneer.');
+        return;
+    }
+    const x = game.u.ux + direction.dx;
+    const y = game.u.uy + direction.dy;
+    if (!isok(x, y)) return;
+    const monster = game.level?.monsters.find(mon =>
+        monsterHasMapPosition(mon, game) && mon.mx === x && mon.my === y);
+    if (!monster || monster.mundetected) {
+        const topObject = game.level?.objects[x]?.[y]?.[0];
+        const loc = game.level?.at(x, y);
+        if (topObject?.otyp === STATUE) {
+            if (!heroIsBlind(game))
+                await plineWithContinuation(`The ${heroIsHallucinating(game) ? randomDisplayMonsterName() : 'statue'} seems not to notice you.`);
+        } else if (!heroIsDeaf(game) && loc && (IS_WALL(loc.typ) || loc.typ === SDOOR)
+            && (!heroIsBlind(game) || IS_WALL(loc.lastseentyp))) {
+            if (!heroIsHallucinating(game)) {
+                await plineWithContinuation("It's like talking to a wall.");
+            } else {
+                const wallTalk = [
+                    'gripes about its job.', 'tells you a funny joke!',
+                    'insults your heritage!', 'chuckles.', 'guffaws merrily!',
+                    'deprecates your exploration efforts.', 'suggests a stint of rehab...',
+                    "doesn't seem to be interested.",
+                ];
+                await plineWithContinuation(`The wall ${wallTalk[Math.min(rn2(10), wallTalk.length - 1)]}`);
+            }
+        }
+        return;
+    }
+    if (M_AP_TYPE(monster) === M_AP_FURNITURE || M_AP_TYPE(monster) === M_AP_OBJECT)
+        return;
+    if (!monster.ispriest && (monster.msleeping || !monster.mcanmove)) {
+        if (canSpotMonster(monster))
+            await plineWithContinuation(`${monsterName(monster, { capitalized: true })} seems not to notice you.`);
+        return;
+    }
+    monster.mstrategy = (monster.mstrategy ?? 0) & ~STRAT_WAITMASK;
+    if (!heroIsDeaf(game) && monster.mtame && monster.meating) {
+        if (!canSpotMonster(monster)) map_invisible(x, y);
+        await plineWithContinuation(`${monsterName(monster, { capitalized: true })} is eating noisily.`);
+        return;
+    }
+    if (heroIsDeaf(game)) {
+        const response = (MONSTER_FLAGS1[species] ?? 0) & M1_HUMANOID
+            ? 'falls on deaf ears' : 'is inaudible';
+        // Native calls canspotmon() for each fragment but names the target once.
+        await plineWithContinuation(`Any response${canSpotMonster(monster) ? ` from ${monsterName(monster)}` : ''} ${response}.`);
+        return;
+    }
+    if (await chatWithQuestLeader(monster, { exerciseWisdom })) {
+        game.context.move = 1;
+        return;
+    }
+    if (monster.mnum === PM_WATER_NYMPH) {
+        await plineWithContinuation('The water nymph cajoles you.');
+        game.context.move = 1;
+        return;
+    }
+    game.context.move = Number(await publishMonsterNoise(monster, game));
 }
 
 async function wizWish() {
