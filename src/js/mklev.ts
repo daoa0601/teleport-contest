@@ -3579,7 +3579,7 @@ export function randomEngraving(): { pristine: string; text: string } {
     };
 }
 
-const BONES_VERSION = 12;
+const BONES_VERSION = 13;
 
 function bonesStorageKey(level: DungeonLocation | undefined = game.u.uz): string {
     return `teleport-bones:${level?.dnum ?? 0}:${level?.dlevel ?? 1}`;
@@ -4830,7 +4830,7 @@ async function fillCourtRoom(room: Room): Promise<void> {
 
     const entrance = room.doorct
         ? level.doors[room.fdoor] : null;
-    const roomNumber = level.rooms.indexOf(room) + ROOMOFFSET;
+    const roomNumber = room.roomnoidx + ROOMOFFSET;
     for (let x = room.lx; x <= room.hx; x++) {
         for (let y = room.ly; y <= room.hy; y++) {
             const loc = level.at(x, y);
@@ -8836,7 +8836,7 @@ function barracksMonsterType(): number | null {
 async function fillBarracksRoom(room: Room): Promise<void> {
     const level = requireGameLevel();
     const entrance = room.doorct ? level.doors?.[room.fdoor] : null;
-    const roomNumber = level.rooms.indexOf(room) + ROOMOFFSET;
+    const roomNumber = room.roomnoidx + ROOMOFFSET;
     for (let x = room.lx; x <= room.hx; x++) {
         for (let y = room.ly; y <= room.hy; y++) {
             const loc = level.at(x, y);
@@ -9491,7 +9491,7 @@ function add_subroom(
         doorct: 0, fdoor: level.doorindex,
         irregular: false, needjoining: !special,
         nsubrooms: 0, sbrooms: [],
-        roomnoidx: MAXNROFROOMS + subroomIndex,
+        roomnoidx: MAXNROFROOMS + 1 + subroomIndex,
         needfill: 0,
     };
     do_room_or_subroom(
