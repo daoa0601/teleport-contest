@@ -130,7 +130,7 @@ export async function fallWithIronBall(state: GameState = game): Promise<boolean
     await releaseCarriedBall(state, true);
     if (!hits) return false;
 
-    let damage = rn2(7) + 25;
+    let damage = rn1(7, 25);
     await plineWithContinuation(`The iron ball falls on your ${heroHeadName(state)}.`);
     const helmet = state.uarmh || state.u.uarmh;
     if (helmet) {
@@ -139,7 +139,7 @@ export async function fallWithIronBall(state: GameState = game): Promise<boolean
             damage = 3;
         } else if (state.flags.verbose !== false) {
             await plineWithContinuation(
-                `Your ${helmet.name || OBJECT_NAMES[helmet.otyp]} does not protect you.`,
+                `${ownedObjectName(helmet, state)} does not protect you.`,
             );
         }
     }

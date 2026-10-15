@@ -91,7 +91,7 @@ export async function fallWithIronBall(state = game) {
     await releaseCarriedBall(state, true);
     if (!hits)
         return false;
-    let damage = rn2(7) + 25;
+    let damage = rn1(7, 25);
     await plineWithContinuation(`The iron ball falls on your ${heroHeadName(state)}.`);
     const helmet = state.uarmh || state.u.uarmh;
     if (helmet) {
@@ -100,7 +100,7 @@ export async function fallWithIronBall(state = game) {
             damage = 3;
         }
         else if (state.flags.verbose !== false) {
-            await plineWithContinuation(`Your ${helmet.name || OBJECT_NAMES[helmet.otyp]} does not protect you.`);
+            await plineWithContinuation(`${ownedObjectName(helmet, state)} does not protect you.`);
         }
     }
     return ballDamage(damage, 'crunched in the head by an iron ball', state, NO_KILLER_PREFIX);
