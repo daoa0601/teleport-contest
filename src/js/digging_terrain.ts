@@ -82,8 +82,8 @@ import { finishMonsterLiquidDeath } from './monster_death.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { loseHeroHp } from './hero_damage.js';
 import {
-    canDigDown, deleteFloorTrap, maketrap,
-    makemonAt, mkclassAligned, mksobj, set_corpsenm,
+    canDigDown, createToptenObject, deleteFloorTrap, maketrap,
+    makemonAt, mkclassAligned,
 } from './mklev.js';
 import {
     buriedBallToPunishment, unearthFloorObjectsAt,
@@ -111,7 +111,7 @@ import { cansee } from './vision.js';
 import { CLR_BLUE } from './terminal.js';
 import { isAxe } from './weapon_type.js';
 import {
-    placeCreatedObject, placeObject, stack_object, updateIceObjectTimersAt,
+    updateIceObjectTimersAt,
 } from './floor_object.js';
 import { deleteEngravingAt } from './engrave.js';
 import { isLavaAt, isPoolAt, monsterInAir } from './terrain_properties.js';
@@ -122,8 +122,6 @@ const EXPL_ROWS = [['/', '-', '\\'], ['|', ' ', '|'], ['\\', '-', '/']];
 const SHIELD_ROWS = ['0', '#', '@', '#', '0', '#', '*'];
 const MZ_HUGE = 4;
 const M1_FLY = 0x00000001;
-const PM_ARCHEOLOGIST = MONSTER_NAME.indexOf('archeologist');
-const PM_WIZARD = MONSTER_NAME.indexOf('wizard');
 
 function trapAt(x: number, y: number, state: GameState): Trap | null {
     return (state.level?.traps || []).find(
@@ -744,14 +742,8 @@ export async function digUpGrave(
     const whatHappens = location.emptygrave ? -1 : rn2(5);
     if (whatHappens === 0 || whatHappens === 1) {
         await plineWithContinuation('You unearth a corpse.');
-        const corpse = await mksobj(CORPSE, true, false);
-        // mk_tt_object() names the corpse after a scoreboard player; without
-        // one it forces a random player species.
-        set_corpsenm(corpse,
-            PM_ARCHEOLOGIST + rn2(PM_WIZARD - PM_ARCHEOLOGIST + 1));
-        placeCreatedObject(corpse, digX, digY, state);
+        const corpse = await createToptenObject(CORPSE, digX, digY);
         corpse.age -= 51; /* TAINT_AGE + 1: this is an *OLD* corpse */
-        await stack_object(corpse, state);
     } else if (whatHappens === 2) {
         if (!blind) {
             await plineWithContinuation(hallucinating
