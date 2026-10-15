@@ -49,7 +49,7 @@ import { restoreHeroNutrition } from './hunger.js';
 import {
     A_CON, A_WIS, ACH_BLND, ACH_NUDE, ACH_UWIN, ASCENDED, BURNING, CHOKING, DIED, ESCAPED, G_EXTINCT, G_GENOD, GENOCIDED,
     PANICKED, QUIT, STARVING, STONING, TRICKED,
-    In_endgame, In_quest, Is_astralevel, KILLED_BY, KILLED_BY_AN, NO_KILLER_PREFIX, PICK_ONE, TT_LAVA, Upolyd,
+    In_endgame, In_quest, Is_astralevel, Is_knox_level, KILLED_BY, KILLED_BY_AN, NO_KILLER_PREFIX, PICK_ONE, TT_LAVA, Upolyd,
 } from './const.js';
 import {
     AMULET_OF_LIFE_SAVING, BELL_OF_OPENING, FAKE_AMULET_OF_YENDOR,
@@ -691,7 +691,7 @@ function finalLocationLine(verb: string, score: number): string {
         const where = Is_astralevel(here) ? 'The Astral Plane'
             : game._tutorialActive ? 'The Tutorial' : currentDungeonName();
         text = `You ${verb} in ${where}`;
-        if (!In_endgame(here) && game.dungeons[here?.dnum ?? 0]?.num_dunlevs !== 1)
+        if (!In_endgame(here) && !Is_knox_level(here))
             text += ` on dungeon level ${In_quest(here) ? here?.dlevel : depth(here)}`;
     }
     return `${text} with ${score} point${plur(score)},`;

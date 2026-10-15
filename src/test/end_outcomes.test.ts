@@ -52,14 +52,26 @@ void test('death on the Astral Plane omits a dungeon level number', async () => 
     assert.doesNotMatch(summary, /on dungeon level/);
 });
 
-void test('quitting a single-level branch omits the dungeon level suffix', async () => {
+void test('quitting Fort Ludios omits the dungeon level suffix', async () => {
     const screens = endingRoom();
     game.dungeons = [createDungeon({ dname: 'Fort Ludios', num_dunlevs: 1 })];
     game.u.uz = { dnum: 0, dlevel: 1 };
+    game.knox_level = createSpecialLevel({ dnum: 0, dlevel: 1 });
 
     await doquit();
 
     const summary = screens.find(screen => screen.includes('You were level')) ?? '';
     assert.match(summary, /You quit in Fort Ludios with/);
     assert.doesNotMatch(summary, /on dungeon level/);
+});
+
+void test('a one-level dungeon still shows its depth when it is not Fort Ludios', async () => {
+    const screens = endingRoom();
+    game.dungeons = [createDungeon({ dname: 'The Tutorial', num_dunlevs: 1 })];
+    game.u.uz = { dnum: 0, dlevel: 1 };
+
+    await doquit();
+
+    const summary = screens.find(screen => screen.includes('You were level')) ?? '';
+    assert.match(summary, /You quit in The Tutorial on dungeon level 1 with/);
 });
