@@ -3,10 +3,11 @@
 // lookup and maps spentTurn to context.move.
 
 import {
-    I_SPECIAL, IS_POOL, Is_airlevel, Is_waterlevel, TT_INFLOOR, TT_LAVA,
+    I_SPECIAL, Is_airlevel, Is_waterlevel, TT_INFLOOR, TT_LAVA,
     TIMEOUT, W_ARTI,
 } from './const.js';
-import { game, requireGameLevel, requireLiveGame } from './gstate.js';
+import { game, requireLiveGame } from './gstate.js';
+import { isPoolAt } from './terrain_properties.js';
 import type { GameState } from './game_state.js';
 import type { Stairway } from './map_types.js';
 import type { MessagePublisher } from './display.js';
@@ -120,7 +121,7 @@ export async function descendFromLevitation(
             surfaceName(state.u.ux, state.u.uy, state)}.`);
     } else if (Is_waterlevel(state.u.uz)) {
         await publish(`You are floating in ${
-            IS_POOL(requireGameLevel(state).requireAt(state.u.ux, state.u.uy).typ)
+            isPoolAt(state.u.ux, state.u.uy, state)
                 ? 'the water' : 'a bubble of air'}.`);
     } else {
         await floatingAbove(stairsDown ? 'stairs'
