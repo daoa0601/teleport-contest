@@ -4,7 +4,7 @@
 import { heroIsHallucinating } from './senses.js';
 import { Upolyd } from './const.js';
 import {
-    canSpotMonster, plineWithContinuation, randomDisplayMonsterSubject, shieldeff,
+    canSpotMonster, displayLiquidName, plineWithContinuation, randomDisplayMonsterSubject, shieldeff,
 } from './display.js';
 import { game, requirePlayingGame } from './gstate.js';
 import type { GameState, PlayingGameState } from './game_state.js';
@@ -80,7 +80,7 @@ export async function applyHeroFormPassive(monster: Monster, oldForm: number, at
 
     if (type === AD_ACID) {
         if (random(2) === 0) {
-            await publish(`${subject(monster)} is splashed by ${Upolyd(state.u) ? 'your ' : ''}acid!`);
+            await publish(`${subject(monster)} is splashed by ${Upolyd(state.u) ? 'your ' : ''}${displayLiquidName('acid', state)}!`);
             if (monsterHasAcidResistance(monster)) {
                 await publish(`${subject(monster)} is not affected.`);
                 damage = 0;

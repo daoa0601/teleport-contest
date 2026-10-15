@@ -252,6 +252,8 @@ import {
     AD_DCAY,
     AD_DGST,
     AD_DREN,
+    AD_DETH,
+    AD_CONF,
     AD_DRLI,
     AD_ELEC,
     AD_ENCH,
@@ -298,14 +300,11 @@ import {
     AT_EXPL,
 } from './monster_attack_types.js';
 import {
-    AMULET_OF_YENDOR,
     APPLE,
     BANANA,
-    BELL_OF_OPENING,
     BULLWHIP,
     BOULDER,
     CARROT,
-    CANDELABRUM_OF_INVOCATION,
     CLOVE_OF_GARLIC,
     CORPSE,
     DWARVISH_MATTOCK,
@@ -334,7 +333,6 @@ import {
     POT_HEALING,
     POT_INVISIBILITY,
     SLIME_MOLD,
-    SPE_BOOK_OF_THE_DEAD,
     TIN,
     TRIPE_RATION,
     WAN_SPEED_MONSTER,
@@ -456,7 +454,9 @@ import { MONSTER_SOUND } from './monster_data.js';
 import { MONSTER_DIFFICULTY } from './monster_data.js';
 import { depth } from './hacklib.js';
 import { objectMaterial } from './object_material.js';
-import { monsterHatesSilver } from './monster_data.js';
+import { artifactById } from './artifacts.js';
+import { resolveMonsterWeaponContact } from './monster_weapon_contact.js';
+import { monsterHatesBlessings, monsterHatesSilver } from './monster_data.js';
 import { canHeroRiseUp, levelAtDepth } from './dungeon.js';
 import { LEVEL_TELEP } from './const.js';
 import { teleportMonsterThroughPortal, teleportMonsterToRandomLevel } from './teleport.js';
@@ -1851,6 +1851,7 @@ function monsterAttackThreshold(
 // hit: once attack effects and knockback finish, it reduces positive damage
 // by rnd(-uac), with a floor of one.  This is not the AC_VALUE to-hit draw.
 function reduceHeroContactDamage(
+    monster: Monster,
     damage: number,
     state: PlayingGameState,
     rollOne: RollOne,
@@ -1865,7 +1866,10 @@ function reduceHeroContactDamage(
     }
     // mhitu.c:hitmu() applies Half_physical_damage only after negative-AC
     // reduction and rounds odd positive damage upward.
-    if (appliedDamage > 0 && state?.u?.halfPhysicalDamage) {
+    const mitreProtects = state.urole.key === 'priest'
+        && artifactById(state.uarmh?.oartifact, state)?.questArtifact
+        && monsterHatesBlessings(monster);
+    if (appliedDamage > 0 && (state.u.halfPhysicalDamage || mitreProtects)) {
         appliedDamage = Math.trunc((appliedDamage + 1) / 2);
     }
     return appliedDamage;
@@ -3927,6 +3931,15 @@ export async function beginMonsterHeroAttack(
     state.notonhead = false;
     if (dist2(monster.mx, monster.my, state.u.ux, state.u.uy) <= 3)
         endVoluntaryMultiTurn(state);
+    if (monster.dead || monster.mhp <= 0) return { heroAttackResult: 1 };
+    if ((state.underwater || state.u.uinwater)
+        && !((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_SWIM)) return {};
+    if (state.u.uswallow) {
+        if (state.u.ustuck !== monster) return {};
+        monster.mux = state.u.ux;
+        monster.muy = state.u.uy;
+        if (state.u.invulnerable) return {};
+    }
     if (monster === state.u.usteed) return {};
     if (!state.u.uswallow && state.u.usteed) {
         const steed = state.u.usteed;
@@ -5626,6 +5639,8 @@ async function beginHeroAttackSlot(
                 deferredPostHit: true,
             };
         }
+        damage = await resolveMonsterWeaponContact(monster, contactWeapon, damage, state,
+            plineWithContinuation, rollOne);
         await erodeAttackingWeapon(state.u, contactWeapon, { state, random });
         if (poison) {
             const effect = await poisonHeroFromMonster(monster, attackType, {
@@ -5655,7 +5670,7 @@ async function beginHeroAttackSlot(
         );
         if (knockback.defenderDied)
             return { kind: 'hero-attack', hit, damage: 0, heroDied: true, attackType, damageType };
-        damage = reduceHeroContactDamage(damage, state, rollOne, calls);
+        damage = reduceHeroContactDamage(monster, damage, state, rollOne, calls);
         const passive = await finishHeroContactDamage(
             monster,
             damage,
@@ -5699,7 +5714,7 @@ async function beginHeroAttackSlot(
         );
         if (knockback.defenderDied)
             return { kind: 'hero-attack', hit, damage: 0, heroDied: true, attackType, damageType };
-        damage = reduceHeroContactDamage(damage, state, rollOne, calls);
+        damage = reduceHeroContactDamage(monster, damage, state, rollOne, calls);
         const passive = await finishHeroContactDamage(
             monster,
             damage,
@@ -5771,7 +5786,7 @@ async function beginHeroAttackSlot(
         );
         if (knockback.defenderDied)
             return { kind: 'hero-attack', hit, damage: 0, heroDied: true, attackType, damageType };
-        damage = reduceHeroContactDamage(damage, state, rollOne, calls);
+        damage = reduceHeroContactDamage(monster, damage, state, rollOne, calls);
         const passive = await finishHeroContactDamage(
             monster,
             damage,
@@ -5795,28 +5810,13 @@ async function beginHeroAttackSlot(
             passive,
             heroDied: !!passive.heroDied,
         };
-    } else if (hit && damageType === AD_SAMU && dice > 0 && sides > 0) {
-        // uhitm.c:mhitm_ad_samu() retains ordinary claw damage.  After
-        // hitmsg(), it always spends the one-in-twenty theft gate; a hero
-        // without quest/invocation objects simply has nothing to steal.
-        return {
-            kind: 'hero-attack',
-            roll,
-            threshold,
-            hit,
-            damage,
-            attackType,
-            damageType,
-            effect: 'amulet-theft-natural',
-            deferredAmuletTheftGate: true,
-            deferredPostHit: true,
-            oldFormMnum,
-        };
     } else if (hit && (damageType === AD_WERE || damageType === AD_SLEE
         || damageType === AD_POLY || damageType === AD_TLPT || damageType === AD_PLYS
         || damageType === AD_WRAP || damageType === AD_DRIN || damageType === AD_CURS
         || damageType === AD_HEAL || damageType === AD_ACID || damageType === AD_SLOW
-        || damageType === AD_SGLD || damageType === AD_SSEX)) {
+        || damageType === AD_SGLD || damageType === AD_SSEX || damageType === AD_DISE
+        || damageType === AD_CONF || damageType === AD_PEST || damageType === AD_FAMN
+        || damageType === AD_DETH || damageType === AD_SAMU)) {
         const negated = damageType === AD_SLOW
             ? specialAttackNegated(monster, state.u, { state, random })
             : damageType === AD_POLY
@@ -5827,6 +5827,9 @@ async function beginHeroAttackSlot(
             ...(damageType === AD_WRAP ? { effect: 'wrapping-natural' } : {}),
             ...(damageType === AD_HEAL ? { effect: `nurse-${nurseContactMode(monster, state)}` } : {}),
             ...(damageType === AD_SSEX ? { effect: 'seduction-contact' } : {}),
+            ...(damageType === AD_PEST ? { effect: 'pestilence-contact' } : {}),
+            ...(damageType === AD_FAMN ? { effect: 'famine-contact' } : {}),
+            ...(damageType === AD_DETH ? { effect: 'death-contact' } : {}),
         };
     } else if (hit && damageType === AD_STCK) {
         const armorProtection = magicNegation(state.u, state);
@@ -6180,7 +6183,7 @@ async function beginHeroAttackSlot(
         );
         if (knockback.defenderDied)
             return { kind: 'hero-attack', hit, damage: 0, heroDied: true, attackType, damageType };
-        damage = reduceHeroContactDamage(damage, state, rollOne, calls);
+        damage = reduceHeroContactDamage(monster, damage, state, rollOne, calls);
         const passive = await finishHeroContactDamage(
             monster,
             damage,
@@ -6527,29 +6530,6 @@ export async function resumeDeferredHeroContact(
             return action;
         }
     }
-    if (attack.deferredAmuletTheftGate) {
-        const stealGate = recordRandom(random, calls, 20);
-        attack.deferredAmuletTheftGate = false;
-        const theftTarget = (state.inventory || []).find(
-            (object) =>
-                object?.questArtifact ||
-                [
-                    AMULET_OF_YENDOR,
-                    BELL_OF_OPENING,
-                    SPE_BOOK_OF_THE_DEAD,
-                    CANDELABRUM_OF_INVOCATION,
-                ].includes(object?.otyp),
-        );
-        if (stealGate === 0 && theftTarget) {
-            // Actual worn-item removal, theft, and relocation remain a named
-            // continuation.  A successful gate with no special target is a
-            // source no-op and must continue into knockback/passive handling.
-            attack.deferredAmuletTheft = true;
-            attack.amuletTheftTarget = theftTarget;
-            return action;
-        }
-    }
-    if (attack.deferredAmuletTheft) return action;
     if (attack.deferredColdInventory) {
         const destructionGate = recordRandom(random, calls, 20);
         const attackerLevel = action.monster?.m_lev ?? MONSTER_LEVEL[action.monster?.mnum] ?? 0;
@@ -6604,7 +6584,22 @@ export async function resumeDeferredHeroContact(
         attack.deferredPostHit = false;
         return action;
     }
-    attack.appliedDamage = reduceHeroContactDamage(attack.damage ?? 0, state, rollOne, calls);
+    attack.appliedDamage = reduceHeroContactDamage(action.monster, attack.damage ?? 0, state, rollOne, calls);
+    if (attack.permanentDamage && attack.appliedDamage > 0) {
+        const damage = attack.appliedDamage;
+        let drain = recordRandom(random, calls, Math.trunc(damage / 2) + 1);
+        const hero = state.u;
+        const polymorphed = Upolyd(hero);
+        if (polymorphed || hero.uhpmax > 25 * hero.ulevel) drain = damage;
+        else if (hero.uhpmax > 10 * hero.ulevel) drain += Math.trunc(damage / 2);
+        else if (hero.uhpmax > 5 * hero.ulevel) drain += Math.trunc(damage / 4);
+        const maximum = polymorphed ? 'mhmax' : 'uhpmax';
+        const lowerLimit = polymorphed
+            ? Math.min(MONSTER_LEVEL[hero.umonnum] ?? 0, hero.ulevel) : Math.max(hero.ulevel, 1);
+        if (hero[maximum] > lowerLimit)
+            hero[maximum] = Math.max(lowerLimit, hero[maximum] - drain);
+        state.context.botl = true;
+    }
     attack.passive = await finishHeroContactDamage(
         action.monster,
         attack.appliedDamage,

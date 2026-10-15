@@ -2,7 +2,7 @@
 // C mhitu.c:passiveum() and assess_dmg().
 import { heroIsHallucinating } from './senses.js';
 import { Upolyd } from './const.js';
-import { canSpotMonster, plineWithContinuation, randomDisplayMonsterSubject, shieldeff, } from './display.js';
+import { canSpotMonster, displayLiquidName, plineWithContinuation, randomDisplayMonsterSubject, shieldeff, } from './display.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
@@ -37,7 +37,7 @@ export async function applyHeroFormPassive(monster, oldForm, attackType, { state
     const weapon = monsterWieldedWeapon(monster);
     if (type === AD_ACID) {
         if (random(2) === 0) {
-            await publish(`${subject(monster)} is splashed by ${Upolyd(state.u) ? 'your ' : ''}acid!`);
+            await publish(`${subject(monster)} is splashed by ${Upolyd(state.u) ? 'your ' : ''}${displayLiquidName('acid', state)}!`);
             if (monsterHasAcidResistance(monster)) {
                 await publish(`${subject(monster)} is not affected.`);
                 damage = 0;

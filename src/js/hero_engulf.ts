@@ -2,7 +2,7 @@
 // C mhitm.c:engulf_target() and mhitu.c:gulpmu().
 import {
     A_CON, A_STR, DISMOUNT_ENGULFED, DOOR, D_CLOSED, D_LOCKED, IRONBARS,
-    IS_OBSTRUCTED, IS_TREE, SICK_NONVOMITABLE, TT_WEB, is_pit,
+    IS_OBSTRUCTED, IS_TREE, TT_WEB, is_pit,
 } from './const.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import type { GameState, PlayingGameState } from './game_state.js';
@@ -19,7 +19,7 @@ import {
 } from './monster_attack_types.js';
 import {
     MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SIZE,
-    monsterDigests, monsterEnfolds, monsterIsAmorphous, monsterIsAnimal, monsterIsWhirly, monsterTypeName,
+    monsterDigests, monsterEnfolds, monsterIsAmorphous, monsterIsAnimal, monsterIsWhirly,
 } from './monster_data.js';
 import {
     BOULDER, BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, LEASH,
@@ -33,7 +33,7 @@ import { burnAwayHeroSlime } from './hack.js';
 import { damageHeroFromMonster } from './hero_damage.js';
 import { drainHeroEnergy } from './hero_energy.js';
 import { expelHero } from './hero_expulsion.js';
-import { startHeroSickness } from './hero_illness.js';
+import { infectHeroWithMonsterDisease } from './monster_disease.js';
 import { applyHeroGolemEffects } from './polyself.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { endObjectBurn } from './light.js';
@@ -275,18 +275,7 @@ export async function resolveHeroEngulf(monster: Monster, damageType: number, da
         }
         break;
     case AD_DISE:
-        if (hero.sicknessResistance) {
-            await publish('You feel a slight illness.');
-            damage = 0;
-        } else {
-            const turns = hero.sickTurns
-                ? Math.trunc(hero.sickTurns / 3) + 1
-                : random(currentAttribute(A_CON, state)) + 20;
-            await startHeroSickness({
-                state, turns, cause: monsterTypeName(monster.mnum),
-                type: SICK_NONVOMITABLE, publish,
-            });
-        }
+        if (!await infectHeroWithMonsterDisease(monster, state, publish, random)) damage = 0;
         break;
     case AD_DREN:
         if (!monster.mcan && random(4)) {
