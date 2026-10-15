@@ -5,8 +5,10 @@ import { AIR, COLNO, NO_MINVENT, ROWNO, WATER } from '../js/const.js';
 import { moveElementalBubbles } from '../js/elemental.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { generateWaterLevel } from '../js/mklev.js';
+import { CRYSKNIFE, WORM_TOOTH } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { restoreGame, saveGame } from '../js/save.js';
+import { floorObject } from './support/game-objects.js';
 import { installSwallowedHero } from './support/hero-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshSpecialLevel } from './support/special-level.js';
@@ -40,6 +42,27 @@ async function waterPlane() {
     game.u.uy = 10;
     return bubble;
 }
+
+void test('a water bubble transports a floor crysknife and can revert it to a worm tooth', async () => {
+    const bubble = await waterPlane();
+    requirePlayingGame(game);
+    initRng(2n);
+    const knife = await floorObject(CRYSKNIFE, 20, 10, {
+        initialize: false, oerodeproof: true,
+    });
+    assert.equal(knife.otyp, CRYSKNIFE, 'the fixed knife survives its initial floor placement');
+    initRng(1n);
+
+    await moveElementalBubbles();
+
+    assert.equal(knife.otyp, WORM_TOOTH, 'bubble placement applies the fixed knife reversion chance');
+    assert.equal(knife.oerodeproof, false);
+    assert.equal(knife.where, 'floor');
+    assert.equal(knife.ox, bubble.x);
+    assert.equal(knife.oy, bubble.y);
+    assert.ok(game.level.objects[bubble.x]?.[bubble.y]?.includes(knife));
+    assert.ok(!game.level.objects[20]?.[10]?.includes(knife), 'the old floor pile no longer owns the knife');
+});
 
 void test('a water bubble carries a mounted hero and exposes their hiding place', async () => {
     const bubble = await waterPlane();

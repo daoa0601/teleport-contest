@@ -14,7 +14,7 @@ import {
 import { rn2 } from './rng.js';
 import { CLR_BRIGHT_BLUE, CLR_CYAN, CLR_GRAY } from './terminal.js';
 import { newsym } from './display.js';
-import { placeObjectSynchronously, remove_object, stack_object } from './floor_object.js';
+import { placeObject, remove_object, stack_object } from './floor_object.js';
 import { placeHeroOnLevel } from './hero_location.js';
 import { clearMonsterWormFromMap } from './monster_worm.js';
 import { mnearto } from './shop_damage.js';
@@ -88,7 +88,7 @@ async function restoreBubbleContents(bubble: ElementalBubble, dx: number, dy: nu
         const x = content.x + dx, y = content.y + dy;
         if (content.kind === 'objects') {
             for (const object of content.items) {
-                placeObjectSynchronously(object, x, y);
+                await placeObject(object, x, y);
                 await stack_object(object);
             }
         } else if (content.kind === 'monster') {
