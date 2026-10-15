@@ -38,7 +38,8 @@ import type {
     RandomBelow, RollDice, RollOne,
 } from './monster_action_types.js';
 import { clearImmediateZapBypasses } from './immediate_zap.js';
-import { MON_FLOOR, PICK_ONE, PLNMSG_MON_TAKES_OFF_ITEM } from './const.js';
+import { In_endgame, MON_FLOOR, PICK_ONE, PLNMSG_MON_TAKES_OFF_ITEM } from './const.js';
+import { mapVicinity } from './magic_mapping.js';
 import { showInventoryWindow } from './windows.js';
 import type { InventoryMenuItem } from './windows.js';
 import { endVoluntaryMultiTurn, heroHasInvoluntaryDelay } from './command_state.js';
@@ -679,20 +680,23 @@ function interruptCountedActivity(message: string): void {
 // loop has allocated as many global turns as the hero needs.  Burden can make
 // one action span two allocations; seer_turn is checked only after the last
 // one, against the final `moves` value.
-function finishHeroTookTimeRng(sourceTurn: number): void {
+async function finishHeroTookTime(sourceTurn: number): Promise<void> {
     const game = requireInitializedGame();
     if (sourceTurn >= (game.seer_turn ?? Infinity)) {
+        if ((game.u.uhave.amulet || propertyIsActive('clairvoyant', game))
+            && !In_endgame(game.u.uz) && !propertyIsBlocked('clairvoyant', game))
+            await mapVicinity(null, { state: game });
         game.seer_turn = sourceTurn + 15 + rn2(31);
     }
 }
 
-function finishOrDeferHeroTookTimeRng(sourceTurn: number): void {
+async function finishOrDeferHeroTookTime(sourceTurn: number): Promise<void> {
     const game = requireInitializedGame();
     if (game._vaultMaintenanceContinuation) {
         game._vaultHeroTookTimePending = sourceTurn;
         return;
     }
-    finishHeroTookTimeRng(sourceTurn);
+    await finishHeroTookTime(sourceTurn);
 }
 
 async function finishInitialTurnMaintenanceAfterIntervention(
@@ -3704,7 +3708,7 @@ export async function moveloop_core() {
         // C moveloop_core() checks again after nh_timeout() can remove weight.
         await reportHeroEncumbrance(g);
         if (!g.program_state?.gameover)
-            finishOrDeferHeroTookTimeRng(g.moves || 1);
+            await finishOrDeferHeroTookTime(g.moves || 1);
     }
 
     if (movementRationActionPending && !g.program_state?.gameover) {
@@ -3802,7 +3806,7 @@ export async function moveloop_core() {
             await finishInitialTurnMaintenanceRng(continuation.sourceTurn);
             g._vaultMaintenanceContinuation = null;
             if (g._vaultHeroTookTimePending != null) {
-                finishHeroTookTimeRng(g._vaultHeroTookTimePending);
+                await finishHeroTookTime(g._vaultHeroTookTimePending);
                 g._vaultHeroTookTimePending = null;
             }
         }
