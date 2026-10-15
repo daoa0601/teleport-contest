@@ -2,6 +2,10 @@
 // C refs: end.c disclose()/really_done(), insight.c, dungeon.c.
 
 import { formatFeltMessage } from './hero_speech.js';
+import { adjustAttribute, currentAttribute, reportHeroEncumbrance } from './attrib.js';
+import { cureHeroSickness } from './hero_illness.js';
+import { removeIntrinsicProperty, setPropertyTimeout } from './properties.js';
+import { resetHeroTrap } from './terrain_movement.js';
 import { PARANOID_DIE, PARANOID_QUIT, PLNMSG_OK_DONT_DIE } from './const.js';
 import { PanicTermination } from './panic_termination.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
@@ -41,7 +45,7 @@ import { doneObjectCleanup } from './object_cleanup.js';
 import { restoreHeroNutrition } from './hunger.js';
 import {
     A_CON, A_WIS, CHOKING, DIED, G_EXTINCT, G_GENOD, GENOCIDED, PANICKED, POISONING, STARVING, STONING,
-    Is_astralevel, KILLED_BY, KILLED_BY_AN, NO_KILLER_PREFIX, PICK_ONE, STRAT_WAITFORU, Upolyd,
+    Is_astralevel, KILLED_BY, KILLED_BY_AN, NO_KILLER_PREFIX, PICK_ONE, STRAT_WAITFORU, TT_LAVA, Upolyd,
 } from './const.js';
 import {
     AMULET_OF_LIFE_SAVING, AMULET_OF_YENDOR, BELL_OF_OPENING,
@@ -171,11 +175,9 @@ export async function completeHeroLifeSaving(
 
     await consumeInventoryItem(amulet, game);
 
-    const attributes = game.u?.acurr?.a;
-    if (attributes)
-        attributes[A_CON] = Math.max(3, (attributes[A_CON] ?? 3) - 1);
-    if (!game.u._exercise) game.u._exercise = [0, 0, 0, 0, 0, 0];
-    game.u._exercise[A_CON] = 0;
+    const change = adjustAttribute(A_CON, -1);
+    if (change.changed && game.program_state.in_moveloop)
+        await reportHeroEncumbrance();
 
     await restoreHeroAfterDeath({ deathType });
     if (game.program_state.gameover) return false;
@@ -188,13 +190,17 @@ export async function completeHeroLifeSaving(
 // share this viability repair after their distinct prompt/item transactions.
 export async function restoreHeroAfterDeath({ deathType = null }: RevivalOptions = {}) {
     requireInitializedHero(game.u);
-    const constitution = game.u?.acurr?.a?.[A_CON] ?? 3;
+    const constitution = currentAttribute(A_CON);
     const giveHp = 50 + 10 * Math.trunc(constitution / 2);
-    game.u.uhp = Math.min(game.u.uhpmax ?? giveHp, giveHp);
+    game.u.ulevel = Math.max(1, game.u.ulevel);
+    game.u.uhpmax = Math.max(game.u.uhpmax, game.u.ulevel, 10);
+    game.u.uhppeak = Math.max(game.u.uhppeak ?? 0, game.u.uhpmax);
+    game.u.uhp = Math.min(game.u.uhpmax, giveHp);
     if (Upolyd(game.u))
         game.u.mh = Math.min(game.u.mhmax, giveHp);
     if ((game.u.uhunger ?? 900) < 500 || deathType === CHOKING)
         await plineWithContinuation(restoreHeroNutrition());
+    if (game.u.sickTurns === 1) cureHeroSickness();
     game.context.move = 0;
     // end.c:savelife() replaces any earlier negative multi (including a
     // monster paralysis spell) with exactly -1.  The interrupted actor can
@@ -204,10 +210,15 @@ export async function restoreHeroAfterDeath({ deathType = null }: RevivalOptions
     endVoluntaryMultiTurn(game);
     game.multi = -1;
     game._helplessTurns = 1;
-    game._helplessReason = 'attempting to cheat Death';
+    game._helplessReason = game.urole?.key === 'tourist'
+        ? 'being toyed with by Fate' : 'attempting to cheat Death';
     game._helplessDoneMessage = 'You survived that attempt on your life.';
+    if (game.u.utrap && game.u.utraptype === TT_LAVA)
+        await resetHeroTrap(false);
     game.context.botl = true;
     clearHeroRemains(game);
+    setPropertyTimeout('unchanging', 0);
+    removeIntrinsicProperty('unchanging');
     await flush_screen(1);
     const holder = game.u.ustuck;
     if (game.u.uswallow) {
