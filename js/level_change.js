@@ -42,6 +42,7 @@ import { fumaroles } from './monmove.js';
 import { moveElementalBubbles } from './elemental.js';
 import { CORR, ROOM, DISMOUNT_FELL, LR_UPTELE, LR_DOWNTELE, RLOC_NOMSG, MAGIC_PORTAL, In_endgame, Is_airlevel, Is_waterlevel, Is_rogue_level, Is_knox_level, UTOTYPE_DEFERRED, } from './const.js';
 import { resurrectWizard } from './wizard.js';
+import { forgetTempleEntry } from './priest.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 // C do.c:schedule_goto(). The current command or monster finishes using
 // the departure level; utotype stops the next monster from moving.
@@ -151,6 +152,9 @@ export async function gotoLevel(targetDepth, { arrival = 'random', ladder = fals
     if (!game._levelCache)
         game._levelCache = new Map();
     rewindEngravingsForSave(oldLevel);
+    for (const monster of oldLevel.monsters)
+        if (monster.ispriest)
+            forgetTempleEntry(monster);
     game._levelCache.set(levelCacheKey(oldDepth), cachedLevelState(oldLevel, oldStairs));
     if (leavingTutorial) {
         for (const key of game._levelCache.keys()) {
