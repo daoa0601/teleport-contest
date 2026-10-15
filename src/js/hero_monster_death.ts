@@ -3,6 +3,7 @@
 
 import { formatFeltMessage, publishHeardMessage } from './hero_speech.js';
 import { adjustHeroAlignment } from './alignment.js';
+import { changeHeroLuck } from './attrib.js';
 import { uncreateArtifact } from './artifacts.js';
 import { A_CHAOTIC, A_NONE, G_NOCORPSE, MGIVENNAME, is_pit } from './const.js';
 import { monsterName, possessiveName } from './monster_name.js';
@@ -117,7 +118,7 @@ function killingIsMurder(monster: Monster) {
 
 async function punishMurder() {
     removeIntrinsicProperty('telepathy', game);
-    game.u.uluck = (game.u.uluck || 0) - 2;
+    changeHeroLuck(-2);
     await plineWithContinuation('You murderer!');
 
     const blind = !!game.blind || (game.u?.blindTurns ?? 0) > 0;
@@ -132,7 +133,7 @@ async function punishQuestLeaderKill() {
         alignmentRecord + Math.trunc(alignmentLimit / 2)
     ));
     game.u.ugangr = (game.u.ugangr || 0) + 7;
-    game.u.uluck = (game.u.uluck || 0) - 20;
+    changeHeroLuck(-20);
 
     const probably = game.u?.uevent?.qcompleted ? 'probably ' : '';
     await plineWithContinuation(`That was ${probably}a bad idea...`);
@@ -150,7 +151,7 @@ async function punishQuestGuardianKill(hallucinating: boolean) {
     const alignmentLimit = 10 + Math.trunc((game.moves || 0) / 200);
     adjustHeroAlignment(-Math.trunc(alignmentLimit / 8));
     game.u.ugangr = (game.u.ugangr || 0) + 1;
-    game.u.uluck = (game.u.uluck || 0) - 4;
+    changeHeroLuck(-4);
     await plineWithContinuation(hallucinating
         ? 'Whoopsie-daisy!'
         : 'That was probably a bad idea...');
@@ -365,11 +366,11 @@ export async function finishHeroMonsterKillOutcome(monster: Monster, x: number, 
 
     if (killingIsMurder(monster)) await punishMurder();
     if ((monster.mpeaceful && rn2(2) === 0) || monster.mtame)
-        game.u.uluck = (game.u.uluck || 0) - 1;
+        changeHeroLuck(-1);
     if (monsterIsUnicorn(monster.mnum)
         && Math.sign(game.u?.ualign?.type ?? 0)
             === Math.sign(MONSTER_ALIGNMENT[monster.mnum] ?? 0)) {
-        game.u.uluck = (game.u.uluck || 0) - 5;
+        changeHeroLuck(-5);
         await plineWithContinuation(formatFeltMessage('guilty...'));
     }
     const killCount = monsterDeathCount(monster.mnum);

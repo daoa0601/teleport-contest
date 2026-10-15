@@ -7,6 +7,7 @@ import { newsym, pline } from './display.js';
 import { game } from './gstate.js';
 import { placeObject, placeObjectSynchronously, remove_object } from './floor_object.js';
 import { adjustHeroAlignment } from './alignment.js';
+import { changeHeroLuck } from './attrib.js';
 import { costlySpot } from './shk.js';
 import { shopClaimsObject } from './shop_loss.js';
 import { breakObjectAtLocation } from './object_breakage.js';
@@ -26,7 +27,7 @@ export function sokobanGuilt(state) {
     if (!state.u.uconduct)
         state.u.uconduct = {};
     state.u.uconduct.sokocheat = (state.u.uconduct.sokocheat ?? 0) + 1;
-    state.u.uluck = (state.u.uluck ?? 0) - 1;
+    changeHeroLuck(-1, state);
 }
 async function dropStatueContents(statue, x, y, state) {
     for (const object of statue.contents || []) {

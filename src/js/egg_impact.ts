@@ -1,3 +1,4 @@
+import { changeHeroLuck } from './attrib.js';
 // Egg state changes shared by throwing and floor breakage.
 // C refs: obj.h stale_egg, uhitm.c hmon_hitmon_misc_obj(),
 // and dothrow.c breakobj().
@@ -32,10 +33,7 @@ export function applyHeroEggLuckPenalty(egg: GameObject | null | undefined, stat
         return 0;
     const quantity = egg.quan ?? egg.quantity ?? 1;
     const penalty = Math.min(quantity, 5);
-    state.u.uluck = Math.max(
-        -13,
-        Math.min(13, (state.u?.uluck ?? 0) - penalty),
-    );
+    changeHeroLuck(-penalty, state);
     return penalty;
 }
 

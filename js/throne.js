@@ -7,7 +7,7 @@ import { makeBlinded } from './sight_change.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { heroHasHalfSpellDamage } from './spell_damage.js';
 import { A_CON, A_MAX, ROOM, } from './const.js';
-import { adjustAttribute, attributeChangeMessage, exerciseAttribute, } from './attrib.js';
+import { adjustAttribute, attributeChangeMessage, changeHeroLuck, exerciseAttribute, } from './attrib.js';
 import { artifactById } from './artifacts.js';
 import { mapLevel } from './detect.js';
 import { displayColorName, map_background, newsym, newsym_force, plineWithContinuation, see_monsters, shieldeff, } from './display.js';
@@ -68,9 +68,6 @@ function naturalLuck() {
 }
 function heroLuck() {
     return naturalLuck() + (game.u.moreluck ?? 0);
-}
-function changeLuck(amount) {
-    game.u.uluck = Math.max(-13, Math.min(13, naturalLuck() + amount));
 }
 function inVladsTower() {
     return (game.u.uz ? game.dungeons[game.u.uz.dnum]?.dname : undefined) === "Vlad's Tower";
@@ -167,7 +164,7 @@ async function normalThroneEffect(effect, x, y, { chooseTeleportDestination }) {
         case 6:
             if (naturalLuck() + rn2(5) < 0) {
                 await plineWithContinuation(formatFeltMessage('your luck is changing.'));
-                changeLuck(1);
+                changeHeroLuck(1);
             }
             else {
                 await makeWish({ announce: game.flags?.verbose !== false });
@@ -188,7 +185,7 @@ async function normalThroneEffect(effect, x, y, { chooseTeleportDestination }) {
             await plineWithContinuation('"A curse upon thee for sitting upon this most holy throne!"');
             if (heroLuck() > 0) {
                 await makeBlinded((game.u.blindTurns ?? 0) + rn1(100, 250));
-                changeLuck(heroLuck() > 1 ? -rnd(2) : -1);
+                changeHeroLuck(heroLuck() > 1 ? -rnd(2) : -1);
             }
             else {
                 await rndcurse();

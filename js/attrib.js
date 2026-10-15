@@ -11,7 +11,7 @@ import { rn2, rnd } from './rng.js';
 import { propertyIsActive } from './properties.js';
 import { formMaximumStrength } from './polyself.js';
 import { DUNCE_CAP, GAUNTLETS_OF_POWER } from './object_data.js';
-import { A_CHA, A_CON, A_DEX, A_INT, A_MAX, A_STR, A_WIS, Upolyd, } from './const.js';
+import { A_CHA, A_CON, A_DEX, A_INT, A_MAX, A_STR, A_WIS, LUCKMAX, LUCKMIN, Upolyd, } from './const.js';
 const ATTRIBUTE_INDICES = [0, 1, 2, 3, 4, 5];
 const STR25 = 125;
 const MAX_EXERCISE = 50;
@@ -30,6 +30,10 @@ const ATTRIBUTE_NAME = [
 export const ATTRIBUTE_DISPLAY_ORDER = Object.freeze([
     A_STR, A_DEX, A_CON, A_INT, A_WIS, A_CHA,
 ]);
+// C attrib.c:change_luck(). The carried Luck bonus is separate from uluck.
+export function changeHeroLuck(amount, state = game) {
+    state.u.uluck = Math.max(LUCKMIN, Math.min(LUCKMAX, (state.u.uluck ?? 0) + amount));
+}
 function wornObject(state, slot) {
     return state?.[slot] || state?.u?.[slot] || null;
 }
