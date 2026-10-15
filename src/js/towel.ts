@@ -57,7 +57,8 @@ export async function useTowel(object: GameObject, { state = game }: { state?: G
         }
         if (mishap) {
             result.spentTime = true;
-            if (!state.program_state.gameover) await dryTowel(object, -1, { state, verbose: object === state.uwep });
+            if (!state.program_state.gameover && isWetTowel(object))
+                await dryTowel(object, -1, { state, verbose: object === state.uwep });
             result.heroDied = !!state.program_state.gameover;
             return result;
         }
@@ -82,7 +83,8 @@ export async function useTowel(object: GameObject, { state = game }: { state?: G
     }
     result.spentTime = true;
     result.heroDied = !!state.program_state.gameover;
-    if (!result.heroDied) await dryTowel(object, -1, { state, verbose: object === state.uwep });
+    if (!result.heroDied && isWetTowel(object))
+        await dryTowel(object, -1, { state, verbose: object === state.uwep });
     return result;
 }
 
