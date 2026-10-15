@@ -373,3 +373,16 @@ void test('named Lua objects do not become random artifacts before receiving the
     assert.equal(swords.length, 80);
     assert.equal(swords.filter(object => object.oartifact).length, 0);
 });
+
+void test('Lua blessing options leave gold uncursed and unblessed', async t => {
+    const lua = await levelLua(t);
+    await lua.executeAsync(`
+        des.map({ x = 10, y = 5, map = [[..]] })
+        des.object({ id = "gold piece", x = 0, y = 0, buc = "cursed", quantity = 5 })
+        des.object({ id = "gold piece", x = 1, y = 0, buc = "blessed", quantity = 5 })
+    `);
+    for (const object of floorObjects(requireGameLevel())) {
+        assert.equal(!!object.cursed, false);
+        assert.equal(!!object.blessed, false);
+    }
+});

@@ -92,7 +92,7 @@ import { LEVEL_TIMER_KIND, OBJECT_TIMER_KIND, objectTimers, objectsInTimerGraph,
 import { setMonsterApparentHeroPosition } from './monster_perception.js';
 import { objectWeight } from './weight.js';
 import { createOrcRaid, deliverOrcRaidLoot } from './orc_raid.js';
-import { curseObjectState, objectResistsDestruction, } from './object_state.js';
+import { blessObjectState, curseObjectState, unblessObjectState, uncurseObjectState, objectResistsDestruction, } from './object_state.js';
 import { isMultiGeneratedWeapon, isPoisonableObject, } from './object_properties.js';
 import { addCreatedObjectToContainer, addObjectToContainer } from './object_container.js';
 import { monsterEmitsLight, vision_note_blocker_change } from './vision.js';
@@ -6121,31 +6121,34 @@ async function createLuaObjectPiece(context, options, corpseSpecies, parentConta
     }
     if (!object)
         return null;
+    if (options.spe !== undefined && Number.isInteger(options.spe))
+        object.spe = options.spe;
     if (options.buc === 'blessed') {
-        object.blessed = true;
-        object.cursed = false;
+        blessObjectState(object);
     }
     else if (options.buc === 'uncursed') {
-        object.blessed = false;
-        object.cursed = false;
+        unblessObjectState(object);
+        uncurseObjectState(object);
     }
     else if (options.buc === 'cursed') {
-        object.blessed = false;
-        object.cursed = true;
+        curseObjectState(object);
     }
     else if (options.buc === 'not-cursed') {
-        object.cursed = false;
+        uncurseObjectState(object);
     }
     else if (options.buc === 'not-uncursed') {
-        blessorcurse(object, 1);
+        if (!object.blessed && !object.cursed && !rn2(1)) {
+            if (!rn2(2))
+                curseObjectState(object);
+            else
+                blessObjectState(object);
+        }
     }
     else if (options.buc === 'not-blessed') {
-        object.blessed = false;
+        unblessObjectState(object);
     }
     if (corpseSpecies !== null)
         set_corpsenm(object, corpseSpecies);
-    if (options.spe !== undefined && Number.isInteger(options.spe))
-        object.spe = options.spe;
     if (options.spinachTin) {
         object.corpsenm = -1;
         object.spe = 1;
