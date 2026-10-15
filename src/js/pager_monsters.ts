@@ -41,7 +41,7 @@ const COYOTE_NAMES = [
 export async function lookAtMonster(monster: Monster, x: number, y: number): Promise<string> {
     const accurate = !heroIsHallucinating();
     const coyote = accurate && MONSTER_NAME[monster.mnum] === 'coyote';
-    const name = coyote ? `${monsterName(monster, { article: 'none', suppressIt: true })} - ${
+    const name = coyote ? `${monsterName(monster, { article: 'none', called: true, suppressSaddle: false })} - ${
         monster.mcan ? 'Canis latrans' : COYOTE_NAMES[monster.m_id % COYOTE_NAMES.length]}`
         : distantMonsterName(monster);
     const tail = monster.mx !== x || monster.my !== y;

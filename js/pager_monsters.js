@@ -30,7 +30,7 @@ const COYOTE_NAMES = [
 export async function lookAtMonster(monster, x, y) {
     const accurate = !heroIsHallucinating();
     const coyote = accurate && MONSTER_NAME[monster.mnum] === 'coyote';
-    const name = coyote ? `${monsterName(monster, { article: 'none', suppressIt: true })} - ${monster.mcan ? 'Canis latrans' : COYOTE_NAMES[monster.m_id % COYOTE_NAMES.length]}`
+    const name = coyote ? `${monsterName(monster, { article: 'none', called: true, suppressSaddle: false })} - ${monster.mcan ? 'Canis latrans' : COYOTE_NAMES[monster.m_id % COYOTE_NAMES.length]}`
         : distantMonsterName(monster);
     const tail = monster.mx !== x || monster.my !== y;
     const prefix = tail ? monster.isshk && accurate ? 'tail of ' : 'tail of a ' : '';
