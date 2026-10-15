@@ -342,7 +342,8 @@ function senseDetectedTrap(trap: DetectionTrap) {
 
 function showFoundFeature(x: number, y: number, glyph: GlyphMetadata) {
     const location = requireGameLevel(game).requireAt(x, y);
-    if (!glyph.kind || glyph.kind === 'terrain') location.seenv = 0xff;
+    if (glyph.kind === 'terrain' || glyph.kind === 'trap'
+        || glyph.kind === 'unexplored') location.seenv = 0xff;
     const vision = game.viz_array?.[y];
     const previousVision = vision?.[x];
     if (!vision || previousVision === undefined) throw new Error(`No vision cell at ${x},${y}`);
