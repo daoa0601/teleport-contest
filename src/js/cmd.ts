@@ -1250,6 +1250,8 @@ export async function rhack(key: number): Promise<void> {
         if (!selected) throw new Error('Command dispatch lost its selected command');
         if (selected.handler === 'do_repeat') {
             await repeatLastCommand();
+            // The outer rhack() dispatches do_repeat, not dokick.
+            if (game.context.move) game._kickedLoc = null;
             return;
         }
         rememberCommand(binding, !!prefix && command.handler !== 'doextcmd');
