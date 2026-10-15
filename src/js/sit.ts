@@ -65,8 +65,6 @@ const PM_GREMLIN = 40;
 const PM_GARGOYLE = 41;
 const PM_WINGED_GARGOYLE = 42;
 const PM_TRAPPER = 99;
-const PM_FIRE_VORTEX = 111;
-const PM_FLAMING_SPHERE = 30;
 const PM_FIRE_ELEMENTAL = 155;
 const PM_GIANT_EEL = 319;
 const PM_ELECTRIC_EEL = 320;
@@ -224,9 +222,8 @@ async function sitInWater() {
 }
 
 function formLikesLava() {
-    return [
-        PM_FIRE_VORTEX, PM_FLAMING_SPHERE, PM_FIRE_ELEMENTAL, PM_SALAMANDER,
-    ].includes(heroMonsterForm(game) ?? -1);
+    const form = heroMonsterForm(game);
+    return form === PM_FIRE_ELEMENTAL || form === PM_SALAMANDER;
 }
 
 export async function dosit({
