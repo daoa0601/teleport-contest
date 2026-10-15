@@ -30,6 +30,7 @@ import { initRng } from '../js/rng.js';
 import { knownObject, addInventoryObject, floorObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshGameplayRoom } from './support/playable-room.js';
+import { createDungeon } from './support/topology.js';
 
 function heroRoom() {
     const level = freshGameplayRoom();
@@ -243,6 +244,7 @@ void test('lava flooding over gold preserves subsequent fire protection', async 
 
 void test('an adjacent hole takes a grounded monster down with it', async () => {
     const level = heroRoom();
+    game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 20 })];
     requireFixtureGame(game);
     const victim = await createMonsterAt('giant ant', 11, 10);
 
@@ -368,6 +370,7 @@ void test('a floating eye flies over a pit dug beneath it', async () => {
 
 void test('a released leash lets a pet fall through a dug hole', async () => {
     const level = heroRoom();
+    game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 20 })];
     requireFixtureGame(game);
     const pet = await createMonsterAt('little dog', 11, 10);
     pet.mtame = 1;

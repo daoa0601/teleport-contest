@@ -24,7 +24,7 @@ void test('a sleeping hero dreams about the draft from an opened secret corridor
     putHeroToSleep(3);
     await digMonsterTunnel(monster, game);
     await flush_screen(1);
-    assert.match(visibleText(), /You dream that you feel a draft\./);
+    assert.equal(game._pending_message, 'You dream that you feel a draft.');
 });
 async function tunnelRoom(terrain) {
     const level = freshPlayableRoom({ flags: { verbose: true, acoustics: true } });
