@@ -4,7 +4,7 @@
 import { publishHeardMessage } from './hero_speech.js';
 import { monsterHasMapPosition } from './monster_location.js';
 import { deleteTrap } from './trap_lifecycle.js';
-import { adjustHeroAlignment } from './alignment.js';
+import { desecrateAltar } from './divine_wrath.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import {
     A_DEX, ALTAR, AM_MASK, AM_SANCTUM, Amask2align, COLNO, CORR,
@@ -312,16 +312,9 @@ async function wakeMonsterForEarthquake(monster: Monster | null): Promise<boolea
 }
 
 function altarName(location: MapLocation): string {
-    const alignment = Amask2align((location.flags || 0) & AM_MASK);
+    const alignment = Amask2align((location.altarmask ?? location.flags) & AM_MASK);
     return alignment > 0 ? 'lawful'
         : alignment < 0 ? 'chaotic' : alignment === 0 ? 'neutral' : 'unaligned';
-}
-
-function punishAltarDestruction(location: MapLocation): void {
-    const altarAlignment = Amask2align((location.flags || 0) & AM_MASK);
-    if (altarAlignment !== game.u?.ualign?.type) return;
-    adjustHeroAlignment(-20, game);
-    game.u.ugangr = (game.u.ugangr || 0) + 5;
 }
 
 async function shakeTerrain(x: number, y: number, hadPitBeforeEarthquake: boolean): Promise<boolean> {
@@ -338,13 +331,15 @@ async function shakeTerrain(x: number, y: number, hadPitBeforeEarthquake: boolea
         return await openChasm(x, y, hadPitBeforeEarthquake);
     }
     if (location.typ === ALTAR) {
-        if ((location.flags || 0) & AM_SANCTUM) return false;
+        const mask = location.altarmask ?? location.flags;
+        if (mask & AM_SANCTUM) return false;
         if (cansee(x, y)) {
             await plineWithContinuation(
                 `The ${altarName(location)} altar falls into a chasm.`,
             );
         }
-        punishAltarDestruction(location);
+        await desecrateAltar(false, Amask2align(mask & AM_MASK));
+        if (game.program_state.gameover) return false;
         return await openChasm(x, y, hadPitBeforeEarthquake);
     }
     if (location.typ === GRAVE || location.typ === THRONE) {
