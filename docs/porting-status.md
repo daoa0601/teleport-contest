@@ -130,7 +130,7 @@ existing tests needed their setup corrected:
   `commitPetPickup()` and checks that the dagger stays on the floor until
   then.
 
-## Parallel batches 1–17 (`3340f2e`)
+## Parallel batches 1–18 (`89a6e24`)
 
 Units ran in worktrees under `docs/orchestration.md` (Codex; each diff reviewed
 by Codex against the C source, then merged only if the full suite adds no
@@ -258,35 +258,45 @@ shortening) and **audit-pager** (`pager.c`: look, whatis, help), and
 **review-debt-4** (accepted review findings). The eval sample now matches
 every random call.
 
+Batch 18: C-source audits of **audit-cmd** (`cmd.c`: prefixes, counts,
+command recall, extended commands, travel menus) and **audit-lock**
+(`lock.c`: door strength rolls, lock picking, forcing, wand effects),
+**public-5** (hallucinated projections, floor-pile windows, getpos
+messages), **pool-tail-5** (the last pool tails), and **review-debt-5**.
+public-5's floor-pile change exposed that `lift_object()` never cleared its
+burden question (`pickup.c`); that is fixed. The eval sample and the pool now
+complete every session.
+
 ## Verification
 
-`npm test` at `3340f2e`: **10,188/10,188**. Merges require a fully green suite;
+`npm test` at `89a6e24`: **10,431/10,431**. Merges require a fully green suite;
 batch runs also compare matched screens per session with the previous batch
-(no screen regression in batch 17, eval, public or pool).
+(no screen regression in batch 18, eval, public or pool).
 
 ## Most recent native diagnostics
 
 | Diagnostic | Complete | Matched screens | Matched random calls | Crashes |
 | --- | ---: | ---: | ---: | ---: |
-| Public | 41/44 | 11,169/11,405 | 787,533/792,838 | 0 |
-| Native eval sample | 299/300 | 50,559/50,586 | 3,616,669/3,616,669 | 0 |
-| Holdout-dev pool | 2,492/2,500 | | | 0 |
+| Public | 42/44 | 11,211/11,405 | 787,533/792,838 | 0 |
+| Native eval sample | 300/300 | 50,586/50,586 | 3,616,669/3,616,669 | 0 |
+| Holdout-dev pool | 2,500/2,500 | | | 0 |
 
-Runs: `.cache/generalization/batch17-3340f2e-{eval,public}` and
-`triage-3340f2e` (pool) in the verify worktree (baseline `base-06d7e73`:
-143/300; batch 16: 297/300, pool 2,456/2,500). No verified random call was
+Runs: `.cache/generalization/batch18-89a6e24-{eval,public}` and
+`triage-89a6e24` (pool) in the verify worktree (baseline `base-06d7e73`:
+143/300; batch 17: 299/300, pool 2,492/2,500). No verified random call was
 lost; the ledgers now hold 350 eval and 191 public functions. The
 state oracle finds all 300 sessions matching C state throughout.
 
 ## Next work
 
-In flight: C-source audits of `cmd.c` (audit-cmd) and `lock.c` (audit-lock;
-`doclose()` lacked its strength roll), public-5 (last public and eval
-failures) and review-debt-5 (accepted review findings). review-debt-3's
-turn-loop restructuring (delayed armor removal, `stealarm()`, prayer delay) is
-parked unmerged: it broke save/restore twice. 8 pool sessions still fail;
-`.cache/agents/pool-3340f2e-firsts.tsv` lists them and `.cache/agents/queue.md`
-holds accepted review findings.
+Every eval-sample and pool session now completes, so new work comes from
+C-source audits of files the corpora barely run. In flight: `dokick.c`
+(audit-kick), `hack.c` (audit-hack), `mhitu.c` (audit-mhitu) and `dig.c`
+(audit-dig); review-debt-6 has merged after this checkpoint. Public still
+fails seed2200-wizard-quaff-zap-read and seed4500-knight-coverage.
+review-debt-3's turn-loop restructuring (delayed armor removal, `stealarm()`,
+prayer delay) is parked unmerged: it broke save/restore twice.
+`.cache/agents/queue.md` holds accepted review findings.
 
 `splitObjectStack()` now links the new piece right after the original in
 whichever chain owns it (floor pile, hero or monster inventory, container,
