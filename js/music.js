@@ -21,6 +21,7 @@ import { makeMonsterFlee } from './monster_flee.js';
 import { monsterIsScaredAt } from './monster_fear.js';
 import { BUGLE, DRUM_OF_EARTHQUAKE, FIRE_HORN, FROST_HORN, LEATHER_DRUM, MAGIC_FLUTE, MAGIC_HARP, OBJECT_NAMES, TOOLED_HORN, WOODEN_FLUTE, WOODEN_HARP, } from './object_data.js';
 import { learnObjectType } from './object_knowledge.js';
+import { consumeObjectCharge } from './object_charge.js';
 import { askForTune, playTune } from './passtune.js';
 import { heroCanBlow, heroFormSticks } from './hero_species.js';
 import { d, rnd, rn2 } from './rng.js';
@@ -240,7 +241,7 @@ async function charmMonsters(distance) {
     }
 }
 async function playMagicFlute(instrument, familiar) {
-    instrument.spe--;
+    await consumeObjectCharge(instrument);
     await plineWithContinuation(`You ${heroIsDeaf() ? 'seem to ' : ''}produce ${heroIsHallucinating() ? 'piped' : 'soft'}${familiar ? ', familiar' : ''} music.`);
     await putMonstersToSleep((game.u?.ulevel || 1) * 5);
     await exerciseAttribute(A_DEX, true);
@@ -289,7 +290,7 @@ function learnInstrumentType(instrument) {
     instrument.typeKnown = true;
 }
 async function playElementalHorn(instrument, element) {
-    instrument.spe--;
+    await consumeObjectCharge(instrument);
     const direction = await readHornDirection();
     if (direction === null) {
         await plineWithContinuation(`The ${instrumentName(instrument)} vibrates.`);
@@ -329,7 +330,7 @@ async function playBugle(instrument, familiar) {
     await exerciseAttribute(A_WIS, false);
 }
 async function playMagicHarp(instrument, familiar) {
-    instrument.spe--;
+    await consumeObjectCharge(instrument);
     await plineWithContinuation(heroIsDeaf()
         ? formatFeltMessage('very soothing vibrations.')
         : `Your ${instrumentName(instrument)} produces very attractive${familiar ? ' and familiar' : ''} music.`);
@@ -396,7 +397,7 @@ function levelDescription() {
     return 'dungeon';
 }
 async function playEarthquakeDrum(instrument) {
-    instrument.spe--;
+    await consumeObjectCharge(instrument);
     await plineWithContinuation('You produce a heavy, thunderous rolling!');
     await plineWithContinuation(`The entire ${levelDescription()} is shaking around you!`);
     const force = Math.trunc(((game.u?.ulevel || 1) - 1) / 3) + 1;

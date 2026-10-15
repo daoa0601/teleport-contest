@@ -35,6 +35,7 @@ import {
     WOODEN_HARP,
 } from './object_data.js';
 import { learnObjectType } from './object_knowledge.js';
+import { consumeObjectCharge } from './object_charge.js';
 import { askForTune, playTune } from './passtune.js';
 import { heroCanBlow, heroFormSticks } from './hero_species.js';
 import { d, rnd, rn2 } from './rng.js';
@@ -284,7 +285,7 @@ async function charmMonsters(distance: number) {
 }
 
 async function playMagicFlute(instrument: GameObject, familiar: boolean) {
-    instrument.spe--;
+    await consumeObjectCharge(instrument);
     await plineWithContinuation(
         `You ${heroIsDeaf() ? 'seem to ' : ''}produce ${
             heroIsHallucinating() ? 'piped' : 'soft'
@@ -348,7 +349,7 @@ async function playElementalHorn(
     instrument: GameObject,
     element: 'fire' | 'cold',
 ): Promise<InstrumentEffectResult> {
-    instrument.spe--;
+    await consumeObjectCharge(instrument);
     const direction = await readHornDirection();
     if (direction === null) {
         await plineWithContinuation(`The ${instrumentName(instrument)} vibrates.`);
@@ -389,7 +390,7 @@ async function playBugle(instrument: GameObject, familiar: boolean): Promise<Ins
 }
 
 async function playMagicHarp(instrument: GameObject, familiar: boolean) {
-    instrument.spe--;
+    await consumeObjectCharge(instrument);
     await plineWithContinuation(heroIsDeaf()
         ? formatFeltMessage('very soothing vibrations.')
         : `Your ${instrumentName(instrument)} produces very attractive${
@@ -459,7 +460,7 @@ function levelDescription() {
 }
 
 async function playEarthquakeDrum(instrument: GameObject): Promise<InstrumentEffectResult> {
-    instrument.spe--;
+    await consumeObjectCharge(instrument);
     await plineWithContinuation('You produce a heavy, thunderous rolling!');
     await plineWithContinuation(
         `The entire ${levelDescription()} is shaking around you!`,

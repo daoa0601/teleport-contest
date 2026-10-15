@@ -3,10 +3,11 @@ import test from 'node:test';
 import { moveloop_core } from '../js/allmain.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
-import { MAGIC_FLUTE, WOODEN_FLUTE, WOODEN_HARP } from '../js/object_data.js';
+import { DRUM_OF_EARTHQUAKE, FIRE_HORN, FROST_HORN, MAGIC_FLUTE, MAGIC_HARP, OBJECT_NAMES, WOODEN_FLUTE, WOODEN_HARP } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { finishAtCommandInput, installPagerInput } from './support/pager-input.js';
+import { createStaffedShop } from './support/shop.js';
 import { freshTurnRoom } from './support/playable-room.js';
 
 void test('an applied magic flute puts a grabbing monster into wakeable sleep and releases its grip', async () => {
@@ -45,5 +46,24 @@ for (const [species, instrument] of [['snake', 'flute'], ['water nymph', 'harp']
 
         assert.equal(target.mpeaceful, 1);
         assert.doesNotMatch(messages.join('\n'), /sways with the music|listens cheerfully/);
+    });
+}
+
+for (const type of [MAGIC_FLUTE, MAGIC_HARP, FIRE_HORN, FROST_HORN, DRUM_OF_EARTHQUAKE]) {
+    void test(`applying unpaid ${OBJECT_NAMES[type]} bills its charge before the next turn`, async () => {
+        const input = freshTurnRoom({ hero: { levitating: true, uhp: 1000, uhpmax: 1000 } });
+        const object = await addInventoryObject(type, { spe: 2 });
+        const { shopkeeper } = await createStaffedShop({ keeperX: 14 });
+        object.unpaid = true;
+        const debit = shopkeeper.eshk.debit;
+        installPagerInput(input, { expected: /playing|music|usage fee|thunderous|shaking|chasm|horn|wakes|angry|collapses|cold|fire/, limit: 40 });
+        const horn = type === FIRE_HORN || type === FROST_HORN;
+        pushKeys(`a${object.invlet}${type === DRUM_OF_EARTHQUAKE ? '' : 'y'}${horn ? ' <' : ''}`);
+
+        await moveloop_core();
+        // Check the bill before an earthquake can make the keeper pursue us.
+        assert.ok(shopkeeper.eshk.debit > debit, 'Using an unpaid magical instrument incurs a usage fee');
+        assert.equal(object.spe, 1);
+        await finishAtCommandInput(input, moveloop_core, /playing|music|usage fee|thunderous|shaking|chasm|horn|wakes|angry|collapses|cold|fire|^$/);
     });
 }
