@@ -2,7 +2,7 @@ import { heroLocomotion } from './hero_locomotion.js';
 // steed.js — Saddling, mounting, riding, and dismounting.
 // C ref: steed.c.
 import { monsterHasMapPosition, placeMonsterAt } from './monster_location.js';
-import { RLOC_ERR, RLOC_NOMSG, ACCESSIBLE, D_CLOSED, D_LOCKED, DISMOUNT_BONES, DISMOUNT_BYCHOICE, DISMOUNT_ENGULFED, DISMOUNT_FELL, DISMOUNT_KNOCKED, DISMOUNT_POLY, DISMOUNT_THROWN, DOOR, IS_OBSTRUCTED, MGIVENNAME, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPMASK, P_RIDING, A_CHA, A_DEX, A_WIS, P_BASIC, P_SKILLED, P_EXPERT, TRAP_EXPLANATIONS, TT_BEARTRAP, TT_PIT, TT_WEB, Upolyd, VIBRATING_SQUARE, W_SADDLE, isok, } from './const.js';
+import { RLOC_ERR, RLOC_NOMSG, ACCESSIBLE, D_CLOSED, D_LOCKED, DISMOUNT_BONES, DISMOUNT_BYCHOICE, DISMOUNT_ENGULFED, DISMOUNT_FELL, DISMOUNT_KNOCKED, DISMOUNT_POLY, DISMOUNT_THROWN, DOOR, IS_OBSTRUCTED, MGIVENNAME, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPMASK, NO_KILLER_PREFIX, P_RIDING, A_CHA, A_DEX, A_WIS, P_BASIC, P_SKILLED, P_EXPERT, TRAP_EXPLANATIONS, TT_BEARTRAP, TT_PIT, TT_WEB, Upolyd, VIBRATING_SQUARE, W_SADDLE, isok, } from './const.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { levitationAtWill, refreshMovementProperties } from './properties.js';
 import { floatHeroDown } from './terrain_movement.js';
@@ -301,7 +301,7 @@ async function mountSteed(steed, force, [dx, dy]) {
         let name = `a saddled ${monsterTypeName(steed.mnum, !!steed.female)}`;
         if (MGIVENNAME(steed))
             name += ` called ${MGIVENNAME(steed)}`;
-        await loseHeroHp(damage, `slipped while mounting ${name}`);
+        await loseHeroHp(damage, `slipped while mounting ${name}`, { killerFormat: NO_KILLER_PREFIX });
         return false;
     }
     await wakeSteedForRiding(steed);
