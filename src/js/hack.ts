@@ -3,7 +3,7 @@
 
 import { formatFeltMessage } from './hero_speech.js';
 import { monsterHasMapPosition } from './monster_location.js';
-import { heroIsHallucinating } from './senses.js';
+import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import {
     BURNING, D_BROKEN, D_CLOSED, D_LOCKED, DISMOUNT_FELL, DISMOUNT_GENERIC, DISSOLVED, DROWNING,
     DOOR, IS_AIR, IS_OBSTRUCTED, IS_STWALL, IS_WALL, IS_WATERWALL,
@@ -407,7 +407,7 @@ async function reviveHeroFromLiquid(state: PlayingGameState, publish: MessagePub
     if (!lifeSaving) return false;
     await publish('But wait...');
     identifyLifeSavingAmulet(random);
-    await publish('Your medallion begins to glow!');
+    await publish(`Your medallion ${heroIsBlind(state) ? 'feels warm' : 'begins to glow'}!`);
     await publish(formatFeltMessage('much better!', state));
     await publish('The medallion crumbles to dust!');
     await completeHeroLifeSaving(lifeSaving);
