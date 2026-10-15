@@ -4847,7 +4847,7 @@ function loadSpecialAsciiMap(rows, lit, origin = null) {
     return context;
 }
 function specialStairAt(context, x, y, up) {
-    mkstairs(context.xstart + x, context.ystart + y, up, null);
+    mkstairs(context.xstart + x, context.ystart + y, up, null, true);
 }
 function specialLadderAt(context, x, y, up) {
     const ladderX = context.xstart + x;
@@ -9949,9 +9949,14 @@ function generate_stairs_find_room() {
     const selected = level.rooms[rn2(level.nroom)];
     return isRoom(selected) ? selected : null;
 }
-export function mkstairs(x, y, up, croom) {
+export function mkstairs(x, y, up, croom, force = false) {
     const g = game;
     const level = requireGameLevel();
+    const loc = level.at(x, y);
+    // Explicit Lua coordinates force floor even when this dungeon endpoint
+    // subsequently prevents creation of the requested stairs.
+    if (force && loc)
+        loc.typ = ROOM;
     const currentLevel = g.u?.uz?.dlevel ?? 1;
     const dungeonLevels = g.dungeons?.[g.u?.uz?.dnum ?? 0]?.num_dunlevs
         ?? currentLevel;
@@ -9960,7 +9965,6 @@ export function mkstairs(x, y, up, croom) {
     if ((up && currentLevel === 1)
         || (!up && currentLevel === dungeonLevels))
         return;
-    const loc = level.at(x, y);
     if (loc) {
         setLevelTerrainType(x, y, STAIRS);
         loc.ladder = up ? 1 : 2;

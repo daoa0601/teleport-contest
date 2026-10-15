@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import type { TestContext } from 'node:test';
-import { ALTAR, DOOR, FOUNTAIN, GRAVE, LADDER, MOAT, STAIRS } from '../js/const.js';
+import { ALTAR, DOOR, FOUNTAIN, GRAVE, LADDER, MOAT, ROOM, STAIRS } from '../js/const.js';
 import { GOLD_PIECE, ROCK } from '../js/object_data.js';
 import { GameMap } from '../js/game.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
@@ -28,6 +28,33 @@ async function levelScript(t: TestContext) {
     requirePlayingGame(game);
     return { lua, level: game.level };
 }
+
+void test('explicit Lua stairs replace ladder terrain with regular stairs', async t => {
+    const { lua, level } = await levelScript(t);
+    game.u.uz = { dnum: 0, dlevel: 2 };
+    await lua.executeAsync('des.ladder({ dir = "down", x = 12, y = 7 })');
+    assert.equal(level.requireAt(13, 7).typ, LADDER);
+
+    await lua.executeAsync('des.stair({ dir = "up", x = 12, y = 7 })');
+
+    assert.equal(level.requireAt(13, 7).typ, STAIRS);
+    assert.equal(level.requireAt(13, 7).ladder, 1);
+    assert.ok(game.stairs?.up);
+    assert.equal(game.stairs?.isladder, false);
+    assert.equal(game.stairs?.tolev.dlevel, 1);
+});
+
+void test('explicit Lua stairs force floor even when a dungeon endpoint forbids the stairs', async t => {
+    const { lua, level } = await levelScript(t);
+    game.u.uz = { dnum: 0, dlevel: 1 };
+    await lua.executeAsync('des.ladder({ dir = "down", x = 12, y = 7 })');
+
+    await lua.executeAsync('des.stair({ dir = "up", x = 12, y = 7 })');
+
+    assert.equal(level.requireAt(13, 7).typ, ROOM);
+    assert.equal(game.stairs?.isladder, true);
+    assert.equal(game.stairs?.up, false);
+});
 
 for (const [binding, options, terrain] of [
     ['terrain', 'typ = "}"', MOAT],
