@@ -307,7 +307,7 @@ async function triggerPit(
     const ball = game.uball || hero.uball;
     if (heroIsPunished(game) && ball && !game.inventory.includes(ball)) {
         await unplaceBallAndChain(game);
-        await fallWithIronBall(game);
+        if (await fallWithIronBall(game)) return;
         await placeBallAndChain(game);
     }
     if (!conjoined) await selfTouchPetrifyingWeapons({ messageStart: 'Falling, you' });

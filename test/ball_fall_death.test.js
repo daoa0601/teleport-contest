@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { rhack } from '../js/cmd.js';
-import { HOLE } from '../js/const.js';
+import { HOLE, PANICLOG, PIT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { unlinkObject } from '../js/object_location.js';
@@ -45,5 +45,18 @@ void test('a fatal downstairs pull uses its complete death description', async (
     await rhack('>'.charCodeAt(0));
     assert.equal(game.program_state.gameover, true);
     assert.equal(loadScoreRecords()[0]?.death, 'dragged downstairs by an iron ball');
+});
+void test('a fatal ball blow in a pit finishes the move without placing the cleaned-up pair again', async () => {
+    const { source } = fatalFallLevels();
+    requirePlayingGame(game);
+    game.u.uhp = 10;
+    const storage = memoryStorage();
+    game.storage = storage;
+    await punishHero();
+    addTrap(source, PIT, 11, 10);
+    initRng(2n);
+    await rhack('l'.charCodeAt(0));
+    assert.equal(game.program_state.gameover, true);
+    assert.equal(storage.getItem(PANICLOG), null, 'a fatal pit landing must not report a placement error');
 });
 //# sourceMappingURL=ball_fall_death.test.js.map
