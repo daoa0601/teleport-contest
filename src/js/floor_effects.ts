@@ -3,7 +3,7 @@
 
 import {
     ALTAR, CORR, ROOM,
-    TT_PIT, is_hole, is_pit,
+    TT_PIT, WT_SPLASH_THRESHOLD, is_hole, is_pit,
 } from './const.js';
 import { landObjectOnAltar } from './altar_object.js';
 import { dropBoulderIntoLiquid } from './boulder_pool.js';
@@ -13,7 +13,7 @@ import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Trap } from './map_types.js';
 import type { MessagePublisher } from './display.js';
-import { plineWithContinuation } from './display.js';
+import { map_background, newsym, plineWithContinuation } from './display.js';
 import { meldLandingGlob } from './glob.js';
 import { breakObjectAtLocation } from './object_breakage.js';
 import { deleteObject } from './object_delete.js';
@@ -27,6 +27,7 @@ import { rnl, rn2 } from './rng.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
 import { destroyLavaFloorObjects, waterDamageObject } from './trap.js';
 import { cansee } from './vision.js';
+import { objectWeight } from './weight.js';
 import { isLavaAt, isPoolAt } from './terrain_properties.js';
 
 export interface FloorEffectOptions {
@@ -182,6 +183,16 @@ export async function applyFloorEffects(
         if (!landed.includes(object))
             return { finished: true, object: null };
     } else if (isPoolAt(x, y, state)) {
+        const airborne = state.u.levitating || state.u.flying;
+        if ((heroIsBlind(state) || airborne) && !heroIsDeaf(state)
+            && state.u.ux === x && state.u.uy === y) {
+            if (!state.u.uinwater) {
+                if (objectWeight(object) > WT_SPLASH_THRESHOLD) await publish('Splash!');
+                else if (airborne) await publish('Plop!');
+            }
+            map_background(x, y, false);
+            newsym(x, y);
+        }
         const messages: string[] = [];
         const result = await waterDamageObject(object, messages, state, {
             random,
