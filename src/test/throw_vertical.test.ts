@@ -44,7 +44,6 @@ void test('unimpaired upward throws catch returning weapons and restore their eq
             `${weapon === 'Mjollnir' ? weapon : `The ${weapon}`} hits the ceiling and returns to your hand!`);
         assert.equal(item.where, 'inventory');
         assert.equal(item.invlet, letter);
-        assert.equal(game.inventory[0], item, 'return preserves unfixed inventory order');
         assert.equal(game.uswapwep, alternate);
         if (weapon === 'boomerang') {
             assert.equal(game.uquiver, item);
@@ -56,6 +55,23 @@ void test('unimpaired upward throws catch returning weapons and restore their eq
         }
         assert.equal(game.context.move, 1);
     }
+});
+
+void test('catching an upward-thrown singleton from the inventory head moves it to the last floating letter', async () => {
+    freshObjectRoom({ flags: { fixinv: false } });
+    const aklys = await addInventoryWeapon(AKLYS);
+    const club = await addInventoryWeapon(CLUB);
+    const rock = await addInventoryObject(ROCK);
+    await setPrimaryWeapon(aklys);
+
+    await throwInventoryObject(aklys, '<', ' '.repeat(20));
+    resetInputState().feed(' ');
+    await rhack('i'.charCodeAt(0));
+
+    assert.equal(club.invlet, 'a');
+    assert.equal(rock.invlet, 'b');
+    assert.equal(aklys.invlet, 'c');
+    assert.equal(game.uwep, aklys);
 });
 
 void test('throwing downward announces the object hitting the floor at the hero', async () => {

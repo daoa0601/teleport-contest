@@ -185,7 +185,8 @@ async function returnUpwardThrowToInventory(
     if (state.flags.fixinv === false) {
         state.inventory.splice(state.inventory.indexOf(returned), 1);
         const index = oldSlot ? state.inventory.indexOf(oldSlot) : -1;
-        state.inventory.splice(index >= 0 ? index : state.inventory.length, 0, returned);
+        // C addinv_core0() inserts before oldSlot only when it has a predecessor.
+        state.inventory.splice(index > 0 ? index : state.inventory.length, 0, returned);
     }
     const quivered = !!((returned.owornmask ?? 0) & W_QUIVER);
     const held = !!(((returned.owornmask ?? 0) | weaponMask) & (W_WEP | W_SWAPWEP));
