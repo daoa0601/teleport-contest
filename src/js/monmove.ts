@@ -444,6 +444,7 @@ import { currentMonsterLoad, monsterCanCarryObject, monsterCarryAmount } from '.
 export { monsterCanCarryObject } from './monster_carry.js';
 import {
     monsterCanFog,
+    monsterHasLineOfSightToHero,
     setMonsterApparentHeroPosition,
 } from './monster_perception.js';
 import { adjustMonsterSpeed, monsterSpeedMessage } from './monster_speed.js';
@@ -8860,7 +8861,7 @@ export async function runMonsterAction(
     if (
         (monster.mstrategy ?? 0) & STRAT_WAITFORU &&
         ((monster.mhp ?? 0) < (monster.mhpmax ?? monster.mhp ?? 0) ||
-            (monster.mcansee !== 0 && couldSeeFromHero(state, monster.mx, monster.my)))
+            monsterHasLineOfSightToHero(monster, state))
     ) {
         monster.mstrategy = (monster.mstrategy ?? 0) & ~STRAT_WAITFORU;
     }

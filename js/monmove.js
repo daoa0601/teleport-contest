@@ -161,7 +161,7 @@ import { inHeroSanctuary, priestIsInOwnTemple } from './priest.js';
 import { addObjectToMonsterInventory, linkObjectToMonsterInventory, } from './monster_inventory.js';
 import { currentMonsterLoad, monsterCanCarryObject, monsterCarryAmount } from './monster_carry.js';
 export { monsterCanCarryObject } from './monster_carry.js';
-import { monsterCanFog, setMonsterApparentHeroPosition, } from './monster_perception.js';
+import { monsterCanFog, monsterHasLineOfSightToHero, setMonsterApparentHeroPosition, } from './monster_perception.js';
 import { adjustMonsterSpeed, monsterSpeedMessage } from './monster_speed.js';
 import { setMonsterPermanentInvisibility } from './monster_invisibility.js';
 import { msummon } from './minion.js';
@@ -7233,7 +7233,7 @@ export async function runMonsterAction(monster, state, random = rn2, rollDice = 
     // actor can see the hero or has been hurt.
     if ((monster.mstrategy ?? 0) & STRAT_WAITFORU &&
         ((monster.mhp ?? 0) < (monster.mhpmax ?? monster.mhp ?? 0) ||
-            (monster.mcansee !== 0 && couldSeeFromHero(state, monster.mx, monster.my)))) {
+            monsterHasLineOfSightToHero(monster, state))) {
         monster.mstrategy = (monster.mstrategy ?? 0) & ~STRAT_WAITFORU;
     }
     if ((monster.mstrategy ?? 0) & STRAT_WAITMASK) {
