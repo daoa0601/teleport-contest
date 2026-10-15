@@ -515,6 +515,7 @@ export function createDesBindings(operations, wrapSelection) {
             const options = tableOptions(value);
             return operations.gasCloud({
                 ...options,
+                point: tablePoint(options),
                 selection: options.selection == null ? null : unwrapSelection(options.selection),
             });
         },

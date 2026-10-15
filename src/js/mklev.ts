@@ -6910,7 +6910,7 @@ function createLuaLevelSession() {
         },
         exclusion: options => createLuaExclusion(context, options),
         gasCloud: async options => {
-            const coordinate = luaCoordinate(options);
+            const coordinate = options.point;
             const point = coordinate?.x === -1 && coordinate.y === -1 ? null : coordinate;
             const damage = options.damage ?? 0;
             const cloud = point

@@ -218,6 +218,20 @@ void test('Lua gas clouds retain their damage and lifetime and accept point plac
     assert.equal(point.ttl, 9);
     assert.deepEqual(point.cells, [{ x: 20, y: 8 }]);
 });
+void test('Lua gas clouds prefer explicit coordinates and use coord when both axes are absent', async (t) => {
+    const lua = await levelLua(t);
+    await lua.executeAsync(`
+        des.map({ x = 10, y = 5, map = [[...]] })
+        des.gas_cloud({ x = 20, y = 8, coord = {30, 9} })
+        des.gas_cloud({ x = -1, y = -1, coord = {x = 30, y = 9} })
+        des.gas_cloud({ coord = {40, 10} })
+    `);
+    const [explicit, absent, omitted] = requireGameLevel().regions ?? [];
+    assert.ok(explicit && absent && omitted, 'each coordinate form should create a cloud');
+    assert.deepEqual(explicit.cells, [{ x: 20, y: 8 }]);
+    assert.deepEqual(absent.cells, [{ x: 30, y: 9 }]);
+    assert.deepEqual(omitted.cells, [{ x: 40, y: 10 }]);
+});
 for (const source of ['hero', 'level generation', 'monster']) {
     void test(`a Lua selection cloud created by ${source} ${source === 'hero' ? 'angers' : 'does not anger'} its victim`, async (t) => {
         const lua = await levelLua(t);

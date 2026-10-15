@@ -199,7 +199,7 @@ export interface DesOperations {
     teleportRegion(options: DesOptions): DesOperationResult;
     levelRegion(options: DesOptions): DesOperationResult;
     exclusion(options: DesOptions): DesOperationResult;
-    gasCloud(options: DesSelectionOptions): DesOperationResult;
+    gasCloud(options: DesSelectionOptions & { point: LuaPoint | null }): DesOperationResult;
     randomCorridors(): DesOperationResult;
     corridor(options: DesOptions): DesOperationResult;
     mazeWalk(options: DesOptions & { dir: string; stocked: boolean }): DesOperationResult;
@@ -738,6 +738,7 @@ export function createDesBindings(
             const options = tableOptions(value);
             return operations.gasCloud({
                 ...options,
+                point: tablePoint(options),
                 selection: options.selection == null ? null : unwrapSelection(options.selection),
             });
         },
