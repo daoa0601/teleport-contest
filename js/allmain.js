@@ -2,6 +2,7 @@ import { recorderLocalEpochSeconds } from './calendar.js';
 import { slipOrTrip } from './fumbling.js';
 import { recoverTimedLuck } from './timeout_luck.js';
 import { advanceBodyTimeouts, advanceGallopingTimeout } from './timeout_body.js';
+import { breathingDialogue, wallPassageDialogue, finishBreathingTimeout, finishWallPassageTimeout, } from './timeout_warnings.js';
 import { invWeight } from './weight.js';
 import { rewindEngravingsForSave } from './engrave.js';
 import { finishMonsterHideUnder } from './monster_hiding.js';
@@ -958,6 +959,10 @@ async function finishInitialTurnMaintenanceBeforeTimeouts({ sourceTurn, moveAmou
     if (!prayerTimeoutFreeze)
         await levitationDialogue(game);
     if (!prayerTimeoutFreeze) {
+        await wallPassageDialogue(game);
+        await breathingDialogue(game);
+    }
+    if (!prayerTimeoutFreeze) {
         if (propertyTimeout('sleepy', game) === 4)
             await plineWithContinuation('You yawn.');
         await advanceBodyTimeouts(game);
@@ -1215,17 +1220,10 @@ async function finishInitialTurnMaintenanceAfterFumbling({ sourceTurn, moveAmoun
             && !propertyIsActive('waterWalking', game))
             await plineWithContinuation('Your temporary ability to walk on liquid has ended.');
         advancePropertyTimeout('swimming', game);
-        for (const [property, timeout] of [
-            ['magicalBreathing', 'magicalBreathingTurns'],
-            ['passesWalls', 'passesWallsTurns'],
-        ]) {
-            const remaining = game.u[timeout];
-            if (remaining !== undefined && remaining > 0) {
-                game.u[timeout] = remaining - 1;
-                if (game.u[timeout] === 0)
-                    refreshProperty(property, game);
-            }
-        }
+        if (advancePropertyTimeout('magicalBreathing', game))
+            await finishBreathingTimeout(game);
+        if (advancePropertyTimeout('passesWalls', game))
+            await finishWallPassageTimeout(game);
         advancePropertyTimeout('slowDigestion', game);
     }
     if (!prayerTimeoutFreeze)
