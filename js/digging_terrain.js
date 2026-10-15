@@ -57,7 +57,7 @@ import { fireDamageChain } from './fire_damage.js';
 import { cansee } from './vision.js';
 import { CLR_BLUE } from './terminal.js';
 import { isAxe } from './weapon_type.js';
-import { updateIceObjectTimersAt, } from './floor_object.js';
+import { updateIceObjectTimersAt } from './floor_object.js';
 import { deleteEngravingAt } from './engrave.js';
 import { isLavaAt, isPoolAt, levelHasCeiling, monsterFliesOrFloats } from './terrain_properties.js';
 const S_ZOMBIE = 52;
@@ -215,6 +215,8 @@ async function furnitureHandled(x, y, madeByYou, state) {
         await breakSinkAt(x, y, state);
         return true;
     }
+    if (location.typ === DRAWBRIDGE_UP)
+        return false;
     const bridge = findDrawbridgeAt(x, y, state);
     if (location.typ === DRAWBRIDGE_DOWN || bridge) {
         // If under the portcullis, the bridge is adjacent.
@@ -527,9 +529,10 @@ export async function digActualHole(x, y, madeBy, ttyp, { state = game } = {}) {
                 await impactDrop(null, x, y, { state, publish: plineWithContinuation });
             }
             if (victim) {
+                const clingsToCeiling = !!((MONSTER_FLAGS1[victim.mnum] ?? 0) & M1_CLING)
+                    && levelHasCeiling(state);
                 if (monsterFliesOrFloats(victim)
-                    || ((MONSTER_FLAGS1[victim.mnum] ?? 0) & M1_CLING)
-                        && levelHasCeiling(state)
+                    || clingsToCeiling
                     || (victim.wormSegments?.length ?? 0) > 5
                     || (MONSTER_SIZE[victim.mnum] ?? 2) >= MZ_HUGE) {
                     return;

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { rhack } from '../js/cmd.js';
-import { DB_FLOOR, DB_LAVA, DRAWBRIDGE_UP, HOLE, MOAT, PIT, POOL, ROOM, TT_PIT, W_WEP } from '../js/const.js';
+import { DB_EAST, DB_FLOOR, DB_LAVA, DBWALL, DRAWBRIDGE_UP, HOLE, MOAT, PIT, POOL, ROOM, TT_PIT, W_WEP } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { maketrap } from '../js/mklev.js';
@@ -103,4 +103,24 @@ void test('forced pit flooding still tests the liquid supply before wetting floo
 
     assert.equal(level.requireAt(11, 10).typ, POOL);
     assert.equal(potion.odiluted, true, 'The flooded potion receives native water damage.');
+});
+
+void test('a broken digging wand opens a pit under a raised drawbridge without destroying the bridge', async () => {
+    const level = freshObjectRoom({ hero: { uhp: 500, uhpmax: 500 } });
+    const span = level.requireAt(11, 10);
+    span.typ = DRAWBRIDGE_UP;
+    span.drawbridgemask = DB_EAST | DB_FLOOR;
+    const portcullis = level.requireAt(12, 10);
+    portcullis.typ = DBWALL;
+    grantIntrinsicProperty('levitation', 'outside');
+    const wand = await addInventoryObject(WAN_DIGGING, { spe: 1 });
+    const input = resetInputState();
+    installPagerInput(input, { expected: /wand|pit|hole|bridge|crash|blast|Boom|debris/i, limit: 30 });
+    input.feed(`${wand.invlet}y`);
+
+    await rhack('a'.charCodeAt(0));
+
+    assert.equal(span.typ, DRAWBRIDGE_UP);
+    assert.equal(portcullis.typ, DBWALL);
+    assert.equal(level.traps.find(trap => trap.tx === 11 && trap.ty === 10)?.ttyp, PIT);
 });
