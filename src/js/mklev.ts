@@ -150,7 +150,7 @@ import {
     DRUM_OF_EARTHQUAKE, CORPSE, EGG, MEAT_RING,
     GLOB_OF_GRAY_OOZE, GLOB_OF_BLACK_PUDDING, KELP_FROND,
     SLIME_MOLD, MELON, LUMP_OF_ROYAL_JELLY, CREAM_PIE, CANDY_BAR,
-    TIN, GOLD_PIECE, SPE_NOVEL, SPE_BOOK_OF_THE_DEAD,
+    TIN, GOLD_PIECE, SPE_NOVEL, SPE_BOOK_OF_THE_DEAD, SPE_DIG, POT_SICKNESS,
     DILITHIUM_CRYSTAL, LUCKSTONE, LOADSTONE, TOUCHSTONE,
     ROCK, BOULDER, STATUE, DART, DAGGER, SPEAR, SLING, ORCISH_DAGGER, MACE,
     QUARTERSTAFF,
@@ -2005,9 +2005,18 @@ async function makemon(
         return object.where === 'gone' ? null : object;
     };
 
-    // makemon() creates Croesus's fixed sword before apparent-target rolls.
-    if (allowMonsterInventory && mndx === PM_CROESUS)
-        await mongets(TWO_HANDED_SWORD);
+    // C makemon() grants fixed possessions before ordinary equipment.
+    // The Wizard count advances even when NO_MINVENT suppresses his book.
+    let fixedItem = 0;
+    if (mndx === PM_VLAD_THE_IMPALER) fixedItem = CANDELABRUM_OF_INVOCATION;
+    else if (mndx === PM_WIZARD_OF_YENDOR) {
+        game.context.no_of_wizards = (game.context.no_of_wizards ?? 0) + 1;
+        if (game.context.no_of_wizards === 1 && Is_earthlevel(game.u.uz))
+            fixedItem = SPE_DIG;
+    } else if (mndx === PM_CROESUS) fixedItem = TWO_HANDED_SWORD;
+    else if (MONSTER_SOUND[mndx] === 37) fixedItem = BELL_OF_OPENING; // MS_NEMESIS
+    else if (mndx === PM_PESTILENCE) fixedItem = POT_SICKNESS;
+    if (allowMonsterInventory && fixedItem) await mongets(fixedItem);
 
     // makemon.c owns this initialization when its original requested
     // coordinate was the hero's occupied square.  enexto() has already moved
@@ -2138,12 +2147,7 @@ async function makemon(
         }
         await giveOffensiveMonsterItem();
     };
-    if (allowMonsterInventory && mndx === PM_VLAD_THE_IMPALER)
-        await mongets(CANDELABRUM_OF_INVOCATION);
     if (isQuestNemesis) {
-        // makemon() gives MS_NEMESIS the Bell before its level-generation
-        // sleep gate and normal weapon/inventory initialization.
-        if (allowMonsterInventory) await mongets(BELL_OF_OPENING);
         if (game.in_mklev && isNeutralDemon
             && !game.u?.uhave?.amulet && rn2(5)) {
             monsterSleeping = 1;
@@ -2785,8 +2789,6 @@ async function makemon(
         monster.cham = pendingMonster.cham;
     if (mndx === PM_WIZARD_OF_YENDOR) {
         monster.iswiz = true;
-        game.context.no_of_wizards =
-            (game.context.no_of_wizards || 0) + 1;
     }
     restoreMonsterInventoryOwnership(monster);
     if (allowMonsterInventory) {
