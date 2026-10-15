@@ -5818,7 +5818,7 @@ async function beginHeroAttackSlot(
         || damageType === AD_WRAP || damageType === AD_DRIN || damageType === AD_CURS
         || damageType === AD_HEAL || damageType === AD_ACID || damageType === AD_SLOW
         || damageType === AD_SGLD || damageType === AD_SSEX || damageType === AD_DISE
-        || damageType === AD_CONF || damageType === AD_PEST)) {
+        || damageType === AD_CONF || damageType === AD_PEST || damageType === AD_FAMN)) {
         const negated = damageType === AD_SLOW
             ? specialAttackNegated(monster, state.u, { state, random })
             : damageType === AD_POLY
@@ -5830,6 +5830,7 @@ async function beginHeroAttackSlot(
             ...(damageType === AD_HEAL ? { effect: `nurse-${nurseContactMode(monster, state)}` } : {}),
             ...(damageType === AD_SSEX ? { effect: 'seduction-contact' } : {}),
             ...(damageType === AD_PEST ? { effect: 'pestilence-contact' } : {}),
+            ...(damageType === AD_FAMN ? { effect: 'famine-contact' } : {}),
         };
     } else if (hit && damageType === AD_STCK) {
         const armorProtection = magicNegation(state.u, state);

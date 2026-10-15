@@ -1725,6 +1725,8 @@ async function monsterAttackMessage(
     const subject = monsterName(monster, { capitalized: true });
     if (attack.effect === 'pestilence-contact')
         return `${subject} reaches out, and you feel fever and chills.`;
+    if (attack.effect === 'famine-contact')
+        return `${subject} reaches out, and your body shrivels.`;
     if (monster?.mnum === 116) {
         if (attack.effect === 'electric-natural')
             return `${subject} bites!`;

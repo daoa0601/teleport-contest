@@ -4,16 +4,17 @@ import { artifactById } from './artifacts.js';
 import { heroHasFreeAction } from './armor.js';
 import { exerciseAttribute } from './attrib.js';
 import { endVoluntaryMultiTurn, heroHasInvoluntaryDelay } from './command_state.js';
-import { A_CON, A_DEX, A_STR, M_SEEN_ACID, M_SEEN_SLEEP, Upolyd } from './const.js';
+import { A_CON, A_DEX, A_STR, FAINTED, M_SEEN_ACID, M_SEEN_SLEEP, Upolyd } from './const.js';
 import { displayLiquidName, shieldeff, type MessagePublisher } from './display.js';
 import type { PlayingGameState } from './game_state.js';
 import { heroIsBlind } from './senses.js';
 import { heroIsUnconscious, putHeroToSleep } from './hero_sleep.js';
 import { retouchEquipment } from './hero_retouch.js';
 import { specialAttackNegated } from './magic_negation.js';
-import { AD_ACID, AD_CONF, AD_CURS, AD_DISE, AD_HEAL, AD_PEST, AD_PLYS, AD_POLY, AD_SGLD, AD_SLEE, AD_SLOW, AD_SSEX, AD_TLPT, AD_WERE, AD_WRAP } from './monster_attack_types.js';
+import { AD_ACID, AD_CONF, AD_CURS, AD_DISE, AD_FAMN, AD_HEAL, AD_PEST, AD_PLYS, AD_POLY, AD_SGLD, AD_SLEE, AD_SLOW, AD_SSEX, AD_TLPT, AD_WERE, AD_WRAP } from './monster_attack_types.js';
 import { infectHeroWithMonsterDisease } from './monster_disease.js';
 import { makeConfused } from './hero_mental_status.js';
+import { spendHeroNutrition } from './hunger.js';
 import { resolveHeroSeduction } from './monster_seduction.js';
 import { stealHeroGold } from './monster_gold_theft.js';
 import { heroHasRemovableSpeed, slowHero } from './hero_speed.js';
@@ -87,6 +88,10 @@ export async function resolveMonsterContactEffect(
     }
     else if (attack.damageType === AD_PEST)
         await infectHeroWithMonsterDisease(monster, state, publish, random);
+    else if (attack.damageType === AD_FAMN) {
+        await exerciseAttribute(A_CON, false, state);
+        if (state.u.uhs !== FAINTED) await spendHeroNutrition(random(40) + 40, { state });
+    }
     else if (attack.damageType === AD_CONF) {
         const duration = attack.damage ?? 0;
         if (!monster.mcan && random(4) === 0 && !monster.mspec_used) {
