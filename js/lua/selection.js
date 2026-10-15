@@ -1,4 +1,4 @@
-import { SpecialSelection, specialSelectionFillRect, specialSelectionFloodFill, specialSelectionLine, specialSelectionMatch, specialSelectionRandLine, specialSelectionRect, selection_from_mkroom, } from '../selvar.js';
+import { SpecialSelection, specialSelectionFillRect, specialSelectionFloodFill, specialSelectionLine, specialSelectionMatch, specialSelectionRandLine, specialSelectionRect, selection_from_mkroom, selection_do_ellipse, } from '../selvar.js';
 import { LuaTable, LuaUserdata } from './runtime.js';
 import { luaInteger, luaString, luaTruthy } from './arguments.js';
 import { ANY_LOC, getLocationCoord } from '../special_location.js';
@@ -59,6 +59,17 @@ export function createSelectionApi(context, invoke = null) {
     };
     const rndcoord = (self, remove = 0) => pointTable(relativePoint(selectionValue(self).randomCoordinate(!!luaInteger(remove ?? 0))));
     const bounds = (self) => boundsTable(selectionValue(self).bounds());
+    const ellipse = async (circular, args) => {
+        const hasSelection = args[0] instanceof LuaUserdata;
+        const result = hasSelection ? selectionValue(args.shift()) : new SpecialSelection();
+        const x = luaInteger(args[0]), y = luaInteger(args[1]);
+        const radiusX = luaInteger(args[2]);
+        const radiusY = circular ? radiusX : luaInteger(args[3]);
+        const filled = luaInteger(args[circular ? 3 : 4] ?? 0);
+        const point = await getLocationCoord(currentContext(), { x, y }, ANY_LOC);
+        selection_do_ellipse(result.selection, point.x, point.y, radiusX, radiusY, !filled);
+        return wrap(result);
+    };
     const randline = (self, x1, y1, x2, y2, roughness = 7) => {
         const active = currentContext();
         const result = selectionValue(self).clone();
@@ -86,6 +97,8 @@ export function createSelectionApi(context, invoke = null) {
         grow,
         rndcoord,
         bounds,
+        circle: (...args) => ellipse(true, args),
+        ellipse: (...args) => ellipse(false, args),
         randline,
         iterate,
     };

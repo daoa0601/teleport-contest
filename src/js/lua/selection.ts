@@ -7,6 +7,7 @@ import {
     specialSelectionRandLine,
     specialSelectionRect,
     selection_from_mkroom,
+    selection_do_ellipse,
 } from '../selvar.js';
 import { LuaTable, LuaUserdata } from './runtime.js';
 import { luaInteger, luaString, luaTruthy } from './arguments.js';
@@ -88,6 +89,17 @@ export function createSelectionApi(context: ContextSource, invoke: InvokeSelecti
         selectionValue(self).randomCoordinate(!!luaInteger(remove ?? 0)),
     ));
     const bounds = (self: LuaValue) => boundsTable(selectionValue(self).bounds());
+    const ellipse = async (circular: boolean, args: LuaValue[]) => {
+        const hasSelection = args[0] instanceof LuaUserdata;
+        const result = hasSelection ? selectionValue(args.shift()) : new SpecialSelection();
+        const x = luaInteger(args[0]), y = luaInteger(args[1]);
+        const radiusX = luaInteger(args[2]);
+        const radiusY = circular ? radiusX : luaInteger(args[3]);
+        const filled = luaInteger(args[circular ? 3 : 4] ?? 0);
+        const point = await getLocationCoord(currentContext(), { x, y }, ANY_LOC);
+        selection_do_ellipse(result.selection, point.x, point.y, radiusX, radiusY, !filled);
+        return wrap(result);
+    };
     const randline = (self: LuaValue, x1: LuaValue, y1: LuaValue, x2: LuaValue, y2: LuaValue, roughness: LuaValue = 7) => {
         const active = currentContext();
         const result = selectionValue(self).clone();
@@ -122,6 +134,8 @@ export function createSelectionApi(context: ContextSource, invoke: InvokeSelecti
         grow,
         rndcoord,
         bounds,
+        circle: (...args: LuaValue[]) => ellipse(true, args),
+        ellipse: (...args: LuaValue[]) => ellipse(false, args),
         randline,
         iterate,
     };
