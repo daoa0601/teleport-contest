@@ -460,7 +460,12 @@ async function beginMonsterForm(mnum: number, {
     }
 
     if (!u.uconduct) u.uconduct = {};
+    const firstPolymorph = !u.uconduct.polyselfs;
     u.uconduct.polyselfs = (u.uconduct.polyselfs || 0) + 1;
+    if (firstPolymorph) {
+        const form = monsterTypeName(mnum, game.flags.female);
+        recordGameLogEvent(`changed form for the first time, becoming ${withIndefiniteArticle(form)}`);
+    }
 
     // polymon() exercises the human attributes before installing the
     // monster form, so these two calls belong ahead of duration and HP.
