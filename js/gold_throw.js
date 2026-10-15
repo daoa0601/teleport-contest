@@ -4,16 +4,20 @@
 import { A_CHA, IS_SOFT, Is_airlevel, Is_waterlevel, LOST_THROWN, Upolyd, } from './const.js';
 import { objectIsHardHelmet } from './armor.js';
 import { loseHeroHp } from './hero_damage.js';
-import { monsterName, shopkeeperName } from './monster_name.js';
+import { monsterName } from './monster_name.js';
 import { currentAttribute } from './attrib.js';
-import { newsym, pline, plineWithContinuation } from './display.js';
+import { canSeeMonster, canSpotMonster, newsym, pline, plineWithContinuation } from './display.js';
 import { placeObjectSynchronously, stack_object } from './floor_object.js';
 import { hiddenGold } from './gold.js';
 import { freeInventoryObject } from './hero_inventory.js';
 import { requirePlayingGame } from './gstate.js';
 import { detachHeroGold, heroGoldAmount, heroGoldObject, } from './hero_gold.js';
 import { addObjectToMonsterInventory, linkObjectToMonsterInventory, } from './monster_inventory.js';
-import { MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL, } from './monster_data.js';
+import { MONSTER_FLAGS2 } from './monster_data.js';
+import { finishMonsterEating } from './monster_eating.js';
+import { makeShopkeeperHappy } from './shop_damage.js';
+import { hasShopkeeperData } from './shop_types.js';
+import { heroIsDeaf } from './senses.js';
 import { OBJECT_COST } from './object_data.js';
 import { rn2, rnd } from './rng.js';
 import { flyHeroThrownObject, heroThrowRange, prepareHeroThrownTarget, } from './thrown_object.js';
@@ -37,50 +41,27 @@ function goldNoun(gold) {
     return quantity(gold) === 1 ? 'gold piece' : 'gold pieces';
 }
 async function missGold(monster, gold, state) {
-    const target = state.flags?.verbose === false
-        ? 'it' : (MONSTER_NAME[monster.mnum] || 'monster');
-    await pline(`The ${goldNoun(gold)} miss the ${target}.`);
+    const spotted = cansee(monster.mx, monster.my) || canSpotMonster(monster);
+    const target = state.flags.verbose !== false && spotted ? monsterName(monster, { state }) : 'it';
+    await pline(`The ${goldNoun(gold)} ${quantity(gold) === 1 ? 'misses' : 'miss'} ${target}.`);
 }
-function finishMonsterMeal(monster) {
-    monster.meating = 0;
-    if (monster.m_ap_type && MONSTER_SYMBOL[monster.mnum] !== 13) {
-        monster.m_ap_type = 0;
-        monster.mappearance = 0;
-        newsym(monster.mx, monster.my);
-    }
-}
-function makeShopkeeperHappy(monster, state, adjustAlignment) {
-    if (!monster.eshk)
-        throw new Error('Shopkeeper gold payment requires shopkeeper data.');
-    const wasAngry = !monster.mpeaceful;
-    monster.mpeaceful = 1;
-    monster.eshk.following = 0;
-    monster.eshk.robbed = 0;
-    if (state.urole?.key !== 'rogue') {
-        adjustAlignment?.(Math.sign(state.u?.ualign?.type ?? 0));
-    }
-    return wasAngry;
-}
-async function finishShopkeeperCatch(monster, gold, value, state, adjustAlignment) {
-    if (!monster.eshk)
+async function finishShopkeeperCatch(monster, value, state) {
+    if (!hasShopkeeperData(monster))
         throw new Error('Shopkeeper gold payment requires shopkeeper data.');
     const robbedBefore = Math.max(0, Math.trunc(monster.eshk.robbed ?? 0));
     if (robbedBefore) {
         const robbedAfter = Math.max(0, robbedBefore - value);
         await pline(`The amount ${robbedAfter ? 'partially ' : ''}covers ${monster.female ? 'her' : 'his'} recent losses.`);
         monster.eshk.robbed = robbedAfter;
-        if (!robbedAfter) {
-            const calmed = makeShopkeeperHappy(monster, state, adjustAlignment);
-            if (calmed)
-                await pline(`${shopkeeperName(monster, { state, capitalized: true })} calms down.`);
-        }
+        if (!robbedAfter)
+            await makeShopkeeperHappy(monster, { state });
         return;
     }
     if (monster.mpeaceful) {
         monster.eshk.credit = Math.max(0, Math.trunc(monster.eshk.credit ?? 0)) + value;
         await pline(`You have ${monster.eshk.credit} zorkmid${monster.eshk.credit === 1 ? '' : 's'} in credit.`);
     }
-    else {
+    else if (!heroIsDeaf(state)) {
         await pline('"Thanks, scum!"');
     }
 }
@@ -92,7 +73,8 @@ async function finishGuardCatch(monster, state) {
             : monster.mpeaceful
                 ? "I'll take care of that; please move along."
                 : "I'll take that; now get moving.";
-    await pline(`"${speech}"`);
+    if (!heroIsDeaf(state))
+        await pline(`"${speech}"`);
 }
 async function finishMercenaryCatch(monster, value, state) {
     const wasAngry = !monster.mpeaceful;
@@ -104,6 +86,8 @@ async function finishMercenaryCatch(monster, value, state) {
         if (value > required)
             monster.mpeaceful = 1;
     }
+    if (heroIsDeaf(state))
+        return;
     if (!monster.mpeaceful) {
         await pline(required
             ? '"That\'s not enough, coward!"'
@@ -116,7 +100,7 @@ async function finishMercenaryCatch(monster, value, state) {
         await pline(`"Thanks for the tip, ${state.flags?.female ? 'lady' : 'buddy'}."`);
     }
 }
-export async function resolveGoldMonsterContact({ state, monster, gold, wakeMonster, angerMonster, adjustAlignment, }) {
+export async function resolveGoldMonsterContact({ state, monster, gold, wakeMonster, angerMonster, }) {
     const flags = MONSTER_FLAGS2[monster?.mnum] ?? 0;
     const greedy = !!(flags & M2_GREEDY);
     const mercenary = !!(flags & M2_MERC);
@@ -128,16 +112,16 @@ export async function resolveGoldMonsterContact({ state, monster, gold, wakeMons
         return false;
     }
     if (monster.mcanmove === 0 || monster.mcanmove === false) {
-        if (cansee(monster.mx, monster.my)) {
-            await pline(`The ${goldNoun(gold)} harmlessly hit ${(MONSTER_NAME[monster.mnum] || 'monster')}.`);
-        }
-        await missGold(monster, gold, state);
+        if (canSeeMonster(monster))
+            await pline(`The ${goldNoun(gold)} harmlessly ${quantity(gold) === 1 ? 'hits' : 'hit'} ${monsterName(monster, { state })}.`);
+        else
+            await missGold(monster, gold, state);
         return false;
     }
     const wasSleeping = !!monster.msleeping;
     const value = quantity(gold) * (OBJECT_COST[gold.otyp] ?? 1);
     monster.msleeping = 0;
-    finishMonsterMeal(monster);
+    finishMonsterEating(monster, state);
     if (!monster.isgd && rn2(4) === 0)
         await angerMonster?.(monster);
     if (cansee(monster.mx, monster.my)) {
@@ -145,9 +129,9 @@ export async function resolveGoldMonsterContact({ state, monster, gold, wakeMons
     }
     await addObjectToMonsterInventory(monster, gold, state);
     if (monster.isshk) {
-        await finishShopkeeperCatch(monster, gold, value, state, adjustAlignment);
+        await finishShopkeeperCatch(monster, value, state);
     }
-    else if (monster.ispriest) {
+    else if (monster.ispriest && !heroIsDeaf(state)) {
         await pline(monster.mpeaceful
             ? '"Thank you for your contribution."' : '"Thanks, scum!"');
     }
@@ -183,7 +167,7 @@ async function resolveQuiveredGoldMonsterContact({ state, monster, gold, swallow
         await wakeMonster?.(monster);
     return false;
 }
-export async function resolveDirectGoldThrow({ state, gold, dx = 0, dy = 0, dz = 0, captureFlight = null, wakeMonster = null, angerMonster = null, adjustAlignment = null, }) {
+export async function resolveDirectGoldThrow({ state, gold, dx = 0, dy = 0, dz = 0, captureFlight = null, wakeMonster = null, angerMonster = null, }) {
     if (!gold || gold.oclass !== 12 || !state.inventory.includes(gold))
         return false;
     await freeInventoryObject(gold, state);
@@ -207,7 +191,7 @@ export async function resolveDirectGoldThrow({ state, gold, dx = 0, dy = 0, dz =
     if (contact) {
         const caught = await resolveGoldMonsterContact({
             state, monster: contact, gold,
-            wakeMonster, angerMonster, adjustAlignment,
+            wakeMonster, angerMonster,
         });
         if (caught)
             return true;

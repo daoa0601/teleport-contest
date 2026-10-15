@@ -91,20 +91,19 @@ export async function dipSink(object) {
         await tryCallObjectType(object);
     await consumeInventoryItem(object);
 }
-async function sinkBacksUp() {
+export async function sinkBacksUp(x = game.u.ux, y = game.u.uy) {
     requirePlayingGame(game);
     const sight = heroIsBlind(), deaf = heroIsDeaf();
     const message = !sight ? 'Muddy waste pops up from the drain'
         : !deaf ? 'You hear a sloshing sound' : `Something splashes you in the ${heroFaceName()}`;
     await pline(`${deaf ? '' : 'Flupp!  '}${message}.`);
-    const { ux, uy } = game.u;
-    const location = game.level.requireAt(ux, uy);
+    const location = game.level.requireAt(x, y);
     if ((location.looted ?? 0) & S_LRING)
         return;
     if (!sight)
         await pline('You see a ring shining in its midst.');
-    placeCreatedObject(await mkobj(4, true), ux, uy);
-    newsym(ux, uy);
+    placeCreatedObject(await mkobj(4, true), x, y);
+    newsym(x, y);
     await exerciseAttribute(A_DEX, true);
     await exerciseAttribute(A_WIS, true);
     location.looted = (location.looted ?? 0) | S_LRING;

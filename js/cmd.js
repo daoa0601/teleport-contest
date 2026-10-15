@@ -3,7 +3,7 @@ import { resetPick } from './lock_context.js';
 import { AUTOUNLOCK_APPLY_KEY, AUTOUNLOCK_UNTRAP } from './const.js';
 import { findDrawbridgeAt } from './dbridge.js';
 import { doorObstructed } from './door_magic.js';
-import { DBWALL, DRAWBRIDGE_DOWN } from './const.js';
+import { DBWALL, DRAWBRIDGE_DOWN, IS_DRAWBRIDGE, IS_TREE, LADDER, STAIRS, THRONE } from './const.js';
 import { dipFountainSword } from './fountain_sword.js';
 import { washHands } from './dip_water.js';
 import { waterDamageObject } from './trap.js';
@@ -78,6 +78,8 @@ import { senseBuriedObjects } from './buried_object.js';
 import { distantMonsterName, monsterInstanceDisplayName, monsterName, shopkeeperName } from './monster_name.js';
 import { attackHostileMonster } from './hero_melee.js';
 import { prepareAppliedWeaponAttack } from './hero_attack_preflight.js';
+import { applyCaitiffPenalty } from './hero_attack_conduct.js';
+import { revealMonsterAppearance } from './monster_appearance.js';
 import { beastChoosesHeroDisplacement, settleBeastHeroDisplacement } from './hero_beast_displacement.js';
 import { stumbleOnDoorMimic, stumbleOntoMimic } from './mimic.js';
 import { monsterHasMapPosition, monsterAtPosition } from './monster_location.js';
@@ -224,7 +226,6 @@ import { doUntrap } from './untrap.js';
 import { dosit } from './sit.js';
 import { continueEngraving, doengrave } from './engrave_command.js';
 import { heroCanMoveFromTrap, triggerHeroTrapAt, triggerLevelTeleportTrap } from './hero_traps.js';
-import { activateStatueTrapAt } from './statue_trap.js';
 import { applyDippedCoinFate, applyFountainDemonActor, applyFountainGemDiscovery, applyFountainNymphActor, applyFountainSnakeActors, resolveDippedBucFate, resolveDippedSensationFate, } from './fountain_effects.js';
 import { dryFountainAt, gushForthFromFountain } from './fountain.js';
 import { heroArmName, heroFingerName, heroHandName } from './body_parts.js';
@@ -286,9 +287,13 @@ import { chatWithQuestLeader, onQuestStart, okToQuest } from './quest.js';
 import { performPetRangedAttack, resumeDeferredMonsterTrap, triggerImmediateMonsterTrap, } from './monmove.js';
 import { hurtleHero, kickRecoilRange } from './hero_hurtle.js';
 import { announceInvocationSquare } from './invocation.js';
-import { abuseKickedPet, kickConductViolation, levitatingKickMisses, prepareKick, prepareKickDamage, rollKickDamage, tryKickEvasion, tryKickReel, } from './monster_kick.js';
+import { abuseKickedPet, levitatingKickMisses, prepareKick, prepareKickDamage, rollKickDamage, tryKickEvasion, tryKickReel, } from './monster_kick.js';
 import { kickFloorObject } from './object_kick.js';
 import { kickWithMonsterForm } from './hero_form_kick.js';
+import { admitHeroKick, kickCanReachTarget } from './kick_admission.js';
+import { kickNonDoorTerrain } from './kick_terrain.js';
+import { kickDoor } from './kick_door.js';
+import { heroHasMartialKick } from './kick_rules.js';
 import { bringLeashedFollowers, heroTeleportDestinationOk, moveHeroByTeleport, randomMonsterRelocation, } from './teleport.js';
 import { goodPosition, monsterTeleportRestricted } from './teleport_rules.js';
 import { removeWishGrantingMonster } from './monster_departure.js';
@@ -1689,7 +1694,19 @@ async function kickOuch(x, y, objectName = '') {
     await plineWithContinuation('Ouch!  That hurts!');
     await exerciseAttribute(A_DEX, false);
     await exerciseAttribute(A_STR, false);
-    wakeMonstersNear(x, y, 25);
+    if (isok(x, y)) {
+        if (heroIsBlind(game))
+            feel_location(x, y);
+        const location = game.level?.at(x, y);
+        const bridge = location && (location.typ === DOOR || location.typ === DBWALL)
+            ? findDrawbridgeAt(x, y) : null;
+        if (bridge) {
+            await plineWithContinuation('The drawbridge is unaffected.');
+            x = bridge.x;
+            y = bridge.y;
+        }
+        wakeMonstersNear(x, y, 25);
+    }
     if (rn2(3) === 0) {
         await woundHeroLegs('right', 5 + rnd(5));
     }
@@ -1705,17 +1722,35 @@ function kickCausesRecoil() {
         || game.u?.levitation || game.levitating;
 }
 function kickDeathReason(x, y) {
+    if (!isok(x, y))
+        return 'kicking nothing';
     const location = game.level?.at?.(x, y);
     if (!location)
         return 'kicking nothing';
     if (location.typ === DOOR)
         return 'kicking a door';
+    if (IS_TREE(location.typ))
+        return 'kicking a tree';
     if (IS_STWALL(location.typ))
         return 'kicking a wall';
-    if (location.typ === TREE)
-        return 'kicking a tree';
+    if (IS_OBSTRUCTED(location.typ))
+        return 'kicking a rock';
+    if (location.typ === THRONE)
+        return 'kicking a throne';
+    if (location.typ === FOUNTAIN)
+        return 'kicking a fountain';
     if (location.typ === GRAVE)
         return 'kicking a headstone';
+    if (location.typ === SINK)
+        return 'kicking a sink';
+    if (location.typ === ALTAR)
+        return 'kicking an altar';
+    if (IS_DRAWBRIDGE(location.typ))
+        return 'kicking a drawbridge';
+    if (location.typ === STAIRS)
+        return 'kicking the stairs';
+    if (location.typ === LADDER)
+        return 'kicking a ladder';
     if (location.typ === IRONBARS)
         return 'kicking an iron bar';
     return 'kicking something weird';
@@ -1743,23 +1778,6 @@ async function recoilFromKick(range) {
         finishMonsterDeath: finishHurtleMonsterDeath,
     });
 }
-function kickPromptTargetName(monster) {
-    if (monster.name)
-        return monster.name;
-    const article = (monster.mtame ?? 0) > 0 ? 'your' : 'the';
-    return `${article} ${monsterInstanceDisplayName(monster)}`;
-}
-async function confirmKickTarget(monster) {
-    const hero = game.u;
-    const impaired = hero?.confused || (hero?.confusionTurns ?? 0) > 0
-        || heroIsHallucinating(game)
-        || hero?.stunned || (hero?.stunnedTurns ?? 0) > 0;
-    if (game.flags?.confirm === false || !monster.mpeaceful || impaired
-        || game.context?.forcefight || !canSpotMonster(monster))
-        return true;
-    const paranoid = !!((game.flags?.paranoia_bits ?? 0) & PARANOID_HIT);
-    return paranoidQuery(paranoid, `Really attack ${kickPromptTargetName(monster)}?`);
-}
 function applyKickPassive(monster, hit) {
     return applyHeroContactPassive(monster, {
         hit,
@@ -1771,32 +1789,40 @@ function applyKickPassive(monster, hit) {
 // Form-specific attacks share the command admission rules. Projection affects only the
 // target noun: dokick() still targets m_at(x,y) when the actor is invisible.
 async function kickLiveMonster(monster, x, y) {
-    const helplessBeforeKick = !!(monster.msleeping
-        || monster.mcanmove === 0 || (monster.mfrozen ?? 0) > 0);
-    const fleeingFromBehind = !!(monster.mflee && !monster.mavenge);
-    monster.mstrategy = (monster.mstrategy ?? 0) & ~STRAT_WAITMASK;
-    if (!await confirmKickTarget(monster)) {
-        game.context.move = 0;
-        return;
+    const forcefight = game.context.forcefight;
+    try {
+        if (!monster.mpeaceful || !canSpotMonster(monster))
+            game.context.forcefight = true;
+        const permission = await prepareAppliedWeaponAttack(monster, null, { struckAt: { x, y } });
+        if (!permission.proceed) {
+            game.context.move = permission.spentTime ? 1 : 0;
+            return false;
+        }
+        if (await checkHeroAttackOverexertion()) {
+            game.context.move = 1;
+            return false;
+        }
     }
-    if (await checkHeroAttackOverexertion()) {
-        game.context.move = 1;
-        return;
+    finally {
+        if (forcefight === undefined)
+            delete game.context.forcefight;
+        else
+            game.context.forcefight = forcefight;
     }
     wakeMonstersNear(game.u.ux, game.u.uy, (game.u?.ulevel ?? 1) * 20);
     wipeHeroEngraving(2);
     await angerAttackedMonster(monster);
     if (await levitatingKickMisses(monster)) {
         await pline('Floating in the air, you miss wildly!');
+        await exerciseAttribute(A_DEX, false);
         await applyKickPassive(monster, false);
         game.context.move = 1;
-        return;
+        return true;
     }
     if (monster.mundetected
         || (M_AP_TYPE(monster) && M_AP_TYPE(monster) !== M_AP_MONSTER)) {
         monster.mundetected = 0;
-        monster.m_ap_type = 0;
-        monster.mappearance = 0;
+        revealMonsterAppearance(monster);
         if (canSpotMonster(monster)) {
             newsym(x, y);
             const name = monsterInstanceDisplayName(monster);
@@ -1809,11 +1835,10 @@ async function kickLiveMonster(monster, x, y) {
     }
     if (await kickWithMonsterForm(monster, x, y)) {
         game.context.move = 1;
-        return;
+        return true;
     }
     const target = monsterName(monster);
-    const martial = game.urole?.key === 'monk' || game.urole?.key === 'samurai'
-        || game.uarmf?.otyp === KICKING_BOOTS;
+    const martial = heroHasMartialKick();
     const kick = await prepareKick({
         martial,
         announce: pline,
@@ -1821,7 +1846,7 @@ async function kickLiveMonster(monster, x, y) {
     if (kick.stopped) {
         await applyKickPassive(monster, false);
         game.context.move = 1;
-        return;
+        return true;
     }
     await plineWithContinuation(`You kick ${target}.`);
     const evaded = await tryKickEvasion(monster, {
@@ -1837,41 +1862,35 @@ async function kickLiveMonster(monster, x, y) {
             && !canSpotMonster(monster))
             map_invisible(x, y);
         game.context.move = 1;
-        return;
+        return true;
     }
     const preparedDamage = prepareKickDamage(monster, {
         clumsy: kick.clumsy,
     });
     if (preparedDamage.passesThroughShade) {
-        await plineWithContinuation('The kick passes harmlessly through the shade.');
+        await plineWithContinuation('The kick passes harmlessly through.');
         game.context.move = 1;
-        return;
+        return true;
     }
-    const conductMessage = kickConductViolation(monster, {
-        helpless: helplessBeforeKick,
-        fleeingFromBehind,
-    });
-    if (conductMessage) {
-        await plineWithContinuation(conductMessage);
-        adjustHeroAlignment(-1);
-    }
+    revealMonsterAppearance(monster);
+    await applyCaitiffPenalty(monster);
     const petReaction = await abuseKickedPet(monster, preparedDamage.potentialDamage);
     if (petReaction.heroDied)
-        return;
+        return true;
     const damage = await rollKickDamage(preparedDamage, { martial });
     if (damage.damage > 0)
-        monster.mhp = Math.max(0, (monster.mhp ?? 1) - damage.damage);
+        monster.mhp -= damage.damage;
     const reel = await tryKickReel(monster, x - (game.u?.ux ?? x), y - (game.u?.uy ?? y), {
         martial,
         announce: plineWithContinuation,
         nameMonster: (actor) => canSpotMonster(actor) ? `The ${monsterInstanceDisplayName(actor)}` : 'It',
     });
     if (reel?.heroDied)
-        return;
+        return true;
     const passive = await applyKickPassive(monster, true);
     if (passive.heroDied) {
         game.context.move = 1;
-        return;
+        return true;
     }
     if ((monster.mhp ?? 1) <= 0 && !reel?.dead) {
         await finishHeroMonsterKill(monster, monster.mx, monster.my, {
@@ -1885,19 +1904,13 @@ async function kickLiveMonster(monster, x, y) {
     if (damage.trainSkill)
         await useHeroSkill(35);
     game.context.move = 1;
+    return true;
 }
 async function dokick() {
-    if ((game.u?._woundedLegTurns ?? 0) > 0) {
-        const side = game.u._woundedLegSide;
-        const leg = side === 'both' ? 'legs are' : `${side || 'right'} leg is`;
-        await moreUntilDismissed(`Your ${leg} in no shape for kicking.`);
-        game._pending_message = '';
-        game._retained_message = '';
-        game.context.move = 0;
+    if (!await admitHeroKick())
         return;
-    }
     const direction = await promptDirection();
-    if (!direction || direction.dz || (!direction.dx && !direction.dy)) {
+    if (!direction || (!direction.dx && !direction.dy)) {
         resetCommandVariables(true); // dokick() returns ECMD_CANCEL.
         return;
     }
@@ -1909,14 +1922,28 @@ async function dokick() {
     // dispatching the target.  Peaceful monsters and pets consult it during
     // this same elapsed turn so they do not step into the square just kicked.
     game._kickedLoc = { x, y };
+    if (!await kickCanReachTarget())
+        return;
     const average = game.uarmf?.otyp === KICKING_BOOTS ? 99
         : Math.trunc((currentStrength()
             + currentAttribute(A_DEX) + currentAttribute(A_CON)) / 3);
     const monster = monsterAtPosition(requireGameLevel(), x, y);
     if (monster) {
+        const cell = game.level?.at(x, y);
+        const oldGlyph = cell ? { ch: cell.disp_ch, color: cell.disp_color,
+            decgfx: cell.disp_decgfx, attr: cell.disp_attr, metadata: glyphAt(x, y) } : null;
         const recoilRange = kickRecoilRange(monster.mnum);
-        await kickLiveMonster(monster, x, y);
-        if (kickCausesRecoil() && game.context.move)
+        if (!await kickLiveMonster(monster, x, y))
+            return;
+        const glyph = glyphAt(x, y);
+        if (monster.dead || monster.mhp <= 0) {
+            if (oldGlyph && glyph?.kind === 'invisible' && oldGlyph.metadata?.kind !== 'invisible')
+                show_glyph_cell(x, y, oldGlyph.ch, oldGlyph.color, oldGlyph.decgfx, oldGlyph.attr, oldGlyph.metadata);
+        }
+        else if (!canSpotMonster(monster) && monster.mx === x && monster.my === y
+            && glyph?.kind !== 'invisible' && !(game.u.uswallow && game.u.ustuck === monster))
+            map_invisible(x, y);
+        if (!game.program_state.gameover && kickCausesRecoil() && game.context.move)
             await recoilFromKick(recoilRange);
         return;
     }
@@ -1926,17 +1953,21 @@ async function dokick() {
     // impact-centered wake after its attribute exercise draws.
     wakeMonstersNear(game.u.ux, game.u.uy, (game.u?.ulevel ?? 1) * 20);
     wipeHeroEngraving(2);
+    if (!isok(x, y)) {
+        await kickOuch(x, y);
+        game.context.move = 1;
+        return;
+    }
+    unmap_invisible(x, y);
+    if ((isPoolAt(x, y) || location?.typ === LAVAWALL) !== !!game.u.uinwater) {
+        await plineWithContinuation(`You splash some ${displayLiquidName(isPoolAt(x, y) ? 'water' : 'lava')} around.`);
+        game.context.move = 1;
+        return;
+    }
     const kickedObject = game.level?.objects?.[x]?.[y]?.[0];
-    const ball = game.uball || game.u?.uball;
-    const chain = game.uchain || game.u?.uchain;
-    if (kickedObject && kickedObject.otyp !== BOULDER
-        && kickedObject !== ball && kickedObject !== chain) {
-        const trap = game.level?.traps?.find(candidate => candidate.tx === x && candidate.ty === y);
-        if (trap?.ttyp === STATUE_TRAP) {
-            await activateStatueTrapAt(x, y);
-            game.context.move = 1;
-            return;
-        }
+    const hasBoulder = game.level?.objects?.[x]?.[y]?.some(object => object.otyp === BOULDER);
+    if (kickedObject && (!game.u.levitating || Is_airlevel(game.u.uz)
+        || Is_waterlevel(game.u.uz) || hasBoulder)) {
         const kicked = await kickFloorObject(x, y, {
             state: game,
             dx: game.u.dx,
@@ -1948,10 +1979,12 @@ async function dokick() {
             return;
         if (!kicked)
             await kickOuch(x, y, killerObjectName(kickedObject));
+        else if (Is_airlevel(game.u.uz))
+            await recoilFromKick(1);
         game.context.move = 1;
         return;
     }
-    if (!location || IS_STWALL(location.typ)) {
+    if (!location || (IS_STWALL(location.typ) && !IS_TREE(location.typ))) {
         await kickOuch(x, y);
         game.context.move = 1;
         return;
@@ -1989,47 +2022,8 @@ async function dokick() {
         game.context.move = 1;
         return;
     }
-    if (location?.typ === DOOR
-        && (location.doormask & (D_CLOSED | D_LOCKED))) {
-        if (game.u?.levitating) {
-            await kickOuch(x, y);
-            game.context.move = 1;
-            return;
-        }
-        await exerciseAttribute(A_DEX, true);
-        const strength = currentStrength();
-        if (rnl(35) < average) {
-            const shopDoor = roomsAt(game.level, x, y, SHOPBASE).length > 0;
-            if (location.doormask & D_TRAPPED) {
-                if (game.flags.verbose)
-                    await pline('You kick the door.');
-                await exerciseAttribute(A_STR, false);
-                location.doormask = D_NODOOR;
-                if (await triggerBoobyTrap('door', { bodypart: true }))
-                    return;
-            }
-            else {
-                const shatters = strength > 18 && rn2(5) === 0 && !shopDoor;
-                location.doormask = shatters ? D_NODOOR : D_BROKEN;
-                await pline(shatters
-                    ? 'As you kick the door, it shatters to pieces!'
-                    : 'As you kick the door, it crashes open!');
-                await exerciseAttribute(A_STR, true);
-            }
-            feel_newsym(x, y);
-            // kick_door() defers sight refresh so billing sees the keeper's
-            // visibility before the door broke, as rloc_to_core() requires.
-            vision_note_blocker_change(x, y);
-            if (shopDoor) {
-                addShopDamage(x, y, SHOP_DOOR_COST);
-                await payForShopDamage('break');
-            }
-        }
-        else {
-            await exerciseAttribute(A_STR, true);
-            await pline(rn2(3) === 0 ? 'Thwack!!' : 'Whammm!!');
-        }
-        game.context.move = 1;
+    if (location.typ === DOOR) {
+        await kickDoor(x, y, average, { ouch: kickOuch, dumb: kickDumb });
         return;
     }
     if (location.typ === SDOOR) {
@@ -2056,6 +2050,8 @@ async function dokick() {
         game.context.move = 1;
         return;
     }
+    if (await kickNonDoorTerrain(x, y, average, { ouch: kickOuch, dumb: kickDumb }))
+        return;
     await kickDumb(x, y);
     game.context.move = 1;
 }
@@ -2063,8 +2059,7 @@ async function kickDumb(x, y) {
     // dokick.c:kick_dumb() always abuses Dexterity before deciding whether
     // an unremarkable floor kick is merely empty or strains a muscle.
     await exerciseAttribute(A_DEX, false);
-    const martial = game.urole?.key === 'monk' || game.urole?.key === 'samurai'
-        || game.uarmf?.otyp === KICKING_BOOTS;
+    const martial = heroHasMartialKick();
     if (martial || currentAttribute(A_DEX) >= 16 || rn2(3) !== 0) {
         await pline('You kick at empty space.');
         if (heroIsBlind(game))
@@ -6328,7 +6323,6 @@ async function throwCommand(selectedItem = null, capabilityChecked = false, supp
             captureFlight: captureThrownObjectFlight,
             wakeMonster: wakeAttackedMonster,
             angerMonster: angerAttackedMonster,
-            adjustAlignment: adjustHeroAlignment,
         });
         game.context.move = 1;
         return;
