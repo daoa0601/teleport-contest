@@ -40,8 +40,8 @@ void test('walking wears text melted into the ice beneath a raised drawbridge', 
     input.feed('E');
     await answerPrompts(moveloop_core(), input, [
         { prompt: /What do you want to write with\?/, keys: wand.invlet },
-        { prompt: /You melt into the (ice|water) with/, keys: ' ' },
-        { prompt: /What do you want to melt into the (ice|water) here\?/, keys: '?\r' },
+        { prompt: /You melt into the ice with/, keys: ' ' },
+        { prompt: /What do you want to melt into the ice here\?/, keys: '?\r' },
     ]);
     await moveloop_core();
     assert.equal(engravingAt(10, 10)?.engr_type, BURN);
