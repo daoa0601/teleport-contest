@@ -35,7 +35,6 @@ import { heroIsPolymorphed, polymorphHero, } from './polyself.js';
 import { getLine, promptYesNo } from './query.js';
 import { applyRemoveCurseSpell } from './scroll_effects.js';
 import { rnd, rn1, rn2 } from './rng.js';
-import { syncBlindness } from './senses.js';
 import { monsterSaddle } from './steed.js';
 import { teleportHero } from './teleport.js';
 import { cansee } from './vision.js';
@@ -108,8 +107,7 @@ async function healHeroCompletely() {
     }
     hero.uhp = hero.uhpmax;
     hero.ucreamed = 0;
-    hero.blindTurns = 0;
-    syncBlindness(game);
+    await makeBlinded(0);
     cureHeroSickness(game);
     await healHeroLegs(game);
     game.context.botl = true;
