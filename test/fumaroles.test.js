@@ -42,4 +42,37 @@ void test('a fumarole leaves damaging gas which hurts a breathing occupant on th
     assert.ok(cloud.damage >= 5 && cloud.damage <= 14, `fumarole damage ${cloud.damage} must be 5..14`);
     assert.equal(cloud.heroFault, false);
 });
+for (const deaf of [false, true]) {
+    void test(`distant fumaroles ${deaf ? 'stay silent for a deaf hero' : 'announce a whoosh only once'}`, async () => {
+        const level = freshObjectRoom({ gameplaySeed: 1n, heroX: 1, heroY: 0,
+            hero: { deafTurns: deaf ? 100 : 0 } });
+        requirePlayingGame(game);
+        level.flags.temperature = 1;
+        for (let x = 1; x < COLNO; x++) {
+            for (let y = 0; y < ROWNO; y++)
+                level.requireAt(x, y).typ = LAVAPOOL;
+        }
+        pushKeys(' '.repeat(20));
+        await fumaroles(game);
+        assert.equal(level.regions.length > 0, true);
+        assert.equal(game._pending_message || '', deaf ? '' : 'You hear a whoosh!');
+        if (!deaf) {
+            await fumaroles(game);
+            assert.equal(game._pending_message, 'You hear a whoosh!', 'consecutive identical whooshes are suppressed');
+        }
+    });
+}
+void test('a nearby fumarole announces a loud whoosh', async () => {
+    const level = freshObjectRoom({ gameplaySeed: 1n, heroX: 40, heroY: 10 });
+    requirePlayingGame(game);
+    level.flags.temperature = 1;
+    for (let x = 1; x < COLNO; x++) {
+        for (let y = 0; y < ROWNO; y++)
+            level.requireAt(x, y).typ = LAVAPOOL;
+    }
+    pushKeys(' '.repeat(200));
+    for (let attempt = 0; attempt < 100 && game._lastPlineMessage !== 'You hear a loud whoosh!'; attempt++)
+        await fumaroles(game);
+    assert.equal(game._lastPlineMessage, 'You hear a loud whoosh!');
+});
 //# sourceMappingURL=fumaroles.test.js.map

@@ -3344,6 +3344,8 @@ export async function fumaroles(state = requireInitializedGame()) {
         if (dx * dx + dy * dy < 15)
             loud = true;
     }
+    if (heard && !heroIsDeaf(state))
+        await plineWithContinuation(`You hear a ${loud ? 'loud ' : ''}whoosh!`, { noRepeat: true });
     return { heard, loud };
 }
 // Finish breamm() in the same actor transaction across ray message input.

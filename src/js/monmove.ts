@@ -4223,6 +4223,8 @@ export async function fumaroles(state: PlayingGameState = requireInitializedGame
         const dy = y - (state.u?.uy ?? 0);
         if (dx * dx + dy * dy < 15) loud = true;
     }
+    if (heard && !heroIsDeaf(state))
+        await plineWithContinuation(`You hear a ${loud ? 'loud ' : ''}whoosh!`, { noRepeat: true });
     return { heard, loud };
 }
 
