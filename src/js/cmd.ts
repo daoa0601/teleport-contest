@@ -1879,6 +1879,12 @@ export async function travelStairs(up: boolean) {
         return false;
     }
     if (up && await monsterPreventsStairTravel(true)) return false;
+    if (up && nearCapacity(game) > SLT_ENCUMBER) {
+        await plineWithContinuation(`Your load is too heavy to climb the ${
+            level.requireAt(game.u.ux, game.u.uy).typ === STAIRS ? 'stairs' : 'ladder'}.`);
+        game.context.move = 1;
+        return false;
+    }
     if (!await bringLeashedFollowers()) {
         await plineWithContinuation('You are held back by your pet!');
         game.context.move = 0;
