@@ -45,6 +45,7 @@ import { moveMonsterNextToHero, randomMonsterRelocation } from './teleport.js';
 import { monsterAtPosition } from './monster_location.js';
 import { placeHeroAtRandomArrival } from './level_change.js';
 import { monsterName, monsterSpellDeathReason, possessiveName, quietMonsterName } from './monster_name.js';
+import { touchHeroWithDeath } from './monster_death_touch.js';
 import { finishMonsterAttackDeath, waitForCurrentMonsterMore } from './monster_attack_death.js';
 import { monsterMissMessage } from './monster_miss.js';
 import { monsterIsAnimal } from './monster_data.js';
@@ -1727,6 +1728,8 @@ async function monsterAttackMessage(
         return `${subject} reaches out, and you feel fever and chills.`;
     if (attack.effect === 'famine-contact')
         return `${subject} reaches out, and your body shrivels.`;
+    if (attack.effect === 'death-contact')
+        return `${subject} reaches out with its deadly touch.`;
     if (monster?.mnum === 116) {
         if (attack.effect === 'electric-natural')
             return `${subject} bites!`;
@@ -2309,36 +2312,10 @@ async function resolveDeferredHeroDeathTouch(
         return;
     }
 
-    const rolledDamage = d(8, 6);
-    action.calls.push('d(8,6)');
-    const damage = 50 + rolledDamage;
-    const drain = Math.trunc(damage / 2);
-    await publish('You feel drained...');
-    heroAttack.fatalAttribution = {
-        kind: 'death-inflicted-by',
-        killer: monsterSpellDeathReason(action.monster, 'the touch of death'),
-        announcesDeath: drain < (u.uhpmax ?? 1),
-    };
-    if (polymorphed) {
-        u.mh = 0;
-        heroAttack.rehumanize = true;
-        heroAttack.appliedDamage = damage;
-    } else if (drain >= (u.uhpmax ?? 1)) {
-        u.uhp = 0;
-        heroAttack.appliedDamage = damage;
-        heroAttack.heroDied = true;
-    } else {
-        const oldHp = u.uhp ?? 1;
-        const minimumHp = Math.max(u.ulevel ?? 1, 3);
-        u.uhpmax = Math.max(minimumHp, (u.uhpmax ?? 1) - drain);
-        u.uhp = Math.min(u.uhp ?? 1, u.uhpmax);
-        const adjustedDamage = Math.max(
-            1, damage - (oldHp - u.uhp),
-        );
-        applyHeroSpellDamage(heroAttack, adjustedDamage, game);
-    }
-    heroAttack.deathTouchDamage = damage;
-    heroAttack.deathTouchDrain = drain;
+    heroAttack.heroDied = await touchHeroWithDeath(action.monster, game, publish, (count, sides) => {
+        action.calls.push(`d(${count},${sides})`);
+        return d(count, sides);
+    });
     heroAttack.deferredDeathTouch = false;
 }
 

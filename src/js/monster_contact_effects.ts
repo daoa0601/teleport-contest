@@ -11,7 +11,8 @@ import { heroIsBlind } from './senses.js';
 import { heroIsUnconscious, putHeroToSleep } from './hero_sleep.js';
 import { retouchEquipment } from './hero_retouch.js';
 import { specialAttackNegated } from './magic_negation.js';
-import { AD_ACID, AD_CONF, AD_CURS, AD_DISE, AD_FAMN, AD_HEAL, AD_PEST, AD_PLYS, AD_POLY, AD_SGLD, AD_SLEE, AD_SLOW, AD_SSEX, AD_TLPT, AD_WERE, AD_WRAP } from './monster_attack_types.js';
+import { AD_ACID, AD_CONF, AD_CURS, AD_DETH, AD_DISE, AD_FAMN, AD_HEAL, AD_PEST, AD_PLYS, AD_POLY, AD_SGLD, AD_SLEE, AD_SLOW, AD_SSEX, AD_TLPT, AD_WERE, AD_WRAP } from './monster_attack_types.js';
+import { resolveDeathTouchContact } from './monster_death_touch.js';
 import { infectHeroWithMonsterDisease } from './monster_disease.js';
 import { makeConfused } from './hero_mental_status.js';
 import { spendHeroNutrition } from './hunger.js';
@@ -88,6 +89,8 @@ export async function resolveMonsterContactEffect(
     }
     else if (attack.damageType === AD_PEST)
         await infectHeroWithMonsterDisease(monster, state, publish, random);
+    else if (attack.damageType === AD_DETH)
+        await resolveDeathTouchContact(monster, attack, state, publish, random, rollDice);
     else if (attack.damageType === AD_FAMN) {
         await exerciseAttribute(A_CON, false, state);
         if (state.u.uhs !== FAINTED) await spendHeroNutrition(random(40) + 40, { state });

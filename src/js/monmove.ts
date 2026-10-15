@@ -252,6 +252,7 @@ import {
     AD_DCAY,
     AD_DGST,
     AD_DREN,
+    AD_DETH,
     AD_CONF,
     AD_DRLI,
     AD_ELEC,
@@ -5818,7 +5819,8 @@ async function beginHeroAttackSlot(
         || damageType === AD_WRAP || damageType === AD_DRIN || damageType === AD_CURS
         || damageType === AD_HEAL || damageType === AD_ACID || damageType === AD_SLOW
         || damageType === AD_SGLD || damageType === AD_SSEX || damageType === AD_DISE
-        || damageType === AD_CONF || damageType === AD_PEST || damageType === AD_FAMN)) {
+        || damageType === AD_CONF || damageType === AD_PEST || damageType === AD_FAMN
+        || damageType === AD_DETH)) {
         const negated = damageType === AD_SLOW
             ? specialAttackNegated(monster, state.u, { state, random })
             : damageType === AD_POLY
@@ -5831,6 +5833,7 @@ async function beginHeroAttackSlot(
             ...(damageType === AD_SSEX ? { effect: 'seduction-contact' } : {}),
             ...(damageType === AD_PEST ? { effect: 'pestilence-contact' } : {}),
             ...(damageType === AD_FAMN ? { effect: 'famine-contact' } : {}),
+            ...(damageType === AD_DETH ? { effect: 'death-contact' } : {}),
         };
     } else if (hit && damageType === AD_STCK) {
         const armorProtection = magicNegation(state.u, state);
@@ -6609,6 +6612,21 @@ export async function resumeDeferredHeroContact(
         return action;
     }
     attack.appliedDamage = reduceHeroContactDamage(attack.damage ?? 0, state, rollOne, calls);
+    if (attack.permanentDamage && attack.appliedDamage > 0) {
+        const damage = attack.appliedDamage;
+        let drain = recordRandom(random, calls, Math.trunc(damage / 2) + 1);
+        const hero = state.u;
+        const polymorphed = Upolyd(hero);
+        if (polymorphed || hero.uhpmax > 25 * hero.ulevel) drain = damage;
+        else if (hero.uhpmax > 10 * hero.ulevel) drain += Math.trunc(damage / 2);
+        else if (hero.uhpmax > 5 * hero.ulevel) drain += Math.trunc(damage / 4);
+        const maximum = polymorphed ? 'mhmax' : 'uhpmax';
+        const lowerLimit = polymorphed
+            ? Math.min(MONSTER_LEVEL[hero.umonnum] ?? 0, hero.ulevel) : Math.max(hero.ulevel, 1);
+        if (hero[maximum] > lowerLimit)
+            hero[maximum] = Math.max(lowerLimit, hero[maximum] - drain);
+        state.context.botl = true;
+    }
     attack.passive = await finishHeroContactDamage(
         action.monster,
         attack.appliedDamage,
