@@ -1,11 +1,12 @@
 import { moveloop_core } from '../../js/allmain.js';
 import { MM_NOWAIT, NO_MINVENT } from '../../js/const.js';
-import { game, requirePlayingGame } from '../../js/gstate.js';
+import assert from 'node:assert/strict';
+import { game, requireGameDisplay, requirePlayingGame } from '../../js/gstate.js';
 import { resetInputState } from '../../js/input.js';
 import { initRng } from '../../js/rng.js';
 import { createMonsterAt } from './monsters.js';
 import { freshObjectRoom } from './object-room.js';
-import { finishAtCommandInput, installPagerInput } from './pager-input.js';
+import { installPagerInput } from './pager-input.js';
 export async function prepareSpellCaster(species, level) {
     freshObjectRoom({ hero: { uhp: 500, uhpmax: 500, uac: -1000, coldResistance: true } });
     requirePlayingGame(game);
@@ -27,9 +28,21 @@ export async function finishSpellTurn(seed) {
     const messages = [];
     input.beforeRead = () => { messages.push(game._pending_message); };
     installPagerInput(input, { expected: /^/, limit: 80 });
+    const pager = input.display;
+    assert.ok(pager);
+    input.display = {
+        async readKey() {
+            const screen = requireGameDisplay(game).grid.map(row => row.map(cell => cell.ch).join('')).join('\n');
+            if (game._pending_message && /--More--|Hit space to continue/.test(screen))
+                return pager.readKey();
+            assert.doesNotMatch(game._pending_message, /\?/, 'A spell turn must not bypass a question');
+            return 27;
+        },
+    };
     input.feed('m.');
     await moveloop_core();
-    await finishAtCommandInput(input, moveloop_core, /^/);
+    await moveloop_core();
+    messages.push(game._pending_message);
     return messages.join('\n');
 }
 //# sourceMappingURL=monster-spells.js.map
