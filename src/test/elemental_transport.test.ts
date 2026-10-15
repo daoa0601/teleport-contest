@@ -109,3 +109,27 @@ void test('restoring a water level applies the initial border bounce to its bubb
     assert.equal(restored.dx, 1, 'the initial draw bounces a bubble touching the western border');
     assert.equal(game.level.requireAt(4, 10).typ, AIR);
 });
+
+void test('the initial water plane remembers water beyond its bubbles', async () => {
+    await waterPlane();
+    requirePlayingGame(game);
+
+    const memory = game.level.requireAt(1, 0).remembered_glyph;
+    assert.ok(memory?.kind === 'terrain');
+    assert.equal(memory.terrainName, 'water');
+});
+
+void test('water replacing a moving bubble clears the old terrain flags', async () => {
+    await waterPlane();
+    requirePlayingGame(game);
+    const oldCell = game.level.requireAt(20, 10);
+    oldCell.candig = true;
+    oldCell.altarmask = 7;
+    initRng(2n);
+
+    await moveElementalBubbles();
+
+    assert.equal(oldCell.typ, WATER);
+    assert.equal(!!oldCell.candig, false, 'water cannot retain the digging exception of a former trapdoor');
+    assert.equal(oldCell.altarmask, 0, 'the replacement cell has no former altar alignment');
+});

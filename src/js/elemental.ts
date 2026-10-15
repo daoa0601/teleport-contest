@@ -12,7 +12,7 @@ import {
     Is_airlevel, Is_waterlevel,
 } from './const.js';
 import { rn2 } from './rng.js';
-import { CLR_BRIGHT_BLUE, CLR_GRAY } from './terminal.js';
+import { CLR_BRIGHT_BLUE, CLR_CYAN, CLR_GRAY } from './terminal.js';
 import { newsym } from './display.js';
 import { placeObjectSynchronously, remove_object, stack_object } from './floor_object.js';
 import { placeHeroOnLevel } from './hero_location.js';
@@ -48,6 +48,18 @@ function setElementalCell(loc: MapLocation | null, typ: number, lit: boolean): v
     loc.horizontal = false;
     loc.edge = false;
     loc.wall_info = 0;
+    // C replaces the whole rm, including fields which share flags,
+    // horizontal, and candig. JS keeps those terrain aliases separately.
+    loc.icedpool = 0;
+    loc.altarmask = 0;
+    loc.ladder = 0;
+    loc.drawbridgemask = 0;
+    loc.looted = 0;
+    loc.emptygrave = false;
+    loc.blessedftn = false;
+    loc.disturbed = false;
+    loc.candig = false;
+    loc.arboreal_sdoor = false;
     // movebubbles() resets old air clouds to an Air cell remembered as Cloud,
     // and old water bubbles to a Water cell remembered as Water.
     const water = typ === WATER;
@@ -254,8 +266,13 @@ export async function setupElementalBubbles(): Promise<void> {
     for (let x = 1; x < COLNO; x++) {
         for (let y = 0; y < ROWNO; y++) {
             const loc = level.at(x, y);
-            if (loc?.typ === STONE && baseTerrain != null)
-                loc.typ = baseTerrain;
+            if (!loc) continue;
+            if (loc.typ === STONE) loc.typ = baseTerrain;
+            const water = baseTerrain === WATER;
+            loc.remembered_glyph = {
+                ch: water ? '}' : ' ', color: water ? CLR_BRIGHT_BLUE : CLR_CYAN,
+                decgfx: false, kind: 'terrain', terrainName: water ? 'water' : 'air',
+            };
         }
     }
 
