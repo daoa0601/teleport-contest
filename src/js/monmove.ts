@@ -210,7 +210,7 @@ import {
     resolveHeroEngulf,
 } from './hero_engulf.js';
 import { splitObjectStack } from './object_stack.js';
-import { respondMedusa } from './monster_gaze.js';
+import { respondToImmediateMagic } from './monster_magic_response.js';
 import {
     canSeeMonster,
     canSpotMonster,
@@ -8143,7 +8143,7 @@ export async function takeMonsterTurn(
                 };
             }
         }
-        const response = await respondMedusa(monster, { state, random, rollDice, rollOne, calls });
+        const response = await respondToImmediateMagic(monster, state, { random, rollDice, rollOne, calls });
         if (response?.heroDied || monster.dead || monster.mhp <= 0) {
             return {
                 calls,

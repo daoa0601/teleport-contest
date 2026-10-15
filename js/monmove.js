@@ -98,7 +98,7 @@ import { heroGoldAmount, heroGoldObject } from './hero_gold.js';
 import { unplaceBallAndChain } from './ball.js';
 import { beginHeroEngulf, monsterCanEngulfHero, resolveHeroEngulf, } from './hero_engulf.js';
 import { splitObjectStack } from './object_stack.js';
-import { respondMedusa } from './monster_gaze.js';
+import { respondToImmediateMagic } from './monster_magic_response.js';
 import { canSeeMonster, canSpotMonster, map_invisible, newsym, randomDisplayMonsterSubject, plineWithContinuation, } from './display.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SIZE, MONSTER_SYMBOL, monsterIsCovetous, monsterIsNoncorporeal, monsterIsUndead, monsterIsVampireShifter, monsterIsWhirly, monsterIsShade, monsterIsUnsolid, monsterIsThickSkinned, monsterTypeName, } from './monster_data.js';
 import { AD_ACID, AD_BLND, AD_CLRC, AD_COLD, AD_CURS, AD_HEAL, AD_DRIN, AD_CORR, AD_DCAY, AD_DGST, AD_DREN, AD_DETH, AD_CONF, AD_DRLI, AD_ELEC, AD_ENCH, AD_FIRE, AD_LEGS, AD_PHYS, AD_POLY, AD_TLPT, AD_DISE, AD_PEST, AD_FAMN, AD_MAGM, AD_SPC2, AD_SAMU, AD_SEDU, AD_SGLD, AD_SSEX, AD_SITM, AD_SLIM, AD_SLOW, AD_SPEL, AD_STCK, AD_STON, AD_STUN, AD_WRAP, AD_PLYS, AD_WERE, AD_RUST, AT_BOOM, AT_BREA, AT_CLAW, AT_ENGL, AT_GAZE, AT_HUGS, AT_MAGC, AT_SPIT, AT_TUCH, AT_WEAP, AT_KICK, AT_BITE, AT_STNG, AT_BUTT, AT_TENT, AT_EXPL, } from './monster_attack_types.js';
@@ -6706,7 +6706,7 @@ export async function takeMonsterTurn(monster, state, random = rn2, rollDice = d
                 };
             }
         }
-        const response = await respondMedusa(monster, { state, random, rollDice, rollOne, calls });
+        const response = await respondToImmediateMagic(monster, state, { random, rollDice, rollOne, calls });
         if (response?.heroDied || monster.dead || monster.mhp <= 0) {
             return {
                 calls,
