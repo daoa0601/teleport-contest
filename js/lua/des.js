@@ -65,12 +65,12 @@ function tableOptions(value) {
     }
     for (const key of [
         'achievement', 'adjacentok', 'arrival_room', 'asleep', 'avenge', 'broken',
-        'buried', 'cancelled', 'confused', 'countbirth', 'deadends', 'degrade',
+        'buried', 'cancelled', 'confused', 'countbirth', 'deadends', 'degrade', 'dishwasher',
         'exclude_islev', 'female', 'greased', 'group', 'guardobjects', 'historic',
         'ignorewater', 'invisible', 'irregular', 'joined', 'keep_default_invent',
-        'lit', 'locked', 'male', 'peaceful', 'region_islev', 'revived', 'seen',
-        'smoothed', 'spider_on_web', 'stocked', 'stunned', 'tail', 'tknown',
-        'trapped', 'victim', 'waiting', 'walled'
+        'lit', 'locked', 'looted', 'male', 'peaceful', 'pudding', 'region_islev', 'revived', 'ring', 'seen',
+        'smoothed', 'spider_on_web', 'stocked', 'stunned', 'swarm', 'tail', 'tknown',
+        'trapped', 'victim', 'waiting', 'walled', 'warned'
     ]) {
         const entry = value.get(key);
         if (entry == null)
@@ -473,10 +473,15 @@ export function createDesBindings(operations, wrapSelection) {
                     ?? point(luaArgument(value), luaArgument(y)),
             });
         },
-        feature: (type, x, y) => operations.feature({
-            type: String(type),
-            point: point(luaArgument(x), luaArgument(y)),
-        }),
+        feature: (type, x, y) => {
+            const options = type instanceof LuaTable ? tableOptions(type) : {};
+            return operations.feature({
+                ...options,
+                type: options.type ?? String(type),
+                point: point(options.coord) ?? point(options.x, options.y)
+                    ?? point(luaArgument(x), luaArgument(y)),
+            });
+        },
         altar: (value) => operations.altar(tableOptions(value)),
         non_diggable: (selection) => operations.nonDiggable(selection == null ? null : unwrapSelection(selection)),
         non_passwall: (selection) => operations.nonPasswall(selection == null ? null : unwrapSelection(selection)),

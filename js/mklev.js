@@ -57,7 +57,7 @@ import { depth as depth_of_level, ledgerNo, maxLedgerNo, } from './hacklib.js';
 import { inducedAlignment, level_difficulty, specialLevelAt } from './dungeon.js';
 import { mkmap } from './mkmap.js';
 import { carveMazeFrom, createMaze } from './maze_terrain.js';
-import { DRY, HOT, NO_LOC_WARN, SOLID, WET, getLocationCoord } from './special_location.js';
+import { ANY_LOC, DRY, HOT, NO_LOC_WARN, SOLID, WET, getLocationCoord } from './special_location.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import { cleanupSpecialLevelMap, removeSpecialLevelBoundaries } from './special_level_cleanup.js';
 import { A_CHA, COLNO, ROWNO, STONE, ROOM, CORR, DOOR, STAIRS, LADDER, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER, CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL, D_NODOOR, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_TRAPPED, OROOM, VAULT, COURT, SWAMP, BEEHIVE, MORGUE, BARRACKS, ZOO, TEMPLE, LEPREHALL, COCKNEST, ANTHOLE, DELPHI, THEMEROOM, SHOPBASE, ROOMOFFSET, MAXNROFROOMS, SHARED, SDOOR, SCORR, IRONBARS, FOUNTAIN, SINK, ALTAR, GRAVE, THRONE, HEADSTONE, ENGRAVE, BURN, MARK, DUST, ENGR_BLOOD, DIR_N, DIR_S, DIR_E, DIR_W, DIR_180, XL_UP, XL_DOWN, XL_LEFT, XL_RIGHT, ACCESSIBLE, IS_WALL, IS_STWALL, IS_DOOR, IS_ROOM, IS_OBSTRUCTED, ZAP_POS, IS_FURNITURE, IS_POOL, IS_AIR, IS_LAVA, In_endgame, Is_earthlevel, Is_botlevel, Is_stronghold, Invocation_lev, In_hell, In_quest, In_V_tower, Is_oracle_level, Is_waterlevel, Is_knox_level, Is_rogue_level, In_sokoban, SPACE_POS, isok, W_NONDIGGABLE, W_NONPASSWALL, FILL_NONE, FILL_NORMAL, ICE, MOAT, POOL, WATER, LAVAPOOL, LAVAWALL, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN, DBWALL, ICED_POOL, ICED_MOAT, DB_NORTH, DB_SOUTH, DB_EAST, DB_WEST, DB_MOAT, DB_LAVA, DB_UNDER, DB_FLOOR, SHOP_HOLE_COST, TREE, AIR, CLOUD, A_NONE, A_CHAOTIC, A_NEUTRAL, A_LAWFUL, P_SHORT_SWORD, P_SABER, AM_SHRINE, AM_SANCTUM, Align2amask, LR_DOWNSTAIR, LR_UPSTAIR, LR_UPTELE, LR_DOWNTELE, LR_TELE, LR_BRANCH, LR_PORTAL, M_AP_NOTHING, M_AP_FURNITURE, M_AP_OBJECT, M_AP_MONSTER, M_AP_TYPE, MM_ANGRY, MM_ASLEEP, MM_NONAME, MM_NOGRP, MM_EMIN, MM_EPRI, MM_NOWAIT, MM_NOTAIL, MM_IGNOREWATER, MM_ADJACENTOK, MM_NOCOUNTBIRTH, MM_NOMSG, MM_MALE, MM_FEMALE, MM_MINVIS, MM_EDOG, NO_MINVENT, G_EXTINCT, G_GENOD, G_GONE, G_NOCORPSE, ROT_AGE, TROLL_REVIVE_CHANCE, HEALTHY_TIN, RANDOM_TIN, MAX_OIL_IN_FLASK, CORPSTAT_FEMALE, CORPSTAT_MALE, CORPSTAT_NEUTER, CORPSTAT_HISTORIC, CORPSTAT_INIT, CORPSTAT_SPE_VAL, STRAT_APPEARMSG, STRAT_CLOSE, STRAT_WAITFORU, ANTI_MAGIC, TT_BURIEDBALL, TT_BEARTRAP, TT_WEB, TT_PIT, TT_LAVA, } from './const.js';
@@ -86,6 +86,7 @@ import { insideShopRoomAt } from './shk.js';
 import { convertSecretDoor } from './detect.js';
 import { occupied, somex, somey, somexy, somexyspace, } from './mkroom.js';
 import { createHarmlessGasCloudSelection } from './regions.js';
+import { F_LOOTED, F_WARNED, S_LDWASHER, S_LPUDDING, S_LRING, T_LOOTED, TREE_LOOTED, TREE_SWARM } from './const.js';
 import { beginObjectBurn } from './light.js';
 import { LEVEL_TIMER_KIND, OBJECT_TIMER_KIND, objectTimers, objectsInTimerGraph, scheduleLevelTimer, scheduleObjectTimer, stopAllObjectTimers, stopObjectTimer, stopLevelTimer, } from './object_timers.js';
 import { setMonsterApparentHeroPosition } from './monster_perception.js';
@@ -4230,17 +4231,6 @@ async function specialObjectOfType(context, otyp) {
     const point = await specialRandomLocation(context);
     return point ? await mksobj_at(otyp, point.x, point.y, true, true) : null;
 }
-async function specialFeatureOfType(context, typ) {
-    const level = requireGameLevel();
-    const point = await specialRandomLocation(context, loc => SPACE_POS(loc.typ) && !IS_FURNITURE(loc.typ));
-    if (!point)
-        return null;
-    const loc = level.at(point.x, point.y);
-    if (!loc || IS_FURNITURE(loc.typ))
-        return null;
-    loc.typ = typ;
-    return point;
-}
 function specialDoorAt(context, mask, x, y) {
     const level = requireGameLevel();
     const doorX = context.xstart + x, doorY = context.ystart + y;
@@ -5724,8 +5714,9 @@ function replaceLuaTerrain(context, options) {
             loc.horizontal = true;
     });
 }
-async function createLuaFeature(context, { type, point }) {
+async function createLuaFeature(context, options) {
     const level = requireGameLevel();
+    const { type, point } = options;
     const types = {
         fountain: FOUNTAIN, sink: SINK, pool: POOL,
         throne: THRONE, tree: TREE,
@@ -5733,15 +5724,26 @@ async function createLuaFeature(context, { type, point }) {
     const featureType = types[type];
     if (featureType === undefined)
         throw new Error(`unknown Lua feature ${type}`);
-    if (point) {
-        const loc = level.at(context.xstart + point.x, context.ystart + point.y);
-        if (loc && !IS_FURNITURE(loc.typ)) {
-            loc.typ = featureType;
-        }
+    const location = await getLocationCoord(context, point, point ? ANY_LOC : DRY);
+    if (!isok(location.x, location.y))
         return;
+    const cell = level.requireAt(location.x, location.y);
+    if (!IS_FURNITURE(cell.typ))
+        cell.typ = featureType;
+    if (cell.typ !== featureType)
+        return;
+    const flags = featureType === FOUNTAIN
+        ? [[options.looted, F_LOOTED], [options.warned, F_WARNED]]
+        : featureType === SINK
+            ? [[options.pudding, S_LPUDDING], [options.dishwasher, S_LDWASHER], [options.ring, S_LRING]]
+            : featureType === THRONE ? [[options.looted, T_LOOTED]]
+                : featureType === TREE ? [[options.looted, TREE_LOOTED], [options.swarm, TREE_SWARM]] : [];
+    for (const [value, flag] of flags) {
+        if (value === undefined)
+            continue;
+        const current = cell.looted ?? cell.flags;
+        cell.flags = cell.looted = value ? current | flag : current & ~flag;
     }
-    // C sp_lev.c:sel_set_feature() writes terrain without updating counters.
-    await specialFeatureOfType(context, featureType);
 }
 function noncoalignedSpecialAlignment() {
     const original = game.u?.ualignbase?.[1]

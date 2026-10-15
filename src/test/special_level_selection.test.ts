@@ -2,7 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import type { TestContext } from 'node:test';
 
-import { CORR, GRAVE, HEADSTONE, HWALL, ROOM, STONE } from '../js/const.js';
+import { CORR, FOUNTAIN, F_LOOTED, F_WARNED, GRAVE, HEADSTONE, HWALL,
+    ROOM, STONE, S_LDWASHER, S_LPUDDING, S_LRING, T_LOOTED,
+    TREE_LOOTED, TREE_SWARM } from '../js/const.js';
 import { init_dungeons } from '../js/dungeon.js';
 import { GameMap } from '../js/game.js';
 import { game, requireGameLevel } from '../js/gstate.js';
@@ -157,4 +159,26 @@ void test('Lua graves place their epitaphs and leave trapped squares unchanged',
     assert.ok(epitaph, 'the grave should have a headstone');
     assert.equal(epitaph.engr_type, HEADSTONE);
     assert.equal(epitaph.text, 'Remembered here');
+});
+
+void test('Lua feature tables set and clear the native looted-state flags', async t => {
+    const lua = await levelLua(t);
+    await lua.executeAsync(`
+        des.map({ x = 10, y = 5, map = [[....]] })
+        des.feature({ type = "fountain", coord = {0, 0}, looted = true, warned = true })
+        des.feature({ type = "sink", x = 1, y = 0, pudding = true, dishwasher = true, ring = true })
+        des.feature({ type = "throne", x = 2, y = 0, looted = true })
+        des.feature({ type = "tree", x = 3, y = 0, looted = true, swarm = true })
+    `);
+    const level = requireGameLevel();
+    assert.equal(level.requireAt(10, 5).looted, F_LOOTED | F_WARNED);
+    assert.equal(level.requireAt(11, 5).looted, S_LPUDDING | S_LDWASHER | S_LRING);
+    assert.equal(level.requireAt(12, 5).looted, T_LOOTED);
+    assert.equal(level.requireAt(13, 5).looted, TREE_LOOTED | TREE_SWARM);
+    await lua.executeAsync(`
+        des.feature({ type = "fountain", x = 0, y = 0, looted = false })
+        des.feature({ type = "sink", x = 0, y = 0, ring = true })
+    `);
+    assert.equal(level.requireAt(10, 5).typ, FOUNTAIN, 'another feature cannot replace furniture');
+    assert.equal(level.requireAt(10, 5).looted, F_WARNED, 'omitted flags retain their values');
 });

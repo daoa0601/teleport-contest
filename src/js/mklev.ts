@@ -91,7 +91,7 @@ import {
 import { inducedAlignment, level_difficulty, specialLevelAt } from './dungeon.js';
 import { mkmap } from './mkmap.js';
 import { carveMazeFrom, createMaze } from './maze_terrain.js';
-import { DRY, HOT, NO_LOC_WARN, SOLID, WET, getLocationCoord } from './special_location.js';
+import { ANY_LOC, DRY, HOT, NO_LOC_WARN, SOLID, WET, getLocationCoord } from './special_location.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import { cleanupSpecialLevelMap, removeSpecialLevelBoundaries } from './special_level_cleanup.js';
 import {
@@ -220,6 +220,8 @@ import {
     occupied, somex, somey, somexy, somexyspace,
 } from './mkroom.js';
 import { createHarmlessGasCloudSelection } from './regions.js';
+import { F_LOOTED, F_WARNED, S_LDWASHER, S_LPUDDING, S_LRING,
+    T_LOOTED, TREE_LOOTED, TREE_SWARM } from './const.js';
 import { beginObjectBurn } from './light.js';
 import {
     LEVEL_TIMER_KIND, OBJECT_TIMER_KIND,
@@ -4315,17 +4317,6 @@ async function specialObjectOfType(context: SpecialLevelContext, otyp: number): 
     return point ? await mksobj_at(otyp, point.x, point.y, true, true) : null;
 }
 
-async function specialFeatureOfType(context: SpecialLevelContext, typ: number): Promise<Position | null> {
-    const level = requireGameLevel();
-    const point = await specialRandomLocation(context, loc =>
-        SPACE_POS(loc.typ) && !IS_FURNITURE(loc.typ));
-    if (!point) return null;
-    const loc = level.at(point.x, point.y);
-    if (!loc || IS_FURNITURE(loc.typ)) return null;
-    loc.typ = typ;
-    return point;
-}
-
 function specialDoorAt(context: SpecialLevelContext, mask: number, x: number, y: number): Position | null {
     const level = requireGameLevel();
     const doorX = context.xstart + x, doorY = context.ystart + y;
@@ -5850,9 +5841,10 @@ function replaceLuaTerrain(context: SpecialLevelContext, options: DesSelectionOp
 }
 
 async function createLuaFeature(
-    context: SpecialLevelContext, { type, point }: Parameters<DesOperations['feature']>[0],
+    context: SpecialLevelContext, options: Parameters<DesOperations['feature']>[0],
 ): Promise<void> {
     const level = requireGameLevel();
+    const { type, point } = options;
     const types: Record<string, number> = {
         fountain: FOUNTAIN, sink: SINK, pool: POOL,
         throne: THRONE, tree: TREE,
@@ -5860,17 +5852,22 @@ async function createLuaFeature(
     const featureType = types[type];
     if (featureType === undefined)
         throw new Error(`unknown Lua feature ${type}`);
-    if (point) {
-        const loc = level.at(
-            context.xstart + point.x, context.ystart + point.y,
-        );
-        if (loc && !IS_FURNITURE(loc.typ)) {
-            loc.typ = featureType;
-        }
-        return;
+    const location = await getLocationCoord(context, point, point ? ANY_LOC : DRY);
+    if (!isok(location.x, location.y)) return;
+    const cell = level.requireAt(location.x, location.y);
+    if (!IS_FURNITURE(cell.typ)) cell.typ = featureType;
+    if (cell.typ !== featureType) return;
+    const flags: readonly (readonly [DesOptions['looted'], number])[] = featureType === FOUNTAIN
+        ? [[options.looted, F_LOOTED], [options.warned, F_WARNED]]
+        : featureType === SINK
+            ? [[options.pudding, S_LPUDDING], [options.dishwasher, S_LDWASHER], [options.ring, S_LRING]]
+            : featureType === THRONE ? [[options.looted, T_LOOTED]]
+                : featureType === TREE ? [[options.looted, TREE_LOOTED], [options.swarm, TREE_SWARM]] : [];
+    for (const [value, flag] of flags) {
+        if (value === undefined) continue;
+        const current = cell.looted ?? cell.flags;
+        cell.flags = cell.looted = value ? current | flag : current & ~flag;
     }
-    // C sp_lev.c:sel_set_feature() writes terrain without updating counters.
-    await specialFeatureOfType(context, featureType);
 }
 
 function noncoalignedSpecialAlignment() {
