@@ -36,6 +36,7 @@ import { cureHeroSickness } from './hero_illness.js';
 import { adjustObjectLightAfterBlessing, objectLightRadius } from './light.js';
 import { healHeroLegs } from './hero_legs.js';
 import { takeHeroGold } from './hero_gold.js';
+import { scheduleLevelChange } from './level_change.js';
 import { identifyPack } from './invent.js';
 import { msummon } from './minion.js';
 import {
@@ -312,7 +313,7 @@ async function specialThroneEffect(effect: number, x: number, y: number, { gotoL
             if (typeof gotoLevel !== 'function') {
                 throw new TypeError('Vlad throne travel needs a level mover');
             }
-            await gotoLevel({
+            scheduleLevelChange([{
                 dnum: gehennom,
                 dlevel: Math.max(
                     1, (game.dungeons[gehennom]?.num_dunlevs ?? 1) - 1,
@@ -320,7 +321,7 @@ async function specialThroneEffect(effect: number, x: number, y: number, { gotoL
             }, {
                 arrival: 'random',
                 postMessage: 'You feel extremely out of place.',
-            });
+            }], gotoLevel);
         }
         break;
     }
