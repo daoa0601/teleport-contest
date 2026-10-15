@@ -18,7 +18,7 @@ import type { MapLocation } from './map_types.js';
 import { monsterAtPosition } from './monster_location.js';
 import { visibleRegionAt } from './regions.js';
 import { heroIsHallucinating } from './senses.js';
-import { CLR_BRIGHT_GREEN, NO_COLOR } from './terminal.js';
+import { CLR_BRIGHT_GREEN, CLR_GRAY, NO_COLOR } from './terminal.js';
 import { cansee } from './vision.js';
 import {
     tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow,
@@ -142,7 +142,7 @@ function terrainViewGlyph(location: MapLocation, x: number, y: number, subset: n
             ? { ch: ' ', color: NO_COLOR, decgfx: false, kind: 'unexplored', glyph: GlyphOffset.unexplored } : empty();
         else if (keepTraps && region && (gas || wasMonster)) glyph = trap ? transientTrapGlyph(trap)
             : { kind: 'terrain', terrainName: region.damage ? 'poison cloud' : 'cloud',
-                ch: '#', color: region.damage ? CLR_BRIGHT_GREEN : NO_COLOR, decgfx: false,
+                ch: '#', color: region.damage ? CLR_BRIGHT_GREEN : CLR_GRAY, decgfx: false,
                 glyph: cmapToGlyph(region.damage ? CmapSymbol.poisoncloud : CmapSymbol.cloud) };
         else {
             const mimic = monsterAtPosition(level, x, y);
