@@ -2,11 +2,13 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { A_CON, A_DEX, A_STR, ALTAR, CORR, FOUNTAIN, IRONBARS, LA_UP, ROOM, SCORR, SINK, S_LPUDDING, S_LRING, STAIRS, THRONE, TREE, TREE_LOOTED, TREE_SWARM } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
+import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { GOLD_PIECE, IRON_SHOES } from '../js/object_data.js';
 import { kickDirection } from './support/commands.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { floorObjects } from './support/level-state.js';
+import { createMonsterAt } from './support/monsters.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 import { createDungeon } from './support/topology.js';
 void test('a kick can expose a secret corridor', async () => {
@@ -111,6 +113,28 @@ void test('a tree can yield fruit once and then release its bees', async () => {
         }
     }
     assert.ok(fruited && swarmed, 'A tree supplies fruit and its former occupants.');
+});
+void test('a surviving peaceful monster hit by kicked tree fruit becomes hostile', async () => {
+    let hit = false;
+    for (let seed = 1n; seed <= 50n && !hit; seed++) {
+        const level = freshPlayableRoom({ seed, hero: { uhp: 100, uhpmax: 100 } });
+        level.requireAt(11, 10).typ = TREE;
+        const hobbit = await createMonsterAt('hobbit', 12, 10);
+        hobbit.mpeaceful = 1;
+        hobbit.mhp = hobbit.mhpmax = 100;
+        const messages = [];
+        const input = resetInputState();
+        input.beforeRead = () => { messages.push(game._pending_message); };
+        await kickDirection('l', ' '.repeat(20));
+        messages.push(game._pending_message);
+        if (messages.some(message => /hits the hobbit\./.test(message))) {
+            hit = true;
+            assert.ok(hobbit.mhp > 0, 'The fruit target survives the impact.');
+            assert.equal(hobbit.mpeaceful, 0, 'A fruit hit during the hero\'s kick angers its target.');
+            assert.equal(game.context.move, 1);
+        }
+    }
+    assert.ok(hit, 'Kicked tree fruit can hit a neighboring monster.');
 });
 for (const terrain of [IRONBARS, STAIRS]) {
     void test(`kicking hard terrain ${terrain} hurts`, async () => {

@@ -186,7 +186,7 @@ async function kickTree(x, y, location, responses) {
         const name = objectCombatName(fruit);
         await pline(count > 1 ? `Some ${name} fall from the tree!` : `${withIndefiniteArticle(name).replace(/^./u, letter => letter.toUpperCase())} falls from the tree!`);
         const fallen = await scatterFloorObjects(x, y, 2, { onlyObject: fruit, mayDestroy: false, mayFracture: false,
-            mayHitHero: true, mayHitMonsters: true, publish: pline });
+            mayHitHero: true, mayHitMonsters: true, heroCaused: true, publish: pline });
         if (fallen !== count) {
             const caught = await mksobj(type, true, false);
             caught.quan = caught.quantity = count - fallen;
