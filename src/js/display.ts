@@ -8,6 +8,7 @@ import { MAP_SYMBOLS } from './map_symbols.js';
 import { CmapSymbol, GlyphOffset, altarToGlyph, cmapToGlyph } from './glyph_numbers.js';
 import { heroDetectsMonsters, heroIsBlind, heroIsHallucinating } from './senses.js';
 import { drawbridgeUnderlyingType } from './drawbridge_terrain.js';
+import { terrainCoversObjectsAt } from './terrain_properties.js';
 import { heroWarnsOfMonster } from './hero_species.js';
 import { artifactWarningFeedback } from './artifact_warning.js';
 import { currentAttribute } from './attrib.js';
@@ -1337,15 +1338,6 @@ function engravingAt(x: number, y: number) {
         engraving.x === x && engraving.y === y);
 }
 
-function coversNonlivingLocation(x: number, y: number) {
-    const typ = game.level?.at(x, y)?.typ;
-    const underwater = !!(game.underwater || game.u?.uinwater);
-    // C display.h:covers_objects()/covers_traps(). Pools cease covering the
-    // lower layers while the hero is underwater; lava always covers them.
-    return (typ !== undefined && IS_POOL(typ) && !underwater)
-        || typ === LAVAPOOL || typ === LAVAWALL;
-}
-
 function monsterAtMapCell(x: number, y: number) {
     // Native m_at() retains a dying actor until remove_monster(), including
     // a vision refresh while its death announcement awaits acknowledgment.
@@ -1369,7 +1361,7 @@ export function updateLastSeenTerrain(x: number, y: number) {
 // C display.c:_map_location(). This direct mapper intentionally bypasses
 // line of sight, but object observation and cloud visibility keep their gates.
 export function map_location(x: number, y: number, show = true) {
-    const covered = coversNonlivingLocation(x, y);
+    const covered = terrainCoversObjectsAt(x, y);
     const level = requireGameLevel();
     const object = level.objects?.[x]?.[y]?.[0];
     const trap = level.traps?.find(candidate =>
@@ -1612,7 +1604,7 @@ export function map_invisible(x: number, y: number) {
 export function unmapObject(x: number, y: number) {
     const loc = game.level?.at(x, y);
     if (!loc || !game.level?.flags.hero_memory) return;
-    const covered = coversNonlivingLocation(x, y);
+    const covered = terrainCoversObjectsAt(x, y);
     const trap = game.level?.traps?.find(candidate =>
         candidate.tx === x && candidate.ty === y);
     if (trap?.tseen && !covered) {

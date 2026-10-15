@@ -1,7 +1,7 @@
 // C cmd.c:doterrain(), detect.c:reveal_terrain()/reveal_terrain_getglyph().
 import {
     COLNO, ROWNO, MENU_ITEMFLAGS_SELECTED, NHW_MENU, PICK_ONE,
-    TER_FULL, TER_MAP, TER_OBJ, TER_TRP, TREE, IS_POOL, IS_LAVA,
+    TER_FULL, TER_MAP, TER_OBJ, TER_TRP, TREE,
     M_AP_FURNITURE, M_AP_TYPE,
 } from './const.js';
 import {
@@ -18,6 +18,7 @@ import type { MapLocation } from './map_types.js';
 import { monsterAtPosition } from './monster_location.js';
 import { visibleRegionAt } from './regions.js';
 import { heroIsHallucinating } from './senses.js';
+import { terrainCoversObjectsAt } from './terrain_properties.js';
 import { CLR_BRIGHT_GREEN, CLR_GRAY, NO_COLOR } from './terminal.js';
 import { cansee } from './vision.js';
 import {
@@ -130,7 +131,7 @@ function terrainViewGlyph(location: MapLocation, x: number, y: number, subset: n
     const region = visibleRegionAt(game, x, y);
     const hidesObject = !keepObjects && glyph.kind === 'object';
     if ((hidesObject || glyph.kind === 'invisible')
-        && keepTraps && trap && !IS_POOL(location.typ) && !IS_LAVA(location.typ))
+        && keepTraps && trap && !terrainCoversObjectsAt(x, y))
         glyph = transientTrapGlyph(trap);
     const gas = !!region && glyph.kind === 'terrain'
         && (glyph.glyph === cmapToGlyph(CmapSymbol.cloud) || glyph.glyph === cmapToGlyph(CmapSymbol.poisoncloud));

@@ -1,5 +1,5 @@
 // C cmd.c:doterrain(), detect.c:reveal_terrain()/reveal_terrain_getglyph().
-import { COLNO, ROWNO, MENU_ITEMFLAGS_SELECTED, NHW_MENU, PICK_ONE, TER_FULL, TER_MAP, TER_OBJ, TER_TRP, TREE, IS_POOL, IS_LAVA, M_AP_FURNITURE, M_AP_TYPE, } from './const.js';
+import { COLNO, ROWNO, MENU_ITEMFLAGS_SELECTED, NHW_MENU, PICK_ONE, TER_FULL, TER_MAP, TER_OBJ, TER_TRP, TREE, M_AP_FURNITURE, M_AP_TYPE, } from './const.js';
 import { cmapSymbolAppearance, displayMessageWindow, docrt, flush_screen, pline, show_glyph_cell, terrain_glyph, transientTrapGlyph, } from './display.js';
 import { recordMappedOverviewState } from './dungeon.js';
 import { game, requireGameLevel } from './gstate.js';
@@ -8,6 +8,7 @@ import { selectMapPosition, shouldShowGetposTip, showGetposTip } from './getpos.
 import { monsterAtPosition } from './monster_location.js';
 import { visibleRegionAt } from './regions.js';
 import { heroIsHallucinating } from './senses.js';
+import { terrainCoversObjectsAt } from './terrain_properties.js';
 import { CLR_BRIGHT_GREEN, CLR_GRAY, NO_COLOR } from './terminal.js';
 import { cansee } from './vision.js';
 import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu, } from './tty_menu.js';
@@ -130,7 +131,7 @@ function terrainViewGlyph(location, x, y, subset, swallowed) {
     const region = visibleRegionAt(game, x, y);
     const hidesObject = !keepObjects && glyph.kind === 'object';
     if ((hidesObject || glyph.kind === 'invisible')
-        && keepTraps && trap && !IS_POOL(location.typ) && !IS_LAVA(location.typ))
+        && keepTraps && trap && !terrainCoversObjectsAt(x, y))
         glyph = transientTrapGlyph(trap);
     const gas = !!region && glyph.kind === 'terrain'
         && (glyph.glyph === cmapToGlyph(CmapSymbol.cloud) || glyph.glyph === cmapToGlyph(CmapSymbol.poisoncloud));

@@ -1,4 +1,4 @@
-import type { GameState, PlayingGameState } from './game_state.js';
+import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import { requirePlayingGame } from './gstate.js';
 // C detect.c:do_mapping(), do_vicinity_map().
@@ -6,7 +6,7 @@ import { requirePlayingGame } from './gstate.js';
 import { monsterHasMapPosition } from './monster_location.js';
 import { exerciseWisdom } from './attrib.js';
 import {
-    COLNO, IN_SIGHT, IS_POOL, LAVAPOOL, LAVAWALL, ROWNO,
+    COLNO, IN_SIGHT, ROWNO,
     TER_DETECT, TER_MAP, TER_MON, TER_OBJ, TER_TRP,
 } from './const.js';
 import { mapLevel, showMapSpot } from './detect.js';
@@ -22,6 +22,7 @@ import {
 import { MONSTER_NAME } from './monster_data.js';
 import { observeObject } from './object_knowledge.js';
 import { propertyIsActive } from './properties.js';
+import { terrainCoversObjectsAt } from './terrain_properties.js';
 
 const LONG_WORM_TAIL = MONSTER_NAME.indexOf('long worm tail');
 const MAP_MODE = TER_DETECT | TER_MAP | TER_TRP | TER_OBJ;
@@ -71,7 +72,7 @@ export async function mapVicinity(source: GameObject | null, { state = game }: {
                     map_object(object, true);
                     shownObjects.set(`${x},${y}`, object);
                     if (glyphChanged(oldGlyph, glyphAt(x, y, state))
-                        && coversObjects(x, y, state)) detectedObject = true;
+                        && terrainCoversObjectsAt(x, y, state)) detectedObject = true;
                 }
                 const monster = state.level.monsters.find(actor => monsterHasMapPosition(actor, state) &&
                     !actor.dead && actor.mhp > 0 && actor.mx === x && actor.my === y);
@@ -125,11 +126,6 @@ function glyphChanged(before: ReturnType<typeof glyphAt>, after: ReturnType<type
     if (before.kind === 'monster' && after.kind === 'monster') return before.mnum !== after.mnum;
     if (before.kind === 'trap' && after.kind === 'trap') return before.trapType !== after.trapType;
     return false;
-}
-
-function coversObjects(x: number, y: number, state: PlayingGameState) {
-    const typ = state.level.requireAt(x, y).typ;
-    return IS_POOL(typ) && !state.u.uinwater || typ === LAVAPOOL || typ === LAVAWALL;
 }
 
 function glyphCharacter(glyph: ReturnType<typeof glyphAt>): string | undefined {

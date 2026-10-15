@@ -1,7 +1,8 @@
 // Rules applied before the pickup menu or object transfer.
 // C ref: hack.c pickup_checks().
 import { heroHasWaterWalking } from './armor.js';
-import { ALTAR, D_ISOPEN, DOOR, FOUNTAIN, GRAVE, HOLE, IS_LAVA, IS_POOL, SINK, STAIRS, THRONE, TRAPDOOR, is_pit, } from './const.js';
+import { ALTAR, D_ISOPEN, DOOR, FOUNTAIN, GRAVE, HOLE, SINK, STAIRS, THRONE, TRAPDOOR, is_pit, } from './const.js';
+import { isLavaAt, isPoolAt } from './terrain_properties.js';
 import { floorReachProblem } from './floor_reach.js';
 import { game } from './gstate.js';
 import { MONSTER_NAME, MONSTER_SYMBOL, monsterDigests, } from './monster_data.js';
@@ -87,7 +88,7 @@ export function pickupLocationProblem({ state = game, objects, monster = null, }
         };
     }
     const location = state.level?.at?.(state.u?.ux, state.u?.uy);
-    if (location && IS_POOL(location.typ)) {
+    if (isPoolAt(state.u.ux, state.u.uy, state)) {
         if (heroStaysAboveLiquid(state)) {
             return {
                 messages: ['You cannot dive into the water to pick things up.'],
@@ -103,7 +104,7 @@ export function pickupLocationProblem({ state = game, objects, monster = null, }
             };
         }
     }
-    if (location && IS_LAVA(location.typ)) {
+    if (isLavaAt(state.u.ux, state.u.uy, state)) {
         if (heroStaysAboveLiquid(state)) {
             return {
                 messages: ["You can't reach the bottom to pick things up."],

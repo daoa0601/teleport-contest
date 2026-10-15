@@ -76,6 +76,17 @@ export function isLavaAt(x, y, state = game) {
     return location.typ === DRAWBRIDGE_UP
         && ((location.drawbridgemask ?? 0) & DB_UNDER) === DB_LAVA;
 }
+// C dbridge.c:is_pool_or_lava().
+export function isPoolOrLavaAt(x, y, state = game) {
+    return isPoolAt(x, y, state) || isLavaAt(x, y, state);
+}
+// C display.h:covers_objects()/covers_traps(). Unlike is_lava(), the
+// lava check here deliberately excludes lava beneath a raised bridge.
+export function terrainCoversObjectsAt(x, y, state = game) {
+    const type = state.level?.at(x, y)?.typ;
+    return (isPoolAt(x, y, state) && !(state.underwater || state.u.uinwater))
+        || type === LAVAPOOL || type === LAVAWALL;
+}
 // C dbridge.c:is_ice(). A lowered drawbridge covers its frozen water.
 export function isIceAt(x, y, state = game) {
     if (!isok(x, y))
