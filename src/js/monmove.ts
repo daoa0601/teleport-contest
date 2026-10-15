@@ -458,6 +458,7 @@ import { MONSTER_SOUND } from './monster_data.js';
 import { MONSTER_DIFFICULTY } from './monster_data.js';
 import { depth } from './hacklib.js';
 import { objectMaterial } from './object_material.js';
+import { divideHeroFromWeaponHit } from './monster_weapon_contact.js';
 import { monsterHatesSilver } from './monster_data.js';
 import { canHeroRiseUp, levelAtDepth } from './dungeon.js';
 import { LEVEL_TELEP } from './const.js';
@@ -5637,6 +5638,8 @@ async function beginHeroAttackSlot(
                 deferredPostHit: true,
             };
         }
+        damage = await divideHeroFromWeaponHit(monster, contactWeapon, damage, state,
+            plineWithContinuation, rollOne);
         await erodeAttackingWeapon(state.u, contactWeapon, { state, random });
         if (poison) {
             const effect = await poisonHeroFromMonster(monster, attackType, {

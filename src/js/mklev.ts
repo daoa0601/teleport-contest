@@ -2859,12 +2859,23 @@ export function findMonsterNearPosition(
     );
 }
 
-// C refs: mhitu.c:cloneu(), potion.c:split_mon(), dog.c:initedog().
+// C potion.c:split_mon() halves maximum HP after cloneu() divides current HP.
+export async function splitHeroMonsterForm(state: GameState = game): Promise<Monster | null> {
+    const maximum = state.u.mhmax;
+    if (maximum === undefined) return null;
+    const clone = await cloneHeroMonsterForm(state);
+    if (clone) {
+        clone.mhpmax = Math.trunc(maximum / 2);
+        state.u.mhmax = maximum - clone.mhpmax;
+    }
+    return clone;
+}
+
+// C refs: mhitu.c:cloneu() and dog.c:initedog().
 // The actor is a fresh makemon birth rather than a copy of youmonst: it owns
 // ordinary placement, HP, gender, attitude, and identity RNG before cloneu()
-// replaces its level/HP and initializes a named tame companion.  split_mon()
-// then halves maximum form HP separately, leaving odd points with the hero.
-export async function splitHeroMonsterForm(state: GameState = game): Promise<Monster | null> {
+// replaces its level/HP and initializes a named tame companion.
+export async function cloneHeroMonsterForm(state: GameState = game): Promise<Monster | null> {
     if (state !== game)
         throw new Error('hero clone owner requires live game state');
     const u = state.u;
@@ -2921,8 +2932,6 @@ export async function splitHeroMonsterForm(state: GameState = game): Promise<Mon
     clone.mhp = Math.trunc(u.mh / 2);
     u.mh -= clone.mhp;
     state.context.botl = true;
-    clone.mhpmax = Math.trunc(u.mhmax / 2);
-    u.mhmax -= clone.mhpmax;
     if (!u.uconduct) u.uconduct = {};
     u.uconduct.pets = (u.uconduct.pets ?? 0) + 1;
     newsym(clone.mx, clone.my);
