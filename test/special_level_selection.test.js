@@ -325,4 +325,11 @@ void test('Lua terrain replacement honors explicit rectangle fields before a sel
     assert.equal(level.requireAt(13, 5).typ, ROOM);
     assert.equal(level.requireAt(11, 5).horizontal, false, 'replacement preserves the old orientation flag');
 });
+void test('Lua level flags accept native case-insensitive names and enable shrouded memory', async (t) => {
+    const lua = await levelLua(t);
+    requireGameLevel().flags.hero_memory = false;
+    await lua.executeAsync('des.level_flags("ShRoUd", "NoTeLePoRt")');
+    assert.equal(requireGameLevel().flags.hero_memory, true);
+    assert.equal(requireGameLevel().flags.noteleport, true);
+});
 //# sourceMappingURL=special_level_selection.test.js.map

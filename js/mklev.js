@@ -5637,7 +5637,10 @@ async function fillSpecialLevel(options, active) {
 }
 function setLuaLevelFlags(active, flags) {
     const level = requireGameLevel();
-    for (const flag of flags) {
+    if (!flags.length)
+        throw new TypeError('des.level_flags requires at least one flag');
+    for (const value of flags) {
+        const flag = luaString(value).toLowerCase();
         if (flag === 'mazelevel')
             level.flags.is_maze_lev = true;
         else if (flag === 'noteleport')
@@ -5686,7 +5689,9 @@ function setLuaLevelFlags(active, flags) {
             level.flags.stormy = true;
         else if (flag === 'icedpools')
             active.icedPools = true;
-        else if (flag !== 'shroud')
+        else if (flag === 'shroud')
+            level.flags.hero_memory = true;
+        else
             throw new Error(`unknown Lua level flag ${flag}`);
     }
 }
