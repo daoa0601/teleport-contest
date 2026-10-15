@@ -35,6 +35,7 @@ import { game } from './gstate.js';
 import { dist2 } from './hacklib.js';
 import { hurtleHero } from './hero_hurtle.js';
 import { monsterTypeName } from './monster_data.js';
+import { hitFloorWithObject } from './object_drop.js';
 import {
     hitMonsterWithSupportedPotion, potionImpactObjectName,
     SUPPORTED_MONSTER_POTION_TYPES,
@@ -62,11 +63,6 @@ function canResolveMapPotionThrow({
         || !Number.isInteger(selectedQuantity) || selectedQuantity < 1
         || !Number.isInteger(dx) || !Number.isInteger(dy)) return false;
     return true;
-}
-
-function indefiniteObjectName(object: GameObject, state: GameState) {
-    const noun = potionImpactObjectName(object, state);
-    return `${/^[aeiou]/iu.test(noun) ? 'An' : 'A'} ${noun}`;
 }
 
 function distanceFromHero(state: GameState, x: number, y: number) {
@@ -136,16 +132,7 @@ export async function resolveMapPotionThrow({
                 state.context.move = 1;
                 return true;
             }
-            await publish(
-                `${indefiniteObjectName(thrown, state)} hits the floor.`,
-            );
-            await finishHeroThrownObjectLanding({
-                state,
-                object: thrown,
-                x: state.u.ux,
-                y: state.u.uy,
-                publish,
-            });
+            await hitFloorWithObject(thrown, { state, publish });
             state.context.move = 1;
             return true;
         }
