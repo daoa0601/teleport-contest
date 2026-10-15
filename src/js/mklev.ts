@@ -3579,7 +3579,7 @@ export function randomEngraving(): { pristine: string; text: string } {
     };
 }
 
-const BONES_VERSION = 12;
+const BONES_VERSION = 13;
 
 function bonesStorageKey(level: DungeonLocation | undefined = game.u.uz): string {
     return `teleport-bones:${level?.dnum ?? 0}:${level?.dlevel ?? 1}`;
@@ -4823,12 +4823,14 @@ async function fillCourtRoom(room: Room): Promise<void> {
         ruler.mpeaceful = 0;
         setMonsterMalign(ruler);
         const mace = await mksobj(MACE, true, false);
+        // All four rulers are princes; mongets() upgrades their weapons.
+        mace.spe = Math.max(1, mace.spe);
         await addObjectToMonsterInventory(ruler, mace, game, { atFront: true });
     }
 
     const entrance = room.doorct
         ? level.doors[room.fdoor] : null;
-    const roomNumber = level.rooms.indexOf(room) + ROOMOFFSET;
+    const roomNumber = room.roomnoidx + ROOMOFFSET;
     for (let x = room.lx; x <= room.hx; x++) {
         for (let y = room.ly; y <= room.hy; y++) {
             const loc = level.at(x, y);
@@ -4851,8 +4853,7 @@ async function fillCourtRoom(room: Room): Promise<void> {
             // square and makemon() then rejects it without constructor RNG.
             if (loc.typ === THRONE) continue;
             const mndx = courtMonsterType();
-            const monster = mndx == null ? null
-                : await makemon(mndx, x, y, MM_ASLEEP | MM_NOGRP);
+            const monster = await makemon(mndx, x, y, MM_ASLEEP | MM_NOGRP);
             if (monster) {
                 monster.msleeping = 1;
                 if (monster.mpeaceful) {
@@ -4870,11 +4871,12 @@ async function fillCourtRoom(room: Room): Promise<void> {
     const gold = await mksobj(GOLD_PIECE, true, false);
     gold.quan = rn1(50 * difficulty, 10);
     gold.quantity = gold.quan;
-    gold.owt = (OBJECT_WEIGHT[GOLD_PIECE] ?? 0) * gold.quan;
+    gold.owt = objectWeight(gold);
     const chest = await mksobj_at(
         CHEST, cofferPosition.x, cofferPosition.y, true, false,
     );
-    chest.contents = [gold];
+    await addToContainer(chest, gold);
+    chest.owt = objectWeight(chest);
     chest.spe = 2;
     level.flags.has_court = true;
 }
@@ -6047,10 +6049,14 @@ function luaRoomLighting(value: boolean | number): boolean {
 function luaRoomType(name = 'ordinary') {
     const roomTypes: Record<string, number> = {
         ordinary: OROOM,
+        vault: VAULT,
         zoo: ZOO,
         beehive: BEEHIVE,
         morgue: MORGUE,
         barracks: BARRACKS,
+        anthole: ANTHOLE,
+        cocknest: COCKNEST,
+        leprehall: LEPREHALL,
         court: COURT,
         throne: COURT,
         swamp: SWAMP,
@@ -6070,7 +6076,7 @@ function luaRoomType(name = 'ordinary') {
         'health food shop': SHOPBASE + 10,
         'candle shop': SHOPBASE + 11,
     };
-    const roomType = roomTypes[name];
+    const roomType = roomTypes[name.toLowerCase()];
     if (roomType == null)
         throw new Error(`unsupported Lua room type ${name}`);
     return roomType;
@@ -8263,8 +8269,7 @@ async function maybePlaceKnoxPortal(x: number, y: number): Promise<boolean> {
 function roomHasStair(croom: Room, up: boolean): boolean {
     for (let stair = game.stairs; stair; stair = stair.next) {
         if (!!stair.up !== !!up) continue;
-        if (stair.sx >= croom.lx && stair.sx <= croom.hx
-            && stair.sy >= croom.ly && stair.sy <= croom.hy)
+        if (insideRoom(game.level, croom, stair.sx, stair.sy))
             return true;
     }
     return false;
@@ -8272,7 +8277,7 @@ function roomHasStair(croom: Room, up: boolean): boolean {
 
 // C ref: mkroom.c invalid_shop_shape().  A shopkeeper must have more than a
 // one-square cul-de-sac immediately inside the selected room's only door.
-function invalidShopShape(croom: Room): boolean {
+async function invalidShopShape(croom: Room): Promise<boolean> {
     const level = requireGameLevel();
     const door = level.doors[croom.fdoor];
     if (!door) return true;
@@ -8288,7 +8293,10 @@ function invalidShopShape(croom: Room): boolean {
             }
         }
     }
-    if (insideCount < 1 || !inside) return true;
+    if (insideCount < 1 || !inside) {
+        await impossible('invalid_shop_shape: no squares inside door?');
+        return true;
+    }
     if (insideCount > 1) return false;
 
     let exits = 0;
@@ -8303,14 +8311,18 @@ function invalidShopShape(croom: Room): boolean {
     return exits === 1;
 }
 
-function mkshop(): boolean {
+async function mkshop(): Promise<boolean> {
     const level = requireGameLevel();
     const rooms = level.rooms.slice(0, level.nroom);
-    const sroom = rooms.find((room): room is Room => isRoom(room) && room.rtype === OROOM
-        && !roomHasStair(room, false)
-        && !roomHasStair(room, true)
-        && room.doorct === 1
-        && !invalidShopShape(room));
+    let sroom: Room | null = null;
+    for (const room of rooms) {
+        if (!isRoom(room) || room.hx < 0) return false;
+        if (room.rtype !== OROOM || roomHasStair(room, false)
+            || roomHasStair(room, true) || room.doorct !== 1) continue;
+        if (await invalidShopShape(room)) continue;
+        sroom = room;
+        break;
+    }
     if (!sroom) return false;
 
     if (!sroom.rlit) {
@@ -8390,7 +8402,6 @@ function shrinePosition(room: Room): Position {
 async function makeRandomTemple(room: Room): Promise<boolean> {
     const level = requireGameLevel();
     room.rtype = TEMPLE;
-    room.needfill = FILL_NORMAL;
 
     const shrine = shrinePosition(room);
     const altar = level.at(shrine.x, shrine.y);
@@ -8479,23 +8490,27 @@ async function maybeMakeSpecialRoom(roomThreshold: number): Promise<boolean> {
         return mkshop();
     if (uDepth > 4 && !rn2(6))
         return markRandomSpecialRoom(COURT);
-    if (uDepth > 5 && !rn2(8))
+    if (uDepth > 5 && !rn2(8)
+        && !((game.mvitals?.[MONSTER_NAME.indexOf('leprechaun')]?.mvflags ?? 0) & G_GONE))
         return markRandomSpecialRoom(LEPREHALL);
     if (uDepth > 6 && !rn2(7))
         return markRandomSpecialRoom(ZOO);
     if (uDepth > 8 && !rn2(5))
         return markRandomSpecialRoom(TEMPLE);
-    if (uDepth > 9 && !rn2(5))
+    if (uDepth > 9 && !rn2(5)
+        && !((game.mvitals?.[MONSTER_NAME.indexOf('killer bee')]?.mvflags ?? 0) & G_GONE))
         return markRandomSpecialRoom(BEEHIVE);
     if (uDepth > 11 && !rn2(6))
         return markRandomSpecialRoom(MORGUE);
-    if (uDepth > 12 && !rn2(8))
+    if (uDepth > 12 && !rn2(8) && antholeMonsterType() !== null)
         return markRandomSpecialRoom(ANTHOLE);
-    if (uDepth > 14 && !rn2(4))
+    if (uDepth > 14 && !rn2(4)
+        && !((game.mvitals?.[PM_SOLDIER]?.mvflags ?? 0) & G_GONE))
         return markRandomSpecialRoom(BARRACKS);
     if (uDepth > 15 && !rn2(6))
         return markRandomSpecialRoom(SWAMP);
-    if (uDepth > 16 && !rn2(8))
+    if (uDepth > 16 && !rn2(8)
+        && !((game.mvitals?.[MONSTER_NAME.indexOf('cockatrice')]?.mvflags ?? 0) & G_GONE))
         return markRandomSpecialRoom(COCKNEST);
     return false;
 }
@@ -8828,7 +8843,7 @@ function barracksMonsterType(): number | null {
 async function fillBarracksRoom(room: Room): Promise<void> {
     const level = requireGameLevel();
     const entrance = room.doorct ? level.doors?.[room.fdoor] : null;
-    const roomNumber = level.rooms.indexOf(room) + ROOMOFFSET;
+    const roomNumber = room.roomnoidx + ROOMOFFSET;
     for (let x = room.lx; x <= room.hx; x++) {
         for (let y = room.ly; y <= room.hy; y++) {
             const loc = level.at(x, y);
@@ -8848,8 +8863,7 @@ async function fillBarracksRoom(room: Room): Promise<void> {
                 continue;
             }
             const mndx = barracksMonsterType();
-            const monster = mndx == null ? null
-                : await makemon(mndx, x, y, MM_ASLEEP | MM_NOGRP);
+            const monster = await makemon(mndx, x, y, MM_ASLEEP | MM_NOGRP);
             if (monster) monster.msleeping = 1;
             if (!rn2(20)) {
                 await mksobj_at(
@@ -9484,7 +9498,7 @@ function add_subroom(
         doorct: 0, fdoor: level.doorindex,
         irregular: false, needjoining: !special,
         nsubrooms: 0, sbrooms: [],
-        roomnoidx: MAXNROFROOMS + subroomIndex,
+        roomnoidx: MAXNROFROOMS + 1 + subroomIndex,
         needfill: 0,
     };
     do_room_or_subroom(
@@ -10929,7 +10943,7 @@ async function level_finalize_topology(): Promise<void> {
             if (isRoom(room)) topologize(room);
     }
     setWallState();
-    for (const room of level.rooms) {
+    for (const room of [...level.rooms, ...(level.subrooms ?? [])]) {
         if (isRoom(room)) room.orig_rtype = room.rtype;
     }
 }

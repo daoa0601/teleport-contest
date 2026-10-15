@@ -16,7 +16,6 @@ import { heroArmName, heroFootName, heroHeadName, heroLegName, monsterFootName }
 import { A_CON, A_DEX, A_STR, ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, DART_TRAP, FIRE_TRAP, DISMOUNT_POLY, In_endgame, In_quest, is_pit, HOLE, M_SEEN_SLEEP, LANDMINE, LEVEL_TELEP, MAGIC_PORTAL, MAGIC_TRAP, PIT, POLY_TRAP, ROCKTRAP, ROLLING_BOULDER_TRAP, RUST_TRAP, SLP_GAS_TRAP, SPIKED_PIT, SQKY_BOARD, STATUE_TRAP, TRAPDOOR, TELEP_TRAP, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, VAULT, VIBRATING_SQUARE, WEB, isok, Is_stronghold, squeakyBoardNoteWithArticle, } from './const.js';
 import { flush_screen, lastDirtyMapCursor, map_trap, newsym, pline, plineWithContinuation, shieldeff, show_glyph_cell, } from './display.js';
 import { game, requirePlayingGame, requireGameLevel } from './gstate.js';
-import { isRoom } from './map_types.js';
 import { buriedBallNear, buriedBallToPunishment } from './buried_object.js';
 import { loseHeroHp } from './hero_damage.js';
 import { hitHeroWithObject } from './hero_object_hit.js';
@@ -31,7 +30,7 @@ import { explodeLandMine } from './landmine_explosion.js';
 import { placeCreatedObject, placeObject, placeObjectSynchronously, remove_object, stack_object, } from './floor_object.js';
 import { canFallThrough, splitHeroMonsterForm, } from './mklev.js';
 import { fillPitWithBoulderAt } from './pit_fill.js';
-import { somexyspace } from './mkroom.js';
+import { searchSpecial, somexyspace } from './mkroom.js';
 import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterTypeName, monsterIsAmorphous, monsterIsUnsolid, monsterIsWhirly, } from './monster_data.js';
 import { ARROW, BOULDER, DART, HEAVY_IRON_BALL, OBJECT_BIMANUAL, OBJECT_MATERIAL, OBJECT_NAMES, ROCK, } from './object_data.js';
 import { deleteObject } from './object_delete.js';
@@ -607,7 +606,7 @@ async function triggerTeleportTrap(trap, finishTeleport) {
         if (trap.once) {
             deleteTrap(trap);
             newsym(game.u.ux, game.u.uy);
-            const vault = game.level?.rooms?.find((room) => isRoom(room) && room.rtype === VAULT);
+            const vault = searchSpecial(VAULT);
             if (vault) {
                 const vaultSquare = { x: 0, y: 0 };
                 if (somexyspace(vault, vaultSquare)

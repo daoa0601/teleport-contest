@@ -8,6 +8,7 @@ import {
 import { canSeeMonster, canSpotMonster, map_location, map_object } from '../js/display.js';
 import { placeCreatedObject } from '../js/floor_object.js';
 import { GameMap } from '../js/game.js';
+import { CmapSymbol } from '../js/glyph_numbers.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { mksobj } from '../js/mklev.js';
 import { POT_HEALING } from '../js/object_data.js';
@@ -114,7 +115,7 @@ void test('a seen furniture disguise affects remembered terrain, telepathy alone
     requirePlayingGame(game);
     const mimic = await createMonsterAt('small mimic', 12, 10);
     mimic.m_ap_type = M_AP_FURNITURE;
-    mimic.mappearance = FOUNTAIN;
+    mimic.mappearance = CmapSymbol.fountain;
     assert.equal(canSeeMonster(mimic), true);
 
     map_location(12, 10, false);

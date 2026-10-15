@@ -35,8 +35,7 @@ import { game, requirePlayingGame, requireGameLevel } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
-import { isRoom } from './map_types.js';
-import type { Trap, Position, Room } from './map_types.js';
+import type { Trap, Position } from './map_types.js';
 import type { DungeonLocation } from './dungeon_types.js';
 import type { DisplayGlyph } from './display.js';
 import type { HeroHurtleOptions } from './hero_hurtle.js';
@@ -59,7 +58,7 @@ import {
     canFallThrough, splitHeroMonsterForm,
 } from './mklev.js';
 import { fillPitWithBoulderAt } from './pit_fill.js';
-import { somexyspace } from './mkroom.js';
+import { searchSpecial, somexyspace } from './mkroom.js';
 import {
     MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterTypeName,
     monsterIsAmorphous, monsterIsUnsolid, monsterIsWhirly,
@@ -691,9 +690,7 @@ async function triggerTeleportTrap(trap: Trap, finishTeleport: HeroTrapOptions['
             deleteTrap(trap);
             newsym(game.u.ux, game.u.uy);
 
-            const vault = game.level?.rooms?.find(
-                (room): room is Room => isRoom(room) && room.rtype === VAULT,
-            );
+            const vault = searchSpecial(VAULT);
             if (vault) {
                 const vaultSquare = { x: 0, y: 0 };
                 if (somexyspace(vault, vaultSquare)
