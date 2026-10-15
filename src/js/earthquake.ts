@@ -3,7 +3,6 @@
 
 import { publishHeardMessage } from './hero_speech.js';
 import { monsterAtPosition } from './monster_location.js';
-import { deleteTrap } from './trap_lifecycle.js';
 import { desecrateAltar } from './divine_wrath.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import {
@@ -28,9 +27,10 @@ import {
     finishHeroLiquidMonsterDeath, finishHeroMonsterKill,
 } from './hero_monster_death.js';
 import { liquidForHole } from './hole.js';
-import { remove_object } from './floor_object.js';
+import { remove_object, updateIceObjectTimersAt } from './floor_object.js';
+import { unearthFloorObjectsAt } from './buried_object.js';
 import { applyFloorEffects } from './floor_effects.js';
-import { maketrap } from './mklev.js';
+import { deleteFloorTrap, maketrap } from './mklev.js';
 import { resolveMonsterLiquid } from './mon.js';
 import {
     MONSTER_FLAGS1, monsterIsHumanoid, monsterSpeciesHidesOnCeiling,
@@ -94,16 +94,14 @@ async function damageFloorObjectsWithWater(x: number, y: number) {
 }
 
 async function flowLiquidIntoChasm(x: number, y: number, trap: Trap, liquid: number, monster: Monster | null): Promise<void> {
-    deleteTrap(trap);
-    if (monster) monster.mtrapped = 0;
-    if (game.u?.ux === x && game.u?.uy === y) {
-        game.u.utrap = 0;
-        game.u.utraptype = 0;
-    }
     const location = requireGameLevel(game).at(x, y);
     if (!location) throw new RangeError(`Earthquake square ${x},${y} is outside the level.`);
     location.typ = liquid;
     location.flags = 0;
+    if (liquid === LAVAPOOL) location.lit = true;
+    await deleteFloorTrap(trap);
+    updateIceObjectTimersAt(x, y, game);
+    await unearthFloorObjectsAt(x, y, game);
     if (liquid === LAVAPOOL) {
         await fireDamageChain(
             game.level?.objects?.[x]?.[y] || [],

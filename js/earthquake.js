@@ -2,7 +2,6 @@
 // C ref: music.c do_earthquake() and do_pit().
 import { publishHeardMessage } from './hero_speech.js';
 import { monsterAtPosition } from './monster_location.js';
-import { deleteTrap } from './trap_lifecycle.js';
 import { desecrateAltar } from './divine_wrath.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { A_DEX, ALTAR, AM_MASK, AM_SANCTUM, Amask2align, COLNO, CORR, MGIVENNAME, DOOR, D_NODOOR, FOUNTAIN, GRAVE, LAVAPOOL, MOAT, PIT, POOL, ROOM, ROWNO, NO_KILLER_PREFIX, SCORR, SDOOR, SHOPBASE, SINK, THRONE, TT_BURIEDBALL, TT_PIT, is_pit, } from './const.js';
@@ -12,9 +11,10 @@ import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
 import { heroLiquidEffects } from './hack.js';
 import { finishHeroLiquidMonsterDeath, finishHeroMonsterKill, } from './hero_monster_death.js';
 import { liquidForHole } from './hole.js';
-import { remove_object } from './floor_object.js';
+import { remove_object, updateIceObjectTimersAt } from './floor_object.js';
+import { unearthFloorObjectsAt } from './buried_object.js';
 import { applyFloorEffects } from './floor_effects.js';
-import { maketrap } from './mklev.js';
+import { deleteFloorTrap, maketrap } from './mklev.js';
 import { resolveMonsterLiquid } from './mon.js';
 import { MONSTER_FLAGS1, monsterIsHumanoid, monsterSpeciesHidesOnCeiling, } from './monster_data.js';
 import { finishMonsterLiquidDeath } from './monster_death.js';
@@ -64,18 +64,16 @@ async function damageFloorObjectsWithWater(x, y) {
     }
 }
 async function flowLiquidIntoChasm(x, y, trap, liquid, monster) {
-    deleteTrap(trap);
-    if (monster)
-        monster.mtrapped = 0;
-    if (game.u?.ux === x && game.u?.uy === y) {
-        game.u.utrap = 0;
-        game.u.utraptype = 0;
-    }
     const location = requireGameLevel(game).at(x, y);
     if (!location)
         throw new RangeError(`Earthquake square ${x},${y} is outside the level.`);
     location.typ = liquid;
     location.flags = 0;
+    if (liquid === LAVAPOOL)
+        location.lit = true;
+    await deleteFloorTrap(trap);
+    updateIceObjectTimersAt(x, y, game);
+    await unearthFloorObjectsAt(x, y, game);
     if (liquid === LAVAPOOL) {
         await fireDamageChain(game.level?.objects?.[x]?.[y] || [], {
             state: game, x, y, force: true,
