@@ -53,7 +53,6 @@ function floatingEyeFreezeDuration(monster, state, random, rollDice) {
     return rollDice((monster.m_lev ?? 0) + 1, attack[3] ?? 1);
 }
 async function applyGazePassive(monster, state, publish, random, rollDice, die) {
-    const name = monsterName(monster, { state, article: 'none' });
     if (monster.mnum === PM_FLOATING_EYE && !monster.mcan) {
         const owner = possessiveName(monsterName(monster, { state }));
         if (heroHasFreeAction(state)) {
@@ -70,6 +69,7 @@ async function applyGazePassive(monster, state, publish, random, rollDice, die) 
     }
     if (monster.mnum !== PM_MEDUSA || monster.mcan)
         return { heroDied: false };
+    const name = monsterName(monster, { state, article: 'none' });
     await publish(`Gazing at the awake ${name} is not a very good idea.`);
     await publish('You turn to stone...');
     const heroDied = await die({

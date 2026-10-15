@@ -64,8 +64,7 @@ async function spinWhileSwallowed(state, publish, refresh) {
     const monster = state.u.ustuck;
     if (!monster)
         throw new Error('A swallowed hero must have an engulfing monster');
-    const name = monsterName(monster, { state });
-    await publish(`You release web fluid inside ${name}.`);
+    await publish(`You release web fluid inside ${monsterName(monster, { state })}.`);
     if (monsterIsAnimal(monster)) {
         await expelHero(monster, { state, publish, refresh });
     }
@@ -73,7 +72,7 @@ async function spinWhileSwallowed(state, publish, refresh) {
         await publish(whirlyWebMessage(monster));
     }
     else {
-        await publish(`The web dissolves into ${name}.`);
+        await publish(`The web dissolves into ${monsterName(monster, { state })}.`);
     }
 }
 export async function useHeroWeb({ state = game, publish = plineWithContinuation, refresh = newsym, createTrap = maketrap, activateTrap = triggerHeroTrap, } = {}) {

@@ -84,14 +84,13 @@ function whirlyWebMessage(monster: Monster) {
 async function spinWhileSwallowed(state: GameState, publish: MessagePublisher, refresh: typeof newsym) {
     const monster = state.u.ustuck;
     if (!monster) throw new Error('A swallowed hero must have an engulfing monster');
-    const name = monsterName(monster, { state });
-    await publish(`You release web fluid inside ${name}.`);
+    await publish(`You release web fluid inside ${monsterName(monster, { state })}.`);
     if (monsterIsAnimal(monster)) {
         await expelHero(monster, { state, publish, refresh });
     } else if (monsterIsWhirly(monster)) {
         await publish(whirlyWebMessage(monster));
     } else {
-        await publish(`The web dissolves into ${name}.`);
+        await publish(`The web dissolves into ${monsterName(monster, { state })}.`);
     }
 }
 

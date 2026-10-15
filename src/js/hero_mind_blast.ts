@@ -90,4 +90,3 @@ function mindBlastSense(monster: Monster, random: typeof rn2) {
         return telepathic ? 'latent telepathy' : 'mind';
     return null;
 }
-

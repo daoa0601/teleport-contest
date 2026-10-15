@@ -80,7 +80,6 @@ async function applyGazePassive(
     monster: Monster, state: GameState, publish: MessagePublisher,
     random: typeof rn2, rollDice: typeof d, die: DeathHandler,
 ) {
-    const name = monsterName(monster, { state, article: 'none' });
     if (monster.mnum === PM_FLOATING_EYE && !monster.mcan) {
         const owner = possessiveName(monsterName(monster, { state }));
         if (heroHasFreeAction(state)) {
@@ -100,6 +99,7 @@ async function applyGazePassive(
 
     if (monster.mnum !== PM_MEDUSA || monster.mcan)
         return { heroDied: false };
+    const name = monsterName(monster, { state, article: 'none' });
     await publish(`Gazing at the awake ${name} is not a very good idea.`);
     await publish('You turn to stone...');
     const heroDied = await die({
