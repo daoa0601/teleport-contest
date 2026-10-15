@@ -24,7 +24,7 @@ import { advanceCorpseResistanceTimeouts } from './corpse_intrinsics.js';
 import { game, requireGameLevel, requireInitializedGame, requireGameDisplay, requireLiveGame } from './gstate.js';
 import { isRoom } from './map_types.js';
 import { clearImmediateZapBypasses } from './immediate_zap.js';
-import { In_endgame, MON_FLOOR, PICK_ONE, PLNMSG_MON_TAKES_OFF_ITEM } from './const.js';
+import { In_endgame, Is_astralevel, MON_FLOOR, PICK_ONE, PLNMSG_MON_TAKES_OFF_ITEM } from './const.js';
 import { mapVicinity } from './magic_mapping.js';
 import { showInventoryWindow } from './windows.js';
 import { endVoluntaryMultiTurn, heroHasInvoluntaryDelay } from './command_state.js';
@@ -95,7 +95,7 @@ import { stopRun } from './runmode.js';
 import { resolveMonsterGaze } from './monster_gaze.js';
 import { resolveMonsterMagicRay } from './monster_magic_ray.js';
 import { resolveMonsterSelfExplosion } from './monster_self_explosion.js';
-import { canSpotMonster, displayMessageWindow, docrt, redrawMap, bot, flush_screen, flushPendingTopline, pline, plineWithContinuation, newsym, map_invisible, randomDisplayMonsterName, see_monsters, see_objects, see_traps, show_glyph_cell, swallowed, canSeeMonster, monsterVisible, shieldeff, } from './display.js';
+import { canSpotMonster, displayColorName, displayMessageWindow, docrt, redrawMap, bot, flush_screen, flushPendingTopline, pline, plineWithContinuation, newsym, map_invisible, randomDisplayMonsterName, see_monsters, see_objects, see_traps, show_glyph_cell, swallowed, canSeeMonster, monsterVisible, shieldeff, } from './display.js';
 import { cansee, couldsee, vision_note_blocker_change, vision_recalc, vision_reset, hasLightSources, init_vision_globals, } from './vision.js';
 import { nhgetch } from './input.js';
 import { NO_COLOR, CLR_BRIGHT_BLUE } from './terminal.js';
@@ -568,13 +568,14 @@ async function finishInitialTurnMaintenanceRng(sourceTurn) {
         if (game.u.udg_cnt !== undefined && game.u.udg_cnt > 0)
             game.u.udg_cnt--;
         if ((game.u.udg_cnt ?? 0) === 0) {
-            const intervention = rn2(6);
+            const intervention = Is_astralevel(game.u.uz) ? rnd(4) : rn2(6);
             if (intervention <= 1) {
                 appendTurnMessage(formatFeltMessage('vaguely nervous.'));
                 delete game._unresolvedDemigodIntervention;
             }
             else if (intervention === 2) {
-                appendTurnMessage('You notice a black glow surrounding you.');
+                if (!heroIsBlind(game))
+                    appendTurnMessage(`You notice a ${displayColorName('black', game)} glow surrounding you.`);
                 game._pendingDemigodIntervention = {
                     kind: intervention, sourceTurn,
                 };
