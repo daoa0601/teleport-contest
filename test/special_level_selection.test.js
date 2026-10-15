@@ -293,4 +293,22 @@ void test('Lua wallify honors an explicit rectangle in level coordinates', async
     assert.equal(level.requireAt(9, 5).typ, VWALL);
     assert.equal(level.requireAt(11, 5).typ, STONE, 'terrain outside the rectangle stays unchanged');
 });
+void test('Lua line and rectangle methods extend copies and randline accepts a new selection', async (t) => {
+    const lua = await levelLua(t);
+    await lua.executeAsync(`
+        des.map({ x = 10, y = 5, map = [[xxxxxxxxxxxxxxxxxxxx]] })
+        local original = selection.area(0, 0, 0, 0)
+        local rooms = original:fillrect(2, 1, 4, 2):rect(6, 1, 8, 3):line(10, 1, 12, 1)
+        original_count = original:numpoints()
+        des.terrain(rooms, ".")
+        des.terrain(selection.randline(14, 1, 18, 1, 0), "#")
+    `);
+    const level = requireGameLevel();
+    assert.equal(lua.getGlobal('original_count'), 1, 'drawing returns a copy of the original selection');
+    assert.equal(level.requireAt(10, 5).typ, ROOM);
+    assert.equal(level.requireAt(13, 7).typ, ROOM);
+    assert.equal(level.requireAt(17, 7).typ, STONE, 'an outlined rectangle leaves its center alone');
+    assert.equal(level.requireAt(20, 6).typ, ROOM);
+    assert.equal(level.requireAt(26, 6).typ, CORR);
+});
 //# sourceMappingURL=special_level_selection.test.js.map

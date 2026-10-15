@@ -1,4 +1,4 @@
-import { SpecialSelection, specialSelectionFillRect, specialSelectionFloodFill, specialSelectionLine, specialSelectionMatch, specialSelectionRandLine, specialSelectionRect, selection_from_mkroom, selection_do_ellipse, selection_do_gradient, selection_getpoint, selection_setpoint, SEL_GRADIENT_RADIAL, SEL_GRADIENT_SQUARE, } from '../selvar.js';
+import { SpecialSelection, specialSelectionFloodFill, specialSelectionMatch, specialSelectionRandLine, selection_from_mkroom, selection_do_ellipse, selection_do_line, selection_do_gradient, selection_getpoint, selection_setpoint, SEL_GRADIENT_RADIAL, SEL_GRADIENT_SQUARE, } from '../selvar.js';
 import { LuaTable, LuaUserdata } from './runtime.js';
 import { luaInteger, luaString, luaTruthy } from './arguments.js';
 import { ANY_LOC, getLocationCoord } from '../special_location.js';
@@ -65,14 +65,39 @@ export function createSelectionApi(context, invoke = null) {
     const rndcoord = (self, remove = 0) => pointTable(relativePoint(selectionValue(self).randomCoordinate(!!luaInteger(remove ?? 0)))
         ?? { x: -1, y: -1 });
     const bounds = (self) => boundsTable(selectionValue(self).bounds());
-    const ellipse = async (circular, args) => {
+    const explicitPoint = (x, y) => {
+        const active = currentContext();
+        return {
+            x: active.xstart + (luaInteger(x) & 0xff),
+            y: active.ystart + (luaInteger(y) & 0xff),
+        };
+    };
+    const geometry = (shape, args) => {
+        const self = args[0] instanceof LuaUserdata ? args.shift() : undefined;
+        const result = self ? selectionValue(self).clone() : new SpecialSelection();
+        const start = explicitPoint(args[0], args[1]), end = explicitPoint(args[2], args[3]);
+        if (shape === 'area') {
+            for (let y = start.y; y <= end.y; y++)
+                selection_do_line(start.x, y, end.x, y, result.selection);
+        }
+        else {
+            selection_do_line(start.x, start.y, end.x, shape === 'line' ? end.y : start.y, result.selection);
+            if (shape === 'rect') {
+                selection_do_line(start.x, start.y, start.x, end.y, result.selection);
+                selection_do_line(end.x, start.y, end.x, end.y, result.selection);
+                selection_do_line(start.x, end.y, end.x, end.y, result.selection);
+            }
+        }
+        return wrap(result);
+    };
+    const ellipse = (circular, args) => {
         const self = args[0] instanceof LuaUserdata ? args.shift() : undefined;
         const result = self ? selectionValue(self) : new SpecialSelection();
         const x = luaInteger(args[0]), y = luaInteger(args[1]);
         const radiusX = luaInteger(args[2]);
         const radiusY = circular ? radiusX : luaInteger(args[3]);
         const filled = luaInteger(args[circular ? 3 : 4] ?? 0);
-        const point = await getLocationCoord(currentContext(), { x, y }, ANY_LOC);
+        const point = explicitPoint(x, y);
         selection_do_ellipse(result.selection, point.x, point.y, radiusX, radiusY, !filled);
         return self ?? wrap(result);
     };
@@ -92,10 +117,11 @@ export function createSelectionApi(context, invoke = null) {
         selection_do_gradient(result.selection, x, y, pointCenter ? x : x2, pointCenter ? y : y2, type === 'radial' ? SEL_GRADIENT_RADIAL : SEL_GRADIENT_SQUARE, luaInteger(options.get('mindist') ?? 0), luaInteger(options.get('maxdist')));
         return wrap(result);
     };
-    const randline = (self, x1, y1, x2, y2, roughness = 7) => {
-        const active = currentContext();
-        const result = selectionValue(self).clone();
-        return wrap(specialSelectionRandLine(active.xstart + luaInteger(x1), active.ystart + luaInteger(y1), active.xstart + luaInteger(x2), active.ystart + luaInteger(y2), luaInteger(roughness), 12, result));
+    const randline = (...args) => {
+        const self = args[0] instanceof LuaUserdata ? args.shift() : undefined;
+        const result = self ? selectionValue(self).clone() : new SpecialSelection();
+        const start = explicitPoint(args[0], args[1]), end = explicitPoint(args[2], args[3]);
+        return wrap(specialSelectionRandLine(start.x, start.y, end.x, end.y, luaInteger(args[4] ?? 7), 12, result));
     };
     const iterate = async (self, callback) => {
         if (!invoke)
@@ -120,6 +146,10 @@ export function createSelectionApi(context, invoke = null) {
         grow,
         rndcoord,
         bounds,
+        line: (...args) => geometry('line', args),
+        rect: (...args) => geometry('rect', args),
+        fillrect: (...args) => geometry('area', args),
+        area: (...args) => geometry('area', args),
         circle: (...args) => ellipse(true, args),
         ellipse: (...args) => ellipse(false, args),
         gradient,
@@ -147,10 +177,6 @@ export function createSelectionApi(context, invoke = null) {
     const bindings = {
         new: () => wrap(new SpecialSelection()),
         ...methods,
-        line: (x1, y1, x2, y2) => wrap(specialSelectionLine(currentContext(), luaInteger(x1), luaInteger(y1), luaInteger(x2), luaInteger(y2))),
-        rect: (x1, y1, x2, y2) => wrap(specialSelectionRect(currentContext(), luaInteger(x1), luaInteger(y1), luaInteger(x2), luaInteger(y2))),
-        fillrect: (x1, y1, x2, y2) => wrap(specialSelectionFillRect(currentContext(), luaInteger(x1), luaInteger(y1), luaInteger(x2), luaInteger(y2))),
-        area: (x1, y1, x2, y2) => wrap(specialSelectionFillRect(currentContext(), luaInteger(x1), luaInteger(y1), luaInteger(x2), luaInteger(y2))),
         floodfill: (x, y, diagonals = false) => wrap(specialSelectionFloodFill(currentContext(), luaInteger(x), luaInteger(y), luaTruthy(diagonals))),
         match: fragment => wrap(specialSelectionMatch(luaString(fragment))),
         room: () => wrap(new SpecialSelection(selection_from_mkroom(currentContext()._room))),
