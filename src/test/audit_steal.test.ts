@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { performMonsterHeroAttack } from '../js/allmain.js';
 import { wearHeroAccessory } from '../js/accessory.js';
-import { MM_ANGRY, MM_NOGRP, NO_MINVENT } from '../js/const.js';
+import { MM_ANGRY, MM_NOGRP, NO_MINVENT, W_AMUL } from '../js/const.js';
 import { flushPendingTopline } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { setHeroSpecies } from '../js/hero_species.js';
@@ -10,10 +10,11 @@ import { resetInputState } from '../js/input.js';
 import { punishHero } from '../js/punishment.js';
 import { unlinkObject } from '../js/object_location.js';
 import { addInventoryItem } from '../js/u_init.js';
-import { BOULDER, DAGGER, GOLD_PIECE, LEASH, OBJECT_NAMES } from '../js/object_data.js';
+import { AMULET_OF_LIFE_SAVING, BOULDER, DAGGER, GOLD_PIECE, LEASH, OBJECT_NAMES, STATUE } from '../js/object_data.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { addInventoryObject } from './support/game-objects.js';
-import { createMonsterAt } from './support/monsters.js';
+import { addInventoryObject, knownObject, untimedCorpse } from './support/game-objects.js';
+import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
+import { floorObjectsAt } from './support/level-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 import { installHeroChainedToBuriedBall } from './support/hero-state.js';
@@ -106,8 +107,37 @@ function theftMessages() {
     const messages: string[] = [];
     const input = resetInputState();
     input.beforeRead = () => { messages.push(game._pending_message); };
-    installPagerInput(input, { expected: /nymph|monkey|Somebody|She|Something|Someone|punished|chain|anchor/, limit: 25 });
+    installPagerInput(input, { expected: /nymph|monkey|Somebody|She|Something|Someone|punished|chain|anchor|amulet/, limit: 25 });
     return messages;
+}
+
+for (const lifeSaving of [false, true]) {
+    void test(`stealing a cockatrice corpse petrifies a nymph ${lifeSaving ? 'who is then life saved' : 'with the stolen corpse inside her statue'}`, async () => {
+        freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
+        requirePlayingGame(game);
+        const corpse = await addInventoryItem(await untimedCorpse(MONSTER_NAME.indexOf('cockatrice')));
+        const thief = await nearbyThief();
+        if (lifeSaving)
+            await equipMonsterObject(thief, await knownObject(AMULET_OF_LIFE_SAVING), W_AMUL);
+        const messages = theftMessages();
+
+        await performMonsterHeroAttack(thief, game, { random: () => 0, rollOne: () => 1 });
+        messages.push(game._pending_message);
+
+        assert.match(messages.join('\n'), /stole[\s\S]*turns to stone/);
+        assert.equal(game.inventory.includes(corpse), false);
+        assert.ok(!thief.mflee, 'Petrification ends the attack before flight, even with life saving');
+        if (lifeSaving) {
+            assert.ok(thief.mhp > 0);
+            assert.ok(thief.minvent.includes(corpse));
+            assert.ok(!thief.minvent.some(object => object.otyp === AMULET_OF_LIFE_SAVING));
+        } else {
+            assert.ok(thief.dead);
+            const statue = floorObjectsAt(game.level, 11, 10).find(object => object.otyp === STATUE);
+            assert.ok(statue?.contents?.includes(corpse));
+            assert.equal(game.u.uconduct.killer, 1, 'The hero gets credit for the petrified thief');
+        }
+    });
 }
 
 for (const carried of [false, true]) {

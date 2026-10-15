@@ -45,6 +45,8 @@ import { monsterMissMessage } from './monster_miss.js';
 import { monsterIsAnimal } from './monster_data.js';
 import { monsterCanCarryObject } from './monster_carry.js';
 import { releaseObjectLeash } from './monster_leash.js';
+import { petrifyMonsterImmediately } from './monster_stoning.js';
+import { touchPetrifies } from './stoning.js';
 import { armorSimpleName, stopDonning } from './armor.js';
 import { isBeingTakenOff } from './takeoff_state.js';
 import { OBJECT_DELAY } from './object_data.js';
@@ -100,7 +102,7 @@ import { makePlural, verbForSubject, withIndefiniteArticle } from './object_gram
 import { monsterLocomotion } from './monster_locomotion.js';
 import { monsterFliesOrFloats } from './terrain_properties.js';
 import { observeDistantObjectForNaming, observeObjectForNaming, ownedObjectName, } from './objnam.js';
-import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, BOLT_LIM, COLNO, ROWNO, DOOR, D_CLOSED, D_LOCKED, HOLE, M_SEEN_MAGR, STONE, ZAP_POS, STRAT_CLOSE, STRAT_WAITFORU, UNENCUMBERED, MOD_ENCUMBER, HVY_ENCUMBER, EXT_ENCUMBER, W_ACCESSORY, W_WEAPONS, ismnum, Upolyd, Is_airlevel, Is_waterlevel, LUCKMIN, LUCKMAX, TT_BURIEDBALL, TT_LAVA, } from './const.js';
+import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, BOLT_LIM, COLNO, ROWNO, DOOR, D_CLOSED, D_LOCKED, HOLE, M_SEEN_MAGR, STONE, ZAP_POS, STRAT_CLOSE, STRAT_WAITFORU, M_ATTK_AGR_DIED, W_ARMG, UNENCUMBERED, MOD_ENCUMBER, HVY_ENCUMBER, EXT_ENCUMBER, W_ACCESSORY, W_WEAPONS, ismnum, Upolyd, Is_airlevel, Is_waterlevel, LUCKMIN, LUCKMAX, TT_BURIEDBALL, TT_LAVA, } from './const.js';
 import { uInitMisc, makedog, uInitInventoryAttrs, finishStartingDiscoveries, } from './u_init.js';
 import { makeDeaf } from './hero_hearing.js';
 import { heroIsBlind, heroIsDeaf, syncBlindness } from './senses.js';
@@ -1823,8 +1825,17 @@ async function resolveDeferredHeroItemTheft(action, monster, attack, random) {
     // It can first suspend while clearing the older worn-removal line; after
     // that acknowledgement, rloc() may append its own message to this one.
     await plineWithContinuation(`${thief} stole ${stolenObjectDescription}.`);
+    const couldPetrify = object.otyp === CORPSE && touchPetrifies(object.corpsenm);
     object.how_lost = LOST_STOLEN;
     await addObjectToMonsterInventory(monster, object, game);
+    if (couldPetrify && !((monster.misc_worn_check ?? 0) & W_ARMG)) {
+        await petrifyMonsterImmediately(monster, {
+            creditHero: true,
+            finishDeath: (target, death = {}) => finishHeroMonsterKill(target, target.mx, target.my, { ...death, showKillMessage: false, recordConduct: false }),
+        });
+        attack.nativeResult = M_ATTK_AGR_DIED;
+        return true;
+    }
     // steal() returns zero while an involuntary delay is still active.
     // The thief can keep attacking and must stay for any pending armor.
     attack.theftResolved = true;
