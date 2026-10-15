@@ -11,7 +11,7 @@ void test('searching while swallowed spends a turn looking for the exit without 
     freshObjectRoom();
     requirePlayingGame(game);
     const worm = await createMonsterAt('purple worm', 11, 10, NO_MINVENT);
-    installSwallowedHero(worm);
+    await installSwallowedHero(worm);
     await createMonsterAt('stalker', game.u.ux + 1, game.u.uy, NO_MINVENT);
     pushKeys(' '.repeat(20));
     await dosearch();

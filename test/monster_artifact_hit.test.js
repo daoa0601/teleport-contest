@@ -135,7 +135,7 @@ void test('a monster using the Tsurugi cannot slice the hero swallower from insi
     const attacker = await createMonsterAt('orc', 12, 10, TEST_MONSTER_FLAGS);
     const defender = await createMonsterAt('purple worm', 11, 10, TEST_MONSTER_FLAGS);
     defender.mhp = defender.mhpmax = 100;
-    installSwallowedHero(defender);
+    await installSwallowedHero(defender);
     const messages = [];
     const hit = await applyArtifactHitToMonster(await artifactObject('The Tsurugi of Muramasa'), defender, 4, {
         attacker, state: game, dieRoll: 1, visible: false, rollOne: maximumRoll,
@@ -171,7 +171,7 @@ void test('Vorpal Blade cannot behead another monster while the hero is swallowe
     const attacker = await createMonsterAt('orc', 12, 10, TEST_MONSTER_FLAGS);
     const defender = await createMonsterAt('jackal', 13, 10, TEST_MONSTER_FLAGS);
     const swallower = await createMonsterAt('purple worm', 11, 10, TEST_MONSTER_FLAGS);
-    installSwallowedHero(swallower);
+    await installSwallowedHero(swallower);
     const hit = await applyArtifactHitToMonster(await artifactObject('Vorpal Blade'), defender, 4, {
         attacker, state: game, dieRoll: 1, visible: false, rollOne: maximumRoll,
     });

@@ -233,7 +233,7 @@ async function triggerPit(trap, { viaSitting = false, failedUntrap = false, took
     }
     const ball = game.uball || hero.uball;
     if (heroIsPunished(game) && ball && !game.inventory.includes(ball)) {
-        unplaceBallAndChain(game);
+        await unplaceBallAndChain(game);
         await fallWithIronBall(game);
         await placeBallAndChain(game);
     }

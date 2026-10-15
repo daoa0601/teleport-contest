@@ -145,8 +145,8 @@ export async function installHeroChainedToBuriedBall({ x = game.u.ux, y = game.u
     refreshMovementProperties(game);
     return ball;
 }
-export function installSwallowedHero(monster, turns = 10) {
-    unplaceBallAndChain();
+export async function installSwallowedHero(monster, turns = 10) {
+    await unplaceBallAndChain();
     monster.mx = game.u.ux;
     monster.my = game.u.uy;
     monster.mtrapped = 0;

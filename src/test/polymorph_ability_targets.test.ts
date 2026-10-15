@@ -36,7 +36,7 @@ void test('web fluid inside a named engulfer uses its proper name', async () => 
     freshMonsterAbilityRoom('giant spider');
     const worm = await createMonsterAt('purple worm', 11, 10);
     worm.mgivenname = 'Wriggle';
-    installSwallowedHero(worm);
+    await installSwallowedHero(worm);
     const input = resetInputState();
     const messages: string[] = [];
     input.beforeRead = () => { messages.push(game._pending_message); };

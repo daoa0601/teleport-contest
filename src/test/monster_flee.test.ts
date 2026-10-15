@@ -140,7 +140,7 @@ void test('a frightened engulfer expels the hero onto the trap below it', async 
     requirePlayingGame(game);
     const worm = await createMonsterAt('purple worm', 11, 10);
     addTrap(level, PIT, game.u.ux, game.u.uy);
-    installSwallowedHero(worm);
+    await installSwallowedHero(worm);
     pushKeys(' '.repeat(40));
 
     await makeMonsterFlee(worm, { announce: false });
@@ -234,7 +234,7 @@ async function swallowedGarlicArena(lifeSaving = false) {
     assert.equal(vampire.mnum, MONSTER_NAME.indexOf('fog cloud'));
     vampire.mhp = vampire.mhpmax = 100;
     addTrap(level, PIT, game.u.ux, game.u.uy);
-    installSwallowedHero(vampire);
+    await installSwallowedHero(vampire);
     await setPrimaryWeapon(await addInventoryObject(CLOVE_OF_GARLIC));
     let amulet;
     if (lifeSaving) {
@@ -280,7 +280,7 @@ void test('fatal expulsion from horn music leaves later listeners asleep', async
     observer.msleeping = 1;
     const worm = await createMonsterAt('purple worm', 11, 10);
     addTrap(level, PIT, game.u.ux, game.u.uy);
-    installSwallowedHero(worm);
+    await installSwallowedHero(worm);
     const horn = await addInventoryObject(TOOLED_HORN);
     initRng(17n);
 
@@ -391,7 +391,7 @@ async function swallowedMagicbaneArena(fatalLanding: boolean) {
     worm.mhp = worm.mhpmax = 100;
     const impact = { x: game.u.ux, y: game.u.uy };
     if (fatalLanding) addTrap(level, PIT, impact.x, impact.y);
-    installSwallowedHero(worm);
+    await installSwallowedHero(worm);
     const weapon = await addInventoryItem(await artifactObject('Magicbane', { spe: 0 }));
     initRng(55n);
     return { worm, weapon, impact };

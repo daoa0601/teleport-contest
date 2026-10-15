@@ -475,7 +475,7 @@ void test('an engulfing monster releases the hero when its hold expires during a
     requirePlayingGame(game);
     const cloud = await createMonsterAt('fog cloud', game.u.ux + 1, game.u.uy);
     cloud.movement = 12;
-    installSwallowedHero(cloud, 1);
+    await installSwallowedHero(cloud, 1);
     installPagerInput(input, { expected: /enveloped in a cloud of steam|moisture.*get expelled/, limit: 24 });
     input.feed('.');
 

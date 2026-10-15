@@ -52,7 +52,7 @@ void test('a giant body is expelled and falls into the pit beneath the monster',
     requireFixtureGame(game);
     const worm = await createMonsterAt('purple worm', game.u.ux + 1, game.u.uy);
     addTrap(level, PIT, game.u.ux, game.u.uy);
-    installSwallowedHero(worm);
+    await installSwallowedHero(worm);
     pushKeys('polyself\nhill giant\n                                ');
 
     await rhack('#'.charCodeAt(0));
@@ -68,7 +68,7 @@ void test('an unsolid body escapes an engulfer even without becoming huge', asyn
     freshObjectRoom({ flags: { debug: true } });
     requireFixtureGame(game);
     const worm = await createMonsterAt('purple worm', game.u.ux + 1, game.u.uy);
-    installSwallowedHero(worm);
+    await installSwallowedHero(worm);
     pushKeys('polyself\nfog cloud\n                                ');
 
     await rhack('#'.charCodeAt(0));
@@ -81,7 +81,7 @@ void test('a small new body remains inside a large engulfer', async () => {
     freshObjectRoom({ flags: { debug: true } });
     requireFixtureGame(game);
     const worm = await createMonsterAt('purple worm', game.u.ux + 1, game.u.uy);
-    installSwallowedHero(worm);
+    await installSwallowedHero(worm);
     pushKeys('polyself\ngoblin\n                                ');
 
     await rhack('#'.charCodeAt(0));

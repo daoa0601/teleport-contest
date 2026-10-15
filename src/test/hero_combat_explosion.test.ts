@@ -216,7 +216,7 @@ void test('a hero explosion from inside a monster affects the engulfer but spare
     requirePlayingGame(game);
     const engulfer = await targetMonster('purple worm');
     const outside = await targetMonster('orc', 9, 10);
-    installSwallowedHero(engulfer);
+    await installSwallowedHero(engulfer);
     const health = game.u.mh;
 
     const result = await resolveHeroCombatExplosion(engulfer, attack, {

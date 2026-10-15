@@ -188,7 +188,26 @@ async function releaseCarriedBall(state: GameState, showMessage = false): Promis
 
 // C unplacebc()/placebc(): swallowing removes the floor pair but leaves a
 // carried ball in the pack. Expulsion returns the chain to the hero's square.
-export function unplaceBallAndChain(state: GameState = game): void {
+export async function unplaceBallAndChain(state: GameState = game): Promise<void> {
+    if (state._ballChainRestriction) {
+        await impossible('unplacebc denied, restriction in place', { state });
+        return;
+    }
+    unplaceBallAndChainCore(state);
+}
+
+export async function reserveBallAndChainPlacement(state: GameState = game): Promise<number> {
+    if (state._ballChainRestriction) {
+        await impossible('unplacebc_and_covet_placebc denied, already restricted', { state });
+        return 0;
+    }
+    const pin = rnd(400);
+    state._ballChainRestriction = pin;
+    unplaceBallAndChainCore(state);
+    return pin;
+}
+
+function unplaceBallAndChainCore(state: GameState): void {
     requireLiveGame(state);
     const ball = state.uball || state.u.uball;
     const chain = state.uchain || state.u.uchain;
@@ -232,7 +251,16 @@ export function moveSwallowedBallAndChain(monster: Monster, state: GameState = g
 export async function placeBallAndChain(
     state: GameState = game, publish: MessagePublisher = plineWithContinuation,
 ): Promise<void> {
+    if (state._ballChainRestriction) return;
+    await restoreBallAndChainPlacement(0, state, publish);
+}
+
+// A negative pin overrides the restriction during terminal object cleanup.
+export async function restoreBallAndChainPlacement(
+    pin: number, state: GameState = game, publish: MessagePublisher = plineWithContinuation,
+): Promise<void> {
     requireLiveGame(state);
+    if (state._ballChainRestriction && pin !== -1 && pin !== state._ballChainRestriction) return;
     const ball = state.uball || state.u.uball;
     const chain = state.uchain || state.u.uchain;
     if (chain && chain.where !== 'free') {
@@ -255,6 +283,7 @@ export async function placeBallAndChain(
     placeObjectSynchronously(chain, x, y, state);
     state.u.bglyph = state.u.cglyph = rememberedGlyphAt(x, y, state);
     newsym(x, y);
+    state._ballChainRestriction = 0;
 }
 
 function dist2(x1: number, y1: number, x2: number, y2: number): number {

@@ -149,7 +149,24 @@ async function releaseCarriedBall(state, showMessage = false) {
 }
 // C unplacebc()/placebc(): swallowing removes the floor pair but leaves a
 // carried ball in the pack. Expulsion returns the chain to the hero's square.
-export function unplaceBallAndChain(state = game) {
+export async function unplaceBallAndChain(state = game) {
+    if (state._ballChainRestriction) {
+        await impossible('unplacebc denied, restriction in place', { state });
+        return;
+    }
+    unplaceBallAndChainCore(state);
+}
+export async function reserveBallAndChainPlacement(state = game) {
+    if (state._ballChainRestriction) {
+        await impossible('unplacebc_and_covet_placebc denied, already restricted', { state });
+        return 0;
+    }
+    const pin = rnd(400);
+    state._ballChainRestriction = pin;
+    unplaceBallAndChainCore(state);
+    return pin;
+}
+function unplaceBallAndChainCore(state) {
     requireLiveGame(state);
     const ball = state.uball || state.u.uball;
     const chain = state.uchain || state.u.uchain;
@@ -193,7 +210,15 @@ export function moveSwallowedBallAndChain(monster, state = game) {
     }
 }
 export async function placeBallAndChain(state = game, publish = plineWithContinuation) {
+    if (state._ballChainRestriction)
+        return;
+    await restoreBallAndChainPlacement(0, state, publish);
+}
+// A negative pin overrides the restriction during terminal object cleanup.
+export async function restoreBallAndChainPlacement(pin, state = game, publish = plineWithContinuation) {
     requireLiveGame(state);
+    if (state._ballChainRestriction && pin !== -1 && pin !== state._ballChainRestriction)
+        return;
     const ball = state.uball || state.u.uball;
     const chain = state.uchain || state.u.uchain;
     if (chain && chain.where !== 'free') {
@@ -217,6 +242,7 @@ export async function placeBallAndChain(state = game, publish = plineWithContinu
     placeObjectSynchronously(chain, x, y, state);
     state.u.bglyph = state.u.cglyph = rememberedGlyphAt(x, y, state);
     newsym(x, y);
+    state._ballChainRestriction = 0;
 }
 function dist2(x1, y1, x2, y2) {
     const dx = x1 - x2;

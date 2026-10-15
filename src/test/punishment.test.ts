@@ -60,7 +60,7 @@ void test('a swallowed hero gains a ball and chain without placing them outside 
     freshObjectRoom();
     requirePlayingGame(game);
     const worm = await createMonsterAt('purple worm', 10, 10);
-    installSwallowedHero(worm);
+    await installSwallowedHero(worm);
     pushKeys(' '.repeat(20));
 
     await punishHero();

@@ -76,7 +76,7 @@ for (const saved of [false, true]) {
         requirePlayingGame(game);
         const later = await createMonsterAt('little dog', 12, 10);
         const worm = await createMonsterAt('purple worm', 11, 10);
-        installSwallowedHero(worm);
+        await installSwallowedHero(worm);
         addTrap(game.level, PIT, game.u.ux, game.u.uy);
         let amulet;
         if (saved) {
@@ -125,7 +125,7 @@ void test('garlic makes an undead hero nauseated instead of frightening nearby m
     requirePlayingGame(game);
     installPolymorphedHero('vampire');
     const worm = await createMonsterAt('purple worm', 11, 10);
-    installSwallowedHero(worm);
+    await installSwallowedHero(worm);
     const garlic = await addInventoryObject(CLOVE_OF_GARLIC, { age: game.moves });
     initRng(17n);
     pushKeys(garlic.invlet + ' '.repeat(16));
@@ -161,7 +161,7 @@ void test('low health alone does not make an engulfer release the hero after mel
     const worm = await createMonsterAt('purple worm', 11, 10);
     worm.mhp = 40;
     worm.mhpmax = 100;
-    installSwallowedHero(worm);
+    await installSwallowedHero(worm);
     const dagger = await addInventoryObject(DAGGER);
     await setPrimaryWeapon(dagger, game);
     initRng(30n);

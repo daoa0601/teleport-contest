@@ -110,7 +110,7 @@ for (const lifesaving of [false, true]) {
         const worm = await createMonsterAt('purple worm', 11, 10, MM_ANGRY | NO_MINVENT);
         addTrap(level, PIT, game.u.ux, game.u.uy);
         await floorObject(SCR_SCARE_MONSTER, game.u.ux, game.u.uy);
-        installSwallowedHero(worm);
+        await installSwallowedHero(worm);
         let amulet;
         if (lifesaving) {
             amulet = await addInventoryObject(AMULET_OF_LIFE_SAVING);
