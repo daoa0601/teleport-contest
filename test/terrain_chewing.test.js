@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { rhack } from '../js/cmd.js';
+import { continueRun, rhack } from '../js/cmd.js';
 import { CORR, DOOR, D_CLOSED, D_BROKEN, D_NODOOR, ROOM, STONE, TREE, VWALL, W_NONDIGGABLE } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
@@ -54,5 +54,19 @@ void test('a tunnelling form hurts its teeth on undiggable stone', async () => {
     assert.equal(game.u.ux, 10);
     assert.equal(game.context.move, 0);
     assert.equal(game._pending_message, 'You hurt your teeth on the hard stone.');
+});
+void test('a rock mole keeps running after finishing a boulder meal', async () => {
+    freshObjectRoom();
+    installPolymorphedHero('rock mole');
+    const boulder = await floorObject(BOULDER, 11, 10);
+    pushKeys(' '.repeat(20));
+    await rhack('l'.charCodeAt(0));
+    await rhack('l'.charCodeAt(0));
+    await rhack('L'.charCodeAt(0));
+    assert.equal(boulder.where, 'gone');
+    assert.deepEqual([game.u.ux, game.u.uy], [11, 10]);
+    assert.equal(game.context.run, 1);
+    assert.equal(await continueRun(), true);
+    assert.deepEqual([game.u.ux, game.u.uy], [12, 10]);
 });
 //# sourceMappingURL=terrain_chewing.test.js.map

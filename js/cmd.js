@@ -7700,19 +7700,20 @@ async function domoveCore(dx, dy, explicitAttempt) {
         game.context.move = 0;
         return false;
     }
-    if (boulder && tunnels && !game.level.flags.sokoban_rules) {
-        if (await continueChewingTerrain(newx, newy, game))
-            return false;
-    }
-    else if (boulder && !await pushBoulder(boulder, newx, newy, dx, dy)) {
-        game.context.move = 0;
-        return false;
-    }
-    if (boulder && game._runState) {
-        // hack.c:dopush() cancels multi after the successful push.  The hero
-        // still enters the boulder's vacated square, but Shift-direction
-        // running must not auto-push the same boulder down the whole corridor.
-        stopRun(game);
+    if (boulder) {
+        if (tunnels && !game.level.flags.sokoban_rules) {
+            if (await continueChewingTerrain(newx, newy, game))
+                return false;
+        }
+        else {
+            if (!await pushBoulder(boulder, newx, newy, dx, dy)) {
+                game.context.move = 0;
+                return false;
+            }
+            // C moverock_core() stops running for a push; still_chewing() does not.
+            if (game._runState)
+                stopRun(game);
+        }
     }
     // C hack.c:swim_move_danger().  Known walking equipment and the swim
     // confirmation option decide whether a visible liquid edge stops us.
