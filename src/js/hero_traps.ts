@@ -11,7 +11,7 @@ import {
     currentAttribute, exerciseAttribute,
 } from './attrib.js';
 import { armorSimpleName, objectIsHardHelmet } from './armor.js';
-import { heroArmName, heroFootName, heroHeadName, monsterFootName } from './body_parts.js';
+import { heroArmName, heroFootName, heroHeadName, heroLegName, monsterFootName } from './body_parts.js';
 import {
     A_CON, A_DEX, A_STR, ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, DART_TRAP,
     FIRE_TRAP, DISMOUNT_POLY, In_endgame, In_quest, is_pit,
@@ -471,14 +471,8 @@ function trapAtHero() {
     ) || null;
 }
 
-function fillHeroPitWithBoulder() {
-    const boulder = objectAtHero(BOULDER);
-    const trap = trapAtHero();
-    if (!boulder || !trap
-        || (trap.ttyp !== PIT && trap.ttyp !== SPIKED_PIT)) return;
-    remove_object(boulder);
-    deleteTrap(trap);
-    newsym(game.u.ux, game.u.uy);
+async function fillHeroPitWithBoulder() {
+    await fillPitWithBoulderAt(game.u.ux, game.u.uy);
 }
 
 function heroEscapesPitEasily() {
@@ -486,42 +480,54 @@ function heroEscapesPitEasily() {
     return form === PM_PIT_FIEND || (MONSTER_SIZE[form] ?? 2) >= MZ_HUGE;
 }
 
-async function climbOutOfPit() {
+export async function climbOutOfPit() {
     requirePlayingGame(game);
     const hero = game.u;
+    if (!hero.utrap || hero.utraptype !== TT_PIT) return;
+    const pit = trapName(PIT);
     if (heroPassesWalls()) {
-        await pline('You ascend from the pit.');
+        await pline(`You ascend from the ${pit}.`);
         clearHeroTrap();
-        fillHeroPitWithBoulder();
+        await fillHeroPitWithBoulder();
         game.vision_full_recalc = 1;
         return;
     }
 
     const creviceRoll = rn2(2);
     if (creviceRoll === 0 && objectAtHero(BOULDER)) {
-        await plineWithContinuation('Your leg gets stuck in a crevice.');
-        await pline('You free your leg.');
+        await plineWithContinuation(`Your ${heroLegName(game)} gets stuck in a crevice.`);
+        await pline(`You free your ${heroLegName(game)}.`);
         return;
     }
 
     const canLeaveByAir = hero.flying || game.flying
         || !!(heroFormFlags() & M1_CLING);
     if (canLeaveByAir && !game.level?.flags?.sokoban_rules) {
-        await pline('You climb from the pit.');
+        const locomotion = hero.levitating ? 'float' : hero.flying ? 'fly'
+            : monsterLocomotion(heroMonsterForm(), 'climb');
+        await pline(`You ${locomotion} from the ${pit}.`);
         clearHeroTrap();
-        fillHeroPitWithBoulder();
+        await fillHeroPitWithBoulder();
         game.vision_full_recalc = 1;
         return;
     }
 
     if (reduceHeroTrapDuration() <= 0 || heroEscapesPitEasily()) {
-        await pline('You crawl to the edge of the pit.');
         clearHeroTrap();
-        fillHeroPitWithBoulder();
+        const locomotion = game.level.flags.sokoban_rules && hero.levitating
+            ? 'struggle against the air currents and float' : hero.usteed ? 'ride' : 'crawl';
+        await pline(`You ${locomotion} to the edge of the ${pit}.`);
+        await fillHeroPitWithBoulder();
         game.vision_full_recalc = 1;
         return;
     }
-    if (game.flags?.verbose !== false) {
+    if (hero.dz || game.flags?.verbose !== false) {
+        if (hero.usteed) {
+            await repeatableTrapMessage(`${monsterName(hero.usteed, {
+                article: 'your', capitalized: true,
+            })} is still in a pit.`);
+            return;
+        }
         const hallucinating = heroIsHallucinating(game);
         const message = hallucinating && rn2(5) === 0
             ? "You've fallen, and you can't get up."

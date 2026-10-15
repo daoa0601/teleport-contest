@@ -228,7 +228,7 @@ import { continueForceLock, doforce } from './lock.js';
 import { doUntrap } from './untrap.js';
 import { dosit } from './sit.js';
 import { continueEngraving, doengrave } from './engrave_command.js';
-import { heroCanMoveFromTrap, triggerHeroTrapAt, triggerLevelTeleportTrap } from './hero_traps.js';
+import { climbOutOfPit, heroCanMoveFromTrap, triggerHeroTrapAt, triggerLevelTeleportTrap } from './hero_traps.js';
 import { applyDippedCoinFate, applyFountainDemonActor, applyFountainGemDiscovery, applyFountainNymphActor, applyFountainSnakeActors, resolveDippedBucFate, resolveDippedSensationFate, } from './fountain_effects.js';
 import { dryFountainAt, gushForthFromFountain } from './fountain.js';
 import { heroArmName, heroFingerName, heroHandName } from './body_parts.js';
@@ -1705,7 +1705,12 @@ export async function travelStairs(up) {
         game.context.move = 1;
         return false;
     }
-    if (await stuckSteed(true, game)) {
+    if (up && game.u.utrap && game.u.utraptype === TT_PIT) {
+        await climbOutOfPit();
+        game.context.move = 1;
+        return true;
+    }
+    if (!up && await stuckSteed(true, game)) {
         game.context.move = 0;
         return false;
     }
@@ -1723,6 +1728,14 @@ export async function travelStairs(up) {
         || !!stairs.up !== up))
         stairs = stairs.next;
     if (!stairs) {
+        const pit = !up && level.traps.find(trap => trap.tx === game.u.ux && trap.ty === game.u.uy
+            && (trap.ttyp === PIT || trap.ttyp === SPIKED_PIT) && trap.tseen
+            && !(game.u.utrap && game.u.utraptype === TT_PIT));
+        if (pit) {
+            await triggerHeroTrapAt(game.u.ux, game.u.uy, { gotoLevel, tookPlunge: true });
+            game.context.move = 1;
+            return true;
+        }
         const hole = !up && level.traps.find(trap => trap.tx === game.u.ux && trap.ty === game.u.uy
             && (trap.ttyp === HOLE || trap.ttyp === TRAPDOOR) && trap.tseen);
         if (hole) {
@@ -1733,6 +1746,10 @@ export async function travelStairs(up) {
             return true;
         }
         await pline(`You can't go ${up ? 'up' : 'down'} here.`);
+        game.context.move = 0;
+        return false;
+    }
+    if (up && await stuckSteed(true, game)) {
         game.context.move = 0;
         return false;
     }
