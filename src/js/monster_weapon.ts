@@ -436,7 +436,7 @@ export async function updateMonsterWeaponAfterPolymorph(monster: Monster, state:
         return await stack_object(weapon, state);
     }
 
-    const welded = weapon.cursed && ((weapon.owornmask ?? 0) & W_WEP);
+    const welded = willWeld(weapon) && ((weapon.owornmask ?? 0) & W_WEP);
     if (!(welded && monster.weaponCheck === NO_WEAPON_WANTED))
         monster.weaponCheck = NEED_WEAPON;
     return null;
