@@ -10747,6 +10747,7 @@ export async function fill_ordinary_room(croom, bonus_items) {
     if (!croom || (croom.rtype !== OROOM && croom.rtype !== THEMEROOM))
         return;
     const level = requireGameLevel();
+    const levelDepth = depth_of_level(g.u.uz);
     // C fills descendants before their parent and does so even when the
     // parent itself is marked unfilled.
     for (const subroom of croom.sbrooms || [])
@@ -10797,7 +10798,7 @@ export async function fill_ordinary_room(croom, bonus_items) {
     if (!rn2(60))
         mkaltar(croom);
     // Grave
-    x = 80 - (depth_of_level(g.u?.uz) * 2);
+    x = 80 - levelDepth * 2;
     if (x < 2)
         x = 2;
     if (!rn2(x))
@@ -10856,8 +10857,7 @@ export async function fill_ordinary_room(croom, bonus_items) {
                         throw new RangeError('Supply chest class selection is out of range.');
                     let otmp = await mkobj(oclass, false);
                     if (oclass === SPBOOK_no_NOVEL && otmp) {
-                        const depth = g.u?.uz?.dlevel ?? 1;
-                        const maxpass = (depth > 2) ? 2 : 3;
+                        const maxpass = levelDepth > 2 ? 2 : 3;
                         for (let pass = 1; pass <= maxpass; pass++) {
                             const candidate = await mkobj(oclass, false);
                             if ((OBJECT_SPELL_LEVEL[candidate.otyp] ?? 0)
@@ -10878,8 +10878,7 @@ export async function fill_ordinary_room(croom, bonus_items) {
         await mksobj_at(rn2(3) ? LARGE_BOX : CHEST, pos.x, pos.y, true, false);
     }
     // Graffiti
-    const depth = g.u?.uz?.dlevel ?? 1;
-    if (!rn2(27 + 3 * Math.abs(depth))) {
+    if (!rn2(27 + 3 * Math.abs(levelDepth))) {
         const { text: engrText, pristine } = randomEngraving();
         if (engrText) {
             do {
