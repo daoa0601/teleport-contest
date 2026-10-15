@@ -191,8 +191,9 @@ export async function petrifyMonsterFromContact(monster: Monster, {
     state = game,
 }: PetrificationContactOptions = {}): Promise<MonsterContactPetrificationResult> {
     const cure = await useMonsterStoningCure(monster, {
-        finishDeath, publish, rollOne, state,
+        byHero: creditHero, publish, rollOne, state,
     });
+    if (cure.consumed && cure.heroDied) return { heroDied: true };
     if (cure.consumed) {
         return {
             changed: true,
@@ -226,8 +227,9 @@ export async function petrifyMonsterDefender(monster: Monster, {
     publish = plineWithContinuation,
     visible = canSeeMonster(monster),
     ...options
-}: MonsterStoningCureOptions & { visible?: boolean } = {}): Promise<MonsterDefenderPetrificationResult> {
+}: MonsterStoningCureOptions & PetrificationOptions & { visible?: boolean } = {}): Promise<MonsterDefenderPetrificationResult> {
     const cure = await useMonsterStoningCure(monster, { ...options, publish });
+    if (cure.consumed && cure.heroDied) return { heroDied: true };
     if (cure.consumed)
         return { survived: !cure.died, stopped: true, damage: 0, cure };
     const stoneForm = await turnGolemToStone(monster, publish);

@@ -9,7 +9,7 @@ import { rn2 } from './rng.js';
 import { W_ARMH } from './const.js';
 import {
     MONSTER_ATTACKS, MONSTER_DIFFICULTY, MONSTER_FLAGS1,
-    MONSTER_SYMBOL, monsterIsKop, monsterIsNonliving,
+    MONSTER_SYMBOL, monsterIsKop, monsterIsNonliving, monsterIsVampireShifter,
 } from './monster_data.js';
 import { AT_EXPL } from './monster_attack_types.js';
 import {
@@ -30,8 +30,6 @@ const M1_MINDLESS = 0x00010000;
 const M1_ANIMAL = 0x00040000;
 const M1_UNSOLID = 0x00100000;
 const S_GHOST = 54;
-const PM_VAMPIRE = 226;
-const PM_VAMPIRE_LEADER = 227;
 const PM_PESTILENCE = 312;
 
 function rejectsRandomItem(monster: Monster): boolean {
@@ -138,9 +136,7 @@ export function randomMiscMonsterItem(monster: Monster | null | undefined): numb
     if (difficulty < 6 && !rn2(30))
         return rn2(6) ? POT_POLYMORPH : WAN_POLYMORPH;
 
-    const vampireShifter = monster.cham === PM_VAMPIRE
-        || monster.cham === PM_VAMPIRE_LEADER;
-    if (!rn2(40) && !monsterIsNonliving(mndx) && !vampireShifter)
+    if (!rn2(40) && !monsterIsNonliving(mndx) && !monsterIsVampireShifter(monster))
         return AMULET_OF_LIFE_SAVING;
 
     switch (rn2(3)) {

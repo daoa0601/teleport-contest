@@ -106,10 +106,8 @@ import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_
 import { AD_ACID, AD_BLND, AD_CLRC, AD_COLD, AD_CURS, AD_HEAL, AD_DRIN, AD_CORR, AD_DCAY, AD_DGST, AD_DREN, AD_DETH, AD_CONF, AD_DRLI, AD_ELEC, AD_ENCH, AD_FIRE, AD_LEGS, AD_PHYS, AD_POLY, AD_TLPT, AD_DISE, AD_PEST, AD_FAMN, AD_MAGM, AD_SPC2, AD_SAMU, AD_SEDU, AD_SGLD, AD_SSEX, AD_SITM, AD_SLIM, AD_SLOW, AD_SPEL, AD_STCK, AD_STON, AD_STUN, AD_WRAP, AD_PLYS, AD_WERE, AD_RUST, AT_BOOM, AT_BREA, AT_CLAW, AT_ENGL, AT_GAZE, AT_HUGS, AT_MAGC, AT_SPIT, AT_TUCH, AT_WEAP, AT_KICK, AT_BITE, AT_STNG, AT_BUTT, AT_TENT, AT_EXPL, } from './monster_attack_types.js';
 import { APPLE, BANANA, BULLWHIP, BOULDER, CARROT, CLOVE_OF_GARLIC, CORPSE, DWARVISH_MATTOCK, EGG, FAKE_AMULET_OF_YENDOR, FLINT, ENORMOUS_MEATBALL, GOLD_PIECE, MEATBALL, MEAT_RING, MEAT_STICK, ARROW, AXE, BATTLE_AXE, DART, IRON_SHOES, OBJECT_MATERIAL, OBJECT_BIMANUAL, OBJECT_LARGE_DAMAGE, OBJECT_NAMES, OBJECT_SMALL_DAMAGE, OBJECT_SUBTYPE, PICK_AXE, ROCK, POT_GAIN_LEVEL, POT_HEALING, POT_INVISIBILITY, SLIME_MOLD, TIN, TRIPE_RATION, WAN_SPEED_MONSTER, } from './object_data.js';
 import { placeCreatedObject, placeObjectSynchronously, remove_object, stack_object, } from './floor_object.js';
-import { unlinkObject } from './object_location.js';
-import { removeWornHeroItem } from './hero_equipment.js';
-import { canLetGo, finishInventoryRemoval } from './hero_inventory.js';
-import { dropObjectAtHero } from './object_drop.js';
+import { canLetGo } from './hero_inventory.js';
+import { useMonsterBullwhip } from './monster_bullwhip.js';
 import { canFallThrough, makemonNear, maketrap, mksobj, summonNastyMonsters } from './mklev.js';
 import { decideMonsterShapeChange } from './monster_polymorph.js';
 import { isZombieMaker, zombieForm } from './corpse_species.js';
@@ -171,10 +169,9 @@ import { stashLeprechaunGold } from './leprechaun_stash.js';
 import { MONSTER_SOUND } from './monster_data.js';
 import { MONSTER_DIFFICULTY } from './monster_data.js';
 import { depth } from './hacklib.js';
-import { objectMaterial } from './object_material.js';
 import { artifactById } from './artifacts.js';
 import { resolveMonsterWeaponContact } from './monster_weapon_contact.js';
-import { monsterHatesBlessings, monsterHatesSilver } from './monster_data.js';
+import { monsterHatesBlessings } from './monster_data.js';
 import { canHeroRiseUp, levelAtDepth } from './dungeon.js';
 import { LEVEL_TELEP } from './const.js';
 import { teleportMonsterThroughPortal, teleportMonsterToRandomLevel } from './teleport.js';
@@ -635,7 +632,7 @@ async function useMonsterMiscItem(monster, state, random, calls) {
     if (selected.kind === 'bullwhip-disarm') {
         // use_misc() chooses the destination before any two-weapon target
         // selection.  Removal itself follows the urgent wrap message.
-        let whereTo = recordRandom(random, calls, 4);
+        const whereTo = recordRandom(random, calls, 4);
         let target = selected.heroWeapon;
         if (!await heroCanReleaseWeapon(target, state) ||
             (state?.u?.twoweap &&
@@ -643,12 +640,10 @@ async function useMonsterMiscItem(monster, state, random, calls) {
                 recordRandom(random, calls, 2))) {
             target = selected.heroSwapWeapon;
         }
-        if (whereTo === 3 && target && monsterHatesSilver(monster) && objectMaterial(target, state) === 14)
-            whereTo = 2;
         return {
             ...selected,
             target,
-            whereTo: target && !willWeld(target) ? whereTo : 0,
+            whereTo,
             deferredEffect: true,
         };
     }
@@ -659,12 +654,6 @@ async function useMonsterMiscItem(monster, state, random, calls) {
         kind: wand ? 'wand-speed-monster' : 'potion-speed',
         deferredEffect: true,
     };
-}
-function placeDisarmedHeroWeapon(state, object, x, y) {
-    // Disarm runs inside the attacking monster's turn (mon_moving), so the
-    // hero-controlled crysknife prohibition cannot apply; the synchronous
-    // placement still performs the reversion iteration.
-    placeObjectSynchronously(object, x, y, state);
 }
 export function monsterGainLevelRiseDestination(monster, state) {
     if (!canHeroRiseUp(monster.mx, monster.my, { state }))
@@ -742,44 +731,17 @@ export async function finishDeferredMonsterMiscItem(action, state = requireIniti
         return misc;
     }
     if (misc.kind === 'wand-speed-monster' || misc.kind === 'potion-speed') {
-        if (misc.kind === 'wand-speed-monster') {
-        }
-        else {
-            await consumeMonsterItem(monster, misc.object, state);
-        }
         const speed = adjustMonsterSpeed(monster, 1);
         misc.oldSpeed = speed.oldSpeed;
-        misc.speedChanged = speed.changed && speed.canDescribe && monster.mcanmove !== 0;
+        misc.speedChanged = speed.changed && speed.canDescribe && !state.in_mklev;
         misc.speedMuch = speed.much;
         misc.effectApplied = true;
         return misc;
     }
     if (misc.kind === 'bullwhip-disarm') {
         const target = misc.target;
-        if (!target || misc.whereTo === 0) {
-            misc.whereTo = 0;
-            misc.effectApplied = true;
-            return misc;
-        }
-        await removeWornHeroItem(target, state);
-        if (state.program_state.gameover)
-            return misc;
-        unlinkObject(target, state);
-        await finishInventoryRemoval(target, state);
-        if (state.program_state.gameover)
-            return misc;
-        if (misc.whereTo === 3) {
-            // muse.c:use_misc(MUSE_BULLWHIP)->mpickobj().  The disarmed
-            // identity is free of hero equipment state before the monster
-            // applies carrying effects and links it into minvent.
-            await addObjectToMonsterInventory(monster, target, state);
-        }
-        else if (misc.whereTo === 1) {
-            placeDisarmedHeroWeapon(state, target, monster.mx, monster.my);
-        }
-        else {
-            await dropObjectAtHero(target, { state });
-        }
+        if (target)
+            await useMonsterBullwhip(monster, target, misc.whereTo ?? 0, state);
         misc.effectApplied = true;
     }
     return misc;
