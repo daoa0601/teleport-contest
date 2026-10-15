@@ -2,6 +2,7 @@ import { recorderLocalEpochSeconds } from './calendar.js';
 import type { MessagePublisher } from './display.js';
 import { slipOrTrip } from './fumbling.js';
 import { recoverTimedLuck } from './timeout_luck.js';
+import { doStorms } from './storms.js';
 import { advanceBodyTimeouts, advanceGallopingTimeout } from './timeout_body.js';
 import {
     breathingDialogue, wallPassageDialogue,
@@ -891,6 +892,8 @@ async function finishInitialTurnMaintenanceAfterAutomaticSearch({
     await warnWithMasterKey(game);
     // Each sound keeps its native message wait before later feature rolls.
     await dosounds();
+    await doStorms(game);
+    if (game.program_state.gameover) return { kind: 'complete', moveAmount };
     return finishInitialTurnMaintenanceAfterAmbient({ sourceTurn, moveAmount });
 }
 
