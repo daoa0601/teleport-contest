@@ -5966,10 +5966,14 @@ function luaRoomLighting(value) {
 function luaRoomType(name = 'ordinary') {
     const roomTypes = {
         ordinary: OROOM,
+        vault: VAULT,
         zoo: ZOO,
         beehive: BEEHIVE,
         morgue: MORGUE,
         barracks: BARRACKS,
+        anthole: ANTHOLE,
+        cocknest: COCKNEST,
+        leprehall: LEPREHALL,
         court: COURT,
         throne: COURT,
         swamp: SWAMP,
