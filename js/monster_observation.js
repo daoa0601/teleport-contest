@@ -3,6 +3,7 @@ import { M_AP_MONSTER, M_AP_NOTHING, M_AP_TYPE } from './const.js';
 import { canSenseMonster } from './display.js';
 import { addExperience, checkExperienceLevel, monsterExperience } from './exper.js';
 import { MONSTER_NAME } from './monster_data.js';
+import { findMonsterArmorClass } from './monworn.js';
 import { game, requireLiveGame } from './gstate.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 export async function seeMonsterCloseup(monster, { photo = false, onHead = true, state = game } = {}) {
@@ -34,7 +35,9 @@ export async function seeMonsterCloseup(monster, { photo = false, onHead = true,
     if (state.urole?.key === 'tourist' && species === monster.mnum
         && (monster.m_id !== state.context.startingpet_mid
             || species !== state.context.startingpet_typ)) {
-        addExperience(monsterExperience(monster, { killCount: 0 }), 0, state);
+        addExperience(monsterExperience(monster, {
+            killCount: 0, armorClass: findMonsterArmorClass(monster),
+        }), 0, state);
         await checkExperienceLevel();
     }
 }

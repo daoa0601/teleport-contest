@@ -9,6 +9,7 @@ import { heroIsHallucinating } from './senses.js';
 import { canSpotMonster, newsym, plineWithContinuation, see_monsters, } from './display.js';
 import { recordHeroKillConduct } from './end.js';
 import { awardMonsterExperience, checkExperienceLevel } from './exper.js';
+import { findMonsterArmorClass } from './monworn.js';
 import { landFloorObject } from './floor_effects.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { finishDestinationSpotEffects } from './location_effects.js';
@@ -269,6 +270,7 @@ export async function finishHeroMonsterKillOutcome(monster, x, y, { hallucinatin
     awardMonsterExperience(monster, {
         killCount,
         amphibious: !!game.u?.amphibious,
+        armorClass: findMonsterArmorClass(monster),
     });
     await checkExperienceLevel();
     if (isQuestLeader(monster, game)) {

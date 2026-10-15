@@ -36,16 +36,13 @@ interface ExperienceOptions {
 
 interface GainExperienceOptions extends ExperienceOptions { incremental?: boolean; }
 interface LoseExperienceOptions extends ExperienceOptions { die?: DeathHandler; }
-interface MonsterExperienceOptions { killCount?: number; amphibious?: boolean; }
+interface MonsterExperienceOptions { killCount?: number; amphibious?: boolean; armorClass?: number; }
 
 type LevelAbility = readonly [level: number, property: PropertyName, gainMessage: string, lossMessage: string];
 
 export interface ExperienceMonster {
     mnum?: number;
     m_lev?: number;
-    mac?: number;
-    ac?: number;
-    mmove?: number;
     mrevived?: Monster['mrevived'];
     mcloned?: Monster['mcloned'];
 }
@@ -357,7 +354,7 @@ export async function loseHeroExperience(drainer: string | null = null, {
 }
 
 export function monsterExperience(monster: ExperienceMonster | null | undefined, {
-    killCount = 1, amphibious = false,
+    killCount = 1, amphibious = false, armorClass,
 }: MonsterExperienceOptions = {}): number {
     const mnum = monster?.mnum ?? -1;
     const storedLevel = monster?.m_lev;
@@ -365,13 +362,12 @@ export function monsterExperience(monster: ExperienceMonster | null | undefined,
         ? storedLevel : (MONSTER_LEVEL[mnum] ?? 0);
     const [baseAc = 10, attackBonus = 0, levelMultiplier = 0,
         flatBonus = 0, eelWrap = 0] = MONSTER_EXPERIENCE_META[mnum] || [];
-    const armorClass = monster?.mac !== undefined && Number.isFinite(monster.mac) ? monster.mac
-        : monster?.ac !== undefined && Number.isFinite(monster.ac) ? monster.ac : baseAc;
-    const speed = MONSTER_MOVE[mnum] ?? monster?.mmove ?? NORMAL_SPEED;
+    const effectiveAc = armorClass ?? baseAc;
+    const speed = MONSTER_MOVE[mnum] ?? NORMAL_SPEED;
 
     let award = 1 + level * level;
-    if (armorClass < 3)
-        award += (7 - armorClass) * (armorClass < 0 ? 2 : 1);
+    if (effectiveAc < 3)
+        award += (7 - effectiveAc) * (effectiveAc < 0 ? 2 : 1);
     if (speed > NORMAL_SPEED)
         award += speed > (3 * NORMAL_SPEED / 2) ? 5 : 3;
     award += attackBonus + flatBonus + levelMultiplier * level;
@@ -393,9 +389,9 @@ export function monsterExperience(monster: ExperienceMonster | null | undefined,
 }
 
 export function awardMonsterExperience(monster: ExperienceMonster | null | undefined, {
-    state = game, killCount = 1, amphibious = false,
+    state = game, ...options
 }: MonsterExperienceOptions & { state?: GameState } = {}) {
-    const award = monsterExperience(monster, { killCount, amphibious });
+    const award = monsterExperience(monster, options);
     addExperience(award, 0, state);
     return award;
 }
