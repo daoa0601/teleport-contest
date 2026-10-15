@@ -957,7 +957,6 @@ async function redrawCommand() {
 async function performWaitCommand(force = game.iflags.menu_requested) {
     if (!await donull(force, !!game.multi))
         return;
-    game._pending_message = '';
     game.context.move = 1;
 }
 // C cmd.c:can_do_extcmd(). Admission precedes prefixes and handler setup.

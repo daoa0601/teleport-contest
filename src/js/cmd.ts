@@ -1131,7 +1131,6 @@ async function redrawCommand(): Promise<void> {
 
 async function performWaitCommand(force = game.iflags.menu_requested) {
     if (!await donull(force, !!game.multi)) return;
-    game._pending_message = '';
     game.context.move = 1;
 }
 
