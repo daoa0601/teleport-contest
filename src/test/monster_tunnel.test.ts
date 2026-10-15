@@ -7,6 +7,7 @@ import {
 import { flush_screen, plineWithContinuation } from '../js/display.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
+import { putHeroToSleep } from '../js/hero_sleep.js';
 import { digMonsterTunnel } from '../js/monster_tunnel.js';
 import type { AlignmentValue } from '../js/roles.js';
 import {
@@ -24,6 +25,17 @@ import { createRoom, createSpecialLevel } from './support/topology.js';
 function visibleText(): string {
     return requireGameDisplay().grid.map(row => row.map(cell => cell.ch).join('')).join('\n');
 }
+
+void test('a sleeping hero dreams about the draft from an opened secret corridor', async () => {
+    const { monster } = await tunnelRoom(SCORR);
+    requirePlayingGame(game);
+    putHeroToSleep(3);
+
+    await digMonsterTunnel(monster, game);
+    await flush_screen(1);
+
+    assert.match(visibleText(), /You dream that you feel a draft\./);
+});
 
 async function tunnelRoom(terrain: number) {
     const level = freshPlayableRoom({ flags: { verbose: true, acoustics: true } });
