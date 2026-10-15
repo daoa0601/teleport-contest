@@ -138,7 +138,9 @@ import {
     OBJECT_BIMANUAL, OBJECT_NAMES,
     SHIELD_OF_REFLECTION,
 } from './object_data.js';
-import { makePlural, withIndefiniteArticle } from './object_grammar.js';
+import { makePlural, verbForSubject, withIndefiniteArticle } from './object_grammar.js';
+import { monsterLocomotion } from './monster_locomotion.js';
+import { monsterFliesOrFloats } from './terrain_properties.js';
 import {
     observeDistantObjectForNaming, observeObjectForNaming, ownedObjectName,
 } from './objnam.js';
@@ -1695,12 +1697,14 @@ function addHeroMovementRation(state: GameState, amount: number): void {
 function reluctantPetMessage(monster: Monster, movement: MonsterMovement): string {
     const game = requireInitializedGame();
     const pile = game.level?.objects?.[movement.x]?.[movement.y] || [];
-    const top = pile[0];
+    const rememberedObject = game.level?.at(movement.x, movement.y)?.remembered_glyph?.kind === 'object';
+    const top = !heroIsHallucinating(game) && game.level?.flags.hero_memory && rememberedObject
+        ? pile[0] : undefined;
     const objectName = top ? distantMonsterObjectName(top) : 'something';
-    const airborne = !!((MONSTER_FLAGS1[monster?.mnum] ?? 0) & 0x1);
-    return `${monsterName(monster, { state: game, capitalized: true, article: 'your', suppressIt: true })} ${
-        airborne ? 'flies reluctantly over' : 'steps reluctantly onto'
-    } ${objectName}.`;
+    const verb = verbForSubject(null, monsterLocomotion(monster.mnum, 'step'));
+    const subject = monsterName(monster, { state: game, capitalized: true, article: 'your', suppressIt: true });
+    const preposition = monsterFliesOrFloats(monster) ? 'over' : 'onto';
+    return `${subject} ${verb} reluctantly ${preposition} ${objectName}.`;
 }
 
 async function monsterAttackMessage(
