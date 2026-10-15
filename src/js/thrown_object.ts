@@ -10,8 +10,6 @@ import {
     D_CLOSED,
     D_LOCKED,
     IRONBARS,
-    IS_LAVA,
-    IS_POOL,
     IS_SOFT,
     IS_WATERWALL,
     Is_airlevel,
@@ -26,6 +24,7 @@ import {
     isok,
 } from './const.js';
 import { monsterName } from './monster_name.js';
+import { isPoolOrLavaAt } from './terrain_properties.js';
 import { dropBall } from './ball.js';
 import { containerImpactDamage } from './container_impact.js';
 import { currentAttribute } from './attrib.js';
@@ -416,7 +415,7 @@ async function flyPhysicalObject({
         }
 
         path.push({ x, y });
-        if (kicked && (IS_POOL(location.typ) || IS_LAVA(location.typ))) {
+        if (kicked && isPoolOrLavaAt(x, y, state)) {
             stoppedBy = 'liquid';
             break;
         }
