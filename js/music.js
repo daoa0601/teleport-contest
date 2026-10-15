@@ -11,10 +11,11 @@ import { createEarthquake } from './earthquake.js';
 import { game } from './gstate.js';
 import { loseHeroHp } from './hero_damage.js';
 import { zapHeroWithObject } from './hero_self_zap.js';
-import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_MAGIC_RESISTANCE, MONSTER_SYMBOL, } from './monster_data.js';
+import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_SYMBOL, } from './monster_data.js';
 import { monsterName, possessiveName } from './monster_name.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
 import { monsterResistsSleep, putMonsterToSleep } from './monster_sleep.js';
+import { monsterResistsEffect } from './monster_resistance.js';
 import { releaseHeroFromMonster } from './hero_expulsion.js';
 import { makeMonsterFlee } from './monster_flee.js';
 import { monsterIsScaredAt } from './monster_fear.js';
@@ -61,9 +62,7 @@ function liveMonsters() {
     return Array.from(game.level?.monsters || []).reverse().filter(monster => monster && (monster.mhp ?? 1) > 0);
 }
 function monsterResistsInstrument(monster) {
-    const defenseLevel = Math.max(1, Math.min(50, monster.m_lev || 1));
-    const magicResistance = MONSTER_MAGIC_RESISTANCE[monster.mnum] || 0;
-    return rn2(100 + TOOL_ATTACK_LEVEL - defenseLevel) < magicResistance;
+    return monsterResistsEffect(monster, TOOL_ATTACK_LEVEL);
 }
 function instrumentCanScare(monster) {
     return monsterIsScaredAt(monster, game, 0, 0);
