@@ -25,7 +25,7 @@ import { wizFuzzer, wizPanic } from './wizard_debug_commands.js';
 import { wizSmell } from './wizard_smell.js';
 import { wizBury } from './wizard_bury.js';
 import { wizMigrateMonsters } from './wizard_migration.js';
-import { prepareTeleportAtWill, wizardTeleportCommand } from './wizard_teleport.js';
+import { wizardTeleportCommand } from './wizard_teleport.js';
 import { hurtleMonster } from './monster_hurtle.js';
 import { isRoom } from './map_types.js';
 import { continueSpellbookStudy } from './spellbook_study.js';
@@ -50,10 +50,7 @@ import { finishMonsterKilled, finishMonsterLiquidDeath } from './monster_death.j
 import { monsterIsNonliving } from './monster_data.js';
 import { Invocation_lev, Is_earthlevel, Is_firelevel, Is_knox_level, MAGIC_PORTAL, VIBRATING_SQUARE } from './const.js';
 import { map_engraving, map_trap } from './display.js';
-import { VAULT } from './const.js';
-import { somexyspace } from './mkroom.js';
-import { deleteTrap } from './trap_lifecycle.js';
-import { teleportHero } from './teleport.js';
+import { teleportHeroAtWill } from './teleport.js';
 import { mapMagicLevel } from './magic_mapping.js';
 import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu, } from './tty_menu.js';
 import { LOOK_ONCE, LOOK_QUICK, LOOK_VERBOSE } from './const.js';
@@ -304,7 +301,7 @@ import { admitHeroKick, kickCanReachTarget } from './kick_admission.js';
 import { kickNonDoorTerrain } from './kick_terrain.js';
 import { kickDoor } from './kick_door.js';
 import { heroHasMartialKick } from './kick_rules.js';
-import { bringLeashedFollowers, heroTeleportDestinationOk, moveHeroByTeleport, randomMonsterRelocation, } from './teleport.js';
+import { bringLeashedFollowers, randomMonsterRelocation, } from './teleport.js';
 import { goodPosition, monsterTeleportRestricted } from './teleport_rules.js';
 import { removeWishGrantingMonster } from './monster_departure.js';
 import { RLOC_MSG, A_CON, A_DEX, A_MAX, A_STR, A_WIS, BOLT_LIM, COLNO, ROWNO, STONE, SCORR, SDOOR, DOOR, CORR, ROOM, ICE, POOL, CLOUD, IRONBARS, FOUNTAIN, SINK, ALTAR, WATER, MOAT, LAVAWALL, TREE, D_NODOOR, D_BROKEN, D_ISOPEN, D_CLOSED, D_LOCKED, D_TRAPPED, SHOP_DOOR_COST, IS_WALL, IS_STWALL, IS_OBSTRUCTED, IS_FURNITURE, IS_AIR, IS_ROOM, ZAP_POS, SQKY_BOARD, BEAR_TRAP, LANDMINE, FIRE_TRAP, PIT, SPIKED_PIT, TT_PIT, HOLE, TRAPDOOR, DART_TRAP, MAGIC_TRAP, TELEP_TRAP, LEVEL_TELEP, STATUE_TRAP, WEB, ANTI_MAGIC, G_GONE, ER_NOTHING, ER_DAMAGED, M_AP_MONSTER, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, STRAT_WAITMASK, MM_NOEXCLAM, MM_NOMSG, SHOPBASE, ROOMOFFSET, F_LOOTED, In_endgame, Is_airlevel, Is_waterlevel, Is_rogue_level, In_hell, W_ARMOR, W_ACCESSORY, W_SADDLE, LOST_THROWN, WT_SQUEEZABLE_INV, P_BOW, P_SLING, PARANOID_HIT, POLY_CONTROLLED, STR19, isok, ACCESSIBLE, AIR, DIGTYP_UNDIGGABLE, DRAWBRIDGE_UP, } from './const.js';
@@ -4575,70 +4572,10 @@ export async function askTeleportDestination({ onPrompt = null } = {}) {
 // ECMD_TIME.  Its first getpos use still owns the shared Lua tutorial, while
 // the destination room separately owns entry effects after relocation.
 async function teleportAtWillCommand(ignoreRestrictions) {
-    requirePlayingGame(game);
-    let trap = game.level.traps.find(candidate => candidate.tx === game.u.ux && candidate.ty === game.u.uy);
-    if (!trap?.tseen)
-        trap = undefined;
-    if (trap?.ttyp === LEVEL_TELEP) {
-        if (await promptYesNo('There is a level teleporter here. Trigger it?') === 'y') {
-            await triggerLevelTeleportTrap(trap, gotoLevel, true);
-            game.context.move = 1;
-            return;
-        }
-        trap = undefined;
-    }
-    else if (trap?.ttyp === TELEP_TRAP) {
-        if (trap.once) {
-            await plineWithContinuation('This is a vault teleport, usable once only.');
-            if (await promptYesNo('Jump in?') === 'n')
-                trap = undefined;
-            else {
-                deleteTrap(trap);
-                newsym(game.u.ux, game.u.uy);
-            }
-        }
-    }
-    else
-        trap = undefined;
-    if (trap) {
-        const locomotion = heroLocomotion('jump');
-        await plineWithContinuation(`You ${locomotion} onto the teleportation trap.`);
-    }
-    if (!trap && !ignoreRestrictions && !await prepareTeleportAtWill())
-        return;
-    if (!await bringLeashedFollowers()) {
-        await plineWithContinuation('You shudder for a moment.');
-        game.context.move = 0;
-        return;
-    }
-    if (trap?.once) {
-        const vault = game.level.rooms.find((room) => isRoom(room) && room.rtype === VAULT);
-        const point = { x: 0, y: 0 };
-        if (vault && somexyspace(vault, point)
-            && heroTeleportDestinationOk(point.x, point.y)) {
-            await finishTeleportArrival(await moveHeroByTeleport(point.x, point.y));
-        }
-        else
-            await teleportHero({ chooseDestination: askTeleportDestination });
-    }
-    else if (trap?.teledest && isok(trap.teledest.x, trap.teledest.y)) {
-        // Native dotele() uses the fixed location directly, preserving travelcc.
-        await finishTeleportArrival(await moveHeroByTeleport(trap.teledest.x, trap.teledest.y));
-    }
-    else {
-        // Travel suggestions are cleared only after next_to_u() succeeds.
-        game._travelTarget = null;
-        await teleportHero({ chooseDestination: askTeleportDestination });
-    }
-    if (game.program_state.gameover)
-        return;
-    await bringLeashedFollowers();
-    if (!trap) {
-        await spendHeroNutrition(100);
-        if (game.program_state.gameover)
-            return;
-    }
-    game.context.move = 1;
+    const result = await teleportHeroAtWill({
+        ignoreRestrictions, chooseDestination: askTeleportDestination,
+    });
+    game.context.move = Number(result.spentTime);
 }
 function travelLocationDescription(x, y) {
     if (x === game.level?.dnstair?.x && y === game.level?.dnstair?.y) {
