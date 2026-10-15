@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { MM_NOMSG } from '../js/const.js';
 import { makemonAt } from '../js/mklev.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { ARROW, AXE, BOW, CHAIN_MAIL, CLOAK_OF_MAGIC_RESISTANCE, CLUB, CREAM_PIE, DAGGER, DART, LEATHER_ARMOR, LEATHER_JACKET, LONG_SWORD, MACE, OBJECT_NAMES, ROBE, SHORT_SWORD, } from '../js/object_data.js';
+import { ARROW, AXE, BOW, CHAIN_MAIL, CLOAK_OF_MAGIC_RESISTANCE, CLOAK_OF_PROTECTION, CLUB, CREAM_PIE, DAGGER, DART, LEATHER_ARMOR, LEATHER_JACKET, LONG_SWORD, MACE, OBJECT_NAMES, ROBE, SHORT_SWORD, SMALL_SHIELD, } from '../js/object_data.js';
 import { freshObjectRoom } from './support/object-room.js';
 const KNIFE = 40;
 const SHURIKEN = 25;
@@ -87,6 +87,16 @@ void test('Monk quest leaders receive their role clothing', async () => {
     assert.ok(leader);
     assert.ok(leader.minvent.some(item => [ROBE, CLOAK_OF_MAGIC_RESISTANCE].includes(item.otyp)));
 });
+for (const name of ['Grand Master', 'Master Kaen']) {
+    void test(`${name} receives Cleric clothing but no mace when the hero is a Priest`, async () => {
+        freshObjectRoom({ role: 'priest', gameplaySeed: 1n });
+        const monster = await makemonAt(MONSTER_NAME.indexOf(name), 12, 10, MM_NOMSG);
+        assert.ok(monster);
+        assert.equal(monster.minvent.some(item => item.otyp === MACE), false, `${name} has no weapon attack and must not receive a mace`);
+        assert.ok(monster.minvent.some(item => [ROBE, CLOAK_OF_PROTECTION, CLOAK_OF_MAGIC_RESISTANCE].includes(item.otyp)), `${name} still receives Cleric clothing`);
+        assert.ok(monster.minvent.some(item => item.otyp === SMALL_SHIELD), `${name} still receives a Cleric shield`);
+    });
+}
 void test('an Arch Priest outside the Cleric quest does not receive Cleric equipment', async () => {
     freshObjectRoom({ role: 'wizard', gameplaySeed: 1n });
     const leader = await makemonAt(MONSTER_NAME.indexOf('Arch Priest'), 12, 10, MM_NOMSG);

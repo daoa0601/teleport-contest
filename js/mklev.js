@@ -2346,9 +2346,9 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
         }
         await giveGeneralMonsterWeapon();
     }
-    else if (receivesClericEquipment(mndx)) {
-        // C ref: makemon.c m_initweap(), Priest/Cleric quest-leader branch.
-        // This intentionally bypasses ordinary object initialization.
+    else if (MONSTER_HAS_WEAPON_ATTACK.has(mndx) && receivesClericEquipment(mndx)) {
+        // C makemon() skips m_initweap() for unarmed species, even when
+        // the hero's role makes them Cleric quest representatives.
         const mace = await mksobj(MACE, false, false);
         mace.spe = rnd(3);
         if (!rn2(2)) {
