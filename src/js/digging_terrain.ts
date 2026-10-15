@@ -81,6 +81,7 @@ import {
 import { finishMonsterLiquidDeath } from './monster_death.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { loseHeroHp } from './hero_damage.js';
+import { delobj } from './object_delete.js';
 import {
     canDigDown, createToptenObject, deleteFloorTrap, maketrap,
     makemonAt, mkclassAligned,
@@ -99,7 +100,7 @@ import {
     BEARTRAP, BOULDER, CORPSE, LAND_MINE,
 } from './object_data.js';
 import {
-    LEVEL_TIMER_KIND, stopAllObjectTimers, stopLevelTimer,
+    LEVEL_TIMER_KIND, stopLevelTimer,
 } from './object_timers.js';
 import { autopickupAtHero } from './pickup.js';
 import { roomsAt } from './room.js';
@@ -291,17 +292,6 @@ async function furnitureHandled(x: number, y: number, madeByYou: boolean, state:
     return false;
 }
 
-function deleteBoulder(boulder: GameObject, state: GameState): void {
-    const pile = requireGameLevel(state).objects[boulder.ox]?.[boulder.oy];
-    const index = pile?.indexOf(boulder) ?? -1;
-    if (pile && index >= 0) pile.splice(index, 1);
-    stopAllObjectTimers(boulder);
-    boulder.where = 'gone';
-    boulder.buried = false;
-    boulder.ox = 0;
-    boulder.oy = 0;
-}
-
 // C dig.c:dighole().  Returns true when the digging changed the terrain.
 export async function digHole({
     pitOnly = false,
@@ -376,7 +366,7 @@ export async function digHole({
             );
             await deleteFloorTrap(trap, state);
         }
-        deleteBoulder(boulder, state);
+        await delobj(boulder, state);
     } else if (IS_GRAVE(oldTyp)) {
         await digActualHole(digX, digY, 'you', PIT, { state });
         await digUpGrave(coordinate, { state });

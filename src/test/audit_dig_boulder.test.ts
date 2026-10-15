@@ -1,0 +1,33 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+import { rhack } from '../js/cmd.js';
+import { PIT, TT_PIT } from '../js/const.js';
+import { game } from '../js/gstate.js';
+import { resetInputState } from '../js/input.js';
+import { maketrap } from '../js/mklev.js';
+import { BOULDER, WAN_DIGGING } from '../js/object_data.js';
+import { addInventoryObject, floorObject } from './support/game-objects.js';
+import { createMonsterAt } from './support/monsters.js';
+import { freshObjectRoom } from './support/object-room.js';
+import { installPagerInput } from './support/pager-input.js';
+
+void test('digging away a covering boulder exposes a hiding monster', async () => {
+    freshObjectRoom();
+    const spider = await createMonsterAt('cave spider', 11, 10);
+    const boulder = await floorObject(BOULDER, 11, 10);
+    spider.mundetected = 1;
+    await maketrap(10, 10, PIT);
+    game.u.utrap = 5;
+    game.u.utraptype = TT_PIT;
+    const wand = await addInventoryObject(WAN_DIGGING, { spe: 2 });
+    const input = resetInputState();
+    installPagerInput(input, { expected: /boulder|KADOOM/, limit: 10 });
+    input.feed(`${wand.invlet}l`);
+
+    await rhack('z'.charCodeAt(0));
+
+    assert.equal(boulder.where, 'gone');
+    assert.equal(spider.mundetected, 0);
+    assert.equal(wand.spe, 1);
+    assert.equal(game.context.move, 1);
+});

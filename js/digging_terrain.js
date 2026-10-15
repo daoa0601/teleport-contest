@@ -34,6 +34,7 @@ import { leashAttachedToMonster, releaseMonsterLeash, } from './monster_leash.js
 import { finishMonsterLiquidDeath } from './monster_death.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { loseHeroHp } from './hero_damage.js';
+import { delobj } from './object_delete.js';
 import { canDigDown, createToptenObject, deleteFloorTrap, maketrap, makemonAt, mkclassAligned, } from './mklev.js';
 import { buriedBallToPunishment, unearthFloorObjectsAt, } from './buried_object.js';
 import { dryFountainAt, gushForthFromFountain } from './fountain.js';
@@ -44,7 +45,7 @@ import { refreshMovementProperties } from './properties.js';
 import { resetHeroTrap, switchHeroTerrain } from './terrain_movement.js';
 import { impactDrop } from './object_migration.js';
 import { BEARTRAP, BOULDER, CORPSE, LAND_MINE, } from './object_data.js';
-import { LEVEL_TIMER_KIND, stopAllObjectTimers, stopLevelTimer, } from './object_timers.js';
+import { LEVEL_TIMER_KIND, stopLevelTimer, } from './object_timers.js';
 import { autopickupAtHero } from './pickup.js';
 import { roomsAt } from './room.js';
 import { d, rn2 } from './rng.js';
@@ -221,17 +222,6 @@ async function furnitureHandled(x, y, madeByYou, state) {
     }
     return false;
 }
-function deleteBoulder(boulder, state) {
-    const pile = requireGameLevel(state).objects[boulder.ox]?.[boulder.oy];
-    const index = pile?.indexOf(boulder) ?? -1;
-    if (pile && index >= 0)
-        pile.splice(index, 1);
-    stopAllObjectTimers(boulder);
-    boulder.where = 'gone';
-    boulder.buried = false;
-    boulder.ox = 0;
-    boulder.oy = 0;
-}
 // C dig.c:dighole().  Returns true when the digging changed the terrain.
 export async function digHole({ pitOnly = false, byMagic = false, coordinate = null, state = game, } = {}) {
     requirePlayingGame(state);
@@ -302,7 +292,7 @@ export async function digHole({ pitOnly = false, byMagic = false, coordinate = n
             await wakeMonstersNearWithMessages(state.u.ux, state.u.uy, (state.u.ulevel ?? 1) * 20, state);
             await deleteFloorTrap(trap, state);
         }
-        deleteBoulder(boulder, state);
+        await delobj(boulder, state);
     }
     else if (IS_GRAVE(oldTyp)) {
         await digActualHole(digX, digY, 'you', PIT, { state });
