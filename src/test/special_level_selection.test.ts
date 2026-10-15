@@ -60,3 +60,21 @@ void test('an exhausted Lua selection returns the absent-coordinate sentinel', a
     assert.equal(lua.getGlobal('absent_y'), -1);
     assert.equal(requireGameLevel().objects[11]?.[5]?.length, 1);
 });
+
+void test('Lua gradients carve the guaranteed center and exclude terrain beyond their radius', async t => {
+    const lua = await levelLua(t);
+    await lua.executeAsync(`
+        local radial = selection.gradient({ x = 15, y = 8, x2 = 15, y2 = 8,
+            mindist = 2, maxdist = 2 })
+        des.terrain(radial, ".")
+        local square = selection.gradient({ type = "square", x = 35, y = 8,
+            x2 = 35, y2 = 8, mindist = 2, maxdist = 2 })
+        des.terrain(square, ".")
+    `);
+    const level = requireGameLevel();
+    assert.equal(level.requireAt(16, 8).typ, ROOM);
+    assert.equal(level.requireAt(18, 10).typ, STONE, 'radial guaranteed center is circular');
+    assert.equal(level.requireAt(38, 10).typ, ROOM, 'square guaranteed center includes its corners');
+    assert.equal(level.requireAt(16, 13).typ, STONE);
+    assert.equal(level.requireAt(36, 13).typ, STONE);
+});

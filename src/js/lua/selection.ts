@@ -8,6 +8,9 @@ import {
     specialSelectionRect,
     selection_from_mkroom,
     selection_do_ellipse,
+    selection_do_gradient,
+    SEL_GRADIENT_RADIAL,
+    SEL_GRADIENT_SQUARE,
 } from '../selvar.js';
 import { LuaTable, LuaUserdata } from './runtime.js';
 import { luaInteger, luaString, luaTruthy } from './arguments.js';
@@ -101,6 +104,25 @@ export function createSelectionApi(context: ContextSource, invoke: InvokeSelecti
         selection_do_ellipse(result.selection, point.x, point.y, radiusX, radiusY, !filled);
         return wrap(result);
     };
+    const gradient = (options: LuaValue) => {
+        if (!(options instanceof LuaTable))
+            throw new TypeError('selection.gradient requires a table');
+        const type = luaString(options.get('type') ?? 'radial');
+        if (type !== 'radial' && type !== 'square')
+            throw new TypeError(`Unknown gradient type: ${type}`);
+        const active = currentContext();
+        const x = active.xstart + luaInteger(options.get('x'));
+        const y = active.ystart + luaInteger(options.get('y'));
+        const x2 = active.xstart + luaInteger(options.get('x2') ?? -1);
+        const y2 = active.ystart + luaInteger(options.get('y2') ?? -1);
+        const pointCenter = x2 === -1 && y2 === -1;
+        const result = new SpecialSelection();
+        selection_do_gradient(result.selection, x, y,
+            pointCenter ? x : x2, pointCenter ? y : y2,
+            type === 'radial' ? SEL_GRADIENT_RADIAL : SEL_GRADIENT_SQUARE,
+            luaInteger(options.get('mindist') ?? 0), luaInteger(options.get('maxdist')));
+        return wrap(result);
+    };
     const randline = (self: LuaValue, x1: LuaValue, y1: LuaValue, x2: LuaValue, y2: LuaValue, roughness: LuaValue = 7) => {
         const active = currentContext();
         const result = selectionValue(self).clone();
@@ -137,6 +159,7 @@ export function createSelectionApi(context: ContextSource, invoke: InvokeSelecti
         bounds,
         circle: (...args: LuaValue[]) => ellipse(true, args),
         ellipse: (...args: LuaValue[]) => ellipse(false, args),
+        gradient,
         randline,
         iterate,
     };
