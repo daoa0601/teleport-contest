@@ -29,6 +29,17 @@ void test('ring mail can cancel a grid bug bite after its single base damage rol
     assert.equal(attack.heroAttackSequence?.current?.damage, 0);
     assert.equal(game.u.uhp, hp, 'magic cancellation prevents the electric bite damage');
 });
+void test('a fresh room keeps ordinary wraith damage when the host clock is midnight', async (context) => {
+    context.mock.timers.enable({ apis: ['Date'], now: Date.UTC(2026, 0, 10, 5) });
+    freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
+    requirePlayingGame(game);
+    const wraith = await createMonsterAt('wraith', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
+    wraith.m_lev = 30;
+    wraith.mux = game.u.ux;
+    wraith.muy = game.u.uy;
+    const attack = await beginMonsterHeroAttack(wraith, game, range => Math.min(1, range - 1), () => 1, (count, sides) => count * sides, []);
+    assert.equal(attack.heroAttackSequence?.current?.damage, 6, 'the test room is daytime even when New York is at midnight');
+});
 for (const [hour, damage] of [['00', 12], ['01', 6], ['12', 6]]) {
     void test(`a wraith's touch deals ${damage} damage at recorded hour ${hour}`, async (context) => {
         context.mock.timers.enable({ apis: ['Date'], now: Date.UTC(2026, 0, 1, 12) });

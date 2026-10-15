@@ -33,37 +33,27 @@ async function startNewGame({ datetime = '' }: { datetime?: string } = {}) {
     return game.ubirthday;
 }
 
-void test('a fixed session datetime sets the birthday by the known C rule', async () => {
-    const realNow = Date.now;
-    // Summer wall clock: New York observes EDT (UTC-4), making the
-    // recorder's inherited offset exactly -4h regardless of the fixed
-    // calendar date.  Restored in finally; no real-time waits involved.
-    Date.now = () => Date.UTC(2025, 6, 15, 18, 30, 0);
-    let birthday;
-    try {
-        birthday = await startNewGame({ datetime: FIXED_DATETIME });
-        requirePlayingGame(game);
-    } finally {
-        Date.now = realNow;
-    }
+void test('a fixed session datetime sets the birthday by the known C rule', async context => {
+    context.mock.timers.enable({ apis: ['Date'], now: Date.UTC(2025, 6, 15, 18, 30) });
+
+    const birthday = await startNewGame({ datetime: FIXED_DATETIME });
 
     assert.equal(birthday, EXPECTED_BIRTHDAY);
     assert.ok(Number.isInteger(birthday));
 });
 
-void test('a live session sets the birthday to the current epoch', async () => {
-    const before = Math.floor(Date.now() / 1000);
-    const birthday = await startNewGame();
-    requirePlayingGame(game);
-    const after = Math.floor(Date.now() / 1000);
+void test('a live session sets the birthday to the current epoch', async context => {
+    const now = Date.UTC(2025, 6, 15, 18, 30);
+    context.mock.timers.enable({ apis: ['Date'], now });
 
-    assert.ok(Number.isInteger(birthday));
-    assert.ok(birthday != null, 'Expected birthday to be initialized');
-    assert.ok(birthday >= before && birthday <= after,
-        `birthday ${birthday} outside the test's real time bracket`);
+    const birthday = await startNewGame({ datetime: '' });
+
+    assert.equal(birthday, now / 1000);
 });
 
-void test('restoring keeps the original birthday instead of recapturing the clock', async () => {
+void test('restoring keeps the original birthday instead of recapturing the clock', async context => {
+    const now = Date.UTC(2025, 6, 15, 18, 30);
+    context.mock.timers.enable({ apis: ['Date'], now });
     const birthday = await startNewGame({ datetime: FIXED_DATETIME });
     requirePlayingGame(game);
     game.plname = 'Clockwatcher';
@@ -71,13 +61,8 @@ void test('restoring keeps the original birthday instead of recapturing the cloc
     assert.equal(await saveGame(storage), true);
 
     // An hour passes before the player restores.
-    const realNow = Date.now;
-    Date.now = () => realNow() + 3600 * 1000;
-    try {
-        assert.equal(restoreGame('Clockwatcher', storage), true);
-    } finally {
-        Date.now = realNow;
-    }
+    context.mock.timers.setTime(now + 3600 * 1000);
+    assert.equal(restoreGame('Clockwatcher', storage), true);
 
     // The original captured value is the proof: retention, not recapture.
     assert.equal(game.ubirthday, birthday);

@@ -155,7 +155,7 @@ for (const [name, date, setDate, luck] of [
     ['Friday the thirteenth', '20261113120000', (): void => { game.flags.friday13 = true; }, -1],
 ] as const) {
     void test(`saving and restoring on ${name} keeps its luck adjustment once`, async () => {
-        freshPlayableRoom({ role: 'wizard' });
+        freshPlayableRoom({ role: 'wizard', datetime: date });
         game.plname = game.displayName = 'Saver';
         setDate();
         game.u.uluck = luck;

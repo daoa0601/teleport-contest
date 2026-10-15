@@ -3,6 +3,7 @@ import { resetGame } from '../../js/gstate.js';
 import { init_objects } from '../../js/o_init.js';
 import { initRng } from '../../js/rng.js';
 import { aligns, races, roles } from '../../js/roles.js';
+import { DEFAULT_TEST_DATETIME } from './calendar.js';
 import { finishStartingDiscoveries, uInitInventoryAttrs, uInitMisc, } from '../../js/u_init.js';
 function namedEntry(entries, requested, kind) {
     if (typeof requested === 'object')
@@ -12,8 +13,9 @@ function namedEntry(entries, requested, kind) {
         throw new Error(`Unknown ${kind}: ${requested}`);
     return entry;
 }
-export function prepareHeroStartup({ role, race = 'human', alignment = 'chaotic', flags = {}, seed = 123n, }) {
+export function prepareHeroStartup({ role, datetime = DEFAULT_TEST_DATETIME, race = 'human', alignment = 'chaotic', flags = {}, seed = 123n, }) {
     const state = resetGame();
+    state.datetime = datetime;
     const selectedRole = namedEntry(roles, role, 'role');
     const selectedRace = namedEntry(races, race, 'race');
     const selectedAlignment = namedEntry(aligns, alignment, 'alignment');

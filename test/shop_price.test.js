@@ -52,7 +52,9 @@ void test('unidentified red glass has a stable jasper or ruby quote set by the g
     gem.dknown = true;
     assert.equal(shopObjectUnitCost(gem), 5);
 });
-void test('saving and restoring preserves an unidentified glass quote when the clock changes', async () => {
+void test('saving and restoring preserves an unidentified glass quote when the clock changes', async (context) => {
+    const now = Date.UTC(2025, 0, 10, 17);
+    context.mock.timers.enable({ apis: ['Date'], now });
     normalCustomer();
     requirePlayingGame(game);
     game.plname = 'Gem customer';
@@ -66,14 +68,8 @@ void test('saving and restoring preserves an unidentified glass quote when the c
     assert.equal(price, 3500);
     const storage = memoryStorage();
     assert.equal(await saveGame(storage), true);
-    const now = Date.now;
-    Date.now = () => now() + 3600 * 1000;
-    try {
-        assert.equal(restoreGame('Gem customer', storage), true);
-    }
-    finally {
-        Date.now = now;
-    }
+    context.mock.timers.setTime(now + 3600 * 1000);
+    assert.equal(restoreGame('Gem customer', storage), true);
     const restoredGem = game.inventory.find(object => object.invlet === 'a');
     assert.ok(restoredGem);
     assert.equal(shopObjectUnitCost(restoredGem), price);

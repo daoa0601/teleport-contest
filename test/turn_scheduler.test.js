@@ -177,7 +177,7 @@ void test('a healthy hero survives repeated water-demon attacks', async () => {
     assert.ok(game.moves >= startingTurn + 3, 'three turns should have elapsed');
 });
 void test('a cockatrice hiss starts petrification during an ordinary turn', async () => {
-    const input = freshTurnRoom();
+    const input = freshTurnRoom({ datetime: '20000106090000' });
     requirePlayingGame(game);
     game.flags.moonphase = NEW_MOON;
     const cockatrice = await createMonsterAt('cockatrice', 11, 10, NO_MINVENT);

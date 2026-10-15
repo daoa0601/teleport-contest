@@ -12,6 +12,7 @@ import { initializeHeroSpecies } from '../../js/u_init.js';
 import { initializeHeroRoomMembership } from '../../js/room.js';
 import { initializeMonsterVitals } from '../../js/monster_population.js';
 import { initializeFruitRegistry } from '../../js/fruit.js';
+import { DEFAULT_TEST_DATETIME } from './calendar.js';
 
 export interface FixtureGameState extends PlayingGameState {
     mvitals: MonsterVital[];
@@ -25,6 +26,7 @@ export function requireFixtureGame(state: GameState): asserts state is FixtureGa
 }
 
 export interface FreshGameOptions {
+    datetime?: string;
     level?: GameMap;
     role?: RoleKey | Role;
     race?: Race;
@@ -50,6 +52,7 @@ function visibleGrid(): Uint8Array[] {
 }
 
 export function freshGame({
+    datetime = DEFAULT_TEST_DATETIME,
     level = new GameMap(),
     role = 'archeologist',
     race = races.find(candidate => candidate.name === 'human'),
@@ -91,6 +94,7 @@ export function freshGame({
         weaponSkills: null, skillRecord: [], weapon_slots: 0,
     };
     const state = resetGame();
+    state.datetime = datetime;
     state.level = level;
     state.u = u;
     state.urole = typeof role === 'string' ? roleData : role;
