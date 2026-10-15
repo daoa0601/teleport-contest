@@ -1,7 +1,6 @@
 // Anti-magic trap effects.
 // C ref: trap.c trapeffect_anti_magic().
 
-import { formatFeltMessage } from './hero_speech.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import type { GameState } from './game_state.js';
@@ -111,7 +110,7 @@ export async function triggerHeroAntiMagicTrap(trap: Trap) {
                 : damage >= Math.trunc(hitPoints / 4)
                   ? 'very lethargic.'
                   : 'sluggish.';
-        await plineWithContinuation(formatFeltMessage(feeling));
+        await plineWithContinuation(`You feel ${feeling}`);
         if (await loseHeroHp(damage, 'anti-magic implosion')) return;
     }
 

@@ -1,5 +1,4 @@
 // C uhitm.c:mhitm_ad_deth() and mcastu.c:touch_of_death().
-import { formatFeltMessage } from './hero_speech.js';
 import { KILLED_BY, Upolyd } from './const.js';
 import { shieldeff } from './display.js';
 import { finishHeroDeath } from './end.js';
@@ -21,7 +20,7 @@ export async function resolveDeathTouchContact(monster, attack, state, publish, 
         attack.damage = 0;
     }
     else if (outcome >= 5) {
-        await publish(formatFeltMessage('your life force draining away...', state));
+        await publish('You feel your life force draining away...');
         attack.permanentDamage = true;
     }
     else {
@@ -36,7 +35,7 @@ export async function resolveDeathTouchContact(monster, attack, state, publish, 
 export async function touchHeroWithDeath(monster, state, publish, rollDice = d) {
     const damage = 50 + rollDice(8, 6);
     const drain = Math.trunc(damage / 2);
-    await publish(formatFeltMessage('drained...', state));
+    await publish('You feel drained...');
     const killer = monsterSpellDeathReason(monster, 'the touch of death');
     const hero = state.u;
     if (Upolyd(hero)) {

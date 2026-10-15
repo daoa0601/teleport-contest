@@ -5,7 +5,7 @@ import { ICE, isok } from './const.js';
 import { deallocateObject } from './object_delete.js';
 import { unlinkObject } from './object_location.js';
 import { game, requireLiveGame } from './gstate.js';
-import { formatHeardMessage, formatSeenMessage } from './hero_speech.js';
+import { formatHeardMessage } from './hero_speech.js';
 import { maybeUnhideAt } from './monster_hiding.js';
 import { reconcileObjectDeletionBill } from './shk.js';
 import { GLOB_OF_BLACK_PUDDING, GLOB_OF_GRAY_OOZE, OBJECT_NAMES, } from './object_data.js';
@@ -47,7 +47,7 @@ export async function announceGlobMerge(first, second, state = game, publish = p
     if ((!heroIsBlind(state) && visible) || inPack) {
         if (heroIsHallucinating(state)) {
             if (onFloor)
-                await publish(formatSeenMessage('parts of the floor melting!', state));
+                await publish('You see parts of the floor melting!');
             else if (inPack)
                 await publish('Your pack reaches out and grabs something!');
         }

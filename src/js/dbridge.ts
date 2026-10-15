@@ -1,7 +1,6 @@
 // Drawbridge location and movement.
 // C ref: dbridge.c find_drawbridge(), open_drawbridge(), close_drawbridge().
 
-import { formatSeenMessage, publishHeardMessage } from './hero_speech.js';
 import { deleteTrap } from './trap_lifecycle.js';
 import {
     DBWALL, DB_DIR, DB_EAST, DB_ICE, DB_LAVA,
@@ -139,13 +138,13 @@ async function announceBridgeMovement(bridge: DrawbridgeSquare, wall: Drawbridge
                 || wallDistance < bridgeDistance;
         const movement = coming ? 'coming' : 'going';
         await plineWithContinuation(
-            formatSeenMessage(`a drawbridge ${movement} ${opening ? 'down' : 'up'}!`, state),
+            `You see a drawbridge ${movement} ${opening ? 'down' : 'up'}!`,
         );
         return;
     }
-    await publishHeardMessage(opening
-        ? 'gears turning and chains rattling.'
-        : 'chains rattling and gears turning.', plineWithContinuation, state);
+    await plineWithContinuation(opening
+        ? 'You hear gears turning and chains rattling.'
+        : 'You hear chains rattling and gears turning.');
 }
 
 function heroAt(point: Position, state: GameState): boolean {
@@ -163,16 +162,16 @@ async function announceBridgeDestruction(bridge: DrawbridgeSquare, wall: Drawbri
             await plineWithContinuation(raised
                 ? `The portcullis of the drawbridge falls into the ${liquid}!`
                 : `The drawbridge collapses into the ${liquid}!`);
-        } else {
-            await publishHeardMessage('a loud *SPLASH*!', plineWithContinuation, state);
+        } else if (!state.u?.deaf && !state.deaf) {
+            await plineWithContinuation('You hear a loud *SPLASH*!');
         }
         return;
     }
 
     if (cansee(bridge.x, bridge.y) || heroAt(bridge, state))
         await plineWithContinuation('The drawbridge disintegrates!');
-    else
-        await publishHeardMessage('a loud *CRASH*!', plineWithContinuation, state);
+    else if (!state.u?.deaf && !state.deaf)
+        await plineWithContinuation('You hear a loud *CRASH*!');
 }
 
 export async function openDrawbridge(x: number, y: number, state = game, options: DrawbridgeOptions = {}): Promise<boolean> {

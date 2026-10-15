@@ -1,5 +1,4 @@
 // C trap.c:trapeffect_poly_trap() and steedintrap(), hero polymorph branch.
-import { formatFeltMessage } from './hero_speech.js';
 import type { Trap } from './map_types.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { newsym, plineWithContinuation, shieldeff } from './display.js';
@@ -56,7 +55,7 @@ export async function triggerHeroPolymorphTrap(trap: Trap, viaSitting: boolean):
     if (propertyIsActive('antimagic', game) || heroHasArtifactDefense('magic', game)
         || heroIsUnchanging(game)) {
         await shieldeff(game.u.ux, game.u.uy);
-        await plineWithContinuation(formatFeltMessage('momentarily different.'));
+        await plineWithContinuation('You feel momentarily different.');
         return;
     }
 
@@ -71,6 +70,6 @@ export async function triggerHeroPolymorphTrap(trap: Trap, viaSitting: boolean):
     }
     deleteTrap(trap);
     newsym(game.u.ux, game.u.uy);
-    await plineWithContinuation(formatFeltMessage('a change coming over you.'));
+    await plineWithContinuation('You feel a change coming over you.');
     await polymorphHero();
 }

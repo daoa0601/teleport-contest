@@ -2,7 +2,6 @@
 // C refs: engrave.c make_engr_at(), wipe_engr_at(), read_engr_at();
 //         hack.c maybe_smudge_engr().
 
-import { formatSeenMessage } from './hero_speech.js';
 import { game } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { GameMap } from './game.js';
@@ -291,7 +290,7 @@ function readingMessages(
             if (!blind) first = `There's some graffiti on the ${surface} here.`;
             break;
         case ENGR_BLOOD:
-            if (!blind) first = formatSeenMessage('a message scrawled in blood here.');
+            if (!blind) first = 'You see a message scrawled in blood here.';
             break;
         default:
             first = 'Something is written here in a very strange way.';

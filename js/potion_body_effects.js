@@ -1,4 +1,3 @@
-import { formatFeltMessage } from './hero_speech.js';
 // C potion.c: bodily quaff effects. The drink transaction owns the bottle.
 import { adjustAttribute, exerciseAttribute } from './attrib.js';
 import { heroFaceName } from './body_parts.js';
@@ -93,7 +92,7 @@ async function drinkWater(source, state) {
             }
             return loseHeroHp(halfPhysical(d(2, 6), state), 'potion of holy water', { state });
         }
-        await plineWithContinuation(formatFeltMessage('quite proud of yourself.', state));
+        await plineWithContinuation('You feel quite proud of yourself.');
         await healHero(d(2, 6), 0, { state });
         if (hero.ulycn >= 0 && !heroIsPolymorphed(state))
             await applyHeroWereChange({ state });
@@ -103,7 +102,7 @@ async function drinkWater(source, state) {
         return !!state.program_state.gameover;
     }
     if (source.blessed) {
-        await plineWithContinuation(formatFeltMessage('full of awe.', state));
+        await plineWithContinuation('You feel full of awe.');
         await cureHeroSicknessWithMessages(state);
         await exerciseAttribute(A_WIS, true, state);
         await exerciseAttribute(A_CON, true, state);
@@ -117,7 +116,7 @@ async function drinkWater(source, state) {
                 return true;
         }
         else
-            await plineWithContinuation(formatFeltMessage('full of dread.', state));
+            await plineWithContinuation('You feel full of dread.');
         if (hero.ulycn >= 0 && !heroIsPolymorphed(state))
             await applyHeroWereChange({ state });
         if (state.program_state.gameover)
@@ -201,7 +200,7 @@ async function drinkAcid(source, state) {
     return !!state.program_state.gameover;
 }
 async function drinkPolymorph(source, state) {
-    await plineWithContinuation(formatFeltMessage(`a little ${heroIsHallucinating(state) ? 'normal' : 'strange'}.`, state));
+    await plineWithContinuation(`You feel a little ${heroIsHallucinating(state) ? 'normal' : 'strange'}.`);
     if (heroIsUnchanging(state))
         return false;
     const controlled = source.blessed && !heroIsPolymorphed(state);

@@ -9,7 +9,7 @@ import { game, requirePlayingGame } from './gstate.js';
 import { makeDeaf } from './hero_hearing.js';
 import { hasInternalInvisibility, syncHeroInvisibility } from './hero_invisibility.js';
 import { heroSpecies } from './hero_species.js';
-import { formatHeardMessage, formatSeenMessage, formatFeltMessage } from './hero_speech.js';
+import { formatHeardMessage, formatSeenMessage } from './hero_speech.js';
 import { makemonAt } from './mklev.js';
 import { MONSTER_FLAGS2 } from './monster_data.js';
 import { monsterAtPosition } from './monster_location.js';
@@ -44,7 +44,7 @@ export async function triggerHeroMagicTrapEffect(): Promise<void> {
             await hear('a deafening roar!');
             await makeDeaf((game.u.deafTurns ?? 0) + rn1(20, 30), { talk: false });
         } else {
-            await plineWithContinuation(formatFeltMessage('rankled.'));
+            await plineWithContinuation('You feel rankled.');
             await makeDeaf((game.u.deafTurns ?? 0) + rn1(5, 15), { talk: false });
         }
         for (let i = 0; i < count; i++)
@@ -72,7 +72,7 @@ export async function triggerHeroMagicTrapEffect(): Promise<void> {
         if (onQuestStart(game)) {
             const neuter = Upolyd(game.u)
                 && !!((MONSTER_FLAGS2[heroSpecies(game)] ?? 0) & M2_NEUTER);
-            await plineWithContinuation(formatFeltMessage(`${game.flags.female || neuter ? 'oddly ' : ''}like the prodigal son.`));
+            await plineWithContinuation(`You feel ${game.flags.female || neuter ? 'oddly ' : ''}like the prodigal son.`);
         } else {
             const quest = game.dungeons.findIndex(dungeon => dungeon.dname === 'The Quest');
             const atEntrance = game.branches.some(branch => branch.end2.dnum === quest
@@ -89,7 +89,7 @@ export async function triggerHeroMagicTrapEffect(): Promise<void> {
         await plineWithContinuation(heroIsHallucinating(game) ? 'You smell hamburgers.' : 'You smell charred flesh.');
         return;
     case 18:
-        await plineWithContinuation(formatFeltMessage('tired.'));
+        await plineWithContinuation('You feel tired.');
         return;
     case 19: {
         const change = adjustAttribute(A_CHA, 1);
@@ -137,7 +137,7 @@ async function toggleIntrinsicInvisibility(): Promise<void> {
         if (!heroIsBlind(game)) await plineWithContinuation(game.u.seeInvisible
             ? "You can't see through yourself anymore." : 'You can see yourself again!');
     } else {
-        await plineWithContinuation(formatFeltMessage(`a little more ${intrinsic ? 'obvious' : 'hidden'} now.`));
+        await plineWithContinuation(`You feel a little more ${intrinsic ? 'obvious' : 'hidden'} now.`);
     }
     if (intrinsic) {
         removeIntrinsicProperty('invisible', game);

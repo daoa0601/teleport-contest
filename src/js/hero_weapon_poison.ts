@@ -1,7 +1,6 @@
 // Poison applied by the hero's weapon.
 // C ref: uhitm.c hmon_hitmon_poison().
 
-import { formatFeltMessage } from './hero_speech.js';
 import { adjustHeroAlignment } from './alignment.js';
 import { A_LAWFUL } from './const.js';
 import { game } from './gstate.js';
@@ -60,7 +59,7 @@ export async function resolveHeroWeaponPoison(monster: Monster, weapon: GameObje
     } else if (state.u?.ualign?.type === A_LAWFUL
         && (state.u.ualign.record ?? 0) > -10) {
         await publish(
-            formatFeltMessage('like an evil coward for using a poisoned weapon.', state),
+            'You feel like an evil coward for using a poisoned weapon.',
         );
         adjustHeroAlignment(-1, state);
     }

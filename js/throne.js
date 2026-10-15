@@ -1,7 +1,6 @@
 // Throne effects.
 // C ref: sit.c throne_sit_effect(), special_throne_effect(), attrcurse(),
 // and rndcurse().
-import { formatFeltMessage } from './hero_speech.js';
 import { makeConfused } from './hero_mental_status.js';
 import { makeBlinded } from './sight_change.js';
 import { heroIsHallucinating } from './senses.js';
@@ -45,17 +44,17 @@ const COIN_CLASS = 12;
 const M2_PRINCE = 0x00000800;
 const S_VAMPIRE = 48;
 const CURSEABLE_INTRINSICS = Object.freeze([
-    ['fireResistance', 'warmer.'],
-    ['teleportation', 'less jumpy.'],
-    ['poisonResistance', 'a little sick!'],
-    ['telepathy', null],
-    ['coldResistance', 'cooler.'],
-    ['invisible', 'paranoid.'],
+    ['fireResistance', 'You feel warmer.'],
+    ['teleportation', 'You feel less jumpy.'],
+    ['poisonResistance', 'You feel a little sick!'],
+    ['telepathy', 'Your senses fail!'],
+    ['coldResistance', 'You feel cooler.'],
+    ['invisible', 'You feel paranoid.'],
     ['seeInvisible', null],
-    ['fast', 'slower.'],
-    ['stealth', 'clumsy.'],
-    ['protection', 'vulnerable.'],
-    ['aggravateMonster', 'less attractive.'],
+    ['fast', 'You feel slower.'],
+    ['stealth', 'You feel clumsy.'],
+    ['protection', 'You feel vulnerable.'],
+    ['aggravateMonster', 'You feel less attractive.'],
 ]);
 function currentForm() {
     const species = game.u.umonnum;
@@ -150,7 +149,7 @@ async function normalThroneEffect(effect, x, y, { chooseTeleportDestination }) {
             break;
         }
         case 4:
-            await plineWithContinuation(formatFeltMessage('much, much better!'));
+            await plineWithContinuation('You feel much, much better!');
             await healHeroCompletely();
             break;
         case 5:
@@ -158,7 +157,7 @@ async function normalThroneEffect(effect, x, y, { chooseTeleportDestination }) {
             break;
         case 6:
             if (heroLuck() + rn2(5) < 0) {
-                await plineWithContinuation(formatFeltMessage('your luck is changing.'));
+                await plineWithContinuation('You feel your luck is changing.');
                 changeLuck(1);
             }
             else {
@@ -204,11 +203,11 @@ async function normalThroneEffect(effect, x, y, { chooseTeleportDestination }) {
             break;
         case 11:
             if (heroLuck() < 0) {
-                await plineWithContinuation(formatFeltMessage('threatened.'));
+                await plineWithContinuation('You feel threatened.');
                 aggravateMonsters(game);
             }
             else {
-                await plineWithContinuation(formatFeltMessage('a wrenching sensation.'));
+                await plineWithContinuation('You feel a wrenching sensation.');
                 await teleportHero(chooseTeleportDestination
                     ? { chooseDestination: chooseTeleportDestination } : {});
             }
@@ -259,7 +258,7 @@ async function specialThroneEffect(effect, x, y, { gotoLevel }) {
         case 8: {
             const gehennom = game.dungeons?.findIndex(dungeon => dungeon?.dname === 'Gehennom');
             if (game.u?.uhave?.amulet) {
-                await plineWithContinuation(formatFeltMessage('extremely disoriented for a moment.'));
+                await plineWithContinuation('You feel extremely disoriented for a moment.');
             }
             else if (gehennom >= 0) {
                 if (typeof gotoLevel !== 'function') {
@@ -298,11 +297,11 @@ async function specialThroneEffect(effect, x, y, { gotoLevel }) {
         }
         case 11:
             if (MONSTER_SYMBOL[currentForm() ?? -1] === S_VAMPIRE) {
-                await plineWithContinuation(formatFeltMessage('unworthy.'));
+                await plineWithContinuation('You feel unworthy.');
             }
             else {
                 await plineWithContinuation('This throne was not meant for those such as you!');
-                await plineWithContinuation(formatFeltMessage('a change coming over you.'));
+                await plineWithContinuation('You feel a change coming over you.');
                 await polymorphHero();
             }
             break;
@@ -350,7 +349,9 @@ export async function throneSitEffect({ gotoLevel = null, chooseTeleportDestinat
     else {
         const prince = !!((MONSTER_FLAGS2[currentForm() ?? -1] ?? 0) & M2_PRINCE);
         const handOfElbereth = !!game.u?.uevent?.uhand_of_elbereth;
-        await plineWithContinuation(formatFeltMessage(prince || handOfElbereth ? 'very comfortable here.' : 'somehow out of place...'));
+        await plineWithContinuation(prince || handOfElbereth
+            ? 'You feel very comfortable here.'
+            : 'You feel somehow out of place...');
     }
     if (!rn2(3)) {
         if (game.flags?.debug
@@ -365,7 +366,7 @@ export async function throneSitEffect({ gotoLevel = null, chooseTeleportDestinat
 export async function attrcurse({ publish = plineWithContinuation } = {}) {
     const hero = game.u;
     const start = rnd(CURSEABLE_INTRINSICS.length) - 1;
-    for (const [property, sensation] of CURSEABLE_INTRINSICS.slice(start)) {
+    for (const [property, ordinaryMessage] of CURSEABLE_INTRINSICS.slice(start)) {
         if (!hasPermanentIntrinsicProperty(property, game))
             continue;
         removePermanentIntrinsicProperty(property, game);
@@ -382,11 +383,8 @@ export async function attrcurse({ publish = plineWithContinuation } = {}) {
                 ? 'You tawt you taw a puttie tat!'
                 : 'You thought you saw something!');
         }
-        else if (property === 'telepathy') {
-            await publish('Your senses fail!');
-        }
-        else if (sensation) {
-            await publish(formatFeltMessage(sensation));
+        else {
+            await publish(ordinaryMessage);
         }
         return property;
     }

@@ -1,6 +1,5 @@
 // Native spell.c:study_book(), learn(), cursed_book(), and confused_book().
 // Reading owns admission and literacy; the scheduler owns each study turn.
-import { formatFeltMessage } from './hero_speech.js';
 import { currentAttribute, exerciseWisdom } from './attrib.js';
 import { heroEyeCount, heroEyeName, heroFaceName } from './body_parts.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
@@ -215,11 +214,11 @@ export async function cursedBook(book, { state = game } = {}) {
     let destroyed = false;
     switch (rn2(requireObjectData(OBJECT_SPELL_LEVEL, book.otyp))) {
         case 0:
-            await pline(formatFeltMessage('a wrenching sensation.', state));
+            await pline('You feel a wrenching sensation.');
             await teleportHero({ chooseDestination: askTeleportDestination });
             break;
         case 1:
-            await pline(formatFeltMessage('threatened.', state));
+            await pline('You feel threatened.');
             aggravateMonsters(state);
             break;
         case 2:

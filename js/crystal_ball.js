@@ -1,5 +1,3 @@
-// C detect.c:use_crystal_ball(), furniture_detect(), level_distance().
-import { formatSeenMessage } from './hero_speech.js';
 import { A_INT, COLNO, IS_FURNITURE, M_AP_FURNITURE, M_AP_TYPE, ROWNO, TER_DETECT, TER_MAP, TER_MON, TER_OBJ, TER_TRP, } from './const.js';
 import { currentAttribute } from './attrib.js';
 import { artifactByName } from './artifacts.js';
@@ -87,7 +85,7 @@ export async function useCrystalBall(object) {
         await distantVision();
     if (missing)
         await pline(rn2(100) === 0
-            ? formatSeenMessage('the Wizard of Yendor gazing out at you.') : 'The vision is unclear.');
+            ? 'You see the Wizard of Yendor gazing out at you.' : 'The vision is unclear.');
     return object;
 }
 async function crystalBallMishap(object, intelligence) {
@@ -160,10 +158,10 @@ async function hallucinatedVision() {
             await pline(`The crystal pulses with sinister ${displayColorName(null)} light!`);
             break;
         case 4:
-            await pline(formatSeenMessage('goldfish swimming above fluorescent rocks.'));
+            await pline('You see goldfish swimming above fluorescent rocks.');
             break;
         case 5:
-            await pline(formatSeenMessage('tiny snowflakes spinning around a miniature farmhouse.'));
+            await pline('You see tiny snowflakes spinning around a miniature farmhouse.');
             break;
         default:
             await pline('Oh wow... like a kaleidoscope!');
@@ -182,7 +180,7 @@ async function distantVision() {
         throw new Error('Crystal-ball destination is outside its level list');
     if (!destination.level)
         throw new Error(`Crystal-ball destination ${destination.name} is not initialized`);
-    await pline(formatSeenMessage(`${destination.name}, ${levelDistance(destination.level)}.`));
+    await pline(`You see ${destination.name}, ${levelDistance(destination.level)}.`);
 }
 function levelDistance(destination) {
     const here = game.u.uz;

@@ -2,7 +2,6 @@
 // C refs: makemon.c:makemon(), mon.c:check_gear_next_turn() and
 // movemon_singlemon(), worn.c:m_dowear()/m_dowear_type().
 
-import { publishHeardMessage } from './hero_speech.js';
 import { armorBonus, armorSlotFor, dragonFormForArmor } from './armor.js';
 import {
     observeDistantObjectForNaming,
@@ -14,6 +13,7 @@ import { learnObjectType } from './object_knowledge.js';
 import { artifactEmitsLight } from './artifacts.js';
 import { beginObjectBurn, endObjectBurn, equipmentLightDescription } from './light.js';
 import { cansee, vision_recalc } from './vision.js';
+import { heroIsDeaf } from './senses.js';
 import { surfaceName } from './terrain_name.js';
 import { monsterSentenceSubject } from './monster_sound.js';
 import { monsterName } from './monster_name.js';
@@ -333,7 +333,7 @@ export async function adjustMonsterClothingAfterPolymorph(
             destroyed.push(object);
     };
     const hear = async (sound: string): Promise<void> => {
-        await publishHeardMessage(`${sound}.`, publish, state);
+        if (!heroIsDeaf(state)) await publish(`You hear ${sound}.`);
     };
     let object: GameObject | null;
 

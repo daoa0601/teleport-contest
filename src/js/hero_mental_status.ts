@@ -1,6 +1,5 @@
 // Native potion.c make_confused(), make_stunned(), and make_hallucinated().
 
-import { formatFeltMessage } from './hero_speech.js';
 import type { GameState } from './game_state.js';
 import type { MessagePublisher } from './display.js';
 import type { PropertyObject, WornPropertySlot } from './property_types.js';
@@ -34,7 +33,7 @@ export async function makeConfused(turns: number, {
 }: MentalStatusOptions = {}) {
     const old = state.u.confusionTurns ?? 0;
     if (!turns && state.u.confusionTurns && talk && !heroIsUnaware(state)) {
-        await publish(formatFeltMessage(`less ${heroIsHallucinating(state) ? 'trippy' : 'confused'} now.`, state));
+        await publish(`You feel less ${heroIsHallucinating(state) ? 'trippy' : 'confused'} now.`);
     }
     if (!!turns !== !!old) state.context.botl = true;
     setPropertyTimeout('confusion', turns, state);
@@ -46,7 +45,7 @@ export async function makeStunned(turns: number, {
     const old = propertyIsActive('stunned', state);
     if (talk && !heroIsUnaware(state)) {
         if (!turns && old) {
-            await publish(formatFeltMessage(`${heroIsHallucinating(state) ? 'less wobbly' : 'a bit steadier'} now.`, state));
+            await publish(`You feel ${heroIsHallucinating(state) ? 'less wobbly' : 'a bit steadier'} now.`);
         } else if (turns && !old) {
             await publish(state.u.usteed ? 'You wobble in the saddle.'
                 : `You ${staggerVerb(heroSpecies(state)).replace(/s$/, '')}...`);

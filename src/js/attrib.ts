@@ -1,7 +1,6 @@
 // attrib.js — Effective hero attributes and exercise state.
 // C refs: attrib.c acurr(), acurrstr(), and exercise().
 
-import { formatFeltMessage } from './hero_speech.js';
 import { game, requirePlayingGame } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
@@ -182,7 +181,7 @@ export async function gainHeroStrength(object: GameObject | null = null, amount 
     const change = adjustAttribute(A_STR, object?.cursed ? -amount : amount, state);
     if (change.changed) {
         if (giveMessage) {
-            const message = attributeChangeMessage(A_STR, change, state);
+            const message = attributeChangeMessage(A_STR, change);
             if (message) await plineWithContinuation(message);
         }
         if (state._moveloopStarted) await reportHeroEncumbrance(state);
@@ -239,7 +238,7 @@ export async function loseHeroStrength(amount: number, killer: string | null | u
     return false;
 }
 
-export function attributeChangeMessage(attribute: number, result: AttributeChangeResult | null | undefined, state = game): string | null {
+export function attributeChangeMessage(attribute: number, result: AttributeChangeResult | null | undefined): string | null {
     requireAttributeIndex(attribute);
     if (!result || result.fixed) return null;
     if (result.blockedByDunceCap)
@@ -254,7 +253,7 @@ export function attributeChangeMessage(attribute: number, result: AttributeChang
         return `You're already as ${word} as you can get.`;
     }
     const emphasis = Math.abs(result.amount) > 1 ? 'very ' : '';
-    return formatFeltMessage(`${emphasis}${word}!`, state);
+    return `You feel ${emphasis}${word}!`;
 }
 
 export async function exerciseAttribute(attribute: number, improving: boolean, state: GameState = game): Promise<void> {
@@ -323,7 +322,7 @@ export async function checkAttributeExercise(sourceTurn: number, state: GameStat
                 const change = adjustAttribute(attribute, direction, state);
                 if (change.changed) {
                     accumulated = 0;
-                    const message = attributeChangeMessage(attribute, change, state);
+                    const message = attributeChangeMessage(attribute, change);
                     if (message) await plineWithContinuation(message);
                     if (state._moveloopStarted && (attribute === A_STR || attribute === A_CON))
                         await reportHeroEncumbrance(state);

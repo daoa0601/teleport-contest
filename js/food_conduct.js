@@ -1,6 +1,5 @@
 // Native food and diet conduct with their separate first-event logs.
 // C refs: eat.c doeat(), eatcorpse(), doeat_nonfood(), eating_conducts(), fpostfx().
-import { formatFeltMessage } from './hero_speech.js';
 import { adjustHeroAlignment } from './alignment.js';
 import { plineWithContinuation as pline } from './display.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
@@ -114,7 +113,7 @@ async function violateVegetarian(state) {
     incrementConduct('unvegetarian', state);
     if (state.urole.key !== 'monk')
         return;
-    await pline(formatFeltMessage('guilty.', state));
+    await pline('You feel guilty.');
     adjustHeroAlignment(-1, state);
 }
 //# sourceMappingURL=food_conduct.js.map

@@ -7,7 +7,7 @@ import { canSeeMonster, canSpotMonster, newsym, plineWithContinuation, } from '.
 import { insideWizardTower } from './dungeon.js';
 import { deleteEngravingAt, hasCompletedEngraving } from './engrave.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
-import { formatHeardMessage, formatFeltMessage } from './hero_speech.js';
+import { formatHeardMessage } from './hero_speech.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { makeMonsterFlee } from './monster_flee.js';
 import { publishMonsterWake, wakeMonstersNearWithMessages } from './monster_wake.js';
@@ -370,7 +370,7 @@ export async function angerMonster(monster, { attacked = false } = {}) {
     const { ux, uy } = game.u;
     if (attacked && hasCompletedEngraving('Elbereth', ux, uy)
         && (monsterIsScaredAt(monster, game, ux, uy) || monster.mpeaceful)) {
-        await plineWithContinuation(formatFeltMessage('like a hypocrite.'));
+        await plineWithContinuation('You feel like a hypocrite.');
         adjustHeroAlignment(game.u.ualign.record > 5 ? -5 : -rnd(5));
         if (!heroIsBlind())
             await plineWithContinuation('The engraving beneath you fades.');

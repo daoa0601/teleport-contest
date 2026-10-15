@@ -1,7 +1,6 @@
 // Object light and burn timers.
 // C refs: timeout.c begin_burn()/burn_object()/end_burn(), light.c.
 
-import { formatSeenMessage } from './hero_speech.js';
 import { monsterHasMapPosition } from './monster_location.js';
 import { loseHeroHp } from './hero_damage.js';
 import { finishMonsterKilled } from './monster_death.js';
@@ -611,22 +610,22 @@ async function announceLampBurn(
     const lantern = object.otyp === BRASS_LANTERN;
     if (threshold === 0) {
         if (visible || byTouch) await plineWithContinuation(lantern
-            ? floor ? formatSeenMessage('a lantern run out of power.', state) : `${owner} lantern has run out of power.`
-            : floor ? formatSeenMessage(`${withIndefiniteArticle(objectName(object, state))} go out.`, state) : `${burnName(object, state)} has gone out.`);
+            ? floor ? 'You see a lantern run out of power.' : `${owner} lantern has run out of power.`
+            : floor ? `You see ${withIndefiniteArticle(objectName(object, state))} go out.` : `${burnName(object, state)} has gone out.`);
         return;
     }
     if (!visible || ![150, 100, 50, 25].includes(threshold)) return;
     if (lantern) {
-        await plineWithContinuation(floor ? formatSeenMessage('a lantern getting dim.', state)
+        await plineWithContinuation(floor ? 'You see a lantern getting dim.'
             : object.where === 'inventory' ? 'Your lantern is getting dim.'
                 : `${burnOwner(object, state)} lantern is getting dim.`);
         if (object.where === 'inventory' && heroIsHallucinating(state))
             await plineWithContinuation('Batteries have not been invented yet.');
     } else if (threshold === 25) await plineWithContinuation(floor
-        ? formatSeenMessage(`${withIndefiniteArticle(objectName(object, state))} about to go out.`, state)
+        ? `You see ${withIndefiniteArticle(objectName(object, state))} about to go out.`
         : `${burnName(object, state)} seems about to go out.`);
     else await plineWithContinuation(floor
-        ? formatSeenMessage(`${withIndefiniteArticle(objectName(object, state))} flicker${threshold === 50 ? ' considerably' : ''}.`, state)
+        ? `You see ${withIndefiniteArticle(objectName(object, state))} flicker${threshold === 50 ? ' considerably' : ''}.`
         : `${burnName(object, state)} flickers${threshold === 50 ? ' considerably' : ''}.`);
 }
 
@@ -638,19 +637,19 @@ async function announceCandleBurn(
     const many = menorah ? object.spe > 1 : (object.quan ?? object.quantity ?? 1) > 1;
     const floor = object.where === 'floor';
     const candle = `${menorah ? "candelabrum's " : ''}candle`;
-    const owner = floor ? formatSeenMessage(`${menorah ? 'a ' : many ? 'some ' : 'a '}`, state) : `${ownership} `;
+    const owner = floor ? `You see ${menorah ? 'a ' : many ? 'some ' : 'a '}` : `${ownership} `;
     if (threshold === 75 && visible) {
         await plineWithContinuation(`${owner}${candle}${many ? 's' : ''}${floor ? '' : many ? ' are' : ' is'} getting short.`);
     } else if (threshold === 15 && visible) {
         await plineWithContinuation(`${owner}${candle}${many ? "s'" : "'s"} flame${many ? 's' : ''} flicker${floor || many ? '' : 's'} low!`);
     } else if (threshold === 0 && (visible || byTouch)) {
         if (menorah) await plineWithContinuation(floor
-            ? formatSeenMessage(`a candelabrum's flame${many ? 's' : ''} die.`, state)
+            ? `You see a candelabrum's flame${many ? 's' : ''} die.`
             : `${ownership} candelabrum's flame${many ? 's die' : ' dies'}.`);
         else {
             const name = objectName(object, state);
             await plineWithContinuation(floor
-                ? formatSeenMessage(`${many ? `some ${makePlural(name)}` : withIndefiniteArticle(name)} consumed!`, state)
+                ? `You see ${many ? `some ${makePlural(name)}` : withIndefiniteArticle(name)} consumed!`
                 : `${burnName(object, state)} ${many ? 'are' : 'is'} consumed!`);
             if (heroIsHallucinating(state)) await plineWithContinuation(many ? 'They shriek!' : 'It shrieks!');
             else if (!heroIsBlind(state)) await plineWithContinuation(many ? 'Their flames die.' : 'Its flame dies.');
@@ -686,7 +685,7 @@ export async function runClaimedObjectBurnTimer(
     const byTouch = object.where === 'inventory' && object.otyp !== BRASS_LANTERN;
     if (object.otyp === POT_OIL) {
         if (visible) await plineWithContinuation(object.where === 'floor'
-            ? formatSeenMessage('a burning potion of oil go out.', state) : `${owner} potion of oil has burnt away.`);
+            ? 'You see a burning potion of oil go out.' : `${owner} potion of oil has burnt away.`);
     } else if (CANDLE_TYPES.has(object.otyp))
         await announceCandleBurn(object, threshold, visible, byTouch, state, owner);
     else await announceLampBurn(object, threshold, visible, byTouch, state, owner);

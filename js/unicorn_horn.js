@@ -1,6 +1,5 @@
 // Using a unicorn horn as an item or as a polymorphed unicorn's ability.
 // C refs: apply.c use_unicorn_horn(), cmd.c domonability().
-import { formatFeltMessage } from './hero_speech.js';
 import { makeConfused, makeHallucinated, makeStunned } from './hero_mental_status.js';
 import { makeBlinded } from './sight_change.js';
 import { makeDeaf } from './hero_hearing.js';
@@ -97,7 +96,7 @@ async function cureHornTrouble(trouble, state, publish) {
     const talk = !heroIsUnaware(state);
     if (trouble === SICK) {
         cureHeroSickness(state, SICK_ALL);
-        await publish(formatFeltMessage('cured.  What a relief!', state));
+        await publish('You feel cured.  What a relief!');
         return;
     }
     if (trouble === BLIND) {
@@ -111,7 +110,7 @@ async function cureHornTrouble(trouble, state, publish) {
     if (trouble === VOMITING) {
         cureHeroVomiting(state);
         if (talk)
-            await publish(formatFeltMessage('much less nauseated now.', state));
+            await publish('You feel much less nauseated now.');
         return;
     }
     if (trouble === CONFUSED) {

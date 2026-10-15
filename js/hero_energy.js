@@ -1,6 +1,5 @@
 // Hero energy loss.
 // C ref: trap.c drain_en().
-import { formatFeltMessage } from './hero_speech.js';
 import { rnd } from './rng.js';
 export function drainHeroEnergy(state, amount, { maximumAlreadyDrained = false, rollOne = rnd } = {}) {
     const hero = state.u;
@@ -12,7 +11,7 @@ export function drainHeroEnergy(state, amount, { maximumAlreadyDrained = false, 
             hero.uenmax = 0;
             state.context.botl = true;
         }
-        return formatFeltMessage('momentarily lethargic.', state);
+        return 'You feel momentarily lethargic.';
     }
     if (amount > ((hero.uen ?? 0) + maximum) / 3)
         amount = rollOne(amount);
@@ -27,6 +26,6 @@ export function drainHeroEnergy(state, amount, { maximumAlreadyDrained = false, 
         hero.uen = maximum;
     }
     state.context.botl = true;
-    return formatFeltMessage(`your magical energy drain away${punctuation}`, state);
+    return `You feel your magical energy drain away${punctuation}`;
 }
 //# sourceMappingURL=hero_energy.js.map

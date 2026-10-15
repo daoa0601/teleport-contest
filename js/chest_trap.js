@@ -1,6 +1,5 @@
 // Traps triggered while opening or disarming containers.
 // C ref: trap.c chest_trap().
-import { formatFeltMessage } from './hero_speech.js';
 import { makeHallucinated, makeStunned } from './hero_mental_status.js';
 import { heroIsHallucinating } from './senses.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
@@ -130,7 +129,7 @@ async function releaseNoxiousGas(container, location, state, publish, random, ro
     return { outcome: 'noxious-gas', destroyed: false };
 }
 async function prickHero(state, publish, random, rollDice, bodyPart) {
-    await publish(formatFeltMessage(`a needle prick your ${bodyPart}.`, state));
+    await publish(`You feel a needle prick your ${bodyPart}.`);
     const poison = await poisonHero({
         reason: 'needle',
         killer: 'poisoned needle',

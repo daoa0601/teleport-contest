@@ -1,4 +1,3 @@
-import { formatFeltMessage } from './hero_speech.js';
 import { requirePlayingGame, requireGameLevel } from './gstate.js';
 // detect.js — Searching and detection.
 // C ref: detect.c — dosearch(), dosearch0().
@@ -298,7 +297,7 @@ async function findHiddenMonster(monster, viaWarning) {
     exerciseWisdom();
     if (!canSpotMonster(monster)) {
         map_invisible(monster.mx, monster.my);
-        await plineWithContinuation(formatFeltMessage('an unseen monster!'));
+        await plineWithContinuation('You feel an unseen monster!');
     }
     else if (!canSenseMonster(monster)) {
         await plineWithContinuation(`You find ${monsterName(monster, {
@@ -484,7 +483,7 @@ export async function findit() {
     if (!total)
         await plineWithContinuation("You don't find anything.");
     else if (found.clearedUnseen && total === found.clearedUnseen) {
-        await plineWithContinuation(formatFeltMessage(`${found.keptUnseen ? 'somewhat ' : ''}less paranoid.`));
+        await plineWithContinuation(`You feel ${found.keptUnseen ? 'somewhat ' : ''}less paranoid.`);
     }
     return total;
 }

@@ -1,5 +1,4 @@
 // Native eat.c:cprefx()/cpostfx(). The meal/tin owner retains the food identity.
-import { formatFeltMessage } from './hero_speech.js';
 import {
     adjustAttribute, attributeChangeMessage, currentAttribute, exerciseWisdom,
 } from './attrib.js';
@@ -75,7 +74,7 @@ export async function applyCorpsePreEffects(mnum: number, { state = game, food =
     }
     const name = requireMonsterData(MONSTER_NAME, mnum);
     if (domesticAnimals.has(name) && !heroMayEatOwnKind(state)) {
-        await plineWithContinuation(formatFeltMessage(`that eating the ${name} was a bad idea.`, state));
+        await plineWithContinuation(`You feel that eating the ${name} was a bad idea.`);
         grantIntrinsicProperty('aggravateMonster', 'outside', state);
     } else if (name === 'lizard') {
         if (heroIsPetrifying(state)) await curePetrificationByFood(state);
@@ -170,7 +169,7 @@ export async function applyCorpsePostEffects(mnum: number, { state = game, tin =
     case 'doppelganger':
     case 'sandestin':
     case 'genetic engineer':
-        if (heroIsUnchanging(state)) await plineWithContinuation(formatFeltMessage('momentarily different.', state));
+        if (heroIsUnchanging(state)) await plineWithContinuation('You feel momentarily different.');
         else {
             if (tin) {
                 await useUpTin(tin, { state });
@@ -198,7 +197,7 @@ export async function applyCorpsePostEffects(mnum: number, { state = game, tin =
             if (!rn2(2)) {
                 await plineWithContinuation('Yum!  That was real brain food!');
                 const change = adjustAttribute(A_INT, 1, state);
-                const message = attributeChangeMessage(A_INT, change, state);
+                const message = attributeChangeMessage(A_INT, change);
                 if (message) await plineWithContinuation(message);
                 break;
             }
@@ -228,7 +227,7 @@ async function eatStalker(state: PlayingGameState) {
         syncHeroInvisibility(state);
         if (!heroIsBlind(state) && !invisibilityIsBlocked(state)) await showInvisibilityMessage(state);
     } else {
-        if (!hasPermanentIntrinsicProperty('invisible', state)) await plineWithContinuation(formatFeltMessage('hidden!', state));
+        if (!hasPermanentIntrinsicProperty('invisible', state)) await plineWithContinuation('You feel hidden!');
         grantIntrinsicProperty('invisible', 'outside', state);
         grantIntrinsicProperty('seeInvisible', 'outside', state);
         syncHeroInvisibility(state);

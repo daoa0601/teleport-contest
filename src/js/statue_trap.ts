@@ -1,7 +1,6 @@
 // Statue traps and the monster released from their statue.
 // C refs: trap.c animate_statue() and activate_statue_trap().
 
-import { formatFeltMessage } from './hero_speech.js';
 import { heroIsHallucinating } from './senses.js';
 import { deleteTrap } from './trap_lifecycle.js';
 import { setMonsterGivenName } from './monster_given_name.js';
@@ -213,10 +212,10 @@ export async function animateStatue(statue: GameObject, x: number, y: number, {
     if (state.urole?.key === 'archeologist'
         && ((statue.spe ?? 0) & CORPSTAT_HISTORIC)) {
         if (!state.context.mon_moving) {
-            await pline(formatFeltMessage('guilty that the historic statue is now gone.', state));
+            await pline('You feel guilty that the historic statue is now gone.');
             adjustHeroAlignment(-1, state);
         } else if (cansee(x, y)) {
-            await pline(formatFeltMessage('regret that the historic statue is now gone.', state));
+            await pline('You feel regret that the historic statue is now gone.');
         }
     }
     await transferStatueContents(statue, monster, state);

@@ -188,7 +188,7 @@ async function increaseAttribute(attribute: number, reportFailure: boolean, stat
     const change = adjustAttribute(attribute, 1, state);
     if (change.changed || reportFailure
         && (change.blockedByDunceCap || state.flags.verbose)) {
-        const message = attributeChangeMessage(attribute, change, state);
+        const message = attributeChangeMessage(attribute, change);
         if (message) await pline(message);
     }
     if (change.changed && state._moveloopStarted

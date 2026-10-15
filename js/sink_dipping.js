@@ -1,5 +1,4 @@
 // C fountain.c:dipsink(), sink_backs_up().
-import { formatSeenMessage, publishHeardMessage } from './hero_speech.js';
 import { exerciseAttribute } from './attrib.js';
 import { heroFaceName } from './body_parts.js';
 import { A_DEX, A_WIS, S_LRING } from './const.js';
@@ -58,7 +57,7 @@ export async function dipSink(object) {
                 tryCall = true;
             }
             else if (!heroIsDeaf()) {
-                await publishHeardMessage('a sucking sound.', pline);
+                await pline('You hear a sucking sound.');
                 tryCall = true;
             }
             else
@@ -102,7 +101,7 @@ export async function sinkBacksUp(x = game.u.ux, y = game.u.uy) {
     if ((location.looted ?? 0) & S_LRING)
         return;
     if (!sight)
-        await pline(formatSeenMessage('a ring shining in its midst.'));
+        await pline('You see a ring shining in its midst.');
     placeCreatedObject(await mkobj(4, true), x, y);
     newsym(x, y);
     await exerciseAttribute(A_DEX, true);

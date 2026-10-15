@@ -1,6 +1,5 @@
 // Divine retaliation.
 // C pray.c:gods_upset(), angrygods(), god_zaps_you(), fry_by_god().
-import { formatFeltMessage } from './hero_speech.js';
 import { adjustHeroAlignment, deityName } from './alignment.js';
 import { disintegrateWornArmor } from './armor.js';
 import { adjustAttribute, attributeChangeMessage } from './attrib.js';
@@ -61,7 +60,7 @@ export async function desecrateAltar(highAltar, alignment, state = game) {
         adjustHeroAlignment(-20, state);
         state.u.ugangr = (state.u.ugangr || 0) + 5;
     }
-    await pline(formatFeltMessage('the air around you grow charged...', state));
+    await pline('You feel the air around you grow charged...');
     await pline(`Suddenly, you realize that ${deityName(alignment, state)} has noticed you...`);
     await godVoice(alignment, `So, mortal!  You dare desecrate my ${highAltar ? 'High Temple' : 'altar'}!`, state);
     await godZapsHero(alignment, state);
@@ -85,7 +84,7 @@ export async function angryGods(alignment, state = game) {
         case 0:
         case 1: {
             const mood = heroIsHallucinating(state) ? 'bummed' : 'displeased';
-            await pline(formatFeltMessage(`that ${deityName(alignment, state)} is ${mood}.`, state));
+            await pline(`You feel that ${deityName(alignment, state)} is ${mood}.`);
             break;
         }
         case 2:
@@ -96,7 +95,7 @@ export async function angryGods(alignment, state = game) {
             await pline(`"Thou ${accusation}, ${mortal}."`);
             await pline('"Thou must relearn thy lessons!"');
             const change = adjustAttribute(A_WIS, -1, state);
-            const message = attributeChangeMessage(A_WIS, change, state);
+            const message = attributeChangeMessage(A_WIS, change);
             if (message)
                 await pline(message);
             if (await loseHeroExperience(null, { state }))

@@ -1,4 +1,3 @@
-import { formatFeltMessage } from './hero_speech.js';
 // Monster summoning by demons, minions, and the Wizard of Yendor.
 // C ref: minion.c msummon(), dprince(), dlord(), and ndemon().
 import { artifactById } from './artifacts.js';
@@ -56,7 +55,7 @@ export async function summonMinion(alignment, talk = false) {
         const deity = deityName(alignment);
         const possessive = deity.endsWith('s') ? `${deity}'` : `${deity}'s`;
         await plineWithContinuation(heroIsDeaf(game)
-            ? formatFeltMessage(`${possessive} booming voice:`)
+            ? `You feel ${possessive} booming voice:`
             : `The voice of ${deity} booms:`);
         await plineWithContinuation('"Thou shalt pay for thine indiscretion!"');
         if (canSpotMonster(monster))

@@ -1,6 +1,5 @@
 // Artifact powers used by the #invoke command.
 // C ref: artifact.c arti_invoke() and its invoke_* helpers.
-import { formatFeltMessage } from './hero_speech.js';
 import { I_SPECIAL, In_endgame, In_hell, In_quest, P_EXPERT, TIMEOUT, Upolyd, W_ARTI, isok } from './const.js';
 import { newsym, pline } from './display.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
@@ -100,7 +99,7 @@ export function artifactInvokeIsActive(artifact, state = game) {
 }
 async function nothingSpecial(object, state, publish) {
     if ((state.inventory || []).includes(object)) {
-        await publish(formatFeltMessage('a surge of power, but nothing seems to happen.', state));
+        await publish('You feel a surge of power, but nothing seems to happen.');
     }
 }
 async function beginInvocation(object, artifact, state, publish, rollDice, scaledRandom) {
@@ -114,7 +113,7 @@ async function beginInvocation(object, artifact, state, publish, rollDice, scale
             object.age += rollDice(3, 10);
             return false;
         }
-        await publish(formatFeltMessage('drained...', state));
+        await publish('You feel drained...');
         state.u.uen -= energyCost;
         state.context.botl = true;
     }
@@ -125,7 +124,7 @@ async function beginInvocation(object, artifact, state, publish, rollDice, scale
 }
 async function ignoringHero(object, state, publish) {
     const subject = definiteName(objectCombatName(object, { state }), state);
-    await publish(formatFeltMessage(`that ${subject} ${objectNameIsPlural(object, state) ? 'are' : 'is'} ignoring you.`, state));
+    await publish(`You feel that ${subject} ${objectNameIsPlural(object, state) ? 'are' : 'is'} ignoring you.`);
 }
 async function invokeProperty(object, artifact, state, publish, rollDice, scaledRandom) {
     // Artifact property toggles mutate the invoked source and the object's
@@ -155,7 +154,7 @@ async function invokeProperty(object, artifact, state, publish, rollDice, scaled
         return { used: true, ready: true, on };
     }
     if (artifact.invokePower === 'conflict') {
-        await publish(formatFeltMessage(on ? 'like a rabble-rouser.' : 'the tension decrease around you.', state));
+        await publish(on ? 'You feel like a rabble-rouser.' : 'You feel the tension decrease around you.');
         return { used: true, ready: true, on };
     }
     if (artifact.invokePower === 'levitation') {
@@ -200,13 +199,14 @@ async function invokeHealing(object, state, publish) {
     // The first native check compares boolean Blinded (0 or 1) with cream;
     // the second compares the blindness timeout.
     if (healing !== 0 || treatsIllness || Number(heroIsBlinded(state)) > cream)
-        await publish(formatFeltMessage('better.', state));
+        await publish('You feel better.');
     const helps = healing !== 0 || treatsIllness || curesBlindness;
     if (!helps) {
         await nothingSpecial(object, state, publish);
         return;
     }
-    await publish(formatFeltMessage(!healing && !treatsIllness && permanent ? 'slightly better.' : 'better.', state));
+    await publish(!healing && !treatsIllness && permanent
+        ? 'You feel slightly better.' : 'You feel better.');
     if (healing > 0)
         hero[hitPoints] = current + healing;
     cureHeroSickness(state);
@@ -229,7 +229,7 @@ async function invokeEnergyBoost(object, state, publish) {
     }
     hero.uen = (hero.uen ?? 0) + restored;
     state.context.botl = true;
-    await publish(formatFeltMessage('re-energized.', state));
+    await publish('You feel re-energized.');
 }
 async function invokeCreateAmmo(object, rollOne, state, publish) {
     const arrows = await mksobj(ARROW, true, false);
@@ -333,11 +333,11 @@ async function invokeCreatePortal(object, state, publish) {
     };
     if (state.u.uhave.amulet || In_endgame(state.u.uz) || In_endgame(destination)
         || destination.dnum === state.u.uz.dnum || !await bringLeashedFollowers(state)) {
-        await publish(formatFeltMessage('very disoriented for a moment.', state));
+        await publish('You feel very disoriented for a moment.');
         return;
     }
     await publish(heroIsBlind(state)
-        ? formatFeltMessage('weightless for a moment.', state)
+        ? 'You feel weightless for a moment.'
         : 'You are surrounded by a shimmering sphere!');
     await gotoLevel(destination);
 }

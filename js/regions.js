@@ -1,4 +1,3 @@
-import { formatFeltMessage, formatSeenMessage } from './hero_speech.js';
 import { isLavaAt, isPoolAt } from './terrain_properties.js';
 // regions.js — Shared level-region construction.
 // C ref: region.c create_region(), make_gas_cloud(), and
@@ -195,7 +194,7 @@ export async function rescueHeroFromRegion(state = game) {
         if (heroIsInDangerousRegion(state)) {
             state.u.magicalBreathingTurns = d(4, 4) + 4;
             refreshProperty('magicalBreathing', state);
-            await plineWithContinuation(formatFeltMessage('able to breathe.', state));
+            await plineWithContinuation('You feel able to breathe.');
         }
     }
     else if (cloud) {
@@ -390,9 +389,9 @@ async function expireRegions(state, publish) {
             dissipatedInSight = 0;
     }
     if (dissipatedInSight === 1)
-        await publish(formatSeenMessage('a gas cloud dissipate.', state));
+        await publish('You see a gas cloud dissipate.');
     else if (dissipatedInSight > 1)
-        await publish(formatSeenMessage('some gas clouds dissipate.', state));
+        await publish('You see some gas clouds dissipate.');
 }
 function maintainCloudForFog(region, species) {
     if (region.ttl < 20 && species === PM_FOG_CLOUD)

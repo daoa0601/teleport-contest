@@ -1,7 +1,6 @@
 // Source-shaped fountain effect reducers.
 // C refs: fountain.c fountain actor helpers and dipfountain() cases 16 through
 // 20, 21 through 24, 26 through 27, and 29.
-import { formatFeltMessage, formatHeardMessage } from './hero_speech.js';
 import { curseObjectState, uncurseObjectState } from './object_state.js';
 import { rn2, rnd } from './rng.js';
 function resolvedLiquidName(liquidName) {
@@ -41,7 +40,7 @@ export function resolveDippedSensationFate({ fate, armName = 'arm' }) {
     if (fate === 27) {
         return {
             handled: true,
-            message: formatFeltMessage('a sudden chill.'),
+            message: 'You feel a sudden chill.',
         };
     }
     return { handled: false, message: '' };
@@ -97,7 +96,7 @@ export async function applyFountainGemDiscovery({ loc, blind = false, announce =
         };
     }
     const message = blind
-        ? formatFeltMessage('a gem here!')
+        ? 'You feel a gem here!'
         : 'You spot a gem in the sparkling waters!';
     await announce(message);
     const gemType = chooseGem();
@@ -125,7 +124,7 @@ export async function applyFountainNymphActor({ gone = false, blind = false, cre
     const monster = gone ? null : await createMonster();
     if (!monster) {
         const message = blind
-            ? formatHeardMessage('a loud pop.')
+            ? 'You hear a loud pop.'
             : 'A large bubble rises to the surface and pops.';
         await announceFountainActor(message, announce);
         return {
@@ -134,7 +133,7 @@ export async function applyFountainNymphActor({ gone = false, blind = false, cre
         };
     }
     const message = blind
-        ? formatHeardMessage('a seductive voice.')
+        ? 'You hear a seductive voice.'
         : `You attract ${nymphDescription(monster)}!`;
     await announceFountainActor(message, announce);
     wakeMonster(monster);
@@ -161,7 +160,7 @@ export async function applyFountainDemonActor({ gone = false, blind = false, dif
         };
     }
     const message = blind
-        ? formatFeltMessage('the presence of evil.')
+        ? 'You feel the presence of evil.'
         : `You unleash ${demonIndefiniteName(monster)}!`;
     await announceFountainActor(message, announce);
     const wishRoll = random(100);
@@ -194,7 +193,7 @@ export async function applyFountainSnakeActors({ gone = false, blind = false, ha
         };
     }
     const message = blind
-        ? formatHeardMessage('something hissing!')
+        ? 'You hear something hissing!'
         : `An endless stream of ${hallucinating ? hallucinatedPlural() : 'snakes'} pours forth!`;
     await announceFountainActor(message, announce);
     const created = [];

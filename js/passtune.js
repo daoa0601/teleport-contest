@@ -1,6 +1,5 @@
 // The Stronghold passtune and its drawbridge hints.
 // C ref: music.c do_play_instrument().
-import { publishHeardMessage } from './hero_speech.js';
 import { recordAchievement } from './achievements.js';
 import { exerciseAttribute } from './attrib.js';
 import { ACH_TUNE, A_WIS, Is_stronghold, isok, } from './const.js';
@@ -66,14 +65,14 @@ function tuneHint(played, expected) {
 }
 async function announceTuneHint({ tumblers, gears }) {
     if (tumblers && gears) {
-        await publishHeardMessage(`${tumblers} tumbler${tumblers === 1 ? '' : 's'} click `
-            + `and ${gears} gear${gears === 1 ? '' : 's'} turn.`, plineWithContinuation);
+        await plineWithContinuation(`You hear ${tumblers} tumbler${tumblers === 1 ? '' : 's'} click `
+            + `and ${gears} gear${gears === 1 ? '' : 's'} turn.`);
     }
     else if (tumblers) {
-        await publishHeardMessage(`${tumblers} tumbler${tumblers === 1 ? '' : 's'} click.`, plineWithContinuation);
+        await plineWithContinuation(`You hear ${tumblers} tumbler${tumblers === 1 ? '' : 's'} click.`);
     }
     else if (gears) {
-        await publishHeardMessage(`${gears} gear${gears === 1 ? '' : 's'} turn.`, plineWithContinuation);
+        await plineWithContinuation(`You hear ${gears} gear${gears === 1 ? '' : 's'} turn.`);
     }
 }
 function recordKnownPasstune() {

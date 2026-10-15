@@ -1,7 +1,6 @@
 // Hero sickness and nausea state.
 // C refs: potion.c make_sick(), make_vomiting();
 // timeout.c sickness_dialogue(), vomiting_dialogue(); eat.c vomit().
-import { formatFeltMessage } from './hero_speech.js';
 import { heroIsHallucinating } from './senses.js';
 import { heroIsUnaware } from './hero_sleep.js';
 import { makeConfused, makeStunned } from './hero_mental_status.js';
@@ -43,11 +42,11 @@ export async function startHeroSickness({ state = game, turns, cause = 'illness'
     const oldTurns = hero.sickTurns ?? 0;
     const newlySick = !oldTurns;
     if (newlySick) {
-        await publish(formatFeltMessage('deathly sick.', state));
+        await publish('You feel deathly sick.');
     }
     else if (talk) {
         const severity = turns <= oldTurns / 2 ? 'much' : 'even';
-        await publish(formatFeltMessage(`${severity} worse.`, state));
+        await publish(`You feel ${severity} worse.`);
     }
     hero.sickTurns = Math.min(TIMEOUT, Math.max(0, Math.trunc(turns)));
     hero.sick = hero.sickTurns > 0;
@@ -83,7 +82,8 @@ export async function cureHeroSicknessWithMessages(state = game, type = SICK_ALL
     if (!heroIsSick(state) || !(currentType & type))
         return false;
     hero.sickType = currentType & ~type;
-    await plineWithContinuation(formatFeltMessage(hero.sickType ? 'somewhat better.' : 'cured.  What a relief!', state));
+    await plineWithContinuation(hero.sickType
+        ? 'You feel somewhat better.' : 'You feel cured.  What a relief!');
     if (hero.sickType) {
         hero.sickTurns = Math.min(TIMEOUT, (hero.sickTurns ?? 0) * 2);
         state.context.botl = true;
@@ -143,7 +143,9 @@ async function cureFoodPoisoningByVomiting(state, publish) {
     if (!((hero.sickType ?? 0) & SICK_VOMITABLE))
         return false;
     cureHeroSickness(state, SICK_VOMITABLE);
-    await publish(formatFeltMessage(hero.sickType ? 'somewhat better.' : 'cured.  What a relief!', state));
+    await publish(hero.sickType
+        ? 'You feel somewhat better.'
+        : 'You feel cured.  What a relief!');
     return true;
 }
 export async function vomitHero({ state = game, publish = pline, angerAltar = altarWrath, melt = meltIce, random = rn2, rollDice = d, } = {}) {
@@ -265,7 +267,7 @@ export async function advanceHeroVomiting({ state = game, publish = plineWithCon
     if (nextTurns === 0) {
         state.context.botl = true;
         if (hero.vomiting && !heroIsUnaware(state))
-            await publish(formatFeltMessage('much less nauseated now.', state));
+            await publish('You feel much less nauseated now.');
     }
     return { active: hero.vomiting, turns: nextTurns };
 }

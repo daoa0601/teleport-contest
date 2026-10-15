@@ -1,5 +1,4 @@
 // C eat.c:eataccessory(), accessory_has_effect(), bounded_increase().
-import { formatFeltMessage } from './hero_speech.js';
 import { removeHeroAccessory } from './accessory.js';
 import { findArmorClass } from './armor.js';
 import { adjustAttribute, attributeChangeMessage, reportHeroEncumbrance } from './attrib.js';
@@ -53,7 +52,7 @@ export async function digestAccessory(object, { state = game } = {}) {
         const attribute = object.otyp === ADORNMENT ? A_CHA : object.otyp === STRENGTH ? A_STR : A_CON;
         const change = adjustAttribute(attribute, object.spe, state);
         if (change.changed) {
-            const message = attributeChangeMessage(attribute, change, state);
+            const message = attributeChangeMessage(attribute, change);
             if (message)
                 await pline(message);
             if (state._moveloopStarted && [A_STR, A_CON].includes(attribute))
@@ -77,7 +76,7 @@ export async function digestAccessory(object, { state = game } = {}) {
         if (!hasIntrinsicProperty('sleepResistance', 'outside', state))
             await accessoryEffectMessage(object);
         if (!state.u.sleepResistance)
-            await pline(formatFeltMessage('wide awake.', state));
+            await pline('You feel wide awake.');
         grantIntrinsicProperty('sleepResistance', 'outside', state);
     }
     else if (object.otyp === CHANGE) {

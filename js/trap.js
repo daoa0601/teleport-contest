@@ -1,7 +1,6 @@
 // Water, lava, fire, and monster rust-trap effects.
 // C ref: trap.c lava_effects(), burnarmor(), trapeffect_rust_trap(),
 // water_damage(), and erode_obj().
-import { formatSeenMessage } from './hero_speech.js';
 import { IS_POOL, Is_waterlevel, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU, W_SWAPWEP, W_WEP, isok, } from './const.js';
 import { armorSimpleName, heroHasWaterWalking } from './armor.js';
 import { fireDamageObject } from './fire_damage.js';
@@ -150,7 +149,7 @@ export async function destroyLavaFloorObjects(objects, { state = game, publish =
                 }
                 else {
                     observeObjectForNaming(object, { state });
-                    await publish(formatSeenMessage(`${fullObjectDescription(object, { state })} hit lava and burn up!`, state));
+                    await publish(`You see ${fullObjectDescription(object, { state })} hit lava and burn up!`);
                 }
             }
             await delobj(object, state, random);

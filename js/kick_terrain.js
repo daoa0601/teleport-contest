@@ -1,5 +1,4 @@
 // Native dokick.c:kick_nondoor(), for terrain beyond doors and graves.
-import { publishHeardMessage } from './hero_speech.js';
 import { exerciseAttribute } from './attrib.js';
 import { A_DEX, A_WIS, ALTAR, CORR, FOUNTAIN, G_GONE, IRONBARS, IS_TREE, Is_stronghold, LADDER, LA_DOWN, MM_ANGRY, MM_FEMALE, MM_MALE, MM_NOMSG, ROOM, SCORR, SINK, STAIRS, S_LDWASHER, S_LPUDDING, THRONE, TREE_LOOTED, TREE_SWARM, T_LOOTED, } from './const.js';
 import { displayColorName, displayMessageWindow, feel_newsym, newsym, plineWithContinuation as pline } from './display.js';
@@ -170,8 +169,8 @@ function speciesGone(species) {
 async function kickTree(x, y, location, responses) {
     const bee = MONSTER_NAME.indexOf('killer bee');
     if (rn2(3) !== 0) {
-        if (rn2(6) === 0 && !speciesGone(bee))
-            await publishHeardMessage('a low buzzing.', pline);
+        if (rn2(6) === 0 && !speciesGone(bee) && !heroIsDeaf())
+            await pline('You hear a low buzzing.');
         await responses.ouch(x, y);
         return;
     }
@@ -233,7 +232,7 @@ async function kickSink(x, y, location, responses) {
         if (!heroIsBlind())
             await pline(`A ${displayColorName('black')} ooze gushes up from the drain!`);
         else if (!heroIsDeaf())
-            await publishHeardMessage('a gushing sound.', pline);
+            await pline('You hear a gushing sound.');
         await makemonAt(pudding, x, y, MM_NOMSG);
         await exerciseAttribute(A_DEX, true);
         newsym(x, y);

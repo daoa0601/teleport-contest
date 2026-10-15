@@ -1,6 +1,5 @@
 // Floor objects thrown outward by an explosion or collapsing structure.
 // C ref: explode.c:scatter() and mthrowu.c:ohitmon().
-import { publishHeardMessage } from './hero_speech.js';
 import { monsterHasMapPosition } from './monster_location.js';
 import { deleteTrap } from './trap_lifecycle.js';
 import { DOOR, D_CLOSED, D_LOCKED, SHOPBASE, SINK, STATUE_TRAP, ZAP_POS, isok, } from './const.js';
@@ -223,9 +222,10 @@ async function fractureObject(object, x, y, state, options) {
         const verb = object.otyp === BOULDER ? 'breaks apart' : 'crumbles';
         await options.publish(`The ${objectName(object)} ${verb}.`);
     }
-    else {
-        await publishHeardMessage(object.otyp === BOULDER
-            ? 'stone breaking.' : 'stone crumbling.', options.publish, state);
+    else if (!state.u?.deaf && !state.deaf) {
+        await options.publish(object.otyp === BOULDER
+            ? 'You hear stone breaking.'
+            : 'You hear stone crumbling.');
     }
     if (object.otyp === STATUE) {
         const contents = object.contents || [];

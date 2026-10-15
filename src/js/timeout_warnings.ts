@@ -1,5 +1,4 @@
 // C timeout.c:phaze_dialogue(), region_dialogue(), and their expiry cases.
-import { formatFeltMessage } from './hero_speech.js';
 import { plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
 import { heroIsBreathless } from './hero_species.js';
@@ -40,7 +39,7 @@ export async function breathingDialogue(state = game): Promise<void> {
 export async function finishWallPassageTimeout(state = game): Promise<void> {
     if (propertyIsActive('passesWalls', state)) return;
     await plineWithContinuation(heroIsSurroundedByRock(state)
-        ? formatFeltMessage('hemmed in again.', state)
+        ? 'You feel hemmed in again.'
         : `You're back to your ${heroIsPolymorphed(state) ? 'unusual' : 'normal'} self again.`);
 }
 

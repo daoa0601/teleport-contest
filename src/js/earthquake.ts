@@ -1,7 +1,6 @@
 // Earthquakes and the chasms they open.
 // C ref: music.c do_earthquake() and do_pit().
 
-import { publishHeardMessage } from './hero_speech.js';
 import { monsterHasMapPosition } from './monster_location.js';
 import { deleteTrap } from './trap_lifecycle.js';
 import { adjustHeroAlignment } from './alignment.js';
@@ -238,8 +237,9 @@ async function dropMonsterIntoChasm(monster: Monster | null, x: number, y: numbe
         if (cansee(x, y)) {
             const name = MONSTER_NAME[monster.mnum] || 'monster';
             await plineWithContinuation(`The ${name} falls into a chasm!`);
-        } else if (monsterIsHumanoid(monster.mnum)) {
-            await publishHeardMessage('a scream!', plineWithContinuation);
+        } else if (monsterIsHumanoid(monster.mnum)
+            && !game.deaf && !game.u?.deaf) {
+            await plineWithContinuation('You hear a scream!');
         }
     }
 

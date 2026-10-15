@@ -1,4 +1,3 @@
-import { formatFeltMessage } from './hero_speech.js';
 import type { Monster } from './monster_types.js';
 import type { PlayingGameState } from './game_state.js';
 import type { RandomBelow } from './monster_action_types.js';
@@ -74,7 +73,7 @@ export async function summonMinion(alignment: number, talk = false): Promise<Mon
         const possessive = deity.endsWith('s') ? `${deity}'` : `${deity}'s`;
         await plineWithContinuation(
             heroIsDeaf(game)
-                ? formatFeltMessage(`${possessive} booming voice:`)
+                ? `You feel ${possessive} booming voice:`
                 : `The voice of ${deity} booms:`,
         );
         await plineWithContinuation('"Thou shalt pay for thine indiscretion!"');

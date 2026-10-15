@@ -1,7 +1,6 @@
 // C detect.c:trap_detect(), detect_obj_traps(), display_trap_map(), sense_trap().
 // The caller owns strange_feeling's naming prompt and source consumption.
 
-import { formatFeltMessage } from './hero_speech.js';
 import {
     D_TRAPPED, SDOOR, TER_DETECT, TER_MON, TER_OBJ, TER_TRP,
     TRAPPED_CHEST, TRAPPED_DOOR, isok,
@@ -87,7 +86,7 @@ async function displayTrapMap(cursed: boolean, state: PlayingGameState): Promise
             newsym(state.u.ux, state.u.uy);
             mode |= TER_MON;
         }
-        await pline(formatFeltMessage(`${cursed ? 'very greedy' : 'entrapped'}.`, state));
+        await pline(`You feel ${cursed ? 'very greedy' : 'entrapped'}.`);
         await browseDetectionMap(mode, cursed ? 'gold' : 'trap of interest', { objects, state });
     } finally { await redisplayDetectionMap(constraints, state); }
     return { result: 0, known: false, strangeFeeling: false };

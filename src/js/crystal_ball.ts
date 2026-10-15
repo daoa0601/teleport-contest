@@ -1,5 +1,4 @@
 // C detect.c:use_crystal_ball(), furniture_detect(), level_distance().
-import { formatSeenMessage } from './hero_speech.js';
 import type { GameObject } from './object_types.js';
 import type { DungeonLocation } from './dungeon_types.js';
 import {
@@ -89,7 +88,7 @@ export async function useCrystalBall(object: GameObject): Promise<GameObject | n
     else if (symbol === '^') missing = (await detectTraps(null)).result !== 0;
     else await distantVision();
     if (missing) await pline(rn2(100) === 0
-        ? formatSeenMessage('the Wizard of Yendor gazing out at you.') : 'The vision is unclear.');
+        ? 'You see the Wizard of Yendor gazing out at you.' : 'The vision is unclear.');
     return object;
 }
 
@@ -158,8 +157,8 @@ async function hallucinatedVision(): Promise<void> {
     case 1: await pline('You grok some groovy globs of incandescent lava.'); break;
     case 2: await pline(`Whoa!  Psychedelic colors, ${heroPolyGender() === 1 ? 'babe' : 'dude'}!`); break;
     case 3: await pline(`The crystal pulses with sinister ${displayColorName(null)} light!`); break;
-    case 4: await pline(formatSeenMessage('goldfish swimming above fluorescent rocks.')); break;
-    case 5: await pline(formatSeenMessage('tiny snowflakes spinning around a miniature farmhouse.')); break;
+    case 4: await pline('You see goldfish swimming above fluorescent rocks.'); break;
+    case 5: await pline('You see tiny snowflakes spinning around a miniature farmhouse.'); break;
     default: await pline('Oh wow... like a kaleidoscope!'); break;
     }
 }
@@ -174,7 +173,7 @@ async function distantVision(): Promise<void> {
     const destination = destinations[rn2(destinations.length)];
     if (!destination) throw new Error('Crystal-ball destination is outside its level list');
     if (!destination.level) throw new Error(`Crystal-ball destination ${destination.name} is not initialized`);
-    await pline(formatSeenMessage(`${destination.name}, ${levelDistance(destination.level)}.`));
+    await pline(`You see ${destination.name}, ${levelDistance(destination.level)}.`);
 }
 
 function levelDistance(destination: DungeonLocation): string {

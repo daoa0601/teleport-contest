@@ -1,6 +1,5 @@
 // Fire-trap effects on the hero and monsters.
 // C refs: trap.c dofiretrap() and trapeffect_fire_trap().
-import { formatSeenMessage } from './hero_speech.js';
 import { requireInitializedHero } from './hero_types.js';
 import { finishMonsterKilled } from './monster_death.js';
 import { AD_FIRE, AD_PHYS } from './monster_attack_types.js';
@@ -135,7 +134,7 @@ export async function finishMonsterFireTrap(monster, event, state = game, { publ
         await publish(`A tower of flame erupts from the ${surface} under ${perceivedMonsterName(monster, { state })}!`);
     }
     else if (event.seeSquare) {
-        await publish(formatSeenMessage(`a tower of flame erupt from the ${surface}!`, state));
+        await publish(`You see a tower of flame erupt from the ${surface}!`);
     }
     event.resisted = monsterHasFireResistance(monster);
     if (event.resisted) {

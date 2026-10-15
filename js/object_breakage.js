@@ -1,6 +1,5 @@
 // Object breakage and its immediate effects.
 // C refs: dothrow.c breaktest(), hero_breaks(), and breakobj().
-import { publishHeardMessage } from './hero_speech.js';
 import { ACID_VENOM, BLINDING_VENOM, BOULDER, CREAM_PIE, EGG, EXPENSIVE_CAMERA, CRYSTAL_BALL, LENSES, MELON, MIRROR, OBJECT_MATERIAL, OBJECT_NAMES, POT_OIL, POT_WATER, STATUE, } from './object_data.js';
 import { newsym, plineWithContinuation, } from './display.js';
 import { releaseCameraDemon } from './camera.js';
@@ -48,7 +47,7 @@ function objectName(object) {
         return potionImpactObjectName(object);
     return object.name || OBJECT_NAMES[object.otyp] || 'object';
 }
-async function publishBreakMessage(object, visible, publish, state) {
+async function publishBreakMessage(object, visible, audible, publish, state) {
     if ([EGG, MELON].includes(object.otyp)) {
         await publish('Splat!');
         return;
@@ -63,7 +62,8 @@ async function publishBreakMessage(object, visible, publish, state) {
         return;
     }
     if (!visible) {
-        await publishHeardMessage('something shatter!', publish, state);
+        if (audible)
+            await publish('You hear something shatter!');
         return;
     }
     const quantity = object.quan ?? object.quantity ?? 1;
@@ -168,7 +168,7 @@ export async function breakObjectAtLocation(object, { x = object.ox, y = object.
         return { destroyed, observed: destroyed && (visible || audible) };
     }
     if (showBreakMessage)
-        await publishBreakMessage(object, visible, publish, state);
+        await publishBreakMessage(object, visible, audible, publish, state);
     if (heroCaused && object.otyp === MIRROR) {
         state.u.uluck = Math.max(-13, Math.min(13, (state.u.uluck ?? 0) - 2));
     }

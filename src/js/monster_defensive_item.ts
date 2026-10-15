@@ -8,7 +8,7 @@ import {
 import { canSeeMonster, canSpotMonster, newsym, plineWithContinuation } from './display.js';
 import { levelAtDepth, levelIsWizardTower } from './dungeon.js';
 import { dist2, depth, ledgerNo } from './hacklib.js';
-import { formatHeardMessage, publishHeardMessage } from './hero_speech.js';
+import { formatHeardMessage } from './hero_speech.js';
 import { inventoryItemDescription } from './invent.js';
 import { artifactById } from './artifacts.js';
 import { randomTeleportDepth } from './level_teleport.js';
@@ -360,7 +360,7 @@ export async function useMonsterDefensiveItem(monster: Monster, choice: MonsterD
         if (cansee(x, y)) {
             await publish(`${subject()} has made a ${hole ? 'hole' : 'pit'} in the ${surfaceName(x, y, state)}.`);
             if (hole) await publish(`${subject()} ${(MONSTER_FLAGS1[monster.mnum] ?? 0) & 1 ? 'dives' : 'falls'} through...`);
-        } else if (hole && !heroIsDeaf(state)) await publishHeardMessage(`something crash through the ${surfaceName(x, y, state)}.`, publish, state);
+        } else if (hole && !heroIsDeaf(state)) await publish(`You hear something crash through the ${surfaceName(x, y, state)}.`);
         await fillPitWithBoulderAt(x, y, state, { publish });
         if (hole) await migrateMonsterOffLevel(monster, state, { dst: { dnum: state.u.uz.dnum, dlevel: state.u.uz.dlevel + 1 } });
         else {

@@ -1,7 +1,6 @@
 // Objects which fall through downward passages and arrive on another level.
 // C refs: dokick.c down_gate(), impact_drop(), ship_object(), obj_delivery(),
 // and teleport.c rloco().
-import { publishHeardMessage } from './hero_speech.js';
 import { IS_SOFT, MIGR_LADDER_UP, SHOPBASE, MIGR_NOBREAK, MIGR_NOSCATTER, MIGR_RANDOM, MIGR_SSTAIRS, MIGR_STAIRS_UP, MIGR_TO_SPECIES, MIGR_WITH_HERO, TRAPDOOR, is_hole, } from './const.js';
 import { newsym } from './display.js';
 import { placeObject, remove_object, stack_object, } from './floor_object.js';
@@ -25,7 +24,7 @@ import { relocateObjectRandomly } from './object_teleport.js';
 import { BOULDER, CORPSE, EGG, EXPENSIVE_CAMERA, MIRROR, OBJECT_MATERIAL, ROCK, } from './object_data.js';
 import { onQuestStart, okToQuest } from './quest.js';
 import { rn2, rnd } from './rng.js';
-import { heroIsBlind } from './senses.js';
+import { heroIsBlind, heroIsDeaf } from './senses.js';
 import { cansee } from './vision.js';
 const COIN_CLASS = 12;
 const GLASS = 19;
@@ -174,9 +173,11 @@ async function breaksInTransit(object, state, publish, random) {
         && object.corpsenm !== undefined && Number.isInteger(object.corpsenm) && object.corpsenm >= 0) {
         state.u.uluck = Math.max(-13, (state.u?.uluck ?? 0) - Math.min(quantity(object), 5));
     }
-    const crash = OBJECT_MATERIAL[object.otyp] === GLASS
-        || object.otyp === EXPENSIVE_CAMERA;
-    await publishHeardMessage(`a muffled ${crash ? 'crash' : 'splat'}.`, publish, state);
+    if (!heroIsDeaf(state)) {
+        const crash = OBJECT_MATERIAL[object.otyp] === GLASS
+            || object.otyp === EXPENSIVE_CAMERA;
+        await publish(`You hear a muffled ${crash ? 'crash' : 'splat'}.`);
+    }
     await deleteObject(object, state);
     return true;
 }
@@ -246,8 +247,8 @@ export async function impactDrop(missile, x, y, { state = requireInitializedGame
                 await publish(angry ? `${shopkeeperName(owner, { state, capitalized: true })} is infuriated!`
                     : `"${state.plname || 'player'}, you are a thief!"`);
             }
-            else
-                await publishHeardMessage('a scream, "Thief!"', publish, state);
+            else if (!heroIsDeaf(state))
+                await publish('You hear a scream, "Thief!"');
             hotPursuitShopkeeper(owner, state);
             await angerWatchGuards(false, { state, publish });
         }

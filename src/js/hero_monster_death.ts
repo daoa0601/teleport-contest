@@ -1,7 +1,6 @@
 // Hero-credited monster death.
 // C refs: mon.c xkilled(), corpse_chance(), and explode.c explode().
 
-import { formatFeltMessage, publishHeardMessage } from './hero_speech.js';
 import { adjustHeroAlignment } from './alignment.js';
 import { uncreateArtifact } from './artifacts.js';
 import { A_CHAOTIC, A_NONE, G_NOCORPSE, MGIVENNAME, is_pit } from './const.js';
@@ -367,7 +366,7 @@ export async function finishHeroMonsterKillOutcome(monster: Monster, x: number, 
         && Math.sign(game.u?.ualign?.type ?? 0)
             === Math.sign(MONSTER_ALIGNMENT[monster.mnum] ?? 0)) {
         game.u.uluck = (game.u.uluck || 0) - 5;
-        await plineWithContinuation(formatFeltMessage('guilty...'));
+        await plineWithContinuation('You feel guilty...');
     }
     const killCount = monsterDeathCount(monster.mnum);
     awardMonsterExperience(monster, {
@@ -386,9 +385,9 @@ export async function finishHeroMonsterKillOutcome(monster: Monster, x: number, 
         applyPriestKillConsequences(monster);
     } else if (monster.mtame) {
         adjustHeroAlignment(-15);
-        await publishHeardMessage(hallucinating
-            ? 'the studio audience applaud!'
-            : 'the rumble of distant thunder...', plineWithContinuation);
+        await plineWithContinuation(hallucinating
+            ? 'You hear the studio audience applaud!'
+            : 'You hear the rumble of distant thunder...');
     } else if (monster.mpeaceful) {
         adjustHeroAlignment(-5);
     }

@@ -2,7 +2,6 @@
 // C refs: dokick.c down_gate(), impact_drop(), ship_object(), obj_delivery(),
 // and teleport.c rloco().
 
-import { publishHeardMessage } from './hero_speech.js';
 import {
     IS_SOFT, MIGR_LADDER_UP, SHOPBASE,
     MIGR_NOBREAK, MIGR_NOSCATTER, MIGR_RANDOM, MIGR_SSTAIRS,
@@ -40,7 +39,7 @@ import {
 } from './object_data.js';
 import { onQuestStart, okToQuest } from './quest.js';
 import { rn2, rnd } from './rng.js';
-import { heroIsBlind } from './senses.js';
+import { heroIsBlind, heroIsDeaf } from './senses.js';
 import { cansee } from './vision.js';
 
 const COIN_CLASS = 12;
@@ -243,9 +242,11 @@ async function breaksInTransit(object: GameObject, state: PlayingGameState, publ
             (state.u?.uluck ?? 0) - Math.min(quantity(object), 5),
         );
     }
-    const crash = OBJECT_MATERIAL[object.otyp] === GLASS
-        || object.otyp === EXPENSIVE_CAMERA;
-    await publishHeardMessage(`a muffled ${crash ? 'crash' : 'splat'}.`, publish, state);
+    if (!heroIsDeaf(state)) {
+        const crash = OBJECT_MATERIAL[object.otyp] === GLASS
+            || object.otyp === EXPENSIVE_CAMERA;
+        await publish(`You hear a muffled ${crash ? 'crash' : 'splat'}.`);
+    }
     await deleteObject(object, state);
     return true;
 }
@@ -321,7 +322,7 @@ export async function impactDrop(
                 owner.eshk.customer ||= state.plname || 'player';
                 await publish(angry ? `${shopkeeperName(owner, { state, capitalized: true })} is infuriated!`
                     : `"${state.plname || 'player'}, you are a thief!"`);
-            } else await publishHeardMessage('a scream, "Thief!"', publish, state);
+            } else if (!heroIsDeaf(state)) await publish('You hear a scream, "Thief!"');
             hotPursuitShopkeeper(owner, state);
             await angerWatchGuards(false, { state, publish });
         } else if ((owner.eshk.debit ?? 0) > debit) {

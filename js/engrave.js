@@ -1,7 +1,6 @@
 // engrave.js — Shared engraving storage, wear, and reading.
 // C refs: engrave.c make_engr_at(), wipe_engr_at(), read_engr_at();
 //         hack.c maybe_smudge_engr().
-import { formatSeenMessage } from './hero_speech.js';
 import { game } from './gstate.js';
 import { exerciseWisdom } from './attrib.js';
 import { heroCanReachFloor } from './floor_reach.js';
@@ -246,7 +245,7 @@ function readingMessages(engraving, x, y) {
             break;
         case ENGR_BLOOD:
             if (!blind)
-                first = formatSeenMessage('a message scrawled in blood here.');
+                first = 'You see a message scrawled in blood here.';
             break;
         default:
             first = 'Something is written here in a very strange way.';

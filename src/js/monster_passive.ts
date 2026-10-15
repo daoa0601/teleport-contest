@@ -1,7 +1,6 @@
 // A monster's passive response when the hero or an object strikes it.
 // C ref: uhitm.c passive() and passive_obj().
 
-import { formatFeltMessage } from './hero_speech.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { makeStunned } from './hero_mental_status.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
@@ -390,7 +389,7 @@ async function applyColdPassive(context: PassiveContext): Promise<PassiveEffect>
     if (!monsterNearHero(monster, state)) return { heroDied: false };
     if (heroResists(state, 'coldResistance', MR_COLD)) {
         await shieldeff(state.u.ux, state.u.uy, state);
-        await publish(formatFeltMessage('a mild chill.', state));
+        await publish('You feel a mild chill.');
         monstersObserveHeroResistance(M_SEEN_COLD, state);
         await applyHeroGolemEffects(AD_COLD, damage, { state, publish });
         return { resisted: true, heroDied: false };
@@ -421,7 +420,7 @@ async function applyFirePassive({ monster, damage, state, publish, die }: Passiv
     if (!monsterNearHero(monster, state)) return { heroDied: false };
     if (heroResists(state, 'fireResistance', MR_FIRE)) {
         await shieldeff(state.u.ux, state.u.uy, state);
-        await publish(formatFeltMessage('mildly warm.', state));
+        await publish('You feel mildly warm.');
         monstersObserveHeroResistance(M_SEEN_FIRE, state);
         await applyHeroGolemEffects(AD_FIRE, damage, { state, publish });
         return { resisted: true, heroDied: false };
@@ -438,7 +437,7 @@ async function applyFirePassive({ monster, damage, state, publish, die }: Passiv
 async function applyElectricPassive({ monster, damage, state, publish, die }: PassiveContext): Promise<PassiveEffect> {
     if (heroResists(state, 'shockResistance', MR_ELEC)) {
         await shieldeff(state.u.ux, state.u.uy, state);
-        await publish(formatFeltMessage('a mild tingle.', state));
+        await publish('You feel a mild tingle.');
         monstersObserveHeroResistance(M_SEEN_ELEC, state);
         await applyHeroGolemEffects(AD_ELEC, damage, { state, publish });
         return { resisted: true, heroDied: false };

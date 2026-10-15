@@ -1,7 +1,6 @@
 // A physical blow can throw a much smaller opponent backward.
 // C uhitm.c:mhitm_knockback() and m_is_steadfast().
 
-import { formatFeltMessage } from './hero_speech.js';
 import { artifactById } from './artifacts.js';
 import {
     D_BROKEN, DISMOUNT_KNOCKED, DOOR, IS_POOL, Is_airlevel, Is_waterlevel,
@@ -187,7 +186,7 @@ export async function tryKnockback(attacker: PhysicalActor, defender: PhysicalAc
         const blow = random(2) ? 'blow' : 'strike';
         await publish(`${subject} ${heroAttacks ? 'knock' : 'knocks'} ${object} ${how} with a ${strength} ${blow}!`);
     } else if (heroAttacks && target) {
-        await publish(formatFeltMessage(`${monsterName(target, { state, augmentIt: true })} be knocked ${how}!`, state));
+        await publish(`You feel ${monsterName(target, { state, augmentIt: true })} be knocked ${how}!`);
     }
 
     if (heroAttacks || movingHero) state.u.ustuck = null;

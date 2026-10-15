@@ -1,6 +1,5 @@
 // Magic portals under the hero.
 // C ref: teleport.c domagicportal().
-import { formatFeltMessage } from './hero_speech.js';
 import { In_endgame } from './const.js';
 import { plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
@@ -27,7 +26,7 @@ export async function activateMagicPortal(trap, gotoLevel) {
     }
     await plineWithContinuation('You activated a magic portal!');
     if (In_endgame(game.u?.uz) && !game.u?.uhave?.amulet) {
-        await plineWithContinuation(formatFeltMessage('dizzy for a moment, but nothing happens...'));
+        await plineWithContinuation('You feel dizzy for a moment, but nothing happens...');
         return;
     }
     if (typeof gotoLevel !== 'function')

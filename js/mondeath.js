@@ -1,6 +1,5 @@
 // Monster death rules which can keep a monster alive.
 // C refs: mon.c mlifesaver(), lifesaved_monster(), mondead().
-import { formatSeenMessage, formatHeardMessage } from './hero_speech.js';
 import { heroIsUnaware } from './hero_sleep.js';
 import { A_WIS, DOOR, D_CLOSED, D_LOCKED, D_NODOOR, D_TRAPPED, G_GENOD, NON_PM, W_AMUL, } from './const.js';
 import { exerciseAttribute } from './attrib.js';
@@ -156,12 +155,13 @@ async function smashDoorUnderVampire(monster, x, y, { visible, spotted, unaware,
     }
     const trapped = !!((door.doormask ?? 0) & D_TRAPPED);
     let message = null;
-    if (!visible) {
-        message = formatHeardMessage(trapped
-            ? 'an explosion.' : 'a door being smashed.', state);
+    if (!visible && !(state.deaf || state.u?.deaf)) {
+        message = trapped
+            ? 'You hear an explosion.' : 'You hear a door being smashed.';
     }
     else if (visible && !spotted) {
-        message = formatSeenMessage(trapped ? 'a door exploding.' : 'a door being smashed.', state);
+        message = trapped
+            ? 'You see a door exploding.' : 'You see a door being smashed.';
     }
     else if (visible && spotted && !unaware) {
         message = trapped

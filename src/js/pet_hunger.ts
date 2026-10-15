@@ -1,5 +1,4 @@
 // C dogmove.c:dog_hunger() and dog_starve().
-import { formatFeltMessage } from './hero_speech.js';
 import { plineWithContinuation } from './display.js';
 import { finishEnvironmentalMonsterDeath } from './monster_death.js';
 import { MONSTER_FLAGS1 } from './monster_data.js';
@@ -45,7 +44,7 @@ export async function applyPetHunger(monster: Monster, state: GameState): Promis
         } else if (couldsee(monster.mx, monster.my)) {
             await begForFood(monster, state);
         } else {
-            await plineWithContinuation(formatFeltMessage(`worried about ${monsterName(monster, { state, article: 'your' })}.`, state));
+            await plineWithContinuation(`You feel worried about ${monsterName(monster, { state, article: 'your' })}.`);
         }
         await stopHeroOccupation(state);
         return false;
@@ -64,7 +63,7 @@ async function starvePet(monster: Monster, state: GameState): Promise<void> {
     } else if (cansee(monster.mx, monster.my)) {
         await plineWithContinuation(`${monsterName(monster, { state, capitalized: true })} starves.`);
     } else {
-        await plineWithContinuation(formatFeltMessage(`${heroIsHallucinating(state) ? 'bummed' : 'sad'} for a moment.`, state));
+        await plineWithContinuation(`You feel ${heroIsHallucinating(state) ? 'bummed' : 'sad'} for a moment.`);
     }
     await finishEnvironmentalMonsterDeath(monster, state);
 }

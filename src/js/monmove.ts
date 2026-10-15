@@ -1,4 +1,3 @@
-import { formatFeltMessage, publishHeardMessage } from './hero_speech.js';
 import { moveMonsterNextToHero } from './teleport.js';
 import { monsterFireDescription } from './monster_fire_description.js';
 import { bot } from './display.js';
@@ -783,30 +782,32 @@ function monsterSpellEffectPreview(
         effectMessage = resisted ? 'You stiffen briefly.' : 'You are frozen in place!';
     } else if (spell.key === 'confuse-you') {
         if (antimagic) {
-            effectMessage = formatFeltMessage('momentarily dizzy.', state);
+            effectMessage = 'You feel momentarily dizzy.';
         } else if (heroIsHallucinating(state)) {
             effectMessage =
-                formatFeltMessage((state?.u?.confusionTurns ?? 0) > 0 ? 'trippier!' : 'trippy!', state);
+                (state?.u?.confusionTurns ?? 0) > 0 ? 'You feel trippier!' : 'You feel trippy!';
         } else {
             effectMessage =
-                formatFeltMessage((state?.u?.confusionTurns ?? 0) > 0 ? 'more confused!' : 'confused!', state);
+                (state?.u?.confusionTurns ?? 0) > 0
+                    ? 'You feel more confused!'
+                    : 'You feel confused!';
         }
     } else if (spell.key === 'weaken-you') {
-        effectMessage = antimagic ? formatFeltMessage('momentarily weakened.', state) : 'You suddenly feel weaker!';
+        effectMessage = antimagic ? 'You feel momentarily weakened.' : 'You suddenly feel weaker!';
     } else if (spell.key === 'aggravation') {
-        effectMessage = formatFeltMessage('that monsters are aware of your presence.', state);
+        effectMessage = 'You feel that monsters are aware of your presence.';
     } else if (spell.key === 'stun-you') {
         const resisted = antimagic || heroHasFreeAction(state);
         const alreadyStunned = !!state?.u?.stunned || (state?.u?.stunnedTurns ?? 0) > 0;
         effectMessage = resisted
             ? alreadyStunned
                 ? null
-                : formatFeltMessage('momentarily disoriented.', state)
+                : 'You feel momentarily disoriented.'
             : alreadyStunned
               ? 'You struggle to keep your balance.'
               : 'You reel...';
     } else if (spell.key === 'curse-items') {
-        effectMessage = formatFeltMessage('as if you need some help.', state);
+        effectMessage = 'You feel as if you need some help.';
     } else if (spell.key === 'geyser') {
         effectMessage = 'A sudden geyser slams into you from nowhere!';
     } else if (spell.key === 'fire-pillar') {
@@ -2038,8 +2039,7 @@ async function watchOnDuty(
                         `${name} angrily waves ${monster.female ? 'her' : 'his'} arms!`,
                     );
             } else {
-                if (seen) await plineWithContinuation(`${name} yells:`);
-                else await publishHeardMessage('someone yell:', plineWithContinuation, state);
+                await plineWithContinuation(seen ? `${name} yells:` : 'You hear someone yell:');
                 await plineWithContinuation(
                     warned
                         ? '"Halt, thief!  You\'re under arrest!"'
@@ -3973,7 +3973,7 @@ export async function beginMonsterHeroAttack(
         } else if (appearsAdjacent) {
             await plineWithContinuation(canSpotMonster(monster)
                 ? `${canonicalMonsterName(monster, { state, capitalized: true })} starts to attack you, but pulls back.`
-                : formatFeltMessage('something move nearby.', state));
+                : 'You feel something move nearby.');
         }
         return {};
     }
@@ -7354,7 +7354,7 @@ export async function resumeDeferredMovementSpell(
             action.monster.mhp = Math.min(action.monster.mhpmax, action.monster.mhp + rollDice(3, 6));
         }
     } else if (spellCast.spell === 'aggravation') {
-        await publish(formatFeltMessage('that monsters are aware of your presence.', state));
+        await publish('You feel that monsters are aware of your presence.');
         aggravateMonsters(state, random);
     } else if (spellCast.spell === 'insects') {
         effect = await summonMonsterInsects(action.monster, state);

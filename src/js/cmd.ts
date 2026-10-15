@@ -1,4 +1,3 @@
-import { publishHeardMessage } from './hero_speech.js';
 import { autokey, autoUnlockFlags, continuePicking, pickLock } from './lock_pick.js';
 import { resetPick } from './lock_context.js';
 import { petRefusesHeroSwap } from './hero_pet_displacement.js';
@@ -7165,7 +7164,9 @@ async function pushBoulder(boulder: GameObject, x: number, y: number, dx: number
                 `There's ${withIndefiniteArticle(name)} on the other side.`,
             );
         } else {
-            await publishHeardMessage('a monster behind the boulder.', plineWithContinuation);
+            await plineWithContinuation(
+                'You hear a monster behind the boulder.',
+            );
             map_invisible(targetX, targetY);
         }
         if (game.flags?.verbose !== false) {

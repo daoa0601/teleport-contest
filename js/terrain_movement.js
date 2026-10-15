@@ -1,4 +1,3 @@
-import { formatFeltMessage } from './hero_speech.js';
 import { monsterHasMapPosition } from './monster_location.js';
 import { isPoolAt } from './terrain_properties.js';
 import { classifyStatusTerrain } from './status_terrain.js';
@@ -228,7 +227,7 @@ export async function floatHeroDown(hmask = 0, emask = 0, state = game, previous
             await plineWithContinuation('You begin to tumble in place.');
         }
         else if (Is_waterlevel(hero.uz) && !noMsg) {
-            await plineWithContinuation(formatFeltMessage('heavier.', state));
+            await plineWithContinuation('You feel heavier.');
             /* u.uinwater messages already in spoteffects()/drown() */
         }
         else if (!hero.uinwater && !noMsg && !(emask & W_SADDLE)) {

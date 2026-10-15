@@ -1,7 +1,6 @@
 // potion_hit.js — Shared potion impact, direct effect, and vapor ownership.
 // C refs: potion.c bottlename(), potionhit(), potionbreathe().
 
-import { formatFeltMessage } from './hero_speech.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
@@ -627,7 +626,7 @@ async function applyPotionVaporEffect({
     } else if (CONFUSION_POTION_TYPES.has(potion.otyp)) {
         const hero = state.u;
         if ((hero.confusionTurns ?? 0) <= 0)
-            await publish(formatFeltMessage('somewhat dizzy.', state));
+            await publish('You feel somewhat dizzy.');
         confusionDuration = rnd(5);
         await makeConfused((hero.confusionTurns ?? 0) + confusionDuration, {
             state, talk: false, publish,
@@ -650,7 +649,7 @@ async function applyPotionVaporEffect({
         } else {
             await publish(potion.otyp === POT_PARALYSIS
                 ? 'Something seems to be holding you.'
-                : formatFeltMessage('rather tired.', state));
+                : 'You feel rather tired.');
             helplessDuration = rnd(5);
             await installPotionHelplessness(
                 state,

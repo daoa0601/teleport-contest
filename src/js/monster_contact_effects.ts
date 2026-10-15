@@ -1,6 +1,5 @@
 // C uhitm.c:mhitm_ad_were(), mhitm_ad_slee(), mhitm_ad_poly(), and mhitm_ad_tlpt().
 // These effects resume after hitmsg(); polymorph negation precedes hitmsg().
-import { formatFeltMessage, publishHeardMessage } from './hero_speech.js';
 import { artifactById } from './artifacts.js';
 import { heroHasFreeAction } from './armor.js';
 import { exerciseAttribute } from './attrib.js';
@@ -145,8 +144,8 @@ async function curseHero(
     if (monster.mnum === MONSTER_NAME.indexOf('gremlin') && !sessionIsNight(state.datetime)) return;
     if (monster.mcan || random(10) !== 0) return;
     if (!heroIsDeaf(state)) {
-        if (heroIsBlind(state)) await publishHeardMessage('laughter.', publish, state);
-        else await publish(`${monsterName(monster, { state, capitalized: true })} chuckles.`);
+        await publish(heroIsBlind(state) ? 'You hear laughter.'
+            : `${monsterName(monster, { state, capitalized: true })} chuckles.`);
     }
     if (state.u.umonnum === MONSTER_NAME.indexOf('clay golem')) {
         await publish('Some writing vanishes from your head!');
@@ -271,10 +270,10 @@ async function polymorphHeroOnContact(
             await publish('You are subjected to a freakish metamorphosis.');
             await polymorphHero();
         } else if (state.u.umonnum !== state.u.ulycn) {
-            await publish(formatFeltMessage('an unnatural urge coming on.', state));
+            await publish('You feel an unnatural urge coming on.');
             await applyHeroWereChange({ state, publish });
         } else {
-            await publish(formatFeltMessage('a natural urge coming on.', state));
+            await publish('You feel a natural urge coming on.');
             await revertHeroWereForm({ state, publish });
         }
     }

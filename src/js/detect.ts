@@ -1,4 +1,3 @@
-import { formatFeltMessage } from './hero_speech.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
@@ -313,7 +312,7 @@ async function findHiddenMonster(monster: Monster, viaWarning: boolean): Promise
     exerciseWisdom();
     if (!canSpotMonster(monster)) {
         map_invisible(monster.mx, monster.my);
-        await plineWithContinuation(formatFeltMessage('an unseen monster!'));
+        await plineWithContinuation('You feel an unseen monster!');
     } else if (!canSenseMonster(monster)) {
         await plineWithContinuation(`You find ${monsterName(monster, {
             article: monster.mtame ? 'your' : 'a',
@@ -515,7 +514,7 @@ export async function findit() {
     if (!total) await plineWithContinuation("You don't find anything.");
     else if (found.clearedUnseen && total === found.clearedUnseen) {
         await plineWithContinuation(
-            formatFeltMessage(`${found.keptUnseen ? 'somewhat ' : ''}less paranoid.`),
+            `You feel ${found.keptUnseen ? 'somewhat ' : ''}less paranoid.`,
         );
     }
     return total;

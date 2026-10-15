@@ -1,7 +1,6 @@
 // end.js — End-of-game disclosure and terminal presentation.
 // C refs: end.c disclose()/really_done(), insight.c, dungeon.c.
 
-import { formatFeltMessage } from './hero_speech.js';
 import { PARANOID_DIE, PARANOID_QUIT, PLNMSG_OK_DONT_DIE } from './const.js';
 import { PanicTermination } from './panic_termination.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
@@ -247,7 +246,7 @@ export async function finishHeroDeath({
         identifyLifeSavingAmulet();
         await plineWithContinuation(`Your medallion ${heroIsBlind() ? 'feels warm' : 'begins to glow'}!`);
         if (deathType === CHOKING) await plineWithContinuation('You vomit ...');
-        await plineWithContinuation(formatFeltMessage('much better!'));
+        await plineWithContinuation('You feel much better!');
         await plineWithContinuation('The medallion crumbles to dust!');
         await completeHeroLifeSaving({ amulet }, { deathType });
         if (game.program_state.gameover) return true;

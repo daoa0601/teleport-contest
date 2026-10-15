@@ -1,7 +1,6 @@
 // Expulsion from an engulfing monster, including the hero's landing.
 // C refs: mhitu.c expels(), mon.c unstuck(), mnexto().
 
-import { formatFeltMessage } from './hero_speech.js';
 import { game, requireLiveGame } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
@@ -96,7 +95,7 @@ export async function releaseHold(state: GameState = game): Promise<{ died?: boo
     }
     if (state.u.uswallow) {
         if (monsterDigests(monster)) await plineWithContinuation(heroIsBlind(state)
-            ? formatFeltMessage('a sudden rush of air!', state)
+            ? 'You feel a sudden rush of air!'
             : `${monsterName(monster, { state, capitalized: true })} opens its mouth!`);
         return await expelHero(monster, { state });
     }

@@ -1,6 +1,5 @@
 // Hero nutrition, hunger transitions, and meal fullness.
 // C refs: eat.c:gethungry(), newuhs(), morehungry(), lesshungry(), choke().
-import { formatFeltMessage } from './hero_speech.js';
 import { objectMaterial } from './object_material.js';
 import { heroIsUnaware } from './hero_sleep.js';
 import { game, requirePlayingGame, requireInitializedGame } from './gstate.js';
@@ -98,7 +97,7 @@ export async function chokeHeroOnFood(food, { state = game } = {}) {
     if (hero.uhs === SATIATED && state.urole?.key === 'knight'
         && hero.ualign.type === A_LAWFUL) {
         adjustHeroAlignment(-1, state);
-        await plineWithContinuation(formatFeltMessage('like a glutton!', state));
+        await plineWithContinuation('You feel like a glutton!');
     }
     await exerciseAttribute(A_CON, false, state);
     if (heroIsBreathless(state) || hero.hunger

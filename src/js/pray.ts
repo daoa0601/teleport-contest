@@ -1,7 +1,6 @@
 // Prayer decisions and the three-turn prayer occupation.
 // C pray.c:can_pray(), dopray(), prayer_done(), and pleased().
 
-import { formatFeltMessage } from './hero_speech.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { game, requireInitializedGame, requirePlayingGame } from './gstate.js';
 import { displayColorName, flushPendingTopline, plineWithContinuation as pline } from './display.js';
@@ -44,7 +43,7 @@ export async function altarWrath(x: number, y: number, state: GameState = game) 
     if (heroAlignment === altarAlignment && alignmentRecord > -rn2(4)) {
         await godVoice(altarAlignment, 'How darest thou desecrate my altar!', state);
         const change = adjustAttribute(A_WIS, -1, state);
-        const message = attributeChangeMessage(A_WIS, change, state);
+        const message = attributeChangeMessage(A_WIS, change);
         if (message) await pline(message);
         state.u.ualign.record = alignmentRecord - 1;
         return;
@@ -164,7 +163,7 @@ export async function finishPrayerOccupation(state: GameState = game) {
         } else if (outcome === 'undead') {
             await godVoice(alignment, alignment === 1
                 ? 'Vile creature, thou durst call upon me?' : 'Walk no more, perversion of nature!');
-            await pline(formatFeltMessage('like you are falling apart.', state));
+            await pline('You feel like you are falling apart.');
             await returnHeroToHumanForm(state);
             if (!state.program_state.gameover)
                 await loseHeroHp(rnd(20), 'residual undead turning effect', { state });
@@ -214,7 +213,7 @@ async function pleaseGod(alignment: number) {
     const mood = hero.ualign.record >= 14 ? (hallucinating ? 'pleased as punch' : 'well-pleased')
         : hero.ualign.record >= STRIDENT ? (hallucinating ? 'ticklish' : 'pleased')
             : hallucinating ? 'full' : 'satisfied';
-    await pline(formatFeltMessage(`that ${deityName(alignment)} is ${mood}.`));
+    await pline(`You feel that ${deityName(alignment)} is ${mood}.`);
     if (currentAltar() && game._prayerAlignment !== hero.ualign.type) {
         adjustHeroAlignment(-1);
         return;

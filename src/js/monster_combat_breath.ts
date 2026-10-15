@@ -1,5 +1,4 @@
 // C mthrowu.c:breamm(), with a monster target.
-import { publishHeardMessage } from './hero_speech.js';
 import { breatheFromMonster, breathWeaponName } from './breath_ray.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { M_ATTK_HIT, M_ATTK_MISS } from './const.js';
@@ -40,9 +39,9 @@ export async function resolveMonsterCombatBreath(
         return { nativeResult: M_ATTK_HIT, heroDied: false };
     if (source.mcan) {
         if (!heroIsDeaf(state)) {
-            if (canSeeMonster(source))
-                await publish(`${monsterName(source, { state, capitalized: true })} coughs.`);
-            else await publishHeardMessage('a cough.', publish, state);
+            await publish(canSeeMonster(source)
+                ? `${monsterName(source, { state, capitalized: true })} coughs.`
+                : 'You hear a cough.');
         }
         return { nativeResult: M_ATTK_MISS, heroDied: false };
     }

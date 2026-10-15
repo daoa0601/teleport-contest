@@ -6,7 +6,7 @@ import { A_INT, A_STR, A_WIS, P_CLERIC_SPELL, P_ISRESTRICTED, P_UNSKILLED, } fro
 import { plineWithContinuation } from './display.js';
 import { game, requireLiveGame } from './gstate.js';
 import { makeConfused, makeStunned } from './hero_mental_status.js';
-import { heroCanChant, formatFeltMessage } from './hero_speech.js';
+import { heroCanChant } from './hero_speech.js';
 import { spendHeroNutrition } from './hunger.js';
 import { OBJECT_NAMES, OBJECT_SPELL_CATEGORY, OBJECT_SPELL_LEVEL, OBJECT_SUBTYPE, OBJECT_WEIGHT, QUARTERSTAFF, ROBE, SMALL_SHIELD, SPE_CURE_BLINDNESS, SPE_CURE_SICKNESS, SPE_DETECT_FOOD, SPE_EXTRA_HEALING, SPE_HEALING, SPE_REMOVE_CURSE, SPE_RESTORE_ABILITY, } from './object_data.js';
 import { objectMaterial } from './object_material.js';
@@ -55,7 +55,7 @@ export async function checkSpellCast(spell, { state = game } = {}) {
     }
     const amuletDrains = hero.uhave.amulet && hero.uen >= energy;
     if (amuletDrains) {
-        await plineWithContinuation(formatFeltMessage('the amulet draining your energy away.', state));
+        await plineWithContinuation('You feel the amulet draining your energy away.');
         hero.uen = Math.max(0, hero.uen - rnd(2 * energy));
         state.context.botl = true;
     }

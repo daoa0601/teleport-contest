@@ -1,6 +1,5 @@
 // attrib.js — Effective hero attributes and exercise state.
 // C refs: attrib.c acurr(), acurrstr(), and exercise().
-import { formatFeltMessage } from './hero_speech.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { artifactById } from './artifacts.js';
 import { plineWithContinuation } from './display.js';
@@ -137,7 +136,7 @@ export async function gainHeroStrength(object = null, amount = 0, { state = game
     const change = adjustAttribute(A_STR, object?.cursed ? -amount : amount, state);
     if (change.changed) {
         if (giveMessage) {
-            const message = attributeChangeMessage(A_STR, change, state);
+            const message = attributeChangeMessage(A_STR, change);
             if (message)
                 await plineWithContinuation(message);
         }
@@ -193,7 +192,7 @@ export async function loseHeroStrength(amount, killer, { state = game, random = 
     }
     return false;
 }
-export function attributeChangeMessage(attribute, result, state = game) {
+export function attributeChangeMessage(attribute, result) {
     requireAttributeIndex(attribute);
     if (!result || result.fixed)
         return null;
@@ -209,7 +208,7 @@ export function attributeChangeMessage(attribute, result, state = game) {
         return `You're already as ${word} as you can get.`;
     }
     const emphasis = Math.abs(result.amount) > 1 ? 'very ' : '';
-    return formatFeltMessage(`${emphasis}${word}!`, state);
+    return `You feel ${emphasis}${word}!`;
 }
 export async function exerciseAttribute(attribute, improving, state = game) {
     if (!accumulateAttributeExercise(attribute, improving, state))
@@ -282,7 +281,7 @@ export async function checkAttributeExercise(sourceTurn, state = game) {
                 const change = adjustAttribute(attribute, direction, state);
                 if (change.changed) {
                     accumulated = 0;
-                    const message = attributeChangeMessage(attribute, change, state);
+                    const message = attributeChangeMessage(attribute, change);
                     if (message)
                         await plineWithContinuation(message);
                     if (state._moveloopStarted && (attribute === A_STR || attribute === A_CON))
