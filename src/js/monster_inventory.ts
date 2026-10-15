@@ -92,6 +92,8 @@ export function clearMonsterCarriedObjectState(
 function prepareMonsterPickup(
     monster: Monster, object: GameObject, state: GameState,
 ): boolean {
+    if (state._thrownObject === object) state._thrownObject = null;
+    else if (state._kickedObject === object) state._kickedObject = null;
     if (!monster.mtame) {
         if (object.how_lost === LOST_THROWN) object.how_lost = LOST_STOLEN;
         else if (object.how_lost === LOST_DROPPED) object.how_lost = LOST_NONE;

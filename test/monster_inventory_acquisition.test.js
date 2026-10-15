@@ -22,6 +22,19 @@ import { createMonsterAt, createSaddledSteed, equipMonsterObject } from './suppo
 import { freshObjectRoom } from './support/object-room.js';
 import { corpseObject, floorObject, knownObject } from './support/game-objects.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
+for (const flight of ['_thrownObject', '_kickedObject']) {
+    void test(`monster pickup releases the ${flight === '_thrownObject' ? 'thrown' : 'kicked'} object from flight`, async () => {
+        freshObjectRoom();
+        requirePlayingGame(game);
+        const monster = await createMonsterAt('soldier', 11, 10, NO_MINVENT);
+        const dagger = await knownObject(DAGGER);
+        game[flight] = dagger;
+        await addObjectToMonsterInventory(monster, dagger, game);
+        assert.ok(game[flight] === null, 'The flight can no longer place a monster-owned object');
+        assert.equal(dagger.where, 'minvent');
+        assert.ok(monster.minvent.includes(dagger));
+    });
+}
 void test('a pet returns a fetched item but keeps its worn saddle', async () => {
     freshObjectRoom();
     requirePlayingGame(game);

@@ -60,6 +60,10 @@ export function clearMonsterCarriedObjectState(object, state = game) {
     delete object.carrierMid;
 }
 function prepareMonsterPickup(monster, object, state) {
+    if (state._thrownObject === object)
+        state._thrownObject = null;
+    else if (state._kickedObject === object)
+        state._kickedObject = null;
     if (!monster.mtame) {
         if (object.how_lost === LOST_THROWN)
             object.how_lost = LOST_STOLEN;
