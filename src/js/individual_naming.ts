@@ -31,12 +31,9 @@ export async function nameIndividualObject(object: GameObject): Promise<void> {
     }
     observeObjectForNaming(object);
     const prefix = `What do you want to name ${objectNameIsPlural(object) ? 'these' : 'this'} `;
-    let description = objectName(object);
-    if (object.quan !== 1) description = pluralizeObjectNoun(object, description);
-    if (prefix.length + description.length + 1 >= QBUFSZ)
-        description = simpleObjectName(object);
-    if (prefix.length + description.length + 1 >= QBUFSZ) description = 'item';
-    const name = await playerName(`${prefix}${description}?`);
+    const suffix = '?';
+    const description = individualNamingDescription(object, QBUFSZ - 1 - prefix.length - suffix.length);
+    const name = await playerName(`${prefix}${description}${suffix}`);
     if (name === null) return;
     if (object.oartifact) {
         await pline(`${object.oextra?.oname || object.oname || 'The artifact'} resists the attempt.`);
@@ -82,6 +79,51 @@ export async function nameIndividualObject(object: GameObject): Promise<void> {
     const bareName = artifact.name.replace(/^the /i, '');
     recordGameLogEvent(first ? `became literate by naming ${bareName}`
         : `chose ${simpleObjectNameWithArticle(object)} to be named "${bareName}"`);
+}
+
+// C safe_qbuf()/short_oname(xname, simpleonames): keep as much of each
+// existing name as fits, without changing the names the player can edit.
+function individualNamingDescription(object: GameObject, limit: number): string {
+    const describe = (item: GameObject, state = game): string => {
+        const name = objectName(item, state);
+        return item.quan === 1 ? name : pluralizeObjectNoun(item, name);
+    };
+    let name = describe(object);
+    if (name.length <= limit) return name;
+
+    const callName = game._objectCallNames?.[object.otyp];
+    const personalName = object.oextra?.oname || object.oname;
+    const shortCallState = callName && callName.length >= 12
+        ? { ...game, _objectCallNames: {
+            ...game._objectCallNames, [object.otyp]: `${callName.slice(0, 8)}...`,
+        } } : game;
+    const shortNamedObject = personalName && personalName.length >= 12
+        ? { ...object, oextra: { ...object.oextra, oname: `${personalName.slice(0, 8)}...` } }
+        : object;
+    if (shortCallState !== game) {
+        name = describe(object, shortCallState);
+        if (name.length <= limit) return name;
+    }
+    if (shortNamedObject !== object) {
+        name = describe(shortNamedObject);
+        if (name.length <= limit) return name;
+    }
+    const shortenBoth = shortCallState !== game && shortNamedObject !== object;
+    if (shortenBoth) {
+        name = describe(shortNamedObject, shortCallState);
+        if (name.length <= limit) return name;
+    }
+
+    // Only the combined attempt leaves both names abbreviated when native
+    // removes attributes. Erosion aliases share the cleared C fields.
+    const state = shortenBoth ? shortCallState : game;
+    const plainObject = { ...(shortenBoth ? shortNamedObject : object),
+        bknown: game.urole?.key === 'priest', rknown: false, greased: false,
+        oeroded: 0, oeroded2: 0, orotten: false, odiluted: false, norevive: false,
+    };
+    name = describe(plainObject, state);
+    if (name.length > limit) name = simpleObjectName(plainObject, state);
+    return name.length <= limit ? name : 'item';
 }
 
 // Empty input cancels; spaces erase a name after normalization.

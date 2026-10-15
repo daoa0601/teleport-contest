@@ -4,7 +4,8 @@ import { artifactByName, nameArtifact } from '../js/artifacts.js';
 import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
 import { queueCommandKeys, resetInputState } from '../js/input.js';
-import { ARROW, ELVEN_DAGGER, LONG_SWORD, SPE_NOVEL } from '../js/object_data.js';
+import { ARROW, ELVEN_DAGGER, LONG_SWORD, RIN_PROTECTION, SPE_FORCE_BOLT, SPE_NOVEL } from '../js/object_data.js';
+import { recordObjectCall } from '../js/object_knowledge.js';
 import { setPrimaryWeapon, setSecondaryWeapon, setTwoWeaponCombat } from '../js/weapon_slots.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -26,6 +27,54 @@ void test('an individual naming prompt pluralizes a stack before its existing in
     assert.equal(arrows.quan, 4);
     assert.equal(game.context.move, 0);
 });
+const longCallName = 'A patient reminder about the magic hiding inside this treasure';
+const longInscription = 'A memory of our long journey beneath the mountain with friends';
+for (const { title, type, callName, description } of [
+    {
+        title: 'shortens the call name before the inscription',
+        type: RIN_PROTECTION,
+        callName: longCallName,
+        description: `ring called A patien... named ${longInscription}`,
+    },
+    {
+        title: 'shortens just the inscription when shortening the call name is insufficient',
+        type: SPE_FORCE_BOLT,
+        callName: 'Remember to identify this book before relying on its magic',
+        description: 'spellbook called Remember to identify this book before relying on its magic named A memory...',
+    },
+    {
+        title: 'shortens both names when neither shortened name alone fits',
+        type: SPE_FORCE_BOLT,
+        callName: longCallName,
+        description: 'spellbook called A patien... named A memory...',
+    },
+]) {
+    void test(`an individual naming prompt ${title}`, async (t) => {
+        freshObjectRoom();
+        const object = await addInventoryObject(type, {
+            invlet: 'a', typeKnown: false, oextra: { oname: longInscription },
+        });
+        recordObjectCall(type, callName);
+        const input = resetInputState();
+        input.feed('name\r');
+        queueCommandKeys('ia');
+        const previousDisplay = input.display;
+        let prompted = false;
+        input.display = {
+            async readKey() {
+                assert.equal(game._pending_message, `What do you want to name this ${description}?`);
+                prompted = true;
+                return 27;
+            },
+        };
+        t.after(() => { input.display = previousDisplay; });
+        await rhack('#'.charCodeAt(0));
+        assert.equal(prompted, true, 'The naming command must ask for an inscription');
+        assert.equal(object.oextra?.oname, longInscription);
+        assert.equal(game._objectCallNames?.[type], callName);
+        assert.equal(game.context.move, 0);
+    });
+}
 void test('naming a wielded elven dagger Sting creates its artifact and warning', async () => {
     freshObjectRoom();
     const dagger = await addInventoryObject(ELVEN_DAGGER, { invlet: 'a' });
