@@ -35,7 +35,8 @@ import {
     scheduleObjectTimer, stopAllObjectTimers,
 } from '../js/object_timers.js';
 import { initRng } from '../js/rng.js';
-import { pushKeys } from '../js/input.js';
+import { pushKeys, resetInputState } from '../js/input.js';
+import { installPagerInput } from './support/pager-input.js';
 import { freshTurnRoom } from './support/playable-room.js';
 import { floorObjects, floorObjectsAt } from './support/level-state.js';
 import { createMonsterAt, createSaddledSteed, equipMonsterObject } from './support/monsters.js';
@@ -512,6 +513,7 @@ async function beginBullwhipDisarm(
     monster: Monster, target: GameObject, whereTo: number,
 ): Promise<MonsterMovementAction> {
     requirePlayingGame(game);
+    installPagerInput(resetInputState(), { expected: /whip|wielding|yanks|snatches/, limit: 6 });
     const turn = await takeMonsterTurn(monster, game,
         range => range === 4 ? whereTo : 0,
         (count, sides) => count * sides,

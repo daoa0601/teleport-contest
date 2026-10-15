@@ -3162,36 +3162,9 @@ async function executeMonsterTurns() {
             }
         }
         if (movement?.usedMisc?.kind === 'bullwhip-disarm') {
-            const misc = movement.usedMisc;
-            const targetType = misc.target?.otyp;
-            const targetName = (targetType !== undefined ? OBJECT_NAMES[targetType] : null)
-                || misc.target?.name || 'weapon';
-            const targetWithArticle = `the ${targetName}`;
-            const hand = targetType !== undefined && OBJECT_BIMANUAL[targetType]
-                ? 'hands' : 'hand';
-            if (actorWasOpticallySeen) {
-                await plineWithContinuation(`${visibleMonsterSubject(monster)} flicks a bullwhip towards your ${hand}!`);
-            }
-            const whip = actorWasOpticallySeen ? 'The bullwhip' : 'A whip';
-            await plineWithContinuation(`${whip} wraps around ${targetWithArticle} you're wielding!`);
             await finishDeferredMonsterMiscItem(action, game);
-            newsym(monster.mx, monster.my);
-            newsym(game.u.ux, game.u.uy);
-            if (misc.whereTo === 0) {
-                await plineWithContinuation('The whip slips free.');
-            }
-            else {
-                const subject = canSpotMonster(monster) ? visibleMonsterSubject(monster) : 'It';
-                if (misc.whereTo === 1) {
-                    await plineWithContinuation(`${subject} yanks ${targetWithArticle} from your ${hand}!`);
-                }
-                else if (misc.whereTo === 2) {
-                    await plineWithContinuation(`${subject} yanks ${targetWithArticle} to the floor!`);
-                }
-                else {
-                    await plineWithContinuation(`${subject} snatches ${targetWithArticle}!`);
-                }
-            }
+            if (game.program_state.gameover)
+                return false;
         }
         if (movement?.usedMisc?.kind === 'potion-speed' || movement?.usedMisc?.kind === 'wand-speed-monster') {
             const misc = movement.usedMisc;

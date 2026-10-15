@@ -345,10 +345,8 @@ import {
     remove_object,
     stack_object,
 } from './floor_object.js';
-import { unlinkObject } from './object_location.js';
-import { removeWornHeroItem } from './hero_equipment.js';
-import { canLetGo, finishInventoryRemoval } from './hero_inventory.js';
-import { dropObjectAtHero } from './object_drop.js';
+import { canLetGo } from './hero_inventory.js';
+import { useMonsterBullwhip } from './monster_bullwhip.js';
 import { canFallThrough, makemonNear, maketrap, mksobj, summonNastyMonsters } from './mklev.js';
 import { decideMonsterShapeChange } from './monster_polymorph.js';
 import { isZombieMaker, zombieForm } from './corpse_species.js';
@@ -456,10 +454,9 @@ import { stashLeprechaunGold } from './leprechaun_stash.js';
 import { MONSTER_SOUND } from './monster_data.js';
 import { MONSTER_DIFFICULTY } from './monster_data.js';
 import { depth } from './hacklib.js';
-import { objectMaterial } from './object_material.js';
 import { artifactById } from './artifacts.js';
 import { resolveMonsterWeaponContact } from './monster_weapon_contact.js';
-import { monsterHatesBlessings, monsterHatesSilver } from './monster_data.js';
+import { monsterHatesBlessings } from './monster_data.js';
 import { canHeroRiseUp, levelAtDepth } from './dungeon.js';
 import { LEVEL_TELEP } from './const.js';
 import { teleportMonsterThroughPortal, teleportMonsterToRandomLevel } from './teleport.js';
@@ -1071,7 +1068,7 @@ async function useMonsterMiscItem(
     if (selected.kind === 'bullwhip-disarm') {
         // use_misc() chooses the destination before any two-weapon target
         // selection.  Removal itself follows the urgent wrap message.
-        let whereTo = recordRandom(random, calls, 4);
+        const whereTo = recordRandom(random, calls, 4);
         let target: GameObject | null = selected.heroWeapon;
         if (
             !await heroCanReleaseWeapon(target, state) ||
@@ -1081,12 +1078,10 @@ async function useMonsterMiscItem(
         ) {
             target = selected.heroSwapWeapon;
         }
-        if (whereTo === 3 && target && monsterHatesSilver(monster) && objectMaterial(target, state) === 14)
-            whereTo = 2;
         return {
             ...selected,
             target,
-            whereTo: target && !willWeld(target) ? whereTo : 0,
+            whereTo,
             deferredEffect: true,
         };
     }
@@ -1098,18 +1093,6 @@ async function useMonsterMiscItem(
         kind: wand ? 'wand-speed-monster' : 'potion-speed',
         deferredEffect: true,
     };
-}
-
-function placeDisarmedHeroWeapon(
-    state: PlayingGameState,
-    object: GameObject,
-    x: number,
-    y: number,
-) {
-    // Disarm runs inside the attacking monster's turn (mon_moving), so the
-    // hero-controlled crysknife prohibition cannot apply; the synchronous
-    // placement still performs the reversion iteration.
-    placeObjectSynchronously(object, x, y, state);
 }
 
 export function monsterGainLevelRiseDestination(monster: Monster, state: PlayingGameState): DungeonLocation | null {
@@ -1196,26 +1179,7 @@ export async function finishDeferredMonsterMiscItem(
 
     if (misc.kind === 'bullwhip-disarm') {
         const target = misc.target;
-        if (!target || misc.whereTo === 0) {
-            misc.whereTo = 0;
-            misc.effectApplied = true;
-            return misc;
-        }
-        await removeWornHeroItem(target, state);
-        if (state.program_state.gameover) return misc;
-        unlinkObject(target, state);
-        await finishInventoryRemoval(target, state);
-        if (state.program_state.gameover) return misc;
-        if (misc.whereTo === 3) {
-            // muse.c:use_misc(MUSE_BULLWHIP)->mpickobj().  The disarmed
-            // identity is free of hero equipment state before the monster
-            // applies carrying effects and links it into minvent.
-            await addObjectToMonsterInventory(monster, target, state);
-        } else if (misc.whereTo === 1) {
-            placeDisarmedHeroWeapon(state, target, monster.mx, monster.my);
-        } else {
-            await dropObjectAtHero(target, { state });
-        }
+        if (target) await useMonsterBullwhip(monster, target, misc.whereTo ?? 0, state);
         misc.effectApplied = true;
     }
     return misc;
