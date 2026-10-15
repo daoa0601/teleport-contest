@@ -47,7 +47,8 @@ import { setMonsterMalign } from './monster_alignment.js';
 import { removeMonsterFromGame } from './monster_departure.js';
 import { monsterName, monsterPossessive, monsterSubjectPronoun } from './monster_name.js';
 import { monsterWieldedWeapon, wieldMonsterWeapon } from './monster_weapon.js';
-import { BOULDER, GOLD_PIECE, OBJECT_NAMES } from './object_data.js';
+import { BOULDER, GOLD_PIECE } from './object_data.js';
+import { simpleObjectTypeName } from './objnam.js';
 import { fractureRock } from './rock_breakage.js';
 import { rn2 } from './rng.js';
 import { formatSeenMessage, publishHeardMessage } from './hero_speech.js';
@@ -56,6 +57,7 @@ import { roomForRoomno, roomsAt } from './room.js';
 
 const PM_GUARD = 272;
 const VAULT_GUARD_TIME = 30;
+const STRANGE_OBJECT = 0;
 
 // C vault.c:vault_summon_gd(). The next world turn owns guard arrival.
 export function summonVaultGuardSoon(state: GameState = game) {
@@ -208,8 +210,12 @@ export async function continueVaultGuardArrival(state: GameState = game) {
         return true;
     }
     if (M_AP_TYPE(state.u) === M_AP_OBJECT || state.u.uundetected) {
-        if (!deaf && M_AP_TYPE(state.u) === M_AP_OBJECT && state.u.mappearance !== GOLD_PIECE)
-            await plineWithContinuation(`"Hey!  Who left that ${OBJECT_NAMES[state.u.mappearance ?? 0] ?? 'object'} in here?"`);
+        if (!deaf && M_AP_TYPE(state.u) === M_AP_OBJECT && state.u.mappearance !== GOLD_PIECE) {
+            const appearance = state.u.mappearance ?? STRANGE_OBJECT;
+            const disguise = appearance === STRANGE_OBJECT
+                ? 'whatcha-may-callit' : simpleObjectTypeName(appearance, state);
+            await plineWithContinuation(`"Hey!  Who left that ${disguise} in here?"`);
+        }
         await plineWithContinuation(`Puzzled, ${monsterSubjectPronoun(guard, { state })} turns around and leaves.`);
         await removeMonsterFromGame(guard);
         return true;

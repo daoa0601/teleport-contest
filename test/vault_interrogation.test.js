@@ -1,9 +1,12 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { moveloop_core } from '../js/allmain.js';
 import { CORR, DOOR, ROOMOFFSET, SHARED, VAULT, VWALL } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { continueVaultGuardArrival, maintainVaultResidence } from '../js/vault.js';
+import { runMonsterAbilityCommand } from './support/commands.js';
+import { installPolymorphedHero } from './support/hero-state.js';
 import { answerPrompts } from './support/input-boundaries.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createRoom } from './support/topology.js';
@@ -20,6 +23,26 @@ function arrivingGuard() {
     assert.equal(maintainVaultResidence(), true);
     return level;
 }
+void test('a guard calls a hiding mimic a whatcha-may-callit and leaves the vault closed', async () => {
+    const level = arrivingGuard();
+    installPolymorphedHero('small mimic');
+    await runMonsterAbilityCommand();
+    game._moveloopStarted = true;
+    game.u.umovement = 12;
+    const messages = [];
+    const input = resetInputState();
+    input.beforeRead = () => {
+        const message = game.nhDisplay?.grid.slice(0, 3)
+            .map(row => row.map(cell => cell.ch).join('')).join('') ?? '';
+        messages.push(message);
+        input.feed(message.includes('--More--') ? ' ' : '.');
+    };
+    await moveloop_core();
+    messages.push(game._pending_message);
+    assert.match(messages.join('\n'), /"Hey!  Who left that whatcha-may-callit in here\?"/);
+    assert.equal(level.monsters.some(monster => monster.isgd), false);
+    assert.equal(level.requireAt(11, 10).typ, VWALL);
+});
 for (const name of ['Croesus', 'Kroisos', 'Creosote']) {
     void test(`a vault guard leaves an unopened wall when the hero claims to be ${name}`, async () => {
         const level = arrivingGuard();
