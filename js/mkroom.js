@@ -121,7 +121,7 @@ export function somexy(room, coordinate, state = game) {
             continue;
         if ((room.sbrooms || []).some(subroom => insideRoom(state.level, subroom, coordinate.x, coordinate.y)))
             continue;
-        return true;
+        return attempts < 100;
     }
     return false;
 }

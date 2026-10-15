@@ -139,7 +139,7 @@ export function somexy(room: Room, coordinate: Position, state: GameState = game
             insideRoom(
                 state.level, subroom, coordinate.x, coordinate.y,
             ))) continue;
-        return true;
+        return attempts < 100;
     }
     return false;
 }
