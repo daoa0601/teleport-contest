@@ -447,7 +447,7 @@ export async function climbOutOfPit() {
     if (hero.dz || game.flags?.verbose !== false) {
         if (hero.usteed) {
             await repeatableTrapMessage(`${monsterName(hero.usteed, {
-                article: 'your', capitalized: true,
+                article: 'your', capitalized: true, suppressSaddle: true,
             })} is still in a pit.`);
             return;
         }
