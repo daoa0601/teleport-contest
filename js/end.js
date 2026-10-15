@@ -39,7 +39,7 @@ import { heroGoldAmount } from './hero_gold.js';
 import { doneObjectCleanup } from './object_cleanup.js';
 import { restoreHeroNutrition } from './hunger.js';
 import { A_CON, A_WIS, ACH_BLND, ACH_NUDE, ACH_UWIN, ASCENDED, BURNING, CHOKING, DIED, ESCAPED, G_EXTINCT, G_GENOD, GENOCIDED, PANICKED, QUIT, STARVING, STONING, TRICKED, In_endgame, In_quest, Is_astralevel, KILLED_BY, KILLED_BY_AN, NO_KILLER_PREFIX, PICK_ONE, TT_LAVA, Upolyd, } from './const.js';
-import { AMULET_OF_LIFE_SAVING, AMULET_OF_YENDOR, BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION, JADE, OBJECT_COST, OBJECT_NAMES, SPE_BOOK_OF_THE_DEAD, } from './object_data.js';
+import { AMULET_OF_LIFE_SAVING, BELL_OF_OPENING, FAKE_AMULET_OF_YENDOR, CANDELABRUM_OF_INVOCATION, JADE, OBJECT_COST, OBJECT_NAMES, SPE_BOOK_OF_THE_DEAD, } from './object_data.js';
 import { createBonesFromDeath } from './bones_death.js';
 import { canMakeBones } from './bones_admission.js';
 import { restoreLaunchedObjectForBones } from './rolling_boulder.js';
@@ -724,6 +724,17 @@ function scoreDeathCause(cause, deathType) {
             ? `${cleanCause}, while helpless` : cleanCause;
 }
 function currentScoreRecord(summary, { outcome = 'died', killer = '', deathVerb = 'died', deathCause = null, deathType = null, } = {}) {
+    let cause = deathCause || (outcome === 'quit' ? 'quit'
+        : deathCauseRecord(killer, deathVerb));
+    if (game.u.uhave?.amulet) {
+        cause += ' (with the Amulet)';
+    }
+    else if (outcome === 'escaped') {
+        if (Is_astralevel(game.u.uz))
+            cause += ' (in celestial disgrace)';
+        else if (game.inventory.some(object => object.otyp === FAKE_AMULET_OF_YENDOR))
+            cause += ' (with a fake Amulet)';
+    }
     return {
         points: summary.score,
         deathdnum: game.u?.uz?.dnum ?? 0,
@@ -734,8 +745,7 @@ function currentScoreRecord(summary, { outcome = 'died', killer = '', deathVerb 
         ...scoreIdentity(),
         dungeon: currentDungeonName(),
         outcome,
-        death: outcome === 'quit' ? 'quit'
-            : scoreDeathCause(deathCause || deathCauseRecord(killer, deathVerb), deathType),
+        death: scoreDeathCause(cause, deathType),
     };
 }
 function updateScoreRecord(current) {
@@ -1388,9 +1398,8 @@ export async function finishLivingGame(outcome) {
         names.push("Schroedinger's cat");
     }
     game.u.urexp = summary.score;
-    const disgrace = outcome === 'escaped' && Is_astralevel(game.u.uz);
     const current = currentScoreRecord(summary, {
-        outcome, deathCause: outcome + (disgrace ? ' (in celestial disgrace)' : ''),
+        outcome, deathCause: outcome,
     });
     if (showSummary) {
         const title = outcome === 'ascended'

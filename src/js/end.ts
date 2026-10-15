@@ -52,7 +52,7 @@ import {
     In_endgame, In_quest, Is_astralevel, KILLED_BY, KILLED_BY_AN, NO_KILLER_PREFIX, PICK_ONE, TT_LAVA, Upolyd,
 } from './const.js';
 import {
-    AMULET_OF_LIFE_SAVING, AMULET_OF_YENDOR, BELL_OF_OPENING,
+    AMULET_OF_LIFE_SAVING, BELL_OF_OPENING, FAKE_AMULET_OF_YENDOR,
     CANDELABRUM_OF_INVOCATION, JADE, OBJECT_COST, OBJECT_NAMES,
     SPE_BOOK_OF_THE_DEAD,
 } from './object_data.js';
@@ -858,6 +858,15 @@ function scoreDeathCause(cause: string, deathType: number | null): string {
 function currentScoreRecord(summary: GameSummary, {
     outcome = 'died', killer = '', deathVerb = 'died', deathCause = null, deathType = null,
 }: ScoreOptions = {}): ScoreRecord {
+    let cause = deathCause || (outcome === 'quit' ? 'quit'
+        : deathCauseRecord(killer, deathVerb));
+    if (game.u.uhave?.amulet) {
+        cause += ' (with the Amulet)';
+    } else if (outcome === 'escaped') {
+        if (Is_astralevel(game.u.uz)) cause += ' (in celestial disgrace)';
+        else if (game.inventory.some(object => object.otyp === FAKE_AMULET_OF_YENDOR))
+            cause += ' (with a fake Amulet)';
+    }
     return {
         points: summary.score,
         deathdnum: game.u?.uz?.dnum ?? 0,
@@ -868,8 +877,7 @@ function currentScoreRecord(summary: GameSummary, {
         ...scoreIdentity(),
         dungeon: currentDungeonName(),
         outcome,
-        death: outcome === 'quit' ? 'quit'
-            : scoreDeathCause(deathCause || deathCauseRecord(killer, deathVerb), deathType),
+        death: scoreDeathCause(cause, deathType),
     };
 }
 
@@ -1535,9 +1543,8 @@ export async function finishLivingGame(outcome: LivingOutcome) {
         names.push("Schroedinger's cat");
     }
     game.u.urexp = summary.score;
-    const disgrace = outcome === 'escaped' && Is_astralevel(game.u.uz);
     const current = currentScoreRecord(summary, {
-        outcome, deathCause: outcome + (disgrace ? ' (in celestial disgrace)' : ''),
+        outcome, deathCause: outcome,
     });
     if (showSummary) {
         const title = outcome === 'ascended'
