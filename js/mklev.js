@@ -1797,13 +1797,6 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
         peaceful = true;
     }
     let monsterSleeping = initialMonsterSleepState(mndx, !!(mmflags & MM_ASLEEP));
-    if (game.in_mklev
-        && (mndx === PM_GIANT_EEL || mndx === PM_WUMPUS
-            || mndx === PM_LONG_WORM
-            || (isNeutralDemon && !isQuestNemesis))
-        && !game.u?.uhave?.amulet && rn2(5)) {
-        monsterSleeping = 1;
-    }
     // C links the primary actor before group construction.  Reserve its
     // creation-order slot now so enexto() sees the occupied center and the
     // final JS array retains primary-then-members order.
@@ -1918,6 +1911,13 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
         fixedItem = POT_SICKNESS;
     if (allowMonsterInventory && fixedItem)
         await mongets(fixedItem);
+    if (game.in_mklev
+        && (isNeutralDemon || mndx === PM_GIANT_EEL
+            || mndx === PM_WUMPUS || mndx === PM_LONG_WORM)
+        && !game.u?.uhave?.amulet && rn2(5)) {
+        monsterSleeping = 1;
+        pendingMonster.msleeping = 1;
+    }
     // makemon.c owns this initialization when its original requested
     // coordinate was the hero's occupied square.  enexto() has already moved
     // the actor, so preserve that caller fact separately from final x/y.
@@ -1971,6 +1971,9 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
         pendingMonster.emin = { min_align: minAlign, renegade };
         pendingMonster.mpeaceful = roamingMinion.mpeaceful;
     }
+    // Native creation finishes attitude and kill credit before group members
+    // can announce their arrival and wait for the player's input.
+    setMonsterMalign(pendingMonster);
     if (mdat == null && !(mmflags & MM_NOGRP)) {
         const geno = MONSTER_GENO[mndx] || 0;
         if ((geno & G_SGROUP) && rn2(2)) {
@@ -2051,12 +2054,6 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
         }
         await giveOffensiveMonsterItem();
     };
-    if (isQuestNemesis) {
-        if (game.in_mklev && isNeutralDemon
-            && !game.u?.uhave?.amulet && rn2(5)) {
-            monsterSleeping = 1;
-        }
-    }
     // C m_initweap() and m_initinv() both return on Rogue levels. Fixed
     // possessions from makemon() above and its saddle probe below are separate.
     if (!initializeMonsterEquipment) {
@@ -2745,7 +2742,7 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
         msleeping: monsterSleeping,
         mpeaceful: pendingMonster.mpeaceful,
         mavenge: pendingMonster.mavenge ?? 0,
-        malign: 0,
+        malign: pendingMonster.malign,
         mcanmove: 1, mcansee: 1,
         mgenmklev: !!game.in_mklev,
         seen_resistance: 0,
@@ -2829,9 +2826,6 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
     if (mndx === PM_SHOPKEEPER) {
         monster.mpeaceful = 1;
     }
-    // makemon.c:set_malign() records the finalized birth attitude, before
-    // later changes to the hero's alignment can affect kill credit.
-    setMonsterMalign(monster);
     if (generatedGhostName != null)
         setMonsterGivenName(monster, generatedGhostName);
     registerQuestLeader(monster);

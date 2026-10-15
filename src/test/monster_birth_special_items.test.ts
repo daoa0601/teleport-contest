@@ -46,4 +46,3 @@ void test('NO_MINVENT suppresses fixed Wizard equipment while still counting the
     assert.equal(second.minvent.some(item => item.otyp === SPE_DIG), false);
     assert.equal(game.context.no_of_wizards, 2);
 });
-
