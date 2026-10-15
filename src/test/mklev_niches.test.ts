@@ -2,8 +2,9 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import type { TestContext } from 'node:test';
 
-import { LEVEL_TELEP, SCORR, TRAPDOOR } from '../js/const.js';
+import { LEVEL_TELEP, SCORR, TELEP_TRAP, TRAPDOOR, VAULT } from '../js/const.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
+import { isRoom } from '../js/map_types.js';
 import { mklev } from '../js/mklev.js';
 import { initRng } from '../js/rng.js';
 import { roomBindings } from './support/themed-room-bindings.js';
@@ -64,5 +65,19 @@ void test('no-teleport levels do not receive level-teleport niches', async t => 
         assert.ok(!requireGameLevel().traps.some(trap => trap.ttyp === LEVEL_TELEP),
             `a no-teleport level must reject level-teleport niches (seed ${seed})`);
     }
+});
+
+void test('vaults on no-teleport levels do not receive teleport niches', async t => {
+    await ordinaryRooms(t, 12, 1, true);
+    let vaults = 0;
+    for (let seed = 1; seed <= 24; seed++) {
+        initRng(seed);
+        await mklev();
+        const level = requireGameLevel();
+        vaults += level.rooms.filter(room => isRoom(room) && room.rtype === VAULT).length;
+        assert.ok(!level.traps.some(trap => trap.ttyp === TELEP_TRAP),
+            `a no-teleport vault must not create a teleport niche (seed ${seed})`);
+    }
+    assert.ok(vaults > 0, 'the generated levels must exercise vault placement');
 });
 

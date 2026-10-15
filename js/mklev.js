@@ -8013,7 +8013,7 @@ async function makelevel() {
     let roomThreshold = branchp ? 4 : 3;
     await makecorridors();
     await make_niches();
-    // Vault creation (simplified for contest)
+    // Restore the reserved vault after corridors and niches are complete.
     if (g.vault_x !== undefined && g.vault_x !== -1) {
         if (g.vault_y === undefined)
             throw new Error('Vault reservation has no y coordinate.');
@@ -8029,7 +8029,7 @@ async function makelevel() {
                 await fillVault(vaultRoom);
             }
             await maybePlaceKnoxPortal(vx.v + vw.v, vy.v + vh.v);
-            if (!rn2(3))
+            if (!level.flags.noteleport && !rn2(3))
                 await makeniche(TELEP_TRAP);
         };
         if (check_room(vx, vw, vy, vh, true)) {
