@@ -588,7 +588,7 @@ export async function polymonHero(mnum: number, options: PolymonOptions = {}) {
     if (!Number.isInteger(mnum) || mnum < 0 || mnum >= MONSTER_NAME.length)
         throw new RangeError(`Invalid polymorph species: ${mnum}`);
     if ((game.mvitals?.[mnum]?.mvflags ?? 0) & G_GENOD) {
-        await plineWithContinuation(`You feel rather ${MONSTER_NAME[mnum]}-ish.`);
+        await plineWithContinuation(`You feel rather ${monsterTypeName(mnum, game.flags.female)}-ish.`);
         await exerciseAttribute(A_WIS, true);
         return { transformed: false };
     }
