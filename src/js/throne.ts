@@ -5,7 +5,7 @@
 import { formatFeltMessage } from './hero_speech.js';
 import { makeConfused } from './hero_mental_status.js';
 import { makeBlinded } from './sight_change.js';
-import { heroIsHallucinating } from './senses.js';
+import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { heroHasHalfSpellDamage } from './spell_damage.js';
 import {
     A_CON, A_MAX, ROOM,
@@ -29,7 +29,8 @@ import type { GameObject } from './object_types.js';
 
 export type ThroneOptions = Pick<HeroHurtleOptions, 'gotoLevel' | 'chooseTeleportDestination'>;
 import { dropCursedSecondaryWeapon } from './two_weapon.js';
-import { heroHasEyes } from './body_parts.js';
+import { heroEyeCount, heroEyeName, heroHeadName } from './body_parts.js';
+import { makePlural, verbForSubject } from './object_grammar.js';
 import { loseHeroHp } from './hero_damage.js';
 import { cureHeroSickness } from './hero_illness.js';
 import { healHeroLegs } from './hero_legs.js';
@@ -151,14 +152,16 @@ async function summonCourt(x: number, y: number): Promise<void> {
 
 async function grantSeeInvisible() {
     const hero = game.u;
-    if (!game.blind) {
+    if (!heroIsBlind()) {
         await plineWithContinuation('Your vision becomes clear.');
-    } else if (heroHasEyes(game)) {
-        await plineWithContinuation('Your eyes tingle...');
     } else {
-        await plineWithContinuation(
-            'You have a very strange feeling in your head.',
-        );
+        const count = heroEyeCount();
+        if (count) {
+            const eyes = count === 1 ? heroEyeName() : makePlural(heroEyeName());
+            await plineWithContinuation(`Your ${eyes} ${verbForSubject(eyes, 'tingle')}...`);
+        } else {
+            await plineWithContinuation(`You have a very strange feeling in your ${heroHeadName()}.`);
+        }
     }
     grantIntrinsicProperty('seeInvisible', 'outside', game);
     newsym(hero.ux, hero.uy);
