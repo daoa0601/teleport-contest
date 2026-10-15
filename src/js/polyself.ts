@@ -31,7 +31,7 @@ import {
 } from './exper.js';
 import { recordGameLogEvent } from './gamelog.js';
 import { withIndefiniteArticle } from './object_grammar.js';
-import { reportHeroEncumbrance } from './attrib.js';
+import { currentAttribute, reportHeroEncumbrance } from './attrib.js';
 import {
     MONSTER_ATTACKS, MONSTER_FLAGS1,
     MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME,
@@ -983,7 +983,7 @@ function newmanHpIncrement(level: number) {
         hp = (role[fixedKey] || 0) + (race[fixedKey] || 0);
         if ((role[randomKey] || 0) > 0) hp += rnd(role[randomKey]);
         if ((race[randomKey] || 0) > 0) hp += rnd(race[randomKey]);
-        hp += constitutionHpBonus(game.u?.acurr?.a?.[A_CON] || 0);
+        hp += constitutionHpBonus(currentAttribute(A_CON));
     }
     hp = Math.max(1, hp);
     if (level < MAXULEV) game.u.uhpinc[level] = hp;
@@ -1026,7 +1026,7 @@ function newmanPowerIncrement(level: number) {
         const lower = level < (game.urole?.xlev ?? 10);
         const fixedKey = lower ? 'lofix' : 'hifix';
         const randomKey = lower ? 'lornd' : 'hirnd';
-        const range = Math.trunc((game.u?.acurr?.a?.[A_WIS] || 0) / 2)
+        const range = Math.trunc(currentAttribute(A_WIS) / 2)
             + (role[randomKey] || 0) + (race[randomKey] || 0);
         const fixed = (role[fixedKey] || 0) + (race[fixedKey] || 0);
         power = energyModifier(rn2(range) + fixed);
@@ -1194,7 +1194,7 @@ export async function polymorphHero(flags = POLY_NOFLAGS) {
 
     if (!heroHasPolymorphControl(game) && !forced
         && dragon === null && !lycanthrope && !vampire
-        && rn2(20) > hero.acurr.a[A_CON]) {
+        && rn2(20) > currentAttribute(A_CON)) {
         await plineWithContinuation('You shudder for a moment.');
         const died = await loseHeroHp(rnd(30), 'system shock');
         if (!died) await exerciseAttribute(A_CON, false);
