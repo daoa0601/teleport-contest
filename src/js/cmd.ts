@@ -6122,7 +6122,10 @@ async function applyTool(
             return item;
         }
         const direction = await promptDirection();
-        if (!direction) return item;
+        if (!direction) {
+            game.context.move = 0;
+            return item;
+        }
         game._pending_message = '';
         const result = await useBullwhip(item, direction, {
             state: game,

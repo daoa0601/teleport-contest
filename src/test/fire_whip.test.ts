@@ -25,3 +25,19 @@ void test('fire applies a wielded bullwhip when autoquiver is disabled', async (
     assert.equal(game.uquiver, null);
     assert.equal(game.context.move, 1);
 });
+
+void test('cancelling fire with a wielded bullwhip after a timed command takes no time', async () => {
+    freshObjectRoom({ flags: { autoquiver: false } });
+    const whip = await addInventoryObject(BULLWHIP);
+    await setPrimaryWeapon(whip);
+    await rhack('.'.charCodeAt(0));
+    assert.equal(game.context.move, 1);
+    const input = resetInputState();
+
+    await answerPrompts(rhack('f'.charCodeAt(0)), input, [
+        { prompt: /In what direction\?/, keys: '\x1b' },
+    ]);
+
+    assert.equal(game.context.move, 0);
+    assert.equal(game.uwep, whip);
+});
