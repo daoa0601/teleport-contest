@@ -38,5 +38,6 @@ void test('entering a restored special subroom updates the room linked from its 
     await checkSpecialRoom();
 
     assert.equal(hive.rtype, OROOM, 'the parent must see that its beehive has been entered');
+    assert.equal(hive.orig_rtype, BEEHIVE, 'entering a subroom must preserve its original type');
     assert.ok(game.level.subrooms?.includes(hive), 'the parent and level must share the same subroom');
 });

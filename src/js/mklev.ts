@@ -10937,7 +10937,7 @@ async function level_finalize_topology(): Promise<void> {
             if (isRoom(room)) topologize(room);
     }
     setWallState();
-    for (const room of level.rooms) {
+    for (const room of [...level.rooms, ...(level.subrooms ?? [])]) {
         if (isRoom(room)) room.orig_rtype = room.rtype;
     }
 }
