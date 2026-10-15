@@ -4,11 +4,28 @@ import { artifactByName, nameArtifact } from '../js/artifacts.js';
 import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
 import { queueCommandKeys, resetInputState } from '../js/input.js';
-import { ELVEN_DAGGER, LONG_SWORD, SPE_NOVEL } from '../js/object_data.js';
+import { ARROW, ELVEN_DAGGER, LONG_SWORD, SPE_NOVEL } from '../js/object_data.js';
 import { setPrimaryWeapon, setSecondaryWeapon, setTwoWeaponCombat } from '../js/weapon_slots.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { planInput } from './support/planned-input.js';
+void test('an individual naming prompt pluralizes a stack before its existing inscription', async (t) => {
+    freshObjectRoom();
+    const arrows = await addInventoryObject(ARROW, {
+        invlet: 'a', quan: 4, oextra: { oname: 'First Flight' },
+    });
+    const input = resetInputState();
+    input.feed('name\r');
+    queueCommandKeys('ia');
+    planInput(input, t, [{
+            prompt: /What do you want to name these arrows named First Flight\?/,
+            keys: 'Fletching\r',
+        }]);
+    await rhack('#'.charCodeAt(0));
+    assert.equal(arrows.oextra?.oname, 'Fletching');
+    assert.equal(arrows.quan, 4);
+    assert.equal(game.context.move, 0);
+});
 void test('naming a wielded elven dagger Sting creates its artifact and warning', async () => {
     freshObjectRoom();
     const dagger = await addInventoryObject(ELVEN_DAGGER, { invlet: 'a' });

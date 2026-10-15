@@ -8,7 +8,7 @@ import { recordGameLogEvent } from './gamelog.js';
 import { game } from './gstate.js';
 import { CLOAK_OF_DISPLACEMENT, CLOAK_OF_PROTECTION, HELMET, LEATHER_GLOVES, LEVITATION_BOOTS, OBJECT_BASES, OBJECT_DESCRIPTIONS, OBJECT_MAGIC, OBJECT_NAMES, OBJECT_UNIQUE, POT_WATER, SPEED_BOOTS, SPE_NOVEL, } from './object_data.js';
 import { objectClassForType } from './object_knowledge.js';
-import { objectName, objectNameIsPlural, observeObjectForNaming, simpleObjectName, simpleObjectNameWithArticle, } from './objnam.js';
+import { objectName, objectNameIsPlural, observeObjectForNaming, pluralizeObjectNoun, simpleObjectName, simpleObjectNameWithArticle, } from './objnam.js';
 import { getLine } from './query.js';
 import { rn2Display } from './rng.js';
 import { objectOwnershipPrefix, objectTypeKnown, updateUnpaidObjectPrice } from './shk.js';
@@ -21,6 +21,8 @@ export async function nameIndividualObject(object) {
     observeObjectForNaming(object);
     const prefix = `What do you want to name ${objectNameIsPlural(object) ? 'these' : 'this'} `;
     let description = objectName(object);
+    if (object.quan !== 1)
+        description = pluralizeObjectNoun(object, description);
     if (prefix.length + description.length + 1 >= QBUFSZ)
         description = simpleObjectName(object);
     if (prefix.length + description.length + 1 >= QBUFSZ)

@@ -15,7 +15,7 @@ import {
 } from './object_data.js';
 import { objectClassForType } from './object_knowledge.js';
 import {
-    objectName, objectNameIsPlural, observeObjectForNaming,
+    objectName, objectNameIsPlural, observeObjectForNaming, pluralizeObjectNoun,
     simpleObjectName, simpleObjectNameWithArticle,
 } from './objnam.js';
 import { getLine } from './query.js';
@@ -32,6 +32,7 @@ export async function nameIndividualObject(object: GameObject): Promise<void> {
     observeObjectForNaming(object);
     const prefix = `What do you want to name ${objectNameIsPlural(object) ? 'these' : 'this'} `;
     let description = objectName(object);
+    if (object.quan !== 1) description = pluralizeObjectNoun(object, description);
     if (prefix.length + description.length + 1 >= QBUFSZ)
         description = simpleObjectName(object);
     if (prefix.length + description.length + 1 >= QBUFSZ) description = 'item';
