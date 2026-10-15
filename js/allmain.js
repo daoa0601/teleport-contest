@@ -2134,7 +2134,8 @@ async function resolveDeferredHeroDeathTouch(action, heroAttack, publish) {
         action.calls.push(`d(${count},${sides})`);
         return d(count, sides);
     });
-    monstersForgetHeroResistance(M_SEEN_MAGR, game);
+    if (!heroAttack.heroDied)
+        monstersForgetHeroResistance(M_SEEN_MAGR, game);
     heroAttack.deferredDeathTouch = false;
 }
 async function resolveDeferredHeroDestroyArmor(heroAttack) {
@@ -2395,6 +2396,8 @@ async function presentMonsterAttackEffects(action, game, { random = rn2, rollDic
                     const effectDismissal = effectMessage
                         ? await publishSpellMessage(effectMessage)
                         : null;
+                    if (heroAttack.spell === 'confuse-you' && !game.u.antimagic)
+                        monstersForgetHeroResistance(M_SEEN_MAGR, game);
                     if (heroAttack.deferredSpellEffect) {
                         if (heroAttack.spell === 'blind-you') {
                             heroAttack.deferredSpellEffect = false;

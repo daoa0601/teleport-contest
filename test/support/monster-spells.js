@@ -20,13 +20,16 @@ export async function prepareSpellCaster(species, level) {
     caster.mstrategy = 0;
     return caster;
 }
-export async function finishSpellTurn(seed) {
+export async function finishSpellTurn(seed, observeInput) {
     game._moveloopStarted = true;
     game.u.umovement = 12;
     initRng(BigInt(seed));
     const input = resetInputState();
     const messages = [];
-    input.beforeRead = () => { messages.push(game._pending_message); };
+    input.beforeRead = () => {
+        messages.push(game._pending_message);
+        observeInput?.();
+    };
     installPagerInput(input, { expected: /^/, limit: 80 });
     const pager = input.display;
     assert.ok(pager);

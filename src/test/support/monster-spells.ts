@@ -22,13 +22,16 @@ export async function prepareSpellCaster(species: string, level: number) {
     return caster;
 }
 
-export async function finishSpellTurn(seed: number): Promise<string> {
+export async function finishSpellTurn(seed: number, observeInput?: () => void): Promise<string> {
     game._moveloopStarted = true;
     game.u.umovement = 12;
     initRng(BigInt(seed));
     const input = resetInputState();
     const messages: string[] = [];
-    input.beforeRead = () => { messages.push(game._pending_message); };
+    input.beforeRead = () => {
+        messages.push(game._pending_message);
+        observeInput?.();
+    };
     installPagerInput(input, { expected: /^/, limit: 80 });
     const pager = input.display;
     assert.ok(pager);

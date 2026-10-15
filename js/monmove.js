@@ -5706,7 +5706,6 @@ export function resumeDeferredHeroSpell(action, state, random = rn2, rollOne = r
             if (!state.u.confusionTurns && duration)
                 state.context.botl = true;
             state.u.confusionTurns = (state.u.confusionTurns ?? 0) + duration;
-            monstersForgetHeroResistance(M_SEEN_MAGR, state);
         }
         attack.appliedDamage = 0;
         attack.confusedHero = !antimagic;

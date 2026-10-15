@@ -54,3 +54,25 @@ for (const [species, level, feedback] of [
         assert.ok(cast, `A caster should produce ${feedback.source}`);
     });
 }
+
+void test('a cleric forgets magic protection after its confusion feedback is acknowledged', async () => {
+    let observedPager = false;
+    for (let seed = 1; seed <= 32 && !observedPager; seed++) {
+        const caster = await prepareSpellCaster('high cleric', 4);
+        caster.female = true;
+        caster.minvis = 1;
+        caster.seen_resistance = M_SEEN_MAGR;
+        game.u.seeInvisible = true;
+
+        await finishSpellTurn(seed, () => {
+            if ((game.u.confusionTurns ?? 0) > 0 && game._pending_message.includes('casts a spell')) {
+                assert.ok((caster.seen_resistance ?? 0) & M_SEEN_MAGR,
+                    'The effect already confuses the hero while the caster still awaits its feedback');
+                observedPager = true;
+            }
+        });
+
+        if (observedPager) assert.equal((caster.seen_resistance ?? 0) & M_SEEN_MAGR, 0);
+    }
+    assert.ok(observedPager, 'The confusion feedback should page the long casting announcement');
+});
