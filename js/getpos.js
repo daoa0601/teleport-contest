@@ -625,12 +625,9 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
             }
             const target = getposCycleKind(key);
             if (target) {
-                // GLOC_VALID falls through to GLOC_INTERESTING when no
-                // caller has installed a validity predicate.
-                const kind = target.kind === 'valid' && !isValidLocation
-                    ? 'all' : target.kind;
+                const kind = target.kind;
                 const gatherTargets = () => gatherValidLocations((x, y) => (x !== game.u.ux || y !== game.u.uy)
-                    && (kind === 'valid' ? isValidLocation?.(x, y) ?? false
+                    && (kind === 'valid' ? isValidLocation?.(x, y) ?? matchesGetposCycle('all', x, y)
                         : matchesGetposCycle(kind, x, y)));
                 if (game.iflags.getloc_usemenu) {
                     // getpos_menu gathers each time; a doorway's area
@@ -649,7 +646,7 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
                     message = await movementMessage();
                     continue;
                 }
-                let cycle = kind === 'valid' ? validLocations() : targetCycles.get(kind);
+                let cycle = kind === 'valid' && isValidLocation ? validLocations() : targetCycles.get(kind);
                 if (!cycle) {
                     cycle = {
                         spots: [{ x: game.u.ux, y: game.u.uy }, ...gatherTargets()], index: 0,
