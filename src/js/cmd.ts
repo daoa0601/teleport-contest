@@ -4144,10 +4144,7 @@ async function dipFountain(object: DipTarget, loc: MapLocation) {
     } else if (fate === 25) {
         await gushForthFromFountain();
     } else if (fate === 28) {
-        await moreUntilDismissed(
-            'An urge to take a bath overwhelms you.',
-        );
-        game._pending_message = '';
+        await plineWithContinuation('An urge to take a bath overwhelms you.');
 
         const wallet = heroGoldAmount(game);
         if (wallet > 10) {
