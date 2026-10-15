@@ -193,7 +193,8 @@ import { findNearbyMonsterPosition, goodPosition, monsterTeleportRestricted, rep
 import { burnArmorByFire, monsterTrapVisibility, seeTrap } from './trap.js';
 import { publishMonsterWake } from './monster_wake.js';
 import { wereChange, setHeroLycanthropy } from './were.js';
-import { aggravateMonsters, angerMonster, angerWatchGuards } from './monster_anger.js';
+import { aggravateMonsters, angerMonster, angerWatchGuards, publishMonsterWhimper } from './monster_anger.js';
+import { xdir, ydir } from './const.js';
 import { stopHeroOccupation } from './occupation.js';
 import { rileShopkeeper, shopkeeperRepairsDamage } from './shop_damage.js';
 import { diggingTimeToHole } from './hero_digging.js';
@@ -2284,7 +2285,8 @@ export function maxPassiveMonsterDamage(defender, aggressor) {
     return 0;
 }
 async function finishPetMovePlan(monster, state, plan, random, rollDice, rollOne, calls) {
-    const { oldx, oldy, nix, niy, selectedInfo, reluctant, inventoryAction } = plan;
+    const { oldx, oldy, selectedInfo, reluctant, inventoryAction } = plan;
+    let { nix, niy } = plan;
     if (selectedInfo & ALLOW_U) {
         if (monster.mleashed) {
             const pronoun = (MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_NEUTER
@@ -2321,6 +2323,11 @@ async function finishPetMovePlan(monster, state, plan, random, rollDice, rollOne
         monster.mtrack.unshift({ x: oldx, y: oldy });
         monster.mtrack.length = Math.min(monster.mtrack.length, 4);
     }
+    else {
+        pullLeashedPetCloser(monster, state, random, calls);
+        nix = monster.mx;
+        niy = monster.my;
+    }
     const movement = {
         oldx,
         oldy,
@@ -2336,6 +2343,44 @@ async function finishPetMovePlan(monster, state, plan, random, rollDice, rollOne
         movement.deferredPetReluctance = true;
     }
     return movement;
+}
+// C dog_move() keeps a leashed pet close even after an action which left it
+// in place. Its fallback probes use dirtocoord's map coordinates as written.
+function pullLeashedPetCloser(monster, state, random, calls) {
+    if (!monster.mleashed || dist2(monster.mx, monster.my, state.u.ux, state.u.uy) <= 4)
+        return;
+    const dx = Math.sign(monster.mx - state.u.ux);
+    const dy = Math.sign(monster.my - state.u.uy);
+    let destination = { x: state.u.ux + dx, y: state.u.uy + dy };
+    const reachable = (position) => goodPosition(position.x, position.y, { kind: 'monster', monster }, { state });
+    if (!reachable(destination)) {
+        const direction = xdir.findIndex((x, i) => i < 8 && x === dx && ydir[i] === dy);
+        let found = false;
+        for (const spread of [1, 2]) {
+            for (let j = (direction + 8 - spread) % 8; j < (direction + spread) % 8; j++) {
+                const x = xdir[j], y = ydir[j];
+                if (x === undefined || y === undefined)
+                    continue;
+                const candidate = { x, y };
+                if (!reachable(candidate))
+                    continue;
+                destination = candidate;
+                found = true;
+                break;
+            }
+            if (found)
+                break;
+        }
+        if (!found)
+            destination = { x: monster.mx, y: monster.my };
+    }
+    // The native region check precedes placement and uses the unchanged
+    // planned square when this is a forced leash move.
+    updateMonsterRegions(monster, state);
+    monster.mx = destination.x;
+    monster.my = destination.y;
+    newsym(monster.mx, monster.my);
+    setMonsterApparentHeroPosition(monster, state, random, calls);
 }
 async function movePet(monster, state, random, rollDice, rollOne, calls, resumeAfterInventory = false) {
     const oldx = monster.mx;
@@ -2492,11 +2537,14 @@ async function movePet(monster, state, random, rollDice, rollOne, calls, resumeA
         // pile.  A pet usually refuses a harmful trap the hero has seen, but
         // an unseen trap remains eligible even when the pet knows its type.
         const trap = trapAt(state, nx, ny);
-        if (candidate.info & ALLOW_TRAPS &&
-            trap?.tseen &&
-            !monster.mleashed &&
-            recordRandom(random, calls, 40) !== 0)
-            continue;
+        if (candidate.info & ALLOW_TRAPS && trap) {
+            if (monster.mleashed) {
+                if (!heroIsDeaf(state))
+                    await publishMonsterWhimper(monster);
+            }
+            else if (trap.tseen && recordRandom(random, calls, 40) !== 0)
+                continue;
+        }
         // dogmove.c examines every reachable, uncursed object on a candidate
         // square before applying its cursed-square avoidance roll.  Cursed
         // objects set the reluctance flag without calling dogfood(); ordinary
@@ -2539,7 +2587,8 @@ async function movePet(monster, state, random, rollDice, rollOne, calls, resumeA
                 ...inventoryAction,
             };
         }
-        if (cursed && uncursedCount > 0 && recordRandom(random, calls, 13 * uncursedCount))
+        if (cursed && !monster.mleashed && uncursedCount > 0
+            && recordRandom(random, calls, 13 * uncursedCount))
             continue;
         // C dog_move(): only distant, unleashed pets probabilistically avoid
         // recent locations. `uncursedCount` is the source `k`, so it controls
@@ -7159,6 +7208,12 @@ export async function resumeDeferredPetEating(action, state, random = rn2, rollD
     delete movement.petMeal;
     if (monster.dead || monster.mhp <= 0)
         movement.postMoveStatus = MMOVE_DIED;
+    else if (!movement.moved && monsterHasMapPosition(monster, state)) {
+        pullLeashedPetCloser(monster, state, random, calls);
+        movement.x = monster.mx;
+        movement.y = monster.my;
+        movement.moved = movement.x !== movement.oldx || movement.y !== movement.oldy;
+    }
     await completeMovedMonsterAction(monster, movement, state, random, rollDice, rollOne, calls, action.dochugContext);
     return action;
 }
