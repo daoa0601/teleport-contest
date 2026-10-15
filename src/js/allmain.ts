@@ -1723,6 +1723,8 @@ async function monsterAttackMessage(
     }
     if (!attack.hit) return monsterMissMessage(monster, attack, game, random);
     const subject = monsterName(monster, { capitalized: true });
+    if (attack.effect === 'pestilence-contact')
+        return `${subject} reaches out, and you feel fever and chills.`;
     if (monster?.mnum === 116) {
         if (attack.effect === 'electric-natural')
             return `${subject} bites!`;
