@@ -4,6 +4,7 @@ import { reportHeroEncumbrance } from './attrib.js';
 import { STRAT_WAITMASK, isok } from './const.js';
 import { plineWithContinuation as pline } from './display.js';
 import { fullyIdentifyObject } from './invent.js';
+import { MONSTER_NAME } from './monster_data.js';
 import { addObjectToMonsterInventory } from './monster_inventory.js';
 import { monsterName, possessiveName } from './monster_name.js';
 import { AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, OBJECT_UNIQUE } from './object_data.js';
@@ -40,7 +41,10 @@ export async function catchQuestObject(monster, object, state) {
         await addObjectToMonsterInventory(monster, object, state);
         return true;
     }
-    const adjacent = Math.max(Math.abs(monster.mx - state.u.ux), Math.abs(monster.my - state.u.uy)) <= 1;
+    // C monnear(): a grid bug cannot move or attack diagonally.
+    const distance = (monster.mx - state.u.ux) ** 2 + (monster.my - state.u.uy) ** 2;
+    const adjacent = distance < 3
+        && (distance !== 2 || MONSTER_NAME[monster.mnum] !== 'grid bug');
     await finishQuest(object, state);
     await pline(`${name()} ${adjacent ? 'hands' : 'tosses'} ${itemName()} back to you.`);
     if (!adjacent) {
