@@ -12,7 +12,7 @@ import type { GameState, PlayingGameState } from './game_state.js';
 import type { Dungeon, DungeonLocation } from './dungeon_types.js';
 import { depth } from './hacklib.js';
 import { heroSpecies } from './hero_species.js';
-import { gotoLevel as changeLevel } from './level_change.js';
+import { gotoLevel as changeLevel, scheduleLevelChange } from './level_change.js';
 import { MONSTER_SOUND } from './monster_data.js';
 import { propertyIsActive } from './properties.js';
 import { getLine, promptYesNoQuit } from './query.js';
@@ -30,7 +30,8 @@ type LevelRequest =
     | { random?: false; depth: number; destination?: never }
     | { random?: false; depth?: never; destination: DungeonLocation };
 
-export async function levelTeleport({ state = game, gotoLevel = changeLevel,
+export async function levelTeleport({ state = game,
+    gotoLevel = (...args: Parameters<typeof changeLevel>) => { scheduleLevelChange(args); },
     menuRequested = false }: {
     state?: GameState; gotoLevel?: LevelChange; menuRequested?: boolean;
 } = {}): Promise<void> {

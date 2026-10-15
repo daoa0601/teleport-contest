@@ -1628,7 +1628,7 @@ async function doquaff() {
 }
 
 async function readCommand(): Promise<void> {
-    const result = await doread({ gotoLevel });
+    const result = await doread();
     if (result.cancelled) resetCommandVariables(true);
 }
 

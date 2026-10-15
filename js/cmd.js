@@ -1505,7 +1505,7 @@ async function doquaff() {
     game.context.move = result.spentTime && !result.heroDied ? 1 : 0;
 }
 async function readCommand() {
-    const result = await doread({ gotoLevel });
+    const result = await doread();
     if (result.cancelled)
         resetCommandVariables(true);
 }
