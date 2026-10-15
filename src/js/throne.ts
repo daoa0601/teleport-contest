@@ -16,7 +16,7 @@ import {
 import { artifactById } from './artifacts.js';
 import { mapLevel } from './detect.js';
 import {
-    map_background, newsym, plineWithContinuation, see_monsters, shieldeff,
+    map_background, newsym, newsym_force, plineWithContinuation, see_monsters, shieldeff,
 } from './display.js';
 import { finishHeroDeath } from './end.js';
 import { loseHeroExperience } from './exper.js';
@@ -106,7 +106,7 @@ function removeThrone(x: number, y: number): void {
     location.typ = ROOM;
     location.flags = 0;
     map_background(x, y, false);
-    newsym(x, y);
+    newsym_force(x, y);
 }
 
 async function announceAttributeChange(attribute: number, amount: number, conditional: boolean) {
@@ -409,7 +409,7 @@ export async function throneSitEffect({
         await plineWithContinuation(formatFeltMessage(prince || handOfElbereth ? 'very comfortable here.' : 'somehow out of place...'));
     }
 
-    if (!rn2(3)) {
+    if (!special && !rn2(3)) {
         if (game.flags?.debug
             && await promptYesNo('Analyze throne?', 'n') !== 'y') return;
         removeThrone(x, y);

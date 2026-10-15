@@ -10,7 +10,7 @@ import { A_CON, A_MAX, ROOM, } from './const.js';
 import { adjustAttribute, attributeChangeMessage, exerciseAttribute, } from './attrib.js';
 import { artifactById } from './artifacts.js';
 import { mapLevel } from './detect.js';
-import { map_background, newsym, plineWithContinuation, see_monsters, shieldeff, } from './display.js';
+import { map_background, newsym, newsym_force, plineWithContinuation, see_monsters, shieldeff, } from './display.js';
 import { finishHeroDeath } from './end.js';
 import { loseHeroExperience } from './exper.js';
 import { heroHasDrainResistance } from './armor.js';
@@ -80,7 +80,7 @@ function removeThrone(x, y) {
     location.typ = ROOM;
     location.flags = 0;
     map_background(x, y, false);
-    newsym(x, y);
+    newsym_force(x, y);
 }
 async function announceAttributeChange(attribute, amount, conditional) {
     const result = adjustAttribute(attribute, amount, game);
@@ -355,7 +355,7 @@ export async function throneSitEffect({ gotoLevel = null, chooseTeleportDestinat
         const handOfElbereth = !!game.u?.uevent?.uhand_of_elbereth;
         await plineWithContinuation(formatFeltMessage(prince || handOfElbereth ? 'very comfortable here.' : 'somehow out of place...'));
     }
-    if (!rn2(3)) {
+    if (!special && !rn2(3)) {
         if (game.flags?.debug
             && await promptYesNo('Analyze throne?', 'n') !== 'y')
             return;
