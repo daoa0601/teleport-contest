@@ -33,7 +33,7 @@ import {
     addShopDamage, makeAngryShopkeeper, payForShopDamage, shopDig,
 } from './shop_damage.js';
 import {
-    canSeeMonster, canSpotMonster, flush_screen, map_invisible, newsym,
+    canSeeMonster, canSpotMonster, flush_screen, map_invisible, map_trap, newsym,
     plineWithContinuation, show_glyph_cell, unmap_invisible,
 } from './display.js';
 import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
@@ -476,7 +476,11 @@ export async function digActualHole(
     const newObjects = pileAt(x, y, state);
     trap.madeby_u = herosFault;
     trap.tseen = 0;
-    if (cansee(x, y) || madeByYou) trap.tseen = 1;
+    if (cansee(x, y)) trap.tseen = 1;
+    else if (madeByYou) {
+        trap.tseen = 1;
+        map_trap(trap, true);
+    }
     newsym(x, y);
 
     const trapWord = ttyp === HOLE ? 'hole' : 'pit';
