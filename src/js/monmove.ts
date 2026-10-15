@@ -378,7 +378,7 @@ import { wipeEngravingAt } from './engrave.js';
 import { moveVaultGuard } from './vault.js';
 import { afterShopkeeperMove, checkSpecialRoom, shopGreeting, shopkeeperInOwnShop } from './shk.js';
 import { shopkeeperIsMuted } from './shop_loss.js';
-import { findMonsterArmorClass } from './monworn.js';
+import { checkMonsterGearNextTurn, findMonsterArmorClass } from './monworn.js';
 import { inTown, roomsAt } from './room.js';
 import { addShopDamage } from './shop_damage.js';
 import {
@@ -2398,6 +2398,11 @@ export async function commitPetPickup(monster: Monster, movement: PetInventoryAc
     remove_object(object, state);
     newsym(monster.mx, monster.my);
     await addObjectToMonsterInventory(monster, object, state);
+    if (speciesHasWeaponAttack(monster.mnum) && monster.weaponCheck === NEED_WEAPON) {
+        monster.weaponCheck = NEED_HTH_WEAPON;
+        await wieldMonsterWeapon(monster, state);
+    }
+    checkMonsterGearNextTurn(monster);
 }
 
 function trapAt(state: PlayingGameState, x: number, y: number) {
