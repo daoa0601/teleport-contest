@@ -29,7 +29,7 @@ import {
 } from './hero_monster_death.js';
 import { liquidForHole } from './hole.js';
 import { remove_object } from './floor_object.js';
-import { buryFloorObjectsAt } from './buried_object.js';
+import { applyFloorEffects } from './floor_effects.js';
 import { maketrap } from './mklev.js';
 import { resolveMonsterLiquid } from './mon.js';
 import {
@@ -38,7 +38,6 @@ import {
 import { finishMonsterLiquidDeath } from './monster_death.js';
 import { monsterSelfTouch } from './monster_stoning.js';
 import { BOULDER } from './object_data.js';
-import { stopAllObjectTimers } from './object_timers.js';
 import { heroHasNoLimbs, heroIsPolymorphed } from './polyself.js';
 import { selfTouchPetrifyingWeapons } from './stoning.js';
 import { rnl, rnd, rn2 } from './rng.js';
@@ -72,7 +71,7 @@ function boulderAt(x: number, y: number) {
     ) || null;
 }
 
-async function fillChasmWithBoulder(x: number, y: number, trap: Trap, boulder: GameObject, monster: Monster | null): Promise<void> {
+async function fillChasmWithBoulder(x: number, y: number, boulder: GameObject, monster: Monster | null): Promise<void> {
     if (cansee(x, y)) {
         await plineWithContinuation(
             `KADOOM!  The boulder falls into a chasm${
@@ -82,13 +81,7 @@ async function fillChasmWithBoulder(x: number, y: number, trap: Trap, boulder: G
     }
     if (monster) monster.mtrapped = 0;
     remove_object(boulder);
-    stopAllObjectTimers(boulder);
-    boulder.where = 'gone';
-    boulder.ox = 0;
-    boulder.oy = 0;
-    deleteTrap(trap);
-    await buryFloorObjectsAt(x, y, game);
-    newsym(x, y);
+    await applyFloorEffects(boulder, x, y);
 }
 
 async function damageFloorObjectsWithWater(x: number, y: number) {
@@ -274,7 +267,7 @@ async function openChasm(
     const monster = monsterAt(x, y);
     const boulder = boulderAt(x, y);
     if (boulder) {
-        await fillChasmWithBoulder(x, y, chasm, boulder, monster);
+        await fillChasmWithBoulder(x, y, boulder, monster);
         return true;
     }
 
