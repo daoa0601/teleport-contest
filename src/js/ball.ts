@@ -8,7 +8,7 @@ import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import { impossible } from './diagnostics.js';
 import { maybeUnhideAt } from './monster_hiding.js';
 import {
-    cls, map_object, newsym, plineWithContinuation,
+    cls, displayLiquidName, map_object, newsym, plineWithContinuation,
 } from './display.js';
 import {
     moveObject, placeObjectSynchronously, remove_object,
@@ -337,7 +337,7 @@ export async function dropBall(x: number, y: number, { state = game, publish = p
                 if (web) level.traps.splice(
                     level.traps.indexOf(web), 1);
             } else if (hero.utraptype === TT_LAVA) {
-                await publish(`${pullmsg}lava!`);
+                await publish(`${pullmsg}${displayLiquidName('lava', state)}!`);
             } else if (hero.utraptype === TT_BEARTRAP) {
                 const side = rn2(3) ? LEFT_SIDE : RIGHT_SIDE;
                 await publish(`${pullmsg}bear trap!`);
