@@ -2313,8 +2313,16 @@ async function finishPetMovePlan(monster, state, plan, random, rollDice, rollOne
             ...inventoryAction,
         };
     }
-    if (nix !== oldx || niy !== oldy)
+    if (nix !== oldx || niy !== oldy) {
         updateMonsterRegions(monster, state, { x: nix, y: niy });
+        if (await readyMonsterDiggingWeapon(monster, state, nix, niy)) {
+            return {
+                oldx, oldy, x: oldx, y: oldy, moved: false,
+                postMoveStatus: MMOVE_NOTHING, movementStage: 'postmov',
+                ...inventoryAction,
+            };
+        }
+    }
     monster.mx = nix;
     monster.my = niy;
     if (nix !== oldx || niy !== oldy) {
@@ -2567,6 +2575,13 @@ async function movePet(monster, state, random, rollDice, rollOne, calls, resumeA
         }
         if (edible) {
             updateMonsterRegions(monster, state, { x: nx, y: ny });
+            if (await readyMonsterDiggingWeapon(monster, state, nx, ny)) {
+                return {
+                    oldx, oldy, x: oldx, y: oldy, moved: false,
+                    postMoveStatus: MMOVE_NOTHING, movementStage: 'postmov',
+                    ...inventoryAction,
+                };
+            }
             monster.mx = nx;
             monster.my = ny;
             if (!Array.isArray(monster.mtrack))
