@@ -217,6 +217,7 @@ async function flyPhysicalObject({ state = game, object, dx, dy, range, startX, 
     const steps = kicked ? Math.max(0, range - 1) : range;
     let skip = !kicked && object.otyp === ROCK ? rockSkipRange(range) : null;
     const allowSkip = skip !== null && random(3) === 0;
+    const glyph = transientObjectGlyph(object);
     let skipping = false;
     let skips = 0;
     for (let step = 0; step < steps && (dx || dy); step++) {
@@ -326,8 +327,8 @@ async function flyPhysicalObject({ state = game, object, dx, dy, range, startX, 
             break;
         }
     }
-    if (captureFlight && path.length)
-        await captureFlight(object, path, state);
+    if (captureFlight)
+        await captureFlight(object, path, state, glyph);
     return { x, y, path, contact, stoppedBy, destroyed, migrated };
 }
 function rockSkipRange(range) {
@@ -391,8 +392,7 @@ export async function detachThrownUnit(state, item, selectedQuantity, splitObjec
     state._thrownObject = thrown;
     return thrown;
 }
-export async function captureThrownObjectFlight(object, flightPath, state = game) {
-    const glyph = transientObjectGlyph(object);
+export async function captureThrownObjectFlight(object, flightPath, state = game, glyph = transientObjectGlyph(object)) {
     let transientCell = null;
     let transientCursor = null;
     try {

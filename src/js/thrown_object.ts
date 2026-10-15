@@ -46,7 +46,7 @@ import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
 import type { MapLocation, Position, Trap } from './map_types.js';
-import type { MessagePublisher } from './display.js';
+import type { DisplayGlyph, MessagePublisher } from './display.js';
 import { costlySpot } from './shk.js';
 import { removeWornHeroItem } from './hero_equipment.js';
 import { finishInventoryRemoval } from './hero_inventory.js';
@@ -103,7 +103,7 @@ export interface ThrownObjectLandingOptions extends Position {
 }
 
 export type ProjectileFlightCapture = (
-    object: GameObject, path: readonly Position[], state: GameState,
+    object: GameObject, path: readonly Position[], state: GameState, glyph?: DisplayGlyph,
 ) => Promise<void>;
 
 export interface ProjectileFlightOptions {
@@ -344,6 +344,7 @@ async function flyPhysicalObject({
     const steps = kicked ? Math.max(0, range - 1) : range;
     let skip = !kicked && object.otyp === ROCK ? rockSkipRange(range) : null;
     const allowSkip = skip !== null && random(3) === 0;
+    const glyph = transientObjectGlyph(object);
     let skipping = false;
     let skips = 0;
 
@@ -460,8 +461,8 @@ async function flyPhysicalObject({
         }
     }
 
-    if (captureFlight && path.length)
-        await captureFlight(object, path, state);
+    if (captureFlight)
+        await captureFlight(object, path, state, glyph);
     return { x, y, path, contact, stoppedBy, destroyed, migrated };
 }
 
@@ -532,8 +533,8 @@ export async function detachThrownUnit(
 
 export async function captureThrownObjectFlight(
     object: GameObject, flightPath: readonly Position[], state: GameState = game,
+    glyph = transientObjectGlyph(object),
 ): Promise<void> {
-    const glyph = transientObjectGlyph(object);
     let transientCell: Position | null = null;
     let transientCursor: [number, number] | null = null;
     try {
