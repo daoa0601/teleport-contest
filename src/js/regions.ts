@@ -457,7 +457,7 @@ function removeGasCloud(region: GasCloud, state: GameState): void {
         if (cansee(cell.x, cell.y)) newsym(cell.x, cell.y);
 }
 
-async function expireRegions(state: GameState, publish: MessagePublisher): Promise<void> {
+function expireRegions(state: GameState): { aroundHero: boolean; inSight: number } {
     let dissipatedAroundHero = false;
     let dissipatedInSight = 0;
     const level = requireGameLevel(state);
@@ -481,13 +481,20 @@ async function expireRegions(state: GameState, publish: MessagePublisher): Promi
         }
         removeGasCloud(region, state);
     }
-    if (dissipatedAroundHero) {
+    return { aroundHero: dissipatedAroundHero, inSight: dissipatedInSight };
+}
+
+async function announceDissipation(
+    state: GameState, { aroundHero, inSight }: { aroundHero: boolean; inSight: number },
+    publish: MessagePublisher,
+): Promise<void> {
+    if (aroundHero) {
         await publish('The gas cloud around you dissipates.');
-        if ((state.u.xray_range ?? -1) <= 1) dissipatedInSight = 0;
+        if ((state.u.xray_range ?? -1) <= 1) inSight = 0;
     }
-    if (dissipatedInSight === 1)
+    if (inSight === 1)
         await publish(formatSeenMessage('a gas cloud dissipate.', state));
-    else if (dissipatedInSight > 1)
+    else if (inSight > 1)
         await publish(formatSeenMessage('some gas clouds dissipate.', state));
 }
 
@@ -504,7 +511,7 @@ export async function runLevelRegions(state: GameState | null | undefined, {
     onAnger,
 }: RegionTurnOptions = {}): Promise<RegionEvent[]> {
     if (!state?.level?.regions?.length) return [];
-    await expireRegions(state, publish);
+    const dissipation = expireRegions(state);
     const events: RegionEvent[] = [];
     for (const region of state.level.regions) {
         if (region.ttl > 0) region.ttl--;
@@ -512,7 +519,7 @@ export async function runLevelRegions(state: GameState | null | undefined, {
             publish, rollOne, wake, die,
         });
         if (hero) events.push(hero);
-        if (state.program_state?.gameover) break;
+        if (state.program_state?.gameover) return events;
         let index = 0;
         while (index < region.monsterIds.length) {
             const id = region.monsterIds[index];
@@ -529,5 +536,6 @@ export async function runLevelRegions(state: GameState | null | undefined, {
             else index++;
         }
     }
+    await announceDissipation(state, dissipation, publish);
     return events;
 }

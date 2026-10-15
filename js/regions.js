@@ -351,7 +351,7 @@ function removeGasCloud(region, state) {
         if (cansee(cell.x, cell.y))
             newsym(cell.x, cell.y);
 }
-async function expireRegions(state, publish) {
+function expireRegions(state) {
     let dissipatedAroundHero = false;
     let dissipatedInSight = 0;
     const level = requireGameLevel(state);
@@ -377,14 +377,17 @@ async function expireRegions(state, publish) {
         }
         removeGasCloud(region, state);
     }
-    if (dissipatedAroundHero) {
+    return { aroundHero: dissipatedAroundHero, inSight: dissipatedInSight };
+}
+async function announceDissipation(state, { aroundHero, inSight }, publish) {
+    if (aroundHero) {
         await publish('The gas cloud around you dissipates.');
         if ((state.u.xray_range ?? -1) <= 1)
-            dissipatedInSight = 0;
+            inSight = 0;
     }
-    if (dissipatedInSight === 1)
+    if (inSight === 1)
         await publish(formatSeenMessage('a gas cloud dissipate.', state));
-    else if (dissipatedInSight > 1)
+    else if (inSight > 1)
         await publish(formatSeenMessage('some gas clouds dissipate.', state));
 }
 function maintainCloudForFog(region, species) {
@@ -394,7 +397,7 @@ function maintainCloudForFog(region, species) {
 export async function runLevelRegions(state, { publish = plineWithContinuation, rollOne = rnd, wake = async () => { }, die, onMonsterDeath, onAnger, } = {}) {
     if (!state?.level?.regions?.length)
         return [];
-    await expireRegions(state, publish);
+    const dissipation = expireRegions(state);
     const events = [];
     for (const region of state.level.regions) {
         if (region.ttl > 0)
@@ -405,7 +408,7 @@ export async function runLevelRegions(state, { publish = plineWithContinuation, 
         if (hero)
             events.push(hero);
         if (state.program_state?.gameover)
-            break;
+            return events;
         let index = 0;
         while (index < region.monsterIds.length) {
             const id = region.monsterIds[index];
@@ -425,6 +428,7 @@ export async function runLevelRegions(state, { publish = plineWithContinuation, 
                 index++;
         }
     }
+    await announceDissipation(state, dissipation, publish);
     return events;
 }
 //# sourceMappingURL=regions.js.map
