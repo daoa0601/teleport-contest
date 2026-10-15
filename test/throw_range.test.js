@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { A_STR, POOL, STR19 } from '../js/const.js';
+import { A_STR, DB_FLOOR, DB_MOAT, DRAWBRIDGE_UP, POOL, STR19 } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { BOULDER, DAGGER, ROCK } from '../js/object_data.js';
@@ -30,25 +30,38 @@ void test('an underwater rock throw uses the same one-square range as weapons', 
     assert.equal(rock.ox, 11);
     assert.equal(rock.oy, 10);
 });
-void test('a rock skipping over a pool passes above a swimming monster', async () => {
-    const level = freshObjectRoom({ right: 35 });
-    requirePlayingGame(game);
-    game.u.acurr.a[A_STR] = 18;
-    for (let x = 11; x <= 19; x++)
-        level.requireAt(x, 10).typ = POOL;
-    const eel = await createMonsterAt('giant eel', 12, 10);
-    eel.mhp = eel.mhpmax = 100;
-    const rock = await addInventoryObject(ROCK, { oname: 'Ripple' });
-    const messages = [];
-    resetInputState().beforeRead = () => { messages.push(game._pending_message); };
-    initRng(5n);
-    await throwInventoryObject(rock, 'l', ' '.repeat(20));
-    assert.equal(eel.mhp, 100);
-    assert.equal(rock.where, 'floor');
-    assert.equal(rock.ox, 19);
-    assert.equal(rock.oy, 10);
-    assert.match(messages.join('\n'), /The rock named Ripple skips\./);
-});
+for (const surface of [
+    { name: 'a pool', type: POOL, underneath: DB_MOAT, skips: true },
+    { name: 'water beneath a raised drawbridge', type: DRAWBRIDGE_UP, underneath: DB_MOAT, skips: true },
+    { name: 'floor beneath a raised drawbridge', type: DRAWBRIDGE_UP, underneath: DB_FLOOR, skips: false },
+]) {
+    void test(`a rock ${surface.skips ? 'skips' : 'does not skip'} over ${surface.name}`, async () => {
+        const level = freshObjectRoom({ right: 35 });
+        requirePlayingGame(game);
+        game.u.acurr.a[A_STR] = 18;
+        for (let x = 11; x <= 19; x++)
+            level.requireAt(x, 10).typ = POOL;
+        const firstSquare = level.requireAt(11, 10);
+        firstSquare.typ = surface.type;
+        firstSquare.drawbridgemask = surface.underneath;
+        const eel = await createMonsterAt('giant eel', 12, 10);
+        eel.mhp = eel.mhpmax = 100;
+        const rock = await addInventoryObject(ROCK, { oname: 'Ripple' });
+        const messages = [];
+        resetInputState().beforeRead = () => { messages.push(game._pending_message); };
+        initRng(5n);
+        await throwInventoryObject(rock, 'l', ' '.repeat(20));
+        if (surface.skips)
+            assert.equal(eel.mhp, 100);
+        assert.equal(rock.where, 'floor');
+        assert.equal(rock.ox, surface.skips ? 19 : 12);
+        assert.equal(rock.oy, 10);
+        if (surface.skips)
+            assert.match(messages.join('\n'), /The rock named Ripple skips\./);
+        else
+            assert.doesNotMatch(messages.join('\n'), /skips\./);
+    });
+}
 void test('a giant throws a boulder twenty squares regardless of its weight', async () => {
     freshObjectRoom({ right: 35 });
     installPolymorphedHero('hill giant');

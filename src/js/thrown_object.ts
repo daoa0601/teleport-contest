@@ -72,6 +72,7 @@ import { rn2, rnd } from './rng.js';
 import { publishHeardMessage } from './hero_speech.js';
 import { heroIsBlind } from './senses.js';
 import { settleThrownShopObject } from './shk.js';
+import { isPoolAt } from './terrain_properties.js';
 import { objectNoLongerHeld } from './object_release.js';
 import { cansee } from './vision.js';
 
@@ -399,7 +400,7 @@ async function flyPhysicalObject({
         }
         const remaining = steps - step - 1;
         if (skip && skip.start && remaining === skip.start && allowSkip) {
-            if (IS_POOL(location.typ) && !monster) {
+            if (isPoolAt(x, y, state) && !monster) {
                 skipping = true;
                 if (!heroIsBlind(state))
                     await publish(`${ownedObjectName(object, state)} skips${skips ? ' again' : ''}.`);
