@@ -95,7 +95,7 @@ import { flipCoin } from './coin_flip.js';
 import { useGrayStone } from './gray_stone.js';
 import { useMirror } from './mirror.js';
 import { useCamera } from './camera.js';
-import { useTowel } from './towel.js';
+import { dryTowel, useTowel } from './towel.js';
 import { useBell } from './apply_bell.js';
 import { breakWand } from './wand_break.js';
 import { speakArtifact } from './artifact_speech.js';
@@ -191,10 +191,7 @@ import { displayLiquidName, displayMessageWindow,
     see_traps, transientObjectGlyph, map_invisible, unmap_invisible, map_object, unmapObject,
 } from './display.js';
 import { cansee, couldsee, vision_note_blocker_change, vision_recalc, vision_reset } from './vision.js';
-import {
-    lightWieldedArtifact,
-    transformMagicLampToOilLamp,
-} from './light.js';
+import { transformMagicLampToOilLamp } from './light.js';
 import {
     dozap,
 } from './zap.js';
@@ -273,7 +270,8 @@ import {
     level_difficulty, recordMappedOverviewState, specialDisplayName, specialPrototypeAt,
 } from './dungeon.js';
 import { addInventoryItem, assignInventoryLetter, inventoryLetterRank } from './u_init.js';
-import { objectQuantity, rejoinObjectStack, splitObjectStack } from './object_stack.js';
+import { clearSplitObjects, objectQuantity, rejoinObjectStack, splitObjectStack } from './object_stack.js';
+import { freeInventoryObject } from './hero_inventory.js';
 import { dropHeroObject } from './hero_drop.js';
 import { SELL_DELIBERATE, SELL_NORMAL, setSellDisposition } from './shop_sell.js';
 import { addObjectToMonsterInventory } from './monster_inventory.js';
@@ -306,7 +304,6 @@ import {
 import {
     invokeArtifactPower,
 } from './artifact_invoke.js';
-import { touchArtifactByHero } from './artifact_touch.js';
 import {
     SLING, BULLWHIP, GRAPPLING_HOOK, CREAM_PIE, EGG, LUMP_OF_ROYAL_JELLY, LOCK_PICK,
     CREDIT_CARD, STETHOSCOPE, LOADSTONE, GOLD_PIECE, BOULDER, ROCK, DILITHIUM_CRYSTAL,
@@ -387,8 +384,9 @@ import { heroArmName, heroFingerName, heroHandName } from './body_parts.js';
 import { armorUsesPairGrammar, withIndefiniteArticle, makePlural } from './object_grammar.js';
 import { objectWearMessage } from './object_wear_message.js';
 import { isWetTowel, willWeld } from './weapon_type.js';
-import { announceWeaponWeld, explainTwoWeaponEnd, refuseWeldedPrimary } from './weapon_feedback.js';
-import { toggleTwoWeaponCombat } from './two_weapon.js';
+import { refuseWeldedPrimary } from './weapon_feedback.js';
+import { readyHeroWeapon } from './weapon_readiness.js';
+import { dropCursedSecondaryWeapon, stopTwoWeaponCombat, toggleTwoWeaponCombat } from './two_weapon.js';
 import { dist2, distmin, dungeonDepth, ledgerNo } from './hacklib.js';
 import { triggerBoobyTrap } from './booby_trap.js';
 import { addShopDamage, payForShopDamage } from './shop_damage.js';
@@ -2774,38 +2772,11 @@ async function doswapweapon() {
     }
     const oldPrimary = game.uwep || game.u?.uwep || null;
     const oldSecondary = game.uswapwep || game.u?.uswapwep || null;
-    if (!oldSecondary) {
-        if (!oldPrimary) {
-            await pline('You are already bare handed.');
-            game.context.move = 0;
-            return;
-        }
-        await plineWithContinuation('You are bare handed.');
-        await setPrimaryWeapon(null, game);
-        await setSecondaryWeapon(oldPrimary, game);
-        observeObjectForNaming(oldPrimary);
-        await plineWithContinuation(
-            `${oldPrimary.invlet} - ${
-                inventoryItemDescription(oldPrimary)}.`,
-        );
-        game.context.move = 1;
-        return;
-    }
-
     await setSecondaryWeapon(null, game);
-    observeObjectForNaming(oldSecondary);
-    if (willWeld(oldSecondary)) {
-        await announceWeaponWeld(oldSecondary);
-    } else {
-        await plineWithContinuation(
-            `${oldSecondary.invlet} - ${
-                inventoryItemDescription(oldSecondary, { projectPrimaryHand: true })}.`,
-        );
-    }
-    await setPrimaryWeapon(oldSecondary, game);
-    await lightWieldedArtifact(oldSecondary);
-
-    if (oldPrimary) {
+    const spentTime = await readyHeroWeapon(oldSecondary);
+    if (game.uwep === oldPrimary) {
+        await setSecondaryWeapon(oldSecondary, game);
+    } else if (oldPrimary) {
         await setSecondaryWeapon(oldPrimary, game);
         observeObjectForNaming(oldPrimary);
         await plineWithContinuation(
@@ -2815,7 +2786,7 @@ async function doswapweapon() {
     } else {
         await plineWithContinuation('You have no secondary weapon readied.');
     }
-    game.context.move = 1;
+    game.context.move = spentTime ? 1 : 0;
 }
 
 async function dochat() {
@@ -5464,21 +5435,18 @@ async function dowield(): Promise<void> {
         return;
     }
     const weapons = (game.inventory || []).filter(object =>
-        object.class === 'Weapons' || object.oclass === 2
-        || (object.oclass === 6 && OBJECT_SUBTYPE[object.otyp] !== 0))
-        .sort((left, right) =>
-            String(left.invlet || '').localeCompare(
-                String(right.invlet || ''),
-            ));
+        object.oclass === 2 || isWeaponTool(object))
+        .sort((left, right) => inventoryLetterRank(left) - inventoryLetterRank(right));
     const letters = weapons.map(object => object.invlet).join('');
     const choices = ['-', compactInventoryLetters(letters)].filter(Boolean).join(' ');
     const prompt = `What do you want to wield? [${choices} or ?*] `;
+    clearSplitObjects();
     const selection = await promptInventoryObject(
         prompt, game.inventory || [], {
             verb: 'wield',
             classify: object => object.oclass === 12 ? GETOBJ_EXCLUDE
                 : object.oclass === 2 || isWeaponTool(object) ? GETOBJ_SUGGEST : GETOBJ_DOWNPLAY,
-            allowNone: true, allowMenu: true,
+            allowNone: true, allowMenu: true, allowCount: true,
             menuItems: weapons.length ? weapons : game.inventory.filter(item => item.oclass !== 12),
             noneDescription: `your ${game.uarmg ? 'gloved' : 'bare'} ${
                 makePlural(heroHandName(game))}${game.uwep ? '' : ' (wielded)'}`,
@@ -5489,38 +5457,45 @@ async function dowield(): Promise<void> {
         return;
     }
 
-    const object = selection.object;
+    let object = selection.object;
     if (!selection.none && !object) {
         game.context.move = 0;
         return;
     }
+    let splitParent: GameObject | null = null;
+    if (object && selection.count !== null && selection.count < object.quan) {
+        if (object.otyp === LOADSTONE && object.cursed) object.corpsenm = selection.count;
+        else if (isWeldedPrimary(object)) object.bknown = true;
+        else {
+            splitParent = object;
+            object = splitCarriedStack(object, selection.count);
+        }
+    }
     if (object && object === game.uwep) {
-        await pline('You are already wielding that!');
-        if (isWeaponTool(object) || isWetTowel(object)) game._unweapon = false;
-        game.context.move = 0;
+        await reportAlreadyWielded(object);
         return;
     }
     if (await refuseWeldedPrimary()) {
         resetBulkTakeoff();
+        if (splitParent && object) await rejoinObjectStack(splitParent, object);
         game.context.move = 0;
+        return;
+    }
+    if (splitParent && object) {
+        if (splitParent === game.uwep) {
+            await rejoinObjectStack(splitParent, object);
+            await reportAlreadyWielded(splitParent);
+        } else {
+            await finishSplittingCarriedStack(object);
+            await wieldSelectedWeapon(object);
+        }
         return;
     }
     if (selection.none) {
-        if (!game.uwep) {
-            await pline('You are already bare handed.');
-            game.context.move = 0;
-            return;
-        }
-        await plineWithContinuation('You are bare handed.');
-        await setPrimaryWeapon(null, game);
-        game.context.move = 1;
+        await wieldSelectedWeapon(null);
         return;
     }
-
-    if (!object) {
-        game.context.move = 0;
-        return;
-    }
+    if (!object) return;
 
     // C dowield() hands an alternate-weapon selection to doswapweapon()
     // rather than treating it as an unrelated primary.  That continuation
@@ -5530,40 +5505,60 @@ async function dowield(): Promise<void> {
         await doswapweapon();
         return;
     }
-    if (object.worn && object.class !== 'Weapons' && object.oclass !== 2) {
+    if (object === game.uquiver) {
+        const quantity = object.quan;
+        let confirmation: string;
+        if (quantity > 1 && hasFreeBasicInventoryLetter() && splittableForQuiver(object)) {
+            const names = makePlural(minimalObjectName(object, game));
+            const answer = await promptYesNoQuit(`You have ${quantity} ${names} readied.  Wield one?`);
+            if (answer === 'q') {
+                game.context.move = 0;
+                return;
+            }
+            if (answer === 'y') {
+                await wieldSelectedWeapon(await splitStackForQuiver(object, 1));
+                return;
+            }
+            confirmation = 'Wield all of them instead?';
+        } else {
+            const plural = objectNameIsPlural(object, game)
+                || object.otyp === LENSES || armorUsesPairGrammar(OBJECT_NAMES[object.otyp]);
+            confirmation = `You have ${plural ? 'those' : 'that'} readied.  Wield ${plural ? 'them' : 'it'} instead?`;
+        }
+        if (await promptYesNoQuit(confirmation) !== 'y') {
+            const names = minimalObjectName(object, game);
+            const plural = objectNameIsPlural(object, game);
+            await plineWithContinuation(`${objectOwnershipPrefix(object, game)}${quantity > 1 ? makePlural(names) : names} ${plural ? 'remain' : 'remains'} readied.`);
+            game.context.move = 0;
+            return;
+        }
+        await setQuiverObject(null);
+    } else if ((object.owornmask ?? 0) & (W_ARMOR | W_ACCESSORY | W_SADDLE)) {
         await pline('You cannot wield that!');
         game.context.move = 0;
         return;
     }
-    if (object.oartifact) {
-        const artifact = artifactById(object.oartifact);
-        const touch = await touchArtifactByHero(object, artifact);
-        if (!touch.allowed || touch.died) {
-            game.context.move = 1;
-            return;
-        }
-    }
+    await wieldSelectedWeapon(object);
+}
 
-    observeObjectForNaming(object);
-    const oldPrimary = game.uwep || game.u?.uwep || null;
-    const wasTwoWeapon = game.u.twoweap;
-    if (willWeld(object)) {
-        await announceWeaponWeld(object);
-    } else {
-        const description = inventoryItemDescription(object, { projectPrimaryHand: true });
-        await plineWithContinuation(`${object.invlet} - ${description}.`);
-    }
-    await setPrimaryWeapon(object, game);
-    await explainTwoWeaponEnd(wasTwoWeapon);
-    await lightWieldedArtifact(object);
+async function reportAlreadyWielded(object: GameObject): Promise<void> {
+    await pline('You are already wielding that!');
+    if (isWeaponTool(object) || isWetTowel(object)) game._unweapon = false;
+    game.context.move = 0;
+}
+
+async function wieldSelectedWeapon(object: GameObject | null): Promise<void> {
+    const oldPrimary = game.uwep || game.u.uwep || null;
+    const spentTime = await readyHeroWeapon(object);
     // C dowield() applies pushweapon only after ready_weapon() has installed
     // the new primary.  The displaced primary becomes the authoritative
     // secondary object; preserving that identity is what makes a later
     // selection of it enter doswapweapon() and its two-prinv continuation.
-    if (game.flags?.pushweapon && oldPrimary && oldPrimary !== object) {
+    if (game.flags?.pushweapon && oldPrimary && game.uwep !== oldPrimary) {
         await setSecondaryWeapon(oldPrimary, game);
     }
-    game.context.move = 1;
+    await stopTwoWeaponCombat();
+    game.context.move = spentTime ? 1 : 0;
 }
 
 // C refs: do_wear.c dowear(), accessory_or_armor_on(), and the negative
@@ -6259,23 +6254,20 @@ function splitCarriedStack(item: GameObject, count: number): GameObject {
     return split;
 }
 
-function splitStackForQuiver(item: GameObject, count: number): GameObject {
+async function splitStackForQuiver(item: GameObject, count: number): Promise<GameObject> {
     const child = splitCarriedStack(item, count);
-    child.invlet = null;
-    assignInventoryLetter(child);
-    if (!child.invlet) child.invlet = '#';
+    await finishSplittingCarriedStack(child);
     return child;
 }
 
-async function reportWeldedPrimary(item: GameObject): Promise<boolean> {
-    const newlyKnown = !item.bknown;
-    item.bknown = true;
-    observeObjectForNaming(item);
-    const hand = item.bimanual ? 'hands' : 'hand';
-    await pline(
-        `${inventoryItemDescription(item)} is welded to your ${hand}!`,
-    );
-    return newlyKnown;
+// C finish_splitting(): take the child out and add it without merging so
+// its inherited inventory letter is replaced and carried effects refresh.
+async function finishSplittingCarriedStack(object: GameObject): Promise<void> {
+    await freeInventoryObject(object);
+    const nomerge = !!object.nomerge;
+    object.nomerge = true;
+    await addInventoryItem(object, null, false);
+    object.nomerge = nomerge;
 }
 
 function splittableForQuiver(item: GameObject): boolean {
@@ -6284,10 +6276,7 @@ function splittableForQuiver(item: GameObject): boolean {
 }
 
 function hasFreeBasicInventoryLetter(): boolean {
-    const basicLetters = new Set((game.inventory || [])
-        .map(item => item.invlet)
-        .filter(letter => /^[a-zA-Z]$/.test(letter || '')));
-    return basicLetters.size < 52;
+    return game.inventory.filter(item => item.oclass !== 12).length < 52;
 }
 
 async function doquiverCore(verb: 'ready' | 'fire'): Promise<QuiverCommandResult> {
@@ -6297,6 +6286,7 @@ async function doquiverCore(verb: 'ready' | 'fire'): Promise<QuiverCommandResult
         game.context.move = 0;
         return { item: null, spentTime: false, cancelled: false };
     }
+    clearSplitObjects();
     const suggestions = game.inventory.filter(item => readySuggestion(item, game));
     const letters = suggestions.map(item => item.invlet).join('');
     const noneSuggested = !!game.uquiver;
@@ -6333,7 +6323,12 @@ async function doquiverCore(verb: 'ready' | 'fire'): Promise<QuiverCommandResult
     }
 
     if (isWeldedPrimary(item)) {
-        const spentTime = await reportWeldedPrimary(item);
+        // getobj() tests splittable() first for a partial count. That test
+        // reveals the weld before doquiver_core() checks whether it is new.
+        if (selection.count !== null && selection.count < item.quan) item.bknown = true;
+        const spentTime = !item.bknown;
+        await refuseWeldedPrimary();
+        resetBulkTakeoff();
         game.context.move = spentTime ? 1 : 0;
         return {
             item: null, spentTime, cancelled: false,
@@ -6344,6 +6339,8 @@ async function doquiverCore(verb: 'ready' | 'fire'): Promise<QuiverCommandResult
     const initialQuantity = item.quantity ?? item.quan ?? 1;
     const partialCount = requestedCount !== null
         && requestedCount < initialQuantity;
+    if (partialCount && item.otyp === LOADSTONE && item.cursed)
+        item.corpsenm = requestedCount;
     if (item === game.uquiver) {
         // C getobj() splits before doquiver_core() notices the readied parent.
         if (partialCount && splittableForQuiver(item)) {
@@ -6365,7 +6362,7 @@ async function doquiverCore(verb: 'ready' | 'fire'): Promise<QuiverCommandResult
     }
     if (requestedCount !== null && requestedCount < initialQuantity
         && splittableForQuiver(item)) {
-        item = splitStackForQuiver(item, requestedCount);
+        item = await splitStackForQuiver(item, requestedCount);
     }
 
     const incompatibleMask = W_ARMOR | W_ACCESSORY | W_SADDLE;
@@ -6404,7 +6401,7 @@ async function doquiverCore(verb: 'ready' | 'fire'): Promise<QuiverCommandResult
                 return { item: null, spentTime: false, cancelled: false };
             }
             if (partial === 'y') {
-                item = splitStackForQuiver(item, quantity - 1);
+                item = await splitStackForQuiver(item, quantity - 1);
                 readyAll = false;
             } else confirmation = 'Ready all of them instead?';
         }
@@ -6714,6 +6711,8 @@ async function throwCommand(
         return;
     }
     wipeHeroEngraving(2);
+
+    if (isWetTowel(item)) await dryTowel(item, -1);
 
     if (selectedIsGold && item === game.uquiver) {
         const previousCapacity = game._encumbranceLevel
@@ -7685,7 +7684,6 @@ async function domoveCore(dx: number, dy: number, explicitAttempt: boolean): Pro
         if (beastChoosesHeroDisplacement(monster, game, newx, newy)) {
             const ballChainMove = await beginBallAndChainMove(newx, newy);
             if (ballChainMove?.blocked) {
-                if (ballChainMove.blockedMessage) await pline(ballChainMove.blockedMessage);
                 game.context.move = Number(ballChainMove.consumedTurn);
                 return ballChainMove.consumedTurn;
             }
@@ -7749,7 +7747,6 @@ async function domoveCore(dx: number, dy: number, explicitAttempt: boolean): Pro
             if (await rejectHeroDiagonalDoorway(dx, dy, loc)) return false;
             const ballChainMove = await beginBallAndChainMove(newx, newy);
             if (ballChainMove?.blocked) {
-                if (ballChainMove.blockedMessage) await pline(ballChainMove.blockedMessage);
                 game.context.move = Number(ballChainMove.consumedTurn);
                 return ballChainMove.consumedTurn;
             }
@@ -7975,7 +7972,6 @@ async function domoveCore(dx: number, dy: number, explicitAttempt: boolean): Pro
     // Move the hero
     const ballChainMove = await beginBallAndChainMove(newx, newy);
     if (ballChainMove?.blocked) {
-        if (ballChainMove.blockedMessage) await pline(ballChainMove.blockedMessage);
         game.context.move = Number(ballChainMove.consumedTurn);
         return ballChainMove.consumedTurn;
     }

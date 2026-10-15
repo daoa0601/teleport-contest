@@ -2,7 +2,7 @@
 // C refs: skills.h, u_init.c:skill_init(), weapon.c:doenhance().
 import { formatFeltMessage } from './hero_speech.js';
 import { OBJECT_SPELL_CATEGORY, OBJECT_SPELL_LEVEL, OBJECT_SUBTYPE } from './object_data.js';
-import { MAXULEV, PICK_NONE, PICK_ONE, P_BASIC, P_EXPERT, P_FIRST_SPELL, P_ISRESTRICTED, P_LAST_SPELL, P_LAST_WEAPON, P_NONE, P_SKILLED, P_SKILL_LIMIT, TIP_ENHANCE, } from './const.js';
+import { MAXULEV, PICK_NONE, PICK_ONE, P_BASIC, P_EXPERT, P_FIRST_SPELL, P_ISRESTRICTED, P_LAST_SPELL, P_LAST_WEAPON, P_NONE, P_SKILLED, P_SKILL_LIMIT, P_BARE_HANDED_COMBAT, P_RIDING, P_TWO_WEAPON_COMBAT, P_UNSKILLED, TIP_ENHANCE, } from './const.js';
 import { game, requireLiveGame } from './gstate.js';
 import { flushPendingTopline, plineWithContinuation } from './display.js';
 import { recordObjectKnowledge } from './object_knowledge.js';
@@ -139,64 +139,88 @@ export function roleAllowsSpellbook(otyp, state) {
     return skill !== undefined && skill >= P_FIRST_SPELL
         && skill <= P_LAST_SPELL && !!roleMaximums(state)?.has(skill);
 }
-function currentWeaponSkill(game, skill) {
-    if (!Number.isInteger(skill) || skill <= 0)
-        return null;
-    const state = ensureHeroSkills(game)?.[skill];
-    return state?.skill ?? null;
-}
-function effectiveWeaponSkill(game, skill) {
-    const weaponSkill = currentWeaponSkill(game, skill);
-    if (weaponSkill === null)
-        return null;
-    if (!game.u?.twoweap)
-        return weaponSkill;
-    const twoWeaponSkill = currentWeaponSkill(game, 36);
-    return Math.min(weaponSkill, twoWeaponSkill ?? 0);
-}
 // Native weapon.c:weapon_hit_bonus().
-export function weaponSkillHitBonus(game, skill) {
-    const level = effectiveWeaponSkill(game, skill);
-    if (level === null)
-        return 0;
-    if (game.u?.twoweap) {
-        if (level <= 1)
-            return -9;
-        if (level === 2)
-            return -7;
-        if (level === 3)
-            return -5;
-        return -3;
+export function weaponSkillHitBonus(weapon, state = game) {
+    const weaponSkill = weaponSkillType(weapon);
+    const skill = attackSkillType(weapon, state);
+    let bonus = 0;
+    if (skill !== P_NONE && skill <= P_LAST_WEAPON) {
+        const level = proficiency(skill, state);
+        bonus = level <= P_UNSKILLED ? -4 : level === P_BASIC ? 0
+            : level === P_SKILLED ? 2 : level === P_EXPERT ? 3 : -4;
     }
-    if (level <= 1)
-        return -4;
-    if (level === 2)
-        return 0;
-    if (level === 3)
-        return 2;
-    return 3;
+    else if (skill === P_TWO_WEAPON_COMBAT) {
+        const level = Math.min(proficiency(skill, state), proficiency(weaponSkill, state));
+        bonus = level <= P_UNSKILLED ? -9 : level === P_BASIC ? -7
+            : level === P_SKILLED ? -5 : level === P_EXPERT ? -3 : -9;
+    }
+    else if (skill === P_BARE_HANDED_COMBAT) {
+        const level = Math.max(proficiency(skill, state), P_UNSKILLED);
+        bonus = Math.trunc((level + 1) * (usesMartialArts(state) ? 2 : 1) / 2);
+    }
+    if (state.u.usteed) {
+        const riding = proficiency(P_RIDING, state);
+        if (riding <= P_UNSKILLED)
+            bonus -= 2;
+        else if (riding === P_BASIC)
+            bonus--;
+        if (state.u.twoweap)
+            bonus -= 2;
+    }
+    return bonus;
 }
 // weapon.c:weapon_dam_bonus().
-export function weaponSkillDamageBonus(game, skill) {
-    const level = effectiveWeaponSkill(game, skill);
-    if (level === null)
-        return 0;
-    if (game.u?.twoweap) {
-        if (level <= 1)
-            return -3;
-        if (level === 2)
-            return -1;
-        if (level === 3)
-            return 0;
-        return 1;
+export function weaponSkillDamageBonus(weapon, state = game) {
+    const weaponSkill = weaponSkillType(weapon);
+    const skill = attackSkillType(weapon, state);
+    let bonus = 0;
+    if (skill !== P_NONE && skill <= P_LAST_WEAPON) {
+        const level = proficiency(skill, state);
+        bonus = level <= P_UNSKILLED ? -2 : level === P_BASIC ? 0
+            : level === P_SKILLED ? 1 : level === P_EXPERT ? 2 : -2;
     }
-    if (level <= 1)
-        return -2;
-    if (level === 2)
-        return 0;
-    if (level === 3)
-        return 1;
-    return 2;
+    else if (skill === P_TWO_WEAPON_COMBAT) {
+        const level = Math.min(proficiency(skill, state), proficiency(weaponSkill, state));
+        bonus = level <= P_UNSKILLED ? -3 : level === P_BASIC ? -1
+            : level === P_SKILLED ? 0 : level === P_EXPERT ? 1 : -3;
+    }
+    else if (skill === P_BARE_HANDED_COMBAT) {
+        const level = Math.max(proficiency(skill, state), P_UNSKILLED);
+        bonus = Math.trunc(level * (usesMartialArts(state) ? 3 : 1) / 2);
+    }
+    if (state.u.usteed && skill !== P_TWO_WEAPON_COMBAT) {
+        const riding = proficiency(P_RIDING, state);
+        if (riding === P_SKILLED)
+            bonus++;
+        else if (riding === P_EXPERT)
+            bonus += 2;
+    }
+    return bonus;
+}
+export function weaponSkillType(weapon) {
+    if (!weapon)
+        return P_BARE_HANDED_COMBAT;
+    if (![2, 6, 13].includes(weapon.oclass))
+        return P_NONE;
+    const skill = OBJECT_SUBTYPE[weapon.otyp];
+    if (skill === undefined)
+        throw new RangeError(`Weapon ${weapon.otyp} has no skill type`);
+    return Math.abs(skill);
+}
+function attackSkillType(weapon, state) {
+    return state.u.twoweap && weapon !== null
+        && (weapon === (state.uwep || state.u.uwep)
+            || weapon === (state.uswapwep || state.u.uswapwep))
+        ? P_TWO_WEAPON_COMBAT : weaponSkillType(weapon);
+}
+function proficiency(skill, state) {
+    const entry = ensureHeroSkills(state)?.[skill];
+    if (!entry)
+        throw new Error(`Hero combat requires initialized skill ${skill}`);
+    return entry.skill;
+}
+function usesMartialArts(state) {
+    return state.urole?.key === 'monk' || state.urole?.key === 'samurai';
 }
 // Native weapon.c:use_skill(). Practice can accumulate at a role's ceiling;
 // only the transition into eligibility produces advancement feedback.

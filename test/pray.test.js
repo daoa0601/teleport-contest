@@ -254,7 +254,7 @@ void test('divine lightning from #pray names the monster swallowing the hero', a
     requirePlayingGame(game);
     const worm = await createMonsterAt('purple worm', 11, 10);
     setMonsterGivenName(worm, 'Gullet');
-    installSwallowedHero(worm);
+    await installSwallowedHero(worm);
     grantIntrinsicProperty('disintegrationResistance', 'outside');
     initRng(2n);
     const messages = await prayAndReadMessages();

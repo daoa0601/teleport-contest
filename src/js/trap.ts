@@ -15,7 +15,6 @@ import { objectCombatName, observeObjectForNaming, ownedObjectName, simpleObject
 import { cansee, couldsee } from './vision.js';
 import { endObjectBurn } from './light.js';
 import { game } from './gstate.js';
-import { monsterName, possessiveName } from './monster_name.js';
 import { removeHeroEquipment, removeWornHeroItem } from './hero_equipment.js';
 import { useUpInventoryStack } from './hero_inventory.js';
 import { getObjectLocation } from './object_location.js';
@@ -44,6 +43,7 @@ import { stopAllObjectTimers } from './object_timers.js';
 import { rnl, rn2, rnd } from './rng.js';
 import type { MessagePublisher } from './display.js';
 import { canSeeMonster, newsym } from './display.js';
+import { dryTowel, wetTowel } from './towel.js';
 import type { GameState } from './game_state.js';
 import type { Hero } from './hero_types.js';
 import type { Monster } from './monster_types.js';
@@ -447,12 +447,7 @@ export async function waterDamageObject(
     const spe = object.spe ?? 0;
     if (object.otyp === CAN_OF_GREASE && spe > 0) return 'nothing';
     if (object.otyp === TOWEL && spe < 7) {
-        const wetness = spe + rollOne(7 - spe);
-        if (carried) {
-            const adjective = wetness < 3 ? spe ? 'damper' : 'damp' : spe ? 'wetter' : 'wet';
-            await emit(`${ownedObjectName(object, state)} gets ${adjective}.`);
-        }
-        object.spe = wetness;
+        await wetTowel(object, -rollOne(7 - spe), { state, verbose: true, publish: emit });
         return 'nothing';
     }
     if (object.greased) {
@@ -660,20 +655,13 @@ export async function burnArmorByFire(
     if (victim !== state.u && !monster)
         throw new TypeError('Armor damage requires the live hero or a monster.');
     const hero = monster === null;
-    const owner = !monster ? () => 'Your'
-        : visible ? () => possessiveName(monsterName(monster, { state, capitalized: true })) : null;
     const inventory = monster ? inventoryOf(monster) : state.inventory;
     for (const towel of inventory) {
         const wetness = towel.otyp === TOWEL ? towel.spe ?? 0 : 0;
         if (wetness <= 0) continue;
         const newWetness = recordRoll(random, calls, wetness + 1);
         if (newWetness === wetness) continue;
-        towel.spe = newWetness;
-        if (visible && owner && emitMessage) {
-            await emitMessage(
-                `${owner()} towel dries${newWetness ? '' : ' out'}.`,
-            );
-        }
+        await dryTowel(towel, newWetness, { state, verbose: visible, publish: emitMessage ?? null });
         break;
     }
     for (;;) {

@@ -197,7 +197,7 @@ void test('an insubstantial swallower lets the cursed earth boulder fall through
     requirePlayingGame(game);
     const monster = await createMonsterAt('fog cloud', 11, 10);
     monster.mhp = monster.mhpmax = 100;
-    installSwallowedHero(monster);
+    await installSwallowedHero(monster);
     await applyAreaScrollEffect(await scroll(SCR_EARTH, { cursed: true }));
     assert.equal(monster.mhp, 100);
     assert.ok(game.u.uhp < 500);

@@ -205,7 +205,7 @@ for (const swallowed of [false, true]) {
         const monster = await createMonsterAt('purple worm', 11, 10, TEST_MONSTER_FLAGS);
         monster.mhp = monster.mhpmax = 500;
         if (swallowed)
-            installSwallowedHero(monster);
+            await installSwallowedHero(monster);
         else
             game.u.ustuck = monster;
         await makeBlinded(20, { talk: false });
@@ -229,7 +229,7 @@ for (const blind of [false, true]) {
         const monster = await createMonsterAt('purple worm', 11, 10, TEST_MONSTER_FLAGS);
         monster.mhp = monster.mhpmax = 500;
         const level = monster.m_lev;
-        installSwallowedHero(monster);
+        await installSwallowedHero(monster);
         if (blind)
             await makeBlinded(20, { talk: false });
         const weapon = await addInventoryItem(await artifactObject('Stormbringer'));
@@ -270,7 +270,7 @@ void test('seeing a swallowed artifact strike does not expose the swallower\'s b
     assert.ok(scroll);
     const lamp = await addObjectToMonsterInventory(monster, await knownObject(OIL_LAMP, { age: 100 }), game);
     assert.ok(lamp);
-    installSwallowedHero(monster);
+    await installSwallowedHero(monster);
     const messages = [];
     await applyArtifactHitToMonster(await artifactObject('Fire Brand'), monster, 20, {
         visible: true, realizesDamage: true, random: () => 0,

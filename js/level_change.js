@@ -130,7 +130,7 @@ export async function gotoLevel(targetDepth, { arrival = 'random', ladder = fals
     // object identity while removing both objects from the departing floor.
     // placebc() installs them on the destination after hero placement.
     if (heroIsPunished())
-        unplaceBallAndChain(game);
+        await unplaceBallAndChain(game);
     clearHeroTrap(game);
     game.u.ustuck = null;
     // goto_level() calls set_ustuck(NULL), which requests a status update.

@@ -35,7 +35,7 @@ void test('release from swallowing replaces punishment without expulsion or a la
     game.u.ustuck = engulfer;
     game.u.uswallow = game.uswallow = 1;
     game._monsterSwallower = engulfer;
-    unplaceBallAndChain();
+    await unplaceBallAndChain();
     addTrap(game.level, PIT, engulfer.mx, engulfer.my);
     await releaseHeroFromMonster(engulfer);
     const storage = memoryStorage();

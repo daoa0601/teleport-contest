@@ -8,7 +8,7 @@ import {
     W_ARMG, W_ARMS, W_WEP,
 } from './const.js';
 import {
-    objectName, objectCombatName, observeObjectForNaming, observeDistantObjectForNaming, ownedObjectName,
+    definiteName, objectName, objectCombatName, objectNameIsPlural, observeObjectForNaming, observeDistantObjectForNaming, ownedObjectName,
 } from './objnam.js';
 import { artifactById, artifactEmitsLight, monsterCanTouchArtifact } from './artifacts.js';
 import { monsterHandName } from './body_parts.js';
@@ -285,7 +285,7 @@ export async function wieldMonsterWeapon(monster: Monster, state: GameState = ga
     if (previous && willWeld(previous)) {
         if (canSeeMonster(monster)) {
             const hand = wieldingHand(monster, previous);
-            const pronoun = monster.female ? 'her' : 'his';
+            const pronoun = perceivedPossessivePronoun(monster, { state });
             const plural = (previous.quan ?? previous.quantity ?? 1) > 1;
             const welded = `${plural ? 'are' : 'is'} welded to ${pronoun} ${hand}`;
             if (weapon.otyp === PICK_AXE) {
@@ -362,10 +362,8 @@ function weaponForCurrentAction(monster: Monster, state: GameState): GameObject 
 }
 
 function namedWeapon(weapon: GameObject, state: GameState): string {
-    const artifact = artifactById(weapon.oartifact, state);
-    if (artifact) return artifact.name;
-    const name = objectName(weapon, state);
-    return `The ${(weapon.quan ?? weapon.quantity ?? 1) > 1 ? makePlural(name) : name}`;
+    const name = definiteName(objectCombatName(weapon, { state, includeCorpseSpecies: false }), state);
+    return name.charAt(0).toUpperCase() + name.slice(1);
 }
 
 function wieldingHand(monster: Monster, weapon: GameObject): string {
@@ -388,7 +386,7 @@ export async function unwieldMonsterWeapon(monster: Monster, state: GameState = 
         endObjectBurn(weapon, state);
         if (canSeeMonster(monster)) {
             const hand = monsterHandName(monster.mnum);
-            await publish(`${namedWeapon(weapon, state)} in ${monsterPossessive(monster, state)} ${hand} stops shining.`);
+            await publish(`${namedWeapon(weapon, state)} in ${monsterPossessive(monster, state)} ${hand} ${objectNameIsPlural(weapon, state) ? 'stop' : 'stops'} shining.`);
         }
     }
     if (monster.mw === weapon) monster.mw = null;
@@ -438,7 +436,7 @@ export async function updateMonsterWeaponAfterPolymorph(monster: Monster, state:
         return await stack_object(weapon, state);
     }
 
-    const welded = weapon.cursed && ((weapon.owornmask ?? 0) & W_WEP);
+    const welded = willWeld(weapon) && ((weapon.owornmask ?? 0) & W_WEP);
     if (!(welded && monster.weaponCheck === NO_WEAPON_WANTED))
         monster.weaponCheck = NEED_WEAPON;
     return null;

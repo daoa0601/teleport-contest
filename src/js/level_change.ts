@@ -179,7 +179,7 @@ export async function gotoLevel(targetDepth: Partial<DungeonLocation>, {
     // C do.c:goto_level() unplaces punishment before savelev(), retaining
     // object identity while removing both objects from the departing floor.
     // placebc() installs them on the destination after hero placement.
-    if (heroIsPunished()) unplaceBallAndChain(game);
+    if (heroIsPunished()) await unplaceBallAndChain(game);
     clearHeroTrap(game);
     game.u.ustuck = null;
     // goto_level() calls set_ustuck(NULL), which requests a status update.
