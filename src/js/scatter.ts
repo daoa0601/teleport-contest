@@ -48,7 +48,7 @@ import { MONSTER_FLAGS1, MONSTER_SIZE, MONSTER_NAME, monsterHatesSilver,
     monsterIsAmorphous, monsterIsNoncorporeal, monsterIsNonliving, monsterIsVampireShifter } from './monster_data.js';
 import { findMonsterArmorClass } from './monworn.js';
 import {
-    ACID_VENOM, BOULDER, CREAM_PIE, EGG, GOLD_PIECE, OBJECT_MATERIAL, OBJECT_NAMES, STATUE,
+    ACID_VENOM, BOULDER, CREAM_PIE, EGG, GOLD_PIECE, OBJECT_MATERIAL, STATUE,
 } from './object_data.js';
 import {
     breakFloorObject,
@@ -63,9 +63,11 @@ import { isPoisonableObject } from './object_properties.js';
 import { shouldMulchMissile } from './projectile.js';
 import { touchPetrifies } from './stoning.js';
 import { cansee } from './vision.js';
+import { heroIsBlind } from './senses.js';
 import { d, rn2, rnd } from './rng.js';
 import { breakStatue, fractureRock } from './rock_breakage.js';
 import { objectCombatName, objectNameIsPlural } from './objnam.js';
+import { objectDescription } from './object_description.js';
 import { verbForSubject, withIndefiniteArticle } from './object_grammar.js';
 import { capitalizedDefiniteName, rayHitMessage, rayMissMessage } from './ray_hit_message.js';
 import {
@@ -137,10 +139,6 @@ function openFlightSquare(state: GameState, x: number, y: number): boolean {
     return ZAP_POS(location.typ)
         && (location.typ !== DOOR
             || !(location.doormask & (D_CLOSED | D_LOCKED)));
-}
-
-function objectName(object: GameObject): string {
-    return object.name || OBJECT_NAMES[object.otyp] || 'object';
 }
 
 async function finishScatteredMonsterDeath(
@@ -316,14 +314,17 @@ async function hitMonster(monster: Monster, node: ScatterNode, state: GameState,
 }
 
 async function hitHero(node: ScatterNode, state: GameState, options: ScatterSettings): Promise<boolean> {
+    requirePlayingGame(state);
     const object = node.object;
     if (!object) return false;
     const attack = 8 + (object.spe ?? 0)
         + ((MONSTER_SIZE[heroSpecies(state)] ?? 2) >= 3 ? 1 : 0);
     if (state.multi) endVoluntaryMultiTurn(state);
+    let damage = rollPhysicalWeaponDamageAgainstHero(object, state, {
+        rollOne: options.rollOne, rollDice: options.rollDice,
+    });
+    if (state.u.halfPhysicalDamage) damage = Math.trunc((damage + 1) / 2);
     if (object.oclass !== POTION_CLASS) {
-        let damage = rollPhysicalWeaponDamageAgainstHero(object, state, { rollOne: options.rollOne });
-        if (state.u.halfPhysicalDamage) damage = Math.trunc((damage + 1) / 2);
         const result = await hitHeroWithObject(object, damage, attack, {
             state, publish: options.publish, rollOne: options.rollOne,
         });
@@ -333,15 +334,29 @@ async function hitHero(node: ScatterNode, state: GameState, options: ScatterSett
         }
         return result.hit;
     }
-    if ((state.u.uac ?? 10) + attack <= options.rollOne(20)) return false;
-
-    await options.publish(`You are hit by ${objectName(object)}.`);
+    const name = object.quan > 1 ? objectDescription(object, { state })
+        : withIndefiniteArticle(objectCombatName(object, { state }));
+    const terse = heroIsBlind(state) || !state.flags.verbose;
+    const threshold = state.u.uac + attack;
+    const roll = options.rollOne(20);
+    if (threshold <= roll) {
+        if (terse) await options.publish('It misses.');
+        else if (threshold <= roll - 2) {
+            const subject = name.charAt(0).toUpperCase() + name.slice(1);
+            await options.publish(`${subject} ${verbForSubject(name, 'miss')} you.`);
+        } else await options.publish(`You are almost hit by ${name}.`);
+        return false;
+    }
+    const punctuation = damage > 4 ? '!' : '.';
+    await options.publish(terse ? `You are hit${punctuation}` : `You are hit by ${name}${punctuation}`);
     await hitHeroWithThrownPotion(object, {
         state, publish: options.publish, random: options.random,
         rollOne: options.rollOne, rollDice: options.rollDice, source: 'propelled',
     });
     node.object = null;
     node.stopped = true;
+    node.range -= 3;
+    if (!state.program_state.gameover) await stopHeroOccupation(state, options.publish);
     return true;
 }
 
