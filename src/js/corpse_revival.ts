@@ -409,9 +409,8 @@ function retryRevival(
         delay = riderRevivalTime(corpse, true);
     } else {
         kind = OBJECT_TIMER_KIND.ROT_CORPSE;
-        if (isRider(corpse.corpsenm)
-            && !objectTimers(corpse).some(timer => timer.kind === kind)) {
-            messages.push('You feel much less hassled.');
+        if (!objectTimers(corpse).some(timer => timer.kind === kind)) {
+            messages.push(`You feel ${isRider(corpse.corpsenm) ? 'much ' : ''}less hassled.`);
         }
         delay = Math.max(
             1,
