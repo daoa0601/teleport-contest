@@ -66,8 +66,6 @@ export interface BallChainMove extends BallMoveGeometry { blocked: false }
 export interface BlockedBallMove extends BallMoveGeometry {
     blocked: true;
     consumedTurn: boolean;
-    // Null means drag_ball already presented and resolved the interruption.
-    blockedMessage: string | null;
 }
 export type BallMovePlan = BallChainMove | BlockedBallMove;
 export interface BallMoveOptions { state?: GameState; allowDrag?: boolean }
@@ -671,11 +669,12 @@ export async function beginBallAndChainMove(targetX: number, targetY: number, {
 
     if (nearCapacity(state) > SLT_ENCUMBER
         && dist2(targetX, targetY, state.u.ux, state.u.uy) <= 2) {
+        await plineWithContinuation(state.inventory.length
+            ? 'You cannot carry all that and also drag the heavy iron ball.'
+            : 'You cannot drag the heavy iron ball.');
+        endVoluntaryMultiTurn(state);
         return {
             ...plan, blocked: true, consumedTurn: false,
-            blockedMessage: state.inventory.length
-                ? 'You cannot carry all that and also drag the heavy iron ball.'
-                : 'You cannot drag the heavy iron ball.',
         };
     }
     return beginDraggingBall(plan, targetX, targetY, state);
@@ -700,7 +699,7 @@ async function beginDraggingBall(
             await jerkHeroBackToChain(plan, state);
             return {
                 ...plan, blocked: true, consumedTurn: true,
-                blockedMessage: null, causeDelay: false,
+                causeDelay: false,
             };
         }
     }

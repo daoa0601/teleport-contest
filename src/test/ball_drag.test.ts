@@ -60,6 +60,20 @@ void test('a blocked chain route restores the chain above the ball before refusi
     assert.equal(game.context.move, 0);
 });
 
+void test('a refused heavy drag clears temporary invulnerability and the remaining counted moves', async () => {
+    await readyToDrag();
+    await addInventoryObject(ROCK, { quantity: Math.ceil(weightCapacity(game) * 1.6 / 10) });
+    game.u.invulnerable = true;
+
+    await rhack('4'.charCodeAt(0));
+    await rhack('l'.charCodeAt(0));
+
+    assert.equal(game.u.ux, 10);
+    assert.equal(game.multi, 0);
+    assert.equal(game.u.invulnerable, false);
+    assert.equal(game.context.move, 0);
+});
+
 void test('a pit under the chain pulls the hero backward and places the ball in the pit', async () => {
     const { ball, chain } = await readyToDrag();
     requirePlayingGame(game);

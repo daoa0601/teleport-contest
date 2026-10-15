@@ -7398,8 +7398,6 @@ async function domoveCore(dx, dy, explicitAttempt) {
         if (beastChoosesHeroDisplacement(monster, game, newx, newy)) {
             const ballChainMove = await beginBallAndChainMove(newx, newy);
             if (ballChainMove?.blocked) {
-                if (ballChainMove.blockedMessage)
-                    await pline(ballChainMove.blockedMessage);
                 game.context.move = Number(ballChainMove.consumedTurn);
                 return ballChainMove.consumedTurn;
             }
@@ -7471,8 +7469,6 @@ async function domoveCore(dx, dy, explicitAttempt) {
                 return false;
             const ballChainMove = await beginBallAndChainMove(newx, newy);
             if (ballChainMove?.blocked) {
-                if (ballChainMove.blockedMessage)
-                    await pline(ballChainMove.blockedMessage);
                 game.context.move = Number(ballChainMove.consumedTurn);
                 return ballChainMove.consumedTurn;
             }
@@ -7698,8 +7694,6 @@ async function domoveCore(dx, dy, explicitAttempt) {
     // Move the hero
     const ballChainMove = await beginBallAndChainMove(newx, newy);
     if (ballChainMove?.blocked) {
-        if (ballChainMove.blockedMessage)
-            await pline(ballChainMove.blockedMessage);
         game.context.move = Number(ballChainMove.consumedTurn);
         return ballChainMove.consumedTurn;
     }

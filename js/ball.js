@@ -603,11 +603,12 @@ export async function beginBallAndChainMove(targetX, targetY, { state = game, al
     }
     if (nearCapacity(state) > SLT_ENCUMBER
         && dist2(targetX, targetY, state.u.ux, state.u.uy) <= 2) {
+        await plineWithContinuation(state.inventory.length
+            ? 'You cannot carry all that and also drag the heavy iron ball.'
+            : 'You cannot drag the heavy iron ball.');
+        endVoluntaryMultiTurn(state);
         return {
             ...plan, blocked: true, consumedTurn: false,
-            blockedMessage: state.inventory.length
-                ? 'You cannot carry all that and also drag the heavy iron ball.'
-                : 'You cannot drag the heavy iron ball.',
         };
     }
     return beginDraggingBall(plan, targetX, targetY, state);
@@ -630,7 +631,7 @@ async function beginDraggingBall(plan, targetX, targetY, state) {
             await jerkHeroBackToChain(plan, state);
             return {
                 ...plan, blocked: true, consumedTurn: true,
-                blockedMessage: null, causeDelay: false,
+                causeDelay: false,
             };
         }
     }
