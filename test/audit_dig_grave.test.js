@@ -36,4 +36,17 @@ void test('digging a grave unearths the named corpse of a recorded adventurer', 
     assert.equal(corpse.spe, CORPSTAT_FEMALE);
     assert.ok(corpse.age <= game.moves - 51, 'The grave corpse is already old.');
 });
+void test('disturbing a mummy in a grave delivers the complete warning', async () => {
+    const level = freshObjectRoom();
+    level.requireAt(10, 10).typ = GRAVE;
+    grantIntrinsicProperty('levitation', 'outside');
+    const wand = await addInventoryObject(WAN_DIGGING, { spe: 2 });
+    const input = resetInputState();
+    installPagerInput(input, { expected: /dig|pit|grave|robber|tomb/, limit: 10 });
+    input.feed(`${wand.invlet}>`);
+    initRng(2n);
+    await rhack('z'.charCodeAt(0));
+    assert.equal(game._pending_message, "You've disturbed a tomb!");
+    assert.ok(level.monsters.some(monster => MONSTER_NAME[monster.mnum]?.endsWith('mummy')));
+});
 //# sourceMappingURL=audit_dig_grave.test.js.map

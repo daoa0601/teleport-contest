@@ -3,7 +3,7 @@
 // digactualhole(), liquid_flow(), dig_up_grave(), and the shared furniture
 // dispatch.  The digging effort loop itself lives in hero_digging.js.
 import { monsterHasMapPosition } from './monster_location.js';
-import { heroIsHallucinating } from './senses.js';
+import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { deleteTrap } from './trap_lifecycle.js';
 import { AD_DGST, AD_STCK, AD_WRAP, AT_ENGL, AT_HUGS, } from './monster_attack_types.js';
 import { adjustHeroAlignment } from './alignment.js';
@@ -655,7 +655,7 @@ export async function digUpGrave(coordinate = null, { state = game } = {}) {
             adjustHeroAlignment(-1, state);
         await plineWithContinuation('You have violated the sanctity of this grave!');
     }
-    const blind = state.blind || (state.u?.blindTurns ?? 0) > 0;
+    const blind = heroIsBlind(state);
     const hallucinating = heroIsHallucinating(state);
     const whatHappens = location.emptygrave ? -1 : rn2(5);
     if (whatHappens === 0 || whatHappens === 1) {
@@ -677,8 +677,8 @@ export async function digUpGrave(coordinate = null, { state = game } = {}) {
     else if (whatHappens === 3) {
         if (!blind) {
             await plineWithContinuation(hallucinating
-                ? 'I want my mummy'
-                : "You've disturbed a tomb");
+                ? 'I want my mummy!'
+                : "You've disturbed a tomb!");
         }
         const species = mkclassAligned(S_MUMMY, 0);
         if (species !== null) {
