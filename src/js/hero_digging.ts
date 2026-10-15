@@ -518,7 +518,7 @@ export async function continueHeroDigging(state = game): Promise<boolean> {
     }
 
     digging.effort += 10 + rn2(5) + heroAttackBonus(state) + (uwep.spe ?? 0)
-        - greatestErosion(uwep) + (state.udaminc ?? 0);
+        - greatestErosion(uwep) + (hero.udaminc ?? 0);
     if (state.urace?.name === 'dwarf') digging.effort *= 2;
 
     if (digging.down) {
