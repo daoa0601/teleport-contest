@@ -2,7 +2,7 @@
 // C refs: dothrow.c throw_obj(), invent.c freeinv(), mkobj.c splitobj(),
 // and zap.c bhit().
 import { monsterAtPosition, monsterHasMapPosition } from './monster_location.js';
-import { A_STR, BOLT_LIM, DOOR, D_CLOSED, D_LOCKED, IRONBARS, IS_LAVA, IS_POOL, IS_SOFT, IS_WATERWALL, Is_airlevel, LAVAWALL, LOST_THROWN, M_AP_OBJECT, M_AP_TYPE, P_CROSSBOW, SINK, WEB, ZAP_POS, isok, } from './const.js';
+import { A_STR, BOLT_LIM, DOOR, D_CLOSED, D_LOCKED, IRONBARS, IS_LAVA, IS_POOL, IS_SOFT, IS_WATERWALL, Is_airlevel, LAVAWALL, LOST_THROWN, M_AP_OBJECT, M_AP_TYPE, P_CROSSBOW, SINK, WEB, WT_SPLASH_THRESHOLD, ZAP_POS, isok, } from './const.js';
 import { monsterName } from './monster_name.js';
 import { artifactById } from './artifacts.js';
 import { dropBall } from './ball.js';
@@ -24,17 +24,19 @@ import { MONSTER_FLAGS1, MONSTER_MOVE, MONSTER_NAME, MONSTER_SYMBOL } from './mo
 import { breakObjectAtLocation, objectBreaksOnImpact } from './object_breakage.js';
 import { BOULDER, CANDELABRUM_OF_INVOCATION, HEAVY_IRON_BALL, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_SUBTYPE, ROCK, TALLOW_CANDLE, WAX_CANDLE, } from './object_data.js';
 import { objectClassForType } from './object_knowledge.js';
+import { objectIsVulnerableToErosion } from './object_erosion.js';
 import { isLauncherAmmunition, launcherMatchesAmmo, } from './object_properties.js';
 import { shipObject } from './object_migration.js';
 import { splitObjectStack } from './object_stack.js';
 import { projectileHitsIronBars } from './projectile_bars.js';
 import { rn2, rnd } from './rng.js';
 import { publishHeardMessage } from './hero_speech.js';
-import { heroIsBlind } from './senses.js';
+import { heroIsBlind, heroIsDeaf } from './senses.js';
 import { settleThrownShopObject } from './shk.js';
-import { isPoolAt } from './terrain_properties.js';
+import { isLavaAt, isPoolAt } from './terrain_properties.js';
 import { objectNoLongerHeld } from './object_release.js';
 import { cansee } from './vision.js';
+import { objectWeight } from './weight.js';
 const VENOM_CLASS = 17;
 const COIN_CLASS = 12;
 const GEM_CLASS = 13;
@@ -154,6 +156,12 @@ export async function finishHeroThrownObjectLanding({ state = game, object, x, y
         });
         if (state.program_state?.gameover || destroyed)
             return null;
+    }
+    // throwit() announces liquid impact before floor effects can consume the object.
+    if (!heroIsDeaf(state) && !state.underwater && !state.u.uinwater
+        && (isPoolAt(x, y, state)
+            || isLavaAt(x, y, state) && !objectIsVulnerableToErosion(object, 'burn', state))) {
+        await publish(objectWeight(object) > WT_SPLASH_THRESHOLD ? 'Splash!' : 'Plop!');
     }
     const floorEffect = await applyFloorEffects(object, x, y, {
         state,

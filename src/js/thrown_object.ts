@@ -22,6 +22,7 @@ import {
     P_CROSSBOW,
     SINK,
     WEB,
+    WT_SPLASH_THRESHOLD,
     ZAP_POS,
     isok,
 } from './const.js';
@@ -62,6 +63,7 @@ import {
     OBJECT_NAMES, OBJECT_SUBTYPE, ROCK, TALLOW_CANDLE, WAX_CANDLE,
 } from './object_data.js';
 import { objectClassForType } from './object_knowledge.js';
+import { objectIsVulnerableToErosion } from './object_erosion.js';
 import {
     isLauncherAmmunition, launcherMatchesAmmo,
 } from './object_properties.js';
@@ -70,11 +72,12 @@ import { splitObjectStack } from './object_stack.js';
 import { projectileHitsIronBars } from './projectile_bars.js';
 import { rn2, rnd } from './rng.js';
 import { publishHeardMessage } from './hero_speech.js';
-import { heroIsBlind } from './senses.js';
+import { heroIsBlind, heroIsDeaf } from './senses.js';
 import { settleThrownShopObject } from './shk.js';
-import { isPoolAt } from './terrain_properties.js';
+import { isLavaAt, isPoolAt } from './terrain_properties.js';
 import { objectNoLongerHeld } from './object_release.js';
 import { cansee } from './vision.js';
+import { objectWeight } from './weight.js';
 
 const VENOM_CLASS = 17;
 
@@ -267,6 +270,13 @@ export async function finishHeroThrownObjectLanding({
             state, publish, random,
         });
         if (state.program_state?.gameover || destroyed) return null;
+    }
+
+    // throwit() announces liquid impact before floor effects can consume the object.
+    if (!heroIsDeaf(state) && !state.underwater && !state.u.uinwater
+        && (isPoolAt(x, y, state)
+            || isLavaAt(x, y, state) && !objectIsVulnerableToErosion(object, 'burn', state))) {
+        await publish(objectWeight(object) > WT_SPLASH_THRESHOLD ? 'Splash!' : 'Plop!');
     }
 
     const floorEffect = await applyFloorEffects(object, x, y, {
