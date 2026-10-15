@@ -6018,25 +6018,27 @@ function corridorDoorEndpoint(room, wall, door) {
     }
     return null;
 }
-function createLuaDrawbridge(context, options) {
+async function createLuaDrawbridge(context, options) {
     const coordinate = luaCoordinate(options);
-    if (!coordinate)
+    if (!coordinate || !isok(coordinate.x, coordinate.y))
         throw new TypeError('des.drawbridge requires coordinates');
     const directions = {
         north: DB_NORTH, south: DB_SOUTH,
         east: DB_EAST, west: DB_WEST,
     };
     const direction = options.dir === 'random' || options.dir == null
-        ? [DB_NORTH, DB_SOUTH, DB_WEST, DB_EAST][rn2(4)]
+        ? -1
         : directions[options.dir];
     if (direction == null)
         throw new Error(`unknown Lua drawbridge direction ${options.dir}`);
-    const open = options.state === 'random' || options.state == null
-        ? !rn2(2) : options.state === 'open';
     if (!['open', 'closed', 'random', undefined].includes(options.state))
         throw new Error(`unknown Lua drawbridge state ${options.state}`);
-    makeSpecialDrawbridge(context, coordinate.x, coordinate.y, direction, open);
-    return { x: context.xstart + coordinate.x, y: context.ystart + coordinate.y };
+    const point = await getLocationCoord(context, coordinate, DRY | WET | HOT);
+    const open = options.state === 'random' || options.state == null
+        ? !rn2(2) : options.state === 'open';
+    if (!await makeSpecialDrawbridge(point.x, point.y, direction, open))
+        await impossible('Cannot create drawbridge.');
+    return point;
 }
 async function createLuaEngraving(context, options) {
     const point = options.point
@@ -6713,8 +6715,8 @@ function createLuaLevelSession() {
             if (point)
                 mappedCells.add(point.x, point.y);
         },
-        drawbridge: options => {
-            const point = createLuaDrawbridge(context, options);
+        drawbridge: async (options) => {
+            const point = await createLuaDrawbridge(context, options);
             mappedCells.add(point.x, point.y);
         },
         engraving: options => createLuaEngraving(context, options),
@@ -7174,33 +7176,35 @@ export async function generateFakeWizardLevel(active) {
     active.file = `${active.prototype}.lua`;
     await generateSpecialAndFixup(generateLuaSpecialLevel, active);
 }
-function makeSpecialDrawbridge(context, x, y, direction, open = false) {
+async function makeSpecialDrawbridge(x, y, direction, open) {
     const level = requireGameLevel();
-    const bridgeX = context.xstart + x;
-    const bridgeY = context.ystart + y;
-    const bridge = level.at(bridgeX, bridgeY);
+    const bridge = level.at(x, y);
     if (!bridge)
-        return;
-    const under = bridge.typ === LAVAPOOL ? DB_LAVA : DB_MOAT;
+        return false;
     const offsets = new Map([
         [DB_NORTH, { x: 0, y: -1 }], [DB_SOUTH, { x: 0, y: 1 }],
         [DB_EAST, { x: 1, y: 0 }], [DB_WEST, { x: -1, y: 0 }],
     ]);
-    const offset = offsets.get(direction);
-    if (!offset)
-        throw new RangeError(`Invalid drawbridge direction ${direction}`);
+    const requestedOffset = offsets.get(direction);
+    if (!requestedOffset)
+        await impossible('bad direction in create_drawbridge');
+    const offset = requestedOffset ?? { x: -1, y: 0 };
+    const wall = level.at(x + offset.x, y + offset.y);
+    if (!wall || !IS_WALL(wall.typ))
+        return false;
+    const under = bridge.typ === LAVAPOOL ? DB_LAVA : DB_MOAT;
+    const horizontal = offset.x === 0;
     bridge.typ = open ? DRAWBRIDGE_DOWN : DRAWBRIDGE_UP;
-    bridge.horizontal = direction === DB_EAST || direction === DB_WEST;
-    bridge.drawbridgemask = direction | under;
-    const wall = level.at(bridgeX + offset.x, bridgeY + offset.y);
-    if (wall) {
-        wall.typ = open ? DOOR : DBWALL;
-        if (open)
-            wall.doormask = D_NODOOR;
-        wall.horizontal = direction === DB_NORTH || direction === DB_SOUTH;
-        if (!open)
-            wall.wall_info |= W_NONDIGGABLE;
-    }
+    bridge.horizontal = !horizontal;
+    // Native rm.flags is five bits, including when the default -1 direction
+    // reaches create_drawbridge()'s westward fallback.
+    bridge.flags = bridge.drawbridgemask = (direction & 31) | under;
+    wall.typ = open ? DOOR : DBWALL;
+    wall.horizontal = horizontal;
+    wall.flags = wall.wall_info = open ? D_NODOOR : W_NONDIGGABLE;
+    if (open)
+        wall.doormask = D_NODOOR;
+    return true;
 }
 export async function generateHellFillerLevel(active) {
     const level = requireGameLevel();

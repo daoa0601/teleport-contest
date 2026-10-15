@@ -2,7 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import type { TestContext } from 'node:test';
 
-import { CLOUD, CORR, D_CLOSED, FOUNTAIN, F_LOOTED, F_WARNED, GRAVE, HEADSTONE, HWALL,
+import { CLOUD, CORR, DB_DIR, DB_WEST, DBWALL, DRAWBRIDGE_UP, D_CLOSED,
+    FOUNTAIN, F_LOOTED, F_WARNED, GRAVE, HEADSTONE, HWALL,
     ROOM, SCORR, SDOOR, STONE, S_LDWASHER, S_LPUDDING, S_LRING, T_LOOTED,
     TREE_LOOTED, TREE_SWARM, VWALL, W_NONPASSWALL } from '../js/const.js';
 import { init_dungeons } from '../js/dungeon.js';
@@ -18,6 +19,7 @@ import { freshGame } from './support/game-state.js';
 import { startLuaCore } from './support/lua-game.js';
 import { floorObjects } from './support/level-state.js';
 import { novelTitle } from '../js/novel_titles.js';
+import { resetInputState } from '../js/input.js';
 
 async function levelLua(t: TestContext) {
     freshGame({ flags: { bones: false } });
@@ -429,4 +431,24 @@ void test('explicit absent coordinates keep native random-feature and selection-
     assert.equal(level.requireAt(11, 5).typ, FOUNTAIN);
     assert.equal(level.requireAt(12, 5).typ, STONE);
     assert.deepEqual(level.regions?.[0]?.cells, [{ x: 11, y: 5 }]);
+});
+
+void test('Lua drawbridges require an adjacent wall and preserve the native default direction', async t => {
+    const lua = await levelLua(t);
+    resetInputState().feed(Array.from({ length: 16 }, () => ' '));
+    await lua.executeAsync(`
+        des.map({ x = 10, y = 5, map = [[...]] })
+        des.drawbridge({ x = 1, y = 0, dir = "north", state = "closed" })
+    `);
+    const level = requireGameLevel();
+    assert.equal(level.requireAt(11, 5).typ, ROOM, 'a bridge cannot create its own supporting wall');
+    assert.equal(level.requireAt(11, 4).typ, STONE);
+    await lua.executeAsync(`
+        des.map({ x = 10, y = 5, map = [[--
+|.]] })
+        des.drawbridge({ x = 1, y = 1, state = "closed" })
+    `);
+    assert.equal(level.requireAt(11, 6).typ, DRAWBRIDGE_UP);
+    assert.equal(level.requireAt(10, 6).typ, DBWALL);
+    assert.equal((level.requireAt(11, 6).drawbridgemask ?? 0) & DB_DIR, DB_WEST);
 });
