@@ -1511,7 +1511,7 @@ function levelMonsterAt(x, y, ignore = null) {
 // x/y pair for every rejected candidate.  Level generation skips the
 // visibility-avoidance pass, then falls back to a deterministic wrapped scan
 // only if all fifty random candidates fail.
-function randomMonsterPosition(mndx) {
+function randomMonsterPosition(mndx, gpflags) {
     const subject = mndx == null ? null : { kind: 'species', mnum: mndx };
     let x = 0, y = 0, good = false, tryCount = 0;
     do {
@@ -1519,7 +1519,7 @@ function randomMonsterPosition(mndx) {
         y = rn2(ROWNO);
         good = (!game.in_mklev
             && !!((game.viz_array?.[y]?.[x] ?? 0) & 0x02))
-            ? false : goodPosition(x, y, subject, { gpflags: GP_AVOID_MONPOS });
+            ? false : goodPosition(x, y, subject, { gpflags });
     } while (++tryCount < 50 && !good);
     if (good)
         return { x, y };
@@ -1530,6 +1530,8 @@ function randomMonsterPosition(mndx) {
     const xOffset = x;
     const yOffset = y;
     for (let visiblePass = firstPass; visiblePass < 2; visiblePass++) {
+        if (!visiblePass)
+            gpflags &= ~GP_CHECKSCARY;
         for (let dx = 0; dx < COLNO; dx++) {
             for (let dy = 0; dy < ROWNO; dy++) {
                 const candidateX = ((dx + xOffset) % (COLNO - 1)) + 1;
@@ -1540,7 +1542,7 @@ function randomMonsterPosition(mndx) {
                     && !!((game.viz_array?.[candidateY]?.[candidateX] ?? 0) & 0x02)) {
                     continue;
                 }
-                if (goodPosition(candidateX, candidateY, subject, { gpflags: GP_AVOID_MONPOS }))
+                if (goodPosition(candidateX, candidateY, subject, { gpflags }))
                     return { x: candidateX, y: candidateY };
             }
         }
@@ -1552,7 +1554,7 @@ function randomMonsterPosition(mndx) {
                     break;
                 }
             }
-            if (goodPosition(x, y, subject, { gpflags: GP_AVOID_MONPOS }))
+            if (goodPosition(x, y, subject, { gpflags }))
                 return { x, y };
         }
     }
@@ -1675,8 +1677,9 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
     const level = requireGameLevel();
     if (mdat == null && level?.flags?.rndmongen === false)
         return null;
+    const gpflags = GP_AVOID_MONPOS | GP_CHECKSCARY | (mmflags & MM_IGNOREWATER);
     if (x === 0 && y === 0) {
-        const point = randomMonsterPosition(mdat);
+        const point = randomMonsterPosition(mdat, gpflags);
         if (!point)
             return null;
         x = point.x;
@@ -1692,13 +1695,15 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
         y = point.y;
         requestedByHero = true;
     }
+    if (!isok(x, y)) {
+        await impossible(`makemon trying to create a monster at <${x},${y}>?`);
+        return null;
+    }
     if (levelMonsterAt(x, y)) {
         if (!(mmflags & MM_ADJACENTOK))
             return null;
         // The occupied-square branch has only the scary-square-aware search.
-        const flags = GP_AVOID_MONPOS | GP_CHECKSCARY
-            | (mmflags & MM_IGNOREWATER);
-        const point = findMonsterNearPositionCore(mdat, x, y, flags, game);
+        const point = findMonsterNearPositionCore(mdat, x, y, gpflags, game);
         if (!point)
             return null;
         x = point.x;
@@ -1718,8 +1723,7 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
             && ((tryCount === 1 && In_sokoban(game.u.uz)
                 && !!((MONSTER_FLAGS2[mndx] ?? 0) & 0x08000000)) // M2_ROCKTHROW
                 || !goodPosition(x, y, { kind: 'species', mnum: mndx }, {
-                    gpflags: GP_AVOID_MONPOS | GP_CHECKSCARY
-                        | (mmflags & MM_IGNOREWATER),
+                    gpflags,
                 })));
     }
     if (mdat != null
