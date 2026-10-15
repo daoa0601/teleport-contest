@@ -29,7 +29,8 @@ export interface GoldThrowOptions extends GoldContactCallbacks {
 // dokick.c:ghitm().
 
 import {
-    A_CHA, IS_SOFT, Is_airlevel, Is_waterlevel, LOST_THROWN,
+    A_CHA, DOOR, D_CLOSED, D_LOCKED, IS_SOFT, Is_airlevel, Is_waterlevel,
+    LOST_THROWN, ZAP_POS, isok,
 } from './const.js';
 import { hitFloorWithObject } from './object_drop.js';
 import { tossObjectUp } from './toss_up.js';
@@ -240,6 +241,16 @@ export async function resolveDirectGoldThrow({
 
     if (dz) {
         if (dz > 0) await pline('The gold hits the floor.');
+        await settleGoldOnFloor(state, gold, state.u.ux, state.u.uy);
+        return true;
+    }
+
+    // throw_gold() never enters bhit() when the purse cannot leave the hero.
+    const nextX = state.u.ux + dx;
+    const nextY = state.u.uy + dy;
+    const next = isok(nextX, nextY) ? state.level?.at(nextX, nextY) : null;
+    if (!next || !ZAP_POS(next.typ)
+        || next.typ === DOOR && !!(next.doormask & (D_CLOSED | D_LOCKED))) {
         await settleGoldOnFloor(state, gold, state.u.ux, state.u.uy);
         return true;
     }
