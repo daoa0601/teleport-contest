@@ -1837,6 +1837,13 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
     const isMimic = MONSTER_SYMBOL[mndx] === S_MIMIC;
     if (isMimic)
         await setMimicAppearance(pendingMonster);
+    // C makemon() creates the hiding object before fixed possessions such
+    // as Scorpius's Bell, so inventory flags cannot change this object.
+    if (game.in_mklev
+        && (MONSTER_SYMBOL[mndx] === 19 || MONSTER_SYMBOL[mndx] === 45)
+        && x && y) {
+        await mkobj_at(RANDOM_CLASS, x, y, true);
+    }
     let generatedGhostName = null;
     if (mndx === 287 && !(mmflags & MM_NONAME)) { // PM_GHOST
         generatedGhostName = randomGhostName();
@@ -1952,13 +1959,6 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
         initializeMonsterWormBody(pendingMonster, {
             allowTail: !(mmflags & MM_NOTAIL),
         });
-    // C makemon() type setup: spiders and snakes born during level creation
-    // receive a random floor object before they hide beneath it.
-    if (game.in_mklev
-        && (MONSTER_SYMBOL[mndx] === 19 || MONSTER_SYMBOL[mndx] === 45)
-        && x && y) {
-        await mkobj_at(RANDOM_CLASS, x, y, true);
-    }
     // Ordinary clerics always become roamers; ordinary Angels have a
     // one-in-three chance. Callers requesting priest/minion data own its
     // alignment themselves. This birth state also applies under NO_MINVENT.
