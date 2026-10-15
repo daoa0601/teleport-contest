@@ -175,8 +175,8 @@ function heroAttackBonus(state) {
     let bonus = strength < 6 ? -2
         : strength < 8 ? -1
             : strength < 17 ? 0
-                : strength < 1850 ? 1
-                    : strength < 1900 ? 2 : 3;
+                : strength < 68 ? 1 // STR18(50)
+                    : strength < 118 ? 2 : 3; // STR18(100)
     if ((state.u?.ulevel ?? 1) < 3)
         bonus++;
     return bonus + (dexterity < 4 ? -3
