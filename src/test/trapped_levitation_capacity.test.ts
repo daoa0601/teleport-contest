@@ -6,21 +6,34 @@ import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { grantIntrinsicProperty, setPropertyTerrainBlocked } from '../js/properties.js';
 import { LEVITATION_BOOTS, ROCK } from '../js/object_data.js';
-import { weightCapacity } from '../js/weight.js';
+import { MOD_ENCUMBER, nearCapacity, weightCapacity } from '../js/weight.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('levitation still supports a load while the hero is stuck in the floor', async () => {
-    freshObjectRoom({ hero: { utrap: 1, utraptype: TT_INFLOOR, uhp: 5 } });
+    freshObjectRoom({ hero: { utrap: 2, utraptype: TT_INFLOOR, uhp: 5 } });
     grantIntrinsicProperty('levitation', 'outside');
-    await addInventoryObject(ROCK, { quan: 90 });
+    // This load is Stressed at ordinary capacity and Burdened with levitation.
+    await addInventoryObject(ROCK, { quan: 120 });
     pushKeys(' '.repeat(5));
 
     await rhack('l'.charCodeAt(0));
 
-    assert.equal(game.u.utrap, 0, 'the hero can spend its movement escaping instead of collapsing');
+    assert.equal(game.u.utrap, 1, 'the injured hero can struggle against the floor under this load');
+    assert.equal(game.u.levitating, false, 'the floor still prevents floating');
     assert.equal(weightCapacity(game), 1000);
-    assert.match(game._lastPlineMessage ?? '', /finally wriggle free/);
+    assert.equal(game._lastPlineMessage, 'You are stuck in the floor.');
+});
+
+void test('an injured hero without levitation cannot struggle against the floor under a stressed load', async () => {
+    freshObjectRoom({ hero: { utrap: 2, utraptype: TT_INFLOOR, uhp: 5 } });
+    await addInventoryObject(ROCK, { quan: 120 });
+    assert.equal(nearCapacity(game), MOD_ENCUMBER);
+    pushKeys(' '.repeat(5));
+
+    await rhack('l'.charCodeAt(0));
+
+    assert.equal(game.u.utrap, 2, 'the stamina restriction prevents the escape attempt');
 });
 
 void test('terrain that blocks levitation also blocks its carrying benefit', () => {
