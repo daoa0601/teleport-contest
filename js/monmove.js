@@ -38,6 +38,7 @@ import { loseGuardianAngel } from './guardian_angel.js';
 import { shiftMonsterForDoor, resolveMonsterDoorPassage } from './monster_door_passage.js';
 import { heroSpecies } from './hero_species.js';
 import { releaseHeroFromMonster, releaseMonsterHold } from './hero_expulsion.js';
+import { checkQuestMonsterStatus } from './quest.js';
 import { placeHeroOnLevel } from './hero_location.js';
 import { swallowed } from './display.js';
 import { Is_rogue_level } from './const.js';
@@ -7243,6 +7244,7 @@ export async function runMonsterAction(monster, state, random = rn2, rollDice = 
             monsterHasLineOfSightToHero(monster, state))) {
         monster.mstrategy = (monster.mstrategy ?? 0) & ~STRAT_WAITFORU;
     }
+    checkQuestMonsterStatus(monster, state);
     if ((monster.mstrategy ?? 0) & STRAT_WAITMASK) {
         if (heroIsHallucinating(state))
             newsym(monster.mx, monster.my);
