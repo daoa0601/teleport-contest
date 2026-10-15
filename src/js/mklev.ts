@@ -2416,9 +2416,11 @@ async function makemon(
         await mongets(rn2(4) ? SHURIKEN : DART);
         await mongets(rn2(4) ? SHORT_SWORD : AXE);
         await giveOffensiveMonsterItem();
-    } else if (['student', 'attendant', 'abbot', 'acolyte', 'guide', 'apprentice']
+    } else if (MONSTER_HAS_WEAPON_ATTACK.has(mndx)
+        && ['student', 'attendant', 'abbot', 'acolyte', 'guide', 'apprentice']
         .includes(MONSTER_NAME[mndx] ?? '')) {
-        // C m_initweap(), novice quest guardians.
+        // C makemon() calls m_initweap() only for armed species. Abbots
+        // appear in its guardian switch but have no weapon attack.
         if (rn2(2)) await mongets(rn2(3) ? DAGGER : KNIFE);
         if (rn2(5)) await mongets(rn2(3) ? LEATHER_JACKET : LEATHER_CLOAK);
         if (rn2(3)) await mongets(rn2(3) ? LOW_BOOTS : HIGH_BOOTS);

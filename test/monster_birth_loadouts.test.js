@@ -3,11 +3,26 @@ import assert from 'node:assert/strict';
 import { MM_NOMSG } from '../js/const.js';
 import { makemonAt } from '../js/mklev.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { ARROW, AXE, BOW, CHAIN_MAIL, CLOAK_OF_MAGIC_RESISTANCE, CLUB, CREAM_PIE, DAGGER, DART, LEATHER_ARMOR, LEATHER_JACKET, LONG_SWORD, MACE, ROBE, SHORT_SWORD, } from '../js/object_data.js';
+import { ARROW, AXE, BOW, CHAIN_MAIL, CLOAK_OF_MAGIC_RESISTANCE, CLUB, CREAM_PIE, DAGGER, DART, LEATHER_ARMOR, LEATHER_JACKET, LONG_SWORD, MACE, OBJECT_NAMES, ROBE, SHORT_SWORD, } from '../js/object_data.js';
 import { freshObjectRoom } from './support/object-room.js';
 const KNIFE = 40;
 const SHURIKEN = 25;
 const RUBBER_HOSE = 78;
+const WEAPON_CLASS = 2;
+const ARMOR_CLASS = 3;
+void test('abbots are born without weapons or armor but can carry magic items', async () => {
+    let carriedItems = 0;
+    for (let seed = 1; seed <= 32; seed++) {
+        freshObjectRoom({ role: 'monk', gameplaySeed: seed });
+        const abbot = await makemonAt(MONSTER_NAME.indexOf('abbot'), 12, 10, MM_NOMSG);
+        assert.ok(abbot);
+        for (const item of abbot.minvent) {
+            assert.ok(item.oclass !== WEAPON_CLASS && item.oclass !== ARMOR_CLASS, `abbot received ${OBJECT_NAMES[item.otyp]} at birth (seed ${seed})`);
+        }
+        carriedItems += abbot.minvent.length;
+    }
+    assert.ok(carriedItems > 0, 'abbots remain eligible for ordinary magic items');
+});
 for (const name of ['page', 'roshi', 'warrior']) {
     void test(`${name} receives a sword and body armor at birth`, async () => {
         freshObjectRoom({ gameplaySeed: 1n });
