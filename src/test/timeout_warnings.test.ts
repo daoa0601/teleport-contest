@@ -5,6 +5,7 @@ import { game } from '../js/gstate.js';
 import { grantIntrinsicProperty, setPropertyTimeout } from '../js/properties.js';
 import { createHarmlessGasCloudSelection } from '../js/regions.js';
 import { freshTurnRoom } from './support/playable-room.js';
+import { installPolymorphedHero } from './support/hero-state.js';
 
 for (const turns of [5, 3, 1]) {
     void test(`temporary wall passage gives its ${turns}-turn warning or recovery`, async () => {
@@ -37,6 +38,23 @@ void test('permanent wall passage suppresses its temporary warning', async () =>
 
     assert.doesNotMatch(messages.join('\n'), /flabby/);
 });
+
+for (const turns of [5, 3]) {
+    void test(`a xorn body suppresses the ${turns}-turn wall-passage warning`, async () => {
+        const input = freshTurnRoom();
+        installPolymorphedHero('xorn');
+        setPropertyTimeout('passesWalls', turns);
+        const messages: string[] = [];
+        input.beforeRead = () => { messages.push(game._pending_message || game._retained_message); };
+        input.feed('ll');
+
+        await moveloop_core();
+        await moveloop_core();
+
+        assert.doesNotMatch(messages.join('\n'), /bloated|flabby/);
+        assert.equal(game.u.passesWalls, true);
+    });
+}
 
 void test('temporary breathing warns while the hero remains in a gas region', async () => {
     const input = freshTurnRoom();

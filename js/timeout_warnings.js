@@ -3,12 +3,12 @@ import { plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
 import { heroIsBreathless } from './hero_species.js';
 import { heroIsSurroundedByRock } from './prayer_trouble.js';
-import { hasCarriedProperty, hasInvokedProperty, hasPermanentIntrinsicProperty, hasWornProperty, propertyIsActive, propertyTimeout, setPropertyTimeout, } from './properties.js';
+import { hasCarriedProperty, hasIntrinsicProperty, hasInvokedProperty, hasWornProperty, propertyIsActive, propertyTimeout, setPropertyTimeout, } from './properties.js';
 import { heroIsInDangerousRegion } from './regions.js';
 import { heroIsPolymorphed } from './polyself.js';
 export async function wallPassageDialogue(state = game) {
     const turns = propertyTimeout('passesWalls', state);
-    if (hasPermanentIntrinsicProperty('passesWalls', state)
+    if (hasIntrinsicProperty('passesWalls', null, state)
         || hasWornProperty('passesWalls', state)
         || hasCarriedProperty('passesWalls', null, state)
         || hasInvokedProperty('passesWalls', state))
