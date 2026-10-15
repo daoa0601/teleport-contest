@@ -6,12 +6,13 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { addInventoryItem } from '../js/u_init.js';
 import { setPrimaryWeapon } from '../js/weapon_slots.js';
 import { runClaimedGlobTimer } from '../js/glob.js';
+import { beginObjectBurn } from '../js/light.js';
 import { placeCreatedObject } from '../js/floor_object.js';
 import { moveloop_core } from '../js/allmain.js';
 import { giveSpecialMonsterObject, makemonAt, mksobj, } from '../js/mklev.js';
 import { commitPetPickup, finishDeferredMonsterMiscItem, takeMonsterTurn, } from '../js/monmove.js';
 import { addObjectToMonsterInventory, linkObjectToMonsterInventory, removeObjectFromMonsterInventory, } from '../js/monster_inventory.js';
-import { BULLWHIP, DAGGER, FIGURINE, GLOB_OF_GRAY_OOZE, GOLD_PIECE, LUCKSTONE, MACE, SCR_IDENTIFY, SKELETON_KEY, SPEED_BOOTS, SPE_BOOK_OF_THE_DEAD, WAN_STRIKING, } from '../js/object_data.js';
+import { BULLWHIP, DAGGER, FIGURINE, GLOB_OF_GRAY_OOZE, GOLD_PIECE, LUCKSTONE, MACE, SCR_IDENTIFY, SKELETON_KEY, SPEED_BOOTS, OIL_LAMP, SPE_BOOK_OF_THE_DEAD, WAN_STRIKING, } from '../js/object_data.js';
 import { claimNextDueObjectTimer, OBJECT_TIMER_KIND, objectTimers, objectsInTimerGraph, scheduleObjectTimer, stopAllObjectTimers, } from '../js/object_timers.js';
 import { initRng } from '../js/rng.js';
 import { pushKeys, resetInputState } from '../js/input.js';
@@ -35,6 +36,21 @@ for (const flight of ['_thrownObject', '_kickedObject']) {
         assert.ok(monster.minvent.includes(dagger));
     });
 }
+void test('an engulfed hero sees a lamp go out before the engulfer takes it', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    const monster = await createMonsterAt('purple worm', 11, 10, NO_MINVENT);
+    game.u.uswallow = 1;
+    game.u.ustuck = monster;
+    const lamp = await knownObject(OIL_LAMP, { age: 300 });
+    beginObjectBurn(lamp);
+    const input = resetInputState();
+    installPagerInput(input, { expected: /lamp/, limit: 4 });
+    await addObjectToMonsterInventory(monster, lamp, game);
+    assert.equal(lamp.lamplit, false);
+    assert.equal(lamp.where, 'minvent');
+    assert.match(game._pending_message, /The oil lamp goes out\./);
+});
 void test('a pet returns a fetched item but keeps its worn saddle', async () => {
     freshObjectRoom();
     requirePlayingGame(game);

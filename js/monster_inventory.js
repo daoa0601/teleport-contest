@@ -14,6 +14,8 @@ import { monsterCanEngulf } from './monster_data.js';
 import { canSeeMonster, plineWithContinuation } from './display.js';
 import { updateMonsterEquipment } from './monster_equipment.js';
 import { unwieldMonsterWeapon } from './monster_weapon.js';
+import { observeObjectForNaming, objectName, objectNameIsPlural } from './objnam.js';
+import { heroIsBlind } from './senses.js';
 import { ELVEN_SHIELD, GLOB_OF_BLACK_PUDDING, GLOB_OF_GRAY_OOZE, OBJECT_MERGE, OBJECT_USES_KNOWN, ORCISH_SHIELD, SHIELD_OF_REFLECTION, } from './object_data.js';
 const DESCRIPTION_UNKNOWN_CLASSES = new Set([
     2, // WEAPON_CLASS
@@ -59,33 +61,38 @@ export function clearMonsterCarriedObjectState(object, state = game) {
     object.ocarry = null;
     delete object.carrierMid;
 }
-function prepareMonsterPickup(monster, object, state) {
+async function prepareMonsterPickup(monster, object, state) {
     if (state._thrownObject === object)
         state._thrownObject = null;
     else if (state._kickedObject === object)
         state._kickedObject = null;
+    removeObjectAndContentsFromBill(object, state);
+    const snuff = objectShedsLight(object) && monsterCanEngulf(monster);
+    if (snuff && state.u.uswallow && state.u.ustuck === monster && !heroIsBlind(state)) {
+        observeObjectForNaming(object, { state });
+        const name = objectName(object, state);
+        await plineWithContinuation(`The ${name} ${objectNameIsPlural(object, state) ? 'go' : 'goes'} out.`);
+    }
+    object.no_charge = false;
+    if (!monster.mtame && monster !== state.u?.ustuck
+        && !canSeeMonster(monster)) {
+        forgetObjectKnowledge(object);
+    }
     if (!monster.mtame) {
         if (object.how_lost === LOST_THROWN)
             object.how_lost = LOST_STOLEN;
         else if (object.how_lost === LOST_DROPPED)
             object.how_lost = LOST_NONE;
     }
-    removeObjectAndContentsFromBill(object, state);
-    object.no_charge = false;
-    if (!monster.mtame && monster !== state.u?.ustuck
-        && !canSeeMonster(monster)) {
-        forgetObjectKnowledge(object);
-    }
     attachCursedFigurineTimer(object, state);
-    return objectShedsLight(object) && !artifactEmitsLight(object)
-        && monsterCanEngulf(monster);
+    return snuff && !artifactEmitsLight(object);
 }
 // Carrying effects precede merging; engulfing snuffs the surviving object.
 export async function addObjectToMonsterInventory(monster, object, state = game, { atFront = true } = {}) {
     requireLiveGame(state);
     if (!monster || !object)
         return null;
-    const extinguish = prepareMonsterPickup(monster, object, state);
+    const extinguish = await prepareMonsterPickup(monster, object, state);
     const carried = await linkObjectToMonsterInventory(monster, object, { atFront, state });
     if (extinguish)
         endObjectBurn(carried, state, state.moves);
@@ -93,7 +100,7 @@ export async function addObjectToMonsterInventory(monster, object, state = game,
 }
 export async function addCreatedObjectToMonsterInventory(monster, object, state = game, { atFront = true } = {}) {
     assertCreatedObject(object, state);
-    const extinguish = prepareMonsterPickup(monster, object, state);
+    const extinguish = await prepareMonsterPickup(monster, object, state);
     const carried = await linkCreatedObjectToMonsterInventory(monster, object, { atFront, state });
     if (extinguish)
         endObjectBurn(carried, state, state.moves);
