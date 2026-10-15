@@ -5246,9 +5246,8 @@ async function dowield() {
         game.context.move = 0;
         return;
     }
-    const weapons = (game.inventory || []).filter(object => object.class === 'Weapons' || object.oclass === 2
-        || (object.oclass === 6 && OBJECT_SUBTYPE[object.otyp] !== 0))
-        .sort((left, right) => String(left.invlet || '').localeCompare(String(right.invlet || '')));
+    const weapons = (game.inventory || []).filter(object => object.oclass === 2 || isWeaponTool(object))
+        .sort((left, right) => inventoryLetterRank(left) - inventoryLetterRank(right));
     const letters = weapons.map(object => object.invlet).join('');
     const choices = ['-', compactInventoryLetters(letters)].filter(Boolean).join(' ');
     const prompt = `What do you want to wield? [${choices} or ?*] `;
