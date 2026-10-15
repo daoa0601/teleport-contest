@@ -18,7 +18,7 @@ import { leashAttachedToMonster, releaseMonsterLeash, } from './monster_leash.js
 import { rn2, rnd } from './rng.js';
 import { GP_CHECKSCARY, A_STR, COLNO, ROWNO, VAULT, VIBRATING_SQUARE, M_AP_NOTHING, MON_FLOOR, MON_OFFMAP, RLOC_MSG, RLOC_NOMSG, RLOC_NONE, RLOC_ERR, STRAT_APPEARMSG, BOLT_LIM, TT_BURIEDBALL, In_endgame, MIGR_PORTAL, Upolyd, ZAP_POS, is_hole, is_pit, isok, } from './const.js';
 import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL, monsterHasNoAttacks, } from './monster_data.js';
-import { AMULET_OF_YENDOR, LEASH, OBJECT_SPELL_LEVEL, RIN_TELEPORTATION, RIN_TELEPORT_CONTROL, SPE_TELEPORT_AWAY, } from './object_data.js';
+import { AMULET_OF_YENDOR, LEASH, OBJECT_SPELL_LEVEL, RIN_TELEPORTATION, RIN_TELEPORT_CONTROL, SPE_TELEPORT_AWAY, WAN_TELEPORTATION, } from './object_data.js';
 import { currentAttribute } from './attrib.js';
 import { spendHeroNutrition } from './hunger.js';
 import { beginBallAndChainMove, finishBallAndChainMove, heroIsPunished, placeBallAndChain, unplaceBallAndChain, } from './ball.js';
@@ -52,6 +52,7 @@ import { clearHeroTrap } from './hero_traps.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { fillPitWithBoulderAt } from './pit_fill.js';
 import { seeTrap } from './trap.js';
+import { learnObjectType } from './object_knowledge.js';
 import { isRoom } from './map_types.js';
 import { hasShopkeeperData } from './shop_types.js';
 function requireLevel(state) {
@@ -577,6 +578,8 @@ export async function relocateMonsterTo(monster, x, y, { state = game, random = 
             });
             await plineWithContinuation(`${name} ${appear ? 'suddenly ' : ''}${heroIsBlind(state) ? 'arrives' : 'appears'}${near}!`);
         }
+        if (state._currentWand?.otyp === WAN_TELEPORTATION)
+            learnObjectType(WAN_TELEPORTATION, state);
     }
     if (residentShopkeeper && hasShopkeeperData(monster) && !shopkeeperInOwnShop(monster, state))
         await makeAngryShopkeeper(monster, state);

@@ -30,7 +30,7 @@ import {
 } from './monster_data.js';
 import {
     AMULET_OF_YENDOR, LEASH, OBJECT_SPELL_LEVEL, RIN_TELEPORTATION, RIN_TELEPORT_CONTROL,
-    SPE_TELEPORT_AWAY,
+    SPE_TELEPORT_AWAY, WAN_TELEPORTATION,
 } from './object_data.js';
 import { currentAttribute } from './attrib.js';
 import { spendHeroNutrition } from './hunger.js';
@@ -73,6 +73,7 @@ import { clearHeroTrap } from './hero_traps.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { fillPitWithBoulderAt } from './pit_fill.js';
 import { seeTrap } from './trap.js';
+import { learnObjectType } from './object_knowledge.js';
 
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { GameMap } from './game.js';
@@ -688,6 +689,8 @@ export async function relocateMonsterTo(monster: Monster, x: number, y: number, 
             await plineWithContinuation(`${name} ${appear ? 'suddenly ' : ''}${
                 heroIsBlind(state) ? 'arrives' : 'appears'}${near}!`);
         }
+        if (state._currentWand?.otyp === WAN_TELEPORTATION)
+            learnObjectType(WAN_TELEPORTATION, state);
     }
 
     if (residentShopkeeper && hasShopkeeperData(monster) && !shopkeeperInOwnShop(monster, state))
