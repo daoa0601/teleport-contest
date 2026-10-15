@@ -17,6 +17,7 @@ import {
 } from './polyself.js';
 import { heroIsBlind } from './senses.js';
 import { surfaceName } from './terrain_name.js';
+import { riderCannotReachMessage } from './steed.js';
 
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
@@ -91,11 +92,7 @@ function trapAtHero(state: GameState): Trap | null {
 function reachMessage(state: GameState, problem: FloorReachProblem, trap: Trap | null): string {
     if (problem === 'pit-edge')
         return 'You cannot reach the bottom of the pit.';
-    if (problem === 'riding') {
-        return `You aren't skilled enough to reach from your ${
-            (state.u.usteed ? MONSTER_NAME[state.u.usteed.mnum] : null) || 'steed'
-        }.`;
-    }
+    if (problem === 'riding') return riderCannotReachMessage(state);
     if (heroIsBlind(state)) return 'You cannot reach anything here.';
     const surface = trap?.ttyp === HOLE ? 'edge of the hole'
         : trap?.ttyp === TRAPDOOR ? 'trap door'

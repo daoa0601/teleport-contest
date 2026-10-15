@@ -72,6 +72,15 @@ const IRON = 11;
 const MITHRIL = 17;
 const S_EYE = 5;
 const S_LIGHT = 25;
+export function riderCannotReachMessage(state = game) {
+    const steed = state.u.usteed;
+    if (!steed)
+        throw new Error('A riding reach message requires a steed.');
+    const name = monsterName(steed, {
+        state, article: steed.mtame ? 'your' : 'the', suppressSaddle: true,
+    });
+    return `You aren't skilled enough to reach from ${name}.`;
+}
 export function steedIsGrounded(steed, state = game) {
     const flags = MONSTER_FLAGS1[steed?.mnum] ?? 0;
     const symbol = MONSTER_SYMBOL[steed?.mnum];

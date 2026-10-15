@@ -9,6 +9,7 @@ import { MONSTER_NAME, MONSTER_SYMBOL, monsterDigests, } from './monster_data.js
 import { heroFormClings, heroFormFlags, heroIsFlying, heroMonsterForm, } from './polyself.js';
 import { heroIsBlind } from './senses.js';
 import { surfaceName } from './terrain_name.js';
+import { riderCannotReachMessage } from './steed.js';
 const M1_BREATHLESS = 0x00000400;
 const S_EYE = 5;
 const S_LIGHT = 25;
@@ -58,9 +59,8 @@ function trapAtHero(state) {
 function reachMessage(state, problem, trap) {
     if (problem === 'pit-edge')
         return 'You cannot reach the bottom of the pit.';
-    if (problem === 'riding') {
-        return `You aren't skilled enough to reach from your ${(state.u.usteed ? MONSTER_NAME[state.u.usteed.mnum] : null) || 'steed'}.`;
-    }
+    if (problem === 'riding')
+        return riderCannotReachMessage(state);
     if (heroIsBlind(state))
         return 'You cannot reach anything here.';
     const surface = trap?.ttyp === HOLE ? 'edge of the hole'

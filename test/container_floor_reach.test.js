@@ -26,7 +26,7 @@ for (const command of ['loot', 'tip']) {
         const chest = await floorObject(CHEST, 10, 10, { initialize: false, lknown: false });
         const allowed = await ableToLoot(10, 10, command === 'loot');
         assert.equal(allowed, false);
-        assert.equal(game._pending_message, "You aren't skilled enough to reach from your saddled pony.");
+        assert.equal(game._pending_message, "You aren't skilled enough to reach from your pony.");
         assert.equal(chest.lknown, false);
         assert.equal(game.context.move, 0);
     });
