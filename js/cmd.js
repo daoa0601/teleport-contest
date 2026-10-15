@@ -6227,9 +6227,13 @@ async function dofire(cannedShotLimit = null) {
                 return;
             }
         }
-        await dothrow(fireObject, true, shotLimit);
-        if (quiverSelectionSpentTime && !game.context.move)
+        const throwResult = await throwCommand(fireObject, true, shotLimit);
+        // dofire() returns the time spent unwielding even if throw_obj()
+        // cancels. Only a cancellation without that elapsed turn clears recall.
+        if (quiverSelectionSpentTime)
             game.context.move = 1;
+        else if (throwResult === 'cancelled')
+            resetCommandVariables(true);
         return;
     }
 }
@@ -6253,7 +6257,11 @@ async function finishOrdinarySwallowedConsumedKill(monster, kind, death = {}) {
 async function finishOrdinaryMapPotionKill(monster, death = {}) {
     return finishHeroMonsterKillOutcome(monster, monster.mx, monster.my, death);
 }
-async function dothrow(selectedItem = null, capabilityChecked = false, suppliedShotLimit = null) {
+async function dothrow(selectedItem = null) {
+    if (await throwCommand(selectedItem) === 'cancelled')
+        resetCommandVariables(true);
+}
+async function throwCommand(selectedItem = null, capabilityChecked = false, suppliedShotLimit = null) {
     const shotLimit = suppliedShotLimit === null
         ? Math.max(0, game._commandCount || 0)
         : Math.max(0, suppliedShotLimit || 0);
@@ -6288,8 +6296,7 @@ async function dothrow(selectedItem = null, capabilityChecked = false, suppliedS
     }
     const item = selectedItem;
     if (!item) {
-        resetCommandVariables(true); // dothrow() returns ECMD_CANCEL without an object.
-        return;
+        return 'cancelled';
     }
     const previous = game.inventory[game.inventory.indexOf(item) - 1];
     const splitParent = previous && previous.invlet === item.invlet ? previous : null;
@@ -6300,9 +6307,8 @@ async function dothrow(selectedItem = null, capabilityChecked = false, suppliedS
     if (!direction) {
         if (splitParent)
             await rejoinObjectStack(splitParent, item, game);
-        resetCommandVariables(true); // throw_obj() returns ECMD_CANCEL without a direction.
         game._pending_message = '';
-        return;
+        return 'cancelled';
     }
     const { dx, dy, dz } = direction;
     const selfThrow = !dx && !dy && !dz;
