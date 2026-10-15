@@ -4,6 +4,7 @@ import { monsterFireDescription } from './monster_fire_description.js';
 import { bot } from './display.js';
 import { launchRollingBoulder } from './rolling_boulder.js';
 import { recorderLocalHour } from './calendar.js';
+import { impossible, panic } from './diagnostics.js';
 // Monster movement-ration state, movement, and combat.
 // C refs: allmain.c moveloop_core(), mon.c mcalcmove()/movemon()/mfndpos(),
 // monmove.c m_move()/dochug(), and dogmove.c dog_goal()/dog_move().
@@ -6427,8 +6428,19 @@ async function completeMovedMonsterAction(monster, movement, state, random, roll
             if (state === game)
                 swallowed(false);
         }
-        else if (state === game)
-            newsym(monster.mx, monster.my);
+        else if (state === game) {
+            const { mx, my } = monster;
+            if (!state.in_mklev && !state.program_state.saving && !isok(mx, my)) {
+                // C newsym() diagnoses column zero even when a live guard
+                // is legitimately parked there until its corridor clears.
+                const reason = `newsym: attempting screen update for <${mx},${my}>`;
+                if (mx < 0 || my < 0 || mx >= COLNO || my >= ROWNO)
+                    await panic(reason, { state });
+                await impossible(reason, { state });
+            }
+            else
+                newsym(mx, my);
+        }
         movement.postMoveDestinationPainted = true;
     }
     if (movement.postMoveStatus === MMOVE_MOVED || movement.postMoveStatus === MMOVE_DONE) {

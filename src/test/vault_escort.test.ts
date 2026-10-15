@@ -11,6 +11,7 @@ import { rn2 } from '../js/rng.js';
 import { moveHeroByTeleport } from '../js/teleport.js';
 import { finishTeleportArrival } from '../js/location_effects.js';
 import { moveVaultGuard } from '../js/vault.js';
+import { runMonsterAction } from '../js/monmove.js';
 import { floorObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -99,4 +100,41 @@ void test('teleporting away with vault gold releases an angry guard immediately'
     await finishTeleportArrival(movement);
 
     assert.equal(guard.mpeaceful, 0);
+});
+
+void test('a live parked guard reports its invalid map update before other monsters act', async () => {
+    const { level, guard } = await escort();
+    requirePlayingGame(game);
+    assert.ok(guard._egd);
+    guard.mx = guard._egd.ogx = 13;
+    guard._egd.fcend = 3;
+    guard._egd.fakecorr.push({ x: 12, y: 10, typ: STONE, flags: 0 }, { x: 13, y: 10, typ: STONE, flags: 0 });
+    for (let x = 8; x <= 11; x++) {
+        for (let y = 8; y <= 11; y++) {
+            if (x === 8 || x === 11 || y === 8 || y === 11) level.requireAt(x, y).typ = VWALL;
+        }
+    }
+    for (let x = 11; x <= 13; x++) level.requireAt(x, 10).typ = CORR;
+    game.u.ux = 12;
+    const input = resetInputState();
+
+    const turn = runMonsterAction(guard, game);
+    const paused = await Promise.race([
+        turn.then(() => false), input.waitUntilBlocked().then(() => true),
+    ]);
+    try {
+        assert.equal(paused, true, 'A live parked guard must acknowledge its disappearance before continuing.');
+        const message = game.nhDisplay?.grid[0]?.map(cell => cell.ch).join('') ?? '';
+        assert.match(message, /Suddenly, the guard disappears\.--More--/);
+        assert.equal(guard.mx, 0);
+        assert.ok(guard.mhp > 0);
+        input.feed(' ');
+        await input.waitUntilBlocked();
+        const diagnostic = game.nhDisplay?.grid[0]?.map(cell => cell.ch).join('') ?? '';
+        assert.match(diagnostic, /newsym: attempting screen update for <0,0>/);
+    } finally {
+        input.beforeRead = () => input.feed(' ');
+        input.feed(' ');
+        await turn;
+    }
 });

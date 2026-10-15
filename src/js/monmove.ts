@@ -7,6 +7,7 @@ import { recorderLocalHour } from './calendar.js';
 import type { MonsterLiquidDeathContext } from './mon.js';
 import type { MonsterDeathOptions } from './monster_death.js';
 import type { Monster } from './monster_types.js';
+import { impossible, panic } from './diagnostics.js';
 import type { GameObject } from './object_types.js';
 import type { PlayingGameState } from './game_state.js';
 import type { MessagePublisher } from './display.js';
@@ -7749,7 +7750,17 @@ async function completeMovedMonsterAction(
             state.u.uy0 = state.u.uy;
             await placeHeroOnLevel(monster.mx, monster.my, state);
             if (state === game) swallowed(false);
-        } else if (state === game) newsym(monster.mx, monster.my);
+        } else if (state === game) {
+            const { mx, my } = monster;
+            if (!state.in_mklev && !state.program_state.saving && !isok(mx, my)) {
+                // C newsym() diagnoses column zero even when a live guard
+                // is legitimately parked there until its corridor clears.
+                const reason = `newsym: attempting screen update for <${mx},${my}>`;
+                if (mx < 0 || my < 0 || mx >= COLNO || my >= ROWNO)
+                    await panic(reason, { state });
+                await impossible(reason, { state });
+            } else newsym(mx, my);
+        }
         movement.postMoveDestinationPainted = true;
     }
 
