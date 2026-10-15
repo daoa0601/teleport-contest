@@ -23,8 +23,8 @@ import { adjustLevelAbilities, experienceRankIndex, randomExperience, } from './
 import { recordGameLogEvent } from './gamelog.js';
 import { withIndefiniteArticle } from './object_grammar.js';
 import { reportHeroEncumbrance } from './attrib.js';
-import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, SPECIAL_PM, monsterBreaksArmor, monsterHasNoHands, monsterHornCount, monsterIsBat, monsterIsCentaur, monsterIsAmorphous, monsterIsSlithy, monsterIsUnsolid, monsterIsVampire, monsterIsVerySmall, monsterIsWhirly, monsterSlipsArmor, monsterTypeName, monsterWrappingAllowed, validVampireShiftForm, } from './monster_data.js';
-import { AD_ELEC, AD_FIRE } from './monster_attack_types.js';
+import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL, SPECIAL_PM, monsterBreaksArmor, monsterHasNoHands, monsterHornCount, monsterIsBat, monsterIsCentaur, monsterIsAmorphous, monsterIsSlithy, monsterIsUnsolid, monsterIsMindFlayer, monsterIsUnicorn, monsterIsVampire, monsterIsVerySmall, monsterIsWhirly, monsterSlipsArmor, monsterTypeName, monsterWrappingAllowed, validVampireShiftForm, } from './monster_data.js';
+import { AD_ELEC, AD_FIRE, AT_BREA, AT_GAZE, AT_SPIT } from './monster_attack_types.js';
 import { AMULET_OF_UNCHANGING, ELVEN_MITHRIL_COAT, LEASH, LENSES, LOADSTONE, GRAY_DRAGON_SCALE_MAIL, GRAY_DRAGON_SCALES, OBJECT_MATERIAL, OBJECT_NAMES, RIN_POLYMORPH_CONTROL, RIN_PROTECTION_FROM_SHAPE_CHANGERS, } from './object_data.js';
 import { newsym, pline, plineWithContinuation, see_monsters, } from './display.js';
 import { deleteObject } from './object_delete.js';
@@ -36,7 +36,7 @@ import { exerciseAttribute } from './attrib.js';
 import { heroIsBlind, setHeroBlindnessTurns, syncBlindness } from './senses.js';
 import { nameToMonster, nameToMonsterClass } from './mondata.js';
 import { counterWereSpecies } from './monster_species.js';
-import { wereBeastForSpecies } from './were.js';
+import { isWereMonster, wereBeastForSpecies } from './were.js';
 import { getLine, promptYesNo } from './query.js';
 import { golemHitPoints, isHomeElemental } from './monster_hit_points.js';
 import { races } from './roles.js';
@@ -86,7 +86,10 @@ const G_HELL = 0x0400;
 const G_NOHELL = 0x0800;
 const G_UNIQ = 0x1000;
 const S_MIMIC = 13;
+const S_NYMPH = 14;
 const S_DRAGON = 30;
+const S_EEL = 57;
+const MS_SHRIEK = 18;
 const MZ_SMALL = 1;
 const MZ_HUGE = 4;
 const MAXULEV = 30;
@@ -582,20 +585,50 @@ export async function polymonHero(mnum, options = {}) {
         : await selfTouchPetrifyingWeapons();
     if (selfTouch.died)
         return { transformed: true, mnum, died: true };
-    const currentForm = game.u.umonnum;
-    const canBreathe = (MONSTER_ATTACKS[currentForm] || [])
-        .some(([attackType]) => attackType === 12);
-    if (game.flags.verbose !== false && canBreathe) {
-        await plineWithContinuation('Use the command #monster to use your breath weapon.');
-    }
-    const laysEggs = !!((MONSTER_FLAGS1[currentForm] ?? 0) & M1_OVIPAROUS);
-    const aquaticEel = MONSTER_NAME[currentForm] === 'giant eel'
-        || MONSTER_NAME[currentForm] === 'electric eel';
-    if (game.flags.verbose !== false && laysEggs
-        && game.flags.female && !aquaticEel) {
-        await plineWithContinuation('Use the command #sit to lay an egg.');
-    }
+    if (game.flags.verbose !== false)
+        await explainFormAbilities();
     return { transformed: true, mnum };
+}
+async function explainFormAbilities() {
+    requirePlayingGame(game);
+    const form = game.u.umonnum;
+    const attacks = MONSTER_ATTACKS[form] ?? [];
+    const hasAttack = (type) => attacks.some(([attack]) => attack === type);
+    const explain = (action) => plineWithContinuation(`Use the command #monster to ${action}.`);
+    const mightHide = heroFormHidesUnderObjects() || heroFormHidesWithoutCover();
+    const webmaker = heroCanSpinWeb();
+    if (hasAttack(AT_BREA))
+        await explain('use your breath weapon');
+    if (hasAttack(AT_SPIT))
+        await explain('spit venom');
+    if (MONSTER_SYMBOL[form] === S_NYMPH)
+        await explain('remove an iron ball');
+    if (hasAttack(AT_GAZE))
+        await explain('gaze at monsters');
+    if (mightHide && webmaker)
+        await explain('hide or to spin a web');
+    else if (mightHide)
+        await explain('hide');
+    else if (webmaker)
+        await explain('spin a web');
+    if (isWereMonster({ mnum: form }))
+        await explain('summon help');
+    if (MONSTER_NAME[form] === 'gremlin')
+        await explain('multiply in a fountain');
+    if (monsterIsUnicorn(form))
+        await explain('use your horn');
+    if (monsterIsMindFlayer(form))
+        await explain('emit a mental blast');
+    if (MONSTER_SOUND[form] === MS_SHRIEK)
+        await explain('shriek');
+    if (heroCanChangeVampireShape())
+        await explain('change shape');
+    const laysEggs = !!((MONSTER_FLAGS1[form] ?? 0) & M1_OVIPAROUS);
+    const name = MONSTER_NAME[form];
+    if (laysEggs && game.flags.female && name !== 'giant eel' && name !== 'electric eel') {
+        const waterEggs = MONSTER_SYMBOL[form] === S_EEL && game.u.swimming;
+        await plineWithContinuation(`Use the command #sit to ${waterEggs ? 'spawn in the water' : 'lay an egg'}.`);
+    }
 }
 async function escapeTrapsAfterFormChange() {
     requirePlayingGame(game);
