@@ -14,8 +14,22 @@ import { costlySpot } from './shk.js';
 import { isLavaAt, isPoolAt } from './terrain_properties.js';
 const STRANGE_OBJECT = 0;
 export async function objectAtMapDescription(x, y, glyph, state = game, style = 'farlook') {
+    return await withMapObject(x, y, glyph, (object, temporary) => {
+        if (style === 'hidden') {
+            const noun = minimalObjectName(object, state);
+            return object.quan === 1 ? withIndefiniteArticle(noun) : makePlural(noun);
+        }
+        const withPrice = object.dknown;
+        const description = distantObjectName(object, item => item.otyp === STRANGE_OBJECT ? 'strange object'
+            : objectDescription(item, { state, withPrice, vagueQuantity: true }), state);
+        return description + placementSuffix(temporary ? null : object, x, y, state);
+    }, state) ?? 'something';
+}
+// object_from_map lends the caller either a real object or a temporary
+// sample. Only the sample is freed after the caller finishes using it.
+export async function withMapObject(x, y, glyph, use, state = game) {
     if (glyph?.kind !== 'object')
-        return 'something';
+        return null;
     const level = requireGameLevel(state);
     const monster = monsterAtPosition(level, x, y);
     const mimic = monster && M_AP_TYPE(monster) === M_AP_OBJECT
@@ -64,14 +78,7 @@ export async function objectAtMapDescription(x, y, glyph, state = game, style = 
             mimic.m_ap_type = (mimic.m_ap_type ?? 0) | M_AP_F_DKNOWN;
             observeObject(object, state);
         }
-        if (style === 'hidden') {
-            const noun = minimalObjectName(object, state);
-            return object.quan === 1 ? withIndefiniteArticle(noun) : makePlural(noun);
-        }
-        const withPrice = object.dknown;
-        const description = distantObjectName(object, item => item.otyp === STRANGE_OBJECT ? 'strange object'
-            : objectDescription(item, { state, withPrice, vagueQuantity: true }), state);
-        return description + placementSuffix(temporary ? null : object, x, y, state);
+        return await use(object, temporary);
     }
     finally {
         if (temporary) {

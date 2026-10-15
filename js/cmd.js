@@ -142,6 +142,7 @@ export { getLine, promptYesNo, promptYesNoQuit } from './query.js';
 import { callObjectType, objectTypeIsCallable, } from './object_call.js';
 import { nameIndividualObject } from './individual_naming.js';
 import { nameChosenMonster } from './monster_naming_command.js';
+import { nameFloorObject } from './floor_naming.js';
 import { displayLiquidName, displayMessageWindow, newsym, feel_newsym, flushPendingTopline, flush_screen, pline, plineWithContinuation, moreUntilDismissed, docrt, bot, terrain_glyph, glyphAt, canSeeMonster, canSpotMonster, canSenseMonster, canSpotHeroSelf, unblindTelepathyRange, monsterHasWarningProjection, see_nearby_objects, show_glyph_cell, swallowed, randomDisplayMonsterName, randomDisplayMonsterSubject, see_monsters, see_objects, see_traps, transientObjectGlyph, map_invisible, unmap_invisible, map_object, unmapObject, } from './display.js';
 import { cansee, couldsee, vision_note_blocker_change, vision_recalc, vision_reset } from './vision.js';
 import { transformMagicLampToOilLamp } from './light.js';
@@ -2423,6 +2424,9 @@ async function doname() {
     // individual object's name must stay on that same object identity.
     if (choice === 'm') {
         await nameChosenMonster();
+    }
+    else if (choice === 'f') {
+        await nameFloorObject();
     }
     else if (choice === 'a') {
         await queryCurrentLevelAnnotation();

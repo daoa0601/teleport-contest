@@ -2,7 +2,7 @@ import { rotCorpse } from './corpse_rot.js';
 import { isRoom } from './map_types.js';
 import { createObjectBase } from './object_constructor.js';
 import { deleteTrap, finishSokobanIfSolved } from './trap_lifecycle.js';
-import { randomGhostName, setMonsterGivenName } from './monster_given_name.js';
+import { randomGhostName, roguePlayerName, setMonsterGivenName } from './monster_given_name.js';
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import { lookupNovelTitle, novelTitle } from './novel_titles.js';
 import { addFruit } from './fruit.js';
@@ -8964,11 +8964,6 @@ async function makeroguerooms() {
         }
     }
 }
-function roguename() {
-    return rn2(3)
-        ? (rn2(2) ? 'Michael Toy' : 'Kenneth Arnold')
-        : 'Glenn Wichman';
-}
 async function makerogueghost() {
     const level = requireGameLevel();
     if (!level.nroom)
@@ -8981,7 +8976,7 @@ async function makerogueghost() {
     if (!ghost)
         return;
     ghost.msleeping = 1;
-    setMonsterGivenName(ghost, roguename());
+    setMonsterGivenName(ghost, roguePlayerName());
     let ghostobj;
     if (rn2(4)) {
         ghostobj = await mksobj_at(FOOD_RATION, x, y, false, false);

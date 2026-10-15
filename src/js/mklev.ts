@@ -16,7 +16,7 @@ import type { DueObjectTimer } from './object_timers.js';
 import type { ObjectDefinition } from './object_data.js';
 import { createObjectBase } from './object_constructor.js';
 import { deleteTrap, finishSokobanIfSolved } from './trap_lifecycle.js';
-import { randomGhostName, setMonsterGivenName } from './monster_given_name.js';
+import { randomGhostName, roguePlayerName, setMonsterGivenName } from './monster_given_name.js';
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import { lookupNovelTitle, novelTitle } from './novel_titles.js';
 import { addFruit } from './fruit.js';
@@ -9098,12 +9098,6 @@ async function makeroguerooms(): Promise<void> {
     }
 }
 
-function roguename(): string {
-    return rn2(3)
-        ? (rn2(2) ? 'Michael Toy' : 'Kenneth Arnold')
-        : 'Glenn Wichman';
-}
-
 async function makerogueghost(): Promise<void> {
     const level = requireGameLevel();
     if (!level.nroom) return;
@@ -9113,7 +9107,7 @@ async function makerogueghost(): Promise<void> {
     const ghost = await makemon(287, x, y, 0); // PM_GHOST
     if (!ghost) return;
     ghost.msleeping = 1;
-    setMonsterGivenName(ghost, roguename());
+    setMonsterGivenName(ghost, roguePlayerName());
 
     let ghostobj;
     if (rn2(4)) {

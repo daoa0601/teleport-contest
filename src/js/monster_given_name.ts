@@ -40,3 +40,7 @@ export function randomGhostName(state: GameState = game): string {
     if (name === undefined) throw new RangeError('Ghost name selection is outside the name table.');
     return name;
 }
+
+export function roguePlayerName(): string {
+    return rn2(3) ? (rn2(2) ? 'Michael Toy' : 'Kenneth Arnold') : 'Glenn Wichman';
+}
