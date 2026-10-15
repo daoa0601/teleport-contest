@@ -90,7 +90,7 @@ export async function useMirror(object, { state = game } = {}) {
 function seesInvisible(state) {
     return !!state.u.seeInvisible || (state.u.seeInvisibleTurns ?? 0) > 0;
 }
-function visage(state) {
+export function heroBeautyDescription(state = game) {
     const charisma = currentAttribute(A_CHA, state);
     if (charisma >= 25)
         return 'sublime';
@@ -114,7 +114,7 @@ async function seeOwnReflection(mirror, visible, state) {
     const species = heroSpecies(state);
     const hallucinating = heroIsHallucinating(state);
     if (!visible) {
-        await pline(`You can't see your ${visage(state)} ${heroFaceName(state)}.`);
+        await pline(`You can't see your ${heroBeautyDescription(state)} ${heroFaceName(state)}.`);
     }
     else if (species === FLOATING_EYE) {
         if (heroHasFreeAction(state)) {
@@ -152,7 +152,7 @@ async function seeOwnReflection(mirror, visible, state) {
         await pline(`You look like ${withIndefiniteArticle(monsterTypeName(species, state.flags.female))}.`);
     }
     else {
-        await pline(`You look as ${visage(state)} as ever.`);
+        await pline(`You look as ${heroBeautyDescription(state)} as ever.`);
     }
 }
 // The invisible beam checks an occupant before its terrain and can pass an

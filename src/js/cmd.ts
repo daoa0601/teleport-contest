@@ -183,6 +183,7 @@ import {
     objectTypeCallNoun,
 } from './object_call.js';
 import { nameIndividualObject } from './individual_naming.js';
+import { nameChosenMonster } from './monster_naming_command.js';
 import { displayLiquidName, displayMessageWindow,
     newsym, feel_newsym, flushPendingTopline, flush_screen, pline, plineWithContinuation, moreUntilDismissed, docrt,
     bot, terrain_glyph, glyphAt, canSeeMonster, canSpotMonster, canSenseMonster, canSpotHeroSelf,
@@ -2544,7 +2545,9 @@ async function doname() {
     // dungeon.c:donamelevel()/query_annotation().  The menu owns only the
     // category choice; level annotations live with mapseen, while an
     // individual object's name must stay on that same object identity.
-    if (choice === 'a') {
+    if (choice === 'm') {
+        await nameChosenMonster();
+    } else if (choice === 'a') {
         await queryCurrentLevelAnnotation();
         game._pending_message = '';
         await restoreCommandMap();

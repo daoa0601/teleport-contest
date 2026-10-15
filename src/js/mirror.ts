@@ -107,7 +107,7 @@ function seesInvisible(state: GameState) {
     return !!state.u.seeInvisible || (state.u.seeInvisibleTurns ?? 0) > 0;
 }
 
-function visage(state: GameState) {
+export function heroBeautyDescription(state: GameState = game) {
     const charisma = currentAttribute(A_CHA, state);
     if (charisma >= 25) return 'sublime';
     if (charisma >= 19) return 'splendorous';
@@ -125,7 +125,7 @@ async function seeOwnReflection(mirror: string, visible: boolean, state: GameSta
     const species = heroSpecies(state);
     const hallucinating = heroIsHallucinating(state);
     if (!visible) {
-        await pline(`You can't see your ${visage(state)} ${heroFaceName(state)}.`);
+        await pline(`You can't see your ${heroBeautyDescription(state)} ${heroFaceName(state)}.`);
     } else if (species === FLOATING_EYE) {
         if (heroHasFreeAction(state)) {
             await pline('You stiffen momentarily under your gaze.');
@@ -155,7 +155,7 @@ async function seeOwnReflection(mirror: string, visible: boolean, state: GameSta
     } else if (Upolyd(hero)) {
         await pline(`You look like ${withIndefiniteArticle(monsterTypeName(species, state.flags.female))}.`);
     } else {
-        await pline(`You look as ${visage(state)} as ever.`);
+        await pline(`You look as ${heroBeautyDescription(state)} as ever.`);
     }
 }
 
