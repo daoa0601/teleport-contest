@@ -154,6 +154,23 @@ void test('Lua graves place their epitaphs and leave trapped squares unchanged',
     assert.equal(epitaph.engr_type, HEADSTONE);
     assert.equal(epitaph.text, 'Remembered here');
 });
+void test('Lua grave and feature tables prefer explicit coordinates and fall back when both are absent', async (t) => {
+    const lua = await levelLua(t);
+    await lua.executeAsync(`
+        des.map({ x = 10, y = 5, map = [[......]] })
+        des.grave({ x = 0, y = 0, coord = {1, 0}, text = "Explicit grave" })
+        des.feature({ type = "fountain", x = 2, y = 0, coord = {3, 0} })
+        des.grave({ x = -1, y = -1, coord = {4, 0}, text = "Fallback grave" })
+        des.feature({ type = "fountain", x = -1, y = -1, coord = {5, 0} })
+    `);
+    const level = requireGameLevel();
+    assert.equal(level.requireAt(10, 5).typ, GRAVE);
+    assert.equal(level.requireAt(11, 5).typ, ROOM);
+    assert.equal(level.requireAt(12, 5).typ, FOUNTAIN);
+    assert.equal(level.requireAt(13, 5).typ, ROOM);
+    assert.equal(level.requireAt(14, 5).typ, GRAVE);
+    assert.equal(level.requireAt(15, 5).typ, FOUNTAIN);
+});
 void test('Lua feature tables set and clear the native looted-state flags', async (t) => {
     const lua = await levelLua(t);
     await lua.executeAsync(`

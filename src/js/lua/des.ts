@@ -333,6 +333,12 @@ function point(value: unknown, y: unknown = null): LuaPoint | null {
     return null;
 }
 
+function tablePoint(options: DesOptions): LuaPoint | null {
+    const x = options.x ?? -1;
+    const y = options.y ?? -1;
+    return x === -1 && y === -1 ? point(options.coord) : { x, y };
+}
+
 function objectClassForType(type: number) {
     for (let objectClass = 2;
         objectClass < OBJECT_BASES.length - 1; objectClass++) {
@@ -701,7 +707,7 @@ export function createDesBindings(
             return operations.grave({
                 ...options,
                 ...(text == null ? {} : { text: String(text) }),
-                point: point(options.coord) ?? point(options.x, options.y)
+                point: tablePoint(options)
                     ?? point(luaArgument(value), luaArgument(y)),
             });
         },
@@ -710,7 +716,7 @@ export function createDesBindings(
             return operations.feature({
                 ...options,
                 type: options.type ?? String(type),
-                point: point(options.coord) ?? point(options.x, options.y)
+                point: tablePoint(options)
                     ?? point(luaArgument(x), luaArgument(y)),
             });
         },
