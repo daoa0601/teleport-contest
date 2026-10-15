@@ -5993,7 +5993,7 @@ function luaRoomType(name = 'ordinary') {
         'health food shop': SHOPBASE + 10,
         'candle shop': SHOPBASE + 11,
     };
-    const roomType = roomTypes[name];
+    const roomType = roomTypes[name.toLowerCase()];
     if (roomType == null)
         throw new Error(`unsupported Lua room type ${name}`);
     return roomType;

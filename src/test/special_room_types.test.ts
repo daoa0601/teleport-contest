@@ -20,7 +20,7 @@ for (const { label, type, species } of [
             themerooms = {{ frequency = 1, contents = function()
                 des.room({ type = "themed", w = 13, h = 8, filled = 0,
                     contents = function()
-                        des.room({ type = "${label}", x = 2, y = 2,
+                        des.room({ type = "${label.toUpperCase()}", x = 2, y = 2,
                                    w = 6, h = 4, filled = 1 })
                     end })
             end }}
