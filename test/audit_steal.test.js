@@ -7,7 +7,7 @@ import { flushPendingTopline } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { setHeroSpecies } from '../js/hero_species.js';
 import { resetInputState } from '../js/input.js';
-import { BOULDER, DAGGER, GOLD_PIECE, OBJECT_NAMES } from '../js/object_data.js';
+import { BOULDER, DAGGER, GOLD_PIECE, LEASH, OBJECT_NAMES } from '../js/object_data.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
@@ -31,6 +31,25 @@ void test('a nymph gives up on a boulder instead of carrying it away', async () 
     assert.equal(thief.minvent.length, 0);
     assert.match(messages.join('\n'), /tries to steal your boulder but gives up/);
 });
+for (const species of ['water nymph', 'monkey']) {
+    for (const cursed of [false, true]) {
+        void test(`${species} ${cursed ? 'confronts a cursed' : 'takes an uncursed'} attached leash`, async () => {
+            freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
+            requirePlayingGame(game);
+            const pet = await createMonsterAt('kitten', 9, 10, NO_MINVENT);
+            const leash = await addInventoryObject(LEASH, { cursed, leashmon: pet.m_id });
+            pet.mleashed = 1;
+            const thief = await nearbyThief(species);
+            theftMessages();
+            await performMonsterHeroAttack(thief, game, { random: () => 0, rollOne: () => 1 });
+            const blocked = species === 'monkey' && cursed;
+            assert.equal(game.inventory.includes(leash), blocked);
+            assert.equal(thief.minvent.includes(leash), !blocked);
+            assert.equal(leash.leashmon, blocked ? pet.m_id : 0);
+            assert.equal(!!pet.mleashed, blocked, 'Taking the leash releases its animal');
+        });
+    }
+}
 void test('a nymph takes a worn adornment ring before ordinary possessions', async () => {
     freshObjectRoom();
     requirePlayingGame(game);

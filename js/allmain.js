@@ -44,6 +44,7 @@ import { finishMonsterAttackDeath, waitForCurrentMonsterMore } from './monster_a
 import { monsterMissMessage } from './monster_miss.js';
 import { monsterIsAnimal } from './monster_data.js';
 import { monsterCanCarryObject } from './monster_carry.js';
+import { releaseObjectLeash } from './monster_leash.js';
 import { armorSimpleName, stopDonning } from './armor.js';
 import { isBeingTakenOff } from './takeoff_state.js';
 import { OBJECT_DELAY } from './object_data.js';
@@ -92,7 +93,7 @@ import { canSpotMonster, displayMessageWindow, docrt, redrawMap, bot, flush_scre
 import { cansee, couldsee, vision_note_blocker_change, vision_recalc, vision_reset, hasLightSources, init_vision_globals, } from './vision.js';
 import { nhgetch } from './input.js';
 import { NO_COLOR, CLR_BRIGHT_BLUE } from './terminal.js';
-import { ACID_VENOM, BOULDER, CORPSE, GOLD_PIECE, OBJECT_BIMANUAL, OBJECT_NAMES, SHIELD_OF_REFLECTION, } from './object_data.js';
+import { ACID_VENOM, BOULDER, CORPSE, LEASH, GOLD_PIECE, OBJECT_BIMANUAL, OBJECT_NAMES, SHIELD_OF_REFLECTION, } from './object_data.js';
 import { makePlural, verbForSubject, withIndefiniteArticle } from './object_grammar.js';
 import { monsterLocomotion } from './monster_locomotion.js';
 import { monsterFliesOrFloats } from './terrain_properties.js';
@@ -1700,6 +1701,11 @@ async function resolveDeferredHeroItemTheft(action, monster, attack, random) {
         }
         if (stuck || !monsterCanCarryObject(monster, object, game, draw))
             return refuse();
+    }
+    if (object.otyp === LEASH && object.leashmon) {
+        if (animal && object.cursed)
+            return refuse();
+        releaseObjectLeash(object, game);
     }
     const previousDelay = game._delayedAction;
     const wasDoffing = (previousDelay?.kind === 'remove' && previousDelay.object === object)
