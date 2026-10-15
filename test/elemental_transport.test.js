@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { rhack } from '../js/cmd.js';
 import { AIR, COLNO, NO_MINVENT, ROWNO, WATER } from '../js/const.js';
 import { moveElementalBubbles } from '../js/elemental.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
@@ -60,5 +61,25 @@ void test('a swallowed hero travels with the monster carried by a water bubble',
     assert.equal(swallower.my, bubble.y);
     assert.deepEqual([game.u.ux, game.u.uy], [swallower.mx, swallower.my], 'swallowing remains attached during transport');
     assert.equal(game.u.ustuck, swallower);
+});
+void test('walking inside a water bubble can steer its next drift', async () => {
+    const bubble = await waterPlane();
+    requirePlayingGame(game);
+    bubble.width = 3;
+    bubble.height = 2;
+    bubble.rows = [7, 7];
+    for (let x = 20; x <= 22; x++)
+        for (let y = 10; y <= 11; y++)
+            game.level.requireAt(x, y).typ = AIR;
+    game.u.ux = 21;
+    initRng(2n);
+    await moveElementalBubbles();
+    for (let attempt = 0; attempt < 20 && bubble.dx !== -1; attempt++) {
+        await rhack('h'.charCodeAt(0));
+        if (bubble.dx !== -1)
+            await rhack('l'.charCodeAt(0));
+    }
+    assert.equal(bubble.dx, -1, 'a successful westward step can turn the occupied bubble west');
+    assert.equal(bubble.dy, 0);
 });
 //# sourceMappingURL=elemental_transport.test.js.map

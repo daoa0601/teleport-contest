@@ -115,8 +115,10 @@ function collectWaterBubbleContents(bubble) {
             monster.mstate = (monster.mstate ?? 0) | MON_BUBBLEMOVE;
             newsym(x, y);
         }
-        if (!game.u?.uswallow && game.u?.ux === x && game.u?.uy === y)
+        if (!game.u?.uswallow && game.u?.ux === x && game.u?.uy === y) {
             bubble.contents.unshift({ kind: 'hero', x, y });
+            game._heroBubble = bubble;
+        }
         const trap = level.traps.find(candidate => candidate.tx === x && candidate.ty === y);
         if (trap)
             bubble.contents.unshift({ kind: 'trap', x, y, trap });
@@ -239,6 +241,7 @@ export async function moveElementalBubbles() {
         return;
     const level = requireGameLevel();
     vision_recalc(2);
+    game._heroBubble = null;
     const traversalUp = !!game._bubbleTraversalUp;
     if (Is_waterlevel(game.u?.uz)) {
         const collectionOrder = traversalUp
@@ -273,5 +276,17 @@ export async function moveElementalBubbles() {
         await moveBubble(bubble, dx, dy, false);
     }
     game.vision_full_recalc = 1;
+}
+// C mkmaze.c:maybe_adjust_hero_bubble(). The bubble last carrying the hero
+// remains sticky for subsequent steps until movebubbles() collects again.
+export function maybeAdjustHeroBubble() {
+    const hero = game.u;
+    if (!Is_waterlevel(hero.uz) || (!hero.dx && !hero.dy))
+        return;
+    const bubble = game._heroBubble;
+    if (bubble && game.level?.elementalBubbles?.includes(bubble) && !rn2(2)) {
+        bubble.dx = hero.dx ?? 0;
+        bubble.dy = hero.dy ?? 0;
+    }
 }
 //# sourceMappingURL=elemental.js.map

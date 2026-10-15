@@ -5,6 +5,7 @@ import { autokey, autoUnlockFlags, continuePicking, pickLock } from './lock_pick
 import { resetPick } from './lock_context.js';
 import { petRefusesHeroSwap } from './hero_pet_displacement.js';
 import { airTurbulenceStopsHero, waterTurbulenceStopsHero } from './hero_movement_turbulence.js';
+import { maybeAdjustHeroBubble } from './elemental.js';
 import { announceRunLiquid, announceRunTrap, knownRunTrap, runLiquidIsDangerous } from './run_hazards.js';
 import { AUTOUNLOCK_APPLY_KEY, AUTOUNLOCK_UNTRAP } from './const.js';
 import { findDrawbridgeAt } from './dbridge.js';
@@ -7352,6 +7353,7 @@ async function finishMovedHero({
 
     await checkHeroLeashes(oldx, oldy);
     if (game.program_state.gameover) return true;
+    game._domoveSucceeded = oldx !== newx || oldy !== newy;
     newsym(oldx, oldy);
     vision_recalc(1);
     await announceInvocationSquare();
@@ -7389,8 +7391,10 @@ async function delayAfterDraggingBall(): Promise<void> {
 
 // C hack.c:domove() clears kickedloc after even an unsuccessful attempt.
 async function domove(dx: number, dy: number, explicitAttempt = true): Promise<boolean> {
+    game._domoveSucceeded = false;
     const moved = await domoveCore(dx, dy, explicitAttempt);
     if (!game.program_state.gameover) {
+        if (game._domoveSucceeded) maybeAdjustHeroBubble();
         game._kickedLoc = null;
         game._movementAttempt = null;
     }

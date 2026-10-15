@@ -120,8 +120,10 @@ function collectWaterBubbleContents(bubble: ElementalBubble): void {
             monster.mstate = (monster.mstate ?? 0) | MON_BUBBLEMOVE;
             newsym(x, y);
         }
-        if (!game.u?.uswallow && game.u?.ux === x && game.u?.uy === y)
+        if (!game.u?.uswallow && game.u?.ux === x && game.u?.uy === y) {
             bubble.contents.unshift({ kind: 'hero', x, y });
+            game._heroBubble = bubble;
+        }
         const trap = level.traps.find(candidate =>
             candidate.tx === x && candidate.ty === y);
         if (trap)
@@ -252,6 +254,7 @@ export async function moveElementalBubbles(): Promise<void> {
     const level = requireGameLevel();
 
     vision_recalc(2);
+    game._heroBubble = null;
 
     const traversalUp = !!game._bubbleTraversalUp;
     if (Is_waterlevel(game.u?.uz)) {
@@ -287,4 +290,16 @@ export async function moveElementalBubbles(): Promise<void> {
         await moveBubble(bubble, dx, dy, false);
     }
     game.vision_full_recalc = 1;
+}
+
+// C mkmaze.c:maybe_adjust_hero_bubble(). The bubble last carrying the hero
+// remains sticky for subsequent steps until movebubbles() collects again.
+export function maybeAdjustHeroBubble(): void {
+    const hero = game.u;
+    if (!Is_waterlevel(hero.uz) || (!hero.dx && !hero.dy)) return;
+    const bubble = game._heroBubble;
+    if (bubble && game.level?.elementalBubbles?.includes(bubble) && !rn2(2)) {
+        bubble.dx = hero.dx ?? 0;
+        bubble.dy = hero.dy ?? 0;
+    }
 }

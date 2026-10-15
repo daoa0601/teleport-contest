@@ -9,7 +9,7 @@ import type { GameObject } from './object_types.js';
 import type { ObjectPriceQuote } from './object_knowledge.js';
 import type { Monster, MonsterVital } from './monster_types.js';
 import type { Shopkeeper } from './shop_types.js';
-import type { Position, Rectangle, Room, Stairway, ActiveSpecialLevel, CachedLevelState } from './map_types.js';
+import type { Position, Rectangle, Room, Stairway, ActiveSpecialLevel, CachedLevelState, ElementalBubble } from './map_types.js';
 import type { Dungeon, DungeonBranch, DungeonLocation, SpecialLevelDescriptor, OverviewRecord } from './dungeon_types.js';
 import type { GameDisplay } from './game_display.js';
 import type { StorageBackend } from './storage.js';
@@ -380,6 +380,8 @@ export interface GameState {
     _vaultMaintenanceContinuation?: { sourceTurn: number } | null;
     _vaultHeroTookTimePending?: number | null;
     _bubbleTraversalUp?: boolean;
+    _heroBubble?: ElementalBubble | null;
+    _domoveSucceeded?: boolean;
     _emptyShops?: number[];
     _shopFollowMessageTurn?: number;
     _monsterNoiseTime?: number;
