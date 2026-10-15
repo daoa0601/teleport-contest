@@ -39,9 +39,14 @@ export async function finishSpellTurn(seed) {
             return 27;
         },
     };
-    input.feed('m.');
+    const alreadyHelpless = (game._helplessTurns ?? 0) > 0;
+    if (alreadyHelpless)
+        game._heroTimePending = true;
+    else
+        input.feed('m.');
     await moveloop_core();
-    await moveloop_core();
+    if (!alreadyHelpless)
+        await moveloop_core();
     if (messages.at(-1) !== game._pending_message)
         messages.push(game._pending_message);
     return messages.join('\n');

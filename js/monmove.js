@@ -23,7 +23,8 @@ import { senseWithTelepathy } from './display.js';
 import { heroHasHalfSpellDamage } from './spell_damage.js';
 import { useMonsterMindBlast } from './monster_mind_blast.js';
 import { monsterIsMindFlayer } from './monster_data.js';
-import { endVoluntaryMultiTurn } from './command_state.js';
+import { endVoluntaryMultiTurn, heroHasInvoluntaryDelay } from './command_state.js';
+import { stopRun } from './runmode.js';
 import { d, rn2, rnd, rnl } from './rng.js';
 import { game, requireInitializedGame, requireLiveGame } from './gstate.js';
 import { performMonsterHeroAttack } from './allmain.js';
@@ -362,7 +363,8 @@ function monsterSpellEffectPreview(spell, damage, state) {
     }
     else if (spell.key === 'paralyze') {
         const resisted = !!(state?.u?.antimagic || heroHasFreeAction(state));
-        effectMessage = resisted ? 'You stiffen briefly.' : 'You are frozen in place!';
+        if (!heroHasInvoluntaryDelay(state))
+            effectMessage = resisted ? 'You stiffen briefly.' : 'You are frozen in place!';
     }
     else if (spell.key === 'confuse-you') {
         if (antimagic) {
@@ -5675,10 +5677,19 @@ export function resumeDeferredHeroSpell(action, state, random = rn2, rollOne = r
         let duration = resisted ? 1 : 4 + monsterLevel;
         if (heroHasHalfSpellDamage(state))
             duration = Math.trunc((duration + 1) / 2);
-        endVoluntaryMultiTurn(state);
-        state._helplessTurns = duration;
+        const existingDelay = Math.max(0, state._helplessTurns ?? 0, -state.multi);
+        if (duration >= existingDelay) {
+            if (!existingDelay)
+                state.context.botl = true;
+            state.u.invulnerable = false;
+            state.u.usleep = 0;
+            state.multi = -duration;
+            state._helplessTurns = duration;
+            stopRun(state);
+            state._cannedCommands = [];
+        }
         state._helplessReason = 'paralyzed by a monster';
-        state._helplessDoneMessage = 'You can move again.';
+        state._helplessDoneMessage = null;
         applyHeroSpellDamage(attack, duration, state);
         attack.paralyzed = true;
         if (!resisted)
