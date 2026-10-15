@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { continueCountedCommand, rhack } from '../js/cmd.js';
-import { DOOR, D_CLOSED, D_BROKEN, HWALL, W_WEP } from '../js/const.js';
+import { DOOR, D_CLOSED, D_BROKEN, D_TRAPPED, HWALL, SDOOR, W_WEP } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { PICK_AXE } from '../js/object_data.js';
@@ -9,6 +9,7 @@ import { initRng } from '../js/rng.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
+import { createSpecialLevel } from './support/topology.js';
 
 void test('fumbling a digging swing names the broad side of the tool', async () => {
     const level = freshObjectRoom();
@@ -70,4 +71,26 @@ void test('a fumbling pick that cannot be dropped reveals its curse', async () =
     assert.equal(pick.bknown, true);
     assert.equal(game.u._woundedLegSide, 'right');
     assert.equal(game._occupation, null);
+});
+
+void test('breaking a Rogue-level secret door clears the obsolete door trap before it can explode', async () => {
+    const level = freshObjectRoom();
+    game.rogue_level = createSpecialLevel({ dnum: 0, dlevel: 8 });
+    const door = level.requireAt(11, 10);
+    door.typ = SDOOR;
+    door.doormask = D_TRAPPED;
+    const pick = await addInventoryObject(PICK_AXE, { spe: 0, owornmask: W_WEP });
+    game.uwep = game.u.uwep = pick;
+    const hp = game.u.uhp;
+    const input = resetInputState();
+    installPagerInput(input, { expected: /dig|door|explod|KABOOM|stagger/, limit: 10 });
+    input.feed(`${pick.invlet}l`);
+
+    await rhack('a'.charCodeAt(0));
+    for (let swing = 0; game._occupation && swing < 20; swing++)
+        await continueCountedCommand();
+
+    assert.equal(door.typ, DOOR);
+    assert.equal(door.doormask, D_BROKEN);
+    assert.equal(game.u.uhp, hp);
 });

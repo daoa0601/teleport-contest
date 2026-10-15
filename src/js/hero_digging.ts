@@ -15,6 +15,7 @@ import {
     TRAP_EXPLANATIONS, TT_PIT, Upolyd, W_NONDIGGABLE, Is_earthlevel, is_pit,
 } from './const.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
+import { convertSecretDoor } from './detect.js';
 import { altarWrath } from './pray.js';
 import { adjustHeroAlignment } from './alignment.js';
 import { angerTemplePriest } from './priest.js';
@@ -651,8 +652,7 @@ export async function continueHeroDigging(state = game): Promise<boolean> {
             }
             digtxt = 'You make an opening in the wall.';
         } else if (location.typ === SDOOR) {
-            // cvt_sdoor_to_door(): the hidden door becomes a real one.
-            location.typ = DOOR;
+            convertSecretDoor(location, state);
             digtxt = 'You break through a secret door!';
             if (!((location.doormask ?? 0) & D_TRAPPED))
                 location.doormask = D_BROKEN;

@@ -5,6 +5,7 @@ import { monsterHasMapPosition } from './monster_location.js';
 import { deleteTrap } from './trap_lifecycle.js';
 import { RLOC_NOMSG, A_STR, A_DEX, COULD_SEE, CORR, DBWALL, D_BROKEN, D_CLOSED, D_LOCKED, D_NODOOR, D_TRAPPED, DIGTYP_BOULDER, DIGTYP_DOOR, DIGTYP_ROCK, DIGTYP_STATUE, DIGTYP_TREE, DIGTYP_UNDIGGABLE, DOOR, IN_SIGHT, IS_ALTAR, IS_DOOR, IS_OBSTRUCTED, IS_STWALL, IS_TREE, IS_WALL, LANDMINE, BEAR_TRAP, HOLE, TRAPDOOR, MM_NOMSG, ROOM, SCORR, SDOOR, SHOPBASE, SHOP_DOOR_COST, SHOP_PIT_COST, STONE, TRAP_EXPLANATIONS, TT_PIT, Upolyd, W_NONDIGGABLE, Is_earthlevel, is_pit, } from './const.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
+import { convertSecretDoor } from './detect.js';
 import { altarWrath } from './pray.js';
 import { adjustHeroAlignment } from './alignment.js';
 import { angerTemplePriest } from './priest.js';
@@ -576,8 +577,7 @@ export async function continueHeroDigging(state = game) {
             digtxt = 'You make an opening in the wall.';
         }
         else if (location.typ === SDOOR) {
-            // cvt_sdoor_to_door(): the hidden door becomes a real one.
-            location.typ = DOOR;
+            convertSecretDoor(location, state);
             digtxt = 'You break through a secret door!';
             if (!((location.doormask ?? 0) & D_TRAPPED))
                 location.doormask = D_BROKEN;
