@@ -1684,16 +1684,12 @@ function fountainActorVisibleSubject(monster: Monster) {
         : `The ${monsterInstanceDisplayName(monster)}`;
 }
 
-// Fountain-spawned monsters can enter webs immediately. Other trap types
-// still wait for their normal turn because their messages are not handled
-// here yet.
-function supportedImmediateFountainTrap(monster: Monster) {
+function fountainTrapAt(monster: Monster) {
     return game.level?.traps?.some(trap =>
-        trap.tx === monster.mx && trap.ty === monster.my
-        && trap.ttyp === WEB) ?? false;
+        trap.tx === monster.mx && trap.ty === monster.my) ?? false;
 }
 
-async function triggerSupportedImmediateFountainTrap(monster: Monster) {
+async function triggerFountainTrap(monster: Monster) {
     const state = requireInitializedGame();
     const action = await triggerImmediateMonsterTrap(monster, state);
     await resumeDeferredMonsterTrap(action, state, {
@@ -1716,8 +1712,8 @@ async function summonFountainNymph() {
         },
         announce: plineWithContinuation,
         nymphDescription: fountainActorIndefiniteName,
-        trapAt: supportedImmediateFountainTrap,
-        triggerTrap: triggerSupportedImmediateFountainTrap,
+        trapAt: fountainTrapAt,
+        triggerTrap: triggerFountainTrap,
     });
 }
 
@@ -1736,8 +1732,8 @@ async function summonFountainDemon() {
         announce: plineWithContinuation,
         demonIndefiniteName: fountainActorIndefiniteName,
         grantWish: (demon: Monster) => grantMonsterWish(demon),
-        trapAt: supportedImmediateFountainTrap,
-        triggerTrap: triggerSupportedImmediateFountainTrap,
+        trapAt: fountainTrapAt,
+        triggerTrap: triggerFountainTrap,
     });
 }
 
@@ -1758,8 +1754,8 @@ async function summonFountainSnakes() {
             if (snake) newsym(snake.mx, snake.my);
             return snake;
         },
-        trapAt: supportedImmediateFountainTrap,
-        triggerTrap: triggerSupportedImmediateFountainTrap,
+        trapAt: fountainTrapAt,
+        triggerTrap: triggerFountainTrap,
     });
 }
 
