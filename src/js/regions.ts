@@ -5,7 +5,7 @@ import { isLavaAt, isPoolAt } from './terrain_properties.js';
 // create_gas_cloud_selection().
 
 import {
-    ACCESSIBLE, PLNMSG_ENVELOPED_IN_GAS, Upolyd, isok,
+    ACCESSIBLE, M_SEEN_POISON, PLNMSG_ENVELOPED_IN_GAS, Upolyd, isok,
 } from './const.js';
 import {
     canSeeMonster, newsym, plineWithContinuation,
@@ -32,6 +32,7 @@ import {
     MONSTER_SYMBOL, monsterIsNonliving, monsterIsVampireShifter,
 } from './monster_data.js';
 import { monsterName } from './monster_name.js';
+import { monstersForgetHeroResistance, monstersObserveHeroResistance } from './monster_perception.js';
 import { AD_DRST, AD_RBRE, AT_BREA } from './monster_attack_types.js';
 import { d, rn2, rnd } from './rng.js';
 import { heroIsBlind } from './senses.js';
@@ -376,6 +377,7 @@ async function affectHeroWithGas(
     if (tolerance === GAS_MINOR) {
         await publish('You cough!');
         await wakeNearGas(state.u.ux, state.u.uy, state, publish, wake);
+        monstersObserveHeroResistance(M_SEEN_POISON, state);
         return { kind: 'hero-gas', resisted: true, damage: 0 };
     }
 
@@ -386,6 +388,7 @@ async function affectHeroWithGas(
     const event: HeroGasDamage = { kind: 'hero-gas', resisted: false, damage };
     const died = await loseHeroHp(damage, 'gas cloud', { state, publish, ...(die ? { die } : {}) });
     if (died) event.died = true;
+    else monstersForgetHeroResistance(M_SEEN_POISON, state);
     return event;
 }
 
