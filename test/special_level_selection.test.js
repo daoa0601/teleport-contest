@@ -12,6 +12,7 @@ import { MONSTER_NAME } from '../js/monster_data.js';
 import { DAGGER, OBJECT_NAMES } from '../js/object_data.js';
 import { freshGame } from './support/game-state.js';
 import { startLuaCore } from './support/lua-game.js';
+import { floorObjects } from './support/level-state.js';
 async function levelLua(t) {
     freshGame({ flags: { bones: false } });
     initRng(731n);
@@ -331,5 +332,18 @@ void test('Lua level flags accept native case-insensitive names and enable shrou
     await lua.executeAsync('des.level_flags("ShRoUd", "NoTeLePoRt")');
     assert.equal(requireGameLevel().flags.hero_memory, true);
     assert.equal(requireGameLevel().flags.noteleport, true);
+});
+void test('named Lua objects do not become random artifacts before receiving their names', async (t) => {
+    const lua = await levelLua(t);
+    await lua.executeAsync(`
+        des.level_init({ style = "solidfill", fg = ".", lit = 0 })
+        for i = 1, 80 do
+            des.object({ id = "long sword", name = "Ceremonial blade" })
+        end
+    `);
+    const swords = floorObjects(requireGameLevel())
+        .filter(object => object.oextra?.oname === 'Ceremonial blade');
+    assert.equal(swords.length, 80);
+    assert.equal(swords.filter(object => object.oartifact).length, 0);
 });
 //# sourceMappingURL=special_level_selection.test.js.map

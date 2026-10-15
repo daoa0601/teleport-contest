@@ -4222,16 +4222,16 @@ function specialSelectionNonDiggable(selection) {
             loc.wall_info |= W_NONDIGGABLE;
     });
 }
-async function specialObject(context) {
+async function specialObject(context, allowArtifacts = true) {
     const point = await specialRandomLocation(context);
     if (point)
-        return await mkobj_at(RANDOM_CLASS, point.x, point.y, true);
+        return await mkobj_at(RANDOM_CLASS, point.x, point.y, allowArtifacts);
     return null;
 }
-async function specialObjectOfClass(context, objectClass) {
+async function specialObjectOfClass(context, objectClass, allowArtifacts = true) {
     const point = await specialRandomLocation(context);
     if (point)
-        return await mkobj_at(objectClass, point.x, point.y, true);
+        return await mkobj_at(objectClass, point.x, point.y, allowArtifacts);
     return null;
 }
 async function specialCorpseOf(context, mndx) {
@@ -4242,9 +4242,9 @@ async function specialCorpseOf(context, mndx) {
     set_corpsenm(corpse, mndx);
     return corpse;
 }
-async function specialObjectOfType(context, otyp) {
+async function specialObjectOfType(context, otyp, allowArtifacts = true) {
     const point = await specialRandomLocation(context);
-    return point ? await mksobj_at(otyp, point.x, point.y, true, true) : null;
+    return point ? await mksobj_at(otyp, point.x, point.y, true, allowArtifacts) : null;
 }
 function specialDoorAt(context, mask, x, y) {
     const level = requireGameLevel();
@@ -4859,11 +4859,11 @@ async function specialObjectAt(context, otyp, x, y, { named = false } = {}) {
     // unnamed armor still consumes its source-owned rn2(40) chance.
     return await mksobj_at(otyp, context.xstart + x, context.ystart + y, true, !named);
 }
-async function specialRandomObjectAt(context, x, y) {
-    return await mkobj_at(RANDOM_CLASS, context.xstart + x, context.ystart + y, true);
+async function specialRandomObjectAt(context, x, y, allowArtifacts = true) {
+    return await mkobj_at(RANDOM_CLASS, context.xstart + x, context.ystart + y, allowArtifacts);
 }
-async function specialObjectClassAt(context, objectClass, x, y) {
-    return await mkobj_at(objectClass, context.xstart + x, context.ystart + y, true);
+async function specialObjectClassAt(context, objectClass, x, y, allowArtifacts = true) {
+    return await mkobj_at(objectClass, context.xstart + x, context.ystart + y, allowArtifacts);
 }
 function applyMinesSameRaceMonsterGate(mndx) {
     const dungeonName = game.dungeons?.[game.u?.uz?.dnum ?? -1]?.dname;
@@ -6096,6 +6096,7 @@ async function createLuaObject(context, options, parentContainer, parentMonster,
 }
 async function createLuaObjectPiece(context, options, corpseSpecies, parentContainer, parentMonster) {
     const { point, objectClass, objectType } = options;
+    const allowArtifacts = !options.name;
     let object;
     const randomMedusaStatue = objectType === STATUE
         && game._activeSpecialLevel?.prototype === 'medusa'
@@ -6106,17 +6107,17 @@ async function createLuaObjectPiece(context, options, corpseSpecies, parentConta
     else if (objectType != null) {
         object = point
             ? await specialObjectAt(context, objectType, point.x, point.y, { named: !!options.name })
-            : await specialObjectOfType(context, objectType);
+            : await specialObjectOfType(context, objectType, allowArtifacts);
     }
     else if (objectClass != null) {
         object = point
-            ? await specialObjectClassAt(context, objectClass, point.x, point.y)
-            : await specialObjectOfClass(context, objectClass);
+            ? await specialObjectClassAt(context, objectClass, point.x, point.y, allowArtifacts)
+            : await specialObjectOfClass(context, objectClass, allowArtifacts);
     }
     else {
         object = point
-            ? await specialRandomObjectAt(context, point.x, point.y)
-            : await specialObject(context);
+            ? await specialRandomObjectAt(context, point.x, point.y, allowArtifacts)
+            : await specialObject(context, allowArtifacts);
     }
     if (!object)
         return null;

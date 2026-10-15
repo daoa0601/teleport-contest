@@ -4304,15 +4304,15 @@ function specialSelectionNonDiggable(selection: SpecialSelection): void {
     });
 }
 
-async function specialObject(context: SpecialLevelContext): Promise<GameObject | null> {
+async function specialObject(context: SpecialLevelContext, allowArtifacts = true): Promise<GameObject | null> {
     const point = await specialRandomLocation(context);
-    if (point) return await mkobj_at(RANDOM_CLASS, point.x, point.y, true);
+    if (point) return await mkobj_at(RANDOM_CLASS, point.x, point.y, allowArtifacts);
     return null;
 }
 
-async function specialObjectOfClass(context: SpecialLevelContext, objectClass: number): Promise<GameObject | null> {
+async function specialObjectOfClass(context: SpecialLevelContext, objectClass: number, allowArtifacts = true): Promise<GameObject | null> {
     const point = await specialRandomLocation(context);
-    if (point) return await mkobj_at(objectClass, point.x, point.y, true);
+    if (point) return await mkobj_at(objectClass, point.x, point.y, allowArtifacts);
     return null;
 }
 
@@ -4324,9 +4324,9 @@ async function specialCorpseOf(context: SpecialLevelContext, mndx: number): Prom
     return corpse;
 }
 
-async function specialObjectOfType(context: SpecialLevelContext, otyp: number): Promise<GameObject | null> {
+async function specialObjectOfType(context: SpecialLevelContext, otyp: number, allowArtifacts = true): Promise<GameObject | null> {
     const point = await specialRandomLocation(context);
-    return point ? await mksobj_at(otyp, point.x, point.y, true, true) : null;
+    return point ? await mksobj_at(otyp, point.x, point.y, true, allowArtifacts) : null;
 }
 
 function specialDoorAt(context: SpecialLevelContext, mask: number, x: number, y: number): Position | null {
@@ -4886,17 +4886,18 @@ async function specialObjectAt(
     );
 }
 
-async function specialRandomObjectAt(context: SpecialLevelContext, x: number, y: number): Promise<GameObject> {
+async function specialRandomObjectAt(context: SpecialLevelContext, x: number, y: number, allowArtifacts = true): Promise<GameObject> {
     return await mkobj_at(
-        RANDOM_CLASS, context.xstart + x, context.ystart + y, true,
+        RANDOM_CLASS, context.xstart + x, context.ystart + y, allowArtifacts,
     );
 }
 
 async function specialObjectClassAt(
     context: SpecialLevelContext, objectClass: number, x: number, y: number,
+    allowArtifacts = true,
 ): Promise<GameObject> {
     return await mkobj_at(
-        objectClass, context.xstart + x, context.ystart + y, true,
+        objectClass, context.xstart + x, context.ystart + y, allowArtifacts,
     );
 }
 
@@ -6229,6 +6230,7 @@ async function createLuaObjectPiece(
     parentContainer: GameObject | null, parentMonster: Monster | null,
 ): Promise<GameObject | null> {
     const { point, objectClass, objectType } = options;
+    const allowArtifacts = !options.name;
     let object: GameObject | null;
     const randomMedusaStatue = objectType === STATUE
         && game._activeSpecialLevel?.prototype === 'medusa'
@@ -6241,15 +6243,15 @@ async function createLuaObjectPiece(
                 context, objectType, point.x, point.y,
                 { named: !!options.name },
             )
-            : await specialObjectOfType(context, objectType);
+            : await specialObjectOfType(context, objectType, allowArtifacts);
     } else if (objectClass != null) {
         object = point
-            ? await specialObjectClassAt(context, objectClass, point.x, point.y)
-            : await specialObjectOfClass(context, objectClass);
+            ? await specialObjectClassAt(context, objectClass, point.x, point.y, allowArtifacts)
+            : await specialObjectOfClass(context, objectClass, allowArtifacts);
     } else {
         object = point
-            ? await specialRandomObjectAt(context, point.x, point.y)
-            : await specialObject(context);
+            ? await specialRandomObjectAt(context, point.x, point.y, allowArtifacts)
+            : await specialObject(context, allowArtifacts);
     }
     if (!object) return null;
 
