@@ -18,6 +18,7 @@ import {
     SELL_DELIBERATE, SELL_DONTSELL, SELL_NORMAL, sellHeroDroppedObject,
     setSellDisposition, shopOfferForObject, shopStocksObject,
 } from '../js/shop_sell.js';
+import type { SellDisposition } from '../js/shop_sell.js';
 import { shopGetPrice } from '../js/shop_loss.js';
 import {
     MONSTER_CONVEYS, MONSTER_LEVEL, MONSTER_NAME, MONSTER_NUTRITION,
@@ -142,6 +143,34 @@ void test('a broke shopkeeper pays in credit', async t => {
     assert.equal(heroGoldAmount(game), 0);
     assert.match(game._lastPlineMessage, /traded .* in credit\./);
 });
+
+const creditSaleDispositions: readonly SellDisposition[] = [SELL_DELIBERATE, SELL_NORMAL];
+for (const disposition of creditSaleDispositions) {
+    for (const quantity of [1, 2]) {
+        const sale = disposition === SELL_NORMAL ? 'automatic' : 'deliberate';
+        void test(`hallucinated ${sale} credit sale of ${quantity} dagger(s) confirms zorkmids`, async t => {
+            const { shopkeeper } = await sellShop(t, [], { gold: 0 });
+            game.u.hallucinationTurns = 100;
+            shopkeeper.eshk.credit = 10;
+            setSellDisposition(disposition);
+            const dagger = await floorObject(DAGGER, 10, 10, { quan: quantity });
+            const offer = shopOfferForObject(dagger, shopkeeper);
+            const credit = Math.trunc(offer * 9 / 10) + (offer <= 1 ? 1 : 0);
+            const messages: string[] = [];
+
+            const outcome = await sellHeroDroppedObject(dagger, 10, 10, game, {
+                publish: async message => { messages.push(message); },
+                query: (): 'y' => 'y',
+            });
+
+            assert.deepEqual(outcome, { sold: true, credit });
+            assert.equal(shopkeeper.eshk.credit, 10 + credit);
+            assert.ok(messages.at(-1)?.endsWith(
+                `${credit} zorkmid${credit === 1 ? '' : 's'} in additional credit.`),
+            `expected a native credit confirmation, got ${messages.at(-1)}`);
+        });
+    }
+}
 
 void test('an "all" answer keeps accepting credit for the batch', async t => {
     await sellShop(t, [

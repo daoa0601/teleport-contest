@@ -552,9 +552,10 @@ export async function sellHeroDroppedObject(object, x, y, state = game, { publis
             answer = 'n';
         }
         if (answer === 'y') {
+            const creditAmount = `${tmpcr} zorkmid${tmpcr === 1 ? '' : 's'}`;
             await nameShopTransaction(resident, object, it => sellHow !== SELL_NORMAL
-                ? `traded ${it} for ${moneyAmount(tmpcr, state)} in ${(eshk.credit ?? 0) > 0 ? 'additional ' : ''}credit.`
-                : `relinquish ${it} and acquire ${moneyAmount(tmpcr, state)} in ${(eshk.credit ?? 0) > 0
+                ? `traded ${it} for ${creditAmount} in ${(eshk.credit ?? 0) > 0 ? 'additional ' : ''}credit.`
+                : `relinquish ${it} and acquire ${creditAmount} in ${(eshk.credit ?? 0) > 0
                     ? 'additional ' : ''}credit.`, { publish, state });
             eshk.credit = (eshk.credit ?? 0) + tmpcr;
             if (container)
