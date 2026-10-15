@@ -1632,7 +1632,7 @@ function showMapRegion(x, y) {
     if (!region)
         return;
     const poisonous = region.damage > 0;
-    show_glyph_cell(x, y, '#', poisonous ? CLR_BRIGHT_GREEN : NO_COLOR, false, 0, { kind: 'terrain', terrainName: poisonous ? 'poison cloud' : 'cloud',
+    show_glyph_cell(x, y, '#', poisonous ? CLR_BRIGHT_GREEN : CLR_GRAY, false, 0, { kind: 'terrain', terrainName: poisonous ? 'poison cloud' : 'cloud',
         glyph: cmapToGlyph(poisonous ? CmapSymbol.poisoncloud : CmapSymbol.cloud) });
 }
 function monsterOverridesMapRegion(monster, x, y) {

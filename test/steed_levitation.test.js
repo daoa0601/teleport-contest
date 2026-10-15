@@ -3,6 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { DISMOUNT_POLY, PIT, TT_PIT, } from '../js/const.js';
 import { game } from '../js/gstate.js';
+import { initializePet } from '../js/dog.js';
 import { pushKeys } from '../js/input.js';
 import { OBJECT_NAMES } from '../js/object_data.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
@@ -80,6 +81,7 @@ void test('stuckSteed reports a helpless or eating steed', async () => {
     requirePlayingGame(game);
     assert.equal(await stuckSteed(), false); // not riding
     const pony = await createMonsterAt('pony', 11, 10);
+    initializePet(pony, { state: game });
     game.u.usteed = pony;
     game._pending_message = '';
     assert.equal(await stuckSteed(), false);
