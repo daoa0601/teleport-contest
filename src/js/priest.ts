@@ -118,6 +118,14 @@ export function priestHasShrine(priest: Monster, state: GameState = game): boole
         && epri.shralign === Amask2align(altar.flags & ~AM_SHRINE);
 }
 
+// C forget_temple_entry(): saving a monster starts its entry feedback anew.
+export function forgetTempleEntry(priest: Monster): void {
+    const shrine = priestData(priest);
+    if (!priest.ispriest || !shrine)
+        throw new Error('Temple entry memory requires a priest with shrine data.');
+    shrine.intone_time = shrine.enter_time = shrine.peaceful_time = shrine.hostile_time = 0;
+}
+
 // C priest.c:in_your_sanctuary(). A resident protects only a faithful hero
 // sharing the temple of their intact, coaligned shrine.
 export function inHeroSanctuary(

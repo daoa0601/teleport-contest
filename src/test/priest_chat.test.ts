@@ -9,6 +9,10 @@ import { monsterGoldAmount } from '../js/shop_money.js';
 import { initRng } from '../js/rng.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { changeMonsterForm } from '../js/monster_polymorph.js';
+import { rhack } from '../js/cmd.js';
+import { clearMessageWindow } from '../js/display.js';
+import { saveGame, restoreGame } from '../js/save.js';
+import { memoryStorage } from './support/memory-storage.js';
 import { runExtendedCommand } from './support/commands.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -110,4 +114,23 @@ void test('a monster in a coaligned cleric form rejects a hero who has strayed',
 
     assert.match(game._pending_message, /doesn't want anything to do with you!$/);
     assert.equal(priest.mpeaceful, 0);
+});
+
+void test('a restored priest gives fresh temple-entry feedback despite a recent visit', async () => {
+    const priest = await templePriest();
+    assert.ok(priest.epri);
+    priest.epri.intone_time = priest.epri.enter_time = priest.epri.peaceful_time = 10000;
+    game.plname = 'TempleVisitor';
+    const storage = memoryStorage();
+    assert.equal(await saveGame(storage), true);
+    assert.equal(restoreGame('TempleVisitor', storage), true);
+    game.u.ux = 6;
+    game.u.urooms = [];
+    clearMessageWindow();
+    const input = resetInputState();
+    input.beforeRead = () => input.feed(' ');
+
+    await rhack('l'.charCodeAt(0));
+
+    assert.match(game._lastPlineMessage, /You experience an unusual sense of peace/);
 });

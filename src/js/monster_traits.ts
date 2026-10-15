@@ -10,6 +10,7 @@ import { monsterHitPointsPerLevel } from './monster_hit_points.js';
 import type { MonsterHitPointRandom } from './monster_hit_points.js';
 import type { Monster, PetData, SavedMonsterTraits, ShopkeeperData } from './monster_types.js';
 import { rnd, rn2 } from './rng.js';
+import { forgetTempleEntry } from './priest.js';
 
 const G_UNIQ = 0x1000;
 
@@ -35,6 +36,7 @@ export function saveMonsterTraits(monster: null | undefined): null;
 export function saveMonsterTraits(monster: Monster | null | undefined): SavedMonsterTraits | null;
 export function saveMonsterTraits(monster: Monster | null | undefined): SavedMonsterTraits | null {
     if (!monster) return null;
+    if (monster.ispriest) forgetTempleEntry(monster);
     const {
         minvent, inventory, mw, wormSegments, wormGrowTime, wormHead,
         ...saved

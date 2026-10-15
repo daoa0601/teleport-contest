@@ -58,6 +58,7 @@ import {
     Is_rogue_level, Is_knox_level, UTOTYPE_DEFERRED,
 } from './const.js';
 import { resurrectWizard } from './wizard.js';
+import { forgetTempleEntry } from './priest.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import type { GameMap } from './game.js';
 import type { DungeonLocation } from './dungeon_types.js';
@@ -198,6 +199,8 @@ export async function gotoLevel(targetDepth: Partial<DungeonLocation>, {
     else updateMonsterLastMove(game);
     if (!game._levelCache) game._levelCache = new Map();
     rewindEngravingsForSave(oldLevel);
+    for (const monster of oldLevel.monsters)
+        if (monster.ispriest) forgetTempleEntry(monster);
     game._levelCache.set(
         levelCacheKey(oldDepth), cachedLevelState(oldLevel, oldStairs),
     );

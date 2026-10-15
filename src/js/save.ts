@@ -24,6 +24,7 @@ import { vision_reset_new_level } from './vision.js';
 import { rewindEngravingsForSave, restoreEngravingPointers } from './engrave.js';
 import { weaponNeedsBashingMessage } from './weapon_type.js';
 import { GRAPPLING_HOOK, PICK_AXE } from './object_data.js';
+import { forgetTempleEntry } from './priest.js';
 
 const SAVE_PREFIX = 'teleport-save:';
 const ERROR_SAVE_PREFIX = 'teleport-error-save:';
@@ -127,6 +128,13 @@ export async function askAboutPanicSave(): Promise<boolean> {
 async function prepareGameForSave(): Promise<void> {
     game.u.invulnerable = false;
     await doneObjectCleanup();
+    const levels = [game.level, ...[...(game._levelCache?.values() ?? [])].map(cached => cached.level)];
+    for (const level of levels)
+        for (const monster of level?.monsters ?? [])
+            if (monster.ispriest) forgetTempleEntry(monster);
+    for (const monster of game._migratingMonsters ?? [])
+        if (monster.ispriest) forgetTempleEntry(monster);
+    if (game.u.usteed?.ispriest) forgetTempleEntry(game.u.usteed);
 }
 
 // C save.c dosave0(): undo the date-dependent luck that
