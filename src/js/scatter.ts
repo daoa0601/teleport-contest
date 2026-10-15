@@ -32,6 +32,7 @@ import { hitHeroWithObject } from './hero_object_hit.js';
 import { hitHeroWithThrownPotion } from './hero_potion_hit.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { stopHeroOccupation } from './occupation.js';
+import { unpunishHero } from './punishment.js';
 import { addShopObjectToBill, costlySpot } from './shk.js';
 import { roomsAt } from './room.js';
 import { MONSTER_FLAGS1, MONSTER_SIZE, MONSTER_NAME } from './monster_data.js';
@@ -412,6 +413,16 @@ export async function scatterFloorObjects(
     const nodes: ScatterNode[] = [];
     const pile = floorPile(state, x, y);
     while (onlyObject || pile.length) {
+        const candidate = onlyObject || pile[0];
+        const chain = state.uchain || state.u.uchain;
+        if (candidate && (candidate === chain || candidate === (state.uball || state.u.uball))) {
+            await publish('The chain shatters!');
+            await unpunishHero(state);
+            if (candidate === chain) {
+                if (onlyObject) break;
+                continue;
+            }
+        }
         const next = nextObjectFromPile(pile, state, options);
         if (!next) break;
         const node = await prepareScatteredObject(
