@@ -17,6 +17,8 @@ export class GameDisplay {
     terminal;
     topMessage;
     toplines;
+    // update_topl() keeps accepting logical text while WIN_STOP hides output.
+    stoppedTopline = null;
     messages;
     toplin;
     messageWinFlags;

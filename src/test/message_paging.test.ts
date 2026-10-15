@@ -59,6 +59,22 @@ void test('Escape at More erases the message and returns its cursor to the first
     assert.equal(requireGameDisplay().cursorRow, 0);
 });
 
+void test('Escape retains dismissed prose when deciding whether a death message resumes output', async () => {
+    freshPlayableRoom();
+    requirePlayingGame(game);
+    const input = resetInputState();
+    await plineWithContinuation('You hear a heavy door slamming shut in the distance.');
+    input.feed('\x1b');
+    await flushPendingTopline();
+
+    await plineWithContinuation('The wind howls.');
+    await plineWithContinuation('You die...');
+    await flush_screen(1);
+
+    assert.equal(requireGameDisplay().grid[0]?.map(cell => cell.ch).join('').trimEnd(), '',
+        'The retained warning and hidden prose leave too little room for death to resume output');
+});
+
 void test('an explicit newline owns a message acknowledgment even when the text is short', async () => {
     freshPlayableRoom();
     requirePlayingGame(game);

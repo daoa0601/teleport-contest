@@ -112,7 +112,7 @@ import { isContainer, useContainer } from './container.js';
 import { tipCommand } from './container_tip.js';
 import { lootCommand } from './container_loot.js';
 import { adjustHeroAlignment } from './alignment.js';
-import { doOptions } from './options.js';
+import { doOptions, option_help } from './options.js';
 import { blocksDiagonalDoor, blocksMove, escapeFromStickyMonster, heroBadRock, heroCanPassWallAt, heroLiquidEffects, heroShouldAvoidLiquid, heroTightDiagonalReason, } from './hack.js';
 import { commandExecutionKey, controlRushDirection, visibleCommandKey } from './command_keys.js';
 import { NATIVE_COMMAND_FLAGS, NATIVE_COMMANDS } from './command_data.js';
@@ -999,7 +999,6 @@ async function redrawCommand() {
 async function performWaitCommand(force = game.iflags.menu_requested) {
     if (!await donull(force, !!game.multi))
         return;
-    game._pending_message = '';
     game.context.move = 1;
 }
 // C cmd.c:can_do_extcmd(). Admission precedes prefixes and handler setup.
@@ -4843,6 +4842,8 @@ async function dohelp() {
         await dowhatis();
     else if (choice === 'f')
         await whatDoesCommand();
+    else if (choice === 'g')
+        await option_help();
     else if (choice === 'j')
         await showKeyBindings();
     else if (choice === 'k')
