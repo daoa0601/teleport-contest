@@ -421,9 +421,9 @@ export async function teleportHeroAtWill({
 
     let destination: Position | null = null;
     if (trap?.once) {
-        const vault = state.level.rooms.find(room => isRoom(room) && room.rtype === VAULT);
+        const vault = searchSpecial(VAULT, state);
         const point = { x: 0, y: 0 };
-        if (isRoom(vault) && somexyspace(vault, point)
+        if (vault && somexyspace(vault, point, state)
             && heroTeleportDestinationOk(point.x, point.y, { state })) destination = point;
     } else if (trap?.teledest && isok(trap.teledest.x, trap.teledest.y)) {
         destination = trap.teledest;

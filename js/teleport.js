@@ -319,9 +319,9 @@ export async function teleportHeroAtWill({ state = game, random = rn2, rollOne =
     }
     let destination = null;
     if (trap?.once) {
-        const vault = state.level.rooms.find(room => isRoom(room) && room.rtype === VAULT);
+        const vault = searchSpecial(VAULT, state);
         const point = { x: 0, y: 0 };
-        if (isRoom(vault) && somexyspace(vault, point)
+        if (vault && somexyspace(vault, point, state)
             && heroTeleportDestinationOk(point.x, point.y, { state }))
             destination = point;
     }
