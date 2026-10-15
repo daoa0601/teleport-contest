@@ -56,6 +56,7 @@ import { unpunishHero } from './punishment.js';
 import { clearHeroTrap, freeHeroFromBuriedBall } from './hero_traps.js';
 import { handleRidingAfterFormChange } from './steed.js';
 import { hideHeroUnder } from './monster_hiding.js';
+import { learnEggType } from './invent.js';
 import { heroCanSpinWeb } from './hero_web.js';
 import { expelHero, holdingMonsterSubject, releaseHeroGrip, } from './hero_expulsion.js';
 import { applyHeroLocationEffects } from './cmd.js';
@@ -520,6 +521,13 @@ export async function polymonHero(mnum, options = {}) {
     game.vision_full_recalc = 1;
     newsym(game.u.ux, game.u.uy);
     const hero = game.u;
+    if ((MONSTER_FLAGS1[hero.umonnum] ?? 0) & M1_OVIPAROUS) {
+        learnEggType(hero.umonnum, game);
+        const name = MONSTER_NAME[hero.umonnum];
+        const ordinaryEgg = name === 'queen bee' ? nameToMonster('killer bee')
+            : name === 'winged gargoyle' ? nameToMonster('gargoyle') : hero.umonnum;
+        learnEggType(ordinaryEgg, game);
+    }
     const holder = hero.ustuck;
     const unsolid = monsterIsUnsolid({ mnum: hero.umonnum });
     let wasExpelled = false;

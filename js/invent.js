@@ -71,7 +71,7 @@ export function objectNeedsFullIdentification(object) {
         return false;
     return ['rust', 'burn', 'rot', 'corrosion', 'crack'].some(kind => objectIsVulnerableToErosion(object, kind));
 }
-function learnEggType(mnum, state) {
+export function learnEggType(mnum, state) {
     const adult = MONSTER_GROWTH_TARGET[mnum] ?? mnum;
     if (!Array.isArray(state.mvitals))
         state.mvitals = [];

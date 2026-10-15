@@ -125,7 +125,7 @@ export function objectNeedsFullIdentification(object: GameObject | null | undefi
         objectIsVulnerableToErosion(object, kind));
 }
 
-function learnEggType(mnum: number, state: GameState) {
+export function learnEggType(mnum: number, state: GameState) {
     const adult = MONSTER_GROWTH_TARGET[mnum] ?? mnum;
     if (!Array.isArray(state.mvitals)) state.mvitals = [];
     const vital = state.mvitals[adult]
