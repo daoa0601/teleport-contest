@@ -1,12 +1,13 @@
 import { hasShopkeeperData } from './shop_types.js';
+import { isAccessibleAt, isPoolAt } from './terrain_properties.js';
 // Ordinary monster death and corpse rules.
 // C refs: mon.c monkilled(), mondead(), mondied(), corpse_chance(), and make_corpse().
 
 import { prepareVaultGuardDeath } from './vault_guard.js';
 import { armorThiefGone } from './command_state.js';
 import {
-    ACCESSIBLE, CORPSTAT_FEMALE, CORPSTAT_INIT, CORPSTAT_MALE,
-    DISMOUNT_GENERIC, G_NOCORPSE, Is_rogue_level, IS_POOL,
+    CORPSTAT_FEMALE, CORPSTAT_INIT, CORPSTAT_MALE,
+    DISMOUNT_GENERIC, G_NOCORPSE, Is_rogue_level,
 } from './const.js';
 import { buryObject } from './buried_object.js';
 import {
@@ -153,8 +154,7 @@ export function levelAllowsMonsterDeathDrops(
 }
 
 export function monsterDeathSquareAllowsObjects(x: number, y: number, state: GameState = game): boolean {
-    const terrain = state.level?.at?.(x, y)?.typ;
-    return terrain !== undefined && (ACCESSIBLE(terrain) || IS_POOL(terrain));
+    return isAccessibleAt(x, y, state) || isPoolAt(x, y, state);
 }
 
 export function monsterBodyCrumbles(monster: Monster): boolean {

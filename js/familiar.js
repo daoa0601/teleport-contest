@@ -1,8 +1,9 @@
 // C dog.c:pick_familiar_pm() and make_familiar().
-import { G_EXTINCT, IS_POOL, MM_EDOG, MM_FEMALE, MM_IGNOREWATER, MM_MALE, MM_NOMSG, NEED_HTH_WEAPON, NO_MINVENT, } from './const.js';
+import { G_EXTINCT, MM_EDOG, MM_FEMALE, MM_IGNOREWATER, MM_MALE, MM_NOMSG, NEED_HTH_WEAPON, NO_MINVENT, } from './const.js';
 import { newsym, plineWithContinuation } from './display.js';
 import { initializePet } from './dog.js';
-import { game, requireGameLevel, requireLiveGame } from './gstate.js';
+import { game, requireLiveGame } from './gstate.js';
+import { isPoolAt } from './terrain_properties.js';
 import { makemonAt, makemonNear, rndmonstAdj } from './mklev.js';
 import { resolveMonsterLiquid } from './mon.js';
 import { setMonsterMalign } from './monster_alignment.js';
@@ -77,7 +78,7 @@ export async function makeFamiliar(object = null, x = game.u.ux, y = game.u.uy, 
         if (monster.mextra)
             delete monster.mextra.emin;
     }
-    if (IS_POOL(requireGameLevel(state).requireAt(monster.mx, monster.my).typ)) {
+    if (isPoolAt(monster.mx, monster.my, state)) {
         const result = await resolveMonsterLiquid(monster, state, {
             announce,
             finishDeath: finishMonsterLiquidDeath,

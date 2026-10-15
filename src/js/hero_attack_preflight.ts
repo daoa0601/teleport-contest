@@ -2,11 +2,12 @@
 // C ref: uhitm.c attack_checks().
 
 import { heroIsHallucinating } from './senses.js';
+import { isPoolAt } from './terrain_properties.js';
 import { observeObjectForNaming } from './objnam.js';
 import { artifactById } from './artifacts.js';
 import { AD_STCK } from './monster_attack_types.js';
 import {
-    IS_POOL, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, PARANOID_HIT,
+    M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, PARANOID_HIT,
     STRAT_WAITMASK,
 } from './const.js';
 import {
@@ -133,8 +134,7 @@ async function publishHiddenMonster(monster: Monster, state: GameState) {
         return;
     }
 
-    const terrain = state.level?.at?.(monster.mx, monster.my)?.typ;
-    const submergedCover = terrain !== undefined && IS_POOL(terrain)
+    const submergedCover = isPoolAt(monster.mx, monster.my, state)
         && !(state.underwater || state.u.uinwater);
     if (blind || submergedCover) {
         await plineWithContinuation("Wait!  There's a hidden monster there!");

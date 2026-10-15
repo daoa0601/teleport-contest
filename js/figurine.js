@@ -2,8 +2,9 @@
 // C refs: apply.c:fig_transform() and dog.c:make_familiar()/initedog().
 import { formatFeltMessage, formatSeenMessage } from './hero_speech.js';
 import { makeFamiliar } from './familiar.js';
-import { IS_OBSTRUCTED, IS_POOL, STONE, TREE, W_NONPASSWALL, isok, } from './const.js';
+import { IS_OBSTRUCTED, STONE, TREE, W_NONPASSWALL, isok, } from './const.js';
 import { canSeeMonster, newsym } from './display.js';
+import { isPoolAt } from './terrain_properties.js';
 import { remove_object } from './floor_object.js';
 import { game } from './gstate.js';
 import { findMonsterNearPosition, } from './mklev.js';
@@ -125,8 +126,7 @@ function monsterCarrierDescription(monster, state) {
         const owner = given ? name : `${articleFor(name)} ${name}`;
         return `${possessive(owner)} pack`;
     }
-    const location = state.level?.at(monster.mx, monster.my);
-    return location && IS_POOL(location.typ) ? 'empty water' : 'thin air';
+    return isPoolAt(monster.mx, monster.my, state) ? 'empty water' : 'thin air';
 }
 function objectDescription(object) {
     const name = object?.oextra?.oname || object?.oname

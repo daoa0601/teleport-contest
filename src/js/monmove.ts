@@ -532,9 +532,7 @@ import {
     Is_firelevel,
     Is_waterlevel,
     IS_DOOR,
-    IS_LAVA,
     IS_OBSTRUCTED,
-    IS_POOL,
     IS_ROOM,
     IS_STWALL,
     IS_TREE,
@@ -5486,7 +5484,7 @@ async function beginHeroAttackSlot(
                 let what: string;
                 if (heroIsBlind(state) && !object.dknown) {
                     what = 'something';
-                } else if (IS_POOL(state.level?.at(monster.mx, monster.my)?.typ ?? STONE)
+                } else if (isPoolAt(monster.mx, monster.my, state)
                     && !state.u.underwater) {
                     what = 'the water';
                 } else {
