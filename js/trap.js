@@ -423,10 +423,10 @@ async function destroyWetAcidPotion(object, described, emit, state, context) {
     await delobj(object, state);
     return 'destroyed';
 }
-export async function waterDamageChain(objects, messages = [], state = game) {
+export async function waterDamageChain(objects, messages = [], state = game, options = {}) {
     if (!objects)
         return messages;
-    await damageWaterChain(objects, messages, state, {});
+    await damageWaterChain(objects, messages, state, options);
     return messages;
 }
 async function damageWaterChain(objects, messages, state, options) {

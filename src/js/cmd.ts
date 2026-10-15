@@ -1857,7 +1857,7 @@ export async function drinkFountain(loc: MapLocation) {
                 return true;
         }
     } else if (fate === 30) {
-        fountainMessage = (await gushForthFromFountain({ drinking: true })).join('  ');
+        await gushForthFromFountain({ drinking: true });
     } else if (fate >= 10) {
         fountainMessage =
             `This tepid ${displayLiquidName('water')} is tasteless.`;
@@ -4138,11 +4138,11 @@ async function dipFountain(object: DipTarget, loc: MapLocation) {
         await summonFountainSnakes();
     } else if (fate === 24) {
         if ((loc.looted ?? 0) & F_LOOTED)
-            eventMessage = (await gushForthFromFountain()).join('  ');
+            await gushForthFromFountain();
         else
             await discoverFountainGem(loc);
     } else if (fate === 25) {
-        eventMessage = (await gushForthFromFountain()).join('  ');
+        await gushForthFromFountain();
     } else if (fate === 28) {
         await moreUntilDismissed(
             'An urge to take a bath overwhelms you.',

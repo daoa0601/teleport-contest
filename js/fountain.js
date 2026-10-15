@@ -88,7 +88,6 @@ export async function splitSittingGremlin() {
 // C refs: fountain.c dogushforth() and gush().
 export async function gushForthFromFountain({ drinking = false, state = game } = {}) {
     const level = requireGameLevel(state);
-    const messages = [];
     const ux = state.u.ux;
     const uy = state.u.uy;
     let madePool = 0;
@@ -106,12 +105,12 @@ export async function gushForthFromFountain({ drinking = false, state = game } =
         if (trap && !await deleteFloorTrap(trap, state))
             continue;
         if (madePool++ === 0) {
-            messages.push('Water gushes forth from the overflowing fountain!');
+            await plineWithContinuation('Water gushes forth from the overflowing fountain!');
         }
         location.typ = POOL;
         location.flags = 0;
         deleteEngravingAt(x, y, level);
-        await waterDamageChain(objects, messages, state);
+        await waterDamageChain(objects, [], state, { publish: plineWithContinuation });
         const monster = (state.level?.monsters || []).find(candidate => monsterHasMapPosition(candidate, state) &&
             (candidate.mhp ?? 1) > 0 && candidate.mx === x && candidate.my === y);
         if (monster) {
@@ -126,11 +125,10 @@ export async function gushForthFromFountain({ drinking = false, state = game } =
         }
     }
     if (!madePool) {
-        messages.push(drinking
+        await plineWithContinuation(drinking
             ? 'Your thirst is quenched.'
             : 'Water sprays all over you.');
     }
-    return messages;
 }
 function distmin(x1, y1, x2, y2) {
     return Math.max(Math.abs(x1 - x2), Math.abs(y1 - y2));

@@ -537,9 +537,10 @@ export async function waterDamageChain(
     objects: GameObject[] | null | undefined,
     messages: string[] = [],
     state = game,
+    options: Pick<WaterDamageOptions, 'publish'> = {},
 ): Promise<string[]> {
     if (!objects) return messages;
-    await damageWaterChain(objects, messages, state, {});
+    await damageWaterChain(objects, messages, state, options);
     return messages;
 }
 
