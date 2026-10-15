@@ -5,18 +5,16 @@ import { game } from './gstate.js';
 import type { GameState, QuestStatus } from './game_state.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
-import type { TextPage } from './windows.js';
 import type { DungeonLocation } from './dungeon_types.js';
 import { gotoLevel } from './level_change.js';
 import { nhgetch } from './input.js';
 import { flushPendingTopline, flush_screen, pline } from './display.js';
-import { showTextPages } from './windows.js';
-import { rn2 } from './rng.js';
 import {
     MIN_QUEST_ALIGN, MIN_QUEST_LEVEL, STRAT_CLOSE,
 } from './const.js';
 import { monsterIsQuestNemesis } from './monster_data.js';
-import { convertQuestLine, questLeaderName, questNemesisName } from './quest_pager.js';
+import { displayQuestText, prepareQuestText, qtPager } from './quest_pager.js';
+import type { QuestText } from './quest_pager.js';
 
 // C struct q_score is global game state, not a property inferred from the
 // current special level.  Keeping the complete shape here makes the state
@@ -112,378 +110,17 @@ export function markQuestNemesisDead(
     return true;
 }
 
-function questPage(lines: readonly string[]): TextPage {
-    const page = lines.slice(0, 23);
-    while (page.length < 23) page.push('');
-    page.push('--More--');
-    return { lines: page, cursor: [8, 23] };
-}
-
-function heroName(g: GameState = game) {
-    return g.plname || g.displayName?.toLowerCase() || 'adventurer';
-}
-
-function roleDeity(g: GameState = game) {
-    const role = g.urole;
-    const align = (g.u?.ualign?.type ?? 0) > 0 ? 'lawful'
-        : (g.u?.ualign?.type ?? 0) < 0 ? 'chaotic' : 'neutral';
-    return role?.gods?.[align] || 'your god';
-}
-
-function archeologistFirstTime(g: GameState = game) {
-    const homebase = g.urole?.homebase || 'the College of Archeology';
-    return [
-        'You are suddenly in familiar surroundings.  The buildings in the distance',
-        'seem to be those of your old alma mater, but something is wrong.  It feels',
-        `as if there has been a riot recently, or ${homebase} has`,
-        'been under siege.',
-        '',
-        'All of the windows are boarded up, and there are objects scattered around',
-        'the entrance.',
-        '',
-        'Strange forbidding shapes seem to be moving in the distance.',
-    ];
-}
-
-function barbarianFirstTime(g: GameState = game) {
-    const role = g.urole;
-    const perceive = g.blind ? 'sense' : 'see';
-    const homebase = role?.homebase || 'the Camp of the Duali Tribe';
-    const leader = questLeaderName(g) || 'Pelias';
-    return [
-        'Warily you scan your surroundings, all of your senses alert for signs',
-        `of possible danger.  Off in the distance, you can ${perceive} the familiar shapes`,
-        `of ${homebase}.`,
-        '',
-        `But why, you think, should ${leader} be there?`,
-        '',
-        'Suddenly, the hairs on your neck stand on end as you detect the aura of',
-        'evil magic in the air.',
-        '',
-        'Without thought, you ready your weapon, and mutter under your breath:',
-        '',
-        `    "By ${roleDeity(g)}, there will be blood spilt today."`,
-    ];
-}
-
-function barbarianLocateFirst(g: GameState = game) {
-    const intermediate = g.urole?.intermediate || 'the Duali Oasis';
-    return [
-        'The scent of water comes to you in the desert breeze.  You know that',
-        `you have located ${intermediate}.`,
-    ];
-}
-
-function barbarianLocateNext(g: GameState = game) {
-    const intermediate = g.urole?.intermediate || 'the Duali Oasis';
-    return `Yet again you have a chance to infiltrate ${intermediate}.`;
-}
-
-function archeologistLeaderFirst(g: GameState = game) {
-    const name = heroName(g);
-    return [
-        `"Finally you have returned, ${name}.  You were always`,
-        'my most promising student.  Allow me to see if you are ready for the',
-        'most difficult task of your career."',
-    ];
-}
-
-function archeologistAssignQuest(g: GameState = game) {
-    const role = g.urole;
-    const nemesis = questNemesisName(g) || 'the Minion of Huhetotl';
-    const artifact = role?.artifactName || 'the Orb of Detection';
-    const intermediate = role?.intermediate || 'the Tomb of the Toltec Kings';
-    return [
-        `Grave times have befallen the college, for ${nemesis} has`,
-        `stolen ${artifact}.  Without it, the board of directors of`,
-        'the university will soon have no choice but to revoke our research grants.',
-        '',
-        `"You must locate the entrance to ${intermediate}.  Within it,`,
-        `you will find ${nemesis}.`,
-        '',
-        `"You must then defeat ${nemesis} and return ${artifact}`,
-        'to me.',
-        '',
-        '"Only in this way will we be able to prevent the budget cuts that could',
-        'close this college.',
-        '',
-        `"May the wisdom of ${roleDeity(g)} be your guide."`,
-    ];
-}
-
-function archeologistBadAlign(g: GameState = game) {
-    const name = heroName(g);
-    const properName = name
-        ? `${name.charAt(0).toUpperCase()}${name.slice(1)}` : 'Adventurer';
-    const rank = g.urole?.rank;
-    const rankName = (g.flags?.female ? rank?.f : rank?.m)
-        || rank?.m || 'Spelunker';
-    const alignment = (g.u?.ualign?.type ?? 0) > 0 ? 'lawful'
-        : (g.u?.ualign?.type ?? 0) < 0 ? 'chaotic' : 'neutral';
-    return [
-        `"${properName}!  I've heard that you've been using sloppy techniques.  Your`,
-        `results lately can hardly be called suitable for a ${rankName}!`,
-        '',
-        `"How could you have strayed from the ${alignment} path?  Go from here, and come`,
-        'back only when you have purified yourself."',
-    ];
-}
-
-function archeologistLocateFirst(g: GameState = game) {
-    const intermediate = g.urole?.intermediate
-        || 'the Tomb of the Toltec Kings';
-    return [
-        'A plain opens before you.  Beyond the plain lies a foreboding edifice.',
-        '',
-        'You have the feeling that you will soon find the entrance to',
-        `${intermediate}.`,
-    ];
-}
-
-function priestLeaderFirst(g: GameState = game) {
-    const name = heroName(g);
-    const child = g.flags?.female ? 'daughter' : 'son';
-    return [
-        `"Ah, ${name}, my ${child}.  You have returned to us at last.`,
-        'A great blow has befallen our order; perhaps you can help us.',
-        'First, however, I must determine if you are prepared for this',
-        'great challenge."',
-    ];
-}
-
-function priestAssignQuest(g: GameState = game) {
-    const role = g.urole;
-    const name = heroName(g);
-    const nemesis = questNemesisName(g) || 'Nalzok';
-    const homebase = role?.homebase || 'the Great Temple';
-    const guardians = role?.guardianPlural || 'Acolytes';
-    const artifact = role?.artifactName || 'the Mitre of Holiness';
-    const intermediate = role?.intermediate || 'the Temple of Nalzok';
-    const align = (g.u?.ualign?.type ?? 0) > 0 ? 'lawful'
-        : (g.u?.ualign?.type ?? 0) < 0 ? 'chaotic' : 'neutral';
-    const deity = role?.gods?.[align] || 'your god';
-    return [
-        `"Yes, ${name}.  You are truly ready now.  Attend to me and I shall`,
-        'tell you of what has transpired:',
-        '',
-        `"At one of the Great Festivals a short time ago, ${nemesis} and a legion`,
-        `of undead invaded ${homebase}.  Many ${guardians} were killed, including`,
-        `the one carrying ${artifact}.`,
-        '',
-        `"As a final act of vengefulness, ${nemesis} desecrated the altar here.`,
-        'Without it, we could not mount a counter-attack.  Now, there are',
-        `barely enough ${guardians} left to keep the undead at bay.`,
-        '',
-        `"We need you to find ${intermediate}, then, from there, travel`,
-        `to ${nemesis}'s lair.  If you can manage to defeat ${nemesis} and return`,
-        `${artifact} here, we can then drive off the legions of`,
-        'undead that befoul the land.',
-        '',
-        `"Go with ${deity} as your guide, ${name}."`,
-    ];
-}
-
-function priestFirstTime(g: GameState = game) {
-    const role = g.urole;
-    const homebase = role?.homebase || 'the Great Temple';
-    const leader = questLeaderName(g) || 'the Arch Priest';
-    return [
-        `You find yourself standing in sight of ${homebase}.  Something`,
-        `is obviously wrong here.  The doors to ${homebase}, which usually`,
-        'stand open, are closed.  Strange human shapes shamble around',
-        'outside.',
-        '',
-        `You realize that ${leader} needs your assistance!`,
-    ];
-}
-
-function priestLocateFirst(g: GameState = game) {
-    const role = g.urole;
-    const intermediate = role?.intermediate || 'the Temple of Nalzok';
-    const leader = questLeaderName(g) || 'the Arch Priest';
-    const nemesis = questNemesisName(g) || 'Nalzok';
-    return [
-        'You stand facing a large graveyard.  The sky above is filled with clouds',
-        'that seem to get thicker closer to the center.  You sense the presence of',
-        'undead in larger numbers than you have ever encountered before.',
-        '',
-        `You remember the descriptions of ${intermediate}, given to you by`,
-        `${leader}.  It is ahead that you will find ${nemesis}'s trail.`,
-    ];
-}
-
-function priestGoalFirst() {
-    return [
-        'The stench of brimstone is all about you, and the shrieks and moans',
-        'of tortured souls assault your psyche.',
-        '',
-        'Ahead, there is a small clearing amidst the bubbling pits of lava...',
-    ];
-}
-
-function archeologistGoalFirst(g: GameState = game) {
-    const leader = questLeaderName(g) || 'Lord Carnarvon';
-    const artifact = g.urole?.artifactName || 'the Orb of Detection';
-    return [
-        'A strange feeling washes over you, and you think back to things you',
-        `learned during the many lectures of ${leader}.`,
-        '',
-        `You realize the feeling must be the presence of ${artifact}.`,
-    ];
-}
-
-function knightGoalFirst(g: GameState = game) {
-    const perceive = g.blind ? 'sense' : 'see';
-    return [
-        `As you exit the swamps, you ${perceive} before you a huge, gaping hole in the`,
-        'side of a hill.  From within, you smell the foul stench of carrion.',
-        '',
-        'The pools on either side of the entrance are fouled with blood, and',
-        'pieces of rusted metal and broken weapons show above the surface.',
-    ];
-}
-
-function priestNextTime(g: GameState = game) {
-    const homebase = g.urole?.homebase || 'the Great Temple';
-    return `Once again, you stand before ${homebase}.`;
-}
-
-function archeologistNextTime(g: GameState = game) {
-    const homebase = g.urole?.homebase || 'the College of Archeology';
-    return `Once again, you are back at ${homebase}.`;
-}
-
-function archeologistLocateNext(g: GameState = game) {
-    const intermediate = g.urole?.intermediate
-        || 'the Tomb of the Toltec Kings';
-    return `Once again, you are near the entrance to ${intermediate}.`;
-}
-
-function archeologistGoalNext(g: GameState = game) {
-    const artifact = g.urole?.artifactName || 'the Orb of Detection';
-    return `The familiar presence of ${artifact} is in the ether.`;
-}
-
-function archeologistGoalAlt(g: GameState = game) {
-    const nemesis = questNemesisName(g).replace(/^the /, '');
-    return `You have returned to ${nemesis}'s lair.`;
-}
-
-function priestLocateNext(g: GameState = game) {
-    const intermediate = g.urole?.intermediate || 'the Temple of Nalzok';
-    return `Again, you stand before ${intermediate}.`;
-}
-
-function wizardFirstTime(g: GameState = game) {
-    const leader = questLeaderName(g) || 'Neferet the Green';
-    return [
-        'You are suddenly in familiar surroundings.  You notice what appears to',
-        'be a large, squat stone structure nearby.  Wait!  That looks like the',
-        `tower of your former teacher, ${leader}.`,
-        '',
-        'However, things are not the same as when you were last here.  Mists and',
-        'areas of unexplained darkness surround the tower.  There is movement in',
-        'the shadows.',
-        '',
-        'Your teacher would never allow such unaesthetic forms to surround the',
-        'tower...  unless something were dreadfully wrong!',
-    ];
-}
-
-function wizardLocateFirst(g: GameState = game) {
-    const nemesis = questNemesisName(g) || 'the Dark One';
-    const possessive = nemesis.endsWith('s')
-        ? `${nemesis}'`
-        : `${nemesis}'s`;
-    return 'Wisps of fog swirl nearby.  '
-        + `You feel that ${possessive} lair is close.`;
-}
-
-type QuestTextRole = 'Arc' | 'Bar' | 'Kni' | 'Pri' | 'Wiz';
-type QuestMessage = 'firsttime' | 'leader_first' | 'assignquest' | 'badalign'
-    | 'locate_first' | 'goal_first' | 'locate_next' | 'nexttime'
-    | 'goal_next' | 'goal_alt';
-type QuestPageText = (state: GameState) => string[];
-type QuestLineText = (state: GameState) => string;
-
-type QuestDelivery =
-    | { page: TextPage | null; line?: never }
-    | { page?: never; line: string | null }
-    | { page?: never; line?: never };
-
-export type QuestArrival = QuestDelivery & { commit?: () => void };
-
-const QUEST_TEXT: Record<QuestTextRole, Partial<Record<QuestMessage, QuestPageText>>> = {
-    Arc: {
-        firsttime: archeologistFirstTime,
-        leader_first: archeologistLeaderFirst,
-        assignquest: archeologistAssignQuest,
-        badalign: archeologistBadAlign,
-        locate_first: archeologistLocateFirst,
-        goal_first: archeologistGoalFirst,
-    },
-    Bar: {
-        firsttime: barbarianFirstTime,
-        locate_first: barbarianLocateFirst,
-    },
-    Kni: {
-        goal_first: knightGoalFirst,
-    },
-    Pri: {
-        firsttime: priestFirstTime,
-        locate_first: priestLocateFirst,
-        goal_first: priestGoalFirst,
-        leader_first: priestLeaderFirst,
-        assignquest: priestAssignQuest,
-    },
-    Wiz: {
-        firsttime: wizardFirstTime,
-    },
+export type QuestArrival = {
+    page?: QuestText | null;
+    line?: string | null;
+    text?: QuestText | null;
+    commit?: () => void;
 };
 
-const QUEST_LINE: Partial<Record<QuestTextRole, Partial<Record<QuestMessage, QuestLineText>>>> = {
-    Bar: {
-        locate_next: barbarianLocateNext,
-    },
-    Arc: {
-        nexttime: archeologistNextTime,
-        locate_next: archeologistLocateNext,
-        goal_next: archeologistGoalNext,
-        goal_alt: archeologistGoalAlt,
-    },
-    Pri: {
-        nexttime: priestNextTime,
-        locate_next: priestLocateNext,
-    },
-    Wiz: {
-        locate_first: wizardLocateFirst,
-    },
-};
-
-function isQuestTextRole(role: string | undefined): role is QuestTextRole {
-    return role !== undefined && Object.hasOwn(QUEST_TEXT, role);
-}
-
-// questpgr.c loads quest.lua afresh for each qt_pager() lookup.  Its nhlib
-// dependency shuffles the three alignment names before the requested message
-// is resolved, even though these two Priest texts do not reference that list.
-function prepareQtDelivery(messageId: QuestMessage, g: GameState = game): QuestDelivery {
-    rn2(3);
-    rn2(2);
-    const role = g.urole?.filecode;
-    if (!isQuestTextRole(role)) return {};
-    const pageText = QUEST_TEXT[role][messageId];
-    if (pageText) return { page: questPage(pageText(g)) };
-    const lineText = QUEST_LINE[role]?.[messageId];
-    return lineText ? { line: lineText(g) } : {};
-}
-
-function prepareQtPager(messageId: QuestMessage, g: GameState = game): TextPage | null {
-    return prepareQtDelivery(messageId, g).page || null;
-}
-
-function prepareQtLine(messageId: QuestMessage, g: GameState = game): string | null {
-    return prepareQtDelivery(messageId, g).line || null;
+async function prepareQtDelivery(messageId: string, state: GameState): Promise<QuestArrival> {
+    const text = await prepareQuestText(messageId, state);
+    return text?.output === 'pline'
+        ? { line: text.lines.join('\n'), text } : { page: text };
 }
 
 function objectContainsQuestArtifact(object: GameObject | null | undefined): boolean {
@@ -503,40 +140,19 @@ function levelContainsQuestArtifact(g: GameState = game) {
             .some(objectContainsQuestArtifact));
 }
 
-async function displayPreparedQtPager(
-    page: TextPage | null, g: GameState = game,
-): Promise<boolean> {
-    if (!page) return false;
-    // goto_level's arrival owner has already displayed and acknowledged its
-    // explicit `--More--` line.  Direct quest_talk() enters with an ordinary
-    // pending pline, which opening the text window must flush here.
-    if (g._pending_message
-        && !g._pending_message.endsWith('--More--'))
-        await flushPendingTopline();
-    g._pending_message = '';
-    g._retained_message = '';
-    await showTextPages([page], { validKeys: [27, 32, 10, 13] });
-    g._pending_message = '';
-    g._retained_message = '';
-    return true;
-}
-
-async function qtPager(messageId: QuestMessage, g: GameState = game): Promise<boolean> {
-    return displayPreparedQtPager(prepareQtPager(messageId, g), g);
-}
-
 // C do.c:goto_level() leaves its level-teleport pline pending and then calls
 // quest.c:onquest().  qt_pager() has already loaded quest.lua and substituted
 // the role text when opening its text window forces the older pline's More
 // acknowledgement.  Keep lookup and display separate so the Lua RNG remains
 // on the command which entered the level while the next key still belongs to
 // the pending materialization line.
-export function prepareQuestArrival({ fromDepth, firstVisit = true }: {
+export async function prepareQuestArrival({ fromDepth, firstVisit = true }: {
     fromDepth?: DungeonLocation;
     firstVisit?: boolean;
-} = {}, g: GameState = game): QuestArrival | null {
+} = {}, g: GameState = game): Promise<QuestArrival | null> {
     const currentDepth = g.u.uz;
     if (!currentDepth) return null;
+    if (fromDepth?.dnum === currentDepth.dnum && fromDepth.dlevel === currentDepth.dlevel) return null;
     if (g.u?.uevent?.qcompleted) return null;
     if (g.dungeons?.[g.u?.uz?.dnum ?? 0]?.dname !== 'The Quest') return null;
 
@@ -545,7 +161,7 @@ export function prepareQuestArrival({ fromDepth, firstVisit = true }: {
     if (prototype.endsWith('-strt')) {
         if (!status.first_start) {
             return {
-                page: prepareQtPager('firsttime', g),
+                ...await prepareQtDelivery('firsttime', g),
                 commit() { status.first_start = true; },
             };
         }
@@ -559,11 +175,8 @@ export function prepareQuestArrival({ fromDepth, firstVisit = true }: {
             // substitution still precede collision with the pending level-
             // teleport message.
             if ((status.not_ready ?? 0) <= 2)
-                return { line: prepareQtLine('nexttime', g) };
-            // Priest othertime is an unexercised multiline pline branch;
-            // keep the control-flow boundary explicit until that transcript
-            // supplies its tty pagination contract.
-            return null;
+                return prepareQtDelivery('nexttime', g);
+            return prepareQtDelivery('othertime', g);
         }
         return null;
     }
@@ -573,7 +186,7 @@ export function prepareQuestArrival({ fromDepth, firstVisit = true }: {
             < (g.u?.uz?.dlevel ?? 0);
         if (!status.first_locate) {
             const delivery = fromAbove
-                ? prepareQtDelivery('locate_first', g)
+                ? await prepareQtDelivery('locate_first', g)
                 : {};
             return {
                 ...delivery,
@@ -581,20 +194,20 @@ export function prepareQuestArrival({ fromDepth, firstVisit = true }: {
             };
         }
         if (fromAbove)
-            return { line: prepareQtLine('locate_next', g) };
+            return prepareQtDelivery('locate_next', g);
     }
     if (prototype.endsWith('-goal')) {
         if (status.killed_nemesis) return null;
         if (!status.made_goal) {
             return {
-                page: prepareQtPager('goal_first', g),
+                ...await prepareQtDelivery('goal_first', g),
                 commit() { status.made_goal = 1; },
             };
         }
         const messageId = levelContainsQuestArtifact(g)
             ? 'goal_next' : 'goal_alt';
         return {
-            line: prepareQtLine(messageId, g),
+            ...await prepareQtDelivery(messageId, g),
             commit() {
                 if (status.made_goal < 7) status.made_goal++;
             },
@@ -607,7 +220,7 @@ export function prepareQuestArrival({ fromDepth, firstVisit = true }: {
 // first time invokes com_pager("quest_portal").  Loading quest.lua consumes
 // nhlib's alignment shuffle before its four plines collide with any pending
 // level-teleport message.
-export function prepareMainQuestPortalCall({ firstVisit = true } = {},
+export async function prepareMainQuestPortalCall({ firstVisit = true } = {},
     g: GameState = game) {
     if (!firstVisit) return null;
     const event = g.u?.uevent || (g.u.uevent = {});
@@ -629,31 +242,20 @@ export function prepareMainQuestPortalCall({ firstVisit = true } = {},
     });
     if (!entrance || currentDnum === questDnum) return null;
 
-    rn2(3);
-    rn2(2);
-    // dat/quest.lua quest_portal text; convertQuestLine expands %l and %H
-    // for the current role the same way com_pager() does for every role.
-    if (event.qcalled) {
-        return [convertQuestLine(g.urole?.key === 'rogue'
-            ? 'You again sense %l demanding your attendance.'
-            : 'You again sense %l pleading for help.', g)];
-    }
-
+    const messageId = event.qcalled
+        ? g.urole?.key === 'rogue' ? 'quest_portal_demand' : 'quest_portal_again'
+        : 'quest_portal';
+    const text = await prepareQuestText(messageId, g, true);
     event.qcalled = true;
-    return [
-        'You receive a faint telepathic message from %l:',
-        'Your help is urgently needed at %H!',
-        'Look for a ...ic transporter.',
-        "You couldn't quite make out that last message.",
-    ].map(line => convertQuestLine(line, g));
+    return text?.lines ?? null;
 }
 
 export async function displayPreparedQuestArrival(
     arrival: QuestArrival | null, g: GameState = game,
 ): Promise<boolean> {
     if (!arrival) return false;
-    if (arrival.page) await displayPreparedQtPager(arrival.page, g);
-    else if (arrival.line) await pline(arrival.line);
+    if (arrival.page) await displayQuestText(arrival.page, g);
+    else if (arrival.text) await displayQuestText(arrival.text, g);
     arrival.commit?.();
     return !!(arrival.page || arrival.line);
 }
