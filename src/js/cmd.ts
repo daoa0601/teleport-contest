@@ -4154,7 +4154,7 @@ async function dipFountain(object: DipTarget, loc: MapLocation) {
             const loss = Math.trunc(someGold(wallet) / 10);
             game._statusGoldOverride = wallet;
             setHeroGoldAmount(game, wallet - loss);
-            await pline('You lost some of your gold in the fountain!');
+            await plineWithContinuation('You lost some of your gold in the fountain!');
             loc.looted = (loc.looted ?? 0) & ~F_LOOTED;
             await exerciseAttribute(A_WIS, false);
         }
