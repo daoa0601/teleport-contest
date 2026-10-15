@@ -16,7 +16,7 @@ import { beginObjectBurn, endObjectBurn, equipmentLightDescription } from './lig
 import { cansee, vision_recalc } from './vision.js';
 import { surfaceName } from './terrain_name.js';
 import { monsterSentenceSubject } from './monster_sound.js';
-import { monsterName } from './monster_name.js';
+import { monsterName, monsterObjectPronoun, monsterPossessive } from './monster_name.js';
 import { dismountHero, heroCanRideSteed } from './steed.js';
 import { resolveImmediatePetrification, touchPetrifies } from './stoning.js';
 import { rnl } from './rng.js';
@@ -26,7 +26,7 @@ import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
 import type { MessagePublisher } from './display.js';
 import {
-    MONSTER_EXPERIENCE_META, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_SIZE, MONSTER_NAME, MONSTER_SYMBOL,
+    MONSTER_EXPERIENCE_META, MONSTER_FLAGS1, MONSTER_SIZE, MONSTER_NAME, MONSTER_SYMBOL,
     monsterBreaksArmor, monsterCanBeSaddled, monsterHasNoHands,
     monsterIsCentaur, monsterIsWhirly, monsterTypeName,
     monsterHornCount, monsterIsSlithy, monsterIsVerySmall,
@@ -66,7 +66,6 @@ export interface MonsterGearChange {
 const M1_NOHEAD = 0x00008000;
 const M1_MINDLESS = 0x00010000;
 const M1_ANIMAL = 0x00040000;
-const M2_NEUTER = 0x00040000;
 const MZ_SMALL = 1;
 const LEATHER = 7;
 const SPEED_BOOTS = 166;
@@ -304,6 +303,10 @@ export async function adjustMonsterClothingAfterPolymorph(
     const dropped: GameObject[] = [];
     const destroyed: GameObject[] = [];
     const mnum = monster.mnum;
+    // mon_break_armor chooses both perceived pronouns before any clothing
+    // changes visibility. Hallucination chooses each one independently.
+    const pronoun = monsterObjectPronoun(monster, { state });
+    const owner = monsterPossessive(monster, { state });
     const wrappingFits = monsterWrappingAllowed(mnum);
     const visible = cansee(monster.mx, monster.my);
     const name = () => monsterSentenceSubject(monster);
@@ -311,9 +314,6 @@ export async function adjustMonsterClothingAfterPolymorph(
         const subject = name();
         return `${subject}${subject.endsWith('s') ? "'" : "'s"}`;
     };
-    const neuter = !!((MONSTER_FLAGS2[mnum] ?? 0) & M2_NEUTER);
-    const pronoun = neuter ? 'it' : monster.female ? 'her' : 'him';
-    const owner = neuter ? 'its' : monster.female ? 'her' : 'his';
     const cloakName = (object: GameObject): string => object.otyp === ROBE ? 'robe'
         : object.otyp === MUMMY_WRAPPING ? 'mummy wrapping'
             : object.otyp === ALCHEMY_SMOCK ? 'apron' : 'cloak';
