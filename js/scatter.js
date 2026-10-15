@@ -22,6 +22,7 @@ import { monsterHasAcidResistance, monsterHasPoisonResistance, monsterHasStoneRe
 import { petrifyMonsterFromContact } from './monster_stoning.js';
 import { wakeMonstersNear } from './monster_wake.js';
 import { heroSpecies } from './hero_species.js';
+import { dist2 } from './hacklib.js';
 import { captureHeroProjectileName } from './hero_physical_messages.js';
 import { hideHeroUnder, maybeUnhideAt } from './monster_hiding.js';
 import { hitHeroWithObject } from './hero_object_hit.js';
@@ -162,6 +163,7 @@ async function hitMonster(monster, node, state, options) {
             targetVisible: cansee(monster.mx, monster.my),
             targetSpotted: canSpotMonster(monster),
             resolveVapor: true,
+            distance: dist2(state.u.ux, state.u.uy, monster.mx, monster.my),
             publish: options.publish,
             wakeMonster: target => wakeMonster(target, {
                 attacked: options.heroCaused,
