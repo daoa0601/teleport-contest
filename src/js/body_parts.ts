@@ -144,6 +144,7 @@ export function monsterHandName(mnum: number) {
 
 export function monsterHeadName(mnum: number) {
     const symbol = MONSTER_SYMBOL[mnum];
+    if (MONSTER_NAME[mnum] === 'stalker') return 'head';
     if (symbol === S_JELLY || symbol === S_PUDDING || symbol === S_BLOB)
         return 'cerebral area';
     if (symbol === S_EYE || symbol === S_LIGHT) return 'body';
