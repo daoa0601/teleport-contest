@@ -56,4 +56,24 @@ void test('a pet can take the rare chance to attack a gelatinous cube', async ()
     await beginMonsterMove(pet, game, () => 0, count => count, () => 1);
     assert.ok(target.mhp < 100);
 });
+for (const species of ['jackal', 'Student', 'Lord Carnarvon']) {
+    void test(`a pet leaves a peaceful ${species} alone when injured or protecting quest allies`, async () => {
+        const { pet, target } = await meleeRoom(species);
+        requirePlayingGame(game);
+        target.mpeaceful = 1;
+        pet.m_lev = 30;
+        pet.mhp = species === 'jackal' ? 24 : 100;
+        await beginMonsterMove(pet, game, limit => Math.min(1, limit - 1), count => count, () => 1);
+        assert.equal(target.mhp, 100, 'the pet must not initiate melee against this peaceful monster');
+    });
+}
+void test('a pet at one quarter health may still attack an ordinary peaceful monster', async () => {
+    const { pet, target } = await meleeRoom('jackal');
+    requirePlayingGame(game);
+    target.mpeaceful = 1;
+    pet.m_lev = 30;
+    pet.mhp = 25;
+    await beginMonsterMove(pet, game, limit => Math.min(1, limit - 1), count => count, () => 1);
+    assert.ok(target.mhp < 100);
+});
 //# sourceMappingURL=pet_melee_avoidance.test.js.map

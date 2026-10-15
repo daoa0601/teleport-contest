@@ -205,6 +205,8 @@ export const NORMAL_SPEED = 12;
 export const MSLOW = 1;
 export const MFAST = 2;
 const M1_FLY = 0x00000001;
+const MS_LEADER = 36;
+const MS_GUARDIAN = 38;
 const M1_SWIM = 0x00000002;
 const M1_AMORPHOUS = 0x00000004;
 const M1_CLING = 0x00000010;
@@ -2437,6 +2439,11 @@ async function movePet(monster, state, random, rollDice, rollOne, calls, resumeA
             if (target.mtame && monster.mtame && !heroHasConflict(state))
                 continue;
             if (maxPassiveMonsterDamage(target, monster) >= (monster.mhp ?? 1))
+                continue;
+            const targetSound = MONSTER_SOUND[target.mnum];
+            if ((monster.mhp * 4 < monster.mhpmax
+                || targetSound === MS_GUARDIAN || targetSound === MS_LEADER)
+                && target.mpeaceful && !heroHasConflict(state))
                 continue;
             // dog_move() usually avoids paralysis and petrifying contact even
             // when the expected passive HP damage would be survivable.
