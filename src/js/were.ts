@@ -28,9 +28,7 @@ import {
 } from './polyself.js';
 import { paranoidQuery } from './query.js';
 import { rn2, rnd } from './rng.js';
-import {
-    monsterSentenceSubject, sessionIsNight,
-} from './monster_sound.js';
+import { sessionIsNight } from './monster_sound.js';
 import { heroIsDeaf } from './senses.js';
 import { updateMonsterWeaponAfterPolymorph } from './monster_weapon.js';
 import { monsterIsScaredAt } from './monster_fear.js';
@@ -442,7 +440,7 @@ export async function transformWereMonster(monster: Monster, state: GameState = 
 
     if (canSeeMonster(monster) && !heroIsHallucinating(state)) {
         const form = changedWereFormName({ mnum: newMnum });
-        await publish(`${monsterSentenceSubject(monster)} changes into a ${form}.`);
+        await publish(`${monsterName(monster, { state, capitalized: true })} changes into a ${form}.`);
     }
     setMonsterSpecies(monster, newMnum);
     if (monster.msleeping || monster.mfrozen || monster.mcanmove === 0) {
