@@ -20,6 +20,7 @@ import { seenResistanceForDamage } from './monster_perception.js';
 import { monsterLinedUpWithPerceivedHero } from './monmove.js';
 import { d, rn2, rnd } from './rng.js';
 import { displayRayName } from './ray_name.js';
+import { heroIsDeaf } from './senses.js';
 import { couldsee } from './vision.js';
 
 const M1_SEE_INVIS = 0x01000000;
@@ -41,8 +42,7 @@ async function curseDirectedSpell(monster: Monster, state: GameState, publish: M
         await publish(`${monsterName(monster, { state, capitalized: true })} points ${pointing}.`);
     } else if (!(state.moves % 4) || !random(4)) {
         const message = 'You hear a mumbled curse.';
-        if (!state.deaf && !(state._pending_message || '').endsWith(message))
-            await publish(message);
+        if (!heroIsDeaf(state)) await publish(message, { noRepeat: true });
     }
 }
 
