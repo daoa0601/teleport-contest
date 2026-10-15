@@ -236,18 +236,17 @@ async function sitInWater() {
         return;
     }
 
-    const messages: string[] = [];
     const armor = game.uarm || game.u?.uarm;
     const boots = game.uarmf || game.u?.uarmf;
-    if (armor && rn2(10) === 0)
-        await waterDamageObject(armor, messages, game);
-    if (boots?.otyp !== WATER_WALKING_BOOTS && boots
-        && rn2(10) === 0) {
+    if (rn2(10) === 0 && armor)
+        await waterDamageObject(armor, [], game,
+            { force: true, description: 'armor', publish: pline });
+    if (rn2(10) === 0 && boots && boots.otyp !== WATER_WALKING_BOOTS) {
         // sit.c passes uarm here too; preserve that behavior from the pinned
         // source rather than silently changing which item gets wet.
-        await waterDamageObject(armor, messages, game);
+        await waterDamageObject(armor, [], game,
+            { force: true, description: 'armor', publish: pline });
     }
-    for (const message of messages) await pline(message);
 }
 
 function formLikesLava() {
