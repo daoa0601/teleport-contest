@@ -2,6 +2,7 @@
 // C refs: potion.c make_sick(), make_vomiting();
 // timeout.c sickness_dialogue(), vomiting_dialogue(); eat.c vomit().
 import { heroIsHallucinating } from './senses.js';
+import { heroIsUnaware } from './hero_sleep.js';
 import { makeConfused, makeStunned } from './hero_mental_status.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { heroStomachName } from './body_parts.js';
@@ -21,6 +22,7 @@ import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_SYMBOL, } from '.
 import { heroMonsterForm } from './polyself.js';
 import { altarWrath } from './pray.js';
 import { d, rn2 } from './rng.js';
+import { propertyIsActive } from './properties.js';
 import { heroAcidBreathAttack, hitHeroWithRay, } from './hero_breath.js';
 const S_RODENT = 18;
 const M1_ACID = 0x08000000;
@@ -189,15 +191,14 @@ export async function vomitHero({ state = game, publish = pline, angerAltar = al
     return { spewed: true, cannotVomit: false };
 }
 function vomitingMessage(state, nextTurns) {
-    const hero = state.u;
     if (nextTurns === 14)
         return 'You are feeling mildly nauseated.';
     if (nextTurns === 11) {
-        return (hero.confusionTurns ?? 0) > 0
+        return propertyIsActive('confusion', state)
             ? 'You feel slightly more confused.' : 'You feel slightly confused.';
     }
     if (nextTurns === 8) {
-        return (hero.stunnedTurns ?? 0) > 0
+        return propertyIsActive('stunned', state)
             ? "You can't think straight."
             : "You can't seem to think straight.";
     }
@@ -254,11 +255,19 @@ export async function vomitingDialogue({ state = game, publish = pline, rollDice
     await exerciseAttribute(A_CON, false, state);
     return { active: heroIsVomiting(state), vomited, turns: nextTurns };
 }
-export function advanceHeroVomiting({ state = game } = {}) {
+export async function advanceHeroVomiting({ state = game, publish = plineWithContinuation, } = {}) {
     const hero = state.u;
-    const nextTurns = Math.max(0, (hero.vomitingTurns ?? 0) - 1);
+    const turns = hero.vomitingTurns ?? 0;
+    if (turns <= 0)
+        return { active: heroIsVomiting(state), turns: 0 };
+    const nextTurns = turns - 1;
     hero.vomitingTurns = nextTurns;
-    hero.vomiting = nextTurns > 0;
+    hero.vomiting = propertyIsActive('vomiting', state);
+    if (nextTurns === 0) {
+        state.context.botl = true;
+        if (hero.vomiting && !heroIsUnaware(state))
+            await publish('You feel much less nauseated now.');
+    }
     return { active: hero.vomiting, turns: nextTurns };
 }
 function sicknessMessage(hero) {

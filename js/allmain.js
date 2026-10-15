@@ -1093,7 +1093,7 @@ async function finishInitialTurnMaintenanceAfterConfusion({ sourceTurn, moveAmou
         await advanceHeroStrangulation();
         if (game.program_state.gameover)
             return { kind: 'complete', moveAmount };
-        advanceHeroVomiting();
+        await advanceHeroVomiting();
     }
     if (!prayerTimeoutFreeze && advancePropertyTimeout('glib', game))
         setSlipperyHands(0, game);

@@ -21,6 +21,6 @@ export async function advanceHeroSickness(options = {}) {
 }
 export async function advanceHeroVomiting(options = {}) {
     const dialogue = await vomitingDialogue(options);
-    return { ...dialogue, ...tickVomiting(options) };
+    return { ...dialogue, ...await tickVomiting(options) };
 }
 //# sourceMappingURL=condition-turn.js.map

@@ -34,5 +34,5 @@ export async function advanceHeroSickness(options: NonNullable<Parameters<typeof
 
 export async function advanceHeroVomiting(options: NonNullable<Parameters<typeof vomitingDialogue>[0]> = {}) {
     const dialogue = await vomitingDialogue(options);
-    return { ...dialogue, ...tickVomiting(options) };
+    return { ...dialogue, ...await tickVomiting(options) };
 }

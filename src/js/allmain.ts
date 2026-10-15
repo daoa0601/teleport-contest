@@ -1293,7 +1293,7 @@ async function finishInitialTurnMaintenanceAfterConfusion({
         if (game.program_state.gameover) return { kind: 'complete', moveAmount };
         await advanceHeroStrangulation();
         if (game.program_state.gameover) return { kind: 'complete', moveAmount };
-        advanceHeroVomiting();
+        await advanceHeroVomiting();
     }
 
     if (!prayerTimeoutFreeze && advancePropertyTimeout('glib', game))
