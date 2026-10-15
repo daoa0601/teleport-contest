@@ -37,7 +37,7 @@ import { MONSTER_SIZE, MONSTER_NAME } from './monster_data.js';
 import { findMonsterArmorClass } from './monworn.js';
 import {
     BOULDER, EGG, GOLD_PIECE, OBJECT_MATERIAL, OBJECT_NAMES,
-    ROCK, STATUE,
+    STATUE,
 } from './object_data.js';
 import {
     breakFloorObject,
@@ -45,7 +45,10 @@ import {
 import { splitObjectStack } from './object_stack.js';
 import { hitMonsterWithSupportedPotion } from './potion_hit.js';
 import { d, rn2, rnd } from './rng.js';
-import { objectWeight } from './weight.js';
+import { breakStatue, fractureRock } from './rock_breakage.js';
+import { objectCombatName, objectNameIsPlural } from './objnam.js';
+import { verbForSubject } from './object_grammar.js';
+import { capitalizedDefiniteName } from './ray_hit_message.js';
 import {
     rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero,
 } from './weapon_damage.js';
@@ -78,7 +81,6 @@ interface ScatterNode extends Position {
     stopped: boolean;
 }
 
-const GEM_CLASS = 13;
 const GLASS = 19;
 const POTION_CLASS = 8;
 const DIRECTIONS = [
@@ -288,34 +290,33 @@ async function hitHero(node: ScatterNode, state: GameState, options: ScatterSett
 }
 
 async function fractureObject(object: GameObject, x: number, y: number, state: GameState, options: ScatterSettings): Promise<void> {
-    if (squareIsVisible(state, x, y)) {
-        const verb = object.otyp === BOULDER ? 'breaks apart' : 'crumbles';
-        await options.publish(`The ${objectName(object)} ${verb}.`);
-    } else {
-        await publishHeardMessage(object.otyp === BOULDER ? 'stone breaking.' : 'stone crumbling.', options.publish, state);
-    }
-
-    if (object.otyp === STATUE) {
-        const contents = object.contents || [];
-        for (const item of contents) {
-            unlinkObject(item, state);
-            await placeOnFloor(item, x, y, state);
-        }
-        object.contents = [];
+    const boulder = object.otyp === BOULDER;
+    if (!boulder) {
         const statueTrap = state.level?.traps.find(trap =>
             trap.tx === x && trap.ty === y && trap.ttyp === STATUE_TRAP);
         if (statueTrap) deleteTrap(statueTrap, state);
     }
-    object.otyp = ROCK;
-    object.oclass = GEM_CLASS;
-    object.quan = object.quantity = options.rollOne(60) + 6;
-    object.owt = objectWeight(object);
-    object.dknown = false;
-    object.bknown = false;
-    object.rknown = false;
-    object.known = true;
-    delete object.oextra;
-    await placeOnFloor(object, x, y, state);
+    if (squareIsVisible(state, x, y)) {
+        const name = capitalizedDefiniteName(objectCombatName(object, { state }), state);
+        const verb = boulder ? 'break' : 'crumble';
+        const action = objectNameIsPlural(object, state) ? verb : verbForSubject(null, verb);
+        await options.publish(`${name} ${action}${boulder ? ' apart' : ''}.`);
+    } else {
+        await publishHeardMessage(boulder ? 'stone breaking.' : 'stone crumbling.', options.publish, state);
+    }
+    const fractureOptions = { state, random: options.random, publish: options.publish };
+    if (boulder) await fractureRock(object, x, y, fractureOptions);
+    else await breakStatue(object, x, y, fractureOptions);
+    await placeObject(object, x, y, state);
+    if (boulder) {
+        // Native scatter() processes all remaining boulders before the debris.
+        const nextBoulder = floorPile(state, x, y).find(candidate => candidate.otyp === BOULDER);
+        if (nextBoulder) {
+            unlinkObject(nextBoulder, state);
+            await placeObject(nextBoulder, x, y, state);
+        }
+    }
+    newsym(x, y);
 }
 
 async function prepareScatteredObject(object: GameObject, x: number, y: number, state: GameState, options: ScatterSettings): Promise<ScatterNode | null> {
