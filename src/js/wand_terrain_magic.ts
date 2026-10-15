@@ -1,3 +1,4 @@
+import { formatFeltMessage } from './hero_speech.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Trap, Engraving } from './map_types.js';
@@ -173,7 +174,7 @@ async function probeTerrain(x: number, y: number, trap: Trap | undefined, learne
         if (cansee(x, y)) {
             await pline('Probing reveals a secret door.');
             learned = true;
-        } else if (Is_rogue_level(state.u.uz)) await pline('You feel a draft.');
+        } else if (Is_rogue_level(state.u.uz)) await pline(formatFeltMessage('a draft.', state));
     } else if (surface === SCORR) {
         location.typ = CORR;
         vision_note_blocker_change(x, y);

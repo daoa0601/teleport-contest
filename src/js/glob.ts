@@ -6,7 +6,7 @@ import { ICE, isok } from './const.js';
 import { deallocateObject } from './object_delete.js';
 import { unlinkObject } from './object_location.js';
 import { game, requireLiveGame } from './gstate.js';
-import { formatHeardMessage } from './hero_speech.js';
+import { formatHeardMessage, formatSeenMessage } from './hero_speech.js';
 import { maybeUnhideAt } from './monster_hiding.js';
 import { reconcileObjectDeletionBill } from './shk.js';
 import {
@@ -96,7 +96,7 @@ export async function announceGlobMerge(first: GameObject, second: GameObject, s
     const inPack = first.where === 'inventory' || second.where === 'inventory';
     if ((!heroIsBlind(state) && visible) || inPack) {
         if (heroIsHallucinating(state)) {
-            if (onFloor) await publish('You see parts of the floor melting!');
+            if (onFloor) await publish(formatSeenMessage('parts of the floor melting!', state));
             else if (inPack) await publish('Your pack reaches out and grabs something!');
         } else if (onFloor || inPack) {
             const adjacent = (first.ox !== state.u.ux || first.oy !== state.u.uy)

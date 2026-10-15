@@ -1,5 +1,6 @@
 // Squeaky boards triggered by monsters.
 // C ref: trap.c:trapeffect_sqky_board().
+import { publishHeardMessage } from './hero_speech.js';
 import { BOLT_LIM, COULD_SEE, squeakyBoardNoteWithArticle } from './const.js';
 import { game } from './gstate.js';
 import { dist2 } from './hacklib.js';
@@ -42,8 +43,8 @@ export async function finishMonsterSqueakyBoard(monster, event, state = game, { 
             await publish(`${monsterName(monster, { state, capitalized: true })} stops momentarily and appears to cringe.`);
         }
     }
-    else if (!event.deaf) {
-        await publish(`You hear ${event.note} squeak ${event.nearby ? 'nearby' : 'in the distance'}.`);
+    else {
+        await publishHeardMessage(`${event.note} squeak ${event.nearby ? 'nearby' : 'in the distance'}.`, publish, state);
     }
     await wakeMonstersNearWithMessages(event.trap.tx, event.trap.ty, 40, state, publish);
     event.finished = true;

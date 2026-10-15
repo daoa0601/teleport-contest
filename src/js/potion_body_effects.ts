@@ -1,3 +1,4 @@
+import { formatFeltMessage } from './hero_speech.js';
 import type { GameObject } from './object_types.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { PotionEffectOptions, PartialPotionEffectResult } from './potion_types.js';
@@ -96,7 +97,7 @@ async function drinkWater(source: GameObject, state: PlayingGameState) {
             }
             return loseHeroHp(halfPhysical(d(2, 6), state), 'potion of holy water', { state });
         }
-        await plineWithContinuation('You feel quite proud of yourself.');
+        await plineWithContinuation(formatFeltMessage('quite proud of yourself.', state));
         await healHero(d(2, 6), 0, { state });
         if (hero.ulycn >= 0 && !heroIsPolymorphed(state))
             await applyHeroWereChange({ state });
@@ -105,7 +106,7 @@ async function drinkWater(source: GameObject, state: PlayingGameState) {
         return !!state.program_state.gameover;
     }
     if (source.blessed) {
-        await plineWithContinuation('You feel full of awe.');
+        await plineWithContinuation(formatFeltMessage('full of awe.', state));
         await cureHeroSicknessWithMessages(state);
         await exerciseAttribute(A_WIS, true, state);
         await exerciseAttribute(A_CON, true, state);
@@ -114,7 +115,7 @@ async function drinkWater(source: GameObject, state: PlayingGameState) {
         if (hero.ualign.type === 1) {
             await plineWithContinuation(`This burns like ${displayLiquidName('acid', state)}!`);
             if (await loseHeroHp(halfPhysical(d(2, 6), state), 'potion of unholy water', { state })) return true;
-        } else await plineWithContinuation('You feel full of dread.');
+        } else await plineWithContinuation(formatFeltMessage('full of dread.', state));
         if (hero.ulycn >= 0 && !heroIsPolymorphed(state))
             await applyHeroWereChange({ state });
         if (state.program_state.gameover) return true;
@@ -192,7 +193,7 @@ async function drinkAcid(source: GameObject, state: PlayingGameState) {
 }
 
 async function drinkPolymorph(source: GameObject, state: PlayingGameState) {
-    await plineWithContinuation(`You feel a little ${heroIsHallucinating(state) ? 'normal' : 'strange'}.`);
+    await plineWithContinuation(formatFeltMessage(`a little ${heroIsHallucinating(state) ? 'normal' : 'strange'}.`, state));
     if (heroIsUnchanging(state)) return false;
     const controlled = source.blessed && !heroIsPolymorphed(state);
     const result = await polymorphHero(controlled ? POLY_CONTROLLED | POLY_LOW_CTRL : POLY_NOFLAGS);

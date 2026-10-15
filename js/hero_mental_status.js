@@ -1,4 +1,5 @@
 // Native potion.c make_confused(), make_stunned(), and make_hallucinated().
+import { formatFeltMessage } from './hero_speech.js';
 import { game, requireLiveGame } from './gstate.js';
 import { TIMEOUT } from './const.js';
 import { heroEyeCount, heroEyeName, heroHasEyes } from './body_parts.js';
@@ -13,7 +14,7 @@ import { grantWornProperty, hasCarriedProperty, hasInvokedProperty, hasWornPrope
 export async function makeConfused(turns, { state = game, talk = true, publish = plineWithContinuation, } = {}) {
     const old = state.u.confusionTurns ?? 0;
     if (!turns && state.u.confusionTurns && talk && !heroIsUnaware(state)) {
-        await publish(`You feel less ${heroIsHallucinating(state) ? 'trippy' : 'confused'} now.`);
+        await publish(formatFeltMessage(`less ${heroIsHallucinating(state) ? 'trippy' : 'confused'} now.`, state));
     }
     if (!!turns !== !!old)
         state.context.botl = true;
@@ -23,7 +24,7 @@ export async function makeStunned(turns, { state = game, talk = true, publish = 
     const old = propertyIsActive('stunned', state);
     if (talk && !heroIsUnaware(state)) {
         if (!turns && old) {
-            await publish(`You feel ${heroIsHallucinating(state) ? 'less wobbly' : 'a bit steadier'} now.`);
+            await publish(formatFeltMessage(`${heroIsHallucinating(state) ? 'less wobbly' : 'a bit steadier'} now.`, state));
         }
         else if (turns && !old) {
             await publish(state.u.usteed ? 'You wobble in the saddle.'

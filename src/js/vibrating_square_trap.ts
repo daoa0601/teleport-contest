@@ -1,6 +1,7 @@
 // Vibrating squares triggered by monsters.
 // C ref: trap.c:trapeffect_vibrating_square().
 
+import { formatSeenMessage } from './hero_speech.js';
 import type { Monster } from './monster_types.js';
 import type { GameState } from './game_state.js';
 import type { Trap } from './map_types.js';
@@ -74,7 +75,7 @@ export async function finishMonsterVibratingSquare(
     event.trap.tseen = true;
     revealTrap(event.trap);
     if (!event.inSight) {
-        await publish(`You see the ground vibrate ${event.nearby ? 'nearby' : 'in the distance'}.`);
+        await publish(formatSeenMessage(`the ground vibrate ${event.nearby ? 'nearby' : 'in the distance'}.`));
     } else {
         const subject = sentenceObject(describeMonster(monster));
         const location = event.wholeBody
@@ -82,7 +83,7 @@ export async function finishMonsterVibratingSquare(
             : `${possessive(subject)} ${makePlural(
                   monsterFootName(monster.mnum).replace(/^rear /u, ''),
               )}`;
-        await publish(`You see a strange vibration beneath ${location}.`);
+        await publish(formatSeenMessage(`a strange vibration beneath ${location}.`));
     }
 
     event.finished = true;

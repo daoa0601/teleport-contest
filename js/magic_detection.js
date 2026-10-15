@@ -1,3 +1,4 @@
+import { formatFeltMessage } from './hero_speech.js';
 import { currency } from './currency.js';
 // C detect.c: gold_detect(), food_detect(), object_detect(), monster_detect().
 // Physical source consumption and trycall() belong to the caller.
@@ -99,7 +100,7 @@ export async function detectGold(source, { state = game } = {}) {
             }
         }
         const mode = showHeroUnlessCovered(shown, state);
-        await pline('You feel very greedy, and sense gold!');
+        await pline(formatFeltMessage('very greedy, and sense gold!', state));
         exerciseWisdom(true, state);
         await browseDetectionMap(mode, 'gold', { objects: shown, state });
     }

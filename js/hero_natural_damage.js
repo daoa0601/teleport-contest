@@ -1,4 +1,5 @@
 // C uhitm.c:damageum() and the hero-attacker branches of mhitm_adtyping().
+import { formatFeltMessage } from './hero_speech.js';
 import { artifactById, monsterHasArtifactDefense } from './artifacts.js';
 import { exerciseWisdom } from './attrib.js';
 import { monsterResistsBlindingLight } from './blinding_attack.js';
@@ -75,7 +76,7 @@ export async function resolveHeroNaturalDamage(monster, attack, specialDamage, {
             && MONSTER_SYMBOL[monster.mnum] === S_TROLL
             && artifactById(weapon?.oartifact, state)?.enumName === 'TROLLSBANE';
         if (monster.mtame && !cansee(monster.mx, monster.my)) {
-            await publish('You feel embarrassed for a moment.');
+            await publish(formatFeltMessage('embarrassed for a moment.', state));
             death.showKillMessage = false;
         }
         else if (!state.flags.verbose) {

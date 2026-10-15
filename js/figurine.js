@@ -1,5 +1,6 @@
 // Cursed figurines which come to life on their own.
 // C refs: apply.c:fig_transform() and dog.c:make_familiar()/initedog().
+import { formatFeltMessage, formatSeenMessage } from './hero_speech.js';
 import { makeFamiliar } from './familiar.js';
 import { IS_OBSTRUCTED, IS_POOL, STONE, TREE, W_NONPASSWALL, isok, } from './const.js';
 import { canSeeMonster, newsym } from './display.js';
@@ -169,19 +170,19 @@ function familiarPresentation(monster, figurine, location, overdue, state) {
     const visible = cansee(location.x, location.y);
     if (location.carrier === 'inventory') {
         return blind || suppressSight
-            ? `You feel something ${movement} from your pack!`
-            : `You see ${familiar} ${movement} out of your pack${ending}!`;
+            ? formatFeltMessage(`something ${movement} from your pack!`, state)
+            : formatSeenMessage(`${familiar} ${movement} out of your pack${ending}!`, state);
     }
     if (location.carrier === 'floor') {
         if (!visible || overdue)
             return null;
         return suppressSight
             ? `${figurineDescription(figurine)} suddenly vanishes!`
-            : `You see a figurine transform into ${familiar}${ending}!`;
+            : formatSeenMessage(`a figurine transform into ${familiar}${ending}!`, state);
     }
     if (!visible || overdue || suppressSight)
         return null;
-    return `You see ${familiar} ${movement} out of ${monsterCarrierDescription(location.monsterCarrier, state)}${ending}!`;
+    return formatSeenMessage(`${familiar} ${movement} out of ${monsterCarrierDescription(location.monsterCarrier, state)}${ending}!`, state);
 }
 function deleteFigurine(figurine, state) {
     if (figurine.where === 'floor')

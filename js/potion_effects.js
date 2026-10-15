@@ -1,3 +1,4 @@
+import { formatFeltMessage } from './hero_speech.js';
 // Native potion.c:peffects(). Selection, naming, and useup belong to quaff.js.
 import { exerciseAttribute, restoreHeroBaseAttributes } from './attrib.js';
 import { A_CON, A_DEX, A_STR, A_WIS, COLNO, ROWNO, TIMEOUT, WEAK } from './const.js';
@@ -93,12 +94,12 @@ export async function applyPotionEffect(source, { state = game } = {}) {
             break;
         }
         case POT_HEALING:
-            await pline('You feel better.');
+            await pline(formatFeltMessage('better.', state));
             await healHero(8 + d(4 + 2 * blessing, 4), source.cursed ? 0 : 1, { state, cureSickness: !!source.blessed, cureBlindness: !source.cursed });
             await exerciseAttribute(A_CON, true, state);
             break;
         case POT_EXTRA_HEALING:
-            await pline('You feel much better.');
+            await pline(formatFeltMessage('much better.', state));
             await healHero(16 + d(4 + 2 * blessing, 8), source.blessed ? 5 : source.cursed ? 0 : 2, { state, cureSickness: !source.cursed, cureBlindness: true });
             await makeHallucinated(0, { state });
             await exerciseAttribute(A_CON, true, state);
@@ -107,7 +108,7 @@ export async function applyPotionEffect(source, { state = game } = {}) {
                 await healHeroLegs(state);
             break;
         case POT_FULL_HEALING:
-            await pline('You feel completely healed.');
+            await pline(formatFeltMessage('completely healed.', state));
             await healHero(400, 4 + 4 * blessing, { state, cureSickness: !source.cursed, cureBlindness: true });
             if (source.blessed && state.u.ulevel < state.u.ulevelmax) {
                 state.u.ulevelmax--;
@@ -120,7 +121,7 @@ export async function applyPotionEffect(source, { state = game } = {}) {
                 await healHeroLegs(state);
             break;
         case POT_GAIN_ENERGY: {
-            await pline(source.cursed ? 'You feel lackluster.' : 'Magical energies course through your body.');
+            await pline(source.cursed ? formatFeltMessage('lackluster.', state) : 'Magical energies course through your body.');
             const amount = d(source.blessed ? 3 : source.cursed ? 1 : 2, 6) * (source.cursed ? -1 : 1);
             state.u.uenmax = Math.max(0, (state.u.uenmax || 0) + amount);
             state.u.uenpeak = Math.max(state.u.uenpeak || 0, state.u.uenmax);
@@ -201,7 +202,7 @@ async function monsterDetection(source, state) {
         if (!hero.uswallow && !hero.uinwater && !state.underwater) {
             await see_monsters();
             if (!found)
-                await pline('You feel lonely.');
+                await pline(formatFeltMessage('lonely.', state));
             return { result: 0, unknown, nothing };
         }
     }

@@ -1,4 +1,6 @@
 // C teleport.c:level_tele() and random_teleport_level().
+
+import { formatFeltMessage } from './hero_speech.js';
 import { buriedBallToPunishment } from './buried_object.js';
 import { chooseWizardLevelDestination } from './cmd.js';
 import { In_endgame, In_mines, In_quest, In_sokoban, TT_BURIEDBALL } from './const.js';
@@ -46,7 +48,7 @@ export async function levelTeleport({ state = game, gotoLevel = changeLevel,
         return;
     }
     if ((hero.uhave?.amulet || In_endgame(hero.uz) || In_sokoban(hero.uz)) && !wizard) {
-        await plineWithContinuation('You feel very disoriented for a moment.');
+        await plineWithContinuation(formatFeltMessage('very disoriented for a moment.', state));
         return;
     }
 
@@ -270,7 +272,7 @@ async function teleportAboveDungeon(destination: number, state: PlayingGameState
         await plineWithContinuation('"Thou art early, but we\'ll admit thee."');
         killer = 'went to heaven prematurely';
     } else if (destination === -9) {
-        await plineWithContinuation('You feel deliriously happy.');
+        await plineWithContinuation(formatFeltMessage('deliriously happy.', state));
         await plineWithContinuation("(In fact, you're on Cloud 9!)");
         await flushPendingTopline();
     } else await plineWithContinuation('You are now high above the clouds...');

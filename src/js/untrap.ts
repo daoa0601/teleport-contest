@@ -1,6 +1,7 @@
 // Finding and removing floor, container, and door traps.
 // C ref: trap.c dountrap(), could_untrap(), and untrap().
 
+import { formatFeltMessage } from './hero_speech.js';
 import { monsterHasMapPosition } from './monster_location.js';
 import { deleteTrap } from './trap_lifecycle.js';
 import { vision_note_blocker_change } from './vision.js';
@@ -801,7 +802,7 @@ export async function rewardMonsterRescue(trap: Trap, monster: Monster, {
     if (random(3) === 0 && luckRandom(8) === 0
         && state.u?.ualign?.type === 1) {
         adjustHeroAlignment(1, state);
-        await publish('You feel that you did the right thing.');
+        await publish(formatFeltMessage('that you did the right thing.', state));
     }
 }
 

@@ -15,7 +15,7 @@ import {
 import { plineWithContinuation } from './display.js';
 import { game, requireLiveGame } from './gstate.js';
 import { makeConfused, makeStunned } from './hero_mental_status.js';
-import { heroCanChant } from './hero_speech.js';
+import { formatFeltMessage, heroCanChant } from './hero_speech.js';
 import { spendHeroNutrition } from './hunger.js';
 import {
     OBJECT_NAMES, OBJECT_SPELL_CATEGORY, OBJECT_SPELL_LEVEL, OBJECT_SUBTYPE,
@@ -73,7 +73,7 @@ export async function checkSpellCast(spell: SpellReference | null, { state = gam
 
     const amuletDrains = hero.uhave.amulet && hero.uen >= energy;
     if (amuletDrains) {
-        await plineWithContinuation('You feel the amulet draining your energy away.');
+        await plineWithContinuation(formatFeltMessage('the amulet draining your energy away.', state));
         hero.uen = Math.max(0, hero.uen - rnd(2 * energy));
         state.context.botl = true;
     }

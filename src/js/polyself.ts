@@ -1,5 +1,7 @@
 // Hero form changes and equipment.
 // C refs: polyself.c polyself(), polymon(), break_armor(), drop_weapon().
+
+import { formatFeltMessage } from './hero_speech.js';
 import { weaponDescription } from './weapon_description.js';
 import { P_SHORT_SWORD, P_SABER } from './const.js';
 import { makePlural } from './object_grammar.js';
@@ -614,7 +616,7 @@ export async function polymonHero(mnum: number, options: PolymonOptions = {}) {
     if (!Number.isInteger(mnum) || mnum < 0 || mnum >= MONSTER_NAME.length)
         throw new RangeError(`Invalid polymorph species: ${mnum}`);
     if ((game.mvitals?.[mnum]?.mvflags ?? 0) & G_GENOD) {
-        await plineWithContinuation(`You feel rather ${monsterTypeName(mnum, game.flags.female)}-ish.`);
+        await plineWithContinuation(formatFeltMessage(`rather ${monsterTypeName(mnum, game.flags.female)}-ish.`));
         await exerciseAttribute(A_WIS, true);
         return { transformed: false };
     }

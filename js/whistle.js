@@ -1,5 +1,6 @@
 // Whistles and eucalyptus leaves. C apply.c:use_whistle(),
 // use_magic_whistle(), magic_whistled(), and doapply's eucalyptus branch.
+import { formatFeltMessage } from './hero_speech.js';
 import { LUCKMIN, M_AP_TYPE, PLNMSG_enum, RLOC_MSG, RLOC_NONE, } from './const.js';
 import { heroNoseName } from './body_parts.js';
 import { canSpotMonster, displayColorName, newsym, plineWithContinuation, } from './display.js';
@@ -54,7 +55,7 @@ async function blowOrdinaryWhistle(object, state) {
         return;
     }
     await plineWithContinuation(heroIsDeaf(state)
-        ? `You feel rushing air tickle your ${heroNoseName(state)}.`
+        ? formatFeltMessage(`rushing air tickle your ${heroNoseName(state)}.`, state)
         : `You produce a ${object.cursed ? 'shrill' : 'high'} whistling sound.`);
     await callNearbyPets(state);
     if (object.cursed)

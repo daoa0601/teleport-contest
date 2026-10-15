@@ -10,7 +10,7 @@ import {
 import type { MessagePublisher } from './display.js';
 import type { PlayingGameState } from './game_state.js';
 import { requireLiveGame } from './gstate.js';
-import { formatHeardMessage } from './hero_speech.js';
+import { formatHeardMessage, formatSeenMessage } from './hero_speech.js';
 import type { Position } from './map_types.js';
 import {
     MONSTER_FLAGS1, MONSTER_MOVE, MONSTER_NAME, MONSTER_SYMBOL,
@@ -161,7 +161,7 @@ export async function resolveMonsterDoorPassage(monster: Monster, state: Playing
             : action === 'open' ? 'open' : 'crash open';
         const message = seesDoor && canSpotMonster(monster)
             ? `${monsterName(monster, { state, capitalized: true })} ${actorAction} a door.`
-            : seesDoor ? `You see a door ${doorAction}.`
+            : seesDoor ? formatSeenMessage(`a door ${doorAction}.`, state)
                 : !heroIsDeaf(state) ? formatHeardMessage(`a door ${doorAction}.`, state) : null;
         if (message) await publish(message);
     }

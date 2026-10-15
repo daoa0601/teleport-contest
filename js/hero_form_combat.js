@@ -1,4 +1,5 @@
 // C uhitm.c:hmonas(). Each slot observes changes made by the preceding hit.
+import { formatFeltMessage } from './hero_speech.js';
 import { M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, TT_PIT, Upolyd, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMU, W_RINGL, W_RINGR, } from './const.js';
 import { selectAttack } from './attack_selection.js';
 import { specialContactDamage } from './contact_damage.js';
@@ -336,7 +337,7 @@ async function performHeroEngulf(sequence, attack, index) {
     if (!effect.heroDied && effect.nativeResult === M_ATTK_DEF_DIED
         && [S_ZOMBIE, S_MUMMY].includes(MONSTER_SYMBOL[monster.mnum] ?? -1)
         && rn2(5) !== 0 && !state.u.sicknessResistance) {
-        await plineWithContinuation(`You feel ${state.u.sick ? 'very ' : ''}sick.`);
+        await plineWithContinuation(formatFeltMessage(`${state.u.sick ? 'very ' : ''}sick.`, state));
         effect.heroDied = await damageHeroFromMonster(monster, rnd(8), { state });
     }
     return { kind: 'processed', result: effect.nativeResult, weapon: null, heroDied: effect.heroDied };

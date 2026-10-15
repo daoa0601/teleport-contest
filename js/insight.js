@@ -1,3 +1,4 @@
+import { formatFeltMessage } from './hero_speech.js';
 import { currency } from './currency.js';
 // insight.js — Basic enlightenment / attributes command.
 // C ref: insight.c — doattributes(), enlightenment().
@@ -521,7 +522,7 @@ export async function doattributes() {
     game.context.move = 0;
 }
 export async function doEnlightenmentEffect() {
-    await pline('You feel self-knowledgeable...');
+    await pline(formatFeltMessage('self-knowledgeable...'));
     // zap.c displays WIN_MESSAGE before opening the enlightenment menu.
     await flushPendingTopline();
     await showEnlightenment({ basic: false, magic: true });

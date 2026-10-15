@@ -1,3 +1,4 @@
+import { formatFeltMessage, publishHeardMessage } from './hero_speech.js';
 import { heroIsDeaf } from './senses.js';
 import { propertyIsActive } from './properties.js';
 // shop_damage.js — Shop-damage bookkeeping owned by the shop system.
@@ -592,7 +593,7 @@ export async function payForShopDamage(verb, { cantMollify = false, state = game
             if (!animal) {
                 if (!heroIsDeaf(state)
                     && !muteShopkeeper(keeper)) {
-                    await pline('You hear an angry voice:');
+                    await publishHeardMessage('an angry voice:', pline, state);
                     await verbalize('Out of my way, scum!');
                 }
                 await flush_screen(1);
@@ -663,7 +664,7 @@ export async function shopDig(fall, state = game) {
         return;
     if (!shopkeeperInOwnShop(keeper, state)) {
         if (state.urole?.key === 'knight') {
-            await pline('You feel like a common thief.');
+            await pline(formatFeltMessage('like a common thief.', state));
             adjustHeroAlignment(-Math.sign(state.u.ualign?.type ?? 0), state);
         }
         return;
@@ -685,7 +686,7 @@ export async function shopDig(fall, state = game) {
             }
         }
         if (state.urole?.key === 'knight') {
-            await pline('You feel like a common thief.');
+            await pline(formatFeltMessage('like a common thief.', state));
             adjustHeroAlignment(-Math.sign(state.u.ualign?.type ?? 0), state);
         }
         return;
@@ -1059,7 +1060,7 @@ export async function repairShopDamage(keeper, record, { catchup = false, state 
     else if (IS_WALL(record.typ)) {
         if (insideShop(state, state.u.ux, state.u.uy)
             === keeper.eshk.shoproom) {
-            await pline('You feel more claustrophobic than before.');
+            await pline(formatFeltMessage('more claustrophobic than before.', state));
         }
         else if (!heroIsDeaf(state) && rn2(10) === 0) {
             await pline('The dungeon acoustics noticeably change.');
@@ -1084,7 +1085,7 @@ export async function shopkeeperRepairsDamage(keeper, state = game) {
         await pline(`${shopkeeperName(keeper, { capitalized: true })} whispers ${shkCloseby ? 'an incantation' : 'something'}.`);
     }
     else if (!heroIsDeaf(state) && shkCloseby) {
-        await pline('You hear someone muttering an incantation.');
+        await publishHeardMessage('someone muttering an incantation.', pline, state);
     }
     const disposition = await repairShopDamage(keeper, record, { state });
     discardDamageRecord(record, state);

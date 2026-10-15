@@ -1,5 +1,6 @@
 // skills.js - Hero weapon/fighting/spell skill state and commands.
 // C refs: skills.h, u_init.c:skill_init(), weapon.c:doenhance().
+import { formatFeltMessage } from './hero_speech.js';
 import { OBJECT_SPELL_CATEGORY, OBJECT_SPELL_LEVEL, OBJECT_SUBTYPE } from './object_data.js';
 import { MAXULEV, PICK_NONE, PICK_ONE, P_BASIC, P_EXPERT, P_FIRST_SPELL, P_ISRESTRICTED, P_LAST_SPELL, P_LAST_WEAPON, P_NONE, P_SKILLED, P_SKILL_LIMIT, TIP_ENHANCE, } from './const.js';
 import { game, requireLiveGame } from './gstate.js';
@@ -224,7 +225,7 @@ export function canAdvanceHeroSkill(skill, { state = game, speedy = false } = {}
 async function giveMayAdvanceMessage(skill, state) {
     const kind = skill === P_NONE ? '' : skill <= P_LAST_WEAPON ? 'weapon '
         : skill <= P_LAST_SPELL ? 'spell casting ' : 'fighting ';
-    await plineWithContinuation(`You feel more confident in your ${kind}skills.`);
+    await plineWithContinuation(formatFeltMessage(`more confident in your ${kind}skills.`, state));
     const tip = 1 << TIP_ENHANCE;
     if (state.flags.tips !== false && !((state.context.tips ?? 0) & tip)) {
         state.context.tips = (state.context.tips || 0) | tip;
@@ -434,7 +435,7 @@ export async function doenhance() {
         if (!more)
             return;
         if (!speedy) {
-            await plineWithContinuation('You feel you could be more dangerous!');
+            await plineWithContinuation(formatFeltMessage('you could be more dangerous!'));
             return;
         }
     }

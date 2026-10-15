@@ -1,5 +1,6 @@
 // Applying a spellbook without studying it. C apply.c:flip_through_book().
 
+import { formatFeltMessage, formatSeenMessage, publishHeardMessage } from './hero_speech.js';
 import { displayColorName, plineWithContinuation } from './display.js';
 import { game, requireLiveGame } from './gstate.js';
 import { makePlural } from './object_grammar.js';
@@ -31,12 +32,12 @@ export async function flipThroughBook(book: GameObject, { state = game }: { stat
     if (book.otyp === SPE_BOOK_OF_THE_DEAD) {
         if (!heroIsDeaf(state)) {
             const sound = hallucinating ? 'chuckling' : 'rustling';
-            await plineWithContinuation(`You hear the pages make an unpleasant ${sound} sound.`);
+            await publishHeardMessage(`the pages make an unpleasant ${sound} sound.`, plineWithContinuation, state);
         } else if (!blind) {
             const color = displayColorName('red', state);
-            await plineWithContinuation(`You see the pages glow faintly ${color}.`);
+            await plineWithContinuation(formatSeenMessage(`the pages glow faintly ${color}.`, state));
         } else {
-            await plineWithContinuation('You feel the pages tremble.');
+            await plineWithContinuation(formatFeltMessage('the pages tremble.', state));
         }
     } else if (blind) {
         const texture = hallucinating ? 'freshly picked' : 'rough and dry';

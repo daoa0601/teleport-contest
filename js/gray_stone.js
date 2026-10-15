@@ -1,4 +1,5 @@
 // C apply.c:use_stone() and touchstone_ok().
+import { formatFeltMessage, formatSeenMessage } from './hero_speech.js';
 import { GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST } from './const.js';
 import { plineWithContinuation } from './display.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
@@ -42,7 +43,7 @@ export async function useGrayStone(stone, { state = game } = {}) {
     }
     if (stone.otyp === TOUCHSTONE && stone.cursed && object.oclass === GEM_CLASS
         && !isGrayStone(object) && !objectResistsDestruction(object, 80, 100)) {
-        const message = heroIsBlind(state) ? 'You feel something shatter.'
+        const message = heroIsBlind(state) ? formatFeltMessage('something shatter.', state)
             : heroIsHallucinating(state) ? 'Oh, wow, look at the pretty shards.'
                 : `A sharp crack shatters ${quantity > 1 ? 'one of ' : ''}the ${stoneNoun(object, state)}.`;
         await plineWithContinuation(message);
@@ -73,7 +74,7 @@ export async function useGrayStone(stone, { state = game } = {}) {
         const name = `stone${plural ? 's' : ''}`;
         await plineWithContinuation(result.scratch
             ? `You make ${result.color ? result.color + ' ' : ''}scratch marks on the ${name}.`
-            : result.color ? `You see ${result.color} streaks on the ${name}.` : SCRITCH);
+            : result.color ? formatSeenMessage(`${result.color} streaks on the ${name}.`, state) : SCRITCH);
     }
     return { spentTime: true };
 }

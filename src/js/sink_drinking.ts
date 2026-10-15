@@ -13,7 +13,7 @@ import { placeCreatedObject } from './floor_object.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { loseHeroHp } from './hero_damage.js';
 import { vomitHero } from './hero_illness.js';
-import { heroIsUnaware } from './hero_sleep.js';
+import { publishHeardMessage } from './hero_speech.js';
 import { spendHeroNutrition } from './hunger.js';
 import { floatingAbove } from './levitation_commands.js';
 import { makemonNear, mkobj } from './mklev.js';
@@ -163,11 +163,7 @@ async function drinkFaucetPotion(state: PlayingGameState) {
 }
 
 async function hearSink(message: string, state: PlayingGameState) {
-    const unaware = heroIsUnaware(state);
-    if (heroIsDeaf(state) && !unaware || state.flags.acoustics === false) return;
-    const prefix = state.u.uinwater || state.underwater ? 'You barely hear'
-        : unaware ? 'You dream that you hear' : 'You hear';
-    await pline(`${prefix} ${message}`);
+    await publishHeardMessage(message, pline, state);
 }
 
 async function releaseSinkGas(state: PlayingGameState) {

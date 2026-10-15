@@ -1,5 +1,6 @@
 // C pray.c:pleased() favors, give_spell(), gcrownu(), and at_your_feet().
 
+import { formatFeltMessage, publishHeardMessage } from './hero_speech.js';
 import { recordAchievement } from './achievements.js';
 import { deityName } from './alignment.js';
 import { findArmorClass } from './armor.js';
@@ -35,7 +36,7 @@ import { objectName, ownedObjectAction, ownedObjectName, simpleObjectNameWithArt
 import { grantIntrinsicProperty, hasPermanentIntrinsicProperty } from './properties.js';
 import type { PropertyName } from './property_types.js';
 import { rn1, rn2 } from './rng.js';
-import { heroIsBlind, heroIsDeaf, setHeroBlindnessTurns } from './senses.js';
+import { heroIsBlind, setHeroBlindnessTurns } from './senses.js';
 import { adjustWeaponSkillSlots, ensureHeroSkills, SKILL_NAMES, unrestrictHeroSkill } from './skills.js';
 import { forceLearnSpell, knownSpell } from './spell.js';
 import { willWeld } from './weapon_type.js';
@@ -86,7 +87,7 @@ async function blessWieldedWeapon(): Promise<void> {
     const changed = weapon.cursed || !weapon.blessed;
     if (weapon.cursed) {
         await pline(heroIsBlind(game)
-            ? `You feel the power of ${deityName(game.u.ualign.type)} over ${ownedObjectName(weapon, game, { capitalized: false })}.`
+            ? formatFeltMessage(`the power of ${deityName(game.u.ualign.type)} over ${ownedObjectName(weapon, game, { capitalized: false })}.`)
             : `${ownedObjectAction(weapon, 'softly glow')} ${displayColorName('amber')}${repair}.`);
         if (!heroIsBlind(game)) game._lastPlineKind = PLNMSG_OBJ_GLOWS;
         const oldLight = objectLightRadius(weapon);
@@ -96,7 +97,7 @@ async function blessWieldedWeapon(): Promise<void> {
     } else if (!weapon.blessed) {
         const color = heroIsBlind(game) ? null : displayColorName('light blue');
         await pline(color === null
-            ? `You feel the blessing of ${deityName(game.u.ualign.type)} over ${ownedObjectName(weapon, game, { capitalized: false })}.`
+            ? formatFeltMessage(`the blessing of ${deityName(game.u.ualign.type)} over ${ownedObjectName(weapon, game, { capitalized: false })}.`)
             : `${ownedObjectAction(weapon, 'softly glow')} with ${withIndefiniteArticle(color)} aura${repair}.`);
         if (color !== null) game._lastPlineKind = PLNMSG_OBJ_GLOWS;
         const oldLight = objectLightRadius(weapon);
@@ -148,7 +149,7 @@ async function revealCastleTune(alignment: number): Promise<boolean> {
         await pline(`"Hark, ${requireMonsterData(MONSTER_FLAGS2, game.u.umonnum) & 0x08 ? 'mortal' : 'creature'}!"`);
         await pline('"To enter the castle, thou must play the right tune!"');
     } else {
-        if (!heroIsDeaf(game)) await pline('You hear a divine music...');
+        await publishHeardMessage('a divine music...', pline);
         await pline(`It sounds like:  "${game.castleTune}".`);
         recordAchievement(game, ACH_TUNE);
     }
@@ -159,7 +160,7 @@ async function revealCastleTune(alignment: number): Promise<boolean> {
 async function uncurseInventory(): Promise<void> {
     requirePlayingGame(game);
     const blind = heroIsBlind(game);
-    if (blind) await pline(`You feel the power of ${deityName(game.u.ualign.type)}.`);
+    if (blind) await pline(formatFeltMessage(`the power of ${deityName(game.u.ualign.type)}.`));
     else {
         const color = displayColorName('light blue');
         await pline(`You are surrounded by ${withIndefiniteArticle(color)} aura.`);
@@ -342,7 +343,7 @@ async function crownHero(): Promise<void> {
         object.oerodeproof = object.bknown = object.rknown = true;
         object.spe = Math.max(1, object.spe);
         unrestrictHeroSkill(Math.abs(requireObjectData(OBJECT_SUBTYPE, object.otyp)));
-    } else if (!classGift) await pline('You feel unworthy.');
+    } else if (!classGift) await pline(formatFeltMessage('unworthy.'));
     await adjustWeaponSkillSlots(1);
 }
 

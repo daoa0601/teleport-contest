@@ -1,4 +1,6 @@
 // C trap.c:mu_maybe_destroy_web() and the monster half of trapeffect_web().
+
+import { publishHeardMessage } from './hero_speech.js';
 import { game } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { Hero } from './hero_types.js';
@@ -9,7 +11,6 @@ import { canSeeMonster, newsym, plineWithContinuation } from './display.js';
 import { deleteTrap } from './trap_lifecycle.js';
 import { heroSpecies } from './hero_species.js';
 import { monsterName } from './monster_name.js';
-import { heroIsDeaf } from './senses.js';
 import {
     MONSTER_FLAGS1,
     MONSTER_FLAGS2,
@@ -118,7 +119,7 @@ export async function finishMonsterWebTrap(
             (!!monster.wormno && (monster.wormSegments?.length || 0) > 5));
     const owner = trap.madeby_u ? 'your' : 'a';
     if (hiddenBear) {
-        if (!heroIsDeaf(state)) await publish('You hear the roaring of a confused bear!');
+        await publishHeardMessage('the roaring of a confused bear!', publish, state);
     } else if (visible) {
         const name = typeof subject === 'function' ? subject(monster) : subject;
         if (tear) {

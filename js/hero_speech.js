@@ -1,5 +1,5 @@
 // C mondata.c:can_chant(), shared by reading and calling on a deity.
-// C pline.c:You_hear() prefix and gating for heard-sound messages.
+// C pline.c:You_feel(), You_hear(), and You_see() wording.
 import { game } from './gstate.js';
 import { MONSTER_FLAGS1, MONSTER_SOUND } from './monster_data.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
@@ -22,6 +22,13 @@ export function formatHeardMessage(text, state = game) {
     if (unaware)
         return `You dream that you hear ${text}`;
     return `You hear ${text}`;
+}
+// This applies You_hear's own suppression. Callers must retain their C guards:
+// an unconditional You_hear reaches a deaf unaware hero, but `if (!Deaf)` does not.
+export async function publishHeardMessage(text, publish, state = game) {
+    const message = formatHeardMessage(text, state);
+    if (message)
+        await publish(message);
 }
 // C pline.c:You_see(). Callers decide whether the event can be seen.
 export function formatSeenMessage(text, state = game) {
