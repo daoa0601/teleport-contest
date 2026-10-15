@@ -9,7 +9,7 @@ import { deleteTrap } from './trap_lifecycle.js';
 import { exerciseAttribute } from './attrib.js';
 import {
     ANTI_MAGIC, ARROW_TRAP, A_DEX, BEAR_TRAP, DART_TRAP, FIRE_TRAP,
-    HOLE, IS_AIR, LADDER, LANDMINE, LEVEL_TELEP, MAGIC_PORTAL,
+    HOLE, IS_AIR, LADDER, LANDMINE, LEVEL_TELEP, MAGIC_PORTAL, SHOPBASE, SHOP_WEB_COST,
     MAGIC_TRAP, PIT, POLY_TRAP, ROCKTRAP, ROLLING_BOULDER_TRAP,
     RUST_TRAP, SLP_GAS_TRAP, SPIKED_PIT, SQKY_BOARD, STAIRS,
     TELEP_TRAP, TRAPDOOR, VIBRATING_SQUARE, WEB,
@@ -31,6 +31,8 @@ import {
 } from './monster_attack_types.js';
 import { heroMonsterForm } from './polyself.js';
 import { promptKey } from './tty_prompts.js';
+import { roomsAt } from './room.js';
+import { addShopDamage } from './shop_damage.js';
 
 const PM_CAVE_SPIDER = MONSTER_NAME.indexOf('cave spider');
 const PM_GIANT_SPIDER = MONSTER_NAME.indexOf('giant spider');
@@ -187,10 +189,12 @@ export async function useHeroWeb({
 
     const web = await createTrap(x, y, WEB);
     if (web) {
+        await publish('You spin a web.');
         web.madeby_u = 1;
         web.tseen = true;
         refresh(x, y);
-        await publish('You spin a web.');
+        if (roomsAt(state.level, x, y, SHOPBASE).length)
+            addShopDamage(x, y, SHOP_WEB_COST, state);
     }
     return { used: true, spentTime: true, trap: web };
 }
