@@ -4215,7 +4215,8 @@ export async function fumaroles(state: PlayingGameState = requireInitializedGame
         const x = rn2(COLNO - 4) + 3;
         const y = rn2(ROWNO - 4) + 3;
         if (state.level?.at?.(x, y)?.typ !== LAVAPOOL) continue;
-        await createSteamCloud(state, x, y, rn2(10) + minimumSize, rn2);
+        const cloud = await createSteamCloud(state, x, y, rn2(10) + minimumSize, rn2);
+        if (cloud) cloud.heroFault = false;
         heard = true;
         const dx = x - (state.u?.ux ?? 0);
         const dy = y - (state.u?.uy ?? 0);
