@@ -131,7 +131,6 @@ function baseRangedHitThreshold(monster: Monster, weapon: GameObject, state: Pla
 }
 
 function throwingHitBonus(monster: Monster, weapon: GameObject, state: PlayingGameState) {
-    const skill = Math.abs(OBJECT_SUBTYPE[weapon.otyp] ?? 0);
     if (isLauncherAmmunition(weapon)) {
         const launcher = state.uwep;
         if (!launcher || !launcherMatchesAmmo(weapon, launcher)) return -4;
@@ -139,16 +138,14 @@ function throwingHitBonus(monster: Monster, weapon: GameObject, state: PlayingGa
             launcher.oeroded ?? 0, launcher.oeroded2 ?? 0,
         );
         return launcher.spe - erosion
-            + weaponSkillHitBonus(
-                state, Math.abs(OBJECT_SUBTYPE[launcher.otyp] ?? 0),
-            )
+            + weaponSkillHitBonus(launcher, state)
             + artifactToHitBonus(launcher, monster, rnd, { state })
             + bowTrainingHitBonus(state, launcher);
     }
 
     const bonus = weapon.otyp === BOOMERANG ? 4
         : isThrowingWeapon(weapon) ? 2 : -2;
-    return bonus + weaponSkillHitBonus(state, skill);
+    return bonus + weaponSkillHitBonus(weapon, state);
 }
 
 function rangedObjectUsesWeaponHit(object: GameObject) {
@@ -180,7 +177,7 @@ async function hitMonsterWithRangedObject(
     if (weaponHit) {
         if (mode === 'kicked') threshold -= isLauncherAmmunition(object) ? 5 : 3;
         else if (mode === 'thrown') threshold += throwingHitBonus(monster, object, state);
-        else threshold += weaponSkillHitBonus(state, Math.abs(OBJECT_SUBTYPE[object.otyp] ?? 0));
+        else threshold += weaponSkillHitBonus(object, state);
     } else if (heavyObject) {
         await exerciseAttribute(A_STR, true, state);
     } else {
