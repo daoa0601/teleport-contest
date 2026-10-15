@@ -3003,9 +3003,9 @@ export async function makemonNear(mnum, centerX, centerY, flags = 0, requestedBy
 // C makemon.c:create_critters().  Wands, scrolls, and spells all create
 // monsters through the ordinary constructor.  The return value says whether
 // the hero saw or sensed at least one result.
-export async function createCritters(count, mnum = null) {
+export async function createCritters(count, mnum = null, neverAsk = false) {
     let known = false;
-    let ask = !!game.flags.debug;
+    let ask = !!game.flags.debug && !neverAsk;
     while (count-- > 0) {
         if (ask) {
             if (await createParticularMonster()) {
@@ -3020,7 +3020,7 @@ export async function createCritters(count, mnum = null) {
         if (mnum == null && game.u?.uinwater) {
             const wetPosition = findMonsterNearPosition(PM_GIANT_EEL, game.u.ux, game.u.uy);
             if (wetPosition) {
-                monster = await makemon(null, wetPosition.x, wetPosition.y, 0, true);
+                monster = await makemon(null, wetPosition.x, wetPosition.y, 0);
             }
             else {
                 monster = await makemonNear(null, game.u.ux, game.u.uy, 0, true);
@@ -3031,7 +3031,6 @@ export async function createCritters(count, mnum = null) {
         }
         if (!monster)
             continue;
-        newsym(monster.mx, monster.my);
         const appearance = M_AP_TYPE(monster);
         const visible = canSeeMonster(monster);
         const seenInOwnForm = visible
