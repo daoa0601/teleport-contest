@@ -177,7 +177,7 @@ import { resolveMonsterWeaponContact } from './monster_weapon_contact.js';
 import { monsterHatesBlessings } from './monster_data.js';
 import { canHeroRiseUp, levelAtDepth } from './dungeon.js';
 import { LEVEL_TELEP } from './const.js';
-import { teleportMonsterThroughPortal, teleportMonsterToRandomLevel } from './teleport.js';
+import { teleportMonsterThroughHole, teleportMonsterThroughPortal, teleportMonsterToRandomLevel } from './teleport.js';
 import { learnObjectType } from './object_knowledge.js';
 import { changeMonsterForm } from './monster_polymorph.js';
 import { rndmonstAdj } from './mklev.js';
@@ -200,7 +200,7 @@ import { stopHeroOccupation } from './occupation.js';
 import { rileShopkeeper, shopkeeperRepairsDamage } from './shop_damage.js';
 import { diggingTimeToHole } from './hero_digging.js';
 import { migrateMonsterOffLevel } from './monster_migration.js';
-import { RLOC_MSG, A_CHA, A_DEX, A_STR, A_CON, ALLOW_ALL, ALLOW_BARS, ALLOW_DIG, ALLOW_M, ALLOW_MDISP, ALLOW_ROCK, ALLOW_SANCT, MMOVE_NOTHING, MMOVE_MOVED, MMOVE_DIED, MMOVE_DONE, MMOVE_NOMOVES, MON_FLOOR, ALLOW_SSM, ALLOW_TM, ALLOW_TRAPS, ALLOW_U, ALLOW_WALL, ARROW_TRAP, BEAR_TRAP, BOLT_LIM, COLNO, CORR, DART_TRAP, DOOR, ROWNO, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, D_WARNED, FOUNTAIN, SDOOR, Is_firelevel, Is_waterlevel, IS_DOOR, IS_OBSTRUCTED, IS_ROOM, IS_STWALL, IS_TREE, IS_WALL, IRONBARS, LAVAPOOL, LAVAWALL, BUSTDOOR, MAGIC_PORTAL, OPENDOOR, TELEP_TRAP, MIGR_RANDOM, ANTI_MAGIC, FIRE_TRAP, HOLE, LANDMINE, MAGIC_TRAP, M_ATTK_AGR_DIED, M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, M_ATTK_AGR_DONE, M_AP_FURNITURE, M_AP_MONSTER, M_AP_NOTHING, M_AP_OBJECT, M_AP_TYPE, POLY_TRAP, RUST_TRAP, PIT, PL_NSIZ, ROCKTRAP, ROLLING_BOULDER_TRAP, ROOM, SLP_GAS_TRAP, STONE, SPIKED_PIT, SQKY_BOARD, STATUE_TRAP, TRAPDOOR, NEED_AXE, NEED_HTH_WEAPON, NEED_PICK_AXE, NEED_PICK_OR_AXE, NEED_WEAPON, NO_WEAPON_WANTED, MM_NOWAIT, NOGARLIC, NOTONL, SHOPBASE, TEMPLE, TRAPNUM, STRAT_WAITFORU, STRAT_WAITMASK, STRAT_CLOSE, STRAT_ARRIVE, UNLOCKDOOR, VIBRATING_SQUARE, WATER, W_ACCESSORY, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMOR, W_ARMS, W_ARMU, W_NONDIGGABLE, W_NONPASSWALL, Upolyd, isok, WEB, WT_TOOMUCH_DIAGONAL, } from './const.js';
+import { RLOC_MSG, A_CHA, A_DEX, A_STR, A_CON, ALLOW_ALL, ALLOW_BARS, ALLOW_DIG, ALLOW_M, ALLOW_MDISP, ALLOW_ROCK, ALLOW_SANCT, MMOVE_NOTHING, MMOVE_MOVED, MMOVE_DIED, MMOVE_DONE, MMOVE_NOMOVES, MON_FLOOR, ALLOW_SSM, ALLOW_TM, ALLOW_TRAPS, ALLOW_U, ALLOW_WALL, ARROW_TRAP, BEAR_TRAP, BOLT_LIM, COLNO, CORR, DART_TRAP, DOOR, ROWNO, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, D_WARNED, FOUNTAIN, SDOOR, Is_firelevel, Is_waterlevel, IS_DOOR, IS_OBSTRUCTED, IS_ROOM, IS_STWALL, IS_TREE, IS_WALL, IRONBARS, LAVAPOOL, LAVAWALL, BUSTDOOR, MAGIC_PORTAL, OPENDOOR, TELEP_TRAP, ANTI_MAGIC, FIRE_TRAP, HOLE, LANDMINE, MAGIC_TRAP, M_ATTK_AGR_DIED, M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, M_ATTK_AGR_DONE, M_AP_FURNITURE, M_AP_MONSTER, M_AP_NOTHING, M_AP_OBJECT, M_AP_TYPE, POLY_TRAP, RUST_TRAP, PIT, PL_NSIZ, ROCKTRAP, ROLLING_BOULDER_TRAP, ROOM, SLP_GAS_TRAP, STONE, SPIKED_PIT, SQKY_BOARD, STATUE_TRAP, TRAPDOOR, NEED_AXE, NEED_HTH_WEAPON, NEED_PICK_AXE, NEED_PICK_OR_AXE, NEED_WEAPON, NO_WEAPON_WANTED, MM_NOWAIT, NOGARLIC, NOTONL, SHOPBASE, TEMPLE, TRAPNUM, STRAT_WAITFORU, STRAT_WAITMASK, STRAT_CLOSE, STRAT_ARRIVE, UNLOCKDOOR, VIBRATING_SQUARE, WATER, W_ACCESSORY, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMOR, W_ARMS, W_ARMU, W_NONDIGGABLE, W_NONPASSWALL, Upolyd, isok, WEB, WT_TOOMUCH_DIAGONAL, } from './const.js';
 import { monsterIsScaredAt } from './monster_fear.js';
 import { monsterInAir, monsterFliesOrFloats, levelHasCeiling, isLavaAt, isPoolAt } from './terrain_properties.js';
 import { disturbBuriedZombies } from './object_impact.js';
@@ -3666,17 +3666,6 @@ async function placeAndStackTrapMissile(object, state, x, y) {
     placeObjectSynchronously(object, x, y, state);
     return await stack_object(object, state);
 }
-// C teleport.c:mlevel_tele_trap() announces the exit while the monster
-// still occupies its square. The acknowledgement precedes seetrap() and
-// migrate_to_level(), so input observers must retain that monster too.
-async function announceTrapLevelDeparture(monster, trap, state, publish) {
-    if (!canSeeMonster(monster) && monster !== state.u.usteed)
-        return;
-    const effect = trap.ttyp === HOLE ? 'falls into a hole'
-        : trap.ttyp === TRAPDOOR ? 'falls through a trap door' : 'disappears out of sight';
-    await publish(`Suddenly, ${canonicalMonsterName(monster, { state })} ${effect}.`);
-    seeTrap(trap, state);
-}
 async function triggerMonsterTrap(monster, state, movement, random, rollDice, rollOne, calls, publish = plineWithContinuation) {
     const trap = trapAtMonster(monster, state);
     if (!trap || monster.mtrapped)
@@ -3772,18 +3761,33 @@ async function triggerMonsterTrap(monster, state, movement, random, rollDice, ro
         // discovers that this level has nowhere to fall.
         if (!canFallThrough(state.u.uz))
             return null;
-        const airborne = !!((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_FLY);
+        const clinging = !!((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_CLING) && levelHasCeiling(state);
+        const airborne = monsterFliesOrFloats(monster) || clinging;
         const tooLarge = (MONSTER_SIZE[monster.mnum] ?? 2) >= 4;
-        if (airborne || tooLarge || !trap.dst)
-            return null;
-        // TODO: offer to release an uncursed leash before migration.
-        if (monster.mleashed)
-            return null;
-        await announceTrapLevelDeparture(monster, trap, state, publish);
-        const event = await migrateMonsterOffLevel(monster, state, trap, {
-            kind: 'level-fall-migration',
-            mode: MIGR_RANDOM,
+        const longWorm = !!monster.wormno && (monster.wormSegments?.length ?? 0) > 5;
+        if (airborne || tooLarge || longWorm) {
+            const seen = canSeeMonster(monster) || monster === state.u.usteed;
+            if (movement.forcedTrapLanding && !state.level.flags.sokoban_rules) {
+                if (seen) {
+                    seeTrap(trap, state);
+                    await publish(trap.ttyp === TRAPDOOR
+                        ? `A trap door opens, but ${canonicalMonsterName(monster, { state })} doesn't fall through.`
+                        : `${canonicalMonsterName(monster, { state, capitalized: true })} doesn't fall through the hole.`);
+                }
+                return null;
+            }
+            if (!movement.forcedTrapLanding && !sokobanFall)
+                return null;
+            if (seen) {
+                await publish(`${canonicalMonsterName(monster, { state, capitalized: true })} seems to be yanked down!`);
+                seeTrap(trap, state);
+            }
+        }
+        const event = await teleportMonsterThroughHole(monster, trap, {
+            state, force: !!movement.forcedTrapLanding, publish,
         });
+        if (!event)
+            return null;
         movement.trap = event;
         movement.actorLeftLevel = true;
         movement.postMoveStatus = MMOVE_DIED;

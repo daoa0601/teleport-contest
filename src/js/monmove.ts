@@ -460,7 +460,7 @@ import { resolveMonsterWeaponContact } from './monster_weapon_contact.js';
 import { monsterHatesBlessings } from './monster_data.js';
 import { canHeroRiseUp, levelAtDepth } from './dungeon.js';
 import { LEVEL_TELEP } from './const.js';
-import { teleportMonsterThroughPortal, teleportMonsterToRandomLevel } from './teleport.js';
+import { teleportMonsterThroughHole, teleportMonsterThroughPortal, teleportMonsterToRandomLevel } from './teleport.js';
 import { learnObjectType } from './object_knowledge.js';
 import { changeMonsterForm } from './monster_polymorph.js';
 import { rndmonstAdj } from './mklev.js';
@@ -544,7 +544,6 @@ import {
     MAGIC_PORTAL,
     OPENDOOR,
     TELEP_TRAP,
-    MIGR_RANDOM,
     ANTI_MAGIC,
     FIRE_TRAP,
     HOLE,
@@ -4655,19 +4654,6 @@ async function placeAndStackTrapMissile(
     return await stack_object(object, state);
 }
 
-// C teleport.c:mlevel_tele_trap() announces the exit while the monster
-// still occupies its square. The acknowledgement precedes seetrap() and
-// migrate_to_level(), so input observers must retain that monster too.
-async function announceTrapLevelDeparture(
-    monster: Monster, trap: Trap, state: PlayingGameState, publish: PublishMonsterMessage,
-): Promise<void> {
-    if (!canSeeMonster(monster) && monster !== state.u.usteed) return;
-    const effect = trap.ttyp === HOLE ? 'falls into a hole'
-        : trap.ttyp === TRAPDOOR ? 'falls through a trap door' : 'disappears out of sight';
-    await publish(`Suddenly, ${canonicalMonsterName(monster, { state })} ${effect}.`);
-    seeTrap(trap, state);
-}
-
 async function triggerMonsterTrap(
     monster: Monster,
     state: PlayingGameState,
@@ -4768,16 +4754,31 @@ async function triggerMonsterTrap(
         // mintrap() handles avoidance and learning before trapeffect_hole()
         // discovers that this level has nowhere to fall.
         if (!canFallThrough(state.u.uz)) return null;
-        const airborne = !!((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_FLY);
+        const clinging = !!((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_CLING) && levelHasCeiling(state);
+        const airborne = monsterFliesOrFloats(monster) || clinging;
         const tooLarge = (MONSTER_SIZE[monster.mnum] ?? 2) >= 4;
-        if (airborne || tooLarge || !trap.dst) return null;
-        // TODO: offer to release an uncursed leash before migration.
-        if (monster.mleashed) return null;
-        await announceTrapLevelDeparture(monster, trap, state, publish);
-        const event = await migrateMonsterOffLevel(monster, state, trap, {
-            kind: 'level-fall-migration',
-            mode: MIGR_RANDOM,
+        const longWorm = !!monster.wormno && (monster.wormSegments?.length ?? 0) > 5;
+        if (airborne || tooLarge || longWorm) {
+            const seen = canSeeMonster(monster) || monster === state.u.usteed;
+            if (movement.forcedTrapLanding && !state.level.flags.sokoban_rules) {
+                if (seen) {
+                    seeTrap(trap, state);
+                    await publish(trap.ttyp === TRAPDOOR
+                        ? `A trap door opens, but ${canonicalMonsterName(monster, { state })} doesn't fall through.`
+                        : `${canonicalMonsterName(monster, { state, capitalized: true })} doesn't fall through the hole.`);
+                }
+                return null;
+            }
+            if (!movement.forcedTrapLanding && !sokobanFall) return null;
+            if (seen) {
+                await publish(`${canonicalMonsterName(monster, { state, capitalized: true })} seems to be yanked down!`);
+                seeTrap(trap, state);
+            }
+        }
+        const event = await teleportMonsterThroughHole(monster, trap, {
+            state, force: !!movement.forcedTrapLanding, publish,
         });
+        if (!event) return null;
         movement.trap = event;
         movement.actorLeftLevel = true;
         movement.postMoveStatus = MMOVE_DIED;

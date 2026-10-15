@@ -16,7 +16,7 @@ import { canSeeMonster, canSenseMonster, canSpotMonster, docrt, newsym, plineWit
 import { vision_recalc } from './vision.js';
 import { leashAttachedToMonster, releaseMonsterLeash, } from './monster_leash.js';
 import { rn2, rnd } from './rng.js';
-import { GP_CHECKSCARY, A_STR, COLNO, ROWNO, VAULT, VIBRATING_SQUARE, M_AP_NOTHING, MON_FLOOR, MON_OFFMAP, RLOC_MSG, RLOC_NOMSG, RLOC_NONE, RLOC_ERR, STRAT_APPEARMSG, BOLT_LIM, TT_BURIEDBALL, In_endgame, MIGR_PORTAL, Upolyd, ZAP_POS, is_hole, is_pit, isok, } from './const.js';
+import { GP_CHECKSCARY, A_STR, COLNO, ROWNO, VAULT, VIBRATING_SQUARE, M_AP_NOTHING, MON_FLOOR, MON_OFFMAP, RLOC_MSG, RLOC_NOMSG, RLOC_NONE, RLOC_ERR, STRAT_APPEARMSG, BOLT_LIM, TT_BURIEDBALL, HOLE, In_endgame, In_hell, In_quest, Is_botlevel, Is_stronghold, MIGR_PORTAL, MIGR_RANDOM, Upolyd, ZAP_POS, is_hole, is_pit, isok, } from './const.js';
 import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL, monsterHasNoAttacks, } from './monster_data.js';
 import { AMULET_OF_YENDOR, LEASH, OBJECT_SPELL_LEVEL, RIN_TELEPORTATION, RIN_TELEPORT_CONTROL, SPE_TELEPORT_AWAY, WAN_TELEPORTATION, } from './object_data.js';
 import { currentAttribute } from './attrib.js';
@@ -950,6 +950,54 @@ export async function teleportMonsterThroughPortal(monster, trap, { state = game
         monster.mconf = 1;
     return migrateMonsterOffLevel(monster, state, trap, {
         kind: 'magic-portal-migration', mode: MIGR_PORTAL,
+    });
+}
+// C teleport.c:mlevel_tele_trap(), the hole and trapdoor branches.
+export async function teleportMonsterThroughHole(monster, trap, { state = game, force = false, publish = plineWithContinuation, } = {}) {
+    requirePlayingGame(state);
+    if (monster === state.u.ustuck)
+        return null;
+    if (!await teleportMonsterPet(monster, state, force, publish))
+        return null;
+    const seen = canSeeMonster(monster) || monster === state.u.usteed;
+    let destination;
+    if (Is_stronghold(state.u.uz)) {
+        if (!state.valley_level)
+            throw new Error('A Castle trapdoor requires the Valley destination');
+        destination = { dnum: state.valley_level.dnum, dlevel: state.valley_level.dlevel };
+    }
+    else {
+        if (Is_botlevel(state.u.uz)) {
+            if (seen && trap.tseen) {
+                const name = monsterName(monster, { state, capitalized: true });
+                await publish(`${name} avoids the ${trap.ttyp === HOLE ? 'hole' : 'trap'}.`);
+            }
+            return null;
+        }
+        if (!trap.dst)
+            throw new Error('A monster fall requires a hole destination');
+        const dungeon = state.dungeons[trap.dst.dnum];
+        if (!dungeon)
+            throw new Error(`Hole leads to absent dungeon ${trap.dst.dnum}`);
+        let bottom = dungeon.num_dunlevs;
+        if (In_quest(trap.dst)) {
+            const locate = state.specialLevels?.get('x-loca');
+            if (!locate)
+                throw new Error('Quest falls require the locate level');
+            if (dungeon.dunlev_ureached < locate.dlevel)
+                bottom = locate.dlevel;
+        }
+        else if (In_hell(trap.dst) && !state.u.uevent?.invoked)
+            bottom--;
+        destination = { dnum: trap.dst.dnum, dlevel: Math.min(trap.dst.dlevel, bottom) };
+    }
+    if (seen) {
+        const effect = trap.ttyp === HOLE ? 'falls into a hole' : 'falls through a trap door';
+        await publish(`Suddenly, ${monsterName(monster, { state })} ${effect}.`);
+        seeTrap(trap, state);
+    }
+    return migrateMonsterOffLevel(monster, state, { ...trap, dst: destination }, {
+        kind: 'level-fall-migration', mode: MIGR_RANDOM,
     });
 }
 // C teleport.c:mlevel_tele_trap(), the LEVEL_TELEP branch. The destination
