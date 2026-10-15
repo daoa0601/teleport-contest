@@ -4,6 +4,7 @@ import { canSenseMonster } from './display.js';
 import { addExperience, checkExperienceLevel, monsterExperience } from './exper.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { findMonsterArmorClass } from './monworn.js';
+import { heroIsAmphibious } from './hero_species.js';
 import { game, requireLiveGame } from './gstate.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import type { GameState } from './game_state.js';
@@ -45,6 +46,7 @@ export async function seeMonsterCloseup(
             || species !== state.context.startingpet_typ)) {
         addExperience(monsterExperience(monster, {
             killCount: 0, armorClass: findMonsterArmorClass(monster),
+            amphibious: heroIsAmphibious(state),
         }), 0, state);
         await checkExperienceLevel();
     }

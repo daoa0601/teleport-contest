@@ -182,6 +182,11 @@ export function heroIsBreathless(state = game) {
     return !!state.u.magicalBreathing
         || !!(speciesEntry(MONSTER_FLAGS1, heroSpecies(state)) & 0x00000400);
 }
+// C youprop.h:Amphibious. Breathless bodies alone do not qualify.
+export function heroIsAmphibious(state = game) {
+    return !!state.u.magicalBreathing
+        || !!(speciesEntry(MONSTER_FLAGS1, heroSpecies(state)) & 0x00000200);
+}
 export function heroPassesWalls(state = game) {
     return !!state.u.passesWalls || !!(speciesEntry(MONSTER_FLAGS1, heroSpecies(state)) & 0x08);
 }
