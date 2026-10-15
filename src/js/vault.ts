@@ -1,32 +1,23 @@
 // vault.js — Vault residence, guard arrival, and the initial interrogation.
 // C ref: vault.c:invault(), find_guard_dest(), and the PM_GUARD setup slice.
 
+import { guardDestination } from './vault_escort.js';
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { GameMap } from './game.js';
-import type { Monster, VaultGuardData } from './monster_types.js';
-import type { MonsterCallLog, MonsterMovement } from './monster_action_types.js';
+import type { VaultGuardData } from './monster_types.js';
 import type { Position, Room } from './map_types.js';
 import { isRoom } from './map_types.js';
 import { getLine } from './query.js';
 import { deleteEngravingAt } from './engrave.js';
-import { bot, redrawMap, flush_screen, newsym, pline, plineWithContinuation, displayMessageWindow } from './display.js';
+import { bot, redrawMap, newsym, plineWithContinuation, displayMessageWindow } from './display.js';
 import {
-    COLNO,
-    ROWNO,
     ROOM,
     ROOMOFFSET,
-    CORR,
-    STONE,
     DOOR,
     D_NODOOR,
     VAULT,
-    SCORR,
-    IS_STWALL,
-    IS_POOL,
-    IS_ROOM,
     IS_WALL,
-    ACCESSIBLE,
     HWALL,
     VWALL,
     TLCORNER,
@@ -34,28 +25,39 @@ import {
     BLCORNER,
     BRCORNER,
     MM_NOMSG,
-    MMOVE_NOTHING,
-    MMOVE_MOVED,
-    MMOVE_DIED,
-    GD_EATGOLD,
 } from './const.js';
 import { makemonAt } from './mklev.js';
-import { cansee, vision_note_blocker_change } from './vision.js';
+import { vision_note_blocker_change } from './vision.js';
 import { setWallStateAt } from './wall_topology.js';
 import { LEVEL_TIMER_KIND, stopLevelTimer } from './object_timers.js';
 import {
-    clearVaultCorridor,
     findVaultGuard,
-    inVaultCorridor,
-    requireVaultGuard,
 } from './vault_guard.js';
 import { hiddenGold } from './gold.js';
 import { heroGoldAmount } from './hero_gold.js';
 import { resetHeroFaint } from './hunger.js';
 import { heroIsDeaf } from './senses.js';
+import { heroIsBlind } from './senses.js';
+import { adjustHeroAlignment } from './alignment.js';
+import { endVoluntaryMultiTurn, heroHasInvoluntaryDelay } from './command_state.js';
+import { canSpotMonster, map_invisible } from './display.js';
+import { MONSTER_SOUND } from './monster_data.js';
+import { angerMonster } from './monster_anger.js';
+import { setMonsterMalign } from './monster_alignment.js';
+import { removeMonsterFromGame } from './monster_departure.js';
+import { monsterName, monsterPossessive, monsterSubjectPronoun } from './monster_name.js';
+import { monsterWieldedWeapon, wieldMonsterWeapon } from './monster_weapon.js';
+import { BOULDER, GOLD_PIECE } from './object_data.js';
+import { simpleObjectTypeName } from './objnam.js';
+import { fractureRock } from './rock_breakage.js';
+import { rn2 } from './rng.js';
+import { formatSeenMessage, publishHeardMessage } from './hero_speech.js';
+import { M_AP_OBJECT, M_AP_TYPE, NEED_HTH_WEAPON } from './const.js';
+import { roomForRoomno, roomsAt } from './room.js';
 
 const PM_GUARD = 272;
 const VAULT_GUARD_TIME = 30;
+const STRANGE_OBJECT = 0;
 
 // C vault.c:vault_summon_gd(). The next world turn owns guard arrival.
 export function summonVaultGuardSoon(state: GameState = game) {
@@ -68,17 +70,8 @@ export function summonVaultGuardSoon(state: GameState = game) {
 }
 
 function vaultRoomAt(x: number, y: number, level: GameMap | null = game.level): Room | null {
-    return (
-        level?.rooms?.find(
-            (room): room is Room =>
-                isRoom(room) &&
-                room.rtype === VAULT &&
-                x >= room.lx &&
-                x <= room.hx &&
-                y >= room.ly &&
-                y <= room.hy,
-        ) || null
-    );
+    const roomno = roomsAt(level, x, y, VAULT)[0];
+    return roomno === undefined ? null : roomForRoomno(level, roomno);
 }
 
 // Called from the synchronous once-per-global-turn owner.  Returning true
@@ -91,7 +84,10 @@ export function maintainVaultResidence(state: GameState = game) {
         return false;
     }
 
-    state.u.uinvault = (state.u.uinvault || 0) + 1;
+    const deaths = state.mvitals?.[PM_GUARD]?.died ?? 0;
+    state.u.uinvault ??= 0;
+    if (deaths < 2 || deaths < 50 && !rn2(deaths * deaths))
+        state.u.uinvault = (state.u.uinvault || 0) + 1;
     if (
         state.u.uinvault < VAULT_GUARD_TIME ||
         state.u.uinvault % (VAULT_GUARD_TIME / 2) !== 0 ||
@@ -101,38 +97,7 @@ export function maintainVaultResidence(state: GameState = game) {
         return false;
 
     state._vaultGuardArrivalPending = { vault };
-    // C increments again immediately after successful creation so a guard
-    // killed during its greeting cannot respawn on the following turn.
-    state.u.uinvault++;
     return true;
-}
-
-function findGuardDestination() {
-    const level = requireGameLevel();
-    const ux = game.u.ux;
-    const uy = game.u.uy;
-    for (let distance = 2; distance < ROWNO || distance < COLNO; distance++) {
-        let rejectRadius = false;
-        for (let y = uy - distance; y <= uy + distance; y++) {
-            if (y < 0 || y >= ROWNO) continue;
-            for (let x = ux - distance; x <= ux + distance; x++) {
-                if (y !== uy - distance && y !== uy + distance && x !== ux - distance)
-                    x = ux + distance;
-                if (x < 1 || x >= COLNO) continue;
-                if (level.at(x, y)?.typ !== CORR) continue;
-                const lx = x < ux ? x + 1 : x > ux ? x - 1 : x;
-                const ly = y < uy ? y + 1 : y > uy ? y - 1 : y;
-                const inward = level.at(lx, ly)?.typ;
-                if (inward !== STONE && inward !== CORR) {
-                    rejectRadius = true;
-                    break;
-                }
-                return { x, y };
-            }
-            if (rejectRadius) break;
-        }
-    }
-    return null;
 }
 
 function guardEntryToward(destination: Position) {
@@ -162,12 +127,16 @@ function guardEntryToward(destination: Position) {
         if (Math.abs(destination.x - x) >= Math.abs(destination.y - y)) x += dx;
         else y += dy;
     }
+    if (x === game.u.ux && y === game.u.uy) {
+        const horizontalEntry = (x: number, y: number) => [HWALL, DOOR].includes(level.requireAt(x, y).typ);
+        const verticalEntry = (x: number, y: number) => [VWALL, DOOR].includes(level.requireAt(x, y).typ);
+        if (horizontalEntry(x + 1, y)) x++;
+        else if (horizontalEntry(x - 1, y)) x--;
+        else if (verticalEntry(x, y + 1)) y++;
+        else if (verticalEntry(x, y - 1)) y--;
+        else return null;
+    }
     return { x, y };
-}
-
-async function morePrompt(message: string) {
-    await plineWithContinuation(message);
-    await displayMessageWindow();
 }
 
 async function readGuardName() {
@@ -181,208 +150,16 @@ async function readGuardName() {
     return '';
 }
 
-function guardGoldState(state: GameState = game) {
-    return heroGoldAmount(state) + hiddenGold(state, true);
-}
-
-function guardLocation(level: GameMap, x: number, y: number) {
-    const location = level.at(x, y);
-    if (!location) throw new RangeError(`Vault guard square (${x}, ${y}) is outside the map.`);
-    return location;
-}
-
-function vaultGuardNextSquare(guard: Monster, state: GameState = game) {
-    requireVaultGuard(guard);
-    const level = requireGameLevel(state);
-    const egd = guard._egd;
-    const x = guard.mx;
-    const y = guard.my;
-    const dx = Math.sign(egd.gdx - x);
-    let dy = Math.sign(egd.gdy - y);
-    let nx = x;
-    let ny = y;
-    if (Math.abs(egd.gdx - x) >= Math.abs(egd.gdy - y)) nx += dx;
-    else ny += dy;
-
-    let loc = guardLocation(level, nx, ny);
-    let typ = loc.typ;
-    while (typ !== STONE) {
-        const ex = nx + nx - x;
-        const ey = ny + ny - y;
-        if (
-            ex >= 1 &&
-            ex < COLNO &&
-            ey >= 0 &&
-            ey < ROWNO &&
-            IS_ROOM(guardLocation(level, ex, ey).typ)
-        ) {
-            loc.typ = DOOR;
-            loc.flags = loc.wall_info = loc.doormask = D_NODOOR;
-            deleteEngravingAt(ex, ey, level);
-            return { nx, ny, typ, flags: 0 };
-        }
-        if (dy && nx !== x) {
-            nx = x;
-            ny = y + dy;
-        } else if (dx && ny !== y) {
-            ny = y;
-            nx = x + dx;
-            dy = 0;
-        } else {
-            if (IS_ROOM(typ)) {
-                loc.typ = DOOR;
-                loc.flags = loc.wall_info = loc.doormask = D_NODOOR;
-                deleteEngravingAt(ex, ey, level);
-                return { nx, ny, typ, flags: 0 };
-            }
-            break;
-        }
-        loc = guardLocation(level, nx, ny);
-        typ = loc.typ;
-    }
-    loc.typ = CORR;
-    loc.flags = loc.wall_info = loc.doormask = 0;
-    return { nx, ny, typ, flags: 0 };
-}
-
-// C ref: vault.c:gd_move(), peaceful escort slice.  The guard carves one
-// reversible square toward its exterior destination, then waits whenever the
-// hero falls more than one square behind.  The only RNG in this owner is the
-// occasional "Move along!" line; route selection itself is deterministic.
-export async function moveVaultGuard(
-    guard: Monster,
-    state: GameState = game,
-    random: (limit: number) => number,
-    calls: Pick<MonsterCallLog, 'push'> = [],
-): Promise<MonsterMovement | null> {
-    requireLiveGame(state);
-    const egd = guard?._egd;
-    const oldx = guard.mx;
-    const oldy = guard.my;
-    const stopped = (message?: string): MonsterMovement => ({
-        oldx,
-        oldy,
-        x: oldx,
-        y: oldy,
-        moved: false,
-        postMoveStatus: MMOVE_NOTHING,
-        movementStage: 'postmov',
-        ...(message ? { message } : {}),
-    });
-    if (!egd || !guard.mpeaceful) return null;
-    const heroLevel = state.u.uz;
-    if (!heroLevel) throw new Error('Vault guard movement requires the hero dungeon location.');
-    const level = requireGameLevel(state);
-
-    if (
-        egd.witness &&
-        guard.mx &&
-        guard.mhp > 0 &&
-        !egd.gddone &&
-        egd.gdlevel.dnum === heroLevel.dnum &&
-        egd.gdlevel.dlevel === heroLevel.dlevel &&
-        Math.abs(egd.ogx - guard.mx) <= 1 &&
-        Math.abs(egd.ogy - guard.my) <= 1
-    ) {
-        if (!heroIsDeaf(state))
-            await pline(
-                `"How dare you ${egd.witness & GD_EATGOLD ? 'consume' : 'destroy'} that gold, scoundrel!"`,
-            );
-        egd.witness = 0;
-        guard.mpeaceful = 0;
-        // C returns -1 so ordinary hostile monster movement takes over.
-        return null;
-    }
-
-    const heroInVault = !!vaultRoomAt(state.u.ux, state.u.uy, state.level);
-    const carryingGold = guardGoldState(state) > 0;
-    const distance = Math.max(Math.abs(oldx - state.u.ux), Math.abs(oldy - state.u.uy));
-
-    if (egd.fcend === 1 && heroInVault && (carryingGold || distance > 1)) {
-        egd.warncnt = (egd.warncnt || 0) + 1;
-        return stopped();
-    }
-
-    if (distance > 1 || egd.gddone) {
-        let message = null;
-        if (!egd.gddone) {
-            const roll = random(10);
-            calls.push('rn2(10)');
-            if (roll === 0 && !state.deaf) message = '"Move along!"';
-        }
-        await clearVaultCorridor(guard, false, state);
-        return stopped(message ?? undefined);
-    }
-
-    if (!heroInVault) {
-        for (let nx = oldx - 1; nx <= oldx + 1; nx++) {
-            for (let ny = oldy - 1; ny <= oldy + 1; ny++) {
-                if (
-                    !((nx === oldx || ny === oldy) && (nx !== oldx || ny !== oldy)) ||
-                    nx < 1 ||
-                    nx >= COLNO ||
-                    ny < 0 ||
-                    ny >= ROWNO
-                )
-                    continue;
-                const location = guardLocation(level, nx, ny);
-                const typ = location.typ;
-                if (inVaultCorridor(guard, nx, ny)) continue;
-                if (vaultRoomAt(nx, ny, state.level)) continue;
-                if (!IS_STWALL(typ) && !IS_POOL(typ)) {
-                    egd.gddone = 1;
-                    if (!ACCESSIBLE(typ)) {
-                        location.typ = typ === SCORR ? CORR : DOOR;
-                        location.doormask = location.typ === DOOR ? D_NODOOR : 0;
-                    }
-                    guard.mx = 0;
-                    guard.my = 0;
-                    return {
-                        oldx,
-                        oldy,
-                        x: nx,
-                        y: ny,
-                        moved: true,
-                        guardFinished: true,
-                        postMoveStatus: MMOVE_DIED,
-                        movementStage: 'dochug',
-                    };
-                }
-            }
-        }
-    }
-
-    const { nx, ny, typ, flags } = vaultGuardNextSquare(guard, state);
-    vision_note_blocker_change(nx, ny);
-    if (cansee(nx, ny)) newsym(nx, ny);
-    egd.fakecorr.push({ x: nx, y: ny, typ, flags });
-    egd.fcend++;
-    egd.ogx = oldx;
-    egd.ogy = oldy;
-    guard.mx = nx;
-    guard.my = ny;
-    await clearVaultCorridor(guard, false, state);
-    state.vision_full_recalc = 1;
-    return {
-        oldx,
-        oldy,
-        x: nx,
-        y: ny,
-        moved: true,
-        postMoveStatus: MMOVE_MOVED,
-        movementStage: 'postmov',
-    };
-}
-
 export async function continueVaultGuardArrival(state: GameState = game) {
     requireLiveGame(state);
     const pending = state._vaultGuardArrivalPending;
     if (!pending) return false;
     state._vaultGuardArrivalPending = null;
 
-    const destination = findGuardDestination();
+    const destination = await guardDestination(state);
     if (!destination) return false;
     const entry = guardEntryToward(destination);
+    if (!entry) return false;
     const original = requireGameLevel(state).at(entry.x, entry.y);
     if (!original) return false;
 
@@ -390,6 +167,7 @@ export async function continueVaultGuardArrival(state: GameState = game) {
     if (!guard) return false;
     guard.isgd = 1;
     guard.mpeaceful = 1;
+    setMonsterMalign(guard, state);
     const heroLevel = state.u.uz;
     if (!heroLevel) throw new Error('Vault guard arrival requires the hero dungeon location.');
     const corridor: VaultGuardData = {
@@ -400,31 +178,94 @@ export async function continueVaultGuardArrival(state: GameState = game) {
         gdx: destination.x,
         gdy: destination.y,
         vault: pending.vault,
-        warncnt: 1,
+        warncnt: 0,
         fcbeg: 0,
         fcend: 0,
         fakecorr: [],
         dropgoldcnt: 0,
     };
     guard._egd = corridor;
+    state.u.uinvault = (state.u.uinvault ?? 0) + 1;
     await resetHeroFaint({ state });
-    game._occupation = null;
+    const boulders = requireGameLevel(state).objects[entry.x]?.[entry.y]?.filter(object => object.otyp === BOULDER) ?? [];
+    for (const boulder of boulders) await fractureRock(boulder, entry.x, entry.y, { state });
+    if (boulders.length) {
+        const description = `${boulders.length === 1 ? 'a boulder' : 'boulders'} shatter.`;
+        if (heroIsBlind(state)) await publishHeardMessage(description, plineWithContinuation, state);
+        else await plineWithContinuation(formatSeenMessage(description, state));
+    }
     newsym(entry.x, entry.y);
     await redrawMap();
     await bot();
 
-    await morePrompt("Suddenly one of the Vault's guards enters!");
-    await readGuardName();
-
-    await plineWithContinuation('"I don\'t know you."');
-    const gold = heroGoldAmount(game);
-    const stashedGold = hiddenGold(game, true);
+    const spotted = canSpotMonster(guard);
+    await plineWithContinuation(spotted ? "Suddenly one of the Vault's guards enters!" : 'Someone else has entered the Vault.');
+    if (!spotted) map_invisible(entry.x, entry.y);
+    const deaf = heroIsDeaf(state), blind = heroIsBlind(state);
+    const name = () => monsterName(guard, { state, capitalized: true, suppressIt: true });
+    if (state.u.uswallow) {
+        if (!deaf) await plineWithContinuation(`"What's going on here?"`);
+        if (!spotted) await plineWithContinuation('The other presence vanishes.');
+        await removeMonsterFromGame(guard);
+        return true;
+    }
+    if (M_AP_TYPE(state.u) === M_AP_OBJECT || state.u.uundetected) {
+        if (!deaf && M_AP_TYPE(state.u) === M_AP_OBJECT && state.u.mappearance !== GOLD_PIECE) {
+            const appearance = state.u.mappearance ?? STRANGE_OBJECT;
+            const disguise = appearance === STRANGE_OBJECT
+                ? 'whatcha-may-callit' : simpleObjectTypeName(appearance, state);
+            await plineWithContinuation(`"Hey!  Who left that ${disguise} in here?"`);
+        }
+        await plineWithContinuation(`Puzzled, ${monsterSubjectPronoun(guard, { state })} turns around and leaves.`);
+        await removeMonsterFromGame(guard);
+        return true;
+    }
+    if (state.u.strangled || (state.u.strangledTurns ?? 0) > 0
+        || MONSTER_SOUND[state.u.umonnum ?? state.u.umonster ?? 260] === 0 || heroHasInvoluntaryDelay(state)) {
+        await plineWithContinuation(deaf ? `${name()} huffs and turns to leave.`
+            : `"I'll be back when you're ready to speak to me!"`);
+        await removeMonsterFromGame(guard);
+        return true;
+    }
+    state._occupation = null;
+    if ((state.multi ?? 0) > 0) endVoluntaryMultiTurn(state);
+    await displayMessageWindow();
+    const response = await readGuardName();
+    if (state.u.ualign?.type === 1 && !response.toLowerCase().startsWith(state.plname.toLowerCase()))
+        adjustHeroAlignment(-1, state);
+    if (['croesus', 'kroisos', 'creosote'].includes(response.toLowerCase())) {
+        if (!(state.mvitals?.[286]?.died ?? 0)) {
+            if (!deaf) await plineWithContinuation('"Oh, yes, of course.  Sorry to have disturbed you."');
+            else if (!blind) await plineWithContinuation(`${name()} waves goodbye.`);
+            await removeMonsterFromGame(guard);
+        } else {
+            await angerMonster(guard);
+            if (!deaf) await plineWithContinuation(`"Back from the dead, are you?  I'll remedy that!"`);
+            else if (!blind) await plineWithContinuation(`${name()} mouths something and looks very angry!`);
+            if (!monsterWieldedWeapon(guard)) {
+                guard.weaponCheck = NEED_HTH_WEAPON;
+                await wieldMonsterWeapon(guard, state);
+            }
+        }
+        return true;
+    }
+    await plineWithContinuation(deaf ? `${name()} doesn't ${blind ? '' : 'appear to '}recognize you.` : `"I don't know you."`);
+    const gold = heroGoldAmount(state);
+    const stashedGold = hiddenGold(state, true);
     if (!gold && !stashedGold) {
-        await plineWithContinuation('"Please follow me."');
+        await plineWithContinuation(deaf ? `${name()} stomps${blind ? '' : ' and beckons'}.` : '"Please follow me."');
     } else {
-        if (!gold) await plineWithContinuation('"You have hidden gold."');
-        await plineWithContinuation('"Most likely all your gold was stolen from this vault."');
-        await plineWithContinuation('"Please drop that gold and follow me."');
+        if (!gold) {
+            if (!deaf) await plineWithContinuation('"You have hidden gold."');
+            else if (!blind) await plineWithContinuation(`${name()} glares at you${state.inventory.length ? 'r stuff' : ''}.`);
+        }
+        if (!deaf) {
+            await plineWithContinuation('"Most likely all your gold was stolen from this vault."');
+            await plineWithContinuation('"Please drop that gold and follow me."');
+        } else if (!blind) {
+            const possessive = monsterPossessive(guard, { state, noIt: true });
+            await plineWithContinuation(`${name()} holds out ${possessive} palm and beckons with ${monsterPossessive(guard, { state, noIt: true })} other hand.`);
+        }
         corridor.dropgoldcnt++;
     }
 
@@ -447,6 +288,7 @@ export async function continueVaultGuardArrival(state: GameState = game) {
         flags: original.wall_info,
     });
     corridor.fcend = 1;
+    corridor.warncnt = 1;
     stopLevelTimer(entry.x, entry.y, LEVEL_TIMER_KIND.MELT_ICE_AWAY, state);
     original.typ = DOOR;
     original.flags = original.wall_info = original.doormask = D_NODOOR;
@@ -456,3 +298,5 @@ export async function continueVaultGuardArrival(state: GameState = game) {
     game.context.move = 0;
     return true;
 }
+
+export { moveVaultGuard } from './vault_escort.js';

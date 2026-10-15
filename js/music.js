@@ -246,7 +246,7 @@ async function playWoodenFlute(instrument, familiar, canUseSpecial) {
         await plineWithContinuation(`Your ${instrumentName(instrument)} ${succeeds ? 'trills' : 'toots'}${familiar ? ' a familiar tune' : ''}.`);
     }
     else {
-        await plineWithContinuation(formatFeltMessage(`your ${instrumentName(instrument)} ${succeeds ? 'trill' : 'toot'}.`));
+        await plineWithContinuation(`You feel your ${instrumentName(instrument)} ${succeeds ? 'trill' : 'toot'}.`);
     }
     if (succeeds)
         await charmSnakes((game.u?.ulevel || 1) * 3);

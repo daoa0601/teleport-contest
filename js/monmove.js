@@ -4,6 +4,7 @@ import { monsterFireDescription } from './monster_fire_description.js';
 import { bot } from './display.js';
 import { launchRollingBoulder } from './rolling_boulder.js';
 import { recorderLocalHour } from './calendar.js';
+import { impossible, panic } from './diagnostics.js';
 // Monster movement-ration state, movement, and combat.
 // C refs: allmain.c moveloop_core(), mon.c mcalcmove()/movemon()/mfndpos(),
 // monmove.c m_move()/dochug(), and dogmove.c dog_goal()/dog_move().
@@ -40,7 +41,7 @@ import { loseGuardianAngel } from './guardian_angel.js';
 import { shiftMonsterForDoor, resolveMonsterDoorPassage } from './monster_door_passage.js';
 import { heroSpecies } from './hero_species.js';
 import { releaseHeroFromMonster, releaseMonsterHold } from './hero_expulsion.js';
-import { checkQuestMonsterStatus } from './quest.js';
+import { checkQuestMonsterStatus, talkQuestCharacter } from './quest.js';
 import { placeHeroOnLevel } from './hero_location.js';
 import { swallowed } from './display.js';
 import { Is_rogue_level } from './const.js';
@@ -132,7 +133,7 @@ import { shopkeeperIsMuted } from './shop_loss.js';
 import { checkMonsterGearNextTurn, findMonsterArmorClass } from './monworn.js';
 import { inTown, roomsAt } from './room.js';
 import { addShopDamage } from './shop_damage.js';
-import { createHarmlessGasCloudSelection, createPoisonGasCloud, createSteamCloud, GAS_OK, monsterGasTolerance, visibleRegionAt, updateMonsterRegions, } from './regions.js';
+import { createPoisonGasCloud, createSteamCloud, GAS_OK, monsterGasTolerance, visibleRegionAt, updateMonsterRegions, } from './regions.js';
 import { heroIsDeaf, syncBlindness } from './senses.js';
 import { makeBlinded } from './sight_change.js';
 import { applyMonsterStoningAttack, startHeroPetrificationFromMonster, touchPetrifies, } from './stoning.js';
@@ -199,7 +200,7 @@ import { stopHeroOccupation } from './occupation.js';
 import { rileShopkeeper, shopkeeperRepairsDamage } from './shop_damage.js';
 import { diggingTimeToHole } from './hero_digging.js';
 import { migrateMonsterOffLevel } from './monster_migration.js';
-import { RLOC_MSG, A_CHA, A_DEX, A_STR, A_CON, ALLOW_ALL, ALLOW_BARS, ALLOW_DIG, ALLOW_M, ALLOW_MDISP, ALLOW_ROCK, ALLOW_SANCT, MMOVE_NOTHING, MMOVE_MOVED, MMOVE_DIED, MMOVE_DONE, MMOVE_NOMOVES, MON_FLOOR, ALLOW_SSM, ALLOW_TM, ALLOW_TRAPS, ALLOW_U, ALLOW_WALL, ARROW_TRAP, BEAR_TRAP, BOLT_LIM, COLNO, CORR, DART_TRAP, DOOR, ROWNO, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, D_WARNED, FOUNTAIN, SDOOR, Is_firelevel, Is_waterlevel, IS_DOOR, IS_LAVA, IS_OBSTRUCTED, IS_POOL, IS_ROOM, IS_STWALL, IS_TREE, IS_WALL, IRONBARS, LAVAPOOL, LAVAWALL, BUSTDOOR, MAGIC_PORTAL, OPENDOOR, TELEP_TRAP, MIGR_RANDOM, ANTI_MAGIC, FIRE_TRAP, HOLE, LANDMINE, MAGIC_TRAP, M_ATTK_AGR_DIED, M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, M_ATTK_AGR_DONE, M_AP_FURNITURE, M_AP_MONSTER, M_AP_NOTHING, M_AP_OBJECT, M_AP_TYPE, POLY_TRAP, RUST_TRAP, PIT, PL_NSIZ, ROCKTRAP, ROLLING_BOULDER_TRAP, ROOM, SLP_GAS_TRAP, STONE, SPIKED_PIT, SQKY_BOARD, STATUE_TRAP, TRAPDOOR, NEED_AXE, NEED_HTH_WEAPON, NEED_PICK_AXE, NEED_PICK_OR_AXE, NEED_WEAPON, NO_WEAPON_WANTED, MM_NOWAIT, NOGARLIC, NOTONL, SHOPBASE, TEMPLE, TRAPNUM, STRAT_WAITFORU, STRAT_WAITMASK, STRAT_ARRIVE, UNLOCKDOOR, VIBRATING_SQUARE, WATER, W_ACCESSORY, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMOR, W_ARMS, W_ARMU, W_NONDIGGABLE, W_NONPASSWALL, Upolyd, isok, WEB, WT_TOOMUCH_DIAGONAL, } from './const.js';
+import { RLOC_MSG, A_CHA, A_DEX, A_STR, A_CON, ALLOW_ALL, ALLOW_BARS, ALLOW_DIG, ALLOW_M, ALLOW_MDISP, ALLOW_ROCK, ALLOW_SANCT, MMOVE_NOTHING, MMOVE_MOVED, MMOVE_DIED, MMOVE_DONE, MMOVE_NOMOVES, MON_FLOOR, ALLOW_SSM, ALLOW_TM, ALLOW_TRAPS, ALLOW_U, ALLOW_WALL, ARROW_TRAP, BEAR_TRAP, BOLT_LIM, COLNO, CORR, DART_TRAP, DOOR, ROWNO, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, D_WARNED, FOUNTAIN, SDOOR, Is_firelevel, Is_waterlevel, IS_DOOR, IS_LAVA, IS_OBSTRUCTED, IS_POOL, IS_ROOM, IS_STWALL, IS_TREE, IS_WALL, IRONBARS, LAVAPOOL, LAVAWALL, BUSTDOOR, MAGIC_PORTAL, OPENDOOR, TELEP_TRAP, MIGR_RANDOM, ANTI_MAGIC, FIRE_TRAP, HOLE, LANDMINE, MAGIC_TRAP, M_ATTK_AGR_DIED, M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, M_ATTK_AGR_DONE, M_AP_FURNITURE, M_AP_MONSTER, M_AP_NOTHING, M_AP_OBJECT, M_AP_TYPE, POLY_TRAP, RUST_TRAP, PIT, PL_NSIZ, ROCKTRAP, ROLLING_BOULDER_TRAP, ROOM, SLP_GAS_TRAP, STONE, SPIKED_PIT, SQKY_BOARD, STATUE_TRAP, TRAPDOOR, NEED_AXE, NEED_HTH_WEAPON, NEED_PICK_AXE, NEED_PICK_OR_AXE, NEED_WEAPON, NO_WEAPON_WANTED, MM_NOWAIT, NOGARLIC, NOTONL, SHOPBASE, TEMPLE, TRAPNUM, STRAT_WAITFORU, STRAT_WAITMASK, STRAT_CLOSE, STRAT_ARRIVE, UNLOCKDOOR, VIBRATING_SQUARE, WATER, W_ACCESSORY, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMOR, W_ARMS, W_ARMU, W_NONDIGGABLE, W_NONPASSWALL, Upolyd, isok, WEB, WT_TOOMUCH_DIAGONAL, } from './const.js';
 import { monsterIsScaredAt } from './monster_fear.js';
 import { monsterInAir, monsterFliesOrFloats, levelHasCeiling, isLavaAt, isPoolAt } from './terrain_properties.js';
 import { disturbBuriedZombies } from './object_impact.js';
@@ -754,32 +755,32 @@ export async function finishDeferredMonsterMiscItem(action, state = requireIniti
 export function monstersInFmonOrder(monsters = []) {
     return Array.from(monsters).reverse();
 }
-function createFogEveryturnRegion(state, x, y, random = rn2) {
+async function createFogEveryturnRegion(state, x, y, random = rn2) {
     const cell = state.level.at(x, y);
     if (!cell || (IS_DOOR(cell.typ) && cell.doormask & (D_CLOSED | D_LOCKED))
         || visibleRegionAt(state, x, y))
         return null;
-    return createHarmlessGasCloudSelection(state, [{ x, y }], { ttl: 4 + random(3) });
+    return await createPoisonGasCloud(state, x, y, 1, 0, random);
 }
 // C monmove.c:m_everyturn_effect().  movemon_singlemon() runs this before its
 // movement-ration check, so an otherwise stationary fog cloud still leaves a
 // one-cell harmless vapor region.  A size-one create_gas_cloud() owns only the
 // rn1(3,4) TTL draw; the region then suppresses another cloud at that square.
-function monsterEveryturnEffect(monster, state, random = rn2) {
+async function monsterEveryturnEffect(monster, state, random = rn2) {
     if (!state?.level ||
         monster?.mnum !== PM_FOG_CLOUD ||
         visibleRegionAt(state, monster.mx, monster.my))
         return null;
-    return createFogEveryturnRegion(state, monster.mx, monster.my, random);
+    return await createFogEveryturnRegion(state, monster.mx, monster.my, random);
 }
-export function runMonsterEveryturnEffects(monsters, state, random = rn2, { fmonOrdered = false } = {}) {
+export async function runMonsterEveryturnEffects(monsters, state, random = rn2, { fmonOrdered = false } = {}) {
     const effects = [];
     const visits = fmonOrdered ? Array.from(monsters || []) : monstersInFmonOrder(monsters || []);
     for (const monster of visits) {
         initializeMonsterMovement(monster);
         if (!schedulable(monster))
             continue;
-        const effect = monsterEveryturnEffect(monster, state, random);
+        const effect = await monsterEveryturnEffect(monster, state, random);
         if (effect)
             effects.push({ monster, effect });
     }
@@ -788,10 +789,10 @@ export function runMonsterEveryturnEffects(monsters, state, random = rn2, { fmon
 // C allmain.c invokes the same species hook for `youmonst` after status
 // projection and before accepting the next command.  The region persists on
 // the level and suppresses another TTL draw while it covers the hero square.
-export function heroEveryturnEffect(state = requireInitializedGame(), random = rn2) {
+export async function heroEveryturnEffect(state = requireInitializedGame(), random = rn2) {
     if ((state.u?.mtimedone ?? 0) <= 0 || state.u?.umonnum !== PM_FOG_CLOUD)
         return null;
-    return createFogEveryturnRegion(state, state.u.ux, state.u.uy, random);
+    return await createFogEveryturnRegion(state, state.u.ux, state.u.uy, random);
 }
 // C ref: mon.c mcalcdistress()/m_calcdistress(). JS appends monsters while C
 // prepends them to fmon, so this once-per-global-turn phase traverses the
@@ -3316,7 +3317,7 @@ function maybeBreatheAtHero(monster, attack, state, random, calls) {
 }
 // C ref: mkmaze.c:fumaroles(). Steam vents use the same cloud builder as
 // fire striking water.
-export function fumaroles(state = requireInitializedGame()) {
+export async function fumaroles(state = requireInitializedGame()) {
     let cloudCount = rn2(3);
     let minimumSize = 5;
     if (Is_firelevel(state.u?.uz)) {
@@ -3334,7 +3335,9 @@ export function fumaroles(state = requireInitializedGame()) {
         const y = rn2(ROWNO - 4) + 3;
         if (state.level?.at?.(x, y)?.typ !== LAVAPOOL)
             continue;
-        createSteamCloud(state, x, y, rn2(10) + minimumSize, rn2);
+        const cloud = await createSteamCloud(state, x, y, rn2(10) + minimumSize, rn2);
+        if (cloud)
+            cloud.heroFault = false;
         heard = true;
         const dx = x - (state.u?.ux ?? 0);
         const dy = y - (state.u?.uy ?? 0);
@@ -6427,8 +6430,19 @@ async function completeMovedMonsterAction(monster, movement, state, random, roll
             if (state === game)
                 swallowed(false);
         }
-        else if (state === game)
-            newsym(monster.mx, monster.my);
+        else if (state === game) {
+            const { mx, my } = monster;
+            if (!state.in_mklev && !state.program_state.saving && !isok(mx, my)) {
+                // C newsym() diagnoses column zero even when a live guard
+                // is legitimately parked there until its corridor clears.
+                const reason = `newsym: attempting screen update for <${mx},${my}>`;
+                if (mx < 0 || my < 0 || mx >= COLNO || my >= ROWNO)
+                    await panic(reason, { state });
+                await impossible(reason, { state });
+            }
+            else
+                newsym(mx, my);
+        }
         movement.postMoveDestinationPainted = true;
     }
     if (movement.postMoveStatus === MMOVE_MOVED || movement.postMoveStatus === MMOVE_DONE) {
@@ -7265,6 +7279,9 @@ export async function runMonsterAction(monster, state, random = rn2, rollDice = 
     if ((monster.mstrategy ?? 0) & STRAT_WAITMASK) {
         if (heroIsHallucinating(state))
             newsym(monster.mx, monster.my);
+        if (monster.mcanmove && (monster.mstrategy ?? 0) & STRAT_CLOSE
+            && !monster.msleeping && nextToHero)
+            await talkQuestCharacter(monster, state);
         return {
             monster,
             calls,

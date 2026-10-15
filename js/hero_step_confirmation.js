@@ -1,3 +1,4 @@
+import { heroLocomotion } from './hero_locomotion.js';
 // C hack.c:avoid_trap_andor_region()/u_locomotion() and
 // trap.c:immune_to_trap()/into_vs_onto(), for hero movement.
 import { BEAR_TRAP, HOLE, In_endgame, In_sokoban, Is_earthlevel, LANDMINE, LEVEL_TELEP, MAGIC_PORTAL, PARANOID_CONFIRM, PARANOID_TRAP, PIT, ROLLING_BOULDER_TRAP, RUST_TRAP, SLP_GAS_TRAP, SPIKED_PIT, SQKY_BOARD, TELEP_TRAP, TRAPDOOR, TRAP_EXPLANATIONS, TRAPNUM, VIBRATING_SQUARE, WEB, W_QUIVER, W_SWAPWEP, is_hole, is_pit, } from './const.js';
@@ -5,7 +6,6 @@ import { endVoluntaryMultiTurn } from './command_state.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { heroSpecies } from './hero_species.js';
 import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterIsAmorphous, monsterIsUnsolid, monsterIsWhirly, } from './monster_data.js';
-import { monsterLocomotion } from './monster_locomotion.js';
 import { OBJECT_MATERIAL } from './object_data.js';
 import { paranoidQuery } from './query.js';
 import { visibleRegionAt } from './regions.js';
@@ -23,8 +23,7 @@ export async function confirmHeroStep(x, y, state = game) {
         || (state.context.nopick && !state.context.run))
         return true;
     const hallucinating = heroIsHallucinating(state);
-    const locomotion = state.u.levitating ? 'float' : state.u.flying ? 'fly'
-        : monsterLocomotion(heroSpecies(state), 'step');
+    const locomotion = heroLocomotion('step', state);
     const confirm = !!(bits & PARANOID_CONFIRM);
     if (!heroIsBlind(state) && !hallucinating) {
         const entered = visibleRegionAt(state, x, y);

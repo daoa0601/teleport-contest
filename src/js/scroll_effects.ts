@@ -13,7 +13,7 @@ import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { makeConfused } from './hero_mental_status.js';
 import { heroSpecies } from './hero_species.js';
-import { formatHeardMessage, formatFeltMessage } from './hero_speech.js';
+import { formatFeltMessage, formatHeardMessage } from './hero_speech.js';
 import { freeHeroFromBuriedBall } from './hero_traps.js';
 import { consumeInventoryItem, identifyPack } from './invent.js';
 import { detectFood, detectGold, mapMagicLevel } from './magic_detection.js';

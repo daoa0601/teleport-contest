@@ -1,4 +1,5 @@
 // C teleport.c:level_tele() and random_teleport_level().
+
 import { formatFeltMessage } from './hero_speech.js';
 import { buriedBallToPunishment } from './buried_object.js';
 import { chooseWizardLevelDestination } from './cmd.js';

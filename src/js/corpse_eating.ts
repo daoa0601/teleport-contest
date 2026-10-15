@@ -1,4 +1,5 @@
 // Native eat.c:cprefx()/cpostfx(). The meal/tin owner retains the food identity.
+
 import { formatFeltMessage } from './hero_speech.js';
 import {
     adjustAttribute, attributeChangeMessage, currentAttribute, exerciseWisdom,

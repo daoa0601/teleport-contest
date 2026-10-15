@@ -1,4 +1,5 @@
 // C fountain.c:dipsink(), sink_backs_up().
+
 import { formatSeenMessage, publishHeardMessage } from './hero_speech.js';
 import { exerciseAttribute } from './attrib.js';
 import { heroFaceName } from './body_parts.js';

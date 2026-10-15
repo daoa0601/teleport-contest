@@ -1,3 +1,4 @@
+import { ensureQuestStatus } from '../js/quest.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
@@ -72,6 +73,7 @@ void test('blindness expiry preserves counted searching when the Eyes kept the h
         ualign: { type: 0, record: 0 }, uhp: 100, uhpmax: 100,
     } });
     requirePlayingGame(game);
+    ensureQuestStatus().touched_artifact = true;
     const eyes = await addInventoryItem(await artifactObject('The Eyes of the Overworld'));
     installPagerInput(input, { expected: /Eyes|vision/, limit: 4 });
     await applyInventoryObject(eyes);

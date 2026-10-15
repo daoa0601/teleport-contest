@@ -1,4 +1,5 @@
 // C uhitm.c:mhitm_ad_drli/dren/deth/pest/famn/dise/curs(), monster defenders.
+
 import { publishHeardMessage } from './hero_speech.js';
 import { M_ATTK_AGR_DIED, M_ATTK_DEF_DIED, M_ATTK_MISS, STRAT_WAITFORU } from './const.js';
 import { canSeeMonster, canSpotMonster } from './display.js';

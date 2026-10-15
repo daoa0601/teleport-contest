@@ -1,6 +1,9 @@
+import { currency } from '../js/currency.js';
+import { game } from '../js/gstate.js';
+import { initRng } from '../js/rng.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { monsterGrowlSound, sessionIsNight } from '../js/monster_sound.js';
+import { monsterGrowlSound, publishMonsterNoise, sessionIsNight } from '../js/monster_sound.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
@@ -41,4 +44,16 @@ void test('a shrieker uses the default scream for its growl', async () => {
     const sound = monsterGrowlSound(shrieker);
 
     assert.equal(sound, 'scream');
+});
+
+void test('a hallucinated gecko sales pitch uses the shared currency name', async () => {
+    freshObjectRoom({ hero: { hallucinationTurns: 100 } });
+    const gecko = await createMonsterAt('gecko', 11, 10);
+    initRng(913n);
+    const expected = currency(15);
+    initRng(913n);
+
+    await publishMonsterNoise(gecko);
+
+    assert.equal(game._last_message, `"15 minutes could save you 15 ${expected}."`);
 });

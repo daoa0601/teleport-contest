@@ -1,7 +1,7 @@
 import { createRoom } from './support/topology.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { A_STR, BEAR_TRAP, IRONBARS, GD_EATGOLD, VAULT, W_ARM } from '../js/const.js';
+import { A_STR, BEAR_TRAP, IRONBARS, GD_EATGOLD, ROOMOFFSET, VAULT, W_ARM } from '../js/const.js';
 import { digestAccessory } from '../js/eaten_accessory.js';
 import { wearHeroAccessory } from '../js/accessory.js';
 import { flushPendingTopline } from '../js/display.js';
@@ -235,14 +235,20 @@ void test('eating iron bars resumes work and restores passable terrain on comple
     assert.equal(game.context.digging?.chew, false);
 });
 void test('a guard who sees gold eaten becomes hostile on its next movement', async () => {
-    eatingRoom('rock mole');
+    const level = eatingRoom('rock mole');
     requirePlayingGame(game);
+    const vault = createRoom({ lx: 7, ly: 6, hx: 16, hy: 14, rtype: VAULT });
+    level.rooms = [vault];
+    level.nroom = 1;
+    for (let x = vault.lx; x <= vault.hx; x++)
+        for (let y = vault.ly; y <= vault.hy; y++)
+            level.requireAt(x, y).roomno = ROOMOFFSET;
     const guard = await createMonsterAt('guard', 12, 10);
     guard.isgd = 1;
     guard.mpeaceful = 1;
     guard._egd = {
         gdlevel: { ...game.u.uz }, ogx: guard.mx, ogy: guard.my, witness: 0,
-        gddone: 0, gdx: guard.mx, gdy: guard.my, vault: createRoom({ lx: 7, ly: 6, hx: 16, hy: 14, rtype: VAULT }), warncnt: 1,
+        gddone: 0, gdx: guard.mx, gdy: guard.my, vault, warncnt: 1,
         fcbeg: 0, fcend: 0, fakecorr: [], dropgoldcnt: 0,
     };
     const gold = await addInventoryObject(GOLD_PIECE, { quantity: 300 });

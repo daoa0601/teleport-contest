@@ -1,4 +1,5 @@
 // Native do_wear.c:toggle_displacement() for eating and timeout expiry.
+
 import { formatFeltMessage } from './hero_speech.js';
 import { heroIsDisplaced } from './armor.js';
 import { TIMEOUT } from './const.js';

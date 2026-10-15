@@ -1,11 +1,10 @@
-// C trap.c:trapeffect_poly_trap() and steedintrap(), hero polymorph branch.
 import { formatFeltMessage } from './hero_speech.js';
+import { heroLocomotion } from './hero_locomotion.js';
+// C trap.c:trapeffect_poly_trap() and steedintrap(), hero polymorph branch.
 import type { Trap } from './map_types.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { newsym, plineWithContinuation, shieldeff } from './display.js';
 import { inventoryItemDescription } from './invent.js';
-import { heroSpecies } from './hero_species.js';
-import { monsterLocomotion } from './monster_locomotion.js';
 import { monsterName } from './monster_name.js';
 import { observeObjectForNaming, ownedObjectName } from './objnam.js';
 import { heroIsHallucinating } from './senses.js';
@@ -31,8 +30,7 @@ export async function triggerHeroPolymorphTrap(trap: Trap, viaSitting: boolean):
         newsym(trap.tx, trap.ty);
     }
     const steed = game.u.usteed;
-    const locomotion = game.u.levitating ? 'float' : game.u.flying ? 'fly'
-        : monsterLocomotion(heroSpecies(game), 'step');
+    const locomotion = heroLocomotion('step');
     const verb = viaSitting ? 'trigger' : steed
         ? `lead ${monsterName(steed, {
             article: steed.name && !heroIsHallucinating(game) ? 'none' : 'the',

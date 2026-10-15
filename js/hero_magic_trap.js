@@ -9,7 +9,7 @@ import { game, requirePlayingGame } from './gstate.js';
 import { makeDeaf } from './hero_hearing.js';
 import { hasInternalInvisibility, syncHeroInvisibility } from './hero_invisibility.js';
 import { heroSpecies } from './hero_species.js';
-import { formatHeardMessage, formatSeenMessage, formatFeltMessage } from './hero_speech.js';
+import { formatFeltMessage, formatHeardMessage, formatSeenMessage } from './hero_speech.js';
 import { makemonAt } from './mklev.js';
 import { MONSTER_FLAGS2 } from './monster_data.js';
 import { monsterAtPosition } from './monster_location.js';

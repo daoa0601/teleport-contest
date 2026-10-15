@@ -78,3 +78,15 @@ export function endgameLevelName(uz: DungeonLocation | null | undefined) {
 }
 
 // C ref: rn2(x) already in rng.js — re-export not needed
+
+// C hacklib.c:ing_suffix(), including compound verbs such as "put on".
+export function ingSuffix(verb: string): string {
+    const particle = verb.match(/ (?:on|off|with)$/i)?.[0] || '';
+    let stem = particle ? verb.slice(0, -particle.length) : verb;
+    if (!/er$/i.test(stem)) {
+        if (/[^aeiouwy][aeiouwy][^aeiouwy]$/.test(stem)) stem += stem.at(-1);
+        else if (/ie$/i.test(stem)) stem = stem.slice(0, -2) + 'y';
+        else if (stem.endsWith('e')) stem = stem.slice(0, -1);
+    }
+    return stem + 'ing' + particle;
+}

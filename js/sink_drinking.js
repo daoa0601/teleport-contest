@@ -1,5 +1,4 @@
 // C fountain.c:drinksink(). Admission and action time belong to quaffing.
-import { publishHeardMessage } from './hero_speech.js';
 import { currentAttribute, exerciseWisdom } from './attrib.js';
 import { A_CON, G_GONE, MM_NOMSG, M_SEEN_FIRE, POLY_NOFLAGS, S_LRING, } from './const.js';
 import { canSpotMonster, displayColorName, displayLiquidName, newsym, plineWithContinuation as pline, } from './display.js';
@@ -8,6 +7,7 @@ import { placeCreatedObject } from './floor_object.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { loseHeroHp } from './hero_damage.js';
 import { vomitHero } from './hero_illness.js';
+import { publishHeardMessage } from './hero_speech.js';
 import { spendHeroNutrition } from './hunger.js';
 import { floatingAbove } from './levitation_commands.js';
 import { makemonNear, mkobj } from './mklev.js';
@@ -22,7 +22,7 @@ import { propertyIsActive } from './properties.js';
 import { drinkPotion } from './quaff.js';
 import { createPoisonGasCloud } from './regions.js';
 import { rn1, rn2, rnd } from './rng.js';
-import { heroIsBlind, heroIsHallucinating } from './senses.js';
+import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { breakSinkAt } from './sink_terrain.js';
 const PM_SEWER_RAT = MONSTER_NAME.indexOf('sewer rat');
 const PM_WATER_ELEMENTAL = MONSTER_NAME.indexOf('water elemental');

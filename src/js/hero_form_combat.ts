@@ -1,4 +1,5 @@
 // C uhitm.c:hmonas(). Each slot observes changes made by the preceding hit.
+
 import { formatFeltMessage } from './hero_speech.js';
 import {
     M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, TT_PIT, Upolyd,

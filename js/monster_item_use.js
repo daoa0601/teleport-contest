@@ -4,7 +4,7 @@ import { impossible } from './diagnostics.js';
 import { canSeeMonster, canSenseMonster, canSpotMonster, cls, displayMessageWindow, displaySelf, docrt, flashGlyphAt, map_invisible, newsym, plineWithContinuation, randomDisplayMonsterName, show_glyph_cell, transientMonsterGlyph, } from './display.js';
 import { heroSpecies } from './hero_species.js';
 import { heroIsUnconscious } from './hero_sleep.js';
-import { formatHeardMessage, formatFeltMessage } from './hero_speech.js';
+import { formatFeltMessage, formatHeardMessage } from './hero_speech.js';
 import { inventoryItemDescription } from './invent.js';
 import { AD_RBRE } from './monster_attack_types.js';
 import { MONSTER_GENO } from './monster_data.js';

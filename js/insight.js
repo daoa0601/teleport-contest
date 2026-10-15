@@ -1,6 +1,7 @@
+import { formatFeltMessage } from './hero_speech.js';
+import { currency } from './currency.js';
 // insight.js — Basic enlightenment / attributes command.
 // C ref: insight.c — doattributes(), enlightenment().
-import { formatFeltMessage } from './hero_speech.js';
 import { heroIsHallucinating } from './senses.js';
 import { heroHandedName } from './body_parts.js';
 import { canPraySafely } from './pray.js';
@@ -42,12 +43,12 @@ export function goldInsightLines(final, indent = '  ') {
     const purse = heroGoldAmount(game);
     const stashed = hiddenGold(game, final);
     let wallet = purse
-        ? `Your wallet ${final ? 'contained' : 'contains'} ${purse} zorkmid${purse === 1 ? '' : 's'}`
+        ? `Your wallet ${final ? 'contained' : 'contains'} ${purse} ${currency(purse)}`
         : `Your wallet ${final ? 'was' : 'is'} empty`;
     wallet += stashed ? purse ? ', and' : ', but' : '.';
     const lines = [`${indent}${wallet}`];
     if (stashed) {
-        lines.push(`${indent}you ${final ? 'had' : 'have'} ${stashed} ${purse ? 'more' : `zorkmid${stashed === 1 ? '' : 's'}`} stashed away in your pack.`);
+        lines.push(`${indent}you ${final ? 'had' : 'have'} ${stashed} ${purse ? 'more' : currency(stashed)} stashed away in your pack.`);
     }
     return lines;
 }

@@ -1,3 +1,4 @@
+import { heroLocomotion } from './hero_locomotion.js';
 // shk.js — Runtime shop ownership and entry policy.
 // C refs: hack.c move_update()/check_special_room(), shk.c inhishop(),
 // shop_keeper(), and u_entered_shop().  Lua/mklev owns room construction and
@@ -338,27 +339,27 @@ export async function chargeUnpaidUsage(object: GameObject, {
     const amount = shopUsageCost(object, resident, alternate, state);
     if (!amount) return null;
 
-    const money = `${amount} zorkmid${amount === 1 ? '' : 's'}`;
-    let text;
+    const money = () => `${amount} ${currency(amount, { state })}`;
+    let text: () => string;
     if (object.oclass === 10) {
         const insult = shopkeeperCustomerInsult(state);
         const prefix = rn2(2) ? `This is no free library, ${insult}!  ` : '';
         const extra = (resident.eshk.debit ?? 0) > 0 ? ' an additional' : '';
-        text = `${prefix}You owe${extra} ${money}.`;
+        text = () => `${prefix}You owe${extra} ${money()}.`;
     } else if (object.otyp === POT_OIL) {
-        text = `That will cost you ${money} (Yendorian Fuel Tax).`;
+        text = () => `That will cost you ${money()} (Yendorian Fuel Tax).`;
     } else if (alternate
         && [BAG_OF_TRICKS, HORN_OF_PLENTY].includes(object.otyp)) {
         let prefix = rn2(3) === 0 ? 'Whoa!  ' : '';
         if (rn2(3) === 0) prefix = 'Watch it!  ';
-        text = `${prefix}Emptying that will cost you ${money}.`;
+        text = () => `${prefix}Emptying that will cost you ${money()}.`;
     } else {
         const first = rn2(3) === 0 ? 'Hey!  ' : '';
         const second = rn2(3) === 0 ? 'Ahem.  ' : '';
-        text = `${first}${second}Usage fee, ${money}.`;
+        text = () => `${first}${second}Usage fee, ${money()}.`;
     }
     const audible = !heroIsDeaf(state) && !shopkeeperIsMuted(resident);
-    const message = audible ? `"${text}"` : null;
+    const message = audible ? `"${text()}"` : null;
     if (message) {
         await plineWithContinuation(message);
         await exerciseAttribute(A_WIS, true, state);
@@ -521,12 +522,10 @@ export async function chargeUnpaidObjectAsDebt(
         const debt = value - creditUsed;
         eshk.debit = (eshk.debit ?? 0) + debt;
         if (debt) {
-            message = `You owe ${shopkeeperName(resident)} ${debt} zorkmid${
-                debt === 1 ? '' : 's'
-            } for it!`;
+            message = `You owe ${shopkeeperName(resident)} ${debt} ${currency(debt, { state })} for it!`;
         } else {
             message = eshk.credit
-                ? `You have ${eshk.credit} zorkmids credit remaining.`
+                ? `You have ${eshk.credit} ${currency(eshk.credit, { state })} credit remaining.`
                 : 'You have no credit remaining.';
         }
     } else {
@@ -1340,8 +1339,12 @@ function specialRoomEntryMessage(room: Room, roomno: number): string | null {
         return `You enter an opulent${throne ? ' throne' : ''} room!`;
     }
     case LEPREHALL: return 'You enter a leprechaun hall!';
-    case MORGUE: return Number(String(game.datetime || '').slice(8, 10)) === 0
-        ? 'Run away!  Run away!' : 'You have an uncanny feeling...';
+    case MORGUE: {
+        if (Number(String(game.datetime || '').slice(8, 10)) !== 0)
+            return 'You have an uncanny feeling...';
+        const verb = heroLocomotion('Run');
+        return `${verb} away!  ${verb} away!`;
+    }
     case BEEHIVE: return 'You enter a giant beehive!';
     case COCKNEST: return 'You enter a disgusting nest!';
     case ANTHOLE: return 'You enter an anthole!';

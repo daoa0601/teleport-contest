@@ -7,6 +7,7 @@ import { recorderLocalHour } from './calendar.js';
 import type { MonsterLiquidDeathContext } from './mon.js';
 import type { MonsterDeathOptions } from './monster_death.js';
 import type { Monster } from './monster_types.js';
+import { impossible, panic } from './diagnostics.js';
 import type { GameObject } from './object_types.js';
 import type { PlayingGameState } from './game_state.js';
 import type { MessagePublisher } from './display.js';
@@ -99,7 +100,7 @@ import { loseGuardianAngel } from './guardian_angel.js';
 import { shiftMonsterForDoor, resolveMonsterDoorPassage } from './monster_door_passage.js';
 import { heroSpecies } from './hero_species.js';
 import { releaseHeroFromMonster, releaseMonsterHold } from './hero_expulsion.js';
-import { checkQuestMonsterStatus } from './quest.js';
+import { checkQuestMonsterStatus, talkQuestCharacter } from './quest.js';
 import { placeHeroOnLevel } from './hero_location.js';
 import { swallowed } from './display.js';
 import { Is_rogue_level } from './const.js';
@@ -383,7 +384,6 @@ import { checkMonsterGearNextTurn, findMonsterArmorClass } from './monworn.js';
 import { inTown, roomsAt } from './room.js';
 import { addShopDamage } from './shop_damage.js';
 import {
-    createHarmlessGasCloudSelection,
     createPoisonGasCloud,
     createSteamCloud,
     GAS_OK,
@@ -589,7 +589,7 @@ import {
     TEMPLE,
     TRAPNUM,
     STRAT_WAITFORU,
-    STRAT_WAITMASK,
+    STRAT_WAITMASK, STRAT_CLOSE,
     STRAT_ARRIVE,
     UNLOCKDOOR,
     VIBRATING_SQUARE,
@@ -1194,7 +1194,7 @@ export function monstersInFmonOrder(monsters: readonly Monster[] = []) {
     return Array.from(monsters).reverse();
 }
 
-function createFogEveryturnRegion(
+async function createFogEveryturnRegion(
     state: PlayingGameState,
     x: number,
     y: number,
@@ -1203,14 +1203,14 @@ function createFogEveryturnRegion(
     const cell = state.level.at(x, y);
     if (!cell || (IS_DOOR(cell.typ) && cell.doormask & (D_CLOSED | D_LOCKED))
         || visibleRegionAt(state, x, y)) return null;
-    return createHarmlessGasCloudSelection(state, [{ x, y }], { ttl: 4 + random(3) });
+    return await createPoisonGasCloud(state, x, y, 1, 0, random);
 }
 
 // C monmove.c:m_everyturn_effect().  movemon_singlemon() runs this before its
 // movement-ration check, so an otherwise stationary fog cloud still leaves a
 // one-cell harmless vapor region.  A size-one create_gas_cloud() owns only the
 // rn1(3,4) TTL draw; the region then suppresses another cloud at that square.
-function monsterEveryturnEffect(
+async function monsterEveryturnEffect(
     monster: Monster,
     state: PlayingGameState,
     random: RandomBelow = rn2,
@@ -1221,10 +1221,10 @@ function monsterEveryturnEffect(
         visibleRegionAt(state, monster.mx, monster.my)
     )
         return null;
-    return createFogEveryturnRegion(state, monster.mx, monster.my, random);
+    return await createFogEveryturnRegion(state, monster.mx, monster.my, random);
 }
 
-export function runMonsterEveryturnEffects(
+export async function runMonsterEveryturnEffects(
     monsters: readonly Monster[],
     state: PlayingGameState,
     random: RandomBelow = rn2,
@@ -1235,7 +1235,7 @@ export function runMonsterEveryturnEffects(
     for (const monster of visits) {
         initializeMonsterMovement(monster);
         if (!schedulable(monster)) continue;
-        const effect = monsterEveryturnEffect(monster, state, random);
+        const effect = await monsterEveryturnEffect(monster, state, random);
         if (effect) effects.push({ monster, effect });
     }
     return effects;
@@ -1244,12 +1244,12 @@ export function runMonsterEveryturnEffects(
 // C allmain.c invokes the same species hook for `youmonst` after status
 // projection and before accepting the next command.  The region persists on
 // the level and suppresses another TTL draw while it covers the hero square.
-export function heroEveryturnEffect(
+export async function heroEveryturnEffect(
     state: PlayingGameState = requireInitializedGame(),
     random: RandomBelow = rn2,
 ) {
     if ((state.u?.mtimedone ?? 0) <= 0 || state.u?.umonnum !== PM_FOG_CLOUD) return null;
-    return createFogEveryturnRegion(state, state.u.ux, state.u.uy, random);
+    return await createFogEveryturnRegion(state, state.u.ux, state.u.uy, random);
 }
 
 // C ref: mon.c mcalcdistress()/m_calcdistress(). JS appends monsters while C
@@ -4198,7 +4198,7 @@ function maybeBreatheAtHero(
 
 // C ref: mkmaze.c:fumaroles(). Steam vents use the same cloud builder as
 // fire striking water.
-export function fumaroles(state: PlayingGameState = requireInitializedGame()) {
+export async function fumaroles(state: PlayingGameState = requireInitializedGame()) {
     let cloudCount = rn2(3);
     let minimumSize = 5;
     if (Is_firelevel(state.u?.uz)) {
@@ -4216,7 +4216,8 @@ export function fumaroles(state: PlayingGameState = requireInitializedGame()) {
         const x = rn2(COLNO - 4) + 3;
         const y = rn2(ROWNO - 4) + 3;
         if (state.level?.at?.(x, y)?.typ !== LAVAPOOL) continue;
-        createSteamCloud(state, x, y, rn2(10) + minimumSize, rn2);
+        const cloud = await createSteamCloud(state, x, y, rn2(10) + minimumSize, rn2);
+        if (cloud) cloud.heroFault = false;
         heard = true;
         const dx = x - (state.u?.ux ?? 0);
         const dy = y - (state.u?.uy ?? 0);
@@ -7749,7 +7750,17 @@ async function completeMovedMonsterAction(
             state.u.uy0 = state.u.uy;
             await placeHeroOnLevel(monster.mx, monster.my, state);
             if (state === game) swallowed(false);
-        } else if (state === game) newsym(monster.mx, monster.my);
+        } else if (state === game) {
+            const { mx, my } = monster;
+            if (!state.in_mklev && !state.program_state.saving && !isok(mx, my)) {
+                // C newsym() diagnoses column zero even when a live guard
+                // is legitimately parked there until its corridor clears.
+                const reason = `newsym: attempting screen update for <${mx},${my}>`;
+                if (mx < 0 || my < 0 || mx >= COLNO || my >= ROWNO)
+                    await panic(reason, { state });
+                await impossible(reason, { state });
+            } else newsym(mx, my);
+        }
         movement.postMoveDestinationPainted = true;
     }
 
@@ -8868,6 +8879,9 @@ export async function runMonsterAction(
     checkQuestMonsterStatus(monster, state);
     if ((monster.mstrategy ?? 0) & STRAT_WAITMASK) {
         if (heroIsHallucinating(state)) newsym(monster.mx, monster.my);
+        if (monster.mcanmove && (monster.mstrategy ?? 0) & STRAT_CLOSE
+            && !monster.msleeping && nextToHero)
+            await talkQuestCharacter(monster, state);
         return {
             monster,
             calls,

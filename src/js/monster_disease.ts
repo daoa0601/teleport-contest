@@ -1,4 +1,5 @@
 // C mhitu.c:diseasemu(). Disease bypasses cancellation and magic negation.
+
 import { formatFeltMessage } from './hero_speech.js';
 import { currentAttribute } from './attrib.js';
 import { A_CON, SICK_NONVOMITABLE } from './const.js';

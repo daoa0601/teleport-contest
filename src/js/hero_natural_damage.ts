@@ -1,4 +1,5 @@
 // C uhitm.c:damageum() and the hero-attacker branches of mhitm_adtyping().
+
 import { formatFeltMessage } from './hero_speech.js';
 import { artifactById, monsterHasArtifactDefense } from './artifacts.js';
 import { exerciseWisdom } from './attrib.js';

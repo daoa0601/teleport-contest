@@ -24,10 +24,11 @@ for (const startsInside of [false, true]) {
         const pet = await createMonsterAt('little dog', 11, 10, NO_MINVENT);
         initializePet(pet, { state: game });
         pet.mhp = pet.mhpmax = 100;
-        const cloud = createHarmlessGasCloudSelection(game,
+        const cloud = await createHarmlessGasCloudSelection(game,
             [{ x: startsInside ? 11 : 10, y: 10 }], { ttl: 10 });
         assert.ok(cloud);
         cloud.damage = 8;
+        cloud.heroFault = false;
         resetInputState().feed(' ');
 
         await rhack('l'.charCodeAt(0));
@@ -43,10 +44,11 @@ void test('gas affects existing occupants in map scan order, independently of mo
     const right = await createMonsterAt('soldier', 13, 10, NO_MINVENT);
     const left = await createMonsterAt('jackal', 11, 10, NO_MINVENT);
     left.mhp = right.mhp = 100;
-    const cloud = createHarmlessGasCloudSelection(game,
+    const cloud = await createHarmlessGasCloudSelection(game,
         [{ x: 13, y: 10 }, { x: 11, y: 10 }], { ttl: 10 });
     assert.ok(cloud);
     cloud.damage = 8;
+    cloud.heroFault = false;
     const messages: string[] = [];
 
     await runLevelRegions(game, { publish: async message => { messages.push(message); } });
@@ -63,10 +65,11 @@ void test('gas deaths process the replacement occupant before the next member', 
     const soldier = await createMonsterAt('soldier', 13, 10, NO_MINVENT);
     jackal.mhp = 1;
     dog.mhp = soldier.mhp = 100;
-    const cloud = createHarmlessGasCloudSelection(game,
+    const cloud = await createHarmlessGasCloudSelection(game,
         [{ x: 11, y: 10 }, { x: 12, y: 10 }, { x: 13, y: 10 }], { ttl: 10 });
     assert.ok(cloud);
     cloud.damage = 8;
+    cloud.heroFault = false;
     const messages: string[] = [];
 
     await runLevelRegions(game, {
@@ -86,9 +89,10 @@ void test('a monster teleporting into and out of gas changes its exposure', asyn
     freshObjectRoom();
     const soldier = await createMonsterAt('soldier', 13, 10, NO_MINVENT);
     soldier.mhp = 100;
-    const cloud = createHarmlessGasCloudSelection(game, [{ x: 11, y: 10 }], { ttl: 10 });
+    const cloud = await createHarmlessGasCloudSelection(game, [{ x: 11, y: 10 }], { ttl: 10 });
     assert.ok(cloud);
     cloud.damage = 8;
+    cloud.heroFault = false;
 
     await relocateMonsterTo(soldier, 11, 10);
     await runLevelRegions(game, { publish: async () => {} });
@@ -105,10 +109,11 @@ for (const startsInside of [false, true]) {
         freshObjectRoom();
         const soldier = await createMonsterAt('soldier', 11, 10, NO_MINVENT);
         soldier.mhp = 100;
-        const cloud = createHarmlessGasCloudSelection(game,
+        const cloud = await createHarmlessGasCloudSelection(game,
             [{ x: startsInside ? 11 : 13, y: 10 }], { ttl: 10 });
         assert.ok(cloud);
         cloud.damage = 8;
+        cloud.heroFault = false;
 
         await hurtleMonster(soldier, 1, 0, 2);
         await runLevelRegions(game, { publish: async () => {} });
@@ -123,9 +128,10 @@ void test('displacing another monster updates gas exposure for both actors', asy
     const beast = await createMonsterAt('displacer beast', 12, 10, NO_MINVENT);
     const dog = await createMonsterAt('little dog', 13, 10, NO_MINVENT);
     beast.mhp = dog.mhp = 100;
-    const cloud = createHarmlessGasCloudSelection(game, [{ x: 13, y: 10 }], { ttl: 10 });
+    const cloud = await createHarmlessGasCloudSelection(game, [{ x: 13, y: 10 }], { ttl: 10 });
     assert.ok(cloud);
     cloud.damage = 8;
+    cloud.heroFault = false;
 
     for (let attempt = 0; attempt < 20 && beast.mx === 12; attempt++)
         await displaceMonster(beast, dog, game, { quietly: true });
@@ -142,13 +148,14 @@ void test('a pet walking out of a harmless cloud loses exposure before the cloud
     const pet = await createMonsterAt('little dog', 13, 10, NO_MINVENT);
     initializePet(pet, { state: game });
     pet.mhp = 100;
-    const cloud = createHarmlessGasCloudSelection(game, [{ x: 13, y: 10 }], { ttl: 10 });
+    const cloud = await createHarmlessGasCloudSelection(game, [{ x: 13, y: 10 }], { ttl: 10 });
     assert.ok(cloud);
 
     for (let attempt = 0; attempt < 20 && pet.mx === 13 && pet.my === 10; attempt++)
         await takeMonsterTurn(pet, game);
     assert.ok(pet.mx !== 13 || pet.my !== 10, 'The pet must move toward the hero');
     cloud.damage = 8;
+    cloud.heroFault = false;
     await runLevelRegions(game, { publish: async () => {} });
 
     assert.equal(pet.mhp, 100);
@@ -160,9 +167,10 @@ void test('saving after a hero/pet swap retains prior gas exposure after restore
     const pet = await createMonsterAt('little dog', 11, 10, NO_MINVENT);
     initializePet(pet, { state: game });
     pet.mhp = 100;
-    const cloud = createHarmlessGasCloudSelection(game, [{ x: 10, y: 10 }], { ttl: 10 });
+    const cloud = await createHarmlessGasCloudSelection(game, [{ x: 10, y: 10 }], { ttl: 10 });
     assert.ok(cloud);
     cloud.damage = 8;
+    cloud.heroFault = false;
     resetInputState().feed(' ');
     await rhack('l'.charCodeAt(0));
     const id = pet.m_id;

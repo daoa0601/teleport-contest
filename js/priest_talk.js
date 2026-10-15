@@ -28,7 +28,8 @@ export async function talkToPriest(priest, state) {
         priest.mpeaceful = 0;
         return;
     }
-    if (!priestIsInOwnTemple(priest, state) || !priest.mpeaceful || priest.msleeping || !priest.mcanmove) {
+    if (!priestIsInOwnTemple(priest, state) || !priestHasShrine(priest, state)
+        || !priest.mpeaceful || priest.msleeping || !priest.mcanmove) {
         if (priest.msleeping || !priest.mcanmove) {
             const name = monsterName(priest, { capitalized: true, state });
             await pline(`${name} breaks out of ${monsterPossessive(priest, { state })} reverie!`);
@@ -44,11 +45,6 @@ export async function talkToPriest(priest, state) {
         if (!message)
             throw new RangeError('Priest reply is outside its message table');
         await speak(message);
-        return;
-    }
-    if (!priestHasShrine(priest, state)) {
-        await speak('Begone!  Thou desecratest this holy place with thy presence.');
-        priest.mpeaceful = 0;
         return;
     }
     if (!heroGoldAmount(state)) {

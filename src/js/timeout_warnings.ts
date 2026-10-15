@@ -1,4 +1,5 @@
 // C timeout.c:phaze_dialogue(), region_dialogue(), and their expiry cases.
+
 import { formatFeltMessage } from './hero_speech.js';
 import { plineWithContinuation } from './display.js';
 import { game } from './gstate.js';

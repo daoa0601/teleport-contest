@@ -1,4 +1,6 @@
 import { publishHeardMessage } from './hero_speech.js';
+import { ingSuffix } from './hacklib.js';
+import { heroLocomotion } from './hero_locomotion.js';
 import { autokey, autoUnlockFlags, continuePicking, pickLock } from './lock_pick.js';
 import { resetPick } from './lock_context.js';
 import { petRefusesHeroSwap } from './hero_pet_displacement.js';
@@ -333,7 +335,6 @@ import {
     removeHeroAccessory, wearHeroAccessory,
 } from './accessory.js';
 import { heroFormSticks, heroHasNoHead, heroPassesWalls, heroSpecies } from './hero_species.js';
-import { monsterLocomotion } from './monster_locomotion.js';
 import { autopickupAtHero } from './pickup.js';
 import { disturbBuriedZombies } from './object_impact.js';
 import { checkSlipperyIce } from './fumbling.js';
@@ -2760,7 +2761,7 @@ async function dochat() {
             await plineWithContinuation(`${monsterName(steed, { capitalized: true })} seems not to notice you.`);
             game.context.move = 1;
         } else {
-            game.context.move = Number(await publishMonsterNoise(steed, game, { exerciseWisdom }));
+            game.context.move = Number(await publishMonsterNoise(steed, game));
         }
         return;
     }
@@ -2819,7 +2820,7 @@ async function dochat() {
         await plineWithContinuation(`Any response${canSpotMonster(monster) ? ` from ${monsterName(monster)}` : ''} ${response}.`);
         return;
     }
-    game.context.move = Number(await publishMonsterNoise(monster, game, { exerciseWisdom }));
+    game.context.move = Number(await publishMonsterNoise(monster, game));
 }
 
 async function wizWish() {
@@ -4624,9 +4625,7 @@ async function wizTeleportPosition(ignoreRestrictions: boolean): Promise<void> {
         }
     } else trap = undefined;
     if (trap) {
-        const locomotion = propertyIsActive('levitation') ? 'float'
-            : propertyIsActive('flying') ? 'fly'
-                : monsterLocomotion(heroSpecies(), 'jump');
+        const locomotion = heroLocomotion('jump');
         await plineWithContinuation(`You ${locomotion} onto the teleportation trap.`);
     }
     if (!trap && !ignoreRestrictions && !await prepareWizardTeleportAtWill()) return;
@@ -7873,7 +7872,7 @@ async function domoveCore(dx: number, dy: number, explicitAttempt: boolean): Pro
     // The request-menu (`m`) prefix deliberately accepts that step.
     if (heroShouldAvoidLiquid(newx, newy)) {
         const liquid = waterbodyName(newx, newy);
-        const warning = `You avoid stepping into the ${liquid}.`;
+        const warning = `You avoid ${ingSuffix(heroLocomotion('step'))} into the ${liquid}.`;
         if (game.flags?.tips !== false && !game._tipSwimShown) {
             await promptKey(`${warning}--More--`);
             game._tipSwimShown = true;

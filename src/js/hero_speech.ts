@@ -1,5 +1,5 @@
 // C mondata.c:can_chant(), shared by reading and calling on a deity.
-// C pline.c:You_feel(), You_hear(), and You_see() message wording.
+// C pline.c:You_feel(), You_hear(), and You_see() wording.
 
 import type { MessagePublisher } from './display.js';
 import { game } from './gstate.js';
@@ -28,7 +28,8 @@ export function formatHeardMessage(text: string, state = game) {
     return `You hear ${text}`;
 }
 
-// Keep suppression at the message boundary without changing the caller's effects.
+// This applies You_hear's own suppression. Callers must retain their C guards:
+// an unconditional You_hear reaches a deaf unaware hero, but `if (!Deaf)` does not.
 export async function publishHeardMessage(
     text: string, publish: MessagePublisher, state = game,
 ): Promise<void> {

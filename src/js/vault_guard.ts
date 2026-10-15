@@ -151,19 +151,16 @@ export function findVaultGuard(state: GameState = game): VaultGuard | null {
             monster._egd.gdlevel.dlevel === heroLevel.dlevel
         );
     };
-    const guard = level.monsters.find(belongsHere);
+    const guard = [...level.monsters].reverse().find(belongsHere);
     if (guard) {
         if (!guard.mx && !guard._egd.gddone) guard.mhp = guard.mhpmax;
         return guard;
     }
     const migrants = state._migratingMonsters || [];
-    const index = migrants.findIndex(belongsHere);
-    if (index < 0) return null;
-    const returning = migrants[index];
-    if (!returning) throw new Error('Returning vault guard is missing from migrating monsters.');
-    requireVaultGuard(returning);
-    migrants.splice(index, 1);
-    level.monsters.unshift(returning);
+    const returning = [...migrants].reverse().find(belongsHere);
+    if (!returning) return null;
+    migrants.splice(migrants.indexOf(returning), 1);
+    level.monsters.push(returning);
     returning.mtrack = [];
     returning.mux = state.u.ux;
     returning.muy = state.u.uy;

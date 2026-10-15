@@ -1,7 +1,7 @@
 // Terrain and airborne predicates shared by placement, movement, and traps.
 // C refs: mon.c:m_in_air(), has_ceiling(), Is_waterlevel().
 import { game } from './gstate.js';
-import { ACCESSIBLE, DB_LAVA, DB_MOAT, DB_UNDER, DOOR, D_CLOSED, D_LOCKED, DRAWBRIDGE_UP, DB_ICE, ICE, LAVAPOOL, LAVAWALL, MOAT, POOL, WATER, isok, } from './const.js';
+import { ACCESSIBLE, DB_LAVA, DB_MOAT, DB_UNDER, DOOR, D_CLOSED, D_LOCKED, DRAWBRIDGE_UP, DB_ICE, ICE, LADDER, STAIRS, LAVAPOOL, LAVAWALL, MOAT, POOL, WATER, isok, } from './const.js';
 import { MONSTER_FLAGS1, MONSTER_SYMBOL } from './monster_data.js';
 import { drawbridgeUnderlyingType } from './drawbridge_terrain.js';
 const M1_FLY = 0x00000001;
@@ -96,5 +96,10 @@ export function isAccessibleAt(x, y, state = game) {
     const closedDoor = location.typ === DOOR
         && ((location.doormask ?? 0) & (D_CLOSED | D_LOCKED));
     return ACCESSIBLE(surface) && !closedDoor;
+}
+// C rm.h:CAN_OVERWRITE_TERRAIN(). Explicit Lua map and feature writes
+// have their own native rules and do not use this guard.
+export function canOverwriteTerrain(type, state = game) {
+    return !!state.iflags.debug_overwrite_stairs || (type !== STAIRS && type !== LADDER);
 }
 //# sourceMappingURL=terrain_properties.js.map

@@ -1537,7 +1537,7 @@ async function finalPossessionLines(possessions: FinalPossessions) {
     const lines = possessions.artifacts.map(({ object, value, points, name }) => {
         recordObjectKnowledge(object.otyp);
         object.known = object.dknown = object.bknown = object.rknown = true;
-        return `${name} (worth ${value} zorkmids and ${points} points)`;
+        return `${name} (worth ${value} ${currency(value)} and ${points} points)`;
     });
     for (const [type, count] of possessions.valuables) {
         const worth = count * objectBaseValue(type);
@@ -1550,7 +1550,7 @@ async function finalPossessionLines(possessions: FinalPossessions) {
             object.quan = count;
             recordObjectKnowledge(type);
             const name = objectName(object);
-            lines.push(`${prefix} ${count === 1 ? name : makePlural(name)} (worth ${worth} zorkmids),`);
+            lines.push(`${prefix} ${count === 1 ? name : makePlural(name)} (worth ${worth} ${currency(2)}),`);
             await deleteObject(object);
         }
     }

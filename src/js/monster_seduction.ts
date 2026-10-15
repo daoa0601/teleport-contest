@@ -1,4 +1,5 @@
 // C mhitu.c:doseduce(), mayberem(), and uhitm.c:mhitm_ad_ssex().
+
 import { formatFeltMessage } from './hero_speech.js';
 import { removeHeroAccessory, wearHeroAccessory } from './accessory.js';
 import { adjustHeroAlignment } from './alignment.js';

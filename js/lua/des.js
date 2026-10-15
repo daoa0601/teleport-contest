@@ -85,6 +85,8 @@ function tableOptions(value) {
         options[key] = key === 'lit' ? entry : !!entry;
     }
     for (const key of ['coord', 'teledest']) {
+        if (key === 'coord' && ((options.x ?? -1) !== -1 || (options.y ?? -1) !== -1))
+            continue;
         const entry = value.get(key);
         if (entry == null)
             continue;
@@ -134,7 +136,7 @@ function point(value, y = null) {
         return { x: value.x, y: value.y };
     return null;
 }
-function tablePoint(options) {
+export function tablePoint(options) {
     const x = options.x ?? -1;
     const y = options.y ?? -1;
     return x === -1 && y === -1 ? point(options.coord) : { x, y };
@@ -199,8 +201,7 @@ function objectOptions(id, x, y) {
         else
             options.id = id;
     }
-    const location = point(options.coord)
-        ?? point(options.x, options.y)
+    const location = tablePoint(options)
         ?? point(luaArgument(x), luaArgument(y));
     const corpseMonster = options.montype == null
         ? null : String(options.montype);
@@ -286,8 +287,7 @@ function monsterOptions(id, x, y) {
     }
     return {
         ...options,
-        point: point(options.coord)
-            ?? point(options.x, options.y)
+        point: tablePoint(options)
             ?? point(luaArgument(x), luaArgument(y)),
         monsterClass,
         monsterType: namedMonster?.type ?? null,
@@ -304,8 +304,7 @@ function trapOptions(type, x, y) {
         throw new Error(`unknown Lua trap ${name}`);
     return {
         ...options,
-        point: point(options.coord)
-            ?? point(options.x, options.y)
+        point: tablePoint(options)
             ?? point(luaArgument(x), luaArgument(y)),
         trapType,
     };
@@ -316,7 +315,7 @@ function doorOptions(state, x, y) {
         return {
             ...options,
             state: String(options.state ?? 'random'),
-            point: point(options.coord) ?? point(options.x, options.y),
+            point: tablePoint(options),
         };
     }
     return {
@@ -329,7 +328,7 @@ function stairOptions(direction, x, y) {
         const options = tableOptions(direction);
         return {
             direction: String(options.dir ?? 'down'),
-            point: point(options.coord) ?? point(options.x, options.y),
+            point: tablePoint(options),
         };
     }
     return {
@@ -347,7 +346,7 @@ function mazeWalkOptions(value, y, direction) {
         };
     }
     const options = tableOptions(value);
-    const location = point(options.coord) ?? point(options.x, options.y);
+    const location = tablePoint(options);
     return {
         ...options,
         ...(location ? { x: location.x, y: location.y } : {}),
@@ -368,7 +367,7 @@ function engravingOptions(value, type, text) {
     const options = tableOptions(value);
     return {
         ...options,
-        point: point(options.coord) ?? point(options.x, options.y),
+        point: tablePoint(options),
         type: String(options.type ?? 'engrave'),
         text: String(options.text),
     };
@@ -378,7 +377,7 @@ function goldOptions(value, x, y) {
         const options = tableOptions(value);
         return {
             ...options,
-            point: point(options.coord) ?? point(options.x, options.y),
+            point: tablePoint(options),
         };
     }
     return {
@@ -391,8 +390,7 @@ function callTerrain(operations, args) {
         return operations.terrainAt(luaInteger(args[0]), luaInteger(args[1]), String(args[2]));
     if (args[0] instanceof LuaTable) {
         const options = tableOptions(args[0]);
-        const location = point(options.coord)
-            ?? point(options.x, options.y)
+        const location = tablePoint(options)
             ?? point(luaArgument(args[0]));
         const type = args.length === 1 ? options.typ : args[1];
         if (location && type != null)
@@ -404,12 +402,10 @@ function callTerrain(operations, args) {
     return operations.terrain(unwrapSelection(args[0]), String(args[1]));
 }
 export function mapOrigin(options, width, height, levelInitialized) {
-    const coordinate = Array.isArray(options.coord)
-        ? options.coord : [options.x, options.y];
-    if (typeof coordinate[0] === 'number' && typeof coordinate[1] === 'number'
-        && Number.isInteger(coordinate[0]) && Number.isInteger(coordinate[1])) {
+    const coordinate = tablePoint(options);
+    if (coordinate && coordinate.x >= 0 && coordinate.y >= 0) {
         return {
-            xstart: coordinate[0], ystart: coordinate[1], width, height,
+            xstart: coordinate.x, ystart: coordinate.y, width, height,
         };
     }
     const mazeMaxX = (COLNO - 1) & ~1;

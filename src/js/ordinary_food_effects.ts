@@ -1,5 +1,6 @@
 // Ordinary food first bites, finishing effects, and rotten-food illness.
 // C refs: eat.c fprefx(), fpostfx(), rottenfood(), and garlic_breath().
+
 import { formatFeltMessage, publishHeardMessage } from './hero_speech.js';
 import { heroLightHeadedFeeling, heroStomachName } from './body_parts.js';
 import { endVoluntaryMultiTurn } from './command_state.js';

@@ -1,5 +1,6 @@
 // Monster-versus-hero engulf admission, capture, and per-slot effects.
 // C mhitm.c:engulf_target() and mhitu.c:gulpmu().
+
 import { formatFeltMessage } from './hero_speech.js';
 import {
     A_CON, A_STR, DISMOUNT_ENGULFED, DOOR, D_CLOSED, D_LOCKED, IRONBARS,

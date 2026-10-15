@@ -1,4 +1,5 @@
 // Native potion.c:potionhit(&youmonst, ..., POTHIT_MONST_THROW).
+
 import { formatFeltMessage } from './hero_speech.js';
 import { heroHeadName } from './body_parts.js';
 import { plineWithContinuation } from './display.js';

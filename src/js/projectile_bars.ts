@@ -92,8 +92,7 @@ export async function projectileHitsIronBars(object: GameObject, {
             if (cansee(barsX, barsY) && !nondiggable)
                 await publish('The iron bars are dissolved!');
             else
-                await publishHeardMessage(heroIsHallucinating(state)
-                    ? 'angry snakes!' : 'a hissing noise.', publish, state);
+                await publishHeardMessage(heroIsHallucinating(state) ? 'angry snakes!' : 'a hissing noise.', publish, state);
             if (!nondiggable) await dissolveBars(barsX, barsY, state);
         }
         return { blocked: true, destroyed: true, heroDied: !!state.program_state.gameover };

@@ -19,7 +19,7 @@ import { heroIsInvisible } from './hero_invisibility.js';
 import { makeConfused } from './hero_mental_status.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { heroPolyGender, heroSpecies } from './hero_species.js';
-import { formatHeardMessage, formatFeltMessage } from './hero_speech.js';
+import { formatFeltMessage, formatHeardMessage } from './hero_speech.js';
 import { paralyzeMonster } from './mon.js';
 import {
     MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL,

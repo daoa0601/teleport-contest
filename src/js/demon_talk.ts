@@ -1,5 +1,6 @@
 // Peaceful demons demand payment before letting the hero pass.
 // C minion.c:demon_talk()/bribe() and monmove.c:dochug().
+
 import { formatFeltMessage } from './hero_speech.js';
 import { artifactById } from './artifacts.js';
 import { currentAttribute } from './attrib.js';

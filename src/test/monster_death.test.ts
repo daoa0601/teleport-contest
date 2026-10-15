@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { ALTAR, G_GENOD, MM_EPRI, PIT, POOL, STONE } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
-import { pushKeys } from '../js/input.js';
+import { pushKeys, resetInputState } from '../js/input.js';
 import { finishEnvironmentalMonsterDeath, finishMonsterLiquidDeath } from '../js/monster_death.js';
 import { wearHeroAccessory } from '../js/accessory.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
@@ -255,6 +255,7 @@ void test('killing the nemesis before the leader rewards alignment', async () =>
     const quest = ensureQuestStatus(game);
     quest.killed_leader = false;
     quest.killed_nemesis = false;
+    resetInputState().display = { async readKey() { return 32; } };
 
     await finishHeroMonsterKill(nemesis, nemesis.mx, nemesis.my, {
         showKillMessage: false,

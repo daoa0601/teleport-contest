@@ -1,3 +1,4 @@
+import { ensureQuestStatus } from '../js/quest.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { A_INT, NO_MINVENT, WEB } from '../js/const.js';
@@ -33,6 +34,7 @@ void test('the Knight quest artifact doubles spell damage before the monster sav
     for (const carriesArtifact of [false, true]) {
         freshObjectRoom({ role: 'knight', hero: { ulevel: 20 } });
         requirePlayingGame(game);
+        ensureQuestStatus().touched_artifact = true;
         if (carriesArtifact)
             await addInventoryItem(await artifactObject('The Magic Mirror of Merlin'));
         const ant = await createMonsterAt('giant ant', 11, 10, NO_MINVENT);
@@ -133,6 +135,7 @@ void test('an unskilled fireball crosses intervening webs and explodes at its fi
 void test('the carried Orb of Detection blocks a vertical magic missile', async () => {
     freshObjectRoom({ role: 'archeologist', hero: { uhp: 100, uhpmax: 100, uac: 100, dx: 0, dy: 0, dz: -1 } });
     requirePlayingGame(game);
+    ensureQuestStatus().touched_artifact = true;
     await addInventoryItem(await artifactObject('The Orb of Detection'));
     const wand = await knownObject(WAN_MAGIC_MISSILE);
     installPagerInput(resetInputState(), { expected: /magic missile hits you|missiles bounce off/i, limit: 2 });
@@ -146,6 +149,7 @@ void test('the carried Orb of Detection halves a cold ray', async () => {
     for (const carryOrb of [false, true]) {
         freshObjectRoom({ role: 'archeologist', hero: { uhp: 100, uhpmax: 100, uac: 100, dx: 0, dy: 0, dz: -1 } });
         requirePlayingGame(game);
+        ensureQuestStatus().touched_artifact = true;
         if (carryOrb)
             await addInventoryItem(await artifactObject('The Orb of Detection'));
         const wand = await knownObject(WAN_COLD);

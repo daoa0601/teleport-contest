@@ -46,7 +46,7 @@ import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { impossible } from './diagnostics.js';
 import { LUA_SOURCES } from './generated/lua_sources.js';
 import {
-    createDesBindings, mapOrigin, objectTypeForName, regionCoordinates,
+    createDesBindings, mapOrigin, objectTypeForName, regionCoordinates, tablePoint,
 } from './lua/des.js';
 import type {
     DesOperations, DesOptions, DesObjectOptions, DesMonsterOptions,
@@ -97,7 +97,7 @@ import { MAP_SYMBOLS } from './map_symbols.js';
 import { cleanupSpecialLevelMap, removeSpecialLevelBoundaries } from './special_level_cleanup.js';
 import {
     A_CHA,
-    COLNO, ROWNO, STONE, ROOM, CORR, DOOR, STAIRS, LADDER,
+    COLNO, ROWNO, STONE, MAX_TYPE, ROOM, CORR, DOOR, STAIRS, LADDER,
     HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER,
     CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL,
     D_NODOOR, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_TRAPPED,
@@ -254,7 +254,7 @@ import {
     specialSelectionFillRect,
     specialSelectionMatch,
 } from './selvar.js';
-import { isIceAt, isLavaAt, isPoolAt } from './terrain_properties.js';
+import { canOverwriteTerrain, isIceAt, isLavaAt, isPoolAt } from './terrain_properties.js';
 
 // Object/class constants (normally from objects.js, not in contest template)
 const RANDOM_CLASS = 0;
@@ -1514,20 +1514,16 @@ function rndmonnumAdj(minAdjustment = 0, maxAdjustment = 0): number {
     return species;
 }
 
+// C questpgr.c:qt_montype(). The chosen role supplies both species and
+// fallback classes; a genocided preferred species still spends rn2(5).
 function questMonsterType(): number | null {
     const role = game.urole;
-    if (rn2(5)) {
-        const qpm = role?.enemy1num
-            ?? (role?.filecode === 'Pri' ? PM_HUMAN_ZOMBIE : null);
-        if (qpm != null && qpm >= 0 && rn2(5)
-            && !((game.mvitals?.[qpm]?.mvflags ?? 0) & G_GENOD)) return qpm;
-        return mkclass(role?.enemy1sym ?? 52, 0);
-    }
-    const qpm = role?.enemy2num
-        ?? (role?.filecode === 'Pri' ? 230 : null);
-    if (qpm != null && qpm >= 0 && rn2(5)
-        && !((game.mvitals?.[qpm]?.mvflags ?? 0) & G_GENOD)) return qpm;
-    return mkclass(role?.enemy2sym ?? 49, 0);
+    if (!role) throw new Error('Quest monsters require an initialized role');
+    const first = rn2(5) !== 0;
+    const species = first ? role.enemy1num : role.enemy2num;
+    if (species !== null && rn2(5) && !((game.mvitals?.[species]?.mvflags ?? 0) & G_GENOD))
+        return species;
+    return mkclass(first ? role.enemy1sym : role.enemy2sym, 0);
 }
 
 export function rndmonstAdj(minAdjustment = 0, maxAdjustment = 0): number | null {
@@ -3195,7 +3191,7 @@ export async function maketrap(x: number, y: number, typ: number): Promise<Trap 
         // particular, Wiz-strt's random trap can land in a cloud: the Lua
         // location owner accepts that dry square, but maketrap() rejects
         // IS_AIR and its caller must not run the later victim-chance draw.
-        if (terrain === STAIRS || terrain === LADDER
+        if (terrain !== undefined && !canOverwriteTerrain(terrain)
             || isPoolAt(x, y) || isLavaAt(x, y)
             || (terrain !== undefined && IS_FURNITURE(terrain)
                 && typ !== PIT && typ !== HOLE)
@@ -3496,7 +3492,7 @@ export function make_grave(x: number, y: number, text: string | null): void {
     const loc = game.level?.at(x, y);
     const trapped = game.level?.traps?.some(trap => trap.tx === x && trap.ty === y);
     if (!loc || (loc.typ !== ROOM && loc.typ !== GRAVE) || trapped) return;
-    loc.typ = GRAVE;
+    if (!setLevelTerrainType(x, y, GRAVE)) return;
     const epitaph = text ?? getRandomTextLine(RANDOM_EPITAPHS);
     make_engr_at(x, y, epitaph, null, 0, HEADSTONE);
 }
@@ -4115,6 +4111,7 @@ async function specialRandomLocation(
 // terrain operation requested SET_LIT_NOCHANGE.  Callers may subsequently
 // replace the terrain again without implicitly clearing that light bit.
 function setLevelTerrainType(x: number, y: number, typ: number): boolean {
+    if (!isok(x, y) || typ < STONE || typ >= MAX_TYPE) return false;
     const loc = game.level?.at?.(x, y);
     if (!loc) return false;
     if (loc.typ === SDOOR && typ === AIR) {
@@ -4122,7 +4119,13 @@ function setLevelTerrainType(x: number, y: number, typ: number): boolean {
         return true;
     }
     const oldType = loc.typ;
+    if (!canOverwriteTerrain(oldType)) return false;
+    const wasIce = isIceAt(x, y);
     loc.typ = typ;
+    if (wasIce && typ !== ICE) {
+        updateIceObjectTimersAt(x, y, game, { includeBuried: true });
+        stopLevelTimer(x, y, LEVEL_TIMER_KIND.MELT_ICE_AWAY);
+    }
     if (IS_LAVA(typ)) loc.lit = true;
     if (typ === ICE && game._activeSpecialLevel?.levelInitialized) {
         loc.icedpool = game._activeSpecialLevel.icedPools
@@ -4913,7 +4916,7 @@ function loadSpecialAsciiMap(
 }
 
 function specialStairAt(context: SpecialLevelContext, x: number, y: number, up: boolean): void {
-    mkstairs(context.xstart + x, context.ystart + y, up, null);
+    mkstairs(context.xstart + x, context.ystart + y, up, null, true);
 }
 
 function specialLadderAt(context: SpecialLevelContext, x: number, y: number, up: boolean): void {
@@ -5551,7 +5554,7 @@ function createSpecialRoomDoor(
     if (!found) return;
     const loc = level.at(x, y);
     if (!loc) return;
-    loc.typ = secret ? SDOOR : DOOR;
+    if (!setLevelTerrainType(x, y, secret ? SDOOR : DOOR)) return;
     loc.doormask = mask;
 }
 
@@ -5974,25 +5977,14 @@ function specialRoomAt(x: number, y: number, roomType: number): Room | null {
     return roomNumber === undefined ? null : roomForIndex(level, roomNumber - ROOMOFFSET);
 }
 
-function luaCoordinate(options: { coord?: DesOptions['coord']; x?: number | undefined; y?: number | undefined }): Position | null {
-    if (Array.isArray(options.coord))
-        return { x: options.coord[0], y: options.coord[1] };
-    if (options.coord && Number.isInteger(options.coord.x)
-        && Number.isInteger(options.coord.y)) return options.coord;
-    if (typeof options.x === 'number' && typeof options.y === 'number'
-        && Number.isInteger(options.x) && Number.isInteger(options.y))
-        return { x: options.x, y: options.y };
-    return null;
-}
-
 async function createLuaAltar(context: SpecialLevelContext, options: DesOptions): Promise<void> {
     const level = requireGameLevel();
-    const coordinate = luaCoordinate(options);
+    const coordinate = tablePoint(options);
     const point = context._room
         ? await getFreeRoomLocation(context, coordinate, context._room)
         : await getLocationCoord(context, coordinate, DRY);
     const altar = level.at(point.x, point.y);
-    if (!altar || altar.typ === STAIRS || altar.typ === LADDER) return;
+    if (!altar) return;
     if (!setLevelTerrainType(point.x, point.y, ALTAR)) return;
     const alignment = luaSpecialAlignment(options.align);
     altar.flags = Align2amask(alignment);
@@ -6107,7 +6099,9 @@ async function createLuaRoomRegion(context: SpecialLevelContext, options: DesOpt
 }
 
 function luaRoomSpec(options: DesOptions) {
-    const coordinate = luaCoordinate(options);
+    const coordinate = tablePoint(options);
+    if (coordinate && (coordinate.x === -1) !== (coordinate.y === -1))
+        throw new TypeError('Room must have both x and y');
     const horizontal: Record<string, number> = {
         left: 1, 'half-left': 2, center: 3, 'half-right': 4, right: 5,
         none: -1, random: -1,
@@ -6205,7 +6199,7 @@ function corridorDoorEndpoint(room: Room, wall: string, door: number): Position 
 }
 
 async function createLuaDrawbridge(context: SpecialLevelContext, options: DesOptions): Promise<Position> {
-    const coordinate = luaCoordinate(options);
+    const coordinate = tablePoint(options);
     if (!coordinate || !isok(coordinate.x, coordinate.y))
         throw new TypeError('des.drawbridge requires coordinates');
     const directions: Record<string, number> = {
@@ -6594,7 +6588,7 @@ async function createLuaTrap(context: SpecialLevelContext, options: Parameters<D
         spiderOnWeb: options.spider_on_web !== false,
     };
     const trap = await specialTrapOfType(context, trapType ?? NO_TRAP, construction, point);
-    const teleportDestination = luaCoordinate({ coord: options.teledest });
+    const teleportDestination = options.teledest ? tablePoint({ coord: options.teledest }) : null;
     if (trap && teleportDestination) {
         trap.teledest = {
             x: context.xstart + teleportDestination.x,
@@ -6972,7 +6966,7 @@ function createLuaLevelSession() {
             const damage = options.damage ?? 0;
             const cloud = point
                 ? await createPoisonGasCloud(game, point.x, point.y, 1, damage)
-                : options.selection ? createGasCloudSelection(
+                : options.selection ? await createGasCloudSelection(
                     game, luaSelectionCoordinates(options.selection), -1, damage,
                 ) : null;
             if (!cloud) throw new TypeError('des.gas_cloud requires a coordinate or selection');
@@ -10007,9 +10001,13 @@ function generate_stairs_find_room(): Room | null {
     return isRoom(selected) ? selected : null;
 }
 
-export function mkstairs(x: number, y: number, up: boolean | 0 | 1, croom: Room | null): void {
+export function mkstairs(x: number, y: number, up: boolean | 0 | 1, croom: Room | null, force = false): void {
     const g = game;
     const level = requireGameLevel();
+    const loc = level.at(x, y);
+    // Explicit Lua coordinates force floor even when this dungeon endpoint
+    // subsequently prevents creation of the requested stairs.
+    if (force && loc) loc.typ = ROOM;
     const currentLevel = g.u?.uz?.dlevel ?? 1;
     const dungeonLevels = g.dungeons?.[g.u?.uz?.dnum ?? 0]?.num_dunlevs
         ?? currentLevel;
@@ -10018,9 +10016,8 @@ export function mkstairs(x: number, y: number, up: boolean | 0 | 1, croom: Room 
     if ((up && currentLevel === 1)
         || (!up && currentLevel === dungeonLevels))
         return;
-    const loc = level.at(x, y);
     if (loc) {
-        loc.typ = STAIRS;
+        setLevelTerrainType(x, y, STAIRS);
         loc.ladder = up ? 1 : 2;
     }
     const dest = {
@@ -10133,7 +10130,7 @@ async function makeniche(trap_type: number): Promise<void> {
             } else {
                 const loc = level.at(xx, yy);
                 if (!rn2(5) && loc && IS_WALL(loc.typ)) {
-                    loc.typ = IRONBARS;
+                    setLevelTerrainType(xx, yy, IRONBARS);
                     if (rn2(3)) {
                         const S_HUMAN = 53;
                         const human = mkclass(S_HUMAN, 0);
@@ -10210,7 +10207,7 @@ async function placeBranchAt(branchp: DungeonBranch | null, x: number, y: number
         const goes_up = on_end1 ? !!branchp.end1_up : !branchp.end1_up;
         const loc = g.level?.at(x, y);
         if (loc) {
-            loc.typ = STAIRS;
+            setLevelTerrainType(x, y, STAIRS);
             loc.ladder = goes_up ? 1 : 2;
         }
         stairway_add(x, y, goes_up, false,
@@ -10549,7 +10546,7 @@ function mkaltar(croom: Room | null): void {
     if (!find_okay_roompos(croom, pos)) return;
     const loc = game.level?.at(pos.x, pos.y);
     if (!loc) return;
-    loc.typ = ALTAR;
+    if (!setLevelTerrainType(pos.x, pos.y, ALTAR)) return;
     const al = rn2(A_LAWFUL + 2) - 1;
     loc.flags = Align2amask(al);
 }

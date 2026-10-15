@@ -285,6 +285,8 @@ function tableOptions(value: LuaValue | undefined): DesOptions {
         options[key] = key === 'lit' ? entry : !!entry;
     }
     for (const key of ['coord', 'teledest'] as const) {
+        if (key === 'coord' && ((options.x ?? -1) !== -1 || (options.y ?? -1) !== -1))
+            continue;
         const entry = value.get(key);
         if (entry == null) continue;
         const location = point(luaArgument(entry));
@@ -333,7 +335,7 @@ function point(value: unknown, y: unknown = null): LuaPoint | null {
     return null;
 }
 
-function tablePoint(options: DesOptions): LuaPoint | null {
+export function tablePoint(options: DesOptions): LuaPoint | null {
     const x = options.x ?? -1;
     const y = options.y ?? -1;
     return x === -1 && y === -1 ? point(options.coord) : { x, y };
@@ -395,8 +397,7 @@ function objectOptions(id: LuaValue | undefined, x: LuaValue | undefined, y: Lua
         if (id.length === 1) options.class = id;
         else options.id = id;
     }
-    const location = point(options.coord)
-        ?? point(options.x, options.y)
+    const location = tablePoint(options)
         ?? point(luaArgument(x), luaArgument(y));
     const corpseMonster = options.montype == null
         ? null : String(options.montype);
@@ -476,8 +477,7 @@ function monsterOptions(id: LuaValue | undefined, x: LuaValue | undefined, y: Lu
     }
     return {
         ...options,
-        point: point(options.coord)
-            ?? point(options.x, options.y)
+        point: tablePoint(options)
             ?? point(luaArgument(x), luaArgument(y)),
         monsterClass,
         monsterType: namedMonster?.type ?? null,
@@ -495,8 +495,7 @@ function trapOptions(type: LuaValue | undefined, x: LuaValue | undefined, y: Lua
         throw new Error(`unknown Lua trap ${name}`);
     return {
         ...options,
-        point: point(options.coord)
-            ?? point(options.x, options.y)
+        point: tablePoint(options)
             ?? point(luaArgument(x), luaArgument(y)),
         trapType,
     };
@@ -508,7 +507,7 @@ function doorOptions(state: LuaValue | undefined, x: LuaValue | undefined, y: Lu
         return {
             ...options,
             state: String(options.state ?? 'random'),
-            point: point(options.coord) ?? point(options.x, options.y),
+            point: tablePoint(options),
         };
     }
     return {
@@ -522,7 +521,7 @@ function stairOptions(direction: LuaValue | undefined, x: LuaValue | undefined, 
         const options = tableOptions(direction);
         return {
             direction: String(options.dir ?? 'down'),
-            point: point(options.coord) ?? point(options.x, options.y),
+            point: tablePoint(options),
         };
     }
     return {
@@ -541,7 +540,7 @@ function mazeWalkOptions(value: LuaValue | undefined, y: LuaValue | undefined, d
         };
     }
     const options = tableOptions(value);
-    const location = point(options.coord) ?? point(options.x, options.y);
+    const location = tablePoint(options);
     return {
         ...options,
         ...(location ? { x: location.x, y: location.y } : {}),
@@ -563,7 +562,7 @@ function engravingOptions(value: LuaValue | undefined, type: LuaValue | undefine
     const options = tableOptions(value);
     return {
         ...options,
-        point: point(options.coord) ?? point(options.x, options.y),
+        point: tablePoint(options),
         type: String(options.type ?? 'engrave'),
         text: String(options.text),
     };
@@ -574,7 +573,7 @@ function goldOptions(value: LuaValue | undefined, x: LuaValue | undefined, y: Lu
         const options = tableOptions(value);
         return {
             ...options,
-            point: point(options.coord) ?? point(options.x, options.y),
+            point: tablePoint(options),
         };
     }
     return {
@@ -588,8 +587,7 @@ function callTerrain(operations: DesOperations, args: LuaValue[]) {
         return operations.terrainAt(luaInteger(args[0]), luaInteger(args[1]), String(args[2]));
     if (args[0] instanceof LuaTable) {
         const options = tableOptions(args[0]);
-        const location = point(options.coord)
-            ?? point(options.x, options.y)
+        const location = tablePoint(options)
             ?? point(luaArgument(args[0]));
         const type = args.length === 1 ? options.typ : args[1];
         if (location && type != null)
@@ -608,12 +606,10 @@ function callTerrain(operations: DesOperations, args: LuaValue[]) {
 }
 
 export function mapOrigin(options: DesOptions, width: number, height: number, levelInitialized: boolean) {
-    const coordinate = Array.isArray(options.coord)
-        ? options.coord : [options.x, options.y];
-    if (typeof coordinate[0] === 'number' && typeof coordinate[1] === 'number'
-        && Number.isInteger(coordinate[0]) && Number.isInteger(coordinate[1])) {
+    const coordinate = tablePoint(options);
+    if (coordinate && coordinate.x >= 0 && coordinate.y >= 0) {
         return {
-            xstart: coordinate[0], ystart: coordinate[1], width, height,
+            xstart: coordinate.x, ystart: coordinate.y, width, height,
         };
     }
 

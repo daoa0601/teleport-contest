@@ -1,4 +1,5 @@
 // Native dokick.c:kick_door(), including witnessed town vandalism.
+
 import { publishHeardMessage } from './hero_speech.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { triggerBoobyTrap } from './booby_trap.js';

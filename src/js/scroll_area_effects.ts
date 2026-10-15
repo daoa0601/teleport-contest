@@ -23,7 +23,7 @@ import type { Position } from './map_types.js';
 import type { DeathHandler } from './end.js';
 import type { ScrollEffectOptions, ScrollEffectResult, ScrollMonsterKill } from './scroll_effects.js';
 import { loseHeroHp } from './hero_damage.js';
-import { formatHeardMessage, formatFeltMessage } from './hero_speech.js';
+import { formatFeltMessage, formatHeardMessage } from './hero_speech.js';
 import { consumeInventoryItem } from './invent.js';
 import { monstersForgetHeroResistance, monstersObserveHeroResistance } from './monster_perception.js';
 import { OBJECT_INITIAL_KNOWN, SCR_AMNESIA, SCR_EARTH, SCR_FIRE, SCR_STINKING_CLOUD } from './object_data.js';

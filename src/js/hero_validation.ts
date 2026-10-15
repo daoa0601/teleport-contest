@@ -266,6 +266,8 @@ function validHeroEvents(value: unknown): value is HeroEvents {
         ascended: optional(heroFlag),
         gehennom_entered: optional(heroFlag),
         invoked: optional(heroFlag),
+        minor_oracle: optional(heroFlag),
+        major_oracle: optional(heroFlag),
         qcalled: optional(heroFlag),
         qcompleted: optional(heroFlag),
         qexpelled: optional(heroFlag),

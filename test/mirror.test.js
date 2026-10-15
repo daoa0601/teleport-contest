@@ -1,3 +1,4 @@
+import { ensureQuestStatus } from '../js/quest.js';
 import { floorObjects } from './support/level-state.js';
 import { requireScreenRow } from './support/screen.js';
 import test from 'node:test';
@@ -299,6 +300,7 @@ void test('an ordinary animal flees its reflection while a unicorn ignores it', 
 void test('a speaking mirror uses a turn after direction cancellation, even while deaf', async () => {
     freshObjectRoom({ role: 'knight', hero: { ualign: { type: 1, record: 10 }, deaf: true } });
     requirePlayingGame(game);
+    ensureQuestStatus().touched_artifact = true;
     const mirror = await addInventoryItem(await artifactObject('The Magic Mirror of Merlin'));
     await applyInventoryObject(mirror, '\x1b' + ' '.repeat(30));
     assert.equal(game.context.move, 1);

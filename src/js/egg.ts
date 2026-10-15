@@ -1,7 +1,7 @@
 // Egg hatch timers.
 // C refs: timeout.c attach_egg_hatch_timeout()/hatch_egg().
 
-import { formatSeenMessage, formatFeltMessage } from './hero_speech.js';
+import { formatFeltMessage, formatSeenMessage } from './hero_speech.js';
 import {
     G_EXTINCT, G_GENOD, IS_POOL, MM_NOMSG, MV_KNOWS_EGG, NO_MINVENT,
 } from './const.js';

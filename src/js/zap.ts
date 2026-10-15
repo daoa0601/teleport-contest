@@ -579,9 +579,7 @@ export async function applyRayFloorFeatures(
             } else if (kind === RAY_COLD) {
                 await publishHeardMessage('a deep cracking sound.', publish, state);
             } else {
-                await publishHeardMessage(kind === RAY_DISINTEGRATION
-                    ? 'crashing wood.'
-                    : 'crackling.', publish, state);
+                await publishHeardMessage(kind === RAY_DISINTEGRATION ? 'crashing wood.' : 'crackling.', publish, state);
             }
             const occupation = state._occupation;
             if (occupation?.key === 'pick-lock' && occupation.door === location) {

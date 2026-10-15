@@ -163,7 +163,7 @@ import {
     A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS,
     BOLT_LIM, COLNO, ROWNO, DOOR, D_CLOSED, D_LOCKED, HOLE, M_SEEN_MAGR,
     STONE, ZAP_POS,
-    STRAT_CLOSE, STRAT_WAITFORU, M_ATTK_AGR_DIED, M_ATTK_AGR_DONE, W_ARMG,
+    M_ATTK_AGR_DIED, M_ATTK_AGR_DONE, W_ARMG,
     UNENCUMBERED, MOD_ENCUMBER, HVY_ENCUMBER, EXT_ENCUMBER, W_ACCESSORY, W_WEAPONS,
     ismnum, Upolyd, Is_airlevel, Is_waterlevel, LUCKMIN, LUCKMAX,
     TT_BURIEDBALL, TT_LAVA,
@@ -275,7 +275,7 @@ import {
 import type { FinishHeroDeathOptions } from './end.js';
 import { runLevelRegions } from './regions.js';
 import {
-    maintainVaultResidence, continueVaultGuardArrival,
+    maintainVaultResidence, continueVaultGuardArrival, moveVaultGuard,
 } from './vault.js';
 import {
     observeObject, recordObjectEncounter,
@@ -287,7 +287,7 @@ import { finishPrayerOccupation } from './pray.js';
 import {
     getHungry, recoverHeroFromFainting, regainHearingAfterHelplessness,
 } from './hunger.js';
-import { chatWithQuestLeader, isQuestLeader } from './quest.js';
+import { talkQuestCharacter } from './quest.js';
 import { publishMonsterCuss } from './monster_cuss.js';
 import { monsterAlignmentType } from './monster_alignment.js';
 import { moveElementalBubbles } from './elemental.js';
@@ -704,7 +704,7 @@ async function finishInitialTurnMaintenanceAfterIntervention(
     // reuses the same fumarole sampler as initial arrival.
     if (Is_airlevel(game.u?.uz) || Is_waterlevel(game.u?.uz))
         await moveElementalBubbles();
-    else if (game.level?.flags?.fumaroles) fumaroles(game);
+    else if (game.level?.flags?.fumaroles) await fumaroles(game);
     const delayedAction = game._delayedAction;
     if (delayedAction && delayedAction.kind !== 'steal' && delayedAction.remainingGlobalTurns > 0) {
         delayedAction.remainingGlobalTurns--;
@@ -2521,7 +2521,7 @@ async function presentMonsterAttackEffects(
                     }
                     if (heroAttack.kind === 'hero-breath') {
                         const breath = heroAttack.breath;
-                        if (breath.cough && !game.deaf) {
+                        if (breath.cough && !heroIsDeaf(game)) {
                             if (canSeeMonster(monster))
                                 await publishSlotMessage(`The ${quietMonsterName(monster)} coughs.`);
                             else await publishHeardMessage('a cough.', publishSlotMessage);
@@ -3209,16 +3209,6 @@ async function presentPetMovementPrelude(
 
 async function presentMonsterMoveMessage(action: MonsterMovementAction, game: PlayingGameState): Promise<void> {
     const movement = action.movement;
-    if (movement?.guardFinished && !game._suppressMessagesUntilInput) {
-        const message = 'Suddenly, the guard disappears.--More--';
-        await pline(message);
-        await flush_screen(1);
-        game.nhDisplay?.setCursor(message.length, 0);
-        let key;
-        do key = await nhgetch();
-        while (key !== 27 && key !== 32 && key !== 10 && key !== 13);
-        game._pending_message = '';
-    }
     if (movement?.message) await plineWithContinuation(movement.message);
 }
 
@@ -3322,10 +3312,20 @@ async function executeMonsterTurns(): Promise<boolean | undefined> {
             somebodyCanMove = false;
             break;
         }
-        if (!level.monsters.includes(actor) || (actor.mhp ?? 1) <= 0 || actor.mx === 0
+        if (!level.monsters.includes(actor)) continue;
+        // C movemon_singlemon(): parked guards keep removing their corridor
+        // once per world turn, even after death or completion of the escort.
+        if (actor.isgd && !actor.mx && (actor.mstate ?? MON_FLOOR) === MON_FLOOR) {
+            if (game.moves > (actor.mlstmv ?? 0)) {
+                await moveVaultGuard(actor, game, rn2);
+                actor.mlstmv = game.moves;
+            }
+            continue;
+        }
+        if ((actor.mhp ?? 1) <= 0 || actor.mx === 0
             || (actor.mstate ?? MON_FLOOR) !== MON_FLOOR)
             continue;
-        runMonsterEveryturnEffects([actor], game, rn2, { fmonOrdered: true });
+        await runMonsterEveryturnEffects([actor], game, rn2, { fmonOrdered: true });
         if (actor.movement === undefined)
             throw new Error(`Monster ${actor.m_id} entered a turn before movement initialization.`);
         if (actor.movement < NORMAL_SPEED) continue;
@@ -3346,29 +3346,6 @@ async function executeMonsterTurns(): Promise<boolean | undefined> {
             finishDeath: finishMonsterLiquidDeath,
         });
         if (liquid?.dead) continue;
-        // C monmove.c:dochug() clears STRAT_WAITFORU when the quest leader
-        // can see the adjacent hero, but STRAT_CLOSE remains a wait-mask bit.
-        // That sends the actor through quest_talk() without ordinary movement
-        // or spellcasting.  The pager can suspend this actor after all earlier
-        // fmon identities have already consumed their movement RNG.
-        if (isQuestLeader(actor, game)) {
-            const adjacent = Math.abs(actor.mx - (game.u?.ux ?? actor.mx)) <= 1
-                && Math.abs(actor.my - (game.u?.uy ?? actor.my)) <= 1;
-            if (adjacent
-                && ((actor.mstrategy ?? 0) & STRAT_WAITFORU))
-                actor.mstrategy = (actor.mstrategy ?? 0) & ~STRAT_WAITFORU;
-            if (actor.mcanmove !== 0 && !actor.msleeping && adjacent
-                && ((actor.mstrategy ?? 0) & STRAT_CLOSE)) {
-                await chatWithQuestLeader(actor, {
-                    exerciseWisdom,
-                });
-                if (game._questExpulsionPending) {
-                    await performQuestExpulsion(game);
-                    break;
-                }
-                continue;
-            }
-        }
         const equipment = await reassessMonsterArmor(actor, game, { publish: plineWithContinuation });
         game._deferVisibleMonsterContact = true;
         let action: MonsterAction;
@@ -3384,6 +3361,10 @@ async function executeMonsterTurns(): Promise<boolean | undefined> {
             game._deferVisibleMonsterContact = false;
         }
         if (game.program_state?.gameover) return false;
+        if (game._questExpulsionPending) {
+            await performQuestExpulsion(game);
+            break;
+        }
         if (action.conflictFight) continue;
         // C dochug() returns after gelcube_digests(), before attacks or cursing.
         if (action.movement.digestedInventory) continue;
@@ -3435,6 +3416,15 @@ async function executeMonsterTurns(): Promise<boolean | undefined> {
         // including items whose effects await their messages below.
         const offensive = movement.heroAttackSequence?.offensive;
         const attackReturnedDeath = offensive?.status === 'completed' && offensive.result.nativeResult === 1;
+        if (action.dochugContext?.reachesFinalActions && !movement.usedMisc
+            && !attackReturnedDeath && !monster.dead && monster.mhp > 0
+            && monster.mcanmove && !monster.msleeping
+            && action.dochugContext.range?.nearby)
+            await talkQuestCharacter(monster, game);
+        if (game._questExpulsionPending) {
+            await performQuestExpulsion(game);
+            break;
+        }
         if (action.dochugContext?.reachesFinalActions
             && !movement.usedMisc && !attackReturnedDeath && action.dochugContext.range?.inRange
             && !monster.dead && monster.mhp > 0 && monster.mx !== 0
@@ -3845,7 +3835,7 @@ export async function moveloop_core() {
         g.vision_full_recalc = 0;
     }
     await flush_screen(1);
-    heroEveryturnEffect(g);
+    await heroEveryturnEffect(g);
 
     // A negative C `multi` suppresses rhack() but still leaves context.move
     // set, so the next moveloop invocation spends another hero action.  Once
@@ -3905,6 +3895,7 @@ export async function moveloop_core() {
     if (g.program_state.gameover) return;
 
     await finishScheduledLevelChange();
+    if (g._questExpulsionPending) await performQuestExpulsion(g);
     if (g.program_state.gameover) return;
 
     // Advance turn

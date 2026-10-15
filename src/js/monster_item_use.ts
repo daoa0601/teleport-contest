@@ -8,7 +8,7 @@ import {
 } from './display.js';
 import { heroSpecies } from './hero_species.js';
 import { heroIsUnconscious } from './hero_sleep.js';
-import { formatHeardMessage, formatFeltMessage } from './hero_speech.js';
+import { formatFeltMessage, formatHeardMessage } from './hero_speech.js';
 import { inventoryItemDescription } from './invent.js';
 import { AD_RBRE } from './monster_attack_types.js';
 import { MONSTER_GENO } from './monster_data.js';

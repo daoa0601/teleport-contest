@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { CORR, VAULT, VWALL } from '../js/const.js';
+import { CORR, ROOMOFFSET, VAULT, VWALL } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pline } from '../js/display.js';
 import { resetInputState } from '../js/input.js';
@@ -20,6 +20,8 @@ void test('the guard accepts and echoes names longer than thirty-one characters'
     level.rooms.push(createRoom({ lx: 9, hx: 10, ly: 9, hy: 10, rtype: VAULT }));
     level.requireAt(16, 10).typ = CORR;
     level.requireAt(11, 10).typ = VWALL;
+    for (let x = 9; x <= 10; x++)
+        for (let y = 9; y <= 10; y++) level.requireAt(x, y).roomno = ROOMOFFSET;
     game.u.uinvault = 29;
     assert.equal(maintainVaultResidence(), true);
     const name = 'Alexandria '.repeat(4).trim();
@@ -50,6 +52,8 @@ for (const goldLocation of ['none', 'purse', 'sack', 'both'] as const) {
             const sack = await addInventoryObject(SACK);
             await addCreatedObjectToContainer(sack, await knownObject(GOLD_PIECE, { quan: 37 }));
         }
+        for (let x = 9; x <= 10; x++)
+            for (let y = 9; y <= 10; y++) level.requireAt(x, y).roomno = ROOMOFFSET;
         game.u.uinvault = 29;
         await pline('You see here 398 gold pieces.');
         const input = resetInputState();

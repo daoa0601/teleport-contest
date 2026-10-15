@@ -1,3 +1,4 @@
+import { heroLocomotion } from './hero_locomotion.js';
 import { maybeResetPick } from './lock_context.js';
 // C do.c:goto_level(): departure, destination creation or restoration, and arrival.
 import { rewindEngravingsForSave, restoreEngravingPointers } from './engrave.js';
@@ -42,6 +43,7 @@ import { fumaroles } from './monmove.js';
 import { moveElementalBubbles } from './elemental.js';
 import { CORR, ROOM, DISMOUNT_FELL, LR_UPTELE, LR_DOWNTELE, RLOC_NOMSG, MAGIC_PORTAL, In_endgame, Is_airlevel, Is_waterlevel, Is_rogue_level, Is_knox_level, UTOTYPE_DEFERRED, } from './const.js';
 import { resurrectWizard } from './wizard.js';
+import { forgetTempleEntry } from './priest.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 // C do.c:schedule_goto(). The current command or monster finishes using
 // the departure level; utotype stops the next monster from moving.
@@ -151,6 +153,9 @@ export async function gotoLevel(targetDepth, { arrival = 'random', ladder = fals
     if (!game._levelCache)
         game._levelCache = new Map();
     rewindEngravingsForSave(oldLevel);
+    for (const monster of oldLevel.monsters)
+        if (monster.ispriest)
+            forgetTempleEntry(monster);
     game._levelCache.set(levelCacheKey(oldDepth), cachedLevelState(oldLevel, oldStairs));
     if (leavingTutorial) {
         for (const key of game._levelCache.keys()) {
@@ -212,12 +217,11 @@ export async function gotoLevel(targetDepth, { arrival = 'random', ladder = fals
         && destinationDepth.dnum === tutorialDnum;
     // Quest text preparation can run Lua, so finish it before a message
     // pauses for player input.
-    const questArrival = prepareQuestArrival({
+    const questArrival = await prepareQuestArrival({
         fromDepth: oldDepth,
-        firstVisit: !cached,
     });
     const questPortalCall = arrival === 'portal' ? null
-        : prepareMainQuestPortalCall({ firstVisit: !cached });
+        : await prepareMainQuestPortalCall({ firstVisit: !cached });
     const oldDungeon = game.dungeons?.[oldDepth.dnum ?? 0];
     const newDungeon = game.dungeons?.[newDepth.dnum ?? 0];
     recordDungeonEntryAchievements(game, oldDepth, newDepth);
@@ -417,7 +421,7 @@ async function arriveOnLevel(from, { arrival, ladder, followers, beforeGlow }) {
         if (Is_airlevel(game.u.uz) || Is_waterlevel(game.u.uz))
             await moveElementalBubbles();
         else if (game.level.flags.fumaroles)
-            fumaroles(game);
+            await fumaroles(game);
         vision_reset_new_level();
         await docrt({ beforeGlow });
         return false;
@@ -438,7 +442,7 @@ async function applyStairTravelEffects(up, ladder) {
         const greatEffort = heroIsPunished() && !(game.u.levitating || game.levitating);
         if (verbose || greatEffort)
             await plineWithContinuation(`${greatEffort ? 'With great effort, you' : 'You'} `
-                + `${flying ? 'fly' : 'climb'} up${flying && ladder ? ' along' : ''} the ${noun}.`);
+                + `${heroLocomotion('climb')} up${flying && ladder ? ' along' : ''} the ${noun}.`);
     }
     else if (game.u.dz) {
         if (flying) {

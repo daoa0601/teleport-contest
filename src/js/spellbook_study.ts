@@ -1,5 +1,6 @@
 // Native spell.c:study_book(), learn(), cursed_book(), and confused_book().
 // Reading owns admission and literacy; the scheduler owns each study turn.
+
 import { formatFeltMessage } from './hero_speech.js';
 import { currentAttribute, exerciseWisdom } from './attrib.js';
 import { heroEyeCount, heroEyeName, heroFaceName } from './body_parts.js';

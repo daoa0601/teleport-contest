@@ -9,6 +9,11 @@ import { monsterGoldAmount } from '../js/shop_money.js';
 import { initRng } from '../js/rng.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { changeMonsterForm } from '../js/monster_polymorph.js';
+import { rhack } from '../js/cmd.js';
+import { clearMessageWindow } from '../js/display.js';
+import { saveGame, restoreGame } from '../js/save.js';
+import { memoryStorage } from './support/memory-storage.js';
+import { restoreBonesMonsters } from '../js/bones_monster.js';
 import { runExtendedCommand } from './support/commands.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -49,6 +54,16 @@ void test('a sleeping priest wakes and becomes angry when chatted with', async (
     assert.equal(game.u.uconduct?.gnostic, 1);
     assert.equal(game.context.move, 1);
 });
+void test('a priest whose shrine was destroyed refuses donations and becomes hostile', async () => {
+    const priest = await templePriest();
+    requirePlayingGame(game);
+    game.level.requireAt(12, 10).flags = Align2amask(0);
+    setHeroGoldAmount(game, 1000);
+    await runExtendedCommand('chat', 'l');
+    assert.equal(priest.mpeaceful, 0);
+    assert.equal(heroGoldAmount(game), 1000);
+    assert.match(game._lastPlineMessage ?? '', /Thou wouldst have words|Here is what I have to say|speak no longer/);
+});
 void test('refusing a temple donation costs alignment and leaves the purse intact', async () => {
     await templePriest();
     setHeroGoldAmount(game, 1000);
@@ -82,5 +97,32 @@ void test('a monster in a coaligned cleric form rejects a hero who has strayed',
     await runExtendedCommand('chat', 'l');
     assert.match(game._pending_message, /doesn't want anything to do with you!$/);
     assert.equal(priest.mpeaceful, 0);
+});
+void test('a restored priest gives fresh temple-entry feedback despite a recent visit', async () => {
+    const priest = await templePriest();
+    assert.ok(priest.epri);
+    priest.epri.intone_time = priest.epri.enter_time = priest.epri.peaceful_time = 10000;
+    game.plname = 'TempleVisitor';
+    const storage = memoryStorage();
+    assert.equal(await saveGame(storage), true);
+    assert.equal(restoreGame('TempleVisitor', storage), true);
+    game.u.ux = 6;
+    game.u.urooms = [];
+    clearMessageWindow();
+    const input = resetInputState();
+    input.beforeRead = () => input.feed(' ');
+    await rhack('l'.charCodeAt(0));
+    assert.match(game._lastPlineMessage, /You experience an unusual sense of peace/);
+});
+void test('a bones priest accepts donations at its shrine on the restored dungeon level', async () => {
+    const priest = await templePriest();
+    requirePlayingGame(game);
+    assert.ok(priest.epri);
+    priest.epri.shrlevel = { dnum: 9, dlevel: 40 };
+    setHeroGoldAmount(game, 1000);
+    await restoreBonesMonsters(game.level, game);
+    await runExtendedCommand('chat', 'l 0\n');
+    assert.equal(priest.mpeaceful, 1);
+    assert.equal(game._lastPlineMessage, '"Thou shalt regret thine action!"');
 });
 //# sourceMappingURL=priest_chat.test.js.map

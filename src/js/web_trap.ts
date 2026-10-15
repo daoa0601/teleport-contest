@@ -1,4 +1,5 @@
 // C trap.c:mu_maybe_destroy_web() and the monster half of trapeffect_web().
+
 import { publishHeardMessage } from './hero_speech.js';
 import { game } from './gstate.js';
 import type { GameState } from './game_state.js';

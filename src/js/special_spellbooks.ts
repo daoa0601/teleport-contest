@@ -1,5 +1,6 @@
 // Special spellbooks. C spell.c:deadbook(), deadbook_pacify_undead(),
 // and the novel branch of study_book(). Ordinary study owns its occupation.
+
 import { publishHeardMessage } from './hero_speech.js';
 import { ACH_INVK, ACH_NOVL, recordAchievement } from './achievements.js';
 import { heroSpineName } from './body_parts.js';

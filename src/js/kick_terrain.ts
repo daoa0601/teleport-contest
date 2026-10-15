@@ -1,4 +1,5 @@
 // Native dokick.c:kick_nondoor(), for terrain beyond doors and graves.
+
 import { publishHeardMessage } from './hero_speech.js';
 import { exerciseAttribute } from './attrib.js';
 import {

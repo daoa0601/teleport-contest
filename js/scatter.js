@@ -1,6 +1,7 @@
+import { publishHeardMessage } from './hero_speech.js';
+import { currency } from './currency.js';
 // Floor objects thrown outward by an explosion or collapsing structure.
 // C ref: explode.c:scatter() and mthrowu.c:ohitmon().
-import { publishHeardMessage } from './hero_speech.js';
 import { monsterHasMapPosition } from './monster_location.js';
 import { deleteTrap } from './trap_lifecycle.js';
 import { DOOR, D_CLOSED, D_LOCKED, SHOPBASE, SINK, STATUE_TRAP, ZAP_POS, isok, } from './const.js';
@@ -224,8 +225,7 @@ async function fractureObject(object, x, y, state, options) {
         await options.publish(`The ${objectName(object)} ${verb}.`);
     }
     else {
-        await publishHeardMessage(object.otyp === BOULDER
-            ? 'stone breaking.' : 'stone crumbling.', options.publish, state);
+        await publishHeardMessage(object.otyp === BOULDER ? 'stone breaking.' : 'stone crumbling.', options.publish, state);
     }
     if (object.otyp === STATUE) {
         const contents = object.contents || [];
@@ -390,7 +390,7 @@ export async function scatterFloorObjects(x, y, force, { state = game, onlyObjec
         const amount = creditUsed > 0 ? creditUsed : debitAdded > 0 ? debitAdded : loanAdded;
         if (amount > 0)
             await publish(`Your ${creditUsed > 0
-                ? 'credit has been reduced' : 'debt has increased'} by ${amount} ${amount === 1 ? 'zorkmid' : 'zorkmids'}.`);
+                ? 'credit has been reduced' : 'debt has increased'} by ${amount} ${currency(amount, { state })}.`);
     }
     return moved;
 }

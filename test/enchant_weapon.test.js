@@ -1,3 +1,4 @@
+import { ensureQuestStatus } from '../js/quest.js';
 import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -375,6 +376,7 @@ void test('evaporating an invoked quest weapon ends its power and carried status
     for (let seed = 1; seed <= 12; seed++) {
         freshObjectRoom({ role: 'caveman', hero: { ualign: { type: 1, record: 10 } } });
         requireFixtureGame(game);
+        ensureQuestStatus().touched_artifact = true;
         const artifact = artifactByName('The Sceptre of Might');
         assert.ok(artifact !== null && artifact !== undefined);
         const weapon = await addInventoryWeapon(artifact.baseType, {

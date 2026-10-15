@@ -5,6 +5,7 @@ import { MONSTER_ATTACKS, MONSTER_GENO, MONSTER_LEVEL, } from './monster_data.js
 import { AD_SEDU, AD_SSEX } from './monster_attack_types.js';
 import { monsterHitPointsPerLevel } from './monster_hit_points.js';
 import { rnd, rn2 } from './rng.js';
+import { forgetTempleEntry } from './priest.js';
 const G_UNIQ = 0x1000;
 function monsterHasSeductionAttack(mnum) {
     return (MONSTER_ATTACKS[mnum] || []).some(([, damageType]) => damageType === AD_SEDU
@@ -22,6 +23,8 @@ function copyShopkeeperData(value) {
 export function saveMonsterTraits(monster) {
     if (!monster)
         return null;
+    if (monster.ispriest)
+        forgetTempleEntry(monster);
     const { minvent, inventory, mw, wormSegments, wormGrowTime, wormHead, ...saved } = monster;
     saved.wormno = 0;
     saved.mhpmax = Math.max(saved.mhpmax ?? 1, (MONSTER_LEVEL[monster.mnum] ?? 0) + 1);

@@ -16,6 +16,7 @@ import { makePlural } from './object_grammar.js';
 import { dissolveBars } from './projectile_bars.js';
 import { roomsAt } from './room.js';
 import { rn2, rnd } from './rng.js';
+import { heroIsDeaf } from './senses.js';
 import { addShopDamage } from './shop_damage.js';
 import { cansee, vision_note_blocker_change, vision_recalc } from './vision.js';
 const M1_FLY = 0x00000001;
@@ -120,7 +121,7 @@ export async function resolveMonsterDoorPassage(monster, state, { canOpen, canUn
         const message = seesDoor && canSpotMonster(monster)
             ? `${monsterName(monster, { state, capitalized: true })} ${actorAction} a door.`
             : seesDoor ? formatSeenMessage(`a door ${doorAction}.`, state)
-                : formatHeardMessage(`a door ${doorAction}.`, state);
+                : !heroIsDeaf(state) ? formatHeardMessage(`a door ${doorAction}.`, state) : null;
         if (message)
             await publish(message);
     }

@@ -1,5 +1,6 @@
 // C uhitm.c:mhitm_ad_were(), mhitm_ad_slee(), mhitm_ad_poly(), and mhitm_ad_tlpt().
 // These effects resume after hitmsg(); polymorph negation precedes hitmsg().
+
 import { formatFeltMessage, publishHeardMessage } from './hero_speech.js';
 import { artifactById } from './artifacts.js';
 import { heroHasFreeAction } from './armor.js';

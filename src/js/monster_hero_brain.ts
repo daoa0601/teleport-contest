@@ -1,4 +1,5 @@
 // C uhitm.c:mhitm_ad_drin() and eat.c:eat_brains(), hero defender.
+
 import { formatFeltMessage } from './hero_speech.js';
 import { armorSimpleName } from './armor.js';
 import { adjustAttribute, attributeChangeMessage, exerciseWisdom } from './attrib.js';

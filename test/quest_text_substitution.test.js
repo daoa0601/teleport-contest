@@ -26,16 +26,16 @@ function valkyrieAtQuestEntrance() {
             end1_up: true, type: 'stair', portal: false,
         }];
 }
-void test('the quest leader calls the hero by role leader and home names', () => {
+void test('the quest leader calls the hero by role leader and home names', async () => {
     valkyrieAtQuestEntrance();
-    const call = prepareMainQuestPortalCall({}, game);
+    const call = await prepareMainQuestPortalCall({}, game);
     assert.deepEqual(call, [
         'You receive a faint telepathic message from the Norn:',
         'Your help is urgently needed at the Shrine of Destiny!',
         'Look for a ...ic transporter.',
         "You couldn't quite make out that last message.",
     ]);
-    const reminder = prepareMainQuestPortalCall({}, game);
+    const reminder = await prepareMainQuestPortalCall({}, game);
     assert.deepEqual(reminder, ['You again sense the Norn pleading for help.']);
 });
 //# sourceMappingURL=quest_text_substitution.test.js.map

@@ -12,8 +12,8 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 import { freshObjectRoom } from './support/object-room.js';
 
-function poisonCloud({ x = 10, y = 10, damage = 8, ttl = 3 } = {}): GasCloud {
-    const region = createHarmlessGasCloudSelection(game, [{ x, y }], { ttl });
+async function poisonCloud({ x = 10, y = 10, damage = 8, ttl = 3 } = {}): Promise<GasCloud> {
+    const region = await createHarmlessGasCloudSelection(game, [{ x, y }], { ttl });
     assert.ok(region);
     region.damage = damage;
     region.heroFault = false;
@@ -32,7 +32,7 @@ void test('an unseen nearby monster coughs without revealing its species', async
     freshObjectRoom();
     const xan = await createMonsterAt('xan', 11, 10);
     xan.minvis = true;
-    requireGameLevel().regions = [poisonCloud({ x: 11, y: 10 })];
+    requireGameLevel().regions = [await poisonCloud({ x: 11, y: 10 })];
     const messages: string[] = [];
 
     await runLevelRegions(game, {
@@ -45,7 +45,7 @@ void test('an unseen nearby monster coughs without revealing its species', async
 void test('a poison cloud blinds and hurts a breathing hero', async () => {
     freshCloudRoom();
     requirePlayingGame(game);
-    requireGameLevel().regions = [poisonCloud()];
+    requireGameLevel().regions = [await poisonCloud()];
     const messages: string[] = [];
 
     const events = await runLevelRegions(game, {
@@ -73,7 +73,7 @@ void test('a poison cloud blinds and hurts a breathing hero', async () => {
 void test('poison resistance leaves a coughing hero unharmed', async () => {
     freshCloudRoom({ poisonResistance: true });
     requirePlayingGame(game);
-    requireGameLevel().regions = [poisonCloud()];
+    requireGameLevel().regions = [await poisonCloud()];
     const messages: string[] = [];
 
     const events = await runLevelRegions(game, {
@@ -92,7 +92,7 @@ void test('poison gas kills a susceptible monster through ordinary death',
         requirePlayingGame(game);
         const jackal = await createMonsterAt('jackal', 11, 10);
         jackal.mhp = jackal.mhpmax = 6;
-        requireGameLevel().regions = [poisonCloud({ x: 11, y: 10 })];
+        requireGameLevel().regions = [await poisonCloud({ x: 11, y: 10 })];
         const messages: string[] = [];
 
         const events = await runLevelRegions(game, {
@@ -120,7 +120,7 @@ void test('poison-resistant monsters cough and lose their sight but not HP',
         requirePlayingGame(game);
         const killerBee = await createMonsterAt('killer bee', 11, 10);
         const hitPoints = killerBee.mhp;
-        requireGameLevel().regions = [poisonCloud({ x: 11, y: 10 })];
+        requireGameLevel().regions = [await poisonCloud({ x: 11, y: 10 })];
 
         const events = await runLevelRegions(game, {
             publish: async () => {},
@@ -135,7 +135,7 @@ void test('poison-resistant monsters cough and lose their sight but not HP',
 void test('a thick cloud thins before it finally dissipates', async () => {
     freshCloudRoom();
     requirePlayingGame(game);
-    requireGameLevel().regions = [poisonCloud({ x: 12, ttl: 0 })];
+    requireGameLevel().regions = [await poisonCloud({ x: 12, ttl: 0 })];
     const messages: string[] = [];
     const options = { publish: async (message: string) => { messages.push(message); } };
 

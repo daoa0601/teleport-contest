@@ -14,11 +14,11 @@ import { game, requirePlayingGame } from './gstate.js';
 import { finishDestinationSpotEffects } from './location_effects.js';
 import { mkobj } from './mklev.js';
 import { angerQuestGuardiansAfterLeaderDeath } from './monster_anger.js';
-import { isQuestLeader, } from './quest.js';
+import { isQuestLeader, questMonsterSound, } from './quest.js';
 import { delobj } from './object_delete.js';
 import { preventMonsterDeath } from './mondeath.js';
 import { prepareMonsterPetrification } from './monster_stoning.js';
-import { MONSTER_ALIGNMENT, MONSTER_FLAGS2, MONSTER_SIZE, monsterIsAlwaysHostile, monsterIsHuman, monsterIsKop, monsterIsNonliving, monsterIsPlainHuman, monsterIsPlayerMonster, monsterIsQuestGuardian, monsterIsQuestNemesis, monsterIsUnicorn, } from './monster_data.js';
+import { MONSTER_ALIGNMENT, MONSTER_FLAGS2, MONSTER_SIZE, monsterIsAlwaysHostile, monsterIsHuman, monsterIsKop, monsterIsNonliving, monsterIsPlainHuman, monsterIsPlayerMonster, monsterIsQuestGuardian, monsterIsUnicorn, } from './monster_data.js';
 import { monsterDeathCount, } from './monster_vitals.js';
 import { createMonsterRemains, detachDeadMonster, finishMonsterLiquidDeath, levelAllowsMonsterDeathDrops, monsterBodyCrumbles, monsterBodyCrumblesMessage, monsterDeathSquareAllowsObjects, monsterLeavesCorpse, } from './monster_death.js';
 import { resolveMonsterDeathExplosion, monsterDeathSwallower, rollMonsterDeathExplosion, } from './monster_explosion.js';
@@ -274,7 +274,7 @@ export async function finishHeroMonsterKillOutcome(monster, x, y, { hallucinatin
     if (isQuestLeader(monster, game)) {
         await punishQuestLeaderKill();
     }
-    else if (monsterIsQuestNemesis(monster.mnum)) {
+    else if (questMonsterSound(monster.mnum, game) === 37) {
         rewardQuestNemesisKill();
     }
     else if (monsterIsQuestGuardian(monster.mnum)) {
@@ -285,9 +285,7 @@ export async function finishHeroMonsterKillOutcome(monster, x, y, { hallucinatin
     }
     else if (monster.mtame) {
         adjustHeroAlignment(-15);
-        await publishHeardMessage(hallucinating
-            ? 'the studio audience applaud!'
-            : 'the rumble of distant thunder...', plineWithContinuation);
+        await publishHeardMessage(hallucinating ? 'the studio audience applaud!' : 'the rumble of distant thunder...', plineWithContinuation);
     }
     else if (monster.mpeaceful) {
         adjustHeroAlignment(-5);

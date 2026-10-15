@@ -237,6 +237,7 @@ export interface GameState {
     castleTune?: string;
     specialLevels?: Map<string, SpecialLevelDescriptor>;
     oracle_level?: SpecialLevelDescriptor | undefined;
+    oracleRemaining?: number[];
     medusa_level?: SpecialLevelDescriptor | undefined;
     knox_level?: SpecialLevelDescriptor | undefined;
     stronghold_level?: SpecialLevelDescriptor | undefined;
@@ -374,7 +375,7 @@ export interface GameState {
     _unresolvedDemigodIntervention?: number;
     _lastDemigodAggravation?: number[];
     _lastDemigodNasty?: number[];
-    _questExpulsionPending?: { seal: boolean } | null;
+    _questExpulsionPending?: { seal: boolean; portal?: boolean } | null;
     _vaultGuardArrivalPending?: { vault: Room } | null;
     _vaultMaintenanceContinuation?: { sourceTurn: number } | null;
     _vaultHeroTookTimePending?: number | null;

@@ -1,6 +1,7 @@
+import { formatFeltMessage } from './hero_speech.js';
+import { currency } from './currency.js';
 // C detect.c: gold_detect(), food_detect(), object_detect(), monster_detect().
 // Physical source consumption and trycall() belong to the caller.
-import { formatFeltMessage } from './hero_speech.js';
 import { COLNO, ROWNO, M_AP_OBJECT, M_AP_TYPE, TER_DETECT, TER_MON, TER_OBJ, } from './const.js';
 import { exerciseWisdom } from './attrib.js';
 import { heroFootName, heroNoseName } from './body_parts.js';
@@ -58,7 +59,7 @@ export async function detectGold(source, { state = game } = {}) {
     if (!known) {
         let message = 'You feel materially poor.';
         if (state.u.umonnum === GOLD_GOLEM)
-            message = 'You feel like a million zorkmids!';
+            message = `You feel like a million ${currency(2, { state })}!`;
         else if (state.inventory.some(object => objectOfClass(object, COIN_CLASS)))
             message = 'You feel worried about your future financial situation.';
         else if (steedGold) {

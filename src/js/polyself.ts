@@ -1,5 +1,6 @@
 // Hero form changes and equipment.
 // C refs: polyself.c polyself(), polymon(), break_armor(), drop_weapon().
+
 import { formatFeltMessage } from './hero_speech.js';
 import { weaponDescription } from './weapon_description.js';
 import { P_SHORT_SWORD, P_SABER } from './const.js';

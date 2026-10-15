@@ -1,5 +1,6 @@
 // Monster-attributed hero death and its terminal continuations.
 // C refs: end.c done_in_by()/done()/savelife(), tty message windows.
+
 import { formatFeltMessage } from './hero_speech.js';
 import { game } from './gstate.js';
 import type { Monster } from './monster_types.js';

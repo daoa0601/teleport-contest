@@ -1,4 +1,5 @@
 // Native eat.c:eatcorpse(). Admission prepares the meal before its first bite.
+
 import { formatFeltMessage } from './hero_speech.js';
 import { applyCannibalPenalty } from './cannibalism.js';
 import { SICK_VOMITABLE } from './const.js';

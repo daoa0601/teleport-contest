@@ -117,7 +117,7 @@ void test('levitation is clearly immune to a known pit', async () => {
 void test('a visible cloud is confirmed before a known trap on the same square', async () => {
     const level = freshObjectRoom({ flags: { paranoia_bits: PARANOID_TRAP } });
     requirePlayingGame(game);
-    createHarmlessGasCloudSelection(game, [{ x: 11, y: 10 }], { ttl: 10 });
+    await createHarmlessGasCloudSelection(game, [{ x: 11, y: 10 }], { ttl: 10 });
     addTrap(level, WEB, 11, 10, { tseen: true });
     const input = resetInputState();
     await answerPrompts(rhack('l'.charCodeAt(0)), input, [

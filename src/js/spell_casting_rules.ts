@@ -15,7 +15,7 @@ import {
 import { plineWithContinuation } from './display.js';
 import { game, requireLiveGame } from './gstate.js';
 import { makeConfused, makeStunned } from './hero_mental_status.js';
-import { heroCanChant, formatFeltMessage } from './hero_speech.js';
+import { formatFeltMessage, heroCanChant } from './hero_speech.js';
 import { spendHeroNutrition } from './hunger.js';
 import {
     OBJECT_NAMES, OBJECT_SPELL_CATEGORY, OBJECT_SPELL_LEVEL, OBJECT_SUBTYPE,

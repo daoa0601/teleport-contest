@@ -5,7 +5,7 @@ import { createRoom } from './support/topology.js';
 import { requirePlayingGame } from '../js/gstate.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { ARROW_TRAP, CORR, DOOR, MON_FLOOR, PIT, STONE, VAULT, VWALL, W_NONDIGGABLE } from '../js/const.js';
+import { ARROW_TRAP, CORR, DOOR, MON_FLOOR, PIT, ROOMOFFSET, STONE, VAULT, VWALL, W_NONDIGGABLE } from '../js/const.js';
 import { makeEngravingAt } from '../js/engrave.js';
 import { maketrap } from '../js/mklev.js';
 import { placeMonsterAt } from '../js/monster_location.js';
@@ -215,6 +215,9 @@ void test('guard arrival preserves the vault wall restriction for restoration', 
     wall.typ = VWALL;
     wall.wall_info = W_NONDIGGABLE;
     setWallStateAt(11, 10);
+    for (let x = 9; x <= 10; x++)
+        for (let y = 9; y <= 10; y++)
+            level.requireAt(x, y).roomno = ROOMOFFSET;
     game.u.uinvault = 29;
     const input = resetInputState();
     assert.equal(maintainVaultResidence(), true);
@@ -239,6 +242,9 @@ for (const done of [false, true]) {
         await removeMonsterFromGame(guard);
         assert.ok(guard._egd !== undefined && guard._egd !== null, 'Expected guard._egd to be initialized');
         guard._egd.gddone = done ? 1 : 0;
+        for (let x = 9; x <= 10; x++)
+            for (let y = 9; y <= 10; y++)
+                level.requireAt(x, y).roomno = ROOMOFFSET;
         game.u.uinvault = 29;
         assert.equal(maintainVaultResidence(), false);
         assert.equal(level.monsters.filter(monster => monster.isgd).length, 1);
@@ -254,6 +260,9 @@ void test('a migrating guard returns directly to its unfinished home corridor', 
     assert.equal(level.monsters.includes(guard), false);
     assert.ok(game._migratingMonsters !== undefined && game._migratingMonsters !== null, 'Expected game._migratingMonsters to be initialized');
     assert.equal(game._migratingMonsters.includes(guard), true);
+    for (let x = 9; x <= 10; x++)
+        for (let y = 9; y <= 10; y++)
+            level.requireAt(x, y).roomno = ROOMOFFSET;
     game.u.uinvault = 29;
     assert.equal(maintainVaultResidence(), false);
     assert.equal(level.monsters.includes(guard), true);
@@ -261,6 +270,35 @@ void test('a migrating guard returns directly to its unfinished home corridor', 
     assert.equal(guard.mstate, MON_FLOOR);
     assert.deepEqual([guard.mx, guard.my, guard.mhp], [0, 0, 0]);
 });
+for (const migrating of [false, true]) {
+    void test(`vault maintenance finds the newest ${migrating ? 'migrating' : 'parked'} guard`, async () => {
+        const { level, guard: older } = await guardCorridor();
+        requirePlayingGame(game);
+        assert.ok(older._egd);
+        const newer = await createMonsterAt('guard', 14, 10);
+        newer.isgd = 1;
+        newer._egd = { ...older._egd, fakecorr: [], fcbeg: 0, fcend: 0 };
+        for (const guard of [older, newer]) {
+            guard.mx = guard.my = guard.mhp = 0;
+        }
+        for (let x = 9; x <= 10; x++)
+            for (let y = 9; y <= 10; y++)
+                level.requireAt(x, y).roomno = ROOMOFFSET;
+        game.u.uinvault = 29;
+        if (migrating) {
+            await sendMonsterToLimbo(older);
+            await sendMonsterToLimbo(newer);
+        }
+        assert.equal(maintainVaultResidence(), false);
+        if (migrating) {
+            assert.equal(level.monsters.includes(newer), true);
+            assert.equal(level.monsters.includes(older), false);
+        }
+        else
+            assert.equal(newer.mhp, newer.mhpmax);
+        assert.equal(older.mhp, 0);
+    });
+}
 void test('a guard away from its corridor level drops its gold without restoring unrelated terrain', async () => {
     const { level, guard, gold } = await guardCorridor({ blocked: false });
     requirePlayingGame(game);

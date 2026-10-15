@@ -7,7 +7,7 @@ import { canSeeMonster, canSpotMonster, newsym, plineWithContinuation, } from '.
 import { insideWizardTower } from './dungeon.js';
 import { deleteEngravingAt, hasCompletedEngraving } from './engrave.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
-import { formatHeardMessage, formatFeltMessage } from './hero_speech.js';
+import { formatFeltMessage, formatHeardMessage } from './hero_speech.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { makeMonsterFlee } from './monster_flee.js';
 import { publishMonsterWake, wakeMonstersNearWithMessages } from './monster_wake.js';

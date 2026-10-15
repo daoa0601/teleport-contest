@@ -1,3 +1,4 @@
+import { ensureQuestStatus } from '../js/quest.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { continueCountedCommand, rhack } from '../js/cmd.js';
@@ -167,6 +168,7 @@ for (const target of ['box', 'door'] as const) {
         const level = freshObjectRoom({ role: 'rogue', hero: { ualign: { type: -1, record: 10 } } });
         const artifact = artifactByName('The Master Key of Thievery');
         assert.ok(artifact);
+        ensureQuestStatus().touched_artifact = true;
         await addInventoryObject(SKELETON_KEY, { invlet: 'a', oartifact: artifact.id, cursed: false });
         const door = level.requireAt(11, 10);
         door.typ = DOOR;

@@ -1,4 +1,5 @@
 // C uhitm.c:mhitm_ad_deth() and mcastu.c:touch_of_death().
+
 import { formatFeltMessage } from './hero_speech.js';
 import { KILLED_BY, Upolyd } from './const.js';
 import type { MessagePublisher } from './display.js';

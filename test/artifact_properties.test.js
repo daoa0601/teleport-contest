@@ -1,3 +1,4 @@
+import { ensureQuestStatus } from '../js/quest.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { rhack } from '../js/cmd.js';
@@ -30,6 +31,7 @@ void test('wielding and unwielding the Staff enables and removes regeneration an
 void test('picking up and dropping the Heart enables and removes its carried stealth', async () => {
     freshObjectRoom({ role: 'barbarian' });
     requirePlayingGame(game);
+    ensureQuestStatus().touched_artifact = true;
     const heart = await floorArtifact('The Heart of Ahriman', game.u.ux, game.u.uy);
     await rhack(','.charCodeAt(0));
     assert.equal(game.inventory.includes(heart), true);
@@ -40,6 +42,7 @@ void test('picking up and dropping the Heart enables and removes its carried ste
 void test('dropping one carried artifact retains the magic resistance granted by another', async () => {
     freshObjectRoom({ role: 'knight', hero: { uhp: 200, uhpmax: 200, ualign: { type: 1, record: 10 } } });
     requirePlayingGame(game);
+    ensureQuestStatus().touched_artifact = true;
     await floorArtifact('The Magic Mirror of Merlin', game.u.ux, game.u.uy);
     await rhack(','.charCodeAt(0));
     const orb = await floorArtifact('The Orb of Detection', game.u.ux, game.u.uy);
@@ -64,6 +67,7 @@ void test('wearing the Eyes grants x-ray sight and magic resistance, removing th
 void test('ordinary worn telepathy combines its range with carried artifact telepathy', async () => {
     freshObjectRoom({ role: 'archeologist', hero: { ualign: { type: 1, record: 10 } } });
     requirePlayingGame(game);
+    ensureQuestStatus().touched_artifact = true;
     await addInventoryItem(await artifactObject('The Orb of Detection'));
     const amulet = await knownObject(OBJECT_NAMES.indexOf('amulet of ESP'), { invlet: 'b', where: 'inventory' });
     game.inventory.push(amulet);
@@ -104,6 +108,7 @@ for (const intrinsic of [false, true]) {
 void test('a wielded ESP amulet extends telepathy supplied by a carried artifact', async () => {
     freshObjectRoom({ right: 22, role: 'archeologist', hero: { ualign: { type: 1, record: 10 } } });
     requirePlayingGame(game);
+    ensureQuestStatus().touched_artifact = true;
     await addInventoryItem(await artifactObject('The Orb of Detection'));
     const goblin = await createMonsterAt('goblin', 20, 10, MM_NOGRP | NO_MINVENT);
     goblin.minvis = 1;

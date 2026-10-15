@@ -10,8 +10,12 @@ import type { DungeonLocation } from './dungeon_types.js';
 import type { Monster, PriestData, MinionData } from './monster_types.js';
 import type { Room } from './map_types.js';
 import { deityName } from './alignment.js';
+import { heroSpineName } from './body_parts.js';
+import { endVoluntaryMultiTurn } from './command_state.js';
+import { recordAchievement } from './achievements.js';
+import { setMonsterMalign } from './monster_alignment.js';
 import { angerMonster, wakeMonster } from './monster_anger.js';
-import { canSeeMonster, plineWithContinuation } from './display.js';
+import { canSeeMonster, canSpotMonster, plineWithContinuation } from './display.js';
 import type { MessagePublisher } from './display.js';
 import { exerciseAttribute } from './attrib.js';
 import { castMonsterSpellRay } from './breath_ray.js';
@@ -20,12 +24,14 @@ import { cansee, couldsee } from './vision.js';
 import { d, rn2 } from './rng.js';
 import {
     A_NONE, A_WIS, AM_SHRINE, Amask2align, BOLT_LIM, D_CLOSED, D_LOCKED,
-    IS_ALTAR, IS_DOOR, IS_OBSTRUCTED, LAVAWALL, TEMPLE, WATER,
+    ACH_TMPL, In_endgame, IS_ALTAR, IS_DOOR, IS_OBSTRUCTED, LAVAWALL, MM_NOMSG, TEMPLE, WATER,
 } from './const.js';
 import { roomForRoomno, roomsAt } from './room.js';
 import { MONSTER_FLAGS2 } from './monster_data.js';
 import { removeMonsterFromGame } from './monster_departure.js';
 import { monsterName } from './monster_name.js';
+import { heroIsHallucinating } from './senses.js';
+import { makemonAt } from './mklev.js';
 
 const M2_MINION = 0x00001000;
 const PM_DEATH = 311, PM_PESTILENCE = 312, PM_FAMINE = 313;
@@ -110,6 +116,14 @@ export function priestHasShrine(priest: Monster, state: GameState = game): boole
     const altar = state.level?.at(epri.shrpos.x, epri.shrpos.y);
     return !!altar && IS_ALTAR(altar.typ) && !!(altar.flags & AM_SHRINE)
         && epri.shralign === Amask2align(altar.flags & ~AM_SHRINE);
+}
+
+// C forget_temple_entry(): saving a monster starts its entry feedback anew.
+export function forgetTempleEntry(priest: Monster): void {
+    const shrine = priestData(priest);
+    if (!priest.ispriest || !shrine)
+        throw new Error('Temple entry memory requires a priest with shrine data.');
+    shrine.intone_time = shrine.enter_time = shrine.peaceful_time = shrine.hostile_time = 0;
 }
 
 // C priest.c:in_your_sanctuary(). A resident protects only a faithful hero
@@ -255,13 +269,28 @@ export async function intemple(roomno: number, state: GameState = game): Promise
         else if (eerie === 1)
             await plineWithContinuation(formatFeltMessage('like you are being watched.', state));
         else if (eerie === 2)
-            await plineWithContinuation('A shiver runs down your spine.');
-        // Ghost creation remains with the monster-construction owner.  Keep
-        // the source gate in stream even when it does not fire.
-        rn2(5);
+            await plineWithContinuation(`A shiver runs down your ${heroSpineName(state)}.`);
+        if (!rn2(5)) {
+            const ghost = await makemonAt(287, state.u.ux, state.u.uy, MM_NOMSG);
+            if (ghost) {
+                const born = state.mvitals?.[287]?.born ?? 0;
+                await plineWithContinuation(canSpotMonster(ghost)
+                    ? `A${born < 5 ? 'n enormous' : ''} ghost appears next to you${born < 10 ? '!' : '.'}`
+                    : 'You sense a presence close by!');
+                ghost.mpeaceful = 0;
+                setMonsterMalign(ghost, state);
+                if (state.flags.verbose)
+                    await plineWithContinuation('You are frightened to death, and unable to move.');
+                endVoluntaryMultiTurn(state);
+                state._helplessTurns = Math.max(state._helplessTurns ?? 0, 3);
+                state._helplessReason = 'being terrified of a ghost';
+                state._helplessDoneMessage = 'You regain your composure.';
+            }
+        }
         return null;
     }
 
+    recordAchievement(state, ACH_TMPL);
     const epri = priestData(priest);
     if (!epri) throw new Error('Temple entry requires the resident shrine record.');
     epri.intone_time ??= 0;
@@ -271,21 +300,41 @@ export async function intemple(roomno: number, state: GameState = game): Promise
     const moves = state.moves ?? 0;
     const canSpeak = priestCanSpeak(priest, state);
     const shrined = priestHasShrine(priest, state);
+    const inSanctum = !!state.sanctum_level && sameLevel(state.sanctum_level, state.u.uz);
+    const sanctum = priest.mnum === 276 && (inSanctum || In_endgame(state.u.uz));
 
     if (canSpeak && moves >= epri.intone_time) {
-        await plineWithContinuation(
-            `${visiblePriestName(priest, state)} intones:`,
-        );
+        const wasPriest = priest.ispriest;
+        try {
+            if (sanctum && !heroIsHallucinating(state)) priest.ispriest = 0;
+            await plineWithContinuation(`${visiblePriestName(priest, state)} intones:`);
+        } finally {
+            if (wasPriest === undefined) delete priest.ispriest;
+            else priest.ispriest = wasPriest;
+        }
         epri.intone_time = moves + d(10, 500);
         epri.enter_time = 0;
     }
 
-    if (moves >= epri.enter_time && canSpeak) {
-        await plineWithContinuation(
-            `"Pilgrim, you enter a ${shrined ? 'sacred' : 'desecrated'} place!"`,
-        );
+    let greeting: string | null = null;
+    let followup: string | null = null;
+    if (sanctum && inSanctum) {
+        if (priest.mpeaceful) {
+            greeting = "Infidel, you have entered Moloch's Sanctum!";
+            followup = 'Be gone!';
+            priest.mpeaceful = 0;
+            setMonsterMalign(priest, state);
+        } else greeting = 'You desecrate this place by your presence!';
+    } else if (moves >= epri.enter_time) {
+        greeting = `Pilgrim, you enter a ${shrined ? 'sacred' : 'desecrated'} place!`;
+    }
+    if (greeting && canSpeak) {
+        await plineWithContinuation(`"${greeting}"`);
+        if (followup) await plineWithContinuation(`"${followup}"`);
         epri.enter_time = moves + d(10, 100);
     }
+
+    if (sanctum) return priest;
 
     const coaligned = priestIsCoaligned(priest, state);
     const forbidding = !shrined || !coaligned

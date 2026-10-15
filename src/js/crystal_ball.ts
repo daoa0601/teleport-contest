@@ -1,4 +1,5 @@
 // C detect.c:use_crystal_ball(), furniture_detect(), level_distance().
+
 import { formatSeenMessage } from './hero_speech.js';
 import type { GameObject } from './object_types.js';
 import type { DungeonLocation } from './dungeon_types.js';
