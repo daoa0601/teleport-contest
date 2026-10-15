@@ -10,7 +10,7 @@ import {
     A_DEX, ALTAR, AM_MASK, AM_SANCTUM, Amask2align, COLNO, CORR,
     DOOR, D_NODOOR,
     FOUNTAIN, GRAVE, LAVAPOOL, MOAT, PIT, POOL, ROOM, ROWNO,
-    SCORR, SDOOR, SINK, THRONE, TT_BURIEDBALL, TT_PIT, is_pit,
+    SCORR, SDOOR, SHOPBASE, SINK, THRONE, TT_BURIEDBALL, TT_PIT, is_pit,
 } from './const.js';
 import {
     newsym, plineWithContinuation,
@@ -48,6 +48,9 @@ import { cansee, vision_note_blocker_change } from './vision.js';
 import { monsterInAir } from './terrain_properties.js';
 import { wakeMonster } from './monster_anger.js';
 import { monsterName } from './monster_name.js';
+import { convertSecretDoor } from './detect.js';
+import { roomsAt } from './room.js';
+import { addShopDamage } from './shop_damage.js';
 
 const M1_CLING = 0x00000010;
 const M1_SLITHY = 0x00080000;
@@ -61,10 +64,6 @@ function monsterAt(x: number, y: number) {
 function trapAt(x: number, y: number) {
     return game.level?.traps?.find(trap => trap.tx === x && trap.ty === y)
         || null;
-}
-
-function terrainAfterPit(originalType: number): number {
-    return originalType === CORR || originalType === SCORR ? CORR : ROOM;
 }
 
 function boulderAt(x: number, y: number) {
@@ -268,12 +267,9 @@ async function openChasm(
 ): Promise<boolean> {
     const location = requireGameLevel(game).at(x, y);
     if (!location) throw new RangeError(`Earthquake square ${x},${y} is outside the level.`);
-    const originalType = location.typ;
     const chasm = await maketrap(x, y, PIT);
     if (!chasm) return false;
     chasm.tseen = 1;
-    location.typ = terrainAfterPit(originalType);
-    location.flags = 0;
 
     const monster = monsterAt(x, y);
     const boulder = boulderAt(x, y);
@@ -353,8 +349,9 @@ async function shakeTerrain(x: number, y: number, hadPitBeforeEarthquake: boolea
     }
     if (location.typ === GRAVE || location.typ === THRONE) {
         const feature = location.typ === GRAVE ? 'headstone' : 'throne';
+        const action = location.typ === GRAVE ? 'topples' : 'falls';
         if (cansee(x, y))
-            await plineWithContinuation(`The ${feature} falls into a chasm.`);
+            await plineWithContinuation(`The ${feature} ${action} into a chasm.`);
         return await openChasm(x, y, hadPitBeforeEarthquake);
     }
     if (location.typ === SCORR) {
@@ -367,7 +364,7 @@ async function shakeTerrain(x: number, y: number, hadPitBeforeEarthquake: boolea
         return await openChasm(x, y, hadPitBeforeEarthquake);
     }
     if (location.typ === SDOOR) {
-        location.typ = DOOR;
+        convertSecretDoor(location);
         if (cansee(x, y))
             await plineWithContinuation('A secret door is revealed.');
     }
@@ -380,6 +377,8 @@ async function shakeTerrain(x: number, y: number, hadPitBeforeEarthquake: boolea
     newsym(x, y);
     if (cansee(x, y))
         await plineWithContinuation('The door collapses.');
+    if (roomsAt(game.level, x, y, SHOPBASE).length)
+        addShopDamage(x, y, 0);
     return true;
 }
 

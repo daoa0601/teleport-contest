@@ -5,7 +5,7 @@ import { monsterHasMapPosition } from './monster_location.js';
 import { deleteTrap } from './trap_lifecycle.js';
 import { adjustHeroAlignment } from './alignment.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
-import { A_DEX, ALTAR, AM_MASK, AM_SANCTUM, Amask2align, COLNO, CORR, DOOR, D_NODOOR, FOUNTAIN, GRAVE, LAVAPOOL, MOAT, PIT, POOL, ROOM, ROWNO, SCORR, SDOOR, SINK, THRONE, TT_BURIEDBALL, TT_PIT, is_pit, } from './const.js';
+import { A_DEX, ALTAR, AM_MASK, AM_SANCTUM, Amask2align, COLNO, CORR, DOOR, D_NODOOR, FOUNTAIN, GRAVE, LAVAPOOL, MOAT, PIT, POOL, ROOM, ROWNO, SCORR, SDOOR, SHOPBASE, SINK, THRONE, TT_BURIEDBALL, TT_PIT, is_pit, } from './const.js';
 import { newsym, plineWithContinuation, } from './display.js';
 import { loseHeroHp } from './hero_damage.js';
 import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
@@ -30,6 +30,9 @@ import { cansee, vision_note_blocker_change } from './vision.js';
 import { monsterInAir } from './terrain_properties.js';
 import { wakeMonster } from './monster_anger.js';
 import { monsterName } from './monster_name.js';
+import { convertSecretDoor } from './detect.js';
+import { roomsAt } from './room.js';
+import { addShopDamage } from './shop_damage.js';
 const M1_CLING = 0x00000010;
 const M1_SLITHY = 0x00080000;
 function monsterAt(x, y) {
@@ -39,9 +42,6 @@ function monsterAt(x, y) {
 function trapAt(x, y) {
     return game.level?.traps?.find(trap => trap.tx === x && trap.ty === y)
         || null;
-}
-function terrainAfterPit(originalType) {
-    return originalType === CORR || originalType === SCORR ? CORR : ROOM;
 }
 function boulderAt(x, y) {
     return game.level?.objects?.[x]?.[y]?.find(object => object.otyp === BOULDER) || null;
@@ -227,13 +227,10 @@ async function openChasm(x, y, hadPitBeforeEarthquake) {
     const location = requireGameLevel(game).at(x, y);
     if (!location)
         throw new RangeError(`Earthquake square ${x},${y} is outside the level.`);
-    const originalType = location.typ;
     const chasm = await maketrap(x, y, PIT);
     if (!chasm)
         return false;
     chasm.tseen = 1;
-    location.typ = terrainAfterPit(originalType);
-    location.flags = 0;
     const monster = monsterAt(x, y);
     const boulder = boulderAt(x, y);
     if (boulder) {
@@ -308,8 +305,9 @@ async function shakeTerrain(x, y, hadPitBeforeEarthquake) {
     }
     if (location.typ === GRAVE || location.typ === THRONE) {
         const feature = location.typ === GRAVE ? 'headstone' : 'throne';
+        const action = location.typ === GRAVE ? 'topples' : 'falls';
         if (cansee(x, y))
-            await plineWithContinuation(`The ${feature} falls into a chasm.`);
+            await plineWithContinuation(`The ${feature} ${action} into a chasm.`);
         return await openChasm(x, y, hadPitBeforeEarthquake);
     }
     if (location.typ === SCORR) {
@@ -322,7 +320,7 @@ async function shakeTerrain(x, y, hadPitBeforeEarthquake) {
         return await openChasm(x, y, hadPitBeforeEarthquake);
     }
     if (location.typ === SDOOR) {
-        location.typ = DOOR;
+        convertSecretDoor(location);
         if (cansee(x, y))
             await plineWithContinuation('A secret door is revealed.');
     }
@@ -336,6 +334,8 @@ async function shakeTerrain(x, y, hadPitBeforeEarthquake) {
     newsym(x, y);
     if (cansee(x, y))
         await plineWithContinuation('The door collapses.');
+    if (roomsAt(game.level, x, y, SHOPBASE).length)
+        addShopDamage(x, y, 0);
     return true;
 }
 export async function createEarthquake(requestedForce) {
