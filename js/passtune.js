@@ -89,9 +89,11 @@ export async function playTune(instrument, tune, options = {}) {
     await exerciseAttribute(A_WIS, true);
     const expected = game.castleTune || '';
     const bridge = nearbyDrawbridge();
-    if (tune === expected && bridge) {
-        recordKnownPasstune();
-        await toggleDrawbridge(bridge.x, bridge.y, game, options);
+    if (tune === expected) {
+        if (bridge) {
+            recordKnownPasstune();
+            await toggleDrawbridge(bridge.x, bridge.y, game, options);
+        }
         game.context.move = 1;
         return;
     }
