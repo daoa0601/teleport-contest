@@ -3,23 +3,26 @@
 import { formatFeltMessage } from './hero_speech.js';
 import { heroIsHallucinating } from './senses.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
-import { A_DEX, A_WIS, COLNO, In_endgame, In_sokoban, In_V_tower, Is_astralevel, ROWNO, STRAT_WAITMASK, } from './const.js';
+import { A_DEX, A_WIS, COLNO, In_endgame, In_sokoban, In_V_tower, Is_astralevel, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, ROWNO, STRAT_WAITMASK, } from './const.js';
 import { tameMonster } from './monster_taming.js';
-import { canSeeMonster, newsym, pline, plineWithContinuation, } from './display.js';
+import { canSeeMonster, newsym, pline, plineWithContinuation, shieldeff, } from './display.js';
 import { finishHeroDeath } from './end.js';
 import { createEarthquake } from './earthquake.js';
 import { game } from './gstate.js';
 import { loseHeroHp } from './hero_damage.js';
 import { zapHeroWithObject } from './hero_self_zap.js';
-import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_MAGIC_RESISTANCE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SYMBOL, } from './monster_data.js';
-import { monsterName } from './monster_name.js';
+import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_MAGIC_RESISTANCE, MONSTER_NAME, MONSTER_SYMBOL, } from './monster_data.js';
+import { monsterName, possessiveName } from './monster_name.js';
+import { revealMonsterAppearance } from './monster_appearance.js';
+import { monsterResistsSleep, putMonsterToSleep } from './monster_sleep.js';
+import { releaseHeroFromMonster } from './hero_expulsion.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { makeMonsterFlee } from './monster_flee.js';
 import { monsterIsScaredAt } from './monster_fear.js';
 import { BUGLE, DRUM_OF_EARTHQUAKE, FIRE_HORN, FROST_HORN, LEATHER_DRUM, MAGIC_FLUTE, MAGIC_HARP, OBJECT_NAMES, TOOLED_HORN, WOODEN_FLUTE, WOODEN_HARP, } from './object_data.js';
 import { learnObjectType } from './object_knowledge.js';
 import { askForTune, playTune } from './passtune.js';
-import { heroCanBlow } from './hero_species.js';
+import { heroCanBlow, heroFormSticks } from './hero_species.js';
 import { d, rnd, rn2 } from './rng.js';
 import { promptYesNoQuit } from './query.js';
 import { syncDeafness } from './senses.js';
@@ -29,7 +32,7 @@ import { zapRayWithObject } from './zap.js';
 const G_UNIQ = 0x1000;
 const M1_MINDLESS = 0x00010000;
 const M2_MERC = 0x00000200;
-const MR_SLEEP = 0x04;
+const S_MIMIC = 13;
 const S_NYMPH = 14;
 const S_SNAKE = 45;
 const PM_GUARD = 272;
@@ -146,14 +149,21 @@ async function putMonstersToSleep(distance) {
         if (monsterDistance(monster) >= distance)
             continue;
         const duration = d(10, 10);
-        const sleepResistant = !!((MONSTER_RESISTS[monster.mnum] || 0)
-            & MR_SLEEP) || monster.defendedSleep;
-        if (sleepResistant || monsterResistsInstrument(monster)
-            || monster.mcanmove === 0)
+        if (MONSTER_SYMBOL[monster.mnum] === S_MIMIC
+            && !monster.msleeping && !monster.mfrozen
+            && [M_AP_FURNITURE, M_AP_OBJECT].includes(M_AP_TYPE(monster)))
+            revealMonsterAppearance(monster);
+        if (monsterResistsSleep(monster) || monsterResistsInstrument(monster)) {
+            await shieldeff(monster.mx, monster.my);
             continue;
-        monster.mcanmove = 0;
-        monster.mfrozen = Math.min(duration + (monster.mfrozen || 0), 127);
-        monster.meating = 0;
+        }
+        if (!putMonsterToSleep(monster, duration))
+            continue;
+        monster.msleeping = 1;
+        if (monster === game.u.ustuck && !game.u.uswallow && !heroFormSticks()) {
+            await plineWithContinuation(`${possessiveName(monsterName(monster, { capitalized: true }))} grip relaxes.`);
+            await releaseHeroFromMonster(monster);
+        }
     }
 }
 async function charmSnakes(distance) {
