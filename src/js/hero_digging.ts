@@ -472,6 +472,8 @@ export async function continueHeroDigging(state = game): Promise<boolean> {
                 );
                 await dropInventoryObjectAtHero(uwep, { state });
             } else {
+                // welded() identifies a curse when the hero cannot let go.
+                uwep.bknown = true;
                 const plural = (uwep.quan ?? uwep.quantity ?? 1) > 1;
                 const bounced = ownedObjectAction(uwep, 'bounce', state);
                 if (hero.usteed) {

@@ -43,4 +43,23 @@ void test('breaking a door uses the simple tool name even when the pick has a pe
     assert.equal(door.doormask, D_BROKEN);
     assert.equal(game._pending_message, 'You break through the door with your pick-axe.');
 });
+void test('a fumbling pick that cannot be dropped reveals its curse', async () => {
+    const level = freshObjectRoom();
+    level.requireAt(11, 10).typ = HWALL;
+    const pick = await addInventoryObject(PICK_AXE, {
+        spe: 0, cursed: true, bknown: false, owornmask: W_WEP,
+    });
+    game.uwep = game.u.uwep = pick;
+    game.u.fumbling = true;
+    const input = resetInputState();
+    installPagerInput(input, { expected: /dig|Ouch|pick/, limit: 10 });
+    input.feed(`${pick.invlet}l`);
+    await rhack('a'.charCodeAt(0));
+    initRng(3n);
+    await continueCountedCommand();
+    assert.equal(game.uwep, pick);
+    assert.equal(pick.bknown, true);
+    assert.equal(game.u._woundedLegSide, 'right');
+    assert.equal(game._occupation, null);
+});
 //# sourceMappingURL=audit_dig_feedback.test.js.map
