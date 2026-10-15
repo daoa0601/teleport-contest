@@ -1994,7 +1994,11 @@ function petCanReachLocation(
         for (let y = my - 1; y <= my + 1; y++) {
             if (!isok(x, y) || dist2(x, y, fx, fy) >= distance) continue;
             const loc = state?.level?.at?.(x, y);
-            if (!loc || IS_OBSTRUCTED(loc.typ)) continue;
+            if (!loc) continue;
+            const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
+            if (IS_OBSTRUCTED(loc.typ) && !(flags & M1_WALLWALK)
+                && (!monsterMayDigLocation(loc) || !(flags & M1_TUNNEL)
+                    || Is_rogue_level(state.u.uz, state))) continue;
             if (IS_DOOR(loc.typ) && (loc.doormask ?? 0) & (D_CLOSED | D_LOCKED)) continue;
             if (!monsterCouldReachItem(monster, x, y, state)) continue;
             if (petCanReachLocation(monster, x, y, fx, fy, state)) return true;
