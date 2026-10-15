@@ -3,6 +3,7 @@ import test from 'node:test';
 
 import { A_STR, POOL, STR19 } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
+import { resetInputState } from '../js/input.js';
 import { BOULDER, DAGGER, ROCK } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { addInventoryItem } from '../js/u_init.js';
@@ -44,7 +45,9 @@ void test('a rock skipping over a pool passes above a swimming monster', async (
     for (let x = 11; x <= 19; x++) level.requireAt(x, 10).typ = POOL;
     const eel = await createMonsterAt('giant eel', 12, 10);
     eel.mhp = eel.mhpmax = 100;
-    const rock = await addInventoryObject(ROCK);
+    const rock = await addInventoryObject(ROCK, { oname: 'Ripple' });
+    const messages: string[] = [];
+    resetInputState().beforeRead = () => { messages.push(game._pending_message); };
     initRng(5n);
 
     await throwInventoryObject(rock, 'l', ' '.repeat(20));
@@ -53,6 +56,7 @@ void test('a rock skipping over a pool passes above a swimming monster', async (
     assert.equal(rock.where, 'floor');
     assert.equal(rock.ox, 19);
     assert.equal(rock.oy, 10);
+    assert.match(messages.join('\n'), /The rock named Ripple skips\./);
 });
 
 void test('a giant throws a boulder twenty squares regardless of its weight', async () => {

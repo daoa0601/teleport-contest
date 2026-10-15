@@ -17,7 +17,7 @@ import { removeWornHeroItem } from './hero_equipment.js';
 import { finishInventoryRemoval } from './hero_inventory.js';
 import { endObjectBurn, objectShedsLight } from './light.js';
 import { addObjectToMonsterInventory } from './monster_inventory.js';
-import { objectName } from './objnam.js';
+import { objectName, ownedObjectName } from './objnam.js';
 import { impactDisturbsZombies } from './object_impact.js';
 import { isPick } from './weapon_type.js';
 import { MONSTER_FLAGS1, MONSTER_MOVE, MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
@@ -268,9 +268,9 @@ async function flyPhysicalObject({ state = game, object, dx, dy, range, startX, 
             if (IS_POOL(location.typ) && !monster) {
                 skipping = true;
                 if (!heroIsBlind(state))
-                    await publish(`${thrownObjectSubject(object)} skips${skips ? ' again' : ''}.`);
+                    await publish(`${ownedObjectName(object, state)} skips${skips ? ' again' : ''}.`);
                 else
-                    await publishHeardMessage(`the ${objectName(object, state)} skip.`, publish, state);
+                    await publishHeardMessage(`${ownedObjectName(object, state, { capitalized: false })} skip.`, publish, state);
                 skips++;
             }
             else if (skip.start > skip.end + 1) {
@@ -285,7 +285,7 @@ async function flyPhysicalObject({ state = game, object, dx, dy, range, startX, 
             }
             else if (monster && rockSkipsOverMonster(monster)) {
                 if (!heroIsBlind(state) && canSpotMonster(monster))
-                    await publish(`${thrownObjectSubject(object)} passes over ${monsterName(monster, { state })}.`);
+                    await publish(`${ownedObjectName(object, state)} passes over ${monsterName(monster, { state })}.`);
                 monster = null;
             }
         }
