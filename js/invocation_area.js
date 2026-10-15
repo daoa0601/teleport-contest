@@ -58,8 +58,10 @@ export async function makeInvocationArea({ state = game } = {}) {
     for (const [distance, ring] of rings.entries()) {
         for (const position of ring)
             await changeInvocationSquare(position, distance, state);
-        if (distance)
+        if (distance) {
             await flush_screen(1);
+            await state.animationFrame?.();
+        }
     }
     await pline('You are standing at the top of a stairwell leading down!');
     await mkstairs(state.u.ux, state.u.uy, false, null);
