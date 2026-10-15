@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { heroArmName, heroFaceName, monsterArmName } from '../js/body_parts.js';
+import { heroArmName, heroBloodName, heroFaceName, monsterArmName } from '../js/body_parts.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { freshGame } from './support/game-state.js';
 void test('mbodypart ARM preserves native class and special-case ordering', () => {
@@ -44,5 +44,14 @@ void test('eyeballs and light have a body or beam where a human has a face', () 
     assert.equal(heroFaceName(freshGame()), 'face');
     assert.equal(heroFaceName(freshGame({ hero: { umonnum: MONSTER_NAME.indexOf('floating eye') } })), 'body');
     assert.equal(heroFaceName(freshGame({ hero: { umonnum: MONSTER_NAME.indexOf('yellow light') } })), 'beam');
+});
+void test('blood descriptions follow the current body substance', () => {
+    for (const [form, substance] of [
+        ['giant spider', 'hemolymph'], ['lichen', 'juices'],
+        ['floating eye', 'life force'], ['yellow light', 'beam'],
+    ]) {
+        const state = freshGame({ hero: { umonnum: MONSTER_NAME.indexOf(form) } });
+        assert.equal(heroBloodName(state), substance, form);
+    }
 });
 //# sourceMappingURL=body_parts.test.js.map
