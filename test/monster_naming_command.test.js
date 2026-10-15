@@ -14,7 +14,8 @@ void test('the monster naming command assigns a normalized name without taking a
     input.feed('name\r');
     queueCommandKeys('m');
     planInput(input, t, [
-        { prompt: /instructions/, keys: 'l.' },
+        { prompt: /instructions/, keys: 'l' },
+        { prompt: /soldier/, keys: '.' },
         { prompt: /What do you want to call the soldier\?/, keys: '  Watcher   One  \r' },
     ]);
     await rhack('#'.charCodeAt(0));

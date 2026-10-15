@@ -3,7 +3,7 @@ import { M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, MGIVENNAME } from './const.js';
 import { canSeeMonster, canSenseMonster, canSpotMonster, glyphAt, plineWithContinuation as pline } from './display.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { GlyphOffset } from './glyph_numbers.js';
-import { selectMapPosition, showGetposTip } from './getpos.js';
+import { describeGetposLocation, selectMapPosition, showGetposTip } from './getpos.js';
 import { playerName } from './individual_naming.js';
 import { heroBeautyDescription } from './mirror.js';
 import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_SOUND, monsterIsRider } from './monster_data.js';
@@ -21,6 +21,7 @@ export async function nameChosenMonster() {
     const tip = await showGetposTip();
     const selected = await selectMapPosition({
         start: { x: game.u.ux, y: game.u.uy }, goal, force: false,
+        describe: describeGetposLocation,
         prompt: tip ? `Move cursor to ${goal}:`
             : game.flags.verbose ? "(For instructions type a '?')" : '',
     });

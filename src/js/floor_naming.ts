@@ -2,7 +2,7 @@
 import { Upolyd } from './const.js';
 import { glyphAt, plineWithContinuation as pline, randomBogusMonsterName } from './display.js';
 import { game, requirePlayingGame } from './gstate.js';
-import { selectMapPosition, showGetposTip } from './getpos.js';
+import { describeGetposLocation, selectMapPosition, showGetposTip } from './getpos.js';
 import { withMapObject } from './map_object_description.js';
 import { roguePlayerName } from './monster_given_name.js';
 import { callObjectType, objectTypeIsCallable } from './object_call.js';
@@ -19,6 +19,7 @@ export async function nameFloorObject(): Promise<void> {
     const tip = await showGetposTip();
     const selected = await selectMapPosition({
         start: { x: game.u.ux, y: game.u.uy }, goal, force: false,
+        describe: describeGetposLocation,
         prompt: tip ? `Move cursor to ${goal}:`
             : game.flags.verbose ? "(For instructions type a '?')" : '',
     });

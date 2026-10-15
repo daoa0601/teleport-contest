@@ -291,6 +291,13 @@ async function describeMenuPosition({ x, y }) {
     return screen.needsDetail
         ? await farlookLocationDescription(x, y) || screen.firstMatch : screen.firstMatch;
 }
+export async function describeGetposLocation(x, y) {
+    const description = await describeMenuPosition({ x, y });
+    if (!description)
+        return null;
+    const coordinates = coordinateDescription(x, y, game.iflags.getpos_coords ?? 'n');
+    return description + (coordinates ? ` ${coordinates}` : '');
+}
 // selection_force_newsyms() redraws by column, then row. Hallucinated glyphs
 // consume display randomness in that order, independently of target cycling.
 function validMapSquares(isValidLocation) {
