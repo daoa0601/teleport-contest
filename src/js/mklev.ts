@@ -111,7 +111,7 @@ import {
     IS_FURNITURE, IS_POOL,
     IS_AIR, IS_LAVA, In_endgame, Is_earthlevel, Is_botlevel, Is_stronghold,
     Invocation_lev, In_hell, In_quest, In_V_tower, Is_oracle_level,
-    Is_waterlevel, Is_knox_level, Is_rogue_level, In_sokoban,
+    Is_waterlevel, Is_firelevel, Is_airlevel, Is_astralevel, Is_knox_level, Is_rogue_level, In_sokoban,
     SPACE_POS, isok, W_NONDIGGABLE, W_NONPASSWALL, FILL_NONE, FILL_NORMAL,
     ICE, MOAT, POOL, WATER, LAVAPOOL, LAVAWALL,
     DRAWBRIDGE_UP, DRAWBRIDGE_DOWN, DBWALL,
@@ -177,12 +177,13 @@ import {
     MONSTER_SYMBOL, MONSTER_SIZE, MONSTER_MOVE, MONSTER_SOUND,
     MONSTER_HAS_WEAPON_ATTACK, MONSTER_COLOR, MONSTER_NAME, MONSTER_RESISTS,
     SPECIAL_PM, monsterClassSymbol, monsterIsPlayerMonster, requireMonsterData,
+    monsterIsAmorphous, monsterIsNoncorporeal, monsterIsWhirly,
 } from './monster_data.js';
 import {
     isReviver, isRider, zombieForm,
 } from './corpse_species.js';
 import {
-    adjustedMonsterLevel, newMonsterHitPoints,
+    adjustedMonsterLevel, isHomeElemental, newMonsterHitPoints,
 } from './monster_hit_points.js';
 import {
     changeMonsterForm, initialShapechangedBirth, pickNastyShape, shapechangerGender,
@@ -1435,6 +1436,8 @@ function rndmonstReservoir(minAdjustment = 0, maxAdjustment = 0): number | null 
         const geno = requireMonsterData(MONSTER_GENO, mndx);
         if (difficulty < minDifficulty || difficulty > maxDifficulty) continue;
         if (Is_rogue_level(game.u.uz) && !/^[A-Z]$/.test(monsterClassSymbol(mndx))) continue;
+        if (In_endgame(game.u.uz) && !Is_astralevel(game.u.uz)
+            && wrongElementalPlaneSpecies(mndx)) continue;
         if (geno & (0x0200 | 0x1000)) continue; // G_NOGEN | G_UNIQ
         if ((game.mvitals?.[mndx]?.mvflags ?? 0) & G_GONE) continue;
         if (inHell) {
@@ -1467,6 +1470,27 @@ function rndmonstReservoir(minAdjustment = 0, maxAdjustment = 0): number | null 
         }
     }
     return selected >= 0 ? selected : null;
+}
+
+// C makemon.c:wrong_elem_type(). Elementals belong only on their own
+// plane; other species need the relevant swimming, resistance, or air trait.
+function wrongElementalPlaneSpecies(mndx: number): boolean {
+    const monsterClass = MONSTER_SYMBOL[mndx];
+    if (monsterClass === 31) return !isHomeElemental(mndx); // S_ELEMENTAL
+    if (Is_earthlevel(game.u.uz)) return false;
+    const flags = requireMonsterData(MONSTER_FLAGS1, mndx);
+    if (Is_waterlevel(game.u.uz)) return !(flags & 0x02); // M1_SWIM
+    if (Is_firelevel(game.u.uz))
+        return !(requireMonsterData(MONSTER_RESISTS, mndx) & 0x01); // MR_FIRE
+    if (Is_airlevel(game.u.uz)) {
+        const species = { mnum: mndx };
+        return !((flags & 0x01) && monsterClass !== 20) // flyer, excluding S_TRAPPER
+            && monsterClass !== 5 && monsterClass !== 25 // S_EYE / S_LIGHT floaters
+            && !monsterIsAmorphous(species)
+            && !monsterIsNoncorporeal(species)
+            && !monsterIsWhirly(species);
+    }
+    return false;
 }
 
 export function rndmonnum(): number {
