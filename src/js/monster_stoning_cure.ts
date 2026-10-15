@@ -7,6 +7,7 @@ import {
 } from './const.js';
 import { canSeeMonster, plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
+import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { formatHeardMessage } from './hero_speech.js';
 import { inventoryItemDescription } from './invent.js';
 import {
@@ -14,6 +15,7 @@ import {
     MONSTER_SYMBOL, monsterIsAnimal, monsterIsBat,
 } from './monster_data.js';
 import { monsterName } from './monster_name.js';
+import { finishEnvironmentalMonsterDeath } from './monster_death.js';
 import { monsterIsHelpless } from './monster_sleep.js';
 import {
     monsterHasAcidResistance, monsterHasStoneResistance,
@@ -37,12 +39,11 @@ import { monsterWieldedWeapon } from './monster_weapon.js';
 import { willWeld } from './weapon_type.js';
 import type { MessagePublisher } from './display.js';
 import type { GameState } from './game_state.js';
-import type { PetrificationDeathHandler } from './monster_stoning.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 
 export interface MonsterStoningCureOptions {
-    finishDeath?: PetrificationDeathHandler | undefined;
+    byHero?: boolean;
     publish?: MessagePublisher;
     rollOne?: (sides: number) => number;
     state?: GameState;
@@ -50,7 +51,7 @@ export interface MonsterStoningCureOptions {
 
 export type MonsterStoningCureResult =
     | { consumed: false; died: false }
-    | { consumed: true; cure: GameObject; died: boolean };
+    | { consumed: true; cure: GameObject; died: boolean; heroDied?: boolean };
 
 const M1_ACID = 0x08000000;
 const S_GHOST = 54;
@@ -126,7 +127,7 @@ async function describeCure(
 }
 
 export async function useMonsterStoningCure(monster: Monster, {
-    finishDeath,
+    byHero = false,
     publish = plineWithContinuation,
     rollOne = rnd,
     state = game,
@@ -142,11 +143,11 @@ export async function useMonsterStoningCure(monster: Monster, {
         curesStoning(monster, object, tinCanBeOpened));
     if (!cure) return { consumed: false, died: false };
 
-    return consumeMonsterStoningCure(monster, cure, { finishDeath, publish, rollOne, state, stoning: true });
+    return consumeMonsterStoningCure(monster, cure, { byHero, publish, rollOne, state, stoning: true });
 }
 
 export async function consumeMonsterStoningCure(monster: Monster, cure: GameObject, {
-    finishDeath, publish = plineWithContinuation, rollOne = rnd, state = game, stoning,
+    byHero = false, publish = plineWithContinuation, rollOne = rnd, state = game, stoning,
 }: MonsterStoningCureOptions & { stoning: boolean }): Promise<MonsterStoningCureResult> {
 
     const visible = canSeeMonster(monster);
@@ -177,13 +178,12 @@ export async function consumeMonsterStoningCure(monster: Monster, cure: GameObje
         }
         if (monster.mhp <= 0) {
             await publish(`${monsterName(monster, { state, capitalized: true })} dies!`);
-            if (typeof finishDeath !== 'function') {
-                throw new TypeError(
-                    'a fatal stoning cure requires a monster death function',
-                );
-            }
-            await finishDeath(monster, { noCorpse: false });
-            return { consumed: true, cure, died: monster.mhp <= 0 || !!monster.dead };
+            const death = byHero
+                ? await finishHeroMonsterKillOutcome(monster, monster.mx, monster.my, {
+                    showKillMessage: false, recordConduct: false, publish,
+                })
+                : await finishEnvironmentalMonsterDeath(monster, state, { noCorpse: true, publish });
+            return { consumed: true, cure, died: monster.mhp <= 0 || !!monster.dead, heroDied: !!death.heroDied };
         }
     }
 
