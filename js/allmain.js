@@ -1,5 +1,6 @@
 import { recorderLocalEpochSeconds } from './calendar.js';
 import { slipOrTrip } from './fumbling.js';
+import { recoverTimedLuck } from './timeout_luck.js';
 import { invWeight } from './weight.js';
 import { rewindEngravingsForSave } from './engrave.js';
 import { finishMonsterHideUnder } from './monster_hiding.js';
@@ -921,6 +922,7 @@ async function finishInitialTurnMaintenanceAfterObjectTimers({ sourceTurn, moveA
     // Prayer's u.uinvulnerable is not the timed Invulnerable property.
     // timeout.c:nh_timeout() returns before decrementing any property while
     // that prayer-only flag is active.
+    recoverTimedLuck(game);
     const prayerTimeoutFreeze = !!game.u?.invulnerable;
     if (!prayerTimeoutFreeze && heroIsPetrifying(game)) {
         await advanceHeroPetrification({
