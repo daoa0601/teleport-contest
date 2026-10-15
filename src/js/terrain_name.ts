@@ -2,7 +2,7 @@
 
 import {
     ALTAR, CLOUD, DOOR, DRAWBRIDGE_DOWN, FOUNTAIN, GRAVE, ICE,
-    IS_AIR, IS_LAVA, IS_POOL, IS_ROOM, IS_WALL, Is_waterlevel, Is_earthlevel,
+    IS_AIR, IS_ROOM, IS_WALL, Is_waterlevel, Is_earthlevel,
     Is_firelevel, In_quest, SHOPBASE, TEMPLE, VAULT, SDOOR,
     DRAWBRIDGE_UP, LAVAPOOL, LAVAWALL, MOAT, POOL, WATER, isok,
 } from './const.js';
@@ -11,6 +11,7 @@ import type { GameState } from './game_state.js';
 import type { DungeonLocation } from './dungeon_types.js';
 import { displayLiquidName } from './display.js';
 import { drawbridgeUnderlyingType } from './drawbridge_terrain.js';
+import { isIceAt, isLavaAt, isPoolAt } from './terrain_properties.js';
 import { onQuestStart } from './quest.js';
 import { heroIsHallucinating } from './senses.js';
 import { roomsAt } from './room.js';
@@ -45,13 +46,17 @@ export function waterbodyName(x: number, y: number, state: GameState = game): st
 
 
 export function surfaceName(x: number, y: number, state: GameState = game): string {
-    const type = state.level?.at?.(x, y)?.typ;
-    if (type === undefined) return 'ground';
-    if (IS_AIR(type)) return type === CLOUD ? 'cloud' : 'air';
-    if (IS_POOL(type))
-        return state.underwater || state.u?.uinwater ? 'bottom' : 'water';
-    if (type === ICE) return 'ice';
-    if (IS_LAVA(type)) return displayLiquidName('lava', state);
+    const location = state.level?.at(x, y);
+    if (!location) return 'ground';
+    const type = location.typ === DRAWBRIDGE_UP
+        ? drawbridgeUnderlyingType(location.drawbridgemask ?? 0) : location.typ;
+    if (IS_AIR(type)) return Is_waterlevel(state.u.uz)
+        ? 'air bubble' : type === CLOUD ? 'cloud' : 'air';
+    if (isPoolAt(x, y, state))
+        return (state.underwater || state.u.uinwater) && !Is_waterlevel(state.u.uz)
+            ? 'bottom' : displayLiquidName('water', state);
+    if (isIceAt(x, y, state)) return 'ice';
+    if (isLavaAt(x, y, state)) return displayLiquidName('lava', state);
     if (type === DRAWBRIDGE_DOWN) return 'bridge';
     if (type === ALTAR) return 'altar';
     if (type === GRAVE) return 'headstone';
