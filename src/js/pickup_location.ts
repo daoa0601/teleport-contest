@@ -4,10 +4,10 @@
 import { heroHasWaterWalking } from './armor.js';
 import {
     ALTAR, D_ISOPEN, DOOR, FOUNTAIN, GRAVE, HOLE,
-    SINK, STAIRS, THRONE, TRAPDOOR, is_pit,
+    P_BASIC, P_RIDING, SINK, STAIRS, THRONE, TRAPDOOR, is_pit,
 } from './const.js';
 import { isLavaAt, isPoolAt } from './terrain_properties.js';
-import { floorReachProblem } from './floor_reach.js';
+import { floorReachProblem, heroTeetersAtPit } from './floor_reach.js';
 import { game } from './gstate.js';
 import {
     MONSTER_NAME, MONSTER_SYMBOL, monsterDigests,
@@ -23,7 +23,6 @@ import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
 import type { MapLocation, Trap } from './map_types.js';
-import type { FloorReachProblem } from './floor_reach.js';
 
 export interface PickupLocationProblem {
     messages: string[];
@@ -89,10 +88,11 @@ function trapAtHero(state: GameState): Trap | null {
         trap.tx === state.u?.ux && trap.ty === state.u?.uy) || null;
 }
 
-function reachMessage(state: GameState, problem: FloorReachProblem, trap: Trap | null): string {
-    if (problem === 'pit-edge')
+function reachMessage(state: GameState, trap: Trap | null): string {
+    if (heroTeetersAtPit(state, trap))
         return 'You cannot reach the bottom of the pit.';
-    if (problem === 'riding') return riderCannotReachMessage(state);
+    if (state.u.usteed && (state.u.weaponSkills?.[P_RIDING]?.skill ?? 0) < P_BASIC)
+        return riderCannotReachMessage(state);
     if (heroIsBlind(state)) return 'You cannot reach anything here.';
     const surface = trap?.ttyp === HOLE ? 'edge of the hole'
         : trap?.ttyp === TRAPDOOR ? 'trap door'
@@ -169,7 +169,7 @@ export function pickupLocationProblem({
         checkPit: !!trap && is_pit(trap.ttyp),
     });
     return reachProblem ? {
-        messages: [reachMessage(state, reachProblem, trap)],
+        messages: [reachMessage(state, trap)],
         spendsTurn: false,
     } : null;
 }

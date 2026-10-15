@@ -1,9 +1,9 @@
 // Rules applied before the pickup menu or object transfer.
 // C ref: hack.c pickup_checks().
 import { heroHasWaterWalking } from './armor.js';
-import { ALTAR, D_ISOPEN, DOOR, FOUNTAIN, GRAVE, HOLE, SINK, STAIRS, THRONE, TRAPDOOR, is_pit, } from './const.js';
+import { ALTAR, D_ISOPEN, DOOR, FOUNTAIN, GRAVE, HOLE, P_BASIC, P_RIDING, SINK, STAIRS, THRONE, TRAPDOOR, is_pit, } from './const.js';
 import { isLavaAt, isPoolAt } from './terrain_properties.js';
-import { floorReachProblem } from './floor_reach.js';
+import { floorReachProblem, heroTeetersAtPit } from './floor_reach.js';
 import { game } from './gstate.js';
 import { MONSTER_NAME, MONSTER_SYMBOL, monsterDigests, } from './monster_data.js';
 import { heroFormClings, heroFormFlags, heroIsFlying, heroMonsterForm, } from './polyself.js';
@@ -56,10 +56,10 @@ function emptyFloorMessage(location) {
 function trapAtHero(state) {
     return state.level?.traps?.find(trap => trap.tx === state.u?.ux && trap.ty === state.u?.uy) || null;
 }
-function reachMessage(state, problem, trap) {
-    if (problem === 'pit-edge')
+function reachMessage(state, trap) {
+    if (heroTeetersAtPit(state, trap))
         return 'You cannot reach the bottom of the pit.';
-    if (problem === 'riding')
+    if (state.u.usteed && (state.u.weaponSkills?.[P_RIDING]?.skill ?? 0) < P_BASIC)
         return riderCannotReachMessage(state);
     if (heroIsBlind(state))
         return 'You cannot reach anything here.';
@@ -131,7 +131,7 @@ export function pickupLocationProblem({ state = game, objects, monster = null, }
         checkPit: !!trap && is_pit(trap.ttyp),
     });
     return reachProblem ? {
-        messages: [reachMessage(state, reachProblem, trap)],
+        messages: [reachMessage(state, trap)],
         spendsTurn: false,
     } : null;
 }
