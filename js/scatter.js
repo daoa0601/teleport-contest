@@ -13,13 +13,14 @@ import { unlinkObject } from './object_location.js';
 import { wakeMonster } from './monster_anger.js';
 import { wakeMonstersNear } from './monster_wake.js';
 import { heroSpecies } from './hero_species.js';
+import { hideHeroUnder, maybeUnhideAt } from './monster_hiding.js';
 import { hitHeroWithObject } from './hero_object_hit.js';
 import { hitHeroWithThrownPotion } from './hero_potion_hit.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { stopHeroOccupation } from './occupation.js';
 import { addShopObjectToBill, costlySpot } from './shk.js';
 import { roomsAt } from './room.js';
-import { MONSTER_SIZE, MONSTER_NAME } from './monster_data.js';
+import { MONSTER_FLAGS1, MONSTER_SIZE, MONSTER_NAME } from './monster_data.js';
 import { findMonsterArmorClass } from './monworn.js';
 import { BOULDER, EGG, GOLD_PIECE, OBJECT_MATERIAL, OBJECT_NAMES, STATUE, } from './object_data.js';
 import { breakFloorObject, } from './object_breakage.js';
@@ -387,6 +388,13 @@ export async function scatterFloorObjects(x, y, force, { state = game, onlyObjec
         newsym(node.x, node.y);
     }
     newsym(x, y);
+    if (state.u.ux === x && state.u.uy === y && state.u.uundetected
+        && ((MONSTER_FLAGS1[heroSpecies(state)] ?? 0) & 0x80))
+        hideHeroUnder(state);
+    const originMonster = monsterAt(state, x, y);
+    if (originMonster?.mtrapped)
+        originMonster.mtrapped = 0;
+    maybeUnhideAt(x, y, state);
     if (lostGoods && shop) {
         const creditUsed = creditBefore - (shop.eshk.credit ?? 0);
         const debitAdded = (shop.eshk.debit ?? 0) - debitBefore;
