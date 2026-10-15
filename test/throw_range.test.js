@@ -1,13 +1,15 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { A_STR, STR19 } from '../js/const.js';
+import { A_STR, POOL, STR19 } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { BOULDER, DAGGER } from '../js/object_data.js';
+import { BOULDER, DAGGER, ROCK } from '../js/object_data.js';
+import { initRng } from '../js/rng.js';
 import { addInventoryItem } from '../js/u_init.js';
 import { setPrimaryWeapon } from '../js/weapon_slots.js';
 import { throwInventoryObject } from './support/commands.js';
 import { addInventoryObject, artifactObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';
+import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('underwater throws stop one square from the hero', async () => {
     freshObjectRoom({ right: 35 });
@@ -17,6 +19,31 @@ void test('underwater throws stop one square from the hero', async () => {
     assert.equal(dagger.where, 'floor');
     assert.equal(dagger.ox, 11);
     assert.equal(dagger.oy, 10);
+});
+void test('an underwater rock throw uses the same one-square range as weapons', async () => {
+    freshObjectRoom({ right: 35 });
+    game.underwater = true;
+    const rock = await addInventoryObject(ROCK);
+    await throwInventoryObject(rock);
+    assert.equal(rock.where, 'floor');
+    assert.equal(rock.ox, 11);
+    assert.equal(rock.oy, 10);
+});
+void test('a rock skipping over a pool passes above a swimming monster', async () => {
+    const level = freshObjectRoom({ right: 35 });
+    requirePlayingGame(game);
+    game.u.acurr.a[A_STR] = 18;
+    for (let x = 11; x <= 19; x++)
+        level.requireAt(x, 10).typ = POOL;
+    const eel = await createMonsterAt('giant eel', 12, 10);
+    eel.mhp = eel.mhpmax = 100;
+    const rock = await addInventoryObject(ROCK);
+    initRng(5n);
+    await throwInventoryObject(rock, 'l', ' '.repeat(20));
+    assert.equal(eel.mhp, 100);
+    assert.equal(rock.where, 'floor');
+    assert.equal(rock.ox, 19);
+    assert.equal(rock.oy, 10);
 });
 void test('a giant throws a boulder twenty squares regardless of its weight', async () => {
     freshObjectRoom({ right: 35 });

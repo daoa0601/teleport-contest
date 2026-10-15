@@ -158,7 +158,6 @@ import { stopHeroOccupation } from './occupation.js';
 import { canSelectOff, continueBulkTakeoff, takeOffAll } from './bulk_takeoff.js';
 import { resetBulkTakeoff, TAKEOFF_ORDER, takeoffSlotObject } from './takeoff_state.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
-import { nextObjectId } from './ident.js';
 import { clearCommandKeys, nhgetch, queueCommandKeys, takeCommandKey } from './input.js';
 import { readCommandInput } from './command_input.js';
 import { clearRepeatCommand, rememberCommand, takeRepeatCommand } from './command_repeat.js';
@@ -188,7 +187,7 @@ import { displayLiquidName, displayMessageWindow,
     unblindTelepathyRange,
     monsterHasWarningProjection, see_nearby_objects, show_glyph_cell, swallowed,
     randomDisplayMonsterName, randomDisplayMonsterSubject, see_monsters, see_objects,
-    see_traps, transientObjectGlyph, map_invisible, unmap_invisible, map_object, unmapObject,
+    see_traps, map_invisible, unmap_invisible, map_object, unmapObject,
 } from './display.js';
 import { cansee, couldsee, vision_note_blocker_change, vision_recalc, vision_reset } from './vision.js';
 import { transformMagicLampToOilLamp } from './light.js';
@@ -289,10 +288,9 @@ import {
 import { launcherMatchesAmmo } from './object_properties.js';
 import { resolveMapPotionThrow } from './potion_throw.js';
 import { throwOrdinaryObject } from './ordinary_throw.js';
-import { hitMonsterWithThrownObject } from './hero_ranged_attack.js';
 import { chooseHeroVolleyCount } from './hero_multishot.js';
 import {
-    captureThrownObjectFlight, detachThrownUnit, finishHeroThrownObjectLanding,
+    captureThrownObjectFlight,
 } from './thrown_object.js';
 import {
     objectName, singularObjectName, unseenObjectNoun,
@@ -502,7 +500,7 @@ import {
     SPIKED_PIT, TT_PIT, HOLE, TRAPDOOR, DART_TRAP, MAGIC_TRAP, TELEP_TRAP, LEVEL_TELEP, STATUE_TRAP, WEB,
     ANTI_MAGIC, G_GONE, ER_NOTHING, ER_DAMAGED, M_AP_MONSTER, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE,
     STRAT_WAITMASK, MM_NOEXCLAM, MM_NOMSG, SHOPBASE, ROOMOFFSET, F_LOOTED, In_endgame,
-    Is_airlevel, Is_waterlevel, Is_rogue_level, In_hell, W_ARMOR, W_ACCESSORY, W_SADDLE, LOST_THROWN, WT_SPLASH_THRESHOLD,
+    Is_airlevel, Is_waterlevel, Is_rogue_level, In_hell, W_ARMOR, W_ACCESSORY, W_SADDLE,
     WT_SQUEEZABLE_INV, P_BOW, P_SLING, PARANOID_HIT, POLY_CONTROLLED, STR19, isok,
     ACCESSIBLE, AIR, DIGTYP_UNDIGGABLE, DRAWBRIDGE_UP,
 } from './const.js';
@@ -525,8 +523,6 @@ const M2_ROCKTHROW = 0x08000000;
 const M1_HUMANOID = 0x00020000;
 const M1_TUNNEL = 0x20;
 const M1_NEEDPICK = 0x40;
-const MAT_GEMSTONE = 20;
-const MAT_MINERAL = 21;
 
 function isMovementKey(ch: string): ch is DirectionKey {
     return ch.length === 1 && 'hjklyubn'.includes(ch);
@@ -6664,7 +6660,6 @@ async function throwCommand(
     }
     const { dx, dy, dz } = direction;
     const selfThrow = !dx && !dy && !dz;
-    const verticalThrow = !!dz;
 
     if (directGoldThrow) {
         if (selfThrow) {
@@ -6752,13 +6747,10 @@ async function throwCommand(
     // obj.h:is_ammo()+matching_launcher(): the arrow flight owner is selected
     // by the signed P_BOW subtype, not the ordinary ARROW/BOW identities.
     // This includes elven, orcish, silver and ya ammunition with any matching
-    // bow while keeping crossbow and sling ammunition in their own owners.
+    // bow while leaving crossbow and sling ammunition to the shared flight.
     const bowAmmo = OBJECT_SUBTYPE[item.otyp] === -P_BOW;
     const handThrownArrow = bowAmmo
         && (!game.uwep || OBJECT_SUBTYPE[game.uwep.otyp] !== P_BOW);
-    const matchingSlingGem = !game.u?.uswallow
-        && wieldingSling && thrownObjectClass === 13
-        && OBJECT_SUBTYPE[item.otyp] === -P_SLING;
     const volleyCount = game.u?.uswallow ? 1 : chooseHeroVolleyCount(item, {
         state: game,
         shotLimit,
@@ -6772,19 +6764,10 @@ async function throwCommand(
                 volleyCount} ${noun}.`,
         );
     }
-    let splitObjectId = null;
-    if (!game.u?.uswallow && thrownObjectClass === 13
-        && !matchingSlingGem
-        && selectedQuantity > 1) {
-        // The dispatchers below share the same copied type/knowledge fields.
-        // Allocate at C's split point; detachThrownUnit owns the actual split.
-        splitObjectId = nextObjectId(item, item, game);
-    }
     if (await resolveSwallowedEggPieOrVenomThrow({
         state: game,
         item,
         selectedQuantity,
-        splitObjectId,
         finishKill: (monster: Monster) => finishOrdinarySwallowedConsumedKill(
             monster, item.otyp === EGG ? 'swallowed-egg' : 'swallowed-venom',
         ),
@@ -6794,7 +6777,6 @@ async function throwCommand(
         item,
         objectClass: thrownObjectClass,
         selectedQuantity,
-        splitObjectId,
         finishKill: finishOrdinarySwallowedThrowKill,
     })) return;
     if (game.u?.uswallow
@@ -6811,7 +6793,6 @@ async function throwCommand(
         item,
         objectClass: thrownObjectClass,
         selectedQuantity,
-        splitObjectId,
         wakeMonster: wakeAttackedMonster,
         wakeNearby: wakeMonstersNear,
         finishKill: (monster: Monster, death?: HeroMonsterKillOptions) => finishOrdinarySwallowedConsumedKill(
@@ -6826,7 +6807,6 @@ async function throwCommand(
         item,
         objectClass: thrownObjectClass,
         selectedQuantity,
-        splitObjectId,
         wakeMonster: wakeAttackedMonster,
     })) return;
 
@@ -6835,7 +6815,6 @@ async function throwCommand(
         item,
         objectClass: thrownObjectClass,
         selectedQuantity,
-        splitObjectId,
         wakeMonster: wakeAttackedMonster,
     })) return;
     if (game.u?.uswallow && thrownObjectClass !== 8) {
@@ -6849,7 +6828,6 @@ async function throwCommand(
         item,
         objectClass: thrownObjectClass,
         selectedQuantity,
-        splitObjectId,
         dx,
         dy,
         captureFlight: captureThrownObjectFlight,
@@ -6871,169 +6849,12 @@ async function throwCommand(
         );
     }
 
-    // C refs: dothrow.c:throwit(), zap.c:bhit()/skiprange(), and
-    // dothrow.c:drop_throw().  This bounded slice owns GEM_CLASS flight for a
-    // mineral ROCK/TOUCHSTONE and a gem
-    // launched by a matching sling.  Only ROCK initializes skiprange; magic
-    // TOUCHSTONE bypasses should_mulch_missile().
-    const mineralProjectile = item.otyp === ROCK || item.otyp === TOUCHSTONE;
-    const supportedGemProjectile = mineralProjectile || matchingSlingGem;
-    const mineralFirstTyp = game.level
-        ?.at?.(game.u.ux + dx, game.u.uy + dy)?.typ;
-    if (!verticalThrow && supportedGemProjectile
-        && (mineralFirstTyp === POOL || mineralFirstTyp === ROOM
-            || mineralFirstTyp === CORR || mineralFirstTyp === DOOR
-            || mineralFirstTyp === ALTAR || mineralFirstTyp === IRONBARS
-            || (mineralFirstTyp !== undefined && IS_WALL(mineralFirstTyp)))) {
-        const resolveGemShot = async (shotNumber: number) => {
-        const thrownMineral = await detachThrownUnit(
-            game, item, objectQuantity(item),
-            matchingSlingGem ? null : splitObjectId, plineWithContinuation,
-        );
-        try {
-            if (game.program_state?.gameover) return { heroDied: true };
-            const unitWeight = OBJECT_WEIGHT[item.otyp] ?? item.owt ?? 1;
-            let range = Math.max(
-                1,
-                Math.trunc(currentAttribute(A_STR) / 2)
-                    - Math.trunc(unitWeight / 40),
-            );
-            if (matchingSlingGem) range++;
-            let skipRangeStart = 0;
-            let skipRangeEnd = 0;
-            let allowSkip = false;
-            if (item.otyp === ROCK) {
-                const rangeQuarter = Math.trunc(range / 4);
-                skipRangeStart = range
-                    - (rangeQuarter > 0 ? rnd(rangeQuarter) : 0);
-                skipRangeEnd = skipRangeStart
-                    - Math.trunc(skipRangeStart / 4) * rnd(3);
-                if (skipRangeEnd >= skipRangeStart)
-                    skipRangeEnd = skipRangeStart - 1;
-                allowSkip = rn2(3) === 0;
-            }
-
-            const landThrownMineral = (landingX: number, landingY: number) =>
-                finishHeroThrownObjectLanding({
-                    state: game,
-                    object: thrownMineral,
-                    x: landingX,
-                    y: landingY,
-                    contactedMonster: contact,
-                    publish: plineWithContinuation,
-                });
-
-            // C zap.c:bhit() initializes tmp_at() from obj_to_glyph() once
-            // before traversing the path.  Hallucination makes that temporary
-            // glyph consume one display-stream draw even when animation is not
-            // exposed by this terminal adapter.
-            transientObjectGlyph(thrownMineral);
-
-            let x = game.u.ux;
-            let y = game.u.uy;
-            let remaining = range;
-            let skipping = false;
-            let contact: Monster | null = null;
-            while (remaining-- > 0) {
-                x += dx;
-                y += dy;
-                const loc = game.level?.at?.(x, y);
-                const monster = game.level ? monsterAtPosition(game.level, x, y) : null;
-
-                if (loc?.typ === WATER || loc?.typ === LAVAWALL) break;
-                const pointBlankPassingBars = loc?.typ === IRONBARS
-                    && remaining === range - 1;
-                let passingBars = pointBlankPassingBars;
-                if (loc?.typ === IRONBARS && !pointBlankPassingBars) {
-                    const forcedBarsHit = rn2(5) === 0;
-                    if (forcedBarsHit) {
-                        rn2(100); // hit_bars()->hero_breaks()->breaktest()
-                        await plineWithContinuation('Clonk!');
-                        wakeMonstersNear(x, y, 16);
-                        x -= dx;
-                        y -= dy;
-                        break;
-                    }
-                    passingBars = true;
-                }
-
-                if (remaining === skipRangeStart && allowSkip) {
-                    if (loc?.typ === POOL && !monster) {
-                        skipping = true;
-                        await plineWithContinuation('The rock skips.');
-                    } else if (skipRangeStart > skipRangeEnd + 1) {
-                        skipRangeStart--;
-                    }
-                }
-                if (skipping && remaining <= skipRangeEnd) skipping = false;
-
-                if (((!loc || !ZAP_POS(loc.typ)) || blocksMove(x, y))
-                    && !passingBars) {
-                    x -= dx;
-                    y -= dy;
-                    break;
-                }
-                if (monster) {
-                    contact = monster;
-                    break;
-                }
-            }
-
-            if (contact) {
-                const hit = await hitMonsterWithThrownObject(contact, thrownMineral, {
-                    state: game, target: { x, y },
-                    volley: { count: volleyCount, index: shotNumber, objectType: item.otyp },
-                });
-                if (hit.heroDied) return hit;
-                if (hit.consumed) {
-                    game.context.move = 1;
-                    return;
-                }
-                await landThrownMineral(x, y);
-                game.context.move = 1;
-                return;
-            }
-
-            const endpoint = game.level?.at?.(x, y);
-            if (endpoint?.typ === POOL) {
-                await plineWithContinuation(
-                    unitWeight > WT_SPLASH_THRESHOLD ? 'Splash!' : 'Plop!',
-                );
-            }
-            await landThrownMineral(x, y);
-            game.context.move = 1;
-            return;
-        } finally {
-            if (game._thrownObject === thrownMineral) game._thrownObject = null;
-        }
-        };
-
-        for (let shot = 0; shot < volleyCount; shot++) {
-            const previousCapacity = game._encumbranceLevel
-                ?? nearCapacity(game);
-            const shotResult = await resolveGemShot(shot + 1);
-            if (shotResult?.heroDied) return;
-            const currentCapacity = nearCapacity(game);
-            const capacityMessage = encumbranceMessage(
-                previousCapacity, currentCapacity,
-            );
-            if (capacityMessage)
-                await plineWithContinuation(capacityMessage);
-            game._encumbranceLevel = currentCapacity;
-            game.u._encumbrance = encumbranceLabel(currentCapacity);
-            if (game.program_state?.gameover) break;
-        }
-        game.context.move = 1;
-        return;
-    }
-
     for (let shot = 0; shot < volleyCount; shot++) {
         const previousCapacity = game._encumbranceLevel ?? nearCapacity(game);
         const shotResult = await throwOrdinaryObject({
             state: game,
             item,
             quantity: item.quantity ?? item.quan ?? 1,
-            splitObjectId,
             dx,
             dy,
             volley: { count: volleyCount, index: shot + 1, objectType: item.otyp },
