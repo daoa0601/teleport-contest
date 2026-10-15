@@ -3,18 +3,21 @@ import test from 'node:test';
 import { moveloop_core } from '../js/allmain.js';
 import { rhack } from '../js/cmd.js';
 import { CORR, ROOMOFFSET, STONE, VAULT, VWALL, NO_MINVENT } from '../js/const.js';
+import { glyphAt, newsym } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { setHeroGoldAmount } from '../js/hero_gold.js';
 import { resetInputState } from '../js/input.js';
 import { monsterGoldAmount } from '../js/shop_money.js';
+import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { GOLD_PIECE } from '../js/object_data.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
-import { rn2 } from '../js/rng.js';
+import { initRng, rn2 } from '../js/rng.js';
 import { moveHeroByTeleport } from '../js/teleport.js';
 import { finishTeleportArrival } from '../js/location_effects.js';
 import { moveVaultGuard } from '../js/vault.js';
 import { runMonsterAction } from '../js/monmove.js';
-import { floorObject } from './support/game-objects.js';
+import { cansee, vision_recalc } from '../js/vision.js';
+import { floorObject, knownObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -73,6 +76,44 @@ void test('an escort recovers dropped corridor gold without advancing past the h
     assert.equal(monsterGoldAmount(guard), 71);
     assert.equal(guard.mx, 13);
     assert.equal(guard._egd.warncnt, 5);
+});
+
+void test('recovering unseen gold gives a telepathically sensed guard the same hallucinated appearance as waiting', async () => {
+    const appearanceAfterTurn = async (pickup: boolean) => {
+        const { level, guard } = await escort();
+        requirePlayingGame(game);
+        assert.ok(guard._egd);
+        guard._egd.fcend = 2;
+        guard._egd.fakecorr.push({ x: 12, y: 10, typ: STONE, flags: 0 });
+        level.requireAt(12, 10).typ = CORR;
+        game.u.ux = 9;
+        game.blind = true;
+        game.u.blindTurns = 20;
+        game.u.telepathy = true;
+        game.u.hallucinationTurns = 20;
+        vision_recalc(0);
+        const coins = pickup
+            ? await floorObject(GOLD_PIECE, guard.mx, guard.my, { quan: 71 })
+            : await knownObject(GOLD_PIECE, { quan: 71 });
+        if (!pickup) await addObjectToMonsterInventory(guard, coins);
+        initRng(1n);
+        newsym(guard.mx, guard.my);
+        assert.equal(cansee(guard.mx, guard.my), false);
+
+        await runMonsterAction(guard, game);
+
+        assert.equal(coins.where, 'minvent');
+        assert.equal(monsterGoldAmount(guard), 71);
+        assert.equal(guard.mx, 11);
+        const appearance = glyphAt(guard.mx, guard.my);
+        assert.ok(appearance?.kind === 'monster');
+        return appearance.mnum;
+    };
+
+    const waitingAppearance = await appearanceAfterTurn(false);
+    const pickupAppearance = await appearanceAfterTurn(true);
+
+    assert.equal(pickupAppearance, waitingAppearance, 'Unseen gold must not add an extra hallucinated appearance change.');
 });
 
 void test('a finished parked escort removes its corridor on a later world turn', async () => {

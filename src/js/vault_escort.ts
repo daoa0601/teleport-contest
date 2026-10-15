@@ -360,7 +360,7 @@ async function pickGoldAtGuard(guard: Monster, state: GameState) {
     if (!gold) return;
     unlinkObject(gold, state);
     await linkObjectToMonsterInventory(guard, gold, { state });
-    newsym(guard.mx, guard.my);
+    if (cansee(guard.mx, guard.my)) newsym(guard.mx, guard.my);
 }
 
 async function pickCorridorGold(guard: VaultGuard, x: number, y: number, state: GameState, random: (limit: number) => number) {
