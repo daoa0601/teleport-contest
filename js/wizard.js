@@ -15,7 +15,7 @@ export async function amuletTurn(state) {
     const amulet = state.uamul?.otyp === AMULET_OF_YENDOR ? state.uamul
         : state.uwep?.otyp === AMULET_OF_YENDOR ? state.uwep : null;
     if (amulet && !rn2(15)) {
-        const portal = state.level.traps.find(trap => trap.ttyp === MAGIC_PORTAL);
+        const portal = [...state.level.traps].reverse().find(trap => trap.ttyp === MAGIC_PORTAL);
         if (portal) {
             const dx = portal.tx - state.u.ux, dy = portal.ty - state.u.uy;
             const distance = dx * dx + dy * dy;
