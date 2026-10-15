@@ -926,8 +926,9 @@ function canDropPolymorphWeapon(object: GameObject) {
     return !(object.otyp === LEASH && object.leashmon);
 }
 
-function roundDivPositive(numerator: number, denominator: number) {
-    return Math.trunc((numerator + Math.trunc(denominator / 2)) / denominator);
+function roundDiv(numerator: number, denominator: number) {
+    const magnitude = Math.trunc((Math.abs(numerator) + Math.trunc(denominator / 2)) / denominator);
+    return Math.sign(numerator) * magnitude;
 }
 
 function humanAttributeArrays() {
@@ -1067,14 +1068,14 @@ async function renewHumanForm(sexChangeAllowed = true) {
     let hpMaximum = u.uhpmax ?? 1;
     for (let i = 0; i < oldLevel; i++)
         hpMaximum -= Number(u.uhpinc?.[i] || 0);
-    hpMaximum = roundDivPositive(hpMaximum * (rn2(4) + 8), 10);
+    hpMaximum = roundDiv(hpMaximum * (rn2(4) + 8), 10);
     for (let i = 0; i < newLevel; i++) {
         u.ulevel = i;
         hpMaximum += newmanHpIncrement(i);
     }
     u.ulevel = newLevel;
     hpMaximum = Math.max(hpMaximum, newLevel);
-    u.uhp = roundDivPositive(
+    u.uhp = roundDiv(
         (u.uhp ?? 1) * hpMaximum,
         Math.max(1, u.uhpmax ?? 1),
     );
@@ -1085,14 +1086,14 @@ async function renewHumanForm(sexChangeAllowed = true) {
     let powerMaximum = u.uenmax ?? 0;
     for (let i = 0; i < oldLevel; i++)
         powerMaximum -= Number(u.ueninc?.[i] || 0);
-    powerMaximum = roundDivPositive(powerMaximum * (rn2(4) + 8), 10);
+    powerMaximum = roundDiv(powerMaximum * (rn2(4) + 8), 10);
     for (let i = 0; i < newLevel; i++) {
         u.ulevel = i;
         powerMaximum += newmanPowerIncrement(i);
     }
     u.ulevel = newLevel;
     powerMaximum = Math.max(powerMaximum, newLevel);
-    u.uen = roundDivPositive(
+    u.uen = roundDiv(
         (u.uen ?? 0) * powerMaximum,
         Math.max(1, u.uenmax ?? 0),
     );

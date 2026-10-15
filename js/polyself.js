@@ -862,8 +862,9 @@ function canDropPolymorphWeapon(object) {
     }
     return !(object.otyp === LEASH && object.leashmon);
 }
-function roundDivPositive(numerator, denominator) {
-    return Math.trunc((numerator + Math.trunc(denominator / 2)) / denominator);
+function roundDiv(numerator, denominator) {
+    const magnitude = Math.trunc((Math.abs(numerator) + Math.trunc(denominator / 2)) / denominator);
+    return Math.sign(numerator) * magnitude;
 }
 function humanAttributeArrays() {
     requirePlayingGame(game);
@@ -1003,28 +1004,28 @@ async function renewHumanForm(sexChangeAllowed = true) {
     let hpMaximum = u.uhpmax ?? 1;
     for (let i = 0; i < oldLevel; i++)
         hpMaximum -= Number(u.uhpinc?.[i] || 0);
-    hpMaximum = roundDivPositive(hpMaximum * (rn2(4) + 8), 10);
+    hpMaximum = roundDiv(hpMaximum * (rn2(4) + 8), 10);
     for (let i = 0; i < newLevel; i++) {
         u.ulevel = i;
         hpMaximum += newmanHpIncrement(i);
     }
     u.ulevel = newLevel;
     hpMaximum = Math.max(hpMaximum, newLevel);
-    u.uhp = roundDivPositive((u.uhp ?? 1) * hpMaximum, Math.max(1, u.uhpmax ?? 1));
+    u.uhp = roundDiv((u.uhp ?? 1) * hpMaximum, Math.max(1, u.uhpmax ?? 1));
     u.uhpmax = hpMaximum;
     u.uhp = Math.min(u.uhp, u.uhpmax);
     u.uhppeak = Math.max(u.uhppeak ?? 0, u.uhpmax);
     let powerMaximum = u.uenmax ?? 0;
     for (let i = 0; i < oldLevel; i++)
         powerMaximum -= Number(u.ueninc?.[i] || 0);
-    powerMaximum = roundDivPositive(powerMaximum * (rn2(4) + 8), 10);
+    powerMaximum = roundDiv(powerMaximum * (rn2(4) + 8), 10);
     for (let i = 0; i < newLevel; i++) {
         u.ulevel = i;
         powerMaximum += newmanPowerIncrement(i);
     }
     u.ulevel = newLevel;
     powerMaximum = Math.max(powerMaximum, newLevel);
-    u.uen = roundDivPositive((u.uen ?? 0) * powerMaximum, Math.max(1, u.uenmax ?? 0));
+    u.uen = roundDiv((u.uen ?? 0) * powerMaximum, Math.max(1, u.uenmax ?? 0));
     u.uenmax = powerMaximum;
     u.uen = Math.min(u.uen, u.uenmax);
     u.uhunger = 500 + rn2(500);
