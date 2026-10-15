@@ -464,7 +464,7 @@ import { removeHeroEquipment } from './hero_equipment.js';
 import {
     shouldShowGetposTip, showGetposTip, selectMapPosition,
 } from './getpos.js';
-import { chatWithQuestLeader, onQuestStart, okToQuest } from './quest.js';
+import { onQuestStart, okToQuest } from './quest.js';
 import {
     performPetRangedAttack, resumeDeferredMonsterTrap, triggerImmediateMonsterTrap,
 } from './monmove.js';
@@ -2759,7 +2759,7 @@ async function dochat() {
             await plineWithContinuation(`${monsterName(steed, { capitalized: true })} seems not to notice you.`);
             game.context.move = 1;
         } else {
-            game.context.move = Number(await publishMonsterNoise(steed, game));
+            game.context.move = Number(await publishMonsterNoise(steed, game, { exerciseWisdom }));
         }
         return;
     }
@@ -2819,16 +2819,7 @@ async function dochat() {
         await plineWithContinuation(`Any response${canSpotMonster(monster) ? ` from ${monsterName(monster)}` : ''} ${response}.`);
         return;
     }
-    if (await chatWithQuestLeader(monster, { exerciseWisdom })) {
-        game.context.move = 1;
-        return;
-    }
-    if (monster.mnum === PM_WATER_NYMPH) {
-        await plineWithContinuation('The water nymph cajoles you.');
-        game.context.move = 1;
-        return;
-    }
-    game.context.move = Number(await publishMonsterNoise(monster, game));
+    game.context.move = Number(await publishMonsterNoise(monster, game, { exerciseWisdom }));
 }
 
 async function wizWish() {

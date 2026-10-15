@@ -287,7 +287,7 @@ import { deleteEngravingAt, maybeSmudgeEngravings, wipeHeroEngraving } from './e
 import { canLetGo, finishInventoryRemoval } from './hero_inventory.js';
 import { removeHeroEquipment } from './hero_equipment.js';
 import { shouldShowGetposTip, showGetposTip, selectMapPosition, } from './getpos.js';
-import { chatWithQuestLeader, onQuestStart, okToQuest } from './quest.js';
+import { onQuestStart, okToQuest } from './quest.js';
 import { performPetRangedAttack, resumeDeferredMonsterTrap, triggerImmediateMonsterTrap, } from './monmove.js';
 import { hurtleHero, kickRecoilRange } from './hero_hurtle.js';
 import { announceInvocationSquare } from './invocation.js';
@@ -2667,7 +2667,7 @@ async function dochat() {
             game.context.move = 1;
         }
         else {
-            game.context.move = Number(await publishMonsterNoise(steed, game));
+            game.context.move = Number(await publishMonsterNoise(steed, game, { exerciseWisdom }));
         }
         return;
     }
@@ -2730,16 +2730,7 @@ async function dochat() {
         await plineWithContinuation(`Any response${canSpotMonster(monster) ? ` from ${monsterName(monster)}` : ''} ${response}.`);
         return;
     }
-    if (await chatWithQuestLeader(monster, { exerciseWisdom })) {
-        game.context.move = 1;
-        return;
-    }
-    if (monster.mnum === PM_WATER_NYMPH) {
-        await plineWithContinuation('The water nymph cajoles you.');
-        game.context.move = 1;
-        return;
-    }
-    game.context.move = Number(await publishMonsterNoise(monster, game));
+    game.context.move = Number(await publishMonsterNoise(monster, game, { exerciseWisdom }));
 }
 async function wizWish() {
     const verbose = game.flags.verbose;
