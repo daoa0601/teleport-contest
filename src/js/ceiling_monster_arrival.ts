@@ -33,7 +33,9 @@ export async function finishCeilingMonsterArrival(state: PlayingGameState, publi
             await publish('Its blow glances off your helm.');
         } else {
             const missed = hero.uac + 3 <= rnd(20);
-            const falling = monsterName(monster, { state, article: 'a', adjective: 'falling', suppressIt: true });
+            const falling = monsterName(monster, {
+                state, article: 'a', adjective: 'falling', called: true, suppressSaddle: false,
+            });
             if (missed) {
                 await publish(`You are almost hit by ${falling}!`);
             } else {

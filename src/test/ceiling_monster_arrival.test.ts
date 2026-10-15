@@ -7,6 +7,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { wearHeroArmor } from '../js/armor.js';
 import { ORCISH_HELM } from '../js/object_data.js';
+import { setHeroBlindnessTurns } from '../js/senses.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -68,3 +69,26 @@ void test('a concealed piercer stops running even when its fall misses the hero'
     assert.equal(await continueRun(), false);
     assert.deepEqual([game.u.ux, game.u.uy], [11, 10]);
 });
+
+for (const blind of [false, true]) {
+    for (const misses of [false, true]) {
+        void test(`a falling named piercer ${misses ? 'misses' : 'hits'} a ${blind ? 'blind' : 'sighted'} hero`, async () => {
+            freshObjectRoom({ hero: { uac: misses ? -20 : 50 } });
+            requirePlayingGame(game);
+            setHeroBlindnessTurns(blind ? 10 : 0);
+            const piercer = await createMonsterAt('rock piercer', 11, 10, MM_NOGRP | NO_MINVENT);
+            piercer.mgivenname = 'Spike';
+            piercer.mpeaceful = 0;
+            piercer.mundetected = 1;
+            pushKeys(' '.repeat(10));
+            const health = game.u.uhp;
+
+            await rhack('l'.charCodeAt(0));
+
+            const target = blind ? 'it' : 'a falling rock piercer called Spike';
+            assert.equal(game._lastPlineMessage, `You are ${misses ? 'almost hit' : 'hit'} by ${target}!`);
+            if (misses) assert.equal(game.u.uhp, health);
+            else assert.ok(game.u.uhp < health);
+        });
+    }
+}
