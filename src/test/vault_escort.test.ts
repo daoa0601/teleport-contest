@@ -3,13 +3,13 @@ import test from 'node:test';
 import { moveloop_core } from '../js/allmain.js';
 import { rhack } from '../js/cmd.js';
 import { CORR, ROOMOFFSET, STONE, VAULT, VWALL, NO_MINVENT } from '../js/const.js';
-import { glyphAt, newsym } from '../js/display.js';
+import { canSeeMonster, glyphAt, newsym } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { setHeroGoldAmount } from '../js/hero_gold.js';
 import { resetInputState } from '../js/input.js';
 import { monsterGoldAmount } from '../js/shop_money.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
-import { GOLD_PIECE } from '../js/object_data.js';
+import { GOLD_PIECE, TIN_WHISTLE } from '../js/object_data.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { initRng, rn2 } from '../js/rng.js';
 import { moveHeroByTeleport } from '../js/teleport.js';
@@ -145,6 +145,36 @@ void test('teleporting away with vault gold releases an angry guard immediately'
 
     assert.equal(guard.mpeaceful, 0);
 });
+
+for (const whistle of [false, true]) {
+    void test(`infravision alone gives a guard's ${whistle ? 'whistle' : 'shouting'} alarm after a vault escape`, async () => {
+        const { level, guard } = await escort();
+        game.u.infravision = true;
+        for (let x = 7; x <= 16; x++)
+            for (let y = 6; y <= 14; y++) level.requireAt(x, y).lit = false;
+        if (whistle) await addObjectToMonsterInventory(guard, await knownObject(TIN_WHISTLE));
+        setHeroGoldAmount(game, 50);
+        initRng(3n);
+        const messages: string[] = [];
+        const input = resetInputState();
+        input.beforeRead = () => {
+            messages.push(game.nhDisplay?.grid.slice(0, 3)
+                .map(row => row.map(cell => cell.ch).join('')).join('') ?? '');
+            input.feed(' ');
+        };
+
+        const movement = await moveHeroByTeleport(15, 10);
+        await finishTeleportArrival(movement);
+        messages.push(game._pending_message);
+
+        assert.equal(guard.mpeaceful, 0);
+        assert.equal(cansee(guard.mx, guard.my), false);
+        assert.equal(canSeeMonster(guard), true, 'Infravision still reveals the guard in the dark.');
+        assert.match(messages.join('\n'), whistle
+            ? /You hear the shrill sound of a guard's whistle\./
+            : /You hear angry shouting\./);
+    });
+}
 
 void test('teleporting into rock blocks levitation before the vault guard reacts', async () => {
     const { level, guard } = await escort();
