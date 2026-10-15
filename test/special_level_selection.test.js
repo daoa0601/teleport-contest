@@ -117,4 +117,16 @@ void test('solid initialization resets cell metadata within the native maze boun
     assert.equal(level.requireAt(1, 5).typ, CORR);
     assert.equal(level.requireAt(79, 5).typ, HWALL);
 });
+void test('swamp initialization chooses lighting when omitted and maze grids default to stone', async (t) => {
+    const lua = await levelLua(t);
+    const lighting = new Set();
+    for (let seed = 1; seed <= 8; seed++) {
+        initRng(seed);
+        await lua.executeAsync('des.level_init({ style = "swamp" })');
+        lighting.add(requireGameLevel().requireAt(20, 10).lit);
+    }
+    assert.equal(lighting.size, 2, 'unspecified swamp lighting can be lit or unlit');
+    await lua.executeAsync('des.level_init({ style = "mazegrid" })');
+    assert.equal(requireGameLevel().requireAt(20, 10).typ, STONE);
+});
 //# sourceMappingURL=special_level_selection.test.js.map

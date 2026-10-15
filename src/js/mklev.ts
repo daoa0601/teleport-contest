@@ -5736,6 +5736,8 @@ async function fillSpecialLevel(
         if (foreground === undefined || background === undefined)
             throw new Error('unknown Lua mines terrain');
         const lit = options.lit == null ? !!rn2(2) : !!options.lit;
+        const filling = mapCharacterType(options.filling ?? options.fg ?? '.');
+        if (filling !== undefined) fillSpecialSolid(filling, false);
         await mkmap({
             lit,
             foreground,
@@ -5753,13 +5755,13 @@ async function fillSpecialLevel(
         const background = mapCharacterType(options.bg ?? '}');
         if (foreground === undefined || background === undefined)
             throw new Error('unknown Lua swamp terrain');
-        const lit = !!options.lit;
+        const lit = options.lit == null ? !!rn2(2) : !!options.lit;
         fillSpecialSwamp(foreground, background, lit);
         active.defaultLit = lit;
         return;
     }
     if (style === 'mazegrid') {
-        const type = mapCharacterType(options.bg ?? '-');
+        const type = mapCharacterType(options.bg ?? ' ');
         if (type === undefined)
             throw new Error(`unknown Lua map character ${options.bg}`);
         fillSpecialMazeGrid(type);
@@ -7187,21 +7189,10 @@ function fillSpecialSwamp(fg = ROOM, bg = MOAT, lit = false): void {
     // then run the x-major relaxed blockwise maze over even coordinates.
     const mazeXMax = (COLNO - 1) & ~1;
     const mazeYMax = (ROWNO - 1) & ~1;
-    for (let x = 2; x <= mazeXMax; x++) {
-        for (let y = 0; y <= mazeYMax; y++) {
-            const loc = level.at(x, y);
-            if (!loc) continue;
-            loc.typ = bg;
-            loc.lit = !!lit;
-            loc.flags = 0;
-            loc.horizontal = false;
-            loc.roomno = 0;
-            loc.edge = false;
-        }
-    }
+    fillSpecialSolid(bg, lit);
     for (let x = 2; x <= Math.min(mazeXMax, COLNO - 2); x += 2) {
         for (let y = 0; y <= Math.min(mazeYMax, ROWNO - 2); y += 2) {
-            setLevelTerrainType(x, y, fg);
+            setLevelTerrainLit(x, y, fg, lit);
             const east = level.at(x + 1, y);
             const south = level.at(x, y + 1);
             const diagonal = level.at(x + 1, y + 1);
@@ -7210,12 +7201,8 @@ function fillSpecialSwamp(fg = ROOM, bg = MOAT, lit = false): void {
                 + Number(diagonal?.typ === bg);
             if (untouched !== 3) continue;
             const chosen = rn2(3);
-            const point = chosen === 0 ? east
-                : chosen === 1 ? south : diagonal;
-            if (point) {
-                point.typ = fg;
-                point.lit = !!lit;
-            }
+            setLevelTerrainLit(x + (chosen !== 1 ? 1 : 0),
+                y + (chosen !== 0 ? 1 : 0), fg, lit);
         }
     }
 }
