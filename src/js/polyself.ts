@@ -54,7 +54,9 @@ import {
 import { deleteObject } from './object_delete.js';
 import { dragonFormForArmor, findArmorClass, removeHeroArmor, simpleArmorName } from './armor.js';
 import { isFlimsyObject } from './object_properties.js';
-import { endObjectBurn } from './light.js';
+import {
+    adjustObjectLightAfterBlessing as adjustObjectLight, endObjectBurn, objectLightRadius,
+} from './light.js';
 import {
     encumbranceLabel, encumbranceMessage, nearCapacity,
 } from './weight.js';
@@ -1418,12 +1420,11 @@ async function mergeDragonArmor(armor: GameObject | null | undefined, mnum: numb
     if (!armor)
         throw new Error('Merging with a dragon form requires worn dragon armor');
     if (!((game.mvitals?.[mnum]?.mvflags ?? 0) & G_GENOD)) {
+        const oldLight = objectLightRadius(armor);
         if (armor.otyp >= GRAY_DRAGON_SCALES) {
             await plineWithContinuation('You merge with your scaly armor.');
         } else {
-            const armorName = OBJECT_NAMES[armor.otyp];
-            if (!armorName) throw new Error(`Unknown dragon armor type: ${armor.otyp}`);
-            const name = armorName.replace(' dragon ', ' ');
+            const name = simpleObjectName(armor).replace(' dragon ', ' ');
             await plineWithContinuation(
                 `Your ${name} reverts to scales as you merge with them.`,
             );
@@ -1431,12 +1432,14 @@ async function mergeDragonArmor(armor: GameObject | null | undefined, mnum: numb
             const scaleName = OBJECT_NAMES[armor.otyp];
             if (!scaleName) throw new Error(`Unknown dragon scales type: ${armor.otyp}`);
             armor.name = scaleName;
-            if (!heroIsBlind(game)) armor.dknown = true;
+            observeObject(armor, game);
+            game.context.botl = true;
         }
         game.uskin = armor;
         game.uarm = game.u.uarm = null;
         armor.owornmask = (armor.owornmask ?? 0) | I_SPECIAL;
         armor.wornSlot = 'uskin';
+        if (armor.lamplit) await adjustObjectLight(armor, oldLight);
     }
     return polymonHero(mnum);
 }
@@ -1444,9 +1447,11 @@ async function mergeDragonArmor(armor: GameObject | null | undefined, mnum: numb
 async function restoreDragonArmor(state = game, publish: MessagePublisher = plineWithContinuation) {
     const armor = state.uskin;
     if (!armor) return;
+    const oldLight = objectLightRadius(armor, state);
     await publish('Your skin returns to its original form.');
     state.uarm = state.u.uarm = armor;
     state.uskin = null;
     armor.owornmask = (armor.owornmask ?? 0) & ~I_SPECIAL;
     armor.wornSlot = 'uarm';
+    if (armor.lamplit) await adjustObjectLight(armor, oldLight, state);
 }
