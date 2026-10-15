@@ -4,7 +4,9 @@
 import { heroIsHallucinating } from './senses.js';
 import { game } from './gstate.js';
 import { canSpotMonster, pline, plineWithContinuation, } from './display.js';
-import { MONSTER_ATTACKS } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_FLAGS1 } from './monster_data.js';
+import { monsterIsScaredAt } from './monster_fear.js';
+import { monsterHasMapPosition } from './monster_location.js';
 import { AT_BOOM } from './monster_attack_types.js';
 import { M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE } from './const.js';
 import { setHeroBlindnessTurns } from './senses.js';
@@ -32,10 +34,13 @@ export function threateningMonsterNearby(state = game) {
             || monsterIsHelpless(monster)
             || M_AP_TYPE(monster) === M_AP_FURNITURE
             || M_AP_TYPE(monster) === M_AP_OBJECT
-            || monster.mundetected
+            || !monsterHasMapPosition(monster, state)
+            || ((MONSTER_FLAGS1[monster.mnum] ?? 0) & 0x00000100)
+                && monster.mundetected
             || (monster.mx === u.ux && monster.my === u.uy)
             || Math.abs(monster.mx - u.ux) > 1
             || Math.abs(monster.my - u.uy) > 1
+            || monsterIsScaredAt(monster, state, u.ux, u.uy)
             || !canSpotMonster(monster)) {
             return false;
         }
