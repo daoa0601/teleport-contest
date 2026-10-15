@@ -88,7 +88,7 @@ export interface VaultGuardData {
     ogy: number;
     gdx: number;
     gdy: number;
-    vault: Room;
+    vault: Room | null;
     warncnt: number;
     fcbeg: number;
     fcend: number;

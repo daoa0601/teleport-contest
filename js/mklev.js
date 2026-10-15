@@ -11,6 +11,7 @@ import { setWallState } from './wall_topology.js';
 import { monsterHasMapPosition, monsterAtPosition, monsterOccupiesPosition } from './monster_location.js';
 import { hideMonsterUnder } from './monster_hiding.js';
 import { finishMonsterBirth } from './monster_birth.js';
+import { allocateMonsterBirthExtensions } from './monster_birth_extensions.js';
 import { createParticularMonster } from './read_creation.js';
 import { setMonsterPermanentInvisibility } from './monster_invisibility.js';
 import { setMonsterSpecies } from './monster_species.js';
@@ -1825,6 +1826,7 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
         hasInventory: false,
     };
     const monsterIndex = level.monsters.push(pendingMonster) - 1;
+    allocateMonsterBirthExtensions(pendingMonster, mmflags);
     if (mmflags & MM_MINVIS) {
         setMonsterPermanentInvisibility(pendingMonster);
         newsym(pendingMonster.mx, pendingMonster.my);
@@ -2765,6 +2767,20 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
         // pickup, polymorph, and loss paths explicitly set NEED_WEAPON.
         weaponCheck: 0,
     };
+    if (pendingMonster.mextra)
+        monster.mextra = pendingMonster.mextra;
+    if (pendingMonster.edog)
+        monster.edog = pendingMonster.edog;
+    if (pendingMonster.emin)
+        monster.emin = pendingMonster.emin;
+    if (pendingMonster.epri)
+        monster.epri = pendingMonster.epri;
+    if (pendingMonster.eshk)
+        monster.eshk = pendingMonster.eshk;
+    if (pendingMonster._egd)
+        monster._egd = pendingMonster._egd;
+    if (pendingMonster.mcorpsenm !== undefined)
+        monster.mcorpsenm = pendingMonster.mcorpsenm;
     if (roamingMinion) {
         monster.isminion = 1;
         monster.emin = {
