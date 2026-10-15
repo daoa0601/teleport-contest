@@ -364,7 +364,7 @@ import {
 } from './monster_anger.js';
 import { publishMonsterNoise } from './monster_sound.js';
 import { doride, moveSteedWithHero, ridingPreventsMovement, stuckSteed } from './steed.js';
-import { currentAttribute, currentStrength, exerciseAttribute, exerciseWisdom, reportHeroEncumbrance } from './attrib.js';
+import { adjustAttribute, ATTRIBUTE_DISPLAY_ORDER, attributeChangeMessage, currentAttribute, currentStrength, exerciseAttribute, exerciseWisdom, reportHeroEncumbrance } from './attrib.js';
 import { spendHeroNutrition, updateHeroHunger } from './hunger.js';
 
 import { continueForceLock, doforce } from './lock.js';
@@ -1764,7 +1764,16 @@ async function summonFountainSnakes() {
 
 export async function drinkFountain(loc: MapLocation) {
     let fountainMessage = '';
+    const blessed = loc.blessedftn === 1;
     const fate = rnd(30);
+    if (propertyIsActive('levitation')) {
+        await floatingAbove('fountain');
+        return false;
+    }
+    if (blessed && (game.u.uluck ?? 0) >= 0 && fate >= 10) {
+        await blessedFountainDraught(loc);
+        return false;
+    }
     if (fate < 10) {
         // fountain.c:drinkfountain() handles the ordinary low-fate draught
         // before its numbered switch.  Nutrition is credited before dryup()
@@ -1773,6 +1782,7 @@ export async function drinkFountain(loc: MapLocation) {
         game.u.uhunger = (game.u.uhunger ?? 900) + rnd(10);
         await updateHeroHunger(false);
         if (game.program_state.gameover) return true;
+        if (blessed) return false;
     } else if (fate === 20) {
         await plineWithContinuation('The water is foul!  You gag and vomit.');
         // C refs: fountain.c:drinkfountain(), eat.c:vomit(), and
@@ -1818,6 +1828,38 @@ export async function drinkFountain(loc: MapLocation) {
 
     await dryFountainAt(game.u.ux, game.u.uy);
     return false;
+}
+
+async function blessedFountainDraught(loc: MapLocation): Promise<void> {
+    requirePlayingGame(game);
+    const state = game;
+    const hero = state.u;
+    await plineWithContinuation('Wow!  This makes you feel great!');
+    for (const attribute of ATTRIBUTE_DISPLAY_ORDER) {
+        if (hero.acurr.a[attribute] < hero.amax.a[attribute]) {
+            hero.acurr.a[attribute] = hero.amax.a[attribute];
+            state.context.botl = true;
+        }
+    }
+    const littleLuck = (hero.uluck ?? 0) < 4;
+    const start = rn2(6);
+    for (let offset = 0; offset < 6; offset++) {
+        const attribute = (start + offset) % 6;
+        const change = adjustAttribute(attribute, 1, state);
+        if (change.changed || !littleLuck
+            && (change.blockedByDunceCap || state.flags.verbose !== false)) {
+            const message = attributeChangeMessage(attribute, change, state);
+            if (message) await plineWithContinuation(message);
+        }
+        if (change.changed && state._moveloopStarted
+            && (attribute === A_STR || attribute === A_CON))
+            await reportHeroEncumbrance(state);
+        if (change.changed && littleLuck) break;
+    }
+    await flushPendingTopline();
+    await plineWithContinuation('A wisp of vapor escapes the fountain...');
+    await exerciseAttribute(A_WIS, true);
+    loc.blessedftn = 0;
 }
 
 // C do.c:u_stuck_cannot_go(). A sticky hero releases its captive, while
