@@ -193,6 +193,7 @@ export async function unearthFloorObjectsAt(x: number, y: number, state: GameSta
         unearthed.push(object);
     }
     deleteEngravingAt(x, y, requireGameLevel(state));
+    newsym(x, y);
     return unearthed;
 }
 

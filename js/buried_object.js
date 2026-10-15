@@ -164,6 +164,7 @@ export async function unearthFloorObjectsAt(x, y, state = game) {
         unearthed.push(object);
     }
     deleteEngravingAt(x, y, requireGameLevel(state));
+    newsym(x, y);
     return unearthed;
 }
 // C dig.c:buried_ball(): the buried iron ball at the spot, or the nearest one
