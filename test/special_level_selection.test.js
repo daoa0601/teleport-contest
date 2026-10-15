@@ -8,6 +8,7 @@ import { currentLuaLifecycle } from '../js/lua/lifecycle.js';
 import { mklev } from '../js/mklev.js';
 import { init_objects } from '../js/o_init.js';
 import { initRng } from '../js/rng.js';
+import { MONSTER_NAME } from '../js/monster_data.js';
 import { freshGame } from './support/game-state.js';
 import { startLuaCore } from './support/lua-game.js';
 async function levelLua(t) {
@@ -167,5 +168,16 @@ void test('Lua feature tables set and clear the native looted-state flags', asyn
     `);
     assert.equal(level.requireAt(10, 5).typ, FOUNTAIN, 'another feature cannot replace furniture');
     assert.equal(level.requireAt(10, 5).looted, F_WARNED, 'omitted flags retain their values');
+});
+void test('numeric false in Lua monster options suppresses birth counting', async (t) => {
+    const lua = await levelLua(t);
+    const species = MONSTER_NAME.indexOf('orc');
+    const births = game.mvitals?.[species]?.born ?? 0;
+    await lua.executeAsync(`
+        des.map({ x = 10, y = 5, map = [[...]] })
+        des.monster({ id = "orc", x = 1, y = 0, group = 0, countbirth = 0 })
+    `);
+    assert.equal(game.mvitals?.[species]?.born ?? 0, births);
+    assert.equal(requireGameLevel().monsters.length, 1);
 });
 //# sourceMappingURL=special_level_selection.test.js.map

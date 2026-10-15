@@ -266,7 +266,9 @@ function tableOptions(value: LuaValue | undefined): DesOptions {
         if (entry == null) continue;
         if (typeof entry !== 'boolean' && typeof entry !== 'number')
             throw new TypeError(`des.${key} must be a flag`);
-        options[key] = entry;
+        if (key !== 'lit' && typeof entry === 'number' && entry !== 0 && entry !== 1)
+            throw new TypeError(`des.${key} must be zero or one`);
+        options[key] = key === 'lit' ? entry : !!entry;
     }
     for (const key of ['coord', 'teledest'] as const) {
         const entry = value.get(key);
