@@ -6388,6 +6388,10 @@ async function dofire(cannedShotLimit = null) {
         else {
             if (game.uwep && isPolearm(game.uwep))
                 return applyPolearm(game.uwep, true);
+            if (game.uwep?.otyp === BULLWHIP) {
+                await applyTool(game.uwep, snapshotMenuUnderlay());
+                return;
+            }
             const alternate = game.uswapwep || game.u?.uswapwep;
             if (game.flags?.fireassist !== false && alternate && isPolearm(alternate)
                 && !(alternate.cursed && alternate.bknown)) {
