@@ -15,10 +15,12 @@ import { removeObjectAndContentsFromBill } from './shk.js';
 import { artifactEmitsLight } from './artifacts.js';
 import { endObjectBurn, objectShedsLight } from './light.js';
 import { monsterCanEngulf } from './monster_data.js';
+import { monsterTypeName } from './monster_data.js';
+import { impossible } from './diagnostics.js';
 import { canSeeMonster, plineWithContinuation } from './display.js';
 import { updateMonsterEquipment } from './monster_equipment.js';
 import { unwieldMonsterWeapon } from './monster_weapon.js';
-import { observeObjectForNaming, objectName, objectNameIsPlural } from './objnam.js';
+import { observeObjectForNaming, objectName, objectNameIsPlural, simpleObjectName } from './objnam.js';
 import { heroIsBlind } from './senses.js';
 import {
     ELVEN_SHIELD, GLOB_OF_BLACK_PUDDING, GLOB_OF_GRAY_OOZE,
@@ -122,7 +124,16 @@ export async function addObjectToMonsterInventory(
     state: GameState = game, { atFront = true }: MonsterPickupOptions = {},
 ): Promise<GameObject | null> {
     requireLiveGame(state);
-    if (!monster || !object) return null;
+    if (!monster) return null;
+    if (!object) {
+        await impossible(`monster (${monsterTypeName(monster.mnum, !!monster.female)}) taking or picking up nothing?`, { state });
+        return null;
+    }
+    if (object === state.uball || object === state.uchain) {
+        const part = object === state.uchain ? 'chain' : 'ball';
+        await impossible(`monster (${monsterTypeName(monster.mnum, !!monster.female)}) taking or picking up attached ${part} (${simpleObjectName(object, state)})?`, { state });
+        return null;
+    }
     const extinguish = await prepareMonsterPickup(monster, object, state);
     const carried = await linkObjectToMonsterInventory(monster, object, { atFront, state });
     if (extinguish) endObjectBurn(carried, state, state.moves);

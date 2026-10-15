@@ -7,6 +7,7 @@ import { addInventoryItem } from '../js/u_init.js';
 import { setPrimaryWeapon } from '../js/weapon_slots.js';
 import { runClaimedGlobTimer } from '../js/glob.js';
 import { beginObjectBurn } from '../js/light.js';
+import { punishHero } from '../js/punishment.js';
 import { placeCreatedObject } from '../js/floor_object.js';
 import { moveloop_core } from '../js/allmain.js';
 import { giveSpecialMonsterObject, makemonAt, mksobj, } from '../js/mklev.js';
@@ -51,6 +52,26 @@ void test('an engulfed hero sees a lamp go out before the engulfer takes it', as
     assert.equal(lamp.where, 'minvent');
     assert.match(game._pending_message, /The oil lamp goes out\./);
 });
+for (const part of ['ball', 'chain']) {
+    void test(`monster pickup refuses the hero's attached ${part} without disturbing punishment`, async () => {
+        freshObjectRoom();
+        requirePlayingGame(game);
+        const monster = await createMonsterAt('soldier', 11, 10, NO_MINVENT);
+        installPagerInput(resetInputState(), {
+            expected: /punished|monster .*attached|Program in disorder|Please report/,
+            limit: 8,
+        });
+        await punishHero();
+        const object = part === 'ball' ? game.uball : game.uchain;
+        assert.ok(object);
+        const pickup = await addObjectToMonsterInventory(monster, object, game);
+        assert.ok(pickup === null);
+        assert.equal(object.where, 'floor');
+        assert.equal(game.u.punished, true);
+        assert.ok(monster.minvent.length === 0);
+        assert.ok(part === 'ball' ? game.uball === object : game.uchain === object);
+    });
+}
 void test('a pet returns a fetched item but keeps its worn saddle', async () => {
     freshObjectRoom();
     requirePlayingGame(game);
