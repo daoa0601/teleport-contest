@@ -36,7 +36,7 @@ for (const command of ['<', '>']) {
     }
 }
 
-void test('a sticky hero releases its captive before trying to descend elsewhere', async () => {
+void test('a failed descent preserves the sticky hero releasing its captive', async () => {
     const { source } = freshConnectedLevels();
     requirePlayingGame(game);
     game.stairs = null;
@@ -50,5 +50,5 @@ void test('a sticky hero releases its captive before trying to descend elsewhere
     assert.ok(game.level === source, 'the hero stays on this level');
     assert.equal(game.u.ustuck, null);
     assert.equal(game.context.move, 0);
-    assert.equal(game._pending_message, "You can't go down here.");
+    assert.equal(game._pending_message, "You release the newt.  You can't go down here.");
 });

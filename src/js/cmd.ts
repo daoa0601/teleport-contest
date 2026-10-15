@@ -1919,7 +1919,7 @@ export async function travelStairs(up: boolean) {
         }
         const vibratingSquare = !up && level.traps.some(trap =>
             trap.tx === game.u.ux && trap.ty === game.u.uy && trap.ttyp === VIBRATING_SQUARE);
-        await pline(`You can't go ${up ? 'up' : 'down'} here${vibratingSquare ? ' yet' : ''}.`);
+        await plineWithContinuation(`You can't go ${up ? 'up' : 'down'} here${vibratingSquare ? ' yet' : ''}.`);
         game.context.move = 0;
         return false;
     }
