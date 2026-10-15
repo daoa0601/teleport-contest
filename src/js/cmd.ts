@@ -103,7 +103,7 @@ import { retouchHeroObject } from './hero_retouch.js';
 import { GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, PARANOID_REMOVE, GETOBJ_SUGGEST } from './const.js';
 import { TER_MON } from './const.js';
 import { senseBuriedObjects } from './buried_object.js';
-import { distantMonsterName, monsterInstanceDisplayName, monsterName, shopkeeperName } from './monster_name.js';
+import { distantMonsterName, monsterInstanceDisplayName, monsterName, monsterPossessive, monsterSubjectPronoun, shopkeeperName } from './monster_name.js';
 import { attackHostileMonster } from './hero_melee.js';
 import { prepareAppliedWeaponAttack } from './hero_attack_preflight.js';
 import { applyCaitiffPenalty } from './hero_attack_conduct.js';
@@ -1658,7 +1658,7 @@ function someGold(amount: number | null | undefined) {
 async function discoverFountainGem(loc: MapLocation) {
     return applyFountainGemDiscovery({
         loc,
-        blind: !!game.blind,
+        blind: heroIsBlind(),
         announce: (message: string) => pline(message),
         chooseGem: () => rndClass(DILITHIUM_CRYSTAL, LUCKSTONE - 1),
         createGem: (gemType: number) => mksobj(gemType, false, false),
@@ -1673,15 +1673,11 @@ function fountainActorGone(mnum: number) {
 }
 
 function fountainActorIndefiniteName(monster: Monster) {
-    const name = heroIsHallucinating()
-        ? randomDisplayMonsterName() : monsterInstanceDisplayName(monster);
-    return withIndefiniteArticle(name);
+    return monsterName(monster, { article: 'a' });
 }
 
 function fountainActorVisibleSubject(monster: Monster) {
-    return heroIsHallucinating()
-        ? randomDisplayMonsterSubject()
-        : `The ${monsterInstanceDisplayName(monster)}`;
+    return monsterName(monster, { capitalized: true });
 }
 
 function fountainTrapAt(monster: Monster) {
@@ -1702,7 +1698,7 @@ async function triggerFountainTrap(monster: Monster) {
 async function summonFountainNymph() {
     return applyFountainNymphActor({
         gone: fountainActorGone(PM_WATER_NYMPH),
-        blind: !!game.blind,
+        blind: heroIsBlind(),
         createMonster: async () => {
             const nymph = await makemonNear(
                 PM_WATER_NYMPH, game.u.ux, game.u.uy, MM_NOMSG,
@@ -1720,7 +1716,7 @@ async function summonFountainNymph() {
 async function summonFountainDemon() {
     return applyFountainDemonActor({
         gone: fountainActorGone(PM_WATER_DEMON),
-        blind: !!game.blind,
+        blind: heroIsBlind(),
         difficulty: level_difficulty(),
         createMonster: async () => {
             const demon = await makemonNear(
@@ -1731,6 +1727,10 @@ async function summonFountainDemon() {
         },
         announce: plineWithContinuation,
         demonIndefiniteName: fountainActorIndefiniteName,
+        demonPronouns: monster => ({
+            possessive: monsterPossessive(monster),
+            pronoun: monsterSubjectPronoun(monster),
+        }),
         grantWish: (demon: Monster) => grantMonsterWish(demon),
         trapAt: fountainTrapAt,
         triggerTrap: triggerFountainTrap,
@@ -1740,7 +1740,7 @@ async function summonFountainDemon() {
 async function summonFountainSnakes() {
     return applyFountainSnakeActors({
         gone: fountainActorGone(PM_WATER_MOCCASIN),
-        blind: !!game.blind,
+        blind: heroIsBlind(),
         hallucinating: heroIsHallucinating(),
         random: rn2,
         hallucinatedPlural: () => makePlural(randomDisplayMonsterName()),
@@ -4096,7 +4096,7 @@ async function dipFountain(object: DipTarget, loc: MapLocation) {
         message: fate >= 17 && fate <= 20 ? 'A feeling of loss comes over you.' : '' } : resolveDippedBucFate({
         fate,
         object,
-        blind: !!game.blind,
+        blind: heroIsBlind(),
         liquidName: () => displayLiquidName('water'),
     });
     if (object !== 'hands' && !wasCursed && object.cursed) {
@@ -4115,7 +4115,7 @@ async function dipFountain(object: DipTarget, loc: MapLocation) {
         dungeonLevels: currentDungeon?.num_dunlevs
             ?? game.u?.uz?.dlevel ?? 1,
         dungeonLevel: game.u?.uz?.dlevel ?? 1,
-        blind: !!game.blind,
+        blind: heroIsBlind(),
         random: rnd,
         createGold: async (quantity: number) => {
             await mkgold(quantity, game.u.ux, game.u.uy);
