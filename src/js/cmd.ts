@@ -182,6 +182,7 @@ export { getLine, promptYesNo, promptYesNoQuit } from './query.js';
 import {
     objectTypeCallNoun,
 } from './object_call.js';
+import { nameIndividualObject } from './individual_naming.js';
 import { displayLiquidName, displayMessageWindow,
     newsym, feel_newsym, flushPendingTopline, flush_screen, pline, plineWithContinuation, moreUntilDismissed, docrt,
     bot, terrain_glyph, glyphAt, canSeeMonster, canSpotMonster, canSenseMonster, canSpotHeroSelf,
@@ -2556,23 +2557,8 @@ async function doname() {
                 : candidate.dknown === false || candidate.oartifact || candidate.otyp === SPE_NOVEL
                     ? GETOBJ_DOWNPLAY : GETOBJ_SUGGEST, { forcePrompt: true });
         if (object) {
-            const value = await getLine(
-                `What do you want to name this ${object.name}?`,
-                (_ch, key) => key >= 32 && key < 127,
-            );
-            if (value !== null) {
-                const name = value.trim().replace(/\s+/g, ' ');
-                if (name) {
-                    object.oextra = {
-                        ...(object.oextra || {}),
-                        oname: name,
-                    };
-                } else if (object.oextra?.oname) {
-                    delete object.oextra.oname;
-                }
-            }
-            game._pending_message = '';
-            await restoreCommandMap();
+            await nameIndividualObject(object);
+            await flush_screen(1);
         }
     } else if (choice === 'o') {
         const inventory = (game.inventory || [])
