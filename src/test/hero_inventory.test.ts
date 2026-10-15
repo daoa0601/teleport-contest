@@ -1,3 +1,4 @@
+import { ensureQuestStatus } from '../js/quest.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { artifactByName } from '../js/artifacts.js';
@@ -60,6 +61,7 @@ async function invokedHeart() {
         expected: /float|levitat|ground|land|mine|explos|pit|die|Goodbye|points|experience|REST|PEACE/i,
         limit: 24,
     });
+    ensureQuestStatus().touched_artifact = true;
     const heart = await artifactObject('The Heart of Ahriman');
     await addInventoryItem(heart);
     const artifact = artifactByName('The Heart of Ahriman');
