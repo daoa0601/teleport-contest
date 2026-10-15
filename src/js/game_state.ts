@@ -237,6 +237,7 @@ export interface GameState {
     castleTune?: string;
     specialLevels?: Map<string, SpecialLevelDescriptor>;
     oracle_level?: SpecialLevelDescriptor | undefined;
+    oracleRemaining?: number[];
     medusa_level?: SpecialLevelDescriptor | undefined;
     knox_level?: SpecialLevelDescriptor | undefined;
     stronghold_level?: SpecialLevelDescriptor | undefined;

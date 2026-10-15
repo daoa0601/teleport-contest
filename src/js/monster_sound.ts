@@ -13,6 +13,7 @@ import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { chatWithShopkeeper } from './shop_chat.js';
 import { chatWithQuestCharacter } from './quest.js';
+import { consultOracle } from './rumor.js';
 import { roles } from './roles.js';
 import { rn2 } from './rng.js';
 import {
@@ -42,6 +43,7 @@ const MS_HUMANOID = 25;
 const MS_ORC = 24;
 const MS_LEADER = 36;
 const MS_NEMESIS = 37;
+const MS_ORACLE = 40;
 const MS_GUARDIAN = 38;
 const MS_GROAN = 44;
 const M1_CARNIVORE = 0x20000000;
@@ -129,6 +131,7 @@ export async function publishMonsterNoise(
     else if (sound === MS_MOO && !monster.mtame) sound = MS_BELLOW;
     else if (hallucinating && looksLikeGecko(monster, state)) sound = MS_SELL;
     if (!canSpotMonster(monster)) map_invisible(monster.mx, monster.my);
+    if (sound === MS_ORACLE) return consultOracle(monster, state);
     if (sound === MS_LEADER || sound === MS_NEMESIS || sound === MS_GUARDIAN) {
         await chatWithQuestCharacter(monster, state);
         return true;
