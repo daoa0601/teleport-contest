@@ -4,8 +4,7 @@ import { BOLT_LIM, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE } from './const.js';
 import { artifactById, artifactEmitsLight } from './artifacts.js';
 import { canSeeMonster, plineWithContinuation } from './display.js';
 import { game, requireLiveGame } from './gstate.js';
-import { expelHero, releaseHeroFromMonster } from './hero_expulsion.js';
-import { heroFormSticks } from './hero_species.js';
+import { releaseMonsterHold } from './hero_expulsion.js';
 import { MONSTER_FLAGS1, MONSTER_MOVE, MONSTER_NAME } from './monster_data.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { inHeroSanctuary } from './priest.js';
@@ -51,17 +50,8 @@ export async function makeMonsterFlee(monster, { state = game, turns = 0, first 
     requireLiveGame(state);
     if (monster.mhp <= 0)
         return { heroDied: false };
-    if (state.u.ustuck === monster) {
-        if (state.u.uswallow) {
-            const expelled = await expelHero(monster, { state, publish, random, rollOne });
-            if (expelled.died)
-                return { heroDied: true };
-        }
-        else if (!heroFormSticks(state)) {
-            await releaseHeroFromMonster(monster, { state, publish, rollOne });
-            await publish('You get released!');
-        }
-    }
+    if (await releaseMonsterHold(monster, { state, publish, random, rollOne }))
+        return { heroDied: true };
     const canStart = !first || !monster.mflee;
     if (canStart) {
         if (turns === 0) {

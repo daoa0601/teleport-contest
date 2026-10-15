@@ -41,6 +41,23 @@ export interface ExpelHeroOptions extends ReleaseHeroOptions {
     random?: (range: number) => number;
 }
 
+// C monmove.c:release_hero(). A monster can end its own hold, but cannot
+// release a sticky hero's grip. Expulsion also settles the hero's landing.
+export async function releaseMonsterHold(monster: Monster, {
+    state = game, publish = plineWithContinuation, random = rn2, rollOne = rnd,
+}: Pick<ExpelHeroOptions, 'state' | 'publish' | 'random' | 'rollOne'> = {}): Promise<boolean> {
+    if (state.u.ustuck !== monster) return false;
+    if (state.u.uswallow) {
+        const result = await expelHero(monster, { state, publish, random, rollOne });
+        return !!result.died;
+    }
+    if (!heroFormSticks(state)) {
+        await releaseHeroFromMonster(monster, { state, publish, rollOne });
+        await publish('You get released!');
+    }
+    return false;
+}
+
 export type ExpelHeroResult =
     | { expelled: false; died?: false }
     | { expelled: true; died: boolean };

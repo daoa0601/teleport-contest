@@ -37,6 +37,7 @@ import { monsterMovementBaseFlags, monsterCanOpenDoor, monsterCanUnlockDoor, mon
 import { loseGuardianAngel } from './guardian_angel.js';
 import { shiftMonsterForDoor, resolveMonsterDoorPassage } from './monster_door_passage.js';
 import { heroSpecies } from './hero_species.js';
+import { releaseMonsterHold } from './hero_expulsion.js';
 import { placeHeroOnLevel } from './hero_location.js';
 import { swallowed } from './display.js';
 import { Is_rogue_level } from './const.js';
@@ -6728,6 +6729,17 @@ export async function takeMonsterTurn(monster, state, random = rn2, rollDice = d
             (monster.mhp ?? 0) === (monster.mhpmax ?? 0) &&
             recordRandom(random, calls, 25) === 0) {
             monster.mflee = 0;
+        }
+        if (state.u.ustuck === monster && monster.mpeaceful && !monster.mconf
+            && !heroHasConflict(state)) {
+            const heroDied = await releaseMonsterHold(monster, { state, random, rollOne });
+            return {
+                calls, dochugContext,
+                movement: {
+                    oldx: monster.mx, oldy: monster.my, x: monster.mx, y: monster.my,
+                    moved: false, actionCompleted: true, heroDied,
+                },
+            };
         }
     }
     if (!options.afterCovetousRelocation) {
