@@ -114,7 +114,7 @@ function baseRangedHitThreshold(monster: Monster, weapon: GameObject, state: Pla
         : state.u?.ulevel ?? 1;
     const targetFlags = MONSTER_FLAGS2[monster.mnum] ?? 0;
     const threshold = -1
-        + (state.u?.uluck ?? state.u?.luck ?? state.Luck ?? 0)
+        + (state.u.uluck ?? 0) + (state.u.moreluck ?? 0)
         + findMonsterArmorClass(monster)
         + (state.u?.uhitinc ?? 0)
         + heroLevel
