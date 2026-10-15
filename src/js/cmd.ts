@@ -13,6 +13,7 @@ import { DBWALL, DRAWBRIDGE_DOWN, IS_DRAWBRIDGE, IS_TREE, LADDER, STAIRS, THRONE
 import type { DipTarget } from './dip_water.js';
 import { dipFountainSword } from './fountain_sword.js';
 import { washHands } from './dip_water.js';
+import { curseObject } from './object_state.js';
 import { waterDamageObject } from './trap.js';
 import { dip, dipInto } from './potion_dip.js';
 import { AKLYS, BOOMERANG, CRYSTAL_BALL } from './object_data.js';
@@ -1817,6 +1818,18 @@ export async function drinkFountain(loc: MapLocation) {
         await summonFountainSnakes();
     } else if (fate === 23) {
         await summonFountainDemon();
+    } else if (fate === 24) {
+        await plineWithContinuation("This water's no good!");
+        await spendHeroNutrition(11 + rn2(20));
+        if (game.program_state.gameover) return true;
+        await exerciseAttribute(A_CON, false);
+        // A curse can drop the offhand weapon and change the inventory.
+        for (const object of [...game.inventory]) {
+            if (object.oclass !== 12 && !object.cursed && !rn2(5)) {
+                await curseObject(object);
+                if (game.program_state.gameover) return true;
+            }
+        }
     } else if (fate === 26) {
         await detectMonsters(null);
         await exerciseAttribute(A_WIS, true);
