@@ -115,7 +115,7 @@ import {
     updateIceObjectTimersAt,
 } from './floor_object.js';
 import { deleteEngravingAt } from './engrave.js';
-import { isLavaAt, isPoolAt, monsterInAir } from './terrain_properties.js';
+import { isLavaAt, isPoolAt, levelHasCeiling, monsterFliesOrFloats } from './terrain_properties.js';
 
 const S_ZOMBIE = 52;
 const S_MUMMY = 39;
@@ -123,6 +123,7 @@ const EXPL_ROWS = [['/', '-', '\\'], ['|', ' ', '|'], ['\\', '-', '/']];
 const SHIELD_ROWS = ['0', '#', '@', '#', '0', '#', '*'];
 const MZ_HUGE = 4;
 const M1_FLY = 0x00000001;
+const M1_CLING = 0x00000010;
 
 function trapAt(x: number, y: number, state: GameState): Trap | null {
     return (state.level?.traps || []).find(
@@ -539,7 +540,7 @@ export async function digActualHole(
             }
             if (objectsAppeared) await autopickupAtHero();
         } else if (victim) {
-            if (monsterInAir(victim, state)) {
+            if (monsterFliesOrFloats(victim)) {
                 if (canSeeMonster(victim)) {
                     // C is_flyer() vs is_floater(): floaters also carry
                     // M1_FLY in the pinned data, so they report "flies".
@@ -598,7 +599,9 @@ export async function digActualHole(
                     { state, publish: plineWithContinuation });
             }
             if (victim) {
-                if (monsterInAir(victim, state)
+                if (monsterFliesOrFloats(victim)
+                    || ((MONSTER_FLAGS1[victim.mnum] ?? 0) & M1_CLING)
+                        && levelHasCeiling(state)
                     || (victim.wormSegments?.length ?? 0) > 5
                     || (MONSTER_SIZE[victim.mnum] ?? 2) >= MZ_HUGE) {
                     return;
