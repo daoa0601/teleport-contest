@@ -43,6 +43,8 @@ const persistentNames = [
 // Every remaining GameState field must be transient. Adding, removing, or
 // reclassifying a field requires an explicit persistence decision at compile time.
 const transientFields = {
+    _heroBubble: true,
+    _domoveSucceeded: true,
     _wishHistory: true,
     _pickWarningMove: true,
     _canMakeBones: true,

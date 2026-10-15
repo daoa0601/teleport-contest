@@ -133,7 +133,7 @@ import { shopkeeperIsMuted } from './shop_loss.js';
 import { checkMonsterGearNextTurn, findMonsterArmorClass } from './monworn.js';
 import { inTown, roomsAt } from './room.js';
 import { addShopDamage } from './shop_damage.js';
-import { createPoisonGasCloud, createSteamCloud, GAS_OK, monsterGasTolerance, visibleRegionAt, updateMonsterRegions, } from './regions.js';
+import { createPoisonGasCloud, GAS_OK, monsterGasTolerance, visibleRegionAt, updateMonsterRegions, } from './regions.js';
 import { heroIsDeaf, syncBlindness } from './senses.js';
 import { makeBlinded } from './sight_change.js';
 import { applyMonsterStoningAttack, startHeroPetrificationFromMonster, touchPetrifies, } from './stoning.js';
@@ -3315,8 +3315,8 @@ function maybeBreatheAtHero(monster, attack, state, random, calls) {
         dy: Math.sign(targetY - monster.my),
     };
 }
-// C ref: mkmaze.c:fumaroles(). Steam vents use the same cloud builder as
-// fire striking water.
+// C ref: mkmaze.c:fumaroles(). Lava vents leave damaging gas even though
+// fire striking water leaves harmless steam.
 export async function fumaroles(state = requireInitializedGame()) {
     let cloudCount = rn2(3);
     let minimumSize = 5;
@@ -3335,7 +3335,7 @@ export async function fumaroles(state = requireInitializedGame()) {
         const y = rn2(ROWNO - 4) + 3;
         if (state.level?.at?.(x, y)?.typ !== LAVAPOOL)
             continue;
-        const cloud = await createSteamCloud(state, x, y, rn2(10) + minimumSize, rn2);
+        const cloud = await createPoisonGasCloud(state, x, y, rn2(10) + minimumSize, rn2(10) + 5);
         if (cloud)
             cloud.heroFault = false;
         heard = true;
@@ -3344,6 +3344,8 @@ export async function fumaroles(state = requireInitializedGame()) {
         if (dx * dx + dy * dy < 15)
             loud = true;
     }
+    if (heard && !heroIsDeaf(state))
+        await plineWithContinuation(`You hear a ${loud ? 'loud ' : ''}whoosh!`, { noRepeat: true });
     return { heard, loud };
 }
 // Finish breamm() in the same actor transaction across ray message input.

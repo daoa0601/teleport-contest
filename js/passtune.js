@@ -7,14 +7,9 @@ import { ACH_TUNE, A_WIS, Is_stronghold, isok, } from './const.js';
 import { findDrawbridgeAt, toggleDrawbridge, } from './dbridge.js';
 import { pline, plineWithContinuation, } from './display.js';
 import { game } from './gstate.js';
-import { OBJECT_NAMES } from './object_data.js';
+import { definiteName, objectCombatName } from './objnam.js';
 import { getLine, promptYesNoQuit } from './query.js';
-function instrumentName(instrument) {
-    return instrument.name || OBJECT_NAMES[instrument.otyp] || 'instrument';
-}
-function heroIsDeaf() {
-    return !!(game.deaf || (game.u?.deafTurns ?? 0) > 0);
-}
+import { heroIsDeaf } from './senses.js';
 function nearbyDrawbridge() {
     for (let y = (game.u?.uy || 0) - 1; y <= (game.u?.uy || 0) + 1; y++) {
         for (let x = (game.u?.ux || 0) - 1; x <= (game.u?.ux || 0) + 1; x++) {
@@ -83,9 +78,10 @@ function recordKnownPasstune() {
     recordAchievement(game, ACH_TUNE);
 }
 export async function playTune(instrument, tune, options = {}) {
+    const name = definiteName(objectCombatName(instrument));
     await pline(heroIsDeaf()
-        ? `You can feel your ${instrumentName(instrument)} emitting vibrations.`
-        : `You extract a strange sound from your ${instrumentName(instrument)}!`);
+        ? `You can feel ${name} emitting vibrations.`
+        : `You extract a strange sound from ${name}!`);
     if (!Is_stronghold(game.u?.uz)) {
         game.context.move = 1;
         return;
@@ -93,9 +89,11 @@ export async function playTune(instrument, tune, options = {}) {
     await exerciseAttribute(A_WIS, true);
     const expected = game.castleTune || '';
     const bridge = nearbyDrawbridge();
-    if (tune === expected && bridge) {
-        recordKnownPasstune();
-        await toggleDrawbridge(bridge.x, bridge.y, game, options);
+    if (tune === expected) {
+        if (bridge) {
+            recordKnownPasstune();
+            await toggleDrawbridge(bridge.x, bridge.y, game, options);
+        }
         game.context.move = 1;
         return;
     }

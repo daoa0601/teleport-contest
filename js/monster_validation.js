@@ -76,7 +76,7 @@ function guard(context) {
         ogy: integer,
         gdx: integer,
         gdy: integer,
-        vault: context.room,
+        vault: nullable(context.room),
         warncnt: integer,
         fcbeg: integer,
         fcend: integer,

@@ -434,16 +434,21 @@ async function pickCorridorGold(guard, x, y, state, random) {
     }
 }
 async function moveGoldIntoVault(gold, guard, state, random) {
+    const vault = guard._egd.vault;
+    if (!vault)
+        throw new Error('An appointed vault guard must have an assigned vault');
     const oldx = gold.ox, oldy = gold.oy;
     remove_object(gold, state);
     newsym(oldx, oldy);
-    const x = guard._egd.vault.lx + random(2), y = guard._egd.vault.ly + random(2);
+    const x = vault.lx + random(2), y = vault.ly + random(2);
     await placeObject(gold, x, y, state);
     await stack_object(gold, state);
     newsym(x, y);
 }
 export async function wallifyVault(guard, state, random = rn2) {
     const level = requireGameLevel(state), vault = guard._egd.vault;
+    if (!vault)
+        throw new Error('An appointed vault guard must have an assigned vault');
     const left = vault.lx - 1, right = vault.hx + 1, top = vault.ly - 1, bottom = vault.hy + 1;
     let fixed = false, movedGold = false;
     for (let x = left; x <= right; x++) {

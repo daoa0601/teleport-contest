@@ -4,7 +4,7 @@
 
 import { formatSeenMessage } from './hero_speech.js';
 import {
-    IS_POOL, Is_waterlevel, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH,
+    Is_waterlevel, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH,
     W_ARMS, W_ARMU, W_SWAPWEP, W_WEP, isok,
 } from './const.js';
 import { armorSimpleName, heroHasWaterWalking } from './armor.js';
@@ -12,7 +12,7 @@ import { fireDamageObject } from './fire_damage.js';
 import { delobj } from './object_delete.js';
 import { objectDescription as fullObjectDescription } from './object_description.js';
 import { objectCombatName, observeObjectForNaming, ownedObjectName, simpleObjectName } from './objnam.js';
-import { cansee } from './vision.js';
+import { cansee, couldsee } from './vision.js';
 import { endObjectBurn } from './light.js';
 import { game } from './gstate.js';
 import { removeHeroEquipment, removeWornHeroItem } from './hero_equipment.js';
@@ -20,15 +20,17 @@ import { useUpInventoryStack } from './hero_inventory.js';
 import { getObjectLocation } from './object_location.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { heroIsFlying } from './polyself.js';
-import { MONSTER_FLAGS1 } from './monster_data.js';
+import { isPoolAt, monsterFliesOrFloats } from './terrain_properties.js';
+import { objectOwnershipPrefix } from './shk.js';
+import { MONSTER_FLAGS1, monsterIsHumanoid } from './monster_data.js';
 import { splitMonster } from './monster_clone.js';
 import { monsterWieldedWeapon } from './monster_weapon.js';
 import {
-    BAG_OF_TRICKS, BRASS_LANTERN, CAN_OF_GREASE, CHEST, ICE_BOX,
+    BAG_OF_TRICKS, BRASS_LANTERN, CAN_OF_GREASE, CANDELABRUM_OF_INVOCATION, CHEST, ICE_BOX,
     FIRE_HORN, LARGE_BOX, OBJECT_BIMANUAL, OBJECT_MATERIAL, OBJECT_MATERIAL_NAMES, OBJECT_NAMES, OBJECT_PROPERTY, OILSKIN_SACK,
-    POT_ACID, POT_WATER, RED_DRAGON_SCALE_MAIL, RED_DRAGON_SCALES,
+    MAGIC_LAMP, OIL_LAMP, POT_ACID, POT_OIL, POT_WATER, RED_DRAGON_SCALE_MAIL, RED_DRAGON_SCALES,
     RIN_FIRE_RESISTANCE, SCR_BLANK_PAPER, SCR_FIRE, SPE_BLANK_PAPER,
-    SPE_BOOK_OF_THE_DEAD, SPE_FIREBALL, SPE_NOVEL, TOWEL, WAN_FIRE,
+    SPE_BOOK_OF_THE_DEAD, SPE_FIREBALL, SPE_NOVEL, TALLOW_CANDLE, TOWEL, WAN_FIRE, WAX_CANDLE,
 } from './object_data.js';
 import { erodeObject } from './object_erosion.js';
 import { learnObjectType } from './object_knowledge.js';
@@ -333,8 +335,7 @@ function carriedByHero(object: GameObject, state: GameState): boolean {
 }
 
 function heroLanternIsDunked(state: GameState): boolean {
-    const location = state.level?.at?.(state.u?.ux, state.u?.uy);
-    if (!location || !IS_POOL(location.typ)) return false;
+    if (!isPoolAt(state.u.ux, state.u.uy, state)) return false;
     return Is_waterlevel(state.u.uz)
         || !(state.u?.levitating || state.levitating
             || heroIsFlying(state) || heroHasWaterWalking(state));
@@ -342,29 +343,55 @@ function heroLanternIsDunked(state: GameState): boolean {
 
 export function splashLitObject(object: GameObject | null | undefined, messages: string[] = [], state = game): boolean {
     if (!object?.lamplit) return false;
+    // snuff_lit() handles flames and lanterns, not magical light sources.
+    if (![OIL_LAMP, MAGIC_LAMP, BRASS_LANTERN, POT_OIL,
+        TALLOW_CANDLE, WAX_CANDLE, CANDELABRUM_OF_INVOCATION].includes(object.otyp))
+        return false;
     const carried = carriedByHero(object, state);
     let dunkedLantern = false;
-    if (object.otyp === BRASS_LANTERN && carried) {
-        const visible = !heroIsBlind(state);
-        const audible = !heroIsDeaf(state);
+    if (object.otyp === BRASS_LANTERN) {
+        let visible = false, audible = false, snuff = true;
+        if (carried) {
+            visible = !heroIsBlind(state);
+            audible = !heroIsDeaf(state);
+            dunkedLantern = heroLanternIsDunked(state);
+            snuff = false;
+        } else if (object.where === 'minvent' && object.ocarry
+            && monsterIsHumanoid(object.ocarry.mnum)) {
+            const carrier = object.ocarry;
+            const position = getObjectLocation(object, state);
+            visible = !!position && cansee(position.x, position.y);
+            audible = couldsee(carrier.mx, carrier.my)
+                && (carrier.mx - state.u.ux) ** 2 + (carrier.my - state.u.uy) ** 2 < 25;
+            dunkedLantern = isPoolAt(carrier.mx, carrier.my, state)
+                && (!monsterFliesOrFloats(carrier) || Is_waterlevel(state.u.uz));
+            snuff = false;
+        }
         if (visible || audible) {
             const action = audible && visible
                 ? 'crackles and flickers'
                 : audible ? 'crackles' : 'flickers';
-            messages.push(`Your ${waterObjectName(object)} ${action}.`);
+            messages.push(`${ownedObjectName(object, state)} ${action}.`);
         }
-        dunkedLantern = heroLanternIsDunked(state);
-        if (!dunkedLantern) return false;
+        if (!dunkedLantern && !snuff) return false;
     }
 
+    const position = getObjectLocation(object, state);
+    const visible = object.where === 'minvent'
+        ? !!position && cansee(position.x, position.y) : !heroIsBlind(state);
+    if (visible) {
+        const candle = object.otyp === TALLOW_CANDLE || object.otyp === WAX_CANDLE;
+        if (candle || object.otyp === CANDELABRUM_OF_INVOCATION) {
+            const many = candle ? object.quan > 1 : object.spe > 1;
+            messages.push(`${objectOwnershipPrefix(object, state, { capitalized: true })}${
+                candle ? '' : "candelabrum's "}candle${many ? "s' flames are" : "'s flame is"} extinguished.`);
+        } else {
+            const plural = waterObjectIsPlural(object);
+            messages.push(`${ownedObjectName(object, state)} ${plural ? 'go' : 'goes'} out!`);
+        }
+    }
     if (!endObjectBurn(object, state, state.moves ?? 0))
         object.lamplit = false;
-    if (carried && !heroIsBlind(state)) {
-        const plural = waterObjectIsPlural(object);
-        messages.push(
-            `Your ${waterObjectName(object)} ${plural ? 'go' : 'goes'} out!`,
-        );
-    }
     if (dunkedLantern) {
         const age = object.age ?? 0;
         object.age = age - (age > 200 ? 100 : Math.trunc(age / 2));
@@ -452,7 +479,8 @@ export async function waterDamageObject(
         }
         return 'damaged';
     }
-    if (!force && (state.u.uluck ?? 0) + 5 > random(20)) return 'nothing';
+    const luck = (state.u.uluck ?? 0) + (state.u.moreluck ?? 0);
+    if (!force && luck + 5 > random(20)) return 'nothing';
     if (object.oclass === 9) {
         if (object.otyp === SCR_BLANK_PAPER) return 'nothing';
         if (carried) await emit(`Your ${name} ${plural ? 'fade' : 'fades'}.`);
@@ -532,9 +560,10 @@ export async function waterDamageChain(
     objects: GameObject[] | null | undefined,
     messages: string[] = [],
     state = game,
+    options: Pick<WaterDamageOptions, 'publish'> = {},
 ): Promise<string[]> {
     if (!objects) return messages;
-    await damageWaterChain(objects, messages, state, {});
+    await damageWaterChain(objects, messages, state, options);
     return messages;
 }
 

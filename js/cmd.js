@@ -1,10 +1,11 @@
-import { publishHeardMessage } from './hero_speech.js';
+import { formatFeltMessage, formatSeenMessage, publishHeardMessage } from './hero_speech.js';
 import { ingSuffix } from './hacklib.js';
 import { heroLocomotion } from './hero_locomotion.js';
 import { autokey, autoUnlockFlags, continuePicking, pickLock } from './lock_pick.js';
 import { resetPick } from './lock_context.js';
 import { petRefusesHeroSwap } from './hero_pet_displacement.js';
 import { airTurbulenceStopsHero, waterTurbulenceStopsHero } from './hero_movement_turbulence.js';
+import { maybeAdjustHeroBubble } from './elemental.js';
 import { announceRunLiquid, announceRunTrap, knownRunTrap, runLiquidIsDangerous } from './run_hazards.js';
 import { AUTOUNLOCK_APPLY_KEY, AUTOUNLOCK_UNTRAP } from './const.js';
 import { findDrawbridgeAt } from './dbridge.js';
@@ -12,6 +13,8 @@ import { doorObstructed } from './door_magic.js';
 import { DBWALL, DRAWBRIDGE_DOWN, IS_DRAWBRIDGE, IS_TREE, LADDER, STAIRS, THRONE } from './const.js';
 import { dipFountainSword } from './fountain_sword.js';
 import { washHands } from './dip_water.js';
+import { curseObject, uncurseObjectState } from './object_state.js';
+import { adjustObjectLightAfterBlessing, objectLightRadius } from './light.js';
 import { waterDamageObject } from './trap.js';
 import { dip, dipInto } from './potion_dip.js';
 import { AKLYS, BOOMERANG, CRYSTAL_BALL } from './object_data.js';
@@ -25,7 +28,7 @@ import { wizMigrateMonsters } from './wizard_migration.js';
 import { prepareWizardTeleportAtWill, wizardTeleportCommand } from './wizard_teleport.js';
 import { hurtleMonster } from './monster_hurtle.js';
 import { isRoom } from './map_types.js';
-import { bookCursed, continueSpellbookStudy } from './spellbook_study.js';
+import { continueSpellbookStudy } from './spellbook_study.js';
 import { grantMonsterWish } from './potion_occupants.js';
 import { quaff } from './quaff.js';
 import { tameMonster } from './monster_taming.js';
@@ -81,7 +84,7 @@ import { retouchHeroObject } from './hero_retouch.js';
 import { GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, PARANOID_REMOVE, GETOBJ_SUGGEST } from './const.js';
 import { TER_MON } from './const.js';
 import { senseBuriedObjects } from './buried_object.js';
-import { distantMonsterName, monsterInstanceDisplayName, monsterName, shopkeeperName } from './monster_name.js';
+import { distantMonsterName, monsterInstanceDisplayName, monsterName, monsterPossessive, monsterSubjectPronoun, shopkeeperName } from './monster_name.js';
 import { attackHostileMonster } from './hero_melee.js';
 import { prepareAppliedWeaponAttack } from './hero_attack_preflight.js';
 import { applyCaitiffPenalty } from './hero_attack_conduct.js';
@@ -96,7 +99,7 @@ import { woundHeroLegs } from './hero_legs.js';
 import { makeMonsterFlee } from './monster_flee.js';
 import { descendFromLevitation, floatingAbove } from './levitation_commands.js';
 import { endVoluntaryMultiTurn, resetCommandVariables } from './command_state.js';
-import { propertyIsActive } from './properties.js';
+import { grantIntrinsicProperty, propertyIsActive } from './properties.js';
 import { addPickedInventoryObject, pickupAtHero, pickupObjectClass, pickupClassOrder, } from './pickup.js';
 import { gotoLevel } from './level_change.js';
 import { levelTeleport } from './level_teleport.js';
@@ -167,7 +170,7 @@ import { continueFoodMeal, doeat } from './eat.js';
 import { continueTinOpening, useTinOpener } from './tin.js';
 import { PLAYABLE_INSTRUMENTS, playInstrument } from './music.js';
 import { dodiscovered } from './o_init.js';
-import { doattributes, doconduct } from './insight.js';
+import { doattributes, doconduct, showEnlightenment } from './insight.js';
 import { contactHelp, displayHelpFile, menuControlsHelp, setOptionsCommand } from './pager_help.js';
 import { doextversion, NATIVE_VERSION } from './extversion.js';
 import { dosearch, findit } from './detect.js';
@@ -225,14 +228,14 @@ import { wakeMonstersNear } from './monster_wake.js';
 import { aggravateMonsters, angerAttackedMonster, wakeAttackedMonster, } from './monster_anger.js';
 import { publishMonsterNoise } from './monster_sound.js';
 import { doride, moveSteedWithHero, ridingPreventsMovement, stuckSteed } from './steed.js';
-import { currentAttribute, currentStrength, exerciseAttribute, exerciseWisdom, reportHeroEncumbrance } from './attrib.js';
+import { adjustAttribute, ATTRIBUTE_DISPLAY_ORDER, attributeChangeMessage, currentAttribute, currentStrength, exerciseAttribute, exerciseWisdom, reportHeroEncumbrance } from './attrib.js';
 import { spendHeroNutrition, updateHeroHunger } from './hunger.js';
 import { continueForceLock, doforce } from './lock.js';
 import { doUntrap } from './untrap.js';
 import { dosit } from './sit.js';
 import { continueEngraving, doengrave } from './engrave_command.js';
 import { climbOutOfPit, heroCanMoveFromTrap, triggerHeroTrapAt, triggerLevelTeleportTrap } from './hero_traps.js';
-import { applyDippedCoinFate, applyFountainDemonActor, applyFountainGemDiscovery, applyFountainNymphActor, applyFountainSnakeActors, resolveDippedBucFate, resolveDippedSensationFate, } from './fountain_effects.js';
+import { applyDippedCoinFate, applyFountainDemonActor, applyFountainGemDiscovery, applyFountainNymphActor, applyFountainSnakeActors, resolveDippedSensationFate, } from './fountain_effects.js';
 import { dryFountainAt, gushForthFromFountain } from './fountain.js';
 import { heroArmName, heroFingerName, heroHandName } from './body_parts.js';
 import { armorUsesPairGrammar, withIndefiniteArticle, makePlural } from './object_grammar.js';
@@ -304,7 +307,7 @@ import { heroHasMartialKick } from './kick_rules.js';
 import { bringLeashedFollowers, heroTeleportDestinationOk, moveHeroByTeleport, randomMonsterRelocation, } from './teleport.js';
 import { goodPosition, monsterTeleportRestricted } from './teleport_rules.js';
 import { removeWishGrantingMonster } from './monster_departure.js';
-import { RLOC_MSG, A_CON, A_DEX, A_STR, A_WIS, BOLT_LIM, COLNO, ROWNO, STONE, SCORR, SDOOR, DOOR, CORR, ROOM, ICE, POOL, CLOUD, IRONBARS, FOUNTAIN, SINK, ALTAR, WATER, MOAT, LAVAWALL, TREE, D_NODOOR, D_BROKEN, D_ISOPEN, D_CLOSED, D_LOCKED, D_TRAPPED, SHOP_DOOR_COST, IS_WALL, IS_STWALL, IS_OBSTRUCTED, IS_FURNITURE, IS_AIR, IS_POOL, IS_LAVA, IS_ROOM, ZAP_POS, SQKY_BOARD, BEAR_TRAP, LANDMINE, FIRE_TRAP, PIT, SPIKED_PIT, TT_PIT, HOLE, TRAPDOOR, DART_TRAP, MAGIC_TRAP, TELEP_TRAP, LEVEL_TELEP, STATUE_TRAP, WEB, ANTI_MAGIC, G_GONE, ER_NOTHING, ER_DAMAGED, M_AP_MONSTER, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, STRAT_WAITMASK, MM_NOEXCLAM, MM_NOMSG, SHOPBASE, ROOMOFFSET, F_LOOTED, In_endgame, Is_airlevel, Is_waterlevel, Is_rogue_level, In_hell, W_ARMOR, W_ACCESSORY, W_SADDLE, LOST_THROWN, WT_SPLASH_THRESHOLD, WT_SQUEEZABLE_INV, P_BOW, P_SLING, PARANOID_HIT, POLY_CONTROLLED, STR19, isok, ACCESSIBLE, AIR, DIGTYP_UNDIGGABLE, DRAWBRIDGE_UP, } from './const.js';
+import { RLOC_MSG, A_CON, A_DEX, A_MAX, A_STR, A_WIS, BOLT_LIM, COLNO, ROWNO, STONE, SCORR, SDOOR, DOOR, CORR, ROOM, ICE, POOL, CLOUD, IRONBARS, FOUNTAIN, SINK, ALTAR, WATER, MOAT, LAVAWALL, TREE, D_NODOOR, D_BROKEN, D_ISOPEN, D_CLOSED, D_LOCKED, D_TRAPPED, SHOP_DOOR_COST, IS_WALL, IS_STWALL, IS_OBSTRUCTED, IS_FURNITURE, IS_AIR, IS_POOL, IS_LAVA, IS_ROOM, ZAP_POS, SQKY_BOARD, BEAR_TRAP, LANDMINE, FIRE_TRAP, PIT, SPIKED_PIT, TT_PIT, HOLE, TRAPDOOR, DART_TRAP, MAGIC_TRAP, TELEP_TRAP, LEVEL_TELEP, STATUE_TRAP, WEB, ANTI_MAGIC, G_GONE, ER_NOTHING, ER_DAMAGED, M_AP_MONSTER, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, STRAT_WAITMASK, MM_NOEXCLAM, MM_NOMSG, SHOPBASE, ROOMOFFSET, F_LOOTED, In_endgame, Is_airlevel, Is_waterlevel, Is_rogue_level, In_hell, W_ARMOR, W_ACCESSORY, W_SADDLE, LOST_THROWN, WT_SPLASH_THRESHOLD, WT_SQUEEZABLE_INV, P_BOW, P_SLING, PARANOID_HIT, POLY_CONTROLLED, STR19, isok, ACCESSIBLE, AIR, DIGTYP_UNDIGGABLE, DRAWBRIDGE_UP, } from './const.js';
 const DIR_DX = { h: -1, l: 1, j: 0, k: 0, y: -1, u: 1, b: -1, n: 1 };
 const DIR_DY = { h: 0, l: 0, j: 1, k: -1, y: -1, u: -1, b: 1, n: 1 };
 // object.h enum value; object_data currently exposes the two other tools.
@@ -1517,7 +1520,7 @@ function someGold(amount) {
 async function discoverFountainGem(loc) {
     return applyFountainGemDiscovery({
         loc,
-        blind: !!game.blind,
+        blind: heroIsBlind(),
         announce: (message) => pline(message),
         chooseGem: () => rndClass(DILITHIUM_CRYSTAL, LUCKSTONE - 1),
         createGem: (gemType) => mksobj(gemType, false, false),
@@ -1530,35 +1533,29 @@ function fountainActorGone(mnum) {
     return !!((game.mvitals?.[mnum]?.mvflags ?? 0) & G_GONE);
 }
 function fountainActorIndefiniteName(monster) {
-    const name = heroIsHallucinating()
-        ? randomDisplayMonsterName() : monsterInstanceDisplayName(monster);
-    return withIndefiniteArticle(name);
+    return monsterName(monster, { article: 'a' });
 }
 function fountainActorVisibleSubject(monster) {
-    return heroIsHallucinating()
-        ? randomDisplayMonsterSubject()
-        : `The ${monsterInstanceDisplayName(monster)}`;
+    return monsterName(monster, { capitalized: true });
 }
-// Fountain-spawned monsters can enter webs immediately. Other trap types
-// still wait for their normal turn because their messages are not handled
-// here yet.
-function supportedImmediateFountainTrap(monster) {
-    return game.level?.traps?.some(trap => trap.tx === monster.mx && trap.ty === monster.my
-        && trap.ttyp === WEB) ?? false;
+function fountainTrapAt(monster) {
+    return game.level?.traps?.some(trap => trap.tx === monster.mx && trap.ty === monster.my) ?? false;
 }
-async function triggerSupportedImmediateFountainTrap(monster) {
+async function triggerFountainTrap(monster) {
     const state = requireInitializedGame();
     const action = await triggerImmediateMonsterTrap(monster, state);
-    await resumeDeferredMonsterTrap(action, state, {
-        describeMonster: fountainActorVisibleSubject,
-        publish: plineWithContinuation,
-    });
-    return action;
+    if (!state.program_state.gameover) {
+        await resumeDeferredMonsterTrap(action, state, {
+            describeMonster: fountainActorVisibleSubject,
+            publish: plineWithContinuation,
+        });
+    }
+    return { heroDied: !!state.program_state.gameover };
 }
 async function summonFountainNymph() {
     return applyFountainNymphActor({
         gone: fountainActorGone(PM_WATER_NYMPH),
-        blind: !!game.blind,
+        blind: heroIsBlind(),
         createMonster: async () => {
             const nymph = await makemonNear(PM_WATER_NYMPH, game.u.ux, game.u.uy, MM_NOMSG);
             if (nymph)
@@ -1567,14 +1564,14 @@ async function summonFountainNymph() {
         },
         announce: plineWithContinuation,
         nymphDescription: fountainActorIndefiniteName,
-        trapAt: supportedImmediateFountainTrap,
-        triggerTrap: triggerSupportedImmediateFountainTrap,
+        trapAt: fountainTrapAt,
+        triggerTrap: triggerFountainTrap,
     });
 }
 async function summonFountainDemon() {
     return applyFountainDemonActor({
         gone: fountainActorGone(PM_WATER_DEMON),
-        blind: !!game.blind,
+        blind: heroIsBlind(),
         difficulty: level_difficulty(),
         createMonster: async () => {
             const demon = await makemonNear(PM_WATER_DEMON, game.u.ux, game.u.uy, MM_NOMSG);
@@ -1584,15 +1581,19 @@ async function summonFountainDemon() {
         },
         announce: plineWithContinuation,
         demonIndefiniteName: fountainActorIndefiniteName,
+        demonPronouns: monster => ({
+            possessive: monsterPossessive(monster),
+            pronoun: monsterSubjectPronoun(monster),
+        }),
         grantWish: (demon) => grantMonsterWish(demon),
-        trapAt: supportedImmediateFountainTrap,
-        triggerTrap: triggerSupportedImmediateFountainTrap,
+        trapAt: fountainTrapAt,
+        triggerTrap: triggerFountainTrap,
     });
 }
 async function summonFountainSnakes() {
     return applyFountainSnakeActors({
         gone: fountainActorGone(PM_WATER_MOCCASIN),
-        blind: !!game.blind,
+        blind: heroIsBlind(),
         hallucinating: heroIsHallucinating(),
         random: rn2,
         hallucinatedPlural: () => makePlural(randomDisplayMonsterName()),
@@ -1605,13 +1606,22 @@ async function summonFountainSnakes() {
                 newsym(snake.mx, snake.my);
             return snake;
         },
-        trapAt: supportedImmediateFountainTrap,
-        triggerTrap: triggerSupportedImmediateFountainTrap,
+        trapAt: fountainTrapAt,
+        triggerTrap: triggerFountainTrap,
     });
 }
 export async function drinkFountain(loc) {
     let fountainMessage = '';
+    const blessed = loc.blessedftn === 1;
     const fate = rnd(30);
+    if (propertyIsActive('levitation')) {
+        await floatingAbove('fountain');
+        return false;
+    }
+    if (blessed && (game.u.uluck ?? 0) >= 0 && fate >= 10) {
+        await blessedFountainDraught(loc);
+        return false;
+    }
     if (fate < 10) {
         // fountain.c:drinkfountain() handles the ordinary low-fate draught
         // before its numbered switch.  Nutrition is credited before dryup()
@@ -1621,6 +1631,15 @@ export async function drinkFountain(loc) {
         await updateHeroHunger(false);
         if (game.program_state.gameover)
             return true;
+        if (blessed)
+            return false;
+    }
+    else if (fate === 19) {
+        await plineWithContinuation(formatFeltMessage('self-knowledgeable...'));
+        await flushPendingTopline();
+        await showEnlightenment({ basic: false, magic: true });
+        await exerciseAttribute(A_WIS, true);
+        await plineWithContinuation('The feeling subsides.');
     }
     else if (fate === 20) {
         await plineWithContinuation('The water is foul!  You gag and vomit.');
@@ -1654,8 +1673,42 @@ export async function drinkFountain(loc) {
     else if (fate === 23) {
         await summonFountainDemon();
     }
+    else if (fate === 24) {
+        await plineWithContinuation("This water's no good!");
+        await spendHeroNutrition(11 + rn2(20));
+        if (game.program_state.gameover)
+            return true;
+        await exerciseAttribute(A_CON, false);
+        // A curse can drop the offhand weapon and change the inventory.
+        for (const object of [...game.inventory]) {
+            if (object.oclass !== 12 && !object.cursed && !rn2(5)) {
+                await curseObject(object);
+                if (game.program_state.gameover)
+                    return true;
+            }
+        }
+    }
+    else if (fate === 25) {
+        if (heroIsBlind()) {
+            if (propertyIsActive('invisible') && !propertyIsActive('seeInvisible')) {
+                await plineWithContinuation('You feel transparent.');
+            }
+            else {
+                await plineWithContinuation('You feel very self-conscious.');
+                await plineWithContinuation('Then it passes.');
+            }
+        }
+        else {
+            await plineWithContinuation(formatSeenMessage('an image of someone stalking you.'));
+            await plineWithContinuation('But it disappears.');
+        }
+        grantIntrinsicProperty('seeInvisible', 'outside');
+        newsym(game.u.ux, game.u.uy);
+        await exerciseAttribute(A_WIS, true);
+    }
     else if (fate === 26) {
-        await detectMonsters(null);
+        if ((await detectMonsters(null)).result)
+            await plineWithContinuation(`The ${displayLiquidName('water')} tastes like nothing.`);
         await exerciseAttribute(A_WIS, true);
     }
     else if (fate === 27 && !((loc.looted ?? 0) & 1)) {
@@ -1664,17 +1717,61 @@ export async function drinkFountain(loc) {
     else if (fate === 27 || fate === 28) {
         await summonFountainNymph();
     }
+    else if (fate === 29) {
+        await plineWithContinuation(`This ${displayLiquidName('water')} gives you bad breath!`);
+        for (const monster of [...requireGameLevel().monsters].reverse()) {
+            if (monster.dead || monster.mhp <= 0)
+                continue;
+            if ((await makeMonsterFlee(monster, { announce: false })).heroDied)
+                return true;
+        }
+    }
     else if (fate === 30) {
-        fountainMessage = (await gushForthFromFountain({ drinking: true })).join('  ');
+        await gushForthFromFountain({ drinking: true });
     }
     else if (fate >= 10) {
         fountainMessage =
             `This tepid ${displayLiquidName('water')} is tasteless.`;
     }
+    if (game.program_state.gameover)
+        return true;
     if (fountainMessage)
         await plineWithContinuation(fountainMessage);
     await dryFountainAt(game.u.ux, game.u.uy);
     return false;
+}
+async function blessedFountainDraught(loc) {
+    requirePlayingGame(game);
+    const state = game;
+    const hero = state.u;
+    await plineWithContinuation('Wow!  This makes you feel great!');
+    for (const attribute of ATTRIBUTE_DISPLAY_ORDER) {
+        if (hero.acurr.a[attribute] < hero.amax.a[attribute]) {
+            hero.acurr.a[attribute] = hero.amax.a[attribute];
+            state.context.botl = true;
+        }
+    }
+    const littleLuck = (hero.uluck ?? 0) < 4;
+    const start = rn2(A_MAX);
+    for (let offset = 0; offset < A_MAX; offset++) {
+        const attribute = (start + offset) % A_MAX;
+        const change = adjustAttribute(attribute, 1, state);
+        if (change.changed || !littleLuck
+            && (change.blockedByDunceCap || state.flags.verbose !== false)) {
+            const message = attributeChangeMessage(attribute, change, state);
+            if (message)
+                await plineWithContinuation(message);
+        }
+        if (change.changed && state._moveloopStarted
+            && (attribute === A_STR || attribute === A_CON))
+            await reportHeroEncumbrance(state);
+        if (change.changed && littleLuck)
+            break;
+    }
+    await displayMessageWindow();
+    await plineWithContinuation('A wisp of vapor escapes the fountain...');
+    await exerciseAttribute(A_WIS, true);
+    loc.blessedftn = 0;
 }
 // C do.c:u_stuck_cannot_go(). A sticky hero releases its captive, while
 // being held or swallowed prevents even an attempt to use the floor below.
@@ -3892,19 +3989,24 @@ async function dipFountain(object, loc) {
     }
     const fate = rnd(30);
     let eventMessage = '';
-    const wasCursed = object !== 'hands' && object.cursed;
-    const bucEffect = object === 'hands' ? { handled: fate >= 16 && fate <= 20,
-        message: fate >= 17 && fate <= 20 ? 'A feeling of loss comes over you.' : '' } : resolveDippedBucFate({
-        fate,
-        object,
-        blind: !!game.blind,
-        liquidName: () => displayLiquidName('water'),
-    });
-    if (object !== 'hands' && !wasCursed && object.cursed) {
-        await dropCursedSecondaryWeapon(object);
-        if (game.program_state.gameover)
-            return;
-        await bookCursed(object);
+    if (fate >= 16 && fate <= 20) {
+        if (fate === 16) {
+            if (object !== 'hands' && object.oclass !== 12 && !object.cursed)
+                await curseObject(object);
+        }
+        else if (object !== 'hands' && object.cursed) {
+            if (!heroIsBlind())
+                await plineWithContinuation(`The ${displayLiquidName('water')} glows for a moment.`);
+            const oldRadius = objectLightRadius(object);
+            uncurseObjectState(object);
+            await adjustObjectLightAfterBlessing(object, oldRadius);
+        }
+        else {
+            await plineWithContinuation('A feeling of loss comes over you.');
+        }
+        if (!game.program_state.gameover)
+            await dryFountainAt(game.u.ux, game.u.uy);
+        return;
     }
     const sensationEffect = resolveDippedSensationFate({
         fate,
@@ -3917,7 +4019,7 @@ async function dipFountain(object, loc) {
         dungeonLevels: currentDungeon?.num_dunlevs
             ?? game.u?.uz?.dlevel ?? 1,
         dungeonLevel: game.u?.uz?.dlevel ?? 1,
-        blind: !!game.blind,
+        blind: heroIsBlind(),
         random: rnd,
         createGold: async (quantity) => {
             await mkgold(quantity, game.u.ux, game.u.uy);
@@ -3926,10 +4028,7 @@ async function dipFountain(object, loc) {
         exerciseWisdom,
         repaint: () => newsym(game.u.ux, game.u.uy),
     });
-    if (bucEffect.handled) {
-        eventMessage = bucEffect.message;
-    }
-    else if (sensationEffect.handled) {
+    if (sensationEffect.handled) {
         eventMessage = sensationEffect.message;
     }
     else if (coinEffect.handled) {
@@ -3946,22 +4045,21 @@ async function dipFountain(object, loc) {
     }
     else if (fate === 24) {
         if ((loc.looted ?? 0) & F_LOOTED)
-            eventMessage = (await gushForthFromFountain()).join('  ');
+            await gushForthFromFountain();
         else
             await discoverFountainGem(loc);
     }
     else if (fate === 25) {
-        eventMessage = (await gushForthFromFountain()).join('  ');
+        await gushForthFromFountain();
     }
     else if (fate === 28) {
-        await moreUntilDismissed('An urge to take a bath overwhelms you.');
-        game._pending_message = '';
+        await plineWithContinuation('An urge to take a bath overwhelms you.');
         const wallet = heroGoldAmount(game);
         if (wallet > 10) {
             const loss = Math.trunc(someGold(wallet) / 10);
             game._statusGoldOverride = wallet;
             setHeroGoldAmount(game, wallet - loss);
-            await pline('You lost some of your gold in the fountain!');
+            await plineWithContinuation('You lost some of your gold in the fountain!');
             loc.looted = (loc.looted ?? 0) & ~F_LOOTED;
             await exerciseAttribute(A_WIS, false);
         }
@@ -3971,6 +4069,8 @@ async function dipFountain(object, loc) {
     else if ((fate < 16 || fate === 30) && result === 'nothing') {
         eventMessage = 'Nothing seems to happen.';
     }
+    if (game.program_state.gameover)
+        return;
     if (eventMessage)
         await plineWithContinuation(eventMessage);
     await dryFountainAt(game.u.ux, game.u.uy);
@@ -7160,6 +7260,7 @@ async function finishMovedHero({ oldx, oldy, newx, newy, loc, explicitAttempt, b
     await checkHeroLeashes(oldx, oldy);
     if (game.program_state.gameover)
         return true;
+    game._domoveSucceeded = oldx !== newx || oldy !== newy;
     newsym(oldx, oldy);
     vision_recalc(1);
     await announceInvocationSquare();
@@ -7194,8 +7295,11 @@ async function delayAfterDraggingBall() {
 }
 // C hack.c:domove() clears kickedloc after even an unsuccessful attempt.
 async function domove(dx, dy, explicitAttempt = true) {
+    game._domoveSucceeded = false;
     const moved = await domoveCore(dx, dy, explicitAttempt);
     if (!game.program_state.gameover) {
+        if (game._domoveSucceeded)
+            maybeAdjustHeroBubble();
         game._kickedLoc = null;
         game._movementAttempt = null;
     }

@@ -20,6 +20,7 @@ import { rewindEngravingsForSave, restoreEngravingPointers } from './engrave.js'
 import { weaponNeedsBashingMessage } from './weapon_type.js';
 import { GRAPPLING_HOOK, PICK_AXE } from './object_data.js';
 import { forgetTempleEntry } from './priest.js';
+import { restoreElementalBubbles } from './elemental.js';
 const SAVE_PREFIX = 'teleport-save:';
 const ERROR_SAVE_PREFIX = 'teleport-error-save:';
 function saveKey(name, prefix = SAVE_PREFIX) {
@@ -179,6 +180,7 @@ export function restoreGame(name, storage = game.storage) {
         restoreSavedMonsters(snapshot.state);
         restorePersistentState(game, snapshot.state);
         resolveDungeonIdentities(game);
+        restoreElementalBubbles();
         // restgamestate() rebuilds the first-use reminder from the restored
         // weapon, treating applied tools conservatively as improvised weapons.
         const weapon = game.uwep || game.u.uwep;

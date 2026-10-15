@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { G_GENOD, MM_ADJACENTOK, MM_NOGRP, MM_NOMSG, NO_MINVENT, ROOM, STONE } from '../js/const.js';
+import { G_GENOD, MM_ADJACENTOK, MM_IGNOREWATER, MM_NOGRP, MM_NOMSG, NO_MINVENT, POOL, ROOM, STONE } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
+import { pushKeys } from '../js/input.js';
 import { makemonAt } from '../js/mklev.js';
 import { MONSTER_NAME, SPECIAL_PM } from '../js/monster_data.js';
 import { SCR_SCARE_MONSTER } from '../js/object_data.js';
@@ -81,5 +82,26 @@ void test('random birth prefers a stairway when every usable square is visible',
     assert.ok(rat);
     assert.equal(rat.mx, 16);
     assert.equal(rat.my, 14);
+});
+void test('MM_IGNOREWATER permits a random land-monster birth in a flooded level', async () => {
+    const level = freshObjectRoom({ gameplaySeed: 1n });
+    requirePlayingGame(game);
+    for (let x = 7; x <= 16; x++) {
+        for (let y = 6; y <= 14; y++)
+            level.requireAt(x, y).typ = POOL;
+    }
+    game.in_mklev = true;
+    const rat = await makemonAt(RAT, 0, 0, BIRTH_FLAGS | MM_IGNOREWATER);
+    assert.ok(rat, 'the flag allows flooded squares during random placement');
+    assert.equal(level.requireAt(rat.mx, rat.my).typ, POOL);
+});
+void test('explicit birth outside the map does not create an actor or count a birth', async () => {
+    const level = freshObjectRoom();
+    const born = game.mvitals?.[RAT]?.born;
+    pushKeys(' '.repeat(10));
+    const rat = await makemonAt(RAT, 80, 10, BIRTH_FLAGS);
+    assert.equal(rat, null);
+    assert.equal(level.monsters.length, 0);
+    assert.equal(game.mvitals?.[RAT]?.born, born);
 });
 //# sourceMappingURL=monster_birth_position.test.js.map

@@ -39,8 +39,10 @@ export async function payVaultGuardOnExit({
         await moveMonsterNextToHero(guard, state, { flags: RLOC_NOMSG, random });
         if (!silent)
             await publish(`${monsterName(guard, { state, capitalized: true })} remits your gold to the vault.`);
-        x = guard._egd.vault.lx + random(2);
-        y = guard._egd.vault.ly + random(2);
+        const vault = guard._egd.vault;
+        if (!vault) throw new Error('An appointed vault guard must have an assigned vault');
+        x = vault.lx + random(2);
+        y = vault.ly + random(2);
         const role = monsterTypeName(state.u.umonster, !!state.flags.female);
         make_grave(x, y, `To Croesus: here's the gold recovered from ${state.plname} the ${role}.`);
     }

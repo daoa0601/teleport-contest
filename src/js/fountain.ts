@@ -96,9 +96,8 @@ export async function splitSittingGremlin() {
 
 // Gushing water along line of sight from an overflowing fountain.
 // C refs: fountain.c dogushforth() and gush().
-export async function gushForthFromFountain({ drinking = false, state = game }: { drinking?: boolean; state?: GameState } = {}): Promise<string[]> {
+export async function gushForthFromFountain({ drinking = false, state = game }: { drinking?: boolean; state?: GameState } = {}): Promise<void> {
     const level = requireGameLevel(state);
-    const messages: string[] = [];
     const ux = state.u.ux;
     const uy = state.u.uy;
     let madePool = 0;
@@ -116,12 +115,12 @@ export async function gushForthFromFountain({ drinking = false, state = game }: 
         if (trap && !await deleteFloorTrap(trap, state)) continue;
 
         if (madePool++ === 0) {
-            messages.push('Water gushes forth from the overflowing fountain!');
+            await plineWithContinuation('Water gushes forth from the overflowing fountain!');
         }
         location.typ = POOL;
         location.flags = 0;
         deleteEngravingAt(x, y, level);
-        await waterDamageChain(objects, messages, state);
+        await waterDamageChain(objects, [], state, { publish: plineWithContinuation });
 
         const monster = (state.level?.monsters || []).find(candidate => monsterHasMapPosition(candidate, state) &&
             (candidate.mhp ?? 1) > 0 && candidate.mx === x && candidate.my === y);
@@ -136,11 +135,10 @@ export async function gushForthFromFountain({ drinking = false, state = game }: 
         }
     }
     if (!madePool) {
-        messages.push(drinking
+        await plineWithContinuation(drinking
             ? 'Your thirst is quenched.'
             : 'Water sprays all over you.');
     }
-    return messages;
 }
 
 function distmin(x1: number, y1: number, x2: number, y2: number): number {

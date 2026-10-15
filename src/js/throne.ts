@@ -5,7 +5,7 @@
 import { formatFeltMessage } from './hero_speech.js';
 import { makeConfused } from './hero_mental_status.js';
 import { makeBlinded } from './sight_change.js';
-import { heroIsHallucinating } from './senses.js';
+import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { heroHasHalfSpellDamage } from './spell_damage.js';
 import {
     A_CON, A_MAX, ROOM,
@@ -16,7 +16,7 @@ import {
 import { artifactById } from './artifacts.js';
 import { mapLevel } from './detect.js';
 import {
-    map_background, newsym, plineWithContinuation, see_monsters, shieldeff,
+    displayColorName, map_background, newsym, newsym_force, plineWithContinuation, see_monsters, shieldeff,
 } from './display.js';
 import { finishHeroDeath } from './end.js';
 import { loseHeroExperience } from './exper.js';
@@ -29,21 +29,24 @@ import type { GameObject } from './object_types.js';
 
 export type ThroneOptions = Pick<HeroHurtleOptions, 'gotoLevel' | 'chooseTeleportDestination'>;
 import { dropCursedSecondaryWeapon } from './two_weapon.js';
-import { heroHasEyes } from './body_parts.js';
+import { heroEyeCount, heroEyeName, heroHeadName } from './body_parts.js';
+import { makePlural, verbForSubject } from './object_grammar.js';
 import { loseHeroHp } from './hero_damage.js';
 import { cureHeroSickness } from './hero_illness.js';
+import { adjustObjectLightAfterBlessing, objectLightRadius } from './light.js';
 import { healHeroLegs } from './hero_legs.js';
 import { takeHeroGold } from './hero_gold.js';
+import { scheduleLevelChange } from './level_change.js';
 import { identifyPack } from './invent.js';
 import { msummon } from './minion.js';
 import {
     courtMonsterType, makemonNear,
 } from './mklev.js';
 import { MONSTER_FLAGS2, MONSTER_SYMBOL } from './monster_data.js';
-import { OBJECT_NAMES } from './object_data.js';
+import { definiteName, objectCombatName, objectNameIsPlural, ownedObjectAction } from './objnam.js';
 import { curseObject, unblessObjectState } from './object_state.js';
 import {
-    grantIntrinsicProperty, hasIntrinsicProperty, hasPermanentIntrinsicProperty,
+    grantIntrinsicProperty, hasPermanentIntrinsicProperty,
     removePermanentIntrinsicProperty,
 } from './properties.js';
 import { syncHeroInvisibility } from './hero_invisibility.js';
@@ -54,7 +57,6 @@ import {
 import { getLine, promptYesNo } from './query.js';
 import { applyRemoveCurseSpell } from './scroll_effects.js';
 import { rnd, rn1, rn2 } from './rng.js';
-import { syncBlindness } from './senses.js';
 import { monsterSaddle } from './steed.js';
 import { teleportHero } from './teleport.js';
 import { cansee } from './vision.js';
@@ -84,12 +86,16 @@ function currentForm(): number | null {
     return species !== undefined && Number.isInteger(species) ? species : null;
 }
 
-function heroLuck() {
+function naturalLuck() {
     return game.u?.uluck ?? game.u?.luck ?? 0;
 }
 
+function heroLuck() {
+    return naturalLuck() + (game.u.moreluck ?? 0);
+}
+
 function changeLuck(amount: number): void {
-    game.u.uluck = Math.max(-13, Math.min(13, heroLuck() + amount));
+    game.u.uluck = Math.max(-13, Math.min(13, naturalLuck() + amount));
 }
 
 function inVladsTower() {
@@ -102,7 +108,7 @@ function removeThrone(x: number, y: number): void {
     location.typ = ROOM;
     location.flags = 0;
     map_background(x, y, false);
-    newsym(x, y);
+    newsym_force(x, y);
 }
 
 async function announceAttributeChange(attribute: number, amount: number, conditional: boolean) {
@@ -129,8 +135,7 @@ async function healHeroCompletely(): Promise<void> {
     }
     hero.uhp = hero.uhpmax;
     hero.ucreamed = 0;
-    hero.blindTurns = 0;
-    syncBlindness(game);
+    await makeBlinded(0);
     cureHeroSickness(game);
     await healHeroLegs(game);
     game.context.botl = true;
@@ -149,14 +154,16 @@ async function summonCourt(x: number, y: number): Promise<void> {
 
 async function grantSeeInvisible() {
     const hero = game.u;
-    if (!game.blind) {
+    if (!heroIsBlind()) {
         await plineWithContinuation('Your vision becomes clear.');
-    } else if (heroHasEyes(game)) {
-        await plineWithContinuation('Your eyes tingle...');
     } else {
-        await plineWithContinuation(
-            'You have a very strange feeling in your head.',
-        );
+        const count = heroEyeCount();
+        if (count) {
+            const eyes = count === 1 ? heroEyeName() : makePlural(heroEyeName());
+            await plineWithContinuation(`Your ${eyes} ${verbForSubject(eyes, 'tingle')}...`);
+        } else {
+            await plineWithContinuation(`You have a very strange feeling in your ${heroHeadName()}.`);
+        }
     }
     grantIntrinsicProperty('seeInvisible', 'outside', game);
     newsym(hero.ux, hero.uy);
@@ -190,7 +197,7 @@ async function normalThroneEffect(
         await takeHeroGold();
         break;
     case 6:
-        if (heroLuck() + rn2(5) < 0) {
+        if (naturalLuck() + rn2(5) < 0) {
             await plineWithContinuation(formatFeltMessage('your luck is changing.'));
             changeLuck(1);
         } else {
@@ -223,7 +230,7 @@ async function normalThroneEffect(
         break;
     case 10:
         if (heroLuck() < 0
-            || hasIntrinsicProperty('seeInvisible', null, game)) {
+            || hasPermanentIntrinsicProperty('seeInvisible', game)) {
             if (game.level?.flags?.nommap) {
                 await plineWithContinuation(
                     'A terrible drone fills your head!',
@@ -306,7 +313,7 @@ async function specialThroneEffect(effect: number, x: number, y: number, { gotoL
             if (typeof gotoLevel !== 'function') {
                 throw new TypeError('Vlad throne travel needs a level mover');
             }
-            await gotoLevel({
+            scheduleLevelChange([{
                 dnum: gehennom,
                 dlevel: Math.max(
                     1, (game.dungeons[gehennom]?.num_dunlevs ?? 1) - 1,
@@ -314,7 +321,7 @@ async function specialThroneEffect(effect: number, x: number, y: number, { gotoL
             }, {
                 arrival: 'random',
                 postMessage: 'You feel extremely out of place.',
-            });
+            }], gotoLevel);
         }
         break;
     }
@@ -405,7 +412,7 @@ export async function throneSitEffect({
         await plineWithContinuation(formatFeltMessage(prince || handOfElbereth ? 'very comfortable here.' : 'somehow out of place...'));
     }
 
-    if (!rn2(3)) {
+    if (!special && !rn2(3)) {
         if (game.flags?.debug
             && await promptYesNo('Analyze throne?', 'n') !== 'y') return;
         removeThrone(x, y);
@@ -480,12 +487,16 @@ export async function rndcurse({
             candidate.oclass !== COIN_CLASS)[index];
         if (!object || object.cursed) continue;
         if (artifactById(object.oartifact)?.selfWilled && rn2(10) < 8) {
-            const name = object.name || OBJECT_NAMES[object.otyp] || 'object';
-            await publish(`The ${name} resists!`);
+            const name = definiteName(objectCombatName(object, { includeCorpseSpecies: false }));
+            const subject = name.charAt(0).toUpperCase() + name.slice(1);
+            await publish(`${subject} ${objectNameIsPlural(object) ? 'resist' : 'resists'}!`);
             continue;
         }
-        if (object.blessed) unblessObjectState(object);
-        else {
+        if (object.blessed) {
+            const oldRadius = objectLightRadius(object, state);
+            unblessObjectState(object, state);
+            await adjustObjectLightAfterBlessing(object, oldRadius, state);
+        } else {
             await curseObject(object);
             await dropCursedSecondaryWeapon(object, state);
             if (state.program_state.gameover) return changed;
@@ -499,11 +510,12 @@ export async function rndcurse({
     if (saddle && !saddle.cursed) {
         if (saddle.blessed) unblessObjectState(saddle);
         else await curseObject(saddle);
-        if (state.blind) {
+        if (heroIsBlind(state)) {
             saddle.bknown = false;
         } else {
-            const color = saddle.cursed ? 'black' : 'brown';
-            await publish(`The saddle glows ${color}.`);
+            const subject = ownedObjectAction(saddle, 'glow', state);
+            const color = displayColorName(saddle.cursed ? 'black' : 'brown', state);
+            await publish(`${subject} ${color}.`);
             saddle.bknown = !(heroIsHallucinating(state));
         }
         changed.push(saddle);

@@ -6,6 +6,9 @@ import { game } from '../js/gstate.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 import { placeHeroAtRandomArrival } from '../js/level_change.js';
+import { restoreGame, saveGame } from '../js/save.js';
+import { memoryStorage } from './support/memory-storage.js';
+import { createSpecialLevel } from './support/topology.js';
 
 void test('random arrival resets the old position on entry to a different level', async () => {
     freshPlayableRoom({ hero: {
@@ -48,6 +51,20 @@ void test('a one-square portal region keeps its dungeon destination', async () =
 
     const portal = level.traps.find(trap => trap.tx === 12 && trap.ty === 10);
     assert.equal(portal?.ttyp, MAGIC_PORTAL);
+    assert.deepEqual(portal?.dst, { dnum: 1, dlevel: 7 });
+});
+
+void test('a portal to a named special level remains usable after saving and restoring', async () => {
+    freshPlayableRoom();
+    const destination = createSpecialLevel({ dnum: 1, dlevel: 7, flags: { town: true } });
+    await place_lregion(12, 10, 12, 10, -1, -1, -1, -1, LR_PORTAL, destination);
+    game.plname = 'PortalSaver';
+    const storage = memoryStorage();
+
+    assert.equal(await saveGame(storage), true);
+    assert.equal(restoreGame('PortalSaver', storage), true, 'a named portal must survive the saved-state boundary');
+
+    const portal = game.level?.traps.find(trap => trap.tx === 12 && trap.ty === 10);
     assert.deepEqual(portal?.dst, { dnum: 1, dlevel: 7 });
 });
 

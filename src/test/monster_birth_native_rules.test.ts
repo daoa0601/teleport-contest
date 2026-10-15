@@ -20,6 +20,7 @@ void test('ordinary Angels can be roaming minions even without inventory', async
         if (angel.isminion) {
             roamers++;
             assert.ok(angel.emin);
+            assert.equal(angel.emin.parentmid, angel.m_id, 'a roamer record belongs to its newborn actor');
             assert.ok([-1, 0, 1].includes(angel.emin.min_align));
             const peaceful = angel.emin.min_align === game.u.ualign.type
                 ? !angel.emin.renegade : angel.emin.renegade;
