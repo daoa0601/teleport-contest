@@ -49,7 +49,7 @@ import {
     RIN_POLYMORPH_CONTROL, RIN_PROTECTION_FROM_SHAPE_CHANGERS,
 } from './object_data.js';
 import {
-    newsym, pline, plineWithContinuation, see_monsters,
+    canSpotMonster, newsym, pline, plineWithContinuation, see_monsters,
 } from './display.js';
 import { deleteObject } from './object_delete.js';
 import { dragonFormForArmor, findArmorClass, removeHeroArmor, simpleArmorName } from './armor.js';
@@ -97,7 +97,7 @@ import { hideHeroUnder } from './monster_hiding.js';
 import { learnEggType } from './invent.js';
 import { heroCanSpinWeb } from './hero_web.js';
 import {
-    expelHero, holdingMonsterSubject, releaseHeroGrip,
+    expelHero, releaseHeroGrip,
 } from './hero_expulsion.js';
 import { applyHeroLocationEffects } from './cmd.js';
 
@@ -489,6 +489,8 @@ async function beginMonsterForm(mnum: number, {
         && sexChangeAllowed && rn2(10) === 0)
         game.flags.female = !female;
 
+    const holderName = u.ustuck
+        ? monsterName(u.ustuck, { capitalized: true, augmentIt: true }) : '';
     if (announceForm) {
         const sexChanged = female !== game.flags.female;
         const gendered = genderFlags & (M2_MALE | M2_FEMALE);
@@ -556,7 +558,7 @@ async function beginMonsterForm(mnum: number, {
     // polymon() does not repaint the accepted form until break_armor() has
     // completed.  A garment pager can therefore still expose the old hero
     // glyph even though monster HP and status metadata are already live.
-    return mnum;
+    return { mnum, holderName };
 }
 
 // C polyself.c:uasmon_maxStr(). Racial limits also apply to undead relatives,
@@ -594,7 +596,8 @@ export async function polymonHero(mnum: number, options: PolymonOptions = {}) {
     const wasHolding = game.u.ustuck && !game.u.uswallow && heroFormSticks(game);
     const wasBlind = heroIsBlind(game);
     const wasHidingUnder = game.u.uundetected && heroFormHidesUnderObjects(game);
-    mnum = await beginMonsterForm(mnum, options);
+    const body = await beginMonsterForm(mnum, options);
+    mnum = body.mnum;
     if (game.uskin && dragonFormForArmor(game.uskin) !== mnum)
         await restoreDragonArmor(game);
     await changeArmorForHeroForm(mnum);
@@ -632,8 +635,10 @@ export async function polymonHero(mnum: number, options: PolymonOptions = {}) {
         if (unsolid || size >= MZ_HUGE
             || (size > holderSize && !monsterIsWhirly(holder))) {
             if (unsolid) {
+                const subject = canSpotMonster(holder)
+                    ? monsterName(holder, { capitalized: true }) : body.holderName;
                 await plineWithContinuation(
-                    `${holdingMonsterSubject(holder)} can no longer contain you.`,
+                    `${subject} can no longer contain you.`,
                 );
             }
             const result = await expelHero(holder, { message: !unsolid });
@@ -641,8 +646,10 @@ export async function polymonHero(mnum: number, options: PolymonOptions = {}) {
             wasExpelled = true;
         }
     } else if (holder && !wasHolding && (heroFormSticks() || unsolid)) {
+        const subject = canSpotMonster(holder)
+            ? monsterName(holder, { capitalized: true }) : body.holderName;
         hero.ustuck = null;
-        await plineWithContinuation(`${holdingMonsterSubject(holder)} loses its grip on you.`);
+        await plineWithContinuation(`${subject} loses its grip on you.`);
     } else if (wasHolding && !heroFormSticks()) {
         await releaseHeroGrip();
     }
