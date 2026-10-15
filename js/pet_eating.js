@@ -1,3 +1,4 @@
+import { currency } from './currency.js';
 import { canSeeMonster, canSpotMonster, monsterVisible, newsym, plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
 import { foodNutrition } from './food_lifecycle.js';
@@ -163,7 +164,7 @@ export async function finishPetEating(monster, meal, state = game, random = rn2,
         const keeper = billForObject(object, state)?.resident ?? null;
         const cost = unpaidObjectCost(object, state)
             + containedBuyCost(object, keeper, { state });
-        await plineWithContinuation(`That ${objectName(object, state)} will cost you ${cost} ${cost === 1 ? 'zorkmid' : 'zorkmids'}.`);
+        await plineWithContinuation(`That ${objectName(object, state)} will cost you ${cost} ${currency(cost, { state })}.`);
     }
     await consumeMonsterObject(monster, object, state);
 }

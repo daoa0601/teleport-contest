@@ -1,0 +1,22 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+import { COLNO, LAVAPOOL, ROWNO } from '../js/const.js';
+import { game, requirePlayingGame } from '../js/gstate.js';
+import { pushKeys } from '../js/input.js';
+import { fumaroles } from '../js/monmove.js';
+import { freshObjectRoom } from './support/object-room.js';
+
+void test('natural lava clouds do not blame the hero outside level generation or monster movement', async () => {
+    const level = freshObjectRoom({ gameplaySeed: 1n });
+    requirePlayingGame(game);
+    level.flags.temperature = 1;
+    for (let x = 1; x < COLNO; x++) {
+        for (let y = 0; y < ROWNO; y++) level.requireAt(x, y).typ = LAVAPOOL;
+    }
+    pushKeys(' '.repeat(20));
+
+    await fumaroles(game);
+
+    assert.ok(level.regions.length > 0, 'a hot lava level must produce a cloud');
+    for (const cloud of level.regions) assert.equal(cloud.heroFault, false);
+});

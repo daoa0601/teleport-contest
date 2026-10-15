@@ -18,7 +18,6 @@ import { OBJECT_TIMER_KIND, objectTimers } from './object_timers.js';
 import { isThrowingWeapon, launcherMatchesAmmo, } from './object_properties.js';
 import { rnd } from './rng.js';
 import { hitMonsterWithSupportedPotion, SUPPORTED_MONSTER_POTION_TYPES, } from './potion_hit.js';
-import { heroIsBlind } from './senses.js';
 import { touchPetrifies } from './stoning.js';
 import { offerThrownFood } from './thrown_food.js';
 import { detachThrownUnit, finishHeroThrownObjectLanding, prepareHeroThrownTarget } from './thrown_object.js';
@@ -310,11 +309,6 @@ export async function resolveGenericSwallowedThrow({ state = game, item, objectC
         const destination = trail
             ? `${possessive(monsterName)}${trail}` : monsterName;
         await plineWithContinuation(`The ${objectName(thrown, state)} vanishes into ${destination}.`);
-        const snuffLamp = thrown.lamplit && LAMP_TYPES.has(thrown.otyp)
-            && monsterCanEngulf(engulfer);
-        if (snuffLamp && !heroIsBlind(state)) {
-            await plineWithContinuation(`The ${objectName(thrown, state)} goes out.`);
-        }
         await addObjectToMonsterInventory(engulfer, thrown, state, { atFront: true });
         state.context.move = 1;
         return true;

@@ -212,3 +212,23 @@ void test('empty urgent output does not end Escape suppression', async () => {
 
     assert.doesNotMatch(visibleText(), /An ordinary sound follows/);
 });
+
+void test('Escape dismissing older prose still pages the incoming wrapped message', async () => {
+    freshPlayableRoom();
+    const input = resetInputState();
+    await plineWithContinuation('A distant rumble echoes through the empty corridor.');
+    const pages: string[] = [];
+    input.beforeRead = () => {
+        pages.push(visibleText());
+        input.feed('\x1b');
+    };
+
+    await plineWithContinuation('The ceiling cracks overhead. Stones fall across the passage and clouds of dust fill the chamber.');
+
+    assert.equal(pages.length, 2, 'Both the old prose and the incoming wrapped warning need acknowledgment');
+    assert.match(pages[1] ?? '', /fill the chamber\.--More--/);
+    assert.equal(requireGameDisplay().cursorRow, 0, 'Acknowledgment restores the covered map');
+    await plineWithContinuation('The dust settles.');
+    await flush_screen(1);
+    assert.doesNotMatch(visibleText(), /The dust settles/, 'Escape still suppresses later prose');
+});

@@ -1,3 +1,4 @@
+import { heroLocomotion } from './hero_locomotion.js';
 import { maybeResetPick } from './lock_context.js';
 // C do.c:goto_level(): departure, destination creation or restoration, and arrival.
 import { rewindEngravingsForSave, restoreEngravingPointers } from './engrave.js';
@@ -416,7 +417,7 @@ async function arriveOnLevel(from, { arrival, ladder, followers, beforeGlow }) {
         if (Is_airlevel(game.u.uz) || Is_waterlevel(game.u.uz))
             await moveElementalBubbles();
         else if (game.level.flags.fumaroles)
-            fumaroles(game);
+            await fumaroles(game);
         vision_reset_new_level();
         await docrt({ beforeGlow });
         return false;
@@ -437,7 +438,7 @@ async function applyStairTravelEffects(up, ladder) {
         const greatEffort = heroIsPunished() && !(game.u.levitating || game.levitating);
         if (verbose || greatEffort)
             await plineWithContinuation(`${greatEffort ? 'With great effort, you' : 'You'} `
-                + `${flying ? 'fly' : 'climb'} up${flying && ladder ? ' along' : ''} the ${noun}.`);
+                + `${heroLocomotion('climb')} up${flying && ladder ? ' along' : ''} the ${noun}.`);
     }
     else if (game.u.dz) {
         if (flying) {

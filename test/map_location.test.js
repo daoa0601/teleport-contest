@@ -53,7 +53,7 @@ for (const blind of [false, true]) {
         requirePlayingGame(game);
         const potion = await mksobj(POT_HEALING, false, false);
         placeCreatedObject(potion, 12, 10);
-        createHarmlessGasCloudSelection(game, [{ x: 12, y: 10 }]);
+        await createHarmlessGasCloudSelection(game, [{ x: 12, y: 10 }]);
         level.requireAt(11, 10).typ = VWALL;
         vision_reset();
         setHeroBlindnessTurns(blind ? 5 : 0);
@@ -70,7 +70,7 @@ void test('memory-only mapping does not draw an otherwise visible cloud overlay'
     requirePlayingGame(game);
     const potion = await mksobj(POT_HEALING, false, false);
     placeCreatedObject(potion, 12, 10);
-    createHarmlessGasCloudSelection(game, [{ x: 12, y: 10 }]);
+    await createHarmlessGasCloudSelection(game, [{ x: 12, y: 10 }]);
     map_object(potion, true);
     assert.equal(level.requireAt(12, 10).disp_ch, '!');
     map_location(12, 10, false);

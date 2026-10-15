@@ -20,9 +20,10 @@ for (const poisonous of [false, true]) {
         const club = await floorObject(CLUB, 10, 10);
         await floorObject(CORPSE, 10, 10, { corpsenm: 10 });
         addTrap(level, ARROW_TRAP, 10, 10, { tseen: true });
-        const cloud = createHarmlessGasCloudSelection(game, [{ x: 10, y: 10 }]);
+        const cloud = await createHarmlessGasCloudSelection(game, [{ x: 10, y: 10 }]);
         assert.ok(cloud);
         cloud.damage = poisonous ? 8 : 0;
+        cloud.heroFault = false;
         const input = resetInputState();
 
         const operation = rhack(','.charCodeAt(0));

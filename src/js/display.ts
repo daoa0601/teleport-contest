@@ -2840,7 +2840,7 @@ export async function plineWithContinuation(msg: string, { noRepeat = false, urg
         dismissal = await pageTopline(pending, { urgent });
         // Escape suppresses later lines, not the line which forced this pager.
         await pline(msg);
-        if ((dismissal !== 27 || urgent) && wraps)
+        if (wraps)
             dismissal = await pageTopline(msg, { urgent });
     }
     // C pline.c tracks the last individual message, not the joined tty line.

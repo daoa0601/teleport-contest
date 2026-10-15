@@ -438,9 +438,10 @@ void test('prayer grants breathing when a permanent poison cloud has no safe exi
         for (let y = 6; y <= 14; y++)
             cells.push({ x, y });
     }
-    const cloud = createHarmlessGasCloudSelection(game, cells, { ttl: -1 });
+    const cloud = await createHarmlessGasCloudSelection(game, cells, { ttl: -1 });
     assert.ok(cloud);
     cloud.damage = 5;
+    cloud.heroFault = false;
     const hp = game.u.uhp;
     await resolvePrayer();
     await runLevelRegions(game);

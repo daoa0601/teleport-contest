@@ -322,7 +322,7 @@ export async function detachThrownUnit(state, item, selectedQuantity, splitObjec
         thrown.invlet = null;
     }
     else {
-        await removeWornHeroItem(item, state);
+        await removeWornHeroItem(item, state, { unchainBall: false });
         if (state.program_state?.gameover)
             return thrown;
     }

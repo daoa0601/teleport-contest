@@ -1,3 +1,4 @@
+import { currency } from './currency.js';
 // C detect.c: gold_detect(), food_detect(), object_detect(), monster_detect().
 // Physical source consumption and trycall() belong to the caller.
 
@@ -78,7 +79,7 @@ export async function detectGold(source: GameObject | null, { state = game }: De
     if (!known) {
         let message = 'You feel materially poor.';
         if (state.u.umonnum === GOLD_GOLEM)
-            message = 'You feel like a million zorkmids!';
+            message = `You feel like a million ${currency(2, { state })}!`;
         else if (state.inventory.some(object => objectOfClass(object, COIN_CLASS)))
             message = 'You feel worried about your future financial situation.';
         else if (steedGold) {

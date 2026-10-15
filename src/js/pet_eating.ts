@@ -1,3 +1,4 @@
+import { currency } from './currency.js';
 // A pet's meal, from nutritional recovery through the observable eating
 // message to consumption. C refs: dogmove.c dog_nutrition() and dog_eat().
 import type { GameState } from './game_state.js';
@@ -176,7 +177,7 @@ export async function finishPetEating(
         const keeper = billForObject(object, state)?.resident ?? null;
         const cost = unpaidObjectCost(object, state)
             + containedBuyCost(object, keeper, { state });
-        await plineWithContinuation(`That ${objectName(object, state)} will cost you ${cost} ${cost === 1 ? 'zorkmid' : 'zorkmids'}.`);
+        await plineWithContinuation(`That ${objectName(object, state)} will cost you ${cost} ${currency(cost, { state })}.`);
     }
     await consumeMonsterObject(monster, object, state);
 }

@@ -2,18 +2,51 @@ import { requirePlayingGame } from '../js/gstate.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { addBuriedObject } from '../js/buried_object.js';
+import { W_BALL, W_CHAIN } from '../js/const.js';
 import { game } from '../js/gstate.js';
+import { pushKeys, resetInputState } from '../js/input.js';
 import { beginObjectBurn } from '../js/light.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { addObjectToContainer } from '../js/object_container.js';
 import { CORPSE, HEAVY_IRON_BALL, LARGE_BOX, POT_WATER, TALLOW_CANDLE } from '../js/object_data.js';
+import { unlinkObject } from '../js/object_location.js';
 import { OBJECT_TIMER_KIND, scheduleObjectTimer } from '../js/object_timers.js';
+import { punishHero } from '../js/punishment.js';
 import { initRng } from '../js/rng.js';
 import { runDueTimers } from '../js/timer_effects.js';
+import { addInventoryItem } from '../js/u_init.js';
+import { setPrimaryWeapon } from '../js/weapon_slots.js';
 import { throwInventoryObject } from './support/commands.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { floorObjects } from './support/level-state.js';
 import { freshObjectRoom } from './support/object-room.js';
+
+void test('throwing a wielded punishment ball releases the weapon but keeps the chain attached', async () => {
+    const level = freshObjectRoom({ right: 20 });
+    requirePlayingGame(game);
+    pushKeys(' '.repeat(20));
+    await punishHero();
+    const ball = game.uball;
+    const chain = game.uchain;
+    assert.ok(ball && chain);
+    unlinkObject(ball, game);
+    await addInventoryItem(ball);
+    ball.cursed = false;
+    await setPrimaryWeapon(ball);
+    resetInputState();
+
+    await throwInventoryObject(ball, 'l', ' '.repeat(20));
+
+    assert.equal(game.u.punished, true);
+    assert.equal(game.uball, ball);
+    assert.equal(game.uchain, chain);
+    assert.equal(ball.owornmask, W_BALL);
+    assert.equal(chain.owornmask, W_CHAIN);
+    assert.equal(game.uwep, null);
+    assert.equal(game.inventory.includes(ball), false);
+    assert.ok(floorObjects(level).includes(ball));
+    assert.ok(floorObjects(level).includes(chain));
+});
 
 void test('a thrown candle goes out while the rest of its carried stack stays lit', async () => {
     const level = freshObjectRoom({ right: 20 });

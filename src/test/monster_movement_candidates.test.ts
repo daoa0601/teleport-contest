@@ -135,7 +135,7 @@ void test('harmless steam does not block a breathing monster', async () => {
     freshObjectRoom({ heroX: 15, heroY: 12 });
     requirePlayingGame(game);
     const goblin = await createMonsterAt('goblin', 10, 10, MM_ANGRY | NO_MINVENT);
-    createSteamCloud(game, 11, 10, 1);
+    await createSteamCloud(game, 11, 10, 1);
 
     assert.equal(canStep(goblin, 11, 10), true);
 });

@@ -3,13 +3,14 @@
 
 import { clearHeroAccessory, removeHeroAccessory } from './accessory.js';
 import { armorSlotFor, clearHeroArmor, removeHeroArmor } from './armor.js';
-import { I_SPECIAL } from './const.js';
+import { I_SPECIAL, W_BALL, W_CHAIN } from './const.js';
 import { removeEyewear, unequipEyewear } from './eyewear.js';
 import { game } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import { syncBlindness } from './senses.js';
 import { losePrimaryWeapon, releaseWeaponSlots } from './weapon_slots.js';
+import { unpunishHero } from './punishment.js';
 
 export async function removeHeroEquipment(object: GameObject, state: GameState = game, {
     deferArmorClass = false,
@@ -34,9 +35,10 @@ export async function removeHeroEquipment(object: GameObject, state: GameState =
 
 // C steal.c:remove_worn_item(). Landing can otherwise disrobe or burn the
 // very item whose removal is still in progress.
-export async function removeWornHeroItem(
-    object: GameObject, state: GameState = game, options: { cancelledDon?: boolean } = {},
-): Promise<void> {
+export async function removeWornHeroItem(object: GameObject, state: GameState = game, {
+    unchainBall = true,
+    ...armorOptions
+}: { unchainBall?: boolean; cancelledDon?: boolean } = {}): Promise<void> {
     const wasInUse = object.in_use;
     object.in_use = true;
     try {
@@ -45,7 +47,7 @@ export async function removeWornHeroItem(
             // Native *_off() clears worn sources; the command loop owns find_ac().
             await removeHeroArmor(object, state, {
                 deferArmorClass: true,
-                ...options,
+                ...armorOptions,
             });
         }
         await removeHeroAccessory(object, state);
@@ -56,6 +58,8 @@ export async function removeWornHeroItem(
         if (state.uwep === object || state.u?.uwep === object)
             await losePrimaryWeapon(state);
         await removeHeroEquipment(object, state);
+        if (unchainBall && ((object.owornmask ?? 0) & (W_BALL | W_CHAIN)))
+            await unpunishHero(state);
     } finally {
         if (wasInUse === undefined) delete object.in_use;
         else object.in_use = wasInUse;

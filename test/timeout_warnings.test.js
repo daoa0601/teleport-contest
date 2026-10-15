@@ -48,7 +48,7 @@ for (const turns of [5, 3]) {
 }
 void test('temporary breathing warns while the hero remains in a gas region', async () => {
     const input = freshTurnRoom();
-    createHarmlessGasCloudSelection(game, [{ x: 11, y: 10 }]);
+    await createHarmlessGasCloudSelection(game, [{ x: 11, y: 10 }]);
     setPropertyTimeout('magicalBreathing', 5);
     const messages = [];
     input.beforeRead = () => { messages.push(game._pending_message || game._retained_message); };

@@ -382,7 +382,6 @@ import { checkMonsterGearNextTurn, findMonsterArmorClass } from './monworn.js';
 import { inTown, roomsAt } from './room.js';
 import { addShopDamage } from './shop_damage.js';
 import {
-    createHarmlessGasCloudSelection,
     createPoisonGasCloud,
     createSteamCloud,
     GAS_OK,
@@ -1195,7 +1194,7 @@ export function monstersInFmonOrder(monsters: readonly Monster[] = []) {
     return Array.from(monsters).reverse();
 }
 
-function createFogEveryturnRegion(
+async function createFogEveryturnRegion(
     state: PlayingGameState,
     x: number,
     y: number,
@@ -1204,14 +1203,14 @@ function createFogEveryturnRegion(
     const cell = state.level.at(x, y);
     if (!cell || (IS_DOOR(cell.typ) && cell.doormask & (D_CLOSED | D_LOCKED))
         || visibleRegionAt(state, x, y)) return null;
-    return createHarmlessGasCloudSelection(state, [{ x, y }], { ttl: 4 + random(3) });
+    return await createPoisonGasCloud(state, x, y, 1, 0, random);
 }
 
 // C monmove.c:m_everyturn_effect().  movemon_singlemon() runs this before its
 // movement-ration check, so an otherwise stationary fog cloud still leaves a
 // one-cell harmless vapor region.  A size-one create_gas_cloud() owns only the
 // rn1(3,4) TTL draw; the region then suppresses another cloud at that square.
-function monsterEveryturnEffect(
+async function monsterEveryturnEffect(
     monster: Monster,
     state: PlayingGameState,
     random: RandomBelow = rn2,
@@ -1222,10 +1221,10 @@ function monsterEveryturnEffect(
         visibleRegionAt(state, monster.mx, monster.my)
     )
         return null;
-    return createFogEveryturnRegion(state, monster.mx, monster.my, random);
+    return await createFogEveryturnRegion(state, monster.mx, monster.my, random);
 }
 
-export function runMonsterEveryturnEffects(
+export async function runMonsterEveryturnEffects(
     monsters: readonly Monster[],
     state: PlayingGameState,
     random: RandomBelow = rn2,
@@ -1236,7 +1235,7 @@ export function runMonsterEveryturnEffects(
     for (const monster of visits) {
         initializeMonsterMovement(monster);
         if (!schedulable(monster)) continue;
-        const effect = monsterEveryturnEffect(monster, state, random);
+        const effect = await monsterEveryturnEffect(monster, state, random);
         if (effect) effects.push({ monster, effect });
     }
     return effects;
@@ -1245,12 +1244,12 @@ export function runMonsterEveryturnEffects(
 // C allmain.c invokes the same species hook for `youmonst` after status
 // projection and before accepting the next command.  The region persists on
 // the level and suppresses another TTL draw while it covers the hero square.
-export function heroEveryturnEffect(
+export async function heroEveryturnEffect(
     state: PlayingGameState = requireInitializedGame(),
     random: RandomBelow = rn2,
 ) {
     if ((state.u?.mtimedone ?? 0) <= 0 || state.u?.umonnum !== PM_FOG_CLOUD) return null;
-    return createFogEveryturnRegion(state, state.u.ux, state.u.uy, random);
+    return await createFogEveryturnRegion(state, state.u.ux, state.u.uy, random);
 }
 
 // C ref: mon.c mcalcdistress()/m_calcdistress(). JS appends monsters while C
@@ -4198,7 +4197,7 @@ function maybeBreatheAtHero(
 
 // C ref: mkmaze.c:fumaroles(). Steam vents use the same cloud builder as
 // fire striking water.
-export function fumaroles(state: PlayingGameState = requireInitializedGame()) {
+export async function fumaroles(state: PlayingGameState = requireInitializedGame()) {
     let cloudCount = rn2(3);
     let minimumSize = 5;
     if (Is_firelevel(state.u?.uz)) {
@@ -4216,7 +4215,8 @@ export function fumaroles(state: PlayingGameState = requireInitializedGame()) {
         const x = rn2(COLNO - 4) + 3;
         const y = rn2(ROWNO - 4) + 3;
         if (state.level?.at?.(x, y)?.typ !== LAVAPOOL) continue;
-        createSteamCloud(state, x, y, rn2(10) + minimumSize, rn2);
+        const cloud = await createSteamCloud(state, x, y, rn2(10) + minimumSize, rn2);
+        if (cloud) cloud.heroFault = false;
         heard = true;
         const dx = x - (state.u?.ux ?? 0);
         const dy = y - (state.u?.uy ?? 0);

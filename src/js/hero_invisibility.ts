@@ -1,7 +1,7 @@
 // Temporary and intrinsic hero invisibility.
 // C refs: potion.c peffect_invisibility() and zap.c zapyourself().
 
-import type { GameState } from './game_state.js';
+import { formatFeltMessage } from './hero_speech.js';
 import { heroIsHallucinating } from './senses.js';
 import { TIMEOUT } from './const.js';
 import { newsym, plineWithContinuation as pline } from './display.js';
@@ -59,7 +59,7 @@ export async function applyPotionLikeInvisibility({
 } = {}) {
     const cloak = state.uarmc || state.u.uarmc;
     if (spell && invisibilityIsBlocked(state) && cloak?.otyp === MUMMY_WRAPPING) {
-        await pline(`You feel rather itchy under ${ownedObjectName(cloak, state, { capitalized: false })}.`);
+        await pline(formatFeltMessage(`rather itchy under ${ownedObjectName(cloak, state, { capitalized: false })}.`, state));
         return {
             blocked: true,
             showedInvisibility: false,
@@ -108,7 +108,7 @@ export async function zapHeroInvisible(
 ) {
     const cloak = state.uarmc || state.u.uarmc;
     if (invisibilityIsBlocked(state) && cloak?.otyp === MUMMY_WRAPPING) {
-        await pline(`You feel rather itchy under ${ownedObjectName(cloak, state, { capitalized: false })}.`);
+        await pline(formatFeltMessage(`rather itchy under ${ownedObjectName(cloak, state, { capitalized: false })}.`, state));
         return false;
     }
     const observed = !heroIsInvisible(state) && !heroIsBlind(state)

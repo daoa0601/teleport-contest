@@ -112,7 +112,7 @@ void test('a displayed cloud suppresses the drying line, but an actor drawn over
         requireFixtureGame(game);
         game.u.ux = 11;
         if (withMonster) await createMonsterAt('newt', 12, 10);
-        createHarmlessGasCloudSelection(game, [{ x: 12, y: 10 }]);
+        await createHarmlessGasCloudSelection(game, [{ x: 12, y: 10 }]);
         newsym(12, 10);
         assert.equal(glyphAt(12, 10)?.kind, withMonster ? 'monster' : 'terrain');
         const messages: string[] = [];

@@ -2,11 +2,12 @@
 // C worn.c:setnotworn(). Command messages belong to the caller.
 import { clearHeroAccessory, removeHeroAccessory } from './accessory.js';
 import { armorSlotFor, clearHeroArmor, removeHeroArmor } from './armor.js';
-import { I_SPECIAL } from './const.js';
+import { I_SPECIAL, W_BALL, W_CHAIN } from './const.js';
 import { removeEyewear, unequipEyewear } from './eyewear.js';
 import { game } from './gstate.js';
 import { syncBlindness } from './senses.js';
 import { losePrimaryWeapon, releaseWeaponSlots } from './weapon_slots.js';
+import { unpunishHero } from './punishment.js';
 export async function removeHeroEquipment(object, state = game, { deferArmorClass = false, } = {}) {
     const armorSlot = armorSlotFor(object.otyp);
     if (state.uskin === object) {
@@ -27,7 +28,7 @@ export async function removeHeroEquipment(object, state = game, { deferArmorClas
 }
 // C steal.c:remove_worn_item(). Landing can otherwise disrobe or burn the
 // very item whose removal is still in progress.
-export async function removeWornHeroItem(object, state = game, options = {}) {
+export async function removeWornHeroItem(object, state = game, { unchainBall = true, ...armorOptions } = {}) {
     const wasInUse = object.in_use;
     object.in_use = true;
     try {
@@ -36,7 +37,7 @@ export async function removeWornHeroItem(object, state = game, options = {}) {
             // Native *_off() clears worn sources; the command loop owns find_ac().
             await removeHeroArmor(object, state, {
                 deferArmorClass: true,
-                ...options,
+                ...armorOptions,
             });
         }
         await removeHeroAccessory(object, state);
@@ -48,6 +49,8 @@ export async function removeWornHeroItem(object, state = game, options = {}) {
         if (state.uwep === object || state.u?.uwep === object)
             await losePrimaryWeapon(state);
         await removeHeroEquipment(object, state);
+        if (unchainBall && ((object.owornmask ?? 0) & (W_BALL | W_CHAIN)))
+            await unpunishHero(state);
     }
     finally {
         if (wasInUse === undefined)

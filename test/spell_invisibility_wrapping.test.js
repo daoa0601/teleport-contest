@@ -4,7 +4,8 @@ import { wearHeroArmor } from '../js/armor.js';
 import { rhack } from '../js/cmd.js';
 import { A_INT, MENU_TRADITIONAL } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { heroIsInvisible } from '../js/hero_invisibility.js';
+import { applyPotionLikeInvisibility, heroIsInvisible, zapHeroInvisible } from '../js/hero_invisibility.js';
+import { putHeroToSleep } from '../js/hero_sleep.js';
 import { resetInputState } from '../js/input.js';
 import { MUMMY_WRAPPING, SPE_INVISIBILITY, WAN_MAKE_INVISIBLE } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
@@ -40,4 +41,19 @@ void test('a self-directed invisibility wand also names the wrapping absorbing i
     assert.equal(game.u.invisibleTurns ?? 0, 0);
     assert.equal(game.context.move, 1);
 });
+for (const source of ['spell', 'wand']) {
+    void test(`a sleeping hero dreams of the named wrapping absorbing an invisibility ${source}`, async () => {
+        freshObjectRoom();
+        const wrapping = await addInventoryObject(MUMMY_WRAPPING, { oextra: { oname: 'Linen' } });
+        wearHeroArmor(wrapping);
+        putHeroToSleep(5);
+        if (source === 'spell')
+            await applyPotionLikeInvisibility({ spell: true });
+        else
+            await zapHeroInvisible();
+        assert.equal(game._lastPlineMessage, 'You dream that you feel rather itchy under your mummy wrapping named Linen.');
+        assert.equal(heroIsInvisible(), false);
+        assert.equal(game.u.invisibleTurns ?? 0, 0);
+    });
+}
 //# sourceMappingURL=spell_invisibility_wrapping.test.js.map

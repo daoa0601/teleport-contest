@@ -184,7 +184,7 @@ void test('probing includes a distant visible gas region around a target', async
     room();
     requireFixtureGame(game);
     const jackal = await createMonsterAt('jackal', 17, 10);
-    createHarmlessGasCloudSelection(game, [{ x: 17, y: 10 }], { ttl: 10 });
+    await createHarmlessGasCloudSelection(game, [{ x: 17, y: 10 }], { ttl: 10 });
     assert.match(await monsterStatusLine(jackal), /in a cloud of vapor/);
 });
 void test('wizard probing reports pet hunger and apport from the actual pet', async () => {

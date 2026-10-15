@@ -1,3 +1,4 @@
+import { currency } from './currency.js';
 // gold_throw.js — Hero-gold flight and direct/quivered contact ownership.
 // C refs: dothrow.c:throw_gold()/throwit()/thitmonst(), zap.c:bhit(),
 // dokick.c:ghitm().
@@ -59,7 +60,7 @@ async function finishShopkeeperCatch(monster, value, state) {
     }
     if (monster.mpeaceful) {
         monster.eshk.credit = Math.max(0, Math.trunc(monster.eshk.credit ?? 0)) + value;
-        await pline(`You have ${monster.eshk.credit} zorkmid${monster.eshk.credit === 1 ? '' : 's'} in credit.`);
+        await pline(`You have ${monster.eshk.credit} ${currency(monster.eshk.credit, { state })} in credit.`);
     }
     else if (!heroIsDeaf(state)) {
         await pline('"Thanks, scum!"');

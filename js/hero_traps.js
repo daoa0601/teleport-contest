@@ -1,3 +1,4 @@
+import { heroLocomotion } from './hero_locomotion.js';
 // Trap effects on the hero.
 // C refs: trap.c dotrap(), trapeffect_*(), launch_obj(), and teleport.c
 // tele_trap().
@@ -75,7 +76,6 @@ import { monsterName } from './monster_name.js';
 import { withIndefiniteArticle } from './object_grammar.js';
 import { objectName, observeObjectForNaming, killerObjectName, ownedObjectName, simpleObjectNameWithArticle } from './objnam.js';
 import { finishImmediateMonsterTrap, trapTriggeredByFloor, triggerImmediateMonsterTrap } from './monmove.js';
-import { monsterLocomotion } from './monster_locomotion.js';
 import { askTeleportDestination } from './cmd.js';
 import { observeObject } from './object_knowledge.js';
 import { triggerHeroPolymorphTrap } from './hero_polymorph_trap.js';
@@ -152,7 +152,7 @@ async function triggerPit(trap, { viaSitting = false, failedUntrap = false, took
                 : `You lead ${steedName.replace(/^the /, 'the poor ')} into ${trap.madeby_u ? 'your' : 'a'} pit!`);
         }
         else if (deliberate) {
-            await plineWithContinuation('You carefully lower yourself into the pit.');
+            await plineWithContinuation(`You carefully ${heroLocomotion('lower yourself')} into the pit.`);
         }
         else if (conjoined) {
             await plineWithContinuation('You move into an adjacent pit.');
@@ -279,7 +279,7 @@ async function triggerWeb(trap, { viaSitting = false, failedUntrap = false, forc
             : steed ? `lead ${monsterName(steed, {
                 article: steed.name && !heroIsHallucinating(game) ? 'none' : 'the',
                 adjective: 'poor', suppressSaddle: true,
-            })} into` : `${monsterLocomotion(form, 'stumble')} into`;
+            })} into` : `${heroLocomotion('stumble')} into`;
         await plineWithContinuation(`You ${verb} ${trap.madeby_u ? 'your' : 'a'} spider web!`);
     }
     hero.utrap = 1;
@@ -427,8 +427,7 @@ export async function climbOutOfPit() {
     const canLeaveByAir = hero.flying || game.flying
         || !!(heroFormFlags() & M1_CLING);
     if (canLeaveByAir && !game.level?.flags?.sokoban_rules) {
-        const locomotion = hero.levitating ? 'float' : hero.flying ? 'fly'
-            : monsterLocomotion(heroMonsterForm(), 'climb');
+        const locomotion = heroLocomotion('climb');
         await pline(`You ${locomotion} from the ${pit}.`);
         clearHeroTrap();
         await fillHeroPitWithBoulder();
@@ -732,8 +731,7 @@ export async function triggerLevelTeleportTrap(trap, gotoLevel, intentional) {
     const hero = game.u;
     // C hack.c:u_locomotion() gives the hero's active movement properties
     // precedence over the species' normal way of moving.
-    const locomotion = hero.levitating || game.levitating ? 'float'
-        : hero.flying || game.flying ? 'fly' : monsterLocomotion(heroMonsterForm(), 'step');
+    const locomotion = heroLocomotion('step');
     const verb = intentional ? 'trigger' : `${locomotion} onto`;
     await plineWithContinuation(`You ${verb} a level teleport trap!`);
     if (hero.antimagic && !intentional)
@@ -1120,8 +1118,7 @@ export async function triggerHeroTrap(trap, { finishTeleport = null, gotoLevel =
         const airborne = hero.levitating || game.levitating
             || ((hero.flying || game.flying) && !viaSitting && !tookPlunge);
         if (trapTriggeredByFloor(trap) && airborne) {
-            const locomotion = hero.levitating || game.levitating ? 'float'
-                : hero.flying || game.flying ? 'fly' : monsterLocomotion(heroMonsterForm(), 'step');
+            const locomotion = heroLocomotion('step');
             if (trap.tseen)
                 await plineWithContinuation(`You ${locomotion} over ${owner} ${trapName(trap.ttyp)}.`);
             return { died: false, shortCircuited: false };

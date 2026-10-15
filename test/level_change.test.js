@@ -312,4 +312,13 @@ void test('a Tourist earns a threshold level on first arrival but not on a retur
     assert.equal(game.u.uexp, 21);
     assert.equal(game.u.urexp, 2004);
 });
+void test('a snake slithers up the stairs when returning to a cached level', async () => {
+    freshConnectedLevels();
+    requirePlayingGame(game);
+    installPagerInput(resetInputState(), { expected: /You descend the stairs|You slither up the stairs/, limit: 2 });
+    await rhack('>'.charCodeAt(0));
+    installPolymorphedHero('garter snake');
+    await rhack('<'.charCodeAt(0));
+    assert.match(game._last_message, /You slither up the stairs\./);
+});
 //# sourceMappingURL=level_change.test.js.map

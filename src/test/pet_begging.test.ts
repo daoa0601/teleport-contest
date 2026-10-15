@@ -163,7 +163,7 @@ void test('a hallucinated gecko gives its sales pitch instead of begging noises'
 
     await begForFood(monster, game);
 
-    assert.equal(await messageLine(), '"15 minutes could save you 15 zorkmids."');
+    assert.match(await messageLine(), /^"15 minutes could save you 15 [^".]+\."$/);
 });
 
 void test('a hallucinated gecko appearance also gives the sales pitch', async () => {
@@ -175,7 +175,7 @@ void test('a hallucinated gecko appearance also gives the sales pitch', async ()
 
     await begForFood(monster, game);
 
-    assert.equal(await messageLine(), '"15 minutes could save you 15 zorkmids."');
+    assert.match(await messageLine(), /^"15 minutes could save you 15 [^".]+\."$/);
 });
 
 void test('a deaf hero cannot hear a trumpeting pet and sleepers stay asleep', async () => {
