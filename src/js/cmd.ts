@@ -267,7 +267,8 @@ import {
     level_difficulty, recordMappedOverviewState, specialDisplayName, specialPrototypeAt,
 } from './dungeon.js';
 import { addInventoryItem, assignInventoryLetter, inventoryLetterRank } from './u_init.js';
-import { objectQuantity, rejoinObjectStack, splitObjectStack } from './object_stack.js';
+import { clearSplitObjects, objectQuantity, rejoinObjectStack, splitObjectStack } from './object_stack.js';
+import { freeInventoryObject } from './hero_inventory.js';
 import { dropHeroObject } from './hero_drop.js';
 import { SELL_DELIBERATE, SELL_NORMAL, setSellDisposition } from './shop_sell.js';
 import { addObjectToMonsterInventory } from './monster_inventory.js';
@@ -5358,12 +5359,13 @@ async function dowield(): Promise<void> {
     const letters = weapons.map(object => object.invlet).join('');
     const choices = ['-', compactInventoryLetters(letters)].filter(Boolean).join(' ');
     const prompt = `What do you want to wield? [${choices} or ?*] `;
+    clearSplitObjects();
     const selection = await promptInventoryObject(
         prompt, game.inventory || [], {
             verb: 'wield',
             classify: object => object.oclass === 12 ? GETOBJ_EXCLUDE
                 : object.oclass === 2 || isWeaponTool(object) ? GETOBJ_SUGGEST : GETOBJ_DOWNPLAY,
-            allowNone: true, allowMenu: true,
+            allowNone: true, allowMenu: true, allowCount: true,
             menuItems: weapons.length ? weapons : game.inventory.filter(item => item.oclass !== 12),
             noneDescription: `your ${game.uarmg ? 'gloved' : 'bare'} ${
                 makePlural(heroHandName(game))}${game.uwep ? '' : ' (wielded)'}`,
@@ -5374,36 +5376,45 @@ async function dowield(): Promise<void> {
         return;
     }
 
-    const object = selection.object;
+    let object = selection.object;
     if (!selection.none && !object) {
         game.context.move = 0;
         return;
     }
+    let splitParent: GameObject | null = null;
+    if (object && selection.count !== null && selection.count < object.quan) {
+        if (object.otyp === LOADSTONE && object.cursed) object.corpsenm = selection.count;
+        else if (isWeldedPrimary(object)) object.bknown = true;
+        else {
+            splitParent = object;
+            object = splitCarriedStack(object, selection.count);
+        }
+    }
     if (object && object === game.uwep) {
-        await pline('You are already wielding that!');
-        if (isWeaponTool(object) || isWetTowel(object)) game._unweapon = false;
-        game.context.move = 0;
+        await reportAlreadyWielded(object);
         return;
     }
     if (await refuseWeldedPrimary()) {
         resetBulkTakeoff();
+        if (splitParent && object) await rejoinObjectStack(splitParent, object);
         game.context.move = 0;
+        return;
+    }
+    if (splitParent && object) {
+        if (splitParent === game.uwep) {
+            await rejoinObjectStack(splitParent, object);
+            await reportAlreadyWielded(splitParent);
+        } else {
+            await finishSplittingCarriedStack(object);
+            await wieldSelectedWeapon(object);
+        }
         return;
     }
     if (selection.none) {
-        const oldPrimary = game.uwep || game.u.uwep;
-        const spentTime = await readyHeroWeapon(null);
-        if (game.flags.pushweapon && oldPrimary && game.uwep !== oldPrimary)
-            await setSecondaryWeapon(oldPrimary);
-        await stopTwoWeaponCombat();
-        game.context.move = spentTime ? 1 : 0;
+        await wieldSelectedWeapon(null);
         return;
     }
-
-    if (!object) {
-        game.context.move = 0;
-        return;
-    }
+    if (!object) return;
 
     // C dowield() hands an alternate-weapon selection to doswapweapon()
     // rather than treating it as an unrelated primary.  That continuation
@@ -5413,12 +5424,50 @@ async function dowield(): Promise<void> {
         await doswapweapon();
         return;
     }
-    if (object.worn && object.class !== 'Weapons' && object.oclass !== 2) {
+    if (object === game.uquiver) {
+        const quantity = object.quan;
+        let confirmation: string;
+        if (quantity > 1 && hasFreeBasicInventoryLetter() && splittableForQuiver(object)) {
+            const names = makePlural(minimalObjectName(object, game));
+            const answer = await promptYesNoQuit(`You have ${quantity} ${names} readied.  Wield one?`);
+            if (answer === 'q') {
+                game.context.move = 0;
+                return;
+            }
+            if (answer === 'y') {
+                await wieldSelectedWeapon(await splitStackForQuiver(object, 1));
+                return;
+            }
+            confirmation = 'Wield all of them instead?';
+        } else {
+            const plural = objectNameIsPlural(object, game)
+                || object.otyp === LENSES || armorUsesPairGrammar(OBJECT_NAMES[object.otyp]);
+            confirmation = `You have ${plural ? 'those' : 'that'} readied.  Wield ${plural ? 'them' : 'it'} instead?`;
+        }
+        if (await promptYesNoQuit(confirmation) !== 'y') {
+            const names = minimalObjectName(object, game);
+            const plural = objectNameIsPlural(object, game);
+            await plineWithContinuation(`${objectOwnershipPrefix(object, game)}${quantity > 1 ? makePlural(names) : names} ${plural ? 'remain' : 'remains'} readied.`);
+            game.context.move = 0;
+            return;
+        }
+        await setQuiverObject(null);
+    } else if ((object.owornmask ?? 0) & (W_ARMOR | W_ACCESSORY | W_SADDLE)) {
         await pline('You cannot wield that!');
         game.context.move = 0;
         return;
     }
-    const oldPrimary = game.uwep || game.u?.uwep || null;
+    await wieldSelectedWeapon(object);
+}
+
+async function reportAlreadyWielded(object: GameObject): Promise<void> {
+    await pline('You are already wielding that!');
+    if (isWeaponTool(object) || isWetTowel(object)) game._unweapon = false;
+    game.context.move = 0;
+}
+
+async function wieldSelectedWeapon(object: GameObject | null): Promise<void> {
+    const oldPrimary = game.uwep || game.u.uwep || null;
     const spentTime = await readyHeroWeapon(object);
     // C dowield() applies pushweapon only after ready_weapon() has installed
     // the new primary.  The displaced primary becomes the authoritative
@@ -6124,12 +6173,20 @@ function splitCarriedStack(item: GameObject, count: number): GameObject {
     return split;
 }
 
-function splitStackForQuiver(item: GameObject, count: number): GameObject {
+async function splitStackForQuiver(item: GameObject, count: number): Promise<GameObject> {
     const child = splitCarriedStack(item, count);
-    child.invlet = null;
-    assignInventoryLetter(child);
-    if (!child.invlet) child.invlet = '#';
+    await finishSplittingCarriedStack(child);
     return child;
+}
+
+// C finish_splitting(): take the child out and add it without merging so
+// its inherited inventory letter is replaced and carried effects refresh.
+async function finishSplittingCarriedStack(object: GameObject): Promise<void> {
+    await freeInventoryObject(object);
+    const nomerge = !!object.nomerge;
+    object.nomerge = true;
+    await addInventoryItem(object, null, false);
+    object.nomerge = nomerge;
 }
 
 async function reportWeldedPrimary(item: GameObject): Promise<boolean> {
@@ -6230,7 +6287,7 @@ async function doquiverCore(verb: 'ready' | 'fire'): Promise<QuiverCommandResult
     }
     if (requestedCount !== null && requestedCount < initialQuantity
         && splittableForQuiver(item)) {
-        item = splitStackForQuiver(item, requestedCount);
+        item = await splitStackForQuiver(item, requestedCount);
     }
 
     const incompatibleMask = W_ARMOR | W_ACCESSORY | W_SADDLE;
@@ -6269,7 +6326,7 @@ async function doquiverCore(verb: 'ready' | 'fire'): Promise<QuiverCommandResult
                 return { item: null, spentTime: false, cancelled: false };
             }
             if (partial === 'y') {
-                item = splitStackForQuiver(item, quantity - 1);
+                item = await splitStackForQuiver(item, quantity - 1);
                 readyAll = false;
             } else confirmation = 'Ready all of them instead?';
         }
