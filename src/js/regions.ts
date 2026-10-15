@@ -11,6 +11,7 @@ import {
     canSeeMonster, newsym, plineWithContinuation,
 } from './display.js';
 import { game, requireGameLevel } from './gstate.js';
+import { impossible } from './diagnostics.js';
 import { monsterAtPosition } from './monster_location.js';
 import { loseHeroHp } from './hero_damage.js';
 import type { DeathHandler } from './end.js';
@@ -233,6 +234,10 @@ export async function createPoisonGasCloud(
     const silentSingleCell = !state.context?.mon_moving
         && x === state.u.ux && y === state.u.uy && cloudSize === 1
         && (!damage || heroGasTolerance(state) === GAS_OK);
+    if (cloudSize > 150) {
+        await impossible(`create_gas_cloud: cloud too large (${cloudSize})!`, { state });
+        cloudSize = 150;
+    }
     const cells = gasCloudCells(state, x, y, cloudSize, random);
     return await makeGasCloud(state, cells,
         gasCloudTtl(cloudSize, cells.length, random), damage, silentSingleCell, publish);
