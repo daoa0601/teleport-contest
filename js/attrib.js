@@ -218,6 +218,8 @@ export function attributeChangeMessage(attribute, result, state = game) {
     const word = result.amount > 0
         ? ATTRIBUTE_GAIN_WORD[attribute] : ATTRIBUTE_LOSS_WORD[attribute];
     if (!result.changed) {
+        if (state.flags.verbose === false)
+            return null;
         if (result.baseChanged || result.maximumChanged) {
             const direction = result.amount > 0 ? 'improved' : 'declined';
             return `Your innate ${ATTRIBUTE_NAME[attribute]} has ${direction}.`;
