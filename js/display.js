@@ -2741,8 +2741,12 @@ async function pageTopline(message, { urgent = false, menuLetter } = {}) {
     else {
         game._retained_message = message + '--More--';
     }
-    if (key === 27 && !urgent)
+    if (key === 27 && !urgent) {
         game._suppressMessagesUntilInput = true;
+        // more() erases the display but retains gt.toplines for hidden prose.
+        if (display)
+            display.stoppedTopline = message;
+    }
     return key;
 }
 // Opening a tty text window flushes any older topline before the window is

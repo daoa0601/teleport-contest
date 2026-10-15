@@ -2759,7 +2759,11 @@ async function pageTopline(
     } else {
         game._retained_message = message + '--More--';
     }
-    if (key === 27 && !urgent) game._suppressMessagesUntilInput = true;
+    if (key === 27 && !urgent) {
+        game._suppressMessagesUntilInput = true;
+        // more() erases the display but retains gt.toplines for hidden prose.
+        if (display) display.stoppedTopline = message;
+    }
     return key;
 }
 
