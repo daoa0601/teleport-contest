@@ -14,7 +14,8 @@ import { addObjectToMonsterInventory, linkObjectToMonsterInventory, removeObject
 import { BULLWHIP, DAGGER, FIGURINE, GLOB_OF_GRAY_OOZE, GOLD_PIECE, LUCKSTONE, MACE, SCR_IDENTIFY, SKELETON_KEY, SPEED_BOOTS, SPE_BOOK_OF_THE_DEAD, WAN_STRIKING, } from '../js/object_data.js';
 import { claimNextDueObjectTimer, OBJECT_TIMER_KIND, objectTimers, objectsInTimerGraph, scheduleObjectTimer, stopAllObjectTimers, } from '../js/object_timers.js';
 import { initRng } from '../js/rng.js';
-import { pushKeys } from '../js/input.js';
+import { pushKeys, resetInputState } from '../js/input.js';
+import { installPagerInput } from './support/pager-input.js';
 import { freshTurnRoom } from './support/playable-room.js';
 import { floorObjects, floorObjectsAt } from './support/level-state.js';
 import { createMonsterAt, createSaddledSteed, equipMonsterObject } from './support/monsters.js';
@@ -378,6 +379,7 @@ async function createBullwhipMonster() {
 }
 async function beginBullwhipDisarm(monster, target, whereTo) {
     requirePlayingGame(game);
+    installPagerInput(resetInputState(), { expected: /whip|wielding|yanks|snatches/, limit: 6 });
     const turn = await takeMonsterTurn(monster, game, range => range === 4 ? whereTo : 0, (count, sides) => count * sides, () => 1);
     const effect = turn.movement.usedMisc;
     assert.ok(effect?.kind === 'bullwhip-disarm', 'A wielded whip must select the native disarm action');

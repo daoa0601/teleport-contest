@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
+import { option_help } from '../js/options.js';
 import { freshTurnRoom } from './support/playable-room.js';
 
 void test('whatdoes describes the command currently bound to the requested key', async () => {
@@ -179,6 +180,62 @@ void test('whatdoes describes the fixed Escape key', async () => {
 
         assert.equal(game._pending_message, '<esc>   cancel current prompt or pending prefix.');
         assert.equal(game.context.move, 0);
+    } finally {
+        input.feed('\x1b');
+        await action;
+    }
+});
+
+void test('option help lists booleans, compound descriptions, and configuration directives without taking a turn', async () => {
+    const input = freshTurnRoom();
+    input.feed('?g');
+    const action = rhack(0);
+    const pages: string[] = [];
+    try {
+        for (let page = 0; ; page++) {
+            assert.ok(page < 12, 'option help did not finish within twelve pages');
+            const boundary = await Promise.race([
+                input.waitUntilBlocked().then(() => 'waiting'), action.then(() => 'closed'),
+            ]);
+            if (boundary === 'closed') break;
+            pages.push(game.nhDisplay?.grid.map(row => row.map(cell => cell.ch).join('')).join('\n') ?? '');
+            input.feed(' ');
+        }
+        const text = pages.join('\n');
+        assert.match(text, /NetHack Options Help:/);
+        assert.match(text, /Boolean options .*negated/);
+        assert.match(text, /autopickup,/);
+        assert.match(text, /Compound options:/);
+        assert.match(text, /`fruit' + - name of a fruit you enjoy eating,/);
+        assert.match(text, /Other settings:/);
+        assert.match(text, /autopickup exceptions/);
+        assert.match(text, /See NetHack's "Guidebook" for details/);
+        assert.doesNotMatch(text, /debug_hunger|montelecontrol|wizweight/);
+    } finally {
+        input.feed('\x1b');
+        await action;
+    }
+    assert.equal(game.context.move, 0);
+});
+
+void test('option help includes wizard-only options in debug mode', async () => {
+    const input = freshTurnRoom({ flags: { debug: true } });
+    const action = option_help();
+    const pages: string[] = [];
+    try {
+        for (let page = 0; ; page++) {
+            assert.ok(page < 12, 'option help did not finish within twelve pages');
+            const boundary = await Promise.race([
+                input.waitUntilBlocked().then(() => 'waiting'), action.then(() => 'closed'),
+            ]);
+            if (boundary === 'closed') break;
+            pages.push(game.nhDisplay?.grid.map(row => row.map(cell => cell.ch).join('')).join('\n') ?? '');
+            input.feed(' ');
+        }
+        const text = pages.join('\n');
+        assert.match(text, /montelecontrol/);
+        assert.match(text, /wizweight/);
+        assert.match(text, /debug_hunger/);
     } finally {
         input.feed('\x1b');
         await action;

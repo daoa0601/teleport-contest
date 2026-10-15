@@ -7,7 +7,7 @@ import {
 } from './const.js';
 import { canSeeMonster, canSpotMonster, newsym, plineWithContinuation } from './display.js';
 import { levelAtDepth, levelIsWizardTower } from './dungeon.js';
-import { dist2, depth } from './hacklib.js';
+import { dist2, depth, ledgerNo } from './hacklib.js';
 import { formatHeardMessage } from './hero_speech.js';
 import { inventoryItemDescription } from './invent.js';
 import { artifactById } from './artifacts.js';
@@ -375,15 +375,17 @@ export async function useMonsterDefensiveItem(monster: Monster, choice: MonsterD
     case 'stairs': {
         await fleeForEscape(monster, options);
         const stair = choice.stair;
-        if (state.u.uz.dnum === 0 && state.u.uz.dlevel === 1 && stair.up) {
+        const branch = stair.tolev.dnum !== state.u.uz.dnum;
+        const ladder = stair.isladder && !branch;
+        if (ledgerNo(state.u.uz, state) === 1 && (branch || stair.up && !ladder)) {
             if (monsterHasSpecial(monster, state) || monster.iswiz && (state.context.no_of_wizards ?? 0) < 2) return { nativeResult: 0, heroDied: false };
             if (seen) await publish(`${subject()} escapes the dungeon!`);
             await removeMonsterFromGame(monster);
             return spent();
         }
         let destination = stair.tolev;
-        let mode = stair.tolev.dnum !== state.u.uz.dnum ? MIGR_SSTAIRS
-            : stair.isladder ? stair.up ? MIGR_LADDER_DOWN : MIGR_LADDER_UP
+        let mode = branch ? MIGR_SSTAIRS
+            : ladder ? stair.up ? MIGR_LADDER_DOWN : MIGR_LADDER_UP
                 : stair.up ? MIGR_STAIRS_DOWN : MIGR_STAIRS_UP;
         if (mode === MIGR_STAIRS_DOWN && state.dungeons[state.u.uz.dnum]?.flags.hellish
             && hasAmulet(monster) && !random(4)
@@ -391,7 +393,7 @@ export async function useMonsterDefensiveItem(monster: Monster, choice: MonsterD
             if (seen) await publish(`As ${monsterName(monster, { state })} climbs the stairs, a mysterious force momentarily surrounds ${monsterObjectPronoun(monster, { state })}...`);
             destination = { dnum: state.u.uz.dnum, dlevel: state.u.uz.dlevel + 1 };
             mode = MIGR_RANDOM;
-        } else if (seen) await publish(`${subject()} escapes ${stair.isladder ? `${stair.up ? 'up' : 'down'} the ladder` : `${stair.up ? 'up' : 'down'}stairs`}!`);
+        } else if (seen) await publish(`${subject()} escapes ${ladder ? `${stair.up ? 'up' : 'down'} the ladder` : `${stair.up ? 'up' : 'down'}stairs`}!`);
         await migrateMonsterOffLevel(monster, state, { dst: destination }, { mode });
         return spent();
     }

@@ -149,7 +149,7 @@ void test('petrifying egg contact uses life saving without an extra physical hit
     assert.equal(floorObjectsAt(game.level, 11, 10).some(object => object.otyp === STATUE), false);
 });
 
-void test('an acid cure consumed during petrifying egg contact credits its fatal damage to the hero', async () => {
+void test('an acid cure consumed during petrifying egg contact credits the hero without breaking pacifism', async () => {
     const { monster } = await contactRoom(/Splat|goblin|acid|You feel/);
     requirePlayingGame(game);
     monster.mhp = 1;
@@ -161,7 +161,7 @@ void test('an acid cure consumed during petrifying egg contact credits its fatal
 
     assert.equal(result.survived, false);
     assert.equal(game.level.monsters.includes(monster), false);
-    assert.equal(game.u.uconduct.killer, 1);
+    assert.equal(game.u.uconduct.killer ?? 0, 0);
 });
 
 void test('bashing with a healing-potion stack frees one bottle and retains the wielded remainder', async () => {

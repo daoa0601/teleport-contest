@@ -24,7 +24,7 @@ for (const inactive of ['frozen', 'sleeping', 'waiting']) {
             troll.msleeping = 1;
         if (inactive === 'waiting') {
             troll.mstrategy = STRAT_WAITFORU;
-            troll.mcansee = 0;
+            game.u.invisibleTurns = 20;
         }
         troll.movement = 12;
         await runMonsterAction(troll, game);

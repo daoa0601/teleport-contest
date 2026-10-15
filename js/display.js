@@ -1632,7 +1632,7 @@ function showMapRegion(x, y) {
     if (!region)
         return;
     const poisonous = region.damage > 0;
-    show_glyph_cell(x, y, '#', poisonous ? CLR_BRIGHT_GREEN : NO_COLOR, false, 0, { kind: 'terrain', terrainName: poisonous ? 'poison cloud' : 'cloud',
+    show_glyph_cell(x, y, '#', poisonous ? CLR_BRIGHT_GREEN : CLR_GRAY, false, 0, { kind: 'terrain', terrainName: poisonous ? 'poison cloud' : 'cloud',
         glyph: cmapToGlyph(poisonous ? CmapSymbol.poisoncloud : CmapSymbol.cloud) });
 }
 function monsterOverridesMapRegion(monster, x, y) {
@@ -2578,6 +2578,8 @@ export async function pline(msg) {
         vision_recalc(0);
     if (game.u.ux)
         await flush_screen(1);
+    if (game.nhDisplay)
+        game.nhDisplay.stoppedTopline = game._suppressMessagesUntilInput ? msg : null;
     game._pending_message = msg;
     game._retained_message = '';
     game._last_message = msg;
@@ -2739,8 +2741,12 @@ async function pageTopline(message, { urgent = false, menuLetter } = {}) {
     else {
         game._retained_message = message + '--More--';
     }
-    if (key === 27 && !urgent)
+    if (key === 27 && !urgent) {
         game._suppressMessagesUntilInput = true;
+        // more() erases the display but retains gt.toplines for hidden prose.
+        if (display)
+            display.stoppedTopline = message;
+    }
     return key;
 }
 // Opening a tty text window flushes any older topline before the window is
@@ -2784,14 +2790,30 @@ export async function plineWithContinuation(msg, { noRepeat = false, urgent = fa
         vision_recalc(0);
     if (game.u.ux)
         await flush_screen(1);
-    // Escape stops tty prose after vpline has refreshed the display.
-    if (!urgent && game._suppressMessagesUntilInput)
-        return;
     const pending = game._pending_message || '';
     const visibleLength = (message) => /[\x0e\x0f]|\x1b\[[0-9;]*C/.test(message)
         ? decodeMixedTopline(message).length : message.length;
     const columns = game.nhDisplay?.cols ?? 80;
     const wraps = toplineRows(msg, columns).length > 1;
+    if (!urgent && game._suppressMessagesUntilInput) {
+        const stopped = game.nhDisplay?.stoppedTopline ?? pending;
+        // Escape's more() resets the message cursor to row zero. Hidden
+        // prose changes gt.toplines without moving that cursor, even if
+        // pending still holds an earlier wrapped message.
+        const fits = visibleLength(msg) + visibleLength(stopped) + 3 < columns - 8;
+        const restarts = fits && msg.startsWith('You die');
+        // Even hidden prose appends to or replaces gt.toplines. Native only
+        // compares "You die" after the length check, so a long stopped line
+        // keeps WIN_STOP set through the following survival question.
+        if (game.nhDisplay)
+            game.nhDisplay.stoppedTopline = fits && !restarts ? `${stopped}  ${msg}` : msg;
+        game._lastPlineMessage = msg;
+        if (!restarts)
+            return;
+        game._suppressMessagesUntilInput = false;
+        await pline(msg);
+        return wraps ? await pageTopline(msg) : null;
+    }
     let dismissal;
     if (!pending) {
         await pline(msg);

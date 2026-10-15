@@ -81,8 +81,10 @@ export async function monsterSelfTouchAfterPolymorph(monster, options = {}) {
 }
 export async function petrifyMonsterFromContact(monster, { creditHero = false, finishDeath, publish = plineWithContinuation, rollOne = rnd, state = game, } = {}) {
     const cure = await useMonsterStoningCure(monster, {
-        finishDeath, publish, rollOne, state,
+        byHero: creditHero, publish, rollOne, state,
     });
+    if (cure.consumed && cure.heroDied)
+        return { heroDied: true };
     if (cure.consumed) {
         return {
             changed: true,
@@ -111,6 +113,8 @@ export async function petrifyMonsterAttacker(monster, { publish = plineWithConti
 // C uhitm.c:do_stone_mon(). A cure or life saving ends this hit.
 export async function petrifyMonsterDefender(monster, { publish = plineWithContinuation, visible = canSeeMonster(monster), ...options } = {}) {
     const cure = await useMonsterStoningCure(monster, { ...options, publish });
+    if (cure.consumed && cure.heroDied)
+        return { heroDied: true };
     if (cure.consumed)
         return { survived: !cure.died, stopped: true, damage: 0, cure };
     const stoneForm = await turnGolemToStone(monster, publish);

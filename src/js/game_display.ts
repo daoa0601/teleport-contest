@@ -22,6 +22,8 @@ export class GameDisplay {
     readonly terminal: Terminal;
     topMessage: string | null;
     toplines: string;
+    // update_topl() keeps accepting logical text while WIN_STOP hides output.
+    stoppedTopline: string | null = null;
     readonly messages: string[];
     toplin: number;
     messageWinFlags: number;

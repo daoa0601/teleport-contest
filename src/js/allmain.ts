@@ -8,6 +8,7 @@ import { finishMonsterHideUnder } from './monster_hiding.js';
 // C ref: allmain.c — newgame, moveloop, moveloop_core.
 import { heroIsHallucinating } from './senses.js';
 import { mcalcmove } from './monster_speed.js';
+import { learnWand } from './wand_charge.js';
 import { makeBlinded } from './sight_change.js';
 import { makeConfused, makeHallucinated, makeStunned } from './hero_mental_status.js';
 import { heroHasHalfSpellDamage } from './spell_damage.js';
@@ -3489,72 +3490,25 @@ async function executeMonsterTurns(): Promise<boolean | undefined> {
             }
         }
         if (movement?.usedMisc?.kind === 'bullwhip-disarm') {
-            const misc = movement.usedMisc;
-            const targetType = misc.target?.otyp;
-            const targetName = (targetType !== undefined ? OBJECT_NAMES[targetType] : null)
-                || misc.target?.name || 'weapon';
-            const targetWithArticle = `the ${targetName}`;
-            const hand = targetType !== undefined && OBJECT_BIMANUAL[targetType]
-                ? 'hands' : 'hand';
-            if (actorWasOpticallySeen) {
-                await plineWithContinuation(
-                    `${visibleMonsterSubject(monster)} flicks a bullwhip towards your ${hand}!`,
-                );
-            }
-            const whip = actorWasOpticallySeen ? 'The bullwhip' : 'A whip';
-            await plineWithContinuation(
-                `${whip} wraps around ${targetWithArticle} you're wielding!`,
-            );
             await finishDeferredMonsterMiscItem(action, game);
-            newsym(monster.mx, monster.my);
-            newsym(game.u.ux, game.u.uy);
-            if (misc.whereTo === 0) {
-                await plineWithContinuation('The whip slips free.');
-            } else {
-                const subject = canSpotMonster(monster) ? visibleMonsterSubject(monster) : 'It';
-                if (misc.whereTo === 1) {
-                    await plineWithContinuation(
-                        `${subject} yanks ${targetWithArticle} from your ${hand}!`,
-                    );
-                } else if (misc.whereTo === 2) {
-                    await plineWithContinuation(
-                        `${subject} yanks ${targetWithArticle} to the floor!`,
-                    );
-                } else {
-                    await plineWithContinuation(
-                        `${subject} snatches ${targetWithArticle}!`,
-                    );
-                }
-            }
+            if (game.program_state.gameover) return false;
         }
-        if (movement?.usedMisc?.kind === 'potion-speed') {
+        if (movement?.usedMisc?.kind === 'potion-speed' || movement?.usedMisc?.kind === 'wand-speed-monster') {
             const misc = movement.usedMisc;
-            const sawDrinking = await presentMonsterQuaff(monster, misc.object);
+            const seen = canSeeMonster(monster);
+            if (misc.kind === 'wand-speed-monster')
+                await presentMonsterWandUse(monster, misc.object, { state: game, self: true });
+            else await presentMonsterQuaff(monster, misc.object);
             await finishDeferredMonsterMiscItem(action, game);
-            if (sawDrinking && misc.speedChanged) {
+            if (seen && misc.speedChanged) {
                 await plineWithContinuation(
                     `${visibleMonsterSubject(monster)} is suddenly moving ${
                         misc.speedMuch ? 'much ' : ''
                     }faster.`,
                 );
-                if (misc.object.dknown) learnObjectType(misc.object.otyp);
+                learnWand(misc.object, { state: game });
             }
-        }
-        if (movement?.usedMisc?.kind === 'wand-speed-monster') {
-            const misc = movement.usedMisc;
-            await presentMonsterWandUse(monster, misc.object, { state: game, self: true });
-            await finishDeferredMonsterMiscItem(action, game);
-            if (actorWasOpticallySeen && misc.speedChanged) {
-                await plineWithContinuation(
-                    `${visibleMonsterSubject(monster)} is suddenly moving ${
-                        misc.speedMuch ? 'much ' : ''
-                    }faster.`,
-                );
-                if (misc.object.dknown) {
-                    await exerciseAttribute(A_WIS, true);
-                    recordObjectKnowledge(misc.object.otyp);
-                }
-            }
+            if (misc.kind === 'potion-speed') await consumeMonsterItem(monster, misc.object, game);
         }
         await presentMonsterMoveMessage(action, game);
         // C monmove.c:dochugw() interrupts an occupation when one actor has

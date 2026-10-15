@@ -52,6 +52,14 @@ export function ensureQuestStatus(g: GameState = game): QuestStatus {
     return g.quest_status;
 }
 
+// C quest.c:quest_stat_check(), before dochug() returns for an inactive actor.
+export function checkQuestMonsterStatus(monster: Monster, state: GameState = game): void {
+    if (!monsterIsQuestNemesis(monster.mnum)) return;
+    ensureQuestStatus(state).in_battle = !monster.msleeping && !!monster.mcanmove
+        && Math.abs(monster.mx - state.u.ux) <= 1
+        && Math.abs(monster.my - state.u.uy) <= 1;
+}
+
 // role_init() marks the selected role's leader species peaceful and M3_CLOSE;
 // makemon() then records the particular live identity in q_score.  Register
 // after ordinary construction so the constructor's existing RNG remains in

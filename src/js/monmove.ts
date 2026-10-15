@@ -97,6 +97,8 @@ import {
 import { loseGuardianAngel } from './guardian_angel.js';
 import { shiftMonsterForDoor, resolveMonsterDoorPassage } from './monster_door_passage.js';
 import { heroSpecies } from './hero_species.js';
+import { releaseHeroFromMonster, releaseMonsterHold } from './hero_expulsion.js';
+import { checkQuestMonsterStatus } from './quest.js';
 import { placeHeroOnLevel } from './hero_location.js';
 import { swallowed } from './display.js';
 import { Is_rogue_level } from './const.js';
@@ -211,7 +213,7 @@ import {
     resolveHeroEngulf,
 } from './hero_engulf.js';
 import { splitObjectStack } from './object_stack.js';
-import { respondMedusa } from './monster_gaze.js';
+import { respondToImmediateMagic } from './monster_magic_response.js';
 import {
     canSeeMonster,
     canSpotMonster,
@@ -344,10 +346,8 @@ import {
     remove_object,
     stack_object,
 } from './floor_object.js';
-import { unlinkObject } from './object_location.js';
-import { removeWornHeroItem } from './hero_equipment.js';
-import { canLetGo, finishInventoryRemoval } from './hero_inventory.js';
-import { dropObjectAtHero } from './object_drop.js';
+import { canLetGo } from './hero_inventory.js';
+import { useMonsterBullwhip } from './monster_bullwhip.js';
 import { canFallThrough, makemonNear, maketrap, mksobj, summonNastyMonsters } from './mklev.js';
 import { decideMonsterShapeChange } from './monster_polymorph.js';
 import { isZombieMaker, zombieForm } from './corpse_species.js';
@@ -444,6 +444,7 @@ import { currentMonsterLoad, monsterCanCarryObject, monsterCarryAmount } from '.
 export { monsterCanCarryObject } from './monster_carry.js';
 import {
     monsterCanFog,
+    monsterHasLineOfSightToHero,
     setMonsterApparentHeroPosition,
 } from './monster_perception.js';
 import { adjustMonsterSpeed, monsterSpeedMessage } from './monster_speed.js';
@@ -454,10 +455,9 @@ import { stashLeprechaunGold } from './leprechaun_stash.js';
 import { MONSTER_SOUND } from './monster_data.js';
 import { MONSTER_DIFFICULTY } from './monster_data.js';
 import { depth } from './hacklib.js';
-import { objectMaterial } from './object_material.js';
 import { artifactById } from './artifacts.js';
 import { resolveMonsterWeaponContact } from './monster_weapon_contact.js';
-import { monsterHatesBlessings, monsterHatesSilver } from './monster_data.js';
+import { monsterHatesBlessings } from './monster_data.js';
 import { canHeroRiseUp, levelAtDepth } from './dungeon.js';
 import { LEVEL_TELEP } from './const.js';
 import { teleportMonsterThroughPortal, teleportMonsterToRandomLevel } from './teleport.js';
@@ -589,6 +589,7 @@ import {
     TRAPNUM,
     STRAT_WAITFORU,
     STRAT_WAITMASK,
+    STRAT_ARRIVE,
     UNLOCKDOOR,
     VIBRATING_SQUARE,
     WATER,
@@ -1071,7 +1072,7 @@ async function useMonsterMiscItem(
     if (selected.kind === 'bullwhip-disarm') {
         // use_misc() chooses the destination before any two-weapon target
         // selection.  Removal itself follows the urgent wrap message.
-        let whereTo = recordRandom(random, calls, 4);
+        const whereTo = recordRandom(random, calls, 4);
         let target: GameObject | null = selected.heroWeapon;
         if (
             !await heroCanReleaseWeapon(target, state) ||
@@ -1081,12 +1082,10 @@ async function useMonsterMiscItem(
         ) {
             target = selected.heroSwapWeapon;
         }
-        if (whereTo === 3 && target && monsterHatesSilver(monster) && objectMaterial(target, state) === 14)
-            whereTo = 2;
         return {
             ...selected,
             target,
-            whereTo: target && !willWeld(target) ? whereTo : 0,
+            whereTo,
             deferredEffect: true,
         };
     }
@@ -1098,18 +1097,6 @@ async function useMonsterMiscItem(
         kind: wand ? 'wand-speed-monster' : 'potion-speed',
         deferredEffect: true,
     };
-}
-
-function placeDisarmedHeroWeapon(
-    state: PlayingGameState,
-    object: GameObject,
-    x: number,
-    y: number,
-) {
-    // Disarm runs inside the attacking monster's turn (mon_moving), so the
-    // hero-controlled crysknife prohibition cannot apply; the synchronous
-    // placement still performs the reversion iteration.
-    placeObjectSynchronously(object, x, y, state);
 }
 
 export function monsterGainLevelRiseDestination(monster: Monster, state: PlayingGameState): DungeonLocation | null {
@@ -1186,13 +1173,9 @@ export async function finishDeferredMonsterMiscItem(
     }
 
     if (misc.kind === 'wand-speed-monster' || misc.kind === 'potion-speed') {
-        if (misc.kind === 'wand-speed-monster') {
-        } else {
-            await consumeMonsterItem(monster, misc.object, state);
-        }
         const speed = adjustMonsterSpeed(monster, 1);
         misc.oldSpeed = speed.oldSpeed;
-        misc.speedChanged = speed.changed && speed.canDescribe && monster.mcanmove !== 0;
+        misc.speedChanged = speed.changed && speed.canDescribe && !state.in_mklev;
         misc.speedMuch = speed.much;
         misc.effectApplied = true;
         return misc;
@@ -1200,26 +1183,7 @@ export async function finishDeferredMonsterMiscItem(
 
     if (misc.kind === 'bullwhip-disarm') {
         const target = misc.target;
-        if (!target || misc.whereTo === 0) {
-            misc.whereTo = 0;
-            misc.effectApplied = true;
-            return misc;
-        }
-        await removeWornHeroItem(target, state);
-        if (state.program_state.gameover) return misc;
-        unlinkObject(target, state);
-        await finishInventoryRemoval(target, state);
-        if (state.program_state.gameover) return misc;
-        if (misc.whereTo === 3) {
-            // muse.c:use_misc(MUSE_BULLWHIP)->mpickobj().  The disarmed
-            // identity is free of hero equipment state before the monster
-            // applies carrying effects and links it into minvent.
-            await addObjectToMonsterInventory(monster, target, state);
-        } else if (misc.whereTo === 1) {
-            placeDisarmedHeroWeapon(state, target, monster.mx, monster.my);
-        } else {
-            await dropObjectAtHero(target, { state });
-        }
+        if (target) await useMonsterBullwhip(monster, target, misc.whereTo ?? 0, state);
         misc.effectApplied = true;
     }
     return misc;
@@ -3438,18 +3402,7 @@ function monsterApproachPolicy(
     random: RandomBelow,
 ): { policy: MonsterApproach; min: number; max: number } {
     const distance = dist2(monster.mx, monster.my, targetX, targetY);
-    const heroInvisible = !!(
-        state?.u?.invisible ||
-        state?.u?.invis ||
-        (state?.u?.invisibleTurns ?? 0) > 0
-    );
-    const speciesFlags = MONSTER_FLAGS1[monster?.mnum] ?? 0;
-    const seesInvisible = !!(speciesFlags & M1_SEE_INVIS);
-    const canSeeHero =
-        monster.mcansee !== false &&
-        (!heroInvisible || seesInvisible) &&
-        couldSeeFromHero(state, monster.mx, monster.my);
-    if (monster.mpeaceful || distance >= 25 || !canSeeHero)
+    if (monster.mpeaceful || distance >= 25 || !monsterHasLineOfSightToHero(monster, state))
         return { policy: oldPolicy, min: 0, max: 0 };
 
     if (monsterHasLauncherAndAmmo(monster)) return { policy: -1, min: 0, max: 0 };
@@ -3611,54 +3564,50 @@ async function moveHostile(
     const heroY = state?.u?.uy ?? oldy;
     let gx = isFiniteNumber(monster.mux) ? monster.mux : heroX;
     let gy = isFiniteNumber(monster.muy) ? monster.muy : heroY;
-    // m_move() establishes the base approach mode before refreshing its
-    // short-range visual target and applying ranged-distance policy.
-    const disoriented = monster.mconf || monster.mcansee === false || monster.mcansee === 0
-        || state.u.uswallow && state.u.ustuck === monster;
-    let appr: MonsterApproach = disoriented ? 0 : monster.mflee ? -1 : 1;
-    // C m_move() does not pursue the hero's omniscient coordinates through
-    // long, unseen passages.  Outside its short direct-vision envelope, an
-    // eyed monster follows the newest adjacent entry in the hero track.  The
-    // goal swap consumes no randomness, but it changes which equally legal
-    // candidate wins and can therefore alter a later candidate-count range.
-    const monsterTile = state?.level?.at?.(oldx, oldy);
-    const apparentTargetTile = state?.level?.at?.(gx, gy);
-    const shouldSee =
-        couldSeeFromHero(state, oldx, oldy) &&
-        (apparentTargetTile?.lit || !monsterTile?.lit) &&
-        dist2(oldx, oldy, gx, gy) <= 36;
     const speciesFlags = MONSTER_FLAGS1[monster?.mnum] ?? 0;
-    // C m_move() distinguishes geometric COULD_SEE from the hero's rendered
-    // sight.  An invisible hero in a dark but unobstructed corridor can make
-    // a non-perceiving monster abandon directed pursuit before item search
-    // and mfndpos()'s random reservoir.  This test precedes the unconditional
-    // peaceful-milling clause, so a sighted peaceful actor still owns rn2(11).
-    const heroInvisible =
-        !!state?.invisible ||
-        !!state?.u?.invisible ||
-        !!state?.u?.invis ||
-        (state?.u?.invisibleTurns ?? 0) > 0;
-    if (
-        !monster.mconf &&
-        monster.mcansee !== false &&
-        monster.mcansee !== 0 &&
-        shouldSee &&
-        heroInvisible &&
-        !(speciesFlags & M1_SEE_INVIS) &&
-        recordRandom(random, calls, 11) !== 0
-    ) {
-        appr = 0;
-    }
-    if (monster.mpeaceful) appr = 0;
-    // set_apparxy() has already established mux/muy.  m_move() never
-    // replaces that apparent target with the omniscient hero coordinate;
-    // it substitutes the hero's track only when the apparent target is not
-    // in this short direct-vision envelope.
-    if (!shouldSee && !(speciesFlags & M1_NOEYES)) {
-        const track = getTrack(oldx, oldy, state);
-        if (track) {
-            gx = track.x;
-            gy = track.y;
+    let appr: MonsterApproach = monster.mflee ? -1 : 1;
+    let preferredRange = { min: 0, max: 0 };
+    // Confused monsters and engulfers skip all deliberate pursuit decisions.
+    if (monster.mconf || state.u.uswallow && state.u.ustuck === monster) appr = 0;
+    else {
+        const monsterTile = state.level.at(oldx, oldy);
+        const apparentTargetTile = state.level.at(gx, gy);
+        const shouldSee = couldSeeFromHero(state, oldx, oldy)
+            && (apparentTargetTile?.lit || !monsterTile?.lit)
+            && dist2(oldx, oldy, gx, gy) <= 36;
+        const heroObjectAppearance = M_AP_TYPE(state.u) === M_AP_OBJECT ? state.u.mappearance : null;
+        const symbol = MONSTER_SYMBOL[monster.mnum];
+        if (!monster.mcansee
+            || (shouldSee && heroIsInvisible(state) && !(speciesFlags & M1_SEE_INVIS)
+                && recordRandom(random, calls, 11) !== 0)
+            || heroObjectAppearance === 0 || state.u.uundetected
+            || (heroObjectAppearance === GOLD_PIECE
+                && !((MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_GREEDY))
+            || (monster.mpeaceful && !monster.isshk)
+            || ((monster.mnum === PM_STALKER || symbol === 28 || symbol === S_LIGHT)
+                && recordRandom(random, calls, 3) === 0))
+            appr = 0;
+
+        if (appr === 1 && monster.mnum === MONSTER_NAME.indexOf('leprechaun')) {
+            const carriedGold = monster.minvent?.find(object => object.otyp === GOLD_PIECE);
+            const heroGold = state.inventory.find(object => object.otyp === GOLD_PIECE);
+            if (carriedGold && carriedGold.quan > (heroGold?.quan ?? 0)) appr = -1;
+        }
+        const approach = monsterApproachPolicy(monster, state, appr, monster.mux, monster.muy,
+            limit => recordRandom(random, calls, limit));
+        appr = approach.policy;
+        preferredRange = { min: approach.min, max: approach.max };
+
+        // C can_track(): Excalibur lets even eyeless monsters follow tracks.
+        const heroWeapon = state.uwep || state.u.uwep;
+        const canTrack = !(speciesFlags & M1_NOEYES)
+            || artifactById(heroWeapon?.oartifact, state)?.name === 'Excalibur';
+        if (!shouldSee && canTrack) {
+            const track = getTrack(oldx, oldy, state);
+            if (track) {
+                gx = track.x;
+                gy = track.y;
+            }
         }
     }
     let nix = oldx;
@@ -3666,35 +3615,6 @@ async function moveHostile(
     let nidist = dist2(nix, niy, gx, gy);
     let selected = false;
     let selectedInfo = 0;
-    // C m_move() makes stalkers, bats, and lights intermittently wander even
-    // while fleeing. This roll is part of the approach decision and must
-    // precede item search and mfndpos()'s random-reservoir selection.
-    const symbol = MONSTER_SYMBOL[monster?.mnum];
-    if (
-        appr !== 0 &&
-        (monster.mnum === PM_STALKER || symbol === 28 || symbol === S_LIGHT) &&
-        recordRandom(random, calls, 3) === 0
-    ) {
-        appr = 0;
-    }
-    if (appr === 1 && monster.mnum === MONSTER_NAME.indexOf('leprechaun')) {
-        const carriedGold = monster.minvent?.find(object => object.otyp === GOLD_PIECE);
-        const heroGold = state.inventory.find(object => object.otyp === GOLD_PIECE);
-        // leppie_avoidance(): a richer leprechaun protects its own gold.
-        if (carriedGold && carriedGold.quan > (heroGold?.quan ?? 0)) appr = -1;
-    }
-    // Confused and engulfing monsters skip deliberate ranged movement.
-    const approach = monster.mconf || state.u.uswallow && state.u.ustuck === monster
-        ? { policy: appr, min: 0, max: 0 }
-        : monsterApproachPolicy(
-            monster,
-            state,
-            appr,
-            monster.mux ?? gx,
-            monster.muy ?? gy,
-            limit => recordRandom(random, calls, limit),
-        );
-    appr = approach.policy;
     // Native lined_up() is evaluated for every admitted search, including
     // peaceful actors, before approach determines whether combat forbids it.
     if ((!monster.mpeaceful || recordRandom(random, calls, 10) === 0)
@@ -3822,8 +3742,8 @@ async function moveHostile(
             if (selected && ndist < nidist) continue;
         } else if (appr === -2) {
             const nearer = ndist < nidist;
-            const inRetreatBand = ndist <= approach.min && !nearer;
-            const inAdvanceBand = ndist >= approach.max && nearer;
+            const inRetreatBand = ndist <= preferredRange.min && !nearer;
+            const inAdvanceBand = ndist >= preferredRange.max && nearer;
             if (selected && !inRetreatBand && !inAdvanceBand) continue;
         }
         nix = candidate.x;
@@ -7609,6 +7529,11 @@ async function finishDochugAfterMovement(
         || movement.postMoveStatus === MMOVE_DONE || movement.postMoveStatus === MMOVE_NOMOVES))
         newsym(monster.mx, monster.my);
     if (movement.postMoveStatus === MMOVE_MOVED) {
+        const dx = Math.abs(monster.mx - state.u.ux);
+        const dy = Math.abs(monster.my - state.u.uy);
+        const nextToHero = dx <= 1 && dy <= 1 && !(monster.mnum === PM_GRID_BUG && dx && dy);
+        if (state.u.ustuck === monster && !nextToHero)
+            await releaseHeroFromMonster(monster, { state, rollOne });
         const flags = MONSTER_FLAGS1[dochugContext.entryMnum] ?? 0;
         if (!monsterFliesOrFloats({ mnum: dochugContext.entryMnum })
             && (!(flags & M1_CLING) || !levelHasCeiling(state)))
@@ -8217,7 +8142,7 @@ export async function takeMonsterTurn(
                 };
             }
         }
-        const response = await respondMedusa(monster, { state, random, rollDice, rollOne, calls });
+        const response = await respondToImmediateMagic(monster, state, { random, rollDice, rollOne, calls });
         if (response?.heroDied || monster.dead || monster.mhp <= 0) {
             return {
                 calls,
@@ -8241,6 +8166,17 @@ export async function takeMonsterTurn(
             recordRandom(random, calls, 25) === 0
         ) {
             monster.mflee = 0;
+        }
+        if (state.u.ustuck === monster && monster.mpeaceful && !monster.mconf
+            && !heroHasConflict(state)) {
+            const heroDied = await releaseMonsterHold(monster, { state, random, rollOne });
+            return {
+                calls, dochugContext,
+                movement: {
+                    oldx: monster.mx, oldy: monster.my, x: monster.mx, y: monster.my,
+                    moved: false, actionCompleted: true, heroDied,
+                },
+            };
         }
     }
     if (!options.afterCovetousRelocation) {
@@ -8915,6 +8851,8 @@ export async function runMonsterAction(
         if (conflictFight?.heroDied || conflictFight?.consumed)
             return { monster, calls, conflictFight };
     }
+    // C m_arrival() always clears arrival, even for an inactive monster.
+    monster.mstrategy = (monster.mstrategy ?? 0) & ~STRAT_ARRIVE;
     // monmove.c:dochug() checks the strategy wait mask before ordinary
     // sleep disturbance.  A squeaky board wakes indeterminate sleep, but
     // wake_nearto() deliberately preserves meditation for unique
@@ -8923,10 +8861,11 @@ export async function runMonsterAction(
     if (
         (monster.mstrategy ?? 0) & STRAT_WAITFORU &&
         ((monster.mhp ?? 0) < (monster.mhpmax ?? monster.mhp ?? 0) ||
-            (monster.mcansee !== 0 && couldSeeFromHero(state, monster.mx, monster.my)))
+            monsterHasLineOfSightToHero(monster, state))
     ) {
         monster.mstrategy = (monster.mstrategy ?? 0) & ~STRAT_WAITFORU;
     }
+    checkQuestMonsterStatus(monster, state);
     if ((monster.mstrategy ?? 0) & STRAT_WAITMASK) {
         if (heroIsHallucinating(state)) newsym(monster.mx, monster.my);
         return {

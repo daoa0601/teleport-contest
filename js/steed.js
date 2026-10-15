@@ -20,7 +20,7 @@ import { applyMonsterEquipmentProperties } from './monster_equipment.js';
 import { objectMaterial } from './object_material.js';
 import { makePlural, withIndefiniteArticle } from './object_grammar.js';
 import { monsterAtPosition } from './monster_location.js';
-import { monsterName } from './monster_name.js';
+import { monsterName, monsterReflexiveAction, monsterSubjectPronoun } from './monster_name.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { heroHandName } from './body_parts.js';
 import { heroHasFreeHand } from './weapon_type.js';
@@ -117,7 +117,7 @@ export async function handleRidingAfterFormChange() {
     if (!steed)
         return { died: false };
     if (touchPetrifies(steed.mnum) && !game.u.stoneResistance && rnl(3)) {
-        await plineWithContinuation(`No longer petrify-resistant, you touch ${steedName(steed)}.`);
+        await plineWithContinuation(`No longer petrify-resistant, you touch ${monsterName(steed)}.`);
         const species = monsterTypeName(steed.mnum, !!steed.female);
         const article = /^[aeiou]/i.test(species) ? 'an' : 'a';
         const result = await resolveImmediatePetrification({
@@ -133,8 +133,8 @@ export async function handleRidingAfterFormChange() {
 export async function adjustRiderAfterSteedPolymorph(steed, oldMnum, state = game, publish = plineWithContinuation) {
     if (!monsterCanBeSaddled(steed) || !heroCanRideSteed(steed, state))
         return dismountHero(DISMOUNT_FELL, { state, announce: publish });
-    const givenName = MGIVENNAME(steed);
-    const name = givenName || `your ${oldMnum !== steed.mnum ? 'new ' : ''}${monsterTypeName(steed.mnum, !!steed.female)}`;
+    const steedName = monsterName(steed, { state, article: 'your', suppressSaddle: true });
+    const name = oldMnum !== steed.mnum ? steedName.replace('your ', 'your new ') : steedName;
     await publish(`You adjust yourself in the saddle on ${name}.`);
     refreshMovementProperties(state);
     return { dismounted: false };
@@ -143,8 +143,8 @@ export async function ridingPreventsMovement() {
     const steed = game.u.usteed;
     if (!steed || !monsterIsHelpless(steed))
         return false;
-    const name = MGIVENNAME(steed) || `your ${monsterTypeName(steed.mnum, !!steed.female)}`;
-    await plineWithContinuation(`${name.charAt(0).toUpperCase()}${name.slice(1)} won't move!`);
+    const name = monsterName(steed, { article: 'your', suppressSaddle: true, capitalized: true });
+    await plineWithContinuation(`${name} won't move!`);
     return true;
 }
 // C hack.c moves the steed with the hero before resolving displacement.
@@ -159,14 +159,6 @@ export async function moveSteedWithHero() {
         hero.urideturns = 0;
         await useHeroSkill(P_RIDING);
     }
-}
-function steedName(steed) {
-    const species = monsterTypeName(steed.mnum, !!steed.female);
-    return MGIVENNAME(steed) || `the ${monsterSaddle(steed) ? 'saddled ' : ''}${species}`;
-}
-function steedSubject(steed) {
-    const name = steedName(steed);
-    return name.charAt(0).toUpperCase() + name.slice(1);
 }
 function ridingStepIsClear(state, x, y) {
     const hero = state.u;
@@ -235,11 +227,11 @@ async function mountSteed(steed, force, [dx, dy]) {
     }
     const saddle = monsterSaddle(steed);
     if (!saddle) {
-        await pline(`${steedSubject(steed)} is not saddled.`);
+        await pline(`${monsterName(steed, { capitalized: true })} is not saddled.`);
         return false;
     }
     if (touchPetrifies(steed.mnum) && !hero.stoneResistance) {
-        await plineWithContinuation(`You touch ${steedName(steed)}.`);
+        await plineWithContinuation(`You touch ${monsterName(steed)}.`);
         const result = await resolveImmediatePetrification({
             killer: `attempting to ride a ${monsterTypeName(steed.mnum, !!steed.female)}`,
         });
@@ -247,7 +239,7 @@ async function mountSteed(steed, force, [dx, dy]) {
             return false;
     }
     if (!steed.mtame || steed.isminion) {
-        await pline(`I think ${steedName(steed)} would mind.`);
+        await pline(`I think ${monsterName(steed)} would mind.`);
         return false;
     }
     if (steed.mtrapped) {
@@ -256,7 +248,7 @@ async function mountSteed(steed, force, [dx, dy]) {
         if (!trapName)
             throw new Error('A trapped steed has no trap at its position.');
         const article = /^[aeiou]/i.test(trapName) ? 'an' : 'a';
-        await pline(`You can't mount ${steedName(steed)} while it's trapped in ${article} ${trapName}.`);
+        await pline(`You can't mount ${monsterName(steed)} while ${monsterSubjectPronoun(steed)}'s trapped in ${article} ${trapName}.`);
         return false;
     }
     if (!force && game.urole.key !== 'knight') {
@@ -265,7 +257,7 @@ async function mountSteed(steed, force, [dx, dy]) {
         if (!steed.mtame) {
             newsym(steed.mx, steed.my);
             const leash = steed.mleashed ? ' and its leash comes off' : '';
-            await pline(`${steedSubject(steed)} resists${leash}!`);
+            await pline(`${monsterName(steed, { capitalized: true })} resists${leash}!`);
             if (steed.mleashed)
                 releaseMonsterLeash(steed, game);
             return false;
@@ -284,7 +276,7 @@ async function mountSteed(steed, force, [dx, dy]) {
     const floats = symbol === S_EYE || symbol === S_LIGHT;
     const flies = !!(steedFlags & M1_FLY);
     if (!force && !floats && !flies && hero.levitation && !levitationAtWill()) {
-        await pline(`You cannot reach ${steedName(steed)}.`);
+        await pline(`You cannot reach ${monsterName(steed)}.`);
         return false;
     }
     const armor = game.uarm || hero.uarm;
@@ -292,7 +284,7 @@ async function mountSteed(steed, force, [dx, dy]) {
     if (!force && armor && typeof material === 'number' && material >= IRON && material <= MITHRIL
         && (armor.oeroded || armor.oeroded2)) {
         const damage = armor.oeroded ? 'rusty' : 'corroded';
-        await pline(`Your ${damage} armor is too stiff to be able to mount ${steedName(steed)}.`);
+        await pline(`Your ${damage} armor is too stiff to be able to mount ${monsterName(steed)}.`);
         return false;
     }
     if (!force && ((hero.confusionTurns ?? 0) > 0 || hero.fumbling || (hero.fumblingTurns ?? 0) > 0
@@ -300,10 +292,10 @@ async function mountSteed(steed, force, [dx, dy]) {
         || hero.glib || saddle.cursed || saddle.greased
         || hero.ulevel + steed.mtame < rnd(20))) {
         if (hero.levitation) {
-            await pline(`${steedSubject(steed)} slips away from you.`);
+            await pline(`${monsterName(steed, { capitalized: true })} slips away from you.`);
             return false;
         }
-        await plineWithContinuation(`You slip while trying to get on ${steedName(steed)}.`);
+        await plineWithContinuation(`You slip while trying to get on ${monsterName(steed)}.`);
         let damage = rn1(5, 10);
         if (hero.halfPhysicalDamage)
             damage = Math.trunc((damage + 1) / 2);
@@ -316,10 +308,10 @@ async function mountSteed(steed, force, [dx, dy]) {
     await wakeSteedForRiding(steed);
     if (!force) {
         if (hero.levitation && !floats && !flies)
-            await plineWithContinuation(`${steedSubject(steed)} magically floats up!`);
-        await plineWithContinuation(`You mount ${steedName(steed)}.`);
+            await plineWithContinuation(`${monsterName(steed, { capitalized: true })} magically floats up!`);
+        await plineWithContinuation(`You mount ${monsterName(steed)}.`);
         if (hero.flying)
-            await plineWithContinuation(`You and ${steedName(steed)} take flight together.`);
+            await plineWithContinuation(`You and ${monsterName(steed)} take flight together.`);
     }
     if (isPolearm(game.uwep || hero.uwep))
         game._unweapon = false;
@@ -348,7 +340,7 @@ async function wakeSteedForRiding(steed) {
             steed.mfrozen = remaining;
     }
     if (wasHelpless && !monsterIsHelpless(steed))
-        await plineWithContinuation(`${steedSubject(steed)} wakes up.`);
+        await plineWithContinuation(`${monsterName(steed, { capitalized: true })} wakes up.`);
     steed.meating = 0;
     if (((steed.m_ap_type ?? 0) & M_AP_TYPMASK) && MONSTER_SYMBOL[steed.mnum] !== 13) {
         steed.m_ap_type = 0;
@@ -547,15 +539,6 @@ async function moveSteedOffHero(state, steed, random) {
     newsym(point.x, point.y);
     return true;
 }
-// C YMonnam(steed): the given name when the steed has one, otherwise
-// "your [saddled] <species>".
-function yourSteedSubject(steed) {
-    const name = MGIVENNAME(steed);
-    if (name)
-        return name;
-    const species = monsterTypeName(steed.mnum, !!steed.female);
-    return `Your ${monsterSaddle(steed) ? 'saddled ' : ''}${species}`;
-}
 // C steed.c:875-895 stucksteed().  Decides whether the hero's steed is able
 // to move; holding traps are not checked here (those affect the hero
 // directly).  Announces the reason and returns true, or returns false for a
@@ -565,11 +548,15 @@ export async function stuckSteed(checkFeeding = true, state = game) {
     if (!steed)
         return false;
     if (monsterIsHelpless(steed)) {
-        await plineWithContinuation(`${yourSteedSubject(steed)} won't move!`);
+        await plineWithContinuation(`${monsterName(steed, {
+            state, article: 'your', suppressSaddle: true, capitalized: true,
+        })} won't move!`);
         return true;
     }
     if (checkFeeding && steed.meating) {
-        await plineWithContinuation(`${yourSteedSubject(steed)} is still eating.`);
+        await plineWithContinuation(`${monsterName(steed, {
+            state, article: 'your', suppressSaddle: true, capitalized: true,
+        })} is still eating.`);
         return true;
     }
     return false;
@@ -603,7 +590,7 @@ export async function dismountHero(reason, { state = game, random = rn2, announc
     refreshMovementProperties(state);
     if ([DISMOUNT_THROWN, DISMOUNT_KNOCKED, DISMOUNT_FELL].includes(reason)) {
         const verb = reason === DISMOUNT_THROWN ? 'are thrown' : fallingVerb;
-        await announce(`You ${verb} off of ${steedName(steed)}!`);
+        await announce(`You ${verb} off of ${monsterName(steed)}!`);
         landing ||= landingSpot(state, steed, reason, random, true);
         if (!inAir) {
             let damage = rn1(10, 10);
@@ -616,7 +603,7 @@ export async function dismountHero(reason, { state = game, random = rn2, announc
         }
     }
     else if (reason === DISMOUNT_POLY) {
-        await announce(`You can no longer ride ${steedName(steed)}.`);
+        await announce(`You can no longer ride ${monsterName(steed)}.`);
         landing ||= landingSpot(state, steed, reason, random, true);
     }
     if (reason === DISMOUNT_BYCHOICE) {
@@ -635,7 +622,7 @@ export async function dismountHero(reason, { state = game, random = rn2, announc
     if (reason === DISMOUNT_BYCHOICE) {
         const givenName = MGIVENNAME(steed);
         await announce(givenName
-            ? `You dismount ${givenName}.`
+            ? `You dismount ${monsterName(steed)}.`
             : unnamedSteedMessage(steed));
         if (!givenName && heroIsHallucinating(state))
             await announce('It felt good to get out of the rain.');
@@ -720,7 +707,7 @@ export async function dismountHero(reason, { state = game, random = rn2, announc
                 if (wasTrapped) {
                     const action = await triggerImmediateMonsterTrap(steed, state);
                     await resumeDeferredMonsterTrap(action, state, {
-                        publish: announce, describeMonster: steedSubject,
+                        publish: announce, describeMonster: monster => monsterName(monster, { capitalized: true }),
                     });
                 }
             }
@@ -819,11 +806,11 @@ async function dropSteedIntoLiquid(steed, state, announce) {
     let fatal = false;
     if (isPoolAt(x, y, state)) {
         if (!state.u.uinwater)
-            await announce(`${steedSubject(steed)} falls into the water!`);
+            await announce(`${monsterName(steed, { capitalized: true })} falls into the water!`);
         fatal = !monsterSurvivesPool(steed);
     }
     else if (isLavaAt(x, y, state)) {
-        await announce(`${steedSubject(steed)} is pulled into the lava!`);
+        await announce(`${monsterName(steed, { capitalized: true })} is pulled into the lava!`);
         fatal = !['fire elemental', 'salamander'].includes(MONSTER_NAME[steed.mnum] ?? '');
     }
     else
@@ -844,10 +831,12 @@ export async function strikeSteed({ state = game, random = rn2, roll = rnd, anno
     const helpless = !!(steed.msleeping || steed.mcanmove === 0
         || (steed.mfrozen ?? 0) > 0);
     if (helpless) {
+        const pronoun = monsterSubjectPronoun(steed, { state });
+        const subject = pronoun.charAt(0).toUpperCase() + pronoun.slice(1);
         const canRecover = steed.mcanmove !== 0 || (steed.mfrozen ?? 0) > 0;
         const stirred = canRecover && random(2) === 0;
         if (!stirred) {
-            await announce('It does not respond.');
+            await announce(`${subject} does not respond.`);
             return { struck: true, helpless: true };
         }
         if (steed.mcanmove !== 0)
@@ -860,7 +849,8 @@ export async function strikeSteed({ state = game, random = rn2, roll = rnd, anno
         }
         const remainsHelpless = !!(steed.msleeping || steed.mcanmove === 0
             || (steed.mfrozen ?? 0) > 0);
-        await announce(remainsHelpless ? 'It stirs.' : 'It rouses itself!');
+        await announce(remainsHelpless ? `${subject} stirs.`
+            : `${monsterReflexiveAction(steed, subject, 'rouse', '', { state })}!`);
         return { struck: true, helpless: remainsHelpless };
     }
     if (steed.mtame !== undefined && steed.mtame > 0)
@@ -880,7 +870,7 @@ export async function strikeSteed({ state = game, random = rn2, roll = rnd, anno
         });
         return { struck: true, thrown: dismount.dismounted };
     }
-    const name = steed.name || `The ${monsterTypeName(steed.mnum, !!steed.female)}`;
+    const name = monsterName(steed, { state, capitalized: true });
     await announce(`${name} gallops!`);
     hero.ugallop = (hero.ugallop ?? 0) + random(20) + 30;
     return { struck: true, galloped: true };

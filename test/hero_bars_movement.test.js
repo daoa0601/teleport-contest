@@ -5,6 +5,7 @@ import { IRONBARS, W_NONDIGGABLE } from '../js/const.js';
 import { flushPendingTopline } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
+import { initRng } from '../js/rng.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
@@ -30,6 +31,8 @@ for (const form of ['garter snake', 'rust monster', 'ghost']) {
         requirePlayingGame(game);
         installPolymorphedHero(form);
         level.requireAt(11, 10).typ = IRONBARS;
+        // Exercise the obstacle itself on a step that water does not divert.
+        initRng(2n);
         await rhack('l'.charCodeAt(0));
         const admitted = form === 'ghost';
         assert.equal(game.u.ux, admitted ? 11 : 10);

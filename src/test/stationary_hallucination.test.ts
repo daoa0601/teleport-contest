@@ -18,7 +18,7 @@ for (const condition of ['paralyzed', 'waiting', 'sleeping'] as const) {
         if (condition === 'paralyzed') monster.mcanmove = 0;
         else if (condition === 'waiting') {
             monster.mstrategy = STRAT_WAITFORU;
-            monster.mcansee = 0;
+            game.u.invisibleTurns = 20;
         } else monster.msleeping = 1;
         initRng(1n);
         newsym(monster.mx, monster.my);
