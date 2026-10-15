@@ -5929,6 +5929,11 @@ async function movementSpellSelections(monster, state, random, calls) {
     for (const [attackType, damageType] of MONSTER_ATTACKS[monster.mnum] || []) {
         if (attackType !== AT_MAGC || (damageType !== AD_CLRC && damageType !== AD_SPEL))
             continue;
+        const monsterLevel = monster.m_lev ?? MONSTER_LEVEL[monster.mnum] ?? 0;
+        if (!monsterLevel) {
+            await publishMonsterSpellFailure(monster, MONSTER_WIZARD_SPELLS[0], state, random, calls);
+            continue;
+        }
         const spell = chooseMonsterSpell(monster, damageType, state, random, calls);
         if (!spell)
             continue;
@@ -5938,8 +5943,7 @@ async function movementSpellSelections(monster, state, random, calls) {
         if (!(spell.flags & MCF_INDIRECT) ||
             monsterSpellUseless(monster, spell, state, random, calls))
             continue;
-        const monsterLevel = monster.m_lev ?? MONSTER_LEVEL[monster.mnum] ?? 0;
-        if (monster.mcan || monster.mspec_used || !monsterLevel) {
+        if (monster.mcan || monster.mspec_used) {
             await publishMonsterSpellFailure(monster, spell, state, random, calls);
             return {
                 spell: spell.key,
