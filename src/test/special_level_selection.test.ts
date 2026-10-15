@@ -313,7 +313,7 @@ void test('Lua wall_property applies its rectangle relative to the last map', as
 void test('Lua wallify honors an explicit rectangle in level coordinates', async t => {
     const lua = await levelLua(t);
     await lua.executeAsync(`
-        des.map({ x = 10, y = 5, map = [[.]] })
+        des.map({ x = 10, y = 5, map = [[.x]] })
         des.wallify({ x1 = 9, y1 = 4, x2 = 10, y2 = 6 })
     `);
     const level = requireGameLevel();
@@ -411,7 +411,7 @@ void test('Lua species-bearing objects accept native empty tokens and egg owners
 void test('a named Lua novel retains the requested title when read', async t => {
     const lua = await levelLua(t);
     await lua.executeAsync(`
-        des.map({ x = 10, y = 5, map = [[.]] })
+        des.map({ x = 10, y = 5, map = [[.x]] })
         des.object({ id = "novel", name = "The Shepherd's Crown", x = 0, y = 0 })
     `);
     const book = floorObjects(requireGameLevel())[0];
