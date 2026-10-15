@@ -72,7 +72,7 @@ import {
     tty_end_menu, tty_select_menu, tty_start_menu,
 } from './tty_menu.js';
 import { LOOK_ONCE, LOOK_QUICK, LOOK_VERBOSE } from './const.js';
-import { waterbodyName } from './terrain_name.js';
+import { surfaceName, waterbodyName } from './terrain_name.js';
 import { def_warnsyms } from './const.js';
 import { iceDescriptionAt } from './dungeon_feature.js';
 import { CmapSymbol, GlyphOffset, cmapToGlyph } from './glyph_numbers.js';
@@ -332,13 +332,14 @@ import {
 } from './accessory.js';
 import { heroFormSticks, heroHasNoHead, heroPassesWalls, heroSpecies } from './hero_species.js';
 import { monsterLocomotion } from './monster_locomotion.js';
+import { autopickupAtHero } from './pickup.js';
 import { disturbBuriedZombies } from './object_impact.js';
 import { checkSlipperyIce } from './fumbling.js';
 import { MONSTER_BODY_META } from './monster_data.js';
 import { accessibleEquipment, equipmentClassification, wearingFullEquipment } from './equipment_selection.js';
 import { armorWearDecision } from './armor_wear.js';
 import { heroCanOoze } from './monster_perception.js';
-import { isPoolAt } from './terrain_properties.js';
+import { isLavaAt, isPoolAt } from './terrain_properties.js';
 import { drawbridgeUnderlyingType } from './drawbridge_terrain.js';
 import { dosave } from './save.js';
 import { captureRunmodeDelay, startRun, stopRun } from './runmode.js';
@@ -418,7 +419,7 @@ import {
 } from './monster_passive.js';
 import {
     heroCannotTake, heroHasNoHands, heroHasNoLimbs, heroIsPolymorphed, heroIsVerySmall,
-    heroCanChangeVampireShape, polymorphHero, returnHeroToHumanForm,
+    heroCanChangeVampireShape, heroHidesOnCeiling, polymorphHero, returnHeroToHumanForm,
 } from './polyself.js';
 import {
     applyEyewear, isEyewear, removeEyewear, wearEyewear,
@@ -1863,6 +1864,22 @@ export async function travelStairs(up: boolean) {
         if (descent.handled) {
             game.context.move = descent.spentTurn ? 1 : 0;
             return descent.spentTurn;
+        }
+        if (heroIsPolymorphed(game) && heroHidesOnCeiling(game)) {
+            game.u.uundetected = 0;
+            if (game.u.flying) await plineWithContinuation('You fly out of hiding.');
+            else {
+                await plineWithContinuation(`You drop to the ${surfaceName(game.u.ux, game.u.uy)}.`);
+                if (isPoolAt(game.u.ux, game.u.uy) || isLavaAt(game.u.ux, game.u.uy)) {
+                    await applyHeroLiquidEffects();
+                } else {
+                    await autopickupAtHero();
+                    if (!game.program_state.gameover)
+                        await triggerHeroTrapAt(game.u.ux, game.u.uy, { gotoLevel, tookPlunge: true });
+                }
+            }
+            game.context.move = 1;
+            return true;
         }
         if (await monsterPreventsStairTravel(false)) return false;
     }
