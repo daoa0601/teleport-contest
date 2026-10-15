@@ -3,7 +3,7 @@
 import { formatFeltMessage } from './hero_speech.js';
 import { In_endgame } from './const.js';
 import { plineWithContinuation } from './display.js';
-import { game } from './gstate.js';
+import { game, requirePlayingGame } from './gstate.js';
 import { makeStunned } from './hero_mental_status.js';
 import { scheduleLevelChange } from './level_change.js';
 import { bringLeashedFollowers } from './teleport.js';
@@ -21,10 +21,14 @@ async function addPortalStun() {
     return alreadyStunned ? 'You feel dizzier.' : 'You feel slightly dizzy.';
 }
 export async function activateMagicPortal(trap, gotoLevel) {
+    requirePlayingGame(game);
     if (!await bringLeashedFollowers()) {
         await plineWithContinuation('You shudder for a moment.');
         return;
     }
+    const { uz, uz0 } = game.u;
+    if (uz0 && (uz.dnum !== uz0.dnum || uz.dlevel !== uz0.dlevel))
+        return;
     await plineWithContinuation('You activated a magic portal!');
     if (In_endgame(game.u?.uz) && !game.u?.uhave?.amulet) {
         await plineWithContinuation(formatFeltMessage('dizzy for a moment, but nothing happens...'));

@@ -405,6 +405,7 @@ async function enterTutorial() {
     game.level = tutorialLevel;
     game.stairs = tutorialStairs;
     game.u.uz = { ...target };
+    game.u.uz0 = { ...target };
     const tutorialHero = game.u;
     tutorialHero.ux = tutorialPosition.x;
     tutorialHero.uy = tutorialPosition.y;
