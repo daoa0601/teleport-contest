@@ -1,12 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { game } from '../js/gstate.js';
+import { flush_screen } from '../js/display.js';
 import { finishEnvironmentalMonsterDeath } from '../js/monster_death.js';
 import { DART, DAGGER, ROCK } from '../js/object_data.js';
 import { scatterFloorObjects } from '../js/scatter.js';
 import { floorObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { requireScreenRow } from './support/screen.js';
 void test('scattered poisoned weapons can kill a monster with their poison', async () => {
     freshObjectRoom();
     game.context.mon_moving = true;
@@ -18,6 +20,20 @@ void test('scattered poisoned weapons can kill a monster with their poison', asy
         finishMonsterDeath: (monster, options) => finishEnvironmentalMonsterDeath(monster, game, options),
     });
     assert.equal(soldier.dead, true);
+});
+void test('a weapon landing after a fatal scatter hit is drawn on the vacated square', async () => {
+    freshObjectRoom();
+    const soldier = await createMonsterAt('soldier', 13, 10);
+    soldier.mhp = 1;
+    const dagger = await floorObject(DAGGER, 14, 10);
+    await flush_screen(1);
+    await scatterFloorObjects(14, 10, 2, {
+        mayDestroy: false, random: () => 0, rollOne: () => 1,
+    });
+    await flush_screen(1);
+    assert.equal(dagger.where, 'floor');
+    assert.equal(dagger.ox, 13);
+    assert.equal(requireScreenRow(11)[12]?.ch, ')');
 });
 void test('a scattered stone passes harmlessly through a xorn', async () => {
     freshObjectRoom();

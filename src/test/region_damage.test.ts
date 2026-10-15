@@ -21,4 +21,3 @@ void test('lethal gas damage ends a vulnerable polymorph without killing the her
     assert.equal(!!game.program_state.gameover, false);
     assert.ok(messages.some(message => message.includes('return to')));
 });
-

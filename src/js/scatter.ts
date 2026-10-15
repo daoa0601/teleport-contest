@@ -536,7 +536,10 @@ export async function scatterFloorObjects(
 
     let moved = 0;
     for (const node of nodes) {
-        if (!node.object) continue;
+        if (!node.object) {
+            newsym(node.x, node.y);
+            continue;
+        }
         const quantity = node.object.quan ?? node.object.quantity ?? 1;
         const object = node.object;
         const effect = await applyFloorEffects(object, node.x, node.y, {
