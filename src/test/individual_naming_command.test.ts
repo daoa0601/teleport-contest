@@ -35,6 +35,7 @@ void test('naming the alternate weapon Orcrist ends two-weapon combat', async ()
     const weapon = await addInventoryObject(artifact.baseType, { invlet: 'a' });
     await setSecondaryWeapon(weapon);
     setTwoWeaponCombat(true);
+    game.u.uconduct = { literate: 1 };
     const input = resetInputState();
     input.feed('name\rorcrist\r');
     queueCommandKeys('ia');
@@ -43,6 +44,8 @@ void test('naming the alternate weapon Orcrist ends two-weapon combat', async ()
 
     assert.equal(weapon.oartifact, artifact.id);
     assert.equal(game.u.twoweap, false);
+    assert.equal(game._pending_message, 'You can no longer wield two weapons at once.');
+    assert.ok(game.gamelog?.some(event => event.text === 'chose an elven broadsword to be named "Orcrist"'));
 });
 
 void test('restricted artifact lettering slips instead of creating Excalibur', async t => {

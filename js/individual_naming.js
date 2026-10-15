@@ -8,7 +8,7 @@ import { recordGameLogEvent } from './gamelog.js';
 import { game } from './gstate.js';
 import { CLOAK_OF_DISPLACEMENT, CLOAK_OF_PROTECTION, HELMET, LEATHER_GLOVES, LEVITATION_BOOTS, OBJECT_BASES, OBJECT_DESCRIPTIONS, OBJECT_MAGIC, OBJECT_NAMES, OBJECT_UNIQUE, POT_WATER, SPEED_BOOTS, SPE_NOVEL, } from './object_data.js';
 import { objectClassForType } from './object_knowledge.js';
-import { objectName, objectNameIsPlural, observeObjectForNaming, simpleObjectName, } from './objnam.js';
+import { objectName, objectNameIsPlural, observeObjectForNaming, simpleObjectName, simpleObjectNameWithArticle, } from './objnam.js';
 import { getLine } from './query.js';
 import { rn2Display } from './rng.js';
 import { objectOwnershipPrefix, objectTypeKnown, updateUnpaidObjectPrice } from './shk.js';
@@ -63,7 +63,7 @@ export async function nameIndividualObject(object) {
         return;
     if (object === (game.uswapwep || game.u.uswapwep)) {
         if (game.u.twoweap)
-            await pline('You can no longer use two weapons at once.');
+            await pline('You can no longer wield two weapons at once.');
         setTwoWeaponCombat(false);
     }
     if (object === (game.uwep || game.u.uwep))
@@ -75,7 +75,7 @@ export async function nameIndividualObject(object) {
     conduct.literate = (conduct.literate ?? 0) + 1;
     const bareName = artifact.name.replace(/^the /i, '');
     recordGameLogEvent(first ? `became literate by naming ${bareName}`
-        : `chose ${simpleObjectName(object)} to be named "${bareName}"`);
+        : `chose ${simpleObjectNameWithArticle(object)} to be named "${bareName}"`);
 }
 // Empty input cancels; spaces erase a name after normalization.
 export async function playerName(prompt) {
