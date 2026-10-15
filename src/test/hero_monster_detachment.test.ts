@@ -77,7 +77,7 @@ for (const ending of ['ordinary', 'no corpse', 'petrification', 'level forbids r
         requirePlayingGame(game);
         const engulfer = await createMonsterAt('trapper', 11, 10, NO_MINVENT);
         const trap = addTrap(level, PIT, 10, 10);
-        installSwallowedHero(engulfer);
+        await installSwallowedHero(engulfer);
         if (ending === 'level forbids remains') level.flags.deathdrops = false;
         const hp = game.u.uhp;
         installPagerInput(resetInputState(), {

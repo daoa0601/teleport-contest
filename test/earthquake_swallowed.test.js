@@ -14,7 +14,7 @@ void test('a swallowed drummer stays inside the monster that falls into a chasm'
     const input = freshTurnRoom({ heroLevel: 30, hero: { uhp: 1000, uhpmax: 1000 } });
     const worm = await createMonsterAt('ochre jelly', 11, 10);
     worm.mhp = worm.mhpmax = 1000;
-    installSwallowedHero(worm, 100);
+    await installSwallowedHero(worm, 100);
     const drum = await addInventoryObject(DRUM_OF_EARTHQUAKE, { spe: 10 });
     const expected = /playing|thunderous|shaking|chasm|flee|digest|uncomfortable|jelly|goo|acid|covered|spit/;
     installPagerInput(input, { expected, limit: 150 });

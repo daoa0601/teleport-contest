@@ -51,6 +51,7 @@ export type PersistentState = Pick<GameState, PersistentStateKey>;
 // Every remaining GameState field must be transient. Adding, removing, or
 // reclassifying a field requires an explicit persistence decision at compile time.
 const transientFields = {
+    _ballChainRestriction: true,
     _heroBubble: true,
     _domoveSucceeded: true,
     _wishHistory: true,

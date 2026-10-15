@@ -40,7 +40,7 @@ void test('a peaceful engulfer expels the hero and ends its turn', async () => {
     worm.mpeaceful = 1;
     worm.msleeping = 0;
     worm.movement = 12;
-    installSwallowedHero(worm, 20);
+    await installSwallowedHero(worm, 20);
     game._moveloopStarted = game._heroTimePending = true;
     game.u.umovement = 12;
     const input = resetInputState();

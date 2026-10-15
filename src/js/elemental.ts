@@ -20,6 +20,7 @@ import { clearMonsterWormFromMap } from './monster_worm.js';
 import { mnearto } from './shop_damage.js';
 import { dealWithMonsterOvercrowding, moveMonsterNextToHero } from './teleport.js';
 import { vision_recalc, vision_reset } from './vision.js';
+import { heroIsPunished, reserveBallAndChainPlacement, restoreBallAndChainPlacement } from './ball.js';
 
 const BUBBLE_MASKS = [
     { width: 2, height: 1, rows: [0x3] },
@@ -294,7 +295,9 @@ export async function moveElementalBubbles(): Promise<void> {
     game._heroBubble = null;
 
     const traversalUp = !!game._bubbleTraversalUp;
+    let ballChainPin = 0;
     if (Is_waterlevel(game.u?.uz)) {
+        if (heroIsPunished()) ballChainPin = await reserveBallAndChainPlacement();
         const collectionOrder = traversalUp
             ? bubbles : [...bubbles].reverse();
         for (const bubble of collectionOrder)
@@ -326,6 +329,8 @@ export async function moveElementalBubbles(): Promise<void> {
             - (!bubble.dy ? ry : (ry ? 1 : 0));
         await moveBubble(bubble, dx, dy, false);
     }
+    if (Is_waterlevel(game.u.uz) && heroIsPunished())
+        await restoreBallAndChainPlacement(ballChainPin);
     game.vision_full_recalc = 1;
 }
 

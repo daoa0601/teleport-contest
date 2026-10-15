@@ -113,7 +113,7 @@ void test('a divine bolt can kill the swallower without breaking pacifist conduc
     freshObjectRoom();
     requireFixtureGame(game);
     const worm = await createMonsterAt('purple worm', 10, 10);
-    installSwallowedHero(worm);
+    await installSwallowedHero(worm);
     grantIntrinsicProperty('disintegrationResistance', 'outside');
     pushKeys(' '.repeat(100));
 

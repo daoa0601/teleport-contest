@@ -875,7 +875,7 @@ export async function moveHeroByTeleport(x, y, state = game, { allowDrag = false
             && distmin(x, y, ball.ox, ball.oy) <= 2)
             ballStillInRange = true;
         else if (!allowDrag)
-            unplaceBallAndChain(state);
+            await unplaceBallAndChain(state);
     }
     clearHeroTrap(state);
     const wasSwallowed = u.uswallow;
@@ -905,7 +905,7 @@ export async function moveHeroByTeleport(x, y, state = game, { allowDrag = false
             ball = state.uball || u.uball;
             ballActive = !!ball && ball.where !== 'free';
             if (ballActive)
-                unplaceBallAndChain(state);
+                await unplaceBallAndChain(state);
         }
     }
     await placeHeroOnLevel(x, y, state);

@@ -55,7 +55,7 @@ void test('web fluid makes an animal release a swallowed spider', async () => {
     });
     requireFixtureGame(game);
     const worm = await createMonsterAt('purple worm', game.u.ux + 1, game.u.uy);
-    installSwallowedHero(worm);
+    await installSwallowedHero(worm);
     pushKeys('                ');
     const result = await useHeroWeb({ state: game });
     assert.equal(game.u.uswallow, 0);
@@ -70,7 +70,7 @@ void test('an expelled worm finds room beyond the nearby blocked squares', async
     const y = game.u.uy;
     const worm = await createMonsterAt('purple worm', x + 4, y);
     worm.mspec_used = 7;
-    installSwallowedHero(worm);
+    await installSwallowedHero(worm);
     for (let nx = x - 3; nx <= x + 3; nx++) {
         for (let ny = y - 3; ny <= y + 3; ny++) {
             if (nx !== x || ny !== y)
@@ -88,7 +88,7 @@ void test('expulsion restores the punishment ball and chain to the floor', async
     requireFixtureGame(game);
     const { ball, chain } = await installPunishedHero();
     const worm = await createMonsterAt('purple worm', game.u.ux + 1, game.u.uy);
-    installSwallowedHero(worm);
+    await installSwallowedHero(worm);
     assert.ok(!floorObjectsAt(level, game.u.ux, game.u.uy).includes(chain));
     pushKeys('                                ');
     await useHeroWeb();

@@ -27,7 +27,7 @@ void test('a released purple worm keeps its bite and substitutes a claw while it
     await conflictRoom(/purple worm|regurgitated/);
     requirePlayingGame(game);
     const worm = await createMonsterAt('purple worm', 11, 10, NO_MINVENT);
-    installSwallowedHero(worm);
+    await installSwallowedHero(worm);
     await releaseHold();
     assert.equal(Boolean(game.u.uswallow), false);
     assert.ok(worm.mspec_used && worm.mspec_used > 0, 'releasing the hero starts the engulf cooldown');

@@ -41,7 +41,7 @@ void test('a drowning engulfer announces the water flushing the hero out', async
     const level = freshObjectRoom();
     requirePlayingGame(game);
     const worm = await createMonsterAt('purple worm', 12, 10);
-    installSwallowedHero(worm);
+    await installSwallowedHero(worm);
     level.requireAt(worm.mx, worm.my).typ = POOL;
     const messages: string[] = [];
 

@@ -70,7 +70,7 @@ void test('a message refresh keeps both lines of sight closed while the hero is 
     const worm = await createMonsterAt('purple worm', 11, 10);
     assert.equal(couldsee(12, 10), true);
     assert.equal(cansee(12, 10), true);
-    installSwallowedHero(worm);
+    await installSwallowedHero(worm);
     pushKeys(' '.repeat(10));
 
     await plineWithContinuation('You are inside the purple worm.');

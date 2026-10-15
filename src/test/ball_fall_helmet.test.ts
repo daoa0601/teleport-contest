@@ -1,0 +1,51 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+import { wearHeroArmor } from '../js/armor.js';
+import { rhack } from '../js/cmd.js';
+import { HOLE } from '../js/const.js';
+import { game, requirePlayingGame } from '../js/gstate.js';
+import { pushKeys, resetInputState } from '../js/input.js';
+import { ELVEN_LEATHER_HELM, HELMET } from '../js/object_data.js';
+import { punishHero } from '../js/punishment.js';
+import { initRng } from '../js/rng.js';
+import { freshConnectedLevels } from './support/connected-levels.js';
+import { addInventoryObject } from './support/game-objects.js';
+import { addTrap } from './support/level-state.js';
+
+void test('a soft helmet keeps its personal name when it fails to protect against the falling ball', async () => {
+    const { source } = freshConnectedLevels();
+    requirePlayingGame(game);
+    game.u.uhp = game.u.uhpmax = 100;
+    const input = resetInputState();
+    const messages: string[] = [];
+    input.beforeRead = () => { messages.push(game._pending_message); };
+    pushKeys(' '.repeat(30));
+    await punishHero();
+    wearHeroArmor(await addInventoryObject(ELVEN_LEATHER_HELM, { oextra: { oname: 'Leafcap' } }));
+    addTrap(source, HOLE, 11, 10);
+    initRng(1n);
+
+    await rhack('l'.charCodeAt(0));
+
+    messages.push(game._last_message);
+    assert.ok(messages.some(message => /Your .* named Leafcap does not protect you\./.test(message)),
+        `missing named helmet warning: ${messages.join(' | ')}`);
+    assert.ok(game.u.uhp >= 63 && game.u.uhp <= 74,
+        'the unprotected ball deals 25–31 damage before the 1–6 damage fall');
+});
+
+void test('a hard helmet protects a punished hero walking into a hole', async () => {
+    const { source } = freshConnectedLevels();
+    requirePlayingGame(game);
+    game.u.uhp = game.u.uhpmax = 100;
+    pushKeys(' '.repeat(30));
+    await punishHero();
+    wearHeroArmor(await addInventoryObject(HELMET));
+    addTrap(source, HOLE, 11, 10);
+    initRng(1n);
+
+    await rhack('l'.charCodeAt(0));
+
+    assert.ok(game.u.uhp >= 91 && game.u.uhp <= 96,
+        'the helmet limits the ball to three damage before the 1–6 damage fall');
+});

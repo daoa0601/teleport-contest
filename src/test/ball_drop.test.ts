@@ -2,7 +2,7 @@ import type { DisplayGlyph } from '../js/display.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { BC_CHAIN, PIT, TT_BEARTRAP } from '../js/const.js';
+import { BC_CHAIN, PIT, TT_BEARTRAP, TT_LAVA } from '../js/const.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { dropBall, setBallAndChainFelt } from '../js/ball.js';
@@ -184,6 +184,25 @@ void test('dropping a blind ball restores the known floor beneath the felt chain
     assert.equal(game.u.bc_felt, BC_CHAIN);
     assert.equal(objectGlyphType(game.u.bglyph), HEAVY_IRON_BALL);
     assert.equal(objectGlyphType(game.u.cglyph), HEAVY_IRON_BALL);
+});
+
+void test('a hallucinating hero can perceive another liquid when the ball pulls them out of lava', async () => {
+    const messages: string[] = [];
+    for (let seed = 1; seed <= 8; seed++) {
+        await punishedHero({ ballAt: [11, 10], seed });
+        game.u.utrap = 4;
+        game.u.utraptype = TT_LAVA;
+        game.u.hallucinationTurns = 10;
+        game.u.dx = 1;
+        game.u.dy = 0;
+
+        await dropBall(11, 10, { publish: async message => { messages.push(message); } });
+
+        assert.equal(game.u.utrap, 0);
+    }
+    assert.ok(messages.some(message => message.startsWith('The ball pulls you out of the ')
+        && message !== 'The ball pulls you out of the lava!'),
+    'hallucination must apply to the liquid in the release message');
 });
 
 function objectGlyphType(glyph: DisplayGlyph | null | undefined): number {

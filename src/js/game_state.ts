@@ -381,6 +381,7 @@ export interface GameState {
     _vaultHeroTookTimePending?: number | null;
     _bubbleTraversalUp?: boolean;
     _heroBubble?: ElementalBubble | null;
+    _ballChainRestriction?: number;
     _domoveSucceeded?: boolean;
     _emptyShops?: number[];
     _shopFollowMessageTurn?: number;
