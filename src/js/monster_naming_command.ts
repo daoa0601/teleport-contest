@@ -22,11 +22,12 @@ export async function nameChosenMonster(): Promise<void> {
     }
     const goal = 'the monster you want to name';
     const tip = await showGetposTip();
+    if (game.flags.verbose) await pline("(For instructions type a '?')");
+    if (tip) await pline(`Move cursor to ${goal}:`);
     const selected = await selectMapPosition({
         start: { x: game.u.ux, y: game.u.uy }, goal, force: false,
         describe: describeGetposLocation,
-        prompt: tip ? `Move cursor to ${goal}:`
-            : game.flags.verbose ? "(For instructions type a '?')" : '',
+        prompt: game._pending_message,
     });
     if (!selected) return;
     let monster: Monster | null;

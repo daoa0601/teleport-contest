@@ -17,11 +17,12 @@ export async function nameFloorObject(): Promise<void> {
     requirePlayingGame(game);
     const goal = `object on map (or '.' for one ${game.u.uundetected && heroFormHidesUnderObjects(game) ? 'over' : 'under'} you)`;
     const tip = await showGetposTip();
+    if (game.flags.verbose) await pline("(For instructions type a '?')");
+    if (tip) await pline(`Move cursor to ${goal}:`);
     const selected = await selectMapPosition({
         start: { x: game.u.ux, y: game.u.uy }, goal, force: false,
         describe: describeGetposLocation,
-        prompt: tip ? `Move cursor to ${goal}:`
-            : game.flags.verbose ? "(For instructions type a '?')" : '',
+        prompt: game._pending_message,
     });
     if (!selected) return;
     const here = selected.x === game.u.ux && selected.y === game.u.uy;
