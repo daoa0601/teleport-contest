@@ -1,12 +1,13 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { performMonsterHeroAttack } from '../js/allmain.js';
+import { continueFoodMeal, doeat } from '../js/eat.js';
 import { wearHeroAccessory } from '../js/accessory.js';
 import { MM_ANGRY, MM_NOGRP, NO_MINVENT, W_AMUL } from '../js/const.js';
 import { flushPendingTopline } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { setHeroSpecies } from '../js/hero_species.js';
-import { resetInputState } from '../js/input.js';
+import { pushKeys, resetInputState } from '../js/input.js';
 import { punishHero } from '../js/punishment.js';
 import { unlinkObject } from '../js/object_location.js';
 import { addInventoryItem } from '../js/u_init.js';
@@ -93,9 +94,35 @@ function theftMessages() {
     const messages = [];
     const input = resetInputState();
     input.beforeRead = () => { messages.push(game._pending_message); };
-    installPagerInput(input, { expected: /nymph|monkey|Somebody|She|Something|Someone|punished|chain|anchor|amulet/, limit: 25 });
+    installPagerInput(input, { expected: /nymph|monkey|Somebody|She|Something|Someone|punished|chain|anchor|amulet|eating|corpse|petrified/, limit: 25 });
     return messages;
 }
+void test('a monkey cannot steal the last bite of a finished meal and flees before biting', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    const thief = await nearbyThief('monkey');
+    const messages = theftMessages();
+    const food = await addInventoryItem(await untimedCorpse(MONSTER_NAME.indexOf('lizard')));
+    assert.ok(food.invlet);
+    pushKeys(food.invlet);
+    await doeat();
+    for (let bite = 0; (food.oeaten ?? 0) > 1 && bite < 10; bite++) {
+        const occupation = game._occupation;
+        assert.ok(occupation?.key === 'eat-food');
+        await continueFoodMeal(occupation, game);
+    }
+    assert.equal(food.oeaten, 1);
+    assert.ok(game._occupation);
+    assert.equal(food.where, 'inventory');
+    const theft = theftMessages();
+    const health = game.u.uhp;
+    await performMonsterHeroAttack(thief, game, { random: () => 0, rollOne: () => 1 });
+    messages.push(...theft, game._pending_message);
+    assert.equal(food.where, 'gone');
+    assert.equal(thief.minvent.length, 0);
+    assert.match(messages.join('\n'), /finish eating[\s\S]*nothing to steal/);
+    assert.equal(game.u.uhp, health);
+});
 for (const lifeSaving of [false, true]) {
     void test(`stealing a cockatrice corpse petrifies a nymph ${lifeSaving ? 'who is then life saved' : 'with the stolen corpse inside her statue'}`, async () => {
         freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });

@@ -1866,6 +1866,16 @@ async function resolveDeferredHeroItemTheft(
         }
         return false;
     }
+    if (dist2(monster.mx, monster.my, game.u.ux, game.u.uy) > 2) return false;
+    const seenBeforeRemoval = canSpotMonster(monster);
+    let subject = seenBeforeRemoval
+        ? monsterName(monster, { state: game, capitalized: true })
+        : animal ? 'Something' : 'Someone';
+    const meal = game.context.victual;
+    if (game._occupation?.key === 'eat-food' && meal && meal.usedtime >= meal.reqtime) {
+        await stopHeroOccupation(game);
+        if (game.program_state.gameover) return true;
+    }
     const adornment = !animal && !game.uarmg
         ? [game.uleft, game.uright].find(ring => ring?.otyp === OBJECT_NAMES.indexOf('adornment'))
         : null;
@@ -1880,9 +1890,6 @@ async function resolveDeferredHeroItemTheft(
         object = selectHeroItemForTheft(game, random, action.calls);
     }
     if (!object) {
-        const subject = canSpotMonster(monster)
-            ? monsterName(monster, { state: game, capitalized: true })
-            : animal ? 'Something' : 'Someone';
         if (!animal && game.uchain && draw(4)) {
             await plineWithContinuation(`${subject} takes off ${wornTheftObjectDescription(game.uchain)}.`);
             await removeWornHeroItem(game.uchain, game);
@@ -1911,10 +1918,6 @@ async function resolveDeferredHeroItemTheft(
         || !!(weaponMask & W_ACCESSORY);
     const wasWorn = occupiedSlots.length > 0
         || object.worn || weaponMask !== 0;
-    const seenBeforeRemoval = canSpotMonster(monster);
-    let subject = seenBeforeRemoval
-        ? monsterName(monster, { state: game, capitalized: true })
-        : animal ? 'Something' : 'Someone';
     const wornArmor = occupiedSlots.some(slot => slot.startsWith('uarm'));
     const refuse = async (): Promise<boolean> => {
         const verbs = ['steal', 'snatch', 'grab', 'take'];
