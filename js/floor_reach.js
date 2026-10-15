@@ -24,8 +24,9 @@ function trapAtHero(state) {
     const hero = state.u;
     return state.level?.traps?.find(trap => trap.tx === hero?.ux && trap.ty === hero?.uy) || null;
 }
-function heroTeetersAtPit(state, trap) {
+export function heroTeetersAtPit(state, trap) {
     return !!trap && is_pit(trap.ttyp) && !!trap.tseen
+        && trap.tx === state.u.ux && trap.ty === state.u.uy
         && !(state.u?.utrap && state.u.utraptype === TT_PIT);
 }
 function heroEscapedShaft(trap) {

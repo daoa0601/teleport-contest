@@ -1,0 +1,40 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+
+import { moveloop_core } from '../js/allmain.js';
+import { NO_MINVENT } from '../js/const.js';
+import { game, requirePlayingGame } from '../js/gstate.js';
+import { resetInputState } from '../js/input.js';
+import { MONSTER_NAME } from '../js/monster_data.js';
+import { grantIntrinsicProperty } from '../js/properties.js';
+import { initRng } from '../js/rng.js';
+import { createMonsterAt } from './support/monsters.js';
+import { freshObjectRoom } from './support/object-room.js';
+import { finishAtCommandInput, installPagerInput } from './support/pager-input.js';
+
+void test('a visible invisible werewolf keeps its perceived name when changing during a turn', async () => {
+    freshObjectRoom({ datetime: '20250101010000', flags: { moonphase: 4 } });
+    requirePlayingGame(game);
+    grantIntrinsicProperty('seeInvisible', 'outside');
+    const werewolf = await createMonsterAt('human werewolf', 13, 10, NO_MINVENT);
+    werewolf.minvis = true;
+    werewolf.mpeaceful = true;
+    werewolf.msleeping = 0;
+    werewolf.movement = 0;
+    werewolf.mhp = 4;
+    werewolf.mhpmax = 20;
+    game._moveloopStarted = game._heroTimePending = true;
+    game.u.umovement = 0;
+    const input = resetInputState();
+    const messages: string[] = [];
+    input.beforeRead = () => { messages.push(game._pending_message); };
+    installPagerInput(input, { expected: /werewolf|wolf/, limit: 4 });
+    initRng(1n);
+
+    await finishAtCommandInput(input, moveloop_core, /werewolf|wolf|^$/);
+
+    assert.equal(werewolf.mnum, MONSTER_NAME.indexOf('werewolf'));
+    assert.equal(werewolf.mhp, 8);
+    assert.match([...messages, game._pending_message].join('\n'),
+        /The invisible werewolf changes into a wolf\./);
+});
