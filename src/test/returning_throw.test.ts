@@ -2,17 +2,19 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { A_STR, WEB } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { AKLYS, BOOMERANG } from '../js/object_data.js';
+import { AKLYS, BOOMERANG, ROCK, SPLINT_MAIL } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { setPrimaryWeapon } from '../js/weapon_slots.js';
 import { addInventoryItem } from '../js/u_init.js';
 import { rhack } from '../js/cmd.js';
-import { pushKey } from '../js/input.js';
+import { pushKey, resetInputState } from '../js/input.js';
+import { nearCapacity } from '../js/weight.js';
 import { throwInventoryObject } from './support/commands.js';
-import { addInventoryWeapon, artifactObject } from './support/game-objects.js';
+import { addInventoryObject, addInventoryWeapon, artifactObject } from './support/game-objects.js';
 import { addTrap, floorObjectsAt } from './support/level-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createMonsterAt } from './support/monsters.js';
+import { requireScreenRow } from './support/screen.js';
 
 async function wieldAklys() {
     freshObjectRoom({ left: 4, right: 25, top: 3, bottom: 17 });
@@ -71,6 +73,44 @@ void test('a failed catch leaves the returning aklys at the hero', async () => {
     assert.ok(floorObjectsAt(game.level, 10, 10).includes(weapon));
     assert.match(game._pending_message, /(?:landing at your feet|hitting your arm)/);
 });
+
+for (const command of ['throw', 'fire']) {
+    void test(`${command}: a failed aklys catch reports the lighter load once`, async () => {
+        const weapon = await wieldAklys();
+        requirePlayingGame(game);
+        game.u.acurr.a[A_STR] = 12;
+        await addInventoryObject(SPLINT_MAIL);
+        await addInventoryObject(ROCK, { quan: 24 });
+        assert.equal(nearCapacity(game), 1, 'The aklys makes the carried load burdensome');
+        game._encumbranceLevel = 1;
+        game.u._encumbrance = 'Burdened';
+        const messages: string[] = [];
+        const pages: string[] = [];
+        resetInputState().beforeRead = () => {
+            const row = requireScreenRow(0).map(cell => cell.ch).join('');
+            if (row.includes('--More--')) {
+                pages.push(row);
+                messages.push(game._pending_message);
+            }
+        };
+        initRng(26n);
+
+        if (command === 'throw') {
+            await throwInventoryObject(weapon, 'l', ' '.repeat(10));
+        } else {
+            pushKey('l');
+            for (let page = 0; page < 10; page++) pushKey(' ');
+            await rhack('f'.charCodeAt(0));
+        }
+
+        assert.ok(floorObjectsAt(game.level, 10, 10).includes(weapon));
+        assert.equal(nearCapacity(game), 0);
+        messages.push(game._pending_message);
+        const loadMessages = messages.join('\n').match(/Your movements are now unencumbered\./g) ?? [];
+        assert.equal(loadMessages.length, 1, `Load feedback was: ${messages.join(' | ')}`);
+        assert.equal(pages.length, 1, `Message pagers were: ${pages.join(' | ')}`);
+    });
+}
 
 void test('fumbling prevents a returning aklys catch', async () => {
     const weapon = await wieldAklys();

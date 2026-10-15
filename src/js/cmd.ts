@@ -6865,7 +6865,6 @@ async function throwCommand(
     }
 
     for (let shot = 0; shot < volleyCount; shot++) {
-        const previousCapacity = game._encumbranceLevel ?? nearCapacity(game);
         const shotResult = await throwOrdinaryObject({
             state: game,
             item,
@@ -6875,13 +6874,7 @@ async function throwCommand(
             volley: { count: volleyCount, index: shot + 1, objectType: item.otyp },
         });
         if ('heroDied' in shotResult && shotResult.heroDied) return;
-        const currentCapacity = nearCapacity(game);
-        const capacityMessage = encumbranceMessage(
-            previousCapacity, currentCapacity,
-        );
-        if (capacityMessage) await plineWithContinuation(capacityMessage);
-        game._encumbranceLevel = currentCapacity;
-        game.u._encumbrance = encumbranceLabel(currentCapacity);
+        await reportHeroEncumbrance(game);
         if (game.program_state?.gameover) break;
         if ('stopVolley' in shotResult && shotResult.stopVolley) break;
     }
