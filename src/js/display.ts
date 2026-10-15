@@ -6,6 +6,7 @@ import { monsterHasMapPosition, monsterAtPosition } from './monster_location.js'
 import { redrawMonsterWormSegments } from './monster_worm.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import { CmapSymbol, GlyphOffset, altarToGlyph, cmapToGlyph } from './glyph_numbers.js';
+import { cmapToType } from './mkroom.js';
 import { heroDetectsMonsters, heroIsBlind, heroIsHallucinating } from './senses.js';
 import { drawbridgeUnderlyingType } from './drawbridge_terrain.js';
 import { isIceAt, isPoolAt, isPoolOrLavaAt, terrainCoversObjectsAt } from './terrain_properties.js';
@@ -1352,7 +1353,7 @@ export function updateLastSeenTerrain(x: number, y: number) {
     const monster = monsterAtMapCell(x, y);
     if (monster && M_AP_TYPE(monster) === M_AP_FURNITURE
         && canSeeMonster(monster)) {
-        typ = mimicAppearance(monster);
+        typ = cmapToType(mimicAppearance(monster));
     }
     location.lastseentyp = typ;
 }
@@ -1824,6 +1825,7 @@ function displayMonsterAtCell(monster: Monster, x: number, y: number, projection
                 loc.remembered_glyph = glyph;
                 if (!sensed) {
                     show_glyph_cell(x, y, glyph.ch, glyph.color, false, 0, glyph);
+                    loc.lastseentyp = cmapToType(mimicAppearance(monster));
                     return;
                 }
             }

@@ -45,6 +45,7 @@ import {
     ROOMOFFSET, SHOPBASE, SWAMP, TEMPLE, THRONE, Upolyd, MGIVENNAME, ZOO,
 } from './const.js';
 import { insideRoom, inTown, roomForRoomno, roomsAt, updateHeroRoomMembership } from './room.js';
+import { searchSpecial } from './mkroom.js';
 import { intemple } from './priest.js';
 import { recordDiscoveredRoom } from './dungeon.js';
 import {
@@ -1303,8 +1304,7 @@ export async function checkSpecialRoom({ newLevel = false } = {}) {
             recordDiscoveredRoom(roomno - ROOMOFFSET);
         }
         if (room.rtype !== OROOM || type === OROOM) continue;
-        const remainingRooms = [...game.level.rooms, ...(game.level.subrooms ?? [])];
-        if (!remainingRooms.some(candidate => 'rtype' in candidate && candidate.rtype === type)) {
+        if (!searchSpecial(type)) {
             switch (type) {
             case COURT: game.level.flags.has_court = false; break;
             case SWAMP: game.level.flags.has_swamp = false; break;

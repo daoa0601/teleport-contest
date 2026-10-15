@@ -43,7 +43,7 @@ import {
 } from './ball.js';
 
 
-import { somexyspace } from './mkroom.js';
+import { searchSpecial, somexyspace } from './mkroom.js';
 import { priestIsInOwnTemple } from './priest.js';
 
 import { checkSpecialRoom, costlySpot, shopkeeperInOwnShop } from './shk.js';
@@ -85,7 +85,6 @@ import type { GameMap } from './game.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
 import type { Position, Rectangle, Trap } from './map_types.js';
-import { isRoom } from './map_types.js';
 import { hasShopkeeperData } from './shop_types.js';
 import type { MessagePublisher } from './display.js';
 import type { MonsterCallLog, MonsterRelocation, MonsterTeleportTrapEvent } from './monster_action_types.js';
@@ -948,10 +947,10 @@ export async function teleportMonsterFromTrap(
     const fixedDestination = trap.teledest
         && isok(trap.teledest.x, trap.teledest.y);
     if (trap.once) {
-        const vault = state.level.rooms.find(room => isRoom(room) && room.rtype === VAULT);
-        if (vault && isRoom(vault)) {
+        const vault = searchSpecial(VAULT, state);
+        if (vault) {
             const square = { x: 0, y: 0 };
-            if (somexyspace(vault, square)
+            if (somexyspace(vault, square, state)
                 && goodPosition(square.x, square.y, { kind: 'monster', monster }, { state, random })) {
                 event.relocation = await relocateMonsterTo(monster, square.x, square.y, { state, random, rollOne, calls });
             }

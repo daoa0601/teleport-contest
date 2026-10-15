@@ -212,6 +212,19 @@ export function restoreSavedMap(value, entities) {
     Object.setPrototypeOf(value, GameMap.prototype);
     if (!(value instanceof GameMap))
         throw new TypeError('Saved level could not acquire map methods');
+    // C rest_room() rebuilds each parent's pointers into the subroom array.
+    // JSON stores those room records twice, so restore their shared identity.
+    const subrooms = value.subrooms ?? [];
+    for (const room of [...value.rooms, ...subrooms]) {
+        if (!('rtype' in room))
+            continue;
+        room.sbrooms = room.sbrooms.map(child => {
+            const restored = subrooms.find(candidate => candidate.roomnoidx === child.roomnoidx);
+            if (!restored)
+                throw new TypeError(`Saved level has no subroom ${child.roomnoidx}`);
+            return restored;
+        });
+    }
     return value;
 }
 export function validSavedStairways(value) {

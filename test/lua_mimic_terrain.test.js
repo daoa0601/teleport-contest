@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { THEMEROOM } from '../js/const.js';
-import { flush_screen, newsym } from '../js/display.js';
+import { FOUNTAIN, STAIRS, THEMEROOM } from '../js/const.js';
+import { flush_screen, newsym, updateLastSeenTerrain } from '../js/display.js';
 import { init_dungeons } from '../js/dungeon.js';
 import { GameMap } from '../js/game.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
@@ -13,9 +13,9 @@ import { initRng } from '../js/rng.js';
 import { vision_recalc, vision_reset_new_level } from '../js/vision.js';
 import { freshGame } from './support/game-state.js';
 import { startLuaCore } from './support/lua-game.js';
-for (const { name, symbol } of [
-    { name: 'fountain', symbol: '{' },
-    { name: 'staircase down', symbol: '>' },
+for (const { name, symbol, terrain } of [
+    { name: 'fountain', symbol: '{', terrain: FOUNTAIN },
+    { name: 'staircase down', symbol: '>', terrain: STAIRS },
 ]) {
     void test(`a Lua mimic posing as a ${name} displays that feature`, async (t) => {
         freshGame({ flags: { bones: false } });
@@ -52,6 +52,9 @@ for (const { name, symbol } of [
         await flush_screen(1);
         assert.equal(level.requireAt(x, y).disp_ch, symbol);
         assert.equal(level.requireAt(x, y).remembered_glyph?.ch, symbol);
+        assert.equal(level.requireAt(x, y).lastseentyp, terrain, 'seeing furniture remembers its terrain type');
+        updateLastSeenTerrain(x, y);
+        assert.equal(level.requireAt(x, y).lastseentyp, terrain, 'an explicit memory refresh uses the same terrain type');
     });
 }
 //# sourceMappingURL=lua_mimic_terrain.test.js.map

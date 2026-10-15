@@ -2,7 +2,8 @@
 //
 // C stores ordinary rooms and subrooms in separate arrays but gives map
 // locations and resident records one encoded index space: ordinary rooms
-// occupy [0, MAXNROFROOMS), then subrooms continue from MAXNROFROOMS.
+// occupy [0, MAXNROFROOMS), followed by a sentinel; subrooms start at
+// MAXNROFROOMS + 1 (decl.c:decl_globals_init()).
 // ROOMOFFSET is added only when that index is written into levl[].roomno.
 
 import {
@@ -16,12 +17,12 @@ import type { Room } from './map_types.js';
 type RoomMap = Pick<GameMap, 'rooms' | 'subrooms' | 'at' | 'flags'>;
 
 export function roomForIndex(level: RoomMap | null | undefined, index: number): Room | null {
-    if (!Number.isInteger(index) || index < 0) return null;
+    if (!Number.isInteger(index) || index < 0 || index === MAXNROFROOMS) return null;
     if (index < MAXNROFROOMS) {
         const room = level?.rooms[index];
         return isRoom(room) ? room : null;
     }
-    return level?.subrooms?.[index - MAXNROFROOMS] || null;
+    return level?.subrooms?.[index - MAXNROFROOMS - 1] || null;
 }
 
 export function roomForRoomno(level: RoomMap | null | undefined, roomno: number): Room | null {
