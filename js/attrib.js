@@ -218,7 +218,9 @@ export function attributeChangeMessage(attribute, result, state = game) {
             const direction = result.amount > 0 ? 'improved' : 'declined';
             return `Your innate ${ATTRIBUTE_NAME[attribute]} has ${direction}.`;
         }
-        return `You're already as ${word} as you can get.`;
+        const bonus = state.u.abon?.a[attribute] ?? 0;
+        const opposingBonus = result.amount > 0 ? bonus < 0 : bonus > 0;
+        return `You're ${opposingBonus ? 'currently' : 'already'} as ${word} as you can get.`;
     }
     const emphasis = Math.abs(result.amount) > 1 ? 'very ' : '';
     return formatFeltMessage(`${emphasis}${word}!`, state);
