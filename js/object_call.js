@@ -1,38 +1,22 @@
 // object_call.js — Shared docall()/trycall() type-naming ownership.
 // C refs: do.c trycall(); do_name.c docall(), docall_xname().
 import { withIndefiniteArticle } from './object_grammar.js';
+import { PL_PSIZ } from './const.js';
 import { game } from './gstate.js';
-import { OBJECT_DESCRIPTIONS, OBJECT_NAMES } from './object_data.js';
+import { AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, FIGURINE, HEAVY_IRON_BALL, OBJECT_DESCRIPTIONS, OBJECT_WEIGHT, STATUE, TIN, TOWEL, } from './object_data.js';
 import { recordObjectCall, recordObjectEncounter } from './object_knowledge.js';
 import { getLine } from './query.js';
 import { flush_screen } from './display.js';
 import { objectTypeKnown } from './shk.js';
-const MAX_PLAYER_NAME_LENGTH = 62; // PL_PSIZ - 1
-export function objectTypeCallNoun(object, state = game) {
-    const type = object?.otyp;
-    const appearance = type === undefined ? null : (state.objectDescriptions?.[type] ?? OBJECT_DESCRIPTIONS[type]);
-    switch (object?.oclass) {
-        case 4:
-            return `${appearance || 'unknown'} ring`;
-        case 5:
-            return `${appearance || 'unknown'} amulet`;
-        case 8:
-            return `${appearance || 'unknown'} potion`;
-        case 9:
-            return appearance === 'unlabeled'
-                ? 'unlabeled scroll'
-                : `scroll labeled ${appearance || 'unknown'}`;
-        case 10:
-            return `${appearance || 'unknown'} spellbook`;
-        case 11:
-            return `${appearance || 'unknown'} wand`;
-        case undefined:
-        default:
-            return (appearance ||
-                object?.name ||
-                (type === undefined ? null : OBJECT_NAMES[type]) ||
-                'thing');
-    }
+import { objectName } from './objnam.js';
+const MAX_PLAYER_NAME_LENGTH = PL_PSIZ - 1;
+export function objectTypeIsCallable(object, state = game) {
+    if (state._objectCallNames?.[object.otyp])
+        return true;
+    if (object.otyp === AMULET_OF_YENDOR || object.otyp === FAKE_AMULET_OF_YENDOR)
+        return false;
+    return [3, 4, 5, 6, 8, 9, 10, 11, 13, 17].includes(object.oclass)
+        && !!OBJECT_DESCRIPTIONS[object.otyp];
 }
 export async function tryCallObjectType(object, state = game) {
     if (!object ||
@@ -41,16 +25,49 @@ export async function tryCallObjectType(object, state = game) {
         state._objectCallNames?.[object.otyp]) {
         return { prompted: false, named: false, callName: null };
     }
+    return callObjectType(object, state);
+}
+export async function callObjectType(object, state = game) {
+    if (!object.dknown)
+        return { prompted: false, named: false, callName: null };
     // C docall() publishes buffered status before getlin() disables bot().
     await flush_screen(1);
-    const noun = objectTypeCallNoun(object, state);
+    const sample = { ...object, quan: 1, quantity: 1, blessed: false, cursed: false };
+    delete sample.oextra;
+    delete sample.oname;
+    delete sample.buc;
+    if (sample.oclass === 2)
+        sample.opoisoned = 0;
+    else if (sample.oclass === 8)
+        sample.odiluted = false;
+    else if (sample.otyp === TOWEL || sample.otyp === STATUE)
+        sample.spe = 0;
+    else if (sample.otyp === TIN)
+        sample.known = false;
+    else if (sample.otyp === FIGURINE)
+        sample.corpsenm = -1;
+    else if (sample.otyp === HEAVY_IRON_BALL)
+        sample.owt = OBJECT_WEIGHT[HEAVY_IRON_BALL] ?? sample.owt;
+    else if (sample.oclass === 7 && sample.globby)
+        sample.owt = 120;
+    const noun = objectName(sample, state);
     const appearance = state.objectDescriptions?.[object.otyp] ?? OBJECT_DESCRIPTIONS[object.otyp];
     const prompt = object.oclass === 8 && object.fromsink
         ? `Call a stream of ${appearance} fluid:`
         : `Call ${withIndefiniteArticle(noun)}:`;
     const input = await getLine(prompt, (_ch, key) => key >= 32 && key < 127);
+    if (input === null || input === '')
+        return { prompted: true, named: false, callName: null };
     const callName = input?.trim().replace(/\s+/g, ' ').slice(0, MAX_PLAYER_NAME_LENGTH) || '';
     if (!callName) {
+        if (state._objectCallNames?.[object.otyp]) {
+            delete state._objectCallNames[object.otyp];
+            if (!objectTypeKnown(object, state)) {
+                if (state._objectDiscoveryOrder)
+                    state._objectDiscoveryOrder = state._objectDiscoveryOrder.filter(type => type !== object.otyp);
+                state._encounteredObjectTypes?.delete(object.otyp);
+            }
+        }
         return { prompted: true, named: false, callName: null };
     }
     recordObjectCall(object.otyp, callName, state);

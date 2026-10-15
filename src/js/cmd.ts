@@ -180,7 +180,7 @@ import {
 } from './query.js';
 export { getLine, promptYesNo, promptYesNoQuit } from './query.js';
 import {
-    objectTypeCallNoun,
+    callObjectType, objectTypeIsCallable,
 } from './object_call.js';
 import { nameIndividualObject } from './individual_naming.js';
 import { nameChosenMonster } from './monster_naming_command.js';
@@ -2564,52 +2564,18 @@ async function doname() {
             await flush_screen(1);
         }
     } else if (choice === 'o') {
-        const inventory = (game.inventory || [])
-            .filter((object: GameObject): object is GameObject & { invlet: string } =>
-                typeof object.invlet === 'string' && object.invlet.length > 0)
-            .sort((a, b) => a.invlet.localeCompare(b.invlet));
-        const callableClasses = new Set([3, 4, 5, 6, 8, 9, 10, 11, 13, 17]);
-        const eligible = inventory.filter(object => {
-            if (game._objectCallNames?.[object.otyp]) return true;
-            if (object.otyp === AMULET_OF_YENDOR
-                || object.otyp === FAKE_AMULET_OF_YENDOR) return false;
-            return callableClasses.has(object.oclass)
-                && !!OBJECT_DESCRIPTIONS[object.otyp];
-        });
-        const suggested = eligible.filter(object =>
-            object.dknown !== false
-                && (!objectTypeKnown(object)
-                    || !!game._objectCallNames?.[object.otyp]));
-        const letters = compactInventoryLetters(
-            suggested.map(object => object.invlet).join(''),
-        );
-        const selection = await promptInventoryObject(
-            `What do you want to call? [${letters ? `${letters} or ?*` : '*'}] `,
-            eligible,
-            { verb: 'call', allowMenu: true, menuItems: suggested.length ? suggested : eligible },
-        );
-        if (!selection.cancelled && selection.object) {
-            const object = selection.object;
-            if (object.dknown === false) {
+        const object = await chooseInventoryObject('call', candidate =>
+            !objectTypeIsCallable(candidate) ? GETOBJ_EXCLUDE
+                : !candidate.dknown || objectTypeKnown(candidate) && !game._objectCallNames?.[candidate.otyp]
+                    ? GETOBJ_DOWNPLAY : GETOBJ_SUGGEST);
+        if (object) {
+            observeObjectForNaming(object);
+            if (!object.dknown) {
                 await pline('You would never recognize another one.');
             } else {
-                const perceivedName = objectTypeKnown(object)
-                    ? OBJECT_NAMES[object.otyp] || object.name || 'thing'
-                    : objectTypeCallNoun(object);
-                const value = await getLine(
-                    `Call ${withIndefiniteArticle(perceivedName)}:`,
-                    (_ch, key) => key >= 32 && key < 127,
-                );
-                if (value !== null) {
-                    const name = value.trim().replace(/\s+/g, ' ');
-                    if (name) recordObjectCall(object.otyp, name);
-                    else if (game._objectCallNames?.[object.otyp])
-                        delete game._objectCallNames[object.otyp];
-                    recordObjectEncounter(object.otyp);
-                }
+                await callObjectType(object);
             }
-            game._pending_message = '';
-            await restoreCommandMap();
+            await flush_screen(1);
         }
     }
     game.context.move = 0;
