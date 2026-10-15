@@ -1000,14 +1000,20 @@ export async function heroLiquidEffects(options: HeroLiquidOptions = {}): Promis
                 state, random, rollOne,
                 chooseDestination: chooseTeleportDestination,
                 publish,
-                finishArrival: movement => finishLiquidTeleport(movement, {
-                    state, repaint, resetVision, recalculateVision, applyLandingEffects,
-                }),
+                finishArrival: async movement => {
+                    if (state.flags.verbose !== false)
+                        await publish(`You materialize in ${
+                            movement.oldx === movement.x && movement.oldy === movement.y
+                                ? 'the same' : 'a different'
+                        } location!`);
+                    return finishLiquidTeleport(movement, {
+                        state, repaint, resetVision, recalculateVision, applyLandingEffects,
+                    });
+                },
             });
             if (teleport.died) return { entered: true, moved: teleport.moved, died: true };
-            if (teleport.moved) {
-                return teleport.arrival;
-            }
+            if (!isPoolAt(u.ux, u.uy, state))
+                return teleport.arrival ?? { entered: true, moved: teleport.moved, died: false };
         }
     }
 

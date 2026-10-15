@@ -8,8 +8,11 @@ import { clearMonsterWormFromMap, placeMonsterWormTailRandomly } from './monster
 import { game, requireLiveGame, requireGameLevel, requirePlayingGame } from './gstate.js';
 import { impossible } from './diagnostics.js';
 import { askMonsterTeleportDestination, askTeleportDestination } from './cmd.js';
+import { prepareTeleportAtWill } from './wizard_teleport.js';
+import { heroLocomotion } from './hero_locomotion.js';
 import { randomTeleportDepth } from './level_teleport.js';
 import { depth } from './hacklib.js';
+import { clampHoleDestination } from './hole_destination.js';
 import { levelAtDepth, insideWizardTower, levelIsWizardTower } from './dungeon.js';
 import { propertyIsActive } from './properties.js';
 import { finishTeleportArrival } from './location_effects.js';
@@ -20,20 +23,19 @@ import {
 } from './monster_leash.js';
 import { rn2, rnd } from './rng.js';
 import {
-    GP_CHECKSCARY, A_STR, COLNO, ROWNO,
+    GP_CHECKSCARY, COLNO, ROWNO, LEVEL_TELEP, TELEP_TRAP,
     VAULT, VIBRATING_SQUARE, M_AP_NOTHING, MON_FLOOR, MON_OFFMAP, RLOC_MSG,
     RLOC_NOMSG, RLOC_NONE, RLOC_ERR, STRAT_APPEARMSG, BOLT_LIM, TT_BURIEDBALL,
-    HOLE, In_endgame, In_hell, In_quest, Is_botlevel, Is_stronghold,
+    HOLE, In_endgame, Is_botlevel, Is_stronghold,
     MIGR_PORTAL, MIGR_RANDOM, Upolyd, ZAP_POS, is_hole, is_pit, isok,
 } from './const.js';
 import {
     MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL, monsterHasNoAttacks,
 } from './monster_data.js';
 import {
-    AMULET_OF_YENDOR, LEASH, OBJECT_SPELL_LEVEL, RIN_TELEPORTATION, RIN_TELEPORT_CONTROL,
-    SPE_TELEPORT_AWAY, WAN_TELEPORTATION,
+    AMULET_OF_YENDOR, LEASH, RIN_TELEPORTATION, RIN_TELEPORT_CONTROL,
+    WAN_TELEPORTATION,
 } from './object_data.js';
-import { currentAttribute } from './attrib.js';
 import { spendHeroNutrition } from './hunger.js';
 import {
     beginBallAndChainMove, finishBallAndChainMove, heroIsPunished,
@@ -59,7 +61,7 @@ import { couldsee } from './vision.js';
 import {
     findNearbyMonsterPosition, heroTeleportRestricted, goodPosition, monsterTeleportRestricted,
 } from './teleport_rules.js';
-import { exceedsActionCapacity, nearCapacity, SLT_ENCUMBER } from './weight.js';
+import { nearCapacity, SLT_ENCUMBER } from './weight.js';
 import { distmin } from './hacklib.js';
 import { heroIsUnaware, heroIsUnconscious } from './hero_sleep.js';
 import { promptYesNo } from './query.js';
@@ -70,7 +72,9 @@ import { migrateMonsterOffLevel, migrateMonsterToLevel, sendMonsterToLimbo } fro
 import { isHomeElemental } from './monster_hit_points.js';
 import { removeMonsterFromGame } from './monster_departure.js';
 import { Is_astralevel, MON_ENDGAME_MIGR, MON_OBLITERATE } from './const.js';
-import { clearHeroTrap } from './hero_traps.js';
+import { clearHeroTrap, triggerLevelTeleportTrap } from './hero_traps.js';
+import { gotoLevel } from './level_change.js';
+import { deleteTrap } from './trap_lifecycle.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { fillPitWithBoulderAt } from './pit_fill.js';
 import { seeTrap } from './trap.js';
@@ -89,10 +93,15 @@ type RandomBelow = (limit: number) => number;
 type LevelGameState = GameState & { level: GameMap };
 export interface HeroTeleportMovement extends Position { oldx: number; oldy: number }
 export interface HeroDestinationRequest { onPrompt: () => Promise<void> }
-export interface HeroTeleportOptions {
+export interface HeroTeleportOptions<Arrival extends ArrivalResult = DefaultArrival> {
     chooseDestination?: (request: HeroDestinationRequest) => Promise<Position | null>;
     source?: GameObject | null;
     discover?: (() => unknown) | null;
+    state?: GameState;
+    random?: RandomBelow;
+    rollOne?: RandomBelow;
+    finishArrival?: (movement: HeroTeleportMovement) => Promise<Arrival>;
+    publish?: MessagePublisher;
 }
 export interface RelocationOptions {
     state?: GameState;
@@ -109,9 +118,16 @@ interface TeleportAtWillOptions<Arrival extends ArrivalResult> {
     chooseDestination?: (() => Promise<Position | null>) | null;
     finishArrival?: (movement: HeroTeleportMovement) => Promise<Arrival>;
     publish?: MessagePublisher;
+    ignoreRestrictions?: boolean;
 }
-export type TeleportAtWillResult<Arrival> =
-    | { moved: false; died: boolean; needsDestination?: true; cancelled?: true; arrival?: never; movement?: never }
+export interface TeleportAtWillResult<Arrival> {
+    moved: boolean;
+    died: boolean;
+    spentTime: boolean;
+    arrival?: Arrival;
+}
+type HeroTeleportResult<Arrival> =
+    | { moved: false; died: boolean }
     | { moved: true; died: boolean; movement: HeroTeleportMovement; arrival: Arrival };
 type DefaultArrival = Awaited<ReturnType<typeof finishTeleportArrival>>;
 
@@ -279,35 +295,43 @@ export function safeTeleportDestination(
 }
 
 // C teleport.c:tele()/scrolltele(NULL). The reader returns coordinates or null.
-export async function teleportHero({ chooseDestination, source = null, discover = null }: HeroTeleportOptions = {}) {
+export function teleportHero<Arrival extends ArrivalResult>(
+    options: HeroTeleportOptions<Arrival> & { finishArrival: (movement: HeroTeleportMovement) => Promise<Arrival> },
+): Promise<HeroTeleportResult<Arrival>>;
+export function teleportHero(options?: HeroTeleportOptions): Promise<HeroTeleportResult<DefaultArrival>>;
+export async function teleportHero({
+    chooseDestination, source = null, discover = null, state = game,
+    random = rn2, rollOne = rnd, finishArrival = finishTeleportArrival,
+    publish = plineWithContinuation,
+}: HeroTeleportOptions<ArrivalResult> = {}): Promise<HeroTeleportResult<ArrivalResult>> {
     let sourceDiscovered = false;
     const discoverSource = async () => {
         if (!source || sourceDiscovered) return;
         sourceDiscovered = true;
         await discover?.();
     };
-    if (heroTeleportRestricted(game) && !game.flags.debug) {
-        await plineWithContinuation(
+    if (heroTeleportRestricted(state) && !state.flags.debug) {
+        await publish(
             'A mysterious force prevents you from teleporting!',
         );
         await discoverSource();
         return { moved: false, died: false };
     }
-    if (!heroIsBlind(game)) setHeroBlindnessTurns(0, game);
-    const onWizardTower = levelIsWizardTower();
-    if ((game.u.uhave?.amulet || onWizardTower) && !rn2(3)) {
-        await plineWithContinuation(formatFeltMessage('disoriented for a moment.'));
-        if (!game.flags.debug || await promptYesNo('Override?', 'n') !== 'y')
+    if (!heroIsBlind(state)) setHeroBlindnessTurns(0, state);
+    const onWizardTower = levelIsWizardTower(state);
+    if ((state.u.uhave?.amulet || onWizardTower) && !random(3)) {
+        await publish(formatFeltMessage('disoriented for a moment.', state));
+        if (!state.flags.debug || await promptYesNo('Override?', 'n') !== 'y')
             return { moved: false, died: false };
     }
 
-    const controlled = ((heroControlsTeleport() || source?.blessed) && !heroIsStunned(game))
-        || game.flags.debug;
+    const controlled = ((heroControlsTeleport(state) || source?.blessed) && !heroIsStunned(state))
+        || state.flags.debug;
     let destination = null;
     let acceptedChoice = false;
     if (controlled) {
-        if (heroIsUnconscious()) {
-            await plineWithContinuation(
+        if (heroIsUnconscious(state)) {
+            await publish(
                 'Being unconscious, you cannot control your teleport.',
             );
         } else {
@@ -315,24 +339,24 @@ export async function teleportHero({ chooseDestination, source = null, discover 
                 throw new TypeError('controlled teleport needs a destination reader');
             destination = await chooseDestination({ onPrompt: discoverSource });
             if (!destination) return { moved: false, died: false };
-            acceptedChoice = heroTeleportDestinationOk(destination.x, destination.y);
+            acceptedChoice = heroTeleportDestinationOk(destination.x, destination.y, { state });
             if (!acceptedChoice) {
-                await plineWithContinuation('Sorry...');
+                await publish('Sorry...');
                 destination = null;
             }
         }
     }
     await discoverSource();
-    destination ||= safeTeleportDestination();
+    destination ||= safeTeleportDestination(state, random, rollOne);
     if (!destination) return { moved: false, died: false };
 
-    const movement = await moveHeroByTeleport(destination.x, destination.y);
-    await finishTeleportArrival(movement);
-    const died = !!game.program_state.gameover;
+    const movement = await moveHeroByTeleport(destination.x, destination.y, state);
+    const arrival = await finishArrival(movement);
+    const died = !!arrival?.died || !!state.program_state.gameover;
     if (!died && acceptedChoice
-        && game.u.ux === game._travelTarget?.x
-        && game.u.uy === game._travelTarget?.y) game._travelTarget = null;
-    return { moved: true, died };
+        && state.u.ux === state._travelTarget?.x
+        && state.u.uy === state._travelTarget?.y) state._travelTarget = null;
+    return { moved: true, died, movement, arrival };
 }
 
 export async function teleportHeroSafely() {
@@ -347,97 +371,81 @@ function heroIsStunned(state: GameState) {
     return !!(state?.u?.stunned || (state?.u?.stunnedTurns ?? 0) > 0);
 }
 
-function teleportAtWillFailure(state: GameState) {
-    const u = state.u;
-    const nativeForm = heroFormCanTeleport(state);
-    const requiredLevel = state.urole?.key === 'wizard' ? 8 : 12;
-    if (!heroHasTeleportation(state) && !nativeForm)
-        return "You don't know that spell.";
-    if ((u.ulevel ?? 1) < requiredLevel && !nativeForm)
-        return 'You are not able to teleport at will.';
-    if ((u.uhunger ?? 0) <= 10)
-        return 'You are too weak from hunger to teleport.';
-    if (currentAttribute(A_STR, state) < 4)
-        return 'You lack the strength to teleport.';
-
-    const energy = 5 * teleportSpellLevel();
-    if (energy > (u.uen ?? 0))
-        return 'You lack the energy to teleport.';
-    return null;
-}
-
+// C teleport.c:dotele(). The command and drowning escape use the same
+// trap admission, spell fallback, follower checks, and nutrition costs.
 export function teleportHeroAtWill<Arrival extends ArrivalResult>(
     options: TeleportAtWillOptions<Arrival> & { finishArrival: (movement: HeroTeleportMovement) => Promise<Arrival> },
 ): Promise<TeleportAtWillResult<Arrival>>;
 export function teleportHeroAtWill(options?: TeleportAtWillOptions<DefaultArrival>): Promise<TeleportAtWillResult<DefaultArrival>>;
 export async function teleportHeroAtWill({
-    state = game,
-    random = rn2,
-    rollOne = rnd,
-    chooseDestination = null,
-    finishArrival = finishTeleportArrival,
-    publish = plineWithContinuation,
+    state = game, random = rn2, rollOne = rnd, chooseDestination = null,
+    finishArrival = finishTeleportArrival, publish = plineWithContinuation,
+    ignoreRestrictions = false,
 }: TeleportAtWillOptions<ArrivalResult> = {}): Promise<TeleportAtWillResult<ArrivalResult>> {
     requirePlayingGame(state);
-    const failure = teleportAtWillFailure(state);
-    if (failure) {
-        await publish(failure);
-        return { moved: false, died: false };
+    const hero = state.u;
+    const old = { x: hero.ux, y: hero.uy, ...hero.uz };
+    let trap = state.level.traps.find(candidate =>
+        candidate.tx === hero.ux && candidate.ty === hero.uy && candidate.tseen);
+    if (trap?.ttyp === LEVEL_TELEP) {
+        if (await promptYesNo('There is a level teleporter here. Trigger it?') === 'y') {
+            await triggerLevelTeleportTrap(trap, gotoLevel, true);
+            return { moved: false, died: !!state.program_state.gameover, spentTime: true };
+        }
+        trap = undefined;
+    } else if (trap?.ttyp === TELEP_TRAP) {
+        if (trap.once) {
+            await publish('This is a vault teleport, usable once only.');
+            if (await promptYesNo('Jump in?') === 'n') trap = undefined;
+            else {
+                deleteTrap(trap, state);
+                newsym(hero.ux, hero.uy);
+            }
+        }
+    } else trap = undefined;
+    if (trap)
+        await publish(`You ${heroLocomotion('jump', state)} onto the teleportation trap.`);
+    if (!trap && !ignoreRestrictions) {
+        const preparation = await prepareTeleportAtWill(state, publish);
+        if (!preparation.proceed) return {
+            moved: hero.ux !== old.x || hero.uy !== old.y
+                || hero.uz.dnum !== old.dnum || hero.uz.dlevel !== old.dlevel,
+            died: !!state.program_state.gameover,
+            spentTime: preparation.spentTime,
+        };
     }
-    if (exceedsActionCapacity(state)) {
-        await publish('Your concentration falters from carrying so much.');
-        return { moved: false, died: false };
-    }
-
-    const canChoose = heroControlsTeleport(state)
-        && !heroIsStunned(state) && !heroIsUnaware(state);
-    if (canChoose && !chooseDestination)
-        return { moved: false, needsDestination: true, died: false };
-
-    const energy = 5 * teleportSpellLevel();
-    state.u.uen -= energy;
-    state.context.botl = true;
-
-    const followersReady = await bringLeashedFollowers(state, random);
-    if (!followersReady) {
+    if (!await bringLeashedFollowers(state, random)) {
         await publish('You shudder for a moment.');
-        return { moved: false, died: false };
+        return { moved: false, died: false, spentTime: false };
     }
 
-    // dotele() discards the prior travel suggestion before calling tele().
-    state._travelTarget = null;
-    let destination = canChoose && chooseDestination ? await chooseDestination() : null;
-    if (canChoose && !destination) {
-        await spendHeroNutrition(100, { state });
-        return { moved: false, cancelled: true, died: !!state.program_state.gameover };
+    let destination: Position | null = null;
+    if (trap?.once) {
+        const vault = searchSpecial(VAULT, state);
+        const point = { x: 0, y: 0 };
+        if (vault && somexyspace(vault, point, state)
+            && heroTeleportDestinationOk(point.x, point.y, { state })) destination = point;
+    } else if (trap?.teledest && isok(trap.teledest.x, trap.teledest.y)) {
+        destination = trap.teledest;
+    } else {
+        state._travelTarget = null;
     }
-    if (!destination || !heroTeleportDestinationOk(
-        destination.x, destination.y, { state },
-    )) {
-        if (destination) await publish('Sorry...');
-        destination = safeTeleportDestination(state, random, rollOne);
+    let result: HeroTeleportResult<ArrivalResult>;
+    if (destination) {
+        const movement = await moveHeroByTeleport(destination.x, destination.y, state);
+        const arrival = await finishArrival(movement);
+        result = { moved: true, movement, arrival,
+            died: !!arrival?.died || !!state.program_state.gameover };
+    } else {
+        result = await teleportHero({
+            state, random, rollOne, finishArrival, publish,
+            chooseDestination: chooseDestination ? () => chooseDestination() : askTeleportDestination,
+        });
     }
-
-    if (!destination) {
-        await spendHeroNutrition(100, { state });
-        return { moved: false, died: !!state.program_state.gameover };
-    }
-
-    const movement = await moveHeroByTeleport(
-        destination.x, destination.y, state,
-    );
-    if (state.flags?.verbose !== false) {
-        await publish(`You materialize in ${
-            movement.oldx === movement.x && movement.oldy === movement.y
-                ? 'the same' : 'a different'
-        } location!`);
-    }
-    const arrival = await finishArrival(movement);
-    if (arrival?.died || state.program_state.gameover)
-        return { moved: true, movement, arrival, died: true };
-    // C dotele(): teleds() completes all landing effects before morehungry.
-    await spendHeroNutrition(100, { state });
-    return { moved: true, movement, arrival, died: !!state.program_state.gameover };
+    if (result.died) return { ...result, spentTime: true };
+    await bringLeashedFollowers(state, random);
+    if (!trap) await spendHeroNutrition(100, { state });
+    return { ...result, died: !!state.program_state.gameover, spentTime: true };
 }
 
 export async function randomMonsterRelocation(monster: Monster | null, {
@@ -1032,13 +1040,6 @@ export async function moveHeroByTeleport(x: number, y: number, state = game, { a
     endVoluntaryMultiTurn(state);
     return { oldx, oldy, x, y };
 }
-
-function teleportSpellLevel(): number {
-    const level = OBJECT_SPELL_LEVEL[SPE_TELEPORT_AWAY];
-    if (level === undefined) throw new Error('Missing teleport spell level.');
-    return level;
-}
-
 // C teleport.c:mlevel_tele_trap(), the MAGIC_PORTAL branch.
 export async function teleportMonsterThroughPortal(monster: Monster, trap: Trap, {
     state = game, random = rn2, force = false, publish = plineWithContinuation,
@@ -1087,15 +1088,7 @@ export async function teleportMonsterThroughHole(monster: Monster, trap: Trap, {
             return null;
         }
         if (!trap.dst) throw new Error('A monster fall requires a hole destination');
-        const dungeon = state.dungeons[trap.dst.dnum];
-        if (!dungeon) throw new Error(`Hole leads to absent dungeon ${trap.dst.dnum}`);
-        let bottom = dungeon.num_dunlevs;
-        if (In_quest(trap.dst)) {
-            const locate = state.specialLevels?.get('x-loca');
-            if (!locate) throw new Error('Quest falls require the locate level');
-            if (dungeon.dunlev_ureached < locate.dlevel) bottom = locate.dlevel;
-        } else if (In_hell(trap.dst) && !state.u.uevent?.invoked) bottom--;
-        destination = { dnum: trap.dst.dnum, dlevel: Math.min(trap.dst.dlevel, bottom) };
+        destination = clampHoleDestination(trap.dst, state);
     }
     if (seen) {
         const effect = trap.ttyp === HOLE ? 'falls into a hole' : 'falls through a trap door';

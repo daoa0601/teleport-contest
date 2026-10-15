@@ -104,23 +104,22 @@ async function withTeleportMode(mode, action) {
     }
 }
 // A spell completes dotele() itself. Direct intrinsic teleport continues in
-// the caller after energy is spent; all refusals leave its time result here.
-export async function prepareTeleportAtWill() {
-    requirePlayingGame(game);
-    const hero = game.u;
-    const teleportation = heroHasTeleportation(game);
-    const requiredLevel = game.urole.key === 'wizard' ? 8 : 12;
+// the caller after energy is spent. The caller owns the command's turn result.
+export async function prepareTeleportAtWill(state = game, publish = plineWithContinuation) {
+    requirePlayingGame(state);
+    const hero = state.u;
+    const teleportation = heroHasTeleportation(state);
+    const requiredLevel = state.urole.key === 'wizard' ? 8 : 12;
     let cast = false;
-    if (!teleportation || hero.ulevel < requiredLevel && !heroFormCanTeleport(game)) {
-        const known = knownSpell(SPE_TELEPORT_AWAY);
+    if (!teleportation || hero.ulevel < requiredLevel && !heroFormCanTeleport(state)) {
+        const known = knownSpell(SPE_TELEPORT_AWAY, state);
         cast = (known === 'fresh' || known === 'stale')
             && !(hero.confused || (hero.confusionTurns ?? 0) > 0);
         if (!cast) {
-            await plineWithContinuation(!teleportation
+            await publish(!teleportation
                 ? known === 'unknown' ? "You don't know that spell." : "You can't cast that spell."
                 : 'You are not able to teleport at will.');
-            game.context.move = 0;
-            return false;
+            return { proceed: false, spentTime: false };
         }
     }
     const level = OBJECT_SPELL_LEVEL[SPE_TELEPORT_AWAY];
@@ -128,26 +127,25 @@ export async function prepareTeleportAtWill() {
         throw new Error('Teleport-away has no spell level');
     const energy = 5 * level;
     const failure = hero.uhunger <= 10 ? 'are too weak from hunger'
-        : currentAttribute(A_STR) < 4 ? 'lack the strength'
+        : currentAttribute(A_STR, state) < 4 ? 'lack the strength'
             : energy > hero.uen ? 'lack the energy' : null;
     if (failure) {
-        await plineWithContinuation(`You ${failure} ${cast ? 'for a teleport spell' : 'to teleport'}.`);
-        game.context.move = 0;
-        return false;
+        await publish(`You ${failure} ${cast ? 'for a teleport spell' : 'to teleport'}.`);
+        return { proceed: false, spentTime: false };
     }
-    if (exceedsActionCapacity(game)) {
-        await plineWithContinuation('Your concentration falters from carrying so much.');
-        game.context.move = 1;
-        return false;
+    if (exceedsActionCapacity(state)) {
+        await publish('Your concentration falters from carrying so much.');
+        return { proceed: false, spentTime: true };
     }
     if (cast) {
-        exerciseWisdom();
-        const result = await castSpell(SPE_TELEPORT_AWAY, { atSelf: true });
-        game.context.move = Number(result.spentTime);
-        return false;
+        exerciseWisdom(true, state);
+        const enclosingMove = state.context.move;
+        const result = await castSpell(SPE_TELEPORT_AWAY, { atSelf: true, state });
+        state.context.move = enclosingMove;
+        return { proceed: false, spentTime: result.spentTime };
     }
     hero.uen -= energy;
-    game.context.botl = true;
-    return true;
+    state.context.botl = true;
+    return { proceed: true };
 }
 //# sourceMappingURL=wizard_teleport.js.map

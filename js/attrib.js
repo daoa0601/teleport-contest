@@ -196,16 +196,9 @@ export async function loseHeroStrength(amount, killer, { state = game, random = 
         state.context.botl = true;
     }
     if (remainingLoss > 0 && (Upolyd(hero) || !wasPolymorphed)) {
-        const previousCapacity = state._encumbranceLevel ?? nearCapacity(state);
         const change = adjustAttribute(A_STR, -remainingLoss, state);
-        if (change.changed && state._moveloopStarted) {
-            const capacity = nearCapacity(state);
-            state._encumbranceLevel = capacity;
-            hero._encumbrance = encumbranceLabel(capacity);
-            const message = encumbranceMessage(previousCapacity, capacity);
-            if (message)
-                await publish(message);
-        }
+        if (change.changed && state._moveloopStarted)
+            await reportHeroEncumbrance(state, publish);
     }
     return false;
 }
@@ -260,12 +253,12 @@ function accumulateAttributeExercise(attribute, improving, state) {
 }
 // C pickup.c:encumber_msg() commits oldcap after its message returns. A
 // pager therefore retains the prior load status until the hero dismisses it.
-export async function reportHeroEncumbrance(state = game) {
+export async function reportHeroEncumbrance(state = game, publish = plineWithContinuation) {
     const previous = state._encumbranceLevel ?? 0;
     const capacity = nearCapacity(state);
     const message = encumbranceMessage(previous, capacity);
     if (message)
-        await plineWithContinuation(message);
+        await publish(message);
     if (previous !== capacity)
         state.context.botl = true;
     state._encumbranceLevel = capacity;
