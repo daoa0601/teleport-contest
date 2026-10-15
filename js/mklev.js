@@ -5748,12 +5748,21 @@ async function createLuaFeature(context, options) {
         cell.typ = featureType;
     if (cell.typ !== featureType)
         return;
-    const flags = featureType === FOUNTAIN
-        ? [[options.looted, F_LOOTED], [options.warned, F_WARNED]]
-        : featureType === SINK
-            ? [[options.pudding, S_LPUDDING], [options.dishwasher, S_LDWASHER], [options.ring, S_LRING]]
-            : featureType === THRONE ? [[options.looted, T_LOOTED]]
-                : featureType === TREE ? [[options.looted, TREE_LOOTED], [options.swarm, TREE_SWARM]] : [];
+    let flags = [];
+    switch (featureType) {
+        case FOUNTAIN:
+            flags = [[options.looted, F_LOOTED], [options.warned, F_WARNED]];
+            break;
+        case SINK:
+            flags = [[options.pudding, S_LPUDDING], [options.dishwasher, S_LDWASHER], [options.ring, S_LRING]];
+            break;
+        case THRONE:
+            flags = [[options.looted, T_LOOTED]];
+            break;
+        case TREE:
+            flags = [[options.looted, TREE_LOOTED], [options.swarm, TREE_SWARM]];
+            break;
+    }
     for (const [value, flag] of flags) {
         if (value === undefined)
             continue;
@@ -6088,7 +6097,7 @@ async function createLuaObject(context, options, parentContainer, parentMonster,
     }
     const quantity = options.quantity ?? 1;
     const count = options.objectType !== null && !OBJECT_MERGE[options.objectType]
-        && Number.isInteger(quantity) ? Math.max(1, quantity) : 1;
+        ? Math.max(1, quantity) : 1;
     let object = null;
     for (let index = 0; index < count; index++) {
         object = await createLuaObjectPiece(context, options, corpseSpecies, parentContainer, parentMonster);
@@ -6240,8 +6249,6 @@ async function createLuaObjectPiece(context, options, corpseSpecies, parentConta
         if (options.buried && (await buryObject(object)).outcome === 'absorbed')
             object = null;
     }
-    if (!object)
-        return null;
     return object;
 }
 function applyLuaMonsterAppearance(monster, appearance) {
@@ -7152,7 +7159,12 @@ function fillSpecialSwamp(fg = ROOM, bg = MOAT, lit = false) {
             if (untouched !== 3)
                 continue;
             const chosen = rn2(3);
-            setLevelTerrainLit(x + (chosen !== 1 ? 1 : 0), y + (chosen !== 0 ? 1 : 0), fg, lit);
+            if (chosen === 0)
+                setLevelTerrainLit(x + 1, y, fg, lit);
+            else if (chosen === 1)
+                setLevelTerrainLit(x, y + 1, fg, lit);
+            else
+                setLevelTerrainLit(x + 1, y + 1, fg, lit);
         }
     }
 }
