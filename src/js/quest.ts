@@ -8,13 +8,32 @@ import type { GameObject } from './object_types.js';
 import type { DungeonLocation } from './dungeon_types.js';
 import { gotoLevel } from './level_change.js';
 import { nhgetch } from './input.js';
-import { flushPendingTopline, flush_screen, pline } from './display.js';
+import { canSeeMonster, flush_screen, pline, plineWithContinuation } from './display.js';
 import {
-    MIN_QUEST_ALIGN, MIN_QUEST_LEVEL, STRAT_CLOSE,
+    MIN_QUEST_ALIGN, MIN_QUEST_LEVEL, STRAT_CLOSE, STRAT_WAITMASK, MAGIC_PORTAL,
 } from './const.js';
-import { monsterIsQuestNemesis } from './monster_data.js';
-import { displayQuestText, prepareQuestText, qtPager } from './quest_pager.js';
+import { MONSTER_NAME, MONSTER_SOUND, monsterIsQuestNemesis } from './monster_data.js';
+import { displayQuestText, prepareQuestText, qtPager, comPager } from './quest_pager.js';
 import type { QuestText } from './quest_pager.js';
+import { artifactByName } from './artifacts.js';
+import { exerciseWisdom as exerciseQuestWisdom } from './attrib.js';
+import { fullyIdentifyObject } from './invent.js';
+import { observeObject } from './object_knowledge.js';
+import { AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, BELL_OF_OPENING } from './object_data.js';
+import { objectCombatName, definiteName } from './objnam.js';
+import { heroIsDeaf } from './senses.js';
+import { recordGameLogEvent } from './gamelog.js';
+import { monsterName } from './monster_name.js';
+import { angerMonster, angerWatchGuards } from './monster_anger.js';
+import { adjustHeroAlignment } from './alignment.js';
+import { endVoluntaryMultiTurn } from './command_state.js';
+import { rn2 } from './rng.js';
+import { createPoisonGasCloud } from './regions.js';
+import { deleteTrap } from './trap_lifecycle.js';
+import { impossible } from './diagnostics.js';
+
+const MS_NEMESIS = 37;
+const MS_GUARDIAN = 38;
 
 // C struct q_score is global game state, not a property inferred from the
 // current special level.  Keeping the complete shape here makes the state
@@ -54,6 +73,7 @@ export function ensureQuestStatus(g: GameState = game): QuestStatus {
 export function checkQuestMonsterStatus(monster: Monster, state: GameState = game): void {
     if (!monsterIsQuestNemesis(monster.mnum)) return;
     ensureQuestStatus(state).in_battle = !monster.msleeping && !!monster.mcanmove
+        && (monster.mx !== state.u.ux || monster.my !== state.u.uy)
         && Math.abs(monster.mx - state.u.ux) <= 1
         && Math.abs(monster.my - state.u.uy) <= 1;
 }
@@ -102,11 +122,26 @@ export function markQuestLeaderAlive(
     return true;
 }
 
-export function markQuestNemesisDead(
+export async function markQuestNemesisDead(
     monster: Monster | null | undefined, g: GameState = game,
-): boolean {
+    x = monster?.mx ?? 0, y = monster?.my ?? 0,
+): Promise<boolean> {
     if (!monster || !monsterIsQuestNemesis(monster.mnum)) return false;
-    ensureQuestStatus(g).killed_nemesis = true;
+    const status = ensureQuestStatus(g);
+    if (!status.killed_nemesis) {
+        status.killed_nemesis = true;
+        await qtPager('killed_nemesis', g);
+    }
+    // stinky_nemesis() performs a second lookup even after nemdead() has
+    // already announced an earlier nemesis death.
+    const text = await prepareQuestText('killed_nemesis', g);
+    const raw = text?.raw.replaceAll('\n', ' ') ?? '';
+    if (/(?:noxious|poisonous|toxic).* (?:gas|fumes)/iu.test(raw)) {
+        const moving = g.context.mon_moving;
+        g.context.mon_moving = true;
+        try { await createPoisonGasCloud(g, x, y, 5, 8); }
+        finally { g.context.mon_moving = moving; }
+    }
     return true;
 }
 
@@ -123,21 +158,26 @@ async function prepareQtDelivery(messageId: string, state: GameState): Promise<Q
         ? { line: text.lines.join('\n'), text } : { page: text };
 }
 
-function objectContainsQuestArtifact(object: GameObject | null | undefined): boolean {
+export function isQuestArtifact(object: GameObject, state: GameState = game): boolean {
+    return !!object.oartifact
+        && object.oartifact === artifactByName(state.urole?.artifactName, state)?.id;
+}
+
+function objectContainsQuestArtifact(object: GameObject | null | undefined, state: GameState): boolean {
     if (!object) return false;
-    if (object.questArtifact) return true;
-    return (object.contents || []).some(objectContainsQuestArtifact);
+    return isQuestArtifact(object, state)
+        || (object.contents ?? []).some(content => objectContainsQuestArtifact(content, state));
 }
 
 function levelContainsQuestArtifact(g: GameState = game) {
     const level = g.level;
-    if ((level?.objects || []).flat(2).some(objectContainsQuestArtifact))
+    if ((level?.objects || []).flat(2).some(object => objectContainsQuestArtifact(object, g)))
         return true;
-    if ((level?.buriedObjects || []).some(objectContainsQuestArtifact))
+    if ((level?.buriedObjects || []).some(object => objectContainsQuestArtifact(object, g)))
         return true;
     return (level?.monsters || []).some(monster =>
-        (monster.minvent || [])
-            .some(objectContainsQuestArtifact));
+        !monster.dead && monster.mhp > 0 && (monster.minvent || [])
+            .some(object => objectContainsQuestArtifact(object, g)));
 }
 
 // C do.c:goto_level() leaves its level-teleport pline pending and then calls
@@ -146,9 +186,8 @@ function levelContainsQuestArtifact(g: GameState = game) {
 // acknowledgement.  Keep lookup and display separate so the Lua RNG remains
 // on the command which entered the level while the next key still belongs to
 // the pending materialization line.
-export async function prepareQuestArrival({ fromDepth, firstVisit = true }: {
+export async function prepareQuestArrival({ fromDepth }: {
     fromDepth?: DungeonLocation;
-    firstVisit?: boolean;
 } = {}, g: GameState = game): Promise<QuestArrival | null> {
     const currentDepth = g.u.uz;
     if (!currentDepth) return null;
@@ -282,7 +321,7 @@ async function wizardAdjustAlignment(g: GameState = game) {
     const key = await nhgetch();
     g._pending_message = '';
     g._retained_message = '';
-    return String.fromCharCode(key).toLowerCase();
+    return String.fromCharCode(key);
 }
 
 function originalAlignment(g: GameState = game) {
@@ -297,16 +336,16 @@ async function questPurity(talk: boolean, g: GameState = game): Promise<-1 | 0 |
     const original = originalAlignment(g);
     const alignment = g.u.ualign;
     if (!alignment) throw new Error('Quest purity requires initialized hero alignment.');
-    if (g.flags?.debug && talk
-        && (g.u?.ualign?.type ?? 0) === original
-        && currentBaseAlignment(g) === original
-        && (g.u?.ualign?.record ?? 0) < MIN_QUEST_ALIGN) {
-        await questMore(
-            `You are currently ${alignment.record} and require ${MIN_QUEST_ALIGN}.--More--`,
-            g,
-        );
-        if (await wizardAdjustAlignment(g) === 'y')
-            alignment.record = MIN_QUEST_ALIGN;
+    if (g.flags?.debug && talk) {
+        const alignmentName = (value: number) => value > 0 ? 'lawful' : value < 0 ? 'chaotic' : 'neutral';
+        if (alignment.type !== original)
+            await plineWithContinuation(`You are currently ${alignmentName(alignment.type)} instead of ${alignmentName(original)}.`);
+        else if (currentBaseAlignment(g) !== original)
+            await plineWithContinuation('You have converted.');
+        else if (alignment.record < MIN_QUEST_ALIGN) {
+            await questMore(`You are currently ${alignment.record} and require ${MIN_QUEST_ALIGN}.--More--`, g);
+            if (await wizardAdjustAlignment(g) === 'y') alignment.record = MIN_QUEST_ALIGN;
+        }
     }
     if ((g.u?.ualign?.record ?? 0) >= MIN_QUEST_ALIGN
         && (g.u?.ualign?.type ?? 0) === original
@@ -332,52 +371,160 @@ export function okToQuest(g: GameState = game) {
         || status.killed_leader);
 }
 
-// Ported source block: chat_with_leader()'s first-contact, capable, pure
-// assignment path.  The durable state and dispatch seams are shared with the
-// remaining rejection/completion branches, which stay explicit future work.
-export async function chatWithQuestLeader(monster: Monster | null | undefined, {
-    exerciseWisdom = null,
-}: { exerciseWisdom?: (() => void) | null } = {}, g: GameState = game): Promise<boolean> {
+// C quest.c:finish_quest(). Returning the artifact also teaches its identity;
+// an Amulet visit can happen before or after formal quest completion.
+export async function finishQuest(object: GameObject | null, state: GameState = game): Promise<void> {
+    if (object && !isQuestArtifact(object, state)) {
+        if (heroIsDeaf(state)) return;
+        fullyIdentifyObject(object, state);
+        if (object.otyp === AMULET_OF_YENDOR) await qtPager('hasamulet', state);
+        else if (object.otyp === FAKE_AMULET_OF_YENDOR)
+            await plineWithContinuation('"Sorry to say, this is a mere imitation of the true Amulet of Yendor."');
+        else await plineWithContinuation(`"Ah, I see you've found ${definiteName(objectCombatName(object, { state }), state)}."`);
+        return;
+    }
+    const status = ensureQuestStatus(state);
+    if (state.u.uhave?.amulet) {
+        await qtPager('hasamulet', state);
+        const amulet = state.inventory.find(item => item.otyp === AMULET_OF_YENDOR);
+        if (amulet) fullyIdentifyObject(amulet, state);
+    } else {
+        await qtPager(status.got_thanks ? 'offeredit2' : 'offeredit', state);
+        if (!state.inventory.some(item => item.otyp === BELL_OF_OPENING))
+            await comPager('quest_complete_no_bell', state);
+    }
+    status.got_thanks = true;
+    if (object) {
+        (state.u.uevent ??= {}).qcompleted = 1;
+        fullyIdentifyObject(object, state);
+    }
+}
+
+export async function touchQuestArtifact(object: GameObject, state: GameState = game): Promise<void> {
+    const status = ensureQuestStatus(state);
+    if (status.touched_artifact) return;
+    observeObject(object, state);
+    status.touched_artifact = true;
+    await qtPager('gotit', state);
+    exerciseQuestWisdom(true, state);
+}
+
+// C chat_with_leader(): the checks after the greeting apply only at home.
+export async function chatWithQuestLeader(monster: Monster | null | undefined, g: GameState = game): Promise<boolean> {
     if (!monster || !isQuestLeader(monster, g)) return false;
     const status = ensureQuestStatus(g);
     if (!monster.mpeaceful || status.pissed_off) return true;
-
-    // The current completed block is initial assignment.  Preserve command
-    // ownership for later leader states without fabricating their dialogue.
-    if (status.met_leader || status.got_quest || status.got_thanks)
-        return true;
-
-    if (!await qtPager('leader_first', g)) return true;
-    status.met_leader = true;
-    status.not_ready = 0;
-
-    // A leader carried through the portal may be chatted with elsewhere, but
-    // capability and quest assignment are meaningful only on qstart_level.
-    if (!onQuestStart(g)) return true;
-    if ((g.u?.ulevel ?? 1) < MIN_QUEST_LEVEL) {
-        // badlevel text plus expulsion is the next alternative readiness
-        // block; do not silently grant the quest when it is not yet ported.
-        status.not_ready = 1;
-        return true;
+    if (g.u.uhave?.questart && !status.met_nemesis) status.cheater = true;
+    if (status.got_thanks) {
+        if (g.u.uhave?.amulet) await finishQuest(null, g);
+        else await qtPager('posthanks', g);
+    } else if (g.u.uhave?.questart) {
+        await finishQuest(g.inventory.find(item => isQuestArtifact(item, g)) ?? null, g);
+    } else if (status.got_quest) {
+        await qtPager('encourage', g);
+    } else {
+        if (!status.met_leader) {
+            await qtPager('leader_first', g);
+            status.met_leader = true;
+            status.not_ready = 0;
+        } else await qtPager('leader_next', g);
+        if (!onQuestStart(g)) return true;
+        if ((g.u.ulevel ?? 1) < MIN_QUEST_LEVEL) {
+            await qtPager('badlevel', g);
+            exerciseQuestWisdom(true, g);
+            await scheduleQuestExpulsion(false, g);
+            return true;
+        }
+        const purity = await questPurity(true, g);
+        if (purity < 0) {
+            await comPager('banished', g);
+            status.pissed_off = true;
+            await scheduleQuestExpulsion(false, g);
+            recordGameLogEvent(`${monsterName(monster, { state: g })} has expelled you from the quest`, { state: g });
+        } else if (purity === 0) {
+            await qtPager('badalign', g);
+            status.not_ready = 1;
+            exerciseQuestWisdom(true, g);
+            await scheduleQuestExpulsion(false, g);
+        } else {
+            await qtPager('assignquest', g);
+            exerciseQuestWisdom(true, g);
+            status.got_quest = true;
+            recordGameLogEvent(`${monsterName(monster, { state: g })} has granted access to proceed deeper into the quest`, { state: g });
+        }
     }
-
-    const purity = await questPurity(true, g);
-    if (purity === 0) {
-        await qtPager('badalign', g);
-        if (exerciseWisdom) exerciseWisdom();
-        status.not_ready = 1;
-        g._questExpulsionPending = { seal: false };
-        return true;
-    }
-    if (purity !== 1) {
-        status.not_ready = 1;
-        return true;
-    }
-
-    if (!await qtPager('assignquest', g)) return true;
-    if (exerciseWisdom) exerciseWisdom();
-    status.got_quest = true;
     return true;
+}
+
+// C quest_chat(): chat uses a random threat; spontaneous nemesis speech has
+// its own encounter progression and battle gate.
+export async function chatWithQuestCharacter(monster: Monster, state: GameState = game): Promise<void> {
+    const status = ensureQuestStatus(state);
+    if (isQuestLeader(monster, state)) {
+        await chatWithQuestLeader(monster, state);
+        if (status.pissed_off) await angerMonster(monster);
+    } else if (MONSTER_SOUND[monster.mnum] === MS_NEMESIS) {
+        await qtPager('discourage', state);
+        status.met_nemesis = true;
+    } else if (MONSTER_SOUND[monster.mnum] === MS_GUARDIAN) {
+        await qtPager(state.u.uhave?.questart && status.killed_nemesis
+            ? 'guardtalk_after' : 'guardtalk_before', state);
+    }
+}
+
+export async function talkQuestCharacter(monster: Monster, state: GameState = game): Promise<void> {
+    const status = ensureQuestStatus(state);
+    if (isQuestLeader(monster, state)) {
+        if (!monster.mpeaceful) {
+            if (!status.pissed_off) await qtPager('leader_last', state);
+            status.pissed_off = true;
+            monster.mstrategy = (monster.mstrategy ?? 0) & ~STRAT_WAITMASK;
+        }
+        if (onQuestStart(state) && !status.pissed_off) await chatWithQuestLeader(monster, state);
+        return;
+    }
+    if (MONSTER_SOUND[monster.mnum] === MS_NEMESIS) {
+        if (status.in_battle) {
+            if (!rn2(5)) await qtPager('discourage', state);
+            return;
+        }
+        if (state.u.uhave?.questart) await qtPager('nemesis_wantsit', state);
+        else if (status.made_goal === 1 || !status.met_nemesis) await qtPager('nemesis_first', state);
+        else if (status.made_goal < 4) await qtPager('nemesis_next', state);
+        else if (status.made_goal < 7) await qtPager('nemesis_other', state);
+        else if (!rn2(5)) await qtPager('discourage', state);
+        if (status.made_goal < 7) status.made_goal++;
+        status.met_nemesis = true;
+    } else if (MONSTER_NAME[monster.mnum] === 'prisoner'
+        && ((monster.mstrategy ?? 0) & STRAT_WAITMASK) !== 0) {
+        if (canSeeMonster(monster)) await plineWithContinuation(`${monsterName(monster, { capitalized: true, state })} speaks:`);
+        await plineWithContinuation('"I\'m finally free!"');
+        monster.mstrategy = (monster.mstrategy ?? 0) & ~STRAT_WAITMASK;
+        monster.mpeaceful = 1;
+        adjustHeroAlignment(3, state);
+        await angerWatchGuards(false, { state });
+    }
+}
+
+export async function scheduleQuestExpulsion(seal: boolean, state: GameState = game): Promise<void> {
+    endVoluntaryMultiTurn(state);
+    state._questExpulsionPending = { seal, portal: !state.u.uevent?.qexpelled };
+    if (seal) {
+        const expelled = !!state.u.uevent?.qexpelled;
+        (state.u.uevent ??= {}).qexpelled = 1;
+        forgetQuestOverview(state);
+        const portal = state.level?.traps.find(trap => trap.ttyp === MAGIC_PORTAL);
+        if (portal) deleteTrap(portal, state);
+        else if (!expelled) await impossible('quest portal already gone?', { state });
+    }
+}
+
+function forgetQuestOverview(state: GameState): void {
+    const dungeon = state.quest_dnum ?? state.u.uz?.dnum;
+    if (dungeon === undefined) return;
+    for (const key of state._overviewRecords?.keys() ?? []) {
+        if (key.startsWith(`${dungeon}:`)) state._overviewRecords?.delete(key);
+    }
 }
 
 // quest.c:expulsion(FALSE) schedules a portal arrival on the parent side of
@@ -388,16 +535,18 @@ export async function performQuestExpulsion(g: GameState = game) {
     const current = g.u.uz;
     if (!current) return false;
     const branch = g.branches?.find(candidate =>
-        (candidate.end1?.dnum === current.dnum
-            && candidate.end1?.dlevel === current.dlevel)
-        || (candidate.end2?.dnum === current.dnum
-            && candidate.end2?.dlevel === current.dlevel));
+        candidate.end1.dnum === current.dnum || candidate.end2.dnum === current.dnum);
     if (!branch) return false;
-    const destination = branch.end1?.dnum === current.dnum
-        && branch.end1?.dlevel === current.dlevel
-        ? branch.end2 : branch.end1;
+    const destination = branch.end1.dnum === current.dnum ? branch.end2 : branch.end1;
     if (!destination) return false;
-    await gotoLevel({ ...destination }, { arrival: 'portal' });
+    const seal = g._questExpulsionPending?.seal;
+    const expelled = !!g.u.uevent?.qexpelled;
+    await gotoLevel({ ...destination }, { arrival: (g._questExpulsionPending?.portal ?? !expelled) ? 'portal' : 'random' });
+    if (seal) {
+        forgetQuestOverview(g);
+        const portal = g.level?.traps.find(trap => trap.ttyp === MAGIC_PORTAL);
+        if (portal) deleteTrap(portal, g);
+    }
     g._questExpulsionPending = null;
     g.context.move = 1;
     return true;

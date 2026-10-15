@@ -1,3 +1,4 @@
+import { ensureQuestStatus } from '../js/quest.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { finishHeroThrownBlindness, prepareHeroThrownBlindness } from '../js/blinding_attack.js';
@@ -32,6 +33,7 @@ void test('thrown venom leaves sight available until its pending blindness is ap
 });
 void test('the Eyes of the Overworld keep sight after a cream pie covers the hero', async () => {
     freshObjectRoom({ role: 'monk' });
+    ensureQuestStatus().touched_artifact = true;
     const eyes = await addInventoryItem(await artifactObject('The Eyes of the Overworld'));
     await applyInventoryObject(eyes);
     const effect = prepareHeroThrownBlindness(CREAM_PIE, game, () => 8);

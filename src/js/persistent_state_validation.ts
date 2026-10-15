@@ -131,8 +131,8 @@ function validPersistentState(value: unknown, entities: SavedEntityContext): val
         _preserveLeadingStyledBlanks: optional(boolean),
         _prevDecorType: optional(integer),
         _priestPantheonIndex: optional(integer),
-        _questExpulsionPending: optional(nullable((pending): pending is { seal: boolean } =>
-            closedFieldsMatch(pending, { seal: boolean }))),
+        _questExpulsionPending: optional(nullable((pending): pending is { seal: boolean; portal?: boolean } =>
+            closedFieldsMatch(pending, { seal: boolean, portal: optional(boolean) }))),
         _restoredBones: optional(boolean),
         _rndmonstAlignment: optional(nullable(validSavedSpecialLevel)),
         _rndmonstAlignmentMove: optional(integer),

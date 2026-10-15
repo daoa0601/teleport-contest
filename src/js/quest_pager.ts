@@ -23,6 +23,7 @@ const M2_PNAME = 0x00080000;
 
 export interface QuestText {
     lines: readonly string[];
+    raw: string;
     output: 'pline' | 'text' | 'menu';
     synopsis: string | null;
 }
@@ -64,7 +65,7 @@ async function prepareSection(section: string, messageId: string, state: GameSta
         const lines = text.split('\n');
         if (text.endsWith('\n')) lines.pop();
         return {
-            lines: lines.map(line => convertQuestLine(line, state)), output,
+            lines: lines.map(line => convertQuestLine(line, state)), output, raw: text,
             synopsis: synopsis === null ? null : convertQuestLine(synopsis, state),
         };
     } finally {

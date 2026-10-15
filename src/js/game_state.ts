@@ -374,7 +374,7 @@ export interface GameState {
     _unresolvedDemigodIntervention?: number;
     _lastDemigodAggravation?: number[];
     _lastDemigodNasty?: number[];
-    _questExpulsionPending?: { seal: boolean } | null;
+    _questExpulsionPending?: { seal: boolean; portal?: boolean } | null;
     _vaultGuardArrivalPending?: { vault: Room } | null;
     _vaultMaintenanceContinuation?: { sourceTurn: number } | null;
     _vaultHeroTookTimePending?: number | null;

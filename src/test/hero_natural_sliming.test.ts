@@ -1,3 +1,4 @@
+import { ensureQuestStatus } from '../js/quest.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { MFAST, M_ATTK_DEF_DIED, M_ATTK_MISS, MM_NOGRP, NO_MINVENT, NORMAL_SPEED, STRAT_WAITFORU, FIRE_TRAP, W_ARMC } from '../js/const.js';
@@ -35,6 +36,7 @@ async function slimeAttack(species = 'orc', { visible = true } = {}) {
     freshObjectRoom({ role: 'monk', gameplaySeed: 83n });
     requirePlayingGame(game);
     if (visible) {
+        ensureQuestStatus().touched_artifact = true;
         const eyes = await addInventoryItem(await artifactObject('The Eyes of the Overworld'));
         assert.equal(await wearEyewear(eyes), true);
     }

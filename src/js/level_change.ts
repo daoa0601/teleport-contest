@@ -261,7 +261,6 @@ export async function gotoLevel(targetDepth: Partial<DungeonLocation>, {
     // pauses for player input.
     const questArrival = await prepareQuestArrival({
         fromDepth: oldDepth,
-        firstVisit: !cached,
     });
     const questPortalCall = arrival === 'portal' ? null
         : await prepareMainQuestPortalCall({ firstVisit: !cached });

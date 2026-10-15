@@ -1,6 +1,7 @@
 // C invent.c:freeinv_core()/addinv_core1()/addinv_core2()/learn_unseen_invent()
 // and attrib.c:set_moreluck().
 
+import { isQuestArtifact, touchQuestArtifact } from './quest.js';
 import { artifactById, artifactByName } from './artifacts.js';
 import { recordAchievement } from './achievements.js';
 import { deactivateArtifactProperty } from './artifact_invoke.js';
@@ -127,6 +128,7 @@ export async function finishInventoryAddition(object: GameObject, state: GameSta
             : object.otyp === CANDELABRUM_OF_INVOCATION ? ACH_CNDL
                 : object.otyp === SPE_BOOK_OF_THE_DEAD ? ACH_BOOK : null;
     if (achievement !== null) recordAchievement(state, achievement);
+    if (isQuestArtifact(object, state)) await touchQuestArtifact(object, state);
     await setCarriedArtifactProperties(object, true, state);
     await reactToSeenInventoryObject(object, state);
 }

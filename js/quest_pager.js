@@ -61,7 +61,7 @@ async function prepareSection(section, messageId, state) {
         if (text.endsWith('\n'))
             lines.pop();
         return {
-            lines: lines.map(line => convertQuestLine(line, state)), output,
+            lines: lines.map(line => convertQuestLine(line, state)), output, raw: text,
             synopsis: synopsis === null ? null : convertQuestLine(synopsis, state),
         };
     }

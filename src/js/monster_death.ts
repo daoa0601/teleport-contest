@@ -446,7 +446,7 @@ export async function detachDeadMonster(
     await detachMonsterFromLevel(monster, state);
     if (state.program_state.gameover) return true;
     if (monster.iswiz) wizardDeadOrGone(state, random);
-    markQuestNemesisDead(monster, state);
+    await markQuestNemesisDead(monster, state, x, y);
     await releaseMonsterInventory(monster, state, { publish, random });
     if (state.program_state.gameover) return true;
     armorThiefGone(monster, state);
