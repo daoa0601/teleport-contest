@@ -1,3 +1,4 @@
+import { currency } from './currency.js';
 // Floor objects thrown outward by an explosion or collapsing structure.
 // C ref: explode.c:scatter() and mthrowu.c:ohitmon().
 import { monsterHasMapPosition } from './monster_location.js';
@@ -390,7 +391,7 @@ export async function scatterFloorObjects(x, y, force, { state = game, onlyObjec
         const amount = creditUsed > 0 ? creditUsed : debitAdded > 0 ? debitAdded : loanAdded;
         if (amount > 0)
             await publish(`Your ${creditUsed > 0
-                ? 'credit has been reduced' : 'debt has increased'} by ${amount} ${amount === 1 ? 'zorkmid' : 'zorkmids'}.`);
+                ? 'credit has been reduced' : 'debt has increased'} by ${amount} ${currency(amount, { state })}.`);
     }
     return moved;
 }

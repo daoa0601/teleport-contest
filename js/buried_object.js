@@ -1,3 +1,4 @@
+import { currency } from './currency.js';
 // Object burial and buried-object ownership.
 // C refs: dig.c bury_an_obj()/bury_objs() and dungeon.c earth_sense().
 import { CORR, ROOM, TT_BURIEDBALL, Upolyd } from './const.js';
@@ -79,7 +80,7 @@ export async function buryFloorObjectsAt(x, y, state = game, { publish = plineWi
     newsym(x, y);
     maybeUnhideAt(x, y, state);
     if (shop && loss) {
-        await publish(`You owe ${shopkeeperName(shop.resident, { state })} ${loss} ${loss === 1 ? 'zorkmid' : 'zorkmids'} for burying merchandise.`);
+        await publish(`You owe ${shopkeeperName(shop.resident, { state })} ${loss} ${currency(loss, { state })} for burying merchandise.`);
     }
     return buried;
 }

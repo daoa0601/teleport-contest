@@ -127,7 +127,7 @@ void test('a hallucinated gecko gives its sales pitch instead of begging noises'
     const monster = await hungryPet('gecko');
     game.u.hallucinationTurns = 10;
     await begForFood(monster, game);
-    assert.equal(await messageLine(), '"15 minutes could save you 15 zorkmids."');
+    assert.match(await messageLine(), /^"15 minutes could save you 15 [^".]+\."$/);
 });
 void test('a hallucinated gecko appearance also gives the sales pitch', async () => {
     const monster = await hungryPet('little dog');
@@ -136,7 +136,7 @@ void test('a hallucinated gecko appearance also gives the sales pitch', async ()
         kind: 'monster', mnum: MONSTER_NAME.indexOf('gecko'),
     });
     await begForFood(monster, game);
-    assert.equal(await messageLine(), '"15 minutes could save you 15 zorkmids."');
+    assert.match(await messageLine(), /^"15 minutes could save you 15 [^".]+\."$/);
 });
 void test('a deaf hero cannot hear a trumpeting pet and sleepers stay asleep', async () => {
     const monster = await hungryPet('mumak');

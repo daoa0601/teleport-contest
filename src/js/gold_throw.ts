@@ -1,3 +1,4 @@
+import { currency } from './currency.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
@@ -106,8 +107,7 @@ async function finishShopkeeperCatch(
         monster.eshk.credit = Math.max(
             0, Math.trunc(monster.eshk.credit ?? 0),
         ) + value;
-        await pline(`You have ${monster.eshk.credit} zorkmid${
-            monster.eshk.credit === 1 ? '' : 's'} in credit.`);
+        await pline(`You have ${monster.eshk.credit} ${currency(monster.eshk.credit, { state })} in credit.`);
     } else if (!heroIsDeaf(state)) {
         await pline('"Thanks, scum!"');
     }

@@ -1,3 +1,4 @@
+import { currency } from './currency.js';
 // C shk.c:sellobj() - the hero drops something in a shop and can sell it -
 // plus sellobj_state()'s command disposition.
 import { monsterGoldAmount, moneyToHero } from './shop_money.js';
@@ -75,8 +76,8 @@ export function setSellDisposition(disposition) {
 function objectQuan(object) {
     return object.quan ?? object.quantity ?? 1;
 }
-function zorkmids(amount) {
-    return `${amount} zorkmid${amount === 1 ? '' : 's'}`;
+function moneyAmount(amount, state) {
+    return `${amount} ${currency(amount, { state })}`;
 }
 function goldPieces(amount) {
     return `${amount} gold piece${amount === 1 ? '' : 's'}`;
@@ -211,7 +212,7 @@ export async function rouseShopkeeper(resident, publish = plineWithContinuation)
     }
 }
 // C shk.c:3873 donate_gold().
-export async function donateGold(amount, resident, { selling = true, publish = plineWithContinuation } = {}) {
+export async function donateGold(amount, resident, { selling = true, publish = plineWithContinuation, state = game } = {}) {
     const eshk = resident.eshk;
     if ((eshk.debit ?? 0) >= amount) {
         if (eshk.loan) {
@@ -230,10 +231,10 @@ export async function donateGold(amount, resident, { selling = true, publish = p
             await publish('Your debt is paid off.');
         }
         if (eshk.credit === delta) {
-            await publish(`You have ${selling ? '' : 're-'}established ${zorkmids(delta)} credit.`);
+            await publish(`You have ${selling ? '' : 're-'}established ${moneyAmount(delta, state)} credit.`);
         }
         else {
-            await publish(`${zorkmids(delta)} added${selling ? '' : ' back'} to your credit; total is now ${zorkmids(eshk.credit)}.`);
+            await publish(`${moneyAmount(delta, state)} added${selling ? '' : ' back'} to your credit; total is now ${moneyAmount(eshk.credit, state)}.`);
         }
     }
 }
@@ -248,7 +249,7 @@ export async function costlyGold(x, y, amount, { silent = false, publish = pline
     if ((eshk.credit ?? 0) >= amount) {
         if (!silent) {
             if ((eshk.credit ?? 0) > amount) {
-                await publish(`Your credit is reduced by ${zorkmids(amount)}.`);
+                await publish(`Your credit is reduced by ${moneyAmount(amount, state)}.`);
             }
             else {
                 await publish('Your credit is erased.');
@@ -262,10 +263,10 @@ export async function costlyGold(x, y, amount, { silent = false, publish = pline
             if (eshk.credit)
                 await publish('Your credit is erased.');
             if (eshk.debit) {
-                await publish(`Your debt increases by ${zorkmids(delta)}.`);
+                await publish(`Your debt increases by ${moneyAmount(delta, state)}.`);
             }
             else {
-                await publish(`You owe ${shopkeeperName(spot.resident)} ${zorkmids(delta)}.`);
+                await publish(`You owe ${shopkeeperName(spot.resident)} ${moneyAmount(delta, state)}.`);
             }
         }
         eshk.debit = (eshk.debit ?? 0) + delta;
@@ -540,7 +541,7 @@ export async function sellHeroDroppedObject(object, x, y, state = game, { publis
         else if (sellResponse !== 'n') {
             await publish(`${shopkeeperName(resident)} cannot pay you at present.`);
             recordObjectPriceQuote(object.otyp, Math.trunc(tmpcr / objectQuan(object)), 'sell');
-            const prefix = `Will you accept ${zorkmids(tmpcr)} in credit for `;
+            const prefix = `Will you accept ${moneyAmount(tmpcr, state)} in credit for `;
             answer = await askSell(saleQuestion(object, prefix, '?', object.quan === 1, state, 'credit'), { query });
             if (answer === 'a') {
                 answer = 'y';
@@ -552,8 +553,8 @@ export async function sellHeroDroppedObject(object, x, y, state = game, { publis
         }
         if (answer === 'y') {
             await nameShopTransaction(resident, object, it => sellHow !== SELL_NORMAL
-                ? `traded ${it} for ${zorkmids(tmpcr)} in ${(eshk.credit ?? 0) > 0 ? 'additional ' : ''}credit.`
-                : `relinquish ${it} and acquire ${zorkmids(tmpcr)} in ${(eshk.credit ?? 0) > 0
+                ? `traded ${it} for ${moneyAmount(tmpcr, state)} in ${(eshk.credit ?? 0) > 0 ? 'additional ' : ''}credit.`
+                : `relinquish ${it} and acquire ${moneyAmount(tmpcr, state)} in ${(eshk.credit ?? 0) > 0
                     ? 'additional ' : ''}credit.`, { publish, state });
             eshk.credit = (eshk.credit ?? 0) + tmpcr;
             if (container)

@@ -1,3 +1,4 @@
+import { currency } from './currency.js';
 import type { Monster } from './monster_types.js';
 import type { GameState } from './game_state.js';
 // Pet begging and animal noises shared by #chat and mounted breath fallback.
@@ -137,7 +138,7 @@ export async function publishMonsterNoise(
         if (!hallucinating || MONSTER_SOUND[monster.mnum] === MS_SILENT || monster.isshk && rn2(2) === 0)
             await chatWithShopkeeper(monster, state);
         else
-            await plineWithContinuation('"15 minutes could save you 15 zorkmids."');
+            await plineWithContinuation(`"15 minutes could save you 15 ${currency(15, { state })}."`);
         return true;
     }
     if (sound > MS_ANIMAL) return publishMonsterConversation(monster, sound, state);
