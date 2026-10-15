@@ -10,9 +10,10 @@ import { setMonsterGivenName } from './monster_given_name.js';
 import { addObjectToMonsterInventory } from './monster_inventory.js';
 import { setMonsterMalign } from './monster_alignment.js';
 import { migrateMonsterOffLevel } from './monster_migration.js';
-import { CORPSE, EGG, GOLD_PIECE, LEATHER_GLOVES, LEMBAS_WAFER, LONG_SWORD, OBJECT_NAMES, OBJECT_PROB, ROCK, SKELETON_KEY, SLIME_MOLD, TALLOW_CANDLE, TIN, TRIPE_RATION, WAX_CANDLE, getObjectClassBounds, } from './object_data.js';
+import { CORPSE, EGG, GOLD_PIECE, LEATHER_GLOVES, LEMBAS_WAFER, LONG_SWORD, OBJECT_NAMES, OBJECT_PROB, ROCK, SKELETON_KEY, SLIME_MOLD, TALLOW_CANDLE, TIN, TRIPE_RATION, WAX_CANDLE, } from './object_data.js';
 import { rn2, rnd } from './rng.js';
 import { objectWeight } from './weight.js';
+import { randomTypeByDescription } from './wish_lookup.js';
 import { deallocateObject } from './object_delete.js';
 const C_RATION = OBJECT_NAMES.indexOf('C-ration');
 const K_RATION = OBJECT_NAMES.indexOf('K-ration');
@@ -124,25 +125,9 @@ async function giveShinyLoot(monster, state) {
             deallocateObject(gem, state);
     }
     if (captain || rn2(8) === 0) {
-        const { first, last } = getObjectClassBounds(RING_CLASS);
-        const candidates = [];
-        let probability = 0;
-        for (let type = first; type <= last; type++) {
-            if (state.objectDescriptions?.[type] !== 'shiny')
-                continue;
-            candidates.push(type);
-            probability += OBJECT_PROB[type] ?? 0;
-        }
-        if (probability === 0)
-            return;
-        let choice = rn2(probability);
-        for (const type of candidates) {
-            choice -= OBJECT_PROB[type] ?? 0;
-            if (choice < 0) {
-                await addObjectToMonsterInventory(monster, await mksobj(type, true, false), state);
-                break;
-            }
-        }
+        const type = randomTypeByDescription('shiny', RING_CLASS, 0, state);
+        if (type !== null)
+            await addObjectToMonsterInventory(monster, await mksobj(type, true, false), state);
     }
 }
 async function sendRaiderToLowerMines(monster, leader, state) {
