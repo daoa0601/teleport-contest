@@ -351,6 +351,18 @@ function removeGasCloud(region, state) {
         if (cansee(cell.x, cell.y))
             newsym(cell.x, cell.y);
 }
+// C rest_regions() removes expired clouds without running their expiry callback.
+// Time spent on another level reduces a finite lifetime, never its damage.
+export function restoreLevelRegions(state, elapsed) {
+    const regions = requireGameLevel(state).regions;
+    for (const region of [...regions].reverse()) {
+        if (region.ttl < 0)
+            continue;
+        region.ttl = Math.max(0, region.ttl - elapsed);
+        if (region.ttl === 0)
+            removeGasCloud(region, state);
+    }
+}
 function expireRegions(state) {
     let dissipatedAroundHero = false;
     let dissipatedInSight = 0;
