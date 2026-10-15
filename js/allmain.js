@@ -145,7 +145,7 @@ import { monsterAlignmentType } from './monster_alignment.js';
 import { moveElementalBubbles } from './elemental.js';
 import { removeObjectAndContentsFromBill, checkSpecialRoom, currentShopResident, } from './shk.js';
 import { inventoryItemDescription, rerollMenu, } from './invent.js';
-import { hasIntrinsicProperty, hasPermanentIntrinsicProperty, propertyIsActive, propertyTimeout, refreshProperty, setPropertyTimeout, } from './properties.js';
+import { hasIntrinsicProperty, hasPermanentIntrinsicProperty, propertyIsActive, propertyTimeout, propertyIsBlocked, refreshProperty, setPropertyTimeout, } from './properties.js';
 import { heroIsUnconscious, putHeroToSleep } from './hero_sleep.js';
 import { resolveMonsterContactEffect } from './monster_contact_effects.js';
 import { setSlipperyHands } from './towel.js';
@@ -1196,12 +1196,11 @@ async function finishInitialTurnMaintenanceAfterFumbling({ sourceTurn, moveAmoun
         if (game.u.invisibleTurns === 0) {
             const stillInvisible = syncHeroInvisibility(game);
             newsym(game.u.ux, game.u.uy);
-            if (!stillInvisible && !game.blind) {
-                appendTurnMessage(game.u.seeInvisible
+            if (!stillInvisible && !propertyIsBlocked('invisible', game) && !heroIsBlind(game)) {
+                await plineWithContinuation(game.u.seeInvisible
                     ? 'You can no longer see through yourself.'
                     : 'You are no longer invisible.');
-                if (game._occupation)
-                    game._occupation = null;
+                await stopHeroOccupation(game);
             }
         }
     }
@@ -1248,7 +1247,7 @@ async function finishInitialTurnMaintenanceAfterFumbling({ sourceTurn, moveAmoun
         setPropertyTimeout('fast', game.u.veryFastTurns - 1, game);
         if (game.u.veryFastTurns === 0) {
             if (!game.u.veryFast)
-                appendTurnMessage(game.u.fast
+                await plineWithContinuation(game.u.fast
                     ? 'You feel yourself slow down a bit.'
                     : 'You feel yourself slow down.');
         }
