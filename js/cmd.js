@@ -139,7 +139,7 @@ export { getLine, promptYesNo, promptYesNoQuit } from './query.js';
 import { objectTypeCallNoun, } from './object_call.js';
 import { displayLiquidName, displayMessageWindow, newsym, feel_newsym, flushPendingTopline, flush_screen, pline, plineWithContinuation, moreUntilDismissed, docrt, bot, terrain_glyph, glyphAt, canSeeMonster, canSpotMonster, canSenseMonster, canSpotHeroSelf, unblindTelepathyRange, monsterHasWarningProjection, see_nearby_objects, show_glyph_cell, swallowed, randomDisplayMonsterName, randomDisplayMonsterSubject, see_monsters, see_objects, see_traps, transientObjectGlyph, map_invisible, unmap_invisible, map_object, unmapObject, } from './display.js';
 import { cansee, couldsee, vision_note_blocker_change, vision_recalc, vision_reset } from './vision.js';
-import { lightWieldedArtifact, transformMagicLampToOilLamp, } from './light.js';
+import { transformMagicLampToOilLamp } from './light.js';
 import { dozap, } from './zap.js';
 import { bucAdjectiveForName, checkInventoryGold, consumeInventoryItem, ddoinv, dolook, fullyIdentifyObject, inventoryItemDescription, inventoryPrimaryHandDetail, selectInventoryObject, selectUsedInventoryLetter, } from './invent.js';
 import { mergable, mergeObjectStacks } from './object_merge.js';
@@ -199,7 +199,6 @@ import { captureThrownObjectFlight, detachThrownUnit, finishHeroThrownObjectLand
 import { objectName, singularObjectName, unseenObjectNoun, } from './objnam.js';
 import { artifactById, } from './artifacts.js';
 import { invokeArtifactPower, } from './artifact_invoke.js';
-import { touchArtifactByHero } from './artifact_touch.js';
 import { SLING, BULLWHIP, GRAPPLING_HOOK, CREAM_PIE, EGG, LUMP_OF_ROYAL_JELLY, LOCK_PICK, CREDIT_CARD, STETHOSCOPE, LOADSTONE, GOLD_PIECE, BOULDER, ROCK, DILITHIUM_CRYSTAL, LUCKSTONE, TOUCHSTONE, LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK, BAG_OF_HOLDING, BAG_OF_TRICKS, BRASS_LANTERN, OIL_LAMP, MAGIC_LAMP, STATUE, RIN_PROTECTION, BANANA, MIRROR, TIN_WHISTLE, MAGIC_WHISTLE, EUCALYPTUS_LEAF, BELL, BELL_OF_OPENING, EXPENSIVE_CAMERA, TIN_OPENER, FIGURINE, LEASH, CAN_OF_GREASE, SADDLE, HORN_OF_PLENTY, TINNING_KIT, LAND_MINE, BEARTRAP, TALLOW_CANDLE, WAX_CANDLE, CANDELABRUM_OF_INVOCATION, POT_OIL, RIN_CONFLICT, MEAT_RING, OBJECT_BIMANUAL, HELM_OF_OPPOSITE_ALIGNMENT, GRAY_DRAGON_SCALES, LENSES, BLINDFOLD, TOWEL, FUMBLE_BOOTS, KICKING_BOOTS, MAGIC_MARKER, UNICORN_HORN, SHIELD_OF_REFLECTION, AMULET_OF_YENDOR, AMULET_OF_STRANGULATION, FAKE_AMULET_OF_YENDOR, SPE_NOVEL, OBJECT_DELAY, OBJECT_UNIQUE, OBJECT_DESCRIPTIONS, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_WEIGHT, OBJECT_SUBTYPE, } from './object_data.js';
 import { CLR_WHITE, NO_COLOR, } from './terminal.js';
 import { MONSTER_COLOR, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, MONSTER_SOUND, MONSTER_ALIGNMENT, MONSTER_ATTACKS, requireMonsterData, monsterTypeName, monsterClassSymbol, monsterIsHumanoid, monsterDigests, monsterSpeciesHidesOnCeiling, } from './monster_data.js';
@@ -238,8 +237,9 @@ import { heroArmName, heroFingerName, heroHandName } from './body_parts.js';
 import { armorUsesPairGrammar, withIndefiniteArticle, makePlural } from './object_grammar.js';
 import { objectWearMessage } from './object_wear_message.js';
 import { isWetTowel, willWeld } from './weapon_type.js';
-import { announceWeaponWeld, explainTwoWeaponEnd, refuseWeldedPrimary } from './weapon_feedback.js';
-import { dropCursedSecondaryWeapon, toggleTwoWeaponCombat } from './two_weapon.js';
+import { refuseWeldedPrimary } from './weapon_feedback.js';
+import { readyHeroWeapon } from './weapon_readiness.js';
+import { dropCursedSecondaryWeapon, stopTwoWeaponCombat, toggleTwoWeaponCombat } from './two_weapon.js';
 import { dist2, distmin, dungeonDepth, ledgerNo } from './hacklib.js';
 import { triggerBoobyTrap } from './booby_trap.js';
 import { addShopDamage, payForShopDamage } from './shop_damage.js';
@@ -2603,31 +2603,12 @@ async function doswapweapon() {
     }
     const oldPrimary = game.uwep || game.u?.uwep || null;
     const oldSecondary = game.uswapwep || game.u?.uswapwep || null;
-    if (!oldSecondary) {
-        if (!oldPrimary) {
-            await pline('You are already bare handed.');
-            game.context.move = 0;
-            return;
-        }
-        await plineWithContinuation('You are bare handed.');
-        await setPrimaryWeapon(null, game);
-        await setSecondaryWeapon(oldPrimary, game);
-        observeObjectForNaming(oldPrimary);
-        await plineWithContinuation(`${oldPrimary.invlet} - ${inventoryItemDescription(oldPrimary)}.`);
-        game.context.move = 1;
-        return;
-    }
     await setSecondaryWeapon(null, game);
-    observeObjectForNaming(oldSecondary);
-    if (willWeld(oldSecondary)) {
-        await announceWeaponWeld(oldSecondary);
+    const spentTime = await readyHeroWeapon(oldSecondary);
+    if (game.uwep === oldPrimary) {
+        await setSecondaryWeapon(oldSecondary, game);
     }
-    else {
-        await plineWithContinuation(`${oldSecondary.invlet} - ${inventoryItemDescription(oldSecondary, { projectPrimaryHand: true })}.`);
-    }
-    await setPrimaryWeapon(oldSecondary, game);
-    await lightWieldedArtifact(oldSecondary);
-    if (oldPrimary) {
+    else if (oldPrimary) {
         await setSecondaryWeapon(oldPrimary, game);
         observeObjectForNaming(oldPrimary);
         await plineWithContinuation(`${oldPrimary.invlet} - ${inventoryItemDescription(oldPrimary)}.`);
@@ -2635,7 +2616,7 @@ async function doswapweapon() {
     else {
         await plineWithContinuation('You have no secondary weapon readied.');
     }
-    game.context.move = 1;
+    game.context.move = spentTime ? 1 : 0;
 }
 async function dochat() {
     const species = heroSpecies(game);
@@ -5300,14 +5281,12 @@ async function dowield() {
         return;
     }
     if (selection.none) {
-        if (!game.uwep) {
-            await pline('You are already bare handed.');
-            game.context.move = 0;
-            return;
-        }
-        await plineWithContinuation('You are bare handed.');
-        await setPrimaryWeapon(null, game);
-        game.context.move = 1;
+        const oldPrimary = game.uwep || game.u.uwep;
+        const spentTime = await readyHeroWeapon(null);
+        if (game.flags.pushweapon && oldPrimary && game.uwep !== oldPrimary)
+            await setSecondaryWeapon(oldPrimary);
+        await stopTwoWeaponCombat();
+        game.context.move = spentTime ? 1 : 0;
         return;
     }
     if (!object) {
@@ -5327,35 +5306,17 @@ async function dowield() {
         game.context.move = 0;
         return;
     }
-    if (object.oartifact) {
-        const artifact = artifactById(object.oartifact);
-        const touch = await touchArtifactByHero(object, artifact);
-        if (!touch.allowed || touch.died) {
-            game.context.move = 1;
-            return;
-        }
-    }
-    observeObjectForNaming(object);
     const oldPrimary = game.uwep || game.u?.uwep || null;
-    const wasTwoWeapon = game.u.twoweap;
-    if (willWeld(object)) {
-        await announceWeaponWeld(object);
-    }
-    else {
-        const description = inventoryItemDescription(object, { projectPrimaryHand: true });
-        await plineWithContinuation(`${object.invlet} - ${description}.`);
-    }
-    await setPrimaryWeapon(object, game);
-    await explainTwoWeaponEnd(wasTwoWeapon);
-    await lightWieldedArtifact(object);
+    const spentTime = await readyHeroWeapon(object);
     // C dowield() applies pushweapon only after ready_weapon() has installed
     // the new primary.  The displaced primary becomes the authoritative
     // secondary object; preserving that identity is what makes a later
     // selection of it enter doswapweapon() and its two-prinv continuation.
-    if (game.flags?.pushweapon && oldPrimary && oldPrimary !== object) {
+    if (game.flags?.pushweapon && oldPrimary && game.uwep !== oldPrimary) {
         await setSecondaryWeapon(oldPrimary, game);
     }
-    game.context.move = 1;
+    await stopTwoWeaponCombat();
+    game.context.move = spentTime ? 1 : 0;
 }
 // C refs: do_wear.c dowear(), accessory_or_armor_on(), and the negative
 // `multi`/afternmv completion in allmain.c.  Armor is installed in its worn

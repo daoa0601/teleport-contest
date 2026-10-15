@@ -188,10 +188,7 @@ import { displayLiquidName, displayMessageWindow,
     see_traps, transientObjectGlyph, map_invisible, unmap_invisible, map_object, unmapObject,
 } from './display.js';
 import { cansee, couldsee, vision_note_blocker_change, vision_recalc, vision_reset } from './vision.js';
-import {
-    lightWieldedArtifact,
-    transformMagicLampToOilLamp,
-} from './light.js';
+import { transformMagicLampToOilLamp } from './light.js';
 import {
     dozap,
 } from './zap.js';
@@ -303,7 +300,6 @@ import {
 import {
     invokeArtifactPower,
 } from './artifact_invoke.js';
-import { touchArtifactByHero } from './artifact_touch.js';
 import {
     SLING, BULLWHIP, GRAPPLING_HOOK, CREAM_PIE, EGG, LUMP_OF_ROYAL_JELLY, LOCK_PICK,
     CREDIT_CARD, STETHOSCOPE, LOADSTONE, GOLD_PIECE, BOULDER, ROCK, DILITHIUM_CRYSTAL,
@@ -384,8 +380,9 @@ import { heroArmName, heroFingerName, heroHandName } from './body_parts.js';
 import { armorUsesPairGrammar, withIndefiniteArticle, makePlural } from './object_grammar.js';
 import { objectWearMessage } from './object_wear_message.js';
 import { isWetTowel, willWeld } from './weapon_type.js';
-import { announceWeaponWeld, explainTwoWeaponEnd, refuseWeldedPrimary } from './weapon_feedback.js';
-import { dropCursedSecondaryWeapon, toggleTwoWeaponCombat } from './two_weapon.js';
+import { refuseWeldedPrimary } from './weapon_feedback.js';
+import { readyHeroWeapon } from './weapon_readiness.js';
+import { dropCursedSecondaryWeapon, stopTwoWeaponCombat, toggleTwoWeaponCombat } from './two_weapon.js';
 import { dist2, distmin, dungeonDepth, ledgerNo } from './hacklib.js';
 import { triggerBoobyTrap } from './booby_trap.js';
 import { addShopDamage, payForShopDamage } from './shop_damage.js';
@@ -2689,38 +2686,11 @@ async function doswapweapon() {
     }
     const oldPrimary = game.uwep || game.u?.uwep || null;
     const oldSecondary = game.uswapwep || game.u?.uswapwep || null;
-    if (!oldSecondary) {
-        if (!oldPrimary) {
-            await pline('You are already bare handed.');
-            game.context.move = 0;
-            return;
-        }
-        await plineWithContinuation('You are bare handed.');
-        await setPrimaryWeapon(null, game);
-        await setSecondaryWeapon(oldPrimary, game);
-        observeObjectForNaming(oldPrimary);
-        await plineWithContinuation(
-            `${oldPrimary.invlet} - ${
-                inventoryItemDescription(oldPrimary)}.`,
-        );
-        game.context.move = 1;
-        return;
-    }
-
     await setSecondaryWeapon(null, game);
-    observeObjectForNaming(oldSecondary);
-    if (willWeld(oldSecondary)) {
-        await announceWeaponWeld(oldSecondary);
-    } else {
-        await plineWithContinuation(
-            `${oldSecondary.invlet} - ${
-                inventoryItemDescription(oldSecondary, { projectPrimaryHand: true })}.`,
-        );
-    }
-    await setPrimaryWeapon(oldSecondary, game);
-    await lightWieldedArtifact(oldSecondary);
-
-    if (oldPrimary) {
+    const spentTime = await readyHeroWeapon(oldSecondary);
+    if (game.uwep === oldPrimary) {
+        await setSecondaryWeapon(oldSecondary, game);
+    } else if (oldPrimary) {
         await setSecondaryWeapon(oldPrimary, game);
         observeObjectForNaming(oldPrimary);
         await plineWithContinuation(
@@ -2730,7 +2700,7 @@ async function doswapweapon() {
     } else {
         await plineWithContinuation('You have no secondary weapon readied.');
     }
-    game.context.move = 1;
+    game.context.move = spentTime ? 1 : 0;
 }
 
 async function dochat() {
@@ -5421,14 +5391,12 @@ async function dowield(): Promise<void> {
         return;
     }
     if (selection.none) {
-        if (!game.uwep) {
-            await pline('You are already bare handed.');
-            game.context.move = 0;
-            return;
-        }
-        await plineWithContinuation('You are bare handed.');
-        await setPrimaryWeapon(null, game);
-        game.context.move = 1;
+        const oldPrimary = game.uwep || game.u.uwep;
+        const spentTime = await readyHeroWeapon(null);
+        if (game.flags.pushweapon && oldPrimary && game.uwep !== oldPrimary)
+            await setSecondaryWeapon(oldPrimary);
+        await stopTwoWeaponCombat();
+        game.context.move = spentTime ? 1 : 0;
         return;
     }
 
@@ -5450,35 +5418,17 @@ async function dowield(): Promise<void> {
         game.context.move = 0;
         return;
     }
-    if (object.oartifact) {
-        const artifact = artifactById(object.oartifact);
-        const touch = await touchArtifactByHero(object, artifact);
-        if (!touch.allowed || touch.died) {
-            game.context.move = 1;
-            return;
-        }
-    }
-
-    observeObjectForNaming(object);
     const oldPrimary = game.uwep || game.u?.uwep || null;
-    const wasTwoWeapon = game.u.twoweap;
-    if (willWeld(object)) {
-        await announceWeaponWeld(object);
-    } else {
-        const description = inventoryItemDescription(object, { projectPrimaryHand: true });
-        await plineWithContinuation(`${object.invlet} - ${description}.`);
-    }
-    await setPrimaryWeapon(object, game);
-    await explainTwoWeaponEnd(wasTwoWeapon);
-    await lightWieldedArtifact(object);
+    const spentTime = await readyHeroWeapon(object);
     // C dowield() applies pushweapon only after ready_weapon() has installed
     // the new primary.  The displaced primary becomes the authoritative
     // secondary object; preserving that identity is what makes a later
     // selection of it enter doswapweapon() and its two-prinv continuation.
-    if (game.flags?.pushweapon && oldPrimary && oldPrimary !== object) {
+    if (game.flags?.pushweapon && oldPrimary && game.uwep !== oldPrimary) {
         await setSecondaryWeapon(oldPrimary, game);
     }
-    game.context.move = 1;
+    await stopTwoWeaponCombat();
+    game.context.move = spentTime ? 1 : 0;
 }
 
 // C refs: do_wear.c dowear(), accessory_or_armor_on(), and the negative
