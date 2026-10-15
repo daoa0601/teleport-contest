@@ -85,7 +85,7 @@ import { summonMonsterInsects } from './monster_spell_insects.js';
 import { applyHeroLiquidEffects, continueCountedCommand, continueRun, finishArmorRemoval, getLine, promptYesNo, rhack, } from './cmd.js';
 import { finishDestinationSpotEffects } from './location_effects.js';
 import { performQuestExpulsion } from './quest.js';
-import { resurrectWizard } from './wizard.js';
+import { amuletTurn, resurrectWizard } from './wizard.js';
 import { finishHeroLiquidMonsterDeath, finishHeroMonsterKill, } from './hero_monster_death.js';
 import { aggravateMonsters, angerMonster } from './monster_anger.js';
 import { grantAmuletWish } from './wish.js';
@@ -556,6 +556,8 @@ async function finishInitialTurnMaintenanceAfterIntervention(sourceTurn) {
 // monster generation, ambient feature sounds, hunger, and engraving wear.
 async function finishInitialTurnMaintenanceRng(sourceTurn) {
     const game = requireInitializedGame();
+    if (game.u.uhave.amulet)
+        await amuletTurn(game);
     if (!rn2(40 + currentAttribute(A_DEX) * 3))
         wipeHeroEngraving(rnd(3));
     // allmain.c's demigod intervention clock advances after engraving wear
