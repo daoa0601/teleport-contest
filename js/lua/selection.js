@@ -57,7 +57,8 @@ export function createSelectionApi(context, invoke = null) {
             throw new TypeError(`Unknown selection growth direction: ${name}`);
         return wrap(selectionValue(self).grow(name));
     };
-    const rndcoord = (self, remove = 0) => pointTable(relativePoint(selectionValue(self).randomCoordinate(!!luaInteger(remove ?? 0))));
+    const rndcoord = (self, remove = 0) => pointTable(relativePoint(selectionValue(self).randomCoordinate(!!luaInteger(remove ?? 0)))
+        ?? { x: -1, y: -1 });
     const bounds = (self) => boundsTable(selectionValue(self).bounds());
     const ellipse = async (circular, args) => {
         const hasSelection = args[0] instanceof LuaUserdata;

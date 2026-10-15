@@ -45,3 +45,18 @@ void test('Lua circles and ellipses carve outlines or filled areas relative to t
     assert.equal(level.requireAt(34, 9).typ, ROOM, 'the ellipse reaches its horizontal radius');
     assert.equal(level.requireAt(31, 11).typ, STONE, 'the ellipse respects its vertical radius');
 });
+
+void test('an exhausted Lua selection returns the absent-coordinate sentinel', async t => {
+    const lua = await levelLua(t);
+    await lua.executeAsync(`
+        des.map({ x = 10, y = 5, map = [[...]] })
+        local remaining = selection.area(1, 0, 1, 0)
+        local first = remaining:rndcoord(1)
+        des.object({ id = "rock", coord = first })
+        local absent = remaining:rndcoord()
+        absent_x, absent_y = absent.x, absent.y
+    `);
+    assert.equal(lua.getGlobal('absent_x'), -1);
+    assert.equal(lua.getGlobal('absent_y'), -1);
+    assert.equal(requireGameLevel().objects[11]?.[5]?.length, 1);
+});

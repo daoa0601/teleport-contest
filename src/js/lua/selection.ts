@@ -85,9 +85,10 @@ export function createSelectionApi(context: ContextSource, invoke: InvokeSelecti
             throw new TypeError(`Unknown selection growth direction: ${name}`);
         return wrap(selectionValue(self).grow(name));
     };
-    const rndcoord = (self: LuaValue, remove: LuaValue = 0) => pointTable(relativePoint(
-        selectionValue(self).randomCoordinate(!!luaInteger(remove ?? 0)),
-    ));
+    const rndcoord = (self: LuaValue, remove: LuaValue = 0) => pointTable(
+        relativePoint(selectionValue(self).randomCoordinate(!!luaInteger(remove ?? 0)))
+            ?? { x: -1, y: -1 },
+    );
     const bounds = (self: LuaValue) => boundsTable(selectionValue(self).bounds());
     const ellipse = async (circular: boolean, args: LuaValue[]) => {
         const hasSelection = args[0] instanceof LuaUserdata;
