@@ -1,4 +1,4 @@
-import { SpecialSelection, specialSelectionFillRect, specialSelectionFloodFill, specialSelectionLine, specialSelectionMatch, specialSelectionRandLine, specialSelectionRect, selection_from_mkroom, selection_do_ellipse, selection_do_gradient, SEL_GRADIENT_RADIAL, SEL_GRADIENT_SQUARE, } from '../selvar.js';
+import { SpecialSelection, specialSelectionFillRect, specialSelectionFloodFill, specialSelectionLine, specialSelectionMatch, specialSelectionRandLine, specialSelectionRect, selection_from_mkroom, selection_do_ellipse, selection_do_gradient, selection_getpoint, selection_setpoint, SEL_GRADIENT_RADIAL, SEL_GRADIENT_SQUARE, } from '../selvar.js';
 import { LuaTable, LuaUserdata } from './runtime.js';
 import { luaInteger, luaString, luaTruthy } from './arguments.js';
 import { ANY_LOC, getLocationCoord } from '../special_location.js';
@@ -33,16 +33,21 @@ export function createSelectionApi(context, invoke = null) {
             y: point.y - active.ystart,
         };
     };
-    const set = async (self, x = null, y = null, value = 1) => {
-        const selection = selectionValue(self);
-        const coordinate = x === null && y === null ? null
+    const set = async (...args) => {
+        const self = args[0] instanceof LuaUserdata ? args.shift() : undefined;
+        const selection = self ? selectionValue(self) : new SpecialSelection();
+        const coordinate = args.length === 0 ? null
+            : { x: luaInteger(args[0]), y: luaInteger(args[1]) };
+        const point = await getLocationCoord(currentContext(), coordinate, ANY_LOC);
+        selection_setpoint(point.x, point.y, selection.selection, luaInteger(args[2] ?? 1));
+        return self ?? wrap(selection);
+    };
+    const get = async (self, x, y = null) => {
+        const coordinate = x instanceof LuaTable
+            ? { x: luaInteger(x.get('x') ?? x.get(1)), y: luaInteger(x.get('y') ?? x.get(2)) }
             : { x: luaInteger(x), y: luaInteger(y) };
         const point = await getLocationCoord(currentContext(), coordinate, ANY_LOC);
-        if (luaInteger(value ?? 1))
-            selection.add(point.x, point.y);
-        else
-            selection.remove(point.x, point.y);
-        return self;
+        return selection_getpoint(point.x, point.y, selectionValue(self).selection);
     };
     const clone = (self) => wrap(selectionValue(self).clone());
     const numpoints = (self) => selectionValue(self).numPoints();
@@ -61,15 +66,15 @@ export function createSelectionApi(context, invoke = null) {
         ?? { x: -1, y: -1 });
     const bounds = (self) => boundsTable(selectionValue(self).bounds());
     const ellipse = async (circular, args) => {
-        const hasSelection = args[0] instanceof LuaUserdata;
-        const result = hasSelection ? selectionValue(args.shift()) : new SpecialSelection();
+        const self = args[0] instanceof LuaUserdata ? args.shift() : undefined;
+        const result = self ? selectionValue(self) : new SpecialSelection();
         const x = luaInteger(args[0]), y = luaInteger(args[1]);
         const radiusX = luaInteger(args[2]);
         const radiusY = circular ? radiusX : luaInteger(args[3]);
         const filled = luaInteger(args[circular ? 3 : 4] ?? 0);
         const point = await getLocationCoord(currentContext(), { x, y }, ANY_LOC);
         selection_do_ellipse(result.selection, point.x, point.y, radiusX, radiusY, !filled);
-        return wrap(result);
+        return self ?? wrap(result);
     };
     const gradient = (options) => {
         if (!(options instanceof LuaTable))
@@ -106,6 +111,7 @@ export function createSelectionApi(context, invoke = null) {
     };
     const methods = {
         set,
+        get,
         clone,
         numpoints,
         negate,

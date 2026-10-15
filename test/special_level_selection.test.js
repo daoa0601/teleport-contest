@@ -72,4 +72,22 @@ void test('Lua gradients carve the guaranteed center and exclude terrain beyond 
     assert.equal(level.requireAt(16, 13).typ, STONE);
     assert.equal(level.requireAt(36, 13).typ, STONE);
 });
+void test('Lua level selections preserve point values and support coordinate-table reads', async (t) => {
+    const lua = await levelLua(t);
+    await lua.executeAsync(`
+        des.map({ x = 10, y = 5, map = [[...]] })
+        local points = selection.set(1, 0)
+        points:set(2, 0, 7)
+        first_value = points:get({1, 0})
+        second_value = points:get(2, 0)
+        points:set(1, 0, 0)
+        cleared_value = points:get({x = 1, y = 0})
+        des.terrain(points, "#")
+    `);
+    assert.equal(lua.getGlobal('first_value'), 1);
+    assert.equal(lua.getGlobal('second_value'), 7);
+    assert.equal(lua.getGlobal('cleared_value'), 0);
+    assert.equal(requireGameLevel().requireAt(11, 5).typ, ROOM);
+    assert.notEqual(requireGameLevel().requireAt(12, 5).typ, ROOM);
+});
 //# sourceMappingURL=special_level_selection.test.js.map
