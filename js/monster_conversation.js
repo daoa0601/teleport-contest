@@ -4,8 +4,10 @@ import { endVoluntaryMultiTurn } from './command_state.js';
 import { Upolyd, In_endgame } from './const.js';
 import { plineWithContinuation as pline } from './display.js';
 import { heroGoldAmount } from './hero_gold.js';
+import { monsterAlignmentType } from './monster_alignment.js';
 import { heroPolyGender, heroSpecies } from './hero_species.js';
 import { aggravateMonsters } from './monster_anger.js';
+import { publishMonsterCuss } from './monster_cuss.js';
 import { AT_TUCH, AD_SSEX } from './monster_attack_types.js';
 import { MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL, monsterIsPlayerMonster, monsterTypeName } from './monster_data.js';
 import { monsterName, monsterPossessive } from './monster_name.js';
@@ -33,6 +35,7 @@ const MS_DJINNI = 29;
 const MS_NURSE = 30;
 const MS_SEDUCE = 31;
 const MS_VAMPIRE = 32;
+const MS_CUSS = 34;
 const MS_RIDER = 35;
 const MS_SPELL = 42;
 const MS_BOAST = 43;
@@ -122,6 +125,13 @@ export async function publishMonsterConversation(monster, sound, state) {
             break;
         case MS_VAMPIRE:
             reply.speech = vampireReply(monster, state);
+            break;
+        case MS_CUSS:
+            if (!monster.mpeaceful)
+                await publishMonsterCuss(monster, state);
+            else
+                reply.speech = (MONSTER_FLAGS2[monster.mnum] ?? 0) & 0x1000
+                    && monsterAlignmentType(monster) === 1 ? "It's not too late." : "We're all doomed.";
             break;
         case MS_SEDUCE:
             if (MONSTER_SYMBOL[monster.mnum] !== S_NYMPH
