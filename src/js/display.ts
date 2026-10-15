@@ -8,7 +8,7 @@ import { MAP_SYMBOLS } from './map_symbols.js';
 import { CmapSymbol, GlyphOffset, altarToGlyph, cmapToGlyph } from './glyph_numbers.js';
 import { heroDetectsMonsters, heroIsBlind, heroIsHallucinating } from './senses.js';
 import { drawbridgeUnderlyingType } from './drawbridge_terrain.js';
-import { terrainCoversObjectsAt } from './terrain_properties.js';
+import { isIceAt, isPoolAt, isPoolOrLavaAt, terrainCoversObjectsAt } from './terrain_properties.js';
 import { heroWarnsOfMonster } from './hero_species.js';
 import { artifactWarningFeedback } from './artifact_warning.js';
 import { currentAttribute } from './attrib.js';
@@ -30,7 +30,7 @@ import {
     HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER,
     CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL,
     TREE, IRONBARS, POOL, MOAT, WATER, LAVAPOOL, LAVAWALL, AIR, CLOUD,
-    IS_POOL, IS_LAVA, IS_OBSTRUCTED, IS_ROOM, IS_WALL, LADDER, LA_DOWN, DBWALL, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN,
+    IS_POOL, IS_OBSTRUCTED, IS_ROOM, IS_WALL, LADDER, LA_DOWN, DBWALL, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN,
     D_NODOOR, D_ISOPEN, D_CLOSED, D_LOCKED, D_BROKEN,
     SV0, SV1, SV2, SV3, SV4, SV5, SV6, SV7,
     WM_X_TL, WM_X_TR, WM_X_BL, WM_X_BR, WM_X_TLBR, WM_X_BLTR,
@@ -289,8 +289,7 @@ export function canSenseMonster(monster: Monster | null | undefined) {
     if (game.u?.uinwater || game.underwater) {
         const distance = (monster.mx - game.u.ux) ** 2
             + (monster.my - game.u.uy) ** 2;
-        const location = game.level?.at(monster.mx, monster.my);
-        if (distance > 2 || !location || !IS_POOL(location.typ)) return false;
+        if (distance > 2 || !isPoolAt(monster.mx, monster.my)) return false;
     }
     return senseWithTelepathy(monster)
         || heroWarnsOfMonster(monster)
@@ -1733,7 +1732,7 @@ export function newsym(x: number, y: number) {
 
     const monster = monsterAtMapCell(x, y);
     const region = physicallyVisible ? visibleMapRegionAt(x, y) : null;
-    if (region && (ACCESSIBLE(loc.typ) || IS_POOL(loc.typ) || IS_LAVA(loc.typ))
+    if (region && (ACCESSIBLE(loc.typ) || isPoolOrLavaAt(x, y))
         && !monsterOverridesMapRegion(monster, x, y)) {
         // region.c:show_region() uses the gas-cloud cmap glyph.  Visible gas
         // overlays ordinary distant monsters but not sensed/warned or
@@ -2050,10 +2049,7 @@ function restrictedUnderwaterView() {
 }
 
 function underwaterTerrain(x: number, y: number) {
-    const location = game.level?.at(x, y);
-    const typ = location?.typ === DRAWBRIDGE_UP
-        ? drawbridgeUnderlyingType(location.drawbridgemask ?? 0) : location?.typ;
-    return (typ !== undefined && IS_POOL(typ)) || typ === LAVAPOOL || typ === LAVAWALL || typ === ICE;
+    return isPoolOrLavaAt(x, y) || isIceAt(x, y);
 }
 
 // C under_water()/under_ground(): map memory survives while the viewport is

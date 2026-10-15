@@ -7,7 +7,7 @@ import { MAP_SYMBOLS } from './map_symbols.js';
 import { CmapSymbol, GlyphOffset, altarToGlyph, cmapToGlyph } from './glyph_numbers.js';
 import { heroDetectsMonsters, heroIsBlind, heroIsHallucinating } from './senses.js';
 import { drawbridgeUnderlyingType } from './drawbridge_terrain.js';
-import { terrainCoversObjectsAt } from './terrain_properties.js';
+import { isIceAt, isPoolAt, isPoolOrLavaAt, terrainCoversObjectsAt } from './terrain_properties.js';
 import { heroWarnsOfMonster } from './hero_species.js';
 import { artifactWarningFeedback } from './artifact_warning.js';
 import { currentAttribute } from './attrib.js';
@@ -22,7 +22,7 @@ import { statusTerrain } from './status_terrain.js';
 import { hitpointBar } from './status_hitpoint_bar.js';
 import { criticallyLowHp } from './prayer_trouble.js';
 import { cansee, couldsee, set_seenv, vision_recalc } from './vision.js';
-import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, ACCESSIBLE, BC_BALL, BC_CHAIN, COLNO, ROWNO, STONE, ROOM, CORR, SCORR, SDOOR, DOOR, STAIRS, FOUNTAIN, THRONE, SINK, GRAVE, ALTAR, ICE, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER, CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL, TREE, IRONBARS, POOL, MOAT, WATER, LAVAPOOL, LAVAWALL, AIR, CLOUD, IS_POOL, IS_LAVA, IS_OBSTRUCTED, IS_ROOM, IS_WALL, LADDER, LA_DOWN, DBWALL, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN, D_NODOOR, D_ISOPEN, D_CLOSED, D_LOCKED, D_BROKEN, SV0, SV1, SV2, SV3, SV4, SV5, SV6, SV7, WM_X_TL, WM_X_TR, WM_X_BL, WM_X_BR, WM_X_TLBR, WM_X_BLTR, BEAR_TRAP, WEB, VIBRATING_SQUARE, CORPSTAT_GENDER, CORPSTAT_FEMALE, ENGRAVE, BURN, HEADSTONE, is_pit, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, def_warnsyms, MON_STILL_ARRIVING, In_endgame, In_quest, Is_rogue_level, Is_waterlevel, Is_knox_level, In_sokoban, PLNMSG_UNKNOWN, MONSEEN_NORMAL, MONSEEN_SEEINVIS, MONSEEN_INFRAVIS, MONSEEN_TELEPAT, MONSEEN_XRAYVIS, MONSEEN_DETECT, MONSEEN_WARNMON, PICK_NONE, PICK_ONE, Upolyd, ismnum, } from './const.js';
+import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, ACCESSIBLE, BC_BALL, BC_CHAIN, COLNO, ROWNO, STONE, ROOM, CORR, SCORR, SDOOR, DOOR, STAIRS, FOUNTAIN, THRONE, SINK, GRAVE, ALTAR, ICE, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER, CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL, TREE, IRONBARS, POOL, MOAT, WATER, LAVAPOOL, LAVAWALL, AIR, CLOUD, IS_POOL, IS_OBSTRUCTED, IS_ROOM, IS_WALL, LADDER, LA_DOWN, DBWALL, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN, D_NODOOR, D_ISOPEN, D_CLOSED, D_LOCKED, D_BROKEN, SV0, SV1, SV2, SV3, SV4, SV5, SV6, SV7, WM_X_TL, WM_X_TR, WM_X_BL, WM_X_BR, WM_X_TLBR, WM_X_BLTR, BEAR_TRAP, WEB, VIBRATING_SQUARE, CORPSTAT_GENDER, CORPSTAT_FEMALE, ENGRAVE, BURN, HEADSTONE, is_pit, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, def_warnsyms, MON_STILL_ARRIVING, In_endgame, In_quest, Is_rogue_level, Is_waterlevel, Is_knox_level, In_sokoban, PLNMSG_UNKNOWN, MONSEEN_NORMAL, MONSEEN_SEEINVIS, MONSEEN_INFRAVIS, MONSEEN_TELEPAT, MONSEEN_XRAYVIS, MONSEEN_DETECT, MONSEEN_WARNMON, PICK_NONE, PICK_ONE, Upolyd, ismnum, } from './const.js';
 import { NO_COLOR, ATR_INVERSE, CLR_BLACK, CLR_RED, CLR_GREEN, CLR_GRAY, CLR_BROWN, CLR_MAGENTA, CLR_CYAN, CLR_WHITE, CLR_YELLOW, CLR_BLUE, CLR_ORANGE, CLR_BRIGHT_GREEN, CLR_BRIGHT_BLUE, CLR_BRIGHT_MAGENTA, DEC_TO_UNICODE, } from './terminal.js';
 import { LARGE_BOX, CHEST, GOLD_PIECE, FOOD_RATION, CORPSE, TOWEL, STATUE, BOULDER, OBJECT_BASES, OBJECT_COLOR, } from './object_data.js';
 import { MONSTER_COLOR, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_FLAGS3, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SYMBOL, SPECIAL_PM, monsterTypeName, } from './monster_data.js';
@@ -188,8 +188,7 @@ export function canSenseMonster(monster) {
     if (game.u?.uinwater || game.underwater) {
         const distance = (monster.mx - game.u.ux) ** 2
             + (monster.my - game.u.uy) ** 2;
-        const location = game.level?.at(monster.mx, monster.my);
-        if (distance > 2 || !location || !IS_POOL(location.typ))
+        if (distance > 2 || !isPoolAt(monster.mx, monster.my))
             return false;
     }
     return senseWithTelepathy(monster)
@@ -1677,7 +1676,7 @@ export function newsym(x, y) {
         engraving.erevealed = true;
     const monster = monsterAtMapCell(x, y);
     const region = physicallyVisible ? visibleMapRegionAt(x, y) : null;
-    if (region && (ACCESSIBLE(loc.typ) || IS_POOL(loc.typ) || IS_LAVA(loc.typ))
+    if (region && (ACCESSIBLE(loc.typ) || isPoolOrLavaAt(x, y))
         && !monsterOverridesMapRegion(monster, x, y)) {
         // region.c:show_region() uses the gas-cloud cmap glyph.  Visible gas
         // overlays ordinary distant monsters but not sensed/warned or
@@ -2000,10 +1999,7 @@ function restrictedUnderwaterView() {
     return !!(game.u?.uinwater || game.underwater) && !Is_waterlevel(game.u?.uz);
 }
 function underwaterTerrain(x, y) {
-    const location = game.level?.at(x, y);
-    const typ = location?.typ === DRAWBRIDGE_UP
-        ? drawbridgeUnderlyingType(location.drawbridgemask ?? 0) : location?.typ;
-    return (typ !== undefined && IS_POOL(typ)) || typ === LAVAPOOL || typ === LAVAWALL || typ === ICE;
+    return isPoolOrLavaAt(x, y) || isIceAt(x, y);
 }
 // C under_water()/under_ground(): map memory survives while the viewport is
 // restricted. A full underground reset is blank until the next hero update.
