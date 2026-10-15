@@ -1,5 +1,5 @@
-import { ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, COLNO, DART_TRAP, FIRE_TRAP, HOLE, LANDMINE, LEVEL_TELEP, MAGIC_PORTAL, MAGIC_TRAP, PIT, POLY_TRAP, ROCKTRAP, ROLLING_BOULDER_TRAP, ROWNO, RUST_TRAP, SLP_GAS_TRAP, SPIKED_PIT, SQKY_BOARD, STATUE_TRAP, TELEP_TRAP, TRAPDOOR, VIBRATING_SQUARE, WEB, } from '../const.js';
-import { OBJECT_BASES, OBJECT_DESCRIPTIONS, OBJECT_NAMES, } from '../object_data.js';
+import { ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, COLNO, CORPSTAT_FEMALE, CORPSTAT_HISTORIC, CORPSTAT_MALE, DART_TRAP, FIRE_TRAP, HOLE, LANDMINE, LEVEL_TELEP, MAGIC_PORTAL, MAGIC_TRAP, PIT, POLY_TRAP, ROCKTRAP, ROLLING_BOULDER_TRAP, ROWNO, RUST_TRAP, SLP_GAS_TRAP, SPIKED_PIT, SQKY_BOARD, STATUE_TRAP, TELEP_TRAP, TRAPDOOR, VIBRATING_SQUARE, WEB, } from '../const.js';
+import { CORPSE, EGG, FIGURINE, OBJECT_BASES, OBJECT_DESCRIPTIONS, OBJECT_NAMES, STATUE, TIN, } from '../object_data.js';
 import { MONSTER_NAME, monsterTypeName } from '../monster_data.js';
 import { game } from '../gstate.js';
 import { LuaTable, luaValueToJs } from './runtime.js';
@@ -59,15 +59,18 @@ function tableOptions(value) {
         const entry = value.get(key);
         if (entry == null)
             continue;
-        if (typeof entry !== 'number')
-            throw new TypeError(`des.${key} must be a number`);
+        if ((key === 'spe' || key === 'quantity') && typeof entry === 'string'
+            && entry.toLowerCase() === 'random')
+            continue;
+        if (typeof entry !== 'number' || !Number.isInteger(entry))
+            throw new TypeError(`des.${key} must be an integer`);
         options[key] = entry;
     }
     for (const key of [
         'achievement', 'adjacentok', 'arrival_room', 'asleep', 'avenge', 'broken',
         'buried', 'cancelled', 'confused', 'countbirth', 'deadends', 'degrade', 'dishwasher',
         'exclude_islev', 'female', 'greased', 'group', 'guardobjects', 'historic',
-        'ignorewater', 'invisible', 'irregular', 'joined', 'keep_default_invent',
+        'ignorewater', 'invisible', 'irregular', 'joined', 'keep_default_invent', 'laid_by_you',
         'lit', 'locked', 'looted', 'male', 'peaceful', 'pudding', 'region_islev', 'revived', 'ring', 'seen',
         'smoothed', 'spider_on_web', 'stocked', 'stunned', 'swarm', 'tail', 'trap_known',
         'trapped', 'victim', 'waiting', 'walled', 'warned'
@@ -196,24 +199,35 @@ function objectOptions(id, x, y) {
         ?? point(luaArgument(x), luaArgument(y));
     const corpseMonster = options.montype == null
         ? null : String(options.montype);
-    const spinachTin = typeof options.id === 'string'
-        && options.id.toLowerCase() === 'tin'
+    const objectType = options.id ? objectTypeForName(options.id, options.class) : null;
+    const speciesObject = objectType !== null && [STATUE, CORPSE, EGG, TIN, FIGURINE].includes(objectType);
+    const spinachTin = objectType === TIN
         && corpseMonster?.toLowerCase() === 'spinach';
-    const corpseMonsterClass = corpseMonster?.length === 1
+    const noSpecies = spinachTin || (objectType === TIN || objectType === EGG)
+        && corpseMonster?.toLowerCase() === 'empty';
+    const corpseMonsterClass = speciesObject && corpseMonster?.length === 1
         ? MONSTER_CLASS_SYMBOLS.indexOf(corpseMonster) : null;
-    if (corpseMonster?.length === 1 && (corpseMonsterClass == null || corpseMonsterClass < 1))
+    if (speciesObject && corpseMonster?.length === 1 && (corpseMonsterClass == null || corpseMonsterClass < 1))
         throw new Error(`unknown Lua monster class ${corpseMonster}`);
+    if (objectType === STATUE || objectType === CORPSE) {
+        options.spe = (options.historic ? CORPSTAT_HISTORIC : 0)
+            | (options.male ? CORPSTAT_MALE : 0) | (options.female ? CORPSTAT_FEMALE : 0);
+    }
+    else if (objectType === EGG) {
+        options.spe = options.laid_by_you ? 1 : 0;
+    }
+    else if (objectType === TIN || objectType === FIGURINE) {
+        options.spe = spinachTin ? 1 : 0;
+    }
     return {
         ...options,
         point: location,
         objectClass: options.class
             ? objectClassForSymbol(options.class) : null,
-        objectType: options.id
-            ? objectTypeForName(options.id, options.class) : null,
-        monsterType: corpseMonster && corpseMonster.length > 1 && !spinachTin
+        objectType,
+        monsterType: speciesObject && corpseMonster && corpseMonster.length > 1 && !noSpecies
             ? monsterTypeForName(corpseMonster).type : null,
         monsterClass: corpseMonsterClass,
-        spinachTin,
     };
 }
 function monsterTypeForName(name) {

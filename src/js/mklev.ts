@@ -6274,10 +6274,6 @@ async function createLuaObjectPiece(
         unblessObjectState(object);
     }
     if (corpseSpecies !== null) set_corpsenm(object, corpseSpecies);
-    if (options.spinachTin) {
-        object.corpsenm = -1;
-        object.spe = 1;
-    }
     if (options.eroded) {
         if (options.eroded < 0) {
             object.oerodeproof = true;
@@ -6308,11 +6304,6 @@ async function createLuaObjectPiece(
     if (options.trapped !== false && Object.hasOwn(options, 'trap_known'))
         object.tknown = !!options.trap_known;
     object.greased = !!options.greased;
-    if (objectType === STATUE || objectType === CORPSE) {
-        object.spe = (options.historic ? CORPSTAT_HISTORIC : 0)
-            | (options.male ? CORPSTAT_MALE : 0)
-            | (options.female ? CORPSTAT_FEMALE : 0);
-    }
     if (options.name) {
         const artifact = artifactByName(options.name);
         if (artifact?.baseType === object.otyp) {

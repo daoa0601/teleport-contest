@@ -386,3 +386,21 @@ void test('Lua blessing options leave gold uncursed and unblessed', async t => {
         assert.equal(!!object.blessed, false);
     }
 });
+
+void test('Lua species-bearing objects accept native empty tokens and egg ownership', async t => {
+    const lua = await levelLua(t);
+    await lua.executeAsync(`
+        des.map({ x = 10, y = 5, map = [[.....]] })
+        des.object({ id = "tin", montype = "empty", x = 0, y = 0 })
+        des.object({ id = "tin", montype = "spinach", x = 1, y = 0 })
+        des.object({ id = "egg", montype = "red dragon", x = 2, y = 0, laid_by_you = 1 })
+        des.object({ id = "figurine", montype = "newt", x = 3, y = 0, spe = 9 })
+        des.object({ id = "dagger", x = 4, y = 0, spe = "random", quantity = "random" })
+    `);
+    const level = requireGameLevel();
+    assert.equal(level.objects[10]?.[5]?.[0]?.spe, 0);
+    assert.equal(level.objects[11]?.[5]?.[0]?.spe, 1);
+    assert.equal(level.objects[12]?.[5]?.[0]?.spe, 1, 'an egg laid by the hero retains that ownership');
+    assert.equal(level.objects[13]?.[5]?.[0]?.spe, 0, 'figurines reserve spe rather than accepting an enchantment');
+    assert.equal(level.objects[14]?.[5]?.length, 1);
+});
