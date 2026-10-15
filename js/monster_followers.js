@@ -7,13 +7,14 @@ import { releaseMonsterLeash } from './monster_leash.js';
 import { detachMonsterFromLevel } from './monster_level_departure.js';
 import { migrateMonsterOffLevel, prepareMonsterDeparture } from './monster_migration.js';
 import { monsterName, possessiveName } from './monster_name.js';
+import { finishMonsterEating } from './monster_eating.js';
 import { tryMonsterTrapEscape } from './monster_trap_escape.js';
 import { AMULET_OF_YENDOR } from './object_data.js';
 const M2_STALK = 0x01000000;
 const PM_GRID_BUG = MONSTER_NAME.indexOf('grid bug');
 // The caller skips this entire transaction when iflags.nofollowers is set.
 // Returned monsters are detached from the old level in native mydogs order.
-export async function collectLevelFollowers(state = game) {
+export async function collectLevelFollowers(state = game, petsOnly = false) {
     requireLiveGame(state);
     requirePlayingGame(state);
     const level = state.level;
@@ -22,6 +23,14 @@ export async function collectLevelFollowers(state = game) {
     for (const monster of level.monsters.slice().reverse()) {
         if (monster.mhp <= 0)
             continue;
+        if (petsOnly) {
+            if (!monster.mtame)
+                continue;
+            monster.mtrapped = 0;
+            finishMonsterEating(monster, state);
+            monster.msleeping = monster.mfrozen = 0;
+            monster.mcanmove = 1;
+        }
         const follows = (nearHero(monster, state) && levelFollower(monster, state)
             || state.u.uhave.amulet && monster.iswiz)
             && (!(monster.msleeping || !monster.mcanmove) || monster === state.u.usteed)

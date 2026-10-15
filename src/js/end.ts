@@ -14,6 +14,7 @@ import { game, requireGameLevel, requireInitializedGame } from './gstate.js';
 import { expelHero, releaseHeroFromMonster } from './hero_expulsion.js';
 import { heroFormSticks } from './hero_species.js';
 import { monsterName } from './monster_name.js';
+import { collectLevelFollowers } from './monster_followers.js';
 import { nhgetch } from './input.js';
 import {
     bot, clearMessageWindow, displayMessageWindow, flush_screen, pline, plineWithContinuation,
@@ -47,7 +48,7 @@ import { restoreHeroNutrition } from './hunger.js';
 import {
     A_CON, A_WIS, ACH_BLND, ACH_NUDE, ACH_UWIN, ASCENDED, BURNING, CHOKING, DIED, ESCAPED, G_EXTINCT, G_GENOD, GENOCIDED,
     PANICKED, QUIT, STARVING, STONING, TRICKED,
-    In_endgame, In_quest, Is_astralevel, KILLED_BY, KILLED_BY_AN, NO_KILLER_PREFIX, PICK_ONE, STRAT_WAITFORU, TT_LAVA, Upolyd,
+    In_endgame, In_quest, Is_astralevel, KILLED_BY, KILLED_BY_AN, NO_KILLER_PREFIX, PICK_ONE, TT_LAVA, Upolyd,
 } from './const.js';
 import {
     AMULET_OF_LIFE_SAVING, AMULET_OF_YENDOR, BELL_OF_OPENING,
@@ -72,7 +73,6 @@ import { loadScoreRecords, saveScoreRecords } from './score_records.js';
 import { requireInitializedHero } from './hero_types.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
-import type { Monster } from './monster_types.js';
 import type { InventoryMenuItem, TextMenuEntry, TextMenuLine, TextPage } from './windows.js';
 import type { ScoreOutcome, ScoreRecord } from './score_records.js';
 
@@ -1516,12 +1516,12 @@ export async function finishLivingGame(outcome: LivingOutcome) {
     await startGameExit(outcome);
     const taken = await settleGameExit(outcome);
     const showSummary = await discloseGame({ deathVerb: outcome, taken });
-    const pets = takeEscapingPets();
+    const pets = await collectLevelFollowers(game, true);
     const summary = gameSummaryValues(outcome);
     const possessions = collectFinalPossessions();
     summary.score += possessions.points;
     for (const pet of pets) summary.score += pet.mhp;
-    const names = pets.map(pet => pet.name || `the ${MONSTER_NAME[pet.mnum]}`);
+    const names = pets.map(pet => monsterName(pet));
     if (possessions.quantumCat) {
         summary.score += d(adjustedMonsterLevel(MONSTER_NAME.indexOf('housecat')), 8);
         names.push("Schroedinger's cat");
@@ -1553,24 +1553,6 @@ export async function finishLivingGame(outcome: LivingOutcome) {
     }
     await finishScoreDisplay(current, { stopPrinting: !showSummary });
     game.context.move = 0;
-}
-
-function takeEscapingPets() {
-    const pets: Monster[] = [];
-    const level = requireGameLevel();
-    for (const monster of level.monsters) {
-        if (!((monster.mtame ?? 0) > 0) || monster.dead || monster.mhp <= 0) continue;
-        monster.mtrapped = monster.meating = monster.msleeping = monster.mfrozen = 0;
-        monster.mcanmove = 1;
-        if ((monster.mstrategy ?? 0) & STRAT_WAITFORU) continue;
-        if (Math.max(Math.abs(monster.mx - game.u.ux), Math.abs(monster.my - game.u.uy)) > 1) continue;
-        if ((monster.minvent || []).some(object => object.otyp === AMULET_OF_YENDOR)) continue;
-        pets.unshift(monster);
-        monster.mx = monster.my = 0;
-        monster.mlstmv = game.moves;
-    }
-    level.monsters = level.monsters.filter(monster => !pets.includes(monster));
-    return pets;
 }
 
 function objectBaseValue(type: number): number {
