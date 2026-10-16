@@ -8527,7 +8527,7 @@ function goodShopDoor(sroom: Room): ShopDoor | null {
 
 function stockRoomGoodPos(sroom: Room, shopDoor: ShopDoor, x: number, y: number): boolean {
     const loc = requireGameLevel().at(x, y);
-    if (!loc || loc.typ !== ROOM) return false;
+    if (!loc || !IS_ROOM(loc.typ)) return false;
     if (sroom.irregular) {
         const roomno = (sroom.roomnoidx ?? -1) + ROOMOFFSET;
         return !loc.edge && loc.roomno === roomno
