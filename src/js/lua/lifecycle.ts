@@ -22,7 +22,7 @@ export interface LuaBindings extends LuaHostObject {
 }
 
 export class LuaGameState extends LuaState {
-    constructor(bindings: LuaBindings, readonly objects: ObjectApi) {
+    constructor(bindings: LuaBindings, readonly objects: ObjectApi, readonly sid: number) {
         super(bindings, objects.destroy);
     }
 }
@@ -86,6 +86,7 @@ function bindingsFor(
 }
 
 export class LuaLifecycle {
+    private stateCount = 0;
     core: LuaGameState | null;
     readonly themed: Map<number, { gameState: GameState; state: LuaGameState }>;
     readonly unavailableHooks: Set<string>;
@@ -102,7 +103,10 @@ export class LuaLifecycle {
 
     createState(gameState: GameState, bindings: LuaBindings = {}): LuaGameState {
         const objects = createObjectApi(gameState);
-        const state = new LuaGameState(bindingsFor(gameState, this, objects, bindings), objects);
+        // nhlL_newstate() numbers every state, including temporary states.
+        const state = new LuaGameState(
+            bindingsFor(gameState, this, objects, bindings), objects, ++this.stateCount,
+        );
         // nhl_loadlua() names each buffer with its parenthesized filename.
         state.execute(luaSource('nhlib.lua'), '(nhlib.lua)');
         return state;

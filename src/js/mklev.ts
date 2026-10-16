@@ -7149,10 +7149,14 @@ async function beginLuaThemerooms(): Promise<boolean> {
         const createdSession = createLuaLevelSession();
         session = createdSession;
         createdSession.beginLevel(active, { special: false });
+        let loadingStateId: number | undefined;
         try {
             state = await lifecycle.createThemedState(
                 game, dungeonNumber, filename, createdSession.bindings,
-                created => createdSession.bindState(created),
+                created => {
+                    loadingStateId = created.sid;
+                    createdSession.bindState(created);
+                },
             );
         } catch (error) {
             if (error instanceof PanicTermination) throw error;
@@ -7162,7 +7166,8 @@ async function beginLuaThemerooms(): Promise<boolean> {
             } else if (error instanceof SyntaxError) {
                 reason = `luaL_loadbuffer: Error loading (${filename}): ${error.message}`;
             } else {
-                reason = `Lua error: ${filename} ${error instanceof Error ? error.message : String(error)}`;
+                if (loadingStateId === undefined) throw error;
+                reason = `Lua error: ${loadingStateId}:${filename} ${error instanceof Error ? error.message : String(error)}`;
             }
             await impossible(reason);
             // C makerooms() closes a failed theme and clears its filename so

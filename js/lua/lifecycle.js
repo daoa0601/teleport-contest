@@ -12,9 +12,11 @@ import { createObjectApi } from './objects.js';
 import { LuaState, LuaTable, luaType, luaTableToArray, luaVariablesFromTable, luaValueToJs, objectToLuaTable, } from './runtime.js';
 export class LuaGameState extends LuaState {
     objects;
-    constructor(bindings, objects) {
+    sid;
+    constructor(bindings, objects, sid) {
         super(bindings, objects.destroy);
         this.objects = objects;
+        this.sid = sid;
     }
 }
 const CALLBACK_NAMES = ['cmd_before', 'level_enter', 'level_leave', 'end_turn'];
@@ -63,6 +65,7 @@ function bindingsFor(gameState, lifecycle, objects, additionalBindings = {}) {
     };
 }
 export class LuaLifecycle {
+    stateCount = 0;
     core;
     themed;
     unavailableHooks;
@@ -77,7 +80,8 @@ export class LuaLifecycle {
     }
     createState(gameState, bindings = {}) {
         const objects = createObjectApi(gameState);
-        const state = new LuaGameState(bindingsFor(gameState, this, objects, bindings), objects);
+        // nhlL_newstate() numbers every state, including temporary states.
+        const state = new LuaGameState(bindingsFor(gameState, this, objects, bindings), objects, ++this.stateCount);
         // nhl_loadlua() names each buffer with its parenthesized filename.
         state.execute(luaSource('nhlib.lua'), '(nhlib.lua)');
         return state;

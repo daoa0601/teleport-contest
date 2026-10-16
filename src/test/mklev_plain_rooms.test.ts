@@ -40,6 +40,42 @@ void test('a fatal impossible in a room theme preserves its original reason', as
     assert.equal(dungeon.themeRooms, 'themerms.lua');
 });
 
+for (const temporaryState of [false, true]) {
+    void test(`a runtime theme error identifies its Lua state${temporaryState ? ' after a temporary state closes' : ''}`, async t => {
+        const state = freshGame({ flags: { bones: false } });
+        state.program_state.in_sanity_check = true;
+        initRng(999);
+        init_objects();
+        await init_dungeons();
+        await startLuaCore(t);
+        if (temporaryState)
+            await currentLuaLifecycle().createSpecialState(state).destroy();
+        const dungeon = state.dungeons[0];
+        assert.ok(dungeon);
+        dungeon.themeRooms = 'themerms.lua';
+        state.u.uz = { dnum: 0, dlevel: 12 };
+        state.specialLevels?.clear();
+        state.branches = [];
+        resetInputState().feed(' ');
+        const execute = LuaState.prototype.executeAsync;
+        t.mock.method(LuaState.prototype, 'executeAsync', async function (
+            this: LuaState, source: string, filename = '<lua>',
+        ) {
+            await execute.call(this, filename === '(themerms.lua)'
+                ? 'error("broken")' : source, filename);
+        });
+
+        await mklev();
+
+        assert.match(state._lastPlineMessage, temporaryState
+            ? /^Lua error: 3:themerms\.lua .*broken/
+            : /^Lua error: 2:themerms\.lua .*broken/);
+        assert.ok(state.level.rooms.filter(isRoom).some(room => room.rtype === OROOM));
+        assert.equal(dungeon.themeRooms, undefined);
+        assert.equal(currentLuaLifecycle().getThemedState(state, 0), null);
+    });
+}
+
 for (const { label, source: malformedSource, diagnostic } of [
     { label: 'a missing local name', source: 'local =',
         diagnostic: /\[string "\(themerms\.lua\)"\]:1: <name> expected near '='/ },
