@@ -2,7 +2,7 @@
 // C ref: options.c — handles OPTIONS=, BIND=, etc.
 
 import { game } from './gstate.js';
-import { displayPagerText } from './pager_help.js';
+import { displayHelpFile, displayPagerText } from './pager_help.js';
 import { setConditionOption } from './status_conditions.js';
 import { classifyStatusTerrain } from './status_terrain.js';
 import type { GameFlags, InterfaceFlags, LootSortMode, MenuStyle } from './flags.js';
@@ -17,7 +17,7 @@ import { NO_COLOR } from './terminal.js';
 import { ATR_INVERSE, restoreMenuUnderlay, showChoiceWindow, showInventoryWindow, showMultiSelectWindow, snapshotMenuUnderlay } from './windows.js';
 import type { MenuLabel, PageLocalMenuItem, PageLocalMultiSelectSection } from './windows.js';
 import {
-    COLNO, MENU_FULL, PICK_ONE, PL_PSIZ,
+    COLNO, MENU_FULL, MENU_ITEMFLAGS_SKIPINVERT, PICK_ONE, PL_PSIZ,
     PARANOID_AUTOALL, PARANOID_BONES, PARANOID_BREAKWAND, PARANOID_CONFIRM,
     PARANOID_DIE, PARANOID_EATING, PARANOID_HIT, PARANOID_PRAY,
     PARANOID_QUIT, PARANOID_REMOVE, PARANOID_SWIM, PARANOID_TRAP,
@@ -1022,50 +1022,59 @@ function applyBooleanVisualChange(name: BooleanOptionName): boolean {
 }
 
 async function doRequestMenuOptions(): Promise<void> {
-    await flushPendingTopline();
-    const underlay = snapshotMenuUnderlay();
-    const selected = new Set(await showMultiSelectWindow({
-        title: 'Set what options?',
-        pageLocalKeys: true,
-        introLines: [
-            "    For a brief explanation of how this works, type '?' to select",
-            '    the next menu choice, then press <enter> or <return>.',
-            '? - view help for options menu',
-            "    [To suppress this menu help, toggle off the 'cmdassist' option.]",
-            '',
-        ],
-        sections: requestMenuSections(),
-    }));
-
-    restoreMenuUnderlay(underlay);
+    let skipHelp = game.flags.cmdassist === false;
     let needsRedraw = false;
-    for (const option of REQUEST_MENU_BOOLEAN_OPTIONS) {
-        const [name] = option;
-        if (!selected.has(name)) continue;
-        const value = !requestBooleanValue(name);
-        setRequestBoolean(option, value);
-        if (name === 'rest_on_space') game.commandBindings.setRestOnSpace(value);
-        needsRedraw = applyBooleanVisualChange(name) || needsRedraw;
-        // optfn_bool() commits the value before its ordinary pline. The
-        // shared tty owner handles overflow and any later menu acknowledgment.
-        await plineWithContinuation(`'${name}' option toggled ${value ? 'on' : 'off'}.`);
+    for (;;) {
+        const sections = requestMenuSections().map(section => ({ items: [
+            { selectable: false, text: section.heading ?? '', attr: ATR_INVERSE } as const,
+            ...section.items,
+        ] }));
+        if (!skipHelp) sections.unshift({ items: [
+            { selectable: false, text: "    For a brief explanation of how this works, type '?' to select" },
+            { selectable: false, text: '    the next menu choice, then press <enter> or <return>.' },
+            { key: '?', groupAccelerator: '?', value: 'help', text: 'view help for options menu',
+                itemFlags: MENU_ITEMFLAGS_SKIPINVERT },
+            { selectable: false, text: "    [To suppress this menu help, toggle off the 'cmdassist' option.]" },
+            { selectable: false, text: '' },
+        ] });
+        const selected = await showMultiSelectWindow({
+            title: 'Set what options?', pageLocalKeys: true, omitHeadings: true, sections,
+        });
+        for (const name of selected) {
+            if (name === 'help') {
+                await displayHelpFile('optmenu');
+                continue;
+            }
+            const option = requestBooleanByName.get(name.toLowerCase());
+            if (option) {
+                const value = !requestBooleanValue(option[0]);
+                setRequestBoolean(option, value);
+                if (option[0] === 'rest_on_space') game.commandBindings.setRestOnSpace(value);
+                needsRedraw = applyBooleanVisualChange(option[0]) || needsRedraw;
+                await plineWithContinuation(`'${option[0]}' option toggled ${value ? 'on' : 'off'}.`);
+            } else await editCompoundOption(name, true);
+        }
+        if (selected.length !== 1 || selected[0] !== 'help') break;
+        skipHelp = true;
     }
-    if (selected.has('number_pad')) await editNumberPad();
-    if (selected.has('menustyle')) await editMenuStyle();
-    if (selected.has('fruit')) await editFruitOption();
-    if (selected.has('packorder')) {
-        const order = await getLine('Set packorder to what?',
-            (_character: string, key: number) => key >= 32 && key < 127);
-        if (order !== null && order.length) changeInventoryOrder(order);
-    }
-    if (selected.has('pickup_types')) await editPickupTypes(true);
-    if (selected.has('sortloot')) await editSortLoot();
     if (needsRedraw) {
         reglyph_darkroom();
         await docrt();
     }
     await bot();
     game.context.move = 0;
+}
+
+async function editCompoundOption(name: string, fullMenu: boolean): Promise<void> {
+    if (name === 'number_pad') await editNumberPad();
+    else if (name === 'menustyle') await editMenuStyle();
+    else if (name === 'fruit') await editFruitOption();
+    else if (name === 'packorder') {
+        const order = await getLine('Set packorder to what?',
+            (_character: string, key: number) => key >= 32 && key < 127);
+        if (order !== null && order.length) changeInventoryOrder(order);
+    } else if (name === 'pickup_types') await editPickupTypes(fullMenu);
+    else if (name === 'sortloot') await editSortLoot();
 }
 
 // Native options.c:handler_menustyle(). PICK_ONE retains the old selection
@@ -1229,9 +1238,7 @@ export async function doOptions(menuRequested = false): Promise<void> {
         if (option) {
             setRequestBoolean(option, !requestBooleanValue(option[0]));
             needsRedraw = applyBooleanVisualChange(option[0]);
-        } else if (name === 'fruit') await editFruitOption();
-        else if (name === 'number_pad') await editNumberPad();
-        else if (name === 'pickup_types') await editPickupTypes();
+        } else await editCompoundOption(name, false);
         if (needsRedraw) {
             reglyph_darkroom();
             await docrt();
