@@ -1495,8 +1495,19 @@ function darkenFeltFloor(x, y, location) {
 }
 // ── show_glyph_cell ──
 export function glyphAt(x, y, state = game) {
+    if (x < 0 || x >= COLNO || y < 0 || y >= ROWNO) {
+        const appearance = cmapSymbolAppearance(CmapSymbol.room);
+        return { ch: appearance.ch, color: NO_COLOR, decgfx: appearance.dec,
+            kind: 'terrain', terrainName: 'floor of a room',
+            glyph: cmapToGlyph(CmapSymbol.room) };
+    }
     const loc = state.level?.at(x, y);
-    return loc?.disp_glyph || loc?.remembered_glyph || null;
+    if (!loc)
+        return null;
+    // Native glyph_at() reads the third screen, even when a memory-only map
+    // operation has recorded something which has never been displayed.
+    return loc.disp_glyph || { ch: ' ', color: NO_COLOR, decgfx: false,
+        kind: 'unexplored', glyph: GlyphOffset.unexplored };
 }
 export function show_glyph_cell(x, y, ch, color = NO_COLOR, decgfx = false, attr = 0, glyph = null) {
     if (suppressMapOutput() || x === 0)
