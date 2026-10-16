@@ -53,3 +53,19 @@ void test('an arrow that misses remains on the floor', async () => {
     ));
     assert.match(messages[0] ?? '', /is almost hit by an arrow/);
 });
+
+// C trap.c:thitm() names a seen missile with doname(), so the arrow left on
+// the floor is known by appearance.
+void test('a seen trap arrow that misses is known by appearance', async () => {
+    const { level, monster } = await freshMonsterTrapRoom(ARROW_TRAP, {
+        gameplaySeed: 9n,
+    });
+    requirePlayingGame(game);
+    initRng(9n);
+
+    const action = await triggerImmediateMonsterTrap(monster, game);
+    await resumeDeferredMonsterTrap(action, game, { publish: async () => {} });
+
+    const arrow = floorObjectsAt(level, 11, 10).find(object => object.otyp === ARROW);
+    assert.equal(arrow?.dknown, true);
+});

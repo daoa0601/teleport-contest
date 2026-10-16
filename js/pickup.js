@@ -3,7 +3,7 @@ import { game, requireGameLevel } from './gstate.js';
 import { isIceAt, isLavaAt, isPoolAt } from './terrain_properties.js';
 import { objectName, observeObjectForNaming } from './objnam.js';
 import { inventoryClassOrder, lootSortMode, objectClassHeading, sortObjects } from './object_sort.js';
-import { floorObjectDescription, readFloorEngraving, showFloorPile, } from './floor_object_display.js';
+import { floorObjectDescription, lookHere, readFloorEngraving, } from './floor_object_display.js';
 import { tryCallObjectType } from './object_call.js';
 import { newsym, flush_screen, pline, plineWithContinuation, map_object, } from './display.js';
 import { dungeonFeatureSentenceAt, forceDescribeDecor } from './dungeon_feature.js';
@@ -90,8 +90,9 @@ export async function autopickupAtHero() {
             const look = await checkHere(source, false);
             if (look.died)
                 return;
+            // C pickup(): this follows check_here()'s floor prose.
             if (heroCannotTake(game))
-                await pline('You are physically incapable of picking anything up.');
+                await plineWithContinuation('You are physically incapable of picking anything up.');
             return;
         }
         if (objects.length && game._runState?.mode !== 8)
@@ -369,11 +370,13 @@ function splitPickupStack(object, count) {
         return object;
     return splitObjectStack(object, count, game) ?? object;
 }
+// C pickup.c:check_here().
 async function checkHere(source, pickedSome) {
     const { x, y } = source;
     const skipFeature = await describePickupDecor(requireGameLevel().at(x, y));
-    const objects = pickupObjects(source);
-    if (!objects.length) {
+    const chain = game.uchain || game.u?.uchain;
+    const count = pickupObjects(source).filter(object => object !== chain).length;
+    if (!count) {
         await readFloorEngraving(x, y);
         return { died: false };
     }
@@ -381,18 +384,12 @@ async function checkHere(source, pickedSome) {
     // C check_here() flushes movement before look_here() can page a prior
     // message. The pager itself leaves pending map changes untouched.
     await flush_screen(1);
-    let feature = skipFeature ? '' : dungeonFeatureSentenceAt(x, y);
-    if (heroIsBlind(game)) {
-        const first = source.objects[0];
-        if (first)
-            map_object(first, false, false);
-        if (isIceAt(x, y)) {
-            await forceDescribeDecor();
-            feature = '';
-        }
-        await plineWithContinuation(blindPickupInspectionMessage(x, y));
-    }
-    return await showFloorPile(source.objects, pickedSome, feature, { automatic: true });
+    // A blind hero remembers the felt top object (display.c newsym()).
+    const first = source.objects[0];
+    if (heroIsBlind(game) && first)
+        map_object(first, false, false);
+    const { died } = await lookHere(count, { pickedSome, skipFeature });
+    return { died };
 }
 async function describePickupDecor(loc) {
     const brokenDoor = !!game.flags.mention_decor && loc?.typ === DOOR
@@ -401,14 +398,6 @@ async function describePickupDecor(loc) {
     if (brokenDoor)
         await pline('There is a broken door here.');
     return brokenDoor;
-}
-function blindPickupInspectionMessage(x, y) {
-    // look_here() leaves the altar description to the following floor display.
-    if (isIceAt(x, y))
-        return 'You try to feel what is on it.';
-    return requireGameLevel().at(x, y)?.typ === ALTAR
-        ? 'You try to feel what is here.'
-        : `You try to feel what is lying here on the ${surfaceName(x, y)}.`;
 }
 export function orderedPickupObjects(pile) {
     return sortObjects(pile, { mode: lootSortMode() });

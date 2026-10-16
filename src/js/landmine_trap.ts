@@ -207,6 +207,8 @@ export async function finishMonsterLandMine(
         event.finished = true;
         return event;
     }
+    // Native redraws the visible victim before the detonation message can
+    // pause for input, including monsters seen only through infravision.
     if (event.inSight) newsym(monster.mx, monster.my);
     if (event.airborne && event.inSight) {
         await publish(`The air currents set ${event.alreadySeen ? 'a land mine' : 'it'} off!`);

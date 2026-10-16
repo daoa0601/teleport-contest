@@ -4,12 +4,15 @@ import { finishMonsterKilled } from './monster_death.js';
 import { AD_PHYS } from './monster_attack_types.js';
 import { plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
-import { MONSTER_SIZE, monsterIsAmorphous, monsterIsUnsolid, monsterIsWhirly, monsterTypeName, } from './monster_data.js';
+import { publishHeardMessage } from './hero_speech.js';
+import { MONSTER_NAME, MONSTER_SIZE, monsterIsAmorphous, monsterIsUnsolid, monsterIsWhirly, monsterTypeName, } from './monster_data.js';
 import { monsterWearsIronShoes } from './monworn.js';
 import { d, rn2 } from './rng.js';
 import { monsterTrapVisibility, seeTrap } from './trap.js';
 import { monsterInAir } from './terrain_properties.js';
 const MZ_SMALL = 1;
+const PM_OWLBEAR = MONSTER_NAME.indexOf('owlbear');
+const PM_BUGBEAR = MONSTER_NAME.indexOf('bugbear');
 function ordinaryMonsterSubject(monster) {
     return monster?.name || `The ${monsterTypeName(monster?.mnum, !!monster?.female)}`;
 }
@@ -53,6 +56,9 @@ export async function finishMonsterBearTrap(monster, event, state = game, { publ
         const owner = event.trap.madeby_u ? 'your' : 'a';
         await publish(`${describeMonster(monster)} is caught in ${owner} bear trap!`);
         seeTrap(event.trap, state);
+    }
+    else if (monster.mnum === PM_OWLBEAR || monster.mnum === PM_BUGBEAR) {
+        await publishHeardMessage('the roaring of an angry bear!', publish, state);
     }
     if (!monsterWearsIronShoes(monster)) {
         event.damage = rollDice(2, 4);

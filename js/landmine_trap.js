@@ -135,6 +135,8 @@ export async function finishMonsterLandMine(monster, event, state = game, { fini
         event.finished = true;
         return event;
     }
+    // Native redraws the visible victim before the detonation message can
+    // pause for input, including monsters seen only through infravision.
     if (event.inSight)
         newsym(monster.mx, monster.my);
     if (event.airborne && event.inSight) {

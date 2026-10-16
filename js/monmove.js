@@ -6319,10 +6319,8 @@ async function beginStandardMonsterAttack(monster, movement, state, random, roll
         !hasAttacks ||
         (Upolyd(state.u) ? state.u.mh : state.u.uhp) <= 0)
         return;
-    if (state.u.uswallow && state.u.ustuck !== monster) {
-        movement.swallowedAttackSkipped = true;
-        return;
-    }
+    // mattacku() interrupts the hero before refusing a monster other than
+    // the engulfer.
     const attack = await beginMonsterHeroAttack(monster, state, random, rollOne, rollDice, calls);
     attachMonsterAttack(movement, attack);
     if (attack.heroAttackSequence?.offensive)

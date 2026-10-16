@@ -223,7 +223,8 @@ void test('pit-side digging of a boulder consumes the boulder instead of making 
     assert.equal(floorObjectsAt(level, 11, 10).includes(boulder), false);
 });
 void test('opening a pit into water floods every connected pit and releases its occupants', async () => {
-    const { level } = diggingRoom();
+    const { level, input } = diggingRoom();
+    installPagerInput(input, { expected: /pit|water/, limit: 4 });
     requireFixtureGame(game);
     grantIntrinsicProperty('swimming', 'outside');
     const ownPit = await trappedHero();

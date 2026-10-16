@@ -52,13 +52,13 @@ import { tryCallObjectType } from './object_call.js';
 import { monsterGainLevelRiseDestination } from './monmove.js';
 import { RLOC_NOMSG, WATER } from './const.js';
 import { consumeMonsterItem, presentMonsterQuaff as publishMonsterQuaff, presentMonsterWandUse, revealAggravatingMonster } from './monster_item_use.js';
-import { moveMonsterNextToHero, randomMonsterRelocation } from './teleport.js';
+import { heroCanTeleport, moveMonsterNextToHero, randomMonsterRelocation, teleportHero } from './teleport.js';
 import { monsterAtPosition } from './monster_location.js';
 import { placeHeroAtRandomArrival } from './level_change.js';
 import { monsterName, monsterSpellDeathReason, monsterSubjectPronoun, possessiveName, quietMonsterName } from './monster_name.js';
 import { touchHeroWithDeath } from './monster_death_touch.js';
 import { resolveMonsterWeaponContact } from './monster_weapon_contact.js';
-import { finishMonsterAttackDeath, waitForCurrentMonsterMore } from './monster_attack_death.js';
+import { finishHeroDeathAfterMonsterMessage, finishMonsterAttackDeath, waitForCurrentMonsterMore } from './monster_attack_death.js';
 import { monsterMissMessage } from './monster_miss.js';
 import { monsterIsAnimal } from './monster_data.js';
 import { monsterCanCarryObject } from './monster_carry.js';
@@ -109,12 +109,14 @@ import {
 } from './mklev.js';
 import { summonMonsterInsects } from './monster_spell_insects.js';
 import {
-    applyHeroLiquidEffects, continueCountedCommand, continueRun,
+    applyHeroLiquidEffects, askTeleportDestination, continueCountedCommand, continueRun,
     finishArmorRemoval, getLine, promptYesNo, rhack,
 } from './cmd.js';
+import { clearRepeatCommand } from './command_repeat.js';
+import { checkHeroLeashes } from './leash_apply.js';
 import { finishDestinationSpotEffects } from './location_effects.js';
 import { performQuestExpulsion } from './quest.js';
-import { amuletTurn, resurrectWizard } from './wizard.js';
+import { amuletTurn, monsterCarriesAmulet, resurrectWizard } from './wizard.js';
 import {
     finishHeroLiquidMonsterDeath, finishHeroMonsterKill,
 } from './hero_monster_death.js';
@@ -168,7 +170,7 @@ import {
     M_ATTK_AGR_DIED, M_ATTK_AGR_DONE, W_ARMG,
     UNENCUMBERED, MOD_ENCUMBER, HVY_ENCUMBER, EXT_ENCUMBER, W_ACCESSORY, W_WEAPONS,
     ismnum, Upolyd, Is_airlevel, Is_waterlevel, LUCKMIN, LUCKMAX,
-    TT_BURIEDBALL, TT_LAVA,
+    TT_BURIEDBALL, TT_LAVA, KILLED_BY_AN,
 } from './const.js';
 import { uInitMisc, makedog, uInitInventoryAttrs,
     finishStartingDiscoveries,
@@ -959,6 +961,8 @@ async function finishInitialTurnMaintenanceAfterRegions({
         }
     }
 
+    await rollHeroTeleportitis();
+    if (game.program_state.gameover) return { kind: 'complete', moveAmount };
     await advanceHeroShapeChange();
     if (game.program_state.gameover) return { kind: 'complete', moveAmount };
 
@@ -978,6 +982,28 @@ async function finishInitialTurnMaintenanceAfterRegions({
     return await finishInitialTurnMaintenanceAfterAutomaticSearch({
         sourceTurn, moveAmount,
     });
+}
+
+// C allmain.c:moveloop_core(): Teleportation, including a teleporting form,
+// moves the hero once in 85 turns. A move away from a leashed follower checks
+// the leash and cancels queued and repeated commands.
+async function rollHeroTeleportitis(): Promise<void> {
+    if (game.u.invulnerable || !heroCanTeleport(game) || rn2(85)) return;
+    const from = { x: game.u.ux, y: game.u.uy };
+    await teleportHero({ chooseDestination: askTeleportDestination });
+    if (game.program_state.gameover || (game.u.ux === from.x && game.u.uy === from.y)) return;
+    if (!heroNextToLeashedFollowers()) await checkHeroLeashes(from.x, from.y);
+    game._cannedCommands = [];
+    clearRepeatCommand();
+}
+
+// C apply.c:next_to_u().
+function heroNextToLeashedFollowers(): boolean {
+    const level = game.level;
+    if (level?.monsters.some(monster => monster.mleashed
+        && (monster.mx - game.u.ux) ** 2 + (monster.my - game.u.uy) ** 2 > 2)) return false;
+    const steed = game.u.usteed;
+    return !(steed && monsterCarriesAmulet(steed));
 }
 
 // C allmain.c:moveloop_core(). A selected change waits through involuntary
@@ -2432,14 +2458,6 @@ function resolveDeferredHeroGeyser(
     heroAttack.deferredGeyserSpell = false;
 }
 
-async function finishHeroDeathAfterMonsterMessage(options: FinishHeroDeathOptions) {
-    // losehp() enters urgent_pline(), whose map flush precedes paging the
-    // previous message. Its pending HP request must reach that pager.
-    await flush_screen(1);
-    await waitForCurrentMonsterMore();
-    return finishHeroDeath(options);
-}
-
 async function resumeTrappedMonster(action: MonsterAction): Promise<void> {
     const game = requireInitializedGame();
     if (!action.movement?.escapingTrap) return;
@@ -2515,8 +2533,8 @@ async function presentMonsterAttackEffects(
                                 deathType: options.deathType ?? null,
                                 attribution: {
                                     kind: 'death-inflicted-by', killer: options.killer,
-                                    deathCause: options.deathCause
-                                        || `killed by ${withIndefiniteArticle(options.killer)}`,
+                                    ...(options.deathCause ? { deathCause: options.deathCause } : {}),
+                                    killerFormat: options.killerFormat ?? KILLED_BY_AN,
                                     announcesDeath: !options.deathLineShown,
                                 },
                                 pagerOwned: paging.pagerOwned,

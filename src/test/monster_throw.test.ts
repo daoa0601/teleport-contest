@@ -5,7 +5,7 @@ import {
     MM_NOTAIL, MM_NOWAIT, NEED_WEAPON, NO_MINVENT, NO_WEAPON_WANTED,
     STONE, W_AMUL, W_WEP,
 } from '../js/const.js';
-import { game, requirePlayingGame } from '../js/gstate.js';
+import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { initializePet } from '../js/dog.js';
 import { resetInputState, pushKeys } from '../js/input.js';
 import { resolveMonsterCombatThrow } from '../js/monster_combat_throw.js';
@@ -542,4 +542,36 @@ void test('native multishot accounts for elven equipment and launcher enchantmen
     const count = monsterVolleyCount(source, arrows, bow, sides => sides);
 
     assert.equal(count, 7);
+});
+
+// C mthrowu.c:thitu() -> losehp(): You("die...") flushes the lethal HP to
+// the status line before tty pages the hit message.
+void test('a fatal missile hit shows zero HP while its hit message waits', async () => {
+    projectileRoom();
+    requirePlayingGame(game);
+    game.flags.debug = true;
+    game.u.ux = 11;
+    game.u.uy = 10;
+    game.u.uhp = 1;
+    game.u.uhpmax = 12;
+    const source = await combatant('orc');
+    const dagger = await uninitializedObject(DAGGER);
+    const input = resetInputState();
+    const hitScreens: string[] = [];
+    input.display = {
+        async readKey() {
+            const rows = requireGameDisplay(game).grid.map(row => row.map(cell => cell.ch).join(''));
+            if (rows[0]?.includes('Die?')) return 'n'.charCodeAt(0);
+            if (rows[0]?.includes('You are hit by')) hitScreens.push(rows.join('\n'));
+            return ' '.charCodeAt(0);
+        },
+    };
+
+    await throwMonsterProjectile(source, dagger, {
+        state: game, dx: 1, dy: 0, range: 4, target: null, random: ordinaryChoices, rollOne: minimumRoll,
+    });
+
+    assert.equal(hitScreens.length, 1);
+    assert.match(hitScreens[0] ?? '', /--More--/);
+    assert.match(hitScreens[0] ?? '', /HP:0\(12\)/);
 });

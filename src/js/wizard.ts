@@ -54,7 +54,7 @@ export function wizardDeadOrGone(state: GameState = game, random = rn2): void {
     }
 }
 
-function carriesAmulet(monster: Monster): boolean {
+export function monsterCarriesAmulet(monster: Monster): boolean {
     // C wizard.c:mon_has_amulet() searches only the top-level inventory.
     return (monster.minvent ?? []).some(object => object.otyp === AMULET_OF_YENDOR);
 }
@@ -70,7 +70,7 @@ function recallMigratingWizard(): Promise<Monster | null> | null {
     for (const candidate of [...(game._migratingMonsters || [])]) {
         if (!candidate.iswiz) continue;
         // if he has the Amulet, he won't bring it to you
-        if (carriesAmulet(candidate)) continue;
+        if (monsterCarriesAmulet(candidate)) continue;
         let elapsed = (game.moves ?? 0) - (candidate.mlstmv ?? game.moves ?? 0);
         if (!(elapsed > 0)) continue;
         catchUpMonster(candidate, elapsed, game);

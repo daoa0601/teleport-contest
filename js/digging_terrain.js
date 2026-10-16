@@ -9,10 +9,11 @@ import { deleteTrap } from './trap_lifecycle.js';
 import { AD_DGST, AD_STCK, AD_WRAP, AT_ENGL, AT_HUGS, } from './monster_attack_types.js';
 import { adjustHeroAlignment } from './alignment.js';
 import { exerciseAttribute } from './attrib.js';
-import { A_LAWFUL, A_STR, A_WIS, ALTAR, AM_MASK, AM_SANCTUM, Amask2align, BEAR_TRAP, DBWALL, DB_ICE, DB_LAVA, DB_MOAT, DB_UNDER, DIGCHECK_FAIL_AIRLEVEL, DIGCHECK_FAIL_ALTAR, DIGCHECK_FAIL_BOULDER, DIGCHECK_FAIL_CANTDIG, DIGCHECK_FAIL_ONLADDER, DIGCHECK_FAIL_ONSTAIRS, DIGCHECK_FAIL_OBJ_POOL_OR_TRAP, DIGCHECK_FAIL_THRONE, DIGCHECK_FAIL_TOOHARD, DIGCHECK_FAIL_UNDESTROYABLETRAP, DIGCHECK_FAIL_WATERLEVEL, DIGCHECK_FAILED, DIGCHECK_PASSED, DIGCHECK_PASSED_DESTROY_TRAP, DIGCHECK_PASSED_PITONLY, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, FOUNTAIN, F_WARNED, GRAVE, HOLE, ICE, IS_ALTAR, IS_DOOR, IS_FURNITURE, IS_GRAVE, IS_OBSTRUCTED, IS_ROOM, IS_STWALL, IS_THRONE, Is_airlevel, Is_botlevel, Is_earthlevel, Is_stronghold, Is_waterlevel, LADDER, LANDMINE, LAVAPOOL, MAGIC_PORTAL, MIGR_RANDOM, M_SEEN_MAGR, MM_NOMSG, PIT, POOL, ROOM, SDOOR, SHOPBASE, SHOP_PIT_COST, SINK, STAIRS, TT_BURIEDBALL, TT_INFLOOR, TT_PIT, VIBRATING_SQUARE, W_NONDIGGABLE, is_hole, is_magical_trap, is_pit, isok, } from './const.js';
+import { A_LAWFUL, A_STR, A_WIS, ALTAR, AM_MASK, AM_SANCTUM, Amask2align, BEAR_TRAP, DBWALL, DB_ICE, DB_LAVA, DB_MOAT, DB_UNDER, DIGCHECK_FAIL_AIRLEVEL, DIGCHECK_FAIL_ALTAR, DIGCHECK_FAIL_BOULDER, DIGCHECK_FAIL_CANTDIG, DIGCHECK_FAIL_ONLADDER, DIGCHECK_FAIL_ONSTAIRS, DIGCHECK_FAIL_OBJ_POOL_OR_TRAP, DIGCHECK_FAIL_THRONE, DIGCHECK_FAIL_TOOHARD, DIGCHECK_FAIL_UNDESTROYABLETRAP, DIGCHECK_FAIL_WATERLEVEL, DIGCHECK_FAILED, DIGCHECK_PASSED, DIGCHECK_PASSED_DESTROY_TRAP, DIGCHECK_PASSED_PITONLY, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, EXPL_MAGICAL, FOUNTAIN, F_WARNED, GRAVE, HOLE, ICE, IS_ALTAR, IS_DOOR, IS_FURNITURE, IS_GRAVE, IS_OBSTRUCTED, IS_ROOM, IS_STWALL, IS_THRONE, Is_airlevel, Is_botlevel, Is_earthlevel, Is_stronghold, Is_waterlevel, LADDER, LANDMINE, LAVAPOOL, MAGIC_PORTAL, MIGR_RANDOM, M_SEEN_MAGR, MM_NOMSG, PIT, POOL, ROOM, SDOOR, SHOPBASE, SHOP_PIT_COST, SINK, STAIRS, TT_BURIEDBALL, TT_INFLOOR, TT_PIT, VIBRATING_SQUARE, W_NONDIGGABLE, is_hole, is_magical_trap, is_pit, isok, } from './const.js';
 import { addShopDamage, makeAngryShopkeeper, payForShopDamage, shopDig, } from './shop_damage.js';
-import { canSeeMonster, canSpotMonster, flush_screen, map_invisible, newsym, plineWithContinuation, show_glyph_cell, unmap_invisible, } from './display.js';
+import { canSeeMonster, canSpotMonster, flush_screen, map_invisible, newsym, plineWithContinuation, show_glyph_cell, unmap_invisible, explosionGlyph, shieldGlyph, SHIELD_STATIC, } from './display.js';
 import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
+import { TemporaryMapEffect } from './temporary_map_effect.js';
 import { levelAtDepth } from './dungeon.js';
 import { depth } from './hacklib.js';
 import { monsterHasMagicResistance } from './anti_magic_trap.js';
@@ -57,15 +58,12 @@ import { surfaceName } from './terrain_name.js';
 import { feelTrap, seeTrap, waterDamageChain } from './trap.js';
 import { fireDamageChain } from './fire_damage.js';
 import { cansee } from './vision.js';
-import { CLR_BLUE } from './terminal.js';
 import { isAxe } from './weapon_type.js';
 import { updateIceObjectTimersAt } from './floor_object.js';
 import { deleteEngravingAt } from './engrave.js';
 import { isLavaAt, isPoolAt, levelHasCeiling, monsterFliesOrFloats } from './terrain_properties.js';
 const S_ZOMBIE = 52;
 const S_MUMMY = 39;
-const EXPL_ROWS = [['/', '-', '\\'], ['|', ' ', '|'], ['\\', '-', '/']];
-const SHIELD_ROWS = ['0', '#', '@', '#', '0', '#', '*'];
 const MZ_HUGE = 4;
 const M1_FLY = 0x00000001;
 const M1_CLING = 0x00000010;
@@ -771,32 +769,31 @@ async function explodeMagicalTrapAt(x, y, state) {
         }
     }
     if (visible) {
-        // Start the explosion with the C 3x3 glyph pattern.
-        for (const [i, row] of EXPL_ROWS.entries()) {
-            for (const [j, glyph] of row.entries()) {
-                show_glyph_cell(x + i - 1, y + j - 1, glyph, CLR_BLUE, false);
-            }
+        const effect = new TemporaryMapEffect('beam', explosionGlyph(EXPL_MAGICAL, -1, -1));
+        await effect.start();
+        for (const cell of cells) {
+            const glyph = explosionGlyph(EXPL_MAGICAL, cell.x - x, cell.y - y);
+            effect.changeGlyph(glyph);
+            await effect.show(cell.x, cell.y);
         }
         await flush_screen(1);
         if (anyShield && state.flags?.sparkle !== false) {
-            // simulate the shield effect (decl.c shield_static rows)
-            for (let k = 0; k < 3 * 7; k++) {
-                const glyph = SHIELD_ROWS[k % 7];
-                if (glyph === undefined)
-                    throw new Error('Missing magic shield glyph');
+            for (const character of SHIELD_STATIC) {
+                const glyph = shieldGlyph(character);
                 for (const cell of cells) {
                     if (!cell.mask)
                         continue;
-                    show_glyph_cell(cell.x, cell.y, glyph, CLR_BLUE, false);
+                    show_glyph_cell(cell.x, cell.y, glyph.ch, glyph.color, glyph.decgfx, 0, glyph);
                 }
                 await flush_screen(1);
                 await state.animationFrame?.();
             }
             // Cover the last shield glyph with the blast symbol.
-            for (const [i, row] of EXPL_ROWS.entries()) {
-                for (const [j, glyph] of row.entries()) {
-                    show_glyph_cell(x + i - 1, y + j - 1, glyph, CLR_BLUE, false);
-                }
+            for (const cell of cells) {
+                if (!cell.mask)
+                    continue;
+                const glyph = explosionGlyph(EXPL_MAGICAL, cell.x - x, cell.y - y);
+                show_glyph_cell(cell.x, cell.y, glyph.ch, glyph.color, glyph.decgfx, 0, glyph);
             }
         }
         else {
@@ -804,8 +801,7 @@ async function explodeMagicalTrapAt(x, y, state) {
             await state.animationFrame?.();
         }
         // tmp_at(DISP_END): clear the explosion
-        for (const cell of cells)
-            newsym(cell.x, cell.y);
+        effect.clear();
     }
     else if (!deaf) {
         await publishHeardMessage('a blast.', plineWithContinuation, state);
