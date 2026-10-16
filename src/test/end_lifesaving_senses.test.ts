@@ -34,4 +34,3 @@ void test('a blind hero feels the life-saving medallion warm after falling in la
     assert.ok(messages.some(message => message.includes('Your medallion feels warm!')));
     assert.ok(messages.every(message => !message.includes('medallion begins to glow')));
 });
-

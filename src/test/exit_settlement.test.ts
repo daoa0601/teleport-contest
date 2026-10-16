@@ -335,7 +335,7 @@ for (const lifeSaving of [false, true]) {
                 assert.equal(amulet.where, 'gone');
                 assert.equal(state.inventory.includes(amulet), false);
             }
-            if (!screen.includes('You died in')) return;
+            if (!screen.includes('You were genocided in')) return;
             sawSummary = true;
             assert.equal(state.program_state.gameover, true);
             assert.equal(state.u.umortality, 1);
