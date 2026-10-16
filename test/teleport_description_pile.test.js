@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { askMonsterTeleportDestination, askTeleportDestination } from '../js/cmd.js';
 import { STAIRS } from '../js/const.js';
-import { flush_screen } from '../js/display.js';
+import { flush_screen, newsym } from '../js/display.js';
 import { showFloorPile } from '../js/floor_object_display.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
@@ -84,6 +84,7 @@ void test('a chosen teleport description remains visible beside a corner floor-p
     const location = level.requireAt(11, 10);
     location.typ = STAIRS;
     level.upstair = { x: 11, y: 10 };
+    newsym(11, 10);
     const apple = await floorObject(APPLE, 10, 10);
     const dagger = await floorObject(DAGGER, 10, 10);
     const input = resetInputState();
