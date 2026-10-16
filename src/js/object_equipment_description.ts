@@ -102,11 +102,15 @@ function wornArmorDescription(item: GameObject, state: GameState): string {
     let description = item === (state.uskin || state.u.uskin) ? 'embedded in your skin'
         : dressing === 'remove' || isBeingTakenOff(item, state) ? 'being doffed'
             : dressing === 'wear' ? 'being donned' : 'being worn';
+    description = ` (${description})`;
+    // Native Concat(bp, 1, ...) uses strncat(), which still appends after the
+    // closing parenthesis it meant to replace; the light text uses snprintf()
+    // and does replace it.
     if (item === (state.uarmg || state.u.uarmg)
-        && (state.u.glib || (state.u.glibTurns ?? 0) > 0)) description += '; slippery';
+        && (state.u.glib || (state.u.glibTurns ?? 0) > 0)) description += '; slippery)';
     if (!heroIsBlind(state) && item.lamplit && artifactEmitsLight(item))
-        description += `, ${equipmentLightDescription(item, state)} lit`;
-    return ` (${description})`;
+        description = `${description.slice(0, -1)}, ${equipmentLightDescription(item, state)} lit)`;
+    return description;
 }
 
 function wornRingDescription(mask: number, state: GameState): string {

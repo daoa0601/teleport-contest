@@ -141,7 +141,7 @@ export async function zapWithoutDirection(source: GameObject, state: PlayingGame
         if ((state.u.uluck || 0) + rn2(5) < 0) await pline('Unfortunately, nothing happens.');
         else {
             known = !!source.dknown;
-            await makeWish({ announce: state.flags.verbose !== false });
+            await makeWish();
         }
         break;
     case WAN_ENLIGHTENMENT:

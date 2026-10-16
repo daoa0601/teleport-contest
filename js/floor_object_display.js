@@ -10,7 +10,8 @@ import { nhgetch } from './input.js';
 import { clearMessageWindow, flushPendingTopline, flush_screen, pline, plineWithContinuation, } from './display.js';
 import { readEngravingAt } from './engrave.js';
 import { stopRun } from './runmode.js';
-import { snapshotMenuUnderlay, restoreMenuUnderlay } from './windows.js';
+import { showDisclosureOverlay, snapshotMenuUnderlay, restoreMenuUnderlay } from './windows.js';
+import { windowOrigin } from './tty_menu.js';
 import { objectDescription } from './object_description.js';
 import { observeObjectForNaming } from './objnam.js';
 import { NO_COLOR } from './terminal.js';
@@ -156,12 +157,29 @@ export async function showFloorPile(objects, pickedSome = false, featureDescript
         }
         descriptions.push(pricedFloorObjectDescription(object));
     }
-    const lines = [
+    const content = [
         ...(featureDescription ? [featureDescription, ''] : []),
         `${pickedSome ? 'Other things' : 'Things'} that ${pileLocation}:`,
         ...descriptions,
-        '--More--',
     ];
+    // tty_display_nhwindow() clears the whole screen instead of using a
+    // corner when menu_overlay is off or the window is too tall.
+    const widest = Math.max(...content.map(line => line.length));
+    if (windowOrigin(display.cols, display.rows, widest + 1, content.length, game.flags.menu_overlay !== false) === 0) {
+        await showDisclosureOverlay(content);
+    }
+    else {
+        await showFloorPileCorner(display, [...content, '--More--']);
+        restoreMenuUnderlay(underlay);
+    }
+    const result = touchedCorpse ? await feelPetrifyingCorpse(touchedCorpse) : { died: false };
+    if (!result.died)
+        await readFloorEngraving(game.u.ux, game.u.uy);
+    return result;
+}
+// tty corner placement for a short pile window. Only a menu-dismissal key
+// destroys it and returns that input boundary to the command loop.
+async function showFloorPileCorner(display, lines) {
     // Tty menus leave one blank column after the widest line and align the
     // window to the right.
     const left = Math.max(0, Math.min(41, display.cols - Math.max(...lines.map(line => line.length)) - 1));
@@ -172,18 +190,10 @@ export async function showFloorPile(objects, pickedSome = false, featureDescript
             display.setCell(left + col, row, line.charAt(col), NO_COLOR, 0);
     }
     display.setCursor(left + 8, lines.length - 1);
-    // tty's temporary PICK_NONE pile window ignores ordinary command bytes;
-    // only a menu-dismissal key destroys it and returns that input boundary
-    // to the command loop.
     let key;
     do
         key = await nhgetch();
     while (![27, 32, 10, 13].includes(key));
-    restoreMenuUnderlay(underlay);
-    const result = touchedCorpse ? await feelPetrifyingCorpse(touchedCorpse) : { died: false };
-    if (!result.died)
-        await readFloorEngraving(game.u.ux, game.u.uy);
-    return result;
 }
 export function pricedFloorObjectDescription(object) {
     return objectDescription(object, { withPrice: true });

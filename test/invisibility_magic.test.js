@@ -2,9 +2,10 @@ import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { rhack } from '../js/cmd.js';
+import { flush_screen } from '../js/display.js';
 import { P_EXPERT } from '../js/const.js';
-import { game } from '../js/gstate.js';
-import { pushKeys } from '../js/input.js';
+import { game, requireGameDisplay } from '../js/gstate.js';
+import { pushKeys, resetInputState } from '../js/input.js';
 import { POT_INVISIBILITY, SPE_INVISIBILITY, WAN_MAKE_INVISIBLE, } from '../js/object_data.js';
 import { castSpell } from '../js/spell.js';
 import { learnSpell } from './support/spells.js';
@@ -13,6 +14,7 @@ import { addInventoryObject, chargedWand, } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshCasterRoom } from './support/hero-state.js';
 import { freshGameplayRoom } from './support/playable-room.js';
+import { freshObjectRoom } from './support/object-room.js';
 void test('drinking an invisibility potion makes the hero invisible', async () => {
     freshGameplayRoom();
     requireFixtureGame(game);
@@ -25,6 +27,30 @@ void test('drinking an invisibility potion makes the hero invisible', async () =
     assert.equal(game.u.invisible, true);
     assert.ok((game.u.invisibleTurns ?? 0) > 100);
     assert.equal(game.inventory.includes(potion), false);
+});
+// C potion.c peffect_invisibility(): the hero's square is redrawn before
+// the cursed potion's second message makes the first one wait.
+void test('a cursed invisibility potion hides the hero before its warning pages', async () => {
+    freshObjectRoom();
+    requireFixtureGame(game);
+    await addInventoryObject(POT_INVISIBILITY, { initialize: false, invlet: 'a', cursed: true });
+    const heroCells = [];
+    const input = resetInputState();
+    input.display = {
+        async readKey() {
+            const display = requireGameDisplay();
+            const topline = display.grid[0]?.map(cell => cell.ch).join('') ?? '';
+            if (topline.includes("can't see yourself"))
+                heroCells.push(display.grid[game.u.uy + 1]?.[game.u.ux - 1]?.ch ?? '');
+            return ' '.charCodeAt(0);
+        },
+    };
+    await flush_screen(1);
+    assert.equal(requireGameDisplay().grid[game.u.uy + 1]?.[game.u.ux - 1]?.ch, '@');
+    pushKeys('a');
+    await rhack('q'.charCodeAt(0));
+    assert.equal(heroCells.length, 1);
+    assert.notEqual(heroCells[0], '@');
 });
 void test('the invisibility spell affects the hero without asking for a direction', async () => {
     freshCasterRoom();

@@ -105,8 +105,8 @@ async function releaseDjinni(source: GameObject, state: PlayingGameState) {
 }
 
 export async function grantMonsterWish(monster: Monster, {
-    state = game, announce = false,
-}: PotionEffectOptions & { announce?: boolean } = {}): Promise<void> {
+    state = game,
+}: PotionEffectOptions = {}): Promise<void> {
     requireLiveGame(state);
     requirePlayingGame(state);
     const { mx, my } = monster;
@@ -125,7 +125,7 @@ export async function grantMonsterWish(monster: Monster, {
         show_glyph_cell(mx, my, projection.ch, projection.color,
             projection.decgfx, projection.attr, projection.glyph);
     try {
-        await makeWish({ announce });
+        await makeWish();
     } finally {
         state.context.move = spentTime;
         newsym(mx, my);

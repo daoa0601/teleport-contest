@@ -107,7 +107,7 @@ for (const [answer, weight] of [['y', 5200], ['n', 1040]]) {
 void test('a wish grants the requested single rock to the hero', async () => {
     freshObjectRoom({ gameplaySeed: 6108 });
     requirePlayingGame(game);
-    pushKeys('1 rock\n');
+    pushKeys(' 1 rock\n');
     await makeWish();
     const rocks = game.inventory.filter(object => object.otyp === ROCK);
     assert.equal(rocks.length, 1);
@@ -191,7 +191,7 @@ void test('wizard wand charge and recharge requests still have storage limits', 
 void test('identifying a wished wand reveals its real recharge count', async () => {
     freshObjectRoom({ flags: { debug: true } });
     requirePlayingGame(game);
-    pushKeys('wand of light (2:7)\n');
+    pushKeys(' wand of light (2:7)\n');
     await makeWish();
     await identifyPack(0);
     const firstWishedObject = game.inventory[0];

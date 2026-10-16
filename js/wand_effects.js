@@ -127,7 +127,7 @@ export async function zapWithoutDirection(source, state) {
                 await pline('Unfortunately, nothing happens.');
             else {
                 known = !!source.dknown;
-                await makeWish({ announce: state.flags.verbose !== false });
+                await makeWish();
             }
             break;
         case WAN_ENLIGHTENMENT:
