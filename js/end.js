@@ -1,6 +1,7 @@
 // end.js — End-of-game disclosure and terminal presentation.
 // C refs: end.c disclose()/really_done(), insight.c, dungeon.c.
 import { formatFeltMessage } from './hero_speech.js';
+import { recorderLocalEpochSeconds } from './calendar.js';
 import { adjustAttribute, currentAttribute, reportHeroEncumbrance } from './attrib.js';
 import { cureHeroSickness } from './hero_illness.js';
 import { removeIntrinsicProperty, setPropertyTimeout } from './properties.js';
@@ -553,6 +554,14 @@ function tombstoneLine(value) {
     const col = 28 - Math.trunc((text.length + 1) / 2);
     return `${' '.repeat(col - 19)}${text}${' '.repeat(37 - col - text.length)}`;
 }
+function tombstoneYear(when) {
+    const year = Number(new Intl.DateTimeFormat('en-US', {
+        timeZone: 'America/New_York', year: 'numeric',
+    }).format(new Date(when * 1000)));
+    // C calendar.c:yyyymmdd() treats tm_year below 70 as a two-digit year.
+    const calendarYear = year < 1970 ? year + 100 : year;
+    return String(calendarYear % 10000).padStart(4, ' ');
+}
 function currentDungeonName() {
     const dnum = game.u?.uz?.dnum ?? 0;
     return game.dungeons?.[dnum]?.dname
@@ -586,7 +595,7 @@ function finalLocationLine(verb, score) {
     }
     return `${text} with ${score} point${plur(score)},`;
 }
-// C end.c:genl_outrip().  The stone receives up to four cause rows, each at
+// C rip.c:genl_outrip().  The stone receives up to four cause rows, each at
 // most sixteen characters, split backward at a word boundary when possible.
 function tombstoneDeathRows(cause) {
     let remaining = String(cause || '');
@@ -598,11 +607,10 @@ function tombstoneDeathRows(cause) {
         }
         let count = remaining.length;
         if (count > 16) {
-            count = 16;
-            while (count > 0 && remaining[count] !== ' ')
-                count--;
-            if (count === 0)
-                count = 16;
+            const space = remaining.lastIndexOf(' ', 16);
+            // Native's backward scan reaches zero after a space at index
+            // one, so that case hard-splits just like an unbroken word.
+            count = space > 1 ? space : 16;
         }
         rows.push(remaining.slice(0, count));
         remaining = remaining[count] === ' '
@@ -610,12 +618,13 @@ function tombstoneDeathRows(cause) {
     }
     return rows;
 }
-function deathSummaryLines(killer, { gold, score, moves }, { deathVerb = 'died', deathCause = null, deathType = null, } = {}) {
+function deathSummaryLines(killer, { gold, score, moves }, endtime, { deathVerb = 'died', deathCause = null, deathType = null, } = {}) {
     const name = game.plname || 'player';
-    const year = String(game.datetime || '').slice(0, 4) || '2026';
+    const year = tombstoneYear(endtime);
     const role = game.flags?.female && game.urole?.name?.f
         ? game.urole.name.f : game.urole?.name?.m || 'Adventurer';
     const goodbye = game.urole?.goodbye || 'Goodbye';
+    const stoneGold = Math.min(999_999_999, Math.max(0, gold));
     const causeRows = tombstoneDeathRows(sanitizeDeathCause(deathCause || deathCauseRecord(killer, deathVerb)));
     const stone = [
         [23, '----------'],
@@ -625,7 +634,7 @@ function deathSummaryLines(killer, { gold, score, moves }, { deathVerb = 'died',
         [19, '/     PEACE      \\'],
         [18, '/                  \\'],
         [18, `|${tombstoneLine(name)}|`],
-        [18, `|${tombstoneLine(`${gold} Au`)}|`],
+        [18, `|${tombstoneLine(`${stoneGold} Au`)}|`],
         [18, `|${tombstoneLine(causeRows[0])}|`],
         [18, `|${tombstoneLine(causeRows[1])}|`],
         [18, `|${tombstoneLine(causeRows[2])}|`],
@@ -1215,6 +1224,8 @@ async function startGameExit(outcome, deathType = DIED) {
     game.program_state.something_worth_saving = false;
     if (deathType !== PANICKED && !game.program_state.panicking)
         await doneObjectCleanup();
+    // really_done() fixes the finish time before any disclosure can wait.
+    const endtime = recorderLocalEpochSeconds(game.datetime) || Date.now() / 1000;
     if (achievementEntries(game).length || !game.flags.beginner) {
         if (game.u.uroleplay?.blind)
             recordAchievement(game, ACH_BLND);
@@ -1232,6 +1243,7 @@ async function startGameExit(outcome, deathType = DIED) {
         && canMakeBones();
     if (game._canMakeBones)
         restoreLaunchedObjectForBones(game);
+    return endtime;
 }
 async function settleGameExit(outcome) {
     const silent = !!game.program_state.stopprint;
@@ -1246,12 +1258,12 @@ async function settleGameExit(outcome) {
     return taken;
 }
 export async function finishOrdinaryDeath(options) {
-    await startGameExit('died', options.deathType ?? DIED);
+    const endtime = await startGameExit('died', options.deathType ?? DIED);
     if (options.deathType != null)
         setHeroRemainsFromDeath(options.deathType, game);
-    await completeOrdinaryDeath(options);
+    await completeOrdinaryDeath(options, endtime);
 }
-async function completeOrdinaryDeath({ killer, possessionAnswer = null, deathVerb = 'died', deathCause = null, deathType = null, killerFormat = KILLED_BY_AN, }) {
+async function completeOrdinaryDeath({ killer, possessionAnswer = null, deathVerb = 'died', deathCause = null, deathType = null, killerFormat = KILLED_BY_AN, }, endtime) {
     const how = deathType ?? DIED;
     if (!killer && how === GENOCIDED)
         killerFormat = NO_KILLER_PREFIX;
@@ -1291,7 +1303,7 @@ async function completeOrdinaryDeath({ killer, possessionAnswer = null, deathVer
     await createBonesFromDeath(deathCause || deathCauseRecord(killer, deathVerb), promptYesNo);
     if (showSummary) {
         game._preserveLeadingStyledBlanks = false;
-        await showTextWindow(deathSummaryLines(killer, summary, { deathVerb, deathCause, deathType }));
+        await showTextWindow(deathSummaryLines(killer, summary, endtime, { deathVerb, deathCause, deathType }));
     }
     await finishScoreDisplay(currentScoreRecord(summary, {
         killer, deathVerb, deathCause, deathType,
@@ -1358,14 +1370,14 @@ export async function doquit() {
 export async function finishOrdinaryQuit() {
     requireInitializedHero(game.u);
     await bot();
-    await startGameExit('quit');
+    const endtime = await startGameExit('quit');
     // really_done() admits bones while the outcome is still QUIT, then
     // converts an already-dead hero without another death or recovery phase.
     if (game.u.uhp < 1) {
         game.u.umortality = (game.u.umortality ?? 0) + 1;
         game._canMakeBones = false;
         const cause = "quit while already on Charon's boat";
-        await completeOrdinaryDeath({ killer: cause, deathCause: cause });
+        await completeOrdinaryDeath({ killer: cause, deathCause: cause }, endtime);
         return;
     }
     const taken = await settleGameExit('quit');
