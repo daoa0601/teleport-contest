@@ -200,7 +200,7 @@ async function normalThroneEffect(
             await plineWithContinuation(formatFeltMessage('your luck is changing.'));
             changeHeroLuck(1);
         } else {
-            await makeWish({ announce: game.flags?.verbose !== false });
+            await makeWish();
         }
         break;
     case 7:
@@ -271,7 +271,7 @@ async function specialThroneEffect(effect: number, x: number, y: number, { gotoL
     case 2:
     case 3:
     case 4:
-        await makeWish({ announce: game.flags?.verbose !== false });
+        await makeWish();
         removeThrone(x, y);
         await plineWithContinuation(
             'The throne disintegrates, having spent its power.',
