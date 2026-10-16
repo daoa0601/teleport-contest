@@ -31,7 +31,7 @@ void test('a fatal impossible in a room theme preserves its original reason', as
     t.mock.method(LuaState.prototype, 'executeAsync', async function (
         this: LuaState, source: string, filename = '<lua>',
     ) {
-        await execute.call(this, filename === 'themerms.lua'
+        await execute.call(this, filename === '(themerms.lua)'
             ? 'nh.impossible("The room theme cannot continue.")' : source, filename);
     });
 
@@ -40,36 +40,52 @@ void test('a fatal impossible in a room theme preserves its original reason', as
     assert.equal(dungeon.themeRooms, 'themerms.lua');
 });
 
-void test('a room theme syntax error reports a load error and falls back to ordinary rooms', async t => {
-    const state = freshGame({ flags: { bones: false } });
-    state.program_state.in_sanity_check = true;
-    initRng(999);
-    init_objects();
-    await init_dungeons();
-    await startLuaCore(t);
-    const dungeon = state.dungeons[0];
-    assert.ok(dungeon);
-    dungeon.themeRooms = 'themerms.lua';
-    state.u.uz = { dnum: 0, dlevel: 12 };
-    state.specialLevels?.clear();
-    state.branches = [];
-    resetInputState().feed(' ');
+for (const { label, source: malformedSource, diagnostic } of [
+    { label: 'a missing local name', source: 'local =',
+        diagnostic: /\[string "\(themerms\.lua\)"\]:1: <name> expected near '='/ },
+    { label: 'a missing local name on a later line', source: '-- room theme\nlocal =',
+        diagnostic: /\[string "\(themerms\.lua\)"\]:2: <name> expected near '='/ },
+    { label: 'an unexpected expression symbol', source: 'local answer = )',
+        diagnostic: /\[string "\(themerms\.lua\)"\]:1: unexpected symbol near '\)'/ },
+    { label: 'an unfinished conditional', source: 'if true then\n',
+        diagnostic: /\[string "\(themerms\.lua\)"\]:2: 'end' expected \(to close 'if' at line 1\) near <eof>/ },
+    { label: 'an unfinished local function with a multiline header', source: 'local function room\n()\n',
+        diagnostic: /\[string "\(themerms\.lua\)"\]:3: 'end' expected \(to close 'function' at line 2\) near <eof>/ },
+    { label: 'an unfinished quoted string', source: 'local message = "\n',
+        diagnostic: /\[string "\(themerms\.lua\)"\]:1: unfinished string near '"'/ },
+]) {
+    void test(`a room theme with ${label} reports Lua's diagnostic and falls back to ordinary rooms`, async t => {
+        const state = freshGame({ flags: { bones: false } });
+        state.program_state.in_sanity_check = true;
+        initRng(999);
+        init_objects();
+        await init_dungeons();
+        await startLuaCore(t);
+        const dungeon = state.dungeons[0];
+        assert.ok(dungeon);
+        dungeon.themeRooms = 'themerms.lua';
+        state.u.uz = { dnum: 0, dlevel: 12 };
+        state.specialLevels?.clear();
+        state.branches = [];
+        resetInputState().feed(' ');
 
-    // Feed malformed source to the real parser without changing packaged assets.
-    const execute = LuaState.prototype.executeAsync;
-    t.mock.method(LuaState.prototype, 'executeAsync', async function (
-        this: LuaState, source: string, filename = '<lua>',
-    ) {
-        await execute.call(this, filename === 'themerms.lua' ? 'local =' : source, filename);
+        // Feed malformed source to the real parser without changing packaged assets.
+        const execute = LuaState.prototype.executeAsync;
+        t.mock.method(LuaState.prototype, 'executeAsync', async function (
+            this: LuaState, source: string, filename = '<lua>',
+        ) {
+            await execute.call(this, filename === '(themerms.lua)' ? malformedSource : source, filename);
+        });
+
+        await mklev();
+
+        assert.match(state._lastPlineMessage, /^luaL_loadbuffer: Error loading \(themerms\.lua\): /);
+        assert.match(state._lastPlineMessage, diagnostic);
+        assert.ok(state.level.rooms.filter(isRoom).some(room => room.rtype === OROOM));
+        assert.equal(dungeon.themeRooms, undefined);
+        assert.equal(currentLuaLifecycle().getThemedState(state, 0), null);
     });
-
-    await mklev();
-
-    assert.match(state._lastPlineMessage, /^luaL_loadbuffer: Error loading \(themerms\.lua\): /);
-    assert.ok(state.level.rooms.filter(isRoom).some(room => room.rtype === OROOM));
-    assert.equal(dungeon.themeRooms, undefined);
-    assert.equal(currentLuaLifecycle().getThemedState(state, 0), null);
-});
+}
 
 void test('a missing room theme is disabled and ordinary rooms still generate on later levels', async t => {
     const state = freshGame({ flags: { bones: false } });

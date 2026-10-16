@@ -103,7 +103,8 @@ export class LuaLifecycle {
     createState(gameState: GameState, bindings: LuaBindings = {}): LuaGameState {
         const objects = createObjectApi(gameState);
         const state = new LuaGameState(bindingsFor(gameState, this, objects, bindings), objects);
-        state.execute(luaSource('nhlib.lua'), 'nhlib.lua');
+        // nhl_loadlua() names each buffer with its parenthesized filename.
+        state.execute(luaSource('nhlib.lua'), '(nhlib.lua)');
         return state;
     }
 
@@ -115,7 +116,7 @@ export class LuaLifecycle {
         this.callbackCounts.clear();
         const savedVariables = gameState.nh_lua_variables || null;
         this.core = this.createState(gameState);
-        this.core.execute(luaSource('nhcore.lua'), 'nhcore.lua');
+        this.core.execute(luaSource('nhcore.lua'), '(nhcore.lua)');
         if (savedVariables) {
             this.core.setGlobal(
                 'nh_lua_variables', objectToLuaTable(savedVariables),
@@ -194,7 +195,7 @@ export class LuaLifecycle {
         try {
             const source = luaSource(filename);
             beforeExecute?.(state);
-            await state.executeAsync(source, filename);
+            await state.executeAsync(source, `(${filename})`);
         } finally {
             await state.destroy();
         }
@@ -204,7 +205,7 @@ export class LuaLifecycle {
         const state = this.createSpecialState(gameState);
         try {
             const source = luaSource(filename);
-            state.execute(source, filename);
+            state.execute(source, `(${filename})`);
             return luaValueToJs(state.getGlobal(globalName));
         } finally {
             await state.destroy();
@@ -227,7 +228,7 @@ export class LuaLifecycle {
         try {
             const source = luaSource(filename);
             beforeExecute?.(state);
-            await state.executeAsync(source, filename);
+            await state.executeAsync(source, `(${filename})`);
             this.themed.set(dungeonNumber, { gameState, state });
             return state;
         } catch (error) {

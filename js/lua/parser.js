@@ -1,4 +1,5 @@
 import { lexLua } from './lexer.js';
+import { luaSyntaxError } from './syntax_error.js';
 const binaryPrecedence = {
     or: 1, and: 2,
     '<': 3, '>': 3, '<=': 3, '>=': 3, '~=': 3, '==': 3,
@@ -20,11 +21,12 @@ export function parseLua(source, filename = '<lua>') {
     function current() {
         const token = tokens[cursor];
         if (!token)
-            throw new SyntaxError(`${filename}: unexpected end of input`);
+            throw new Error('Lua parser advanced past the end of its tokens');
         return token;
     }
     function fail(message, token = current()) {
-        throw new SyntaxError(`${filename}:${token.line}:${token.column}: ${message}`);
+        const near = token.type === 'eof' ? '<eof>' : `'${token.text}'`;
+        throw luaSyntaxError(filename, token.line, message, near);
     }
     function is(value) {
         const token = current();
@@ -38,16 +40,25 @@ export function parseLua(source, filename = '<lua>') {
     function take(value = null) {
         const token = current();
         if (value !== null && token.value !== value)
-            fail(`expected ${value}, found ${token.value}`, token);
+            fail(`'${value}' expected`, token);
         cursor++;
         return token;
     }
     function takeName() {
         const token = current();
         if (token.type !== 'name')
-            fail(`expected a name, found ${token.value}`);
+            fail('<name> expected');
         take();
         return token.value;
+    }
+    // Lua check_match() identifies the opening construct when it is on an earlier line.
+    function takeClosing(value, opening) {
+        if (!is(value)) {
+            const context = opening.line === current().line ? ''
+                : ` (to close '${opening.value}' at line ${opening.line})`;
+            fail(`'${value}' expected${context}`);
+        }
+        take(value);
     }
     function parseExpressionList() {
         const expressions = [parseExpression()];
@@ -70,7 +81,7 @@ export function parseLua(source, filename = '<lua>') {
         }
         return body;
     }
-    function parseFunctionBody() {
+    function parseFunctionBody(opening) {
         take('(');
         const parameters = [];
         let vararg = false;
@@ -81,6 +92,8 @@ export function parseLua(source, filename = '<lua>') {
                     vararg = true;
                     break;
                 }
+                if (current().type !== 'name')
+                    fail("<name> or '...' expected");
                 parameters.push(takeName());
                 if (!is(','))
                     break;
@@ -89,11 +102,11 @@ export function parseLua(source, filename = '<lua>') {
         }
         take(')');
         const body = parseBlock(new Set(['end']));
-        take('end');
+        takeClosing('end', opening);
         return { type: 'Function', parameters, vararg, body };
     }
     function parseFunctionStatement() {
-        take('function');
+        const opening = take('function');
         let target = { type: 'Name', name: takeName() };
         while (is('.')) {
             take('.');
@@ -111,7 +124,7 @@ export function parseLua(source, filename = '<lua>') {
                 key: { type: 'Literal', value: takeName() },
             };
         }
-        const expression = parseFunctionBody();
+        const expression = parseFunctionBody(opening);
         if (method)
             expression.parameters.unshift('self');
         return { type: 'Assign', targets: [target], expressions: [expression] };
@@ -119,11 +132,12 @@ export function parseLua(source, filename = '<lua>') {
     function parseLocalStatement() {
         take('local');
         if (is('function')) {
-            take('function');
+            const opening = take('function');
             const name = takeName();
             return {
                 type: 'LocalFunction', name,
-                expression: parseFunctionBody(),
+                // Lua localfunc() passes the header's current line to body().
+                expression: parseFunctionBody({ ...opening, line: current().line }),
             };
         }
         const names = [takeName()];
@@ -136,7 +150,7 @@ export function parseLua(source, filename = '<lua>') {
         return { type: 'Local', names, expressions };
     }
     function parseIfStatement() {
-        take('if');
+        const opening = take('if');
         const clauses = [];
         let condition = parseExpression();
         take('then');
@@ -152,11 +166,11 @@ export function parseLua(source, filename = '<lua>') {
             take('else');
             otherwise = parseBlock(new Set(['end']));
         }
-        take('end');
+        takeClosing('end', opening);
         return { type: 'If', clauses, otherwise };
     }
     function parseForStatement() {
-        take('for');
+        const opening = take('for');
         const first = takeName();
         if (is('=')) {
             take('=');
@@ -168,7 +182,7 @@ export function parseLua(source, filename = '<lua>') {
                 : { type: 'Literal', value: 1 };
             take('do');
             const body = parseBlock(new Set(['end']));
-            take('end');
+            takeClosing('end', opening);
             return { type: 'ForNumeric', name: first, start, stop, step, body };
         }
         const names = [first];
@@ -180,21 +194,21 @@ export function parseLua(source, filename = '<lua>') {
         const expressions = parseExpressionList();
         take('do');
         const body = parseBlock(new Set(['end']));
-        take('end');
+        takeClosing('end', opening);
         return { type: 'ForGeneric', names, expressions, body };
     }
     function parseWhileStatement() {
-        take('while');
+        const opening = take('while');
         const condition = parseExpression();
         take('do');
         const body = parseBlock(new Set(['end']));
-        take('end');
+        takeClosing('end', opening);
         return { type: 'While', condition, body };
     }
     function parseRepeatStatement() {
-        take('repeat');
+        const opening = take('repeat');
         const body = parseBlock(new Set(['until']));
-        take('until');
+        takeClosing('until', opening);
         return { type: 'Repeat', body, condition: parseExpression() };
     }
     function parseReturnStatement() {
@@ -213,14 +227,14 @@ export function parseLua(source, filename = '<lua>') {
             if (!is(',') && !is('='))
                 return { type: 'CallStatement', call: first };
         }
-        if (!assignable(first))
-            fail('expected an assignment or function call');
+        if ((!is(',') && !is('=')) || !assignable(first))
+            fail('syntax error');
         const targets = [first];
         while (is(',')) {
             take(',');
             const target = parseSuffixedExpression();
             if (!assignable(target))
-                fail('invalid assignment target');
+                fail('syntax error');
             targets.push(target);
         }
         take('=');
@@ -240,9 +254,9 @@ export function parseLua(source, filename = '<lua>') {
         if (is('repeat'))
             return parseRepeatStatement();
         if (is('do')) {
-            take('do');
+            const opening = take('do');
             const body = parseBlock(new Set(['end']));
-            take('end');
+            takeClosing('end', opening);
             return { type: 'Do', body };
         }
         if (is('return'))
@@ -254,7 +268,7 @@ export function parseLua(source, filename = '<lua>') {
         return parseAssignmentOrCall();
     }
     function parseTable() {
-        take('{');
+        const opening = take('{');
         const fields = [];
         while (!is('}')) {
             if (is('[')) {
@@ -275,24 +289,24 @@ export function parseLua(source, filename = '<lua>') {
             }
             if (is(',') || is(';'))
                 take();
-            else if (!is('}'))
-                fail('expected a table field separator');
+            else
+                break;
         }
-        take('}');
+        takeClosing('}', opening);
         return { type: 'Table', fields };
     }
     function parseArguments() {
         if (is('(')) {
-            take('(');
+            const opening = take('(');
             const args = is(')') ? [] : parseExpressionList();
-            take(')');
+            takeClosing(')', opening);
             return args;
         }
         if (is('{'))
             return [parseTable()];
         if (current().type === 'string')
             return [{ type: 'Literal', value: take().value }];
-        fail('expected function arguments');
+        fail('function arguments expected');
     }
     function parsePrimary() {
         const token = current();
@@ -312,8 +326,8 @@ export function parseLua(source, filename = '<lua>') {
             return { type: 'Vararg' };
         }
         if (is('function')) {
-            take('function');
-            return parseFunctionBody();
+            const opening = take('function');
+            return parseFunctionBody(opening);
         }
         if (is('{'))
             return parseTable();
@@ -322,12 +336,12 @@ export function parseLua(source, filename = '<lua>') {
             return { type: 'Name', name: token.value };
         }
         if (is('(')) {
-            take('(');
+            const opening = take('(');
             const expression = parseExpression();
-            take(')');
+            takeClosing(')', opening);
             return { type: 'Group', expression };
         }
-        fail(`expected an expression, found ${token.value}`);
+        fail('unexpected symbol');
     }
     function parseSuffixedExpression() {
         let expression = parsePrimary();
@@ -394,7 +408,7 @@ export function parseLua(source, filename = '<lua>') {
     }
     const body = parseBlock(new Set());
     if (current().type !== 'eof')
-        fail(`unexpected ${current().value}`);
+        fail('<eof> expected');
     return { type: 'Chunk', body, filename };
 }
 //# sourceMappingURL=parser.js.map
