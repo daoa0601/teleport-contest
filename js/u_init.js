@@ -1347,7 +1347,8 @@ export async function uInitInventoryAttrs() {
         game.uarmh = game.uarmf = null;
     game.u.weaponSkills = null;
     game.u.skillRecord = [];
-    game.u.weapon_slots = 2;
+    // u_init_misc() starts with no slots; pauper_reinit() grants its two later.
+    game.u.weapon_slots = 0;
     game.spells = [];
     delete game._startingEffectsApplied;
     game.moves = 1;
