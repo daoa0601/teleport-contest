@@ -130,7 +130,7 @@ existing tests needed their setup corrected:
   `commitPetPickup()` and checks that the dagger stays on the floor until
   then.
 
-## Parallel batches 1–28 (`6eacc52`)
+## Parallel batches 1–29 (`7b21004`)
 
 Units ran in worktrees under `docs/orchestration.md` (Codex; each diff reviewed
 by Codex against the C source, then merged only if the full suite adds no
@@ -328,11 +328,16 @@ aklys/Mjollnir return and catch rolls) and C-source audits of
 life saving and disclosure), **audit-light** (`light.c`) and
 **audit-dungeon** (`dungeon.c` level bookkeeping and the overview).
 
+Batch 29: C-source audits of **audit-minion** (`minion.c`, `mplayer.c`),
+**audit-mklev** (`mklev.c` niches, graves, vaults and trap choice),
+**audit-rip** (`rip.c`/`topten.c` end-of-game screens) and **audit-vision**
+(`vision.c`).
+
 ## Verification
 
-`npm test` at `6eacc52`: **11,637/11,637**. Merges require a fully green suite;
+`npm test` at `7b21004`: **11,671/11,671**. Merges require a fully green suite;
 batch runs also compare matched screens per session with the previous batch
-(no screen regression in batch 28, eval, public or pool).
+(no screen regression in batch 29, eval, public or pool).
 
 ## Most recent native diagnostics
 
@@ -342,9 +347,9 @@ batch runs also compare matched screens per session with the previous batch
 | Native eval sample | 300/300 | 50,586/50,586 | 3,616,669/3,616,669 | 0 |
 | Holdout-dev pool | 2,500/2,500 | | | 0 |
 
-Runs: `.cache/generalization/batch28-6eacc52-{eval,public}` and
-`triage-6eacc52` (pool) in the verify worktree (baseline `base-06d7e73`:
-143/300; batch 27: 300/300, pool 2,500/2,500). No verified random call was
+Runs: `.cache/generalization/batch29-7b21004-{eval,public}` and
+`triage-7b21004` (pool) in the verify worktree (baseline `base-06d7e73`:
+143/300; batch 28: 300/300, pool 2,500/2,500). No verified random call was
 lost; the ledgers now hold 350 eval and 363 public functions. The
 state oracle finds all 300 sessions matching C state throughout.
 
@@ -352,9 +357,9 @@ state oracle finds all 300 sessions matching C state throughout.
 
 Every eval-sample and pool session completes and public matches every random
 call, so new work comes from C-source audits of files the corpora barely
-run. In flight: `mklev.c` (audit-mklev), `minion.c`/`mplayer.c`
-(audit-minion), `rip.c`/`topten.c` (audit-rip) and `options.c`
-(audit-options). review-debt-3's turn-loop restructuring
+run. In flight: `options.c` (audit-options), `dogmove.c`
+(audit-dogmove), `display.c` (audit-display) and `shknam.c`
+(audit-shknam). review-debt-3's turn-loop restructuring
 (delayed armor removal, `stealarm()`, prayer delay) is parked unmerged: it
 broke save/restore twice. `.cache/agents/queue.md` holds accepted review
 findings.
