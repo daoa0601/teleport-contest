@@ -195,8 +195,7 @@ void test('searching for furniture reveals a distant altar and exposes a furnitu
     planInput(input, t, [
         { prompt: /What do you want to invoke\?/, keys: ball.invlet },
         { prompt: /What do you look for\?/, keys: '_' },
-        { prompt: /You peer into the crystal ball\.\.\.--More--/, keys: ' ' },
-        { prompt: /Move cursor|instructions|Pick an object/, keys: '\x1b' },
+        { prompt: /You peer into the crystal ball\.\.\.(?!-)/, keys: '\x1b' },
     ]);
     await rhack('#'.charCodeAt(0));
     assert.equal(altar.remembered_glyph?.kind, 'terrain');

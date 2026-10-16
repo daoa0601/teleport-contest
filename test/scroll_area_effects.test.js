@@ -111,7 +111,7 @@ void test('blessed fire targets a distant explosion after consuming its scroll',
     assert.equal(game.inventory.includes(source), false);
     assert.equal(game.u.uhp, 500);
     assert.equal(monster.mhp, 500);
-    input.feed('llll.');
+    input.feed(' llll.');
     const result = await effect;
     assert.equal(result.consumed, true);
     assert.equal(game.inventory.includes(source), false);
@@ -122,7 +122,7 @@ void test('cancelling blessed fire targeting returns the explosion to the reader
     const input = room(t);
     requirePlayingGame(game);
     const source = await scroll(SCR_FIRE, { blessed: true });
-    input.feed('\x1b');
+    input.feed(' \x1b');
     await applyAreaScrollEffect(source);
     assert.ok(game.u.uhp < 500);
     assert.equal(game.inventory.includes(source), false);
@@ -226,7 +226,7 @@ for (const [blessed, cursed, size, damage] of [[false, true, 5, 4], [false, fals
         const input = room(t);
         requirePlayingGame(game);
         const source = await scroll(SCR_STINKING_CLOUD, { blessed, cursed });
-        input.feed('lll.');
+        input.feed(' lll.');
         const result = await applyAreaScrollEffect(source);
         assert.equal(result.known, true);
         assert.equal(result.consumed, false);
@@ -244,7 +244,7 @@ for (const keys of ['\x1b', 'llllll.']) {
         const input = room(t);
         requirePlayingGame(game);
         const source = await scroll(SCR_STINKING_CLOUD);
-        input.feed(keys);
+        input.feed(` ${keys}`);
         const result = await applyAreaScrollEffect(source);
         assert.equal(result.known, true);
         assert.equal(game.level.regions?.length || 0, 0);
@@ -261,7 +261,7 @@ void test('cloud targeting leaves the steed unmarked and refreshes its hallucina
     game.u.hallucinationTurns = 20;
     const source = await scroll(SCR_STINKING_CLOUD);
     const input = resetInputState();
-    input.feed('$');
+    input.feed(' $');
     const reading = applyAreaScrollEffect(source);
     await input.waitUntilBlocked();
     const marked = glyphAt(game.u.ux, game.u.uy);
@@ -285,7 +285,7 @@ void test('cloud spreads through corridors and doors and announces a newly envel
     doorSquare.typ = DOOR;
     doorSquare.doormask = D_CLOSED;
     vision_recalc(0);
-    input.feed('.');
+    input.feed(' .');
     await applyAreaScrollEffect(await scroll(SCR_STINKING_CLOUD, { cursed: true }));
     assert.ok(game.level.regions[0] != null);
     assert.equal(game.level.regions[0].cells.length, 5);

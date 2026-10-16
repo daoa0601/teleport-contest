@@ -17,6 +17,7 @@ import { screenDescription } from './pager_description.js';
 import { farlookLocationDescription } from './cmd.js';
 import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu, } from './tty_menu.js';
 import { rememberCommandKey, takeRepeatCommand } from './command_repeat.js';
+import { visibleCommandKey } from './command_keys.js';
 // defsym.h S_goodpos: the dollar sign doubles as the default getpos key
 // which toggles valid-position marking, so the mark glyph shares it.
 const GOODPOS_CH = '$';
@@ -82,6 +83,15 @@ export async function showGetposTip(state = game) {
     state._travelTipShown = true;
     await currentLuaLifecycle().callCore(state, 'getpos_tip');
     return true;
+}
+// getpos() prints a separate pline; tty decides whether it fits after the caller's message.
+export async function showGetposInstructions(state = game) {
+    if (!state.flags.verbose)
+        return;
+    const helpKey = state.commandBindings.specialKey('getpos.help');
+    if (helpKey === undefined)
+        throw new Error('Map selection requires a getpos.help binding');
+    await plineWithContinuation(`(For instructions type a '${visibleCommandKey(helpKey)}')`);
 }
 // C uses cmap identities, not the terminal character of a remembered glyph.
 // In particular, DEC's pi altar must still match the default '_' key.

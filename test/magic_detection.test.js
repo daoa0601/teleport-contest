@@ -146,8 +146,6 @@ void test('monster detection keeps its map and suspension until browsing has fin
     assert.match(game._pending_message, /sense the presence of monsters/);
     assert.equal(visibleMonsterAt(30, 10).mnum, monster.mnum);
     assert.equal(game.u.uburied, 0);
-    gate.feed(' ');
-    await gate.waitUntilBlocked();
     assert.match(game._pending_message, /For instructions/);
     assert.equal(glyphAt(30, 10)?.kind, 'monster');
     gate.feed('.');
@@ -211,7 +209,7 @@ void test('detected ghosts retain their blank species symbol with visible highli
     assert.equal(glyphAt(30, 10)?.kind, 'monster');
     assert.equal(level.requireAt(30, 10).disp_ch, ' ');
     assert.equal(level.requireAt(30, 10).disp_attr, 1);
-    gate.feed(' .');
+    gate.feed('.');
     await effect;
 });
 void test('monster browsing cycles to detected creatures without restoring ordinary vision', async () => {
@@ -222,8 +220,6 @@ void test('monster browsing cycles to detected creatures without restoring ordin
     const gate = new InputGate();
     bindInputGate(gate);
     const effect = detectMonsters(null);
-    await gate.waitUntilBlocked();
-    gate.feed(' ');
     await gate.waitUntilBlocked();
     gate.feed('m');
     await gate.waitUntilBlocked();

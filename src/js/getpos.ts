@@ -29,6 +29,7 @@ import {
 import type { GameState } from './game_state.js';
 import type { Position } from './map_types.js';
 import { rememberCommandKey, takeRepeatCommand } from './command_repeat.js';
+import { visibleCommandKey } from './command_keys.js';
 
 export type MapPositionPickType = typeof LOOK_TRADITIONAL | typeof LOOK_QUICK
     | typeof LOOK_ONCE | typeof LOOK_VERBOSE;
@@ -123,6 +124,14 @@ export async function showGetposTip(state = game) {
     state._travelTipShown = true;
     await currentLuaLifecycle().callCore(state, 'getpos_tip');
     return true;
+}
+
+// getpos() prints a separate pline; tty decides whether it fits after the caller's message.
+export async function showGetposInstructions(state: GameState = game): Promise<void> {
+    if (!state.flags.verbose) return;
+    const helpKey = state.commandBindings.specialKey('getpos.help');
+    if (helpKey === undefined) throw new Error('Map selection requires a getpos.help binding');
+    await plineWithContinuation(`(For instructions type a '${visibleCommandKey(helpKey)}')`);
 }
 
 // C uses cmap identities, not the terminal character of a remembered glyph.
