@@ -2837,10 +2837,9 @@ export function Is_botlevel(uz?: DungeonLocation | null): boolean {
     const dun = game?.dungeons?.[lev.dnum];
     return !!dun && lev.dlevel === dun.num_dunlevs;
 }
-export function In_hell(uz?: DungeonLocation | null, state: Pick<GameState, 'u' | 'valley_level'> = game): boolean {
+export function In_hell(uz?: DungeonLocation | null, state: Pick<GameState, 'u' | 'dungeons'> = game): boolean {
     const lev = uz ?? state?.u?.uz;
-    return !!lev && !!state?.valley_level
-        && lev.dnum === state.valley_level.dnum;
+    return !!lev && !!state.dungeons[lev.dnum]?.flags.hellish;
 }
 export function Invocation_lev(uz?: DungeonLocation | null, state: Pick<GameState, 'u' | 'valley_level' | 'dungeons'> = game): boolean {
     const lev = uz ?? state?.u?.uz;
