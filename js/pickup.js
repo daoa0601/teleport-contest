@@ -90,8 +90,9 @@ export async function autopickupAtHero() {
             const look = await checkHere(source, false);
             if (look.died)
                 return;
+            // C pickup(): this follows check_here()'s floor prose.
             if (heroCannotTake(game))
-                await pline('You are physically incapable of picking anything up.');
+                await plineWithContinuation('You are physically incapable of picking anything up.');
             return;
         }
         if (objects.length && game._runState?.mode !== 8)
