@@ -13,7 +13,7 @@ import {
 } from './const.js';
 import {
     canSpotMonster, flush_screen, lastDirtyMapCursor, map_invisible, newsym,
-    show_glyph_cell, unmap_invisible,
+    show_glyph_cell, unmap_invisible, zapdir_to_glyph,
 } from './display.js';
 import { game } from './gstate.js';
 import { MONSTER_NAME } from './monster_data.js';
@@ -45,7 +45,7 @@ export interface RayTraversalOptions {
     state?: GameState;
     direction: RayDirection;
     range: number;
-    color: number;
+    beamType: number;
     originX?: number;
     originY?: number;
     random?: typeof rn2;
@@ -222,7 +222,7 @@ export async function runRay({
     state = game,
     direction,
     range,
-    color,
+    beamType,
     originX = state.u.ux,
     originY = state.u.uy,
     random = rn2,
@@ -260,7 +260,7 @@ export async function runRay({
                     && (rayPositionIsOpen(x, y, state)
                         || (rayPositionIsValid(previousX, previousY)
                             && canSee(previousX, previousY)))) {
-                    paintRayCell(beamCells, x, y, dx, dy, color);
+                    paintRayCell(beamCells, x, y, dx, dy, beamType);
                     await captureRayTraversalFrame(state);
                 }
                 state.bhitpos = { x, y };
@@ -320,11 +320,10 @@ export async function captureRayTraversalFrame(state: GameState = game) {
     await state.animationFrame?.();
 }
 
-export function paintRayCell(cells: Map<string, Position>, x: number, y: number, dx: number, dy: number, color: number) {
+export function paintRayCell(cells: Map<string, Position>, x: number, y: number, dx: number, dy: number, beamType: number) {
     cells.set(`${x},${y}`, { x, y });
-    if (dy === 0) show_glyph_cell(x, y, 'q', color, true);
-    else if (dx === 0) show_glyph_cell(x, y, 'x', color, true);
-    else show_glyph_cell(x, y, dx === dy ? '\\' : '/', color, false);
+    const glyph = zapdir_to_glyph(dx, dy, beamType);
+    show_glyph_cell(x, y, glyph.ch, glyph.color, glyph.decgfx, 0, glyph);
 }
 
 export function clearRayCells(cells: ReadonlyMap<string, Position>) {

@@ -1119,6 +1119,23 @@ export function transientMonsterGlyph(monster) {
     return displayMonsterGlyph(heroIsHallucinating()
         ? rn2Display(MONSTER_COLOR.length) : monster.mnum, !!monster.female);
 }
+// Native zapdir_to_glyph() and reset_glyphmap(): direction selects one of
+// four symbols; the beam type retains a separate glyph even for equal colors.
+export function zapdir_to_glyph(dx, dy, beamType) {
+    const type = beamType >= 8 ? 0 : beamType;
+    const direction = dx === dy ? 2 : dx && dy ? 3 : dx ? 1 : 0;
+    const ascii = ['|', '-', '\\', '/'][direction];
+    if (ascii === undefined)
+        throw new Error('Beam direction has no display symbol');
+    const dec = !Is_rogue_level(game.u.uz) && /^DECgraphics$/i.test(game.symset ?? '')
+        && direction < 2;
+    const color = [CLR_BRIGHT_BLUE, CLR_ORANGE, CLR_WHITE, CLR_BRIGHT_BLUE,
+        CLR_BLACK, CLR_WHITE, CLR_GREEN, CLR_YELLOW][type];
+    if (color === undefined)
+        throw new RangeError(`Unknown beam type ${beamType}`);
+    return { ch: dec ? direction === 0 ? 'x' : 'q' : ascii,
+        color, decgfx: dec, kind: 'effect', glyph: GlyphOffset.zap + type * 4 + direction };
+}
 // C display.h:obj_to_glyph(), for tmp_at() callers.  A projectile has already
 // been extracted from the floor chain, so this deliberately derives only its
 // transient glyph and does not mutate hero memory or object discovery state.

@@ -1,8 +1,7 @@
 // Native m_throw() and bhit() tmp_at flight. Impacts run between frames, so a suspended
 // hit message retains the last flight cell until the input resumes.
-import { flush_screen, lastDirtyMapCursor, newsym, show_glyph_cell, transientObjectGlyph } from './display.js';
+import { flush_screen, lastDirtyMapCursor, newsym, show_glyph_cell, transientObjectGlyph, zapdir_to_glyph } from './display.js';
 import { COLNO, isok } from './const.js';
-import { CLR_WHITE } from './terminal.js';
 import { cansee } from './vision.js';
 import type { PlayingGameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
@@ -83,8 +82,6 @@ function drawTether(position: Position, state: PlayingGameState): void {
     // Pinned tether_glyph() uses the hero's position even for a monster's aklys.
     const dx = Math.sign(state.u.ux - position.x);
     const dy = Math.sign(state.u.uy - position.y);
-    if (dx === dy) show_glyph_cell(position.x, position.y, '\\', CLR_WHITE);
-    else if (dx && dy) show_glyph_cell(position.x, position.y, '/', CLR_WHITE);
-    else if (dx) show_glyph_cell(position.x, position.y, 'q', CLR_WHITE, true);
-    else show_glyph_cell(position.x, position.y, 'x', CLR_WHITE, true);
+    const glyph = zapdir_to_glyph(dx, dy, 2);
+    show_glyph_cell(position.x, position.y, glyph.ch, glyph.color, glyph.decgfx, 0, glyph);
 }

@@ -2,7 +2,7 @@ import { requirePlayingGame } from './gstate.js';
 // C spell.c:throwspell(), skilled elemental spells, cast_chain_lightning().
 import { exerciseAttribute } from './attrib.js';
 import { farlookLocationDescription } from './cmd.js';
-import { A_WIS, D_CLOSED, D_ISOPEN, D_LOCKED, DOOR, DRAWBRIDGE_UP, EXPL_FIERY, EXPL_FROSTY, HI_ZAP, IS_STWALL, Is_waterlevel, LAVAPOOL, MOAT, POOL, SPACE_POS, ZAP_POS, isok, xdir, ydir, } from './const.js';
+import { A_WIS, D_CLOSED, D_ISOPEN, D_LOCKED, DOOR, DRAWBRIDGE_UP, EXPL_FIERY, EXPL_FROSTY, IS_STWALL, Is_waterlevel, LAVAPOOL, MOAT, POOL, SPACE_POS, ZAP_POS, isok, xdir, ydir, } from './const.js';
 import { canSeeMonster, canSpotMonster, clearMessageWindow, flush_screen, map_invisible, plineWithContinuation, } from './display.js';
 import { explode } from './explosion.js';
 import { prepareMapPositionHighlights, selectMapPosition, shouldShowGetposTip, showGetposTip } from './getpos.js';
@@ -20,12 +20,10 @@ import { clearRayCells, paintRayCell } from './ray.js';
 import { rnd, rn2Display } from './rng.js';
 import { heroIsHallucinating } from './senses.js';
 import { adjustSpellDamage } from './spell_damage.js';
-import { CLR_BLACK, CLR_ORANGE, CLR_WHITE } from './terminal.js';
 import { cansee } from './vision.js';
 import { hitMonsterWithRay } from './zap.js';
 const CHAIN_LIGHTNING_LIMIT = 100;
 const LIGHTNING_SPELL_TYPE = 15;
-const beamColors = [HI_ZAP, CLR_ORANGE, CLR_WHITE, HI_ZAP, CLR_BLACK, CLR_WHITE];
 export async function castSkilledElementalSpell(pseudo, { state = game } = {}) {
     requireLiveGame(state);
     requirePlayingGame(state);
@@ -227,10 +225,7 @@ async function propagateLightning(queue, painted, zap, displayedBeam, state) {
         return;
     queue.push({ direction: zap.direction, x, y, strength });
     if (cansee(x, y)) {
-        const color = beamColors[displayedBeam];
-        if (color === undefined)
-            throw new RangeError(`Invalid lightning color ${displayedBeam}`);
-        paintRayCell(painted, x, y, dx, dy, color);
+        paintRayCell(painted, x, y, dx, dy, displayedBeam);
         await flush_screen(0);
     }
 }

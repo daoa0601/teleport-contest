@@ -6,7 +6,7 @@ import { currentAttribute, exerciseWisdom } from './attrib.js';
 import { findMonsterArmorClass } from './monworn.js';
 import { monsterAtPosition } from './monster_location.js';
 import { A_DEX, P_BASIC, P_SKILLED, P_EXPERT, COLNO, DOOR, D_CLOSED, D_LOCKED, In_mines, IS_ROOM, IS_WALL, Is_airlevel, ROWNO, STONE, W_AMUL, W_ARM, W_ARMS, ZAP_POS, } from './const.js';
-import { canSpotMonster, flush_screen, lastDirtyMapCursor, map_invisible, newsym, show_glyph_cell, unmap_invisible, } from './display.js';
+import { canSpotMonster, flush_screen, lastDirtyMapCursor, map_invisible, newsym, show_glyph_cell, unmap_invisible, zapdir_to_glyph, } from './display.js';
 import { game } from './gstate.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { monsterWieldedWeapon } from './monster_weapon.js';
@@ -156,7 +156,7 @@ export function rayBounceDirection(x, y, dx, dy, bounceback, state = game, rando
         return { dx, dy: -dy };
     return { dx: -dx, dy: -dy };
 }
-export async function runRay({ state = game, direction, range, color, originX = state.u.ux, originY = state.u.uy, random = rn2, canSee = (x, y) => cansee(x, y), onCell, stopAtObstacle = false, onObstacle = null, onBounce = async () => undefined, onVanish = async () => undefined, }) {
+export async function runRay({ state = game, direction, range, beamType, originX = state.u.ux, originY = state.u.uy, random = rn2, canSee = (x, y) => cansee(x, y), onCell, stopAtObstacle = false, onObstacle = null, onBounce = async () => undefined, onVanish = async () => undefined, }) {
     let dx = DIRECTION_X[direction] || 0;
     let dy = DIRECTION_Y[direction] || 0;
     let x = originX;
@@ -184,7 +184,7 @@ export async function runRay({ state = game, direction, range, color, originX = 
                     && (rayPositionIsOpen(x, y, state)
                         || (rayPositionIsValid(previousX, previousY)
                             && canSee(previousX, previousY)))) {
-                    paintRayCell(beamCells, x, y, dx, dy, color);
+                    paintRayCell(beamCells, x, y, dx, dy, beamType);
                     await captureRayTraversalFrame(state);
                 }
                 state.bhitpos = { x, y };
@@ -240,14 +240,10 @@ export async function captureRayTraversalFrame(state = game) {
         state.nhDisplay?.setCursor(...messageCursor);
     await state.animationFrame?.();
 }
-export function paintRayCell(cells, x, y, dx, dy, color) {
+export function paintRayCell(cells, x, y, dx, dy, beamType) {
     cells.set(`${x},${y}`, { x, y });
-    if (dy === 0)
-        show_glyph_cell(x, y, 'q', color, true);
-    else if (dx === 0)
-        show_glyph_cell(x, y, 'x', color, true);
-    else
-        show_glyph_cell(x, y, dx === dy ? '\\' : '/', color, false);
+    const glyph = zapdir_to_glyph(dx, dy, beamType);
+    show_glyph_cell(x, y, glyph.ch, glyph.color, glyph.decgfx, 0, glyph);
 }
 export function clearRayCells(cells) {
     for (const cell of cells.values())

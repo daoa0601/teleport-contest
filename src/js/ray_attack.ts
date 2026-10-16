@@ -64,10 +64,6 @@ import { flashBurn } from './sight_change.js';
 import { monsterResistsBlindingLight } from './blinding_attack.js';
 import { realRayName, displayRayName } from './ray_name.js';
 import {
-    CLR_BLACK, CLR_BRIGHT_BLUE, CLR_GREEN, CLR_ORANGE, CLR_WHITE,
-    CLR_YELLOW, NO_COLOR,
-} from './terminal.js';
-import {
     discoverHeroReflectionSource, heroReflectionSource, heroReflectsRay,
     monsterReflectsRay, monsterReflectionSource, rayHitsHero, rayHitsMonster,
     rayMonsterAt, runRay,
@@ -263,7 +259,7 @@ async function traceRay(direction: RayDirection, originX: number, originY: numbe
     let vanished = false;
     const stopped = await runRay({
         state, direction, range: dx || dy ? range : 1,
-        color: rayColor(context.displayDamageType), originX, originY, random,
+        beamType: context.displayDamageType - 1, originX, originY, random,
         canSee: (x, y) => cellIsVisible(state, x, y),
         onCell: async cell => {
             endpoint = cell;
@@ -725,11 +721,6 @@ function floorKind(damageType: DamageType, nativeType: number): RayFloorKind {
     if (damageType === AD_ELEC) return 'lightning';
     if (damageType === AD_ACID) return 'acid';
     return 'breath';
-}
-
-function rayColor(damageType: number) {
-    return [NO_COLOR, CLR_BRIGHT_BLUE, CLR_ORANGE, CLR_WHITE,
-        CLR_BRIGHT_BLUE, CLR_BLACK, CLR_WHITE, CLR_GREEN, CLR_YELLOW][damageType] ?? NO_COLOR;
 }
 
 function cellIsVisible(state: GameState, x: number, y: number) {
