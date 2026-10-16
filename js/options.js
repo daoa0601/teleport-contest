@@ -169,11 +169,10 @@ function setNumberPadOption(value, settings) {
     settings.iflags.num_pad = value > 0;
     settings.iflags.num_pad_mode = value === -1 ? 1 : value > 0 ? value - 1 : 0;
 }
-// C optfn_scores(): an explicit value replaces all three display choices.
 function parseScoreOption(value, negated) {
     if (!value)
         return null;
-    const choices = { end_top: 0, end_around: 0, end_own: false };
+    const choices = { end_top: 0, end_around: 0, end_own: false, error: null };
     let rest = negated ? '' : value.toLowerCase();
     while (rest) {
         const disabled = rest.startsWith('!') || rest.startsWith('no');
@@ -195,8 +194,12 @@ function parseScoreOption(value, negated) {
             choices.end_top = choices.end_around = 0;
             choices.end_own = false;
         }
-        else
+        else {
+            choices.error = /^-\d/.test(rest)
+                ? 'Values for scores:top and scores:around must not be negative'
+                : `Unknown scores parameter '${rest}'`;
             break;
+        }
         rest = rest.replace(/^[a-z]+ */, '');
         if (rest.startsWith('/'))
             rest = rest.slice(1).replace(/^ +/, '');
@@ -1124,9 +1127,11 @@ async function editCompoundOption(name, fullMenu) {
                 game.flags.end_top = parsed.end_top;
                 game.flags.end_around = parsed.end_around;
                 game.flags.end_own = parsed.end_own;
+                if (parsed.error)
+                    await optionError(parsed.error);
             }
             else
-                await plineWithContinuation("Missing parameter for 'scores:'");
+                await optionError("Missing parameter for 'scores:'");
         }
         else
             await setTextOption(name, value);

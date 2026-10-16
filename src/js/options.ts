@@ -184,9 +184,11 @@ function setNumberPadOption(value: number, settings: Pick<ConfigurationSettings,
 }
 
 // C optfn_scores(): an explicit value replaces all three display choices.
-function parseScoreOption(value: string | null, negated: boolean): Required<Pick<GameFlags, 'end_top' | 'end_around' | 'end_own'>> | null {
+type ScoreChoices = Required<Pick<GameFlags, 'end_top' | 'end_around' | 'end_own'>> & { error: string | null };
+
+function parseScoreOption(value: string | null, negated: boolean): ScoreChoices | null {
     if (!value) return null;
-    const choices = { end_top: 0, end_around: 0, end_own: false };
+    const choices: ScoreChoices = { end_top: 0, end_around: 0, end_own: false, error: null };
     let rest = negated ? '' : value.toLowerCase();
     while (rest) {
         const disabled = rest.startsWith('!') || rest.startsWith('no');
@@ -202,7 +204,12 @@ function parseScoreOption(value: string | null, negated: boolean): Required<Pick
         else if (rest[0] === 'n') {
             choices.end_top = choices.end_around = 0;
             choices.end_own = false;
-        } else break;
+        } else {
+            choices.error = /^-\d/.test(rest)
+                ? 'Values for scores:top and scores:around must not be negative'
+                : `Unknown scores parameter '${rest}'`;
+            break;
+        }
         rest = rest.replace(/^[a-z]+ */, '');
         if (rest.startsWith('/')) rest = rest.slice(1).replace(/^ +/, '');
     }
@@ -1092,7 +1099,8 @@ async function editCompoundOption(name: string, fullMenu: boolean): Promise<bool
                 game.flags.end_top = parsed.end_top;
                 game.flags.end_around = parsed.end_around;
                 game.flags.end_own = parsed.end_own;
-            } else await plineWithContinuation("Missing parameter for 'scores:'");
+                if (parsed.error) await optionError(parsed.error);
+            } else await optionError("Missing parameter for 'scores:'");
         } else await setTextOption(name, value);
     }
     return false;

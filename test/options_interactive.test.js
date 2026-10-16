@@ -364,4 +364,11 @@ void test('number-pad mode selection honors the configured menu search key', asy
     }
     assert.equal(game.commandBindings.phoneLayout, true);
 });
+void test('scores retains valid prefixes and reports a negative count', async () => {
+    freshObjectRoom();
+    await fullOptions(['scores'], () => '4top/-2around\n');
+    assert.equal(game.flags.end_top, 4);
+    assert.equal(game.flags.end_around, 0);
+    assert.match(game._pending_message, /Values for scores:top and scores:around must not be negative\./);
+});
 //# sourceMappingURL=options_interactive.test.js.map
