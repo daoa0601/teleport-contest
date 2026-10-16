@@ -24,6 +24,7 @@ import { CLUB, SACK, GOLD_PIECE } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { SAVE_VERSION } from '../js/state_schema.js';
+import { decodeSavedGame } from '../js/persistent_state_validation.js';
 import { decodeSavedGraph, encodeSavedGraph, isSavedRecord } from '../js/saved_graph.js';
 import { dropInventoryObject, runExtendedCommand } from './support/commands.js';
 import { addInventoryObject } from './support/game-objects.js';
@@ -115,6 +116,26 @@ void test('runSegment resumes a saved game through the same Engine boundary',
         assert.equal(restored.state.level instanceof GameMap, true);
     });
 
+
+void test('saves from before interface option separation report an incompatible version', async () => {
+    freshObjectRoom();
+    game.plname = 'OldOptions';
+    resetInputState().feed('\x1b');
+    await rhack('O'.charCodeAt(0));
+    const storage = memoryStorage();
+    assert.equal(await saveGame(storage), true);
+    const encoded = storage.getItem('teleport-save:oldoptions');
+    assert.ok(encoded);
+    const snapshot = decodeSavedGraph(encoded);
+    assert.ok(isSavedRecord(snapshot) && isSavedRecord(snapshot.state));
+    // Format 30 saved this flag after opening the options menu.
+    snapshot.version = 30;
+    snapshot.state._optionsInitialized = true;
+
+    assert.throws(() => decodeSavedGame(encodeSavedGraph(snapshot)), {
+        message: 'Saved game has invalid version',
+    });
+});
 
 for (const version of [SAVE_VERSION - 1, SAVE_VERSION + 1]) {
     void test(`incompatible save version ${version} is rejected without changing the live game`, async () => {
