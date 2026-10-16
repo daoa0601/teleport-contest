@@ -74,7 +74,7 @@ for (const scenario of [
         assert.equal(died, true);
         assert.equal(game.u.umonnum, game.u.umonster);
         assert.equal(game.u.strangledTurns ?? 0, 0);
-        assert.equal(wand.dknown, false);
+        assert.equal(wand.dknown, true, 'Postmortem identification reveals the carried wand');
         const records = loadScoreRecords();
         assert.equal(records[0]?.death, scenario.cause);
         const messages = text();

@@ -39,7 +39,7 @@ void test('an opposite-alignment helm changes alignment, confuses and curses, th
     assert.match(removal, /Your mind is back in sync with your body\./);
 });
 
-void test('a fatal Excalibur blast stops helmet wear before cursing or discovering its type', async () => {
+void test('a fatal Excalibur blast stops helmet wear before cursing it', async () => {
     freshObjectRoom({
         role: 'knight',
         hero: { uhp: 1, uhpmax: 1, ualign: { type: 1, record: 20, abuse: 0 }, ualignbase: [1, 1] },
@@ -57,7 +57,7 @@ void test('a fatal Excalibur blast stops helmet wear before cursing or discoveri
     assert.equal(game.program_state.gameover, true);
     assert.match(messages, /You are blasted by the long sword named Excalibur's power!/);
     assert.equal(helmet.cursed, false);
-    assert.equal(objectTypeKnown(helmet), false);
+    assert.equal(objectTypeKnown(helmet), true, 'The final inventory identifies the helmet');
     assert.doesNotMatch(messages, /glows black for a moment/);
 });
 
