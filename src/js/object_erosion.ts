@@ -20,11 +20,12 @@ import { removeObjectFromMonsterInventory } from './monster_inventory.js';
 import { removeWornHeroItem } from './hero_equipment.js';
 import { monsterName, possessiveName } from './monster_name.js';
 import {
-    DWARVISH_CLOAK, OBJECT_NAMES, OBJECT_PROPERTY,
+    DWARVISH_CLOAK, OBJECT_PROPERTY,
     OBJECT_SUBTYPE, SCR_BLANK_PAPER, TALLOW_CANDLE, WAN_FIRE, WAX_CANDLE,
 } from './object_data.js';
 import { delobj } from './object_delete.js';
-import { makePlural, verbForSubject } from './object_grammar.js';
+import { verbForSubject } from './object_grammar.js';
+import { objectCombatName } from './objnam.js';
 import { hasWornProperty } from './properties.js';
 import { rn2, rnl } from './rng.js';
 import { heroIsBlind } from './senses.js';
@@ -291,13 +292,7 @@ function objectView(object: GameObject, state: GameState,
     const floorVisible = !hero && !carrier && cansee(x, y)
         && (!isPoolAt(x, y, state) || (!!state.u.underwater
             && Math.max(Math.abs(state.u.ux - x), Math.abs(state.u.uy - y)) <= 1));
-    let name = displayName;
-    if (name === null) {
-        name = object.name || object.description || OBJECT_NAMES[object.otyp] || 'object';
-        if (!object.name && !object.description && object.oclass === SCROLL_CLASS)
-            name = `scroll of ${name}`;
-        if (object.quan > 1) name = makePlural(name);
-    }
+    let name = displayName ?? objectCombatName(object, { state });
     if (!hero && !monsterVisible) name = name.replace(/^the /iu, '');
     const plural = verbForSubject(name, 'are') === 'are';
     return {
