@@ -3764,6 +3764,7 @@ async function renewBonesIdentities(level, fruits) {
     // replacing their slot with the last member, as during region turns.
     for (const region of level.regions) {
         region.heroFault = false;
+        region.heroInside = false;
         let index = 0;
         while (index < region.monsterIds.length) {
             const mapped = remappedMonsterId(region.monsterIds[index], monsterIds);

@@ -2,7 +2,7 @@
 // C ref: teleport.c teleok(), safe_teleds(), teleds(), and tele_trap().
 import { formatFeltMessage } from './hero_speech.js';
 import { monsterHasMapPosition, monsterAtPosition, placeMonsterAt } from './monster_location.js';
-import { updateMonsterRegions } from './regions.js';
+import { updateHeroRegions, updateMonsterRegions } from './regions.js';
 import { clearMonsterWormFromMap, placeMonsterWormTailRandomly } from './monster_worm.js';
 import { game, requireLiveGame, requireGameLevel, requirePlayingGame } from './gstate.js';
 import { impossible } from './diagnostics.js';
@@ -138,7 +138,10 @@ export function heroTeleportDestinationOk(x, y, { state = game, allowTrap = fals
         return false;
     if (!goodPosition(x, y, { kind: 'hero' }, { state }))
         return false;
-    return !crossesTeleportBoundary(state, state.u.ux, state.u.uy, x, y);
+    if (crossesTeleportBoundary(state, state.u.ux, state.u.uy, x, y))
+        return false;
+    updateHeroRegions(state, x, y);
+    return true;
 }
 function shuffleCoordinates(coordinates, random) {
     let start = 0;
@@ -921,6 +924,7 @@ export async function moveHeroByTeleport(x, y, state = game, { allowDrag = false
     const chain = state.uchain || u.uchain;
     if (ballActive && chain?.where === 'free')
         await placeBallAndChain(state);
+    updateHeroRegions(state);
     newsym(oldx, oldy);
     await see_monsters();
     state.vision_full_recalc = 1;

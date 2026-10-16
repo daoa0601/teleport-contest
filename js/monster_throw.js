@@ -46,7 +46,7 @@ import { objectMaterial } from './object_material.js';
 import { shipObject } from './object_migration.js';
 import { isPoisonableObject } from './object_properties.js';
 import { splitObjectStack } from './object_stack.js';
-import { objectCombatName, objectHasPersonalName, killerObjectName } from './objnam.js';
+import { objectCombatName, objectHasPersonalName, killerObjectName, observeObjectForNaming } from './objnam.js';
 import { stopHeroOccupation } from './occupation.js';
 import { heroHasNoHands } from './polyself.js';
 import { poisonHero } from './poison.js';
@@ -604,6 +604,9 @@ async function launchVolley(source, weapon, target, state, { random = rn2, rollO
         if (volley > 1)
             appearance = `${volley} ${objectCombatName(weapon, { state })}`;
         else {
+            // C singular(otmp, xname) observes the original stack while
+            // temporarily naming one missile. Keep that knowledge on it.
+            observeObjectForNaming(weapon, { state });
             const single = { ...weapon, quan: 1, quantity: 1 };
             const name = objectCombatName(single, { state });
             appearance = objectHasPersonalName(single, state)

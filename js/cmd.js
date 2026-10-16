@@ -20,7 +20,7 @@ import { waterDamageObject } from './trap.js';
 import { dip, dipInto } from './potion_dip.js';
 import { AKLYS, BOOMERANG, CRYSTAL_BALL } from './object_data.js';
 import { useCrystalBall } from './crystal_ball.js';
-import { visibleRegionAt } from './regions.js';
+import { updateHeroRegions, visibleRegionAt } from './regions.js';
 import { wizIntrinsic } from './wizard_intrinsics.js';
 import { wizFuzzer, wizPanic } from './wizard_debug_commands.js';
 import { wizSmell } from './wizard_smell.js';
@@ -7205,6 +7205,7 @@ async function domoveCore(dx, dy, explicitAttempt) {
                 return ballChainMove.consumedTurn;
             }
             const oldx = u.ux, oldy = u.uy;
+            updateHeroRegions(game, newx, newy);
             u.ux = newx;
             u.uy = newy;
             await settleBeastHeroDisplacement(monster, game);
@@ -7236,15 +7237,10 @@ async function domoveCore(dx, dy, explicitAttempt) {
                 if (flight.heroDied)
                     return true;
             }
-            const tameName = monster.name || (monster.mnum === 16
-                ? 'your little dog' : monster.mnum === 32 ? 'your kitten'
-                : monster.mnum === 100 ? 'your saddled pony' : 'your pet');
-            const speciesName = monsterInstanceDisplayName(monster);
-            const subject = tame ? tameName
-                : monster.name ? speciesName : `the ${speciesName}`;
             if (blocked || inShop) {
-                const displayName = subject.charAt(0).toUpperCase()
-                    + subject.slice(1);
+                const displayName = monsterName(monster, {
+                    state: game, article: 'your', capitalized: true,
+                });
                 await plineWithContinuation(`You stop.  ${displayName} is in the way!`);
                 stopRun(game);
                 return true;
@@ -7280,6 +7276,7 @@ async function domoveCore(dx, dy, explicitAttempt) {
             const oldx = u.ux, oldy = u.uy;
             u.ux0 = oldx;
             u.uy0 = oldy;
+            updateHeroRegions(game, newx, newy);
             u.ux = newx;
             u.uy = newy;
             await moveSteedWithHero();
@@ -7308,9 +7305,9 @@ async function domoveCore(dx, dy, explicitAttempt) {
             // announcement can flush the map or pause for acknowledgment.
             newsym(newx, newy);
             newsym(oldx, oldy);
-            const swapName = tame ? tameName
-                : monster.name ? `peaceful ${speciesName}`
-                    : `the peaceful ${speciesName}`;
+            const swapName = monsterName(monster, {
+                state: game, article: 'your', adjective: tame ? '' : 'peaceful',
+            });
             await plineWithContinuation(`You swap places with ${swapName}.`);
             return finishMovedHero({
                 oldx, oldy, newx, newy, loc, explicitAttempt,
@@ -7450,6 +7447,15 @@ async function domoveCore(dx, dy, explicitAttempt) {
         return false;
     if (await rejectTightHeroDiagonal(dx, dy))
         return false;
+    if (!(dx && dy && heroBadRock(game, u.ux, newy) && heroBadRock(game, newx, u.uy))
+        && wormCrossesBetween(u.ux, u.uy, newx, newy, game)) {
+        const worm = monsterAtPosition(game.level, u.ux, newy);
+        if (!worm)
+            throw new Error('A crossing worm must occupy the adjacent square.');
+        await pline(`${monsterName(worm, { state: game, article: 'your', capitalized: true })} is in your way.`);
+        game.context.move = 0;
+        return false;
+    }
     const boulder = heroPassesWalls(game) && !game.level.flags.sokoban_rules ? null
         : (game.level.objects[newx]?.[newy] || []).find(object => object.otyp === BOULDER);
     const hallucinating = heroIsHallucinating(game);
@@ -7503,6 +7509,7 @@ async function domoveCore(dx, dy, explicitAttempt) {
     const oldx = u.ux, oldy = u.uy;
     u.ux0 = oldx;
     u.uy0 = oldy;
+    updateHeroRegions(game, newx, newy);
     u.ux = newx;
     u.uy = newy;
     await moveSteedWithHero();

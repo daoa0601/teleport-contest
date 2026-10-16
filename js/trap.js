@@ -187,11 +187,6 @@ export function monsterTrapVisibility(monster, state = game) {
 function wornObject(monster, mask) {
     return inventoryOf(monster).find(object => ((object.owornmask ?? 0) & mask) !== 0) || null;
 }
-function objectDescription(object, fallback) {
-    if (!object)
-        return fallback;
-    return object.name || OBJECT_NAMES[object.otyp] || fallback;
-}
 function objectContents(object) {
     return object.contents || [];
 }
@@ -611,7 +606,7 @@ export async function applyMonsterRustTrap(monster, state, { roll = rn2, luckRol
         if (shieldResult === 'nothing') {
             const weapon = monsterWieldedWeapon(monster);
             if (weapon && OBJECT_BIMANUAL[weapon.otyp]) {
-                addWaterEffect(event, rustObject(weapon, objectDescription(weapon, 'weapon'), monster, state, roll, luckRoll));
+                addWaterEffect(event, rustObject(weapon, objectCombatName(weapon, { state }), monster, state, roll, luckRoll));
             }
             const gloves = wornObject(monster, W_ARMG);
             addWaterEffect(event, rustObject(gloves, gloves ? armorSimpleName(gloves, state) : 'gloves', monster, state, roll, luckRoll));
@@ -620,7 +615,7 @@ export async function applyMonsterRustTrap(monster, state, { roll = rn2, luckRol
     else if (targetRoll === 2) {
         event.target = 'right-arm';
         const weapon = monsterWieldedWeapon(monster);
-        addWaterEffect(event, rustObject(weapon, objectDescription(weapon, 'weapon'), monster, state, roll, luckRoll));
+        addWaterEffect(event, rustObject(weapon, weapon ? objectCombatName(weapon, { state }) : 'weapon', monster, state, roll, luckRoll));
         const gloves = wornObject(monster, W_ARMG);
         addWaterEffect(event, rustObject(gloves, gloves ? armorSimpleName(gloves, state) : 'gloves', monster, state, roll, luckRoll));
     }
