@@ -4221,9 +4221,17 @@ async function doDungeonOverview() {
             if (record?.flags.quest_summons)
                 lines.push(`      Summoned by ${questLeaderName()}.`);
             if (record?.branch) {
+                const branch = record.branch;
                 const target = game.dungeons?.[record.branch.dnum]?.dname
                     || 'another dungeon';
-                lines.push(`      Stairs ${record.branch.up ? 'up' : 'down'} to ${target}.`);
+                const direction = branch.up ? 'up' : 'down';
+                const description = branch.type === 'portal'
+                    ? branch.dnum === game.quest_dnum && game.u.uevent?.qexpelled ? 'Sealed portal' : 'Portal'
+                    : branch.type === 'no_end1' ? 'Connection'
+                        : branch.type === 'no_end2' ? `One way stairs ${direction}` : `Stairs ${direction}`;
+                const targetLevel = branch.up && !In_endgame(branch)
+                    ? `, level ${dungeonDepth(branch.dnum, branch.dlevel)}` : '';
+                lines.push(`      ${description} to ${target}${targetLevel}.`);
             }
         }
     }

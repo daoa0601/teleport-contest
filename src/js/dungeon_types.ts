@@ -58,7 +58,7 @@ export interface OverviewRecord {
         ngrave: number;
         ntree: number;
     };
-    branch: (DungeonLocation & { up: boolean }) | null;
+    branch: (DungeonLocation & { up: boolean; type: DungeonBranchType }) | null;
     seenRooms: number[];
     untendedRooms: number[];
 }

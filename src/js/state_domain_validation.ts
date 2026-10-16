@@ -127,6 +127,7 @@ export function validSavedOverviewRecord(value: unknown): value is OverviewRecor
         branch: nullable((entry): entry is NonNullable<OverviewRecord['branch']> =>
             closedFieldsMatch<NonNullable<OverviewRecord['branch']>>(entry, {
                 dnum: integer, dlevel: integer, up: boolean,
+                type: oneOf('stair', 'portal', 'no_end1', 'no_end2'),
             })),
         seenRooms: arrayOf(integer),
         untendedRooms: arrayOf(integer),

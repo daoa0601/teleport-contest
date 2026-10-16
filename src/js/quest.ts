@@ -31,6 +31,7 @@ import { rn2 } from './rng.js';
 import { createPoisonGasCloud } from './regions.js';
 import { deleteTrap } from './trap_lifecycle.js';
 import { impossible } from './diagnostics.js';
+import { markOverviewUnreachable } from './dungeon.js';
 
 const MS_NEMESIS = 37;
 const MS_GUARDIAN = 38;
@@ -533,9 +534,7 @@ export async function scheduleQuestExpulsion(seal: boolean, state: GameState = g
 function forgetQuestOverview(state: GameState): void {
     const dungeon = state.quest_dnum ?? state.u.uz?.dnum;
     if (dungeon === undefined) return;
-    for (const key of state._overviewRecords?.keys() ?? []) {
-        if (key.startsWith(`${dungeon}:`)) state._overviewRecords?.delete(key);
-    }
+    markOverviewUnreachable(dungeon, state);
 }
 
 // quest.c:expulsion(FALSE) schedules a portal arrival on the parent side of

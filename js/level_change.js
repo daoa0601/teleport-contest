@@ -21,7 +21,7 @@ import { restoreMonsterShape } from './monster_polymorph.js';
 import { restoreMonsterWormHeads } from './monster_worm.js';
 import { restoreLevelRegions } from './regions.js';
 import { mklev, place_lregion, u_on_downstairs, u_on_upstairs } from './mklev.js';
-import { dungeonBuildsUp, level_difficulty, specialPrototypeAt } from './dungeon.js';
+import { dungeonBuildsUp, level_difficulty, specialPrototypeAt, recordMappedOverviewState, recordOverviewBranch, markOverviewUnreachable } from './dungeon.js';
 import { findNearbyMonsterPosition } from './teleport_rules.js';
 import { moveMonsterNextToHero, randomMonsterRelocation } from './teleport.js';
 import { placeHeroOnLevel } from './hero_location.js';
@@ -143,6 +143,7 @@ export async function gotoLevel(targetDepth, { arrival = 'random', ladder = fals
     const followers = game.iflags.nofollowers ? [] : await collectLevelFollowers(game);
     if (game.program_state.gameover)
         return true;
+    recordMappedOverviewState();
     // Losing sight of this level can use display randomness while the hero
     // hallucinates. Do it before generating the destination.
     vision_recalc(2);
@@ -168,6 +169,14 @@ export async function gotoLevel(targetDepth, { arrival = 'random', ladder = fals
         lifecycle.themed.delete(tutorialDnum);
         await tutorialState?.destroy();
     }
+    if (leavingTutorial)
+        markOverviewUnreachable(oldDepth.dnum);
+    else if (oldDepth.dnum !== destinationDepth.dnum && In_endgame(destinationDepth)) {
+        for (let dnum = 0; dnum < game.dungeons.length; dnum++)
+            markOverviewUnreachable(dnum);
+    }
+    if (arrival === 'stairs' || arrival === 'downstairs' || arrival === 'portal' || arrival === 'falling')
+        recordOverviewBranch(oldDepth, destinationDepth);
     const cached = game._levelCache.get(levelCacheKey(destinationDepth));
     game.u.uz0 = oldDepth;
     game.u.uz = destinationDepth;

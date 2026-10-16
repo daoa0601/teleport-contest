@@ -341,6 +341,23 @@ export function recordTempleOverview(state: GameState = game): void {
     else if (sameDungeonLevel(here, state.sanctum_level)) record.flags.msanctum = true;
 }
 
+// C recbranch_mapseen(): only traversal from the parent endpoint teaches a
+// connection. Level teleport and artifact travel do not call this function.
+export function recordOverviewBranch(source: DungeonLocation, destination: DungeonLocation, state: GameState = game): void {
+    if (source.dnum === destination.dnum) return;
+    const branch = state.branches.find(branch => sameDungeonLevel(source, branch.end1)
+        && sameDungeonLevel(destination, branch.end2));
+    const record = state._overviewRecords?.get(`${source.dnum}:${source.dlevel}`);
+    if (branch && record) record.branch = { ...branch.end2, up: branch.end1_up, type: branch.type };
+}
+
+// C remdun_mapseen(): keep knowledge for disclosure and possible reentry.
+export function markOverviewUnreachable(dnum: number, state: GameState = game): void {
+    for (const [key, record] of state._overviewRecords || []) {
+        if (Number(key.split(':')[0]) === dnum) record.flags.notreachable = true;
+    }
+}
+
 // C dungeon.c:room_discovered(). Recalculation occurs once per newly seen room.
 export function recordDiscoveredRoom(
     roomIndex: number, { state = game }: { state?: GameState } = {},
