@@ -1585,7 +1585,7 @@ export const SHIELD_STATIC = [
 // C display.c:shieldeff().  Resistance effects own a fixed 21-frame glyph
 // cycle at the protected coordinate, then restore the normal map projection.
 export async function shieldeff(x: number, y: number, g: GameState = game) {
-    if (!cansee(x, y)) return;
+    if (g.flags.sparkle === false || !cansee(x, y)) return;
     try {
         for (const ch of SHIELD_STATIC) {
             show_glyph_cell(x, y, ch, CLR_BRIGHT_BLUE, false);
