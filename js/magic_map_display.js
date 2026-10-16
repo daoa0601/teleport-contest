@@ -97,7 +97,7 @@ export async function browseDetectionMap(terrainMode, goal, { objects = null, st
         await selectMapPosition({
             start: { x: state.u.ux, y: state.u.uy },
             prompt: hadTip ? `${hint}${hint ? '  ' : ''}Move cursor to ${goal}:` : hint,
-            goal, force: false, preserveMap: true,
+            goal, force: false,
             describe: (x, y) => detectionDescription(x, y, terrainMode, objects, state),
         });
     }
