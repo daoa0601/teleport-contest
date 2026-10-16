@@ -13,7 +13,7 @@ import {
 } from './const.js';
 import {
     canSpotMonster, flush_screen, lastDirtyMapCursor, map_invisible, newsym,
-    show_glyph_cell, unmap_invisible, zapdir_to_glyph,
+    unmap_invisible, zapdir_to_glyph,
 } from './display.js';
 import { game } from './gstate.js';
 import { MONSTER_NAME } from './monster_data.js';
@@ -25,6 +25,7 @@ import {
 import { recordObjectKnowledge } from './object_knowledge.js';
 import { rn2, rnd } from './rng.js';
 import { cansee } from './vision.js';
+import { TemporaryMapEffect } from './temporary_map_effect.js';
 
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
@@ -237,7 +238,8 @@ export async function runRay({
     let dy = DIRECTION_Y[direction] || 0;
     let x = originX;
     let y = originY;
-    const beamCells = new Map<string, Position>();
+    const beamCells = new TemporaryMapEffect('beam', zapdir_to_glyph(dx, dy, beamType));
+    await beamCells.start();
     let heroDied = false;
 
     try {
@@ -303,7 +305,7 @@ export async function runRay({
             }
         }
     } finally {
-        if (!heroDied && !state.program_state?.gameover) clearRayCells(beamCells);
+        if (!heroDied && !state.program_state?.gameover) beamCells.clear();
     }
     return undefined;
 }
@@ -320,14 +322,10 @@ export async function captureRayTraversalFrame(state: GameState = game) {
     await state.animationFrame?.();
 }
 
-export function paintRayCell(cells: Map<string, Position>, x: number, y: number, dx: number, dy: number, beamType: number) {
-    cells.set(`${x},${y}`, { x, y });
+export function paintRayCell(effect: TemporaryMapEffect, x: number, y: number, dx: number, dy: number, beamType: number) {
     const glyph = zapdir_to_glyph(dx, dy, beamType);
-    show_glyph_cell(x, y, glyph.ch, glyph.color, glyph.decgfx, 0, glyph);
-}
-
-export function clearRayCells(cells: ReadonlyMap<string, Position>) {
-    for (const cell of cells.values()) newsym(cell.x, cell.y);
+    effect.changeGlyph(glyph);
+    effect.draw(x, y);
 }
 
 function rayBouncebackChance(valid: boolean, location: MapLocation | null | undefined, state: GameState) {

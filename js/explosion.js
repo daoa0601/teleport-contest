@@ -34,6 +34,7 @@ import { cansee } from './vision.js';
 import { applyRayFloorFeatures, destroyInventoryByElement, destroyMonsterInventoryByElement, } from './zap.js';
 import { rayDamageType } from './magic_types.js';
 import { requirePlayingGame } from './gstate.js';
+import { TemporaryMapEffect } from './temporary_map_effect.js';
 const WAND_CLASS = 11;
 const SCROLL_CLASS = 9;
 const RAY = 3;
@@ -342,16 +343,15 @@ async function paintExplosion(cells, state) {
         await flush_screen(1);
         state.nhDisplay?.setCursor(state.u.ux - 1, state.u.uy + 1);
     };
-    const painted = [];
-    await flush_screen(0);
+    const first = cells[0];
+    if (!first)
+        return;
+    const effect = new TemporaryMapEffect('beam', first.glyph);
+    await effect.start();
     try {
         for (const cell of cells) {
-            // DISP_BEAM keeps hidden squares off-screen; shield glyphs bypass it.
-            if (!cansee(cell.x, cell.y))
-                continue;
-            paint(cell);
-            painted.push(cell);
-            await flush_screen(0);
+            effect.changeGlyph(cell.glyph);
+            await effect.show(cell.x, cell.y);
         }
         await flush();
         if (state.flags.sparkle && cells.some(cell => cell.shield)) {
@@ -374,8 +374,7 @@ async function paintExplosion(cells, state) {
         }
     }
     finally {
-        for (const cell of painted)
-            newsym(cell.x, cell.y);
+        effect.clear();
     }
 }
 function hallucinatedExplosion(limit = Infinity) {

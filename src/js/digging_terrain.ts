@@ -39,6 +39,7 @@ import {
     explosionGlyph, shieldGlyph, SHIELD_STATIC,
 } from './display.js';
 import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
+import { TemporaryMapEffect } from './temporary_map_effect.js';
 import { levelAtDepth } from './dungeon.js';
 import { depth } from './hacklib.js';
 import type { GameState, PlayingGameState } from './game_state.js';
@@ -846,14 +847,12 @@ async function explodeMagicalTrapAt(x: number, y: number, state: PlayingGameStat
     }
 
     if (visible) {
-        const painted: BlastCell[] = [];
-        await flush_screen(0);
+        const effect = new TemporaryMapEffect('beam', explosionGlyph(EXPL_MAGICAL, -1, -1));
+        await effect.start();
         for (const cell of cells) {
-            if (!cansee(cell.x, cell.y)) continue;
             const glyph = explosionGlyph(EXPL_MAGICAL, cell.x - x, cell.y - y);
-            show_glyph_cell(cell.x, cell.y, glyph.ch, glyph.color, glyph.decgfx, 0, glyph);
-            painted.push(cell);
-            await flush_screen(0);
+            effect.changeGlyph(glyph);
+            await effect.show(cell.x, cell.y);
         }
         await flush_screen(1);
         if (anyShield && state.flags?.sparkle !== false) {
@@ -878,7 +877,7 @@ async function explodeMagicalTrapAt(x: number, y: number, state: PlayingGameStat
             await state.animationFrame?.();
         }
         // tmp_at(DISP_END): clear the explosion
-        for (const cell of painted) newsym(cell.x, cell.y);
+        effect.clear();
     } else if (!deaf) {
         await publishHeardMessage('a blast.', plineWithContinuation, state);
     }

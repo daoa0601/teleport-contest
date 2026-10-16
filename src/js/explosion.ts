@@ -66,6 +66,7 @@ import type { DamageType } from './monster_attack_types.js';
 import type { InventoryDamageType, MagicDamageResult, RayFloorKind } from './magic_types.js';
 import { rayDamageType } from './magic_types.js';
 import { requirePlayingGame } from './gstate.js';
+import { TemporaryMapEffect } from './temporary_map_effect.js';
 
 export interface ExplosionOptions {
     state?: GameState;
@@ -395,15 +396,14 @@ async function paintExplosion(cells: readonly ExplosionCell[], state: GameState)
         await flush_screen(1);
         state.nhDisplay?.setCursor(state.u.ux - 1, state.u.uy + 1);
     };
-    const painted: ExplosionCell[] = [];
-    await flush_screen(0);
+    const first = cells[0];
+    if (!first) return;
+    const effect = new TemporaryMapEffect('beam', first.glyph);
+    await effect.start();
     try {
         for (const cell of cells) {
-            // DISP_BEAM keeps hidden squares off-screen; shield glyphs bypass it.
-            if (!cansee(cell.x, cell.y)) continue;
-            paint(cell);
-            painted.push(cell);
-            await flush_screen(0);
+            effect.changeGlyph(cell.glyph);
+            await effect.show(cell.x, cell.y);
         }
         await flush();
         if (state.flags.sparkle && cells.some(cell => cell.shield)) {
@@ -422,7 +422,7 @@ async function paintExplosion(cells: readonly ExplosionCell[], state: GameState)
             await state.animationFrame?.();
         }
     } finally {
-        for (const cell of painted) newsym(cell.x, cell.y);
+        effect.clear();
     }
 }
 

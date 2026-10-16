@@ -16,7 +16,9 @@ import { monsterName } from './monster_name.js';
 import { monsterHasShockResistance } from './monster_resistance.js';
 import { SPE_CONE_OF_COLD, SPE_MAGIC_MISSILE } from './object_data.js';
 import { walkPathCells } from './path_walk.js';
-import { clearRayCells, paintRayCell } from './ray.js';
+import { paintRayCell } from './ray.js';
+import { TemporaryMapEffect } from './temporary_map_effect.js';
+import { zapdir_to_glyph } from './display.js';
 import { rnd, rn2Display } from './rng.js';
 import { heroIsHallucinating } from './senses.js';
 import { adjustSpellDamage } from './spell_damage.js';
@@ -129,8 +131,8 @@ export async function castChainLightning({ state = game } = {}) {
     if (state.u.uswallow)
         return { heroDied: false };
     const queue = [];
-    const painted = new Map();
-    await flush_screen(0);
+    const painted = new TemporaryMapEffect('beam', zapdir_to_glyph(0, 1, displayedBeam));
+    await painted.start();
     try {
         for (let direction = 0; direction < 8; direction++)
             await propagateLightning(queue, painted, {
@@ -197,7 +199,7 @@ export async function castChainLightning({ state = game } = {}) {
     }
     finally {
         if (!state.program_state.gameover)
-            clearRayCells(painted);
+            painted.clear();
     }
     return { heroDied: false };
 }
