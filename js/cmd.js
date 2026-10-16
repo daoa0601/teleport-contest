@@ -2328,7 +2328,7 @@ function setLevelAnnotation(level, value) {
     // existing value; space-only input removes it after mungspaces().
     if (value === null || value === '')
         return;
-    const annotation = value.trim().replace(/\s+/g, ' ');
+    const annotation = value.replace(/\t/g, ' ').replace(/ +/g, ' ').replace(/^ | $/g, '');
     const key = `${level.dnum}:${level.dlevel}`;
     if (!game._levelAnnotations)
         game._levelAnnotations = new Map();
@@ -2362,7 +2362,7 @@ async function queryLevelAnnotation(level = null, inMenu = false) {
     const prior = game._levelAnnotations?.get(`${location.dnum}:${location.dlevel}`);
     const prompt = prior ? `Replace annotation "${prior.slice(0, 30)}${prior.length > 30 ? '...' : ''}" with?`
         : `What do you want to call ${annotationLevelDescription(location)}?`;
-    const value = await getLine(prompt, (_ch, key) => key >= 32 && key < 127, { inMenu });
+    const value = await getLine(prompt, () => true, { inMenu });
     setLevelAnnotation(location, value);
 }
 async function doannotate() {

@@ -2446,7 +2446,7 @@ function setLevelAnnotation(level: DungeonLocation, value: string | null) {
     // dungeon.c:query_annotation(): empty input and Escape preserve the
     // existing value; space-only input removes it after mungspaces().
     if (value === null || value === '') return;
-    const annotation = value.trim().replace(/\s+/g, ' ');
+    const annotation = value.replace(/\t/g, ' ').replace(/ +/g, ' ').replace(/^ | $/g, '');
     const key = `${level.dnum}:${level.dlevel}`;
     if (!game._levelAnnotations) game._levelAnnotations = new Map();
     if (annotation) game._levelAnnotations.set(key, annotation);
@@ -2478,7 +2478,7 @@ async function queryLevelAnnotation(level: DungeonLocation | null = null, inMenu
         : `What do you want to call ${annotationLevelDescription(location)}?`;
     const value = await getLine(
         prompt,
-        (_ch, key) => key >= 32 && key < 127,
+        () => true,
         { inMenu },
     );
     setLevelAnnotation(location, value);

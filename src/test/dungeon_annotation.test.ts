@@ -20,6 +20,26 @@ void test('annotating an already named level asks to replace the abbreviated ann
     assert.equal(game.context.move, 0);
 });
 
+void test('level annotations accept printable characters beyond ASCII', async () => {
+    freshConnectedLevels();
+    const input = resetInputState();
+    input.feed('annotate\rCafé\r');
+
+    await rhack('#'.charCodeAt(0));
+
+    assert.equal(game._levelAnnotations?.get('0:1'), 'Café');
+});
+
+void test('annotation cleanup preserves nonbreaking spaces', async () => {
+    freshConnectedLevels();
+    const input = resetInputState();
+    input.feed('annotate\r  A\u00a0B  \r');
+
+    await rhack('#'.charCodeAt(0));
+
+    assert.equal(game._levelAnnotations?.get('0:1'), 'A\u00a0B');
+});
+
 for (const command of ['m#annotate\r', 'm\x0f']) {
     void test(`${command.includes('#') ? 'menu annotate' : 'menu overview'} can name a different visited level`, async t => {
         freshConnectedLevels();
