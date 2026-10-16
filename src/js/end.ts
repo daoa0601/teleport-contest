@@ -697,7 +697,7 @@ function finalLocationLine(verb: string, score: number): string {
     return `${text} with ${score} point${plur(score)},`;
 }
 
-// C end.c:genl_outrip().  The stone receives up to four cause rows, each at
+// C rip.c:genl_outrip().  The stone receives up to four cause rows, each at
 // most sixteen characters, split backward at a word boundary when possible.
 function tombstoneDeathRows(cause: string) {
     let remaining = String(cause || '');
@@ -728,6 +728,7 @@ function deathSummaryLines(killer: string, { gold, score, moves }: GameSummary, 
     const role = game.flags?.female && game.urole?.name?.f
         ? game.urole.name.f : game.urole?.name?.m || 'Adventurer';
     const goodbye = game.urole?.goodbye || 'Goodbye';
+    const stoneGold = Math.min(999_999_999, Math.max(0, gold));
     const causeRows = tombstoneDeathRows(
         sanitizeDeathCause(deathCause || deathCauseRecord(killer, deathVerb)),
     );
@@ -739,7 +740,7 @@ function deathSummaryLines(killer: string, { gold, score, moves }: GameSummary, 
         [19, '/     PEACE      \\'],
         [18, '/                  \\'],
         [18, `|${tombstoneLine(name)}|`],
-        [18, `|${tombstoneLine(`${gold} Au`)}|`],
+        [18, `|${tombstoneLine(`${stoneGold} Au`)}|`],
         [18, `|${tombstoneLine(causeRows[0])}|`],
         [18, `|${tombstoneLine(causeRows[1])}|`],
         [18, `|${tombstoneLine(causeRows[2])}|`],
