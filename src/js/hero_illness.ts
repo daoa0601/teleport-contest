@@ -371,10 +371,9 @@ export async function advanceHeroSickness({
     hero.sickTurns = Math.max(0, (hero.sickTurns ?? 0) - 1);
     if (hero.sickTurns > 0)
         return { active: true, died: false, turns: hero.sickTurns };
-    // nh_timeout() has already decremented Sick to zero when either
-    // outcome's message refreshes the status line.
+    // nh_timeout() has already decremented Sick to zero without marking the
+    // status line; only an earlier pending refresh shows the change.
     hero.sick = false;
-    state.context.botl = true;
 
     const canRecover = !((hero.sickType ?? 0) & SICK_NONVOMITABLE)
         && random(100) < currentAttribute(A_CON, state);
@@ -398,7 +397,6 @@ export async function advanceHeroSickness({
     if (unique && !personal) killer = definiteName(killer);
     // done_timeout() marks Sick with I_SPECIAL while done() runs.
     hero.sick = true;
-    state.context.botl = true;
     const died = await die({
         killer,
         deathCause: `poisoned by ${personal || unique || killer === '#wizintrinsic'
