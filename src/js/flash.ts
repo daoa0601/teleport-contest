@@ -1,4 +1,4 @@
-import type { GameState, PlayingGameState } from './game_state.js';
+import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
 import type { Position } from './map_types.js';
@@ -28,7 +28,8 @@ import { rayPositionIsOpen } from './ray.js';
 import { visibleRegionAt } from './regions.js';
 import { d, rn2, rnd } from './rng.js';
 import { heroIsBlind } from './senses.js';
-import { cansee, vision_recalc } from './vision.js';
+import { cansee } from './vision.js';
+import { cleanupTransientLight, showTransientLight } from './transient_light.js';
 
 const GREMLIN = MONSTER_NAME.indexOf('gremlin');
 const M1_NOEYES = 0x1000;
@@ -47,7 +48,7 @@ export async function doBlindingRay(object: GameObject, { dx, dy }: { dx: number
             x += dx;
             y += dy;
             if (!isok(x, y)) break;
-            if (!heroIsBlind(state)) await illuminateFlashCell(x, y, state);
+            if (!heroIsBlind(state)) await showTransientLight(null, x, y, state);
             const monster = monsterAtPosition(state.level, x, y);
             if (monster && M_AP_TYPE(monster) !== M_AP_OBJECT) {
                 object.ox = state.u.ux;
@@ -74,7 +75,7 @@ export async function doBlindingRay(object: GameObject, { dx, dy }: { dx: number
         }
     } finally {
         for (const cell of cells) newsym(cell.x, cell.y);
-        await cleanupFlashLight(state);
+        await cleanupTransientLight(state);
     }
     return heroDied;
 }
@@ -142,30 +143,6 @@ export async function flashHitsMonster(monster: Monster, object: GameObject, { s
     if (result.observed && !state.level.requireAt(monster.mx, monster.my).lit)
         await flushPendingTopline();
     return result;
-}
-
-async function illuminateFlashCell(x: number, y: number, state: PlayingGameState) {
-    if (state.level.requireAt(x, y).lit) return;
-    (state._transientLights || (state._transientLights = [])).push({ x, y, range: 0 });
-    vision_recalc(0);
-    await flush_screen(0);
-    for (const monster of state.level.monsters)
-        if (monster.mhp > 0 && monster.mx === x && monster.my === y && canSeeMonster(monster))
-            monster.mtemplit = 1;
-}
-
-async function cleanupFlashLight(state: PlayingGameState) {
-    delete state._transientLights;
-    state.vision_full_recalc = 1;
-    vision_recalc(0);
-    let changed = false;
-    for (const monster of state.level.monsters) {
-        if (monster.mhp <= 0 || !monster.mtemplit) continue;
-        monster.mtemplit = 0;
-        changed = true;
-        if (!canSpotMonster(monster)) map_invisible(monster.mx, monster.my);
-    }
-    if (changed) await flush_screen(0);
 }
 
 // Object disguises are skipped by the beam; the remaining descriptions use

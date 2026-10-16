@@ -77,6 +77,7 @@ import { isLavaAt, isPoolAt, isPoolOrLavaAt } from './terrain_properties.js';
 import { objectNoLongerHeld } from './object_release.js';
 import { cansee } from './vision.js';
 import { objectWeight } from './weight.js';
+import { cleanupTransientLight, showTransientLight } from './transient_light.js';
 
 const VENOM_CLASS = 17;
 
@@ -359,122 +360,131 @@ async function flyPhysicalObject({
     let skipping = false;
     let skips = 0;
 
-    for (let step = 0; step < steps && (dx || dy); step++) {
-        const nextX = x + dx;
-        const nextY = y + dy;
-        if (!isok(nextX, nextY)) {
-            stoppedBy = 'edge';
-            break;
-        }
+    const movingLight = !!object.lamplit && !heroIsBlind(state);
+    try {
+        for (let step = 0; step < steps && (dx || dy); step++) {
+            const nextX = x + dx;
+            const nextY = y + dy;
+            if (!isok(nextX, nextY)) {
+                stoppedBy = 'edge';
+                break;
+            }
 
-        const location = state.level?.at?.(nextX, nextY);
-        if (!location) {
-            stoppedBy = 'edge';
-            break;
-        }
-        const previousX = x;
-        const previousY = y;
-        x = nextX;
-        y = nextY;
+            const location = state.level?.at?.(nextX, nextY);
+            if (!location) {
+                stoppedBy = 'edge';
+                break;
+            }
+            const previousX = x;
+            const previousY = y;
+            x = nextX;
+            y = nextY;
 
-        if (IS_WATERWALL(location.typ) || location.typ === LAVAWALL) {
-            stoppedBy = 'liquid-wall';
-            break;
-        }
+            if (IS_WATERWALL(location.typ) || location.typ === LAVAWALL) {
+                stoppedBy = 'liquid-wall';
+                break;
+            }
 
-        if (location.typ === IRONBARS) {
-            const forcedHit = step > 0 && random(5) === 0;
-            const impact = await projectileHitsIronBars(object, {
-                x: previousX, y: previousY, barsX: x, barsY: y,
-                forceHit: forcedHit, heroCaused: true, state, publish, random,
-            });
-            if (impact.blocked) {
-                destroyed = impact.destroyed || impact.heroDied;
+            if (movingLight) await showTransientLight(object, x, y, state);
+
+            if (location.typ === IRONBARS) {
+                const forcedHit = step > 0 && random(5) === 0;
+                const impact = await projectileHitsIronBars(object, {
+                    x: previousX, y: previousY, barsX: x, barsY: y,
+                    forceHit: forcedHit, heroCaused: true, state, publish, random,
+                });
+                if (impact.blocked) {
+                    destroyed = impact.destroyed || impact.heroDied;
+                    x = previousX;
+                    y = previousY;
+                    stoppedBy = 'iron-bars';
+                    break;
+                }
+            }
+
+            let monster = liveMonsterAt(state, x, y);
+            const web = monster ? null : webAt(state, x, y);
+            if (web && random(3) === 0) {
+                if (cansee(x, y)) {
+                    await publish(
+                        `${thrownObjectSubject(object)} gets stuck in a web!`,
+                    );
+                    web.tseen = true;
+                    newsym(x, y);
+                }
+                stoppedBy = 'web';
+                break;
+            }
+            const remaining = steps - step - 1;
+            if (skip && skip.start && remaining === skip.start && allowSkip) {
+                if (isPoolAt(x, y, state) && !monster) {
+                    skipping = true;
+                    if (!heroIsBlind(state))
+                        await publish(`${ownedObjectName(object, state)} skips${skips ? ' again' : ''}.`);
+                    else await publishHeardMessage(`${ownedObjectName(object, state, { capitalized: false })} skip.`, publish, state);
+                    skips++;
+                } else if (skip.start > skip.end + 1) {
+                    skip.start--;
+                }
+            }
+            if (skipping && skip) {
+                if (remaining <= skip.end) {
+                    skipping = false;
+                    if (remaining > 3) skip = rockSkipRange(remaining);
+                } else if (monster && rockSkipsOverMonster(monster)) {
+                    if (!heroIsBlind(state) && canSpotMonster(monster))
+                        await publish(`${ownedObjectName(object, state)} passes over ${monsterName(monster, { state })}.`);
+                    monster = null;
+                }
+            }
+            contact = monster ? projectileMonsterAt(state, object, x, y) : null;
+            if (contact) {
+                stoppedBy = 'monster';
+                break;
+            }
+
+            if (kicked && object.oclass === 12 && state.level?.objects[x]?.[y]?.length) {
+                stoppedBy = 'terrain';
+                break;
+            }
+            if (kicked && await shipObject(object, x, y, {
+                state: requireInitializedGame(state),
+                publish,
+                random,
+                shopFloorObject: !!costlySpot(x, y, state),
+            })) {
+                path.push({ x, y });
+                migrated = true;
+                stoppedBy = 'passage';
+                break;
+            }
+
+            if (!ZAP_POS(location.typ) || closedDoor(location)) {
                 x = previousX;
                 y = previousY;
-                stoppedBy = 'iron-bars';
+                stoppedBy = 'terrain';
+                break;
+            }
+
+            path.push({ x, y });
+            if (display) await display.show({ x, y });
+            if (movingLight && captureFlight)
+                await captureFlight(object, [{ x, y }], state, glyph);
+            if (kicked && isPoolOrLavaAt(x, y, state)) {
+                stoppedBy = 'liquid';
+                break;
+            }
+            if (location.typ === SINK) {
+                stoppedBy = 'sink';
                 break;
             }
         }
 
-        let monster = liveMonsterAt(state, x, y);
-        const web = monster ? null : webAt(state, x, y);
-        if (web && random(3) === 0) {
-            if (cansee(x, y)) {
-                await publish(
-                    `${thrownObjectSubject(object)} gets stuck in a web!`,
-                );
-                web.tseen = true;
-                newsym(x, y);
-            }
-            stoppedBy = 'web';
-            break;
-        }
-        const remaining = steps - step - 1;
-        if (skip && skip.start && remaining === skip.start && allowSkip) {
-            if (isPoolAt(x, y, state) && !monster) {
-                skipping = true;
-                if (!heroIsBlind(state))
-                    await publish(`${ownedObjectName(object, state)} skips${skips ? ' again' : ''}.`);
-                else await publishHeardMessage(`${ownedObjectName(object, state, { capitalized: false })} skip.`, publish, state);
-                skips++;
-            } else if (skip.start > skip.end + 1) {
-                skip.start--;
-            }
-        }
-        if (skipping && skip) {
-            if (remaining <= skip.end) {
-                skipping = false;
-                if (remaining > 3) skip = rockSkipRange(remaining);
-            } else if (monster && rockSkipsOverMonster(monster)) {
-                if (!heroIsBlind(state) && canSpotMonster(monster))
-                    await publish(`${ownedObjectName(object, state)} passes over ${monsterName(monster, { state })}.`);
-                monster = null;
-            }
-        }
-        contact = monster ? projectileMonsterAt(state, object, x, y) : null;
-        if (contact) {
-            stoppedBy = 'monster';
-            break;
-        }
-
-        if (kicked && object.oclass === 12 && state.level?.objects[x]?.[y]?.length) {
-            stoppedBy = 'terrain';
-            break;
-        }
-        if (kicked && await shipObject(object, x, y, {
-            state: requireInitializedGame(state),
-            publish,
-            random,
-            shopFloorObject: !!costlySpot(x, y, state),
-        })) {
-            path.push({ x, y });
-            migrated = true;
-            stoppedBy = 'passage';
-            break;
-        }
-
-        if (!ZAP_POS(location.typ) || closedDoor(location)) {
-            x = previousX;
-            y = previousY;
-            stoppedBy = 'terrain';
-            break;
-        }
-
-        path.push({ x, y });
-        if (display) await display.show({ x, y });
-        if (kicked && isPoolOrLavaAt(x, y, state)) {
-            stoppedBy = 'liquid';
-            break;
-        }
-        if (location.typ === SINK) {
-            stoppedBy = 'sink';
-            break;
-        }
+        if (!movingLight && captureFlight)
+            await captureFlight(object, path, state, glyph);
+    } finally {
+        await cleanupTransientLight(state);
     }
-
-    if (captureFlight)
-        await captureFlight(object, path, state, glyph);
     return { x, y, path, contact, stoppedBy, destroyed, migrated };
 }
 
