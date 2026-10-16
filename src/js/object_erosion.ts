@@ -128,11 +128,12 @@ export async function damageObjectWithAcid(object: GameObject | null | undefined
     state = game, publish = plineWithContinuation, random = rn2, ...options
 }: ErosionOptions = {}) {
     if (!object) return;
-    const view = objectView(object, state, options.position);
-    if (view.hero && inventoryResists('corrosion', state, random)) return;
+    if (object.where === 'inventory' && inventoryResists('corrosion', state, random)) return;
     if (object.greased) {
+        const view = objectView(object, state, options.position);
         await protectWithGrease(object, view, state, publish, random);
     } else if (object.oclass === SCROLL_CLASS && object.otyp !== SCR_BLANK_PAPER) {
+        const view = objectView(object, state, options.position);
         if (!heroIsBlind(state) && (view.hero || view.monsterVisible))
             await publish(`${objectSubject(view, state)} ${view.plural ? 'fade' : 'fades'}.`);
         object.otyp = SCR_BLANK_PAPER;
@@ -162,9 +163,9 @@ export async function erodeObject(object: GameObject | null | undefined, kind: E
     if (!object) return 'nothing';
     const rule = EROSION[kind];
     if (!rule) throw new TypeError(`Unknown erosion: ${kind}`);
+    if (object.where === 'inventory' && inventoryResists(kind, state, random)) return 'nothing';
     const view = objectView(object, state, position, displayName);
     const agreement = view.plural ? 'are' : 'is';
-    if (view.hero && inventoryResists(kind, state, random)) return 'nothing';
     if (grease && kind !== 'burn' && kind !== 'rot' && object.greased) {
         await protectWithGrease(object, view, state, publish, random);
         return 'greased';
