@@ -285,19 +285,12 @@ export function vision_note_blocker_change(x, y) {
     if (wasInVisibilityMap)
         game.vision_full_recalc = 1;
 }
-// C's level-change transaction starts visibility with no cells inherited
-// from the previous level.  Coordinate overlap between two maps must not
-// suppress the first newsym() repaint on the destination.
+// C vision.c:vision_reset(). A new level starts without inherited sight and
+// requests a refresh before the next vision-dependent operation or message.
 export function vision_reset_new_level() {
-    for (let y = 0; y < ROWNO; y++) {
-        visionRow(cs_buf0, y).fill(0);
-        visionRow(cs_buf1, y).fill(0);
-    }
-    game.viz_array = cs_buf0;
-    game.active_buf = 0;
-    game._viz_rmin = null;
-    game._viz_rmax = null;
+    init_vision_globals();
     vision_reset();
+    game.vision_full_recalc = 1;
 }
 // Bresenham quadrant path functions (C ref: vision.c q1-q4_path)
 function q1_path(srow, scol, y2, x2) {
