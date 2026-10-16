@@ -1,5 +1,6 @@
 import { formatFeltMessage } from './hero_speech.js';
 import { currency } from './currency.js';
+import { recorderLocalHour } from './calendar.js';
 // insight.js — Basic enlightenment / attributes command.
 // C ref: insight.c — doattributes(), enlightenment().
 import { heroIsHallucinating } from './senses.js';
@@ -426,6 +427,11 @@ function basicEnlightenmentLines(roleName) {
             ? 'Elemental ' : ''}${endgameLevelName(u.uz)}.`
         : `  You are in ${displayedDungeonName}, on level ${displayedDepth}.`;
     lines.push(`  You are ${align}, on a mission for ${currentGod}`, `  who is opposed by ${opponents[0]} and ${opponents[1]}.`, `  You are ${handednessDescription()}.`, location, entered);
+    const hour = recorderLocalHour(game.datetime);
+    if (hour === 0)
+        lines.push('  It is the midnight hour.');
+    else if (hour < 6 || hour > 21)
+        lines.push('  It is nighttime.');
     if (game.flags?.moonphase === 4)
         lines.push('  There is a full moon in effect.');
     else if (game.flags?.moonphase === 0)

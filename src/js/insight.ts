@@ -1,5 +1,6 @@
 import { formatFeltMessage } from './hero_speech.js';
 import { currency } from './currency.js';
+import { recorderLocalHour } from './calendar.js';
 // insight.js — Basic enlightenment / attributes command.
 // C ref: insight.c — doattributes(), enlightenment().
 
@@ -504,6 +505,11 @@ function basicEnlightenmentLines(roleName: string) {
         location,
         entered,
     );
+    const hour = recorderLocalHour(game.datetime);
+    if (hour === 0)
+        lines.push('  It is the midnight hour.');
+    else if (hour < 6 || hour > 21)
+        lines.push('  It is nighttime.');
     if (game.flags?.moonphase === 4)
         lines.push('  There is a full moon in effect.');
     else if (game.flags?.moonphase === 0)
