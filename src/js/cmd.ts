@@ -7544,6 +7544,15 @@ async function domoveCore(dx: number, dy: number, explicitAttempt: boolean): Pro
 
     if (await rejectTightHeroDiagonal(dx, dy)) return false;
 
+    if (!(dx && dy && heroBadRock(game, u.ux, newy) && heroBadRock(game, newx, u.uy))
+        && wormCrossesBetween(u.ux, u.uy, newx, newy, game)) {
+        const worm = monsterAtPosition(game.level, u.ux, newy);
+        if (!worm) throw new Error('A crossing worm must occupy the adjacent square.');
+        await pline(`${monsterName(worm, { state: game, article: 'your', capitalized: true })} is in your way.`);
+        game.context.move = 0;
+        return false;
+    }
+
     const boulder = heroPassesWalls(game) && !game.level.flags.sokoban_rules ? null
         : (game.level.objects[newx]?.[newy] || []).find(object => object.otyp === BOULDER);
     const hallucinating = heroIsHallucinating(game);
