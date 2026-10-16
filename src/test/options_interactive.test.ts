@@ -499,3 +499,17 @@ void test('each disclosure category commits before the next category prompt', as
 
     assert.match(game.flags.disclose ?? '', /^\+i /);
 });
+
+for (const style of [0, 2] as const) {
+    void test(`pickup types are cleared during the native ${style === 0 ? 'text' : 'menu'} prompt and restored on Escape`, async () => {
+        freshObjectRoom({ flags: { menu_style: style, pickup_types: '$' } });
+
+        await fullOptions(['pickup_types'], view => {
+            assert.match(view, style === 0 ? /New pickup_types:/ : /Autopickup what\?/);
+            assert.equal(game.flags.pickup_types, '');
+            return '\x1b';
+        });
+
+        assert.equal(game.flags.pickup_types, '$');
+    });
+}

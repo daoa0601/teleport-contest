@@ -972,6 +972,7 @@ const PICKUP_TYPE_ROWS = [
 // windows.c:choose_classes_menu() owns the full/partial class picker.
 async function editPickupTypes(preserveStatus = false): Promise<void> {
     const previous = game.flags.pickup_types ?? '';
+    game.flags.pickup_types = '';
     let value = previous;
     let useMenu = true;
     if ((game.flags.menu_style ?? MENU_FULL) <= 1) {
