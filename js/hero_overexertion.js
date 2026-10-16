@@ -20,23 +20,28 @@ export async function checkHeroAttackOverexertion(state = game) {
     if (state.program_state.gameover)
         return true;
     if ((state.moves ?? 0) % 3 !== 0
-        && nearCapacity(state) >= HVY_ENCUMBER) {
-        const field = activeHitPointField(state.u);
-        const hitPoints = state.u?.[field] ?? 0;
-        if (hitPoints > 1) {
-            state.u[field] = hitPoints - 1;
-            state.context.botl = true;
-        }
-        else {
-            await pline('You pass out from exertion!');
-            await exerciseAttribute(A_CON, false, state);
-            putHeroToSleep(10, {
-                state,
-                reason: 'passed out from exertion',
-                doneMessage: '',
-            });
-        }
-    }
+        && nearCapacity(state) >= HVY_ENCUMBER)
+        await overexertHeroHp(state);
     return heroIsHelpless(state);
+}
+// C hack.c:overexert_hp(): heavy work costs a hit point, or the last one
+// makes the hero pass out.
+export async function overexertHeroHp(state = game) {
+    requirePlayingGame(state);
+    const field = activeHitPointField(state.u);
+    const hitPoints = state.u?.[field] ?? 0;
+    if (hitPoints > 1) {
+        state.u[field] = hitPoints - 1;
+        state.context.botl = true;
+    }
+    else {
+        await pline('You pass out from exertion!');
+        await exerciseAttribute(A_CON, false, state);
+        putHeroToSleep(10, {
+            state,
+            reason: 'passed out from exertion',
+            doneMessage: '',
+        });
+    }
 }
 //# sourceMappingURL=hero_overexertion.js.map

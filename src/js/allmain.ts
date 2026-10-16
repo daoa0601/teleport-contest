@@ -46,6 +46,7 @@ import { endVoluntaryMultiTurn, heroHasInvoluntaryDelay } from './command_state.
 import { dosounds } from './ambient_sounds.js';
 import { warnWithMasterKey } from './artifact_warning.js';
 import { regenerateHeroHp } from './hero_regeneration.js';
+import { overexertHeroHp } from './hero_overexertion.js';
 import { ceilingName } from './terrain_name.js';
 import { tryCallObjectType } from './object_call.js';
 import { monsterGainLevelRiseDestination } from './monmove.js';
@@ -923,6 +924,11 @@ async function finishInitialTurnMaintenanceAfterRegions({
     if (await regenerateHeroHp(recoveryCapacity, sourceTurn))
         interruptCountedActivity('You are in full health.');
     if (game.program_state.gameover) return { kind: 'complete', moveAmount };
+
+    // C moveloop_core(): moving around while Strained or worse is hard work.
+    if (recoveryCapacity > MOD_ENCUMBER && game.u.umoved
+        && sourceTurn % (recoveryCapacity < EXT_ENCUMBER ? 30 : 10) === 0)
+        await overexertHeroHp(game);
 
     if ((game.u?.uen ?? 0) < (game.u?.uenmax ?? 0)) {
         const level = game.u?.ulevel ?? 1;
