@@ -8552,7 +8552,7 @@ function assignShopkeeperIdentity(monster: Monster, shopIndex: number): void {
     let names: readonly string[] = shop.names;
     let selected: string | undefined;
     if (names === candleShop.names && In_mines(game.u.uz)
-        && level.flags.has_town) {
+        && specialLevelAt()?.flags.town) {
         selected = '+Izchak';
         monster.female = false;
     } else {
