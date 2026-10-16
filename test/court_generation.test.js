@@ -14,7 +14,8 @@ async function generateCourt() {
     const state = freshGame({ moves: 0, flags: { bones: false }, hero: {
             uz: { dnum: 0, dlevel: 20 }, ulevel: 20,
         } });
-    state.dungeons = [createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 30 })];
+    state.dungeons = [createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 30,
+            themeRooms: 'themerms.lua' })];
     initRng(999);
     init_objects();
     initRng(2);

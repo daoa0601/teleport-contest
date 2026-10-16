@@ -12,7 +12,8 @@ async function generateLevel(seed, unavailable = []) {
     const state = freshGame({ moves: 0, flags: { bones: false }, hero: {
             uz: { dnum: 0, dlevel: 20 }, ulevel: 20,
         } });
-    state.dungeons = [createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 30 })];
+    state.dungeons = [createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 30,
+            themeRooms: 'themerms.lua' })];
     for (const name of unavailable) {
         const vital = state.mvitals[MONSTER_NAME.indexOf(name)];
         assert.ok(vital, `missing monster vital for ${name}`);

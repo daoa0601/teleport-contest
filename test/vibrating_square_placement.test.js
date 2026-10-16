@@ -27,7 +27,7 @@ void test('Lua vibrating squares ignore requested coordinates and leave space fo
     game.in_mklev = true;
     initRng(97n);
     await lua.executeAsync('des.level_init({ style = "solidfill", fg = "." })');
-    mkstairs(10, 10, true, null);
+    await mkstairs(10, 10, true, null);
     await lua.executeAsync('des.trap({ type = "vibrating square", x = 1, y = 0 })');
     requirePlayingGame(game);
     const trap = game.level.traps.find(candidate => candidate.ttyp === VIBRATING_SQUARE);

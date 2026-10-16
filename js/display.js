@@ -667,12 +667,13 @@ const TERRAIN_NAMES = new Map([
     [WATER, 'water'], [LAVAPOOL, 'molten lava'], [LAVAWALL, 'wall of lava'],
     [FOUNTAIN, 'fountain'], [THRONE, 'opulent throne'], [SINK, 'sink'],
     [GRAVE, 'grave'], [ALTAR, 'altar'], [ICE, 'ice'], [AIR, 'air'],
-    [CLOUD, 'cloud'], [DRAWBRIDGE_UP, 'raised drawbridge'],
-    [DRAWBRIDGE_DOWN, 'lowered drawbridge'],
+    [CLOUD, 'cloud'], [DRAWBRIDGE_DOWN, 'lowered drawbridge'],
 ]);
 function terrainGlyphName(loc, x, y, glyph) {
     if (isArborealBackground(loc))
         return 'tree';
+    if (loc.typ === DBWALL)
+        return 'raised drawbridge';
     if (IS_WALL(loc.typ) || loc.typ === SDOOR)
         return glyph.ch === ' ' ? 'stone' : 'wall';
     if (loc.typ === DOOR) {
@@ -688,7 +689,7 @@ function terrainGlyphName(loc, x, y, glyph) {
     if (loc.typ === CORR)
         return (cansee(x, y) ? loc.lit : loc.waslit) || game.flags?.lit_corridor
             ? 'lit corridor' : 'corridor';
-    return TERRAIN_NAMES.get(loc.typ) || 'stone';
+    return TERRAIN_NAMES.get(projectedTerrainType(loc)) || 'stone';
 }
 export function terrain_glyph(loc, x, y) {
     const appearance = terrainGlyphAppearance(loc, x, y);
