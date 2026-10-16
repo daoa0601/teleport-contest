@@ -24,7 +24,7 @@ async function fullOptions(names, respond = () => '\x1b') {
     await input.waitUntilBlocked();
     input.beforeRead = () => {
         const view = screen();
-        if (++reads > 70)
+        if (++reads > 300)
             throw new Error(`Options did not finish; remaining: ${[...remaining].join(', ')}`);
         if (!selecting) {
             if (!answer) {
@@ -289,5 +289,30 @@ void test('idlecheckpoint reports that the native build cannot enable it', async
     freshObjectRoom();
     await fullOptions(['idlecheckpoint']);
     assert.match(game._pending_message, /There is no underlying support for 'idlecheckpoint' compiled in\./);
+});
+void test('native no-prefixes and repeated negations survive opening options', async () => {
+    freshObjectRoom({ flags: { color: true, time: true, verbose: false } });
+    applyNethackrc('OPTIONS=nocolor,no-time,!!verbose');
+    resetInputState().feed('\x1b');
+    await rhack('O'.charCodeAt(0));
+    assert.equal(game.flags.color, false);
+    assert.equal(game.flags.time, false);
+    assert.equal(game.flags.verbose, true);
+});
+void test('native compound abbreviations show their canonical settings', async () => {
+    freshObjectRoom();
+    applyNethackrc('OPTIONS=runmode:w,pile_limit:-8,msg_window:reversed,paranoid_confirmation:pr tr sw');
+    resetInputState().feed('\x1b');
+    await rhack('O'.charCodeAt(0));
+    assert.equal(game.flags.runmode, 'walk');
+    assert.equal(game.flags.pile_limit, 5);
+    assert.equal(game.iflags.prevmsg_window, 'r');
+    assert.equal(game.flags.paranoia_bits, PARANOID_PRAY | PARANOID_TRAP | PARANOID_SWIM);
+});
+void test('invalid traditional pickup classes retain valid symbols once and report the error', async () => {
+    freshObjectRoom({ flags: { menu_style: 0 } });
+    await fullOptions(['pickup_types'], () => ')x)\n');
+    assert.equal(game.flags.pickup_types, ')');
+    assert.match(game._pending_message, /Unknown pickup_types parameter ''\./);
 });
 //# sourceMappingURL=options_interactive.test.js.map

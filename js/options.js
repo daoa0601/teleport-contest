@@ -5,13 +5,12 @@ import { displayHelpFile, displayPagerText } from './pager_help.js';
 import { setConditionOption } from './status_conditions.js';
 import { classifyStatusTerrain } from './status_terrain.js';
 import { setWarningSymbols } from './warning_symbols.js';
-import { isTextOption, setTextOption, textOptionValue } from './option_values.js';
+import { isTextOption, setTextOption, textOptionValue, cInteger, parsePickupTypes, optionError } from './option_values.js';
 import { compoundMenuValue, editCompoundMenu } from './option_editors.js';
 import { CommandBindings } from './command_bindings.js';
 import { changePreferredFruit, normalizePreferredFruitName } from './fruit.js';
 import { bot, clearMessageWindow, docrt, flushPendingTopline, flush_screen, plineWithContinuation, reassessStatusFields, reglyph_darkroom } from './display.js';
 import { vision_recalc } from './vision.js';
-import { nhgetch } from './input.js';
 import { getLine } from './query.js';
 import { changeInventoryOrder, inventoryOrderSymbols } from './object_sort.js';
 import { ATR_INVERSE, restoreMenuUnderlay, showChoiceWindow, showInventoryWindow, showMultiSelectWindow, snapshotMenuUnderlay } from './windows.js';
@@ -23,58 +22,41 @@ const MENU_STYLES = [
     ['full', '[use menu to choose class(es), then', ' use another menu for items in those]'],
     ['partial', '[skip class filtering; always', ' use menu of all available items]'],
 ];
-const PARANOIA_OPTION_BITS = new Map([
-    ['confirm', PARANOID_CONFIRM], ['paranoia', PARANOID_CONFIRM],
-    ['quit', PARANOID_QUIT], ['explore', PARANOID_QUIT],
-    ['die', PARANOID_DIE], ['death', PARANOID_DIE],
-    ['bones', PARANOID_BONES],
-    ['attack', PARANOID_HIT], ['hit', PARANOID_HIT],
-    ['pray', PARANOID_PRAY],
-    ['remove', PARANOID_REMOVE], ['takeoff', PARANOID_REMOVE],
-    ['wand-break', PARANOID_BREAKWAND],
-    ['break-wand', PARANOID_BREAKWAND],
-    ['were-change', PARANOID_WERECHANGE],
-    ['werechange', PARANOID_WERECHANGE],
-    ['eat', PARANOID_EATING], ['continue', PARANOID_EATING],
-    ['swim', PARANOID_SWIM], ['trap', PARANOID_TRAP],
-    ['autoall', PARANOID_AUTOALL],
-]);
+const PARANOIA_ARGUMENTS = [
+    ['confirm', 1, PARANOID_CONFIRM], ['paranoia', 2, PARANOID_CONFIRM],
+    ['quit', 1, PARANOID_QUIT], ['explore', 2, PARANOID_QUIT],
+    ['die', 1, PARANOID_DIE], ['death', 2, PARANOID_DIE],
+    ['bones', 1, PARANOID_BONES], ['attack', 1, PARANOID_HIT], ['hit', 1, PARANOID_HIT],
+    ['wand-break', 2, PARANOID_BREAKWAND], ['break-wand', 2, PARANOID_BREAKWAND],
+    ['eat', 1, PARANOID_EATING], ['continue', 4, PARANOID_EATING],
+    ['were-change', 2, PARANOID_WERECHANGE], ['pray', 1, PARANOID_PRAY],
+    ['trap', 1, PARANOID_TRAP], ['move-trap', 1, PARANOID_TRAP],
+    ['autoall', 2, PARANOID_AUTOALL], ['autoselect-all', 2, PARANOID_AUTOALL],
+    ['swim', 1, PARANOID_SWIM], ['remove', 1, PARANOID_REMOVE], ['takeoff', 1, PARANOID_REMOVE],
+    ['none', 4, 0], ['all', 3, ~0],
+];
 function updateParanoiaBits(current, rawValue) {
-    const value = rawValue.trim();
-    let bits = current;
-    let mode = 'replace';
-    let fields = value;
-    if (fields.startsWith('+') || fields.startsWith('-')) {
-        mode = fields[0] === '+' ? 'add' : 'remove';
-        fields = fields.slice(1).trim();
-    }
-    else {
-        bits = 0;
-    }
-    for (let field of fields.split(/\s+/)) {
-        if (!field)
-            continue;
-        let remove = mode === 'remove';
-        if (field.startsWith('!')) {
-            field = field.slice(1);
-            if (mode !== 'remove')
-                remove = true;
-        }
-        const name = field.toLowerCase();
-        if (name === 'none') {
-            if (mode === 'replace')
+    let fields = rawValue.trim().replace(/ +/g, ' ').toLowerCase();
+    const augmenting = fields.startsWith('+') || fields.startsWith('-');
+    const removing = fields.startsWith('-');
+    let bits = augmenting ? current : 0;
+    if (augmenting)
+        fields = fields.slice(1).trimStart();
+    fields = fields.replace(/! /g, '!');
+    for (let field of fields.split(' ')) {
+        const negated = field.startsWith('!') || /^no[^n]/.test(field);
+        if (negated)
+            field = field.slice(field.startsWith('!') ? 1 : 2);
+        const entry = PARANOIA_ARGUMENTS.find(([name, minimum]) => field.length >= minimum && name.startsWith(field));
+        if (!entry)
+            break; // C retains changes made before an invalid argument.
+        const bit = entry[2];
+        if (!bit) {
+            if (!augmenting)
                 bits = 0;
-            continue;
         }
-        if (name === 'all') {
-            const all = [...new Set(PARANOIA_OPTION_BITS.values())]
-                .reduce((mask, bit) => mask | bit, 0);
-            bits = remove ? bits & ~all : bits | all;
-            continue;
-        }
-        const bit = PARANOIA_OPTION_BITS.get(name);
-        if (bit !== undefined)
-            bits = remove ? bits & ~bit : bits | bit;
+        else
+            bits = removing || negated ? bits & ~bit : bits | bit;
     }
     return bits;
 }
@@ -274,15 +256,20 @@ function parseConfiguration(rc, result) {
             const trimmed = opt.trim();
             if (!trimmed)
                 continue;
-            const negated = trimmed.startsWith('!');
-            const stripped = negated ? trimmed.slice(1) : trimmed;
+            let negated = false;
+            let stripped = trimmed;
+            while (stripped.startsWith('!') || /^no/i.test(stripped)) {
+                const prefix = stripped.startsWith('!') ? 1 : stripped[2] === '-' ? 3 : 2;
+                stripped = stripped.slice(prefix);
+                negated = !negated;
+            }
             if (stripped.toLowerCase().startsWith('cond_')) {
                 const mask = setConditionOption(stripped, !negated, result.flags.statusConditionMask);
                 if (mask !== null)
                     result.flags.statusConditionMask = mask;
                 continue;
             }
-            const colonIdx = stripped.indexOf(':');
+            const colonIdx = stripped.search(/[:=]/);
             const bindingOption = (colonIdx < 0 ? stripped : stripped.slice(0, colonIdx)).trim().toLowerCase();
             const optionValue = colonIdx < 0 ? null : stripped.slice(colonIdx + 1).trim();
             if (bindingOption.startsWith('menu_') && bindingOption !== 'menu_headings'
@@ -294,6 +281,44 @@ function parseConfiguration(rc, result) {
             if (bindingOption === 'warnings') {
                 if (!negated && optionValue)
                     setWarningSymbols(optionValue, result.iflags);
+                continue;
+            }
+            if (bindingOption === 'pickup_types') {
+                if (!negated) {
+                    result.flags.pickup_types = parsePickupTypes(optionValue ?? '').symbols;
+                    if (!optionValue)
+                        result.flags.pickup = true;
+                }
+                continue;
+            }
+            if (bindingOption === 'pile_limit') {
+                if (!negated || !optionValue) {
+                    const limit = negated ? 0 : optionValue ? cInteger(optionValue) : 5;
+                    result.flags.pile_limit = limit < 0 ? 5 : limit;
+                }
+                continue;
+            }
+            if (bindingOption === 'runmode') {
+                const mode = negated ? 'teleport' : ['teleport', 'run', 'walk', 'crawl']
+                    .find(mode => optionValue && mode.startsWith(optionValue.toLowerCase()));
+                if (mode)
+                    result.flags.runmode = mode;
+                continue;
+            }
+            if (bindingOption === 'msg_window') {
+                if (!negated || !optionValue) {
+                    const initial = optionValue?.charAt(0).toLowerCase() || (negated ? 's' : 'f');
+                    if ('scfr'.includes(initial))
+                        result.iflags.prevmsg_window = initial;
+                }
+                continue;
+            }
+            if (bindingOption === 'prayconfirm') {
+                if (!optionValue) {
+                    paranoiaBits = negated ? paranoiaBits & ~PARANOID_PRAY : paranoiaBits | PARANOID_PRAY;
+                    paranoiaSeen = true;
+                    result.flags.paranoia_bits = paranoiaBits;
+                }
                 continue;
             }
             if (bindingOption === 'versinfo') {
@@ -398,10 +423,10 @@ function parseConfiguration(rc, result) {
                     result.symset = val;
                 else if (key === 'suppress_alert')
                     result.flags.suppress_alert = val;
-                else if (key === 'msg_window')
-                    result.iflags.prevmsg_window = val;
                 else if (key === 'paranoid_confirmation'
                     || key === 'paranoid_confirm') {
+                    if (negated)
+                        continue;
                     paranoiaBits = updateParanoiaBits(paranoiaBits, val);
                     paranoiaSeen = true;
                     result.flags.paranoia_bits = paranoiaBits;
@@ -412,12 +437,6 @@ function parseConfiguration(rc, result) {
                     result.flags.disclose = val;
                 else if (key === 'pickup_burden')
                     result.flags.pickup_burden = val;
-                else if (key === 'pickup_types')
-                    result.flags.pickup_types = val;
-                else if (key === 'pile_limit')
-                    result.flags.pile_limit = val;
-                else if (key === 'runmode')
-                    result.flags.runmode = val;
                 else {
                     const option = requestBooleanByName.get(key);
                     const value = booleanOption(val, negated);
@@ -1006,7 +1025,10 @@ async function editPickupTypes(preserveStatus = false) {
         restoreMenuUnderlay(underlay);
         value = selected === null ? previous : selected.includes(' ') ? '' : selected.join('');
     }
-    game.flags.pickup_types = /^[aA]/.test(value) ? '' : value;
+    const parsed = parsePickupTypes(value);
+    game.flags.pickup_types = parsed.symbols;
+    if (parsed.invalid)
+        await optionError("Unknown pickup_types parameter ''");
 }
 // C options.c:optfn_bool(), followed by reset_needed_visuals(). Status-only
 // changes need bot(); map-affecting changes defer the full docrt until all

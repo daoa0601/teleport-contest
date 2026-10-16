@@ -1,6 +1,7 @@
 // Text-entered option values. C refs: options.c:optfn_*(), botl.c:parse_status_hl1().
 import { game } from './gstate.js';
 import { plineWithContinuation } from './display.js';
+import { OBJECT_CLASS_SYMBOLS } from './object_knowledge.js';
 import { changeInventoryOrder } from './object_sort.js';
 export function textOptionValue(name) {
     switch (name) {
@@ -13,10 +14,7 @@ export function isTextOption(name) {
     return ['packorder', 'pile_limit', 'menuinvertmode', 'hilite_status', 'statuslines', 'scores'].includes(name);
 }
 export async function setTextOption(name, value) {
-    // Interactive parseoptions treats commas as part of this value. It also
-    // checks the complete option, including its name, before parsing it.
-    const option = `${name}:${value}`.trim();
-    if (option.length > 128) {
+    if (name.length + 1 + value.length > 128) {
         await optionError('Option too long, max length is 128 characters');
         return;
     }
@@ -54,7 +52,7 @@ export async function setTextOption(name, value) {
             break;
     }
 }
-function cInteger(value) {
+export function cInteger(value) {
     const prefix = value.match(/^\s*[+-]?\d+/)?.[0];
     return prefix ? Number(prefix) : 0;
 }
@@ -86,5 +84,19 @@ async function rejectInvalidStatusField(value) {
 // cfgfiles.c:config_erradd() adds punctuation at the interactive boundary.
 export async function optionError(message) {
     await plineWithContinuation(/[.!?]$/.test(message) ? message : `${message}.`);
+}
+export function parsePickupTypes(value) {
+    value = value.replace(/^ +/, '');
+    if (/^[aA]/.test(value))
+        return { symbols: '', invalid: false };
+    let symbols = '';
+    let invalid = false;
+    for (const symbol of value) {
+        if (!OBJECT_CLASS_SYMBOLS.includes(symbol) || symbols.includes(symbol))
+            invalid = true;
+        else
+            symbols += symbol;
+    }
+    return { symbols, invalid };
 }
 //# sourceMappingURL=option_values.js.map
