@@ -146,6 +146,8 @@ const MUMMY_WRAPPING = 138;
 const ALCHEMY_SMOCK = 144;
 const PM_HUMAN = MONSTER_NAME.indexOf('human');
 const PM_WOLF = MONSTER_NAME.indexOf('wolf');
+const PM_URUK_HAI = MONSTER_NAME.indexOf('Uruk-hai');
+const PM_ORC_CAPTAIN = MONSTER_NAME.indexOf('orc-captain');
 const PM_FOG_CLOUD = MONSTER_NAME.indexOf('fog cloud');
 const PM_VAMPIRE_BAT = MONSTER_NAME.indexOf('vampire bat');
 const PM_VAMPIRE_LEADER = MONSTER_NAME.indexOf('vampire leader');
@@ -595,7 +597,7 @@ export function formMaximumStrength(mnum: number) {
     const flags = MONSTER_FLAGS2[mnum] ?? 0;
     let race;
     if (flags & M2_ORC) {
-        if (MONSTER_NAME[mnum] !== 'Uruk-hai' && MONSTER_NAME[mnum] !== 'orc captain')
+        if (mnum !== PM_URUK_HAI && mnum !== PM_ORC_CAPTAIN)
             race = races.find(candidate => candidate.name === 'orc');
     } else if (flags & M2_ELF) {
         race = races.find(candidate => candidate.name === 'elf');
