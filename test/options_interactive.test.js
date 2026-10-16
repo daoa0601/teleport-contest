@@ -7,11 +7,13 @@ import { freshObjectRoom } from './support/object-room.js';
 import { NO_MINVENT, PARANOID_PRAY, PARANOID_SWIM, PARANOID_TRAP } from '../js/const.js';
 import { inventoryOrderSymbols } from '../js/object_sort.js';
 import { applyNethackrc } from '../js/options.js';
-import { flush_screen, newsym } from '../js/display.js';
+import { bot, flush_screen, newsym } from '../js/display.js';
 import { createMonsterAt } from './support/monsters.js';
 import { requireScreenCell } from './support/screen.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { memoryStorage } from './support/memory-storage.js';
+import { GameDisplay } from '../js/game_display.js';
+import { Terminal } from '../js/terminal.js';
 function screen() {
     return game.nhDisplay?.grid.map(row => row.map(cell => cell.ch).join('')).join('\n') ?? '';
 }
@@ -447,5 +449,13 @@ void test('restoring a game retains the current sound preference', async () => {
     assert.equal(restoreGame('Options', storage), true);
     await fullOptions(['sounds']);
     assert.match(game._pending_message, /'sounds' option toggled on\./);
+});
+void test('cancelling a full-screen simple options menu restores the status rows', async () => {
+    freshObjectRoom();
+    game.nhDisplay = new GameDisplay(new Terminal(null, { cols: 50, rows: 24 }));
+    await bot();
+    resetInputState().feed('\x1b');
+    await rhack('O'.charCodeAt(0));
+    assert.match(screen().split('\n')[23] ?? '', /HP:40/);
 });
 //# sourceMappingURL=options_interactive.test.js.map

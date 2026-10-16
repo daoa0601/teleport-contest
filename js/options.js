@@ -1305,6 +1305,9 @@ export async function doOptions(menuRequested = false) {
         }
         await bot();
     }
+    // doset_simple resets pending visuals after cancellation too. A full-screen
+    // tty dismissal clears status while its input owner still suppresses bot().
+    await bot();
     game.iflags.optionMessages = true;
     game.context.move = 0;
 }
