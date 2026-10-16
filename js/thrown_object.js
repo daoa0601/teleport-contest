@@ -230,6 +230,7 @@ async function flyPhysicalObject({ state = game, object, dx, dy, range, startX, 
     const glyph = display?.glyph ?? transientObjectGlyph(object);
     let skipping = false;
     let skips = 0;
+    let capturedCell = null;
     const movingLight = !!object.lamplit && !heroIsBlind(state);
     try {
         for (let step = 0; step < steps && (dx || dy); step++) {
@@ -334,8 +335,14 @@ async function flyPhysicalObject({ state = game, object, dx, dy, range, startX, 
             path.push({ x, y });
             if (display)
                 await display.show({ x, y });
-            if (movingLight && captureFlight)
-                await captureFlight(object, [{ x, y }], state, glyph);
+            if (movingLight && captureFlight) {
+                // bhit() keeps DISP_FLASH open across the next light recalc.
+                // Erase the previous projectile only when drawing this step.
+                if (capturedCell)
+                    newsym(capturedCell.x, capturedCell.y);
+                capturedCell = cansee(x, y) ? { x, y } : null;
+                await captureFlight(object, [{ x, y }], state, glyph, true);
+            }
             if (kicked && isPoolOrLavaAt(x, y, state)) {
                 stoppedBy = 'liquid';
                 break;
@@ -349,6 +356,8 @@ async function flyPhysicalObject({ state = game, object, dx, dy, range, startX, 
             await captureFlight(object, path, state, glyph);
     }
     finally {
+        if (capturedCell)
+            newsym(capturedCell.x, capturedCell.y);
         await cleanupTransientLight(state);
     }
     return { x, y, path, contact, stoppedBy, destroyed, migrated };
@@ -414,7 +423,7 @@ export async function detachThrownUnit(state, item, selectedQuantity, splitObjec
     state._thrownObject = thrown;
     return thrown;
 }
-export async function captureThrownObjectFlight(object, flightPath, state = game, glyph = transientObjectGlyph(object)) {
+export async function captureThrownObjectFlight(object, flightPath, state = game, glyph = transientObjectGlyph(object), retainGlyph = false) {
     let transientCell = null;
     let transientCursor = null;
     try {
@@ -435,7 +444,7 @@ export async function captureThrownObjectFlight(object, flightPath, state = game
         }
     }
     finally {
-        if (transientCell)
+        if (transientCell && !retainGlyph)
             newsym(transientCell.x, transientCell.y);
     }
 }
