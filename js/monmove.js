@@ -2588,16 +2588,16 @@ async function movePet(monster, state, random, rollDice, rollOne, calls, resumeA
         if (cursed && !monster.mleashed && uncursedCount > 0
             && recordRandom(random, calls, 13 * uncursedCount))
             continue;
-        // C dog_move(): only distant, unleashed pets probabilistically avoid
-        // recent locations. `uncursedCount` is the source `k`, so it controls
-        // both the random range and the track-age cutoff.
+        // Guardians have no food or fetching state and do not avoid curses.
+        // Their backtracking chance therefore counts every candidate square.
         if (!monster.mleashed &&
             distmin(oldx, oldy, state?.u?.ux ?? goal.x, state?.u?.uy ?? goal.y) > 5) {
-            const trackCount = Math.min(4, Math.max(0, uncursedCount - 1));
+            const trackSquares = monster.edog ? uncursedCount : candidates.length;
+            const trackCount = Math.min(4, Math.max(0, trackSquares - 1));
             let avoid = false;
             for (let j = 0; j < trackCount; j++) {
                 const track = monster.mtrack?.[j];
-                const trackRange = 4 * (uncursedCount - j);
+                const trackRange = 4 * (trackSquares - j);
                 if (track?.x === nx && track?.y === ny) {
                     if (recordRandom(random, calls, trackRange)) {
                         avoid = true;
