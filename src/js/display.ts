@@ -264,9 +264,10 @@ function isWormTail(monster: Monster | null | undefined, x: number, y: number) {
 
 function monsterProjectionAtCell(monster: Monster, x: number, y: number): MonsterProjection | null {
     const wormTail = isWormTail(monster, x, y);
-    const sensed = canSenseMonster(monster);
-    const located = sensed && (senseWithTelepathy(monster) || heroWarnsOfMonster(monster));
-    const detected = sensed && heroDetectsMonsters();
+    // newsym() checks each sense directly after its viewport guards. Only
+    // display_monster() uses sensemon() to decide whether a disguise fails.
+    const located = senseWithTelepathy(monster) || heroWarnsOfMonster(monster);
+    const detected = heroDetectsMonsters();
     if (cansee(x, y)) {
         // Native PHYSICALLY_SEEN includes telepathy/warning on a visible head
         // square. Only this branch can map a mimic's appearance into memory.
@@ -1067,7 +1068,8 @@ export function canSpotHeroSelf() {
         game.blind || game.u?.uswallow
         || (!invisible && !game.u?.uundetected)
     );
-    const sensesSelf = unblindTelepathyRange() >= 0 || heroDetectsMonsters();
+    const sensesSelf = hasWornProperty('telepathy') || hasCarriedProperty('telepathy')
+        || heroDetectsMonsters();
     return canSeeSelf || sensesSelf;
 }
 
@@ -1720,11 +1722,9 @@ function monsterOverridesMapRegion(monster: Monster | null | undefined, x: numbe
     const range = Math.max(game.u?.xray_range ?? -1, 1);
     const dx = x - (game.u?.ux ?? x);
     const dy = y - (game.u?.uy ?? y);
-    const seesInvisible = !!game.u?.seeInvisible;
-    const ordinaryVisible = !blind && !monster.mundetected
+    const ordinaryVisible = !blind && monsterVisible(monster)
         && M_AP_TYPE(monster) !== M_AP_FURNITURE
-        && M_AP_TYPE(monster) !== M_AP_OBJECT
-        && (!monster.minvis || seesInvisible);
+        && M_AP_TYPE(monster) !== M_AP_OBJECT;
     return ordinaryVisible && dx * dx + dy * dy <= range * (range + 1);
 }
 
