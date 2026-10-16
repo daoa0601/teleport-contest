@@ -1086,13 +1086,13 @@ async function renewHumanForm(sexChangeAllowed = true) {
     else
         recordRenewedHumanGender(oldGender);
     if (heroIsSliming(game)) {
-        await pline('Your body transforms, but there is still slime on you.');
+        await plineWithContinuation('Your body transforms, but there is still slime on you.');
         resetHeroSlimingCountdown(game);
     }
     game.context.botl = true;
     await see_monsters();
     if (restored.encumbranceMessage)
-        await pline(restored.encumbranceMessage);
+        await plineWithContinuation(restored.encumbranceMessage);
     const retouch = await retouchEquipment(2);
     const selfTouch = retouch.died || game.uarmg || game.u?.uarmg ? retouch
         : await selfTouchPetrifyingWeapons();

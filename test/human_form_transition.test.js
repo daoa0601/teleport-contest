@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { wearHeroAccessory } from '../js/accessory.js';
-import { A_STR, G_GENOD, M_AP_NOTHING, POLY_CONTROLLED } from '../js/const.js';
+import { A_STR, G_GENOD, M_AP_NOTHING, POLY_CONTROLLED, UNENCUMBERED } from '../js/const.js';
 import { heroHasInvoluntaryDelay } from '../js/command_state.js';
 import { flushPendingTopline } from '../js/display.js';
 import { doGenocide, GENOCIDE_ON_THRONE } from '../js/genocide.js';
@@ -10,7 +10,8 @@ import { loseHeroHp } from '../js/hero_damage.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { beginMealMimicry } from '../js/meal_mimic.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { AMULET_OF_STRANGULATION, AMULET_OF_UNCHANGING, WAN_LIGHT } from '../js/object_data.js';
+import { AMULET_OF_STRANGULATION, AMULET_OF_UNCHANGING, ROCK, WAN_LIGHT } from '../js/object_data.js';
+import { nearCapacity } from '../js/weight.js';
 import { minimalObjectName } from '../js/objnam.js';
 import { polymonHero, polymorphHero, returnHeroToHumanForm } from '../js/polyself.js';
 import { loadScoreRecords } from '../js/score_records.js';
@@ -175,5 +176,21 @@ void test('an unchanging amulet is discovered when a living monster body is forc
     assert.equal(amulet.dknown, true);
     assert.equal(minimalObjectName(amulet), 'amulet of unchanging');
     assert.match(text(), /Your .*amulet.* fails!/);
+});
+// C polyself.c:newman(): polyman() announces the renewed body and the later
+// encumber_msg() joins that topline instead of replacing it.
+void test('a renewed human body keeps its announcement before the encumbrance change', async () => {
+    const { input, text } = formTransitionRoom();
+    requirePlayingGame(game);
+    installPolymorphedHero('homunculus');
+    while (nearCapacity(game) === UNENCUMBERED)
+        await addInventoryObject(ROCK);
+    await flushPendingTopline();
+    game.u.polymorphControl = true;
+    input.feed('human\n');
+    const result = await polymorphHero(POLY_CONTROLLED);
+    assert.equal('newman' in result && result.newman, true);
+    assert.equal(nearCapacity(game), UNENCUMBERED);
+    assert.match(`${text()}\n${game._pending_message ?? ''}`, /You feel like a new (?:man|woman)!  Your movements are now unencumbered\./);
 });
 //# sourceMappingURL=human_form_transition.test.js.map
