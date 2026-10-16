@@ -294,6 +294,7 @@ import {
     AT_GAZE,
     AT_HUGS,
     AT_MAGC,
+    AT_NONE,
     AT_SPIT,
     AT_TUCH,
     AT_WEAP,
@@ -397,7 +398,10 @@ import {
     startHeroPetrificationFromMonster,
     touchPetrifies,
 } from './stoning.js';
-import { monsterHasFireResistance, monsterHasStoneResistance } from './monster_resistance.js';
+import {
+    monsterHasAcidResistance, monsterHasColdResistance, monsterHasFireResistance,
+    monsterHasShockResistance, monsterHasStoneResistance,
+} from './monster_resistance.js';
 import { monsterReflectsRay } from './ray.js';
 import { clearHeroSliming } from './slime.js';
 import {
@@ -2951,20 +2955,28 @@ async function petAttacksMonster(
 // passive retaliation, multiplied by the pet's number of contact attacks, as
 // a deterministic safety gate before any melee to-hit roll is allowed.
 export function maxPassiveMonsterDamage(defender: Monster, aggressor: Monster) {
-    const contactTypes = new Set([1, 2, 3, 4, 5, 6, 7, 11, 16, AT_WEAP]);
+    const contactTypes = new Set([
+        AT_CLAW, AT_BITE, AT_KICK, AT_BUTT, AT_TUCH, AT_STNG, AT_HUGS,
+        AT_ENGL, AT_TENT, AT_WEAP,
+    ]);
     const contactCount = (MONSTER_ATTACKS[aggressor?.mnum] || []).filter(([attackType]) =>
         contactTypes.has(attackType),
     ).length;
     if (!contactCount) return 0;
 
-    const resistance = MONSTER_RESISTS[aggressor?.mnum] ?? 0;
+    const species = MONSTER_NAME[aggressor.mnum];
     for (const [attackType, damageType, dice, sides] of MONSTER_ATTACKS[defender?.mnum] || []) {
-        if (attackType !== 0 && attackType !== 14) continue;
+        if (attackType !== AT_NONE && attackType !== AT_BOOM) continue;
+        // These bodies are destroyed by contact regardless of resistance or HP.
+        if (damageType === AD_FIRE && (species === 'paper golem' || species === 'straw golem')
+            || damageType === AD_DCAY && (species === 'wood golem' || species === 'leather golem')
+            || damageType === AD_RUST && species === 'iron golem')
+            return aggressor.mhp * contactCount;
         const resisted =
-            (damageType === AD_FIRE && resistance & 0x01) ||
-            (damageType === AD_COLD && resistance & 0x02) ||
-            (damageType === AD_ELEC && resistance & 0x10) ||
-            (damageType === AD_ACID && resistance & 0x40);
+            (damageType === AD_FIRE && monsterHasFireResistance(aggressor)) ||
+            (damageType === AD_COLD && monsterHasColdResistance(aggressor)) ||
+            (damageType === AD_ELEC && monsterHasShockResistance(aggressor)) ||
+            (damageType === AD_ACID && monsterHasAcidResistance(aggressor));
         if (resisted) return 0;
         if (![AD_PHYS, AD_FIRE, AD_COLD, AD_ELEC, AD_ACID].includes(damageType)) return 0;
         const count = dice || (MONSTER_LEVEL[defender.mnum] ?? 0) + 1;

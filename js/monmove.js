@@ -107,7 +107,7 @@ import { splitObjectStack } from './object_stack.js';
 import { respondToImmediateMagic } from './monster_magic_response.js';
 import { canSeeMonster, canSpotMonster, map_invisible, newsym, plineWithContinuation, } from './display.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SIZE, MONSTER_SYMBOL, monsterIsCovetous, monsterIsNoncorporeal, monsterIsUndead, monsterIsVampireShifter, monsterIsWhirly, monsterIsShade, monsterIsUnsolid, monsterIsThickSkinned, monsterTypeName, } from './monster_data.js';
-import { AD_ACID, AD_BLND, AD_CLRC, AD_COLD, AD_CURS, AD_HEAL, AD_DRIN, AD_CORR, AD_DCAY, AD_DGST, AD_DREN, AD_DETH, AD_CONF, AD_DRLI, AD_ELEC, AD_ENCH, AD_FIRE, AD_LEGS, AD_PHYS, AD_POLY, AD_TLPT, AD_DISE, AD_PEST, AD_FAMN, AD_MAGM, AD_SPC2, AD_SAMU, AD_SEDU, AD_SGLD, AD_SSEX, AD_SITM, AD_SLIM, AD_SLOW, AD_SPEL, AD_STCK, AD_STON, AD_STUN, AD_WRAP, AD_PLYS, AD_WERE, AD_RUST, AT_BOOM, AT_BREA, AT_CLAW, AT_ENGL, AT_GAZE, AT_HUGS, AT_MAGC, AT_SPIT, AT_TUCH, AT_WEAP, AT_KICK, AT_BITE, AT_STNG, AT_BUTT, AT_TENT, AT_EXPL, } from './monster_attack_types.js';
+import { AD_ACID, AD_BLND, AD_CLRC, AD_COLD, AD_CURS, AD_HEAL, AD_DRIN, AD_CORR, AD_DCAY, AD_DGST, AD_DREN, AD_DETH, AD_CONF, AD_DRLI, AD_ELEC, AD_ENCH, AD_FIRE, AD_LEGS, AD_PHYS, AD_POLY, AD_TLPT, AD_DISE, AD_PEST, AD_FAMN, AD_MAGM, AD_SPC2, AD_SAMU, AD_SEDU, AD_SGLD, AD_SSEX, AD_SITM, AD_SLIM, AD_SLOW, AD_SPEL, AD_STCK, AD_STON, AD_STUN, AD_WRAP, AD_PLYS, AD_WERE, AD_RUST, AT_BOOM, AT_BREA, AT_CLAW, AT_ENGL, AT_GAZE, AT_HUGS, AT_MAGC, AT_NONE, AT_SPIT, AT_TUCH, AT_WEAP, AT_KICK, AT_BITE, AT_STNG, AT_BUTT, AT_TENT, AT_EXPL, } from './monster_attack_types.js';
 import { APPLE, BANANA, BULLWHIP, BOULDER, CARROT, CLOVE_OF_GARLIC, CORPSE, DWARVISH_MATTOCK, EGG, FAKE_AMULET_OF_YENDOR, FLINT, ENORMOUS_MEATBALL, GOLD_PIECE, MEATBALL, MEAT_RING, MEAT_STICK, ARROW, AXE, BATTLE_AXE, DART, IRON_SHOES, OBJECT_MATERIAL, OBJECT_BIMANUAL, OBJECT_LARGE_DAMAGE, OBJECT_NAMES, OBJECT_SMALL_DAMAGE, OBJECT_SUBTYPE, PICK_AXE, ROCK, POT_GAIN_LEVEL, POT_HEALING, POT_INVISIBILITY, SLIME_MOLD, TIN, TRIPE_RATION, WAN_SPEED_MONSTER, } from './object_data.js';
 import { placeCreatedObject, placeObjectSynchronously, remove_object, stack_object, } from './floor_object.js';
 import { canLetGo } from './hero_inventory.js';
@@ -138,7 +138,7 @@ import { createPoisonGasCloud, GAS_OK, monsterGasTolerance, visibleRegionAt, upd
 import { heroIsBlinded, heroIsDeaf } from './senses.js';
 import { makeBlinded } from './sight_change.js';
 import { applyMonsterStoningAttack, startHeroPetrificationFromMonster, touchPetrifies, } from './stoning.js';
-import { monsterHasFireResistance, monsterHasStoneResistance } from './monster_resistance.js';
+import { monsterHasAcidResistance, monsterHasColdResistance, monsterHasFireResistance, monsterHasShockResistance, monsterHasStoneResistance, } from './monster_resistance.js';
 import { monsterReflectsRay } from './ray.js';
 import { clearHeroSliming } from './slime.js';
 import { monsterWeaponStrengthBonus, rollPhysicalWeaponDamageAgainstHero, } from './weapon_damage.js';
@@ -2234,18 +2234,26 @@ async function petAttacksMonster(pet, target, state, random, rollDice, rollOne, 
 // passive retaliation, multiplied by the pet's number of contact attacks, as
 // a deterministic safety gate before any melee to-hit roll is allowed.
 export function maxPassiveMonsterDamage(defender, aggressor) {
-    const contactTypes = new Set([1, 2, 3, 4, 5, 6, 7, 11, 16, AT_WEAP]);
+    const contactTypes = new Set([
+        AT_CLAW, AT_BITE, AT_KICK, AT_BUTT, AT_TUCH, AT_STNG, AT_HUGS,
+        AT_ENGL, AT_TENT, AT_WEAP,
+    ]);
     const contactCount = (MONSTER_ATTACKS[aggressor?.mnum] || []).filter(([attackType]) => contactTypes.has(attackType)).length;
     if (!contactCount)
         return 0;
-    const resistance = MONSTER_RESISTS[aggressor?.mnum] ?? 0;
+    const species = MONSTER_NAME[aggressor.mnum];
     for (const [attackType, damageType, dice, sides] of MONSTER_ATTACKS[defender?.mnum] || []) {
-        if (attackType !== 0 && attackType !== 14)
+        if (attackType !== AT_NONE && attackType !== AT_BOOM)
             continue;
-        const resisted = (damageType === AD_FIRE && resistance & 0x01) ||
-            (damageType === AD_COLD && resistance & 0x02) ||
-            (damageType === AD_ELEC && resistance & 0x10) ||
-            (damageType === AD_ACID && resistance & 0x40);
+        // These bodies are destroyed by contact regardless of resistance or HP.
+        if (damageType === AD_FIRE && (species === 'paper golem' || species === 'straw golem')
+            || damageType === AD_DCAY && (species === 'wood golem' || species === 'leather golem')
+            || damageType === AD_RUST && species === 'iron golem')
+            return aggressor.mhp * contactCount;
+        const resisted = (damageType === AD_FIRE && monsterHasFireResistance(aggressor)) ||
+            (damageType === AD_COLD && monsterHasColdResistance(aggressor)) ||
+            (damageType === AD_ELEC && monsterHasShockResistance(aggressor)) ||
+            (damageType === AD_ACID && monsterHasAcidResistance(aggressor));
         if (resisted)
             return 0;
         if (![AD_PHYS, AD_FIRE, AD_COLD, AD_ELEC, AD_ACID].includes(damageType))
