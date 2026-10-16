@@ -14,11 +14,10 @@ import { vision_recalc } from './vision.js';
 import { nhgetch } from './input.js';
 import { getLine } from './query.js';
 import { changeInventoryOrder, inventoryOrderSymbols } from './object_sort.js';
-import { NO_COLOR } from './terminal.js';
 import { ATR_INVERSE, restoreMenuUnderlay, showChoiceWindow, showInventoryWindow, showMultiSelectWindow, snapshotMenuUnderlay } from './windows.js';
 import type { MenuLabel, PageLocalMenuItem, PageLocalMultiSelectSection } from './windows.js';
 import {
-    COLNO, MENU_FULL, MENU_ITEMFLAGS_SKIPINVERT, PICK_ONE, PL_PSIZ,
+    COLNO, MENU_FULL, MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPINVERT, PICK_ONE, PL_PSIZ,
     PARANOID_AUTOALL, PARANOID_BONES, PARANOID_BREAKWAND, PARANOID_CONFIRM,
     PARANOID_DIE, PARANOID_EATING, PARANOID_HIT, PARANOID_PRAY,
     PARANOID_QUIT, PARANOID_REMOVE, PARANOID_SWIM, PARANOID_TRAP,
@@ -491,15 +490,6 @@ async function editNumberPad(): Promise<void> {
     if (index >= 0) setNumberPadOption(index === 5 ? -1 : index, game);
 }
 
-function putOptionsLine(col: number, row: number, text: string, attr = 0): void {
-    const display = game.nhDisplay;
-    if (!display) return;
-    for (let index = 0; index < text.length && col + index < display.cols;
-        index++) {
-        display.setCell(col + index, row, text.charAt(index), NO_COLOR, attr);
-    }
-}
-
 const REQUEST_MENU_BOOLEAN_OPTIONS = [
     ['accessiblemsg', 'accessiblemsg', false],
     ['acoustics', 'acoustics', true],
@@ -937,73 +927,50 @@ const PICKUP_TYPE_ROWS = [
     ['o', '_', 'iron chain'],
 ] as const;
 
-function renderPickupTypes(selected: ReadonlySet<string>): void {
-    const display = game.nhDisplay;
-    if (!display) return;
-    const help = game.flags?.pickup
-        ? "Toggle off 'autopickup' to not pick up anything."
-        : "Toggle on 'autopickup' to automatically pick these things up.";
-    const content = [
-        'Autopickup what?',
-        ...PICKUP_TYPE_ROWS.map(([letter, symbol, description]) =>
-            `${letter} ${selected.has(symbol) ? '+' : '-'} ${symbol}  ${description}`),
-        'A -    All classes of objects',
-        'Note: when no choices are selected, "all" is implied.',
-        help,
-        '(end)',
-    ];
-    const widest = Math.max(...content.map(line => line.length));
-    const left = Math.max(11, display.cols - widest - 2);
-    for (let row = 0; row <= 21; row++) {
-        for (let col = left - 1; col < display.cols; col++)
-            display.setCell(col, row, ' ', NO_COLOR, 0);
-    }
-    putOptionsLine(left, 0, 'Autopickup what?', ATR_INVERSE);
-    for (const [index, [letter, symbol, description]] of PICKUP_TYPE_ROWS.entries()) {
-        putOptionsLine(left, index + 2,
-            `${letter} ${selected.has(symbol) ? '+' : '-'} ${symbol}  ${description}`);
-    }
-    putOptionsLine(left, 18, 'A -    All classes of objects');
-    putOptionsLine(left, 19,
-        'Note: when no choices are selected, "all" is implied.');
-    putOptionsLine(left, 20, help);
-    putOptionsLine(left, 21, '(end)');
-    display.setCursor(left + 6, 21);
-}
-
+// options.c:optfn_pickup_types() prompts in traditional/combination mode;
+// windows.c:choose_classes_menu() owns the full/partial class picker.
 async function editPickupTypes(preserveStatus = false): Promise<void> {
-    const selected = new Set<string>(game.flags?.pickup_types || '');
-    // tty_display_nhwindow(NHW_MENU) pages unread prose, then clears the
-    // entire message window before painting the menu's corner rectangle.
-    if (!game._suppressMessagesUntilInput) await flushPendingTopline();
-    clearMessageWindow();
-    await flush_screen(1);
-    const underlay = snapshotMenuUnderlay();
-    if (!preserveStatus) {
-        game.nhDisplay?.clearRow(22);
-        game.nhDisplay?.clearRow(23);
+    const previous = game.flags.pickup_types ?? '';
+    let value = previous;
+    let useMenu = true;
+    if ((game.flags.menu_style ?? MENU_FULL) <= 1) {
+        const answer = await getLine(`New pickup_types: [${inventoryOrderSymbols()} am] (${previous || 'all'})`,
+            (_character: string, key: number) => key >= 32 && key < 127);
+        value = answer === null || !answer ? previous : answer.trim().replace(/ +/g, ' ');
+        useMenu = value.startsWith('m');
     }
-    for (;;) {
-        renderPickupTypes(selected);
-        const key = await nhgetch();
-        if (key === 27 || key === 10 || key === 13) break;
-        const input = String.fromCharCode(key);
-        if (input === 'A') {
-            if (selected.size === PICKUP_TYPE_ROWS.length) selected.clear();
-            else for (const [, symbol] of PICKUP_TYPE_ROWS) selected.add(symbol);
-            continue;
+    if (useMenu) {
+        const symbols = inventoryOrderSymbols() + (game.flags.debug ? '.' : '');
+        const classes = [...symbols].map((symbol, index) => {
+            const description = PICKUP_TYPE_ROWS.find(([, candidate]) => candidate === symbol)?.[2] ?? 'splash of venom';
+            return { key: String.fromCharCode(97 + index), groupAccelerator: symbol, value: symbol,
+                text: `${symbol}  ${description}`,
+                itemFlags: previous.includes(symbol) ? MENU_ITEMFLAGS_SELECTED : 0 };
+        });
+        await flushPendingTopline();
+        clearMessageWindow();
+        await flush_screen(1);
+        const underlay = snapshotMenuUnderlay();
+        if (!preserveStatus) {
+            game.nhDisplay?.clearRow(22);
+            game.nhDisplay?.clearRow(23);
         }
-        const row = PICKUP_TYPE_ROWS.find(([letter, symbol]) =>
-            input === letter || input === symbol);
-        if (!row) continue;
-        if (selected.has(row[1])) selected.delete(row[1]);
-        else selected.add(row[1]);
+        const selected = await showMultiSelectWindow({
+            title: 'Autopickup what?', omitHeadings: true, signalEscape: true,
+            sections: [{ items: [
+                ...classes,
+                { selectable: false, text: '' },
+                { key: 'A', value: ' ', text: '   All classes of objects', itemFlags: MENU_ITEMFLAGS_SKIPINVERT },
+                { selectable: false, text: 'Note: when no choices are selected, "all" is implied.' },
+                { selectable: false, text: game.flags.pickup
+                    ? "Toggle off 'autopickup' to not pick up anything."
+                    : "Toggle on 'autopickup' to automatically pick these things up." },
+            ] }],
+        });
+        restoreMenuUnderlay(underlay);
+        value = selected === null ? previous : selected.includes(' ') ? '' : selected.join('');
     }
-    game.flags.pickup_types = PICKUP_TYPE_ROWS
-        .map(([, symbol]) => symbol)
-        .filter(symbol => selected.has(symbol))
-        .join('');
-    restoreMenuUnderlay(underlay);
+    game.flags.pickup_types = /^[aA]/.test(value) ? '' : value;
 }
 
 // C options.c:optfn_bool(), followed by reset_needed_visuals(). Status-only

@@ -194,3 +194,28 @@ void test('pickup burden uses the native encumbrance choices', async () => {
     assert.ok(views.some(view => view.includes('Select encumbrance level:')));
     assert.equal(game.flags.pickup_burden, 5);
 });
+
+void test('cancelling autopickup types discards new checks', async () => {
+    freshObjectRoom({ flags: { pickup_types: '$' } });
+
+    await fullOptions(['pickup_types'], () => 'c\x1b');
+
+    assert.equal(game.flags.pickup_types, '$');
+});
+
+void test('the all-classes autopickup choice stores the native empty list', async () => {
+    freshObjectRoom({ flags: { pickup_types: '$' } });
+
+    await fullOptions(['pickup_types'], () => 'A\n');
+
+    assert.equal(game.flags.pickup_types, '');
+});
+
+void test('traditional autopickup prompts for symbols and preserves order', async () => {
+    freshObjectRoom({ flags: { menu_style: 0, pickup_types: '$' } });
+
+    const views = await fullOptions(['pickup_types'], () => ')%\n');
+
+    assert.ok(views.some(view => view.includes('New pickup_types: [') && view.includes('am] ($)')));
+    assert.equal(game.flags.pickup_types, ')%');
+});
