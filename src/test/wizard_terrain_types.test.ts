@@ -6,6 +6,7 @@ import { resetInputState } from '../js/input.js';
 import { runExtendedCommand } from './support/commands.js';
 import { answerPrompts } from './support/input-boundaries.js';
 import { freshPlayableRoom } from './support/playable-room.js';
+import { createSpecialLevel } from './support/topology.js';
 
 void test('wizard terrain offers a readable legend for the internal terrain codes', async () => {
     freshPlayableRoom({ flags: { debug: true } });
@@ -18,6 +19,21 @@ void test('wizard terrain offers a readable legend for the internal terrain code
 
     assert.equal(game.context.move, 0);
 });
+
+for (const [role, prototype] of [['wizard', 'Wiz-strt'], ['ranger', 'Ran-strt']] as const) {
+    void test(`the terrain footer uses the ${role} quest prototype`, async () => {
+        freshPlayableRoom({ role, flags: { debug: true } });
+        game.specialLevels = new Map([['x-strt', createSpecialLevel({ dnum: 0, dlevel: 1 })]]);
+        const input = resetInputState();
+
+        await answerPrompts(runExtendedCommand('terrain'), input, [
+            { prompt: /internal levl/, keys: 'e' },
+            { prompt: new RegExp(`D:0,L:1 "${prototype}"`), keys: ' ' },
+        ]);
+
+        assert.equal(game.context.move, 0);
+    });
+}
 
 void test('wizard terrain encodes real tiles and undiggable stone', async () => {
     const level = freshPlayableRoom({ flags: { debug: true } });

@@ -3,7 +3,7 @@ import {
     COLNO, ROWNO, STONE, Invocation_lev, In_endgame, In_mines, In_quest,
     In_sokoban, In_V_tower, Is_knox_level, Is_rogue_level,
 } from './const.js';
-import { levelIsWizardTower, sameDungeonLevel } from './dungeon.js';
+import { levelIsWizardTower, sameDungeonLevel, specialDisplayName } from './dungeon.js';
 import { displayMessageWindow, docrt, flush_screen } from './display.js';
 import { game, requireGameLevel } from './gstate.js';
 import { mayDig } from './hero_digging.js';
@@ -70,7 +70,7 @@ function terrainLevelDescription(): string {
     const special = [...(game.specialLevels?.entries() ?? [])]
         .find(([, location]) => sameDungeonLevel(here, location));
     if (special) {
-        parts.push(`"${special[0]}"`);
+        parts.push(`"${specialDisplayName(special[0])}"`);
         // The pinned dungeon.lua sets only town and roguelike on special levels.
         if (special[1].flags.town) parts.push('town');
         if (Is_rogue_level(here)) parts.push('roguelike');
