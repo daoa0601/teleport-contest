@@ -62,7 +62,7 @@ export function mapFeatureDescription(x, y, glyph) {
         const mask = monster && M_AP_TYPE(monster) === M_AP_FURNITURE
             && monster.mappearance === CmapSymbol.altar
             ? monster.mcorpsenm ?? monster.mextra?.mcorpsenm ?? 0
-            : location.typ === ALTAR ? location.altarmask ?? location.flags : 0;
+            : location.typ === ALTAR ? location.flags : 0;
         const alignment = Amask2align(mask);
         const distant = Is_astralevel(game.u.uz) && !adjacentToHero(x, y)
             && !!(mask & AM_SANCTUM);
