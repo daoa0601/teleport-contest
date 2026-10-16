@@ -9,6 +9,33 @@ import { initRng } from '../js/rng.js';
 import { freshGame } from './support/game-state.js';
 import { startLuaCore } from './support/lua-game.js';
 import { currentLuaLifecycle } from '../js/lua/lifecycle.js';
+import { LuaState } from '../js/lua/runtime.js';
+import { resetInputState } from '../js/input.js';
+void test('a room theme syntax error reports a load error and falls back to ordinary rooms', async (t) => {
+    const state = freshGame({ flags: { bones: false } });
+    state.program_state.in_sanity_check = true;
+    initRng(999);
+    init_objects();
+    await init_dungeons();
+    await startLuaCore(t);
+    const dungeon = state.dungeons[0];
+    assert.ok(dungeon);
+    dungeon.themeRooms = 'themerms.lua';
+    state.u.uz = { dnum: 0, dlevel: 12 };
+    state.specialLevels?.clear();
+    state.branches = [];
+    resetInputState().feed(' ');
+    // Feed malformed source to the real parser without changing packaged assets.
+    const execute = LuaState.prototype.executeAsync;
+    t.mock.method(LuaState.prototype, 'executeAsync', async function (source, filename = '<lua>') {
+        await execute.call(this, filename === 'themerms.lua' ? 'local =' : source, filename);
+    });
+    await mklev();
+    assert.match(state._lastPlineMessage, /^luaL_loadbuffer: Error loading \(themerms\.lua\): /);
+    assert.ok(state.level.rooms.filter(isRoom).some(room => room.rtype === OROOM));
+    assert.equal(dungeon.themeRooms, undefined);
+    assert.equal(currentLuaLifecycle().getThemedState(state, 0), null);
+});
 void test('a missing room theme is disabled and ordinary rooms still generate on later levels', async (t) => {
     const state = freshGame({ flags: { bones: false } });
     state.program_state.in_sanity_check = true;

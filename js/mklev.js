@@ -7036,9 +7036,16 @@ async function beginLuaThemerooms() {
             state = await lifecycle.createThemedState(game, dungeonNumber, filename, createdSession.bindings, created => createdSession.bindState(created));
         }
         catch (error) {
-            const reason = !LUA_SOURCES[filename]
-                ? `nhl_loadlua: Error opening (${filename})`
-                : `Lua error: ${filename} ${error instanceof Error ? error.message : String(error)}`;
+            let reason;
+            if (!LUA_SOURCES[filename]) {
+                reason = `nhl_loadlua: Error opening (${filename})`;
+            }
+            else if (error instanceof SyntaxError) {
+                reason = `luaL_loadbuffer: Error loading (${filename}): ${error.message}`;
+            }
+            else {
+                reason = `Lua error: ${filename} ${error instanceof Error ? error.message : String(error)}`;
+            }
             await impossible(reason);
             // C makerooms() closes a failed theme and clears its filename so
             // this level and later levels use ordinary rooms instead.
