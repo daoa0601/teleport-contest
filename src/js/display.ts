@@ -2029,22 +2029,26 @@ export function swallowed(first = false) {
     if (first) {
         for (let y = 0; y < ROWNO; y++)
             for (let x = 1; x < COLNO; x++)
-                show_glyph_cell(x, y, ' ', NO_COLOR, false);
+                show_glyph_cell(x, y, ' ', NO_COLOR, false, 0,
+                    { kind: 'unexplored', glyph: GlyphOffset.unexplored });
     } else if (lastSwallowedX > 0) {
         for (let y = lastSwallowedY - 1; y <= lastSwallowedY + 1; y++)
             for (let x = lastSwallowedX - 1; x <= lastSwallowedX + 1; x++)
                 if (x > 0 && x < COLNO && y >= 0 && y < ROWNO)
-                    show_glyph_cell(x, y, ' ', NO_COLOR, false);
+                    show_glyph_cell(x, y, ' ', NO_COLOR, false, 0,
+                        { kind: 'unexplored', glyph: GlyphOffset.unexplored });
     }
 
     const x = game.u.ux, y = game.u.uy;
-    const positions: ReadonlyArray<readonly [number, number, string, boolean]> = [
-        [-1, -1, '/', false], [0, -1, 'o', true], [1, -1, '\\', false],
-        [-1, 0, 'x', true],                         [1, 0, 'x', true],
-        [-1, 1, '\\', false],  [0, 1, 's', true],  [1, 1, '/', false],
+    const positions: ReadonlyArray<readonly [number, number, string, string | null]> = [
+        [-1, -1, '/', null], [0, -1, '-', 'o'], [1, -1, '\\', null],
+        [-1, 0, '|', 'x'],                      [1, 0, '|', 'x'],
+        [-1, 1, '\\', null], [0, 1, '-', 's'], [1, 1, '/', null],
     ];
     const hallucinating = heroIsHallucinating(game);
-    for (const [dx, dy, ch, decgfx] of positions) {
+    const dec = !Is_rogue_level(game.u.uz) && /^DECgraphics$/i.test(game.symset ?? '');
+    for (const [index, [dx, dy, ascii, alternate]] of positions.entries()) {
+        if (index === 4) displaySelf();
         const sx = x + dx, sy = y + dy;
         if (sx <= 0 || sx >= COLNO || sy < 0 || sy >= ROWNO) continue;
         const mnum = hallucinating
@@ -2052,9 +2056,13 @@ export function swallowed(first = false) {
         let color = MONSTER_COLOR[mnum] ?? NO_COLOR;
         // tty maps black and ordinary gray through its default foreground.
         if (color === CLR_BLACK || color === CLR_GRAY) color = NO_COLOR;
-        show_glyph_cell(sx, sy, ch, color, decgfx);
+        const glyph: DisplayGlyph = {
+            ch: dec && alternate ? alternate : ascii, color,
+            decgfx: dec && alternate !== null, kind: 'effect',
+            glyph: GlyphOffset.swallow + mnum * 8 + index,
+        };
+        show_glyph_cell(sx, sy, glyph.ch, color, glyph.decgfx, 0, glyph);
     }
-    displaySelf();
     lastSwallowedX = x;
     lastSwallowedY = y;
 }
