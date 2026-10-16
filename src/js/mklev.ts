@@ -25,7 +25,7 @@ import { setWallState } from './wall_topology.js';
 import { monsterHasMapPosition, monsterAtPosition, monsterOccupiesPosition } from './monster_location.js';
 import { hideMonsterUnder } from './monster_hiding.js';
 import { finishMonsterBirth } from './monster_birth.js';
-import { allocateMonsterBirthExtensions } from './monster_birth_extensions.js';
+import { allocateMonsterBirthExtensions, ensureMinionData } from './monster_birth_extensions.js';
 import { createParticularMonster } from './read_creation.js';
 import { setMonsterPermanentInvisibility } from './monster_invisibility.js';
 import { setMonsterSpecies } from './monster_species.js';
@@ -4983,10 +4983,9 @@ export function finishSpecialRoamer(monster: Monster, alignment: number, peacefu
     const coaligned = alignment === (game.u?.ualign?.type ?? A_NEUTRAL);
     monster.ispriest = 0;
     monster.isminion = 1;
-    monster.emin = {
-        min_align: alignment,
-        renegade: coaligned && !peaceful,
-    };
+    const minion = ensureMinionData(monster);
+    minion.min_align = alignment;
+    minion.renegade = coaligned && !peaceful;
     monster.maligntyp = alignment;
     monster.mpeaceful = peaceful ? 1 : 0;
     monster.msleeping = 0;

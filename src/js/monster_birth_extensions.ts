@@ -46,6 +46,7 @@ export function ensureMinionData(monster: Monster): MinionData {
     const minion = monster.emin ?? monster.mextra?.emin
         ?? { parentmid: monster.m_id, min_align: 0, renegade: 0 };
     monster.emin = minion;
-    monster.mextra = { ...monster.mextra, emin: minion };
+    monster.mextra ??= {};
+    monster.mextra.emin = minion;
     return minion;
 }
