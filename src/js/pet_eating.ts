@@ -18,8 +18,7 @@ import { objectName, observeDistantObjectForNaming } from './objnam.js';
 import { splitObjectStack } from './object_stack.js';
 import { DOGFOOD, dogFood } from './pet_food.js';
 import { rn2 } from './rng.js';
-import { billForObject, chargeAlteredUnpaidObject, unpaidObjectCost } from './shk.js';
-import { containedBuyCost } from './shop_loss.js';
+import { chargeAlteredUnpaidObject, unpaidObjectCost } from './shk.js';
 import { G_GENOD } from './const.js';
 import { isPoolAt } from './terrain_properties.js';
 import { cansee } from './vision.js';
@@ -153,7 +152,16 @@ export async function finishPetEating(
     if (meal.royalJelly && await feedBeeRoyalJelly(monster, object, state)) {
         return;
     }
-    await describePetMeal(monster, meal, state);
+    const previousPriceSuppression = state.iflags.suppress_price;
+    if (object.unpaid) state.iflags.suppress_price = true;
+    let chargedName = '';
+    try {
+        await describePetMeal(monster, meal, state);
+        if (object.unpaid) chargedName = objectName(object, state);
+    } finally {
+        if (previousPriceSuppression === undefined) delete state.iflags.suppress_price;
+        else state.iflags.suppress_price = previousPriceSuppression;
+    }
     if (monster.mnum === PM_RUST_MONSTER && object.oerodeproof) {
         if (object.unpaid) await chargeAlteredUnpaidObject(object, 'degrade', state);
         object.oerodeproof = false;
@@ -174,10 +182,8 @@ export async function finishPetEating(
         dog.apport += Math.trunc(200 / elapsed);
     }
     if (object.unpaid) {
-        const keeper = billForObject(object, state)?.resident ?? null;
-        const cost = unpaidObjectCost(object, state)
-            + containedBuyCost(object, keeper, { state });
-        await plineWithContinuation(`That ${objectName(object, state)} will cost you ${cost} ${currency(cost, { state })}.`);
+        const cost = unpaidObjectCost(object, state, 'contents');
+        await plineWithContinuation(`That ${chargedName} will cost you ${cost} ${currency(cost, { state })}.`);
     }
     await consumeMonsterObject(monster, object, state);
 }
