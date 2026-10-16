@@ -7148,10 +7148,23 @@ async function beginLuaThemerooms(): Promise<boolean> {
         const createdSession = createLuaLevelSession();
         session = createdSession;
         createdSession.beginLevel(active, { special: false });
-        state = await lifecycle.createThemedState(
-            game, dungeonNumber, filename, createdSession.bindings,
-            created => createdSession.bindState(created),
-        );
+        try {
+            state = await lifecycle.createThemedState(
+                game, dungeonNumber, filename, createdSession.bindings,
+                created => createdSession.bindState(created),
+            );
+        } catch (error) {
+            const reason = !LUA_SOURCES[filename]
+                ? `nhl_loadlua: Error opening (${filename})`
+                : `Lua error: ${filename} ${error instanceof Error ? error.message : String(error)}`;
+            await impossible(reason);
+            // C makerooms() closes a failed theme and clears its filename so
+            // this level and later levels use ordinary rooms instead.
+            const dungeon = game.dungeons[dungeonNumber];
+            if (dungeon) dungeon.themeRooms = undefined;
+            activeThemes.delete(game);
+            return false;
+        }
         themedLuaSessions.set(state, session);
     } else {
         session.beginLevel(active, { special: false });

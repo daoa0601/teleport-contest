@@ -9,6 +9,34 @@ import { init_objects } from '../js/o_init.js';
 import { initRng } from '../js/rng.js';
 import { freshGame } from './support/game-state.js';
 import { startLuaCore } from './support/lua-game.js';
+import { currentLuaLifecycle } from '../js/lua/lifecycle.js';
+
+void test('a missing room theme is disabled and ordinary rooms still generate on later levels', async t => {
+    const state = freshGame({ flags: { bones: false } });
+    state.program_state.in_sanity_check = true;
+    initRng(999);
+    init_objects();
+    await init_dungeons();
+    await startLuaCore(t);
+    const dungeon = state.dungeons[0];
+    assert.ok(dungeon);
+    dungeon.themeRooms = 'missing-room-theme.lua';
+    state.specialLevels?.clear();
+    state.branches = [];
+
+    for (const depth of [12, 13]) {
+        state.u.uz = { dnum: 0, dlevel: depth };
+
+        await mklev();
+
+        const rooms = state.level.rooms.filter(isRoom);
+        assert.ok(rooms.some(room => room.rtype === OROOM), `ordinary rooms must generate at depth ${depth}`);
+        assert.ok(!rooms.some(room => room.rtype === THEMEROOM));
+        assert.equal(currentLuaLifecycle().getThemedState(state, 0), null);
+        assert.equal(dungeon.themeRooms, undefined, 'the failed theme must stay disabled');
+        assert.match(state._pending_message, /nhl_loadlua: Error opening \(missing-room-theme.lua\)/);
+    }
+});
 
 void test('a dungeon without a themed-room file creates ordinary rectangular rooms', async t => {
     const state = freshGame({ flags: { bones: false } });
