@@ -96,7 +96,7 @@ import { resolveMonsterGaze } from './monster_gaze.js';
 import { resolveMonsterMagicRay } from './monster_magic_ray.js';
 import { resolveMonsterSelfExplosion } from './monster_self_explosion.js';
 import { canSpotMonster, displayColorName, displayMessageWindow, docrt, redrawMap, bot, flush_screen, flushPendingTopline, pline, plineWithContinuation, newsym, map_invisible, randomDisplayMonsterName, see_monsters, see_objects, see_traps, show_glyph_cell, swallowed, canSeeMonster, monsterVisible, shieldeff, } from './display.js';
-import { cansee, couldsee, vision_note_blocker_change, vision_recalc, vision_reset, hasLightSources, init_vision_globals, } from './vision.js';
+import { cansee, couldsee, vision_note_blocker_change, vision_recalc, vision_reset_new_level, hasLightSources, } from './vision.js';
 import { nhgetch } from './input.js';
 import { NO_COLOR, CLR_BRIGHT_BLUE } from './terminal.js';
 import { ACID_VENOM, BOULDER, CORPSE, LEASH, GOLD_PIECE, OBJECT_BIMANUAL, OBJECT_NAMES, } from './object_data.js';
@@ -317,8 +317,7 @@ export async function restoregamePreamble() {
     game._encumbranceLevel = 0;
     // C dorecover() rebuilds the unsaved vision state before docrt() and
     // welcome(). Search and monster feedback use that same live sight.
-    init_vision_globals();
-    vision_reset();
+    vision_reset_new_level();
     await docrt();
     const race = game.urace?.adj || game.urace?.noun || 'human';
     const role = game.flags?.female && game.urole?.name?.f
@@ -413,7 +412,7 @@ async function enterTutorial() {
     tutorialHero.uy0 = tutorialPosition.y0;
     game._tutorialActive = true;
     game._pending_message = '';
-    vision_reset();
+    vision_reset_new_level();
     await docrt();
     await checkSpecialRoom();
     await readEngravingAt(game.u.ux, game.u.uy, plineWithContinuation);
@@ -3330,8 +3329,7 @@ export async function newgame() {
     // C does this before makedog() so that the starting pet is placed next
     // to the hero rather than next to the level-generation origin.
     await u_on_upstairs();
-    init_vision_globals();
-    vision_reset();
+    vision_reset_new_level();
     await checkSpecialRoom();
     const occupant = monsterAtPosition(requireGameLevel(g), g.u.ux, g.u.uy);
     if (occupant)
