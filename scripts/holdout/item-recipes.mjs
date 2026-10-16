@@ -91,14 +91,15 @@ export const ITEM_RECIPES = {
         return actions;
     }),
     'potion-quaffing': itemRecipe('Quaff two seeded potions with varied beatitude, bless a weapon by dipping, and throw a third potion down.', ['Two potions are drunk with turns consumed.', 'The dipped weapon glows.', 'The thrown potion shatters.'], seed => {
-        const potions = pickItems(seed, POTIONS, 3);
+        // The recipe wishes for its own holy water; a second water wish
+        // would merge into that stack and change its name.
+        const potions = pickItems(seed, POTIONS.filter(name => name !== 'water'), 3);
         const blessing = itemAt(pickItems(seed + 1, BLESSINGS, 1), 0);
         const actions = wish(...potions.map(name => `${blessing} potion of ${name}`), 'blessed potion of water', 'uncursed +0 dagger');
         // Dip and throw before quaffing: blindness and levitation then
         // cannot hide the breakage message or block floor interactions.
         actions.push(choose('dagger', 'm#dip\r*'), choose('potion of holy water', '*'));
-        const label = (name) => name === 'water' && blessing === 'blessed' ? 'potion of holy water'
-            : name === 'water' && blessing === 'cursed' ? 'potion of unholy water' : `potion of ${name}`;
+        const label = (name) => `potion of ${name}`;
         actions.push(choose(label(itemAt(potions, 2)), 't*'), keys('>'));
         // A new form might have no hands. Drink polymorph last.
         for (const name of potions.slice(0, 2).sort((a, b) => Number(a === 'polymorph') - Number(b === 'polymorph'))) {
@@ -186,6 +187,10 @@ function completedEffects(screens, prompt, effect) {
     for (const [index, screen] of screens.entries()) {
         if (prompt.test(screen) && !prompt.test(screens[index - 1] ?? ''))
             awaitingEffect = true;
+        // getobj() reports an escaped selection; later messages belong to
+        // other commands.
+        else if (awaitingEffect && /^Never mind\./.test(screen))
+            awaitingEffect = false;
         else if (awaitingEffect && !prompt.test(screen) && effect.test(screen)) {
             completed++;
             awaitingEffect = false;
