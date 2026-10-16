@@ -717,9 +717,9 @@ export async function init_dungeons() {
     if (knoxBranch)
         knoxBranch.end1.dnum = loaded.length;
 }
-export function specialDisplayName(name) {
+export function specialDisplayName(name, state = game) {
     if (name.startsWith('x-')) {
-        const code = game.urole?.filecode || 'Wiz';
+        const code = state.urole?.filecode || 'Wiz';
         return `${code}-${name.slice(2)}`;
     }
     return name;
