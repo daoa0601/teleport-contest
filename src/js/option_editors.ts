@@ -2,6 +2,7 @@
 import { game } from './gstate.js';
 import { plineWithContinuation } from './display.js';
 import { visibleCommandKey } from './command_keys.js';
+import { statusVersion } from './status_version.js';
 import { showInventoryWindow, showMultiSelectWindow } from './windows.js';
 import {
     MENU_ITEMFLAGS_SELECTED, PICK_ONE,
@@ -57,6 +58,13 @@ export function compoundMenuValue(name: string): string | null {
         const value = game.flags.pickup_burden;
         return typeof value === 'number' ? BURDEN_NAMES[value] ?? 'stressed' : value ?? 'stressed';
     }
+    case 'whatis_coord': return COORDINATE_CHOICES.find(([key]) => key === (game.iflags.getpos_coords ?? 'n'))?.[1] ?? 'none';
+    case 'whatis_filter': return ['none', 'view', 'area'][game.iflags.getloc_filter ?? 0] ?? 'none';
+    case 'versinfo': {
+        const bits = game.flags.versinfo ?? 1;
+        const parts = [bits & 2 ? 'name' : '', bits & 4 ? 'branch' : '', bits & 1 ? 'number' : ''].filter(Boolean);
+        return `${bits}: ${parts.join('+')} (${statusVersion(bits)})`;
+    }
     default: return null;
     }
 }
@@ -82,9 +90,58 @@ export async function editCompoundMenu(name: string, giveMessage: boolean): Prom
         if (burden >= 0) game.flags.pickup_burden = burden;
         break;
     }
+    case 'whatis_coord': await editCoordinates(); break;
+    case 'whatis_filter': await editLocationFilter(); break;
+    case 'versinfo': await editVersionInfo(); break;
     default: return false;
     }
     return true;
+}
+
+const COORDINATE_CHOICES = [
+    ['c', 'compass', "compass ('east' or '3s' or '2n,4w')"],
+    ['f', 'full compass', "full compass ('east' or '3south' or '2north,4west')"],
+    ['m', 'map', 'map <x,y>'], ['s', 'screen', 'screen [row,column]'],
+    ['n', 'none', 'none (no coordinates displayed)'],
+] as const;
+
+async function editCoordinates(): Promise<void> {
+    const selection = await showInventoryWindow([{ items: [
+        ...COORDINATE_CHOICES.map(([key, , text]) => ({ key, text })),
+        { text: '' },
+        { text: 'map: upper-left: <1,0>, lower-right: <79,20>'
+            + (game.flags.verbose ? '; column 0 unused, off left edge' : '') },
+        { text: 'screen: upper-left: [02,01], lower-right: [22,79]'
+            + (game.flags.verbose ? '; column 80 is not used' : '') },
+        { text: '' },
+    ] }], { title: 'Select coordinate display when auto-describing a map position:',
+        pickMode: PICK_ONE, preselectedKey: game.iflags.getpos_coords ?? 'n' });
+    const chosen = COORDINATE_CHOICES.find(([key]) => key.charCodeAt(0) === selection.key);
+    if (chosen) game.iflags.getpos_coords = chosen[0];
+}
+
+async function editLocationFilter(): Promise<void> {
+    const choices = [ ['n', 'no filtering', 0], ['v', 'in view only', 1], ['a', 'in same area', 2] ] as const;
+    const selection = await showInventoryWindow([{ items: choices.map(([key, text]) => ({ key, text })) }], {
+        title: 'Select location filtering when going for next/previous map position:', pickMode: PICK_ONE,
+        preselectedKey: choices.find(([, , value]) => value === (game.iflags.getloc_filter ?? 0))?.[0] ?? 'n',
+    });
+    const chosen = choices.find(([key]) => key.charCodeAt(0) === selection.key);
+    if (chosen) game.iflags.getloc_filter = chosen[2];
+}
+
+async function editVersionInfo(): Promise<void> {
+    const previous = game.flags.versinfo ?? 1;
+    const choices = [ ['n', 1, 'version number'], ['g', 2, 'game name'], ['b', 4, '(not available)'] ] as const;
+    const selected = await showMultiSelectWindow({
+        title: 'Select version information flags:', omitHeadings: true,
+        sections: [{ items: choices.map(([key, bit, text]) => ({ key, value: bit,
+            groupAccelerator: String(bit), text, itemFlags: previous & bit ? MENU_ITEMFLAGS_SELECTED : 0 })) }],
+    });
+    const bits = selected.reduce((mask, bit) => mask | bit, 0) & 7;
+    if (bits) game.flags.versinfo = bits;
+    const current = game.flags.versinfo ?? 1;
+    await plineWithContinuation(`'versinfo' ${current === previous ? 'not changed, still' : 'changed to'} ${current}.`);
 }
 
 function messageWindowName(): string {

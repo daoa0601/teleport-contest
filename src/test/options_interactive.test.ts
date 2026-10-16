@@ -379,3 +379,25 @@ void test('invalid traditional pickup classes retain valid symbols once and repo
     assert.equal(game.flags.pickup_types, ')');
     assert.match(game._pending_message, /Unknown pickup_types parameter ''\./);
 });
+
+void test('coordinate and location filtering options use their native menus', async () => {
+    freshObjectRoom();
+
+    const views = await fullOptions(['whatis_coord', 'whatis_filter'], view =>
+        view.includes('Select coordinate display') ? 'm' : 'v');
+
+    assert.ok(views.some(view => view.includes('map <x,y>')));
+    assert.ok(views.some(view => view.includes('in view only')));
+    assert.equal(game.iflags.getpos_coords, 'm');
+    assert.equal(game.iflags.getloc_filter, 1);
+});
+
+void test('changing version information redraws the displayed version', async () => {
+    freshObjectRoom({ flags: { showvers: true } });
+
+    const views = await fullOptions(['versinfo'], view => view.includes('Select version information flags:') ? 'ng\n' : ' ');
+
+    assert.equal(game.flags.versinfo, 2);
+    assert.ok(views.some(view => view.includes("'versinfo' changed to 2.")));
+    assert.match(screen(), /nethack/);
+});

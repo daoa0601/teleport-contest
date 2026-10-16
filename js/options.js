@@ -950,9 +950,9 @@ function requestMenuSections() {
                 choice('statuslines', 'statuslines             [2]'),
                 choice('suppress_alert', 'suppress_alert          [(none)]'),
                 choice('symset', `symset                  [${game.symset || 'default'}, active, handler=DEC]`),
-                choice('versinfo', 'versinfo                [1: number (5.0.0)]'),
-                choice('whatis_coord', 'whatis_coord            [none]'),
-                choice('whatis_filter', 'whatis_filter           [none]'),
+                choice('versinfo', `versinfo                [${compoundMenuValue('versinfo')}]`),
+                choice('whatis_coord', `whatis_coord            [${compoundMenuValue('whatis_coord')}]`),
+                choice('whatis_filter', `whatis_filter           [${compoundMenuValue('whatis_filter')}]`),
                 label(''),
             ] },
         { heading: 'Other settings:', items: [
@@ -1089,7 +1089,7 @@ async function doRequestMenuOptions() {
                     await plineWithContinuation(`'${option[0]}' option toggled ${value ? 'on' : 'off'}.`);
             }
             else
-                await editCompoundOption(name, true);
+                needsRedraw = await editCompoundOption(name, true) || needsRedraw;
         }
         if (selected.length !== 1 || selected[0] !== 'help')
             break;
@@ -1103,6 +1103,7 @@ async function doRequestMenuOptions() {
     game.context.move = 0;
 }
 async function editCompoundOption(name, fullMenu) {
+    const previousVersion = game.flags.versinfo ?? 1;
     if (name === 'number_pad')
         await editNumberPad();
     else if (name === 'menustyle')
@@ -1114,11 +1115,11 @@ async function editCompoundOption(name, fullMenu) {
     else if (name === 'sortloot')
         await editSortLoot();
     else if (await editCompoundMenu(name, fullMenu && game.iflags.optionMessages !== false))
-        return;
+        return name === 'versinfo' && (game.flags.versinfo ?? 1) !== previousVersion;
     else if (isTextOption(name)) {
         const value = await getLine(`Set ${name} to what?`, (_character, key) => key >= 32 && key < 127);
         if (value === null)
-            return;
+            return false;
         if (name === 'scores') {
             const parsed = parseScoreOption(value, false);
             if (parsed) {
@@ -1132,6 +1133,7 @@ async function editCompoundOption(name, fullMenu) {
         else
             await setTextOption(name, value);
     }
+    return false;
 }
 // Native options.c:handler_menustyle(). PICK_ONE retains the old selection
 // until a different entry is chosen or the user explicitly deselects it.
@@ -1288,7 +1290,7 @@ export async function doOptions(menuRequested = false) {
             needsRedraw = applyBooleanVisualChange(option[0]);
         }
         else
-            await editCompoundOption(name, false);
+            needsRedraw = await editCompoundOption(name, false);
         if (needsRedraw) {
             reglyph_darkroom();
             await docrt();

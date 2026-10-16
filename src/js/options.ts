@@ -925,9 +925,9 @@ function requestMenuSections(): PageLocalMultiSelectSection<string>[] {
             choice('statuslines', 'statuslines             [2]'),
             choice('suppress_alert', 'suppress_alert          [(none)]'),
             choice('symset', `symset                  [${game.symset || 'default'}, active, handler=DEC]`),
-            choice('versinfo', 'versinfo                [1: number (5.0.0)]'),
-            choice('whatis_coord', 'whatis_coord            [none]'),
-            choice('whatis_filter', 'whatis_filter           [none]'),
+            choice('versinfo', `versinfo                [${compoundMenuValue('versinfo')}]`),
+            choice('whatis_coord', `whatis_coord            [${compoundMenuValue('whatis_coord')}]`),
+            choice('whatis_filter', `whatis_filter           [${compoundMenuValue('whatis_filter')}]`),
             label(''),
         ] },
         { heading: 'Other settings:', items: [
@@ -1062,7 +1062,7 @@ async function doRequestMenuOptions(): Promise<void> {
                 if (option[0] === 'rest_on_space') game.commandBindings.setRestOnSpace(value);
                 needsRedraw = applyBooleanVisualChange(option[0]) || needsRedraw;
                 if (giveBooleanMessage) await plineWithContinuation(`'${option[0]}' option toggled ${value ? 'on' : 'off'}.`);
-            } else await editCompoundOption(name, true);
+            } else needsRedraw = await editCompoundOption(name, true) || needsRedraw;
         }
         if (selected.length !== 1 || selected[0] !== 'help') break;
         skipHelp = true;
@@ -1075,17 +1075,19 @@ async function doRequestMenuOptions(): Promise<void> {
     game.context.move = 0;
 }
 
-async function editCompoundOption(name: string, fullMenu: boolean): Promise<void> {
+async function editCompoundOption(name: string, fullMenu: boolean): Promise<boolean> {
+    const previousVersion = game.flags.versinfo ?? 1;
     if (name === 'number_pad') await editNumberPad();
     else if (name === 'menustyle') await editMenuStyle();
     else if (name === 'fruit') await editFruitOption(fullMenu && game.iflags.optionMessages !== false);
     else if (name === 'pickup_types') await editPickupTypes(fullMenu);
     else if (name === 'sortloot') await editSortLoot();
-    else if (await editCompoundMenu(name, fullMenu && game.iflags.optionMessages !== false)) return;
+    else if (await editCompoundMenu(name, fullMenu && game.iflags.optionMessages !== false))
+        return name === 'versinfo' && (game.flags.versinfo ?? 1) !== previousVersion;
     else if (isTextOption(name)) {
         const value = await getLine(`Set ${name} to what?`,
             (_character: string, key: number) => key >= 32 && key < 127);
-        if (value === null) return;
+        if (value === null) return false;
         if (name === 'scores') {
             const parsed = parseScoreOption(value, false);
             if (parsed) {
@@ -1095,6 +1097,7 @@ async function editCompoundOption(name: string, fullMenu: boolean): Promise<void
             } else await plineWithContinuation("Missing parameter for 'scores:'");
         } else await setTextOption(name, value);
     }
+    return false;
 }
 
 // Native options.c:handler_menustyle(). PICK_ONE retains the old selection
@@ -1255,7 +1258,7 @@ export async function doOptions(menuRequested = false): Promise<void> {
         if (option) {
             setRequestBoolean(option, !requestBooleanValue(option[0]));
             needsRedraw = applyBooleanVisualChange(option[0]);
-        } else await editCompoundOption(name, false);
+        } else needsRedraw = await editCompoundOption(name, false);
         if (needsRedraw) {
             reglyph_darkroom();
             await docrt();
