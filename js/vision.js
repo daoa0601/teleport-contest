@@ -857,8 +857,16 @@ export function couldsee(x, y) {
         return false;
     return !!((game.viz_array?.[y]?.[x] ?? 0) & COULD_SEE);
 }
+// C vision.c:vision_init(). Neither work buffer belongs to a previous game.
 export function init_vision_globals() {
+    for (let y = 0; y < ROWNO; y++) {
+        visionRow(cs_buf0, y).fill(0);
+        visionRow(cs_buf1, y).fill(0);
+    }
     game.viz_array = cs_buf0;
     game.active_buf = 0;
+    game._viz_rmin = null;
+    game._viz_rmax = null;
+    game.vision_full_recalc = 0;
 }
 //# sourceMappingURL=vision.js.map
