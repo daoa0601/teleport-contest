@@ -91,6 +91,8 @@ for (const { label, source: malformedSource, diagnostic } of [
         diagnostic: /\[string "\(themerms\.lua\)"\]:3: 'end' expected \(to close 'function' at line 2\) near <eof>/ },
     { label: 'an unfinished quoted string', source: 'local message = "\n',
         diagnostic: /\[string "\(themerms\.lua\)"\]:1: unfinished string near '"'/ },
+    { label: 'an escaped string instead of a local name', source: 'local "a\\nb"',
+        diagnostic: /\[string "\(themerms\.lua\)"\]:1: <name> expected near '"a\nb"'/ },
 ]) {
     void test(`a room theme with ${label} reports Lua's diagnostic and falls back to ordinary rooms`, async t => {
         const state = freshGame({ flags: { bones: false } });

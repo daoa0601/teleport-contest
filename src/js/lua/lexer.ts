@@ -4,6 +4,7 @@ export type LuaTokenData =
     | { type: 'number'; value: number }
     | { type: 'string' | 'name' | 'keyword' | 'symbol' | 'eof'; value: string };
 
+// Diagnostic text follows Lua's lexer buffer, including decoded string contents.
 export type LuaToken = LuaTokenData & { line: number; text: string };
 
 const keywords = new Set([
@@ -52,8 +53,8 @@ export function lexLua(source: string, filename = '<lua>'): LuaToken[] {
         return char;
     }
 
-    function add(token: LuaTokenData): void {
-        tokens.push({ ...token, line, text: source.slice(tokenStart, offset) });
+    function add(token: LuaTokenData, text = source.slice(tokenStart, offset)): void {
+        tokens.push({ ...token, line, text });
     }
 
     function readLongString(level: number, comment = false): string {
@@ -69,7 +70,7 @@ export function lexLua(source: string, filename = '<lua>'): LuaToken[] {
             fail(`unfinished long ${comment ? 'comment' : 'string'} (starting at line ${startingLine})`, '<eof>');
         }
         while (offset < end) advance();
-        const value = source.slice(start, end);
+        const value = source.slice(start, end).replace(/\r\n|\n\r|\r/gu, '\n');
         for (let index = 0; index < closing.length; index++) advance();
         return value;
     }
@@ -91,7 +92,7 @@ export function lexLua(source: string, filename = '<lua>'): LuaToken[] {
         let value = '';
         while (offset < source.length) {
             if (source[offset] === '\n' || source[offset] === '\r')
-                fail('unfinished string', `'${source.slice(tokenStart, offset)}'`);
+                fail('unfinished string', `'${quote}${value}'`);
             const char = advance();
             if (char === quote) return value;
             if (char !== '\\') {
@@ -161,11 +162,14 @@ export function lexLua(source: string, filename = '<lua>'): LuaToken[] {
         tokenStart = offset;
         const level = longBracketLevel(source, offset);
         if (level >= 0) {
-            add({ type: 'string', value: readLongString(level) });
+            const value = readLongString(level);
+            const separator = '='.repeat(level);
+            add({ type: 'string', value }, `[${separator}[${value}]${separator}]`);
             continue;
         }
         if (char === '"' || char === "'") {
-            add({ type: 'string', value: readQuotedString(char) });
+            const value = readQuotedString(char);
+            add({ type: 'string', value }, `${char}${value}${char}`);
             continue;
         }
         if (/\d/u.test(char)

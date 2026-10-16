@@ -39,8 +39,8 @@ export function lexLua(source, filename = '<lua>') {
         }
         return char;
     }
-    function add(token) {
-        tokens.push({ ...token, line, text: source.slice(tokenStart, offset) });
+    function add(token, text = source.slice(tokenStart, offset)) {
+        tokens.push({ ...token, line, text });
     }
     function readLongString(level, comment = false) {
         const startingLine = line;
@@ -59,7 +59,7 @@ export function lexLua(source, filename = '<lua>') {
         }
         while (offset < end)
             advance();
-        const value = source.slice(start, end);
+        const value = source.slice(start, end).replace(/\r\n|\n\r|\r/gu, '\n');
         for (let index = 0; index < closing.length; index++)
             advance();
         return value;
@@ -81,7 +81,7 @@ export function lexLua(source, filename = '<lua>') {
         let value = '';
         while (offset < source.length) {
             if (source[offset] === '\n' || source[offset] === '\r')
-                fail('unfinished string', `'${source.slice(tokenStart, offset)}'`);
+                fail('unfinished string', `'${quote}${value}'`);
             const char = advance();
             if (char === quote)
                 return value;
@@ -162,11 +162,14 @@ export function lexLua(source, filename = '<lua>') {
         tokenStart = offset;
         const level = longBracketLevel(source, offset);
         if (level >= 0) {
-            add({ type: 'string', value: readLongString(level) });
+            const value = readLongString(level);
+            const separator = '='.repeat(level);
+            add({ type: 'string', value }, `[${separator}[${value}]${separator}]`);
             continue;
         }
         if (char === '"' || char === "'") {
-            add({ type: 'string', value: readQuotedString(char) });
+            const value = readQuotedString(char);
+            add({ type: 'string', value }, `${char}${value}${char}`);
             continue;
         }
         if (/\d/u.test(char)
