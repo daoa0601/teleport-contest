@@ -7,7 +7,7 @@ import { rn2 } from './rng.js';
 import { ALTAR, AM_MASK, Amask2align, COLNO, D_ALIGN_CHAOTIC, D_ALIGN_LAWFUL, D_ALIGN_MASK, D_ALIGN_NEUTRAL, FOUNTAIN, GRAVE, HELLISH, In_endgame, MAZELIKE, ROGUELIKE, ROOMOFFSET, ROWNO, SHOPBASE, SINK, THRONE, In_sokoban, TOWN, TREE, UNCONNECTED, } from './const.js';
 import { deepestLevelReached, depth, ledgerNo } from './hacklib.js';
 import { updateLastSeenTerrain } from './display.js';
-import { propertyIsActive } from './properties.js';
+import { hasCarriedProperty, hasInvokedProperty, hasWornProperty, propertyIsActive } from './properties.js';
 import { isRoom } from './map_types.js';
 const WIZARD_TOWER_LEVELS = new Set(['wizard1', 'wizard2', 'wizard3']);
 const DUNGEON_FLAG_BITS = {
@@ -118,19 +118,25 @@ export function levelAtDepth(requestedDepth, { state = game } = {}) {
 }
 export function level_difficulty() {
     const uz = game.u?.uz;
+    let difficulty;
     if (In_endgame(uz)) {
-        return depth(game.sanctum_level)
+        difficulty = depth(game.sanctum_level)
             + Math.trunc((game.u?.ulevel || 1) / 2);
     }
-    if (game.u?.uhave?.amulet) {
-        return deepestLevelReached();
+    else if (game.u?.uhave?.amulet) {
+        difficulty = deepestLevelReached();
     }
-    let difficulty = depth(uz);
-    const dungeon = game.dungeons?.[uz?.dnum ?? 0];
-    // Reaching an upward branch requires descending to its entrance first.
-    if (dungeon && dungeonBuildsUp(uz)) {
-        difficulty += 2 * (dungeon.entry_lev - (uz?.dlevel ?? 1) + 1);
+    else {
+        difficulty = depth(uz);
+        const dungeon = game.dungeons?.[uz?.dnum ?? 0];
+        // Reaching an upward branch requires descending to its entrance first.
+        if (dungeon && dungeonBuildsUp(uz)) {
+            difficulty += 2 * (dungeon.entry_lev - (uz?.dlevel ?? 1) + 1);
+        }
     }
+    if (hasWornProperty('aggravateMonster') || hasCarriedProperty('aggravateMonster')
+        || hasInvokedProperty('aggravateMonster'))
+        difficulty = difficulty > 25 ? 50 : difficulty * 2;
     return difficulty;
 }
 // C dungeon.c:recalc_mapseen().  The overview records what the hero has

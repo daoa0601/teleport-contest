@@ -13,7 +13,7 @@ import {
 } from './const.js';
 import { deepestLevelReached, depth, ledgerNo } from './hacklib.js';
 import { updateLastSeenTerrain } from './display.js';
-import { propertyIsActive } from './properties.js';
+import { hasCarriedProperty, hasInvokedProperty, hasWornProperty, propertyIsActive } from './properties.js';
 import { isRoom } from './map_types.js';
 import type { Room } from './map_types.js';
 import type { GameState } from './game_state.js';
@@ -160,19 +160,23 @@ export function levelAtDepth(
 
 export function level_difficulty(): number {
     const uz = game.u?.uz;
+    let difficulty: number;
     if (In_endgame(uz)) {
-        return depth(game.sanctum_level)
+        difficulty = depth(game.sanctum_level)
             + Math.trunc((game.u?.ulevel || 1) / 2);
+    } else if (game.u?.uhave?.amulet) {
+        difficulty = deepestLevelReached();
+    } else {
+        difficulty = depth(uz);
+        const dungeon = game.dungeons?.[uz?.dnum ?? 0];
+        // Reaching an upward branch requires descending to its entrance first.
+        if (dungeon && dungeonBuildsUp(uz)) {
+            difficulty += 2 * (dungeon.entry_lev - (uz?.dlevel ?? 1) + 1);
+        }
     }
-    if (game.u?.uhave?.amulet) {
-        return deepestLevelReached();
-    }
-    let difficulty = depth(uz);
-    const dungeon = game.dungeons?.[uz?.dnum ?? 0];
-    // Reaching an upward branch requires descending to its entrance first.
-    if (dungeon && dungeonBuildsUp(uz)) {
-        difficulty += 2 * (dungeon.entry_lev - (uz?.dlevel ?? 1) + 1);
-    }
+    if (hasWornProperty('aggravateMonster') || hasCarriedProperty('aggravateMonster')
+        || hasInvokedProperty('aggravateMonster'))
+        difficulty = difficulty > 25 ? 50 : difficulty * 2;
     return difficulty;
 }
 
