@@ -309,6 +309,7 @@ import {
 import { heroIsUnconscious, putHeroToSleep } from './hero_sleep.js';
 import { resolveMonsterContactEffect } from './monster_contact_effects.js';
 import { setSlipperyHands } from './towel.js';
+import { heroHasSlipperyHands, slipFromSlipperyHands } from './slippery_hands.js';
 import { restartMonsterShapechanging } from './monster_polymorph.js';
 import { msummon } from './minion.js';
 import { captureRunmodeDelay } from './runmode.js';
@@ -1148,6 +1149,7 @@ async function finishInitialTurnMaintenanceAfterMonsterDistress(
     if (game.flags.time && !game.context.run) game.context.time_botl = true;
     game._heroActionSeq = game.moves * 8;
     await currentLuaLifecycle().callCore(game, 'moveloop_turn');
+    if (heroHasSlipperyHands(game)) await slipFromSlipperyHands(game);
 
     // nh_timeout() precedes regeneration and exerchk() in the C loop.  Keep
     // the first timed impairment live rather than treating its setup rolls as
