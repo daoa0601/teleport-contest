@@ -30,6 +30,7 @@ void test('wizard terrain encodes real tiles and undiggable stone', async () => 
         const rows = requireGameDisplay().grid.map(row => row.map(cell => cell.ch).join('').trimEnd());
         assert.match(rows[1] ?? '', /^\*p/);
         assert.ok(rows.some(row => row.startsWith('D:0,L:1') && row.endsWith(' dungeon')));
+        assert.equal(rows.at(-1), '--More--');
         assert.equal(level.requireAt(2, 0).typ, ROOM);
     }
     finally {

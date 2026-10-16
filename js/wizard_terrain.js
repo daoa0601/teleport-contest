@@ -1,9 +1,10 @@
 // C wizcmds.c:wiz_map_levltyp()/wiz_levltyp_legend(), cmd.c:levltyp[].
 import { COLNO, ROWNO, STONE, Invocation_lev, In_endgame, In_mines, In_quest, In_sokoban, In_V_tower, Is_knox_level, Is_rogue_level, } from './const.js';
 import { levelIsWizardTower, sameDungeonLevel } from './dungeon.js';
+import { displayMessageWindow, docrt, flush_screen } from './display.js';
 import { game, requireGameLevel } from './gstate.js';
 import { mayDig } from './hero_digging.js';
-import { showDisclosureOverlay } from './windows.js';
+import { showTextWindow } from './windows.js';
 const TERRAIN_NAMES = [
     'stone', 'vertical wall', 'horizontal wall', 'top-left corner wall',
     'top-right corner wall', 'bottom-left corner wall', 'bottom-right corner wall',
@@ -28,7 +29,7 @@ export async function showTerrainCodes() {
         lines.push(row);
     }
     lines.push(terrainLevelDescription().slice(0, COLNO - 1));
-    await showDisclosureOverlay(lines, { restoreUnderlay: true });
+    await showTerrainText(lines);
 }
 export async function showTerrainCodeLegend() {
     const lines = ['#terrain encodings:', ''];
@@ -42,7 +43,13 @@ export async function showTerrainCodeLegend() {
     };
     for (let index = 0; index < half; index++)
         lines.push(entry(index) + entry(index + half));
-    await showDisclosureOverlay(lines, { restoreUnderlay: true });
+    await showTerrainText(lines);
+}
+async function showTerrainText(lines) {
+    await displayMessageWindow();
+    await showTextWindow(lines);
+    await docrt();
+    await flush_screen(1);
 }
 function terrainCode(terrain) {
     return String.fromCharCode(terrain < 10 ? 48 + terrain

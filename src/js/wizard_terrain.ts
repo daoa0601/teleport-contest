@@ -4,9 +4,10 @@ import {
     In_sokoban, In_V_tower, Is_knox_level, Is_rogue_level,
 } from './const.js';
 import { levelIsWizardTower, sameDungeonLevel } from './dungeon.js';
+import { displayMessageWindow, docrt, flush_screen } from './display.js';
 import { game, requireGameLevel } from './gstate.js';
 import { mayDig } from './hero_digging.js';
-import { showDisclosureOverlay } from './windows.js';
+import { showTextWindow } from './windows.js';
 
 const TERRAIN_NAMES = [
     'stone', 'vertical wall', 'horizontal wall', 'top-left corner wall',
@@ -32,7 +33,7 @@ export async function showTerrainCodes(): Promise<void> {
         lines.push(row);
     }
     lines.push(terrainLevelDescription().slice(0, COLNO - 1));
-    await showDisclosureOverlay(lines, { restoreUnderlay: true });
+    await showTerrainText(lines);
 }
 
 export async function showTerrainCodeLegend(): Promise<void> {
@@ -46,7 +47,14 @@ export async function showTerrainCodeLegend(): Promise<void> {
     };
     for (let index = 0; index < half; index++)
         lines.push(entry(index) + entry(index + half));
-    await showDisclosureOverlay(lines, { restoreUnderlay: true });
+    await showTerrainText(lines);
+}
+
+async function showTerrainText(lines: readonly string[]): Promise<void> {
+    await displayMessageWindow();
+    await showTextWindow(lines);
+    await docrt();
+    await flush_screen(1);
 }
 
 function terrainCode(terrain: number): string {
