@@ -10,7 +10,7 @@ import { exerciseAttribute } from './attrib.js';
 import { farlookLocationDescription } from './cmd.js';
 import {
     A_WIS, D_CLOSED, D_ISOPEN, D_LOCKED, DOOR, DRAWBRIDGE_UP,
-    EXPL_FIERY, EXPL_FROSTY, HI_ZAP, IS_STWALL, Is_waterlevel,
+    EXPL_FIERY, EXPL_FROSTY, IS_STWALL, Is_waterlevel,
     LAVAPOOL, MOAT, POOL, SPACE_POS, ZAP_POS, isok, xdir, ydir,
 } from './const.js';
 import {
@@ -29,17 +29,17 @@ import { monsterName } from './monster_name.js';
 import { monsterHasShockResistance } from './monster_resistance.js';
 import { SPE_CONE_OF_COLD, SPE_MAGIC_MISSILE } from './object_data.js';
 import { walkPathCells } from './path_walk.js';
-import { clearRayCells, paintRayCell } from './ray.js';
+import { paintRayCell } from './ray.js';
+import { TemporaryMapEffect } from './temporary_map_effect.js';
+import { zapdir_to_glyph } from './display.js';
 import { rnd, rn2Display } from './rng.js';
 import { heroIsHallucinating } from './senses.js';
 import { adjustSpellDamage } from './spell_damage.js';
-import { CLR_BLACK, CLR_ORANGE, CLR_WHITE } from './terminal.js';
 import { cansee } from './vision.js';
 import { hitMonsterWithRay } from './zap.js';
 
 const CHAIN_LIGHTNING_LIMIT = 100;
 const LIGHTNING_SPELL_TYPE = 15;
-const beamColors = [HI_ZAP, CLR_ORANGE, CLR_WHITE, HI_ZAP, CLR_BLACK, CLR_WHITE];
 
 export async function castSkilledElementalSpell(pseudo: GameObject, { state = game }: { state?: GameState } = {}) {
     requireLiveGame(state);
@@ -140,8 +140,8 @@ export async function castChainLightning({ state = game }: { state?: GameState }
     // The pinned source deliberately leaves this branch without damage.
     if (state.u.uswallow) return { heroDied: false };
     const queue: LightningStep[] = [];
-    const painted = new Map<string, Position>();
-    await flush_screen(0);
+    const painted = new TemporaryMapEffect('beam', zapdir_to_glyph(0, 1, displayedBeam));
+    await painted.start();
     try {
         for (let direction = 0; direction < 8; direction++)
             await propagateLightning(queue, painted, {
@@ -198,12 +198,12 @@ export async function castChainLightning({ state = game }: { state?: GameState }
         await state.animationFrame?.();
         await state.animationFrame?.();
     } finally {
-        if (!state.program_state.gameover) clearRayCells(painted);
+        if (!state.program_state.gameover) painted.clear();
     }
     return { heroDied: false };
 }
 
-async function propagateLightning(queue: LightningStep[], painted: Map<string, Position>, zap: LightningStep, displayedBeam: number, state: PlayingGameState) {
+async function propagateLightning(queue: LightningStep[], painted: TemporaryMapEffect, zap: LightningStep, displayedBeam: number, state: PlayingGameState) {
     const dx = xdir[zap.direction], dy = ydir[zap.direction];
     if (dx === undefined || dy === undefined) throw new RangeError(`Invalid lightning direction ${zap.direction}`);
     const x = zap.x + dx;
@@ -221,9 +221,7 @@ async function propagateLightning(queue: LightningStep[], painted: Map<string, P
     if (queue.some(queued => queued.x === x && queued.y === y)) return;
     queue.push({ direction: zap.direction, x, y, strength });
     if (cansee(x, y)) {
-        const color = beamColors[displayedBeam];
-        if (color === undefined) throw new RangeError(`Invalid lightning color ${displayedBeam}`);
-        paintRayCell(painted, x, y, dx, dy, color);
+        paintRayCell(painted, x, y, dx, dy, displayedBeam);
         await flush_screen(0);
     }
 }

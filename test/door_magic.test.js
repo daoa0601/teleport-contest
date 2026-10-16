@@ -11,6 +11,7 @@ import { resetInputState } from '../js/input.js';
 import { initRng } from '../js/rng.js';
 import { runMonsterAction } from '../js/monmove.js';
 import { flush_screen, plineWithContinuation } from '../js/display.js';
+import { CmapSymbol } from '../js/glyph_numbers.js';
 import { cansee, vision_reset, vision_recalc } from '../js/vision.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { floorObject, knownObject } from './support/game-objects.js';
@@ -111,6 +112,7 @@ for (const appearance of [M_AP_OBJECT, M_AP_FURNITURE]) {
         freshDoor();
         const mimic = await createMonsterAt('small mimic', 11, 10, NO_MINVENT);
         mimic.m_ap_type = appearance | M_AP_F_DKNOWN;
+        mimic.mappearance = appearance === M_AP_OBJECT ? ROCK : CmapSymbol.fountain;
         const source = await knownObject(SPE_WIZARD_LOCK);
         const door = doorAt(11, 10, D_ISOPEN);
         assert.equal(await changeDoorByMagic(source, 11, 10), appearance === M_AP_FURNITURE);

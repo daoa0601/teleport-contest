@@ -97,9 +97,9 @@ void test('an advancing tether leaves a white cord behind the weapon and clears 
     await flight.show({ x: 12, y: 10 });
     await flight.show({ x: 13, y: 10 });
 
-    assert.equal(screenCell(11, 10).ch, '─');
+    assert.equal(screenCell(11, 10).ch, '-');
     assert.equal(screenCell(11, 10).color, CLR_WHITE);
-    assert.equal(screenCell(12, 10).ch, '─');
+    assert.equal(screenCell(12, 10).ch, '-');
     assert.equal(screenCell(13, 10).ch, ')');
 
     flight.clear();
@@ -110,7 +110,7 @@ void test('an advancing tether leaves a white cord behind the weapon and clears 
 });
 
 for (const { x, y, glyph } of [
-    { x: 10, y: 9, glyph: '│' },
+    { x: 10, y: 9, glyph: '|' },
     { x: 11, y: 9, glyph: '/' },
     { x: 11, y: 11, glyph: '\\' },
     { x: 10, y: 10, glyph: '\\' },
@@ -148,11 +148,11 @@ void test('a tether remains drawn outside current sight while an ordinary missil
     await tether.show({ x: 11, y: 10 });
     await tether.show({ x: 12, y: 10 });
 
-    assert.equal(screenCell(11, 10).ch, '─');
+    assert.equal(screenCell(11, 10).ch, '-');
     assert.equal(screenCell(12, 10).ch, ')');
     tether.clear();
     await flush_screen(1);
-    assert.notEqual(screenCell(11, 10).ch, '─');
+    assert.notEqual(screenCell(11, 10).ch, '-');
     assert.notEqual(screenCell(12, 10).ch, ')');
 });
 
@@ -208,7 +208,7 @@ for (const returns of [false, true]) {
         let sawCord = false;
         game.animationFrame = async () => {
             if (screenCell(11, 10).ch === ')') farthestFrames.push(11);
-            if (screenCell(10, 10).ch === '│') sawCord = true;
+            if (screenCell(10, 10).ch === '|') sawCord = true;
         };
 
         await throwMonsterProjectile(source, aklys, {

@@ -976,6 +976,7 @@ export async function animateRollingBoulderCell(
 
 async function triggerRollingBoulderTrap(trap: Trap) {
     const wasKnown = !!trap.tseen;
+    trap.tseen = true;
     map_trap(trap, false);
     newsym(trap.tx, trap.ty);
 

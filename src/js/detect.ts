@@ -70,7 +70,10 @@ export function premap_detect() {
             if (boulder) map_object(boulder, true, false);
         }
     }
-    for (const trap of game.level?.traps || []) map_trap(trap, true);
+    for (const trap of game.level?.traps || []) {
+        trap.tseen = true;
+        map_trap(trap, true);
+    }
 }
 
 // C detect.c:do_mapping() and show_map_spot().  Mapping reveals terrain and
