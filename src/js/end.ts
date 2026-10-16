@@ -831,6 +831,13 @@ const DEATH_CAUSE_PREFIXES: readonly string[] = [
     '', '', '', '', '',
 ];
 
+// C topten.c:formatkiller() for a done() reason and killer.format.
+export function formatKillerCause(
+    killer: string, deathType: number | null, killerFormat: KillerFormat = KILLED_BY_AN,
+): string {
+    return deathCauseRecord(killer, 'died', deathType, killerFormat);
+}
+
 function deathCauseRecord(
     killer: string, deathVerb = 'died', deathType: number | null = null,
     killerFormat: KillerFormat = KILLED_BY_AN,

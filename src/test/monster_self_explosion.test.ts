@@ -183,7 +183,9 @@ for (const species of ['flaming sphere', 'freezing sphere'] as const) {
         assert.doesNotMatch(messages.join(' '), /You die/);
         const records = loadScoreRecords(game);
         assert.ok(records[0], 'Death records the completed game');
-        assert.equal(records[0].death, `killed by a ${species}'s explosion`);
+        // explode.c ends a fatal fire blast with done(BURNING).
+        const prefix = species === 'flaming sphere' ? 'burned' : 'killed';
+        assert.equal(records[0].death, `${prefix} by a ${species}'s explosion`);
         if (species === 'flaming sphere') assert.equal(game.u.ugrave_arise, NON_PM - 2);
     });
 }

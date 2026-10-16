@@ -697,6 +697,10 @@ const DEATH_CAUSE_PREFIXES = [
     'petrified by ', 'turned to slime by ', 'killed by ',
     '', '', '', '', '',
 ];
+// C topten.c:formatkiller() for a done() reason and killer.format.
+export function formatKillerCause(killer, deathType, killerFormat = KILLED_BY_AN) {
+    return deathCauseRecord(killer, 'died', deathType, killerFormat);
+}
 function deathCauseRecord(killer, deathVerb = 'died', deathType = null, killerFormat = KILLED_BY_AN) {
     const raw = String(killer || 'unknown cause');
     const prefix = deathType === null ? undefined : DEATH_CAUSE_PREFIXES[deathType];

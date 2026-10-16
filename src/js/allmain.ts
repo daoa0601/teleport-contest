@@ -170,7 +170,7 @@ import {
     M_ATTK_AGR_DIED, M_ATTK_AGR_DONE, W_ARMG,
     UNENCUMBERED, MOD_ENCUMBER, HVY_ENCUMBER, EXT_ENCUMBER, W_ACCESSORY, W_WEAPONS,
     ismnum, Upolyd, Is_airlevel, Is_waterlevel, LUCKMIN, LUCKMAX,
-    TT_BURIEDBALL, TT_LAVA,
+    TT_BURIEDBALL, TT_LAVA, KILLED_BY_AN,
 } from './const.js';
 import { uInitMisc, makedog, uInitInventoryAttrs,
     finishStartingDiscoveries,
@@ -2541,8 +2541,8 @@ async function presentMonsterAttackEffects(
                                 deathType: options.deathType ?? null,
                                 attribution: {
                                     kind: 'death-inflicted-by', killer: options.killer,
-                                    deathCause: options.deathCause
-                                        || `killed by ${withIndefiniteArticle(options.killer)}`,
+                                    ...(options.deathCause ? { deathCause: options.deathCause } : {}),
+                                    killerFormat: options.killerFormat ?? KILLED_BY_AN,
                                     announcesDeath: !options.deathLineShown,
                                 },
                                 pagerOwned: paging.pagerOwned,
