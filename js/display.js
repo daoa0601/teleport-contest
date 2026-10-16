@@ -2067,23 +2067,62 @@ function restrictedUnderwaterView() {
 function underwaterTerrain(x, y) {
     return isPoolOrLavaAt(x, y) || isIceAt(x, y);
 }
-// C under_water()/under_ground(): map memory survives while the viewport is
-// restricted. A full underground reset is blank until the next hero update.
-function redrawRestrictedMap(full) {
-    for (let y = 0; y < ROWNO; y++)
-        for (let x = 1; x < COLNO; x++)
-            show_glyph_cell(x, y, ' ', NO_COLOR, false, 0, { kind: 'unexplored', glyph: GlyphOffset.unexplored });
-    if (!restrictedUnderwaterView()) {
-        if (!full)
-            newsym(game.u.ux, game.u.uy);
+// Native under_water(): mode 2 defers the full clear until the next update;
+// mode 0 clears only the previous three-by-three view before drawing the new one.
+export async function under_water(mode) {
+    if (!game.level || Is_waterlevel(game.u.uz) || game.u.uswallow)
         return;
+    const view = game._underwaterView ??= { position: null, fullRedrawPending: false };
+    if (mode === 1 || view.fullRedrawPending) {
+        await cls();
+        view.fullRedrawPending = false;
+    }
+    else if (mode === 2) {
+        view.fullRedrawPending = true;
+        return;
+    }
+    else {
+        const previous = view.position ?? { x: 0, y: 0 };
+        for (let y = previous.y - 1; y <= previous.y + 1; y++)
+            for (let x = previous.x - 1; x <= previous.x + 1; x++)
+                show_glyph_cell(x, y, ' ', NO_COLOR, false, 0, { kind: 'unexplored', glyph: GlyphOffset.unexplored });
     }
     for (let x = game.u.ux - 1; x <= game.u.ux + 1; x++) {
         for (let y = game.u.uy - 1; y <= game.u.uy + 1; y++) {
-            if (underwaterTerrain(x, y)
-                && (!heroIsBlind() || x === game.u.ux && y === game.u.uy))
+            if (!underwaterTerrain(x, y))
+                continue;
+            if (heroIsBlind() && (x !== game.u.ux || y !== game.u.uy))
+                show_glyph_cell(x, y, ' ', NO_COLOR, false, 0, { kind: 'unexplored', glyph: GlyphOffset.unexplored });
+            else
                 newsym(x, y);
         }
+    }
+    view.position = { x: game.u.ux, y: game.u.uy };
+}
+// Native under_ground(): a full reset stays blank until the next hero update.
+export async function under_ground(mode) {
+    if (!game.level || game.u.uswallow)
+        return;
+    const view = game._undergroundView ??= { fullRedrawPending: false };
+    if (mode === 1 || view.fullRedrawPending) {
+        await cls();
+        view.fullRedrawPending = false;
+    }
+    else if (mode === 2) {
+        view.fullRedrawPending = true;
+    }
+    else
+        newsym(game.u.ux, game.u.uy);
+}
+async function redrawRestrictedMap(full) {
+    if (restrictedUnderwaterView()) {
+        await under_water(full || !game._underwaterView ? 1 : 0);
+    }
+    else {
+        if (full || !game._undergroundView)
+            await under_ground(1);
+        if (!full)
+            await under_ground(0);
     }
 }
 // ── docrt ──
@@ -2100,8 +2139,7 @@ export async function docrt({ beforeGlow = null } = {}) {
             return;
         }
         if (restrictedUnderwaterView() || game.u?.uburied) {
-            await cls();
-            redrawRestrictedMap(true);
+            await redrawRestrictedMap(true);
             return;
         }
         vision_recalc(2);
@@ -2137,7 +2175,7 @@ export async function redrawMap() {
         return;
     }
     if (restrictedUnderwaterView() || game.u?.uburied) {
-        redrawRestrictedMap(false);
+        await redrawRestrictedMap(false);
         return;
     }
     for (let y = 0; y < ROWNO; y++)
