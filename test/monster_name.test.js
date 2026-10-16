@@ -297,6 +297,10 @@ void test('Minetown residents have identities and its lighting shop belongs to I
     });
     game.mines_dnum = 1;
     game.u.uz.dnum = 1;
+    const descriptor = game.specialLevels?.get('minetn');
+    assert.ok(descriptor);
+    descriptor.dnum = 1;
+    descriptor.flags.town = true;
     game.ubirthday = 900000000;
     await generateMinetown(active);
     const keepers = game.level.monsters.filter(monster => monster.isshk);

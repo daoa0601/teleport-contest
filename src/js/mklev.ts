@@ -124,7 +124,7 @@ import {
     AM_SHRINE, AM_SANCTUM, Align2amask,
     LR_DOWNSTAIR, LR_UPSTAIR, LR_UPTELE, LR_DOWNTELE, LR_TELE, LR_BRANCH, LR_PORTAL,
     M_AP_NOTHING, M_AP_FURNITURE, M_AP_OBJECT, M_AP_MONSTER, M_AP_TYPE,
-    MM_ANGRY, MM_ASLEEP, MM_NONAME, MM_NOGRP, MM_EMIN, MM_EPRI,
+    MM_ANGRY, MM_ASLEEP, MM_NONAME, MM_NOGRP, MM_EMIN, MM_EPRI, MM_ESHK,
     MM_NOWAIT, MM_NOTAIL, MM_IGNOREWATER, MM_ADJACENTOK,
     MM_NOCOUNTBIRTH, MM_NOMSG, MM_MALE, MM_FEMALE, MM_MINVIS, MM_EDOG, NO_MINVENT,
     G_EXTINCT, G_GENOD, G_GONE, G_NOCORPSE,
@@ -8527,7 +8527,7 @@ function goodShopDoor(sroom: Room): ShopDoor | null {
 
 function stockRoomGoodPos(sroom: Room, shopDoor: ShopDoor, x: number, y: number): boolean {
     const loc = requireGameLevel().at(x, y);
-    if (!loc || loc.typ !== ROOM) return false;
+    if (!loc || !IS_ROOM(loc.typ)) return false;
     if (sroom.irregular) {
         const roomno = (sroom.roomnoidx ?? -1) + ROOMOFFSET;
         return !loc.edge && loc.roomno === roomno
@@ -8552,7 +8552,7 @@ function assignShopkeeperIdentity(monster: Monster, shopIndex: number): void {
     let names: readonly string[] = shop.names;
     let selected: string | undefined;
     if (names === candleShop.names && In_mines(game.u.uz)
-        && level.flags.has_town) {
+        && specialLevelAt()?.flags.town) {
         selected = '+Izchak';
         monster.female = false;
     } else {
@@ -8651,20 +8651,24 @@ async function stockShopRoom(sroom: Room): Promise<void> {
     // the resident; it does not abandon this shop when its doorway is busy.
     const occupant = monsterAtPosition(level, shopDoor.x, shopDoor.y);
     if (occupant) await randomMonsterRelocation(occupant, { flags: RLOC_NOMSG });
-    const shopkeeper = await makemon(PM_SHOPKEEPER, shopDoor.x, shopDoor.y, 0);
+    const shopkeeper = await makemon(PM_SHOPKEEPER, shopDoor.x, shopDoor.y, MM_ESHK);
     if (!shopkeeper) return;
-    shopkeeper.eshk = {
-        shoproom: (sroom.roomnoidx ?? -1) + ROOMOFFSET,
-        shoptype: sroom.rtype,
-        shoplevel: { ...shopLevel },
-        shd: { ...shopDoor.door },
-        shk: { x: shopDoor.x, y: shopDoor.y },
-    };
+    const shop = shopkeeper.eshk;
+    if (!shop) throw new Error('Shopkeeper creation requires its shop extension.');
     // C isshk() is resident-extension identity, not species identity.  A
     // Wizard-forced out-of-context shopkeeper has no eshk and remains an
     // ordinary humanoid observer; shkinit() establishes both together here.
     shopkeeper.isshk = 1;
+    shopkeeper.mpeaceful = 1;
+    setMonsterMalign(shopkeeper);
+    shopkeeper.msleeping = 0;
+    shopkeeper.mtrapseen = -1;
+    shop.shoproom = (sroom.roomnoidx ?? -1) + ROOMOFFSET;
     sroom.resident = shopkeeper;
+    shop.shoptype = sroom.rtype;
+    shop.shoplevel = { ...shopLevel };
+    shop.shd = { ...shopDoor.door };
+    shop.shk = { x: shopDoor.x, y: shopDoor.y };
 
     // C shknam.c:shkinit()/makemon.c:mkmonmoney(). Initial capital is
     // an ordinary coin stack in the keeper's inventory.
@@ -8736,10 +8740,9 @@ async function stockShopRoom(sroom: Room): Promise<void> {
             continue;
         }
         if (rn2(100) < depth_of_level(game.u?.uz)
-            && !level.monsters.some(mon => monsterHasMapPosition(mon, game) && mon.mx === pos.x && mon.my === pos.y)) {
+            && !monsterAtPosition(level, pos.x, pos.y)) {
             const mimic = mkclass(S_MIMIC, 0);
-            if (mimic != null) {
-                await makemon(mimic, pos.x, pos.y, 0);
+            if (mimic != null && await makemon(mimic, pos.x, pos.y, 0)) {
                 continue;
             }
         }
