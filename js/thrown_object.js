@@ -2,6 +2,7 @@
 // C refs: dothrow.c throw_obj(), invent.c freeinv(), mkobj.c splitobj(),
 // and zap.c bhit().
 import { monsterAtPosition, monsterHasMapPosition } from './monster_location.js';
+import { monsterProjectileDisplay } from './monster_projectile_display.js';
 import { A_STR, BOLT_LIM, DOOR, D_CLOSED, D_LOCKED, IRONBARS, IS_SOFT, IS_WATERWALL, Is_airlevel, LAVAWALL, LOST_THROWN, M_AP_OBJECT, M_AP_TYPE, P_CROSSBOW, SINK, WEB, WT_SPLASH_THRESHOLD, ZAP_POS, isok, } from './const.js';
 import { monsterName } from './monster_name.js';
 import { artifactById } from './artifacts.js';
@@ -214,7 +215,7 @@ export async function finishHeroThrownObjectLanding({ state = game, object, x, y
         state.vision_full_recalc = 1;
     return landed;
 }
-async function flyPhysicalObject({ state = game, object, dx, dy, range, startX, startY, kicked = false, captureFlight = null, publish = plineWithContinuation, random = rn2, }) {
+async function flyPhysicalObject({ state = game, object, dx, dy, range, startX, startY, kicked = false, captureFlight = null, publish = plineWithContinuation, random = rn2, display, }) {
     let x = startX;
     let y = startY;
     const path = [];
@@ -225,7 +226,7 @@ async function flyPhysicalObject({ state = game, object, dx, dy, range, startX, 
     const steps = kicked ? Math.max(0, range - 1) : range;
     let skip = !kicked && object.otyp === ROCK ? rockSkipRange(range) : null;
     const allowSkip = skip !== null && random(3) === 0;
-    const glyph = transientObjectGlyph(object);
+    const glyph = display?.glyph ?? transientObjectGlyph(object);
     let skipping = false;
     let skips = 0;
     for (let step = 0; step < steps && (dx || dy); step++) {
@@ -326,6 +327,8 @@ async function flyPhysicalObject({ state = game, object, dx, dy, range, startX, 
             break;
         }
         path.push({ x, y });
+        if (display)
+            await display.show({ x, y });
         if (kicked && isPoolOrLavaAt(x, y, state)) {
             stoppedBy = 'liquid';
             break;

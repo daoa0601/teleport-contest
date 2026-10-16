@@ -2,17 +2,20 @@
 // C refs: dothrow.c throw_obj(), throwit(), thitmonst(), swallowit();
 // steal.c mpickobj().
 import { hitMonsterWithThrownEggPieOrVenom, isHeroThrownEggPieOrVenom, } from './hero_thrown_egg_pie_venom.js';
-import { plineWithContinuation } from './display.js';
+import { flush_screen, plineWithContinuation } from './display.js';
 import { foodObjectName, objectName, observeObjectForNaming } from './objnam.js';
-import { game, requireGameLevel, requireLiveGame } from './gstate.js';
+import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { hitMonsterWithThrownObject } from './hero_ranged_attack.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { addObjectToMonsterInventory } from './monster_inventory.js';
 import { monsterAtPosition } from './monster_location.js';
 import { monsterName } from './monster_name.js';
+import { monsterProjectileDisplay } from './monster_projectile_display.js';
+import { W_WEP } from './const.js';
+import { finishReturningThrow, isAutoReturningThrow, throwerIsImpaired } from './returning_throw.js';
 import { petrifyMonsterImmediately } from './monster_stoning.js';
 import { delobj } from './object_delete.js';
-import { BOULDER, BRASS_LANTERN, CORPSE, MAGIC_LAMP, OBJECT_SUBTYPE, OIL_LAMP, } from './object_data.js';
+import { AKLYS, BOULDER, BRASS_LANTERN, CORPSE, MAGIC_LAMP, OBJECT_SUBTYPE, OIL_LAMP, } from './object_data.js';
 import { MONSTER_SYMBOL, monsterCanEngulf, monsterDigests, monsterIsAnimal, monsterIsWhirly, monsterTypeName, } from './monster_data.js';
 import { OBJECT_TIMER_KIND, objectTimers } from './object_timers.js';
 import { isThrowingWeapon, launcherMatchesAmmo, } from './object_properties.js';
@@ -103,27 +106,48 @@ export async function resolveSwallowedWeaponThrow({ state = game, item, objectCl
     const engulfer = swallowedWeaponTarget(state, item, objectClass);
     if (!engulfer)
         return false;
+    requirePlayingGame(state);
+    const weaponMask = item.owornmask ?? 0;
+    const returns = isAutoReturningThrow(item, weaponMask, state);
+    const impaired = throwerIsImpaired(state);
+    const twoWeapons = !!state.u.twoweap;
+    const oldSlot = state.inventory[state.inventory.indexOf(item) + 1] ?? null;
     const thrown = await detachThrownUnit(state, item, selectedQuantity, splitObjectId);
+    let tetherDisplay = null;
     try {
         if (state.program_state?.gameover)
             return true;
         const launched = launcherMatchesAmmo(thrown, state.uwep);
-        await applyThrowSlip({
+        const slipped = await applyThrowSlip({
             state,
             object: thrown,
             launcher: launched,
             throwingWeapon: isThrowingWeapon(thrown),
         });
         await applyLowStaminaThrow({ state, object: thrown });
+        if (item.otyp === AKLYS && !!(weaponMask & W_WEP)) {
+            tetherDisplay = monsterProjectileDisplay(thrown, state, { tethered: true });
+            await flush_screen(0);
+        }
         const impactX = engulfer.mx, impactY = engulfer.my;
         const contact = await hitMonsterWithThrownObject(engulfer, thrown, {
             state,
             guaranteedHit: true,
-            finishKillWithObject: finishKill,
+            // xkilled() leaves a returning missile free during expulsion;
+            // other projectiles join the engulfer's inventory before death.
+            ...(returns ? {} : { finishKillWithObject: finishKill }),
         });
         if (contact.heroDied)
             return true;
         if (!contact.consumed) {
+            if (returns && await finishReturningThrow({
+                state, object: thrown, impact: { x: impactX, y: impactY },
+                impaired: impaired || slipped, twoWeapons, oldSlot, tetherDisplay,
+            })) {
+                if (!state.program_state.gameover)
+                    state.context.move = 1;
+                return true;
+            }
             if (state.u.uswallow) {
                 const currentEngulfer = state.u.ustuck;
                 if (!currentEngulfer)
@@ -143,6 +167,7 @@ export async function resolveSwallowedWeaponThrow({ state = game, item, objectCl
         return true;
     }
     finally {
+        tetherDisplay?.clear();
         if (state._thrownObject === thrown)
             state._thrownObject = null;
     }

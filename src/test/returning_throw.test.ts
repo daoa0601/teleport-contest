@@ -1,0 +1,300 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { A_STR, STONE, WEB } from '../js/const.js';
+import { game, requirePlayingGame } from '../js/gstate.js';
+import { AKLYS, BOOMERANG, ROCK, SPLINT_MAIL } from '../js/object_data.js';
+import { initRng } from '../js/rng.js';
+import { setPrimaryWeapon } from '../js/weapon_slots.js';
+import { addInventoryItem } from '../js/u_init.js';
+import { rhack } from '../js/cmd.js';
+import { redrawMap } from '../js/display.js';
+import { pushKey, resetInputState } from '../js/input.js';
+import { nearCapacity } from '../js/weight.js';
+import { grantIntrinsicProperty } from '../js/properties.js';
+import { throwInventoryObject } from './support/commands.js';
+import { addInventoryObject, addInventoryWeapon, artifactObject } from './support/game-objects.js';
+import { addTrap, floorObjectsAt } from './support/level-state.js';
+import { freshObjectRoom } from './support/object-room.js';
+import { createMonsterAt } from './support/monsters.js';
+import { requireScreenCell, requireScreenRow } from './support/screen.js';
+
+async function wieldAklys() {
+    freshObjectRoom({ left: 4, right: 25, top: 3, bottom: 17 });
+    requirePlayingGame(game);
+    game.u.acurr.a[A_STR] = 125;
+    const weapon = await addInventoryWeapon(AKLYS);
+    await setPrimaryWeapon(weapon, game);
+    return weapon;
+}
+
+void test('a wielded aklys returns to the primary slot after a horizontal throw', async () => {
+    const weapon = await wieldAklys();
+    initRng(1n);
+
+    await throwInventoryObject(weapon, 'l');
+
+    assert.equal(game.uwep, weapon);
+    assert.equal(weapon.where, 'inventory');
+    assert.equal(game.uquiver, null);
+    assert.match(game._pending_message, /The aklys returns to your hand!/);
+});
+
+void test('fire throws and catches the wielded aklys without a quiver', async () => {
+    const weapon = await wieldAklys();
+    initRng(1n);
+    pushKey('l');
+
+    await rhack('f'.charCodeAt(0));
+
+    assert.equal(game.uwep, weapon);
+    assert.equal(weapon.where, 'inventory');
+    assert.equal(game.context.move, 1);
+});
+
+void test('a detached tether leaves an aklys no more than four squares away', async () => {
+    const weapon = await wieldAklys();
+    requirePlayingGame(game);
+    const level = game.level;
+    initRng(167n);
+
+    await throwInventoryObject(weapon, 'l');
+
+    assert.equal(game.uwep, null);
+    assert.ok(floorObjectsAt(level, 14, 10).includes(weapon));
+    assert.match(game._pending_message, /The aklys fails to return!/);
+});
+
+void test('a failed catch leaves the returning aklys at the hero', async () => {
+    const weapon = await wieldAklys();
+    requirePlayingGame(game);
+    initRng(26n);
+
+    await throwInventoryObject(weapon, 'l', ' '.repeat(10));
+
+    assert.equal(game.uwep, null);
+    assert.ok(floorObjectsAt(game.level, 10, 10).includes(weapon));
+    assert.match(game._pending_message, /(?:landing at your feet|hitting your arm)/);
+});
+
+for (const command of ['throw', 'fire']) {
+    void test(`${command}: a failed aklys catch reports the lighter load once`, async () => {
+        const weapon = await wieldAklys();
+        requirePlayingGame(game);
+        game.u.acurr.a[A_STR] = 12;
+        await addInventoryObject(SPLINT_MAIL);
+        await addInventoryObject(ROCK, { quan: 24 });
+        assert.equal(nearCapacity(game), 1, 'The aklys makes the carried load burdensome');
+        game._encumbranceLevel = 1;
+        game.u._encumbrance = 'Burdened';
+        const messages: string[] = [];
+        const pages: string[] = [];
+        resetInputState().beforeRead = () => {
+            const row = requireScreenRow(0).map(cell => cell.ch).join('');
+            if (row.includes('--More--')) {
+                pages.push(row);
+                messages.push(game._pending_message);
+            }
+        };
+        initRng(26n);
+
+        if (command === 'throw') {
+            await throwInventoryObject(weapon, 'l', ' '.repeat(10));
+        } else {
+            pushKey('l');
+            for (let page = 0; page < 10; page++) pushKey(' ');
+            await rhack('f'.charCodeAt(0));
+        }
+
+        assert.ok(floorObjectsAt(game.level, 10, 10).includes(weapon));
+        assert.equal(nearCapacity(game), 0);
+        messages.push(game._pending_message);
+        const loadMessages = messages.join('\n').match(/Your movements are now unencumbered\./g) ?? [];
+        assert.equal(loadMessages.length, 1, `Load feedback was: ${messages.join(' | ')}`);
+        assert.equal(pages.length, 1, `Message pagers were: ${pages.join(' | ')}`);
+    });
+}
+
+void test('fumbling prevents a returning aklys catch', async () => {
+    const weapon = await wieldAklys();
+    requirePlayingGame(game);
+    game.u.fumbling = true;
+    initRng(1n);
+
+    await throwInventoryObject(weapon, 'l', ' '.repeat(10));
+
+    assert.equal(game.uwep, null);
+    assert.ok(floorObjectsAt(game.level, 10, 10).includes(weapon));
+});
+
+void test('a web prevents the aklys from returning', async () => {
+    const weapon = await wieldAklys();
+    requirePlayingGame(game);
+    addTrap(game.level, WEB, 11, 10);
+    initRng(1n);
+
+    await throwInventoryObject(weapon, 'l', ' '.repeat(10));
+
+    assert.equal(weapon.where, 'floor');
+    assert.ok(floorObjectsAt(game.level, 11, 10).includes(weapon));
+    assert.match(game._pending_message, /gets stuck in a web!/);
+});
+
+for (const command of ['throw', 'fire']) {
+    void test(`${command}: a web clears the aklys tether before the recoil pager`, async () => {
+        const weapon = await wieldAklys();
+        requirePlayingGame(game);
+        grantIntrinsicProperty('levitation', 'outside');
+        // Recoiling into the wall forces acknowledgment of the web message.
+        game.level.requireAt(9, 10).typ = STONE;
+        addTrap(game.level, WEB, 13, 10);
+        await redrawMap();
+        const pages: { cord: string; weapon: string }[] = [];
+        resetInputState().beforeRead = () => {
+            const row = requireScreenRow(0).map(cell => cell.ch).join('');
+            if (row.includes('--More--') && game._pending_message.includes('gets stuck in a web!')) {
+                pages.push({
+                    cord: requireScreenCell(10, 11).ch,
+                    weapon: requireScreenCell(11, 11).ch,
+                });
+            }
+        };
+        initRng(1n);
+
+        if (command === 'throw') {
+            await throwInventoryObject(weapon, 'l', ' '.repeat(10));
+        } else {
+            pushKey('l');
+            for (let page = 0; page < 10; page++) pushKey(' ');
+            await rhack('f'.charCodeAt(0));
+        }
+
+        assert.ok(pages.length > 0, 'Recoil must pause after the web message');
+        for (const page of pages) {
+            assert.equal(page.cord, '.', 'The cord must be erased before recoil');
+            assert.equal(page.weapon, '.', 'The airborne aklys must be erased before recoil');
+        }
+        assert.equal(game.u.ux, 10, 'The wall must stop recoil');
+        assert.ok(game.u.uhp < 40, 'Recoil must injure the hero against the wall');
+        assert.ok(floorObjectsAt(game.level, 13, 10).includes(weapon));
+    });
+}
+
+void test('a strong Valkyrie catches and rewields Mjollnir', async () => {
+    freshObjectRoom({ role: 'valkyrie', right: 25 });
+    requirePlayingGame(game);
+    game.u.acurr.a[A_STR] = 125;
+    const hammer = await addInventoryItem(await artifactObject('Mjollnir'));
+    await setPrimaryWeapon(hammer, game);
+    initRng(1n);
+
+    await throwInventoryObject(hammer, 'l');
+
+    assert.equal(game.uwep, hammer);
+    assert.equal(hammer.where, 'inventory');
+    assert.match(game._pending_message, /Mjollnir returns to your hand!/);
+});
+
+for (const kill of [false, true]) {
+    void test(`a swallowed aklys returns after ${kill ? 'killing' : 'hitting'} its engulfer`, async () => {
+        const weapon = await wieldAklys();
+        requirePlayingGame(game);
+        const engulfer = await createMonsterAt('trapper', 11, 10);
+        engulfer.mx = 10;
+        engulfer.mhp = kill ? 1 : 100;
+        engulfer.mhpmax = 100;
+        game.u.uswallow = 1;
+        game.u.ustuck = engulfer;
+        initRng(1n);
+
+        await throwInventoryObject(weapon, 'l', ' '.repeat(30));
+
+        assert.ok(engulfer.mhp < (kill ? 1 : 100));
+        assert.equal(game.uwep, weapon);
+        assert.equal(weapon.where, 'inventory');
+        assert.ok(!engulfer.minvent.includes(weapon));
+    });
+}
+
+void test('an underwater boomerang takes the straight returning-weapon path', async () => {
+    freshObjectRoom({ right: 25 });
+    requirePlayingGame(game);
+    game.underwater = true;
+    const boom = await addInventoryWeapon(BOOMERANG);
+    initRng(1n);
+
+    await throwInventoryObject(boom, 'l');
+
+    assert.equal(boom.where, 'inventory');
+    assert.equal(game.uwep, boom);
+    assert.match(game._pending_message, /The boomerang returns to your hand!/);
+});
+
+void test('an unwielded aklys has no tether or automatic return', async () => {
+    const weapon = await wieldAklys();
+    requirePlayingGame(game);
+    await setPrimaryWeapon(null, game);
+    initRng(1n);
+
+    await throwInventoryObject(weapon, 'l');
+
+    assert.equal(weapon.where, 'floor');
+    assert.ok(weapon.ox > 14);
+});
+
+void test('Glib does not prevent catching an aklys in the pinned throwit rules', async () => {
+    const weapon = await wieldAklys();
+    requirePlayingGame(game);
+    game.u.glib = true;
+    game.u.glibTurns = 10;
+    initRng(1n);
+
+    await throwInventoryObject(weapon, 'l');
+
+    assert.equal(game.uwep, weapon);
+    assert.equal(weapon.where, 'inventory');
+});
+
+void test('a blind thrower hears no return description when an aklys lands at their feet', async () => {
+    const weapon = await wieldAklys();
+    requirePlayingGame(game);
+    game.u.blind = true;
+    game.u.blindTurns = 10;
+    initRng(1n);
+
+    await throwInventoryObject(weapon, 'l');
+
+    assert.equal(game._pending_message, 'Something lands at your feet.');
+    assert.ok(floorObjectsAt(game.level, 10, 10).includes(weapon));
+});
+
+void test('half physical damage reduces a failed catch injury', async () => {
+    const weapon = await wieldAklys();
+    requirePlayingGame(game);
+    initRng(26n);
+    await throwInventoryObject(weapon, 'l');
+    const fullDamage = 40 - game.u.uhp;
+    assert.ok(fullDamage >= 2 && fullDamage <= 4);
+
+    const protectedWeapon = await wieldAklys();
+    requirePlayingGame(game);
+    game.u.halfPhysicalDamage = true;
+    initRng(26n);
+    await throwInventoryObject(protectedWeapon, 'l');
+
+    assert.equal(40 - game.u.uhp, Math.ceil(fullDamage / 2));
+});
+
+void test('a failed Mjollnir catch can strike the hero with lightning', async () => {
+    freshObjectRoom({ role: 'valkyrie', right: 25 });
+    requirePlayingGame(game);
+    game.u.acurr.a[A_STR] = 125;
+    const hammer = await addInventoryItem(await artifactObject('Mjollnir'));
+    await setPrimaryWeapon(hammer, game);
+    initRng(26n);
+
+    await throwInventoryObject(hammer, 'l', ' '.repeat(20));
+
+    assert.ok(game.u.uhp < 36);
+    assert.match(game._pending_message, /Lightning strikes you!/);
+    assert.ok(floorObjectsAt(game.level, 10, 10).includes(hammer));
+});

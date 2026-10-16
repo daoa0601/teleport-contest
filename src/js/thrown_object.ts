@@ -3,6 +3,7 @@
 // and zap.c bhit().
 
 import { monsterAtPosition, monsterHasMapPosition } from './monster_location.js';
+import { monsterProjectileDisplay } from './monster_projectile_display.js';
 import {
     A_STR,
     BOLT_LIM,
@@ -114,6 +115,7 @@ export interface ProjectileFlightOptions {
     dy: number;
     range: number;
     captureFlight?: ProjectileFlightCapture | null;
+    display?: ReturnType<typeof monsterProjectileDisplay>;
     publish?: MessagePublisher;
     random?: typeof rn2;
 }
@@ -341,6 +343,7 @@ async function flyPhysicalObject({
     captureFlight = null,
     publish = plineWithContinuation,
     random = rn2,
+    display,
 }: PhysicalFlightOptions): Promise<ProjectileFlight> {
     let x = startX;
     let y = startY;
@@ -352,7 +355,7 @@ async function flyPhysicalObject({
     const steps = kicked ? Math.max(0, range - 1) : range;
     let skip = !kicked && object.otyp === ROCK ? rockSkipRange(range) : null;
     const allowSkip = skip !== null && random(3) === 0;
-    const glyph = transientObjectGlyph(object);
+    const glyph = display?.glyph ?? transientObjectGlyph(object);
     let skipping = false;
     let skips = 0;
 
@@ -459,6 +462,7 @@ async function flyPhysicalObject({
         }
 
         path.push({ x, y });
+        if (display) await display.show({ x, y });
         if (kicked && isPoolOrLavaAt(x, y, state)) {
             stoppedBy = 'liquid';
             break;
