@@ -320,6 +320,7 @@ const PM_DJINNI = 315;
 const PM_WATER_NYMPH = 68;
 const PM_WATER_DEMON = 289;
 const PM_WATER_MOCCASIN = 216;
+const M2_PNAME = 0x00080000;
 const M2_ROCKTHROW = 0x08000000;
 const M1_HUMANOID = 0x00020000;
 const M1_TUNNEL = 0x20;
@@ -7305,8 +7306,12 @@ async function domoveCore(dx, dy, explicitAttempt) {
             // announcement can flush the map or pause for acknowledgment.
             newsym(newx, newy);
             newsym(oldx, oldy);
+            const hasPersonalName = !!MGIVENNAME(monster)
+                || !!((MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_PNAME);
             const swapName = monsterName(monster, {
-                state: game, article: 'your', adjective: tame ? '' : 'peaceful',
+                state: game,
+                article: tame ? 'your' : hasPersonalName ? 'none' : 'the',
+                adjective: tame ? '' : 'peaceful',
             });
             await plineWithContinuation(`You swap places with ${swapName}.`);
             return finishMovedHero({
