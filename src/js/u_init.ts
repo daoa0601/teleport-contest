@@ -540,6 +540,7 @@ export function initializeHeroSpecies(state: GameState = game): void {
 export function uInitMisc(handednessRoll: number): void {
     const g = game;
     const u = g.u;
+    g.flags.beginner = true;
     u._propertySources = {};
     u.uhave = {};
     u.uconduct = {};
