@@ -2,7 +2,7 @@
 import { game } from './gstate.js';
 import { plineWithContinuation } from './display.js';
 import { OBJECT_CLASS_SYMBOLS } from './object_knowledge.js';
-import { changeInventoryOrder } from './object_sort.js';
+import { planInventoryOrder } from './object_sort.js';
 export function textOptionValue(name) {
     switch (name) {
         case 'pile_limit': return String(game.flags.pile_limit ?? 5);
@@ -26,14 +26,17 @@ export async function setTextOption(name, value) {
             game.flags.pile_limit = limit < 0 ? 5 : limit;
             break;
         }
-        case 'packorder':
+        case 'packorder': {
             if (!value) {
                 await optionError("Missing parameter for 'packorder:'");
                 break;
             }
-            for (const error of changeInventoryOrder(value))
+            const change = planInventoryOrder(value);
+            for (const error of change.errors)
                 await optionError(error);
+            game.flags.inv_order = change.order;
             break;
+        }
         case 'menuinvertmode': {
             if (!value)
                 break;

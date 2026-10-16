@@ -27,6 +27,11 @@ export function inventoryOrderSymbols(state = game) {
 // options.c:change_inv_order() keeps valid entries even when others are bad,
 // then fills omitted classes using their previous order. Omitted gold leads.
 export function changeInventoryOrder(symbols, state = game) {
+    const change = planInventoryOrder(symbols, state);
+    state.flags.inv_order = change.order;
+    return change.errors;
+}
+export function planInventoryOrder(symbols, state = game) {
     const previous = inventoryClassOrder(state);
     const order = symbols.includes('$') ? [] : [12];
     const errors = [];
@@ -42,8 +47,7 @@ export function changeInventoryOrder(symbols, state = game) {
             order.push(oclass);
         }
     }
-    state.flags.inv_order = [...order, ...previous.filter(oclass => !order.includes(oclass))];
-    return errors;
+    return { order: [...order, ...previous.filter(oclass => !order.includes(oclass))], errors };
 }
 export function inventorySortMode(state = game) {
     return ((state.flags.sortloot ?? 'l') === 'f' ? SORTLOOT_LOOT : SORTLOOT_INVLET)

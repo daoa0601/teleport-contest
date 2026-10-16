@@ -383,4 +383,19 @@ void test('feature-alert suppression rejects future versions and keeps the old s
     assert.equal(game.flags.suppress_alert, '3.3.1');
     assert.match(game._pending_message, /You can't disable new feature alerts for future versions\./);
 });
+void test('packorder keeps its old order until all validation errors have been acknowledged', async () => {
+    freshObjectRoom();
+    const previous = inventoryOrderSymbols();
+    let acknowledged = false;
+    await fullOptions(['packorder'], view => {
+        if (view.includes('Set packorder to what?'))
+            return '%)~^|@\n';
+        assert.match(view, /--More--/);
+        assert.equal(inventoryOrderSymbols(), previous);
+        acknowledged = true;
+        return ' ';
+    });
+    assert.equal(acknowledged, true);
+    assert.match(inventoryOrderSymbols(), /^\$%\)/);
+});
 //# sourceMappingURL=options_interactive.test.js.map
