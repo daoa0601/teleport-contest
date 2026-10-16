@@ -7,10 +7,10 @@ import type { Monster } from './monster_types.js';
 import { KILLED_BY, PARANOID_DIE, MGIVENNAME, M_AP_MONSTER, M_AP_TYPE, STONING, Upolyd, ismnum } from './const.js';
 import { canSpotMonster, flushPendingTopline, flush_screen, plineWithContinuation } from './display.js';
 import {
-    beginHeroLifeSaving, completeHeroLifeSaving, finishOrdinaryDeath, formatKillerCause,
+    beginHeroLifeSaving, completeHeroLifeSaving, finishHeroDeath, finishOrdinaryDeath, formatKillerCause,
     identifyLifeSavingAmulet, restoreHeroAfterDeath,
 } from './end.js';
-import type { KillerFormat } from './end.js';
+import type { FinishHeroDeathOptions, KillerFormat } from './end.js';
 import { setHeroRemainsFromMonster } from './death_remains.js';
 import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, monsterTypeName } from './monster_data.js';
 import { monsterName } from './monster_name.js';
@@ -193,6 +193,14 @@ export async function finishMonsterAttackDeath(monster: Monster, {
     });
     game.context.move = 0;
     return true;
+}
+
+// losehp() enters urgent_pline(), whose map flush precedes paging the
+// previous message. Its pending HP request must reach that pager.
+export async function finishHeroDeathAfterMonsterMessage(options: FinishHeroDeathOptions) {
+    await flush_screen(1);
+    await waitForCurrentMonsterMore();
+    return finishHeroDeath(options);
 }
 
 export async function waitForCurrentMonsterMore(fallbackMessage = '') {

@@ -58,7 +58,7 @@ import { placeHeroAtRandomArrival } from './level_change.js';
 import { monsterName, monsterSpellDeathReason, monsterSubjectPronoun, possessiveName, quietMonsterName } from './monster_name.js';
 import { touchHeroWithDeath } from './monster_death_touch.js';
 import { resolveMonsterWeaponContact } from './monster_weapon_contact.js';
-import { finishMonsterAttackDeath, waitForCurrentMonsterMore } from './monster_attack_death.js';
+import { finishHeroDeathAfterMonsterMessage, finishMonsterAttackDeath, waitForCurrentMonsterMore } from './monster_attack_death.js';
 import { monsterMissMessage } from './monster_miss.js';
 import { monsterIsAnimal } from './monster_data.js';
 import { monsterCanCarryObject } from './monster_carry.js';
@@ -2456,14 +2456,6 @@ function resolveDeferredHeroGeyser(
         ? Math.trunc((originalDamage + 1) / 2) : originalDamage;
     applyHeroSpellDamage(heroAttack, appliedDamage, game);
     heroAttack.deferredGeyserSpell = false;
-}
-
-async function finishHeroDeathAfterMonsterMessage(options: FinishHeroDeathOptions) {
-    // losehp() enters urgent_pline(), whose map flush precedes paging the
-    // previous message. Its pending HP request must reach that pager.
-    await flush_screen(1);
-    await waitForCurrentMonsterMore();
-    return finishHeroDeath(options);
 }
 
 async function resumeTrappedMonster(action: MonsterAction): Promise<void> {
