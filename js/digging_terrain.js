@@ -11,7 +11,7 @@ import { adjustHeroAlignment } from './alignment.js';
 import { exerciseAttribute } from './attrib.js';
 import { A_LAWFUL, A_STR, A_WIS, ALTAR, AM_MASK, AM_SANCTUM, Amask2align, BEAR_TRAP, DBWALL, DB_ICE, DB_LAVA, DB_MOAT, DB_UNDER, DIGCHECK_FAIL_AIRLEVEL, DIGCHECK_FAIL_ALTAR, DIGCHECK_FAIL_BOULDER, DIGCHECK_FAIL_CANTDIG, DIGCHECK_FAIL_ONLADDER, DIGCHECK_FAIL_ONSTAIRS, DIGCHECK_FAIL_OBJ_POOL_OR_TRAP, DIGCHECK_FAIL_THRONE, DIGCHECK_FAIL_TOOHARD, DIGCHECK_FAIL_UNDESTROYABLETRAP, DIGCHECK_FAIL_WATERLEVEL, DIGCHECK_FAILED, DIGCHECK_PASSED, DIGCHECK_PASSED_DESTROY_TRAP, DIGCHECK_PASSED_PITONLY, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, FOUNTAIN, F_WARNED, GRAVE, HOLE, ICE, IS_ALTAR, IS_DOOR, IS_FURNITURE, IS_GRAVE, IS_OBSTRUCTED, IS_ROOM, IS_STWALL, IS_THRONE, Is_airlevel, Is_botlevel, Is_earthlevel, Is_stronghold, Is_waterlevel, LADDER, LANDMINE, LAVAPOOL, MAGIC_PORTAL, MIGR_RANDOM, M_SEEN_MAGR, MM_NOMSG, PIT, POOL, ROOM, SDOOR, SHOPBASE, SHOP_PIT_COST, SINK, STAIRS, TT_BURIEDBALL, TT_INFLOOR, TT_PIT, VIBRATING_SQUARE, W_NONDIGGABLE, is_hole, is_magical_trap, is_pit, isok, } from './const.js';
 import { addShopDamage, makeAngryShopkeeper, payForShopDamage, shopDig, } from './shop_damage.js';
-import { canSeeMonster, canSpotMonster, flush_screen, map_invisible, map_trap, newsym, plineWithContinuation, show_glyph_cell, unmap_invisible, } from './display.js';
+import { canSeeMonster, canSpotMonster, flush_screen, map_invisible, newsym, plineWithContinuation, show_glyph_cell, unmap_invisible, } from './display.js';
 import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
 import { levelAtDepth } from './dungeon.js';
 import { depth } from './hacklib.js';
@@ -54,7 +54,7 @@ import { autopickupAtHero } from './pickup.js';
 import { roomsAt } from './room.js';
 import { d, rn2 } from './rng.js';
 import { surfaceName } from './terrain_name.js';
-import { waterDamageChain } from './trap.js';
+import { feelTrap, seeTrap, waterDamageChain } from './trap.js';
 import { fireDamageChain } from './fire_damage.js';
 import { cansee } from './vision.js';
 import { CLR_BLUE } from './terminal.js';
@@ -405,12 +405,9 @@ export async function digActualHole(x, y, madeBy, ttyp, { state = game } = {}) {
     trap.madeby_u = herosFault;
     trap.tseen = 0;
     if (cansee(x, y))
-        trap.tseen = 1;
-    else if (madeByYou) {
-        trap.tseen = 1;
-        map_trap(trap, true);
-    }
-    newsym(x, y);
+        seeTrap(trap, state);
+    else if (madeByYou)
+        feelTrap(trap, state);
     const trapWord = ttyp === HOLE ? 'hole' : 'pit';
     const through = ttyp === HOLE ? 'through' : 'in';
     if (madeByYou) {

@@ -34,7 +34,7 @@ import {
     addShopDamage, makeAngryShopkeeper, payForShopDamage, shopDig,
 } from './shop_damage.js';
 import {
-    canSeeMonster, canSpotMonster, flush_screen, map_invisible, map_trap, newsym,
+    canSeeMonster, canSpotMonster, flush_screen, map_invisible, newsym,
     plineWithContinuation, show_glyph_cell, unmap_invisible,
 } from './display.js';
 import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
@@ -110,7 +110,7 @@ import { autopickupAtHero } from './pickup.js';
 import { roomsAt } from './room.js';
 import { d, rn2 } from './rng.js';
 import { surfaceName } from './terrain_name.js';
-import { waterDamageChain } from './trap.js';
+import { feelTrap, seeTrap, waterDamageChain } from './trap.js';
 import { fireDamageChain } from './fire_damage.js';
 import { cansee } from './vision.js';
 import { CLR_BLUE } from './terminal.js';
@@ -476,12 +476,8 @@ export async function digActualHole(
     const newObjects = pileAt(x, y, state);
     trap.madeby_u = herosFault;
     trap.tseen = 0;
-    if (cansee(x, y)) trap.tseen = 1;
-    else if (madeByYou) {
-        trap.tseen = 1;
-        map_trap(trap, true);
-    }
-    newsym(x, y);
+    if (cansee(x, y)) seeTrap(trap, state);
+    else if (madeByYou) feelTrap(trap, state);
 
     const trapWord = ttyp === HOLE ? 'hole' : 'pit';
     const through = ttyp === HOLE ? 'through' : 'in';

@@ -31,7 +31,7 @@ import { objectMaterial } from './object_material.js';
 import { impossible } from './diagnostics.js';
 import { stopAllObjectTimers } from './object_timers.js';
 import { rnl, rn2, rnd } from './rng.js';
-import { canSeeMonster, newsym } from './display.js';
+import { canSeeMonster, map_trap, newsym } from './display.js';
 import { dryTowel, wetTowel } from './towel.js';
 // C trap.c:seetrap(). Reveal a new trap and redraw its square.
 export function seeTrap(trap, state = game) {
@@ -40,6 +40,14 @@ export function seeTrap(trap, state = game) {
     trap.tseen = true;
     if (state === game)
         newsym(trap.tx, trap.ty);
+}
+// C trap.c:feeltrap(). Touch maps even a known trap without requiring sight.
+export function feelTrap(trap, state = game) {
+    trap.tseen = true;
+    if (state === game) {
+        map_trap(trap, true);
+        newsym(trap.tx, trap.ty);
+    }
 }
 const PM_GREMLIN = 40;
 const PM_IRON_GOLEM = 259;
