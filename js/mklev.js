@@ -61,7 +61,7 @@ import { carveMazeFrom, createMaze } from './maze_terrain.js';
 import { ANY_LOC, DRY, HOT, NO_LOC_WARN, SOLID, WET, getLocation, getLocationCoord } from './special_location.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import { cleanupSpecialLevelMap, removeSpecialLevelBoundaries } from './special_level_cleanup.js';
-import { A_CHA, COLNO, ROWNO, STONE, MAX_TYPE, ROOM, CORR, DOOR, STAIRS, LADDER, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER, CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL, D_NODOOR, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_TRAPPED, OROOM, VAULT, COURT, SWAMP, BEEHIVE, MORGUE, BARRACKS, ZOO, TEMPLE, LEPREHALL, COCKNEST, ANTHOLE, DELPHI, THEMEROOM, SHOPBASE, ROOMOFFSET, MAXNROFROOMS, SHARED, SDOOR, SCORR, IRONBARS, FOUNTAIN, SINK, ALTAR, GRAVE, THRONE, HEADSTONE, ENGRAVE, BURN, MARK, DUST, ENGR_BLOOD, DIR_N, DIR_S, DIR_E, DIR_W, DIR_180, XL_UP, XL_DOWN, XL_LEFT, XL_RIGHT, ACCESSIBLE, IS_WALL, IS_STWALL, IS_DOOR, IS_ROOM, IS_OBSTRUCTED, ZAP_POS, IS_FURNITURE, IS_POOL, IS_AIR, IS_LAVA, In_endgame, Is_earthlevel, Is_botlevel, Is_stronghold, Invocation_lev, In_hell, In_quest, In_V_tower, Is_oracle_level, Is_waterlevel, Is_firelevel, Is_airlevel, Is_astralevel, Is_knox_level, Is_rogue_level, In_sokoban, SPACE_POS, isok, W_NONDIGGABLE, W_NONPASSWALL, FILL_NONE, FILL_NORMAL, ICE, MOAT, POOL, WATER, LAVAPOOL, LAVAWALL, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN, DBWALL, ICED_POOL, ICED_MOAT, DB_NORTH, DB_SOUTH, DB_EAST, DB_WEST, DB_MOAT, DB_LAVA, DB_UNDER, DB_FLOOR, SHOP_HOLE_COST, TREE, AIR, CLOUD, A_NONE, A_CHAOTIC, A_NEUTRAL, A_LAWFUL, P_SHORT_SWORD, P_SABER, AM_SHRINE, AM_SANCTUM, Align2amask, LR_DOWNSTAIR, LR_UPSTAIR, LR_UPTELE, LR_DOWNTELE, LR_TELE, LR_BRANCH, LR_PORTAL, M_AP_NOTHING, M_AP_FURNITURE, M_AP_OBJECT, M_AP_MONSTER, M_AP_TYPE, MM_ANGRY, MM_ASLEEP, MM_NONAME, MM_NOGRP, MM_EMIN, MM_EPRI, MM_NOWAIT, MM_NOTAIL, MM_IGNOREWATER, MM_ADJACENTOK, MM_NOCOUNTBIRTH, MM_NOMSG, MM_MALE, MM_FEMALE, MM_MINVIS, MM_EDOG, NO_MINVENT, G_EXTINCT, G_GENOD, G_GONE, G_NOCORPSE, ROT_AGE, TROLL_REVIVE_CHANCE, HEALTHY_TIN, RANDOM_TIN, MAX_OIL_IN_FLASK, CORPSTAT_FEMALE, CORPSTAT_MALE, CORPSTAT_NEUTER, CORPSTAT_HISTORIC, CORPSTAT_INIT, CORPSTAT_SPE_VAL, STRAT_APPEARMSG, STRAT_CLOSE, STRAT_WAITFORU, ANTI_MAGIC, TT_BURIEDBALL, TT_BEARTRAP, TT_WEB, TT_PIT, TT_LAVA, } from './const.js';
+import { A_CHA, COLNO, ROWNO, STONE, MAX_TYPE, ROOM, CORR, DOOR, STAIRS, LADDER, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER, CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL, D_NODOOR, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_TRAPPED, OROOM, VAULT, COURT, SWAMP, BEEHIVE, MORGUE, BARRACKS, ZOO, TEMPLE, LEPREHALL, COCKNEST, ANTHOLE, DELPHI, THEMEROOM, SHOPBASE, ROOMOFFSET, MAXNROFROOMS, SHARED, SDOOR, SCORR, IRONBARS, FOUNTAIN, SINK, ALTAR, GRAVE, THRONE, HEADSTONE, ENGRAVE, BURN, MARK, DUST, ENGR_BLOOD, DIR_N, DIR_S, DIR_E, DIR_W, DIR_180, XL_UP, XL_DOWN, XL_LEFT, XL_RIGHT, ACCESSIBLE, IS_WALL, IS_STWALL, IS_DOOR, IS_ROOM, IS_OBSTRUCTED, ZAP_POS, IS_FURNITURE, IS_POOL, IS_AIR, IS_LAVA, In_endgame, Is_earthlevel, Is_botlevel, Is_stronghold, Invocation_lev, In_hell, In_quest, In_V_tower, Is_oracle_level, Is_waterlevel, Is_firelevel, Is_airlevel, Is_astralevel, Is_knox_level, Is_rogue_level, In_sokoban, SPACE_POS, isok, W_NONDIGGABLE, W_NONPASSWALL, FILL_NONE, FILL_NORMAL, ICE, MOAT, POOL, WATER, LAVAPOOL, LAVAWALL, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN, DBWALL, ICED_POOL, ICED_MOAT, DB_NORTH, DB_SOUTH, DB_EAST, DB_WEST, DB_MOAT, DB_LAVA, DB_UNDER, DB_FLOOR, SHOP_HOLE_COST, TREE, AIR, CLOUD, A_NONE, A_CHAOTIC, A_NEUTRAL, A_LAWFUL, AM_SHRINE, AM_SANCTUM, Align2amask, LR_DOWNSTAIR, LR_UPSTAIR, LR_UPTELE, LR_DOWNTELE, LR_TELE, LR_BRANCH, LR_PORTAL, M_AP_NOTHING, M_AP_FURNITURE, M_AP_OBJECT, M_AP_MONSTER, M_AP_TYPE, MM_ANGRY, MM_ASLEEP, MM_NONAME, MM_NOGRP, MM_EMIN, MM_EPRI, MM_NOWAIT, MM_NOTAIL, MM_IGNOREWATER, MM_ADJACENTOK, MM_NOCOUNTBIRTH, MM_NOMSG, MM_MALE, MM_FEMALE, MM_MINVIS, MM_EDOG, NO_MINVENT, G_EXTINCT, G_GENOD, G_GONE, G_NOCORPSE, ROT_AGE, TROLL_REVIVE_CHANCE, HEALTHY_TIN, RANDOM_TIN, MAX_OIL_IN_FLASK, CORPSTAT_FEMALE, CORPSTAT_MALE, CORPSTAT_NEUTER, CORPSTAT_HISTORIC, CORPSTAT_INIT, CORPSTAT_SPE_VAL, STRAT_APPEARMSG, STRAT_CLOSE, STRAT_WAITFORU, ANTI_MAGIC, TT_BURIEDBALL, TT_BEARTRAP, TT_WEB, TT_PIT, TT_LAVA, } from './const.js';
 import { getObjectClassBounds, getObjectDefinition, requireObjectData, OBJECT_BASES, OBJECT_PROB, OBJECT_MATERIAL, OBJECT_SPELL_LEVEL, OBJECT_MERGE, OBJECT_WEIGHT, OBJECT_COST, OBJECT_SUBTYPE, WORM_TOOTH, UNICORN_HORN, HELM_OF_OPPOSITE_ALIGNMENT, GAUNTLETS_OF_FUMBLING, FUMBLE_BOOTS, LEVITATION_BOOTS, AMULET_OF_STRANGULATION, AMULET_OF_RESTFUL_SLEEP, AMULET_OF_CHANGE, AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK, BAG_OF_HOLDING, BAG_OF_TRICKS, TALLOW_CANDLE, WAX_CANDLE, BRASS_LANTERN, OIL_LAMP, MAGIC_LAMP, EXPENSIVE_CAMERA, CRYSTAL_BALL, TINNING_KIT, CAN_OF_GREASE, FIGURINE, MAGIC_MARKER, MAGIC_FLUTE, FROST_HORN, FIRE_HORN, HORN_OF_PLENTY, MAGIC_HARP, DRUM_OF_EARTHQUAKE, CORPSE, EGG, MEAT_RING, GLOB_OF_GRAY_OOZE, GLOB_OF_BLACK_PUDDING, KELP_FROND, SLIME_MOLD, MELON, LUMP_OF_ROYAL_JELLY, CREAM_PIE, CANDY_BAR, TIN, GOLD_PIECE, SPE_NOVEL, SPE_BOOK_OF_THE_DEAD, SPE_DIG, POT_SICKNESS, DILITHIUM_CRYSTAL, LUCKSTONE, LOADSTONE, TOUCHSTONE, ROCK, BOULDER, STATUE, DART, DAGGER, SPEAR, SLING, ORCISH_DAGGER, MACE, QUARTERSTAFF, BULLWHIP, FEDORA, ELVEN_ARROW, ELVEN_SPEAR, ELVEN_DAGGER, ELVEN_SHORT_SWORD, ELVEN_BROADSWORD, ELVEN_BOW, ELVEN_LEATHER_HELM, ELVEN_MITHRIL_COAT, ELVEN_CLOAK, ELVEN_SHIELD, ELVEN_BOOTS, ORCISH_ARROW, ORCISH_SHORT_SWORD, ORCISH_BOW, ORCISH_HELM, ORCISH_CHAIN_MAIL, ORCISH_CLOAK, URUK_HAI_SHIELD, ORCISH_SHIELD, SCIMITAR, AXE, PICK_AXE, DWARVISH_SPEAR, DWARVISH_SHORT_SWORD, DWARVISH_MATTOCK, DWARVISH_IRON_HELM, DWARVISH_MITHRIL_COAT, DWARVISH_CLOAK, DWARVISH_ROUNDSHIELD, IRON_SHOES, HELMET, SPLINT_MAIL, RING_MAIL, SMALL_SHIELD, ROBE, CLOAK_OF_PROTECTION, CLOAK_OF_MAGIC_RESISTANCE, LEATHER_ARMOR, LEATHER_JACKET, LEATHER_GLOVES, LEATHER_CLOAK, MIRROR, POT_OBJECT_DETECTION, RIN_INVISIBILITY, SHIELD_OF_REFLECTION, SADDLE, WAN_CANCELLATION, WAN_LIGHT, WAN_LIGHTNING, } from './object_data.js';
 import { MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_DIFFICULTY, MONSTER_GENO, MONSTER_ALIGNMENT, MONSTER_LEVEL, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_FLAGS3, MONSTER_SYMBOL, MONSTER_SIZE, MONSTER_MOVE, MONSTER_SOUND, MONSTER_HAS_WEAPON_ATTACK, MONSTER_COLOR, MONSTER_NAME, MONSTER_RESISTS, SPECIAL_PM, monsterClassSymbol, monsterIsPlayerMonster, requireMonsterData, monsterIsAmorphous, monsterIsNoncorporeal, monsterIsWhirly, } from './monster_data.js';
 import { isReviver, isRider, zombieForm, } from './corpse_species.js';
@@ -78,6 +78,8 @@ import { deleteEngravingAt, forgetEngravings, makeEngravingAt, restoreEngravings
 import { registerQuestLeader } from './quest.js';
 import { armorBonus } from './armor.js';
 import { initializeMonsterArmor } from './monworn.js';
+import { giveMonsterStartingObject } from './monster_starting_inventory.js';
+import { createPlayerMonster } from './mplayer.js';
 import { artifactByName, artifactExistCount, createRandomArtifact, nameArtifact } from './artifacts.js';
 import { addCreatedObjectToMonsterInventory, addObjectToMonsterInventory, linkCreatedObjectToMonsterInventory, linkObjectToMonsterInventory, restoreMonsterInventoryOwnership, unlinkMonsterObject, } from './monster_inventory.js';
 import { setupElementalBubbles } from './elemental.js';
@@ -1865,52 +1867,11 @@ async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
     let roamingMinion = null;
     let hasMonsterInventory = false;
     const allowMonsterInventory = !(mmflags & NO_MINVENT);
-    // C makemon.c:mongets(). Normalize birth equipment before mpickobj().
     const mongets = async (otyp) => {
-        if (!otyp)
-            return null;
-        const object = await mksobj(otyp, true, false);
-        if (MONSTER_SYMBOL[mndx] === 56) {
-            if (object.blessed) {
-                object.blessed = false;
-                object.cursed = true;
-            }
-        }
-        else if ((genderFlags & M2_MINION)
-            && (roamingMinion?.min_align ?? monsterAlignmentType(pendingMonster)) === A_LAWFUL) {
-            object.cursed = false;
-            object.spe = Math.max(0, object.spe);
-            object.oerodeproof = true;
-            object.oeroded = object.oeroded2 = 0;
-        }
-        else if (monsterIsPlayerMonster(mndx)
-            && object.oclass === WEAPON_CLASS
-            && (OBJECT_SUBTYPE[otyp] ?? 0) >= P_SHORT_SWORD
-            && (OBJECT_SUBTYPE[otyp] ?? 0) <= P_SABER) {
-            object.spe = 3 + rn2(4);
-        }
-        if (otyp === CANDELABRUM_OF_INVOCATION) {
-            object.spe = 0;
-            object.age = 0;
-            object.lamplit = false;
-            object.blessed = object.cursed = false;
-        }
-        else if (otyp === BELL_OF_OPENING) {
-            object.blessed = object.cursed = false;
-        }
-        else if (otyp === SPE_BOOK_OF_THE_DEAD) {
-            object.blessed = false;
-            object.cursed = true;
-        }
-        if (genderFlags & M2_PRINCE) {
-            if (object.oclass === WEAPON_CLASS)
-                object.spe = Math.max(1, object.spe);
-            else if (object.oclass === ARMOR_CLASS)
-                object.spe = Math.max(0, object.spe);
-        }
-        await addCreatedObjectToMonsterInventory(pendingMonster, object, game);
-        hasMonsterInventory = true;
-        return object.where === 'gone' ? null : object;
+        const object = await giveMonsterStartingObject(pendingMonster, otyp);
+        if (otyp)
+            hasMonsterInventory = true;
+        return object;
     };
     // C makemon() grants fixed possessions before ordinary equipment.
     // The Wizard count advances even when NO_MINVENT suppresses his book.
@@ -5035,7 +4996,7 @@ function selectNamedSpecialMonster(mndx) {
 }
 // sp_lev.c:create_monster() searches before construction, including when
 // a worm's tail occupies the requested square. The result must stay in croom.
-async function createSpecialMonster(context, mndx, x, y, mmflags) {
+async function createSpecialMonster(context, mndx, x, y, mmflags, playerMonster = false) {
     const level = requireGameLevel();
     if (monsterAtPosition(level, x, y)) {
         const nearby = findMonsterNearPosition(mndx, x, y);
@@ -5047,7 +5008,9 @@ async function createSpecialMonster(context, mndx, x, y, mmflags) {
     const room = context._room;
     if (room && !insideRoom(level, room, x, y))
         return null;
-    return await makemon(mndx, x, y, mmflags);
+    return playerMonster && mndx !== null
+        ? await createPlayerMonster(mndx, x, y, false)
+        : await makemon(mndx, x, y, mmflags);
 }
 async function specialMonsterAt(context, mndx, x, y, { randomGender = true, randomAlignment = true, peaceful = null, asleep = null, mmflags = 0, roamerAlignment = null, } = {}) {
     // Lua's find_montype() resolves a requested gender before
@@ -5063,7 +5026,7 @@ async function specialMonsterAt(context, mndx, x, y, { randomGender = true, rand
     if (!selection)
         return null;
     mndx = applyMinesSameRaceMonsterGate(selection.species);
-    const monster = await createSpecialMonster(context, mndx, context.xstart + x, context.ystart + y, mmflags);
+    const monster = await createSpecialMonster(context, mndx, context.xstart + x, context.ystart + y, mmflags, alignment === null && mndx !== null && monsterIsPlayerMonster(mndx));
     if (monster && requestedFemale !== null)
         monster.female = requestedFemale;
     if (monster && peaceful != null)
@@ -5140,7 +5103,7 @@ async function specialExplicitMonster(context, mndx, appearance = null, { random
     const point = await specialMonsterRandomLocation(context, selectedSpecies);
     if (!point)
         return null;
-    const monster = await createSpecialMonster(context, selectedSpecies, point.x, point.y, mmflags);
+    const monster = await createSpecialMonster(context, selectedSpecies, point.x, point.y, mmflags, alignment === null && monsterIsPlayerMonster(mndx));
     if (!monster)
         return null;
     if (requestedFemale != null)

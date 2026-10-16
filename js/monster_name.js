@@ -213,7 +213,7 @@ function formatMonsterName(monster, state, { adjective = '', article = 'the', ca
         return withIndefiniteArticle(description);
     return (article === 'none' ? '' : `${article} `) + description;
 }
-function monsterRank(monster, state) {
+export function monsterRank(monster, state = game) {
     const role = roles.find(candidate => SPECIAL_PM + 1 + candidate.mnum === monster.mnum) || state.urole;
     if (!role)
         throw new Error('Naming a player monster requires an initialized hero role.');

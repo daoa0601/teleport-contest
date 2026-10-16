@@ -120,7 +120,7 @@ import {
     DB_NORTH, DB_SOUTH, DB_EAST, DB_WEST, DB_MOAT, DB_LAVA,
     DB_UNDER, DB_FLOOR, SHOP_HOLE_COST,
     TREE, AIR, CLOUD,
-    A_NONE, A_CHAOTIC, A_NEUTRAL, A_LAWFUL, P_SHORT_SWORD, P_SABER,
+    A_NONE, A_CHAOTIC, A_NEUTRAL, A_LAWFUL,
     AM_SHRINE, AM_SANCTUM, Align2amask,
     LR_DOWNSTAIR, LR_UPSTAIR, LR_UPTELE, LR_DOWNTELE, LR_TELE, LR_BRANCH, LR_PORTAL,
     M_AP_NOTHING, M_AP_FURNITURE, M_AP_OBJECT, M_AP_MONSTER, M_AP_TYPE,
@@ -210,6 +210,8 @@ import {
 import { registerQuestLeader } from './quest.js';
 import { armorBonus } from './armor.js';
 import { initializeMonsterArmor } from './monworn.js';
+import { giveMonsterStartingObject } from './monster_starting_inventory.js';
+import { createPlayerMonster } from './mplayer.js';
 import { artifactByName, artifactExistCount, createRandomArtifact, nameArtifact } from './artifacts.js';
 import {
     addCreatedObjectToMonsterInventory, addObjectToMonsterInventory,
@@ -1981,48 +1983,10 @@ async function makemon(
     let roamingMinion: { min_align: number; renegade: boolean; mpeaceful: 0 | 1 } | null = null;
     let hasMonsterInventory = false;
     const allowMonsterInventory = !(mmflags & NO_MINVENT);
-    // C makemon.c:mongets(). Normalize birth equipment before mpickobj().
     const mongets = async (otyp: number): Promise<GameObject | null> => {
-        if (!otyp) return null;
-        const object = await mksobj(otyp, true, false);
-        if (MONSTER_SYMBOL[mndx] === 56) {
-            if (object.blessed) {
-                object.blessed = false;
-                object.cursed = true;
-            }
-        } else if ((genderFlags & M2_MINION)
-            && (roamingMinion?.min_align ?? monsterAlignmentType(pendingMonster)) === A_LAWFUL) {
-            object.cursed = false;
-            object.spe = Math.max(0, object.spe);
-            object.oerodeproof = true;
-            object.oeroded = object.oeroded2 = 0;
-        } else if (monsterIsPlayerMonster(mndx)
-            && object.oclass === WEAPON_CLASS
-            && (OBJECT_SUBTYPE[otyp] ?? 0) >= P_SHORT_SWORD
-            && (OBJECT_SUBTYPE[otyp] ?? 0) <= P_SABER) {
-            object.spe = 3 + rn2(4);
-        }
-
-        if (otyp === CANDELABRUM_OF_INVOCATION) {
-            object.spe = 0;
-            object.age = 0;
-            object.lamplit = false;
-            object.blessed = object.cursed = false;
-        } else if (otyp === BELL_OF_OPENING) {
-            object.blessed = object.cursed = false;
-        } else if (otyp === SPE_BOOK_OF_THE_DEAD) {
-            object.blessed = false;
-            object.cursed = true;
-        }
-
-        if (genderFlags & M2_PRINCE) {
-            if (object.oclass === WEAPON_CLASS) object.spe = Math.max(1, object.spe);
-            else if (object.oclass === ARMOR_CLASS) object.spe = Math.max(0, object.spe);
-        }
-
-        await addCreatedObjectToMonsterInventory(pendingMonster, object, game);
-        hasMonsterInventory = true;
-        return object.where === 'gone' ? null : object;
+        const object = await giveMonsterStartingObject(pendingMonster, otyp);
+        if (otyp) hasMonsterInventory = true;
+        return object;
     };
 
     // C makemon() grants fixed possessions before ordinary equipment.
@@ -5064,8 +5028,8 @@ function selectNamedSpecialMonster(mndx: number | null): { species: number | nul
 // a worm's tail occupies the requested square. The result must stay in croom.
 async function createSpecialMonster(
     context: SpecialLevelContext, mndx: number | null, x: number, y: number,
-    mmflags: number,
-): Promise<MonsterBirthState | null> {
+    mmflags: number, playerMonster = false,
+): Promise<Monster | null> {
     const level = requireGameLevel();
     if (monsterAtPosition(level, x, y)) {
         const nearby = findMonsterNearPosition(mndx, x, y);
@@ -5073,7 +5037,9 @@ async function createSpecialMonster(
     }
     const room = context._room;
     if (room && !insideRoom(level, room, x, y)) return null;
-    return await makemon(mndx, x, y, mmflags);
+    return playerMonster && mndx !== null
+        ? await createPlayerMonster(mndx, x, y, false)
+        : await makemon(mndx, x, y, mmflags);
 }
 
 async function specialMonsterAt(
@@ -5100,6 +5066,7 @@ async function specialMonsterAt(
     mndx = applyMinesSameRaceMonsterGate(selection.species);
     const monster = await createSpecialMonster(
         context, mndx, context.xstart + x, context.ystart + y, mmflags,
+        alignment === null && mndx !== null && monsterIsPlayerMonster(mndx),
     );
     if (monster && requestedFemale !== null) monster.female = requestedFemale;
     if (monster && peaceful != null) monster.mpeaceful = peaceful ? 1 : 0;
@@ -5195,7 +5162,8 @@ async function specialExplicitMonster(
     const selectedSpecies = applyMinesSameRaceMonsterGate(selection.species);
     const point = await specialMonsterRandomLocation(context, selectedSpecies);
     if (!point) return null;
-    const monster = await createSpecialMonster(context, selectedSpecies, point.x, point.y, mmflags);
+    const monster = await createSpecialMonster(context, selectedSpecies, point.x, point.y, mmflags,
+        alignment === null && monsterIsPlayerMonster(mndx));
     if (!monster) return null;
     if (requestedFemale != null) monster.female = requestedFemale;
     if (peaceful != null) monster.mpeaceful = peaceful ? 1 : 0;

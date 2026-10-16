@@ -113,6 +113,11 @@ const RANGED_WEAPON_PREFERENCE = [
     'luckstone', 'dart', 'cream pie',
 ].map(name => OBJECT_NAMES.indexOf(name));
 
+// C weapon.c:monmightthrowwep(). This is the native missile preference set.
+export function monsterMightThrowWeapon(object: GameObject): boolean {
+    return RANGED_WEAPON_PREFERENCE.includes(object.otyp);
+}
+
 const POLEARM_PREFERENCE = [
     'halberd', 'bardiche', 'spetum', 'bill-guisarme', 'voulge', 'ranseur',
     'guisarme', 'glaive', 'lucern hammer', 'bec de corbin', 'fauchard',
