@@ -240,6 +240,10 @@ function completedDrinks(screens: string[]): number {
         if (/What do you want to drink\?/.test(screen)) {
             awaitingDrink = true;
             before = undefined;
+        } else if (/Never mind\.|What do you want to /.test(screen)) {
+            // Inventory lost during another action is not a drink, even
+            // when cancellation itself was silent (!verbose).
+            awaitingDrink = false;
         }
         if (!awaitingDrink) continue;
         const count = inventoryPotionCount(screen);
@@ -298,10 +302,11 @@ export function validateItemRecipe(name: string, session: RecipeRecording): Reci
         break;
     case 'container-looting':
         has('item put into container', /You put .* into (?:the|your) /);
-        // out_container() prints the new inventory letter on the message
-        // line. An inventory or takeout menu can show the same item text.
-        require('item taken out of container', completedEffects(observed, /Take out what\?/,
-            /^[a-zA-Z] - an? /) >= 1);
+        // out_container() prints the inventory letter when the takeout
+        // menu closes. Later wielding or inventory messages are unrelated.
+        require('item taken out of container', observed.some((screen, index) =>
+            /Take out what\?/.test(observed[index - 1] ?? '')
+            && !/Take out what\?/.test(screen) && /^[a-zA-Z] - an? /.test(screen)));
         break;
     case 'wear-cycle':
         has('armor worn', /finish your dressing maneuver|You are now wearing/);

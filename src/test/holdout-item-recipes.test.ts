@@ -84,6 +84,18 @@ void test('selecting and deselecting a takeout item before cancelling leaves the
     assert.equal(result.ok, false, JSON.stringify(result));
 });
 
+void test('wielding a lance after cancelling takeout does not complete the container recipe', () => {
+    const result = validateRecipeRecording('container-looting', recording([
+        'You put an amethyst into the sack.',
+        'Take out what?\na - an amethyst\n(end)',
+        '',
+        'What do you want to wield?',
+        'b - a +1 lance (weapon in right hand).',
+        'Weapons\nb - a +1 lance (weapon in right hand)\nTools\ni - a sack containing 1 item\n(end)',
+    ]));
+    assert.equal(result.ok, false, JSON.stringify(result));
+});
+
 void test('potion recipe requires drinking, dipping, and breaking a thrown potion', () => {
     const messages = potionMessages('gain level', 'You feel more experienced.');
     assert.equal(validateRecipeRecording('potion-quaffing', recording(messages)).ok, true);
@@ -114,6 +126,19 @@ void test('an escaped drink prompt cannot count a later turn as a silent drink',
     messages[messages.length - 1] = 'Weapons\na - a dagger\nj - a potion of monster detection\n(end)';
     const result = validateRecipeRecording('potion-quaffing', recording([...messages, 'The pony whinnies.']));
     assert.equal(result.ok, false, JSON.stringify(result));
+});
+
+void test('dropping a potion after cancelling the second drink does not count as drinking it', () => {
+    for (const cancellation of ['Never mind.', '']) {
+        const messages = potionMessages('monster detection', cancellation).slice(0, -1);
+        const result = validateRecipeRecording('potion-quaffing', recording([
+            ...messages,
+            'What do you want to drop?',
+            'You drop a potion of monster detection.',
+            'Weapons\na - a dagger\n(end)',
+        ]));
+        assert.equal(result.ok, false, JSON.stringify(result));
+    }
 });
 
 void test('seeded scroll recipes explore many scroll types', () => {
