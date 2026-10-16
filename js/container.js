@@ -12,7 +12,7 @@ import { finishInventoryRemoval, useUpInventoryStack } from './hero_inventory.js
 import { setPrimaryWeapon, setSecondaryWeapon, setQuiverObject } from './weapon_slots.js';
 import { inventoryItemDescription, inventoryPrimaryHandDetail } from './invent.js';
 import { compactInventoryLetters, promptInventoryObject } from './inventory_prompt.js';
-import { definiteName, objectCombatName, objectNameIsPlural, observeObjectForNaming, ownedObjectAction, ownedObjectName, ownedSimpleObjectName, simpleObjectName, } from './objnam.js';
+import { definiteName, objectCombatName, objectNameIsPlural, observeObjectForNaming, ownedObjectAction, ownedObjectQuestion, ownedSimpleObjectName, simpleObjectName, } from './objnam.js';
 import { inventoryClassOrder, lootSortMode, objectClassHeading, sortObjects } from './object_sort.js';
 import { OBJECT_CLASS_SYMBOLS, objectClassForType } from './object_knowledge.js';
 import { clearJustPicked } from './just_picked.js';
@@ -672,8 +672,12 @@ async function chooseAction(container, usedTime, moreContainers) {
     const mayTakeOut = hasContents || !container.cknown;
     const mayPutIn = (game.inventory || []).some(object => object !== container);
     const title = mayTakeOut
-        ? `Do what with ${ownedObjectName(container, game, { capitalized: false })}?`
-        : `${ownedObjectName(container)} is empty.  Do what with it?`;
+        ? ownedObjectQuestion(container, {
+            prefix: 'Do what with ', suffix: '?', fallback: 'it', capitalized: false,
+        })
+        : ownedObjectQuestion(container, {
+            prefix: '', suffix: ' is empty.  Do what with it?', fallback: 'This', capitalized: true,
+        });
     const menuStyle = game.flags.menu_style ?? MENU_FULL;
     if (menuStyle === MENU_TRADITIONAL || menuStyle === MENU_COMBINATION) {
         const visibleChoices = `:${mayTakeOut ? 'o' : ''}${mayPutIn ? 'i' : ''}`

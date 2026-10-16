@@ -41,4 +41,26 @@ void test('an empty floor bag uses the floor ownership prefix', async () => {
     ]);
     assert.equal(game.context.move, 0);
 });
+for (const cknown of [false, true]) {
+    void test(`a long named and called bag preserves its ${cknown ? 'empty' : 'ordinary'} question`, async () => {
+        freshPlayableRoom({ flags: { menu_style: MENU_TRADITIONAL } });
+        const personalName = 'Travel supplies '.repeat(4).slice(0, 63);
+        const callName = 'Waterproof luggage '.repeat(3);
+        const bag = await addInventoryObject(OILSKIN_SACK, {
+            initialize: false, cknown, known: false, typeKnown: false,
+            oextra: { oname: personalName },
+        });
+        game._objectCallNames = { [OILSKIN_SACK]: callName };
+        const input = resetInputState();
+        await answerPrompts(applyInventoryObject(bag), input, [
+            { prompt: cknown
+                    ? /Your bag called Waterpro\.\.\. named[\s\S]*is empty\.  Do what with it\?/
+                    : /Do what with your bag called Waterpro\.\.\. named[\s\S]*\?/,
+                keys: 'q' },
+        ]);
+        assert.equal(bag.oextra?.oname, personalName);
+        assert.equal(game._objectCallNames[OILSKIN_SACK], callName);
+        assert.equal(game.context.move, 0);
+    });
+}
 //# sourceMappingURL=container_ownership.test.js.map
