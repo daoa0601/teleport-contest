@@ -15,7 +15,7 @@ import { bot, clearMessageWindow, docrt, flushPendingTopline, flush_screen, plin
 import { vision_recalc } from './vision.js';
 import { getLine } from './query.js';
 import { changeInventoryOrder, inventoryOrderSymbols } from './object_sort.js';
-import { ATR_INVERSE, restoreMenuUnderlay, showChoiceWindow, showInventoryWindow, showMultiSelectWindow, snapshotMenuUnderlay } from './windows.js';
+import { ATR_INVERSE, restoreMenuUnderlay, showInventoryWindow, showMultiSelectWindow, snapshotMenuUnderlay } from './windows.js';
 import type { MenuLabel, PageLocalMenuItem, PageLocalMultiSelectSection } from './windows.js';
 import {
     COLNO, MENU_FULL, MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPINVERT, PICK_ONE, PL_PSIZ,
@@ -507,16 +507,14 @@ function numberPadDescription(): string {
 }
 
 async function editNumberPad(): Promise<void> {
-    await flushPendingTopline();
-    const key = await showChoiceWindow({
-        title: 'Select number_pad mode:',
-        entries: NUMBER_PAD_CHOICES.map((text, index) => ({
-            key: String.fromCharCode(97 + index), text,
-        })),
-        validKeys: [...'abcdef012345'].map(key => key.charCodeAt(0)).concat([27, 32, 10, 13]),
+    const selected = await showMultiSelectWindow({
+        title: 'Select number_pad mode:', omitHeadings: true, pickOne: true,
+        sections: [{ items: NUMBER_PAD_CHOICES.map((text, index) => ({
+            key: String.fromCharCode(97 + index), groupAccelerator: String(index), text, value: index,
+        })) }],
     });
-    const index = key >= 97 && key <= 102 ? key - 97 : key >= 48 && key <= 53 ? key - 48 : -1;
-    if (index >= 0) setNumberPadOption(index === 5 ? -1 : index, game);
+    const index = selected[0];
+    if (index !== undefined) setNumberPadOption(index === 5 ? -1 : index, game);
 }
 
 const REQUEST_MENU_BOOLEAN_OPTIONS = [

@@ -348,4 +348,20 @@ void test('accepting an autounlock alias preserves its current key action', asyn
     await rhack('O'.charCodeAt(0));
     assert.equal(game.flags.autounlock, 2);
 });
+void test('number-pad mode selection honors the configured menu search key', async () => {
+    freshObjectRoom();
+    applyNethackrc('OPTIONS=menu_search:;');
+    const input = resetInputState();
+    input.feed('b;');
+    const command = rhack('O'.charCodeAt(0));
+    await input.waitUntilBlocked();
+    try {
+        assert.match(game._pending_message, /Search for:/);
+    }
+    finally {
+        input.feed('phone\n\x1b\x1b');
+        await command;
+    }
+    assert.equal(game.commandBindings.phoneLayout, true);
+});
 //# sourceMappingURL=options_interactive.test.js.map
