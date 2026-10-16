@@ -1523,9 +1523,17 @@ export function show_glyph_cell(
         && game.iflags.wc_inverse !== false) attr |= ATR_INVERSE;
     if (game.flags.color === false) {
         color = NO_COLOR;
-        // reset_glyphmap() marks ice sharing the floor symbol with MG_BW_ICE.
-        // tty_print_glyph() displays that flag inversely when permitted.
-        if (nextGlyph.glyph === cmapToGlyph(CmapSymbol.ice)
+        // reset_glyphmap() distinguishes terrain which otherwise shares a
+        // monochrome symbol. tty_print_glyph() shows those markers inversely.
+        const symbol = nextGlyph.glyph;
+        const indistinguishable = symbol === cmapToGlyph(CmapSymbol.ice)
+            && ch === cmapSymbolAppearance(CmapSymbol.room).ch
+            || (symbol === cmapToGlyph(CmapSymbol.lava) || symbol === cmapToGlyph(CmapSymbol.lavawall))
+                && (ch === cmapSymbolAppearance(CmapSymbol.pool).ch
+                    || ch === cmapSymbolAppearance(CmapSymbol.water).ch)
+            || symbol === cmapToGlyph(CmapSymbol.sink)
+                && ch === cmapSymbolAppearance(CmapSymbol.fountain).ch;
+        if (indistinguishable
             && game.flags.use_inverse !== false
             && game.iflags.use_inverse !== false && game.iflags.wc_inverse !== false) {
             attr |= ATR_INVERSE;
