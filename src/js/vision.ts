@@ -9,11 +9,13 @@ import {
     M_AP_OBJECT, M_AP_FURNITURE, M_AP_TYPE, Upolyd,
     SV0, SV1, SV2, SV3, SV4, SV5, SV6, SV7, SVALL,
     IS_WALL, Is_rogue_level, Is_waterlevel, ROOMOFFSET, TT_PIT,
+    TEMP_LIT,
 } from './const.js';
 import { newsym } from './display.js';
 import { BOULDER } from './object_data.js';
 import { MONSTER_SYMBOL } from './monster_data.js';
 import { objectLightRadius } from './light.js';
+import { objectsInTimerGraph } from './object_timers.js';
 import { isMoatAt, isPoolAt } from './terrain_properties.js';
 import type { GameMap } from './game.js';
 import type { GameObject } from './object_types.js';
@@ -53,7 +55,7 @@ export function monsterEmitsLight(mnum: number | undefined): boolean {
 function mobileLightSources(level: GameMap): (Position & { range: number })[] {
     const monsters = [...(level?.monsters || [])];
     const sources = monsters.filter(monster =>
-        !monster.dead && monster.mx > 0 && monsterEmitsLight(monster.mnum))
+        !monster.dead && !monster.mburied && monster.mx > 0 && monsterEmitsLight(monster.mnum))
         .map(monster => ({ x: monster.mx, y: monster.my, range: 1 }));
     if (Upolyd(game.u) && monsterEmitsLight(game.u.umonnum)) {
         // C polyself() increases the hero's radius from one to two so
@@ -83,37 +85,38 @@ function mobileLightSources(level: GameMap): (Position & { range: number })[] {
 // C light.c:any_light_source(). The monster pass must request a refresh even
 // when the hero stays still: a monster can move its own light or a lit object.
 export function hasLightSources(): boolean {
-    if (game.level && mobileLightSources(game.level).length > 0) return true;
-    // C retains buried oil and migrating sources in light_base, but
-    // do_light_sources() cannot locate them. They still require movemon's refresh.
-    return (game.level?.buriedObjects || []).some(object => objectLightRadius(object) > 0)
-        || (game._migratingMonsters || []).some(monster => !monster.dead
-        && (monsterEmitsLight(monster.mnum)
-            || (monster.minvent || monster.inventory || []).some(object =>
-                objectLightRadius(object) > 0)))
-        || (game.migratingObjects || []).some(object => objectLightRadius(object) > 0);
+    // Sources in containers, underground, or in transit still exist even
+    // when get_obj_location()/get_mon_location() cannot expose their light.
+    return !!game._transientLights?.length
+        || Upolyd(game.u) && monsterEmitsLight(game.u.umonnum)
+        || [...(game.level?.monsters ?? []), ...(game._migratingMonsters ?? [])]
+            .some(monster => !monster.dead && monsterEmitsLight(monster.mnum))
+        || objectsInTimerGraph(game).some(object => objectLightRadius(object) > 0);
 }
 
-function mobileLightMap(level: GameMap, couldSee: Uint8Array[]): Uint8Array[] {
-    const lit = Array.from({ length: ROWNO }, () => new Uint8Array(COLNO));
+function doLightSources(level: GameMap, couldSee: Uint8Array[]): void {
+    let atHeroRange = 0;
     for (const source of mobileLightSources(level)) {
+        const atHero = source.x === game.u.ux && source.y === game.u.uy;
+        if (atHero) {
+            if (atHeroRange >= source.range) continue;
+            atHeroRange = source.range;
+        }
         const limits = visionValue(circle_start, source.range);
         for (let y = Math.max(0, source.y - source.range);
             y <= Math.min(ROWNO - 1, source.y + source.range); y++) {
             const offset = visionValue(circle_data, limits + Math.abs(y - source.y));
             for (let x = Math.max(1, source.x - offset);
                 x <= Math.min(COLNO - 1, source.x + offset); x++) {
-                const atHero = source.x === game.u.ux
-                    && source.y === game.u.uy;
                 if (atHero ? ((couldSee[y]?.[x] ?? 0) & COULD_SEE)
                     : ((source.x === x && source.y === y)
                         || clearPath(source.x, source.y, x, y))) {
-                    visionRow(lit, y)[x] = 1;
+                    const row = visionRow(couldSee, y);
+                    row[x] = visionValue(row, x) | TEMP_LIT;
                 }
             }
         }
     }
-    return lit;
 }
 
 // C ref: vision.c seenv_matrix
@@ -776,8 +779,9 @@ export function vision_recalc(control = 0): void {
             if (!underwater && xray < nightVision) extendHeroSight(output, nightVision, false);
         }
     }
-    const light = blind ? null : mobileLightMap(level, next);
-    const litAt = (x: number, y: number) => !!level.at(x, y)?.lit || !!light?.[y]?.[x];
+    if (!blind) doLightSources(level, next);
+    const litAt = (x: number, y: number) => !!level.at(x, y)?.lit
+        || !!((next[y]?.[x] ?? 0) & TEMP_LIT);
     const old = game.viz_array;
     const old_rmin = game._viz_rmin, old_rmax = game._viz_rmax;
     game.viz_array = next;
