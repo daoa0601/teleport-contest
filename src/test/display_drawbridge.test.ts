@@ -26,7 +26,7 @@ void test('a gas cloud does not obscure a monster on inaccessible dry ground bel
     const square = level.requireAt(14, 10);
     square.typ = DRAWBRIDGE_UP;
     square.drawbridgemask = DB_FLOOR;
-    level.regions = [{ kind: 'gas-cloud', visible: true, heroFault: false,
+    level.regions = [{ kind: 'gas-cloud', heroInside: false, visible: true, heroFault: false,
         damage: 0, ttl: 3, cells: [{ x: 14, y: 10 }], monsterIds: [] }];
 
     newsym(14, 10);

@@ -130,8 +130,7 @@ async function makeGasCloud(
     silent: boolean, publish: MessagePublisher,
 ): Promise<GasCloud | null> {
     if (!state?.level) return null;
-    const inside = state.level.regions.some(region =>
-        regionContains(region, state.u.ux, state.u.uy));
+    const inside = state.level.regions.some(region => region.heroInside);
     const orderedCells = uniqueXMajorCells(cells);
     const monsterIds = new Set<number>();
     for (const cell of orderedCells) {
@@ -147,6 +146,7 @@ async function makeGasCloud(
         ttl,
         cells: orderedCells,
         monsterIds: [...monsterIds],
+        heroInside: orderedCells.some(cell => cell.x === state.u.ux && cell.y === state.u.uy),
     };
     (state.level.regions ||= []).push(region);
     if (state.level === game.level) {
@@ -162,7 +162,7 @@ async function makeGasCloud(
         }
     }
     if (!state.in_mklev && !inside && !silent
-        && regionContains(region, state.u.ux, state.u.uy)) {
+        && region.heroInside) {
         await publish(`You are enveloped in a cloud of ${damage ? 'noxious gas' : 'steam'}!`);
         state._lastPlineKind = PLNMSG_ENVELOPED_IN_GAS;
     }
@@ -247,6 +247,14 @@ function regionContains(region: GasCloud, x: number, y: number): boolean {
     return region.cells?.some(cell => cell.x === x && cell.y === y);
 }
 
+// C in_out_region()/update_player_regions(): exposure changes at the caller's
+// movement boundary, which can precede a blocked or refused step.
+export function updateHeroRegions(state: GameState = game,
+    x = state.u.ux, y = state.u.uy): void {
+    for (const region of requireGameLevel(state).regions)
+        region.heroInside = regionContains(region, x, y);
+}
+
 // C m_in_out_region()/update_monster_region(). Membership changes at the
 // movement boundary; swapping with the hero does not cross this boundary.
 export function updateMonsterRegions(monster: Monster, state: GameState = game,
@@ -277,13 +285,13 @@ export function heroIsInDangerousRegion(state: GameState = game): boolean {
     if (heroIsBreathless(state) || state.u.poisonResistance
         || (state.u.umonnum !== undefined && monsterIsNonliving(state.u.umonnum))) return false;
     return requireGameLevel(state).regions.some(region =>
-        region.kind === 'gas-cloud' && regionContains(region, state.u.ux, state.u.uy));
+        region.kind === 'gas-cloud' && region.heroInside);
 }
 
 export async function rescueHeroFromRegion(state: GameState = game): Promise<void> {
     const level = requireGameLevel(state);
     const clouds = level.regions.filter(region =>
-        region.kind === 'gas-cloud' && regionContains(region, state.u.ux, state.u.uy));
+        region.kind === 'gas-cloud' && region.heroInside);
     const cloud = clouds[0];
     if (clouds.length > 1 || cloud && cloud.ttl < 0) {
         await teleportHeroSafely();
@@ -369,7 +377,7 @@ async function affectHeroWithGas(
     region: GasCloud, state: GameState,
     { publish, rollOne, wake, die }: RegionTurnHandlers,
 ): Promise<RegionEvent | null> {
-    if (!regionContains(region, state.u.ux, state.u.uy)) return null;
+    if (!region.heroInside) return null;
     if (Upolyd(state.u)) maintainCloudForFog(region, state.u.umonnum);
     if (region.damage < 1) return null;
     const tolerance = heroGasTolerance(state);

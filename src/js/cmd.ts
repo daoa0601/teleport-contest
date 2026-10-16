@@ -21,7 +21,7 @@ import { waterDamageObject } from './trap.js';
 import { dip, dipInto } from './potion_dip.js';
 import { AKLYS, BOOMERANG, CRYSTAL_BALL } from './object_data.js';
 import { useCrystalBall } from './crystal_ball.js';
-import { visibleRegionAt } from './regions.js';
+import { updateHeroRegions, visibleRegionAt } from './regions.js';
 import type { PageLocalMultiSelectItem } from './windows.js';
 import type { ChoiceMenuItem } from './windows.js';
 import { wizIntrinsic } from './wizard_intrinsics.js';
@@ -7310,6 +7310,7 @@ async function domoveCore(dx: number, dy: number, explicitAttempt: boolean): Pro
                 return ballChainMove.consumedTurn;
             }
             const oldx = u.ux, oldy = u.uy;
+            updateHeroRegions(game, newx, newy);
             u.ux = newx;
             u.uy = newy;
             await settleBeastHeroDisplacement(monster, game);
@@ -7371,6 +7372,7 @@ async function domoveCore(dx: number, dy: number, explicitAttempt: boolean): Pro
             // later refuses to swap and both rider and steed move back.
             const oldx = u.ux, oldy = u.uy;
             u.ux0 = oldx; u.uy0 = oldy;
+            updateHeroRegions(game, newx, newy);
             u.ux = newx; u.uy = newy;
             await moveSteedWithHero();
             // C drag_ball() can pull the hero back before the swap check.
@@ -7604,6 +7606,7 @@ async function domoveCore(dx: number, dy: number, explicitAttempt: boolean): Pro
     const oldx = u.ux, oldy = u.uy;
     u.ux0 = oldx;
     u.uy0 = oldy;
+    updateHeroRegions(game, newx, newy);
     u.ux = newx;
     u.uy = newy;
     await moveSteedWithHero();

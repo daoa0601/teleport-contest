@@ -3,7 +3,7 @@
 
 import { formatFeltMessage } from './hero_speech.js';
 import { monsterHasMapPosition, monsterAtPosition, placeMonsterAt } from './monster_location.js';
-import { updateMonsterRegions } from './regions.js';
+import { updateHeroRegions, updateMonsterRegions } from './regions.js';
 import { clearMonsterWormFromMap, placeMonsterWormTailRandomly } from './monster_worm.js';
 import { game, requireLiveGame, requireGameLevel, requirePlayingGame } from './gstate.js';
 import { impossible } from './diagnostics.js';
@@ -215,9 +215,9 @@ export function heroTeleportDestinationOk(
     const trap = requireGameLevel(state).traps.find(candidate => candidate.tx === x && candidate.ty === y);
     if (!trapAllowedAtDestination(state, trap, allowTrap)) return false;
     if (!goodPosition(x, y, { kind: 'hero' }, { state })) return false;
-    return !crossesTeleportBoundary(
-        state, state.u.ux, state.u.uy, x, y,
-    );
+    if (crossesTeleportBoundary(state, state.u.ux, state.u.uy, x, y)) return false;
+    updateHeroRegions(state, x, y);
+    return true;
 }
 
 function shuffleCoordinates(coordinates: Position[], random: RandomBelow) {
@@ -1033,6 +1033,7 @@ export async function moveHeroByTeleport(x: number, y: number, state = game, { a
     if (oldTrap && is_pit(oldTrap.ttyp)) await fillPitWithBoulderAt(oldx, oldy, state);
     const chain = state.uchain || u.uchain;
     if (ballActive && chain?.where === 'free') await placeBallAndChain(state);
+    updateHeroRegions(state);
     newsym(oldx, oldy);
     await see_monsters();
     state.vision_full_recalc = 1;
