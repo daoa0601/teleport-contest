@@ -341,4 +341,11 @@ void test('status condition choices update the live status line', async () => {
     await flush_screen(1);
     assert.match(screen(), /Bare/);
 });
+void test('accepting an autounlock alias preserves its current key action', async () => {
+    freshObjectRoom();
+    applyNethackrc('OPTIONS=autounlock:apply_key');
+    resetInputState().feed('i\n\x1b');
+    await rhack('O'.charCodeAt(0));
+    assert.equal(game.flags.autounlock, 2);
+});
 //# sourceMappingURL=options_interactive.test.js.map

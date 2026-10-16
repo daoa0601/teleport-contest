@@ -2,6 +2,7 @@
 import { game } from './gstate.js';
 import { plineWithContinuation } from './display.js';
 import { visibleCommandKey } from './command_keys.js';
+import { autoUnlockFlags } from './lock_pick.js';
 import { statusVersion } from './status_version.js';
 import { statusConditionOptions } from './status_conditions.js';
 import { showInventoryWindow, showMultiSelectWindow } from './windows.js';
@@ -215,22 +216,13 @@ async function editParanoidConfirmation() {
     if (selected !== null)
         game.flags.paranoia_bits = selected.reduce((mask, bit) => mask | bit, 0);
 }
-function unlockBits() {
-    const value = game.flags.autounlock;
-    if (typeof value === 'number')
-        return value;
-    if (value === false)
-        return 0;
-    if (typeof value !== 'string')
-        return 2;
-    return UNLOCK_ACTIONS.reduce((bits, [name], index) => value.includes(name) ? bits | (1 << index) : bits, 0);
-}
 function unlockDescription() {
-    return UNLOCK_ACTIONS.filter((_, index) => (unlockBits() & (1 << index)) !== 0)
+    const bits = autoUnlockFlags(game);
+    return UNLOCK_ACTIONS.filter((_, index) => (bits & (1 << index)) !== 0)
         .map(([name]) => name).join(' + ') || 'none';
 }
 async function editAutounlock(giveMessage) {
-    const previous = unlockBits();
+    const previous = autoUnlockFlags(game);
     const separator = game.iflags.menu_tab_sep ? '\t' : ' ';
     const selected = await showMultiSelectWindow({
         title: "Select 'autounlock' actions:", omitHeadings: true, signalEscape: true,
@@ -241,7 +233,7 @@ async function editAutounlock(giveMessage) {
     });
     if (selected !== null)
         game.flags.autounlock = selected.reduce((bits, bit) => bits | bit, 0);
-    const changed = unlockBits() !== previous;
+    const changed = autoUnlockFlags(game) !== previous;
     if (giveMessage && (changed || game.flags.verbose))
         await plineWithContinuation(`'autounlock' ${changed ? 'changed to' : 'is still'} '${unlockDescription()}'.`);
 }
