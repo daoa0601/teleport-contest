@@ -5,6 +5,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { PARANOID_PRAY, PARANOID_SWIM, PARANOID_TRAP } from '../js/const.js';
+import { inventoryOrderSymbols } from '../js/object_sort.js';
 
 function screen(): string {
     return game.nhDisplay?.grid.map(row => row.map(cell => cell.ch).join('')).join('\n') ?? '';
@@ -218,4 +219,54 @@ void test('traditional autopickup prompts for symbols and preserves order', asyn
 
     assert.ok(views.some(view => view.includes('New pickup_types: [') && view.includes('am] ($)')));
     assert.equal(game.flags.pickup_types, ')%');
+});
+
+for (const [value, expected] of [['12', 12], ['-2', 5], ['nonsense', 0], ['', 5]] as const) {
+    void test(`pile_limit accepts native numeric input ${JSON.stringify(value)}`, async () => {
+        freshObjectRoom();
+
+        const views = await fullOptions(['pile_limit'], () => `${value}\n`);
+
+        assert.ok(views.some(view => view.includes('Set pile_limit to what?')));
+        assert.equal(game.flags.pile_limit, expected);
+    });
+}
+
+void test('packorder reports bad classes while retaining the valid entries', async () => {
+    freshObjectRoom();
+
+    await fullOptions(['packorder'], view => view.includes('Set packorder to what?') ? ')~)%\n' : ' ');
+
+    assert.match(inventoryOrderSymbols(), /^\$\)%/);
+    assert.match(game._pending_message, /Duplicate object class '\)'/);
+    assert.match(game._pending_message, /Not an object class '~'/);
+});
+
+void test('invalid menuinvertmode leaves its previous value and reports the range error', async () => {
+    freshObjectRoom();
+    game.iflags.menuinvertmode = 2;
+
+    const views = await fullOptions(['menuinvertmode'], () => '3\n');
+
+    assert.ok(views.some(view => view.includes('Set menuinvertmode to what?')));
+    assert.equal(game.iflags.menuinvertmode, 2);
+    assert.match(game._pending_message, /Illegal menuinvertmode parameter '3'/);
+});
+
+void test('invalid status height is rejected by its compound prompt', async () => {
+    freshObjectRoom();
+
+    const views = await fullOptions(['statuslines'], () => '4\n');
+
+    assert.ok(views.some(view => view.includes('Set statuslines to what?')));
+    assert.match(game._pending_message, /'statuslines:4' is invalid; must be 2 or 3/);
+});
+
+void test('a highlighting rule with an unknown status field reports that field', async () => {
+    freshObjectRoom();
+
+    const views = await fullOptions(['hilite_status'], () => 'mystery/red\n');
+
+    assert.ok(views.some(view => view.includes('Set hilite_status to what?')));
+    assert.match(game._pending_message, /Unknown status field 'mystery'/);
 });

@@ -6,6 +6,7 @@ import { displayHelpFile, displayPagerText } from './pager_help.js';
 import { setConditionOption } from './status_conditions.js';
 import { classifyStatusTerrain } from './status_terrain.js';
 import type { GameFlags, InterfaceFlags, LootSortMode, MenuStyle } from './flags.js';
+import { isTextOption, setTextOption, textOptionValue } from './option_values.js';
 import { compoundMenuValue, editCompoundMenu } from './option_editors.js';
 import { CommandBindings } from './command_bindings.js';
 import { changePreferredFruit, normalizePreferredFruitName } from './fruit.js';
@@ -750,7 +751,9 @@ function scoreDisplayDescription(): string {
 
 function requestMenuSections(): PageLocalMultiSelectSection<string>[] {
     const { role, race, gender, alignment } = requestMenuIdentity();
-    const choice = (name: string, text: string): PageLocalMenuItem<string> => ({ value: name, text });
+    const choice = (name: string, text: string): PageLocalMenuItem<string> => ({
+        value: name, text: textOptionValue(name) === null ? text : `${name.padEnd(24)}[${textOptionValue(name)}]`,
+    });
     const label = (text: string): MenuLabel => ({ selectable: false, text });
     const readonly = (name: string, value: string | boolean) => label(`    ${name.padEnd(24)}[${value}]`);
     const boolean = (name: BooleanOptionName) => choice(name,
@@ -1037,13 +1040,22 @@ async function editCompoundOption(name: string, fullMenu: boolean): Promise<void
     if (name === 'number_pad') await editNumberPad();
     else if (name === 'menustyle') await editMenuStyle();
     else if (name === 'fruit') await editFruitOption(fullMenu);
-    else if (name === 'packorder') {
-        const order = await getLine('Set packorder to what?',
-            (_character: string, key: number) => key >= 32 && key < 127);
-        if (order !== null && order.length) changeInventoryOrder(order);
-    } else if (name === 'pickup_types') await editPickupTypes(fullMenu);
+    else if (name === 'pickup_types') await editPickupTypes(fullMenu);
     else if (name === 'sortloot') await editSortLoot();
-    else await editCompoundMenu(name, fullMenu);
+    else if (await editCompoundMenu(name, fullMenu)) return;
+    else if (isTextOption(name)) {
+        const value = await getLine(`Set ${name} to what?`,
+            (_character: string, key: number) => key >= 32 && key < 127);
+        if (value === null) return;
+        if (name === 'scores') {
+            const parsed = parseScoreOption(value, false);
+            if (parsed) {
+                game.flags.end_top = parsed.end_top;
+                game.flags.end_around = parsed.end_around;
+                game.flags.end_own = parsed.end_own;
+            } else await plineWithContinuation("Missing parameter for 'scores:'");
+        } else await setTextOption(name, value);
+    }
 }
 
 // Native options.c:handler_menustyle(). PICK_ONE retains the old selection
