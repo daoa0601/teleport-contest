@@ -67,10 +67,10 @@ export function inventoryOrderSymbols(state: InventoryOrderState = game): string
 
 // options.c:change_inv_order() keeps valid entries even when others are bad,
 // then fills omitted classes using their previous order. Omitted gold leads.
-export function changeInventoryOrder(symbols: string, state: InventoryOrderState = game): string[] {
+export function changeInventoryOrder(symbols: string, state: InventoryOrderState = game): boolean {
     const change = planInventoryOrder(symbols, state);
     state.flags.inv_order = change.order;
-    return change.errors;
+    return change.errors.length === 0;
 }
 
 export function planInventoryOrder(symbols: string, state: InventoryOrderState = game): { order: number[]; errors: string[] } {

@@ -29,7 +29,7 @@ export function inventoryOrderSymbols(state = game) {
 export function changeInventoryOrder(symbols, state = game) {
     const change = planInventoryOrder(symbols, state);
     state.flags.inv_order = change.order;
-    return change.errors;
+    return change.errors.length === 0;
 }
 export function planInventoryOrder(symbols, state = game) {
     const previous = inventoryClassOrder(state);

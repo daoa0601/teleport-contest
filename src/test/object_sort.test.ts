@@ -114,16 +114,16 @@ void test('configured pack order is visible in the actual inventory window, incl
 });
 
 void test('pack order fills omitted classes from the previous order and forces omitted gold first', () => {
-    assert.equal(changeInventoryOrder('%)').length, 0);
+    assert.equal(changeInventoryOrder('%)'), true);
     assert.match(inventoryOrderSymbols(), /^\$%\)/);
-    assert.equal(changeInventoryOrder('=)').length, 0);
+    assert.equal(changeInventoryOrder('=)'), true);
     assert.match(inventoryOrderSymbols(), /^\$=\)%/);
-    assert.equal(changeInventoryOrder(')$%').length, 0);
+    assert.equal(changeInventoryOrder(')$%'), true);
     assert.match(inventoryOrderSymbols(), /^\)\$%/);
 });
 
 void test('bad pack-order entries do not discard the valid requested order', () => {
-    assert.equal(changeInventoryOrder(')%)~').length, 2);
+    assert.equal(changeInventoryOrder(')%)~'), false);
     assert.match(inventoryOrderSymbols(), /^\$%\)/);
 });
 
