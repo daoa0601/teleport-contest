@@ -15,7 +15,7 @@ export function allocateMonsterBirthExtensions(monster, flags) {
         };
     }
     if (flags & MM_EMIN)
-        monster.emin = { parentmid, min_align: 0, renegade: 0 };
+        ensureMinionData(monster).parentmid = parentmid;
     if (flags & MM_EPRI) {
         monster.epri = {
             parentmid, shroom: 0, shralign: 0, shrpos: { x: 0, y: 0 },
@@ -30,6 +30,7 @@ export function allocateMonsterBirthExtensions(monster, flags) {
             bill: [], billct: 0, billUnavailable: true,
             credit: 0, debit: 0, loan: 0, robbed: 0, surcharge: 0,
             following: 0, customer: '', visitct: 0, dismiss_kops: false,
+            break_seq: 0, seq_peaceful: 0,
         };
     }
     if (flags & MM_EGD) {
@@ -39,5 +40,14 @@ export function allocateMonsterBirthExtensions(monster, flags) {
             warncnt: 0, fcbeg: 0, fcend: 0, fakecorr: [], dropgoldcnt: 0,
         };
     }
+}
+// C minion.c:newemin(). Preserve an existing record and its ownership link.
+export function ensureMinionData(monster) {
+    const minion = monster.emin ?? monster.mextra?.emin
+        ?? { parentmid: monster.m_id, min_align: 0, renegade: 0 };
+    monster.emin = minion;
+    monster.mextra ??= {};
+    monster.mextra.emin = minion;
+    return minion;
 }
 //# sourceMappingURL=monster_birth_extensions.js.map

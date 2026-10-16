@@ -12,10 +12,13 @@ import { loseHeroHp } from './hero_damage.js';
 import { finishLivingGame } from './end.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import {
-    flushPendingTopline, flush_screen, pline, plineWithContinuation, docrt, bot,
+    flushPendingTopline, flush_screen, pline, plineWithContinuation, docrt, bot, newsym,
 } from './display.js';
 import { vision_recalc, vision_reset, vision_reset_new_level } from './vision.js';
-import { d, rnd, rn2 } from './rng.js';
+import { d, rnd, rn1, rn2 } from './rng.js';
+import { gainGuardianAngel } from './guardian_angel.js';
+import { createPlayerMonsters } from './mplayer.js';
+import { monsterAlignmentType, setMonsterMalign } from './monster_alignment.js';
 import { deliverMigratingObjects, impactDrop } from './object_migration.js';
 import {
     deliverMigratingMonsters, discardMigrations, updateMonsterLastMove,
@@ -47,7 +50,7 @@ import {
     dragBallDownStairs, fallWithIronBall, heroIsPunished, placeBallAndChain,
     unplaceBallAndChain,
 } from './ball.js';
-import { recordDungeonEntryAchievements } from './achievements.js';
+import { recordAchievement, recordDungeonEntryAchievements } from './achievements.js';
 import { heroHasOlfaction } from './polyself.js';
 import { checkSpecialRoom } from './shk.js';
 import { fixShopDamage } from './shop_damage.js';
@@ -59,7 +62,7 @@ import { fumaroles } from './monmove.js';
 import { moveElementalBubbles } from './elemental.js';
 import {
     CORR, ROOM, DISMOUNT_FELL, LR_UPTELE, LR_DOWNTELE, RLOC_NOMSG,
-    MAGIC_PORTAL, In_endgame, Is_airlevel, Is_waterlevel,
+    MAGIC_PORTAL, In_endgame, Is_airlevel, Is_waterlevel, Is_astralevel, ACH_ENDG, ACH_ASTR,
     Is_rogue_level, Is_knox_level, UTOTYPE_DEFERRED,
 } from './const.js';
 import { resurrectWizard } from './wizard.js';
@@ -371,7 +374,11 @@ export async function gotoLevel(targetDepth: Partial<DungeonLocation>, {
     }
     const enteredEndgame = oldDepth.dnum !== newDepth.dnum
         && In_endgame(newDepth);
-    if (enteredEndgame && game.u?.uhave?.amulet)
+    if (enteredEndgame) recordAchievement(game, ACH_ENDG);
+    if (!cached && Is_astralevel(newDepth)) {
+        await finishAstralArrival();
+        recordAchievement(game, ACH_ASTR);
+    } else if (enteredEndgame && game.u?.uhave?.amulet)
         await resurrectWizard();
     // Special levels can override their dungeon's temperature.
     const currentTemperature = game.level?.flags?.temperature || 0;
@@ -418,6 +425,22 @@ export async function gotoLevel(targetDepth: Partial<DungeonLocation>, {
     if (game.program_state?.gameover) return true;
     game.u.uz0 = { ...game.u.uz };
     return true;
+}
+
+// C do.c:final_level() and priest.c:reset_hostility().
+async function finishAstralArrival(): Promise<void> {
+    requirePlayingGame(game);
+    for (const monster of game.level.monsters.slice().reverse()) {
+        if (!monster.isminion || !['Angel', 'aligned cleric'].includes(MONSTER_NAME[monster.mnum] ?? ''))
+            continue;
+        if (monsterAlignmentType(monster) !== game.u.ualign.type) {
+            monster.mpeaceful = monster.mtame = 0;
+            setMonsterMalign(monster);
+        }
+        newsym(monster.mx, monster.my);
+    }
+    await createPlayerMonsters(rn1(4, 3), true);
+    await gainGuardianAngel(game);
 }
 
 async function arriveOnLevel(from: DungeonLocation, { arrival, ladder, followers, beforeGlow, wasInsideWizardTower }: LevelArrivalOptions): Promise<boolean> {

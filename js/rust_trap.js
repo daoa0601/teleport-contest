@@ -9,7 +9,7 @@ import { wornMonsterLifeSaver } from './mondeath.js';
 import { monsterName, possessiveName } from './monster_name.js';
 import { OBJECT_NAMES } from './object_data.js';
 import { rn2 } from './rng.js';
-import { applyMonsterRustTrap, monsterTrapVisibility } from './trap.js';
+import { applyMonsterRustTrap, monsterTrapVisibility, seeTrap } from './trap.js';
 async function presentRustTrap(monster, event, state, publish) {
     if (!event.inSight)
         return;
@@ -60,8 +60,10 @@ export async function beginMonsterRustTrap(monster, trap, state = game, { random
         trap,
         finished: false,
     };
+    // C trapeffect_rust_trap(): seetrap() redraws the square, showing the
+    // monster on its new spot before the gush message.
     if (event.inSight)
-        trap.tseen = true;
+        seeTrap(trap, state);
     if (event.completelyRusted) {
         event.startsToFall = !!wornMonsterLifeSaver(monster);
         monster.mhp = 0;

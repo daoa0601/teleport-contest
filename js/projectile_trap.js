@@ -8,7 +8,9 @@ import { placeCreatedObject, stack_object } from './floor_object.js';
 import { game, requireGameLevel } from './gstate.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { findMonsterArmorClass } from './monworn.js';
-import { ARROW, DART, OBJECT_NAMES } from './object_data.js';
+import { ARROW, DART } from './object_data.js';
+import { objectDescription } from './object_description.js';
+import { observeObjectForNaming } from './objnam.js';
 import { deleteObject } from './object_delete.js';
 import { rn2, rnd } from './rng.js';
 import { monsterTrapVisibility } from './trap.js';
@@ -33,10 +35,6 @@ async function placeMissile(missile, trap, state) {
         pile.unshift(missile);
     }
     return await stack_object(missile, state);
-}
-function missileName(missile) {
-    const name = OBJECT_NAMES[missile.otyp] || (missile.otyp === ARROW ? 'arrow' : 'dart');
-    return missile.opoisoned ? `poisoned ${name}` : name;
 }
 export async function beginMonsterProjectileTrap(monster, trap, state = game, { random = rn2, rollOne = rnd } = {}) {
     const visibility = monsterTrapVisibility(monster, state);
@@ -84,10 +82,11 @@ export async function finishMonsterProjectileTrap(monster, event, state = game, 
         event.finished = true;
         return event;
     }
-    const name = missileName(event.missile);
-    const article = /^[aeiou]/iu.test(name) ? 'an' : 'a';
     if (event.seeSquare) {
-        await publish(`${describeMonster(monster)} is ${event.hit ? 'hit' : 'almost hit'} by ${article} ${name}!`);
+        // C trap.c:thitm() names the missile with doname(), which also
+        // marks a seen missile's appearance as known.
+        observeObjectForNaming(event.missile, { state });
+        await publish(`${describeMonster(monster)} is ${event.hit ? 'hit' : 'almost hit'} by ${objectDescription(event.missile)}!`);
     }
     if (event.hit) {
         const damage = Math.max(1, rollPhysicalWeaponDamage(event.missile, monster, { rollOne }));

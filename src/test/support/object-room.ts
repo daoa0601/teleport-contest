@@ -51,6 +51,8 @@ export function freshObjectRoom({
     game.in_mklev = false;
     vision_reset_new_level();
     if (recalculateVision) vision_recalc(0);
+    // Opting out of initial sight also opts out of its pending refresh.
+    else game.vision_full_recalc = 0;
     init_objects();
     if (gameplaySeed !== undefined) initRng(BigInt(gameplaySeed));
     return level;

@@ -1,8 +1,12 @@
 // Looking at floor objects and displaying their prices and pile windows.
 // C invent.c:look_here(), pickup.c:check_here(), and objnam.c.
 
-import { game, requireGameDisplay } from './gstate.js';
-import { PLNMSG_ONE_ITEM_HERE } from './const.js';
+import { game, requireGameDisplay, requireGameLevel } from './gstate.js';
+import { ICE, Is_airlevel, Is_waterlevel, PLNMSG_ONE_ITEM_HERE, is_pit } from './const.js';
+import { dungeonFeatureAt, dungeonFeatureSentence, forceDescribeDecor } from './dungeon_feature.js';
+import { heroCanReachFloor } from './floor_reach.js';
+import { surfaceName } from './terrain_name.js';
+import { isIceAt, isLavaAt, isPoolAt } from './terrain_properties.js';
 import type { GameObject } from './object_types.js';
 import { nhgetch } from './input.js';
 import {
@@ -29,23 +33,76 @@ export async function readFloorEngraving(x: number, y: number): Promise<void> {
     if (read && game._runState) stopRun();
 }
 
+// C invent.c:look_here() outside an engulfer. A positive objectCount is
+// autopickup's count, which summarizes a pile at pile_limit; skipFeature
+// means describe_decor() already showed the terrain.
+export async function lookHere(
+    objectCount = 0, { pickedSome = false, skipFeature = false } = {},
+): Promise<{ died: boolean; tookTime: boolean }> {
+    const { ux: x, uy: y } = game.u;
+    const level = requireGameLevel();
+    const blind = heroIsBlind();
+    const limit = configuredPileLimit();
+    const skipObjects = limit > 0 && objectCount >= limit;
+    const trap = level.traps.find(candidate => candidate.tx === x && candidate.ty === y);
+    if (!skipObjects) {
+        const region = visibleRegionAt(game, x, y);
+        const features: string[] = [];
+        if (region) features.push(`a ${region.damage ? 'poison gas' : 'vapor'} cloud`);
+        if (trap?.tseen) features.push(withIndefiniteArticle(trapName(trap.ttyp)));
+        if (features.length) await plineWithContinuation(`There is ${features.join(' and ')} here.`);
+    }
+    const underwater = !!(game.underwater || game.u.uinwater);
+    let featureName = dungeonFeatureAt(x, y);
+    if (featureName === 'pool of water' && underwater) featureName = null;
+    let hideFeature = skipFeature;
+    if (blind) {
+        const drift = Is_airlevel(game.u.uz) || Is_waterlevel(game.u.uz);
+        const surface = surfaceName(x, y);
+        if (featureName?.startsWith('altar ')) {
+            await plineWithContinuation('You try to feel what is here.');
+        } else if (isIceAt(x, y)) {
+            if (!game.flags.mention_decor || game._prevDecorType === ICE) await forceDescribeDecor();
+            await plineWithContinuation('You try to feel what is on it.');
+            hideFeature = true;
+        } else {
+            const where = drift ? 'floating here' : heroCanReachFloor(game, { checkPit: true })
+                ? `lying here on the ${surface}` : 'lying beneath you';
+            await plineWithContinuation(`You try to feel what is ${where}.`);
+            if (!drift && featureName === surface) hideFeature = true;
+        }
+        if (!heroCanReachFloor(game, { checkPit: !!trap && is_pit(trap.ttyp) })) {
+            await plineWithContinuation("But you can't reach it!");
+            return { died: false, tookTime: false };
+        }
+    }
+    const feature = hideFeature ? '' : dungeonFeatureSentence(featureName);
+    const objects = isLavaAt(x, y) || (isPoolAt(x, y) && !underwater) ? [] : level.objects[x]?.[y] ?? [];
+    if (!objects.length) {
+        if (feature) await plineWithContinuation(feature);
+        await readFloorEngraving(x, y);
+        if (!skipObjects && (blind || !featureName))
+            await plineWithContinuation(`You ${blind ? 'feel' : 'see'} no objects here.`);
+        return { died: false, tookTime: blind };
+    }
+    const { died } = await showFloorPile(objects, pickedSome, feature, { objectCount });
+    return { died, tookTime: blind };
+}
+
+function configuredPileLimit(): number {
+    const configured = Number(game.flags?.pile_limit ?? 5);
+    return Number.isFinite(configured) && configured >= 0 ? Math.trunc(configured) : 5;
+}
+
+// The object part of look_here(). objectCount at or above pile_limit only
+// summarizes the pile.
 export async function showFloorPile(
-    objects: readonly GameObject[], pickedSome = false, featureDescription = '', { automatic = false } = {},
+    objects: readonly GameObject[], pickedSome = false, featureDescription = '', { objectCount = 0 } = {},
 ) {
     const first = objects[0];
     if (!first) return { died: false };
-    const chain = game.uchain || game.u?.uchain;
-    const objectCount = automatic ? objects.filter(object => object !== chain).length : 0;
-    if (automatic && objectCount === 0) {
-        await readFloorEngraving(game.u.ux, game.u.uy);
-        return { died: false };
-    }
-    // C check_here() excludes the punishment chain from the count, but
-    // look_here() still uses the complete floor chain for displayed names.
-    const configuredLimit = Number(game.flags?.pile_limit ?? 5);
-    const pileLimit = Number.isFinite(configuredLimit) && configuredLimit >= 0
-        ? Math.trunc(configuredLimit) : 5;
-    if (automatic && pileLimit > 0 && objectCount >= pileLimit) {
+    const pileLimit = configuredPileLimit();
+    if (pileLimit > 0 && objectCount >= pileLimit) {
         if (featureDescription)
             await plineWithContinuation(featureDescription);
         await readFloorEngraving(game.u.ux, game.u.uy);
@@ -74,13 +131,6 @@ export async function showFloorPile(
         }
         return { died: false };
     }
-    const region = visibleRegionAt(game, game.u.ux, game.u.uy);
-    const trap = game.level?.traps.find(trap => trap.tseen
-        && trap.tx === game.u.ux && trap.ty === game.u.uy);
-    const features: string[] = [];
-    if (region) features.push(`a ${region.damage ? 'poison gas' : 'vapor'} cloud`);
-    if (trap) features.push(withIndefiniteArticle(trapName(trap.ttyp)));
-    if (features.length) await plineWithContinuation(`There is ${features.join(' and ')} here.`);
     if (objects.length === 1) {
         if (featureDescription) await plineWithContinuation(featureDescription);
         await readFloorEngraving(game.u.ux, game.u.uy);

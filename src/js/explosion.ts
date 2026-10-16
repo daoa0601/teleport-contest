@@ -10,7 +10,7 @@ import {
 import {
     canSeeMonster, canSpotMonster, flush_screen, map_invisible,
     newsym, plineWithContinuation, randomDisplayMonsterName, SHIELD_STATIC,
-    show_glyph_cell, unmap_invisible,
+    show_glyph_cell, unmap_invisible, explosionGlyph, shieldGlyph,
 } from './display.js';
 import { impossible } from './diagnostics.js';
 import { finishHeroDeath } from './end.js';
@@ -51,10 +51,6 @@ import { propertyIsActive } from './properties.js';
 import { rn2 } from './rng.js';
 import { heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { payForShopDamage } from './shop_damage.js';
-import {
-    CLR_BLACK, CLR_BLUE, CLR_BRIGHT_BLUE, CLR_BROWN, CLR_GREEN,
-    CLR_MAGENTA, CLR_ORANGE, CLR_WHITE,
-} from './terminal.js';
 import { burnArmorByFire, burnHeroArmorByFire } from './trap.js';
 import { cansee } from './vision.js';
 import {
@@ -63,13 +59,14 @@ import {
 
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
-import type { MessagePublisher } from './display.js';
+import type { DisplayGlyph, MessagePublisher } from './display.js';
 import type { DeathHandler, OrdinaryDeathOptions } from './end.js';
 import type { PropertyName } from './property_types.js';
 import type { DamageType } from './monster_attack_types.js';
 import type { InventoryDamageType, MagicDamageResult, RayFloorKind } from './magic_types.js';
 import { rayDamageType } from './magic_types.js';
 import { requirePlayingGame } from './gstate.js';
+import { TemporaryMapEffect } from './temporary_map_effect.js';
 
 export interface ExplosionOptions {
     state?: GameState;
@@ -100,7 +97,7 @@ interface ExplosionCell {
     x: number;
     y: number;
     shield: number;
-    glyph: readonly [string, boolean];
+    glyph: DisplayGlyph;
 }
 interface ExplosionMonsterDeathOptions {
     damageType: DamageType;
@@ -117,12 +114,6 @@ const SCROLL_CLASS = 9;
 const RAY = 3;
 const M2_DEMON = 0x100;
 const resistanceLevels = new Map([[WAND_CLASS, 12], [6, 10], [2, 10], [SCROLL_CLASS, 9], [8, 6], [4, 5]]);
-const colors = [CLR_BLACK, CLR_GREEN, CLR_BROWN, CLR_BLUE, CLR_MAGENTA, CLR_ORANGE, CLR_WHITE];
-const blastGlyphs: readonly (readonly [string, boolean])[] = [
-    ['/', false], ['x', true], ['\\', false],
-    ['o', true], [' ', false], ['s', true],
-    ['\\', false], ['x', true], ['/', false],
-];
 const damageKinds = new Map<DamageType, ExplosionKind>([
     [AD_MAGM, {
         name: 'magical blast', floor: 'magic', property: 'antimagic',
@@ -177,12 +168,10 @@ export async function explode(x: number, y: number, type: number, damage: number
     const hallucinate = monsterExplosion && heroIsHallucinating(state)
         && /(?:'s|s') explosion/i.test(killer || '');
     let description = monsterExplosion ? killer || source.name : source.name;
-    const cells = explosionCells(x, y, damageType, objectClass, state);
+    const cells = explosionCells(x, y, damageType, objectClass, Math.abs(style), state);
     const visible = cells.some(cell => cansee(cell.x, cell.y));
     if (visible) {
-        const color = colors[Math.abs(style)];
-        if (color === undefined) throw new RangeError(`Invalid explosion style ${style}`);
-        await paintExplosion(cells, color, state);
+        await paintExplosion(cells, state);
     }
     else if ([MON_EXPLODE, TRAP_EXPLODE].includes(objectClass)) description = 'explosion';
     if (!heroIsDeaf(state)) {
@@ -380,7 +369,7 @@ function monsterResists(monster: Monster, damageType: DamageType, objectClass: n
     return kind.resists(monster);
 }
 
-function explosionCells(x: number, y: number, damageType: DamageType, objectClass: number, state: PlayingGameState): ExplosionCell[] {
+function explosionCells(x: number, y: number, damageType: DamageType, objectClass: number, style: number, state: PlayingGameState): ExplosionCell[] {
     const cells: ExplosionCell[] = [];
     for (let dx = -1; dx <= 1; dx++) {
         for (let dy = -1; dy <= 1; dy++) {
@@ -393,35 +382,36 @@ function explosionCells(x: number, y: number, damageType: DamageType, objectClas
             if (living && monsterResists(monster, damageType, objectClass)) shield |= 1;
             if (living && cansee(cx, cy) && !canSpotMonster(monster)) map_invisible(cx, cy);
             else if (!living) unmap_invisible(cx, cy);
-            const glyph = blastGlyphs[(dx + 1) * 3 + dy + 1];
-            if (!glyph) throw new Error('Explosion cell has no display glyph.');
+            const glyph = explosionGlyph(style, dx, dy);
             cells.push({ x: cx, y: cy, shield, glyph });
         }
     }
     return cells;
 }
 
-async function paintExplosion(cells: readonly ExplosionCell[], color: number, state: GameState) {
-    const paint = (cell: ExplosionCell) => show_glyph_cell(cell.x, cell.y, cell.glyph[0], color, cell.glyph[1]);
+async function paintExplosion(cells: readonly ExplosionCell[], state: GameState) {
+    const paint = (cell: ExplosionCell) => show_glyph_cell(cell.x, cell.y,
+        cell.glyph.ch, cell.glyph.color, cell.glyph.decgfx, 0, cell.glyph);
     const flush = async () => {
         await flush_screen(1);
         state.nhDisplay?.setCursor(state.u.ux - 1, state.u.uy + 1);
     };
-    const painted: ExplosionCell[] = [];
-    await flush_screen(0);
+    const first = cells[0];
+    if (!first) return;
+    const effect = new TemporaryMapEffect('beam', first.glyph);
+    await effect.start();
     try {
         for (const cell of cells) {
-            // DISP_BEAM keeps hidden squares off-screen; shield glyphs bypass it.
-            if (!cansee(cell.x, cell.y)) continue;
-            paint(cell);
-            painted.push(cell);
-            await flush_screen(0);
+            effect.changeGlyph(cell.glyph);
+            await effect.show(cell.x, cell.y);
         }
         await flush();
         if (state.flags.sparkle && cells.some(cell => cell.shield)) {
             for (const ch of SHIELD_STATIC) {
+                const glyph = shieldGlyph(ch);
                 for (const cell of cells) {
-                    if (cell.shield) show_glyph_cell(cell.x, cell.y, ch, CLR_BRIGHT_BLUE, false);
+                    if (cell.shield) show_glyph_cell(cell.x, cell.y,
+                        glyph.ch, glyph.color, glyph.decgfx, 0, glyph);
                 }
                 await flush();
                 await state.animationFrame?.();
@@ -432,7 +422,7 @@ async function paintExplosion(cells: readonly ExplosionCell[], color: number, st
             await state.animationFrame?.();
         }
     } finally {
-        for (const cell of painted) newsym(cell.x, cell.y);
+        effect.clear();
     }
 }
 

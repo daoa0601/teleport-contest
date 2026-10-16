@@ -25,7 +25,7 @@ import { setWallState } from './wall_topology.js';
 import { monsterHasMapPosition, monsterAtPosition, monsterOccupiesPosition } from './monster_location.js';
 import { hideMonsterUnder } from './monster_hiding.js';
 import { finishMonsterBirth } from './monster_birth.js';
-import { allocateMonsterBirthExtensions } from './monster_birth_extensions.js';
+import { allocateMonsterBirthExtensions, ensureMinionData } from './monster_birth_extensions.js';
 import { createParticularMonster } from './read_creation.js';
 import { setMonsterPermanentInvisibility } from './monster_invisibility.js';
 import { setMonsterSpecies } from './monster_species.js';
@@ -120,11 +120,11 @@ import {
     DB_NORTH, DB_SOUTH, DB_EAST, DB_WEST, DB_MOAT, DB_LAVA,
     DB_UNDER, DB_FLOOR, SHOP_HOLE_COST,
     TREE, AIR, CLOUD,
-    A_NONE, A_CHAOTIC, A_NEUTRAL, A_LAWFUL, P_SHORT_SWORD, P_SABER,
+    A_NONE, A_CHAOTIC, A_NEUTRAL, A_LAWFUL,
     AM_SHRINE, AM_SANCTUM, Align2amask,
     LR_DOWNSTAIR, LR_UPSTAIR, LR_UPTELE, LR_DOWNTELE, LR_TELE, LR_BRANCH, LR_PORTAL,
     M_AP_NOTHING, M_AP_FURNITURE, M_AP_OBJECT, M_AP_MONSTER, M_AP_TYPE,
-    MM_ANGRY, MM_ASLEEP, MM_NONAME, MM_NOGRP, MM_EMIN, MM_EPRI,
+    MM_ANGRY, MM_ASLEEP, MM_NONAME, MM_NOGRP, MM_EMIN, MM_EPRI, MM_ESHK,
     MM_NOWAIT, MM_NOTAIL, MM_IGNOREWATER, MM_ADJACENTOK,
     MM_NOCOUNTBIRTH, MM_NOMSG, MM_MALE, MM_FEMALE, MM_MINVIS, MM_EDOG, NO_MINVENT,
     G_EXTINCT, G_GENOD, G_GONE, G_NOCORPSE,
@@ -197,7 +197,7 @@ import { saveMonsterTraits } from './monster_traits.js';
 
 import { nhgetch } from './input.js';
 import {
-    canSeeMonster, canSenseMonster, flush_screen, newsym, pline,
+    canSeeMonster, canSenseMonster, flush_screen, newsym, pline, terrain_glyph,
 } from './display.js';
 import { premap_detect } from './detect.js';
 import {
@@ -210,6 +210,8 @@ import {
 import { registerQuestLeader } from './quest.js';
 import { armorBonus } from './armor.js';
 import { initializeMonsterArmor } from './monworn.js';
+import { giveMonsterStartingObject } from './monster_starting_inventory.js';
+import { createPlayerMonster } from './mplayer.js';
 import { artifactByName, artifactExistCount, createRandomArtifact, nameArtifact } from './artifacts.js';
 import {
     addCreatedObjectToMonsterInventory, addObjectToMonsterInventory,
@@ -601,7 +603,7 @@ async function putLregionHere(
     } else if (type === LR_BRANCH) {
         await placeBranchAt(is_branchlev(), x, y);
     } else if (type === LR_DOWNSTAIR || type === LR_UPSTAIR) {
-        mkstairs(x, y, type === LR_UPSTAIR, null);
+        await mkstairs(x, y, type === LR_UPSTAIR, null);
     }
     return true;
 }
@@ -1981,48 +1983,10 @@ async function makemon(
     let roamingMinion: { min_align: number; renegade: boolean; mpeaceful: 0 | 1 } | null = null;
     let hasMonsterInventory = false;
     const allowMonsterInventory = !(mmflags & NO_MINVENT);
-    // C makemon.c:mongets(). Normalize birth equipment before mpickobj().
     const mongets = async (otyp: number): Promise<GameObject | null> => {
-        if (!otyp) return null;
-        const object = await mksobj(otyp, true, false);
-        if (MONSTER_SYMBOL[mndx] === 56) {
-            if (object.blessed) {
-                object.blessed = false;
-                object.cursed = true;
-            }
-        } else if ((genderFlags & M2_MINION)
-            && (roamingMinion?.min_align ?? monsterAlignmentType(pendingMonster)) === A_LAWFUL) {
-            object.cursed = false;
-            object.spe = Math.max(0, object.spe);
-            object.oerodeproof = true;
-            object.oeroded = object.oeroded2 = 0;
-        } else if (monsterIsPlayerMonster(mndx)
-            && object.oclass === WEAPON_CLASS
-            && (OBJECT_SUBTYPE[otyp] ?? 0) >= P_SHORT_SWORD
-            && (OBJECT_SUBTYPE[otyp] ?? 0) <= P_SABER) {
-            object.spe = 3 + rn2(4);
-        }
-
-        if (otyp === CANDELABRUM_OF_INVOCATION) {
-            object.spe = 0;
-            object.age = 0;
-            object.lamplit = false;
-            object.blessed = object.cursed = false;
-        } else if (otyp === BELL_OF_OPENING) {
-            object.blessed = object.cursed = false;
-        } else if (otyp === SPE_BOOK_OF_THE_DEAD) {
-            object.blessed = false;
-            object.cursed = true;
-        }
-
-        if (genderFlags & M2_PRINCE) {
-            if (object.oclass === WEAPON_CLASS) object.spe = Math.max(1, object.spe);
-            else if (object.oclass === ARMOR_CLASS) object.spe = Math.max(0, object.spe);
-        }
-
-        await addCreatedObjectToMonsterInventory(pendingMonster, object, game);
-        hasMonsterInventory = true;
-        return object.where === 'gone' ? null : object;
+        const object = await giveMonsterStartingObject(pendingMonster, otyp);
+        if (otyp) hasMonsterInventory = true;
+        return object;
     };
 
     // C makemon() grants fixed possessions before ordinary equipment.
@@ -3226,7 +3190,8 @@ export async function maketrap(x: number, y: number, typ: number): Promise<Trap 
             || (terrain !== undefined && IS_FURNITURE(terrain)
                 && typ !== PIT && typ !== HOLE)
             || (terrain === DRAWBRIDGE_UP && typ === MAGIC_PORTAL)
-            || (terrain !== undefined && IS_AIR(terrain) && typ !== MAGIC_PORTAL)) {
+            || (terrain !== undefined && IS_AIR(terrain) && typ !== MAGIC_PORTAL)
+            || (typ === LEVEL_TELEP && Is_knox_level(game.u.uz))) {
             return null;
         }
     }
@@ -4365,7 +4330,7 @@ function specialMonsterHumidity(mndx: number): number {
 async function specialStair(context: SpecialLevelContext, up: boolean): Promise<Position | null> {
     const point = await specialRandomLocation(context,
         loc => loc.typ === ROOM || loc.typ === CORR || loc.typ === ICE);
-    if (point) mkstairs(point.x, point.y, up, null);
+    if (point) await mkstairs(point.x, point.y, up, null);
     return point;
 }
 
@@ -4951,8 +4916,8 @@ function loadSpecialAsciiMap(
     return context;
 }
 
-function specialStairAt(context: SpecialLevelContext, x: number, y: number, up: boolean): void {
-    mkstairs(context.xstart + x, context.ystart + y, up, null, true);
+async function specialStairAt(context: SpecialLevelContext, x: number, y: number, up: boolean): Promise<void> {
+    await mkstairs(context.xstart + x, context.ystart + y, up, null, true);
 }
 
 function specialLadderAt(context: SpecialLevelContext, x: number, y: number, up: boolean): void {
@@ -5019,10 +4984,9 @@ export function finishSpecialRoamer(monster: Monster, alignment: number, peacefu
     const coaligned = alignment === (game.u?.ualign?.type ?? A_NEUTRAL);
     monster.ispriest = 0;
     monster.isminion = 1;
-    monster.emin = {
-        min_align: alignment,
-        renegade: coaligned && !peaceful,
-    };
+    const minion = ensureMinionData(monster);
+    minion.min_align = alignment;
+    minion.renegade = coaligned && !peaceful;
     monster.maligntyp = alignment;
     monster.mpeaceful = peaceful ? 1 : 0;
     monster.msleeping = 0;
@@ -5064,8 +5028,8 @@ function selectNamedSpecialMonster(mndx: number | null): { species: number | nul
 // a worm's tail occupies the requested square. The result must stay in croom.
 async function createSpecialMonster(
     context: SpecialLevelContext, mndx: number | null, x: number, y: number,
-    mmflags: number,
-): Promise<MonsterBirthState | null> {
+    mmflags: number, playerMonster = false,
+): Promise<Monster | null> {
     const level = requireGameLevel();
     if (monsterAtPosition(level, x, y)) {
         const nearby = findMonsterNearPosition(mndx, x, y);
@@ -5073,7 +5037,9 @@ async function createSpecialMonster(
     }
     const room = context._room;
     if (room && !insideRoom(level, room, x, y)) return null;
-    return await makemon(mndx, x, y, mmflags);
+    return playerMonster && mndx !== null
+        ? await createPlayerMonster(mndx, x, y, false)
+        : await makemon(mndx, x, y, mmflags);
 }
 
 async function specialMonsterAt(
@@ -5100,6 +5066,7 @@ async function specialMonsterAt(
     mndx = applyMinesSameRaceMonsterGate(selection.species);
     const monster = await createSpecialMonster(
         context, mndx, context.xstart + x, context.ystart + y, mmflags,
+        alignment === null && mndx !== null && monsterIsPlayerMonster(mndx),
     );
     if (monster && requestedFemale !== null) monster.female = requestedFemale;
     if (monster && peaceful != null) monster.mpeaceful = peaceful ? 1 : 0;
@@ -5195,7 +5162,8 @@ async function specialExplicitMonster(
     const selectedSpecies = applyMinesSameRaceMonsterGate(selection.species);
     const point = await specialMonsterRandomLocation(context, selectedSpecies);
     if (!point) return null;
-    const monster = await createSpecialMonster(context, selectedSpecies, point.x, point.y, mmflags);
+    const monster = await createSpecialMonster(context, selectedSpecies, point.x, point.y, mmflags,
+        alignment === null && monsterIsPlayerMonster(mndx));
     if (!monster) return null;
     if (requestedFemale != null) monster.female = requestedFemale;
     if (peaceful != null) monster.mpeaceful = peaceful ? 1 : 0;
@@ -6166,7 +6134,7 @@ function luaRoomSpec(options: DesOptions) {
 async function createLuaStair(context: SpecialLevelContext, { direction, point }: Parameters<DesOperations['stair']>[0]): Promise<Position | null> {
     const up = direction === 'up';
     if (!point) return await specialStair(context, up);
-    specialStairAt(context, point.x, point.y, up);
+    await specialStairAt(context, point.x, point.y, up);
     return { x: context.xstart + point.x, y: context.ystart + point.y };
 }
 
@@ -7163,19 +7131,25 @@ type LuaLevelSession = ReturnType<typeof createLuaLevelSession>;
 const themedLuaSessions = new WeakMap<LuaState, LuaLevelSession>();
 const activeThemes = new WeakMap<GameState, { state: LuaState; session: LuaLevelSession }>();
 
-async function beginLuaThemerooms(): Promise<void> {
+async function beginLuaThemerooms(): Promise<boolean> {
     const lifecycle = currentLuaLifecycle();
     const dungeonNumber = game.u?.uz?.dnum ?? 0;
     let state = lifecycle.getThemedState(game, dungeonNumber);
+    const filename = game.dungeons[dungeonNumber]?.themeRooms;
+    if (!state && !filename) {
+        activeThemes.delete(game);
+        return false;
+    }
     let session = state ? themedLuaSessions.get(state) : null;
-    const active = { prototype: 'themerms', file: 'themerms.lua' };
+    const active = { prototype: 'themerms', file: filename ?? '' };
 
     if (!session) {
+        if (!filename) throw new Error('Themed room initialization requires a source file.');
         const createdSession = createLuaLevelSession();
         session = createdSession;
         createdSession.beginLevel(active, { special: false });
         state = await lifecycle.createThemedState(
-            game, dungeonNumber, 'themerms.lua', createdSession.bindings,
+            game, dungeonNumber, filename, createdSession.bindings,
             created => createdSession.bindState(created),
         );
         themedLuaSessions.set(state, session);
@@ -7186,6 +7160,7 @@ async function beginLuaThemerooms(): Promise<void> {
     if (!state) throw new Error('Themed room initialization did not create a Lua state.');
     activeThemes.set(game, { state, session });
     await state.callValueAsync(state.getGlobal('pre_themerooms_generate'), []);
+    return true;
 }
 
 async function callLuaThemerooms(name: string, args: LuaValue[] = []): Promise<LuaValues> {
@@ -7771,13 +7746,13 @@ export async function generateRandomMaze(): Promise<void> {
         wallification(2, 2, (COLNO - 1) & ~1, (ROWNO - 1) & ~1);
 
     const up = mazeFloorPoint();
-    mkstairs(up.x, up.y, true, null);
+    await mkstairs(up.x, up.y, true, null);
     if (invocation) {
         const square = vibratingSquarePoint();
         await maketrap(square.x, square.y, VIBRATING_SQUARE);
     } else {
         const down = mazeFloorPoint();
-        mkstairs(down.x, down.y, false, null);
+        await mkstairs(down.x, down.y, false, null);
     }
     await place_branch(is_branchlev());
     await populateRandomMaze();
@@ -8144,8 +8119,8 @@ async function makelevel(): Promise<void> {
     }
 
     // Regular level generation
-    await beginLuaThemerooms();
-    await makerooms();
+    const themedRooms = await beginLuaThemerooms();
+    await makerooms(themedRooms);
 
     if (level.nroom <= 0) return;
     sort_rooms();
@@ -8158,7 +8133,7 @@ async function makelevel(): Promise<void> {
     await makecorridors();
     await make_niches();
 
-    // Vault creation (simplified for contest)
+    // Restore the reserved vault after corridors and niches are complete.
     if (g.vault_x !== undefined && g.vault_x !== -1) {
         if (g.vault_y === undefined) throw new Error('Vault reservation has no y coordinate.');
         const vw = { v: 1 }, vh = { v: 1 };
@@ -8173,7 +8148,7 @@ async function makelevel(): Promise<void> {
                 await fillVault(vaultRoom);
             }
             await maybePlaceKnoxPortal(vx.v + vw.v, vy.v + vh.v);
-            if (!rn2(3)) await makeniche(TELEP_TRAP);
+            if (!level.flags.noteleport && !rn2(3)) await makeniche(TELEP_TRAP);
         };
         if (check_room(vx, vw, vy, vh, true)) {
             await finishVault();
@@ -8227,11 +8202,12 @@ async function makelevel(): Promise<void> {
     for (const croom of level.rooms.slice(0, level.nroom))
         if (isRoom(croom)) await fillSpecialRoom(croom);
 
-    await callLuaThemerooms('post_level_generate');
-    // A loaded theme interpreter always wallifies the complete level, not
-    // only rooms created from des.map().  Dynamic terrain callbacks such as
-    // "Pillars" rely on this pass for their internal wall spines.
-    wallification(1, 0, COLNO - 1, ROWNO - 1);
+    if (themedRooms) {
+        await callLuaThemerooms('post_level_generate');
+        // A loaded theme interpreter wallifies the complete level, including
+        // walls placed inside rooms by terrain callbacks such as "Pillars".
+        wallification(1, 0, COLNO - 1, ROWNO - 1);
+    }
 }
 
 // C ref: mklev.c mk_knox_portal().  Fort Ludios starts with an out-of-range
@@ -8551,7 +8527,7 @@ function goodShopDoor(sroom: Room): ShopDoor | null {
 
 function stockRoomGoodPos(sroom: Room, shopDoor: ShopDoor, x: number, y: number): boolean {
     const loc = requireGameLevel().at(x, y);
-    if (!loc || loc.typ !== ROOM) return false;
+    if (!loc || !IS_ROOM(loc.typ)) return false;
     if (sroom.irregular) {
         const roomno = (sroom.roomnoidx ?? -1) + ROOMOFFSET;
         return !loc.edge && loc.roomno === roomno
@@ -8576,7 +8552,7 @@ function assignShopkeeperIdentity(monster: Monster, shopIndex: number): void {
     let names: readonly string[] = shop.names;
     let selected: string | undefined;
     if (names === candleShop.names && In_mines(game.u.uz)
-        && level.flags.has_town) {
+        && specialLevelAt()?.flags.town) {
         selected = '+Izchak';
         monster.female = false;
     } else {
@@ -8675,20 +8651,24 @@ async function stockShopRoom(sroom: Room): Promise<void> {
     // the resident; it does not abandon this shop when its doorway is busy.
     const occupant = monsterAtPosition(level, shopDoor.x, shopDoor.y);
     if (occupant) await randomMonsterRelocation(occupant, { flags: RLOC_NOMSG });
-    const shopkeeper = await makemon(PM_SHOPKEEPER, shopDoor.x, shopDoor.y, 0);
+    const shopkeeper = await makemon(PM_SHOPKEEPER, shopDoor.x, shopDoor.y, MM_ESHK);
     if (!shopkeeper) return;
-    shopkeeper.eshk = {
-        shoproom: (sroom.roomnoidx ?? -1) + ROOMOFFSET,
-        shoptype: sroom.rtype,
-        shoplevel: { ...shopLevel },
-        shd: { ...shopDoor.door },
-        shk: { x: shopDoor.x, y: shopDoor.y },
-    };
+    const shop = shopkeeper.eshk;
+    if (!shop) throw new Error('Shopkeeper creation requires its shop extension.');
     // C isshk() is resident-extension identity, not species identity.  A
     // Wizard-forced out-of-context shopkeeper has no eshk and remains an
     // ordinary humanoid observer; shkinit() establishes both together here.
     shopkeeper.isshk = 1;
+    shopkeeper.mpeaceful = 1;
+    setMonsterMalign(shopkeeper);
+    shopkeeper.msleeping = 0;
+    shopkeeper.mtrapseen = -1;
+    shop.shoproom = (sroom.roomnoidx ?? -1) + ROOMOFFSET;
     sroom.resident = shopkeeper;
+    shop.shoptype = sroom.rtype;
+    shop.shoplevel = { ...shopLevel };
+    shop.shd = { ...shopDoor.door };
+    shop.shk = { x: shopDoor.x, y: shopDoor.y };
 
     // C shknam.c:shkinit()/makemon.c:mkmonmoney(). Initial capital is
     // an ordinary coin stack in the keeper's inventory.
@@ -8760,10 +8740,9 @@ async function stockShopRoom(sroom: Room): Promise<void> {
             continue;
         }
         if (rn2(100) < depth_of_level(game.u?.uz)
-            && !level.monsters.some(mon => monsterHasMapPosition(mon, game) && mon.mx === pos.x && mon.my === pos.y)) {
+            && !monsterAtPosition(level, pos.x, pos.y)) {
             const mimic = mkclass(S_MIMIC, 0);
-            if (mimic != null) {
-                await makemon(mimic, pos.x, pos.y, 0);
+            if (mimic != null && await makemon(mimic, pos.x, pos.y, 0)) {
                 continue;
             }
         }
@@ -9192,7 +9171,7 @@ async function makerogueghost(): Promise<void> {
 }
 
 // C ref: mklev.c makerooms()
-async function makerooms(): Promise<void> {
+async function makerooms(themedRooms: boolean): Promise<void> {
     const g = game;
     const level = requireGameLevel();
     let tried_vault = false;
@@ -9207,7 +9186,7 @@ async function makerooms(): Promise<void> {
                 const reserved = level.rooms[level.nroom];
                 if (reserved) level.rooms[level.nroom] = { ...reserved, hx: -1 };
             }
-        } else {
+        } else if (themedRooms) {
             g.in_mk_themerooms = true;
             const generated = await themerooms_generate();
             g.in_mk_themerooms = false;
@@ -9216,10 +9195,10 @@ async function makerooms(): Promise<void> {
                     || level.nroom >= Math.trunc(MAXNROFROOMS / 6))
                     break;
             }
-        }
+        } else if (!create_room(-1, -1, -1, -1, -1, -1, OROOM, -1)) break;
     }
     g.in_mk_themerooms = false;
-    await callLuaThemerooms('post_themerooms_generate');
+    if (themedRooms) await callLuaThemerooms('post_themerooms_generate');
 }
 
 function themedMapTerrain(ch: string | undefined): number | null {
@@ -10017,14 +9996,7 @@ async function makecorridors(): Promise<void> {
 function generate_stairs_room_good(croom: Room | null | undefined, phase: number): boolean {
     if (!croom || croom.hx < 0) return false;
     if (!croom.needjoining && phase >= 0) return false;
-    let hasDown = false, hasUp = false;
-    for (let st = game.stairs; st; st = st.next) {
-        const inRoom = st.sx >= croom.lx && st.sx <= croom.hx
-            && st.sy >= croom.ly && st.sy <= croom.hy;
-        if (!inRoom) continue;
-        if (st.up) hasUp = true; else hasDown = true;
-    }
-    if (phase >= 1 && (hasDown || hasUp)) return false;
+    if (phase >= 1 && (roomHasStair(croom, false) || roomHasStair(croom, true))) return false;
     if (croom.rtype !== OROOM && !(phase < 2 && croom.rtype === THEMEROOM)) return false;
     return true;
 }
@@ -10047,13 +10019,21 @@ function generate_stairs_find_room(): Room | null {
     return isRoom(selected) ? selected : null;
 }
 
-export function mkstairs(x: number, y: number, up: boolean | 0 | 1, croom: Room | null, force = false): void {
+export async function mkstairs(x: number, y: number, up: boolean | 0 | 1, croom: Room | null, force = false): Promise<void> {
     const g = game;
     const level = requireGameLevel();
-    const loc = level.at(x, y);
+    if (!isok(x, y)) {
+        await impossible(`mkstairs:  bogus stair attempt at <${x},${y}>`);
+        return;
+    }
+    const loc = level.requireAt(x, y);
     // Explicit Lua coordinates force floor even when this dungeon endpoint
     // subsequently prevents creation of the requested stairs.
-    if (force && loc) loc.typ = ROOM;
+    if (force) loc.typ = ROOM;
+    if (loc.typ !== ROOM && loc.typ !== CORR && loc.typ !== ICE) {
+        const terrain = terrain_glyph(loc, x, y).terrainName;
+        await impossible(`mkstairs:  placing stairs ${up ? 'up' : 'down'} on ${terrain} at <${x},${y}>`);
+    }
     const currentLevel = g.u?.uz?.dlevel ?? 1;
     const dungeonLevels = g.dungeons?.[g.u?.uz?.dnum ?? 0]?.num_dunlevs
         ?? currentLevel;
@@ -10062,15 +10042,13 @@ export function mkstairs(x: number, y: number, up: boolean | 0 | 1, croom: Room 
     if ((up && currentLevel === 1)
         || (!up && currentLevel === dungeonLevels))
         return;
-    if (loc) {
-        setLevelTerrainType(x, y, STAIRS);
-        loc.ladder = up ? 1 : 2;
-    }
     const dest = {
         dnum: g.u?.uz?.dnum ?? 0,
         dlevel: currentLevel + (up ? -1 : 1),
     };
     stairway_add(x, y, !!up, false, dest);
+    setLevelTerrainType(x, y, STAIRS);
+    loc.ladder = up ? 1 : 2;
     if (up) level.upstair = { x, y };
     else level.dnstair = { x, y };
 }
@@ -10079,14 +10057,14 @@ async function generate_stairs(): Promise<void> {
     const g = game;
     const pos = { x: 0, y: 0 };
     // Down stairs
-    {
+    if (!Is_botlevel(g.u.uz)) {
         const croom = generate_stairs_find_room();
         if (croom) {
             if (!somexyspace(croom, pos)) {
                 pos.x = somex(croom);
                 pos.y = somey(croom);
             }
-            mkstairs(pos.x, pos.y, 0, croom);
+            await mkstairs(pos.x, pos.y, 0, croom);
         }
     }
     // Up stairs only if not level 1
@@ -10097,7 +10075,7 @@ async function generate_stairs(): Promise<void> {
                 pos.x = somex(croom);
                 pos.y = somey(croom);
             }
-            mkstairs(pos.x, pos.y, 1, croom);
+            await mkstairs(pos.x, pos.y, 1, croom);
         }
     }
 }
@@ -10162,7 +10140,7 @@ async function makeniche(trap_type: number): Promise<void> {
                     ? 'Vlad was here'
                     : (actualTrap === TELEP_TRAP || actualTrap === LEVEL_TELEP)
                         ? 'ad aerarium' : null;
-                if (trapEngraving) {
+                if (trap && trapEngraving) {
                     // Creation preserves the original punctuation before wear.
                     makeEngravingAt(xx, yy - dy, trapEngraving, null, 0, DUST);
                     wipeEngravingAt(xx, yy - dy, 5);
@@ -10196,10 +10174,11 @@ async function makeniche(trap_type: number): Promise<void> {
 }
 
 async function make_niches(): Promise<void> {
-    const g = game;
-    let ct = rnd(Math.trunc(requireGameLevel().nroom / 2) + 1);
-    let ltptr = ((g.u?.uz?.dlevel ?? 1) > 15);
-    let vamp = ((g.u?.uz?.dlevel ?? 1) > 5 && (g.u?.uz?.dlevel ?? 1) < 25);
+    const level = requireGameLevel();
+    let ct = rnd(Math.trunc(level.nroom / 2) + 1);
+    const depth = depth_of_level(game.u.uz);
+    let ltptr = !level.flags.noteleport && depth > 15;
+    let vamp = depth > 5 && depth < 25;
     while (ct--) {
         if (ltptr && !rn2(6)) {
             ltptr = false;
@@ -10634,6 +10613,7 @@ export async function fill_ordinary_room(croom: Room | null | undefined, bonus_i
     const g = game;
     if (!croom || (croom.rtype !== OROOM && croom.rtype !== THEMEROOM)) return;
     const level = requireGameLevel();
+    const levelDepth = depth_of_level(g.u.uz);
     // C fills descendants before their parent and does so even when the
     // parent itself is marked unfilled.
     for (const subroom of croom.sbrooms || [])
@@ -10680,7 +10660,7 @@ export async function fill_ordinary_room(croom: Room | null | undefined, bonus_i
     // Altar
     if (!rn2(60)) mkaltar(croom);
     // Grave
-    x = 80 - (depth_of_level(g.u?.uz) * 2);
+    x = 80 - levelDepth * 2;
     if (x < 2) x = 2;
     if (!rn2(x)) await mkgrave_room(croom);
     // Statue
@@ -10733,8 +10713,7 @@ export async function fill_ordinary_room(croom: Room | null | undefined, bonus_i
                     if (oclass === undefined) throw new RangeError('Supply chest class selection is out of range.');
                     let otmp = await mkobj(oclass, false);
                     if (oclass === SPBOOK_no_NOVEL && otmp) {
-                        const depth = g.u?.uz?.dlevel ?? 1;
-                        const maxpass = (depth > 2) ? 2 : 3;
+                        const maxpass = levelDepth > 2 ? 2 : 3;
                         for (let pass = 1; pass <= maxpass; pass++) {
                             const candidate = await mkobj(oclass, false);
                             if ((OBJECT_SPELL_LEVEL[candidate.otyp] ?? 0)
@@ -10755,8 +10734,7 @@ export async function fill_ordinary_room(croom: Room | null | undefined, bonus_i
         await mksobj_at(rn2(3) ? LARGE_BOX : CHEST, pos.x, pos.y, true, false);
     }
     // Graffiti
-    const depth = g.u?.uz?.dlevel ?? 1;
-    if (!rn2(27 + 3 * Math.abs(depth))) {
+    if (!rn2(27 + 3 * Math.abs(levelDepth))) {
         const { text: engrText, pristine } = randomEngraving();
         if (engrText) {
             do {

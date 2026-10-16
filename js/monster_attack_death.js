@@ -2,9 +2,9 @@
 // C refs: end.c done_in_by()/done()/savelife(), tty message windows.
 import { formatFeltMessage } from './hero_speech.js';
 import { game } from './gstate.js';
-import { PARANOID_DIE, MGIVENNAME, M_AP_MONSTER, M_AP_TYPE, STONING, Upolyd, ismnum } from './const.js';
+import { KILLED_BY, PARANOID_DIE, MGIVENNAME, M_AP_MONSTER, M_AP_TYPE, STONING, Upolyd, ismnum } from './const.js';
 import { canSpotMonster, flushPendingTopline, flush_screen, plineWithContinuation } from './display.js';
-import { beginHeroLifeSaving, completeHeroLifeSaving, finishOrdinaryDeath, identifyLifeSavingAmulet, restoreHeroAfterDeath, } from './end.js';
+import { beginHeroLifeSaving, completeHeroLifeSaving, finishHeroDeath, finishOrdinaryDeath, formatKillerCause, identifyLifeSavingAmulet, restoreHeroAfterDeath, } from './end.js';
 import { setHeroRemainsFromMonster } from './death_remains.js';
 import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, monsterTypeName } from './monster_data.js';
 import { monsterName } from './monster_name.js';
@@ -85,7 +85,7 @@ export async function finishMonsterAttackDeath(monster, { pagerOwned = false, at
         await plineWithContinuation(fatalLine);
     const fatalKiller = customCause ? attribution.killer : fatalMonsterDescription(monster);
     const fatalDeathCause = customCause
-        ? attribution.deathCause ?? `killed by ${fatalKiller}`
+        ? attribution.deathCause ?? formatKillerCause(fatalKiller, deathType, attribution.killerFormat ?? KILLED_BY)
         : `${deathType === STONING ? 'petrified' : 'killed'} by ${fatalKiller}`;
     if (!customCause) {
         // done_in_by() removes redundant attribution only for the causing monster.
@@ -182,6 +182,13 @@ export async function finishMonsterAttackDeath(monster, { pagerOwned = false, at
     });
     game.context.move = 0;
     return true;
+}
+// losehp() enters urgent_pline(), whose map flush precedes paging the
+// previous message. Its pending HP request must reach that pager.
+export async function finishHeroDeathAfterMonsterMessage(options) {
+    await flush_screen(1);
+    await waitForCurrentMonsterMore();
+    return finishHeroDeath(options);
 }
 export async function waitForCurrentMonsterMore(fallbackMessage = '') {
     if (!game._pending_message)

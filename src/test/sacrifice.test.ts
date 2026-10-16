@@ -12,6 +12,7 @@ import assert from 'node:assert/strict';
 import { artifactById, initializeArtifacts } from '../js/artifacts.js';
 import { wearHeroAccessory } from '../js/accessory.js';
 import { ALTAR, AM_SANCTUM, Align2amask, Amask2align } from '../js/const.js';
+import { terrain_glyph } from '../js/display.js';
 import { SCORE_RECORD_STORAGE_KEY } from '../js/end.js';
 import { placeCreatedObject } from '../js/floor_object.js';
 import { game } from '../js/gstate.js';
@@ -21,6 +22,7 @@ import { ddoinv } from '../js/invent.js';
 import { resetInputState } from '../js/input.js';
 import { answerPrompts } from './support/input-boundaries.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
+import { mapFeatureDescription } from '../js/pager_features.js';
 import { AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, GOLD_PIECE } from '../js/object_data.js';
 import { addInventoryItem } from '../js/u_init.js';
 import { runExtendedCommand } from './support/commands.js';
@@ -222,11 +224,14 @@ void test('a former pet is refused even after its corpse becomes old', async () 
 void test('a chaotic human sacrifice changes a neutral altar without changing the hero', async () => {
     const altar = freshAltar({ hero: { ualign: { type: -1, record: 0 }, ualignbase: [-1, -1] } });
     requirePlayingGame(game);
+    altar.altarmask = altar.flags;
     const corpse = await addInventoryItem(await corpseObject(MONSTER_NAME.indexOf('human')));
 
     await runExtendedCommand('offer', `${corpse.invlet}\x1b`);
 
     assert.equal(Amask2align(altar.flags), -1);
+    assert.equal(mapFeatureDescription(game.u.ux, game.u.uy,
+        terrain_glyph(altar, game.u.ux, game.u.uy)), 'chaotic altar');
     assert.equal(game.u.ualign.type, -1);
     assert.equal(corpse.where, 'gone');
 });

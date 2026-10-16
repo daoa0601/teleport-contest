@@ -7,7 +7,6 @@ import { artifactToHitBonus } from './artifacts.js';
 import { applyMonsterBlindness, monsterCanBeBlindedByObject, prepareHeroThrownBlindness, finishHeroThrownBlindness } from './blinding_attack.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { canSeeMonster, canSpotMonster, displayLiquidName, plineWithContinuation } from './display.js';
-import { finishHeroDeath } from './end.js';
 import { applyFloorEffects } from './floor_effects.js';
 import { placeObject, stack_object } from './floor_object.js';
 import { game, requirePlayingGame } from './gstate.js';
@@ -20,7 +19,7 @@ import { hitHeroWithThrownPotion } from './hero_potion_hit.js';
 import { heroSpecies } from './hero_species.js';
 import { angerAttackedMonster } from './monster_anger.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
-import { waitForCurrentMonsterMore } from './monster_attack_death.js';
+import { finishHeroDeathAfterMonsterMessage } from './monster_attack_death.js';
 import { rejectMonsterShadeContact } from './monster_combat_messages.js';
 import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SIZE, monsterHatesSilver, monsterIsAmorphous, monsterIsNoncorporeal, monsterIsNonliving, monsterIsPlayerMonster, monsterIsUnicorn, monsterIsVampireShifter } from './monster_data.js';
 import { finishEnvironmentalMonsterDeath } from './monster_death.js';
@@ -559,10 +558,7 @@ async function hitHeroWithProjectile(shot, context) {
         damage = Math.ceil(damage / 2);
     shot.damage = damage;
     const mortality = hero.umortality ?? 0;
-    const die = async (options) => {
-        await waitForCurrentMonsterMore();
-        return finishHeroDeath(options);
-    };
+    const die = finishHeroDeathAfterMonsterMessage;
     const hit = await hitHeroWithObject(object, damage, accuracy, {
         state, publish, rollOne, die,
         name: captureHeroProjectileName(object, state, volley), killer: killerObjectName(object, state),

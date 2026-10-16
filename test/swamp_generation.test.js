@@ -16,7 +16,8 @@ void test('ordinary level generation can make swamps with alternating pools and 
         const state = freshGame({ moves: 0, flags: { bones: false }, hero: {
                 uz: { dnum: 0, dlevel: 20 }, ulevel: 20,
             } });
-        game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 30 })];
+        game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 30,
+                themeRooms: 'themerms.lua' })];
         initRng(999);
         init_objects();
         initRng(seed);

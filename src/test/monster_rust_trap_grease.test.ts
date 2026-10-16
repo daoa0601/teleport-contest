@@ -2,7 +2,9 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { RUST_TRAP, W_ARMH } from '../js/const.js';
-import { game } from '../js/gstate.js';
+import { flush_screen, newsym } from '../js/display.js';
+import { game, requireGameDisplay } from '../js/gstate.js';
+import { placeMonsterAt } from '../js/monster_location.js';
 import { monsterName } from '../js/monster_name.js';
 import { HELMET } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
@@ -40,3 +42,30 @@ for (const hallucinating of [false, true]) {
         });
     }
 }
+
+// C trapeffect_rust_trap(): an unseen rust trap is revealed by seetrap(),
+// whose newsym() draws the monster that just stepped onto it before the
+// gush message appears.
+void test('a monster stepping onto an unseen rust trap is drawn there before the gush', async () => {
+    const { monster, trap } = await freshMonsterTrapRoom(RUST_TRAP, { x: 12, y: 10 });
+    trap.tseen = false;
+    placeMonsterAt(monster, 13, 10);
+    newsym(12, 10);
+    newsym(13, 10);
+    placeMonsterAt(monster, 12, 10);
+    newsym(13, 10);
+    const cell = () => requireGameDisplay().grid[10 + 1]?.[12 - 1]?.ch;
+    assert.notEqual(cell(), 'H');
+    let shownAtMessage: string | undefined;
+
+    const event = await beginMonsterRustTrap(monster, trap, game, { random: () => 4 });
+    await finishMonsterRustTrap(monster, event, game, {
+        publish: async () => {
+            await flush_screen(1);
+            shownAtMessage ??= cell();
+        },
+    });
+
+    assert.equal(trap.tseen, true);
+    assert.equal(shownAtMessage, 'H');
+});

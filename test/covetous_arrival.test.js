@@ -48,7 +48,7 @@ void test('a lich returning from unseen retreat stairs announces its arrival fro
             level.requireAt(20, y).typ = VWALL;
         vision_reset();
         vision_recalc(0);
-        mkstairs(40, 10, true, null);
+        await mkstairs(40, 10, true, null);
         const lich = await createMonsterAt('master lich', 11, 10, NO_MINVENT);
         lich.minvis = 1;
         lich.mhp = 85;

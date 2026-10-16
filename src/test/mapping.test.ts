@@ -142,3 +142,16 @@ void test('memory-only magic background mapping replaces a trap glyph without hi
     mapLevel();
     assert.equal(level.requireAt(30, 10).disp_ch, '^');
 });
+
+void test('magic background mapping replaces explicit unexplored memory', () => {
+    const level = freshObjectRoom();
+    const location = level.requireAt(30, 10);
+    location.typ = FOUNTAIN;
+    location.remembered_glyph = { ch: ' ', color: NO_COLOR, kind: 'unexplored' };
+
+    magic_map_background(30, 10, false);
+
+    const memory = level.requireAt(30, 10).remembered_glyph;
+    assert.ok(memory?.kind === 'terrain');
+    assert.equal(memory.terrainName, 'fountain');
+});

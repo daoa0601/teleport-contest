@@ -24,6 +24,9 @@ void test('Lua-generated health food shops stock actual vegetarian food', async 
     game.specialLevels.clear();
     game.flags.bones = false;
     game.medusa_level = createSpecialLevel({ dnum: 0, dlevel: 20 });
+    const dungeon = game.dungeons[0];
+    assert.ok(dungeon);
+    dungeon.themeRooms = 'themerms.lua';
     await startLuaCore(t);
     await mklev();
     const lua = currentLuaLifecycle().getThemedState(game, 0);

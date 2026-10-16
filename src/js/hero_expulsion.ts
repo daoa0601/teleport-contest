@@ -165,7 +165,8 @@ export async function expelHero(monster: Monster, {
         monster.mx = destination.x;
         monster.my = destination.y;
         monster.mtrack = [];
-        state.vision_full_recalc = 1;
+        // Native mnexto() keeps the vision from unstuck() until the normal
+        // monster light refresh; relocation alone must not reveal terrain.
     }
     refresh(oldx, oldy);
     refresh(monster.mx, monster.my);

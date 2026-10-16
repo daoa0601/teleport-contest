@@ -134,3 +134,23 @@ void test('electric engulf heals an injured flesh golem instead of damaging it',
     assert.equal(game.u.ustuck, vortex);
     assert.match(messages.join('\n'), /crackles with electricity[\s\S]*You seem unhurt[\s\S]*feel better/);
 });
+
+// C mhitu.c:mattacku() calls nomul(0) for every adjacent attacker before it
+// refuses one that is not the engulfer.
+void test('an adjacent monster interrupts a counted search inside another engulfer', async () => {
+    const messages: string[] = [];
+    const engulfer = await captureHero('trapper', messages);
+    const jackal = await createMonsterAt('jackal', game.u.ux - 1, game.u.uy,
+        MM_ANGRY | MM_NOGRP | NO_MINVENT);
+    jackal.movement = 12;
+    const input = recordMessages(messages);
+    input.feed('20s');
+    await moveloop_core();
+    assert.ok(game.multi > 0);
+    engulfer.movement = 0;
+
+    await moveloop_core();
+
+    assert.equal(game.multi, 0);
+    assert.equal(game.u.ustuck, engulfer);
+});

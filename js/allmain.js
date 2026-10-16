@@ -31,18 +31,19 @@ import { endVoluntaryMultiTurn, heroHasInvoluntaryDelay } from './command_state.
 import { dosounds } from './ambient_sounds.js';
 import { warnWithMasterKey } from './artifact_warning.js';
 import { regenerateHeroHp } from './hero_regeneration.js';
+import { overexertHeroHp } from './hero_overexertion.js';
 import { ceilingName } from './terrain_name.js';
 import { tryCallObjectType } from './object_call.js';
 import { monsterGainLevelRiseDestination } from './monmove.js';
 import { RLOC_NOMSG, WATER } from './const.js';
 import { consumeMonsterItem, presentMonsterQuaff as publishMonsterQuaff, presentMonsterWandUse, revealAggravatingMonster } from './monster_item_use.js';
-import { moveMonsterNextToHero, randomMonsterRelocation } from './teleport.js';
+import { heroCanTeleport, moveMonsterNextToHero, randomMonsterRelocation, teleportHero } from './teleport.js';
 import { monsterAtPosition } from './monster_location.js';
 import { placeHeroAtRandomArrival } from './level_change.js';
 import { monsterName, monsterSpellDeathReason, monsterSubjectPronoun, possessiveName, quietMonsterName } from './monster_name.js';
 import { touchHeroWithDeath } from './monster_death_touch.js';
 import { resolveMonsterWeaponContact } from './monster_weapon_contact.js';
-import { finishMonsterAttackDeath, waitForCurrentMonsterMore } from './monster_attack_death.js';
+import { finishHeroDeathAfterMonsterMessage, finishMonsterAttackDeath, waitForCurrentMonsterMore } from './monster_attack_death.js';
 import { monsterMissMessage } from './monster_miss.js';
 import { monsterIsAnimal } from './monster_data.js';
 import { monsterCanCarryObject } from './monster_carry.js';
@@ -82,10 +83,12 @@ import { readEngravingAt, wipeHeroEngraving } from './engrave.js';
 import { d, rn2, rnd } from './rng.js';
 import { mklev, l_nhcore_init, makemonAt, summonNastyMonsters, u_on_upstairs, } from './mklev.js';
 import { summonMonsterInsects } from './monster_spell_insects.js';
-import { applyHeroLiquidEffects, continueCountedCommand, continueRun, finishArmorRemoval, getLine, promptYesNo, rhack, } from './cmd.js';
+import { applyHeroLiquidEffects, askTeleportDestination, continueCountedCommand, continueRun, finishArmorRemoval, getLine, promptYesNo, rhack, } from './cmd.js';
+import { clearRepeatCommand } from './command_repeat.js';
+import { checkHeroLeashes } from './leash_apply.js';
 import { finishDestinationSpotEffects } from './location_effects.js';
 import { performQuestExpulsion } from './quest.js';
-import { amuletTurn, resurrectWizard } from './wizard.js';
+import { amuletTurn, monsterCarriesAmulet, resurrectWizard } from './wizard.js';
 import { finishHeroLiquidMonsterDeath, finishHeroMonsterKill, } from './hero_monster_death.js';
 import { aggravateMonsters, angerMonster } from './monster_anger.js';
 import { grantAmuletWish } from './wish.js';
@@ -96,7 +99,7 @@ import { resolveMonsterGaze } from './monster_gaze.js';
 import { resolveMonsterMagicRay } from './monster_magic_ray.js';
 import { resolveMonsterSelfExplosion } from './monster_self_explosion.js';
 import { canSpotMonster, displayColorName, displayMessageWindow, docrt, redrawMap, bot, flush_screen, flushPendingTopline, pline, plineWithContinuation, newsym, map_invisible, randomDisplayMonsterName, see_monsters, see_objects, see_traps, show_glyph_cell, swallowed, canSeeMonster, monsterVisible, shieldeff, } from './display.js';
-import { cansee, couldsee, vision_note_blocker_change, vision_recalc, vision_reset, hasLightSources, init_vision_globals, } from './vision.js';
+import { cansee, couldsee, vision_note_blocker_change, vision_recalc, vision_reset_new_level, hasLightSources, } from './vision.js';
 import { nhgetch } from './input.js';
 import { NO_COLOR, CLR_BRIGHT_BLUE } from './terminal.js';
 import { ACID_VENOM, BOULDER, CORPSE, LEASH, GOLD_PIECE, OBJECT_BIMANUAL, OBJECT_NAMES, } from './object_data.js';
@@ -104,7 +107,7 @@ import { makePlural, verbForSubject, withIndefiniteArticle } from './object_gram
 import { monsterLocomotion } from './monster_locomotion.js';
 import { monsterFliesOrFloats } from './terrain_properties.js';
 import { observeDistantObjectForNaming, observeObjectForNaming, ownedObjectName, } from './objnam.js';
-import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, BOLT_LIM, COLNO, ROWNO, DOOR, D_CLOSED, D_LOCKED, HOLE, M_SEEN_ELEC, M_SEEN_FIRE, M_SEEN_MAGR, M_SEEN_REFL, STONE, ZAP_POS, M_ATTK_AGR_DIED, M_ATTK_AGR_DONE, W_ARMG, UNENCUMBERED, MOD_ENCUMBER, HVY_ENCUMBER, EXT_ENCUMBER, W_ACCESSORY, W_WEAPONS, ismnum, Upolyd, Is_airlevel, Is_waterlevel, LUCKMIN, LUCKMAX, TT_BURIEDBALL, TT_LAVA, } from './const.js';
+import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, BOLT_LIM, COLNO, ROWNO, DOOR, D_CLOSED, D_LOCKED, HOLE, M_SEEN_ELEC, M_SEEN_FIRE, M_SEEN_MAGR, M_SEEN_REFL, STONE, ZAP_POS, M_ATTK_AGR_DIED, M_ATTK_AGR_DONE, W_ARMG, UNENCUMBERED, MOD_ENCUMBER, HVY_ENCUMBER, EXT_ENCUMBER, W_ACCESSORY, W_WEAPONS, ismnum, Upolyd, Is_airlevel, Is_waterlevel, LUCKMIN, LUCKMAX, TT_BURIEDBALL, TT_LAVA, KILLED_BY_AN, } from './const.js';
 import { uInitMisc, makedog, uInitInventoryAttrs, finishStartingDiscoveries, } from './u_init.js';
 import { makeDeaf } from './hero_hearing.js';
 import { heroIsBlind, heroIsDeaf, syncBlindness } from './senses.js';
@@ -317,8 +320,7 @@ export async function restoregamePreamble() {
     game._encumbranceLevel = 0;
     // C dorecover() rebuilds the unsaved vision state before docrt() and
     // welcome(). Search and monster feedback use that same live sight.
-    init_vision_globals();
-    vision_reset();
+    vision_reset_new_level();
     await docrt();
     const race = game.urace?.adj || game.urace?.noun || 'human';
     const role = game.flags?.female && game.urole?.name?.f
@@ -413,7 +415,7 @@ async function enterTutorial() {
     tutorialHero.uy0 = tutorialPosition.y0;
     game._tutorialActive = true;
     game._pending_message = '';
-    vision_reset();
+    vision_reset_new_level();
     await docrt();
     await checkSpecialRoom();
     await readEngravingAt(game.u.ux, game.u.uy, plineWithContinuation);
@@ -742,6 +744,10 @@ async function finishInitialTurnMaintenanceAfterRegions({ sourceTurn, moveAmount
         interruptCountedActivity('You are in full health.');
     if (game.program_state.gameover)
         return { kind: 'complete', moveAmount };
+    // C moveloop_core(): moving around while Strained or worse is hard work.
+    if (recoveryCapacity > MOD_ENCUMBER && game.u.umoved
+        && sourceTurn % (recoveryCapacity < EXT_ENCUMBER ? 30 : 10) === 0)
+        await overexertHeroHp(game);
     if ((game.u?.uen ?? 0) < (game.u?.uenmax ?? 0)) {
         const level = game.u?.ulevel ?? 1;
         const roleFactor = game.urole?.key === 'wizard' ? 3 : 4;
@@ -762,6 +768,9 @@ async function finishInitialTurnMaintenanceAfterRegions({ sourceTurn, moveAmount
                 interruptCountedActivity('You feel full of energy.');
         }
     }
+    await rollHeroTeleportitis();
+    if (game.program_state.gameover)
+        return { kind: 'complete', moveAmount };
     await advanceHeroShapeChange();
     if (game.program_state.gameover)
         return { kind: 'complete', moveAmount };
@@ -780,6 +789,30 @@ async function finishInitialTurnMaintenanceAfterRegions({ sourceTurn, moveAmount
     return await finishInitialTurnMaintenanceAfterAutomaticSearch({
         sourceTurn, moveAmount,
     });
+}
+// C allmain.c:moveloop_core(): Teleportation, including a teleporting form,
+// moves the hero once in 85 turns. A move away from a leashed follower checks
+// the leash and cancels queued and repeated commands.
+async function rollHeroTeleportitis() {
+    if (game.u.invulnerable || !heroCanTeleport(game) || rn2(85))
+        return;
+    const from = { x: game.u.ux, y: game.u.uy };
+    await teleportHero({ chooseDestination: askTeleportDestination });
+    if (game.program_state.gameover || (game.u.ux === from.x && game.u.uy === from.y))
+        return;
+    if (!heroNextToLeashedFollowers())
+        await checkHeroLeashes(from.x, from.y);
+    game._cannedCommands = [];
+    clearRepeatCommand();
+}
+// C apply.c:next_to_u().
+function heroNextToLeashedFollowers() {
+    const level = game.level;
+    if (level?.monsters.some(monster => monster.mleashed
+        && (monster.mx - game.u.ux) ** 2 + (monster.my - game.u.uy) ** 2 > 2))
+        return false;
+    const steed = game.u.usteed;
+    return !(steed && monsterCarriesAmulet(steed));
 }
 // C allmain.c:moveloop_core(). A selected change waits through involuntary
 // delays and Unchanging; losing the source of the change cancels it.
@@ -2181,13 +2214,6 @@ function resolveDeferredHeroGeyser(action, heroAttack) {
     applyHeroSpellDamage(heroAttack, appliedDamage, game);
     heroAttack.deferredGeyserSpell = false;
 }
-async function finishHeroDeathAfterMonsterMessage(options) {
-    // losehp() enters urgent_pline(), whose map flush precedes paging the
-    // previous message. Its pending HP request must reach that pager.
-    await flush_screen(1);
-    await waitForCurrentMonsterMore();
-    return finishHeroDeath(options);
-}
 async function resumeTrappedMonster(action) {
     const game = requireInitializedGame();
     if (!action.movement?.escapingTrap)
@@ -2262,8 +2288,8 @@ async function presentMonsterAttackEffects(action, game, { random = rn2, rollDic
                             deathType: options.deathType ?? null,
                             attribution: {
                                 kind: 'death-inflicted-by', killer: options.killer,
-                                deathCause: options.deathCause
-                                    || `killed by ${withIndefiniteArticle(options.killer)}`,
+                                ...(options.deathCause ? { deathCause: options.deathCause } : {}),
+                                killerFormat: options.killerFormat ?? KILLED_BY_AN,
                                 announcesDeath: !options.deathLineShown,
                             },
                             pagerOwned: paging.pagerOwned,
@@ -3330,8 +3356,7 @@ export async function newgame() {
     // C does this before makedog() so that the starting pet is placed next
     // to the hero rather than next to the level-generation origin.
     await u_on_upstairs();
-    init_vision_globals();
-    vision_reset();
+    vision_reset_new_level();
     await checkSpecialRoom();
     const occupant = monsterAtPosition(requireGameLevel(g), g.u.ux, g.u.uy);
     if (occupant)

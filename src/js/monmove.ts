@@ -294,6 +294,7 @@ import {
     AT_GAZE,
     AT_HUGS,
     AT_MAGC,
+    AT_NONE,
     AT_SPIT,
     AT_TUCH,
     AT_WEAP,
@@ -397,7 +398,10 @@ import {
     startHeroPetrificationFromMonster,
     touchPetrifies,
 } from './stoning.js';
-import { monsterHasFireResistance, monsterHasStoneResistance } from './monster_resistance.js';
+import {
+    monsterHasAcidResistance, monsterHasColdResistance, monsterHasFireResistance,
+    monsterHasShockResistance, monsterHasStoneResistance,
+} from './monster_resistance.js';
 import { monsterReflectsRay } from './ray.js';
 import { clearHeroSliming } from './slime.js';
 import {
@@ -2214,12 +2218,13 @@ function dogGoal(
     // Inventory order is observable because dogfood() calls obj_resists()
     // before classifying each item and stops at the first DOGFOOD entry.
     if (appr === 0) {
-        const heroLocation = state?.level?.at?.(ux, uy);
-        const onStairs =
-            !!heroLocation?.ladder ||
-            [state?.level?.upstair, state?.level?.dnstair].some(
-                (stair) => stair?.x === ux && stair?.y === uy,
-            );
+        let onStairs = false;
+        for (let stair = state.stairs; stair; stair = stair.next) {
+            if (stair.sx === ux && stair.sy === uy) {
+                onStairs = true;
+                break;
+            }
+        }
         if (onStairs) {
             appr = 1;
         } else {
@@ -2951,20 +2956,28 @@ async function petAttacksMonster(
 // passive retaliation, multiplied by the pet's number of contact attacks, as
 // a deterministic safety gate before any melee to-hit roll is allowed.
 export function maxPassiveMonsterDamage(defender: Monster, aggressor: Monster) {
-    const contactTypes = new Set([1, 2, 3, 4, 5, 6, 7, 11, 16, AT_WEAP]);
+    const contactTypes = new Set([
+        AT_CLAW, AT_BITE, AT_KICK, AT_BUTT, AT_TUCH, AT_STNG, AT_HUGS,
+        AT_ENGL, AT_TENT, AT_WEAP,
+    ]);
     const contactCount = (MONSTER_ATTACKS[aggressor?.mnum] || []).filter(([attackType]) =>
         contactTypes.has(attackType),
     ).length;
     if (!contactCount) return 0;
 
-    const resistance = MONSTER_RESISTS[aggressor?.mnum] ?? 0;
+    const species = MONSTER_NAME[aggressor.mnum];
     for (const [attackType, damageType, dice, sides] of MONSTER_ATTACKS[defender?.mnum] || []) {
-        if (attackType !== 0 && attackType !== 14) continue;
+        if (attackType !== AT_NONE && attackType !== AT_BOOM) continue;
+        // These bodies are destroyed by contact regardless of resistance or HP.
+        if (damageType === AD_FIRE && (species === 'paper golem' || species === 'straw golem')
+            || damageType === AD_DCAY && (species === 'wood golem' || species === 'leather golem')
+            || damageType === AD_RUST && species === 'iron golem')
+            return aggressor.mhp * contactCount;
         const resisted =
-            (damageType === AD_FIRE && resistance & 0x01) ||
-            (damageType === AD_COLD && resistance & 0x02) ||
-            (damageType === AD_ELEC && resistance & 0x10) ||
-            (damageType === AD_ACID && resistance & 0x40);
+            (damageType === AD_FIRE && monsterHasFireResistance(aggressor)) ||
+            (damageType === AD_COLD && monsterHasColdResistance(aggressor)) ||
+            (damageType === AD_ELEC && monsterHasShockResistance(aggressor)) ||
+            (damageType === AD_ACID && monsterHasAcidResistance(aggressor));
         if (resisted) return 0;
         if (![AD_PHYS, AD_FIRE, AD_COLD, AD_ELEC, AD_ACID].includes(damageType)) return 0;
         const count = dice || (MONSTER_LEVEL[defender.mnum] ?? 0) + 1;
@@ -3324,18 +3337,18 @@ async function movePet(
             && recordRandom(random, calls, 13 * uncursedCount))
             continue;
 
-        // C dog_move(): only distant, unleashed pets probabilistically avoid
-        // recent locations. `uncursedCount` is the source `k`, so it controls
-        // both the random range and the track-age cutoff.
+        // Guardians have no food or fetching state and do not avoid curses.
+        // Their backtracking chance therefore counts every candidate square.
         if (
             !monster.mleashed &&
             distmin(oldx, oldy, state?.u?.ux ?? goal.x, state?.u?.uy ?? goal.y) > 5
         ) {
-            const trackCount = Math.min(4, Math.max(0, uncursedCount - 1));
+            const trackSquares = monster.edog ? uncursedCount : candidates.length;
+            const trackCount = Math.min(4, Math.max(0, trackSquares - 1));
             let avoid = false;
             for (let j = 0; j < trackCount; j++) {
                 const track = monster.mtrack?.[j];
-                const trackRange = 4 * (uncursedCount - j);
+                const trackRange = 4 * (trackSquares - j);
                 if (track?.x === nx && track?.y === ny) {
                     if (recordRandom(random, calls, trackRange)) {
                         avoid = true;
@@ -7585,11 +7598,8 @@ async function beginStandardMonsterAttack(
         (Upolyd(state.u) ? state.u.mh : state.u.uhp) <= 0
     )
         return;
-    if (state.u.uswallow && state.u.ustuck !== monster) {
-        movement.swallowedAttackSkipped = true;
-        return;
-    }
-
+    // mattacku() interrupts the hero before refusing a monster other than
+    // the engulfer.
     const attack = await beginMonsterHeroAttack(
         monster,
         state,

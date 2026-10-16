@@ -284,8 +284,8 @@ for (const buildsUp of [false, true] as const) {
         const dungeon = game.dungeons[0];
         assert.ok(dungeon);
         dungeon.entry_lev = buildsUp ? 20 : 1;
-        mkstairs(25, 5, true, null);
-        mkstairs(25, 15, false, null);
+        await mkstairs(25, 5, true, null);
+        await mkstairs(25, 15, false, null);
         await purchase();
         await checkSpecialRoom({ newLevel: true });
         const responders = game.level.monsters.filter(isKop);

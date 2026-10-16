@@ -976,6 +976,7 @@ export async function animateRollingBoulderCell(
 
 async function triggerRollingBoulderTrap(trap: Trap) {
     const wasKnown = !!trap.tseen;
+    trap.tseen = true;
     map_trap(trap, false);
     newsym(trap.tx, trap.ty);
 
@@ -1194,8 +1195,11 @@ export async function prepareHoleFall(trap: Trap | null | undefined, { tookPlung
         ?? { dnum: current.dnum, dlevel: current.dlevel + 1 });
     const distance = dungeonDepth(destination.dnum, destination.dlevel)
         - dungeonDepth(current.dnum, current.dlevel);
+    // C fall_through(): only a deliberate plunge while Flying is
+    // controlled_flight; a forced Sokoban fall still falls.
+    const controlledFlight = flying && tookPlunge;
     if (distance > 1) await plineWithContinuation(
-        `You ${flying ? 'fly' : 'fall'} down a ${distance > 3 ? 'very ' : ''}`
+        `You ${controlledFlight ? 'fly' : 'fall'} down a ${distance > 3 ? 'very ' : ''}`
         + `${distance > 2 ? 'deep ' : ''}shaft!`,
     );
     return { destination, arrival: flying ? 'random' : 'falling' };

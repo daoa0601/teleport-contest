@@ -52,4 +52,21 @@ for (const visitedLocate of [false, true]) {
         assert.equal(fall?.destination.dlevel, visitedLocate ? 5 : 3);
     });
 }
+// C trap.c fall_through(): "fly down a shaft" needs controlled_flight, which
+// only a deliberate plunge while Flying sets; Sokoban's forced fall of a
+// flying hero still falls.
+for (const plunge of [false, true]) {
+    void test(`a flying hero ${plunge ? 'who plunges flies' : 'forced down in Sokoban falls'} down a deep shaft`, async () => {
+        const { source } = freshConnectedLevels({ destinationDepth: 4 });
+        requirePlayingGame(game);
+        game.u.flying = true;
+        if (!plunge)
+            source.flags.sokoban_rules = true;
+        const hole = addTrap(source, HOLE, 10, 10, { dst: { dnum: 0, dlevel: 4 } });
+        pushKeys(' '.repeat(10));
+        const fall = await prepareHoleFall(hole, { tookPlunge: plunge });
+        assert.ok(fall);
+        assert.match(String(game._pending_message ?? ''), plunge ? /You fly down a deep shaft!/ : /You fall down a deep shaft!/);
+    });
+}
 //# sourceMappingURL=hero_hole_destination.test.js.map

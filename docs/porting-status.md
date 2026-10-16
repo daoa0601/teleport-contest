@@ -130,7 +130,7 @@ existing tests needed their setup corrected:
   `commitPetPickup()` and checks that the dagger stays on the floor until
   then.
 
-## Parallel batches 1–27 (`2a7f360`)
+## Parallel batches 1–30 (`b16c387`)
 
 Units ran in worktrees under `docs/orchestration.md` (Codex; each diff reviewed
 by Codex against the C source, then merged only if the full suite adds no
@@ -322,11 +322,29 @@ Batch 27: C-source audits of **audit-throw** (`dothrow.c`/`mthrowu.c`),
 and `do_name.c`), and **review-debt-11** (the accepted review queue; most
 items were already fixed by later audits).
 
+Batch 28: **throw-return** (native `boomhit()` boomerang flight and the
+aklys/Mjollnir return and catch rolls) and C-source audits of
+**audit-write** (`write.c`, `rumors.c`), **audit-end** (`end.c` death,
+life saving and disclosure), **audit-light** (`light.c`) and
+**audit-dungeon** (`dungeon.c` level bookkeeping and the overview).
+
+Batch 29: C-source audits of **audit-minion** (`minion.c`, `mplayer.c`),
+**audit-mklev** (`mklev.c` niches, graves, vaults and trap choice),
+**audit-rip** (`rip.c`/`topten.c` end-of-game screens) and **audit-vision**
+(`vision.c`).
+
+Batch 30: C-source audits of **audit-dogmove** (`dogmove.c`) and
+**audit-shknam** (`shknam.c`), plus fixes found by scoring 1,250 freshly
+recorded native sessions (**opus-1**, **opus-2**, **fresh-a**): per-turn
+teleportitis, Strained overexertion, drowning while riding, look_here shared by
+autopickup and `:`, monster fire-blast death causes, trap missile naming,
+newman message joining, bear-trap and land-mine display.
+
 ## Verification
 
-`npm test` at `2a7f360`: **11,509/11,509**. Merges require a fully green suite;
+`npm test` at `b16c387`: **11,705/11,705**. Merges require a fully green suite;
 batch runs also compare matched screens per session with the previous batch
-(no screen regression in batch 27, eval, public or pool).
+(no screen regression in batch 30, eval, public or pool).
 
 ## Most recent native diagnostics
 
@@ -336,9 +354,9 @@ batch runs also compare matched screens per session with the previous batch
 | Native eval sample | 300/300 | 50,586/50,586 | 3,616,669/3,616,669 | 0 |
 | Holdout-dev pool | 2,500/2,500 | | | 0 |
 
-Runs: `.cache/generalization/batch27-2a7f360-{eval,public}` and
-`triage-2a7f360` (pool) in the verify worktree (baseline `base-06d7e73`:
-143/300; batch 26: 300/300, pool 2,500/2,500). No verified random call was
+Runs: `.cache/generalization/batch30-b16c387-{eval,public}` and
+`triage-b16c387` (pool) in the verify worktree (baseline `base-06d7e73`:
+143/300; batch 29: 300/300, pool 2,500/2,500). No verified random call was
 lost; the ledgers now hold 350 eval and 363 public functions. The
 state oracle finds all 300 sessions matching C state throughout.
 
@@ -346,10 +364,10 @@ state oracle finds all 300 sessions matching C state throughout.
 
 Every eval-sample and pool session completes and public matches every random
 call, so new work comes from C-source audits of files the corpora barely
-run. Merged after batch 27: `write.c`/`rumors.c` (audit-write) and
-boomerang and returning-weapon flight (throw-return). In flight: `end.c`
-(audit-end), `mklev.c` (audit-mklev), `light.c` (audit-light) and
-`dungeon.c` (audit-dungeon). review-debt-3's turn-loop restructuring
+run, plus freshly recorded native sessions (1,746/1,750 of fresh1–3 and
+public, 400/400 fresh4). In flight: `options.c` (audit-options), `display.c`
+(audit-display), trap reveal display (trap-reveal) and new holdout recipes
+for unexercised mechanics (recipe-expansion). review-debt-3's turn-loop restructuring
 (delayed armor removal, `stealarm()`, prayer delay) is parked unmerged: it
 broke save/restore twice. `.cache/agents/queue.md` holds accepted review
 findings.
