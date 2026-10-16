@@ -1730,12 +1730,11 @@ export function newsym_force(x: number, y: number): void {
 
 // ── newsym ──
 function monsterDisplayAttribute(state: 'normal' | 'pet' | 'detected') {
+    // C tty_print_glyph() applies pet highlighting independently of use_inverse.
+    if (state === 'pet') return game.flags.hilite_pet ? ATR_INVERSE : 0;
     const inverse = game.flags?.use_inverse !== false
         && game.iflags?.use_inverse !== false && game.iflags?.wc_inverse !== false;
-    if (!inverse) return 0;
-    // A detected tame monster uses a pet glyph, so only hilite_pet can
-    // highlight it. Ordinary detected glyphs always carry MG_DETECT.
-    return state === 'detected' || state === 'pet' && game.flags.hilite_pet ? ATR_INVERSE : 0;
+    return state === 'detected' && inverse ? ATR_INVERSE : 0;
 }
 
 // C show_mon_or_warn(): a located actor replaces remembered invisibility.
