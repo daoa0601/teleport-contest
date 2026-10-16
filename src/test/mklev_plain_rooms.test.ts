@@ -87,6 +87,8 @@ for (const { label, source: malformedSource, diagnostic } of [
         diagnostic: /\[string "\(themerms\.lua\)"\]:2: 'end' expected \(to close 'if' at line 1\) near <eof>/ },
     { label: 'an unfinished local function with a multiline header', source: 'local function room\n()\n',
         diagnostic: /\[string "\(themerms\.lua\)"\]:3: 'end' expected \(to close 'function' at line 2\) near <eof>/ },
+    { label: 'an unfinished anonymous function with a multiline header', source: 'local room = function\n()\n',
+        diagnostic: /\[string "\(themerms\.lua\)"\]:3: 'end' expected \(to close 'function' at line 2\) near <eof>/ },
     { label: 'an unfinished quoted string', source: 'local message = "\n',
         diagnostic: /\[string "\(themerms\.lua\)"\]:1: unfinished string near '"'/ },
 ]) {

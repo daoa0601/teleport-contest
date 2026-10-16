@@ -327,7 +327,8 @@ export function parseLua(source, filename = '<lua>') {
         }
         if (is('function')) {
             const opening = take('function');
-            return parseFunctionBody(opening);
+            // Lua simpleexp() passes the line reached after reading 'function'.
+            return parseFunctionBody({ ...opening, line: current().line });
         }
         if (is('{'))
             return parseTable();
