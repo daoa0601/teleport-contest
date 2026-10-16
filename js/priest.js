@@ -4,6 +4,7 @@
 // with the hero after movement or a level transition.
 import { formatFeltMessage } from './hero_speech.js';
 import { game, requireGameLevel, requireInitializedGame, requireLiveGame } from './gstate.js';
+import { recordTempleOverview } from './dungeon.js';
 import { deityName } from './alignment.js';
 import { heroSpineName } from './body_parts.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
@@ -348,8 +349,10 @@ export async function intemple(roomno, state = game) {
             await plineWithContinuation(`"${followup}"`);
         epri.enter_time = moves + d(10, 100);
     }
-    if (sanctum)
+    if (sanctum) {
+        recordTempleOverview(state);
         return priest;
+    }
     const coaligned = priestIsCoaligned(priest, state);
     const forbidding = !shrined || !coaligned
         || (state.u?.ualign?.record ?? 0) <= -4;
@@ -369,6 +372,7 @@ export async function intemple(roomno, state = game) {
         if (epri[thisKey] <= epri[otherKey])
             epri[otherKey] = epri[thisKey] - 1;
     }
+    recordTempleOverview(state);
     return priest;
 }
 export function templeRoomAt(state, x, y) {

@@ -5,6 +5,7 @@
 
 import { formatFeltMessage } from './hero_speech.js';
 import { game, requireGameLevel, requireInitializedGame, requireLiveGame } from './gstate.js';
+import { recordTempleOverview } from './dungeon.js';
 import type { GameState } from './game_state.js';
 import type { DungeonLocation } from './dungeon_types.js';
 import type { Monster, PriestData, MinionData } from './monster_types.js';
@@ -334,7 +335,10 @@ export async function intemple(roomno: number, state: GameState = game): Promise
         epri.enter_time = moves + d(10, 100);
     }
 
-    if (sanctum) return priest;
+    if (sanctum) {
+        recordTempleOverview(state);
+        return priest;
+    }
 
     const coaligned = priestIsCoaligned(priest, state);
     const forbidding = !shrined || !coaligned
@@ -358,6 +362,7 @@ export async function intemple(roomno: number, state: GameState = game): Promise
         if (epri[thisKey] <= epri[otherKey])
             epri[otherKey] = epri[thisKey] - 1;
     }
+    recordTempleOverview(state);
     return priest;
 }
 

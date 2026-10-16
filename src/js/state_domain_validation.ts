@@ -117,6 +117,12 @@ export function validSavedSpecialLevel(value: unknown): value is SpecialLevelDes
 
 export function validSavedOverviewRecord(value: unknown): value is OverviewRecord {
     return closedFieldsMatch<OverviewRecord>(value, {
+        flags: (entry): entry is OverviewRecord['flags'] => closedFieldsMatch<OverviewRecord['flags']>(entry, {
+            notreachable: boolean, forgot: boolean, sokosolved: boolean, bigroom: boolean,
+            roguelevel: boolean, oracle: boolean, castle: boolean, castletune: boolean,
+            ludios: boolean, valley: boolean, msanctum: boolean, vibrating_square: boolean,
+            quest_summons: boolean, questing: boolean,
+        }),
         features: validOverviewFeatures,
         branch: nullable((entry): entry is NonNullable<OverviewRecord['branch']> =>
             closedFieldsMatch<NonNullable<OverviewRecord['branch']>>(entry, {

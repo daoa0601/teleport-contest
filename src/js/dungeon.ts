@@ -10,6 +10,7 @@ import {
     D_ALIGN_MASK, D_ALIGN_NEUTRAL, FOUNTAIN, GRAVE, HELLISH, In_endgame,
     MAZELIKE, ROGUELIKE, ROOMOFFSET, ROWNO, SHOPBASE, SINK, THRONE, In_sokoban,
     TOWN, TREE, UNCONNECTED, TEMPLE, Is_astralevel, M_AP_TYPE, M_AP_FURNITURE,
+    DELPHI, DOOR, DBWALL, DRAWBRIDGE_DOWN, Invocation_lev, VIBRATING_SQUARE,
 } from './const.js';
 import { deepestLevelReached, depth, ledgerNo } from './hacklib.js';
 import { updateLastSeenTerrain } from './display.js';
@@ -18,12 +19,14 @@ import { roomForIndex } from './room.js';
 import { shopResident, shopkeeperInOwnShop } from './shk.js';
 import { monsterAtPosition } from './monster_location.js';
 import { CmapSymbol } from './glyph_numbers.js';
+import { findDrawbridgeAt } from './dbridge.js';
+import { heroIsBlind } from './senses.js';
 import type { GameState } from './game_state.js';
 import type {
     BranchDefinition, BranchDefinitionType, Dungeon, DungeonAlignment,
     DungeonBranch, DungeonBranchType, DungeonDefinition, DungeonFlag,
     DungeonLocation, LevelRangeDefinition, SpecialLevelDefinition,
-    SpecialLevelDescriptor,
+    SpecialLevelDescriptor, OverviewFlags, OverviewRecord,
 } from './dungeon_types.js';
 
 interface PlacedLevel {
@@ -192,6 +195,7 @@ export function recordMappedOverviewState({ discoveredRoom = null, state = game 
     if (!level) throw new Error('Overview knowledge requires the current map.');
     const { dnum, dlevel } = currentDungeonLocation(state);
     const prior = state._overviewRecords?.get(`${dnum}:${dlevel}`);
+    const flags = currentOverviewFlags(prior, state);
     const seenRooms = new Set(prior?.seenRooms || []);
     const untendedRooms = new Set(prior?.untendedRooms || []);
     if (discoveredRoom != null) seenRooms.add(discoveredRoom);
@@ -227,11 +231,13 @@ export function recordMappedOverviewState({ discoveredRoom = null, state = game 
             else if (shoptype !== room.rtype) shoptype = 0;
             nshop = cap3(nshop + 1);
         } else if (room.rtype === TEMPLE) ntemple = cap3(ntemple + 1);
+        else if (room.orig_rtype === DELPHI) flags.oracle = true;
     }
     let naltar = 0, altarAlignment: number | null = null;
     for (let x = 1; x < COLNO; x++) {
         for (let y = 0; y < ROWNO; y++) {
             const location = level.requireAt(x, y);
+            learnOverviewStructure(flags, x, y, state);
             if (location.lastseentyp !== ALTAR) continue;
             const monster = monsterAtPosition(level, x, y);
             const mask = monster && M_AP_TYPE(monster) === M_AP_FURNITURE
@@ -246,7 +252,9 @@ export function recordMappedOverviewState({ discoveredRoom = null, state = game 
         }
     }
     if (!state._overviewRecords) state._overviewRecords = new Map();
+    updateSanctumOverview(flags, naltar, state);
     state._overviewRecords.set(`${dnum}:${dlevel}`, {
+        flags,
         features: {
             nshop, shoptype, ntemple, naltar, altarAlignment,
             nfount: countTerrain(FOUNTAIN),
@@ -259,6 +267,78 @@ export function recordMappedOverviewState({ discoveredRoom = null, state = game 
         seenRooms: [...seenRooms],
         untendedRooms: [...untendedRooms],
     });
+}
+
+export function sameDungeonLevel(
+    left: DungeonLocation | null | undefined, right: DungeonLocation | null | undefined,
+): boolean {
+    return !!left && !!right && left.dnum === right.dnum && left.dlevel === right.dlevel;
+}
+
+function currentOverviewFlags(prior: OverviewRecord | undefined, state: GameState): OverviewFlags {
+    const here = currentDungeonLocation(state);
+    const atSpecial = (name: string) => sameDungeonLevel(here, state.specialLevels?.get(name));
+    const questEntrance = state.branches.find(branch => branch.end2.dnum === state.quest_dnum);
+    const event = state.u.uevent;
+    if (prior?.flags.notreachable && here.dnum === state.quest_dnum) {
+        for (const [key, record] of state._overviewRecords || []) {
+            if (Number(key.split(':')[0]) === state.quest_dnum) record.flags.notreachable = false;
+        }
+    }
+    return {
+        notreachable: false, forgot: false,
+        sokosolved: here.dnum === state.sokoban_dnum && !state.level?.flags.sokoban_rules,
+        bigroom: heroIsBlind(state) ? !!prior?.flags.bigroom && !prior.flags.forgot : atSpecial('bigrm'),
+        roguelevel: sameDungeonLevel(here, state.rogue_level),
+        oracle: false, castle: prior?.flags.castle ?? false, castletune: false,
+        ludios: prior?.flags.ludios ?? false, valley: prior?.flags.valley ?? false,
+        msanctum: prior?.flags.msanctum ?? false,
+        vibrating_square: prior?.flags.vibrating_square ?? false,
+        quest_summons: sameDungeonLevel(here, questEntrance?.end1) && !!event?.qcalled
+            && !event.qcompleted && !event.qexpelled && !state.quest_status?.leader_is_dead,
+        questing: atSpecial('x-strt') && !!state.quest_status?.got_quest,
+    };
+}
+
+function learnOverviewStructure(flags: OverviewFlags, x: number, y: number, state: GameState): void {
+    const level = state.level;
+    const typ = level?.at(x, y)?.lastseentyp;
+    if (typ === DOOR && sameDungeonLevel(state.u.uz, state.knox_level)) {
+        if ([-1, 0, 1].some(dy => level?.at(x - 4, y + dy)?.typ === THRONE)) flags.ludios = true;
+    } else if (sameDungeonLevel(state.u.uz, state.stronghold_level)
+        && (typ === DBWALL || typ === DRAWBRIDGE_DOWN || typ === DOOR && findDrawbridgeAt(x, y, state))) {
+        flags.castle = true;
+        flags.castletune = true;
+    }
+}
+
+function updateSanctumOverview(flags: OverviewFlags, altars: number, state: GameState): void {
+    if (sameDungeonLevel(state.u.uz, state.valley_level)) {
+        if (altars) flags.valley = true;
+    } else if (sameDungeonLevel(state.u.uz, state.sanctum_level)) {
+        if (altars) flags.msanctum = true;
+        if (flags.msanctum) {
+            const here = currentDungeonLocation(state);
+            const gateway = state._overviewRecords?.get(`${here.dnum}:${here.dlevel - 1}`);
+            if (gateway) gateway.flags.vibrating_square = false;
+        }
+    } else if (Invocation_lev(state.u.uz, state)) {
+        const trap = state.level?.traps.find(trap => trap.ttyp === VIBRATING_SQUARE);
+        const sanctum = state.sanctum_level;
+        const sanctumRecord = sanctum && state._overviewRecords?.get(`${sanctum.dnum}:${sanctum.dlevel}`);
+        flags.vibrating_square = trap ? !!trap.tseen : !sanctumRecord?.flags.msanctum;
+    }
+}
+
+// C mapseen_temple(): entering an attended temple identifies these levels,
+// even if blindness prevents the hero from discovering the altar.
+export function recordTempleOverview(state: GameState = game): void {
+    const here = currentDungeonLocation(state);
+    if (!state._overviewRecords?.has(`${here.dnum}:${here.dlevel}`)) recordMappedOverviewState({ state });
+    const record = state._overviewRecords?.get(`${here.dnum}:${here.dlevel}`);
+    if (!record) return;
+    if (sameDungeonLevel(here, state.valley_level)) record.flags.valley = true;
+    else if (sameDungeonLevel(here, state.sanctum_level)) record.flags.msanctum = true;
 }
 
 // C dungeon.c:room_discovered(). Recalculation occurs once per newly seen room.

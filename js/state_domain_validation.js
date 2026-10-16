@@ -91,6 +91,12 @@ export function validSavedSpecialLevel(value) {
 }
 export function validSavedOverviewRecord(value) {
     return closedFieldsMatch(value, {
+        flags: (entry) => closedFieldsMatch(entry, {
+            notreachable: boolean, forgot: boolean, sokosolved: boolean, bigroom: boolean,
+            roguelevel: boolean, oracle: boolean, castle: boolean, castletune: boolean,
+            ludios: boolean, valley: boolean, msanctum: boolean, vibrating_square: boolean,
+            quest_summons: boolean, questing: boolean,
+        }),
         features: validOverviewFeatures,
         branch: nullable((entry) => closedFieldsMatch(entry, {
             dnum: integer, dlevel: integer, up: boolean,
