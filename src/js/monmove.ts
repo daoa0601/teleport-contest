@@ -2218,12 +2218,13 @@ function dogGoal(
     // Inventory order is observable because dogfood() calls obj_resists()
     // before classifying each item and stops at the first DOGFOOD entry.
     if (appr === 0) {
-        const heroLocation = state?.level?.at?.(ux, uy);
-        const onStairs =
-            !!heroLocation?.ladder ||
-            [state?.level?.upstair, state?.level?.dnstair].some(
-                (stair) => stair?.x === ux && stair?.y === uy,
-            );
+        let onStairs = false;
+        for (let stair = state.stairs; stair; stair = stair.next) {
+            if (stair.sx === ux && stair.sy === uy) {
+                onStairs = true;
+                break;
+            }
+        }
         if (onStairs) {
             appr = 1;
         } else {
