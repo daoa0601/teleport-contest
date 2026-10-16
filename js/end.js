@@ -598,11 +598,10 @@ function tombstoneDeathRows(cause) {
         }
         let count = remaining.length;
         if (count > 16) {
-            count = 16;
-            while (count > 0 && remaining[count] !== ' ')
-                count--;
-            if (count === 0)
-                count = 16;
+            const space = remaining.lastIndexOf(' ', 16);
+            // Native's backward scan reaches zero after a space at index
+            // one, so that case hard-splits just like an unbroken word.
+            count = space > 1 ? space : 16;
         }
         rows.push(remaining.slice(0, count));
         remaining = remaining[count] === ' '

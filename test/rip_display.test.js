@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { SICK_NONVOMITABLE } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
+import { startHeroSickness } from '../js/hero_illness.js';
 import { runSegment } from '../js/jsmain.js';
 import { GOLD_PIECE } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
@@ -39,5 +41,27 @@ void test('the tombstone caps its gold inscription while the death summary keeps
     assert.match(summary, /and 1234567890 pieces of gold/);
     assert.match(summary, /\|\s+AlexandertheGrea\s+\|/);
     assert.match(summary, /\|\s+1999\s+\|/);
+});
+void test('the tombstone hard-splits a lone letter followed by an overlong word', async () => {
+    const engine = await endingGame();
+    await startHeroSickness({
+        turns: 1, type: SICK_NONVOMITABLE,
+        cause: 'abcdefghijklmnop x abcdefghijklmnopqrstuv',
+    });
+    engine.inputGate.feed('m.');
+    await engine.runUntilInputNeeded();
+    let tombstone = '';
+    for (let page = 0; page < 8 && !game.program_state.windows_exited; page++) {
+        const screen = screenText(capturedScreen(engine));
+        if (screen.includes('REST'))
+            tombstone = screen;
+        assert.match(screen, /--More--/, 'The fatal illness should reach only ending pagers');
+        engine.inputGate.feed(' ');
+        await engine.runUntilInputNeeded();
+    }
+    assert.equal(game.program_state.windows_exited, true);
+    assert.match(tombstone, /\|\s+abcdefghijklmnop\s+\|/);
+    assert.match(tombstone, /\|\s+x abcdefghijklmn\s+\|/);
+    assert.match(tombstone, /\|\s+opqrstuv\s+\|/);
 });
 //# sourceMappingURL=rip_display.test.js.map
