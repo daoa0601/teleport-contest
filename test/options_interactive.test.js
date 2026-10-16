@@ -12,6 +12,7 @@ async function fullOptions(names, respond = () => '\x1b') {
     const remaining = new Set(names);
     const views = [];
     let selecting = true;
+    let answer = '';
     let reads = 0;
     const command = rhack('m'.charCodeAt(0));
     await input.waitUntilBlocked();
@@ -20,8 +21,12 @@ async function fullOptions(names, respond = () => '\x1b') {
         if (++reads > 70)
             throw new Error(`Options did not finish; remaining: ${[...remaining].join(', ')}`);
         if (!selecting) {
-            views.push(view);
-            input.feed(respond(view));
+            if (!answer) {
+                views.push(view);
+                answer = respond(view);
+            }
+            input.feed(answer.charAt(0));
+            answer = answer.slice(1);
             return;
         }
         const row = view.split('\n').find(line => [...remaining].some(name => line.includes(` ${name} `)));
@@ -109,5 +114,11 @@ void test('full option help returns to the choices with its help offer removed',
     assert.ok(views.some(view => view.includes('How dynamically setting options works:')));
     assert.match(views.at(-1) ?? '', /Set what options\?/);
     assert.doesNotMatch(views.at(-1) ?? '', /view help for options menu/);
+});
+void test('full fruit edits announce the native singular name', async () => {
+    freshObjectRoom();
+    await fullOptions(['fruit'], view => view.includes('Set fruit to what?') ? 'mangos\n' : ' ');
+    assert.equal(game.fruitName, 'mango');
+    assert.match(game._pending_message, /Fruit is now "mango"\./);
 });
 //# sourceMappingURL=options_interactive.test.js.map

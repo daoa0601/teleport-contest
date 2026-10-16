@@ -1068,7 +1068,7 @@ async function doRequestMenuOptions(): Promise<void> {
 async function editCompoundOption(name: string, fullMenu: boolean): Promise<void> {
     if (name === 'number_pad') await editNumberPad();
     else if (name === 'menustyle') await editMenuStyle();
-    else if (name === 'fruit') await editFruitOption();
+    else if (name === 'fruit') await editFruitOption(fullMenu);
     else if (name === 'packorder') {
         const order = await getLine('Set packorder to what?',
             (_character: string, key: number) => key >= 32 && key < 127);
@@ -1126,16 +1126,13 @@ async function editSortLoot(): Promise<void> {
     if (isLootSortMode(mode)) game.flags.sortloot = mode;
 }
 
-async function editFruitOption(): Promise<void> {
+async function editFruitOption(giveMessage: boolean): Promise<void> {
     const name = await getLine('Set fruit to what?',
         (_ch: string, code: number) => code >= 32 && code < 127, { suppressStatus: true });
     if (!name) return;
     const result = changePreferredFruit(name);
-    // Native suppresses ordinary option-confirmation prose inside doset.
-    if (!result.changed) {
-        await plineWithContinuation(result.message);
-        await flushPendingTopline();
-    }
+    // doset_simple suppresses this notice; doset keeps it.
+    if (!result.changed || giveMessage) await plineWithContinuation(result.message);
 }
 
 // optlist.h assigns these options to the four simple-menu sections.
