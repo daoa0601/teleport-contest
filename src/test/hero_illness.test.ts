@@ -16,6 +16,7 @@ import { initRng } from '../js/rng.js';
 import { useUnicornHorn } from '../js/unicorn_horn.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { startHeroSickness, startHeroVomiting, vomitHero } from '../js/hero_illness.js';
+import { statusConditions } from '../js/status_conditions.js';
 import { CHAIN_MAIL, LONG_SWORD, UNICORN_HORN } from '../js/object_data.js';
 import {
     addInventoryObject, addInventoryWeapon,
@@ -57,6 +58,29 @@ void test('fatal illness worsens and reaches the normal death path', async () =>
     assert.equal(deaths.length, 1);
     assert.equal(deaths[0]?.killer, 'rotted goblin corpse');
     assert.equal(game.u.sickTurns, 0);
+});
+
+// C timeout.c:nh_timeout(): Sick has reached zero when "You die from your
+// illness." refreshes the status line; done_timeout() marks it again for
+// the death itself.
+void test('terminal illness leaves the status line at its fatal message and returns for the death', async () => {
+    freshHeroConditionRoom();
+    requireFixtureGame(game);
+    await startHeroSickness({ state: game, turns: 1, cause: 'illness', type: SICK_NONVOMITABLE });
+    const shown: [string, boolean][] = [];
+
+    await advanceHeroSickness({
+        state: game,
+        publish: async (message: string) => {
+            shown.push([message, statusConditions(game).some(text => text[0] === 'TermIll')]);
+        },
+        die: async () => {
+            shown.push(['done', statusConditions(game).some(text => text[0] === 'TermIll')]);
+            return true;
+        },
+    });
+
+    assert.deepEqual(shown, [['You die from your illness.', false], ['done', true]]);
 });
 
 void test('the Constitution recovery roll can cure food poisoning', async () => {
