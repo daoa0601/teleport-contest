@@ -26,6 +26,9 @@ for (const invoked of [false, true]) {
     void test(`a hero hole fall ${invoked ? 'can reach the Sanctum after invocation' : 'stops above the Sanctum before invocation'}`, async () => {
         const { source } = freshConnectedLevels({ destinationDepth: 3 });
         requirePlayingGame(game);
+        const dungeon = game.dungeons[0];
+        assert.ok(dungeon);
+        dungeon.flags.hellish = true;
         game.valley_level = createSpecialLevel({ dnum: 0, dlevel: 1 });
         game.u.uevent = { invoked };
         const hole = addTrap(source, HOLE, 10, 10, { dst: { dnum: 0, dlevel: 3 } });
