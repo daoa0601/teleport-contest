@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { rhack } from '../js/cmd.js';
-import { flush_screen } from '../js/display.js';
+import { docrt, flush_screen } from '../js/display.js';
+import { POOL } from '../js/const.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { answerPrompts } from './support/input-boundaries.js';
@@ -29,7 +30,9 @@ void test('quick look restores its goal after disabling descriptions and restore
 });
 
 void test('submerged quick look describes distant cursor positions as unreconnoitered', async () => {
-    freshObjectRoom({ flags: { tips: false }, hero: { uinwater: true } });
+    const level = freshObjectRoom({ flags: { tips: false }, hero: { uinwater: true } });
+    level.requireAt(game.u.ux, game.u.uy).typ = POOL;
+    await docrt();
     const input = resetInputState();
     input.feed('ll');
     await answerPrompts(rhack(';'.charCodeAt(0)), input, [

@@ -14,7 +14,8 @@ import { nhgetch, readchar } from './input.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { BOULDER, ROCK } from './object_data.js';
-import { CmapSymbol, GlyphOffset } from './glyph_numbers.js';
+import { CmapSymbol, GlyphOffset, cmapToGlyph } from './glyph_numbers.js';
+import { TemporaryMapEffect } from './temporary_map_effect.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import { NO_COLOR } from './terminal.js';
 import { cansee } from './vision.js';
@@ -243,8 +244,13 @@ export async function paintGetposCursor(cursor: Position, message: string, marke
     // hero can see, so a validity rule that admits unseen squares (polearm
     // couldsee+glyph policy) still cannot reveal them.
     if (markedSpots) {
+        const markers = new TemporaryMapEffect('beam', {
+            ch: GOODPOS_CH, color: HI_ZAP, decgfx: false, kind: 'effect',
+            glyph: cmapToGlyph(CmapSymbol.goodpos),
+        });
+        await markers.start();
         for (const { x, y } of markedSpots)
-            show_glyph_cell(x, y, GOODPOS_CH, HI_ZAP, false);
+            await markers.show(x, y);
     }
     await bot();
     await flush_screen(1);

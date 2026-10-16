@@ -1,0 +1,61 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+import { M_AP_FURNITURE, M_AP_MONSTER } from '../js/const.js';
+import { flush_screen, map_background, newsym } from '../js/display.js';
+import { CmapSymbol } from '../js/glyph_numbers.js';
+import { game } from '../js/gstate.js';
+import { MONSTER_NAME } from '../js/monster_data.js';
+import { ATR_INVERSE } from '../js/terminal.js';
+import { cansee, couldsee, vision_recalc } from '../js/vision.js';
+import { freshObjectRoom } from './support/object-room.js';
+import { createMonsterAt } from './support/monsters.js';
+import { requireScreenCell } from './support/screen.js';
+
+void test('a furniture mimic uses the selected dungeon graphics in both sight and memory', async () => {
+    const level = freshObjectRoom();
+    game.symset = 'DECgraphics';
+    const mimic = await createMonsterAt('small mimic', 11, 10);
+    mimic.m_ap_type = M_AP_FURNITURE;
+    mimic.mappearance = CmapSymbol.hwall;
+
+    newsym(11, 10);
+    await flush_screen(1);
+
+    assert.equal(requireScreenCell(10, 11).ch, '─');
+    assert.equal(level.requireAt(11, 10).remembered_glyph?.decgfx, true);
+});
+
+void test('infravision alone does not expose the true form of a disguised warm monster in darkness', async () => {
+    const level = freshObjectRoom({ hero: { infravision: true } });
+    game.symset = 'ASCII';
+    const location = level.requireAt(14, 10);
+    location.lit = false;
+    vision_recalc(0);
+    assert.equal(cansee(14, 10), false);
+    assert.equal(couldsee(14, 10), true);
+    const monster = await createMonsterAt('goblin', 14, 10);
+    monster.m_ap_type = M_AP_FURNITURE;
+    monster.mappearance = CmapSymbol.fountain;
+    monster.meverseen = 0;
+    map_background(14, 10);
+
+    newsym(14, 10);
+    await flush_screen(1);
+
+    assert.equal(requireScreenCell(13, 11).ch, '.');
+    assert.equal(monster.meverseen, 0);
+});
+
+void test('a tame monster disguise is shown as its apparent species without pet highlighting', async () => {
+    freshObjectRoom({ flags: { hilite_pet: true } });
+    const mimic = await createMonsterAt('small mimic', 11, 10);
+    mimic.m_ap_type = M_AP_MONSTER;
+    mimic.mappearance = MONSTER_NAME.indexOf('goblin');
+    mimic.mtame = 5;
+
+    newsym(11, 10);
+    await flush_screen(1);
+
+    assert.equal(requireScreenCell(10, 11).ch, 'o');
+    assert.equal(requireScreenCell(10, 11).attr & ATR_INVERSE, 0);
+});

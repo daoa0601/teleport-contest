@@ -89,6 +89,8 @@ const transientFields = {
     _lastPlineMessage: true,
     _luaObjectRefs: true,
     _mapFlushPaused: true,
+    _underwaterView: true,
+    _undergroundView: true,
     _inTeleportTrap: true,
     lastMonsterWeaponReturnMessage: true,
     _monTelecontrol: true,
