@@ -172,6 +172,15 @@ void test('paranoid confirmation can clear all preselected actions', async () =>
     assert.ok(views.some(view => view.includes('Actions requiring extra confirmation:')));
     assert.equal(game.flags.paranoia_bits, 0);
 });
+void test('tab-separated paranoia arguments select their confirmations in options', async () => {
+    freshObjectRoom();
+    applyNethackrc('OPTIONS=paranoid_confirmation:pray\ttrap');
+    const views = await fullOptions(['paranoid_confirmation']);
+    assert.equal(game.flags.paranoia_bits, PARANOID_PRAY | PARANOID_TRAP);
+    const rows = views.flatMap(view => view.split('\n'));
+    assert.match(rows.find(row => row.includes('y required to pray')) ?? '', /p \* y required to pray/);
+    assert.match(rows.find(row => row.includes('y required to enter known trap')) ?? '', /t \* y required to enter known trap/);
+});
 void test('disclosure edits selected categories in native category order', async () => {
     freshObjectRoom();
     const views = await fullOptions(['disclose'], view => {

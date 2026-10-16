@@ -36,7 +36,7 @@ const PARANOIA_ARGUMENTS = [
     ['none', 4, 0], ['all', 3, ~0],
 ];
 function updateParanoiaBits(current, rawValue) {
-    let fields = rawValue.trim().replace(/ +/g, ' ').toLowerCase();
+    let fields = rawValue.trim().replace(/[ \t]+/g, ' ').toLowerCase();
     const augmenting = fields.startsWith('+') || fields.startsWith('-');
     const removing = fields.startsWith('-');
     let bits = augmenting ? current : 0;
