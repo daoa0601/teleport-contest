@@ -873,13 +873,15 @@ function terrainGlyphAppearance(loc: MapLocation, x: number, y: number): GlyphAp
     case THRONE:     return { ch: '\\', color: CLR_YELLOW, dec: false };
     case SINK:       return { ch: '{', color: CLR_WHITE, dec: false };
     case GRAVE:      return { ch: '|', color: CLR_WHITE, dec: false };
-    case ALTAR:
-        // DECgraphics uses the altar's pi glyph.  Unaligned altars are red;
-        // aligned variants retain the terminal's ordinary foreground until
-        // their full alignment-color projection is needed.
+    case ALTAR: {
+        // reset_glyphmap() colors the selected altar glyph; shrine status
+        // does not change alignment, while sanctum status selects "other".
+        const altar = altarToGlyph(loc.flags) - GlyphOffset.altar;
+        const color = altar === 4 ? CLR_BRIGHT_MAGENTA : altar === 0 ? CLR_RED : NO_COLOR;
         return dec
-            ? { ch: '{', color: loc.flags ? NO_COLOR : CLR_RED, dec: true }
-            : { ch: '_', color: loc.flags ? NO_COLOR : CLR_RED, dec: false };
+            ? { ch: '{', color, dec: true }
+            : { ch: '_', color, dec: false };
+    }
     case TREE:       return dec
         ? { ch: 'g', color: CLR_GREEN, dec: true }
         : { ch: '#', color: CLR_GREEN, dec: false };
