@@ -8618,10 +8618,9 @@ async function stockShopRoom(sroom) {
             continue;
         }
         if (rn2(100) < depth_of_level(game.u?.uz)
-            && !level.monsters.some(mon => monsterHasMapPosition(mon, game) && mon.mx === pos.x && mon.my === pos.y)) {
+            && !monsterAtPosition(level, pos.x, pos.y)) {
             const mimic = mkclass(S_MIMIC, 0);
-            if (mimic != null) {
-                await makemon(mimic, pos.x, pos.y, 0);
+            if (mimic != null && await makemon(mimic, pos.x, pos.y, 0)) {
                 continue;
             }
         }
