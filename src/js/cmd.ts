@@ -269,7 +269,7 @@ import {
 } from './floor_object.js';
 import { makemonNear, mkgold, mksobj, rndClass } from './mklev.js';
 import {
-    level_difficulty, recordMappedOverviewState, specialDisplayName, specialPrototypeAt,
+    level_difficulty, recordMappedOverviewState, specialDisplayName, specialPrototypeAt, specialLevelAt,
     dungeonBuildsUp, sameDungeonLevel,
 } from './dungeon.js';
 import { questLeaderName } from './quest_pager.js';
@@ -4274,7 +4274,7 @@ async function doDungeonOverview() {
                 const record = game._overviewRecords?.get?.(`${dnum}:${dlevel}`);
                 const current = (game.u?.uz?.dnum ?? 0) === dnum
                     && (game.u?.uz?.dlevel ?? 1) === dlevel;
-                const prototype = game.flags?.debug
+                const prototype = game.flags?.debug && specialLevelAt({ dnum, dlevel })
                     ? specialPrototypeAt(dnum, dlevel) : null;
                 const special = prototype ? ` [${prototype}]` : '';
                 const suffix = annotation ? ` "${annotation}"` : '';

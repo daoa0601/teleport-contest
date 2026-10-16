@@ -71,4 +71,17 @@ void test('the Sanctum altar replaces the invocation gateway annotation', async 
     assert.match(text, /Moloch's Sanctum\./);
     assert.doesNotMatch(text, /Gateway to /);
 });
+void test('wizard overview does not label ordinary Quest filler levels as special levels', async () => {
+    freshObjectRoom({ flags: { debug: true } });
+    requirePlayingGame(game);
+    game.dungeons = [createDungeon({ dname: 'The Quest', num_dunlevs: 5 })];
+    game.quest_dnum = 0;
+    game.u.uz = { dnum: 0, dlevel: 2 };
+    game.specialLevels = new Map([
+        ['x-strt', createSpecialLevel({ dnum: 0, dlevel: 1 })],
+        ['x-loca', createSpecialLevel({ dnum: 0, dlevel: 3 })],
+    ]);
+    const text = await readDungeonOverview();
+    assert.match(text, /Level 2: <- You are here\./);
+});
 //# sourceMappingURL=dungeon_notes.test.js.map
