@@ -716,6 +716,14 @@ export async function init_dungeons() {
     const knoxBranch = branches.find(branch => game.dungeons?.[branch.end2?.dnum]?.dname === 'Fort Ludios');
     if (knoxBranch)
         knoxBranch.end1.dnum = loaded.length;
+    // C fixup_level_locations(): the dummy surface shifts the Planes up
+    // one floor, placing Earth at depth -1 instead of zero.
+    const dummy = game.specialLevels?.get('dummy');
+    if (dummy) {
+        const dungeon = requireDungeon(game.dungeons, dummy.dnum);
+        if (dungeon.num_dunlevs > 1 - dungeon.depth_start)
+            dungeon.depth_start--;
+    }
 }
 export function specialDisplayName(name, state = game) {
     if (name.startsWith('x-')) {

@@ -162,7 +162,7 @@ void test('ascension uses death-style shop settlement before the reward summary'
     const { state } = exitRoom({ outside: false });
     // A synthetic Astral shop distinguishes native paybill(1) from quit's
     // paybill(0): a second visible keeper comments only in the former case.
-    state.dungeons.push(createDungeon({ dname: 'The Elemental Planes' }));
+    state.dungeons.push(createDungeon({ dname: 'The Elemental Planes', depth_start: -5 }));
     state.astral_level = createSpecialLevel({ dnum: 1, dlevel: 1 });
     state.u.uz = { dnum: 1, dlevel: 1 };
     const first = await createStaffedShop();
