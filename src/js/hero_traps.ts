@@ -9,7 +9,7 @@ import { surfaceName } from './terrain_name.js';
 import { heroIsHallucinating } from './senses.js';
 import { triggerHeroMagicTrapEffect } from './hero_magic_trap.js';
 import { launchRollingBoulder } from './rolling_boulder.js';
-import { deleteTrap, revealTrap } from './trap_lifecycle.js';
+import { deleteTrap } from './trap_lifecycle.js';
 import { maybeDestroyWeb } from './web_trap.js';
 import {
     currentAttribute, exerciseAttribute,
@@ -114,7 +114,7 @@ import {
     monsterIsBreathless, monsterIsHelpless, monsterResistsSleep,
     putMonsterToSleep,
 } from './monster_sleep.js';
-import { splashLitObject, waterDamageObject } from './trap.js';
+import { seeTrap, splashLitObject, waterDamageObject } from './trap.js';
 import { heroIsPolymorphed, returnHeroToHumanForm } from './polyself.js';
 import { finishHeroDeath } from './end.js';
 import { triggerHeroAntiMagicTrap } from './anti_magic_trap.js';
@@ -667,7 +667,7 @@ export async function heroCanMoveFromTrap(targetX: number, targetY: number): Pro
 }
 
 async function triggerTeleportTrap(trap: Trap, finishTeleport: HeroTrapOptions['finishTeleport']): Promise<boolean> {
-    trap.tseen = true;
+    seeTrap(trap);
     if (game._inTeleportTrap) return false;
     if (typeof finishTeleport !== 'function')
         throw new TypeError('teleport trap needs an arrival handler');
@@ -734,7 +734,7 @@ async function triggerTeleportTrap(trap: Trap, finishTeleport: HeroTrapOptions['
 }
 
 async function triggerMagicTrap(trap: Trap) {
-    trap.tseen = true;
+    seeTrap(trap);
     if (rn2(30) === 0) {
         deleteTrap(trap);
         newsym(trap.tx, trap.ty);
@@ -767,7 +767,7 @@ async function triggerProjectileTrap(trap: Trap) {
     }
 
     trap.once = true;
-    trap.tseen = true;
+    seeTrap(trap);
     await plineWithContinuation(`${subject} shoots out at you!`);
 
     const missile = await makeTrapMissile(objectType, trap);
@@ -808,7 +808,7 @@ async function triggerProjectileTrap(trap: Trap) {
 export async function triggerLevelTeleportTrap(trap: Trap, gotoLevel: HeroTrapOptions['gotoLevel'],
     intentional: boolean): Promise<void> {
     requirePlayingGame(game);
-    revealTrap(trap);
+    seeTrap(trap);
     const hero = game.u;
     // C hack.c:u_locomotion() gives the hero's active movement properties
     // precedence over the species' normal way of moving.
@@ -848,7 +848,7 @@ async function triggerSqueakyBoard(
     const forced = forceTrap || failedUntrap || (flying && viaSitting);
     if (airborne && !forced) {
         if (!blind) {
-            trap.tseen = true;
+            seeTrap(trap);
             const hallucinating = heroIsHallucinating(game);
             await plineWithContinuation(hallucinating
                 ? 'You notice a crease in the linoleum.'
@@ -857,7 +857,7 @@ async function triggerSqueakyBoard(
         return;
     }
 
-    trap.tseen = true;
+    seeTrap(trap);
     await plineWithContinuation(deaf
         ? 'A board beneath you vibrates.'
         : `A board beneath you squeaks ${
@@ -931,7 +931,7 @@ async function triggerFallingRockTrap(trap: Trap) {
 
 async function triggerSleepingGasTrap(trap: Trap) {
     const hero = game.u;
-    trap.tseen = true;
+    seeTrap(trap);
     const breathless = !!hero.breathless
         || !!(heroFormFlags() & M1_BREATHLESS);
     if (hero.sleepResistance || breathless) {
@@ -1079,7 +1079,7 @@ async function rustIronGolemHero() {
 
 async function triggerRustTrap(trap: Trap) {
     const hero = game.u;
-    trap.tseen = true;
+    seeTrap(trap);
     const target = rn2(5);
 
     if (target === 0) {
@@ -1300,7 +1300,7 @@ export async function triggerHeroTrap(trap: Trap | null | undefined, {
         });
         break;
     case FIRE_TRAP:
-        trap.tseen = true;
+        seeTrap(trap);
         died = (await triggerHeroFireTrap()).died;
         break;
     case MAGIC_PORTAL:

@@ -4,7 +4,7 @@ import { game } from './gstate.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { monsterIsBreathless, monsterIsHelpless, monsterResistsSleep, putMonsterToSleep, } from './monster_sleep.js';
 import { rnd } from './rng.js';
-import { monsterTrapVisibility } from './trap.js';
+import { monsterTrapVisibility, seeTrap } from './trap.js';
 function ordinaryMonsterSubject(monster) {
     if (monster.name)
         return monster.name;
@@ -27,11 +27,11 @@ export function beginMonsterSleepGasTrap(monster, trap, state = game, { rollOne 
 export function sleepGasTrapNeedsResume(event) {
     return event?.kind === 'sleep-gas' && !event.finished;
 }
-export async function finishMonsterSleepGasTrap(monster, event, { publish = async () => { }, describeMonster = ordinaryMonsterSubject } = {}) {
+export async function finishMonsterSleepGasTrap(monster, event, { state = game, publish = async () => { }, describeMonster = ordinaryMonsterSubject } = {}) {
     if (!event || event.finished)
         return event;
     await publish(`${describeMonster(monster)} suddenly falls asleep!`);
-    event.trap.tseen = true;
+    seeTrap(event.trap, state);
     event.finished = true;
     return event;
 }

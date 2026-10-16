@@ -8,7 +8,7 @@ import { surfaceName } from './terrain_name.js';
 import { heroIsHallucinating } from './senses.js';
 import { triggerHeroMagicTrapEffect } from './hero_magic_trap.js';
 import { launchRollingBoulder } from './rolling_boulder.js';
-import { deleteTrap, revealTrap } from './trap_lifecycle.js';
+import { deleteTrap } from './trap_lifecycle.js';
 import { maybeDestroyWeb } from './web_trap.js';
 import { currentAttribute, exerciseAttribute, } from './attrib.js';
 import { armorSimpleName, objectIsHardHelmet } from './armor.js';
@@ -68,7 +68,7 @@ import { ceilingName } from './terrain_name.js';
 import { putHeroToSleep } from './hero_sleep.js';
 import { monstersForgetHeroResistance, monstersObserveHeroResistance, } from './monster_perception.js';
 import { monsterIsBreathless, monsterIsHelpless, monsterResistsSleep, putMonsterToSleep, } from './monster_sleep.js';
-import { splashLitObject, waterDamageObject } from './trap.js';
+import { seeTrap, splashLitObject, waterDamageObject } from './trap.js';
 import { heroIsPolymorphed, returnHeroToHumanForm } from './polyself.js';
 import { finishHeroDeath } from './end.js';
 import { triggerHeroAntiMagicTrap } from './anti_magic_trap.js';
@@ -586,7 +586,7 @@ export async function heroCanMoveFromTrap(targetX, targetY) {
     }
 }
 async function triggerTeleportTrap(trap, finishTeleport) {
-    trap.tseen = true;
+    seeTrap(trap);
     if (game._inTeleportTrap)
         return false;
     if (typeof finishTeleport !== 'function')
@@ -648,7 +648,7 @@ async function triggerTeleportTrap(trap, finishTeleport) {
     }
 }
 async function triggerMagicTrap(trap) {
-    trap.tseen = true;
+    seeTrap(trap);
     if (rn2(30) === 0) {
         deleteTrap(trap);
         newsym(trap.tx, trap.ty);
@@ -678,7 +678,7 @@ async function triggerProjectileTrap(trap) {
         return;
     }
     trap.once = true;
-    trap.tseen = true;
+    seeTrap(trap);
     await plineWithContinuation(`${subject} shoots out at you!`);
     const missile = await makeTrapMissile(objectType, trap);
     if (!arrowTrap && rn2(6) === 0)
@@ -717,7 +717,7 @@ async function triggerProjectileTrap(trap) {
 // announcement before accepting its first character.
 export async function triggerLevelTeleportTrap(trap, gotoLevel, intentional) {
     requirePlayingGame(game);
-    revealTrap(trap);
+    seeTrap(trap);
     const hero = game.u;
     // C hack.c:u_locomotion() gives the hero's active movement properties
     // precedence over the species' normal way of moving.
@@ -757,7 +757,7 @@ async function triggerSqueakyBoard(trap, { viaSitting = false, failedUntrap = fa
     const forced = forceTrap || failedUntrap || (flying && viaSitting);
     if (airborne && !forced) {
         if (!blind) {
-            trap.tseen = true;
+            seeTrap(trap);
             const hallucinating = heroIsHallucinating(game);
             await plineWithContinuation(hallucinating
                 ? 'You notice a crease in the linoleum.'
@@ -765,7 +765,7 @@ async function triggerSqueakyBoard(trap, { viaSitting = false, failedUntrap = fa
         }
         return;
     }
-    trap.tseen = true;
+    seeTrap(trap);
     await plineWithContinuation(deaf
         ? 'A board beneath you vibrates.'
         : `A board beneath you squeaks ${squeakyBoardNoteWithArticle(trap.tnote ?? -1) || 'a note'} loudly.`);
@@ -823,7 +823,7 @@ async function triggerFallingRockTrap(trap) {
 }
 async function triggerSleepingGasTrap(trap) {
     const hero = game.u;
-    trap.tseen = true;
+    seeTrap(trap);
     const breathless = !!hero.breathless
         || !!(heroFormFlags() & M1_BREATHLESS);
     if (hero.sleepResistance || breathless) {
@@ -965,7 +965,7 @@ async function rustIronGolemHero() {
 }
 async function triggerRustTrap(trap) {
     const hero = game.u;
-    trap.tseen = true;
+    seeTrap(trap);
     const target = rn2(5);
     if (target === 0) {
         await plineWithContinuation(`A gush of water hits you on the ${heroHeadName(game)}!`);
@@ -1177,7 +1177,7 @@ export async function triggerHeroTrap(trap, { finishTeleport = null, gotoLevel =
             });
             break;
         case FIRE_TRAP:
-            trap.tseen = true;
+            seeTrap(trap);
             died = (await triggerHeroFireTrap()).died;
             break;
         case MAGIC_PORTAL:

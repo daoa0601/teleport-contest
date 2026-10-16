@@ -33,8 +33,7 @@ import { stopAllObjectTimers } from './object_timers.js';
 import { rnl, rn2, rnd } from './rng.js';
 import { canSeeMonster, newsym } from './display.js';
 import { dryTowel, wetTowel } from './towel.js';
-// C trap.c:seetrap(). Discovering a trap refreshes the nonliving layer;
-// any object or monster still covering it keeps its usual display priority.
+// C trap.c:seetrap(). Reveal a new trap and redraw its square.
 export function seeTrap(trap, state = game) {
     if (trap.tseen)
         return;

@@ -2872,7 +2872,6 @@ async function presentMonsterPostMove(action, game) {
             publish: plineWithContinuation,
             monsterName: quietMonsterName,
             describeMonster: visibleMonsterSubject,
-            revealTrap: (trap) => newsym(trap.tx, trap.ty),
         });
         if ('heroDied' in event && event.heroDied)
             return true;

@@ -55,8 +55,7 @@ type CallRecorder = Pick<MonsterCallLog, 'push'>;
 type ArmorMask = typeof W_ARM | typeof W_ARMC | typeof W_ARMH
     | typeof W_ARMS | typeof W_ARMG | typeof W_ARMF | typeof W_ARMU;
 
-// C trap.c:seetrap(). Discovering a trap refreshes the nonliving layer;
-// any object or monster still covering it keeps its usual display priority.
+// C trap.c:seetrap(). Reveal a new trap and redraw its square.
 export function seeTrap(trap: Trap, state: GameState = game): void {
     if (trap.tseen) return;
     trap.tseen = true;

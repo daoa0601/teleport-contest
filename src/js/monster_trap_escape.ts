@@ -8,7 +8,7 @@ import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SIZE } from './monster_data.js';
 import { BOULDER } from './object_data.js';
 import { fillPitWithBoulderAt } from './pit_fill.js';
 import { rn2 } from './rng.js';
-import { monsterTrapVisibility } from './trap.js';
+import { monsterTrapVisibility, seeTrap } from './trap.js';
 import type { Monster } from './monster_types.js';
 import type { GameState } from './game_state.js';
 import type { MessagePublisher } from './display.js';
@@ -34,8 +34,7 @@ export async function tryMonsterTrapEscape(monster: Monster, state: GameState = 
     const pit = is_pit(trap.ttyp);
     if (!trap.tseen && seeSquare && inSight
         && (pit || [BEAR_TRAP, HOLE, WEB].includes(trap.ttyp))) {
-        trap.tseen = true;
-        newsym(x, y);
+        seeTrap(trap, state);
     }
     const climbsEasily = (MONSTER_SIZE[monster.mnum] ?? 0) >= MZ_HUGE
         || MONSTER_NAME[monster.mnum] === 'pit fiend';

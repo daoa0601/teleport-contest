@@ -6,7 +6,7 @@ import { monsterFootName } from './body_parts.js';
 import { dist2 } from './hacklib.js';
 import { monsterHasNoLimbs, monsterTypeName } from './monster_data.js';
 import { makePlural } from './object_grammar.js';
-import { monsterTrapVisibility } from './trap.js';
+import { monsterTrapVisibility, seeTrap } from './trap.js';
 import { monsterInAir } from './terrain_properties.js';
 function ordinaryMonsterSubject(monster) {
     if (monster?.name)
@@ -31,11 +31,10 @@ export function beginMonsterVibratingSquare(monster, trap, state = game) {
         ...visibility,
     };
 }
-export async function finishMonsterVibratingSquare(monster, event, { publish = async () => { }, describeMonster = ordinaryMonsterSubject, revealTrap = () => { }, } = {}) {
+export async function finishMonsterVibratingSquare(monster, event, { state = game, publish = async () => { }, describeMonster = ordinaryMonsterSubject, } = {}) {
     if (!event || event.finished)
         return event;
-    event.trap.tseen = true;
-    revealTrap(event.trap);
+    seeTrap(event.trap, state);
     if (!event.inSight) {
         await publish(formatSeenMessage(`the ground vibrate ${event.nearby ? 'nearby' : 'in the distance'}.`));
     }

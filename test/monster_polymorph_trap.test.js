@@ -54,7 +54,6 @@ void test('a visible monster changes form and reveals a polymorph trap', async (
     const action = await triggerImmediateMonsterTrap(monster, game);
     await resumeDeferredMonsterTrap(action, game, {
         publish: async (message) => messages.push(message),
-        revealTrap: () => { },
     });
     assert.notEqual(monster.mnum, originalForm);
     assert.equal(trap.tseen, true);
@@ -70,7 +69,6 @@ void test('a polymorph trap is revealed when a Nazgul cannot change form', async
     const action = await triggerImmediateMonsterTrap(monster, game);
     await resumeDeferredMonsterTrap(action, game, {
         publish: async () => { },
-        revealTrap: () => { },
     });
     assert.equal(monster.mnum, originalForm);
     assert.equal(trap.tseen, true);

@@ -13,7 +13,7 @@ import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { monsterIsMindless } from './monster_data.js';
 import { monsterName } from './monster_name.js';
 import { heroIsDeaf } from './senses.js';
-import { monsterTrapVisibility } from './trap.js';
+import { monsterTrapVisibility, seeTrap } from './trap.js';
 import { monsterInAir } from './terrain_properties.js';
 
 export interface MonsterSqueakyBoardEvent {
@@ -75,7 +75,7 @@ export async function finishMonsterSqueakyBoard(
             await publish(
                 `A board beneath ${monsterName(monster, { state })} squeaks ${event.note} loudly.`,
             );
-            event.trap.tseen = true;
+            seeTrap(event.trap, state);
         } else if (!event.mindless) {
             await publish(`${monsterName(monster, { state, capitalized: true })} stops momentarily and appears to cringe.`);
         }
