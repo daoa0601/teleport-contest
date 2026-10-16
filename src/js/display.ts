@@ -721,15 +721,15 @@ function terrainGlyphName(loc: MapLocation, x: number, y: number, glyph: GlyphAp
     if (IS_WALL(loc.typ) || loc.typ === SDOOR)
         return glyph.ch === ' ' ? 'stone' : 'wall';
     if (loc.typ === DOOR) {
+        if (!loc.doormask || loc.doormask & D_BROKEN) return 'doorway';
         if (loc.doormask & D_ISOPEN) return 'open door';
-        if (loc.doormask & (D_CLOSED | D_LOCKED)) return 'closed door';
-        return 'doorway';
+        return 'closed door';
     }
     if (loc.typ === STAIRS || loc.typ === LADDER) {
         return stairSymbol(loc, x, y).name;
     }
     if (loc.typ === CORR)
-        return (cansee(x, y) ? loc.lit : loc.waslit) || game.flags?.lit_corridor
+        return loc.waslit || game.flags?.lit_corridor
             ? 'lit corridor' : 'corridor';
     return TERRAIN_NAMES.get(projectedTerrainType(loc)) || 'stone';
 }
@@ -765,7 +765,7 @@ function terrainSymbolIndex(loc: MapLocation, x: number, y: number, typ: number,
         return loc.horizontal ? CmapSymbol.hcdoor : CmapSymbol.vcdoor;
     }
     if (typ === STAIRS || typ === LADDER) return stairGlyphIndex(loc, x, y);
-    if (typ === CORR) return (cansee(x, y) ? loc.lit : loc.waslit) || game.flags.lit_corridor
+    if (typ === CORR) return loc.waslit || game.flags.lit_corridor
         ? CmapSymbol.litcorr : CmapSymbol.corr;
     if (typ === DBWALL) return loc.horizontal ? CmapSymbol.hcdbridge : CmapSymbol.vcdbridge;
     if (typ === DRAWBRIDGE_DOWN) return loc.horizontal ? CmapSymbol.hodbridge : CmapSymbol.vodbridge;
@@ -798,6 +798,8 @@ function projectedTerrainType(loc: MapLocation) {
         return surface === STONE ? ROOM : surface;
     }
     if (isArborealBackground(loc)) return TREE;
+    if ((IS_WALL(loc.typ) && loc.typ !== DBWALL || loc.typ === SDOOR)
+        && !loc.seenv) return STONE;
     if (loc.typ === CROSSWALL) return projectedCrossWallType(loc);
     return projectedTWallType(loc);
 }
@@ -831,13 +833,12 @@ function terrainGlyphAppearance(loc: MapLocation, x: number, y: number): GlyphAp
         ? { ch: '~', color: CLR_BROWN, dec: true }
         : { ch: '.', color: CLR_BROWN, dec: false };
     case DBWALL:    return { ch: '#', color: CLR_BROWN, dec: false };
-    // C back_to_glyph(): a corridor currently lit for display uses S_litcorr.
+    // C back_to_glyph(): newsym() records lighting before choosing this glyph.
     // tty renders that CLR_GRAY symbol with its bright foreground treatment;
     // CLR_WHITE is the equivalent serialized color in this port.
     case CORR:      return {
         ch: '#',
-        color: (cansee(x, y) ? loc.lit : loc.waslit)
-            || game.flags?.lit_corridor ? CLR_WHITE : NO_COLOR,
+        color: loc.waslit || game.flags?.lit_corridor ? CLR_WHITE : NO_COLOR,
         dec: false,
     };
     case SDOOR:
@@ -852,15 +853,15 @@ function terrainGlyphAppearance(loc: MapLocation, x: number, y: number): GlyphAp
     case DOOR:
         if (rogue)
             return { ch: '+', color: NO_COLOR, dec: false };
+        if (!loc.doormask || loc.doormask & D_BROKEN)
+            return dec
+                ? { ch: '~', color: NO_COLOR, dec: true }
+                : { ch: '.', color: NO_COLOR, dec: false };
         if (loc.doormask & D_ISOPEN)
             return dec
                 ? { ch: 'a', color: CLR_BROWN, dec: true }
-                : { ch: '-', color: CLR_BROWN, dec: false };
-        if (loc.doormask & (D_CLOSED | D_LOCKED))
-            return { ch: '+', color: CLR_BROWN, dec: false };
-        return dec
-            ? { ch: '~', color: NO_COLOR, dec: true }
-            : { ch: '.', color: NO_COLOR, dec: false };  // D_NODOOR = floor
+                : { ch: loc.horizontal ? '|' : '-', color: CLR_BROWN, dec: false };
+        return { ch: '+', color: CLR_BROWN, dec: false };
     case STAIRS:
     case LADDER: {
         const symbol = stairSymbol(loc, x, y);
