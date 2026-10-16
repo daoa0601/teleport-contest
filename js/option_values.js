@@ -22,15 +22,15 @@ export async function setTextOption(name, value) {
     value = value.trimEnd();
     switch (name) {
         case 'pile_limit': {
+            if (!value)
+                await optionError("Missing parameter for 'pile_limit:'");
             const limit = value ? cInteger(value) : 5;
             game.flags.pile_limit = limit < 0 ? 5 : limit;
             break;
         }
         case 'packorder': {
-            if (!value) {
-                await optionError("Missing parameter for 'packorder:'");
+            if (!value)
                 break;
-            }
             const change = planInventoryOrder(value);
             for (const error of change.errors)
                 await optionError(error);
@@ -48,6 +48,8 @@ export async function setTextOption(name, value) {
             break;
         }
         case 'statuslines':
+            if (!value)
+                await optionError("Missing parameter for 'statuslines:'");
             if (cInteger(value) !== 2 && cInteger(value) !== 3)
                 await optionError(`'statuslines:${value}' is invalid; must be 2 or 3`);
             break;

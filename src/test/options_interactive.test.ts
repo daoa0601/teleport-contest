@@ -587,3 +587,31 @@ void test('menu instructions and the boolean help option can be selected togethe
     assert.ok(views.some(view => view.includes('How dynamically setting options works:')));
     assert.equal(game.flags.help, false);
 });
+
+void test('an empty packorder answer leaves the order unchanged without an error', async () => {
+    freshObjectRoom();
+    const previous = inventoryOrderSymbols();
+
+    await fullOptions(['packorder'], () => '\n');
+
+    assert.equal(inventoryOrderSymbols(), previous);
+    assert.equal(game._pending_message, '');
+});
+
+void test('an empty pile limit reports its missing parameter and resets the threshold', async () => {
+    freshObjectRoom({ flags: { pile_limit: 9 } });
+
+    await fullOptions(['pile_limit'], () => '\n');
+
+    assert.equal(game.flags.pile_limit, 5);
+    assert.match(game._pending_message, /Missing parameter for 'pile_limit:'\./);
+});
+
+void test('an empty status height reports both native validation errors', async () => {
+    freshObjectRoom();
+
+    const views = await fullOptions(['statuslines'], view => view.includes('Set statuslines to what?') ? '\n' : ' ');
+
+    assert.ok(views.some(view => view.includes("Missing parameter for 'statuslines:'.")));
+    assert.match(game._pending_message, /'statuslines:' is invalid; must be 2 or 3\./);
+});
