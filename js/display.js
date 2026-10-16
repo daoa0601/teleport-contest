@@ -1145,12 +1145,13 @@ function mimicAppearance(monster) {
 function apparentObjectGlyph(monster) {
     const otyp = mimicAppearance(monster);
     const oclass = objectClassForType(otyp);
-    return objectGlyph({
-        otyp,
-        oclass,
-        ...(monster.mcorpsenm === undefined ? {} : { corpsenm: monster.mcorpsenm }),
-        dknown: true,
-    });
+    // display_self() uses objnum_to_glyph(), including generic corpses and
+    // statues. The hero's disguise never uses hallucinated object selection.
+    return {
+        ch: activeObjectSymbols()[oclass] || '?',
+        color: objectColor({ otyp, oclass, dknown: true }),
+        decgfx: false, kind: 'object', otyp, glyph: GlyphOffset.object + otyp,
+    };
 }
 // C refs: display.c map_background(), map_object(), and map_trap().  These
 // update hero memory independently from ordinary line-of-sight newsym().
