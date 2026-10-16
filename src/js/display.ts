@@ -1388,12 +1388,18 @@ export function feel_newsym(x: number, y: number) {
     else newsym(x, y);
 }
 
+// Native suppress_map_output(): initialization and persistence can leave
+// terrain, hero properties, and ownership links temporarily incomplete.
+function suppressMapOutput(): boolean {
+    return !!(game.in_mklev || game.program_state.saving || game.program_state.restoring);
+}
+
 // C display.c:feel_location().  Blind explicit search refreshes each adjacent
 // nonliving layer before it tests for a concealed monster or trap.  This is
 // why a felt floor object can remain in hero memory after a later invisible
 // actor marker is installed elsewhere during the same search.
 export function feel_location(x: number, y: number) {
-    if (game.in_mklev || game.program_state.saving) return;
+    if (suppressMapOutput()) return;
     const loc = game.level?.at(x, y);
     if (!loc) return;
     const monster = monsterAtMapCell(x, y);
@@ -1498,6 +1504,7 @@ export function show_glyph_cell(
     x: number, y: number, ch: string, color: number = NO_COLOR, decgfx = false,
     attr = 0, glyph: GlyphMetadata | null = null,
 ) {
+    if (suppressMapOutput() || x === 0) return;
     const loc = game.level?.at(x, y);
     if (!loc) return;
     // symbols.c:assign_graphics(ROGUESET) selects the classic character set
@@ -1707,7 +1714,7 @@ function monsterOverridesMapRegion(monster: Monster | null | undefined, x: numbe
 }
 
 export function newsym(x: number, y: number) {
-    if (game.in_mklev || game.program_state.saving) return;
+    if (suppressMapOutput()) return;
     const loc = game.level?.at(x, y);
     if (!loc) return;
     // C newsym() permits only the hero cell while swallowed.  The stomach
@@ -2432,7 +2439,7 @@ function writeMapRow(display: GameDisplay, y: number): void {
 
 // ── flush_screen ──
 export async function flush_screen(mode?: number) {
-    if (game.program_state.saving || game._suppressMapStatusForFlush) return;
+    if (suppressMapOutput() || game._suppressMapStatusForFlush) return;
     if (game.program_state?.windows_exited) return;
     // C display.c pauses map updates during level arrival. Message windows
     // still write their own rows while the old map remains on screen.

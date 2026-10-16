@@ -1330,12 +1330,17 @@ export function feel_newsym(x, y) {
     else
         newsym(x, y);
 }
+// Native suppress_map_output(): initialization and persistence can leave
+// terrain, hero properties, and ownership links temporarily incomplete.
+function suppressMapOutput() {
+    return !!(game.in_mklev || game.program_state.saving || game.program_state.restoring);
+}
 // C display.c:feel_location().  Blind explicit search refreshes each adjacent
 // nonliving layer before it tests for a concealed monster or trap.  This is
 // why a felt floor object can remain in hero memory after a later invisible
 // actor marker is installed elsewhere during the same search.
 export function feel_location(x, y) {
-    if (game.in_mklev || game.program_state.saving)
+    if (suppressMapOutput())
         return;
     const loc = game.level?.at(x, y);
     if (!loc)
@@ -1443,6 +1448,8 @@ export function glyphAt(x, y, state = game) {
     return loc?.disp_glyph || loc?.remembered_glyph || null;
 }
 export function show_glyph_cell(x, y, ch, color = NO_COLOR, decgfx = false, attr = 0, glyph = null) {
+    if (suppressMapOutput() || x === 0)
+        return;
     const loc = game.level?.at(x, y);
     if (!loc)
         return;
@@ -1648,7 +1655,7 @@ function monsterOverridesMapRegion(monster, x, y) {
     return ordinaryVisible && dx * dx + dy * dy <= range * (range + 1);
 }
 export function newsym(x, y) {
-    if (game.in_mklev || game.program_state.saving)
+    if (suppressMapOutput())
         return;
     const loc = game.level?.at(x, y);
     if (!loc)
@@ -2409,7 +2416,7 @@ function writeMapRow(display, y) {
 }
 // ── flush_screen ──
 export async function flush_screen(mode) {
-    if (game.program_state.saving || game._suppressMapStatusForFlush)
+    if (suppressMapOutput() || game._suppressMapStatusForFlush)
         return;
     if (game.program_state?.windows_exited)
         return;
