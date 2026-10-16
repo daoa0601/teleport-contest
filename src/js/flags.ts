@@ -13,7 +13,7 @@ export type GameBooleanFlag =
     | 'pickup_thrown' | 'price_quotes' | 'pushweapon' | 'query_menu'
     | 'quick_farsight' | 'rest_on_space' | 'safe_pet' | 'safe_wait'
     | 'showdamage' | 'showexp' | 'showrace' | 'showvers' | 'silent'
-    | 'sortpack' | 'sparkle' | 'spot_monsters' | 'standout' | 'terrainstatus'
+    | 'sounds' | 'sortpack' | 'sparkle' | 'spot_monsters' | 'standout' | 'terrainstatus'
     | 'time' | 'tips' | 'tombstone' | 'travel' | 'use_inverse' | 'verbose'
     | 'weaponstatus'
     | 'beginner' | 'blind' | 'bones' | 'deaf' | 'debug' | 'explore' | 'female'
@@ -76,6 +76,7 @@ export interface InterfaceFlags {
     override_ID?: boolean;
     suppress_price?: boolean;
     simple_options_help?: boolean;
+    optionMessages?: boolean;
     wizmgender?: boolean;
     wizweight?: boolean;
     partly_eaten_hack?: boolean;

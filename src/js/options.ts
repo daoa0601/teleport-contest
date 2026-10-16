@@ -561,6 +561,7 @@ const REQUEST_MENU_BOOLEAN_OPTIONS = [
     ['showvers', 'showvers', false],
     ['silent', 'silent', true],
     ['sortpack', 'sortpack', true],
+    ['sounds', 'sounds', false],
     ['sparkle', 'sparkle', true],
     ['spot_monsters', 'spot_monsters', false],
     ['standout', 'standout', false],
@@ -593,9 +594,9 @@ export async function option_help(): Promise<void> {
     const debugNames = ['debug_hunger', 'debug_mongen', 'debug_overwrite_stairs'];
     const booleanNames = [
         ...REQUEST_MENU_BOOLEAN_OPTIONS.map(([name]) => name),
-        'bgcolors', 'blind', 'bones', 'deaf', 'female', 'idlecheckpoint', 'legacy',
+        'blind', 'bones', 'deaf', 'female', 'idlecheckpoint', 'legacy',
         'monpolycontrol', 'news', 'nudist', 'pauper', 'reroll', 'sanity_check',
-        'selectsaved', 'sounds', 'status_updates', 'travel_debug', 'tutorial',
+        'selectsaved', 'status_updates', 'travel_debug', 'tutorial',
         'use_darkgray', 'use_truecolor', 'voices', 'wizmgender', 'wizweight',
         ...(game.flags.debug && !game.iflags.debug_fuzzer ? debugNames : []),
     ].filter(name => game.flags.debug || !wizardNames.has(name))
@@ -764,6 +765,7 @@ function requestMenuSections(): PageLocalMultiSelectSection<string>[] {
     const { role, race, gender, alignment } = requestMenuIdentity();
     const choice = (name: string, text: string): PageLocalMenuItem<string> => ({
         value: name, text: textOptionValue(name) === null ? text : `${name.padEnd(24)}[${textOptionValue(name)}]`,
+        itemFlags: requestBooleanByName.has(name.toLowerCase()) || name === 'idlecheckpoint' ? MENU_ITEMFLAGS_SKIPINVERT : 0,
     });
     const label = (text: string): MenuLabel => ({ selectable: false, text });
     const readonly = (name: string, value: string | boolean) => label(`    ${name.padEnd(24)}[${value}]`);
@@ -844,7 +846,7 @@ function requestMenuSections(): PageLocalMultiSelectSection<string>[] {
             boolean('showvers'),
             boolean('silent'),
             boolean('sortpack'),
-            choice('sounds', 'sounds                  [off]'),
+            choice('sounds', `sounds                  [${requestBooleanValue('sounds') ? 'on' : 'off'}]`),
             boolean('sparkle'),
             boolean('spot_monsters'),
             boolean('standout'),
@@ -1006,6 +1008,7 @@ function applyBooleanVisualChange(name: BooleanOptionName): boolean {
 async function doRequestMenuOptions(): Promise<void> {
     let skipHelp = game.flags.cmdassist === false;
     let needsRedraw = false;
+    let giveBooleanMessage = game.iflags.optionMessages !== false;
     for (;;) {
         const sections = requestMenuSections().map(section => ({ items: [
             { selectable: false, text: section.heading ?? '', attr: ATR_INVERSE } as const,
@@ -1027,13 +1030,19 @@ async function doRequestMenuOptions(): Promise<void> {
                 await displayHelpFile('optmenu');
                 continue;
             }
+            if (name === 'idlecheckpoint') {
+                await plineWithContinuation("There is no underlying support for 'idlecheckpoint' compiled in.");
+                giveBooleanMessage = false;
+                game.iflags.optionMessages = false;
+                continue;
+            }
             const option = requestBooleanByName.get(name.toLowerCase());
             if (option) {
                 const value = !requestBooleanValue(option[0]);
                 setRequestBoolean(option, value);
                 if (option[0] === 'rest_on_space') game.commandBindings.setRestOnSpace(value);
                 needsRedraw = applyBooleanVisualChange(option[0]) || needsRedraw;
-                await plineWithContinuation(`'${option[0]}' option toggled ${value ? 'on' : 'off'}.`);
+                if (giveBooleanMessage) await plineWithContinuation(`'${option[0]}' option toggled ${value ? 'on' : 'off'}.`);
             } else await editCompoundOption(name, true);
         }
         if (selected.length !== 1 || selected[0] !== 'help') break;
@@ -1050,10 +1059,10 @@ async function doRequestMenuOptions(): Promise<void> {
 async function editCompoundOption(name: string, fullMenu: boolean): Promise<void> {
     if (name === 'number_pad') await editNumberPad();
     else if (name === 'menustyle') await editMenuStyle();
-    else if (name === 'fruit') await editFruitOption(fullMenu);
+    else if (name === 'fruit') await editFruitOption(fullMenu && game.iflags.optionMessages !== false);
     else if (name === 'pickup_types') await editPickupTypes(fullMenu);
     else if (name === 'sortloot') await editSortLoot();
-    else if (await editCompoundMenu(name, fullMenu)) return;
+    else if (await editCompoundMenu(name, fullMenu && game.iflags.optionMessages !== false)) return;
     else if (isTextOption(name)) {
         const value = await getLine(`Set ${name} to what?`,
             (_character: string, key: number) => key >= 32 && key < 127);
@@ -1235,5 +1244,6 @@ export async function doOptions(menuRequested = false): Promise<void> {
         }
         await bot();
     }
+    game.iflags.optionMessages = true;
     game.context.move = 0;
 }

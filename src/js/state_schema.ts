@@ -18,7 +18,7 @@ const persistentNames = [
     '_levelAnnotations', '_levelCache', '_lifeSavedCount', '_migratingMonsters',
     '_mimicMealMessage', '_monsterNoiseTime', '_moveloopStarted', '_nextAttribCheck',
     '_nextIdent', '_nextObjectTimerId', '_objectCallNames', '_objectDiscoveryOrder',
-    '_objectPriceQuotes', '_optionsInitialized', '_overviewRecords', '_polymorphGenocideCause', '_prayerAlignment',
+    '_objectPriceQuotes', '_overviewRecords', '_polymorphGenocideCause', '_prayerAlignment',
     '_prayerOutcome', '_prayerTrouble', '_preserveLeadingStyledBlanks', '_prevDecorType',
     '_priestPantheonIndex', '_questExpulsionPending', '_restoredBones', '_rndmonstAlignment',
     '_rndmonstAlignmentMove', '_runtimeVersionInfoInitialized', '_specialLevelPrototype',

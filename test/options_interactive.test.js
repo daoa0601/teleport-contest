@@ -262,4 +262,32 @@ for (const symbols of ['0!~', '0\\x21\\o176']) {
         assert.equal(await farlookLocationDescription(11, 10), 'unknown creature causing you anxiety');
     });
 }
+void test('bulk inversion leaves unselected full-menu booleans unchanged', async () => {
+    freshObjectRoom();
+    const input = resetInputState();
+    const command = rhack('m'.charCodeAt(0));
+    await input.waitUntilBlocked();
+    input.feed('O');
+    await input.waitUntilBlocked();
+    input.feed('@');
+    await input.waitUntilBlocked();
+    try {
+        let row = screen().split('\n').find(line => line.includes(' acoustics '));
+        for (let page = 0; !row && page < 12; page++) {
+            input.feed('>');
+            await input.waitUntilBlocked();
+            row = screen().split('\n').find(line => line.includes(' acoustics '));
+        }
+        assert.match(row ?? '', /^[ ]*[a-zA-Z] - acoustics /);
+    }
+    finally {
+        input.feed('\x1b');
+        await command;
+    }
+});
+void test('idlecheckpoint reports that the native build cannot enable it', async () => {
+    freshObjectRoom();
+    await fullOptions(['idlecheckpoint']);
+    assert.match(game._pending_message, /There is no underlying support for 'idlecheckpoint' compiled in\./);
+});
 //# sourceMappingURL=options_interactive.test.js.map
