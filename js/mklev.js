@@ -29,6 +29,7 @@ import { removeMonsterFromGame } from './monster_departure.js';
 import { exerciseWisdom } from './attrib.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { impossible } from './diagnostics.js';
+import { PanicTermination } from './panic_termination.js';
 import { LUA_SOURCES } from './generated/lua_sources.js';
 import { createDesBindings, mapOrigin, objectTypeForName, regionCoordinates, tablePoint, } from './lua/des.js';
 import { luaInteger, luaString } from './lua/arguments.js';
@@ -7036,6 +7037,8 @@ async function beginLuaThemerooms() {
             state = await lifecycle.createThemedState(game, dungeonNumber, filename, createdSession.bindings, created => createdSession.bindState(created));
         }
         catch (error) {
+            if (error instanceof PanicTermination)
+                throw error;
             let reason;
             if (!LUA_SOURCES[filename]) {
                 reason = `nhl_loadlua: Error opening (${filename})`;

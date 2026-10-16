@@ -11,6 +11,28 @@ import { startLuaCore } from './support/lua-game.js';
 import { currentLuaLifecycle } from '../js/lua/lifecycle.js';
 import { LuaState } from '../js/lua/runtime.js';
 import { resetInputState } from '../js/input.js';
+import { PanicTermination } from '../js/panic_termination.js';
+void test('a fatal impossible in a room theme preserves its original reason', async (t) => {
+    const state = freshGame({ flags: { bones: false, debug_fuzzer: 1 } });
+    initRng(999);
+    init_objects();
+    await init_dungeons();
+    await startLuaCore(t);
+    const dungeon = state.dungeons[0];
+    assert.ok(dungeon);
+    dungeon.themeRooms = 'themerms.lua';
+    state.u.uz = { dnum: 0, dlevel: 12 };
+    state.specialLevels?.clear();
+    state.branches = [];
+    const execute = LuaState.prototype.executeAsync;
+    t.mock.method(LuaState.prototype, 'executeAsync', async function (source, filename = '<lua>') {
+        await execute.call(this, filename === 'themerms.lua'
+            ? 'nh.impossible("The room theme cannot continue.")' : source, filename);
+    });
+    await assert.rejects(mklev(), error => error instanceof PanicTermination
+        && error.message === 'The room theme cannot continue.');
+    assert.equal(dungeon.themeRooms, 'themerms.lua');
+});
 void test('a room theme syntax error reports a load error and falls back to ordinary rooms', async (t) => {
     const state = freshGame({ flags: { bones: false } });
     state.program_state.in_sanity_check = true;
