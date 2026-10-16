@@ -514,6 +514,30 @@ void test('scores retains valid prefixes and reports a negative count', async ()
     assert.match(game._pending_message, /Values for scores:top and scores:around must not be negative\./);
 });
 
+void test('a blank scores answer keeps every score choice and reports the missing value', async () => {
+    freshObjectRoom();
+    game.flags.end_top = 3;
+    game.flags.end_around = 2;
+    game.flags.end_own = true;
+
+    await fullOptions(['scores'], () => '   \n');
+
+    assert.equal(game.flags.end_top, 3);
+    assert.equal(game.flags.end_around, 2);
+    assert.equal(game.flags.end_own, true);
+    assert.match(game._pending_message, /Missing parameter for 'scores:'/);
+});
+
+void test('scores reads fields in any case and quotes unknown text as typed', async () => {
+    freshObjectRoom();
+
+    await fullOptions(['scores'], () => '5TOP/NoOwn/BOGUS\n');
+
+    assert.equal(game.flags.end_top, 5);
+    assert.equal(game.flags.end_own, false);
+    assert.match(game._pending_message, /Unknown scores parameter 'BOGUS'/);
+});
+
 void test('feature-alert suppression accepts a current or older native version', async () => {
     freshObjectRoom();
 

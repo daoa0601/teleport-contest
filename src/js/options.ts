@@ -187,21 +187,25 @@ function setNumberPadOption(value: number, settings: Pick<ConfigurationSettings,
 type ScoreChoices = Required<Pick<GameFlags, 'end_top' | 'end_around' | 'end_own'>> & { error: string | null };
 
 function parseScoreOption(value: string | null, negated: boolean): ScoreChoices | null {
-    if (!value) return null;
+    // string_for_opt() trims the value; an empty one is a missing parameter.
+    const text = value?.trim();
+    if (!text) return null;
     const choices: ScoreChoices = { end_top: 0, end_around: 0, end_own: false, error: null };
-    let rest = negated ? '' : value.toLowerCase();
+    let rest = negated ? '' : text;
     while (rest) {
-        const disabled = rest.startsWith('!') || rest.startsWith('no');
+        const disabled = rest.startsWith('!') || rest.slice(0, 2).toLowerCase() === 'no';
         if (disabled) rest = rest.startsWith('!') ? rest.slice(1)
             : rest.slice(rest[2] === '-' ? 3 : 2);
         const digits = rest.match(/^\d+/)?.[0];
         const count = digits ? Number(digits) : 1;
         if (digits) rest = rest.slice(digits.length);
         rest = rest.replace(/^ +/, '');
-        if (rest[0] === 't') choices.end_top = disabled ? 0 : count;
-        else if (rest[0] === 'a') choices.end_around = disabled ? 0 : count;
-        else if (rest[0] === 'o') choices.end_own = !disabled && count !== 0;
-        else if (rest[0] === 'n') {
+        // Native lowc() selects the field but reports the original text.
+        const field = rest[0]?.toLowerCase();
+        if (field === 't') choices.end_top = disabled ? 0 : count;
+        else if (field === 'a') choices.end_around = disabled ? 0 : count;
+        else if (field === 'o') choices.end_own = !disabled && count !== 0;
+        else if (field === 'n') {
             choices.end_top = choices.end_around = 0;
             choices.end_own = false;
         } else {
@@ -210,7 +214,7 @@ function parseScoreOption(value: string | null, negated: boolean): ScoreChoices 
                 : `Unknown scores parameter '${rest}'`;
             break;
         }
-        rest = rest.replace(/^[a-z]+ */, '');
+        rest = rest.replace(/^[a-zA-Z]+ */, '');
         if (rest.startsWith('/')) rest = rest.slice(1).replace(/^ +/, '');
     }
     return choices;

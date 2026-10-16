@@ -170,12 +170,14 @@ function setNumberPadOption(value, settings) {
     settings.iflags.num_pad_mode = value === -1 ? 1 : value > 0 ? value - 1 : 0;
 }
 function parseScoreOption(value, negated) {
-    if (!value)
+    // string_for_opt() trims the value; an empty one is a missing parameter.
+    const text = value?.trim();
+    if (!text)
         return null;
     const choices = { end_top: 0, end_around: 0, end_own: false, error: null };
-    let rest = negated ? '' : value.toLowerCase();
+    let rest = negated ? '' : text;
     while (rest) {
-        const disabled = rest.startsWith('!') || rest.startsWith('no');
+        const disabled = rest.startsWith('!') || rest.slice(0, 2).toLowerCase() === 'no';
         if (disabled)
             rest = rest.startsWith('!') ? rest.slice(1)
                 : rest.slice(rest[2] === '-' ? 3 : 2);
@@ -184,13 +186,15 @@ function parseScoreOption(value, negated) {
         if (digits)
             rest = rest.slice(digits.length);
         rest = rest.replace(/^ +/, '');
-        if (rest[0] === 't')
+        // Native lowc() selects the field but reports the original text.
+        const field = rest[0]?.toLowerCase();
+        if (field === 't')
             choices.end_top = disabled ? 0 : count;
-        else if (rest[0] === 'a')
+        else if (field === 'a')
             choices.end_around = disabled ? 0 : count;
-        else if (rest[0] === 'o')
+        else if (field === 'o')
             choices.end_own = !disabled && count !== 0;
-        else if (rest[0] === 'n') {
+        else if (field === 'n') {
             choices.end_top = choices.end_around = 0;
             choices.end_own = false;
         }
@@ -200,7 +204,7 @@ function parseScoreOption(value, negated) {
                 : `Unknown scores parameter '${rest}'`;
             break;
         }
-        rest = rest.replace(/^[a-z]+ */, '');
+        rest = rest.replace(/^[a-zA-Z]+ */, '');
         if (rest.startsWith('/'))
             rest = rest.slice(1).replace(/^ +/, '');
     }
