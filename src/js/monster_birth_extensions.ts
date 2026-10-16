@@ -1,7 +1,7 @@
 // C makemon.c:makemon() allocates requested role records without appointing
 // the monster to that role. The caller fills them before setting role flags.
 import { MM_EDOG, MM_EGD, MM_EMIN, MM_EPRI, MM_ESHK } from './const.js';
-import type { Monster } from './monster_types.js';
+import type { MinionData, Monster } from './monster_types.js';
 
 export function allocateMonsterBirthExtensions(monster: Monster, flags: number): void {
     if (!(flags & (MM_EDOG | MM_EGD | MM_EMIN | MM_EPRI | MM_ESHK))) return;
@@ -15,8 +15,7 @@ export function allocateMonsterBirthExtensions(monster: Monster, flags: number):
             mhpmax_penalty: 0, killed_by_u: 0,
         };
     }
-    if (flags & MM_EMIN)
-        monster.emin = { parentmid, min_align: 0, renegade: 0 };
+    if (flags & MM_EMIN) ensureMinionData(monster).parentmid = parentmid;
     if (flags & MM_EPRI) {
         monster.epri = {
             parentmid, shroom: 0, shralign: 0, shrpos: { x: 0, y: 0 },
@@ -40,4 +39,13 @@ export function allocateMonsterBirthExtensions(monster: Monster, flags: number):
             warncnt: 0, fcbeg: 0, fcend: 0, fakecorr: [], dropgoldcnt: 0,
         };
     }
+}
+
+// C minion.c:newemin(). Preserve an existing record and its ownership link.
+export function ensureMinionData(monster: Monster): MinionData {
+    const minion = monster.emin ?? monster.mextra?.emin
+        ?? { parentmid: monster.m_id, min_align: 0, renegade: 0 };
+    monster.emin = minion;
+    monster.mextra = { ...monster.mextra, emin: minion };
+    return minion;
 }

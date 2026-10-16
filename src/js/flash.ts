@@ -47,7 +47,7 @@ export async function doBlindingRay(object: GameObject, { dx, dy }: { dx: number
             x += dx;
             y += dy;
             if (!isok(x, y)) break;
-            if (!heroIsBlind(state)) await illuminateFlashCell(x, y, state);
+            if (!heroIsBlind(state)) await illuminateTransientCell(x, y, state);
             const monster = monsterAtPosition(state.level, x, y);
             if (monster && M_AP_TYPE(monster) !== M_AP_OBJECT) {
                 object.ox = state.u.ux;
@@ -74,7 +74,7 @@ export async function doBlindingRay(object: GameObject, { dx, dy }: { dx: number
         }
     } finally {
         for (const cell of cells) newsym(cell.x, cell.y);
-        await cleanupFlashLight(state);
+        await cleanupTransientLight(state);
     }
     return heroDied;
 }
@@ -144,7 +144,7 @@ export async function flashHitsMonster(monster: Monster, object: GameObject, { s
     return result;
 }
 
-async function illuminateFlashCell(x: number, y: number, state: PlayingGameState) {
+export async function illuminateTransientCell(x: number, y: number, state: PlayingGameState) {
     if (state.level.requireAt(x, y).lit) return;
     (state._transientLights || (state._transientLights = [])).push({ x, y, range: 0 });
     vision_recalc(0);
@@ -154,7 +154,7 @@ async function illuminateFlashCell(x: number, y: number, state: PlayingGameState
             monster.mtemplit = 1;
 }
 
-async function cleanupFlashLight(state: PlayingGameState) {
+export async function cleanupTransientLight(state: PlayingGameState) {
     delete state._transientLights;
     state.vision_full_recalc = 1;
     vision_recalc(0);

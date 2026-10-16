@@ -5,18 +5,20 @@ import { artifactById } from './artifacts.js';
 import { deityName } from './alignment.js';
 import { A_NONE, In_endgame, MM_EMIN, MM_NOMSG, STRAT_APPEARMSG } from './const.js';
 import { canSeeMonster, canSpotMonster, pline, plineWithContinuation } from './display.js';
-import { game, requireInitializedGame } from './gstate.js';
+import { illuminateTransientCell, cleanupTransientLight } from './flash.js';
+import { game, requireGameLevel, requireInitializedGame } from './gstate.js';
 import { makemonNear, mkclassAligned } from './mklev.js';
-import { MONSTER_ALIGNMENT, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
+import { MONSTER_ALIGNMENT, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
+import { ensureMinionData } from './monster_birth_extensions.js';
+import { monsterName } from './monster_name.js';
 import { rn1, rn2 } from './rng.js';
-import { heroIsDeaf } from './senses.js';
+import { heroIsBlind, heroIsDeaf } from './senses.js';
 import { isWereMonster, summonWereAttackHelp } from './were.js';
 const S_DEMON = 56;
 const M2_DEMON = 0x00000100;
 const M2_LORD = 0x00000400;
 const M2_PRINCE = 0x00000800;
 const M2_MINION = 0x00001000;
-const M2_PNAME = 0x00080000;
 const G_GONE = 0x03;
 const PM_WIZARD_OF_YENDOR = MONSTER_NAME.indexOf('Wizard of Yendor');
 const PM_ANGEL = MONSTER_NAME.indexOf('Angel');
@@ -49,8 +51,9 @@ export async function summonMinion(alignment, talk = false) {
         return null;
     if (!specialRole) {
         monster.isminion = 1;
-        monster.emin = { min_align: alignment, renegade: 0 };
-        monster.mextra = { ...monster.mextra, emin: monster.emin };
+        const minion = ensureMinionData(monster);
+        minion.min_align = alignment;
+        minion.renegade = 0;
     }
     if (talk) {
         const deity = deityName(alignment);
@@ -60,7 +63,7 @@ export async function summonMinion(alignment, talk = false) {
             : `The voice of ${deity} booms:`);
         await plineWithContinuation('"Thou shalt pay for thine indiscretion!"');
         if (canSpotMonster(monster))
-            await plineWithContinuation(`${summonedMonsterName(monster)} appears before you.`);
+            await plineWithContinuation(`${monsterName(monster, { capitalized: true, article: 'a' })} appears before you.`);
         monster.mstrategy = (monster.mstrategy ?? 0) & ~STRAT_APPEARMSG;
     }
     monster.mpeaceful = false;
@@ -148,7 +151,7 @@ function summonedType(monster, alignment) {
                 : !rn2(4)
                     ? demonLord(alignment)
                     : normalDemon(alignment),
-            mayDouble: true,
+            double: 'demon',
         };
     }
     if (flags & M2_DEMON && flags & M2_LORD) {
@@ -158,22 +161,22 @@ function summonedType(monster, alignment) {
                 : !rn2(20)
                     ? demonLord(alignment)
                     : normalDemon(alignment),
-            mayDouble: true,
+            double: 'demon',
         };
     }
     if (MONSTER_NAME[mnum] === 'bone devil')
-        return { mnum: MONSTER_NAME.indexOf('skeleton'), mayDouble: false };
+        return { mnum: MONSTER_NAME.indexOf('skeleton'), double: null };
     if (flags & M2_DEMON && !(flags & (M2_LORD | M2_PRINCE))) {
         return {
             mnum: !rn2(20) ? demonLord(alignment) : !rn2(6) ? normalDemon(alignment) : mnum,
-            mayDouble: false,
+            double: null,
         };
     }
     if (flags & M2_MINION && alignment > 0) {
         const lord = !!(flags & M2_LORD);
         return {
             mnum: lord && !rn2(20) ? lawfulLord() : lord || !rn2(6) ? lawfulMinion() : mnum,
-            mayDouble: true,
+            double: 'minion',
         };
     }
     if (mnum === PM_ANGEL) {
@@ -181,32 +184,41 @@ function summonedType(monster, alignment) {
         if (!rn2(6)) {
             summoned = alignment === 0 ? summonedElemental() : normalDemon(alignment);
         }
-        return { mnum: summoned, mayDouble: true };
+        return { mnum: summoned, double: 'minion' };
     }
-    return { mnum: null, mayDouble: false };
-}
-function summonedMonsterName(monster) {
-    const name = MONSTER_NAME[monster.mnum] || 'monster';
-    if ((MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_PNAME)
-        return name;
-    const article = /^[aeiou]/i.test(name) ? 'An' : 'A';
-    return `${article} ${name}`;
+    return { mnum: null, double: null };
 }
 function summonEnvironment(monster) {
-    const name = MONSTER_NAME[monster.mnum];
-    if (name === 'air elemental' || name === 'water elemental')
-        return 'cloud of vapor';
-    if (name === 'fire elemental')
-        return 'ball of flame';
-    if (name === 'earth elemental')
-        return 'cloud of dust';
-    if ((MONSTER_SYMBOL[monster.mnum] ?? 0) === 27)
+    if (MONSTER_SYMBOL[monster.mnum] === 27 || MONSTER_SYMBOL[monster.mnum] === 25)
         return 'flash of light';
-    return 'cloud of smoke';
+    switch (MONSTER_NAME[monster.mnum] ?? '') {
+        case 'water demon':
+        case 'air elemental':
+        case 'water elemental':
+        case 'fog cloud':
+        case 'ice vortex':
+        case 'freezing sphere':
+            return 'cloud of vapor';
+        case 'steam vortex':
+            return 'cloud of steam';
+        case 'energy vortex':
+        case 'shocking sphere':
+            return 'shower of sparks';
+        case 'earth elemental':
+        case 'dust vortex':
+            return 'cloud of dust';
+        case 'fire elemental':
+        case 'fire vortex':
+        case 'flaming sphere':
+            return 'ball of flame';
+        default:
+            return 'cloud of smoke';
+    }
 }
-function existingMonsterName(monster) {
-    const name = MONSTER_NAME[monster.mnum] || 'monster';
-    return (MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_PNAME ? name : `The ${name}`;
+export function monsterCensus(spotted = false) {
+    return requireGameLevel().monsters.filter(monster => monster.mhp > 0
+        && !(monster.isgd && monster.mx === 0)
+        && (!spotted || canSpotMonster(monster))).length;
 }
 export async function msummon(monster = null) {
     const summonerFlags = MONSTER_FLAGS2[monster?.mnum ?? -1] ?? 0;
@@ -215,7 +227,7 @@ export async function msummon(monster = null) {
         summonerFlags & M2_DEMON &&
         artifactById(weapon?.oartifact)?.name === 'Demonbane') {
         if (canSeeMonster(monster)) {
-            await pline(`${existingMonsterName(monster)} looks puzzled for a moment.`);
+            await pline(`${monsterName(monster, { capitalized: true })} looks puzzled for a moment.`);
         }
         return { count: 0, created: [] };
     }
@@ -226,34 +238,45 @@ export async function msummon(monster = null) {
         return { count: 0, created: [] };
     let count = 1;
     const flags = MONSTER_FLAGS2[mnum] ?? 0;
-    if (selection.mayDouble && !rn2(4) && !(flags & (M2_LORD | M2_PRINCE)))
-        count = 2;
+    if (selection.double && !rn2(4)) {
+        const eligible = selection.double === 'demon'
+            ? !!(flags & M2_DEMON) && !(flags & (M2_LORD | M2_PRINCE))
+            : !(flags & M2_LORD);
+        if (eligible)
+            count = 2;
+    }
+    if ((MONSTER_GENO[mnum] ?? 0) & 0x1000)
+        count = 1;
     if (monsterIsGone(mnum)) {
         mnum = normalDemon(alignment);
         if (mnum == null)
             return { count: 0, created: [] };
     }
+    const census = monsterCensus();
+    let litAngel = false;
     const created = [];
     while (count-- > 0) {
         const summoned = await makemonNear(mnum, game.u.ux, game.u.uy, MM_EMIN | MM_NOMSG);
         if (!summoned)
             continue;
-        summoned.emin = { min_align: 0, renegade: 0 };
+        const minion = ensureMinionData(summoned);
         if (mnum === PM_ANGEL) {
             summoned.isminion = 1;
-            summoned.emin.min_align = alignment;
-            summoned.emin.renegade =
+            minion.min_align = alignment;
+            minion.renegade =
                 (alignment !== (game.u?.ualign?.type ?? 0)) !== !summoned.mpeaceful ? 1 : 0;
         }
-        summoned.mextra = {
-            ...(summoned.mextra || {}),
-            emin: summoned.emin,
-        };
         created.push(summoned);
+        if (MONSTER_SYMBOL[summoned.mnum] === 27 && !heroIsBlind(game)) {
+            await illuminateTransientCell(summoned.mx, summoned.my, requireInitializedGame());
+            litAngel = true;
+        }
         if (count === 0 && canSeeMonster(summoned)) {
-            await plineWithContinuation(`${summonedMonsterName(summoned)} appears in a ${summonEnvironment(summoned)}!`);
+            await plineWithContinuation(`${monsterName(summoned, { capitalized: true, article: 'a' })} appears in a ${summonEnvironment(summoned)}!`);
         }
     }
-    return { count: created.length, created };
+    if (litAngel)
+        await cleanupTransientLight(requireInitializedGame());
+    return { count: created.length ? monsterCensus() - census : 0, created };
 }
 //# sourceMappingURL=minion.js.map
