@@ -7339,15 +7339,10 @@ async function domoveCore(dx: number, dy: number, explicitAttempt: boolean): Pro
                 });
                 if (flight.heroDied) return true;
             }
-            const tameName = monster.name || (monster.mnum === 16
-                ? 'your little dog' : monster.mnum === 32 ? 'your kitten'
-                    : monster.mnum === 100 ? 'your saddled pony' : 'your pet');
-            const speciesName = monsterInstanceDisplayName(monster);
-            const subject = tame ? tameName
-                : monster.name ? speciesName : `the ${speciesName}`;
             if (blocked || inShop) {
-                const displayName = subject.charAt(0).toUpperCase()
-                    + subject.slice(1);
+                const displayName = monsterName(monster, {
+                    state: game, article: 'your', capitalized: true,
+                });
                 await plineWithContinuation(`You stop.  ${displayName} is in the way!`);
                 stopRun(game);
                 return true;
@@ -7400,9 +7395,9 @@ async function domoveCore(dx: number, dy: number, explicitAttempt: boolean): Pro
             // announcement can flush the map or pause for acknowledgment.
             newsym(newx, newy);
             newsym(oldx, oldy);
-            const swapName = tame ? tameName
-                : monster.name ? `peaceful ${speciesName}`
-                    : `the peaceful ${speciesName}`;
+            const swapName = monsterName(monster, {
+                state: game, article: 'your', adjective: tame ? '' : 'peaceful',
+            });
             await plineWithContinuation(`You swap places with ${swapName}.`);
             return finishMovedHero({
                 oldx, oldy, newx, newy, loc, explicitAttempt,
