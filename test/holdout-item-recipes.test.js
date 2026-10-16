@@ -12,6 +12,18 @@ function recording(messages) {
                     screen: `${message}\nDlvl:1 HP:120(120) Pw:10(10) AC:3 Xp:20 T:${index + 1}`,
                 })) }] };
 }
+function potionMessages(name, effect) {
+    const inventory = (potions) => `Weapons\na - a dagger\n${potions}\n(end)`;
+    return [
+        'Your dagger softly glows with a light blue aura.',
+        'The potion crashes on the floor and breaks into shards.',
+        'What do you want to drink?',
+        inventory(`i - a potion of healing\nj - a potion of ${name}`),
+        'You feel better.', inventory(`j - a potion of ${name}`),
+        'What do you want to drink?', inventory(`j - a potion of ${name}`),
+        effect, inventory(''),
+    ];
+}
 void test('scroll recipe accepts consumed scrolls and rejects unanswered read prompts', () => {
     const result = validateRecipeRecording('scroll-reading', recording([
         'What do you want to read?',
@@ -26,6 +38,21 @@ void test('scroll recipe accepts consumed scrolls and rejects unanswered read pr
         'What do you want to read?', 'What do you want to read?',
     ])).ok, false);
 });
+void test('scroll recipe accepts blind recitation with and without speech or disappearance', () => {
+    for (const verb of ['pronounce', 'cogitate']) {
+        for (const disappears of [true, false]) {
+            const message = disappears
+                ? `As you ${verb} the formula on it, the scroll disappears.`
+                : `You ${verb} the formula on the scroll.`;
+            const result = validateRecipeRecording('scroll-reading', recording([
+                'What do you want to read?', message,
+                'What do you want to read?', message,
+                'What do you want to read?', message,
+            ]));
+            assert.equal(result.ok, true, `${message}: ${JSON.stringify(result)}`);
+        }
+    }
+});
 void test('container recipe requires putting an item in and taking it back out', () => {
     const result = validateRecipeRecording('container-looting', recording([
         'What do you want to use or apply?',
@@ -38,26 +65,42 @@ void test('container recipe requires putting an item in and taking it back out',
         'Do what with your sack?', 'Take out what?',
     ])).ok, false);
 });
+void test('selecting and deselecting a takeout item before cancelling leaves the transfer incomplete', () => {
+    const result = validateRecipeRecording('container-looting', recording([
+        'You put a ruby into the sack.',
+        'Take out what?\na - a ruby\n(end)',
+        'Take out what?\na + a ruby\n(end)',
+        'Take out what?\na - a ruby\n(end)',
+        'Never mind.',
+        'Weapons\na - a long sword\n(end)',
+    ]));
+    assert.equal(result.ok, false, JSON.stringify(result));
+});
 void test('potion recipe requires drinking, dipping, and breaking a thrown potion', () => {
-    const messages = [
-        'What do you want to drink?', 'You feel better.',
-        'What do you want to drink?', 'You feel more experienced.',
-        'Your dagger softly glows with a light blue aura.',
-        'The potion crashes on the floor and breaks into shards.',
-    ];
+    const messages = potionMessages('gain level', 'You feel more experienced.');
     assert.equal(validateRecipeRecording('potion-quaffing', recording(messages)).ok, true);
-    assert.equal(validateRecipeRecording('potion-quaffing', recording(messages.slice(0, -1))).ok, false);
+    assert.equal(validateRecipeRecording('potion-quaffing', recording(messages.filter(message => !message.includes('shards')))).ok, false);
 });
 void test('hallucination counts as a completed drink with either sight or touch feedback', () => {
     for (const verb of ['looks', 'feels']) {
-        const result = validateRecipeRecording('potion-quaffing', recording([
-            'Your dagger softly glows with a light blue aura.',
-            'The potion crashes on the floor and breaks into shards.',
-            'What do you want to drink?', 'You feel better.',
-            'What do you want to drink?', `Oh wow!  Everything ${verb} so cosmic!`,
-        ]));
+        const result = validateRecipeRecording('potion-quaffing', recording(potionMessages('hallucination', `Oh wow!  Everything ${verb} so cosmic!`)));
         assert.equal(result.ok, true, JSON.stringify(result));
     }
+});
+for (const { potion, message } of [
+    { potion: 'oil', message: 'That was smooth!' },
+    { potion: 'silent blessed monster detection', message: '' },
+]) {
+    void test(`${potion} counts as a completed drink`, () => {
+        const result = validateRecipeRecording('potion-quaffing', recording(potionMessages(potion === 'oil' ? 'oil' : 'monster detection', message)));
+        assert.equal(result.ok, true, JSON.stringify(result));
+    });
+}
+void test('an escaped drink prompt cannot count a later turn as a silent drink', () => {
+    const messages = potionMessages('monster detection', 'Never mind.');
+    messages[messages.length - 1] = 'Weapons\na - a dagger\nj - a potion of monster detection\n(end)';
+    const result = validateRecipeRecording('potion-quaffing', recording([...messages, 'The pony whinnies.']));
+    assert.equal(result.ok, false, JSON.stringify(result));
 });
 void test('seeded scroll recipes explore many scroll types', () => {
     const wishes = (seed) => {

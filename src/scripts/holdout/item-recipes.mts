@@ -113,8 +113,11 @@ export const ITEM_RECIPES: Record<string, Recipe> = {
                 : name === 'water' && blessing === 'cursed' ? 'potion of unholy water' : `potion of ${name}`;
             actions.push(choose(label(itemAt(potions, 2)), 't*'), keys('>'));
             // A new form might have no hands. Drink polymorph last.
-            for (const name of potions.slice(0, 2).sort((a, b) => Number(a === 'polymorph') - Number(b === 'polymorph')))
-                actions.push(choose(label(name), 'mq*'), keys('\x1b'));
+            for (const name of potions.slice(0, 2).sort((a, b) => Number(a === 'polymorph') - Number(b === 'polymorph'))) {
+                // Some drinks have no message or immediate status refresh.
+                // Show inventory so validation can observe their consumption.
+                actions.push(choose(label(name), 'mq*'), keys('\x1bi\x1b'));
+            }
             return actions;
         }),
     'wand-zapping': itemRecipe(
@@ -210,9 +213,41 @@ function completedEffects(screens: string[], prompt: RegExp, effect: RegExp): nu
     let completed = 0;
     for (const [index, screen] of screens.entries()) {
         if (prompt.test(screen) && !prompt.test(screens[index - 1] ?? '')) awaitingEffect = true;
-        else if (awaitingEffect && effect.test(screen)) {
+        else if (awaitingEffect && !prompt.test(screen) && effect.test(screen)) {
             completed++;
             awaitingEffect = false;
+        }
+    }
+    return completed;
+}
+
+function inventoryPotionCount(screen: string): number | undefined {
+    if (!/(?:^|\n)\s*\(end\)\s*(?:\n|$)/.test(screen)
+        || !/(?:^|\n)\s*[a-zA-Z] [-+] /.test(screen)) return undefined;
+    let count = 0;
+    for (const item of screen.matchAll(/(?:^|\n)\s*[a-zA-Z] [-+] (an?|\d+) ([^\n]+)/g)) {
+        if (/\bpotions?\b/.test(item[2] ?? ''))
+            count += item[1] === 'a' || item[1] === 'an' ? 1 : Number(item[1]);
+    }
+    return count;
+}
+
+function completedDrinks(screens: string[]): number {
+    let awaitingDrink = false;
+    let before: number | undefined;
+    let completed = 0;
+    for (const screen of screens) {
+        if (/What do you want to drink\?/.test(screen)) {
+            awaitingDrink = true;
+            before = undefined;
+        }
+        if (!awaitingDrink) continue;
+        const count = inventoryPotionCount(screen);
+        if (count === undefined) continue;
+        if (before === undefined) before = count;
+        else {
+            if (count < before) completed++;
+            awaitingDrink = false;
         }
     }
     return completed;
@@ -243,13 +278,12 @@ export function validateItemRecipe(name: string, session: RecipeRecording): Reci
         (turns.at(-1) ?? 0) > (turns[0] ?? Infinity));
     switch (name) {
     case 'scroll-reading': {
-        const read = transitions(observed, /As you read the scroll, it disappears\.|You read the scroll\./);
+        const read = transitions(observed, /As you read the scroll, it disappears\.|You read the scroll\.|As you (?:pronounce|cogitate) the formula on it, the scroll disappears\.|You (?:pronounce|cogitate) the formula on the scroll\./);
         require('three scrolls read', read >= 3, `${read} read messages`);
         break;
     }
     case 'potion-quaffing':
-        require('two drinks completed', completedEffects(observed, /What do you want to drink\?/,
-            /\bYou (?:feel|are|start|rise|float|have|turn|smell|suddenly|detect)|Your |This |Gee!|Ooph!|Ulch|Yecch|Huh, What|Oh wow!\s+Everything\s+(?:looks|feels)\s+so cosmic!|darkness|Magical energ|djinni emerges|enormous ghost/) >= 2);
+        require('two drinks completed', completedDrinks(observed) >= 2);
         has('dipped weapon blessed', /dagger.*(?:glows|shines).*light blue aura/);
         has('thrown potion broke', /(?:potion|bottle).*(?:shatters|breaks|shards|crashes)/i);
         break;
@@ -264,8 +298,10 @@ export function validateItemRecipe(name: string, session: RecipeRecording): Reci
         break;
     case 'container-looting':
         has('item put into container', /You put .* into (?:the|your) /);
+        // out_container() prints the new inventory letter on the message
+        // line. An inventory or takeout menu can show the same item text.
         require('item taken out of container', completedEffects(observed, /Take out what\?/,
-            /(?:^|\n)\s*[a-zA-Z] - an? /) >= 1);
+            /^[a-zA-Z] - an? /) >= 1);
         break;
     case 'wear-cycle':
         has('armor worn', /finish your dressing maneuver|You are now wearing/);
