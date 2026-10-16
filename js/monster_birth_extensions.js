@@ -30,6 +30,7 @@ export function allocateMonsterBirthExtensions(monster, flags) {
             bill: [], billct: 0, billUnavailable: true,
             credit: 0, debit: 0, loan: 0, robbed: 0, surcharge: 0,
             following: 0, customer: '', visitct: 0, dismiss_kops: false,
+            break_seq: 0, seq_peaceful: 0,
         };
     }
     if (flags & MM_EGD) {

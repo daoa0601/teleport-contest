@@ -8,7 +8,7 @@ import { GOLD_PIECE, OBJECT_NAMES } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { monsterKnowsTrap } from '../js/trap_knowledge.js';
 import { roomBindings } from './support/themed-room-bindings.js';
-void test('generated hardware shopkeepers begin ready to tend their shops and know every trap', async (t) => {
+async function generateHardwareShops(t) {
     const lua = await roomBindings(t);
     requirePlayingGame(game);
     game.u.uz = { dnum: 0, dlevel: 2 };
@@ -22,6 +22,10 @@ void test('generated hardware shopkeepers begin ready to tend their shops and kn
     await mklev();
     const shops = game.level.rooms.filter(isRoom).filter(room => room.rtype === SHOPBASE + 8);
     assert.ok(shops.length > 0, 'the level generator must create hardware shops');
+    return shops;
+}
+void test('generated hardware shopkeepers begin ready to tend their shops and know every trap', async (t) => {
+    const shops = await generateHardwareShops(t);
     for (const room of shops) {
         const keeper = room.resident;
         assert.ok(keeper?.isshk, 'each shop needs its appointed resident');
@@ -40,6 +44,15 @@ void test('generated hardware shopkeepers begin ready to tend their shops and kn
         assert.equal(keeper.mx, account.shk.x);
         assert.equal(keeper.my, account.shk.y);
         assert.equal(Math.abs(keeper.mx - account.shd.x) + Math.abs(keeper.my - account.shd.y), 1, 'the keeper must stand immediately inside the entrance');
+    }
+});
+void test('new shopkeepers start with no breakage sequence or remembered peaceful breakage', async (t) => {
+    const shops = await generateHardwareShops(t);
+    for (const room of shops) {
+        const account = room.resident?.eshk;
+        assert.ok(account);
+        assert.equal(account.break_seq, 0, 'the keeper has not handled an object breakage');
+        assert.equal(account.seq_peaceful, 0, 'no peaceful breakage has been recorded');
     }
 });
 //# sourceMappingURL=shopkeeper_initialization.test.js.map
