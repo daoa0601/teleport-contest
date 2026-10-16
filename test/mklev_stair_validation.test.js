@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { COLNO, DB_FLOOR, DB_ICE, DB_LAVA, DB_MOAT, DB_WEST, DRAWBRIDGE_UP, ROWNO, STAIRS, } from '../js/const.js';
+import { COLNO, DB_FLOOR, DB_ICE, DB_LAVA, DB_MOAT, DB_WEST, DBWALL, DRAWBRIDGE_UP, ROWNO, STAIRS, } from '../js/const.js';
 import { flush_screen } from '../js/display.js';
 import { GameDisplay } from '../js/game_display.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
@@ -26,6 +26,24 @@ void test('stair construction rejects coordinates outside the playable map', asy
     }
     assert.equal(requireGameLevel().requireAt(0, 10).typ, unusedColumn, 'forcing invalid stairs must not turn the unused map column into floor');
 });
+for (const horizontal of [false, true]) {
+    void test(`stair diagnostics name a ${horizontal ? 'horizontal' : 'vertical'} raised drawbridge wall`, async (t) => {
+        await roomBindings(t);
+        requirePlayingGame(game);
+        game.u.uz = { dnum: 0, dlevel: 4 };
+        await mklev();
+        const display = new GameDisplay(null);
+        game.nhDisplay = display;
+        game.program_state.in_sanity_check = true;
+        const square = requireGameLevel().requireAt(10, 10);
+        square.typ = DBWALL;
+        square.horizontal = horizontal;
+        await mkstairs(10, 10, false, null);
+        await flush_screen(1);
+        assert.equal(display.grid[0]?.map(cell => cell.ch).join('').trimEnd(), 'mkstairs:  placing stairs down on raised drawbridge at <10,10>');
+        assert.equal(square.typ, STAIRS, 'the diagnostic must still allow stair construction');
+    });
+}
 for (const [underneath, surface] of [
     [DB_MOAT, 'water'],
     [DB_LAVA, 'molten lava'],

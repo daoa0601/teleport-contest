@@ -672,6 +672,8 @@ const TERRAIN_NAMES = new Map([
 function terrainGlyphName(loc, x, y, glyph) {
     if (isArborealBackground(loc))
         return 'tree';
+    if (loc.typ === DBWALL)
+        return 'raised drawbridge';
     if (IS_WALL(loc.typ) || loc.typ === SDOOR)
         return glyph.ch === ' ' ? 'stone' : 'wall';
     if (loc.typ === DOOR) {
