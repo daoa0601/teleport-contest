@@ -558,3 +558,13 @@ void test('cancelling a full-screen simple options menu restores the status rows
 
     assert.match(screen().split('\n')[23] ?? '', /HP:40/);
 });
+
+void test('a negated empty paranoia value clears all confirmations', async () => {
+    freshObjectRoom({ flags: { paranoia_bits: PARANOID_PRAY | PARANOID_TRAP | PARANOID_SWIM } });
+    applyNethackrc('OPTIONS=!paranoid_confirmation:');
+    resetInputState().feed('\x1b');
+
+    await rhack('O'.charCodeAt(0));
+
+    assert.equal(game.flags.paranoia_bits, 0);
+});

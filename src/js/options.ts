@@ -423,7 +423,14 @@ function parseConfiguration(rc: string, result: ConfigurationSettings): Configur
                 }
                 else if (key === 'paranoid_confirmation'
                     || key === 'paranoid_confirm') {
-                    if (negated) continue;
+                    if (negated) {
+                        if (!val) {
+                            paranoiaBits = 0;
+                            paranoiaSeen = true;
+                            result.flags.paranoia_bits = 0;
+                        }
+                        continue;
+                    }
                     paranoiaBits = updateParanoiaBits(paranoiaBits, val);
                     paranoiaSeen = true;
                     result.flags.paranoia_bits = paranoiaBits;
