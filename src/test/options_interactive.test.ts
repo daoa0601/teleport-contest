@@ -85,6 +85,26 @@ async function simpleOption(name: string, select = true): Promise<string> {
     assert.fail(`The simple options menu did not offer ${name}`);
 }
 
+async function fullOptionRow(name: string): Promise<string> {
+    const input = resetInputState();
+    const command = rhack('m'.charCodeAt(0));
+    await input.waitUntilBlocked();
+    input.feed('O');
+    for (let page = 0; page < 12; page++) {
+        await input.waitUntilBlocked();
+        const row = screen().split('\n').find(line => line.trimStart().startsWith(`${name} `));
+        if (row) {
+            input.feed('\x1b');
+            await command;
+            return row;
+        }
+        input.feed(' ');
+    }
+    input.feed('\x1b');
+    await command;
+    assert.fail(`The full options menu did not display ${name}`);
+}
+
 void test('the simple options menu toggles autoquiver without using a turn', async () => {
     freshObjectRoom({ flags: { autoquiver: false } });
     requirePlayingGame(game);
@@ -615,3 +635,38 @@ void test('an empty status height reports both native validation errors', async 
     assert.ok(views.some(view => view.includes("Missing parameter for 'statuslines:'.")));
     assert.match(game._pending_message, /'statuslines:' is invalid; must be 2 or 3\./);
 });
+
+for (const mode of ['normal', 'explore', 'debug']) {
+    void test(`the full options menu displays ${mode} play mode`, async () => {
+        freshObjectRoom({ flags: { debug: mode === 'debug', explore: mode === 'explore' } });
+
+        const row = await fullOptionRow('playmode');
+
+        assert.ok(row.includes(`[${mode}]`), row);
+    });
+}
+
+void test('the full options menu displays the disabled bones preference', async () => {
+    freshObjectRoom({ flags: { bones: false } });
+
+    const row = await fullOptionRow('bones');
+
+    assert.ok(row.includes('[false]'), row);
+});
+
+for (const { preference, description } of [
+    { preference: 'c', description: 'cat' },
+    { preference: 'd', description: 'dog' },
+    { preference: 'h', description: 'horse' },
+    { preference: 'n', description: 'none' },
+    { preference: '', description: 'random' },
+]) {
+    void test(`the full options menu displays the ${description} pet preference`, async () => {
+        freshObjectRoom();
+        game.preferred_pet = preference;
+
+        const row = await fullOptionRow('pettype');
+
+        assert.ok(row.includes(`[${description}]`), row);
+    });
+}

@@ -814,6 +814,16 @@ function scoreDisplayDescription() {
         parts.push('own');
     return parts.join('/') || 'none';
 }
+function preferredPetDescription() {
+    const preference = game.preferred_pet ?? '';
+    switch (preference) {
+        case 'c': return 'cat';
+        case 'd': return 'dog';
+        case 'h': return 'horse';
+        case 'n': return 'none';
+        default: return 'random';
+    }
+}
 function requestMenuSections() {
     const { role, race, gender, alignment } = requestMenuIdentity();
     const choice = (name, text) => ({
@@ -826,7 +836,7 @@ function requestMenuSections() {
     return [
         { heading: 'Booleans (selecting will toggle value):', items: [
                 readonly('blind', !!game.u?.uroleplay?.blind),
-                readonly('bones', true),
+                readonly('bones', game.flags.bones !== false),
                 readonly('deaf', !!game.u?.uroleplay?.deaf),
                 readonly('legacy', game.flags?.legacy !== false),
                 readonly('news', false),
@@ -917,7 +927,7 @@ function requestMenuSections() {
             ] },
         { heading: 'Compounds (selecting will prompt for new value):', items: [
                 readonly('windowtype', 'tty'),
-                readonly('playmode', 'normal'),
+                readonly('playmode', game.flags.debug ? 'debug' : game.flags.explore ? 'explore' : 'normal'),
                 readonly('name', game.plname),
                 readonly('role', role),
                 readonly('race', race),
@@ -927,7 +937,7 @@ function requestMenuSections() {
                 readonly('dogname', game.flags.dogname || '(none)'),
                 readonly('horsename', game.flags.horsename || '(none)'),
                 readonly('msghistory', '20'),
-                readonly('pettype', 'random'),
+                readonly('pettype', preferredPetDescription()),
                 readonly('soundlib', 'nosound'),
                 choice('autounlock', `autounlock              [${compoundMenuValue('autounlock')}]`),
                 choice('boulder', 'boulder                 [`]'),
