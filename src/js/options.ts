@@ -437,7 +437,13 @@ function parseConfiguration(rc: string, result: ConfigurationSettings): Configur
                 }
                 else if (key === 'autounlock') result.flags.autounlock = val;
                 else if (key === 'disclose') result.flags.disclose = val;
-                else if (key === 'pickup_burden') result.flags.pickup_burden = val;
+                else if (key === 'pickup_burden') {
+                    // optfn_pickup_burden() uses the first letter, with 'o'
+                    // and 't' both selecting overtaxed.
+                    const initial = val.charAt(0).toLowerCase();
+                    const burden = 'ubsntl'.indexOf(initial === 'o' ? 't' : initial);
+                    if (initial && burden >= 0) result.flags.pickup_burden = burden;
+                }
                 else {
                     const option = requestBooleanByName.get(key);
                     const value = booleanOption(val, negated);

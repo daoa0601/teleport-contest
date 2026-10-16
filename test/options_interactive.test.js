@@ -93,7 +93,7 @@ async function fullOptionRow(name) {
     input.feed('O');
     for (let page = 0; page < 12; page++) {
         await input.waitUntilBlocked();
-        const row = screen().split('\n').find(line => line.trimStart().startsWith(`${name} `));
+        const row = screen().split('\n').find(line => line.replace(/^\s*[a-zA-Z?] [-+*#] /, '').trimStart().startsWith(`${name} `));
         if (row) {
             input.feed('\x1b');
             await command;
@@ -208,6 +208,23 @@ void test('pickup burden uses the native encumbrance choices', async () => {
     const views = await fullOptions(['pickup_burden'], () => 'l');
     assert.ok(views.some(view => view.includes('Select encumbrance level:')));
     assert.equal(game.flags.pickup_burden, 5);
+});
+for (const [value, expected] of [
+    ['u', 'unencumbered'], ['b', 'burdened'], ['S', 'stressed'],
+    ['n', 'strained'], ['o', 'overtaxed'], ['T', 'overtaxed'], ['l', 'overloaded'],
+]) {
+    void test(`the full options menu expands pickup_burden:${value} to ${expected}`, async () => {
+        freshObjectRoom();
+        applyNethackrc(`OPTIONS=pickup_burden:${value}`);
+        const row = await fullOptionRow('pickup_burden');
+        assert.match(row, new RegExp(`\\[${expected}\\]`));
+    });
+}
+void test('an invalid pickup burden keeps the previous encumbrance setting', async () => {
+    freshObjectRoom({ flags: { pickup_burden: 5 } });
+    applyNethackrc('OPTIONS=pickup_burden:invalid');
+    const row = await fullOptionRow('pickup_burden');
+    assert.match(row, /\[overloaded\]/);
 });
 void test('cancelling autopickup types discards new checks', async () => {
     freshObjectRoom({ flags: { pickup_types: '$' } });
