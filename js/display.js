@@ -1246,7 +1246,7 @@ export function magic_map_background(x, y, show = true) {
     const remembered = location.remembered_glyph;
     // C's cmap glyph range includes traps and engraved floor glyphs.
     if (requireGameLevel().flags.hero_memory && (!remembered
-        || ['terrain', 'trap', 'engraving'].includes(remembered.kind))) {
+        || ['unexplored', 'terrain', 'trap', 'engraving'].includes(remembered.kind))) {
         location.remembered_glyph = { ...glyph, decgfx: glyph.dec };
     }
     if (show)
