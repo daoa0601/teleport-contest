@@ -105,3 +105,18 @@ void test('half physical damage reduces a thrown weapon hit, rounding up', async
     assert.ok(fullDamage > 0);
     assert.equal(reducedDamage, Math.ceil(fullDamage / 2));
 });
+
+// C mthrowu.c monshoot(): singular(otmp, xname) names the monster's stack
+// itself, so a seen throw reveals the darts it keeps, and a thrown one can
+// merge back into that stack later.
+void test('watching a monster throw one dart reveals the rest of its stack', async () => {
+    freshObjectRoom();
+    requireFixtureGame(game);
+    const { soldier, weapon } = await throwWeaponAtHero(DART, { quan: 3, dknown: false, spe: 0 });
+
+    await throwMonsterWeaponAtHero(soldier, game, weapon, { publish: async () => {}, rollOne: () => 1 });
+
+    const kept = soldier.minvent?.find(object => object.otyp === DART);
+    assert.equal(kept?.quan, 2);
+    assert.equal(kept?.dknown, true);
+});
