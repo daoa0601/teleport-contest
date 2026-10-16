@@ -5,6 +5,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { fumaroles } from '../js/monmove.js';
 import { runLevelRegions } from '../js/regions.js';
+import { moveHeroByTeleport } from '../js/teleport.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('natural lava clouds do not blame the hero outside level generation or monster movement', async () => {
@@ -36,8 +37,7 @@ void test('a fumarole leaves damaging gas which hurts a breathing occupant on th
     assert.ok(cloud, 'the hot lava level must produce a fumarole');
     const cell = cloud.cells[0];
     assert.ok(cell);
-    game.u.ux = cell.x;
-    game.u.uy = cell.y;
+    await moveHeroByTeleport(cell.x, cell.y);
     const hp = game.u.uhp;
     await runLevelRegions(game, { publish: async () => {} });
 
