@@ -884,7 +884,24 @@ export async function heroLiquidEffects(options = {}) {
                 return teleport.arrival ?? { entered: true, moved: teleport.moved, died: false };
         }
     }
+    // C drown(): a mounted hero dismounts before crawling; landing on dry
+    // ground ends the drowning.
+    if (u.usteed) {
+        const from = { x: u.ux, y: u.uy };
+        const dismount = await dismountHero(DISMOUNT_GENERIC, { state, random, announce: publish });
+        if (dismount.died || state.program_state?.gameover)
+            return { entered: true, dismounted: dismount.dismounted, moved: u.ux !== from.x || u.uy !== from.y, died: true };
+        if (!isPoolAt(u.ux, u.uy, state))
+            return {
+                entered: true, dismounted: dismount.dismounted,
+                moved: u.ux !== from.x || u.uy !== from.y, died: false,
+                from, to: { x: u.ux, y: u.uy },
+            };
+    }
     await wakeHeroForCrawl(state, publish);
+    // C drown() reads u.ux/u.uy after any teleport or dismount.
+    x = u.ux;
+    y = u.uy;
     const canMove = !((state._helplessTurns ?? 0) > 0)
         && (!((u.mtimedone ?? 0) > 0) || (MONSTER_MOVE[u.umonnum] ?? 0) > 0);
     const destination = canMove
