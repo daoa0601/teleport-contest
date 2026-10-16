@@ -1,3 +1,4 @@
+import { useMagicMarker } from './write.js';
 import { formatFeltMessage, formatSeenMessage, publishHeardMessage } from './hero_speech.js';
 import { ingSuffix } from './hacklib.js';
 import { heroLocomotion } from './hero_locomotion.js';
@@ -5770,46 +5771,6 @@ async function openClosedDoor(door, x, y) {
     feel_newsym(x, y);
     vision_note_blocker_change(x, y);
 }
-// C refs: write.c dowrite()/write_ok(); invent.c getobj().  The object picker
-// retains ownership after an absent inventory letter and reopens the same
-// prompt once its More boundary is dismissed.
-async function useMagicMarker() {
-    const prompt = 'What do you want to write on? [*] ';
-    let key = await promptKey(prompt);
-    for (;;) {
-        if ([27, 10, 13].includes(key)) {
-            game.context.move = 0;
-            return;
-        }
-        const letter = String.fromCharCode(key);
-        const paper = game.inventory?.find(item => item.invlet === letter);
-        if (paper) {
-            if (paper.oclass !== 9 && paper.oclass !== 10) {
-                await pline('That is a silly thing to write on.');
-                game.context.move = 0;
-                return;
-            }
-            await pline(`That ${paper.oclass === 10 ? 'spellbook' : 'scroll'} is not blank!`);
-            game.context.move = 1;
-            return;
-        }
-        const invalid = "You don't have that object.--More--";
-        await pline(invalid);
-        await flush_screen(1);
-        game.nhDisplay?.setCursor(invalid.length, 0);
-        do
-            key = await nhgetch();
-        while (![27, 32, 10, 13].includes(key));
-        if (key === 27) {
-            game.context.move = 0;
-            return;
-        }
-        await pline(prompt);
-        await flush_screen(1);
-        game.nhDisplay?.setCursor(prompt.length, 0);
-        key = await nhgetch();
-    }
-}
 async function pickAxeDirection(prompt) {
     return promptDirection(() => readDirectionKey(`${prompt} `));
 }
@@ -6060,7 +6021,7 @@ async function applyTool(item, underlay) {
         return item;
     }
     if (item.otyp === MAGIC_MARKER) {
-        await useMagicMarker();
+        game.context.move = Number(await useMagicMarker(item));
         return item;
     }
     if (item.otyp === UNICORN_HORN) {
