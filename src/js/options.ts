@@ -11,7 +11,7 @@ import { isTextOption, setTextOption, textOptionValue, cInteger, parsePickupType
 import { compoundMenuValue, editCompoundMenu } from './option_editors.js';
 import { CommandBindings } from './command_bindings.js';
 import { changePreferredFruit, normalizePreferredFruitName } from './fruit.js';
-import { bot, clearMessageWindow, docrt, flushPendingTopline, flush_screen, plineWithContinuation, reassessStatusFields, reglyph_darkroom } from './display.js';
+import { bot, clearMessageWindow, displayMessageWindow, docrt, flush_screen, plineWithContinuation, reassessStatusFields, reglyph_darkroom } from './display.js';
 import { vision_recalc } from './vision.js';
 import { getLine } from './query.js';
 import { changeInventoryOrder, inventoryOrderSymbols } from './object_sort.js';
@@ -1013,7 +1013,8 @@ async function editPickupTypes(preserveStatus = false): Promise<void> {
                 text: `${symbol}  ${description}`,
                 itemFlags: previous.includes(symbol) ? MENU_ITEMFLAGS_SELECTED : 0 };
         });
-        await flushPendingTopline();
+        // tty menu display honors WIN_STOP before clearing the message row.
+        await displayMessageWindow();
         clearMessageWindow();
         await flush_screen(1);
         const underlay = snapshotMenuUnderlay();
