@@ -10,6 +10,8 @@ import { applyNethackrc } from '../js/options.js';
 import { flush_screen, newsym } from '../js/display.js';
 import { createMonsterAt } from './support/monsters.js';
 import { requireScreenCell } from './support/screen.js';
+import { restoreGame, saveGame } from '../js/save.js';
+import { memoryStorage } from './support/memory-storage.js';
 
 function screen(): string {
     return game.nhDisplay?.grid.map(row => row.map(cell => cell.ch).join('')).join('\n') ?? '';
@@ -57,19 +59,21 @@ async function fullOptions(names: readonly string[], respond: (view: string) => 
     }
 }
 
-async function simpleOption(name: string): Promise<void> {
+async function simpleOption(name: string, select = true): Promise<string> {
     const input = resetInputState();
     const command = rhack('O'.charCodeAt(0));
     for (let page = 0; page < 12; page++) {
         await input.waitUntilBlocked();
         const row = screen().split('\n').find(line => line.includes(` ${name} `));
         const key = row?.match(/^\s*([a-zA-Z]) [-+] /)?.[1];
-        if (key) {
-            input.feed(key);
-            await input.waitUntilBlocked();
+        if (key && row) {
+            if (select) {
+                input.feed(key);
+                await input.waitUntilBlocked();
+            }
             input.feed('\x1b');
             await command;
-            return;
+            return row;
         }
         input.feed(' ');
     }
@@ -513,3 +517,31 @@ for (const style of [0, 2] as const) {
         assert.equal(game.flags.pickup_types, '$');
     });
 }
+
+void test('restoring a game retains the current background-color preference', async () => {
+    freshObjectRoom();
+    game.plname = 'Options';
+    const storage = memoryStorage();
+    await simpleOption('bgcolors');
+    assert.equal(await saveGame(storage), true);
+    await simpleOption('bgcolors');
+
+    assert.equal(restoreGame('Options', storage), true);
+    const row = await simpleOption('bgcolors', false);
+
+    assert.match(row, /\[X\]/);
+});
+
+void test('restoring a game retains the current sound preference', async () => {
+    freshObjectRoom();
+    game.plname = 'Options';
+    const storage = memoryStorage();
+    await fullOptions(['sounds']);
+    assert.equal(await saveGame(storage), true);
+    await fullOptions(['sounds']);
+
+    assert.equal(restoreGame('Options', storage), true);
+    await fullOptions(['sounds']);
+
+    assert.match(game._pending_message, /'sounds' option toggled on\./);
+});

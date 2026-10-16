@@ -741,7 +741,7 @@ function requestBooleanValue(name: BooleanOptionName): boolean {
     if (!option) return false;
     const [, property, fallback] = option;
     if (property === '_monTelecontrol') return game._monTelecontrol ?? fallback;
-    if (property === 'altmeta' || property === 'toptenwin' || property === 'menu_tab_sep'
+    if (property === 'bgcolors' || property === 'sounds' || property === 'altmeta' || property === 'toptenwin' || property === 'menu_tab_sep'
         || property === 'wc_eight_bit_input' || property === 'autodescribe'
         || property === 'getloc_usemenu' || property === 'getloc_moveskip')
         return game.iflags[property] ?? fallback;
@@ -751,7 +751,7 @@ function requestBooleanValue(name: BooleanOptionName): boolean {
 function setConfigurationBoolean(settings: ConfigurationSettings, option: BooleanOption, value: boolean): void {
     const [, property] = option;
     if (property === '_monTelecontrol') settings.monTelecontrol = value;
-    else if (property === 'altmeta' || property === 'toptenwin' || property === 'menu_tab_sep'
+    else if (property === 'bgcolors' || property === 'sounds' || property === 'altmeta' || property === 'toptenwin' || property === 'menu_tab_sep'
         || property === 'wc_eight_bit_input' || property === 'autodescribe'
         || property === 'getloc_usemenu' || property === 'getloc_moveskip')
         settings.iflags[property] = value;
@@ -761,7 +761,7 @@ function setConfigurationBoolean(settings: ConfigurationSettings, option: Boolea
 function setRequestBoolean(option: BooleanOption, value: boolean): void {
     const [, property] = option;
     if (property === '_monTelecontrol') game._monTelecontrol = value;
-    else if (property === 'altmeta' || property === 'toptenwin' || property === 'menu_tab_sep'
+    else if (property === 'bgcolors' || property === 'sounds' || property === 'altmeta' || property === 'toptenwin' || property === 'menu_tab_sep'
         || property === 'wc_eight_bit_input' || property === 'autodescribe'
         || property === 'getloc_usemenu' || property === 'getloc_moveskip')
         game.iflags[property] = value;

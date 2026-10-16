@@ -3,7 +3,7 @@
 export type GameBooleanFlag =
     | 'accessiblemsg' | 'acoustics' | 'armorstatus'
     | 'autodig' | 'autoopen' | 'pickup' | 'autoquiver' | 'checkpoint'
-    | 'bgcolors' | 'cmdassist' | 'color' | 'confirm' | 'customcolors' | 'customsymbols'
+    | 'cmdassist' | 'color' | 'confirm' | 'customcolors' | 'customsymbols'
     | 'dark_room' | 'dropped_nopick' | 'extmenu'
     | 'fireassist' | 'fixinv' | 'force_invmenu' | 'goldX' | 'help'
     | 'herecmd_menu' | 'hilite_pet' | 'hilite_pile' | 'hitpointbar'
@@ -13,7 +13,7 @@ export type GameBooleanFlag =
     | 'pickup_thrown' | 'price_quotes' | 'pushweapon' | 'query_menu'
     | 'quick_farsight' | 'rest_on_space' | 'safe_pet' | 'safe_wait'
     | 'showdamage' | 'showexp' | 'showrace' | 'showvers' | 'silent'
-    | 'sounds' | 'sortpack' | 'sparkle' | 'spot_monsters' | 'standout' | 'terrainstatus'
+    | 'sortpack' | 'sparkle' | 'spot_monsters' | 'standout' | 'terrainstatus'
     | 'time' | 'tips' | 'tombstone' | 'travel' | 'use_inverse' | 'verbose'
     | 'weaponstatus'
     | 'beginner' | 'blind' | 'bones' | 'deaf' | 'debug' | 'explore' | 'female'
@@ -53,6 +53,8 @@ export interface GameFlags extends Partial<Record<GameBooleanFlag, boolean>> {
 }
 
 export interface InterfaceFlags {
+    bgcolors?: boolean;
+    sounds?: boolean;
     altmeta?: boolean;
     autodescribe?: boolean;
     debug_fuzzer?: boolean;
