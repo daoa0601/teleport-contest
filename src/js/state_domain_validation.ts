@@ -117,12 +117,20 @@ export function validSavedSpecialLevel(value: unknown): value is SpecialLevelDes
 
 export function validSavedOverviewRecord(value: unknown): value is OverviewRecord {
     return closedFieldsMatch<OverviewRecord>(value, {
+        flags: (entry): entry is OverviewRecord['flags'] => closedFieldsMatch<OverviewRecord['flags']>(entry, {
+            notreachable: boolean, forgot: boolean, sokosolved: boolean, bigroom: boolean,
+            roguelevel: boolean, oracle: boolean, castle: boolean, castletune: boolean,
+            ludios: boolean, valley: boolean, msanctum: boolean, vibrating_square: boolean,
+            quest_summons: boolean, questing: boolean,
+        }),
         features: validOverviewFeatures,
         branch: nullable((entry): entry is NonNullable<OverviewRecord['branch']> =>
             closedFieldsMatch<NonNullable<OverviewRecord['branch']>>(entry, {
                 dnum: integer, dlevel: integer, up: boolean,
+                type: oneOf('stair', 'portal', 'no_end1', 'no_end2'),
             })),
         seenRooms: arrayOf(integer),
+        untendedRooms: arrayOf(integer),
     });
 }
 
@@ -265,7 +273,8 @@ function validDungeonFlags(value: unknown): value is DungeonFlags {
 function validOverviewFeatures(value: unknown): value is OverviewRecord['features'] {
     return closedFieldsMatch<OverviewRecord['features']>(value, {
         nshop: integer, shoptype: integer, nfount: integer, nsink: integer,
-        naltar: integer, nthrone: integer, ngrave: integer, ntree: integer,
+        naltar: integer, altarAlignment: nullable(integer), ntemple: integer,
+        nthrone: integer, ngrave: integer, ntree: integer,
     });
 }
 

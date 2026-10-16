@@ -55,7 +55,7 @@ void test('wizard level teleport places the hero before acknowledging the Amulet
     game.flags.debug = true;
     // The Wizard is elsewhere, so arrival has no resurrection pager.
     game.context.no_of_wizards = 1;
-    game.dungeons.push(createDungeon({ dname: 'The Elemental Planes', num_dunlevs: 5 }));
+    game.dungeons.push(createDungeon({ dname: 'The Elemental Planes', num_dunlevs: 5, depth_start: -5 }));
     game.astral_level = createSpecialLevel({ dnum: 1, dlevel: 1 });
     game.specialLevels = new Map([['earth', createSpecialLevel({ dnum: 1, dlevel: 5 })]]);
     const levels = game._levelCache;

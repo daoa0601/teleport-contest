@@ -86,7 +86,7 @@ export function mapLevel({
             showMapSpot(x, y, { confused, revealAllTraps });
         }
     }
-    recordMappedOverviewState({ mapped: !confused });
+    recordMappedOverviewState();
     if (exercise) exerciseWisdom();
 }
 

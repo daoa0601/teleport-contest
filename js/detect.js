@@ -61,7 +61,7 @@ export function mapLevel({ confused = (game.u?.confusionTurns ?? 0) > 0, revealA
             showMapSpot(x, y, { confused, revealAllTraps });
         }
     }
-    recordMappedOverviewState({ mapped: !confused });
+    recordMappedOverviewState();
     if (exercise)
         exerciseWisdom();
 }

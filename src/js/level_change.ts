@@ -27,10 +27,13 @@ import { restoreMonsterShape } from './monster_polymorph.js';
 import { restoreMonsterWormHeads } from './monster_worm.js';
 import { restoreLevelRegions } from './regions.js';
 import { mklev, place_lregion, u_on_downstairs, u_on_upstairs } from './mklev.js';
-import { dungeonBuildsUp, level_difficulty, specialPrototypeAt } from './dungeon.js';
+import { dungeonBuildsUp, level_difficulty, specialPrototypeAt,
+    recordMappedOverviewState, recordOverviewBranch, markOverviewUnreachable,
+    insideWizardTower, levelIsWizardTower } from './dungeon.js';
 import { findNearbyMonsterPosition } from './teleport_rules.js';
 import { moveMonsterNextToHero, randomMonsterRelocation } from './teleport.js';
 import { placeHeroOnLevel } from './hero_location.js';
+import { switchHeroTerrain } from './terrain_movement.js';
 import { MONSTER_FLAGS1, MONSTER_NAME } from './monster_data.js';
 import { monsterDeathCount } from './monster_vitals.js';
 import { killGenocidedMonsters } from './mon.js';
@@ -113,6 +116,7 @@ interface LevelArrivalOptions {
     ladder: boolean;
     followers: Monster[];
     beforeGlow: () => Promise<void>;
+    wasInsideWizardTower: boolean;
 }
 
 export async function gotoLevel(targetDepth: Partial<DungeonLocation>, {
@@ -122,6 +126,7 @@ export async function gotoLevel(targetDepth: Partial<DungeonLocation>, {
 }: LevelChangeOptions = {}): Promise<boolean> {
     requirePlayingGame(game);
     const oldDepth = { ...game.u.uz };
+    const wasInsideWizardTower = insideWizardTower(game.u.ux, game.u.uy);
     const destinationDepth = { ...oldDepth, ...targetDepth };
     const tutorialDnum = game.specialLevels?.get('tut-1')?.dnum;
     const leavingTutorial = tutorialDnum !== undefined && Number.isInteger(tutorialDnum)
@@ -191,6 +196,7 @@ export async function gotoLevel(targetDepth: Partial<DungeonLocation>, {
     game.u.uundetected = false;
     const followers = game.iflags.nofollowers ? [] : await collectLevelFollowers(game);
     if (game.program_state.gameover) return true;
+    recordMappedOverviewState();
 
     // Losing sight of this level can use display randomness while the hero
     // hallucinates. Do it before generating the destination.
@@ -215,6 +221,13 @@ export async function gotoLevel(targetDepth: Partial<DungeonLocation>, {
         lifecycle.themed.delete(tutorialDnum);
         await tutorialState?.destroy();
     }
+
+    if (leavingTutorial) markOverviewUnreachable(oldDepth.dnum);
+    else if (oldDepth.dnum !== destinationDepth.dnum && In_endgame(destinationDepth)) {
+        for (let dnum = 0; dnum < game.dungeons.length; dnum++) markOverviewUnreachable(dnum);
+    }
+    if (arrival === 'stairs' || arrival === 'downstairs' || arrival === 'portal' || arrival === 'falling')
+        recordOverviewBranch(oldDepth, destinationDepth);
 
     const cached = game._levelCache.get(levelCacheKey(destinationDepth));
     game.u.uz0 = oldDepth;
@@ -254,7 +267,7 @@ export async function gotoLevel(targetDepth: Partial<DungeonLocation>, {
         postMessage = '';
         await plineWithContinuation(message);
     };
-    const died = await arriveOnLevel(oldDepth, { arrival, ladder, followers, beforeGlow });
+    const died = await arriveOnLevel(oldDepth, { arrival, ladder, followers, beforeGlow, wasInsideWizardTower });
     if (died) return true;
     const newDepth = { ...game.u.uz };
 
@@ -407,7 +420,7 @@ export async function gotoLevel(targetDepth: Partial<DungeonLocation>, {
     return true;
 }
 
-async function arriveOnLevel(from: DungeonLocation, { arrival, ladder, followers, beforeGlow }: LevelArrivalOptions): Promise<boolean> {
+async function arriveOnLevel(from: DungeonLocation, { arrival, ladder, followers, beforeGlow, wasInsideWizardTower }: LevelArrivalOptions): Promise<boolean> {
     requirePlayingGame(game);
     const atStairs = arrival === 'stairs' || arrival === 'downstairs';
     const up = dungeonDepth(game.u.uz.dnum, game.u.uz.dlevel)
@@ -424,8 +437,11 @@ async function arriveOnLevel(from: DungeonLocation, { arrival, ladder, followers
             if (stairs) {
                 await placeHeroOnLevel(stairs.sx, stairs.sy);
                 stairs.u_traversed = true;
-            } else if (up) await u_on_downstairs();
-            else await u_on_upstairs();
+            } else {
+                if (up) await u_on_downstairs();
+                else await u_on_upstairs();
+                await placeHeroOnLevel(game.u.ux, game.u.uy);
+            }
             if (await applyStairTravelEffects(up, ladder)) return true;
         } else if (arrival === 'portal' && !In_endgame(game.u.uz)) {
             const portal = game.level.traps.find(trap => trap.ttyp === MAGIC_PORTAL);
@@ -434,7 +450,9 @@ async function arriveOnLevel(from: DungeonLocation, { arrival, ladder, followers
                 await placeHeroOnLevel(portal.tx, portal.ty);
             } else await placeHeroAtRandomArrival(game.level.upTeleportRegion, true);
         } else {
-            await placeHeroAtRandomArrival(up
+            if (wasInsideWizardTower && levelIsWizardTower())
+                await placeHeroAtRandomArrival(game._activeSpecialLevel?.downTeleportExclude);
+            else await placeHeroAtRandomArrival(up
                 ? game.level.upTeleportRegion : game.level.downTeleportRegion, up);
             if (arrival === 'falling') {
                 if (heroIsPunished() && await fallWithIronBall()) return true;
@@ -572,6 +590,8 @@ export async function placeHeroAtRandomArrival(
     await place_lregion(area.lx, area.ly, area.hx, area.hy,
         excluded.lx, excluded.ly, excluded.hx, excluded.hy,
         up ? LR_UPTELE : LR_DOWNTELE, null);
+    await placeHeroOnLevel(game.u.ux, game.u.uy);
+    await switchHeroTerrain();
     return { x: game.u.ux, y: game.u.uy };
 }
 

@@ -5,7 +5,7 @@ import { buriedBallToPunishment } from './buried_object.js';
 import { chooseWizardLevelDestination } from './cmd.js';
 import { In_endgame, In_mines, In_quest, In_sokoban, TT_BURIEDBALL } from './const.js';
 import { flushPendingTopline, plineWithContinuation } from './display.js';
-import { levelAtDepth } from './dungeon.js';
+import { levelAtDepth, specialDisplayName } from './dungeon.js';
 import { finishHeroDeath } from './end.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import type { GameState, PlayingGameState } from './game_state.js';
@@ -206,22 +206,22 @@ export function levelDepthByName(input: string, state: GameState = game): number
     requirePlayingGame(state);
     let name = input.toLowerCase();
     let target: DungeonLocation | undefined;
-    for (const [key, annotation] of state._levelAnnotations || []) {
-        if (annotation.toLowerCase() !== name) continue;
+    const annotations = [...state._levelAnnotations || []].map(([key, annotation]) => {
         const [dnum, dlevel] = key.split(':').map(Number);
         if (dnum === undefined || dlevel === undefined
             || !Number.isInteger(dnum) || !Number.isInteger(dlevel))
             throw new Error(`Invalid level annotation identity ${key}`);
-        target = { dnum, dlevel };
-        break;
-    }
+        return { annotation, location: { dnum, dlevel } };
+    }).sort((left, right) => left.location.dnum - right.location.dnum
+        || left.location.dlevel - right.location.dlevel);
+    target = annotations.find(entry => entry.annotation.toLowerCase() === name)?.location;
     if (!target) {
         name = name.replace(/^the /, '').replace(/ level$/, '');
         if (name === 'hell' || name === 'gehennom')
             name = state.u.uz.dnum === state.tower_dnum ? " to vlad's tower" : 'valley';
         if (name === 'delphi') name = 'oracle';
         for (const [key, special] of state.specialLevels || []) {
-            if (key.toLowerCase() === name) { target = special; break; }
+            if (specialDisplayName(key, state).toLowerCase() === name) { target = special; break; }
         }
     }
     const visited = (level: DungeonLocation) => state.flags.debug || sameLevel(level, state.u.uz)
@@ -229,15 +229,15 @@ export function levelDepthByName(input: string, state: GameState = game): number
     const inBranch = (level: DungeonLocation) => level.dnum === state.u.uz.dnum
         || (state.u.uz.dnum === state.valley_level?.dnum && level.dnum === state.medusa_level?.dnum)
         || (state.u.uz.dnum === state.medusa_level?.dnum && level.dnum === state.valley_level?.dnum);
-    if (target) return inBranch(target) && visited(target) ? depth(target) : 0;
-    if (name.includes(' to ')) name = name.slice(name.lastIndexOf(' to ') + 4);
-    const branch = state.branches?.find(candidate => {
+    if (target) return inBranch(target) && visited(target) ? depth(target, state.dungeons) : 0;
+    const findBranch = (name: string) => state.branches.find(candidate => {
         const dungeonName = state.dungeons[candidate.end2.dnum]?.dname.toLowerCase();
         return dungeonName === name || dungeonName?.replace(/^the /, '') === name;
     });
+    const branch = findBranch(name) || (name.includes(' to ') ? findBranch(name.slice(name.indexOf(' to ') + 4)) : null);
     if (!branch || !visited(branch.end1) || !visited(branch.end2)) return 0;
-    target = branch.end2.dnum === state.u.uz.dnum ? branch.end2 : branch.end1;
-    return inBranch(target) ? depth(target) : 0;
+    target = branch.end1.dnum === state.u.uz.dnum ? branch.end1 : branch.end2;
+    return inBranch(target) ? depth(target, state.dungeons) : 0;
 }
 
 async function teleportToNowhere(state: PlayingGameState): Promise<void> {

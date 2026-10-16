@@ -29,6 +29,7 @@ import { wizMigrateMonsters } from './wizard_migration.js';
 import { wizardTeleportCommand } from './wizard_teleport.js';
 import { hurtleMonster } from './monster_hurtle.js';
 import { isRoom } from './map_types.js';
+import { deityName } from './alignment.js';
 import { continueSpellbookStudy } from './spellbook_study.js';
 import { grantMonsterWish } from './potion_occupants.js';
 import { quaff } from './quaff.js';
@@ -45,7 +46,7 @@ import { encyclopediaEntries, encyclopediaMatches, encyclopediaSupplementalName 
 import { objectAtMapDescription } from './map_object_description.js';
 import { objectNeedsFullIdentification } from './invent.js';
 import { identifyPack } from './invent.js';
-import { DIED, KILLED_BY, MENU_ITEMFLAGS_SKIPINVERT, MGIVENNAME, NHW_MENU, PICK_ANY } from './const.js';
+import { DIED, KILLED_BY, MENU_ITEMFLAGS_SKIPINVERT, MGIVENNAME, NHW_MENU, PICK_ANY, PICK_NONE, PICK_ONE } from './const.js';
 import { AD_PHYS } from './monster_attack_types.js';
 import { finishMonsterKilled, finishMonsterLiquidDeath } from './monster_death.js';
 import { monsterIsNonliving } from './monster_data.js';
@@ -185,7 +186,8 @@ import { landFloorObject } from './floor_effects.js';
 import { shipObject } from './object_migration.js';
 import { moveObject, placeCreatedObject, } from './floor_object.js';
 import { makemonNear, mkgold, mksobj, rndClass } from './mklev.js';
-import { level_difficulty, recordMappedOverviewState, specialDisplayName, specialPrototypeAt, } from './dungeon.js';
+import { level_difficulty, recordMappedOverviewState, specialDisplayName, specialPrototypeAt, specialLevelAt, dungeonBuildsUp, sameDungeonLevel, } from './dungeon.js';
+import { questLeaderName } from './quest_pager.js';
 import { addInventoryItem, assignInventoryLetter, inventoryLetterRank } from './u_init.js';
 import { clearSplitObjects, objectQuantity, rejoinObjectStack, splitObjectStack } from './object_stack.js';
 import { freeInventoryObject } from './hero_inventory.js';
@@ -245,7 +247,7 @@ import { isWetTowel, willWeld } from './weapon_type.js';
 import { refuseWeldedPrimary } from './weapon_feedback.js';
 import { readyHeroWeapon } from './weapon_readiness.js';
 import { dropCursedSecondaryWeapon, stopTwoWeaponCombat, toggleTwoWeaponCombat } from './two_weapon.js';
-import { dist2, distmin, dungeonDepth, ledgerNo } from './hacklib.js';
+import { dist2, distmin, dungeonDepth, ledgerNo, endgameLevelName } from './hacklib.js';
 import { triggerBoobyTrap } from './booby_trap.js';
 import { addShopDamage, payForShopDamage } from './shop_damage.js';
 import { convertSecretDoor } from './detect.js';
@@ -2321,13 +2323,13 @@ function putCommandLine(col, row, message, attr = 0) {
     for (let index = 0; index < message.length && col + index < display.cols; index++)
         display.setCell(col + index, row, message.charAt(index), NO_COLOR, attr);
 }
-function setCurrentLevelAnnotation(value) {
+function setLevelAnnotation(level, value) {
     // dungeon.c:query_annotation(): empty input and Escape preserve the
     // existing value; space-only input removes it after mungspaces().
     if (value === null || value === '')
         return;
-    const annotation = value.trim().replace(/\s+/g, ' ');
-    const key = `${game.u?.uz?.dnum ?? 0}:${game.u?.uz?.dlevel ?? 1}`;
+    const annotation = value.replace(/\t/g, ' ').replace(/ +/g, ' ').replace(/^ | $/g, '');
+    const key = `${level.dnum}:${level.dlevel}`;
     if (!game._levelAnnotations)
         game._levelAnnotations = new Map();
     if (annotation)
@@ -2335,12 +2337,40 @@ function setCurrentLevelAnnotation(value) {
     else
         game._levelAnnotations.delete(key);
 }
-async function queryCurrentLevelAnnotation() {
-    const value = await getLine('What do you want to call this dungeon level?', (_ch, key) => key >= 32 && key < 127);
-    setCurrentLevelAnnotation(value);
+function annotationLevelDescription(level) {
+    if (sameDungeonLevel(level, game.u.uz))
+        return 'this dungeon level';
+    const otherBranch = level.dnum !== game.u.uz?.dnum;
+    const dungeon = game.dungeons[level.dnum];
+    if (!dungeon)
+        throw new Error(`Annotation has no dungeon ${level.dnum}`);
+    if (sameDungeonLevel(level, game.knox_level))
+        return dungeon.dname;
+    if (In_endgame(level)) {
+        const name = endgameLevelName(level);
+        return otherBranch ? name : name.replace('Plane of ', '');
+    }
+    const tutorial = game.specialLevels?.get('tut-1')?.dnum;
+    const description = level.dnum === game.quest_dnum ? `Home ${level.dlevel}`
+        : level.dnum === tutorial && !otherBranch ? `Tutorial:${dungeonDepth(level.dnum, level.dlevel)}`
+            : `level ${dungeonDepth(level.dnum, level.dlevel)}`;
+    return otherBranch ? `${description}, ${dungeon.dname.replace('The ', 'the ')}` : description;
+}
+async function queryLevelAnnotation(level = null, inMenu = false) {
+    requirePlayingGame(game);
+    const location = level ?? game.u.uz;
+    const prior = game._levelAnnotations?.get(`${location.dnum}:${location.dlevel}`);
+    const prompt = prior ? `Replace annotation "${prior.slice(0, 30)}${prior.length > 30 ? '...' : ''}" with?`
+        : `What do you want to call ${annotationLevelDescription(location)}?`;
+    const value = await getLine(prompt, () => true, { inMenu });
+    setLevelAnnotation(location, value);
 }
 async function doannotate() {
-    await queryCurrentLevelAnnotation();
+    if (game.iflags.menu_requested) {
+        await doDungeonOverview();
+        return;
+    }
+    await queryLevelAnnotation();
     game.context.move = 0;
 }
 async function doherecmdmenu() {
@@ -2419,7 +2449,7 @@ async function doname() {
         await renameDiscoveredType();
     }
     else if (choice === 'a') {
-        await queryCurrentLevelAnnotation();
+        await queryLevelAnnotation();
         game._pending_message = '';
         await restoreCommandMap();
     }
@@ -4048,36 +4078,53 @@ function visitedDungeonLevels() {
         byDungeon.set(dnum, levels);
     };
     remember(game.u?.uz?.dnum ?? 0, game.u?.uz?.dlevel ?? 1);
-    for (const key of game._levelCache?.keys?.() || []) {
+    for (const key of game._overviewRecords?.keys() || []) {
         const [dnum, dlevel] = String(key).split(':').map(Number);
         remember(dnum, dlevel);
     }
     return byDungeon;
 }
-function dungeonOverviewHeading(dnum, levels) {
+function overviewDepth(dnum, dlevel) {
+    return dnum === game.quest_dnum || dnum === game.knox_level?.dnum
+        ? dlevel : dungeonDepth(dnum, dlevel);
+}
+function dungeonOverviewHeading(dnum) {
     const dungeon = game.dungeons?.[dnum];
-    const reached = dungeon?.entry_lev === dungeon?.num_dunlevs
-        ? Math.min(...levels) : Math.max(...levels);
-    if (reached === (dungeon?.entry_lev ?? 1))
+    if (!dungeon)
+        throw new Error(`Overview has no dungeon ${dnum}`);
+    const reached = dungeon.dunlev_ureached;
+    if (reached === dungeon.entry_lev || In_endgame({ dnum, dlevel: 1 }))
         return `${dungeon?.dname || 'Dungeon'}:`;
-    const depths = levels.map(dlevel => dungeonDepth(dnum, dlevel))
-        .sort((a, b) => a - b);
-    const range = dungeon?.entry_lev === dungeon?.num_dunlevs
-        ? `levels ${depths.at(-1)} up to ${depths[0]}`
-        : `levels ${depths[0]} to ${depths.at(-1)}`;
+    const range = dungeonBuildsUp({ dnum, dlevel: 1 })
+        ? `levels ${overviewDepth(dnum, dungeon.entry_lev)} up to ${overviewDepth(dnum, reached)}`
+        : `levels ${overviewDepth(dnum, 1)} to ${overviewDepth(dnum, reached)}`;
     return `${dungeon?.dname || 'Dungeon'}: ${range}`;
 }
-function overviewLevelIsInteresting(dnum, dlevel, deepest) {
-    if (dlevel === deepest)
-        return true;
-    if ((game.u?.uz?.dnum ?? 0) === dnum
-        && (game.u?.uz?.dlevel ?? 1) === dlevel)
+function overviewLevelIsInteresting(dnum, dlevel) {
+    const location = { dnum, dlevel };
+    if (sameDungeonLevel(location, game.u.uz))
         return true;
     const annotation = game._levelAnnotations?.get?.(`${dnum}:${dlevel}`);
     const record = game._overviewRecords?.get?.(`${dnum}:${dlevel}`);
-    const features = record?.features || {};
-    return !!annotation || !!record?.branch || Object.values(features)
-        .some(value => typeof value === 'number' && Number.isInteger(value) && value > 0);
+    const flags = record?.flags;
+    if (flags?.notreachable || flags?.forgot)
+        return false;
+    const tutorial = game.specialLevels?.get('tut-1')?.dnum;
+    if (tutorial !== undefined && game.u.uz?.dnum === tutorial)
+        return dnum === tutorial;
+    if (tutorial !== undefined && dnum === tutorial)
+        return false;
+    if (flags && (flags.oracle || flags.bigroom || flags.roguelevel || flags.castle
+        || flags.valley || flags.msanctum || flags.vibrating_square
+        || flags.quest_summons || flags.questing))
+        return true;
+    if (dnum === game.sokoban_dnum
+        && (game.u.uz?.dnum === game.sokoban_dnum || !flags?.sokosolved))
+        return true;
+    if (In_endgame(game.u.uz))
+        return In_endgame(location);
+    return !!annotation || !!record?.branch || !!overviewFeatureLine(record?.features)
+        || dlevel === game.dungeons[dnum]?.dunlev_ureached;
 }
 function overviewCountPhrase(count, noun) {
     if (count === 1)
@@ -4090,15 +4137,27 @@ function overviewFeatureLine(features) {
     const phrases = [];
     if (features?.nshop) {
         if (features.nshop === 1) {
-            const type = SHOP_TYPES[(features.shoptype ?? SHOPBASE) - SHOPBASE]?.name || 'shop';
-            phrases.push(`a ${type}`);
+            const shop = SHOP_TYPES[(features.shoptype ?? SHOPBASE) - SHOPBASE];
+            const type = features.shoptype < SHOPBASE ? 'untended shop'
+                : shop?.annotation || shop?.name || 'shop?';
+            phrases.push(withIndefiniteArticle(type));
         }
         else {
             phrases.push(overviewCountPhrase(features.nshop, 'shop'));
         }
     }
+    const temples = features?.ntemple ?? 0;
+    const altars = features?.naltar ?? 0;
+    if (temples || altars) {
+        let phrase = [temples ? overviewCountPhrase(temples, 'temple') : '',
+            altars ? overviewCountPhrase(altars, 'altar') : ''].filter(Boolean).join(' and ');
+        const alignment = game.u.ualign?.type;
+        if (alignment !== undefined && features?.altarAlignment === alignment)
+            phrase += ` to ${deityName(alignment)}`;
+        phrases.push(phrase);
+    }
     for (const [countKey, noun] of [
-        ['naltar', 'altar'], ['nthrone', 'throne'],
+        ['nthrone', 'throne'],
         ['nfount', 'fountain'], ['nsink', 'sink'],
         ['ngrave', 'grave'], ['ntree', 'tree'],
     ]) {
@@ -4111,6 +4170,40 @@ function overviewFeatureLine(features) {
     const text = phrases.join(', ');
     return `      ${text.charAt(0).toUpperCase()}${text.slice(1)}.`;
 }
+function overviewAutomaticNote(dnum, dlevel, record) {
+    const flags = record?.flags;
+    const here = { dnum, dlevel };
+    if (flags?.oracle)
+        return 'Oracle of Delphi.';
+    if (dnum === game.sokoban_dnum)
+        return flags?.sokosolved ? 'Solved.' : 'Unsolved.';
+    if (flags?.bigroom)
+        return 'A very big room.';
+    if (flags?.roguelevel)
+        return 'A primitive area.';
+    if (sameDungeonLevel(here, game.specialLevels?.get('x-strt'))) {
+        if (game.u.uevent?.qcompleted)
+            return `Completed quest for ${questLeaderName()}.`;
+        if (flags?.questing)
+            return `Given quest by ${questLeaderName()}.`;
+        return `Home${flags?.notreachable ? ' (no way back...)' : ''}.`;
+    }
+    if (flags?.ludios)
+        return 'Fort Ludios.';
+    if (flags?.castle) {
+        const knowledge = game.u.uevent?.uheard_tune;
+        const tune = knowledge === 2 ? `notes "${game.castleTune || ''}"` : '5-note tune';
+        return `The castle${flags.castletune && knowledge
+            ? ` (play ${tune} to open or close drawbridge)` : ''}.`;
+    }
+    if (flags?.valley)
+        return 'Valley of the Dead.';
+    if (flags?.vibrating_square)
+        return "Gateway to Moloch's Sanctum.";
+    if (flags?.msanctum)
+        return "Moloch's Sanctum.";
+    return null;
+}
 // C ref: dungeon.c dooverview()/show_overview().  This is dungeon-history
 // projection over mapseen/cache state; it is distinct from Delete's
 // known-terrain browser, which enters a getpos-style cursor transaction.
@@ -4119,42 +4212,68 @@ async function doDungeonOverview() {
     // the current level from remembered/underfoot terrain at that same
     // boundary; do not infer features from unseen live squares.
     recordMappedOverviewState();
-    const lines = [];
-    const visited = [...visitedDungeonLevels().entries()]
-        .sort(([left], [right]) => left - right);
-    for (const [dnum, levelSet] of visited) {
-        const levels = [...levelSet].sort((a, b) => a - b);
-        if (!levels.length || !game.dungeons?.[dnum])
-            continue;
-        lines.push({
-            text: dungeonOverviewHeading(dnum, levels),
-            attr: ATR_INVERSE,
-        });
-        const deepest = levels.at(-1);
-        for (const dlevel of levels) {
-            if (!overviewLevelIsInteresting(dnum, dlevel, deepest))
+    const annotate = game.iflags.menu_requested;
+    game.iflags.menu_requested = false;
+    const window = tty_create_nhwindow(NHW_MENU);
+    const addLine = (text, location = null, attr = 0) => tty_add_menu(window, { text, identifier: location, attr });
+    try {
+        await tty_start_menu(window);
+        const visited = [...visitedDungeonLevels().entries()]
+            .sort(([left], [right]) => left - right);
+        for (const [dnum, levelSet] of visited) {
+            if (In_endgame(game.u.uz) && !In_endgame({ dnum, dlevel: 1 }))
                 continue;
-            const depth = dungeonDepth(dnum, dlevel);
-            const annotation = game._levelAnnotations?.get?.(`${dnum}:${dlevel}`);
-            const record = game._overviewRecords?.get?.(`${dnum}:${dlevel}`);
-            const current = (game.u?.uz?.dnum ?? 0) === dnum
-                && (game.u?.uz?.dlevel ?? 1) === dlevel;
-            const prototype = game.flags?.debug
-                ? specialPrototypeAt(dnum, dlevel) : null;
-            const special = prototype ? ` [${prototype}]` : '';
-            const suffix = annotation ? ` "${annotation}"` : '';
-            lines.push(`   Level ${depth}:${special}${suffix}${current ? ' <- You are here.' : ''}`);
-            const featureLine = overviewFeatureLine(record?.features);
-            if (featureLine)
-                lines.push(featureLine);
-            if (record?.branch) {
-                const target = game.dungeons?.[record.branch.dnum]?.dname
-                    || 'another dungeon';
-                lines.push(`      Stairs ${record.branch.up ? 'up' : 'down'} to ${target}.`);
+            const levels = [...levelSet].sort((a, b) => a - b)
+                .filter(dlevel => annotate || overviewLevelIsInteresting(dnum, dlevel));
+            if (!levels.length || !game.dungeons?.[dnum])
+                continue;
+            addLine(dungeonOverviewHeading(dnum), null, ATR_INVERSE);
+            for (const dlevel of levels) {
+                const annotation = game._levelAnnotations?.get?.(`${dnum}:${dlevel}`);
+                const record = game._overviewRecords?.get?.(`${dnum}:${dlevel}`);
+                const current = (game.u?.uz?.dnum ?? 0) === dnum
+                    && (game.u?.uz?.dlevel ?? 1) === dlevel;
+                const prototype = game.flags?.debug && specialLevelAt({ dnum, dlevel })
+                    ? specialPrototypeAt(dnum, dlevel) : null;
+                const special = prototype ? ` [${prototype}]` : '';
+                const suffix = annotation ? ` "${annotation}"` : '';
+                const title = In_endgame({ dnum, dlevel }) ? endgameLevelName({ dnum, dlevel })
+                    : `Level ${overviewDepth(dnum, dlevel)}`;
+                addLine(`${annotate ? '' : '   '}${title}:${special}${suffix}${current ? ' <- You are here.' : ''}`, annotate ? { dnum, dlevel } : null);
+                if (record?.flags.forgot)
+                    continue;
+                const featureLine = overviewFeatureLine(record?.features);
+                if (featureLine)
+                    addLine(featureLine);
+                const automaticNote = overviewAutomaticNote(dnum, dlevel, record);
+                if (automaticNote)
+                    addLine(`      ${automaticNote}`);
+                if (record?.flags.quest_summons)
+                    addLine(`      Summoned by ${questLeaderName()}.`);
+                if (record?.branch) {
+                    const branch = record.branch;
+                    const target = game.dungeons?.[record.branch.dnum]?.dname
+                        || 'another dungeon';
+                    const direction = branch.up ? 'up' : 'down';
+                    const description = branch.type === 'portal'
+                        ? branch.dnum === game.quest_dnum && game.u.uevent?.qexpelled ? 'Sealed portal' : 'Portal'
+                        : branch.type === 'no_end1' ? 'Connection'
+                            : branch.type === 'no_end2' ? `One way stairs ${direction}` : `Stairs ${direction}`;
+                    const targetLevel = branch.up && !In_endgame(branch)
+                        ? `, level ${dungeonDepth(branch.dnum, branch.dlevel)}` : '';
+                    addLine(`      ${description} to ${target}${targetLevel}.`);
+                }
             }
         }
+        tty_end_menu(window);
+        const selection = await tty_select_menu(window, annotate ? PICK_ONE : PICK_NONE);
+        const target = selection.selections[0]?.identifier;
+        if (target)
+            await queryLevelAnnotation(target, true);
     }
-    await showTextMenuOverlay(lines);
+    finally {
+        await tty_destroy_nhwindow(window);
+    }
     game._pending_message = '';
     game.context.move = 0;
 }

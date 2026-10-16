@@ -45,18 +45,39 @@ export interface SpecialLevelDescriptor extends DungeonLocation {
 }
 
 export interface OverviewRecord {
+    flags: OverviewFlags;
     features: {
         nshop: number;
         shoptype: number;
         nfount: number;
         nsink: number;
         naltar: number;
+        altarAlignment: number | null;
+        ntemple: number;
         nthrone: number;
         ngrave: number;
         ntree: number;
     };
-    branch: (DungeonLocation & { up: boolean }) | null;
+    branch: (DungeonLocation & { up: boolean; type: DungeonBranchType }) | null;
     seenRooms: number[];
+    untendedRooms: number[];
+}
+
+export interface OverviewFlags {
+    notreachable: boolean;
+    forgot: boolean;
+    sokosolved: boolean;
+    bigroom: boolean;
+    roguelevel: boolean;
+    oracle: boolean;
+    castle: boolean;
+    castletune: boolean;
+    ludios: boolean;
+    valley: boolean;
+    msanctum: boolean;
+    vibrating_square: boolean;
+    quest_summons: boolean;
+    questing: boolean;
 }
 
 export interface LevelRangeDefinition {

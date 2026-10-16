@@ -17,11 +17,7 @@ export function dungeonDepth(dnum, dlevel, dungeons = game?.dungeons) {
     const dungeon = dungeons?.[dnum];
     if (!dungeon)
         return dlevel;
-    if (dungeon.dname === 'The Elemental Planes')
-        return dlevel - 6;
-    const start = typeof dungeon.depth_start === 'number' && Number.isInteger(dungeon.depth_start)
-        ? dungeon.depth_start : 1;
-    return start + dlevel - 1;
+    return dungeon.depth_start + dlevel - 1;
 }
 export function depth(uz, dungeons = game?.dungeons) {
     return dungeonDepth(uz?.dnum ?? 0, uz?.dlevel ?? 1, dungeons);

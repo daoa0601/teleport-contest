@@ -2641,8 +2641,7 @@ export function Is_botlevel(uz) {
 }
 export function In_hell(uz, state = game) {
     const lev = uz ?? state?.u?.uz;
-    return !!lev && !!state?.valley_level
-        && lev.dnum === state.valley_level.dnum;
+    return !!lev && !!state.dungeons[lev.dnum]?.flags.hellish;
 }
 export function Invocation_lev(uz, state = game) {
     const lev = uz ?? state?.u?.uz;
