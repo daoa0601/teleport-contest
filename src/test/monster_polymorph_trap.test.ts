@@ -11,7 +11,30 @@ import {
 } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { knownObject } from './support/game-objects.js';
+import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { applyMonsterPolymorphTrap } from '../js/polymorph_trap.js';
+import { createStaffedShop } from './support/shop.js';
+import { createMonsterAt } from './support/monsters.js';
+import { freshObjectRoom } from './support/object-room.js';
+import { addTrap } from './support/level-state.js';
 import { freshMonsterTrapRoom } from './support/monster-traps.js';
+
+void test('polymorphing monster-worn shoes in a shop angers their owner', async () => {
+    const level = freshObjectRoom();
+    const { shopkeeper } = await createStaffedShop({ keeperX: 14, keeperY: 10 });
+    const shoes = await knownObject(IRON_SHOES);
+    const monster = await createMonsterAt('giant', 11, 10);
+    await addObjectToMonsterInventory(monster, shoes);
+    shoes.owornmask = W_ARMF;
+    monster.misc_worn_check = (monster.misc_worn_check ?? 0) | W_ARMF;
+    const trap = addTrap(level, POLY_TRAP, 11, 10);
+
+    await applyMonsterPolymorphTrap(monster, trap);
+
+    assert.equal(monster.minvent[0]?.otyp, KICKING_BOOTS);
+    assert.equal(shopkeeper.mpeaceful, 0);
+    assert.equal(shopkeeper.eshk.following, 1);
+});
 
 void test("a polymorph trap changes a monster's iron shoes but leaves them worn",
     async () => {
