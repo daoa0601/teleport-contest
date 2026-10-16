@@ -598,6 +598,13 @@ export function ownedObjectName(
     return capitalized ? name.charAt(0).toUpperCase() + name.slice(1) : name;
 }
 
+// C ysimple_name()/Ysimple_name2(): ownership with only the known type name.
+export function ownedSimpleObjectName(
+    object: GameObject, state: GameState = game, { capitalized = true } = {},
+): string {
+    return objectOwnershipPrefix(object, state, { capitalized }) + minimalObjectName(object, state);
+}
+
 // Native fruit labels imported from bones can already be plural. xname
 // singularizes those labels before pluralizing a multi-object stack.
 export function pluralizeObjectNoun(object: Pick<GameObject, 'otyp'>, noun: string): string {
