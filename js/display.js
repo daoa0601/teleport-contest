@@ -23,7 +23,7 @@ import { statusTerrain } from './status_terrain.js';
 import { hitpointBar } from './status_hitpoint_bar.js';
 import { criticallyLowHp } from './prayer_trouble.js';
 import { cansee, couldsee, set_seenv, vision_recalc } from './vision.js';
-import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, ACCESSIBLE, BC_BALL, BC_CHAIN, COLNO, ROWNO, STONE, ROOM, CORR, SCORR, SDOOR, DOOR, STAIRS, FOUNTAIN, THRONE, SINK, GRAVE, ALTAR, ICE, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER, CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL, TREE, IRONBARS, POOL, MOAT, WATER, LAVAPOOL, LAVAWALL, AIR, CLOUD, IS_POOL, IS_OBSTRUCTED, IS_ROOM, IS_WALL, LADDER, LA_DOWN, DBWALL, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN, D_NODOOR, D_ISOPEN, D_CLOSED, D_LOCKED, D_BROKEN, SV0, SV1, SV2, SV3, SV4, SV5, SV6, SV7, WM_X_TL, WM_X_TR, WM_X_BL, WM_X_BR, WM_X_TLBR, WM_X_BLTR, BEAR_TRAP, WEB, VIBRATING_SQUARE, CORPSTAT_GENDER, CORPSTAT_FEMALE, ENGRAVE, BURN, HEADSTONE, is_pit, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, def_warnsyms, MON_STILL_ARRIVING, In_endgame, In_quest, Is_rogue_level, Is_waterlevel, Is_knox_level, In_sokoban, PLNMSG_UNKNOWN, MONSEEN_NORMAL, MONSEEN_SEEINVIS, MONSEEN_INFRAVIS, MONSEEN_TELEPAT, MONSEEN_XRAYVIS, MONSEEN_DETECT, MONSEEN_WARNMON, PICK_NONE, PICK_ONE, Upolyd, ismnum, } from './const.js';
+import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, ACCESSIBLE, BC_BALL, BC_CHAIN, COLNO, ROWNO, STONE, ROOM, CORR, SCORR, SDOOR, DOOR, STAIRS, FOUNTAIN, THRONE, SINK, GRAVE, ALTAR, ICE, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER, CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL, TREE, IRONBARS, POOL, MOAT, WATER, LAVAPOOL, LAVAWALL, AIR, CLOUD, IS_POOL, IS_OBSTRUCTED, IS_ROOM, IS_WALL, LADDER, LA_DOWN, DBWALL, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN, D_NODOOR, D_ISOPEN, D_CLOSED, D_LOCKED, D_BROKEN, SV0, SV1, SV2, SV3, SV4, SV5, SV6, SV7, WM_X_TL, WM_X_TR, WM_X_BL, WM_X_BR, WM_X_TLBR, WM_X_BLTR, BEAR_TRAP, WEB, VIBRATING_SQUARE, CORPSTAT_GENDER, CORPSTAT_FEMALE, ENGRAVE, BURN, HEADSTONE, is_pit, M_AP_NOTHING, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, def_warnsyms, MON_STILL_ARRIVING, In_endgame, In_quest, Is_rogue_level, Is_waterlevel, Is_knox_level, In_sokoban, PLNMSG_UNKNOWN, MONSEEN_NORMAL, MONSEEN_SEEINVIS, MONSEEN_INFRAVIS, MONSEEN_TELEPAT, MONSEEN_XRAYVIS, MONSEEN_DETECT, MONSEEN_WARNMON, PICK_NONE, PICK_ONE, Upolyd, ismnum, } from './const.js';
 import { NO_COLOR, ATR_INVERSE, CLR_BLACK, CLR_RED, CLR_GREEN, CLR_GRAY, CLR_BROWN, CLR_MAGENTA, CLR_CYAN, CLR_WHITE, CLR_YELLOW, CLR_BLUE, CLR_ORANGE, CLR_BRIGHT_GREEN, CLR_BRIGHT_BLUE, CLR_BRIGHT_MAGENTA, DEC_TO_UNICODE, } from './terminal.js';
 import { LARGE_BOX, CHEST, GOLD_PIECE, FOOD_RATION, CORPSE, TOWEL, STATUE, BOULDER, OBJECT_BASES, OBJECT_COLOR, } from './object_data.js';
 import { MONSTER_COLOR, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_FLAGS3, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SYMBOL, SPECIAL_PM, monsterTypeName, } from './monster_data.js';
@@ -946,16 +946,9 @@ function heroDisplayGlyph() {
     }
     if (game.u.m_ap_type === M_AP_FURNITURE) {
         const appearance = game.u.mappearance;
-        const symbol = appearance === undefined ? undefined : MAP_SYMBOLS[appearance];
-        if (appearance === undefined || !symbol)
-            throw new Error('Hero furniture disguise requires a valid map symbol');
-        const display = cmapSymbolAppearance(appearance);
-        const wallOffset = currentWallGlyphOffset();
-        const wallDisguise = appearance >= CmapSymbol.vwall && appearance <= CmapSymbol.trwall;
-        const color = display.dec && wallDisguise
-            ? decWallColors.get(wallOffset) ?? symbol.color : symbol.color;
-        return { ch: display.ch, color, decgfx: display.dec,
-            kind: 'terrain', terrainName: symbol.name, glyph: cmapToGlyph(appearance, wallOffset) };
+        if (appearance === undefined)
+            throw new Error('Hero furniture disguise requires a map symbol');
+        return furnitureDisplayGlyph(appearance);
     }
     // display.h:hero_glyph and you.h:Ugender select the current body's sex.
     // Hero glyph identity still changes when the tty symbol remains '@'.
@@ -1008,6 +1001,18 @@ const decWallColors = new Map([
     [GlyphOffset.cmapMines, CLR_BROWN], [GlyphOffset.cmapGehennom, CLR_RED],
     [GlyphOffset.cmapKnox, CLR_YELLOW], [GlyphOffset.cmapSokoban, CLR_BLUE],
 ]);
+function furnitureDisplayGlyph(appearance) {
+    const symbol = MAP_SYMBOLS[appearance];
+    if (!symbol)
+        throw new RangeError(`Unknown furniture disguise ${appearance}`);
+    const display = cmapSymbolAppearance(appearance);
+    const wallOffset = currentWallGlyphOffset();
+    const wall = appearance >= CmapSymbol.vwall && appearance <= CmapSymbol.trwall;
+    const color = display.dec && wall
+        ? decWallColors.get(wallOffset) ?? symbol.color : symbol.color;
+    return { ch: display.ch, color, decgfx: display.dec,
+        kind: 'terrain', terrainName: symbol.name, glyph: cmapToGlyph(appearance, wallOffset) };
+}
 // C display.h:canspotself().  See-invisible does not make the hero's own
 // glyph opaque again; ordinary self projection depends on not being
 // invisible, while telepathy/detection can supply a sensory projection.
@@ -1778,19 +1783,12 @@ function displayMonsterAtCell(monster, x, y, projection) {
                 return;
         }
         else if (M_AP_TYPE(monster) === M_AP_FURNITURE) {
-            const symbol = MAP_SYMBOLS[mimicAppearance(monster)];
-            if (symbol) {
-                const glyph = {
-                    ch: symbol.ch, color: symbol.color, decgfx: false,
-                    kind: 'terrain', terrainName: symbol.name,
-                    glyph: cmapToGlyph(mimicAppearance(monster)),
-                };
-                loc.remembered_glyph = glyph;
-                if (!sensed) {
-                    show_glyph_cell(x, y, glyph.ch, glyph.color, false, 0, glyph);
-                    loc.lastseentyp = cmapToType(mimicAppearance(monster));
-                    return;
-                }
+            const glyph = furnitureDisplayGlyph(mimicAppearance(monster));
+            loc.remembered_glyph = glyph;
+            if (!sensed) {
+                show_glyph_cell(x, y, glyph.ch, glyph.color, glyph.decgfx, 0, glyph);
+                loc.lastseentyp = cmapToType(mimicAppearance(monster));
+                return;
             }
         }
         else if (M_AP_TYPE(monster) === M_AP_MONSTER
@@ -1798,12 +1796,13 @@ function displayMonsterAtCell(monster, x, y, projection) {
             const mnum = heroIsHallucinating()
                 ? rn2Display(MONSTER_COLOR.length) : mimicAppearance(monster);
             const glyph = displayMonsterGlyph(mnum, !!monster.female);
-            show_glyph_cell(x, y, glyph.ch, glyph.color, false, (monster.pet || (monster.mtame ?? 0) > 0)
-                && game.flags?.hilite_pet ? 1 : 0, glyph);
+            show_glyph_cell(x, y, glyph.ch, glyph.color, false, 0, glyph);
             if (!sensed)
                 return;
         }
     }
+    if (M_AP_TYPE(monster) !== M_AP_NOTHING && !sensed)
+        return;
     const monsterState = (monster.pet || (monster.mtame ?? 0) > 0) && !heroIsHallucinating()
         ? 'pet' : projection.detected ? 'detected' : 'normal';
     if (heroIsHallucinating()) {

@@ -37,7 +37,7 @@ import {
     WM_X_TL, WM_X_TR, WM_X_BL, WM_X_BR, WM_X_TLBR, WM_X_BLTR,
     BEAR_TRAP, WEB, VIBRATING_SQUARE, CORPSTAT_GENDER, CORPSTAT_FEMALE,
     ENGRAVE, BURN, HEADSTONE,
-    is_pit, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE,
+    is_pit, M_AP_NOTHING, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE,
     def_warnsyms, MON_STILL_ARRIVING,
     In_endgame, In_quest, Is_rogue_level, Is_waterlevel, Is_knox_level, In_sokoban, PLNMSG_UNKNOWN,
     MONSEEN_NORMAL, MONSEEN_SEEINVIS, MONSEEN_INFRAVIS, MONSEEN_TELEPAT,
@@ -986,15 +986,8 @@ function heroDisplayGlyph(): DisplayGlyph {
     }
     if (game.u.m_ap_type === M_AP_FURNITURE) {
         const appearance = game.u.mappearance;
-        const symbol = appearance === undefined ? undefined : MAP_SYMBOLS[appearance];
-        if (appearance === undefined || !symbol) throw new Error('Hero furniture disguise requires a valid map symbol');
-        const display = cmapSymbolAppearance(appearance);
-        const wallOffset = currentWallGlyphOffset();
-        const wallDisguise = appearance >= CmapSymbol.vwall && appearance <= CmapSymbol.trwall;
-        const color = display.dec && wallDisguise
-            ? decWallColors.get(wallOffset) ?? symbol.color : symbol.color;
-        return { ch: display.ch, color, decgfx: display.dec,
-            kind: 'terrain', terrainName: symbol.name, glyph: cmapToGlyph(appearance, wallOffset) };
+        if (appearance === undefined) throw new Error('Hero furniture disguise requires a map symbol');
+        return furnitureDisplayGlyph(appearance);
     }
     // display.h:hero_glyph and you.h:Ugender select the current body's sex.
     // Hero glyph identity still changes when the tty symbol remains '@'.
@@ -1050,6 +1043,18 @@ const decWallColors = new Map<GlyphOffset, number>([
     [GlyphOffset.cmapMines, CLR_BROWN], [GlyphOffset.cmapGehennom, CLR_RED],
     [GlyphOffset.cmapKnox, CLR_YELLOW], [GlyphOffset.cmapSokoban, CLR_BLUE],
 ]);
+
+function furnitureDisplayGlyph(appearance: number): DisplayGlyph {
+    const symbol = MAP_SYMBOLS[appearance];
+    if (!symbol) throw new RangeError(`Unknown furniture disguise ${appearance}`);
+    const display = cmapSymbolAppearance(appearance);
+    const wallOffset = currentWallGlyphOffset();
+    const wall = appearance >= CmapSymbol.vwall && appearance <= CmapSymbol.trwall;
+    const color = display.dec && wall
+        ? decWallColors.get(wallOffset) ?? symbol.color : symbol.color;
+    return { ch: display.ch, color, decgfx: display.dec,
+        kind: 'terrain', terrainName: symbol.name, glyph: cmapToGlyph(appearance, wallOffset) };
+}
 
 // C display.h:canspotself().  See-invisible does not make the hero's own
 // glyph opaque again; ordinary self projection depends on not being
@@ -1831,31 +1836,23 @@ function displayMonsterAtCell(monster: Monster, x: number, y: number, projection
             }, !sensed);
             if (!sensed) return;
         } else if (M_AP_TYPE(monster) === M_AP_FURNITURE) {
-            const symbol = MAP_SYMBOLS[mimicAppearance(monster)];
-            if (symbol) {
-                const glyph: DisplayGlyph = {
-                    ch: symbol.ch, color: symbol.color, decgfx: false,
-                    kind: 'terrain', terrainName: symbol.name,
-                    glyph: cmapToGlyph(mimicAppearance(monster)),
-                };
-                loc.remembered_glyph = glyph;
-                if (!sensed) {
-                    show_glyph_cell(x, y, glyph.ch, glyph.color, false, 0, glyph);
-                    loc.lastseentyp = cmapToType(mimicAppearance(monster));
-                    return;
-                }
+            const glyph = furnitureDisplayGlyph(mimicAppearance(monster));
+            loc.remembered_glyph = glyph;
+            if (!sensed) {
+                show_glyph_cell(x, y, glyph.ch, glyph.color, glyph.decgfx, 0, glyph);
+                loc.lastseentyp = cmapToType(mimicAppearance(monster));
+                return;
             }
         } else if (M_AP_TYPE(monster) === M_AP_MONSTER
             && Number.isInteger(monster.mappearance)) {
             const mnum = heroIsHallucinating()
                 ? rn2Display(MONSTER_COLOR.length) : mimicAppearance(monster);
             const glyph = displayMonsterGlyph(mnum, !!monster.female);
-            show_glyph_cell(x, y, glyph.ch, glyph.color, false,
-                (monster.pet || (monster.mtame ?? 0) > 0)
-                    && game.flags?.hilite_pet ? 1 : 0, glyph);
+            show_glyph_cell(x, y, glyph.ch, glyph.color, false, 0, glyph);
             if (!sensed) return;
         }
     }
+    if (M_AP_TYPE(monster) !== M_AP_NOTHING && !sensed) return;
     const monsterState = (monster.pet || (monster.mtame ?? 0) > 0) && !heroIsHallucinating()
         ? 'pet' : projection.detected ? 'detected' : 'normal';
     if (heroIsHallucinating()) {
