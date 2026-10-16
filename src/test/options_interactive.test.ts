@@ -485,3 +485,17 @@ void test('packorder keeps its old order until all validation errors have been a
     assert.equal(acknowledged, true);
     assert.match(inventoryOrderSymbols(), /^\$%\)/);
 });
+
+void test('each disclosure category commits before the next category prompt', async () => {
+    freshObjectRoom();
+
+    await fullOptions(['disclose'], view => {
+        if (view.includes('Change which disclosure options categories:')) return 'iv\n';
+        if (view.includes('Disclosure options for inventory:')) return 'b';
+        assert.match(view, /Disclosure options for vanquished:/);
+        assert.match(game.flags.disclose ?? '', /^\+i /);
+        return '\x1b';
+    });
+
+    assert.match(game.flags.disclose ?? '', /^\+i /);
+});

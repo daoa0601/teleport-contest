@@ -55,7 +55,7 @@ export function compoundMenuValue(name: string): string | null {
     case 'paranoid_confirmation': return PARANOIA_CHOICES
         .filter(([bit]) => (paranoiaBits() & bit) !== 0 && (bit !== PARANOID_BONES || game.flags.debug))
         .map(([, option]) => option).join(' ') || 'none';
-    case 'disclose': return disclosureValues().map((value, index) => `${value}${DISCLOSURE_CATEGORIES[index]?.[0] ?? ''}`).join(' ');
+    case 'disclose': return disclosureDescription(disclosureValues());
     case 'pickup_burden': {
         const value = game.flags.pickup_burden;
         return typeof value === 'number' ? BURDEN_NAMES[value] ?? 'stressed' : value ?? 'stressed';
@@ -285,7 +285,13 @@ async function editDisclosure(): Promise<void> {
         });
         // PICK_ONE may return both the preselected item and a new choice.
         const chosen = selected.find(value => value !== values[index]) ?? selected[0];
-        if (chosen) values[index] = chosen;
+        if (chosen) {
+            values[index] = chosen;
+            game.flags.disclose = disclosureDescription(values);
+        }
     }
-    game.flags.disclose = values.map((value, index) => `${value}${DISCLOSURE_CATEGORIES[index]?.[0] ?? ''}`).join(' ');
+}
+
+function disclosureDescription(values: readonly string[]): string {
+    return DISCLOSURE_CATEGORIES.map(([key], index) => `${values[index] ?? 'n'}${key}`).join(' ');
 }
