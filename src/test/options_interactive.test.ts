@@ -4,6 +4,7 @@ import { rhack } from '../js/cmd.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { PARANOID_PRAY, PARANOID_SWIM, PARANOID_TRAP } from '../js/const.js';
 
 function screen(): string {
     return game.nhDisplay?.grid.map(row => row.map(cell => cell.ch).join('')).join('\n') ?? '';
@@ -130,4 +131,66 @@ void test('full fruit edits announce the native singular name', async () => {
 
     assert.equal(game.fruitName, 'mango');
     assert.match(game._pending_message, /Fruit is now "mango"\./);
+});
+
+void test('runmode offers native display choices and keeps the selected mode', async () => {
+    freshObjectRoom();
+
+    const views = await fullOptions(['runmode'], () => 't');
+
+    assert.ok(views.some(view => view.includes('Select run/travel display mode:')));
+    assert.equal(game.flags.runmode, 'teleport');
+});
+
+void test('message history mode uses its own choice menu and confirmation', async () => {
+    freshObjectRoom();
+
+    const views = await fullOptions(['msg_window'], () => 'r');
+
+    assert.ok(views.some(view => view.includes('Select message history display type:')));
+    assert.equal(game.iflags.prevmsg_window, 'r');
+    assert.match(game._pending_message, /'msg_window' changed to "reversed"\./);
+});
+
+void test('paranoid confirmation can clear all preselected actions', async () => {
+    freshObjectRoom({ flags: { paranoia_bits: PARANOID_PRAY | PARANOID_TRAP | PARANOID_SWIM } });
+
+    const views = await fullOptions(['paranoid_confirmation'], () => '-\n');
+
+    assert.ok(views.some(view => view.includes('Actions requiring extra confirmation:')));
+    assert.equal(game.flags.paranoia_bits, 0);
+});
+
+void test('disclosure edits selected categories in native category order', async () => {
+    freshObjectRoom();
+
+    const views = await fullOptions(['disclose'], view => {
+        if (view.includes('Change which disclosure options categories:')) return 'iv\n';
+        if (view.includes('Disclosure options for inventory:')) return 'b';
+        if (view.includes('Disclosure options for vanquished:')) return 'c';
+        return '\x1b';
+    });
+
+    assert.ok(views.some(view => view.includes('Disclosure options for inventory:')));
+    assert.ok(views.some(view => view.includes('Disclosure options for vanquished:')));
+    assert.equal(game.flags.disclose, '+i na #v ng nc no');
+});
+
+void test('autounlock applies the checked action set from the simple menu', async () => {
+    freshObjectRoom();
+    const input = resetInputState();
+    input.feed('iauf\n\x1b');
+
+    await rhack('O'.charCodeAt(0));
+
+    assert.equal(game.flags.autounlock, 9);
+});
+
+void test('pickup burden uses the native encumbrance choices', async () => {
+    freshObjectRoom();
+
+    const views = await fullOptions(['pickup_burden'], () => 'l');
+
+    assert.ok(views.some(view => view.includes('Select encumbrance level:')));
+    assert.equal(game.flags.pickup_burden, 5);
 });

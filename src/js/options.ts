@@ -6,6 +6,7 @@ import { displayHelpFile, displayPagerText } from './pager_help.js';
 import { setConditionOption } from './status_conditions.js';
 import { classifyStatusTerrain } from './status_terrain.js';
 import type { GameFlags, InterfaceFlags, LootSortMode, MenuStyle } from './flags.js';
+import { compoundMenuValue, editCompoundMenu } from './option_editors.js';
 import { CommandBindings } from './command_bindings.js';
 import { changePreferredFruit, normalizePreferredFruitName } from './fruit.js';
 import { bot, clearMessageWindow, docrt, flushPendingTopline, flush_screen, plineWithContinuation, reassessStatusFields, reglyph_darkroom } from './display.js';
@@ -870,12 +871,12 @@ function requestMenuSections(): PageLocalMultiSelectSection<string>[] {
             readonly('msghistory', '20'),
             readonly('pettype', 'random'),
             readonly('soundlib', 'nosound'),
-            choice('autounlock', 'autounlock              [apply-key]'),
+            choice('autounlock', `autounlock              [${compoundMenuValue('autounlock')}]`),
             choice('boulder', 'boulder                 [`]'),
             choice('crash_email', 'crash_email             [unknown]'),
             choice('crash_name', 'crash_name              [unknown]'),
             choice('crash_urlmax', 'crash_urlmax            [-1]'),
-            choice('disclose', 'disclose                [ni na nv ng nc no]'),
+            choice('disclose', `disclose                [${compoundMenuValue('disclose')}]`),
             choice('fruit', `fruit                   [${game.fruitName}]`),
             choice('glyph', 'glyph                   [(to be done)]'),
             choice('hilite_status', 'hilite_status           [(none)]'),
@@ -883,16 +884,16 @@ function requestMenuSections(): PageLocalMultiSelectSection<string>[] {
             choice('menu_objsyms', 'menu_objsyms            [conditional]'),
             choice('menuinvertmode', 'menuinvertmode          [1]'),
             choice('menustyle', `menustyle               [${MENU_STYLES[game.flags.menu_style ?? MENU_FULL][0]}]`),
-            choice('msg_window', 'msg_window              [single]'),
+            choice('msg_window', `msg_window              [${compoundMenuValue('msg_window')}]`),
             choice('number_pad', `number_pad              [${numberPadDescription()}]`),
             choice('packorder', `packorder               [${inventoryOrderSymbols()}]`),
-            choice('paranoid_confirmation', 'paranoid_confirmation   [pray trap swim]'),
+            choice('paranoid_confirmation', `paranoid_confirmation   [${compoundMenuValue('paranoid_confirmation')}]`),
             choice('petattr', 'petattr                 [inverse]'),
-            choice('pickup_burden', 'pickup_burden           [stressed]'),
+            choice('pickup_burden', `pickup_burden           [${compoundMenuValue('pickup_burden')}]`),
             choice('pickup_types', `pickup_types            [${game.flags?.pickup_types || 'all'}]`),
             choice('pile_limit', 'pile_limit              [5]'),
             choice('roguesymset', 'roguesymset             [default]'),
-            choice('runmode', 'runmode                 [run]'),
+            choice('runmode', `runmode                 [${compoundMenuValue('runmode')}]`),
             choice('scores', `scores                  [${scoreDisplayDescription()}]`),
             choice('sortdiscoveries', 'sortdiscoveries         [by order of discovery within each class]'),
             choice('sortloot', `sortloot                [${SORT_LOOT_NAMES[game.flags.sortloot ?? 'l']}]`),
@@ -1075,6 +1076,7 @@ async function editCompoundOption(name: string, fullMenu: boolean): Promise<void
         if (order !== null && order.length) changeInventoryOrder(order);
     } else if (name === 'pickup_types') await editPickupTypes(fullMenu);
     else if (name === 'sortloot') await editSortLoot();
+    else await editCompoundMenu(name, fullMenu);
 }
 
 // Native options.c:handler_menustyle(). PICK_ONE retains the old selection
