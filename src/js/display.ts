@@ -1187,6 +1187,29 @@ export function zapdir_to_glyph(dx: number, dy: number, beamType: number): Displ
         color, decgfx: dec, kind: 'effect', glyph: GlyphOffset.zap + type * 4 + direction };
 }
 
+// Native explosion_to_glyph(): rows run from top left to bottom right.
+export function explosionGlyph(style: number, dx: number, dy: number): DisplayGlyph {
+    const index = (dy + 1) * 3 + dx + 1;
+    const ascii = ['/', '-', '\\', '|', ' ', '|', '\\', '-', '/'][index];
+    const color = [CLR_BLACK, CLR_GREEN, CLR_BROWN, CLR_BLUE,
+        CLR_MAGENTA, CLR_ORANGE, CLR_WHITE][style];
+    if (ascii === undefined || color === undefined)
+        throw new RangeError(`Unknown explosion glyph ${style} at offset ${dx},${dy}`);
+    const alternate = index === 1 ? 'o' : index === 3 || index === 5 ? 'x'
+        : index === 7 ? 's' : null;
+    const dec = alternate !== null && !Is_rogue_level(game.u.uz)
+        && /^DECgraphics$/i.test(game.symset ?? '');
+    return { ch: dec && alternate ? alternate : ascii, color, decgfx: dec,
+        kind: 'effect', glyph: GlyphOffset.explodeDark + style * 9 + index };
+}
+
+export function shieldGlyph(character: string): DisplayGlyph {
+    const index = ['0', '#', '@', '*'].indexOf(character);
+    if (index < 0) throw new RangeError(`Unknown shield symbol ${character}`);
+    return { ch: character, color: CLR_BRIGHT_BLUE, decgfx: false, kind: 'effect',
+        glyph: cmapToGlyph(82 + index) };
+}
+
 // C display.h:obj_to_glyph(), for tmp_at() callers.  A projectile has already
 // been extracted from the floor chain, so this deliberately derives only its
 // transient glyph and does not mutate hero memory or object discovery state.
@@ -1606,7 +1629,8 @@ export async function shieldeff(x: number, y: number, g: GameState = game) {
     if (g.flags.sparkle === false || !cansee(x, y)) return;
     try {
         for (const ch of SHIELD_STATIC) {
-            show_glyph_cell(x, y, ch, CLR_BRIGHT_BLUE, false);
+            const glyph = shieldGlyph(ch);
+            show_glyph_cell(x, y, glyph.ch, glyph.color, glyph.decgfx, 0, glyph);
             await flush_screen(1);
             g.nhDisplay?.setCursor(
                 (g.u?.ux ?? 1) - 1,
