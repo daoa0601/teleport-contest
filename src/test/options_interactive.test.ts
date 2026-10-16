@@ -401,3 +401,16 @@ void test('changing version information redraws the displayed version', async ()
     assert.ok(views.some(view => view.includes("'versinfo' changed to 2.")));
     assert.match(screen(), /nethack/);
 });
+
+void test('status condition choices update the live status line', async () => {
+    freshObjectRoom();
+
+    const views = await fullOptions(['status condition fields'], view => {
+        if (view.includes('Choose status conditions to toggle')) return 'a\n';
+        return '\x1b';
+    });
+
+    assert.ok(views.some(view => view.includes('cond_barehanded')));
+    await flush_screen(1);
+    assert.match(screen(), /Bare/);
+});

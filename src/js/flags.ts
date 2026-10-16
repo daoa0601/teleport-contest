@@ -77,6 +77,7 @@ export interface InterfaceFlags {
     suppress_price?: boolean;
     simple_options_help?: boolean;
     optionMessages?: boolean;
+    conditionMenuByRank?: boolean;
     wizmgender?: boolean;
     wizweight?: boolean;
     partly_eaten_hack?: boolean;

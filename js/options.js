@@ -961,7 +961,7 @@ function requestMenuSections() {
                 choice('bind_keys', 'bind keys               [(0 currently set)]'),
                 choice('menu_colors', 'menu colors             [(0 currently set)]'),
                 choice('message_types', 'message types           [(0 currently set)]'),
-                choice('status_conditions', 'status condition fields [(16 currently set)]'),
+                choice('status_conditions', `status condition fields [${compoundMenuValue('status_conditions')}]`),
                 choice('status_highlights', 'status highlight rules  [(0 currently set)]'),
             ] }
     ];

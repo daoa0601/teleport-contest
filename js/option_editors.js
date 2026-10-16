@@ -3,8 +3,9 @@ import { game } from './gstate.js';
 import { plineWithContinuation } from './display.js';
 import { visibleCommandKey } from './command_keys.js';
 import { statusVersion } from './status_version.js';
+import { statusConditionOptions } from './status_conditions.js';
 import { showInventoryWindow, showMultiSelectWindow } from './windows.js';
-import { MENU_ITEMFLAGS_SELECTED, PICK_ONE, PARANOID_AUTOALL, PARANOID_BONES, PARANOID_BREAKWAND, PARANOID_CONFIRM, PARANOID_DIE, PARANOID_EATING, PARANOID_HIT, PARANOID_PRAY, PARANOID_QUIT, PARANOID_REMOVE, PARANOID_SWIM, PARANOID_TRAP, PARANOID_WERECHANGE, } from './const.js';
+import { MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPINVERT, PICK_ONE, PARANOID_AUTOALL, PARANOID_BONES, PARANOID_BREAKWAND, PARANOID_CONFIRM, PARANOID_DIE, PARANOID_EATING, PARANOID_HIT, PARANOID_PRAY, PARANOID_QUIT, PARANOID_REMOVE, PARANOID_SWIM, PARANOID_TRAP, PARANOID_WERECHANGE, } from './const.js';
 const RUN_MODES = ['teleport', 'run', 'walk', 'crawl'];
 const BURDEN_NAMES = ['unencumbered', 'burdened', 'stressed', 'strained', 'overtaxed', 'overloaded'];
 const UNLOCK_ACTIONS = [
@@ -57,6 +58,7 @@ export function compoundMenuValue(name) {
             const parts = [bits & 2 ? 'name' : '', bits & 4 ? 'branch' : '', bits & 1 ? 'number' : ''].filter(Boolean);
             return `${bits}: ${parts.join('+')} (${statusVersion(bits)})`;
         }
+        case 'status_conditions': return `(${statusConditionOptions(game).filter(option => option.enabled).length} currently set)`;
         default: return null;
     }
 }
@@ -98,9 +100,40 @@ export async function editCompoundMenu(name, giveMessage) {
         case 'versinfo':
             await editVersionInfo();
             break;
+        case 'status_conditions':
+            await editStatusConditions();
+            break;
         default: return false;
     }
     return true;
+}
+async function editStatusConditions() {
+    for (;;) {
+        const byRank = game.iflags.conditionMenuByRank ?? false;
+        const current = byRank ? 'by ranking' : 'alphabetically';
+        const next = byRank ? 'alphabetically' : 'by ranking';
+        const choices = statusConditionOptions(game).sort((left, right) => (byRank ? left.rank - right.rank : 0)
+            || (left.name.toLowerCase() < right.name.toLowerCase() ? -1 : 1));
+        const selected = await showMultiSelectWindow({
+            title: 'Choose status conditions to toggle', omitHeadings: true,
+            pageLocalKeys: true, signalEscape: true,
+            sections: [{ items: [
+                        { key: 'S', value: 'sort', text: `change sort order from "${current}" to "${next}"`,
+                            itemFlags: MENU_ITEMFLAGS_SKIPINVERT },
+                        { selectable: false, text: `sorted ${current}`, attr: 1 },
+                        ...choices.map(option => ({ value: option.bit, text: `cond_${option.name.padEnd(14)}`,
+                            itemFlags: option.enabled ? MENU_ITEMFLAGS_SELECTED : 0 })),
+                    ] }],
+        });
+        if (selected === null)
+            return;
+        if (selected.includes('sort')) {
+            game.iflags.conditionMenuByRank = !byRank;
+            continue;
+        }
+        game.flags.statusConditionMask = selected.reduce((mask, bit) => typeof bit === 'number' ? mask | bit : mask, 0);
+        return;
+    }
 }
 const COORDINATE_CHOICES = [
     ['c', 'compass', "compass ('east' or '3s' or '2n,4w')"],
