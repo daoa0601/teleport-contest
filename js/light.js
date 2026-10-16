@@ -166,26 +166,32 @@ async function affectCarriedLights(worsen) {
         if (artifactEmitsLight(object))
             await impactArtifactLight(object, worsen);
         else if (worsen)
-            await snuffCarriedLight(object);
+            await snuffLitObject(object);
         if (object.lamplit)
             stillLit++;
     }
     return stillLit;
 }
-async function snuffCarriedLight(object) {
-    if (!LIGHT_TYPES.has(object.otyp))
-        return;
-    if (!heroIsBlind()) {
+// C apply.c:snuff_lit()/snuff_candle(). Callers keep the object in its
+// native ownership phase: in_container() has already removed it from inventory.
+export async function snuffLitObject(object, state = game, publish = plineWithContinuation) {
+    if (!object.lamplit || !LIGHT_TYPES.has(object.otyp))
+        return false;
+    const location = getObjectLocation(object, state);
+    const visible = object.where === 'minvent'
+        ? !!location && cansee(location.x, location.y) : !heroIsBlind(state);
+    if (visible) {
         if (CANDLE_TYPES.has(object.otyp)) {
             const candelabrum = object.otyp === CANDELABRUM_OF_INVOCATION;
             const many = candelabrum ? object.spe > 1 : object.quan > 1;
-            await plineWithContinuation(`${carriedObjectOwner(object, game)} ${candelabrum ? "candelabrum's " : ''}candle${many ? "s' flames are" : "'s flame is"} extinguished.`);
+            await publish(`${carriedObjectOwner(object, state)} ${candelabrum ? "candelabrum's " : ''}candle${many ? "s' flames are" : "'s flame is"} extinguished.`);
         }
         else {
-            await plineWithContinuation(`${ownedObjectName(object)} ${objectNameIsPlural(object) ? 'go' : 'goes'} out!`);
+            await publish(`${ownedObjectName(object, state)} ${objectNameIsPlural(object, state) ? 'go' : 'goes'} out!`);
         }
     }
-    snuffOrdinaryLight(object);
+    endObjectBurn(object, state);
+    return true;
 }
 // C potion.c:impact_arti_light()/H2Opotion_dip(). The temporary water
 // object is part of the native effect, including its construction draws.

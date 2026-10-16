@@ -228,11 +228,12 @@ void test('an invocation maze has a distant square instead of a down stair', asy
     assert.equal(isInvocationPosition(square.tx, square.ty), false);
 });
 
-void test('hot custom dungeons cannot supply the invocation level identity', () => {
+void test('heat alone does not identify an invocation level', () => {
     prepareMaze({ hell: true, depth: 29 });
     const mainDungeon = game.dungeons[0];
     assert.ok(mainDungeon);
-    game.dungeons.push({ ...mainDungeon, dname: 'Hot custom dungeon', flags: { ...mainDungeon.flags, hellish: true } });
+    game.dungeons.push({ ...mainDungeon, dname: 'Hot custom dungeon', flags: { ...mainDungeon.flags, hellish: false } });
+    requireGameLevel().flags.temperature = 1;
     game.u.uz = { dnum: 1, dlevel: 29 };
     addTrap(requireGameLevel(), VIBRATING_SQUARE, 10, 10);
 

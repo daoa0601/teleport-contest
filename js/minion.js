@@ -5,7 +5,7 @@ import { artifactById } from './artifacts.js';
 import { deityName } from './alignment.js';
 import { A_NONE, In_endgame, MM_EMIN, MM_NOMSG, STRAT_APPEARMSG } from './const.js';
 import { canSeeMonster, canSpotMonster, pline, plineWithContinuation } from './display.js';
-import { illuminateTransientCell, cleanupTransientLight } from './flash.js';
+import { cleanupTransientLight, showTransientLight } from './transient_light.js';
 import { game, requireGameLevel, requireInitializedGame } from './gstate.js';
 import { makemonNear, mkclassAligned } from './mklev.js';
 import { MONSTER_ALIGNMENT, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
@@ -268,7 +268,7 @@ export async function msummon(monster = null) {
         }
         created.push(summoned);
         if (MONSTER_SYMBOL[summoned.mnum] === 27 && !heroIsBlind(game)) {
-            await illuminateTransientCell(summoned.mx, summoned.my, requireInitializedGame());
+            await showTransientLight(null, summoned.mx, summoned.my, requireInitializedGame());
             litAngel = true;
         }
         if (count === 0 && canSeeMonster(summoned)) {

@@ -313,7 +313,7 @@ for (const [alignment, outcome] of [[0, 'ascended'], [1, 'escaped']] as const) {
         game.astral_level = createSpecialLevel({ dnum: 1, dlevel: 1 });
         game.dungeons = [
             createDungeon({ dname: 'The Dungeons of Doom', depth_start: 1, dunlev_ureached: 1 }),
-            createDungeon({ dname: 'The Elemental Planes', dunlev_ureached: 1 }),
+            createDungeon({ dname: 'The Elemental Planes', depth_start: -5, dunlev_ureached: 1 }),
         ];
         game.storage = memoryStorage();
         const amulet = await addInventoryObject(AMULET_OF_YENDOR);

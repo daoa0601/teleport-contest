@@ -90,6 +90,9 @@ void test('a dungeon bottom cannot leave bones even with its own special bones t
 
 void test('the invocation level is excluded while the preceding Gehennom level can leave bones', () => {
     eligibleBonesRoom();
+    const dungeon = game.dungeons[0];
+    assert.ok(dungeon);
+    dungeon.flags.hellish = true;
     game.valley_level = createSpecialLevel({ dnum: 0, dlevel: 1, bonetag: 'V' });
     game.u.uz = { dnum: 0, dlevel: 8 };
     assert.equal(canMakeBones(), true);

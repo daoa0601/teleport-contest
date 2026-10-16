@@ -11,7 +11,7 @@ for (const invoked of [false, true]) {
     void test(`a trapdoor ${invoked ? 'can reach the sanctum after' : 'stops at the vibrating-square level before'} invocation`, async () => {
         freshObjectRoom({ hero: { uz: { dnum: 0, dlevel: 4 }, uevent: { invoked } } });
         requirePlayingGame(game);
-        game.dungeons = [createDungeon({ dname: 'Gehennom', num_dunlevs: 5 })];
+        game.dungeons = [createDungeon({ dname: 'Gehennom', num_dunlevs: 5, flags: { hellish: true } })];
         game.valley_level = createSpecialLevel({ dnum: 0, dlevel: 1 });
         const trap = await maketrap(12, 10, TRAPDOOR);
         assert.ok(trap);
