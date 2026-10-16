@@ -1,11 +1,15 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { OROOM, VAULT } from '../js/const.js';
+import { init_dungeons } from '../js/dungeon.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { isRoom } from '../js/map_types.js';
 import { mklev } from '../js/mklev.js';
+import { init_objects } from '../js/o_init.js';
 import { initRng } from '../js/rng.js';
+import { freshGame } from './support/game-state.js';
 import { levelStairs } from './support/level-state.js';
+import { startLuaCore } from './support/lua-game.js';
 import { roomBindings } from './support/themed-room-bindings.js';
 void test('generated downstairs avoid rooms with upstairs on their perimeter when another room is free', async (t) => {
     const lua = await roomBindings(t);
@@ -38,19 +42,38 @@ void test('generated downstairs avoid rooms with upstairs on their perimeter whe
             && down.sy >= room.ly && down.sy <= room.hy), `downstairs must use a room without existing stairs (seed ${seed})`);
     }
 });
-void test('an ordinary dungeon bottom has upstairs and no downstairs', async (t) => {
-    await roomBindings(t);
-    requirePlayingGame(game);
-    const dungeon = game.dungeons[0];
-    assert.ok(dungeon);
-    dungeon.num_dunlevs = 4;
-    game.u.uz = { dnum: 0, dlevel: 4 };
-    game.specialLevels?.clear();
-    game.branches = [];
-    await mklev();
-    const stairs = levelStairs(game);
-    assert.equal(stairs.length, 1);
-    assert.equal(stairs[0]?.up, true);
-    assert.equal(stairs[0]?.tolev.dlevel, 3);
+void test('a dungeon bottom uses the first stair placement for upstairs', async (t) => {
+    async function generateStairs(seed, dungeonLevels) {
+        const state = freshGame({ flags: { bones: false } });
+        initRng(seed);
+        init_objects();
+        await init_dungeons();
+        await startLuaCore(t);
+        const dungeon = state.dungeons[0];
+        assert.ok(dungeon);
+        dungeon.themeRooms = undefined;
+        dungeon.num_dunlevs = dungeonLevels;
+        state.u.uz = { dnum: 0, dlevel: 4 };
+        state.specialLevels?.clear();
+        state.branches = [];
+        initRng(seed);
+        await mklev();
+        return levelStairs(state);
+    }
+    for (let seed = 1; seed <= 12; seed++) {
+        const interior = await generateStairs(seed, 5);
+        const bottom = await generateStairs(seed, 4);
+        const firstPlacement = interior.find(stair => !stair.up);
+        const upstairs = bottom[0];
+        assert.ok(firstPlacement, 'an interior level must have downstairs');
+        assert.ok(upstairs, 'a bottom level must have upstairs');
+        assert.equal(bottom.length, 1);
+        assert.equal(upstairs.up, true);
+        assert.equal(upstairs.tolev.dlevel, 3);
+        // C skips the downstairs search entirely at the bottom. With the
+        // same rooms and random stream, upstairs takes that first square.
+        assert.equal(upstairs.sx, firstPlacement.sx, `bottom-level upstairs must use the first stair placement's column (seed ${seed})`);
+        assert.equal(upstairs.sy, firstPlacement.sy, `bottom-level upstairs must use the first stair placement's row (seed ${seed})`);
+    }
 });
 //# sourceMappingURL=mklev_stairs.test.js.map
