@@ -4,7 +4,7 @@ import { formatFeltMessage } from './hero_speech.js';
 import { monsterHasMapPosition } from './monster_location.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { BURNING, D_BROKEN, D_CLOSED, D_LOCKED, DISMOUNT_FELL, DISMOUNT_GENERIC, DISSOLVED, DROWNING, DOOR, IS_AIR, IS_OBSTRUCTED, IS_STWALL, IS_WALL, IS_WATERWALL, Is_waterlevel, LAVAPOOL, LAVAWALL, PARANOID_SWIM, POOL, ROOM, STONE, FAINTED, TREE, TT_LAVA, Upolyd, WATER, W_NONDIGGABLE, W_NONPASSWALL, WT_TOOMUCH_DIAGONAL, } from './const.js';
-import { displayLiquidName, feel_newsym, newsym, plineWithContinuation, updateLastSeenTerrain } from './display.js';
+import { displayLiquidName, feel_newsym, newsym, plineWithContinuation, under_water, updateLastSeenTerrain } from './display.js';
 import { heroPassesWalls, heroFormSticks, heroSpecies } from './hero_species.js';
 import { heroHasConflict } from './hero_conflict.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
@@ -853,8 +853,13 @@ export async function heroLiquidEffects(options = {}) {
             if (!heroIsOnWaterLevel(state))
                 await publish(heroIsHallucinating(state) ? 'Your keel hits the bottom.' : 'You touch bottom.');
         }
+        recalculateVision(2);
         await setHeroInWater(true, state);
-        recalculateVision(1);
+        // drown() clears the whole map on every dive, even after surfacing
+        // has restored land outside the previous underwater viewport.
+        if (state === game)
+            await under_water(1);
+        state.vision_full_recalc = 1;
         return { entered: true, moved: false, died: false };
     }
     const luck = u.uluck ?? 0;
