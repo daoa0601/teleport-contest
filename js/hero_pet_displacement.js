@@ -1,6 +1,7 @@
+import { feelTrap } from './trap.js';
 // C hack.c:domove_swap_with_pet(), after the hero's tentative move.
 import { IS_OBSTRUCTED, IS_STWALL, IS_TREE, W_NONDIGGABLE, W_NONPASSWALL, is_pit } from './const.js';
-import { map_trap, newsym, plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './display.js';
 import { currentMonsterLoad } from './monster_carry.js';
 import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SIZE, monsterIsVerySmall } from './monster_data.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
@@ -47,9 +48,7 @@ export async function petRefusesHeroSwap(monster, state) {
         const name = trapName(trap.ttyp, { state });
         const which = trap.tseen ? `that ${name}` : withIndefiniteArticle(name);
         if (!trap.tseen) {
-            trap.tseen = true;
-            map_trap(trap, true);
-            newsym(trap.tx, trap.ty);
+            feelTrap(trap, state);
         }
         await plineWithContinuation(`You stop.  ${subject} can't move out of ${which}.`);
         if (state.flags.tips !== false && !((state.context.tips ?? 0) & TIP_UNTRAP_MON)) {

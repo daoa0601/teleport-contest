@@ -9,7 +9,7 @@ import { surfaceName } from './terrain_name.js';
 import { heroIsHallucinating } from './senses.js';
 import { triggerHeroMagicTrapEffect } from './hero_magic_trap.js';
 import { launchRollingBoulder } from './rolling_boulder.js';
-import { deleteTrap, revealTrap } from './trap_lifecycle.js';
+import { deleteTrap } from './trap_lifecycle.js';
 import { maybeDestroyWeb } from './web_trap.js';
 import {
     currentAttribute, exerciseAttribute,
@@ -28,7 +28,7 @@ import {
     squeakyBoardNoteWithArticle,
 } from './const.js';
 import {
-    flush_screen, lastDirtyMapCursor, map_trap, newsym, pline,
+    flush_screen, lastDirtyMapCursor, newsym, pline,
     plineWithContinuation, shieldeff, show_glyph_cell,
 } from './display.js';
 import { game, requirePlayingGame, requireGameLevel } from './gstate.js';
@@ -94,7 +94,6 @@ import {
 } from './teleport.js';
 import { CLR_GREEN } from './terminal.js';
 import { cansee } from './vision.js';
-import { revealVibratingSquare } from './invocation.js';
 import { triggerHeroFireTrap } from './fire_trap.js';
 import { activateMagicPortal } from './magic_portal.js';
 import { activateStatueTrapAt } from './statue_trap.js';
@@ -114,7 +113,7 @@ import {
     monsterIsBreathless, monsterIsHelpless, monsterResistsSleep,
     putMonsterToSleep,
 } from './monster_sleep.js';
-import { splashLitObject, waterDamageObject } from './trap.js';
+import { feelTrap, seeTrap, splashLitObject, waterDamageObject } from './trap.js';
 import { heroIsPolymorphed, returnHeroToHumanForm } from './polyself.js';
 import { finishHeroDeath } from './end.js';
 import { triggerHeroAntiMagicTrap } from './anti_magic_trap.js';
@@ -216,7 +215,7 @@ async function triggerPit(
     const plunged = tookPlunge || failedUntrap;
     if (!sokoban && (hero.levitating || game.levitating
         || (flying && !plunged && !viaSitting))) return;
-    trap.tseen = true;
+    feelTrap(trap);
     if (!sokoban && (formFlags & M1_CLING) && !plunged) {
         if (alreadyKnown) {
             await plineWithContinuation(
@@ -337,7 +336,7 @@ async function triggerWeb(
 ) {
     requirePlayingGame(game);
     const hero = game.u;
-    trap.tseen = true;
+    feelTrap(trap);
     const form = heroMonsterForm();
     if (await maybeDestroyWeb(hero, trap, { message: !noWebMessage })) return;
     if (form === PM_CAVE_SPIDER || form === PM_GIANT_SPIDER) {
@@ -394,14 +393,14 @@ async function triggerLandmine(trap: Trap, { failedUntrap = false, forceTrap = f
     if (airborne) {
         const alreadySeen = !!trap.tseen;
         if (!alreadySeen && rn2(3) !== 0) return;
-        trap.tseen = true;
+        feelTrap(trap);
         await plineWithContinuation(alreadySeen
             ? 'There is a trigger in a pile of soil below you.'
             : 'You discover a trigger in a pile of soil below you.');
         if (alreadySeen && rn2(3) !== 0) return;
         await plineWithContinuation('The air currents set the land mine off!');
     } else {
-        trap.tseen = true;
+        feelTrap(trap);
         await plineWithContinuation(
             `KAABLAMM!!!  You triggered ${
                 trap.madeby_u ? 'your' : 'a'
@@ -667,7 +666,7 @@ export async function heroCanMoveFromTrap(targetX: number, targetY: number): Pro
 }
 
 async function triggerTeleportTrap(trap: Trap, finishTeleport: HeroTrapOptions['finishTeleport']): Promise<boolean> {
-    trap.tseen = true;
+    seeTrap(trap);
     if (game._inTeleportTrap) return false;
     if (typeof finishTeleport !== 'function')
         throw new TypeError('teleport trap needs an arrival handler');
@@ -734,7 +733,7 @@ async function triggerTeleportTrap(trap: Trap, finishTeleport: HeroTrapOptions['
 }
 
 async function triggerMagicTrap(trap: Trap) {
-    trap.tseen = true;
+    seeTrap(trap);
     if (rn2(30) === 0) {
         deleteTrap(trap);
         newsym(trap.tx, trap.ty);
@@ -767,7 +766,7 @@ async function triggerProjectileTrap(trap: Trap) {
     }
 
     trap.once = true;
-    trap.tseen = true;
+    seeTrap(trap);
     await plineWithContinuation(`${subject} shoots out at you!`);
 
     const missile = await makeTrapMissile(objectType, trap);
@@ -808,7 +807,7 @@ async function triggerProjectileTrap(trap: Trap) {
 export async function triggerLevelTeleportTrap(trap: Trap, gotoLevel: HeroTrapOptions['gotoLevel'],
     intentional: boolean): Promise<void> {
     requirePlayingGame(game);
-    revealTrap(trap);
+    seeTrap(trap);
     const hero = game.u;
     // C hack.c:u_locomotion() gives the hero's active movement properties
     // precedence over the species' normal way of moving.
@@ -848,7 +847,7 @@ async function triggerSqueakyBoard(
     const forced = forceTrap || failedUntrap || (flying && viaSitting);
     if (airborne && !forced) {
         if (!blind) {
-            trap.tseen = true;
+            seeTrap(trap);
             const hallucinating = heroIsHallucinating(game);
             await plineWithContinuation(hallucinating
                 ? 'You notice a crease in the linoleum.'
@@ -857,7 +856,7 @@ async function triggerSqueakyBoard(
         return;
     }
 
-    trap.tseen = true;
+    seeTrap(trap);
     await plineWithContinuation(deaf
         ? 'A board beneath you vibrates.'
         : `A board beneath you squeaks ${
@@ -885,7 +884,7 @@ async function triggerFallingRockTrap(trap: Trap) {
 
     let damage = d(2, 6);
     trap.once = true;
-    trap.tseen = true;
+    feelTrap(trap);
     const rock = await makeTrapMissile(ROCK, trap);
     placeCreatedObject(rock, hero.ux, hero.uy);
     observeObjectForNaming(rock);
@@ -931,7 +930,7 @@ async function triggerFallingRockTrap(trap: Trap) {
 
 async function triggerSleepingGasTrap(trap: Trap) {
     const hero = game.u;
-    trap.tseen = true;
+    seeTrap(trap);
     const breathless = !!hero.breathless
         || !!(heroFormFlags() & M1_BREATHLESS);
     if (hero.sleepResistance || breathless) {
@@ -976,9 +975,7 @@ export async function animateRollingBoulderCell(
 
 async function triggerRollingBoulderTrap(trap: Trap) {
     const wasKnown = !!trap.tseen;
-    trap.tseen = true;
-    map_trap(trap, false);
-    newsym(trap.tx, trap.ty);
+    feelTrap(trap);
 
     const click = heroIsDeaf(game) ? '' : 'Click!  ';
     await plineWithContinuation(`${click}You trigger a rolling boulder trap!`);
@@ -1003,9 +1000,7 @@ async function triggerBearTrap(trap: Trap, {
 
     const damage = d(2, 4);
     if (!forced && !viaSitting && (levitating || flying)) return false;
-    trap.tseen = true;
-    map_trap(trap, true);
-    newsym(trap.tx, trap.ty);
+    feelTrap(trap);
     const subject = trap.madeby_u ? 'Your' : 'A';
     const body = { mnum: heroMonsterForm() };
     if (monsterIsAmorphous(body) || monsterIsWhirly(body) || monsterIsUnsolid(body)) {
@@ -1080,7 +1075,7 @@ async function rustIronGolemHero() {
 
 async function triggerRustTrap(trap: Trap) {
     const hero = game.u;
-    trap.tseen = true;
+    seeTrap(trap);
     const target = rn2(5);
 
     if (target === 0) {
@@ -1154,7 +1149,7 @@ export async function prepareHoleFall(trap: Trap | null | undefined, { tookPlung
     const levitating = !!(game.u?.levitating || game.levitating);
     if (game.blind && levitating && !sokoban) return null;
 
-    trap.tseen = true;
+    feelTrap(trap);
     if (!sokoban && !tookPlunge) await plineWithContinuation(trap.ttyp === TRAPDOOR
         ? 'A trap door opens up under you!' : "There's a gaping hole under you!");
 
@@ -1301,11 +1296,11 @@ export async function triggerHeroTrap(trap: Trap | null | undefined, {
         });
         break;
     case FIRE_TRAP:
-        trap.tseen = true;
+        seeTrap(trap);
         died = (await triggerHeroFireTrap()).died;
         break;
     case MAGIC_PORTAL:
-        trap.tseen = true;
+        feelTrap(trap);
         if (game.u.utraptype === TT_BURIEDBALL) await buriedBallToPunishment();
         await activateMagicPortal(trap, gotoLevel);
         break;
@@ -1329,7 +1324,7 @@ export async function triggerHeroTrap(trap: Trap | null | undefined, {
         await triggerLandmine(trap, { failedUntrap, forceTrap });
         break;
     case VIBRATING_SQUARE:
-        revealVibratingSquare(trap);
+        feelTrap(trap);
         break;
     }
     return {

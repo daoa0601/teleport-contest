@@ -1,4 +1,5 @@
 import { heroLocomotion } from './hero_locomotion.js';
+import { seeTrap } from './trap.js';
 import { maybeResetPick } from './lock_context.js';
 // C do.c:goto_level(): departure, destination creation or restoration, and arrival.
 
@@ -469,7 +470,7 @@ async function arriveOnLevel(from: DungeonLocation, { arrival, ladder, followers
         } else if (arrival === 'portal' && !In_endgame(game.u.uz)) {
             const portal = game.level.traps.find(trap => trap.ttyp === MAGIC_PORTAL);
             if (portal) {
-                portal.tseen = true;
+                seeTrap(portal);
                 await placeHeroOnLevel(portal.tx, portal.ty);
             } else await placeHeroAtRandomArrival(game.level.upTeleportRegion, true);
         } else {

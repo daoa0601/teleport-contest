@@ -33,6 +33,7 @@ import {
 import { heroFormFlags, heroIsPolymorphed } from './polyself.js';
 import { propertyIsActive } from './properties.js';
 import { d, rn2, rnd } from './rng.js';
+import { monsterTrapVisibility, seeTrap } from './trap.js';
 import { chargeAlteredUnpaidObject } from './shk.js';
 
 interface AntiMagicTrapPresentation {
@@ -74,6 +75,13 @@ interface AntiMagicTrapOptions {
     describeMonster?: (monster: Monster) => string;
 }
 
+interface MonsterAntiMagicOptions {
+    rollDice?: typeof d;
+    rollOne?: typeof rnd;
+    trap?: Trap;
+    state?: GameState;
+}
+
 const M1_WALLWALK = 0x00000008;
 const IRON = 11;
 const PM_BABY_GRAY_DRAGON = MONSTER_NAME.indexOf('baby gray dragon');
@@ -87,7 +95,7 @@ export async function triggerHeroAntiMagicTrap(trap: Trap) {
     const hero = game.u;
     const shoes = ironShoes();
     if (shoes && (shoes.spe ?? 0) > 0) {
-        trap.tseen = true;
+        seeTrap(trap);
         await plineWithContinuation(
             `A lethargic aura surrounds your ${objectName(shoes, 'shoes')}.`,
         );
@@ -97,7 +105,7 @@ export async function triggerHeroAntiMagicTrap(trap: Trap) {
         return;
     }
 
-    trap.tseen = true;
+    seeTrap(trap);
     if (
         hero.antimagic ||
         propertyIsActive('antimagic', game) ||
@@ -132,7 +140,7 @@ export async function triggerHeroAntiMagicTrap(trap: Trap) {
 
 export function applyMonsterAntiMagicTrap(
     monster: Monster,
-    { rollDice = d, rollOne = rnd } = {},
+    { rollDice = d, rollOne = rnd, trap, state = game }: MonsterAntiMagicOptions = {},
 ): MonsterAntiMagicTrapEvent {
     const shoes = monsterWornIronShoes(monster);
     if (shoes && (shoes.spe ?? 0) > 0) {
@@ -155,7 +163,10 @@ export function applyMonsterAntiMagicTrap(
                 ([attackType]) => attackType === AT_MAGC || attackType === AT_BREA,
             );
         const energyDrain = canUseMagic ? rollDice(2, 6) : 0;
-        if (energyDrain) monster.mspec_used = (monster.mspec_used ?? 0) + energyDrain;
+        if (energyDrain) {
+            monster.mspec_used = (monster.mspec_used ?? 0) + energyDrain;
+            if (trap && monsterTrapVisibility(monster, state).inSight) seeTrap(trap, state);
+        }
         return {
             kind: energyDrain ? 'anti-magic-drain' : 'anti-magic',
             resisted: false,
@@ -176,6 +187,7 @@ export function applyMonsterAntiMagicTrap(
         damage += rollOne(4);
     }
     if ((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_WALLWALK) damage = Math.trunc((damage + 3) / 4);
+    if (trap && monsterTrapVisibility(monster, state).inSight) seeTrap(trap, state);
     monster.mhp = Math.max(0, (monster.mhp ?? 1) - damage);
     return {
         kind: 'anti-magic-damage',
