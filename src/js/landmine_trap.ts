@@ -9,7 +9,7 @@ import type { MonsterDeathHandler } from './monster_death.js';
 import { finishMonsterKilled } from './monster_death.js';
 import { AD_PHYS } from './monster_attack_types.js';
 import { WT_ELF } from './const.js';
-import { plineWithContinuation } from './display.js';
+import { newsym, plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
 import { explodeLandMine } from './landmine_explosion.js';
 import { fillPitWithBoulderAt } from './pit_fill.js';
@@ -18,7 +18,7 @@ import { MONSTER_BODY_META, MONSTER_NAME } from './monster_data.js';
 import { beginMonsterPitTrap, finishMonsterPitTrap } from './monster_pit_trap.js';
 import { monsterWearsIronShoes } from './monworn.js';
 import { rn2, rnd } from './rng.js';
-import { monsterTrapVisibility } from './trap.js';
+import { monsterTrapVisibility, seeTrap } from './trap.js';
 import { monsterInAir } from './terrain_properties.js';
 import { monsterLearnsTrap, monstersSeeTrap } from './trap_knowledge.js';
 
@@ -153,10 +153,12 @@ export function beginMonsterLandMine(
     event.airborne = monsterInAir(monster, state);
     if (event.airborne) {
         event.discoveredTrigger = event.inSight && !trap.tseen;
-        if (event.discoveredTrigger) trap.tseen = true;
+        // The discovery message can wait for input. Reveal and test the air
+        // currents only after that message has returned, as in C.
+        if (event.discoveredTrigger) return event;
         event.airCurrentRoll = random(3);
         if (event.airCurrentRoll !== 0) {
-            if (!event.discoveredTrigger) event.finished = true;
+            event.finished = true;
             return event;
         }
     }
@@ -197,11 +199,15 @@ export async function finishMonsterLandMine(
 
     if (event.discoveredTrigger) {
         await publish(`A trigger appears in a pile of soil below ${monsterName(monster)}.`);
+        seeTrap(event.trap, state);
+        event.airCurrentRoll = random(3);
+        event.exploded = event.airCurrentRoll === 0;
     }
     if (!event.exploded) {
         event.finished = true;
         return event;
     }
+    if (event.inSight) newsym(monster.mx, monster.my);
     if (event.airborne && event.inSight) {
         await publish(`The air currents set ${event.alreadySeen ? 'a land mine' : 'it'} off!`);
     } else if (event.inSight) {
