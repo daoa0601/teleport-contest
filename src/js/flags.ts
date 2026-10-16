@@ -3,7 +3,7 @@
 export type GameBooleanFlag =
     | 'accessiblemsg' | 'acoustics' | 'armorstatus'
     | 'autodig' | 'autoopen' | 'pickup' | 'autoquiver' | 'checkpoint'
-    | 'cmdassist' | 'color' | 'confirm' | 'customcolors' | 'customsymbols'
+    | 'bgcolors' | 'cmdassist' | 'color' | 'confirm' | 'customcolors' | 'customsymbols'
     | 'dark_room' | 'dropped_nopick' | 'extmenu'
     | 'fireassist' | 'fixinv' | 'force_invmenu' | 'goldX' | 'help'
     | 'herecmd_menu' | 'hilite_pet' | 'hilite_pile' | 'hitpointbar'
@@ -75,6 +75,7 @@ export interface InterfaceFlags {
     num_pad_mode?: number;
     override_ID?: boolean;
     suppress_price?: boolean;
+    simple_options_help?: boolean;
     wizmgender?: boolean;
     wizweight?: boolean;
     partly_eaten_hack?: boolean;

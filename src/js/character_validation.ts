@@ -91,6 +91,7 @@ export function validSavedGameFlags(value: unknown): value is GameFlags {
         pickup: optional(boolean),
         autoquiver: optional(boolean),
         checkpoint: optional(boolean),
+        bgcolors: optional(boolean),
         cmdassist: optional(boolean),
         color: optional(boolean),
         confirm: optional(boolean),

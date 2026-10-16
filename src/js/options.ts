@@ -499,79 +499,6 @@ function putOptionsLine(col: number, row: number, text: string, attr = 0): void 
     }
 }
 
-function renderOptionsPage(page: 1 | 2): void {
-    const display = game.nhDisplay;
-    if (!display) return;
-    display.clearScreen();
-    const flags = game.flags;
-    const mark = (value: boolean | undefined) => value ? 'X' : ' ';
-    if (page === 1) {
-        putOptionsLine(1, 0, 'Options', ATR_INVERSE);
-        putOptionsLine(1, 2, '? - show help');
-        putOptionsLine(1, 4, ' General', ATR_INVERSE);
-        putOptionsLine(1, 5,
-            `a - fruit                   [${game.fruitName}]`);
-        putOptionsLine(1, 6, `b - number_pad              [${numberPadDescription()}]`);
-        putOptionsLine(1, 7, 'c - price_quotes            [ ]');
-        putOptionsLine(1, 9, ' Behavior', ATR_INVERSE);
-        putOptionsLine(1, 10,
-            `d - autodig                 [${mark(flags.autodig)}]`);
-        putOptionsLine(1, 11,
-            `e - autoopen                [${mark(flags.autoopen)}]`);
-        putOptionsLine(1, 12,
-            `f - autopickup              [${mark(flags.pickup)}]`);
-        putOptionsLine(1, 13,
-            'g - autopickup exceptions   [(0 currently set)]');
-        putOptionsLine(1, 14, 'h - autoquiver              [ ]');
-        putOptionsLine(1, 15, 'i - autounlock              [apply-key]');
-        putOptionsLine(1, 16,
-            `j - cmdassist               [${mark(flags.cmdassist ?? true)}]`);
-        putOptionsLine(1, 17,
-            'k - dropped_nopick          [X]  (for autopickup)');
-        putOptionsLine(1, 18, 'l - fireassist              [X]');
-        putOptionsLine(1, 19,
-            'm - pickup_stolen           [X]  (for autopickup)');
-        putOptionsLine(1, 20,
-            'n - pickup_thrown           [X]  (for autopickup)');
-        putOptionsLine(1, 21,
-            `o - pickup_types            [${flags.pickup_types || 'all'}]  (for autopickup)`);
-        putOptionsLine(1, 22,
-            `p - pushweapon              [${mark(flags.pushweapon)}]`);
-        putOptionsLine(1, 23, '(1 of 2)');
-        display.setCursor(9, 23);
-        return;
-    }
-
-    putOptionsLine(1, 1, ' Map', ATR_INVERSE);
-    putOptionsLine(1, 2, 'a - bgcolors                [X]');
-    putOptionsLine(1, 3, 'b - color                   [X]');
-    putOptionsLine(1, 4, 'c - customcolors            [X]');
-    putOptionsLine(1, 5, 'd - customsymbols           [X]');
-    putOptionsLine(1, 6,
-        `e - hilite_pet              [${mark(flags.hilite_pet)}]`);
-    putOptionsLine(1, 7,
-        `f - hilite_pile             [${mark(flags.hilite_pile)}]`);
-    putOptionsLine(1, 8, 'g - showrace                [ ]');
-    putOptionsLine(1, 9, 'h - sparkle                 [X]');
-    putOptionsLine(1, 10,
-        'i - symset                  [DECgraphics, active, handler=DEC]');
-    putOptionsLine(1, 12, ' Status', ATR_INVERSE);
-    putOptionsLine(1, 13, 'j - hitpointbar             [ ]');
-    putOptionsLine(1, 14,
-        'k - menu colors             [(0 currently set)]');
-    putOptionsLine(1, 15,
-        `l - showexp                 [${mark(flags.showexp)}]`);
-    putOptionsLine(1, 16,
-        'm - status condition fields [(16 currently set)]');
-    putOptionsLine(1, 17,
-        'n - status highlight rules  [(0 currently set)]');
-    putOptionsLine(1, 18, 'o - statuslines             [2]');
-    putOptionsLine(1, 19,
-        `p - time                    [${mark(flags.time)}]`);
-    putOptionsLine(1, 20, '(2 of 2)');
-    display.setCursor(9, 20);
-}
-
 const REQUEST_MENU_BOOLEAN_OPTIONS = [
     ['accessiblemsg', 'accessiblemsg', false],
     ['acoustics', 'acoustics', true],
@@ -581,6 +508,7 @@ const REQUEST_MENU_BOOLEAN_OPTIONS = [
     ['autodig', 'autodig', false],
     ['autoopen', 'autoopen', true],
     ['autopickup', 'pickup', false],
+    ['bgcolors', 'bgcolors', true],
     ['autoquiver', 'autoquiver', false],
     ['checkpoint', 'checkpoint', true],
     ['cmdassist', 'cmdassist', true],
@@ -861,7 +789,7 @@ function requestMenuSections(): PageLocalMultiSelectSection<string>[] {
             boolean('autoopen'),
             boolean('autopickup'),
             boolean('autoquiver'),
-            choice('bgcolors', 'bgcolors                [on]'),
+            choice('bgcolors', `bgcolors                [${requestBooleanValue('bgcolors') ? 'on' : 'off'}]`),
             boolean('checkpoint'),
             boolean('cmdassist'),
             boolean('color'),
@@ -1090,7 +1018,7 @@ function applyBooleanVisualChange(name: BooleanOptionName): boolean {
         return requestBooleanValue('color');
     }
     return ['color', 'customcolors', 'hilite_pet', 'hilite_pile',
-        'hitpointbar', 'showrace', 'use_inverse'].includes(name);
+        'customsymbols', 'hitpointbar', 'showrace', 'use_inverse'].includes(name);
 }
 
 async function doRequestMenuOptions(): Promise<void> {
@@ -1201,82 +1129,115 @@ async function editFruitOption(): Promise<void> {
     }
 }
 
-// C refs: options.c doset()/special_handling() and tty's PICK_ANY menu.
-// Option keys redraw page one. Space advances to page two, then closes it.
-// The pickup-types editor reads its own keys before returning here.
+// optlist.h assigns these options to the four simple-menu sections.
+const SIMPLE_OPTION_SECTIONS = [
+    ['General', [
+        ['fruit', 'name of a fruit you enjoy eating'],
+        ['number_pad', 'use the number pad for movement'],
+        ['price_quotes', 'display prices you have seen for unidentified objects'],
+    ]],
+    ['Behavior', [
+        ['autodig', 'dig if moving and wielding a digging tool'],
+        ['autoopen', 'walking into a door attempts to open it'],
+        ['autopickup', 'automatically pick up objects'],
+        ['autopickup_exceptions', 'edit autopickup exceptions'],
+        ['autoquiver', 'fill empty quiver automatically when firing'],
+        ['autounlock', 'action to take when encountering locked door or chest'],
+        ['cmdassist', 'give help for errors on direction input'],
+        ['dropped_nopick', "don't autopickup dropped items"],
+        ['fireassist', 'fire-command tries to be helpful'],
+        ['pickup_stolen', 'autopickup stolen items'],
+        ['pickup_thrown', 'autopickup thrown items'],
+        ['pickup_types', 'types of objects to pick up automatically'],
+        ['pushweapon', 'previous weapon goes to secondary slot'],
+    ]],
+    ['Map', [
+        ['bgcolors', 'use background color for some map hilighting'],
+        ['color', 'use color in map'],
+        ['customcolors', 'use custom colors in map'],
+        ['customsymbols', 'use custom utf8 symbols in map'],
+        ['hilite_pet', 'use highlight for pets'],
+        ['hilite_pile', 'highlight piles of items'],
+        ['showrace', 'show your character by race rather than role'],
+        ['sparkle', 'display sparkly effect when resisting magic'],
+        ['symset', 'load a set of display symbols from symbols file'],
+    ]],
+    ['Status', [
+        ['hitpointbar', 'show colored bar for hit points'],
+        ['menu_colors', 'edit menu colors'],
+        ['showexp', 'show experience points in status line'],
+        ['status_conditions', 'change status condition highlighting'],
+        ['status_highlights', 'change status line highlighting'],
+        ['statuslines', '2 or 3 lines for status display'],
+        ['time', 'display game turns in status line'],
+    ]],
+] as const;
+
+function simpleMenuSections(): PageLocalMultiSelectSection<string>[] {
+    const options = requestMenuSections().flatMap(section => section.items);
+    return [
+        { items: [
+            ...(game.iflags.simple_options_help
+                ? [{ selectable: false, text: "Use command '#optionsfull' to get the complete options list." } as const]
+                : []),
+            { key: '?', value: 'help', text: game.iflags.simple_options_help ? 'hide help' : 'show help' },
+        ] },
+        ...SIMPLE_OPTION_SECTIONS.map(([heading, names]) => {
+            const items: (PageLocalMenuItem<string> | MenuLabel)[] = [
+                { selectable: false, text: '' },
+                { selectable: false, text: ` ${heading.padEnd(30)} `, attr: ATR_INVERSE },
+            ];
+            for (const [name, description] of names) {
+                const option = options.find(item => item.selectable !== false && item.value === name);
+                if (!option || option.selectable === false) throw new Error(`Missing simple option: ${name}`);
+                const boolean = requestBooleanByName.get(name.toLowerCase());
+                const text = boolean ? `${name.padEnd(24)}[${requestBooleanValue(boolean[0]) ? 'X' : ' '}]`
+                    : option.text;
+                const suffix = ['pickup_types', 'pickup_thrown', 'pickup_stolen', 'dropped_nopick'].includes(name)
+                    ? '  (for autopickup)' : '';
+                items.push({ value: name, text: text + suffix });
+                if (game.iflags.simple_options_help) {
+                    items.push({ selectable: false, text: `    ${description}` },
+                        { selectable: false, text: '' });
+                }
+            }
+            return { items };
+        }),
+    ];
+}
+
+// options.c:doset_simple() applies one choice, refreshes its visuals, and
+// offers a fresh menu. PICK_ONE accepts a choice immediately.
 export async function doOptions(menuRequested = false): Promise<void> {
     if (menuRequested) {
         await doRequestMenuOptions();
         return;
     }
-    const flags = game.flags;
-    if (!game._optionsInitialized) {
-        // Set missing defaults once. Opening the menu must not reset a value
-        // the player already changed.
-        flags.autoopen = flags.autoopen ?? true;
-        flags.pickup = flags.pickup ?? false;
-        flags.hilite_pet = flags.hilite_pet ?? false;
-        flags.hilite_pile = flags.hilite_pile ?? false;
-        game._optionsInitialized = true;
-    }
-    let page: 1 | 2 = 1;
-    let needsRedraw = false;
     for (;;) {
-        renderOptionsPage(page);
-        const key = await nhgetch();
-        if (key === 27 || key === 10 || key === 13) break;
-        const input = String.fromCharCode(key);
-        if (input === ' ') {
-            if (page === 1) {
-                page = 2;
-                continue;
-            }
-            break;
-        }
-        if (input === '>' && page === 1) {
-            page = 2;
+        const selected = await showMultiSelectWindow({
+            title: 'Options', pageLocalKeys: true, omitHeadings: true,
+            sections: simpleMenuSections(), pickOne: true,
+        });
+        const name = selected[0];
+        if (!name) break;
+        if (name === 'help') {
+            game.iflags.simple_options_help = !game.iflags.simple_options_help;
             continue;
         }
-        if (input === '<' && page === 2) {
-            page = 1;
-            continue;
+        const option = requestBooleanByName.get(name.toLowerCase());
+        let needsRedraw = false;
+        if (option) {
+            setRequestBoolean(option, !requestBooleanValue(option[0]));
+            needsRedraw = applyBooleanVisualChange(option[0]);
+        } else if (name === 'fruit') await editFruitOption();
+        else if (name === 'number_pad') await editNumberPad();
+        else if (name === 'pickup_types') await editPickupTypes();
+        if (needsRedraw) {
+            reglyph_darkroom();
+            await docrt();
+            await flush_screen(1);
         }
-        if (page === 1 && input === 'a') {
-            await editFruitOption();
-        } else if (page === 1 && input === 'b') {
-            await editNumberPad();
-        } else if (page === 1 && input === 'd') {
-            flags.autodig = !flags.autodig;
-        } else if (page === 1 && input === 'o') {
-            await editPickupTypes();
-        } else if (page === 1 && input === 'e') {
-            flags.autoopen = !flags.autoopen;
-        } else if (page === 1 && input === 'f') {
-            flags.pickup = !flags.pickup;
-        } else if (page === 1 && input === 'j') {
-            flags.cmdassist = !(flags.cmdassist ?? true);
-        } else if (page === 1 && input === 'p') {
-            flags.pushweapon = !flags.pushweapon;
-        } else if (page === 2 && input === 'e') {
-            flags.hilite_pet = !flags.hilite_pet;
-            needsRedraw = true;
-        } else if (page === 2 && input === 'f') {
-            flags.hilite_pile = !flags.hilite_pile;
-            needsRedraw = true;
-        } else if (page === 2 && input === 'l') {
-            flags.showexp = !flags.showexp;
-            applyBooleanVisualChange('showexp');
-        } else if (page === 2 && input === 'p') {
-            flags.time = !flags.time;
-            applyBooleanVisualChange('time');
-        } else {
-            continue;
-        }
-        page = 1;
+        await bot();
     }
-    game._pending_message = '';
-    if (needsRedraw) reglyph_darkroom();
-    await docrt();
-    await bot();
     game.context.move = 0;
 }
