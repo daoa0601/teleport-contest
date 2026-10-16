@@ -145,6 +145,9 @@ export async function throwOrdinaryObject({
         }
         if ('consumed' in flight && flight.consumed) return { ...flight, consumed: true };
 
+        // bhit() erases a web-stopped returning missile before throwit() recoils.
+        if (flight.stoppedBy === 'web') tetherDisplay?.clear();
+
         if (!boomerang && trajectory.recoil) {
             await hurtleHero(
                 -actualDx, -actualDy, trajectory.recoil, { verbose: true },
