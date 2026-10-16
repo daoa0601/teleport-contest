@@ -37,6 +37,7 @@ import {
     WM_X_TL, WM_X_TR, WM_X_BL, WM_X_BR, WM_X_TLBR, WM_X_BLTR,
     BEAR_TRAP, WEB, VIBRATING_SQUARE, CORPSTAT_GENDER, CORPSTAT_FEMALE,
     ENGRAVE, BURN, HEADSTONE,
+    EXPL_FROSTY, EXPL_MAGICAL, EXPL_WET, EXPL_MUDDY, EXPL_NOXIOUS, EXPL_FIERY,
     is_pit, M_AP_NOTHING, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE,
     def_warnsyms, MON_STILL_ARRIVING,
     In_endgame, In_quest, Is_rogue_level, Is_waterlevel, Is_knox_level, In_sokoban, PLNMSG_UNKNOWN,
@@ -1191,10 +1192,13 @@ export function zapdir_to_glyph(dx: number, dy: number, beamType: number): Displ
 
 // Native explosion_to_glyph(): rows run from top left to bottom right.
 export function explosionGlyph(style: number, dx: number, dy: number): DisplayGlyph {
+    // Native explosion_to_glyph() defaults every other style, including dark, to fiery.
+    const type = [EXPL_FROSTY, EXPL_MAGICAL, EXPL_WET, EXPL_MUDDY, EXPL_NOXIOUS]
+        .includes(style) ? style : EXPL_FIERY;
     const index = (dy + 1) * 3 + dx + 1;
     const ascii = ['/', '-', '\\', '|', ' ', '|', '\\', '-', '/'][index];
-    const color = [CLR_BLACK, CLR_GREEN, CLR_BROWN, CLR_BLUE,
-        CLR_MAGENTA, CLR_ORANGE, CLR_WHITE][style];
+    const color = [CLR_GREEN, CLR_BROWN, CLR_BLUE,
+        CLR_MAGENTA, CLR_ORANGE, CLR_WHITE][type - EXPL_NOXIOUS];
     if (ascii === undefined || color === undefined)
         throw new RangeError(`Unknown explosion glyph ${style} at offset ${dx},${dy}`);
     const alternate = index === 1 ? 'o' : index === 3 || index === 5 ? 'x'
@@ -1202,7 +1206,7 @@ export function explosionGlyph(style: number, dx: number, dy: number): DisplayGl
     const dec = alternate !== null && !Is_rogue_level(game.u.uz)
         && /^DECgraphics$/i.test(game.symset ?? '');
     return { ch: dec && alternate ? alternate : ascii, color, decgfx: dec,
-        kind: 'effect', glyph: GlyphOffset.explodeDark + style * 9 + index };
+        kind: 'effect', glyph: GlyphOffset.explodeDark + type * 9 + index };
 }
 
 export function shieldGlyph(character: string): DisplayGlyph {
