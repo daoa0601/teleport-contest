@@ -947,7 +947,7 @@ void test('identifying a removed flying amulet does not change the landing pit i
     assert.equal(unknown.trappedTurns, known.trappedTurns, 'identification follows the pit confinement');
 });
 
-void test('fatal landing after flying amulet removal does not identify the amulet', async () => {
+void test('fatal landing after flying amulet removal identifies the pack during game over', async () => {
     const level = freshObjectRoom({
         flags: { menu_style: MENU_PARTIAL, verbose: false, bones: false,
             disclose: '-i -a -v -c -o', tombstone: false },
@@ -967,7 +967,8 @@ void test('fatal landing after flying amulet removal does not identify the amule
     await work(1);
 
     assert.equal(game.program_state.gameover, true);
-    assert.equal(objectTypeKnown(amulet), false, 'the fatal fall ends play before discovery');
+    assert.equal(objectTypeKnown(amulet), true,
+        'really_done identifies carried possessions even when disclosure is declined');
 });
 
 void test('bulk magical-breathing amulet removal warns about poison gas and identifies the amulet', async () => {

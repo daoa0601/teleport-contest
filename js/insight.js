@@ -10,7 +10,7 @@ import { withIndefiniteArticle } from './object_grammar.js';
 import { game, requireInitializedGame } from './gstate.js';
 import { bot, docrt, flushPendingTopline, flush_screen, formatStrength, pline, } from './display.js';
 import { showDisclosureOverlay, showTextPages } from './windows.js';
-import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, In_endgame, } from './const.js';
+import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, G_GENOD, In_endgame, ACH_AMUL, ACH_ASTR, ACH_BELL, ACH_BGRM, ACH_BLND, ACH_BOOK, ACH_CNDL, ACH_ENDG, ACH_INVK, ACH_MEDU, ACH_MINE_PRIZE, ACH_NOVL, ACH_NUDE, ACH_ORCL, ACH_SHOP, ACH_SOKO, ACH_SOKO_PRIZE, ACH_TMPL, ACH_TUNE, ACH_UWIN, } from './const.js';
 import { depth as dungeonDepth, endgameLevelName } from './hacklib.js';
 import { ATTRIBUTE_DISPLAY_ORDER, currentAttribute, exerciseAttribute, } from './attrib.js';
 import { heroIsDisplaced } from './armor.js';
@@ -889,22 +889,98 @@ export function finalConductLines() {
         lines.push(' You were vegetarian.');
     if (!(conduct.gnostic || 0))
         lines.push(' You were an atheist.');
-    if (!(conduct.weaphit || 0))
+    if (!conduct.weaphit)
         lines.push(' You never hit with a wielded weapon.');
+    else if (game.flags.debug)
+        lines.push(` You hit with a wielded weapon ${conduct.weaphit} ${plural(conduct.weaphit, 'time')}.`);
     if (!(conduct.killer || 0))
         lines.push(' You were a pacifist.');
-    if (!(conduct.literate || 0))
+    if (!conduct.literate)
         lines.push(' You were illiterate.');
-    if (!(conduct.pets || 0) && !game.startingPet)
+    else if (game.flags.debug)
+        lines.push(` You read items or engraved ${conduct.literate} ${plural(conduct.literate, 'time')}.`);
+    if (!(conduct.pets || 0))
         lines.push(' You never had a pet.');
-    if (!(conduct.genocides || 0))
+    const genocides = (game.mvitals ?? []).filter(vital => (vital.mvflags & G_GENOD) !== 0).length;
+    if (!genocides)
         lines.push(' You never genocided any monsters.');
-    if (!(conduct.polypiles || 0))
+    else
+        lines.push(` You genocided ${genocides} ${plural(genocides, 'type')} of ${plural(genocides, 'monster')}.`);
+    if (!conduct.polypiles)
         lines.push(' You never polymorphed an object.');
-    if (!(conduct.polyselfs || 0))
+    else if (game.flags.debug)
+        lines.push(` You polymorphed ${conduct.polypiles} ${plural(conduct.polypiles, 'item')}.`);
+    if (!conduct.polyselfs)
         lines.push(' You never changed form.');
-    if (!(conduct.wishes || 0))
+    else if (game.flags.debug)
+        lines.push(` You changed form ${conduct.polyselfs} ${plural(conduct.polyselfs, 'time')}.`);
+    if (!conduct.wishes)
         lines.push(' You used no wishes.');
+    else {
+        const wishes = conduct.wishes;
+        const artifacts = conduct.wisharti ?? 0;
+        let text = ` You used ${wishes} wish${wishes === 1 ? '' : 'es'}`;
+        if (artifacts) {
+            const count = artifacts !== wishes ? `${artifacts} `
+                : artifacts > 2 ? 'all ' : artifacts === 2 ? 'both ' : '';
+            text += ` (${count}for ${artifacts === 1 ? 'an artifact' : 'artifacts'})`;
+        }
+        lines.push(`${text}.`);
+        if (!artifacts)
+            lines.push(' You did not wish for any artifacts.');
+    }
+    if (achievementEntries(game).includes(ACH_SOKO)) {
+        const cheated = conduct.sokocheat ?? 0;
+        lines.push(cheated
+            ? ` You violated the special Sokoban rules ${killedCountPhrase(cheated)}.`
+            : ' You did not violate any of the special Sokoban rules.');
+    }
+    lines.push(...finalAchievementLines());
+    return lines;
+}
+function finalAchievementLines() {
+    let entries = achievementEntries(game);
+    if (!entries.length)
+        return [];
+    if (entries.includes(ACH_UWIN)) {
+        entries = entries.filter(entry => entry !== ACH_AMUL && entry !== ACH_UWIN);
+        if (achievementEntries(game).includes(ACH_AMUL))
+            entries.push(ACH_AMUL);
+        entries.push(ACH_UWIN);
+        game.u.uachieved = entries;
+    }
+    const actions = new Map([
+        [ACH_BLND, 'explored without being able to see'], [ACH_NUDE, 'went without any armor'],
+        [ACH_MINE, 'entered the Gnomish Mines'], [ACH_TOWN, 'entered Minetown'],
+        [ACH_SHOP, 'entered a shop'], [ACH_TMPL, 'entered a temple'],
+        [ACH_ORCL, 'consulted the Oracle of Delphi'], [ACH_NOVL, 'read from a Discworld novel'],
+        [ACH_SOKO, 'entered Sokoban'], [ACH_SOKO_PRIZE, 'completed Sokoban'],
+        [ACH_MINE_PRIZE, 'completed the Gnomish Mines'], [ACH_BGRM, 'entered the Big Room'],
+        [ACH_MEDU, 'defeated Medusa'], [ACH_TUNE, "learned the tune to open and close the Castle's drawbridge"],
+        [ACH_BELL, `${game.u.uhave?.bell ? 'had' : 'handled'} the Bell of Opening`],
+        [ACH_HELL, 'entered Gehennom'],
+        [ACH_CNDL, `${game.u.uhave?.menorah ? 'had' : 'handled'} the Candelabrum of Invocation`],
+        [ACH_BOOK, `${game.u.uhave?.book ? 'had' : 'handled'} the Book of the Dead`],
+        [ACH_INVK, "gained access to Moloch's Sanctum"],
+        [ACH_AMUL, `${game.u.uevent?.ascended ? 'delivered' : game.u.uhave?.amulet ? 'had' : 'had obtained'} the Amulet of Yendor`],
+        [ACH_ENDG, 'reached the Elemental Planes'], [ACH_ASTR, 'reached the Astral Plane'],
+    ]);
+    const lines = ['', `Achievement${entries.length === 1 ? '' : 's'}:`];
+    for (const entry of entries) {
+        const identity = Math.abs(entry);
+        if (identity === ACH_UWIN) {
+            lines.push(' You ascended!');
+        }
+        else if (identity >= ACH_RNK1 && identity <= ACH_RNK8) {
+            const rank = game.urole?.title?.[identity - ACH_RNK1 + 1];
+            const title = (entry < 0 ? rank?.f : rank?.m) || rank?.m || 'Adventurer';
+            lines.push(` You attained the rank of ${title}.`);
+        }
+        else {
+            const action = actions.get(identity);
+            lines.push(action ? ` You ${action}.` : ` [Unexpected achievement #${entry}.]`);
+        }
+    }
     return lines;
 }
 //# sourceMappingURL=insight.js.map

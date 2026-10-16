@@ -35,7 +35,7 @@ import {
 } from './object_data.js';
 import { MONSTER_GROWTH_TARGET } from './monster_data.js';
 import { definiteName, objectCombatName, objectLooksUnique, objectName, observeObjectForNaming, simpleObjectName, singularObjectName } from './objnam.js';
-import { learnObjectType, OBJECT_CLASS_SYMBOLS } from './object_knowledge.js';
+import { learnObjectType, OBJECT_CLASS_SYMBOLS, recordObjectEncounter, recordObjectKnowledge } from './object_knowledge.js';
 import { getLine, promptYesNoAllQuit } from './query.js';
 import { isGrayStone, isWeaponTool, objectUsesCharges } from './object_properties.js';
 import { ammunitionMatchesLauncher, isBlade, isTwoWeaponObject } from './weapon_type.js';
@@ -754,23 +754,29 @@ export async function selectUsedInventoryLetter(avoidLetter: string | null): Pro
 // Keep that state transition separate from the ordinary `i` command, whose
 // descriptions are still constrained by what the hero learned in play.
 export async function showIdentifiedInventory() {
-    for (const item of game.inventory || []) {
-        item.typeKnown = true;
-        item.known = true;
-        item.bknown = true;
-        item.dknown = true;
-        item.rknown = true;
-        item.overrideIdentified = true;
-        const redundantNeutral = item.oclass === 2 || item.oclass === 11
-            || (item.oclass === 6 && objectUsesCharges(item));
-        item.buc = item.blessed ? 'blessed' : item.cursed ? 'cursed'
-            : !redundantNeutral
-                && [3, 4, 5, 6, 7, 8, 9, 10, 13].includes(item.oclass)
-                ? 'uncursed' : '';
-        const canonicalName = OBJECT_NAMES[item.otyp];
-        if (item.oclass === 13 && canonicalName) item.name = canonicalName;
-    }
+    for (const item of game.inventory) identifyObjectForDisclosure(item, true);
     return selectInventoryObject({ headingAttr: 0, pickMode: PICK_NONE });
+}
+
+export function identifyObjectForDisclosure(item: GameObject, identifyTinContents = false): void {
+    recordObjectEncounter(item.otyp);
+    recordObjectKnowledge(item.otyp);
+    item.typeKnown = true;
+    item.known = true;
+    item.bknown = true;
+    item.dknown = true;
+    item.rknown = true;
+    if (isContainer(item) || item.otyp === STATUE)
+        item.cknown = item.lknown = true;
+    else if (identifyTinContents && item.otyp === TIN) item.cknown = true;
+    const redundantNeutral = item.oclass === 2 || item.oclass === 11
+        || (item.oclass === 6 && objectUsesCharges(item));
+    item.buc = item.blessed ? 'blessed' : item.cursed ? 'cursed'
+        : !redundantNeutral
+            && [3, 4, 5, 6, 7, 8, 9, 10, 13].includes(item.oclass)
+            ? 'uncursed' : '';
+    const canonicalName = OBJECT_NAMES[item.otyp];
+    if (item.oclass === 13 && canonicalName) item.name = canonicalName;
 }
 
 export async function selectInventoryObject({

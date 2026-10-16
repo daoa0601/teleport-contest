@@ -1,17 +1,24 @@
 // end.js — End-of-game disclosure and terminal presentation.
 // C refs: end.c disclose()/really_done(), insight.c, dungeon.c.
 import { formatFeltMessage } from './hero_speech.js';
+import { adjustAttribute, currentAttribute, reportHeroEncumbrance } from './attrib.js';
+import { cureHeroSickness } from './hero_illness.js';
+import { removeIntrinsicProperty, setPropertyTimeout } from './properties.js';
+import { resetHeroTrap } from './terrain_movement.js';
 import { PARANOID_DIE, PARANOID_QUIT, PLNMSG_OK_DONT_DIE } from './const.js';
 import { PanicTermination } from './panic_termination.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
-import { achievementEntries } from './achievements.js';
-import { game, requireGameLevel, requireInitializedGame } from './gstate.js';
+import { achievementEntries, recordAchievement } from './achievements.js';
+import { game, requireInitializedGame } from './gstate.js';
 import { expelHero, releaseHeroFromMonster } from './hero_expulsion.js';
 import { heroFormSticks } from './hero_species.js';
 import { monsterName } from './monster_name.js';
+import { collectLevelFollowers } from './monster_followers.js';
+import { scheduleLevelChange } from './level_change.js';
 import { nhgetch } from './input.js';
 import { bot, clearMessageWindow, displayMessageWindow, flush_screen, pline, plineWithContinuation, } from './display.js';
-import { consumeInventoryItem, showIdentifiedInventory } from './invent.js';
+import { consumeInventoryItem, identifyObjectForDisclosure, showIdentifiedInventory } from './invent.js';
+import { containerContents } from './container_contents.js';
 import { finalConductLines, showFinalAttributes } from './insight.js';
 import { ATR_INVERSE, ATR_NONE, showDisclosureOverlay, showInventoryWindow, showTextPages, showTextWindow, } from './windows.js';
 import { artifactById } from './artifacts.js';
@@ -23,7 +30,7 @@ import { adjustedMonsterLevel } from './monster_hit_points.js';
 import { deleteObject } from './object_delete.js';
 import { makePlural, withIndefiniteArticle } from './object_grammar.js';
 import { objectName } from './objnam.js';
-import { objectClassForType, recordObjectKnowledge } from './object_knowledge.js';
+import { objectClassForType, recordObjectEncounter, recordObjectKnowledge } from './object_knowledge.js';
 import { isQuantumBox, observeQuantumCat } from './quantum_cat.js';
 import { deepestLevelReached, depth } from './hacklib.js';
 import { recordGameLogEvent } from './gamelog.js';
@@ -31,8 +38,8 @@ import { hiddenGold } from './gold.js';
 import { heroGoldAmount } from './hero_gold.js';
 import { doneObjectCleanup } from './object_cleanup.js';
 import { restoreHeroNutrition } from './hunger.js';
-import { A_CON, A_WIS, CHOKING, DIED, G_EXTINCT, G_GENOD, GENOCIDED, PANICKED, POISONING, STARVING, STONING, Is_astralevel, KILLED_BY, KILLED_BY_AN, NO_KILLER_PREFIX, PICK_ONE, STRAT_WAITFORU, Upolyd, } from './const.js';
-import { AMULET_OF_LIFE_SAVING, AMULET_OF_YENDOR, BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION, JADE, OBJECT_COST, OBJECT_NAMES, SPE_BOOK_OF_THE_DEAD, } from './object_data.js';
+import { A_CON, A_WIS, ACH_BLND, ACH_NUDE, ACH_UWIN, ASCENDED, BURNING, CHOKING, DIED, ESCAPED, G_EXTINCT, G_GENOD, GENOCIDED, PANICKED, QUIT, STARVING, STONING, TRICKED, In_endgame, In_quest, Is_astralevel, Is_knox_level, KILLED_BY, KILLED_BY_AN, NO_KILLER_PREFIX, PICK_ONE, TT_LAVA, Upolyd, } from './const.js';
+import { AMULET_OF_LIFE_SAVING, BELL_OF_OPENING, FAKE_AMULET_OF_YENDOR, CANDELABRUM_OF_INVOCATION, JADE, OBJECT_COST, OBJECT_NAMES, SPE_BOOK_OF_THE_DEAD, } from './object_data.js';
 import { createBonesFromDeath } from './bones_death.js';
 import { canMakeBones } from './bones_admission.js';
 import { restoreLaunchedObjectForBones } from './rolling_boulder.js';
@@ -67,13 +74,13 @@ function recordHeroFatalEvent() {
     }
 }
 export function identifyLifeSavingAmulet(random = rn2) {
+    recordObjectEncounter(AMULET_OF_LIFE_SAVING);
     if (!game._knownObjectTypes?.has(AMULET_OF_LIFE_SAVING)) {
         recordObjectKnowledge(AMULET_OF_LIFE_SAVING);
-        const wisdom = game.u?.acurr?.a?.[A_WIS] ?? 10;
-        const amount = random(19) > wisdom ? 1 : 0;
         if (!game.u._exercise)
             game.u._exercise = [0, 0, 0, 0, 0, 0];
-        game.u._exercise[A_WIS] += amount;
+        if (Math.abs(game.u._exercise[A_WIS]) < 50)
+            game.u._exercise[A_WIS] += random(19) > currentAttribute(A_WIS) ? 1 : 0;
     }
 }
 export async function completeHeroLifeSaving(transaction, { deathType = null } = {}) {
@@ -81,12 +88,9 @@ export async function completeHeroLifeSaving(transaction, { deathType = null } =
     if (!amulet)
         return false;
     await consumeInventoryItem(amulet, game);
-    const attributes = game.u?.acurr?.a;
-    if (attributes)
-        attributes[A_CON] = Math.max(3, (attributes[A_CON] ?? 3) - 1);
-    if (!game.u._exercise)
-        game.u._exercise = [0, 0, 0, 0, 0, 0];
-    game.u._exercise[A_CON] = 0;
+    const change = adjustAttribute(A_CON, -1);
+    if (change.changed && game.program_state.in_moveloop)
+        await reportHeroEncumbrance();
     await restoreHeroAfterDeath({ deathType });
     if (game.program_state.gameover)
         return false;
@@ -99,13 +103,18 @@ export async function completeHeroLifeSaving(transaction, { deathType = null } =
 // share this viability repair after their distinct prompt/item transactions.
 export async function restoreHeroAfterDeath({ deathType = null } = {}) {
     requireInitializedHero(game.u);
-    const constitution = game.u?.acurr?.a?.[A_CON] ?? 3;
+    const constitution = currentAttribute(A_CON);
     const giveHp = 50 + 10 * Math.trunc(constitution / 2);
-    game.u.uhp = Math.min(game.u.uhpmax ?? giveHp, giveHp);
+    game.u.ulevel = Math.max(1, game.u.ulevel);
+    game.u.uhpmax = Math.max(game.u.uhpmax, game.u.ulevel, 10);
+    game.u.uhppeak = Math.max(game.u.uhppeak ?? 0, game.u.uhpmax);
+    game.u.uhp = Math.min(game.u.uhpmax, giveHp);
     if (Upolyd(game.u))
         game.u.mh = Math.min(game.u.mhmax, giveHp);
     if ((game.u.uhunger ?? 900) < 500 || deathType === CHOKING)
         await plineWithContinuation(restoreHeroNutrition());
+    if (game.u.sickTurns === 1)
+        cureHeroSickness();
     game.context.move = 0;
     // end.c:savelife() replaces any earlier negative multi (including a
     // monster paralysis spell) with exactly -1.  The interrupted actor can
@@ -115,10 +124,15 @@ export async function restoreHeroAfterDeath({ deathType = null } = {}) {
     endVoluntaryMultiTurn(game);
     game.multi = -1;
     game._helplessTurns = 1;
-    game._helplessReason = 'attempting to cheat Death';
+    game._helplessReason = game.urole?.key === 'tourist'
+        ? 'being toyed with by Fate' : 'attempting to cheat Death';
     game._helplessDoneMessage = 'You survived that attempt on your life.';
+    if (game.u.utrap && game.u.utraptype === TT_LAVA)
+        await resetHeroTrap(false);
     game.context.botl = true;
     clearHeroRemains(game);
+    setPropertyTimeout('unchanging', 0);
+    removeIntrinsicProperty('unchanging');
     await flush_screen(1);
     const holder = game.u.ustuck;
     if (game.u.uswallow) {
@@ -136,17 +150,32 @@ export async function restoreHeroAfterDeath({ deathType = null } = {}) {
     return game.u.uhp;
 }
 export async function finishHeroDeath({ killer, killerFormat = KILLED_BY_AN, beforeFinalDeath = null, deathCause = null, deathVerb = 'died', deathLineShown = false, deathType = null, }) {
+    const how = deathType ?? DIED;
+    if (how === TRICKED && game.flags.debug) {
+        delete game._deathKiller;
+        return false;
+    }
+    if (how === QUIT) {
+        await finishOrdinaryQuit();
+        return true;
+    }
+    if (how === ESCAPED || how === ASCENDED) {
+        await finishLivingGame(how === ESCAPED ? 'escaped' : 'ascended');
+        return true;
+    }
     // losehp() announces the fatal hit before done() changes mortality or
     // identifies a life-saving amulet. tty keeps this message on its own line.
-    if (!deathLineShown) {
+    if (!deathLineShown && how < PANICKED) {
         await plineWithContinuation('You die...', { urgent: true });
     }
     // done() forces status while HP is still raw, then normalizes it for
     // recovery and disclosure. A later pline owns the next status update.
-    await bot();
-    recordHeroFatalEvent();
+    if (how !== PANICKED && !game.program_state.panicking)
+        await bot();
+    if (how < PANICKED)
+        recordHeroFatalEvent();
     const amulet = game.uamul || game.u?.uamul;
-    if (amulet?.otyp === AMULET_OF_LIFE_SAVING) {
+    if (how <= GENOCIDED && amulet?.otyp === AMULET_OF_LIFE_SAVING) {
         await plineWithContinuation('But wait...');
         identifyLifeSavingAmulet();
         await plineWithContinuation(`Your medallion ${heroIsBlind() ? 'feels warm' : 'begins to glow'}!`);
@@ -164,10 +193,10 @@ export async function finishHeroDeath({ killer, killerFormat = KILLED_BY_AN, bef
             return false;
         }
     }
-    if (game.flags?.debug || game.flags?.explore) {
+    if (how <= GENOCIDED && (game.flags?.debug || game.flags?.explore || game.discover)) {
         const answer = await paranoidQuery(!!((game.flags.paranoia_bits ?? 0) & PARANOID_DIE), 'Die?');
         if (!answer) {
-            await plineWithContinuation("OK, so you don't die.");
+            await plineWithContinuation(`OK, so you don't ${how === CHOKING ? 'choke' : 'die'}.`);
             game._lastPlineKind = PLNMSG_OK_DONT_DIE;
             await restoreHeroAfterDeath({ deathType });
             if (game.program_state.gameover)
@@ -175,7 +204,8 @@ export async function finishHeroDeath({ killer, killerFormat = KILLED_BY_AN, bef
             return false;
         }
     }
-    await beforeFinalDeath?.();
+    if (how !== PANICKED)
+        await beforeFinalDeath?.();
     setHeroRemainsFromDeath(deathType, game);
     await finishOrdinaryDeath({ killer, killerFormat, deathCause, deathVerb, deathType });
     return true;
@@ -493,7 +523,7 @@ function overviewLines(killer, deathVerb = 'killed', deathCause = null) {
     }
     return lines;
 }
-function gameSummaryValues(outcome) {
+function gameSummaryValues(outcome, deathType = DIED) {
     requireInitializedHero(game.u);
     const visibleGold = heroGoldAmount(game);
     const gold = visibleGold + hiddenGold(game, true);
@@ -505,7 +535,7 @@ function gameSummaryValues(outcome) {
     if (deepest > 20)
         depthBonus += 1000 * (deepest > 30 ? 10 : deepest - 20);
     let score = (game.u?.urexp || 0) + gain + depthBonus;
-    if (outcome === 'died')
+    if (outcome === 'died' && deathType < PANICKED)
         score -= Math.trunc(gain / 10);
     const original = game.u.ualignbase?.[1] ?? game.u.ualign.type;
     const current = game.u.ualignbase?.[0] ?? game.u.ualign.type;
@@ -528,6 +558,33 @@ function currentDungeonName() {
     return game.dungeons?.[dnum]?.dname
         || game.dungeons?.[0]?.dname
         || 'The Dungeons of Doom';
+}
+// C end.c:ends[] describes the outcome, separately from killer attribution.
+const ENDINGS = [
+    'died', 'choked', 'were poisoned', 'starved', 'drowned', 'burned',
+    'dissolved in the lava', 'were crushed', 'turned to stone',
+    'turned into slime', 'were genocided', 'panicked', 'were tricked',
+    'quit', 'escaped', 'ascended',
+];
+const DEATH_NAMES = [
+    'died', 'choked', 'poisoned', 'starvation', 'drowning', 'burning',
+    'dissolving under the heat and pressure', 'crushed', 'turned to stone',
+    'turned into slime', 'genocided', 'panic', 'trickery', 'quit', 'escaped', 'ascended',
+];
+function finalLocationLine(verb, score) {
+    const here = game.u.uz;
+    let text;
+    if (here?.dnum === 0 && here.dlevel <= 0) {
+        text = `You ${here.dlevel < 0 ? 'passed away' : verb} beyond the confines of the dungeon`;
+    }
+    else {
+        const where = Is_astralevel(here) ? 'The Astral Plane'
+            : game._tutorialActive ? 'The Tutorial' : currentDungeonName();
+        text = `You ${verb} in ${where}`;
+        if (!In_endgame(here) && !Is_knox_level(here))
+            text += ` on dungeon level ${In_quest(here) ? here?.dlevel : depth(here)}`;
+    }
+    return `${text} with ${score} point${plur(score)},`;
 }
 // C end.c:genl_outrip().  The stone receives up to four cause rows, each at
 // most sixteen characters, split backward at a word boundary when possible.
@@ -553,14 +610,12 @@ function tombstoneDeathRows(cause) {
     }
     return rows;
 }
-function deathSummaryLines(killer, { gold, score, depth, moves }, { deathVerb = 'died', deathCause = null, deathType = null, } = {}) {
+function deathSummaryLines(killer, { gold, score, moves }, { deathVerb = 'died', deathCause = null, deathType = null, } = {}) {
     const name = game.plname || 'player';
     const year = String(game.datetime || '').slice(0, 4) || '2026';
     const role = game.flags?.female && game.urole?.name?.f
         ? game.urole.name.f : game.urole?.name?.m || 'Adventurer';
     const goodbye = game.urole?.goodbye || 'Goodbye';
-    const deathDungeon = game._tutorialActive
-        ? 'The Tutorial' : currentDungeonName();
     const causeRows = tombstoneDeathRows(sanitizeDeathCause(deathCause || deathCauseRecord(killer, deathVerb)));
     const stone = [
         [23, '----------'],
@@ -584,7 +639,7 @@ function deathSummaryLines(killer, { gold, score, depth, moves }, { deathVerb = 
     return [
         ...(tombstone ? ['', ...stone.map(([col, text]) => ' '.repeat(col) + text), '', ''] : []),
         `${goodbye} ${name} the ${role}...`, '',
-        `You ${deathVerb} in ${deathDungeon} on dungeon level ${depth} with ${score} point${plur(score)},`,
+        finalLocationLine(deathVerb, score),
         `and ${gold} piece${plur(gold)} of gold, after ${moves} move${plur(moves)}.`,
         `You were level ${game.u?.ulevel || 1} with a maximum of ${game.u?.uhpmax || 1} hit point${plur(game.u?.uhpmax || 1)} when you ${deathVerb}.`,
         '',
@@ -601,12 +656,12 @@ function roleName() {
     return game.flags?.female && game.urole?.name?.f
         ? game.urole.name.f : game.urole?.name?.m || 'Adventurer';
 }
-function renderQuitSummaryPage({ gold, score, depth, moves }) {
+function renderQuitSummaryPage({ gold, score, moves }) {
     const display = game.nhDisplay;
     display?.clearScreen();
     game._preserveLeadingStyledBlanks = false;
     terminalLine(0, 0, `${roleGoodbye()} ${game.plname || 'player'} the ${roleName()}...`);
-    terminalLine(2, 0, `You quit in ${currentDungeonName()} on dungeon level ${depth} with ${score} point${plur(score)},`);
+    terminalLine(2, 0, finalLocationLine('quit', score));
     terminalLine(3, 0, `and ${gold} piece${plur(gold)} of gold, after ${moves} move${plur(moves)}.`);
     terminalLine(4, 0, `You were level ${game.u?.ulevel || 1} with a maximum of ${game.u?.uhpmax || 1} hit point${plur(game.u?.uhpmax || 1)} when you quit.`);
     terminalLine(23, 0, '--More--');
@@ -669,6 +724,17 @@ function scoreDeathCause(cause, deathType) {
             ? `${cleanCause}, while helpless` : cleanCause;
 }
 function currentScoreRecord(summary, { outcome = 'died', killer = '', deathVerb = 'died', deathCause = null, deathType = null, } = {}) {
+    let cause = deathCause || (outcome === 'quit' ? 'quit'
+        : deathCauseRecord(killer, deathVerb));
+    if (game.u.uhave?.amulet) {
+        cause += ' (with the Amulet)';
+    }
+    else if (outcome === 'escaped') {
+        if (Is_astralevel(game.u.uz))
+            cause += ' (in celestial disgrace)';
+        else if (game.inventory.some(object => object.otyp === FAKE_AMULET_OF_YENDOR))
+            cause += ' (with a fake Amulet)';
+    }
     return {
         points: summary.score,
         deathdnum: game.u?.uz?.dnum ?? 0,
@@ -679,8 +745,7 @@ function currentScoreRecord(summary, { outcome = 'died', killer = '', deathVerb 
         ...scoreIdentity(),
         dungeon: currentDungeonName(),
         outcome,
-        death: outcome === 'quit' ? 'quit'
-            : scoreDeathCause(deathCause || deathCauseRecord(killer, deathVerb), deathType),
+        death: scoreDeathCause(cause, deathType),
     };
 }
 function updateScoreRecord(current) {
@@ -1044,6 +1109,7 @@ async function discloseGame({ killer = '', deathVerb = 'died', deathCause = null
     // Disclosure uses committed HP after that message has been acknowledged.
     let livingCat = false;
     for (const object of game.inventory) {
+        identifyObjectForDisclosure(object, true);
         if (!isQuantumBox(object))
             continue;
         if (livingCat)
@@ -1064,8 +1130,11 @@ async function discloseGame({ killer = '', deathVerb = 'died', deathCause = null
             possessionAnswer = ask ? await ynQuestion(question, 'ynq', defquery)
                 : defquery;
         }
-        if (possessionAnswer === 'y')
+        if (possessionAnswer === 'y') {
+            game.flags.force_invmenu = false;
             await showIdentifiedInventory();
+            await containerContents(game.inventory, true, true, false);
+        }
         if (possessionAnswer === 'q')
             return stopDisclosure();
     }
@@ -1144,7 +1213,16 @@ function stopDisclosure() {
 async function startGameExit(outcome, deathType = DIED) {
     game.program_state.gameover = true;
     game.program_state.something_worth_saving = false;
-    await doneObjectCleanup();
+    if (deathType !== PANICKED && !game.program_state.panicking)
+        await doneObjectCleanup();
+    if (achievementEntries(game).length || !game.flags.beginner) {
+        if (game.u.uroleplay?.blind)
+            recordAchievement(game, ACH_BLND);
+        if (game.u.uroleplay?.nudist)
+            recordAchievement(game, ACH_NUDE);
+    }
+    if (outcome === 'ascended')
+        recordAchievement(game, ACH_UWIN);
     if (outcome === 'died' && deathType < PANICKED
         && game.moves <= 1 && !game.program_state.stopprint) {
         // done() has committed zero HP; this pline refreshes that status.
@@ -1174,20 +1252,34 @@ export async function finishOrdinaryDeath(options) {
     await completeOrdinaryDeath(options);
 }
 async function completeOrdinaryDeath({ killer, possessionAnswer = null, deathVerb = 'died', deathCause = null, deathType = null, killerFormat = KILLED_BY_AN, }) {
+    const how = deathType ?? DIED;
+    if (!killer && how === GENOCIDED)
+        killerFormat = NO_KILLER_PREFIX;
+    if (!killer && (how === STARVING || how === BURNING))
+        killerFormat = KILLED_BY;
+    if (!killer || how >= PANICKED)
+        killer = DEATH_NAMES[how] ?? 'died';
+    if (how >= PANICKED)
+        deathCause = killer;
     deathCause ||= deathCauseRecord(killer, deathVerb, deathType, killerFormat);
-    // topten.c:formatkiller() uses "poisoned by" for the cause; only
-    // end.c:ends[POISONING] uses "were poisoned" in the final summary.
-    if (deathType === POISONING) {
-        deathVerb = 'were poisoned';
-    }
+    if (deathType !== null)
+        deathVerb = ENDINGS[deathType] ?? deathVerb;
     game._deathKiller = killer;
-    const taken = await settleGameExit('died');
-    const showSummary = await discloseGame({ killer, deathVerb, deathCause, possessionAnswer, taken });
+    fixupDeath(how);
+    const taken = how === PANICKED ? false : await settleGameExit('died');
+    let showSummary;
+    if (how === PANICKED) {
+        await displayMessageWindow();
+        showSummary = !game.program_state.stopprint;
+    }
+    else {
+        showSummary = await discloseGame({ killer, deathVerb, deathCause, possessionAnswer, taken });
+    }
     if (game._canMakeBones && taken)
         await finishShopkeeperRepossession();
     // really_done() counts remaining loose and contained gold before bones
     // removes the inventory. Repossessed gold has already left the hero.
-    const summary = gameSummaryValues('died');
+    const summary = gameSummaryValues('died', how);
     game.u.urexp = summary.score;
     const arise = game.u.ugrave_arise;
     if (arise !== undefined && arise >= 0 && !game.program_state.stopprint) {
@@ -1206,8 +1298,24 @@ async function completeOrdinaryDeath({ killer, possessionAnswer = null, deathVer
     }), { stopPrinting: !showSummary });
     game.context.move = 0;
 }
+// C end.c:fixup_death(). These reasons describe the fatal process rather
+// than an independent condition which stopped the hero from acting.
+function fixupDeath(how) {
+    const reason = game._helplessReason;
+    const text = typeof reason === 'string' ? reason : reason?.text;
+    if (how === STONING && text === 'getting stoned') {
+        game._helplessReason = null;
+        game._helplessTurns = 0;
+        game.multi = 0;
+    }
+    else if (how === STARVING && text === 'fainted from lack of food') {
+        game._helplessReason = 'fainted';
+    }
+}
 export async function doquit() {
-    const answer = await paranoidQuery(!!((game.flags.paranoia_bits ?? 0) & PARANOID_QUIT), 'Really quit without saving?');
+    const abandonTutorial = !!game._tutorialActive
+        && await promptChoice('Switch from the tutorial back to regular play?', ['y', 'n'], 'n') === 'y';
+    const answer = !abandonTutorial && await paranoidQuery(!!((game.flags.paranoia_bits ?? 0) & PARANOID_QUIT), 'Really quit without saving?');
     if (!answer) {
         // C end.c:done2() clears the answered question without a docrt,
         // cancels voluntary repetition, and releases prayer/sleep only
@@ -1221,6 +1329,12 @@ export async function doquit() {
         }
         await flush_screen(1);
         game.context.move = 0;
+        if (abandonTutorial) {
+            const prior = game.u.ucamefrom;
+            if (!prior)
+                throw new Error('Tutorial exit has no prior dungeon level');
+            scheduleLevelChange([prior, { arrival: 'stairs' }], undefined, 'Resuming regular play.');
+        }
         return;
     }
     if (game.flags.debug) {
@@ -1272,21 +1386,20 @@ export async function finishLivingGame(outcome) {
     await startGameExit(outcome);
     const taken = await settleGameExit(outcome);
     const showSummary = await discloseGame({ deathVerb: outcome, taken });
-    const pets = takeEscapingPets();
+    const pets = await collectLevelFollowers(game, true);
     const summary = gameSummaryValues(outcome);
     const possessions = collectFinalPossessions();
     summary.score += possessions.points;
     for (const pet of pets)
         summary.score += pet.mhp;
-    const names = pets.map(pet => pet.name || `the ${MONSTER_NAME[pet.mnum]}`);
+    const names = pets.map(pet => monsterName(pet));
     if (possessions.quantumCat) {
         summary.score += d(adjustedMonsterLevel(MONSTER_NAME.indexOf('housecat')), 8);
         names.push("Schroedinger's cat");
     }
     game.u.urexp = summary.score;
-    const disgrace = outcome === 'escaped' && Is_astralevel(game.u.uz);
     const current = currentScoreRecord(summary, {
-        outcome, deathCause: outcome + (disgrace ? ' (in celestial disgrace)' : ''),
+        outcome, deathCause: outcome,
     });
     if (showSummary) {
         const title = outcome === 'ascended'
@@ -1299,7 +1412,7 @@ export async function finishLivingGame(outcome) {
         lines.push(`${names.length ? '' : 'You '}${action} with ${summary.score} point${plur(summary.score)},`);
         lines.push(...await finalPossessionLines(possessions));
         lines.push(`and ${summary.gold} piece${summary.gold === 1 ? '' : 's'} of gold, after ${summary.moves} move${summary.moves === 1 ? '' : 's'}.`);
-        lines.push(`You were level ${game.u.ulevel} with a maximum of ${game.u.uhpmax} hit points when you ${outcome}.`);
+        lines.push(`You were level ${game.u.ulevel} with a maximum of ${game.u.uhpmax} hit point${plur(game.u.uhpmax)} when you ${outcome}.`);
         const pages = [];
         for (let first = 0; first < lines.length; first += 22) {
             const page = lines.slice(first, first + 22);
@@ -1312,27 +1425,6 @@ export async function finishLivingGame(outcome) {
     }
     await finishScoreDisplay(current, { stopPrinting: !showSummary });
     game.context.move = 0;
-}
-function takeEscapingPets() {
-    const pets = [];
-    const level = requireGameLevel();
-    for (const monster of level.monsters) {
-        if (!((monster.mtame ?? 0) > 0) || monster.dead || monster.mhp <= 0)
-            continue;
-        monster.mtrapped = monster.meating = monster.msleeping = monster.mfrozen = 0;
-        monster.mcanmove = 1;
-        if ((monster.mstrategy ?? 0) & STRAT_WAITFORU)
-            continue;
-        if (Math.max(Math.abs(monster.mx - game.u.ux), Math.abs(monster.my - game.u.uy)) > 1)
-            continue;
-        if ((monster.minvent || []).some(object => object.otyp === AMULET_OF_YENDOR))
-            continue;
-        pets.unshift(monster);
-        monster.mx = monster.my = 0;
-        monster.mlstmv = game.moves;
-    }
-    level.monsters = level.monsters.filter(monster => !pets.includes(monster));
-    return pets;
 }
 function objectBaseValue(type) {
     const value = OBJECT_COST[type];

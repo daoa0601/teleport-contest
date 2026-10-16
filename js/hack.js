@@ -2,7 +2,7 @@
 // C ref: hack.c pooleffects() and trap.c drown().
 import { formatFeltMessage } from './hero_speech.js';
 import { monsterHasMapPosition } from './monster_location.js';
-import { heroIsHallucinating } from './senses.js';
+import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { BURNING, D_BROKEN, D_CLOSED, D_LOCKED, DISMOUNT_FELL, DISMOUNT_GENERIC, DISSOLVED, DROWNING, DOOR, IS_AIR, IS_OBSTRUCTED, IS_STWALL, IS_WALL, IS_WATERWALL, Is_waterlevel, LAVAPOOL, LAVAWALL, PARANOID_SWIM, POOL, ROOM, STONE, FAINTED, TREE, TT_LAVA, Upolyd, WATER, W_NONDIGGABLE, W_NONPASSWALL, WT_TOOMUCH_DIAGONAL, } from './const.js';
 import { displayLiquidName, feel_newsym, newsym, plineWithContinuation, updateLastSeenTerrain } from './display.js';
 import { heroPassesWalls, heroFormSticks, heroSpecies } from './hero_species.js';
@@ -305,7 +305,7 @@ async function reviveHeroFromLiquid(state, publish, random) {
         return false;
     await publish('But wait...');
     identifyLifeSavingAmulet(random);
-    await publish('Your medallion begins to glow!');
+    await publish(`Your medallion ${heroIsBlind(state) ? 'feels warm' : 'begins to glow'}!`);
     await publish(formatFeltMessage('much better!', state));
     await publish('The medallion crumbles to dust!');
     await completeHeroLifeSaving(lifeSaving);

@@ -32,10 +32,7 @@ export function setHeroRemainsFromDeath(deathType, state = game) {
         && !((state.mvitals?.[PM_GREEN_SLIME]?.mvflags ?? 0) & G_GENOD)) {
         state.u.ugrave_arise = PM_GREEN_SLIME;
     }
-    else {
-        state.u.ugrave_arise = NON_PM;
-    }
-    return state.u.ugrave_arise;
+    return state.u.ugrave_arise ?? NON_PM;
 }
 export function setHeroRemainsFromMonster(monster, state = game) {
     const symbol = MONSTER_SYMBOL[monster?.mnum];

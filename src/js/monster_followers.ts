@@ -1,4 +1,4 @@
-// C dog.c:keepdogs(FALSE), keep_mon_accessible(), and mondata.c:levl_follower().
+// C dog.c:keepdogs(), keep_mon_accessible(), and mondata.c:levl_follower().
 import type { Monster, MonsterLevel } from './monster_types.js';
 import type { GameState } from './game_state.js';
 import { MIGR_EXACT_XY, STRAT_WAITFORU } from './const.js';
@@ -10,6 +10,7 @@ import { releaseMonsterLeash } from './monster_leash.js';
 import { detachMonsterFromLevel } from './monster_level_departure.js';
 import { migrateMonsterOffLevel, prepareMonsterDeparture } from './monster_migration.js';
 import { monsterName, possessiveName } from './monster_name.js';
+import { finishMonsterEating } from './monster_eating.js';
 import { tryMonsterTrapEscape } from './monster_trap_escape.js';
 import { AMULET_OF_YENDOR } from './object_data.js';
 
@@ -18,7 +19,7 @@ const PM_GRID_BUG = MONSTER_NAME.indexOf('grid bug');
 
 // The caller skips this entire transaction when iflags.nofollowers is set.
 // Returned monsters are detached from the old level in native mydogs order.
-export async function collectLevelFollowers(state: GameState = game): Promise<Monster[]> {
+export async function collectLevelFollowers(state: GameState = game, petsOnly = false): Promise<Monster[]> {
     requireLiveGame(state);
     requirePlayingGame(state);
     const level = state.level;
@@ -26,6 +27,13 @@ export async function collectLevelFollowers(state: GameState = game): Promise<Mo
     // Births append in the port; C fmon links each new monster at the head.
     for (const monster of level.monsters.slice().reverse()) {
         if (monster.mhp <= 0) continue;
+        if (petsOnly) {
+            if (!monster.mtame) continue;
+            monster.mtrapped = 0;
+            finishMonsterEating(monster, state);
+            monster.msleeping = monster.mfrozen = 0;
+            monster.mcanmove = 1;
+        }
         const follows = (nearHero(monster, state) && levelFollower(monster, state)
             || state.u.uhave.amulet && monster.iswiz)
             && (!(monster.msleeping || !monster.mcanmove) || monster === state.u.usteed)

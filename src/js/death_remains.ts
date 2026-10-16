@@ -37,10 +37,8 @@ export function setHeroRemainsFromDeath(deathType: number | null, state: GameSta
     } else if (deathType === TURNED_SLIME
         && !((state.mvitals?.[PM_GREEN_SLIME]?.mvflags ?? 0) & G_GENOD)) {
         state.u.ugrave_arise = PM_GREEN_SLIME;
-    } else {
-        state.u.ugrave_arise = NON_PM;
     }
-    return state.u.ugrave_arise;
+    return state.u.ugrave_arise ?? NON_PM;
 }
 
 export function setHeroRemainsFromMonster(
