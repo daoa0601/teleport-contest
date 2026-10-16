@@ -51,12 +51,15 @@ export interface OverviewRecord {
         nfount: number;
         nsink: number;
         naltar: number;
+        altarAlignment: number | null;
+        ntemple: number;
         nthrone: number;
         ngrave: number;
         ntree: number;
     };
     branch: (DungeonLocation & { up: boolean }) | null;
     seenRooms: number[];
+    untendedRooms: number[];
 }
 
 export interface LevelRangeDefinition {

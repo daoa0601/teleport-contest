@@ -29,6 +29,7 @@ import { wizMigrateMonsters } from './wizard_migration.js';
 import { wizardTeleportCommand } from './wizard_teleport.js';
 import { hurtleMonster } from './monster_hurtle.js';
 import { isRoom } from './map_types.js';
+import { deityName } from './alignment.js';
 import { continueSpellbookStudy } from './spellbook_study.js';
 import { grantMonsterWish } from './potion_occupants.js';
 import { quaff } from './quaff.js';
@@ -4090,15 +4091,27 @@ function overviewFeatureLine(features) {
     const phrases = [];
     if (features?.nshop) {
         if (features.nshop === 1) {
-            const type = SHOP_TYPES[(features.shoptype ?? SHOPBASE) - SHOPBASE]?.name || 'shop';
-            phrases.push(`a ${type}`);
+            const shop = SHOP_TYPES[(features.shoptype ?? SHOPBASE) - SHOPBASE];
+            const type = features.shoptype < SHOPBASE ? 'untended shop'
+                : shop?.annotation || shop?.name || 'shop?';
+            phrases.push(withIndefiniteArticle(type));
         }
         else {
             phrases.push(overviewCountPhrase(features.nshop, 'shop'));
         }
     }
+    const temples = features?.ntemple ?? 0;
+    const altars = features?.naltar ?? 0;
+    if (temples || altars) {
+        let phrase = [temples ? overviewCountPhrase(temples, 'temple') : '',
+            altars ? overviewCountPhrase(altars, 'altar') : ''].filter(Boolean).join(' and ');
+        const alignment = game.u.ualign?.type;
+        if (alignment !== undefined && features?.altarAlignment === alignment)
+            phrase += ` to ${deityName(alignment)}`;
+        phrases.push(phrase);
+    }
     for (const [countKey, noun] of [
-        ['naltar', 'altar'], ['nthrone', 'throne'],
+        ['nthrone', 'throne'],
         ['nfount', 'fountain'], ['nsink', 'sink'],
         ['ngrave', 'grave'], ['ntree', 'tree'],
     ]) {

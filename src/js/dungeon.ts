@@ -2,20 +2,22 @@
 // C ref: dungeon.c — init_dungeons(), init_level(), place_level().
 // Data ref: dat/dungeon.lua.
 
-import { game, requireGameLevel } from './gstate.js';
+import { game } from './gstate.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { rn2 } from './rng.js';
 import {
     ALTAR, AM_MASK, Amask2align, COLNO, D_ALIGN_CHAOTIC, D_ALIGN_LAWFUL,
     D_ALIGN_MASK, D_ALIGN_NEUTRAL, FOUNTAIN, GRAVE, HELLISH, In_endgame,
     MAZELIKE, ROGUELIKE, ROOMOFFSET, ROWNO, SHOPBASE, SINK, THRONE, In_sokoban,
-    TOWN, TREE, UNCONNECTED,
+    TOWN, TREE, UNCONNECTED, TEMPLE, Is_astralevel, M_AP_TYPE, M_AP_FURNITURE,
 } from './const.js';
 import { deepestLevelReached, depth, ledgerNo } from './hacklib.js';
 import { updateLastSeenTerrain } from './display.js';
 import { hasCarriedProperty, hasInvokedProperty, hasWornProperty, propertyIsActive } from './properties.js';
-import { isRoom } from './map_types.js';
-import type { Room } from './map_types.js';
+import { roomForIndex } from './room.js';
+import { shopResident, shopkeeperInOwnShop } from './shk.js';
+import { monsterAtPosition } from './monster_location.js';
+import { CmapSymbol } from './glyph_numbers.js';
 import type { GameState } from './game_state.js';
 import type {
     BranchDefinition, BranchDefinitionType, Dungeon, DungeonAlignment,
@@ -182,18 +184,19 @@ export function level_difficulty(): number {
 
 // C dungeon.c:recalc_mapseen().  The overview records what the hero has
 // learned about the current level, not every feature in the live map.
-export function recordMappedOverviewState({ mapped = false, discoveredRoom = null }: {
-    mapped?: boolean;
+export function recordMappedOverviewState({ discoveredRoom = null, state = game }: {
     discoveredRoom?: number | null;
+    state?: GameState;
 } = {}): void {
-    const level = requireGameLevel();
-    const dnum = game.u?.uz?.dnum ?? 0;
-    const dlevel = game.u?.uz?.dlevel ?? 1;
-    const prior = game._overviewRecords?.get?.(`${dnum}:${dlevel}`);
+    const level = state.level;
+    if (!level) throw new Error('Overview knowledge requires the current map.');
+    const { dnum, dlevel } = currentDungeonLocation(state);
+    const prior = state._overviewRecords?.get(`${dnum}:${dlevel}`);
     const seenRooms = new Set(prior?.seenRooms || []);
+    const untendedRooms = new Set(prior?.untendedRooms || []);
     if (discoveredRoom != null) seenRooms.add(discoveredRoom);
     const cap3 = (count: number): number => Math.min(3, count);
-    if (!propertyIsActive('levitation')) updateLastSeenTerrain(game.u.ux, game.u.uy);
+    if (!propertyIsActive('levitation', state)) updateLastSeenTerrain(state.u.ux, state.u.uy);
     const countTerrain = (typ: number): number => {
         let count = 0;
         for (let x = 1; x < COLNO; x++) {
@@ -204,40 +207,57 @@ export function recordMappedOverviewState({ mapped = false, discoveredRoom = nul
         }
         return cap3(count);
     };
-    const heroRoom = level?.at(game.u?.ux, game.u?.uy)?.roomno;
-    if (heroRoom !== undefined && heroRoom >= ROOMOFFSET)
-        seenRooms.add(heroRoom - ROOMOFFSET);
-    if (mapped) for (const [index, room] of level.rooms.slice(0, level.nroom).entries()) {
-        if (isRoom(room)) seenRooms.add(room.roomnoidx ?? index);
+    for (const roomno of state.u.urooms || []) {
+        const index = roomno - ROOMOFFSET;
+        seenRooms.add(index);
+        const room = roomForIndex(level, index);
+        if (room && room.rtype >= SHOPBASE) {
+            if (shopkeeperInOwnShop(shopResident(roomno, state), state))
+                untendedRooms.delete(index);
+            else untendedRooms.add(index);
+        }
     }
-    const shops = (level?.rooms || [])
-        .slice(0, level?.nroom ?? 0)
-        .filter((room, index): room is Room => isRoom(room) && room.rtype >= SHOPBASE
-            && seenRooms.has(room.roomnoidx ?? index));
-    const sourceBranch = game.branches?.find(candidate =>
-        candidate.end1?.dnum === dnum
-        && candidate.end1?.dlevel === dlevel);
-    const branch = mapped && sourceBranch ? {
-        up: !!sourceBranch.end1_up,
-        dnum: sourceBranch.end2.dnum,
-        dlevel: sourceBranch.end2.dlevel,
-    } : prior?.branch || null;
-    if (!game._overviewRecords) game._overviewRecords = new Map();
-    game._overviewRecords.set(`${dnum}:${dlevel}`, {
+    let nshop = 0, shoptype = 0, ntemple = 0;
+    for (const index of [...seenRooms].sort((a, b) => a - b)) {
+        const room = roomForIndex(level, index);
+        if (!room) continue;
+        if (room.rtype >= SHOPBASE) {
+            if (untendedRooms.has(index)) shoptype = SHOPBASE - 1;
+            else if (!nshop) shoptype = room.rtype;
+            else if (shoptype !== room.rtype) shoptype = 0;
+            nshop = cap3(nshop + 1);
+        } else if (room.rtype === TEMPLE) ntemple = cap3(ntemple + 1);
+    }
+    let naltar = 0, altarAlignment: number | null = null;
+    for (let x = 1; x < COLNO; x++) {
+        for (let y = 0; y < ROWNO; y++) {
+            const location = level.requireAt(x, y);
+            if (location.lastseentyp !== ALTAR) continue;
+            const monster = monsterAtPosition(level, x, y);
+            const mask = monster && M_AP_TYPE(monster) === M_AP_FURNITURE
+                && monster.mappearance === CmapSymbol.altar
+                ? monster.mcorpsenm ?? monster.mextra?.mcorpsenm ?? 0
+                : location.typ === ALTAR ? location.altarmask ?? location.flags : 0;
+            const alignment = Is_astralevel(state.u.uz) && location.seenv !== 255
+                || !(mask & AM_MASK) ? null : Amask2align(mask & AM_MASK);
+            if (!naltar) altarAlignment = alignment;
+            else if (altarAlignment !== alignment) altarAlignment = null;
+            naltar = cap3(naltar + 1);
+        }
+    }
+    if (!state._overviewRecords) state._overviewRecords = new Map();
+    state._overviewRecords.set(`${dnum}:${dlevel}`, {
         features: {
-            nshop: mapped ? cap3(shops.length)
-                : Math.max(prior?.features?.nshop || 0, cap3(shops.length)),
-            shoptype: shops.length === 1 ? shops[0]?.rtype ?? 0
-                : prior?.features?.shoptype || 0,
+            nshop, shoptype, ntemple, naltar, altarAlignment,
             nfount: countTerrain(FOUNTAIN),
             nsink: countTerrain(SINK),
-            naltar: countTerrain(ALTAR),
             nthrone: countTerrain(THRONE),
             ngrave: countTerrain(GRAVE),
             ntree: countTerrain(TREE),
         },
-        branch,
+        branch: prior?.branch || null,
         seenRooms: [...seenRooms],
+        untendedRooms: [...untendedRooms],
     });
 }
 
@@ -248,7 +268,7 @@ export function recordDiscoveredRoom(
     const level = currentDungeonLocation(state);
     const prior = state._overviewRecords?.get?.(`${level.dnum}:${level.dlevel}`);
     if (prior?.seenRooms?.includes(roomIndex)) return false;
-    recordMappedOverviewState({ discoveredRoom: roomIndex });
+    recordMappedOverviewState({ discoveredRoom: roomIndex, state });
     return true;
 }
 

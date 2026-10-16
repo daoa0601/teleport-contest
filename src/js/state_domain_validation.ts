@@ -123,6 +123,7 @@ export function validSavedOverviewRecord(value: unknown): value is OverviewRecor
                 dnum: integer, dlevel: integer, up: boolean,
             })),
         seenRooms: arrayOf(integer),
+        untendedRooms: arrayOf(integer),
     });
 }
 
@@ -265,7 +266,8 @@ function validDungeonFlags(value: unknown): value is DungeonFlags {
 function validOverviewFeatures(value: unknown): value is OverviewRecord['features'] {
     return closedFieldsMatch<OverviewRecord['features']>(value, {
         nshop: integer, shoptype: integer, nfount: integer, nsink: integer,
-        naltar: integer, nthrone: integer, ngrave: integer, ntree: integer,
+        naltar: integer, altarAlignment: nullable(integer), ntemple: integer,
+        nthrone: integer, ngrave: integer, ntree: integer,
     });
 }
 

@@ -96,6 +96,7 @@ export function validSavedOverviewRecord(value) {
             dnum: integer, dlevel: integer, up: boolean,
         })),
         seenRooms: arrayOf(integer),
+        untendedRooms: arrayOf(integer),
     });
 }
 export function validSavedActiveSpecialLevel(value, entities) {
@@ -221,7 +222,8 @@ function validDungeonFlags(value) {
 function validOverviewFeatures(value) {
     return closedFieldsMatch(value, {
         nshop: integer, shoptype: integer, nfount: integer, nsink: integer,
-        naltar: integer, nthrone: integer, ngrave: integer, ntree: integer,
+        naltar: integer, altarAlignment: nullable(integer), ntemple: integer,
+        nthrone: integer, ngrave: integer, ntree: integer,
     });
 }
 function validBaalzebubArea(value) {
