@@ -1040,6 +1040,9 @@ function applyBooleanVisualChange(name: BooleanOptionName): boolean {
         'customsymbols', 'hitpointbar', 'showrace', 'use_inverse'].includes(name);
 }
 
+// C's HELP_IDX is distinct from the boolean 'help' option.
+const OPTIONS_MENU_HELP = 'options_menu_help';
+
 async function doRequestMenuOptions(): Promise<void> {
     let skipHelp = game.flags.cmdassist === false;
     let needsRedraw = false;
@@ -1052,7 +1055,7 @@ async function doRequestMenuOptions(): Promise<void> {
         if (!skipHelp) sections.unshift({ items: [
             { selectable: false, text: "    For a brief explanation of how this works, type '?' to select" },
             { selectable: false, text: '    the next menu choice, then press <enter> or <return>.' },
-            { key: '?', groupAccelerator: '?', value: 'help', text: 'view help for options menu',
+            { key: '?', groupAccelerator: '?', value: OPTIONS_MENU_HELP, text: 'view help for options menu',
                 itemFlags: MENU_ITEMFLAGS_SKIPINVERT },
             { selectable: false, text: "    [To suppress this menu help, toggle off the 'cmdassist' option.]" },
             { selectable: false, text: '' },
@@ -1061,7 +1064,7 @@ async function doRequestMenuOptions(): Promise<void> {
             title: 'Set what options?', pageLocalKeys: true, omitHeadings: true, sections,
         });
         for (const name of selected) {
-            if (name === 'help') {
+            if (name === OPTIONS_MENU_HELP) {
                 await displayHelpFile('optmenu');
                 continue;
             }
@@ -1080,7 +1083,7 @@ async function doRequestMenuOptions(): Promise<void> {
                 if (giveBooleanMessage) await plineWithContinuation(`'${option[0]}' option toggled ${value ? 'on' : 'off'}.`);
             } else needsRedraw = await editCompoundOption(name, true) || needsRedraw;
         }
-        if (selected.length !== 1 || selected[0] !== 'help') break;
+        if (selected.length !== 1 || selected[0] !== OPTIONS_MENU_HELP) break;
         skipHelp = true;
     }
     if (needsRedraw) {

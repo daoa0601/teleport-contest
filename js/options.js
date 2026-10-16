@@ -1057,6 +1057,8 @@ function applyBooleanVisualChange(name) {
     return ['color', 'customcolors', 'hilite_pet', 'hilite_pile',
         'customsymbols', 'hitpointbar', 'showrace', 'use_inverse'].includes(name);
 }
+// C's HELP_IDX is distinct from the boolean 'help' option.
+const OPTIONS_MENU_HELP = 'options_menu_help';
 async function doRequestMenuOptions() {
     let skipHelp = game.flags.cmdassist === false;
     let needsRedraw = false;
@@ -1070,7 +1072,7 @@ async function doRequestMenuOptions() {
             sections.unshift({ items: [
                     { selectable: false, text: "    For a brief explanation of how this works, type '?' to select" },
                     { selectable: false, text: '    the next menu choice, then press <enter> or <return>.' },
-                    { key: '?', groupAccelerator: '?', value: 'help', text: 'view help for options menu',
+                    { key: '?', groupAccelerator: '?', value: OPTIONS_MENU_HELP, text: 'view help for options menu',
                         itemFlags: MENU_ITEMFLAGS_SKIPINVERT },
                     { selectable: false, text: "    [To suppress this menu help, toggle off the 'cmdassist' option.]" },
                     { selectable: false, text: '' },
@@ -1079,7 +1081,7 @@ async function doRequestMenuOptions() {
             title: 'Set what options?', pageLocalKeys: true, omitHeadings: true, sections,
         });
         for (const name of selected) {
-            if (name === 'help') {
+            if (name === OPTIONS_MENU_HELP) {
                 await displayHelpFile('optmenu');
                 continue;
             }
@@ -1102,7 +1104,7 @@ async function doRequestMenuOptions() {
             else
                 needsRedraw = await editCompoundOption(name, true) || needsRedraw;
         }
-        if (selected.length !== 1 || selected[0] !== 'help')
+        if (selected.length !== 1 || selected[0] !== OPTIONS_MENU_HELP)
             break;
         skipHelp = true;
     }

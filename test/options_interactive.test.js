@@ -39,8 +39,9 @@ async function fullOptions(names, respond = () => '\x1b') {
             answer = answer.slice(1);
             return;
         }
-        const row = view.split('\n').find(line => [...remaining].some(name => line.includes(` ${name} `)));
-        const name = [...remaining].find(name => row?.includes(` ${name} `));
+        const optionText = (line) => line.replace(/^\s*[a-zA-Z?] [-+*#] /, '');
+        const row = view.split('\n').find(line => [...remaining].some(name => optionText(line).startsWith(`${name} `)));
+        const name = [...remaining].find(name => row && optionText(row).startsWith(`${name} `));
         const key = row?.match(/^\s*([a-zA-Z?]) [-+] /)?.[1];
         if (name && key) {
             remaining.delete(name);
@@ -464,5 +465,17 @@ void test('a negated empty paranoia value clears all confirmations', async () =>
     resetInputState().feed('\x1b');
     await rhack('O'.charCodeAt(0));
     assert.equal(game.flags.paranoia_bits, 0);
+});
+void test('the boolean help option toggles without opening menu instructions', async () => {
+    freshObjectRoom({ flags: { help: true } });
+    const views = await fullOptions(['help']);
+    assert.equal(game.flags.help, false);
+    assert.ok(views.every(view => !view.includes('How dynamically setting options works:')));
+});
+void test('menu instructions and the boolean help option can be selected together', async () => {
+    freshObjectRoom({ flags: { help: true } });
+    const views = await fullOptions(['view help for options menu', 'help'], view => view.includes('--More--') ? ' ' : '\x1b');
+    assert.ok(views.some(view => view.includes('How dynamically setting options works:')));
+    assert.equal(game.flags.help, false);
 });
 //# sourceMappingURL=options_interactive.test.js.map
