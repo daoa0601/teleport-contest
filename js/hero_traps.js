@@ -865,6 +865,7 @@ export async function animateRollingBoulderCell(boulder, glyph, x, y, previous) 
 }
 async function triggerRollingBoulderTrap(trap) {
     const wasKnown = !!trap.tseen;
+    trap.tseen = true;
     map_trap(trap, false);
     newsym(trap.tx, trap.ty);
     const click = heroIsDeaf(game) ? '' : 'Click!  ';

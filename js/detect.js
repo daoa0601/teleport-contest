@@ -49,8 +49,10 @@ export function premap_detect() {
                 map_object(boulder, true, false);
         }
     }
-    for (const trap of game.level?.traps || [])
+    for (const trap of game.level?.traps || []) {
+        trap.tseen = true;
         map_trap(trap, true);
+    }
 }
 // C detect.c:do_mapping() and show_map_spot().  Mapping reveals terrain and
 // secret corridors.  It preserves secret doors, unknown traps, and objects
