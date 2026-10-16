@@ -18,7 +18,7 @@ import { inventoryClassOrder, lootSortMode, objectClassHeading, sortObjects } fr
 import { OBJECT_CLASS_SYMBOLS, objectClassForType } from './object_knowledge.js';
 import { clearJustPicked } from './just_picked.js';
 import { liftObject } from './lift_object.js';
-import { endObjectBurn } from './light.js';
+import { objectShedsLight, snuffLitObject } from './light.js';
 import { addObjectToContainer } from './object_container.js';
 import { useUpFloorObject } from './floor_consumption.js';
 import { scatterFloorObjects } from './scatter.js';
@@ -551,7 +551,7 @@ export async function putIntoContainer(
     await finishInventoryRemoval(object, state);
     if (state.program_state?.gameover)
         return { moved: false, stop: true, message: null };
-    if (object.lamplit) endObjectBurn(object, state, state.moves ?? 0);
+    if (objectShedsLight(object)) await snuffLitObject(object, state);
     const floorShop = container.where !== 'inventory' && costlySpot(state.u.ux, state.u.uy, state);
     const wasUnpaid = object.unpaid;
     if (floorShop && object.oclass !== 12)
