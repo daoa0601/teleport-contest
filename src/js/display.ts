@@ -1311,7 +1311,6 @@ export type TrapGlyphSource = Pick<Trap, 'tx' | 'ty' | 'ttyp'> & Partial<Pick<Tr
 
 export function map_trap(trap: TrapGlyphSource | null | undefined, show = true) {
     if (!trap) return;
-    trap.tseen = true;
     const glyph = transientTrapGlyph(trap);
     const loc = game.level?.at(trap.tx, trap.ty);
     if (loc && game.level?.flags?.hero_memory)

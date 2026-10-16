@@ -49,8 +49,10 @@ export function premap_detect() {
                 map_object(boulder, true, false);
         }
     }
-    for (const trap of game.level?.traps || [])
+    for (const trap of game.level?.traps || []) {
+        trap.tseen = true;
         map_trap(trap, true);
+    }
 }
 // C detect.c:do_mapping() and show_map_spot().  Mapping reveals terrain and
 // secret corridors.  It preserves secret doors, unknown traps, and objects
@@ -91,8 +93,11 @@ export function showMapSpot(x, y, { state = game, confused = false, revealAllTra
     if (!IS_FURNITURE(loc.typ)) {
         const trap = level.traps?.find(candidate => candidate.tx === x && candidate.ty === y);
         const engraving = level.engravings?.find(candidate => candidate.x === x && candidate.y === y);
-        if (trap && (trap.tseen || revealAllTraps))
+        if (trap && (trap.tseen || revealAllTraps)) {
+            if (revealAllTraps)
+                trap.tseen = true;
             map_trap(trap, true);
+        }
         else if (engraving && !confused)
             map_engraving(engraving, true);
         else if (oldGlyph && ['object', 'trap'].includes(oldGlyph.kind)) {

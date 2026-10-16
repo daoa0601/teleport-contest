@@ -1252,7 +1252,6 @@ export async function flashGlyphAt(x, y, glyph, repeats) {
 export function map_trap(trap, show = true) {
     if (!trap)
         return;
-    trap.tseen = true;
     const glyph = transientTrapGlyph(trap);
     const loc = game.level?.at(trap.tx, trap.ty);
     if (loc && game.level?.flags?.hero_memory)
