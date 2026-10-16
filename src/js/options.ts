@@ -272,7 +272,8 @@ function parseConfiguration(rc: string, result: ConfigurationSettings): Configur
                 if (separator < 0) continue;
                 const code = bindingKeyCode(field.slice(0, separator));
                 const command = field.slice(separator + 1).trim();
-                if (code && command && !result.commandBindings.bindSpecialKey(code, command))
+                if (code && command && !result.commandBindings.bindSpecialKey(code, command)
+                    && !result.commandBindings.bindMenuKey(code, command))
                     result.commandBindings.bindKey(code, command);
             }
             continue;
@@ -297,6 +298,11 @@ function parseConfiguration(rc: string, result: ConfigurationSettings): Configur
             const colonIdx = stripped.indexOf(':');
             const bindingOption = (colonIdx < 0 ? stripped : stripped.slice(0, colonIdx)).trim().toLowerCase();
             const optionValue = colonIdx < 0 ? null : stripped.slice(colonIdx + 1).trim();
+            if (bindingOption.startsWith('menu_') && bindingOption !== 'menu_headings'
+                && bindingOption !== 'menu_objsyms' && bindingOption !== 'menu_overlay' && bindingOption !== 'menu_tab_sep') {
+                if (!negated && optionValue) result.commandBindings.bindMenuKey(bindingKeyCode(optionValue), bindingOption);
+                continue;
+            }
             if (bindingOption === 'versinfo') {
                 const value = Number.parseInt(optionValue ?? '', 10);
                 if (!negated && value >= 1 && value <= 7) result.flags.versinfo = value;

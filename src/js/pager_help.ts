@@ -55,17 +55,18 @@ export function setOptionsCommand(): string {
 }
 
 export async function menuControlsHelp(): Promise<void> {
+    const key = (command: string) => visibleCommandKey(game.commandBindings.menuKey(command));
     const wholeAndPage = (label: string, whole: string, page: string) =>
         `${label.padStart(8)}     ${whole.padEnd(6)} ${page}`;
     const goTo = (key: string, name: string) => wholeAndPage('', key, name);
     await displayPagerText([
         'Menu control keys:', '',
         '           Whole  Current', '            Menu   Page',
-        wholeAndPage('Select', '.', ','), wholeAndPage('Invert', '@', '~'),
-        wholeAndPage('Deselect', '-', '\\'), '',
-        wholeAndPage('Go to', '>', 'Next page'), goTo('<', 'Previous page'),
-        goTo('^', 'First page'), goTo('|', 'Last page'), '',
-        wholeAndPage('Search', ':', 'Exter a target string and invert all matching entries'), '',
+        wholeAndPage('Select', key('.'), key(',')), wholeAndPage('Invert', key('@'), key('~')),
+        wholeAndPage('Deselect', key('-'), key('\\')), '',
+        wholeAndPage('Go to', key('>'), 'Next page'), goTo(key('<'), 'Previous page'),
+        goTo(key('^'), 'First page'), goTo(key('|'), 'Last page'), '',
+        wholeAndPage('Search', key(':'), 'Exter a target string and invert all matching entries'), '',
         '   Other   Return   Accept current choice(s) and dismiss menu',
         '           Enter    Same as Return',
         '           Space    If not on last page, advance one page;',

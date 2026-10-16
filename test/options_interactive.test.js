@@ -6,6 +6,7 @@ import { resetInputState } from '../js/input.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { PARANOID_PRAY, PARANOID_SWIM, PARANOID_TRAP } from '../js/const.js';
 import { inventoryOrderSymbols } from '../js/object_sort.js';
+import { applyNethackrc } from '../js/options.js';
 function screen() {
     return game.nhDisplay?.grid.map(row => row.map(cell => cell.ch).join('')).join('\n') ?? '';
 }
@@ -221,4 +222,25 @@ void test('a highlighting rule with an unknown status field reports that field',
     assert.ok(views.some(view => view.includes('Set hilite_status to what?')));
     assert.match(game._pending_message, /Unknown status field 'mystery'/);
 });
+for (const configuration of ['OPTIONS=menu_next_page:^F,menu_previous_page:^B', 'BINDINGS=^F:menu_next_page,^B:menu_previous_page']) {
+    void test(`configured menu navigation works in the public options command (${configuration.split('=')[0]})`, async () => {
+        freshObjectRoom();
+        applyNethackrc(configuration);
+        const input = resetInputState();
+        const command = rhack('O'.charCodeAt(0));
+        await input.waitUntilBlocked();
+        input.feed('\x06');
+        await input.waitUntilBlocked();
+        try {
+            assert.match(screen(), / Status /);
+            input.feed('\x02');
+            await input.waitUntilBlocked();
+            assert.match(screen(), / General /);
+        }
+        finally {
+            input.feed('\x1b');
+            await command;
+        }
+    });
+}
 //# sourceMappingURL=options_interactive.test.js.map

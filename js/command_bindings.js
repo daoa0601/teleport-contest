@@ -15,6 +15,13 @@ const WAIT_COMMAND = commandNamed('wait');
 if (!WAIT_COMMAND)
     throw new Error('The native command table must define wait.');
 const SPACE_WAIT = { ...WAIT_COMMAND, key: 32 };
+const MENU_COMMAND_KEYS = new Map([
+    ['menu_next_page', '>'], ['menu_previous_page', '<'],
+    ['menu_first_page', '^'], ['menu_last_page', '|'],
+    ['menu_select_all', '.'], ['menu_invert_all', '@'], ['menu_deselect_all', '-'],
+    ['menu_select_page', ','], ['menu_invert_page', '~'], ['menu_deselect_page', '\\'],
+    ['menu_search', ':'], ['menu_shift_right', '}'], ['menu_shift_left', '{'],
+]);
 export class CommandBindings {
     bindings;
     specialKeys;
@@ -25,6 +32,7 @@ export class CommandBindings {
     pcHack;
     phoneLayout;
     restOnSpace;
+    menuAliases;
     constructor() {
         this.bindings = [];
         this.specialKeys = new Map();
@@ -39,6 +47,7 @@ export class CommandBindings {
         this.pcHack = false;
         this.phoneLayout = false;
         this.restOnSpace = false;
+        this.menuAliases = [];
         for (const command of NATIVE_COMMANDS) {
             if (command.name !== null && command.key)
                 this.add(command.key, command);
@@ -58,6 +67,27 @@ export class CommandBindings {
     }
     specialKey(name) {
         return this.specialKeys.get(name);
+    }
+    // options.c:add_menu_cmd_alias() appends aliases; the first matching
+    // key wins, and the original menu command remains available.
+    bindMenuKey(key, name) {
+        const command = MENU_COMMAND_KEYS.get(name);
+        if (!command)
+            return false;
+        const character = String.fromCharCode(key);
+        if (!key || key === 10 || key === 13 || key === 27 || key === 32
+            || /^[a-zA-Z0-9]$/.test(character) || '])[="(%!?+/$*`0_.'.includes(character))
+            return false;
+        if (this.menuAliases.length < 32)
+            this.menuAliases.push({ key, command });
+        return true;
+    }
+    menuKey(command) {
+        return this.menuAliases.find(alias => alias.command === command)?.key ?? command.charCodeAt(0);
+    }
+    menuCommand(key) {
+        const alias = this.menuAliases.find(alias => alias.key === key);
+        return alias ? alias.command.charCodeAt(0) : key;
     }
     bindKey(key, text, user = true) {
         if (text.toLowerCase() === 'nothing') {
