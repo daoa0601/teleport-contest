@@ -759,7 +759,8 @@ async function useContainerActions(container, { held = false, moreContainers = f
         await plineWithContinuation(`You owe ${loss} ${currency(loss)} for lost merchandise.`);
         updateContainerWeights(container);
     }
-    const emptyMessage = `${ownedSimpleObjectName(container)} is ${quantumCat || cursedBag ? 'now ' : ''}empty.`;
+    const emptyMessage = container.contents.length ? ''
+        : `${ownedSimpleObjectName(container)} is ${quantumCat || cursedBag ? 'now ' : ''}empty.`;
     const keys = actionKeys();
     let action;
     for (;;) {
