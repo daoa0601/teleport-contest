@@ -371,4 +371,16 @@ void test('scores retains valid prefixes and reports a negative count', async ()
     assert.equal(game.flags.end_around, 0);
     assert.match(game._pending_message, /Values for scores:top and scores:around must not be negative\./);
 });
+void test('feature-alert suppression accepts a current or older native version', async () => {
+    freshObjectRoom();
+    await fullOptions(['suppress_alert'], () => '3.7.2\n');
+    assert.equal(game.flags.suppress_alert, '3.7.2');
+    assert.match(game._pending_message, /Feature change alerts disabled for NetHack 3\.7\.2 features and prior\./);
+});
+void test('feature-alert suppression rejects future versions and keeps the old setting', async () => {
+    freshObjectRoom({ flags: { suppress_alert: '3.3.1' } });
+    await fullOptions(['suppress_alert'], () => '9.0.0\n');
+    assert.equal(game.flags.suppress_alert, '3.3.1');
+    assert.match(game._pending_message, /You can't disable new feature alerts for future versions\./);
+});
 //# sourceMappingURL=options_interactive.test.js.map

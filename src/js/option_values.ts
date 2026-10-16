@@ -8,12 +8,13 @@ export function textOptionValue(name: string): string | null {
     switch (name) {
     case 'pile_limit': return String(game.flags.pile_limit ?? 5);
     case 'menuinvertmode': return String(game.iflags.menuinvertmode ?? 1);
+    case 'suppress_alert': return game.flags.suppress_alert || '(none)';
     default: return null;
     }
 }
 
 export function isTextOption(name: string): boolean {
-    return ['packorder', 'pile_limit', 'menuinvertmode', 'hilite_status', 'statuslines', 'scores'].includes(name);
+    return ['packorder', 'pile_limit', 'menuinvertmode', 'hilite_status', 'statuslines', 'scores', 'suppress_alert'].includes(name);
 }
 
 export async function setTextOption(name: string, value: string): Promise<void> {
@@ -47,6 +48,17 @@ export async function setTextOption(name: string, value: string): Promise<void> 
             await optionError(`'statuslines:${value}' is invalid; must be 2 or 3`);
         break;
     case 'hilite_status': await rejectInvalidStatusField(value); break;
+    case 'suppress_alert': {
+        const parsed = featureAlertVersion(value);
+        if (!parsed) break;
+        if (parsed.future) {
+            await plineWithContinuation("You can't disable new feature alerts for future versions.");
+            break;
+        }
+        game.flags.suppress_alert = parsed.version;
+        await plineWithContinuation(`Feature change alerts disabled for NetHack ${parsed.version} features and prior.`);
+        break;
+    }
     }
 }
 
@@ -95,4 +107,21 @@ export function parsePickupTypes(value: string): { symbols: string; invalid: boo
         else symbols += symbol;
     }
     return { symbols, invalid };
+}
+
+// version.c:get_feature_notice_ver() validates the first two components,
+// then reads the patch component with atoi. hack.h stores them in bit fields.
+export function featureAlertVersion(value: string): { version: string; future: boolean } | null {
+    const parts = value.match(/^(\d*)\.(\d*)\.(.*)$/);
+    if (!parts) return null;
+    const major = cInteger(parts[1] ?? '');
+    const minor = cInteger(parts[2] ?? '');
+    const patch = cInteger(parts[3] ?? '');
+    if (![major, minor, patch].every(Number.isSafeInteger)) return null;
+    const encoded = BigInt.asUintN(64, BigInt(major) << 24n | BigInt(minor) << 16n | BigInt(patch) << 8n);
+    if (!encoded) return null;
+    return {
+        version: `${encoded >> 24n}.${encoded >> 16n & 255n}.${encoded >> 8n & 255n}`,
+        future: encoded > 5n << 24n,
+    };
 }

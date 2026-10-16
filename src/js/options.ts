@@ -7,7 +7,7 @@ import { setConditionOption } from './status_conditions.js';
 import { classifyStatusTerrain } from './status_terrain.js';
 import type { GameFlags, InterfaceFlags, LootSortMode, MenuStyle } from './flags.js';
 import { setWarningSymbols } from './warning_symbols.js';
-import { isTextOption, setTextOption, textOptionValue, cInteger, parsePickupTypes, optionError } from './option_values.js';
+import { isTextOption, setTextOption, textOptionValue, cInteger, parsePickupTypes, optionError, featureAlertVersion } from './option_values.js';
 import { compoundMenuValue, editCompoundMenu } from './option_editors.js';
 import { CommandBindings } from './command_bindings.js';
 import { changePreferredFruit, normalizePreferredFruitName } from './fruit.js';
@@ -417,7 +417,10 @@ function parseConfiguration(rc: string, result: ConfigurationSettings): Configur
                     else if (val === 'cat' || val === 'c') result.preferred_pet = 'c';
                 }
                 else if (key === 'symset') result.symset = val;
-                else if (key === 'suppress_alert') result.flags.suppress_alert = val;
+                else if (key === 'suppress_alert') {
+                    const parsed = negated ? null : featureAlertVersion(val);
+                    if (parsed && !parsed.future) result.flags.suppress_alert = parsed.version;
+                }
                 else if (key === 'paranoid_confirmation'
                     || key === 'paranoid_confirm') {
                     if (negated) continue;
