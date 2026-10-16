@@ -59,4 +59,3 @@ void test('a tame monster disguise is shown as its apparent species without pet 
     assert.equal(requireScreenCell(10, 11).ch, 'o');
     assert.equal(requireScreenCell(10, 11).attr & ATR_INVERSE, 0);
 });
-

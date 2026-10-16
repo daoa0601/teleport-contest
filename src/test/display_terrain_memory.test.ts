@@ -64,4 +64,3 @@ for (const typ of [CROSSWALL, TDWALL]) {
         assert.equal(requireScreenCell(10, 11).ch, ' ');
     });
 }
-

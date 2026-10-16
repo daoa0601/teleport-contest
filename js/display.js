@@ -1675,13 +1675,14 @@ export function newsym_force(x, y) {
         location.gnew = 1;
 }
 // ── newsym ──
-function monsterDisplayAttribute(monster) {
-    if ((monster.pet || (monster.mtame ?? 0) > 0) && !heroIsHallucinating()
-        && game.flags?.hilite_pet)
-        return 1;
+function monsterDisplayAttribute(state) {
     const inverse = game.flags?.use_inverse !== false
         && game.iflags?.use_inverse !== false && game.iflags?.wc_inverse !== false;
-    return howMonsterSeen(monster) === MONSEEN_DETECT && inverse ? 1 : 0;
+    if (!inverse)
+        return 0;
+    // A detected tame monster uses a pet glyph, so only hilite_pet can
+    // highlight it. Ordinary detected glyphs always carry MG_DETECT.
+    return state === 'detected' || state === 'pet' && game.flags.hilite_pet ? ATR_INVERSE : 0;
 }
 // C show_mon_or_warn(): a located actor replaces remembered invisibility.
 // Its departure must reveal the lower layer rather than restore a stale I.
@@ -1861,7 +1862,7 @@ function displayMonsterAtCell(monster, x, y, projection) {
     if (heroIsHallucinating()) {
         const displayMnum = rn2Display(MONSTER_COLOR.length);
         const glyph = displayMonsterGlyph(displayMnum, !!monster.female, monsterState);
-        showMonsterOrWarning(x, y, glyph, monsterDisplayAttribute(monster));
+        showMonsterOrWarning(x, y, glyph, monsterDisplayAttribute(monsterState));
     }
     else {
         const tailGlyph = projection.wormTail ? displayMonsterGlyph(PM_LONG_WORM_TAIL) : null;
@@ -1875,7 +1876,7 @@ function displayMonsterAtCell(monster, x, y, projection) {
             decgfx: false, kind: 'monster',
             mnum: projection.wormTail ? PM_LONG_WORM_TAIL : monster.mnum,
             glyph: monsterGlyphNumber(projection.wormTail ? PM_LONG_WORM_TAIL : monster.mnum, !!monster.female, monsterState),
-        }, monsterDisplayAttribute(monster));
+        }, monsterDisplayAttribute(monsterState));
     }
     monster.meverseen = 1;
 }
