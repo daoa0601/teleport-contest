@@ -305,11 +305,6 @@ function wornObject(monster: Monster | null | undefined, mask: ArmorMask): GameO
         ((object.owornmask ?? 0) & mask) !== 0) || null;
 }
 
-function objectDescription(object: GameObject | null | undefined, fallback: string): string {
-    if (!object) return fallback;
-    return object.name || OBJECT_NAMES[object.otyp] || fallback;
-}
-
 function objectContents(object: GameObject): GameObject[] {
     return object.contents || [];
 }
@@ -748,7 +743,7 @@ export async function applyMonsterRustTrap(
             const weapon = monsterWieldedWeapon(monster);
             if (weapon && OBJECT_BIMANUAL[weapon.otyp]) {
                 addWaterEffect(event, rustObject(
-                    weapon, objectDescription(weapon, 'weapon'),
+                    weapon, objectCombatName(weapon, { state }),
                     monster, state, roll, luckRoll,
                 ));
             }
@@ -762,7 +757,7 @@ export async function applyMonsterRustTrap(
         event.target = 'right-arm';
         const weapon = monsterWieldedWeapon(monster);
         addWaterEffect(event, rustObject(
-            weapon, objectDescription(weapon, 'weapon'),
+            weapon, weapon ? objectCombatName(weapon, { state }) : 'weapon',
             monster, state, roll, luckRoll,
         ));
         const gloves = wornObject(monster, W_ARMG);
