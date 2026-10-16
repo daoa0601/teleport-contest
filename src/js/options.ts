@@ -6,6 +6,7 @@ import { displayHelpFile, displayPagerText } from './pager_help.js';
 import { setConditionOption } from './status_conditions.js';
 import { classifyStatusTerrain } from './status_terrain.js';
 import type { GameFlags, InterfaceFlags, LootSortMode, MenuStyle } from './flags.js';
+import { setWarningSymbols } from './warning_symbols.js';
 import { isTextOption, setTextOption, textOptionValue } from './option_values.js';
 import { compoundMenuValue, editCompoundMenu } from './option_editors.js';
 import { CommandBindings } from './command_bindings.js';
@@ -301,6 +302,10 @@ function parseConfiguration(rc: string, result: ConfigurationSettings): Configur
             if (bindingOption.startsWith('menu_') && bindingOption !== 'menu_headings'
                 && bindingOption !== 'menu_objsyms' && bindingOption !== 'menu_overlay' && bindingOption !== 'menu_tab_sep') {
                 if (!negated && optionValue) result.commandBindings.bindMenuKey(bindingKeyCode(optionValue), bindingOption);
+                continue;
+            }
+            if (bindingOption === 'warnings') {
+                if (!negated && optionValue) setWarningSymbols(optionValue, result.iflags);
                 continue;
             }
             if (bindingOption === 'versinfo') {

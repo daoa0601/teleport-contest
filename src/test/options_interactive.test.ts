@@ -1,12 +1,15 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { rhack } from '../js/cmd.js';
+import { farlookLocationDescription, rhack } from '../js/cmd.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { freshObjectRoom } from './support/object-room.js';
-import { PARANOID_PRAY, PARANOID_SWIM, PARANOID_TRAP } from '../js/const.js';
+import { NO_MINVENT, PARANOID_PRAY, PARANOID_SWIM, PARANOID_TRAP } from '../js/const.js';
 import { inventoryOrderSymbols } from '../js/object_sort.js';
 import { applyNethackrc } from '../js/options.js';
+import { flush_screen, newsym } from '../js/display.js';
+import { createMonsterAt } from './support/monsters.js';
+import { requireScreenCell } from './support/screen.js';
 
 function screen(): string {
     return game.nhDisplay?.grid.map(row => row.map(cell => cell.ch).join('')).join('\n') ?? '';
@@ -290,5 +293,24 @@ for (const configuration of ['OPTIONS=menu_next_page:^F,menu_previous_page:^B', 
             input.feed('\x1b');
             await command;
         }
+    });
+}
+
+for (const symbols of ['0!~', '0\\x21\\o176']) {
+    void test(`configured warning symbols retain their threat description (${symbols})`, async () => {
+        freshObjectRoom({ hero: { warning: true } });
+        applyNethackrc(`OPTIONS=warnings:${symbols}`);
+        const xorn = await createMonsterAt('xorn', 11, 10, NO_MINVENT);
+        xorn.minvis = 1;
+        xorn.mpeaceful = false;
+        xorn.m_lev = 8;
+        resetInputState().feed('\x1b');
+
+        await rhack('O'.charCodeAt(0));
+        newsym(11, 10);
+        await flush_screen(1);
+
+        assert.equal(requireScreenCell(10, 11).ch, '~');
+        assert.equal(await farlookLocationDescription(11, 10), 'unknown creature causing you anxiety');
     });
 }

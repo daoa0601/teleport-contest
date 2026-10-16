@@ -1,3 +1,4 @@
+import { warningSymbols } from './warning_symbols.js';
 // display.js — Map rendering and terminal output.
 // C ref: display.c — newsym, show_glyph, docrt, cls, flush_screen.
 import { game, requireGameLevel } from './gstate.js';
@@ -217,7 +218,8 @@ function warningProjection(monster) {
     const level = heroIsHallucinating()
         ? rn2Display(def_warnsyms.length - 1) + 1
         : Math.min(def_warnsyms.length - 1, Math.trunc((monster.m_lev ?? 0) / 4));
-    return def_warnsyms[level];
+    const warning = warningSymbols()[level];
+    return warning ? { ...warning, glyph: GlyphOffset.warning + level } : null;
 }
 export function objectUsesGenericGlyph(object) {
     if (!object || object.dknown)
@@ -1715,7 +1717,7 @@ export function newsym(x, y) {
     const warning = isWormTail(monster, x, y) ? null : warningProjection(monster);
     if (warning) {
         showMonsterOrWarning(x, y, { ...warning, decgfx: false, kind: 'warning',
-            glyph: GlyphOffset.warning + Number(warning.ch) });
+            glyph: warning.glyph });
         return;
     }
     if (loc.remembered_glyph?.kind === 'invisible') {

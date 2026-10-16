@@ -1,4 +1,4 @@
-import { def_warnsyms } from './const.js';
+import { warningSymbols } from './warning_symbols.js';
 import { CmapSymbol } from './glyph_numbers.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import { MONSTER_CLASS_EXPLAIN, MONSTER_CLASS_SYMBOLS } from './monster_data.js';
@@ -74,7 +74,7 @@ export function typedSymbolDescription(symbol: string, context: TypedLookContext
     if (symbol === '~' && (!count || context.inHell)) append('a vibrating square', 'vibrating square');
     if (symbol === '#') append('a poison cloud', 'poison cloud');
     if (symbol === '$') append('a valid position', 'valid position');
-    for (const warning of def_warnsyms.slice(1)) {
+    for (const warning of warningSymbols().slice(1)) {
         if (symbol === warning.ch) {
             append(warning.desc, warning.desc);
             break;

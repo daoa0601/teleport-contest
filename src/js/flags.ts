@@ -88,4 +88,5 @@ export interface InterfaceFlags {
     wc_eight_bit_input?: boolean;
     wc_inverse?: boolean;
     wc_splash_screen?: boolean;
+    warningSymbols?: string;
 }
