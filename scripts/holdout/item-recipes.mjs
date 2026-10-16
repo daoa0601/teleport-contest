@@ -63,7 +63,7 @@ const TOOLS = [
     { name: 'bell', after: '' }, { name: 'horn of plenty', after: '' },
     { name: 'expensive camera', after: '.' }, { name: 'bag of tricks', after: '' },
     { name: 'wooden flute', after: 'y' }, { name: 'tooled horn', after: 'y' },
-    { name: 'wooden harp', after: 'y' }, { name: 'leather drum', after: 'y' },
+    { name: 'wooden harp', after: 'y' }, { name: 'leather drum', after: '' },
 ];
 export const ITEM_RECIPES = {
     'scroll-reading': itemRecipe('Read three seeded scroll types, sometimes while confused; answer genocide, charging, and targeting prompts.', ['Three scrolls are read and disappear or report that they were read.'], seed => {
@@ -105,7 +105,7 @@ export const ITEM_RECIPES = {
             actions.push(choose(label(name), 'mq*'), keys('\x1b'));
         return actions;
     }),
-    'wand-zapping': itemRecipe('Engrave with a digging wand, zap two seeded wand types, and probe the hero.', ['Wand engraving leaves visible text.', 'Zaps consume charges and turns.', 'Self probing reports the hero status.'], seed => {
+    'wand-zapping': itemRecipe('Engrave with a digging wand, zap two seeded wand types, and probe the hero.', ['Wand engraving leaves visible text.', 'Engraving and all three zaps spend charges.', 'Self probing reports the hero status.'], seed => {
         const wands = pickItems(seed, WANDS, 2);
         const actions = wish('uncursed wand of digging', 'uncursed wand of probing', ...wands.map(name => `uncursed wand of ${name}`));
         actions.push(choose('wand of digging', 'E*'), keys('Elbereth\r:'));
@@ -220,17 +220,17 @@ export function validateItemRecipe(name, session) {
             break;
         }
         case 'potion-quaffing':
-            require('two drinks completed', completedEffects(observed, /What do you want to drink\?/, /\bYou (?:feel|are|start|rise|float|have|turn|smell|suddenly|detect)|Your |This |Gee!|Ooph!|Ulch|Yecch|Huh, What|darkness|Magical energ|djinni emerges|enormous ghost/) >= 2);
+            require('two drinks completed', completedEffects(observed, /What do you want to drink\?/, /\bYou (?:feel|are|start|rise|float|have|turn|smell|suddenly|detect)|Your |This |Gee!|Ooph!|Ulch|Yecch|Huh, What|Oh wow!\s+Everything\s+(?:looks|feels)\s+so cosmic!|darkness|Magical energ|djinni emerges|enormous ghost/) >= 2);
             has('dipped weapon blessed', /dagger.*(?:glows|shines).*light blue aura/);
             has('thrown potion broke', /(?:potion|bottle).*(?:shatters|breaks|shards|crashes)/i);
             break;
         case 'wand-zapping':
             has('wand engraving visible', /engraved here.*(?:floor|ground)|read:.*Elbereth/i);
-            require('three wands lost charges', dischargedWands(observed) >= 3);
+            require('engraving and all three zaps spent charges', dischargedWands(observed) >= 4);
             has('self probing completed', /Status of wizard/);
             break;
         case 'tool-applying':
-            require('multiple applications produce effects', completedEffects(observed, /What do you want to use or apply\?/, /(?:You (?:produce|whistle|ring|play|start playing|begin playing|hear|see|look|feel|take a picture)|lamp.*(?:on|lit)|lantern.*(?:on|lit)|Nothing happens|face is already clean|spills out|Status of wizard)/i) >= 2);
+            require('multiple applications produce effects', completedEffects(observed, /What do you want to use or apply\?/, /(?:You (?:produce|whistle|ring|play|start playing|begin playing|hear|see|look|feel|take a picture|are blinded by the flash)|lamp.*(?:on|lit)|lantern.*(?:on|lit)|Nothing (?:happens|seems to happen)|face is already clean|spills out|Status of wizard)/i) >= 2);
             break;
         case 'container-looting':
             has('item put into container', /You put .* into (?:the|your) /);
@@ -257,7 +257,7 @@ export function validateItemRecipe(name, session) {
             break;
         case 'help-pager':
             require('help content displayed', observed.some(screen => !screen.includes('Select one item:')
-                && /NetHack.*(?:history|commands|version)|Menu control|wizard.mode commands|General commands/i.test(screen)));
+                && /NetHack.*(?:history|commands|version)|Menu control|wizard.mode commands|Debug-Mode Quick Reference|General commands/i.test(screen)));
             has('map location described', /\(human knight called wizard\)/i);
             has('attributes displayed', /Current Attributes|Current Status|Background:|Basics:/);
             has('overview displayed', /The Dungeons of Doom|Dungeon overview/);
