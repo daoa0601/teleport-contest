@@ -174,7 +174,7 @@ for (const blind of [false, true]) {
 void test('wishing for an artifact prevents a later inventory find log', async () => {
     freshObjectRoom({ role: 'wizard', flags: { debug: true } });
     requirePlayingGame(game);
-    pushKeys('Magicbane\n');
+    pushKeys(' Magicbane\n');
     await makeWish();
     const object = game.inventory.find((object) => object.oartifact);
     const magicbane = artifactByName('Magicbane');

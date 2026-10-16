@@ -1,13 +1,36 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { MM_NOGRP, NO_MINVENT } from '../js/const.js';
-import { glyphAt } from '../js/display.js';
+import { flush_screen, glyphAt, map_invisible } from '../js/display.js';
 import { prepareMapPositionHighlights, selectMapPosition } from '../js/getpos.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { initRng } from '../js/rng.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { requireScreenCell } from './support/screen.js';
+void test('entering and moving the targeting cursor preserves unseen monster information', async () => {
+    freshObjectRoom({ flags: { tips: false, verbose: false } });
+    for (const x of [11, 20]) {
+        const monster = await createMonsterAt('xorn', x, 10, MM_NOGRP | NO_MINVENT);
+        monster.minvis = 1;
+        monster.mpeaceful = false;
+        monster.m_lev = 8;
+    }
+    map_invisible(11, 10);
+    game.u.warning = true;
+    await flush_screen(1);
+    const input = resetInputState();
+    input.feed('l\x1b');
+    const selected = await selectMapPosition({
+        start: { x: 10, y: 10 }, prompt: 'Choose a location.', goal: 'a location',
+        afterPaint: () => {
+            assert.equal(requireScreenCell(10, 11).ch, 'I', 'Targeting keeps the remembered unseen attacker');
+            assert.equal(requireScreenCell(19, 11).ch, ' ', 'Targeting does not discover a new warning');
+        },
+    });
+    assert.equal(selected, null);
+});
 const TARGETS = [{ x: 9, y: 8 }, { x: 9, y: 12 }, { x: 11, y: 11 }];
 async function highlightedSpecies(heroY, phase, marked = false) {
     freshObjectRoom({ heroY, hero: { hallucinationTurns: 20 } });
@@ -24,7 +47,7 @@ async function highlightedSpecies(heroY, phase, marked = false) {
         await selectMapPosition({
             start: { x: game.u.ux, y: game.u.uy },
             prompt: 'Where do you want to hit?', goal: 'the spot to hit',
-            isValidLocation, preserveMap: true,
+            isValidLocation,
             afterPaint: () => { initRng(1n); },
         });
     }

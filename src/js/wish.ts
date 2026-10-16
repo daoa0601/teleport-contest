@@ -65,11 +65,9 @@ async function showWishHelp(triesLeft: number): Promise<void> {
     await flush_screen(1);
 }
 
-export async function makeWish({
-    announce = false,
-} = {}): Promise<void> {
+export async function makeWish(): Promise<void> {
     requirePlayingGame(game);
-    if (announce) {
+    if (game.flags.verbose !== false) {
         await plineWithContinuation('You may wish for an object.');
         await flushPendingTopline();
     }
@@ -177,11 +175,7 @@ export async function grantAmuletWish(): Promise<boolean> {
     if (!game.u.uevent) game.u.uevent = {};
     game.u.uevent.amulet_wish = 1;
     await flushPendingTopline();
-    await pline(
-        'The Amulet is bestowing a wish upon you!  '
-        + 'You may wish for an object.',
-    );
-    await flushPendingTopline();
+    await pline('The Amulet is bestowing a wish upon you!');
     await makeWish();
     return true;
 }

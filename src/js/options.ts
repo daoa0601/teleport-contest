@@ -2,22 +2,23 @@
 // C ref: options.c — handles OPTIONS=, BIND=, etc.
 
 import { game } from './gstate.js';
-import { displayPagerText } from './pager_help.js';
+import { displayHelpFile, displayPagerText } from './pager_help.js';
 import { setConditionOption } from './status_conditions.js';
 import { classifyStatusTerrain } from './status_terrain.js';
 import type { GameFlags, InterfaceFlags, LootSortMode, MenuStyle } from './flags.js';
+import { setWarningSymbols } from './warning_symbols.js';
+import { isTextOption, setTextOption, textOptionValue, cInteger, parsePickupTypes, optionError, featureAlertVersion } from './option_values.js';
+import { compoundMenuValue, editCompoundMenu } from './option_editors.js';
 import { CommandBindings } from './command_bindings.js';
 import { changePreferredFruit, normalizePreferredFruitName } from './fruit.js';
-import { bot, clearMessageWindow, docrt, flushPendingTopline, flush_screen, plineWithContinuation, reassessStatusFields, reglyph_darkroom } from './display.js';
+import { bot, clearMessageWindow, displayMessageWindow, docrt, flush_screen, plineWithContinuation, reassessStatusFields, reglyph_darkroom } from './display.js';
 import { vision_recalc } from './vision.js';
-import { nhgetch } from './input.js';
 import { getLine } from './query.js';
 import { changeInventoryOrder, inventoryOrderSymbols } from './object_sort.js';
-import { NO_COLOR } from './terminal.js';
-import { ATR_INVERSE, restoreMenuUnderlay, showChoiceWindow, showInventoryWindow, showMultiSelectWindow, snapshotMenuUnderlay } from './windows.js';
+import { ATR_INVERSE, restoreMenuUnderlay, showInventoryWindow, showMultiSelectWindow, snapshotMenuUnderlay } from './windows.js';
 import type { MenuLabel, PageLocalMenuItem, PageLocalMultiSelectSection } from './windows.js';
 import {
-    COLNO, MENU_FULL, PICK_ONE, PL_PSIZ,
+    COLNO, MENU_FULL, MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPINVERT, PICK_ONE, PL_PSIZ,
     PARANOID_AUTOALL, PARANOID_BONES, PARANOID_BREAKWAND, PARANOID_CONFIRM,
     PARANOID_DIE, PARANOID_EATING, PARANOID_HIT, PARANOID_PRAY,
     PARANOID_QUIT, PARANOID_REMOVE, PARANOID_SWIM, PARANOID_TRAP,
@@ -55,55 +56,36 @@ const MENU_STYLES = [
     ['full', '[use menu to choose class(es), then', ' use another menu for items in those]'],
     ['partial', '[skip class filtering; always', ' use menu of all available items]'],
 ] as const;
-const PARANOIA_OPTION_BITS = new Map([
-    ['confirm', PARANOID_CONFIRM], ['paranoia', PARANOID_CONFIRM],
-    ['quit', PARANOID_QUIT], ['explore', PARANOID_QUIT],
-    ['die', PARANOID_DIE], ['death', PARANOID_DIE],
-    ['bones', PARANOID_BONES],
-    ['attack', PARANOID_HIT], ['hit', PARANOID_HIT],
-    ['pray', PARANOID_PRAY],
-    ['remove', PARANOID_REMOVE], ['takeoff', PARANOID_REMOVE],
-    ['wand-break', PARANOID_BREAKWAND],
-    ['break-wand', PARANOID_BREAKWAND],
-    ['were-change', PARANOID_WERECHANGE],
-    ['werechange', PARANOID_WERECHANGE],
-    ['eat', PARANOID_EATING], ['continue', PARANOID_EATING],
-    ['swim', PARANOID_SWIM], ['trap', PARANOID_TRAP],
-    ['autoall', PARANOID_AUTOALL],
-]);
+const PARANOIA_ARGUMENTS = [
+    ['confirm', 1, PARANOID_CONFIRM], ['paranoia', 2, PARANOID_CONFIRM],
+    ['quit', 1, PARANOID_QUIT], ['explore', 2, PARANOID_QUIT],
+    ['die', 1, PARANOID_DIE], ['death', 2, PARANOID_DIE],
+    ['bones', 1, PARANOID_BONES], ['attack', 1, PARANOID_HIT], ['hit', 1, PARANOID_HIT],
+    ['wand-break', 2, PARANOID_BREAKWAND], ['break-wand', 2, PARANOID_BREAKWAND],
+    ['eat', 1, PARANOID_EATING], ['continue', 4, PARANOID_EATING],
+    ['were-change', 2, PARANOID_WERECHANGE], ['pray', 1, PARANOID_PRAY],
+    ['trap', 1, PARANOID_TRAP], ['move-trap', 1, PARANOID_TRAP],
+    ['autoall', 2, PARANOID_AUTOALL], ['autoselect-all', 2, PARANOID_AUTOALL],
+    ['swim', 1, PARANOID_SWIM], ['remove', 1, PARANOID_REMOVE], ['takeoff', 1, PARANOID_REMOVE],
+    ['none', 4, 0], ['all', 3, ~0],
+] as const;
 
 function updateParanoiaBits(current: number, rawValue: string): number {
-    const value = rawValue.trim();
-    let bits = current;
-    let mode = 'replace';
-    let fields = value;
-    if (fields.startsWith('+') || fields.startsWith('-')) {
-        mode = fields[0] === '+' ? 'add' : 'remove';
-        fields = fields.slice(1).trim();
-    } else {
-        bits = 0;
-    }
-    for (let field of fields.split(/\s+/)) {
-        if (!field) continue;
-        let remove = mode === 'remove';
-        if (field.startsWith('!')) {
-            field = field.slice(1);
-            if (mode !== 'remove') remove = true;
-        }
-        const name = field.toLowerCase();
-        if (name === 'none') {
-            if (mode === 'replace') bits = 0;
-            continue;
-        }
-        if (name === 'all') {
-            const all = [...new Set(PARANOIA_OPTION_BITS.values())]
-                .reduce((mask, bit) => mask | bit, 0);
-            bits = remove ? bits & ~all : bits | all;
-            continue;
-        }
-        const bit = PARANOIA_OPTION_BITS.get(name);
-        if (bit !== undefined)
-            bits = remove ? bits & ~bit : bits | bit;
+    let fields = rawValue.trim().replace(/[ \t]+/g, ' ').toLowerCase();
+    const augmenting = fields.startsWith('+') || fields.startsWith('-');
+    const removing = fields.startsWith('-');
+    let bits = augmenting ? current : 0;
+    if (augmenting) fields = fields.slice(1).trimStart();
+    fields = fields.replace(/! /g, '!');
+    for (let field of fields.split(' ')) {
+        const negated = field.startsWith('!') || /^no[^n]/.test(field);
+        if (negated) field = field.slice(field.startsWith('!') ? 1 : 2);
+        const entry = PARANOIA_ARGUMENTS.find(([name, minimum]) => field.length >= minimum && name.startsWith(field));
+        if (!entry) break; // C retains changes made before an invalid argument.
+        const bit = entry[2];
+        if (!bit) {
+            if (!augmenting) bits = 0;
+        } else bits = removing || negated ? bits & ~bit : bits | bit;
     }
     return bits;
 }
@@ -202,26 +184,37 @@ function setNumberPadOption(value: number, settings: Pick<ConfigurationSettings,
 }
 
 // C optfn_scores(): an explicit value replaces all three display choices.
-function parseScoreOption(value: string | null, negated: boolean): Required<Pick<GameFlags, 'end_top' | 'end_around' | 'end_own'>> | null {
-    if (!value) return null;
-    const choices = { end_top: 0, end_around: 0, end_own: false };
-    let rest = negated ? '' : value.toLowerCase();
+type ScoreChoices = Required<Pick<GameFlags, 'end_top' | 'end_around' | 'end_own'>> & { error: string | null };
+
+function parseScoreOption(value: string | null, negated: boolean): ScoreChoices | null {
+    // string_for_opt() trims the value; an empty one is a missing parameter.
+    const text = value?.trim();
+    if (!text) return null;
+    const choices: ScoreChoices = { end_top: 0, end_around: 0, end_own: false, error: null };
+    let rest = negated ? '' : text;
     while (rest) {
-        const disabled = rest.startsWith('!') || rest.startsWith('no');
+        const disabled = rest.startsWith('!') || rest.slice(0, 2).toLowerCase() === 'no';
         if (disabled) rest = rest.startsWith('!') ? rest.slice(1)
             : rest.slice(rest[2] === '-' ? 3 : 2);
         const digits = rest.match(/^\d+/)?.[0];
         const count = digits ? Number(digits) : 1;
         if (digits) rest = rest.slice(digits.length);
         rest = rest.replace(/^ +/, '');
-        if (rest[0] === 't') choices.end_top = disabled ? 0 : count;
-        else if (rest[0] === 'a') choices.end_around = disabled ? 0 : count;
-        else if (rest[0] === 'o') choices.end_own = !disabled && count !== 0;
-        else if (rest[0] === 'n') {
+        // Native lowc() selects the field but reports the original text.
+        const field = rest[0]?.toLowerCase();
+        if (field === 't') choices.end_top = disabled ? 0 : count;
+        else if (field === 'a') choices.end_around = disabled ? 0 : count;
+        else if (field === 'o') choices.end_own = !disabled && count !== 0;
+        else if (field === 'n') {
             choices.end_top = choices.end_around = 0;
             choices.end_own = false;
-        } else break;
-        rest = rest.replace(/^[a-z]+ */, '');
+        } else {
+            choices.error = /^-\d/.test(rest)
+                ? 'Values for scores:top and scores:around must not be negative'
+                : `Unknown scores parameter '${rest}'`;
+            break;
+        }
+        rest = rest.replace(/^[a-zA-Z]+ */, '');
         if (rest.startsWith('/')) rest = rest.slice(1).replace(/^ +/, '');
     }
     return choices;
@@ -271,7 +264,8 @@ function parseConfiguration(rc: string, result: ConfigurationSettings): Configur
                 if (separator < 0) continue;
                 const code = bindingKeyCode(field.slice(0, separator));
                 const command = field.slice(separator + 1).trim();
-                if (code && command && !result.commandBindings.bindSpecialKey(code, command))
+                if (code && command && !result.commandBindings.bindSpecialKey(code, command)
+                    && !result.commandBindings.bindMenuKey(code, command))
                     result.commandBindings.bindKey(code, command);
             }
             continue;
@@ -284,8 +278,13 @@ function parseConfiguration(rc: string, result: ConfigurationSettings): Configur
             const trimmed = opt.trim();
             if (!trimmed) continue;
 
-            const negated = trimmed.startsWith('!');
-            const stripped = negated ? trimmed.slice(1) : trimmed;
+            let negated = false;
+            let stripped = trimmed;
+            while (stripped.startsWith('!') || /^no/i.test(stripped)) {
+                const prefix = stripped.startsWith('!') ? 1 : stripped[2] === '-' ? 3 : 2;
+                stripped = stripped.slice(prefix);
+                negated = !negated;
+            }
 
             if (stripped.toLowerCase().startsWith('cond_')) {
                 const mask = setConditionOption(stripped, !negated, result.flags.statusConditionMask);
@@ -293,9 +292,53 @@ function parseConfiguration(rc: string, result: ConfigurationSettings): Configur
                 continue;
             }
 
-            const colonIdx = stripped.indexOf(':');
+            const colonIdx = stripped.search(/[:=]/);
             const bindingOption = (colonIdx < 0 ? stripped : stripped.slice(0, colonIdx)).trim().toLowerCase();
             const optionValue = colonIdx < 0 ? null : stripped.slice(colonIdx + 1).trim();
+            if (bindingOption.startsWith('menu_') && bindingOption !== 'menu_headings'
+                && bindingOption !== 'menu_objsyms' && bindingOption !== 'menu_overlay' && bindingOption !== 'menu_tab_sep') {
+                if (!negated && optionValue) result.commandBindings.bindMenuKey(bindingKeyCode(optionValue), bindingOption);
+                continue;
+            }
+            if (bindingOption === 'warnings') {
+                if (!negated && optionValue) setWarningSymbols(optionValue, result.iflags);
+                continue;
+            }
+            if (bindingOption === 'pickup_types') {
+                if (!negated) {
+                    result.flags.pickup_types = parsePickupTypes(optionValue ?? '').symbols;
+                    if (!optionValue) result.flags.pickup = true;
+                }
+                continue;
+            }
+            if (bindingOption === 'pile_limit') {
+                if (!negated || !optionValue) {
+                    const limit = negated ? 0 : optionValue ? cInteger(optionValue) : 5;
+                    result.flags.pile_limit = limit < 0 ? 5 : limit;
+                }
+                continue;
+            }
+            if (bindingOption === 'runmode') {
+                const mode = negated ? 'teleport' : ['teleport', 'run', 'walk', 'crawl']
+                    .find(mode => optionValue && mode.startsWith(optionValue.toLowerCase()));
+                if (mode) result.flags.runmode = mode;
+                continue;
+            }
+            if (bindingOption === 'msg_window') {
+                if (!negated || !optionValue) {
+                    const initial = optionValue?.charAt(0).toLowerCase() || (negated ? 's' : 'f');
+                    if ('scfr'.includes(initial)) result.iflags.prevmsg_window = initial;
+                }
+                continue;
+            }
+            if (bindingOption === 'prayconfirm') {
+                if (!optionValue) {
+                    paranoiaBits = negated ? paranoiaBits & ~PARANOID_PRAY : paranoiaBits | PARANOID_PRAY;
+                    paranoiaSeen = true;
+                    result.flags.paranoia_bits = paranoiaBits;
+                }
+                continue;
+            }
             if (bindingOption === 'versinfo') {
                 const value = Number.parseInt(optionValue ?? '', 10);
                 if (!negated && value >= 1 && value <= 7) result.flags.versinfo = value;
@@ -378,20 +421,33 @@ function parseConfiguration(rc: string, result: ConfigurationSettings): Configur
                     else if (val === 'cat' || val === 'c') result.preferred_pet = 'c';
                 }
                 else if (key === 'symset') result.symset = val;
-                else if (key === 'suppress_alert') result.flags.suppress_alert = val;
-                else if (key === 'msg_window') result.iflags.prevmsg_window = val;
+                else if (key === 'suppress_alert') {
+                    const parsed = negated ? null : featureAlertVersion(val);
+                    if (parsed && !parsed.future) result.flags.suppress_alert = parsed.version;
+                }
                 else if (key === 'paranoid_confirmation'
                     || key === 'paranoid_confirm') {
+                    if (negated) {
+                        if (!val) {
+                            paranoiaBits = 0;
+                            paranoiaSeen = true;
+                            result.flags.paranoia_bits = 0;
+                        }
+                        continue;
+                    }
                     paranoiaBits = updateParanoiaBits(paranoiaBits, val);
                     paranoiaSeen = true;
                     result.flags.paranoia_bits = paranoiaBits;
                 }
                 else if (key === 'autounlock') result.flags.autounlock = val;
                 else if (key === 'disclose') result.flags.disclose = val;
-                else if (key === 'pickup_burden') result.flags.pickup_burden = val;
-                else if (key === 'pickup_types') result.flags.pickup_types = val;
-                else if (key === 'pile_limit') result.flags.pile_limit = val;
-                else if (key === 'runmode') result.flags.runmode = val;
+                else if (key === 'pickup_burden') {
+                    // optfn_pickup_burden() uses the first letter, with 'o'
+                    // and 't' both selecting overtaxed.
+                    const initial = val.charAt(0).toLowerCase();
+                    const burden = 'ubsntl'.indexOf(initial === 'o' ? 't' : initial);
+                    if (initial && burden >= 0) result.flags.pickup_burden = burden;
+                }
                 else {
                     const option = requestBooleanByName.get(key);
                     const value = booleanOption(val, negated);
@@ -478,98 +534,14 @@ function numberPadDescription(): string {
 }
 
 async function editNumberPad(): Promise<void> {
-    await flushPendingTopline();
-    const key = await showChoiceWindow({
-        title: 'Select number_pad mode:',
-        entries: NUMBER_PAD_CHOICES.map((text, index) => ({
-            key: String.fromCharCode(97 + index), text,
-        })),
-        validKeys: [...'abcdef012345'].map(key => key.charCodeAt(0)).concat([27, 32, 10, 13]),
+    const selected = await showMultiSelectWindow({
+        title: 'Select number_pad mode:', omitHeadings: true, pickOne: true,
+        sections: [{ items: NUMBER_PAD_CHOICES.map((text, index) => ({
+            key: String.fromCharCode(97 + index), groupAccelerator: String(index), text, value: index,
+        })) }],
     });
-    const index = key >= 97 && key <= 102 ? key - 97 : key >= 48 && key <= 53 ? key - 48 : -1;
-    if (index >= 0) setNumberPadOption(index === 5 ? -1 : index, game);
-}
-
-function putOptionsLine(col: number, row: number, text: string, attr = 0): void {
-    const display = game.nhDisplay;
-    if (!display) return;
-    for (let index = 0; index < text.length && col + index < display.cols;
-        index++) {
-        display.setCell(col + index, row, text.charAt(index), NO_COLOR, attr);
-    }
-}
-
-function renderOptionsPage(page: 1 | 2): void {
-    const display = game.nhDisplay;
-    if (!display) return;
-    display.clearScreen();
-    const flags = game.flags;
-    const mark = (value: boolean | undefined) => value ? 'X' : ' ';
-    if (page === 1) {
-        putOptionsLine(1, 0, 'Options', ATR_INVERSE);
-        putOptionsLine(1, 2, '? - show help');
-        putOptionsLine(1, 4, ' General', ATR_INVERSE);
-        putOptionsLine(1, 5,
-            `a - fruit                   [${game.fruitName}]`);
-        putOptionsLine(1, 6, `b - number_pad              [${numberPadDescription()}]`);
-        putOptionsLine(1, 7, 'c - price_quotes            [ ]');
-        putOptionsLine(1, 9, ' Behavior', ATR_INVERSE);
-        putOptionsLine(1, 10,
-            `d - autodig                 [${mark(flags.autodig)}]`);
-        putOptionsLine(1, 11,
-            `e - autoopen                [${mark(flags.autoopen)}]`);
-        putOptionsLine(1, 12,
-            `f - autopickup              [${mark(flags.pickup)}]`);
-        putOptionsLine(1, 13,
-            'g - autopickup exceptions   [(0 currently set)]');
-        putOptionsLine(1, 14, 'h - autoquiver              [ ]');
-        putOptionsLine(1, 15, 'i - autounlock              [apply-key]');
-        putOptionsLine(1, 16,
-            `j - cmdassist               [${mark(flags.cmdassist ?? true)}]`);
-        putOptionsLine(1, 17,
-            'k - dropped_nopick          [X]  (for autopickup)');
-        putOptionsLine(1, 18, 'l - fireassist              [X]');
-        putOptionsLine(1, 19,
-            'm - pickup_stolen           [X]  (for autopickup)');
-        putOptionsLine(1, 20,
-            'n - pickup_thrown           [X]  (for autopickup)');
-        putOptionsLine(1, 21,
-            `o - pickup_types            [${flags.pickup_types || 'all'}]  (for autopickup)`);
-        putOptionsLine(1, 22,
-            `p - pushweapon              [${mark(flags.pushweapon)}]`);
-        putOptionsLine(1, 23, '(1 of 2)');
-        display.setCursor(9, 23);
-        return;
-    }
-
-    putOptionsLine(1, 1, ' Map', ATR_INVERSE);
-    putOptionsLine(1, 2, 'a - bgcolors                [X]');
-    putOptionsLine(1, 3, 'b - color                   [X]');
-    putOptionsLine(1, 4, 'c - customcolors            [X]');
-    putOptionsLine(1, 5, 'd - customsymbols           [X]');
-    putOptionsLine(1, 6,
-        `e - hilite_pet              [${mark(flags.hilite_pet)}]`);
-    putOptionsLine(1, 7,
-        `f - hilite_pile             [${mark(flags.hilite_pile)}]`);
-    putOptionsLine(1, 8, 'g - showrace                [ ]');
-    putOptionsLine(1, 9, 'h - sparkle                 [X]');
-    putOptionsLine(1, 10,
-        'i - symset                  [DECgraphics, active, handler=DEC]');
-    putOptionsLine(1, 12, ' Status', ATR_INVERSE);
-    putOptionsLine(1, 13, 'j - hitpointbar             [ ]');
-    putOptionsLine(1, 14,
-        'k - menu colors             [(0 currently set)]');
-    putOptionsLine(1, 15,
-        `l - showexp                 [${mark(flags.showexp)}]`);
-    putOptionsLine(1, 16,
-        'm - status condition fields [(16 currently set)]');
-    putOptionsLine(1, 17,
-        'n - status highlight rules  [(0 currently set)]');
-    putOptionsLine(1, 18, 'o - statuslines             [2]');
-    putOptionsLine(1, 19,
-        `p - time                    [${mark(flags.time)}]`);
-    putOptionsLine(1, 20, '(2 of 2)');
-    display.setCursor(9, 20);
+    const index = selected[0];
+    if (index !== undefined) setNumberPadOption(index === 5 ? -1 : index, game);
 }
 
 const REQUEST_MENU_BOOLEAN_OPTIONS = [
@@ -581,6 +553,7 @@ const REQUEST_MENU_BOOLEAN_OPTIONS = [
     ['autodig', 'autodig', false],
     ['autoopen', 'autoopen', true],
     ['autopickup', 'pickup', false],
+    ['bgcolors', 'bgcolors', true],
     ['autoquiver', 'autoquiver', false],
     ['checkpoint', 'checkpoint', true],
     ['cmdassist', 'cmdassist', true],
@@ -630,6 +603,7 @@ const REQUEST_MENU_BOOLEAN_OPTIONS = [
     ['showvers', 'showvers', false],
     ['silent', 'silent', true],
     ['sortpack', 'sortpack', true],
+    ['sounds', 'sounds', false],
     ['sparkle', 'sparkle', true],
     ['spot_monsters', 'spot_monsters', false],
     ['standout', 'standout', false],
@@ -662,9 +636,9 @@ export async function option_help(): Promise<void> {
     const debugNames = ['debug_hunger', 'debug_mongen', 'debug_overwrite_stairs'];
     const booleanNames = [
         ...REQUEST_MENU_BOOLEAN_OPTIONS.map(([name]) => name),
-        'bgcolors', 'blind', 'bones', 'deaf', 'female', 'idlecheckpoint', 'legacy',
+        'blind', 'bones', 'deaf', 'female', 'idlecheckpoint', 'legacy',
         'monpolycontrol', 'news', 'nudist', 'pauper', 'reroll', 'sanity_check',
-        'selectsaved', 'sounds', 'status_updates', 'travel_debug', 'tutorial',
+        'selectsaved', 'status_updates', 'travel_debug', 'tutorial',
         'use_darkgray', 'use_truecolor', 'voices', 'wizmgender', 'wizweight',
         ...(game.flags.debug && !game.iflags.debug_fuzzer ? debugNames : []),
     ].filter(name => game.flags.debug || !wizardNames.has(name))
@@ -784,7 +758,7 @@ function requestBooleanValue(name: BooleanOptionName): boolean {
     if (!option) return false;
     const [, property, fallback] = option;
     if (property === '_monTelecontrol') return game._monTelecontrol ?? fallback;
-    if (property === 'altmeta' || property === 'toptenwin' || property === 'menu_tab_sep'
+    if (property === 'bgcolors' || property === 'sounds' || property === 'altmeta' || property === 'toptenwin' || property === 'menu_tab_sep'
         || property === 'wc_eight_bit_input' || property === 'autodescribe'
         || property === 'getloc_usemenu' || property === 'getloc_moveskip')
         return game.iflags[property] ?? fallback;
@@ -794,7 +768,7 @@ function requestBooleanValue(name: BooleanOptionName): boolean {
 function setConfigurationBoolean(settings: ConfigurationSettings, option: BooleanOption, value: boolean): void {
     const [, property] = option;
     if (property === '_monTelecontrol') settings.monTelecontrol = value;
-    else if (property === 'altmeta' || property === 'toptenwin' || property === 'menu_tab_sep'
+    else if (property === 'bgcolors' || property === 'sounds' || property === 'altmeta' || property === 'toptenwin' || property === 'menu_tab_sep'
         || property === 'wc_eight_bit_input' || property === 'autodescribe'
         || property === 'getloc_usemenu' || property === 'getloc_moveskip')
         settings.iflags[property] = value;
@@ -804,7 +778,7 @@ function setConfigurationBoolean(settings: ConfigurationSettings, option: Boolea
 function setRequestBoolean(option: BooleanOption, value: boolean): void {
     const [, property] = option;
     if (property === '_monTelecontrol') game._monTelecontrol = value;
-    else if (property === 'altmeta' || property === 'toptenwin' || property === 'menu_tab_sep'
+    else if (property === 'bgcolors' || property === 'sounds' || property === 'altmeta' || property === 'toptenwin' || property === 'menu_tab_sep'
         || property === 'wc_eight_bit_input' || property === 'autodescribe'
         || property === 'getloc_usemenu' || property === 'getloc_moveskip')
         game.iflags[property] = value;
@@ -829,9 +803,23 @@ function scoreDisplayDescription(): string {
     return parts.join('/') || 'none';
 }
 
+function preferredPetDescription(): string {
+    const preference = game.preferred_pet ?? '';
+    switch (preference) {
+    case 'c': return 'cat';
+    case 'd': return 'dog';
+    case 'h': return 'horse';
+    case 'n': return 'none';
+    default: return 'random';
+    }
+}
+
 function requestMenuSections(): PageLocalMultiSelectSection<string>[] {
     const { role, race, gender, alignment } = requestMenuIdentity();
-    const choice = (name: string, text: string): PageLocalMenuItem<string> => ({ value: name, text });
+    const choice = (name: string, text: string): PageLocalMenuItem<string> => ({
+        value: name, text: textOptionValue(name) === null ? text : `${name.padEnd(24)}[${textOptionValue(name)}]`,
+        itemFlags: requestBooleanByName.has(name.toLowerCase()) || name === 'idlecheckpoint' ? MENU_ITEMFLAGS_SKIPINVERT : 0,
+    });
     const label = (text: string): MenuLabel => ({ selectable: false, text });
     const readonly = (name: string, value: string | boolean) => label(`    ${name.padEnd(24)}[${value}]`);
     const boolean = (name: BooleanOptionName) => choice(name,
@@ -839,7 +827,7 @@ function requestMenuSections(): PageLocalMultiSelectSection<string>[] {
     return [
         { heading: 'Booleans (selecting will toggle value):', items: [
             readonly('blind', !!game.u?.uroleplay?.blind),
-            readonly('bones', true),
+            readonly('bones', game.flags.bones !== false),
             readonly('deaf', !!game.u?.uroleplay?.deaf),
             readonly('legacy', game.flags?.legacy !== false),
             readonly('news', false),
@@ -861,7 +849,7 @@ function requestMenuSections(): PageLocalMultiSelectSection<string>[] {
             boolean('autoopen'),
             boolean('autopickup'),
             boolean('autoquiver'),
-            choice('bgcolors', 'bgcolors                [on]'),
+            choice('bgcolors', `bgcolors                [${requestBooleanValue('bgcolors') ? 'on' : 'off'}]`),
             boolean('checkpoint'),
             boolean('cmdassist'),
             boolean('color'),
@@ -911,7 +899,7 @@ function requestMenuSections(): PageLocalMultiSelectSection<string>[] {
             boolean('showvers'),
             boolean('silent'),
             boolean('sortpack'),
-            choice('sounds', 'sounds                  [off]'),
+            choice('sounds', `sounds                  [${requestBooleanValue('sounds') ? 'on' : 'off'}]`),
             boolean('sparkle'),
             boolean('spot_monsters'),
             boolean('standout'),
@@ -930,7 +918,7 @@ function requestMenuSections(): PageLocalMultiSelectSection<string>[] {
         ] },
         { heading: 'Compounds (selecting will prompt for new value):', items: [
             readonly('windowtype', 'tty'),
-            readonly('playmode', 'normal'),
+            readonly('playmode', game.flags.debug ? 'debug' : game.flags.explore ? 'explore' : 'normal'),
             readonly('name', game.plname),
             readonly('role', role),
             readonly('race', race),
@@ -940,14 +928,14 @@ function requestMenuSections(): PageLocalMultiSelectSection<string>[] {
             readonly('dogname', game.flags.dogname || '(none)'),
             readonly('horsename', game.flags.horsename || '(none)'),
             readonly('msghistory', '20'),
-            readonly('pettype', 'random'),
+            readonly('pettype', preferredPetDescription()),
             readonly('soundlib', 'nosound'),
-            choice('autounlock', 'autounlock              [apply-key]'),
+            choice('autounlock', `autounlock              [${compoundMenuValue('autounlock')}]`),
             choice('boulder', 'boulder                 [`]'),
             choice('crash_email', 'crash_email             [unknown]'),
             choice('crash_name', 'crash_name              [unknown]'),
             choice('crash_urlmax', 'crash_urlmax            [-1]'),
-            choice('disclose', 'disclose                [ni na nv ng nc no]'),
+            choice('disclose', `disclose                [${compoundMenuValue('disclose')}]`),
             choice('fruit', `fruit                   [${game.fruitName}]`),
             choice('glyph', 'glyph                   [(to be done)]'),
             choice('hilite_status', 'hilite_status           [(none)]'),
@@ -955,16 +943,16 @@ function requestMenuSections(): PageLocalMultiSelectSection<string>[] {
             choice('menu_objsyms', 'menu_objsyms            [conditional]'),
             choice('menuinvertmode', 'menuinvertmode          [1]'),
             choice('menustyle', `menustyle               [${MENU_STYLES[game.flags.menu_style ?? MENU_FULL][0]}]`),
-            choice('msg_window', 'msg_window              [single]'),
+            choice('msg_window', `msg_window              [${compoundMenuValue('msg_window')}]`),
             choice('number_pad', `number_pad              [${numberPadDescription()}]`),
             choice('packorder', `packorder               [${inventoryOrderSymbols()}]`),
-            choice('paranoid_confirmation', 'paranoid_confirmation   [pray trap swim]'),
+            choice('paranoid_confirmation', `paranoid_confirmation   [${compoundMenuValue('paranoid_confirmation')}]`),
             choice('petattr', 'petattr                 [inverse]'),
-            choice('pickup_burden', 'pickup_burden           [stressed]'),
+            choice('pickup_burden', `pickup_burden           [${compoundMenuValue('pickup_burden')}]`),
             choice('pickup_types', `pickup_types            [${game.flags?.pickup_types || 'all'}]`),
             choice('pile_limit', 'pile_limit              [5]'),
             choice('roguesymset', 'roguesymset             [default]'),
-            choice('runmode', 'runmode                 [run]'),
+            choice('runmode', `runmode                 [${compoundMenuValue('runmode')}]`),
             choice('scores', `scores                  [${scoreDisplayDescription()}]`),
             choice('sortdiscoveries', 'sortdiscoveries         [by order of discovery within each class]'),
             choice('sortloot', `sortloot                [${SORT_LOOT_NAMES[game.flags.sortloot ?? 'l']}]`),
@@ -973,9 +961,9 @@ function requestMenuSections(): PageLocalMultiSelectSection<string>[] {
             choice('statuslines', 'statuslines             [2]'),
             choice('suppress_alert', 'suppress_alert          [(none)]'),
             choice('symset', `symset                  [${game.symset || 'default'}, active, handler=DEC]`),
-            choice('versinfo', 'versinfo                [1: number (5.0.0)]'),
-            choice('whatis_coord', 'whatis_coord            [none]'),
-            choice('whatis_filter', 'whatis_filter           [none]'),
+            choice('versinfo', `versinfo                [${compoundMenuValue('versinfo')}]`),
+            choice('whatis_coord', `whatis_coord            [${compoundMenuValue('whatis_coord')}]`),
+            choice('whatis_filter', `whatis_filter           [${compoundMenuValue('whatis_filter')}]`),
             label(''),
         ] },
         { heading: 'Other settings:', items: [
@@ -984,7 +972,7 @@ function requestMenuSections(): PageLocalMultiSelectSection<string>[] {
             choice('bind_keys', 'bind keys               [(0 currently set)]'),
             choice('menu_colors', 'menu colors             [(0 currently set)]'),
             choice('message_types', 'message types           [(0 currently set)]'),
-            choice('status_conditions', 'status condition fields [(16 currently set)]'),
+            choice('status_conditions', `status condition fields [${compoundMenuValue('status_conditions')}]`),
             choice('status_highlights', 'status highlight rules  [(0 currently set)]'),
         ] }
     ];
@@ -1008,73 +996,54 @@ const PICKUP_TYPE_ROWS = [
     ['o', '_', 'iron chain'],
 ] as const;
 
-function renderPickupTypes(selected: ReadonlySet<string>): void {
-    const display = game.nhDisplay;
-    if (!display) return;
-    const help = game.flags?.pickup
-        ? "Toggle off 'autopickup' to not pick up anything."
-        : "Toggle on 'autopickup' to automatically pick these things up.";
-    const content = [
-        'Autopickup what?',
-        ...PICKUP_TYPE_ROWS.map(([letter, symbol, description]) =>
-            `${letter} ${selected.has(symbol) ? '+' : '-'} ${symbol}  ${description}`),
-        'A -    All classes of objects',
-        'Note: when no choices are selected, "all" is implied.',
-        help,
-        '(end)',
-    ];
-    const widest = Math.max(...content.map(line => line.length));
-    const left = Math.max(11, display.cols - widest - 2);
-    for (let row = 0; row <= 21; row++) {
-        for (let col = left - 1; col < display.cols; col++)
-            display.setCell(col, row, ' ', NO_COLOR, 0);
-    }
-    putOptionsLine(left, 0, 'Autopickup what?', ATR_INVERSE);
-    for (const [index, [letter, symbol, description]] of PICKUP_TYPE_ROWS.entries()) {
-        putOptionsLine(left, index + 2,
-            `${letter} ${selected.has(symbol) ? '+' : '-'} ${symbol}  ${description}`);
-    }
-    putOptionsLine(left, 18, 'A -    All classes of objects');
-    putOptionsLine(left, 19,
-        'Note: when no choices are selected, "all" is implied.');
-    putOptionsLine(left, 20, help);
-    putOptionsLine(left, 21, '(end)');
-    display.setCursor(left + 6, 21);
-}
-
+// options.c:optfn_pickup_types() prompts in traditional/combination mode;
+// windows.c:choose_classes_menu() owns the full/partial class picker.
 async function editPickupTypes(preserveStatus = false): Promise<void> {
-    const selected = new Set<string>(game.flags?.pickup_types || '');
-    // tty_display_nhwindow(NHW_MENU) pages unread prose, then clears the
-    // entire message window before painting the menu's corner rectangle.
-    if (!game._suppressMessagesUntilInput) await flushPendingTopline();
-    clearMessageWindow();
-    await flush_screen(1);
-    const underlay = snapshotMenuUnderlay();
-    if (!preserveStatus) {
-        game.nhDisplay?.clearRow(22);
-        game.nhDisplay?.clearRow(23);
+    const previous = game.flags.pickup_types ?? '';
+    game.flags.pickup_types = '';
+    let value = previous;
+    let useMenu = true;
+    if ((game.flags.menu_style ?? MENU_FULL) <= 1) {
+        const answer = await getLine(`New pickup_types: [${inventoryOrderSymbols()} am] (${previous || 'all'})`,
+            (_character: string, key: number) => key >= 32 && key < 127);
+        value = answer === null || !answer ? previous : answer.trim().replace(/ +/g, ' ');
+        useMenu = value.startsWith('m');
     }
-    for (;;) {
-        renderPickupTypes(selected);
-        const key = await nhgetch();
-        if (key === 27 || key === 10 || key === 13) break;
-        const input = String.fromCharCode(key);
-        if (input === 'A') {
-            if (selected.size === PICKUP_TYPE_ROWS.length) selected.clear();
-            else for (const [, symbol] of PICKUP_TYPE_ROWS) selected.add(symbol);
-            continue;
+    if (useMenu) {
+        const symbols = inventoryOrderSymbols() + (game.flags.debug ? '.' : '');
+        const classes = [...symbols].map((symbol, index) => {
+            const description = PICKUP_TYPE_ROWS.find(([, candidate]) => candidate === symbol)?.[2] ?? 'splash of venom';
+            return { key: String.fromCharCode(97 + index), groupAccelerator: symbol, value: symbol,
+                text: `${symbol}  ${description}`,
+                itemFlags: previous.includes(symbol) ? MENU_ITEMFLAGS_SELECTED : 0 };
+        });
+        // tty menu display honors WIN_STOP before clearing the message row.
+        await displayMessageWindow();
+        clearMessageWindow();
+        await flush_screen(1);
+        const underlay = snapshotMenuUnderlay();
+        if (!preserveStatus) {
+            game.nhDisplay?.clearRow(22);
+            game.nhDisplay?.clearRow(23);
         }
-        const row = PICKUP_TYPE_ROWS.find(([letter, symbol]) =>
-            input === letter || input === symbol);
-        if (!row) continue;
-        if (selected.has(row[1])) selected.delete(row[1]);
-        else selected.add(row[1]);
+        const selected = await showMultiSelectWindow({
+            title: 'Autopickup what?', omitHeadings: true, signalEscape: true,
+            sections: [{ items: [
+                ...classes,
+                { selectable: false, text: '' },
+                { key: 'A', value: ' ', text: '   All classes of objects', itemFlags: MENU_ITEMFLAGS_SKIPINVERT },
+                { selectable: false, text: 'Note: when no choices are selected, "all" is implied.' },
+                { selectable: false, text: game.flags.pickup
+                    ? "Toggle off 'autopickup' to not pick up anything."
+                    : "Toggle on 'autopickup' to automatically pick these things up." },
+            ] }],
+        });
+        restoreMenuUnderlay(underlay);
+        value = selected === null ? previous : selected.includes(' ') ? '' : selected.join('');
     }
-    game.flags.pickup_types = PICKUP_TYPE_ROWS
-        .map(([, symbol]) => symbol)
-        .filter(symbol => selected.has(symbol))
-        .join('');
-    restoreMenuUnderlay(underlay);
+    const parsed = parsePickupTypes(value);
+    game.flags.pickup_types = parsed.symbols;
+    if (parsed.invalid) await optionError("Unknown pickup_types parameter ''");
 }
 
 // C options.c:optfn_bool(), followed by reset_needed_visuals(). Status-only
@@ -1090,54 +1059,87 @@ function applyBooleanVisualChange(name: BooleanOptionName): boolean {
         return requestBooleanValue('color');
     }
     return ['color', 'customcolors', 'hilite_pet', 'hilite_pile',
-        'hitpointbar', 'showrace', 'use_inverse'].includes(name);
+        'customsymbols', 'hitpointbar', 'showrace', 'use_inverse'].includes(name);
 }
 
-async function doRequestMenuOptions(): Promise<void> {
-    await flushPendingTopline();
-    const underlay = snapshotMenuUnderlay();
-    const selected = new Set(await showMultiSelectWindow({
-        title: 'Set what options?',
-        pageLocalKeys: true,
-        introLines: [
-            "    For a brief explanation of how this works, type '?' to select",
-            '    the next menu choice, then press <enter> or <return>.',
-            '? - view help for options menu',
-            "    [To suppress this menu help, toggle off the 'cmdassist' option.]",
-            '',
-        ],
-        sections: requestMenuSections(),
-    }));
+// C's HELP_IDX is distinct from the boolean 'help' option.
+const OPTIONS_MENU_HELP = 'options_menu_help';
 
-    restoreMenuUnderlay(underlay);
+async function doRequestMenuOptions(): Promise<void> {
+    let skipHelp = game.flags.cmdassist === false;
     let needsRedraw = false;
-    for (const option of REQUEST_MENU_BOOLEAN_OPTIONS) {
-        const [name] = option;
-        if (!selected.has(name)) continue;
-        const value = !requestBooleanValue(name);
-        setRequestBoolean(option, value);
-        if (name === 'rest_on_space') game.commandBindings.setRestOnSpace(value);
-        needsRedraw = applyBooleanVisualChange(name) || needsRedraw;
-        // optfn_bool() commits the value before its ordinary pline. The
-        // shared tty owner handles overflow and any later menu acknowledgment.
-        await plineWithContinuation(`'${name}' option toggled ${value ? 'on' : 'off'}.`);
+    let giveBooleanMessage = game.iflags.optionMessages !== false;
+    for (;;) {
+        const sections = requestMenuSections().map(section => ({ items: [
+            { selectable: false, text: section.heading ?? '', attr: ATR_INVERSE } as const,
+            ...section.items,
+        ] }));
+        if (!skipHelp) sections.unshift({ items: [
+            { selectable: false, text: "    For a brief explanation of how this works, type '?' to select" },
+            { selectable: false, text: '    the next menu choice, then press <enter> or <return>.' },
+            { key: '?', groupAccelerator: '?', value: OPTIONS_MENU_HELP, text: 'view help for options menu',
+                itemFlags: MENU_ITEMFLAGS_SKIPINVERT },
+            { selectable: false, text: "    [To suppress this menu help, toggle off the 'cmdassist' option.]" },
+            { selectable: false, text: '' },
+        ] });
+        const selected = await showMultiSelectWindow({
+            title: 'Set what options?', pageLocalKeys: true, omitHeadings: true, sections,
+        });
+        for (const name of selected) {
+            if (name === OPTIONS_MENU_HELP) {
+                await displayHelpFile('optmenu');
+                continue;
+            }
+            if (name === 'idlecheckpoint') {
+                await plineWithContinuation("There is no underlying support for 'idlecheckpoint' compiled in.");
+                giveBooleanMessage = false;
+                game.iflags.optionMessages = false;
+                continue;
+            }
+            const option = requestBooleanByName.get(name.toLowerCase());
+            if (option) {
+                const value = !requestBooleanValue(option[0]);
+                setRequestBoolean(option, value);
+                if (option[0] === 'rest_on_space') game.commandBindings.setRestOnSpace(value);
+                needsRedraw = applyBooleanVisualChange(option[0]) || needsRedraw;
+                if (giveBooleanMessage) await plineWithContinuation(`'${option[0]}' option toggled ${value ? 'on' : 'off'}.`);
+            } else needsRedraw = await editCompoundOption(name, true) || needsRedraw;
+        }
+        if (selected.length !== 1 || selected[0] !== OPTIONS_MENU_HELP) break;
+        skipHelp = true;
     }
-    if (selected.has('number_pad')) await editNumberPad();
-    if (selected.has('menustyle')) await editMenuStyle();
-    if (selected.has('fruit')) await editFruitOption();
-    if (selected.has('packorder')) {
-        const order = await getLine('Set packorder to what?',
-            (_character: string, key: number) => key >= 32 && key < 127);
-        if (order !== null && order.length) changeInventoryOrder(order);
-    }
-    if (selected.has('pickup_types')) await editPickupTypes(true);
-    if (selected.has('sortloot')) await editSortLoot();
     if (needsRedraw) {
         reglyph_darkroom();
         await docrt();
     }
     await bot();
     game.context.move = 0;
+}
+
+async function editCompoundOption(name: string, fullMenu: boolean): Promise<boolean> {
+    const previousVersion = game.flags.versinfo ?? 1;
+    if (name === 'number_pad') await editNumberPad();
+    else if (name === 'menustyle') await editMenuStyle();
+    else if (name === 'fruit') await editFruitOption(fullMenu && game.iflags.optionMessages !== false);
+    else if (name === 'pickup_types') await editPickupTypes(fullMenu);
+    else if (name === 'sortloot') await editSortLoot();
+    else if (await editCompoundMenu(name, fullMenu && game.iflags.optionMessages !== false))
+        return name === 'versinfo' && (game.flags.versinfo ?? 1) !== previousVersion;
+    else if (isTextOption(name)) {
+        const value = await getLine(`Set ${name} to what?`,
+            (_character: string, key: number) => key >= 32 && key < 127);
+        if (value === null) return false;
+        if (name === 'scores') {
+            const parsed = parseScoreOption(value, false);
+            if (parsed) {
+                game.flags.end_top = parsed.end_top;
+                game.flags.end_around = parsed.end_around;
+                game.flags.end_own = parsed.end_own;
+                if (parsed.error) await optionError(parsed.error);
+            } else await optionError("Missing parameter for 'scores:'");
+        } else await setTextOption(name, value);
+    }
+    return false;
 }
 
 // Native options.c:handler_menustyle(). PICK_ONE retains the old selection
@@ -1189,94 +1191,126 @@ async function editSortLoot(): Promise<void> {
     if (isLootSortMode(mode)) game.flags.sortloot = mode;
 }
 
-async function editFruitOption(): Promise<void> {
+async function editFruitOption(giveMessage: boolean): Promise<void> {
     const name = await getLine('Set fruit to what?',
         (_ch: string, code: number) => code >= 32 && code < 127, { suppressStatus: true });
     if (!name) return;
     const result = changePreferredFruit(name);
-    // Native suppresses ordinary option-confirmation prose inside doset.
-    if (!result.changed) {
-        await plineWithContinuation(result.message);
-        await flushPendingTopline();
-    }
+    // doset_simple suppresses this notice; doset keeps it.
+    if (!result.changed || giveMessage) await plineWithContinuation(result.message);
 }
 
-// C refs: options.c doset()/special_handling() and tty's PICK_ANY menu.
-// Option keys redraw page one. Space advances to page two, then closes it.
-// The pickup-types editor reads its own keys before returning here.
+// optlist.h assigns these options to the four simple-menu sections.
+const SIMPLE_OPTION_SECTIONS = [
+    ['General', [
+        ['fruit', 'name of a fruit you enjoy eating'],
+        ['number_pad', 'use the number pad for movement'],
+        ['price_quotes', 'display prices you have seen for unidentified objects'],
+    ]],
+    ['Behavior', [
+        ['autodig', 'dig if moving and wielding a digging tool'],
+        ['autoopen', 'walking into a door attempts to open it'],
+        ['autopickup', 'automatically pick up objects'],
+        ['autopickup_exceptions', 'edit autopickup exceptions'],
+        ['autoquiver', 'fill empty quiver automatically when firing'],
+        ['autounlock', 'action to take when encountering locked door or chest'],
+        ['cmdassist', 'give help for errors on direction input'],
+        ['dropped_nopick', "don't autopickup dropped items"],
+        ['fireassist', 'fire-command tries to be helpful'],
+        ['pickup_stolen', 'autopickup stolen items'],
+        ['pickup_thrown', 'autopickup thrown items'],
+        ['pickup_types', 'types of objects to pick up automatically'],
+        ['pushweapon', 'previous weapon goes to secondary slot'],
+    ]],
+    ['Map', [
+        ['bgcolors', 'use background color for some map hilighting'],
+        ['color', 'use color in map'],
+        ['customcolors', 'use custom colors in map'],
+        ['customsymbols', 'use custom utf8 symbols in map'],
+        ['hilite_pet', 'use highlight for pets'],
+        ['hilite_pile', 'highlight piles of items'],
+        ['showrace', 'show your character by race rather than role'],
+        ['sparkle', 'display sparkly effect when resisting magic'],
+        ['symset', 'load a set of display symbols from symbols file'],
+    ]],
+    ['Status', [
+        ['hitpointbar', 'show colored bar for hit points'],
+        ['menu_colors', 'edit menu colors'],
+        ['showexp', 'show experience points in status line'],
+        ['status_conditions', 'change status condition highlighting'],
+        ['status_highlights', 'change status line highlighting'],
+        ['statuslines', '2 or 3 lines for status display'],
+        ['time', 'display game turns in status line'],
+    ]],
+] as const;
+
+function simpleMenuSections(): PageLocalMultiSelectSection<string>[] {
+    const options = requestMenuSections().flatMap(section => section.items);
+    return [
+        { items: [
+            ...(game.iflags.simple_options_help
+                ? [{ selectable: false, text: "Use command '#optionsfull' to get the complete options list." } as const]
+                : []),
+            { key: '?', value: 'help', text: game.iflags.simple_options_help ? 'hide help' : 'show help' },
+        ] },
+        ...SIMPLE_OPTION_SECTIONS.map(([heading, names]) => {
+            const items: (PageLocalMenuItem<string> | MenuLabel)[] = [
+                { selectable: false, text: '' },
+                { selectable: false, text: ` ${heading.padEnd(30)} `, attr: ATR_INVERSE },
+            ];
+            for (const [name, description] of names) {
+                const option = options.find(item => item.selectable !== false && item.value === name);
+                if (!option || option.selectable === false) throw new Error(`Missing simple option: ${name}`);
+                const boolean = requestBooleanByName.get(name.toLowerCase());
+                const text = boolean ? `${name.padEnd(24)}[${requestBooleanValue(boolean[0]) ? 'X' : ' '}]`
+                    : option.text;
+                const suffix = ['pickup_types', 'pickup_thrown', 'pickup_stolen', 'dropped_nopick'].includes(name)
+                    ? '  (for autopickup)' : '';
+                items.push({ value: name, text: text + suffix });
+                if (game.iflags.simple_options_help) {
+                    items.push({ selectable: false, text: `    ${description}` },
+                        { selectable: false, text: '' });
+                }
+            }
+            return { items };
+        }),
+    ];
+}
+
+// options.c:doset_simple() applies one choice, refreshes its visuals, and
+// offers a fresh menu. PICK_ONE accepts a choice immediately.
 export async function doOptions(menuRequested = false): Promise<void> {
     if (menuRequested) {
         await doRequestMenuOptions();
         return;
     }
-    const flags = game.flags;
-    if (!game._optionsInitialized) {
-        // Set missing defaults once. Opening the menu must not reset a value
-        // the player already changed.
-        flags.autoopen = flags.autoopen ?? true;
-        flags.pickup = flags.pickup ?? false;
-        flags.hilite_pet = flags.hilite_pet ?? false;
-        flags.hilite_pile = flags.hilite_pile ?? false;
-        game._optionsInitialized = true;
-    }
-    let page: 1 | 2 = 1;
-    let needsRedraw = false;
     for (;;) {
-        renderOptionsPage(page);
-        const key = await nhgetch();
-        if (key === 27 || key === 10 || key === 13) break;
-        const input = String.fromCharCode(key);
-        if (input === ' ') {
-            if (page === 1) {
-                page = 2;
-                continue;
-            }
-            break;
-        }
-        if (input === '>' && page === 1) {
-            page = 2;
+        const selected = await showMultiSelectWindow({
+            title: 'Options', pageLocalKeys: true, omitHeadings: true,
+            sections: simpleMenuSections(), pickOne: true,
+        });
+        const name = selected[0];
+        if (!name) break;
+        if (name === 'help') {
+            game.iflags.simple_options_help = !game.iflags.simple_options_help;
             continue;
         }
-        if (input === '<' && page === 2) {
-            page = 1;
-            continue;
+        const option = requestBooleanByName.get(name.toLowerCase());
+        let needsRedraw = false;
+        if (option) {
+            setRequestBoolean(option, !requestBooleanValue(option[0]));
+            needsRedraw = applyBooleanVisualChange(option[0]);
+        } else needsRedraw = await editCompoundOption(name, false);
+        if (needsRedraw) {
+            reglyph_darkroom();
+            await docrt();
+            await flush_screen(1);
         }
-        if (page === 1 && input === 'a') {
-            await editFruitOption();
-        } else if (page === 1 && input === 'b') {
-            await editNumberPad();
-        } else if (page === 1 && input === 'd') {
-            flags.autodig = !flags.autodig;
-        } else if (page === 1 && input === 'o') {
-            await editPickupTypes();
-        } else if (page === 1 && input === 'e') {
-            flags.autoopen = !flags.autoopen;
-        } else if (page === 1 && input === 'f') {
-            flags.pickup = !flags.pickup;
-        } else if (page === 1 && input === 'j') {
-            flags.cmdassist = !(flags.cmdassist ?? true);
-        } else if (page === 1 && input === 'p') {
-            flags.pushweapon = !flags.pushweapon;
-        } else if (page === 2 && input === 'e') {
-            flags.hilite_pet = !flags.hilite_pet;
-            needsRedraw = true;
-        } else if (page === 2 && input === 'f') {
-            flags.hilite_pile = !flags.hilite_pile;
-            needsRedraw = true;
-        } else if (page === 2 && input === 'l') {
-            flags.showexp = !flags.showexp;
-            applyBooleanVisualChange('showexp');
-        } else if (page === 2 && input === 'p') {
-            flags.time = !flags.time;
-            applyBooleanVisualChange('time');
-        } else {
-            continue;
-        }
-        page = 1;
+        await bot();
     }
-    game._pending_message = '';
-    if (needsRedraw) reglyph_darkroom();
-    await docrt();
+    // doset_simple resets pending visuals after cancellation too. A full-screen
+    // tty dismissal clears status while its input owner still suppresses bot().
     await bot();
+    game.iflags.optionMessages = true;
     game.context.move = 0;
 }

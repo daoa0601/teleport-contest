@@ -1,5 +1,6 @@
 import { errorMessage, itemAt } from '../lib/session-types.mjs';
 import type { KeysAction, MenuAction, Session, SessionAction, SessionSegment } from '../lib/session-types.mjs';
+import { ITEM_RECIPES, validateItemRecipe } from './item-recipes.mjs';
 export interface Character {
     role: string;
     race: string;
@@ -22,14 +23,14 @@ interface RecipeArguments {
 }
 export interface RecipePlanSegment extends SessionSegment { driver: SessionAction[]; }
 export interface RecipePlan extends Session { segments: RecipePlanSegment[]; }
-interface Recipe {
+export interface Recipe {
     roles: string[] | null;
     options: string[];
     description: string;
     success: string[];
     build(args: { seed: number; datetime: string; rc(overrides?: string[]): string; character: Character }, targets?: string[]): RecipePlanSegment[];
 }
-interface RecipeCheck {
+export interface RecipeCheck {
     check: string;
     ok: boolean;
     evidence: string;
@@ -476,6 +477,8 @@ RECIPES['throw-fight'] = {
     ],
 };
 
+for (const [name, recipe] of Object.entries(ITEM_RECIPES)) RECIPES[name] = recipe;
+
 export { RECIPES };
 
 export const RECIPE_NAMES = Object.keys(RECIPES);
@@ -746,7 +749,8 @@ VALIDATORS['throw-fight'] = (s) => {
  * @returns {{ recipe: string, ok: boolean, checks: Array<{check:string, ok:boolean, evidence:string}>, error?: string }}
  */
 export function validateRecipeRecording(name: string, session: RecipeRecording): RecipeEvidence {
-    const validator = VALIDATORS[name];
+    const validator = VALIDATORS[name] ?? (ITEM_RECIPES[name]
+        ? (recording: RecipeRecording) => validateItemRecipe(name, recording) : undefined);
     if (!validator) return { recipe: name, ok: false, checks: [], error: 'unknown recipe' };
     let checks;
     try {

@@ -64,14 +64,16 @@ export async function applyPotionLikeInvisibility({ state = game, blessed = fals
         duration = rollDice(6 - 3 * blessing, 100) + 100;
         state.u.invisibleTurns = Math.min(TIMEOUT, (state.u.invisibleTurns ?? 0) + duration);
     }
+    syncHeroInvisibility(state);
+    // The hero's square is redrawn before the cursed message can page.
+    newsym(state.u.ux, state.u.uy);
     let aggravates = false;
     if (cursed) {
         await pline('For some reason, you feel your presence is known.');
         revokeIntrinsicProperty('invisible', 'outside', state);
+        syncHeroInvisibility(state);
         aggravates = true;
     }
-    syncHeroInvisibility(state);
-    newsym(state.u.ux, state.u.uy);
     return {
         blocked: false,
         showedInvisibility,

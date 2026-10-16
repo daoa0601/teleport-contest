@@ -24,7 +24,7 @@ import { objectName } from './objnam.js';
 import { observeObject } from './object_knowledge.js';
 import { heroIsBlind } from './senses.js';
 import { d, rn2, rnd } from './rng.js';
-import { burnArmorByFire, burnHeroArmorByFire, monsterTrapVisibility } from './trap.js';
+import { burnArmorByFire, burnHeroArmorByFire, monsterTrapVisibility, seeTrap } from './trap.js';
 import { surfaceName } from './terrain_name.js';
 import { burnFloorObjectsAt, destroyFireInventory, destroyFireMonsterInventory } from './zap.js';
 const PM_STRAW_GOLEM = 249;
@@ -208,7 +208,7 @@ export async function finishMonsterFireTrap(monster, event, state = game, { publ
     if (isIceAt(x, y, state))
         await meltIce(x, y);
     if (event.seeSquare && state.level?.traps?.includes(event.trap))
-        event.trap.tseen = true;
+        seeTrap(event.trap, state);
     event.killed = !!monster.dead || (monster.mhp ?? 0) <= 0;
     event.finished = true;
     return event;

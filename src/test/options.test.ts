@@ -522,6 +522,36 @@ void test('an overflowing toggle message resumes the remaining changes before op
     }
 });
 
+void test('Escape at an overflowing option notice opens the pickup editor without another acknowledgment', async () => {
+    freshObjectRoom({ flags: { autodig: false, autoopen: true, pickup: true } });
+    requirePlayingGame(game);
+    const transaction = await beginSelectedOptions(['autodig', 'autoopen', 'autopickup', 'pickup_types']);
+    try {
+        assert.equal(transaction.completed, false);
+        assert.match(visibleOptions(), /'autodig' option toggled on\..*'autoopen' option toggled off\.--More--/);
+        transaction.input.feed('\x1b');
+        await transaction.input.waitUntilBlocked();
+
+        assert.match(visibleOptions(), /Autopickup what\?/, 'Escape should dismiss the notices and open the class picker');
+        assert.doesNotMatch(visibleOptions(), /--More--/);
+        transaction.input.feed('c\n');
+        await transaction.command;
+        assert.equal(game.flags.pickup_types, ')');
+        assert.equal(game.flags.autodig, true);
+        assert.equal(game.flags.autoopen, false);
+        assert.equal(game.flags.pickup, false);
+        assert.equal(game.moves, 40);
+    } finally {
+        transaction.input.beforeRead = () => transaction.input.feed('\x1b');
+        transaction.input.feed('\x1b');
+        try {
+            await transaction.command;
+        } finally {
+            transaction.input.beforeRead = null;
+        }
+    }
+});
+
 void test('a pet-highlight option still waits for its native redraw and repaints the pet', async () => {
     freshObjectRoom({ flags: { hilite_pet: false } });
     requirePlayingGame(game);

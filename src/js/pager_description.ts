@@ -1,8 +1,9 @@
+import { warningSymbols } from './warning_symbols.js';
 // C pager.c:do_screen_description(), add_cmap_descr(), append_str().
 import { BOULDER } from './object_data.js';
 import {
     BUFSZ, In_hell, Upolyd, Is_rogue_level, Is_waterlevel, TER_DETECT, TER_MAP,
-    TER_MON, TER_OBJ, TRAP_EXPLANATIONS, VIBRATING_SQUARE, WEB, def_warnsyms,
+    TER_MON, TER_OBJ, TRAP_EXPLANATIONS, VIBRATING_SQUARE, WEB,
 } from './const.js';
 import { cmapSymbolAppearance } from './display.js';
 import { onQuestStart } from './quest.js';
@@ -128,7 +129,7 @@ export function screenDescription(x: number, y: number, description: string): Sc
         if (index === CmapSymbol.altar || trap || index === CmapSymbol.engroom || index === CmapSymbol.engrcorr
             || index === CmapSymbol.grave || liquid && heroIsHallucinating(game)) needLook = true;
     }
-    for (const warning of def_warnsyms.slice(1)) {
+    for (const warning of warningSymbols().slice(1)) {
         if (!sameSymbol({ ch: warning.ch })) continue;
         append(warning.desc, warning.desc);
         if (game.level?.objects[x]?.[y]?.some(object => object.otyp === BOULDER))

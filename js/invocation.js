@@ -3,8 +3,7 @@
 // trapeffect_vibrating_square().
 import { formatFeltMessage } from './hero_speech.js';
 import { heroFootName } from './body_parts.js';
-import { VIBRATING_SQUARE } from './const.js';
-import { newsym, plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
 import { heroIsOnStairs, isInvocationPosition } from './invocation_position.js';
 import { monsterTypeName } from './monster_data.js';
@@ -41,13 +40,6 @@ export async function announceInvocationSquare() {
         await plineWithContinuation(`The ${name} ${game.blind ? 'throbs palpably'
             : 'glows with a strange light'}!`);
     }
-    return true;
-}
-export function revealVibratingSquare(trap) {
-    if (!trap || trap.ttyp !== VIBRATING_SQUARE)
-        return false;
-    trap.tseen = true;
-    newsym(trap.tx, trap.ty);
     return true;
 }
 //# sourceMappingURL=invocation.js.map

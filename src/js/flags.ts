@@ -53,6 +53,8 @@ export interface GameFlags extends Partial<Record<GameBooleanFlag, boolean>> {
 }
 
 export interface InterfaceFlags {
+    bgcolors?: boolean;
+    sounds?: boolean;
     altmeta?: boolean;
     autodescribe?: boolean;
     debug_fuzzer?: boolean;
@@ -75,6 +77,9 @@ export interface InterfaceFlags {
     num_pad_mode?: number;
     override_ID?: boolean;
     suppress_price?: boolean;
+    simple_options_help?: boolean;
+    optionMessages?: boolean;
+    conditionMenuByRank?: boolean;
     wizmgender?: boolean;
     wizweight?: boolean;
     partly_eaten_hack?: boolean;
@@ -87,4 +92,5 @@ export interface InterfaceFlags {
     wc_eight_bit_input?: boolean;
     wc_inverse?: boolean;
     wc_splash_screen?: boolean;
+    warningSymbols?: string;
 }

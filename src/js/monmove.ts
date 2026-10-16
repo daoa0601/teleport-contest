@@ -1119,7 +1119,7 @@ export async function finishDeferredMonsterMiscItem(
 
     if (misc.kind === 'polymorph-trap') {
         const trapVisible = cansee(misc.trap.tx, misc.trap.ty);
-        if (cansee(monster.mx, monster.my) || trapVisible) misc.trap.tseen = true;
+        if (cansee(monster.mx, monster.my) || trapVisible) seeTrap(misc.trap, state);
         if (canSeeMonster(monster) || trapVisible) {
             const subject = canonicalMonsterName(monster, { state, capitalized: true, augmentIt: true });
             const verb = verbForSubject(subject, monsterLocomotion(monster.mnum, 'jump'));
@@ -4948,6 +4948,7 @@ async function triggerMonsterTrap(
     }
     if (trap.ttyp === ANTI_MAGIC) {
         const effect = applyMonsterAntiMagicTrap(monster, {
+            trap, state,
             rollDice: (count: number, sides: number) => {
                 const result = rollDice(count, sides);
                 calls.push(`d(${count},${sides})`);
@@ -4960,8 +4961,6 @@ async function triggerMonsterTrap(
             },
         });
         const { inSight, seeSquare } = monsterTrapVisibility(monster, state);
-        const visibleEffect = effect.resisted || effect.energyDrain > 0;
-        if (inSight && visibleEffect) trap.tseen = true;
         const event = {
             trap,
             ...effect,
@@ -7598,11 +7597,8 @@ async function beginStandardMonsterAttack(
         (Upolyd(state.u) ? state.u.mh : state.u.uhp) <= 0
     )
         return;
-    if (state.u.uswallow && state.u.ustuck !== monster) {
-        movement.swallowedAttackSkipped = true;
-        return;
-    }
-
+    // mattacku() interrupts the hero before refusing a monster other than
+    // the engulfer.
     const attack = await beginMonsterHeroAttack(
         monster,
         state,
@@ -7869,7 +7865,6 @@ export async function resumeDeferredMonsterTrap(
         publish = plineWithContinuation,
         monsterName,
         describeMonster,
-        revealTrap,
         finishDeath = (monster: Monster, options?: MonsterDeathOptions) =>
             finishEnvironmentalMonsterDeath(monster, state, options),
     }: MonsterTrapResumeOptions = {},
@@ -8004,6 +7999,7 @@ export async function resumeDeferredMonsterTrap(
             break;
         case 'sleep-gas':
             await finishMonsterSleepGasTrap(action.monster, event, {
+                state,
                 publish,
                 ...(describeMonster ? { describeMonster } : {}),
             });
@@ -8015,16 +8011,15 @@ export async function resumeDeferredMonsterTrap(
             break;
         case 'vibrating-square':
             await finishMonsterVibratingSquare(action.monster, event, {
+                state,
                 publish,
                 ...(describeMonster ? { describeMonster } : {}),
-                ...(revealTrap ? { revealTrap } : {}),
             });
             break;
         case 'polymorph-trap':
             await finishMonsterPolymorphTrap(event, {
                 finishDeath,
                 publish,
-                ...(revealTrap ? { revealTrap } : {}),
                 state,
             });
             break;

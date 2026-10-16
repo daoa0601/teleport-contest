@@ -130,7 +130,7 @@ existing tests needed their setup corrected:
   `commitPetPickup()` and checks that the dagger stays on the floor until
   then.
 
-## Parallel batches 1–30 (`b16c387`)
+## Parallel batches 1–31 (`62713ef`)
 
 Units ran in worktrees under `docs/orchestration.md` (Codex; each diff reviewed
 by Codex against the C source, then merged only if the full suite adds no
@@ -340,11 +340,20 @@ teleportitis, Strained overexertion, drowning while riding, look_here shared by
 autopickup and `:`, monster fire-blast death causes, trap missile naming,
 newman message joining, bear-trap and land-mine display.
 
+Batch 31: fixes found by scoring 1,250 more fresh native sessions
+(fresh5–8, recipe1) and **recipe-expansion** recipes: per-turn slippery-hands
+item loss (`glibr()`), the "; slippery)" glove suffix, full-screen piles with
+`!menu_overlay`, one-page "(end)" enlightenment footers, cursed invisibility
+redraw order, `makewish()`'s verbose offer, interrupting an engulfed hero
+from outside (`mattacku()`'s `nomul(0)`), `scores:` option parsing
+(**audit-options**), trap reveal display (**trap-reveal**), and warning versus
+remembered-monster glyphs (**fresh-b**).
+
 ## Verification
 
-`npm test` at `b16c387`: **11,705/11,705**. Merges require a fully green suite;
+`npm test` at `62713ef`: **11,917/11,917**. Merges require a fully green suite;
 batch runs also compare matched screens per session with the previous batch
-(no screen regression in batch 30, eval, public or pool).
+(no screen regression in batch 31, eval, public or pool).
 
 ## Most recent native diagnostics
 
@@ -354,9 +363,9 @@ batch runs also compare matched screens per session with the previous batch
 | Native eval sample | 300/300 | 50,586/50,586 | 3,616,669/3,616,669 | 0 |
 | Holdout-dev pool | 2,500/2,500 | | | 0 |
 
-Runs: `.cache/generalization/batch30-b16c387-{eval,public}` and
-`triage-b16c387` (pool) in the verify worktree (baseline `base-06d7e73`:
-143/300; batch 29: 300/300, pool 2,500/2,500). No verified random call was
+Runs: `.cache/generalization/batch31-62713ef-{eval,public}` and
+`triage-62713ef` (pool) in the verify worktree (baseline `base-06d7e73`:
+143/300; batch 30: 300/300, pool 2,500/2,500). No verified random call was
 lost; the ledgers now hold 350 eval and 363 public functions. The
 state oracle finds all 300 sessions matching C state throughout.
 
@@ -364,10 +373,12 @@ state oracle finds all 300 sessions matching C state throughout.
 
 Every eval-sample and pool session completes and public matches every random
 call, so new work comes from C-source audits of files the corpora barely
-run, plus freshly recorded native sessions (1,746/1,750 of fresh1–3 and
-public, 400/400 fresh4). In flight: `options.c` (audit-options), `display.c`
-(audit-display), trap reveal display (trap-reveal) and new holdout recipes
-for unexercised mechanics (recipe-expansion). review-debt-3's turn-loop restructuring
+run, plus freshly recorded native sessions (fresh5 493/500, fresh6 289/300,
+fresh7 193/200, fresh8 192/200, recipe1 32/40). In flight: recipe-a (container
+naming, `#enhance` slots, `#terrain` choices, getpos hints, nighttime),
+fresh-c (six RNG divergences from fresh5), poly-vision (map timing after
+polymorphing into an eyeless form) and queue-sweep (accepted review
+findings). review-debt-3's turn-loop restructuring
 (delayed armor removal, `stealarm()`, prayer delay) is parked unmerged: it
 broke save/restore twice. `.cache/agents/queue.md` holds accepted review
 findings.

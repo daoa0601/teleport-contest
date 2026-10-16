@@ -58,7 +58,7 @@ import { placeHeroAtRandomArrival } from './level_change.js';
 import { monsterName, monsterSpellDeathReason, monsterSubjectPronoun, possessiveName, quietMonsterName } from './monster_name.js';
 import { touchHeroWithDeath } from './monster_death_touch.js';
 import { resolveMonsterWeaponContact } from './monster_weapon_contact.js';
-import { finishMonsterAttackDeath, waitForCurrentMonsterMore } from './monster_attack_death.js';
+import { finishHeroDeathAfterMonsterMessage, finishMonsterAttackDeath, waitForCurrentMonsterMore } from './monster_attack_death.js';
 import { monsterMissMessage } from './monster_miss.js';
 import { monsterIsAnimal } from './monster_data.js';
 import { monsterCanCarryObject } from './monster_carry.js';
@@ -309,6 +309,7 @@ import {
 import { heroIsUnconscious, putHeroToSleep } from './hero_sleep.js';
 import { resolveMonsterContactEffect } from './monster_contact_effects.js';
 import { setSlipperyHands } from './towel.js';
+import { heroHasSlipperyHands, slipFromSlipperyHands } from './slippery_hands.js';
 import { restartMonsterShapechanging } from './monster_polymorph.js';
 import { msummon } from './minion.js';
 import { captureRunmodeDelay } from './runmode.js';
@@ -1148,6 +1149,7 @@ async function finishInitialTurnMaintenanceAfterMonsterDistress(
     if (game.flags.time && !game.context.run) game.context.time_botl = true;
     game._heroActionSeq = game.moves * 8;
     await currentLuaLifecycle().callCore(game, 'moveloop_turn');
+    if (heroHasSlipperyHands(game)) await slipFromSlipperyHands(game);
 
     // nh_timeout() precedes regeneration and exerchk() in the C loop.  Keep
     // the first timed impairment live rather than treating its setup rolls as
@@ -2514,14 +2516,6 @@ function resolveDeferredHeroGeyser(
     heroAttack.deferredGeyserSpell = false;
 }
 
-async function finishHeroDeathAfterMonsterMessage(options: FinishHeroDeathOptions) {
-    // losehp() enters urgent_pline(), whose map flush precedes paging the
-    // previous message. Its pending HP request must reach that pager.
-    await flush_screen(1);
-    await waitForCurrentMonsterMore();
-    return finishHeroDeath(options);
-}
-
 async function resumeTrappedMonster(action: MonsterAction): Promise<void> {
     const game = requireInitializedGame();
     if (!action.movement?.escapingTrap) return;
@@ -3245,7 +3239,6 @@ async function presentMonsterPostMove(
             publish: plineWithContinuation,
             monsterName: quietMonsterName,
             describeMonster: visibleMonsterSubject,
-            revealTrap: (trap: Trap) => newsym(trap.tx, trap.ty),
         });
         if ('heroDied' in event && event.heroDied) return true;
         movement = action.movement;

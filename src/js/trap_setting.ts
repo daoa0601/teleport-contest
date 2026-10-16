@@ -1,7 +1,8 @@
+import { feelTrap } from './trap.js';
 // C apply.c:use_trap(), set_trap(), reset_trapset().
 import { currentAttribute } from './attrib.js';
 import { A_DEX, A_STR, AIR, BEAR_TRAP, CLOUD, D_CLOSED, D_LOCKED, DOOR, IS_FURNITURE, IS_OBSTRUCTED, Is_airlevel, Is_waterlevel, LANDMINE, P_BASIC, P_RIDING, SHOPBASE } from './const.js';
-import { map_trap, newsym, plineWithContinuation as pline } from './display.js';
+import { plineWithContinuation as pline } from './display.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { dropInventoryObjectAtHero } from './hero_drop.js';
 import { triggerHeroTrap } from './hero_traps.js';
@@ -94,9 +95,7 @@ export async function continueTrapSetting(state: GameState = game): Promise<bool
     const trap = await maketrap(state.u.ux, state.u.uy, type);
     if (trap) {
         trap.madeby_u = true;
-        trap.tseen = true;
-        map_trap(trap);
-        newsym(trap.tx, trap.ty);
+        feelTrap(trap, state);
         if (roomsAt(state.level, trap.tx, trap.ty, SHOPBASE).length) addShopDamage(trap.tx, trap.ty, 0, state);
         if (!progress.forceBungle) await pline(`You finish arming the ${trapName(type)}.`);
         // C evaluates this luck roll before checking force_bungle too.

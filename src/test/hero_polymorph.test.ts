@@ -249,6 +249,21 @@ void test('a goblin retains ordinary strength but has the orc strength limit', a
     assert.equal(game.u.amax.a[A_STR], STR18(50));
 });
 
+// C polyself.c:uasmon_maxStr(): orc-captains and Uruk-hai keep 18/100
+// instead of the hero orc limit.
+for (const form of ['orc-captain', 'Uruk-hai'] as const) {
+    void test(`an ${form} body has full exceptional strength`, async () => {
+        freshObjectRoom({ flags: { debug: true } });
+        requireFixtureGame(game);
+        pushKeys(`polyself\n${form}\n                `);
+
+        await rhack('#'.charCodeAt(0));
+
+        assert.equal(game.u.acurr.a[A_STR], STR18(100));
+        assert.equal(game.u.amax.a[A_STR], STR18(100));
+    });
+}
+
 void test('living giant strength exceeds undead giant strength', async () => {
     freshObjectRoom({ flags: { debug: true } });
     requireFixtureGame(game);

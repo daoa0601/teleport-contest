@@ -12,7 +12,7 @@ import { MONSTER_BODY_META, MONSTER_NAME } from './monster_data.js';
 import { beginMonsterPitTrap, finishMonsterPitTrap } from './monster_pit_trap.js';
 import { monsterWearsIronShoes } from './monworn.js';
 import { rn2, rnd } from './rng.js';
-import { monsterTrapVisibility } from './trap.js';
+import { monsterTrapVisibility, seeTrap } from './trap.js';
 import { monsterInAir } from './terrain_properties.js';
 import { monsterLearnsTrap, monstersSeeTrap } from './trap_knowledge.js';
 function ordinaryMonsterName(monster) {
@@ -96,12 +96,13 @@ export function beginMonsterLandMine(monster, trap, state = game, { random = rn2
     event.airborne = monsterInAir(monster, state);
     if (event.airborne) {
         event.discoveredTrigger = event.inSight && !trap.tseen;
+        // The discovery message can wait for input. Reveal and test the air
+        // currents only after that message has returned, as in C.
         if (event.discoveredTrigger)
-            trap.tseen = true;
+            return event;
         event.airCurrentRoll = random(3);
         if (event.airCurrentRoll !== 0) {
-            if (!event.discoveredTrigger)
-                event.finished = true;
+            event.finished = true;
             return event;
         }
     }
@@ -126,6 +127,9 @@ export async function finishMonsterLandMine(monster, event, state = game, { fini
     };
     if (event.discoveredTrigger) {
         await publish(`A trigger appears in a pile of soil below ${monsterName(monster)}.`);
+        seeTrap(event.trap, state);
+        event.airCurrentRoll = random(3);
+        event.exploded = event.airCurrentRoll === 0;
     }
     if (!event.exploded) {
         event.finished = true;
