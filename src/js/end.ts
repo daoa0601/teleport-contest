@@ -2,6 +2,7 @@
 // C refs: end.c disclose()/really_done(), insight.c, dungeon.c.
 
 import { formatFeltMessage } from './hero_speech.js';
+import { recorderLocalEpochSeconds } from './calendar.js';
 import { adjustAttribute, currentAttribute, reportHeroEncumbrance } from './attrib.js';
 import { cureHeroSickness } from './hero_illness.js';
 import { removeIntrinsicProperty, setPropertyTimeout } from './properties.js';
@@ -661,6 +662,15 @@ function tombstoneLine(value: string | undefined) {
     return `${' '.repeat(col - 19)}${text}${' '.repeat(37 - col - text.length)}`;
 }
 
+function tombstoneYear(when: number): string {
+    const year = Number(new Intl.DateTimeFormat('en-US', {
+        timeZone: 'America/New_York', year: 'numeric',
+    }).format(new Date(when * 1000)));
+    // C calendar.c:yyyymmdd() treats tm_year below 70 as a two-digit year.
+    const calendarYear = year < 1970 ? year + 100 : year;
+    return String(calendarYear % 10000).padStart(4, ' ');
+}
+
 function currentDungeonName() {
     const dnum = game.u?.uz?.dnum ?? 0;
     return game.dungeons?.[dnum]?.dname
@@ -721,11 +731,11 @@ function tombstoneDeathRows(cause: string) {
     return rows;
 }
 
-function deathSummaryLines(killer: string, { gold, score, moves }: GameSummary, {
+function deathSummaryLines(killer: string, { gold, score, moves }: GameSummary, endtime: number, {
     deathVerb = 'died', deathCause = null, deathType = null,
 }: DeathDescription & { deathType?: number | null } = {}): string[] {
     const name = game.plname || 'player';
-    const year = String(game.datetime || '').slice(0, 4) || '2026';
+    const year = tombstoneYear(endtime);
     const role = game.flags?.female && game.urole?.name?.f
         ? game.urole.name.f : game.urole?.name?.m || 'Adventurer';
     const goodbye = game.urole?.goodbye || 'Goodbye';
@@ -1357,10 +1367,12 @@ function stopDisclosure(): false {
     return false;
 }
 
-async function startGameExit(outcome: ShopExitOutcome, deathType = DIED): Promise<void> {
+async function startGameExit(outcome: ShopExitOutcome, deathType = DIED): Promise<number> {
     game.program_state.gameover = true;
     game.program_state.something_worth_saving = false;
     if (deathType !== PANICKED && !game.program_state.panicking) await doneObjectCleanup();
+    // really_done() fixes the finish time before any disclosure can wait.
+    const endtime = recorderLocalEpochSeconds(game.datetime) || Date.now() / 1000;
     if (achievementEntries(game).length || !game.flags.beginner) {
         if (game.u.uroleplay?.blind) recordAchievement(game, ACH_BLND);
         if (game.u.uroleplay?.nudist) recordAchievement(game, ACH_NUDE);
@@ -1374,6 +1386,7 @@ async function startGameExit(outcome: ShopExitOutcome, deathType = DIED): Promis
     game._canMakeBones = outcome === 'died' && deathType < GENOCIDED
         && canMakeBones();
     if (game._canMakeBones) restoreLaunchedObjectForBones(game);
+    return endtime;
 }
 
 async function settleGameExit(outcome: ShopExitOutcome): Promise<boolean> {
@@ -1390,15 +1403,15 @@ async function settleGameExit(outcome: ShopExitOutcome): Promise<boolean> {
 }
 
 export async function finishOrdinaryDeath(options: OrdinaryDeathOptions): Promise<void> {
-    await startGameExit('died', options.deathType ?? DIED);
+    const endtime = await startGameExit('died', options.deathType ?? DIED);
     if (options.deathType != null) setHeroRemainsFromDeath(options.deathType, game);
-    await completeOrdinaryDeath(options);
+    await completeOrdinaryDeath(options, endtime);
 }
 
 async function completeOrdinaryDeath({
     killer, possessionAnswer = null, deathVerb = 'died', deathCause = null,
     deathType = null, killerFormat = KILLED_BY_AN,
-}: OrdinaryDeathOptions): Promise<void> {
+}: OrdinaryDeathOptions, endtime: number): Promise<void> {
     const how = deathType ?? DIED;
     if (!killer && how === GENOCIDED) killerFormat = NO_KILLER_PREFIX;
     if (!killer && (how === STARVING || how === BURNING)) killerFormat = KILLED_BY;
@@ -1437,7 +1450,7 @@ async function completeOrdinaryDeath({
 
     if (showSummary) {
         game._preserveLeadingStyledBlanks = false;
-        await showTextWindow(deathSummaryLines(killer, summary, { deathVerb, deathCause, deathType }));
+        await showTextWindow(deathSummaryLines(killer, summary, endtime, { deathVerb, deathCause, deathType }));
     }
     await finishScoreDisplay(currentScoreRecord(summary, {
         killer, deathVerb, deathCause, deathType,
@@ -1505,14 +1518,14 @@ export async function doquit() {
 export async function finishOrdinaryQuit() {
     requireInitializedHero(game.u);
     await bot();
-    await startGameExit('quit');
+    const endtime = await startGameExit('quit');
     // really_done() admits bones while the outcome is still QUIT, then
     // converts an already-dead hero without another death or recovery phase.
     if (game.u.uhp < 1) {
         game.u.umortality = (game.u.umortality ?? 0) + 1;
         game._canMakeBones = false;
         const cause = "quit while already on Charon's boat";
-        await completeOrdinaryDeath({ killer: cause, deathCause: cause });
+        await completeOrdinaryDeath({ killer: cause, deathCause: cause }, endtime);
         return;
     }
     const taken = await settleGameExit('quit');

@@ -8,9 +8,9 @@ import { GOLD_PIECE } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { capturedScreen, screenText } from './support/screen.js';
-async function endingGame() {
+async function endingGame(datetime = '19990830190000') {
     return runSegment({
-        seed: 7163, datetime: '19990830190000', moves: ' ', storage: memoryStorage(),
+        seed: 7163, datetime, moves: ' ', storage: memoryStorage(),
         nethackrc: [
             'OPTIONS=name:AlexandertheGreatest,role:Caveman,race:human,gender:male,align:neutral',
             'OPTIONS=!legacy,!tutorial,!autopickup,pettype:none,!bones,tombstone,!toptenwin',
@@ -63,5 +63,39 @@ void test('the tombstone hard-splits a lone letter followed by an overlong word'
     assert.match(tombstone, /\|\s+abcdefghijklmnop\s+\|/);
     assert.match(tombstone, /\|\s+x abcdefghijklmn\s+\|/);
     assert.match(tombstone, /\|\s+opqrstuv\s+\|/);
+});
+for (const { name, datetime, year, now } of [
+    { name: 'live clock', datetime: '', year: 2042, now: Date.UTC(2042, 6, 15, 18) },
+    { name: 'live clock before local New Year', datetime: '', year: 2041, now: Date.UTC(2042, 0, 1, 2) },
+    { name: 'fixed clock normalized across New Year', datetime: '20250101000000', year: 2024, now: Date.UTC(2042, 6, 15, 18) },
+    { name: 'pre-1970 calendar date', datetime: '19690830190000', year: 2069, now: Date.UTC(2042, 6, 15, 18) },
+]) {
+    void test(`the tombstone uses the native year for a ${name}`, async (context) => {
+        context.mock.timers.enable({ apis: ['Date'], now });
+        const engine = await endingGame(datetime);
+        requirePlayingGame(game);
+        game.u.uhp = 0;
+        engine.inputGate.feed('#quit\ny');
+        await engine.runUntilInputNeeded();
+        const summary = screenText(capturedScreen(engine));
+        await finishPages(engine);
+        assert.match(summary, new RegExp(`\\|\\s+${year}\\s+\\|`));
+    });
+}
+void test('a slow disclosure answer cannot move the tombstone into the next year', async (context) => {
+    context.mock.timers.enable({ apis: ['Date'], now: Date.UTC(2042, 0, 1, 4, 59, 59) });
+    const engine = await endingGame('');
+    requirePlayingGame(game);
+    game.u.uhp = 0;
+    game.flags.disclose = '-i na -v -g -c -o';
+    engine.inputGate.feed('#quit\ny');
+    await engine.runUntilInputNeeded();
+    assert.match(screenText(capturedScreen(engine)), /Do you want to see your attributes\?/);
+    context.mock.timers.setTime(Date.UTC(2042, 0, 1, 5, 0, 1));
+    engine.inputGate.feed('n');
+    await engine.runUntilInputNeeded();
+    const summary = screenText(capturedScreen(engine));
+    await finishPages(engine);
+    assert.match(summary, /\|\s+2041\s+\|/);
 });
 //# sourceMappingURL=rip_display.test.js.map
