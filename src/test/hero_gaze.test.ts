@@ -1,6 +1,7 @@
 import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { finishHeroHelplessness } from '../js/allmain.js';
 
 import { game } from '../js/gstate.js';
 import { heroGazeAttack, useHeroGaze } from '../js/hero_gaze.js';
@@ -69,4 +70,6 @@ void test('gazing at a floating eye can freeze the hero', async () => {
     assert.ok('stopped' in result && result.stopped);
     assert.equal(game._helplessTurns, 9);
     assert.equal(game._helplessReason, "frozen by a monster's gaze");
+    await finishHeroHelplessness();
+    assert.match(game._pending_message, /You can move again\./);
 });

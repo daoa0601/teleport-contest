@@ -2,7 +2,7 @@
 // C ref: dothrow.c hurtle() and hurtle_step().
 
 import { formatFeltMessage } from './hero_speech.js';
-import { endVoluntaryMultiTurn } from './command_state.js';
+import { nomul, setMulti } from './command_state.js';
 import { heroHasWaterWalking } from './armor.js';
 import {
     beginBallAndChainMove, finishBallAndChainMove, heroIsPunished,
@@ -49,7 +49,6 @@ import { monsterHasMapPosition } from './monster_location.js';
 import { monsterName, monsterObjectPronoun } from './monster_name.js';
 import { objectName } from './objnam.js';
 import { rnd } from './rng.js';
-import { stopRun } from './runmode.js';
 import { checkSpecialRoom } from './shk.js';
 import { touchPetrifies } from './stoning.js';
 import { inventoryWeight } from './weight.js';
@@ -280,10 +279,7 @@ function anchoredMessage() {
 }
 
 function stopHurtle() {
-    stopRun();
-    game._helplessTurns = 0;
-    game._helplessReason = null;
-    game._helplessDoneMessage = null;
+    nomul(0);
 }
 
 async function triggerLandingTrap(trap: Trap | undefined, options: HeroHurtleOptions, remaining: HurtleDistance): Promise<boolean> {
@@ -345,8 +341,7 @@ async function settleLiquid(options: HeroHurtleOptions, remaining: HurtleDistanc
         return null;
     }
 
-    game.multi = 0;
-    game._helplessTurns = 0;
+    setMulti(0);
     game._helplessReason = null;
     game._helplessDoneMessage = null;
     return heroLiquidEffects({
@@ -461,15 +456,7 @@ export async function hurtleHero(dx: number, dy: number, range: number, {
     range = Math.max(0, Math.trunc(range));
     if (!range || (!dx && !dy) || game.u?.ustuck) return false;
 
-    stopRun();
-    endVoluntaryMultiTurn(game);
-    // nomul(-range) cannot shorten an existing involuntary delay.
-    if ((game._helplessTurns ?? 0) <= range && game.multi >= -range) {
-        game._helplessTurns = range;
-        game.multi = -range;
-        game.u.usleep = 0;
-        game.u.invulnerable = false;
-    }
+    nomul(-range);
     game._helplessReason = 'moving through the air';
     game._helplessDoneMessage = '';
     if (verbose) {

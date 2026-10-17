@@ -7,7 +7,7 @@ import {
 import { currentAttribute } from './attrib.js';
 import { heroLegName } from './body_parts.js';
 import { farlookLocationDescription } from './cmd.js';
-import { endVoluntaryMultiTurn } from './command_state.js';
+import { nomul } from './command_state.js';
 import { impossible } from './diagnostics.js';
 import { bot, newsym, redrawMap, plineWithContinuation } from './display.js';
 import { prepareMapPositionHighlights, selectMapPosition, shouldShowGetposTip, showGetposTip } from './getpos.js';
@@ -260,8 +260,7 @@ export async function jumpHero(magic = 0, { state = game }: { state?: GameState 
         newx: movement.x, newy: movement.y, explicitAttempt: false });
     if (state.program_state.gameover) return jumpResult(true, state);
     await announceInvocationSquare();
-    endVoluntaryMultiTurn(state);
-    state._helplessTurns = 1;
+    nomul(-1, state);
     state._helplessReason = 'jumping around';
     state._helplessDoneMessage = '';
     await spendHeroNutrition(rnd(25), { state });

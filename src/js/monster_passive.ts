@@ -4,7 +4,7 @@
 import { formatFeltMessage } from './hero_speech.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { makeStunned } from './hero_mental_status.js';
-import { endVoluntaryMultiTurn } from './command_state.js';
+import { nomul } from './command_state.js';
 import { changeHeroLuck, currentAttribute, exerciseAttribute } from './attrib.js';
 import { heroHasFreeAction } from './armor.js';
 import { heroSpecies } from './hero_species.js';
@@ -497,8 +497,7 @@ function objectTouchedByEnchantment(state: GameState, attackType: AttackMethod, 
 // clears it for the floating eye, which unmul() also turns into that message.
 function freezeHero(state: GameState, turns: number, reason: MonsterHelplessnessReason): void {
     state._occupation = null;
-    endVoluntaryMultiTurn(state);
-    state._helplessTurns = Math.max(0, turns);
+    nomul(-Math.max(0, turns), state);
     state._helplessReason = reason;
     state._helplessDoneMessage = 'You can move again.';
 }

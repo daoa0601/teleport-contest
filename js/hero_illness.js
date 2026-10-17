@@ -6,7 +6,7 @@ import { heroIsHallucinating } from './senses.js';
 import { isIceAt } from './terrain_properties.js';
 import { heroIsUnaware } from './hero_sleep.js';
 import { makeConfused, makeStunned } from './hero_mental_status.js';
-import { endVoluntaryMultiTurn } from './command_state.js';
+import { endVoluntaryMultiTurn, nomul, currentMulti } from './command_state.js';
 import { heroStomachName } from './body_parts.js';
 import { adjustAttribute, currentAttribute, exerciseAttribute, } from './attrib.js';
 import { reportHeroEncumbrance } from './encumbrance.js';
@@ -133,10 +133,9 @@ function heroCannotVomit(state) {
     return form === PM_PONY || form === PM_HORSE || form === PM_WARHORSE;
 }
 function installVomitingHelplessness(state) {
-    if ((state._helplessTurns ?? 0) > 2)
+    if (currentMulti(state) < -2)
         return;
-    endVoluntaryMultiTurn(state);
-    state._helplessTurns = 2;
+    nomul(-2, state);
     state._helplessReason = 'vomiting';
     state._helplessDoneMessage = 'You can move again.';
 }

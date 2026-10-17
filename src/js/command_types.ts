@@ -51,7 +51,7 @@ export type DelayedArmorAction = {
     object: GameObject;
     ready: boolean;
     _runmodeRetainedTopline?: TerminalCell[] | undefined;
-} & ({ kind: 'wear' | 'remove'; remainingGlobalTurns: number; finishMessage: string }
+} & ({ kind: 'wear' | 'remove' }
     | { kind: 'steal'; thief: Monster });
 
 export interface CommandInput {

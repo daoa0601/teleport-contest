@@ -1,4 +1,5 @@
 // C rumors.c:outrumor(BY_COOKIE). Callers own literacy and the cookie itself.
+import { setMulti } from './command_state.js';
 import { ACH_ORCL, FAINTED } from './const.js';
 import { plineWithContinuation as pline } from './display.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
@@ -25,7 +26,7 @@ import { ORACLE_TEXT } from './oracle_data.js';
 export async function consultOracle(oracle: Monster | null, state: GameState = game): Promise<boolean> {
     requireLiveGame(state);
     requirePlayingGame(state);
-    state.multi = 0;
+    setMulti(0, state);
     const money = heroGoldAmount(state);
     if (!oracle) {
         await pline('There is no one here to consult.');

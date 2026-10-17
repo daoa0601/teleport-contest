@@ -1,7 +1,7 @@
 // Offerings at altars.
 // C pray.c:dosacrifice(), offer_corpse(), and the Amulet offering helpers.
 import { formatFeltMessage, publishHeardMessage } from './hero_speech.js';
-import { endVoluntaryMultiTurn } from './command_state.js';
+import { nomul } from './command_state.js';
 import { observeObjectForNaming } from './objnam.js';
 import { adjustHeroAlignment, convertHeroAlignment, deityName } from './alignment.js';
 import { artifactById, artifactExistCount, createArtifactGift, discoverArtifact, markArtifactFound, } from './artifacts.js';
@@ -367,8 +367,7 @@ async function offerOwnRace(corpse, highAltar, alignment) {
             if (Math.sign(hero.ualign.type) === Math.sign(MONSTER_ALIGNMENT[type] ?? 0))
                 demon.mpeaceful = true;
             await pline('You are terrified, and unable to move.');
-            endVoluntaryMultiTurn(game);
-            game._helplessTurns = 3;
+            nomul(-3);
             game._helplessReason = 'being terrified of a demon';
             game._helplessDoneMessage = '';
         }

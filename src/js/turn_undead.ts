@@ -12,7 +12,7 @@ export interface TurnUndeadOptions {
 // The priest and knight #turn command.
 // C ref: pray.c doturn() and maybe_turn_mon_iter().
 
-import { endVoluntaryMultiTurn } from './command_state.js';
+import { nomul } from './command_state.js';
 import { exerciseAttribute } from './attrib.js';
 import { hallucinatedDeityName } from './alignment.js';
 import {
@@ -171,11 +171,10 @@ export async function turnUndeadByCallingOnDeity(state: GameState = game, {
         results.push({ monster, result });
     }
 
-    endVoluntaryMultiTurn(state);
-    state._helplessTurns = Math.max(
+    nomul(-Math.max(
         1,
         5 - Math.trunc(((state.u?.ulevel ?? 1) - 1) / 6),
-    );
+    ), state);
     state._helplessReason = 'trying to turn the monsters';
     state._helplessDoneMessage = 'You can move again.';
     state.context.move = 1;

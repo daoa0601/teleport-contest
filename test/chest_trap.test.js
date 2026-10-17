@@ -6,6 +6,7 @@ import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { AMULET_OF_YENDOR, CHEST, CLUB, RIN_FREE_ACTION, ROCK } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { heroIsHallucinating } from '../js/senses.js';
+import { putHeroToSleep } from '../js/hero_sleep.js';
 import { addInventoryObject, floorObject, knownObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshPlayableRoom } from './support/playable-room.js';
@@ -32,6 +33,19 @@ function freshTrapRoom(options) {
     initRng(7301n);
     return level;
 }
+void test('chest paralysis preserves a longer sleep while replacing its recovery message', async () => {
+    freshTrapRoom({ hero: { uluck: 0, uhp: 40, uhpmax: 40 } });
+    const chest = await addInventoryObject(CHEST, { otrapped: true });
+    putHeroToSleep(20);
+    const output = messageCollector();
+    await triggerChestTrap(chest, {
+        random: randomValues(0, 1, 3), rollDice: () => 5, publish: output.publish,
+    });
+    assert.equal(game._helplessTurns, 20);
+    assert.ok(game.u.usleep);
+    assert.equal(game._helplessReason, 'frozen by a trap');
+    assert.equal(game._helplessDoneMessage, 'You can move again.');
+});
 void test('luck can discharge a trapped chest without harming the hero', async () => {
     freshTrapRoom({ hero: { uluck: 0, uhp: 40, uhpmax: 40 } });
     requirePlayingGame(game);

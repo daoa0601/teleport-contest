@@ -3,7 +3,7 @@
 import { formatFeltMessage } from './hero_speech.js';
 import { currentAttribute, exerciseWisdom } from './attrib.js';
 import { heroEyeCount, heroEyeName, heroFaceName } from './body_parts.js';
-import { endVoluntaryMultiTurn } from './command_state.js';
+import { nomul } from './command_state.js';
 import { A_INT, A_WIS } from './const.js';
 import { askTeleportDestination } from './cmd.js';
 import { impossible } from './diagnostics.js';
@@ -315,13 +315,7 @@ function typeKnown(type, state) {
     return OBJECT_INITIAL_KNOWN[type] || state._knownObjectTypes?.has(type);
 }
 function delayReading(delay, state) {
-    const turns = -delay;
-    if ((state._helplessTurns || 0) <= turns) {
-        endVoluntaryMultiTurn(state);
-        state.u.invulnerable = false;
-        state.u.usleep = 0;
-        state._helplessTurns = turns;
-    }
+    nomul(delay, state);
     state._helplessReason = 'reading a book';
     state._helplessDoneMessage = null;
 }

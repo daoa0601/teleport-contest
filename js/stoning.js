@@ -3,7 +3,7 @@
 // pickup.c fatal_corpse_mistake(), trap.c instapetrify(),
 // potion.c make_stoned(), and timeout.c stoned_dialogue().
 import { heroIsHallucinating } from './senses.js';
-import { endVoluntaryMultiTurn } from './command_state.js';
+import { endVoluntaryMultiTurn, nomul } from './command_state.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { heroHandName } from './body_parts.js';
 import { makePlural, withIndefiniteArticle } from './object_grammar.js';
@@ -218,8 +218,7 @@ export async function petrificationDialogue({ state = game, publish = plineWithC
     }
     else if (turns === 3) {
         await stopHeroOccupation(state, publish);
-        endVoluntaryMultiTurn(state);
-        state._helplessTurns = 3;
+        nomul(-3, state);
         state._helplessReason = 'getting stoned';
         state._helplessDoneMessage = 'You can move again.';
         if (!hero.usteed)

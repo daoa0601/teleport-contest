@@ -8,7 +8,7 @@ import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 import type { DamageType } from './monster_attack_types.js';
 import { heroIsHallucinating } from './senses.js';
-import { endVoluntaryMultiTurn } from './command_state.js';
+import { nomul } from './command_state.js';
 import { heroHasFreeAction } from './armor.js';
 import {
     KILLED_BY, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, STONING,
@@ -88,12 +88,9 @@ async function applyGazePassive(
         }
         await publish(`You are frozen by ${owner} gaze!`);
         state._occupation = null;
-        endVoluntaryMultiTurn(state);
-        state._helplessTurns = floatingEyeFreezeDuration(
-            monster, state, random, rollDice,
-        );
+        nomul(-floatingEyeFreezeDuration(monster, state, random, rollDice), state);
         state._helplessReason = "frozen by a monster's gaze";
-        state._helplessDoneMessage = '';
+        state._helplessDoneMessage = null;
         return { heroDied: false, stopped: true };
     }
 

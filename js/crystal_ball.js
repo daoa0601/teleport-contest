@@ -4,7 +4,7 @@ import { A_INT, COLNO, IS_FURNITURE, M_AP_FURNITURE, M_AP_TYPE, ROWNO, TER_DETEC
 import { currentAttribute } from './attrib.js';
 import { artifactByName } from './artifacts.js';
 import { heroResistsBlindingLight } from './blinding_attack.js';
-import { endVoluntaryMultiTurn } from './command_state.js';
+import { nomul } from './command_state.js';
 import { canSpotMonster, displayColorName, flushPendingTopline, glyphAt, magic_map_background, map_invisible, plineWithContinuation as pline, } from './display.js';
 import { game, requireGameLevel } from './gstate.js';
 import { cmapToGlyph, CmapSymbol } from './glyph_numbers.js';
@@ -132,12 +132,7 @@ function ballSubject(object, verb) {
     return `${name.charAt(0).toUpperCase()}${name.slice(1)} ${verbForSubject(name, verb)}`;
 }
 function delayGazing(turns, reason) {
-    if ((game._helplessTurns ?? 0) <= turns) {
-        endVoluntaryMultiTurn();
-        game.u.invulnerable = false;
-        game.u.usleep = 0;
-        game._helplessTurns = turns;
-    }
+    nomul(-turns);
     game._helplessReason = reason;
     game._helplessDoneMessage = '';
 }

@@ -6,7 +6,7 @@ import {
 } from './const.js';
 import { exerciseAttribute } from './attrib.js';
 import { heroStomachName } from './body_parts.js';
-import { endVoluntaryMultiTurn } from './command_state.js';
+import { nomul } from './command_state.js';
 import { applyCorpsePostEffects } from './corpse_eating.js';
 import {
     canSpotMonster, flush_screen, map_invisible, map_location, newsym,
@@ -196,8 +196,7 @@ async function digestDefender(defender: Monster, species: number, state: Playing
         if (delay) {
             await publish(`You digest ${monsterName(defender, { state })}.`);
             if (state.u.slowDigestion) delay *= 2;
-            endVoluntaryMultiTurn(state);
-            state._helplessTurns = Math.max(state._helplessTurns ?? 0, delay);
+            nomul(-delay, state);
             state._helplessReason = 'digesting something';
             state._helplessDoneMessage = doneMessage;
             state._digestedMonsterSpecies = species;

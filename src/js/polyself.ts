@@ -55,7 +55,7 @@ import {
     canSpotMonster, newsym, pline, plineWithContinuation, see_monsters,
 } from './display.js';
 import { deleteObject } from './object_delete.js';
-import { dragonFormForArmor, findArmorClass, removeHeroArmor, simpleArmorName } from './armor.js';
+import { cancelDonning, dragonFormForArmor, findArmorClass, removeHeroArmor, simpleArmorName } from './armor.js';
 import { isFlimsyObject } from './object_properties.js';
 import {
     adjustObjectLightAfterBlessing as adjustObjectLight, endObjectBurn, objectLightRadius,
@@ -439,18 +439,7 @@ async function dropCarriedObject(
 function cancelPolymorphDressing(object: GameObject) {
     const delayed = game._delayedAction;
     const cancelledDon = delayed?.object === object && delayed.kind === 'wear';
-    if (delayed?.object === object) {
-        game._delayedAction = null;
-        game.multi = 0;
-    }
-    if (isBeingTakenOff(object)) {
-        const progress = game.context.takeoff;
-        if (progress) {
-            progress.current = null;
-            progress.delay = 0;
-        }
-        game.multi = 0;
-    }
+    if (delayed?.object === object || isBeingTakenOff(object)) cancelDonning();
     return { cancelledDon };
 }
 

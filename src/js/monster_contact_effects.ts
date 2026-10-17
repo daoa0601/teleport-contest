@@ -5,7 +5,7 @@ import { formatFeltMessage, publishHeardMessage } from './hero_speech.js';
 import { artifactById } from './artifacts.js';
 import { heroHasFreeAction } from './armor.js';
 import { exerciseAttribute } from './attrib.js';
-import { endVoluntaryMultiTurn, heroHasInvoluntaryDelay } from './command_state.js';
+import { heroHasInvoluntaryDelay, nomul } from './command_state.js';
 import { A_CON, A_DEX, A_STR, FAINTED, M_SEEN_ACID, M_SEEN_SLEEP, Upolyd } from './const.js';
 import { displayLiquidName, shieldeff, type MessagePublisher } from './display.js';
 import type { PlayingGameState } from './game_state.js';
@@ -171,8 +171,7 @@ async function paralyzeHero(
     }
     await publish(heroIsBlind(state) ? 'You are frozen!'
         : `You are frozen by ${monsterName(monster, { state })}!`);
-    endVoluntaryMultiTurn(state);
-    state._helplessTurns = rollOne(10);
+    nomul(-rollOne(10), state);
     state._helplessDoneMessage = 'You can move again.';
     state._helplessReason = {
         monsterId: monster.m_id,

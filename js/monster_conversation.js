@@ -1,6 +1,6 @@
 // Speech and non-animal noises in C sounds.c:domonnoise().
 import { heroBloodName } from './body_parts.js';
-import { endVoluntaryMultiTurn } from './command_state.js';
+import { nomul } from './command_state.js';
 import { Upolyd, In_endgame } from './const.js';
 import { demandDemonBribe } from './demon_talk.js';
 import { DEATH_QUOTES } from './death_quotes.js';
@@ -75,9 +75,7 @@ export async function publishMonsterConversation(monster, sound, state) {
         case MS_BONES:
             await pline(`${monsterName(monster, { capitalized: true, state })} rattles noisily.`);
             await pline('You freeze for a moment.');
-            endVoluntaryMultiTurn(state);
-            state._helplessTurns = Math.max(state._helplessTurns ?? 0, 2);
-            state.multi = -state._helplessTurns;
+            nomul(-2, state);
             state._helplessReason = 'scared by rattling';
             state._helplessDoneMessage = null;
             break;

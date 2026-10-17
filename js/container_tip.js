@@ -1,5 +1,6 @@
 // C pickup.c:dotip(), choose_tip_container_menu(), tipcontainer(),
 // tipcontainer_gettarget(), and tipcontainer_checks().
+import { nomul } from './command_state.js';
 import { ALTAR, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, LOST_DROPPED, MENU_ITEMFLAGS_SELECTED, MENU_TRADITIONAL, PLNMSG_OBJNAM_ONLY } from './const.js';
 import { game, requireGameLevel } from './gstate.js';
 import { plineWithContinuation as pline } from './display.js';
@@ -168,8 +169,7 @@ async function tipChecks(source, target, allowEmpty) {
     if (source.otrapped) {
         await triggerChestTrap(source);
         if ((game.multi ?? 0) >= 0 && !game._helplessTurns) {
-            game.multi = -1;
-            game._helplessTurns = 1;
+            nomul(-1);
             game._helplessReason = 'tipping a container';
             game._helplessDoneMessage = '';
         }

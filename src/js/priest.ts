@@ -12,7 +12,7 @@ import type { Monster, PriestData, MinionData } from './monster_types.js';
 import type { Room } from './map_types.js';
 import { deityName } from './alignment.js';
 import { heroSpineName } from './body_parts.js';
-import { endVoluntaryMultiTurn } from './command_state.js';
+import { nomul } from './command_state.js';
 import { recordAchievement } from './achievements.js';
 import { setMonsterMalign } from './monster_alignment.js';
 import { angerMonster, wakeMonster } from './monster_anger.js';
@@ -282,8 +282,7 @@ export async function intemple(roomno: number, state: GameState = game): Promise
                 setMonsterMalign(ghost, state);
                 if (state.flags.verbose)
                     await plineWithContinuation('You are frightened to death, and unable to move.');
-                endVoluntaryMultiTurn(state);
-                state._helplessTurns = Math.max(state._helplessTurns ?? 0, 3);
+                nomul(-3, state);
                 state._helplessReason = 'being terrified of a ghost';
                 state._helplessDoneMessage = 'You regain your composure.';
             }

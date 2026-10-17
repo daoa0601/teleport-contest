@@ -22,7 +22,7 @@ import { bot, plineWithContinuation } from './display.js';
 import { finishHeroDeath } from './end.js';
 import { makeDeaf } from './hero_hearing.js';
 import { stopHeroOccupation } from './occupation.js';
-import { endVoluntaryMultiTurn } from './command_state.js';
+import { nomul, setMulti } from './command_state.js';
 import { stopRun } from './runmode.js';
 import { heroIsHallucinating } from './senses.js';
 import { selfTouchPetrifyingWeapons } from './stoning.js';
@@ -85,8 +85,7 @@ export async function gainHeroNutrition(amount: number, { state = game }: Hunger
         && (!victual?.eating || !victual.fullwarn)) {
         await plineWithContinuation("You're having a hard time getting all of it down.");
         if (!victual?.eating) {
-            endVoluntaryMultiTurn(state);
-            state._helplessTurns = 2;
+            setMulti(-2, state);
             state._helplessReason = 'finishing a meal';
             state._helplessDoneMessage = "You're finally finished.";
             state._helplessAfter = null;
@@ -233,8 +232,7 @@ async function faintFromHunger(duration: number, state: PlayingGameState) {
     await stopHeroOccupation(state);
     await plineWithContinuation('You faint from lack of food.');
     await makeDeaf((state.u.deafTurns ?? 0) + duration, { state, talk: false });
-    endVoluntaryMultiTurn(state);
-    state._helplessTurns = duration;
+    nomul(-duration, state);
     state._helplessReason = 'fainted from lack of food';
     state._helplessDoneMessage = 'You regain consciousness.';
     state._helplessAfter = 'unfaint';
@@ -278,8 +276,7 @@ export async function recoverHeroFromFainting({ state = game }: HungerOptions = 
 export async function resetHeroFaint({ state = game }: HungerOptions = {}) {
     requirePlayingGame(state);
     if (state._helplessAfter !== 'unfaint') return false;
-    state.multi = 0;
-    state._helplessTurns = 0;
+    setMulti(0, state);
     state._queuedHelplessRecoveryMessage = null;
     await plineWithContinuation('You revive.');
     state.u.usleep = 0;

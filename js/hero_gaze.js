@@ -1,7 +1,7 @@
 // The #monster gaze command for a polymorphed hero.
 // C ref: polyself.c dogaze().
 import { heroIsHallucinating } from './senses.js';
-import { endVoluntaryMultiTurn } from './command_state.js';
+import { nomul } from './command_state.js';
 import { heroHasFreeAction } from './armor.js';
 import { KILLED_BY, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, STONING, } from './const.js';
 import { canSeeMonster, plineWithContinuation, } from './display.js';
@@ -61,10 +61,9 @@ async function applyGazePassive(monster, state, publish, random, rollDice, die) 
         }
         await publish(`You are frozen by ${owner} gaze!`);
         state._occupation = null;
-        endVoluntaryMultiTurn(state);
-        state._helplessTurns = floatingEyeFreezeDuration(monster, state, random, rollDice);
+        nomul(-floatingEyeFreezeDuration(monster, state, random, rollDice), state);
         state._helplessReason = "frozen by a monster's gaze";
-        state._helplessDoneMessage = '';
+        state._helplessDoneMessage = null;
         return { heroDied: false, stopped: true };
     }
     if (monster.mnum !== PM_MEDUSA || monster.mcan)

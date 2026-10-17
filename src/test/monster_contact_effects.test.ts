@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { performMonsterHeroAttack } from '../js/allmain.js';
+import { currentMulti } from '../js/command_state.js';
 import { CLR_BRIGHT_BLUE } from '../js/terminal.js';
 import { M_SEEN_FIRE, M_SEEN_SLEEP, NO_MINVENT, STONE } from '../js/const.js';
 import { rhack } from '../js/cmd.js';
@@ -98,6 +99,7 @@ for (const delay of ['dressing', 'unprotected prayer', 'negative multi']) {
         }
         const input = resetInputState();
         input.beforeRead = () => input.feed(' ');
+        const remainingDelay = currentMulti();
 
         await performMonsterHeroAttack(attacker, game, {
             random: limit => limit === 10 ? 9 : 0,
@@ -105,7 +107,7 @@ for (const delay of ['dressing', 'unprotected prayer', 'negative multi']) {
         });
 
         assert.equal(game.u.uhp, 97);
-        assert.equal(game._helplessTurns ?? 0, delay === 'unprotected prayer' ? 3 : 0);
+        assert.equal(currentMulti(), remainingDelay, 'A blocked sleep attack must preserve the current delay');
         assert.ok(!game.u.usleep);
     });
 }

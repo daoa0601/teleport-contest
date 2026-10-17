@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { heroHasInvoluntaryDelay } from '../js/command_state.js';
-import { POOL } from '../js/const.js';
+import { POOL, TT_WEB } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { hurtleHero } from '../js/hero_hurtle.js';
 import { putHeroToSleep } from '../js/hero_sleep.js';
@@ -43,6 +43,20 @@ void test('a second knockback cannot shorten time already spent moving through t
 
     assert.equal(game.u.ux, 13);
     assert.equal(game._helplessTurns, 2);
+});
+
+void test('a web anchoring a sleeping hero prevents knockback without waking them', async () => {
+    freshObjectRoom();
+    putHeroToSleep(8);
+    game.u.utrap = 4;
+    game.u.utraptype = TT_WEB;
+
+    await hurtleHero(1, 0, 2);
+
+    assert.equal(game.u.ux, 10);
+    assert.equal(game._helplessTurns, 8);
+    assert.equal(game._helplessDoneMessage, 'You wake up.');
+    assert.ok(game.u.usleep);
 });
 
 void test('hurtling into water releases a swimming hero from the movement delay', async () => {
