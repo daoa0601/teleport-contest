@@ -14,7 +14,7 @@ import { finishScheduledLevelChange, gotoLevel } from '../js/level_change.js';
 import { resetInputState } from '../js/input.js';
 import { beginObjectBurn } from '../js/light.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { AMULET_OF_LIFE_SAVING, AMULET_OF_YENDOR, FOOD_RATION, LEASH, LEATHER_GLOVES, OIL_LAMP, SPLINT_MAIL } from '../js/object_data.js';
+import { AMULET_OF_LIFE_SAVING, AMULET_OF_YENDOR, FOOD_RATION, LEASH, LEATHER_GLOVES, OIL_LAMP, POT_CONFUSION, SPLINT_MAIL } from '../js/object_data.js';
 import { OBJECT_TIMER_KIND, scheduleObjectTimer } from '../js/object_timers.js';
 import { addInventoryItem } from '../js/u_init.js';
 import { restoreGame, saveGame } from '../js/save.js';
@@ -299,6 +299,30 @@ void test('falling through a shaft hurts the hero for each level fallen', async 
     assert.ok(game.level === destination, 'the fall did not reach the shaft destination');
     const damage = 100 - game.u.uhp;
     assert.ok(damage >= 3 && damage <= 18, `a three-level fall dealt ${damage} damage`);
+});
+
+void test('a potion falling with the hero breaks unseen before the remembered-level note', async () => {
+    const { source } = freshConnectedLevels({ destinationDepth: 4 });
+    requirePlayingGame(game);
+    game.u.uhp = game.u.uhpmax = 100;
+    addTrap(source, HOLE, 11, 10, { dst: { dnum: 0, dlevel: 4 }, tseen: true });
+    await floorObject(POT_CONFUSION, 11, 10);
+    game._levelAnnotations = new Map([['0:4', 'the potion drop']]);
+    const pages: string[] = [];
+    resetInputState().display = {
+        async readKey(): Promise<number> {
+            pages.push(game._pending_message ?? '');
+            return ' '.charCodeAt(0);
+        },
+    };
+
+    await rhack('l'.charCodeAt(0));
+
+    // goto_level's obj_delivery(FALSE) lands hero-traveling objects before
+    // the new level is in view and before its remembered note.
+    const transcript = [...pages, game._last_message ?? ''].join('\n');
+    assert.match(transcript,
+        /You hear something shatter![\s\S]*somewhat dizzy[\s\S]*You remember this level as the potion drop/);
 });
 
 void test('a flying hero can deliberately descend through a known hole without fall damage', async () => {
