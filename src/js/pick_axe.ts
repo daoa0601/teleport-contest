@@ -1,3 +1,4 @@
+import { seeTrap } from './trap.js';
 // C dig.c:use_pick_axe()/use_pick_axe2(). Digging effort lives in hero_digging.
 
 import { monsterHasMapPosition } from './monster_location.js';
@@ -233,8 +234,7 @@ async function strikeUndiggable(tool: GameObject, x: number, y: number, state: G
     const statue = pile.find((object) => object.otyp === STATUE);
     if (trap?.ttyp === WEB) {
         if (!trap.tseen) {
-            trap.tseen = true;
-            newsym(x, y);
+            seeTrap(trap, state);
             await plineWithContinuation('There is a spider web there!');
         }
         await plineWithContinuation(

@@ -5,6 +5,7 @@ import type { MessagePublisher } from './display.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 import { isLavaAt, isPoolAt } from './terrain_properties.js';
+import { feelTrap } from './trap.js';
 import { deleteTrap } from './trap_lifecycle.js';
 import { exerciseAttribute } from './attrib.js';
 import {
@@ -190,8 +191,7 @@ export async function useHeroWeb({
     if (web) {
         await publish('You spin a web.');
         web.madeby_u = 1;
-        web.tseen = true;
-        refresh(x, y);
+        feelTrap(web, state);
         if (roomsAt(state.level, x, y, SHOPBASE).length)
             addShopDamage(x, y, SHOP_WEB_COST, state);
     }

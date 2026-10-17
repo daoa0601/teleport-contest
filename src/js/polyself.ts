@@ -335,7 +335,6 @@ async function restoreHumanBody(
         u.m_ap_type = M_AP_NOTHING;
         u.mappearance = 0;
     }
-    state.vision_full_recalc = 1;
     state._encumbranceLevel = nearCapacity(state);
     u._encumbrance = encumbranceLabel(state._encumbranceLevel);
     newsym(u.ux, u.uy);

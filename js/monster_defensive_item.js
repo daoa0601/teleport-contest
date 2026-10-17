@@ -46,6 +46,7 @@ import { surfaceName } from './terrain_name.js';
 import { randomMonsterRelocation } from './teleport.js';
 import { findNearbyMonsterPosition, monsterTeleportRestricted, reportMonsterTeleportRestriction } from './teleport_rules.js';
 import { monsterKnowsTrap, monsterLearnsTrap } from './trap_knowledge.js';
+import { seeTrap } from './trap.js';
 import { cansee, vision_note_blocker_change } from './vision.js';
 const M1_NOHANDS = 0x00002000;
 const M1_NOEYES = 0x00001000;
@@ -394,9 +395,10 @@ export async function useMonsterDefensiveItem(monster, choice, options) {
             const trap = await maketrap(x, y, hole ? HOLE : PIT);
             if (!trap)
                 return spent();
-            trap.tseen = !!hole || cansee(x, y);
             if (hole)
                 vision_note_blocker_change(x, y);
+            if (hole || cansee(x, y))
+                seeTrap(trap, state);
             if (cansee(x, y)) {
                 await publish(`${subject()} has made a ${hole ? 'hole' : 'pit'} in the ${surfaceName(x, y, state)}.`);
                 if (hole)
@@ -466,7 +468,7 @@ export async function useMonsterDefensiveItem(monster, choice, options) {
                 vision_note_blocker_change(trap.tx, trap.ty);
             }
             if (visible)
-                trap.tseen = true;
+                seeTrap(trap, state);
             const oldx = monster.mx, oldy = monster.my;
             placeMonsterAt(monster, trap.tx, trap.ty);
             newsym(oldx, oldy);

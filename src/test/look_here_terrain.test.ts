@@ -6,7 +6,7 @@ import { DOOR, D_NODOOR, SQKY_BOARD } from '../js/const.js';
 import { game, requireGameDisplay, requireGameLevel } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { dolook } from '../js/invent.js';
-import { DART } from '../js/object_data.js';
+import { ARROW, DART } from '../js/object_data.js';
 import { autopickupAtHero } from '../js/pickup.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
 import { floorObject } from './support/game-objects.js';
@@ -64,3 +64,36 @@ void test('looking at an object on a seen trap names the trap once', async () =>
     assert.equal(text.match(/There is a squeaky board here\./g)?.length, 1);
     assert.match(text, /You see here .*dart/);
 });
+
+// C wintty.c:tty_display_nhwindow(): without menu_overlay, the pile window
+// replaces the whole screen at column zero instead of a right-hand corner.
+for (const overlay of [true, false]) {
+    void test(`a looked-at pile ${overlay ? 'overlays a corner' : 'fills the screen'} when menu_overlay is ${overlay ? 'on' : 'off'}`, async () => {
+        freshObjectRoom();
+        requireFixtureGame(game);
+        game.flags.menu_overlay = overlay;
+        await floorObject(DART, game.u.ux, game.u.uy, { quan: 1 });
+        await floorObject(ARROW, game.u.ux, game.u.uy, { quan: 1 });
+        const shown: string[][] = [];
+        const input = resetInputState();
+        input.display = {
+            async readKey(): Promise<number> {
+                shown.push(requireGameDisplay().grid.map(row => row.map(cell => cell.ch).join('')));
+                return ' '.charCodeAt(0);
+            },
+        };
+
+        await dolook();
+
+        const window = shown.find(rows => rows.some(row => row.includes('Things that are here:')));
+        assert.ok(window);
+        const header = window.find(row => row.includes('Things that are here:')) ?? '';
+        if (overlay) {
+            assert.ok(header.indexOf('Things') > 0);
+            assert.match(window.at(-1) ?? '', /\S/, 'the status line stays beneath a corner window');
+        } else {
+            assert.ok(header.startsWith('Things that are here:'));
+            assert.equal((window.at(-1) ?? '').trim(), '', 'a full-screen window clears the status line');
+        }
+    });
+}

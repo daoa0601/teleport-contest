@@ -1,6 +1,7 @@
 // Spinning a web with #monster while polymorphed into a spider.
 // C refs: cmd.c domonability(), polyself.c dospinweb().
 import { isLavaAt, isPoolAt } from './terrain_properties.js';
+import { feelTrap } from './trap.js';
 import { deleteTrap } from './trap_lifecycle.js';
 import { exerciseAttribute } from './attrib.js';
 import { ANTI_MAGIC, ARROW_TRAP, A_DEX, BEAR_TRAP, DART_TRAP, FIRE_TRAP, HOLE, IS_AIR, LADDER, LANDMINE, LEVEL_TELEP, MAGIC_PORTAL, SHOPBASE, SHOP_WEB_COST, MAGIC_TRAP, PIT, POLY_TRAP, ROCKTRAP, ROLLING_BOULDER_TRAP, RUST_TRAP, SLP_GAS_TRAP, SPIKED_PIT, SQKY_BOARD, STAIRS, TELEP_TRAP, TRAPDOOR, VIBRATING_SQUARE, WEB, } from './const.js';
@@ -149,8 +150,7 @@ export async function useHeroWeb({ state = game, publish = plineWithContinuation
     if (web) {
         await publish('You spin a web.');
         web.madeby_u = 1;
-        web.tseen = true;
-        refresh(x, y);
+        feelTrap(web, state);
         if (roomsAt(state.level, x, y, SHOPBASE).length)
             addShopDamage(x, y, SHOP_WEB_COST, state);
     }

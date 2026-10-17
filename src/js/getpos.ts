@@ -6,7 +6,7 @@ import {
     LOOK_TRADITIONAL, LOOK_VERBOSE, NHW_MENU, PICK_ONE, ROWNO, SCORR, STONE, VIBRATING_SQUARE, WEB, IS_WALL, TREE,
 } from './const.js';
 import {
-    bot, clearMessageWindow, redrawMap, flush_screen, glyphAt, lastDirtyMapCursor,
+    bot, clearMessageWindow, flush_screen, glyphAt, lastDirtyMapCursor,
     newsym_force, pline, plineWithContinuation, show_glyph_cell, terrain_glyph,
 } from './display.js';
 import { game } from './gstate.js';
@@ -47,7 +47,6 @@ export interface MapPositionOptions {
     isValidLocation?: ValidLocation | null;
     // Spell and cloud targeting admit the hero but omit its '$' overlay.
     highlightHero?: boolean;
-    preserveMap?: boolean;
     force?: boolean;
 }
 
@@ -244,19 +243,18 @@ export function isGetposPickCharacter(ch: string): boolean {
     return mapPositionPickType(ch.charCodeAt(0)) !== null;
 }
 
-// redrawMap() rebuilds every map cell each round, so the tmp_at-style overlay
-// must be re-applied after it (tty keeps such glyphs on screen instead).
-export async function paintGetposCursor(cursor: Position, message: string, markedSpots: readonly Position[] | null = null, preserveMap = false): Promise<void> {
+// getpos() flushes the existing glyph buffer. Recalculating sight here would
+// discover warnings or erase unseen-monster memory in the middle of a turn.
+export async function paintGetposCursor(cursor: Position, message: string, markedSpots: readonly Position[] | null = null): Promise<TemporaryMapEffect | null> {
     game._pending_message = message;
-    if (!preserveMap) await redrawMap();
     // display.c:tmp_at() with DISP_BEAM shows the glyph only on squares the
     // hero can see, so a validity rule that admits unseen squares (polearm
     // couldsee+glyph policy) still cannot reveal them.
-    if (markedSpots) {
-        const markers = new TemporaryMapEffect('beam', {
-            ch: GOODPOS_CH, color: HI_ZAP, decgfx: false, kind: 'effect',
-            glyph: cmapToGlyph(CmapSymbol.goodpos),
-        });
+    const markers = markedSpots ? new TemporaryMapEffect('beam', {
+        ch: GOODPOS_CH, color: HI_ZAP, decgfx: false, kind: 'effect',
+        glyph: cmapToGlyph(CmapSymbol.goodpos),
+    }) : null;
+    if (markers && markedSpots) {
         await markers.start();
         for (const { x, y } of markedSpots)
             await markers.show(x, y);
@@ -264,6 +262,7 @@ export async function paintGetposCursor(cursor: Position, message: string, marke
     await bot();
     await flush_screen(1);
     game.nhDisplay?.setCursor(cursor.x - 1, cursor.y + 1);
+    return markers;
 }
 
 // C getpos.c:getpos_help() draws this menu over the right side of the map.
@@ -521,7 +520,6 @@ export async function selectMapPosition({
     afterPaint = null,
     isValidLocation = null,
     highlightHero = true,
-    preserveMap = false,
     force = true,
 }: MapPositionOptions): Promise<MapPositionSelection | null> {
     const cursor = { ...start };
@@ -536,6 +534,12 @@ export async function selectMapPosition({
     // getpos_sethilite(NULL, NULL) resets them at its exit.
     const validity: { cycle: LocationCycle | null } = { cycle: null };
     let markValid = false;
+    let marking: TemporaryMapEffect | null = null;
+    const clearMarking = () => {
+        marking?.clear();
+        marking = null;
+        markValid = false;
+    };
     const targetCycles = new Map<GetposCycleKind, LocationCycle>();
     const autoDescription = (): boolean => game.iflags.autodescribe ?? true;
     const movementMessage = async (): Promise<string> => autoDescription()
@@ -569,7 +573,7 @@ export async function selectMapPosition({
                 ? validMapSquares(isValidLocation).filter(({ x, y }) => cansee(x, y)
                     && (highlightHero || x !== game.u.ux || y !== game.u.uy))
                 : null;
-            await paintGetposCursor(cursor, message, paintedSpots, preserveMap);
+            marking = await paintGetposCursor(cursor, message, paintedSpots);
             if (firstPaint && initialMapCursor) game.nhDisplay?.setCursor(...initialMapCursor);
             if (afterPaint) await afterPaint(cursor, firstPaint);
             firstPaint = false;
@@ -615,17 +619,17 @@ export async function selectMapPosition({
 
             if (key === 18) {
                 // redraw_cmd(): getpos_refresh() ends an active marking.
-                markValid = false;
+                clearMarking();
                 message = movePrompt;
                 continue;
             }
             if (key === game.commandBindings.specialKey('getpos.help')) {
                 // getpos_help() runs before getpos_refresh(), which resets
                 // the hilite state to its default (marking off).
-                markValid = false;
                 await getposHelpUntilDismissed(goal, {
                     hasValidLocations: !!isValidLocation,
                 });
+                clearMarking();
                 message = movePrompt;
                 continue;
             }
@@ -639,7 +643,8 @@ export async function selectMapPosition({
                 continue;
             }
             if (key === game.commandBindings.specialKey('getpos.valid')) {
-                if (isValidLocation) markValid = !markValid;
+                if (markValid) clearMarking();
+                else if (isValidLocation) markValid = true;
                 message = movePrompt;
                 continue;
             }

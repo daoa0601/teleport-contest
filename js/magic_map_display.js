@@ -98,7 +98,7 @@ export async function browseDetectionMap(terrainMode, goal, { objects = null, st
         await selectMapPosition({
             start: { x: state.u.ux, y: state.u.uy },
             prompt: state._pending_message,
-            goal, force: false, preserveMap: true,
+            goal, force: false,
             describe: (x, y) => detectionDescription(x, y, terrainMode, objects, state),
         });
     }

@@ -69,3 +69,32 @@ void test('attributes predicts a safe #pray from the live prayer rules', async (
 
     assert.equal(game.u.invulnerable, true);
 });
+
+// tty numbers enlightenment pages only when the report needs more than one.
+void test('a one-page enlightenment report ends with (end), a longer one numbers its pages', async () => {
+    for (const magic of [false, true]) {
+        freshGameplayRoom({ role: 'valkyrie', flags: { debug: magic } });
+        const input = resetInputState();
+        const report = showEnlightenment({ basic: magic, magic });
+        const footers: string[] = [];
+        try {
+            for (;;) {
+                const blocked = await Promise.race([
+                    input.waitUntilBlocked().then(() => true), report.then(() => false),
+                ]);
+                if (!blocked) break;
+                const rows = requireGameDisplay().grid.map(row => row.map(cell => cell.ch).join('').trimEnd());
+                footers.push(rows.filter(row => /^ \((end|\d+ of \d+)\)$/.test(row)).join());
+                input.feed(' ');
+            }
+        } finally {
+            input.feed('\x1b');
+            await report;
+        }
+        if (!magic) assert.deepEqual(footers, [' (end)']);
+        else {
+            assert.ok(footers.length > 1);
+            assert.deepEqual(footers, footers.map((_, page) => ` (${page + 1} of ${footers.length})`));
+        }
+    }
+});

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { G_EXTINCT, G_GENOD } from '../js/const.js';
 import { glyphAt, newsym } from '../js/display.js';
-import { game, requirePlayingGame } from '../js/gstate.js';
+import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { POT_HEALING } from '../js/object_data.js';
@@ -187,6 +187,9 @@ void test('the wish giver leaves the world before the real wish prompt while its
     const wish = grantMonsterWish(monster);
     try {
         await input.waitUntilBlocked();
+        assert.match(game._pending_message, /You may wish for an object\./);
+        input.feed(' ');
+        await input.waitUntilBlocked();
         assert.match(game._pending_message, /For what do you wish/);
         assert.ok(!game.level.monsters.includes(monster));
         assert.equal(glyphAt(11, 10)?.kind, 'monster');
@@ -200,5 +203,33 @@ void test('the wish giver leaves the world before the real wish prompt while its
     assert.equal(game.context.move, 1);
     assert.notEqual(glyphAt(11, 10)?.kind, 'monster');
     assert.equal(game.mvitals?.[djinni]?.died ?? 0, 0);
+});
+// C zap.c makewish(): a verbose wish names the offer before its prompt,
+// whichever effect grants it.
+void test('a bottled djinni wish offers an object before asking for it', async () => {
+    freshObjectRoom({ context: { move: 1 } });
+    requirePlayingGame(game);
+    const source = await bottle('smoky', { blessed: true });
+    const input = resetInputState();
+    const release = releasePotionOccupant(source);
+    const toplines = [];
+    try {
+        for (let pages = 0; pages < 10; pages++) {
+            await input.waitUntilBlocked();
+            const topline = requireGameDisplay().grid[0]?.map(cell => cell.ch).join('').trim() ?? '';
+            toplines.push(topline);
+            if (topline.startsWith('For what do you wish'))
+                break;
+            input.feed(' ');
+        }
+    }
+    finally {
+        input.feed('nothing\n');
+        await release;
+    }
+    const offer = toplines.findIndex(line => line.includes('You may wish for an object.'));
+    assert.ok(offer >= 0, toplines.join(' | '));
+    assert.match(toplines.at(-1) ?? '', /^For what do you wish\?/);
+    assert.ok(offer < toplines.length - 1);
 });
 //# sourceMappingURL=potion_occupants.test.js.map

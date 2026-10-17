@@ -1,3 +1,4 @@
+import { seeTrap } from './trap.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { heroLocomotion } from './hero_locomotion.js';
 // C trap.c:trapeffect_poly_trap() and steedintrap(), hero polymorph branch.
@@ -24,11 +25,7 @@ const WAND_CLASS = 12;
 
 export async function triggerHeroPolymorphTrap(trap: Trap, viaSitting: boolean): Promise<void> {
     requirePlayingGame(game);
-    // C seetrap() reveals the floor without replacing the hero's glyph.
-    if (!trap.tseen) {
-        trap.tseen = true;
-        newsym(trap.tx, trap.ty);
-    }
+    seeTrap(trap);
     const steed = game.u.usteed;
     const locomotion = heroLocomotion('step');
     const verb = viaSitting ? 'trigger' : steed

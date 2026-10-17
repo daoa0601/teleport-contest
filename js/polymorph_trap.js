@@ -9,7 +9,7 @@ import { changeMonsterForm } from './monster_polymorph.js';
 import { monsterResistsEffect } from './monster_resistance.js';
 import { IRON_SHOES, KICKING_BOOTS } from './object_data.js';
 import { rn2 } from './rng.js';
-import { monsterTrapVisibility } from './trap.js';
+import { monsterTrapVisibility, seeTrap } from './trap.js';
 import { objectWeight } from './weight.js';
 function copyBootState(source, replacement) {
     const quantity = source.quan ?? source.quantity ?? 1;
@@ -98,7 +98,7 @@ export async function applyMonsterPolymorphTrap(monster, trap, state = game, { r
         ...visibility,
     };
 }
-export async function finishMonsterPolymorphTrap(event, { publish = async () => { }, revealTrap = () => { }, finishDeath, state = game, } = {}) {
+export async function finishMonsterPolymorphTrap(event, { publish = async () => { }, finishDeath, state = game, } = {}) {
     if (!event || event.finished)
         return event;
     const change = await changeMonsterForm(event.monster, null, state, {
@@ -114,8 +114,7 @@ export async function finishMonsterPolymorphTrap(event, { publish = async () => 
     event.changed = !!change;
     event.killed = !!change && !change.selfTouch.survived;
     if (event.inSight) {
-        event.trap.tseen = true;
-        revealTrap(event.trap);
+        seeTrap(event.trap, state);
     }
     event.finished = true;
     return event;

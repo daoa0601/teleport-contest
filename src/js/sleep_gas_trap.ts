@@ -14,7 +14,7 @@ import {
     putMonsterToSleep,
 } from './monster_sleep.js';
 import { rnd } from './rng.js';
-import { monsterTrapVisibility } from './trap.js';
+import { monsterTrapVisibility, seeTrap } from './trap.js';
 
 export interface MonsterSleepGasTrapEvent {
     kind: 'sleep-gas';
@@ -26,6 +26,7 @@ export interface MonsterSleepGasTrapEvent {
 }
 
 interface FinishTrapOptions {
+    state?: GameState;
     publish?: MessagePublisher;
     describeMonster?: (monster: Monster) => string;
 }
@@ -65,11 +66,11 @@ export function sleepGasTrapNeedsResume(
 export async function finishMonsterSleepGasTrap(
     monster: Monster,
     event: MonsterSleepGasTrapEvent | null,
-    { publish = async () => {}, describeMonster = ordinaryMonsterSubject }: FinishTrapOptions = {},
+    { state = game, publish = async () => {}, describeMonster = ordinaryMonsterSubject }: FinishTrapOptions = {},
 ) {
     if (!event || event.finished) return event;
     await publish(`${describeMonster(monster)} suddenly falls asleep!`);
-    event.trap.tseen = true;
+    seeTrap(event.trap, state);
     event.finished = true;
     return event;
 }

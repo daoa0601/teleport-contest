@@ -1,6 +1,6 @@
 // Shared weapon predicates.
 // C refs: obj.h is_blade(), is_ammo(), ammo_and_launcher(); wield.c will_weld().
-import { AKLYS_LIM, P_AXE, P_BOW, P_CROSSBOW, P_DAGGER, P_LANCE, P_PICK_AXE, P_POLEARMS, P_SABER, P_WHIP } from './const.js';
+import { AKLYS_LIM, P_AXE, P_BOW, P_CROSSBOW, P_DAGGER, P_LANCE, P_PICK_AXE, P_POLEARMS, P_SABER, P_SHORT_SWORD, P_WHIP } from './const.js';
 import { artifactById } from './artifacts.js';
 import { AKLYS, HEAVY_IRON_BALL, IRON_CHAIN, OBJECT_BIMANUAL, OBJECT_DIR, OBJECT_SUBTYPE, TIN_OPENER, TOWEL } from './object_data.js';
 import { rn2 } from './rng.js';
@@ -93,5 +93,10 @@ export function monsterWeaponSwingVerb(object, bash = false, random = rn2) {
     const lash = OBJECT_SUBTYPE[object.otyp] === P_WHIP
         || (object.otyp === TOWEL && (object.spe ?? 0) > 0);
     return bash ? 'bashes with' : lash ? 'lashes' : thrust ? 'thrusts' : 'swings';
+}
+// C objclass.h is_sword().
+export function isSword(object) {
+    const skill = OBJECT_SUBTYPE[object.otyp] ?? 0;
+    return object.oclass === 2 && skill >= P_SHORT_SWORD && skill <= P_SABER;
 }
 //# sourceMappingURL=weapon_type.js.map

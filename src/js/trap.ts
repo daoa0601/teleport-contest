@@ -42,7 +42,7 @@ import { impossible } from './diagnostics.js';
 import { stopAllObjectTimers } from './object_timers.js';
 import { rnl, rn2, rnd } from './rng.js';
 import type { MessagePublisher } from './display.js';
-import { canSeeMonster, newsym } from './display.js';
+import { canSeeMonster, map_trap, newsym } from './display.js';
 import { dryTowel, wetTowel } from './towel.js';
 import type { GameState } from './game_state.js';
 import type { Hero } from './hero_types.js';
@@ -55,12 +55,20 @@ type CallRecorder = Pick<MonsterCallLog, 'push'>;
 type ArmorMask = typeof W_ARM | typeof W_ARMC | typeof W_ARMH
     | typeof W_ARMS | typeof W_ARMG | typeof W_ARMF | typeof W_ARMU;
 
-// C trap.c:seetrap(). Discovering a trap refreshes the nonliving layer;
-// any object or monster still covering it keeps its usual display priority.
+// C trap.c:seetrap(). Reveal a new trap and redraw its square.
 export function seeTrap(trap: Trap, state: GameState = game): void {
     if (trap.tseen) return;
     trap.tseen = true;
     if (state === game) newsym(trap.tx, trap.ty);
+}
+
+// C trap.c:feeltrap(). Touch maps even a known trap without requiring sight.
+export function feelTrap(trap: Trap, state: GameState = game): void {
+    trap.tseen = true;
+    if (state === game) {
+        map_trap(trap, true);
+        newsym(trap.tx, trap.ty);
+    }
 }
 
 interface LavaInventoryOptions {

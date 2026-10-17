@@ -8,7 +8,7 @@ import { publishHeardMessage } from './hero_speech.js';
 import { MONSTER_NAME, MONSTER_SIZE, monsterIsAmorphous, monsterIsUnsolid, monsterIsWhirly, monsterTypeName, } from './monster_data.js';
 import { monsterWearsIronShoes } from './monworn.js';
 import { d, rn2 } from './rng.js';
-import { monsterTrapVisibility } from './trap.js';
+import { monsterTrapVisibility, seeTrap } from './trap.js';
 import { monsterInAir } from './terrain_properties.js';
 const MZ_SMALL = 1;
 const PM_OWLBEAR = MONSTER_NAME.indexOf('owlbear');
@@ -48,14 +48,14 @@ export async function finishMonsterBearTrap(monster, event, state = game, { publ
     if (event.finished) {
         if (event.forced && event.inSight) {
             await publish(`${describeMonster(monster)} evades ${event.trap.madeby_u ? 'your' : 'a'} bear trap!`);
-            event.trap.tseen = true;
+            seeTrap(event.trap, state);
         }
         return event;
     }
     if (event.inSight) {
         const owner = event.trap.madeby_u ? 'your' : 'a';
         await publish(`${describeMonster(monster)} is caught in ${owner} bear trap!`);
-        event.trap.tseen = true;
+        seeTrap(event.trap, state);
     }
     else if (monster.mnum === PM_OWLBEAR || monster.mnum === PM_BUGBEAR) {
         await publishHeardMessage('the roaring of an angry bear!', publish, state);

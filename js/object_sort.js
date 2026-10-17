@@ -27,19 +27,27 @@ export function inventoryOrderSymbols(state = game) {
 // options.c:change_inv_order() keeps valid entries even when others are bad,
 // then fills omitted classes using their previous order. Omitted gold leads.
 export function changeInventoryOrder(symbols, state = game) {
+    const change = planInventoryOrder(symbols, state);
+    state.flags.inv_order = change.order;
+    return change.errors.length === 0;
+}
+export function planInventoryOrder(symbols, state = game) {
     const previous = inventoryClassOrder(state);
     const order = symbols.includes('$') ? [] : [12];
-    let valid = true;
+    const errors = [];
     for (const [index, symbol] of [...symbols].entries()) {
         const oclass = OBJECT_CLASS_SYMBOLS.indexOf(symbol);
-        if (!previous.includes(oclass) || symbols.indexOf(symbol, index + 1) !== -1) {
-            valid = false;
-            continue;
+        if (oclass < 1)
+            errors.push(`Not an object class '${symbol}'`);
+        else if (!previous.includes(oclass))
+            errors.push(`Object class '${symbol}' not allowed`);
+        else if (symbols.indexOf(symbol, index + 1) !== -1)
+            errors.push(`Duplicate object class '${symbol}'`);
+        else {
+            order.push(oclass);
         }
-        order.push(oclass);
     }
-    state.flags.inv_order = [...order, ...previous.filter(oclass => !order.includes(oclass))];
-    return valid;
+    return { order: [...order, ...previous.filter(oclass => !order.includes(oclass))], errors };
 }
 export function inventorySortMode(state = game) {
     return ((state.flags.sortloot ?? 'l') === 'f' ? SORTLOOT_LOOT : SORTLOOT_INVLET)

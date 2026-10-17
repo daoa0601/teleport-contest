@@ -90,6 +90,14 @@ export function statusConditionEnabled(name: ConditionName, state: GameState): b
         condition.option === name && (mask & (1 << index)) !== 0);
 }
 
+export function statusConditionOptions(state: GameState) {
+    const mask = state.flags.statusConditionMask ?? defaultMask;
+    return definitions.map((condition, index) => ({
+        name: condition.option, rank: condition.rank, bit: 1 << index,
+        enabled: (mask & (1 << index)) !== 0,
+    }));
+}
+
 function conditionApplies(
     name: ConditionName, state: GameState, enabled: (name: ConditionName) => boolean,
 ): boolean {

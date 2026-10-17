@@ -66,6 +66,13 @@ export function statusConditionEnabled(name, state) {
     const mask = state.flags.statusConditionMask ?? defaultMask;
     return definitions.some((condition, index) => condition.option === name && (mask & (1 << index)) !== 0);
 }
+export function statusConditionOptions(state) {
+    const mask = state.flags.statusConditionMask ?? defaultMask;
+    return definitions.map((condition, index) => ({
+        name: condition.option, rank: condition.rank, bit: 1 << index,
+        enabled: (mask & (1 << index)) !== 0,
+    }));
+}
 function conditionApplies(name, state, enabled) {
     const hero = state.u;
     const helpless = heroHasInvoluntaryDelay(state);

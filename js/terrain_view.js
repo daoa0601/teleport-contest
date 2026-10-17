@@ -83,7 +83,7 @@ async function revealTerrain(subset, describe) {
             start: { x: hero.ux, y: hero.uy }, goal: 'anything of interest',
             prompt: firstUse ? "(For instructions type a '?')  Move cursor to anything of interest:"
                 : `Showing ${kind} only...${game.flags.verbose ? "  (For instructions type a '?')" : ''}`,
-            describe, preserveMap: true, force: false,
+            describe, force: false,
         });
         await displayMessageWindow();
     }

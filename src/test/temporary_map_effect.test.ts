@@ -20,7 +20,7 @@ void test('valid-location marking stops at the native temporary glyph capacity',
     const beyondCapacity = spots[160];
     assert.ok(first && beyondCapacity, 'the open room must contain more than 160 visible squares');
 
-    await paintGetposCursor({ x: 10, y: 10 }, '', spots.slice(0, 161), true);
+    await paintGetposCursor({ x: 10, y: 10 }, '', spots.slice(0, 161));
 
     assert.equal(requireScreenCell(first.x - 1, first.y + 1).ch, '$');
     assert.equal(requireScreenCell(beyondCapacity.x - 1, beyondCapacity.y + 1).ch, '.');

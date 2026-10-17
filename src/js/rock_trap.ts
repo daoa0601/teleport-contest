@@ -9,7 +9,7 @@ import type { MessagePublisher } from './display.js';
 import { finishMonsterKilled } from './monster_death.js';
 import type { MonsterDeathResult } from './monster_death.js';
 import { AD_PHYS } from './monster_attack_types.js';
-import { deleteTrap, revealTrap } from './trap_lifecycle.js';
+import { deleteTrap } from './trap_lifecycle.js';
 import { game, requireGameLevel } from './gstate.js';
 import { placeCreatedObject, stack_object } from './floor_object.js';
 import { MONSTER_FLAGS1, MONSTER_NAME } from './monster_data.js';
@@ -17,7 +17,7 @@ import { ROCK } from './object_data.js';
 import { inventoryItemDescription } from './invent.js';
 import { observeObjectForNaming } from './objnam.js';
 import { d, rn2 } from './rng.js';
-import { monsterTrapVisibility } from './trap.js';
+import { monsterTrapVisibility, seeTrap } from './trap.js';
 import { makeTrapMissile } from './trap_missile.js';
 
 interface TrapVisibility {
@@ -99,7 +99,7 @@ export async function beginMonsterRockTrap(
 
     trap.once = true;
     const rock = await makeTrapMissile(ROCK, trap);
-    if (visibility.inSight) revealTrap(trap, state);
+    if (visibility.inSight) seeTrap(trap, state);
     return {
         kind: 'falling-rock',
         trap,

@@ -1,8 +1,11 @@
+import { luaSyntaxError } from './syntax_error.js';
+
 export type LuaTokenData =
     | { type: 'number'; value: number }
     | { type: 'string' | 'name' | 'keyword' | 'symbol' | 'eof'; value: string };
 
-export type LuaToken = LuaTokenData & { line: number; column: number };
+// Diagnostic text follows Lua's lexer buffer, including decoded string contents.
+export type LuaToken = LuaTokenData & { line: number; text: string };
 
 const keywords = new Set([
     'and', 'break', 'do', 'else', 'elseif', 'end', 'false', 'for',
@@ -33,37 +36,41 @@ export function lexLua(source: string, filename = '<lua>'): LuaToken[] {
     const tokens: LuaToken[] = [];
     let offset = 0;
     let line = 1;
-    let column = 1;
+    let tokenStart = 0;
 
-    function fail(message: string): never {
-        throw new SyntaxError(`${filename}:${line}:${column}: ${message}`);
+    function fail(message: string, near: string): never {
+        throw luaSyntaxError(filename, line, message, near);
     }
 
     function advance(): string {
         const char = source.charAt(offset++);
-        if (char === '\n') {
+        if (char === '\n' || char === '\r') {
+            const following = source[offset];
+            if ((following === '\n' || following === '\r') && following !== char)
+                offset++;
             line++;
-            column = 1;
-        } else {
-            column++;
         }
         return char;
     }
 
-    function add(token: LuaTokenData, tokenLine = line, tokenColumn = column): void {
-        tokens.push({ ...token, line: tokenLine, column: tokenColumn });
+    function add(token: LuaTokenData, text = source.slice(tokenStart, offset)): void {
+        tokens.push({ ...token, line, text });
     }
 
-    function readLongString(level: number): string {
+    function readLongString(level: number, comment = false): string {
+        const startingLine = line;
         const openingLength = level + 2;
         for (let index = 0; index < openingLength; index++) advance();
-        if (source[offset] === '\n') advance();
+        if (source[offset] === '\n' || source[offset] === '\r') advance();
         const start = offset;
         const closing = `]${'='.repeat(level)}]`;
         const end = source.indexOf(closing, offset);
-        if (end < 0) fail('unterminated long string');
+        if (end < 0) {
+            while (offset < source.length) advance();
+            fail(`unfinished long ${comment ? 'comment' : 'string'} (starting at line ${startingLine})`, '<eof>');
+        }
         while (offset < end) advance();
-        const value = source.slice(start, end);
+        const value = source.slice(start, end).replace(/\r\n|\n\r|\r/gu, '\n');
         for (let index = 0; index < closing.length; index++) advance();
         return value;
     }
@@ -73,16 +80,19 @@ export function lexLua(source: string, filename = '<lua>'): LuaToken[] {
         advance();
         const level = longBracketLevel(source, offset);
         if (level >= 0) {
-            readLongString(level);
+            readLongString(level, true);
             return;
         }
-        while (offset < source.length && source[offset] !== '\n') advance();
+        while (offset < source.length && source[offset] !== '\n'
+            && source[offset] !== '\r') advance();
     }
 
     function readQuotedString(quote: string): string {
         advance();
         let value = '';
         while (offset < source.length) {
+            if (source[offset] === '\n' || source[offset] === '\r')
+                fail('unfinished string', `'${quote}${value}'`);
             const char = advance();
             if (char === quote) return value;
             if (char !== '\\') {
@@ -99,13 +109,13 @@ export function lexLua(source: string, filename = '<lua>'): LuaToken[] {
                 value += replacement;
             } else if (escaped === 'z') {
                 while (/\s/u.test(source[offset] || '')) advance();
-            } else if (escaped === '\n') {
+            } else if (escaped === '\n' || escaped === '\r') {
                 value += '\n';
             } else {
                 value += escaped;
             }
         }
-        fail('unterminated string');
+        fail('unfinished string', '<eof>');
     }
 
     function readNumber(): number {
@@ -134,7 +144,7 @@ export function lexLua(source: string, filename = '<lua>'): LuaToken[] {
         }
         const raw = source.slice(start, offset);
         const value = /^0x/iu.test(raw) ? Number.parseInt(raw, 16) : Number(raw);
-        if (!Number.isFinite(value)) fail(`invalid number ${raw}`);
+        if (!Number.isFinite(value)) fail('malformed number', `'${raw}'`);
         return value;
     }
 
@@ -149,49 +159,46 @@ export function lexLua(source: string, filename = '<lua>'): LuaToken[] {
             continue;
         }
 
-        const tokenLine = line;
-        const tokenColumn = column;
+        tokenStart = offset;
         const level = longBracketLevel(source, offset);
         if (level >= 0) {
-            add({ type: 'string', value: readLongString(level) }, tokenLine, tokenColumn);
+            const value = readLongString(level);
+            const separator = '='.repeat(level);
+            add({ type: 'string', value }, `[${separator}[${value}]${separator}]`);
             continue;
         }
         if (char === '"' || char === "'") {
-            add({ type: 'string', value: readQuotedString(char) }, tokenLine, tokenColumn);
+            const value = readQuotedString(char);
+            add({ type: 'string', value }, `${char}${value}${char}`);
             continue;
         }
         if (/\d/u.test(char)
             || (char === '.' && /\d/u.test(source[offset + 1] || ''))) {
-            add({ type: 'number', value: readNumber() }, tokenLine, tokenColumn);
+            add({ type: 'number', value: readNumber() });
             continue;
         }
         if (isNameStart(char)) {
             const start = offset;
             while (isNamePart(source[offset])) advance();
             const value = source.slice(start, offset);
-            add({ type: keywords.has(value) ? 'keyword' : 'name', value },
-                tokenLine, tokenColumn);
+            add({ type: keywords.has(value) ? 'keyword' : 'name', value });
             continue;
         }
         if (source.startsWith('...', offset)) {
             advance(); advance(); advance();
-            add({ type: 'symbol', value: '...' }, tokenLine, tokenColumn);
+            add({ type: 'symbol', value: '...' });
             continue;
         }
         const pair = source.slice(offset, offset + 2);
         if (doubleSymbols.has(pair)) {
             advance(); advance();
-            add({ type: 'symbol', value: pair }, tokenLine, tokenColumn);
+            add({ type: 'symbol', value: pair });
             continue;
         }
-        if ('+-*/%^#&~|<>=(){}[];:,.'.includes(char)) {
-            advance();
-            add({ type: 'symbol', value: char }, tokenLine, tokenColumn);
-            continue;
-        }
-        fail(`unexpected character ${JSON.stringify(char)}`);
+        advance();
+        add({ type: 'symbol', value: char });
     }
 
-    tokens.push({ type: 'eof', value: '<eof>', line, column });
+    tokens.push({ type: 'eof', value: '<eof>', line, text: '' });
     return tokens;
 }

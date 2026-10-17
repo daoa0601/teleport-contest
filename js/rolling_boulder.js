@@ -1,3 +1,4 @@
+import { seeTrap } from './trap.js';
 // C trap.c:launch_obj(), ROLL styles. Each square resolves its occupants,
 // traps and floor effects before the next square or final placement.
 import { heroHasCarriedArtifactFlag } from './artifacts.js';
@@ -187,8 +188,7 @@ export async function launchRollingBoulder(start, endpoint, { state = requireIni
                         boulder.migration = { source: { ...state.u.uz }, destination: location, arrival: MIGR_RANDOM };
                         (state.migratingObjects ??= []).unshift(boulder);
                     }
-                    trap.tseen = true;
-                    newsym(trap.tx, trap.ty);
+                    seeTrap(trap, state);
                     usedUp = true;
                     break;
                 }

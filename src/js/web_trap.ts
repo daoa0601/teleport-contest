@@ -8,6 +8,7 @@ import type { Monster } from './monster_types.js';
 import type { Trap } from './map_types.js';
 import type { MessagePublisher } from './display.js';
 import { canSeeMonster, newsym, plineWithContinuation } from './display.js';
+import { seeTrap } from './trap.js';
 import { deleteTrap } from './trap_lifecycle.js';
 import { heroSpecies } from './hero_species.js';
 import { monsterName } from './monster_name.js';
@@ -87,7 +88,7 @@ export async function maybeDestroyWeb(
         const subject = monster ? monsterName(monster, { capitalized: true, state }) : 'You';
         const verb = hero ? action : action === 'flow through' ? 'flows through' : `${action}s`;
         await publish(`${subject} ${verb} ${owner} spider web${destroy ? '!' : '.'}`);
-        if (!hero && !destroy) trap.tseen = true;
+        if (!hero && !destroy) seeTrap(trap, state);
     }
     if (destroy) {
         deleteTrap(trap, state);
@@ -126,7 +127,7 @@ export async function finishMonsterWebTrap(
             await publish(`${name} tears through ${owner} spider web!`);
         } else {
             await publish(`${name} is caught in ${owner} spider web.`);
-            trap.tseen = true;
+            seeTrap(trap, state);
         }
     }
     monster.mtrapped = tear ? 0 : 1;

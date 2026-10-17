@@ -1,6 +1,6 @@
 // state_schema.js — Versioned boundary between saved game data and runtime state.
 // C refs: save.c, restore.c, decl.h, you.h, rm.h.
-export const SAVE_VERSION = 30;
+export const SAVE_VERSION = 31;
 const persistentNames = [
     'Luck', '_activeSpecialLevel', '_armorClassDirty', '_artifactDiscoveries',
     '_artifactExists', '_artifactFound', '_artifactRuntime', '_bonesEncountered',
@@ -14,7 +14,7 @@ const persistentNames = [
     '_levelAnnotations', '_levelCache', '_lifeSavedCount', '_migratingMonsters',
     '_mimicMealMessage', '_monsterNoiseTime', '_moveloopStarted', '_nextAttribCheck',
     '_nextIdent', '_nextObjectTimerId', '_objectCallNames', '_objectDiscoveryOrder',
-    '_objectPriceQuotes', '_optionsInitialized', '_overviewRecords', '_polymorphGenocideCause', '_prayerAlignment',
+    '_objectPriceQuotes', '_overviewRecords', '_polymorphGenocideCause', '_prayerAlignment',
     '_prayerOutcome', '_prayerTrouble', '_preserveLeadingStyledBlanks', '_prevDecorType',
     '_priestPantheonIndex', '_questExpulsionPending', '_restoredBones', '_rndmonstAlignment',
     '_rndmonstAlignmentMove', '_runtimeVersionInfoInitialized', '_specialLevelPrototype',

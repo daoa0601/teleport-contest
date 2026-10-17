@@ -124,7 +124,6 @@ function validPersistentState(value: unknown, entities: SavedEntityContext): val
         _objectCallNames: optional(numericRecordOf(string)),
         _objectDiscoveryOrder: optional(arrayOf(integer)),
         _objectPriceQuotes: optional(numericRecordOf(validPriceQuote)),
-        _optionsInitialized: optional(boolean),
         _overviewRecords: optional(mapOf(string, validSavedOverviewRecord)),
         _prayerAlignment: optional(integer),
         _prayerOutcome: optional(oneOf('moloch', 'too-soon', 'angry', 'other-god', 'pleased', 'undead')),
