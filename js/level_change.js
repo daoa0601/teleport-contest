@@ -396,7 +396,9 @@ export async function gotoLevel(targetDepth, { arrival = 'random', ladder = fals
     }
     // The old-level exit cleared room membership before the map switch.
     await checkSpecialRoom();
-    await deliverMigratingObjects(game, { nearHero: true, publish: plineWithContinuation });
+    // C's late obj_delivery(TRUE) handles every object not traveling with
+    // the hero (its !near_hero ^ MIGR_WITH_HERO test is inverted).
+    await deliverMigratingObjects(game);
     updateHeroRegions(game);
     if (cached)
         await fixShopDamage(game);
@@ -488,7 +490,9 @@ async function arriveOnLevel(from, { arrival, ladder, followers, beforeGlow, was
         }
         if (heroIsPunished())
             await placeBallAndChain();
-        await deliverMigratingObjects(game);
+        // C's early obj_delivery(FALSE) lands trap-door objects that fell
+        // with the hero before followers and migrating monsters arrive.
+        await deliverMigratingObjects(game, { nearHero: true, publish: plineWithContinuation });
         await deliverMigratingMonsters(game, followers);
         if (game.program_state.gameover)
             return true;
