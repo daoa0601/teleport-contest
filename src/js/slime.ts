@@ -144,12 +144,14 @@ function dropHeroSliming(hero: GameState['u']): void {
 }
 
 // C timeout.c:burn_away_slime(), through make_slimed(0, message).
-export async function burnAwayHeroSlime({ state = game }: { state?: GameState } = {}): Promise<boolean> {
+export async function burnAwayHeroSlime({
+    state = game, publish = plineWithContinuation,
+}: { state?: GameState; publish?: MessagePublisher } = {}): Promise<boolean> {
     if (!heroIsSliming(state)) return false;
     state.context.botl = true;
     state.u.slimedTurns = 0;
     state.u.slimed = false;
-    await plineWithContinuation('The slime that covers you is burned away!');
+    await publish('The slime that covers you is burned away!');
     clearHeroSliming(state);
     return true;
 }

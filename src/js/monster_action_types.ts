@@ -281,6 +281,7 @@ export interface HeroContactAttack extends HeroAttackProgress {
     deferredColdNegation?: boolean;
     deferredElectricNegation?: boolean;
     deferredFireInventory?: boolean;
+    deferredFireSlimeCure?: boolean;
     deferredColdInventory?: boolean;
     deferredElectricInventory?: boolean;
     fireOriginalDamage?: number;
@@ -292,7 +293,6 @@ export interface HeroContactAttack extends HeroAttackProgress {
     fireResistanceMessage?: string | null;
     coldResistanceMessage?: string | null;
     electricResistanceMessage?: string | null;
-    slimeBurnedMessage?: string | null;
     deferredElementalInventory?: {
         damageType: 'cold' | 'fire' | 'electric';
         sourceDamage: number;

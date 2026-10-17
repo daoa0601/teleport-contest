@@ -141,7 +141,7 @@ import { makeBlinded } from './sight_change.js';
 import { applyMonsterStoningAttack, startHeroPetrificationFromMonster, touchPetrifies, } from './stoning.js';
 import { monsterHasAcidResistance, monsterHasColdResistance, monsterHasFireResistance, monsterHasShockResistance, monsterHasStoneResistance, } from './monster_resistance.js';
 import { monsterReflectsRay } from './ray.js';
-import { clearHeroSliming } from './slime.js';
+import { burnAwayHeroSlime } from './slime.js';
 import { monsterWeaponStrengthBonus, rollPhysicalWeaponDamageAgainstHero, } from './weapon_damage.js';
 import { weaponHitBonus } from './weapon_accuracy.js';
 import { nurseContactMode } from './monster_nurse_contact.js';
@@ -5283,10 +5283,8 @@ export function resumeDeferredHeroFireSpecial(action, state, random = rn2) {
         }
     }
     const continuesFireEffects = !attack.negated && !attack.deferredFireRehumanize;
-    if (continuesFireEffects && clearHeroSliming(state)) {
-        attack.slimeBurnedMessage = 'The slime that covers you is burned away!';
-    }
     attack.deferredFireInventory = continuesFireEffects;
+    attack.deferredFireSlimeCure = continuesFireEffects;
     if (!continuesFireEffects)
         delete attack.fireOriginalDamage;
     attack.deferredPostHit = true;
@@ -5474,6 +5472,12 @@ export async function resumeDeferredHeroContact(action, state, { random = rn2, r
         }
         attack.deferredElectricInventory = false;
         delete attack.electricOriginalDamage;
+    }
+    // mhitm_ad_fire() cures slime after destroying and igniting inventory,
+    // including when the level check skips inventory damage altogether.
+    if (attack.deferredFireSlimeCure) {
+        attack.deferredFireSlimeCure = false;
+        await burnAwayHeroSlime({ state, publish });
     }
     const knockback = await knockHeroFromMonster(action.monster, attack, state, random, publish);
     if (knockback.defenderLeftLevel)
