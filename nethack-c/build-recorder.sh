@@ -109,13 +109,6 @@ case "$OS" in
         # Upstream NetHack doesn't ship a macOS minimal hints file; use ours.
         cp "$SCRIPT_DIR/macosx-minimal" sys/unix/hints/macosx-minimal
         sed -i.bak "s|__NETHACK_PREFIX__|$INSTALL_PREFIX|g" sys/unix/hints/macosx-minimal
-        # The stock Unix sysconf names Linux paths.  NetHack validates them
-        # at startup even when the recorder doesn't use gdb panic tracing.
-        sed -i.bak \
-            -e 's|^GDBPATH=|#GDBPATH=|' \
-            -e 's|^GREPPATH=.*|GREPPATH=/usr/bin/grep|' \
-            -e 's|^PANICTRACE_GDB=.*|PANICTRACE_GDB=0|' \
-            sys/unix/sysconf
         ;;
     Linux)
         # Upstream ships linux-minimal; just point its PREFIX at our install dir.
@@ -126,6 +119,13 @@ esac
 # Permit its debug-mode recipes regardless of the workstation login name so
 # deterministic Ctrl-V and other wizard-command recordings are reproducible.
 sed -i.bak 's|^WIZARDS=.*|WIZARDS=*|' sys/unix/sysconf
+# The stock Unix sysconf names gdb and grep paths.  NetHack validates them
+# at startup even when the recorder doesn't use gdb panic tracing.
+sed -i.bak \
+    -e 's|^GDBPATH=|#GDBPATH=|' \
+    -e 's|^GREPPATH=.*|GREPPATH=/usr/bin/grep|' \
+    -e 's|^PANICTRACE_GDB=.*|PANICTRACE_GDB=0|' \
+    sys/unix/sysconf
 sh sys/unix/setup.sh "$HINTS_FILE"
 
 # --- Step 4: fetch + build Lua (NetHack 5.0 dependency) ---
@@ -150,6 +150,12 @@ cd "$RECORDER_DIR"
 export SOURCE_DATE_EPOCH="${TELEPORT_BUILD_EPOCH:-1777723200}"
 make -j"$NPROC" SYSCFLAGS="$LUA_SYSCFLAGS" >/dev/null
 make install >/dev/null
+# NetHack reads SYSCF_FILE from HACKDIR.  Upstream linux-minimal does not
+# install it (our macosx-minimal hints do), so the binary would refuse to start.
+HACKDIR_INSTALLED="$INSTALL_PREFIX/games/lib/nethackdir"
+if [ ! -f "$HACKDIR_INSTALLED/sysconf" ]; then
+    cp sys/unix/sysconf "$HACKDIR_INSTALLED/sysconf"
+fi
 echo
 echo "[ok] recorder built: $RECORDER_DIR/src/nethack"
 echo "[ok] installed to:    $INSTALL_PREFIX/games/lib/nethackdir/"
