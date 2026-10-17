@@ -4,7 +4,7 @@ import { requirePlayingGame } from './gstate.js';
 // C zap.c:bhitm(), bhito(), unturn_dead(), and unturn_you().
 import { G_GENOD, PLNMSG_OBJ_GLOWS } from './const.js';
 import { canSeeMonster, plineWithContinuation as pline, } from './display.js';
-import { reportHeroEncumbrance } from './attrib.js';
+import { reportHeroEncumbrance } from './encumbrance.js';
 import { reviveCorpseByMagic } from './corpse_revival.js';
 import { makeStunned } from './hero_mental_status.js';
 import { game } from './gstate.js';

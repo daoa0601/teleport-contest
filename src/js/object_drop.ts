@@ -12,9 +12,7 @@ import type { GameObject } from './object_types.js';
 import type { MessagePublisher } from './display.js';
 
 import { newsym, plineWithContinuation, map_object } from './display.js';
-import {
-    encumbranceLabel, encumbranceMessage, nearCapacity,
-} from './weight.js';
+import { reportHeroEncumbrance } from './encumbrance.js';
 import { setPrimaryWeapon, setQuiverObject, setSecondaryWeapon } from './weapon_slots.js';
 import { propertyIsActive } from './properties.js';
 import { heroIsBlind } from './senses.js';
@@ -149,19 +147,6 @@ async function engulferDigestsFood(object: GameObject, { state, publish }: { sta
     return { digested: true, heroDied: false };
 }
 
-export async function updateHeroEncumbrance(state: GameState, publish: MessagePublisher) {
-    const capacity = nearCapacity(state);
-    const baseline = state._encumbranceLevel;
-    state._encumbranceLevel = capacity;
-    state.u._encumbrance = encumbranceLabel(capacity);
-    state._capacityDirty = false;
-    const message = baseline == null ? null : encumbranceMessage(baseline, capacity);
-    if (message) await publish(message);
-    // C pickup.c:encumber_msg() marks the status line after any change; the
-    // next pline()'s flush_screen() then redraws the capacity field.
-    if (baseline != null && baseline !== capacity) state.context.botl = true;
-}
-
 // C do.c:807-843 dropz(): put an already-free dropped object at its
 // destination, with or without impact side effects.  The object's square is
 // the hero's current position.
@@ -226,7 +211,7 @@ export async function dropObjectAtHero(
             map_object(stacked ?? object, false);
         newsym(hero.ux, hero.uy); // remap location under self
     }
-    await updateHeroEncumbrance(state, publish);
+    await reportHeroEncumbrance(state, publish);
     return object;
 }
 

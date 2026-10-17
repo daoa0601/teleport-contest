@@ -4,7 +4,7 @@ import { performMonsterHeroAttack } from '../js/allmain.js';
 import { continueFoodMeal, doeat } from '../js/eat.js';
 import { rhack } from '../js/cmd.js';
 import { wearHeroAccessory } from '../js/accessory.js';
-import { reportHeroEncumbrance } from '../js/attrib.js';
+import { reportHeroEncumbrance } from '../js/encumbrance.js';
 import { MM_ANGRY, MM_NOGRP, NO_MINVENT, W_AMUL } from '../js/const.js';
 import { flushPendingTopline } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';

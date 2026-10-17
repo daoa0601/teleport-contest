@@ -13,7 +13,7 @@ import { addTrap } from './support/level-state.js';
 void test('status recalculates carrying capacity when inventory changes before a turn ends', async () => {
     freshObjectRoom();
     requirePlayingGame(game);
-    game.u._encumbrance = 'Burdened';
+    game._encumbranceLevel = 1;
     await addInventoryObject(SPLINT_MAIL, { quan: 3 });
     await bot();
     assert.match(requireScreenRow(23).map(cell => cell.ch).join(''), /Stressed/);

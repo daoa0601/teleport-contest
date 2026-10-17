@@ -367,7 +367,8 @@ import {
 } from './monster_anger.js';
 import { publishMonsterNoise } from './monster_sound.js';
 import { doride, moveSteedWithHero, ridingPreventsMovement, stuckSteed } from './steed.js';
-import { adjustAttribute, ATTRIBUTE_DISPLAY_ORDER, attributeChangeMessage, currentAttribute, currentStrength, exerciseAttribute, exerciseWisdom, reportHeroEncumbrance } from './attrib.js';
+import { adjustAttribute, ATTRIBUTE_DISPLAY_ORDER, attributeChangeMessage, currentAttribute, currentStrength, exerciseAttribute, exerciseWisdom } from './attrib.js';
+import { reportHeroEncumbrance } from './encumbrance.js';
 import { spendHeroNutrition, updateHeroHunger } from './hunger.js';
 
 import { continueForceLock, doforce } from './lock.js';
@@ -400,7 +401,7 @@ import {
     recordObjectKnowledge,
 } from './object_knowledge.js';
 import {
-    encumbranceLabel, encumbranceMessage, exceedsActionCapacity, nearCapacity,
+    exceedsActionCapacity, nearCapacity,
     OVERLOADED, SLT_ENCUMBER,
 } from './weight.js';
 import { makeWish } from './wish.js';
@@ -6664,8 +6665,6 @@ async function throwCommand(
     if (isWetTowel(item)) await dryTowel(item, -1);
 
     if (selectedIsGold && item === game.uquiver) {
-        const previousCapacity = game._encumbranceLevel
-            ?? nearCapacity(game);
         await resolveQuiveredGoldThrow({
             state: game,
             gold: item,
@@ -6674,13 +6673,7 @@ async function throwCommand(
             wakeMonster: wakeAttackedMonster,
         });
         if (game.program_state.gameover) return;
-        const currentCapacity = nearCapacity(game);
-        const capacityMessage = encumbranceMessage(
-            previousCapacity, currentCapacity,
-        );
-        if (capacityMessage) await plineWithContinuation(capacityMessage);
-        game._encumbranceLevel = currentCapacity;
-        game.u._encumbrance = encumbranceLabel(currentCapacity);
+        await reportHeroEncumbrance(game);
         game.context.move = 1;
         return;
     }

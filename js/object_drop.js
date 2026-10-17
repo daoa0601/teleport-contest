@@ -4,7 +4,7 @@
 import { ALTAR, HOLE, IS_SOFT, IS_ALTAR, LEFT_SIDE, PIT, RIGHT_SIDE, SPIKED_PIT, TRAPDOOR, } from './const.js';
 import { game, requireLiveGame, requireGameLevel, requireInitializedGame } from './gstate.js';
 import { newsym, plineWithContinuation, map_object } from './display.js';
-import { encumbranceLabel, encumbranceMessage, nearCapacity, } from './weight.js';
+import { reportHeroEncumbrance } from './encumbrance.js';
 import { setPrimaryWeapon, setQuiverObject, setSecondaryWeapon } from './weapon_slots.js';
 import { propertyIsActive } from './properties.js';
 import { heroIsBlind } from './senses.js';
@@ -114,20 +114,6 @@ async function engulferDigestsFood(object, { state, publish }) {
     await deleteObject(object, state); // always used up
     return { digested: true, heroDied: false };
 }
-export async function updateHeroEncumbrance(state, publish) {
-    const capacity = nearCapacity(state);
-    const baseline = state._encumbranceLevel;
-    state._encumbranceLevel = capacity;
-    state.u._encumbrance = encumbranceLabel(capacity);
-    state._capacityDirty = false;
-    const message = baseline == null ? null : encumbranceMessage(baseline, capacity);
-    if (message)
-        await publish(message);
-    // C pickup.c:encumber_msg() marks the status line after any change; the
-    // next pline()'s flush_screen() then redraws the capacity field.
-    if (baseline != null && baseline !== capacity)
-        state.context.botl = true;
-}
 // C do.c:807-843 dropz(): put an already-free dropped object at its
 // destination, with or without impact side effects.  The object's square is
 // the hero's current position.
@@ -192,7 +178,7 @@ export async function dropObjectAtHero(object, { impact = false, state = game, p
             map_object(stacked ?? object, false);
         newsym(hero.ux, hero.uy); // remap location under self
     }
-    await updateHeroEncumbrance(state, publish);
+    await reportHeroEncumbrance(state, publish);
     return object;
 }
 // C dothrow.c:606-647 hitfloor(): object hits floor at hero's feet.  The

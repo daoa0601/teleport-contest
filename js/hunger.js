@@ -1,5 +1,6 @@
 // Hero nutrition, hunger transitions, and meal fullness.
 // C refs: eat.c:gethungry(), newuhs(), morehungry(), lesshungry(), choke().
+import { nearCapacity } from './weight.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { objectMaterial } from './object_material.js';
 import { heroIsUnaware } from './hero_sleep.js';
@@ -23,7 +24,7 @@ import { paranoidQuery } from './query.js';
 import { rn2 } from './rng.js';
 import { MONSTER_FLAGS1, requireMonsterData } from './monster_data.js';
 import { heroIsBreathless, heroSpecies } from './hero_species.js';
-import { encumbranceLabel, encumbranceMessage, nearCapacity } from './weight.js';
+import { reportHeroEncumbrance } from './encumbrance.js';
 import { AMULET_OF_STRANGULATION, AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, MEAT_RING, OBJECT_CHARGED, RIN_PROTECTION, RIN_SLOW_DIGESTION, } from './object_data.js';
 import { recordObjectKnowledge } from './object_knowledge.js';
 const M1_METALLIVORE = 0x80000000;
@@ -279,20 +280,16 @@ export async function resetHeroFaint({ state = game } = {}) {
     return true;
 }
 // C eat.c:init_uhunger(). Hunger weakens temporary, not innate, strength.
-export function restoreHeroNutrition(state = game) {
+export async function restoreHeroNutrition(state = game, publish = plineWithContinuation) {
     requirePlayingGame(state);
     const hero = state.u;
-    const before = nearCapacity(state);
     state.context.botl = hero.uhs !== NOT_HUNGRY || (hero.atemp?.a[A_STR] ?? 0) < 0;
     hero.uhunger = 900;
     hero.uhs = NOT_HUNGRY;
     if (!hero.atemp || !(hero.atemp.a[A_STR] < 0))
-        return '';
+        return;
     hero.atemp.a[A_STR] = 0;
-    const after = nearCapacity(state);
-    state._encumbranceLevel = after;
-    hero._encumbrance = encumbranceLabel(after);
-    return encumbranceMessage(before, after);
+    await reportHeroEncumbrance(state, publish);
 }
 function ringCostsNutrition(ring, slot) {
     if (!ring || ring.otyp === MEAT_RING)

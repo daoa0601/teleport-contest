@@ -1,6 +1,6 @@
 // C steal.c:stealamulet() and worn_item_removal().
 import { artifactById } from './artifacts.js';
-import { reportHeroEncumbrance } from './attrib.js';
+import { reportHeroEncumbrance } from './encumbrance.js';
 import { RLOC_MSG, W_ACCESSORY, W_WEAPONS } from './const.js';
 import type { MessagePublisher } from './display.js';
 import type { PlayingGameState } from './game_state.js';

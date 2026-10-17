@@ -1,6 +1,7 @@
 // Glob shrink timers.
 // C refs: mkobj.c start_glob_timeout()/shrink_glob().
 
+import { reportHeroEncumbrance } from './encumbrance.js';
 import { newsym, plineWithContinuation } from './display.js';
 import { isok } from './const.js';
 import { isIceAt } from './terrain_properties.js';
@@ -22,7 +23,7 @@ import { rn2 } from './rng.js';
 import { cansee } from './vision.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import {
-    encumbranceMessage, nearCapacity, objectWeight,
+    nearCapacity, objectWeight,
 } from './weight.js';
 
 import type { GameState } from './game_state.js';
@@ -50,20 +51,17 @@ interface ShrunkGlob extends GlobEventPosition {
 export type GlobTimerEvent =
     | (GlobEventPosition & {
         overdue: true; delta: number; gone: boolean; message: null;
-        delay?: number; finishPending?: never; followupMessage?: never;
+        delay?: number; finishPending?: never;
     })
     | (GlobEventPosition & {
         overdue: false; delta: 0; gone: false; message: null;
         skippedEating: boolean; skippedIce: boolean;
-        finishPending?: never; followupMessage?: never;
+        finishPending?: never;
     })
-    | (ShrunkGlob & { finishPending?: never; followupMessage?: never })
+    | (ShrunkGlob & { finishPending?: never })
     | (ShrunkGlob & {
         finishPending: boolean;
-        oldCapacity: number;
         finished?: true;
-        followupMessage?: string | null;
-        newCapacity?: number;
     });
 
 function isGlobType(otyp: number): boolean {
@@ -312,7 +310,7 @@ export function runClaimedGlobTimer(
     const x = location?.x ?? 0;
     const y = location?.y ?? 0;
     const ice = globIceState(glob, state);
-    const oldCapacity = updatesHeroInventory ? nearCapacity(state) : null;
+    const oldCapacity = state._encumbranceLevel ?? 0;
 
     const deadline = claimed.timer.deadline;
     if (deadline < currentTurn && ice !== 'buried') {
@@ -383,10 +381,9 @@ export function runClaimedGlobTimer(
     }
 
     if (updatesHeroInventory) {
-        if (oldCapacity === null) throw new Error('A carried glob requires its previous encumbrance');
         return {
             glob, x, y, carrier, overdue: false, delta: 1,
-            shrinkThreshold, gone, message, oldCapacity,
+            shrinkThreshold, gone, message,
             finishPending: true,
         };
     }
@@ -409,18 +406,15 @@ export function runClaimedGlobTimer(
     };
 }
 
-export function finishGlobTimer(
+export async function finishGlobTimer(
     event: GlobTimerEvent | null, state: GameState = game, currentTurn = state.moves ?? 0,
-): GlobTimerEvent | null {
+    publish: MessagePublisher = plineWithContinuation,
+): Promise<GlobTimerEvent | null> {
     if (!event?.finishPending || !event.glob) return event;
     if (event.gone) deleteGlob(event.glob, state);
     else scheduleNextGlobAttempt(event.glob, state, currentTurn);
-    const newCapacity = nearCapacity(state);
-    event.followupMessage = encumbranceMessage(
-        event.oldCapacity, newCapacity,
-    ) || null;
-    event.newCapacity = newCapacity;
     event.finishPending = false;
     event.finished = true;
+    await reportHeroEncumbrance(state, publish);
     return event;
 }

@@ -50,7 +50,8 @@ import type { GameObject } from './object_types.js';
 import type { PropertyName, WornPropertySlot } from './property_types.js';
 import type { MessagePublisher } from './display.js';
 import { changeHeroAlignmentFromHelmet } from './alignment.js';
-import { currentAttribute, reportHeroEncumbrance } from './attrib.js';
+import { currentAttribute } from './attrib.js';
+import { reportHeroEncumbrance } from './encumbrance.js';
 import { curseObjectState } from './object_state.js';
 import type { AttributeIndex } from './attrib.js';
 

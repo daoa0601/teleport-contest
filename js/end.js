@@ -2,7 +2,8 @@
 // C refs: end.c disclose()/really_done(), insight.c, dungeon.c.
 import { formatFeltMessage } from './hero_speech.js';
 import { recorderLocalEpochSeconds } from './calendar.js';
-import { adjustAttribute, currentAttribute, reportHeroEncumbrance } from './attrib.js';
+import { adjustAttribute, currentAttribute } from './attrib.js';
+import { reportHeroEncumbrance } from './encumbrance.js';
 import { cureHeroSickness } from './hero_illness.js';
 import { removeIntrinsicProperty, setPropertyTimeout } from './properties.js';
 import { resetHeroTrap } from './terrain_movement.js';
@@ -113,7 +114,7 @@ export async function restoreHeroAfterDeath({ deathType = null } = {}) {
     if (Upolyd(game.u))
         game.u.mh = Math.min(game.u.mhmax, giveHp);
     if ((game.u.uhunger ?? 900) < 500 || deathType === CHOKING)
-        await plineWithContinuation(restoreHeroNutrition());
+        await restoreHeroNutrition(game, plineWithContinuation);
     if (game.u.sickTurns === 1)
         cureHeroSickness();
     game.context.move = 0;

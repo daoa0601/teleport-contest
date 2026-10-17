@@ -1,7 +1,8 @@
 // C potion.c: mental, attribute, and incapacitating potion effects.
 // The drink transaction owns opening, knowledge, naming, and consumption.
 import { heroHasFreeAction } from './armor.js';
-import { adjustAttribute, attributeChangeMessage, exerciseAttribute, reportHeroEncumbrance, } from './attrib.js';
+import { adjustAttribute, attributeChangeMessage, exerciseAttribute, } from './attrib.js';
+import { reportHeroEncumbrance } from './encumbrance.js';
 import { heroFootName } from './body_parts.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { A_CON, A_DEX, A_INT, A_MAX, A_STR, A_WIS, Is_airlevel, Is_waterlevel, M_SEEN_SLEEP } from './const.js';

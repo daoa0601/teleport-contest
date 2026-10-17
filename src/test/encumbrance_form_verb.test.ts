@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { game } from '../js/gstate.js';
-import { updateHeroEncumbrance } from '../js/object_drop.js';
+import { reportHeroEncumbrance } from '../js/encumbrance.js';
 import { ROCK } from '../js/object_data.js';
 import { nearCapacity } from '../js/weight.js';
 import { addInventoryObject } from './support/game-objects.js';
@@ -24,7 +24,7 @@ for (const [form, verb] of [
         game.context.botl = false;
         const messages: string[] = [];
 
-        await updateHeroEncumbrance(game, async message => { messages.push(message); });
+        await reportHeroEncumbrance(game, async message => { messages.push(message); });
 
         assert.deepEqual(messages, [`You ${verb} under your load.  Movement is still very hard.`]);
         assert.equal(game.context.botl, true);

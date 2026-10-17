@@ -31,7 +31,8 @@ import { beginObjectBurn, endObjectBurn, equipmentLightDescription, equipmentLig
 import { AMULET_OF_GUARDING, ALCHEMY_SMOCK, CLOAK_OF_DISPLACEMENT, CLOAK_OF_PROTECTION, CORPSE, CORNUTHAUM, DUNCE_CAP, ELVEN_BOOTS, ELVEN_CLOAK, GAUNTLETS_OF_FUMBLING, GAUNTLETS_OF_POWER, HELM_OF_OPPOSITE_ALIGNMENT, MUMMY_WRAPPING, FEDORA, FUMBLE_BOOTS, LEVITATION_BOOTS, RIN_FREE_ACTION, RIN_PROTECTION, GRAY_DRAGON_SCALE_MAIL, GRAY_DRAGON_SCALES, YELLOW_DRAGON_SCALE_MAIL, YELLOW_DRAGON_SCALES, SHIELD_OF_DRAIN_RESISTANCE, SHIELD_OF_REFLECTION, OBJECT_DESCRIPTIONS, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_PROPERTY, WATER_WALKING_BOOTS, } from './object_data.js';
 import { rn2, rnd } from './rng.js';
 import { changeHeroAlignmentFromHelmet } from './alignment.js';
-import { currentAttribute, reportHeroEncumbrance } from './attrib.js';
+import { currentAttribute } from './attrib.js';
+import { reportHeroEncumbrance } from './encumbrance.js';
 import { curseObjectState } from './object_state.js';
 import { monsterName } from './monster_name.js';
 import { MONSTER_NAME } from './monster_data.js';
