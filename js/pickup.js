@@ -315,7 +315,7 @@ function pickupSourceAtHero() {
 function pickupObjects(source) {
     return source.objects.filter(object => object !== game.uchain && object !== game.u?.uchain);
 }
-function autopickupAllows(object) {
+export function autopickupAllows(object) {
     if (object.where === 'floor' && !object.no_charge
         && costlySpot(object.ox, object.oy))
         return false;

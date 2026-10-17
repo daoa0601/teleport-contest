@@ -326,7 +326,7 @@ function pickupObjects(source: PickupSource): GameObject[] {
     return source.objects.filter(object => object !== game.uchain && object !== game.u?.uchain);
 }
 
-function autopickupAllows(object: GameObject): boolean {
+export function autopickupAllows(object: GameObject): boolean {
     if (object.where === 'floor' && !object.no_charge
         && costlySpot(object.ox, object.oy)) return false;
     if ((game.flags.pickup_thrown !== false && object.how_lost === LOST_THROWN)
