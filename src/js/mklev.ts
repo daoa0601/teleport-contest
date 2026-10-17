@@ -724,11 +724,11 @@ export function rndClass(first: number, last: number): number {
     if (first >= last) return first === last ? first : 0;
     let total = 0;
     for (let otyp = first; otyp <= last; otyp++)
-        total += OBJECT_PROB[otyp] ?? 0;
+        total += objectProb[otyp] ?? 0;
     if (!total) return first + rn2(last - first + 1);
     let roll = rnd(total);
     for (let otyp = first; otyp <= last; otyp++) {
-        roll -= OBJECT_PROB[otyp] ?? 0;
+        roll -= objectProb[otyp] ?? 0;
         if (roll <= 0) return otyp;
     }
     return last;
