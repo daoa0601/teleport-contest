@@ -22,7 +22,7 @@ import {
     BAG_OF_TRICKS, BELL_OF_OPENING, BRASS_LANTERN, CAN_OF_GREASE,
     CRYSTAL_BALL, DRUM_OF_EARTHQUAKE, EXPENSIVE_CAMERA, FIRE_HORN,
     FROST_HORN, HORN_OF_PLENTY, LOADSTONE, MAGIC_FLUTE, MAGIC_HARP,
-    MAGIC_LAMP, MAGIC_MARKER, OBJECT_CHARGED, OBJECT_DIR, OBJECT_NAMES,
+    MAGIC_LAMP, MAGIC_MARKER, OBJECT_CHARGED, OBJECT_NAMES, objectDirection,
     OIL_LAMP, TINNING_KIT, WAN_CANCELLATION, WAN_COLD, WAN_DEATH,
     WAN_FIRE, WAN_LIGHTNING, WAN_MAGIC_MISSILE, WAN_POLYMORPH,
     WAN_UNDEAD_TURNING, WAN_WISHING,
@@ -129,7 +129,7 @@ export async function rechargeObject(object: GameObject, blessing: number, state
 
 async function rechargeWand(wand: GameObject, blessing: number, state: GameState) {
     const limit = wand.otyp === WAN_WISHING ? 1
-        : OBJECT_DIR[wand.otyp] === NODIR ? 15 : 8;
+        : objectDirection(wand.otyp, state) === NODIR ? 15 : 8;
     if (wand.spe === -1) wand.spe = 0;
     const previous = wand.recharged;
     if (previous > 0 && (wand.otyp === WAN_WISHING || previous ** 3 > rn2(343))) {

@@ -170,7 +170,7 @@ import {
     LEATHER_ARMOR, LEATHER_JACKET, LEATHER_GLOVES, LEATHER_CLOAK,
     MIRROR, POT_OBJECT_DETECTION, RIN_INVISIBILITY, SHIELD_OF_REFLECTION,
     SADDLE,
-    WAN_CANCELLATION, WAN_LIGHT, WAN_LIGHTNING,
+    WAN_CANCELLATION, WAN_LIGHT, WAN_LIGHTNING, objectDirection,
 } from './object_data.js';
 import {
     MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_DIFFICULTY, MONSTER_GENO,
@@ -934,7 +934,7 @@ async function mksobj_init(
     case WAND_CLASS:
         if (otyp === 414) otmp.spe = 1;
         else if (otyp === 415) otmp.spe = rn1(4, 3);
-        else otmp.spe = rn1(5, definition.direction === 1 ? 11 : 4);
+        else otmp.spe = rn1(5, objectDirection(otyp, game) === 1 ? 11 : 4);
         blessorcurse(otmp, 17);
         break;
     case ROCK_CLASS:

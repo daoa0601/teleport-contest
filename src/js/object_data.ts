@@ -418,7 +418,6 @@ export interface ObjectDefinition {
     readonly merge: boolean;
     readonly charged: boolean;
     readonly subtype: number;
-    readonly direction: number;
 }
 
 export function getObjectDefinition(otyp: number): ObjectDefinition {
@@ -439,6 +438,15 @@ export function getObjectDefinition(otyp: number): ObjectDefinition {
         merge: requireObjectData(OBJECT_MERGE, otyp) !== 0,
         charged: requireObjectData(OBJECT_CHARGED, otyp) !== 0,
         subtype: requireObjectData(OBJECT_SUBTYPE, otyp),
-        direction: requireObjectData(OBJECT_DIR, otyp),
     };
+}
+
+const NODIR = 1, IMMEDIATE = 2;
+
+// objects[].oc_dir, including the wand of nothing's direction, which o_init.c
+// draws for each game (rn2(2) ? NODIR : IMMEDIATE).
+export function objectDirection(otyp: number, state: { readonly wandNothingDirection?: number }): number {
+    if (otyp === WAN_NOTHING && state.wandNothingDirection !== undefined)
+        return state.wandNothingDirection ? NODIR : IMMEDIATE;
+    return requireObjectData(OBJECT_DIR, otyp);
 }

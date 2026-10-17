@@ -6,7 +6,7 @@ import { monsterHasMapPosition } from './monster_location.js';
 import { chooseInventoryObject } from './inventory_prompt.js';
 import { applyWandEffect } from './wand_effects.js';
 import { GETOBJ_EXCLUDE, GETOBJ_SUGGEST, PLNMSG_ENVELOPED_IN_GAS } from './const.js';
-import { OBJECT_DIR } from './object_data.js';
+import { objectDirection } from './object_data.js';
 import { zapHeroWithObject } from './hero_self_zap.js';
 import { backfireWand, zappable } from './wand_charge.js';
 import { deleteTrap } from './trap_lifecycle.js';
@@ -106,7 +106,7 @@ export async function dozap() {
         return;
     }
     await chargeUnpaidUsage(wand);
-    const needsDirection = OBJECT_DIR[wand.otyp] !== 1;
+    const needsDirection = objectDirection(wand.otyp, game) !== 1;
     if (!await zappable(wand)) {
         await plineWithContinuation('Nothing happens.');
     }

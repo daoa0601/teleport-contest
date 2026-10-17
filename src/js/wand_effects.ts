@@ -45,7 +45,7 @@ import { createCritters, mksobj } from './mklev.js';
 import { maybeUnhideAt } from './monster_hiding.js';
 import { monsterAtPosition } from './monster_location.js';
 import {
-    OBJECT_DIR, OBJECT_NAMES, ROCK, SPE_CANCELLATION, SPE_CURE_SICKNESS,
+    OBJECT_NAMES, ROCK, SPE_CANCELLATION, SPE_CURE_SICKNESS, objectDirection,
     SPE_DETECT_UNSEEN, SPE_DIG, SPE_DRAIN_LIFE,
     SPE_EXTRA_HEALING, SPE_FINGER_OF_DEATH, SPE_FORCE_BOLT, SPE_HEALING,
     SPE_KNOCK, SPE_LIGHT, SPE_MAGIC_MISSILE, SPE_POLYMORPH, SPE_SLOW_MONSTER,
@@ -83,7 +83,7 @@ const NODIR = 1, IMMEDIATE = 2;
 export async function applyWandEffect(source: GameObject, { state = game }: { state?: GameState } = {}) {
     requireLiveGame(state);
     requirePlayingGame(state);
-    const hero = state.u, type = source.otyp, direction = OBJECT_DIR[type];
+    const hero = state.u, type = source.otyp, direction = objectDirection(type, state);
     const unknown = !objectTypeKnown(source, state);
     let disclose = false;
     exerciseWisdom(true, state);
