@@ -1,0 +1,68 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+import { NO_MINVENT, PIT, POOL } from '../js/const.js';
+import { initializePet } from '../js/dog.js';
+import { game, requirePlayingGame } from '../js/gstate.js';
+import { settlePetHeroDisplacement } from '../js/hero_pet_displacement.js';
+import { resetInputState } from '../js/input.js';
+import { monsterAtPosition } from '../js/monster_location.js';
+import { initRng } from '../js/rng.js';
+import { addTrap } from './support/level-state.js';
+import { createMonsterAt } from './support/monsters.js';
+import { freshObjectRoom } from './support/object-room.js';
+import { installPagerInput } from './support/pager-input.js';
+
+void test('frightening a pet into a pit reduces tameness and alignment after the fall', async () => {
+    const level = freshObjectRoom();
+    requirePlayingGame(game);
+    const pet = await createMonsterAt('kitten', 11, 10, NO_MINVENT);
+    initializePet(pet);
+    pet.mpeaceful = 0;
+    pet.mhp = pet.mhpmax = 20;
+    const tameness = pet.mtame ?? 0;
+    const pit = addTrap(level, PIT, 10, 10);
+    game.u.ux0 = 10;
+    game.u.uy0 = 10;
+    game.u.ux = 11;
+    const input = resetInputState();
+    installPagerInput(input, { expected: /frighten|pit|yelp|growl/, limit: 6 });
+    initRng(1n);
+
+    await settlePetHeroDisplacement(pet, game);
+
+    assert.deepEqual([pet.mx, pet.my], [10, 10]);
+    assert.equal(pet.mtrapped, 1);
+    assert.ok(pet.mhp < 20);
+    assert.equal(pit.tseen, true);
+    assert.equal(pet.mtame, tameness - 1);
+    assert.equal(game.u.ualign.record, -3);
+});
+
+void test('a pet drowned by displacement gives kill credit and the pet-loss guilt penalty', async () => {
+    const level = freshObjectRoom();
+    requirePlayingGame(game);
+    const pet = await createMonsterAt('kitten', 11, 10, NO_MINVENT);
+    initializePet(pet);
+    pet.mpeaceful = 0;
+    pet.malign = 0;
+    level.requireAt(10, 10).typ = POOL;
+    game.u.ux0 = 10;
+    game.u.uy0 = 10;
+    game.u.ux = 11;
+    const input = resetInputState();
+    const messages: string[] = [];
+    input.beforeRead = () => { messages.push(game._pending_message); };
+    installPagerInput(input, { expected: /frighten|drown|thunder|guilty/, limit: 10 });
+    initRng(2n);
+
+    await settlePetHeroDisplacement(pet, game);
+
+    assert.ok(pet.dead || pet.mhp <= 0);
+    assert.equal(monsterAtPosition(level, 10, 10), null);
+    assert.ok((game.u.uconduct.killer ?? 0) > 0);
+    assert.ok(game.u.uexp > 0);
+    assert.equal(game.u.ugangr, 1);
+    assert.equal(game.u.ualign.record, -30);
+    assert.ok(messages.some(message => /You drown/.test(message)));
+    assert.equal(game._lastPlineMessage, 'You feel guilty about losing your pet like this.');
+});

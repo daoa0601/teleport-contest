@@ -5,7 +5,7 @@ import { ingSuffix } from './hacklib.js';
 import { heroLocomotion } from './hero_locomotion.js';
 import { autokey, autoUnlockFlags, continuePicking, pickLock } from './lock_pick.js';
 import { resetPick } from './lock_context.js';
-import { petRefusesHeroSwap } from './hero_pet_displacement.js';
+import { petRefusesHeroSwap, settlePetHeroDisplacement } from './hero_pet_displacement.js';
 import { airTurbulenceStopsHero, waterTurbulenceStopsHero } from './hero_movement_turbulence.js';
 import { maybeAdjustHeroBubble } from './elemental.js';
 import { announceRunLiquid, announceRunTrap, knownRunTrap, runLiquidIsDangerous } from './run_hazards.js';
@@ -103,7 +103,8 @@ import { useWhistle } from './whistle.js';
 import { retouchHeroObject } from './hero_retouch.js';
 import { GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, PARANOID_REMOVE, GETOBJ_SUGGEST } from './const.js';
 import { TER_MON } from './const.js';
-import { senseBuriedObjects } from './buried_object.js';
+import { placeHeroOnLevel } from './hero_location.js';
+import { hideHeroUnder } from './monster_hiding.js';
 import { distantMonsterName, monsterName, monsterPossessive, monsterSubjectPronoun, shopkeeperName } from './monster_name.js';
 import { attackHostileMonster } from './hero_melee.js';
 import { prepareAppliedWeaponAttack } from './hero_attack_preflight.js';
@@ -189,7 +190,7 @@ import { displayLiquidName, displayMessageWindow,
     newsym, feel_newsym, flushPendingTopline, flush_screen, pline, plineWithContinuation, moreUntilDismissed, docrt,
     bot, terrain_glyph, glyphAt, canSeeMonster, canSpotMonster, canSenseMonster, canSpotHeroSelf,
     unblindTelepathyRange,
-    monsterHasWarningProjection, see_nearby_objects, show_glyph_cell, swallowed,
+    monsterHasWarningProjection, show_glyph_cell, swallowed,
     randomDisplayMonsterName, randomDisplayMonsterSubject, see_monsters, see_objects,
     see_traps, map_invisible, unmap_invisible, map_object, unmapObject,
 } from './display.js';
@@ -498,7 +499,7 @@ import {
     D_BROKEN, D_ISOPEN, D_CLOSED, D_LOCKED, D_TRAPPED, SHOP_DOOR_COST, IS_WALL, IS_STWALL, IS_OBSTRUCTED, IS_FURNITURE,
     IS_AIR, IS_ROOM, ZAP_POS, SQKY_BOARD, BEAR_TRAP, LANDMINE, FIRE_TRAP, PIT,
     SPIKED_PIT, TT_PIT, HOLE, TRAPDOOR, DART_TRAP, MAGIC_TRAP, TELEP_TRAP, LEVEL_TELEP, STATUE_TRAP, WEB,
-    ANTI_MAGIC, G_GONE, ER_NOTHING, ER_DAMAGED, M_AP_MONSTER, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE,
+    ANTI_MAGIC, G_GONE, ER_NOTHING, ER_DAMAGED, M_AP_NOTHING, M_AP_MONSTER, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE,
     STRAT_WAITMASK, MM_NOEXCLAM, MM_NOMSG, SHOPBASE, ROOMOFFSET, F_LOOTED, In_endgame,
     Is_airlevel, Is_waterlevel, Is_rogue_level, In_hell, W_ARMOR, W_ACCESSORY, W_SADDLE,
     P_BOW, P_SLING, PARANOID_HIT, POLY_CONTROLLED, STR19, isok,
@@ -519,11 +520,12 @@ const PM_DJINNI = 315;
 const PM_WATER_NYMPH = 68;
 const PM_WATER_DEMON = 289;
 const PM_WATER_MOCCASIN = 216;
-const M2_PNAME = 0x00080000;
 const M2_ROCKTHROW = 0x08000000;
 const M1_HUMANOID = 0x00020000;
 const M1_TUNNEL = 0x20;
 const M1_NEEDPICK = 0x40;
+const M1_CONCEAL = 0x80;
+const S_EEL = 57;
 
 function isMovementKey(ch: string): ch is DirectionKey {
     return ch.length === 1 && 'hjklyubn'.includes(ch);
@@ -563,25 +565,38 @@ function heroOozesUnderDoor(destination: MapLocation | null): boolean {
         && !heroPassesWalls(game) && heroCanOoze(game);
 }
 
-// C test_move(DO_MOVE): oozing bypasses only the doorway entry check.
-async function rejectHeroDiagonalDoorway(dx: number, dy: number, destination: MapLocation | null): Promise<boolean> {
+// C test_move(DO_MOVE): entry precedes tight shoulders; exit follows them.
+async function rejectHeroDiagonalDoorEntry(dx: number, dy: number, destination: MapLocation | null): Promise<boolean> {
     if (!dx || !dy || heroPassesWalls(game)) return false;
     const entryDoor = heroOozesUnderDoor(destination) ? null : destination;
     const x = game.u.ux + dx, y = game.u.uy + dy;
     const intactEntry = blocksDiagonalDoor(null, entryDoor);
     const doorKeeper = !intactEntry && entryDoor?.typ === DOOR ? shopkeeperBlockingDoor(x, y) : null;
     const entering = intactEntry || !!doorKeeper;
-    const intactExit = !entering && blocksDiagonalDoor(game.level?.at(game.u.ux, game.u.uy), null);
-    const entryKeeper = !entering && !intactExit ? shopkeeperBlockingEntry(x, y) : null;
-    if (!entering && !intactExit && !entryKeeper) return false;
-    const keeper = doorKeeper ?? entryKeeper;
+    if (!entering) return false;
+    if (doorKeeper) {
+        const invisible = propertyIsActive('invisible', game);
+        await plineWithContinuation(`${shopkeeperName(doorKeeper, { capitalized: true })}${invisible ? ' senses your motion and' : ''} blocks your way!`);
+    }
+    if (game.flags.mention_walls || game.u.uinwater || game.underwater) {
+        await plineWithContinuation("You can't move diagonally into an intact doorway.");
+    }
+    game.context.move = 0;
+    return true;
+}
+
+async function rejectHeroDiagonalDoorExit(dx: number, dy: number): Promise<boolean> {
+    const origin = game.level?.at(game.u.ux, game.u.uy);
+    if (!dx || !dy || heroPassesWalls(game) || origin?.typ !== DOOR) return false;
+    const intact = blocksDiagonalDoor(origin, null);
+    const keeper = intact ? null : shopkeeperBlockingEntry(game.u.ux + dx, game.u.uy + dy);
+    if (!intact && !keeper) return false;
     if (keeper) {
         const invisible = propertyIsActive('invisible', game);
         await plineWithContinuation(`${shopkeeperName(keeper, { capitalized: true })}${invisible ? ' senses your motion and' : ''} blocks your way!`);
     }
-    if (game.flags.mention_walls || entering && (game.u.uinwater || game.underwater)) {
-        await plineWithContinuation(`You can't move diagonally ${entering ? 'into' : 'out of'} an intact doorway.`);
-    }
+    if (game.flags.mention_walls)
+        await plineWithContinuation("You can't move diagonally out of an intact doorway.");
     game.context.move = 0;
     return true;
 }
@@ -3588,22 +3603,19 @@ async function moveIntoFailedUntrap(trap: Trap) {
     const oldy = u.uy;
     u.ux0 = oldx;
     u.uy0 = oldy;
-    u.ux = newx;
-    u.uy = newy;
-    if (u.usteed) {
-        u.usteed.mx = newx;
-        u.usteed.my = newy;
-    }
+    await placeHeroOnLevel(newx, newy);
+    u.umoved = true;
+    newsym(oldx, oldy);
+    vision_recalc(1);
+    await checkHeroLeashes(oldx, oldy);
+    if (game.program_state.gameover) return { entered: true, died: true };
+    await finishBallAndChainMove(ballChainMove);
+    // C move_into_trap() has its own arrival order and does not run the
+    // footstep, concealment, or dragging-delay tail of domove_core().
     trap.tseen = false;
-    await finishMovedHero({
-        oldx,
-        oldy,
-        newx,
-        newy,
-        loc,
-        explicitAttempt: true,
-        ballChainMove,
-        trapOptions: { failedUntrap: true },
+    await finishDestinationSpotEffects({
+        oldx, oldy, newx: u.ux, newy: u.uy,
+        explicitAttempt: false, trapOptions: { failedUntrap: true },
     });
     if (game.program_state.gameover) return { entered: true, died: true };
     const remainingTrap = game.level?.traps?.find(candidate =>
@@ -6915,31 +6927,21 @@ export async function applyHeroLocationEffects(
     });
 }
 
-// C hack.c:domove_core() common tail after the hero's coordinates have been
-// committed.  Ordinary moves and pet displacement both pass through run
-// termination, u_on_newpos/vision work, and spoteffects in this order.
-async function finishMovedHero({
-    oldx, oldy, newx, newy, loc, explicitAttempt, ballChainMove = null,
-    trapOptions = {},
+// C hack.c:domove_core() common tail, including a refused pet swap.
+// Repositioning and concealment finish before vision and arrival effects.
+async function finishHeroMovement({
+    oldx, oldy, loc, explicitAttempt, ballChainMove = null,
 }: {
-    oldx: number; oldy: number; newx: number; newy: number;
+    oldx: number; oldy: number;
     loc: MapLocation | null | undefined;
     explicitAttempt: boolean;
     ballChainMove?: Awaited<ReturnType<typeof beginBallAndChainMove>>;
-    trapOptions?: Parameters<typeof triggerHeroTrapAt>[2];
 }): Promise<boolean> {
     const u = game.u;
+    await placeHeroOnLevel(u.ux, u.uy);
     resetBulkTakeoff();
     resetPick();
     resetTrapSetting();
-    // C hack.c:domove_core() sets this only in the common tail after map
-    // coordinates changed.  The turn loop retains it through every global
-    // allocation needed to settle this action, then clears it before the next
-    // hero action begins.
-    u.umoved = true;
-    see_nearby_objects();
-    await senseBuriedObjects();
-
     // An active non-travel run ends upon entering a doorway, obstruction, or
     // furniture square even when actor displacement, rather than the plain
     // terrain branch, performed the coordinate move.
@@ -6947,27 +6949,36 @@ async function finishMovedHero({
         || IS_OBSTRUCTED(loc?.typ ?? STONE)
         || IS_FURNITURE(loc?.typ ?? STONE))) stopRun();
 
-    // C trap.c:move_into_trap() skips domove_core()'s footstep disturbance.
-    if (!trapOptions.failedUntrap
-        && !propertyIsActive('levitation', game) && !propertyIsActive('flying', game)
+    if (!propertyIsActive('levitation', game) && !propertyIsActive('flying', game)
         && !propertyIsActive('stealth', game)
         && (MONSTER_BODY_META[heroSpecies(game)]?.[0] ?? 0) >= 400)
         disturbBuriedZombies(u.ux, u.uy);
 
+    const species = heroSpecies(game);
+    if (((MONSTER_FLAGS1[species] ?? 0) & M1_CONCEAL)
+        || MONSTER_SYMBOL[species] === S_EEL || u.dx || u.dy)
+        hideHeroUnder();
+    if ((u.dx || u.dy) && (u.m_ap_type === M_AP_OBJECT || u.m_ap_type === M_AP_FURNITURE))
+        u.m_ap_type = M_AP_NOTHING;
     await checkHeroLeashes(oldx, oldy);
     if (game.program_state.gameover) return true;
-    game._domoveSucceeded = oldx !== newx || oldy !== newy;
-    newsym(oldx, oldy);
-    vision_recalc(1);
-    await announceInvocationSquare();
+    game._domoveSucceeded = oldx !== u.ux || oldy !== u.uy;
+    u.umoved = game._domoveSucceeded;
+    if (u.umoved) {
+        newsym(oldx, oldy);
+        vision_recalc(1);
+        await announceInvocationSquare();
+    }
     if (ballChainMove) await finishBallAndChainMove(ballChainMove);
 
-    const finished = await finishDestinationSpotEffects({
-        oldx, oldy, newx, newy, explicitAttempt, trapOptions,
-    });
-    if (finished.died) return true;
-    if (finished.moved && explicitAttempt)
-        maybeSmudgeEngravings(oldx, oldy, u.ux, u.uy);
+    if (u.umoved) {
+        const finished = await finishDestinationSpotEffects({
+            oldx, oldy, newx: u.ux, newy: u.uy, explicitAttempt,
+        });
+        if (finished.died) return true;
+        if (finished.moved && explicitAttempt)
+            maybeSmudgeEngravings(oldx, oldy, u.ux, u.uy);
+    }
     // C domove_core(): landing and pickup finish before nomul(-2).
     // A longer trap-induced delay survives, but its completion prose changes.
     if (ballChainMove?.causeDelay) await delayAfterDraggingBall();
@@ -7218,7 +7229,7 @@ async function domoveCore(dx: number, dy: number, explicitAttempt: boolean): Pro
             u.uy = newy;
             await settleBeastHeroDisplacement(monster, game);
             if (game.program_state.gameover) return true;
-            return finishMovedHero({ oldx, oldy, newx, newy, loc, explicitAttempt, ballChainMove });
+            return finishHeroMovement({ oldx, oldy, loc, explicitAttempt, ballChainMove });
         }
         if (safeMonster && artifactById(game.uwep?.oartifact, game)?.name !== 'Stormbringer') {
             // C ref: hack.c do_attack()/domove(): a tame monster normally
@@ -7395,10 +7406,7 @@ async function domoveCore(dx: number, dy: number, explicitAttempt: boolean): Pro
         return false;
     }
 
-    // C ref: hack.c test_move().  Once the closed-door/autoopen path has had
-    // its opportunity, intact open and doorless doorways only allow
-    // orthogonal entry/exit.
-    if (await rejectHeroDiagonalDoorway(dx, dy, loc)) return false;
+    if (await rejectHeroDiagonalDoorEntry(dx, dy, loc)) return false;
 
     if (await rejectTightHeroDiagonal(dx, dy)) return false;
 
@@ -7410,6 +7418,8 @@ async function domoveCore(dx: number, dy: number, explicitAttempt: boolean): Pro
         game.context.move = 0;
         return false;
     }
+
+    if (await rejectHeroDiagonalDoorExit(dx, dy)) return false;
 
     const boulder = heroPassesWalls(game) && !game.level.flags.sokoban_rules ? null
         : (game.level.objects[newx]?.[newy] || []).find(object => object.otyp === BOULDER);
@@ -7478,36 +7488,14 @@ async function domoveCore(dx: number, dy: number, explicitAttempt: boolean): Pro
                 u.usteed.mx = oldx;
                 u.usteed.my = oldy;
             }
-            // C domove_core() resets occupations after restoring the
-            // hero's position, even when a peaceful refuses the swap.
-            resetBulkTakeoff();
-            resetPick();
-            resetTrapSetting();
-            await finishBallAndChainMove(ballChainMove);
-            if (ballChainMove?.causeDelay) await delayAfterDraggingBall();
-            return true;
+            return finishHeroMovement({
+                oldx, oldy, loc, explicitAttempt, ballChainMove,
+            });
         }
-        monster.mx = oldx; monster.my = oldy;
-        // C domove_swap_with_pet() redraws both actors before the swap
-        // announcement can flush the map or pause for acknowledgment.
-        newsym(newx, newy);
-        newsym(oldx, oldy);
-        // C hack.c domove_swap_with_pet(): x_monnam() with "your" for
-        // pets, "the" for unnamed common species, and a "peaceful"
-        // adjective for non-pets.
-        const givenName = !!MGIVENNAME(monster);
-        const swapName = monsterName(monster, {
-            state: game,
-            article: monster.mtame ? 'your'
-                : !givenName && !((MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_PNAME)
-                    ? 'the' : 'none',
-            adjective: monster.mpeaceful && !monster.mtame ? 'peaceful' : '',
-            suppressSaddle: givenName,
-        });
-        await plineWithContinuation(`You ${
-            monster.mpeaceful ? 'swap places with' : 'frighten'} ${swapName}.`);
+        await settlePetHeroDisplacement(monster, game);
+        if (game.program_state.gameover) return true;
     }
-    return finishMovedHero({
-        oldx, oldy, newx, newy, loc, explicitAttempt, ballChainMove,
+    return finishHeroMovement({
+        oldx, oldy, loc, explicitAttempt, ballChainMove,
     });
 }

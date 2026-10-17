@@ -3,18 +3,32 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { wearHeroAccessory } from '../js/accessory.js';
 import { rhack } from '../js/cmd.js';
-import { BEAR_TRAP, FIRE_TRAP, POOL, ROOM, TT_BEARTRAP } from '../js/const.js';
+import { ARROW_TRAP, BEAR_TRAP, FIRE_TRAP, POOL, ROOM, TT_BEARTRAP } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { heroLiquidEffects } from '../js/hack.js';
 import { finishDestinationSpotEffects } from '../js/location_effects.js';
 import { hurtleHero } from '../js/hero_hurtle.js';
 import { triggerHeroTrap } from '../js/hero_traps.js';
 import { pushKeys } from '../js/input.js';
-import { AMULET_OF_LIFE_SAVING } from '../js/object_data.js';
+import { AMULET_OF_LIFE_SAVING, ROCK } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
-import { addInventoryObject } from './support/game-objects.js';
+import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { addTrap } from './support/level-state.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { installPolymorphedHero } from './support/hero-state.js';
+void test('failed adjacent untrapping exposes a spider that leaves its cover', async () => {
+    const level = freshObjectRoom({ flags: { pickup: false } });
+    installPolymorphedHero('cave spider');
+    await floorObject(ROCK, 10, 10);
+    game.u.uundetected = 1;
+    addTrap(level, ARROW_TRAP, 11, 10, { tseen: true });
+    pushKeys('untrap\nl' + ' '.repeat(10));
+    initRng(2n);
+    await rhack('#'.charCodeAt(0));
+    assert.equal(game.u.ux, 11, 'the failed attempt moves the spider out from under the rock');
+    assert.equal(game.u.uundetected, 0);
+    assert.equal(game.u.umoved, true);
+});
 for (const lifesaving of [false, true]) {
     void test(`hurling through fire ${lifesaving ? 'continues after life saving' : 'stops at permanent death'}`, async () => {
         freshObjectRoom({ hero: { uhp: 1, uhpmax: 100 } });
