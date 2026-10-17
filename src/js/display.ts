@@ -965,10 +965,8 @@ function displayMonsterGlyph(
     const rawColor = MONSTER_COLOR[mnum] ?? CLR_GRAY;
     return {
         ch: MONSTER_CLASS_SYMBOLS[MONSTER_SYMBOL[mnum] ?? 0] || '?',
-        // tty renders black and ordinary gray monster glyphs through its
-        // default foreground rather than retaining an explicit color code.
-        color: rawColor === CLR_BLACK || rawColor === CLR_GRAY
-            ? NO_COLOR : rawColor,
+        // tty has no hilite for ordinary gray; black is dark gray (use_darkgray).
+        color: rawColor === CLR_GRAY ? NO_COLOR : rawColor,
         decgfx: false, kind: 'monster', mnum, piletop: false,
         glyph: monsterGlyphNumber(mnum, female, monsterState),
     };
@@ -1227,10 +1225,8 @@ export function transientObjectGlyph(object: ObjectGlyphSource): DisplayGlyph {
     const glyph = objectGlyph(object);
     return {
         ...glyph,
-        // tty does not emit explicit black/ordinary-gray foreground unless
-        // dark-gray is enabled; those object glyphs use the default color.
-        color: glyph.color === CLR_BLACK || glyph.color === CLR_GRAY
-            ? NO_COLOR : glyph.color,
+        // tty has no hilite for ordinary gray; black is dark gray (use_darkgray).
+        color: glyph.color === CLR_GRAY ? NO_COLOR : glyph.color,
         decgfx: glyph.decgfx ?? false,
         attr: objectGlyphAttr(glyph),
     };
@@ -2112,8 +2108,8 @@ export function swallowed(first = false) {
         const mnum = hallucinating
             ? rn2Display(MONSTER_COLOR.length) : game.u.ustuck.mnum;
         let color = MONSTER_COLOR[mnum] ?? NO_COLOR;
-        // tty maps black and ordinary gray through its default foreground.
-        if (color === CLR_BLACK || color === CLR_GRAY) color = NO_COLOR;
+        // tty has no hilite for ordinary gray; black is dark gray (use_darkgray).
+        if (color === CLR_GRAY) color = NO_COLOR;
         const glyph: DisplayGlyph = {
             ch: dec && alternate ? alternate : ascii, color,
             decgfx: dec && alternate !== null, kind: 'effect',
