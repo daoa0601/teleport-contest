@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { NO_MINVENT, PIT, POOL } from '../js/const.js';
+import { NO_MINVENT, PIT, POOL, TELEP_TRAP } from '../js/const.js';
 import { initializePet } from '../js/dog.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { settlePetHeroDisplacement } from '../js/hero_pet_displacement.js';
@@ -33,6 +33,53 @@ void test('frightening a pet into a pit reduces tameness and alignment after the
     assert.equal(pit.tseen, true);
     assert.equal(pet.mtame, tameness - 1);
     assert.equal(game.u.ualign.record, -3);
+});
+for (const restricted of [false, true]) {
+    const description = restricted
+        ? 'a displaced pet is abused even if the level blocks its teleportation'
+        : 'a displaced pet is abused after teleporting on the same level';
+    void test(description, async () => {
+        const level = freshObjectRoom();
+        requirePlayingGame(game);
+        level.flags.noteleport = restricted;
+        const pet = await createMonsterAt('kitten', 11, 10, NO_MINVENT);
+        initializePet(pet);
+        pet.mpeaceful = 0;
+        const tameness = pet.mtame ?? 0;
+        const history = pet.edog ?? pet.mextra?.edog;
+        assert.ok(history, 'The initialized kitten must have pet history.');
+        addTrap(level, TELEP_TRAP, 10, 10, { teledest: { x: 13, y: 10 } });
+        game.u.ux0 = 10;
+        game.u.uy0 = 10;
+        game.u.ux = 11;
+        installPagerInput(resetInputState(), { expected: /frighten|disoriented|yowl|hiss/, limit: 6 });
+        initRng(1n);
+        await settlePetHeroDisplacement(pet, game);
+        assert.deepEqual([pet.mx, pet.my], [restricted ? 10 : 13, 10]);
+        assert.equal(pet.mtame, tameness - 1);
+        assert.equal(history.abuse, 1);
+        assert.equal(game.u.ualign.record, -3);
+        assert.match(game._lastPlineMessage ?? '', /The kitten (yowls|hisses)!/);
+    });
+}
+void test('a pet that avoids a familiar teleport trap receives no displacement penalty', async () => {
+    const level = freshObjectRoom();
+    requirePlayingGame(game);
+    const pet = await createMonsterAt('kitten', 11, 10, NO_MINVENT);
+    initializePet(pet);
+    pet.mpeaceful = 0;
+    pet.mtrapseen = 1 << (TELEP_TRAP - 1);
+    const tameness = pet.mtame;
+    addTrap(level, TELEP_TRAP, 10, 10);
+    game.u.ux0 = 10;
+    game.u.uy0 = 10;
+    game.u.ux = 11;
+    initRng(3n);
+    await settlePetHeroDisplacement(pet, game);
+    assert.deepEqual([pet.mx, pet.my], [10, 10]);
+    assert.equal(pet.mtame, tameness);
+    assert.equal(game.u.ualign.record, 0);
+    assert.equal(game._lastPlineMessage, 'You frighten your kitten.');
 });
 void test('a pet drowned by displacement gives kill credit and the pet-loss guilt penalty', async () => {
     const level = freshObjectRoom();

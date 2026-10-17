@@ -107,13 +107,14 @@ export async function settlePetHeroDisplacement(monster, state) {
     });
     if (state.program_state.gameover)
         return;
-    let leftLevel = false;
+    let trapMovedMonster = false;
     if (!monster.dead && monster.mhp > 0) {
         const action = await triggerImmediateMonsterTrap(monster, state);
         await finishImmediateMonsterTrap(action, state);
         if (state.program_state.gameover)
             return;
-        leftLevel = !!action.movement.actorLeftLevel;
+        // trapeffect_telep_trap() returns Trap_Moved_Mon even when blocked.
+        trapMovedMonster = !!action.movement.actorLeftLevel || action.event?.kind === 'teleport-trap';
     }
     if (monster.dead || monster.mhp <= 0) {
         // Native awards displacement credit before announcing the loss,
@@ -130,7 +131,7 @@ export async function settlePetHeroDisplacement(monster, state) {
             adjustHeroAlignment(-15, state);
         }
     }
-    else if (monster.mtrapped || leftLevel) {
+    else if (monster.mtrapped || trapMovedMonster) {
         await abusePet(monster, state);
         adjustHeroAlignment(-3, state);
     }
