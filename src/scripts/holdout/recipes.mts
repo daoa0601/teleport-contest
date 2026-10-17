@@ -1,6 +1,7 @@
 import { errorMessage, itemAt } from '../lib/session-types.mjs';
 import type { KeysAction, MenuAction, Session, SessionAction, SessionSegment } from '../lib/session-types.mjs';
 import { ITEM_RECIPES, validateItemRecipe } from './item-recipes.mjs';
+import { GAMEPLAY_RECIPES, validateGameplayRecipe } from './gameplay-recipes.mjs';
 export interface Character {
     role: string;
     race: string;
@@ -478,6 +479,7 @@ RECIPES['throw-fight'] = {
 };
 
 for (const [name, recipe] of Object.entries(ITEM_RECIPES)) RECIPES[name] = recipe;
+for (const [name, recipe] of Object.entries(GAMEPLAY_RECIPES)) RECIPES[name] = recipe;
 
 export { RECIPES };
 
@@ -750,7 +752,8 @@ VALIDATORS['throw-fight'] = (s) => {
  */
 export function validateRecipeRecording(name: string, session: RecipeRecording): RecipeEvidence {
     const validator = VALIDATORS[name] ?? (ITEM_RECIPES[name]
-        ? (recording: RecipeRecording) => validateItemRecipe(name, recording) : undefined);
+        ? (recording: RecipeRecording) => validateItemRecipe(name, recording)
+        : GAMEPLAY_RECIPES[name] ? (recording: RecipeRecording) => validateGameplayRecipe(name, recording) : undefined);
     if (!validator) return { recipe: name, ok: false, checks: [], error: 'unknown recipe' };
     let checks;
     try {

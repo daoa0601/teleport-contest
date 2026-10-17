@@ -54,7 +54,10 @@ export function decodeManifest(value) {
     const configuration = objectValue(data.configuration, 'configuration');
     return { version: 1, tier: 'dev-private', sealed: false, created: stringValue(data.created, 'created'),
         ...(data.updated === undefined ? {} : { updated: stringValue(data.updated, 'updated') }),
-        attempts: numberValue(data.attempts, 'attempts'), configuration: { kinds: arrayValue(configuration.kinds, 'kinds').map(decodeGeneratorKind) },
+        attempts: numberValue(data.attempts, 'attempts'), configuration: {
+            kinds: arrayValue(configuration.kinds, 'kinds').map(decodeGeneratorKind),
+            ...(configuration.recipes === undefined ? {} : { recipes: strings(configuration.recipes, 'recipes') }),
+        },
         pending: arrayValue(data.pending, 'pending').map(decodePending),
         accepted: arrayValue(data.accepted, 'accepted').map(value => { const row = objectValue(value, 'accepted recording'); return { ...decodePending(row), metrics: decodeMetrics(row.metrics) }; }),
         rejected: arrayValue(data.rejected, 'rejected').map(value => { const row = objectValue(value, 'rejected recording'); return { spec: decodeCandidate(row.spec), reason: stringValue(row.reason, 'reason'), ...(row.diagnostic === undefined ? {} : { diagnostic: stringValue(row.diagnostic, 'diagnostic') }) }; }) };

@@ -6,6 +6,7 @@ import { randomInt, randomUUID } from 'node:crypto';
 import { spawn } from 'node:child_process';
 import { LEGAL_CHARACTERS, RECIPE_NAMES, makeRecipe, acceptsCharacter } from './holdout/recipes.mjs';
 import { chooseDate } from './holdout/calendar.mjs';
+import { selectRecipes } from './holdout/recipe-selection.mjs';
 import { inspectCandidate, summarizeCorpus } from './holdout/inspect.mjs';
 import { decodeManifest } from './holdout/types.mjs';
 import { decodeSession, errorMessage, hasErrorCode, itemAt, objectValue, arrayValue, numberValue } from './lib/session-types.mjs';
@@ -47,6 +48,8 @@ function options(argv) {
             requestedMaxAttempts = Number(value);
         else if (flag === '--kinds')
             opts.kinds = value.split(',').map(parseKind);
+        else if (flag === '--recipes')
+            opts.recipes = selectRecipes(value);
         else
             throw new Error(`unknown option ${flag}`);
     }
@@ -59,6 +62,8 @@ function options(argv) {
     if (!opts.kinds.length || opts.kinds.some(kind => !['recipe', 'fuzz', 'explore', 'deep'].includes(kind))) {
         throw new Error('kinds must contain recipe, fuzz, explore, or deep');
     }
+    if (opts.recipes && !opts.kinds.includes('recipe'))
+        throw new Error('--recipes requires recipe in --kinds');
     opts.maxAttempts = requestedMaxAttempts ?? opts.count * 3;
     if (!Number.isSafeInteger(opts.maxAttempts) || opts.maxAttempts < opts.count) {
         throw new Error('max-attempts must be an integer at least count');
@@ -139,7 +144,7 @@ function characterAt(index) {
     }
     return itemAt(ordered, index % ordered.length);
 }
-function makeCandidate(index, seeds, kinds) {
+function makeCandidate(index, seeds, kinds, recipes) {
     const rotation = ['recipe', 'fuzz', 'explore', 'fuzz', 'recipe', 'explore', 'fuzz',
         'explore', 'recipe', 'fuzz', 'explore', 'fuzz', 'recipe', 'explore', 'fuzz',
         'explore', 'recipe', 'fuzz', 'explore', 'fuzz', ...(kinds.includes('deep') ? ['deep'] : [])];
@@ -161,7 +166,7 @@ function makeCandidate(index, seeds, kinds) {
     if (kind === 'recipe') {
         const recipeIndex = Math.floor(index / schedule.length) * schedule.filter(kind => kind === 'recipe').length
             + schedule.slice(0, index % schedule.length).filter(kind => kind === 'recipe').length;
-        const recipe = itemAt(RECIPE_NAMES, recipeIndex % RECIPE_NAMES.length);
+        const recipe = itemAt(recipes, recipeIndex % recipes.length);
         spec.recipe = recipe;
         if (!acceptsCharacter(recipe, character)) {
             const eligible = LEGAL_CHARACTERS.filter(character => acceptsCharacter(recipe, character));
@@ -242,7 +247,7 @@ async function record(input, output, install) {
 async function main() {
     const opts = options(process.argv.slice(2));
     if (!opts) {
-        console.log('Usage: node scripts/generate-holdout.mjs [--out DIR] [--count 500] [--jobs 2] [--resume] [--kinds recipe,fuzz,explore,deep] [--max-attempts N]');
+        console.log('Usage: node scripts/generate-holdout.mjs [--out DIR] [--count 500] [--jobs 2] [--resume] [--kinds recipe,fuzz,explore,deep] [--recipes NAME,...] [--max-attempts N]');
         return;
     }
     const lock = await reserveOutput(opts);
@@ -254,10 +259,15 @@ async function main() {
             throw new Error('output already contains a batch; pass --resume or choose another directory');
         const manifest = savedManifest === null
             ? { version: 1, tier: 'dev-private', sealed: false, created: new Date().toISOString(),
-                accepted: [], rejected: [], pending: [], attempts: 0, configuration: { kinds: opts.kinds } }
+                accepted: [], rejected: [], pending: [], attempts: 0, configuration: {
+                    kinds: opts.kinds, ...(opts.recipes ? { recipes: opts.recipes } : {}),
+                } }
             : decodeManifest(savedManifest);
         if (manifest.configuration.kinds.join(',') !== opts.kinds.join(',')) {
             throw new Error('resume must use the original --kinds; use a separate directory for another mix');
+        }
+        if ((manifest.configuration.recipes ?? []).join(',') !== (opts.recipes ?? []).join(',')) {
+            throw new Error('resume must use the original --recipes; use a separate directory for another selection');
         }
         for (const pending of manifest.pending) {
             const completed = await readJson(path.join(opts.out, pending.file), null);
@@ -305,7 +315,7 @@ async function main() {
                 && manifest.attempts < opts.maxAttempts) {
                 inFlight++;
                 const index = manifest.attempts++;
-                const candidate = makeCandidate(index, seeds, opts.kinds);
+                const candidate = makeCandidate(index, seeds, opts.kinds, opts.recipes ?? RECIPE_NAMES);
                 const { spec, session } = candidate;
                 const planPath = path.join(opts.out, 'plans', `${spec.id}.json`);
                 const partial = path.join(runtime, `${spec.id}.partial.json`);

@@ -1,5 +1,6 @@
 import { errorMessage, itemAt } from '../lib/session-types.mjs';
 import { ITEM_RECIPES, validateItemRecipe } from './item-recipes.mjs';
+import { GAMEPLAY_RECIPES, validateGameplayRecipe } from './gameplay-recipes.mjs';
 // recipes.mjs — Reusable holdout scenario recipes and character strata.
 //
 // Exports:
@@ -398,6 +399,8 @@ RECIPES['throw-fight'] = {
 };
 for (const [name, recipe] of Object.entries(ITEM_RECIPES))
     RECIPES[name] = recipe;
+for (const [name, recipe] of Object.entries(GAMEPLAY_RECIPES))
+    RECIPES[name] = recipe;
 export { RECIPES };
 export const RECIPE_NAMES = Object.keys(RECIPES);
 export const ROLES = Object.keys(ROLE_CONSTRAINTS);
@@ -617,7 +620,8 @@ VALIDATORS['throw-fight'] = (s) => {
  */
 export function validateRecipeRecording(name, session) {
     const validator = VALIDATORS[name] ?? (ITEM_RECIPES[name]
-        ? (recording) => validateItemRecipe(name, recording) : undefined);
+        ? (recording) => validateItemRecipe(name, recording)
+        : GAMEPLAY_RECIPES[name] ? (recording) => validateGameplayRecipe(name, recording) : undefined);
     if (!validator)
         return { recipe: name, ok: false, checks: [], error: 'unknown recipe' };
     let checks;
