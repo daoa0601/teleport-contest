@@ -318,7 +318,11 @@ export async function finishHeroMonsterKillOutcome(monster: Monster, x: number, 
         if (canCreateDeathObjects && monsterBodyCrumbles(monster)
             && deathLocationVisible && !wasInside && !monsterDeathSwallower(game))
             await plineWithContinuation(monsterBodyCrumblesMessage(monster));
+        // corpse_chance() repeats LEVEL_SPECIFIC_NOCORPSE after the crumble
+        // check, so graveyard undead roll again here.
         leavesCorpse = !wasInside && canCreateDeathObjects
+            && !monsterBodyCrumbles(monster)
+            && levelAllowsMonsterDeathDrops(monster, game, rn2)
             && monsterLeavesCorpse(monster, rn2);
     }
     if (deathExplosion !== null) {
