@@ -148,7 +148,7 @@ export async function promptChoice(query, choices, defaultAnswer, { visibleChoic
     const result = await tty_yn_function(query, choices.join(''), defaultAnswer, visibleChoices);
     const answer = choices.find(choice => choice === result.answer) ?? defaultAnswer;
     if (addCommandQueue)
-        rememberCommandKey(answer.charCodeAt(0));
+        rememberCommandKey(answer ? answer.charCodeAt(0) : 0);
     return answer;
 }
 // Native tty_yn_function returns the answer and sets yn_number. Keep the

@@ -153,7 +153,7 @@ export async function promptChoice<Choice extends string>(
     }
     const result = await tty_yn_function(query, choices.join(''), defaultAnswer, visibleChoices);
     const answer = choices.find(choice => choice === result.answer) ?? defaultAnswer;
-    if (addCommandQueue) rememberCommandKey(answer.charCodeAt(0));
+    if (addCommandQueue) rememberCommandKey(answer ? answer.charCodeAt(0) : 0);
     return answer;
 }
 

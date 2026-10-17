@@ -68,3 +68,33 @@ void test('jumping straight to the last corner page leaves the erased lower rows
     }
 });
 
+void test('menu search retains printable eight-bit characters in the query', async () => {
+    freshPlayableRoom();
+    const window = tty_create_nhwindow<string>(NHW_MENU);
+    await tty_start_menu(window);
+    tty_add_menu(window, { identifier: 'accented', selector: 'a', text: 'caf\xe9' });
+    tty_add_menu(window, { identifier: 'plain', selector: 'b', text: 'cafe' });
+    tty_end_menu(window);
+    resetInputState().feed(':caf\xe9\n\n');
+
+    const result = await tty_select_menu(window, PICK_ANY);
+
+    assert.deepEqual(result.selections.map(item => item.identifier), ['accented']);
+    await tty_destroy_nhwindow(window);
+});
+
+void test('menu search folds ASCII case without folding accented bytes', async () => {
+    freshPlayableRoom();
+    const window = tty_create_nhwindow<string>(NHW_MENU);
+    await tty_start_menu(window);
+    tty_add_menu(window, { identifier: 'upper', selector: 'a', text: 'CAF\xc9' });
+    tty_add_menu(window, { identifier: 'lower', selector: 'b', text: 'caf\xe9' });
+    tty_end_menu(window);
+    resetInputState().feed(':caf\xc9\n\n');
+
+    const result = await tty_select_menu(window, PICK_ANY);
+
+    assert.deepEqual(result.selections.map(item => item.identifier), ['upper']);
+    await tty_destroy_nhwindow(window);
+});
+

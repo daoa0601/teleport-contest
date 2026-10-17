@@ -379,7 +379,7 @@ async function process_menu_window(d, rows, layout, how, underlay) {
             continue;
         }
         if (letter === ':' && how !== PICK_NONE) {
-            const query = await getLine('Search for:', (_ch, code) => code >= 32 && code < 127, { inMenu: true });
+            const query = await getLine('Search for:', (_ch, code) => code >= 32 && code !== 127, { inMenu: true });
             if (!query)
                 continue;
             for (const row of rows) {
@@ -427,8 +427,10 @@ function groupAccelerators(rows, how) {
         && (how === PICK_ANY || counts.get(row.group) === 1)).map(row => row.group));
 }
 function menuSearchMatches(query, text) {
-    const pattern = [...query].map(character => character === '*' ? '.*'
+    // strutil.c:pmatchi() uses lowc(), which changes only ASCII A..Z.
+    const lowerAscii = (value) => value.replace(/[A-Z]/g, letter => letter.toLowerCase());
+    const pattern = [...lowerAscii(query)].map(character => character === '*' ? '.*'
         : character === '?' ? '.' : character.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('');
-    return new RegExp(pattern, 'i').test(text);
+    return new RegExp(pattern).test(lowerAscii(text));
 }
 //# sourceMappingURL=tty_menu.js.map
