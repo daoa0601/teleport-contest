@@ -3,7 +3,7 @@
 import { game } from './gstate.js';
 import { makemonAt } from './mklev.js';
 import { monsterIsKop } from './monster_data.js';
-import { rn2 } from './rng.js';
+import { rnd } from './rng.js';
 function downstairs(state) {
     for (let stair = state.stairs; stair; stair = stair.next) {
         if (!stair.isladder && !stair.up)
@@ -11,10 +11,11 @@ function downstairs(state) {
     }
     return null;
 }
-export async function returnDeadKop(monster, state = game, random = rn2) {
+export async function returnDeadKop(monster, state = game, rollOne = rnd) {
     if (!monsterIsKop(monster.mnum))
         return null;
-    const returnRoll = random(5) + 1;
+    // mondead(): switch (rnd(5)) -- 1 near the down stairs, 2 anywhere.
+    const returnRoll = rollOne(5);
     if (returnRoll > 2)
         return null;
     if (returnRoll === 1) {
