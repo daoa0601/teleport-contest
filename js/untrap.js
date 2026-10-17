@@ -46,7 +46,7 @@ import { promptDirection } from './tty_prompts.js';
 import { EXT_ENCUMBER, HVY_ENCUMBER, calcCapacity, nearCapacity, objectWeight, } from './weight.js';
 import { isBlade } from './weapon_type.js';
 import { cansee } from './vision.js';
-import { observeObjectForNaming, definiteName, objectCombatName } from './objnam.js';
+import { observeObjectForNaming, definiteName, objectCombatName, objectQuestion, simpleObjectNameWithArticle, } from './objnam.js';
 import { objectDescription } from './object_description.js';
 import { monsterName as canonicalMonsterName } from './monster_name.js';
 const POTION_CLASS = 8;
@@ -664,11 +664,15 @@ async function handleBoxes(boxes, { state, force, ask, publish, random, rollOne,
         const known = box.tknown && box.dknown;
         if (!known)
             observeObjectForNaming(box, { state });
-        const name = known ? objectCombatName(box, { state, includeCorpseSpecies: false })
-            : objectDescription(box, { state });
-        const answer = await ask(known
-            ? `Disarm this ${name}?`
-            : `There is ${name} here.  Check it for traps?`);
+        const answer = await ask(objectQuestion(box, {
+            prefix: known ? 'Disarm this ' : 'There is ',
+            suffix: known ? '' : ' here.  Check it for traps?',
+            fallback: 'a box',
+            format: (object, nameState) => known
+                ? objectCombatName(object, { state: nameState, includeCorpseSpecies: false })
+                : objectDescription(object, { state: nameState }),
+            shortFormat: simpleObjectNameWithArticle,
+        }, state));
         if (answer === 'q')
             return false;
         if (answer === 'n')

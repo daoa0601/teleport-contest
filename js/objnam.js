@@ -598,14 +598,20 @@ export function ownedObjectName(object, state = game, { capitalized = true, incl
 export function ownedSimpleObjectName(object, state = game, { capitalized = true } = {}) {
     return objectOwnershipPrefix(object, state, { capitalized }) + minimalObjectName(object, state);
 }
-// C safe_qbuf()/short_oname(): reserve the question before shortening names.
 export function ownedObjectQuestion(object, { prefix, suffix, fallback, capitalized }, state = game) {
+    return objectQuestion(object, {
+        prefix, suffix, fallback,
+        format: (item, nameState) => ownedObjectName(item, nameState, { capitalized }),
+        shortFormat: (item, nameState) => ownedSimpleObjectName(item, nameState, { capitalized }),
+    }, state);
+}
+// C safe_qbuf()/short_oname(): reserve the question before shortening names.
+export function objectQuestion(object, { prefix, suffix, fallback, format, shortFormat }, state = game) {
     const limit = QBUFSZ - 1 - prefix.length - suffix.length;
     const question = (name) => `${prefix}${name}${suffix}`;
     if (fallback.length > limit)
         return question(fallback).slice(0, QBUFSZ - 1);
-    const describe = (item, nameState) => ownedObjectName(item, nameState, { capitalized });
-    let name = describe(object, state);
+    let name = format(object, state);
     if (name.length <= limit)
         return question(name);
     const callName = state._objectCallNames?.[object.otyp];
@@ -618,18 +624,18 @@ export function ownedObjectQuestion(object, { prefix, suffix, fallback, capitali
         ? { ...object, oextra: { ...object.oextra, oname: `${personalName.slice(0, 8)}...` } }
         : object;
     if (shortCallState !== state) {
-        name = describe(object, shortCallState);
+        name = format(object, shortCallState);
         if (name.length <= limit)
             return question(name);
     }
     if (shortNamedObject !== object) {
-        name = describe(shortNamedObject, state);
+        name = format(shortNamedObject, state);
         if (name.length <= limit)
             return question(name);
     }
     const shortenBoth = shortCallState !== state && shortNamedObject !== object;
     if (shortenBoth) {
-        name = describe(shortNamedObject, shortCallState);
+        name = format(shortNamedObject, shortCallState);
         if (name.length <= limit)
             return question(name);
     }
@@ -640,9 +646,9 @@ export function ownedObjectQuestion(object, { prefix, suffix, fallback, capitali
         bknown: false, rknown: false, greased: false,
         oeroded: 0, oeroded2: 0, orotten: false, odiluted: false, norevive: false,
     };
-    name = describe(plainObject, nameState);
+    name = format(plainObject, nameState);
     if (name.length > limit)
-        name = ownedSimpleObjectName(plainObject, nameState, { capitalized });
+        name = shortFormat(plainObject, nameState);
     return question(name.length <= limit ? name : fallback);
 }
 // Native fruit labels imported from bones can already be plural. xname
