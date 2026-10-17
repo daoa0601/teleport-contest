@@ -31,7 +31,7 @@ import { hideMonsterUnder, hideMonsterOnRestore } from './monster_hiding.js';
 import { restoreMonsterShape } from './monster_polymorph.js';
 import { restoreMonsterWormHeads } from './monster_worm.js';
 import { restoreLevelRegions, updateHeroRegions } from './regions.js';
-import { mklev, place_lregion, u_on_downstairs, u_on_upstairs } from './mklev.js';
+import { mklev, oinit, place_lregion, u_on_downstairs, u_on_upstairs } from './mklev.js';
 import { dungeonBuildsUp, level_difficulty, specialPrototypeAt,
     recordMappedOverviewState, recordOverviewBranch, markOverviewUnreachable,
     insideWizardTower, levelIsWizardTower } from './dungeon.js';
@@ -259,6 +259,7 @@ export async function gotoLevel(targetDepth: Partial<DungeonLocation>, {
             game.program_state.in_getlev = false;
         }
         if (game.program_state.gameover) return true;
+        oinit();
     } else {
         game._specialLevelPrototype = specialPrototypeAt(
             destinationDepth.dnum, destinationDepth.dlevel,
