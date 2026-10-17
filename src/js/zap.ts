@@ -25,7 +25,7 @@ import { monsterHasFireResistance, monsterHasShockResistance } from './monster_r
 import { SHOPBASE } from './const.js';
 import { roomsAt } from './room.js';
 import { addShopDamage } from './shop_damage.js';
-import { triggerHeroTrap } from './hero_traps.js';
+import { setHeroTrap, triggerHeroTrap } from './hero_traps.js';
 import { monsterName, possessiveName } from './monster_name.js';
 import { destroyObjectFromMonsterInventory } from './monster_inventory.js';
 import { loseHeroHp } from './hero_damage.js';
@@ -411,8 +411,7 @@ async function freezeLiquidAt(x: number, y: number, state: GameState, publish: M
                 await publish('You pass through the now-solid rock.');
                 await resetHeroTrap(true, state);
             } else {
-                state.u.utrap = rnd(50) + 19;
-                state.u.utraptype = TT_INFLOOR;
+                setHeroTrap(rnd(50) + 19, TT_INFLOOR, state);
                 await publish(
                     'You are firmly stuck in the cooling rock.',
                 );

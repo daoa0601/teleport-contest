@@ -20,7 +20,7 @@ import { monsterHasMagicResistance } from './anti_magic_trap.js';
 import { hasShopkeeperData } from './shop_types.js';
 import { convertTrapToObject } from './trap_object.js';
 import { heroLiquidEffects } from './hack.js';
-import { clearHeroTrap } from './hero_traps.js';
+import { clearHeroTrap, setHeroTrap } from './hero_traps.js';
 import { bringLeashedFollowers } from './teleport.js';
 import { liquidForHole } from './hole.js';
 import { gotoLevel } from './level_change.js';
@@ -452,10 +452,7 @@ export async function digActualHole(x, y, madeBy, ttyp, { state = game } = {}) {
         wontFall = heroIsAirborne(state);
         if (atYou) {
             if (!wontFall) {
-                hero.utrap = 2 + rn2(4); /* rn1(4, 2) */
-                hero.utraptype = TT_PIT;
-                refreshMovementProperties(state);
-                state.context.botl = true;
+                setHeroTrap(2 + rn2(4), TT_PIT, state); /* rn1(4, 2) */
                 state.vision_full_recalc = 1; /* vision limits change */
             }
             else {
