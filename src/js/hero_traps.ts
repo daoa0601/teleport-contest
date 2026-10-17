@@ -456,8 +456,9 @@ function reduceHeroTrapDuration(): number {
     return --hero.utrap;
 }
 
+// C Norep() compares pline.c's previous individual message.
 async function repeatableTrapMessage(message: string): Promise<void> {
-    if (game._last_message !== message) await pline(message);
+    if (game._lastPlineMessage !== message) await pline(message);
     else game._pending_message = '';
 }
 

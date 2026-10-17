@@ -662,6 +662,7 @@ function appendTurnMessage(message: string): void {
     game._pending_message = game._pending_message
         ? `${game._pending_message}  ${message}` : message;
     game._last_message = game._pending_message;
+    game._lastPlineMessage = message;
 }
 
 // C ref: allmain.c:interrupt_multi().  Count-prefixed ordinary commands use
@@ -673,9 +674,7 @@ function interruptCountedActivity(message: string): void {
     const game = requireInitializedGame();
     if (!(game.multi > 0) || game.context.travel || game.context.run) return;
     endVoluntaryMultiTurn(game);
-    if (game.flags?.verbose !== false
-        && game._pending_message !== message
-        && game._last_message !== message) {
+    if (game.flags?.verbose !== false && game._lastPlineMessage !== message) {
         appendTurnMessage(message);
     }
 }

@@ -60,8 +60,9 @@ function dangerousHeroProperties() {
         || u.strangled || (u.strangledTurns ?? 0) > 0
         || u.sick || (u.sickTurns ?? 0) > 0);
 }
+// C Norep() compares pline.c's previous individual message.
 async function norep(message) {
-    if (game._last_message !== message)
+    if (game._lastPlineMessage !== message)
         await pline(message);
 }
 // C do.c:cmd_safety_prevention().  The per-command counter is durable across
