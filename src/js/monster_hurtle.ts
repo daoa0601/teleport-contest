@@ -21,7 +21,6 @@ import {
     MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_MOVE,
     MONSTER_SIZE, MONSTER_SYMBOL,
 } from './monster_data.js';
-import { monsterPassesBars } from './monster_movement_traits.js';
 import { BOULDER } from './object_data.js';
 import { resolveMonsterLiquid } from './mon.js';
 import type { MonsterLiquidDeathContext } from './mon.js';
@@ -124,7 +123,9 @@ function destinationIsOpen(monster: Monster, state: GameState, x: number, y: num
     if (IS_OBSTRUCTED(location.typ) && !passesWall) return false;
     if (location.typ === DOOR
         && ((location.doormask ?? 0) & (D_CLOSED | D_LOCKED))) return false;
-    if (location.typ === IRONBARS && !monsterPassesBars(monster)) return false;
+    // C will_hurtle() uses goodpos(), whose accessible() test rejects bars
+    // even for monsters that can squeeze through them while walking.
+    if (location.typ === IRONBARS && !passesWall) return false;
 
     const boulder = (state.level?.objects?.[x]?.[y] || [])
         .some(object => object.otyp === BOULDER);
