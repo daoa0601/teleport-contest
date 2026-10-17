@@ -1,0 +1,140 @@
+name: Fresh batches
+# Record fresh native sessions with the C recorder and score the checked-out
+# JavaScript port against them, one batch per matrix job.
+on:
+  workflow_dispatch:
+    inputs:
+      first:
+        description: First batch number
+        required: true
+        type: number
+      count:
+        description: Number of batches (at most 20)
+        default: 10
+        type: number
+      sessions:
+        description: Sessions per batch
+        default: 300
+        type: number
+  pull_request:
+    # Smoke run: one small batch whenever this workflow or the recorder changes.
+    paths:
+      - .github/workflows/fresh-batches.yml
+      - nethack-c/**
+
+permissions:
+  contents: read
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      batches: ${{ steps.plan.outputs.batches }}
+      sessions: ${{ steps.plan.outputs.sessions }}
+    steps:
+      - id: plan
+        env:
+          FIRST: ${{ inputs.first || 0 }}
+          COUNT: ${{ inputs.count || 1 }}
+          SESSIONS: ${{ inputs.sessions || 20 }}
+        run: |
+          if [ "$COUNT" -gt 20 ]; then COUNT=20; fi
+          echo "batches=$(seq "$FIRST" $((FIRST + COUNT - 1)) | jq -cs .)" >> "$GITHUB_OUTPUT"
+          echo "sessions=$SESSIONS" >> "$GITHUB_OUTPUT"
+
+  recorder:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - id: cache
+        uses: actions/cache@v4
+        with:
+          path: nethack-c/recorder/install
+          key: recorder-${{ runner.os }}-${{ hashFiles('nethack-c/build-recorder.sh', 'nethack-c/patches/**') }}-16ff59115
+      - name: Build the native recorder
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -yq clang bison flex
+          bash nethack-c/build-recorder.sh
+      - run: tar -C nethack-c/recorder -czf recorder.tgz install
+      - uses: actions/upload-artifact@v4
+        with:
+          name: recorder
+          path: recorder.tgz
+          retention-days: 1
+
+  batch:
+    needs: [plan, recorder]
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      max-parallel: 20
+      matrix:
+        n: ${{ fromJSON(needs.plan.outputs.batches) }}
+    env:
+      N: ${{ matrix.n }}
+      SESSIONS: ${{ needs.plan.outputs.sessions }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/download-artifact@v4
+        with:
+          name: recorder
+      - run: mkdir -p nethack-c/recorder && tar -C nethack-c/recorder -xzf recorder.tgz
+
+      - name: Record fresh sessions
+        run: |
+          KINDS=(deep,explore deep,explore,fuzz recipe,fuzz deep,explore,recipe)
+          K=${KINDS[$((N % 4))]}
+          echo "$K" > kinds.txt
+          mkdir -p out
+          node scripts/generate-holdout.mjs --out "fresh$N" --count "$SESSIONS" --jobs 4 --kinds "$K" > out/generate.log 2>&1 \
+            || { tail -40 out/generate.log; exit 1; }
+          cp "fresh$N/summary.json" out/summary.json
+
+      - name: Score the port against them
+        run: |
+          mkdir -p scores
+          ls "fresh$N"/sessions/*.json | xargs -P 4 -I{} sh -c \
+            'node scripts/lib/score-session.mjs "$1" 2>/dev/null | sed -n "/__RESULT_ONE__/{n;p;}" > "scores/$(basename "$1").json"' _ {}
+          python3 - "$N" "$(cat kinds.txt)" <<'EOF'
+          import glob, json, os, shutil, sys
+          n, kinds = sys.argv[1], sys.argv[2]
+          rows = []
+          for f in sorted(glob.glob('scores/*.json')):
+              try:
+                  rows.append(json.loads(open(f).read()))
+              except ValueError:
+                  rows.append({'session': os.path.basename(f)[:-5], 'passed': False, 'error': 'unparsed'})
+          failing = [r for r in rows if not r.get('passed')]
+          lines = [f"fresh{n} {len(rows) - len(failing)} / {len(rows)}"]
+          os.makedirs('out/failing', exist_ok=True)
+          for r in failing:
+              fd = r.get('firstDivergence') or {}
+              err = r.get('error')
+              err = (err if isinstance(err, str) else json.dumps(err))[:100] if err else ''
+              lines.append(f"{r['session'][:12]} step {fd.get('step')} {fd.get('kind')} {err} {json.dumps(fd)[:160]}")
+              shutil.copy(f"fresh{n}/sessions/{r['session']}", 'out/failing/')
+          open('out/score.txt', 'w').write('\n'.join(lines) + '\n')
+          with open('out/results.jsonl', 'w') as out:
+              for r in rows:
+                  out.write(json.dumps(r) + '\n')
+          open('out/kinds.txt', 'w').write(kinds + '\n')
+          print('\n'.join(lines))
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as s:
+              s.write('```\n' + '\n'.join(lines) + '\n```\n')
+          EOF
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: fresh${{ matrix.n }}
+          path: out
+          retention-days: 14
