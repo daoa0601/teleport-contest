@@ -56,7 +56,7 @@ export function menuSelector(index) {
 export function selectableMenuText(key, text, marker = '-') {
     return `${key} ${marker} ${text.slice(0, BUFSZ - 1)}`;
 }
-export function paintMenuPage(d, menu, page, rows, underlay) {
+export function paintMenuPage(d, menu, page, rows, underlay, previousPageLines = 0) {
     const { boundary, maxRows, pageCount } = menu;
     if (boundary === 0)
         d.clearScreen();
@@ -65,7 +65,7 @@ export function paintMenuPage(d, menu, page, rows, underlay) {
         // A shorter corner page exposes the map again below two blank rows.
         // Keep those cells from the already-painted map, like docorner().
         const firstRestoredRow = Math.min(rows.length + 3, maxRows - 1);
-        if (underlay && rows.length + 1 < maxRows) {
+        if (underlay && previousPageLines > rows.length) {
             for (let row = firstRestoredRow; row < maxRows; row++) {
                 for (let col = boundary; col < d.cols; col++) {
                     const cell = underlay[row]?.[col];
@@ -257,6 +257,7 @@ async function process_menu_window(d, rows, layout, how, underlay) {
     let page = 0;
     let count = null;
     let repaint = true;
+    let previousPageLines = 0;
     const result = (key, cancelled = false) => ({
         key, cancelled,
         selections: rows.flatMap(row => row.selected && row.identifier !== null
@@ -271,7 +272,7 @@ async function process_menu_window(d, rows, layout, how, underlay) {
                 const marker = item?.selected ? item.count === -1 ? '*' : '#' : '-';
                 return { ...row, text: item?.identifier !== null && item?.selected
                         ? row.text.slice(0, 2) + marker + row.text.slice(3) : row.text };
-            }), underlay);
+            }), underlay, previousPageLines);
             repaint = false;
         }
         else {
@@ -314,6 +315,10 @@ async function process_menu_window(d, rows, layout, how, underlay) {
             const next = letter === '^' ? 0 : letter === '|' ? layout.pageCount - 1
                 : letter === '<' ? Math.max(0, page - 1) : Math.min(layout.pageCount - 1, page + 1);
             repaint = next !== page;
+            // Native only records the old height for next-page movement.
+            // Other page commands retain that value, including zero.
+            if (next !== page && (letter === ' ' || letter === '>'))
+                previousPageLines = pageRows.length;
             page = next;
             continue;
         }
@@ -400,7 +405,7 @@ function toggleItem(row, count) {
     }
 }
 function set_item_state(d, boundary, row, item) {
-    d.setCell(boundary + 3, row, item.selected ? item.count === -1 ? '+' : '#' : '-', NO_COLOR, item.attr ?? ATR_NONE);
+    d.setCell(boundary + 3, row, item.selected ? item.count === -1 ? '+' : '#' : '-', item.color ?? NO_COLOR, item.attr ?? ATR_NONE);
 }
 function allowsBulkChange(row) {
     if (!(row.itemflags & MENU_ITEMFLAGS_SKIPINVERT))
@@ -416,6 +421,8 @@ function groupAccelerators(rows, how) {
         if (row.group && row.group !== row.key)
             counts.set(row.group, (counts.get(row.group) ?? 0) + 1);
     }
+    if (counts.size === 0)
+        return new Set();
     return new Set(rows.filter(row => row.group && (row.group !== row.key || row.group === '$')
         && (how === PICK_ANY || counts.get(row.group) === 1)).map(row => row.group));
 }

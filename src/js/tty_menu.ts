@@ -76,6 +76,7 @@ export function selectableMenuText(key: string, text: string, marker = '-'): str
 export function paintMenuPage<T extends TextMenuLine>(
     d: GameDisplay, menu: MenuLayout<T>, page: number,
     rows: readonly PaintedMenuRow[], underlay: MenuUnderlay | null,
+    previousPageLines = 0,
 ): void {
     const { boundary, maxRows, pageCount } = menu;
     if (boundary === 0) d.clearScreen();
@@ -84,7 +85,7 @@ export function paintMenuPage<T extends TextMenuLine>(
         // A shorter corner page exposes the map again below two blank rows.
         // Keep those cells from the already-painted map, like docorner().
         const firstRestoredRow = Math.min(rows.length + 3, maxRows - 1);
-        if (underlay && rows.length + 1 < maxRows) {
+        if (underlay && previousPageLines > rows.length) {
             for (let row = firstRestoredRow; row < maxRows; row++) {
                 for (let col = boundary; col < d.cols; col++) {
                     const cell = underlay[row]?.[col];
@@ -299,6 +300,7 @@ async function process_menu_window<T>(
     let page = 0;
     let count: bigint | null = null;
     let repaint = true;
+    let previousPageLines = 0;
     const result = (key: number, cancelled = false): TtyMenuResult<T> => ({
         key, cancelled,
         selections: rows.flatMap(row => row.selected && row.identifier !== null
@@ -313,7 +315,7 @@ async function process_menu_window<T>(
                 const marker = item?.selected ? item.count === -1 ? '*' : '#' : '-';
                 return { ...row, text: item?.identifier !== null && item?.selected
                     ? row.text.slice(0, 2) + marker + row.text.slice(3) : row.text };
-            }), underlay);
+            }), underlay, previousPageLines);
             repaint = false;
         } else {
             const footer = layout.pageCount > 1 ? `(${page + 1} of ${layout.pageCount})` : '(end) ';
@@ -349,6 +351,9 @@ async function process_menu_window<T>(
             const next = letter === '^' ? 0 : letter === '|' ? layout.pageCount - 1
                 : letter === '<' ? Math.max(0, page - 1) : Math.min(layout.pageCount - 1, page + 1);
             repaint = next !== page;
+            // Native only records the old height for next-page movement.
+            // Other page commands retain that value, including zero.
+            if (next !== page && (letter === ' ' || letter === '>')) previousPageLines = pageRows.length;
             page = next;
             continue;
         }
@@ -420,7 +425,7 @@ function toggleItem<T>(row: TtyMenuRow<T>, count: number): void {
 
 function set_item_state<T>(d: GameDisplay, boundary: number, row: number, item: TtyMenuRow<T>): void {
     d.setCell(boundary + 3, row, item.selected ? item.count === -1 ? '+' : '#' : '-',
-        NO_COLOR, item.attr ?? ATR_NONE);
+        item.color ?? NO_COLOR, item.attr ?? ATR_NONE);
 }
 
 function allowsBulkChange<T>(row: TtyMenuRow<T>): boolean {
@@ -435,6 +440,7 @@ function groupAccelerators<T>(rows: readonly TtyMenuRow<T>[], how: MenuPickMode)
     for (const row of rows) {
         if (row.group && row.group !== row.key) counts.set(row.group, (counts.get(row.group) ?? 0) + 1);
     }
+    if (counts.size === 0) return new Set();
     return new Set(rows.filter(row => row.group && (row.group !== row.key || row.group === '$')
         && (how === PICK_ANY || counts.get(row.group) === 1)).map(row => row.group));
 }
