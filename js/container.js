@@ -707,14 +707,11 @@ async function chooseAction(container, usedTime, moreContainers) {
     if (moreContainers)
         entries.push({ key: 'n', marker: '*', text: 'loot next container' });
     entries.push({ key: 'q', marker: moreContainers ? '-' : '*', text: usedTime ? 'done' : 'do nothing' });
-    const valid = [10, 13, 27, 32, 58, 63, 110, 113,
-        ...Object.values(keys).map(key => key.charCodeAt(0))];
     const chosen = await showChoiceWindow({
         title,
         entries,
-        validKeys: valid,
     });
-    if ([10, 13, 32].includes(chosen))
+    if (chosen === 0)
         return moreContainers ? 'n' : 'q';
     return chosen === 27 ? 'q' : String.fromCharCode(chosen);
 }

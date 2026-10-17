@@ -2396,20 +2396,15 @@ async function doherecmdmenu() {
     game._retained_message = '';
     game.nhDisplay?.clearRow(0);
     const underlay = snapshotMenuUnderlay();
-    const validKeys = [
-        27,
-        ...entries.map((_, index) => 97 + index),
-    ];
     const key = await showChoiceWindow({
         title: 'What do you want to do?',
         entries,
-        validKeys,
     });
     restoreMenuUnderlay(underlay);
     game.nhDisplay?.setCursor((game.u?.ux ?? 1) - 1, (game.u?.uy ?? 0) + 1);
     // cmd.c:here_cmd_menu() queues selected actions for a later dispatch.
     // This accepted boundary dismisses with Escape before that action graph.
-    game.context.move = key === 27 ? 0 : 1;
+    game.context.move = key === 0 || key === 27 ? 0 : 1;
 }
 async function doname() {
     // docallcmd() consumes a canned category before creating its menu.
@@ -4991,14 +4986,9 @@ async function dohelp() {
         { key: 'o', text: 'Support information.' },
         ...(game.flags.debug ? [{ key: 'p', text: 'List of wizard-mode commands.' }] : []),
     ];
-    const validKeys = [
-        27, 32, 10, 13,
-        ...entries.map(entry => entry.key.charCodeAt(0)),
-    ];
     const key = await showChoiceWindow({
         title: 'Select one item:',
         entries,
-        validKeys,
     });
     await restoreHelpMap();
     const choice = String.fromCharCode(key);

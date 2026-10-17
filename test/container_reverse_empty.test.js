@@ -1,12 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { MENU_TRADITIONAL } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { CHEST } from '../js/object_data.js';
 import { applyInventoryObject } from './support/commands.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshPlayableRoom } from './support/playable-room.js';
-void test('the reversed container action discovers an empty container after attempting to put in', async () => {
-    freshPlayableRoom();
+void test('a traditional reversed action discovers an empty container after attempting to put in', async () => {
+    freshPlayableRoom({ flags: { menu_style: MENU_TRADITIONAL } });
     const chest = await addInventoryObject(CHEST, {
         invlet: 'a', initialize: false, olocked: false, otrapped: false, cknown: false,
     });
