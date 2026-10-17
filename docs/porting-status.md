@@ -349,6 +349,19 @@ from outside (`mattacku()`'s `nomul(0)`), `scores:` option parsing
 (**audit-options**), trap reveal display (**trap-reveal**), and warning versus
 remembered-monster glyphs (**fresh-b**).
 
+Batch 32–33: fixes found by scoring 7,200 fresh native sessions
+(fresh32–55; 54 failures, all fixed except step-0 DST artifacts): falling
+rock names, unseen hurtle bumps and iron bars stopping hurtles
+(`goodpos()`), passive paralysis wake messages, glove removal clearing
+slippery hands, CLR_BLACK as dark gray, see-invisible self display,
+knockback releasing a held hero, hallucinated trap names, polymorph clothing
+at birth, the starting pet tracked only by `startingpet_mid` (dead pets no
+longer break saving), fatal hits ending the game before `stop_occupation()`,
+every `Norep()` comparing pline's previous message rather than the joined top
+line, coin weight in `carry_count()`, and the starting pet avoiding scary
+squares through `makemon()`'s placement. The menu-audit and moverock units
+landed alongside.
+
 ## Verification
 
 `npm test` at `62713ef`: **11,917/11,917**. Merges require a fully green suite;
