@@ -52,7 +52,7 @@ import {
 } from './monster_data.js';
 import {
     ARROW, BEARTRAP, BOULDER, CAN_OF_GREASE, DART, LAND_MINE,
-    LARGE_BOX, CHEST, OBJECT_BIMANUAL, OBJECT_NAMES, POT_OIL,
+    LARGE_BOX, CHEST, OBJECT_BIMANUAL, POT_OIL,
 } from './object_data.js';
 import { deleteObject } from './object_delete.js';
 import { recordObjectKnowledge } from './object_knowledge.js';
@@ -72,6 +72,12 @@ import {
 } from './weight.js';
 import { isBlade } from './weapon_type.js';
 import { cansee } from './vision.js';
+import {
+    observeObjectForNaming, definiteName, objectCombatName, objectQuestion,
+    simpleObjectNameWithArticle,
+} from './objnam.js';
+import { objectDescription } from './object_description.js';
+import { monsterName as canonicalMonsterName } from './monster_name.js';
 
 const POTION_CLASS = 8;
 const M1_WALLWALK = 0x00000008;
@@ -160,16 +166,6 @@ function boxesAt(state: GameState, x: number, y: number): GameObject[] {
         object.otyp === LARGE_BOX || object.otyp === CHEST);
 }
 
-function monsterName(monster: Monster): string {
-    return monster?.name
-        || `the ${monsterTypeName(monster?.mnum, !!monster?.female)}`;
-}
-
-function capitalizedMonsterName(monster: Monster): string {
-    const name = monsterName(monster);
-    return name.charAt(0).toUpperCase() + name.slice(1);
-}
-
 function trapName(trap: Trap): string {
     return TRAP_EXPLANATIONS[trap?.ttyp] || 'trap';
 }
@@ -198,7 +194,7 @@ export function untrapAbilityProblem(state: GameState = game, { checkFloor = fal
     }
 
     if (state.u?.ustuck && heroFormSticks(state)) {
-        return `You'll have to let go of ${monsterName(state.u.ustuck)} first.`;
+        return `You'll have to let go of ${canonicalMonsterName(state.u.ustuck, { state })} first.`;
     }
     if (state.u?.ustuck || weldedTwoHandedWeapon(state))
         return 'Your hands seem to be too busy for that.';
@@ -449,7 +445,7 @@ async function tryDisarm(trap: Trap, {
     const monster = monsterAt(state, trap.tx, trap.ty);
     const holdingTrap = trap.ttyp === BEAR_TRAP || trap.ttyp === WEB;
     if (monster && (!monster.mtrapped || !holdingTrap)) {
-        await publish(`${capitalizedMonsterName(monster)} is in the way.`);
+        await publish(`${canonicalMonsterName(monster, { state, capitalized: true })} is in the way.`);
         return 0;
     }
 
@@ -534,7 +530,7 @@ async function failMonsterRescue(monster: Monster, trap: Trap, {
             }
         }
         if (monster.mtrapped)
-            await publish(`${capitalizedMonsterName(monster)} remains entangled.`);
+            await publish(`${canonicalMonsterName(monster, { state, capitalized: true })} remains entangled.`);
     }
 }
 
@@ -548,7 +544,7 @@ async function disarmHoldingTrap(trap: Trap, options: FloorTrapOptions): Promise
         monster.mtrapped = 0;
         const noun = trap.ttyp === BEAR_TRAP ? 'bear trap' : 'web';
         await publish(
-            `You extract ${monsterName(monster)} from ${possessiveTrap(trap)} ${noun}.`,
+            `You extract ${canonicalMonsterName(monster, { state })} from ${possessiveTrap(trap)} ${noun}.`,
         );
         await rewardMonsterRescue(trap, monster, {
             state, publish, random, luckRandom,
@@ -677,7 +673,7 @@ function monsterIsHelpless(monster: Monster): boolean {
 async function helpMonsterOut(monster: Monster, trap: Trap, options: FloorTrapOptions): Promise<boolean> {
     const { state, publish, random, luckRandom } = options;
     if (!monster.mtrapped) {
-        await publish(`${capitalizedMonsterName(monster)} isn't trapped.`);
+        await publish(`${canonicalMonsterName(monster, { state, capitalized: true })} isn't trapped.`);
         return false;
     }
     if (nearCapacity(state) >= EXT_ENCUMBER) {
@@ -688,7 +684,7 @@ async function helpMonsterOut(monster: Monster, trap: Trap, options: FloorTrapOp
     const failed = untrapFailureRoll(trap, state, random);
     if (failed && !monsterIsHelpless(monster)) {
         await publish(
-            `You try to reach out your arms, but ${monsterName(monster)} backs away skeptically.`,
+            `You try to reach out your arms, but ${canonicalMonsterName(monster, { state })} backs away skeptically.`,
         );
         return true;
     }
@@ -709,23 +705,23 @@ async function helpMonsterOut(monster: Monster, trap: Trap, options: FloorTrapOp
 
     if (failed) {
         await publish(
-            `You try to grab ${monsterName(monster)}, but cannot get a firm grasp.`,
+            `You try to grab ${canonicalMonsterName(monster, { state })}, but cannot get a firm grasp.`,
         );
         if (monster.msleeping) {
             monster.msleeping = 0;
-            await publish(`${capitalizedMonsterName(monster)} awakens.`);
+            await publish(`${canonicalMonsterName(monster, { state, capitalized: true })} awakens.`);
         }
         return true;
     }
 
-    await publish(`You reach out your arms and grab ${monsterName(monster)}.`);
+    await publish(`You reach out your arms and grab ${canonicalMonsterName(monster, { state })}.`);
     if (monster.msleeping) {
         monster.msleeping = 0;
-        await publish(`${capitalizedMonsterName(monster)} awakens.`);
+        await publish(`${canonicalMonsterName(monster, { state, capitalized: true })} awakens.`);
     } else if (monster.mfrozen && random(monster.mfrozen) === 0) {
         monster.mcanmove = 1;
         monster.mfrozen = 0;
-        await publish(`${capitalizedMonsterName(monster)} stirs.`);
+        await publish(`${canonicalMonsterName(monster, { state, capitalized: true })} stirs.`);
     }
 
     const bodyWeight = MONSTER_BODY_META[monster.mnum]?.[0] ?? 0;
@@ -738,7 +734,7 @@ async function helpMonsterOut(monster: Monster, trap: Trap, options: FloorTrapOp
             monster, trap, bodyWeight + carriedWeight, true, options,
         )) return true;
 
-    await publish(`You pull ${monsterName(monster)} out of the pit.`);
+    await publish(`You pull ${canonicalMonsterName(monster, { state })} out of the pit.`);
     monster.mtrapped = 0;
     await rewardMonsterRescue(trap, monster, {
         state, publish, random, luckRandom,
@@ -770,7 +766,7 @@ async function canLiftMonster(monster: Monster, trap: Trap, weight: number, carr
     const { state, publish, luckRandom } = options;
     if (calcCapacity(state, weight) < HVY_ENCUMBER) return true;
     await publish(
-        `${capitalizedMonsterName(monster)} is ${
+        `${canonicalMonsterName(monster, { state, capitalized: true })} is ${
             carrying ? 'carrying too much' : 'too heavy'
         } for you to lift.`,
     );
@@ -781,7 +777,7 @@ async function canLiftMonster(monster: Monster, trap: Trap, weight: number, carr
         monster.mpeaceful = 1;
         setMonsterMalign(monster, state);
         await publish(
-            `${capitalizedMonsterName(monster)} thinks it was nice of you to try.`,
+            `${canonicalMonsterName(monster, { state, capitalized: true })} thinks it was nice of you to try.`,
         );
     }
     return false;
@@ -797,7 +793,7 @@ export async function rewardMonsterRescue(trap: Trap, monster: Monster, {
         && !unique && MONSTER_SYMBOL[monster.mnum] !== S_HUMAN) {
         monster.mpeaceful = 1;
         setMonsterMalign(monster, state);
-        await publish(`${capitalizedMonsterName(monster)} is grateful.`);
+        await publish(`${canonicalMonsterName(monster, { state, capitalized: true })} is grateful.`);
     }
     if (random(3) === 0 && luckRandom(8) === 0
         && state.u?.ualign?.type === 1) {
@@ -811,10 +807,16 @@ async function handleBoxes(boxes: GameObject[], {
 }: BoxTrapOptions): Promise<boolean | null> {
     for (const box of boxes) {
         const known = box.tknown && box.dknown;
-        const name = OBJECT_NAMES[box.otyp] || box.name || 'box';
-        const answer = await ask(known
-            ? `Disarm this ${name}?`
-            : `There is ${article(name)} ${name} here.  Check it for traps?`);
+        if (!known) observeObjectForNaming(box, { state });
+        const answer = await ask(objectQuestion(box, {
+            prefix: known ? 'Disarm this ' : 'There is ',
+            suffix: known ? '' : ' here.  Check it for traps?',
+            fallback: 'a box',
+            format: (object, nameState) => known
+                ? objectCombatName(object, { state: nameState, includeCorpseSpecies: false })
+                : objectDescription(object, { state: nameState }),
+            shortFormat: simpleObjectNameWithArticle,
+        }, state));
         if (answer === 'q') return false;
         if (answer === 'n') continue;
         if (known) {
@@ -840,15 +842,16 @@ async function inspectBox(box: GameObject, options: BoxTrapOptions): Promise<voi
             && random(MAXULEV + 1 - (state.u?.ulevel ?? 1)) < 10)))
         || box.tknown
         || (!force && impaired && random(3) === 0);
-    const name = OBJECT_NAMES[box.otyp] || box.name || 'box';
+    const alreadyKnown = box.tknown && box.dknown;
+    const name = definiteName(objectCombatName(box, { state, includeCorpseSpecies: false }), state);
     if (!found) {
-        await publish(`You find no traps on the ${name}.`);
+        await publish(`You find no traps on ${name}.`);
         return;
     }
 
-    await publish(box.tknown && box.dknown
-        ? `There's a trap on the ${name}.`
-        : `You find a trap on the ${name}!`);
+    await publish(alreadyKnown
+        ? `There's a trap on ${name}.`
+        : `You find a trap on ${name}!`);
     box.tknown = true;
     box.dknown = true;
     if (!impaired) await exerciseAttribute(A_WIS, true, state);
@@ -859,9 +862,8 @@ async function inspectBox(box: GameObject, options: BoxTrapOptions): Promise<voi
 async function disarmBox(box: GameObject, {
     state, force, publish, random, rollOne, rollDice,
 }: Omit<BoxTrapOptions, 'ask'>): Promise<void> {
-    const name = OBJECT_NAMES[box.otyp] || box.name || 'box';
     if (!box.otrapped) {
-        await publish(`That ${name} was not trapped.`);
+        await publish(`That ${objectCombatName(box, { state, includeCorpseSpecies: false })} was not trapped.`);
         box.tknown = false;
         return;
     }

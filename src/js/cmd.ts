@@ -59,7 +59,6 @@ import { clearMessageWindow, feel_location } from './display.js';
 
 import { game, requireGameLevel, requirePlayingGame, requireInitializedGame } from './gstate.js';
 import { requireInitializedHero } from './hero_types.js';
-
 import { fruitName } from './fruit.js';
 import { encyclopediaEntries, encyclopediaMatches, encyclopediaSupplementalName } from './encyclopedia.js';
 import { objectAtMapDescription } from './map_object_description.js';
@@ -105,7 +104,7 @@ import { retouchHeroObject } from './hero_retouch.js';
 import { GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, PARANOID_REMOVE, GETOBJ_SUGGEST } from './const.js';
 import { TER_MON } from './const.js';
 import { senseBuriedObjects } from './buried_object.js';
-import { distantMonsterName, monsterInstanceDisplayName, monsterName, monsterPossessive, monsterSubjectPronoun, shopkeeperName } from './monster_name.js';
+import { distantMonsterName, monsterName, monsterPossessive, monsterSubjectPronoun, shopkeeperName } from './monster_name.js';
 import { attackHostileMonster } from './hero_melee.js';
 import { prepareAppliedWeaponAttack } from './hero_attack_preflight.js';
 import { applyCaitiffPenalty } from './hero_attack_conduct.js';
@@ -116,6 +115,7 @@ import { monsterHasMapPosition, monsterAtPosition } from './monster_location.js'
 import { SHOP_TYPES } from './shop_data.js';
 import { observeBucForNaming } from './object_knowledge.js';
 import {
+    definiteName, objectCombatName,
     minimalObjectName, objectNameIsPlural, observeDistantObjectForNaming,
     observeObjectForNaming, ownedObjectName, simpleObjectNameWithArticle,
 } from './objnam.js';
@@ -303,7 +303,6 @@ import {
 import {
     artifactById,
 } from './artifacts.js';
-
 import {
     invokeArtifactPower,
 } from './artifact_invoke.js';
@@ -359,7 +358,6 @@ import {
     findMonsterArmorClass,
 } from './monworn.js';
 import { finishHeroMonsterKill, finishHeroMonsterKillOutcome } from './hero_monster_death.js';
-
 import { wakeMonstersNear } from './monster_wake.js';
 import {
     aggravateMonsters, angerAttackedMonster,
@@ -367,14 +365,13 @@ import {
 } from './monster_anger.js';
 import { publishMonsterNoise } from './monster_sound.js';
 import { doride, moveSteedWithHero, ridingPreventsMovement, stuckSteed } from './steed.js';
-import { adjustAttribute, ATTRIBUTE_DISPLAY_ORDER, attributeChangeMessage, currentAttribute, currentStrength, exerciseAttribute, exerciseWisdom, reportHeroEncumbrance } from './attrib.js';
+import { adjustAttribute, ATTRIBUTE_DISPLAY_ORDER, attributeChangeMessage, currentAttribute, currentStrength, exerciseAttribute, exerciseWisdom } from './attrib.js';
+import { reportHeroEncumbrance } from './encumbrance.js';
 import { spendHeroNutrition, updateHeroHunger } from './hunger.js';
-
 import { continueForceLock, doforce } from './lock.js';
 import { doUntrap } from './untrap.js';
 import { dosit } from './sit.js';
 import { continueEngraving, doengrave } from './engrave_command.js';
-
 import { climbOutOfPit, heroCanMoveFromTrap, triggerHeroTrapAt, triggerLevelTeleportTrap } from './hero_traps.js';
 import {
     applyDippedCoinFate, applyFountainDemonActor,
@@ -400,7 +397,7 @@ import {
     recordObjectKnowledge,
 } from './object_knowledge.js';
 import {
-    encumbranceLabel, encumbranceMessage, exceedsActionCapacity, nearCapacity,
+    exceedsActionCapacity, nearCapacity,
     OVERLOADED, SLT_ENCUMBER,
 } from './weight.js';
 import { makeWish } from './wish.js';
@@ -476,9 +473,7 @@ import {
     performPetRangedAttack, resumeDeferredMonsterTrap, triggerImmediateMonsterTrap,
 } from './monmove.js';
 import { hurtleHero, kickRecoilRange } from './hero_hurtle.js';
-
 import type { HeroMonsterKillOptions } from './hero_monster_death.js';
-
 import { announceInvocationSquare } from './invocation.js';
 import {
     abuseKickedPet, levitatingKickMisses,
@@ -2174,9 +2169,9 @@ async function kickLiveMonster(monster: Monster, x: number, y: number) {
         revealMonsterAppearance(monster);
         if (canSpotMonster(monster)) {
             newsym(x, y);
-            const name = monsterInstanceDisplayName(monster);
+            const name = monsterName(monster, { article: 'a' });
             await plineWithContinuation(
-                `There is ${withIndefiniteArticle(name)} here.`,
+                `There is ${name} here.`,
             );
         } else {
             map_invisible(x, y);
@@ -2206,8 +2201,7 @@ async function kickLiveMonster(monster: Monster, x: number, y: number) {
         clumsy: kick.clumsy,
         martial,
         announce: plineWithContinuation,
-        nameMonster: (actor: Monster) => canSpotMonster(actor)
-            ? `The ${monsterInstanceDisplayName(actor)}` : 'It',
+        nameMonster: actor => monsterName(actor, { capitalized: true }),
     });
     if (evaded) {
         await applyKickPassive(monster, false);
@@ -2242,7 +2236,7 @@ async function kickLiveMonster(monster: Monster, x: number, y: number) {
         {
             martial,
             announce: plineWithContinuation,
-            nameMonster: (actor: Monster) => canSpotMonster(actor) ? `The ${monsterInstanceDisplayName(actor)}` : 'It',
+            nameMonster: actor => monsterName(actor, { capitalized: true }),
         },
     );
 
@@ -2516,21 +2510,16 @@ async function doherecmdmenu() {
     game._retained_message = '';
     game.nhDisplay?.clearRow(0);
     const underlay = snapshotMenuUnderlay();
-    const validKeys = [
-        27,
-        ...entries.map((_, index) => 97 + index),
-    ];
     const key = await showChoiceWindow({
         title: 'What do you want to do?',
         entries,
-        validKeys,
     });
     restoreMenuUnderlay(underlay);
     game.nhDisplay?.setCursor((game.u?.ux ?? 1) - 1,
         (game.u?.uy ?? 0) + 1);
     // cmd.c:here_cmd_menu() queues selected actions for a later dispatch.
     // This accepted boundary dismisses with Escape before that action graph.
-    game.context.move = key === 27 ? 0 : 1;
+    game.context.move = key === 0 || key === 27 ? 0 : 1;
 }
 
 async function doname() {
@@ -3287,8 +3276,8 @@ async function doloot() {
 
 async function lootLockedContainer(container: GameObject): Promise<void> {
     if (!container.olocked) return;
-    const name = OBJECT_NAMES[container.otyp] || 'container';
-    await pline(container.lknown ? `The ${name} is locked.` : `Hmmm, the ${name} turns out to be locked.`);
+    const name = definiteName(objectCombatName(container, { includeCorpseSpecies: false }));
+    await pline(container.lknown ? `${name.charAt(0).toUpperCase()}${name.slice(1)} is locked.` : `Hmmm, ${name} turns out to be locked.`);
     container.lknown = true;
     const flags = autoUnlockFlags(game);
     const tool = flags & AUTOUNLOCK_APPLY_KEY ? autokey(true) : null;
@@ -5042,14 +5031,9 @@ async function dohelp(): Promise<void> {
         { key: 'o', text: 'Support information.' },
         ...(game.flags.debug ? [{ key: 'p', text: 'List of wizard-mode commands.' }] : []),
     ];
-    const validKeys = [
-        27, 32, 10, 13,
-        ...entries.map(entry => entry.key.charCodeAt(0)),
-    ];
     const key = await showChoiceWindow({
         title: 'Select one item:',
         entries,
-        validKeys,
     });
     await restoreHelpMap();
     const choice = String.fromCharCode(key);
@@ -6674,8 +6658,6 @@ async function throwCommand(
     if (isWetTowel(item)) await dryTowel(item, -1);
 
     if (selectedIsGold && item === game.uquiver) {
-        const previousCapacity = game._encumbranceLevel
-            ?? nearCapacity(game);
         await resolveQuiveredGoldThrow({
             state: game,
             gold: item,
@@ -6684,13 +6666,7 @@ async function throwCommand(
             wakeMonster: wakeAttackedMonster,
         });
         if (game.program_state.gameover) return;
-        const currentCapacity = nearCapacity(game);
-        const capacityMessage = encumbranceMessage(
-            previousCapacity, currentCapacity,
-        );
-        if (capacityMessage) await plineWithContinuation(capacityMessage);
-        game._encumbranceLevel = currentCapacity;
-        game.u._encumbrance = encumbranceLabel(currentCapacity);
+        await reportHeroEncumbrance(game);
         game.context.move = 1;
         return;
     }
@@ -6709,9 +6685,9 @@ async function throwCommand(
         shotLimit,
     });
     if (volleyCount > 1 || shotLimit > 0) {
-        const name = OBJECT_NAMES[item.otyp] || item.name || 'object';
+        if (volleyCount === 1) observeObjectForNaming(item);
         const noun = volleyCount === 1
-            ? name : item.plural || makePlural(name);
+            ? singularObjectName(item) : objectCombatName(item, { includeCorpseSpecies: false });
         await plineWithContinuation(
             `You ${launcherMatchesAmmo(item, game.uwep) ? 'shoot' : 'throw'} ${
                 volleyCount} ${noun}.`,

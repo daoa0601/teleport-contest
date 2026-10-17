@@ -6,6 +6,7 @@ import { objectMaterial } from './object_material.js';
 import { publishHeardMessage } from './hero_speech.js';
 import { armorBonus, armorSlotFor, dragonFormForArmor } from './armor.js';
 import {
+    ownedObjectName, objectNameIsPlural,
     observeDistantObjectForNaming,
 } from './objnam.js';
 import { canSeeMonster, displayColorName, newsym, plineWithContinuation } from './display.js';
@@ -39,7 +40,7 @@ import {
     AMULET_OF_GUARDING, AMULET_OF_LIFE_SAVING, AMULET_OF_REFLECTION,
     ALCHEMY_SMOCK, DUNCE_CAP, ELVEN_MITHRIL_COAT, HELM_OF_OPPOSITE_ALIGNMENT,
     GOLD_DRAGON_SCALES, IRON_SHOES, MUMMY_WRAPPING, ROBE,
-    OBJECT_BIMANUAL, OBJECT_DELAY, OBJECT_NAMES,
+    OBJECT_BIMANUAL, OBJECT_DELAY, 
 } from './object_data.js';
 import {
     AC_MAX, DISMOUNT_FELL, I_SPECIAL, W_AMUL, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH,
@@ -267,9 +268,9 @@ async function wearSlot(monster: Monster, slot: MonsterArmorSlot, creation: bool
         if (!creation && best.lamplit && cansee(monster.mx, monster.my)) {
             const visibleNow = canSeeMonster(monster);
             const named = wasVisible || visibleNow;
-            const plural = named && best.otyp === GOLD_DRAGON_SCALES;
+            const plural = named && objectNameIsPlural(best, state);
             const name = named
-                ? `The ${OBJECT_NAMES[best.otyp]}` : 'Something';
+                ? ownedObjectName(best, state) : 'Something';
             const startsShining = wasVisible || (!visibleNow && sawSquare);
             const verb = startsShining ? (plural ? 'begin to shine' : 'begins to shine')
                 : (plural ? 'are shining' : 'is shining');

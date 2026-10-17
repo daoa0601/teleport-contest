@@ -487,6 +487,24 @@ export function simpleObjectTypeName(otyp: number, state: GameState = game): str
     return name;
 }
 
+// C obj_typename(): discoveries-style type name, call name, and appearance.
+export function objectTypeName(otyp: number, state: GameState = game): string {
+    const oclass = objectClassForType(otyp);
+    let name = simpleObjectTypeName(otyp, state);
+    if (oclass === COIN_CLASS) return name;
+    const callName = state._objectCallNames?.[otyp];
+    if (callName) name += ` called ${callName}`;
+    const ordinaryName = OBJECT_NAMES[otyp];
+    const appearance = state.urole?.key === 'samurai'
+        && ['wooden harp', 'magic harp'].includes(ordinaryName ?? '')
+        ? 'koto' : state.objectDescriptions?.[otyp] ?? OBJECT_DESCRIPTIONS[otyp];
+    const classHasAppearance = [AMULET_CLASS, POTION_CLASS, SCROLL_CLASS,
+        WAND_CLASS, SPBOOK_CLASS, RING_CLASS].includes(oclass);
+    if (appearance && (classHasAppearance || objectTypeKnown({ otyp, oclass }, state)))
+        name += ` (${appearance})`;
+    return name;
+}
+
 // C minimal_xname() builds a bare object so personal names, call names,
 // quantity, and statue identity cannot reveal more than the known type.
 export function minimalObjectName(object: ObjectNameView, state: GameState = game): string {
@@ -606,7 +624,6 @@ export function ownedSimpleObjectName(
     return objectOwnershipPrefix(object, state, { capitalized }) + minimalObjectName(object, state);
 }
 
-// C safe_qbuf()/short_oname(): reserve the question before shortening names.
 export function ownedObjectQuestion(
     object: GameObject,
     { prefix, suffix, fallback, capitalized }: {
@@ -614,12 +631,29 @@ export function ownedObjectQuestion(
     },
     state: GameState = game,
 ): string {
+    return objectQuestion(object, {
+        prefix, suffix, fallback,
+        format: (item, nameState) => ownedObjectName(item, nameState, { capitalized }),
+        shortFormat: (item, nameState) => ownedSimpleObjectName(item, nameState, { capitalized }),
+    }, state);
+}
+
+// C safe_qbuf()/short_oname(): reserve the question before shortening names.
+export function objectQuestion(
+    object: GameObject,
+    { prefix, suffix, fallback, format, shortFormat }: {
+        prefix: string;
+        suffix: string;
+        fallback: string;
+        format: (object: GameObject, state: GameState) => string;
+        shortFormat: (object: GameObject, state: GameState) => string;
+    },
+    state: GameState = game,
+): string {
     const limit = QBUFSZ - 1 - prefix.length - suffix.length;
     const question = (name: string): string => `${prefix}${name}${suffix}`;
     if (fallback.length > limit) return question(fallback).slice(0, QBUFSZ - 1);
-    const describe = (item: GameObject, nameState: GameState): string =>
-        ownedObjectName(item, nameState, { capitalized });
-    let name = describe(object, state);
+    let name = format(object, state);
     if (name.length <= limit) return question(name);
 
     const callName = state._objectCallNames?.[object.otyp];
@@ -632,16 +666,16 @@ export function ownedObjectQuestion(
         ? { ...object, oextra: { ...object.oextra, oname: `${personalName.slice(0, 8)}...` } }
         : object;
     if (shortCallState !== state) {
-        name = describe(object, shortCallState);
+        name = format(object, shortCallState);
         if (name.length <= limit) return question(name);
     }
     if (shortNamedObject !== object) {
-        name = describe(shortNamedObject, state);
+        name = format(shortNamedObject, state);
         if (name.length <= limit) return question(name);
     }
     const shortenBoth = shortCallState !== state && shortNamedObject !== object;
     if (shortenBoth) {
-        name = describe(shortNamedObject, shortCallState);
+        name = format(shortNamedObject, shortCallState);
         if (name.length <= limit) return question(name);
     }
 
@@ -652,9 +686,9 @@ export function ownedObjectQuestion(
         bknown: false, rknown: false, greased: false,
         oeroded: 0, oeroded2: 0, orotten: false, odiluted: false, norevive: false,
     };
-    name = describe(plainObject, nameState);
+    name = format(plainObject, nameState);
     if (name.length > limit)
-        name = ownedSimpleObjectName(plainObject, nameState, { capitalized });
+        name = shortFormat(plainObject, nameState);
     return question(name.length <= limit ? name : fallback);
 }
 
@@ -689,6 +723,26 @@ export function objectNameIsPlural(object: ObjectNameView, state: GameState = ga
             && !!state._artifactDiscoveries?.includes(object.oartifact));
 }
 
+// C aobjnam(): cxname with a stack count and an optional conjugated verb.
+export function objectAction(object: GameObject, verb: string | null, state: GameState = game): string {
+    const name = objectCombatName(object, { state });
+    const quantity = object.quan ?? object.quantity ?? 1;
+    const subject = quantity === 1 ? name : `${quantity} ${name}`;
+    return objectActionText(object, subject, verb, state);
+}
+
+// C Tobjnam(): The(xname), without a count or corpse species.
+export function definiteObjectAction(object: GameObject, verb: string | null, state: GameState = game): string {
+    const name = definiteName(objectCombatName(object, { state, includeCorpseSpecies: false }), state);
+    const subject = name.charAt(0).toUpperCase() + name.slice(1);
+    return objectActionText(object, subject, verb, state);
+}
+
+function objectActionText(object: GameObject, subject: string, verb: string | null, state: GameState): string {
+    if (!verb) return subject;
+    return `${subject} ${objectNameIsPlural(object, state) ? verb : verbForSubject(null, verb)}`;
+}
+
 export function ownedObjectAction(
     object: GameObject, verb: string | null, state: GameState = game, { capitalized = true } = {},
 ): string {
@@ -709,17 +763,6 @@ export function ownedObjectAction(
     if (!verb) return subject;
     const action = objectNameIsPlural(object, state) ? verb : verbForSubject(null, verb);
     return `${subject} ${action}`;
-}
-
-// C objnam.c:Tobjnam(): The(xname(obj)) with the verb agreeing via otense().
-// xname() calls a corpse just "corpse"; cxname() adds the species.
-export function definiteObjectAction(
-    object: GameObject, verb: string | null, state: GameState = game,
-): string {
-    const name = definiteName(objectCombatName(object, { state, includeCorpseSpecies: false }), state);
-    const subject = `${name.charAt(0).toUpperCase()}${name.slice(1)}`;
-    if (!verb) return subject;
-    return `${subject} ${objectNameIsPlural(object, state) ? verb : verbForSubject(null, verb)}`;
 }
 
 const CLASS_PRESENTATION: Readonly<Partial<Record<number, string>>> = {

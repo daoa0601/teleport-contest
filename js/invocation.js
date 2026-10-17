@@ -6,15 +6,15 @@ import { heroFootName } from './body_parts.js';
 import { plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
 import { heroIsOnStairs, isInvocationPosition } from './invocation_position.js';
-import { monsterTypeName } from './monster_data.js';
 import { makePlural } from './object_grammar.js';
-import { CANDELABRUM_OF_INVOCATION, OBJECT_NAMES, } from './object_data.js';
+import { CANDELABRUM_OF_INVOCATION, } from './object_data.js';
 import { stopRun } from './runmode.js';
+import { monsterName } from './monster_name.js';
+import { definiteObjectAction } from './objnam.js';
 function heroPositionDescription() {
     const steed = game.u?.usteed;
     if (steed) {
-        const name = steed.name
-            || `your ${monsterTypeName(steed.mnum, !!steed.female)}`;
+        const name = monsterName(steed, { article: 'your' });
         return `beneath ${name}`;
     }
     if (game.u.levitating || game.u.flying)
@@ -35,9 +35,7 @@ export async function announceInvocationSquare() {
     game.u.uevent.uvibrated = 1;
     const candelabrum = carriedCandelabrum();
     if (candelabrum?.spe === 7 && candelabrum.lamplit) {
-        const name = OBJECT_NAMES[candelabrum.otyp]
-            || 'Candelabrum of Invocation';
-        await plineWithContinuation(`The ${name} ${game.blind ? 'throbs palpably'
+        await plineWithContinuation(`${definiteObjectAction(candelabrum, null)} ${game.blind ? 'throbs palpably'
             : 'glows with a strange light'}!`);
     }
     return true;

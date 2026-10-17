@@ -7,6 +7,7 @@ import { heroDetectsMonsters, heroIsBlind, heroIsHallucinating } from './senses.
 import { makeHallucinated } from './hero_mental_status.js';
 import { game, requireLiveGame } from './gstate.js';
 import { corpseName, killerObjectName, observeObjectForNaming,
+    ownedObjectName, objectNameIsPlural,
     simpleObjectName, objectName } from './objnam.js';
 import { heroHandName } from './body_parts.js';
 import { makePlural } from './object_grammar.js';
@@ -51,7 +52,8 @@ import type { GameObject } from './object_types.js';
 import type { PropertyName, WornPropertySlot } from './property_types.js';
 import type { MessagePublisher } from './display.js';
 import { changeHeroAlignmentFromHelmet } from './alignment.js';
-import { currentAttribute, reportHeroEncumbrance } from './attrib.js';
+import { currentAttribute } from './attrib.js';
+import { reportHeroEncumbrance } from './encumbrance.js';
 import { curseObjectState } from './object_state.js';
 import type { AttributeIndex } from './attrib.js';
 
@@ -70,7 +72,6 @@ export interface ArmorErosionDescription {
 
 type ArmorBonusSource = Pick<GameObject, 'otyp'>
     & Partial<Pick<GameObject, 'spe' | 'enchantment' | 'oeroded' | 'oeroded2'>>;
-
 import { monsterName } from './monster_name.js';
 import { MONSTER_NAME } from './monster_data.js';
 import {
@@ -511,19 +512,6 @@ export function objectErosionKind(object: Pick<GameObject, 'otyp' | 'oclass'>): 
     return null;
 }
 
-export function objectErosionMessage(object: GameObject, kind: ArmorErosionDescription) {
-    const erosion = object[kind.field] || 0;
-    const name = object.name || OBJECT_NAMES[object.otyp] || 'object';
-    const verb = kind.action === 'smoulder' ? 'smoulders'
-        : kind.action === 'rust' ? 'rusts'
-        : kind.action === 'crack' ? 'cracks'
-        : kind.action === 'rot' ? 'rots' : 'corrodes';
-    if (erosion >= 3) return `Your ${name} ${verb} away!`;
-    const adverb = erosion === 2 ? ' completely'
-        : erosion ? ' further' : '';
-    return `Your ${name} ${verb}${adverb}!`;
-}
-
 export async function destroyWornArmor(armor: GameObject, state: GameState = game) {
     await removeWornHeroItem(armor, state);
     if (state.program_state?.gameover || !state.inventory.includes(armor)) return false;
@@ -881,10 +869,9 @@ export async function applyArmorOnEffects(object: GameObject, state: GameState =
     if (artifactEmitsLight(object) && !object.lamplit) {
         beginObjectBurn(object, state);
         if (!state.blind && !state.u.blindTurns) {
-            const name = OBJECT_NAMES[object.otyp];
-            if (!name) throw new RangeError(`Missing name for luminous armor type ${object.otyp}`);
-            const verb = name.endsWith('scales') ? 'begin' : 'begins';
-            messages.push(`Your ${name} ${verb} to shine ${equipmentLightDescription(object, state)}!`);
+            const name = ownedObjectName(object, state);
+            const verb = objectNameIsPlural(object, state) ? 'begin' : 'begins';
+            messages.push(`${name} ${verb} to shine ${equipmentLightDescription(object, state)}!`);
         }
     }
     return messages;

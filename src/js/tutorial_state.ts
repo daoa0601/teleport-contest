@@ -121,7 +121,7 @@ async function restoreTutorialState(state: GameState): Promise<void> {
     // learned during the tutorial remain known, but user-given names clear.
     state._objectCallNames = {};
     state.spells = saved.spells;
-    await plineWithContinuation(restoreHeroNutrition(state));
+    await restoreHeroNutrition(state, plineWithContinuation);
     state._unweapon = !state.uwep;
     state._capacityDirty = true;
     syncBlindness(state);

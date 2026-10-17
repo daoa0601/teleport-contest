@@ -1,6 +1,7 @@
 // Glob shrink timers.
 // C refs: mkobj.c start_glob_timeout()/shrink_glob().
 
+import { reportHeroEncumbrance } from './encumbrance.js';
 import { newsym, plineWithContinuation } from './display.js';
 import { isok } from './const.js';
 import { isIceAt } from './terrain_properties.js';
@@ -11,7 +12,7 @@ import { formatHeardMessage, formatSeenMessage } from './hero_speech.js';
 import { maybeUnhideAt } from './monster_hiding.js';
 import { reconcileObjectDeletionBill } from './shk.js';
 import {
-    GLOB_OF_BLACK_PUDDING, GLOB_OF_GRAY_OOZE, OBJECT_NAMES,
+    GLOB_OF_BLACK_PUDDING, GLOB_OF_GRAY_OOZE,
 } from './object_data.js';
 import { makePlural } from './object_grammar.js';
 import { absorbGlob, mergable } from './object_merge.js';
@@ -22,15 +23,15 @@ import { rn2 } from './rng.js';
 import { cansee } from './vision.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import {
-    encumbranceMessage, nearCapacity, objectWeight,
+    nearCapacity, objectWeight,
 } from './weight.js';
-
 import type { GameState } from './game_state.js';
 import type { GameObject, ObjectTimer } from './object_types.js';
 import type { Monster } from './monster_types.js';
 import type { Position } from './map_types.js';
 import type { MessagePublisher } from './display.js';
 import type { DueObjectTimer } from './object_timers.js';
+import { ownedObjectName, objectTypeName } from './objnam.js';
 
 type RandomBelow = (limit: number) => number;
 interface GlobMergeOptions {
@@ -50,20 +51,17 @@ interface ShrunkGlob extends GlobEventPosition {
 export type GlobTimerEvent =
     | (GlobEventPosition & {
         overdue: true; delta: number; gone: boolean; message: null;
-        delay?: number; finishPending?: never; followupMessage?: never;
+        delay?: number; finishPending?: never;
     })
     | (GlobEventPosition & {
         overdue: false; delta: 0; gone: false; message: null;
         skippedEating: boolean; skippedIce: boolean;
-        finishPending?: never; followupMessage?: never;
+        finishPending?: never;
     })
-    | (ShrunkGlob & { finishPending?: never; followupMessage?: never })
+    | (ShrunkGlob & { finishPending?: never })
     | (ShrunkGlob & {
         finishPending: boolean;
-        oldCapacity: number;
         finished?: true;
-        followupMessage?: string | null;
-        newCapacity?: number;
     });
 
 function isGlobType(otyp: number): boolean {
@@ -103,7 +101,7 @@ export async function announceGlobMerge(first: GameObject, second: GameObject, s
             const adjacent = (first.ox !== state.u.ux || first.oy !== state.u.uy)
                 && (second.ox !== state.u.ux || second.oy !== state.u.uy);
             await publish(`The ${onFloor && adjacent ? 'adjacent ' : ''}${
-                makePlural(OBJECT_NAMES[first.otyp] || 'glob')} coalesce${
+                makePlural(objectTypeName(first.otyp, state))} coalesce${
                 inPack ? ' inside your pack' : ''}.`);
         }
     } else {
@@ -167,13 +165,6 @@ export function startGlobTimeout(
     return scheduleNextGlobAttempt(glob, state, currentTurn, delay);
 }
 
-function floorGlobName(glob: GameObject): string {
-    const partlyEaten = (glob.oeaten ?? 0) > 0 ? 'partly eaten ' : '';
-    const type = OBJECT_NAMES[glob.otyp] || 'glob';
-    const given = glob.oextra?.oname || glob.oname;
-    return `${partlyEaten}${type}${given ? ` named ${given}` : ''}`;
-}
-
 function parentContainer(object: GameObject, state: GameState): GameObject | null {
     if (object.container) return object.container;
     return objectsInTimerGraph(state).find(candidate =>
@@ -231,12 +222,6 @@ function updateContainerWeights(container: GameObject, state: GameState): void {
     }
 }
 
-function objectName(object: GameObject): string {
-    const type = OBJECT_NAMES[object.otyp] || 'object';
-    const given = object.oextra?.oname || object.oname;
-    return `${type}${given ? ` named ${given}` : ''}`;
-}
-
 function clearHeroEquipment(object: GameObject, state: GameState): void {
     const slots = [
         'uwep', 'uswapwep', 'uquiver',
@@ -287,6 +272,18 @@ function activelyEatingGlob(glob: GameObject, state: GameState): boolean {
         && state.context.victual?.piece === glob;
 }
 
+// shrink_glob() asks xname to include partly eaten food before reducing its mass.
+function shrinkingGlobName(glob: GameObject, state: GameState): string {
+    const previous = state.iflags.partly_eaten_hack;
+    state.iflags.partly_eaten_hack = true;
+    try {
+        return ownedObjectName(glob, state);
+    } finally {
+        if (previous === undefined) delete state.iflags.partly_eaten_hack;
+        else state.iflags.partly_eaten_hack = previous;
+    }
+}
+
 export function runClaimedGlobTimer(
     claimed: DueObjectTimer | null, state: GameState = game, currentTurn = state.moves ?? 0,
 ): GlobTimerEvent | null {
@@ -312,7 +309,7 @@ export function runClaimedGlobTimer(
     const x = location?.x ?? 0;
     const y = location?.y ?? 0;
     const ice = globIceState(glob, state);
-    const oldCapacity = updatesHeroInventory ? nearCapacity(state) : null;
+    const oldCapacity = state._encumbranceLevel ?? 0;
 
     const deadline = claimed.timer.deadline;
     if (deadline < currentTurn && ice !== 'buried') {
@@ -353,7 +350,7 @@ export function runClaimedGlobTimer(
         };
     }
 
-    const name = floorGlobName(glob);
+    const name = shrinkingGlobName(glob, state);
     const oldTopWeight = containerInInventory ? objectWeight(outer) : null;
     const shrinkThreshold = glob.owt > 0 && glob.owt % 10 === 0;
     if (glob.owt > 0) {
@@ -365,7 +362,7 @@ export function runClaimedGlobTimer(
 
     let message: string | null = null;
     if (inInventory && (shrinkThreshold || gone)) {
-        message = `Your ${name} ${
+        message = `${name} ${
             gone ? 'dissolves completely' : 'shrinks'
         }.`;
     } else if (containerInInventory) {
@@ -376,17 +373,16 @@ export function runClaimedGlobTimer(
             || newCapacity !== oldCapacity) {
             const change = newTopWeight !== oldTopWeight
                 ? 'becomes' : 'seems';
-            message = `Your ${objectName(outer)} ${change}${
+            message = `${ownedObjectName(outer, state)} ${change}${
                 gone ? '' : ' slightly'
             } lighter.`;
         }
     }
 
     if (updatesHeroInventory) {
-        if (oldCapacity === null) throw new Error('A carried glob requires its previous encumbrance');
         return {
             glob, x, y, carrier, overdue: false, delta: 1,
-            shrinkThreshold, gone, message, oldCapacity,
+            shrinkThreshold, gone, message,
             finishPending: true,
         };
     }
@@ -396,9 +392,9 @@ export function runClaimedGlobTimer(
         deleteGlob(glob, state);
         if (visible) {
             newsym(x, y);
-            const article = x === state.u?.ux && y === state.u?.uy
-                ? 'The' : 'A';
-            message = `${article} ${name} fades away.`;
+            const subject = x !== state.u.ux || y !== state.u.uy
+                ? name.replace(/^The /u, 'A ') : name;
+            message = `${subject} fades away.`;
         }
     } else {
         scheduleNextGlobAttempt(glob, state, currentTurn);
@@ -409,18 +405,15 @@ export function runClaimedGlobTimer(
     };
 }
 
-export function finishGlobTimer(
+export async function finishGlobTimer(
     event: GlobTimerEvent | null, state: GameState = game, currentTurn = state.moves ?? 0,
-): GlobTimerEvent | null {
+    publish: MessagePublisher = plineWithContinuation,
+): Promise<GlobTimerEvent | null> {
     if (!event?.finishPending || !event.glob) return event;
     if (event.gone) deleteGlob(event.glob, state);
     else scheduleNextGlobAttempt(event.glob, state, currentTurn);
-    const newCapacity = nearCapacity(state);
-    event.followupMessage = encumbranceMessage(
-        event.oldCapacity, newCapacity,
-    ) || null;
-    event.newCapacity = newCapacity;
     event.finishPending = false;
     event.finished = true;
+    await reportHeroEncumbrance(state, publish);
     return event;
 }

@@ -71,10 +71,9 @@ import { AD_RBRE, AD_SLEE } from './monster_attack_types.js';
 import { M_SEEN_MAGR, M_SEEN_REFL } from './const.js';
 import { monstersForgetHeroResistance, seenResistanceForDamage } from './monster_perception.js';
 import { watchDigging } from './digging_watch.js';
-
 import { heroDetectsMonsters, heroIsBlind, heroIsHallucinating } from './senses.js';
 import { objectDescription } from './object_description.js';
-import { observeObjectForNaming } from './objnam.js';
+import { ownedObjectAction, observeObjectForNaming } from './objnam.js';
 import { senseWithTelepathy } from './display.js';
 import { heroHasHalfSpellDamage } from './spell_damage.js';
 import { useMonsterMindBlast } from './monster_mind_blast.js';
@@ -110,7 +109,6 @@ import { hasShopkeeperData } from './shop_types.js';
 import { disturbMealMimicry } from './meal_mimic.js';
 import { monsterKnowsTrap, monsterLearnsTrap, monstersSeeTrap } from './trap_knowledge.js';
 import { woundHeroLegs } from './hero_legs.js';
-
 import { isAccessibleAt } from './terrain_properties.js';
 import { insideWizardTower } from './dungeon.js';
 import { selectPetRangedTarget } from './dogmove.js';
@@ -162,7 +160,6 @@ import { makePlural, verbForSubject } from './object_grammar.js';
 import { drainObjectEnchantment } from './object_state.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { initializeMonsterMovement, mcalcmove, naturalMonsterSpeed } from './monster_speed.js';
-
 import { heroHasDrainResistance, heroHasFreeAction, heroIsDisplaced } from './armor.js';
 import { heroHasConflict } from './hero_conflict.js';
 import { heroIsInvisible } from './hero_invisibility.js';
@@ -330,7 +327,6 @@ import {
     IRON_SHOES,
     OBJECT_BIMANUAL,
     OBJECT_LARGE_DAMAGE,
-    OBJECT_NAMES,
     OBJECT_SMALL_DAMAGE,
     OBJECT_SUBTYPE,
     PICK_AXE,
@@ -2034,11 +2030,11 @@ async function watchOnDuty(
             const warned = !!((location.looted ?? 0) & D_WARNED);
             const deaf = !!(state.deaf || hero.deaf || (hero.deafTurns ?? 0) > 0);
             const seen = canSpotMonster(monster);
-            const name = `A ${monsterTypeName(monster.mnum, !!monster.female)}`;
+            const name = seen ? canonicalMonsterName(monster, { state, article: 'a', capitalized: true }) : '';
             if (deaf) {
                 if (seen)
                     await plineWithContinuation(
-                        `${name} angrily waves ${monster.female ? 'her' : 'his'} arms!`,
+                        `${name} angrily waves ${monsterPossessive(monster, { state })} arms!`,
                     );
             } else {
                 if (seen) await plineWithContinuation(`${name} yells:`);
@@ -6405,12 +6401,7 @@ export async function resumeDeferredHeroEnchantment(
         random: range => recordRandom(random, action.calls, range),
     }) || !target) return;
     attack.drainedObject = target;
-    const quantity = target.quan;
-    const known = target.typeKnown || state._knownObjectTypes?.has(target.otyp);
-    const name = known && target.oclass === RING_CLASS
-        ? `ring of ${OBJECT_NAMES[target.otyp]}`
-        : target.name || OBJECT_NAMES[target.otyp] || 'item';
-    attack.drainMessage = `Your ${name} ${quantity === 1 ? 'seems' : 'seem'} less effective.`;
+    attack.drainMessage = `${ownedObjectAction(target, 'seem', state)} less effective.`;
 }
 
 // Resume mhitm_ad_drli() after hitmsg().  A selected level loss and its
@@ -7469,13 +7460,19 @@ function postMoveHideUnder(
     const eel = MONSTER_SYMBOL[originalSpecies] === S_EEL;
     if (!hidesUnder && !eel) return;
     const helpless = !monster.mcanmove || monster.msleeping || (monster.mfrozen ?? 0) > 0;
-    if (!monster.mundetected && (helpless || recordRandom(random, calls, 5) === 0)) return;
-    const concealment = beginMonsterHideUnder(monster, state);
-    if (concealment.message) {
-        movement.hideUnder = concealment;
-        movement.deferredAfterHideUnder = true;
-    } else if (concealment.undetected !== concealment.oldUndetected)
-        newsym(monster.mx, monster.my);
+    if (monster.mundetected || (!helpless && recordRandom(random, calls, 5) !== 0)) {
+        const concealment = beginMonsterHideUnder(monster, state);
+        if (concealment.message) {
+            movement.hideUnder = concealment;
+            movement.deferredAfterHideUnder = true;
+            return;
+        }
+        if (concealment.undetected !== concealment.oldUndetected)
+            newsym(monster.mx, monster.my);
+    }
+    // postmov() redraws even when hideunder() leaves concealment unchanged
+    // or the monster skips the attempt. Hallucinations need that refresh.
+    newsym(monster.mx, monster.my);
 }
 
 // C mon.c:maybe_unhide_at(), called immediately after place_monster().  A
@@ -7585,6 +7582,9 @@ async function beginStandardMonsterAttack(
         (!heroHasConflict(state) || resistConflict(monster, state, rollOne, calls))
     )
         return;
+    // wormhitu() follows the head's complete attack, even if range or fear
+    // prevents that attack. Presentation must settle each passive first.
+    movement.deferredWormTailAttacks = true;
     const { entryMnum, range } = dochugContext;
     if (!range) throw new Error('A monster attack needs its checked hero range');
     const panicAttack = movement.postMoveStatus === MMOVE_NOMOVES && range.scared;
@@ -8010,7 +8010,6 @@ export async function resumeDeferredMonsterTrap(
             await finishMonsterVibratingSquare(action.monster, event, {
                 state,
                 publish,
-                ...(describeMonster ? { describeMonster } : {}),
             });
             break;
         case 'polymorph-trap':
@@ -8621,6 +8620,7 @@ export async function resumeDeferredMonsterHideUnder(
     const movement = action?.movement;
     if (!movement?.deferredAfterHideUnder) return action;
     delete movement.deferredAfterHideUnder;
+    newsym(action.monster.mx, action.monster.my);
     if (action.monster.isshk) {
         if (!hasShopkeeperData(action.monster))
             throw new Error('A shopkeeper must retain its shop state');

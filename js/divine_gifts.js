@@ -13,6 +13,7 @@ import { placeCreatedObject } from './floor_object.js';
 import { landFloorObject } from './floor_effects.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { recordGameLogEvent } from './gamelog.js';
+import { reportHeroEncumbrance } from './encumbrance.js';
 import { restoreHeroNutrition } from './hunger.js';
 import { adjustObjectLightAfterBlessing, objectLightRadius } from './light.js';
 import { mkobj, mksobj, rndClass } from './mklev.js';
@@ -135,9 +136,10 @@ async function restoreHeroVigor() {
     if (hero.acurr.a[A_STR] < hero.amax.a[A_STR]) {
         hero.acurr.a[A_STR] = hero.amax.a[A_STR];
         game.context.botl = true;
+        await reportHeroEncumbrance(game, pline);
     }
     if (hero.uhunger < 900)
-        await pline(restoreHeroNutrition());
+        await restoreHeroNutrition(game, pline);
     hero.uluck = Math.max(0, hero.uluck || 0);
     hero.ucreamed = 0;
     const { regainedSight } = setHeroBlindnessTurns(0);

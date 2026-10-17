@@ -11,6 +11,7 @@ import { adjustHeroAlignment } from './alignment.js';
 import { angerTemplePriest } from './priest.js';
 import { heroFootName } from './body_parts.js';
 import { feel_location, flush_screen, newsym, pline, plineWithContinuation, } from './display.js';
+import { monsterName } from './monster_name.js';
 import { game, requireGameLevel } from './gstate.js';
 import { pitsAreConjoined } from './pit_connections.js';
 import { dropInventoryObjectAtHero } from './hero_drop.js';
@@ -419,8 +420,7 @@ export async function continueHeroDigging(state = game) {
                     const bounced = ownedObjectAction(uwep, 'bounce', state);
                     if (hero.usteed) {
                         const steed = hero.usteed;
-                        const steedName = steed.name
-                            || `the ${monsterTypeName(steed.mnum, !!steed.female)}`;
+                        const steedName = monsterName(steed, { state });
                         await pline(`${bounced} and ${plural ? 'hit' : 'hits'} ${steedName}!`);
                     }
                     else {

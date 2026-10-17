@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { nhgetch, pushKeys, resetInputState } from '../js/input.js';
-import { getLine, promptChoice, promptYesNo, promptYesNoAllQuit, promptYesNoQuit } from '../js/query.js';
+import { getLine, promptChoice, promptYesNo, promptYesNoAllQuit, promptYesNoQuit, tty_yn_function } from '../js/query.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { bot, flushPendingTopline, flush_screen, pline, plineWithContinuation } from '../js/display.js';
 import { freshPlayableRoom } from './support/playable-room.js';
@@ -83,6 +83,23 @@ void test('an answered one-line confirmation remains visible without paging agai
     await flush_screen(1);
     assert.equal(game.nhDisplay?.grid[0]?.map(cell => cell.ch).join('').trimEnd(), 'You close the book.');
     assert.equal(await nhgetch(), 'X'.charCodeAt(0));
+});
+void test('fuzzer answers leave one-line questions visible until the next message replaces them', async () => {
+    for (const responses of ['yn', null]) {
+        freshPlayableRoom();
+        game.iflags.debug_fuzzer = true;
+        const result = await tty_yn_function('Continue studying?', responses, 'n');
+        if (responses !== null)
+            assert.ok(responses.includes(result.answer));
+        game.iflags.debug_fuzzer = false;
+        pushKeys('X');
+        await flush_screen(1);
+        assert.equal(game.nhDisplay?.grid[0]?.map(cell => cell.ch).join('').trimEnd(), responses === null ? 'Continue studying?' : 'Continue studying? [yn] (n)');
+        await plineWithContinuation('You close the book.');
+        await flush_screen(1);
+        assert.equal(game.nhDisplay?.grid[0]?.map(cell => cell.ch).join('').trimEnd(), 'You close the book.');
+        assert.equal(await nhgetch(), 'X'.charCodeAt(0));
+    }
 });
 void test('an answered wrapped confirmation clears the covered message area', async () => {
     freshPlayableRoom();

@@ -201,7 +201,6 @@ export function validSavedHero(
         stoneKiller: optional(string),
         stoneKillerFormat: optional(oneOf(0, 1, 2)),
         slimeKiller: optional(string),
-        _encumbrance: optional(string),
         _exercise: optional(validSavedAttributeValues),
         _woundedLegSide: optional(nullable(oneOf('left', 'right', 'both'))),
         _woundedLegTurns: optional(integer),

@@ -14,7 +14,7 @@ import { chatWithQuestCharacter, questMonsterSound } from './quest.js';
 import { consultOracle } from './rumor.js';
 import { roles } from './roles.js';
 import { rn2 } from './rng.js';
-import { MONSTER_NAME, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_SOUND, monsterTypeName, } from './monster_data.js';
+import { MONSTER_NAME, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_SOUND, } from './monster_data.js';
 const MS_SILENT = 0;
 const MS_BARK = 1;
 const MS_MEW = 2;
@@ -49,10 +49,7 @@ const PM_RAVEN = MONSTER_NAME.indexOf('raven');
 const PM_GECKO = MONSTER_NAME.indexOf('gecko');
 const PM_LONG_WORM = MONSTER_NAME.indexOf('long worm');
 export function monsterSentenceSubject(monster) {
-    if (monster.name)
-        return monster.name.charAt(0).toUpperCase() + monster.name.slice(1);
-    const saddle = monster.saddled ? 'saddled ' : '';
-    return `The ${saddle}${monsterTypeName(monster.mnum, !!monster.female)}`;
+    return monsterName(monster, { capitalized: true });
 }
 export function sessionIsNight(datetime) {
     const hour = recorderLocalHour(datetime);

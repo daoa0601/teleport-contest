@@ -9,12 +9,13 @@ import { finishHeroDeath } from './end.js';
 import { game } from './gstate.js';
 import { heroHasNoHead, heroIsBreathless } from './hero_species.js';
 import { MONSTER_FLAGS1 } from './monster_data.js';
-import { AMULET_OF_STRANGULATION, OBJECT_NAMES } from './object_data.js';
+import { AMULET_OF_STRANGULATION } from './object_data.js';
 import { deleteObject } from './object_delete.js';
 import { learnObjectType } from './object_knowledge.js';
 import { refreshProperty } from './properties.js';
 import { rn2 } from './rng.js';
 import { stopHeroOccupation } from './occupation.js';
+import { simpleObjectName } from './objnam.js';
 const CHOKING_MESSAGES = [
     'You find it hard to breathe.',
     "You're gasping for air.",
@@ -70,9 +71,7 @@ export async function restartAmuletStrangulation(state = game, publish = plineWi
     state.context.botl = true;
     refreshProperty('strangled', state);
     const action = wasStrangled ? 'still constricts' : 'begins constricting';
-    const name = amulet.dknown === false ? 'amulet'
-        : state._knownObjectTypes?.has(amulet.otyp)
-            ? OBJECT_NAMES[amulet.otyp] : amulet.name;
+    const name = simpleObjectName(amulet, state);
     await publish(`Your ${name} ${action} your ${heroNeckName(state)}!`);
     learnObjectType(AMULET_OF_STRANGULATION, state);
 }

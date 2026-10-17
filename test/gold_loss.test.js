@@ -1,3 +1,4 @@
+import { nearCapacity } from '../js/weight.js';
 import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -69,7 +70,7 @@ void test('losing a heavy purse removes its encumbrance on the next command boun
     input.beforeRead = finishCommand;
     await moveloop_core();
     await moveloop_core();
-    assert.ok(game.u._encumbrance);
+    assert.ok(nearCapacity(game) > 0);
     initRng(25n);
     keys = [...'sit\n5\n'];
     input.beforeRead = () => {
@@ -83,7 +84,7 @@ void test('losing a heavy purse removes its encumbrance on the next command boun
     assert.equal(heroGoldAmount(game), 0);
     input.beforeRead = finishCommand;
     await moveloop_core();
-    assert.equal(game.u._encumbrance, '');
+    assert.equal(nearCapacity(game), 0);
     assert.match(messages.join('\n'), /Your movements are now unencumbered/u);
 });
 //# sourceMappingURL=gold_loss.test.js.map

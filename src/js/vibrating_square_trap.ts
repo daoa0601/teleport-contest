@@ -9,10 +9,11 @@ import type { MessagePublisher } from './display.js';
 import { game } from './gstate.js';
 import { monsterFootName } from './body_parts.js';
 import { dist2 } from './hacklib.js';
-import { monsterHasNoLimbs, monsterTypeName } from './monster_data.js';
+import { monsterHasNoLimbs } from './monster_data.js';
 import { makePlural } from './object_grammar.js';
 import { monsterTrapVisibility, seeTrap } from './trap.js';
 import { monsterInAir } from './terrain_properties.js';
+import { monsterName } from './monster_name.js';
 
 export interface MonsterVibratingSquareEvent {
     kind: 'vibrating-square';
@@ -27,16 +28,6 @@ export interface MonsterVibratingSquareEvent {
 interface FinishTrapOptions {
     state?: GameState;
     publish?: MessagePublisher;
-    describeMonster?: (monster: Monster) => string;
-}
-
-function ordinaryMonsterSubject(monster: Monster) {
-    if (monster?.name) return monster.name;
-    return `The ${monsterTypeName(monster?.mnum, !!monster?.female)}`;
-}
-
-function sentenceObject(subject: string) {
-    return subject.startsWith('The ') ? `the ${subject.slice(4)}` : subject;
 }
 
 function possessive(subject: string) {
@@ -67,7 +58,6 @@ export async function finishMonsterVibratingSquare(
     {
         state = game,
         publish = async () => {},
-        describeMonster = ordinaryMonsterSubject,
     }: FinishTrapOptions = {},
 ) {
     if (!event || event.finished) return event;
@@ -76,7 +66,7 @@ export async function finishMonsterVibratingSquare(
     if (!event.inSight) {
         await publish(formatSeenMessage(`the ground vibrate ${event.nearby ? 'nearby' : 'in the distance'}.`));
     } else {
-        const subject = sentenceObject(describeMonster(monster));
+        const subject = monsterName(monster, { state });
         const location = event.wholeBody
             ? subject
             : `${possessive(subject)} ${makePlural(

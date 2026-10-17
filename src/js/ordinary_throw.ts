@@ -3,7 +3,8 @@
 
 import { game, requirePlayingGame } from './gstate.js';
 import { A_DEX, AKLYS_LIM, Is_airlevel, W_QUIVER, W_SWAPWEP, W_WEP } from './const.js';
-import { exerciseAttribute, reportHeroEncumbrance } from './attrib.js';
+import { exerciseAttribute } from './attrib.js';
+import { reportHeroEncumbrance } from './encumbrance.js';
 import { flyBoomerang } from './boomerang.js';
 import type { BoomerangFlight } from './boomerang.js';
 import { flush_screen, plineWithContinuation } from './display.js';

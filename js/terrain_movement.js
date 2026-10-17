@@ -21,7 +21,7 @@ import { heroFormSticks } from './hero_species.js';
 import { MONSTER_FLAGS1, MONSTER_SYMBOL, monsterDigests, monsterIsAnimal, requireMonsterData, } from './monster_data.js';
 import { dismountHero, steedIsGrounded } from './steed.js';
 import { applyHeroLiquidEffects, applyHeroLocationEffects, } from './cmd.js';
-import { encumbranceLabel, encumbranceMessage, nearCapacity } from './weight.js';
+import { reportHeroEncumbrance } from './encumbrance.js';
 import { heroCanSwim } from './hack.js';
 import { heroHasWaterWalking } from './armor.js';
 import { heroIsPunished } from './ball.js';
@@ -38,7 +38,6 @@ export async function floatHeroUp(state = game, previous = null) {
     requireLiveGame(state);
     state.context.botl = true;
     const hero = state.u;
-    const previousCapacity = state._encumbranceLevel ?? nearCapacity(state);
     // Wearing a levitation source suppresses Flying before this runs, so the
     // flight-loss feedback reads the pre-wear snapshot when the caller
     // captured one (properties.js:captureLevitationState()).
@@ -101,13 +100,7 @@ export async function floatHeroUp(state = game, previous = null) {
         await plineWithContinuation('You are no longer able to control your flight.');
     refreshMovementProperties(state);
     state.context.botl = true;
-    const capacity = nearCapacity(state);
-    const message = encumbranceMessage(previousCapacity, capacity);
-    state._encumbranceLevel = capacity;
-    hero._encumbrance = encumbranceLabel(capacity);
-    state._capacityDirty = false;
-    if (message)
-        await plineWithContinuation(message);
+    await reportHeroEncumbrance(state);
 }
 // C trap.c:float_down(hmask, emask).  The raw C bitmask arguments are kept:
 // hmask clears intrinsic levitation (TIMEOUT zeroes the timeout, I_SPECIAL
@@ -126,7 +119,6 @@ export async function floatHeroDown(hmask = 0, emask = 0, state = game, previous
     requireLiveGame(state);
     const hero = state.u;
     const before = previous ?? captureLevitationState(state);
-    const previousCapacity = state._encumbranceLevel ?? nearCapacity(state);
     clearLevitationMasks(hmask, emask, state);
     if (propertyIsActive('levitation', state))
         return 0; // maybe another ring/potion/boots
@@ -139,7 +131,8 @@ export async function floatHeroDown(hmask = 0, emask = 0, state = game, previous
         if (trappedSolely) {
             await plineWithContinuation(`You are no longer trying to float up from the ${floorTrapHoldName(hero)}.`);
         }
-        await settleEncumbrance(state, previousCapacity);
+        refreshMovementProperties(state);
+        await reportHeroEncumbrance(state);
         return 0;
     }
     state.context.botl = true;
@@ -149,13 +142,15 @@ export async function floatHeroDown(hmask = 0, emask = 0, state = game, previous
         refreshMovementProperties(state);
         if (propertyIsActive('flying', state)) {
             await plineWithContinuation('You have stopped levitating and are now flying.');
-            await settleEncumbrance(state, previousCapacity);
+            refreshMovementProperties(state);
+            await reportHeroEncumbrance(state);
             return 1;
         }
     }
     if (hero.uswallow) {
         await plineWithContinuation(`You float down, but you are still ${monsterDigests(hero.ustuck) ? 'swallowed' : 'engulfed'}.`);
-        await settleEncumbrance(state, previousCapacity);
+        refreshMovementProperties(state);
+        await reportHeroEncumbrance(state);
         return 1;
     }
     let ballTrap = null;
@@ -267,7 +262,8 @@ export async function floatHeroDown(hmask = 0, emask = 0, state = game, previous
     }
     // Levitation gives maximum carrying capacity, so having it end can raise
     // encumbrance: after the landing messages, before traps and autopickup.
-    await settleEncumbrance(state, previousCapacity);
+    refreshMovementProperties(state);
+    await reportHeroEncumbrance(state);
     // Falling through a trap door changes the level before this returns.
     const levelBefore = { dnum: hero.uz?.dnum, dlevel: hero.uz?.dlevel };
     if (trap && trap.ttyp !== STATUE_TRAP) {
@@ -298,17 +294,6 @@ function floorTrapHoldName(hero) {
     if (hero.utraptype === TT_LAVA)
         return 'lava';
     return 'ground'; // TT_INFLOOR
-}
-// C encumber_msg() after a movement-property change.
-async function settleEncumbrance(state, previousCapacity) {
-    refreshMovementProperties(state);
-    const capacity = nearCapacity(state);
-    const message = encumbranceMessage(previousCapacity, capacity);
-    state._encumbranceLevel = capacity;
-    state.u._encumbrance = encumbranceLabel(capacity);
-    state._capacityDirty = false;
-    if (message)
-        await plineWithContinuation(message);
 }
 export async function resetHeroTrap(message = true, state = game) {
     const wasLevitating = propertyIsActive('levitation', state);

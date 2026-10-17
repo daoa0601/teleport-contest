@@ -1,3 +1,4 @@
+import { reportHeroEncumbrance } from './encumbrance.js';
 import { heroLocomotion } from './hero_locomotion.js';
 // steed.js — Saddling, mounting, riding, and dismounting.
 // C ref: steed.c.
@@ -44,7 +45,7 @@ import { heroLegName } from './body_parts.js';
 import { healHeroLegs, woundHeroLegs } from './hero_legs.js';
 import { loseHeroHp } from './hero_damage.js';
 import { resolveImmediatePetrification, touchPetrifies } from './stoning.js';
-import { encumbranceLabel, encumbranceMessage, nearCapacity, SLT_ENCUMBER } from './weight.js';
+import { nearCapacity, SLT_ENCUMBER } from './weight.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { monsterIsHelpless } from './monster_sleep.js';
 import { blocksDiagonalDoor, heroBadRock, heroCanPassWallAt, heroTightDiagonalReason, } from './hack.js';
@@ -376,9 +377,8 @@ async function mountSteed(steed, force, [dx, dy]) {
         let damage = rn1(5, 10);
         if (hero.halfPhysicalDamage)
             damage = Math.trunc((damage + 1) / 2);
-        let name = `a saddled ${monsterTypeName(steed.mnum, !!steed.female)}`;
-        if (MGIVENNAME(steed))
-            name += ` called ${MGIVENNAME(steed)}`;
+        const name = monsterName(steed, { article: 'a', called: true, suppressIt: true,
+            suppressInvisible: true, suppressHallucination: true, suppressSaddle: false });
         await loseHeroHp(damage, `slipped while mounting ${name}`, { killerFormat: NO_KILLER_PREFIX });
         return false;
     }
@@ -650,10 +650,6 @@ export async function dismountHero(reason, { state = game, random = rn2, announc
         return { dismounted: false };
     requirePlayingGame(state);
     const hero = state.u;
-    // Fallback baseline only: the tail encumbrance normally compares
-    // against the level the descent already stored; this covers a
-    // dismount whose float_down returned early without settling.
-    const previousCapacity = nearCapacity(state);
     const wasTrapped = !!hero.utrap;
     let repairLegs = (hero._woundedLegTurns ?? 0) > 0;
     let landing = await landingSpot(state, steed, reason, random, false, announce);
@@ -829,20 +825,8 @@ export async function dismountHero(reason, { state = game, random = rn2, announc
                 dismounted: true, steed, movement, liquid, location,
                 died: true,
             };
-        // C's tail encumber_msg() (steed.c:814) is normally silent because
-        // float_down already settled the stored level; compare against that
-        // stored level so a settled descent reports nothing new.  It still
-        // settles here when float_down returned early (a remaining
-        // levitation source skips its encumbrance work entirely); the entry
-        // baseline is only the fallback when nothing was stored.
-        const baseline = state._encumbranceLevel ?? previousCapacity;
-        const capacity = nearCapacity(state);
-        state._encumbranceLevel = capacity;
-        hero._encumbrance = encumbranceLabel(capacity);
-        const capacityMessage = encumbranceMessage(baseline, capacity);
         state.context.botl = true;
-        if (capacityMessage)
-            await announce(capacityMessage);
+        await reportHeroEncumbrance(state, announce);
         state.vision_full_recalc = 1;
     }
     else

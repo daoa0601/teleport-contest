@@ -16,12 +16,12 @@ import {
     monsterIsAmorphous,
     monsterIsUnsolid,
     monsterIsWhirly,
-    monsterTypeName,
 } from './monster_data.js';
 import { monsterWearsIronShoes } from './monworn.js';
 import { d, rn2 } from './rng.js';
 import { monsterTrapVisibility, seeTrap } from './trap.js';
 import { monsterInAir } from './terrain_properties.js';
+import { monsterName } from './monster_name.js';
 
 export interface MonsterBearTrapEvent {
     kind: 'bear-trap';
@@ -46,10 +46,6 @@ interface FinishTrapOptions {
 const MZ_SMALL = 1;
 const PM_OWLBEAR = MONSTER_NAME.indexOf('owlbear');
 const PM_BUGBEAR = MONSTER_NAME.indexOf('bugbear');
-
-function ordinaryMonsterSubject(monster: Monster) {
-    return monster?.name || `The ${monsterTypeName(monster?.mnum, !!monster?.female)}`;
-}
 
 function bearTrapCanCatch(monster: Monster, state: GameState) {
     return (
@@ -95,7 +91,7 @@ export async function finishMonsterBearTrap(
         publish = plineWithContinuation,
         random = rn2,
         rollDice = d,
-        describeMonster = ordinaryMonsterSubject,
+        describeMonster = target => monsterName(target, { state, capitalized: true }),
     }: FinishTrapOptions = {},
 ) {
     if (!event) return event;

@@ -1,3 +1,4 @@
+import { reportHeroEncumbrance } from './encumbrance.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { monsterAtPosition, monsterHasMapPosition } from './monster_location.js';
 import { isPoolAt } from './terrain_properties.js';
@@ -29,7 +30,7 @@ import {
     TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB,
     Is_waterlevel, is_hole, is_pit,
 } from './const.js';
-import { encumbranceMessage, nearCapacity, SLT_ENCUMBER, weightCapacity } from './weight.js';
+import { nearCapacity, SLT_ENCUMBER, weightCapacity } from './weight.js';
 import { propertyIsActive } from './properties.js';
 import { heroIsBlind } from './senses.js';
 import { heroLegName } from './body_parts.js';
@@ -173,14 +174,10 @@ async function releaseCarriedBall(state: GameState, showMessage = false): Promis
     const ball = state.uball || state.u.uball;
     if (!ball || !carried(ball, state) || isWeldedPrimary(ball, state)) return;
     if (showMessage) await plineWithContinuation('Startled, you drop the iron ball.');
-    const previousCapacity = nearCapacity(state);
     await removeHeroEquipment(ball, state);
     unlinkObject(ball, state);
     await finishInventoryRemoval(ball, state);
-    const currentCapacity = nearCapacity(state);
-    state._encumbranceLevel = currentCapacity;
-    const message = encumbranceMessage(previousCapacity, currentCapacity);
-    if (message) await plineWithContinuation(message);
+    await reportHeroEncumbrance(state);
 }
 
 // C unplacebc()/placebc(): swallowing removes the floor pair but leaves a

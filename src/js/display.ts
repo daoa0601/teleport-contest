@@ -69,7 +69,7 @@ import {
 import { depth as dungeonDepth, endgameLevelName } from './hacklib.js';
 import { OBJECT_CLASS_SYMBOLS, recordObjectEncounter } from './object_knowledge.js';
 import { heroGoldAmount } from './hero_gold.js';
-import { encumbranceLabel, nearCapacity } from './weight.js';
+import { nearCapacity } from './weight.js';
 import { heroCanReachFloor } from './floor_reach.js';
 import { hasCarriedProperty, hasWornProperty, propertyIsActive } from './properties.js';
 import type { GameState } from './game_state.js';
@@ -2639,7 +2639,6 @@ function refreshStatusLines(): void {
         return;
     }
     const capacity = nearCapacity(game);
-    game.u._encumbrance = encumbranceLabel(capacity);
     // botl.c notifies BL_CAP when its value changes; tty_status_update()
     // then clears any blank left by earlier encumbrance shortening.
     const capacityBlank = display.statusLine2Fields?.capacity === capacity

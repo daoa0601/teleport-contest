@@ -4,7 +4,7 @@ import { game, requireLiveGame } from './gstate.js';
 import { plineWithContinuation } from './display.js';
 import { beginObjectBurn, endObjectBurn } from './light.js';
 import { heroIsBlind } from './senses.js';
-import { objectName, ownedObjectName } from './objnam.js';
+import { definiteObjectAction, objectName, ownedObjectName } from './objnam.js';
 import { heroFingerName } from './body_parts.js';
 import { armorSimpleName } from './armor.js';
 import { makePlural } from './object_grammar.js';
@@ -37,8 +37,7 @@ function lampOwner(object, state) {
     return owner.charAt(0).toUpperCase() + owner.slice(1); // C Shk_Your().
 }
 function theName(object, state) {
-    const name = objectName(object, state);
-    return `The ${objectQuantity(object) > 1 ? makePlural(name) : name}`;
+    return definiteObjectAction(object, null, state);
 }
 async function announcePurchase(message) {
     // These apply.c verbalize() calls have no hearing/muteshk gate. The

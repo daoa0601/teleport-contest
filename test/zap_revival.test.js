@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { rhack } from '../js/cmd.js';
+import { reviveCorpseImmediately } from '../js/corpse_revival.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
@@ -80,5 +81,14 @@ void test('undead turning reports an eel corpse twitching when there is no water
     assert.equal(body.where, 'floor');
     assert.equal(game._pending_message, 'The giant eel corpse twitches feebly.');
     assert.equal(wand.spe, 1);
+});
+void test('a unique monster\'s corpse that cannot revive twitches with a single article', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    const body = await floorObject(CORPSE, 10, 10, { corpsenm: MONSTER_NAME.indexOf('Oracle') });
+    body.norevive = true;
+    const event = await reviveCorpseImmediately(body);
+    assert.equal(body.where, 'floor');
+    assert.deepEqual(event?.messages, ['The Oracle\'s corpse twitches feebly.']);
 });
 //# sourceMappingURL=zap_revival.test.js.map

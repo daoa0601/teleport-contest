@@ -48,6 +48,7 @@ import {
 } from './support/commands.js';
 import { addInventoryItem } from '../js/u_init.js';
 import { setPrimaryWeapon, setSecondaryWeapon, setQuiverObject } from '../js/weapon_slots.js';
+import { nearCapacity } from '../js/weight.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createMonsterAt } from './support/monsters.js';
 import { answerPrompts } from './support/input-boundaries.js';
@@ -536,6 +537,7 @@ void test('drowning emergency drops remove a warning source before the hero craw
     monster.minvis = true;
     await setPrimaryWeapon(sting);
     await addInventoryObject(ROCK, { quan: 200 });
+    game._encumbranceLevel = nearCapacity(game);
     requireGameLevel().requireAt(game.u.ux, game.u.uy).typ = POOL;
     await takeMessages(messages);
     initRng(5n);
@@ -706,6 +708,7 @@ void test('a potion dropped while escaping water can dilute again on landing in 
     requirePlayingGame(game);
     const potion = await addInventoryObject(POT_HEALING, { odiluted: 0 });
     await addInventoryObject(ROCK, { quan: 200 });
+    game._encumbranceLevel = nearCapacity(game);
     requireGameLevel().requireAt(game.u.ux, game.u.uy).typ = POOL;
     initRng(6n);
 

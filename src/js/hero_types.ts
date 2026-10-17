@@ -273,7 +273,6 @@ export interface Hero extends HeroCoordinates, HeroPropertyState,
     stoneKiller?: string;
     stoneKillerFormat?: 0 | 1 | 2;
     slimeKiller?: string;
-    _encumbrance?: string;
     _exercise?: AttributeValues;
     _woundedLegSide?: 'left' | 'right' | 'both' | null;
     _woundedLegTurns?: number;

@@ -3,7 +3,8 @@
 import { formatFeltMessage } from './hero_speech.js';
 import { removeHeroAccessory } from './accessory.js';
 import { findArmorClass } from './armor.js';
-import { adjustAttribute, attributeChangeMessage, reportHeroEncumbrance } from './attrib.js';
+import { adjustAttribute, attributeChangeMessage } from './attrib.js';
+import { reportHeroEncumbrance } from './encumbrance.js';
 import { A_CHA, A_CON, A_STR, TIMEOUT } from './const.js';
 import { newsym, plineWithContinuation as pline } from './display.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';

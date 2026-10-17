@@ -395,10 +395,6 @@ export async function rerollMenu() {
     const key = await showChoiceWindow({
         title: 'Reroll this character?',
         entries,
-        validKeys: [
-            acceptKey.charCodeAt(0), rerollKey.charCodeAt(0),
-            27, 32, 10, 13,
-        ],
     });
     const choice = String.fromCharCode(key);
     const reroll = choice === rerollKey ? true
@@ -441,11 +437,11 @@ async function showItemActionMenu(item) {
     return showChoiceWindow({
         title: `Do what with ${definiteName(objectCombatName(item))}?`,
         entries: itemActionEntries(item, game, repairGold),
-        validKeys: [27, 32, 10, 13],
     });
 }
 export async function inventoryActionForObject(item) {
-    return { key: inventoryActionKey(await showItemActionMenu(item)), item };
+    const key = await showItemActionMenu(item);
+    return key === 0 ? null : { key: inventoryActionKey(key), item };
 }
 function itemActionEntries(item, state, repairGold) {
     const itemName = simpleObjectName(item, state);

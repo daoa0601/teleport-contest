@@ -21,20 +21,20 @@ import {
     CLOAK_OF_MAGIC_RESISTANCE,
     GRAY_DRAGON_SCALE_MAIL,
     GRAY_DRAGON_SCALES,
-    OBJECT_NAMES,
 } from './object_data.js';
 import { AD_MAGM, AD_RBRE, AT_BREA, AT_MAGC } from './monster_attack_types.js';
 import {
     MONSTER_ATTACKS,
     MONSTER_FLAGS1,
     MONSTER_NAME,
-    monsterTypeName,
 } from './monster_data.js';
 import { heroFormFlags, heroIsPolymorphed } from './polyself.js';
 import { propertyIsActive } from './properties.js';
 import { d, rn2, rnd } from './rng.js';
 import { monsterTrapVisibility, seeTrap } from './trap.js';
 import { chargeAlteredUnpaidObject } from './shk.js';
+import { monsterName } from './monster_name.js';
+import { ownedObjectName } from './objnam.js';
 
 interface AntiMagicTrapPresentation {
     // The movement owner adds location and visibility after the immediate effect.
@@ -97,7 +97,7 @@ export async function triggerHeroAntiMagicTrap(trap: Trap) {
     if (shoes && (shoes.spe ?? 0) > 0) {
         seeTrap(trap);
         await plineWithContinuation(
-            `A lethargic aura surrounds your ${objectName(shoes, 'shoes')}.`,
+            `A lethargic aura surrounds ${ownedObjectName(shoes, game, { capitalized: false })}.`,
         );
         await chargeAlteredUnpaidObject(shoes, 'disenchant', game);
         shoes.spe--;
@@ -205,8 +205,7 @@ export async function finishMonsterAntiMagicTrap(
     {
         random = rn2,
         publish = plineWithContinuation,
-        describeMonster = (actor) =>
-            actor?.name || `The ${monsterTypeName(actor?.mnum, !!actor?.female)}`,
+        describeMonster = actor => monsterName(actor, { state, capitalized: true }),
     }: AntiMagicTrapOptions = {},
 ) {
     if (event.energyDrain > 0) await publish(`${describeMonster(monster)} seems lethargic.`);
@@ -270,10 +269,6 @@ export function monsterWornIronShoes(monster: Monster) {
 function ironShoes() {
     const shoes = heroObject('uarmf');
     return shoes && objectMaterial(shoes.otyp) === IRON ? shoes : null;
-}
-
-function objectName(object: GameObject, fallback: string) {
-    return object?.name || OBJECT_NAMES[object?.otyp] || fallback;
 }
 
 function heroPassesWalls() {
