@@ -408,11 +408,26 @@ the displaced monster is pushed before the swap); `goto_level()`'s early
 followers arrive and its late `obj_delivery(TRUE)` handles the rest (C's
 `!near_hero ^ MIGR_WITH_HERO` test).
 
+Batches 40-41: **status-refresh** (`carrying_too_much()`'s `nomul(0)` requests the
+full status redraw); **expel-turn**; **halluc-display-rng**,
+**halluc-display-2** and **halluc-display-3** (display-stream draws: glob and
+trap-death redraws, `mintrap()` redraws left to `dochug()`/`flooreffects()`,
+and target names that `dobuzz()`/`hit()` never print); **shop-entry-block**
+(`u_entered_shop()` warnings, mattock identification, the keeper's extra
+`dochug()`); **nomul-owner** (one `setMulti()` owner, so combat waking a
+sleeper lets a knockback's `nomul(-range)` wake the hero); **displace-followup**
+(teleport traps during a pet swap count as abuse); **fire-slime-order**
+(`mhitm_ad_fire()` destroys and ignites items before curing slime);
+**artifact-hit-hero** (`artifact_hit()` with the hero as defender, for monster
+weapons); **firetrap-turn** (`catch_lit()` identifies oil and exercises
+Wisdom); and monster hurtles now end with `mintrap(FORCEBUNGLE)`, which keeps
+the known-trap avoidance roll and leaves fliers above floor traps.
+
 ## Verification
 
-Merges require a fully green suite (12,294/12,294 on the latest unit branch);
+Merges require a fully green suite (12,446/12,446 on the latest unit branch);
 batch runs also compare matched screens per session with the previous batch
-(no screen regression in batches 35-39, eval, public or pool).
+(no screen regression in batches 35-40, eval, public or pool).
 
 ## Most recent native diagnostics
 
@@ -422,8 +437,8 @@ batch runs also compare matched screens per session with the previous batch
 | Native eval sample | 300/300 | 50,586/50,586 | 3,616,669/3,616,669 | 0 |
 | Holdout-dev pool | 2,500/2,500 | | | 0 |
 
-Runs: `.cache/generalization/batch39-f2ded12-{eval,public}` and
-`triage-f2ded12` (pool) in the verify worktree (baseline `base-06d7e73`:
+Runs: `.cache/generalization/batch40-1a1adc1-{eval,public}` and
+`triage-1a1adc1` (pool) in the verify worktree (baseline `base-06d7e73`:
 143/300; batch 30: 300/300, pool 2,500/2,500). No verified random call was
 lost; the ledgers now hold 350 eval and 363 public functions. The
 state oracle finds all 300 sessions matching C state throughout.
@@ -433,12 +448,12 @@ state oracle finds all 300 sessions matching C state throughout.
 Every eval-sample and pool session completes and public matches every random
 call; the one public miss (`seed2200-wizard-quaff-zap-read`) prints the
 recorder host's own `.nethackrc` path. New work comes from freshly recorded
-native sessions: fresh86-160 (22,500 sessions) fail only on step-0 moon-phase
-artifacts plus the cases below. In flight: **nomul-owner** (one `nomul()` owner
-for involuntary delays), **shop-entry-block** (`u_entered_shop()` tail warnings
-and the shopkeeper's extra move), **displace-followup** (post-swap liquid/trap
-effects and doorway ordering), and **fire-slime-order** (the hero's fire-damage
-item and slime order in `mhitm_ad_fire`). Round-2 recipe sessions are recorded in `.cache/holdout-dev/recipe2`.
+native sessions: fresh86-190 (31,500 sessions) fail only on step-0 moon-phase
+artifacts plus the cases below. In flight: **afternmv-owner** (one owner for
+C's `afternmv` completion slot, which later setters replace and `unmul()` runs)
+and **bypass-context** (one owner for object bypass bits and
+`context.bypasses`, which `destroy_items()`, `askchain()` and other traversals
+set until `clear_bypasses()`). Round-2 recipe sessions are recorded in `.cache/holdout-dev/recipe2`.
 
 `splitObjectStack()` now links the new piece right after the original in
 whichever chain owns it (floor pile, hero or monster inventory, container,
