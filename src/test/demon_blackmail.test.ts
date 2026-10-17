@@ -41,8 +41,8 @@ void test('a demon attacks a wealthy hero who is still putting on armor', async 
     const armor = await addInventoryObject(RING_MAIL);
     pushKey(armor.invlet);
     await rhack('W'.charCodeAt(0));
-    const dressing = game._delayedAction;
-    assert.ok(dressing && dressing.kind === 'wear' && (game._helplessTurns ?? 0) > 0);
+    const delay = game.multi;
+    assert.ok(delay < 0);
     setHeroGoldAmount(game, 1000);
     const demon = await createMonsterAt('water demon', 11, 10, NO_MINVENT);
     demon.mpeaceful = 1;
@@ -56,7 +56,8 @@ void test('a demon attacks a wealthy hero who is still putting on armor', async 
     assert.equal(satisfied, false);
     assert.equal(!!demon.mpeaceful, false);
     assert.equal(heroGoldAmount(game), 1000, 'dressing prevents a bribe offer or payment');
-    assert.equal(game._delayedAction, dressing, 'the demon does not cancel dressing');
+    assert.equal(game.multi, delay, 'the demon does not cancel dressing');
+    assert.equal(game.uarm, armor);
 });
 
 void test('a zero bribe leaves the next hallucinated demon identity for its anger message', async () => {

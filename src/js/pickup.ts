@@ -123,7 +123,7 @@ export async function autopickupAtHero(): Promise<void> {
             await describePickupDecor(loc);
             return;
         }
-        const busy = !game._runState && (game.multi || game._delayedAction
+        const busy = !game._runState && (game.multi
             || (game._helplessTurns ?? 0) > 0 || game._occupation?.key === 'study-book');
         if (busy || !game.flags.pickup || heroCannotTake(game)) {
             const look = await checkHere(source, false);

@@ -103,8 +103,7 @@ export async function dopray() {
     game._helplessReason = 'praying';
     game._helplessDoneMessage = 'You finish your prayer.';
     // C has one afternmv callback; prayer_done replaces pending dressing.
-    game._delayedAction = null;
-    game._helplessAfter = 'finish-prayer';
+    game._afterMove = { kind: 'finish-prayer' };
     if (outcome === 'pleased' && !inHell()) {
         if (!heroIsBlind(game)) await pline('You are surrounded by a shimmering light.');
         hero.invulnerable = true;

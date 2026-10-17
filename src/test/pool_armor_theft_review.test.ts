@@ -42,7 +42,7 @@ async function finishRemoval(messages: string[]) {
         const row = requireScreenRow(0).map(cell => cell.ch).join('');
         return row.includes('--More--') ? 32 : 46;
     } };
-    while (game._delayedAction) await moveloop_core();
+    while (game.multi < 0) await moveloop_core();
     await flushPendingTopline();
 }
 
@@ -320,7 +320,7 @@ void test('a nymph steals interrupted donning armor immediately after it becomes
     await flushPendingTopline();
 
     assert.ok(thief.minvent.includes(suit), 'Cancelled donning leaves no armor-removal delay');
-    assert.equal(game._delayedAction, null);
+    assert.equal(game.multi, 0);
     assert.doesNotMatch(messages.join('\n'), /charms|seduces|takes off/);
 });
 
@@ -343,7 +343,7 @@ void test('a monkey can give up stealing boots even after removal has started', 
     assert.ok(game.uarmf === boots, 'Interrupted removal leaves the refused boots worn');
     assert.ok(game.inventory.includes(boots));
     assert.equal(thief.minvent.includes(boots), false);
-    assert.equal(game._delayedAction, null, 'The theft attempt still cancels armor removal');
+    assert.equal(game.multi, 0, 'The theft attempt still cancels armor removal');
     assert.match(messages.join('\n'), /The monkey tries to take your shoes but gives up\./);
 });
 

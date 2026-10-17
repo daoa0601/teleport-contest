@@ -171,7 +171,7 @@ async function digestDefender(defender, species, state, { publish, random, rollD
             state._helplessReason = 'digesting something';
             state._helplessDoneMessage = doneMessage;
             state._digestedMonsterSpecies = species;
-            state._helplessAfter = 'finish-digestion';
+            state._afterMove = { kind: 'finish-digestion' };
         }
         else
             await publish(doneMessage);

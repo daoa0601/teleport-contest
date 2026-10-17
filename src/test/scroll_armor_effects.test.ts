@@ -385,13 +385,13 @@ void test('destroying armor interrupts an unfinished dressing action', async () 
     assert.ok(armor.invlet);
     pushKeys(armor.invlet);
     await rhack('W'.charCodeAt(0));
-    assert.equal(game._delayedAction?.kind, 'wear');
+    assert.equal(game.uarm, armor);
+    assert.ok(game.multi < 0);
     const scroll = await addInventoryObject(SCR_DESTROY_ARMOR, { cursed: true });
 
     await applyArmorScrollEffect(scroll);
 
     assert.equal(armor.where, 'gone');
-    assert.equal(game._delayedAction, null);
     assert.equal(game.multi, 0);
 });
 

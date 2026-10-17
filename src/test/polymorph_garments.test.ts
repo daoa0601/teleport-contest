@@ -35,7 +35,7 @@ void test('horns knock off an unfinished cloth hat rather than piercing it', asy
     pushKeys(hat.invlet);
     await rhack('W'.charCodeAt(0));
     assert.equal(game.uarmh, hat);
-    assert.equal(game._delayedAction?.object, hat);
+    assert.ok(game.multi < 0);
     resetInputState();
     pushKeys('polyself\nminotaur\n                        ');
 
@@ -43,7 +43,7 @@ void test('horns knock off an unfinished cloth hat rather than piercing it', asy
 
     assert.equal(game.uarmh, null);
     assert.equal(hat.where, 'floor');
-    assert.equal(game._delayedAction, null);
+    assert.equal(game.multi, 0);
 });
 
 void test('polymorph cancels dressing before the dropped-hat message waits for input', async () => {
@@ -61,7 +61,6 @@ void test('polymorph cancels dressing before the dropped-hat message waits for i
         await input.waitUntilBlocked();
         assert.match(game._pending_message, /You turn into a (?:male |female )?minotaur!/);
         assert.equal(game.multi, 0);
-        assert.equal(game._delayedAction, null);
     } finally {
         input.feed('                        ');
         await changing;

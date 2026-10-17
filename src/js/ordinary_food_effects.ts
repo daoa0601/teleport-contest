@@ -88,7 +88,7 @@ export async function applyRottenFood(food: GameObject, { state = game }: FoodEf
         nomul(-duration, state);
         state._helplessReason = 'unconscious from rotten food';
         state._helplessDoneMessage = 'You are conscious again.';
-        state._helplessAfter = 'hear-again';
+        state._afterMove = { kind: 'hear-again' };
         return true;
     }
     return false;

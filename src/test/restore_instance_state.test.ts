@@ -244,15 +244,15 @@ for (const recovery of ['paralysis', 'prayer', 'digestion', 'mimicry'] as const)
         game._helplessDoneMessage = 'The interrupted delay finishes.';
         game.multi = -4;
         if (recovery === 'prayer') {
-            game._helplessAfter = 'finish-prayer';
+            game._afterMove = { kind: 'finish-prayer' };
             game._prayerAlignment = 0;
             game._prayerTrouble = 0;
             game._prayerOutcome = 'pleased';
         } else if (recovery === 'digestion') {
-            game._helplessAfter = 'finish-digestion';
+            game._afterMove = { kind: 'finish-digestion' };
             game._digestedMonsterSpecies = 0;
         } else if (recovery === 'mimicry') {
-            game._helplessAfter = 'end-mimic-meal';
+            game._afterMove = { kind: 'end-mimic-meal' };
             game._mimicMealMessage = 'You now prefer mimicking a human again.';
         }
         const storage = memoryStorage();

@@ -1,5 +1,6 @@
 // Effects of entering the hero's current square.
 // C ref: hack.c pooleffects() and trap.c drown().
+import { finishHeroHelplessness } from './allmain.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { monsterHasMapPosition } from './monster_location.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
@@ -7,7 +8,7 @@ import { BURNING, D_BROKEN, D_CLOSED, D_LOCKED, DISMOUNT_FELL, DISMOUNT_GENERIC,
 import { bot, displayLiquidName, feel_newsym, newsym, plineWithContinuation, under_water, updateLastSeenTerrain } from './display.js';
 import { heroPassesWalls, heroFormSticks, heroSpecies } from './hero_species.js';
 import { heroHasConflict } from './hero_conflict.js';
-import { endVoluntaryMultiTurn, setMulti } from './command_state.js';
+import { endVoluntaryMultiTurn } from './command_state.js';
 import { resetHeroTrap, setHeroInWater } from './terrain_movement.js';
 import { monstersObserveHeroResistance } from './monster_perception.js';
 import { clearHeroTrap, setHeroTrap } from './hero_traps.js';
@@ -623,23 +624,10 @@ function heroMovedWithinPool(state, x, y) {
     return isPoolAt(previousX, previousY, state);
 }
 async function wakeHeroForCrawl(state, publish) {
-    const u = state.u;
-    if (u.uhs === FAINTED)
+    if (state.u.usleep)
+        await finishHeroHelplessness('Suddenly you wake up!', state, publish);
+    if (state.u.uhs === FAINTED)
         await resetHeroFaint({ state });
-    if (u.usleep) {
-        u.usleep = 0;
-        setMulti(0, state);
-        state._helplessReason = null;
-        state._helplessDoneMessage = null;
-        await publish('Suddenly you wake up!');
-        return;
-    }
-    if (state._helplessReason === 'unconscious from rotten food'
-        || state._helplessReason === 'unconscious from drinking') {
-        setMulti(0, state);
-        state._helplessReason = null;
-        state._helplessDoneMessage = null;
-    }
 }
 async function applyHeroFormWaterEffect(state, publish, random, rollDice) {
     const u = state.u;

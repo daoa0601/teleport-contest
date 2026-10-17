@@ -3,7 +3,7 @@ import { requirePlayingGame } from '../js/gstate.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { SINK } from '../js/const.js';
-import { nomul } from '../js/command_state.js';
+import { rhack } from '../js/cmd.js';
 import { wearHeroAccessory } from '../js/accessory.js';
 import { wearHeroArmor } from '../js/armor.js';
 import { fallIntoSink } from '../js/sink_fall.js';
@@ -198,16 +198,14 @@ void test('falling with a wielded cockatrice corpse turns the hero to stone', as
 void test('a crash interrupts donning armor and loses the partial wear', async () => {
     sinkSpot();
     requirePlayingGame(game);
-    const boots = await wearBoots();
-    nomul(-5);
-    game._delayedAction = {
-        kind: 'wear', object: boots, ready: false,
-    };
+    const boots = await addInventoryObject(LEVITATION_BOOTS);
+    pushKeys(boots.invlet);
+    await rhack('W'.charCodeAt(0));
     pushKeys(' '); // acknowledge the crash before the interrupted-dressing message
     const outcome = await fallIntoSink();
     assert.deepEqual(outcome, { fell: true, died: false });
     assert.match(game._pending_message, /You stop putting on the pair of levitation boots\./);
-    assert.equal(game._delayedAction, null);
+    assert.equal(game.multi, 0);
     assert.equal(game.uarmf, null);
     assert.equal(boots.worn, false);
 });

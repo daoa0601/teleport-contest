@@ -344,7 +344,7 @@ export async function checkAttributeExercise(sourceTurn: number, state: GameStat
 }
 
 function exerciseCheckIsDeferred(state: GameState): boolean {
-    if ((state.multi ?? 0) !== 0 || state._runState || state._delayedAction
+    if ((state.multi ?? 0) !== 0 || state._runState
         || (state._helplessTurns ?? 0) > 0)
         return true;
     // Study uses positive multi; eating and lock picking use occupation with

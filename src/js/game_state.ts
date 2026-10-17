@@ -15,7 +15,7 @@ import type { GameDisplay } from './game_display.js';
 import type { StorageBackend } from './storage.js';
 import type { Isaac64Context } from './isaac64.js';
 import type { RngSeed } from './rng.js';
-import type { CannedCommand, DelayedArmorAction, MovementAttempt, RepeatCommandEntry, RunState } from './command_types.js';
+import type { CannedCommand, AfterMove, MovementAttempt, RepeatCommandEntry, RunState } from './command_types.js';
 import type { FoodContext, HeroOccupation, TrapSetting, PickLockOccupation, ForceLockOccupation } from './occupation_types.js';
 import type { TakeoffContext } from './takeoff_state.js';
 import type { Artifact } from './artifacts.js';
@@ -316,7 +316,9 @@ export interface GameState {
     _occupation?: HeroOccupation | null;
     _lockAttempt?: PickLockOccupation | ForceLockOccupation | null;
     _trapSetting?: TrapSetting | null;
-    _delayedAction?: DelayedArmorAction | null;
+    _afterMove?: AfterMove | null;
+    // C stealoid/stealmid survive replacement of afternmv.
+    _armorTheft?: { object: GameObject; thief: Monster | null } | null;
     _runState?: RunState | null;
     _cannedCommands?: CannedCommand[];
     _commandCount?: number;
@@ -361,8 +363,6 @@ export interface GameState {
     _helplessTurns?: number;
     _helplessReason?: string | MonsterHelplessnessReason | null;
     _helplessDoneMessage?: string | null;
-    _helplessAfter?: 'end-mimic-meal' | 'hear-again' | 'unfaint' | 'finish-digestion'
-        | 'steal-armor' | 'unstolen-armor' | 'finish-prayer' | null;
     _digestedMonsterSpecies?: number | null;
     _mimicMealMessage?: string | null;
     _queuedHelplessRecoveryMessage?: string | null;

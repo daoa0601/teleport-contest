@@ -1,5 +1,6 @@
 // C objnam.c:doname_base(), worn and held object annotations.
 
+import { pendingArmorAction } from './command_state.js';
 import { artifactEmitsLight, artifactGlowColor } from './artifacts.js';
 import { artifactGlowVerb, wieldedArtifactWarns } from './artifact_warning.js';
 import { heroHandName } from './body_parts.js';
@@ -98,7 +99,8 @@ export function primaryHandDescriptionDetail(item: GameObject, state: GameState 
 }
 
 function wornArmorDescription(item: GameObject, state: GameState): string {
-    const dressing = state._delayedAction?.object === item ? state._delayedAction.kind : null;
+    const pending = pendingArmorAction(state);
+    const dressing = pending?.object === item ? pending.kind : null;
     let description = item === (state.uskin || state.u.uskin) ? 'embedded in your skin'
         : dressing === 'remove' || isBeingTakenOff(item, state) ? 'being doffed'
             : dressing === 'wear' ? 'being donned' : 'being worn';

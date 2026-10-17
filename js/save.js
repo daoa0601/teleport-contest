@@ -215,7 +215,8 @@ export function restoreGame(name, storage = game.storage) {
         game._heroTimePending = false;
         game._kickedLoc = null;
         game._cannedCommands = [];
-        game._delayedAction = null;
+        game._afterMove = null;
+        game._armorTheft = null;
         delete game._helplessRunmodeDelayPending;
         game.context.move = 0;
         // Saved flags govern future resets; the current Space binding still
@@ -268,7 +269,6 @@ function resetRestoredInstanceState() {
     delete game._helplessTurns;
     delete game._helplessReason;
     delete game._helplessDoneMessage;
-    delete game._helplessAfter;
     delete game._digestedMonsterSpecies;
     delete game._mimicMealMessage;
     delete game._prayerAlignment;

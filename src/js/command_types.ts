@@ -1,6 +1,5 @@
 import type { CommandDefinition } from './command_data.js';
 import type { GameObject } from './object_types.js';
-import type { Monster } from './monster_types.js';
 import type { TerminalCell } from './terminal.js';
 import type { InventoryAction } from './invent.js';
 
@@ -47,12 +46,15 @@ export interface TravelRunState {
 
 export type RunState = DirectionalRunState | TravelRunState;
 
-export type DelayedArmorAction = {
+export interface ArmorCompletion {
     object: GameObject;
-    ready: boolean;
     _runmodeRetainedTopline?: TerminalCell[] | undefined;
-} & ({ kind: 'wear' | 'remove' }
-    | { kind: 'steal'; thief: Monster });
+    kind: 'wear' | 'remove';
+}
+
+// C ga.afternmv: every setter replaces the one pending completion.
+export type AfterMove = ArmorCompletion
+    | { kind: 'end-mimic-meal' | 'hear-again' | 'unfaint' | 'finish-digestion' | 'finish-prayer' | 'steal' | 'unstolen-armor' };
 
 export interface CommandInput {
     key: number;

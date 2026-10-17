@@ -61,11 +61,18 @@ export function heroHasInvoluntaryDelay(state = game) {
 // C steal.c:thiefdead(), called by mon.c:m_detach() for death or removal.
 // Keep the armor-removal delay, but replace the theft and recovery message.
 export function armorThiefGone(monster, state = game) {
-    const theft = state._delayedAction;
-    if (theft?.kind !== 'steal' || theft.thief !== monster
-        || state._helplessAfter !== 'steal-armor')
+    const theft = state._armorTheft;
+    if (!theft || theft.thief !== monster)
         return;
-    state._helplessAfter = 'unstolen-armor';
-    state._helplessDoneMessage = null;
+    theft.thief = null;
+    if (state._afterMove?.kind === 'steal') {
+        state._afterMove = { kind: 'unstolen-armor' };
+        state._helplessDoneMessage = null;
+    }
+}
+// C donning()/doffing() inspect afternmv, not a separate armor timer.
+export function pendingArmorAction(state = game) {
+    const after = state._afterMove;
+    return after?.kind === 'wear' || after?.kind === 'remove' ? after : null;
 }
 //# sourceMappingURL=command_state.js.map
