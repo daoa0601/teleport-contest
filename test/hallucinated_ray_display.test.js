@@ -5,6 +5,7 @@ import { game } from '../js/gstate.js';
 import { monsterName } from '../js/monster_name.js';
 import { castNativeRay } from '../js/ray_attack.js';
 import { initRng } from '../js/rng.js';
+import { installPolymorphedHero } from './support/hero-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 const MONSTER_FLAGS = MM_ANGRY | MM_NOGRP | MM_NOWAIT | NO_MINVENT;
@@ -52,5 +53,18 @@ void test('a hallucinated Rider gets a fresh identity in each resurrection messa
     assert.equal(new Set(identities).size, 3, `Resurrection identities: ${identities.join(', ')}`);
     assert.equal(rider.mhp, 100);
     assert.equal(!!game.program_state.gameover, false);
+});
+void test('a one-eyed hero sees a Rider reintegrate before one eye', async () => {
+    freshObjectRoom({ flags: { verbose: true } });
+    installPolymorphedHero('Cyclops');
+    const rider = await createMonsterAt('Death', 11, 10, MONSTER_FLAGS);
+    rider.mhp = rider.mhpmax = 100;
+    const messages = [];
+    await castNativeRay(24, 1, 'l', {
+        random: limit => limit === 20 ? 19 : 1, rollOne: () => 1,
+        publish: message => { messages.push(message); },
+    });
+    assert.equal(messages[2], "Death's body reintegrates before your eye!");
+    assert.equal(rider.mhp, 100);
 });
 //# sourceMappingURL=hallucinated_ray_display.test.js.map

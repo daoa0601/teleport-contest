@@ -33,6 +33,8 @@ import { finishMonsterKilled } from './monster_death.js';
 import { wakeMonster } from './monster_anger.js';
 import { monsterName, possessiveName } from './monster_name.js';
 import { distantObjectName, objectName } from './objnam.js';
+import { heroEyeCount, heroEyeName } from './body_parts.js';
+import { makePlural } from './object_grammar.js';
 import { monstersForgetHeroResistance, monstersObserveHeroResistance } from './monster_perception.js';
 import { hitHeroWithRay } from './hero_breath.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
@@ -626,7 +628,10 @@ async function finishMonsterRayHit(
         if (visible) {
             await publish(rayHitMessage(displayName(), monster, { x, y, state }));
             await publish(`${nameTarget()} disintegrates.`);
-            await publish(`${possessiveName(nameTarget())} body reintegrates before your eyes!`);
+            // zap.c:dobuzz() names one eye for a one-eyed hero form.
+            const eye = heroEyeName(state);
+            const eyes = heroEyeCount(state) === 1 ? eye : makePlural(eye);
+            await publish(`${possessiveName(nameTarget())} body reintegrates before your ${eyes}!`);
             await publish(`${nameTarget()} resurrects!`);
         }
         return { heroDied: false };
