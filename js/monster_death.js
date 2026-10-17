@@ -442,8 +442,6 @@ async function resolveMonsterDeath(monster, state, { deathMessage = null, sadFee
     if (recovery.survived || recovery.heroDied)
         return { monster, survived: recovery.survived, corpse: recovery.completedDeath?.corpse ?? null,
             ...(recovery.heroDied ? { heroDied: true } : {}) };
-    const x = monster.mx;
-    const y = monster.my;
     if (!recovery.completedDeath) {
         if (sadFeeling)
             await publish('You have a sad feeling for a moment, then it passes.');
@@ -465,8 +463,6 @@ async function resolveMonsterDeath(monster, state, { deathMessage = null, sadFee
             seen: canSeeMonster(monster),
             publish,
         }) : recovery.completedDeath?.corpse ?? null;
-    if (state === game)
-        newsym(x, y);
     return { monster, survived: false, corpse };
 }
 //# sourceMappingURL=monster_death.js.map

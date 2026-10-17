@@ -7,10 +7,12 @@ import { AD_MAGM } from '../js/monster_attack_types.js';
 import { finishMonsterKilled } from '../js/monster_death.js';
 import { placeMonsterAt } from '../js/monster_location.js';
 import { resumeDeferredMonsterTrap, triggerImmediateMonsterTrap } from '../js/monmove.js';
+import { MONSTER_NAME } from '../js/monster_data.js';
+import { CORPSE } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
+import { floorObject } from './support/game-objects.js';
 import { addTrap } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';
-import { freshMonsterTrapRoom } from './support/monster-traps.js';
 import { freshObjectRoom } from './support/object-room.js';
 for (const [type, name] of [[ARROW_TRAP, 'arrow'], [DART_TRAP, 'dart'], [ROCKTRAP, 'falling-rock']]) {
     for (const invisible of [false, true]) {
@@ -44,15 +46,29 @@ void test('anti-magic damage redraws a surviving monster over a known trap', asy
     assert.equal(monster.mhp, 16);
     assert.equal(glyphAt(11, 10)?.kind, 'monster');
 });
-void test('lethal anti-magic damage gives the hallucinated remains another appearance after death', async () => {
-    const appearances = [];
-    for (const killedByTrap of [false, true]) {
-        const { monster } = await freshMonsterTrapRoom(ANTI_MAGIC, {
-            room: { hero: { hallucinationTurns: 20 } },
-            monster: { species: 'baby gray dragon', hitPoints: 1 },
-            trap: { tseen: true },
+for (const killedByTrap of [false, true]) {
+    const behavior = killedByTrap
+        ? 'anti-magic trap death refreshes the first hallucinated corpse appearance once'
+        : 'ordinary monster death preserves the first hallucinated corpse appearance';
+    void test(behavior, async () => {
+        freshObjectRoom({ hero: { hallucinationTurns: 20 } });
+        await floorObject(CORPSE, 11, 10, {
+            corpsenm: MONSTER_NAME.indexOf('baby gray dragon'),
         });
+        initRng(1n);
+        newsym(11, 10);
+        // make_corpse() shows the corpse; the anti-magic trap then refreshes it.
+        if (killedByTrap)
+            newsym(11, 10);
+        const expected = glyphAt(11, 10);
+        assert.ok(expected?.kind === 'object');
+        const level = freshObjectRoom({ hero: { hallucinationTurns: 20 } });
         requirePlayingGame(game);
+        const monster = await createMonsterAt('baby gray dragon', 11, 10, NO_MINVENT);
+        monster.mhp = 1;
+        // Suppress the death announcement's hallucinated monster name.
+        monster.minvis = true;
+        addTrap(level, ANTI_MAGIC, 11, 10, { tseen: true });
         initRng(1n);
         if (killedByTrap) {
             const action = await triggerImmediateMonsterTrap(monster, game, { rollOne: () => 4 });
@@ -63,16 +79,14 @@ void test('lethal anti-magic damage gives the hallucinated remains another appea
         else {
             monster.mhp = 0;
             await finishMonsterKilled(monster, game, {
-                damageType: AD_MAGM, cause: 'compression from an anti-magic field',
+                damageType: AD_MAGM, cause: null,
                 random: () => 1, publish: async () => { },
             });
         }
         assert.equal(monster.dead, true);
         const shown = glyphAt(11, 10);
         assert.ok(shown?.kind === 'object');
-        assert.ok(shown.glyph !== undefined);
-        appearances.push(shown.glyph);
-    }
-    assert.notEqual(appearances[1], appearances[0], 'the trap refreshes the hallucinated floor pile after monkilled() finishes');
-});
+        assert.equal(shown.glyph, expected.glyph, 'death must leave the corpse with its native number of hallucinated appearances');
+    });
+}
 //# sourceMappingURL=monster_trap_redraw.test.js.map
