@@ -2,11 +2,13 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { moveloop_core } from '../js/allmain.js';
 import { findArmorClass, wearHeroArmor } from '../js/armor.js';
-import { bot, flush_screen } from '../js/display.js';
+import { rhack } from '../js/cmd.js';
+import { bot, clearMessageWindow, flush_screen, timebot } from '../js/display.js';
+import { reportHeroEncumbrance } from '../js/encumbrance.js';
 import { GameDisplay } from '../js/game_display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
-import { CLOAK_OF_PROTECTION, SPE_HASTE_SELF } from '../js/object_data.js';
+import { CLOAK_OF_PROTECTION, ROCK, SPE_HASTE_SELF } from '../js/object_data.js';
 import { getLine } from '../js/query.js';
 import { captureRunmodeDelay } from '../js/runmode.js';
 import { castSpell } from '../js/spell.js';
@@ -17,6 +19,34 @@ import { freshObjectRoom } from './support/object-room.js';
 import { freshTurnRoom } from './support/playable-room.js';
 import { requireScreenRow } from './support/screen.js';
 import { learnSpell } from './support/spells.js';
+
+for (const load of [
+    { description: 'low stamina', rocks: 120, message: "You don't have enough stamina to move." },
+    { description: 'overload', rocks: 400, message: 'You collapse under your load.' },
+]) {
+    void test(`a step blocked by ${load.description} refreshes pending status`, async () => {
+        freshObjectRoom({ flags: { time: true }, hero: { uhp: 5, uen: 1, uenmax: 1 } });
+        await addInventoryObject(ROCK, { quan: load.rocks });
+        await reportHeroEncumbrance(game);
+        clearMessageWindow();
+        await bot();
+        const { ux, uy } = game.u;
+        // Some native effects change power after their last message flush.
+        game.u.uen = 7;
+        game.u.uenmax = 11;
+        game.moves++;
+        timebot();
+        assert.match(requireScreenRow(23).map(cell => cell.ch).join(''), /Pw:1\(1\)/);
+
+        await rhack('l'.charCodeAt(0));
+        await flush_screen(1);
+
+        assert.equal(game._lastPlineMessage, load.message);
+        assert.equal(game.u.ux, ux);
+        assert.equal(game.u.uy, uy);
+        assert.match(requireScreenRow(23).map(cell => cell.ch).join(''), /Pw:7\(11\)/);
+    });
+}
 
 void test('walking run display advances the turn counter', async () => {
     freshObjectRoom({ moves: 1, flags: { time: true, runmode: 'walk' } });
