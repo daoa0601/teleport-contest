@@ -1504,7 +1504,7 @@ export async function finishHeroHelplessness(messageOverride, state = game, publ
     if (message) {
         await publish(message);
         if (Upolyd(state.u) && message.toLowerCase().startsWith('you survived that '))
-            await publish(`You are ${withIndefiniteArticle(monsterTypeName(heroSpecies(state), state.flags.female))}.`);
+            await publish(`You are ${withIndefiniteArticle(monsterTypeName(heroSpecies(state), state.u.mfemale))}.`);
     }
     state.u.usleep = 0;
     state._helplessReason = null;

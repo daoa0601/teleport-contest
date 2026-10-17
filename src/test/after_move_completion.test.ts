@@ -145,3 +145,20 @@ void test('survival recovery reminds a polymorphed hero of their current form', 
     assert.match([...messages, game._pending_message].join('\n'),
         /You survived that attempt on your life\.[\s\S]*You are a purple worm\./);
 });
+
+for (const [female, title] of [[false, 'vampire lord'], [true, 'vampire lady']] as const) {
+    void test(`survival recovery uses Ugender to name a polymorphed ${title}`, async () => {
+        const input = freshTurnRoom();
+        installPolymorphedHero('vampire leader');
+        game.flags.female = !female;
+        game.u.mfemale = female;
+        const messages: string[] = [];
+        input.beforeRead = () => { messages.push(game._pending_message); };
+        installPagerInput(input, { expected: /./, limit: 5 });
+
+        await finishHeroHelplessness('You survived that attempt on your life.');
+
+        assert.match([...messages, game._pending_message].join('\n'),
+            new RegExp(`You are a ${title}\\.`));
+    });
+}
