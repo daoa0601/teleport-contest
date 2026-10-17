@@ -1,12 +1,6 @@
-// windows.ts — Minimal tty menu and text-window rendering.
-// C refs: windows.c, wintty.c, tty.c.
-//
-// NetHack captures input while menus are visible, so modal windows must
-// render into the terminal grid before calling nhgetch().
-
-// This module deliberately contains no session-specific output.  Commands
-// provide state-derived lines and this layer handles placement, attributes,
-// pagination, cursor position, and input boundaries.
+// Native menu callers and tty text windows.
+// Menus collect their entries here; tty_menu.ts owns layout and selection.
+// C refs: windows.c and win/tty/wintty.c.
 
 import { game } from './gstate.js';
 import { nhgetch } from './input.js';
@@ -16,7 +10,7 @@ import { NO_COLOR } from './terminal.js';
 import type { GameDisplay } from './game_display.js';
 import { windowOrigin, tty_create_nhwindow, tty_start_menu,
     tty_add_menu, tty_end_menu, tty_select_menu, tty_destroy_nhwindow } from './tty_menu.js';
-import type { TextMenuLine } from './tty_menu.js';
+import type { TextMenuLine, TtyMenuWindow } from './tty_menu.js';
 export type { TextMenuLine, MenuUnderlay } from './tty_menu.js';
 export { snapshotMenuUnderlay, restoreMenuUnderlay } from './tty_menu.js';
 
@@ -99,8 +93,6 @@ interface MultiSelectWindowBaseOptions {
     title: string;
     omitHeadings?: boolean;
     introLines?: readonly string[];
-    blankAfterTitle?: boolean;
-    titleAttr?: number;
     returnCounts?: boolean;
     pickOne?: boolean;
     signalEscape?: boolean;
@@ -147,13 +139,22 @@ function clearRect(left: number, top: number, right: number, bottom: number): vo
     }
 }
 
+// C windows.c:add_menu_heading() suppresses class highlighting in disclosure.
+export function addMenuHeading<T>(window: TtyMenuWindow<T>, text: string): void {
+    tty_add_menu(window, {
+        identifier: null, text,
+        attr: game.program_state.gameover ? ATR_NONE : game.iflags.menu_headings?.attr ?? ATR_INVERSE,
+        color: game.program_state.gameover ? NO_COLOR : game.iflags.menu_headings?.color ?? NO_COLOR,
+    });
+}
+
 /**
- * Display the tty inventory menu at the right edge of the map.
+ * Build an inventory menu with the native tty window owner.
  * Items carry their displayed text and selector.
  * Return a selected key/count, Escape, or key 0 for an unselected dismissal.
  */
 export async function showInventoryWindow<T = never>(sections: readonly InventorySection<T>[], {
-    pickMode = PICK_NONE, headingAttr = ATR_INVERSE, title = null, preselectedKey = null,
+    pickMode = PICK_NONE, headingAttr, title = null, preselectedKey = null,
 }: InventoryWindowOptions = {}): Promise<InventorySelection<T>> {
     if (!display()) return { key: 27, count: null };
     const window = tty_create_nhwindow<InventoryMenuItem<T>>(NHW_MENU);
@@ -161,7 +162,10 @@ export async function showInventoryWindow<T = never>(sections: readonly Inventor
         await tty_start_menu(window);
         for (const section of sections) {
             if (!section.items.length) continue;
-            if (section.heading != null) tty_add_menu(window, { identifier: null, text: section.heading, attr: headingAttr });
+            if (section.heading != null) {
+                if (headingAttr === undefined) addMenuHeading(window, section.heading);
+                else tty_add_menu(window, { identifier: null, text: section.heading, attr: headingAttr });
+            }
             for (const item of section.items) tty_add_menu(window, {
                 identifier: item.key || item.value !== undefined ? item : null,
                 text: item.text, attr: item.attr ?? ATR_NONE,
@@ -346,23 +350,19 @@ export function showMultiSelectWindow<T>(options: MultiSelectWindowOptions<T> & 
 }): Promise<T[] | CountedSelection<T>[]>;
 export function showMultiSelectWindow<T>(options: MultiSelectWindowOptions<T>): Promise<T[] | CountedSelection<T>[] | null>;
 export async function showMultiSelectWindow<T>({
-    title, sections, omitHeadings = false, introLines = [], blankAfterTitle = true,
-    pageLocalKeys = false, titleAttr = ATR_INVERSE, returnCounts = false, pickOne = false, signalEscape = false,
+    title, sections, omitHeadings = false, introLines = [],
+    pageLocalKeys = false, returnCounts = false, pickOne = false, signalEscape = false,
 }: MultiSelectWindowOptions<T>): Promise<T[] | CountedSelection<T>[] | null> {
     if (!display()) return [];
     const window = tty_create_nhwindow<PageLocalMenuItem<T>>(NHW_MENU);
     try {
         await tty_start_menu(window);
-        if (title) {
-            tty_add_menu(window, { identifier: null, text: title, attr: titleAttr });
-            if (blankAfterTitle) tty_add_menu(window, { identifier: null, text: '' });
-        }
         for (const text of introLines) tty_add_menu(window, { identifier: null, text });
         for (const section of sections) {
             if (!section.items.length) continue;
             if (!omitHeadings) {
                 if (section.heading == null) throw new TypeError('A visible menu section requires a heading');
-                tty_add_menu(window, { identifier: null, text: section.heading, attr: ATR_INVERSE });
+                addMenuHeading(window, section.heading);
             }
             for (const item of section.items) {
                 if (item.selectable === false) {
@@ -377,7 +377,7 @@ export async function showMultiSelectWindow<T>({
                     ...(item.groupAccelerator ? { group: item.groupAccelerator } : {}), itemflags: item.itemFlags ?? 0 });
             }
         }
-        tty_end_menu(window);
+        tty_end_menu(window, title || null);
         const result = await tty_select_menu(window, pickOne ? PICK_ONE : PICK_ANY);
         if (result.cancelled) return signalEscape ? null : [];
         return returnCounts ? result.selections.map(selection => ({ value: selection.identifier.value, count: selection.count }))

@@ -15,8 +15,7 @@ import {
     tty_select_menu, tty_start_menu,
 } from './tty_menu.js';
 import type { GameObject } from './object_types.js';
-import { ATR_INVERSE, showTextPages } from './windows.js';
-import { NO_COLOR } from './terminal.js';
+import { ATR_INVERSE, addMenuHeading, showTextPages } from './windows.js';
 import {
     FLINT,
     MAGIC_HARP,
@@ -221,11 +220,7 @@ export async function renameDiscoveredType(): Promise<void> {
                 discoveries++;
                 if (!objectTypeIsCallable({ otyp: type, oclass })) continue;
                 if (!heading) {
-                    tty_add_menu(window, {
-                        identifier: null, text: OBJECT_CLASS_LABELS[oclass] ?? 'Objects',
-                        attr: game.program_state.gameover ? 0 : game.iflags.menu_headings?.attr ?? ATR_INVERSE,
-                        color: game.program_state.gameover ? NO_COLOR : game.iflags.menu_headings?.color ?? NO_COLOR,
-                    });
+                    addMenuHeading(window, OBJECT_CLASS_LABELS[oclass] ?? 'Objects');
                     heading = true;
                 }
                 nameable++;

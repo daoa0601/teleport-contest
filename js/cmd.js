@@ -180,7 +180,7 @@ import { dosearch, findit } from './detect.js';
 import { detectMonsters } from './magic_detection.js';
 import { abusePetAfterHeroHit } from './dog.js';
 import { continueWipingFace, donull, dowipe, threateningMonsterNearby, } from './do.js';
-import { ATR_INVERSE, ATR_NONE, showChoiceWindow, showMultiSelectWindow, showDisclosureOverlay, showPagedPickOneMenu, showTextMenuOverlay, showTextPages, restoreMenuUnderlay, snapshotMenuUnderlay, } from './windows.js';
+import { ATR_INVERSE, ATR_NONE, addMenuHeading, showChoiceWindow, showMultiSelectWindow, showDisclosureOverlay, showPagedPickOneMenu, showTextMenuOverlay, showTextPages, restoreMenuUnderlay, snapshotMenuUnderlay, } from './windows.js';
 import { d, rnd, rn2, rn2Display, rnl, } from './rng.js';
 import { landObjectOnAltar } from './altar_object.js';
 import { landFloorObject } from './floor_effects.js';
@@ -254,7 +254,7 @@ import { triggerBoobyTrap } from './booby_trap.js';
 import { addShopDamage, payForShopDamage } from './shop_damage.js';
 import { convertSecretDoor } from './detect.js';
 import { roomForRoomno, roomsAt } from './room.js';
-import { learnObjectType, objectClassForType, recordObjectCall, recordObjectEncounter, recordObjectKnowledge, } from './object_knowledge.js';
+import { learnObjectType, objectClassForType, recordObjectCall, recordObjectEncounter, recordObjectKnowledge, OBJECT_CLASS_SYMBOLS, } from './object_knowledge.js';
 import { exceedsActionCapacity, nearCapacity, OVERLOADED, SLT_ENCUMBER, } from './weight.js';
 import { makeWish } from './wish.js';
 import { dopray } from './pray.js';
@@ -4196,7 +4196,7 @@ async function doDungeonOverview() {
     const annotate = game.iflags.menu_requested;
     game.iflags.menu_requested = false;
     const window = tty_create_nhwindow(NHW_MENU);
-    const addLine = (text, location = null, attr = 0) => tty_add_menu(window, { text, identifier: location, attr });
+    const addLine = (text, location = null) => tty_add_menu(window, { text, identifier: location });
     try {
         await tty_start_menu(window);
         const visited = [...visitedDungeonLevels().entries()]
@@ -4208,7 +4208,7 @@ async function doDungeonOverview() {
                 .filter(dlevel => annotate || overviewLevelIsInteresting(dnum, dlevel));
             if (!levels.length || !game.dungeons?.[dnum])
                 continue;
-            addLine(dungeonOverviewHeading(dnum), null, ATR_INVERSE);
+            addMenuHeading(window, dungeonOverviewHeading(dnum));
             for (const dlevel of levels) {
                 const annotation = game._levelAnnotations?.get?.(`${dnum}:${dlevel}`);
                 const record = game._overviewRecords?.get?.(`${dnum}:${dlevel}`);
@@ -4370,9 +4370,12 @@ async function wizIdentify() {
                 ? 'it' : 'any or all of them'} to permanently identify${unidentified.length === 1 ? '' : ` (${visibleCommandKey(allKey)} for all)`}`,
         });
         for (const section of sections) {
-            tty_add_menu(window, { identifier: null, text: section.heading, attr: ATR_INVERSE });
+            addMenuHeading(window, section.heading);
             for (const item of section.items)
-                tty_add_menu(window, { identifier: item.value, selector: item.key, text: item.text });
+                tty_add_menu(window, {
+                    identifier: item.value, selector: item.key,
+                    group: OBJECT_CLASS_SYMBOLS[item.value.oclass] ?? '', text: item.text,
+                });
         }
         tty_end_menu(window);
         const result = await tty_select_menu(window, PICK_ANY);

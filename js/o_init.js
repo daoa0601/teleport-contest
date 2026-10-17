@@ -10,8 +10,7 @@ import { bot, docrt, flush_screen, plineWithContinuation } from './display.js';
 import { NHW_MENU, PICK_ONE } from './const.js';
 import { callObjectType, objectTypeIsCallable } from './object_call.js';
 import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu, } from './tty_menu.js';
-import { ATR_INVERSE, showTextPages } from './windows.js';
-import { NO_COLOR } from './terminal.js';
+import { ATR_INVERSE, addMenuHeading, showTextPages } from './windows.js';
 import { FLINT, MAGIC_HARP, WOODEN_HARP, SPE_NOVEL, OBJECT_COLOR, OBJECT_DESCRIPTIONS, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_TOUGH, OBJECT_INITIAL_KNOWN, OBJECT_USES_KNOWN, OBJECT_UNIQUE, requireObjectData, } from './object_data.js';
 import { OBJECT_CLASS_LABELS, objectClassForType, priceQuoteSuffix, } from './object_knowledge.js';
 import { japaneseItemName } from './objnam.js';
@@ -190,11 +189,7 @@ export async function renameDiscoveredType() {
                 if (!objectTypeIsCallable({ otyp: type, oclass }))
                     continue;
                 if (!heading) {
-                    tty_add_menu(window, {
-                        identifier: null, text: OBJECT_CLASS_LABELS[oclass] ?? 'Objects',
-                        attr: game.program_state.gameover ? 0 : game.iflags.menu_headings?.attr ?? ATR_INVERSE,
-                        color: game.program_state.gameover ? NO_COLOR : game.iflags.menu_headings?.color ?? NO_COLOR,
-                    });
+                    addMenuHeading(window, OBJECT_CLASS_LABELS[oclass] ?? 'Objects');
                     heading = true;
                 }
                 nameable++;
