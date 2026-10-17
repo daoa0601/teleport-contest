@@ -9,9 +9,6 @@ import { makePlural } from './object_grammar.js';
 import { monsterTrapVisibility, seeTrap } from './trap.js';
 import { monsterInAir } from './terrain_properties.js';
 import { monsterName } from './monster_name.js';
-function sentenceObject(subject) {
-    return subject.startsWith('The ') ? `the ${subject.slice(4)}` : subject;
-}
 function possessive(subject) {
     return /s$/iu.test(subject) ? `${subject}'` : `${subject}'s`;
 }
@@ -27,7 +24,7 @@ export function beginMonsterVibratingSquare(monster, trap, state = game) {
         ...visibility,
     };
 }
-export async function finishMonsterVibratingSquare(monster, event, { state = game, publish = async () => { }, describeMonster = target => monsterName(target, { state, capitalized: true }), } = {}) {
+export async function finishMonsterVibratingSquare(monster, event, { state = game, publish = async () => { }, describeMonster = target => monsterName(target, { state }), } = {}) {
     if (!event || event.finished)
         return event;
     seeTrap(event.trap, state);
@@ -35,7 +32,7 @@ export async function finishMonsterVibratingSquare(monster, event, { state = gam
         await publish(formatSeenMessage(`the ground vibrate ${event.nearby ? 'nearby' : 'in the distance'}.`));
     }
     else {
-        const subject = sentenceObject(describeMonster(monster));
+        const subject = describeMonster(monster);
         const location = event.wholeBody
             ? subject
             : `${possessive(subject)} ${makePlural(monsterFootName(monster.mnum).replace(/^rear /u, ''))}`;

@@ -21,8 +21,8 @@ import { BOULDER, OBJECT_NAMES, POT_OIL } from './object_data.js';
 import { makePlural } from './object_grammar.js';
 import { shipObject } from './object_migration.js';
 import { objectResistsDestruction } from './object_state.js';
+import { definiteObjectAction } from './objnam.js';
 import { applyBoulderPitEffects } from './pit_fill.js';
-import { potionImpactObjectName } from './potion_hit.js';
 import { rnl, rn2 } from './rng.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
 import { destroyLavaFloorObjects, waterDamageObject } from './trap.js';
@@ -62,14 +62,6 @@ async function publishAll(messages: readonly string[], publish: MessagePublisher
     for (const message of messages) await publish(message);
 }
 
-function potionLandingSubject(object: GameObject, state: GameState): string {
-    const quantity = object.quan ?? object.quantity ?? 1;
-    const name = potionImpactObjectName(object, state);
-    return quantity === 1
-        ? `The ${name}`
-        : `The ${quantity} ${makePlural(name)}`;
-}
-
 async function breakPotionOnHotGround(
     object: GameObject, x: number, y: number, state: GameState,
     publish: MessagePublisher, random: typeof rn2, luckRoll: typeof rnl,
@@ -78,9 +70,8 @@ async function breakPotionOnHotGround(
     const quantity = object.quan ?? object.quantity ?? 1;
     if (visible) {
         const singular = quantity === 1;
-        await publish(`${potionLandingSubject(object, state)} ${
-            singular ? 'heats' : 'heat'
-        } up as ${singular ? 'it hits' : 'they hit'} the hot ground.`);
+        await publish(`${definiteObjectAction(object, 'heat', state)} up as ${
+            singular ? 'it hits' : 'they hit'} the hot ground.`);
     }
 
     let survivalChance = object.blessed ? 70 : 50;

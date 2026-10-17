@@ -67,9 +67,11 @@ export async function applyMonsterGolemEffects(monster, damageType, damage, { st
         return;
     if (slow && monster.mspeed !== MSLOW) {
         const change = adjustMonsterSpeed(monster, -1);
-        const message = monsterSpeedMessage(change, monsterSentenceSubject(monster));
-        if (message && !state.in_mklev && canSeeMonster(monster))
-            await publish(message);
+        if (!state.in_mklev && change.changed && change.canDescribe && canSeeMonster(monster)) {
+            const message = monsterSpeedMessage(change, monsterSentenceSubject(monster), state);
+            if (message)
+                await publish(message);
+        }
     }
     if (healing && healMonster(monster, healing) && cansee(monster.mx, monster.my))
         await publish(`${monsterSentenceSubject(monster)} seems healthier.`);

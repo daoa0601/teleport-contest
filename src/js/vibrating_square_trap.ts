@@ -31,10 +31,6 @@ interface FinishTrapOptions {
     describeMonster?: (monster: Monster) => string;
 }
 
-function sentenceObject(subject: string) {
-    return subject.startsWith('The ') ? `the ${subject.slice(4)}` : subject;
-}
-
 function possessive(subject: string) {
     return /s$/iu.test(subject) ? `${subject}'` : `${subject}'s`;
 }
@@ -63,7 +59,7 @@ export async function finishMonsterVibratingSquare(
     {
         state = game,
         publish = async () => {},
-        describeMonster = target => monsterName(target, { state, capitalized: true }),
+        describeMonster = target => monsterName(target, { state }),
     }: FinishTrapOptions = {},
 ) {
     if (!event || event.finished) return event;
@@ -72,7 +68,7 @@ export async function finishMonsterVibratingSquare(
     if (!event.inSight) {
         await publish(formatSeenMessage(`the ground vibrate ${event.nearby ? 'nearby' : 'in the distance'}.`));
     } else {
-        const subject = sentenceObject(describeMonster(monster));
+        const subject = describeMonster(monster);
         const location = event.wholeBody
             ? subject
             : `${possessive(subject)} ${makePlural(

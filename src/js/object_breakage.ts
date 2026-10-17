@@ -1,4 +1,5 @@
 import { changeHeroLuck } from './attrib.js';
+import { armorSimpleName } from './armor.js';
 // Object breakage and its immediate effects.
 // C refs: dothrow.c breaktest(), hero_breaks(), and breakobj().
 
@@ -120,11 +121,12 @@ async function publishBreakMessage(object: GameObject, visible: boolean, publish
 }
 
 async function crackGlassArmor(
-    object: GameObject, visible: boolean, publish: MessagePublisher, luckRandom: typeof rnl,
+    object: GameObject, x: number, y: number, publish: MessagePublisher, luckRandom: typeof rnl,
     state: GameState,
 ) {
     const result = await erodeObject(object, 'crack', {
-        state, publish: visible ? publish : () => {}, luckRandom, destroy: true,
+        state, publish, luckRandom, destroy: true, grease: false, verbose: true,
+        position: { x, y }, displayName: armorSimpleName(object, state),
     });
     return result === 'destroyed';
 }
@@ -219,7 +221,7 @@ export async function breakObjectAtLocation(object: GameObject, {
         && OBJECT_MATERIAL[object.otyp] === GLASS;
     if (glassArmor) {
         const destroyed = await crackGlassArmor(
-            object, visible, publish, luckRandom, state,
+            object, x, y, publish, luckRandom, state,
         );
         if (destroyed) newsym(x, y);
         return { destroyed, observed: destroyed && (visible || audible) };

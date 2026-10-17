@@ -6,11 +6,12 @@ import { beginMonsterBearTrap, finishMonsterBearTrap } from '../js/bear_trap.js'
 import { heroBlindingObjectHitMessage } from '../js/blinding_attack.js';
 import { finishGhostlyPickup } from '../js/bones_object.js';
 import { triggerChestTrap } from '../js/chest_trap.js';
-import { ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, DBWALL, DB_MOAT, DB_NORTH, DRAWBRIDGE_UP, PIT, ROCKTRAP, SLP_GAS_TRAP, VIBRATING_SQUARE, WEB, } from '../js/const.js';
+import { ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, DBWALL, DB_MOAT, DB_NORTH, DRAWBRIDGE_UP, MSLOW, PIT, ROCKTRAP, SLP_GAS_TRAP, VIBRATING_SQUARE, WEB, } from '../js/const.js';
 import { useContainer } from '../js/container.js';
 import { reviveCorpseImmediately } from '../js/corpse_revival.js';
 import { openDrawbridge } from '../js/dbridge.js';
 import { fireDamageObject } from '../js/fire_damage.js';
+import { landFloorObject } from '../js/floor_effects.js';
 import { announceGlobMerge } from '../js/glob.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { restartAmuletStrangulation } from '../js/hero_strangulation.js';
@@ -18,8 +19,11 @@ import { pushKeys } from '../js/input.js';
 import { liftObject } from '../js/lift_object.js';
 import { lightRoom, lightWieldedArtifact } from '../js/light.js';
 import { probeObject } from '../js/magic_probe.js';
+import { applyMonsterGolemEffects } from '../js/mon.js';
+import { AD_COLD, AD_FIRE } from '../js/monster_attack_types.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { setMonsterGivenName } from '../js/monster_given_name.js';
+import { monsterName } from '../js/monster_name.js';
 import { hurtleMonster } from '../js/monster_hurtle.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { tryKickReel } from '../js/monster_kick.js';
@@ -58,13 +62,78 @@ void test('fire damage describes an unidentified potion by its appearance and pe
     });
     assert.equal(messages[0], 'The pink potion named Emergency boils and explodes.');
 });
-void test('cracking crystal armor retains its personal name', async () => {
+void test('cracking crystal armor uses its simple armor name', async () => {
     freshObjectRoom();
     const armor = await floorObject(OBJECT_NAMES.indexOf('crystal plate mail'), 11, 10, { oextra: { oname: 'Prism' } });
     const messages = [];
     await breakFloorObject(armor, { random: () => 99, publish: text => { messages.push(text); } });
-    assert.equal(messages[0], 'The crystal plate mail named Prism cracks!');
+    assert.equal(messages[0], 'The mail cracks!');
 });
+void test('grease does not protect crystal armor from impact', async () => {
+    freshObjectRoom();
+    const armor = await addInventoryObject(OBJECT_NAMES.indexOf('crystal plate mail'), { greased: true });
+    const messages = [];
+    await breakFloorObject(armor, { fromInventory: true, random: () => 99,
+        publish: text => { messages.push(text); } });
+    assert.equal(armor.oeroded, 1);
+    assert.equal(armor.greased, true);
+    assert.equal(messages[0], 'Your mail cracks!');
+});
+void test('crystal armor cracks visibly at its impact square rather than its old position', async () => {
+    freshObjectRoom();
+    const armor = await knownObject(OBJECT_NAMES.indexOf('crystal plate mail'), { ox: 50, oy: 18 });
+    const messages = [];
+    await breakFloorObject(armor, { x: 11, y: 10, random: () => 99,
+        publish: text => { messages.push(text); } });
+    assert.equal(armor.oeroded, 1);
+    assert.equal(messages[0], 'The mail cracks!');
+});
+void test('blessed crystal armor reports protection from impact', async () => {
+    freshObjectRoom();
+    const armor = await floorObject(OBJECT_NAMES.indexOf('crystal plate mail'), 11, 10, { blessed: true });
+    const messages = [];
+    await breakFloorObject(armor, { random: () => 99, luckRandom: () => 0,
+        publish: text => { messages.push(text); } });
+    assert.equal(armor.oeroded ?? 0, 0);
+    assert.equal(messages[0], 'Somehow, the mail is not affected by the impact.');
+});
+void test('a potion stack heats up with one plural noun and no stack count', async () => {
+    const level = freshObjectRoom();
+    level.flags.temperature = 1;
+    const potions = await knownObject(POT_HEALING, { quan: 2, typeKnown: true });
+    const messages = [];
+    await landFloorObject(potions, 11, 10, { random: () => 0,
+        publish: text => { messages.push(text); } });
+    assert.equal(messages[0], 'The potions of healing heat up as they hit the hot ground.');
+});
+for (const condition of ['frozen', 'sleeping', 'unseen', 'level creation']) {
+    void test(`silent slowing of a ${condition} golem preserves the next hallucinated message`, async () => {
+        freshObjectRoom();
+        requirePlayingGame(game);
+        const fleshGolem = await createMonsterAt('flesh golem', 11, 10);
+        const ironGolem = await createMonsterAt('iron golem', 10, 11);
+        if (condition === 'frozen')
+            fleshGolem.mfrozen = 10;
+        if (condition === 'sleeping')
+            fleshGolem.msleeping = 1;
+        if (condition === 'unseen')
+            fleshGolem.minvis = true;
+        ironGolem.mhp = ironGolem.mhpmax - 5;
+        game.u.hallucinationTurns = 20;
+        initRng(123n);
+        const expectedName = monsterName(ironGolem, { capitalized: true });
+        initRng(123n);
+        game.in_mklev = condition === 'level creation';
+        const messages = [];
+        const publish = (text) => { messages.push(text); };
+        await applyMonsterGolemEffects(fleshGolem, AD_COLD, 6, { publish });
+        game.in_mklev = false;
+        await applyMonsterGolemEffects(ironGolem, AD_FIRE, 2, { publish });
+        assert.equal(fleshGolem.mspeed, MSLOW);
+        assert.equal(messages.length, 1);
+        assert.equal(messages[0], `${expectedName} seems healthier.`);
+    });
+}
 void test('a swallowed corpse stack is described without its species when digested', async () => {
     freshObjectRoom();
     requirePlayingGame(game);
@@ -303,11 +372,11 @@ void test('a bear trap retains the invisibility of a seen troll', async () => {
 });
 void test('vibrations beneath a named ghost retain the ghost species name', async () => {
     const { monster, trap } = await freshMonsterTrapRoom(VIBRATING_SQUARE, { monster: { species: 'ghost' } });
-    setMonsterGivenName(monster, 'James');
+    setMonsterGivenName(monster, 'james');
     const event = beginMonsterVibratingSquare(monster, trap);
     const messages = [];
     await finishMonsterVibratingSquare(monster, event, { publish: text => { messages.push(text); } });
-    assert.equal(messages[0], "You see a strange vibration beneath James' ghost.");
+    assert.equal(messages[0], "You see a strange vibration beneath james' ghost.");
 });
 void test('a named ghost carrying a reviving corpse retains its species name', async () => {
     freshObjectRoom();
