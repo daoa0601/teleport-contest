@@ -17,7 +17,7 @@ void test('the Staff reports slight relief when it cures a timeout but permanent
     await invokeInventoryObject(staff, ' '.repeat(20));
     assert.equal(game.u.blindTurns, 0);
     assert.equal(heroIsBlind(game), true);
-    assert.equal(game._pending_message, 'You feel slightly better.');
+    assert.equal(game._pending_message, 'You feel better.  You feel slightly better.');
     assert.equal(game.context.move, 1);
 });
 for (const cream of [0, 2]) {

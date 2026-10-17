@@ -20,7 +20,7 @@ void test('the Staff reports slight relief when it cures a timeout but permanent
 
     assert.equal(game.u.blindTurns, 0);
     assert.equal(heroIsBlind(game), true);
-    assert.equal(game._pending_message, 'You feel slightly better.');
+    assert.equal(game._pending_message, 'You feel better.  You feel slightly better.');
     assert.equal(game.context.move, 1);
 });
 

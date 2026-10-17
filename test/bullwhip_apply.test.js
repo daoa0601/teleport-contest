@@ -68,7 +68,7 @@ void test('a proficient bullwhip can pull the hero from a pit toward a boulder',
     game.u.utraptype = TT_PIT;
     await floorObject(BOULDER, 11, 10);
     initRng(7103n);
-    await applyInventoryObject(whip, 'l');
+    await applyInventoryObject(whip, 'l ');
     assert.equal(game.u.utrap, 0);
     assert.deepEqual([game.u.ux, game.u.uy], [11, 10]);
     assert.equal(game.context.move, 1);

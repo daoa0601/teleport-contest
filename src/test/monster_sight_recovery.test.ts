@@ -29,7 +29,7 @@ for (const blind of [false, true]) {
         };
 
         await lifeSaveMonster(monster, amulet, {
-            continueLine: publish, page: publish, line: publish,
+            continueLine: publish, line: publish,
         });
 
         assert.ok(monster.mhp > 0);

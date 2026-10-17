@@ -267,13 +267,15 @@ void test('a sphere burns a shop door with a free repair record and no hero char
     assert.equal(game.level.requireAt(12, 9).doormask, D_NODOOR);
     assert.equal(shopkeeper.eshk.debit, 0);
     assert.ok(shopkeeper.mpeaceful);
+    const repairProse = /^$|door|repairs|damage|Shopkeeper whispers an incantation/i;
+    installPagerInput(input, { expected: repairProse, limit: 6 });
     for (let turn = 0; turn < 6; turn++) {
         input.feed('m.');
         await finishAtCommandInput(input, async () => {
             await moveloop_core();
             await moveloop_core();
             await flushPendingTopline();
-        }, /^(?:$)|door|repairs|damage/i);
+        }, repairProse);
     }
     assert.equal(game.level.requireAt(12, 9).doormask, D_CLOSED);
     assert.equal(shopkeeper.eshk.debit, 0);

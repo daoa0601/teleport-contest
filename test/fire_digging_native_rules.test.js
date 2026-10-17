@@ -51,7 +51,7 @@ void test('an Earth cave-in leaves a wall-walking xorn inside the new rock', { t
     if (boundary === 'prompt') {
         const display = requireGameDisplay();
         const prompt = Array.from({ length: display.cols }, (_, column) => display.getChar(column + 1, 1)).join('');
-        assert.match(prompt, /^You hit the rock with all your might\.\s*--More--/);
+        assert.match(prompt, /^You start digging\.  You hit the rock with all your might\.\s*--More--/);
         input.feed(' ');
     }
     await digging;

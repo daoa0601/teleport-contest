@@ -51,7 +51,7 @@ void test('invoking Sunsword upward lights only the hero map square', async () =
     await invokeInventoryObject(sword, '<' + ' '.repeat(20));
     assert.equal(level.requireAt(game.u.ux, game.u.uy).lit, true);
     assert.equal(level.requireAt(game.u.ux + 1, game.u.uy).lit, false);
-    assert.equal(game._pending_message, 'It is lit here now.');
+    assert.equal(game._pending_message, 'A lit field surrounds you!  It is lit here now.');
     assert.equal(game.context.move, 1);
 });
 //# sourceMappingURL=artifact_invoke_ray.test.js.map

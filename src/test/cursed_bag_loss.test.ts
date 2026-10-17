@@ -39,7 +39,7 @@ void test('losing unpaid contents from a carried cursed bag adds shop debt and c
     assert.ok(price && price > 0);
     initRng(17n);
 
-    await applyInventoryObject(bag, '  q');
+    await applyInventoryObject(bag, '   q');
 
     assert.equal(club.where, 'gone');
     assert.equal(shopkeeper.eshk.debit, price);

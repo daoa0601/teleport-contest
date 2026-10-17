@@ -7,9 +7,12 @@ import { D_BROKEN, D_CLOSED, D_NODOOR, DIGTYP_BOULDER, DIGTYP_DOOR, DIGTYP_ROCK,
 import { continueHeroDigging, diggingTarget, mayDig, startHeroDigging, } from '../js/hero_digging.js';
 import { requireGameLevel, game } from '../js/gstate.js';
 import { initRng } from '../js/rng.js';
+import { resetInputState } from '../js/input.js';
 import { copyPersistentState } from '../js/state_schema.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { freshGameplayRoom } from './support/playable-room.js';
+import { installPagerInput } from './support/pager-input.js';
+const DIGGING_PROSE = /You start (?:digging|chipping|hitting|chopping)|You hit the .* with all your might/;
 async function wieldTool(otyp, overrides = {}) {
     const weapon = await addInventoryObject(otyp, {
         invlet: 'a',
@@ -31,6 +34,7 @@ function setTerrain(x, y, properties) {
         location.doormask = properties.doormask;
 }
 async function digUntilDone(tool, x, y, { down = false, seed = 5n } = {}) {
+    installPagerInput(resetInputState(), { expected: DIGGING_PROSE, limit: 2 });
     initRng(seed);
     const started = await startHeroDigging(tool, x, y, { down, state: game });
     let continuing = true;
@@ -80,12 +84,13 @@ void test('a pick-axe opens a wall into a doorway', async () => {
     assert.equal(game._pending_message, 'You start digging.');
     const continuing = await continueHeroDigging(game);
     assert.equal(continuing, true);
-    assert.equal(game._pending_message, 'You hit the rock with all your might.');
+    assert.equal(game._pending_message, 'You start digging.  You hit the rock with all your might.');
     assert.ok(game.context.digging != null);
     assert.equal(game.context.digging.pos.x, 11);
     assert.ok(game.context.digging != null);
     assert.equal(game.context.digging.pos.y, 10);
     let digging = true;
+    installPagerInput(resetInputState(), { expected: DIGGING_PROSE, limit: 2 });
     while (digging)
         digging = await continueHeroDigging(game);
     const cell = game.level.requireAt(11, 10);
@@ -115,7 +120,7 @@ void test('a secret door breaks open as a broken door', async () => {
     const cell = game.level.requireAt(11, 10);
     assert.equal(cell.typ, DOOR);
     assert.equal(cell.doormask, D_BROKEN);
-    assert.equal(game._pending_message, 'You break through a secret door!');
+    assert.match(game._pending_message, /You break through a secret door!$/);
 });
 void test('a closed door breaks open with the wielded tool named', async () => {
     freshGameplayRoom();
@@ -125,7 +130,7 @@ void test('a closed door breaks open with the wielded tool named', async () => {
     await digUntilDone(axe, 11, 10);
     const cell = game.level.requireAt(11, 10);
     assert.equal(cell.doormask, D_BROKEN);
-    assert.equal(game._pending_message, 'You break through the door with your axe.');
+    assert.match(game._pending_message, /You break through the door with your axe\.$/);
 });
 void test('a pick-axe shatters a statue into a rock pile', async () => {
     freshGameplayRoom();
@@ -137,6 +142,7 @@ void test('a pick-axe shatters a statue into a rock pile', async () => {
     await startHeroDigging(pick, 11, 10, { state: game });
     assert.equal(game._pending_message, 'You start chipping the statue.');
     let digging = true;
+    installPagerInput(resetInputState(), { expected: DIGGING_PROSE, limit: 2 });
     while (digging)
         digging = await continueHeroDigging(game);
     // fracture_rock converts the statue object itself into a rock stack.
@@ -147,7 +153,7 @@ void test('a pick-axe shatters a statue into a rock pile', async () => {
     const rubble = rocks[0];
     assert.ok(rubble);
     assert.ok(rubble.quan >= 7 && rubble.quan <= 66);
-    assert.equal(game._pending_message, 'The statue shatters.');
+    assert.match(game._pending_message, /The statue shatters\.$/);
 });
 void test('a pick-axe breaks a boulder apart', async () => {
     freshGameplayRoom();
@@ -159,7 +165,7 @@ void test('a pick-axe breaks a boulder apart', async () => {
     const pile = floorObjectsAt(requireGameLevel(game), 11, 10);
     assert.equal(pile.some(object => object.otyp === BOULDER), false);
     assert.ok(pile.some(object => object.otyp === ROCK));
-    assert.equal(game._pending_message, 'The boulder falls apart.');
+    assert.match(game._pending_message, /The boulder falls apart\.$/);
 });
 void test('a mattock classifies as a pick for target checks', async () => {
     freshGameplayRoom();
@@ -176,7 +182,7 @@ void test('an axe cannot dig a petrified tree', async () => {
     await startHeroDigging(axe, 11, 10, { state: game });
     const continuing = await continueHeroDigging(game);
     assert.equal(continuing, false);
-    assert.equal(game._pending_message, 'This tree seems to be petrified.');
+    assert.match(game._pending_message, /This tree seems to be petrified\.$/);
     assert.equal(game.level.requireAt(11, 10).typ, TREE);
 });
 void test('a clumsy hero drops the pick-axe instead of digging', async () => {
@@ -189,7 +195,7 @@ void test('a clumsy hero drops the pick-axe instead of digging', async () => {
     await startHeroDigging(pick, 11, 10, { state: game });
     const continuing = await continueHeroDigging(game);
     assert.equal(continuing, false);
-    assert.equal(game._pending_message, 'You fumble and drop your pick-axe.');
+    assert.match(game._pending_message, /You fumble and drop your pick-axe\.$/);
     assert.equal(game.uwep, null);
     assert.equal(game.u.uwep, null);
     assert.equal((game.inventory || []).includes(pick), false);

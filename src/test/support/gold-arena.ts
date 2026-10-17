@@ -128,9 +128,10 @@ export async function readyGold() {
     await rhack('Q'.charCodeAt(0));
 }
 
-export async function throwGold(direction = 'l') {
+export async function throwGold(direction = 'l', dismissKeys = '') {
     pushKey('$');
     pushKey(direction);
+    pushKeys(dismissKeys);
     await rhack('t'.charCodeAt(0));
 }
 

@@ -17,6 +17,7 @@ import { addInventoryObject, floorObject, knownObject, corpseObject, } from './s
 import { freshGameplayRoom } from './support/playable-room.js';
 import { answerPrompts } from './support/input-boundaries.js';
 import { createStaffedShop } from './support/shop.js';
+import { withMessagePages } from './support/planned-input.js';
 void test('a blade can break while prying a chest lock', async () => {
     freshGameplayRoom();
     requireFixtureGame(game);
@@ -36,10 +37,10 @@ void test('a blade can break while prying a chest lock', async () => {
     initRng(46n);
     pushKeys('force\ny');
     await rhack('#'.charCodeAt(0));
-    await continueCountedCommand(game);
+    await withMessagePages(() => continueCountedCommand(game), resetInputState(), /Your dagger broke!$/, 1);
     assert.equal(game.inventory.includes(dagger), false);
     assert.equal(game.uwep, null);
-    assert.match(game._pending_message, /Your dagger broke!.*give up/);
+    assert.equal(game._pending_message, 'You give up your attempt to force the lock.');
 });
 void test('prying with stacked daggers reports one broken dagger and keeps the rest wielded', async () => {
     freshGameplayRoom();
@@ -54,6 +55,7 @@ void test('prying with stacked daggers reports one broken dagger and keeps the r
     pushKeys('force\ny');
     await rhack('#'.charCodeAt(0));
     await answerPrompts(continueCountedCommand(game), input, [
+        { prompt: /You force your daggers into a crack and pry\..*--More--/, keys: ' ' },
         { prompt: /One of your daggers broke!.*--More--/, keys: ' ' },
     ]);
     assert.equal(game._pending_message, 'You give up your attempt to force the lock.');

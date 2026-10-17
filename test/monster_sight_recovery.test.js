@@ -27,7 +27,7 @@ for (const blind of [false, true]) {
             messages.push(message);
         };
         await lifeSaveMonster(monster, amulet, {
-            continueLine: publish, page: publish, line: publish,
+            continueLine: publish, line: publish,
         });
         assert.ok(monster.mhp > 0);
         assert.equal(amulet.where, 'gone');
