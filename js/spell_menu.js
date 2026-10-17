@@ -1,13 +1,14 @@
 // Native spell.c:getspell(), dovspell(), dospellmenu(), sortspells(), and
 // spellretention(). Display sorting changes letters only when explicitly kept.
-import { MENU_TRADITIONAL, PICK_NONE, PICK_ONE, P_BASIC, P_EXPERT, P_SKILLED, } from './const.js';
+import { MENU_TRADITIONAL, NHW_MENU, PICK_NONE, PICK_ONE, P_BASIC, P_EXPERT, P_SKILLED, } from './const.js';
 import { flushPendingTopline, plineWithContinuation } from './display.js';
 import { game, requireLiveGame } from './gstate.js';
-import { OBJECT_NAMES, OBJECT_SPELL_CATEGORY, OBJECT_SPELL_LEVEL } from './object_data.js';
+import { OBJECT_NAMES, OBJECT_SPELL_CATEGORY, OBJECT_SPELL_LEVEL, SPE_BLANK_PAPER, SPE_DIG } from './object_data.js';
 import { currentSpellKnowledge, liveSpellSkill, percentSuccess, rejectCasting, spellSkillType, } from './spell_casting_rules.js';
 import { rememberCommandKey, takeRepeatCommand } from './command_repeat.js';
 import { promptKey } from './tty_prompts.js';
 import { showInventoryWindow } from './windows.js';
+import { tty_create_nhwindow, tty_start_menu, tty_add_menu, tty_end_menu, tty_select_menu, tty_destroy_nhwindow, } from './tty_menu.js';
 const SORT_LETTER = 0;
 const SORT_LEVEL_LOW = 2;
 const SORT_LEVEL_HIGH = 3;
@@ -27,6 +28,25 @@ const SORT_CHOICES = [
     'maintain current ordering',
     'reassign casting letters to retain current order',
 ];
+// C spell.c:dowizcast() lets tty assign page-local selectors to every spell.
+export async function selectWizardSpell() {
+    const window = tty_create_nhwindow(NHW_MENU);
+    try {
+        await tty_start_menu(window);
+        for (let otyp = SPE_DIG; otyp < SPE_BLANK_PAPER; otyp++) {
+            const name = OBJECT_NAMES[otyp];
+            if (name == null)
+                throw new Error(`Missing spell name for object ${otyp}`);
+            tty_add_menu(window, { identifier: otyp, text: name });
+        }
+        tty_end_menu(window, 'Cast which spell?');
+        const result = await tty_select_menu(window, PICK_ONE);
+        return result.selections[0]?.identifier ?? null;
+    }
+    finally {
+        await tty_destroy_nhwindow(window);
+    }
+}
 export async function selectSpellToCast(state = game) {
     requireLiveGame(state);
     const spells = state.spells || [];

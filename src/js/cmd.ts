@@ -206,7 +206,7 @@ import { mergable, mergeObjectStacks } from './object_merge.js';
 import { unlinkObject } from './object_location.js';
 import type { InventoryAction } from './invent.js';
 import {
-    castSpell, docast, dovspell,
+    castSpell, docast, dovspell, dowizcast,
 } from './spell.js';
 import {
     vomitHero,
@@ -3345,6 +3345,7 @@ const EXTENDED_COMMAND_HANDLERS = new Map<string, () => Promise<unknown>>([
     ['levelchange', wizLevelChange],
     ['wizwhere', wizWhere],
     ['wizwish', wizWish],
+    ['wizcast', dowizcast],
     ['wizgenesis', wizGenesis],
     ['wizdetect', wizDetect],
     ['wizsmell', () => wizSmell(farlookLocationDescription)],
