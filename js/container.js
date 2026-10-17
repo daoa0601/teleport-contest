@@ -711,7 +711,7 @@ async function chooseAction(container, usedTime, moreContainers) {
         title,
         entries,
     });
-    if ([10, 13, 32].includes(chosen))
+    if (chosen === 0)
         return moreContainers ? 'n' : 'q';
     return chosen === 27 ? 'q' : String.fromCharCode(chosen);
 }

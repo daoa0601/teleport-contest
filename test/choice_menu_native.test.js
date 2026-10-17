@@ -25,6 +25,16 @@ void test('a choice menu searches descriptions through the native menu owner', a
         ] });
     assert.equal(result, 'a'.charCodeAt(0));
 });
+void test('searching a selected default can finish a choice menu without a selection', async () => {
+    freshPlayableRoom();
+    assert.equal(game.commandBindings.bindMenuKey(';'.charCodeAt(0), 'menu_search'), true);
+    resetInputState().feed(';do nothing\n');
+    const result = await showChoiceWindow({ title: 'Choose an action', entries: [
+            { key: ':', text: 'Look inside the chest' },
+            { key: 'q', marker: '*', text: 'do nothing' },
+        ] });
+    assert.equal(result, 0, 'the search key is not a selected action');
+});
 void test('a menu-style disclosure honors rebound paging keys', async () => {
     freshPlayableRoom();
     assert.equal(game.commandBindings.bindMenuKey(';'.charCodeAt(0), 'menu_next_page'), true);

@@ -781,7 +781,7 @@ async function chooseAction(container: GameObject, usedTime: boolean, moreContai
         title,
         entries,
     });
-    if ([10, 13, 32].includes(chosen)) return moreContainers ? 'n' : 'q';
+    if (chosen === 0) return moreContainers ? 'n' : 'q';
     return chosen === 27 ? 'q' : String.fromCharCode(chosen);
 }
 

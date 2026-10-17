@@ -297,7 +297,7 @@ export async function showTextMenuOverlay(lines: readonly TextMenuEntry[]): Prom
     }
 }
 
-/** Display a native PICK_ONE menu with explicit choice selectors. */
+/** Return a PICK_ONE selector, Escape, or zero when no item is selected. */
 export async function showChoiceWindow({ title, entries }: ChoiceWindowOptions): Promise<number> {
     if (!display()) return 27;
     const window = tty_create_nhwindow<ChoiceMenuItem>(NHW_MENU);
@@ -318,7 +318,7 @@ export async function showChoiceWindow({ title, entries }: ChoiceWindowOptions):
         // A new choice takes precedence over the preselected default.
         const selection = result.selections.find(item => item.identifier.marker !== '*')
             ?? result.selections[0];
-        return selection?.selector.charCodeAt(0) ?? result.key;
+        return selection?.selector.charCodeAt(0) ?? 0;
     } finally {
         await tty_destroy_nhwindow(window);
     }
