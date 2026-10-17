@@ -1,5 +1,6 @@
 // A physical blow can throw a much smaller opponent backward.
 // C uhitm.c:mhitm_knockback() and m_is_steadfast().
+import { releaseHeroFromMonster } from './hero_expulsion.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { artifactById } from './artifacts.js';
 import { D_BROKEN, DISMOUNT_KNOCKED, DOOR, Is_airlevel, Is_waterlevel, MGIVENNAME, MM_IGNORELAVA, MM_IGNOREWATER, W_SADDLE, isok, } from './const.js';
@@ -146,8 +147,10 @@ export async function tryKnockback(attacker, defender, attack, { state = game, r
     else if (heroAttacks && target) {
         await publish(formatFeltMessage(`${monsterName(target, { state, augmentIt: true })} be knocked ${how}!`, state));
     }
-    if (heroAttacks || movingHero)
-        state.u.ustuck = null;
+    // C uhitm.c:mhitm_knockback() calls unstuck(), which also gives a
+    // holder its re-hold cooldown.
+    if ((heroAttacks || movingHero) && state.u.ustuck)
+        await releaseHeroFromMonster(state.u.ustuck, { state, publish });
     let moved;
     const level = state.level;
     if (movingHero) {
