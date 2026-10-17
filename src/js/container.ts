@@ -676,7 +676,7 @@ async function takeSelectedObjects(container: GameObject, resetPicked: boolean):
 
 async function putSelectedObjects(container: GameObject, stashOne = false): Promise<ContainerTransferBatch> {
     const menuStyle = game.flags.menu_style ?? MENU_FULL;
-    if (!stashOne && menuStyle !== MENU_TRADITIONAL && menuStyle !== MENU_COMBINATION)
+    if (!stashOne && menuStyle !== MENU_TRADITIONAL)
         game._pickupEncumbrance = 0;
     // menu_loot queries the whole inventory; only stash-one uses ck_bag.
     const candidates = stashOne
