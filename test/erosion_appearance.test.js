@@ -3,15 +3,56 @@ import assert from 'node:assert/strict';
 import { NO_MINVENT, RUST_TRAP, W_WEP } from '../js/const.js';
 import { wearHeroArmor } from '../js/armor.js';
 import { game } from '../js/gstate.js';
+import { gameLogEvents } from '../js/gamelog.js';
+import { placeCreatedObject } from '../js/floor_object.js';
 import { damageObjectWithAcid, erodeObject } from '../js/object_erosion.js';
-import { DWARVISH_CLOAK, GAUNTLETS_OF_POWER, LEATHER_GLOVES, OBJECT_NAMES, YELLOW_DRAGON_SCALES, } from '../js/object_data.js';
+import { DAGGER, DWARVISH_CLOAK, GAUNTLETS_OF_POWER, LEATHER_GLOVES, OBJECT_NAMES, YELLOW_DRAGON_SCALES, } from '../js/object_data.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
-import { addInventoryObject, uninitializedObject } from './support/game-objects.js';
+import { addInventoryObject, artifactObject, uninitializedObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { freshMonsterTrapRoom } from './support/monster-traps.js';
 import { equipMonsterObject } from './support/monsters.js';
 import { beginMonsterRustTrap, finishMonsterRustTrap } from '../js/rust_trap.js';
+for (const location of ['on the floor', 'held by an invisible monster']) {
+    for (const wearsOff of [false, true]) {
+        void test(`acid ${wearsOff ? 'dissolves' : 'leaves'} grease on an artifact ${location} without revealing it`, async () => {
+            freshObjectRoom();
+            const sting = await artifactObject('Sting', { dknown: false, greased: true });
+            if (location === 'on the floor') {
+                placeCreatedObject(sting, 11, 10);
+            }
+            else {
+                const goblin = await createMonsterAt('goblin', 11, 10, NO_MINVENT);
+                goblin.minvis = true;
+                await addObjectToMonsterInventory(goblin, sting);
+            }
+            assert.equal(sting.dknown, false);
+            const messages = [];
+            await damageObjectWithAcid(sting, {
+                random: () => wearsOff ? 0 : 1,
+                publish: async (message) => { messages.push(message); },
+            });
+            assert.equal(sting.dknown, false, 'silent grease protection must not reveal the artifact');
+            assert.equal(gameLogEvents().filter(event => event.text.startsWith('found ')).length, 0);
+            assert.equal(sting.greased, !wearsOff);
+            assert.equal(sting.oeroded2 ?? 0, 0);
+            assert.deepEqual(messages, []);
+        });
+    }
+}
+void test('acid names a visible greased stack with its quantity', async () => {
+    freshObjectRoom();
+    const daggers = await addInventoryObject(DAGGER, { greased: true, quan: 3 });
+    const messages = [];
+    await damageObjectWithAcid(daggers, {
+        random: () => 1,
+        publish: async (message) => { messages.push(message); },
+    });
+    assert.deepEqual(messages, ['Your 3 daggers are protected by the layer of grease!']);
+    assert.equal(daggers.greased, true);
+    assert.equal(daggers.oeroded2 ?? 0, 0);
+});
 for (const armor of [DWARVISH_CLOAK, YELLOW_DRAGON_SCALES]) {
     const kind = armor === DWARVISH_CLOAK ? 'burn' : 'corrosion';
     void test(`inventory protection against ${kind} leaves unseen gloves unobserved`, async () => {

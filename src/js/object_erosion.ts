@@ -25,7 +25,7 @@ import {
 } from './object_data.js';
 import { delobj } from './object_delete.js';
 import { verbForSubject } from './object_grammar.js';
-import { objectCombatName } from './objnam.js';
+import { objectCombatName, ownedObjectAction } from './objnam.js';
 import { hasWornProperty } from './properties.js';
 import { rn2, rnl } from './rng.js';
 import { heroIsBlind } from './senses.js';
@@ -130,8 +130,7 @@ export async function damageObjectWithAcid(object: GameObject | null | undefined
     if (!object) return;
     if (object.where === 'inventory' && inventoryResists('corrosion', state, random)) return;
     if (object.greased) {
-        const view = objectView(object, state, options.position);
-        await protectWithGrease(object, view, state, publish, random);
+        await protectWithGrease(object, null, state, publish, random);
     } else if (object.oclass === SCROLL_CLASS && object.otyp !== SCR_BLANK_PAPER) {
         const view = objectView(object, state, options.position);
         if (!heroIsBlind(state) && (view.hero || view.monsterVisible))
@@ -261,10 +260,10 @@ function inventoryResists(kind: ErosionKind, state: GameState, random: typeof rn
 }
 
 async function protectWithGrease(
-    object: GameObject, view: ObjectView, state: GameState,
+    object: GameObject, view: ObjectView | null, state: GameState,
     publish: MessagePublisher, random: typeof rn2,
 ) {
-    if (view.hero || view.monsterVisible) {
+    if (view && (view.hero || view.monsterVisible)) {
         // Native grease feedback appends 's even when the name ends in s.
         const subject = view.monsterVisible && view.carrier
             ? `${monsterName(view.carrier, { state, capitalized: true })}'s ${view.name}`
@@ -272,21 +271,30 @@ async function protectWithGrease(
         await publish(
             `${subject} ${view.plural ? 'are' : 'is'} protected by the layer of grease!`,
         );
+    } else if (!view) {
+        const carrier = objectCarrier(object, state);
+        // acid_damage supplies no name; grease_protect names the object only
+        // inside this feedback guard, so silent protection cannot reveal it.
+        if (object.where === 'inventory' || (carrier && canSeeMonster(carrier))) {
+            await publish(`${ownedObjectAction(object, 'are', state)} protected by the layer of grease!`);
+        }
     }
     if (random(2) === 0) {
         object.greased = false;
-        if (view.hero) await publish('The grease dissolves.');
+        if (object.where === 'inventory') await publish('The grease dissolves.');
     }
+}
+
+function objectCarrier(object: GameObject, state: GameState): Monster | null {
+    if (object.where !== 'minvent') return null;
+    return state.u.usteed && state.u.usteed.m_id === object.carrierMid ? state.u.usteed
+        : (state.level?.monsters.find(monster => monster.m_id === object.carrierMid) ?? null);
 }
 
 function objectView(object: GameObject, state: GameState,
     position: Position = { x: object.ox, y: object.oy }, displayName: string | null = null): ObjectView {
     const hero = object.where === 'inventory';
-    let carrier: Monster | null = null;
-    if (object.where === 'minvent') {
-        carrier = state.u.usteed && state.u.usteed.m_id === object.carrierMid ? state.u.usteed
-            : (state.level?.monsters.find(monster => monster.m_id === object.carrierMid) ?? null);
-    }
+    const carrier = objectCarrier(object, state);
     const monsterVisible = !!carrier && !hero
         && canSeeMonster(carrier);
     const { x, y } = position;
