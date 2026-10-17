@@ -562,6 +562,7 @@ export interface MonsterMovement extends PetInventoryAction, MonsterAttackInitia
     actorDied?: boolean;
     actorLeftLevel?: boolean;
     heroDied?: boolean;
+    deferredWormTailAttacks?: boolean;
     hidden?: boolean;
     message?: string;
     waiting?: boolean;

@@ -3214,6 +3214,19 @@ async function presentMonsterAttackEffects(
         movement = action.movement;
     } while (!game.program_state?.gameover);
     if (game.program_state?.gameover) return { heroDied: true };
+    if (movement.deferredWormTailAttacks) {
+        delete movement.deferredWormTailAttacks;
+        const offensive = movement.heroAttackSequence?.offensive;
+        if (movement.heroAttackResult !== 1
+            && !(offensive?.status === 'completed' && offensive.result.nativeResult === 1)
+            && !monster.dead && monster.mhp > 0 && monster.wormno) {
+            const result = await performWormTailAttacks(monster, game, {
+                random, rollDice, rollOne, calls: action.calls,
+            });
+            movement.heroAttackResult = result.nativeResult;
+            return { heroDied: result.heroDied };
+        }
+    }
     return { heroDied: false };
 }
 
@@ -3369,6 +3382,26 @@ export async function performMonsterHeroAttack(
     };
 }
 
+// C worm.c:wormhitu(). Visible segments are stored head-outward; native
+// wtails walks toward the head and excludes its hidden dummy segment.
+async function performWormTailAttacks(
+    worm: Monster, state: PlayingGameState,
+    options: { random: RandomBelow; rollDice: RollDice; rollOne: RollOne; calls: MonsterCallLog },
+): Promise<{ nativeResult: 0 | 1; heroDied: boolean }> {
+    const segments = worm.wormSegments;
+    if (!segments) throw new Error(`Worm ${worm.m_id} has no tail list.`);
+    for (let index = segments.length - 1; index >= 0; index--) {
+        const segment = segments[index];
+        if (!segment) throw new Error(`Worm ${worm.m_id} has no tail segment ${index}.`);
+        if (dist2(segment.x, segment.y, state.u.ux, state.u.uy) >= 3) continue;
+        // Keep the real head position: mattacku() still uses its range and
+        // apparent hero position, including after knockback or a passive.
+        const result = await performMonsterHeroAttack(worm, state, options);
+        if (result.nativeResult === 1 || result.heroDied) return result;
+    }
+    return { nativeResult: 0, heroDied: false };
+}
+
 // C uhitm.c:do_attack() calls m_move(monster, 0) for a leprechaun dodge.
 // Resolve that movement transaction before the hero tests its new position;
 // no movement ration, dochug prelude, or dochug attack tail belongs here.
@@ -3519,7 +3552,8 @@ async function executeMonsterTurns(): Promise<boolean | undefined> {
         // after the complete standard attack set. Item use returns earlier,
         // including items whose effects await their messages below.
         const offensive = movement.heroAttackSequence?.offensive;
-        const attackReturnedDeath = offensive?.status === 'completed' && offensive.result.nativeResult === 1;
+        const attackReturnedDeath = movement.heroAttackResult === 1
+            || (offensive?.status === 'completed' && offensive.result.nativeResult === 1);
         if (action.dochugContext?.reachesFinalActions && !movement.usedMisc
             && !attackReturnedDeath && !monster.dead && monster.mhp > 0
             && monster.mcanmove && !monster.msleeping
