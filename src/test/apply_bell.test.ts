@@ -6,6 +6,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { vision_reset, vision_recalc } from '../js/vision.js';
 import { useBell } from '../js/apply_bell.js';
+import { removeHeroArmor } from '../js/armor.js';
+import { rhack } from '../js/cmd.js';
+import { nomul } from '../js/command_state.js';
+import { finishOrdinaryDeath } from '../js/end.js';
 import { openit } from '../js/magic_opening.js';
 import { openHoldingTrap, closeHoldingTrap, openFallingTrap } from '../js/trap_magic.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
@@ -17,6 +21,7 @@ import {
     transientTrapGlyph,
 } from '../js/display.js';
 import { initRng } from '../js/rng.js';
+import { loadScoreRecords } from '../js/score_records.js';
 import { initializePet } from '../js/dog.js';
 import { punishHero } from '../js/punishment.js';
 import { MONSTER_NAME, monsterIsUndead } from '../js/monster_data.js';
@@ -39,12 +44,13 @@ import {
     VIBRATING_SQUARE,
     WEB,
 } from '../js/const.js';
-import { BELL, BELL_OF_OPENING, CHEST } from '../js/object_data.js';
+import { BELL, BELL_OF_OPENING, CHEST, SPEED_BOOTS } from '../js/object_data.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { createMonsterAt, createSaddledSteed } from './support/monsters.js';
 import { createStaffedShop } from './support/shop.js';
 import { applyInventoryObject } from './support/commands.js';
+import { memoryStorage } from './support/memory-storage.js';
 
 function screen() {
     assert.ok(game.nhDisplay);
@@ -380,6 +386,37 @@ void test('ordinary cursed Bells can summon nymphs, shatter, speed them up, or b
     }
     assert.equal(seen.size, 4, `Missing native ordinary Bell outcomes: ${[...seen].join(', ')}`);
 });
+
+for (const existingDelay of [0, 5]) {
+    void test(`cursed Bell paralysis clears cancelled dressing's death reason with ${existingDelay} turns already pending`, async () => {
+        const input = freshBell({
+            flags: { bones: false, disclose: '-i -a -v -c -o', tombstone: false },
+        });
+        requirePlayingGame(game);
+        installPagerInput(input, {
+            expected: /You ring |You summon |nymph wakes up|Goodbye|points|You were/i,
+            limit: 12,
+        });
+        game.storage = memoryStorage();
+        game.u.urexp = 100;
+        game.iflags.toptenwin = false;
+        const boots = await addInventoryObject(SPEED_BOOTS, { known: false });
+        input.feed(boots.invlet);
+        await rhack('W'.charCodeAt(0));
+        await removeHeroArmor(boots);
+        if (existingDelay > 0) nomul(-existingDelay);
+        const bell = await addInventoryObject(BELL, { cursed: true });
+        initRng(10n);
+
+        await useBell(bell);
+
+        assert.equal(game._helplessDoneMessage, '', 'The bell must immobilize its ringer');
+        if (existingDelay > 0) assert.equal(game._helplessTurns, existingDelay);
+        else assert.ok((game._helplessTurns ?? 0) > 0 && (game._helplessTurns ?? 0) <= 2);
+        await finishOrdinaryDeath({ killer: 'fox' });
+        assert.equal(loadScoreRecords()[0]?.death, 'killed by a fox, while helpless');
+    });
+}
 
 void test('one extinct nymph species suppresses all ordinary cursed Bell summoning', async () => {
     freshBell();

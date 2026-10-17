@@ -3,7 +3,7 @@
 import { formatFeltMessage } from './hero_speech.js';
 import { makeHallucinated, makeStunned } from './hero_mental_status.js';
 import { heroIsHallucinating } from './senses.js';
-import { endVoluntaryMultiTurn } from './command_state.js';
+import { nomul } from './command_state.js';
 import { exerciseAttribute } from './attrib.js';
 import { heroHasFreeAction } from './armor.js';
 import { A_CON, A_DEX, A_STR, W_BALL } from './const.js';
@@ -170,8 +170,7 @@ async function paralyzeHero(state, publish, rollDice) {
     }
     await publish('Suddenly you are frozen in place!');
     const duration = rollDice(5, 6);
-    endVoluntaryMultiTurn(state);
-    state._helplessTurns = duration;
+    nomul(-duration, state);
     state._helplessReason = 'frozen by a trap';
     state._helplessDoneMessage = 'You can move again.';
     await exerciseAttribute(A_DEX, false, state);

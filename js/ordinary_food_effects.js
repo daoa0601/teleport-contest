@@ -2,7 +2,7 @@
 // C refs: eat.c fprefx(), fpostfx(), rottenfood(), and garlic_breath().
 import { formatFeltMessage, publishHeardMessage } from './hero_speech.js';
 import { heroLightHeadedFeeling, heroStomachName } from './body_parts.js';
-import { endVoluntaryMultiTurn } from './command_state.js';
+import { nomul } from './command_state.js';
 import { EXPL_FIERY, Is_airlevel, Is_waterlevel, MON_FLOOR, TIMEOUT } from './const.js';
 import { plineWithContinuation as pline } from './display.js';
 import { eggIsStale, isPyroliskEgg } from './egg_impact.js';
@@ -68,8 +68,7 @@ export async function applyRottenFood(food, { state = game } = {}) {
                 : `you slap against the ${state.u.usteed ? 'saddle' : surfaceName(state.u.ux, state.u.uy, state)}`;
         await pline(`The world spins and ${ending}.`);
         await makeDeaf((state.u.deafTurns || 0) + duration, { state, talk: false });
-        endVoluntaryMultiTurn(state);
-        state._helplessTurns = Math.max(state._helplessTurns || 0, duration);
+        nomul(-duration, state);
         state._helplessReason = 'unconscious from rotten food';
         state._helplessDoneMessage = 'You are conscious again.';
         state._helplessAfter = 'hear-again';

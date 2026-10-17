@@ -3,7 +3,7 @@ import { seeTrap } from './trap.js';
 
 import { monsterHasMapPosition } from './monster_location.js';
 import { heroIsHallucinating } from './senses.js';
-import { endVoluntaryMultiTurn } from './command_state.js';
+import { nomul } from './command_state.js';
 import { artifactById } from './artifacts.js';
 import { makeMonsterFlee } from './monster_flee.js';
 import { heroIsPunished } from './ball.js';
@@ -235,8 +235,7 @@ async function strikeUndiggable(tool: GameObject, x: number, y: number, state: G
             `${ownedObjectAction(tool, 'become', state)} entangled in the web.`,
         );
         const turns = d(2, 2);
-        endVoluntaryMultiTurn(state);
-        state._helplessTurns = turns;
+        nomul(-turns, state);
         state._helplessReason = 'stuck in a spider web';
         state._helplessDoneMessage = 'You pull free.';
     } else if (location.typ === IRONBARS) {

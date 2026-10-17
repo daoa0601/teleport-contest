@@ -27,7 +27,7 @@ import { clearImmediateZapBypasses } from './immediate_zap.js';
 import { In_endgame, Is_astralevel, MON_FLOOR, PICK_ONE, PLNMSG_MON_TAKES_OFF_ITEM } from './const.js';
 import { mapVicinity } from './magic_mapping.js';
 import { showInventoryWindow } from './windows.js';
-import { endVoluntaryMultiTurn, heroHasInvoluntaryDelay } from './command_state.js';
+import { endVoluntaryMultiTurn, heroHasInvoluntaryDelay, nomul, currentMulti, setMulti } from './command_state.js';
 import { dosounds } from './ambient_sounds.js';
 import { warnWithMasterKey } from './artifact_warning.js';
 import { regenerateHeroHp } from './hero_regeneration.js';
@@ -529,21 +529,14 @@ async function finishInitialTurnMaintenanceAfterIntervention(sourceTurn) {
         await moveElementalBubbles();
     else if (game.level?.flags?.fumaroles)
         await fumaroles(game);
-    const delayedAction = game._delayedAction;
-    if (delayedAction && delayedAction.kind !== 'steal' && delayedAction.remainingGlobalTurns > 0) {
-        delayedAction.remainingGlobalTurns--;
-        if (delayedAction.remainingGlobalTurns === 0)
-            delayedAction.ready = true;
-    }
     // C allmain.c increments negative `multi` only after the complete global
     // turn (monster allocation, timeouts, sounds, hunger, and engraving wear).
     // Keep the counter here rather than in the command which caused the
     // helplessness so fast heroes and multi-round movement rations retain the
     // same boundary.
-    if (game._helplessTurns !== undefined && game._helplessTurns > 0) {
+    if (currentMulti(game) < 0) {
         game._helplessRunmodeDelayPending = sourceTurn;
-        game._helplessTurns--;
-        game.multi = -game._helplessTurns;
+        setMulti(currentMulti(game) + 1, game);
         if (game._helplessTurns === 0) {
             const doneMessage = game._helplessDoneMessage
                 ?? 'You can move again.';
@@ -702,11 +695,7 @@ async function finishInitialTurnMaintenanceAfterAmbient({ sourceTurn, moveAmount
 async function finishFumblingExpiryAfterMessage(fumbled, publish) {
     const game = requireInitializedGame();
     if (fumbled) {
-        // timeout.c reaches this through nomul(-2), which always calls
-        // end_running(TRUE) before the helpless interval.
-        stopRun(game);
-        endVoluntaryMultiTurn(game);
-        game._helplessTurns = 2;
+        nomul(-2);
         game._helplessDoneMessage = '';
         game._helplessReason = 'fumbling';
         if (invWeight(game) > -500) {
@@ -1410,10 +1399,8 @@ async function advanceWorldTurn() {
     }
     const helplessDelayTurn = game._helplessRunmodeDelayPending;
     delete game._helplessRunmodeDelayPending;
-    await captureRunmodeDelay(game, Number.isInteger(helplessDelayTurn), helplessDelayTurn ?? completedTurn, { preservePhysicalTopline: true });
-    await drainQueuedHelplessRecoveryMessage();
-    // Armor theft completes through unmul(), so its display delay belongs
-    // to the helplessness counter above rather than the dressing action.
+    // Dressing retains its physical topline through each negative-multi
+    // frame; its armor effects still wait for unmul's recovery message.
     const delayedAction = game._delayedAction?.kind === 'steal'
         ? null : game._delayedAction;
     if (delayedAction) {
@@ -1425,10 +1412,11 @@ async function advanceWorldTurn() {
                 = game.nhDisplay?.grid?.[0]?.map(cell => ({ ...cell }));
         }
     }
-    await captureRunmodeDelay(game, !!delayedAction, completedTurn, {
+    await captureRunmodeDelay(game, Number.isInteger(helplessDelayTurn), helplessDelayTurn ?? completedTurn, {
         preservePhysicalTopline: true,
         retainedTopline: delayedAction?._runmodeRetainedTopline ?? null,
     });
+    await drainQueuedHelplessRecoveryMessage();
     await finishDelayedArmorAction();
     if (game.program_state.gameover)
         return;
@@ -1453,11 +1441,7 @@ async function finishDelayedArmorAction() {
         return;
     g._delayedAction = null;
     if (delayed.kind === 'wear') {
-        // unmul() prints nomovemsg before Armor_on() and find_ac().
-        // An earlier attack can hold that message at a pager while AC
-        // still belongs to the turn before the dressing finished.
-        if (delayed.finishMessage)
-            await plineWithContinuation(delayed.finishMessage);
+        // unmul() has printed nomovemsg before Armor_on() and find_ac().
         const effectMessages = await applyArmorOnEffects(delayed.object, g);
         delayed.object.known = true;
         const discoverArmorType = armorOnIdentifiesType(delayed.object, effectMessages)
@@ -1480,12 +1464,7 @@ async function finishDelayedArmorAction() {
         }
     }
     else if (delayed.kind === 'remove') {
-        // C allmain.c:unmul() emits nomovemsg before calling afternmv.
-        // If an earlier monster-combat line already owns tty, this await
-        // suspends at --More-- with the armor still worn; Armor_off()
-        // commits only after the continuation is acknowledged.
-        if (delayed.finishMessage)
-            await plineWithContinuation(delayed.finishMessage);
+        // unmul() has acknowledged nomovemsg while the armor was still worn.
         await finishArmorRemoval(delayed.object, { silent: true });
     }
     g._delayedAction = null;
@@ -1530,8 +1509,7 @@ async function drainQueuedHelplessRecoveryMessage() {
 // recovery can start another delay without inheriting the old completion.
 export async function finishHeroHelplessness(messageOverride, state = game) {
     state.context.botl = true;
-    state.multi = 0;
-    state._helplessTurns = 0;
+    setMulti(0, state);
     state._queuedHelplessRecoveryMessage = null;
     const message = messageOverride ?? state._helplessDoneMessage ?? 'You can move again.';
     if (message)
@@ -1545,6 +1523,10 @@ export async function finishHeroHelplessness(messageOverride, state = game) {
         ? state._delayedAction : null;
     if (armorTheft)
         state._delayedAction = null;
+    // Dressing finishes through unmul's afternmv, not a direct multi = 0.
+    const dressing = state._delayedAction;
+    if (dressing && dressing.kind !== 'steal')
+        dressing.ready = true;
     // C eat.c:Hear_again() runs after unmul() has delivered nomovemsg.
     // Keep it after the awaited tty continuation: if the rotten-food
     // message fills the topline, the acknowledgement resumes here before
@@ -1864,11 +1846,8 @@ async function resolveDeferredHeroItemTheft(action, monster, attack, random) {
                 // nomul() cannot shorten another involuntary delay. Set it
                 // before removal, whose effects can sleep or life-save us.
                 // Life saving may replace the counter during this same
-                // monster turn, before maintenance refreshes multi.
-                const currentDelay = game._helplessTurns || -game.multi;
-                const remaining = Math.max(delay, currentDelay);
-                game.multi = -remaining;
-                game._helplessTurns = remaining;
+                // monster turn.
+                nomul(-delay);
                 game._helplessReason = 'taking off clothes';
                 game._helplessDoneMessage = null;
                 await removeWornHeroItem(object, game);
@@ -3613,7 +3592,7 @@ export async function moveloop_core() {
         findArmorClass(g);
         g._armorClassDirty = false;
     }
-    if (g._delayedAction && g._delayedAction.kind !== 'steal') {
+    if (currentMulti(g) < 0 && g._delayedAction && g._delayedAction.kind !== 'steal') {
         // A delayed action spends movement without reading another command.
         g.u.umoved = false;
         g.context.move = 1;

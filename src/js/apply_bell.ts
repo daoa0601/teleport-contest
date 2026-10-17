@@ -11,7 +11,7 @@ import { consumeInventoryItem } from './invent.js';
 import { consumeObjectCharge } from './object_charge.js';
 import { learnObjectType } from './object_knowledge.js';
 import { heroIsOnStairs, isInvocationPosition } from './invocation_position.js';
-import { endVoluntaryMultiTurn } from './command_state.js';
+import { nomul } from './command_state.js';
 import { unpunishHero } from './punishment.js';
 import { freeHeroFromBuriedBall } from './hero_traps.js';
 import { findit } from './detect.js';
@@ -71,12 +71,9 @@ export async function useBell(object: GameObject, { state = game }: { state?: Ga
                     const fate = rn2(3);
                     if (fate === 1) adjustMonsterSpeed(nymph, 2);
                     else if (fate === 2) {
-                        // Native nomul() delay is involuntary, with no recovery text
-                        // and no sleep state or invented reason.
-                        endVoluntaryMultiTurn(state);
-                        state._helplessTurns = rnd(2);
-                        state._helplessReason = null;
                         state._helplessDoneMessage = '';
+                        state._helplessReason = null;
+                        nomul(-rnd(2), state);
                     }
                 }
             }

@@ -1,4 +1,5 @@
 // Native eat.c mimic meals, eatmdone/eatmupdate, and mhitu.c interruption.
+import { nomul, setMulti } from './command_state.js';
 import { DISMOUNT_FELL, M_AP_NOTHING, M_AP_OBJECT, Upolyd } from './const.js';
 import { canSeeMonster, canSpotMonster, flushPendingTopline, flush_screen, map_invisible, newsym, plineWithContinuation, } from './display.js';
 import { game, requirePlayingGame } from './gstate.js';
@@ -10,7 +11,6 @@ import { GOLD_PIECE, ORANGE } from './object_data.js';
 import { withIndefiniteArticle } from './object_grammar.js';
 import { heroIsUnchanging } from './polyself.js';
 import { heroIsHallucinating } from './senses.js';
-import { stopRun } from './runmode.js';
 import { dismountHero } from './steed.js';
 const S_MIMIC = requireMonsterData(MONSTER_SYMBOL, MONSTER_NAME.indexOf('small mimic'));
 export async function beginMealMimicry(turns, { state = game } = {}) {
@@ -30,14 +30,7 @@ export async function beginMealMimicry(turns, { state = game } = {}) {
         if (state.program_state.gameover)
             return;
     }
-    if ((state._helplessTurns || 0) <= turns) {
-        hero.invulnerable = false;
-        hero.usleep = 0;
-        state.multi = 0;
-        state._cannedCommands = [];
-        stopRun(state);
-        state._helplessTurns = turns;
-    }
+    nomul(-turns, state);
     state._helplessReason = 'pretending to be a pile of gold';
     const original = Upolyd(hero) ? monsterTypeName(heroSpecies(state), state.flags.female) : state.urace.noun;
     const nowHallucinating = heroIsHallucinating(state);
@@ -99,7 +92,7 @@ export async function disturbMealMimicry(monster, { state = game } = {}) {
         await plineWithContinuation(`Wait, ${name}!  That ${shape} is really ${withIndefiniteArticle(monsterTypeName(heroSpecies(state), state.flags.female))} named ${state.plname}!`);
     }
     if ((state._helplessTurns ?? 0) > 0) {
-        state._helplessTurns = 0;
+        setMulti(0, state);
         const shape = Upolyd(hero)
             ? withIndefiniteArticle(monsterTypeName(heroSpecies(state), state.flags.female)) : 'yourself';
         await plineWithContinuation(`You appear to be ${shape} again.`);

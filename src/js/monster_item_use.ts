@@ -1,4 +1,5 @@
 // Shared monster item feedback and cursed-wand precheck. C muse.c.
+import { setMulti } from './command_state.js';
 import { BOLT_LIM, G_GONE, MM_NOMSG, QBUFSZ, WAND_BACKFIRE_CHANCE } from './const.js';
 import { impossible } from './diagnostics.js';
 import {
@@ -79,7 +80,7 @@ export async function revealAggravatingMonster(monster: Monster, state: PlayingG
     await displayMessageWindow();
     await docrt();
     if (heroIsUnconscious(state)) {
-        state._helplessTurns = 1;
+        setMulti(-1, state);
         state._helplessDoneMessage = 'Aggravated, you are jolted into full consciousness.';
     }
     newsym(monster.mx, monster.my);

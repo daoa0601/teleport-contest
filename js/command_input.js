@@ -1,12 +1,13 @@
 // Command counts are read before ordinary key bindings are consulted.
 // C refs: cmd.c:get_count(GC_NOFLAGS), parse().
+import { setMulti } from './command_state.js';
 import { NATIVE_COMMAND_CONSTANTS } from './command_data.js';
 import { game } from './gstate.js';
 import { readchar } from './input.js';
 import { flush_screen, pline } from './display.js';
 export async function readCommandInput() {
     game._commandCount = 0;
-    game.multi = 0;
+    setMulti(0);
     await flush_screen(1);
     let result;
     if (game.commandBindings.numberPad) {
@@ -18,7 +19,7 @@ export async function readCommandInput() {
         result = await readCommandCount();
     }
     game._commandCount = result.count;
-    game.multi = Math.max(0, result.count - 1);
+    setMulti(Math.max(0, result.count - 1));
     game._commandKey = result.key;
     clearCommandMessage();
     return result;

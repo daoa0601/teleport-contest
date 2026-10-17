@@ -4,6 +4,7 @@
 // engrave(), rloc_engr(), disturb_grave(), blengr(); hacklib.c xcrypt();
 // invent.c getobj()'s "write with" flow.
 
+import { setMulti } from './command_state.js';
 import { plineWithContinuation as pline, newsym } from './display.js';
 import { clearCommandKeys, takeCommandKey } from './input.js';
 import { getLine, promptYesNoQuit } from './query.js';
@@ -446,7 +447,7 @@ export async function doengrave(state: GameState = game): Promise<void> {
         && !(monsterIsAnimal(hero.ustuck) || monsterIsWhirly(hero.ustuck));
     const frosted = isIceAt(hero.ux, hero.uy, state);
 
-    state.multi = 0; /* moves consumed */
+    setMulti(0, state); /* moves consumed */
 
     // C's single doengr_exit label: refresh, then report the time result.
     const exit = (): void => {

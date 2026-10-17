@@ -1,7 +1,7 @@
 // Prayer decisions and the three-turn prayer occupation.
 // C pray.c:can_pray(), dopray(), prayer_done(), and pleased().
 import { formatFeltMessage } from './hero_speech.js';
-import { endVoluntaryMultiTurn } from './command_state.js';
+import { nomul } from './command_state.js';
 import { game, requireInitializedGame, requirePlayingGame } from './gstate.js';
 import { displayColorName, flushPendingTopline, plineWithContinuation as pline } from './display.js';
 import { recordGameLogEvent } from './gamelog.js';
@@ -89,11 +89,11 @@ export async function dopray() {
     game._prayerAlignment = alignment;
     game._prayerTrouble = trouble;
     game._prayerOutcome = outcome;
-    endVoluntaryMultiTurn(game);
-    game._helplessTurns = Math.max(3, game._helplessTurns ?? 0, -game.multi);
-    game.multi = -game._helplessTurns;
+    nomul(-3);
     game._helplessReason = 'praying';
     game._helplessDoneMessage = 'You finish your prayer.';
+    // C has one afternmv callback; prayer_done replaces pending dressing.
+    game._delayedAction = null;
     game._helplessAfter = 'finish-prayer';
     if (outcome === 'pleased' && !inHell()) {
         if (!heroIsBlind(game))

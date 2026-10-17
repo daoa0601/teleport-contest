@@ -10,7 +10,7 @@ import {
 import { currentAttribute } from './attrib.js';
 import { artifactByName } from './artifacts.js';
 import { heroResistsBlindingLight } from './blinding_attack.js';
-import { endVoluntaryMultiTurn } from './command_state.js';
+import { nomul } from './command_state.js';
 import {
     canSpotMonster, displayColorName, flushPendingTopline, glyphAt,
     magic_map_background, map_invisible, plineWithContinuation as pline,
@@ -137,12 +137,7 @@ function ballSubject(object: GameObject, verb: string): string {
 }
 
 function delayGazing(turns: number, reason: string): void {
-    if ((game._helplessTurns ?? 0) <= turns) {
-        endVoluntaryMultiTurn();
-        game.u.invulnerable = false;
-        game.u.usleep = 0;
-        game._helplessTurns = turns;
-    }
+    nomul(-turns);
     game._helplessReason = reason;
     game._helplessDoneMessage = '';
 }

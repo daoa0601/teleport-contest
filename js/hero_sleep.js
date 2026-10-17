@@ -1,6 +1,6 @@
 // Hero sleep state.
 // C ref: timeout.c fall_asleep().
-import { endVoluntaryMultiTurn, heroHasInvoluntaryDelay } from './command_state.js';
+import { heroHasInvoluntaryDelay, nomul } from './command_state.js';
 import { game } from './gstate.js';
 import { FAINTED } from './const.js';
 export function putHeroToSleep(turns, { state = game, reason = 'sleeping', doneMessage = 'You wake up.', } = {}) {
@@ -9,11 +9,7 @@ export function putHeroToSleep(turns, { state = game, reason = 'sleeping', doneM
     const duration = Math.max(0, turns);
     // nomul() refuses to shorten an existing involuntary delay. fall_asleep()
     // still installs its sleep marker and recovery message afterward.
-    if ((state._helplessTurns || 0) <= duration) {
-        endVoluntaryMultiTurn(state);
-        hero.invulnerable = false;
-        state._helplessTurns = duration;
-    }
+    nomul(-duration, state);
     state._helplessReason = reason;
     state._helplessDoneMessage = doneMessage;
     hero.usleep = state.moves || 1;
@@ -21,7 +17,7 @@ export function putHeroToSleep(turns, { state = game, reason = 'sleeping', doneM
 }
 // C youprop.h:Unaware, using the current involuntary-delay representation.
 export function heroIsUnaware(state = game) {
-    return (state._helplessTurns ?? 0) > 0
+    return heroHasInvoluntaryDelay(state)
         && (heroIsUnconscious(state) || state.u?.uhs === FAINTED);
 }
 // C trap.c:unconscious(), narrower than Unaware (which also includes fainting).

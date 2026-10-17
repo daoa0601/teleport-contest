@@ -9,7 +9,7 @@ import { removeIntrinsicProperty, setPropertyTimeout } from './properties.js';
 import { resetHeroTrap } from './terrain_movement.js';
 import { PARANOID_DIE, PARANOID_QUIT, PLNMSG_OK_DONT_DIE } from './const.js';
 import { PanicTermination } from './panic_termination.js';
-import { endVoluntaryMultiTurn } from './command_state.js';
+import { endVoluntaryMultiTurn, setMulti } from './command_state.js';
 import { achievementEntries, recordAchievement } from './achievements.js';
 import { game, requireInitializedGame } from './gstate.js';
 import { expelHero, releaseHeroFromMonster } from './hero_expulsion.js';
@@ -123,9 +123,7 @@ export async function restoreHeroAfterDeath({ deathType = null } = {}) {
     // finish its remaining attack slots, but no older helpless interval may
     // allocate another autonomous monster turn afterward. The shared
     // helplessness recovery publishes nomovemsg when that turn ends.
-    endVoluntaryMultiTurn(game);
-    game.multi = -1;
-    game._helplessTurns = 1;
+    setMulti(-1);
     game._helplessReason = game.urole?.key === 'tourist'
         ? 'being toyed with by Fate' : 'attempting to cheat Death';
     game._helplessDoneMessage = 'You survived that attempt on your life.';
@@ -1322,8 +1320,7 @@ function fixupDeath(how) {
     const text = typeof reason === 'string' ? reason : reason?.text;
     if (how === STONING && text === 'getting stoned') {
         game._helplessReason = null;
-        game._helplessTurns = 0;
-        game.multi = 0;
+        setMulti(0);
     }
     else if (how === STARVING && text === 'fainted from lack of food') {
         game._helplessReason = 'fainted';

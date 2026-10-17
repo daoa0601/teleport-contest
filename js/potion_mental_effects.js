@@ -4,7 +4,7 @@ import { heroHasFreeAction } from './armor.js';
 import { adjustAttribute, attributeChangeMessage, exerciseAttribute, } from './attrib.js';
 import { reportHeroEncumbrance } from './encumbrance.js';
 import { heroFootName } from './body_parts.js';
-import { endVoluntaryMultiTurn } from './command_state.js';
+import { nomul, setMulti } from './command_state.js';
 import { A_CON, A_DEX, A_INT, A_MAX, A_STR, A_WIS, Is_airlevel, Is_waterlevel, M_SEEN_SLEEP } from './const.js';
 import { flushPendingTopline, plineWithContinuation as pline } from './display.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
@@ -136,7 +136,7 @@ async function boozeEffect(source, state) {
     await exerciseAttribute(A_WIS, false, state);
     if (source.cursed) {
         await pline('You pass out.');
-        state._helplessTurns = rnd(15);
+        setMulti(-rnd(15), state);
         state._helplessDoneMessage = 'You awake with a headache.';
     }
 }
@@ -156,12 +156,7 @@ async function paralysisEffect(source, state) {
         await pline(`Your ${makePlural(heroFootName(state))} are frozen to the ${surfaceName(state.u.ux, state.u.uy, state)}!`);
     }
     const turns = rn1(10, 25 - 12 * blessing(source));
-    if ((state._helplessTurns || 0) <= turns) {
-        endVoluntaryMultiTurn(state);
-        state.u.invulnerable = false;
-        state.u.usleep = 0;
-        state._helplessTurns = turns;
-    }
+    nomul(-turns, state);
     state._helplessReason = 'frozen by a potion';
     state._helplessDoneMessage = 'You can move again.';
     await exerciseAttribute(A_DEX, false, state);

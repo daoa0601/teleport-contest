@@ -1,3 +1,4 @@
+import { setMulti } from './command_state.js';
 import { MENU_FULL, MENU_TRADITIONAL } from './const.js';
 import { promptChoice } from './query.js';
 import type { ShopBillItem } from './shop_types.js';
@@ -28,7 +29,7 @@ import { showMultiSelectWindow } from './windows.js';
 // An empty bill takes a turn when the keeper can respond. A payment menu
 // takes no time until a debt or billed item is paid.
 export async function dopay(): Promise<void> {
-    game.multi = 0;
+    setMulti(0);
     const stashedGold = hiddenGold(game, true) > 0;
     const target = await choosePaymentShopkeeper();
     if (!target) {

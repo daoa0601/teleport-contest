@@ -2,7 +2,7 @@
 // toss_up() supplies a die roll from 2 through 19, excluding natural-one cuts.
 
 import { artifactById, artifactDamageBonus } from './artifacts.js';
-import { endVoluntaryMultiTurn } from './command_state.js';
+import { nomul } from './command_state.js';
 import { Upolyd } from './const.js';
 import { displayColorName, shieldeff } from './display.js';
 import { loseHeroExperience } from './exper.js';
@@ -152,13 +152,7 @@ async function hitHeroWithMagicbane(
     } else if (effect === 'scare') {
         resisted = !!state.u.antimagic;
         if (!resisted) {
-            endVoluntaryMultiTurn(state);
-            if ((state._helplessTurns ?? 0) <= 3 && state.multi >= -3) {
-                state._helplessTurns = 3;
-                state.multi = -3;
-                state.u.usleep = 0;
-                state.u.invulnerable = false;
-            }
+            nomul(-3, state);
             state._helplessReason = 'being scared stiff';
             state._helplessDoneMessage = '';
             stun = false;

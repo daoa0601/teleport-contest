@@ -7,7 +7,7 @@ import {
 import { currentAttribute } from './attrib.js';
 import { heroHasFreeAction } from './armor.js';
 import { heroFaceName, monsterStomachName } from './body_parts.js';
-import { endVoluntaryMultiTurn } from './command_state.js';
+import { nomul } from './command_state.js';
 import {
     canSeeMonster, displayColorName, howMonsterSeen, plineWithContinuation as pline,
 } from './display.js';
@@ -135,8 +135,7 @@ async function seeOwnReflection(mirror: string, visible: boolean, state: GameSta
             : "Yikes!  You've frozen yourself!");
         if (!hallucinating || !rn2(4)) {
             state._occupation = null;
-            endVoluntaryMultiTurn(state);
-            state._helplessTurns = rnd(MAXULEV + 6 - hero.ulevel);
+            nomul(-rnd(MAXULEV + 6 - hero.ulevel), state);
             state._helplessReason = 'gazing into a mirror';
         }
         state._helplessDoneMessage = null;

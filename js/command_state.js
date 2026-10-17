@@ -10,7 +10,7 @@ export function resetCommandVariables(clearQueues) {
     game.context.nopick = false;
     game.context.forcefight = false;
     game.context.move = 0;
-    game.multi = 0;
+    setMulti(0);
     game.iflags.menu_requested = false;
     game._movementAttempt = null;
     if (clearQueues) {
@@ -19,26 +19,44 @@ export function resetCommandVariables(clearQueues) {
         clearRepeatCommand();
     }
 }
-// C hack.c:nomul(0). Cancel voluntary repetition, not an involuntary delay.
-// Keep the full command count and any occupation. A timed occupation may
-// still need its final callback after the remaining multi becomes zero.
-export function endVoluntaryMultiTurn(state = game) {
-    if (heroHasInvoluntaryDelay(state))
+// C has one multi counter; involuntary delays have a positive mirror here.
+export function currentMulti(state = game) {
+    const helplessTurns = state._helplessTurns ?? 0;
+    if (helplessTurns > 0)
+        return -helplessTurns;
+    return state.multi;
+}
+// Direct native assignments (combat wake, life saving, unmul, countdown)
+// must change the same counter that nomul() compares during this turn.
+export function setMulti(value, state = game) {
+    state.multi = value;
+    state._helplessTurns = Math.max(0, -value);
+}
+// C hack.c:nomul(). Caller-owned reasons and recovery messages follow this
+// call even when a longer existing delay makes it return early.
+export function nomul(value, state = game) {
+    const previous = currentMulti(state);
+    if (previous < value)
         return;
-    state.context.botl = true;
+    if (previous >= 0)
+        state.context.botl = true;
     const hero = state.u;
     hero.invulnerable = false; // u.uinvulnerable, not the timed property
     hero.usleep = 0;
-    state.multi = 0;
+    setMulti(value, state);
+    if (value === 0)
+        state._helplessReason = null;
     stopRun(state);
     state._cannedCommands = [];
 }
+// Keep the full command count and any occupation. A timed occupation may
+// still need its final callback after the remaining multi becomes zero.
+export function endVoluntaryMultiTurn(state = game) {
+    nomul(0, state);
+}
 // Native multi < 0 includes sleep, paralysis, prayer, and delayed actions.
 export function heroHasInvoluntaryDelay(state = game) {
-    const dressing = state._delayedAction;
-    return (state.multi ?? 0) < 0
-        || (state._helplessTurns ?? 0) > 0
-        || !!(dressing && dressing.kind !== 'steal' && dressing.remainingGlobalTurns > 0);
+    return currentMulti(state) < 0;
 }
 // C steal.c:thiefdead(), called by mon.c:m_detach() for death or removal.
 // Keep the armor-removal delay, but replace the theft and recovery message.

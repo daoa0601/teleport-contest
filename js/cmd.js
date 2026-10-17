@@ -98,7 +98,8 @@ import { definiteName, objectCombatName, minimalObjectName, objectNameIsPlural, 
 import { woundHeroLegs } from './hero_legs.js';
 import { makeMonsterFlee } from './monster_flee.js';
 import { descendFromLevitation, floatingAbove } from './levitation_commands.js';
-import { endVoluntaryMultiTurn, resetCommandVariables } from './command_state.js';
+import { endVoluntaryMultiTurn, resetCommandVariables, nomul, setMulti } from './command_state.js';
+import { finishHeroHelplessness } from './allmain.js';
 import { grantIntrinsicProperty, propertyIsActive } from './properties.js';
 import { addPickedInventoryObject, pickupAtHero, pickupObjectClass, pickupClassOrder, } from './pickup.js';
 import { gotoLevel } from './level_change.js';
@@ -1064,7 +1065,7 @@ export async function rhack(key) {
             clearCommandKeys();
             clearRepeatCommand();
             game.context.move = 0;
-            game.multi = 0;
+            setMulti(0);
             return;
         }
         if (!await commandAllowed(command)) {
@@ -2658,7 +2659,7 @@ async function runInventoryAction({ key, item }) {
 // slot through setworn() also ends two-weapon mode before either new
 // inventory description is projected.
 async function doswapweapon() {
-    game.multi = 0;
+    setMulti(0);
     if (heroHasNoHands(game) || heroIsVerySmall(game)) {
         await pline("Don't be ridiculous!");
         game.context.move = 0;
@@ -2962,7 +2963,7 @@ async function wizTelekinesis() {
             break;
     } while (!game.u.utotype);
     if (game._helplessReason === 'moving through the air')
-        game._helplessTurns = 0;
+        setMulti(0);
     game.context.move = 0;
 }
 function menuLetter(index) {
@@ -5233,15 +5234,14 @@ async function removeWornItem(action, itemAction = false) {
     const delay = OBJECT_DELAY[object.otyp] ?? 0;
     const isArmor = object.class === 'Armor' || object.oclass === 3;
     if (isArmor && delay > 0) {
-        endVoluntaryMultiTurn(game);
+        nomul(-delay);
+        game._helplessReason = 'disrobing';
+        game._helplessDoneMessage = `You finish taking off your ${armorSimpleName(object)}.`;
+        game._helplessAfter = null;
         game._delayedAction = {
             kind: 'remove',
             object,
-            remainingGlobalTurns: delay,
             ready: false,
-            // C do_wear.c installs this as nomovemsg.  allmain.c:unmul()
-            // prints it before invoking Armor_off() through afternmv.
-            finishMessage: `You finish taking off your ${armorSimpleName(object)}.`,
         };
         game.context.move = 1;
         return;
@@ -5286,7 +5286,6 @@ async function putOnArmorObject(object) {
         game.context.move = 1;
         return;
     }
-    const hero = game.u;
     // C accessory_or_armor_on(): armor leaves any held slot before setworn.
     // Cursed armor does not weld to the hand.
     await releaseWeaponSlots(object, game);
@@ -5300,19 +5299,20 @@ async function putOnArmorObject(object) {
     if (delay > 0)
         game._armorClassDirtyAfterDelayedFrame = true;
     if (delay > 0) {
-        endVoluntaryMultiTurn(game);
+        nomul(-delay);
+        game._helplessReason = 'dressing up';
+        game._helplessDoneMessage = 'You finish your dressing maneuver.';
+        game._helplessAfter = null;
         game._delayedAction = {
             kind: 'wear', object,
-            // objects[].oc_delay advances through negative multi during
-            // global-turn allocations, not through input commands.
-            remainingGlobalTurns: delay,
             ready: false,
-            finishMessage: 'You finish your dressing maneuver.',
         };
     }
     else {
-        game.multi = 0;
-        hero.usleep = 0;
+        // unmul("") clears recovery state before the immediate Armor_on().
+        game._helplessAfter = null;
+        game._delayedAction = null;
+        await finishHeroHelplessness('');
         const effectMessages = await applyArmorOnEffects(object, game);
         const identifiesType = armorOnIdentifiesType(object, effectMessages)
             && !game._knownObjectTypes?.has(object.otyp);
@@ -5336,7 +5336,7 @@ async function putOnArmorObject(object) {
 // advertises weapons and weapon-tools but still permits the full inventory
 // through ?/*; '-' represents the synthetic empty-hands object.
 async function dowield() {
-    game.multi = 0;
+    setMulti(0);
     if (heroHasNoHands(game) || heroIsVerySmall(game)) {
         await pline("Don't be ridiculous!");
         game.context.move = 0;
@@ -6132,7 +6132,7 @@ function hasFreeBasicInventoryLetter() {
     return game.inventory.filter(item => item.oclass !== 12).length < 52;
 }
 async function doquiverCore(verb) {
-    game.multi = 0;
+    setMulti(0);
     if (!(game.inventory || []).length) {
         await pline('You have nothing to ready for firing.');
         game.context.move = 0;
@@ -6323,7 +6323,7 @@ async function dofire(cannedShotLimit = null) {
     const shotLimit = cannedShotLimit === null
         ? Math.max(0, game._commandCount || 0)
         : Math.max(0, cannedShotLimit || 0);
-    game.multi = 0;
+    setMulti(0);
     if (!await okToThrow())
         return;
     let fireObject = game.uquiver;
@@ -6474,7 +6474,7 @@ async function throwCommand(selectedItem = null, capabilityChecked = false, supp
         ? Math.max(0, game._commandCount || 0)
         : Math.max(0, suppliedShotLimit || 0);
     requireInitializedHero(game.u);
-    game.multi = 0;
+    setMulti(0);
     if (!capabilityChecked && !await okToThrow())
         return;
     // getobj("throw") changes its suggested class when the primary weapon is
@@ -6874,14 +6874,7 @@ async function finishMovedHero({ oldx, oldy, newx, newy, loc, explicitAttempt, b
 }
 // C domove_core() applies the dragging delay even when a pet refuses the swap.
 async function delayAfterDraggingBall() {
-    if ((game._helplessTurns ?? 0) <= 2) {
-        game.u.invulnerable = false;
-        game.u.usleep = 0;
-        game.multi = 0;
-        stopRun();
-        game._cannedCommands = [];
-        game._helplessTurns = 2;
-    }
+    nomul(-2);
     game._helplessReason = 'dragging an iron ball';
     game._helplessDoneMessage = '';
     await captureRunmodeDelay(game, true, game.moves || 0, { preservePhysicalTopline: true });

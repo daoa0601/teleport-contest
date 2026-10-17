@@ -38,7 +38,7 @@ void test('a demon attacks a wealthy hero who is still putting on armor', async 
     pushKey(armor.invlet);
     await rhack('W'.charCodeAt(0));
     const dressing = game._delayedAction;
-    assert.ok(dressing && dressing.kind === 'wear' && dressing.remainingGlobalTurns > 0);
+    assert.ok(dressing && dressing.kind === 'wear' && (game._helplessTurns ?? 0) > 0);
     setHeroGoldAmount(game, 1000);
     const demon = await createMonsterAt('water demon', 11, 10, NO_MINVENT);
     demon.mpeaceful = 1;

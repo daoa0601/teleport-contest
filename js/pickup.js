@@ -1,4 +1,5 @@
 // C pickup.c: command pickup, automatic pickup, and floor inspection.
+import { setMulti } from './command_state.js';
 import { game, requireGameLevel } from './gstate.js';
 import { isIceAt, isLavaAt, isPoolAt } from './terrain_properties.js';
 import { objectName, observeObjectForNaming } from './objnam.js';
@@ -42,7 +43,7 @@ export function pickupClassOrder() {
     return [...inventoryClassOrder(), 17, 0].map(objectClassHeading);
 }
 export async function pickupAtHero(count = Math.max(0, game._commandCount || 0)) {
-    game.multi = 0;
+    setMulti(0);
     const source = pickupSourceAtHero();
     const objects = pickupObjects(source);
     const problem = pickupLocationProblem({ state: game, objects, monster: source.monster });

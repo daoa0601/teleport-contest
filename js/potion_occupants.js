@@ -1,6 +1,6 @@
 // C potion.c:ghost_from_bottle(), djinni_from_bottle(), mongrantswish().
 import { G_GONE, MM_NOMSG } from './const.js';
-import { endVoluntaryMultiTurn } from './command_state.js';
+import { nomul } from './command_state.js';
 import { canSpotMonster, newsym, plineWithContinuation as pline, randomDisplayMonsterName, show_glyph_cell, } from './display.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { makemonNear } from './mklev.js';
@@ -45,8 +45,7 @@ async function releaseGhost(state) {
     await pline(`As you open the bottle, an enormous ${name} emerges!`);
     if (state.flags.verbose)
         await pline('You are frightened to death, and unable to move.');
-    endVoluntaryMultiTurn(state);
-    state._helplessTurns = Math.max(state._helplessTurns ?? 0, 3);
+    nomul(-3, state);
     state._helplessReason = 'being frightened to death';
     state._helplessDoneMessage = 'You regain your composure.';
 }

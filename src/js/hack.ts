@@ -14,7 +14,7 @@ import {
 import { bot, displayLiquidName, feel_newsym, newsym, plineWithContinuation, under_water, updateLastSeenTerrain } from './display.js';
 import { heroPassesWalls, heroFormSticks, heroSpecies } from './hero_species.js';
 import { heroHasConflict } from './hero_conflict.js';
-import { endVoluntaryMultiTurn } from './command_state.js';
+import { endVoluntaryMultiTurn, setMulti } from './command_state.js';
 import { resetHeroTrap, setHeroInWater } from './terrain_movement.js';
 import { monstersObserveHeroResistance } from './monster_perception.js';
 import { clearHeroTrap, setHeroTrap } from './hero_traps.js';
@@ -741,7 +741,7 @@ async function wakeHeroForCrawl(state: GameState, publish: MessagePublisher) {
     if (u.uhs === FAINTED) await resetHeroFaint({ state });
     if (u.usleep) {
         u.usleep = 0;
-        state._helplessTurns = 0;
+        setMulti(0, state);
         state._helplessReason = null;
         state._helplessDoneMessage = null;
         await publish('Suddenly you wake up!');
@@ -749,7 +749,7 @@ async function wakeHeroForCrawl(state: GameState, publish: MessagePublisher) {
     }
     if (state._helplessReason === 'unconscious from rotten food'
         || state._helplessReason === 'unconscious from drinking') {
-        state._helplessTurns = 0;
+        setMulti(0, state);
         state._helplessReason = null;
         state._helplessDoneMessage = null;
     }

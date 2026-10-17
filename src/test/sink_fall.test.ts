@@ -3,6 +3,7 @@ import { requirePlayingGame } from '../js/gstate.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { SINK } from '../js/const.js';
+import { nomul } from '../js/command_state.js';
 import { wearHeroAccessory } from '../js/accessory.js';
 import { wearHeroArmor } from '../js/armor.js';
 import { fallIntoSink } from '../js/sink_fall.js';
@@ -198,9 +199,9 @@ void test('a crash interrupts donning armor and loses the partial wear', async (
     sinkSpot();
     requirePlayingGame(game);
     const boots = await wearBoots();
+    nomul(-5);
     game._delayedAction = {
-        kind: 'wear', object: boots, remainingGlobalTurns: 5, ready: false,
-        finishMessage: 'You finish your dressing maneuver.',
+        kind: 'wear', object: boots, ready: false,
     };
     pushKeys(' '); // acknowledge the crash before the interrupted-dressing message
     const outcome = await fallIntoSink();

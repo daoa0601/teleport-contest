@@ -1,4 +1,5 @@
 // C apply.c:use_figurine(). Placement is shared with the timer owner.
+import { setMulti } from './command_state.js';
 import { Is_airlevel, Is_waterlevel } from './const.js';
 import { map_invisible, plineWithContinuation as pline } from './display.js';
 import { makeFamiliar } from './familiar.js';
@@ -17,7 +18,7 @@ export async function useFigurine(object) {
     }
     const direction = await promptDirection();
     if (!direction) {
-        game.multi = 0;
+        setMulti(0);
         return { spentTime: false, object };
     }
     const x = game.u.ux + direction.dx, y = game.u.uy + direction.dy;

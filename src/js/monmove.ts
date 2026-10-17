@@ -78,8 +78,7 @@ import { senseWithTelepathy } from './display.js';
 import { heroHasHalfSpellDamage } from './spell_damage.js';
 import { useMonsterMindBlast } from './monster_mind_blast.js';
 import { monsterIsMindFlayer } from './monster_data.js';
-import { endVoluntaryMultiTurn, heroHasInvoluntaryDelay } from './command_state.js';
-import { stopRun } from './runmode.js';
+import { endVoluntaryMultiTurn, heroHasInvoluntaryDelay, nomul, setMulti } from './command_state.js';
 import { d, rn2, rnd, rnl } from './rng.js';
 import { game, requireInitializedGame, requireLiveGame } from './gstate.js';
 import { performMonsterHeroAttack } from './allmain.js';
@@ -6749,7 +6748,7 @@ export async function completeHeroAttackSlot(
         state.u.usleep < state.moves &&
         recordRandom(random, action.calls, 10) === 0
     ) {
-        state._helplessTurns = 1;
+        setMulti(-1, state);
         state._helplessDoneMessage = 'The combat suddenly awakens you.';
     }
     sequence.current = null;
@@ -6847,16 +6846,7 @@ export function resumeDeferredHeroSpell(
         const monsterLevel = action.monster?.m_lev ?? MONSTER_LEVEL[action.monster?.mnum] ?? 0;
         let duration = resisted ? 1 : 4 + monsterLevel;
         if (heroHasHalfSpellDamage(state)) duration = Math.trunc((duration + 1) / 2);
-        const existingDelay = Math.max(0, state._helplessTurns ?? 0, -state.multi);
-        if (duration >= existingDelay) {
-            if (!existingDelay) state.context.botl = true;
-            state.u.invulnerable = false;
-            state.u.usleep = 0;
-            state.multi = -duration;
-            state._helplessTurns = duration;
-            stopRun(state);
-            state._cannedCommands = [];
-        }
+        nomul(-duration, state);
         state._helplessReason = 'paralyzed by a monster';
         state._helplessDoneMessage = null;
         applyHeroSpellDamage(attack, duration, state);
