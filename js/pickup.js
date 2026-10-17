@@ -52,6 +52,7 @@ export async function pickupAtHero(count = Math.max(0, game._commandCount || 0))
         game.context.move = problem.spendsTurn ? 1 : 0;
         return;
     }
+    game._pickupEncumbrance = 0;
     if (!source.monster && heroCannotTake(game)) {
         await pline('You are physically incapable of picking anything up.');
         game.context.move = 0;
@@ -60,12 +61,14 @@ export async function pickupAtHero(count = Math.max(0, game._commandCount || 0))
     const selected = await choosePickupObjects(source, objects, count);
     const { attempted } = await takeSelectedObjects(source, selected);
     game.context.move = attempted ? 1 : 0;
+    game._pickupEncumbrance = 0;
 }
 export async function autopickupAtHero() {
     if (heroIsUnaware(game)) {
         game._prevDecorType = STONE;
         return;
     }
+    game._pickupEncumbrance = 0;
     const source = pickupSourceAtHero();
     const { x, y, monster } = source;
     const level = requireGameLevel();
@@ -101,6 +104,7 @@ export async function autopickupAtHero() {
     const { picked } = await takeSelectedObjects(source, objects.filter(autopickupAllows));
     if (!monster && !game.program_state?.gameover)
         await checkHere(source, picked > 0);
+    game._pickupEncumbrance = 0;
 }
 async function choosePickupObjects(source, objects, count) {
     const eligible = count
@@ -180,7 +184,6 @@ async function takeSelectedObjects(source, selected, telekinesis = false, batch 
         clearJustPicked(game);
     let picked = 0;
     let attempted = false;
-    let previousCapacity = 0;
     for (const selection of selected) {
         const counted = 'value' in selection;
         let object = counted ? selection.value : selection;
@@ -261,10 +264,7 @@ async function takeSelectedObjects(source, selected, telekinesis = false, batch 
         if (remote)
             await remoteBurglary(source.x, source.y);
         const message = pickedInventoryDescription(added.object, lift.count);
-        const capacity = nearCapacity(game);
-        const prefix = capacity === previousCapacity ? '' : pickupLoadPrefix(capacity);
-        previousCapacity = capacity;
-        await plineWithContinuation(prefix ? `${prefix} lifting ${message}` : message);
+        await plineWithContinuation(pickupInventoryMessage(message, 'lifting'));
         const ghostlyMessage = finishGhostlyPickup(added.object, game);
         if (ghostlyMessage)
             await plineWithContinuation(ghostlyMessage);
@@ -277,6 +277,14 @@ async function takeSelectedObjects(source, selected, telekinesis = false, batch 
             newsym(source.x, source.y);
     }
     return { picked, attempted };
+}
+// C pickup.c:pickup_prinv(). Tool pickups retain this process-local
+// baseline; pickup() and container menus reset it at their own boundaries.
+export function pickupInventoryMessage(description, verb, state = game) {
+    const capacity = nearCapacity(state);
+    const prefix = capacity === (state._pickupEncumbrance ?? 0) ? '' : pickupLoadPrefix(capacity);
+    state._pickupEncumbrance = capacity;
+    return prefix ? `${prefix} ${verb} ${description}` : description;
 }
 export async function addPickedInventoryObject(object) {
     recordHeroPrizeAcquisition(object, game);
