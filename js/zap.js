@@ -16,7 +16,7 @@ import { updateIceObjectTimersAt } from './floor_object.js';
 import { isIceAt, isLavaAt, isMoatAt, isPoolAt } from './terrain_properties.js';
 import { heroHasArtifactDefense } from './artifacts.js';
 import { exerciseAttribute } from './attrib.js';
-import { A_STR, COLNO, CORR, DB_FLOOR, DB_ICE, DB_UNDER, DOOR, DRAWBRIDGE_UP, FOUNTAIN, SHOP_BARS_COST, SHOP_DOOR_COST, ZAP_POS, D_BROKEN, D_CLOSED, D_LOCKED, D_NODOOR, HWALL, ICE, ICED_MOAT, ICED_POOL, IRONBARS, IS_WALL, IS_WATERWALL, Is_rogue_level, Is_waterlevel, ismnum, LAVAWALL, PIT, POOL, ROOM, ROWNO, SDOOR, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, Upolyd, VWALL, WEB, WM_MASK, W_NONDIGGABLE, W_RING } from './const.js';
+import { A_STR, COLNO, DB_FLOOR, DB_ICE, DB_UNDER, DOOR, DRAWBRIDGE_UP, FOUNTAIN, SHOP_BARS_COST, SHOP_DOOR_COST, ZAP_POS, D_BROKEN, D_CLOSED, D_LOCKED, D_NODOOR, HWALL, ICE, ICED_MOAT, ICED_POOL, IRONBARS, IS_WALL, IS_WATERWALL, Is_rogue_level, Is_waterlevel, ismnum, LAVAWALL, PIT, POOL, ROOM, ROWNO, SDOOR, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, Upolyd, VWALL, WEB, WM_MASK, W_NONDIGGABLE, W_RING } from './const.js';
 import { displayColorName, displayLiquidName, docrt, newsym, plineWithContinuation } from './display.js';
 import { waterbodyName } from './terrain_name.js';
 import { resetPick } from './lock_context.js';
@@ -51,8 +51,8 @@ import { applySupportedPotionVapor } from './potion_hit.js';
 import { heroHasNoHands } from './polyself.js';
 import { createPoisonGasCloud } from './regions.js';
 import { dryFountainAt } from './fountain.js';
-import { specialLevelAt } from './dungeon.js';
-import { resetHeroTrap, switchHeroTerrain } from './terrain_movement.js';
+import { dissolveBars } from './projectile_bars.js';
+import { resetHeroTrap } from './terrain_movement.js';
 import { stopHeroOccupation } from './occupation.js';
 import { rn2, rnd } from './rng.js';
 import { promptDirection } from './tty_prompts.js';
@@ -443,27 +443,19 @@ export async function applyRayFloorFeatures(kind, x, y, state = game, { rayNoun 
         const action = kind === RAY_ACID ? 'corrode' : 'melt';
         if ((location.wall_info ?? 0) & W_NONDIGGABLE) {
             if (visible) {
-                await publish(`The iron bars ${action} somewhat but remain intact.`);
+                await publish(`The iron bars ${action} somewhat but remain intact.`, { noRepeat: true });
             }
         }
         else {
             rangeChange -= 3;
-            location.typ = location.edge ? DOOR
-                : specialLevelAt(state.u.uz) || roomsAt(state.level, x, y).length ? ROOM : CORR;
-            location.flags = 0;
-            location.doormask = D_NODOOR;
-            location.wall_info = 0;
-            newsym(x, y);
-            if (state.u.ux === x && state.u.uy === y)
-                await switchHeroTerrain(state);
-            vision_note_blocker_change(x, y);
+            // The message can pause at --More-- with the beam over intact bars.
+            if (visible) {
+                await publish(`The iron bars ${action}${kind === RAY_ACID ? ' away' : ''}.`, { noRepeat: true });
+            }
+            await dissolveBars(x, y, state);
             if (roomsAt(state.level, x, y, SHOPBASE).length) {
                 addShopDamage(x, y, heroCaused ? SHOP_BARS_COST : 0, state);
                 shopDamage ||= heroCaused;
-            }
-            if (visible) {
-                await publish(`The iron bars ${action}${kind === RAY_ACID ? ' away' : ''}.`);
-                newsym(x, y);
             }
         }
     }
