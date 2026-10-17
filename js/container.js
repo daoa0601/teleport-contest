@@ -11,6 +11,7 @@ import { startGlobTimeout } from './glob.js';
 import { finishInventoryRemoval, useUpInventoryStack } from './hero_inventory.js';
 import { setPrimaryWeapon, setSecondaryWeapon, setQuiverObject } from './weapon_slots.js';
 import { inventoryItemDescription, inventoryPrimaryHandDetail } from './invent.js';
+import { objectDescription as describeObject } from './object_description.js';
 import { compactInventoryLetters, promptInventoryObject } from './inventory_prompt.js';
 import { definiteObjectAction, definiteName, objectCombatName, objectNameIsPlural, observeObjectForNaming, ownedObjectAction, ownedObjectQuestion, ownedSimpleObjectName, simpleObjectName, objectQuestion, simpleObjectNameWithArticle, } from './objnam.js';
 import { inventoryClassOrder, lootSortMode, objectClassHeading, sortObjects } from './object_sort.js';
@@ -608,7 +609,7 @@ async function lootTraditionally(container, putIn, resetPicked) {
                     const itemPrefix = putIn ? `${letter} - ` : '';
                     const question = objectQuestion(object, {
                         prefix: first ? `${putIn ? 'Put in' : 'Take out'}: ` : '', suffix: '?', fallback: 'item',
-                        format: item => `${itemPrefix}${objectDescription(item)}`,
+                        format: (item, state) => `${itemPrefix}${describeObject(item, { state, primaryHandDetail: null })}`,
                         shortFormat: (item, state) => `${itemPrefix}${simpleObjectNameWithArticle(item, state)}`,
                     });
                     first = false;

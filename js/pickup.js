@@ -3,6 +3,7 @@ import { setMulti } from './command_state.js';
 import { game, requireGameLevel } from './gstate.js';
 import { isIceAt, isLavaAt, isPoolAt } from './terrain_properties.js';
 import { objectName, objectQuestion, observeObjectForNaming, simpleObjectNameWithArticle } from './objnam.js';
+import { objectDescription } from './object_description.js';
 import { inventoryClassOrder, lootSortMode, objectClassHeading, sortObjects } from './object_sort.js';
 import { floorObjectDescription, pricedFloorObjectDescription, lookHere, readFloorEngraving, } from './floor_object_display.js';
 import { tryCallObjectType } from './object_call.js';
@@ -154,7 +155,7 @@ async function pickUpTraditionally(source, count) {
             observeObjectForNaming(object);
             const question = objectQuestion(object, {
                 prefix: 'Pick up ', suffix: '?', fallback: 'something',
-                format: item => floorObjectDescription(item), shortFormat: simpleObjectNameWithArticle,
+                format: (item, state) => objectDescription(item, { state }), shortFormat: simpleObjectNameWithArticle,
             });
             const response = await tty_yn_function(question, amount < 2 ? 'ynaq' : 'yn#aq', 'y');
             if (response.answer === 'q')

@@ -4,7 +4,8 @@ import { MENU_COMBINATION, MENU_TRADITIONAL } from '../js/const.js';
 import { useContainer } from '../js/container.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
-import { ARROW, CLUB, FOOD_RATION, LOADSTONE, SACK } from '../js/object_data.js';
+import { ARROW, CLUB, FOOD_RATION, LOADSTONE, POT_HEALING, SACK } from '../js/object_data.js';
+import { recordObjectCall } from '../js/object_knowledge.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 
@@ -46,6 +47,36 @@ void test('traditional take-out cancellation preserves unknown contents and spen
     assert.equal(arrow.where, 'contained');
     assert.equal(result.spentTime, false);
 });
+
+for (const putIn of [false, true]) {
+    void test(`traditional ${putIn ? 'put-in' : 'take-out'} shortens a called name before removing known attributes`, async () => {
+        freshPlayableRoom({ flags: { menu_style: MENU_TRADITIONAL } });
+        const sack = await addInventoryObject(SACK, { invlet: 'a', cknown: true });
+        const properties = { typeKnown: false, known: false, blessed: true, greased: true };
+        const potion = putIn
+            ? await addInventoryObject(POT_HEALING, { ...properties, invlet: 'b' })
+            : await knownObject(POT_HEALING, { ...properties, where: 'contained', container: sack });
+        if (!putIn) sack.contents = [potion];
+        const callName = 'Restorative mixture reserved for healing wounds after dangerous encounters in the deeper dungeon';
+        recordObjectCall(POT_HEALING, callName);
+        const input = resetInputState();
+        input.feed(`${putIn ? 'i' : 'o'}!\n`);
+        const action = useContainer(sack, { held: true });
+        try {
+            await input.waitUntilBlocked();
+            const prefix = putIn ? 'Put in: b - ' : 'Take out: ';
+            assert.equal(topline(), `${prefix}a blessed greased potion called Restorat...? [ynaq] (n)`);
+        } finally {
+            input.feed('q');
+            await action;
+        }
+        assert.equal(potion.where, putIn ? 'inventory' : 'contained');
+        assert.equal(potion.bknown, true);
+        assert.equal(potion.greased, true);
+        assert.equal(game._objectCallNames?.[POT_HEALING], callName);
+        assert.equal((await action).spentTime, false);
+    });
+}
 
 void test('traditional take-out leaves a cursed loadstone stack whole after a numeric answer', async () => {
     freshPlayableRoom({ flags: { menu_style: MENU_TRADITIONAL } });

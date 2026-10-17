@@ -4,7 +4,8 @@ import { MENU_COMBINATION, MENU_PARTIAL, MENU_TRADITIONAL } from '../js/const.js
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { pickupAtHero } from '../js/pickup.js';
-import { ARROW, CLUB, FOOD_RATION, GOLD_PIECE } from '../js/object_data.js';
+import { ARROW, CLUB, FOOD_RATION, GOLD_PIECE, POT_HEALING } from '../js/object_data.js';
+import { recordObjectCall } from '../js/object_knowledge.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 
@@ -170,6 +171,31 @@ void test('traditional pickup defaults to yes and q stops before another object'
     assert.equal(arrows.where, 'inventory');
     assert.equal(food.where, 'floor');
     assert.equal(game.context.move, 1);
+});
+
+void test('traditional pickup shortens a called name before removing known attributes', async () => {
+    freshPlayableRoom({ flags: { menu_style: MENU_TRADITIONAL } });
+    await floorObject(FOOD_RATION, 10, 10);
+    const potion = await floorObject(POT_HEALING, 10, 10, {
+        typeKnown: false, known: false, blessed: true, greased: true,
+    });
+    const callName = 'Restorative mixture reserved for healing wounds after dangerous encounters in the deeper dungeon';
+    recordObjectCall(POT_HEALING, callName);
+    const input = resetInputState();
+    input.feed(' A\n');
+    const action = pickupAtHero();
+    try {
+        await input.waitUntilBlocked();
+        assert.equal(topline(), 'Pick up a blessed greased potion called Restorat...? [ynaq] (y)');
+    } finally {
+        input.feed('q');
+        await action;
+    }
+    assert.equal(potion.where, 'floor');
+    assert.equal(potion.bknown, true);
+    assert.equal(potion.greased, true);
+    assert.equal(game._objectCallNames?.[POT_HEALING], callName);
+    assert.equal(game.context.move, 0);
 });
 
 void test('traditional pickup can look at the pile and return to its class prompt', async () => {
