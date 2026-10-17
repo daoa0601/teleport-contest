@@ -2745,6 +2745,14 @@ async function presentMonsterAttackEffects(action, game, { random = rn2, rollDic
                         paging.pagerOwned = true;
                     }
                 }
+                // mhitm_ad_fire() updates witnesses after the fire messages,
+                // before inventory damage. Cancelled contact teaches nothing.
+                if (heroAttack.deferredFireInventory) {
+                    if (game.u.fireResistance)
+                        monstersObserveHeroResistance(M_SEEN_FIRE, game);
+                    else
+                        monstersForgetHeroResistance(M_SEEN_FIRE, game);
+                }
                 if (heroAttack.slimeBurnedMessage) {
                     const slimeDismissal = await plineWithContinuation(heroAttack.slimeBurnedMessage);
                     heroAttack.slimeBurnedMessage = null;
