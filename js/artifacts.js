@@ -328,7 +328,7 @@ function resistanceAttackApplies(artifact, defender, { hero, random, state }) {
                 (heroState.ulycn !== undefined &&
                     Number.isInteger(heroState.ulycn) &&
                     heroState.ulycn >= 0));
-        if (damageType === 'stun')
+        if (damageType === 'stun' || damageType === 'magic')
             return !heroState.antimagic;
         return false;
     }
@@ -340,7 +340,7 @@ function resistanceAttackApplies(artifact, defender, { hero, random, state }) {
         return !monsterHasShockResistance(defender);
     if (damageType === 'life-drain')
         return !monsterHasDrainResistance(defender);
-    if (damageType === 'stun') {
+    if (damageType === 'stun' || damageType === 'magic') {
         const resistance = MONSTER_MAGIC_RESISTANCE[defender.mnum] ?? 0;
         return random(100) >= resistance;
     }

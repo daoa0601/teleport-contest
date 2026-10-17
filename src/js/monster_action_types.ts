@@ -245,6 +245,7 @@ interface HeroAttackProgress {
 // Contact effects retain their own mutable progress across a tty pause. These
 // fields belong to contact attacks, not arbitrary payloads on a generic event.
 export interface HeroContactAttack extends HeroAttackProgress {
+    specialMessage?: boolean;
     kind: 'hero-attack';
     attackType: AttackMethod;
     damageType: DamageType;

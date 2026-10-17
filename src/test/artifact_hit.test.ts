@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { applyArtifactHitToMonster } from '../js/artifact_hit.js';
+import { applyArtifactHit } from '../js/artifact_hit.js';
 import { hitMonsterWithHeroObject } from '../js/hero_physical_hit.js';
 import { makeHallucinated } from '../js/hero_mental_status.js';
 import { MM_ANGRY, MM_NOGRP, MM_NOMSG, MM_NOWAIT, NO_MINVENT } from '../js/const.js';
@@ -25,7 +25,7 @@ void test('Magicbane still cancels when an artifact-hit caller supplies a zero d
     const golem = await createMonsterAt('clay golem', 12, 10, TEST_MONSTER_FLAGS);
     const blade = await artifactObject('Magicbane', { spe: 0 });
 
-    await applyArtifactHitToMonster(blade, golem, 4, {
+    await applyArtifactHit(blade, golem, 4, {
         dieRoll: 0, random: limit => limit - 1, publish: async () => {},
     });
 
@@ -41,7 +41,7 @@ void test('Fire Brand can burn a monster inventory and add its damage', async ()
     await addObjectToMonsterInventory(monster, scroll, game);
     const messages: string[] = [];
 
-    const hit = await applyArtifactHitToMonster(await artifactObject('Fire Brand'), monster, 4, {
+    const hit = await applyArtifactHit(await artifactObject('Fire Brand'), monster, 4, {
         state: game,
         describeTarget: () => 'the jackal',
         publish: async (message: string) => {
@@ -64,7 +64,7 @@ void test('Mjollnir wakes monsters near a target struck by lightning', async () 
     const sleeper = await createMonsterAt('lichen', 13, 10, TEST_MONSTER_FLAGS);
     sleeper.msleeping = 1;
 
-    const hit = await applyArtifactHitToMonster(await artifactObject('Mjollnir'), target, 4, {
+    const hit = await applyArtifactHit(await artifactObject('Mjollnir'), target, 4, {
         state: game,
         publish: async () => {},
         random: () => 1,
@@ -83,7 +83,7 @@ void test('Stormbringer drains a monster level and heals its wielder', async () 
     monster.mhp = monster.mhpmax = 20;
     const levelBefore = monster.m_lev;
 
-    const hit = await applyArtifactHitToMonster(await artifactObject('Stormbringer'), monster, 4, {
+    const hit = await applyArtifactHit(await artifactObject('Stormbringer'), monster, 4, {
         state: game,
         describeTarget: () => 'the pony',
         publish: async () => {},
@@ -106,7 +106,7 @@ void test('Magicbane cancels a spellcaster and absorbs its magic', async () => {
     const monster = await createMonsterAt('gnomish wizard', 12, 10, TEST_MONSTER_FLAGS);
     const messages: string[] = [];
 
-    const hit = await applyArtifactHitToMonster(
+    const hit = await applyArtifactHit(
         await artifactObject('Magicbane', { spe: 0 }),
         monster,
         4,
@@ -139,7 +139,7 @@ void test('Magicbane scares a surviving monster for three turns', async () => {
     monster.mhp = monster.mhpmax = 30;
     const messages: string[] = [];
 
-    const hit = await applyArtifactHitToMonster(
+    const hit = await applyArtifactHit(
         await artifactObject('Magicbane', { spe: 0 }),
         monster,
         4,
@@ -173,7 +173,7 @@ void test('the Tsurugi bisects small monsters and cuts deeply into large ones', 
     const mumak = await createMonsterAt('mumak', 12, 10, TEST_MONSTER_FLAGS);
     mumak.mhp = mumak.mhpmax = 20;
 
-    const smallHit = await applyArtifactHitToMonster(weapon, jackal, 4, {
+    const smallHit = await applyArtifactHit(weapon, jackal, 4, {
         state: game,
         dieRoll: 1,
         describeTarget: () => 'the jackal',
@@ -182,7 +182,7 @@ void test('the Tsurugi bisects small monsters and cuts deeply into large ones', 
         },
         rollOne: maximumRoll,
     });
-    const largeHit = await applyArtifactHitToMonster(weapon, mumak, 4, {
+    const largeHit = await applyArtifactHit(weapon, mumak, 4, {
         state: game,
         dieRoll: 1,
         describeTarget: () => 'the mumak',
@@ -205,7 +205,7 @@ void test('Vorpal Blade misses a headless creature and beheads a jabberwock', as
     const messages: string[] = [];
     const gasSpore = await createMonsterAt('gas spore', 11, 10, TEST_MONSTER_FLAGS);
     gasSpore.mhp = gasSpore.mhpmax = 20;
-    const headless = await applyArtifactHitToMonster(weapon, gasSpore, 4, {
+    const headless = await applyArtifactHit(weapon, gasSpore, 4, {
         state: game,
         dieRoll: 1,
         describeTarget: () => 'the gas spore',
@@ -216,7 +216,7 @@ void test('Vorpal Blade misses a headless creature and beheads a jabberwock', as
     });
     const jabberwockTarget = await createMonsterAt('jabberwock', 12, 10, TEST_MONSTER_FLAGS);
     jabberwockTarget.mhp = jabberwockTarget.mhpmax = 20;
-    const jabberwock = await applyArtifactHitToMonster(weapon, jabberwockTarget, 4, {
+    const jabberwock = await applyArtifactHit(weapon, jabberwockTarget, 4, {
         state: game,
         dieRoll: 10,
         describeTarget: () => 'the jabberwock',
@@ -293,7 +293,7 @@ void test('felt elemental damage does not reveal a blind target inventory being 
     await makeBlinded(20, { talk: false });
     const messages: string[] = [];
 
-    const hit = await applyArtifactHitToMonster(await artifactObject('Fire Brand'), monster, 20, {
+    const hit = await applyArtifactHit(await artifactObject('Fire Brand'), monster, 20, {
         visible: false, realizesDamage: true, random: () => 0,
         publish: async message => { messages.push(message); },
     });
@@ -315,7 +315,7 @@ void test('seeing a swallowed artifact strike does not expose the swallower\'s b
     await installSwallowedHero(monster);
     const messages: string[] = [];
 
-    await applyArtifactHitToMonster(await artifactObject('Fire Brand'), monster, 20, {
+    await applyArtifactHit(await artifactObject('Fire Brand'), monster, 20, {
         visible: true, realizesDamage: true, random: () => 0,
         publish: async message => { messages.push(message); },
     });
@@ -334,7 +334,7 @@ void test('visible fire ignites monster equipment with the carrier ownership', a
     assert.ok(lamp);
     const messages: string[] = [];
 
-    await applyArtifactHitToMonster(await artifactObject('Fire Brand'), monster, 20, {
+    await applyArtifactHit(await artifactObject('Fire Brand'), monster, 20, {
         random: () => 0, publish: async message => { messages.push(message); },
     });
 
@@ -350,7 +350,7 @@ void test('one hallucinated Magicbane hit keeps the same target identity in its 
     await makeHallucinated(20, { talk: false });
     const messages: string[] = [];
 
-    await applyArtifactHitToMonster(await artifactObject('Magicbane'), monster, 4, {
+    await applyArtifactHit(await artifactObject('Magicbane'), monster, 4, {
         dieRoll: 1, random: range => range === 12 ? 0 : range - 1,
         rollOne: maximumRoll, publish: async message => { messages.push(message); },
     });

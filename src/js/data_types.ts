@@ -41,7 +41,7 @@ export type ArtifactTarget =
     | { readonly kind: 'symbol'; readonly value: 'S_DRAGON' | 'S_OGRE' | 'S_TROLL' };
 
 export type ArtifactDamage = 'physical' | 'life-drain' | 'shock'
-    | 'stun' | 'cold' | 'fire';
+    | 'stun' | 'cold' | 'fire' | 'magic';
 export type ArtifactDefense = 'life-drain' | 'poison' | 'magic' | 'cold'
     | 'fire' | 'lycanthropy' | 'blindness';
 export type ArtifactPower = 'fling-poison' | 'snowstorm' | 'firestorm'

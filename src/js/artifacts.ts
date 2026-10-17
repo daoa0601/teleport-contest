@@ -473,14 +473,14 @@ function resistanceAttackApplies(
                     Number.isInteger(heroState.ulycn) &&
                     heroState.ulycn >= 0)
             );
-        if (damageType === 'stun') return !heroState.antimagic;
+        if (damageType === 'stun' || damageType === 'magic') return !heroState.antimagic;
         return false;
     }
     if (damageType === 'fire') return !monsterHasFireResistance(defender);
     if (damageType === 'cold') return !monsterHasColdResistance(defender);
     if (damageType === 'shock') return !monsterHasShockResistance(defender);
     if (damageType === 'life-drain') return !monsterHasDrainResistance(defender);
-    if (damageType === 'stun') {
+    if (damageType === 'stun' || damageType === 'magic') {
         const resistance = MONSTER_MAGIC_RESISTANCE[defender.mnum] ?? 0;
         return random(100) >= resistance;
     }

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { applyArtifactHitToMonster } from '../js/artifact_hit.js';
+import { applyArtifactHit } from '../js/artifact_hit.js';
 import { MM_ANGRY, MM_NOGRP, NO_MINVENT } from '../js/const.js';
 import { artifactObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
@@ -13,7 +13,7 @@ for (const name of ['Vorpal Blade', 'The Tsurugi of Muramasa']) {
         monster.mhp = monster.mhpmax = 10;
         const sword = await artifactObject(name);
 
-        const hit = await applyArtifactHitToMonster(sword, monster, 4, {
+        const hit = await applyArtifactHit(sword, monster, 4, {
             dieRoll: 1, publish: async () => {},
         });
 

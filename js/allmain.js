@@ -44,6 +44,7 @@ import { placeHeroAtRandomArrival } from './level_change.js';
 import { monsterName, monsterSpellDeathReason, monsterSubjectPronoun, possessiveName } from './monster_name.js';
 import { touchHeroWithDeath } from './monster_death_touch.js';
 import { resolveMonsterWeaponContact } from './monster_weapon_contact.js';
+import { applyArtifactHit } from './artifact_hit.js';
 import { finishHeroDeathAfterMonsterMessage, finishMonsterAttackDeath, waitForCurrentMonsterMore } from './monster_attack_death.js';
 import { monsterMissMessage } from './monster_miss.js';
 import { monsterIsAnimal } from './monster_data.js';
@@ -1580,6 +1581,8 @@ function reluctantPetMessage(monster, movement) {
 }
 async function monsterAttackMessage(monster, attack, previousAttack = null, random = rn2) {
     const game = requireInitializedGame();
+    if (attack.specialMessage)
+        return null;
     if (attack.effect === 'petrifying-corpse' || attack.effect === 'wrapping-natural')
         return null;
     if (attack.effect === 'physical-hug' || attack.effect === 'silent-physical-touch')
@@ -1642,8 +1645,10 @@ async function monsterAttackMessage(monster, attack, previousAttack = null, rand
                         : attack.attackType === 6 ? 'stings' : 'hits';
     // C hitmsg() requires adjacent slots in the species' attack array.
     // getmattk() replacements use a separate buffer and cannot be adjacent.
+    // Artifact prose skips hitmsg(), so it does not update that prior slot.
     const again = previousAttack?.hit
         && previousAttack.kind === 'hero-attack'
+        && !previousAttack.specialMessage
         && previousAttack.effect !== 'physical-hug'
         && previousAttack.attackType === attack.attackType
         && previousAttack.attackIndex + 1 === attack.attackIndex
@@ -2610,6 +2615,25 @@ async function presentMonsterAttackEffects(action, game, { random = rn2, rollDic
                     && heroAttack.effect !== 'failed-grab'
                     && !canSpotMonster(monster))
                     map_invisible(monster.mx, monster.my);
+                const publishEquipmentMessage = async (line, options) => {
+                    const dismissal = await plineWithContinuation(line, options);
+                    if (dismissal != null)
+                        paging.pagerOwned = true;
+                    return dismissal;
+                };
+                if (heroAttack.hit && heroAttack.effect === 'physical-weapon'
+                    && heroAttack.deferredPostHit) {
+                    const artifact = await applyArtifactHit(monsterWieldedWeapon(monster), 'hero', heroAttack.damage ?? 0, {
+                        state: game, attacker: monster, dieRoll: heroAttack.roll ?? 0,
+                        publish: publishEquipmentMessage, random, rollOne,
+                    });
+                    if (artifact.heroDied)
+                        return { heroDied: true };
+                    heroAttack.damage = artifact.damage;
+                    heroAttack.specialMessage = artifact.specialMessage;
+                    if (!artifact.damage)
+                        heroAttack.poison = null;
+                }
                 const message = await monsterAttackMessage(monster, heroAttack, previousHeroAttack, random);
                 const contactDismissal = message
                     ? await plineWithContinuation(message) : undefined;
@@ -2617,13 +2641,7 @@ async function presentMonsterAttackEffects(action, game, { random = rn2, rollDic
                     && contactDismissal !== undefined) {
                     paging.pagerOwned = true;
                 }
-                const publishEquipmentMessage = async (line, options) => {
-                    const dismissal = await plineWithContinuation(line, options);
-                    if (dismissal != null)
-                        paging.pagerOwned = true;
-                    return dismissal;
-                };
-                if (heroAttack.hit && heroAttack.effect === 'physical-weapon') {
+                if (heroAttack.hit && heroAttack.effect === 'physical-weapon' && heroAttack.damage) {
                     const weapon = monsterWieldedWeapon(monster);
                     if (weapon)
                         heroAttack.damage = await resolveMonsterWeaponContact(monster, weapon, heroAttack.damage ?? 0, game, publishEquipmentMessage, rollOne);
