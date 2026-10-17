@@ -12,6 +12,7 @@ import { dopray } from '../js/pray.js';
 import { vision_note_blocker_change, vision_recalc } from '../js/vision.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
+import { memoryStorage } from './support/memory-storage.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 function visibleText() {
@@ -201,6 +202,35 @@ for (const finished of [false, true]) {
         assert.match(displayed, /You are put to sleep by the homunculus!/);
     });
 }
+
+// C mhitu.c:mdamageu() reaches done_in_by() before hitmu() stops the
+// occupation, so a fatal bite never reports the interrupted meal.
+void test('a bite that kills an eating hero does not report the interrupted meal', async () => {
+    const attacker = await contactAttacker('jackal');
+    requirePlayingGame(game);
+    game.flags.bones = false;
+    game.flags.tombstone = false;
+    game.storage = memoryStorage();
+    const food = await addInventoryObject(FOOD_RATION);
+    assert.ok(food.invlet);
+    const input = resetInputState();
+    const messages: string[] = [];
+    input.beforeRead = () => { messages.push(game._pending_message || ''); input.feed(' '); };
+    input.feed(food.invlet);
+    await rhack('e'.charCodeAt(0));
+    assert.ok(game._occupation);
+    game.u.uhp = 1;
+
+    await performMonsterHeroAttack(attacker, game, {
+        random: limit => limit === 10 ? 9 : 0,
+        rollOne: () => 1, rollDice: () => 3,
+    });
+
+    assert.equal(game.program_state.gameover, true);
+    const displayed = messages.join('\n');
+    assert.match(displayed, /You die\.\.\./);
+    assert.doesNotMatch(displayed, /You stop eating/);
+});
 
 void test('Escape cannot suppress a werejackal infection warning', async () => {
     const attacker = await contactAttacker('werejackal');

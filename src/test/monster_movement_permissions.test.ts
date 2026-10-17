@@ -139,16 +139,18 @@ void test('rusting bars cannot admit a corrosive monster when the level forbids 
     assert.equal(admits(rustMonster), false);
 });
 
-for (const species of ['rust monster', 'goblin']) {
-    void test(`hurtling ${species} uses its real ability to pass iron bars`, async () => {
+// C dothrow.c:will_hurtle() asks goodpos(), which admits iron bars only to
+// wall-passers; a rust monster's ability to squeeze through is not consulted.
+for (const species of ['rust monster', 'goblin', 'xorn']) {
+    void test(`hurtling ${species} passes iron bars only by passing walls`, async () => {
         const level = freshObjectRoom({ heroX: 15, heroY: 12 });
         const monster = await createMonsterAt(species, 10, 10, MM_ANGRY | NO_MINVENT);
         level.requireAt(11, 10).typ = IRONBARS;
 
         const outcome = await hurtleMonster(monster, 1, 0, 1);
 
-        assert.equal(outcome.moved, species === 'rust monster');
-        assert.equal(monster.mx, species === 'rust monster' ? 11 : 10);
+        assert.equal(outcome.moved, species === 'xorn');
+        assert.equal(monster.mx, species === 'xorn' ? 11 : 10);
         assert.equal(level.requireAt(11, 10).typ, IRONBARS);
     });
 }

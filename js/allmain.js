@@ -481,6 +481,7 @@ function appendTurnMessage(message) {
     game._pending_message = game._pending_message
         ? `${game._pending_message}  ${message}` : message;
     game._last_message = game._pending_message;
+    game._lastPlineMessage = message;
 }
 // C ref: allmain.c:interrupt_multi().  Count-prefixed ordinary commands use
 // positive `multi`; full HP or power recovery cancels that voluntary repeat,
@@ -492,9 +493,7 @@ function interruptCountedActivity(message) {
     if (!(game.multi > 0) || game.context.travel || game.context.run)
         return;
     endVoluntaryMultiTurn(game);
-    if (game.flags?.verbose !== false
-        && game._pending_message !== message
-        && game._last_message !== message) {
+    if (game.flags?.verbose !== false && game._lastPlineMessage !== message) {
         appendTurnMessage(message);
     }
 }
@@ -2890,16 +2889,18 @@ async function presentMonsterAttackEffects(action, game, { random = rn2, rollDic
                 // before its rn2(2), assess_dmg(), death line, and the
                 // occupation-stop prose.  Keep this before later attack
                 // slots, but after every deferred tail owned by this slot.
+                // mdamageu() reaches done_in_by() first, so a hero killed by
+                // the hit never stops the occupation unless life-saved.
                 const engulfAttack = heroAttack.effect === 'engulf'
                     || heroAttack.effect === 'engulf-tick'
                     || heroAttack.effect === 'engulf-refused';
                 const missedContact = heroAttack.effect === 'failed-grab'
                     || heroAttack.effect === 'engulf-unfound'
                     || heroAttack.effect === 'wild-miss';
-                if (!engulfAttack && !missedContact && !heroAttack.contactDone) {
-                    await stopHeroOccupation(game);
-                }
+                const stopsOccupation = !engulfAttack && !missedContact && !heroAttack.contactDone;
                 if ((game.u?.[Upolyd(game.u) ? 'mh' : 'uhp'] ?? 1) > 0) {
+                    if (stopsOccupation)
+                        await stopHeroOccupation(game);
                     previousHeroAttack = heroAttack;
                     heroAttack = await completeHeroAttackSlot(action, game, random, rollDice, rollOne);
                     continue;
@@ -2910,6 +2911,8 @@ async function presentMonsterAttackEffects(action, game, { random = rn2, rollDic
                     heroDied = true;
                     break;
                 }
+                if (stopsOccupation)
+                    await stopHeroOccupation(game);
                 heroAttack.heroDied = false;
                 previousHeroAttack = heroAttack;
                 heroAttack = await completeHeroAttackSlot(action, game, random, rollDice, rollOne);

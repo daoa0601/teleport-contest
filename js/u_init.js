@@ -15,8 +15,7 @@ import { setMonsterGivenName } from './monster_given_name.js';
 import { setMonsterMalign } from './monster_alignment.js';
 import { nextIdent } from './ident.js';
 import { rn2, rnd, d, rne } from './rng.js';
-import { mkobj, mksobj } from './mklev.js';
-import { goodPosition } from './teleport_rules.js';
+import { findMonsterNearPosition, mkobj, mksobj } from './mklev.js';
 import { MONSTER_MOVE, MONSTER_NAME, SPECIAL_PM } from './monster_data.js';
 import { findArmorClass } from './armor.js';
 import { ensureQuestStatus } from './quest.js';
@@ -595,8 +594,9 @@ export async function makedog() {
             pettype = rn2(2) ? 32 : 16;
     }
     g.context.startingpet_typ = pettype;
-    const candidates = collectNearbyCoords(g.u.ux, g.u.uy, 3);
-    const spot = candidates.find(({ x, y }) => goodPosition(x, y, { kind: 'species', mnum: pettype }, { gpflags: GP_AVOID_MONPOS }));
+    // C makemon() places a monster made on the hero with enexto_core(),
+    // first avoiding scary squares and only then accepting them.
+    const spot = findMonsterNearPosition(pettype, g.u.ux, g.u.uy, { gpflags: GP_AVOID_MONPOS });
     if (!spot)
         return null;
     const monsterId = nextIdent();
@@ -659,7 +659,6 @@ export async function makedog() {
     if (!g.level.monsters)
         g.level.monsters = [];
     g.level.monsters.push(pet);
-    g.startingPet = pet;
     g.context.startingpet_mid = pet.m_id;
     await seeMonsterCloseup(pet, { photo: g.inventory.some(object => object.otyp === EXPENSIVE_CAMERA) });
     const name = pettype === MONSTER_NAME.indexOf('little dog')

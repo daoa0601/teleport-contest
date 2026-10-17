@@ -1060,13 +1060,13 @@ function furnitureDisplayGlyph(appearance: number): DisplayGlyph {
         kind: 'terrain', terrainName: symbol.name, glyph: cmapToGlyph(appearance, wallOffset) };
 }
 
-// C display.h:canspotself().  See-invisible does not make the hero's own
-// glyph opaque again; ordinary self projection depends on not being
-// invisible, while telepathy/detection can supply a sensory projection.
+// C display.h:canspotself().  Its Invisible (youprop.h) is Invis without
+// See_invisible, so seeing invisible lets the hero see their own glyph;
+// telepathy/detection can otherwise supply a sensory projection.
 export function canSpotHeroSelf() {
     const invisible = !!(
         game.u?.invisible || game.u?.invis || game.invisible
-    );
+    ) && !propertyIsActive('seeInvisible', game);
     const canSeeSelf = !!(
         game.blind || game.u?.uswallow
         || (!invisible && !game.u?.uundetected)

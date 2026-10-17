@@ -1,4 +1,5 @@
 // Escape attempts by an already trapped monster. C trap.c:mintrap().
+import { trapName } from './trap_name.js';
 import { deleteTrap } from './trap_lifecycle.js';
 import { BEAR_TRAP, HOLE, PIT, SPIKED_PIT, WEB, is_pit } from './const.js';
 import { newsym, plineWithContinuation } from './display.js';
@@ -44,8 +45,9 @@ export async function tryMonsterTrapEscape(monster, state = game, { random = rn2
                     await publish(`${describeMonster(monster)} climbs ${climbsEasily ? 'easily ' : ''}out of the pit.`);
                 }
                 else if (trap.ttyp === BEAR_TRAP || trap.ttyp === WEB) {
-                    const name = trap.ttyp === WEB ? 'web' : 'bear trap';
-                    await publish(`${describeMonster(monster)} pulls free of the ${name}.`);
+                    // C trapname() draws a hallucinated trap name after Monnam().
+                    const subject = describeMonster(monster);
+                    await publish(`${subject} pulls free of the ${trapName(trap.ttyp, { state })}.`);
                 }
             }
             monster.mtrapped = 0;

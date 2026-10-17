@@ -530,9 +530,9 @@ export async function sinkHeroIntoLava({ state = game, publish = plineWithContin
         const message = 'You sink deeper into the lava.';
         const slimeBurns = heroIsSliming(state)
             && rollOne(9) >= (hero.slimedTurns ?? 0);
-        if (slimeBurns
-            || (state._last_message !== message
-                && state._pending_message !== message)) {
+        // C Norep() compares pline.c's previous individual message, not the
+        // joined tty top line.
+        if (slimeBurns || state._lastPlineMessage !== message) {
             await publish(message);
         }
         if (slimeBurns)

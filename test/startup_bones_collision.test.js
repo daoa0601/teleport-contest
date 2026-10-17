@@ -33,7 +33,8 @@ void test('a new hero moves an ancestor off the starting stair before creating t
     assert.equal(game.u.uy, stair.y);
     assert.equal(monsterAtPosition(game.level, stair.x, stair.y) === null, true, 'the ancestor must leave the hero starting square');
     assert.ok(Math.max(Math.abs(restored.mx - stair.x), Math.abs(restored.my - stair.y)) <= 1);
-    assert.ok(game.startingPet);
-    assert.notEqual(game.startingPet, restored);
+    const pet = game.level.monsters.find(monster => monster.m_id === game.context.startingpet_mid);
+    assert.ok(pet);
+    assert.notEqual(pet, restored);
 });
 //# sourceMappingURL=startup_bones_collision.test.js.map

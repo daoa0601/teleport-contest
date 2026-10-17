@@ -387,8 +387,9 @@ function reduceHeroTrapDuration() {
         throw new Error('An active hero trap requires a remaining duration.');
     return --hero.utrap;
 }
+// C Norep() compares pline.c's previous individual message.
 async function repeatableTrapMessage(message) {
-    if (game._last_message !== message)
+    if (game._lastPlineMessage !== message)
         await pline(message);
     else
         game._pending_message = '';
