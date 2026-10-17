@@ -7,7 +7,7 @@ import type { GameState } from './game_state.js';
 import type { Trap } from './map_types.js';
 import type { MessagePublisher } from './display.js';
 import { newsym } from './display.js';
-import { finishMonsterKilled } from './monster_death.js';
+import { finishMonsterTrapDeath } from './monster_death.js';
 import type { MonsterDeathResult } from './monster_death.js';
 import { AD_PHYS } from './monster_attack_types.js';
 import { deleteTrap } from './trap_lifecycle.js';
@@ -142,7 +142,7 @@ export async function finishMonsterRockTrap(
     if (!event.harmless) {
         monster.mhp = Math.max(0, (monster.mhp ?? 1) - event.damage);
         if (monster.mhp <= 0) {
-            const death = await finishMonsterKilled(monster, state, {
+            const death = await finishMonsterTrapDeath(monster, state, {
                 damageType: AD_PHYS,
                 random,
                 publish,

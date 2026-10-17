@@ -252,8 +252,10 @@ async function createPuddingGlob(monster, state, publish) {
         || monster.mnum > PM_BLACK_PUDDING)
         return null;
     const glob = await placeMonsterPart(GLOB_OF_GRAY_OOZE + monster.mnum - PM_GRAY_OOZE, monster, state);
+    const remains = await meldNearbyFloorGlobs(glob, { state, publish });
     setMonsterGivenName(monster, null);
-    return meldNearbyFloorGlobs(glob, { state, publish });
+    newsym(monster.mx, monster.my);
+    return remains;
 }
 export async function createMonsterRemains(monster, state = game, { buried = false, zombify = false, noRevive = false, seen = false, publish = plineWithContinuation, } = {}) {
     const x = monster.mx;
@@ -399,6 +401,16 @@ export async function finishMonsterLiquidDeath(monster, { state = game, random =
         actionCompleted: true,
         corpse,
     };
+}
+// C trap.c:thitm() redraws the original square after a lethal hit, even
+// when make_corpse() already displayed the remains. Life-saving skips it.
+export async function finishMonsterTrapDeath(monster, state, options) {
+    const x = monster.mx;
+    const y = monster.my;
+    const death = await finishMonsterKilled(monster, state, options);
+    if (!death.survived && !death.heroDied && state === game)
+        newsym(x, y);
+    return death;
 }
 // C monkilled(): the death line precedes recovery, but pet grief follows it.
 // A null cause suppresses the line even when the monster's square is visible.

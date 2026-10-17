@@ -5,7 +5,7 @@ import { SPIKED_PIT } from './const.js';
 import { plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
 import { monsterSelfTouch } from './monster_stoning.js';
-import { finishEnvironmentalMonsterDeath, finishMonsterKilled } from './monster_death.js';
+import { finishEnvironmentalMonsterDeath, finishMonsterTrapDeath } from './monster_death.js';
 import { AD_PHYS } from './monster_attack_types.js';
 import {
     MONSTER_FLAGS1, MONSTER_SYMBOL,
@@ -138,7 +138,7 @@ export async function finishMonsterPitTrap(
     const damage = rollOne(event.damageSides);
     monster.mhp = Math.max(0, (monster.mhp ?? 1) - damage);
     if (monster.mhp <= 0) {
-        const death = await finishMonsterKilled(monster, state, {
+        const death = await finishMonsterTrapDeath(monster, state, {
             damageType: AD_PHYS,
             ...(random === undefined ? {} : { random }),
             publish,

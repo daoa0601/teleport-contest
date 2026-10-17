@@ -357,8 +357,10 @@ async function createPuddingGlob(monster: Monster, state: GameState, publish: Me
         GLOB_OF_GRAY_OOZE + monster.mnum - PM_GRAY_OOZE,
         monster, state,
     );
+    const remains = await meldNearbyFloorGlobs(glob, { state, publish });
     setMonsterGivenName(monster, null);
-    return meldNearbyFloorGlobs(glob, { state, publish });
+    newsym(monster.mx, monster.my);
+    return remains;
 }
 
 export async function createMonsterRemains(
@@ -523,6 +525,18 @@ export async function finishMonsterLiquidDeath(
         actionCompleted: true,
         corpse,
     };
+}
+
+// C trap.c:thitm() redraws the original square after a lethal hit, even
+// when make_corpse() already displayed the remains. Life-saving skips it.
+export async function finishMonsterTrapDeath(
+    monster: Monster, state: GameState, options: MonsterKilledOptions,
+): Promise<MonsterDeathResult> {
+    const x = monster.mx;
+    const y = monster.my;
+    const death = await finishMonsterKilled(monster, state, options);
+    if (!death.survived && !death.heroDied && state === game) newsym(x, y);
+    return death;
 }
 
 // C monkilled(): the death line precedes recovery, but pet grief follows it.

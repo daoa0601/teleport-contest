@@ -1,6 +1,6 @@
 // Arrows and darts fired at monsters by floor traps.
 // C ref: trap.c:trapeffect_arrow_trap() and trapeffect_dart_trap().
-import { finishMonsterKilled } from './monster_death.js';
+import { finishMonsterTrapDeath } from './monster_death.js';
 import { AD_PHYS } from './monster_attack_types.js';
 import { deleteTrap } from './trap_lifecycle.js';
 import { ARROW_TRAP, DART_TRAP } from './const.js';
@@ -93,7 +93,7 @@ export async function finishMonsterProjectileTrap(monster, event, state = game, 
         monster.mhp = Math.max(0, (monster.mhp ?? 1) - damage);
         await deleteObject(event.missile, state);
         if (monster.mhp <= 0) {
-            const death = await finishMonsterKilled(monster, state, {
+            const death = await finishMonsterTrapDeath(monster, state, {
                 damageType: AD_PHYS,
                 random,
                 publish,

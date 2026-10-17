@@ -2,11 +2,15 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { G_NOCORPSE, MGIVENNAME, NO_MINVENT } from '../js/const.js';
+import { glyphAt } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { AD_PHYS } from '../js/monster_attack_types.js';
 import { finishMonsterKilled } from '../js/monster_death.js';
 import { setMonsterGivenName } from '../js/monster_given_name.js';
-import { CORPSE, ROCK, STATUE } from '../js/object_data.js';
+import {
+    CORPSE, GLOB_OF_BLACK_PUDDING, GLOB_OF_BROWN_PUDDING,
+    GLOB_OF_GRAY_OOZE, GLOB_OF_GREEN_SLIME, ROCK, STATUE,
+} from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { floorObjectsAt } from './support/level-state.js';
 import { createMonsterAt, requireMonsterVital } from './support/monsters.js';
@@ -73,5 +77,29 @@ for (const [species, type] of [['clay golem', ROCK], ['stone golem', STATUE]] as
         assert.equal(death.corpse.otyp, type);
         assert.equal(death.corpse.bypass, true);
         assert.equal(floorObjectsAt(level, 11, 10).includes(death.corpse), true);
+    });
+}
+
+for (const [species, type] of [
+    ['gray ooze', GLOB_OF_GRAY_OOZE],
+    ['brown pudding', GLOB_OF_BROWN_PUDDING],
+    ['green slime', GLOB_OF_GREEN_SLIME],
+    ['black pudding', GLOB_OF_BLACK_PUDDING],
+] as const) {
+    void test(`a killed ${species} immediately displays its unmerged glob`, async () => {
+        const level = freshObjectRoom();
+        requirePlayingGame(game);
+        const monster = await createMonsterAt(species, 11, 10, NO_MINVENT);
+
+        const death = await finishMonsterKilled(monster, game, {
+            damageType: AD_PHYS, cause: null,
+            random: () => 0, publish: async () => {},
+        });
+
+        assert.equal(death.corpse?.otyp, type);
+        assert.equal(floorObjectsAt(level, 11, 10).includes(death.corpse), true);
+        const shown = glyphAt(11, 10);
+        assert.ok(shown?.kind === 'object', 'the new glob must replace the empty floor glyph');
+        assert.equal(shown.otyp, type);
     });
 }

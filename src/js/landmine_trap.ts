@@ -6,7 +6,7 @@ import type { GameState } from './game_state.js';
 import type { Trap } from './map_types.js';
 import type { MessagePublisher } from './display.js';
 import type { MonsterDeathHandler } from './monster_death.js';
-import { finishMonsterKilled } from './monster_death.js';
+import { finishMonsterTrapDeath } from './monster_death.js';
 import { AD_PHYS } from './monster_attack_types.js';
 import { WT_ELF } from './const.js';
 import { newsym, plineWithContinuation } from './display.js';
@@ -55,7 +55,7 @@ async function finishMineDeath(
     state: GameState,
     options: ActiveLandMineOptions,
 ) {
-    const death = await finishMonsterKilled(monster, state, {
+    const death = await finishMonsterTrapDeath(monster, state, {
         damageType: AD_PHYS,
         random: options.random,
         publish: options.publish,

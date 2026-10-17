@@ -2,7 +2,7 @@
 // C refs: trap.c dofiretrap() and trapeffect_fire_trap().
 import { formatSeenMessage } from './hero_speech.js';
 import { requireInitializedHero } from './hero_types.js';
-import { finishMonsterKilled } from './monster_death.js';
+import { finishMonsterKilled, finishMonsterTrapDeath } from './monster_death.js';
 import { AD_FIRE, AD_PHYS } from './monster_attack_types.js';
 import { isIceAt, isPoolAt } from './terrain_properties.js';
 import { heroHasDrainResistance } from './armor.js';
@@ -100,17 +100,6 @@ async function burnFloorAndIce(box, couldSeeFire, publish) {
     if (isIceAt(hero.ux, hero.uy))
         await meltIce(hero.ux, hero.uy);
 }
-async function finishMonsterFireDeath(monster, event, state, { publish, random, damageType }) {
-    const death = await finishMonsterKilled(monster, state, {
-        damageType,
-        random,
-        publish,
-    });
-    event.death = death;
-    if (death.survived)
-        event.lifeSaved = true;
-    return !death.survived;
-}
 export function beginMonsterFireTrap(monster, trap, state, { rollDice = d } = {}) {
     const visibility = monsterTrapVisibility(monster, state);
     return {
@@ -149,12 +138,16 @@ export async function finishMonsterFireTrap(monster, event, state = game, { publ
         monster.mhp = Math.max(0, (monster.mhp ?? 1) - event.damage);
         let dead = false;
         if (monster.mhp <= 0) {
-            dead = await finishMonsterFireDeath(monster, event, state, {
+            const death = await finishMonsterTrapDeath(monster, state, {
                 publish,
                 random,
                 damageType: monster.mnum === PM_PAPER_GOLEM ? 'disintegration' : AD_PHYS,
             });
-            if (event.death?.heroDied)
+            event.death = death;
+            if (death.survived)
+                event.lifeSaved = true;
+            dead = !death.survived;
+            if (death.heroDied)
                 return event;
         }
         if (!dead) {
@@ -184,12 +177,15 @@ export async function finishMonsterFireTrap(monster, event, state = game, { publ
         if ((monster.mhp ?? 0) > 0 && event.itemDamage > 0) {
             monster.mhp = Math.max(0, monster.mhp - event.itemDamage);
             if (monster.mhp <= 0) {
-                await finishMonsterFireDeath(monster, event, state, {
+                const death = await finishMonsterKilled(monster, state, {
                     publish,
                     random,
                     damageType: AD_FIRE,
                 });
-                if (event.death?.heroDied)
+                event.death = death;
+                if (death.survived)
+                    event.lifeSaved = true;
+                if (death.heroDied)
                     return event;
             }
         }

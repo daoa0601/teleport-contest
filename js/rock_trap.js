@@ -1,7 +1,7 @@
 // Falling rocks from ceiling traps.
 // C ref: trap.c:trapeffect_rocktrap().
 import { newsym } from './display.js';
-import { finishMonsterKilled } from './monster_death.js';
+import { finishMonsterTrapDeath } from './monster_death.js';
 import { AD_PHYS } from './monster_attack_types.js';
 import { deleteTrap } from './trap_lifecycle.js';
 import { game, requireGameLevel } from './gstate.js';
@@ -89,7 +89,7 @@ export async function finishMonsterRockTrap(monster, event, state = game, { publ
     if (!event.harmless) {
         monster.mhp = Math.max(0, (monster.mhp ?? 1) - event.damage);
         if (monster.mhp <= 0) {
-            const death = await finishMonsterKilled(monster, state, {
+            const death = await finishMonsterTrapDeath(monster, state, {
                 damageType: AD_PHYS,
                 random,
                 publish,

@@ -9,10 +9,9 @@ import type { InitializedHero } from './hero_types.js';
 import { requireInitializedHero } from './hero_types.js';
 import type { Trap } from './map_types.js';
 import type { MessagePublisher } from './display.js';
-import { finishMonsterKilled } from './monster_death.js';
+import { finishMonsterKilled, finishMonsterTrapDeath } from './monster_death.js';
 import type { MonsterDeathResult } from './monster_death.js';
 import { AD_FIRE, AD_PHYS } from './monster_attack_types.js';
-import type { DamageType } from './monster_attack_types.js';
 import { isIceAt, isPoolAt } from './terrain_properties.js';
 import { heroHasDrainResistance } from './armor.js';
 import { heroHasArtifactDefense } from './artifacts.js';
@@ -64,12 +63,6 @@ interface FireTrapOptions {
     random?: (limit: number) => number;
     rollOne?: (sides: number) => number;
     describeMonster?: (monster: Monster) => string;
-}
-
-interface FireDeathOptions {
-    publish: MessagePublisher;
-    random: (limit: number) => number;
-    damageType: DamageType | 'disintegration';
 }
 
 const PM_STRAW_GOLEM = 249;
@@ -156,22 +149,6 @@ async function burnFloorAndIce(
     if (isIceAt(hero.ux, hero.uy)) await meltIce(hero.ux, hero.uy);
 }
 
-async function finishMonsterFireDeath(
-    monster: Monster,
-    event: MonsterFireTrapEvent,
-    state: GameState,
-    { publish, random, damageType }: FireDeathOptions,
-) {
-    const death = await finishMonsterKilled(monster, state, {
-        damageType,
-        random,
-        publish,
-    });
-    event.death = death;
-    if (death.survived) event.lifeSaved = true;
-    return !death.survived;
-}
-
 export function beginMonsterFireTrap(
     monster: Monster,
     trap: Trap,
@@ -227,12 +204,15 @@ export async function finishMonsterFireTrap(
         monster.mhp = Math.max(0, (monster.mhp ?? 1) - event.damage);
         let dead = false;
         if (monster.mhp <= 0) {
-            dead = await finishMonsterFireDeath(monster, event, state, {
+            const death = await finishMonsterTrapDeath(monster, state, {
                 publish,
                 random,
                 damageType: monster.mnum === PM_PAPER_GOLEM ? 'disintegration' : AD_PHYS,
             });
-            if (event.death?.heroDied) return event;
+            event.death = death;
+            if (death.survived) event.lifeSaved = true;
+            dead = !death.survived;
+            if (death.heroDied) return event;
         }
         if (!dead) {
             event.maximumLoss = random(event.damage + 1);
@@ -262,12 +242,14 @@ export async function finishMonsterFireTrap(
         if ((monster.mhp ?? 0) > 0 && event.itemDamage > 0) {
             monster.mhp = Math.max(0, monster.mhp - event.itemDamage);
             if (monster.mhp <= 0) {
-                await finishMonsterFireDeath(monster, event, state, {
+                const death = await finishMonsterKilled(monster, state, {
                     publish,
                     random,
                     damageType: AD_FIRE,
                 });
-                if (event.death?.heroDied) return event;
+                event.death = death;
+                if (death.survived) event.lifeSaved = true;
+                if (death.heroDied) return event;
             }
         }
     }
