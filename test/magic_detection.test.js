@@ -16,6 +16,8 @@ import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { placeCreatedObject } from '../js/floor_object.js';
 const FOOD_DETECTION = OBJECT_NAMES.indexOf('food detection');
 const GOLD_DETECTION = OBJECT_NAMES.indexOf('gold detection');
+// objects.h generic slot shown for a potion whose appearance is unobserved.
+const POTION_CLASS = 8;
 function detectionRoom(options = {}) {
     const level = freshObjectRoom({ flags: { tips: false, verbose: true }, ...options });
     requirePlayingGame(game);
@@ -66,7 +68,7 @@ void test('cursed food detection finds a nested potion without observing it', as
     const result = await detectFood(await uninitializedObject(FOOD_DETECTION, { cursed: true }));
     assert.equal(result.result, 0);
     assert.equal(result.known, true);
-    assert.equal(rememberedObjectAt(30, 10).otyp, POT_HEALING);
+    assert.equal(rememberedObjectAt(30, 10).otyp, POTION_CLASS);
     assert.equal(potion.dknown, false);
     assert.equal(potion.where, 'contained');
     assert.equal(box.contents?.includes(potion), true);
@@ -197,7 +199,7 @@ void test('ordinary clairvoyance reveals local topology and remembers a distant 
     assert.equal(level.requireAt(19, 10).typ, SDOOR);
     assert.equal(level.requireAt(21, 10).typ, SCORR);
     assert.equal(level.requireAt(monster.mx, monster.my).remembered_glyph?.kind, 'invisible');
-    assert.equal(rememberedObjectAt(17, 10).otyp, POT_HEALING);
+    assert.equal(rememberedObjectAt(17, 10).otyp, POTION_CLASS);
     assert.equal(potion.dknown, false);
 });
 void test('skilled clairvoyance observes only the top object in each pile', async () => {

@@ -1137,6 +1137,7 @@ function objectGlyph(object: ObjectGlyphSource): ObjectGlyph {
     const glyph = objectGlyphNumber(object, piletop);
     // reset_glyphmap() resolves both normal and generic object numbers
     // through objects[].oc_class, including a mimic's zero-class disguise.
+    // glyph_to_obj() later reads that generic slot back, not the hidden type.
     const displayedType = objectUsesGenericGlyph(object) ? object.oclass : object.otyp;
     return statueSymbol
         ? {
@@ -1147,7 +1148,7 @@ function objectGlyph(object: ObjectGlyphSource): ObjectGlyph {
         : {
             ch: activeObjectSymbols()[objectClassForType(displayedType)] || '?',
             color: objectColor(object), decgfx: false,
-            kind: 'object', otyp: object.otyp, ...species, glyph,
+            kind: 'object', otyp: displayedType, ...species, glyph,
             statueGlyph: object.otyp === STATUE, piletop,
         };
 }

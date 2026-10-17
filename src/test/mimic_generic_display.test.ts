@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { M_AP_OBJECT, NO_MINVENT } from '../js/const.js';
 import { flush_screen, newsym } from '../js/display.js';
-import { requireGameDisplay } from '../js/gstate.js';
+import { game, requireGameDisplay } from '../js/gstate.js';
+import { stumbleOntoMimic } from '../js/mimic.js';
 import { DIAMOND, SPE_FORCE_BOLT } from '../js/object_data.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -29,3 +30,19 @@ for (const { disguise, otyp } of [
         });
     }
 }
+
+// uhitm.c:that_is_a_mimic() names the object glyph shown on the map, so a
+// zero-class gem disguise is announced as the strange object it displays.
+void test('stumbling onto a gem-disguised mimic names the strange object it showed', async () => {
+    freshObjectRoom();
+    const mimic = await createMonsterAt('large mimic', 11, 10, NO_MINVENT);
+    mimic.m_ap_type = M_AP_OBJECT;
+    mimic.mappearance = DIAMOND;
+    mimic.msleeping = 0;
+    newsym(11, 10);
+    const messages: string[] = [];
+
+    await stumbleOntoMimic(mimic, game, async message => { messages.push(message); });
+
+    assert.deepEqual(messages, ['That strange object is a large mimic!']);
+});
