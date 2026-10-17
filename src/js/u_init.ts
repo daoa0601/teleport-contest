@@ -83,6 +83,7 @@ import { mergable, mergeCreatedObjectStacks, mergeObjectStacks } from './object_
 import { assertCreatedObject } from './object_release.js';
 import { putSaddleOnMonster } from './steed.js';
 import { grantIntrinsicProperty } from './properties.js';
+import { ROLE_LEVEL_ABILITIES, RACE_LEVEL_ABILITIES } from './innate_abilities.js';
 import { makePlural } from './object_grammar.js';
 import {
     setPrimaryWeapon, setQuiverObject, setSecondaryWeapon,
@@ -591,31 +592,20 @@ export function uInitMisc(handednessRoll: number): void {
     };
     ensureQuestStatus(g);
     u.rightHanded = !!handednessRoll;
-    // C initializes the hero with one ordinary action available.  Samurai
-    // also gain intrinsic Fast at level 1 (attrib.c sam_abil[]).
     u.umovement = 0; // moveloop_preamble() grants the first movement ration.
-    if (g.urole?.intrinsicFast)
-        grantIntrinsicProperty('fast', 'role', g);
-    // adjabil() grants permanent racial infravision only to elves and orcs.
-    // Gnomes and dwarves instead rely on set_uasmon()'s current-body source.
-    if (g.urace && ['elf', 'orc'].includes(g.urace.name))
-        grantIntrinsicProperty('infravision', 'race', g);
-    // C attrib.c level-one role/race ability tables.  Keep these properties
-    // on the hero rather than reconstructing them from identity during end
-    // disclosure; combat and enlightenment must share the same owner.
-    if (g.urole && ['barbarian', 'healer'].includes(g.urole.key))
-        grantIntrinsicProperty('poisonResistance', 'role', g);
-    if (g.urole?.key === 'valkyrie')
-        grantIntrinsicProperty('coldResistance', 'role', g);
-    if (g.urace?.name === 'orc')
-        grantIntrinsicProperty('poisonResistance', 'race', g);
-    if (g.urole?.key === 'rogue')
-        grantIntrinsicProperty('stealth', 'role', g);
-    if (g.urole && ['archeologist', 'ranger'].includes(g.urole.key))
-        grantIntrinsicProperty('searching', 'role', g);
-    if (g.urole?.key === 'monk') {
-        grantIntrinsicProperty('sleepResistance', 'role', g);
-        grantIntrinsicProperty('seeInvisible', 'role', g);
+    const roleAbilities = g.urole ? ROLE_LEVEL_ABILITIES[g.urole.key] : [];
+    // adjabil() grants racial bits only to elves and orcs. Dwarves and
+    // gnomes retain set_uasmon()'s current-body infravision instead.
+    const raceAbilities = g.urace && (g.urace.name === 'elf' || g.urace.name === 'orc')
+        ? RACE_LEVEL_ABILITIES[g.urace.name] ?? [] : [];
+    for (const [origin, abilities] of [['role', roleAbilities], ['race', raceAbilities]] as const) {
+        for (const [level, property] of abilities) {
+            if (level !== 1) continue;
+            grantIntrinsicProperty(property, origin, g);
+            // Level-one abilities survive level loss and already count as
+            // FROMOUTSIDE when a corpse or divine gift tries to grant them.
+            grantIntrinsicProperty(property, 'outside', g);
+        }
     }
     u.nv_range = 1;
     u.xray_range = -1;

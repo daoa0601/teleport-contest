@@ -111,6 +111,7 @@ type LivingOutcome = 'escaped' | 'ascended';
 interface GameSummary { gold: number; score: number; depth: number; moves: number }
 interface DeathDescription { deathVerb?: string; deathCause?: string | null }
 interface DisclosureOptions extends DeathDescription {
+    survived?: boolean;
     killer?: string;
     possessionAnswer?: string | null;
     taken?: boolean;
@@ -1260,7 +1261,7 @@ async function ynQuestion(
 // the answer outright or asks with the option's default.
 async function discloseGame({
     killer = '', deathVerb = 'died', deathCause = null, possessionAnswer = null,
-    taken = false,
+    taken = false, survived = false,
 }: DisclosureOptions = {}) {
     // really_done() displays WIN_MESSAGE before disclosure or bones.
     await displayMessageWindow();
@@ -1299,7 +1300,7 @@ async function discloseGame({
         const attributes = ask
             ? await ynQuestion('Do you want to see your attributes?', 'ynq', defquery)
             : defquery;
-        if (attributes === 'y') await showFinalAttributes();
+        if (attributes === 'y') await showFinalAttributes(survived);
         if (attributes === 'q') return stopDisclosure();
     }
 
@@ -1536,7 +1537,7 @@ export async function finishOrdinaryQuit() {
         return;
     }
     const taken = await settleGameExit('quit');
-    const showSummary = await discloseGame({ deathVerb: 'quit', taken });
+    const showSummary = await discloseGame({ deathVerb: 'quit', taken, survived: true });
     const summary = gameSummaryValues('quit');
     game.u.urexp = summary.score;
     const current = currentScoreRecord(summary, { outcome: 'quit' });
@@ -1553,7 +1554,7 @@ export async function finishLivingGame(outcome: LivingOutcome) {
     await bot();
     await startGameExit(outcome);
     const taken = await settleGameExit(outcome);
-    const showSummary = await discloseGame({ deathVerb: outcome, taken });
+    const showSummary = await discloseGame({ deathVerb: outcome, taken, survived: true });
     const pets = await collectLevelFollowers(game, true);
     const summary = gameSummaryValues(outcome);
     const possessions = collectFinalPossessions();

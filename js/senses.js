@@ -4,7 +4,7 @@ import { game } from './gstate.js';
 import { TIMEOUT } from './const.js';
 import { LENSES } from './object_data.js';
 import { artifactById } from './artifacts.js';
-import { hasIntrinsicProperty } from './properties.js';
+import { hasIntrinsicProperty, propertyIsActive } from './properties.js';
 const EYES_OF_THE_OVERWORLD = 'The Eyes of the Overworld';
 export function heroDetectsMonsters(state = game) {
     return !!(state.u?.detectMonsters || state.detectMonsters
@@ -62,7 +62,7 @@ export function permanentDeaf(state = game) {
 export function heroIsDeaf(state = game) {
     const u = state.u;
     return permanentDeaf(state)
-        || (u.deafTurns ?? 0) > 0
+        || propertyIsActive('deaf', state)
         || !!u.extrinsicDeaf;
 }
 export function heroIsHallucinating(state = game) {

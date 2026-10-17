@@ -15,6 +15,7 @@ import { rankAchievement, recordAchievement, } from './achievements.js';
 import { MONSTER_EXPERIENCE_META, MONSTER_LEVEL, MONSTER_MOVE, PM_MAIL_DAEMON, } from './monster_data.js';
 import { grantIntrinsicProperty, hasPermanentIntrinsicProperty, revokeIntrinsicProperty, } from './properties.js';
 import { adjustWeaponSkillSlots } from './skills.js';
+import { ROLE_LEVEL_ABILITIES, RACE_LEVEL_ABILITIES } from './innate_abilities.js';
 const NORMAL_SPEED = 12;
 const LARGEST_INT = 32767;
 export function newExperienceThreshold(level) {
@@ -177,59 +178,14 @@ export async function gainExperienceLevel({ incremental = false, state = game, p
     hero.ulevelpeak = Math.max(hero.ulevelpeak, hero.ulevel);
     state.context.botl = true;
 }
-// C attrib.c role_abil[] and race ability tables.
-const ROLE_LEVEL_ABILITIES = {
-    archeologist: [
-        [5, 'stealth', 'stealthy', ''], [10, 'fast', 'quick', 'slow'],
-    ],
-    barbarian: [
-        [7, 'fast', 'quick', 'slow'], [15, 'stealth', 'stealthy', ''],
-    ],
-    caveman: [
-        [7, 'fast', 'quick', 'slow'], [15, 'warning', 'sensitive', ''],
-    ],
-    healer: [[15, 'warning', 'sensitive', '']],
-    knight: [[7, 'fast', 'quick', 'slow']],
-    monk: [
-        [3, 'poisonResistance', 'healthy', ''],
-        [5, 'stealth', 'stealthy', ''],
-        [7, 'warning', 'sensitive', ''],
-        [9, 'searching', 'perceptive', 'unaware'],
-        [11, 'fireResistance', 'cool', 'warmer'],
-        [13, 'coldResistance', 'warm', 'cooler'],
-        [15, 'shockResistance', 'insulated', 'conductive'],
-        [17, 'teleportControl', 'controlled', 'uncontrolled'],
-    ],
-    priest: [
-        [15, 'warning', 'sensitive', ''],
-        [20, 'fireResistance', 'cool', 'warmer'],
-    ],
-    ranger: [
-        [7, 'stealth', 'stealthy', ''], [15, 'seeInvisible', '', ''],
-    ],
-    rogue: [[10, 'searching', 'perceptive', '']],
-    samurai: [[15, 'stealth', 'stealthy', '']],
-    tourist: [
-        [10, 'searching', 'perceptive', ''],
-        [20, 'poisonResistance', 'hardy', ''],
-    ],
-    valkyrie: [
-        [3, 'stealth', 'stealthy', ''], [7, 'fast', 'quick', 'slow'],
-    ],
-    wizard: [
-        [15, 'warning', 'sensitive', ''],
-        [17, 'teleportControl', 'controlled', 'uncontrolled'],
-    ],
-};
-const RACE_LEVEL_ABILITIES = {
-    elf: [[4, 'sleepResistance', 'awake', 'tired']],
-};
 async function adjustAbilities(abilities, origin, oldLevel, newLevel, publish) {
     for (const [level, property, gainMessage, lossMessage] of abilities) {
         let changed = false;
         if (oldLevel < level && newLevel >= level) {
             const alreadyIntrinsic = hasPermanentIntrinsicProperty(property, game);
             grantIntrinsicProperty(property, origin, game);
+            if (level === 1)
+                grantIntrinsicProperty(property, 'outside', game);
             changed = true;
             if (!alreadyIntrinsic && gainMessage)
                 await publish(formatFeltMessage(`${gainMessage}!`));
@@ -253,7 +209,8 @@ export async function adjustLevelAbilities(oldLevel, newLevel, publish = plineWi
     const state = requireInitializedGame();
     state.urole.rank = state.urole.title[experienceRankIndex(newLevel)] || state.urole.name;
     await adjustAbilities(ROLE_LEVEL_ABILITIES[state.urole.key] || [], 'experience', oldLevel, newLevel, publish);
-    await adjustAbilities(RACE_LEVEL_ABILITIES[state.urace.name] || [], 'race', oldLevel, newLevel, publish);
+    await adjustAbilities(state.urace.name === 'elf' || state.urace.name === 'orc'
+        ? RACE_LEVEL_ABILITIES[state.urace.name] || [] : [], 'race', oldLevel, newLevel, publish);
     await adjustWeaponSkillSlots(newLevel - oldLevel, game);
 }
 // C exper.c:losexp(). A null drainer loses experience without killing a

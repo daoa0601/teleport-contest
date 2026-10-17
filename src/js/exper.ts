@@ -26,8 +26,10 @@ import type { GameState, PlayingGameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 import type { MessagePublisher } from './display.js';
 import type { DeathHandler } from './end.js';
-import type { IntrinsicOrigin, PropertyName } from './property_types.js';
-import type { RaceName, RoleKey } from './roles.js';
+import type { IntrinsicOrigin } from './property_types.js';
+import type { RoleKey } from './roles.js';
+import { ROLE_LEVEL_ABILITIES, RACE_LEVEL_ABILITIES } from './innate_abilities.js';
+import type { LevelAbility } from './innate_abilities.js';
 
 interface ExperienceOptions {
     state?: GameState;
@@ -38,7 +40,6 @@ interface GainExperienceOptions extends ExperienceOptions { incremental?: boolea
 interface LoseExperienceOptions extends ExperienceOptions { die?: DeathHandler; }
 interface MonsterExperienceOptions { killCount?: number; amphibious?: boolean; armorClass?: number; }
 
-type LevelAbility = readonly [level: number, property: PropertyName, gainMessage: string, lossMessage: string];
 
 export interface ExperienceMonster {
     mnum?: number;
@@ -209,61 +210,13 @@ export async function gainExperienceLevel({
     state.context.botl = true;
 }
 
-// C attrib.c role_abil[] and race ability tables.
-const ROLE_LEVEL_ABILITIES: Readonly<Record<RoleKey, readonly LevelAbility[]>> = {
-    archeologist: [
-        [5, 'stealth', 'stealthy', ''], [10, 'fast', 'quick', 'slow'],
-    ],
-    barbarian: [
-        [7, 'fast', 'quick', 'slow'], [15, 'stealth', 'stealthy', ''],
-    ],
-    caveman: [
-        [7, 'fast', 'quick', 'slow'], [15, 'warning', 'sensitive', ''],
-    ],
-    healer: [[15, 'warning', 'sensitive', '']],
-    knight: [[7, 'fast', 'quick', 'slow']],
-    monk: [
-        [3, 'poisonResistance', 'healthy', ''],
-        [5, 'stealth', 'stealthy', ''],
-        [7, 'warning', 'sensitive', ''],
-        [9, 'searching', 'perceptive', 'unaware'],
-        [11, 'fireResistance', 'cool', 'warmer'],
-        [13, 'coldResistance', 'warm', 'cooler'],
-        [15, 'shockResistance', 'insulated', 'conductive'],
-        [17, 'teleportControl', 'controlled', 'uncontrolled'],
-    ],
-    priest: [
-        [15, 'warning', 'sensitive', ''],
-        [20, 'fireResistance', 'cool', 'warmer'],
-    ],
-    ranger: [
-        [7, 'stealth', 'stealthy', ''], [15, 'seeInvisible', '', ''],
-    ],
-    rogue: [[10, 'searching', 'perceptive', '']],
-    samurai: [[15, 'stealth', 'stealthy', '']],
-    tourist: [
-        [10, 'searching', 'perceptive', ''],
-        [20, 'poisonResistance', 'hardy', ''],
-    ],
-    valkyrie: [
-        [3, 'stealth', 'stealthy', ''], [7, 'fast', 'quick', 'slow'],
-    ],
-    wizard: [
-        [15, 'warning', 'sensitive', ''],
-        [17, 'teleportControl', 'controlled', 'uncontrolled'],
-    ],
-};
-
-const RACE_LEVEL_ABILITIES: Readonly<Partial<Record<RaceName, readonly LevelAbility[]>>> = {
-    elf: [[4, 'sleepResistance', 'awake', 'tired']],
-};
-
 async function adjustAbilities(abilities: readonly LevelAbility[], origin: IntrinsicOrigin, oldLevel: number, newLevel: number, publish: MessagePublisher) {
     for (const [level, property, gainMessage, lossMessage] of abilities) {
         let changed = false;
         if (oldLevel < level && newLevel >= level) {
             const alreadyIntrinsic = hasPermanentIntrinsicProperty(property, game);
             grantIntrinsicProperty(property, origin, game);
+            if (level === 1) grantIntrinsicProperty(property, 'outside', game);
             changed = true;
             if (!alreadyIntrinsic && gainMessage)
                 await publish(formatFeltMessage(`${gainMessage}!`));
@@ -293,7 +246,8 @@ export async function adjustLevelAbilities(
         'experience', oldLevel, newLevel, publish,
     );
     await adjustAbilities(
-        RACE_LEVEL_ABILITIES[state.urace.name] || [],
+        state.urace.name === 'elf' || state.urace.name === 'orc'
+            ? RACE_LEVEL_ABILITIES[state.urace.name] || [] : [],
         'race', oldLevel, newLevel, publish,
     );
     await adjustWeaponSkillSlots(newLevel - oldLevel, game);
