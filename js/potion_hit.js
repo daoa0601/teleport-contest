@@ -661,8 +661,6 @@ async function applySupportedDirectEffect({ state, monster, potion, targetVisibl
             if (!splitMonster)
                 throw new Error('water gremlin-split owner unavailable');
             splitClone = await splitMonster(monster, state);
-            if (splitClone && targetSpotted)
-                await publish(`${sentenceSubject(monster)} multiplies!`);
         }
         else if (monster.mnum === PM_IRON_GOLEM) {
             if (targetSpotted)
@@ -923,7 +921,7 @@ async function applySupportedDirectEffect({ state, monster, potion, targetVisibl
         curedBlindness,
     };
 }
-export async function hitMonsterWithSupportedPotion({ state = game, monster, potion, wakeMonster = null, publish = plineWithContinuation, targetVisible = cansee(monster?.mx, monster?.my), targetSpotted = canSeeMonster(monster), spotMonster = target => canSpotMonster(target), repaintMonster = target => newsym(target.mx, target.my), rememberInvisible = target => map_invisible(target.mx, target.my), wakeNearby = null, splitMonster = target => splitMonsterActor(target, state), transformWere = target => transformWereMonster(target, state), finishKill = null, showShield = target => shieldeff(target.mx, target.my, state), heroCaused = true, resolveVapor = false, distance = 0, target = { x: monster.mx, y: monster.my }, }) {
+export async function hitMonsterWithSupportedPotion({ state = game, monster, potion, wakeMonster = null, publish = plineWithContinuation, targetVisible = cansee(monster?.mx, monster?.my), targetSpotted = canSeeMonster(monster), spotMonster = target => canSpotMonster(target), repaintMonster = target => newsym(target.mx, target.my), rememberInvisible = target => map_invisible(target.mx, target.my), wakeNearby = null, splitMonster = target => splitMonsterActor(target, state, { publish }), transformWere = target => transformWereMonster(target, state), finishKill = null, showShield = target => shieldeff(target.mx, target.my, state), heroCaused = true, resolveVapor = false, distance = 0, target = { x: monster.mx, y: monster.my }, }) {
     if (!monster || !potion
         || !SUPPORTED_MONSTER_POTION_TYPES.has(potion.otyp))
         return null;

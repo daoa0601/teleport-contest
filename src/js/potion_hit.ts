@@ -875,8 +875,6 @@ async function applySupportedDirectEffect({
             if (!splitMonster)
                 throw new Error('water gremlin-split owner unavailable');
             splitClone = await splitMonster(monster, state);
-            if (splitClone && targetSpotted)
-                await publish(`${sentenceSubject(monster)} multiplies!`);
         } else if (monster.mnum === PM_IRON_GOLEM) {
             if (targetSpotted)
                 await publish(`${sentenceSubject(monster)} rusts.`);
@@ -1157,7 +1155,7 @@ export async function hitMonsterWithSupportedPotion({
     repaintMonster = target => newsym(target.mx, target.my),
     rememberInvisible = target => map_invisible(target.mx, target.my),
     wakeNearby = null,
-    splitMonster = target => splitMonsterActor(target, state),
+    splitMonster = target => splitMonsterActor(target, state, { publish }),
     transformWere = target => transformWereMonster(target, state),
     finishKill = null,
     showShield = target => shieldeff(target.mx, target.my, state),

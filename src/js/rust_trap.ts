@@ -10,7 +10,7 @@ import type { MonsterDeathResult } from './monster_death.js';
 import { AD_RUST } from './monster_attack_types.js';
 import type { MonsterRustTrapEvent as RustTrapEffect } from './trap.js';
 import { monsterArmName } from './body_parts.js';
-import { plineWithContinuation } from './display.js';
+import { canSpotMonster, plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
 import { wornMonsterLifeSaver } from './mondeath.js';
 import { monsterName, possessiveName } from './monster_name.js';
@@ -38,7 +38,12 @@ async function presentRustTrap(
     state: GameState,
     publish: MessagePublisher,
 ) {
-    if (!event.inSight) return;
+    if (!event.inSight) {
+        // split_mon() announces a spotted monster even out of sight.
+        if (event.clone && canSpotMonster(monster))
+            await publish(`${monsterName(monster, { state, capitalized: true })} multiplies!`);
+        return;
+    }
 
     const name = monsterName(monster, { state });
     const arm = monsterArmName(monster.mnum);
@@ -76,7 +81,8 @@ async function presentRustTrap(
     if (event.completelyRusted) {
         const action = event.startsToFall ? 'starts to fall' : 'falls';
         await publish(`${monsterName(monster, { state, capitalized: true })} ${action} to pieces!`);
-    } else if (event.clone) {
+    } else if (event.clone && canSpotMonster(monster)) {
+        // trap.c calls split_mon() after the gush and erosion messages.
         await publish(`${monsterName(monster, { state, capitalized: true })} multiplies!`);
     }
 }

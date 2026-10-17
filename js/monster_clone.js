@@ -1,13 +1,13 @@
 // Monster cloning and splitting.
 // C refs: makemon.c clone_mon() and potion.c split_mon().
 import { G_EXTINCT, isok } from './const.js';
-import { newsym } from './display.js';
+import { canSpotMonster, newsym, plineWithContinuation } from './display.js';
 import { game, requireGameLevel } from './gstate.js';
 import { nextIdent } from './ident.js';
 import { findMonsterNearPosition } from './mklev.js';
 import { setMonsterMalign } from './monster_alignment.js';
 import { monsterAtPosition, placeMonsterAt } from './monster_location.js';
-import { shopkeeperName } from './monster_name.js';
+import { monsterName, possessiveName, shopkeeperName } from './monster_name.js';
 import { tameMonster } from './monster_taming.js';
 import { rn2 } from './rng.js';
 import { monsterEmitsLight } from './vision.js';
@@ -113,9 +113,13 @@ export async function cloneMonster(monster, state = game, { monsterMoving = !!st
         newsym(clone.mx, clone.my);
     return clone;
 }
-export async function splitMonster(monster, state = game, options = {}) {
+// C potion.c:split_mon() for a monster.  The heat source is named before
+// cloning, and a spotted monster announces the division.
+export async function splitMonster(monster, state = game, { heatSource = null, publish = plineWithContinuation, ...options } = {}) {
     if (!monster)
         return null;
+    const reason = heatSource === 'hero' ? ' from your heat'
+        : heatSource ? ` from ${possessiveName(monsterName(heatSource, { state }))} heat` : '';
     const maximumHp = monster.mhpmax ?? monster.mhp ?? 0;
     if ((monster.mhp ?? 0) > maximumHp)
         monster.mhp = maximumHp;
@@ -124,6 +128,8 @@ export async function splitMonster(monster, state = game, options = {}) {
         return null;
     clone.mhpmax = Math.trunc(maximumHp / 2);
     monster.mhpmax = maximumHp - clone.mhpmax;
+    if (canSpotMonster(monster))
+        await publish(`${monsterName(monster, { state, capitalized: true })} multiplies${reason}!`);
     return clone;
 }
 //# sourceMappingURL=monster_clone.js.map

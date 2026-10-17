@@ -230,7 +230,7 @@ void test('a monster which survives lava burns vulnerable carried items',
         assert.deepEqual(fireAnt.minvent, []);
     });
 
-void test('a gremlin can multiply in a fountain and dry it up', async () => {
+void test('a gremlin multiplies in a fountain and dries it up', async () => {
     const level = freshObjectRoom();
     requirePlayingGame(game);
     level.requireAt(12, 10).typ = FOUNTAIN;
@@ -252,7 +252,8 @@ void test('a gremlin can multiply in a fountain and dry it up', async () => {
     assert.equal(result.clone.mhp, 6);
     assert.equal(level.requireAt(12, 10).typ, ROOM);
     assert.equal(level.flags.nfountains, 0);
-    assert.deepEqual(messages, ['The fountain dries up!']);
+    // mon.c minliquid() -> split_mon() announces a spotted gremlin first.
+    assert.deepEqual(messages, ['The gremlin multiplies!', 'The fountain dries up!']);
 });
 
 void test('flight does not keep a monster above the Plane of Water', async () => {

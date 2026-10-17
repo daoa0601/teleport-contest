@@ -108,12 +108,8 @@ export async function applyMonsterContactPassive(attacker: Monster, defender: Mo
                     const healing = Math.trunc(damage / 2);
                     healMonster(defender, healing, healing);
                     if (defender.mhpmax > (defender.m_lev + 1) * 8) {
-                        // split_mon saves the source of heat before cloning can
-                        // change what the hero sees on the map.
-                        const owner = possessiveName(monsterName(attacker, { state }));
-                        const clone = await splitMonster(defender, state, { monsterMoving: true, random });
-                        if (clone && canSpotMonster(defender))
-                            await publish(`${monsterName(defender, { state, capitalized: true })} multiplies from ${owner} heat!`);
+                        await splitMonster(defender, state,
+                            { monsterMoving: true, random, heatSource: attacker, publish });
                     }
                 }
             }

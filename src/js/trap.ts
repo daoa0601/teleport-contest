@@ -800,7 +800,8 @@ export async function applyMonsterRustTrap(
     if (monster.mnum === PM_IRON_GOLEM) {
         event.completelyRusted = true;
     } else if (monster.mnum === PM_GREMLIN && roll(3) !== 0) {
-        event.clone = await splitMonster(monster, state, { monsterMoving: true });
+        // The rust-trap report owns split_mon()'s message, after the gush.
+        event.clone = await splitMonster(monster, state, { monsterMoving: true, publish: () => {} });
     }
     return event;
 }

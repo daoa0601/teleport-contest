@@ -272,7 +272,7 @@ async function applyColdPassive(context) {
         return { appliedDamage: damage, heroDied };
     healMonster(monster, Math.trunc((damage + random(2)) / 2), Math.trunc((damage + 1) / 2));
     if ((monster.mhpmax ?? 0) > ((monster.m_lev ?? 0) + 1) * 8)
-        await splitMonster(monster, state);
+        await splitMonster(monster, state, { heatSource: 'hero', publish });
     return { appliedDamage: damage, heroDied: false };
 }
 async function applyStunPassive({ damage, state, publish }) {
