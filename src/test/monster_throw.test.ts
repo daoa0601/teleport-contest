@@ -75,6 +75,27 @@ void test('a monster-thrown acid potion wakes sleeping monsters near a shrieking
     assert.equal(source.minvent.includes(potion), false);
 });
 
+void test('a monster-thrown acid potion destroys its victim without crediting the hero', async () => {
+    projectileRoom();
+    requirePlayingGame(game);
+    const source = await combatant('goblin');
+    const target = await combatant('kobold zombie', { x: 12, hitPoints: 1 });
+    const potion = await uninitializedObject(POT_ACID);
+    await addObjectToMonsterInventory(source, potion);
+    const experience = game.u.uexp;
+    const messages: string[] = [];
+
+    await throwMonsterProjectile(source, potion, {
+        state: game, dx: 1, dy: 0, range: 3, target,
+        random: ordinaryChoices, rollOne: minimumRoll,
+        publish: async message => { messages.push(message); },
+    });
+
+    assert.ok(target.mhp <= 0);
+    assert.match(messages.join('\n'), /shrieks in pain!\nThe kobold zombie is destroyed!/);
+    assert.equal(game.u.uexp, experience);
+});
+
 for (const adjacent of [true, false]) {
     void test(`monster-thrown potion vapor ${adjacent ? 'can reach an adjacent hero' : 'cannot reach a distant hero'}`, async () => {
         projectileRoom();
