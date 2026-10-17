@@ -17,7 +17,6 @@ void test('monster poison waits for the load pager before remembering the new en
     await addInventoryObject(ROCK, { quan: 60 });
     assert.equal(nearCapacity(game), 0);
     game._encumbranceLevel = 0;
-    game.u._encumbrance = '';
     const snake = await createMonsterAt('snake', 11, 10, NO_MINVENT);
     snake.mpeaceful = false;
     const capacitiesAtLoadPager: number[] = [];
@@ -33,5 +32,5 @@ void test('monster poison waits for the load pager before remembering the new en
 
     assert.equal(capacitiesAtLoadPager[0], 0, 'the load message has not returned yet');
     assert.equal(game._encumbranceLevel, 1);
-    assert.equal(game.u._encumbrance, 'Burdened');
+    assert.equal(nearCapacity(game), 1);
 });

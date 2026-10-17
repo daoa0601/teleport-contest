@@ -1,12 +1,13 @@
 // Ray attacks, terrain changes, and elemental item damage.
 // C ref: zap.c dobuzz(), zap_over_floor(), zhitm(), zhitu(), and
 // destroy_items().
+import { objectMaterial } from './object_material.js';
 import { formatFeltMessage, publishHeardMessage } from './hero_speech.js';
 import { monsterHasMapPosition } from './monster_location.js';
 import { chooseInventoryObject } from './inventory_prompt.js';
 import { applyWandEffect } from './wand_effects.js';
 import { GETOBJ_EXCLUDE, GETOBJ_SUGGEST, PLNMSG_ENVELOPED_IN_GAS } from './const.js';
-import { OBJECT_DIR } from './object_data.js';
+import { objectDirection } from './object_data.js';
 import { zapHeroWithObject } from './hero_self_zap.js';
 import { backfireWand, zappable } from './wand_charge.js';
 import { deleteTrap } from './trap_lifecycle.js';
@@ -23,7 +24,7 @@ import { monsterHasFireResistance, monsterHasShockResistance } from './monster_r
 import { SHOPBASE } from './const.js';
 import { roomsAt } from './room.js';
 import { addShopDamage } from './shop_damage.js';
-import { triggerHeroTrap } from './hero_traps.js';
+import { setHeroTrap, triggerHeroTrap } from './hero_traps.js';
 import { monsterName, possessiveName } from './monster_name.js';
 import { destroyObjectFromMonsterInventory } from './monster_inventory.js';
 import { loseHeroHp } from './hero_damage.js';
@@ -41,7 +42,7 @@ import { monsterResistanceBits } from './monster_resistance.js';
 import { triggerImmediateMonsterTrap } from './monmove.js';
 import { makePlural, withIndefiniteArticle } from './object_grammar.js';
 import { MONSTER_FLAGS1 } from './monster_data.js';
-import { DWARVISH_CLOAK, GLOB_OF_GREEN_SLIME, OBJECT_CHARGED, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_PROPERTY, POT_OIL, POT_WATER, RIN_SHOCK_RESISTANCE, SCR_FIRE, SPE_BOOK_OF_THE_DEAD, SPE_FIREBALL, WAN_LIGHTNING, WAN_STRIKING, } from './object_data.js';
+import { DWARVISH_CLOAK, GLOB_OF_GREEN_SLIME, OBJECT_CHARGED, OBJECT_NAMES, OBJECT_PROPERTY, POT_OIL, POT_WATER, RIN_SHOCK_RESISTANCE, SCR_FIRE, SPE_BOOK_OF_THE_DEAD, SPE_FIREBALL, WAN_LIGHTNING, WAN_STRIKING, } from './object_data.js';
 import { observeObject } from './object_knowledge.js';
 import { objectResistsDestruction } from './object_state.js';
 import { LEVEL_TIMER_KIND, scheduleLevelTimer, stopLevelTimer, } from './object_timers.js';
@@ -105,7 +106,7 @@ export async function dozap() {
         return;
     }
     await chargeUnpaidUsage(wand);
-    const needsDirection = OBJECT_DIR[wand.otyp] !== 1;
+    const needsDirection = objectDirection(wand.otyp, game) !== 1;
     if (!await zappable(wand)) {
         await plineWithContinuation('Nothing happens.');
     }
@@ -339,8 +340,7 @@ async function freezeLiquidAt(x, y, state, publish) {
                 await resetHeroTrap(true, state);
             }
             else {
-                state.u.utrap = rnd(50) + 19;
-                state.u.utraptype = TT_INFLOOR;
+                setHeroTrap(rnd(50) + 19, TT_INFLOOR, state);
                 await publish('You are firmly stuck in the cooling rock.');
             }
         }
@@ -605,7 +605,7 @@ function glovesBlockRingShock(object, state) {
     const gloves = state.uarmg || state.u?.uarmg;
     if (!gloves)
         return false;
-    const material = OBJECT_MATERIAL[gloves.otyp] ?? 0;
+    const material = objectMaterial(gloves.otyp);
     return material < 11 || material > 17;
 }
 function destructionMessage(object, damageType, count, quantity, carrier = null, state = game) {

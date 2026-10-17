@@ -91,7 +91,7 @@ export async function levelTeleport({ state = game, gotoLevel = (...args) => { s
         throw new Error('Level teleport has no destination');
     const destination = forced || (newDepth !== undefined
         ? await destinationAtDepth(newDepth, state) : null);
-    if (!destination || sameLevel(destination, hero.uz))
+    if (!destination)
         return;
     await gotoLevel({ dnum: destination.dnum, dlevel: destination.dlevel }, {
         arrival: 'random',

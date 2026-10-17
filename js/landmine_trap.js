@@ -107,7 +107,7 @@ export function beginMonsterLandMine(monster, trap, state = game, { random = rn2
 export function landMineNeedsResume(event) {
     return event?.kind === 'land-mine' && !!(event.exploded || event.discoveredTrigger);
 }
-export async function finishMonsterLandMine(monster, event, state = game, { finishDeath, publish = plineWithContinuation, random = rn2, rollOne = rnd, monsterName = target => canonicalMonsterName(target, { state }), describeMonster = target => canonicalMonsterName(target, { state, capitalized: true }), } = {}) {
+export async function finishMonsterLandMine(monster, event, state = game, { finishDeath, publish = plineWithContinuation, random = rn2, rollOne = rnd, describeMonster = target => canonicalMonsterName(target, { state, capitalized: true }), } = {}) {
     if (event.finished)
         return event;
     if (typeof finishDeath !== 'function')
@@ -117,11 +117,10 @@ export async function finishMonsterLandMine(monster, event, state = game, { fini
         publish,
         random,
         rollOne,
-        monsterName,
         describeMonster,
     };
     if (event.discoveredTrigger) {
-        await publish(`A trigger appears in a pile of soil below ${monsterName(monster)}.`);
+        await publish(`A trigger appears in a pile of soil below ${canonicalMonsterName(monster, { state })}.`);
         seeTrap(event.trap, state);
         event.airCurrentRoll = random(3);
         event.exploded = event.airCurrentRoll === 0;

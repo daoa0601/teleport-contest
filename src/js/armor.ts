@@ -1,6 +1,7 @@
 // armor.js — Hero armor-class projection.
 // C refs: do_wear.c find_ac() and hack.h ARM_BONUS().
 
+import { objectMaterial } from './object_material.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { heroDetectsMonsters, heroIsBlind, heroIsHallucinating } from './senses.js';
 import { makeHallucinated } from './hero_mental_status.js';
@@ -42,7 +43,7 @@ import {
     GRAY_DRAGON_SCALE_MAIL, GRAY_DRAGON_SCALES,
     YELLOW_DRAGON_SCALE_MAIL, YELLOW_DRAGON_SCALES,
     SHIELD_OF_DRAIN_RESISTANCE, SHIELD_OF_REFLECTION,
-    OBJECT_DESCRIPTIONS, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_PROPERTY,
+    OBJECT_DESCRIPTIONS, OBJECT_NAMES, OBJECT_PROPERTY,
     WATER_WALKING_BOOTS,
 } from './object_data.js';
 import { rn2, rnd } from './rng.js';
@@ -51,7 +52,8 @@ import type { GameObject } from './object_types.js';
 import type { PropertyName, WornPropertySlot } from './property_types.js';
 import type { MessagePublisher } from './display.js';
 import { changeHeroAlignmentFromHelmet } from './alignment.js';
-import { currentAttribute, reportHeroEncumbrance } from './attrib.js';
+import { currentAttribute } from './attrib.js';
+import { reportHeroEncumbrance } from './encumbrance.js';
 import { curseObjectState } from './object_state.js';
 import type { AttributeIndex } from './attrib.js';
 
@@ -316,7 +318,9 @@ export async function removeHeroArmor(object: GameObject, state: GameState = gam
     if (losingGloves) {
         if (object.otyp === GAUNTLETS_OF_POWER) learnObjectType(object.otyp, state);
         await reportHeroEncumbrance(state);
-        setSlipperyHands(0, state);
+        // C Gloves_off() cures only existing Glib; make_glib(0) without it
+        // would mark the status line.
+        if (state.u.glib) setSlipperyHands(0, state);
         await losePetrificationProtection(object, state, !state.context.mon_moving && !object.in_use);
         if (state.program_state?.gameover) return removed;
     }
@@ -427,7 +431,7 @@ export async function clearHeroArmor(object: GameObject, state: GameState = game
 
 export function objectIsHardHelmet(object: Pick<GameObject, 'otyp'> | null | undefined) {
     if (!object || armorSlotFor(object.otyp) !== 'uarmh') return false;
-    const material = OBJECT_MATERIAL[object.otyp] ?? 0;
+    const material = objectMaterial(object.otyp);
     return material >= IRON && material <= MITHRIL || material === GLASS;
 }
 
@@ -488,13 +492,13 @@ export async function erodeWornArmor(state: GameState = game) {
     }
     if (state.program_state?.gameover) return damaged;
     if (damaged) await stopHeroOccupation(state, plineWithContinuation);
-    if (state.context.mon_moving) state._armorClassDirty = true;
-    else findArmorClass(state);
+    // destroy_arm() never calls find_ac(); moveloop_core() recomputes u.uac.
+    state._armorClassDirty = true;
     return damaged;
 }
 
 export function objectErosionKind(object: Pick<GameObject, 'otyp' | 'oclass'>): ArmorErosionDescription | null {
-    const material = OBJECT_MATERIAL[object.otyp];
+    const material = objectMaterial(object.otyp);
     if ((material !== undefined && material <= 8 && material !== 1) || material === 18)
         return { field: 'oeroded', action: 'smoulder' };
     if (material === 11)

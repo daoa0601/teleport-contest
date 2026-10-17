@@ -1,5 +1,5 @@
 // C dothrow.c:AutoReturn(), throwit(), and sho_obj_return_to_u().
-import { reportHeroEncumbrance } from './attrib.js';
+import { reportHeroEncumbrance } from './encumbrance.js';
 import { artifactById } from './artifacts.js';
 import { heroArmName, heroFootName } from './body_parts.js';
 import { KILLED_BY, W_QUIVER, W_WEP, isok } from './const.js';

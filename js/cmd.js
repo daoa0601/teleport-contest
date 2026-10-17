@@ -1,3 +1,4 @@
+import { heroCouldMoveOntoBoulder, pushBouldersAt } from './boulder_push.js';
 import { useMagicMarker } from './write.js';
 import { formatFeltMessage, formatSeenMessage, publishHeardMessage } from './hero_speech.js';
 import { ingSuffix } from './hacklib.js';
@@ -184,7 +185,7 @@ import { d, rnd, rn2, rn2Display, rnl, } from './rng.js';
 import { landObjectOnAltar } from './altar_object.js';
 import { landFloorObject } from './floor_effects.js';
 import { shipObject } from './object_migration.js';
-import { moveObject, placeCreatedObject, } from './floor_object.js';
+import { placeCreatedObject } from './floor_object.js';
 import { makemonNear, mkgold, mksobj, rndClass } from './mklev.js';
 import { level_difficulty, recordMappedOverviewState, specialDisplayName, specialPrototypeAt, specialLevelAt, dungeonBuildsUp, sameDungeonLevel, } from './dungeon.js';
 import { questLeaderName } from './quest_pager.js';
@@ -231,7 +232,8 @@ import { wakeMonstersNear } from './monster_wake.js';
 import { aggravateMonsters, angerAttackedMonster, wakeAttackedMonster, } from './monster_anger.js';
 import { publishMonsterNoise } from './monster_sound.js';
 import { doride, moveSteedWithHero, ridingPreventsMovement, stuckSteed } from './steed.js';
-import { adjustAttribute, ATTRIBUTE_DISPLAY_ORDER, attributeChangeMessage, currentAttribute, currentStrength, exerciseAttribute, exerciseWisdom, reportHeroEncumbrance } from './attrib.js';
+import { adjustAttribute, ATTRIBUTE_DISPLAY_ORDER, attributeChangeMessage, currentAttribute, currentStrength, exerciseAttribute, exerciseWisdom } from './attrib.js';
+import { reportHeroEncumbrance } from './encumbrance.js';
 import { spendHeroNutrition, updateHeroHunger } from './hunger.js';
 import { continueForceLock, doforce } from './lock.js';
 import { doUntrap } from './untrap.js';
@@ -253,7 +255,7 @@ import { addShopDamage, payForShopDamage } from './shop_damage.js';
 import { convertSecretDoor } from './detect.js';
 import { roomForRoomno, roomsAt } from './room.js';
 import { learnObjectType, objectClassForType, recordObjectCall, recordObjectEncounter, recordObjectKnowledge, } from './object_knowledge.js';
-import { encumbranceLabel, encumbranceMessage, exceedsActionCapacity, nearCapacity, invWeight, OVERLOADED, SLT_ENCUMBER, } from './weight.js';
+import { exceedsActionCapacity, nearCapacity, OVERLOADED, SLT_ENCUMBER, } from './weight.js';
 import { makeWish } from './wish.js';
 import { dopray } from './pray.js';
 import { finishDestinationSpotEffects, finishTeleportArrival } from './location_effects.js';
@@ -311,7 +313,7 @@ import { heroHasMartialKick } from './kick_rules.js';
 import { bringLeashedFollowers, randomMonsterRelocation, } from './teleport.js';
 import { goodPosition, monsterTeleportRestricted } from './teleport_rules.js';
 import { removeWishGrantingMonster } from './monster_departure.js';
-import { RLOC_MSG, A_CON, A_DEX, A_MAX, A_STR, A_WIS, BOLT_LIM, COLNO, ROWNO, STONE, SCORR, SDOOR, DOOR, CORR, ROOM, ICE, POOL, CLOUD, IRONBARS, FOUNTAIN, SINK, ALTAR, WATER, MOAT, LAVAWALL, TREE, D_NODOOR, D_BROKEN, D_ISOPEN, D_CLOSED, D_LOCKED, D_TRAPPED, SHOP_DOOR_COST, IS_WALL, IS_STWALL, IS_OBSTRUCTED, IS_FURNITURE, IS_AIR, IS_ROOM, ZAP_POS, SQKY_BOARD, BEAR_TRAP, LANDMINE, FIRE_TRAP, PIT, SPIKED_PIT, TT_PIT, HOLE, TRAPDOOR, DART_TRAP, MAGIC_TRAP, TELEP_TRAP, LEVEL_TELEP, STATUE_TRAP, WEB, ANTI_MAGIC, G_GONE, ER_NOTHING, ER_DAMAGED, M_AP_MONSTER, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, STRAT_WAITMASK, MM_NOEXCLAM, MM_NOMSG, SHOPBASE, ROOMOFFSET, F_LOOTED, In_endgame, Is_airlevel, Is_waterlevel, Is_rogue_level, In_hell, W_ARMOR, W_ACCESSORY, W_SADDLE, WT_SQUEEZABLE_INV, P_BOW, P_SLING, PARANOID_HIT, POLY_CONTROLLED, STR19, isok, ACCESSIBLE, AIR, DIGTYP_UNDIGGABLE, DRAWBRIDGE_UP, } from './const.js';
+import { RLOC_MSG, A_CON, A_DEX, A_MAX, A_STR, A_WIS, BOLT_LIM, COLNO, ROWNO, STONE, SCORR, SDOOR, DOOR, CORR, ROOM, ICE, POOL, CLOUD, IRONBARS, FOUNTAIN, SINK, ALTAR, WATER, MOAT, LAVAWALL, TREE, D_NODOOR, D_BROKEN, D_ISOPEN, D_CLOSED, D_LOCKED, D_TRAPPED, SHOP_DOOR_COST, IS_WALL, IS_STWALL, IS_OBSTRUCTED, IS_FURNITURE, IS_AIR, IS_ROOM, ZAP_POS, SQKY_BOARD, BEAR_TRAP, LANDMINE, FIRE_TRAP, PIT, SPIKED_PIT, TT_PIT, HOLE, TRAPDOOR, DART_TRAP, MAGIC_TRAP, TELEP_TRAP, LEVEL_TELEP, STATUE_TRAP, WEB, ANTI_MAGIC, G_GONE, ER_NOTHING, ER_DAMAGED, M_AP_MONSTER, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, STRAT_WAITMASK, MM_NOEXCLAM, MM_NOMSG, SHOPBASE, ROOMOFFSET, F_LOOTED, In_endgame, Is_airlevel, Is_waterlevel, Is_rogue_level, In_hell, W_ARMOR, W_ACCESSORY, W_SADDLE, P_BOW, P_SLING, PARANOID_HIT, POLY_CONTROLLED, STR19, isok, ACCESSIBLE, AIR, DIGTYP_UNDIGGABLE, DRAWBRIDGE_UP, } from './const.js';
 const DIR_DX = { h: -1, l: 1, j: 0, k: 0, y: -1, u: 1, b: -1, n: 1 };
 const DIR_DY = { h: 0, l: 0, j: 1, k: -1, y: -1, u: -1, b: 1, n: 1 };
 // object.h enum value; object_data currently exposes the two other tools.
@@ -340,25 +342,7 @@ function configuredCommand(key) {
         parameter: binding?.parameter ?? null,
     };
 }
-// C ref: hack.c:could_move_onto_boulder().  Travel planning is allowed to
-// route through an ordinary boulder, then actual run-mode movement consults
-// this capability before deciding whether to stop or enter/push the square.
-export function heroCouldMoveOntoBoulder(sx, sy, g = game) {
-    const mnum = g.u.umonnum;
-    if (heroPassesWalls(g))
-        return true;
-    if (g.u?.usteed)
-        return false;
-    const flags2 = mnum === undefined ? 0 : MONSTER_FLAGS2[mnum] ?? 0;
-    if (flags2 & M2_ROCKTHROW) {
-        return !g.u?.dx || !g.u?.dy
-            || !(IS_OBSTRUCTED(requireGameLevel(g).at(g.u.ux, sy)?.typ ?? STONE)
-                && IS_OBSTRUCTED(requireGameLevel(g).at(sx, g.u.uy)?.typ ?? STONE));
-    }
-    if (heroIsVerySmall(g))
-        return true;
-    return invWeight(g) <= -WT_SQUEEZABLE_INV;
-}
+export { heroCouldMoveOntoBoulder } from './boulder_push.js';
 async function rejectTightHeroDiagonal(dx, dy) {
     if (!dx || !dy
         || !heroBadRock(game, game.u.ux, game.u.uy + dy)
@@ -405,9 +389,9 @@ async function rejectHeroDiagonalDoorway(dx, dy, destination) {
     game.context.move = 0;
     return true;
 }
-// C test_move(TEST_MOVE): confirmation tests obstacles without performing
-// auto-open, boulder pushing, or the hero's eventual movement.
-function heroCanConfirmStep(x, y) {
+// C test_move(TEST_MOVE): tests obstacles without performing auto-open,
+// boulder pushing, or the hero's eventual movement.
+export function heroTestMove(x, y) {
     const hero = game.u;
     const location = game.level?.at(x, y);
     if (!location)
@@ -2412,20 +2396,15 @@ async function doherecmdmenu() {
     game._retained_message = '';
     game.nhDisplay?.clearRow(0);
     const underlay = snapshotMenuUnderlay();
-    const validKeys = [
-        27,
-        ...entries.map((_, index) => 97 + index),
-    ];
     const key = await showChoiceWindow({
         title: 'What do you want to do?',
         entries,
-        validKeys,
     });
     restoreMenuUnderlay(underlay);
     game.nhDisplay?.setCursor((game.u?.ux ?? 1) - 1, (game.u?.uy ?? 0) + 1);
     // cmd.c:here_cmd_menu() queues selected actions for a later dispatch.
     // This accepted boundary dismisses with Escape before that action graph.
-    game.context.move = key === 27 ? 0 : 1;
+    game.context.move = key === 0 || key === 27 ? 0 : 1;
 }
 async function doname() {
     // docallcmd() consumes a canned category before creating its menu.
@@ -5007,14 +4986,9 @@ async function dohelp() {
         { key: 'o', text: 'Support information.' },
         ...(game.flags.debug ? [{ key: 'p', text: 'List of wizard-mode commands.' }] : []),
     ];
-    const validKeys = [
-        27, 32, 10, 13,
-        ...entries.map(entry => entry.key.charCodeAt(0)),
-    ];
     const key = await showChoiceWindow({
         title: 'Select one item:',
         entries,
-        validKeys,
     });
     await restoreHelpMap();
     const choice = String.fromCharCode(key);
@@ -6605,8 +6579,6 @@ async function throwCommand(selectedItem = null, capabilityChecked = false, supp
     if (isWetTowel(item))
         await dryTowel(item, -1);
     if (selectedIsGold && item === game.uquiver) {
-        const previousCapacity = game._encumbranceLevel
-            ?? nearCapacity(game);
         await resolveQuiveredGoldThrow({
             state: game,
             gold: item,
@@ -6616,12 +6588,7 @@ async function throwCommand(selectedItem = null, capabilityChecked = false, supp
         });
         if (game.program_state.gameover)
             return;
-        const currentCapacity = nearCapacity(game);
-        const capacityMessage = encumbranceMessage(previousCapacity, currentCapacity);
-        if (capacityMessage)
-            await plineWithContinuation(capacityMessage);
-        game._encumbranceLevel = currentCapacity;
-        game.u._encumbrance = encumbranceLabel(currentCapacity);
+        await reportHeroEncumbrance(game);
         game.context.move = 1;
         return;
     }
@@ -6751,68 +6718,6 @@ async function openLockedDoor(x, y) {
     if (tool)
         return pickLock(tool, { target: { x, y } });
     return Boolean(game.context.move);
-}
-// C ref: hack.c:dopush().  Move a floor boulder before committing the hero
-// into its old square; the first push owns Strength exercise and its message.
-async function pushBoulder(boulder, x, y, dx, dy) {
-    const glyph = glyphAt(x, y);
-    if (heroIsBlind(game) && !(glyph?.kind === 'object' && glyph.otyp === BOULDER)) {
-        await pline('That feels like a boulder.');
-        map_object(boulder, true);
-        endVoluntaryMultiTurn(game);
-        return false;
-    }
-    const targetX = x + dx;
-    const targetY = y + dy;
-    const targetObjects = game.level?.objects?.[targetX]?.[targetY] || [];
-    const targetMonster = game.level?.monsters?.find(monster => monsterHasMapPosition(monster, game) &&
-        monster.mx === targetX && monster.my === targetY
-        && (monster.mhp ?? 1) > 0);
-    const physicalMonster = targetMonster
-        && MONSTER_SYMBOL[targetMonster.mnum] !== 54;
-    if (physicalMonster) {
-        if (canSpotMonster(targetMonster)) {
-            const name = MONSTER_NAME[targetMonster.mnum] || 'monster';
-            await plineWithContinuation(`There's ${withIndefiniteArticle(name)} on the other side.`);
-        }
-        else {
-            await publishHeardMessage('a monster behind the boulder.', plineWithContinuation);
-            map_invisible(targetX, targetY);
-        }
-        if (game.flags?.verbose !== false) {
-            await plineWithContinuation("Perhaps that's why you cannot move it.");
-        }
-        return false;
-    }
-    if (blocksMove(targetX, targetY)
-        || targetObjects.some(object => object.otyp === BOULDER)) {
-        await pline('You try to move the boulder, but in vain.');
-        return false;
-    }
-    const sourceMove = game.moves ?? 0;
-    const lastPushMove = game._lastBoulderPushMove;
-    const giveMessage = game._lastPushedBoulder !== boulder
-        || lastPushMove === undefined || !Number.isInteger(lastPushMove)
-        || sourceMove > lastPushMove + 2
-        || sourceMove < lastPushMove;
-    game._lastPushedBoulder = boulder;
-    game._lastBoulderPushMove = sourceMove;
-    if (giveMessage)
-        await pline('With great effort you move the boulder.');
-    await exerciseAttribute(A_STR, true);
-    // C dopush() invalidates an invisible-monster memory glyph at the
-    // destination before movobj().  Otherwise newsym() must continue to
-    // honor `I` and cannot reveal the boulder which now occupies the square.
-    unmap_invisible(targetX, targetY, false);
-    await moveObject(boulder, targetX, targetY, game);
-    if (heroIsBlind(game)) {
-        feel_location(targetX, targetY);
-        feel_location(x, y);
-    }
-    else {
-        newsym(x, y);
-    }
-    return true;
 }
 // C ref: hack.c:domove_fight_empty(). Forced attacks at the map edge and
 // ordinary moves into remembered invisible-monster knowledge converge here.
@@ -7239,6 +7144,7 @@ async function domoveCore(dx, dy, explicitAttempt) {
                     return true;
             }
             if (blocked || inShop) {
+                // C uhitm.c do_attack(): y_monnam(), capitalized.
                 const displayName = monsterName(monster, {
                     state: game, article: 'your', capitalized: true,
                 });
@@ -7256,7 +7162,7 @@ async function domoveCore(dx, dy, explicitAttempt) {
             // changes position or the hero tries to escape a current trap.
             if (await rootedHeroCannotMove())
                 return true;
-            if (heroCanConfirmStep(newx, newy) && !await confirmHeroStep(newx, newy))
+            if (heroTestMove(newx, newy) && !await confirmHeroStep(newx, newy))
                 return false;
             if (u.utrap
                 && !await heroCanMoveFromTrap(newx, newy))
@@ -7306,14 +7212,19 @@ async function domoveCore(dx, dy, explicitAttempt) {
             // announcement can flush the map or pause for acknowledgment.
             newsym(newx, newy);
             newsym(oldx, oldy);
-            const hasPersonalName = !!MGIVENNAME(monster)
-                || !!((MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_PNAME);
+            // C hack.c domove_swap_with_pet(): x_monnam() with "your" for
+            // pets, "the" for unnamed common species, and a "peaceful"
+            // adjective for non-pets.
+            const givenName = !!MGIVENNAME(monster);
             const swapName = monsterName(monster, {
                 state: game,
-                article: tame ? 'your' : hasPersonalName ? 'none' : 'the',
-                adjective: tame ? '' : 'peaceful',
+                article: monster.mtame ? 'your'
+                    : !givenName && !((MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_PNAME)
+                        ? 'the' : 'none',
+                adjective: monster.mpeaceful && !monster.mtame ? 'peaceful' : '',
+                suppressSaddle: givenName,
             });
-            await plineWithContinuation(`You swap places with ${swapName}.`);
+            await plineWithContinuation(`You ${monster.mpeaceful ? 'swap places with' : 'frighten'} ${swapName}.`);
             return finishMovedHero({
                 oldx, oldy, newx, newy, loc, explicitAttempt,
                 ballChainMove,
@@ -7344,7 +7255,7 @@ async function domoveCore(dx, dy, explicitAttempt) {
     }
     if (await rootedHeroCannotMove())
         return true;
-    if (heroCanConfirmStep(newx, newy) && !await confirmHeroStep(newx, newy))
+    if (heroTestMove(newx, newy) && !await confirmHeroStep(newx, newy))
         return false;
     if (!await heroCanMoveFromTrap(newx, newy))
         return true;
@@ -7479,13 +7390,13 @@ async function domoveCore(dx, dy, explicitAttempt) {
                 return false;
         }
         else {
-            if (!await pushBoulder(boulder, newx, newy, dx, dy)) {
-                game.context.move = 0;
-                return false;
+            game.context.move = 0;
+            const pushed = await pushBouldersAt(newx, newy, dx, dy);
+            if (game.program_state.gameover)
+                return true;
+            if (!pushed) {
+                return Boolean(game.context.move);
             }
-            // C moverock_core() stops running for a push; still_chewing() does not.
-            if (game._runState)
-                stopRun(game);
         }
     }
     // C hack.c:swim_move_danger().  Known walking equipment and the swim

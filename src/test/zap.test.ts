@@ -348,8 +348,7 @@ void test('a worn life-saving amulet saves a monster from a death ray', async t 
     freshGameplayRoom();
     planInput(resetInputState(), t, [
         { prompt: /kill the goblin.*But wait/, keys: ' ' },
-        { prompt: /goblin.s medallion begins to glow/, keys: ' ' },
-        { prompt: /goblin looks much better/, keys: ' ' },
+        { prompt: /goblin.s medallion begins to glow!  The goblin looks much better!/, keys: ' ' },
     ]);
     requirePlayingGame(game);
     const amulet = await knownObject(AMULET_OF_LIFE_SAVING);

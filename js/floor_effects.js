@@ -9,11 +9,10 @@ import { map_background, newsym, plineWithContinuation } from './display.js';
 import { meldLandingGlob } from './glob.js';
 import { breakObjectAtLocation } from './object_breakage.js';
 import { deleteObject } from './object_delete.js';
-import { BOULDER, OBJECT_NAMES, POT_OIL } from './object_data.js';
-import { makePlural } from './object_grammar.js';
+import { BOULDER, POT_OIL } from './object_data.js';
+import { definiteName, definiteObjectAction, objectCombatName, objectNameIsPlural, } from './objnam.js';
 import { shipObject } from './object_migration.js';
 import { objectResistsDestruction } from './object_state.js';
-import { definiteObjectAction } from './objnam.js';
 import { applyBoulderPitEffects } from './pit_fill.js';
 import { rnl, rn2 } from './rng.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
@@ -37,8 +36,7 @@ async function breakPotionOnHotGround(object, x, y, state, publish, random, luck
     const visible = squareIsVisible(state, x, y);
     const quantity = object.quan ?? object.quantity ?? 1;
     if (visible) {
-        const singular = quantity === 1;
-        await publish(`${definiteObjectAction(object, 'heat', state)} up as ${singular ? 'it hits' : 'they hit'} the hot ground.`);
+        await publish(`${definiteObjectAction(object, 'heat', state)} up as ${objectNameIsPlural(object, state) ? 'they hit' : 'it hits'} the hot ground.`);
     }
     let survivalChance = object.blessed ? 70 : 50;
     if (object.invlet)
@@ -65,26 +63,19 @@ async function breakPotionOnHotGround(object, x, y, state, publish, random, luck
     });
     return true;
 }
-function fallenObjectSubject(object) {
-    const quantity = object.quan ?? object.quantity ?? 1;
-    const noun = object.oextra?.oname || object.oname
-        || object.name || OBJECT_NAMES[object.otyp] || 'object';
-    return quantity === 1 ? `The ${noun}`
-        : `The ${quantity} ${makePlural(noun)}`;
-}
 async function handleHeroShaftEdge(object, trap, x, y, state, publish, random) {
     if (!trap || state.u.ux !== x || state.u.uy !== y || !trap.tseen)
         return null;
     if (is_pit(trap.ttyp)
         && !(state.u?.utrap && state.u.utraptype === TT_PIT)) {
-        const noun = object.oextra?.oname || object.oname
-            || object.name || OBJECT_NAMES[object.otyp] || 'object';
-        if (heroIsBlind(state) && !heroIsDeaf(state))
-            await publish(`You hear the ${noun} tumble downwards.`);
+        if (heroIsBlind(state) && !heroIsDeaf(state)) {
+            const name = definiteName(objectCombatName(object, {
+                state, includeCorpseSpecies: false,
+            }), state);
+            await publish(`You hear ${name} tumble downwards.`);
+        }
         else {
-            const verb = (object.quan ?? object.quantity ?? 1) === 1
-                ? 'tumbles' : 'tumble';
-            await publish(`${fallenObjectSubject(object)} ${verb} into ${trap.madeby_u ? 'your' : 'the'} pit.`);
+            await publish(`${definiteObjectAction(object, 'tumble', state)} into ${trap.madeby_u ? 'your' : 'the'} pit.`);
         }
         return { finished: false, object };
     }

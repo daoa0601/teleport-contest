@@ -1,5 +1,6 @@
 // enchant_weapon.js — Scroll of enchant weapon.
 // C refs: read.c seffect_enchant_weapon(); wield.c chwepon().
+import { reportHeroEncumbrance } from './encumbrance.js';
 import { exerciseAttribute } from './attrib.js';
 import { artifactById, ARTIFACTS } from './artifacts.js';
 import { heroHandName } from './body_parts.js';
@@ -18,7 +19,7 @@ import { rn2, rnd } from './rng.js';
 import { strangeFeeling } from './scroll_strange_feeling.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { chargeAlteredUnpaidObject, objectTypeKnown, updateUnpaidObjectPrice, } from './shk.js';
-import { encumbranceLabel, encumbranceMessage, nearCapacity, objectWeight, } from './weight.js';
+import { objectWeight } from './weight.js';
 import { willWeld } from './weapon_type.js';
 const WEAPON_CLASS = 2;
 const ARMOR_CLASS = 3;
@@ -157,7 +158,6 @@ async function chwepon(scroll, amount, state) {
 // C chwepon() worm tooth branch: fusion into one uncursed crysknife.
 async function sharpenWormTeeth(uwep, scrollType, state) {
     const multiple = objectQuantity(uwep) > 1;
-    const previousCapacity = state._encumbranceLevel ?? 0;
     /* order: message, transformation, shop handling */
     await pline(`Your ${simpleonames(uwep)} `
         + `${multiple ? 'fuse, and become' : 'is'} much sharper now.`);
@@ -177,12 +177,11 @@ async function sharpenWormTeeth(uwep, scrollType, state) {
     if (scrollType !== null)
         learnObjectType(scrollType, state);
     if (multiple)
-        await noteEncumbranceChange(previousCapacity, state);
+        await reportHeroEncumbrance(state, pline);
 }
 // C chwepon() crysknife branch: degradation back into one worm tooth.
 async function dullCrysknife(uwep, scrollBknown, scrollType, state) {
     const multiple = objectQuantity(uwep) > 1;
-    const previousCapacity = state._encumbranceLevel ?? 0;
     /* order matters: message, shop handling, transformation */
     await pline(`Your ${simpleonames(uwep)} `
         + `${multiple ? 'fuse, and become' : 'is'} much duller now.`);
@@ -198,7 +197,7 @@ async function dullCrysknife(uwep, scrollBknown, scrollType, state) {
     if (scrollType !== null && scrollBknown)
         learnObjectType(scrollType, state);
     if (multiple)
-        await noteEncumbranceChange(previousCapacity, state);
+        await reportHeroEncumbrance(state, pline);
 }
 // C chwepon() bare-hands branch, including the cursed welded tin opener.
 async function strangeFeelingOn(scroll, amount, state) {
@@ -249,16 +248,6 @@ function capEnchantment(object) {
 function setWeaponEnchantment(object, value) {
     object.spe = value;
     object.enchantment = value;
-}
-// C pickup.c:encumber_msg(), in the shape other JS effect owners use.
-async function noteEncumbranceChange(previousCapacity, state) {
-    const currentCapacity = nearCapacity(state);
-    const message = encumbranceMessage(previousCapacity, currentCapacity);
-    if (message)
-        await pline(message);
-    state._encumbranceLevel = currentCapacity;
-    if (state.u)
-        state.u._encumbrance = encumbranceLabel(currentCapacity);
 }
 // C wield.c u_wield_art(ART_MAGICBANE).
 function heroWieldsMagicbane(state) {

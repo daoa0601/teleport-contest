@@ -5,12 +5,13 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-    A_CON, A_STR, BURNING, DISSOLVED, LAVAPOOL, PARANOID_SWIM, POOL, ROOM,
+    A_CON, A_STR, BURNING, DISSOLVED, LAVAPOOL, M_SEEN_FIRE, PARANOID_SWIM, POOL, ROOM,
     TT_LAVA, WATER,
 } from '../js/const.js';
 import { rhack } from '../js/cmd.js';
 import { initializePet } from '../js/dog.js';
 import { game } from '../js/gstate.js';
+import { bot, plineWithContinuation } from '../js/display.js';
 import { heroLiquidEffects, sinkHeroIntoLava } from '../js/hack.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import {
@@ -18,7 +19,7 @@ import {
     WATER_WALKING_BOOTS,
 } from '../js/object_data.js';
 import { vision_reset } from '../js/vision.js';
-import { pushKeys } from '../js/input.js';
+import { pushKeys, resetInputState } from '../js/input.js';
 import { initRng } from '../js/rng.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { addInventoryObject } from './support/game-objects.js';
@@ -26,6 +27,7 @@ import { createMonsterAt, createSaddledSteed } from './support/monsters.js';
 import { runExtendedCommand } from './support/commands.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { freshGameplayRoom } from './support/playable-room.js';
+import { requireScreenRow } from './support/screen.js';
 import { createSpecialLevel } from './support/topology.js';
 
 function liquidAtHero(terrain: number) {
@@ -91,6 +93,37 @@ void test('fire resistance leaves the hero stuck in lava', async () => {
     );
 });
 
+void test('sinking into lava shows InLava at once and teaches onlookers about fire resistance', async () => {
+    liquidAtHero(LAVAPOOL);
+    requireFixtureGame(game);
+    game.u.fireResistance = true;
+    const hound = await createMonsterAt('hell hound', game.u.ux + 3, game.u.uy);
+    hound.seen_resistance = 0;
+    game.context.botl = true;
+    await bot();
+    const input = resetInputState();
+    let checked = 0;
+    input.display = { async readKey() {
+        const top = requireScreenRow(0).map(cell => cell.ch).join('');
+        if (top.includes('The hole fills with lava!') && top.includes('--More--')) {
+            assert.match(requireScreenRow(23).map(cell => cell.ch).join(''), /\bInLava\b/);
+            checked++;
+        }
+        return 32;
+    } };
+    await plineWithContinuation('The hole fills with lava!');
+
+    await heroLiquidEffects({
+        ...noDisplay,
+        publish: plineWithContinuation,
+        random: () => 0,
+        rollDice: () => 12,
+    });
+
+    assert.equal(checked, 1);
+    assert.equal(hound.seen_resistance & M_SEEN_FIRE, M_SEEN_FIRE);
+});
+
 void test('a trapped hero sinks deeper after another action in lava', async () => {
     liquidAtHero(LAVAPOOL);
     requireFixtureGame(game);
@@ -108,6 +141,29 @@ void test('a trapped hero sinks deeper after another action in lava', async () =
 
     assert.ok((game.u.utrap ?? 0) < 2 << 8);
     assert.equal(messages.includes('You sink deeper into the lava.'), true);
+});
+
+// C trap.c:sink_into_lava() uses Norep(), which compares pline.c's previous
+// message even after tty joined it to an earlier one on the top line.
+void test('sinking deeper is not repeated after it shared the top line', async () => {
+    liquidAtHero(LAVAPOOL);
+    requireFixtureGame(game);
+    game.u.fireResistance = true;
+    game.u.utrap = 4 << 8;
+    game.u.utraptype = TT_LAVA;
+    game.u.umoved = false;
+    pushKeys(' '.repeat(10));
+    const messages: string[] = [];
+    const publish = async (message: string) => {
+        messages.push(message);
+        return await plineWithContinuation(message);
+    };
+
+    await plineWithContinuation('You feel a bit steadier now.');
+    await sinkHeroIntoLava({ ...noDisplay, publish, rollOne: () => 1 });
+    await sinkHeroIntoLava({ ...noDisplay, publish, rollOne: () => 1 });
+
+    assert.deepEqual(messages, ['You sink deeper into the lava.']);
 });
 
 void test('fireproof water-walking boots hold the hero above lava', async () => {

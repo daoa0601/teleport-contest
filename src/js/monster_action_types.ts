@@ -654,7 +654,6 @@ export interface ImmediateMonsterTrapOptions extends MonsterRandomOptions {
 
 export interface MonsterTrapResumeOptions extends MonsterRandomOptions {
     publish?: PublishMonsterMessage;
-    monsterName?: (monster: Monster) => string;
     describeMonster?: (monster: Monster) => string;
     finishDeath?: MonsterDeathHandler;
 }

@@ -209,6 +209,7 @@ export async function resolveMonsterLiquid(monster, state = game, { announce = a
         const clone = await splitMonster(monster, state, {
             monsterMoving,
             random,
+            publish: announce,
         });
         let fountainDried = false;
         if (clone && inFountain) {

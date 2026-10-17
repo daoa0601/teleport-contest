@@ -1,7 +1,8 @@
 // C ref: dokick.c container_impact_dmg().  A kicked, dropped, or thrown
 // container may lose fragile contents.  Callers own placement and pass the
 // object's PRE-impact coordinates for shop-room attribution.
-import { BAG_OF_HOLDING, BAG_OF_TRICKS, EGG, MIRROR, OBJECT_MATERIAL, } from './object_data.js';
+import { objectMaterial } from './object_material.js';
+import { BAG_OF_HOLDING, BAG_OF_TRICKS, EGG, MIRROR, } from './object_data.js';
 import { game, requireLiveGame } from './gstate.js';
 import { plineWithContinuation } from './display.js';
 import { isContainer } from './container.js';
@@ -32,7 +33,7 @@ export async function containerImpactDamage(container, x, y, { state = game, pub
     // RNG outcomes land on the same objects in this iteration order.
     for (const content of [...container.contents]) {
         let result = null;
-        if (OBJECT_MATERIAL[content.otyp] === GLASS
+        if (objectMaterial(content.otyp) === GLASS
             && content.oclass !== GEM_CLASS
             && !objectResistsDestruction(content, 33, 100, random)) {
             result = 'shatter';

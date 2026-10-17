@@ -61,7 +61,7 @@ void test('a boulder fills a pit after its monster is pulled out', async () => {
     const monster = await createMonsterAt('jackal', 11, 10);
     monster.mtrapped = 1;
     const boulder = await floorObject(BOULDER, 11, 10);
-    pushKeys('untrap\nl');
+    pushKeys('untrap\nl ');
     await rhack('#'.charCodeAt(0));
     assert.equal(monster.mtrapped, 0);
     assert.equal(level.traps.includes(trap), false);

@@ -1,6 +1,7 @@
 // Anti-magic trap effects.
 // C ref: trap.c trapeffect_anti_magic().
 
+import { objectMaterial } from './object_material.js';
 import { formatFeltMessage } from './hero_speech.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
@@ -20,7 +21,6 @@ import {
     CLOAK_OF_MAGIC_RESISTANCE,
     GRAY_DRAGON_SCALE_MAIL,
     GRAY_DRAGON_SCALES,
-    OBJECT_MATERIAL,
 } from './object_data.js';
 import { AD_MAGM, AD_RBRE, AT_BREA, AT_MAGC } from './monster_attack_types.js';
 import {
@@ -262,13 +262,13 @@ export function monsterHasMagicResistance(monster: Monster) {
 
 export function monsterWornIronShoes(monster: Monster) {
     return monsterInventory(monster).find(
-        (object) => OBJECT_MATERIAL[object?.otyp] === IRON && !!((object?.owornmask ?? 0) & W_ARMF),
+        (object) => objectMaterial(object?.otyp) === IRON && !!((object?.owornmask ?? 0) & W_ARMF),
     );
 }
 
 function ironShoes() {
     const shoes = heroObject('uarmf');
-    return shoes && OBJECT_MATERIAL[shoes.otyp] === IRON ? shoes : null;
+    return shoes && objectMaterial(shoes.otyp) === IRON ? shoes : null;
 }
 
 function heroPassesWalls() {

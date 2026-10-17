@@ -43,7 +43,7 @@ void test('the Staff heals injuries and cures illness, slime, and blindness', as
     assert.equal(game.u.blindTurns, 2);
     assert.ok(staff.age > game.moves);
     assert.equal(game.context.move, 1);
-    assert.equal(game._pending_message, 'You feel better.');
+    assert.equal(game._pending_message, 'You feel better.  You feel better.');
 });
 void test('the Mitre restores a small energy deficit completely', async () => {
     freshObjectRoom({

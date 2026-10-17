@@ -3,7 +3,7 @@
 
 import type { GameState } from './game_state.js';
 
-export const SAVE_VERSION = 31;
+export const SAVE_VERSION = 33;
 
 const persistentNames = [
     'Luck', '_activeSpecialLevel', '_armorClassDirty', '_artifactDiscoveries',
@@ -13,8 +13,8 @@ const persistentNames = [
     '_encumbranceLevel', '_farMonsterNoise', '_fobjSerial',
     '_helplessAfter', '_helplessDoneMessage', '_helplessReason', '_helplessTurns',
     '_heroActionSeq', '_heroTrack', '_initialGoldCount', '_initialPwBonus',
-    '_knownObjectTypes', '_lastBoulderPushMove', '_lastDemigodAggravation',
-    '_lastDemigodNasty', '_lastInvNr', '_lastPushedBoulder', '_last_message',
+    '_knownObjectTypes', '_lastDemigodAggravation',
+    '_lastDemigodNasty', '_lastInvNr', '_last_message',
     '_levelAnnotations', '_levelCache', '_lifeSavedCount', '_migratingMonsters',
     '_mimicMealMessage', '_monsterNoiseTime', '_moveloopStarted', '_nextAttribCheck',
     '_nextIdent', '_nextObjectTimerId', '_objectCallNames', '_objectDiscoveryOrder',
@@ -37,7 +37,7 @@ const persistentNames = [
     'oracle_level', 'oracleRemaining', 'plname', 'polymorphControl', 'preferred_pet',
     'protectionFromShapeChangers', 'quest_dnum', 'quest_status',
     'rndencode', 'rogue_level', 'sanctum_level', 'seer_turn', 'smeq', 'sokoban_dnum',
-    'specialLevels', 'spells', 'splev_align', 'stairs', 'startingPet', 'stronghold_level',
+    'specialLevels', 'spells', 'splev_align', 'stairs', 'stronghold_level',
     'symset', 'targetX', 'targetY', 'tower_dnum', 'tutorial_set_in_config', 'u', 'uamul',
     'uarm', 'uarmc', 'uarmf', 'uarmg', 'uarmh', 'uarms', 'uarmu', 'uball', 'ubirthday',
     'ublindf', 'uchain', 'udaminc', 'uleft', 'unchanging', 'underwater', 'uquiver', 'urace',
@@ -51,11 +51,15 @@ export type PersistentState = Pick<GameState, PersistentStateKey>;
 // Every remaining GameState field must be transient. Adding, removing, or
 // reclassifying a field requires an explicit persistence decision at compile time.
 const transientFields = {
+    // C hack.c:moverock() keeps these in unsaved instance globals.
+    _lastPushedBoulder: true,
+    _lastBoulderPushMove: true,
     _ballChainRestriction: true,
     _heroBubble: true,
     _domoveSucceeded: true,
     _wishHistory: true,
     _pickWarningMove: true,
+    _pickupEncumbrance: true,
     _canMakeBones: true,
     _wailMessageMove: true,
     bhitpos: true,

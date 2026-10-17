@@ -16,7 +16,7 @@ import { linkObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { shipObject } from '../js/object_migration.js';
 import { GOLD_PIECE, GLOB_OF_BLACK_PUDDING, GLOB_OF_BROWN_PUDDING, GLOB_OF_GRAY_OOZE, GLOB_OF_GREEN_SLIME, SACK, } from '../js/object_data.js';
 import { claimNextDueObjectTimer, OBJECT_TIMER_KIND, objectTimers, scheduleObjectTimer, stopAllObjectTimers, } from '../js/object_timers.js';
-import { objectWeight } from '../js/weight.js';
+import { nearCapacity, objectWeight } from '../js/weight.js';
 import { stopHeroOccupation } from '../js/occupation.js';
 import { addInventoryItem } from '../js/u_init.js';
 import { createMonsterAt } from './support/monsters.js';
@@ -158,11 +158,10 @@ void test('inventory threshold prose precedes reschedule and retains live mass',
     assert.equal(glob.oeaten, 11);
     assert.ok(game.inventory.includes(glob));
     assert.equal(objectTimers(glob).length, 0);
-    finishGlobTimer(event, game, game.moves);
+    await finishGlobTimer(event, game, game.moves, async () => { });
     assert.ok(game.inventory.includes(glob));
     assert.equal(shrinkTimer(glob).deadline >= game.moves + 23, true);
     assert.equal(shrinkTimer(glob).deadline <= game.moves + 27, true);
-    assert.equal(event.followupMessage, null);
 });
 void test('inventory dissolution precedes deletion and then relieves capacity', async () => {
     freshGlobState(12);
@@ -176,20 +175,21 @@ void test('inventory dissolution precedes deletion and then relieves capacity', 
     glob.where = 'inventory';
     glob.owt = 1;
     game.inventory = [ballast, glob];
+    game._encumbranceLevel = nearCapacity(game);
     const timer = shrinkTimer(glob);
     game.moves = timer.deadline;
     const event = runClaimedGlobTimer(claimNextDueObjectTimer(game, game.moves), game, game.moves);
     assert.ok(event, 'The due object timer must produce its effect.');
     assert.ok(event.finishPending);
-    assert.equal(event.oldCapacity, 1);
     assert.equal(event.message, 'Your small glob of gray ooze dissolves completely.');
     assert.equal(glob.owt, 0);
     assert.ok(game.inventory.includes(glob));
-    finishGlobTimer(event, game, game.moves);
+    const messages = [];
+    await finishGlobTimer(event, game, game.moves, async (message) => { messages.push(message); });
     assert.equal(glob.where, 'gone');
     assert.equal(game.inventory.includes(glob), false);
-    assert.equal(event.newCapacity, 0);
-    assert.equal(event.followupMessage, 'Your movements are now unencumbered.');
+    assert.equal(nearCapacity(game), 0);
+    assert.deepEqual(messages, ['Your movements are now unencumbered.']);
 });
 void test('active eating postpones glob shrinkage and interruption lets shrinking resume', async () => {
     freshGlobState(13);
@@ -268,7 +268,7 @@ void test('a glob inside a carried sack makes the sack lighter', async () => {
     assert.ok(event, 'The due object timer must produce its effect.');
     assert.equal(event.message, 'Your bag becomes slightly lighter.');
     assert.equal(sack.owt, oldWeight - 1);
-    finishGlobTimer(event, game, game.moves);
+    await finishGlobTimer(event, game, game.moves, async () => { });
     assert.equal(sack.contents.includes(glob), true);
 });
 void test('a monster-carried glob disappears from its pack', async () => {
@@ -327,7 +327,7 @@ void test('a dissolving wielded glob clears the hero weapon slot', async () => {
     game.moves = timer.deadline;
     const event = runClaimedGlobTimer(claimNextDueObjectTimer(game, game.moves), game, game.moves);
     assert.ok(event, 'The due object timer must produce its effect.');
-    finishGlobTimer(event, game, game.moves);
+    await finishGlobTimer(event, game, game.moves, async () => { });
     assert.equal(game.uwep, null);
     assert.equal(game.u.uwep, null);
     assert.equal(game._occupation, null);

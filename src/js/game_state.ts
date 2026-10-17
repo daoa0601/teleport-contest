@@ -221,7 +221,6 @@ export interface GameState {
     uswapwep?: GameObject | null;
     uwep?: GameObject | null;
     fmon?: Monster | null;
-    startingPet?: Monster | null;
     mvitals?: MonsterVital[];
     migratingObjects?: GameObject[];
     billObjects?: GameObject[];
@@ -344,6 +343,7 @@ export interface GameState {
     _lastInvNr?: number;
     _capacityDirty?: boolean;
     _encumbranceLevel?: number;
+    _pickupEncumbrance?: number;
     _pickWarningMove?: number;
     _pendingHeroShapeChange?: 'polymorph' | 'were';
     _unweapon?: boolean;

@@ -46,7 +46,6 @@ export type MonsterRockTrapEvent = SpentRockTrapEvent | FallingRockEvent;
 interface FinishTrapOptions {
     publish?: MessagePublisher;
     random?: (limit: number) => number;
-    monsterName?: (monster: Monster) => string;
     describeMonster?: (monster: Monster) => string;
 }
 
@@ -118,13 +117,12 @@ export async function finishMonsterRockTrap(
     {
         publish = async () => {},
         random = rn2,
-        monsterName = target => canonicalMonsterName(target, { state }),
         describeMonster = target => canonicalMonsterName(target, { state, capitalized: true }),
     }: FinishTrapOptions = {},
 ) {
     if (!event || event.finished) return event;
     if (event.kind === 'spent-rock-trap') {
-        await publish(`A trap door above ${monsterName(monster)} opens, but nothing falls out!`);
+        await publish(`A trap door above ${canonicalMonsterName(monster, { state })} opens, but nothing falls out!`);
         deleteTrap(event.trap, state);
         event.finished = true;
         return event;

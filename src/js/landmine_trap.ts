@@ -44,7 +44,6 @@ interface LandMineOptions {
     publish?: MessagePublisher;
     random?: (limit: number) => number;
     rollOne?: (sides: number) => number;
-    monsterName?: (monster: Monster) => string;
     describeMonster?: (monster: Monster) => string;
 }
 
@@ -174,7 +173,6 @@ export async function finishMonsterLandMine(
         publish = plineWithContinuation,
         random = rn2,
         rollOne = rnd,
-        monsterName = target => canonicalMonsterName(target, { state }),
         describeMonster = target => canonicalMonsterName(target, { state, capitalized: true }),
     }: LandMineOptions = {},
 ) {
@@ -186,12 +184,11 @@ export async function finishMonsterLandMine(
         publish,
         random,
         rollOne,
-        monsterName,
         describeMonster,
     };
 
     if (event.discoveredTrigger) {
-        await publish(`A trigger appears in a pile of soil below ${monsterName(monster)}.`);
+        await publish(`A trigger appears in a pile of soil below ${canonicalMonsterName(monster, { state })}.`);
         seeTrap(event.trap, state);
         event.airCurrentRoll = random(3);
         event.exploded = event.airCurrentRoll === 0;

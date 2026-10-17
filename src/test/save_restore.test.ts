@@ -22,6 +22,9 @@ import { freshObjectRoom } from './support/object-room.js';
 import { runSegment } from '../js/jsmain.js';
 import { CLUB, SACK, GOLD_PIECE } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
+import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
+import { initializePet } from '../js/dog.js';
+import { CORPSE } from '../js/object_data.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { SAVE_VERSION } from '../js/state_schema.js';
 import { decodeSavedGame } from '../js/persistent_state_validation.js';
@@ -49,7 +52,6 @@ void test('save and restore preserve entity identity across every loaded level',
         level: cachedLevel, stairs: null, savedAt: game.moves,
     }]]);
     game.uwep = weapon;
-    game.startingPet = pet;
 
     assert.equal(await saveGame(storage), true);
     resetGame();
@@ -59,9 +61,31 @@ void test('save and restore preserve entity identity across every loaded level',
     assert.ok(game._levelCache !== undefined && game._levelCache !== null, 'Expected game._levelCache to be initialized');
     assert.equal(game._levelCache.get('0:2')?.level instanceof GameMap, true);
     assert.equal(game.uwep, game.inventory[0]);
-    assert.equal(game.startingPet, game.level.monsters[0]);
     assert.equal(game.u.ustuck, game.level.monsters[0]);
     assert.equal(game.inventory[1]?.contents?.[0]?.container, game.inventory[1]);
+});
+
+// C dog.c records only context.startingpet_mid, so a dead starting pet's
+// corpse is the sole saved holder of that monster's traits. A grown-up
+// horse is large, so xkilled() always leaves its corpse, and a tame
+// monster's corpse keeps its traits.
+void test('a game whose starting pet died leaving a corpse can be saved and restored', async () => {
+    const storage = memoryStorage();
+    const level = freshObjectRoom({ moves: 30 });
+    requirePlayingGame(game);
+    const pet = await createMonsterAt('horse', 11, 10);
+    initializePet(pet, { state: game });
+    game.context.startingpet_mid = pet.m_id;
+    game.plname = 'Mourner';
+    await finishHeroMonsterKill(pet, pet.mx, pet.my, { showKillMessage: false, recordConduct: false });
+    const corpse = floorObjects(level).find(object => object.otyp === CORPSE);
+    assert.equal(corpse?.oextra?.omonst?.m_id, pet.m_id);
+
+    assert.equal(await saveGame(storage), true);
+    resetGame();
+
+    assert.equal(restoreGame('Mourner', storage), true);
+    assert.equal(game.context.startingpet_mid, pet.m_id);
 });
 
 void test('an object falling down stairs survives saving and reaches the next level',

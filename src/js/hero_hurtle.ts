@@ -19,6 +19,7 @@ import {
     canSpotMonster, flush_screen, glyphAt, map_invisible, newsym,
     plineWithContinuation,
 } from './display.js';
+import { heroTestMove } from './cmd.js';
 import { finishHeroDeath } from './end.js';
 import { game, requirePlayingGame } from './gstate.js';
 import type { GameState } from './game_state.js';
@@ -209,8 +210,9 @@ export function canKnockHeroToward(dx: number, dy: number): boolean {
     const { ux, uy } = game.u;
     const x = ux + dx;
     const y = uy + dy;
-    return isok(x, y) && !obstacleAt(x, y)
-        && !(dx && dy && blocksDiagonalDoor(game.level.at(ux, uy), game.level.at(x, y)));
+    // A boulder passes this test ("assume you'll be able to push it"); the
+    // hurtle itself then stops against it.
+    return isok(x, y) && heroTestMove(x, y);
 }
 
 async function hitObstacle(obstacle: HurtleObstacle, x: number, y: number, remaining: number): Promise<void> {

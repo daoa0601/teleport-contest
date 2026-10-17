@@ -1,4 +1,5 @@
 import { formatFeltMessage, publishHeardMessage } from './hero_speech.js';
+import { objectMaterial } from './object_material.js';
 import { moveMonsterNextToHero } from './teleport.js';
 import { monsterFireDescription } from './monster_fire_description.js';
 import { bot } from './display.js';
@@ -324,7 +325,6 @@ import {
     BATTLE_AXE,
     DART,
     IRON_SHOES,
-    OBJECT_MATERIAL,
     OBJECT_BIMANUAL,
     OBJECT_LARGE_DAMAGE,
     OBJECT_SMALL_DAMAGE,
@@ -944,7 +944,7 @@ async function useMonsterMiscItem(
     const naturalForm = (monster.cham ?? -1) < 0;
     if (!stuck && MONSTER_MOVE[monster.mnum] && !monster.mtrapped && naturalForm && weak
         && !inventory.some(object => !!((object.owornmask ?? 0) & W_ARMF)
-            && OBJECT_MATERIAL[object.otyp] === IRON)) {
+            && objectMaterial(object.otyp) === IRON)) {
         for (let x = monster.mx - 1; x <= monster.mx + 1; x++) {
             for (let y = monster.my - 1; y <= monster.my + 1; y++) {
                 if (!isok(x, y) || x === heroX && y === heroY
@@ -7460,13 +7460,19 @@ function postMoveHideUnder(
     const eel = MONSTER_SYMBOL[originalSpecies] === S_EEL;
     if (!hidesUnder && !eel) return;
     const helpless = !monster.mcanmove || monster.msleeping || (monster.mfrozen ?? 0) > 0;
-    if (!monster.mundetected && (helpless || recordRandom(random, calls, 5) === 0)) return;
-    const concealment = beginMonsterHideUnder(monster, state);
-    if (concealment.message) {
-        movement.hideUnder = concealment;
-        movement.deferredAfterHideUnder = true;
-    } else if (concealment.undetected !== concealment.oldUndetected)
-        newsym(monster.mx, monster.my);
+    if (monster.mundetected || (!helpless && recordRandom(random, calls, 5) !== 0)) {
+        const concealment = beginMonsterHideUnder(monster, state);
+        if (concealment.message) {
+            movement.hideUnder = concealment;
+            movement.deferredAfterHideUnder = true;
+            return;
+        }
+        if (concealment.undetected !== concealment.oldUndetected)
+            newsym(monster.mx, monster.my);
+    }
+    // postmov() redraws even when hideunder() leaves concealment unchanged
+    // or the monster skips the attempt. Hallucinations need that refresh.
+    newsym(monster.mx, monster.my);
 }
 
 // C mon.c:maybe_unhide_at(), called immediately after place_monster().  A
@@ -7854,7 +7860,6 @@ export async function resumeDeferredMonsterTrap(
         rollDice = d,
         rollOne = rnd,
         publish = plineWithContinuation,
-        monsterName,
         describeMonster,
         finishDeath = (monster: Monster, options?: MonsterDeathOptions) =>
             finishEnvironmentalMonsterDeath(monster, state, options),
@@ -7966,7 +7971,6 @@ export async function resumeDeferredMonsterTrap(
                 publish,
                 random: recordedRandom,
                 rollOne: recordedRollOne,
-                ...(monsterName ? { monsterName } : {}),
                 ...(describeMonster ? { describeMonster } : {}),
             });
             break;
@@ -7984,7 +7988,6 @@ export async function resumeDeferredMonsterTrap(
             await finishMonsterRockTrap(action.monster, event, state, {
                 publish,
                 random,
-                ...(monsterName ? { monsterName } : {}),
                 ...(describeMonster ? { describeMonster } : {}),
             });
             break;
@@ -8614,6 +8617,7 @@ export async function resumeDeferredMonsterHideUnder(
     const movement = action?.movement;
     if (!movement?.deferredAfterHideUnder) return action;
     delete movement.deferredAfterHideUnder;
+    newsym(action.monster.mx, action.monster.my);
     if (action.monster.isshk) {
         if (!hasShopkeeperData(action.monster))
             throw new Error('A shopkeeper must retain its shop state');

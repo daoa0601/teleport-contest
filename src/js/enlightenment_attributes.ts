@@ -1,4 +1,5 @@
 // C insight.c:attributes_enlightenment(). Property order is the native order.
+import { objectMaterial } from './object_material.js';
 import { game } from './gstate.js';
 import { canPraySafely } from './pray.js';
 import { deityName } from './alignment.js';
@@ -14,7 +15,7 @@ import { isLavaAt, isPoolAt, levelHasCeiling, levelIsWaterLevel } from './terrai
 import { minimalObjectName } from './objnam.js';
 import { makePlural, withIndefiniteArticle } from './object_grammar.js';
 import {
-    DWARVISH_CLOAK, LUCKSTONE, OBJECT_MATERIAL, OBJECT_PROPERTY,
+    DWARVISH_CLOAK, LUCKSTONE, OBJECT_PROPERTY,
     RIN_PROTECTION, AMULET_OF_GUARDING, ROBE, TOWEL,
 } from './object_data.js';
 import { TIMEOUT, TT_PIT, Upolyd,
@@ -189,8 +190,8 @@ export function attributeEnlightenmentLines(final: EnlightenmentFinal = 0): stri
     if (eyewear?.otyp === TOWEL && (eyewear.spe ?? 0) > 0)
         message('You ', 'take', 'took', ' reduced poison gas damage');
     if (game.spells.length) {
-        const metallic = game.uarm && (OBJECT_MATERIAL[game.uarm.otyp] ?? 0) >= 11
-            && (OBJECT_MATERIAL[game.uarm.otyp] ?? 0) <= 17;
+        const metallic = game.uarm && objectMaterial(game.uarm.otyp) >= 11
+            && objectMaterial(game.uarm.otyp) <= 17;
         const robe = game.uarmc?.otyp === ROBE;
         if (metallic || robe) message('Your spell casting ', 'is', 'was', metallic
             ? ` impaired by metallic armor${robe ? ', mitigated by your robe' : ''}` : ' enhanced by wearing a robe');

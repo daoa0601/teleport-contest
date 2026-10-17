@@ -284,6 +284,7 @@ export async function resolveMonsterLiquid<DeathResult = MonsterLiquidDeathResul
         const clone = await splitMonster(monster, state, {
             monsterMoving,
             random,
+            publish: announce,
         });
         let fountainDried = false;
         if (clone && inFountain) {

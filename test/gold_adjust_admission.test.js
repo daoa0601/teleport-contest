@@ -10,6 +10,7 @@ import { answerPrompts } from './support/input-boundaries.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { planInput, withMessagePages } from './support/planned-input.js';
 import { requireScreenRow } from './support/screen.js';
+const GOLD_REPAIR_PROSE = /adjust: gold in wrong slot and multiple gold stacks|Program in disorder|Please report|You learn more about your items by comparing them/;
 void test('a normal gold purse has no inventory letter adjustment action', async () => {
     freshObjectRoom();
     setHeroGoldAmount(game, 37);
@@ -59,7 +60,7 @@ void test('#adjust repairs a second gold stack without requesting a destination'
     input.feed('adjust\r');
     queueCommandKeys('z');
     planInput(input, t, []);
-    await withMessagePages(() => rhack('#'.charCodeAt(0)), input, /adjust: gold in wrong slot and multiple gold stacks|Program in disorder|Please report/, 4);
+    await withMessagePages(() => rhack('#'.charCodeAt(0)), input, GOLD_REPAIR_PROSE, 5);
     assert.equal(game.inventory.filter(object => object.oclass === 12).length, 1);
     assert.equal(heroGoldObject(game)?.invlet, '$');
     assert.equal(heroGoldObject(game)?.quan, 49);
@@ -79,7 +80,7 @@ void test('gold repair keeps lowercase items first when inventory letters later 
     input.feed('adjust\r');
     queueCommandKeys('z');
     planInput(input, t, [{ prompt: /Coins/, keys: '\x1b' }]);
-    await withMessagePages(() => rhack('#'.charCodeAt(0)), input, /adjust: gold in wrong slot and multiple gold stacks|Program in disorder|Please report/, 4);
+    await withMessagePages(() => rhack('#'.charCodeAt(0)), input, GOLD_REPAIR_PROSE, 5);
     game.flags.fixinv = false;
     await rhack('i'.charCodeAt(0));
     assert.equal(dagger.invlet, 'a');

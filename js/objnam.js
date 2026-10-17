@@ -1,5 +1,6 @@
 // objnam.js — Object wish-name parsing, weighted lookup, and visible naming.
 // C refs: objnam.c readobjnam(), rnd_otyp_by_namedesc(), xname().
+import { objectMaterial } from './object_material.js';
 import { game } from './gstate.js';
 import { fruitFromIndex, fruitFromName } from './fruit.js';
 import { objectOwnershipPrefix, objectTypeKnown } from './shk.js';
@@ -17,7 +18,7 @@ import { promptYesNo } from './query.js';
 import { objectWeight } from './weight.js';
 import { heroIsBlind } from './senses.js';
 import { artifactById, artifactByName, artifactExistCount, findArtifact, nameArtifact, uncreateArtifact, } from './artifacts.js';
-import { CRYSKNIFE, FLINT, GOLD_PIECE, LENSES, ROCK, TALLOW_CANDLE, WAX_CANDLE, ACID_VENOM, AMULET_OF_YENDOR, BELL, BELL_OF_OPENING, BLINDING_VENOM, BOULDER, CANDELABRUM_OF_INVOCATION, CHEST, CORPSE, CRYSTAL_BALL, FAKE_AMULET_OF_YENDOR, FIGURINE, HEAVY_IRON_BALL, IRON_CHAIN, LARGE_BOX, MAGIC_LAMP, OIL_LAMP, SKELETON_KEY, SLIME_MOLD, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, STATUE, POT_WATER, TIN, TOWEL, WAN_WISHING, SPE_NOVEL, OBJECT_BASES, requireObjectData, OBJECT_DESCRIPTIONS, OBJECT_NAMES, OBJECT_MERGE, OBJECT_NOWISH, OBJECT_CHARGED, OBJECT_MAGIC, OBJECT_UNIQUE, OBJECT_USES_KNOWN, OBJECT_MATERIAL, OBJECT_SPELL_CATEGORY, OBJECT_SPELL_LEVEL, OBJECT_SUBTYPE, OBJECT_WEIGHT, } from './object_data.js';
+import { CRYSKNIFE, FLINT, GOLD_PIECE, LENSES, ROCK, TALLOW_CANDLE, WAX_CANDLE, ACID_VENOM, AMULET_OF_YENDOR, BELL, BELL_OF_OPENING, BLINDING_VENOM, BOULDER, CANDELABRUM_OF_INVOCATION, CHEST, CORPSE, CRYSTAL_BALL, FAKE_AMULET_OF_YENDOR, FIGURINE, HEAVY_IRON_BALL, IRON_CHAIN, LARGE_BOX, MAGIC_LAMP, OIL_LAMP, SKELETON_KEY, SLIME_MOLD, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, STATUE, POT_WATER, TIN, TOWEL, WAN_WISHING, SPE_NOVEL, OBJECT_BASES, requireObjectData, OBJECT_DESCRIPTIONS, OBJECT_NAMES, OBJECT_MERGE, OBJECT_NOWISH, OBJECT_CHARGED, OBJECT_MAGIC, OBJECT_UNIQUE, OBJECT_USES_KNOWN, OBJECT_SPELL_CATEGORY, OBJECT_SPELL_LEVEL, OBJECT_SUBTYPE, OBJECT_WEIGHT, } from './object_data.js';
 import { armorPresentationName, withIndefiniteArticle, makePlural, makeSingular, verbForSubject } from './object_grammar.js';
 import { armorSimpleName } from './armor.js';
 import { isContainer } from './container.js';
@@ -514,7 +515,7 @@ function actualObjectTypeName(object, state) {
 // C xname_flags() GEM_CLASS. Inventory adds quantity and individual names;
 // minimal_xname suppresses only the user-supplied type call name here.
 export function gemObjectName(object, state = game, { minimal = false } = {}) {
-    const classNoun = OBJECT_MATERIAL[object.otyp] === 21 ? 'stone' : 'gem';
+    const classNoun = objectMaterial(object.otyp) === 21 ? 'stone' : 'gem';
     const overrideIdentity = !!state.iflags.override_ID;
     if (!object.dknown && !overrideIdentity)
         return classNoun;
@@ -766,7 +767,7 @@ export function unseenObjectNoun(object) {
             return OBJECT_NAMES[object?.otyp] === 'novel' ? 'book' : 'spellbook';
         case WAND_CLASS: return 'wand';
         case GEM_CLASS:
-            return OBJECT_MATERIAL[object?.otyp] === 21 ? 'stone' : 'gem';
+            return objectMaterial(object?.otyp) === 21 ? 'stone' : 'gem';
         default:
             return object?.name || OBJECT_NAMES[object?.otyp] || 'object';
     }
@@ -786,7 +787,7 @@ function erosionMatters(object) {
         && (OBJECT_SUBTYPE[object.otyp] ?? 0) !== 0;
 }
 function objectIsDamageable(object) {
-    const material = OBJECT_MATERIAL[object.otyp] ?? 0;
+    const material = objectMaterial(object.otyp);
     const flammable = (material > 1 && material <= 8) || material === 18;
     const rottable = (material > 1 && material <= 8) || material === 10;
     const rustprone = material === 11;
@@ -795,14 +796,14 @@ function objectIsDamageable(object) {
     return flammable || rottable || rustprone || corrodeable || crackable;
 }
 function objectAcceptsPrimaryErosion(object) {
-    const material = OBJECT_MATERIAL[object.otyp] ?? 0;
+    const material = objectMaterial(object.otyp);
     const flammable = (material > 1 && material <= 8) || material === 18;
     const rustprone = material === 11;
     const crackable = material === 19 && object.oclass === ARMOR_CLASS;
     return flammable || rustprone || crackable;
 }
 function objectAcceptsSecondaryErosion(object) {
-    const material = OBJECT_MATERIAL[object.otyp] ?? 0;
+    const material = objectMaterial(object.otyp);
     const rottable = (material > 1 && material <= 8) || material === 10;
     const corrodeable = material === 11 || material === 13;
     return rottable || corrodeable;
@@ -820,14 +821,14 @@ export function objectStatePrefix(object) {
     const secondaryErosion = object.oeroded2 ?? 0;
     let prefix = object?.greased ? 'greased ' : '';
     if (primaryErosion > 0 && object.otyp !== CRYSKNIFE) {
-        const material = OBJECT_MATERIAL[object.otyp] ?? 0;
+        const material = objectMaterial(object.otyp);
         const adjective = material === 11 ? 'rusty '
             : material === 19 && object.oclass === ARMOR_CLASS
                 ? 'cracked ' : 'burnt ';
         prefix += `${erosionDegree(primaryErosion)}${adjective}`;
     }
     if (secondaryErosion > 0 && object.otyp !== CRYSKNIFE) {
-        const material = OBJECT_MATERIAL[object.otyp] ?? 0;
+        const material = objectMaterial(object.otyp);
         const adjective = material === 11 || material === 13
             ? 'corroded ' : 'rotted ';
         prefix += `${erosionDegree(secondaryErosion)}${adjective}`;
@@ -1086,11 +1087,11 @@ const PLAIN_GEMSTONE_NAMES = new Set([
 ]);
 function gemPresentationName(otyp, realName, description) {
     if (description) {
-        const classNoun = OBJECT_MATERIAL[otyp] === 21 ? 'stone' : 'gem';
+        const classNoun = objectMaterial(otyp) === 21 ? 'stone' : 'gem';
         return `${description} ${classNoun}`;
     }
     const needsStone = otyp === FLINT
-        || (OBJECT_MATERIAL[otyp] === 20
+        || (objectMaterial(otyp) === 20
             && !PLAIN_GEMSTONE_NAMES.has(realName));
     return needsStone ? `${realName} stone` : realName;
 }

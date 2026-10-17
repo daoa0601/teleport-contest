@@ -14,6 +14,8 @@ import { currentAttribute, currentStrength } from './attrib.js';
 import type { GameObject } from './object_types.js';
 import type { GameState } from './game_state.js';
 import { flyingSupportsLoad, levitationSupportsLoad } from './properties.js';
+import { heroSpecies } from './hero_species.js';
+import { monsterStagger } from './monster_locomotion.js';
 
 // Weight is also queried for a proposed quantity before a real stack splits.
 export interface WeightObject extends Pick<GameObject, 'otyp'>, Partial<Pick<GameObject,
@@ -190,18 +192,15 @@ export function exceedsActionCapacity(state: GameState): boolean {
     return nearCapacity(state) >= EXT_ENCUMBER;
 }
 
-export function encumbranceLabel(level: number): string {
-    return ['', 'Burdened', 'Stressed', 'Strained', 'Overtaxed', 'Overloaded'][level]
-        || '';
-}
-
-export function encumbranceMessage(previous: number, current: number): string {
+// C pickup.c:encumber_msg(). The strained verb follows the hero's body.
+export function encumbranceMessage(previous: number, current: number, state: GameState): string {
+    const stagger = monsterStagger(heroSpecies(state), 'stagger');
     if (previous < current) {
         return [
             '',
             'Your movements are slowed slightly because of your load.',
             'You rebalance your load.  Movement is difficult.',
-            'You stagger under your heavy load.  Movement is very hard.',
+            `You ${stagger} under your heavy load.  Movement is very hard.`,
             'You can barely move a handspan with this load!',
             "You can't even move a handspan with this load!",
         ][current] || '';
@@ -211,7 +210,7 @@ export function encumbranceMessage(previous: number, current: number): string {
             'Your movements are now unencumbered.',
             'Your movements are only slowed slightly by your load.',
             'You rebalance your load.  Movement is still difficult.',
-            'You stagger under your load.  Movement is still very hard.',
+            `You ${stagger} under your load.  Movement is still very hard.`,
             '',
             '',
         ][current] || '';

@@ -9,7 +9,6 @@ import { wakeMonster as awakenMonster } from './monster_anger.js';
 import { monsterSentenceSubject } from './monster_sound.js';
 import { monsterName } from './monster_name.js';
 import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_MOVE, MONSTER_SIZE, MONSTER_SYMBOL, } from './monster_data.js';
-import { monsterPassesBars } from './monster_movement_traits.js';
 import { BOULDER } from './object_data.js';
 import { resolveMonsterLiquid } from './mon.js';
 import { finishImmediateMonsterTrap, triggerImmediateMonsterTrap, } from './monmove.js';
@@ -54,7 +53,9 @@ function destinationIsOpen(monster, state, x, y) {
     if (location.typ === DOOR
         && ((location.doormask ?? 0) & (D_CLOSED | D_LOCKED)))
         return false;
-    if (location.typ === IRONBARS && !monsterPassesBars(monster))
+    // C will_hurtle() uses goodpos(), whose accessible() test rejects bars
+    // even for monsters that can squeeze through them while walking.
+    if (location.typ === IRONBARS && !passesWall)
         return false;
     const boulder = (state.level?.objects?.[x]?.[y] || [])
         .some(object => object.otyp === BOULDER);
@@ -89,7 +90,7 @@ async function hurtleOneSquare(monster, dx, dy, { state, announce, nameMonster, 
         if (occupant) {
             if (canSeeMonster(monster)
                 || canSeeMonster(occupant)) {
-                await announce(`${monsterSentenceSubject(monster)} bumps into ${monsterName(occupant, { state, article: 'a' })}.`);
+                await announce(`${monsterName(monster, { state, capitalized: true })} bumps into ${monsterName(occupant, { state, article: 'a' })}.`);
             }
             await awakenMonster(occupant, { attacked: !monsterMoving });
             const contact = { publish: announce, finishDeath: finishMonsterDeath, creditHero: !monsterMoving };
@@ -99,7 +100,8 @@ async function hurtleOneSquare(monster, dx, dy, { state, announce, nameMonster, 
                 await petrifyMonsterImmediately(occupant, contact);
         }
         else if (nextX === state.u.ux && nextY === state.u.uy) {
-            await announce(`${monsterSentenceSubject(monster)} bumps into you.`);
+            // C Some_Monnam(): an unseen hurtler is "Someone" or "Something".
+            await announce(`${monsterName(monster, { state, capitalized: true, augmentIt: true })} bumps into you.`);
             await stopHeroOccupation(state, announce);
             if (touchPetrifies(state.u.umonnum) && !monsterWearsTorsoArmor(monster)) {
                 await petrifyMonsterImmediately(monster, {
@@ -185,7 +187,7 @@ export async function hurtleMonster(monster, dx, dy, distance, options = {}) {
     monster.mstun = 1;
     if ((MONSTER_SIZE[monster.mnum] ?? 0) >= 4 || monster === state.u.ustuck || monster.mtrapped) {
         if (canSeeMonster(monster))
-            await announce(`${monsterSentenceSubject(monster)} doesn't budge!`);
+            await announce(`${monsterName(monster, { state, capitalized: true })} doesn't budge!`);
         return { moved: false, dead: false };
     }
     dx = Math.sign(dx);

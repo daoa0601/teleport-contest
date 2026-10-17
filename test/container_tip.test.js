@@ -4,7 +4,7 @@ import { game } from '../js/gstate.js';
 import { LAVAPOOL } from '../js/const.js';
 import { BAG_OF_HOLDING, CAN_OF_GREASE, CHEST, CLUB, HORN_OF_PLENTY, ROCK, SACK, WAN_CANCELLATION } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
-import { reportHeroEncumbrance } from '../js/attrib.js';
+import { reportHeroEncumbrance } from '../js/encumbrance.js';
 import { nearCapacity, objectWeight, SLT_ENCUMBER, UNENCUMBERED } from '../js/weight.js';
 import { runExtendedCommand } from './support/commands.js';
 import { addInventoryObject, artifactObject, floorObject, knownObject } from './support/game-objects.js';
@@ -144,7 +144,6 @@ void test('tipping a floor chest into a carried bag reports the lighter load aft
     await runExtendedCommand('tip', 'ya' + ' '.repeat(20));
     assert.equal(bag.where, 'gone');
     assert.equal(nearCapacity(game), UNENCUMBERED);
-    assert.equal(game.u._encumbrance, '');
     assert.match(game._pending_message, /Your movements are now unencumbered\./);
 });
 void test('tip can transfer a carried sack into another carried container', async () => {

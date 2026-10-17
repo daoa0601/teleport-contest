@@ -11,8 +11,9 @@ import {
     A_CON, A_MAX, A_STR, ROOM,
 } from './const.js';
 import {
-    adjustAttribute, attributeChangeMessage, changeHeroLuck, exerciseAttribute, reportHeroEncumbrance,
+    adjustAttribute, attributeChangeMessage, changeHeroLuck, exerciseAttribute,
 } from './attrib.js';
+import { reportHeroEncumbrance } from './encumbrance.js';
 import { artifactById } from './artifacts.js';
 import { mapLevel } from './detect.js';
 import {

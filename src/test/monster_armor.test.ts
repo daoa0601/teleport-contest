@@ -97,3 +97,28 @@ void test('mummy wrapping blocks permanent invisibility only while worn', async 
     await removeObjectFromMonsterInventory(soldier, wrapping);
     assert.equal(canSeeMonster(soldier), false);
 });
+
+void test('a fire ray announces a seen monster\'s smouldering cloak before rolling for its possessions', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    const soldier = await createMonsterAt('soldier', 11, 10, NO_MINVENT);
+    const wrapping = await addObjectToMonsterInventory(soldier, await knownObject(MUMMY_WRAPPING));
+    assert.ok(wrapping);
+    wrapping.blessed = false;
+    wrapping.oerodeproof = false;
+    wrapping.oeroded = 0;
+    await initializeMonsterArmor(soldier);
+    const events: string[] = [];
+
+    await hitMonsterWithRay(soldier, 1, 2, {
+        publish: async message => { events.push(message); },
+        random: range => { events.push(`rn2(${range})`); return 1; },
+        rollDice: () => 1,
+        rollOne: () => 1,
+    });
+
+    const announced = events.indexOf('The soldier\'s wrapping smoulders!');
+    assert.ok(announced > 0, events.join(' | '));
+    assert.deepEqual(events.slice(announced - 1, announced + 2), ['rn2(5)', events[announced], 'rn2(3)']);
+    assert.equal(wrapping.oeroded, 1);
+});

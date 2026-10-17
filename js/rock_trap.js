@@ -64,11 +64,11 @@ export async function beginMonsterRockTrap(monster, trap, state = game, { random
 export function rockTrapNeedsResume(event) {
     return event?.kind === 'falling-rock' || (event?.kind === 'spent-rock-trap' && !event.finished);
 }
-export async function finishMonsterRockTrap(monster, event, state = game, { publish = async () => { }, random = rn2, monsterName = target => canonicalMonsterName(target, { state }), describeMonster = target => canonicalMonsterName(target, { state, capitalized: true }), } = {}) {
+export async function finishMonsterRockTrap(monster, event, state = game, { publish = async () => { }, random = rn2, describeMonster = target => canonicalMonsterName(target, { state, capitalized: true }), } = {}) {
     if (!event || event.finished)
         return event;
     if (event.kind === 'spent-rock-trap') {
-        await publish(`A trap door above ${monsterName(monster)} opens, but nothing falls out!`);
+        await publish(`A trap door above ${canonicalMonsterName(monster, { state })} opens, but nothing falls out!`);
         deleteTrap(event.trap, state);
         event.finished = true;
         return event;

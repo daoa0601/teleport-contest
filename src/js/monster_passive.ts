@@ -330,7 +330,7 @@ async function applyParalysisPassive({
         await publish(
             `You are frozen by ${displayedMonsterName(monster, { state })}!`,
         );
-        freezeHero(state, damage, passiveParalysisReason(monster, state, false), true);
+        freezeHero(state, damage, passiveParalysisReason(monster, state, false));
         await exerciseAttribute(A_DEX, false, state);
         return { stopped: true, heroDied: false };
     }
@@ -365,12 +365,7 @@ async function applyParalysisPassive({
         await publish(`You are frozen by ${owner} gaze!`);
         const duration = currentAttribute(A_WIS, state) > 12
             || random(4) !== 0 ? damage : 127;
-        freezeHero(
-            state,
-            duration,
-            passiveParalysisReason(monster, state, true),
-            false,
-        );
+        freezeHero(state, duration, passiveParalysisReason(monster, state, true));
         return { stopped: true, heroDied: false };
     }
 
@@ -405,7 +400,7 @@ async function applyColdPassive(context: PassiveContext): Promise<PassiveEffect>
 
     healMonster(monster, Math.trunc((damage + random(2)) / 2), Math.trunc((damage + 1) / 2));
     if ((monster.mhpmax ?? 0) > ((monster.m_lev ?? 0) + 1) * 8)
-        await splitMonster(monster, state);
+        await splitMonster(monster, state, { heatSource: 'hero', publish });
     return { appliedDamage: damage, heroDied: false };
 }
 
@@ -498,13 +493,14 @@ function objectTouchedByEnchantment(state: GameState, attackType: AttackMethod, 
         || state.uarmg || state.u?.uarmg || null;
 }
 
-function freezeHero(state: GameState, turns: number, reason: MonsterHelplessnessReason, showRecoveryMessage: boolean): void {
+// C uhitm.c:passive() sets nomovemsg to You_can_move_again for the cube and
+// clears it for the floating eye, which unmul() also turns into that message.
+function freezeHero(state: GameState, turns: number, reason: MonsterHelplessnessReason): void {
     state._occupation = null;
     endVoluntaryMultiTurn(state);
     state._helplessTurns = Math.max(0, turns);
     state._helplessReason = reason;
-    state._helplessDoneMessage = showRecoveryMessage
-        ? 'You can move again.' : '';
+    state._helplessDoneMessage = 'You can move again.';
 }
 
 function monsterNearHero(monster: Monster, state: GameState): boolean {

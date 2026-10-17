@@ -33,7 +33,7 @@ import { BOGUS_MONSTERS, BOGUS_MONSTER_FILE_SIZE, } from './random_text_data.js'
 import { depth as dungeonDepth, endgameLevelName } from './hacklib.js';
 import { OBJECT_CLASS_SYMBOLS, recordObjectEncounter } from './object_knowledge.js';
 import { heroGoldAmount } from './hero_gold.js';
-import { encumbranceLabel, nearCapacity } from './weight.js';
+import { nearCapacity } from './weight.js';
 import { heroCanReachFloor } from './floor_reach.js';
 import { hasCarriedProperty, hasWornProperty, propertyIsActive } from './properties.js';
 import { ATR_BLINK } from './terminal_attributes.js';
@@ -926,10 +926,8 @@ function displayMonsterGlyph(mnum, female = false, monsterState = 'normal') {
     const rawColor = MONSTER_COLOR[mnum] ?? CLR_GRAY;
     return {
         ch: MONSTER_CLASS_SYMBOLS[MONSTER_SYMBOL[mnum] ?? 0] || '?',
-        // tty renders black and ordinary gray monster glyphs through its
-        // default foreground rather than retaining an explicit color code.
-        color: rawColor === CLR_BLACK || rawColor === CLR_GRAY
-            ? NO_COLOR : rawColor,
+        // tty has no hilite for ordinary gray; black is dark gray (use_darkgray).
+        color: rawColor === CLR_GRAY ? NO_COLOR : rawColor,
         decgfx: false, kind: 'monster', mnum, piletop: false,
         glyph: monsterGlyphNumber(mnum, female, monsterState),
     };
@@ -1018,11 +1016,11 @@ function furnitureDisplayGlyph(appearance) {
     return { ch: display.ch, color, decgfx: display.dec,
         kind: 'terrain', terrainName: symbol.name, glyph: cmapToGlyph(appearance, wallOffset) };
 }
-// C display.h:canspotself().  See-invisible does not make the hero's own
-// glyph opaque again; ordinary self projection depends on not being
-// invisible, while telepathy/detection can supply a sensory projection.
+// C display.h:canspotself().  Its Invisible (youprop.h) is Invis without
+// See_invisible, so seeing invisible lets the hero see their own glyph;
+// telepathy/detection can otherwise supply a sensory projection.
 export function canSpotHeroSelf() {
-    const invisible = !!(game.u?.invisible || game.u?.invis || game.invisible);
+    const invisible = !!(game.u?.invisible || game.u?.invis || game.invisible) && !propertyIsActive('seeInvisible', game);
     const canSeeSelf = !!(game.blind || game.u?.uswallow
         || (!invisible && !game.u?.uundetected));
     const sensesSelf = hasWornProperty('telepathy') || hasCarriedProperty('telepathy')
@@ -1174,10 +1172,8 @@ export function transientObjectGlyph(object) {
     const glyph = objectGlyph(object);
     return {
         ...glyph,
-        // tty does not emit explicit black/ordinary-gray foreground unless
-        // dark-gray is enabled; those object glyphs use the default color.
-        color: glyph.color === CLR_BLACK || glyph.color === CLR_GRAY
-            ? NO_COLOR : glyph.color,
+        // tty has no hilite for ordinary gray; black is dark gray (use_darkgray).
+        color: glyph.color === CLR_GRAY ? NO_COLOR : glyph.color,
         decgfx: glyph.decgfx ?? false,
         attr: objectGlyphAttr(glyph),
     };
@@ -2066,8 +2062,8 @@ export function swallowed(first = false) {
         const mnum = hallucinating
             ? rn2Display(MONSTER_COLOR.length) : game.u.ustuck.mnum;
         let color = MONSTER_COLOR[mnum] ?? NO_COLOR;
-        // tty maps black and ordinary gray through its default foreground.
-        if (color === CLR_BLACK || color === CLR_GRAY)
+        // tty has no hilite for ordinary gray; black is dark gray (use_darkgray).
+        if (color === CLR_GRAY)
             color = NO_COLOR;
         const glyph = {
             ch: dec && alternate ? alternate : ascii, color,
@@ -2635,7 +2631,6 @@ function refreshStatusLines() {
         return;
     }
     const capacity = nearCapacity(game);
-    game.u._encumbrance = encumbranceLabel(capacity);
     // botl.c notifies BL_CAP when its value changes; tty_status_update()
     // then clears any blank left by earlier encumbrance shortening.
     const capacityBlank = display.statusLine2Fields?.capacity === capacity
@@ -2675,7 +2670,10 @@ export function timebot() {
     writeStatusLines(display, display.statusLines);
 }
 // ── pline ──
-export async function pline(msg) {
+// Replace the message line without tty's update_topl() negotiation. Only the
+// topline owner below, its direct pagers, and prompt owners (whose native
+// TOPLINE_SPECIAL_PROMPT text never pages) write the line this way.
+export async function setTopline(msg) {
     if (game.program_state?.windows_exited) {
         if (msg) {
             rawPrint(msg);
@@ -2780,7 +2778,7 @@ export function renderKeyPrompt(message, cursorOffset = 0) {
     return lines.length;
 }
 export async function moreUntilDismissed(message, { urgent = false } = {}) {
-    await pline(message);
+    await setTopline(message);
     return pageTopline(message, { urgent });
 }
 // C tty_message_menu(): the preceding prompt has already been answered.
@@ -2880,6 +2878,14 @@ export async function displayMessageWindow() {
 // topline or owns a --More-- boundary before replacing it.  Keep this policy
 // at the terminal layer so source callers can remain ordinary sequential
 // pline() producers.
+// C pline.c:vpline() always reaches tty through update_topl().
+export async function pline(msg) {
+    if (!msg) {
+        await setTopline(msg);
+        return;
+    }
+    await plineWithContinuation(msg);
+}
 export async function plineWithContinuation(msg, { noRepeat = false, urgent = false } = {}) {
     if (!msg)
         return;
@@ -2922,23 +2928,23 @@ export async function plineWithContinuation(msg, { noRepeat = false, urgent = fa
         if (!restarts)
             return;
         game._suppressMessagesUntilInput = false;
-        await pline(msg);
+        await setTopline(msg);
         return wraps ? await pageTopline(msg) : null;
     }
     let dismissal;
     if (!pending) {
-        await pline(msg);
+        await setTopline(msg);
         dismissal = wraps
             ? await pageTopline(msg, { urgent }) : null;
     }
     else if (!msg.startsWith('You die')
         && visibleLength(msg) + visibleLength(pending) + 3 < columns - 8) {
-        await pline(`${pending}  ${msg}`);
+        await setTopline(`${pending}  ${msg}`);
     }
     else {
         dismissal = await pageTopline(pending, { urgent });
         // Escape suppresses later lines, not the line which forced this pager.
-        await pline(msg);
+        await setTopline(msg);
         if (wraps)
             dismissal = await pageTopline(msg, { urgent });
     }

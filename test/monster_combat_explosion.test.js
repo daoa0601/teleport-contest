@@ -89,9 +89,7 @@ void test('a life-saved elemental sphere stays alive while its combat result end
         visible: true, random: unresistedBlast, rollDice: () => 12,
         publish: async (message) => { messages.push(message); },
     }), input, [
-        { prompt: /But wait[\s\S]*--More--/, keys: ' ' },
-        { prompt: /medallion begins to glow![\s\S]*--More--/, keys: ' ' },
-        { prompt: /reconstitutes![\s\S]*--More--/, keys: ' ' },
+        { prompt: /But wait\.\.\.  [\s\S]*medallion begins to glow![\s\S]*--More--/, keys: ' ' },
     ]);
     assert.equal(result.mask, M_ATTK_AGR_DIED);
     assert.ok(game.level.monsters.includes(attacker));

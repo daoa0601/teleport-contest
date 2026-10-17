@@ -9,11 +9,10 @@ import {
 } from './const.js';
 import { exerciseAttribute } from './attrib.js';
 import {
-    canSeeMonster, canSpotMonster, flush_screen, newsym, pline, plineWithContinuation,
+    canSeeMonster, canSpotMonster, newsym, pline, plineWithContinuation,
 } from './display.js';
 import { game, requireLiveGame } from './gstate.js';
 import { expelHero } from './hero_expulsion.js';
-import { nhgetch } from './input.js';
 import { checkMonsterGearNextTurn } from './monworn.js';
 import { monsterName, namelessMonsterName, possessiveName } from './monster_name.js';
 import { makePetWary } from './dog.js';
@@ -40,7 +39,6 @@ interface LifeSavingOptions {
     retainCursor?: boolean;
     genocided?: boolean;
     continueLine?: MessagePublisher;
-    page?: MessagePublisher;
     line?: MessagePublisher;
     repaint?: (x: number, y: number) => unknown;
 }
@@ -81,16 +79,6 @@ interface VampireRevivalContext {
     rollOne: (sides: number) => number;
 }
 
-async function lifeSavingPage(message: string): Promise<number> {
-    await pline(message);
-    await flush_screen(1);
-    game.nhDisplay?.setCursor(message.length, 0);
-    let key;
-    do key = await nhgetch();
-    while (![27, 32, 10, 13].includes(key));
-    return key;
-}
-
 // which_armor(mon, W_AMUL) is the eligibility boundary: carrying an amulet
 // without wearing it must never intercept monster death.
 export function wornMonsterLifeSaver(monster: Monster): GameObject | null | undefined {
@@ -114,17 +102,15 @@ export async function lifeSaveMonster(
         creditedKill, retainCursor = false,
         genocided = false,
         continueLine = plineWithContinuation,
-        page = lifeSavingPage, line = pline, repaint = newsym,
+        line = pline, repaint = newsym,
     }: LifeSavingOptions = {},
 ): Promise<MonsterLifeSavingResult> {
     if (creditedKill) await continueLine(creditedKill);
     const visible = cansee(monster.mx, monster.my);
     if (visible) {
         await continueLine('But wait...');
-        await page(`${game._pending_message}--More--`);
-
-        await page(
-            `${possessiveName(monsterName(monster, { capitalized: true }))} medallion begins to glow!--More--`,
+        await line(
+            `${possessiveName(monsterName(monster, { capitalized: true }))} medallion begins to glow!`,
         );
         const alreadyKnown = game._knownObjectTypes instanceof Set
             && game._knownObjectTypes.has(amulet.otyp);
@@ -134,7 +120,7 @@ export async function lifeSaveMonster(
         if (canSeeMonster(monster)) {
             const recovery = monsterReconstitutesAfterLifeSaving(monster)
                 ? 'reconstitutes' : 'looks much better';
-            await page(`${monsterName(monster, { capitalized: true })} ${recovery}!--More--`);
+            await line(`${monsterName(monster, { capitalized: true })} ${recovery}!`);
         }
         await line('The medallion crumbles to dust!');
     }

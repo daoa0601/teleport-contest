@@ -15,6 +15,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { createGoldMonster, carriedGold, throwGold, } from './support/gold-arena.js';
 import { addTrap, floorObjects, floorObjectsAt, } from './support/level-state.js';
 import { freshGameplayRoom } from './support/playable-room.js';
+import { withMessagePages } from './support/planned-input.js';
 const PM_SHOPKEEPER = 271;
 const PM_GUARD = 272;
 const PM_ALIGNED_CLERIC = MONSTER_NAME.indexOf('aligned cleric');
@@ -145,7 +146,7 @@ void test('a non-greedy monster wakes but does not catch thrown gold', async () 
     const jackal = await createGoldMonster({
         mnum: 12, mpeaceful: 1, msleeping: 1,
     });
-    await throwGold('l');
+    await withMessagePages(() => throwGold('l'), resetInputState(), /The jackal wakes up!  The jackal growls!  The jackal growls!/, 1);
     assert.equal(jackal.msleeping, 0);
     assert.equal(jackal.mpeaceful, 0);
     assert.equal(jackal.minvent.length, 0);
@@ -192,7 +193,7 @@ void test('the ordinary catch anger probe can turn a peaceful greedy monster hos
     });
     const startingGold = monsterGoldAmount(leprechaun);
     initRng(5n);
-    await throwGold('l');
+    await withMessagePages(() => throwGold('l'), resetInputState(), /leprechaun/, 1);
     assert.equal(monsterGoldAmount(leprechaun), startingGold + 11);
     assert.equal(leprechaun.mpeaceful, 0);
 });
@@ -218,7 +219,7 @@ void test('covering a shopkeeper robbery restores peace and preserves payment id
     game.u.ualign.record = 0;
     const alignmentBefore = game.u.ualign.record;
     initRng(1n);
-    await throwGold('l');
+    await throwGold('l', '  ');
     assert.equal(shopkeeper.minvent.includes(purse), true);
     assert.ok(shopkeeper.eshk !== null && shopkeeper.eshk !== undefined);
     assert.equal(shopkeeper.eshk.robbed, 0);
@@ -248,7 +249,7 @@ void test('a temple priest catches the same whole-purse identity', async () => {
         ispriest: 1, mpeaceful: 1,
     });
     initRng(1n);
-    await throwGold('l');
+    await throwGold('l', ' ');
     assert.equal(priest.minvent.includes(purse), true);
     assert.equal(purse.where, 'minvent');
     assert.equal(priest.mpeaceful, 1);
@@ -264,7 +265,7 @@ void test('the catch anger probe applies the coaligned priest alignment penalty'
     });
     game.u.ualign.record = 10;
     initRng(5n);
-    await throwGold('l');
+    await throwGold('l', '  ');
     assert.equal(priest.minvent.includes(purse), true);
     assert.equal(priest.mpeaceful, 0);
     assert.equal(game.u.ualign.record, 5);
@@ -280,7 +281,7 @@ void test('the catch anger probe rewards angering a cross-aligned priest', async
     });
     game.u.ualign.record = 0;
     initRng(5n);
-    await throwGold('l');
+    await throwGold('l', '  ');
     assert.equal(priest.minvent.includes(purse), true);
     assert.equal(priest.mpeaceful, 0);
     assert.equal(game.u.ualign.record, 2);
@@ -292,7 +293,7 @@ void test('a vault guard catches the purse without the ordinary anger probe', as
         mnum: PM_GUARD, isgd: 1, mpeaceful: 1,
     });
     initRng(5n); // the ordinary one-in-four probe would make it angry
-    await throwGold('l');
+    await throwGold('l', ' ');
     assert.equal(guard.minvent.includes(purse), true);
     assert.equal(guard.mpeaceful, 1);
 });
@@ -325,7 +326,7 @@ void test('a watchman catches gold but remains unbribable', async () => {
         mnum: PM_WATCHMAN, mpeaceful: 0,
     });
     initRng(1n);
-    await throwGold('l');
+    await throwGold('l', ' ');
     assert.equal(watchman.minvent.includes(purse), true);
     assert.equal(watchman.mpeaceful, 0);
 });

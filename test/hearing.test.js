@@ -38,7 +38,7 @@ void test('a resumed game sees its pet before searching beside it', async () => 
     };
     await runSegment({ ...input, moves: ' Sy' });
     const restored = await runSegment({ ...input, moves: ' s' });
-    const pet = restored.state.startingPet;
+    const pet = restored.state.level?.monsters.find(monster => monster.m_id === restored.state.context.startingpet_mid);
     assert.ok(pet);
     assert.equal(canSpotMonster(pet), true, 'a visible restored pet must remain visible to search');
     assert.doesNotMatch(topline(), /unseen monster/);

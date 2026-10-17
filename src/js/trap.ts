@@ -11,7 +11,7 @@ import { armorSimpleName, heroHasWaterWalking } from './armor.js';
 import { fireDamageObject } from './fire_damage.js';
 import { delobj } from './object_delete.js';
 import { objectDescription as fullObjectDescription } from './object_description.js';
-import { objectNameIsPlural, definiteName, objectCombatName, observeObjectForNaming, ownedObjectName, simpleObjectName } from './objnam.js';
+import { objectNameIsPlural, definiteName, objectCombatName, observeObjectForNaming, ownedObjectAction, ownedObjectName, simpleObjectName } from './objnam.js';
 import { cansee, couldsee } from './vision.js';
 import { endObjectBurn } from './light.js';
 import { game } from './gstate.js';
@@ -27,7 +27,7 @@ import { splitMonster } from './monster_clone.js';
 import { monsterWieldedWeapon } from './monster_weapon.js';
 import {
     BAG_OF_TRICKS, BRASS_LANTERN, CAN_OF_GREASE, CANDELABRUM_OF_INVOCATION, CHEST, ICE_BOX,
-    FIRE_HORN, LARGE_BOX, OBJECT_BIMANUAL, OBJECT_MATERIAL, OBJECT_MATERIAL_NAMES, OBJECT_NAMES, OBJECT_PROPERTY, OILSKIN_SACK,
+    FIRE_HORN, LARGE_BOX, OBJECT_BIMANUAL, OBJECT_MATERIAL_NAMES, OBJECT_NAMES, OBJECT_PROPERTY, OILSKIN_SACK,
     MAGIC_LAMP, OIL_LAMP, POT_ACID, POT_OIL, POT_WATER, RED_DRAGON_SCALE_MAIL, RED_DRAGON_SCALES,
     RIN_FIRE_RESISTANCE, SCR_BLANK_PAPER, SCR_FIRE, SPE_BLANK_PAPER,
     SPE_BOOK_OF_THE_DEAD, SPE_FIREBALL, SPE_NOVEL, TALLOW_CANDLE, TOWEL, WAN_FIRE, WAX_CANDLE,
@@ -217,12 +217,7 @@ export async function destroyLavaInventory({
         if (!object.in_use) continue;
         const wasWorn = !!object.worn || !!object.owornmask;
         if (showMessages && wasWorn) {
-            const name = object.name || OBJECT_NAMES[object.otyp] || 'item';
-            const plural = (object.quan ?? object.quantity ?? 1) > 1
-                || name.endsWith('s');
-            await publish(
-                `Your ${name} ${plural ? 'burst' : 'bursts'} into flame!`,
-            );
+            await publish(`${ownedObjectAction(object, 'burst', state)} into flame!`);
             named++;
         } else {
             unnamed++;
@@ -388,7 +383,7 @@ export function splashLitObject(object: GameObject | null | undefined, messages:
 }
 
 function rustMetalObject(object: GameObject | null | undefined, description: string, luckRoll: RandomBelow): MetalRustResult {
-    if (!object || (OBJECT_MATERIAL[object.otyp] ?? 0) !== 11)
+    if (!object || objectMaterial(object.otyp) !== 11)
         return { outcome: 'nothing' };
 
     const proof = !!object.oerodeproof;
@@ -780,7 +775,8 @@ export async function applyMonsterRustTrap(
     if (monster.mnum === PM_IRON_GOLEM) {
         event.completelyRusted = true;
     } else if (monster.mnum === PM_GREMLIN && roll(3) !== 0) {
-        event.clone = await splitMonster(monster, state, { monsterMoving: true });
+        // The rust-trap report owns split_mon()'s message, after the gush.
+        event.clone = await splitMonster(monster, state, { monsterMoving: true, publish: () => {} });
     }
     return event;
 }

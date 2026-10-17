@@ -2,7 +2,7 @@ import { advanceHeroSliming } from './support/condition-turn.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { wearHeroArmor } from '../js/armor.js';
-import { flushPendingTopline, plineWithContinuation } from '../js/display.js';
+import { bot, flushPendingTopline, plineWithContinuation } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { finishHeroDeath } from '../js/end.js';
 import { resetInputState } from '../js/input.js';
@@ -49,4 +49,28 @@ void test('the fatal slime condition stays visible during the explore death ques
 
     assert.equal(questions, 1);
     assert.equal(game.u.slimed, false);
+});
+
+void test('the status line still shows Slime while the final slime message waits for a key', async () => {
+    freshObjectRoom({ flags: { female: false }, hero: { slimedTurns: 1, slimed: true } });
+    requirePlayingGame(game);
+    game.context.botl = true;
+    await bot();
+    const input = resetInputState();
+    let checked = 0;
+    input.display = { async readKey() {
+        const top = requireScreenRow(0).map(cell => cell.ch).join('');
+        if (top.includes('You have become a green slime.') && top.includes('--More--')) {
+            assert.match(requireScreenRow(23).map(cell => cell.ch).join(''), /\bSlime\b/);
+            checked++;
+        }
+        return 32;
+    } };
+    await plineWithContinuation('The vampire bat bites again!');
+
+    await advanceHeroSliming({ transform: polymonHero, publish: plineWithContinuation,
+        die: async () => true });
+    await flushPendingTopline();
+
+    assert.equal(checked, 1);
 });

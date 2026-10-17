@@ -171,9 +171,7 @@ void test('a life-saved target makes the hero explosion return a hit', async () 
     const result = await answerPrompts(resolveHeroCombatExplosion(defender, attack, {
         rollDice: () => 12, random: unresistedBlast, publish: async () => { },
     }), input, [
-        { prompt: /But wait[\s\S]*--More--/, keys: ' ' },
-        { prompt: /medallion begins to glow![\s\S]*--More--/, keys: ' ' },
-        { prompt: /looks much better![\s\S]*--More--/, keys: ' ' },
+        { prompt: /But wait\.\.\.  [\s\S]*medallion begins to glow![\s\S]*--More--/, keys: ' ' },
     ]);
     assert.equal(result.nativeResult, M_ATTK_HIT);
     assert.ok(defender.mhp > 0);

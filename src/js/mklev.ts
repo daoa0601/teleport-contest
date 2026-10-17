@@ -4,6 +4,7 @@ import { rotCorpse } from './corpse_rot.js';
 // Also includes parts of sp_lev.c (create_room) and mkmap.c (litstate_rnd).
 // Level construction uses the game's main random-number stream.
 
+import { objectMaterial } from './object_material.js';
 import type { GameObject, ObjectTimerKind, ObjectWhere } from './object_types.js';
 import type { Monster, MonsterBirthState, PetData } from './monster_types.js';
 import type { Position, MapLocation, Room, SpecialLevelContext, FloorObjects, Trap, ActiveSpecialLevel } from './map_types.js';
@@ -136,8 +137,7 @@ import {
 } from './const.js';
 import {
     getObjectClassBounds, getObjectDefinition, requireObjectData,
-    OBJECT_BASES, OBJECT_PROB, OBJECT_MATERIAL,
-    OBJECT_SPELL_LEVEL,
+    OBJECT_BASES, OBJECT_PROB, OBJECT_SPELL_LEVEL,
     OBJECT_MERGE, OBJECT_WEIGHT, OBJECT_COST, OBJECT_SUBTYPE,
     WORM_TOOTH, UNICORN_HORN, HELM_OF_OPPOSITE_ALIGNMENT,
     GAUNTLETS_OF_FUMBLING, FUMBLE_BOOTS, LEVITATION_BOOTS,
@@ -170,7 +170,7 @@ import {
     LEATHER_ARMOR, LEATHER_JACKET, LEATHER_GLOVES, LEATHER_CLOAK,
     MIRROR, POT_OBJECT_DETECTION, RIN_INVISIBILITY, SHIELD_OF_REFLECTION,
     SADDLE,
-    WAN_CANCELLATION, WAN_LIGHT, WAN_LIGHTNING,
+    WAN_CANCELLATION, WAN_LIGHT, WAN_LIGHTNING, objectDirection,
 } from './object_data.js';
 import {
     MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_DIFFICULTY, MONSTER_GENO,
@@ -934,7 +934,7 @@ async function mksobj_init(
     case WAND_CLASS:
         if (otyp === 414) otmp.spe = 1;
         else if (otyp === 415) otmp.spe = rn1(4, 3);
-        else otmp.spe = rn1(5, definition.direction === 1 ? 11 : 4);
+        else otmp.spe = rn1(5, objectDirection(otyp, game) === 1 ? 11 : 4);
         blessorcurse(otmp, 17);
         break;
     case ROCK_CLASS:
@@ -3857,19 +3857,6 @@ async function getbones(): Promise<boolean> {
 
     const encoded = game.storage?.getItem(bonesStorageKey());
     if (!encoded) return false;
-    // keepdogs() has already detached a migrating companion from the source
-    // monster chain. Clear its glyph before the wizard query, while retaining
-    // the rest of the already-painted source tty map.
-    if (game.startingPet
-        && !game.level?.monsters?.includes(game.startingPet)) {
-        const petLocation = game.level?.at?.(
-            game.startingPet.mx, game.startingPet.my,
-        );
-        if (petLocation?.remembered_glyph?.kind === 'monster') {
-            delete petLocation.remembered_glyph;
-        }
-        newsym(game.startingPet.mx, game.startingPet.my);
-    }
     if (game.flags?.debug
         && await bonesPrompt('Get bones? [yn] (n) ') !== 'y') return false;
 
@@ -8644,7 +8631,7 @@ async function mkveggy_at(x: number, y: number): Promise<GameObject> {
         throw new Error('Food class boundaries are missing.');
     const last = afterFood - 1;
     for (let otyp = first; otyp <= last; otyp++) {
-        if (OBJECT_MATERIAL[otyp] !== 3 // VEGGY
+        if (objectMaterial(otyp) !== 3 // VEGGY
             && otyp !== EGG && otyp !== TIN && otyp !== CORPSE) continue;
         eligible.push(otyp);
         const probability = OBJECT_PROB[otyp];
@@ -10520,7 +10507,7 @@ async function mktrap_victim(trap: Trap): Promise<void> {
 // private to the trap-victim generation block; its inputs are freshly made,
 // non-invocation objects from the four possession classes above.
 function trapVictimObjectBreaks(object: GameObject): boolean {
-    const material = OBJECT_MATERIAL[object.otyp];
+    const material = objectMaterial(object.otyp);
     const ordinaryResistance = object.oclass === ARMOR_CLASS && material === 19
         ? 90 : 1; // GLASS == 19
     if (rn2(100) < (object.artifact ? 99 : ordinaryResistance)) return false;

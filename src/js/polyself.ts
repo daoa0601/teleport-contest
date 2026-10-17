@@ -33,7 +33,8 @@ import {
 } from './exper.js';
 import { recordGameLogEvent } from './gamelog.js';
 import { withIndefiniteArticle } from './object_grammar.js';
-import { currentAttribute, maximumAttribute, reportHeroEncumbrance } from './attrib.js';
+import { currentAttribute, maximumAttribute } from './attrib.js';
+import { reportHeroEncumbrance } from './encumbrance.js';
 import {
     MONSTER_ATTACKS, MONSTER_FLAGS1,
     MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME,
@@ -59,9 +60,6 @@ import { isFlimsyObject } from './object_properties.js';
 import {
     adjustObjectLightAfterBlessing as adjustObjectLight, endObjectBurn, objectLightRadius,
 } from './light.js';
-import {
-    encumbranceLabel, encumbranceMessage, nearCapacity,
-} from './weight.js';
 import {
     A_CHA, A_CON, A_DEX, A_STR, A_WIS, G_GENOD, I_SPECIAL, In_endgame, M_AP_NOTHING,
     M_AP_OBJECT, STR18, STR19, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR,
@@ -296,7 +294,6 @@ interface RestoredHumanBody {
     regainedSight: boolean;
     changedSeeInvisible: boolean;
     race: string;
-    encumbranceMessage: string;
 }
 
 async function restoreHumanBody(
@@ -308,9 +305,6 @@ async function restoreHumanBody(
     const hadSeeInvisible = !!u.seeInvisible;
     const wasMimicking = (u.m_ap_type ?? M_AP_NOTHING) !== M_AP_NOTHING;
     const wasHolding = u.ustuck && !u.uswallow && heroFormSticks(state);
-    const previousEncumbrance = state._encumbranceLevel !== undefined
-        && Number.isInteger(state._encumbranceLevel)
-        ? state._encumbranceLevel : nearCapacity(state);
     if (changed) {
         if (u.macurr) u.acurr = { a: [...u.macurr.a] };
         if (u.mamax) u.amax = { a: [...u.mamax.a] };
@@ -333,17 +327,12 @@ async function restoreHumanBody(
         u.m_ap_type = M_AP_NOTHING;
         u.mappearance = 0;
     }
-    state._encumbranceLevel = nearCapacity(state);
-    u._encumbrance = encumbranceLabel(state._encumbranceLevel);
     newsym(u.ux, u.uy);
     return {
         changed,
         regainedSight,
         changedSeeInvisible: hadSeeInvisible !== !!u.seeInvisible,
         race: state.urace?.adj || state.urace?.noun || 'human',
-        encumbranceMessage: encumbranceMessage(
-            previousEncumbrance, state._encumbranceLevel,
-        ),
     };
 }
 
@@ -406,8 +395,7 @@ export async function returnHeroToHumanForm(state = game, {
     endVoluntaryMultiTurn(state);
     state.context.botl = true;
     state.vision_full_recalc = 1;
-    if (restored.encumbranceMessage)
-        await publish(restored.encumbranceMessage);
+    await reportHeroEncumbrance(state, publish);
     if (wasFlying && !state.u.flying && state.u.usteed)
         await publish(`You and ${monsterName(state.u.usteed, { state })} return gently to the ${surfaceName(state.u.ux, state.u.uy, state)}.`);
     const retouch = await retouchEquipment(2, { state, publish, die });
@@ -1168,8 +1156,7 @@ async function renewHumanForm(sexChangeAllowed = true) {
     }
     game.context.botl = true;
     await see_monsters();
-    if (restored.encumbranceMessage)
-        await plineWithContinuation(restored.encumbranceMessage);
+    await reportHeroEncumbrance(game);
     const retouch = await retouchEquipment(2);
     const selfTouch = retouch.died || game.uarmg || game.u?.uarmg ? retouch
         : await selfTouchPetrifyingWeapons();
@@ -1191,11 +1178,7 @@ async function unsuccessfulPolymorph() {
     const died = await finishHeroDeath({ killer: 'unsuccessful polymorph', deathLineShown: true });
     if (!died) {
         await updateHeroHunger(false);
-        const previous = game._encumbranceLevel ?? nearCapacity(game);
-        game._encumbranceLevel = nearCapacity(game);
-        game.u._encumbrance = encumbranceLabel(game._encumbranceLevel);
-        const message = encumbranceMessage(previous, game._encumbranceLevel);
-        if (message) await plineWithContinuation(message);
+        await reportHeroEncumbrance(game);
     }
     return { transformed: false, died };
 }

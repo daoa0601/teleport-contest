@@ -1,4 +1,5 @@
 import { formatFeltMessage, publishHeardMessage } from './hero_speech.js';
+import { objectMaterial } from './object_material.js';
 import { moveMonsterNextToHero } from './teleport.js';
 import { monsterFireDescription } from './monster_fire_description.js';
 import { bot } from './display.js';
@@ -108,7 +109,7 @@ import { respondToImmediateMagic } from './monster_magic_response.js';
 import { canSeeMonster, canSpotMonster, map_invisible, newsym, plineWithContinuation, } from './display.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SIZE, MONSTER_SYMBOL, monsterIsCovetous, monsterIsNoncorporeal, monsterIsUndead, monsterIsVampireShifter, monsterIsWhirly, monsterIsShade, monsterIsUnsolid, monsterIsThickSkinned, monsterTypeName, } from './monster_data.js';
 import { AD_ACID, AD_BLND, AD_CLRC, AD_COLD, AD_CURS, AD_HEAL, AD_DRIN, AD_CORR, AD_DCAY, AD_DGST, AD_DREN, AD_DETH, AD_CONF, AD_DRLI, AD_ELEC, AD_ENCH, AD_FIRE, AD_LEGS, AD_PHYS, AD_POLY, AD_TLPT, AD_DISE, AD_PEST, AD_FAMN, AD_MAGM, AD_SPC2, AD_SAMU, AD_SEDU, AD_SGLD, AD_SSEX, AD_SITM, AD_SLIM, AD_SLOW, AD_SPEL, AD_STCK, AD_STON, AD_STUN, AD_WRAP, AD_PLYS, AD_WERE, AD_RUST, AT_BOOM, AT_BREA, AT_CLAW, AT_ENGL, AT_GAZE, AT_HUGS, AT_MAGC, AT_NONE, AT_SPIT, AT_TUCH, AT_WEAP, AT_KICK, AT_BITE, AT_STNG, AT_BUTT, AT_TENT, AT_EXPL, } from './monster_attack_types.js';
-import { APPLE, BANANA, BULLWHIP, BOULDER, CARROT, CLOVE_OF_GARLIC, CORPSE, DWARVISH_MATTOCK, EGG, FAKE_AMULET_OF_YENDOR, FLINT, ENORMOUS_MEATBALL, GOLD_PIECE, MEATBALL, MEAT_RING, MEAT_STICK, ARROW, AXE, BATTLE_AXE, DART, IRON_SHOES, OBJECT_MATERIAL, OBJECT_BIMANUAL, OBJECT_LARGE_DAMAGE, OBJECT_SMALL_DAMAGE, OBJECT_SUBTYPE, PICK_AXE, ROCK, POT_GAIN_LEVEL, POT_HEALING, POT_INVISIBILITY, SLIME_MOLD, TIN, TRIPE_RATION, WAN_SPEED_MONSTER, } from './object_data.js';
+import { APPLE, BANANA, BULLWHIP, BOULDER, CARROT, CLOVE_OF_GARLIC, CORPSE, DWARVISH_MATTOCK, EGG, FAKE_AMULET_OF_YENDOR, FLINT, ENORMOUS_MEATBALL, GOLD_PIECE, MEATBALL, MEAT_RING, MEAT_STICK, ARROW, AXE, BATTLE_AXE, DART, IRON_SHOES, OBJECT_BIMANUAL, OBJECT_LARGE_DAMAGE, OBJECT_SMALL_DAMAGE, OBJECT_SUBTYPE, PICK_AXE, ROCK, POT_GAIN_LEVEL, POT_HEALING, POT_INVISIBILITY, SLIME_MOLD, TIN, TRIPE_RATION, WAN_SPEED_MONSTER, } from './object_data.js';
 import { placeCreatedObject, placeObjectSynchronously, remove_object, stack_object, } from './floor_object.js';
 import { canLetGo } from './hero_inventory.js';
 import { useMonsterBullwhip } from './monster_bullwhip.js';
@@ -511,7 +512,7 @@ async function useMonsterMiscItem(monster, state, random, calls) {
     const naturalForm = (monster.cham ?? -1) < 0;
     if (!stuck && MONSTER_MOVE[monster.mnum] && !monster.mtrapped && naturalForm && weak
         && !inventory.some(object => !!((object.owornmask ?? 0) & W_ARMF)
-            && OBJECT_MATERIAL[object.otyp] === IRON)) {
+            && objectMaterial(object.otyp) === IRON)) {
         for (let x = monster.mx - 1; x <= monster.mx + 1; x++) {
             for (let y = monster.my - 1; y <= monster.my + 1; y++) {
                 if (!isok(x, y) || x === heroX && y === heroY
@@ -6229,15 +6230,19 @@ function postMoveHideUnder(monster, movement, state, random, calls) {
     if (!hidesUnder && !eel)
         return;
     const helpless = !monster.mcanmove || monster.msleeping || (monster.mfrozen ?? 0) > 0;
-    if (!monster.mundetected && (helpless || recordRandom(random, calls, 5) === 0))
-        return;
-    const concealment = beginMonsterHideUnder(monster, state);
-    if (concealment.message) {
-        movement.hideUnder = concealment;
-        movement.deferredAfterHideUnder = true;
+    if (monster.mundetected || (!helpless && recordRandom(random, calls, 5) !== 0)) {
+        const concealment = beginMonsterHideUnder(monster, state);
+        if (concealment.message) {
+            movement.hideUnder = concealment;
+            movement.deferredAfterHideUnder = true;
+            return;
+        }
+        if (concealment.undetected !== concealment.oldUndetected)
+            newsym(monster.mx, monster.my);
     }
-    else if (concealment.undetected !== concealment.oldUndetected)
-        newsym(monster.mx, monster.my);
+    // postmov() redraws even when hideunder() leaves concealment unchanged
+    // or the monster skips the attempt. Hallucinations need that refresh.
+    newsym(monster.mx, monster.my);
 }
 // C mon.c:maybe_unhide_at(), called immediately after place_monster().  A
 // concealer which leaves its object (or an eel which leaves water) is exposed
@@ -6487,7 +6492,7 @@ async function continueAfterMonsterTrap(action, state, random, rollDice, rollOne
     await completeMovedMonsterAction(action.monster, action.movement, state, random, rollDice, rollOne, calls, action.dochugContext, { trapAlreadyHandled: true });
     return action;
 }
-export async function resumeDeferredMonsterTrap(action, state, { random = rn2, rollDice = d, rollOne = rnd, publish = plineWithContinuation, monsterName, describeMonster, finishDeath = (monster, options) => finishEnvironmentalMonsterDeath(monster, state, options), } = {}) {
+export async function resumeDeferredMonsterTrap(action, state, { random = rn2, rollDice = d, rollOne = rnd, publish = plineWithContinuation, describeMonster, finishDeath = (monster, options) => finishEnvironmentalMonsterDeath(monster, state, options), } = {}) {
     const movement = action?.movement;
     if (movement?.escapingTrap) {
         await tryMonsterTrapEscape(action.monster, state, {
@@ -6585,7 +6590,6 @@ export async function resumeDeferredMonsterTrap(action, state, { random = rn2, r
                 publish,
                 random: recordedRandom,
                 rollOne: recordedRollOne,
-                ...(monsterName ? { monsterName } : {}),
                 ...(describeMonster ? { describeMonster } : {}),
             });
             break;
@@ -6603,7 +6607,6 @@ export async function resumeDeferredMonsterTrap(action, state, { random = rn2, r
             await finishMonsterRockTrap(action.monster, event, state, {
                 publish,
                 random,
-                ...(monsterName ? { monsterName } : {}),
                 ...(describeMonster ? { describeMonster } : {}),
             });
             break;
@@ -7116,6 +7119,7 @@ export async function resumeDeferredMonsterHideUnder(action, state, random = rn2
     if (!movement?.deferredAfterHideUnder)
         return action;
     delete movement.deferredAfterHideUnder;
+    newsym(action.monster.mx, action.monster.my);
     if (action.monster.isshk) {
         if (!hasShopkeeperData(action.monster))
             throw new Error('A shopkeeper must retain its shop state');

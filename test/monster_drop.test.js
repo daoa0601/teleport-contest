@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { artifactByName, nameArtifact } from '../js/artifacts.js';
 import { LAVAPOOL, MFAST, NO_MINVENT, W_ARMF, W_WEP } from '../js/const.js';
 import { initializePet } from '../js/dog.js';
-import { pline } from '../js/display.js';
+import { setTopline } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { beginObjectBurn } from '../js/light.js';
@@ -74,7 +74,7 @@ void test('a monster keeps its boot speed while the drop message awaits dismissa
     const monster = await createMonsterAt('soldier', 11, 10, NO_MINVENT);
     const boots = await equipMonsterObject(monster, await knownObject(SPEED_BOOTS), W_ARMF);
     assert.equal(monster.mspeed, MFAST);
-    await pline('You hear a loud rumbling sound somewhere deep in the dungeon.');
+    await setTopline('You hear a loud rumbling sound somewhere deep in the dungeon.');
     const input = resetInputState();
     const dropping = dropMonsterObject(monster, boots, game, { verbosely: true });
     await input.waitUntilBlocked();
@@ -99,7 +99,7 @@ void test('dropping a ridden saddle leaves it on the floor before the rider fall
     const saddle = steed.saddle;
     assert.ok(saddle);
     const square = { x: steed.mx, y: steed.my };
-    await pline('You hear a loud rumbling sound somewhere deep in the dungeon.');
+    await setTopline('You hear a loud rumbling sound somewhere deep in the dungeon.');
     const input = resetInputState();
     const dropping = dropMonsterObject(steed, saddle);
     await input.waitUntilBlocked();

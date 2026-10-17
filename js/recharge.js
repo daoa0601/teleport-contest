@@ -11,7 +11,7 @@ import { loseHeroHp } from './hero_damage.js';
 import { consumeInventoryItem } from './invent.js';
 import { compactInventoryLetters, promptInventoryObject, } from './inventory_prompt.js';
 import { endObjectBurn } from './light.js';
-import { BAG_OF_TRICKS, BELL_OF_OPENING, BRASS_LANTERN, CAN_OF_GREASE, CRYSTAL_BALL, DRUM_OF_EARTHQUAKE, EXPENSIVE_CAMERA, FIRE_HORN, FROST_HORN, HORN_OF_PLENTY, LOADSTONE, MAGIC_FLUTE, MAGIC_HARP, MAGIC_LAMP, MAGIC_MARKER, OBJECT_CHARGED, OBJECT_DIR, OBJECT_NAMES, OIL_LAMP, TINNING_KIT, WAN_CANCELLATION, WAN_COLD, WAN_DEATH, WAN_FIRE, WAN_LIGHTNING, WAN_MAGIC_MISSILE, WAN_POLYMORPH, WAN_UNDEAD_TURNING, WAN_WISHING, } from './object_data.js';
+import { BAG_OF_TRICKS, BELL_OF_OPENING, BRASS_LANTERN, CAN_OF_GREASE, CRYSTAL_BALL, DRUM_OF_EARTHQUAKE, EXPENSIVE_CAMERA, FIRE_HORN, FROST_HORN, HORN_OF_PLENTY, LOADSTONE, MAGIC_FLUTE, MAGIC_HARP, MAGIC_LAMP, MAGIC_MARKER, OBJECT_CHARGED, OBJECT_NAMES, objectDirection, OIL_LAMP, TINNING_KIT, WAN_CANCELLATION, WAN_COLD, WAN_DEATH, WAN_FIRE, WAN_LIGHTNING, WAN_MAGIC_MISSILE, WAN_POLYMORPH, WAN_UNDEAD_TURNING, WAN_WISHING, } from './object_data.js';
 import { isWeaponTool } from './object_properties.js';
 import { objectQuantity, splitObjectStack } from './object_stack.js';
 import { blessObjectState, curseObject, uncurseObjectState, } from './object_state.js';
@@ -101,7 +101,7 @@ export async function rechargeObject(object, blessing, state = game) {
 }
 async function rechargeWand(wand, blessing, state) {
     const limit = wand.otyp === WAN_WISHING ? 1
-        : OBJECT_DIR[wand.otyp] === NODIR ? 15 : 8;
+        : objectDirection(wand.otyp, state) === NODIR ? 15 : 8;
     if (wand.spe === -1)
         wand.spe = 0;
     const previous = wand.recharged;

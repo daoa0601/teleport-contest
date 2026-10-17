@@ -1,6 +1,6 @@
 // C steal.c:maybe_absorb_item(). A mimic can take a carried or flying item.
 import { monsterCanTouchArtifact } from './artifacts.js';
-import { reportHeroEncumbrance } from './attrib.js';
+import { reportHeroEncumbrance } from './encumbrance.js';
 import { heroHandName } from './body_parts.js';
 import { canSpotMonster, plineWithContinuation } from './display.js';
 import { game } from './gstate.js';

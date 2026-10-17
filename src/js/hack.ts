@@ -8,14 +8,16 @@ import {
     BURNING, D_BROKEN, D_CLOSED, D_LOCKED, DISMOUNT_FELL, DISMOUNT_GENERIC, DISSOLVED, DROWNING,
     DOOR, IS_AIR, IS_OBSTRUCTED, IS_STWALL, IS_WALL, IS_WATERWALL,
     Is_waterlevel, LAVAPOOL, LAVAWALL, PARANOID_SWIM, POOL, ROOM, STONE,
-    FAINTED, TREE, TT_LAVA, Upolyd, WATER, W_NONDIGGABLE, W_NONPASSWALL,
+    FAINTED, M_SEEN_FIRE, TREE, TT_LAVA, Upolyd, WATER, W_NONDIGGABLE, W_NONPASSWALL,
     WT_TOOMUCH_DIAGONAL,
 } from './const.js';
 import { displayLiquidName, feel_newsym, newsym, plineWithContinuation, under_water, updateLastSeenTerrain } from './display.js';
 import { heroPassesWalls, heroFormSticks, heroSpecies } from './hero_species.js';
 import { heroHasConflict } from './hero_conflict.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
-import { setHeroInWater } from './terrain_movement.js';
+import { resetHeroTrap, setHeroInWater } from './terrain_movement.js';
+import { monstersObserveHeroResistance } from './monster_perception.js';
+import { clearHeroTrap, setHeroTrap } from './hero_traps.js';
 import { monsterName } from './monster_name.js';
 import {
     beginHeroLifeSaving, completeHeroLifeSaving, finishHeroDeath, identifyLifeSavingAmulet,
@@ -37,8 +39,8 @@ import {
 } from './monster_data.js';
 import {
     AMULET_OF_LIFE_SAVING, BOULDER, LOADSTONE, OBJECT_MATERIAL,
-    OBJECT_NAMES,
 } from './object_data.js';
+import { ownedObjectAction } from './objnam.js';
 import {
     heroFormClings, heroFormFlags, heroHidesOnCeiling, heroIsFlying,
 } from './polyself.js';
@@ -379,8 +381,7 @@ async function burnLavaBoots(
     const boots = state.uarmf || state.u?.uarmf;
     if (!boots || !(boots.in_use || (!boots.oerodeproof && objectMaterial(boots, state) <= 8)))
         return false;
-    const name = boots.name || OBJECT_NAMES[boots.otyp] || 'boots';
-    await publish(`Your ${name} burst into flame!`);
+    await publish(`${ownedObjectAction(boots, 'burst', state)} into flame!`);
     // destroyWornArmor() runs the full Boots_off-before-consume sequence; the
     // in_lava_effects counter raised around this whole entry suppresses the
     // nested float_down()/spoteffects() recursion (C trap.c:6863-6867).
@@ -572,11 +573,11 @@ async function finishLavaEffects({
     let sank = false;
     if (!waterWalking
         && (!hero.utrap || hero.utraptype !== TT_LAVA)) {
-        hero.utrap = random(4) + 4 + ((random(4) + 12) << 8);
-        hero.utraptype = TT_LAVA;
+        setHeroTrap(random(4) + 4 + ((random(4) + 12) << 8), TT_LAVA, state);
         await publish(
             `You sink into the ${lavaName(location)}, but it only burns slightly!`,
         );
+        monstersObserveHeroResistance(M_SEEN_FIRE, state);
         if (hero.uhp > 1 && await loseHeroHp(1, 'molten lava', {
             state, publish, die: finishDamageDeath, deathCause: 'killed by molten lava',
         })) return { entered: true, moved: false, died: true, sank: true };
@@ -607,8 +608,7 @@ export async function sinkHeroIntoLava({
     if (!hero?.utrap || hero.utraptype !== TT_LAVA) return null;
     const location = state.level?.at?.(hero.ux, hero.uy);
     if (!location || !isLavaAt(state.u.ux, state.u.uy, state)) {
-        hero.utrap = 0;
-        hero.utraptype = 0;
+        clearHeroTrap(state);
         return { escaped: true };
     }
     if (hero.invulnerable || hero.uinvulnerable)
@@ -631,9 +631,7 @@ export async function sinkHeroIntoLava({
         }
 
         if (state.program_state.gameover) return { sank: true, died: true };
-        hero.utrap = 0;
-        hero.utraptype = 0;
-        refreshMovementProperties(state);
+        await resetHeroTrap(true, state);
         const airborne = hero.levitating || hero.levitation
             || hero.flying;
         if (!airborne) {
@@ -650,9 +648,9 @@ export async function sinkHeroIntoLava({
         const message = 'You sink deeper into the lava.';
         const slimeBurns = heroIsSliming(state)
             && rollOne(9) >= (hero.slimedTurns ?? 0);
-        if (slimeBurns
-            || (state._last_message !== message
-                && state._pending_message !== message)) {
+        // C Norep() compares pline.c's previous individual message, not the
+        // joined tty top line.
+        if (slimeBurns || state._lastPlineMessage !== message) {
             await publish(message);
         }
         if (slimeBurns) await burnAwayHeroSlime(state, publish);

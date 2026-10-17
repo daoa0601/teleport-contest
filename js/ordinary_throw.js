@@ -2,7 +2,8 @@
 // C refs: dothrow.c throwit() and thitmonst(), zap.c bhit().
 import { game, requirePlayingGame } from './gstate.js';
 import { A_DEX, AKLYS_LIM, Is_airlevel, W_QUIVER, W_SWAPWEP, W_WEP } from './const.js';
-import { exerciseAttribute, reportHeroEncumbrance } from './attrib.js';
+import { exerciseAttribute } from './attrib.js';
+import { reportHeroEncumbrance } from './encumbrance.js';
 import { flyBoomerang } from './boomerang.js';
 import { flush_screen, plineWithContinuation } from './display.js';
 import { hitMonsterWithThrownEggPieOrVenom, } from './hero_thrown_egg_pie_venom.js';

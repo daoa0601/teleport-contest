@@ -14,8 +14,9 @@ import { makeConfused, makeStunned } from './hero_mental_status.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { heroStomachName } from './body_parts.js';
 import {
-    adjustAttribute, currentAttribute, exerciseAttribute, reportHeroEncumbrance,
+    adjustAttribute, currentAttribute, exerciseAttribute,
 } from './attrib.js';
+import { reportHeroEncumbrance } from './encumbrance.js';
 import {
     A_CON, ALTAR, FAINTING, POISONING, SICK_ALL,
     SICK_NONVOMITABLE, SICK_VOMITABLE, TIMEOUT,

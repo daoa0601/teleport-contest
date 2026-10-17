@@ -51,8 +51,8 @@ import { isQuantumBox, observeQuantumCat } from './quantum_cat.js';
 import { d, rn2 } from './rng.js';
 import { paranoidYesNoQuit, promptChoice } from './query.js';
 import { touchPetrifyingCorpse } from './stoning.js';
-import { addPickedInventoryObject } from './pickup.js';
-import { nearCapacity, objectWeight, pickupLoadPrefix } from './weight.js';
+import { addPickedInventoryObject, pickupInventoryMessage } from './pickup.js';
+import { objectWeight } from './weight.js';
 import { heroHasFreeHand, willWeld } from './weapon_type.js';
 import { heroHandName } from './body_parts.js';
 import { heroIsBlind } from './senses.js';
@@ -573,7 +573,7 @@ export async function putIntoContainer(
 
 export async function takeFromContainer(
     container: GameObject, object: GameObject, state: GameState = game, count = -1,
-    { resetJustPicked = false, previousCapacity = 0 }: { resetJustPicked?: boolean; previousCapacity?: number } = {},
+    { resetJustPicked = false }: { resetJustPicked?: boolean } = {},
 ): Promise<ContainerTransferResult> {
     if (!container.contents?.includes(object))
         return { moved: false, message: null };
@@ -623,8 +623,6 @@ export async function takeFromContainer(
     updateContainerWeights(container);
     state._capacityDirty = true;
     observeObjectForNaming(carried, { state });
-    const capacity = nearCapacity(state);
-    const prefix = capacity === previousCapacity ? '' : pickupLoadPrefix(capacity);
     const added = { ...carried, quan: addedCount, quantity: addedCount };
     const merged = addedCount < quantity(carried);
     const total = merged ? state.flags.verbose === false ? ''
@@ -632,11 +630,12 @@ export async function takeFromContainer(
     const description = `${carried.invlet || '$'} - ${objectDescription(added, inventoryPrimaryHandDetail(carried))}${total}`;
     return {
         moved: true,
-        message: prefix ? `${prefix} removing ${description}` : description,
+        message: pickupInventoryMessage(description, 'removing', state),
     };
 }
 
 async function takeSelectedObjects(container: GameObject, resetPicked: boolean): Promise<ContainerTransferBatch> {
+    game._pickupEncumbrance = 0;
     if (!container.contents?.length) return { results: [], spentTime: false };
     const categories = await chooseCategories(
         'Take out what type of objects?', container.contents,
@@ -648,19 +647,17 @@ async function takeSelectedObjects(container: GameObject, resetPicked: boolean):
         : await chooseObjects('Take out what?', eligible, false);
     const results: ContainerTransferResult[] = [];
     let resetJustPicked = resetPicked;
-    let previousCapacity = 0;
     for (const selection of selected) {
         const transfer = splitForTransfer(selection.value, selection.count, game);
         const result = await takeFromContainer(
             container, transfer.object, game, -1,
-            { resetJustPicked, previousCapacity },
+            { resetJustPicked },
         );
         if (!result.moved) await restoreRejectedSplit(transfer, game);
         results.push(result);
         if (result.message) await plineWithContinuation(result.message);
         if (result.moved) {
             resetJustPicked = false;
-            previousCapacity = nearCapacity(game);
             if (selection.value.oclass === 12) await bot();
         }
         if (result.stop) break;
@@ -670,6 +667,9 @@ async function takeSelectedObjects(container: GameObject, resetPicked: boolean):
 }
 
 async function putSelectedObjects(container: GameObject, stashOne = false): Promise<ContainerTransferBatch> {
+    const menuStyle = game.flags.menu_style ?? MENU_FULL;
+    if (!stashOne && menuStyle !== MENU_TRADITIONAL)
+        game._pickupEncumbrance = 0;
     // menu_loot queries the whole inventory; only stash-one uses ck_bag.
     const candidates = stashOne
         ? game.inventory.filter(object => object !== container) : game.inventory;
@@ -769,14 +769,11 @@ async function chooseAction(container: GameObject, usedTime: boolean, moreContai
     entries.push('');
     if (moreContainers) entries.push({ key: 'n', marker: '*', text: 'loot next container' });
     entries.push({ key: 'q', marker: moreContainers ? '-' : '*', text: usedTime ? 'done' : 'do nothing' });
-    const valid = [10, 13, 27, 32, 58, 63, 110, 113,
-        ...Object.values(keys).map(key => key.charCodeAt(0))];
     const chosen = await showChoiceWindow({
         title,
         entries,
-        validKeys: valid,
     });
-    if ([10, 13, 32].includes(chosen)) return moreContainers ? 'n' : 'q';
+    if (chosen === 0) return moreContainers ? 'n' : 'q';
     return chosen === 27 ? 'q' : String.fromCharCode(chosen);
 }
 

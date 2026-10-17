@@ -111,6 +111,7 @@ void test('worn amulets, eyewear, and saddles carry the worn annotation', async 
     const amulet = await addInventoryObject(AMULET_OF_REFLECTION);
     const lenses = await addInventoryObject(LENSES);
     const pony = await createSaddledSteed();
+    installPagerInput(resetInputState(), { expected: /amulet|lenses/, limit: 2 });
     await wearHeroAccessory(amulet, 'uamul');
     await wearEyewear(lenses);
     assert.ok(pony.saddle);

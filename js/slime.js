@@ -85,10 +85,16 @@ export function startHeroSliming({ state = game, turns = 10, killer = '', } = {}
     return hero.slimed;
 }
 export function clearHeroSliming(state = game) {
-    const hero = state.u;
     const wasSliming = heroIsSliming(state);
     if (wasSliming)
         state.context.botl = true;
+    dropHeroSliming(state.u);
+    return wasSliming;
+}
+// C timeout.c:nh_timeout() runs the Slimed countdown out with a bare
+// decrement, so the status line keeps "Slime" until something else
+// requests a redraw.
+function dropHeroSliming(hero) {
     hero.slimedTurns = 0;
     hero.slimed = false;
     delete hero.slimeKiller;
@@ -97,7 +103,6 @@ export function clearHeroSliming(state = game) {
         hero.m_ap_type = 0;
         hero.mappearance = 0;
     }
-    return wasSliming;
 }
 // C timeout.c:burn_away_slime(), through make_slimed(0, message).
 export async function burnAwayHeroSlime({ state = game } = {}) {
@@ -238,12 +243,12 @@ export async function advanceHeroSliming({ state = game, publish = plineWithCont
         return { active: true, died: false, turns: hero.slimedTurns };
     }
     if (heroIsGreenSlime(state)) {
-        clearHeroSliming(state);
+        dropHeroSliming(hero);
         return { active: false, died: false };
     }
     const killer = hero.slimeKiller || 'turned into green slime';
     const deathCause = hero.slimeKiller ? null : 'turned into green slime';
-    clearHeroSliming(state);
+    dropHeroSliming(hero);
     if (typeof transform !== 'function' || typeof die !== 'function') {
         throw new TypeError('the final slime turn requires transform and death functions');
     }

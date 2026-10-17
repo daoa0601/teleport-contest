@@ -206,6 +206,7 @@ void test('a renewed human body keeps its announcement before the encumbrance ch
     requirePlayingGame(game);
     installPolymorphedHero('homunculus');
     while (nearCapacity(game) === UNENCUMBERED) await addInventoryObject(ROCK);
+    game._encumbranceLevel = nearCapacity(game);
     await flushPendingTopline();
     game.u.polymorphControl = true;
     input.feed('human\n');
