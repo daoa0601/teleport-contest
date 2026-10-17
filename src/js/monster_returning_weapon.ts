@@ -35,6 +35,8 @@ interface WeaponOptions {
     random?: (limit: number) => number;
     rollOne?: (sides: number) => number;
     animateReturn?: () => Promise<void>;
+    // tmp_at(DISP_END, 0): erase a tether that did not make it back.
+    dropTether?: () => void;
 }
 
 export async function returnMonsterWeapon(monster: Monster, weapon: GameObject, impactX: number, impactY: number, {
@@ -43,6 +45,7 @@ export async function returnMonsterWeapon(monster: Monster, weapon: GameObject, 
     random = rn2,
     rollOne = rnd,
     animateReturn,
+    dropTether,
 }: WeaponOptions = {}): Promise<void> {
     const impaired = monster.mconf || monster.mstun || monster.mblinded;
     const visible = canSeeMonster(monster);
@@ -99,6 +102,7 @@ export async function returnMonsterWeapon(monster: Monster, weapon: GameObject, 
             }
         }
     } else {
+        dropTether?.();
         await publishHeardMessage('a loud snap!', publish, state);
     }
 

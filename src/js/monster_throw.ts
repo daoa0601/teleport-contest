@@ -226,6 +226,7 @@ export async function throwMonsterProjectile(source: Monster, object: GameObject
             await returnMonsterWeapon(source, missile, state.bhitpos.x, state.bhitpos.y, {
                 state, publish, random, rollOne,
                 animateReturn: () => flightDisplay.backtrack(),
+                dropTether: () => flightDisplay.clear(),
             });
         }
     } finally {

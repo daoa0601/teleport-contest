@@ -22,7 +22,7 @@ import { objectWeight } from './weight.js';
 const LIQUID = 1;
 const WOOD = 8;
 const PLASTIC = 18;
-export async function returnMonsterWeapon(monster, weapon, impactX, impactY, { state = game, publish = plineWithContinuation, random = rn2, rollOne = rnd, animateReturn, } = {}) {
+export async function returnMonsterWeapon(monster, weapon, impactX, impactY, { state = game, publish = plineWithContinuation, random = rn2, rollOne = rnd, animateReturn, dropTether, } = {}) {
     const impaired = monster.mconf || monster.mstun || monster.mblinded;
     const visible = canSeeMonster(monster);
     const name = () => monsterName(monster, { state });
@@ -78,6 +78,7 @@ export async function returnMonsterWeapon(monster, weapon, impactX, impactY, { s
         }
     }
     else {
+        dropTether?.();
         await publishHeardMessage('a loud snap!', publish, state);
     }
     const options = { state: requireInitializedGame(state), publish, random };
