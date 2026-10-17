@@ -1,5 +1,6 @@
 // save.js — Web-Storage-backed save and restore.
 // C refs: save.c and restore.c.
+import { resetErinys } from './monster_data.js';
 import { game } from './gstate.js';
 import { PanicTermination } from './panic_termination.js';
 import { clearMessageWindow, docrt, pline, plineWithContinuation, rawPrint } from './display.js';
@@ -188,6 +189,7 @@ export function restoreGame(name, storage = game.storage) {
         restoreSavedMonsters(snapshot.state);
         restorePersistentState(game, snapshot.state);
         resetRestoredInstanceState();
+        resetErinys(game.u.ualign?.abuse ?? 0);
         resolveDungeonIdentities(game);
         // C restnames() reloads objects[].oc_prob as saved; those gem
         // probabilities are always oinit()'s values for the saved u.uz.

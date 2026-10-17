@@ -16,7 +16,6 @@ export interface MonsterHitPointRandom {
     randomBelow?: (limit: number) => number;
 }
 
-const PM_ERINYS = MONSTER_NAME.indexOf('erinys');
 const PM_WIZARD_OF_YENDOR = MONSTER_NAME.indexOf('Wizard of Yendor');
 
 const GOLEM_HIT_POINTS = new Map([
@@ -52,18 +51,9 @@ export function isHomeElemental(mnum: number): boolean {
     }
 }
 
-// mon.c:adj_erinys() changes the species level before any creation or drain
-// calculation. Every HP branch must see that level, including fixed HP at 50.
-function speciesMonsterLevel(mnum: number): number {
-    const speciesLevel = MONSTER_LEVEL[mnum] ?? 0;
-    return mnum === PM_ERINYS
-        ? Math.min(50, speciesLevel + (game.u?.ualign?.abuse ?? 0))
-        : speciesLevel;
-}
-
 // C ref: makemon.c:adj_lev(). Creation and polymorph share the live level.
 export function adjustedMonsterLevel(mnum: number): number {
-    const baseLevel = speciesMonsterLevel(mnum);
+    const baseLevel = MONSTER_LEVEL[mnum] ?? 0;
     if (mnum === PM_WIZARD_OF_YENDOR) {
         const deaths = monsterDeathCount(mnum);
         return Math.min(49, baseLevel + deaths);
@@ -84,7 +74,7 @@ export function adjustedMonsterLevel(mnum: number): number {
 
 // C ref: makemon.c:newmonhp().
 export function newMonsterHitPoints(mnum: number): { level: number; hp: number } {
-    const rawLevel = speciesMonsterLevel(mnum);
+    const rawLevel = MONSTER_LEVEL[mnum] ?? 0;
     let level = adjustedMonsterLevel(mnum);
     const fixedGolemHp = golemHitPoints(mnum);
     let hp;
@@ -118,7 +108,7 @@ export function monsterHitPointsPerLevel(monster: Pick<Monster, 'mnum' | 'm_lev'
     randomBelow = rn2,
 }: MonsterHitPointRandom = {}): number {
     const mnum = monster.mnum;
-    const speciesLevel = speciesMonsterLevel(mnum);
+    const speciesLevel = MONSTER_LEVEL[mnum] ?? 0;
     let hitPoints = rollOne(8);
     const fixedGolemHitPoints = golemHitPoints(mnum);
 

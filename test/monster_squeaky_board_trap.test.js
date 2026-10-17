@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { adjustHeroAlignment } from '../js/alignment.js';
 import { SQKY_BOARD } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resumeDeferredMonsterTrap, triggerImmediateMonsterTrap, } from '../js/monmove.js';
@@ -48,5 +49,22 @@ void test('a flying monster does not press a squeaky board', async () => {
     await triggerImmediateMonsterTrap(monster, game);
     assert.equal(trap.tseen ?? false, false);
     assert.equal(sleeper.msleeping, 1);
+});
+void test('alignment abuse lets an existing peaceful erinys fly over a squeaky board silently', async () => {
+    const { monster, trap } = await monsterOnSqueakyBoard('erinys');
+    requirePlayingGame(game);
+    monster.mpeaceful = 1;
+    const sleeper = await createMonsterAt('jackal', 15, 10);
+    sleeper.msleeping = 1;
+    const messages = [];
+    adjustHeroAlignment(-16);
+    const action = await triggerImmediateMonsterTrap(monster, game);
+    await resumeDeferredMonsterTrap(action, game, {
+        publish: async (message) => { messages.push(message); },
+    });
+    assert.equal(messages.length, 0, 'the airborne erinys must not press the board');
+    assert.equal(trap.tseen ?? false, false);
+    assert.equal(sleeper.msleeping, 1, 'an unpressed board cannot wake nearby monsters');
+    assert.equal(monster.mtrapseen ?? 0, 0, 'the board is not encountered while flying');
 });
 //# sourceMappingURL=monster_squeaky_board_trap.test.js.map

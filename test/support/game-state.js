@@ -1,3 +1,4 @@
+import { resetErinys } from '../../js/monster_data.js';
 import { COLNO, COULD_SEE, IN_SIGHT, MAXULEV, ROWNO } from '../../js/const.js';
 import { GameMap } from '../../js/game.js';
 import { resetGame, requirePlayingGame } from '../../js/gstate.js';
@@ -79,6 +80,7 @@ export function freshGame({ datetime = DEFAULT_TEST_DATETIME, level = new GameMa
         uz0: hero.uz0 ?? { ...(hero.uz ?? u.uz) },
     };
     state.u = configuredHero;
+    resetErinys(configuredHero.ualign.abuse ?? 0);
     initializeFruitRegistry(undefined, state);
     resetInputState();
     requireFixtureGame(state);

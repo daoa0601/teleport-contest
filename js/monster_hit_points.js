@@ -6,7 +6,6 @@ import { game } from './gstate.js';
 import { MONSTER_LEVEL, MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
 import { monsterDeathCount } from './monster_vitals.js';
 import { d, rnd, rn2 } from './rng.js';
-const PM_ERINYS = MONSTER_NAME.indexOf('erinys');
 const PM_WIZARD_OF_YENDOR = MONSTER_NAME.indexOf('Wizard of Yendor');
 const GOLEM_HIT_POINTS = new Map([
     ['straw golem', 20],
@@ -40,17 +39,9 @@ export function isHomeElemental(mnum) {
         default: return false;
     }
 }
-// mon.c:adj_erinys() changes the species level before any creation or drain
-// calculation. Every HP branch must see that level, including fixed HP at 50.
-function speciesMonsterLevel(mnum) {
-    const speciesLevel = MONSTER_LEVEL[mnum] ?? 0;
-    return mnum === PM_ERINYS
-        ? Math.min(50, speciesLevel + (game.u?.ualign?.abuse ?? 0))
-        : speciesLevel;
-}
 // C ref: makemon.c:adj_lev(). Creation and polymorph share the live level.
 export function adjustedMonsterLevel(mnum) {
-    const baseLevel = speciesMonsterLevel(mnum);
+    const baseLevel = MONSTER_LEVEL[mnum] ?? 0;
     if (mnum === PM_WIZARD_OF_YENDOR) {
         const deaths = monsterDeathCount(mnum);
         return Math.min(49, baseLevel + deaths);
@@ -71,7 +62,7 @@ export function adjustedMonsterLevel(mnum) {
 }
 // C ref: makemon.c:newmonhp().
 export function newMonsterHitPoints(mnum) {
-    const rawLevel = speciesMonsterLevel(mnum);
+    const rawLevel = MONSTER_LEVEL[mnum] ?? 0;
     let level = adjustedMonsterLevel(mnum);
     const fixedGolemHp = golemHitPoints(mnum);
     let hp;
@@ -107,7 +98,7 @@ export function newMonsterHitPoints(mnum) {
 }
 export function monsterHitPointsPerLevel(monster, { rollOne = rnd, randomBelow = rn2, } = {}) {
     const mnum = monster.mnum;
-    const speciesLevel = speciesMonsterLevel(mnum);
+    const speciesLevel = MONSTER_LEVEL[mnum] ?? 0;
     let hitPoints = rollOne(8);
     const fixedGolemHitPoints = golemHitPoints(mnum);
     if (fixedGolemHitPoints != null && speciesLevel > 0) {
