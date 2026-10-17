@@ -6,6 +6,7 @@ import { A_CON, A_STR, BURNING, DISSOLVED, LAVAPOOL, PARANOID_SWIM, POOL, ROOM, 
 import { rhack } from '../js/cmd.js';
 import { initializePet } from '../js/dog.js';
 import { game } from '../js/gstate.js';
+import { plineWithContinuation } from '../js/display.js';
 import { heroLiquidEffects, sinkHeroIntoLava } from '../js/hack.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { AMULET_OF_LIFE_SAVING, LEASH, LEATHER_ARMOR, LOADSTONE, POT_ACID, WATER_WALKING_BOOTS, } from '../js/object_data.js';
@@ -83,6 +84,26 @@ void test('a trapped hero sinks deeper after another action in lava', async () =
     });
     assert.ok((game.u.utrap ?? 0) < 2 << 8);
     assert.equal(messages.includes('You sink deeper into the lava.'), true);
+});
+// C trap.c:sink_into_lava() uses Norep(), which compares pline.c's previous
+// message even after tty joined it to an earlier one on the top line.
+void test('sinking deeper is not repeated after it shared the top line', async () => {
+    liquidAtHero(LAVAPOOL);
+    requireFixtureGame(game);
+    game.u.fireResistance = true;
+    game.u.utrap = 4 << 8;
+    game.u.utraptype = TT_LAVA;
+    game.u.umoved = false;
+    pushKeys(' '.repeat(10));
+    const messages = [];
+    const publish = async (message) => {
+        messages.push(message);
+        return await plineWithContinuation(message);
+    };
+    await plineWithContinuation('You feel a bit steadier now.');
+    await sinkHeroIntoLava({ ...noDisplay, publish, rollOne: () => 1 });
+    await sinkHeroIntoLava({ ...noDisplay, publish, rollOne: () => 1 });
+    assert.deepEqual(messages, ['You sink deeper into the lava.']);
 });
 void test('fireproof water-walking boots hold the hero above lava', async () => {
     liquidAtHero(LAVAPOOL);
