@@ -2743,14 +2743,6 @@ async function presentMonsterAttackEffects(action, game, { random = rn2, rollDic
                     else
                         monstersForgetHeroResistance(M_SEEN_FIRE, game);
                 }
-                if (heroAttack.slimeBurnedMessage) {
-                    const slimeDismissal = await plineWithContinuation(heroAttack.slimeBurnedMessage);
-                    heroAttack.slimeBurnedMessage = null;
-                    if (slimeDismissal !== null
-                        && slimeDismissal !== undefined) {
-                        paging.pagerOwned = true;
-                    }
-                }
                 if (heroAttack.deferredElectricNegation)
                     resumeDeferredHeroElectricSpecial(action, game);
                 if (heroAttack.electricEffectMessage) {
@@ -2854,7 +2846,7 @@ async function presentMonsterAttackEffects(action, game, { random = rn2, rollDic
                         if (inventoryDamage.damageType === 'fire') {
                             await igniteItems(game.inventory, {
                                 state: game,
-                                publish: plineWithContinuation,
+                                publish: publishContactMessage,
                             });
                         }
                         heroAttack.deferredElementalInventory = null;
