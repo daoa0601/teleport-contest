@@ -486,11 +486,13 @@ async function disintegrateMonster(monster, state) {
 }
 async function finishMonsterRayHit(monster, hit, { state, displayName, finishMonsterKill, publish, random, source = 'hero-breath', deathContext = null, sayHit = true, x, y, }) {
     const visible = canSeeMonster(monster);
-    const name = monsterName(monster, { state, capitalized: true });
+    // Native Monnam chooses a fresh hallucinated identity only when a
+    // message names the target. Ordinary hit() owns its own name lookup.
+    const nameTarget = () => monsterName(monster, { state, capitalized: true });
     if (hit.absorbedDeath) {
         if (visible) {
             await publish(rayHitMessage(displayName(), monster, { x, y, state }));
-            await publish(`${name} absorbs the deadly ray!`);
+            await publish(`${nameTarget()} absorbs the deadly ray!`);
             await publish('It seems even stronger than before.');
         }
         return { heroDied: false };
@@ -498,16 +500,17 @@ async function finishMonsterRayHit(monster, hit, { state, displayName, finishMon
     if (hit.reintegrated) {
         if (visible) {
             await publish(rayHitMessage(displayName(), monster, { x, y, state }));
-            await publish(`${name} disintegrates.`);
-            await publish(`${name}'s body reintegrates before your eyes!`);
-            await publish(`${name} resurrects!`);
+            await publish(`${nameTarget()} disintegrates.`);
+            await publish(`${possessiveName(nameTarget())} body reintegrates before your eyes!`);
+            await publish(`${nameTarget()} resurrects!`);
         }
         return { heroDied: false };
     }
     if (hit.armorToDisintegrate) {
         if (visible) {
+            const owner = possessiveName(nameTarget());
             const armor = distantObjectName(hit.armorToDisintegrate, object => objectName(object, state), state);
-            await publish(`${possessiveName(name)} ${armor} is disintegrated!`);
+            await publish(`${owner} ${armor} is disintegrated!`);
         }
         await destroyObjectFromMonsterInventory(monster, hit.armorToDisintegrate, state);
         return wakeMonster(monster, { attacked: source.startsWith('hero-') });
@@ -516,7 +519,7 @@ async function finishMonsterRayHit(monster, hit, { state, displayName, finishMon
         if (hit.disintegrated && visible) {
             await publish(wornMonsterLifeSaver(monster)
                 ? rayHitMessage(displayName(), monster, { x, y, damage: hit.damage, state })
-                : `${name} is disintegrated!`);
+                : `${nameTarget()} is disintegrated!`);
         }
         if (hit.disintegrated)
             await destroyDisintegratedMonsterInventory(monster, state, random);
@@ -542,7 +545,7 @@ async function finishMonsterRayHit(monster, hit, { state, displayName, finishMon
             x, y, damage: hit.damage, state,
         }));
     if (hit.slept && state.u.ustuck === monster && !state.u.uswallow && !heroFormSticks(state)) {
-        await publish(`${possessiveName(name)} grip relaxes.`);
+        await publish(`${possessiveName(nameTarget())} grip relaxes.`);
         await releaseHeroFromMonster(monster, { state, publish });
     }
     if (!hit.sleepEffect)
