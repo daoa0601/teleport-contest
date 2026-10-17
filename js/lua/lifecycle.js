@@ -12,9 +12,11 @@ import { createObjectApi } from './objects.js';
 import { LuaState, LuaTable, luaType, luaTableToArray, luaVariablesFromTable, luaValueToJs, objectToLuaTable, } from './runtime.js';
 export class LuaGameState extends LuaState {
     objects;
-    constructor(bindings, objects) {
+    sid;
+    constructor(bindings, objects, sid) {
         super(bindings, objects.destroy);
         this.objects = objects;
+        this.sid = sid;
     }
 }
 const CALLBACK_NAMES = ['cmd_before', 'level_enter', 'level_leave', 'end_turn'];
@@ -63,6 +65,7 @@ function bindingsFor(gameState, lifecycle, objects, additionalBindings = {}) {
     };
 }
 export class LuaLifecycle {
+    stateCount = 0;
     core;
     themed;
     unavailableHooks;
@@ -77,8 +80,10 @@ export class LuaLifecycle {
     }
     createState(gameState, bindings = {}) {
         const objects = createObjectApi(gameState);
-        const state = new LuaGameState(bindingsFor(gameState, this, objects, bindings), objects);
-        state.execute(luaSource('nhlib.lua'), 'nhlib.lua');
+        // nhlL_newstate() numbers every state, including temporary states.
+        const state = new LuaGameState(bindingsFor(gameState, this, objects, bindings), objects, ++this.stateCount);
+        // nhl_loadlua() names each buffer with its parenthesized filename.
+        state.execute(luaSource('nhlib.lua'), '(nhlib.lua)');
         return state;
     }
     async startCore(gameState) {
@@ -89,7 +94,7 @@ export class LuaLifecycle {
         this.callbackCounts.clear();
         const savedVariables = gameState.nh_lua_variables || null;
         this.core = this.createState(gameState);
-        this.core.execute(luaSource('nhcore.lua'), 'nhcore.lua');
+        this.core.execute(luaSource('nhcore.lua'), '(nhcore.lua)');
         if (savedVariables) {
             this.core.setGlobal('nh_lua_variables', objectToLuaTable(savedVariables));
         }
@@ -157,7 +162,7 @@ export class LuaLifecycle {
         try {
             const source = luaSource(filename);
             beforeExecute?.(state);
-            await state.executeAsync(source, filename);
+            await state.executeAsync(source, `(${filename})`);
         }
         finally {
             await state.destroy();
@@ -167,7 +172,7 @@ export class LuaLifecycle {
         const state = this.createSpecialState(gameState);
         try {
             const source = luaSource(filename);
-            state.execute(source, filename);
+            state.execute(source, `(${filename})`);
             return luaValueToJs(state.getGlobal(globalName));
         }
         finally {
@@ -186,7 +191,7 @@ export class LuaLifecycle {
         try {
             const source = luaSource(filename);
             beforeExecute?.(state);
-            await state.executeAsync(source, filename);
+            await state.executeAsync(source, `(${filename})`);
             this.themed.set(dungeonNumber, { gameState, state });
             return state;
         }
