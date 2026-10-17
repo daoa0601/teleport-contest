@@ -316,7 +316,9 @@ export async function removeHeroArmor(object: GameObject, state: GameState = gam
     if (losingGloves) {
         if (object.otyp === GAUNTLETS_OF_POWER) learnObjectType(object.otyp, state);
         await reportHeroEncumbrance(state);
-        setSlipperyHands(0, state);
+        // C Gloves_off() cures only existing Glib; make_glib(0) without it
+        // would mark the status line.
+        if (state.u.glib) setSlipperyHands(0, state);
         await losePetrificationProtection(object, state, !state.context.mon_moving && !object.in_use);
         if (state.program_state?.gameover) return removed;
     }
