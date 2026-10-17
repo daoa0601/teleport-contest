@@ -306,7 +306,6 @@ export interface GameState {
     _startingEffectsApplied?: boolean;
     _priestPantheonIndex?: number;
     _characterPickerUsed?: boolean;
-    _optionsInitialized?: boolean;
     _runtimeVersionInfoInitialized?: boolean;
     _tributeBookstock?: boolean;
     _tutorialActive?: boolean;

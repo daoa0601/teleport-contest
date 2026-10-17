@@ -22,7 +22,8 @@ interface GeneratorOptions {
 }
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const INSTALL = path.join(ROOT, 'nethack-c/recorder/install/games/lib/nethackdir');
+const INSTALL = process.env.NETHACK_INSTALL
+    ?? path.join(ROOT, 'nethack-c/recorder/install/games/lib/nethackdir');
 const children = new Set<ChildProcess>();
 let stopping = false;
 

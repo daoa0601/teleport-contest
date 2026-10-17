@@ -1,10 +1,11 @@
 // C do_wear.c:canwearobj(). Decisions precede contact and slot changes.
 import { armorSimpleName, armorSlotFor } from './armor.js';
 import { heroFingerName, heroFootName, heroLegName } from './body_parts.js';
-import { P_SHORT_SWORD, P_SABER, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, W_ARMOR } from './const.js';
+import { TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, W_ARMOR } from './const.js';
 import { game } from './gstate.js';
 import { MONSTER_NAME, MONSTER_SIZE, monsterBreaksArmor, monsterHornCount, monsterIsCentaur, monsterIsSlithy, monsterSlipsArmor, monsterWrappingAllowed, } from './monster_data.js';
-import { BATTLE_AXE, MUMMY_WRAPPING, OBJECT_BIMANUAL, OBJECT_NAMES, OBJECT_SUBTYPE } from './object_data.js';
+import { BATTLE_AXE, MUMMY_WRAPPING, OBJECT_BIMANUAL, OBJECT_NAMES } from './object_data.js';
+import { isSword } from './weapon_type.js';
 import { makePlural, withIndefiniteArticle } from './object_grammar.js';
 import { isFlimsyObject } from './object_properties.js';
 import { heroHasNoHands, heroIsVerySmall, heroMonsterForm } from './polyself.js';
@@ -88,9 +89,5 @@ export function armorWearDecision(object, state = game) {
         case 'uarmc': break;
     }
     return refuse(null);
-}
-function isSword(object) {
-    const skill = OBJECT_SUBTYPE[object.otyp] ?? 0;
-    return object.oclass === 2 && skill >= P_SHORT_SWORD && skill <= P_SABER;
 }
 //# sourceMappingURL=armor_wear.js.map

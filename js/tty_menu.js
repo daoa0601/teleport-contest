@@ -278,12 +278,16 @@ async function process_menu_window(d, rows, layout, how, underlay) {
             const footer = layout.pageCount > 1 ? `(${page + 1} of ${layout.pageCount})` : '(end) ';
             d.setCursor(layout.boundary + 1 + footer.length, pageRows.length);
         }
-        const key = await nhgetch();
-        const letter = String.fromCharCode(key);
+        let key = await nhgetch();
+        let letter = String.fromCharCode(key);
         // PICK_ONE includes unique group shortcuts among explicit choices,
         // so a digit shortcut selects its group even after a count prefix.
         const explicit = pageRows.some(row => row.key === letter)
             || how === PICK_ONE && groups.has(letter);
+        if (!explicit) {
+            key = game.commandBindings.menuCommand(key);
+            letter = String.fromCharCode(key);
+        }
         // xwaitforspace ignores invalid input without resetting a count.
         if (!explicit && !groups.has(letter) && !'0123456789 \x1b\n\r><^|.,@\\-~:'.includes(letter))
             continue;

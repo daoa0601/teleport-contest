@@ -499,8 +499,9 @@ export function uInitMisc(handednessRoll) {
     u.umovement = 0; // moveloop_preamble() grants the first movement ration.
     if (g.urole?.intrinsicFast)
         grantIntrinsicProperty('fast', 'role', g);
-    // attrib.c race abilities retain infravision even in a body without it.
-    if (g.urace && ['dwarf', 'elf', 'gnome', 'orc'].includes(g.urace.name))
+    // adjabil() grants permanent racial infravision only to elves and orcs.
+    // Gnomes and dwarves instead rely on set_uasmon()'s current-body source.
+    if (g.urace && ['elf', 'orc'].includes(g.urace.name))
         grantIntrinsicProperty('infravision', 'race', g);
     // C attrib.c level-one role/race ability tables.  Keep these properties
     // on the hero rather than reconstructing them from identity during end
@@ -1347,7 +1348,8 @@ export async function uInitInventoryAttrs() {
         game.uarmh = game.uarmf = null;
     game.u.weaponSkills = null;
     game.u.skillRecord = [];
-    game.u.weapon_slots = 2;
+    // u_init_misc() starts with no slots; pauper_reinit() grants its two later.
+    game.u.weapon_slots = 0;
     game.spells = [];
     delete game._startingEffectsApplied;
     game.moves = 1;

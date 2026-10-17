@@ -118,7 +118,10 @@ export function showMapSpot(x: number, y: number, {
     if (!IS_FURNITURE(loc.typ)) {
         const trap = level.traps?.find(candidate => candidate.tx === x && candidate.ty === y);
         const engraving = level.engravings?.find(candidate => candidate.x === x && candidate.y === y);
-        if (trap && (trap.tseen || revealAllTraps)) map_trap(trap, true);
+        if (trap && (trap.tseen || revealAllTraps)) {
+            if (revealAllTraps) trap.tseen = true;
+            map_trap(trap, true);
+        }
         else if (engraving && !confused) map_engraving(engraving, true);
         else if (oldGlyph && ['object', 'trap'].includes(oldGlyph.kind)) {
             if (level.flags.hero_memory) loc.remembered_glyph = { ...oldGlyph };

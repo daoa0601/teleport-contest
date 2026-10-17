@@ -569,7 +569,6 @@ export interface MonsterMovement extends PetInventoryAction, MonsterAttackInitia
     sleeping?: boolean;
     eating?: boolean;
     retainedHidingPlace?: boolean;
-    swallowedAttackSkipped?: boolean;
     fleeingRelocation?: boolean;
     fleeingTeleportFailed?: boolean;
     tenguTeleportFailed?: boolean;
@@ -657,7 +656,6 @@ export interface MonsterTrapResumeOptions extends MonsterRandomOptions {
     publish?: PublishMonsterMessage;
     monsterName?: (monster: Monster) => string;
     describeMonster?: (monster: Monster) => string;
-    revealTrap?: (trap: Trap) => void;
     finishDeath?: MonsterDeathHandler;
 }
 

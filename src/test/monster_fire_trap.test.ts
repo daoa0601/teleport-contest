@@ -106,26 +106,31 @@ void test('a hallucinating hero sees an imaginary owner when a fire trap burns m
 });
 
 void test('armor that silently resists a fire trap does not change later hallucinated descriptions', async () => {
-    const { monster } = await freshMonsterFireTrap({ species: 'goblin' });
-    requirePlayingGame(game);
-    const armor = await knownObject(OBJECT_NAMES.indexOf('plate mail'));
-    await equipMonsterObject(monster, armor, W_ARM);
-    game.u.hallucinationTurns = 20;
-    const action = await triggerImmediateMonsterTrap(monster, game);
-    initRng(1n);
-    monsterName(monster);
-    const nextDescription = monsterName(monster);
-    initRng(1n);
-    const messages: string[] = [];
+    async function describeAfterFireTrap(wearArmor: boolean) {
+        const { monster } = await freshMonsterFireTrap({ species: 'goblin' });
+        requirePlayingGame(game);
+        const armor = wearArmor ? await knownObject(OBJECT_NAMES.indexOf('plate mail')) : null;
+        if (armor) await equipMonsterObject(monster, armor, W_ARM);
+        game.u.hallucinationTurns = 20;
+        const action = await triggerImmediateMonsterTrap(monster, game, { rollDice: () => 2 });
+        initRng(1n);
+        const messages: string[] = [];
 
-    await resumeDeferredMonsterTrap(action, game, {
-        random: quietFireRandom,
-        publish: async message => { messages.push(message); },
-    });
+        await resumeDeferredMonsterTrap(action, game, {
+            random: quietFireRandom,
+            publish: message => { messages.push(message); },
+        });
 
-    assert.equal(messages.length, 1);
-    assert.equal(armor.oeroded ?? 0, 0);
-    assert.equal(monsterName(monster), nextDescription);
+        return { messages, nextDescription: monsterName(monster), erosion: armor?.oeroded ?? 0 };
+    }
+
+    const unarmored = await describeAfterFireTrap(false);
+    const armored = await describeAfterFireTrap(true);
+
+    assert.equal(armored.messages.length, 1);
+    assert.equal(armored.messages[0], unarmored.messages[0]);
+    assert.equal(armored.erosion, 0);
+    assert.equal(armored.nextDescription, unarmored.nextDescription);
 });
 
 void test('worn fire resistance stops the flame but not an exploding potion',

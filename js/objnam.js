@@ -5,7 +5,7 @@ import { fruitFromIndex, fruitFromName } from './fruit.js';
 import { objectOwnershipPrefix, objectTypeKnown } from './shk.js';
 import { rn2, rnd } from './rng.js';
 import { mkobj, mksobj, rndClass } from './mklev.js';
-import { CORPSTAT_FEMALE, CORPSTAT_HISTORIC, PL_PSIZ, SPE_LIM } from './const.js';
+import { CORPSTAT_FEMALE, CORPSTAT_HISTORIC, PL_PSIZ, QBUFSZ, SPE_LIM } from './const.js';
 import { heroHandName } from './body_parts.js';
 import { plineWithContinuation } from './display.js';
 import { deleteObject } from './object_delete.js';
@@ -574,6 +574,57 @@ export function ownedObjectName(object, state = game, { capitalized = true, incl
     const name = `${prefix}${count}${quantity === 1 || object.otyp === CORPSE
         ? noun : pluralizeObjectNoun(object, noun)}`;
     return capitalized ? name.charAt(0).toUpperCase() + name.slice(1) : name;
+}
+// C ysimple_name()/Ysimple_name2(): ownership with only the known type name.
+export function ownedSimpleObjectName(object, state = game, { capitalized = true } = {}) {
+    return objectOwnershipPrefix(object, state, { capitalized }) + minimalObjectName(object, state);
+}
+// C safe_qbuf()/short_oname(): reserve the question before shortening names.
+export function ownedObjectQuestion(object, { prefix, suffix, fallback, capitalized }, state = game) {
+    const limit = QBUFSZ - 1 - prefix.length - suffix.length;
+    const question = (name) => `${prefix}${name}${suffix}`;
+    if (fallback.length > limit)
+        return question(fallback).slice(0, QBUFSZ - 1);
+    const describe = (item, nameState) => ownedObjectName(item, nameState, { capitalized });
+    let name = describe(object, state);
+    if (name.length <= limit)
+        return question(name);
+    const callName = state._objectCallNames?.[object.otyp];
+    const personalName = object.oextra?.oname || object.oname;
+    const shortCallState = callName && callName.length >= 12
+        ? { ...state, _objectCallNames: {
+                ...state._objectCallNames, [object.otyp]: `${callName.slice(0, 8)}...`,
+            } } : state;
+    const shortNamedObject = personalName && personalName.length >= 12
+        ? { ...object, oextra: { ...object.oextra, oname: `${personalName.slice(0, 8)}...` } }
+        : object;
+    if (shortCallState !== state) {
+        name = describe(object, shortCallState);
+        if (name.length <= limit)
+            return question(name);
+    }
+    if (shortNamedObject !== object) {
+        name = describe(shortNamedObject, state);
+        if (name.length <= limit)
+            return question(name);
+    }
+    const shortenBoth = shortCallState !== state && shortNamedObject !== object;
+    if (shortenBoth) {
+        name = describe(shortNamedObject, shortCallState);
+        if (name.length <= limit)
+            return question(name);
+    }
+    // Native retains shortened names during attribute removal only after
+    // the combined attempt. Each separate attempt restores the full names.
+    const nameState = shortenBoth ? shortCallState : state;
+    const plainObject = { ...(shortenBoth ? shortNamedObject : object),
+        bknown: false, rknown: false, greased: false,
+        oeroded: 0, oeroded2: 0, orotten: false, odiluted: false, norevive: false,
+    };
+    name = describe(plainObject, nameState);
+    if (name.length > limit)
+        name = ownedSimpleObjectName(plainObject, nameState, { capitalized });
+    return question(name.length <= limit ? name : fallback);
 }
 // Native fruit labels imported from bones can already be plural. xname
 // singularizes those labels before pluralizing a multi-object stack.

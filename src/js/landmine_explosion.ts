@@ -19,7 +19,7 @@ import { fillPitWithBoulderAt } from './pit_fill.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { rn2, rnd } from './rng.js';
 import { scatterFloorObjects } from './scatter.js';
-import { waterDamageChain } from './trap.js';
+import { seeTrap, waterDamageChain } from './trap.js';
 import { fireDamageChain } from './fire_damage.js';
 import { vision_note_blocker_change } from './vision.js';
 import { unearthFloorObjectsAt } from './buried_object.js';
@@ -154,10 +154,9 @@ export async function explodeLandMine(
 
     survivingTrap.ttyp = PIT;
     survivingTrap.madeby_u = false;
-    survivingTrap.tseen = true;
+    seeTrap(survivingTrap, state);
     await fillPitWithBoulderAt(x, y, state, { publish });
     vision_note_blocker_change(x, y);
-    newsym(x, y);
     return state.level?.traps?.includes(survivingTrap)
         ? survivingTrap : null;
 }

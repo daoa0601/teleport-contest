@@ -4,15 +4,6 @@ import { HOLE, PIT } from './const.js';
 import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
 import { recordGameLogEvent } from './gamelog.js';
 import { clearPitConnections } from './pit_connections.js';
-import { newsym } from './display.js';
-// C trap.c:seetrap(). Learning a trap also redraws whatever covers it.
-export function revealTrap(trap, state = game) {
-    if (trap.tseen)
-        return;
-    trap.tseen = true;
-    if (state === game)
-        newsym(trap.tx, trap.ty);
-}
 export function deleteTrap(trap, state = game) {
     const level = requireGameLevel(state);
     clearPitConnections(trap, state);

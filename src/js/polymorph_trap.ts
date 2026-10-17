@@ -17,7 +17,7 @@ import { changeMonsterForm } from './monster_polymorph.js';
 import { monsterResistsEffect } from './monster_resistance.js';
 import { IRON_SHOES, KICKING_BOOTS } from './object_data.js';
 import { rn2 } from './rng.js';
-import { monsterTrapVisibility } from './trap.js';
+import { monsterTrapVisibility, seeTrap } from './trap.js';
 
 interface PolymorphTrapBase {
     kind: 'polymorph-trap';
@@ -47,7 +47,6 @@ export type MonsterPolymorphTrapEvent =
 
 interface PolymorphTrapOptions {
     publish?: MessagePublisher;
-    revealTrap?: (trap: Trap) => void;
     finishDeath?: MonsterDeathHandler;
     state?: GameState;
 }
@@ -119,7 +118,6 @@ export async function finishMonsterPolymorphTrap(
     event: MonsterPolymorphTrapEvent | null,
     {
         publish = async () => {},
-        revealTrap = () => {},
         finishDeath,
         state = game,
     }: PolymorphTrapOptions = {},
@@ -140,8 +138,7 @@ export async function finishMonsterPolymorphTrap(
     event.killed = !!change && !change.selfTouch.survived;
 
     if (event.inSight) {
-        event.trap.tseen = true;
-        revealTrap(event.trap);
+        seeTrap(event.trap, state);
     }
     event.finished = true;
     return event;

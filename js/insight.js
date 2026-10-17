@@ -1,5 +1,6 @@
 import { formatFeltMessage } from './hero_speech.js';
 import { currency } from './currency.js';
+import { recorderLocalHour } from './calendar.js';
 // insight.js — Basic enlightenment / attributes command.
 // C ref: insight.c — doattributes(), enlightenment().
 import { heroIsHallucinating } from './senses.js';
@@ -368,10 +369,12 @@ function paginateAttributeLines(lines) {
     const pages = [];
     for (let index = 0; index < count; index++) {
         const pageLines = lines.slice(index * contentRows, (index + 1) * contentRows);
-        pageLines.push(` (${index + 1} of ${count})`);
+        // tty numbers the pages only when the window needs more than one.
+        const marker = count > 1 ? ` (${index + 1} of ${count})` : ' (end)';
+        pageLines.push(marker);
         pages.push({
             lines: pageLines,
-            cursor: [9, pageLines.length - 1],
+            cursor: [marker.length + (count > 1 ? 0 : 1), pageLines.length - 1],
         });
     }
     return pages;
@@ -426,6 +429,11 @@ function basicEnlightenmentLines(roleName) {
             ? 'Elemental ' : ''}${endgameLevelName(u.uz)}.`
         : `  You are in ${displayedDungeonName}, on level ${displayedDepth}.`;
     lines.push(`  You are ${align}, on a mission for ${currentGod}`, `  who is opposed by ${opponents[0]} and ${opponents[1]}.`, `  You are ${handednessDescription()}.`, location, entered);
+    const hour = recorderLocalHour(game.datetime);
+    if (hour === 0)
+        lines.push('  It is the midnight hour.');
+    else if (hour < 6 || hour > 21)
+        lines.push('  It is nighttime.');
     if (game.flags?.moonphase === 4)
         lines.push('  There is a full moon in effect.');
     else if (game.flags?.moonphase === 0)

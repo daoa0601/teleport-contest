@@ -8,7 +8,7 @@ import {
     A_CON, SICK_NONVOMITABLE, SICK_VOMITABLE,
 } from '../js/const.js';
 import { requireGameDisplay, game } from '../js/gstate.js';
-import { flushPendingTopline, plineWithContinuation } from '../js/display.js';
+import { flush_screen, flushPendingTopline, plineWithContinuation } from '../js/display.js';
 import { resetInputState } from '../js/input.js';
 import { runExtendedCommand } from './support/commands.js';
 import { loadScoreRecords } from '../js/score_records.js';
@@ -16,6 +16,7 @@ import { initRng } from '../js/rng.js';
 import { useUnicornHorn } from '../js/unicorn_horn.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { startHeroSickness, startHeroVomiting, vomitHero } from '../js/hero_illness.js';
+import { statusConditions } from '../js/status_conditions.js';
 import { CHAIN_MAIL, LONG_SWORD, UNICORN_HORN } from '../js/object_data.js';
 import {
     addInventoryObject, addInventoryWeapon,
@@ -58,6 +59,47 @@ void test('fatal illness worsens and reaches the normal death path', async () =>
     assert.equal(deaths[0]?.killer, 'rotted goblin corpse');
     assert.equal(game.u.sickTurns, 0);
 });
+
+// C timeout.c:nh_timeout(): Sick reaches zero without marking the status
+// line, so the fatal message shows that change only when an earlier change
+// already requested a refresh. done_timeout() marks Sick again for done().
+for (const pendingRefresh of [false, true]) {
+    void test(`terminal illness ${pendingRefresh ? 'leaves' : 'keeps'} TermIll on screen at its fatal message${pendingRefresh ? ' after a pending refresh' : ''}`, async () => {
+        freshHeroConditionRoom();
+        requireFixtureGame(game);
+        const input = resetInputState();
+        const fatalStatus: string[] = [];
+        input.display = {
+            async readKey() {
+                const rows = requireGameDisplay(game).grid.map(row => row.map(cell => cell.ch).join(''));
+                if (rows[0]?.includes('You die from your illness.')) fatalStatus.push(rows[23] ?? '');
+                return ' '.charCodeAt(0);
+            },
+        };
+        await startHeroSickness({ state: game, turns: 1, cause: 'illness', type: SICK_NONVOMITABLE });
+        await flushPendingTopline();
+        await flush_screen(1);
+        if (pendingRefresh) {
+            game.u.uhp -= 1;
+            game.context.botl = true;
+        }
+        let sickAtDeath = false;
+
+        await advanceHeroSickness({
+            state: game,
+            die: async () => {
+                await flushPendingTopline();
+                sickAtDeath = statusConditions(game).some(text => text[0] === 'TermIll');
+                return true;
+            },
+        });
+
+        assert.equal(fatalStatus.length, 1);
+        if (pendingRefresh) assert.doesNotMatch(fatalStatus[0] ?? '', /TermIll/);
+        else assert.match(fatalStatus[0] ?? '', /TermIll/);
+        assert.equal(sickAtDeath, true);
+    });
+}
 
 void test('the Constitution recovery roll can cure food poisoning', async () => {
     freshHeroConditionRoom();

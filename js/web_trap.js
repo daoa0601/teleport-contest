@@ -2,6 +2,7 @@
 import { publishHeardMessage } from './hero_speech.js';
 import { game } from './gstate.js';
 import { canSeeMonster, newsym, plineWithContinuation } from './display.js';
+import { seeTrap } from './trap.js';
 import { deleteTrap } from './trap_lifecycle.js';
 import { heroSpecies } from './hero_species.js';
 import { monsterName } from './monster_name.js';
@@ -47,7 +48,7 @@ export async function maybeDestroyWeb(target, trap, { state = game, message = tr
         const verb = hero ? action : action === 'flow through' ? 'flows through' : `${action}s`;
         await publish(`${subject} ${verb} ${owner} spider web${destroy ? '!' : '.'}`);
         if (!hero && !destroy)
-            trap.tseen = true;
+            seeTrap(trap, state);
     }
     if (destroy) {
         deleteTrap(trap, state);
@@ -80,7 +81,7 @@ export async function finishMonsterWebTrap(monster, trap, { state = game, publis
         }
         else {
             await publish(`${name} is caught in ${owner} spider web.`);
-            trap.tseen = true;
+            seeTrap(trap, state);
         }
     }
     monster.mtrapped = tear ? 0 : 1;

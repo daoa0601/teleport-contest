@@ -371,12 +371,16 @@ export async function advanceHeroSickness({
     hero.sickTurns = Math.max(0, (hero.sickTurns ?? 0) - 1);
     if (hero.sickTurns > 0)
         return { active: true, died: false, turns: hero.sickTurns };
+    // nh_timeout() has already decremented Sick to zero without marking the
+    // status line; only an earlier pending refresh shows the change.
+    hero.sick = false;
 
     const canRecover = !((hero.sickType ?? 0) & SICK_NONVOMITABLE)
         && random(100) < currentAttribute(A_CON, state);
     if (canRecover) {
         await publish('You have recovered from your illness.');
-        cureHeroSickness(state);
+        hero.sickType = 0;
+        delete hero.sickCause;
         await exerciseAttribute(A_CON, false, state);
         const change = adjustAttribute(A_CON, -1, state);
         if (change.changed && state._moveloopStarted) await reportHeroEncumbrance(state);
@@ -391,6 +395,8 @@ export async function advanceHeroSickness({
     // nh_timeout() resolves personal and unique monster names when the
     // delayed illness becomes fatal, before formatkiller() adds an article.
     if (unique && !personal) killer = definiteName(killer);
+    // done_timeout() marks Sick with I_SPECIAL while done() runs.
+    hero.sick = true;
     const died = await die({
         killer,
         deathCause: `poisoned by ${personal || unique || killer === '#wizintrinsic'

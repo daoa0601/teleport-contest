@@ -679,7 +679,7 @@ export async function finishDeferredMonsterMiscItem(action, state = requireIniti
     if (misc.kind === 'polymorph-trap') {
         const trapVisible = cansee(misc.trap.tx, misc.trap.ty);
         if (cansee(monster.mx, monster.my) || trapVisible)
-            misc.trap.tseen = true;
+            seeTrap(misc.trap, state);
         if (canSeeMonster(monster) || trapVisible) {
             const subject = canonicalMonsterName(monster, { state, capitalized: true, augmentIt: true });
             const verb = verbForSubject(subject, monsterLocomotion(monster.mnum, 'jump'));
@@ -3963,6 +3963,7 @@ async function triggerMonsterTrap(monster, state, movement, random, rollDice, ro
     }
     if (trap.ttyp === ANTI_MAGIC) {
         const effect = applyMonsterAntiMagicTrap(monster, {
+            trap, state,
             rollDice: (count, sides) => {
                 const result = rollDice(count, sides);
                 calls.push(`d(${count},${sides})`);
@@ -3975,9 +3976,6 @@ async function triggerMonsterTrap(monster, state, movement, random, rollDice, ro
             },
         });
         const { inSight, seeSquare } = monsterTrapVisibility(monster, state);
-        const visibleEffect = effect.resisted || effect.energyDrain > 0;
-        if (inSight && visibleEffect)
-            trap.tseen = true;
         const event = {
             trap,
             ...effect,
@@ -6321,10 +6319,8 @@ async function beginStandardMonsterAttack(monster, movement, state, random, roll
         !hasAttacks ||
         (Upolyd(state.u) ? state.u.mh : state.u.uhp) <= 0)
         return;
-    if (state.u.uswallow && state.u.ustuck !== monster) {
-        movement.swallowedAttackSkipped = true;
-        return;
-    }
+    // mattacku() interrupts the hero before refusing a monster other than
+    // the engulfer.
     const attack = await beginMonsterHeroAttack(monster, state, random, rollOne, rollDice, calls);
     attachMonsterAttack(movement, attack);
     if (attack.heroAttackSequence?.offensive)
@@ -6496,7 +6492,7 @@ async function continueAfterMonsterTrap(action, state, random, rollDice, rollOne
     await completeMovedMonsterAction(action.monster, action.movement, state, random, rollDice, rollOne, calls, action.dochugContext, { trapAlreadyHandled: true });
     return action;
 }
-export async function resumeDeferredMonsterTrap(action, state, { random = rn2, rollDice = d, rollOne = rnd, publish = plineWithContinuation, monsterName, describeMonster, revealTrap, finishDeath = (monster, options) => finishEnvironmentalMonsterDeath(monster, state, options), } = {}) {
+export async function resumeDeferredMonsterTrap(action, state, { random = rn2, rollDice = d, rollOne = rnd, publish = plineWithContinuation, monsterName, describeMonster, finishDeath = (monster, options) => finishEnvironmentalMonsterDeath(monster, state, options), } = {}) {
     const movement = action?.movement;
     if (movement?.escapingTrap) {
         await tryMonsterTrapEscape(action.monster, state, {
@@ -6618,6 +6614,7 @@ export async function resumeDeferredMonsterTrap(action, state, { random = rn2, r
             break;
         case 'sleep-gas':
             await finishMonsterSleepGasTrap(action.monster, event, {
+                state,
                 publish,
                 ...(describeMonster ? { describeMonster } : {}),
             });
@@ -6629,16 +6626,15 @@ export async function resumeDeferredMonsterTrap(action, state, { random = rn2, r
             break;
         case 'vibrating-square':
             await finishMonsterVibratingSquare(action.monster, event, {
+                state,
                 publish,
                 ...(describeMonster ? { describeMonster } : {}),
-                ...(revealTrap ? { revealTrap } : {}),
             });
             break;
         case 'polymorph-trap':
             await finishMonsterPolymorphTrap(event, {
                 finishDeath,
                 publish,
-                ...(revealTrap ? { revealTrap } : {}),
                 state,
             });
             break;

@@ -43,7 +43,7 @@ import { placeHeroAtRandomArrival } from './level_change.js';
 import { monsterName, monsterSpellDeathReason, monsterSubjectPronoun, possessiveName, quietMonsterName } from './monster_name.js';
 import { touchHeroWithDeath } from './monster_death_touch.js';
 import { resolveMonsterWeaponContact } from './monster_weapon_contact.js';
-import { finishMonsterAttackDeath, waitForCurrentMonsterMore } from './monster_attack_death.js';
+import { finishHeroDeathAfterMonsterMessage, finishMonsterAttackDeath, waitForCurrentMonsterMore } from './monster_attack_death.js';
 import { monsterMissMessage } from './monster_miss.js';
 import { monsterIsAnimal } from './monster_data.js';
 import { monsterCanCarryObject } from './monster_carry.js';
@@ -163,6 +163,7 @@ import { hasIntrinsicProperty, hasPermanentIntrinsicProperty, propertyIsActive, 
 import { heroIsUnconscious, putHeroToSleep } from './hero_sleep.js';
 import { resolveMonsterContactEffect } from './monster_contact_effects.js';
 import { setSlipperyHands } from './towel.js';
+import { heroHasSlipperyHands, slipFromSlipperyHands } from './slippery_hands.js';
 import { restartMonsterShapechanging } from './monster_polymorph.js';
 import { msummon } from './minion.js';
 import { captureRunmodeDelay } from './runmode.js';
@@ -949,6 +950,8 @@ async function finishInitialTurnMaintenanceAfterMonsterDistress(capacity, deferA
         game.context.time_botl = true;
     game._heroActionSeq = game.moves * 8;
     await currentLuaLifecycle().callCore(game, 'moveloop_turn');
+    if (heroHasSlipperyHands(game))
+        await slipFromSlipperyHands(game);
     // nh_timeout() precedes regeneration and exerchk() in the C loop.  Keep
     // the first timed impairment live rather than treating its setup rolls as
     // disposable: bear-trap leg damage lowers Dexterity until this countdown
@@ -1425,6 +1428,9 @@ async function advanceWorldTurn() {
         preservePhysicalTopline: true,
         retainedTopline: delayedAction?._runmodeRetainedTopline ?? null,
     });
+    await finishDelayedArmorAction();
+    if (game.program_state.gameover)
+        return;
     // Native find_ac() follows the elapsed-turn loop.  setworn() is already
     // live for effects, but the first donning cadence frame still shows the
     // prior AC; the next automatic core observes the recomputed value.
@@ -1433,6 +1439,59 @@ async function advanceWorldTurn() {
         game._armorClassDirty = false;
         delete game._armorClassDirtyAfterDelayedFrame;
     }
+}
+// C allmain.c:moveloop_core() calls unmul() at the end of the world turn
+// which finishes negative multi, even if burden still prevents hero movement.
+async function finishDelayedArmorAction() {
+    const g = requireInitializedGame();
+    const delayed = g._delayedAction;
+    if (!delayed?.ready || delayed.kind === 'steal')
+        return;
+    g._delayedAction = null;
+    if (delayed.kind === 'wear') {
+        // unmul() prints nomovemsg before Armor_on() and find_ac().
+        // An earlier attack can hold that message at a pager while AC
+        // still belongs to the turn before the dressing finished.
+        if (delayed.finishMessage)
+            await plineWithContinuation(delayed.finishMessage);
+        const effectMessages = await applyArmorOnEffects(delayed.object, g);
+        delayed.object.known = true;
+        const discoverArmorType = armorOnIdentifiesType(delayed.object, effectMessages)
+            && !g._knownObjectTypes?.has(delayed.object.otyp);
+        const deferDiscoveryUntilAfterMessage = delayed.object.otyp === 166;
+        if (discoverArmorType && !deferDiscoveryUntilAfterMessage) {
+            recordObjectKnowledge(delayed.object.otyp);
+            await exerciseAttribute(A_WIS, true);
+        }
+        const completionMessage = effectMessages.filter(Boolean).join('  ');
+        if (completionMessage)
+            await plineWithContinuation(completionMessage);
+        // If an actor line already owns tty, afternmv itself is resumed
+        // only after that pager is dismissed.  Attribute the makeknown()
+        // Wisdom credit to the resumed input boundary, not the capture
+        // which displayed the actor pager.
+        if (discoverArmorType && deferDiscoveryUntilAfterMessage) {
+            recordObjectKnowledge(delayed.object.otyp);
+            await exerciseAttribute(A_WIS, true);
+        }
+    }
+    else if (delayed.kind === 'remove') {
+        // C allmain.c:unmul() emits nomovemsg before calling afternmv.
+        // If an earlier monster-combat line already owns tty, this await
+        // suspends at --More-- with the armor still worn; Armor_off()
+        // commits only after the continuation is acknowledged.
+        if (delayed.finishMessage)
+            await plineWithContinuation(delayed.finishMessage);
+        await finishArmorRemoval(delayed.object, { silent: true });
+    }
+    g._delayedAction = null;
+    // C moveloop_core() completes travel caused by unmul() before find_ac().
+    // Arrival pagers retain the AC from before the armor was removed.
+    await finishScheduledLevelChange();
+    if (g.program_state.gameover)
+        return;
+    g._armorClassDirty = true;
+    delete g._armorClassDirtyAfterDelayedFrame;
 }
 async function settleHeroLiquidAfterAction() {
     const game = requireInitializedGame();
@@ -2214,13 +2273,6 @@ function resolveDeferredHeroGeyser(action, heroAttack) {
     applyHeroSpellDamage(heroAttack, appliedDamage, game);
     heroAttack.deferredGeyserSpell = false;
 }
-async function finishHeroDeathAfterMonsterMessage(options) {
-    // losehp() enters urgent_pline(), whose map flush precedes paging the
-    // previous message. Its pending HP request must reach that pager.
-    await flush_screen(1);
-    await waitForCurrentMonsterMore();
-    return finishHeroDeath(options);
-}
 async function resumeTrappedMonster(action) {
     const game = requireInitializedGame();
     if (!action.movement?.escapingTrap)
@@ -2901,7 +2953,6 @@ async function presentMonsterPostMove(action, game) {
             publish: plineWithContinuation,
             monsterName: quietMonsterName,
             describeMonster: visibleMonsterSubject,
-            revealTrap: (trap) => newsym(trap.tx, trap.ty),
         });
         if ('heroDied' in event && event.heroDied)
             return true;
@@ -3472,64 +3523,7 @@ export async function moveloop_core() {
         findArmorClass(g);
         g._armorClassDirty = false;
     }
-    // C allmain.c increments negative `multi` after the complete monster and
-    // global maintenance round, then invokes do_wear.c's afternmv callback.
-    // Keep this separate from counted occupations: no extra hero action is
-    // taken when the delayed armor effect and nomovemsg are committed.
-    if (g._delayedAction?.ready) {
-        const delayed = g._delayedAction;
-        g._delayedAction = null;
-        if (delayed.kind === 'wear') {
-            // unmul() prints nomovemsg before Armor_on() and find_ac().
-            // An earlier attack can hold that message at a pager while AC
-            // still belongs to the turn before the dressing finished.
-            if (delayed.finishMessage)
-                await plineWithContinuation(delayed.finishMessage);
-            const effectMessages = await applyArmorOnEffects(delayed.object, g);
-            delayed.object.known = true;
-            const discoverArmorType = armorOnIdentifiesType(delayed.object, effectMessages)
-                && !g._knownObjectTypes?.has(delayed.object.otyp);
-            const deferDiscoveryUntilAfterMessage = delayed.object.otyp === 166;
-            if (discoverArmorType && !deferDiscoveryUntilAfterMessage) {
-                recordObjectKnowledge(delayed.object.otyp);
-                await exerciseAttribute(A_WIS, true);
-            }
-            const completionMessage = effectMessages.filter(Boolean).join('  ');
-            if (completionMessage)
-                await plineWithContinuation(completionMessage);
-            // If an actor line already owns tty, afternmv itself is resumed
-            // only after that pager is dismissed.  Attribute the makeknown()
-            // Wisdom credit to the resumed input boundary, not the capture
-            // which displayed the actor pager.
-            if (discoverArmorType && deferDiscoveryUntilAfterMessage) {
-                recordObjectKnowledge(delayed.object.otyp);
-                await exerciseAttribute(A_WIS, true);
-            }
-            findArmorClass(g);
-            g._armorClassDirty = false;
-            delete g._armorClassDirtyAfterDelayedFrame;
-        }
-        else if (delayed.kind === 'remove') {
-            // C allmain.c:unmul() emits nomovemsg before calling afternmv.
-            // If an earlier monster-combat line already owns tty, this await
-            // suspends at --More-- with the armor still worn; Armor_off()
-            // commits only after the continuation is acknowledged.
-            if (delayed.finishMessage)
-                await plineWithContinuation(delayed.finishMessage);
-            await finishArmorRemoval(delayed.object, { silent: true });
-        }
-        g._delayedAction = null;
-        // C moveloop_core() completes travel caused by unmul() before find_ac().
-        // Arrival pagers retain the AC from before the armor was removed.
-        await finishScheduledLevelChange();
-        if (g.program_state.gameover)
-            return;
-        if (delayed.kind === 'remove') {
-            findArmorClass(g);
-            g._armorClassDirty = false;
-        }
-    }
-    else if (g._delayedAction && g._delayedAction.kind !== 'steal') {
+    if (g._delayedAction && g._delayedAction.kind !== 'steal') {
         // A delayed action spends movement without reading another command.
         g.u.umoved = false;
         g.context.move = 1;

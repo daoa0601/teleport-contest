@@ -1,9 +1,9 @@
 // C detect.c:unconstrain_map(), browse_map(), map_monst(), map_redisplay().
 import { COLNO, ROWNO, TER_MAP, TER_MON, TER_OBJ, TER_TRP, TRAP_EXPLANATIONS } from './const.js';
 import { farlookLocationDescription } from './cmd.js';
-import { cls, docrt, flushPendingTopline, flush_screen, glyphAt, show_glyph_cell, transientMonsterGlyph, } from './display.js';
+import { cls, docrt, flush_screen, glyphAt, plineWithContinuation, show_glyph_cell, transientMonsterGlyph, } from './display.js';
 import { game } from './gstate.js';
-import { selectMapPosition, showGetposTip } from './getpos.js';
+import { selectMapPosition, showGetposInstructions, showGetposTip } from './getpos.js';
 import { MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
 import { objectName } from './objnam.js';
 import { objectClassForType } from './object_knowledge.js';
@@ -86,18 +86,19 @@ async function detectionDescription(x, y, terrainMode, objects, state) {
     return farlookLocationDescription(x, y);
 }
 export async function browseDetectionMap(terrainMode, goal, { objects = null, state = game, } = {}) {
-    await flushPendingTopline();
     const hadTip = await showGetposTip(state);
     const savedAutoDescribe = state.iflags.autodescribe;
     const savedTerrainMode = state.iflags.terrainmode;
     state.iflags.autodescribe = true;
     state.iflags.terrainmode = terrainMode;
     try {
-        const hint = state.flags.verbose ? "(For instructions type a '?')" : '';
+        await showGetposInstructions(state);
+        if (hadTip)
+            await plineWithContinuation(`Move cursor to ${goal}:`);
         await selectMapPosition({
             start: { x: state.u.ux, y: state.u.uy },
-            prompt: hadTip ? `${hint}${hint ? '  ' : ''}Move cursor to ${goal}:` : hint,
-            goal, force: false, preserveMap: true,
+            prompt: state._pending_message,
+            goal, force: false,
             describe: (x, y) => detectionDescription(x, y, terrainMode, objects, state),
         });
     }

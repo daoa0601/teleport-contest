@@ -2,6 +2,7 @@
 // C refs: polyself.c polyself(), polymon(), break_armor(), drop_weapon().
 
 import { formatFeltMessage } from './hero_speech.js';
+import { monsterEmitsLight } from './vision.js';
 import { weaponDescription } from './weapon_description.js';
 import { P_SHORT_SWORD, P_SABER } from './const.js';
 import { makePlural } from './object_grammar.js';
@@ -146,6 +147,8 @@ const MUMMY_WRAPPING = 138;
 const ALCHEMY_SMOCK = 144;
 const PM_HUMAN = MONSTER_NAME.indexOf('human');
 const PM_WOLF = MONSTER_NAME.indexOf('wolf');
+const PM_URUK_HAI = MONSTER_NAME.indexOf('Uruk-hai');
+const PM_ORC_CAPTAIN = MONSTER_NAME.indexOf('orc-captain');
 const PM_FOG_CLOUD = MONSTER_NAME.indexOf('fog cloud');
 const PM_VAMPIRE_BAT = MONSTER_NAME.indexOf('vampire bat');
 const PM_VAMPIRE_LEADER = MONSTER_NAME.indexOf('vampire leader');
@@ -333,7 +336,6 @@ async function restoreHumanBody(
         u.m_ap_type = M_AP_NOTHING;
         u.mappearance = 0;
     }
-    state.vision_full_recalc = 1;
     state._encumbranceLevel = nearCapacity(state);
     u._encumbrance = encumbranceLabel(state._encumbranceLevel);
     newsym(u.ux, u.uy);
@@ -390,6 +392,9 @@ export async function returnHeroToHumanForm(state = game, {
         }
     }
 
+    // rehumanize() deletes the body's light source before polyman() prints.
+    // Its pending vision refresh must reach the announcement's map flush.
+    if (monsterEmitsLight(state.u.umonnum)) state.vision_full_recalc = 1;
     const race = state.urace.adj;
     const restored = await becomeHuman(`You return to ${race} form!`, state, publish, die);
     if (restored.died) return restored;
@@ -595,7 +600,7 @@ export function formMaximumStrength(mnum: number) {
     const flags = MONSTER_FLAGS2[mnum] ?? 0;
     let race;
     if (flags & M2_ORC) {
-        if (MONSTER_NAME[mnum] !== 'Uruk-hai' && MONSTER_NAME[mnum] !== 'orc captain')
+        if (mnum !== PM_URUK_HAI && mnum !== PM_ORC_CAPTAIN)
             race = races.find(candidate => candidate.name === 'orc');
     } else if (flags & M2_ELF) {
         race = races.find(candidate => candidate.name === 'elf');

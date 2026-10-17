@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { map_invisible, newsym } from '../js/display.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { nameToMonster } from '../js/mondata.js';
@@ -42,7 +43,8 @@ void test('#wizsmell sniffs an unseen monster and removes a stale invisible mark
     requirePlayingGame(game);
     const dog = await createMonsterAt('little dog', 11, 10);
     dog.minvis = true;
-    level.requireAt(12, 10).remembered_glyph = { kind: 'invisible', ch: 'I', color: 8 };
+    newsym(11, 10);
+    map_invisible(12, 10);
     const messages: string[] = [];
     const input = resetInputState();
     input.beforeRead = () => { messages.push(game._pending_message); };

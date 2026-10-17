@@ -47,7 +47,7 @@ function detectionRoom(options: ObjectRoomOptions = {}) {
     return freshObjectRoom({ flags: { tips: false, verbose: true }, ...options });
 }
 
-function dismissView() { pushKeys(' .'); }
+function dismissView() { pushKeys('.'); }
 
 void test('no traps produce strange feeling without clearing stale object memory or consuming the source', async () => {
     const level = detectionRoom();
@@ -185,7 +185,7 @@ void test('cursed detection shows fake gold while leaving a floor trap concealed
     assert.equal(chest.tknown, true);
     assert.equal(chest.dknown, true);
     assert.equal((level.objects[30]?.[10] || []).length, 0);
-    gate.feed(' .');
+    gate.feed('.');
     await effect;
     assert.equal(rememberedObject(level, 30, 10).otyp, GOLD_PIECE);
 });
@@ -225,7 +225,7 @@ void test('trapped doors are revealed but a secret door wall flag is not a trap'
     doorSquare.doormask = D_TRAPPED | D_CLOSED;
     level.doors.push({ x: 32, y: 10 });
     level.doorindex = 2;
-    pushKeys('  .');
+    pushKeys(' .');
     await detectTraps({ cursed: false });
 
     assert.equal(rememberedTrap(level, 32, 10).trapType, TRAPPED_DOOR);
@@ -247,8 +247,6 @@ void test('trap browsing suspends underwater view until input finishes then rest
     await gate.waitUntilBlocked();
     assert.equal(game.u.uinwater, 0);
     assert.equal(visibleTrap(30, 10).trapType, PIT);
-    gate.feed(' ');
-    await gate.waitUntilBlocked();
     assert.match(game._pending_message, /For instructions/);
     assert.equal(game.u.uinwater, 0);
     gate.feed('.');

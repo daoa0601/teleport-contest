@@ -170,7 +170,7 @@ async function normalThroneEffect(effect, x, y, { chooseTeleportDestination }) {
                 changeHeroLuck(1);
             }
             else {
-                await makeWish({ announce: game.flags?.verbose !== false });
+                await makeWish();
             }
             break;
         case 7:
@@ -239,7 +239,7 @@ async function specialThroneEffect(effect, x, y, { gotoLevel }) {
         case 2:
         case 3:
         case 4:
-            await makeWish({ announce: game.flags?.verbose !== false });
+            await makeWish();
             removeThrone(x, y);
             await plineWithContinuation('The throne disintegrates, having spent its power.');
             break;

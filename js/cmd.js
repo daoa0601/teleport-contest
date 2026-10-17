@@ -3425,7 +3425,7 @@ async function djinniFromLamp(object) {
     switch (chance) {
         case 0: {
             await plineWithContinuation('"I am in your debt.  I will grant one wish!"');
-            await grantMonsterWish(djinni, { announce: true });
+            await grantMonsterWish(djinni);
             break;
         }
         case 1:

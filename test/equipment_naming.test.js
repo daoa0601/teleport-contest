@@ -123,7 +123,8 @@ void test('slippery hands annotate worn gloves', async () => {
     const gloves = await addInventoryObject(LEATHER_GLOVES);
     wearHeroArmor(gloves);
     setSlipperyHands(12);
-    assert.match(inventoryItemDescription(gloves), /\(being worn; slippery\)$/);
+    // Native strncat() appends past the parenthesis it meant to replace.
+    assert.match(inventoryItemDescription(gloves), /\(being worn\); slippery\)$/);
 });
 void test('armor being put on is described as being donned', async () => {
     freshObjectRoom();

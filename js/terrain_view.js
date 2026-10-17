@@ -11,6 +11,7 @@ import { heroIsHallucinating } from './senses.js';
 import { terrainCoversObjectsAt } from './terrain_properties.js';
 import { CLR_BRIGHT_GREEN, CLR_GRAY, NO_COLOR } from './terminal.js';
 import { cansee } from './vision.js';
+import { showTerrainCodeLegend, showTerrainCodes } from './wizard_terrain.js';
 import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu, } from './tty_menu.js';
 export async function terrainCommand(describe) {
     recordMappedOverviewState();
@@ -20,6 +21,8 @@ export async function terrainCommand(describe) {
         'known map without monsters and objects', 'known map without monsters'];
     if (game.flags.explore || game.flags.debug)
         choices.push('full map without monsters, objects, and traps');
+    if (game.flags.debug)
+        choices.push('internal levl[][].typ codes in base-36', 'legend of base-36 levl[][].typ codes');
     for (const [index, text] of choices.entries())
         tty_add_menu(window, {
             identifier: index + 1, text,
@@ -30,9 +33,15 @@ export async function terrainCommand(describe) {
     await tty_destroy_nhwindow(window);
     if (!result.cancelled) {
         const which = result.selections.find(selection => selection.identifier !== 1)?.identifier ?? 1;
-        const subset = which === 4 ? TER_MAP | TER_FULL
-            : TER_MAP | (which >= 2 ? TER_TRP : 0) | (which >= 3 ? TER_OBJ : 0);
-        await revealTerrain(subset, describe);
+        if (which === 5)
+            await showTerrainCodes();
+        else if (which === 6)
+            await showTerrainCodeLegend();
+        else {
+            const subset = which === 4 ? TER_MAP | TER_FULL
+                : TER_MAP | (which >= 2 ? TER_TRP : 0) | (which >= 3 ? TER_OBJ : 0);
+            await revealTerrain(subset, describe);
+        }
     }
     game.context.move = 0;
 }
@@ -74,7 +83,7 @@ async function revealTerrain(subset, describe) {
             start: { x: hero.ux, y: hero.uy }, goal: 'anything of interest',
             prompt: firstUse ? "(For instructions type a '?')  Move cursor to anything of interest:"
                 : `Showing ${kind} only...${game.flags.verbose ? "  (For instructions type a '?')" : ''}`,
-            describe, preserveMap: true, force: false,
+            describe, force: false,
         });
         await displayMessageWindow();
     }

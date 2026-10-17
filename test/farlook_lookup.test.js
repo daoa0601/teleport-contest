@@ -6,6 +6,7 @@ import { flush_screen, newsym } from '../js/display.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { setMonsterGivenName } from '../js/monster_given_name.js';
+import { applyNethackrc } from '../js/options.js';
 import { answerPrompts } from './support/input-boundaries.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -47,6 +48,19 @@ void test('the typed-name look command opens the encyclopedia without asking for
         { prompt: /Specify what\? \(type the word\)/, keys: '  fountain  \r' },
         { prompt: /Fountain.*[\s\S]*--More--/, keys: ' ' },
     ]);
+    assert.equal(game.context.move, 0);
+});
+void test('custom map warnings preserve default symbols in typed look', async () => {
+    freshObjectRoom({ flags: { tips: false, help: false } });
+    applyNethackrc('OPTIONS=warnings:0abcde');
+    const input = resetInputState();
+    input.feed('\x1b');
+    await rhack('O'.charCodeAt(0));
+    input.feed('?1\n');
+    await rhack('/'.charCodeAt(0));
+    await flush_screen(1);
+    const message = requireGameDisplay().grid[0]?.map(cell => cell.ch).join('').trim();
+    assert.match(message ?? '', /^1 +unknown creature causing you concern$/);
     assert.equal(game.context.move, 0);
 });
 for (const [symbol, description] of [

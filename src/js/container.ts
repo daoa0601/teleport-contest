@@ -14,7 +14,10 @@ import { finishInventoryRemoval, useUpInventoryStack } from './hero_inventory.js
 import { setPrimaryWeapon, setSecondaryWeapon, setQuiverObject } from './weapon_slots.js';
 import { inventoryItemDescription, inventoryPrimaryHandDetail } from './invent.js';
 import { compactInventoryLetters, promptInventoryObject } from './inventory_prompt.js';
-import { objectCombatName, objectNameIsPlural, observeObjectForNaming, ownedObjectAction } from './objnam.js';
+import {
+    definiteName, objectCombatName, objectNameIsPlural, observeObjectForNaming,
+    ownedObjectAction, ownedObjectQuestion, ownedSimpleObjectName, simpleObjectName,
+} from './objnam.js';
 import { inventoryClassOrder, lootSortMode, objectClassHeading, sortObjects } from './object_sort.js';
 import { OBJECT_CLASS_SYMBOLS, objectClassForType } from './object_knowledge.js';
 import { clearJustPicked } from './just_picked.js';
@@ -44,7 +47,7 @@ import {
     OBJECT_TIMER_KIND, stopObjectTimer,
 } from './object_timers.js';
 import { heroHasNoHands } from './polyself.js';
-import { observeQuantumCat } from './quantum_cat.js';
+import { isQuantumBox, observeQuantumCat } from './quantum_cat.js';
 import { d, rn2 } from './rng.js';
 
 import { paranoidYesNoQuit, promptChoice } from './query.js';
@@ -128,10 +131,6 @@ function containerNoun(container: GameObject): string {
     if ([SACK, OILSKIN_SACK, BAG_OF_HOLDING].includes(container.otyp))
         return 'bag';
     return OBJECT_NAMES[container.otyp] || container.name || 'container';
-}
-
-function containerReference(container: GameObject, held: boolean): string {
-    return `${held ? 'your' : 'the'} ${containerNoun(container)}`;
 }
 
 function objectDescription(object: GameObject, primaryHandDetail: ReturnType<typeof inventoryPrimaryHandDetail> = null): string {
@@ -741,14 +740,18 @@ function actionKeys() {
         : { takeOut: 'o', putIn: 'i', both: 'b', reverse: 'r', stash: 's' };
 }
 
-async function chooseAction(container: GameObject, held: boolean, usedTime: boolean, moreContainers: boolean): Promise<string> {
+async function chooseAction(container: GameObject, usedTime: boolean, moreContainers: boolean): Promise<string> {
     const keys = actionKeys();
     const hasContents = !!container.contents?.length;
     const mayTakeOut = hasContents || !container.cknown;
     const mayPutIn = (game.inventory || []).some(object => object !== container);
     const title = mayTakeOut
-        ? `Do what with ${containerReference(container, held)}?`
-        : `The ${containerNoun(container)} is empty.  Do what with it?`;
+        ? ownedObjectQuestion(container, {
+            prefix: 'Do what with ', suffix: '?', fallback: 'it', capitalized: false,
+        })
+        : ownedObjectQuestion(container, {
+            prefix: '', suffix: ' is empty.  Do what with it?', fallback: 'This', capitalized: true,
+        });
     const menuStyle = game.flags.menu_style ?? MENU_FULL;
     if (menuStyle === MENU_TRADITIONAL || menuStyle === MENU_COMBINATION) {
         const visibleChoices = `:${mayTakeOut ? 'o' : ''}${mayPutIn ? 'i' : ''}`
@@ -758,7 +761,8 @@ async function chooseAction(container: GameObject, held: boolean, usedTime: bool
             moreContainers ? 'n' : 'q', { visibleChoices });
     }
     if (!mayTakeOut && !mayPutIn) return keys.both;
-    const entries: ChoiceMenuEntry[] = [{ key: ':', text: `Look inside the ${containerNoun(container)}` }];
+    const simpleName = definiteName(simpleObjectName(container));
+    const entries: ChoiceMenuEntry[] = [{ key: ':', text: `Look inside ${simpleName}` }];
     if (mayTakeOut) entries.push({ key: keys.takeOut, text: 'take something out' });
     if (mayPutIn) entries.push({ key: keys.putIn, text: 'put something in' });
     if (mayTakeOut) entries.push({
@@ -768,7 +772,7 @@ async function chooseAction(container: GameObject, held: boolean, usedTime: bool
         entries.push({
             key: keys.reverse, text: `${mayTakeOut ? 'both reversed; ' : ''}put in, then take out`,
         });
-        entries.push({ key: keys.stash, text: `stash one item into the ${containerNoun(container)}` });
+        entries.push({ key: keys.stash, text: `stash one item into ${simpleName}` });
     }
     entries.push('');
     if (moreContainers) entries.push({ key: 'n', marker: '*', text: 'loot next container' });
@@ -832,19 +836,23 @@ async function useContainerActions(container: GameObject, {
         };
     }
 
+    const quantumCat = isQuantumBox(container);
     let spentTime = await observeQuantumCat(container);
     let tookOut = false;
+    const cursedBag = container.otyp === BAG_OF_HOLDING && container.cursed && container.contents.length > 0;
     const loss = await loseCursedBagContents(container, game);
     if (loss) {
         spentTime = true;
         await plineWithContinuation(`You owe ${loss} ${currency(loss)} for lost merchandise.`);
         updateContainerWeights(container);
     }
+    const emptyMessage = container.contents.length ? ''
+        : `${ownedSimpleObjectName(container)} is ${quantumCat || cursedBag ? 'now ' : ''}empty.`;
     const keys = actionKeys();
     let action;
     for (;;) {
         action = await chooseAction(
-            container, held, spentTime, moreContainers,
+            container, spentTime, moreContainers,
         );
         if (action === '?') {
             const help = ['Container actions:', '',
@@ -871,7 +879,7 @@ async function useContainerActions(container: GameObject, {
         if (!container.contents.length) {
             if (!container.cknown) spentTime = true;
             container.cknown = true;
-            await pline(`The ${containerNoun(container)} is empty.`);
+            await pline(emptyMessage);
         } else {
             const transfer = await takeSelectedObjects(container, resetJustPicked);
             if (transfer.spentTime) spentTime = true;
@@ -901,7 +909,7 @@ async function useContainerActions(container: GameObject, {
         if (!container.contents.length) {
             if (!container.cknown) spentTime = true;
             container.cknown = true;
-            await pline(`The ${containerNoun(container)} is empty.`);
+            await pline(emptyMessage);
         } else {
             const transfer = await takeSelectedObjects(container, resetJustPicked);
             if (transfer.spentTime) spentTime = true;
