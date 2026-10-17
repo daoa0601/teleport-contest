@@ -23,6 +23,7 @@ import { GRAPPLING_HOOK, PICK_AXE } from './object_data.js';
 import { forgetTempleEntry } from './priest.js';
 import { restoreElementalBubbles } from './elemental.js';
 import { restoreLevelRegions } from './regions.js';
+import { oinit } from './mklev.js';
 const SAVE_PREFIX = 'teleport-save:';
 const ERROR_SAVE_PREFIX = 'teleport-error-save:';
 function saveKey(name, prefix = SAVE_PREFIX) {
@@ -186,6 +187,9 @@ export function restoreGame(name, storage = game.storage) {
         restoreSavedMonsters(snapshot.state);
         restorePersistentState(game, snapshot.state);
         resolveDungeonIdentities(game);
+        // C restnames() reloads objects[].oc_prob as saved; those gem
+        // probabilities are always oinit()'s values for the saved u.uz.
+        oinit();
         restoreElementalBubbles();
         // restgamestate() rebuilds the first-use reminder from the restored
         // weapon, treating applied tools conservatively as improvised weapons.

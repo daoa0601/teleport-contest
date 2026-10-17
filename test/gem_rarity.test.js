@@ -5,6 +5,8 @@ import { gotoLevel } from '../js/level_change.js';
 import { mklev, rndClass } from '../js/mklev.js';
 import { DILITHIUM_CRYSTAL, LUCKSTONE } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
+import { restoreGame, saveGame } from '../js/save.js';
+import { memoryStorage } from './support/memory-storage.js';
 import { freshSpecialLevel } from './support/special-level.js';
 void test('gem selection excludes rare gems near the surface and admits them at depth', async () => {
     for (const depth of [1, 30]) {
@@ -35,5 +37,25 @@ void test('returning from a newly made shallow level restores deep-level gem sel
     const deepSelections = Array.from({ length: 200 }, () => rndClass(DILITHIUM_CRYSTAL, LUCKSTONE - 1));
     assert.equal(game.level, deepLevel);
     assert.ok(deepSelections.some(type => type < DILITHIUM_CRYSTAL + 9), 'rare gems must be available again on the restored deep level');
+});
+// C restnames() reloads objects[].oc_prob exactly as savenames() wrote it, so a
+// game restored on a deep level keeps that level's gem probabilities even if
+// this process generated a shallow level in between.
+void test('a game restored on a deep level keeps deep-level gem selection', async () => {
+    freshSpecialLevel({ prototype: 'ordinary', depth: 30, seed: 7 });
+    requirePlayingGame(game);
+    game.specialLevels?.clear();
+    game.flags.bones = false;
+    await mklev();
+    const storage = memoryStorage();
+    assert.equal(await saveGame(storage), true);
+    freshSpecialLevel({ prototype: 'ordinary', depth: 1, seed: 7 });
+    game.specialLevels?.clear();
+    game.flags.bones = false;
+    await mklev();
+    assert.equal(restoreGame(game.plname, storage), true);
+    initRng(17n);
+    const selections = Array.from({ length: 200 }, () => rndClass(DILITHIUM_CRYSTAL, LUCKSTONE - 1));
+    assert.ok(selections.some(type => type < DILITHIUM_CRYSTAL + 9), 'rare gems must remain available after restoring the deep-level game');
 });
 //# sourceMappingURL=gem_rarity.test.js.map
