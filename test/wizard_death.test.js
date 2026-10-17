@@ -94,8 +94,7 @@ void test('life saving keeps the Wizard alive without starting demigod intervent
     const input = resetInputState();
     wizard.mhp = 0;
     const death = await answerPrompts(finishEnvironmentalMonsterDeath(wizard, game, { noCorpse: true }), input, [
-        { prompt: /But wait\.\.\..*--More--/s, keys: ' ' },
-        { prompt: /Wizard of Yendor's medallion begins to glow!.*--More--/s, keys: ' ' },
+        { prompt: /But wait\.\.\.  The Wizard of Yendor's medallion begins to glow!.*--More--/s, keys: ' ' },
         { prompt: /Wizard of Yendor looks much better!.*--More--/s, keys: ' ' },
     ]);
     assert.equal(death.survived, true);

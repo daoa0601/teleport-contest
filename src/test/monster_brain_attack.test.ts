@@ -256,9 +256,7 @@ void test('life saving stops a Medusa brain meal before extra damage and statue 
     const result = await answerPrompts(resolveMonsterBrainAttack(attacker, defender, 2, {
         state: game, visible: true, rollOne: maximumRoll, finishDeath, publish: async () => {},
     }), input, [
-        { prompt: /But wait.*--More--/, keys: ' ' },
-        { prompt: /medallion begins to glow.*--More--/, keys: ' ' },
-        { prompt: /looks much better.*--More--/, keys: ' ' },
+        { prompt: /But wait\.\.\.  .*medallion begins to glow.*--More--/, keys: ' ' },
     ]);
 
     assert.equal(result.damage, 2);

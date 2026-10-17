@@ -23,7 +23,8 @@ import { monsterName, monsterObjectPronoun, possessiveName } from './monster_nam
 import { wakeMonstersNear } from './monster_wake.js';
 import { BOULDER, ROCK } from './object_data.js';
 import { deleteObject } from './object_delete.js';
-import { objectName, ownedObjectName } from './objnam.js';
+import { inventoryItemDescription } from './invent.js';
+import { objectName, observeObjectForNaming, ownedObjectName } from './objnam.js';
 import { rn1 } from './rng.js';
 import { cansee } from './vision.js';
 import { objectWeight } from './weight.js';
@@ -61,7 +62,7 @@ export async function dropBoulderOnHero({
     const object = await fallingRock(confused);
     let damage = 0;
     if (canBeHit({ mnum: heroSpecies(state) }) && !state.u.passesWalls) {
-        await plineWithContinuation(`You are hit by ${fallingRockName(object)}!`);
+        await plineWithContinuation(`You are hit by ${fallingRockName(object, state)}!`);
         damage = rollPhysicalWeaponDamageAgainstHero(object, state) * object.quan;
         const helmet = state.uarmh || state.u.uarmh;
         if (helmet && helmetProtects) {
@@ -94,7 +95,7 @@ export async function dropBoulderOnMonster(x: number, y: number, {
     if (monster && canBeHit(monster)) {
         const spotted = canSpotMonster(monster);
         if (cansee(x, y)) {
-            await plineWithContinuation(`${monsterName(monster, { state, capitalized: true })} is hit by ${fallingRockName(object)}!`);
+            await plineWithContinuation(`${monsterName(monster, { state, capitalized: true })} is hit by ${fallingRockName(object, state)}!`);
             if (monster.minvis && !spotted) map_invisible(x, y);
         } else if (swallowsHero) {
             await hear(`something hit ${possessiveName(monsterName(monster, { state }))} ${monsterStomachName(monster.mnum)} over your ${heroHeadName(state)}!`, state);
@@ -143,8 +144,11 @@ async function fallingRock(confused: boolean): Promise<GameObject> {
     return object;
 }
 
-function fallingRockName(object: GameObject): string {
-    return object.otyp === BOULDER ? 'a boulder' : `${object.quan} rocks`;
+// C doname() observes the falling object, so later blind feeling still
+// calls seen rocks "rocks" rather than "stones".
+function fallingRockName(object: GameObject, state: GameState): string {
+    observeObjectForNaming(object, { state });
+    return inventoryItemDescription(object);
 }
 
 async function landFallingRock(object: GameObject, x: number, y: number, state: PlayingGameState): Promise<void> {
