@@ -14,12 +14,11 @@ import { delobj } from './object_delete.js';
 import { objectResistsDestruction } from './object_state.js';
 import { erodeObject } from './object_erosion.js';
 import { objectClassForType } from './object_knowledge.js';
-import { makePlural } from './object_grammar.js';
+import { definiteName, objectName, ownedObjectName } from './objnam.js';
 import { destroyObjectFromMonsterInventory } from './monster_inventory.js';
-import { monsterTypeName } from './monster_data.js';
 import {
     BAG_OF_TRICKS, CHEST, ICE_BOX, LARGE_BOX,
-    OBJECT_NAMES, POT_OIL,
+    POT_OIL,
     SCR_FIRE, SPE_BOOK_OF_THE_DEAD, SPE_FIREBALL, STATUE,
 } from './object_data.js';
 import { rnl, rn2 } from './rng.js';
@@ -56,27 +55,9 @@ function objectClass(object: GameObject) {
         ? object.oclass : objectClassForType(object?.otyp);
 }
 
-function objectName(object: GameObject) {
-    if (object.otyp === SPE_BOOK_OF_THE_DEAD) return 'Book of the Dead';
-    const baseName = object.name || OBJECT_NAMES[object.otyp] || 'object';
-    let name = baseName;
-    if (objectClass(object) === POTION_CLASS) name = `potion of ${baseName}`;
-    else if (objectClass(object) === SCROLL_CLASS)
-        name = `scroll of ${baseName}`;
-    else if (objectClass(object) === SPBOOK_CLASS)
-        name = `spellbook of ${baseName}`;
-    return (object.quan ?? object.quantity ?? 1) > 1
-        ? makePlural(name) : name;
-}
-
-function monsterName(monster: Monster) {
-    return monster?.name
-        || monsterTypeName(monster?.mnum, !!monster?.female);
-}
-
-function objectSubject(object: GameObject, carrier: Monster | null) {
-    const owner = carrier ? `The ${monsterName(carrier)}'s` : 'The';
-    return `${owner} ${objectName(object)}`;
+// C trap.c:fire_damage() names the burning object with Yname2().
+function objectSubject(object: GameObject, state: GameState) {
+    return ownedObjectName(object, state);
 }
 
 async function removeObject(object: GameObject, context: FireDamageContext) {
@@ -118,7 +99,7 @@ async function burnContainer(object: GameObject, context: FireDamageContext): Pr
     }
     if (context.squareVisible) {
         await context.publish(
-            `${objectSubject(object, context.carrier)} catches fire and burns.`,
+            `${objectSubject(object, context.state)} catches fire and burns.`,
         );
     }
     if ((object.contents || []).length) {
@@ -137,7 +118,7 @@ async function burnPaperOrPotion(object: GameObject, context: FireDamageContext)
             return false;
         if (object.otyp === SPE_BOOK_OF_THE_DEAD) {
             if (context.squareVisible)
-                await context.publish('Smoke rises from the Book of the Dead.');
+                await context.publish(`Smoke rises from ${definiteName(objectName(object, context.state), context.state)}.`);
             return false;
         }
         if (context.squareVisible) {
@@ -145,7 +126,7 @@ async function burnPaperOrPotion(object: GameObject, context: FireDamageContext)
             const verb = oclass === SCROLL_CLASS && plural
                 ? 'catch fire and burn' : 'catches fire and burns';
             await context.publish(
-                `${objectSubject(object, context.carrier)} ${verb}.`,
+                `${objectSubject(object, context.state)} ${verb}.`,
             );
         }
     } else if (oclass === POTION_CLASS) {
@@ -155,7 +136,7 @@ async function burnPaperOrPotion(object: GameObject, context: FireDamageContext)
             if (object.otyp === POT_OIL)
                 verb = plural ? 'ignite and explode' : 'ignites and explodes';
             await context.publish(
-                `${objectSubject(object, context.carrier)} ${verb}.`,
+                `${objectSubject(object, context.state)} ${verb}.`,
             );
         }
     } else {
