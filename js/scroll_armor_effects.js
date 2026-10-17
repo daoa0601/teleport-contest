@@ -1,6 +1,6 @@
 // Armor and weapon scroll effects. C read.c:seffect_enchant_armor(),
 // seffect_destroy_armor(), and seffect_enchant_weapon().
-import { adjustArmorAttributeBonus, armorSlotFor, destroyWornArmor, disintegrateWornArmor, erodeWornArmor, findArmorClass, someHeroArmor, wearHeroArmor, wornArmorInDestroyOrder, } from './armor.js';
+import { adjustArmorAttributeBonus, armorSlotFor, destroyWornArmor, disintegrateWornArmor, erodeWornArmor, someHeroArmor, wearHeroArmor, wornArmorInDestroyOrder, } from './armor.js';
 import { exerciseAttribute } from './attrib.js';
 import { A_CON, A_STR, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, SPE_LIM } from './const.js';
 import { displayColorName, plineWithContinuation as pline } from './display.js';
@@ -37,7 +37,9 @@ export async function applyArmorScrollEffect(source, { state = game } = {}) {
         default:
             throw new RangeError(`Not an armor or weapon scroll: ${source.otyp}`);
     }
-    findArmorClass(state);
+    // C read.c never calls find_ac(): moveloop_core() recomputes u.uac once
+    // per player input, after the monsters have moved.
+    state._armorClassDirty = true;
     return { known: false, consumed: false, ...result,
         heroDied: !!state.program_state?.gameover };
 }

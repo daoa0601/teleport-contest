@@ -3,7 +3,7 @@
 
 import {
     adjustArmorAttributeBonus, armorSlotFor, destroyWornArmor,
-    disintegrateWornArmor, erodeWornArmor, findArmorClass,
+    disintegrateWornArmor, erodeWornArmor,
     someHeroArmor, wearHeroArmor, wornArmorInDestroyOrder,
 } from './armor.js';
 import { exerciseAttribute } from './attrib.js';
@@ -55,7 +55,9 @@ export async function applyArmorScrollEffect(
     default:
         throw new RangeError(`Not an armor or weapon scroll: ${source.otyp}`);
     }
-    findArmorClass(state);
+    // C read.c never calls find_ac(): moveloop_core() recomputes u.uac once
+    // per player input, after the monsters have moved.
+    state._armorClassDirty = true;
     return { known: false, consumed: false, ...result,
         heroDied: !!state.program_state?.gameover };
 }

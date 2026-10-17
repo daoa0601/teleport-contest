@@ -58,7 +58,9 @@ void test('enchant armor improves the exposed torso layer and uncurses it', asyn
     assert.equal(suit.spe, 0);
     assert.ok(cloak.spe >= 1 && cloak.spe <= 3);
     assert.ok(!cloak.cursed);
-    assert.equal(game.u.uac, before - cloak.spe);
+    // read.c leaves u.uac to moveloop_core()'s once-per-input find_ac().
+    assert.equal(game.u.uac, before);
+    assert.equal(findArmorClass(), before - cloak.spe);
     assert.equal(result.known, true);
     assert.equal(result.consumed, false);
     assert.ok(game.inventory.includes(scroll));
@@ -123,7 +125,7 @@ void test('enchantment hardens dragon scales into mail while preserving their wo
     assert.ok(scales.known);
     assert.equal(game.uarm, scales);
     assert.ok(propertyIsActive('antimagic'));
-    assert.equal(game.u.uac, -2);
+    assert.equal(findArmorClass(), -2);
     assert.equal(result.known, false);
 });
 void test('gold scales remain lit as enchantment hardens them and increases their light radius', async () => {
@@ -165,7 +167,7 @@ void test('over-enchantment can dissolve mundane armor while elven armor remains
         if (armor.where === 'gone') {
             dissolved++;
             assert.equal(game.uarm, null);
-            assert.equal(game.u.uac, 10);
+            assert.equal(findArmorClass(), 10);
         }
         else
             survived++;
