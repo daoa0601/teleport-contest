@@ -1,6 +1,7 @@
 // Monster armor.
 // C refs: makemon.c:makemon(), mon.c:check_gear_next_turn() and
 // movemon_singlemon(), worn.c:m_dowear()/m_dowear_type().
+import { objectMaterial } from './object_material.js';
 import { publishHeardMessage } from './hero_speech.js';
 import { armorBonus, armorSlotFor, dragonFormForArmor } from './armor.js';
 import { observeDistantObjectForNaming, } from './objnam.js';
@@ -19,7 +20,7 @@ import { rnl } from './rng.js';
 import { game } from './gstate.js';
 import { MONSTER_EXPERIENCE_META, MONSTER_FLAGS1, MONSTER_SIZE, MONSTER_NAME, MONSTER_SYMBOL, monsterBreaksArmor, monsterCanBeSaddled, monsterHasNoHands, monsterIsCentaur, monsterIsWhirly, monsterTypeName, monsterHornCount, monsterIsSlithy, monsterIsVerySmall, monsterSlipsArmor, monsterWrappingAllowed, } from './monster_data.js';
 import { destroyObjectFromMonsterInventory, dropMonsterArmor, } from './monster_inventory.js';
-import { AMULET_OF_GUARDING, AMULET_OF_LIFE_SAVING, AMULET_OF_REFLECTION, ALCHEMY_SMOCK, DUNCE_CAP, ELVEN_MITHRIL_COAT, HELM_OF_OPPOSITE_ALIGNMENT, GOLD_DRAGON_SCALES, IRON_SHOES, MUMMY_WRAPPING, ROBE, OBJECT_BIMANUAL, OBJECT_DELAY, OBJECT_MATERIAL, OBJECT_NAMES, } from './object_data.js';
+import { AMULET_OF_GUARDING, AMULET_OF_LIFE_SAVING, AMULET_OF_REFLECTION, ALCHEMY_SMOCK, DUNCE_CAP, ELVEN_MITHRIL_COAT, HELM_OF_OPPOSITE_ALIGNMENT, GOLD_DRAGON_SCALES, IRON_SHOES, MUMMY_WRAPPING, ROBE, OBJECT_BIMANUAL, OBJECT_DELAY, OBJECT_NAMES, } from './object_data.js';
 import { AC_MAX, DISMOUNT_FELL, I_SPECIAL, W_AMUL, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU, W_SADDLE, } from './const.js';
 const M1_NOHEAD = 0x00008000;
 const M1_MINDLESS = 0x00010000;
@@ -161,7 +162,7 @@ function bestForSlot(monster, slot, creation, state) {
             if (object.otyp === HELM_OF_OPPOSITE_ALIGNMENT
                 && (monster.ispriest || monster.isminion))
                 continue;
-            const material = OBJECT_MATERIAL[object.otyp];
+            const material = objectMaterial(object.otyp);
             if (monsterHornCount(monster.mnum) && material !== undefined && material > LEATHER)
                 continue;
         }
@@ -383,7 +384,7 @@ export async function adjustMonsterClothingAfterPolymorph(monster, state = game,
     }
     const helmet = wornInSlot(monster, W_ARMH);
     const helmetIsFlimsy = helmet
-        && (OBJECT_MATERIAL[helmet.otyp] ?? Infinity) <= LEATHER;
+        && objectMaterial(helmet.otyp) <= LEATHER;
     if (helmet && (handlessOrTiny
         || (monsterHornCount(mnum) && !helmetIsFlimsy))) {
         if (visible)

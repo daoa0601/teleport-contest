@@ -1,4 +1,5 @@
 import { formatFeltMessage, formatSeenMessage, publishHeardMessage } from './hero_speech.js';
+import { objectMaterial } from './object_material.js';
 import { heroLocomotion } from './hero_locomotion.js';
 import { isLavaAt } from './terrain_properties.js';
 import { surfaceName } from './terrain_name.js';
@@ -34,7 +35,7 @@ import { canFallThrough, splitHeroMonsterForm, } from './mklev.js';
 import { fillPitWithBoulderAt } from './pit_fill.js';
 import { searchSpecial, somexyspace } from './mkroom.js';
 import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterTypeName, monsterIsAmorphous, monsterIsUnsolid, monsterIsWhirly, } from './monster_data.js';
-import { ARROW, BOULDER, DART, HEAVY_IRON_BALL, OBJECT_BIMANUAL, OBJECT_MATERIAL, OBJECT_NAMES, ROCK, } from './object_data.js';
+import { ARROW, BOULDER, DART, HEAVY_IRON_BALL, OBJECT_BIMANUAL, OBJECT_NAMES, ROCK, } from './object_data.js';
 import { deleteObject } from './object_delete.js';
 import { unlinkObject } from './object_location.js';
 import { impactDrop } from './object_migration.js';
@@ -113,7 +114,7 @@ function heroObject(slot) {
 }
 function heroIronShoes() {
     const boots = heroObject('uarmf');
-    return boots && OBJECT_MATERIAL[boots.otyp] === IRON ? boots : null;
+    return boots && objectMaterial(boots.otyp) === IRON ? boots : null;
 }
 function heroWearsIronShoes() {
     return !!heroIronShoes();

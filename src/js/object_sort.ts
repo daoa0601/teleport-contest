@@ -1,4 +1,5 @@
 // Inventory and loot ordering. C refs: invent.c:sortloot()/loot_classify().
+import { objectMaterial } from './object_material.js';
 import { game } from './gstate.js';
 import type { GameFlags } from './flags.js';
 import type { GameState } from './game_state.js';
@@ -14,7 +15,7 @@ import {
     BAG_OF_TRICKS, HORN_OF_PLENTY, WOODEN_FLUTE, MAGIC_FLUTE, TOOLED_HORN,
     FROST_HORN, FIRE_HORN, WOODEN_HARP, MAGIC_HARP, BUGLE, LEATHER_DRUM,
     DRUM_OF_EARTHQUAKE, SLIME_MOLD, TIN, EGG, CORPSE, ROCK, LEASH,
-    OBJECT_SUBTYPE, OBJECT_MATERIAL, OBJECT_INITIAL_KNOWN, OBJECT_DESCRIPTIONS,
+    OBJECT_SUBTYPE, OBJECT_INITIAL_KNOWN, OBJECT_DESCRIPTIONS,
     OBJECT_USES_KNOWN,
 } from './object_data.js';
 import { OBJECT_CLASS_SYMBOLS, objectClassForType, observeObject } from './object_knowledge.js';
@@ -163,7 +164,7 @@ function lootSubclass(object: GameObject, oclass: number, seen: boolean, discove
         return object.globby ? 6 : 2;
     }
     if (oclass === 13) {
-        const material = OBJECT_MATERIAL[object.otyp];
+        const material = objectMaterial(object.otyp);
         if (material === 20 || material === 19) return !seen ? 1 : !discovered ? 2 : material === 20 ? 3 : 4;
         return !seen ? 5 : object.otyp === ROCK ? 8 : !discovered ? 6 : 7;
     }

@@ -2,9 +2,9 @@
 // container may lose fragile contents.  Callers own placement and pass the
 // object's PRE-impact coordinates for shop-room attribution.
 
+import { objectMaterial } from './object_material.js';
 import {
-    BAG_OF_HOLDING, BAG_OF_TRICKS, EGG, MIRROR, OBJECT_MATERIAL,
-} from './object_data.js';
+    BAG_OF_HOLDING, BAG_OF_TRICKS, EGG, MIRROR, } from './object_data.js';
 import { game, requireLiveGame } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
@@ -58,7 +58,7 @@ export async function containerImpactDamage(
     // RNG outcomes land on the same objects in this iteration order.
     for (const content of [...container.contents]) {
         let result: 'shatter' | 'cracking' | null = null;
-        if (OBJECT_MATERIAL[content.otyp] === GLASS
+        if (objectMaterial(content.otyp) === GLASS
             && content.oclass !== GEM_CLASS
             && !objectResistsDestruction(content, 33, 100, random)) {
             result = 'shatter';

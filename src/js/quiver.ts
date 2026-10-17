@@ -2,11 +2,12 @@
 // C refs: dothrow.c:autoquiver()/throwing_weapon(), obj.h ammo predicates,
 // wield.c:ready_ok()/setuqwep().  Command prompts remain in cmd.js.
 
+import { objectMaterial } from './object_material.js';
 import {
     P_BOW, P_CROSSBOW, P_DAGGER, P_SLING,
 } from './const.js';
 import {
-    AKLYS, FLINT, OBJECT_MATERIAL, OBJECT_SUBTYPE, ROCK,
+    AKLYS, FLINT, OBJECT_SUBTYPE, ROCK,
 } from './object_data.js';
 import { objectClassForType } from './object_knowledge.js';
 import type { GameState } from './game_state.js';
@@ -45,7 +46,7 @@ export function autoquiverCandidate(state: GameState): GameObject | null {
         const ordinarySlingStone = item.otyp === ROCK
             || (item.otyp === FLINT && knownType)
             || (objectClass === 13
-                && OBJECT_MATERIAL[item.otyp] === 19 && knownType);
+                && objectMaterial(item.otyp) === 19 && knownType);
         if (ordinarySlingStone) {
             if (currentSling) currentAmmo = item;
             else if (launcherMatchesAmmo(item, state.uswapwep))

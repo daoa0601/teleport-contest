@@ -1,6 +1,7 @@
 // objnam.js — Object wish-name parsing, weighted lookup, and visible naming.
 // C refs: objnam.c readobjnam(), rnd_otyp_by_namedesc(), xname().
 
+import { objectMaterial } from './object_material.js';
 import { game } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
@@ -36,7 +37,7 @@ import {
     OBJECT_DESCRIPTIONS,
     OBJECT_NAMES, OBJECT_MERGE, OBJECT_NOWISH, OBJECT_CHARGED, OBJECT_MAGIC,
     OBJECT_UNIQUE, OBJECT_USES_KNOWN,
-    OBJECT_MATERIAL, OBJECT_SPELL_CATEGORY, OBJECT_SPELL_LEVEL,
+    OBJECT_SPELL_CATEGORY, OBJECT_SPELL_LEVEL,
     OBJECT_SUBTYPE, OBJECT_WEIGHT,
 } from './object_data.js';
 import { armorPresentationName, withIndefiniteArticle, makePlural, makeSingular, verbForSubject } from './object_grammar.js';
@@ -514,7 +515,7 @@ function actualObjectTypeName(object: ObjectNameView, state: GameState): string 
 export function gemObjectName(
     object: ObjectNameView, state: GameState = game, { minimal = false } = {},
 ): string {
-    const classNoun = OBJECT_MATERIAL[object.otyp] === 21 ? 'stone' : 'gem';
+    const classNoun = objectMaterial(object.otyp) === 21 ? 'stone' : 'gem';
     const overrideIdentity = !!state.iflags.override_ID;
     if (!object.dknown && !overrideIdentity) return classNoun;
     const actualName = actualObjectTypeName(object, state);
@@ -766,7 +767,7 @@ export function unseenObjectNoun(
         return OBJECT_NAMES[object?.otyp] === 'novel' ? 'book' : 'spellbook';
     case WAND_CLASS: return 'wand';
     case GEM_CLASS:
-        return OBJECT_MATERIAL[object?.otyp] === 21 ? 'stone' : 'gem';
+        return objectMaterial(object?.otyp) === 21 ? 'stone' : 'gem';
     default:
         return object?.name || OBJECT_NAMES[object?.otyp] || 'object';
     }
@@ -788,7 +789,7 @@ function erosionMatters(object: Pick<GameObject, 'otyp' | 'oclass'>): boolean {
 }
 
 function objectIsDamageable(object: Pick<GameObject, 'otyp' | 'oclass'>): boolean {
-    const material = OBJECT_MATERIAL[object.otyp] ?? 0;
+    const material = objectMaterial(object.otyp);
     const flammable = (material > 1 && material <= 8) || material === 18;
     const rottable = (material > 1 && material <= 8) || material === 10;
     const rustprone = material === 11;
@@ -798,7 +799,7 @@ function objectIsDamageable(object: Pick<GameObject, 'otyp' | 'oclass'>): boolea
 }
 
 function objectAcceptsPrimaryErosion(object: Pick<GameObject, 'otyp' | 'oclass'>): boolean {
-    const material = OBJECT_MATERIAL[object.otyp] ?? 0;
+    const material = objectMaterial(object.otyp);
     const flammable = (material > 1 && material <= 8) || material === 18;
     const rustprone = material === 11;
     const crackable = material === 19 && object.oclass === ARMOR_CLASS;
@@ -806,7 +807,7 @@ function objectAcceptsPrimaryErosion(object: Pick<GameObject, 'otyp' | 'oclass'>
 }
 
 function objectAcceptsSecondaryErosion(object: Pick<GameObject, 'otyp'>): boolean {
-    const material = OBJECT_MATERIAL[object.otyp] ?? 0;
+    const material = objectMaterial(object.otyp);
     const rottable = (material > 1 && material <= 8) || material === 10;
     const corrodeable = material === 11 || material === 13;
     return rottable || corrodeable;
@@ -827,14 +828,14 @@ export function objectStatePrefix(
     const secondaryErosion = object.oeroded2 ?? 0;
     let prefix = object?.greased ? 'greased ' : '';
     if (primaryErosion > 0 && object.otyp !== CRYSKNIFE) {
-        const material = OBJECT_MATERIAL[object.otyp] ?? 0;
+        const material = objectMaterial(object.otyp);
         const adjective = material === 11 ? 'rusty '
             : material === 19 && object.oclass === ARMOR_CLASS
                 ? 'cracked ' : 'burnt ';
         prefix += `${erosionDegree(primaryErosion)}${adjective}`;
     }
     if (secondaryErosion > 0 && object.otyp !== CRYSKNIFE) {
-        const material = OBJECT_MATERIAL[object.otyp] ?? 0;
+        const material = objectMaterial(object.otyp);
         const adjective = material === 11 || material === 13
             ? 'corroded ' : 'rotted ';
         prefix += `${erosionDegree(secondaryErosion)}${adjective}`;
@@ -1097,11 +1098,11 @@ function gemPresentationName(
     otyp: number, realName: string, description: string | null | undefined,
 ): string {
     if (description) {
-        const classNoun = OBJECT_MATERIAL[otyp] === 21 ? 'stone' : 'gem';
+        const classNoun = objectMaterial(otyp) === 21 ? 'stone' : 'gem';
         return `${description} ${classNoun}`;
     }
     const needsStone = otyp === FLINT
-        || (OBJECT_MATERIAL[otyp] === 20
+        || (objectMaterial(otyp) === 20
             && !PLAIN_GEMSTONE_NAMES.has(realName));
     return needsStone ? `${realName} stone` : realName;
 }

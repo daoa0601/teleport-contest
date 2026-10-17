@@ -1,11 +1,12 @@
 // Food contact after thitmonst's weapon and successful splash branches.
 // C dothrow.c:thitmonst(), tmiss(FALSE); mondata.h:befriend_with_obj().
+import { objectMaterial } from './object_material.js';
 import { M_AP_MONSTER, M_AP_TYPE, STRAT_WAITMASK } from './const.js';
 import { canSeeMonster, plineWithContinuation } from './display.js';
 import { MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
 import { monsterName } from './monster_name.js';
 import { tameMonster } from './monster_taming.js';
-import { BANANA, CORPSE, OBJECT_MATERIAL } from './object_data.js';
+import { BANANA, CORPSE } from './object_data.js';
 import { corpseName, objectName, observeObjectForNaming, pluralizeObjectNoun } from './objnam.js';
 import { ACCFOOD, dogFood } from './pet_food.js';
 import { rn2 } from './rng.js';
@@ -49,7 +50,7 @@ function befriendsWithFood(monster: Monster, object: GameObject): boolean {
     if (!((MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_DOMESTIC)
         || object.oclass !== FOOD_CLASS) return false;
     return MONSTER_SYMBOL[monster.mnum] !== S_UNICORN
-        || OBJECT_MATERIAL[object.otyp] === VEGGY
+        || objectMaterial(object.otyp) === VEGGY
         || object.otyp === CORPSE && object.corpsenm === PM_LICHEN;
 }
 

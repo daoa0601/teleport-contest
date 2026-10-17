@@ -1,5 +1,6 @@
 // #sit and the immediate consequences of sitting down.
 // C ref: sit.c dosit() and lay_an_egg().
+import { objectMaterial } from './object_material.js';
 import { A_STR, A_WIS, ALTAR, DRAWBRIDGE_DOWN, FOUNTAIN, GRAVE, Is_waterlevel, is_hole, is_pit, LADDER, SINK, SPIKED_PIT, STAIRS, THRONE, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, } from './const.js';
 import { exerciseAttribute } from './attrib.js';
 import { displayLiquidName, plineWithContinuation as pline } from './display.js';
@@ -14,7 +15,7 @@ import { useUpFloorObject } from './floor_consumption.js';
 import { heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { mksobj, set_corpsenm, } from './mklev.js';
 import { MONSTER_FLAGS1, MONSTER_SYMBOL, } from './monster_data.js';
-import { CHEST, CORPSE, CREAM_PIE, EGG, LARGE_BOX, OBJECT_MATERIAL, OBJECT_NUTRITION, TOWEL, WATER_WALKING_BOOTS, } from './object_data.js';
+import { CHEST, CORPSE, CREAM_PIE, EGG, LARGE_BOX, OBJECT_NUTRITION, TOWEL, WATER_WALKING_BOOTS, } from './object_data.js';
 import { observeObject } from './object_knowledge.js';
 import { objectCombatName, definiteName } from './objnam.js';
 import { monsterName, monsterPossessive } from './monster_name.js';
@@ -138,7 +139,7 @@ async function sitOnObject(object) {
         await useUpFloorObject(object, object.quan);
     }
     else if (object.otyp !== LARGE_BOX && object.otyp !== CHEST
-        && OBJECT_MATERIAL[object.otyp] !== CLOTH) {
+        && objectMaterial(object.otyp) !== CLOTH) {
         await pline("It's not very comfortable...");
     }
 }

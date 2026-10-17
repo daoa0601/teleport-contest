@@ -4,6 +4,7 @@ import { heroLocomotion } from './hero_locomotion.js';
 // shop_keeper(), and u_entered_shop().  Lua/mklev owns room construction and
 // initial stock; this module owns the live relationship among room, resident,
 // customer, and hero.
+import { objectMaterial } from './object_material.js';
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import { hasShopBill, hasShopkeeperData, requireShopGame } from './shop_types.js';
 import { SHOP_TYPES } from './shop_data.js';
@@ -27,7 +28,7 @@ import { insideRoom, inTown, roomForRoomno, roomsAt, updateHeroRoomMembership } 
 import { searchSpecial } from './mkroom.js';
 import { intemple } from './priest.js';
 import { recordDiscoveredRoom } from './dungeon.js';
-import { BAG_OF_TRICKS, BRASS_LANTERN, CAN_OF_GREASE, CHEST, CORPSE, CRYSTAL_BALL, DRUM_OF_EARTHQUAKE, EXPENSIVE_CAMERA, HORN_OF_PLENTY, ICE_BOX, LARGE_BOX, MAGIC_FLUTE, MAGIC_LAMP, MAGIC_MARKER, OBJECT_CHARGED, OBJECT_COST, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_INITIAL_KNOWN, DUNCE_CAP, OIL_LAMP, POT_OIL, TINNING_KIT, WORTHLESS_PIECE_OF_WHITE_GLASS, } from './object_data.js';
+import { BAG_OF_TRICKS, BRASS_LANTERN, CAN_OF_GREASE, CHEST, CORPSE, CRYSTAL_BALL, DRUM_OF_EARTHQUAKE, EXPENSIVE_CAMERA, HORN_OF_PLENTY, ICE_BOX, LARGE_BOX, MAGIC_FLUTE, MAGIC_LAMP, MAGIC_MARKER, OBJECT_CHARGED, OBJECT_COST, OBJECT_NAMES, OBJECT_INITIAL_KNOWN, DUNCE_CAP, OIL_LAMP, POT_OIL, TINNING_KIT, WORTHLESS_PIECE_OF_WHITE_GLASS, } from './object_data.js';
 import { recordObjectPriceQuote } from './object_knowledge.js';
 import { ACH_SHOP, ACH_TOWN, recordAchievement } from './achievements.js';
 import { nextIdent, nextObjectId } from './ident.js';
@@ -201,7 +202,7 @@ const glassGemImitations = [
 export function objectPriceAdjustment(object, oid, state = game) {
     const known = !!object?.dknown && objectTypeKnown(object, state);
     const glassGem = object?.oclass === GEM_CLASS
-        && OBJECT_MATERIAL[object.otyp] === GLASS;
+        && objectMaterial(object.otyp) === GLASS;
     if (!known && !glassGem)
         return ((oid % 4) === 0) ? 1 : 0;
     return 0;
@@ -212,7 +213,7 @@ export function shopObjectUnitCost(object, resident = null, state = game) {
     let divisor = 1;
     const unknown = !object?.dknown || !objectTypeKnown(object, state);
     const glassGem = object?.oclass === GEM_CLASS
-        && OBJECT_MATERIAL[object.otyp] === GLASS;
+        && objectMaterial(object.otyp) === GLASS;
     if (unknown) {
         if (glassGem) {
             const pseudorand = (((state.ubirthday ?? 0) | 0) % object.otyp)

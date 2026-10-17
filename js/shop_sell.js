@@ -1,6 +1,7 @@
 import { currency } from './currency.js';
 // C shk.c:sellobj() - the hero drops something in a shop and can sell it -
 // plus sellobj_state()'s command disposition.
+import { objectMaterial } from './object_material.js';
 import { monsterGoldAmount, moneyToHero } from './shop_money.js';
 import { nameShopTransaction } from './shop_speech.js';
 import { objectDescription } from './object_description.js';
@@ -12,7 +13,7 @@ import { game, requireLiveGame } from './gstate.js';
 import { requireShopGame } from './shop_types.js';
 import { containedGold } from './gold.js';
 import { recordObjectPriceQuote, } from './object_knowledge.js';
-import { CORPSE, EGG, OBJECT_COST, OBJECT_MATERIAL, OBJECT_NAMES, TIN, } from './object_data.js';
+import { CORPSE, EGG, OBJECT_COST, OBJECT_NAMES, TIN, } from './object_data.js';
 import { inTown } from './room.js';
 import { heroIsDeaf } from './senses.js';
 import { costlySpot, objectIsUnpaid, removeObjectAndContentsFromBill, objectTypeKnown } from './shk.js';
@@ -131,7 +132,7 @@ function vegetarianSpecies(mnum) {
 function veggyItem(object) {
     if (object.oclass !== FOOD_CLASS)
         return false;
-    if ((OBJECT_MATERIAL[object.otyp] ?? 0) === 3 || object.otyp === EGG)
+    if (objectMaterial(object.otyp) === 3 || object.otyp === EGG)
         return true;
     // C marks spinach tins with corpsenm NON_PM (-1).
     if (object.otyp === TIN && object.corpsenm === -1)
@@ -177,7 +178,7 @@ export function shopOfferForObject(object, resident, state = game) {
     const unknown = !object.dknown || !objectTypeKnown(object, state);
     if (unknown) {
         if (object.oclass === GEM_CLASS) {
-            if ([19, 20].includes(OBJECT_MATERIAL[object.otyp] ?? 0)) {
+            if ([19, 20].includes(objectMaterial(object.otyp))) {
                 tmp = (object.otyp - FIRST_REAL_GEM)
                     % (6 - (resident?.m_id ?? 1) % 3);
                 tmp = (tmp + 3) * objectQuan(object);
