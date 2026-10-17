@@ -5,7 +5,9 @@ import {
     DOOR, D_CLOSED, D_ISOPEN, HOLE, IRONBARS, LANDMINE, LAVAPOOL,
     LEVEL_TELEP, PIT, POOL, ROLLING_BOULDER_TRAP, ROOM, STONE, TELEP_TRAP, TRAPDOOR,
 } from '../js/const.js';
-import { game, requirePlayingGame } from '../js/gstate.js';
+import { game, requirePlayingGame, resetGame } from '../js/gstate.js';
+import { restoreGame, saveGame } from '../js/save.js';
+import { memoryStorage } from './support/memory-storage.js';
 import { resetInputState } from '../js/input.js';
 import { BOULDER, DAGGER, ROCK } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
@@ -20,13 +22,17 @@ import { createDungeon } from './support/topology.js';
 
 function pushRoom() {
     const level = freshObjectRoom({ flags: { pickup: false, verbose: true } });
+    pushRoomInput();
+    return level;
+}
+
+function pushRoomInput() {
     const input = resetInputState();
     let reads = 0;
     input.beforeRead = () => {
         assert.ok(++reads < 30, `Unexpected push prompt: ${game._pending_message}`);
         input.feed(' ');
     };
-    return level;
 }
 
 for (const terrain of [LAVAPOOL, POOL]) {
@@ -332,4 +338,28 @@ void test('pushing onto a rolling-boulder trap launches the boulder toward its e
     assert.equal(boulder.ox, 14);
     assert.equal(trap.tseen, true);
     assert.equal(game.u.ux, 11);
+});
+
+// C hack.c:moverock() remembers the last pushed boulder in unsaved instance
+// globals, so the first push after restoring always describes the effort.
+void test('the first push after a restore describes the effort again', async () => {
+    pushRoom();
+    const storage = memoryStorage();
+    game.plname = 'Pusher';
+    await floorObject(BOULDER, 11, 10);
+    initRng(1n);
+    await rhack('l'.charCodeAt(0));
+    assert.match(game._pending_message, /With great effort you move the boulder\./);
+    game.moves++;
+
+    assert.equal(await saveGame(storage), true);
+    resetGame();
+    assert.equal(restoreGame('Pusher', storage), true);
+    initRng(2n);
+    pushRoomInput();
+    game._pending_message = '';
+    await rhack('l'.charCodeAt(0));
+
+    assert.equal(game.u.ux, 12);
+    assert.match(game._pending_message, /With great effort you move the boulder\./);
 });

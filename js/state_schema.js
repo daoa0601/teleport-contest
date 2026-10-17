@@ -1,6 +1,6 @@
 // state_schema.js — Versioned boundary between saved game data and runtime state.
 // C refs: save.c, restore.c, decl.h, you.h, rm.h.
-export const SAVE_VERSION = 32;
+export const SAVE_VERSION = 33;
 const persistentNames = [
     'Luck', '_activeSpecialLevel', '_armorClassDirty', '_artifactDiscoveries',
     '_artifactExists', '_artifactFound', '_artifactRuntime', '_bonesEncountered',
@@ -9,8 +9,8 @@ const persistentNames = [
     '_encumbranceLevel', '_farMonsterNoise', '_fobjSerial',
     '_helplessAfter', '_helplessDoneMessage', '_helplessReason', '_helplessTurns',
     '_heroActionSeq', '_heroTrack', '_initialGoldCount', '_initialPwBonus',
-    '_knownObjectTypes', '_lastBoulderPushMove', '_lastDemigodAggravation',
-    '_lastDemigodNasty', '_lastInvNr', '_lastPushedBoulder', '_last_message',
+    '_knownObjectTypes', '_lastDemigodAggravation',
+    '_lastDemigodNasty', '_lastInvNr', '_last_message',
     '_levelAnnotations', '_levelCache', '_lifeSavedCount', '_migratingMonsters',
     '_mimicMealMessage', '_monsterNoiseTime', '_moveloopStarted', '_nextAttribCheck',
     '_nextIdent', '_nextObjectTimerId', '_objectCallNames', '_objectDiscoveryOrder',
@@ -43,6 +43,9 @@ const persistentNames = [
 // Every remaining GameState field must be transient. Adding, removing, or
 // reclassifying a field requires an explicit persistence decision at compile time.
 const transientFields = {
+    // C hack.c:moverock() keeps these in unsaved instance globals.
+    _lastPushedBoulder: true,
+    _lastBoulderPushMove: true,
     _ballChainRestriction: true,
     _heroBubble: true,
     _domoveSucceeded: true,
