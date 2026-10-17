@@ -351,7 +351,7 @@ import { drawbridgeUnderlyingType } from './drawbridge_terrain.js';
 import { dosave } from './save.js';
 import { captureRunmodeDelay, startRun, stopRun } from './runmode.js';
 import {
-    applyArmorOnEffects, armorOnIdentifiesType, armorSlotFor,
+    armorSlotFor,
     armorSimpleName, armorOffMessage,
     findArmorClass, heroIsDisplaced,
     removeHeroArmor, wearHeroArmor,
@@ -5304,11 +5304,9 @@ async function removeWornItem(action: 'remove' | 'take off', itemAction = false)
         nomul(-delay);
         game._helplessReason = 'disrobing';
         game._helplessDoneMessage = `You finish taking off your ${armorSimpleName(object)}.`;
-        game._helplessAfter = null;
-        game._delayedAction = {
+        game._afterMove = {
             kind: 'remove',
             object,
-            ready: false,
         };
         game.context.move = 1;
         return;
@@ -5367,32 +5365,15 @@ async function putOnArmorObject(object: GameObject): Promise<void> {
     const delay = OBJECT_DELAY[object.otyp] ?? 0;
     game._armorClassDirty = true;
     if (delay > 0) game._armorClassDirtyAfterDelayedFrame = true;
+    game._afterMove = { kind: 'wear', object };
     if (delay > 0) {
         nomul(-delay);
         game._helplessReason = 'dressing up';
         game._helplessDoneMessage = 'You finish your dressing maneuver.';
-        game._helplessAfter = null;
-        game._delayedAction = {
-            kind: 'wear', object,
-            ready: false,
-        };
     } else {
-        // unmul("") clears recovery state before the immediate Armor_on().
-        game._helplessAfter = null;
-        game._delayedAction = null;
         await finishHeroHelplessness('');
-        const effectMessages = await applyArmorOnEffects(object, game);
-        const identifiesType = armorOnIdentifiesType(object, effectMessages)
-            && !game._knownObjectTypes?.has(object.otyp);
-        if (identifiesType) {
-            recordObjectKnowledge(object.otyp);
-            await exerciseAttribute(A_WIS, true);
-        }
-        object.known = true;
         object._armorApplied = true;
         const onMessage = objectWearMessage(object);
-        for (const message of effectMessages)
-            await plineWithContinuation(message);
         if (onMessage) await plineWithContinuation(onMessage);
     }
     // C accessory_or_armor_on() discards interrupted 'A' after armor wear.

@@ -120,7 +120,7 @@ for (const laterMonster of [false, true]) {
             },
         };
         await response;
-        for (let turns = 0; game._delayedAction; turns++) {
+        for (let turns = 0; game.multi < 0; turns++) {
             assert.ok(turns < 4, 'Boots removal did not finish after level travel');
             await moveloop_core();
         }

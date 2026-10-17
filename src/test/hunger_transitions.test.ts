@@ -364,7 +364,7 @@ void test('the real moveloop waits for recovery prose before unfaint changes the
     await pline('An earlier message fills the line before you regain consciousness.');
     let atRecovery;
     input.beforeRead = () => {
-        if (game._helplessAfter === 'unfaint') {
+        if (game.u.uhs === FAINTED) {
             atRecovery = game.u.uhs;
             input.feed(' ');
         } else input.feed('\x1b');

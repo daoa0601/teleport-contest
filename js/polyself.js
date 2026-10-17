@@ -7,7 +7,7 @@ import { P_SHORT_SWORD, P_SABER } from './const.js';
 import { verbForSubject, makePlural } from './object_grammar.js';
 import { OBJECT_SUBTYPE } from './object_data.js';
 import { heroIsUnaware } from './hero_sleep.js';
-import { endVoluntaryMultiTurn, heroHasInvoluntaryDelay } from './command_state.js';
+import { endVoluntaryMultiTurn, heroHasInvoluntaryDelay, pendingArmorAction } from './command_state.js';
 import { finishHeroHelplessness } from './allmain.js';
 import { genocideDeathOptions, heroHasBeenGenocided, takePolymorphGenocide } from './hero_genocide.js';
 import { refreshHeroSeeing } from './hero_seeing.js';
@@ -360,7 +360,7 @@ async function dropCarriedObject(object, options = {}) {
     await dropInventoryObjectAtHero(object);
 }
 function cancelPolymorphDressing(object) {
-    const delayed = game._delayedAction;
+    const delayed = pendingArmorAction(game);
     const cancelledDon = delayed?.object === object && delayed.kind === 'wear';
     if (delayed?.object === object || isBeingTakenOff(object))
         cancelDonning();
@@ -770,7 +770,7 @@ async function changeArmorForHeroForm(mnum) {
     }
     const hornCount = monsterHornCount(mnum);
     if (hornCount && (object = worn('uarmh'))) {
-        if (isFlimsyObject(object, game) && game._delayedAction?.object !== object
+        if (isFlimsyObject(object, game) && pendingArmorAction(game)?.object !== object
             && !isBeingTakenOff(object)) {
             await plineWithContinuation(`Your ${hornCount === 1 ? 'horn pierces' : 'horns pierce'} through ${ownedObjectName(object, game, { capitalized: false })}.`);
         }

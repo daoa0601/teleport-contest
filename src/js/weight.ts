@@ -1,6 +1,7 @@
 // weight.js — Hero inventory weight and carrying-capacity state.
 // C refs: hack.c weight_cap(), inv_weight(), calc_capacity(), near_capacity().
 
+import { pendingArmorAction } from './command_state.js';
 import {
     BAG_OF_HOLDING, BOULDER, CANDELABRUM_OF_INVOCATION, CHEST, CORPSE,
     HEAVY_IRON_BALL, ICE_BOX, LARGE_BOX, OBJECT_NUTRITION, OBJECT_WEIGHT,
@@ -151,7 +152,7 @@ export function weightCapacity(state: GameState): number {
     const steedMnum = state.u?.usteed?.mnum;
     const strongSteed = steedMnum !== undefined && Number.isInteger(steedMnum)
         && !!((MONSTER_FLAGS2[steedMnum] ?? 0) & M2_STRONG);
-    const dressing = state._delayedAction;
+    const dressing = pendingArmorAction(state);
     const bootsPending = dressing?.kind === 'wear'
         && dressing.object === (state.uarmf ?? state.u.uarmf);
     const levitating = levitationSupportsLoad(bootsPending, state)

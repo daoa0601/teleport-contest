@@ -1,3 +1,4 @@
+import type { ArmorCompletion } from './command_types.js';
 import { formatFeltMessage, publishHeardMessage } from './hero_speech.js';
 import { recorderLocalEpochSeconds } from './calendar.js';
 import type { MessagePublisher } from './display.js';
@@ -42,7 +43,7 @@ import { In_endgame, Is_astralevel, MON_FLOOR, PICK_ONE, PLNMSG_MON_TAKES_OFF_IT
 import { mapVicinity } from './magic_mapping.js';
 import { showInventoryWindow } from './windows.js';
 import type { InventoryMenuItem } from './windows.js';
-import { endVoluntaryMultiTurn, heroHasInvoluntaryDelay, nomul, currentMulti, setMulti } from './command_state.js';
+import { endVoluntaryMultiTurn, heroHasInvoluntaryDelay, nomul, currentMulti, pendingArmorAction, setMulti } from './command_state.js';
 import { dosounds } from './ambient_sounds.js';
 import { warnWithMasterKey } from './artifact_warning.js';
 import { regenerateHeroHp } from './hero_regeneration.js';
@@ -1601,8 +1602,7 @@ async function advanceWorldTurn(): Promise<void> {
     delete game._helplessRunmodeDelayPending;
     // Dressing retains its physical topline through each negative-multi
     // frame; its armor effects still wait for unmul's recovery message.
-    const delayedAction = game._delayedAction?.kind === 'steal'
-        ? null : game._delayedAction;
+    const delayedAction = pendingArmorAction(game);
     if (delayedAction) {
         if (game._pending_message) {
             delete delayedAction._runmodeRetainedTopline;
@@ -1619,14 +1619,13 @@ async function advanceWorldTurn(): Promise<void> {
         },
     );
     await drainQueuedHelplessRecoveryMessage();
-    await finishDelayedArmorAction();
     if (game.program_state.gameover) return;
     // Native find_ac() follows the elapsed-turn loop.  setworn() is already
     // live for effects, but the first donning cadence frame still shows the
     // prior AC; the next automatic core observes the recomputed value.  A
     // slowed hero stays inside moveloop_core()'s movement loop, without
     // reaching find_ac(), until a turn grants a full movement ration.
-    if (game._armorClassDirtyAfterDelayedFrame && !game._delayedAction?.ready
+    if (game._armorClassDirtyAfterDelayedFrame
         && game.u.umovement >= NORMAL_SPEED) {
         findArmorClass(game);
         game._armorClassDirty = false;
@@ -1636,11 +1635,7 @@ async function advanceWorldTurn(): Promise<void> {
 
 // C allmain.c:moveloop_core() calls unmul() at the end of the world turn
 // which finishes negative multi, even if burden still prevents hero movement.
-async function finishDelayedArmorAction(): Promise<void> {
-    const g = requireInitializedGame();
-    const delayed = g._delayedAction;
-    if (!delayed?.ready || delayed.kind === 'steal') return;
-    g._delayedAction = null;
+async function finishDelayedArmorAction(delayed: ArmorCompletion, g: GameState): Promise<void> {
     if (delayed.kind === 'wear') {
         // unmul() has printed nomovemsg before Armor_on() and find_ac().
         const effectMessages = await applyArmorOnEffects(delayed.object, g);
@@ -1670,10 +1665,6 @@ async function finishDelayedArmorAction(): Promise<void> {
         // unmul() has acknowledged nomovemsg while the armor was still worn.
         await finishArmorRemoval(delayed.object, { silent: true });
     }
-    g._delayedAction = null;
-    // C moveloop_core() completes travel caused by unmul() before find_ac().
-    // Arrival pagers retain the AC from before the armor was removed.
-    await finishScheduledLevelChange();
     if (g.program_state.gameover) return;
     g._armorClassDirty = true;
     delete g._armorClassDirtyAfterDelayedFrame;
@@ -1706,7 +1697,7 @@ async function drainQueuedHelplessRecoveryMessage() {
     if (game._queuedHelplessRecoveryMessage == null) return;
     const message = game._queuedHelplessRecoveryMessage;
     await finishHeroHelplessness(message);
-    // allmain.c takes travel caused by unmul() before the Seer update.
+    // allmain.c takes travel caused by unmul() before find_ac() and the Seer update.
     await finishScheduledLevelChange();
 }
 
@@ -1714,28 +1705,28 @@ async function drainQueuedHelplessRecoveryMessage() {
 // recovery can start another delay without inheriting the old completion.
 export async function finishHeroHelplessness(
     messageOverride?: string, state: GameState = game,
+    publish: MessagePublisher = plineWithContinuation,
 ): Promise<void> {
     state.context.botl = true;
     setMulti(0, state);
     state._queuedHelplessRecoveryMessage = null;
     const message = messageOverride ?? state._helplessDoneMessage ?? 'You can move again.';
-    if (message) await plineWithContinuation(message);
+    if (message) {
+        await publish(message);
+        if (Upolyd(state.u) && message.toLowerCase().startsWith('you survived that '))
+            await publish(`You are ${withIndefiniteArticle(monsterTypeName(heroSpecies(state), state.flags.female))}.`);
+    }
     state.u.usleep = 0;
     state._helplessReason = null;
     state._helplessDoneMessage = null;
-    const after = state._helplessAfter;
-    state._helplessAfter = null;
-    const armorTheft = state._delayedAction?.kind === 'steal'
-        ? state._delayedAction : null;
-    if (armorTheft) state._delayedAction = null;
-    // Dressing finishes through unmul's afternmv, not a direct multi = 0.
-    const dressing = state._delayedAction;
-    if (dressing && dressing.kind !== 'steal') dressing.ready = true;
-    // C eat.c:Hear_again() runs after unmul() has delivered nomovemsg.
-    // Keep it after the awaited tty continuation: if the rotten-food
-    // message fills the topline, the acknowledgement resumes here before
-    // the recovery message becomes the next input boundary.
-    switch (after) {
+    const after = state._afterMove;
+    state._afterMove = null;
+    if (!after) return;
+    switch (after.kind) {
+    case 'wear':
+    case 'remove':
+        await finishDelayedArmorAction(after, state);
+        break;
     case 'hear-again':
         await regainHearingAfterHelplessness({ state });
         break;
@@ -1748,18 +1739,21 @@ export async function finishHeroHelplessness(
     case 'finish-digestion':
         await finishHeroDigestion(state);
         break;
-    case 'steal-armor':
-        if (armorTheft) await finishDelayedArmorTheft(armorTheft.thief, armorTheft.object, state);
+    case 'steal': {
+        const theft = state._armorTheft;
+        if (theft?.thief) await finishDelayedArmorTheft(theft.thief, theft.object, state);
+        state._armorTheft = null;
         break;
-    case 'unstolen-armor':
-        if (armorTheft && state.inventory.includes(armorTheft.object))
-            await plineWithContinuation(`You finish taking off your ${armorSimpleName(armorTheft.object, state)}.`);
+    }
+    case 'unstolen-armor': {
+        const object = state._armorTheft?.object;
+        state._armorTheft = null;
+        if (object && state.inventory.includes(object))
+            await plineWithContinuation(`You finish taking off your ${armorSimpleName(object, state)}.`);
         break;
+    }
     case 'finish-prayer':
         await finishPrayerOccupation(state);
-        break;
-    case null:
-    case undefined:
         break;
     }
 }
@@ -1947,7 +1941,7 @@ async function resolveDeferredHeroItemTheft(
     const throwsRocks = !!((MONSTER_FLAGS2[monster.mnum] ?? 0) & 0x08000000);
     let retriedBoulder = false;
     while (object) {
-        if (game._delayedAction?.kind === 'steal' && game._delayedAction.object === object)
+        if (game._armorTheft?.object === object)
             return false;
         if (object.otyp !== BOULDER || throwsRocks || retriedBoulder) break;
         retriedBoulder = true;
@@ -2011,7 +2005,7 @@ async function resolveDeferredHeroItemTheft(
         if (animal && object.cursed) return refuse();
         releaseObjectLeash(object, game);
     }
-    const previousDelay = game._delayedAction;
+    const previousDelay = pendingArmorAction(game);
     const wasDoffing = (previousDelay?.kind === 'remove' && previousDelay.object === object)
         || isBeingTakenOff(object, game);
     await stopDonning(object, game);
@@ -2061,9 +2055,8 @@ async function resolveDeferredHeroItemTheft(
                 object.cursed = cursed;
             }
             if ((game._helplessTurns ?? 0) > 0) {
-                game._delayedAction = { kind: 'steal', thief: monster, object,
-                    ready: false };
-                game._helplessAfter = 'steal-armor';
+                game._armorTheft = { thief: monster, object };
+                game._afterMove = { kind: 'steal' };
                 return false;
             }
         }
@@ -3886,7 +3879,7 @@ export async function moveloop_core() {
         g._armorClassDirty = false;
     }
 
-    if (currentMulti(g) < 0 && g._delayedAction && g._delayedAction.kind !== 'steal') {
+    if (currentMulti(g) < 0 && pendingArmorAction(g)) {
         // A delayed action spends movement without reading another command.
         g.u.umoved = false;
         g.context.move = 1;

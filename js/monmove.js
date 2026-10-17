@@ -1265,7 +1265,7 @@ function monsterAttackThreshold(monster, state, rollOne, calls) {
     let threshold = sourceHeroArmorClass(state, rollOne, calls) +
         10 +
         (monster.m_lev ?? MONSTER_LEVEL[monster.mnum] ?? 0);
-    if (heroHasNegativeMulti(state))
+    if (heroHasInvoluntaryDelay(state))
         threshold += 4;
     const perceivesInvisible = !!((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_SEE_INVIS);
     if ((heroIsInvisible(state) && !perceivesInvisible) || !monster.mcansee)
@@ -1316,10 +1316,6 @@ async function finishHeroContactDamage(monster, damage, attackType, oldForm, sta
     if (damage <= 0)
         return { attackerStopped: false };
     return applyHeroFormPassive(monster, oldForm, attackType, { state, random, rollDice, publish });
-}
-function heroHasNegativeMulti(state) {
-    return (!!state?._delayedAction ||
-        (state?._helplessTurns ?? 0) > 0);
 }
 function lineBlockingTerrain(state, x, y) {
     if (!isok(x, y))

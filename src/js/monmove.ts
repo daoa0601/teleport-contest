@@ -1805,7 +1805,7 @@ function monsterAttackThreshold(
         sourceHeroArmorClass(state, rollOne, calls) +
         10 +
         (monster.m_lev ?? MONSTER_LEVEL[monster.mnum] ?? 0);
-    if (heroHasNegativeMulti(state)) threshold += 4;
+    if (heroHasInvoluntaryDelay(state)) threshold += 4;
     const perceivesInvisible = !!((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_SEE_INVIS);
     if ((heroIsInvisible(state) && !perceivesInvisible) || !monster.mcansee) threshold -= 2;
     if (monster.mtrapped) threshold -= 2;
@@ -1865,13 +1865,6 @@ async function finishHeroContactDamage(
     }
     if (damage <= 0) return { attackerStopped: false };
     return applyHeroFormPassive(monster, oldForm, attackType, { state, random, rollDice, publish });
-}
-
-function heroHasNegativeMulti(state: PlayingGameState) {
-    return (
-        !!state?._delayedAction ||
-        (state?._helplessTurns ?? 0) > 0
-    );
 }
 
 function lineBlockingTerrain(state: PlayingGameState, x: number, y: number) {

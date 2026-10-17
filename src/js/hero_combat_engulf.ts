@@ -200,7 +200,7 @@ async function digestDefender(defender: Monster, species: number, state: Playing
             state._helplessReason = 'digesting something';
             state._helplessDoneMessage = doneMessage;
             state._digestedMonsterSpecies = species;
-            state._helplessAfter = 'finish-digestion';
+            state._afterMove = { kind: 'finish-digestion' };
         } else await publish(doneMessage);
         if (species === PM_GREEN_SLIME) {
             if (delay) state._helplessDoneMessage = `The ${monsterTypeName(species, !!defender.female)} isn't sitting well with you.`;

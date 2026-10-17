@@ -93,7 +93,7 @@ void test('a nymph waits while the hero removes a suit, then steals it', async (
         const text = requireScreenRow(0).map(cell => cell.ch).join('');
         return text.includes('--More--') ? 32 : 46;
     } };
-    while (game._delayedAction) await moveloop_core();
+    while (game.multi < 0) await moveloop_core();
     await flushPendingTopline();
     assert.equal(nymph.minvent.includes(suit), true);
     assert.match(messages.join('\n'), /water nymph steals/);

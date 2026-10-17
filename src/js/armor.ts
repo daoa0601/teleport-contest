@@ -1,7 +1,7 @@
 // armor.js — Hero armor-class projection.
 // C refs: do_wear.c find_ac() and hack.h ARM_BONUS().
 
-import { setMulti } from './command_state.js';
+import { pendingArmorAction, setMulti } from './command_state.js';
 import { finishHeroHelplessness } from './allmain.js';
 import { objectMaterial } from './object_material.js';
 import { formatFeltMessage } from './hero_speech.js';
@@ -279,11 +279,11 @@ export async function removeHeroArmor(object: GameObject, state: GameState = gam
     if (object.otyp === LEVITATION_BOOTS || object.otyp === WATER_WALKING_BOOTS)
         requireLiveGame(state);
     const previousLevitation = captureLevitationState(state);
+    const pending = pendingArmorAction(state);
     const cancelledDon = options.cancelledDon
-        ?? (state._delayedAction?.kind === 'wear'
-            && state._delayedAction.object === object);
+        ?? (pending?.kind === 'wear' && pending.object === object);
     const losingGloves = equippedObject(state, 'uarmg') === object;
-    if (state._delayedAction?.object === object) {
+    if (pending?.object === object) {
         cancelDonning(state);
     }
     if (object?.otyp === FEDORA && state.urole?.key === 'archeologist')
@@ -389,8 +389,8 @@ async function losePetrificationProtection(armor: GameObject, state: GameState, 
 
 // Slot/source removal without the Boots_off() transition.
 export async function clearHeroArmor(object: GameObject, state: GameState = game, {
-    cancelledDon = state._delayedAction?.kind === 'wear'
-        && state._delayedAction.object === object,
+    cancelledDon = pendingArmorAction(state)?.kind === 'wear'
+        && pendingArmorAction(state)?.object === object,
     deferArmorClass = false,
 }: ArmorRemovalOptions = {}) {
     const slot = armorSlotFor(object?.otyp);
@@ -1027,8 +1027,7 @@ export function armorOffMessage(object: GameObject, state: GameState = game) {
 // C cancel_don(): discard the interrupted callback and its recovery text.
 // The caller retains whether this was donning before clearing the action.
 export function cancelDonning(state: GameState = game): void {
-    state._delayedAction = null;
-    state._helplessAfter = null;
+    state._afterMove = null;
     state._helplessDoneMessage = null;
     state._queuedHelplessRecoveryMessage = null;
     setMulti(0, state);
@@ -1042,8 +1041,7 @@ export function cancelDonning(state: GameState = game): void {
 // C stop_donning(): a cancelled dressing action loses its incomplete armor;
 // interrupted removal leaves the item worn.
 export async function stopDonning(stolenObject: GameObject | null = null, state: GameState = game) {
-    const delayed = state._delayedAction;
-    if (delayed?.kind === 'steal') return false;
+    const delayed = pendingArmorAction(state);
     if (!delayed) {
         const progress = state.context.takeoff;
         const slot = progress?.current;
