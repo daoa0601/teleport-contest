@@ -1,5 +1,5 @@
 // C do.c:doddrop(), menu_drop(), menudrop_split(); invent.c:ggetobj()/askchain().
-import { MENU_COMBINATION, MENU_FULL, MENU_TRADITIONAL, SORTLOOT_INVLET } from './const.js';
+import { MENU_COMBINATION, MENU_FULL, MENU_TRADITIONAL, PARANOID_AUTOALL, SORTLOOT_INVLET } from './const.js';
 import { chooseObjectCategories } from './container.js';
 import { consumeHallucinatedMenuObjectGlyph, plineWithContinuation as pline } from './display.js';
 import { game } from './gstate.js';
@@ -46,6 +46,10 @@ export async function dropMultipleObjects(): Promise<boolean> {
                 if (selected.all || !selected.categories.length) matches = () => true;
             } else if (style === MENU_TRADITIONAL || selected.all) {
                 return await dropTraditionally(selected);
+            } else if (!selected.categories.length
+                && !((game.flags.paranoia_bits ?? 0) & PARANOID_AUTOALL)) {
+                // C allow_category() rejects an empty combination-menu filter.
+                return false;
             }
         } else if (style === MENU_FULL) {
             const categories = await dropCategories();
