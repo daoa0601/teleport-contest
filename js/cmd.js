@@ -622,7 +622,8 @@ function canSeeRunMonster(monster, x, y, g = game) {
         && !monster.mundetected;
 }
 function travelInterruptedByMonster(g = game) {
-    return !!g.level?.monsters?.some(monster => Math.abs(monster.mx - g.u.ux) <= 1
+    return !!g.level?.monsters?.some(monster => monsterHasMapPosition(monster, g)
+        && Math.abs(monster.mx - g.u.ux) <= 1
         && Math.abs(monster.my - g.u.uy) <= 1
         && (monster.mx !== g.u.ux || monster.my !== g.u.uy)
         && !monster.pet && !monster.mpeaceful && cansee(monster.mx, monster.my));

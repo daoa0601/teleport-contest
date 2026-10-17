@@ -26,6 +26,7 @@ import { monsterPolymorphsWhenStoned } from './monster_stoning.js';
 import { relocateObjectRandomly } from './object_teleport.js';
 import { discardMonsterInventory, dropSpecialMonsterObjects } from './monster_drop.js';
 import { removeMonsterFromGame } from './monster_departure.js';
+import { purgeDeadMonsters } from './monster_level_departure.js';
 import { exerciseWisdom } from './attrib.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { impossible } from './diagnostics.js';
@@ -3568,6 +3569,7 @@ export function saveBonesLevel() {
     if (!storage || !game.level || !game.urole || !game.urace
         || !game.u.ualign)
         return false;
+    purgeDeadMonsters(game.level);
     let payload;
     try {
         payload = decodeBonesPayload(encodeSavedGraph({
