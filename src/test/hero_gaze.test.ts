@@ -73,3 +73,21 @@ void test('gazing at a floating eye can freeze the hero', async () => {
     await finishHeroHelplessness();
     assert.match(game._pending_message, /You can move again\./);
 });
+
+void test('a gaze reaches the newest monster first and spares a pet', async () => {
+    freshMonsterAbilityRoom('umber hulk', { energy: 30 });
+    requireFixtureGame(game);
+    const pet = await createMonsterAt('jackal', 11, 10);
+    pet.mtame = 10;
+    const newt = await createMonsterAt('newt', 9, 10);
+    const messages: string[] = [];
+
+    await gaze({ publish: async (message: string) => { messages.push(message); } });
+
+    assert.deepEqual(messages, [
+        'Your gaze confuses the newt!',
+        'You avoid gazing at your jackal.',
+    ]);
+    assert.equal(newt.mconf, 1);
+    assert.ok(!pet.mconf);
+});

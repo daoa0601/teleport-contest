@@ -112,7 +112,6 @@ export function validSavedGameFlags(value) {
         query_menu: optional(boolean),
         quick_farsight: optional(boolean),
         rest_on_space: optional(boolean),
-        safe_pet: optional(boolean),
         safe_wait: optional(boolean),
         showdamage: optional(boolean),
         showexp: optional(boolean),

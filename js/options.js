@@ -522,8 +522,6 @@ function parseConfiguration(rc, result) {
                         result.flags.reroll = value;
                     else if (lname === 'female')
                         result.flags.female = value;
-                    else if (lname === 'safe_dog')
-                        result.flags.safe_dog = value;
                     else if (lname === 'male')
                         result.flags.female = !value;
                     else if (lname === 'autounlock')
@@ -631,7 +629,8 @@ const REQUEST_MENU_BOOLEAN_OPTIONS = [
     ['query_menu', 'query_menu', false],
     ['quick_farsight', 'quick_farsight', false],
     ['rest_on_space', 'rest_on_space', false],
-    ['safe_pet', 'safe_pet', true],
+    // optlist.h: the safe_pet option stores flags.safe_dog.
+    ['safe_pet', 'safe_dog', true],
     ['safe_wait', 'safe_wait', true],
     ['showdamage', 'showdamage', false],
     ['showexp', 'showexp', false],

@@ -11,14 +11,14 @@ export type GameBooleanFlag =
     | 'mention_decor' | 'mention_map' | 'mention_walls' | 'menu_overlay'
     | 'menucolors' | 'mon_movement' | 'null' | 'pickup_stolen'
     | 'pickup_thrown' | 'price_quotes' | 'pushweapon' | 'query_menu'
-    | 'quick_farsight' | 'rest_on_space' | 'safe_pet' | 'safe_wait'
+    | 'quick_farsight' | 'rest_on_space' | 'safe_dog' | 'safe_wait'
     | 'showdamage' | 'showexp' | 'showrace' | 'showvers' | 'silent'
     | 'sortpack' | 'sparkle' | 'spot_monsters' | 'standout' | 'terrainstatus'
     | 'time' | 'tips' | 'tombstone' | 'travel' | 'use_inverse' | 'verbose'
     | 'weaponstatus'
     | 'beginner' | 'blind' | 'bones' | 'deaf' | 'debug' | 'explore' | 'female'
     | 'friday13' | 'legacy' | 'made_fruit' | 'nudist' | 'pauper' | 'reroll'
-    | 'safe_dog' | 'tutorial';
+    | 'tutorial';
 
 export type MenuStyle = 0 | 1 | 2 | 3;
 export type LootSortMode = 'n' | 'l' | 'f';

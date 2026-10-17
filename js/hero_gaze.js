@@ -11,6 +11,7 @@ import { heroIsInvisible } from './hero_invisibility.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { igniteItems } from './light.js';
 import { angerAttackedMonster } from './monster_anger.js';
+import { monstersInFmonOrder } from './monmove.js';
 import { AD_CONF, AD_FIRE, AT_GAZE, } from './monster_attack_types.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS1 } from './monster_data.js';
 import { monsterName, possessiveName } from './monster_name.js';
@@ -142,7 +143,8 @@ export async function useHeroGaze({ state = game, attack = heroGazeAttack(state)
     state.u.uen = energy - 15;
     state.context.botl = true;
     let looked = 0;
-    for (const monster of [...(state.level?.monsters || [])]) {
+    // polyself.c:dogaze() walks fmon, newest monster first.
+    for (const monster of monstersInFmonOrder(state.level?.monsters || [])) {
         if (!monster || monster.dead || (monster.mhp ?? 1) <= 0
             || !canSeeMonster(monster)
             || !couldsee(monster.mx, monster.my))
@@ -162,7 +164,7 @@ export async function useHeroGaze({ state = game, attack = heroGazeAttack(state)
             looked--;
             continue;
         }
-        if (state.flags?.safe_dog && monster.mtame && !heroIsConfused(state)) {
+        if ((state.flags?.safe_dog ?? true) && monster.mtame && !heroIsConfused(state)) {
             const target = monsterName(monster, { state, article: 'your' });
             await publish(`You avoid gazing at ${target}.`);
             continue;
