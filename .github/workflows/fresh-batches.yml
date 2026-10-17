@@ -92,7 +92,7 @@ jobs:
           D=$PWD/nethack-c/recorder/install/games/lib/nethackdir
           ls -la $D | grep -v '\.lua$'
           mkdir -p /tmp/h && printf 'OPTIONS=name:Probe\n' > /tmp/h/.nethackrc
-          (cd /tmp && echo | HOME=/tmp/h NETHACKDIR=$D HACKDIR=$D TERM=xterm-256color NETHACK_SEED=1 NETHACK_FIXED_DATETIME=20000110090000 NETHACK_RNGLOG=/tmp/rng.log NOMUX_MARKERS=1 NETHACK_RAW_KEYS=1 timeout 5 $D/nethack -u Probe > /tmp/out.txt 2>&1; echo "exit=$?")
+          (cd /tmp && echo | HOME=/tmp/h NETHACKDIR=$D HACKDIR=$D TERM=xterm-256color NETHACK_SEED=1 NETHACK_FIXED_DATETIME=20000110090000 NETHACK_RNGLOG=/tmp/rng.log NOMUX_MARKERS=1 NETHACK_RAW_KEYS=1 timeout 5 $D/nethack -u Probe > /tmp/out.txt 2>&1 || echo "exit=$?") || true
           strings /tmp/out.txt | head -20
 
       - name: Record fresh sessions
