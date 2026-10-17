@@ -320,7 +320,7 @@ export async function detachDeadMonster(monster, state, random, publish) {
     restoreMonsterTrueSpecies(monster);
     recordMonsterDeath(monster, state);
     markQuestLeaderDead(monster, state);
-    await returnDeadKop(monster, state, random);
+    await returnDeadKop(monster, state);
     if (state === game)
         unmap_invisible(x, y, false);
     if (monster.mleashed)

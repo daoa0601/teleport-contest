@@ -440,7 +440,7 @@ export async function detachDeadMonster(
     restoreMonsterTrueSpecies(monster);
     recordMonsterDeath(monster, state);
     markQuestLeaderDead(monster, state);
-    await returnDeadKop(monster, state, random);
+    await returnDeadKop(monster, state);
     if (state === game) unmap_invisible(x, y, false);
     if (monster.mleashed) releaseMonsterLeash(monster, state);
     // m_detach removes the light of the form which died, before its true
