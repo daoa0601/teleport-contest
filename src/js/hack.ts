@@ -37,8 +37,8 @@ import {
 } from './monster_data.js';
 import {
     AMULET_OF_LIFE_SAVING, BOULDER, LOADSTONE, OBJECT_MATERIAL,
-    OBJECT_NAMES,
 } from './object_data.js';
+import { ownedObjectAction } from './objnam.js';
 import {
     heroFormClings, heroFormFlags, heroHidesOnCeiling, heroIsFlying,
 } from './polyself.js';
@@ -379,8 +379,7 @@ async function burnLavaBoots(
     const boots = state.uarmf || state.u?.uarmf;
     if (!boots || !(boots.in_use || (!boots.oerodeproof && objectMaterial(boots, state) <= 8)))
         return false;
-    const name = boots.name || OBJECT_NAMES[boots.otyp] || 'boots';
-    await publish(`Your ${name} burst into flame!`);
+    await publish(`${ownedObjectAction(boots, 'burst', state)} into flame!`);
     // destroyWornArmor() runs the full Boots_off-before-consume sequence; the
     // in_lava_effects counter raised around this whole entry suppresses the
     // nested float_down()/spoteffects() recursion (C trap.c:6863-6867).

@@ -7,7 +7,7 @@ import { armorSimpleName, heroHasWaterWalking } from './armor.js';
 import { fireDamageObject } from './fire_damage.js';
 import { delobj } from './object_delete.js';
 import { objectDescription as fullObjectDescription } from './object_description.js';
-import { objectCombatName, observeObjectForNaming, ownedObjectName, simpleObjectName } from './objnam.js';
+import { objectCombatName, observeObjectForNaming, ownedObjectAction, ownedObjectName, simpleObjectName } from './objnam.js';
 import { cansee, couldsee } from './vision.js';
 import { endObjectBurn } from './light.js';
 import { game } from './gstate.js';
@@ -111,10 +111,7 @@ export async function destroyLavaInventory({ state = game, publish = async () =>
             continue;
         const wasWorn = !!object.worn || !!object.owornmask;
         if (showMessages && wasWorn) {
-            const name = object.name || OBJECT_NAMES[object.otyp] || 'item';
-            const plural = (object.quan ?? object.quantity ?? 1) > 1
-                || name.endsWith('s');
-            await publish(`Your ${name} ${plural ? 'burst' : 'bursts'} into flame!`);
+            await publish(`${ownedObjectAction(object, 'burst', state)} into flame!`);
             named++;
         }
         else {
