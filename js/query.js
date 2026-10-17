@@ -1,7 +1,7 @@
 // query.js — Shared tty line and confirmation input ownership.
 // C refs: cmd.c paranoid_query()/paranoid_ynq(), tty getlin/yn_function.
 import { COLNO, PARANOID_CONFIRM, QBUFSZ } from './const.js';
-import { clearMessageWindow, flushPendingTopline, flush_screen, pline } from './display.js';
+import { clearMessageWindow, flushPendingTopline, flush_screen, setTopline } from './display.js';
 import { game } from './gstate.js';
 import { nhgetch } from './input.js';
 import { NO_COLOR } from './terminal.js';
@@ -71,7 +71,7 @@ async function editLine(prompt, accepts, { suppressStatus = false, inMenu = fals
         game._retained_message = '';
     }
     else {
-        await pline(prompt);
+        await setTopline(prompt);
         await flush_screen(1);
     }
     clearSuppressedStatus();
@@ -155,7 +155,7 @@ export async function promptChoice(query, choices, defaultAnswer, { visibleChoic
     if (!game._suppressMessagesUntilInput)
         await flushPendingTopline();
     game._suppressMessagesUntilInput = false;
-    await pline(message);
+    await setTopline(message);
     await flush_screen(1);
     renderChoicePrompt(message);
     const wrapped = (game.nhDisplay?.cursorRow ?? 0) > 0;

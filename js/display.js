@@ -2675,7 +2675,10 @@ export function timebot() {
     writeStatusLines(display, display.statusLines);
 }
 // ── pline ──
-export async function pline(msg) {
+// Replace the message line without tty's update_topl() negotiation. Only the
+// topline owner below, its direct pagers, and prompt owners (whose native
+// TOPLINE_SPECIAL_PROMPT text never pages) write the line this way.
+export async function setTopline(msg) {
     if (game.program_state?.windows_exited) {
         if (msg) {
             rawPrint(msg);
@@ -2780,7 +2783,7 @@ export function renderKeyPrompt(message, cursorOffset = 0) {
     return lines.length;
 }
 export async function moreUntilDismissed(message, { urgent = false } = {}) {
-    await pline(message);
+    await setTopline(message);
     return pageTopline(message, { urgent });
 }
 // C tty_message_menu(): the preceding prompt has already been answered.
@@ -2880,6 +2883,14 @@ export async function displayMessageWindow() {
 // topline or owns a --More-- boundary before replacing it.  Keep this policy
 // at the terminal layer so source callers can remain ordinary sequential
 // pline() producers.
+// C pline.c:vpline() always reaches tty through update_topl().
+export async function pline(msg) {
+    if (!msg) {
+        await setTopline(msg);
+        return;
+    }
+    await plineWithContinuation(msg);
+}
 export async function plineWithContinuation(msg, { noRepeat = false, urgent = false } = {}) {
     if (!msg)
         return;
@@ -2922,23 +2933,23 @@ export async function plineWithContinuation(msg, { noRepeat = false, urgent = fa
         if (!restarts)
             return;
         game._suppressMessagesUntilInput = false;
-        await pline(msg);
+        await setTopline(msg);
         return wraps ? await pageTopline(msg) : null;
     }
     let dismissal;
     if (!pending) {
-        await pline(msg);
+        await setTopline(msg);
         dismissal = wraps
             ? await pageTopline(msg, { urgent }) : null;
     }
     else if (!msg.startsWith('You die')
         && visibleLength(msg) + visibleLength(pending) + 3 < columns - 8) {
-        await pline(`${pending}  ${msg}`);
+        await setTopline(`${pending}  ${msg}`);
     }
     else {
         dismissal = await pageTopline(pending, { urgent });
         // Escape suppresses later lines, not the line which forced this pager.
-        await pline(msg);
+        await setTopline(msg);
         if (wraps)
             dismissal = await pageTopline(msg, { urgent });
     }
