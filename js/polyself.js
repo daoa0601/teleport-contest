@@ -1,6 +1,7 @@
 // Hero form changes and equipment.
 // C refs: polyself.c polyself(), polymon(), break_armor(), drop_weapon().
 import { formatFeltMessage } from './hero_speech.js';
+import { monsterEmitsLight } from './vision.js';
 import { weaponDescription } from './weapon_description.js';
 import { P_SHORT_SWORD, P_SABER } from './const.js';
 import { makePlural } from './object_grammar.js';
@@ -302,6 +303,10 @@ export async function returnHeroToHumanForm(state = game, { publish = plineWithC
             learnObjectType(AMULET_OF_UNCHANGING, state);
         }
     }
+    // rehumanize() deletes the body's light source before polyman() prints.
+    // Its pending vision refresh must reach the announcement's map flush.
+    if (monsterEmitsLight(state.u.umonnum))
+        state.vision_full_recalc = 1;
     const race = state.urace.adj;
     const restored = await becomeHuman(`You return to ${race} form!`, state, publish, die);
     if (restored.died)
