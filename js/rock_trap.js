@@ -1,5 +1,6 @@
 // Falling rocks from ceiling traps.
 // C ref: trap.c:trapeffect_rocktrap().
+import { newsym } from './display.js';
 import { finishMonsterKilled } from './monster_death.js';
 import { AD_PHYS } from './monster_attack_types.js';
 import { deleteTrap } from './trap_lifecycle.js';
@@ -42,8 +43,11 @@ export async function beginMonsterRockTrap(monster, trap, state = game, { random
             finished: !(visibility.inSight && visibility.seeSquare),
             ...visibility,
         };
-        if (event.finished)
+        if (event.finished) {
             deleteTrap(trap, state);
+            if (state === game)
+                newsym(monster.mx, monster.my);
+        }
         return event;
     }
     trap.once = true;
@@ -70,6 +74,8 @@ export async function finishMonsterRockTrap(monster, event, state = game, { publ
     if (event.kind === 'spent-rock-trap') {
         await publish(`A trap door above ${canonicalMonsterName(monster, { state })} opens, but nothing falls out!`);
         deleteTrap(event.trap, state);
+        if (state === game)
+            newsym(monster.mx, monster.my);
         event.finished = true;
         return event;
     }

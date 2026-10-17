@@ -40,8 +40,11 @@ export async function beginMonsterProjectileTrap(monster, trap, state = game, { 
             finished: !(visibility.inSight && visibility.seeSquare),
             ...visibility,
         };
-        if (event.finished)
+        if (event.finished) {
             deleteTrap(trap, state);
+            if (state === game)
+                newsym(monster.mx, monster.my);
+        }
         return event;
     }
     trap.once = true;
@@ -74,6 +77,8 @@ export async function finishMonsterProjectileTrap(monster, event, state = game, 
         const subject = describeMonster(monster);
         await publish(`${subject} triggers a trap but nothing happens.`);
         deleteTrap(event.trap, state);
+        if (state === game)
+            newsym(monster.mx, monster.my);
         event.finished = true;
         return event;
     }

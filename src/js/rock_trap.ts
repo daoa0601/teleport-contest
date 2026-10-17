@@ -6,6 +6,7 @@ import type { GameObject } from './object_types.js';
 import type { GameState } from './game_state.js';
 import type { Trap } from './map_types.js';
 import type { MessagePublisher } from './display.js';
+import { newsym } from './display.js';
 import { finishMonsterKilled } from './monster_death.js';
 import type { MonsterDeathResult } from './monster_death.js';
 import { AD_PHYS } from './monster_attack_types.js';
@@ -85,7 +86,10 @@ export async function beginMonsterRockTrap(
             finished: !(visibility.inSight && visibility.seeSquare),
             ...visibility,
         };
-        if (event.finished) deleteTrap(trap, state);
+        if (event.finished) {
+            deleteTrap(trap, state);
+            if (state === game) newsym(monster.mx, monster.my);
+        }
         return event;
     }
 
@@ -124,6 +128,7 @@ export async function finishMonsterRockTrap(
     if (event.kind === 'spent-rock-trap') {
         await publish(`A trap door above ${canonicalMonsterName(monster, { state })} opens, but nothing falls out!`);
         deleteTrap(event.trap, state);
+        if (state === game) newsym(monster.mx, monster.my);
         event.finished = true;
         return event;
     }
