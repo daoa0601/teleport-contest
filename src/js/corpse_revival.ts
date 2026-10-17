@@ -315,7 +315,7 @@ async function mergeGhostIntoBody(monster: Monster, corpse: GameObject, state: G
     const ghostId = corpse.oextra?.omid ?? corpse.omid;
     if (!ghostId) return;
     const ghost = (state.level?.monsters || []).find(candidate =>
-        candidate.m_id === ghostId && candidate.mnum === PM_GHOST);
+        candidate.mhp > 0 && candidate.m_id === ghostId && candidate.mnum === PM_GHOST);
     if (ghost) {
         if (canSeeMonster(ghost))
             await plineWithContinuation(`${monsterName(ghost, { state, capitalized: true })} is suddenly drawn into its former body!`);
