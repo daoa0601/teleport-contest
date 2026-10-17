@@ -2,6 +2,7 @@
 // C refs: weapon.c select_hwep(), oselect(), setmnotwielded(),
 // mwepgone(), and possibly_unwield().
 
+import { bypassObject } from './object_bypass.js';
 import {
     NEED_AXE, NEED_HTH_WEAPON, NEED_PICK_AXE, NEED_PICK_OR_AXE,
     NEED_RANGED_WEAPON, NEED_WEAPON, NO_WEAPON_WANTED, P_BOW, P_CROSSBOW, P_SLING,
@@ -429,8 +430,7 @@ export async function updateMonsterWeaponAfterPolymorph(monster: Monster, state:
         );
         if (landing.finished) return landing.object;
         if (polyspot) {
-            weapon.bypass = true;
-            state.context.bypasses = true;
+            bypassObject(weapon, state);
         }
         // Weapon drops can follow hero-caused unwields: awaited placement.
         await placeObject(weapon, monster.mx, monster.my, state);

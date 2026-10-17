@@ -1,3 +1,4 @@
+import { bypassObjectList, clearBypasses, nextUnbypassedObject } from './object_bypass.js';
 // invent.js — Inventory display and look-here commands.
 // C ref: invent.c — ddoinv(), display_inventory(), dolook().
 
@@ -250,31 +251,39 @@ async function identifyTraditionally(limit: number): Promise<IdentificationResul
             (a.invlet == null ? -1 : letterOrder.indexOf(a.invlet))
                 - (b.invlet == null ? -1 : letterOrder.indexOf(b.invlet)));
         const classes = categories.classes.length ? categories.classes : [null];
-        for (const objectClass of classes) {
-            for (const [index, object] of inventory.entries()) {
-                if ((objectClass !== null && object.oclass !== objectClass)
-                    || !objectNeedsFullIdentification(object)
-                    || !matchesIdentificationCategories(object, categories)) continue;
-                let response = 'y';
-                if (!all) {
-                    observeObjectForNaming(object);
-                    const letter = game.flags.fixinv === false
-                        ? letterOrder.charAt(Math.min(index + (inventory[0]?.oclass === COIN_CLASS ? 0 : 1), 53))
-                        : object.invlet;
-                    const description = inventoryItemDescription(object, {
-                        primaryHandDetail: inventoryPrimaryHandDetail(object),
-                    });
-                    await flushPendingTopline();
-                    response = await promptYesNoAllQuit(`${letter} - ${description}?`, 'n');
+        try {
+            for (const objectClass of classes) {
+                bypassObjectList(game.inventory, false);
+                let object;
+                let index = -1;
+                while ((object = nextUnbypassedObject(game.inventory, game, inventory))) {
+                    index++;
+                    if ((objectClass !== null && object.oclass !== objectClass)
+                        || !objectNeedsFullIdentification(object)
+                        || !matchesIdentificationCategories(object, categories)) continue;
+                    let response = 'y';
+                    if (!all) {
+                        observeObjectForNaming(object);
+                        const letter = game.flags.fixinv === false
+                            ? letterOrder.charAt(Math.min(index + (inventory[0]?.oclass === COIN_CLASS ? 0 : 1), 53))
+                            : object.invlet;
+                        const description = inventoryItemDescription(object, {
+                            primaryHandDetail: inventoryPrimaryHandDetail(object),
+                        });
+                        await flushPendingTopline();
+                        response = await promptYesNoAllQuit(`${letter} - ${description}?`, 'n');
+                    }
+                    if (response === 'q') return { identified, remaining: 0 };
+                    questioned++;
+                    if (response === 'n') continue;
+                    if (response === 'a') all = true;
+                    await identifyAndDescribe(object);
+                    identified.push(object);
+                    if (!--limit) return { identified, remaining: 0 };
                 }
-                if (response === 'q') return { identified, remaining: 0 };
-                questioned++;
-                if (response === 'n') continue;
-                if (response === 'a') all = true;
-                await identifyAndDescribe(object);
-                identified.push(object);
-                if (!--limit) return { identified, remaining: 0 };
             }
+        } finally {
+            clearBypasses();
         }
         await plineWithContinuation(questioned ? 'That was all.' : 'No applicable objects.');
     }

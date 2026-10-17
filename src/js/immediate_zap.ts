@@ -13,7 +13,7 @@ import { hitFloorObjectWithForce } from './force_bolt.js';
 import { game } from './gstate.js';
 import { probeObject } from './magic_probe.js';
 import { maybeUnhideAt } from './monster_hiding.js';
-import { MONSTER_FLAGS2, MONSTER_NAME, monsterIsNonliving } from './monster_data.js';
+import { MONSTER_FLAGS2, monsterIsNonliving } from './monster_data.js';
 import { monsterName, namelessMonsterName } from './monster_name.js';
 import { cancelObjectMagic } from './object_cancellation.js';
 import {
@@ -30,7 +30,6 @@ import {
 } from './object_polymorph.js';
 import { drainObjectEnchantment } from './object_state.js';
 import { relocateObjectRandomly } from './object_teleport.js';
-import { objectsInTimerGraph } from './object_timers.js';
 import { fillPitWithBoulderAt } from './pit_fill.js';
 import { heroFormHidesUnderObjects } from './polyself.js';
 import { unpunishHero } from './punishment.js';
@@ -59,28 +58,6 @@ export function beginImmediateZap(state: GameState = game) {
 export async function finishImmediateZap(state: GameState = game) {
     if (state.context?.obj_zapped) await pline(formatFeltMessage('shuddering vibrations.', state));
     state.context.obj_zapped = false;
-}
-
-// Native clear_bypasses runs once per turn, after the complete zap transaction.
-export function clearImmediateZapBypasses(state: GameState = game) {
-    for (const object of objectsInTimerGraph(state)) object.bypass = false;
-    const clearChain = (objects: readonly GameObject[] | undefined): void => {
-        for (const object of objects || []) {
-            object.bypass = false;
-            clearChain(object.contents);
-        }
-    };
-    clearChain(state.billObjects);
-    if (state.uball) state.uball.bypass = false;
-    if (state.uchain) state.uchain.bypass = false;
-    for (const monster of state._migratingMonsters || [])
-        clearChain(monster.minvent || monster.inventory);
-    for (const monster of state.level?.monsters || []) {
-        if (monster.dead || monster.mhp <= 0 || MONSTER_NAME[monster.mnum] !== 'long worm') continue;
-        if (Number.isInteger(monster.mcorpsenm)) monster.mcorpsenm = -1;
-        if (monster.mextra && Number.isInteger(monster.mextra.mcorpsenm)) monster.mextra.mcorpsenm = -1;
-    }
-    if (state.context) state.context.bypasses = false;
 }
 
 export async function hitFloorPileWithWand(wand: GameObject, x: number, y: number, { state = game, direction = 0 }: { state?: GameState; direction?: number } = {}): Promise<number> {

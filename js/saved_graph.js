@@ -56,12 +56,16 @@ function graphReplacer() {
             };
         }
         entities.set(key, value);
-        return {
+        const saved = {
             ...value,
             [TYPE]: 'Entity',
             [ENTITY_KIND]: identity.kind,
             [ENTITY_ID]: identity.id,
         };
+        // restore.c:restobjchn() clears these traversal marks on every object.
+        if (identity.kind === 'object')
+            delete saved.bypass;
+        return saved;
     };
 }
 export function encodeSavedGraph(value) {

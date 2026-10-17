@@ -66,12 +66,15 @@ function graphReplacer(): (key: string, value: unknown) => unknown {
             };
         }
         entities.set(key, value);
-        return {
+        const saved: Record<string, unknown> = {
             ...value,
             [TYPE]: 'Entity',
             [ENTITY_KIND]: identity.kind,
             [ENTITY_ID]: identity.id,
         };
+        // restore.c:restobjchn() clears these traversal marks on every object.
+        if (identity.kind === 'object') delete saved.bypass;
+        return saved;
     };
 }
 

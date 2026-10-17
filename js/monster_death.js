@@ -1,3 +1,4 @@
+import { bypassObject } from './object_bypass.js';
 import { hasShopkeeperData } from './shop_types.js';
 import { isAccessibleAt, isPoolAt } from './terrain_properties.js';
 // Ordinary monster death and corpse rules.
@@ -297,7 +298,7 @@ export async function createMonsterRemains(monster, state = game, { buried = fal
 // In particular, the beam which killed a monster must skip its new remains.
 async function finishMonsterRemains(remains, monster, state) {
     if (state.context.bypasses)
-        remains.bypass = true;
+        bypassObject(remains, state);
     if (monster.name)
         remains.oname = monster.name;
     const stacked = await stack_object(remains, state);

@@ -1,3 +1,4 @@
+import { bypassObjectList, clearBypasses, nextUnbypassedObject } from './object_bypass.js';
 // C do_wear.c:menu_remarm(); pickup.c:query_category()/allow_category();
 // invent.c:ggetobj()/askchain(). The window API owns rendering and input.
 import { MENU_COMBINATION, MENU_FULL, MENU_ITEMFLAGS_SKIPINVERT, MENU_TRADITIONAL, SORTLOOT_INVLET } from './const.js';
@@ -208,21 +209,31 @@ async function traditionalCategories(combo: boolean, selectOff: SelectOff): Prom
     let questioned = false;
     const sorted = sortObjects(game.inventory, { mode: SORTLOOT_INVLET });
     const passes = classChoices.length ? classChoices : [null];
-    for (const oclass of passes) for (const [index, object] of sorted.entries()) {
-        if (!worn.includes(object) || (oclass !== null && object.oclass !== oclass)
-            || (requireUnpaid && !hasUnpaid(object))
-            || !matchesCategories(object, categories)) continue;
-        questioned = true;
-        observeObjectForNaming(object);
-        const position = index - (sorted[0]?.oclass === 12 ? 1 : 0);
-        const letter = game.flags.fixinv !== false ? object.invlet
-            : object.oclass === 12 ? '$' : 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'.charAt(position) || '#';
-        const answer = acceptAll ? 'y' : await promptYesNoAllQuit(
-            `${letter} - ${inventoryItemDescription(object)}?`, 'n');
-        if (answer === 'q') return null;
-        if (answer === 'n') continue;
-        if (answer === 'a') acceptAll = true;
-        await selectOff(object);
+    try {
+        for (const oclass of passes) {
+            bypassObjectList(game.inventory, false);
+            let object;
+            let index = -1;
+            while ((object = nextUnbypassedObject(game.inventory, game, sorted))) {
+                index++;
+                if (!worn.includes(object) || (oclass !== null && object.oclass !== oclass)
+                    || (requireUnpaid && !hasUnpaid(object))
+                    || !matchesCategories(object, categories)) continue;
+                questioned = true;
+                observeObjectForNaming(object);
+                const position = index - (sorted[0]?.oclass === 12 ? 1 : 0);
+                const letter = game.flags.fixinv !== false ? object.invlet
+                    : object.oclass === 12 ? '$' : 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'.charAt(position) || '#';
+                const answer = acceptAll ? 'y' : await promptYesNoAllQuit(
+                    `${letter} - ${inventoryItemDescription(object)}?`, 'n');
+                if (answer === 'q') return null;
+                if (answer === 'n') continue;
+                if (answer === 'a') acceptAll = true;
+                await selectOff(object);
+            }
+        }
+    } finally {
+        clearBypasses();
     }
     if (!questioned) await pline('No applicable objects.');
     return null;

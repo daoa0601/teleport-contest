@@ -1,6 +1,7 @@
 // Involuntary monster polymorph caused by magic.
 // C refs: zap.c bhitm() and mon.c newcham().
 
+import { bypassObjectList } from './object_bypass.js';
 import { heroIsHallucinating } from './senses.js';
 import { monsterHasMagicResistance } from './anti_magic_trap.js';
 import { game } from './gstate.js';
@@ -107,10 +108,7 @@ export async function polymorphMonsterFromMagic(monster: Monster, {
 
     if (!magicResistant && !resisted) {
         if (polyspot) {
-            for (const object of monster.minvent || monster.inventory || []) {
-                object.bypass = true;
-                state.context.bypasses = true;
-            }
+            bypassObjectList(monster.minvent || monster.inventory || [], true, state);
         }
         const naturalSpecies = monster.cham;
         const naturalShapechanger = naturalSpecies !== undefined

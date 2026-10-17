@@ -178,7 +178,7 @@ function categoryMatcher(filters) {
         });
     };
 }
-async function chooseCategories(title, objects) {
+export async function chooseObjectCategories(title, objects) {
     if (game.flags.menu_style !== undefined && game.flags.menu_style !== MENU_FULL)
         return { matchers: [() => true], autoSelect: false };
     const groups = objectsByClass(objects);
@@ -568,7 +568,7 @@ async function takeSelectedObjects(container, resetPicked) {
     game._pickupEncumbrance = 0;
     if (!container.contents?.length)
         return { results: [], spentTime: false };
-    const categories = await chooseCategories('Take out what type of objects?', container.contents);
+    const categories = await chooseObjectCategories('Take out what type of objects?', container.contents);
     const eligible = matchingObjects(container.contents, categories.matchers);
     if (categories.matchers.length)
         container.cknown = true;
@@ -620,7 +620,7 @@ async function putSelectedObjects(container, stashOne = false) {
         selected = [{ value: object, count }];
     }
     else {
-        const categories = await chooseCategories('Put in what type of objects?', candidates);
+        const categories = await chooseObjectCategories('Put in what type of objects?', candidates);
         const eligible = matchingObjects(candidates, categories.matchers);
         const onePicked = categories.justPickedCount !== undefined
             && candidates.filter(object => object.pickup_prev).length === 1

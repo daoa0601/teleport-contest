@@ -1,3 +1,4 @@
+import { clearBypasses } from '../js/object_bypass.js';
 import { floorObjectsAt } from './support/level-state.js';
 import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
@@ -7,7 +8,7 @@ import { newsym } from '../js/display.js';
 import { initializePet } from '../js/dog.js';
 import { requireGameLevel, game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
-import { clearImmediateZapBypasses, hitFloorPileWithWand, hitMonsterWithWand, hitObjectWithWand, } from '../js/immediate_zap.js';
+import { hitFloorPileWithWand, hitMonsterWithWand, hitObjectWithWand, } from '../js/immediate_zap.js';
 import { cancelObjectMagic } from '../js/object_cancellation.js';
 import { CHEST, CORPSE, DAGGER, OBJECT_NAMES, POT_FRUIT_JUICE, POT_SICKNESS, SPE_EXTRA_HEALING, SPE_STONE_TO_FLESH, WAN_CANCELLATION, WAN_MAKE_INVISIBLE, WAN_POLYMORPH, WAN_SLEEP, WAN_SPEED_MONSTER, WAN_STRIKING, WAN_UNDEAD_TURNING, } from '../js/object_data.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
@@ -84,7 +85,7 @@ void test('bypassed dropped objects wait until the next turn before another poly
     await hitFloorPileWithWand(await chargedWand(WAN_POLYMORPH), 11, 10);
     assert.equal(dagger.where, 'floor');
     assert.equal(dagger.otyp, DAGGER);
-    clearImmediateZapBypasses();
+    clearBypasses();
     assert.equal(dagger.bypass, false);
 });
 void test('opening magic repairs an already open broken box without claiming an effect', async () => {

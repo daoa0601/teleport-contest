@@ -1,3 +1,4 @@
+import { clearBypasses } from '../js/object_bypass.js';
 import { floorObjectsAt } from './support/level-state.js';
 import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
@@ -8,7 +9,7 @@ import { initializePet } from '../js/dog.js';
 import { requireGameLevel, game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import {
-    clearImmediateZapBypasses, hitFloorPileWithWand, hitMonsterWithWand,
+    hitFloorPileWithWand, hitMonsterWithWand,
     hitObjectWithWand,
 } from '../js/immediate_zap.js';
 import { cancelObjectMagic } from '../js/object_cancellation.js';
@@ -99,7 +100,7 @@ void test('bypassed dropped objects wait until the next turn before another poly
     await hitFloorPileWithWand(await chargedWand(WAN_POLYMORPH), 11, 10);
     assert.equal(dagger.where, 'floor');
     assert.equal(dagger.otyp, DAGGER);
-    clearImmediateZapBypasses();
+    clearBypasses();
     assert.equal(dagger.bypass, false);
 });
 

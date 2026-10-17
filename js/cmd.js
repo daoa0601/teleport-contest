@@ -195,6 +195,7 @@ import { addInventoryItem, assignInventoryLetter, inventoryLetterRank } from './
 import { clearSplitObjects, objectQuantity, rejoinObjectStack, splitObjectStack } from './object_stack.js';
 import { freeInventoryObject } from './hero_inventory.js';
 import { dropHeroObject } from './hero_drop.js';
+import { dropMultipleObjects } from './drop_menu.js';
 import { SELL_DELIBERATE, SELL_NORMAL, setSellDisposition } from './shop_sell.js';
 import { addObjectToMonsterInventory } from './monster_inventory.js';
 import { resolveGenericSwallowedThrow, resolveSwallowedEggPieOrVenomThrow, resolveSwallowedFoodThrow, resolveSwallowedPotionThrow, resolveSwallowedWeaponThrow, } from './swallowed_throw.js';
@@ -1387,6 +1388,16 @@ async function runCommandHandler(binding, { cannedCommand = null, } = {}) {
     }
     else if (ch === 'd') {
         await dodrop();
+    }
+    else if (ch === 'D') {
+        game.context.move = Number(await dropMultipleObjects());
+        if (game.context.move) {
+            resetBulkTakeoff();
+            resetPick();
+            resetTrapSetting();
+            if (game._occupation?.key === 'pick-lock')
+                game._occupation = null;
+        }
     }
     else if (ch === 'c') {
         await doclose();
