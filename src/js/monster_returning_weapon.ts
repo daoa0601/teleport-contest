@@ -2,7 +2,7 @@
 
 import { publishHeardMessage } from './hero_speech.js';
 import { heroArmName, monsterFootName, monsterHandName } from './body_parts.js';
-import { IS_POOL, LAVAPOOL, W_WEP } from './const.js';
+import { W_WEP } from './const.js';
 import { canSeeMonster, canSpotMonster, newsym, plineWithContinuation } from './display.js';
 import { landFloorObject } from './floor_effects.js';
 import { game, requireInitializedGame } from './gstate.js';
@@ -13,8 +13,11 @@ import { monsterName, monsterPossessive, possessiveName } from './monster_name.j
 import { definiteName, objectCombatName } from './objnam.js';
 import { makePlural, verbForSubject } from './object_grammar.js';
 import { shipObject } from './object_migration.js';
+import { objectMaterial } from './object_material.js';
+import { OBJECT_PROPERTY, TALLOW_CANDLE, WAN_FIRE, WAX_CANDLE } from './object_data.js';
 import { rn2, rnd } from './rng.js';
 import { heroIsDeaf } from './senses.js';
+import { isLavaAt, isPoolAt } from './terrain_properties.js';
 import { cansee } from './vision.js';
 import { objectWeight } from './weight.js';
 
@@ -22,6 +25,10 @@ import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
 import type { MessagePublisher } from './display.js';
+
+const LIQUID = 1;
+const WOOD = 8;
+const PLASTIC = 18;
 
 interface WeaponOptions {
     state?: GameState;
@@ -109,9 +116,11 @@ export async function returnMonsterWeapon(monster: Monster, weapon: GameObject, 
         }
     }
     if (!heroIsDeaf(state) && !state.underwater && !state.u.uinwater) {
-        const terrain = state.level?.at(x, y)?.typ;
-        if (terrain === undefined) throw new Error('A returning weapon must land on the current level');
-        if (IS_POOL(terrain) || terrain === LAVAPOOL)
+        const material = objectMaterial(weapon, state);
+        const flammable = ![TALLOW_CANDLE, WAX_CANDLE, WAN_FIRE].includes(weapon.otyp)
+            && OBJECT_PROPERTY[weapon.otyp] !== 'fireResistance'
+            && (material <= WOOD && material !== LIQUID || material === PLASTIC);
+        if (isPoolAt(x, y, state) || isLavaAt(x, y, state) && !flammable)
             await publish(objectWeight(weapon) > 9 ? 'Splash!' : 'Plop!');
     }
     if (cansee(x, y)) newsym(x, y);
