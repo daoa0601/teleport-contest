@@ -456,6 +456,7 @@ import { MONSTER_DIFFICULTY } from './monster_data.js';
 import { depth } from './hacklib.js';
 import { artifactById } from './artifacts.js';
 import { resolveMonsterWeaponContact } from './monster_weapon_contact.js';
+import { applyArtifactHit } from './artifact_hit.js';
 import { monsterHatesBlessings } from './monster_data.js';
 import { canHeroRiseUp, levelAtDepth } from './dungeon.js';
 import { LEVEL_TELEP } from './const.js';
@@ -5645,10 +5646,20 @@ async function beginHeroAttackSlot(
                 deferredPostHit: true,
             };
         }
-        damage = await resolveMonsterWeaponContact(monster, contactWeapon, damage, state,
-            plineWithContinuation, rollOne);
-        await erodeAttackingWeapon(state.u, contactWeapon, { state, random });
-        if (poison) {
+        const artifact = await applyArtifactHit(contactWeapon, 'hero', damage, {
+            state, attacker: monster, dieRoll: roll ?? 0,
+            publish: plineWithContinuation, random, rollOne,
+        });
+        if (artifact.heroDied) return {
+            kind: 'hero-attack', hit, damage: 0, heroDied: true, attackType, damageType,
+        };
+        damage = artifact.damage;
+        if (damage) {
+            damage = await resolveMonsterWeaponContact(monster, contactWeapon, damage, state,
+                plineWithContinuation, rollOne);
+            await erodeAttackingWeapon(state.u, contactWeapon, { state, random });
+        }
+        if (artifact.damage && poison) {
             const effect = await poisonHeroFromMonster(monster, attackType, {
                 ...poison,
                 state,
@@ -5697,6 +5708,7 @@ async function beginHeroAttackSlot(
             attackType,
             damageType,
             effect: 'physical-weapon',
+            specialMessage: artifact.specialMessage,
             passive,
             heroDied: !!passive.heroDied,
         };

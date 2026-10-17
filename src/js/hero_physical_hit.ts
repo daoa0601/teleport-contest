@@ -1,5 +1,5 @@
 // Native uhitm.c:hmon(). Callers own accuracy, flight, turns, and passives.
-import { applyArtifactHitToMonster } from './artifact_hit.js';
+import { applyArtifactHit } from './artifact_hit.js';
 import { artifactById, artifactEmitsLight } from './artifacts.js';
 import { barehandSkill, prepareHeroBarehandContact } from './barehand_combat.js';
 import { confuseTouchedMonster } from './confusing_touch.js';
@@ -275,7 +275,7 @@ async function preparePhysicalContact(
     if (weapon.useWeaponSkill && object.oartifact) {
         const visible = cansee(monster.mx, monster.my)
             || (!!state.u.uswallow && state.u.ustuck === monster && !heroIsBlind(state));
-        const artifact = await applyArtifactHitToMonster(object, monster, strike.damage, {
+        const artifact = await applyArtifactHit(object, monster, strike.damage, {
             state, publish, dieRoll, visible,
             realizesDamage: visible || state.u.ustuck === monster,
             hitOnHead: context.target.x === monster.mx && context.target.y === monster.my,

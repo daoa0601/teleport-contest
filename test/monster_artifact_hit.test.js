@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { applyArtifactHitToMonster } from '../js/artifact_hit.js';
+import { applyArtifactHit } from '../js/artifact_hit.js';
 import { MM_ANGRY, MM_NOGRP, MM_NOMSG, MM_NOWAIT, NO_MINVENT, STONE, W_WEP } from '../js/const.js';
 import { canSeeMonster } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
@@ -28,7 +28,7 @@ for (const injuredHitPoints of [5, 18]) {
         defender.mhp = defender.mhpmax = 30;
         const oldLevel = defender.m_lev;
         const weapon = await equipMonsterObject(attacker, await artifactObject('Stormbringer', { dknown: false }), W_WEP);
-        const hit = await applyArtifactHitToMonster(weapon, defender, 4, {
+        const hit = await applyArtifactHit(weapon, defender, 4, {
             attacker, state: game, random: () => 1, rollOne: maximumRoll,
         });
         assert.equal(hit.damage, 14);
@@ -49,7 +49,7 @@ void test('monster Stormbringer drains a level-zero defender fatally and heals i
     attacker.mhpmax = 20;
     defender.mhp = defender.mhpmax = 4;
     defender.m_lev = 0;
-    const hit = await applyArtifactHitToMonster(await artifactObject('Stormbringer'), defender, 4, {
+    const hit = await applyArtifactHit(await artifactObject('Stormbringer'), defender, 4, {
         attacker, state: game, random: () => 1, rollOne: maximumRoll,
     });
     assert.equal(hit.damage, 208);
@@ -69,7 +69,7 @@ void test('a blind hero receives no artifact feedback or healing from two monste
     game.u.ustuck = defender;
     await makeBlinded(10, { talk: false });
     const messages = [];
-    const hit = await applyArtifactHitToMonster(await artifactObject('Stormbringer'), defender, 4, {
+    const hit = await applyArtifactHit(await artifactObject('Stormbringer'), defender, 4, {
         attacker, state: game, random: () => 1, rollOne: maximumRoll,
         publish: async (message) => { messages.push(message); },
     });
@@ -91,7 +91,7 @@ void test('artifact feedback is visible when only the monster attacker square ca
     assert.equal(cansee(attacker.mx, attacker.my), true);
     assert.equal(cansee(defender.mx, defender.my), false);
     const messages = [];
-    const hit = await applyArtifactHitToMonster(await artifactObject('Fire Brand'), defender, 4, {
+    const hit = await applyArtifactHit(await artifactObject('Fire Brand'), defender, 4, {
         attacker, state: game, random: () => 1, rollOne: maximumRoll,
         publish: async (message) => { messages.push(message); },
     });
@@ -106,7 +106,7 @@ void test('a monster cannot make a blind hero feel Fire Brand by attacking the h
     game.u.ustuck = defender;
     await makeBlinded(10, { talk: false });
     const messages = [];
-    const hit = await applyArtifactHitToMonster(await artifactObject('Fire Brand'), defender, 4, {
+    const hit = await applyArtifactHit(await artifactObject('Fire Brand'), defender, 4, {
         attacker, state: game, random: () => 1, rollOne: maximumRoll,
         publish: async (message) => { messages.push(message); },
     });
@@ -121,7 +121,7 @@ void test('the Tsurugi names the monster wielder when cutting a large defender d
     const defender = await createMonsterAt('mumak', 12, 10, TEST_MONSTER_FLAGS);
     defender.mhp = defender.mhpmax = 100;
     const messages = [];
-    const hit = await applyArtifactHitToMonster(await artifactObject('The Tsurugi of Muramasa'), defender, 4, {
+    const hit = await applyArtifactHit(await artifactObject('The Tsurugi of Muramasa'), defender, 4, {
         attacker, state: game, dieRoll: 1, rollOne: maximumRoll,
         publish: async (message) => { messages.push(message); },
     });
@@ -137,7 +137,7 @@ void test('a monster using the Tsurugi cannot slice the hero swallower from insi
     defender.mhp = defender.mhpmax = 100;
     await installSwallowedHero(defender);
     const messages = [];
-    const hit = await applyArtifactHitToMonster(await artifactObject('The Tsurugi of Muramasa'), defender, 4, {
+    const hit = await applyArtifactHit(await artifactObject('The Tsurugi of Muramasa'), defender, 4, {
         attacker, state: game, dieRoll: 1, visible: false, rollOne: maximumRoll,
         publish: async (message) => { messages.push(message); },
     });
@@ -152,7 +152,7 @@ for (const visible of [false, true]) {
         const attacker = await createMonsterAt('orc', 11, 10, TEST_MONSTER_FLAGS);
         const defender = await createMonsterAt('gas spore', 12, 10, TEST_MONSTER_FLAGS);
         const messages = [];
-        const hit = await applyArtifactHitToMonster(await artifactObject('Vorpal Blade'), defender, 4, {
+        const hit = await applyArtifactHit(await artifactObject('Vorpal Blade'), defender, 4, {
             attacker, state: game, dieRoll: 1, visible, rollOne: maximumRoll,
             publish: async (message) => { messages.push(message); },
         });
@@ -172,7 +172,7 @@ void test('Vorpal Blade cannot behead another monster while the hero is swallowe
     const defender = await createMonsterAt('jackal', 13, 10, TEST_MONSTER_FLAGS);
     const swallower = await createMonsterAt('purple worm', 11, 10, TEST_MONSTER_FLAGS);
     await installSwallowedHero(swallower);
-    const hit = await applyArtifactHitToMonster(await artifactObject('Vorpal Blade'), defender, 4, {
+    const hit = await applyArtifactHit(await artifactObject('Vorpal Blade'), defender, 4, {
         attacker, state: game, dieRoll: 1, visible: false, rollOne: maximumRoll,
     });
     assert.equal(hit.damage, 0);
@@ -184,7 +184,7 @@ void test('a monster using Magicbane cancels spellcasting without giving energy 
     const attacker = await createMonsterAt('orc', 11, 10, TEST_MONSTER_FLAGS);
     const defender = await createMonsterAt('gnomish wizard', 12, 10, TEST_MONSTER_FLAGS);
     const messages = [];
-    const hit = await applyArtifactHitToMonster(await artifactObject('Magicbane', { spe: 0 }), defender, 4, {
+    const hit = await applyArtifactHit(await artifactObject('Magicbane', { spe: 0 }), defender, 4, {
         attacker, state: game, dieRoll: 1, random: range => range - 1, rollOne: maximumRoll,
         publish: async (message) => { messages.push(message); },
     });
@@ -203,7 +203,7 @@ void test('unseen monster Magicbane hits stun and confuse without revealing thei
     const defender = await createMonsterAt('jackal', 12, 10, TEST_MONSTER_FLAGS);
     await makeBlinded(10, { talk: false });
     const messages = [];
-    const hit = await applyArtifactHitToMonster(await artifactObject('Magicbane', { spe: 0 }), defender, 4, {
+    const hit = await applyArtifactHit(await artifactObject('Magicbane', { spe: 0 }), defender, 4, {
         attacker, state: game, dieRoll: 6,
         random: range => range === 12 ? 0 : range - 1, rollOne: maximumRoll,
         publish: async (message) => { messages.push(message); },
@@ -223,7 +223,7 @@ void test('a monster Magicbane probe marks an invisible target without disclosin
     await addObjectToMonsterInventory(defender, dagger);
     assert.equal(canSeeMonster(defender), false);
     const messages = [];
-    const hit = await applyArtifactHitToMonster(await artifactObject('Magicbane', { spe: 0 }), defender, 4, {
+    const hit = await applyArtifactHit(await artifactObject('Magicbane', { spe: 0 }), defender, 4, {
         attacker, state: game, dieRoll: 8, random: () => 0, rollOne: maximumRoll,
         publish: async (message) => { messages.push(message); },
     });
@@ -241,7 +241,7 @@ void test('the hero Magicbane probe reveals the actual monster inventory in its 
     const input = resetInputState();
     const messages = [];
     const weapon = await artifactObject('Magicbane', { spe: 0 });
-    const hit = await answerPrompts(applyArtifactHitToMonster(weapon, defender, 4, {
+    const hit = await answerPrompts(applyArtifactHit(weapon, defender, 4, {
         state: game, dieRoll: 8, random: () => 0, rollOne: maximumRoll,
         publish: async (message) => { messages.push(message); },
     }), input, [
@@ -259,7 +259,7 @@ void test('Magicbane names a cancelled shapechanger in its restored form for lat
     const defender = await createMonsterAt('wolf', 12, 10, TEST_MONSTER_FLAGS);
     defender.cham = MONSTER_NAME.indexOf('vampire');
     const messages = [];
-    await applyArtifactHitToMonster(await artifactObject('Magicbane', { spe: 0 }), defender, 4, {
+    await applyArtifactHit(await artifactObject('Magicbane', { spe: 0 }), defender, 4, {
         attacker, state: game, dieRoll: 1,
         random: range => range === 12 ? 0 : range - 1, rollOne: maximumRoll,
         publish: async (message) => { messages.push(message); },

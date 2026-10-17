@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { applyArtifactHitToMonster } from '../js/artifact_hit.js';
+import { applyArtifactHit } from '../js/artifact_hit.js';
 import { MM_ANGRY, MM_NOGRP, MM_NOMSG, MM_NOWAIT, NO_MINVENT } from '../js/const.js';
 import { bot, plineWithContinuation } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
@@ -20,7 +20,7 @@ void test('Magicbane displays increased power with its absorption message', asyn
     pushKeys(' '.repeat(10));
     let absorptionPower = '';
 
-    await applyArtifactHitToMonster(blade, monster, 4, {
+    await applyArtifactHit(blade, monster, 4, {
         state: game,
         dieRoll: 1,
         random: range => range - 1,

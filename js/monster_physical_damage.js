@@ -1,5 +1,5 @@
 // Native uhitm.c:mhitm_ad_phys(), monster against monster.
-import { applyArtifactHitToMonster } from './artifact_hit.js';
+import { applyArtifactHit } from './artifact_hit.js';
 import { M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS } from './const.js';
 import { canSeeMonster, plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
@@ -53,7 +53,7 @@ export async function resolveMonsterPhysicalDamage(aggressor, defender, attack, 
     damage = Math.max(1, damage + monsterWeaponStrengthBonus(aggressor, random));
     let hitFlags = M_ATTK_MISS;
     if (weapon.oartifact) {
-        const artifact = await applyArtifactHitToMonster(weapon, defender, damage, {
+        const artifact = await applyArtifactHit(weapon, defender, damage, {
             attacker: aggressor, state,
             publish, random, rollOne, dieRoll, hitOnHead,
         });
