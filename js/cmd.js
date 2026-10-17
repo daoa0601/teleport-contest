@@ -404,9 +404,9 @@ async function rejectHeroDiagonalDoorway(dx, dy, destination) {
     game.context.move = 0;
     return true;
 }
-// C test_move(TEST_MOVE): confirmation tests obstacles without performing
-// auto-open, boulder pushing, or the hero's eventual movement.
-function heroCanConfirmStep(x, y) {
+// C test_move(TEST_MOVE): tests obstacles without performing auto-open,
+// boulder pushing, or the hero's eventual movement.
+export function heroTestMove(x, y) {
     const hero = game.u;
     const location = game.level?.at(x, y);
     if (!location)
@@ -7259,7 +7259,7 @@ async function domoveCore(dx, dy, explicitAttempt) {
             // changes position or the hero tries to escape a current trap.
             if (await rootedHeroCannotMove())
                 return true;
-            if (heroCanConfirmStep(newx, newy) && !await confirmHeroStep(newx, newy))
+            if (heroTestMove(newx, newy) && !await confirmHeroStep(newx, newy))
                 return false;
             if (u.utrap
                 && !await heroCanMoveFromTrap(newx, newy))
@@ -7342,7 +7342,7 @@ async function domoveCore(dx, dy, explicitAttempt) {
     }
     if (await rootedHeroCannotMove())
         return true;
-    if (heroCanConfirmStep(newx, newy) && !await confirmHeroStep(newx, newy))
+    if (heroTestMove(newx, newy) && !await confirmHeroStep(newx, newy))
         return false;
     if (!await heroCanMoveFromTrap(newx, newy))
         return true;

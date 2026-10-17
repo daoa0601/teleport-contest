@@ -7,8 +7,8 @@ import { initializePet } from '../js/dog.js';
 import { game } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { runMonsterAction } from '../js/monmove.js';
-import { AMULET_OF_LIFE_SAVING, CLUB, CORPSE, DAGGER, LOADSTONE, STATUE } from '../js/object_data.js';
-import { addInventoryObject, knownObject } from './support/game-objects.js';
+import { AMULET_OF_LIFE_SAVING, BOULDER, CLUB, CORPSE, DAGGER, LOADSTONE, STATUE } from '../js/object_data.js';
+import { addInventoryObject, floorObject, knownObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { addTrap, floorObjectsAt } from './support/level-state.js';
 import { createMonsterAt, createSaddledSteed, equipMonsterObject } from './support/monsters.js';
@@ -134,6 +134,26 @@ void test('a blow aimed toward an occupied square says back and leaves the hero 
     assert.equal(result.moved, false);
     assert.equal(game.u.ux, 10);
     assert.equal(messages[0], 'The hill giant knocks you back with a powerful strike!');
+});
+
+void test('a boulder behind the hero does not prevent a knockback blow', async () => {
+    freshObjectRoom();
+    requireFixtureGame(game);
+    installPolymorphedHero('kobold');
+    const giant = await createMonsterAt('hill giant', 11, 10, NO_MINVENT);
+    await floorObject(BOULDER, 9, 10);
+    const messages: string[] = [];
+    pushKeys(' '.repeat(8));
+
+    // hack.c test_move(TEST_MOVE) assumes a boulder can be pushed.
+    const result = await tryKnockback(giant, game.u,
+        { attackType: AT_WEAP, damageType: AD_PHYS }, {
+            random: () => 0,
+            publish: message => { messages.push(message); },
+        });
+
+    assert.equal(result.knocked, true);
+    assert.match(messages[0] ?? '', /^The hill giant knocks you back/);
 });
 
 void test('a monster landing in a lethal pit survives through its worn life-saving amulet', async () => {

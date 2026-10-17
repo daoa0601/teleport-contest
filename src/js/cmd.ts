@@ -607,9 +607,9 @@ async function rejectHeroDiagonalDoorway(dx: number, dy: number, destination: Ma
     return true;
 }
 
-// C test_move(TEST_MOVE): confirmation tests obstacles without performing
-// auto-open, boulder pushing, or the hero's eventual movement.
-function heroCanConfirmStep(x: number, y: number): boolean {
+// C test_move(TEST_MOVE): tests obstacles without performing auto-open,
+// boulder pushing, or the hero's eventual movement.
+export function heroTestMove(x: number, y: number): boolean {
     const hero = game.u;
     const location = game.level?.at(x, y);
     if (!location) return false;
@@ -7361,7 +7361,7 @@ async function domoveCore(dx: number, dy: number, explicitAttempt: boolean): Pro
             // C domove_core() confirms a yielded step before either actor
             // changes position or the hero tries to escape a current trap.
             if (await rootedHeroCannotMove()) return true;
-            if (heroCanConfirmStep(newx, newy) && !await confirmHeroStep(newx, newy)) return false;
+            if (heroTestMove(newx, newy) && !await confirmHeroStep(newx, newy)) return false;
             if (u.utrap
                 && !await heroCanMoveFromTrap(newx, newy)) return true;
             if (!await heroCanEnterIronBars(newx, newy, game)) return false;
@@ -7439,7 +7439,7 @@ async function domoveCore(dx: number, dy: number, explicitAttempt: boolean): Pro
 
     if (await rootedHeroCannotMove()) return true;
 
-    if (heroCanConfirmStep(newx, newy) && !await confirmHeroStep(newx, newy)) return false;
+    if (heroTestMove(newx, newy) && !await confirmHeroStep(newx, newy)) return false;
 
     if (!await heroCanMoveFromTrap(newx, newy)) return true;
 
