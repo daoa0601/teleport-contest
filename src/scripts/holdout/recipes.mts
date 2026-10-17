@@ -3,6 +3,7 @@ import type { KeysAction, MenuAction, Session, SessionAction, SessionSegment } f
 import { ITEM_RECIPES, validateItemRecipe } from './item-recipes.mjs';
 import { GAMEPLAY_RECIPES, validateGameplayRecipe } from './gameplay-recipes.mjs';
 import { COVERAGE_RECIPES, validateCoverageRecipe } from './coverage-recipes.mjs';
+import { ROUND4_RECIPES, validateRound4Recipe } from './round4-recipes.mjs';
 export interface Character {
     role: string;
     race: string;
@@ -482,6 +483,7 @@ RECIPES['throw-fight'] = {
 for (const [name, recipe] of Object.entries(ITEM_RECIPES)) RECIPES[name] = recipe;
 for (const [name, recipe] of Object.entries(GAMEPLAY_RECIPES)) RECIPES[name] = recipe;
 for (const [name, recipe] of Object.entries(COVERAGE_RECIPES)) RECIPES[name] = recipe;
+for (const [name, recipe] of Object.entries(ROUND4_RECIPES)) RECIPES[name] = recipe;
 
 export { RECIPES };
 
@@ -747,6 +749,10 @@ VALIDATORS['throw-fight'] = (s) => {
 
 for (const name of Object.keys(COVERAGE_RECIPES)) {
     VALIDATORS[name] = recording => validateCoverageRecipe(name, recording);
+}
+
+for (const name of Object.keys(ROUND4_RECIPES)) {
+    VALIDATORS[name] = recording => validateRound4Recipe(name, recording);
 }
 
 /**
