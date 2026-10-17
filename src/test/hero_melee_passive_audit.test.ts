@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { finishHeroHelplessness } from '../js/allmain.js';
 import { wearHeroArmor } from '../js/armor.js';
 import { rhack } from '../js/cmd.js';
 import { MM_NOGRP, MM_NOWAIT, NO_MINVENT, Upolyd } from '../js/const.js';
@@ -190,6 +191,18 @@ for (const { defender, reason } of [
         assert.equal(helplessness.monsterId, monster.m_id);
         assert.equal(helplessness.text, reason,
             'The lasting reason names the true species even when the visible message uses a given name');
+    });
+
+    void test(`paralysis from a ${defender} ends with the default recovery message`, async () => {
+        await meleeRoom('newt', defender);
+        initRng(41n);
+
+        for (let attempt = 0; attempt < 6 && !(game._helplessTurns ?? 0); attempt++)
+            await attackEast(/floating eye|gelatinous cube|frozen/);
+        assert.ok((game._helplessTurns ?? 0) > 0, 'The contact must leave the hero paralyzed');
+        await finishHeroHelplessness();
+
+        assert.match(game._pending_message, /You can move again\./);
     });
 }
 

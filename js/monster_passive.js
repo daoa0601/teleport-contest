@@ -214,7 +214,7 @@ async function applyParalysisPassive({ monster, damage, state, publish, random, 
             return { resisted: true, heroDied: false };
         }
         await publish(`You are frozen by ${displayedMonsterName(monster, { state })}!`);
-        freezeHero(state, damage, passiveParalysisReason(monster, state, false), true);
+        freezeHero(state, damage, passiveParalysisReason(monster, state, false));
         await exerciseAttribute(A_DEX, false, state);
         return { stopped: true, heroDied: false };
     }
@@ -243,7 +243,7 @@ async function applyParalysisPassive({ monster, damage, state, publish, random, 
         await publish(`You are frozen by ${owner} gaze!`);
         const duration = currentAttribute(A_WIS, state) > 12
             || random(4) !== 0 ? damage : 127;
-        freezeHero(state, duration, passiveParalysisReason(monster, state, true), false);
+        freezeHero(state, duration, passiveParalysisReason(monster, state, true));
         return { stopped: true, heroDied: false };
     }
     await publish(`${displayedMonsterName(monster, { state, capitalized: true, adjective: 'blind' })} cannot defend itself.`);
@@ -358,13 +358,14 @@ function objectTouchedByEnchantment(state, attackType, weapon) {
     return weapon || state.uwep || state.u?.uwep
         || state.uarmg || state.u?.uarmg || null;
 }
-function freezeHero(state, turns, reason, showRecoveryMessage) {
+// C uhitm.c:passive() sets nomovemsg to You_can_move_again for the cube and
+// clears it for the floating eye, which unmul() also turns into that message.
+function freezeHero(state, turns, reason) {
     state._occupation = null;
     endVoluntaryMultiTurn(state);
     state._helplessTurns = Math.max(0, turns);
     state._helplessReason = reason;
-    state._helplessDoneMessage = showRecoveryMessage
-        ? 'You can move again.' : '';
+    state._helplessDoneMessage = 'You can move again.';
 }
 function monsterNearHero(monster, state) {
     return Math.max(Math.abs((monster.mx ?? 0) - (state.u?.ux ?? 0)), Math.abs((monster.my ?? 0) - (state.u?.uy ?? 0))) <= 1;
