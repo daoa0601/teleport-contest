@@ -12,7 +12,7 @@ import { finishInventoryRemoval, useUpInventoryStack } from './hero_inventory.js
 import { setPrimaryWeapon, setSecondaryWeapon, setQuiverObject } from './weapon_slots.js';
 import { inventoryItemDescription, inventoryPrimaryHandDetail } from './invent.js';
 import { compactInventoryLetters, promptInventoryObject } from './inventory_prompt.js';
-import { definiteObjectAction, definiteName, objectCombatName, objectNameIsPlural, observeObjectForNaming, ownedObjectAction, ownedObjectQuestion, ownedSimpleObjectName, simpleObjectName, } from './objnam.js';
+import { definiteObjectAction, definiteName, objectCombatName, objectNameIsPlural, observeObjectForNaming, ownedObjectAction, ownedObjectQuestion, ownedSimpleObjectName, simpleObjectName, objectQuestion, simpleObjectNameWithArticle, } from './objnam.js';
 import { inventoryClassOrder, lootSortMode, objectClassHeading, sortObjects } from './object_sort.js';
 import { OBJECT_CLASS_SYMBOLS, objectClassForType } from './object_knowledge.js';
 import { clearJustPicked } from './just_picked.js';
@@ -33,7 +33,9 @@ import { OBJECT_TIMER_KIND, stopObjectTimer, } from './object_timers.js';
 import { heroHasNoHands } from './polyself.js';
 import { isQuantumBox, observeQuantumCat } from './quantum_cat.js';
 import { d, rn2 } from './rng.js';
-import { paranoidYesNoQuit, promptChoice } from './query.js';
+import { paranoidYesNoQuit, promptChoice, tty_yn_function } from './query.js';
+import { matchesObjectCategories, queryObjectClasses } from './object_class_query.js';
+import { bypassObjectList, clearBypasses, nextUnbypassedObject } from './object_bypass.js';
 import { touchPetrifyingCorpse } from './stoning.js';
 import { addPickedInventoryObject, pickupInventoryMessage } from './pickup.js';
 import { objectWeight } from './weight.js';
@@ -47,7 +49,7 @@ import { warnAboutRemovedPick } from './container_shop.js';
 import { heroGoldObject } from './hero_gold.js';
 import { sellHeroDroppedObject, setSellDisposition, SELL_DELIBERATE, SELL_DONTSELL, SELL_NORMAL } from './shop_sell.js';
 import { restoreMenuUnderlay, showChoiceWindow, showDisclosureOverlay, showMultiSelectWindow, showTextWindow, } from './windows.js';
-import { GETOBJ_EXCLUDE_SELECTABLE, GETOBJ_SUGGEST, MENU_COMBINATION, MENU_FULL, MENU_PARTIAL, MENU_TRADITIONAL, MENU_ITEMFLAGS_SKIPINVERT, PARANOID_AUTOALL, PARANOID_CONFIRM, W_ACCESSORY, W_ARMOR, } from './const.js';
+import { GETOBJ_EXCLUDE_SELECTABLE, GETOBJ_SUGGEST, MENU_COMBINATION, MENU_FULL, MENU_PARTIAL, MENU_TRADITIONAL, MENU_ITEMFLAGS_SKIPINVERT, PARANOID_AUTOALL, PARANOID_CONFIRM, W_ACCESSORY, W_ARMOR, SORTLOOT_INVLET, } from './const.js';
 export const CONTAINER_TYPES = new Set([
     LARGE_BOX, CHEST, ICE_BOX, SACK, BAG_OF_HOLDING, OILSKIN_SACK, BAG_OF_TRICKS,
 ]);
@@ -564,11 +566,98 @@ export async function takeFromContainer(container, object, state = game, count =
         message: pickupInventoryMessage(description, 'removing', state),
     };
 }
-async function takeSelectedObjects(container, resetPicked) {
+// C traditional_loot()/askchain(): unlike pickup's floor loop, 'a' accepts
+// every remaining eligible class, and a completed traversal prints a tail.
+async function lootTraditionally(container, putIn, resetPicked) {
+    const objects = putIn ? game.inventory : container.contents ?? [];
+    const selection = await queryObjectClasses(putIn ? 'put in' : 'take out', objects);
+    if (!selection)
+        return { results: [], spentTime: false };
+    if (selection.menu !== 'none')
+        return putIn
+            ? await putSelectedObjects(container, false, selection)
+            : await takeSelectedObjects(container, resetPicked, selection);
+    const order = sortObjects(objects, { mode: SORTLOOT_INVLET });
+    const passes = !selection.oneAtATime && selection.classes.length ? selection.classes : [null];
+    const byCategory = selection.categories.some(category => typeof category === 'string');
+    const results = [];
+    const batch = () => ({ results, spentTime: results.some(result => result.moved) });
+    const chain = () => putIn ? game.inventory : container.contents ?? [];
+    let all = selection.everything, first = true, questioned = false;
+    try {
+        for (const oclass of passes) {
+            bypassObjectList(chain(), false);
+            let letterCode = 'a'.charCodeAt(0) - 1;
+            if (chain()[0]?.oclass === 12)
+                letterCode--;
+            let object;
+            while ((object = nextUnbypassedObject(chain(), game, order))) {
+                if (letterCode === 'z'.charCodeAt(0))
+                    letterCode = 'A'.charCodeAt(0);
+                else if (letterCode === 'Z'.charCodeAt(0))
+                    letterCode = '#'.charCodeAt(0);
+                else
+                    letterCode++;
+                if (oclass !== null && object.oclass !== oclass || putIn && object === container
+                    || byCategory && !matchesObjectCategories(object, selection))
+                    continue;
+                let amount = quantity(object);
+                if (!all) {
+                    observeObjectForNaming(object);
+                    const letter = game.flags.fixinv === false ? String.fromCharCode(letterCode) : object.invlet ?? '#';
+                    const itemPrefix = putIn ? `${letter} - ` : '';
+                    const question = objectQuestion(object, {
+                        prefix: first ? `${putIn ? 'Put in' : 'Take out'}: ` : '', suffix: '?', fallback: 'item',
+                        format: item => `${itemPrefix}${objectDescription(item)}`,
+                        shortFormat: (item, state) => `${itemPrefix}${simpleObjectNameWithArticle(item, state)}`,
+                    });
+                    first = false;
+                    const response = await tty_yn_function(question, amount < 2 ? 'ynaq' : 'yn#aq', 'n');
+                    if (response.answer === 'q')
+                        return batch();
+                    questioned = true;
+                    if (response.answer === 'n' || response.answer === '#' && !response.count)
+                        continue;
+                    if (response.answer === 'a')
+                        all = true;
+                    if (response.answer === '#' && !(object.otyp === LOADSTONE && object.cursed)
+                        && !weldedPrimary(object, game))
+                        amount = Number(response.count < BigInt(amount) ? response.count : BigInt(amount));
+                }
+                questioned = true;
+                const transfer = splitForTransfer(object, amount, game);
+                const result = putIn ? await putIntoContainer(container, transfer.object)
+                    : await takeFromContainer(container, transfer.object, game, -1, { resetJustPicked: resetPicked });
+                results.push(result);
+                if (!result.moved && !result.destroyedContainer)
+                    await restoreRejectedSplit(transfer, game);
+                if (result.message && (!putIn || !result.moved))
+                    await plineWithContinuation(result.message);
+                if (result.moved && !putIn) {
+                    resetPicked = false;
+                    if (object.oclass === 12)
+                        await bot();
+                }
+                if (result.stop || result.destroyedContainer || game.program_state.gameover)
+                    return batch();
+            }
+        }
+        await plineWithContinuation(questioned ? 'That was all.' : 'No applicable objects.');
+        return batch();
+    }
+    finally {
+        clearBypasses();
+    }
+}
+async function takeSelectedObjects(container, resetPicked, retry = null) {
     game._pickupEncumbrance = 0;
     if (!container.contents?.length)
         return { results: [], spentTime: false };
-    const categories = await chooseObjectCategories('Take out what type of objects?', container.contents);
+    if (game.flags.menu_style === MENU_TRADITIONAL && !retry)
+        return await lootTraditionally(container, false, resetPicked);
+    const categories = retry ? { autoSelect: false, matchers: [
+            (object) => retry.menu === 'all' || matchesObjectCategories(object, retry),
+        ] } : await chooseObjectCategories('Take out what type of objects?', container.contents);
     const eligible = matchingObjects(container.contents, categories.matchers);
     if (categories.matchers.length)
         container.cknown = true;
@@ -596,9 +685,11 @@ async function takeSelectedObjects(container, resetPicked) {
     return { results, spentTime: categories.autoSelect
             ? results.some(result => result.moved) : selected.length > 0 };
 }
-async function putSelectedObjects(container, stashOne = false) {
+async function putSelectedObjects(container, stashOne = false, retry = null) {
     const menuStyle = game.flags.menu_style ?? MENU_FULL;
-    if (!stashOne && menuStyle !== MENU_TRADITIONAL)
+    if (!stashOne && menuStyle === MENU_TRADITIONAL && !retry)
+        return await lootTraditionally(container, true, false);
+    if (!stashOne && (menuStyle !== MENU_TRADITIONAL || retry !== null))
         game._pickupEncumbrance = 0;
     // menu_loot queries the whole inventory; only stash-one uses ck_bag.
     const candidates = stashOne
@@ -620,7 +711,9 @@ async function putSelectedObjects(container, stashOne = false) {
         selected = [{ value: object, count }];
     }
     else {
-        const categories = await chooseObjectCategories('Put in what type of objects?', candidates);
+        const categories = retry ? { autoSelect: false, matchers: [
+                (object) => retry.menu === 'all' || matchesObjectCategories(object, retry),
+            ] } : await chooseObjectCategories('Put in what type of objects?', candidates);
         const eligible = matchingObjects(candidates, categories.matchers);
         const onePicked = categories.justPickedCount !== undefined
             && candidates.filter(object => object.pickup_prev).length === 1

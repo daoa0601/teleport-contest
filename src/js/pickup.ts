@@ -3,15 +3,15 @@
 import { setMulti } from './command_state.js';
 import { game, requireGameLevel } from './gstate.js';
 import { isIceAt, isLavaAt, isPoolAt } from './terrain_properties.js';
-import { objectName, observeObjectForNaming } from './objnam.js';
+import { objectName, objectQuestion, observeObjectForNaming, simpleObjectNameWithArticle } from './objnam.js';
 import { inventoryClassOrder, lootSortMode, objectClassHeading, sortObjects } from './object_sort.js';
 import {
-    floorObjectDescription, lookHere, readFloorEngraving,
+    floorObjectDescription, pricedFloorObjectDescription, lookHere, readFloorEngraving,
 } from './floor_object_display.js';
 import { tryCallObjectType } from './object_call.js';
 import {
     newsym, flush_screen, pline, plineWithContinuation,
-    map_object,
+    map_object, consumeHallucinatedMenuObjectGlyph,
 } from './display.js';
 import { dungeonFeatureSentenceAt, forceDescribeDecor } from './dungeon_feature.js';
 import { surfaceName } from './terrain_name.js';
@@ -21,6 +21,9 @@ import { recordHeroPrizeAcquisition } from './hero_inventory.js';
 import { remove_object } from './floor_object.js';
 import { carryableObjectCount, liftObject } from './lift_object.js';
 import { objectQuantity, splitObjectStack } from './object_stack.js';
+import { hasBucCategory, matchesObjectCategories, queryObjectClasses } from './object_class_query.js';
+import type { ObjectClassSelection } from './object_class_query.js';
+import { tty_yn_function } from './query.js';
 import { useUpFloorObject } from './floor_consumption.js';
 import { remoteBurglary } from './shop_departure.js';
 import { roomsAt } from './room.js';
@@ -51,6 +54,7 @@ import { addShopObjectToBill, billedPickupQuote, costlySpot } from './shk.js';
 import {
     SHOPBASE, A_WIS, STONE, DOOR, D_BROKEN, ALTAR, W_WEP, is_pit,
     LOST_NONE, LOST_THROWN, LOST_STOLEN, LOST_DROPPED, LOST_EXPLODING,
+    MENU_TRADITIONAL,
 } from './const.js';
 
 import type { GameObject } from './object_types.js';
@@ -93,8 +97,13 @@ export async function pickupAtHero(count = Math.max(0, game._commandCount || 0))
         game.context.move = 0;
         return;
     }
-    const selected = await choosePickupObjects(source, objects, count);
-    const { attempted } = await takeSelectedObjects(source, selected);
+    let attempted: boolean;
+    if (game.flags.menu_style === MENU_TRADITIONAL && !game.iflags.menu_requested) {
+        attempted = await pickUpTraditionally(source, count);
+    } else {
+        const selected = await choosePickupObjects(source, objects, count);
+        attempted = (await takeSelectedObjects(source, selected)).attempted;
+    }
     game.context.move = attempted ? 1 : 0;
     game._pickupEncumbrance = 0;
 }
@@ -140,18 +149,82 @@ export async function autopickupAtHero(): Promise<void> {
     game._pickupEncumbrance = 0;
 }
 
-async function choosePickupObjects(source: PickupSource, objects: readonly GameObject[], count: number): Promise<CountedSelection<GameObject>[]> {
+async function pickUpTraditionally(source: PickupSource, count: number): Promise<boolean> {
+    const objects = [...source.objects];
+    const onlyObject = objects[0];
+    if (objects.length === 1 && count && onlyObject) {
+        clearJustPicked(game);
+        await takeSelectedObjects(source, [{ value: onlyObject, count: Math.min(count, objectQuantity(onlyObject)) }], false, false);
+        return true;
+    }
+    let selection: ObjectClassSelection | null = null;
+    if (objects.length >= 2) {
+        await plineWithContinuation(`There are ${objects.length <= 10 ? 'several' : 'many'} objects here.`);
+        selection = await queryObjectClasses('pick up', source.objects);
+        if (!selection) return false;
+        if (selection.menu !== 'none') {
+            const requested = selection;
+            const eligible = requested.menu === 'all' ? objects
+                : objects.filter(object => matchesObjectCategories(object, requested));
+            const selected = await choosePickupObjects(source, eligible, 0, {
+                autoSelect: false, feelCockatrice: false, groupByClass: selection.oneAtATime,
+            });
+            return (await takeSelectedObjects(source, selected)).attempted;
+        }
+    }
+    let all = selection?.everything ?? true;
+    let selective = selection?.oneAtATime ?? false;
+    let classes = selection?.classes ?? [];
+    let attempted = false, picked = 0;
+    for (const object of objects) {
+        const matches = selection && hasBucCategory(selection)
+            ? matchesObjectCategories(object, selection)
+            : selective || !classes.length || classes.includes(object.oclass);
+        if (!matches) continue;
+        let amount = objectQuantity(object);
+        if (!all) {
+            observeObjectForNaming(object);
+            const question = objectQuestion(object, {
+                prefix: 'Pick up ', suffix: '?', fallback: 'something',
+                format: item => floorObjectDescription(item), shortFormat: simpleObjectNameWithArticle,
+            });
+            const response = await tty_yn_function(question, amount < 2 ? 'ynaq' : 'yn#aq', 'y');
+            if (response.answer === 'q') break;
+            if (response.answer === 'n' || response.answer === '#' && !response.count) continue;
+            if (response.answer === 'a') {
+                all = true;
+                if (selective) {
+                    selective = false;
+                    classes = [object.oclass];
+                }
+            } else if (response.answer === '#') {
+                amount = Number(response.count < BigInt(amount) ? response.count : BigInt(amount));
+            }
+        }
+        if (!attempted) clearJustPicked(game);
+        attempted = true;
+        const result = await takeSelectedObjects(source, [{ value: object, count: amount }], false, false);
+        picked += result.picked;
+        if (result.stopped) break;
+    }
+    if (picked && !source.monster && !game.program_state.gameover) newsym(source.x, source.y);
+    return attempted;
+}
+
+async function choosePickupObjects(source: PickupSource, objects: readonly GameObject[], count: number,
+    { autoSelect = true, feelCockatrice = !count, groupByClass = game.flags.sortpack !== false } = {},
+): Promise<CountedSelection<GameObject>[]> {
     const eligible = count
         ? objects.filter(object => objectQuantity(object) >= count) : objects;
     if (!eligible.length) return [];
     const onlyObject = eligible[0];
-    if (eligible.length === 1 && onlyObject && !(source.monster && objects[0]?.owornmask))
+    if (autoSelect && eligible.length === 1 && onlyObject && !(source.monster && objects[0]?.owornmask))
         return [{ value: onlyObject, count: count || objectQuantity(onlyObject) }];
     const ordered = orderedPickupObjects(eligible);
     const sections: MultiSelectSection<GameObject>[] = [];
     let letterCode = 'a'.charCodeAt(0);
-    let goldAcceleratorUsed = false;
-    const headings = game.flags.sortpack === false ? [null] : pickupClassOrder();
+    let firstItem = true;
+    const headings = groupByClass ? pickupClassOrder() : [null];
     for (const heading of headings) {
         const items = heading === null ? ordered
             : ordered.filter(object => pickupObjectClass(object) === heading);
@@ -159,29 +232,29 @@ async function choosePickupObjects(source: PickupSource, objects: readonly GameO
         const menuItems: MultiSelectItem<GameObject>[] = [];
         for (const object of items) {
             // query_objlist() names preceding entries before reverting to look_here().
-            if (!count && willFeelPetrifyingCorpse(object)) {
+            if (feelCockatrice && willFeelPetrifyingCorpse(object)) {
                 if (source.monster) await lookInsideSwallower(source.monster);
                 else await dolook();
                 return [];
             }
-            const isFirstGold = object.otyp === GOLD_PIECE && !goldAcceleratorUsed;
-            if (isFirstGold) goldAcceleratorUsed = true;
+            const isFirstGold = firstItem && object.otyp === GOLD_PIECE;
+            firstItem = false;
+            consumeHallucinatedMenuObjectGlyph(object);
             observeObjectForNaming(object);
             menuItems.push({
                 key: isFirstGold ? '$' : String.fromCharCode(letterCode++),
                 groupAccelerator: OBJECT_CLASS_SYMBOLS[object.oclass] || '',
-                text: floorObjectDescription(object),
+                text: pricedFloorObjectDescription(object),
                 value: object,
             });
         }
         sections.push({ heading, items: menuItems });
     }
-    game._pending_message = '';
     await flush_screen(1);
     const menu = {
         title: count ? `Pick ${count} of what?` : 'Pick up what?',
         sections,
-        omitHeadings: game.flags.sortpack === false,
+        omitHeadings: !groupByClass,
     };
     const selected = count
         ? (await showMultiSelectWindow({ ...menu, pickOne: true })).map(value => ({ value, count }))
@@ -206,11 +279,12 @@ export async function pickupFloorObject(object: GameObject, count: number, telek
     return result.picked > 0;
 }
 
-async function takeSelectedObjects(source: PickupSource, selected: readonly PickupSelection[], telekinesis = false, batch = true): Promise<{ picked: number; attempted: boolean }> {
-    if (!selected.length) return { picked: 0, attempted: false };
+async function takeSelectedObjects(source: PickupSource, selected: readonly PickupSelection[], telekinesis = false, batch = true): Promise<{ picked: number; attempted: boolean; stopped: boolean }> {
+    if (!selected.length) return { picked: 0, attempted: false, stopped: false };
     if (batch) clearJustPicked(game);
     let picked = 0;
     let attempted = false;
+    let stopped = false;
     for (const selection of selected) {
         const counted = 'value' in selection;
         let object = counted ? selection.value : selection;
@@ -225,18 +299,27 @@ async function takeSelectedObjects(source: PickupSource, selected: readonly Pick
         if (object === game.uchain) continue;
         if (object.oartifact) {
             const touch = await touchArtifactByHero(object);
-            if (touch.died) break;
+            if (touch.died) {
+                stopped = true;
+                break;
+            }
             if (!touch.allowed) continue;
         }
         if (object.otyp === CORPSE
             && ((!telekinesis && await touchPetrifyingCorpse(object))
-                || await reviveRiderCorpse(object, telekinesis))) break;
+                || await reviveRiderCorpse(object, telekinesis))) {
+            stopped = true;
+            break;
+        }
 
         let count = counted ? selection.count : objectQuantity(object);
         if (!(count > 0)) count = objectQuantity(object);
         if (object.otyp === SCR_SCARE_MONSTER) {
             const scroll = await prepareScareScrollPickup(object, count, telekinesis);
-            if (scroll.decision === 'stop') break;
+            if (scroll.decision === 'stop') {
+                stopped = true;
+                break;
+            }
             if (scroll.decision === 'consumed') {
                 picked++;
                 continue;
@@ -245,7 +328,10 @@ async function takeSelectedObjects(source: PickupSource, selected: readonly Pick
             count = scroll.count;
         }
         const lift = await liftObject({ object, count, telekinesis });
-        if (lift.decision === 'stop') break;
+        if (lift.decision === 'stop') {
+            stopped = true;
+            break;
+        }
         if (lift.decision !== 'lift') continue;
         if (object.otyp !== LOADSTONE)
             object = splitPickupStack(object, lift.count);
@@ -280,12 +366,15 @@ async function takeSelectedObjects(source: PickupSource, selected: readonly Pick
         const ghostlyMessage = finishGhostlyPickup(added.object, game);
         if (ghostlyMessage) await plineWithContinuation(ghostlyMessage);
         picked++;
-        if (game.program_state?.gameover) break;
+        if (game.program_state?.gameover) {
+            stopped = true;
+            break;
+        }
     }
     if (batch && picked && !game.program_state?.gameover) {
         if (!source.monster) newsym(source.x, source.y);
     }
-    return { picked, attempted };
+    return { picked, attempted, stopped };
 }
 
 // C pickup.c:pickup_prinv(). Tool pickups retain this process-local
