@@ -7863,7 +7863,6 @@ export async function resumeDeferredMonsterTrap(
         rollDice = d,
         rollOne = rnd,
         publish = plineWithContinuation,
-        monsterName,
         describeMonster,
         finishDeath = (monster: Monster, options?: MonsterDeathOptions) =>
             finishEnvironmentalMonsterDeath(monster, state, options),
@@ -7975,7 +7974,6 @@ export async function resumeDeferredMonsterTrap(
                 publish,
                 random: recordedRandom,
                 rollOne: recordedRollOne,
-                ...(monsterName ? { monsterName } : {}),
                 ...(describeMonster ? { describeMonster } : {}),
             });
             break;
@@ -7993,7 +7991,6 @@ export async function resumeDeferredMonsterTrap(
             await finishMonsterRockTrap(action.monster, event, state, {
                 publish,
                 random,
-                ...(monsterName ? { monsterName } : {}),
                 ...(describeMonster ? { describeMonster } : {}),
             });
             break;

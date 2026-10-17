@@ -16,6 +16,7 @@ import { MONSTER_FLAGS1, MONSTER_NAME } from './monster_data.js';
 import { ROCK } from './object_data.js';
 import { inventoryItemDescription } from './invent.js';
 import { observeObjectForNaming } from './objnam.js';
+import { monsterName } from './monster_name.js';
 import { d, rn2 } from './rng.js';
 import { monsterTrapVisibility, seeTrap } from './trap.js';
 import { makeTrapMissile } from './trap_missile.js';
@@ -45,7 +46,6 @@ export type MonsterRockTrapEvent = SpentRockTrapEvent | FallingRockEvent;
 interface FinishTrapOptions {
     publish?: MessagePublisher;
     random?: (limit: number) => number;
-    monsterName?: (monster: Monster) => string;
     describeMonster?: (monster: Monster) => string;
 }
 
@@ -54,10 +54,6 @@ const M1_WALLWALK = 0x00000008;
 
 function ordinaryMonsterSubject(monster: Monster) {
     return `The ${monster.name || MONSTER_NAME[monster.mnum] || 'monster'}`;
-}
-
-function ordinaryMonsterName(monster: Monster) {
-    return monster.name || `the ${MONSTER_NAME[monster.mnum] || 'monster'}`;
 }
 
 function monsterPassesRocks(monster: Monster) {
@@ -125,13 +121,12 @@ export async function finishMonsterRockTrap(
     {
         publish = async () => {},
         random = rn2,
-        monsterName = ordinaryMonsterName,
         describeMonster = ordinaryMonsterSubject,
     }: FinishTrapOptions = {},
 ) {
     if (!event || event.finished) return event;
     if (event.kind === 'spent-rock-trap') {
-        await publish(`A trap door above ${monsterName(monster)} opens, but nothing falls out!`);
+        await publish(`A trap door above ${monsterName(monster, { state })} opens, but nothing falls out!`);
         deleteTrap(event.trap, state);
         event.finished = true;
         return event;

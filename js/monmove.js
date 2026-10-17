@@ -6493,7 +6493,7 @@ async function continueAfterMonsterTrap(action, state, random, rollDice, rollOne
     await completeMovedMonsterAction(action.monster, action.movement, state, random, rollDice, rollOne, calls, action.dochugContext, { trapAlreadyHandled: true });
     return action;
 }
-export async function resumeDeferredMonsterTrap(action, state, { random = rn2, rollDice = d, rollOne = rnd, publish = plineWithContinuation, monsterName, describeMonster, finishDeath = (monster, options) => finishEnvironmentalMonsterDeath(monster, state, options), } = {}) {
+export async function resumeDeferredMonsterTrap(action, state, { random = rn2, rollDice = d, rollOne = rnd, publish = plineWithContinuation, describeMonster, finishDeath = (monster, options) => finishEnvironmentalMonsterDeath(monster, state, options), } = {}) {
     const movement = action?.movement;
     if (movement?.escapingTrap) {
         await tryMonsterTrapEscape(action.monster, state, {
@@ -6591,7 +6591,6 @@ export async function resumeDeferredMonsterTrap(action, state, { random = rn2, r
                 publish,
                 random: recordedRandom,
                 rollOne: recordedRollOne,
-                ...(monsterName ? { monsterName } : {}),
                 ...(describeMonster ? { describeMonster } : {}),
             });
             break;
@@ -6609,7 +6608,6 @@ export async function resumeDeferredMonsterTrap(action, state, { random = rn2, r
             await finishMonsterRockTrap(action.monster, event, state, {
                 publish,
                 random,
-                ...(monsterName ? { monsterName } : {}),
                 ...(describeMonster ? { describeMonster } : {}),
             });
             break;

@@ -11,6 +11,7 @@ import { resolveMonsterLiquid } from './mon.js';
 import { MONSTER_BODY_META, MONSTER_NAME } from './monster_data.js';
 import { beginMonsterPitTrap, finishMonsterPitTrap } from './monster_pit_trap.js';
 import { monsterWearsIronShoes } from './monworn.js';
+import { monsterName } from './monster_name.js';
 import { rn2, rnd } from './rng.js';
 import { monsterTrapVisibility, seeTrap } from './trap.js';
 import { monsterInAir } from './terrain_properties.js';
@@ -112,7 +113,7 @@ export function beginMonsterLandMine(monster, trap, state = game, { random = rn2
 export function landMineNeedsResume(event) {
     return event?.kind === 'land-mine' && !!(event.exploded || event.discoveredTrigger);
 }
-export async function finishMonsterLandMine(monster, event, state = game, { finishDeath, publish = plineWithContinuation, random = rn2, rollOne = rnd, monsterName = ordinaryMonsterName, describeMonster = ordinaryMonsterSubject, } = {}) {
+export async function finishMonsterLandMine(monster, event, state = game, { finishDeath, publish = plineWithContinuation, random = rn2, rollOne = rnd, describeMonster = ordinaryMonsterSubject, } = {}) {
     if (event.finished)
         return event;
     if (typeof finishDeath !== 'function')
@@ -122,11 +123,10 @@ export async function finishMonsterLandMine(monster, event, state = game, { fini
         publish,
         random,
         rollOne,
-        monsterName,
         describeMonster,
     };
     if (event.discoveredTrigger) {
-        await publish(`A trigger appears in a pile of soil below ${monsterName(monster)}.`);
+        await publish(`A trigger appears in a pile of soil below ${monsterName(monster, { state })}.`);
         seeTrap(event.trap, state);
         event.airCurrentRoll = random(3);
         event.exploded = event.airCurrentRoll === 0;

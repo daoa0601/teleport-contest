@@ -17,6 +17,7 @@ import { resolveMonsterLiquid } from './mon.js';
 import { MONSTER_BODY_META, MONSTER_NAME } from './monster_data.js';
 import { beginMonsterPitTrap, finishMonsterPitTrap } from './monster_pit_trap.js';
 import { monsterWearsIronShoes } from './monworn.js';
+import { monsterName } from './monster_name.js';
 import { rn2, rnd } from './rng.js';
 import { monsterTrapVisibility, seeTrap } from './trap.js';
 import { monsterInAir } from './terrain_properties.js';
@@ -43,7 +44,6 @@ interface LandMineOptions {
     publish?: MessagePublisher;
     random?: (limit: number) => number;
     rollOne?: (sides: number) => number;
-    monsterName?: (monster: Monster) => string;
     describeMonster?: (monster: Monster) => string;
 }
 
@@ -181,7 +181,6 @@ export async function finishMonsterLandMine(
         publish = plineWithContinuation,
         random = rn2,
         rollOne = rnd,
-        monsterName = ordinaryMonsterName,
         describeMonster = ordinaryMonsterSubject,
     }: LandMineOptions = {},
 ) {
@@ -193,12 +192,11 @@ export async function finishMonsterLandMine(
         publish,
         random,
         rollOne,
-        monsterName,
         describeMonster,
     };
 
     if (event.discoveredTrigger) {
-        await publish(`A trigger appears in a pile of soil below ${monsterName(monster)}.`);
+        await publish(`A trigger appears in a pile of soil below ${monsterName(monster, { state })}.`);
         seeTrap(event.trap, state);
         event.airCurrentRoll = random(3);
         event.exploded = event.airCurrentRoll === 0;

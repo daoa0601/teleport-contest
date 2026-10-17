@@ -9,6 +9,7 @@ import { MONSTER_FLAGS1, MONSTER_NAME } from './monster_data.js';
 import { ROCK } from './object_data.js';
 import { inventoryItemDescription } from './invent.js';
 import { observeObjectForNaming } from './objnam.js';
+import { monsterName } from './monster_name.js';
 import { d, rn2 } from './rng.js';
 import { monsterTrapVisibility, seeTrap } from './trap.js';
 import { makeTrapMissile } from './trap_missile.js';
@@ -16,9 +17,6 @@ const M1_UNSOLID = 0x00100000;
 const M1_WALLWALK = 0x00000008;
 function ordinaryMonsterSubject(monster) {
     return `The ${monster.name || MONSTER_NAME[monster.mnum] || 'monster'}`;
-}
-function ordinaryMonsterName(monster) {
-    return monster.name || `the ${MONSTER_NAME[monster.mnum] || 'monster'}`;
 }
 function monsterPassesRocks(monster) {
     const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
@@ -69,11 +67,11 @@ export async function beginMonsterRockTrap(monster, trap, state = game, { random
 export function rockTrapNeedsResume(event) {
     return event?.kind === 'falling-rock' || (event?.kind === 'spent-rock-trap' && !event.finished);
 }
-export async function finishMonsterRockTrap(monster, event, state = game, { publish = async () => { }, random = rn2, monsterName = ordinaryMonsterName, describeMonster = ordinaryMonsterSubject, } = {}) {
+export async function finishMonsterRockTrap(monster, event, state = game, { publish = async () => { }, random = rn2, describeMonster = ordinaryMonsterSubject, } = {}) {
     if (!event || event.finished)
         return event;
     if (event.kind === 'spent-rock-trap') {
-        await publish(`A trap door above ${monsterName(monster)} opens, but nothing falls out!`);
+        await publish(`A trap door above ${monsterName(monster, { state })} opens, but nothing falls out!`);
         deleteTrap(event.trap, state);
         event.finished = true;
         return event;
