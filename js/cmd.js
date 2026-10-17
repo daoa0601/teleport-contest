@@ -2421,7 +2421,7 @@ async function doherecmdmenu() {
     game.nhDisplay?.setCursor((game.u?.ux ?? 1) - 1, (game.u?.uy ?? 0) + 1);
     // cmd.c:here_cmd_menu() queues selected actions for a later dispatch.
     // This accepted boundary dismisses with Escape before that action graph.
-    game.context.move = key === 27 ? 0 : 1;
+    game.context.move = key === 0 || key === 27 ? 0 : 1;
 }
 async function doname() {
     // docallcmd() consumes a canned category before creating its menu.

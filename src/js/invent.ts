@@ -486,8 +486,9 @@ async function showItemActionMenu(item: GameObject) {
     });
 }
 
-export async function inventoryActionForObject(item: GameObject): Promise<InventoryAction> {
-    return { key: inventoryActionKey(await showItemActionMenu(item)), item };
+export async function inventoryActionForObject(item: GameObject): Promise<InventoryAction | null> {
+    const key = await showItemActionMenu(item);
+    return key === 0 ? null : { key: inventoryActionKey(key), item };
 }
 
 function itemActionEntries(item: GameObject, state: GameState, repairGold: boolean) {

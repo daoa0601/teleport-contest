@@ -440,7 +440,8 @@ async function showItemActionMenu(item) {
     });
 }
 export async function inventoryActionForObject(item) {
-    return { key: inventoryActionKey(await showItemActionMenu(item)), item };
+    const key = await showItemActionMenu(item);
+    return key === 0 ? null : { key: inventoryActionKey(key), item };
 }
 function itemActionEntries(item, state, repairGold) {
     const itemName = simpleObjectName(item, state);
