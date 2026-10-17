@@ -1,6 +1,6 @@
 // Bear traps triggered by monsters.
 // C ref: trap.c:trapeffect_bear_trap().
-import { finishMonsterKilled } from './monster_death.js';
+import { finishMonsterTrapDeath } from './monster_death.js';
 import { AD_PHYS } from './monster_attack_types.js';
 import { plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
@@ -63,7 +63,7 @@ export async function finishMonsterBearTrap(monster, event, state = game, { publ
         monster.mhp = Math.max(0, (monster.mhp ?? 1) - event.damage);
     }
     if (monster.mhp <= 0) {
-        const death = await finishMonsterKilled(monster, state, {
+        const death = await finishMonsterTrapDeath(monster, state, {
             damageType: AD_PHYS,
             random,
             publish,

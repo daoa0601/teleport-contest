@@ -1,6 +1,6 @@
 // Land mines triggered by monsters.
 // C ref: trap.c:trapeffect_landmine().
-import { finishMonsterKilled } from './monster_death.js';
+import { finishMonsterTrapDeath } from './monster_death.js';
 import { AD_PHYS } from './monster_attack_types.js';
 import { WT_ELF } from './const.js';
 import { newsym, plineWithContinuation } from './display.js';
@@ -17,7 +17,7 @@ import { monsterInAir } from './terrain_properties.js';
 import { monsterLearnsTrap, monstersSeeTrap } from './trap_knowledge.js';
 import { monsterName as canonicalMonsterName } from './monster_name.js';
 async function finishMineDeath(monster, event, state, options) {
-    const death = await finishMonsterKilled(monster, state, {
+    const death = await finishMonsterTrapDeath(monster, state, {
         damageType: AD_PHYS,
         random: options.random,
         publish: options.publish,

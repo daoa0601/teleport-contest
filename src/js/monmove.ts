@@ -4965,10 +4965,10 @@ async function triggerMonsterTrap(
             visible: inSight,
         };
         if (inSight && effect.energyDrain > 0) movement.deferredAfterMonsterTrap = true;
+        if (effect.kind === 'anti-magic-damage') movement.deferredAfterMonsterTrap = true;
         if (effect.killed) {
             movement.actorDied = true;
             movement.actionCompleted = true;
-            movement.deferredAfterMonsterTrap = true;
         }
         movement.trap = event;
         return event;

@@ -5,7 +5,7 @@ import type { Monster } from './monster_types.js';
 import type { GameState } from './game_state.js';
 import type { Trap } from './map_types.js';
 import type { MessagePublisher } from './display.js';
-import { finishMonsterKilled } from './monster_death.js';
+import { finishMonsterTrapDeath } from './monster_death.js';
 import type { MonsterDeathResult } from './monster_death.js';
 import { AD_PHYS } from './monster_attack_types.js';
 import { plineWithContinuation } from './display.js';
@@ -118,7 +118,7 @@ export async function finishMonsterBearTrap(
     }
 
     if (monster.mhp <= 0) {
-        const death = await finishMonsterKilled(monster, state, {
+        const death = await finishMonsterTrapDeath(monster, state, {
             damageType: AD_PHYS,
             random,
             publish,

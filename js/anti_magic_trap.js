@@ -6,7 +6,7 @@ import { finishMonsterKilled } from './monster_death.js';
 import { heroHasHalfSpellDamage } from './spell_damage.js';
 import { artifactById, heroHasArtifactDefense, heroHasCarriedArtifactFlag } from './artifacts.js';
 import { W_ACCESSORY, W_ARMF, W_ARMOR, W_WEP } from './const.js';
-import { plineWithContinuation } from './display.js';
+import { newsym, plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
 import { loseHeroHp } from './hero_damage.js';
 import { drainHeroEnergy } from './hero_energy.js';
@@ -122,16 +122,21 @@ export function applyMonsterAntiMagicTrap(monster, { rollDice = d, rollOne = rnd
 export async function finishMonsterAntiMagicTrap(monster, event, state = game, { random = rn2, publish = plineWithContinuation, describeMonster = actor => monsterName(actor, { state, capitalized: true }), } = {}) {
     if (event.energyDrain > 0)
         await publish(`${describeMonster(monster)} seems lethargic.`);
-    if (!event.killed)
-        return null;
-    const cause = 'compression from an anti-magic field';
-    return finishMonsterKilled(monster, state, {
-        // C uses -AD_MAGM; its sign does not change monkilled's death rules.
-        damageType: AD_MAGM,
-        cause: event.inSight ? cause : null,
-        random,
-        publish,
-    });
+    let death = null;
+    if (event.killed) {
+        death = await finishMonsterKilled(monster, state, {
+            // C uses -AD_MAGM; its sign does not change monkilled's death rules.
+            damageType: AD_MAGM,
+            cause: event.inSight ? 'compression from an anti-magic field' : null,
+            random,
+            publish,
+        });
+        if (death.heroDied)
+            return death;
+    }
+    if (event.kind === 'anti-magic-damage' && event.seeSquare && event.trap && state === game)
+        newsym(event.trap.tx, event.trap.ty);
+    return death;
 }
 function heroObject(slot) {
     return game[slot] || game.u?.[slot] || null;

@@ -47,7 +47,7 @@ import { pitsAreConjoined } from './pit_connections.js';
 import { selfTouchPetrifyingWeapons } from './stoning.js';
 import { dismountHero } from './steed.js';
 import { holdingMonsterName, holdingMonsterSubject } from './hero_expulsion.js';
-import { finishMonsterKilled } from './monster_death.js';
+import { finishMonsterTrapDeath } from './monster_death.js';
 import { AD_PHYS } from './monster_attack_types.js';
 import { specialPrototypeAt } from './dungeon.js';
 import { setTrack } from './track.js';
@@ -196,7 +196,7 @@ async function triggerPit(trap, { viaSitting = false, failedUntrap = false, took
         if (steed.mhp > 0)
             steed.mhp -= rnd(trap.ttyp === PIT ? 6 : 10);
         if (steed.mhp <= 0) {
-            const death = await finishMonsterKilled(steed, game, { damageType: AD_PHYS });
+            const death = await finishMonsterTrapDeath(steed, game, { damageType: AD_PHYS });
             if (death.heroDied)
                 return;
             if (!death.survived) {
@@ -907,7 +907,7 @@ async function triggerBearTrap(trap, { failedUntrap = false, forceTrap = false, 
         // C thitm(0, steed, NULL, damage, FALSE): forced damage, no missile.
         steed.mhp -= damage;
         if (steed.mhp <= 0) {
-            const death = await finishMonsterKilled(steed, game, { damageType: AD_PHYS });
+            const death = await finishMonsterTrapDeath(steed, game, { damageType: AD_PHYS });
             if (death.heroDied)
                 return true;
             if (!death.survived)
