@@ -4,7 +4,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { wearHeroAccessory } from '../js/accessory.js';
 import { A_WIS, SICK_ALL } from '../js/const.js';
-import { pline } from '../js/display.js';
+import { setTopline } from '../js/display.js';
 import { canHeroRiseUp, levelAtDepth } from '../js/dungeon.js';
 import { newExperienceThreshold } from '../js/exper.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
@@ -268,7 +268,7 @@ void test('burning oil resumes after its message and life saving before curing s
     const amulet = await addInventoryObject(AMULET_OF_LIFE_SAVING);
     await wearHeroAccessory(amulet, 'uamul');
     const source = await addInventoryObject(POT_OIL, { lamplit: true });
-    await pline('You carefully examine the old inscriptions covering this long corridor.');
+    await setTopline('You carefully examine the old inscriptions covering this long corridor.');
     const input = resetInputState();
     const action = applyPotionBodyEffect(source);
     try {

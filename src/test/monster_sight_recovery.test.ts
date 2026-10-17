@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { MM_ANGRY, NO_MINVENT, W_AMUL } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { pline } from '../js/display.js';
+import { setTopline } from '../js/display.js';
 import { lifeSaveMonster } from '../js/mondeath.js';
 import { AMULET_OF_LIFE_SAVING } from '../js/object_data.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
@@ -24,7 +24,7 @@ for (const blind of [false, true]) {
         if (blind) await makeBlinded(10, { talk: false });
         const messages: string[] = [];
         const publish = async (message: string) => {
-            await pline(message);
+            await setTopline(message);
             messages.push(message);
         };
 

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { moveMonsterForHeroAttack } from '../js/allmain.js';
 import { MM_ANGRY, NO_MINVENT, PIT, PLNMSG_ENVELOPED_IN_GAS } from '../js/const.js';
-import { canSenseMonster, pline } from '../js/display.js';
+import { canSenseMonster, setTopline } from '../js/display.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { useMonsterDefensiveItem } from '../js/monster_defensive_item.js';
@@ -137,7 +137,7 @@ void test('a swallowing steam vortex envelops the hero before its move resumes f
         assert.equal(monster.my, 10);
     };
     installPagerInput(input, { expected: /earlier message/, limit: 1 });
-    await pline('An earlier message fills the line while the swallowing steam vortex starts to move.');
+    await setTopline('An earlier message fills the line while the swallowing steam vortex starts to move.');
     await moveMonsterForHeroAttack(monster);
     assert.equal(pausedWithCloud, true);
     assert.ok(monster.mx !== 10 || monster.my !== 10);
