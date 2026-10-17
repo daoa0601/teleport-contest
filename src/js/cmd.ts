@@ -1747,7 +1747,7 @@ async function summonFountainSnakes() {
 
 export async function drinkFountain(loc: MapLocation) {
     let fountainMessage = '';
-    const blessed = loc.blessedftn === 1;
+    const blessed = !!loc.blessedftn;
     const fate = rnd(30);
     if (propertyIsActive('levitation')) {
         await floatingAbove('fountain');

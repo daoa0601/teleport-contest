@@ -2,7 +2,7 @@
 // C refs: fountain.c dryup()/dogushforth() and sit.c dosit().
 
 import { monsterHasMapPosition } from './monster_location.js';
-import { DOOR, FOUNTAIN, F_WARNED, POOL, ROOM, SDOOR } from './const.js';
+import { DOOR, FOUNTAIN, F_WARNED, MON_FLOOR, POOL, ROOM, SDOOR } from './const.js';
 import { monsterArmName, monsterHeadName } from './body_parts.js';
 import { glyphAt, newsym, plineWithContinuation } from './display.js';
 import { deleteEngravingAt } from './engrave.js';
@@ -67,6 +67,7 @@ export async function dryFountainAt(x: number, y: number, {
 async function warnAboutFountain(state: GameState, publish: MessagePublisher): Promise<void> {
     const watch = [...requireGameLevel(state).monsters].reverse().find(monster =>
         !monster.dead && monster.mhp > 0 && monster.mpeaceful
+        && (monster.mstate ?? MON_FLOOR) === MON_FLOOR
         && (monster.mnum === PM_WATCHMAN || monster.mnum === PM_WATCH_CAPTAIN)
         && couldsee(monster.mx, monster.my));
     if (!watch) {
