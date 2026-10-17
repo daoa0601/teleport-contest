@@ -391,6 +391,23 @@ Batch 37: fixes from fresh101–110: a rust trap names the struck head with
 `mbodypart(HEAD)` (a lichen's cap area), and a snapping aklys tether is erased
 by `tmp_at(DISP_END, 0)` before "You hear a loud snap!".
 
+Batch 38: fresh121-140 fixes and units. Gem probabilities follow
+`setgemprobs()` for the current depth on new levels, cached-level returns and
+restored games; a drowning hero's status is drawn before `done()` zeroes hit
+points; a monster-thrown acid potion kills through `monkilled(AD_ACID)` ("is
+destroyed!") and holy water through `killed()`, as `POTHIT_OTHER_THROW`
+requires; **fountain-quaff** (blessed wished fountains, off-map watchmen in
+`dryup()`); **wizcast** (`#wizcast` casting without energy, learning, hunger or
+practice).
+
+Batch 39: **menu-callers** (native menu heading styles, `tty_end_menu()`
+prompts, wizard identify class shortcuts); **displace-move** (displacing a pet
+or peaceful runs `domove_core()`'s shared `DO_MOVE` checks, so a boulder under
+the displaced monster is pushed before the swap); `goto_level()`'s early
+`obj_delivery(FALSE)` lands trap-door objects that fell with the hero before
+followers arrive and its late `obj_delivery(TRUE)` handles the rest (C's
+`!near_hero ^ MIGR_WITH_HERO` test).
+
 ## Verification
 
 `npm test` at `75b7487`: **12,229/12,229**. Merges require a fully green suite;
@@ -416,16 +433,16 @@ state oracle finds all 300 sessions matching C state throughout.
 Every eval-sample and pool session completes and public matches every random
 call; the one public miss (`seed2200-wizard-quaff-zap-read`) prints the
 recorder host's own `.nethackrc` path. New work comes from freshly recorded
-native sessions: fresh86-120 (10,500 sessions) fail only on step-0 moon-phase
-artifacts plus the cases below. In flight: **fresh63** (two older RNG
-divergences), **nomul-owner** (one `nomul()` owner for involuntary delays; a
-hero woken by combat and knocked back must stagger aloud), **halluc-display-rng**
-(display-stream draw count while hallucinating near a fire trap),
-**wizcast** (`#wizcast` and the spells it reaches) and **fountain-quaff**
-(`drinkfountain()` divergences). The recipe-round2 recipes (fountains, spells,
-digging, untrapping, locks, riding, artifact invocation) are recorded in
-`.cache/holdout-dev/recipe2`; shops, Sokoban and other invocation powers still
-need recipes.
+native sessions: fresh86-160 (22,500 sessions) fail only on step-0 moon-phase
+artifacts plus the cases below. In flight: **nomul-owner** (one `nomul()` owner
+for involuntary delays), **halluc-display-rng** (display-stream draws while
+hallucinating), **shop-entry-block** (`u_entered_shop()` tail warnings and the
+shopkeeper's extra move), **status-refresh** (which event requests the full
+status redraw one turn after a magic-trap explosion), **expel-turn** (an extra
+monster turn after an engulfer expels and re-touches the hero),
+**displace-followup** (post-swap liquid/trap effects and doorway ordering), and
+**recipe-round3** (coverage-guided recipes for code the round-2 recipes still
+miss). Round-2 recipe sessions are recorded in `.cache/holdout-dev/recipe2`.
 
 `splitObjectStack()` now links the new piece right after the original in
 whichever chain owns it (floor pile, hero or monster inventory, container,
@@ -451,12 +468,10 @@ eval and public runs (`losehp-*`) and the state oracle are unchanged and
 both ledgers hold: no corpus session reaches these deaths.
 
 `tty_menu.ts` ports the native `wintty.c` menu window functions
-(create/clear/start/add/end/select), but no caller uses `tty_select_menu()`
-yet: `windows.ts`, `cmd.ts`, `getpos.ts`, `terrain_view.ts`,
-`extended_commands.ts`, `naming_categories.ts`, `o_init.ts`, `wish.ts` and
-`wizard_teleport.ts` still lay out menus through `menuLayout()` and
-`paintMenuPage()` directly. Moving them onto the native window API is its own
-batch.
+(create/clear/start/add/end/select) and every menu caller (`windows.ts`,
+`getpos.ts`, `terrain_view.ts`, `extended_commands.ts`, `naming_categories.ts`,
+`o_init.ts`, `wish.ts`, `spell_menu.ts`, `wizard_teleport.ts`) goes through
+`tty_select_menu()`; only `tty_menu.ts` lays out pages.
 
 ## Remaining full-port work
 
