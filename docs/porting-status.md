@@ -374,11 +374,28 @@ the starting pet's hit points through `newmonhp()`, and `mon_nam()` for spent
 rock traps and land-mine triggers. The encumber-owner and halluc-display
 units landed alongside.
 
+Batch 35: **worm-tail** (`wormhitu()`: every tail segment next to the hero
+makes its own `mattacku()`, with range still measured from the head) and
+**naming-sweep** (corpse-revival messages with native `The()`/`upstart()`
+casing, and remaining callers moved onto the shared object and monster
+namers).
+
+Batch 36: **persist-audit**. Every persistent `GameState` field was checked
+against `savegamestate()`, `savelev()` and the saved/instance globals; 48 that
+model unsaved C state (helplessness and its callbacks, prayer and
+digestion callbacks, noise and push throttles, `oldcap`, `lastinvnr`,
+`hero_seq`, special-level caches, startup guards) are now transient, so a
+restored game recomputes them as native does. `SAVE_VERSION` is 34.
+
+Batch 37: fixes from fresh101–110: a rust trap names the struck head with
+`mbodypart(HEAD)` (a lichen's cap area), and a snapping aklys tether is erased
+by `tmp_at(DISP_END, 0)` before "You hear a loud snap!".
+
 ## Verification
 
-`npm test` at `7c81f0a`: **12,150/12,150**. Merges require a fully green suite;
+`npm test` at `75b7487`: **12,229/12,229**. Merges require a fully green suite;
 batch runs also compare matched screens per session with the previous batch
-(no screen regression in batch 34, eval, public or pool).
+(no screen regression in batches 35-37, eval, public or pool).
 
 ## Most recent native diagnostics
 
@@ -388,8 +405,8 @@ batch runs also compare matched screens per session with the previous batch
 | Native eval sample | 300/300 | 50,586/50,586 | 3,616,669/3,616,669 | 0 |
 | Holdout-dev pool | 2,500/2,500 | | | 0 |
 
-Runs: `.cache/generalization/batch34-7c81f0a-{eval,public}` and
-`triage-7c81f0a` (pool) in the verify worktree (baseline `base-06d7e73`:
+Runs: `.cache/generalization/batch37-75b7487-{eval,public}` and
+`triage-75b7487` (pool) in the verify worktree (baseline `base-06d7e73`:
 143/300; batch 30: 300/300, pool 2,500/2,500). No verified random call was
 lost; the ledgers now hold 350 eval and 363 public functions. The
 state oracle finds all 300 sessions matching C state throughout.
@@ -397,16 +414,18 @@ state oracle finds all 300 sessions matching C state throughout.
 ## Next work
 
 Every eval-sample and pool session completes and public matches every random
-call, so new work comes from C-source audits of files the corpora barely
-run, plus freshly recorded native sessions (fresh5 493/500, fresh6 289/300,
-fresh7 193/200, fresh8 192/200, recipe1 32/40). In flight: recipe-a (container
-naming, `#enhance` slots, `#terrain` choices, getpos hints, nighttime),
-fresh-c (six RNG divergences from fresh5), poly-vision (map timing after
-polymorphing into an eyeless form) and queue-sweep (accepted review
-findings). review-debt-3's turn-loop restructuring
-(delayed armor removal, `stealarm()`, prayer delay) is parked unmerged: it
-broke save/restore twice. `.cache/agents/queue.md` holds accepted review
-findings.
+call; the one public miss (`seed2200-wizard-quaff-zap-read`) prints the
+recorder host's own `.nethackrc` path. New work comes from freshly recorded
+native sessions: fresh86-120 (10,500 sessions) fail only on step-0 moon-phase
+artifacts plus the cases below. In flight: **fresh63** (two older RNG
+divergences), **nomul-owner** (one `nomul()` owner for involuntary delays; a
+hero woken by combat and knocked back must stagger aloud), **halluc-display-rng**
+(display-stream draw count while hallucinating near a fire trap),
+**wizcast** (`#wizcast` and the spells it reaches) and **fountain-quaff**
+(`drinkfountain()` divergences). The recipe-round2 recipes (fountains, spells,
+digging, untrapping, locks, riding, artifact invocation) are recorded in
+`.cache/holdout-dev/recipe2`; shops, Sokoban and other invocation powers still
+need recipes.
 
 `splitObjectStack()` now links the new piece right after the original in
 whichever chain owns it (floor pile, hero or monster inventory, container,
@@ -431,9 +450,13 @@ before rehumanizing). `hero_damage_death.test.ts` covers each death. The
 eval and public runs (`losehp-*`) and the state oracle are unchanged and
 both ledgers hold: no corpus session reaches these deaths.
 
-The native `wintty.c` menu owner (create/add/end/select/process, about 1,000
-lines) still needs a faithful port with its 20 callers moved onto the native
-window API. Do it as its own batch.
+`tty_menu.ts` ports the native `wintty.c` menu window functions
+(create/clear/start/add/end/select), but no caller uses `tty_select_menu()`
+yet: `windows.ts`, `cmd.ts`, `getpos.ts`, `terrain_view.ts`,
+`extended_commands.ts`, `naming_categories.ts`, `o_init.ts`, `wish.ts` and
+`wizard_teleport.ts` still lay out menus through `menuLayout()` and
+`paintMenuPage()` directly. Moving them onto the native window API is its own
+batch.
 
 ## Remaining full-port work
 
