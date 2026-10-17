@@ -1,9 +1,10 @@
 // Escape attempts by an already trapped monster. C trap.c:mintrap().
+// dochug refreshes stationary monsters; a settling boulder owns its redraw.
 
 import { trapName } from './trap_name.js';
 import { deleteTrap } from './trap_lifecycle.js';
 import { BEAR_TRAP, HOLE, PIT, SPIKED_PIT, WEB, is_pit } from './const.js';
-import { newsym, plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './display.js';
 import { game, requireGameLevel } from './gstate.js';
 import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SIZE } from './monster_data.js';
 import { BOULDER } from './object_data.js';
@@ -49,7 +50,6 @@ export async function tryMonsterTrapEscape(monster: Monster, state: GameState = 
                 monster.mtrapped = 0;
                 if (inSight) await publish(`${describeMonster(monster)} pulls free...`);
                 await fillPitWithBoulderAt(x, y, state, { publish });
-                newsym(x, y);
             }
         } else {
             if (inSight) {
@@ -71,12 +71,10 @@ export async function tryMonsterTrapEscape(monster: Monster, state: GameState = 
             deleteTrap(trap, state);
             monster.meating = 5;
             monster.mtrapped = 0;
-            newsym(x, y);
         } else if (trap.ttyp === SPIKED_PIT) {
             if (inSight) await publish(`${describeMonster(monster)} munches on some spikes!`);
             trap.ttyp = PIT;
             monster.meating = 5;
-            newsym(x, y);
         }
     }
 }
