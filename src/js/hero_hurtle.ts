@@ -44,6 +44,7 @@ import {
 import { BOULDER } from './object_data.js';
 import { loseHeroHp } from './hero_damage.js';
 import { placeHeroOnLevel } from './hero_location.js';
+import { updateHeroRegions } from './regions.js';
 import { monsterHasMapPosition } from './monster_location.js';
 import { monsterName, monsterObjectPronoun } from './monster_name.js';
 import { objectName } from './objnam.js';
@@ -360,6 +361,7 @@ async function moveOneSquare(x: number, y: number, options: HeroHurtleOptions, r
         await plineWithContinuation(formatFeltMessage('the spirits holding you back.'));
         return false;
     }
+    updateHeroRegions(game, x, y);
     if (!remaining.value) return false;
 
     const obstacle = obstacleAt(x, y);

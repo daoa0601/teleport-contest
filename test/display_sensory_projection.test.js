@@ -18,7 +18,7 @@ void test('temporary see invisible shows an adjacent invisible monster through a
     const level = freshObjectRoom({ hero: { seeInvisibleTurns: 10 } });
     const monster = await createMonsterAt('goblin', 11, 10);
     monster.minvis = 1;
-    level.regions = [{ kind: 'gas-cloud', visible: true, heroFault: false,
+    level.regions = [{ kind: 'gas-cloud', heroInside: false, visible: true, heroFault: false,
             damage: 0, ttl: 3, cells: [{ x: 11, y: 10 }], monsterIds: [] }];
     newsym(11, 10);
     await flush_screen(1);

@@ -10,9 +10,10 @@ import { MONSTER_ATTACKS, MONSTER_NAME } from './monster_data.js';
 import { removeObjectFromMonsterInventory } from './monster_inventory.js';
 import { removeWornHeroItem } from './hero_equipment.js';
 import { monsterName, possessiveName } from './monster_name.js';
-import { DWARVISH_CLOAK, OBJECT_NAMES, OBJECT_PROPERTY, OBJECT_SUBTYPE, SCR_BLANK_PAPER, TALLOW_CANDLE, WAN_FIRE, WAX_CANDLE, } from './object_data.js';
+import { DWARVISH_CLOAK, OBJECT_PROPERTY, OBJECT_SUBTYPE, SCR_BLANK_PAPER, TALLOW_CANDLE, WAN_FIRE, WAX_CANDLE, } from './object_data.js';
 import { delobj } from './object_delete.js';
-import { makePlural, verbForSubject } from './object_grammar.js';
+import { verbForSubject } from './object_grammar.js';
+import { objectCombatName, ownedObjectAction } from './objnam.js';
 import { hasWornProperty } from './properties.js';
 import { rn2, rnl } from './rng.js';
 import { heroIsBlind } from './senses.js';
@@ -78,13 +79,13 @@ export async function erodeArmor(defender, kind, { state = game, random = rn2, .
 export async function damageObjectWithAcid(object, { state = game, publish = plineWithContinuation, random = rn2, ...options } = {}) {
     if (!object)
         return;
-    const view = objectView(object, state, options.position);
-    if (view.hero && inventoryResists('corrosion', state, random))
+    if (object.where === 'inventory' && inventoryResists('corrosion', state, random))
         return;
     if (object.greased) {
-        await protectWithGrease(object, view, state, publish, random);
+        await protectWithGrease(object, null, state, publish, random);
     }
     else if (object.oclass === SCROLL_CLASS && object.otyp !== SCR_BLANK_PAPER) {
+        const view = objectView(object, state, options.position);
         if (!heroIsBlind(state) && (view.hero || view.monsterVisible))
             await publish(`${objectSubject(view, state)} ${view.plural ? 'fade' : 'fades'}.`);
         object.otyp = SCR_BLANK_PAPER;
@@ -107,10 +108,10 @@ export async function erodeObject(object, kind, { state = game, publish = plineW
     const rule = EROSION[kind];
     if (!rule)
         throw new TypeError(`Unknown erosion: ${kind}`);
+    if (object.where === 'inventory' && inventoryResists(kind, state, random))
+        return 'nothing';
     const view = objectView(object, state, position, displayName);
     const agreement = view.plural ? 'are' : 'is';
-    if (view.hero && inventoryResists(kind, state, random))
-        return 'nothing';
     if (grease && kind !== 'burn' && kind !== 'rot' && object.greased) {
         await protectWithGrease(object, view, state, publish, random);
         return 'greased';
@@ -209,40 +210,43 @@ function inventoryResists(kind, state, random) {
         && random(100) < 90;
 }
 async function protectWithGrease(object, view, state, publish, random) {
-    if (view.hero || view.monsterVisible) {
+    if (view && (view.hero || view.monsterVisible)) {
         // Native grease feedback appends 's even when the name ends in s.
         const subject = view.monsterVisible && view.carrier
             ? `${monsterName(view.carrier, { state, capitalized: true })}'s ${view.name}`
             : objectSubject(view, state);
         await publish(`${subject} ${view.plural ? 'are' : 'is'} protected by the layer of grease!`);
     }
+    else if (!view) {
+        const carrier = objectCarrier(object, state);
+        // acid_damage supplies no name; grease_protect names the object only
+        // inside this feedback guard, so silent protection cannot reveal it.
+        if (object.where === 'inventory' || (carrier && canSeeMonster(carrier))) {
+            await publish(`${ownedObjectAction(object, 'are', state)} protected by the layer of grease!`);
+        }
+    }
     if (random(2) === 0) {
         object.greased = false;
-        if (view.hero)
+        if (object.where === 'inventory')
             await publish('The grease dissolves.');
     }
 }
+function objectCarrier(object, state) {
+    if (object.where !== 'minvent')
+        return null;
+    return state.u.usteed && state.u.usteed.m_id === object.carrierMid ? state.u.usteed
+        : (state.level?.monsters.find(monster => monster.m_id === object.carrierMid) ?? null);
+}
 function objectView(object, state, position = { x: object.ox, y: object.oy }, displayName = null) {
     const hero = object.where === 'inventory';
-    let carrier = null;
-    if (object.where === 'minvent') {
-        carrier = state.u.usteed && state.u.usteed.m_id === object.carrierMid ? state.u.usteed
-            : (state.level?.monsters.find(monster => monster.m_id === object.carrierMid) ?? null);
-    }
+    const carrier = objectCarrier(object, state);
     const monsterVisible = !!carrier && !hero
         && canSeeMonster(carrier);
     const { x, y } = position;
     const floorVisible = !hero && !carrier && cansee(x, y)
         && (!isPoolAt(x, y, state) || (!!state.u.underwater
             && Math.max(Math.abs(state.u.ux - x), Math.abs(state.u.uy - y)) <= 1));
-    let name = displayName;
-    if (name === null) {
-        name = object.name || object.description || OBJECT_NAMES[object.otyp] || 'object';
-        if (!object.name && !object.description && object.oclass === SCROLL_CLASS)
-            name = `scroll of ${name}`;
-        if (object.quan > 1)
-            name = makePlural(name);
-    }
+    let name = displayName ?? objectCombatName(object, { state });
     if (!hero && !monsterVisible)
         name = name.replace(/^the /iu, '');
     const plural = verbForSubject(name, 'are') === 'are';

@@ -33,7 +33,7 @@ void test('a gas-cloud death during the world turn uses the native cause message
     jackal.mcanmove = 0;
     assert.ok(game.level);
     game.level.regions = [{
-            kind: 'gas-cloud', visible: true, heroFault: false,
+            kind: 'gas-cloud', heroInside: false, visible: true, heroFault: false,
             damage: 8, ttl: 3, cells: [{ x: 11, y: 10 }], monsterIds: [jackal.m_id],
         }];
     input.feed('.');

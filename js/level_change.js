@@ -23,7 +23,7 @@ import { collectLevelFollowers } from './monster_followers.js';
 import { hideMonsterUnder, hideMonsterOnRestore } from './monster_hiding.js';
 import { restoreMonsterShape } from './monster_polymorph.js';
 import { restoreMonsterWormHeads } from './monster_worm.js';
-import { restoreLevelRegions } from './regions.js';
+import { restoreLevelRegions, updateHeroRegions } from './regions.js';
 import { mklev, place_lregion, u_on_downstairs, u_on_upstairs } from './mklev.js';
 import { dungeonBuildsUp, level_difficulty, specialPrototypeAt, recordMappedOverviewState, recordOverviewBranch, markOverviewUnreachable, insideWizardTower, levelIsWizardTower } from './dungeon.js';
 import { findNearbyMonsterPosition } from './teleport_rules.js';
@@ -361,6 +361,7 @@ export async function gotoLevel(targetDepth, { arrival = 'random', ladder = fals
     // The old-level exit cleared room membership before the map switch.
     await checkSpecialRoom();
     await deliverMigratingObjects(game, { nearHero: true, publish: plineWithContinuation });
+    updateHeroRegions(game);
     if (cached)
         await fixShopDamage(game);
     if (arrival === 'falling') {

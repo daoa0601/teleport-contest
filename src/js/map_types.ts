@@ -111,6 +111,7 @@ export interface GasCloud {
     ttl: number;
     cells: Position[];
     monsterIds: number[];
+    heroInside: boolean;
     heroFault?: boolean;
 }
 

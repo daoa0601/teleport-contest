@@ -21,7 +21,7 @@ import { waterDamageObject } from './trap.js';
 import { dip, dipInto } from './potion_dip.js';
 import { AKLYS, BOOMERANG, CRYSTAL_BALL } from './object_data.js';
 import { useCrystalBall } from './crystal_ball.js';
-import { visibleRegionAt } from './regions.js';
+import { updateHeroRegions, visibleRegionAt } from './regions.js';
 import type { PageLocalMultiSelectItem } from './windows.js';
 import type { ChoiceMenuItem } from './windows.js';
 import { wizIntrinsic } from './wizard_intrinsics.js';
@@ -525,8 +525,8 @@ const PM_DJINNI = 315;
 const PM_WATER_NYMPH = 68;
 const PM_WATER_DEMON = 289;
 const PM_WATER_MOCCASIN = 216;
-const M2_ROCKTHROW = 0x08000000;
 const M2_PNAME = 0x00080000;
+const M2_ROCKTHROW = 0x08000000;
 const M1_HUMANOID = 0x00020000;
 const M1_TUNNEL = 0x20;
 const M1_NEEDPICK = 0x40;
@@ -7311,6 +7311,7 @@ async function domoveCore(dx: number, dy: number, explicitAttempt: boolean): Pro
                 return ballChainMove.consumedTurn;
             }
             const oldx = u.ux, oldy = u.uy;
+            updateHeroRegions(game, newx, newy);
             u.ux = newx;
             u.uy = newy;
             await settleBeastHeroDisplacement(monster, game);
@@ -7373,6 +7374,7 @@ async function domoveCore(dx: number, dy: number, explicitAttempt: boolean): Pro
             // later refuses to swap and both rider and steed move back.
             const oldx = u.ux, oldy = u.uy;
             u.ux0 = oldx; u.uy0 = oldy;
+            updateHeroRegions(game, newx, newy);
             u.ux = newx; u.uy = newy;
             await moveSteedWithHero();
             // C drag_ball() can pull the hero back before the swap check.
@@ -7556,6 +7558,15 @@ async function domoveCore(dx: number, dy: number, explicitAttempt: boolean): Pro
 
     if (await rejectTightHeroDiagonal(dx, dy)) return false;
 
+    if (!(dx && dy && heroBadRock(game, u.ux, newy) && heroBadRock(game, newx, u.uy))
+        && wormCrossesBetween(u.ux, u.uy, newx, newy, game)) {
+        const worm = monsterAtPosition(game.level, u.ux, newy);
+        if (!worm) throw new Error('A crossing worm must occupy the adjacent square.');
+        await pline(`${monsterName(worm, { state: game, article: 'your', capitalized: true })} is in your way.`);
+        game.context.move = 0;
+        return false;
+    }
+
     const boulder = heroPassesWalls(game) && !game.level.flags.sokoban_rules ? null
         : (game.level.objects[newx]?.[newy] || []).find(object => object.otyp === BOULDER);
     const hallucinating = heroIsHallucinating(game);
@@ -7607,6 +7618,7 @@ async function domoveCore(dx: number, dy: number, explicitAttempt: boolean): Pro
     const oldx = u.ux, oldy = u.uy;
     u.ux0 = oldx;
     u.uy0 = oldy;
+    updateHeroRegions(game, newx, newy);
     u.ux = newx;
     u.uy = newy;
     await moveSteedWithHero();

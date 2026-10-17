@@ -956,9 +956,7 @@ export async function heroLiquidEffects(options: HeroLiquidOptions = {}): Promis
                 ? 'You sink like the Titanic.' : 'You sink like a rock.');
     }
 
-    const damageMessages: string[] = [];
-    await waterDamageChain(state.inventory || [], damageMessages, state);
-    for (const message of damageMessages) await publish(message);
+    await waterDamageChain(state.inventory, [], state, { publish });
 
     const formEffect = await applyHeroFormWaterEffect(
         state, publish, random, rollDice,

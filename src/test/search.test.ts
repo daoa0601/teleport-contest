@@ -58,7 +58,7 @@ void test('blind searching remembers a discovered secret corridor by touch', asy
 void test('searching feels an adjacent object hidden by a visible cloud', async () => {
     const level = freshObjectRoom();
     await floorObject(APPLE, 9, 10);
-    level.regions = [{ kind: 'gas-cloud', visible: true, damage: 0, ttl: 10,
+    level.regions = [{ kind: 'gas-cloud', heroInside: false, visible: true, damage: 0, ttl: 10,
         heroFault: false, monsterIds: [], cells: [{ x: 9, y: 10 }] }];
     newsym(9, 10);
     assert.notEqual(level.requireAt(9, 10).remembered_glyph?.kind, 'object');
