@@ -24,7 +24,10 @@ export function acquireCorpusLock(): () => void {
         if (alive) throw new Error(`Corpus owner ${pid} is still running`);
         rmSync(lock);
     }
-    const processes = execFileSync('ps', ['-axo', 'pid=,command='], { encoding: 'utf8' }).split('\n');
+    // Some desktop processes carry megabyte-long argument lists.
+    const processes = execFileSync('ps', ['-axo', 'pid=,command='], {
+        encoding: 'utf8', maxBuffer: 256 * 1024 * 1024,
+    }).split('\n');
     // Match the node processes themselves, not shells whose command text names them.
     const busy = processes.filter(line => {
         const [pid, ...argv] = line.trim().split(/\s+/);

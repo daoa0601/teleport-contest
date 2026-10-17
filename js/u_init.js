@@ -659,7 +659,6 @@ export async function makedog() {
     if (!g.level.monsters)
         g.level.monsters = [];
     g.level.monsters.push(pet);
-    g.startingPet = pet;
     g.context.startingpet_mid = pet.m_id;
     await seeMonsterCloseup(pet, { photo: g.inventory.some(object => object.otyp === EXPENSIVE_CAMERA) });
     const name = pettype === MONSTER_NAME.indexOf('little dog')

@@ -221,7 +221,6 @@ export interface GameState {
     uswapwep?: GameObject | null;
     uwep?: GameObject | null;
     fmon?: Monster | null;
-    startingPet?: Monster | null;
     mvitals?: MonsterVital[];
     migratingObjects?: GameObject[];
     billObjects?: GameObject[];

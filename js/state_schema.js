@@ -33,7 +33,7 @@ const persistentNames = [
     'oracle_level', 'oracleRemaining', 'plname', 'polymorphControl', 'preferred_pet',
     'protectionFromShapeChangers', 'quest_dnum', 'quest_status',
     'rndencode', 'rogue_level', 'sanctum_level', 'seer_turn', 'smeq', 'sokoban_dnum',
-    'specialLevels', 'spells', 'splev_align', 'stairs', 'startingPet', 'stronghold_level',
+    'specialLevels', 'spells', 'splev_align', 'stairs', 'stronghold_level',
     'symset', 'targetX', 'targetY', 'tower_dnum', 'tutorial_set_in_config', 'u', 'uamul',
     'uarm', 'uarmc', 'uarmf', 'uarmg', 'uarmh', 'uarms', 'uarmu', 'uball', 'ubirthday',
     'ublindf', 'uchain', 'udaminc', 'uleft', 'unchanging', 'underwater', 'uquiver', 'urace',

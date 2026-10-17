@@ -539,6 +539,9 @@ export async function initialShapechangedBirth<T extends Monster>(monster: T): P
         return null;
     const changed = initialShapechangedMonster(monster, targetMnum);
     await refreshNewMonsterFormPerception(changed, game, plineWithContinuation);
+    // newcham() ends with mon_break_armor() even for a newborn without
+    // armor; its perceived pronouns still draw while the hero hallucinates.
+    await adjustMonsterClothingAfterPolymorph(changed, game);
     return changed;
 }
 

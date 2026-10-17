@@ -218,7 +218,6 @@ function validPersistentState(value: unknown, entities: SavedEntityContext): val
         spells: arrayOf(validSpell),
         splev_align: optional(arrayOf(oneOf('law', 'neutral', 'chaos'))),
         stairs: validSavedStairways,
-        startingPet: optional(nullable(entities.monster)),
         stronghold_level: optional(validSavedSpecialLevel),
         symset: optional(nullable(string)),
         targetX: optional(integer),

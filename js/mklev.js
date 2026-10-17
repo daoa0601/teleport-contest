@@ -3809,17 +3809,6 @@ async function getbones() {
     const encoded = game.storage?.getItem(bonesStorageKey());
     if (!encoded)
         return false;
-    // keepdogs() has already detached a migrating companion from the source
-    // monster chain. Clear its glyph before the wizard query, while retaining
-    // the rest of the already-painted source tty map.
-    if (game.startingPet
-        && !game.level?.monsters?.includes(game.startingPet)) {
-        const petLocation = game.level?.at?.(game.startingPet.mx, game.startingPet.my);
-        if (petLocation?.remembered_glyph?.kind === 'monster') {
-            delete petLocation.remembered_glyph;
-        }
-        newsym(game.startingPet.mx, game.startingPet.my);
-    }
     if (game.flags?.debug
         && await bonesPrompt('Get bones? [yn] (n) ') !== 'y')
         return false;
