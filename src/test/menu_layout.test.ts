@@ -205,7 +205,6 @@ void test('choice menus paginate at the actual terminal height and reject off-pa
             { key: 'c', text: 'south' }, { key: 'd', text: 'west' },
             { key: 'e', text: 'stairs' }, { key: 'f', text: 'portal' },
         ],
-        validKeys: [27, 'f'.charCodeAt(0)],
     });
     try {
         await input.waitUntilBlocked();
@@ -258,7 +257,6 @@ void test('a visible choice selector takes precedence over a paging command', as
     const input = resetInputState();
     const menu = showChoiceWindow({
         title: 'Choose a direction', entries: [{ key: '>', text: 'go downstairs' }],
-        validKeys: [27],
     });
     await input.waitUntilBlocked();
     assert.match(textRow(display, 2), /> - go downstairs/);
@@ -266,16 +264,14 @@ void test('a visible choice selector takes precedence over a paging command', as
     assert.equal(await menu, '>'.charCodeAt(0));
 });
 
-void test('choice control keys remain available without being displayed as selectors', async () => {
+void test('a choice menu ignores a leading zero count and then selects a visible item', async () => {
     menuDisplay();
     const input = resetInputState();
-    const menu = showChoiceWindow({
+    input.feed('0a');
+    const selected = await showChoiceWindow({
         title: 'Choose a mode', entries: [{ key: 'a', text: 'default' }],
-        validKeys: [27, '0'.charCodeAt(0)],
     });
-    await input.waitUntilBlocked();
-    input.feed('0');
-    assert.equal(await menu, '0'.charCodeAt(0));
+    assert.equal(selected, 'a'.charCodeAt(0));
 });
 
 void test('a nonselectable heading with native fake-entry syntax keeps its prefix plain', async () => {

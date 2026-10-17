@@ -440,10 +440,6 @@ export async function rerollMenu() {
     const key = await showChoiceWindow({
         title: 'Reroll this character?',
         entries,
-        validKeys: [
-            acceptKey.charCodeAt(0), rerollKey.charCodeAt(0),
-            27, 32, 10, 13,
-        ],
     });
     const choice = String.fromCharCode(key);
     const reroll = choice === rerollKey ? true
@@ -487,7 +483,6 @@ async function showItemActionMenu(item: GameObject) {
     return showChoiceWindow({
         title: `Do what with ${definiteName(objectCombatName(item))}?`,
         entries: itemActionEntries(item, game, repairGold),
-        validKeys: [27, 32, 10, 13],
     });
 }
 

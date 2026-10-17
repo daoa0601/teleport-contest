@@ -2533,14 +2533,9 @@ async function doherecmdmenu() {
     game._retained_message = '';
     game.nhDisplay?.clearRow(0);
     const underlay = snapshotMenuUnderlay();
-    const validKeys = [
-        27,
-        ...entries.map((_, index) => 97 + index),
-    ];
     const key = await showChoiceWindow({
         title: 'What do you want to do?',
         entries,
-        validKeys,
     });
     restoreMenuUnderlay(underlay);
     game.nhDisplay?.setCursor((game.u?.ux ?? 1) - 1,
@@ -5059,14 +5054,9 @@ async function dohelp(): Promise<void> {
         { key: 'o', text: 'Support information.' },
         ...(game.flags.debug ? [{ key: 'p', text: 'List of wizard-mode commands.' }] : []),
     ];
-    const validKeys = [
-        27, 32, 10, 13,
-        ...entries.map(entry => entry.key.charCodeAt(0)),
-    ];
     const key = await showChoiceWindow({
         title: 'Select one item:',
         entries,
-        validKeys,
     });
     await restoreHelpMap();
     const choice = String.fromCharCode(key);

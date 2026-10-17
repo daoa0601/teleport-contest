@@ -6,7 +6,7 @@ import { resetInputState } from '../js/input.js';
 import { showChoiceWindow } from '../js/windows.js';
 import { freshGameplayRoom } from './support/playable-room.js';
 for (const answer of ['a', ':']) {
-    void test(`a choice menu erases its overlay after ${answer === ':' ? 'a hidden command' : 'a selection'}`, async () => {
+    void test(`a choice menu erases its overlay after ${answer === ':' ? 'a colon selection' : 'a selection'}`, async () => {
         freshGameplayRoom();
         await docrt();
         await flush_screen(1);
@@ -14,8 +14,7 @@ for (const answer of ['a', ':']) {
         input.feed(answer);
         const selected = await showChoiceWindow({
             title: 'Choose an action:',
-            entries: [{ key: 'a', text: 'inspect the chest' }],
-            validKeys: ['a'.charCodeAt(0), ':'.charCodeAt(0)],
+            entries: [{ key: 'a', text: 'inspect the chest' }, { key: ':', text: 'look inside' }],
         });
         assert.equal(selected, answer.charCodeAt(0));
         const text = requireGameDisplay().grid
