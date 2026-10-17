@@ -2,7 +2,7 @@ import { monsterAtPosition } from '../js/monster_location.js';
 import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { LAVAPOOL, NO_MINVENT, PIT, W_AMUL, W_WEP } from '../js/const.js';
+import { HOLE, LAVAPOOL, NO_MINVENT, PIT, W_AMUL, W_WEP } from '../js/const.js';
 import { initializePet } from '../js/dog.js';
 import { game } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
@@ -59,6 +59,21 @@ void test('a knocked monster passes over one pit and falls into the pit where it
     assert.equal(orc.mx, 13);
     assert.equal(orc.mtrapped, 1);
     assert.ok(orc.mhp > 0 && orc.mhp < 100, 'the landing pit damages its surviving occupant');
+});
+void test('a knocked flying monster lands above a hole without revealing it', async () => {
+    freshObjectRoom({ heroX: 18, right: 20, flags: { verbose: false } });
+    requireFixtureGame(game);
+    const giant = await createMonsterAt('hill giant', 10, 10, NO_MINVENT);
+    initializePet(giant, { state: game });
+    const bat = await createMonsterAt('giant bat', 11, 10, NO_MINVENT);
+    bat.mpeaceful = false;
+    bat.mhp = bat.mhpmax = 100;
+    const hole = addTrap(game.level, HOLE, 13, 10);
+    pushKeys(' '.repeat(40));
+    await runMonsterAction(giant, game, () => 0, count => count, () => 1);
+    assert.equal(bat.mx, 13, 'the bat is knocked two squares');
+    assert.ok(game.level.monsters.includes(bat));
+    assert.equal(hole.tseen, false, "C's landing mintrap(FORCEBUNGLE) leaves fliers above floor traps");
 });
 void test('a knocked monster petrifies when it collides with a cockatrice', async () => {
     const { giant, orc } = await freshGiantFight();

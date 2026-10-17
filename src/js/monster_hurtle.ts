@@ -210,7 +210,7 @@ async function hurtleOneSquare(monster: Monster, dx: number, dy: number, {
     setMonsterApparentHeroPosition(monster, state, random);
     if (IS_WATERWALL(state.level.requireAt(nextX, nextY).typ))
         return { moved: true, stopped: true };
-    await applyHurtleTrap(monster, { state, announce, finishMonsterDeath, random }, true);
+    await applyHurtleTrap(monster, { state, announce, finishMonsterDeath, random }, 'in-flight');
     return {
         moved: true,
         dead: !!monster.dead || monster.mhp <= 0,
@@ -220,9 +220,12 @@ async function hurtleOneSquare(monster: Monster, dx: number, dy: number, {
     };
 }
 
-async function applyHurtleTrap(monster: Monster, options: Pick<ActiveHurtleOptions, 'state' | 'announce' | 'finishMonsterDeath' | 'random'>, inAir: boolean): Promise<void> {
+// C dothrow.c:mhurtle_step() calls mintrap(HURTLING) on each square; mhurtle()
+// ends with mintrap(FORCEBUNGLE), which still rolls a known trap's avoidance.
+async function applyHurtleTrap(monster: Monster, options: Pick<ActiveHurtleOptions, 'state' | 'announce' | 'finishMonsterDeath' | 'random'>, stage: 'in-flight' | 'landing'): Promise<void> {
     const { state, announce, finishMonsterDeath, random } = options;
-    const action = await triggerImmediateMonsterTrap(monster, state, { inAir, force: !inAir, random });
+    const action = await triggerImmediateMonsterTrap(monster, state, stage === 'in-flight'
+        ? { inAir: true, random } : { forceBungle: true, random });
     await finishImmediateMonsterTrap(action, state, {
         publish: announce,
         random,
@@ -286,7 +289,7 @@ export async function hurtleMonster(monster: Monster, dx: number, dy: number, di
     if (!monster.dead && monster.mhp > 0
         && (monster === state.u.usteed || state.level.monsters.includes(monster))) {
         if (state.level.traps.some(trap => trap.tx === monster.mx && trap.ty === monster.my))
-            await applyHurtleTrap(monster, active, false);
+            await applyHurtleTrap(monster, active, 'landing');
         else await resolveMonsterLiquid(monster, state, {
             announce, finishDeath: active.finishLiquidDeath,
             monsterMoving,
