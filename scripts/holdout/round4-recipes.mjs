@@ -100,7 +100,7 @@ export function validateRound4Recipe(name, session) {
     require('gameplay consumed turns', (turns.at(-1) ?? 0) > (turns[0] ?? Infinity));
     switch (name) {
         case 'shop-purchases':
-            has('merchandise purchased', /You bought .* for \d+ gold pieces?\./);
+            has('merchandise purchased', /[Yy]ou bought .* for \d+ gold pieces?\./);
             has('shopkeeper acknowledges payment', /Thank you for shopping in /);
             break;
         case 'magic-instruments':

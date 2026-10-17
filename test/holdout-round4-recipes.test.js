@@ -37,6 +37,21 @@ for (const { name, messages } of effects) {
         assert.equal(result.ok, false, JSON.stringify(result));
     });
 }
+for (const purchase of [
+    'A mirror; you bought it for 10 gold pieces.',
+    '2 leather cloaks; you bought them for 80 gold pieces.',
+]) {
+    void test(`shop-purchases accepts merchandise identified at payment: ${purchase}`, () => {
+        const result = validateRecipeRecording('shop-purchases', recording([
+            purchase, '"Thank you for shopping in Asidonhopo\'s general store!"',
+        ]));
+        assert.equal(result.ok, true, JSON.stringify(result));
+    });
+    void test(`shop-purchases still requires acknowledgment after identification: ${purchase}`, () => {
+        const result = validateRecipeRecording('shop-purchases', recording([purchase]));
+        assert.equal(result.ok, false, JSON.stringify(result));
+    });
+}
 void test('a cancelled healing invocation cannot claim an unrelated recovery', () => {
     assert.equal(validateRecipeRecording('artifact-healing', recording([
         'What do you want to invoke?', 'Never mind.', 'You feel better.',
