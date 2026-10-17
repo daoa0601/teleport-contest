@@ -155,8 +155,9 @@ void test('saving after refused genocide does not revive an old cause on restore
     acknowledgeGenocideMessages();
     await loseHeroHp(game.u.mh, 'a falling rock');
     assert.equal(game.program_state.gameover, true);
+    // C saves the mortality count, but not the earlier multi_reason.
     assert.equal(game.u.umortality, 2);
-    assert.equal(loadScoreRecords()[0]?.death, 'killed by self-genocide, while attempting to cheat Death');
+    assert.equal(loadScoreRecords()[0]?.death, 'killed by self-genocide');
 });
 void test('restore rejects an unknown delayed genocide cause before replacing live state', async () => {
     const storage = genocideRoom();

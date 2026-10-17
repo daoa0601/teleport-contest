@@ -5,12 +5,11 @@ import type { Artifact } from './artifacts.js';
 import type { ArtifactTarget } from './data_types.js';
 import type { GameMap } from './game.js';
 import type {
-    Fruit, MemorizedSpell, MonsterHelplessnessReason, QuestStatus,
+    Fruit, MemorizedSpell, QuestStatus,
 } from './game_state.js';
 import type { CachedLevelState } from './map_types.js';
 import type { MonsterVital } from './monster_types.js';
 import type { ObjectPriceQuote, ObjectPriceRange } from './object_knowledge.js';
-import type { PrayerTrouble } from './prayer_trouble.js';
 import type { LuaSerializedValue, LuaVariables } from './lua/runtime.js';
 import type { Fields, SavedEntityContext } from './saved_validation.js';
 import type { PersistentState } from './state_schema.js';
@@ -21,7 +20,6 @@ import {
     numericRecordOf, oneOf, optional, setOf, string,
 } from './saved_validation.js';
 import { createSavedEntityChecks } from './entity_validation.js';
-import { MONSTER_NAME } from './monster_data.js';
 import { OBJECT_SPELL_CATEGORY } from './object_data.js';
 import { ORACLE_TEXT } from './oracle_data.js';
 import { validSavedHero, validSavedPropertyName } from './hero_validation.js';
@@ -69,12 +67,6 @@ function validPersistentState(value: unknown, entities: SavedEntityContext): val
     function activeSpecial(candidate: unknown): candidate is NonNullable<PersistentState['_activeSpecialLevel']> {
         return validSavedActiveSpecialLevel(candidate, entities);
     }
-    function helplessReason(candidate: unknown): candidate is string | MonsterHelplessnessReason {
-        return string(candidate) || closedFieldsMatch<MonsterHelplessnessReason>(candidate, {
-            monsterId: (id): id is number => integer(id) && id >= 0,
-            text: string,
-        });
-    }
     const fields: Fields<PersistentState> = {
         Luck: optional(integer),
         _activeSpecialLevel: optional(nullable(activeSpecial)),
@@ -84,40 +76,18 @@ function validPersistentState(value: unknown, entities: SavedEntityContext): val
         _artifactFound: optional(setOf(integer)),
         _artifactRuntime: optional(mapOf(integer, validArtifact)),
         _bonesEncountered: optional(boolean),
-        _bonesSaved: optional(boolean),
-        _bubbleTraversalUp: optional(boolean),
-        _characterPickerUsed: optional(boolean),
         _deathKiller: optional(string),
         _polymorphGenocideCause: optional(oneOf('scroll', 'confusion', 'throne')),
-        _digestedMonsterSpecies: optional(nullable((species): species is number =>
-            integer(species) && species >= 0 && species < MONSTER_NAME.length)),
         _encounteredObjectTypes: optional(setOf(integer)),
-        _encumbranceLevel: optional(integer),
-        _farMonsterNoise: optional(boolean),
         _fobjSerial: optional(integer),
-        _helplessAfter: optional(nullable(oneOf('end-mimic-meal', 'hear-again', 'unfaint', 'finish-digestion',
-            'steal-armor', 'unstolen-armor', 'finish-prayer'))),
-        _helplessDoneMessage: optional(nullable(string)),
-        _helplessReason: optional(nullable(helplessReason)),
-        _helplessTurns: optional(integer),
-        _heroActionSeq: optional(integer),
         _heroTrack: optional(arrayOf(validSavedPosition)),
         _initialGoldCount: optional(integer),
-        _initialPwBonus: optional(integer),
         _knownObjectTypes: optional(setOf(integer)),
-        _lastBoulderPushMove: optional(integer),
-        _lastDemigodAggravation: optional(arrayOf(integer)),
-        _lastDemigodNasty: optional(arrayOf(integer)),
-        _lastInvNr: optional(integer),
-        _lastPushedBoulder: optional(entities.object),
         _last_message: string,
         _levelAnnotations: optional(mapOf(string, string)),
         _levelCache: optional(mapOf(string, cachedLevel)),
         _lifeSavedCount: optional(integer),
         _migratingMonsters: optional(arrayOf(entities.monster)),
-        _mimicMealMessage: optional(nullable(string)),
-        _monsterNoiseTime: optional(integer),
-        _moveloopStarted: optional(boolean),
         _nextAttribCheck: optional(integer),
         _nextIdent: optional(integer),
         _nextObjectTimerId: optional(integer),
@@ -125,28 +95,14 @@ function validPersistentState(value: unknown, entities: SavedEntityContext): val
         _objectDiscoveryOrder: optional(arrayOf(integer)),
         _objectPriceQuotes: optional(numericRecordOf(validPriceQuote)),
         _overviewRecords: optional(mapOf(string, validSavedOverviewRecord)),
-        _prayerAlignment: optional(integer),
-        _prayerOutcome: optional(oneOf('moloch', 'too-soon', 'angry', 'other-god', 'pleased', 'undead')),
-        _prayerTrouble: optional(validPrayerTrouble),
-        _preserveLeadingStyledBlanks: optional(boolean),
-        _prevDecorType: optional(integer),
         _priestPantheonIndex: optional(integer),
         _questExpulsionPending: optional(nullable((pending): pending is { seal: boolean; portal?: boolean } =>
             closedFieldsMatch(pending, { seal: boolean, portal: optional(boolean) }))),
-        _restoredBones: optional(boolean),
-        _rndmonstAlignment: optional(nullable(validSavedSpecialLevel)),
-        _rndmonstAlignmentMove: optional(integer),
-        _runtimeVersionInfoInitialized: optional(boolean),
-        _specialLevelPrototype: optional(nullable(string)),
-        _startingEffectsApplied: optional(boolean),
         _stethoscopeSeq: optional(integer),
         _tipSwimShown: optional(boolean),
         _travelTipShown: optional(boolean),
         _tributeBookstock: optional(boolean),
         _tutorialActive: optional(boolean),
-        _tutorialDeclined: optional(boolean),
-        _unresolvedDemigodIntervention: optional(integer),
-        _unweapon: optional(boolean),
         aggravateMonster: optional(boolean),
         aggravate_monster: optional(boolean),
         air_level: optional(validSavedSpecialLevel),
@@ -173,8 +129,6 @@ function validPersistentState(value: unknown, entities: SavedEntityContext): val
         fruits: optional(arrayOf(validFruit)),
         gamelog: optional(arrayOf((entry): entry is { turn: number; text: string } =>
             closedFieldsMatch(entry, { turn: integer, text: string }))),
-        in_mk_themerooms: optional(boolean),
-        in_mklev: optional(boolean),
         initAlignment: nullable(validSavedAlignment),
         inventory: arrayOf(entities.object),
         invisible: optional(boolean),
@@ -183,14 +137,12 @@ function validPersistentState(value: unknown, entities: SavedEntityContext): val
         lastStrTurn: optional(integer),
         level: nullable(map),
         levitating: optional(boolean),
-        made_branch: optional(boolean),
         medusa_level: optional(validSavedSpecialLevel),
         migratingObjects: optional(arrayOf(entities.object)),
         mines_dnum: optional(integer),
         moves: integer,
         mvitals: optional(arrayOf(validMonsterVital)),
         name: optional(string),
-        nethackrc: string,
         nh_lua_variables: optional(validLuaVariables),
         objectColors: optional(arrayOf(integer)),
         objectDescriptionIndex: optional(arrayOf(integer)),
@@ -204,7 +156,6 @@ function validPersistentState(value: unknown, entities: SavedEntityContext): val
             && records.every(record => record >= 0 && record < ORACLE_TEXT.length)),
         plname: string,
         polymorphControl: optional(boolean),
-        preferred_pet: optional(string),
         protectionFromShapeChangers: optional(boolean),
         quest_dnum: optional(integer),
         quest_status: optional(validQuestStatus),
@@ -212,18 +163,12 @@ function validPersistentState(value: unknown, entities: SavedEntityContext): val
         rogue_level: optional(validSavedDungeonLocation),
         sanctum_level: optional(validSavedSpecialLevel),
         seer_turn: optional(integer),
-        smeq: optional(arrayOf(integer)),
         sokoban_dnum: optional(integer),
         specialLevels: optional(mapOf(string, validSavedSpecialLevel)),
         spells: arrayOf(validSpell),
-        splev_align: optional(arrayOf(oneOf('law', 'neutral', 'chaos'))),
         stairs: validSavedStairways,
         stronghold_level: optional(validSavedSpecialLevel),
-        symset: optional(nullable(string)),
-        targetX: optional(integer),
-        targetY: optional(integer),
         tower_dnum: optional(integer),
-        tutorial_set_in_config: optional(boolean),
         u: (hero): hero is PersistentState['u'] => validSavedHero(hero, entities),
         uamul: optional(nullable(entities.object)),
         uarm: optional(nullable(entities.object)),
@@ -250,17 +195,12 @@ function validPersistentState(value: unknown, entities: SavedEntityContext): val
         uswapwep: optional(nullable(entities.object)),
         uwep: optional(nullable(entities.object)),
         valley_level: optional(validSavedSpecialLevel),
-        vault_x: optional(integer),
-        vault_y: optional(integer),
         wandNothingDirection: optional(integer),
         water_level: optional(validSavedSpecialLevel),
-        were_changes: optional(integer),
     };
     if (!closedFieldsMatch<PersistentState>(value, fields, field => {
         throw new TypeError(`Saved state has invalid ${field}`);
     })) return false;
-    if (value._helplessAfter === 'finish-digestion' && value._digestedMonsterSpecies == null)
-        throw new TypeError('Saved digestion is missing the swallowed monster species');
     return true;
 }
 
@@ -287,10 +227,6 @@ function validPriceRange(value: unknown): value is ObjectPriceRange {
     return closedFieldsMatch<ObjectPriceRange>(value, {
         min: integer, max: integer,
     }) && value.min >= 0 && value.max >= value.min;
-}
-
-function validPrayerTrouble(value: unknown): value is PrayerTrouble {
-    return integer(value) && value >= -11 && value <= 14;
 }
 
 function validMonsterVital(value: unknown): value is MonsterVital {

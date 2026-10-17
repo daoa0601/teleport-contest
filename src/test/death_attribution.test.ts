@@ -224,7 +224,9 @@ void test('a death while fainted includes helplessness in the score but leaves t
 
 for (const restored of [false, true]) {
     for (const sameKiller of [true, false]) {
-        void test(`${restored ? 'saved' : 'ongoing'} paralysis ${sameKiller ? 'omits' : 'keeps'} the ghoul attribution when ${sameKiller ? 'that ghoul' : 'another ghoul'} kills the hero`, async () => {
+        const cause = restored ? 'restored paralysis has no saved cause'
+            : `ongoing paralysis ${sameKiller ? 'omits' : 'keeps'} the ghoul attribution`;
+        void test(`${cause} when ${sameKiller ? 'that ghoul' : 'another ghoul'} kills the hero`, async () => {
             freshObjectRoom({
                 hero: { uhp: 100, uhpmax: 100, uac: 10 },
                 flags: { bones: false, disclose: '-i -a -v -c -o', tombstone: false },
@@ -259,8 +261,10 @@ for (const restored of [false, true]) {
             installPagerInput(input, { expected: /hits|frozen|die|Goodbye|points|You were|Your body rises from the dead as a ghoul/i, limit: 8 });
             await finishMonsterAttackDeath(fatalGhoul);
 
+            // C gm.multi_reason and its monster attribution are unsaved.
+            const suffix = restored ? '' : `, while paralyzed${sameKiller ? '' : ' by a ghoul'}`;
             assert.equal(loadScoreRecords()[0]?.death,
-                `killed by a ghoul, while paralyzed${sameKiller ? '' : ' by a ghoul'}`);
+                `killed by a ghoul${suffix}`);
         });
     }
 }
