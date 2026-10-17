@@ -1,8 +1,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { game, requireGameDisplay } from '../js/gstate.js';
+import { GameDisplay } from '../js/game_display.js';
 import { nhgetch, resetInputState } from '../js/input.js';
 import { promptChoice, tty_yn_function } from '../js/query.js';
+import { Terminal } from '../js/terminal.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 
 void test('choices after Escape remain accepted but are omitted from the prompt', async () => {
@@ -76,4 +78,19 @@ void test('an unrestricted tty prompt accepts one character without a choice suf
         input.feed('Z');
         assert.equal((await answer).answer, 'Z');
     }
+});
+
+void test('aborting a wrapped number clears the rows its prompt covered', async () => {
+    freshPlayableRoom();
+    game.nhDisplay = new GameDisplay(new Terminal(null, { cols: 24, rows: 24 }));
+    const input = resetInputState();
+    input.feed('#123456');
+    const answer = tty_yn_function('How many?', 'yn#', 'n');
+    await input.waitUntilBlocked();
+    assert.equal(requireGameDisplay().cursorRow, 1, 'number entry must reach the second row');
+    input.feed('\x1bn');
+
+    assert.equal((await answer).answer, 'n');
+    assert.equal(requireGameDisplay().grid[1]?.map(cell => cell.ch).join('').trim(), '',
+        'the aborted number must not leave digits on the map');
 });

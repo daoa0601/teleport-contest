@@ -171,16 +171,22 @@ export async function tty_yn_function(query, responses, defaultAnswer = '', visi
     await flush_screen(1);
     renderChoicePrompt(message);
     let displayed = message;
+    let coveredRows = (game.nhDisplay?.cursorRow ?? 0) + 1;
     const paint = (text) => {
+        // Removing a wrapped count must erase its old rows as well as
+        // repainting the shorter prompt. Cleanup still owns those rows.
+        for (let row = 1; row < coveredRows; row++)
+            game.nhDisplay?.clearRow(row);
         displayed = text;
         renderChoicePrompt(text);
+        coveredRows = Math.max(coveredRows, (game.nhDisplay?.cursorRow ?? 0) + 1);
     };
     const finish = (answer, count = 0n) => {
         if (game.nhDisplay)
             game.nhDisplay.toplines = message + (count ? `#${count}` : answer);
         game._retained_message = displayed;
-        if ((game.nhDisplay?.cursorRow ?? 0) > 0)
-            clearMessageWindow();
+        if (coveredRows > 1)
+            clearMessageWindow(coveredRows);
         return { answer, count };
     };
     if (responses === null)
