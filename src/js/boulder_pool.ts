@@ -16,6 +16,7 @@ import { BOULDER } from './object_data.js';
 import { deleteObject } from './object_delete.js';
 import { useUpFloorObject } from './floor_consumption.js';
 import { monsterName } from './monster_name.js';
+import { verbForSubject } from './object_grammar.js';
 import { objectCombatName } from './objnam.js';
 import { d, rn2 } from './rng.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
@@ -79,7 +80,7 @@ export async function dropBoulderIntoLiquid(boulder: GameObject | null, x: numbe
         if (pushing) {
             const who = state.u.usteed
                 ? monsterName(state.u.usteed, { state, article: 'your', capitalized: true }) : 'You';
-            await publish(`${who} ${state.u.usteed ? 'pushes' : 'push'} the ${objectCombatName(boulder, { state })} into the ${liquid}.`);
+            await publish(`${who} ${verbForSubject(who, 'push')} the ${objectCombatName(boulder, { state })} into the ${liquid}.`);
             if (state.flags.verbose !== false && !heroIsBlind(state))
                 await publish('Now you can cross it!');
         }

@@ -11,7 +11,7 @@ import { polymonHero } from '../js/polyself.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { addTrap } from './support/level-state.js';
-import { createMonsterAt } from './support/monsters.js';
+import { createMonsterAt, createSaddledSteed } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createDungeon } from './support/topology.js';
 function pushRoom() {
@@ -40,6 +40,26 @@ for (const terrain of [LAVAPOOL, POOL]) {
         assert.match(game._pending_message, terrain === POOL ? /Now you can cross it!/ : /It sinks without a trace!/);
         if (sleeper)
             assert.equal(sleeper.msleeping, 1, 'filling water by pushing causes no splash');
+    });
+}
+for (const { name, message } of [
+    { name: 'Boots', message: 'Boots push the boulder into the pool of water.' },
+    { name: 'Clover', message: 'Clover pushes the boulder into the pool of water.' },
+]) {
+    void test(`a steed named ${name} fills a pool with the native verb agreement`, async () => {
+        const level = pushRoom();
+        const steed = await createSaddledSteed('pony', { x: 10, y: 10 });
+        steed.mgivenname = name;
+        game.u.usteed = steed;
+        game.flags.verbose = false;
+        level.requireAt(12, 10).typ = POOL;
+        const boulder = await floorObject(BOULDER, 11, 10);
+        initRng(1n);
+        await rhack('l'.charCodeAt(0));
+        assert.ok(game._pending_message.includes(message), game._pending_message);
+        assert.equal(level.requireAt(12, 10).typ, ROOM);
+        assert.equal(boulder.where, 'gone');
+        assert.equal(game.u.ux, 11);
     });
 }
 void test('pushing a boulder into a pit fills it and buries its floor pile', async () => {
