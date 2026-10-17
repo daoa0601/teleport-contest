@@ -1,9 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { ARROW_TRAP, D_CLOSED, D_ISOPEN, DOOR, MM_ANGRY, NO_MINVENT, POLY_TRAP, ROOM, STAIRS, W_AMUL, WEB } from '../js/const.js';
+import { ARROW_TRAP, D_CLOSED, D_ISOPEN, DOOR, MMOVE_MOVED, MM_ANGRY, NO_MINVENT, POLY_TRAP, ROOM, STAIRS, W_AMUL, WEB } from '../js/const.js';
 import { wearHeroAccessory } from '../js/accessory.js';
-import { moveloop_core } from '../js/allmain.js';
+import { moveMonsterForHeroAttack, moveloop_core } from '../js/allmain.js';
+import { glyphAt, newsym } from '../js/display.js';
 import { initializePet } from '../js/dog.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
@@ -43,6 +44,28 @@ void test('a pet can hide under its floor cover after attacking without moving',
     assert.equal(target.msleeping, 0, 'the attack woke the adjacent enemy');
     assert.ok(target.mhp < 200, 'the cobra bit the adjacent enemy before hiding');
     assert.equal(pet.mundetected, 1);
+});
+
+void test('a moving cobra refreshes its hallucination after checking for floor cover', async () => {
+    freshObjectRoom({ hero: { hallucinationTurns: 20 } });
+    const cobra = await createMonsterAt('cobra', 14, 10, MM_ANGRY | NO_MINVENT);
+    cobra.msleeping = 0;
+    // Arrival and the post-move hiding check both redraw an exposed cobra.
+    initRng(1n);
+    newsym(cobra.mx, cobra.my);
+    newsym(cobra.mx, cobra.my);
+    const refreshed = glyphAt(cobra.mx, cobra.my);
+    assert.ok(refreshed?.kind === 'monster');
+    initRng(1n);
+
+    const result = await moveMonsterForHeroAttack(cobra);
+
+    assert.equal(result.status, MMOVE_MOVED);
+    assert.notDeepEqual([cobra.mx, cobra.my], [14, 10]);
+    assert.equal(Boolean(cobra.mundetected), false, 'there is no floor cover to hide under');
+    const current = glyphAt(cobra.mx, cobra.my);
+    assert.ok(current?.kind === 'monster');
+    assert.equal(current.mnum, refreshed.mnum, 'the hiding check refreshes the arrival appearance');
 });
 
 void test('a stationary pet spider can spin a web after a melee attack', async () => {

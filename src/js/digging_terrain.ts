@@ -62,7 +62,7 @@ interface BlastCell extends Position { mask: number; monster: Monster | null }
 
 import { convertTrapToObject } from './trap_object.js';
 import { heroLiquidEffects } from './hack.js';
-import { clearHeroTrap } from './hero_traps.js';
+import { clearHeroTrap, setHeroTrap } from './hero_traps.js';
 import { bringLeashedFollowers } from './teleport.js';
 import { liquidForHole } from './hole.js';
 import { gotoLevel } from './level_change.js';
@@ -529,10 +529,7 @@ export async function digActualHole(
 
         if (atYou) {
             if (!wontFall) {
-                hero.utrap = 2 + rn2(4); /* rn1(4, 2) */
-                hero.utraptype = TT_PIT;
-                refreshMovementProperties(state);
-                state.context.botl = true;
+                setHeroTrap(2 + rn2(4), TT_PIT, state); /* rn1(4, 2) */
                 state.vision_full_recalc = 1; /* vision limits change */
             } else {
                 // C reset_utrap(TRUE): a newly airborne hero floats back up.

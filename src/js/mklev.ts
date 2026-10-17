@@ -4,6 +4,7 @@ import { rotCorpse } from './corpse_rot.js';
 // Also includes parts of sp_lev.c (create_room) and mkmap.c (litstate_rnd).
 // Level construction uses the game's main random-number stream.
 
+import { objectMaterial } from './object_material.js';
 import type { GameObject, ObjectTimerKind, ObjectWhere } from './object_types.js';
 import type { Monster, MonsterBirthState, PetData } from './monster_types.js';
 import type { Position, MapLocation, Room, SpecialLevelContext, FloorObjects, Trap, ActiveSpecialLevel } from './map_types.js';
@@ -137,8 +138,7 @@ import {
 } from './const.js';
 import {
     getObjectClassBounds, getObjectDefinition, requireObjectData,
-    OBJECT_BASES, OBJECT_PROB, OBJECT_MATERIAL,
-    OBJECT_SPELL_LEVEL,
+    OBJECT_BASES, OBJECT_PROB, OBJECT_SPELL_LEVEL,
     OBJECT_MERGE, OBJECT_WEIGHT, OBJECT_COST, OBJECT_SUBTYPE,
     WORM_TOOTH, UNICORN_HORN, HELM_OF_OPPOSITE_ALIGNMENT,
     GAUNTLETS_OF_FUMBLING, FUMBLE_BOOTS, LEVITATION_BOOTS,
@@ -8633,7 +8633,7 @@ async function mkveggy_at(x: number, y: number): Promise<GameObject> {
         throw new Error('Food class boundaries are missing.');
     const last = afterFood - 1;
     for (let otyp = first; otyp <= last; otyp++) {
-        if (OBJECT_MATERIAL[otyp] !== 3 // VEGGY
+        if (objectMaterial(otyp) !== 3 // VEGGY
             && otyp !== EGG && otyp !== TIN && otyp !== CORPSE) continue;
         eligible.push(otyp);
         const probability = OBJECT_PROB[otyp];
@@ -10509,7 +10509,7 @@ async function mktrap_victim(trap: Trap): Promise<void> {
 // private to the trap-victim generation block; its inputs are freshly made,
 // non-invocation objects from the four possession classes above.
 function trapVictimObjectBreaks(object: GameObject): boolean {
-    const material = OBJECT_MATERIAL[object.otyp];
+    const material = objectMaterial(object.otyp);
     const ordinaryResistance = object.oclass === ARMOR_CLASS && material === 19
         ? 90 : 1; // GLASS == 19
     if (rn2(100) < (object.artifact ? 99 : ordinaryResistance)) return false;

@@ -12,7 +12,6 @@ import type { FinishHeroMonsterDeath } from './hero_monster_death.js';
 import type { MonsterFormChange } from './monster_polymorph.js';
 import type { MonsterSelfTouchResult } from './monster_stoning.js';
 import { requirePlayingGame } from './gstate.js';
-
 import { heroIsHallucinating } from './senses.js';
 import { heroIsUnaware } from './hero_sleep.js';
 import { makeConfused } from './hero_mental_status.js';
@@ -39,7 +38,7 @@ import {
     recordObjectEncounter, recordObjectKnowledge,
 } from './object_knowledge.js';
 import {
-    OBJECT_DESCRIPTIONS, OBJECT_NAMES, POT_ACID, POT_BLINDNESS, POT_BOOZE,
+    POT_ACID, POT_BLINDNESS, POT_BOOZE,
     POT_CONFUSION, POT_ENLIGHTENMENT,
     POT_EXTRA_HEALING, POT_FRUIT_JUICE, POT_FULL_HEALING, POT_GAIN_ABILITY,
     POT_GAIN_ENERGY, POT_GAIN_LEVEL, POT_HEALING, POT_INVISIBILITY,
@@ -93,6 +92,7 @@ import {
 import { heroFormSticks } from './hero_species.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
 import { putMonsterToSleep } from './monster_sleep.js';
+import { objectAction, objectCombatName, definiteObjectAction } from './objnam.js';
 
 export type PotionWakeResult = { heroDied?: boolean } | void;
 export type PotionWakeMonster = (monster: Monster) => PotionWakeResult | Promise<PotionWakeResult>;
@@ -296,19 +296,7 @@ export function randomBottleName(
 }
 
 export function potionImpactObjectName(potion: GameObject, state: GameState = game) {
-    const trueName = OBJECT_NAMES[potion?.otyp] || potion?.name || 'potion';
-    const appearance = state?.objectDescriptions?.[potion?.otyp]
-        ?? OBJECT_DESCRIPTIONS[potion?.otyp];
-    let noun;
-    if (objectTypeKnown(potion, state)) noun = `potion of ${trueName}`;
-    else if (potion?.dknown === false) noun = 'potion';
-    else {
-        noun = `${appearance || 'unknown'} potion`;
-        const callName = state._objectCallNames?.[potion?.otyp];
-        if (callName) noun += ` called ${callName}`;
-    }
-    const individualName = potion?.oextra?.oname || potion?.oname;
-    return individualName ? `${noun} named ${individualName}` : noun;
+    return objectCombatName(potion, { state, includeCorpseSpecies: false });
 }
 
 function sentenceSubject(monster: Monster) {
@@ -332,23 +320,18 @@ function potionHitsSaddle(monster: Monster, potion: GameObject): GameObject | nu
     return rn2(3) === 0 ? saddle : null;
 }
 
-function saddleOwnerPhrase(monster: Monster) {
-    const phrase = possessive(monsterName(monster, { suppressIt: true, suppressSaddle: true }));
+function saddleOwnerPhrase(monster: Monster, state: GameState) {
+    const phrase = possessive(monsterName(monster, { state, suppressIt: true, suppressSaddle: true }));
     return `${phrase.charAt(0).toUpperCase()}${phrase.slice(1)}`;
-}
-
-function saddleName(saddle: GameObject) {
-    const base = saddle.name || OBJECT_NAMES[saddle.otyp] || 'saddle';
-    const given = saddle.oextra?.oname || saddle.oname;
-    return given ? `${base} named ${given}` : base;
 }
 
 async function applyPotionToSaddle({
     state, monster, saddle, potion, targetVisible, targetSpotted, publish,
 }: { state: GameState; monster: Monster; saddle: GameObject; potion: GameObject; targetVisible: boolean; targetSpotted: boolean; publish: MessagePublisher }): Promise<void> {
     const seen = !heroIsBlind(state) && targetVisible && targetSpotted;
-    const owner = saddleOwnerPhrase(monster);
-    const objectName = saddleName(saddle);
+    const owner = saddleOwnerPhrase(monster, state);
+    const glowingSaddle = potion.otyp === POT_WATER
+        ? `${owner} ${objectAction(saddle, 'glow', state)}` : '';
     let change: { apply: () => void; color: string; aura: boolean } | null = null;
 
     if (potion.otyp === POT_WATER && potion.blessed) {
@@ -366,14 +349,14 @@ async function applyPotionToSaddle({
     }
 
     if (!change) {
-        if (seen) await publish(`${owner} ${objectName} gets wet.`);
+        if (seen) await publish(`${owner} ${objectAction(saddle, 'get', state)} wet.`);
         return;
     }
 
     if (seen) {
         const color = displayColorName(change.color, state);
         const glow = change.aura ? `with ${withIndefiniteArticle(color)} aura` : color;
-        await publish(`${owner} ${objectName} glows ${glow}.`);
+        await publish(`${glowingSaddle} ${glow}.`);
         state._lastPlineKind = PLNMSG_OBJ_GLOWS;
         saddle.bknown = !heroIsHallucinating(state);
     } else if (!potion.bknown || !potion.dknown) {
@@ -1188,9 +1171,7 @@ export async function hitMonsterWithSupportedPotion({
 
     let evaporationMessage = null;
     if (targetVisible && potion.otyp !== POT_OIL && !saddle) {
-        evaporationMessage = `The ${potionImpactObjectName(
-            potion, state,
-        )} evaporates.`;
+        evaporationMessage = `${definiteObjectAction(potion, 'evaporate', state)}.`;
         await publish(evaporationMessage);
     }
 

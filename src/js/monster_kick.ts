@@ -1,6 +1,7 @@
 // Ordinary humanoid kicks against monsters.
 // C refs: dokick.c:kick_monster() and kickdmg().
 
+import { monsterName } from './monster_name.js';
 import { makeMonsterFlee } from './monster_flee.js';
 import { updateMonsterRegions } from './regions.js';
 import { game, requirePlayingGame } from './gstate.js';
@@ -152,7 +153,7 @@ export async function tryKickEvasion(monster: Monster, {
     martial = false,
     state = game,
     announce = async () => {},
-    nameMonster = () => 'The monster',
+    nameMonster = target => monsterName(target, { state, capitalized: true }),
 }: KickOptions = {}) {
     if (rn2(clumsy ? 3 : 4) !== 0) return false;
 
@@ -236,7 +237,7 @@ export async function tryKickReel(monster: Monster, dx: number, dy: number, {
     martial = false,
     state = game,
     announce = async () => {},
-    nameMonster = () => 'The monster',
+    nameMonster = target => monsterName(target, { state, capitalized: true }),
 }: KickOptions = {}) {
     requirePlayingGame(state);
     if ((monster.mhp ?? 1) <= 0 || !martial

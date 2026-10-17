@@ -47,7 +47,7 @@ for (const lifesaving of [false, true]) {
         const attack = attacks.find(a => a[0] === AT_BREA);
         assert.ok(attack);
         installPagerInput(resetInputState(), {
-            expected: /blast of fire|die|But wait|medallion|amulet of life saving|feel much better|REST|PEACE|Goodbye|points/i,
+            expected: /blast of fire|smoulders|die|But wait|medallion|amulet of life saving|feel much better|REST|PEACE|Goodbye|points/i,
             limit: 12,
         });
         initRng(1n);

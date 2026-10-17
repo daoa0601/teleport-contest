@@ -1,56 +1,98 @@
 // state_schema.js — Versioned boundary between saved game data and runtime state.
 // C refs: save.c, restore.c, decl.h, you.h, rm.h.
 
-import type { GameState } from './game_state.js';
+import type { GameContext, GameState } from './game_state.js';
 
-export const SAVE_VERSION = 32;
+export const SAVE_VERSION = 34;
 
 const persistentNames = [
     'Luck', '_activeSpecialLevel', '_armorClassDirty', '_artifactDiscoveries',
     '_artifactExists', '_artifactFound', '_artifactRuntime', '_bonesEncountered',
-    '_bonesSaved', '_bubbleTraversalUp', '_characterPickerUsed',
-    '_deathKiller', '_digestedMonsterSpecies', '_encounteredObjectTypes',
-    '_encumbranceLevel', '_farMonsterNoise', '_fobjSerial',
-    '_helplessAfter', '_helplessDoneMessage', '_helplessReason', '_helplessTurns',
-    '_heroActionSeq', '_heroTrack', '_initialGoldCount', '_initialPwBonus',
-    '_knownObjectTypes', '_lastBoulderPushMove', '_lastDemigodAggravation',
-    '_lastDemigodNasty', '_lastInvNr', '_lastPushedBoulder', '_last_message',
-    '_levelAnnotations', '_levelCache', '_lifeSavedCount', '_migratingMonsters',
-    '_mimicMealMessage', '_monsterNoiseTime', '_moveloopStarted', '_nextAttribCheck',
-    '_nextIdent', '_nextObjectTimerId', '_objectCallNames', '_objectDiscoveryOrder',
-    '_objectPriceQuotes', '_overviewRecords', '_polymorphGenocideCause', '_prayerAlignment',
-    '_prayerOutcome', '_prayerTrouble', '_preserveLeadingStyledBlanks', '_prevDecorType',
-    '_priestPantheonIndex', '_questExpulsionPending', '_restoredBones', '_rndmonstAlignment',
-    '_rndmonstAlignmentMove', '_runtimeVersionInfoInitialized', '_specialLevelPrototype',
-    '_startingEffectsApplied', '_stethoscopeSeq', '_tipSwimShown',
-    '_travelTipShown', '_tributeBookstock', '_tutorialActive', '_tutorialDeclined',
-    '_unresolvedDemigodIntervention', '_unweapon',
-    'aggravateMonster', 'aggravate_monster',
-    'air_level', 'antimagic', 'astral_level', 'billObjects', 'blind', 'branches', 'castleTune',
-    'context', 'deaf', 'detectMonsters', 'discover', 'displaced', 'displayName',
+    '_deathKiller', '_encounteredObjectTypes', '_fobjSerial', '_heroTrack',
+    '_initialGoldCount', '_knownObjectTypes', '_last_message', '_levelAnnotations',
+    '_levelCache', '_lifeSavedCount', '_migratingMonsters', '_nextAttribCheck', '_nextIdent',
+    '_nextObjectTimerId', '_objectCallNames', '_objectDiscoveryOrder', '_objectPriceQuotes',
+    '_overviewRecords', '_polymorphGenocideCause', '_priestPantheonIndex',
+    '_questExpulsionPending', '_stethoscopeSeq', '_tipSwimShown', '_travelTipShown',
+    '_tributeBookstock', '_tutorialActive', 'aggravateMonster', 'aggravate_monster',
+    'air_level', 'antimagic', 'astral_level', 'billObjects', 'blind', 'branches',
+    'castleTune', 'context', 'deaf', 'detectMonsters', 'discover', 'displaced', 'displayName',
     'dungeons', 'dx', 'dy', 'earth_level', 'fire_level', 'flags', 'flying', 'fruitName',
-    'fruits', 'gamelog', 'in_mk_themerooms', 'in_mklev', 'initAlignment', 'inventory',
-    'invisible', 'juiblex_level', 'knox_level', 'lastStrTurn', 'level', 'levitating',
-    'made_branch', 'medusa_level', 'migratingObjects', 'mines_dnum',
-    'moves', 'mvitals', 'name', 'nethackrc', 'nh_lua_variables', 'objectColors',
+    'fruits', 'gamelog', 'initAlignment', 'inventory', 'invisible', 'juiblex_level',
+    'knox_level', 'lastStrTurn', 'level', 'levitating', 'medusa_level', 'migratingObjects',
+    'mines_dnum', 'moves', 'mvitals', 'name', 'nh_lua_variables', 'objectColors',
     'objectDescriptionIndex', 'objectDescriptions', 'objectMaterials', 'objectToughness',
-    'oracle_level', 'oracleRemaining', 'plname', 'polymorphControl', 'preferred_pet',
-    'protectionFromShapeChangers', 'quest_dnum', 'quest_status',
-    'rndencode', 'rogue_level', 'sanctum_level', 'seer_turn', 'smeq', 'sokoban_dnum',
-    'specialLevels', 'spells', 'splev_align', 'stairs', 'stronghold_level',
-    'symset', 'targetX', 'targetY', 'tower_dnum', 'tutorial_set_in_config', 'u', 'uamul',
-    'uarm', 'uarmc', 'uarmf', 'uarmg', 'uarmh', 'uarms', 'uarmu', 'uball', 'ubirthday',
-    'ublindf', 'uchain', 'udaminc', 'uleft', 'unchanging', 'underwater', 'uquiver', 'urace',
-    'uright', 'urole', 'uskin', 'uswallow', 'uswapwep', 'uwep', 'valley_level', 'vault_x',
-    'vault_y', 'wandNothingDirection', 'water_level', 'were_changes',
+    'oracle_level', 'oracleRemaining', 'plname', 'polymorphControl',
+    'protectionFromShapeChangers', 'quest_dnum', 'quest_status', 'rndencode', 'rogue_level',
+    'sanctum_level', 'seer_turn', 'sokoban_dnum', 'specialLevels', 'spells', 'stairs',
+    'stronghold_level', 'tower_dnum', 'u', 'uamul', 'uarm', 'uarmc', 'uarmf', 'uarmg',
+    'uarmh', 'uarms', 'uarmu', 'uball', 'ubirthday', 'ublindf', 'uchain', 'udaminc', 'uleft',
+    'unchanging', 'underwater', 'uquiver', 'urace', 'uright', 'urole', 'uskin', 'uswallow',
+    'uswapwep', 'uwep', 'valley_level', 'wandNothingDirection', 'water_level',
 ] as const satisfies readonly (keyof GameState)[];
 
 export type PersistentStateKey = typeof persistentNames[number];
-export type PersistentState = Pick<GameState, PersistentStateKey>;
+// These port fields live beside svc.context data, but C stores them in
+// display state, instance globals, or eat.c:newuhs()'s static meal buffer.
+export type PersistentGameContext = Omit<GameContext,
+    'botl' | 'time_botl' | 'obj_zapped' | 'poly_zapped' | 'zap_oseen'
+    | 'forceSaveHungerState' | 'hungerStateBeforeMeal'>;
+export type PersistentState = Omit<Pick<GameState, PersistentStateKey>, 'context'>
+    & { context: PersistentGameContext };
 
 // Every remaining GameState field must be transient. Adding, removing, or
 // reclassifying a field requires an explicit persistence decision at compile time.
+// C instance globals and function statics restart in the restored process.
 const transientFields = {
+    _bonesSaved: true,
+    _bubbleTraversalUp: true,
+    _characterPickerUsed: true,
+    _digestedMonsterSpecies: true,
+    _encumbranceLevel: true,
+    _farMonsterNoise: true,
+    _helplessAfter: true,
+    _helplessDoneMessage: true,
+    _helplessReason: true,
+    _helplessTurns: true,
+    _heroActionSeq: true,
+    _initialPwBonus: true,
+    _lastBoulderPushMove: true,
+    _lastDemigodAggravation: true,
+    _lastDemigodNasty: true,
+    _lastInvNr: true,
+    _lastPushedBoulder: true,
+    _mimicMealMessage: true,
+    _monsterNoiseTime: true,
+    _moveloopStarted: true,
+    _prayerAlignment: true,
+    _prayerOutcome: true,
+    _prayerTrouble: true,
+    _preserveLeadingStyledBlanks: true,
+    _prevDecorType: true,
+    _restoredBones: true,
+    _rndmonstAlignment: true,
+    _rndmonstAlignmentMove: true,
+    _runtimeVersionInfoInitialized: true,
+    _specialLevelPrototype: true,
+    _startingEffectsApplied: true,
+    _tutorialDeclined: true,
+    _unresolvedDemigodIntervention: true,
+    _unweapon: true,
+    in_mk_themerooms: true,
+    in_mklev: true,
+    made_branch: true,
+    nethackrc: true,
+    preferred_pet: true,
+    smeq: true,
+    splev_align: true,
+    symset: true,
+    targetX: true,
+    targetY: true,
+    tutorial_set_in_config: true,
+    vault_x: true,
+    vault_y: true,
+    were_changes: true,
+
     _ballChainRestriction: true,
     _heroBubble: true,
     _domoveSucceeded: true,
@@ -181,16 +223,17 @@ function restoreStateKey<Key extends PersistentStateKey>(
 export function copyPersistentState(state: GameState): PersistentState {
     const snapshot: PersistentState = {
         u: state.u, urole: state.urole, urace: state.urace,
-        initAlignment: state.initAlignment, context: state.context,
+        initAlignment: state.initAlignment, context: copyPersistentContext(state.context),
         flags: state.flags, moves: state.moves, inventory: state.inventory,
         spells: state.spells,
         level: state.level, dungeons: state.dungeons, branches: state.branches,
-        stairs: state.stairs, nethackrc: state.nethackrc,
+        stairs: state.stairs,
         plname: state.plname, displayName: state.displayName,
         _last_message: state._last_message,
     };
     const unknown: string[] = [];
     for (const key of Object.keys(state)) {
+        if (key === 'context') continue;
         if (isPersistentStateKey(key)) {
             copyStateKey(snapshot, state, key);
         } else if (!Object.hasOwn(transientFields, key)) {
@@ -202,5 +245,17 @@ export function copyPersistentState(state: GameState): PersistentState {
             `Save schema does not classify: ${unknown.sort().join(', ')}`,
         );
     }
+    return snapshot;
+}
+
+function copyPersistentContext(context: GameContext): PersistentGameContext {
+    const snapshot = { ...context };
+    delete snapshot.botl;
+    delete snapshot.time_botl;
+    delete snapshot.obj_zapped;
+    delete snapshot.poly_zapped;
+    delete snapshot.zap_oseen;
+    delete snapshot.forceSaveHungerState;
+    delete snapshot.hungerStateBeforeMeal;
     return snapshot;
 }

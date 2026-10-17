@@ -1,3 +1,4 @@
+import { withIndefiniteArticle } from './object_grammar.js';
 import { rotCorpse } from './corpse_rot.js';
 // Corpse revival timers.
 // C refs: do.c revive_corpse()/revive_mon()/zombify_mon() and zap.c revive().
@@ -14,6 +15,7 @@ import { isReviver, isRider, zombieForm } from './corpse_species.js';
 import { canSeeMonster, canSpotMonster, newsym, plineWithContinuation } from './display.js';
 import { makePetWary } from './dog.js';
 import { game, requireGameLevel } from './gstate.js';
+import { capitalizedDefiniteName } from './ray_hit_message.js';
 import { updateHeroHunger } from './hunger.js';
 import { stopHeroOccupation } from './occupation.js';
 import { deleteObject, delobjCore } from './object_delete.js';
@@ -31,7 +33,7 @@ import {
 import { monsterAtPosition } from './monster_location.js';
 import { monsterName } from './monster_name.js';
 import { removeMonsterFromGame } from './monster_departure.js';
-import { corpseName as corpseObjectName } from './objnam.js';
+import { corpseName as corpseObjectName, objectCombatName, ownedObjectName } from './objnam.js';
 import { costlySpot, objectOwnershipPrefix } from './shk.js';
 import { stolenValue } from './shop_loss.js';
 import { restoreMonsterTraits } from './monster_traits.js';
@@ -39,7 +41,7 @@ import { changeMonsterForm, restoreMonsterShape } from './monster_polymorph.js';
 import {
     destroyObjectFromMonsterInventory, linkObjectToMonsterInventory, unlinkMonsterObject,
 } from './monster_inventory.js';
-import { BAG_OF_HOLDING, OBJECT_NAMES, STATUE } from './object_data.js';
+import { BAG_OF_HOLDING, STATUE } from './object_data.js';
 import {
     OBJECT_TIMER_KIND, objectTimers, objectsInTimerGraph,
     scheduleObjectTimer, stopAllObjectTimers,
@@ -52,7 +54,6 @@ import {
     bodyGenderFlags, PM_DOPPELGANGER, PM_HUMAN_ZOMBIE,
     revivalReplacement,
 } from './revival_species.js';
-
 import type { GameState } from './game_state.js';
 import type { GameObject, ObjectTimerKind, ObjectWhere } from './object_types.js';
 import type { Monster } from './monster_types.js';
@@ -196,40 +197,19 @@ function zombieCanDig(x: number, y: number, state: GameState) {
     return !!location && [ROOM, CORR, GRAVE].includes(location.typ);
 }
 
+// C hacklib.c:upstart().
+function upstart(text: string): string {
+    return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
 function corpseName(corpse: CorpseObject) {
-    const species = MONSTER_NAME[corpse.corpsenm] || 'monster';
-    const given = corpse.oextra?.oname || corpse.oname;
-    const chewed = corpse.oeaten ? 'bite-covered ' : '';
-    return `${chewed}${species} corpse${given ? ` named ${given}` : ''}`;
-}
-
-function corpseWithArticle(corpse: CorpseObject) {
-    const name = corpseName(corpse);
-    return `${/^[aeiou]/i.test(name) ? 'an' : 'a'} ${name}`;
-}
-
-function monsterDescription(monster: Monster) {
-    if (monster.name) return monster.name;
-    const name = monsterTypeName(monster.mnum, !!monster.female);
-    const article = /^[aeiou]/i.test(name) ? 'An' : 'A';
-    return `${article} ${name}`;
-}
-
-function carrierDescription(monster: Monster) {
-    if (monster?.name) return monster.name;
-    return `the ${monsterTypeName(monster?.mnum, !!monster?.female)}`;
-}
-
-function containerDescription(container: GameObject) {
-    const name = container?.oextra?.oname || container?.oname
-        || OBJECT_NAMES[container?.otyp] || container?.name || 'container';
-    const article = /^[aeiou]/i.test(name) ? 'an' : 'a';
-    return `${article} ${name}`;
+    return corpseObjectName(corpse, { singular: true,
+        adjective: corpse.oeaten ? 'bite-covered' : '' });
 }
 
 function revivalMessage(
     corpse: CorpseObject, monster: Monster, location: CorpseRevivalLocation,
-    originalWhere: ObjectWhere, wasWielded: boolean,
+    originalWhere: ObjectWhere, wasWielded: boolean, state: GameState,
 ) {
     if (originalWhere === 'inventory') {
         return wasWielded
@@ -239,15 +219,16 @@ function revivalMessage(
     if (originalWhere === 'floor') {
         if (!cansee(location.x, location.y)
             && !canSeeMonster(monster)) return null;
+        // C do.c:revive_corpse() uses The(cname), which keeps one article.
         if (!canSeeMonster(monster))
-            return `The ${corpseName(corpse)} disappears!`;
+            return `${capitalizedDefiniteName(corpseName(corpse), state)} disappears!`;
         const effects = new Map([
             [311, ' in a whirl of spectral skulls'],
             [312, ' in a churning pillar of flies'],
             [313, ' in a ring of withered crops'],
         ]);
-        const subject = monster.name
-            || `The ${monsterTypeName(monster.mnum, !!monster.female)}`;
+        const subject = monsterName(monster, { state, capitalized: true,
+            adjective: corpse.oeaten ? 'bite-covered' : '' });
         return `${subject} rises from the dead${effects.get(monster.mnum) || ''}!`;
     }
     if (originalWhere === 'minvent') {
@@ -255,27 +236,30 @@ function revivalMessage(
         const carrier = location.monsterCarrier;
         if (carrier && canSeeMonster(carrier)) {
             const result = canSpotMonster(monster) ? 'revives' : 'disappears';
-            return `Startled, ${carrierDescription(carrier)} drops ${
-                corpseWithArticle(corpse)
+            return `Startled, ${monsterName(carrier, { state })} drops ${
+                withIndefiniteArticle(corpseName(corpse))
             } as it ${result}!`;
         }
         return canSpotMonster(monster)
-            ? `${monsterDescription(monster)} suddenly appears!` : null;
+            ? `${monsterName(monster, { state, capitalized: true, adjective: corpse.oeaten ? 'bite-covered' : '' })} suddenly appears!` : null;
     }
     if (originalWhere === 'contained' && isContainerLocation(location)) {
         const container = location.directContainer;
         const outer = location.outer;
-        const description = containerDescription(container);
         const revived = canSpotMonster(monster)
-            ? monsterDescription(monster) : 'Something';
+            ? monsterName(monster, { state, article: 'a', capitalized: true }) : 'Something';
         if (location.monsterCarrier
             && canSeeMonster(
                 location.monsterCarrier,
-            )) return `${revived} writhes out of ${description}!`;
-        if (outer.where === 'inventory')
+            )) return `${revived} writhes out of ${ownedObjectName(container, state, { capitalized: false })}!`;
+        if (outer.where === 'inventory') {
+            const description = withIndefiniteArticle(objectCombatName(container, { state, includeCorpseSpecies: false }));
             return `${revived} writhes out of ${description} in your pack!`;
-        if (outer.where === 'floor' && cansee(location.x, location.y))
+        }
+        if (outer.where === 'floor' && cansee(location.x, location.y)) {
+            const description = withIndefiniteArticle(objectCombatName(container, { state, includeCorpseSpecies: false }));
             return `${revived} escapes from ${description}!`;
+        }
     }
     return null;
 }
@@ -360,8 +344,9 @@ async function createRevivedMonster(corpse: CorpseObject, location: CorpseReviva
             && (!targetLocation || !IS_POOL(targetLocation.typ)))) {
         return {
             monster: null,
+            // C zap.c:revive() names it with CXN_PFX_THE and no adjective.
             twitchMessage: cansee(x, y)
-                ? `The ${corpseName(corpse)} twitches feebly.` : null,
+                ? `${upstart(corpseObjectName(corpse, { definite: true }))} twitches feebly.` : null,
         };
     }
 
@@ -502,7 +487,7 @@ async function reviveCorpse(
     monster.mrevived = 1;
     if (announce) {
         const message = revivalMessage(
-            body, monster, location, originalWhere, wasWielded,
+            body, monster, location, originalWhere, wasWielded, state,
         );
         if (message) messages.push(message);
     }

@@ -29,6 +29,7 @@ import { heroStrengthDamageBonus } from './weapon_damage.js';
 import { isPick } from './weapon_type.js';
 import { connectPits } from './pit_connections.js';
 import { isLavaAt, isPoolAt } from './terrain_properties.js';
+import { monsterName } from './monster_name.js';
 const M1_WALLWALK = 0x00000008;
 const GRID_BUG = MONSTER_NAME.indexOf('grid bug');
 const LONG_WORM = MONSTER_NAME.indexOf('long worm');
@@ -75,12 +76,6 @@ function suggestedDirections(tool, state) {
         return isok(x, y) && diggingTarget(tool, x, y, state) !== DIGTYP_UNDIGGABLE;
     }).join('');
 }
-function monsterSubject(monster) {
-    if (monster.name)
-        return monster.name;
-    const name = monsterTypeName(monster.mnum, !!monster.female);
-    return monster.mtame || monster.pet ? `Your ${name}` : `The ${name}`;
-}
 function tendedShopAt(monster, state) {
     const level = requireGameLevel(state);
     return roomsAt(level, monster.mx, monster.my, SHOPBASE).some((roomno) => {
@@ -120,14 +115,14 @@ async function attackWithTool(tool, monster, attackMonster, payShopkeeper, state
                 if (flight.heroDied)
                     return true;
             }
-            await plineWithContinuation(`You stop.  ${monsterSubject(monster)} is in the way!`);
+            await plineWithContinuation(`You stop.  ${monsterName(monster, { state, capitalized: true, article: 'your' })} is in the way!`);
             return true;
         }
         if (monster.mfrozen ||
             monster.msleeping ||
             monster.mcanmove === 0 ||
             (MONSTER_MOVE[monster.mnum] === 0 && rn2(6))) {
-            await plineWithContinuation(`${monsterSubject(monster)} doesn't seem to move!`);
+            await plineWithContinuation(`${monsterName(monster, { state, capitalized: true, article: 'your' })} doesn't seem to move!`);
             return true;
         }
         // do_attack() leaves a safe monster alone. Applying is not movement,

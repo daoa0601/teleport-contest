@@ -11,7 +11,7 @@ import type { MonsterDeathResult } from './monster_death.js';
 import type { HeroMonsterKillOutcome } from './hero_monster_death.js';
 import { heroSpecies } from './hero_species.js';
 import { beginBallAndChainRedraw, finishBallAndChainMove } from './ball.js';
-import { minimalObjectName } from './objnam.js';
+import { definiteObjectAction, minimalObjectName } from './objnam.js';
 import { game, requireGameLevel } from './gstate.js';
 import { requireInitializedHero } from './hero_types.js';
 import type { GameState } from './game_state.js';
@@ -33,12 +33,11 @@ import { initializePet } from './dog.js';
 import { makemonNear, mksobj } from './mklev.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import {
-    monsterDigests, monsterIsWhirly, monsterTypeName,
+    monsterDigests, monsterIsWhirly,
 } from './monster_data.js';
 import {
     BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, GOLD_DRAGON_SCALE_MAIL,
-    GOLD_DRAGON_SCALES, MAGIC_LAMP, OBJECT_NAMES,
-    OIL_LAMP, POT_OIL, POT_WATER, TALLOW_CANDLE, WAX_CANDLE,
+    GOLD_DRAGON_SCALES, MAGIC_LAMP, OIL_LAMP, POT_OIL, POT_WATER, TALLOW_CANDLE, WAX_CANDLE,
 } from './object_data.js';
 import {
     OBJECT_TIMER_KIND, scheduleObjectTimer,
@@ -149,12 +148,9 @@ export function equipmentLightDescription(object: GameObject | null | undefined,
 }
 
 export function equipmentLightMessage(object: GameObject, shining: boolean, state: GameState = game) {
-    const artifact = artifactById(object.oartifact);
-    const name = artifact?.name || `The ${OBJECT_NAMES[object.otyp]}`;
-    const plural = object.otyp === GOLD_DRAGON_SCALES;
     return shining
-        ? `${name} ${plural ? 'begin' : 'begins'} to shine ${equipmentLightDescription(object, state)}!`
-        : `${name} ${plural ? 'stop' : 'stops'} shining.`;
+        ? `${definiteObjectAction(object, 'begin', state)} to shine ${equipmentLightDescription(object, state)}!`
+        : `${definiteObjectAction(object, 'stop', state)} shining.`;
 }
 
 export async function lightWieldedArtifact(
@@ -170,10 +166,8 @@ export async function lightWieldedArtifact(
 function swallowedLightMessage() {
     const swallower = game.u?.ustuck;
     if (!swallower) return null;
-    const name = swallower.name
-        || monsterTypeName(swallower.mnum, !!swallower.female);
-    const subject = `The ${name}`;
-    if (monsterDigests(swallower)) return `${subject}'s stomach is lit.`;
+    const subject = monsterName(swallower, { capitalized: true });
+    if (monsterDigests(swallower)) return `${possessiveName(subject)} stomach is lit.`;
     return monsterIsWhirly(swallower)
         ? `${subject} shines briefly.`
         : `${subject} glistens.`;

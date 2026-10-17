@@ -9,7 +9,7 @@ import { finishMonsterKilled } from './monster_death.js';
 import type { MonsterDeathResult } from './monster_death.js';
 import { AD_RUST } from './monster_attack_types.js';
 import type { MonsterRustTrapEvent as RustTrapEffect } from './trap.js';
-import { monsterArmName } from './body_parts.js';
+import { monsterArmName, monsterHeadName } from './body_parts.js';
 import { canSpotMonster, plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
 import { wornMonsterLifeSaver } from './mondeath.js';
@@ -49,7 +49,7 @@ async function presentRustTrap(
     const arm = monsterArmName(monster.mnum);
     const hit =
         event.target === 'head'
-            ? `A gush of water hits ${name} on the head!`
+            ? `A gush of water hits ${name} on the ${monsterHeadName(monster.mnum)}!`
             : event.target === 'left-arm'
               ? `A gush of water hits ${name}'s left ${arm}!`
               : event.target === 'right-arm'

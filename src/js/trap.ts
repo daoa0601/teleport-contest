@@ -11,7 +11,7 @@ import { armorSimpleName, heroHasWaterWalking } from './armor.js';
 import { fireDamageObject } from './fire_damage.js';
 import { delobj } from './object_delete.js';
 import { objectDescription as fullObjectDescription } from './object_description.js';
-import { objectCombatName, observeObjectForNaming, ownedObjectAction, ownedObjectName, simpleObjectName } from './objnam.js';
+import { objectNameIsPlural, definiteName, objectCombatName, observeObjectForNaming, ownedObjectAction, ownedObjectName, simpleObjectName } from './objnam.js';
 import { cansee, couldsee } from './vision.js';
 import { endObjectBurn } from './light.js';
 import { game } from './gstate.js';
@@ -27,7 +27,7 @@ import { splitMonster } from './monster_clone.js';
 import { monsterWieldedWeapon } from './monster_weapon.js';
 import {
     BAG_OF_TRICKS, BRASS_LANTERN, CAN_OF_GREASE, CANDELABRUM_OF_INVOCATION, CHEST, ICE_BOX,
-    FIRE_HORN, LARGE_BOX, OBJECT_BIMANUAL, OBJECT_MATERIAL, OBJECT_MATERIAL_NAMES, OBJECT_NAMES, OBJECT_PROPERTY, OILSKIN_SACK,
+    FIRE_HORN, LARGE_BOX, OBJECT_BIMANUAL, OBJECT_MATERIAL_NAMES, OBJECT_NAMES, OBJECT_PROPERTY, OILSKIN_SACK,
     MAGIC_LAMP, OIL_LAMP, POT_ACID, POT_OIL, POT_WATER, RED_DRAGON_SCALE_MAIL, RED_DRAGON_SCALES,
     RIN_FIRE_RESISTANCE, SCR_BLANK_PAPER, SCR_FIRE, SPE_BLANK_PAPER,
     SPE_BOOK_OF_THE_DEAD, SPE_FIREBALL, SPE_NOVEL, TALLOW_CANDLE, TOWEL, WAN_FIRE, WAX_CANDLE,
@@ -50,6 +50,7 @@ import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import type { Trap } from './map_types.js';
 import type { MonsterCallLog, RandomBelow } from './monster_action_types.js';
+import { verbForSubject } from './object_grammar.js';
 
 type CallRecorder = Pick<MonsterCallLog, 'push'>;
 type ArmorMask = typeof W_ARM | typeof W_ARMC | typeof W_ARMH
@@ -312,22 +313,6 @@ function objectContents(object: GameObject): GameObject[] {
     return object.contents || [];
 }
 
-function waterObjectName(object: GameObject, description: string | null = null): string {
-    if (description) return description;
-    if (object.name) return object.name;
-    const name = OBJECT_NAMES[object.otyp] || 'object';
-    if (object.oclass === 8) return `potion of ${name}`;
-    if (object.oclass === 9) return `scroll of ${name}`;
-    if (object.oclass === 10) return `spellbook of ${name}`;
-    return name;
-}
-
-function waterObjectIsPlural(object: GameObject, description: string | null = null): boolean {
-    const name = waterObjectName(object, description);
-    return (object.quan ?? object.quantity ?? 1) !== 1
-        || /(?:boots|shoes|gloves|gauntlets|lenses|scales)$/u.test(name);
-}
-
 function carriedByHero(object: GameObject, state: GameState): boolean {
     return (state.inventory || []).includes(object);
 }
@@ -384,7 +369,7 @@ export function splashLitObject(object: GameObject | null | undefined, messages:
             messages.push(`${objectOwnershipPrefix(object, state, { capitalized: true })}${
                 candle ? '' : "candelabrum's "}candle${many ? "s' flames are" : "'s flame is"} extinguished.`);
         } else {
-            const plural = waterObjectIsPlural(object);
+            const plural = objectNameIsPlural(object, state);
             messages.push(`${ownedObjectName(object, state)} ${plural ? 'go' : 'goes'} out!`);
         }
     }
@@ -398,7 +383,7 @@ export function splashLitObject(object: GameObject | null | undefined, messages:
 }
 
 function rustMetalObject(object: GameObject | null | undefined, description: string, luckRoll: RandomBelow): MetalRustResult {
-    if (!object || (OBJECT_MATERIAL[object.otyp] ?? 0) !== 11)
+    if (!object || objectMaterial(object.otyp) !== 11)
         return { outcome: 'nothing' };
 
     const proof = !!object.oerodeproof;
@@ -441,7 +426,7 @@ export async function waterDamageObject(
     for (const message of lightMessages) await emit(message);
     const name = description ?? objectCombatName(object, { state });
     const carried = carriedByHero(object, state);
-    const plural = waterObjectIsPlural(object, name);
+    const plural = verbForSubject(name, 'are') === 'are';
     const spe = object.spe ?? 0;
     if (object.otyp === CAN_OF_GREASE && spe > 0) return 'nothing';
     if (object.otyp === TOWEL && spe < 7) {
@@ -494,7 +479,7 @@ export async function waterDamageObject(
                 object.ox = position.x;
                 object.oy = position.y;
                 if (isok(position.x, position.y) && cansee(position.x, position.y))
-                    await emit('Steam rises from the Book of the Dead.');
+                    await emit(`Steam rises from ${definiteName(objectCombatName(object, { state, includeCorpseSpecies: false }), state)}.`);
             }
             return 'nothing';
         }

@@ -5,6 +5,7 @@ import { heroLocomotion } from './hero_locomotion.js';
 // initial stock; this module owns the live relationship among room, resident,
 // customer, and hero.
 
+import { objectMaterial } from './object_material.js';
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import type { GameObject } from './object_types.js';
 import type { GameState } from './game_state.js';
@@ -32,7 +33,7 @@ import {
 } from './shop_sell.js';
 import { canSeeMonster, canSenseMonster, pline, plineWithContinuation } from './display.js';
 import { currency } from './currency.js';
-import { objectName, objectCombatName, definiteName } from './objnam.js';
+import { simpleObjectName, objectTypeName, objectName, objectCombatName, definiteName } from './objnam.js';
 import { rn2 } from './rng.js';
 import { heroGoldAmount } from './hero_gold.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
@@ -52,7 +53,7 @@ import {
     BAG_OF_TRICKS, BRASS_LANTERN, CAN_OF_GREASE, CHEST, CORPSE, CRYSTAL_BALL,
     DRUM_OF_EARTHQUAKE, EXPENSIVE_CAMERA, HORN_OF_PLENTY, ICE_BOX, LARGE_BOX,
     MAGIC_FLUTE, MAGIC_LAMP, MAGIC_MARKER, OBJECT_CHARGED, OBJECT_COST,
-    OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_INITIAL_KNOWN, DUNCE_CAP, OIL_LAMP, POT_OIL, TINNING_KIT,
+    OBJECT_NAMES, OBJECT_INITIAL_KNOWN, DUNCE_CAP, OIL_LAMP, POT_OIL, TINNING_KIT,
     WORTHLESS_PIECE_OF_WHITE_GLASS,
 } from './object_data.js';
 import { recordObjectPriceQuote } from './object_knowledge.js';
@@ -246,7 +247,7 @@ const glassGemImitations = [
 export function objectPriceAdjustment(object: GameObject, oid: number, state: GameState = game): number {
     const known = !!object?.dknown && objectTypeKnown(object, state);
     const glassGem = object?.oclass === GEM_CLASS
-        && OBJECT_MATERIAL[object.otyp] === GLASS;
+        && objectMaterial(object.otyp) === GLASS;
     if (!known && !glassGem) return ((oid % 4) === 0) ? 1 : 0;
     return 0;
 }
@@ -257,7 +258,7 @@ export function shopObjectUnitCost(object: GameObject, resident: Monster | null 
     let divisor = 1;
     const unknown = !object?.dknown || !objectTypeKnown(object, state);
     const glassGem = object?.oclass === GEM_CLASS
-        && OBJECT_MATERIAL[object.otyp] === GLASS;
+        && objectMaterial(object.otyp) === GLASS;
     if (unknown) {
         if (glassGem) {
             const pseudorand = (((state.ubirthday ?? 0) | 0) % object.otyp)
@@ -736,7 +737,7 @@ export async function settleGlobAbsorptionBilling(
     const absorbedEntry = billForObject(absorbed, state, keeper)?.entry;
     const shop = keeper.eshk;
     const offer = shopOfferForObject(absorbed, keeper, state);
-    const name = OBJECT_NAMES[absorbed.otyp];
+    const name = objectTypeName(absorbed.otyp, state);
     const money = (amount: number) => `${amount} ${currency(amount, { state })}`;
 
     if (absorbedEntry && (!absorber.no_charge
@@ -806,9 +807,6 @@ export async function chargeAlteredUnpaidObject(
     const quantity = object?.quan ?? object?.quantity ?? 1;
     const pronoun = quantity === 1 ? 'it' : 'them';
     const demonstrative = quantity === 1 ? 'that' : 'those';
-    const name = quantity === 1
-        ? OBJECT_NAMES[object.otyp] || object.name || 'object'
-        : object.plural || `${OBJECT_NAMES[object.otyp] || 'object'}s`;
 
     let ox = 0;
     let oy = 0;
@@ -860,7 +858,7 @@ export async function chargeAlteredUnpaidObject(
         if (learnBknown) object.bknown = true;
         // C verbalizes unconditionally here; only the voice is optional.
         await plineWithContinuation(
-            `"You ${alteration} ${demonstrative} ${name}, you pay for ${pronoun}!"`,
+            `"You ${alteration} ${demonstrative} ${simpleObjectName(object, state)}, you pay for ${pronoun}!"`,
         );
         return billDummyObject(object, state);
     }

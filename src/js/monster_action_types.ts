@@ -562,6 +562,7 @@ export interface MonsterMovement extends PetInventoryAction, MonsterAttackInitia
     actorDied?: boolean;
     actorLeftLevel?: boolean;
     heroDied?: boolean;
+    deferredWormTailAttacks?: boolean;
     hidden?: boolean;
     message?: string;
     waiting?: boolean;
@@ -654,7 +655,6 @@ export interface ImmediateMonsterTrapOptions extends MonsterRandomOptions {
 
 export interface MonsterTrapResumeOptions extends MonsterRandomOptions {
     publish?: PublishMonsterMessage;
-    monsterName?: (monster: Monster) => string;
     describeMonster?: (monster: Monster) => string;
     finishDeath?: MonsterDeathHandler;
 }

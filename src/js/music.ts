@@ -36,9 +36,9 @@ import {
 import { learnObjectType } from './object_knowledge.js';
 import { consumeObjectCharge } from './object_charge.js';
 import {
-    definiteName, objectCombatName, objectNameIsPlural, ownedObjectName, simpleObjectName,
+    definiteObjectAction,
+    definiteName, ownedObjectName, simpleObjectName,
 } from './objnam.js';
-import { verbForSubject } from './object_grammar.js';
 import { askForTune, playTune } from './passtune.js';
 import { heroCanBlow, heroFormSticks } from './hero_species.js';
 import { d, rnd, rn2 } from './rng.js';
@@ -69,13 +69,6 @@ const DRUMS = new Set([LEATHER_DRUM, DRUM_OF_EARTHQUAKE]);
 const WIND_INSTRUMENTS = new Set([
     WOODEN_FLUTE, MAGIC_FLUTE, TOOLED_HORN, FROST_HORN, FIRE_HORN, BUGLE,
 ]);
-
-// C Tobjnam(): name the visible instrument with a definite article.
-function instrumentAction(instrument: GameObject, verb: string): string {
-    const name = definiteName(objectCombatName(instrument));
-    const action = objectNameIsPlural(instrument) ? verb : verbForSubject(null, verb);
-    return `${name.charAt(0).toUpperCase()}${name.slice(1)} ${action}`;
-}
 
 function monsterDistance(monster: Monster) {
     const dx = (monster.mx ?? 0) - (game.u?.ux ?? 0);
@@ -299,7 +292,7 @@ async function playWoodenFlute(instrument: GameObject, familiar: boolean, canUse
     const succeeds = canUseSpecial && skilledRoll;
     if (!heroIsDeaf()) {
         await plineWithContinuation(
-            `${instrumentAction(instrument, succeeds ? 'trill' : 'toot')}${
+            `${definiteObjectAction(instrument, succeeds ? 'trill' : 'toot')}${
                 familiar ? ' a familiar tune' : ''
             }.`,
         );
@@ -348,7 +341,7 @@ async function playElementalHorn(
     await consumeObjectCharge(instrument);
     const direction = await readHornDirection();
     if (direction === null) {
-        await plineWithContinuation(`${instrumentAction(instrument, 'vibrate')}.`);
+        await plineWithContinuation(`${definiteObjectAction(instrument, 'vibrate')}.`);
         return;
     }
 
@@ -388,7 +381,7 @@ async function playMagicHarp(instrument: GameObject, familiar: boolean) {
     await consumeObjectCharge(instrument);
     await plineWithContinuation(heroIsDeaf()
         ? formatFeltMessage('very soothing vibrations.')
-        : `${instrumentAction(instrument, 'produce')} very attractive${
+        : `${definiteObjectAction(instrument, 'produce')} very attractive${
             familiar ? ' and familiar' : ''
         } music.`);
     await charmMonsters(Math.trunc(((game.u?.ulevel || 1) - 1) / 3) + 1);

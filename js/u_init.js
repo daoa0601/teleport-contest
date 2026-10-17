@@ -16,6 +16,7 @@ import { setMonsterMalign } from './monster_alignment.js';
 import { nextIdent } from './ident.js';
 import { rn2, rnd, d, rne } from './rng.js';
 import { findMonsterNearPosition, mkobj, mksobj } from './mklev.js';
+import { newMonsterHitPoints } from './monster_hit_points.js';
 import { MONSTER_MOVE, MONSTER_NAME, SPECIAL_PM } from './monster_data.js';
 import { findArmorClass } from './armor.js';
 import { ensureQuestStatus } from './quest.js';
@@ -600,11 +601,10 @@ export async function makedog() {
     if (!spot)
         return null;
     const monsterId = nextIdent();
-    // adj_lev() reduces dogs and kittens to level one; a starting pony is
-    // level two here and therefore rolls two hit dice.
-    let hp = d(role === 'knight' ? 2 : 1, 8);
-    if (role !== 'knight' && hp === 1)
-        hp++;
+    // C makemon() rolls the pet through newmonhp(): adj_lev() lowers dogs and
+    // kittens to level one and the Knight's pony to level two, and an
+    // all-ones roll gains a point.
+    const { level, hp } = newMonsterHitPoints(pettype);
     const female = !!rn2(2);
     // Dogs, cats, and ponies are neutral. C's peace_minded() reaches its two
     // random branches only for a neutral hero, and the first denominator is
@@ -620,9 +620,7 @@ export async function makedog() {
         my: spot.y,
         mhp: hp,
         mhpmax: hp,
-        // makemon()->adj_lev() lowers the Knight's starting pony from its
-        // species level three to level two before rolling its two hit dice.
-        m_lev: role === 'knight' ? 2 : 1,
+        m_lev: level,
         female,
         mtame: 10,
         mpeaceful: 1,

@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { wearHeroAccessory } from '../js/accessory.js';
 import { moveloop_core } from '../js/allmain.js';
 import { DOOR, D_CLOSED, M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, NO_MINVENT, W_AMUL } from '../js/const.js';
-import { flushPendingTopline, flush_screen, plineWithContinuation } from '../js/display.js';
+import { clearMessageWindow, flushPendingTopline, flush_screen, plineWithContinuation } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resolveHeroCombatEngulf } from '../js/hero_combat_engulf.js';
 import { resetInputState } from '../js/input.js';
@@ -45,27 +45,36 @@ void test('digestion consumes life saving, grants nutrition, and leaves the vict
     assert.ok((game._helplessTurns ?? 0) > 0);
     assert.equal(game._monsterSwallower, null);
 });
-void test('a swallowed floating eye grants telepathy only when digestion finishes, including after save and restore', async () => {
-    const { input, publish } = room('purple worm');
-    requirePlayingGame(game);
-    const eye = await createMonsterAt('floating eye', 11, 10, NO_MINVENT);
-    const storage = memoryStorage();
-    await resolveHeroCombatEngulf(eye, engulf(AD_DGST), { publish, random: () => 0 });
-    assert.ok(!game.u.telepathy);
-    assert.equal(game._helplessTurns, 1);
-    assert.equal(await saveGame(storage), true);
-    assert.equal(restoreGame(game.plname, storage), true);
-    requirePlayingGame(game);
-    await flushPendingTopline();
-    game._moveloopStarted = true;
-    game.u.umovement = 12;
-    game.context.move = 0;
-    await moveloop_core();
-    await finishAtCommandInput(input, moveloop_core, /You feel a strange mental acuity\./);
-    assert.equal(game.u.telepathy, true);
-    assert.equal(game._digestedMonsterSpecies, null);
-    assert.equal(game._helplessAfter, null);
-});
+for (const restored of [false, true]) {
+    void test(restored
+        ? 'restore loses the unsaved digestion callback that would grant telepathy'
+        : 'a swallowed floating eye grants telepathy only when digestion finishes', async () => {
+        const { input, publish } = room('purple worm');
+        requirePlayingGame(game);
+        const eye = await createMonsterAt('floating eye', 11, 10, NO_MINVENT);
+        const storage = memoryStorage();
+        await resolveHeroCombatEngulf(eye, engulf(AD_DGST), { publish, random: () => 0 });
+        assert.ok(!game.u.telepathy);
+        if (restored) {
+            assert.equal(await saveGame(storage), true);
+            assert.equal(restoreGame(game.plname, storage), true);
+        }
+        requirePlayingGame(game);
+        await flushPendingTopline();
+        clearMessageWindow();
+        game._moveloopStarted = true;
+        game.u.umovement = 12;
+        game.context.move = 0;
+        if (restored) {
+            await finishAtCommandInput(input, moveloop_core, /^$/);
+        }
+        else {
+            await moveloop_core();
+            await finishAtCommandInput(input, moveloop_core, /You feel a strange mental acuity\./);
+        }
+        assert.equal(!!game.u.telepathy, !restored);
+    });
+}
 void test('slow digestion expels a living victim without food conduct or nutrition', async () => {
     const { publish, messages } = room('purple worm');
     requirePlayingGame(game);

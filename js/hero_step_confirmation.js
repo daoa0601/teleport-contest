@@ -1,6 +1,7 @@
 import { heroLocomotion } from './hero_locomotion.js';
 // C hack.c:avoid_trap_andor_region()/u_locomotion() and
 // trap.c:immune_to_trap()/into_vs_onto(), for hero movement.
+import { objectMaterial } from './object_material.js';
 import { BEAR_TRAP, HOLE, In_endgame, In_sokoban, Is_earthlevel, LANDMINE, LEVEL_TELEP, MAGIC_PORTAL, PARANOID_CONFIRM, PARANOID_TRAP, PIT, ROLLING_BOULDER_TRAP, RUST_TRAP, SLP_GAS_TRAP, SPIKED_PIT, SQKY_BOARD, TELEP_TRAP, TRAPDOOR, TRAP_EXPLANATIONS, TRAPNUM, VIBRATING_SQUARE, WEB, W_QUIVER, W_SWAPWEP, is_hole, is_pit, } from './const.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { game, requirePlayingGame } from './gstate.js';
@@ -88,7 +89,7 @@ function trapIsClearlyHarmless(type, state) {
         case RUST_TRAP:
             if (MONSTER_NAME[species] === 'iron golem')
                 return false;
-            return !state.inventory.some(object => OBJECT_MATERIAL[object.otyp] === 11
+            return !state.inventory.some(object => objectMaterial(object.otyp) === 11
                 && !!object.owornmask && !(object.owornmask & W_QUIVER)
                 && (!(object.owornmask & W_SWAPWEP) || state.u.twoweap));
         case VIBRATING_SQUARE:

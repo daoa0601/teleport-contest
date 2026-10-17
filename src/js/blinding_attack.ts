@@ -23,6 +23,7 @@ import { blindfolded, heroIsBlind } from './senses.js';
 import { makeBlinded } from './sight_change.js';
 import { plineWithContinuation } from './display.js';
 import type { MessagePublisher } from './display.js';
+import { monsterName } from './monster_name.js';
 
 const M1_NOEYES = 0x00001000;
 const PM_FLOATING_EYE = MONSTER_NAME.indexOf('floating eye');
@@ -80,8 +81,7 @@ export function heroBlindingObjectHitMessage(
         canBlind,
         state = game,
         thrown = false,
-        describeTarget = () => monster.name
-            || `the ${MONSTER_NAME[monster.mnum] || 'monster'}`,
+        describeTarget = () => monsterName(monster, { state }),
     }: { canBlind?: boolean; state?: GameState; thrown?: boolean; describeTarget?: () => string } = {},
 ): string {
     const impact = object?.otyp === CREAM_PIE ? 'Splat!' : 'Splash!';

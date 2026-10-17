@@ -5,8 +5,6 @@ import { TAKEOFF_ORDER } from './takeoff_state.js';
 export function validSavedGameContext(value, entities) {
     return closedFieldsMatch(value, {
         move: integer,
-        botl: optional((entry) => boolean(entry) || integer(entry)),
-        time_botl: optional(boolean),
         bypasses: optional(boolean),
         current_fruit: optional(integer),
         deathNotice: optional(boolean),
@@ -24,9 +22,7 @@ export function validSavedGameContext(value, entities) {
             parent_oid: (id) => integer(id) && id >= 0,
             child_oid: (id) => integer(id) && id >= 0,
         })),
-        obj_zapped: optional(boolean),
         polearm: optional(validPolearmContext),
-        poly_zapped: optional(integer),
         run: optional(integer),
         snickersneeTurn: optional(integer),
         spbook: optional((entry) => closedFieldsMatch(entry, {
@@ -40,12 +36,9 @@ export function validSavedGameContext(value, entities) {
         travel1: optional(boolean),
         warnlevel: optional(integer),
         warntype: optional(validWarningContext),
-        zap_oseen: optional(boolean),
         achieveo: optional(validAchievementObjects),
         victual: optional(nullable((entry) => validMeal(entry, entities))),
         tin: optional(nullable((entry) => validTinOpening(entry, entities))),
-        forceSaveHungerState: optional(boolean),
-        hungerStateBeforeMeal: optional(integer),
     });
 }
 function validTakeoffContext(value) {

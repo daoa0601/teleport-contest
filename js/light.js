@@ -8,7 +8,7 @@ import { AD_BLND } from './monster_attack_types.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { heroSpecies } from './hero_species.js';
 import { beginBallAndChainRedraw, finishBallAndChainMove } from './ball.js';
-import { minimalObjectName } from './objnam.js';
+import { definiteObjectAction, minimalObjectName } from './objnam.js';
 import { game, requireGameLevel } from './gstate.js';
 import { requireInitializedHero } from './hero_types.js';
 import { monsterName, possessiveName } from './monster_name.js';
@@ -18,8 +18,8 @@ import { canSeeMonster, canSpotMonster, map_invisible, newsym, plineWithContinua
 import { initializePet } from './dog.js';
 import { makemonNear, mksobj } from './mklev.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
-import { monsterDigests, monsterIsWhirly, monsterTypeName, } from './monster_data.js';
-import { BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, GOLD_DRAGON_SCALE_MAIL, GOLD_DRAGON_SCALES, MAGIC_LAMP, OBJECT_NAMES, OIL_LAMP, POT_OIL, POT_WATER, TALLOW_CANDLE, WAX_CANDLE, } from './object_data.js';
+import { monsterDigests, monsterIsWhirly, } from './monster_data.js';
+import { BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, GOLD_DRAGON_SCALE_MAIL, GOLD_DRAGON_SCALES, MAGIC_LAMP, OIL_LAMP, POT_OIL, POT_WATER, TALLOW_CANDLE, WAX_CANDLE, } from './object_data.js';
 import { OBJECT_TIMER_KIND, scheduleObjectTimer, stopObjectTimer, } from './object_timers.js';
 import { roomForRoomno } from './room.js';
 import { rn2, rnd } from './rng.js';
@@ -94,12 +94,9 @@ export function equipmentLightDescription(object, state = game) {
     return ['strangely', 'dimly', 'brightly', 'brilliantly', 'radiantly'][objectLightRadius(object, state)] || 'strangely';
 }
 export function equipmentLightMessage(object, shining, state = game) {
-    const artifact = artifactById(object.oartifact);
-    const name = artifact?.name || `The ${OBJECT_NAMES[object.otyp]}`;
-    const plural = object.otyp === GOLD_DRAGON_SCALES;
     return shining
-        ? `${name} ${plural ? 'begin' : 'begins'} to shine ${equipmentLightDescription(object, state)}!`
-        : `${name} ${plural ? 'stop' : 'stops'} shining.`;
+        ? `${definiteObjectAction(object, 'begin', state)} to shine ${equipmentLightDescription(object, state)}!`
+        : `${definiteObjectAction(object, 'stop', state)} shining.`;
 }
 export async function lightWieldedArtifact(object, state = game, publish = plineWithContinuation) {
     if (!artifactEmitsLight(object) || object.lamplit)
@@ -112,11 +109,9 @@ function swallowedLightMessage() {
     const swallower = game.u?.ustuck;
     if (!swallower)
         return null;
-    const name = swallower.name
-        || monsterTypeName(swallower.mnum, !!swallower.female);
-    const subject = `The ${name}`;
+    const subject = monsterName(swallower, { capitalized: true });
     if (monsterDigests(swallower))
-        return `${subject}'s stomach is lit.`;
+        return `${possessiveName(subject)} stomach is lit.`;
     return monsterIsWhirly(swallower)
         ? `${subject} shines briefly.`
         : `${subject} glistens.`;

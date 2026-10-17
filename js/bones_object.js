@@ -2,13 +2,14 @@ import { artifactById, nameArtifact } from './artifacts.js';
 import { sanitizeBonesName } from './bones_name.js';
 import { ROOMOFFSET, SHOPBASE } from './const.js';
 import { game } from './gstate.js';
-import { AMULET_OF_YENDOR, BELL, BELL_OF_OPENING, BOOMERANG, BOW, CANDELABRUM_OF_INVOCATION, CORPSE, EGG, ELVEN_BOW, FAKE_AMULET_OF_YENDOR, SPE_NOVEL, OBJECT_NAMES, OBJECT_USES_KNOWN, ORCISH_BOW, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, STATUE, TIN, WAX_CANDLE, YUMI, } from './object_data.js';
+import { AMULET_OF_YENDOR, BELL, BELL_OF_OPENING, BOOMERANG, BOW, CANDELABRUM_OF_INVOCATION, CORPSE, EGG, ELVEN_BOW, FAKE_AMULET_OF_YENDOR, SPE_NOVEL, OBJECT_USES_KNOWN, ORCISH_BOW, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, STATUE, TIN, WAX_CANDLE, YUMI, } from './object_data.js';
 import { MONSTER_GENO, SPECIAL_PM } from './monster_data.js';
 import { OBJECT_TIMER_KIND } from './object_timers.js';
 import { curseObjectState } from './object_state.js';
 import { roomForRoomno } from './room.js';
 import { shopkeeperInOwnShop } from './shk.js';
 import { objectWeight } from './weight.js';
+import { definiteName, objectCombatName } from './objnam.js';
 const HANDED_WEAPONS = new Set([
     BOW, ELVEN_BOW, ORCISH_BOW, YUMI, BOOMERANG,
 ]);
@@ -164,9 +165,8 @@ export function finishGhostlyPickup(object, state) {
     object.ghostly = false;
     if (!HANDED_WEAPONS.has(object.otyp))
         return null;
-    const noun = String(object.name || OBJECT_NAMES[object.otyp] || 'object')
-        .replace(/^(?:an?|the)\s+/i, '');
+    const noun = definiteName(objectCombatName(object, { state, includeCorpseSpecies: false }), state);
     const hand = state?.u?.rightHanded === false ? 'left' : 'right';
-    return `You make adjustments to the ${noun} to suit your ${hand} hand.`;
+    return `You make adjustments to ${noun} to suit your ${hand} hand.`;
 }
 //# sourceMappingURL=bones_object.js.map

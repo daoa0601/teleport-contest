@@ -7,7 +7,7 @@ import { currentAttribute } from '../js/attrib.js';
 import { moveloop_core } from '../js/allmain.js';
 import { wearHeroAccessory } from '../js/accessory.js';
 import { continueCountedCommand, rhack } from '../js/cmd.js';
-import { _statusLine2, pline } from '../js/display.js';
+import { _statusLine2, clearMessageWindow, pline } from '../js/display.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { heroLiquidEffects } from '../js/hack.js';
 import { gainHeroNutrition, getHungry, resetHeroFaint, spendHeroNutrition, } from '../js/hunger.js';
@@ -222,7 +222,7 @@ void test('premature revival ends a faint without ending another involuntary del
     assert.equal(await resetHeroFaint(), false);
     assert.equal(game._helplessTurns, 12);
 });
-void test('saving and restoring preserves an actual faint and its hunger weakness', async () => {
+void test('restore keeps fainting hunger, deafness, and weakness but loses the recovery callback', async () => {
     freshObjectRoom({ hero: { uhunger: 51, uhs: HUNGRY } });
     requireFixtureGame(game);
     acknowledgeMessages();
@@ -234,12 +234,13 @@ void test('saving and restoring preserves an actual faint and its hunger weaknes
     assert.equal(restoreGame('SavedFaint', storage), true);
     assert.equal(game.u.uhs, FAINTED);
     assert.equal(game.u.deafTurns, 10);
-    assert.equal(game._helplessTurns, 10);
     assert.equal(currentAttribute(A_STR), strength);
     acknowledgeMessages();
-    assert.equal(await resetHeroFaint(), true);
-    assert.equal(game._helplessTurns, 0);
-    assert.equal(game.u.uhs, FAINTING);
+    clearMessageWindow();
+    assert.equal(await resetHeroFaint(), false);
+    assert.equal(game.u.uhs, FAINTED);
+    assert.equal(game.u.deafTurns, 10);
+    assert.equal(game._pending_message, '');
 });
 void test('falling into water revives a fainted hero before crawling out', async () => {
     const level = freshObjectRoom({ hero: { uhunger: 1, uhs: WEAK } });

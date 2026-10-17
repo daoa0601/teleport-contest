@@ -15,6 +15,7 @@ import { setPrimaryWeapon, setSecondaryWeapon, setQuiverObject } from './weapon_
 import { inventoryItemDescription, inventoryPrimaryHandDetail } from './invent.js';
 import { compactInventoryLetters, promptInventoryObject } from './inventory_prompt.js';
 import {
+    definiteObjectAction,
     definiteName, objectCombatName, objectNameIsPlural, observeObjectForNaming,
     ownedObjectAction, ownedObjectQuestion, ownedSimpleObjectName, simpleObjectName,
 } from './objnam.js';
@@ -35,8 +36,7 @@ import {
     AMULET_OF_YENDOR, BAG_OF_HOLDING, BELL_OF_OPENING, BOULDER,
     BAG_OF_TRICKS, BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, CHEST, CORPSE, GOLD_PIECE,
     ICE_BOX,
-    LARGE_BOX, LEASH, LOADSTONE, OBJECT_BIMANUAL, OBJECT_NAMES,
-    OIL_LAMP, OILSKIN_SACK, POT_OIL, SACK, SPE_BOOK_OF_THE_DEAD, STATUE,
+    LARGE_BOX, LEASH, LOADSTONE, OBJECT_BIMANUAL, OIL_LAMP, OILSKIN_SACK, POT_OIL, SACK, SPE_BOOK_OF_THE_DEAD, STATUE,
     TALLOW_CANDLE, WAN_CANCELLATION, WAX_CANDLE,
 } from './object_data.js';
 import { unlinkObject } from './object_location.js';
@@ -49,7 +49,6 @@ import {
 import { heroHasNoHands } from './polyself.js';
 import { isQuantumBox, observeQuantumCat } from './quantum_cat.js';
 import { d, rn2 } from './rng.js';
-
 import { paranoidYesNoQuit, promptChoice } from './query.js';
 import { touchPetrifyingCorpse } from './stoning.js';
 import { addPickedInventoryObject, pickupInventoryMessage } from './pickup.js';
@@ -72,7 +71,6 @@ import {
     MENU_ITEMFLAGS_SKIPINVERT, PARANOID_AUTOALL, PARANOID_CONFIRM,
     W_ACCESSORY, W_ARMOR,
 } from './const.js';
-
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { CountedSelection, MenuUnderlay, MultiSelectItem, MultiSelectSection, SelectableMenuItem } from './windows.js';
@@ -126,12 +124,6 @@ export function isContainer(object: Pick<GameObject, 'otyp'> | null | undefined)
 }
 
 const quantity = objectQuantity;
-
-function containerNoun(container: GameObject): string {
-    if ([SACK, OILSKIN_SACK, BAG_OF_HOLDING].includes(container.otyp))
-        return 'bag';
-    return OBJECT_NAMES[container.otyp] || container.name || 'container';
-}
 
 function objectDescription(object: GameObject, primaryHandDetail: ReturnType<typeof inventoryPrimaryHandDetail> = null): string {
     if (object.otyp === GOLD_PIECE) {
@@ -818,7 +810,7 @@ async function useContainerActions(container: GameObject, {
     container.lknown = true;
     if (container.olocked) {
         await plineWithContinuation(
-            `The ${containerNoun(container)} is locked.`,
+            `${definiteObjectAction(container, 'are')} locked.`,
         );
         if (held) await pline('You must put it down to unlock.');
         return { spentTime: false, container };

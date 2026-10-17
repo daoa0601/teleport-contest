@@ -69,3 +69,21 @@ void test('a monster stepping onto an unseen rust trap is drawn there before the
     assert.equal(trap.tseen, true);
     assert.equal(shownAtMessage, 'H');
 });
+
+// C trapeffect_rust_trap() names the struck part with mbodypart(mtmp, HEAD).
+const headCases: readonly (readonly [string, string])[] = [
+    ['lichen', 'cap area'], ['gray ooze', 'cerebral area'], ['giant', 'head'],
+];
+for (const [species, part] of headCases) {
+    void test(`a rust trap's head gush on a ${species} names its ${part}`, async () => {
+        const { monster, trap } = await freshMonsterTrapRoom(RUST_TRAP, { monster: { species } });
+        const messages: string[] = [];
+
+        const event = await beginMonsterRustTrap(monster, trap, game, { random: () => 0 });
+        await finishMonsterRustTrap(monster, event, game, {
+            publish: text => { messages.push(text); },
+        });
+
+        assert.equal(messages[0], `A gush of water hits ${monsterName(monster)} on the ${part}!`);
+    });
+}

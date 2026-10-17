@@ -9,40 +9,17 @@ import { delobj } from './object_delete.js';
 import { objectResistsDestruction } from './object_state.js';
 import { erodeObject } from './object_erosion.js';
 import { objectClassForType } from './object_knowledge.js';
-import { makePlural } from './object_grammar.js';
 import { destroyObjectFromMonsterInventory } from './monster_inventory.js';
-import { monsterTypeName } from './monster_data.js';
-import { BAG_OF_TRICKS, CHEST, ICE_BOX, LARGE_BOX, OBJECT_NAMES, POT_OIL, SCR_FIRE, SPE_BOOK_OF_THE_DEAD, SPE_FIREBALL, STATUE, } from './object_data.js';
+import { BAG_OF_TRICKS, CHEST, ICE_BOX, LARGE_BOX, POT_OIL, SCR_FIRE, SPE_BOOK_OF_THE_DEAD, SPE_FIREBALL, STATUE, } from './object_data.js';
 import { rnl, rn2 } from './rng.js';
 import { cansee, couldsee } from './vision.js';
+import { definiteName, objectCombatName, ownedObjectName } from './objnam.js';
 const POTION_CLASS = 8;
 const SCROLL_CLASS = 9;
 const SPBOOK_CLASS = 10;
 function objectClass(object) {
     return Number.isInteger(object?.oclass)
         ? object.oclass : objectClassForType(object?.otyp);
-}
-function objectName(object) {
-    if (object.otyp === SPE_BOOK_OF_THE_DEAD)
-        return 'Book of the Dead';
-    const baseName = object.name || OBJECT_NAMES[object.otyp] || 'object';
-    let name = baseName;
-    if (objectClass(object) === POTION_CLASS)
-        name = `potion of ${baseName}`;
-    else if (objectClass(object) === SCROLL_CLASS)
-        name = `scroll of ${baseName}`;
-    else if (objectClass(object) === SPBOOK_CLASS)
-        name = `spellbook of ${baseName}`;
-    return (object.quan ?? object.quantity ?? 1) > 1
-        ? makePlural(name) : name;
-}
-function monsterName(monster) {
-    return monster?.name
-        || monsterTypeName(monster?.mnum, !!monster?.female);
-}
-function objectSubject(object, carrier) {
-    const owner = carrier ? `The ${monsterName(carrier)}'s` : 'The';
-    return `${owner} ${objectName(object)}`;
 }
 async function removeObject(object, context) {
     const { carrier, state, random } = context;
@@ -83,7 +60,7 @@ async function burnContainer(object, context) {
         return false;
     }
     if (context.squareVisible) {
-        await context.publish(`${objectSubject(object, context.carrier)} catches fire and burns.`);
+        await context.publish(`${ownedObjectName(object, context.state)} catches fire and burns.`);
     }
     if ((object.contents || []).length) {
         if (context.squareVisible)
@@ -100,14 +77,16 @@ async function burnPaperOrPotion(object, context) {
             return false;
         if (object.otyp === SPE_BOOK_OF_THE_DEAD) {
             if (context.squareVisible)
-                await context.publish('Smoke rises from the Book of the Dead.');
+                await context.publish(`Smoke rises from ${definiteName(objectCombatName(object, {
+                    state: context.state, includeCorpseSpecies: false,
+                }), context.state)}.`);
             return false;
         }
         if (context.squareVisible) {
             const plural = (object.quan ?? object.quantity ?? 1) > 1;
             const verb = oclass === SCROLL_CLASS && plural
                 ? 'catch fire and burn' : 'catches fire and burns';
-            await context.publish(`${objectSubject(object, context.carrier)} ${verb}.`);
+            await context.publish(`${ownedObjectName(object, context.state)} ${verb}.`);
         }
     }
     else if (oclass === POTION_CLASS) {
@@ -116,7 +95,7 @@ async function burnPaperOrPotion(object, context) {
             let verb = plural ? 'boil and explode' : 'boils and explodes';
             if (object.otyp === POT_OIL)
                 verb = plural ? 'ignite and explode' : 'ignites and explodes';
-            await context.publish(`${objectSubject(object, context.carrier)} ${verb}.`);
+            await context.publish(`${ownedObjectName(object, context.state)} ${verb}.`);
         }
     }
     else {

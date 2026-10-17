@@ -5,8 +5,7 @@ import { game, requireLiveGame } from './gstate.js';
 import { loseHeroHp } from './hero_damage.js';
 import { useUpInventoryStack } from './hero_inventory.js';
 import { learnObjectType, observeObject } from './object_knowledge.js';
-import { objectName, observeObjectForNaming } from './objnam.js';
-import { makePlural } from './object_grammar.js';
+import { definiteObjectAction } from './objnam.js';
 import { d, rn2 } from './rng.js';
 import { heroIsBlind } from './senses.js';
 import { objectTypeKnown } from './shk.js';
@@ -25,10 +24,7 @@ export async function backfireWand(wand, { state = game } = {}) {
     requireLiveGame(state);
     requirePlayingGame(state);
     wand.in_use = true;
-    observeObjectForNaming(wand, { state });
-    const name = objectName(wand, state);
-    const quantity = wand.quan ?? wand.quantity ?? 1;
-    await plineWithContinuation(`The ${quantity === 1 ? name : makePlural(name)} suddenly explodes!`);
+    await plineWithContinuation(`${definiteObjectAction(wand, null, state)} suddenly explodes!`);
     const damage = d(wand.spe + 2, 6);
     const injury = state.u.halfPhysicalDamage ? Math.ceil(damage / 2) : damage;
     if (await loseHeroHp(injury, 'exploding wand', {

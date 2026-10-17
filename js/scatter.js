@@ -33,7 +33,7 @@ import { addShopObjectToBill, costlySpot } from './shk.js';
 import { roomsAt } from './room.js';
 import { MONSTER_FLAGS1, MONSTER_SIZE, MONSTER_NAME, monsterHatesSilver, monsterIsAmorphous, monsterIsNoncorporeal, monsterIsNonliving, monsterIsVampireShifter } from './monster_data.js';
 import { findMonsterArmorClass } from './monworn.js';
-import { ACID_VENOM, BOULDER, CREAM_PIE, EGG, GOLD_PIECE, OBJECT_MATERIAL, STATUE, } from './object_data.js';
+import { ACID_VENOM, BOULDER, CREAM_PIE, EGG, GOLD_PIECE, STATUE, } from './object_data.js';
 import { breakFloorObject, } from './object_breakage.js';
 import { splitObjectStack } from './object_stack.js';
 import { hitMonsterWithSupportedPotion } from './potion_hit.js';
@@ -365,7 +365,7 @@ async function prepareScatteredObject(object, x, y, state, options) {
     }
     if (options.mayDestroy) {
         const destructionRoll = options.random(10);
-        const fragile = OBJECT_MATERIAL[object.otyp] === GLASS
+        const fragile = objectMaterial(object.otyp) === GLASS
             || object.otyp === EGG;
         if (destructionRoll === 0 || fragile) {
             // Native scatter() uses breaks(), even during the hero's turn.

@@ -1,5 +1,6 @@
 // Ordinary humanoid kicks against monsters.
 // C refs: dokick.c:kick_monster() and kickdmg().
+import { monsterName } from './monster_name.js';
 import { makeMonsterFlee } from './monster_flee.js';
 import { updateMonsterRegions } from './regions.js';
 import { game, requirePlayingGame } from './gstate.js';
@@ -110,7 +111,7 @@ export async function levitatingKickMisses(monster, state = game) {
         return false;
     return true;
 }
-export async function tryKickEvasion(monster, { clumsy = false, martial = false, state = game, announce = async () => { }, nameMonster = () => 'The monster', } = {}) {
+export async function tryKickEvasion(monster, { clumsy = false, martial = false, state = game, announce = async () => { }, nameMonster = target => monsterName(target, { state, capitalized: true }), } = {}) {
     if (rn2(clumsy ? 3 : 4) !== 0)
         return false;
     const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
@@ -172,7 +173,7 @@ export async function rollKickDamage(prepared, { martial = false, state = game, 
         + (state.u?.udaminc ?? state.udaminc ?? 0);
     return { damage: Math.max(0, damage), trainSkill };
 }
-export async function tryKickReel(monster, dx, dy, { martial = false, state = game, announce = async () => { }, nameMonster = () => 'The monster', } = {}) {
+export async function tryKickReel(monster, dx, dy, { martial = false, state = game, announce = async () => { }, nameMonster = target => monsterName(target, { state, capitalized: true }), } = {}) {
     requirePlayingGame(state);
     if ((monster.mhp ?? 1) <= 0 || !martial
         || (MONSTER_SIZE[monster.mnum] ?? 2) >= 3)

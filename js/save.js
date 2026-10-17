@@ -15,7 +15,7 @@ import { restoreMonsterWormHeads, validMonsterWormBodies } from './monster_worm.
 import { resolveDungeonIdentities } from './dungeon.js';
 import { restoreMonsterInventoryOwnership } from './monster_inventory.js';
 import { purgeDeadMonsters } from './monster_level_departure.js';
-import { FULL_MOON, LUCKMAX, LUCKMIN } from './const.js';
+import { FULL_MOON, LUCKMAX, LUCKMIN, M_AP_NOTHING } from './const.js';
 import { vision_reset_new_level } from './vision.js';
 import { rewindEngravingsForSave, restoreEngravings } from './engrave.js';
 import { weaponNeedsBashingMessage } from './weapon_type.js';
@@ -24,6 +24,7 @@ import { forgetTempleEntry } from './priest.js';
 import { restoreElementalBubbles } from './elemental.js';
 import { restoreLevelRegions } from './regions.js';
 import { oinit } from './mklev.js';
+import { restoreScheduledLevelChange } from './level_change.js';
 const SAVE_PREFIX = 'teleport-save:';
 const ERROR_SAVE_PREFIX = 'teleport-error-save:';
 function saveKey(name, prefix = SAVE_PREFIX) {
@@ -186,10 +187,12 @@ export function restoreGame(name, storage = game.storage) {
         requireInitializedHero(snapshot.state.u);
         restoreSavedMonsters(snapshot.state);
         restorePersistentState(game, snapshot.state);
+        resetRestoredInstanceState();
         resolveDungeonIdentities(game);
         // C restnames() reloads objects[].oc_prob as saved; those gem
         // probabilities are always oinit()'s values for the saved u.uz.
         oinit();
+        restoreScheduledLevelChange();
         restoreElementalBubbles();
         // restgamestate() rebuilds the first-use reminder from the restored
         // weapon, treating applied tools conservatively as improvised weapons.
@@ -237,5 +240,63 @@ export function restoreGame(name, storage = game.storage) {
         console.error(`Unable to restore game: ${message}`);
         return false;
     }
+}
+// C starts a restored game in a new process. These values belong to decl.c
+// instance globals or function statics, rather than the saved context or hero.
+// Clear them here too when callers restore into the existing live state.
+function resetRestoredInstanceState() {
+    // restgamestate() rebuilds youmonst from the saved species; its disguise
+    // belongs to that unsaved monster structure, not the saved native u.
+    game.u.m_ap_type = M_AP_NOTHING;
+    game.u.mappearance = 0;
+    game._lastInvNr = 51; // decl.c starts the rotating letter order before 'a'.
+    game._heroActionSeq = game.moves * 8; // restgamestate() recalculates hero_seq.
+    game._encumbranceLevel = 0;
+    // Resuming skips the new-game branch of moveloop_preamble().
+    game._moveloopStarted = true;
+    delete game._lastPushedBoulder;
+    delete game._lastBoulderPushMove;
+    delete game._farMonsterNoise;
+    delete game._monsterNoiseTime;
+    delete game._prevDecorType;
+    delete game._bubbleTraversalUp;
+    delete game._rndmonstAlignment;
+    delete game._rndmonstAlignmentMove;
+    delete game._runtimeVersionInfoInitialized;
+    // A panic save can interrupt helplessness. Native multi, its completion
+    // message, and its callback are all unsaved, including prayer/digestion data.
+    delete game._helplessTurns;
+    delete game._helplessReason;
+    delete game._helplessDoneMessage;
+    delete game._helplessAfter;
+    delete game._digestedMonsterSpecies;
+    delete game._mimicMealMessage;
+    delete game._prayerAlignment;
+    delete game._prayerTrouble;
+    delete game._prayerOutcome;
+    delete game._queuedHelplessRecoveryMessage;
+    delete game._bonesSaved;
+    delete game._characterPickerUsed;
+    delete game._initialPwBonus;
+    delete game._lastDemigodAggravation;
+    delete game._lastDemigodNasty;
+    delete game._unresolvedDemigodIntervention;
+    delete game._preserveLeadingStyledBlanks;
+    delete game._restoredBones;
+    delete game._specialLevelPrototype;
+    delete game._startingEffectsApplied;
+    delete game._tutorialDeclined;
+    delete game.in_mklev;
+    delete game.in_mk_themerooms;
+    delete game.made_branch;
+    delete game.smeq;
+    delete game.splev_align;
+    delete game.targetX;
+    delete game.targetY;
+    delete game.vault_x;
+    delete game.vault_y;
+    delete game.were_changes;
+    // Instance options (symset, nethackrc, preferred_pet, tutorial_set_in_config)
+    // retain the values parsed for the current process before restore.
 }
 //# sourceMappingURL=save.js.map

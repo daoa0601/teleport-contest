@@ -28,6 +28,7 @@ import { fireDamageChain } from './fire_damage.js';
 import { cansee, vision_note_blocker_change } from './vision.js';
 import { refreshMovementProperties } from './properties.js';
 import { resetHeroTrap } from './terrain_movement.js';
+import { setHeroTrap } from './hero_traps.js';
 import { wakeMonster } from './monster_anger.js';
 import { monsterName } from './monster_name.js';
 import { convertSecretDoor } from './detect.js';
@@ -116,10 +117,7 @@ function heroIsAirborne() {
         || heroClingsToCeiling());
 }
 function trapHeroInChasm() {
-    game.u.utrap = rn2(6) + 2;
-    game.u.utraptype = TT_PIT;
-    refreshMovementProperties(game);
-    game.context.botl = true;
+    setHeroTrap(rn2(6) + 2, TT_PIT);
 }
 function physicalDamage(amount) {
     const halfDamage = game.u.halfPhysicalDamage;

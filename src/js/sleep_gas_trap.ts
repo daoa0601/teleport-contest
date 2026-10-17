@@ -6,7 +6,6 @@ import type { GameState } from './game_state.js';
 import type { Trap } from './map_types.js';
 import type { MessagePublisher } from './display.js';
 import { game } from './gstate.js';
-import { MONSTER_NAME } from './monster_data.js';
 import {
     monsterIsBreathless,
     monsterIsHelpless,
@@ -15,6 +14,7 @@ import {
 } from './monster_sleep.js';
 import { rnd } from './rng.js';
 import { monsterTrapVisibility, seeTrap } from './trap.js';
+import { monsterName } from './monster_name.js';
 
 export interface MonsterSleepGasTrapEvent {
     kind: 'sleep-gas';
@@ -29,11 +29,6 @@ interface FinishTrapOptions {
     state?: GameState;
     publish?: MessagePublisher;
     describeMonster?: (monster: Monster) => string;
-}
-
-function ordinaryMonsterSubject(monster: Monster) {
-    if (monster.name) return monster.name;
-    return `The ${MONSTER_NAME[monster.mnum] || 'monster'}`;
 }
 
 export function beginMonsterSleepGasTrap(
@@ -66,7 +61,7 @@ export function sleepGasTrapNeedsResume(
 export async function finishMonsterSleepGasTrap(
     monster: Monster,
     event: MonsterSleepGasTrapEvent | null,
-    { state = game, publish = async () => {}, describeMonster = ordinaryMonsterSubject }: FinishTrapOptions = {},
+    { state = game, publish = async () => {}, describeMonster = target => monsterName(target, { state, capitalized: true }) }: FinishTrapOptions = {},
 ) {
     if (!event || event.finished) return event;
     await publish(`${describeMonster(monster)} suddenly falls asleep!`);

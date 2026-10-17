@@ -77,3 +77,20 @@ void test('a falling rock passes harmlessly through a xorn', async () => {
     ));
     assert.match(messages[0] ?? '', /is not harmed/);
 });
+
+void test('a spent rock trap names the monster beneath it with mon_nam()', async () => {
+    const { monster, trap } = await freshMonsterTrapRoom(ROCKTRAP, {
+        gameplaySeed: 23n, monster: { species: 'grid bug' },
+    });
+    requirePlayingGame(game);
+    trap.once = true;
+    trap.tseen = true;
+    const messages: string[] = [];
+
+    const action = await triggerImmediateMonsterTrap(monster, game, { random: () => 0 });
+    await resumeDeferredMonsterTrap(action, game, {
+        publish: async message => { messages.push(message); },
+    });
+
+    assert.deepEqual(messages, ['A trap door above the grid bug opens, but nothing falls out!']);
+});

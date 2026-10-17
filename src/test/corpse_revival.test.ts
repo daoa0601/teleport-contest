@@ -412,7 +412,7 @@ void test('a troll corpse revives from a sack in the hero pack', async () => {
     assert.equal(event.kind, 'revived');
     assert.equal(
         event.messages.at(-1),
-        'A troll writhes out of a sack in your pack!',
+        'A troll writhes out of a bag in your pack!',
     );
     assert.equal(sack.contents.length, 0);
 });
@@ -434,6 +434,22 @@ void test('a monster drops a corpse when it revives from its pack', async () => 
         'Startled, the leocrotta drops a troll corpse as it revives!',
     );
     assert.equal(carrier.minvent?.includes(corpse), false);
+});
+
+void test('revival in an unseen carrier sack does not reveal the sack appearance', async () => {
+    freshState();
+    const carrier = await createMonsterAt(PM_LEOCROTTA, 12, 10);
+    carrier.minvis = 1;
+    const sack = await knownObject(SACK, { initialize: false, dknown: false });
+    await addObjectToMonsterInventory(carrier, sack, game);
+    const corpse = await trollCorpse();
+    await addCreatedObjectToContainer(sack, corpse, game);
+
+    const event = await reviveCorpseImmediately(corpse, game);
+
+    assert.ok(event?.monster, 'the corpse revives despite its unseen carrier');
+    assert.equal(event.messages.length, 0, 'the hidden sack produces no revival message');
+    assert.equal(sack.dknown, false, 'an unseen sack keeps its appearance unknown');
 });
 
 void test('a buried troll corpse claws out through a new pit', async () => {

@@ -1,5 +1,6 @@
 import { heroLocomotion } from './hero_locomotion.js';
 import { seeTrap } from './trap.js';
+import { deleteTrap } from './trap_lifecycle.js';
 import { maybeResetPick } from './lock_context.js';
 // C do.c:goto_level(): departure, destination creation or restoration, and arrival.
 import { rewindEngravingsForSave, restoreEngravings } from './engrave.js';
@@ -48,7 +49,7 @@ import { fixShopDamage } from './shop_damage.js';
 import { displayPreparedQuestArrival, prepareQuestArrival, prepareMainQuestPortalCall, onQuestStart, okToQuest, } from './quest.js';
 import { fumaroles } from './monmove.js';
 import { moveElementalBubbles } from './elemental.js';
-import { CORR, ROOM, DISMOUNT_FELL, LR_UPTELE, LR_DOWNTELE, RLOC_NOMSG, MAGIC_PORTAL, In_endgame, Is_airlevel, Is_waterlevel, Is_astralevel, ACH_ENDG, ACH_ASTR, Is_rogue_level, Is_knox_level, UTOTYPE_DEFERRED, } from './const.js';
+import { CORR, ROOM, DISMOUNT_FELL, LR_UPTELE, LR_DOWNTELE, RLOC_NOMSG, MAGIC_PORTAL, In_endgame, Is_airlevel, Is_waterlevel, Is_astralevel, ACH_ENDG, ACH_ASTR, Is_rogue_level, Is_knox_level, UTOTYPE_DEFERRED, UTOTYPE_ATSTAIRS, UTOTYPE_FALLING, UTOTYPE_PORTAL, UTOTYPE_RMPORTAL, } from './const.js';
 import { resurrectWizard } from './wizard.js';
 import { forgetTempleEntry } from './priest.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
@@ -58,7 +59,25 @@ export function scheduleLevelChange(args, changeLevel = gotoLevel, preMessage = 
     requirePlayingGame(game);
     game._scheduledLevelChange = { args, changeLevel, preMessage };
     game.u.utolev = { ...game.u.uz, ...args[0] };
-    game.u.utotype = UTOTYPE_DEFERRED;
+    const arrival = args[1]?.arrival;
+    game.u.utotype = UTOTYPE_DEFERRED
+        | (arrival === 'stairs' || arrival === 'downstairs' ? UTOTYPE_ATSTAIRS : 0)
+        | (arrival === 'falling' ? UTOTYPE_FALLING : 0)
+        | (arrival === 'portal' ? UTOTYPE_PORTAL : 0);
+}
+// C saves u.utolev/utotype, but neither callback pointers nor deferred
+// messages. Rebuild the pending arrival so the normal turn loop completes it.
+export function restoreScheduledLevelChange() {
+    delete game._scheduledLevelChange;
+    const destination = game.u.utolev;
+    const type = game.u.utotype ?? 0;
+    if (!(type & UTOTYPE_DEFERRED) || !destination)
+        return;
+    game._scheduledLevelChange = {
+        args: [{ ...destination }, { arrival: restoredLevelArrival(type) }],
+        changeLevel: gotoLevel,
+        preMessage: '',
+    };
 }
 export async function finishScheduledLevelChange() {
     const travel = game._scheduledLevelChange;
@@ -68,6 +87,7 @@ export async function finishScheduledLevelChange() {
     const destination = game.u.utolev;
     if (!destination)
         throw new Error('Scheduled level travel has no destination');
+    const removePortal = !!((game.u.utotype ?? 0) & UTOTYPE_RMPORTAL);
     delete game._scheduledLevelChange;
     // C do.c:deferred_goto() preserves the topline when travel stays here.
     if (game.u.uz.dnum !== destination.dnum
@@ -75,8 +95,22 @@ export async function finishScheduledLevelChange() {
         if (travel.preMessage)
             await plineWithContinuation(travel.preMessage);
         await travel.changeLevel(...travel.args);
+        if (removePortal) {
+            const portal = game.level.traps.find(trap => trap.tx === game.u.ux && trap.ty === game.u.uy);
+            if (portal) {
+                deleteTrap(portal, game);
+                newsym(game.u.ux, game.u.uy);
+            }
+        }
     }
     game.u.utotype = 0;
+}
+function restoredLevelArrival(type) {
+    if (type & UTOTYPE_PORTAL)
+        return 'portal';
+    if (type & UTOTYPE_FALLING)
+        return 'falling';
+    return type & UTOTYPE_ATSTAIRS ? 'stairs' : 'random';
 }
 export async function gotoLevel(targetDepth, { arrival = 'random', ladder = false, postMessage = '', } = {}) {
     requirePlayingGame(game);

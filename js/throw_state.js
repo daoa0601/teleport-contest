@@ -6,7 +6,7 @@ import { plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
 import { heroIsPolymorphed } from './polyself.js';
 import { rn2 } from './rng.js';
-import { objectName } from './objnam.js';
+import { definiteObjectAction, objectName } from './objnam.js';
 import { calcCapacity, objectWeight, SLT_ENCUMBER, } from './weight.js';
 // throwit() evaluates this gate before its stamina branch. A real slip
 // rewrites the persistent direction even while engulfed, where every result
@@ -17,10 +17,10 @@ export async function applyThrowSlip({ state = game, object, launcher = false, t
         || !(u.dx || u.dy) || rn2(7) !== 0)
         return false;
     if (launcher) {
-        await publish(`The ${objectName(object, state)} misfires!`);
+        await publish(`${definiteObjectAction(object, 'misfire', state)}!`);
     }
     else if (object.greased || throwingWeapon) {
-        await publish(`The ${objectName(object, state)} slips as you throw it!`);
+        await publish(`${definiteObjectAction(object, 'slip', state)} as you throw it!`);
     }
     else {
         return false;

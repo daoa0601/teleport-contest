@@ -23,8 +23,7 @@ import { wakeMonstersNear } from './monster_wake.js';
 import {
     deleteObject, deleteObjectContents,
 } from './object_delete.js';
-import { OBJECT_NAMES } from './object_data.js';
-import { objectName as formattedObjectName } from './objnam.js';
+import { definiteName, definiteObjectAction, objectCombatName } from './objnam.js';
 import { objectResistsDestruction } from './object_state.js';
 import { poisonHero } from './poison.js';
 import { createPoisonGasCloud } from './regions.js';
@@ -69,10 +68,6 @@ const GAS_COLORS = [
     'bright magenta', 'bright cyan', 'white',
 ];
 
-function objectName(object: GameObject | null | undefined): string {
-    return object?.name || OBJECT_NAMES[object?.otyp ?? -1] || 'container';
-}
-
 function containerLocation(container: GameObject, state: GameState): Position {
     if (container.where === 'floor')
         return { x: container.ox, y: container.oy };
@@ -110,9 +105,8 @@ async function explodeContainer(
     const spot = costlySpot(location.x, location.y, state);
     const insider = !!spot && !!insideShopRoomAt(state, state.u.ux, state.u.uy)
         && state.u.ushops?.[0] === spot.roomno;
-    const name = formattedObjectName(container, state);
-    await publish(`The ${name} explodes!`);
-    const killer = `exploding ${name}`;
+    await publish(`${definiteObjectAction(container, 'explode', state)}!`);
+    const killer = `exploding ${objectCombatName(container, { state, includeCorpseSpecies: false })}`;
     // Charge while the objects and their bills still exist, before damage
     // can end the game and settle the hero's debt through inheritance.
     let loss = spot ? await stolenValue(container, location.x, location.y,
@@ -154,7 +148,7 @@ async function releaseNoxiousGas(
     container: GameObject, location: Position, state: GameState, publish: MessagePublisher, random: RandomBelow, rollDice: RollDice,
 ): Promise<ChestTrapResult> {
     await publish(
-        `A cloud of noxious gas billows from the ${objectName(container)}.`,
+        `A cloud of noxious gas billows from ${definiteName(objectCombatName(container, { state, includeCorpseSpecies: false }), state)}.`,
     );
     if (random(3) !== 0) {
         const poison = await poisonHero({
@@ -236,7 +230,7 @@ async function confuseHero(container: GameObject, state: GameState, publish: Mes
         ? BLIND_GAS[random(BLIND_GAS.length)]
         : GAS_COLORS[random(GAS_COLORS.length)];
     await publish(
-        `A cloud of ${description} gas billows from the ${objectName(container)}.`,
+        `A cloud of ${description} gas billows from ${definiteName(objectCombatName(container, { state, includeCorpseSpecies: false }), state)}.`,
     );
     const alreadyStunned = state.u?.stunned
         || (state.u?.stunnedTurns ?? 0) > 0;

@@ -8,12 +8,16 @@ import { isPoolAt } from './terrain_properties.js';
 import { remove_object } from './floor_object.js';
 import { game } from './gstate.js';
 import { findMonsterNearPosition, } from './mklev.js';
-import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_MOVE, MONSTER_SYMBOL, monsterTypeName, } from './monster_data.js';
-import { BOULDER, FIGURINE, OBJECT_NAMES } from './object_data.js';
+import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_MOVE, MONSTER_SYMBOL, } from './monster_data.js';
+import { BOULDER, FIGURINE } from './object_data.js';
 import { unlinkMonsterObject } from './monster_inventory.js';
 import { OBJECT_TIMER_KIND, scheduleObjectTimer, } from './object_timers.js';
 import { rnd } from './rng.js';
 import { cansee } from './vision.js';
+import { monsterName } from './monster_name.js';
+import { objectCombatName } from './objnam.js';
+import { withIndefiniteArticle } from './object_grammar.js';
+import { objectDescription } from './object_description.js';
 const M1_FLY = 0x00000001;
 const M1_AMORPHOUS = 0x00000004;
 const M1_WALLWALK = 0x00000008;
@@ -25,9 +29,6 @@ const S_EYE = 5;
 const S_MIMIC = 13;
 const S_LIGHT = 25;
 const S_EEL = 57;
-function articleFor(noun) {
-    return /^[aeiou]/i.test(noun) ? 'an' : 'a';
-}
 function figurineLocomotion(mnum, fallback = 'drop') {
     const flags = MONSTER_FLAGS1[mnum] ?? 0;
     const symbol = MONSTER_SYMBOL[mnum];
@@ -121,27 +122,10 @@ function possessive(noun) {
 function monsterCarrierDescription(monster, state) {
     if (canSeeMonster(monster)
         && (!monster.wormno || cansee(monster.mx, monster.my))) {
-        const given = monster.name || monster.givenName;
-        const name = given || monsterTypeName(monster.mnum, !!monster.female);
-        const owner = given ? name : `${articleFor(name)} ${name}`;
+        const owner = monsterName(monster, { state, article: 'a' });
         return `${possessive(owner)} pack`;
     }
     return isPoolAt(monster.mx, monster.my, state) ? 'empty water' : 'thin air';
-}
-function objectDescription(object) {
-    const name = object?.oextra?.oname || object?.oname
-        || OBJECT_NAMES[object?.otyp] || object?.name || 'object';
-    return `${articleFor(name)} ${name}`;
-}
-function familiarDescription(monster) {
-    if (monster.name)
-        return monster.name;
-    const name = monsterTypeName(monster.mnum, !!monster.female);
-    return `${articleFor(name)} ${name}`;
-}
-function figurineDescription(figurine) {
-    const given = figurine.oextra?.oname || figurine.oname;
-    return given ? `A figurine named ${given}` : 'A figurine';
 }
 function familiarPresentation(monster, figurine, location, overdue, state) {
     const blind = !!state.blind || (state.u?.blindTurns ?? 0) > 0;
@@ -155,7 +139,7 @@ function familiarPresentation(monster, figurine, location, overdue, state) {
         const shelter = state.level?.objects?.[monster.mx]?.[monster.my]?.[0];
         if ((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_CONCEAL
             && shelter) {
-            ending = ` and ${figurineLocomotion(monster.mnum, 'crawl')} under ${objectDescription(shelter)}`;
+            ending = ` and ${figurineLocomotion(monster.mnum, 'crawl')} under ${objectDescription(shelter, { state })}`;
         }
         else if (MONSTER_SYMBOL[monster.mnum] === S_MIMIC
             || MONSTER_SYMBOL[monster.mnum] === S_EEL) {
@@ -166,7 +150,7 @@ function familiarPresentation(monster, figurine, location, overdue, state) {
         }
     }
     const movement = figurineLocomotion(monster.mnum);
-    const familiar = familiarDescription(monster);
+    const familiar = withIndefiniteArticle(monsterName(monster, { state, article: 'none', exact: true }));
     const visible = cansee(location.x, location.y);
     if (location.carrier === 'inventory') {
         return blind || suppressSight
@@ -177,7 +161,7 @@ function familiarPresentation(monster, figurine, location, overdue, state) {
         if (!visible || overdue)
             return null;
         return suppressSight
-            ? `${figurineDescription(figurine)} suddenly vanishes!`
+            ? `${withIndefiniteArticle(objectCombatName(figurine, { state, includeCorpseSpecies: false }))} suddenly vanishes!`
             : formatSeenMessage(`a figurine transform into ${familiar}${ending}!`, state);
     }
     if (!visible || overdue || suppressSight)

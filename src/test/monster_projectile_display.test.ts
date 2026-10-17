@@ -232,3 +232,28 @@ for (const returns of [false, true]) {
         }
     });
 }
+
+// C return_from_mtoss(): a snapping tether runs tmp_at(DISP_END, 0) before
+// "You hear a loud snap!", so a --More-- on that message shows no cord.
+void test('a snapping aklys tether is erased before the snap is heard', async () => {
+    freshObjectRoom({ heroX: 10, heroY: 12 });
+    requirePlayingGame(game);
+    game.context.mon_moving = true;
+    const source = await createMonsterAt('orc', 8, 10, NO_MINVENT | MM_NOGRP);
+    const aklys = await equipMonsterObject(source, await knownObject(AKLYS), W_WEP);
+    await redrawMap();
+    const cellsAtSnap: string[] = [];
+
+    await throwMonsterProjectile(source, aklys, {
+        dx: 1, dy: 0, range: 3,
+        random: limit => limit === 100 ? 0 : Math.min(1, limit - 1),
+        publish: async text => {
+            if (text.includes('loud snap')) {
+                await flush_screen(1);
+                for (const x of [9, 10, 11]) cellsAtSnap.push(screenCell(x, 10).ch);
+            }
+        },
+    });
+
+    assert.deepEqual(cellsAtSnap, ['.', '.', '.']);
+});

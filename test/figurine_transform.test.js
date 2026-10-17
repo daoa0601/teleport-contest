@@ -244,7 +244,7 @@ void test('a named floating-eye figurine keeps its name and floats from the pack
     assert.ok(event);
     assert.ok(event.monster);
     assert.equal(event.monster.name, 'Iris');
-    assert.equal(event.message, 'You see Iris float out of your pack!');
+    assert.equal(event.message, 'You see an Iris float out of your pack!');
     finishFigurineTimer(event, game);
 });
 void test('zero disposition initializes a complete non-domestic figurine pet', async () => {
