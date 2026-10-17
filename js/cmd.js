@@ -321,6 +321,7 @@ const PM_WATER_NYMPH = 68;
 const PM_WATER_DEMON = 289;
 const PM_WATER_MOCCASIN = 216;
 const M2_ROCKTHROW = 0x08000000;
+const M2_PNAME = 0x00080000;
 const M1_HUMANOID = 0x00020000;
 const M1_TUNNEL = 0x20;
 const M1_NEEDPICK = 0x40;
@@ -7236,15 +7237,11 @@ async function domoveCore(dx, dy, explicitAttempt) {
                 if (flight.heroDied)
                     return true;
             }
-            const tameName = monster.name || (monster.mnum === 16
-                ? 'your little dog' : monster.mnum === 32 ? 'your kitten'
-                : monster.mnum === 100 ? 'your saddled pony' : 'your pet');
-            const speciesName = monsterInstanceDisplayName(monster);
-            const subject = tame ? tameName
-                : monster.name ? speciesName : `the ${speciesName}`;
             if (blocked || inShop) {
-                const displayName = subject.charAt(0).toUpperCase()
-                    + subject.slice(1);
+                // C uhitm.c do_attack(): y_monnam(), capitalized.
+                const displayName = monsterName(monster, {
+                    state: game, article: 'your', capitalized: true,
+                });
                 await plineWithContinuation(`You stop.  ${displayName} is in the way!`);
                 stopRun(game);
                 return true;
@@ -7308,10 +7305,19 @@ async function domoveCore(dx, dy, explicitAttempt) {
             // announcement can flush the map or pause for acknowledgment.
             newsym(newx, newy);
             newsym(oldx, oldy);
-            const swapName = tame ? tameName
-                : monster.name ? `peaceful ${speciesName}`
-                    : `the peaceful ${speciesName}`;
-            await plineWithContinuation(`You swap places with ${swapName}.`);
+            // C hack.c domove_swap_with_pet(): x_monnam() with "your" for
+            // pets, "the" for unnamed common species, and a "peaceful"
+            // adjective for non-pets.
+            const givenName = !!MGIVENNAME(monster);
+            const swapName = monsterName(monster, {
+                state: game,
+                article: monster.mtame ? 'your'
+                    : !givenName && !((MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_PNAME)
+                        ? 'the' : 'none',
+                adjective: monster.mpeaceful && !monster.mtame ? 'peaceful' : '',
+                suppressSaddle: givenName,
+            });
+            await plineWithContinuation(`You ${monster.mpeaceful ? 'swap places with' : 'frighten'} ${swapName}.`);
             return finishMovedHero({
                 oldx, oldy, newx, newy, loc, explicitAttempt,
                 ballChainMove,
