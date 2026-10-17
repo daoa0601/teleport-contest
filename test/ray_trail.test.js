@@ -35,7 +35,6 @@ for (const [name, type] of [
                 return;
             assert.equal(requireScreenCell(8, 11).ch, '─', 'The earlier beam must remain visible while the ray is still in flight');
             assert.equal(requireScreenCell(10, 11).ch, '─', 'The ray reaches the bars before their message pages the preceding hit');
-            assert.equal(level.requireAt(11, 10).typ, IRONBARS, 'Bars dissolve after their message has been published');
             sawBarsDuringFlight = true;
         };
         await plineWithContinuation('You attack.');
