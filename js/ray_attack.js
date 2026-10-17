@@ -25,6 +25,7 @@ import { finishHeroDeath } from './end.js';
 import { finishMonsterKilled } from './monster_death.js';
 import { wakeMonster } from './monster_anger.js';
 import { monsterName, possessiveName } from './monster_name.js';
+import { distantObjectName, objectName } from './objnam.js';
 import { monstersForgetHeroResistance, monstersObserveHeroResistance } from './monster_perception.js';
 import { hitHeroWithRay } from './hero_breath.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
@@ -35,7 +36,7 @@ import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_SYMBOL, monsterIsNo
 import { monsterWieldedWeapon } from './monster_weapon.js';
 import { monsterHasAcidResistance, monsterHasColdResistance, monsterHasDisintegrationResistance, monsterHasFireResistance, monsterHasPoisonResistance, monsterHasShockResistance, monsterResistanceBits, monsterResistsEffect, } from './monster_resistance.js';
 import { AD_ACID, AD_COLD, AD_DISN, AD_DRST, AD_ELEC, AD_FIRE, AD_MAGM, AD_RBRE, AD_SLEE, } from './monster_attack_types.js';
-import { BLACK_DRAGON_SCALE_MAIL, BLACK_DRAGON_SCALES, OBJECT_NAMES, FIRE_HORN, FROST_HORN, SPE_MAGIC_MISSILE, SPE_FINGER_OF_DEATH, WAN_MAGIC_MISSILE, WAN_LIGHTNING, } from './object_data.js';
+import { BLACK_DRAGON_SCALE_MAIL, BLACK_DRAGON_SCALES, FIRE_HORN, FROST_HORN, SPE_MAGIC_MISSILE, SPE_FINGER_OF_DEATH, WAN_MAGIC_MISSILE, WAN_LIGHTNING, } from './object_data.js';
 import { objectResistsDestruction } from './object_state.js';
 import { d, rn2, rnd } from './rng.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
@@ -505,11 +506,8 @@ async function finishMonsterRayHit(monster, hit, { state, displayName, finishMon
     }
     if (hit.armorToDisintegrate) {
         if (visible) {
-            const armor = hit.armorToDisintegrate.name
-                || hit.armorToDisintegrate.description
-                || OBJECT_NAMES[hit.armorToDisintegrate.otyp]
-                || 'armor';
-            await publish(`${name}'s ${armor} is disintegrated!`);
+            const armor = distantObjectName(hit.armorToDisintegrate, object => objectName(object, state), state);
+            await publish(`${possessiveName(name)} ${armor} is disintegrated!`);
         }
         await destroyObjectFromMonsterInventory(monster, hit.armorToDisintegrate, state);
         return wakeMonster(monster, { attacked: source.startsWith('hero-') });

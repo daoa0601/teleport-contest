@@ -9,7 +9,8 @@ import { initializeMonsterArmor } from '../js/monworn.js';
 import { monsterHasAcidResistance, monsterHasPoisonResistance } from '../js/monster_resistance.js';
 import { adjustMonsterSpeed } from '../js/monster_speed.js';
 import { setMonsterPermanentInvisibility } from '../js/monster_invisibility.js';
-import { ALCHEMY_SMOCK, MUMMY_WRAPPING, OBJECT_NAMES, SPEED_BOOTS } from '../js/object_data.js';
+import { ALCHEMY_SMOCK, ELVEN_SHIELD, MUMMY_WRAPPING, OBJECT_NAMES, SPEED_BOOTS } from '../js/object_data.js';
+import { castNativeRay } from '../js/ray_attack.js';
 import { hitMonsterWithRay } from '../js/zap.js';
 import { knownObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
@@ -122,3 +123,25 @@ void test('a fire ray announces a seen monster\'s smouldering cloak before rolli
     assert.deepEqual(events.slice(announced - 1, announced + 2), ['rn2(5)', events[announced], 'rn2(3)']);
     assert.equal(wrapping.oeroded, 1);
 });
+
+// C zhitm()/buzz(): a disintegration ray that destroys armor names it with
+// distant_name(otmp, xname), so an unexamined shield seen from afar is a "shield".
+for (const [x, expected] of [[14, 'shield'], [11, 'elven shield']] as const) {
+    void test(`a disintegration blast names a ${x === 14 ? 'distant' : 'nearby'} monster's unseen elven shield as "${expected}"`, async () => {
+        freshObjectRoom();
+        requirePlayingGame(game);
+        const soldier = await createMonsterAt('soldier', x, 10, NO_MINVENT);
+        const shield = await addObjectToMonsterInventory(soldier, await knownObject(ELVEN_SHIELD));
+        assert.ok(shield);
+        shield.dknown = false;
+        await initializeMonsterArmor(soldier);
+        const messages: string[] = [];
+
+        await castNativeRay(24, 4, 'l', {
+            publish: async message => { messages.push(message); },
+            random: () => 1, rollDice: () => 4, rollOne: () => 1,
+        });
+
+        assert.ok(messages.includes(`The soldier's ${expected} is disintegrated!`), messages.join(' | '));
+    });
+}
