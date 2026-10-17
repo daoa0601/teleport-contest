@@ -17,12 +17,13 @@ import { map_background, newsym, plineWithContinuation } from './display.js';
 import { meldLandingGlob } from './glob.js';
 import { breakObjectAtLocation } from './object_breakage.js';
 import { deleteObject } from './object_delete.js';
-import { BOULDER, OBJECT_NAMES, POT_OIL } from './object_data.js';
-import { makePlural } from './object_grammar.js';
+import { BOULDER, POT_OIL } from './object_data.js';
+import {
+    definiteName, definiteObjectAction, objectCombatName, objectNameIsPlural,
+} from './objnam.js';
 import { shipObject } from './object_migration.js';
 import { objectResistsDestruction } from './object_state.js';
 import { applyBoulderPitEffects } from './pit_fill.js';
-import { potionImpactObjectName } from './potion_hit.js';
 import { rnl, rn2 } from './rng.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
 import { destroyLavaFloorObjects, waterDamageObject } from './trap.js';
@@ -62,14 +63,6 @@ async function publishAll(messages: readonly string[], publish: MessagePublisher
     for (const message of messages) await publish(message);
 }
 
-function potionLandingSubject(object: GameObject, state: GameState): string {
-    const quantity = object.quan ?? object.quantity ?? 1;
-    const name = potionImpactObjectName(object, state);
-    return quantity === 1
-        ? `The ${name}`
-        : `The ${quantity} ${makePlural(name)}`;
-}
-
 async function breakPotionOnHotGround(
     object: GameObject, x: number, y: number, state: GameState,
     publish: MessagePublisher, random: typeof rn2, luckRoll: typeof rnl,
@@ -77,10 +70,8 @@ async function breakPotionOnHotGround(
     const visible = squareIsVisible(state, x, y);
     const quantity = object.quan ?? object.quantity ?? 1;
     if (visible) {
-        const singular = quantity === 1;
-        await publish(`${potionLandingSubject(object, state)} ${
-            singular ? 'heats' : 'heat'
-        } up as ${singular ? 'it hits' : 'they hit'} the hot ground.`);
+        await publish(`${definiteObjectAction(object, 'heat', state)} up as ${
+            objectNameIsPlural(object, state) ? 'they hit' : 'it hits'} the hot ground.`);
     }
 
     let survivalChance = object.blessed ? 70 : 50;
@@ -108,14 +99,6 @@ async function breakPotionOnHotGround(
     return true;
 }
 
-function fallenObjectSubject(object: GameObject): string {
-    const quantity = object.quan ?? object.quantity ?? 1;
-    const noun = object.oextra?.oname || object.oname
-        || object.name || OBJECT_NAMES[object.otyp] || 'object';
-    return quantity === 1 ? `The ${noun}`
-        : `The ${quantity} ${makePlural(noun)}`;
-}
-
 async function handleHeroShaftEdge(
     object: GameObject, trap: Trap | undefined, x: number, y: number,
     state: GameState, publish: MessagePublisher, random: typeof rn2,
@@ -123,14 +106,13 @@ async function handleHeroShaftEdge(
     if (!trap || state.u.ux !== x || state.u.uy !== y || !trap.tseen) return null;
     if (is_pit(trap.ttyp)
         && !(state.u?.utrap && state.u.utraptype === TT_PIT)) {
-        const noun = object.oextra?.oname || object.oname
-            || object.name || OBJECT_NAMES[object.otyp] || 'object';
-        if (heroIsBlind(state) && !heroIsDeaf(state))
-            await publish(`You hear the ${noun} tumble downwards.`);
-        else {
-            const verb = (object.quan ?? object.quantity ?? 1) === 1
-                ? 'tumbles' : 'tumble';
-            await publish(`${fallenObjectSubject(object)} ${verb} into ${
+        if (heroIsBlind(state) && !heroIsDeaf(state)) {
+            const name = definiteName(objectCombatName(object, {
+                state, includeCorpseSpecies: false,
+            }), state);
+            await publish(`You hear ${name} tumble downwards.`);
+        } else {
+            await publish(`${definiteObjectAction(object, 'tumble', state)} into ${
                 trap.madeby_u ? 'your' : 'the'} pit.`);
         }
         return { finished: false, object };

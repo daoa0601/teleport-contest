@@ -680,6 +680,15 @@ export function ownedObjectAction(object, verb, state = game, { capitalized = tr
     const action = objectNameIsPlural(object, state) ? verb : verbForSubject(null, verb);
     return `${subject} ${action}`;
 }
+// C objnam.c:Tobjnam(): The(xname(obj)) with the verb agreeing via otense().
+// xname() calls a corpse just "corpse"; cxname() adds the species.
+export function definiteObjectAction(object, verb, state = game) {
+    const name = definiteName(objectCombatName(object, { state, includeCorpseSpecies: false }), state);
+    const subject = `${name.charAt(0).toUpperCase()}${name.slice(1)}`;
+    if (!verb)
+        return subject;
+    return `${subject} ${objectNameIsPlural(object, state) ? verb : verbForSubject(null, verb)}`;
+}
 const CLASS_PRESENTATION = {
     [WEAPON_CLASS]: 'Weapons',
     [ARMOR_CLASS]: 'Armor',
