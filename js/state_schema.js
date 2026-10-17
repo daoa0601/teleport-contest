@@ -48,6 +48,7 @@ const transientFields = {
     _domoveSucceeded: true,
     _wishHistory: true,
     _pickWarningMove: true,
+    _pickupEncumbrance: true,
     _canMakeBones: true,
     _wailMessageMove: true,
     bhitpos: true,

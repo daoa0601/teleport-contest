@@ -163,6 +163,49 @@ void test('a level teleport trap step gives destination monsters their response 
     assert.ok(game.u.uhp < 100, 'the giant attacks after the timed step');
     assert.equal(game.moves, turn + 1, 'the step consumes one world turn');
 });
+void test('choosing the current level after seduced boots removal stops later monsters', async () => {
+    const { source } = freshConnectedLevels();
+    requirePlayingGame(game);
+    game.flags.safe_wait = false;
+    game._moveloopStarted = true;
+    game.u.umovement = 12;
+    game.u.uhp = game.u.uhpmax = 100;
+    grantIntrinsicProperty('teleportControl', 'outside');
+    const giant = await createMonsterAt('hill giant', 10, 11, NO_MINVENT);
+    const nymph = await createMonsterAt('wood nymph', 11, 10, NO_MINVENT);
+    for (const monster of [giant, nymph]) {
+        monster.mpeaceful = 0;
+        monster.msleeping = 0;
+        monster.m_lev = 30;
+        monster.movement = 12;
+    }
+    const boots = await addInventoryObject(LEVITATION_BOOTS);
+    wearHeroArmor(boots);
+    const trap = addTrap(source, LEVEL_TELEP, 10, 10);
+    const input = resetInputState();
+    input.feed('.');
+    initRng(1n);
+    await moveloop_core();
+    let choseLevel = false;
+    input.display = {
+        async readKey() {
+            const topline = game.nhDisplay?.grid[0]?.map(cell => cell.ch).join('') ?? '';
+            if (/To what level do you want to teleport\?/.test(topline)) {
+                choseLevel = true;
+                input.feed('\r');
+                return '1'.charCodeAt(0);
+            }
+            if (/--More--/.test(topline))
+                return 32;
+            return 27;
+        },
+    };
+    await moveloop_core();
+    assert.equal(choseLevel, true, 'removing the boots must trigger controlled level teleport');
+    assert.equal(source.traps.includes(trap), false);
+    assert.equal(game.level, source);
+    assert.equal(game.u.uhp, 100, 'the later giant must not attack after travel is scheduled');
+});
 void test('fuzzer level teleport to the current level preserves trap feedback', async () => {
     const { source } = freshConnectedLevels({ destinationDepth: 1 });
     requirePlayingGame(game);

@@ -1,3 +1,4 @@
+import { heroCouldMoveOntoBoulder, pushBouldersAt } from './boulder_push.js';
 import { useMagicMarker } from './write.js';
 import { formatFeltMessage, formatSeenMessage, publishHeardMessage } from './hero_speech.js';
 import { ingSuffix } from './hacklib.js';
@@ -264,9 +265,7 @@ import {
 import { landObjectOnAltar } from './altar_object.js';
 import { landFloorObject } from './floor_effects.js';
 import { shipObject } from './object_migration.js';
-import {
-    moveObject, placeCreatedObject,
-} from './floor_object.js';
+import { placeCreatedObject } from './floor_object.js';
 import { makemonNear, mkgold, mksobj, rndClass } from './mklev.js';
 import {
     level_difficulty, recordMappedOverviewState, specialDisplayName, specialPrototypeAt, specialLevelAt,
@@ -402,7 +401,7 @@ import {
 } from './object_knowledge.js';
 import {
     encumbranceLabel, encumbranceMessage, exceedsActionCapacity, nearCapacity,
-    invWeight, OVERLOADED, SLT_ENCUMBER,
+    OVERLOADED, SLT_ENCUMBER,
 } from './weight.js';
 import { makeWish } from './wish.js';
 import { dopray } from './pray.js';
@@ -507,7 +506,7 @@ import {
     ANTI_MAGIC, G_GONE, ER_NOTHING, ER_DAMAGED, M_AP_MONSTER, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE,
     STRAT_WAITMASK, MM_NOEXCLAM, MM_NOMSG, SHOPBASE, ROOMOFFSET, F_LOOTED, In_endgame,
     Is_airlevel, Is_waterlevel, Is_rogue_level, In_hell, W_ARMOR, W_ACCESSORY, W_SADDLE,
-    WT_SQUEEZABLE_INV, P_BOW, P_SLING, PARANOID_HIT, POLY_CONTROLLED, STR19, isok,
+    P_BOW, P_SLING, PARANOID_HIT, POLY_CONTROLLED, STR19, isok,
     ACCESSIBLE, AIR, DIGTYP_UNDIGGABLE, DRAWBRIDGE_UP,
 } from './const.js';
 
@@ -547,23 +546,7 @@ function configuredCommand(key: number): CommandBinding {
     };
 }
 
-// C ref: hack.c:could_move_onto_boulder().  Travel planning is allowed to
-// route through an ordinary boulder, then actual run-mode movement consults
-// this capability before deciding whether to stop or enter/push the square.
-export function heroCouldMoveOntoBoulder(sx: number, sy: number, g: GameState = game): boolean {
-    const mnum = g.u.umonnum;
-    if (heroPassesWalls(g)) return true;
-    if (g.u?.usteed) return false;
-
-    const flags2 = mnum === undefined ? 0 : MONSTER_FLAGS2[mnum] ?? 0;
-    if (flags2 & M2_ROCKTHROW) {
-        return !g.u?.dx || !g.u?.dy
-            || !(IS_OBSTRUCTED(requireGameLevel(g).at(g.u.ux, sy)?.typ ?? STONE)
-                && IS_OBSTRUCTED(requireGameLevel(g).at(sx, g.u.uy)?.typ ?? STONE));
-    }
-    if (heroIsVerySmall(g)) return true;
-    return invWeight(g) <= -WT_SQUEEZABLE_INV;
-}
+export { heroCouldMoveOntoBoulder } from './boulder_push.js';
 
 async function rejectTightHeroDiagonal(dx: number, dy: number): Promise<boolean> {
     if (!dx || !dy
@@ -6846,73 +6829,6 @@ async function openLockedDoor(x: number, y: number): Promise<boolean> {
     return Boolean(game.context.move);
 }
 
-// C ref: hack.c:dopush().  Move a floor boulder before committing the hero
-// into its old square; the first push owns Strength exercise and its message.
-async function pushBoulder(boulder: GameObject, x: number, y: number, dx: number, dy: number): Promise<boolean> {
-    const glyph = glyphAt(x, y);
-    if (heroIsBlind(game) && !(glyph?.kind === 'object' && glyph.otyp === BOULDER)) {
-        await pline('That feels like a boulder.');
-        map_object(boulder, true);
-        endVoluntaryMultiTurn(game);
-        return false;
-    }
-    const targetX = x + dx;
-    const targetY = y + dy;
-    const targetObjects = game.level?.objects?.[targetX]?.[targetY] || [];
-    const targetMonster = game.level?.monsters?.find(monster => monsterHasMapPosition(monster, game) &&
-        monster.mx === targetX && monster.my === targetY
-        && (monster.mhp ?? 1) > 0);
-    const physicalMonster = targetMonster
-        && MONSTER_SYMBOL[targetMonster.mnum] !== 54;
-    if (physicalMonster) {
-        if (canSpotMonster(targetMonster)) {
-            const name = MONSTER_NAME[targetMonster.mnum] || 'monster';
-            await plineWithContinuation(
-                `There's ${withIndefiniteArticle(name)} on the other side.`,
-            );
-        } else {
-            await publishHeardMessage('a monster behind the boulder.', plineWithContinuation);
-            map_invisible(targetX, targetY);
-        }
-        if (game.flags?.verbose !== false) {
-            await plineWithContinuation(
-                "Perhaps that's why you cannot move it.",
-            );
-        }
-        return false;
-    }
-    if (blocksMove(targetX, targetY)
-        || targetObjects.some(object => object.otyp === BOULDER)) {
-        await pline('You try to move the boulder, but in vain.');
-        return false;
-    }
-
-    const sourceMove = game.moves ?? 0;
-    const lastPushMove = game._lastBoulderPushMove;
-    const giveMessage = game._lastPushedBoulder !== boulder
-        || lastPushMove === undefined || !Number.isInteger(lastPushMove)
-        || sourceMove > lastPushMove + 2
-        || sourceMove < lastPushMove;
-    game._lastPushedBoulder = boulder;
-    game._lastBoulderPushMove = sourceMove;
-    if (giveMessage) await pline('With great effort you move the boulder.');
-
-    await exerciseAttribute(A_STR, true);
-    // C dopush() invalidates an invisible-monster memory glyph at the
-    // destination before movobj().  Otherwise newsym() must continue to
-    // honor `I` and cannot reveal the boulder which now occupies the square.
-    unmap_invisible(targetX, targetY, false);
-    await moveObject(boulder, targetX, targetY, game);
-    if (heroIsBlind(game)) {
-        feel_location(targetX, targetY);
-        feel_location(x, y);
-    } else {
-        newsym(x, y);
-    }
-    return true;
-}
-
-
 // C ref: hack.c:domove_fight_empty(). Forced attacks at the map edge and
 // ordinary moves into remembered invisible-monster knowledge converge here.
 // Both spend the action without entering terrain movement; only the
@@ -7583,12 +7499,12 @@ async function domoveCore(dx: number, dy: number, explicitAttempt: boolean): Pro
         if (tunnels && !game.level.flags.sokoban_rules) {
             if (await continueChewingTerrain(newx, newy, game)) return false;
         } else {
-            if (!await pushBoulder(boulder, newx, newy, dx, dy)) {
-                game.context.move = 0;
-                return false;
+            game.context.move = 0;
+            const pushed = await pushBouldersAt(newx, newy, dx, dy);
+            if (game.program_state.gameover) return true;
+            if (!pushed) {
+                return Boolean(game.context.move);
             }
-            // C moverock_core() stops running for a push; still_chewing() does not.
-            if (game._runState) stopRun(game);
         }
     }
 
