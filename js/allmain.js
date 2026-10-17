@@ -68,6 +68,7 @@ import { observeBucForNaming } from './object_knowledge.js';
 import { loseHeroExperience } from './exper.js';
 import { makeMonsterFlee } from './monster_flee.js';
 import { stopHeroOccupation } from './occupation.js';
+import { interruptOccupationForMonster, monsterSightingBeforeAction } from './monster_threat.js';
 import { fixShopDamage } from './shop_damage.js';
 import { removeWornHeroItem } from './hero_equipment.js';
 import { isWeldedPrimary } from './weapon_slots.js';
@@ -110,7 +111,7 @@ import { makePlural, verbForSubject, withIndefiniteArticle } from './object_gram
 import { monsterLocomotion } from './monster_locomotion.js';
 import { monsterFliesOrFloats } from './terrain_properties.js';
 import { observeDistantObjectForNaming, observeObjectForNaming, ownedObjectName, } from './objnam.js';
-import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, BOLT_LIM, COLNO, ROWNO, DOOR, D_CLOSED, D_LOCKED, HOLE, M_SEEN_ELEC, M_SEEN_FIRE, M_SEEN_MAGR, M_SEEN_REFL, STONE, ZAP_POS, M_ATTK_AGR_DIED, M_ATTK_AGR_DONE, W_ARMG, UNENCUMBERED, MOD_ENCUMBER, HVY_ENCUMBER, EXT_ENCUMBER, W_ACCESSORY, W_WEAPONS, ismnum, Upolyd, Is_airlevel, Is_waterlevel, LUCKMIN, LUCKMAX, TT_BURIEDBALL, TT_LAVA, KILLED_BY_AN, } from './const.js';
+import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, COLNO, ROWNO, DOOR, D_CLOSED, D_LOCKED, HOLE, M_SEEN_ELEC, M_SEEN_FIRE, M_SEEN_MAGR, M_SEEN_REFL, STONE, ZAP_POS, M_ATTK_AGR_DIED, M_ATTK_AGR_DONE, W_ARMG, UNENCUMBERED, MOD_ENCUMBER, HVY_ENCUMBER, EXT_ENCUMBER, W_ACCESSORY, W_WEAPONS, ismnum, Upolyd, Is_airlevel, Is_waterlevel, LUCKMIN, LUCKMAX, TT_BURIEDBALL, TT_LAVA, KILLED_BY_AN, } from './const.js';
 import { uInitMisc, makedog, uInitInventoryAttrs, finishStartingDiscoveries, } from './u_init.js';
 import { makeDeaf } from './hero_hearing.js';
 import { heroIsBlind, heroIsDeaf, syncBlindness } from './senses.js';
@@ -3370,9 +3371,6 @@ async function executeMonsterTurns() {
         if (game.context.bypasses)
             clearBypasses(game);
         const actorWasOpticallySeen = canSeeMonster(actor);
-        const actorWasSpotted = canSpotMonster(actor);
-        const actorWasCouldSee = couldsee(actor.mx, actor.my);
-        const actorOldDistance = dist2(actor.mx, actor.my, game.u?.ux ?? actor.mx, game.u?.uy ?? actor.my);
         const liquid = await resolveMonsterLiquid(actor, game, {
             announce: plineWithContinuation,
             finishDeath: finishMonsterLiquidDeath,
@@ -3380,6 +3378,7 @@ async function executeMonsterTurns() {
         if (liquid?.dead)
             continue;
         const equipment = await reassessMonsterArmor(actor, game, { publish: plineWithContinuation });
+        const sightingBefore = monsterSightingBeforeAction(actor, game);
         game._deferVisibleMonsterContact = true;
         let action;
         try {
@@ -3405,23 +3404,10 @@ async function executeMonsterTurns() {
         const offensive = movement.heroAttackSequence?.offensive;
         const attackReturnedDeath = movement.heroAttackResult === 1
             || (offensive?.status === 'completed' && offensive.result.nativeResult === 1);
-        // C monmove.c:dochugw() interrupts an occupation when one actor has
-        // newly become a visible threat within bolt range.  This happens
-        // after dochug() has completed the actor action, before the ordinary
+        // C monmove.c:dochugw() checks the actor after dochug(), before the
         // adjacent monster_nearby() check at the occupation boundary.
-        const threatDistance = (BOLT_LIM + 1) * (BOLT_LIM + 1);
-        if (game._occupation && !attackReturnedDeath
-            && (monster.mhp ?? 1) > 0
-            && !monster.mpeaceful
-            && monster.mcanmove !== 0
-            && !(monster.msleeping || (monster.mfrozen ?? 0) > 0)
-            && dist2(monster.mx, monster.my, game.u?.ux ?? monster.mx, game.u?.uy ?? monster.my) <= threatDistance
-            && (!actorWasSpotted || !actorWasCouldSee
-                || actorOldDistance > threatDistance)
-            && canSpotMonster(monster)
-            && couldsee(monster.mx, monster.my)) {
-            await stopHeroOccupation(game);
-        }
+        if (!attackReturnedDeath && (monster.mhp ?? 1) > 0)
+            await interruptOccupationForMonster(monster, game, sightingBefore);
         if (!movement?.moved)
             continue;
     }

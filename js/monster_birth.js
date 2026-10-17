@@ -1,18 +1,15 @@
 // Runtime completion of a monster birth.
 // C refs: makemon.c:makemon(), pager.c:mhidden_description(), dochugw(FALSE).
 import { BOLT_LIM, M_AP_FURNITURE, M_AP_MONSTER, M_AP_NOTHING, M_AP_OBJECT, M_AP_TYPE, MM_NOMSG, MM_NOEXCLAM, } from './const.js';
-import { canSeeMonster, canSenseMonster, canSpotMonster, glyphAt, newsym, plineWithContinuation, } from './display.js';
+import { canSeeMonster, canSenseMonster, glyphAt, newsym, plineWithContinuation, } from './display.js';
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import { objectAtMapDescription } from './map_object_description.js';
-import { monsterHasNoAttacks } from './monster_data.js';
-import { monsterIsScaredAt } from './monster_fear.js';
+import { interruptOccupationForMonster } from './monster_threat.js';
 import { monsterName } from './monster_name.js';
 import { verbForSubject, withIndefiniteArticle } from './object_grammar.js';
-import { stopHeroOccupation } from './occupation.js';
 import { visibleRegionAt } from './regions.js';
-import { heroIsHallucinating } from './senses.js';
-import { couldsee, monsterEmitsLight } from './vision.js';
+import { monsterEmitsLight } from './vision.js';
 export async function finishMonsterBirth(monster, flags = 0, state = game) {
     requireLiveGame(state);
     if (monsterEmitsLight(monster.mnum))
@@ -44,7 +41,7 @@ export async function finishMonsterBirth(monster, flags = 0, state = game) {
             });
         }
     }
-    await interruptOccupationForBirth(monster, state);
+    await interruptOccupationForMonster(monster, state);
     return monster;
 }
 async function disguisedBirthName(monster, state) {
@@ -76,18 +73,5 @@ export async function objectAtMonsterDescription(monster, state = game, { glyph 
         ? level.at(monster.mx, monster.my)?.remembered_glyph ?? null
         : glyphAt(monster.mx, monster.my, state);
     return objectAtMapDescription(monster.mx, monster.my, glyph, state, 'hidden');
-}
-async function interruptOccupationForBirth(monster, state) {
-    if (!state._occupation)
-        return;
-    if (!heroIsHallucinating(state)
-        && (monster.mpeaceful || monsterHasNoAttacks(monster.mnum)))
-        return;
-    const distance = (monster.mx - state.u.ux) ** 2 + (monster.my - state.u.uy) ** 2;
-    if (distance > (BOLT_LIM + 1) ** 2 || !canSpotMonster(monster)
-        || !couldsee(monster.mx, monster.my) || !monster.mcanmove
-        || monsterIsScaredAt(monster, state, state.u.ux, state.u.uy))
-        return;
-    await stopHeroOccupation(state);
 }
 //# sourceMappingURL=monster_birth.js.map

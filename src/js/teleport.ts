@@ -30,7 +30,7 @@ import {
     MIGR_PORTAL, MIGR_RANDOM, Upolyd, ZAP_POS, is_hole, is_pit, isok,
 } from './const.js';
 import {
-    MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL, monsterHasNoAttacks,
+    MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL,
 } from './monster_data.js';
 import {
     AMULET_OF_YENDOR, LEASH, RIN_TELEPORTATION, RIN_TELEPORT_CONTROL,
@@ -51,12 +51,11 @@ import { makeAngryShopkeeper } from './shop_damage.js';
 import { findObjectOwner, onBillEntry, stolenValue } from './shop_loss.js';
 import { releaseHeroFromMonster } from './hero_expulsion.js';
 import { maybeUnhideAt } from './monster_hiding.js';
-import { monsterIsScaredAt } from './monster_fear.js';
+import { interruptOccupationForMonster } from './monster_threat.js';
 import { monsterName } from './monster_name.js';
 import { publishMonsterYelp } from './monster_anger.js';
 import { setMonsterApparentHeroPosition } from './monster_perception.js';
 import { tryMonsterTrapEscape } from './monster_trap_escape.js';
-import { stopHeroOccupation } from './occupation.js';
 import { couldsee } from './vision.js';
 import {
     findNearbyMonsterPosition, heroTeleportRestricted, goodPosition, monsterTeleportRestricted,
@@ -65,7 +64,7 @@ import { nearCapacity, SLT_ENCUMBER } from './weight.js';
 import { distmin } from './hacklib.js';
 import { heroIsUnaware, heroIsUnconscious } from './hero_sleep.js';
 import { promptYesNo } from './query.js';
-import { heroIsBlind, heroIsHallucinating, setHeroBlindnessTurns } from './senses.js';
+import { heroIsBlind, setHeroBlindnessTurns } from './senses.js';
 import { buriedBallToPunishment } from './buried_object.js';
 import { placeHeroOnLevel } from './hero_location.js';
 import { migrateMonsterOffLevel, migrateMonsterToLevel, sendMonsterToLimbo } from './monster_migration.js';
@@ -704,7 +703,8 @@ export async function relocateMonsterTo(monster: Monster, x: number, y: number, 
                 await stolenValue(object, oldx, oldy, peaceful, { silent: false, state });
         }
     }
-    await stopOccupationForRelocatedMonster(monster, state);
+    // C dochugw(FALSE): new arrivals have no previous-sighting exemption.
+    await interruptOccupationForMonster(monster, state);
     if (!gameWasOver && state.program_state.gameover) return { ...relocation, died: true };
     if (monster.mtrapped && !monster.wormno) {
         await tryMonsterTrapEscape(monster, state, {
@@ -820,18 +820,6 @@ export async function teleportHeroToRandomPet(state = game) {
     const movement = await moveHeroByTeleport(x, y, state);
     await finishTeleportArrival(movement);
     return true;
-}
-
-// C dochugw(FALSE): new arrivals have no previous-sighting exemption.
-async function stopOccupationForRelocatedMonster(monster: Monster, state: GameState) {
-    if (!state._occupation) return;
-    if (!heroIsHallucinating(state)
-        && (monster.mpeaceful || monsterHasNoAttacks(monster.mnum))) return;
-    const distance = (monster.mx - state.u.ux) ** 2 + (monster.my - state.u.uy) ** 2;
-    if (distance > (BOLT_LIM + 1) ** 2 || !canSpotMonster(monster)
-        || !couldsee(monster.mx, monster.my) || !monster.mcanmove
-        || monsterIsScaredAt(monster, state, state.u.ux, state.u.uy)) return;
-    await stopHeroOccupation(state);
 }
 
 export async function clearFixedTeleportDestination(
