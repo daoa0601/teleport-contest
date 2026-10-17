@@ -15,6 +15,15 @@ void test('Escape cancels a choice-menu count before it can cancel the choice', 
     assert.equal(result, 'a'.charCodeAt(0));
 });
 
+void test('a choice menu ignores keys that are neither selectors nor menu controls', async () => {
+    freshPlayableRoom();
+    resetInputState().feed('?ra');
+
+    const result = await showChoiceWindow({ title: 'Choose a route', entries: [{ key: 'a', text: 'north' }] });
+
+    assert.equal(result, 'a'.charCodeAt(0));
+});
+
 void test('a choice menu searches descriptions through the native menu owner', async () => {
     freshPlayableRoom();
     resetInputState().feed(':portal\nb');
