@@ -9,6 +9,7 @@ import { isReviver, isRider, zombieForm } from './corpse_species.js';
 import { canSeeMonster, canSpotMonster, newsym, plineWithContinuation } from './display.js';
 import { makePetWary } from './dog.js';
 import { game, requireGameLevel } from './gstate.js';
+import { capitalizedDefiniteName } from './ray_hit_message.js';
 import { updateHeroHunger } from './hunger.js';
 import { stopHeroOccupation } from './occupation.js';
 import { deleteObject, delobjCore } from './object_delete.js';
@@ -105,6 +106,10 @@ function zombieCanDig(x, y, state) {
     const location = state.level?.at(x, y);
     return !!location && [ROOM, CORR, GRAVE].includes(location.typ);
 }
+// C hacklib.c:upstart().
+function upstart(text) {
+    return text.charAt(0).toUpperCase() + text.slice(1);
+}
 function corpseName(corpse) {
     return corpseObjectName(corpse, { singular: true,
         adjective: corpse.oeaten ? 'bite-covered' : '' });
@@ -119,8 +124,9 @@ function revivalMessage(corpse, monster, location, originalWhere, wasWielded, st
         if (!cansee(location.x, location.y)
             && !canSeeMonster(monster))
             return null;
+        // C do.c:revive_corpse() uses The(cname), which keeps one article.
         if (!canSeeMonster(monster))
-            return `The ${corpseName(corpse)} disappears!`;
+            return `${capitalizedDefiniteName(corpseName(corpse), state)} disappears!`;
         const effects = new Map([
             [311, ' in a whirl of spectral skulls'],
             [312, ' in a churning pillar of flies'],
@@ -237,8 +243,9 @@ async function createRevivedMonster(corpse, location, state) {
             && (!targetLocation || !IS_POOL(targetLocation.typ)))) {
         return {
             monster: null,
+            // C zap.c:revive() names it with CXN_PFX_THE and no adjective.
             twitchMessage: cansee(x, y)
-                ? `The ${corpseName(corpse)} twitches feebly.` : null,
+                ? `${upstart(corpseObjectName(corpse, { definite: true }))} twitches feebly.` : null,
         };
     }
     const replacement = revivalReplacement(originalMnum, corpse);
