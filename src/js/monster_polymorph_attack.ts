@@ -16,6 +16,7 @@ import type { MonsterDeathOptions } from './monster_death.js';
 import type { MonsterFormChange, MonsterFormChangeOptions } from './monster_polymorph.js';
 import type { MonsterSelfTouchResult } from './monster_stoning.js';
 import type { Monster } from './monster_types.js';
+import { monsterName } from './monster_name.js';
 
 type WakeResult = void | { heroDied?: boolean };
 
@@ -79,12 +80,6 @@ function markNewLongWorm(monster: Monster, state: GameState): void {
 }
 
 
-function monsterSubject(monster: Monster): string {
-    if (monster.name) return monster.name;
-    const name = MONSTER_NAME[monster.mnum] || 'monster';
-    return `${name.charAt(0).toUpperCase()}${name.slice(1)}`;
-}
-
 export async function polymorphMonsterFromMagic(monster: Monster, {
     state = game,
     targetSpotted = false,
@@ -123,7 +118,7 @@ export async function polymorphMonsterFromMagic(monster: Monster, {
         systemShock = !naturalShapechanger && rn2(25) === 0;
         if (systemShock) {
             if (targetSpotted)
-                await publish(`${monsterSubject(monster)} shudders!`);
+                await publish(`${monsterName(monster, { state, capitalized: true })} shudders!`);
             if (!finishDeath)
                 throw new Error('polymorph fatality owner unavailable');
             const death = await finishDeath(monster, { noCorpse: true });

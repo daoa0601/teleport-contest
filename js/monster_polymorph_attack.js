@@ -8,6 +8,7 @@ import { changeMonsterForm } from './monster_polymorph.js';
 import { monsterResistsEffect } from './monster_resistance.js';
 import { rn2 } from './rng.js';
 import { plineWithContinuation } from './display.js';
+import { monsterName } from './monster_name.js';
 const POTION_ATTACK_LEVEL = 6;
 const PM_LONG_WORM = MONSTER_NAME.indexOf('long worm');
 function survived(monster) {
@@ -27,12 +28,6 @@ function markNewLongWorm(monster, state) {
         monster.mextra = {};
     monster.mextra.mcorpsenm = PM_LONG_WORM;
     state.context.bypasses = true;
-}
-function monsterSubject(monster) {
-    if (monster.name)
-        return monster.name;
-    const name = MONSTER_NAME[monster.mnum] || 'monster';
-    return `${name.charAt(0).toUpperCase()}${name.slice(1)}`;
 }
 export async function polymorphMonsterFromMagic(monster, { state = game, targetSpotted = false, wakeMonster, publish = plineWithContinuation, showShield, finishDeath, attackLevel = POTION_ATTACK_LEVEL, polyspot = false, } = {}) {
     if (monster.mnum === PM_LONG_WORM
@@ -62,7 +57,7 @@ export async function polymorphMonsterFromMagic(monster, { state = game, targetS
         systemShock = !naturalShapechanger && rn2(25) === 0;
         if (systemShock) {
             if (targetSpotted)
-                await publish(`${monsterSubject(monster)} shudders!`);
+                await publish(`${monsterName(monster, { state, capitalized: true })} shudders!`);
             if (!finishDeath)
                 throw new Error('polymorph fatality owner unavailable');
             const death = await finishDeath(monster, { noCorpse: true });

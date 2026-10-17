@@ -6,7 +6,7 @@ import { game } from './gstate.js';
 import { monsterSelfTouch } from './monster_stoning.js';
 import { finishEnvironmentalMonsterDeath, finishMonsterKilled } from './monster_death.js';
 import { AD_PHYS } from './monster_attack_types.js';
-import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL, } from './monster_data.js';
+import { MONSTER_FLAGS1, MONSTER_SYMBOL, } from './monster_data.js';
 import { monsterWearsIronShoes } from './monworn.js';
 import { monsterName } from './monster_name.js';
 import { rnd } from './rng.js';
@@ -19,9 +19,6 @@ const PM_PIT_FIEND = 300;
 const PM_PIT_VIPER = 218;
 const S_EYE = 5;
 const S_LIGHT = 25;
-function ordinaryMonsterSubject(monster) {
-    return `The ${monster.name || MONSTER_NAME[monster.mnum] || 'monster'}`;
-}
 function monsterIsUngrounded(monster, state) {
     const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
     const symbol = MONSTER_SYMBOL[monster.mnum];
@@ -56,7 +53,7 @@ export function beginMonsterPitTrap(monster, trap, state = game, { forced = fals
         dragged: ungrounded && falls,
     };
 }
-export async function finishMonsterPitTrap(monster, event, { publish = plineWithContinuation, random, rollOne = rnd, describeMonster = ordinaryMonsterSubject, state = game, } = {}) {
+export async function finishMonsterPitTrap(monster, event, { publish = plineWithContinuation, random, rollOne = rnd, state = game, describeMonster = target => monsterName(target, { state, capitalized: true }), } = {}) {
     if (!event || event.finished)
         return event;
     if (!event.falls) {

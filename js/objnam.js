@@ -471,6 +471,25 @@ export function simpleObjectTypeName(otyp, state = game) {
         return gemPresentationName(otyp, actual, known ? null : appearance);
     return name;
 }
+// C obj_typename(): discoveries-style type name, call name, and appearance.
+export function objectTypeName(otyp, state = game) {
+    const oclass = objectClassForType(otyp);
+    let name = simpleObjectTypeName(otyp, state);
+    if (oclass === COIN_CLASS)
+        return name;
+    const callName = state._objectCallNames?.[otyp];
+    if (callName)
+        name += ` called ${callName}`;
+    const ordinaryName = OBJECT_NAMES[otyp];
+    const appearance = state.urole?.key === 'samurai'
+        && ['wooden harp', 'magic harp'].includes(ordinaryName ?? '')
+        ? 'koto' : state.objectDescriptions?.[otyp] ?? OBJECT_DESCRIPTIONS[otyp];
+    const classHasAppearance = [AMULET_CLASS, POTION_CLASS, SCROLL_CLASS,
+        WAND_CLASS, SPBOOK_CLASS, RING_CLASS].includes(oclass);
+    if (appearance && (classHasAppearance || objectTypeKnown({ otyp, oclass }, state)))
+        name += ` (${appearance})`;
+    return name;
+}
 // C minimal_xname() builds a bare object so personal names, call names,
 // quantity, and statue identity cannot reveal more than the known type.
 export function minimalObjectName(object, state = game) {
@@ -657,6 +676,24 @@ export function objectNameIsPlural(object, state = game) {
     return (object.quan ?? object.quantity ?? 1) !== 1
         || (object.oartifact === requiredArtifact('The Eyes of the Overworld', state).id
             && !!state._artifactDiscoveries?.includes(object.oartifact));
+}
+// C aobjnam(): cxname with a stack count and an optional conjugated verb.
+export function objectAction(object, verb, state = game) {
+    const name = objectCombatName(object, { state });
+    const quantity = object.quan ?? object.quantity ?? 1;
+    const subject = quantity === 1 ? name : `${quantity} ${name}`;
+    return objectActionText(object, subject, verb, state);
+}
+// C Tobjnam(): The(xname), without a count or corpse species.
+export function definiteObjectAction(object, verb, state = game) {
+    const name = definiteName(objectCombatName(object, { state, includeCorpseSpecies: false }), state);
+    const subject = name.charAt(0).toUpperCase() + name.slice(1);
+    return objectActionText(object, subject, verb, state);
+}
+function objectActionText(object, subject, verb, state) {
+    if (!verb)
+        return subject;
+    return `${subject} ${objectNameIsPlural(object, state) ? verb : verbForSubject(null, verb)}`;
 }
 export function ownedObjectAction(object, verb, state = game, { capitalized = true } = {}) {
     if (object.otyp !== CORPSE)

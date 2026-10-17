@@ -8,9 +8,10 @@ import { BOULDER } from './object_data.js';
 import { fillPitWithBoulderAt } from './pit_fill.js';
 import { rn2 } from './rng.js';
 import { monsterTrapVisibility, seeTrap } from './trap.js';
+import { monsterName } from './monster_name.js';
 const M1_METALLIVORE = 0x80000000;
 const MZ_HUGE = 4;
-export async function tryMonsterTrapEscape(monster, state = game, { random = rn2, publish = plineWithContinuation, describeMonster = target => `The ${target.name || MONSTER_NAME[target.mnum]}`, } = {}) {
+export async function tryMonsterTrapEscape(monster, state = game, { random = rn2, publish = plineWithContinuation, describeMonster = target => monsterName(target, { state, capitalized: true }), } = {}) {
     const { mx: x, my: y } = monster;
     const level = requireGameLevel(state);
     const trap = level.traps.find(candidate => candidate.tx === x && candidate.ty === y);

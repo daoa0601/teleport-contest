@@ -486,6 +486,24 @@ export function simpleObjectTypeName(otyp: number, state: GameState = game): str
     return name;
 }
 
+// C obj_typename(): discoveries-style type name, call name, and appearance.
+export function objectTypeName(otyp: number, state: GameState = game): string {
+    const oclass = objectClassForType(otyp);
+    let name = simpleObjectTypeName(otyp, state);
+    if (oclass === COIN_CLASS) return name;
+    const callName = state._objectCallNames?.[otyp];
+    if (callName) name += ` called ${callName}`;
+    const ordinaryName = OBJECT_NAMES[otyp];
+    const appearance = state.urole?.key === 'samurai'
+        && ['wooden harp', 'magic harp'].includes(ordinaryName ?? '')
+        ? 'koto' : state.objectDescriptions?.[otyp] ?? OBJECT_DESCRIPTIONS[otyp];
+    const classHasAppearance = [AMULET_CLASS, POTION_CLASS, SCROLL_CLASS,
+        WAND_CLASS, SPBOOK_CLASS, RING_CLASS].includes(oclass);
+    if (appearance && (classHasAppearance || objectTypeKnown({ otyp, oclass }, state)))
+        name += ` (${appearance})`;
+    return name;
+}
+
 // C minimal_xname() builds a bare object so personal names, call names,
 // quantity, and statue identity cannot reveal more than the known type.
 export function minimalObjectName(object: ObjectNameView, state: GameState = game): string {
@@ -686,6 +704,26 @@ export function objectNameIsPlural(object: ObjectNameView, state: GameState = ga
     return (object.quan ?? object.quantity ?? 1) !== 1
         || (object.oartifact === requiredArtifact('The Eyes of the Overworld', state).id
             && !!state._artifactDiscoveries?.includes(object.oartifact));
+}
+
+// C aobjnam(): cxname with a stack count and an optional conjugated verb.
+export function objectAction(object: GameObject, verb: string | null, state: GameState = game): string {
+    const name = objectCombatName(object, { state });
+    const quantity = object.quan ?? object.quantity ?? 1;
+    const subject = quantity === 1 ? name : `${quantity} ${name}`;
+    return objectActionText(object, subject, verb, state);
+}
+
+// C Tobjnam(): The(xname), without a count or corpse species.
+export function definiteObjectAction(object: GameObject, verb: string | null, state: GameState = game): string {
+    const name = definiteName(objectCombatName(object, { state, includeCorpseSpecies: false }), state);
+    const subject = name.charAt(0).toUpperCase() + name.slice(1);
+    return objectActionText(object, subject, verb, state);
+}
+
+function objectActionText(object: GameObject, subject: string, verb: string | null, state: GameState): string {
+    if (!verb) return subject;
+    return `${subject} ${objectNameIsPlural(object, state) ? verb : verbForSubject(null, verb)}`;
 }
 
 export function ownedObjectAction(

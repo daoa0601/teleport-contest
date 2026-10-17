@@ -9,17 +9,13 @@ import { dist2 } from './hacklib.js';
 import { hurtleHero } from './hero_hurtle.js';
 import { hitFloorWithObject } from './object_drop.js';
 import { tossObjectUp } from './toss_up.js';
-import { monsterTypeName } from './monster_data.js';
+import { monsterName } from './monster_name.js';
 import { hitMonsterWithSupportedPotion, potionImpactObjectName, SUPPORTED_MONSTER_POTION_TYPES, } from './potion_hit.js';
 import { rn2, rnd } from './rng.js';
 import { detachThrownUnit, finishHeroThrownObjectLanding, flyHeroThrownObject, heroThrowTrajectory, } from './thrown_object.js';
 import { applyLowStaminaThrow, applyThrowSlip } from './throw_state.js';
 import { cansee } from './vision.js';
 const POTION_CLASS = 8;
-function monsterName(monster) {
-    return monster.name
-        || `the ${monsterTypeName(monster.mnum, !!monster.female)}`;
-}
 function canResolveMapPotionThrow({ state, item, objectClass, selectedQuantity, dx, dy, }) {
     if (state.u?.uswallow || objectClass !== POTION_CLASS
         || !SUPPORTED_MONSTER_POTION_TYPES.has(item?.otyp)
@@ -125,7 +121,7 @@ export async function resolveMapPotionThrow({ state = game, item, objectClass, s
             }
             const visible = cansee(flight.contact.mx, flight.contact.my);
             await publish(visible
-                ? `The ${potionImpactObjectName(thrown, state)} misses ${monsterName(flight.contact)}.`
+                ? `The ${potionImpactObjectName(thrown, state)} misses ${monsterName(flight.contact, { state })}.`
                 : `The ${potionImpactObjectName(thrown, state)} misses.`);
             if (rn2(3) === 0 && (await wakeMonster?.(flight.contact))?.heroDied)
                 return true;

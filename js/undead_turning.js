@@ -11,7 +11,7 @@ import { game } from './gstate.js';
 import { restartEggHatchTimer } from './mklev.js';
 import { makeMonsterFlee } from './monster_flee.js';
 import { monsterIsUndead, monsterIsVampireShifter, monsterIsNonliving, monsterTypeName, monsterYoungerForm, } from './monster_data.js';
-import { monsterName } from './monster_name.js';
+import { namelessMonsterName, monsterName } from './monster_name.js';
 import { ownedObjectName } from './objnam.js';
 import { withIndefiniteArticle } from './object_grammar.js';
 import { monsterResistsEffect } from './monster_resistance.js';
@@ -26,13 +26,13 @@ function eggCanHatch(egg, state) {
     const younger = monsterYoungerForm(mnum);
     return [mnum, younger].filter(Number.isInteger).every(species => !((state.mvitals?.[species]?.mvflags ?? 0) & G_GENOD));
 }
-async function announceRevival(event) {
+async function announceRevival(event, state) {
     const x = event?.location?.x ?? event?.monster?.mx;
     const y = event?.location?.y ?? event?.monster?.my;
     if (!event?.monster || !cansee(x, y))
         return;
-    const name = monsterTypeName(event.monster.mnum, !!event.monster.female);
-    await pline(`The ${name} is resurrected!`);
+    const name = namelessMonsterName(event.monster, { state, article: 'the' });
+    await pline(`${name.charAt(0).toUpperCase()}${name.slice(1)} is resurrected!`);
 }
 export async function turnObjectWithUndeadMagic(object, state = game) {
     if (object.otyp === EGG) {
@@ -50,7 +50,7 @@ export async function turnObjectWithUndeadMagic(object, state = game) {
         return false;
     for (const message of event.messages || [])
         await pline(message);
-    await announceRevival(event);
+    await announceRevival(event, state);
     return true;
 }
 export async function turnCarriedObjects(inventory, state = game) {

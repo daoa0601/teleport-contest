@@ -308,7 +308,7 @@ export async function tryUnarmedStagger(monster: Monster, {
     dy,
     state = game,
     announce = async () => {},
-    nameMonster = target => target?.name || 'monster',
+    nameMonster = target => monsterName(target, { state, capitalized: true }),
     wakeMonster = async () => {
         monster.msleeping = 0;
     },

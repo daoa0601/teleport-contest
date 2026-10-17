@@ -7,12 +7,12 @@ import { heroGoldAmount } from './hero_gold.js';
 import { inventoryItemDescription } from './invent.js';
 import { MONSTER_FLAGS2 } from './monster_data.js';
 import {
-    BAG_OF_HOLDING, BOULDER, GOLD_PIECE, LOADSTONE, OBJECT_NAMES,
-    OILSKIN_SACK, SACK, SCR_SCARE_MONSTER,
+    BAG_OF_HOLDING, BOULDER, GOLD_PIECE, LOADSTONE, SCR_SCARE_MONSTER,
 } from './object_data.js';
 import { mergable } from './object_merge.js';
 import { objectQuantity } from './object_stack.js';
 import {
+    definiteName, objectCombatName,
     wishedObjectPresentation, observeObjectForNaming,
 } from './objnam.js';
 import { heroIsPolymorphed } from './polyself.js';
@@ -21,7 +21,6 @@ import {
     calcCapacity, invWeight, MOD_ENCUMBER, nearCapacity, objectWeight,
     pickupLoadPrefix, weightCapacity,
 } from './weight.js';
-
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 
@@ -104,33 +103,27 @@ function itemDescription(object: GameObject, count = objectQuantity(object)): st
     return inventoryItemDescription(view);
 }
 
-function containerName(container: GameObject): string {
-    if ([SACK, OILSKIN_SACK, BAG_OF_HOLDING].includes(container.otyp))
-        return 'bag';
-    return OBJECT_NAMES[container.otyp] || container.name || 'container';
-}
-
-function locationPhrase(container: GameObject | null, short = false): string {
+function locationPhrase(container: GameObject | null, state: GameState, short = false): string {
     if (!container) return short ? 'here' : 'lying here';
-    return `in the ${containerName(container)}`;
+    return `in ${definiteName(objectCombatName(container, { state, includeCorpseSpecies: false }), state)}`;
 }
 
 function presentTense(object: GameObject): string {
     return objectQuantity(object) === 1 ? 'is' : 'are';
 }
 
-async function reportPartialLift(object: GameObject, count: number, container: GameObject | null, telekinesis: boolean): Promise<void> {
-    observeObjectForNaming(object);
+async function reportPartialLift(object: GameObject, count: number, container: GameObject | null, telekinesis: boolean, state: GameState): Promise<void> {
+    observeObjectForNaming(object, { state });
     const verb = container ? 'carry' : telekinesis ? 'acquire' : 'lift';
     await plineWithContinuation(`You can only ${verb} ${count === 1 ? 'one' : 'some'} of the ${
-        itemDescription(object)} ${locationPhrase(container)}.`);
+        itemDescription(object)} ${locationPhrase(container, state)}.`);
 }
 
 async function reportUnliftable(object: GameObject, container: GameObject | null, state: GameState, telekinesis: boolean): Promise<void> {
     const verb = container ? 'carry' : telekinesis ? 'acquire' : 'lift';
     observeObjectForNaming(object, { state });
     const description = itemDescription(object);
-    const where = locationPhrase(container, !container);
+    const where = locationPhrase(container, state, !container);
     if ((state.inventory || []).length || heroGoldAmount(state)) {
         await plineWithContinuation(`There ${presentTense(object)} ${description} ${where}, but you cannot ${
             verb} any more.`);
@@ -196,7 +189,7 @@ export async function carryableObjectCount({
     );
     const lifted = maximumLiftedCount(object, requested, container, state);
     if (lifted < requested && lifted > 0)
-        await reportPartialLift(object, lifted, container, telekinesis);
+        await reportPartialLift(object, lifted, container, telekinesis, state);
     if (lifted < 1)
         await reportUnliftable(object, container, state, telekinesis);
     return lifted;
@@ -213,7 +206,7 @@ export async function liftObject({
     count = Math.max(0, Math.min(Math.trunc(count || total), total));
 
     if (object.otyp === BOULDER && state.level?.flags?.sokoban_rules) {
-        await plineWithContinuation('You cannot get your hand around this boulder.');
+        await plineWithContinuation(`You cannot get your hand around this ${objectCombatName(object, { state, includeCorpseSpecies: false })}.`);
         return { decision: 'stop', count: 0 };
     }
 
@@ -226,7 +219,7 @@ export async function liftObject({
             || !sameType || canMergeWithInventory(object, total, state)) {
             return { decision: 'lift', count };
         }
-        const noun = OBJECT_NAMES[object.otyp] || object.name || 'object';
+        const noun = objectCombatName(object, { state, includeCorpseSpecies: false });
         await plineWithContinuation(`You are carrying too much stuff to pick up ${
             total === 1 ? 'another' : 'more'} ${noun}.`);
         return { decision: 'stop', count: 0 };

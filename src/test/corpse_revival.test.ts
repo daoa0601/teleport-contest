@@ -412,7 +412,7 @@ void test('a troll corpse revives from a sack in the hero pack', async () => {
     assert.equal(event.kind, 'revived');
     assert.equal(
         event.messages.at(-1),
-        'A troll writhes out of a sack in your pack!',
+        'A troll writhes out of a bag in your pack!',
     );
     assert.equal(sack.contents.length, 0);
 });

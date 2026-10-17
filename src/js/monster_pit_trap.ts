@@ -8,7 +8,7 @@ import { monsterSelfTouch } from './monster_stoning.js';
 import { finishEnvironmentalMonsterDeath, finishMonsterKilled } from './monster_death.js';
 import { AD_PHYS } from './monster_attack_types.js';
 import {
-    MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL,
+    MONSTER_FLAGS1, MONSTER_SYMBOL,
 } from './monster_data.js';
 import { monsterWearsIronShoes } from './monworn.js';
 import { monsterName } from './monster_name.js';
@@ -51,10 +51,6 @@ const PM_PIT_FIEND = 300;
 const PM_PIT_VIPER = 218;
 const S_EYE = 5;
 const S_LIGHT = 25;
-function ordinaryMonsterSubject(monster: Monster): string {
-    return `The ${monster.name || MONSTER_NAME[monster.mnum] || 'monster'}`;
-}
-
 function monsterIsUngrounded(monster: Monster, state: GameState): boolean {
     const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
     const symbol = MONSTER_SYMBOL[monster.mnum];
@@ -101,8 +97,8 @@ export async function finishMonsterPitTrap(
         publish = plineWithContinuation,
         random,
         rollOne = rnd,
-        describeMonster = ordinaryMonsterSubject,
         state = game,
+        describeMonster = target => monsterName(target, { state, capitalized: true }),
     }: PitTrapOptions = {},
 ): Promise<MonsterPitTrap | null> {
     if (!event || event.finished) return event;

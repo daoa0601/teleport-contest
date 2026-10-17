@@ -23,6 +23,7 @@ import { heroFootName } from './body_parts.js';
 import {
     feel_location, flush_screen, newsym, pline, plineWithContinuation,
 } from './display.js';
+import { monsterName } from './monster_name.js';
 import { game, requireGameLevel } from './gstate.js';
 import type { GameState, DiggingContext } from './game_state.js';
 import type { GameObject } from './object_types.js';
@@ -479,8 +480,7 @@ export async function continueHeroDigging(state = game): Promise<boolean> {
                 const bounced = ownedObjectAction(uwep, 'bounce', state);
                 if (hero.usteed) {
                     const steed = hero.usteed;
-                    const steedName = steed.name
-                        || `the ${monsterTypeName(steed.mnum, !!steed.female)}`;
+                    const steedName = monsterName(steed, { state });
                     await pline(
                         `${bounced} and ${plural ? 'hit' : 'hits'} ${steedName}!`,
                     );

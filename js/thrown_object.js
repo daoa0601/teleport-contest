@@ -23,7 +23,7 @@ import { impactDisturbsZombies } from './object_impact.js';
 import { isPick } from './weapon_type.js';
 import { MONSTER_FLAGS1, MONSTER_MOVE, MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
 import { breakObjectAtLocation, objectBreaksOnImpact } from './object_breakage.js';
-import { BOULDER, CANDELABRUM_OF_INVOCATION, HEAVY_IRON_BALL, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_SUBTYPE, ROCK, TALLOW_CANDLE, WAX_CANDLE, } from './object_data.js';
+import { BOULDER, CANDELABRUM_OF_INVOCATION, HEAVY_IRON_BALL, OBJECT_MATERIAL, OBJECT_SUBTYPE, ROCK, TALLOW_CANDLE, WAX_CANDLE, } from './object_data.js';
 import { objectClassForType } from './object_knowledge.js';
 import { objectIsVulnerableToErosion } from './object_erosion.js';
 import { isLauncherAmmunition, launcherMatchesAmmo, } from './object_properties.js';
@@ -74,11 +74,6 @@ function projectileMonsterAt(state, object, x, y) {
             return null;
     }
     return monster;
-}
-function thrownObjectSubject(object) {
-    if (objectClass(object) === COIN_CLASS)
-        return 'The gold';
-    return `The ${object.name || OBJECT_NAMES[object.otyp] || 'object'}`;
 }
 function heroThrowStrength(state) {
     let strength = currentAttribute(A_STR, state);
@@ -273,7 +268,7 @@ async function flyPhysicalObject({ state = game, object, dx, dy, range, startX, 
             const web = monster ? null : webAt(state, x, y);
             if (web && random(3) === 0) {
                 if (cansee(x, y)) {
-                    await publish(`${thrownObjectSubject(object)} gets stuck in a web!`);
+                    await publish(`${ownedObjectName(object, state)} gets stuck in a web!`);
                     web.tseen = true;
                     newsym(x, y);
                 }

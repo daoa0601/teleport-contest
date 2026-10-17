@@ -12,7 +12,7 @@ import { dropObjectAtHero } from './object_drop.js';
 import { shipObject } from './object_migration.js';
 import { AKLYS, BOOMERANG } from './object_data.js';
 import { makePlural } from './object_grammar.js';
-import { definiteName, killerObjectName, objectName, observeObjectForNaming } from './objnam.js';
+import { definiteObjectAction, killerObjectName } from './objnam.js';
 import { propertyIsActive } from './properties.js';
 import { rn2, rnd } from './rng.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
@@ -55,14 +55,14 @@ export async function finishReturningThrow({
     requirePlayingGame(state);
     if (rn2(100) === 0) {
         tetherDisplay?.clear();
-        await plineWithContinuation(`${returningSubject(object, state)} fails to return!`);
+        await plineWithContinuation(`${definiteObjectAction(object, 'fail', state)} to return!`);
         return false;
     }
     if (tetherDisplay) await tetherDisplay.backtrack();
     else await showReturnFlight(object, impact, state);
 
     if (!impaired && rn2(100) !== 0) {
-        await plineWithContinuation(`${returningSubject(object, state)} returns to your hand!`);
+        await plineWithContinuation(`${definiteObjectAction(object, 'return', state)} to your hand!`);
         const returned = await addInventoryItemBefore(object, oldSlot);
         await reportHeroEncumbrance(state);
         if ((returned.owornmask ?? 0) & W_QUIVER) await setQuiverObject(null, state);
@@ -78,13 +78,13 @@ export async function finishReturningThrow({
         const feet = makePlural(heroFootName(state));
         await plineWithContinuation(heroIsBlind(state)
             ? `Something lands ${position} your ${feet}.`
-            : `${returningSubject(object, state)} returns back to you, landing ${position} your ${feet}.`);
+            : `${definiteObjectAction(object, 'return', state)} back to you, landing ${position} your ${feet}.`);
     } else {
         damage += rnd(3);
         const arm = heroArmName(state);
         await plineWithContinuation(heroIsBlind(state)
-            ? `${returningSubject(object, state)} hits your ${arm}!`
-            : `${returningSubject(object, state)} flies back toward you, hitting your ${arm}!`);
+            ? `${definiteObjectAction(object, 'hit', state)} your ${arm}!`
+            : `${definiteObjectAction(object, 'fly', state)} back toward you, hitting your ${arm}!`);
         if (object.oartifact) {
             const hit = await hitHeroWithFallingArtifact(object, damage, {
                 state, publish: plineWithContinuation, random: rn2, rollOne: rnd, dieRoll: 0,
@@ -104,12 +104,6 @@ export async function finishReturningThrow({
         await dropObjectAtHero(object, { state });
     }
     return true;
-}
-
-function returningSubject(object: GameObject, state: GameState): string {
-    observeObjectForNaming(object, { state });
-    const name = definiteName(objectName(object, state), state);
-    return name.charAt(0).toUpperCase() + name.slice(1);
 }
 
 async function showReturnFlight(object: GameObject, impact: Position, state: GameState): Promise<void> {

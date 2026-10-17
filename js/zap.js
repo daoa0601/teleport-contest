@@ -60,7 +60,7 @@ import { chargeUnpaidUsage } from './shk.js';
 import { hasWornProperty } from './properties.js';
 import { closedRayDoor } from './ray.js';
 import { heroIsBlind } from './senses.js';
-import { killerObjectName, objectName, ownedObjectName, observeObjectForNaming, observeDistantObjectForNaming, pluralizeObjectNoun, } from './objnam.js';
+import { definiteObjectAction, killerObjectName, objectName, ownedObjectName, observeObjectForNaming, observeDistantObjectForNaming, pluralizeObjectNoun, } from './objnam.js';
 import { delobj } from './object_delete.js';
 import { useUpFloorObject } from './floor_consumption.js';
 import { requirePlayingGame } from './gstate.js';
@@ -83,8 +83,7 @@ export const INVENTORY_DAMAGE = Object.freeze({
 async function finishWandUse(wand) {
     if (!wand || wand.spe >= 0)
         return;
-    observeObjectForNaming(wand);
-    await plineWithContinuation(`The ${objectName(wand)} turns to dust.`);
+    await plineWithContinuation(`${definiteObjectAction(wand, 'turn')} to dust.`);
     await useUpInventoryStack(wand);
 }
 // C zap.c:dozap(). Selection/charges surround the shared effect transaction.
@@ -120,8 +119,7 @@ export async function dozap() {
     }
     else if (needsDirection && !await promptDirection()) {
         if (!heroIsBlind()) {
-            observeObjectForNaming(wand);
-            await plineWithContinuation(`The ${objectName(wand)} glows and fades.`);
+            await plineWithContinuation(`${definiteObjectAction(wand, null)} glows and fades.`);
         }
     }
     else if (needsDirection && !game.u.dx && !game.u.dy && !game.u.dz) {

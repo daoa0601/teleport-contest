@@ -9,10 +9,11 @@ import type { MessagePublisher } from './display.js';
 import { game } from './gstate.js';
 import { monsterFootName } from './body_parts.js';
 import { dist2 } from './hacklib.js';
-import { monsterHasNoLimbs, monsterTypeName } from './monster_data.js';
+import { monsterHasNoLimbs } from './monster_data.js';
 import { makePlural } from './object_grammar.js';
 import { monsterTrapVisibility, seeTrap } from './trap.js';
 import { monsterInAir } from './terrain_properties.js';
+import { monsterName } from './monster_name.js';
 
 export interface MonsterVibratingSquareEvent {
     kind: 'vibrating-square';
@@ -28,11 +29,6 @@ interface FinishTrapOptions {
     state?: GameState;
     publish?: MessagePublisher;
     describeMonster?: (monster: Monster) => string;
-}
-
-function ordinaryMonsterSubject(monster: Monster) {
-    if (monster?.name) return monster.name;
-    return `The ${monsterTypeName(monster?.mnum, !!monster?.female)}`;
 }
 
 function sentenceObject(subject: string) {
@@ -67,7 +63,7 @@ export async function finishMonsterVibratingSquare(
     {
         state = game,
         publish = async () => {},
-        describeMonster = ordinaryMonsterSubject,
+        describeMonster = target => monsterName(target, { state, capitalized: true }),
     }: FinishTrapOptions = {},
 ) {
     if (!event || event.finished) return event;

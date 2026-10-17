@@ -2,7 +2,7 @@
 // C refs: weapon.c select_hwep(), oselect(), setmnotwielded(),
 // mwepgone(), and possibly_unwield().
 import { NEED_AXE, NEED_HTH_WEAPON, NEED_PICK_AXE, NEED_PICK_OR_AXE, NEED_RANGED_WEAPON, NEED_WEAPON, NO_WEAPON_WANTED, P_BOW, P_CROSSBOW, P_SLING, W_ARMG, W_ARMS, W_WEP, } from './const.js';
-import { definiteName, objectName, objectCombatName, objectNameIsPlural, observeObjectForNaming, observeDistantObjectForNaming, ownedObjectName, } from './objnam.js';
+import { definiteObjectAction, objectName, objectCombatName, objectNameIsPlural, observeObjectForNaming, observeDistantObjectForNaming, ownedObjectName, } from './objnam.js';
 import { artifactById, artifactEmitsLight, monsterCanTouchArtifact } from './artifacts.js';
 import { monsterHandName } from './body_parts.js';
 import { canSeeMonster, monsterVisible, newsym, plineWithContinuation } from './display.js';
@@ -268,7 +268,7 @@ export async function wieldMonsterWeapon(monster, state = game, { publish = plin
             const plural = (weapon.quan ?? weapon.quantity ?? 1) > 1;
             const hand = wieldingHand(monster, weapon);
             const welding = plural ? 'weld themselves' : 'welds itself';
-            await publish(`${namedWeapon(weapon, state)} ${welding} to ${monsterPossessive(monster, state)} ${hand}!`);
+            await publish(`${definiteObjectAction(weapon, null, state)} ${welding} to ${monsterPossessive(monster, state)} ${hand}!`);
             weapon.bknown = true;
         }
     }
@@ -277,7 +277,7 @@ export async function wieldMonsterWeapon(monster, state = game, { publish = plin
         if (canSeeMonster(monster)) {
             const hand = monsterHandName(monster.mnum);
             const brightness = equipmentLightDescription(weapon, state);
-            await publish(`${namedWeapon(weapon, state)} shines ${brightness} in ${monsterPossessive(monster, state)} ${hand}!`);
+            await publish(`${definiteObjectAction(weapon, null, state)} shines ${brightness} in ${monsterPossessive(monster, state)} ${hand}!`);
         }
         else if (cansee(monster.mx, monster.my)) {
             const distance = (monster.mx - state.u.ux) ** 2 + (monster.my - state.u.uy) ** 2;
@@ -310,10 +310,6 @@ function weaponForCurrentAction(monster, state) {
             throw new Error(`Unknown monster weapon request: ${monster.weaponCheck}`);
     }
 }
-function namedWeapon(weapon, state) {
-    const name = definiteName(objectCombatName(weapon, { state, includeCorpseSpecies: false }), state);
-    return name.charAt(0).toUpperCase() + name.slice(1);
-}
 function wieldingHand(monster, weapon) {
     const hand = monsterHandName(monster.mnum);
     return OBJECT_BIMANUAL[weapon.otyp] ? makePlural(hand) : hand;
@@ -329,7 +325,7 @@ export async function unwieldMonsterWeapon(monster, state = game, { weapon = mon
         endObjectBurn(weapon, state);
         if (canSeeMonster(monster)) {
             const hand = monsterHandName(monster.mnum);
-            await publish(`${namedWeapon(weapon, state)} in ${monsterPossessive(monster, state)} ${hand} ${objectNameIsPlural(weapon, state) ? 'stop' : 'stops'} shining.`);
+            await publish(`${definiteObjectAction(weapon, null, state)} in ${monsterPossessive(monster, state)} ${hand} ${objectNameIsPlural(weapon, state) ? 'stop' : 'stops'} shining.`);
         }
     }
     if (monster.mw === weapon)

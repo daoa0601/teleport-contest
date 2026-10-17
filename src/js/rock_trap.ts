@@ -12,13 +12,14 @@ import { AD_PHYS } from './monster_attack_types.js';
 import { deleteTrap } from './trap_lifecycle.js';
 import { game, requireGameLevel } from './gstate.js';
 import { placeCreatedObject, stack_object } from './floor_object.js';
-import { MONSTER_FLAGS1, MONSTER_NAME } from './monster_data.js';
+import { MONSTER_FLAGS1 } from './monster_data.js';
 import { ROCK } from './object_data.js';
 import { inventoryItemDescription } from './invent.js';
 import { observeObjectForNaming } from './objnam.js';
 import { d, rn2 } from './rng.js';
 import { monsterTrapVisibility, seeTrap } from './trap.js';
 import { makeTrapMissile } from './trap_missile.js';
+import { monsterName as canonicalMonsterName } from './monster_name.js';
 
 interface TrapVisibility {
     trap: Trap;
@@ -51,14 +52,6 @@ interface FinishTrapOptions {
 
 const M1_UNSOLID = 0x00100000;
 const M1_WALLWALK = 0x00000008;
-
-function ordinaryMonsterSubject(monster: Monster) {
-    return `The ${monster.name || MONSTER_NAME[monster.mnum] || 'monster'}`;
-}
-
-function ordinaryMonsterName(monster: Monster) {
-    return monster.name || `the ${MONSTER_NAME[monster.mnum] || 'monster'}`;
-}
 
 function monsterPassesRocks(monster: Monster) {
     const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
@@ -125,8 +118,8 @@ export async function finishMonsterRockTrap(
     {
         publish = async () => {},
         random = rn2,
-        monsterName = ordinaryMonsterName,
-        describeMonster = ordinaryMonsterSubject,
+        monsterName = target => canonicalMonsterName(target, { state }),
+        describeMonster = target => canonicalMonsterName(target, { state, capitalized: true }),
     }: FinishTrapOptions = {},
 ) {
     if (!event || event.finished) return event;
@@ -136,8 +129,8 @@ export async function finishMonsterRockTrap(
         event.finished = true;
         return event;
     }
-    const subject = describeMonster(monster);
     if (event.seeSquare) {
+        const subject = describeMonster(monster);
         // thitm() names the missile before stackobj(); seeing it makes it
         // eligible to join an already observed pile.
         observeObjectForNaming(event.rock, { state });

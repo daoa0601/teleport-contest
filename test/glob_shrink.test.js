@@ -120,7 +120,7 @@ void test('visible final floor shrink deletes the glob before fade prose', async
     const event = runClaimedGlobTimer(claimNextDueObjectTimer(game, game.moves), game, game.moves);
     assert.ok(event, 'The due object timer must produce its effect.');
     assert.equal(event.gone, true);
-    assert.equal(event.message, 'A glob of green slime fades away.');
+    assert.equal(event.message, 'A small glob of green slime fades away.');
     assert.equal(glob.owt, 0);
     assert.equal(glob.where, 'gone');
     assert.equal(floorObjectsAt(requireGameLevel(game), 12, 10).includes(glob), false);
@@ -153,7 +153,7 @@ void test('inventory threshold prose precedes reschedule and retains live mass',
     game.moves = timer.deadline;
     const event = runClaimedGlobTimer(claimNextDueObjectTimer(game, game.moves), game, game.moves);
     assert.ok(event, 'The due object timer must produce its effect.');
-    assert.equal(event.message, 'Your partly eaten glob of black pudding shrinks.');
+    assert.equal(event.message, 'Your partly eaten small glob of black pudding shrinks.');
     assert.equal(glob.owt, 19);
     assert.equal(glob.oeaten, 11);
     assert.ok(game.inventory.includes(glob));
@@ -182,7 +182,7 @@ void test('inventory dissolution precedes deletion and then relieves capacity', 
     assert.ok(event, 'The due object timer must produce its effect.');
     assert.ok(event.finishPending);
     assert.equal(event.oldCapacity, 1);
-    assert.equal(event.message, 'Your glob of gray ooze dissolves completely.');
+    assert.equal(event.message, 'Your small glob of gray ooze dissolves completely.');
     assert.equal(glob.owt, 0);
     assert.ok(game.inventory.includes(glob));
     finishGlobTimer(event, game, game.moves);
@@ -266,7 +266,7 @@ void test('a glob inside a carried sack makes the sack lighter', async () => {
     game.moves = timer.deadline;
     const event = runClaimedGlobTimer(claimNextDueObjectTimer(game, game.moves), game, game.moves);
     assert.ok(event, 'The due object timer must produce its effect.');
-    assert.equal(event.message, 'Your sack becomes slightly lighter.');
+    assert.equal(event.message, 'Your bag becomes slightly lighter.');
     assert.equal(sack.owt, oldWeight - 1);
     finishGlobTimer(event, game, game.moves);
     assert.equal(sack.contents.includes(glob), true);

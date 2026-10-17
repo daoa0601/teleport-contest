@@ -376,9 +376,8 @@ async function mountSteed(steed, force, [dx, dy]) {
         let damage = rn1(5, 10);
         if (hero.halfPhysicalDamage)
             damage = Math.trunc((damage + 1) / 2);
-        let name = `a saddled ${monsterTypeName(steed.mnum, !!steed.female)}`;
-        if (MGIVENNAME(steed))
-            name += ` called ${MGIVENNAME(steed)}`;
+        const name = monsterName(steed, { article: 'a', called: true, suppressIt: true,
+            suppressInvisible: true, suppressHallucination: true, suppressSaddle: false });
         await loseHeroHp(damage, `slipped while mounting ${name}`, { killerFormat: NO_KILLER_PREFIX });
         return false;
     }

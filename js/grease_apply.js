@@ -9,8 +9,7 @@ import { compactInventoryLetters, inventoryLetterOrder, promptInventoryObject } 
 import { consumeObjectCharge } from './object_charge.js';
 import { CORPSE } from './object_data.js';
 import { makePlural } from './object_grammar.js';
-import { objectName, observeObjectForNaming, ownedObjectName } from './objnam.js';
-import { objectQuantity } from './object_stack.js';
+import { definiteObjectAction, objectName, observeObjectForNaming, ownedObjectName } from './objnam.js';
 import { propertyIsActive } from './properties.js';
 import { rn1, rn2 } from './rng.js';
 import { carriedObjectOwner } from './shk.js';
@@ -21,8 +20,7 @@ export async function useGrease(can) {
         return true;
     }
     if (can.spe <= 0) {
-        const plural = objectQuantity(can) !== 1;
-        await pline(`${canName(can)} ${can.known ? plural ? 'are' : 'is' : plural ? 'seem' : 'seems'} ${can.known ? '' : 'to be '}empty.`);
+        await pline(`${definiteObjectAction(can, can.known ? 'are' : 'seem')} ${can.known ? '' : 'to be '}empty.`);
         return true;
     }
     if ((can.cursed || propertyIsActive('fumbling', game)) && !rn2(2)) {
@@ -96,13 +94,8 @@ function fingers(simple) {
     const gloves = game.uarmg;
     return simple && gloves ? armorSimpleName(gloves, game) : makePlural(heroFingerName(game));
 }
-function canName(can) {
-    observeObjectForNaming(can);
-    const name = objectName(can, game);
-    return `The ${objectQuantity(can) > 1 ? makePlural(name) : name}`;
-}
 async function dropGrease(can) {
-    await pline(`${canName(can)} ${objectQuantity(can) === 1 ? 'slips' : 'slip'} from your ${fingers(false)}.`);
+    await pline(`${definiteObjectAction(can, 'slip')} from your ${fingers(false)}.`);
     await dropInventoryObjectAtHero(can);
 }
 //# sourceMappingURL=grease_apply.js.map

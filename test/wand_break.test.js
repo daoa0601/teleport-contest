@@ -29,7 +29,7 @@ function wandRoom({ hero = {}, flags = {}, ...options } = {}) {
     const messages = [];
     let reads = 0;
     installPagerInput(input, {
-        expected: /wand|charge|explod|Boom|blast|caught|medallion|feel|pit|hole|wall|door|worm|giant|nothing|amulet of life saving|suddenly appears|But wait/i,
+        expected: /wand|charge|Usage fee|explod|Boom|blast|caught|medallion|feel|pit|hole|wall|door|worm|giant|nothing|amulet of life saving|suddenly appears|But wait/i,
         limit: 200,
     });
     input.beforeRead = () => {

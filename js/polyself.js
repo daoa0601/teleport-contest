@@ -4,7 +4,7 @@ import { formatFeltMessage } from './hero_speech.js';
 import { monsterEmitsLight } from './vision.js';
 import { weaponDescription } from './weapon_description.js';
 import { P_SHORT_SWORD, P_SABER } from './const.js';
-import { makePlural } from './object_grammar.js';
+import { verbForSubject, makePlural } from './object_grammar.js';
 import { OBJECT_SUBTYPE } from './object_data.js';
 import { heroIsUnaware } from './hero_sleep.js';
 import { endVoluntaryMultiTurn, heroHasInvoluntaryDelay } from './command_state.js';
@@ -838,7 +838,7 @@ async function changeArmorForHeroForm(mnum) {
     }
     if (heroHasNoHead(game) && (object = worn('ublindf'))) {
         const name = simpleObjectName(object, game).replace(/^pair of /, '');
-        await plineWithContinuation(`Your ${name} ${name.endsWith('s') ? 'fall' : 'falls'} off!`);
+        await plineWithContinuation(`Your ${name} ${verbForSubject(name, 'fall')} off!`);
         await removeEyewear();
         if (game.program_state.gameover)
             return;

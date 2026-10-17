@@ -224,7 +224,7 @@ export function willMonsterHurtle(monster, state, x, y) {
         && !monster.mtrapped
         && destinationIsOpen(monster, state, x, y);
 }
-export async function tryUnarmedStagger(monster, { skill, damage, dx, dy, state = game, announce = async () => { }, nameMonster = target => target?.name || 'monster', wakeMonster = async () => {
+export async function tryUnarmedStagger(monster, { skill, damage, dx, dy, state = game, announce = async () => { }, nameMonster = target => monsterName(target, { state, capitalized: true }), wakeMonster = async () => {
     monster.msleeping = 0;
 }, finishLiquidDeath, finishMonsterDeath, }) {
     if (rnd(100) >= skill)

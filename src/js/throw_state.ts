@@ -10,7 +10,7 @@ import type { GameObject } from './object_types.js';
 import type { MessagePublisher } from './display.js';
 import { heroIsPolymorphed } from './polyself.js';
 import { rn2 } from './rng.js';
-import { objectName } from './objnam.js';
+import { definiteObjectAction, objectName } from './objnam.js';
 import {
     calcCapacity, objectWeight, SLT_ENCUMBER,
 } from './weight.js';
@@ -41,10 +41,10 @@ export async function applyThrowSlip({
         || !(u.dx || u.dy) || rn2(7) !== 0) return false;
 
     if (launcher) {
-        await publish(`The ${objectName(object, state)} misfires!`);
+        await publish(`${definiteObjectAction(object, 'misfire', state)}!`);
     } else if (object.greased || throwingWeapon) {
         await publish(
-            `The ${objectName(object, state)} slips as you throw it!`,
+            `${definiteObjectAction(object, 'slip', state)} as you throw it!`,
         );
     } else {
         return false;

@@ -2,7 +2,7 @@ import { changeHeroLuck } from './attrib.js';
 // Object breakage and its immediate effects.
 // C refs: dothrow.c breaktest(), hero_breaks(), and breakobj().
 import { publishHeardMessage } from './hero_speech.js';
-import { ACID_VENOM, BLINDING_VENOM, BOULDER, CREAM_PIE, EGG, EXPENSIVE_CAMERA, CRYSTAL_BALL, LENSES, MELON, MIRROR, OBJECT_MATERIAL, OBJECT_NAMES, POT_OIL, POT_WATER, STATUE, } from './object_data.js';
+import { ACID_VENOM, BLINDING_VENOM, BOULDER, CREAM_PIE, EGG, EXPENSIVE_CAMERA, CRYSTAL_BALL, LENSES, MELON, MIRROR, OBJECT_MATERIAL, POT_OIL, POT_WATER, STATUE, } from './object_data.js';
 import { newsym, plineWithContinuation, } from './display.js';
 import { releaseCameraDemon } from './camera.js';
 import { applyHeroEggLuckPenalty, explodePyroliskEggAt, isPyroliskEgg, } from './egg_impact.js';
@@ -13,13 +13,14 @@ import { deleteObject, delobj } from './object_delete.js';
 import { observeObjectForNaming } from './objnam.js';
 import { makemonAt } from './mklev.js';
 import { objectResistsDestruction } from './object_state.js';
-import { applySupportedPotionVapor, heroPotionVaporProfile, potionImpactObjectName, } from './potion_hit.js';
+import { applySupportedPotionVapor, heroPotionVaporProfile, } from './potion_hit.js';
 import { d, rnl, rn2 } from './rng.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
 import { costlySpot, insideShopRoomAt, settleThrownShopObject, } from './shk.js';
 import { stolenValue } from './shop_loss.js';
 import { makeAngryShopkeeper } from './shop_damage.js';
 import { cansee } from './vision.js';
+import { erodeObject } from './object_erosion.js';
 const ARMOR_CLASS = 3;
 const POTION_CLASS = 8;
 const GEM_CLASS = 13;
@@ -43,11 +44,6 @@ export function objectBreaksOnImpact(object, random = rn2) {
         && object.oclass !== GEM_CLASS;
     return glassObject || object.oclass === POTION_CLASS
         || BREAKABLE_TYPES.has(object.otyp);
-}
-function objectName(object) {
-    if (object.oclass === POTION_CLASS)
-        return potionImpactObjectName(object);
-    return object.name || OBJECT_NAMES[object.otyp] || 'object';
 }
 async function publishBreakMessage(object, visible, publish, state) {
     if ([EGG, MELON].includes(object.otyp)) {
@@ -75,34 +71,11 @@ async function publishBreakMessage(object, visible, publish, state) {
     const subject = description.charAt(0).toUpperCase() + description.slice(1);
     await publish(`${subject} ${quantity === 1 ? 'shatters' : 'shatter'}${intoPieces}!`);
 }
-async function deleteBrokenObject(object, state) {
-    await deleteObject(object, state);
-}
 async function crackGlassArmor(object, visible, publish, luckRandom, state) {
-    const name = objectName(object);
-    if (object.oerodeproof && object.rknown)
-        return false;
-    if (object.oerodeproof || (object.blessed && luckRandom(4) === 0)) {
-        if (visible)
-            await publish(`Somehow, the ${name} is not affected by the impact.`);
-        if (object.oerodeproof)
-            object.rknown = true;
-        return false;
-    }
-    const erosion = object.oeroded ?? 0;
-    if (erosion < 3) {
-        object.oeroded = erosion + 1;
-        if (visible) {
-            const adverb = erosion + 1 === 3
-                ? ' completely' : erosion ? ' further' : '';
-            await publish(`The ${name} cracks${adverb}!`);
-        }
-        return false;
-    }
-    if (visible)
-        await publish(`The ${name} shatters!`);
-    await deleteBrokenObject(object, state);
-    return true;
+    const result = await erodeObject(object, 'crack', {
+        state, publish: visible ? publish : () => { }, luckRandom, destroy: true,
+    });
+    return result === 'destroyed';
 }
 async function applyPotionBreakEffect(object, x, y, state, publish) {
     if (object.otyp === POT_OIL && object.lamplit)

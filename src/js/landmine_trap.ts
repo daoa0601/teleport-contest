@@ -14,13 +14,14 @@ import { game } from './gstate.js';
 import { explodeLandMine } from './landmine_explosion.js';
 import { fillPitWithBoulderAt } from './pit_fill.js';
 import { resolveMonsterLiquid } from './mon.js';
-import { MONSTER_BODY_META, MONSTER_NAME } from './monster_data.js';
+import { MONSTER_BODY_META } from './monster_data.js';
 import { beginMonsterPitTrap, finishMonsterPitTrap } from './monster_pit_trap.js';
 import { monsterWearsIronShoes } from './monworn.js';
 import { rn2, rnd } from './rng.js';
 import { monsterTrapVisibility, seeTrap } from './trap.js';
 import { monsterInAir } from './terrain_properties.js';
 import { monsterLearnsTrap, monstersSeeTrap } from './trap_knowledge.js';
+import { monsterName as canonicalMonsterName } from './monster_name.js';
 
 export interface MonsterLandMineEvent {
     kind: 'land-mine';
@@ -48,14 +49,6 @@ interface LandMineOptions {
 }
 
 type ActiveLandMineOptions = Required<LandMineOptions>;
-
-function ordinaryMonsterName(monster: Monster) {
-    return monster.name || MONSTER_NAME[monster.mnum] || 'monster';
-}
-
-function ordinaryMonsterSubject(monster: Monster) {
-    return `The ${ordinaryMonsterName(monster)}`;
-}
 
 async function finishMineDeath(
     monster: Monster,
@@ -181,8 +174,8 @@ export async function finishMonsterLandMine(
         publish = plineWithContinuation,
         random = rn2,
         rollOne = rnd,
-        monsterName = ordinaryMonsterName,
-        describeMonster = ordinaryMonsterSubject,
+        monsterName = target => canonicalMonsterName(target, { state }),
+        describeMonster = target => canonicalMonsterName(target, { state, capitalized: true }),
     }: LandMineOptions = {},
 ) {
     if (event.finished) return event;

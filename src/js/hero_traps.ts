@@ -910,8 +910,7 @@ async function triggerFallingRockTrap(trap: Trap) {
             );
             damage = 2;
         } else if (game.flags?.verbose !== false) {
-            const name = helmet.name || OBJECT_NAMES[helmet.otyp] || 'helmet';
-            await plineWithContinuation(`Your ${name} does not protect you.`);
+            await plineWithContinuation(`${ownedObjectName(helmet)} does not protect you.`);
         }
     } else if (heroPassesRocks()) {
         await plineWithContinuation('It passes harmlessly through you.');

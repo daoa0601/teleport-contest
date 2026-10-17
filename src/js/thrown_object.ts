@@ -59,7 +59,7 @@ import { MONSTER_FLAGS1, MONSTER_MOVE, MONSTER_NAME, MONSTER_SYMBOL } from './mo
 import { breakObjectAtLocation, objectBreaksOnImpact } from './object_breakage.js';
 import {
     BOULDER, CANDELABRUM_OF_INVOCATION, HEAVY_IRON_BALL, OBJECT_MATERIAL,
-    OBJECT_NAMES, OBJECT_SUBTYPE, ROCK, TALLOW_CANDLE, WAX_CANDLE,
+    OBJECT_SUBTYPE, ROCK, TALLOW_CANDLE, WAX_CANDLE,
 } from './object_data.js';
 import { objectClassForType } from './object_knowledge.js';
 import { objectIsVulnerableToErosion } from './object_erosion.js';
@@ -166,11 +166,6 @@ function projectileMonsterAt(state: GameState, object: GameObject, x: number, y:
             return null;
     }
     return monster;
-}
-
-function thrownObjectSubject(object: GameObject): string {
-    if (objectClass(object) === COIN_CLASS) return 'The gold';
-    return `The ${object.name || OBJECT_NAMES[object.otyp] || 'object'}`;
 }
 
 function heroThrowStrength(state: GameState): number {
@@ -409,7 +404,7 @@ async function flyPhysicalObject({
             if (web && random(3) === 0) {
                 if (cansee(x, y)) {
                     await publish(
-                        `${thrownObjectSubject(object)} gets stuck in a web!`,
+                        `${ownedObjectName(object, state)} gets stuck in a web!`,
                     );
                     web.tseen = true;
                     newsym(x, y);

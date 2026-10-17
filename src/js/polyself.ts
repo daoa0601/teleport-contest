@@ -5,9 +5,8 @@ import { formatFeltMessage } from './hero_speech.js';
 import { monsterEmitsLight } from './vision.js';
 import { weaponDescription } from './weapon_description.js';
 import { P_SHORT_SWORD, P_SABER } from './const.js';
-import { makePlural } from './object_grammar.js';
+import { verbForSubject, makePlural } from './object_grammar.js';
 import { OBJECT_SUBTYPE } from './object_data.js';
-
 import type { MessagePublisher } from './display.js';
 import type { DeathHandler } from './end.js';
 import type { GameState, PlayingGameState } from './game_state.js';
@@ -95,7 +94,6 @@ import { isBeingTakenOff } from './takeoff_state.js';
 import { heroIsPunished } from './ball.js';
 import { unpunishHero } from './punishment.js';
 import { clearHeroTrap, freeHeroFromBuriedBall } from './hero_traps.js';
-
 import { handleRidingAfterFormChange } from './steed.js';
 import { hideHeroUnder } from './monster_hiding.js';
 import { learnEggType } from './invent.js';
@@ -104,7 +102,6 @@ import {
     expelHero, releaseHeroGrip,
 } from './hero_expulsion.js';
 import { applyHeroLocationEffects } from './cmd.js';
-
 import {
     restartAmuletStrangulation, stopStrangulationInImmuneForm,
 } from './hero_strangulation.js';
@@ -911,7 +908,7 @@ async function changeArmorForHeroForm(mnum: number) {
     if (heroHasNoHead(game) && (object = worn('ublindf'))) {
         const name = simpleObjectName(object, game).replace(/^pair of /, '');
         await plineWithContinuation(
-            `Your ${name} ${name.endsWith('s') ? 'fall' : 'falls'} off!`,
+            `Your ${name} ${verbForSubject(name, 'fall')} off!`,
         );
         await removeEyewear();
         if (game.program_state.gameover) return;

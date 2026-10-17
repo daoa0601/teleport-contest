@@ -68,12 +68,12 @@ import { hasWornProperty } from './properties.js';
 import { closedRayDoor } from './ray.js';
 import { heroIsBlind } from './senses.js';
 import {
+    definiteObjectAction,
     killerObjectName, objectName, ownedObjectName, observeObjectForNaming,
     observeDistantObjectForNaming, pluralizeObjectNoun,
 } from './objnam.js';
 import { delobj } from './object_delete.js';
 import { useUpFloorObject } from './floor_consumption.js';
-
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
@@ -139,8 +139,7 @@ export const INVENTORY_DAMAGE = Object.freeze({
 
 async function finishWandUse(wand: GameObject | null) {
     if (!wand || wand.spe >= 0) return;
-    observeObjectForNaming(wand);
-    await plineWithContinuation(`The ${objectName(wand)} turns to dust.`);
+    await plineWithContinuation(`${definiteObjectAction(wand, 'turn')} to dust.`);
     await useUpInventoryStack(wand);
 }
 
@@ -175,8 +174,7 @@ export async function dozap(): Promise<void> {
         return;
     } else if (needsDirection && !await promptDirection()) {
         if (!heroIsBlind()) {
-            observeObjectForNaming(wand);
-            await plineWithContinuation(`The ${objectName(wand)} glows and fades.`);
+            await plineWithContinuation(`${definiteObjectAction(wand, null)} glows and fades.`);
         }
     } else if (needsDirection && !game.u.dx && !game.u.dy && !game.u.dz) {
         const effect = await zapHeroWithObject(wand);
