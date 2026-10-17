@@ -7591,6 +7591,9 @@ async function beginStandardMonsterAttack(
         (!heroHasConflict(state) || resistConflict(monster, state, rollOne, calls))
     )
         return;
+    // wormhitu() follows the head's complete attack, even if range or fear
+    // prevents that attack. Presentation must settle each passive first.
+    movement.deferredWormTailAttacks = true;
     const { entryMnum, range } = dochugContext;
     if (!range) throw new Error('A monster attack needs its checked hero range');
     const panicAttack = movement.postMoveStatus === MMOVE_NOMOVES && range.scared;
