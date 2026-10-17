@@ -53,6 +53,7 @@ import {
 } from './const.js';
 
 import type { GameObject } from './object_types.js';
+import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 import type { MapLocation } from './map_types.js';
 import type { CountedSelection, MultiSelectItem, MultiSelectSection } from './windows.js';
@@ -76,6 +77,7 @@ export function pickupClassOrder(): string[] {
 }
 
 export async function pickupAtHero(count = Math.max(0, game._commandCount || 0)): Promise<void> {
+    game._pickupEncumbrance = 0;
     game.multi = 0;
     const source = pickupSourceAtHero();
     const objects = pickupObjects(source);
@@ -93,6 +95,7 @@ export async function pickupAtHero(count = Math.max(0, game._commandCount || 0))
     const selected = await choosePickupObjects(source, objects, count);
     const { attempted } = await takeSelectedObjects(source, selected);
     game.context.move = attempted ? 1 : 0;
+    game._pickupEncumbrance = 0;
 }
 
 export async function autopickupAtHero(): Promise<void> {
@@ -100,6 +103,7 @@ export async function autopickupAtHero(): Promise<void> {
         game._prevDecorType = STONE;
         return;
     }
+    game._pickupEncumbrance = 0;
     const source = pickupSourceAtHero();
     const { x, y, monster } = source;
     const level = requireGameLevel();
@@ -132,6 +136,7 @@ export async function autopickupAtHero(): Promise<void> {
     }
     const { picked } = await takeSelectedObjects(source, objects.filter(autopickupAllows));
     if (!monster && !game.program_state?.gameover) await checkHere(source, picked > 0);
+    game._pickupEncumbrance = 0;
 }
 
 async function choosePickupObjects(source: PickupSource, objects: readonly GameObject[], count: number): Promise<CountedSelection<GameObject>[]> {
@@ -205,7 +210,6 @@ async function takeSelectedObjects(source: PickupSource, selected: readonly Pick
     if (batch) clearJustPicked(game);
     let picked = 0;
     let attempted = false;
-    let previousCapacity = 0;
     for (const selection of selected) {
         const counted = 'value' in selection;
         let object = counted ? selection.value : selection;
@@ -271,10 +275,7 @@ async function takeSelectedObjects(source: PickupSource, selected: readonly Pick
         const added = await addPickedInventoryObject(object);
         if (remote) await remoteBurglary(source.x, source.y);
         const message = pickedInventoryDescription(added.object, lift.count);
-        const capacity = nearCapacity(game);
-        const prefix = capacity === previousCapacity ? '' : pickupLoadPrefix(capacity);
-        previousCapacity = capacity;
-        await plineWithContinuation(prefix ? `${prefix} lifting ${message}` : message);
+        await plineWithContinuation(pickupInventoryMessage(message, 'lifting'));
         const ghostlyMessage = finishGhostlyPickup(added.object, game);
         if (ghostlyMessage) await plineWithContinuation(ghostlyMessage);
         picked++;
@@ -284,6 +285,15 @@ async function takeSelectedObjects(source: PickupSource, selected: readonly Pick
         if (!source.monster) newsym(source.x, source.y);
     }
     return { picked, attempted };
+}
+
+// C pickup.c:pickup_prinv(). Tool pickups retain this process-local
+// baseline; pickup() and container menus reset it at their own boundaries.
+export function pickupInventoryMessage(description: string, verb: 'lifting' | 'removing', state: GameState = game): string {
+    const capacity = nearCapacity(state);
+    const prefix = capacity === (state._pickupEncumbrance ?? 0) ? '' : pickupLoadPrefix(capacity);
+    state._pickupEncumbrance = capacity;
+    return prefix ? `${prefix} ${verb} ${description}` : description;
 }
 
 export async function addPickedInventoryObject(object: GameObject): Promise<AddedInventoryObject> {
