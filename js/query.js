@@ -185,6 +185,9 @@ export async function tty_yn_function(query, responses, defaultAnswer = '', visi
     const finish = (answer, count = 0n) => {
         if (game.nhDisplay)
             game.nhDisplay.toplines = message + (count ? `#${count}` : answer);
+        // Native cleanup marks the question seen even when fuzzer input
+        // bypasses tty_nhgetch(). Keep a one-line question visible.
+        game._pending_message = '';
         game._retained_message = displayed;
         if (coveredRows > 1)
             clearMessageWindow(coveredRows);
