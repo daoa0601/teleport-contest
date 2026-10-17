@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -31,7 +32,7 @@ void test('a slain acid blob still splashes its killer', async () => {
     await runMonsterAction(attacker, game, range => range === 2 ? 0 : 1,
         count => count, () => 1);
 
-    assert.equal(game.level.monsters.includes(defender), false);
+    assert.notEqual(monsterAtPosition(game.level, defender.mx, defender.my), defender);
     assert.ok(attacker.mhp < health, 'the dead blob should still damage its killer');
 });
 

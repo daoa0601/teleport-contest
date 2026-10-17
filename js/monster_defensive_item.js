@@ -14,7 +14,7 @@ import { removeMonsterFromGame } from './monster_departure.js';
 import { monsterIsScaredAt } from './monster_fear.js';
 import { makeMonsterFlee } from './monster_flee.js';
 import { consumeMonsterItem, prepareMonsterItemUse, presentMonsterQuaff, presentMonsterScrollRead, presentMonsterWandUse, } from './monster_item_use.js';
-import { monsterAtPosition, placeMonsterAt } from './monster_location.js';
+import { monsterAtPosition, monsterHasMapPosition, placeMonsterAt } from './monster_location.js';
 import { migrateMonsterOffLevel } from './monster_migration.js';
 import { monsterName, monsterObjectPronoun } from './monster_name.js';
 import { monsterLocomotion } from './monster_locomotion.js';
@@ -114,6 +114,7 @@ export function findMonsterDefensiveItem(monster, state, { tryEscape = false, ra
     const bugle = inventory.find(object => object.otyp === BUGLE);
     if (bugle && (MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_MERC
         && state.level.monsters.some(other => other !== monster
+            && monsterHasMapPosition(other, state) && isok(other.mx, other.my)
             && Math.abs(other.mx - monster.mx) <= 3 && Math.abs(other.my - monster.my) <= 3
             && (MONSTER_FLAGS2[other.mnum] ?? 0) & M2_MERC
             && MONSTER_NAME[other.mnum] !== 'guard'

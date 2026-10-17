@@ -142,6 +142,8 @@ export interface Monster extends MonsterPosition {
     cham?: number;
 
     dead?: boolean;
+    // m_detach deletes the body's light before inventory and map cleanup.
+    lightRemoved?: boolean;
     movement?: number;
     mmove?: number;
     mspeed?: number;
@@ -242,7 +244,7 @@ export interface MonsterBirthState extends Monster {
 // A corpse keeps identity and role history, never ownership of the former
 // inventory or a live long-worm body. Revival supplies those from its birth.
 export type SavedMonsterTraits = Omit<Monster,
-    'minvent' | 'inventory' | 'mw' | 'wormSegments' | 'wormHead' | 'wormGrowTime'>;
+    'minvent' | 'inventory' | 'mw' | 'wormSegments' | 'wormHead' | 'wormGrowTime' | 'lightRemoved'>;
 
 export interface MonsterVital {
     mvflags: number;

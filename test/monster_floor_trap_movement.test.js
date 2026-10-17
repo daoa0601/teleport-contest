@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { DART_TRAP, RUST_TRAP, NO_MINVENT, ROLLING_BOULDER_TRAP, MMOVE_DIED, MMOVE_MOVED } from '../js/const.js';
@@ -49,7 +50,7 @@ for (const fatal of [true, false]) {
         const action = await beginMonsterMove(goblin, game);
         assert.equal(goblin.mx, 11, 'the goblin reached the trigger');
         assert.ok(goblin.mhp < (fatal ? 1 : 100), 'the boulder hit the goblin');
-        assert.equal(level.monsters.includes(goblin), !fatal);
+        assert.equal(monsterAtPosition(level, goblin.mx, goblin.my) === goblin, !fatal);
         assert.equal(action.movement.postMoveStatus, fatal ? MMOVE_DIED : MMOVE_MOVED);
         assert.ok(floorObjectsAt(level, 10, 10).includes(boulder), 'the boulder completed its flight');
     });

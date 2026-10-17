@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { LAVAPOOL, MM_ANGRY, NO_MINVENT } from '../js/const.js';
@@ -42,7 +43,7 @@ void test('monster knockback into lava does not leave a burned victim corpse', a
     const orc = await createMonsterAt('orc', 11, 10, MM_ANGRY | NO_MINVENT);
     level.requireAt(13, 10).typ = LAVAPOOL;
     await runMonsterAction(giant, game, () => 0, (count) => count, () => 1);
-    assert.equal(level.monsters.includes(orc), false);
+    assert.notEqual(monsterAtPosition(level, orc.mx, orc.my), orc);
     assert.equal(floorObjects(level).some((object) => object.otyp === CORPSE && object.corpsenm === orc.mnum), false);
 });
 //# sourceMappingURL=monster_turn_ownership.test.js.map

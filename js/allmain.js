@@ -39,6 +39,7 @@ import { RLOC_NOMSG, WATER } from './const.js';
 import { consumeMonsterItem, presentMonsterQuaff as publishMonsterQuaff, presentMonsterWandUse, revealAggravatingMonster } from './monster_item_use.js';
 import { heroCanTeleport, moveMonsterNextToHero, randomMonsterRelocation, teleportHero } from './teleport.js';
 import { monsterAtPosition } from './monster_location.js';
+import { purgeDeadMonsters } from './monster_level_departure.js';
 import { placeHeroAtRandomArrival } from './level_change.js';
 import { monsterName, monsterSpellDeathReason, monsterSubjectPronoun, possessiveName } from './monster_name.js';
 import { touchHeroWithDeath } from './monster_death_touch.js';
@@ -3402,6 +3403,7 @@ async function executeMonsterTurns() {
 }
 async function moveMonsters() {
     const game = requireInitializedGame();
+    const level = game.level;
     const previousMonsterMoving = game.context.mon_moving;
     game.context.mon_moving = true;
     try {
@@ -3409,6 +3411,7 @@ async function moveMonsters() {
         // C mon.c:movemon() refreshes moving light sources after the pass.
         if (hasLightSources())
             game.vision_full_recalc = 1;
+        purgeDeadMonsters(level);
         // A monster's action can schedule travel, including removal of
         // levitation gear above a trap. Finish it before world maintenance
         // or command input; the departure monsters are now dormant.

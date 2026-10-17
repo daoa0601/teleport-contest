@@ -28,4 +28,27 @@ void test('reviving a ghost\'s former body removes the ghost from its visible sq
     assert.equal(glyphAt(13, 11)?.kind, 'terrain');
     assert.ok(game.level.monsters.some(monster => monster.mnum === MONSTER_NAME.indexOf('troll')));
 });
+void test('undead turning cannot merge a killed ghost into the body revived by the same zap', async () => {
+    freshObjectRoom({ hero: { seeInvisible: true } });
+    requirePlayingGame(game);
+    const ghost = await createMonsterAt('ghost', 11, 10);
+    ghost.mhp = 1;
+    const troll = MONSTER_NAME.indexOf('troll');
+    const corpse = await floorObject(CORPSE, 12, 10, {
+        corpsenm: troll, oextra: { omid: ghost.m_id },
+    });
+    const wand = await addInventoryObject(WAN_UNDEAD_TURNING, { spe: 2 });
+    const input = resetInputState();
+    const messages = [];
+    input.beforeRead = () => { messages.push(game._pending_message); };
+    installPagerInput(input, { expected: /ghost|corpse|resurrected/, limit: 8 });
+    input.feed(`${wand.invlet}l`);
+    await rhack('z'.charCodeAt(0));
+    assert.ok(ghost.mhp <= 0, 'the zap kills the ghost before reaching its former body');
+    assert.equal(corpse.where, 'gone');
+    const revived = game.level.monsters.find(monster => monster.mnum === troll);
+    assert.ok(revived, 'the same zap must revive the body beyond the ghost');
+    assert.equal(!!revived.mconf, false, 'a dead ghost cannot confuse its former body');
+    assert.doesNotMatch([...messages, game._pending_message].join('\n'), /drawn into its former body/);
+});
 //# sourceMappingURL=zap_ghost_revival.test.js.map

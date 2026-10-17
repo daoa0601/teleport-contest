@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { wearHeroAccessory } from '../js/accessory.js';
@@ -66,7 +67,7 @@ void test('a fire attack burns a straw golem completely and credits the hero wit
     requirePlayingGame(game);
     const result = await resolveHeroNaturalDamage(monster, [AT_TUCH, AD_FIRE, 1, 1], 0);
     assert.equal(result.nativeResult, M_ATTK_DEF_DIED);
-    assert.equal(game.level.monsters.includes(monster), false);
+    assert.notEqual(monsterAtPosition(game.level, monster.mx, monster.my), monster);
     assert.equal(game.u.uconduct.killer, 1);
     assert.equal(floorObjectsAt(game.level, 11, 10).some(object => object.otyp === CORPSE), false);
 });
@@ -75,7 +76,7 @@ void test('rust destroys an iron golem regardless of its remaining hit points', 
     requirePlayingGame(game);
     const result = await resolveHeroNaturalDamage(monster, [AT_TUCH, AD_RUST, 0, 0], 0);
     assert.equal(result.nativeResult, M_ATTK_DEF_DIED);
-    assert.equal(game.level.monsters.includes(monster), false);
+    assert.notEqual(monsterAtPosition(game.level, monster.mx, monster.my), monster);
     assert.equal(game.u.uconduct.killer, 1);
 });
 void test('sleep contact immobilizes a grabber and releases its hold on a nonsticky hero', async () => {
@@ -120,7 +121,7 @@ void test('draining a level zero target kills it without healing the hero', asyn
     for (let attempt = 0; attempt < 32 && monster.mhp > 0; attempt++)
         result = await resolveHeroNaturalDamage(monster, [AT_TUCH, AD_DRLI, 0, 0], 0);
     assert.equal(result.nativeResult, M_ATTK_DEF_DIED);
-    assert.equal(game.level.monsters.includes(monster), false);
+    assert.notEqual(monsterAtPosition(game.level, monster.mx, monster.my), monster);
     assert.equal(monster.m_lev, 0);
     assert.equal(game.u.mh, 10);
 });

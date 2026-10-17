@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { moveloop_core } from '../js/allmain.js';
@@ -41,7 +42,7 @@ void test('a gas-cloud death during the world turn uses the native cause message
     await answerPrompts(moveloop_core(), input, [{
             prompt: /The jackal is killed by the gas cloud!/, keys: 27,
         }]);
-    assert.equal(game.level.monsters.includes(jackal), false);
+    assert.notEqual(monsterAtPosition(game.level, jackal.mx, jackal.my), jackal);
     assert.equal(game.u.uconduct?.killer ?? 0, 0);
 });
 void test('monster-caused light kills a visible pet gremlin without an extra death line', async () => {
@@ -54,7 +55,7 @@ void test('monster-caused light kills a visible pet gremlin without an extra dea
     await answerPrompts(lightHitsGremlin(gremlin, 2), input, [{
             prompt: /The gremlin wails in agony!/, keys: ' ',
         }]);
-    assert.equal(level.monsters.includes(gremlin), false);
+    assert.notEqual(monsterAtPosition(level, gremlin.mx, gremlin.my), gremlin);
     assert.equal(await messageLine(), 'You have a sad feeling for a moment, then it passes.');
     assert.equal(game.u.uconduct?.killer ?? 0, 0);
 });
@@ -72,7 +73,7 @@ for (const visible of [true, false]) {
         await answerPrompts(returnMonsterWeapon(soldier, weapon, 11, 10), input, [{
                 prompt: visible ? /aklys flies back toward the soldier, hitting/ : /You hear something hit it with a thud!/, keys: ' ',
             }]);
-        assert.equal(level.monsters.includes(soldier), false);
+        assert.notEqual(monsterAtPosition(level, soldier.mx, soldier.my), soldier);
         assert.ok(floorObjectsAt(level, 13, 10).includes(weapon));
         assert.equal(await messageLine(), visible
             ? 'The soldier is killed!'
@@ -96,7 +97,7 @@ void test('an involuntary dismount with no landing room announces the steed deat
     const alignment = game.u.ualign?.record;
     await dismountHero(DISMOUNT_GENERIC);
     assert.equal(game.u.usteed, null);
-    assert.equal(level.monsters.includes(pony), false);
+    assert.notEqual(monsterAtPosition(level, pony.mx, pony.my), pony);
     assert.match(await messageLine(), /The saddled pony is killed!/);
     assert.equal(game.u.uconduct?.killer ?? 0, 0);
     assert.equal(game.u.ualign?.record, alignment);

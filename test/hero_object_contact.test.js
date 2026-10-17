@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { wearHeroAccessory } from '../js/accessory.js';
@@ -134,7 +135,7 @@ void test('an acid cure consumed during petrifying egg contact credits the hero 
     initRng(97n);
     const result = await hitMonsterWithHeroObject(monster, egg, { mode: 'thrown', dieRoll: 1 });
     assert.equal(result.survived, false);
-    assert.equal(game.level.monsters.includes(monster), false);
+    assert.notEqual(monsterAtPosition(game.level, monster.mx, monster.my), monster);
     assert.equal(game.u.uconduct.killer ?? 0, 0);
 });
 void test('bashing with a healing-potion stack frees one bottle and retains the wielded remainder', async () => {

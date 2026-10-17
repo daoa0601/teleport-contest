@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { NO_MINVENT, W_AMUL, W_ARMG, W_WEP } from '../js/const.js';
@@ -47,7 +48,7 @@ void test('a corpse weapon leaves the defeated monster and its equipment in a st
     const dagger = await equipMonsterObject(giant, await knownObject(DAGGER), W_WEP);
     pushKeys(' '.repeat(40));
     await runMonsterAction(soldier, game, () => 0, count => count, () => 1);
-    assert.equal(game.level.monsters.includes(giant), false);
+    assert.notEqual(monsterAtPosition(game.level, giant.mx, giant.my), giant);
     const statue = floorObjectsAt(game.level, 11, 10).find(object => object.otyp === STATUE);
     assert.ok(statue, 'the petrified giant should leave a statue');
     assert.equal(statue.corpsenm, giant.mnum);
@@ -70,7 +71,7 @@ for (const gloves of [false, true]) {
         await attackMonsterWithMonster(soldier, cockatrice, {
             state: game, random: () => 0, rollDice: count => count, rollOne: () => 1,
         });
-        assert.equal(game.level.monsters.includes(soldier), gloves);
+        assert.equal(monsterAtPosition(game.level, soldier.mx, soldier.my) === soldier, gloves);
         if (gloves)
             assert.ok(cockatrice.mhp < health);
         else
@@ -145,7 +146,7 @@ for (const cancelled of [false, true]) {
         const health = orc.mhp;
         pushKeys(' '.repeat(40));
         await runMonsterAction(cockatrice, game, () => 0, count => count, () => 1);
-        assert.equal(game.level.monsters.includes(orc), cancelled);
+        assert.equal(monsterAtPosition(game.level, orc.mx, orc.my) === orc, cancelled);
         if (cancelled)
             assert.ok(orc.mhp < health);
         else

@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import { floorObjectsAt } from './support/level-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -126,7 +127,7 @@ void test('a bear trap removes a monster it kills', async () => {
         rollDice: () => 8,
         publish: async () => { },
     });
-    assert.equal(game.level.monsters.includes(monster), false);
+    assert.notEqual(monsterAtPosition(game.level, monster.mx, monster.my), monster);
 });
 void test('iron shoes protect a caught monster from a bear trap', async () => {
     const shoes = await knownObject(IRON_SHOES, {
@@ -166,7 +167,7 @@ void test('a rust trap removes an iron golem which falls to pieces', async () =>
     await resumeDeferredMonsterTrap(action, game, {
         publish: async () => { },
     });
-    assert.equal(game.level.monsters.includes(monster), false);
+    assert.notEqual(monsterAtPosition(game.level, monster.mx, monster.my), monster);
 });
 void test('a boulder-hit vampire rises while the boulder keeps rolling', async () => {
     const vampireLeader = MONSTER_NAME.indexOf('vampire leader');
@@ -233,7 +234,7 @@ void test('fatal anti-magic compression removes the monster', async () => {
         publish: async (message) => messages.push(message),
     });
     assert.equal(monster.dead, true);
-    assert.deepEqual(game.level.monsters, []);
+    assert.equal(monsterAtPosition(game.level, monster.mx, monster.my), null);
     assert.deepEqual(messages, [
         'The baby gray dragon is killed by the compression from an anti-magic field!',
     ]);

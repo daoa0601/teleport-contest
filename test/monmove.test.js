@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import { floorObjectsAt } from './support/level-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -149,7 +150,7 @@ void test('a land monster in lava burns and drops what it carried', async () => 
     });
     assert.ok(result, 'Liquid exposure produces a result');
     assert.equal(result.dead, true);
-    assert.equal(level.monsters.includes(ant), false);
+    assert.notEqual(monsterAtPosition(level, ant.mx, ant.my), ant);
     assert.equal(floorObjectsAt(level, 12, 10).includes(rock), true);
 });
 void test('a monster which survives lava burns vulnerable carried items', async () => {
@@ -204,7 +205,7 @@ void test('flight does not keep a monster above the Plane of Water', async () =>
     });
     assert.ok(result, 'Liquid exposure produces a result');
     assert.equal(result.dead, true);
-    assert.equal(level.monsters.includes(dragon), false);
+    assert.notEqual(monsterAtPosition(level, dragon.mx, dragon.my), dragon);
     assert.deepEqual(messages, ['The red dragon drowns.']);
 });
 void test('a drowning vampire wolf rises as a flying vampire leader', async () => {
@@ -255,7 +256,7 @@ void test('a water wall drowns a monster clinging to the ceiling', async () => {
     });
     assert.ok(result, 'Liquid exposure produces a result');
     assert.equal(result.dead, true);
-    assert.equal(level.monsters.includes(piercer), false);
+    assert.notEqual(monsterAtPosition(level, piercer.mx, piercer.my), piercer);
 });
 void test('an engulfer carries only a form which fits through iron bars', async () => {
     const level = freshObjectRoom({ recalculateVision: false });

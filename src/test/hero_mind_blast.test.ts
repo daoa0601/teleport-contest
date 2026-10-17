@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -31,7 +32,7 @@ void test('a mind flayer uses #monster to strike nearby hostile minds', async ()
 
     assert.equal(game.u.uen, 10);
     assert.equal(game.context.move, 1);
-    assert.equal(game.level.monsters.includes(target), false);
+    assert.notEqual(monsterAtPosition(game.level, target.mx, target.my), target);
     assert.equal(mindless.mhp, 20);
     assert.equal(peaceful.mhp, 20);
     assert.equal(distant.mhp, 20);

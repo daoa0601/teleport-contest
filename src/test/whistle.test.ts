@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import { createRoom, createSpecialLevel, createDungeon } from './support/topology.js';
 import type { Monster } from '../js/monster_types.js';
 import { requirePlayingGame } from '../js/gstate.js';
@@ -335,7 +336,7 @@ void test('a pet killed by its summoned destination trap costs one luck and deta
     const result = await useWhistle(whistle);
 
     assert.equal(result.heroDied, false);
-    assert.ok(!game.level.monsters.includes(pet));
+    assert.notEqual(monsterAtPosition(game.level, pet.mx, pet.my), pet);
     assert.equal(game.u.uluck, luck - 1);
     assert.equal(leash.leashmon, 0);
     assert.equal(game._pending_message, 'The dog is killed!');

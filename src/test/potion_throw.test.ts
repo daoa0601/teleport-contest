@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import type { GameObject } from '../js/object_types.js';
 import type { Monster } from '../js/monster_types.js';
 import { setMonsterGivenName } from '../js/monster_given_name.js';
@@ -785,7 +786,7 @@ void test('live fatal acid crosses the ordinary map death continuation', async (
     await throwEast(potion, Array.from({ length: 40 }, () => ' '));
 
     assert.equal(monster.dead, true);
-    assert.equal(game.level.monsters.includes(monster), false);
+    assert.notEqual(monsterAtPosition(game.level, monster.mx, monster.my), monster);
     assert.equal(game.u.uconduct?.killer, 1);
     assert.equal(potion.where, 'gone');
 });
@@ -1053,7 +1054,7 @@ void test('live fatal iron-golem water creates source special chain drops',
         const drops = floorObjects(game.level);
         const chains = drops.filter(object => object.otyp === IRON_CHAIN);
         assert.equal(monster.dead, true);
-        assert.equal(game.level.monsters.includes(monster), false);
+        assert.notEqual(monsterAtPosition(game.level, monster.mx, monster.my), monster);
         assert.equal(drops.some(object => object.otyp === CORPSE), false);
         assert.ok(chains.length >= 2 && chains.length <= 12);
         assert.equal(new Set(chains.map(object => object.o_id)).size,
@@ -1081,7 +1082,7 @@ void test('live fatal blessed water uses the ordinary map death continuation',
         initRng(2702n);
         await throwEast(potion, Array.from({ length: 40 }, () => ' '));
         assert.equal(monster.dead, true);
-        assert.equal(game.level.monsters.includes(monster), false);
+        assert.notEqual(monsterAtPosition(game.level, monster.mx, monster.my), monster);
         assert.equal(game.u.uconduct?.killer, 1);
         assert.equal(potion.where, 'gone');
     });
@@ -1160,7 +1161,7 @@ void test('burning oil explodes when it hits a monster', async () => {
     initRng(2702n);
     await throwEast(potion, Array.from({ length: 30 }, () => ' '));
 
-    assert.equal(game.level.monsters.includes(monster), false);
+    assert.notEqual(monsterAtPosition(game.level, monster.mx, monster.my), monster);
     assert.equal(potion.where, 'gone');
     assert.equal(potion.lamplit, false);
 });

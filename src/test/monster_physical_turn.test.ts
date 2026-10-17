@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { wearHeroAccessory } from '../js/accessory.js';
@@ -156,7 +157,7 @@ void test('a monster killed by Trollsbane leaves a troll corpse that cannot revi
     const corpse = action.conflictFight.attack.death?.corpse;
     assert.ok(corpse, 'the native troll death should leave a corpse');
     assert.equal(corpse.norevive, true);
-    assert.equal(state.level.monsters.includes(defender), false);
+    assert.notEqual(monsterAtPosition(state.level, defender.mx, defender.my), defender);
 });
 
 void test('a fatal knockback beyond passive range still consumes the monster conflict turn', async () => {
@@ -169,7 +170,7 @@ void test('a fatal knockback beyond passive range still consumes the monster con
     const action = await runMonsterAction(aggressor, state, () => 0, count => count, () => 1);
 
     assert.ok(action.conflictFight?.attack.kind === 'monster-attack');
-    assert.equal(state.level.monsters.includes(defender), false);
+    assert.notEqual(monsterAtPosition(state.level, defender.mx, defender.my), defender);
     assert.ok(defender.mx - aggressor.mx > 1, 'the fatal landing must be outside passive range');
     assert.equal(action.conflictFight.attack.struck, true);
     assert.equal(action.conflictFight.consumed, true);
@@ -218,8 +219,8 @@ void test('a fatal Rider brain meal still damages the Rider without growing the 
     const action = await runMonsterAction(aggressor, state, () => 0, count => count, () => 1);
 
     assert.ok(action.conflictFight?.attack.kind === 'monster-attack');
-    assert.equal(state.level.monsters.includes(aggressor), false);
-    assert.equal(state.level.monsters.includes(defender), false);
+    assert.notEqual(monsterAtPosition(state.level, aggressor.mx, aggressor.my), aggressor);
+    assert.notEqual(monsterAtPosition(state.level, defender.mx, defender.my), defender);
     assert.equal(aggressor.m_lev, 20);
     assert.equal(action.conflictFight.attack.death?.growth, null);
     assert.equal(action.conflictFight.attack.aggressorDied, true);

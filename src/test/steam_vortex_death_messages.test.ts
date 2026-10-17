@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { NO_MINVENT } from '../js/const.js';
@@ -23,6 +24,6 @@ for (const alreadyInside of [false, true]) {
         assert.equal(level.regions.some(region => region.cells.some(cell =>
             cell.x === game.u.ux && cell.y === game.u.uy)), true);
         assert.deepEqual(messages, alreadyInside ? [] : ['You are enveloped in a cloud of steam!']);
-        assert.equal(level.monsters.includes(vortex), false);
+        assert.notEqual(monsterAtPosition(level, vortex.mx, vortex.my), vortex);
     });
 }

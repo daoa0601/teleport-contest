@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -133,7 +134,7 @@ for (const outcome of ['survives', 'life saved', 'dies'] as const) {
         assert.equal(game.u.usteed, outcome === 'dies' ? null : steed);
         if (outcome === 'dies') {
             assert.equal(game.u.utrap, 0);
-            assert.ok(!game.level.monsters.includes(steed));
+            assert.notEqual(monsterAtPosition(game.level, steed.mx, steed.my), steed);
         } else {
             assert.equal(game.u.utraptype, TT_BEARTRAP);
             assert.ok(steed.mhp > 0);

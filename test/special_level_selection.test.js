@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { CLOUD, CORR, DB_DIR, DB_WEST, DBWALL, DRAWBRIDGE_UP, D_CLOSED, FOUNTAIN, F_LOOTED, F_WARNED, GRAVE, HEADSTONE, HWALL, ROOM, SCORR, SDOOR, STONE, S_LDWASHER, S_LPUDDING, S_LRING, T_LOOTED, TREE_LOOTED, TREE_SWARM, VWALL, W_NONPASSWALL } from '../js/const.js';
@@ -276,7 +277,7 @@ void test('a hero-created Lua selection cloud awards kill credit and experience'
     input.feed('.' + ' '.repeat(20));
     await moveloop_core();
     await moveloop_core();
-    assert.equal(requireGameLevel().monsters.includes(victim), false);
+    assert.notEqual(monsterAtPosition(requireGameLevel(), victim.mx, victim.my), victim);
     assert.equal(game.u.uconduct?.killer, 1);
     assert.ok((game.u.uexp ?? 0) > experience);
 });

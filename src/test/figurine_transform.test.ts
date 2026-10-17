@@ -522,7 +522,7 @@ void test('a floor figurine over water creates a monster which immediately drown
         assert.deepEqual(event.waterMessages, ['You drown the leocrotta.']);
         assert.equal(figurine.where, 'gone');
         // the spawned leocrotta drowned; the relocated carrier survives
-        assert.equal(game.level.monsters.length, 1);
+        assert.equal(game.level.monsters.filter(monster => monster.mhp > 0).length, 1);
     });
 
 void test('carried figurine uses whole-map enexto fallback before retrying',

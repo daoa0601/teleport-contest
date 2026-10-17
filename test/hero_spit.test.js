@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -135,6 +136,6 @@ void test('acid venom which kills an engulfer releases the hero', async () => {
     await attack;
     assert.equal(game.u.uswallow, 0);
     assert.equal(game.u.ustuck, null);
-    assert.equal(game.level.monsters.includes(jackal), false);
+    assert.notEqual(monsterAtPosition(game.level, jackal.mx, jackal.my), jackal);
 });
 //# sourceMappingURL=hero_spit.test.js.map

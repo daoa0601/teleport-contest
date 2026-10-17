@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import { initializePet } from '../js/dog.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -184,7 +185,7 @@ void test('a cockatrice hero recoiling into an unarmored monster leaves a statue
     vision_reset();
     initRng(19n);
     await kickDirection('l', ' '.repeat(20));
-    assert.equal(game.level.monsters.includes(human), false);
+    assert.notEqual(monsterAtPosition(game.level, human.mx, human.my), human);
     const statue = floorObjectsAt(game.level, 9, 10)
         .find(object => object.otyp === STATUE);
     assert.ok(statue);
@@ -270,7 +271,7 @@ for (const lifesaving of [false, true]) {
             fatalTrap = monster.mx === 12 && (lifesaving
                 ? !!amulet && !monster.minvent.includes(amulet) : !!monster.dead);
             if (fatalTrap) {
-                assert.equal(game.level.monsters.includes(monster), lifesaving);
+                assert.equal(monsterAtPosition(game.level, monster.mx, monster.my) === monster, lifesaving);
                 assert.equal(game.u.uconduct.killer || 0, 0, 'the trap death is not counted again as a direct hero kill');
                 if (lifesaving)
                     assert.ok(monster.mhp > 0);

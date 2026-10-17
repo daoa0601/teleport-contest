@@ -10,7 +10,7 @@ import assert from 'node:assert/strict';
 import { ARROW_TRAP, CORR, DOOR, MON_FLOOR, PIT, ROOMOFFSET, STONE, VAULT, VWALL, W_NONDIGGABLE } from '../js/const.js';
 import { makeEngravingAt } from '../js/engrave.js';
 import { maketrap } from '../js/mklev.js';
-import { placeMonsterAt } from '../js/monster_location.js';
+import { monsterAtPosition, placeMonsterAt } from '../js/monster_location.js';
 import { sendMonsterToLimbo } from '../js/monster_migration.js';
 import { unpunishHero } from '../js/punishment.js';
 import { restoreGame, saveGame } from '../js/save.js';
@@ -145,7 +145,7 @@ void test('the same corpse chance leaves remains when a guard is clear of its co
 
     assert.equal(death.corpse?.otyp, CORPSE);
     assert.equal(floorObjectsAt(level, 14, 10).includes(death.corpse), true);
-    assert.equal(level.monsters.includes(guard), false);
+    assert.notEqual(monsterAtPosition(level, guard.mx, guard.my), guard);
 });
 
 void test('restoration removes traps and engravings but keeps embedded objects and their memory', async () => {
@@ -341,7 +341,7 @@ void test('a guard away from its corridor level drops its gold without restoring
 
     await finishEnvironmentalMonsterDeath(guard, game, { noCorpse: true });
 
-    assert.equal(level.monsters.includes(guard), false);
+    assert.notEqual(monsterAtPosition(level, guard.mx, guard.my), guard);
     assert.equal(level.requireAt(11, 10).typ, CORR);
     assert.equal(level.requireAt(12, 10).typ, CORR);
     assert.equal(floorObjectsAt(level, 13, 10).includes(gold), true);
@@ -357,6 +357,6 @@ void test('liquid death starts guard cleanup at zero HP and still applies the co
     const result = await finishMonsterLiquidDeath(guard, { leaveCorpse: true });
 
     assert.equal(level.requireAt(12, 10).typ, STONE);
-    assert.equal(level.monsters.includes(guard), false);
+    assert.notEqual(monsterAtPosition(level, guard.mx, guard.my), guard);
     assert.equal(result.corpse, null);
 });

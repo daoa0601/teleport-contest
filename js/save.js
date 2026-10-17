@@ -14,6 +14,7 @@ import { copyPersistentState, restorePersistentState, SAVE_VERSION } from './sta
 import { restoreMonsterWormHeads, validMonsterWormBodies } from './monster_worm.js';
 import { resolveDungeonIdentities } from './dungeon.js';
 import { restoreMonsterInventoryOwnership } from './monster_inventory.js';
+import { purgeDeadMonsters } from './monster_level_departure.js';
 import { FULL_MOON, LUCKMAX, LUCKMIN, M_AP_NOTHING } from './const.js';
 import { vision_reset_new_level } from './vision.js';
 import { rewindEngravingsForSave, restoreEngravings } from './engrave.js';
@@ -22,6 +23,7 @@ import { GRAPPLING_HOOK, PICK_AXE } from './object_data.js';
 import { forgetTempleEntry } from './priest.js';
 import { restoreElementalBubbles } from './elemental.js';
 import { restoreLevelRegions } from './regions.js';
+import { oinit } from './mklev.js';
 import { restoreScheduledLevelChange } from './level_change.js';
 const SAVE_PREFIX = 'teleport-save:';
 const ERROR_SAVE_PREFIX = 'teleport-error-save:';
@@ -111,10 +113,14 @@ async function prepareGameForSave() {
     game.u.invulnerable = false;
     await doneObjectCleanup();
     const levels = [game.level, ...[...(game._levelCache?.values() ?? [])].map(cached => cached.level)];
-    for (const level of levels)
-        for (const monster of level?.monsters ?? [])
+    for (const level of levels) {
+        if (!level)
+            continue;
+        purgeDeadMonsters(level);
+        for (const monster of level.monsters)
             if (monster.ispriest)
                 forgetTempleEntry(monster);
+    }
     for (const monster of game._migratingMonsters ?? [])
         if (monster.ispriest)
             forgetTempleEntry(monster);
@@ -183,6 +189,9 @@ export function restoreGame(name, storage = game.storage) {
         restorePersistentState(game, snapshot.state);
         resetRestoredInstanceState();
         resolveDungeonIdentities(game);
+        // C restnames() reloads objects[].oc_prob as saved; those gem
+        // probabilities are always oinit()'s values for the saved u.uz.
+        oinit();
         restoreScheduledLevelChange();
         restoreElementalBubbles();
         // restgamestate() rebuilds the first-use reminder from the restored

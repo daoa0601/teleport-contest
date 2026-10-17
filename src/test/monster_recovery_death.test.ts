@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -82,7 +83,7 @@ for (const disintegrated of [false, true]) {
 
         assert.equal(death.survived, false);
         assert.equal(monster.dead, true);
-        assert.equal(level.monsters.includes(monster), false);
+        assert.notEqual(monsterAtPosition(level, monster.mx, monster.my), monster);
         assert.equal(requireMonsterVital(monster.mnum).died, 1);
         assert.equal(floorObjectQuantityAt(level, 11, 10, CORPSE), disintegrated ? 1 : 2);
         assert.equal(death.corpse?.otyp, CORPSE);
@@ -109,7 +110,7 @@ void test('a hero-credited disintegration still credits a vampire killed by its 
     assert.ok(game.u.uexp > 0);
     assert.equal(game.u.ulevel, 2);
     assert.equal(monster.edog?.killed_by_u, 1);
-    assert.equal(level.monsters.includes(monster), false);
+    assert.notEqual(monsterAtPosition(level, monster.mx, monster.my), monster);
     assert.equal(door.doormask, D_NODOOR);
     assert.equal(game.flags.verbose, true);
 });

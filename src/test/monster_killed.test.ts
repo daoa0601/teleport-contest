@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { wearHeroAccessory } from '../js/accessory.js';
@@ -63,7 +64,7 @@ for (const [species, invisible, message] of [
         });
 
         assert.equal(death.survived, false);
-        assert.equal(level.monsters.includes(monster), false);
+        assert.notEqual(monsterAtPosition(level, monster.mx, monster.my), monster);
         assert.ok([...messages, game._pending_message].join('\n').includes(message));
     });
 }
@@ -86,7 +87,7 @@ for (const lifeSaving of [false, true]) {
         const death = await finishMonsterKilled(dog, game, { damageType: AD_PHYS });
 
         assert.equal(death.survived, lifeSaving);
-        assert.equal(level.monsters.includes(dog), lifeSaving);
+        assert.equal(monsterAtPosition(level, dog.mx, dog.my) === dog, lifeSaving);
         const text = [...messages, game._pending_message].join('\n');
         if (amulet) {
             assert.equal(amulet.where, 'gone');
@@ -163,7 +164,7 @@ for (const [species, damageType, name, epitaph] of [
         const death = await finishMonsterKilled(golem, game, { damageType });
 
         assert.equal(death.survived, false);
-        assert.equal(level.monsters.includes(golem), false);
+        assert.notEqual(monsterAtPosition(level, golem.mx, golem.my), golem);
         const remains = floorObjectsAt(level, 12, 10);
         assert.ok(remains.length > 0, `${species} must leave material remains`);
         if (damageType === AD_RUST) {
@@ -235,7 +236,7 @@ void test('kill narration waits at the pager before detaching the victim and dro
         await dying;
     }
 
-    assert.equal(level.monsters.includes(giant), false);
+    assert.notEqual(monsterAtPosition(level, giant.mx, giant.my), giant);
     assert.equal(club.where, 'floor');
     assert.equal(requireMonsterVital(giant.mnum).died, 1);
     assert.ok(floorObjectsAt(level, 12, 10).some(object => object.otyp === CORPSE));
@@ -257,7 +258,7 @@ for (const swallowed of [false, true]) {
         assert.equal(!!game.u.uswallow, false);
         assert.equal(!!game.uswallow, false);
         assert.equal(!!monster.mtrapped, false);
-        assert.equal(game.level.monsters.includes(monster), false);
+        assert.notEqual(monsterAtPosition(game.level, monster.mx, monster.my), monster);
         if (swallowed) {
             assert.equal(game.u.ux, monster.mx);
             assert.equal(game.u.uy, monster.my);

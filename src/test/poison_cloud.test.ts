@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import type { GasCloud } from '../js/map_types.js';
 import type { ObjectRoomOptions } from './support/object-room.js';
 import test from 'node:test';
@@ -106,7 +107,7 @@ void test('poison gas kills a susceptible monster through ordinary death',
         });
 
         assert.equal(jackal.dead, true);
-        assert.equal(requireGameLevel().monsters.includes(jackal), false);
+        assert.notEqual(monsterAtPosition(requireGameLevel(), jackal.mx, jackal.my), jackal);
         assert.equal(events[0]?.damage, 6);
         assert.deepEqual(messages, [
             'The jackal coughs!',

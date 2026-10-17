@@ -4,6 +4,7 @@ import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { changeDoorByMagic } from '../js/door_magic.js';
+import { monsterAtPosition } from '../js/monster_location.js';
 import { requireGameDisplay, requireGameLevel, game } from '../js/gstate.js';
 import { DOOR, SDOOR, STONE, D_NODOOR, D_BROKEN, D_ISOPEN, D_CLOSED, D_LOCKED, D_TRAPPED, NO_MINVENT, PIT, TRAPPED_DOOR, W_AMUL, M_AP_FURNITURE, M_AP_OBJECT, M_AP_F_DKNOWN, } from '../js/const.js';
 import { AMULET_OF_LIFE_SAVING, LOCK_PICK, ROCK, SPE_FORCE_BOLT, SPE_KNOCK, SPE_WIZARD_LOCK, WAN_LOCKING, WAN_OPENING, WAN_STRIKING, } from '../js/object_data.js';
@@ -205,7 +206,7 @@ for (const lifesaved of [false, true]) {
         doorAt(11, 10, D_CLOSED | D_TRAPPED);
         const experience = game.u.uexp || 0;
         await changeDoorByMagic(source, 11, 10);
-        assert.equal(game.level.monsters.includes(occupant), lifesaved);
+        assert.equal(monsterAtPosition(game.level, occupant.mx, occupant.my) === occupant, lifesaved);
         assert.equal(game.u.uexp || 0, experience);
         if (lifesaved) {
             assert.ok(occupant.mhp > 0);

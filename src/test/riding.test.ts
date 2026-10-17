@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -375,7 +376,7 @@ for (const lifesaving of [false, true]) {
         assert.ok(!game.u._woundedLegSide);
         if (lifesaving) assert.ok(steed.mhp > 0);
         else {
-            assert.ok(!requireGameLevel().monsters.includes(steed));
+            assert.notEqual(monsterAtPosition(requireGameLevel(), steed.mx, steed.my), steed);
             assert.ok(!steed.minvent.length);
         }
     });

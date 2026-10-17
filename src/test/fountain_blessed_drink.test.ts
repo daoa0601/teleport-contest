@@ -4,8 +4,45 @@ import { rhack } from '../js/cmd.js';
 import { A_STR, FOUNTAIN } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
+import { readObjectName } from '../js/objnam.js';
 import { initRng } from '../js/rng.js';
 import { freshObjectRoom } from './support/object-room.js';
+
+for (const wish of ['magic fountain', 'blessed fountain']) {
+    void test(`a wished ${wish} restores drained attributes and grants an ability gain`, async () => {
+        freshObjectRoom({ hero: { uluck: 0, acurr: { a: [8, 9, 10, 11, 10, 9] } } });
+        requirePlayingGame(game);
+        await readObjectName(wish, { wizardWish: true });
+        resetInputState().feed('y' + ' '.repeat(20));
+        initRng(6n);
+
+        await rhack('q'.charCodeAt(0));
+
+        assert.ok(game.u.acurr.a.every(value => value >= 12),
+            `Drained attributes remain: ${game.u.acurr.a.join(', ')}`);
+        assert.equal(game.u.acurr.a.filter(value => value === 13).length, 1);
+        assert.equal(game.level.requireAt(10, 10).typ, FOUNTAIN);
+        assert.equal(!!game.level.requireAt(10, 10).blessedftn, false);
+        assert.match(game._pending_message, /A wisp of vapor escapes the fountain/);
+    });
+}
+
+void test('a refreshing drink from a wished magic fountain preserves its blessing and water', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    await readObjectName('magic fountain', { wizardWish: true });
+    const hunger = game.u.uhunger;
+    resetInputState().feed('y' + ' '.repeat(20));
+    initRng(5n);
+
+    await rhack('q'.charCodeAt(0));
+
+    const fountain = game.level.requireAt(10, 10);
+    assert.equal(fountain.typ, FOUNTAIN);
+    assert.equal(!!fountain.blessedftn, true);
+    assert.ok(game.u.uhunger > hunger);
+    assert.equal(game.u.acurr.a[A_STR], 12);
+});
 
 for (const luck of [0, 4]) {
     void test(`a blessed fountain restores drained attributes and grants ${luck < 4 ? 'one gain' : 'all gains'} at luck ${luck}`, async () => {

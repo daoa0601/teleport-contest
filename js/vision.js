@@ -39,7 +39,8 @@ export function monsterEmitsLight(mnum) {
 }
 function mobileLightSources(level) {
     const monsters = [...(level?.monsters || [])];
-    const sources = monsters.filter(monster => !monster.dead && !monster.mburied && monster.mx > 0 && monsterEmitsLight(monster.mnum))
+    const sources = monsters.filter(monster => !monster.dead && !monster.lightRemoved && !monster.mburied
+        && monster.mx > 0 && monsterEmitsLight(monster.mnum))
         .map(monster => ({ x: monster.mx, y: monster.my, range: 1 }));
     if (Upolyd(game.u) && monsterEmitsLight(game.u.umonnum)) {
         // C polyself() increases the hero's radius from one to two so
@@ -74,7 +75,7 @@ export function hasLightSources() {
     return !!game._transientLights?.length
         || Upolyd(game.u) && monsterEmitsLight(game.u.umonnum)
         || [...(game.level?.monsters ?? []), ...(game._migratingMonsters ?? [])]
-            .some(monster => !monster.dead && monsterEmitsLight(monster.mnum))
+            .some(monster => !monster.dead && !monster.lightRemoved && monsterEmitsLight(monster.mnum))
         || objectsInTimerGraph(game).some(object => objectLightRadius(object) > 0);
 }
 function doLightSources(level, couldSee) {

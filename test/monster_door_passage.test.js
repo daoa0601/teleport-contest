@@ -9,7 +9,7 @@ import { mfndpos } from '../js/monmove.js';
 import { resolveMonsterDoorPassage, shiftMonsterForDoor } from '../js/monster_door_passage.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
-import { placeMonsterAt } from '../js/monster_location.js';
+import { monsterAtPosition, placeMonsterAt } from '../js/monster_location.js';
 import { monsterCanOpenDoor, monsterCanUnlockDoor } from '../js/monster_movement_traits.js';
 import { monsterCanFog, monsterCanOoze } from '../js/monster_perception.js';
 import { changeMonsterForm } from '../js/monster_polymorph.js';
@@ -173,7 +173,7 @@ for (const lifeSaving of [false, true]) {
         assert.equal(result.status, lifeSaving ? 'continue' : 'died');
         assert.equal(result.heroDied, false);
         assert.equal(location.doormask, D_NODOOR);
-        assert.equal(level.monsters.includes(monster), lifeSaving);
+        assert.equal(monsterAtPosition(level, monster.mx, monster.my) === monster, lifeSaving);
         if (amulet) {
             assert.equal(amulet.where, 'gone');
             assert.ok(monster.mhp > 0);

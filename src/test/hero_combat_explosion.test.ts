@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -165,7 +166,7 @@ void test('a hero fire explosion consumes a paper target and awards hero kill cr
     });
 
     assert.equal(result.nativeResult, M_ATTK_DEF_DIED);
-    assert.equal(game.level.monsters.includes(defender), false);
+    assert.notEqual(monsterAtPosition(game.level, defender.mx, defender.my), defender);
     assert.equal(game.u.uconduct.killer, kills + 1);
     assert.ok(game.u.uexp > experience);
     assert.equal(floorObjectsAt(game.level, 11, 10).some(object => object.otyp === SCR_BLANK_PAPER), false);
@@ -185,7 +186,7 @@ void test('killing a bystander leaves the hero explosion result as a hit on the 
 
     assert.equal(result.nativeResult, M_ATTK_HIT);
     assert.ok(game.level.monsters.includes(defender));
-    assert.equal(game.level.monsters.includes(bystander), false);
+    assert.notEqual(monsterAtPosition(game.level, bystander.mx, bystander.my), bystander);
     assert.equal(game.u.uconduct.killer, kills + 1);
 });
 

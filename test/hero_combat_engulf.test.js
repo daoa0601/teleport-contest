@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { wearHeroAccessory } from '../js/accessory.js';
@@ -33,7 +34,7 @@ void test('digestion consumes life saving, grants nutrition, and leaves the vict
     const result = await resolveHeroCombatEngulf(victim, engulf(AD_DGST), { publish, random: () => 0 });
     assert.equal(result.nativeResult, M_ATTK_DEF_DIED);
     assert.equal(result.heroDied, false);
-    assert.equal(level.monsters.includes(victim), false);
+    assert.notEqual(monsterAtPosition(level, victim.mx, victim.my), victim);
     assert.equal(amulet.where, 'gone');
     assert.equal(lamp.where, 'floor');
     assert.equal(floorObjectQuantityAt(level, 11, 10, CORPSE), 0);

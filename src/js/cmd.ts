@@ -206,7 +206,7 @@ import { mergable, mergeObjectStacks } from './object_merge.js';
 import { unlinkObject } from './object_location.js';
 import type { InventoryAction } from './invent.js';
 import {
-    castSpell, docast, dovspell,
+    castSpell, docast, dovspell, dowizcast,
 } from './spell.js';
 import {
     vomitHero,
@@ -820,7 +820,8 @@ function canSeeRunMonster(monster: Monster, x: number, y: number, g: GameState =
 
 function travelInterruptedByMonster(g: GameState = game): boolean {
     return !!g.level?.monsters?.some(monster =>
-        Math.abs(monster.mx - g.u.ux) <= 1
+        monsterHasMapPosition(monster, g)
+        && Math.abs(monster.mx - g.u.ux) <= 1
         && Math.abs(monster.my - g.u.uy) <= 1
         && (monster.mx !== g.u.ux || monster.my !== g.u.uy)
         && !monster.pet && !monster.mpeaceful && cansee(monster.mx, monster.my));
@@ -1746,7 +1747,7 @@ async function summonFountainSnakes() {
 
 export async function drinkFountain(loc: MapLocation) {
     let fountainMessage = '';
-    const blessed = loc.blessedftn === 1;
+    const blessed = !!loc.blessedftn;
     const fate = rnd(30);
     if (propertyIsActive('levitation')) {
         await floatingAbove('fountain');
@@ -3344,6 +3345,7 @@ const EXTENDED_COMMAND_HANDLERS = new Map<string, () => Promise<unknown>>([
     ['levelchange', wizLevelChange],
     ['wizwhere', wizWhere],
     ['wizwish', wizWish],
+    ['wizcast', dowizcast],
     ['wizgenesis', wizGenesis],
     ['wizdetect', wizDetect],
     ['wizsmell', () => wizSmell(farlookLocationDescription)],

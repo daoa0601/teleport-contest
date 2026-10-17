@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -71,7 +72,7 @@ for (const source of ['flaming sphere', 'freezing sphere', 'shocking sphere'] as
         assert.equal(result.mask, M_ATTK_AGR_DIED);
         assert.equal(result.damage, 12);
         assert.equal(result.heroDied, false);
-        assert.equal(game.level.monsters.includes(attacker), false);
+        assert.notEqual(monsterAtPosition(game.level, attacker.mx, attacker.my), attacker);
         assert.equal(defender.mhp, 88);
         assert.equal(bystander.mhp, 88);
         assert.equal(game.u.uexp, experience);
@@ -91,7 +92,7 @@ void test('an elemental explosion reports both deaths when it kills its defender
     });
 
     assert.equal(result.mask, M_ATTK_AGR_DIED | M_ATTK_DEF_DIED);
-    assert.equal(game.level.monsters.includes(defender), false);
+    assert.notEqual(monsterAtPosition(game.level, defender.mx, defender.my), defender);
 });
 
 void test('a life-saved elemental sphere stays alive while its combat result ends the attack', async () => {

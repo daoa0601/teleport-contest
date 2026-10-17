@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { MM_ANGRY, MM_NOGRP, NO_MINVENT } from '../js/const.js';
@@ -130,7 +131,7 @@ void test('a lethal psychic blast kills an opposing monster without hero kill cr
         resistsConflict: () => true, random: limit => limit - 1, rollOne: () => 7,
         publish: async () => { },
     });
-    assert.equal(game.level.monsters.includes(eye), false);
+    assert.notEqual(monsterAtPosition(game.level, eye.mx, eye.my), eye);
     assert.equal(game.u.uexp, experience);
     assert.equal(game.u.uconduct.killer, kills);
 });

@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import { requireScreenRow } from './support/screen.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -190,7 +191,7 @@ void test('a fatal egg throw releases the hero from an engulfer', async () => {
         age: game.moves,
     });
     await throwInventoryObject(egg, 'l', Array.from({ length: 8 }, () => ' '));
-    assert.equal(game.level.monsters.includes(engulfer), false);
+    assert.notEqual(monsterAtPosition(game.level, engulfer.mx, engulfer.my), engulfer);
     assert.equal(game.u.uswallow, 0);
     assert.equal(game.u.ustuck, null);
     assert.equal(egg.where, 'gone');
@@ -205,7 +206,7 @@ void test('acid venom can kill an engulfer and release the hero', async () => {
     assert.equal(venom.where, 'gone');
     assert.equal(game.u.uswallow, 0);
     assert.equal(game.u.ustuck, null);
-    assert.equal(game.level.monsters.includes(engulfer), false);
+    assert.notEqual(monsterAtPosition(game.level, engulfer.mx, engulfer.my), engulfer);
 });
 void test('blind swallowed contact silently snuffs an untimed magic lamp', async () => {
     const engulfer = await freshSwallowedState(PM_TRAPPER);
@@ -1193,7 +1194,7 @@ void test('a killing swallowed dart is acquired, dropped, and autopicked before 
     await throwThroughEngulferDeath(dart, engulfer);
     assert.equal(engulfer.mhp, 0);
     assert.equal(engulfer.dead, true);
-    assert.equal(game.level.monsters.includes(engulfer), false);
+    assert.notEqual(monsterAtPosition(game.level, engulfer.mx, engulfer.my), engulfer);
     assert.equal(game.u.uswallow, 0);
     assert.equal(game.u.ustuck, null);
     assert.equal(game.u.uswldtim, 0);

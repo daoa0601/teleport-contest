@@ -8,7 +8,7 @@ import { gameLogEvents } from '../js/gamelog.js';
 import { rollHeroJoust, resolveHeroJoust, tryHeroPuddingSplit } from '../js/hero_weapon_impact.js';
 import { resetInputState } from '../js/input.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
-import { placeMonsterAt } from '../js/monster_location.js';
+import { monsterAtPosition, placeMonsterAt } from '../js/monster_location.js';
 import { DAGGER, GOLD_PIECE, OBJECT_NAMES, POT_ACID } from '../js/object_data.js';
 import { objectMaterial } from '../js/object_material.js';
 import { initRng } from '../js/rng.js';
@@ -142,7 +142,7 @@ void test('drowning during a joust finishes and credits death before the pending
     assert.equal(result.alreadyKilled, true);
     assert.equal(result.heroDied, false);
     assert.equal(monster.dead, true);
-    assert.equal(level.monsters.includes(monster), false);
+    assert.notEqual(monsterAtPosition(level, monster.mx, monster.my), monster);
     assert.equal(state.u.uconduct.killer, 1);
     assert.ok(state.u.uexp > 0);
     const events = gameLogEvents().map(event => event.text);
@@ -171,7 +171,7 @@ void test('jousting an unseen pet into water drops its inventory before announci
             griefPaged = true;
             assert.equal(acid.where, 'gone', 'Grief follows the dropped potion exploding.');
             assert.equal(pet.minvent.length, 0, 'Grief follows releasing the pet inventory.');
-            assert.equal(level.monsters.includes(pet), false, 'Grief follows removing the pet from the map.');
+            assert.notEqual(monsterAtPosition(level, pet.mx, pet.my), pet, 'Grief follows removing the pet from the map.');
         }
     };
     const result = await resolveHeroJoust(pet, weapon, { damage: 10, joust: 1 });

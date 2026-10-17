@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import { ROCK } from '../js/object_data.js';
 import { requirePlayingGame } from '../js/gstate.js';
 import test from 'node:test';
@@ -574,7 +575,7 @@ void test('a stationary monster in water is checked during world maintenance',
         await moveloop_core();
         await finishAtCommandInput(inputGate, moveloop_core, /drown the Oracle/);
 
-        assert.equal(game.level.monsters.includes(oracle), false);
+        assert.notEqual(monsterAtPosition(game.level, oracle.mx, oracle.my), oracle);
         assert.equal(game.u.uconduct.killer, 1);
         assert.match(game._last_message, /You drown the Oracle\./);
     });

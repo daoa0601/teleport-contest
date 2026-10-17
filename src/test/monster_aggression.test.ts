@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -53,7 +54,7 @@ void test('a zombie attacks a nearby giant and the giant rises as a zombie',
             () => 1,
         );
 
-        assert.equal(game.level.monsters.includes(giant), false);
+        assert.notEqual(monsterAtPosition(game.level, giant.mx, giant.my), giant);
         assert.deepEqual([zombie.mx, zombie.my], [10, 10]);
         const corpse = floorObjectsAt(game.level, 11, 10).find(
             object => object.otyp === CORPSE,

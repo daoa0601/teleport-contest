@@ -42,6 +42,7 @@ import { monsterPolymorphsWhenStoned } from './monster_stoning.js';
 import { relocateObjectRandomly } from './object_teleport.js';
 import { discardMonsterInventory, dropSpecialMonsterObjects } from './monster_drop.js';
 import { removeMonsterFromGame } from './monster_departure.js';
+import { purgeDeadMonsters } from './monster_level_departure.js';
 import { exerciseWisdom } from './attrib.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { impossible } from './diagnostics.js';
@@ -641,7 +642,7 @@ export async function u_on_downstairs(): Promise<void> {
 // Object probabilities are mutable because gemstone rarity changes with
 // dungeon depth.  This is the level-dependent half of o_init.c.
 let objectProb = OBJECT_PROB.slice();
-function oinit(): void {
+export function oinit(): void {
     const firstGem = getObjectClassBounds(GEM_CLASS).first;
     const lastRealGem = 460;
     const ledger = Math.min(
@@ -724,11 +725,11 @@ export function rndClass(first: number, last: number): number {
     if (first >= last) return first === last ? first : 0;
     let total = 0;
     for (let otyp = first; otyp <= last; otyp++)
-        total += OBJECT_PROB[otyp] ?? 0;
+        total += objectProb[otyp] ?? 0;
     if (!total) return first + rn2(last - first + 1);
     let roll = rnd(total);
     for (let otyp = first; otyp <= last; otyp++) {
-        roll -= OBJECT_PROB[otyp] ?? 0;
+        roll -= objectProb[otyp] ?? 0;
         if (roll <= 0) return otyp;
     }
     return last;
@@ -3625,6 +3626,7 @@ export function saveBonesLevel(): boolean {
     if (!storage || !game.level || !game.urole || !game.urace
         || !game.u.ualign) return false;
 
+    purgeDeadMonsters(game.level);
     let payload: BonesPayload;
     try {
         payload = decodeBonesPayload(encodeSavedGraph({

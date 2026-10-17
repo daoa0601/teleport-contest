@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { M_ATTK_AGR_DIED, M_ATTK_HIT, M_ATTK_MISS, MM_ANGRY, MM_NOGRP, MM_NOMSG, MM_NOWAIT, NO_MINVENT, W_AMUL, W_ARMH, } from '../js/const.js';
@@ -193,7 +194,7 @@ void test('eating Medusa brain leaves a real statue containing the attacker inve
     assert.equal(result.damage, 2, 'Petrification leaves only pending tentacle damage');
     assert.equal(result.hitFlags, M_ATTK_AGR_DIED);
     assert.equal(result.heroDied, false);
-    assert.equal(level.monsters.includes(attacker), false);
+    assert.notEqual(monsterAtPosition(level, attacker.mx, attacker.my), attacker);
     const statue = floorObjectsAt(level, 11, 10).find(object => object.otyp === STATUE);
     assert.ok(statue);
     assert.equal(statue.corpsenm, MONSTER_NAME.indexOf('mind flayer'));
@@ -251,7 +252,7 @@ for (const lifeSaving of [false, true]) {
         assert.equal(result.damage, 12);
         assert.equal(result.hitFlags, lifeSaving ? M_ATTK_HIT : M_ATTK_AGR_DIED);
         assert.equal(attacker.mhp > 0, lifeSaving);
-        assert.equal(level.monsters.includes(attacker), lifeSaving);
+        assert.equal(monsterAtPosition(level, attacker.mx, attacker.my) === attacker, lifeSaving);
         if (amulet)
             assert.equal(amulet.where, 'gone');
         assert.equal(result.skipBrainDrain, false);

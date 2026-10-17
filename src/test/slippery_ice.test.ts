@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { moveloop_core } from '../js/allmain.js';
@@ -115,7 +116,7 @@ void test('a cockatrice-form hero slipping into an unarmored monster leaves its 
 
     await slipOrTrip();
 
-    assert.equal(level.monsters.includes(orc), false, 'the collision completes the monster death');
+    assert.notEqual(monsterAtPosition(level, orc.mx, orc.my), orc, 'the collision completes the monster death');
     assert.ok(floorObjectsAt(level, 9, 10)
         .some(object => object.otyp === STATUE && object.corpsenm === orc.mnum));
     assert.equal(game.u.uconduct?.killer, 1, 'the collision counts as one hero kill');

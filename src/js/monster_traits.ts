@@ -2,6 +2,7 @@
 // C refs: mkobj.c save_mtraits() and zap.c montraits().
 
 import { isReviver } from './corpse_species.js';
+import { MON_DETACH, MON_FLOOR } from './const.js';
 import {
     MONSTER_ATTACKS, MONSTER_GENO, MONSTER_LEVEL,
 } from './monster_data.js';
@@ -38,12 +39,13 @@ export function saveMonsterTraits(monster: Monster | null | undefined): SavedMon
     if (!monster) return null;
     if (monster.ispriest) forgetTempleEntry(monster);
     const {
-        minvent, inventory, mw, wormSegments, wormGrowTime, wormHead,
+        minvent, inventory, mw, wormSegments, wormGrowTime, wormHead, lightRemoved,
         ...saved
     } = monster;
     saved.wormno = 0;
     saved.mhpmax = Math.max(saved.mhpmax ?? 1, (MONSTER_LEVEL[monster.mnum] ?? 0) + 1);
     saved.mhp = Math.max(0, Math.min(saved.mhp ?? 0, saved.mhpmax));
+    saved.mstate = (saved.mstate ?? MON_FLOOR) & ~MON_DETACH;
     if (monster.edog) saved.edog = copyPetData(monster.edog);
     if (monster.mextra) {
         saved.mextra = { ...monster.mextra };

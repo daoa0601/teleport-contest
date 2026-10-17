@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -106,7 +107,7 @@ void test('falling forces contact with a wielded cockatrice corpse before the mo
             publish: async (message: string) => messages.push(message),
         });
 
-        assert.equal(level.monsters.includes(monster), false);
+        assert.notEqual(monsterAtPosition(level, monster.mx, monster.my), monster);
         assert.ok(floorObjectsAt(level, 11, 10).some(object =>
             object.otyp === STATUE && object.corpsenm === monster.mnum));
         const fall = messages.findIndex(message =>

@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { M_ATTK_DEF_DIED, M_ATTK_HIT, MM_ANGRY, MM_NOGRP, MM_NOMSG, MM_NOWAIT, NO_MINVENT, W_WEP, } from '../js/const.js';
@@ -52,7 +53,7 @@ void test('a lethal breath becomes a defender-death result rather than retaining
     assert.equal(attack.nativeResult, M_ATTK_DEF_DIED);
     assert.equal(attack.struck, false);
     assert.equal(attack.defenderDied, true);
-    assert.equal(level.monsters.includes(target), false);
+    assert.notEqual(monsterAtPosition(level, target.mx, target.my), target);
     assert.equal(game.u.uconduct.killer || 0, 0);
 });
 for (const species of ['red dragon', 'cobra']) {
@@ -128,7 +129,7 @@ void test('a fatal first throw drops HIT and stops the second native weapon atta
     assert.equal(attack.nativeResult, M_ATTK_DEF_DIED);
     assert.equal(attack.struck, false);
     assert.equal(daggers.quan, 3);
-    assert.equal(level.monsters.includes(target), false);
+    assert.notEqual(monsterAtPosition(level, target.mx, target.my), target);
     assert.equal(game.u.uconduct.killer || 0, 0);
 });
 void test('a breath ray restores the common caller aim even when that aim started on the attacker', async () => {

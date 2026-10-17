@@ -151,6 +151,7 @@ function monsterFields(value, context) {
         hasInventory: optional(boolean),
         cham: optional(validSavedSpeciesOrNone),
         dead: optional(boolean),
+        lightRemoved: optional(boolean),
         movement: optional(integer),
         mmove: optional(integer),
         mspeed: optional(integer),
@@ -236,7 +237,7 @@ export function validSavedMonster(value, context) {
     return validateSavedEntity(value, 'monster', context, monsterFields(value, context));
 }
 export function validSavedMonsterTraits(value, context) {
-    const { minvent, inventory, mw, wormSegments, wormHead, wormGrowTime, ...fields } = monsterFields(value, context);
+    const { minvent, inventory, mw, wormSegments, wormHead, wormGrowTime, lightRemoved, ...fields } = monsterFields(value, context);
     return validateSavedEntity(value, 'savedMonster', context, fields);
 }
 //# sourceMappingURL=monster_validation.js.map

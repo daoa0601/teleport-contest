@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { G_GENOD, MM_NOGRP, MM_NOWAIT, NO_MINVENT } from '../js/const.js';
@@ -69,7 +70,7 @@ void test('eating royal jelly kills a bee when queen bees have been genocided', 
 
     await takeMonsterTurn(bee, game);
 
-    assert.equal(level.monsters.includes(bee), false);
+    assert.notEqual(monsterAtPosition(level, bee.mx, bee.my), bee);
     assert.equal(jelly.where, 'gone');
 });
 

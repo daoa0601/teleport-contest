@@ -8,9 +8,10 @@ import { resumeDeferredMovementSpell, takeMonsterTurn, triggerImmediateMonsterTr
 import { findMonsterDefensiveItem, useMonsterDefensiveItem } from '../js/monster_defensive_item.js';
 import { lootMonsterContainer } from '../js/monster_container_loot.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { finishEnvironmentalMonsterDeath } from '../js/monster_death.js';
 import { prepareMonsterItemUse } from '../js/monster_item_use.js';
 import { addObjectToContainer } from '../js/object_container.js';
-import { AMULET_OF_YENDOR, DAGGER, LEASH, POT_HEALING, SACK, WAN_DIGGING } from '../js/object_data.js';
+import { AMULET_OF_YENDOR, BUGLE, DAGGER, LEASH, POT_HEALING, SACK, WAN_DIGGING } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { makeBlinded } from '../js/sight_change.js';
 import { vision_recalc } from '../js/vision.js';
@@ -20,6 +21,28 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 import { createDungeon } from './support/topology.js';
+
+for (const condition of ['sleeping', 'paralyzed']) {
+    void test(`a bugler stops selecting reveille for a killed ${condition} soldier`, async () => {
+        freshObjectRoom({ heroX: 14, heroY: 10 });
+        requirePlayingGame(game);
+        const bugler = await createMonsterAt('soldier', 10, 10, MM_ANGRY | NO_MINVENT);
+        bugler.mhp = 1;
+        bugler.mhpmax = 40;
+        bugler.mux = game.u.ux;
+        bugler.muy = game.u.uy;
+        await addObjectToMonsterInventory(bugler, await knownObject(BUGLE), game);
+        const soldier = await createMonsterAt('soldier', 12, 10, MM_ANGRY | NO_MINVENT);
+        soldier.msleeping = condition === 'sleeping' ? 1 : 0;
+        soldier.mcanmove = condition === 'paralyzed' ? 0 : 1;
+        assert.equal(findMonsterDefensiveItem(bugler, game)?.kind, 'bugle');
+
+        await finishEnvironmentalMonsterDeath(soldier, game, { noCorpse: true });
+
+        assert.equal(findMonsterDefensiveItem(bugler, game)?.kind, undefined,
+            'A dead soldier must not make the bugler waste its action');
+    });
+}
 
 for (const branch of [true, false]) {
     void test(`an Amulet carrier escapes ${branch ? 'branch' : 'ordinary'} stairs to their destination`, async () => {

@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { ALTAR, G_GENOD, LUCKMIN, MM_EPRI, PIT, POOL, STONE } from '../js/const.js';
@@ -111,7 +112,7 @@ void test('a dead Kop can return elsewhere on the level', async () => {
     await finishEnvironmentalMonsterDeath(kop, game, {
         publish: async () => { },
     });
-    const returnedKop = level.monsters.find(monster => monster.mnum === kop.mnum);
+    const returnedKop = level.monsters.find(monster => monster.mnum === kop.mnum && monster.mhp > 0);
     assert.notEqual(returnedKop, undefined);
     assert.notEqual(returnedKop, kop);
     assert.ok(returnedKop);
@@ -559,7 +560,7 @@ void test('a hero kill releases a fixed crysknife before placing it on the floor
     initRng(5n);
     pushKeys('        ');
     await finishHeroMonsterKill(orc, orc.mx, orc.my, { noCorpse: true });
-    assert.equal(game.level.monsters.includes(orc), false);
+    assert.notEqual(monsterAtPosition(game.level, orc.mx, orc.my), orc);
     assert.ok(floorObjectsAt(game.level, 12, 10).includes(knife));
     assert.equal(knife.otyp, WORM_TOOTH);
 });

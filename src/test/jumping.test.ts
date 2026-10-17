@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import type { ObjectRoomOptions } from './support/object-room.js';
 import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
@@ -241,7 +242,7 @@ void test('a petrifying jump collision uses the real monster death and statue ow
     assert.equal(result.heroDied, false);
     assert.equal(game.u.ux, 11);
     assert.equal(monster.dead, true);
-    assert.equal(game.level.monsters.includes(monster), false);
+    assert.notEqual(monsterAtPosition(game.level, monster.mx, monster.my), monster);
     const statue = floorObjectsAt(requireGameLevel(game), 12, 10).find(object => object.otyp === STATUE);
     assert.ok(statue);
     assert.equal(statue.corpsenm, monster.mnum);

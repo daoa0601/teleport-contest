@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import { floorObjectsAt } from './support/level-state.js';
 import type { Monster } from '../js/monster_types.js';
 import test from 'node:test';
@@ -60,7 +61,7 @@ void test('trying to displace a cockatrice petrifies an unprotected displacer', 
 
     await attemptDisplacement(beast, cockatrice);
 
-    assert.equal(game.level.monsters.includes(beast), false);
+    assert.notEqual(monsterAtPosition(game.level, beast.mx, beast.my), beast);
     assert.deepEqual([cockatrice.mx, cockatrice.my], [12, 10]);
     assert.ok(floorObjectsAt(game.level, 13, 10).some(object => object.otyp === STATUE));
     assert.equal(game.u.uconduct.killer ?? 0, kills);

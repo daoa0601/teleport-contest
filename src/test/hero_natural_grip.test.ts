@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { M_ATTK_DEF_DIED, NO_MINVENT, POOL, W_AMUL, W_ARM, W_ARMC, W_ARMH, W_ARMU } from '../js/const.js';
@@ -139,7 +140,7 @@ for (const lifeSaved of [false, true]) {
         assert.equal(result.nativeResult, M_ATTK_DEF_DIED);
         assert.equal(result.heroDied, false);
         assert.equal(context.state.u.uconduct.killer, 1);
-        assert.equal(context.state.level.monsters.includes(monster), lifeSaved);
+        assert.equal(monsterAtPosition(context.state.level, monster.mx, monster.my) === monster, lifeSaved);
         assert.match(messages.join('\n'), /You drown the long worm/);
         if (amulet) {
             assert.equal(amulet.where, 'gone');

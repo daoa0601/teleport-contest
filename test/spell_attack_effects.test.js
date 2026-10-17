@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import { createSpecialLevel } from './support/topology.js';
 import { requirePlayingGame } from '../js/gstate.js';
 import test from 'node:test';
@@ -220,7 +221,7 @@ void test('chain lightning can kill and continue from its dead target', async ()
     const first = await target('jackal', 13, 10, 1);
     const second = await target('jackal', 16, 10);
     await castChainLightning();
-    assert.ok(!game.level.monsters.includes(first));
+    assert.notEqual(monsterAtPosition(game.level, first.mx, first.my), first);
     assert.ok(second.mhp < 500);
     assert.equal(game.u.uconduct.killer, 1);
 });

@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -53,7 +54,7 @@ void test('genocide records a pet death and releases its leash without kill cred
     assert.equal(requireMonsterVital(dog.mnum).died, 1);
     assert.equal(dog.mleashed, 0);
     assert.equal(leash.leashmon, 0);
-    assert.equal(level.monsters.includes(dog), false);
+    assert.notEqual(monsterAtPosition(level, dog.mx, dog.my), dog);
     assert.equal(game.u.uexp, experience);
     assert.equal(game.u.uconduct.killer, kills);
     assert.equal(floorObjectsAt(level, 11, 10).some(object => object.otyp === CORPSE), false);

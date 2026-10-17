@@ -150,7 +150,7 @@ import { dozap, } from './zap.js';
 import { bucAdjectiveForName, checkInventoryGold, consumeInventoryItem, ddoinv, dolook, fullyIdentifyObject, inventoryItemDescription, inventoryPrimaryHandDetail, selectInventoryObject, selectUsedInventoryLetter, } from './invent.js';
 import { mergable, mergeObjectStacks } from './object_merge.js';
 import { unlinkObject } from './object_location.js';
-import { castSpell, docast, dovspell, } from './spell.js';
+import { castSpell, docast, dovspell, dowizcast, } from './spell.js';
 import { vomitHero, } from './hero_illness.js';
 import { heroBreathAttack } from './hero_breath.js';
 import { resolveHeroCombatExplosion } from './hero_combat_explosion.js';
@@ -622,7 +622,8 @@ function canSeeRunMonster(monster, x, y, g = game) {
         && !monster.mundetected;
 }
 function travelInterruptedByMonster(g = game) {
-    return !!g.level?.monsters?.some(monster => Math.abs(monster.mx - g.u.ux) <= 1
+    return !!g.level?.monsters?.some(monster => monsterHasMapPosition(monster, g)
+        && Math.abs(monster.mx - g.u.ux) <= 1
         && Math.abs(monster.my - g.u.uy) <= 1
         && (monster.mx !== g.u.ux || monster.my !== g.u.uy)
         && !monster.pet && !monster.mpeaceful && cansee(monster.mx, monster.my));
@@ -1602,7 +1603,7 @@ async function summonFountainSnakes() {
 }
 export async function drinkFountain(loc) {
     let fountainMessage = '';
-    const blessed = loc.blessedftn === 1;
+    const blessed = !!loc.blessedftn;
     const fate = rnd(30);
     if (propertyIsActive('levitation')) {
         await floatingAbove('fountain');
@@ -3309,6 +3310,7 @@ const EXTENDED_COMMAND_HANDLERS = new Map([
     ['levelchange', wizLevelChange],
     ['wizwhere', wizWhere],
     ['wizwish', wizWish],
+    ['wizcast', dowizcast],
     ['wizgenesis', wizGenesis],
     ['wizdetect', wizDetect],
     ['wizsmell', () => wizSmell(farlookLocationDescription)],

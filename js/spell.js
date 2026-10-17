@@ -18,7 +18,7 @@ import { deleteObject } from './object_delete.js';
 import { useHeroSkill } from './skills.js';
 import { castChainLightning, castSkilledElementalSpell } from './spell_attack_effects.js';
 import { checkSpellCast, currentSpellKnowledge, liveSpellSkill, spellSkillType } from './spell_casting_rules.js';
-import { selectSpellToCast, viewKnownSpells } from './spell_menu.js';
+import { selectSpellToCast, selectWizardSpell, viewKnownSpells } from './spell_menu.js';
 import { castCureBlindness, castCureSickness, castProtection } from './spell_misc_effects.js';
 import { applyPotionSpell } from './spell_potion_effects.js';
 import { applyScrollEffects } from './scroll_effects.js';
@@ -223,6 +223,14 @@ export async function docast() {
     game._repeatCommands ??= [];
     game._repeatCommands.push({ kind: 'key', key: letter });
     await castSpell(spell.otyp);
+}
+export async function dowizcast() {
+    const spell = await selectWizardSpell();
+    if (spell === null) {
+        game.context.move = 0;
+        return;
+    }
+    await castSpell(spell, { force: true });
 }
 export async function dovspell() {
     await viewKnownSpells(game);

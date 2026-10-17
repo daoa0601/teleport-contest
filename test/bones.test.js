@@ -13,6 +13,7 @@ import { placeCreatedObject } from '../js/floor_object.js';
 import { mklev, saveBonesLevel } from '../js/mklev.js';
 import { createHarmlessGasCloudSelection, runLevelRegions } from '../js/regions.js';
 import { linkObjectToMonsterInventory } from '../js/monster_inventory.js';
+import { finishEnvironmentalMonsterDeath } from '../js/monster_death.js';
 import { AMULET_OF_YENDOR, CHEST, CORPSE, DAGGER, FAKE_AMULET_OF_YENDOR, FOOD_RATION, POT_HEALING, ROCK, STATUE, } from '../js/object_data.js';
 import { init_objects } from '../js/o_init.js';
 import { cansee, vision_recalc, vision_reset_new_level } from '../js/vision.js';
@@ -134,6 +135,20 @@ function storedBones(storage) {
     assert.ok(isSavedRecord(header) && typeof header.version === 'number', 'bones did not retain their format version');
     return { key, payload: decodeBonesPayload(encoded, header.version) };
 }
+void test('bones discard monsters killed before the next movement pass', async () => {
+    const storage = memoryStorage();
+    freshBonesRoom(storage);
+    const soldier = await createMonsterAt('soldier', 12, 10);
+    const ghost = await createMonsterAt(PM_GHOST, 13, 10);
+    await finishEnvironmentalMonsterDeath(soldier, game, { noCorpse: true });
+    assert.equal(saveBonesLevel(), true);
+    freshBonesRoom(storage);
+    pushKeys('yn');
+    await mklev();
+    const restored = requireGameLevel().monsters;
+    assert.equal(restored.some(monster => monster.mnum === soldier.mnum), false, 'A dead soldier must not survive in bones');
+    assert.equal(restored.some(monster => monster.mnum === ghost.mnum), true, 'Bones must retain the living ghost');
+});
 void test('a monster restored from bones retains its gas exposure under its new identity', async () => {
     const storage = memoryStorage();
     freshBonesRoom(storage);

@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import type { Monster } from '../js/monster_types.js';
@@ -50,7 +51,7 @@ for (const restored of [false, true]) {
         await finishHeroMonsterKillOutcome(monster, 11, 10, { noCorpse: true });
 
         requirePlayingGame(game);
-        assert.equal(game.level.monsters.includes(monster), false);
+        assert.notEqual(monsterAtPosition(game.level, monster.mx, monster.my), monster);
         const pile = floorObjectsAt(game.level, 11, 10);
         assert.ok(pile.some(object => object.otyp === IRON_SHOES));
         assert.ok(pile.some(object => object.otyp === DWARVISH_CLOAK));
@@ -95,7 +96,7 @@ for (const ending of ['ordinary', 'no corpse', 'petrification', 'level forbids r
         assert.equal(game.u.uswallow, 0);
         assert.equal(game.u.ux, 10);
         assert.equal(game.u.uy, 10);
-        assert.equal(level.monsters.includes(engulfer), false);
+        assert.notEqual(monsterAtPosition(level, engulfer.mx, engulfer.my), engulfer);
         assert.equal(!!game.u.utrap, ending === 'ordinary');
         assert.equal(!!trap.tseen, ending === 'ordinary');
         if (ending === 'ordinary') assert.ok(game.u.uhp < hp);
@@ -157,7 +158,7 @@ for (const shifted of [false, true]) {
         await finishAtCommandInput(input, moveloop_core, /fire elemental/);
 
         assert.equal(cansee(15, 10), false);
-        assert.equal(level.monsters.includes(emitter), false);
+        assert.notEqual(monsterAtPosition(level, emitter.mx, emitter.my), emitter);
         if (shifted) assert.equal(emitter.mnum, MONSTER_NAME.indexOf('chameleon'));
     });
 }

@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
@@ -29,7 +30,7 @@ void test('a clinging steed drowns on dismount when there is no ceiling', async 
     await runExtendedCommand('ride');
 
     assert.equal(wumpus.dead, true);
-    assert.equal(game.level.monsters.includes(wumpus), false);
+    assert.notEqual(monsterAtPosition(game.level, wumpus.mx, wumpus.my), wumpus);
     assert.equal(game.u.usteed, null);
     assert.equal(game.u.ux, x);
     assert.equal(game.u.uy, y);

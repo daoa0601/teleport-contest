@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { runClaimedCorpseRevivalTimer } from '../js/corpse_revival.js';
@@ -39,7 +40,7 @@ void test('a zombie attacks a nearby giant and the giant rises as a zombie', asy
     giant.m_lev = 6;
     giant.name = 'Bram';
     await takeMonsterTurn(zombie, game, () => 0, (count, sides) => count * sides, () => 1);
-    assert.equal(game.level.monsters.includes(giant), false);
+    assert.notEqual(monsterAtPosition(game.level, giant.mx, giant.my), giant);
     assert.deepEqual([zombie.mx, zombie.my], [10, 10]);
     const corpse = floorObjectsAt(game.level, 11, 10).find(object => object.otyp === CORPSE);
     assert.ok(corpse, 'the giant left a corpse');

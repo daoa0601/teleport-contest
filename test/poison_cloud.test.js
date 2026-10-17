@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
@@ -87,7 +88,7 @@ void test('poison gas kills a susceptible monster through ordinary death', async
         }),
     });
     assert.equal(jackal.dead, true);
-    assert.equal(requireGameLevel().monsters.includes(jackal), false);
+    assert.notEqual(monsterAtPosition(requireGameLevel(), jackal.mx, jackal.my), jackal);
     assert.equal(events[0]?.damage, 6);
     assert.deepEqual(messages, [
         'The jackal coughs!',

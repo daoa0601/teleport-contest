@@ -1,7 +1,7 @@
 import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { FOUNTAIN, F_WARNED, ROOM } from '../js/const.js';
+import { FOUNTAIN, F_WARNED, MON_OFFMAP, ROOM } from '../js/const.js';
 import { flush_screen, glyphAt, newsym } from '../js/display.js';
 import { createHarmlessGasCloudSelection } from '../js/regions.js';
 import { syncDeafness } from '../js/senses.js';
@@ -73,6 +73,19 @@ void test('the newest eligible watchman warns first about a town fountain', asyn
     assert.equal(fountain.typ, FOUNTAIN);
     assert.ok(Number(fountain.looted ?? 0) & F_WARNED);
     assert.ok(messages.some(text => /A watch captain yells:/.test(text)));
+});
+void test('an off-map watchman cannot warn about a town fountain', async () => {
+    const fountain = fountainRoom({ town: true });
+    const watch = await createMonsterAt('watchman', 13, 10);
+    watch.mpeaceful = 1;
+    watch.mstate = MON_OFFMAP;
+    const messages = [];
+    initRng(1n);
+    await dryFountainAt(12, 10, { publish: async (text) => messages.push(text) });
+    assert.equal(fountain.typ, FOUNTAIN);
+    assert.ok(Number(fountain.looted ?? 0) & F_WARNED);
+    assert.ok(messages.includes('The flow reduces to a trickle.'), messages.join('\n'));
+    assert.ok(messages.every(text => !text.includes('yells') && !text.includes('stop using')), messages.join('\n'));
 });
 void test('drying a warned town fountain angers the watch', async () => {
     const fountain = fountainRoom({ town: true });

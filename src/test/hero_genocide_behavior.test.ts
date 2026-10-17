@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { G_EXTINCT, G_GENOD, G_NOCORPSE, MM_NOGRP, NO_MINVENT, Upolyd } from '../js/const.js';
@@ -124,7 +125,7 @@ void test('genociding the current changeable form restores the healthy original 
     assert.equal(Upolyd(state.u), false);
     assert.ok(state.u.uhp > 0);
     assert.equal(!!state.program_state.gameover, false);
-    assert.equal(level.monsters.includes(dragon), false);
+    assert.notEqual(monsterAtPosition(level, dragon.mx, dragon.my), dragon);
     assert.match(observed.text(), /You return to human form!/);
 });
 
@@ -183,7 +184,7 @@ void test('a doomed original race in a surviving monster body still removes that
     await flushPendingTopline();
 
     assert.equal(!!state.program_state.gameover, false);
-    assert.equal(level.monsters.includes(human), false);
+    assert.notEqual(monsterAtPosition(level, human.mx, human.my), human);
     assert.equal(state.u.uhp, -1);
 });
 

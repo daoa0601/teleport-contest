@@ -68,7 +68,7 @@ void test('digestion consumes the actual life saver and leaves possessions witho
     const result = await digest();
     assert.equal(result.nativeResult, M_ATTK_DEF_DIED);
     assert.equal(observedSwallowedPair, true);
-    assert.equal(level.monsters.includes(defender), false);
+    assert.notEqual(monsterAtPosition(level, defender.mx, defender.my), defender);
     assert.equal(amulet.where, 'gone');
     assert.equal(dagger.where, 'floor');
     assert.equal(floorObjectQuantityAt(level, 12, 10, CORPSE), 0);
@@ -81,7 +81,7 @@ for (const rider of ['Death', 'Pestilence', 'Famine']) {
         const { level, attacker, defender, digest } = await digestionRoom(rider);
         const result = await digest();
         assert.equal(result.nativeResult, M_ATTK_AGR_DIED);
-        assert.equal(level.monsters.includes(attacker), false);
+        assert.notEqual(monsterAtPosition(level, attacker.mx, attacker.my), attacker);
         assert.equal(defender.mhp, 100);
         assert.equal(monsterAtPosition(level, 12, 10), defender);
         requirePlayingGame(game);
@@ -106,7 +106,7 @@ void test('a swallowed gas spore explodes only inside its eater', async () => {
     initRng(97n);
     const result = await digest();
     assert.equal(result.nativeResult, M_ATTK_DEF_DIED);
-    assert.equal(level.monsters.includes(defender), false);
+    assert.notEqual(monsterAtPosition(level, defender.mx, defender.my), defender);
     assert.ok(attacker.mhp > 0 && attacker.mhp < 100);
     assert.equal(neighbor.mhp, 100);
     assert.equal(game.u.uhp, 500);
@@ -117,8 +117,8 @@ void test('a fatal internal gas-spore explosion still kills the swallowed spore'
     attacker.mhp = 1;
     const result = await digest();
     assert.equal(result.nativeResult, M_ATTK_AGR_DIED | M_ATTK_DEF_DIED);
-    assert.equal(level.monsters.includes(attacker), false);
-    assert.equal(level.monsters.includes(defender), false);
+    assert.notEqual(monsterAtPosition(level, attacker.mx, attacker.my), attacker);
+    assert.notEqual(monsterAtPosition(level, defender.mx, defender.my), defender);
     assert.equal(monsterAtPosition(level, 12, 10), null);
     assert.equal(game.u.uhp, 500);
 });
@@ -145,7 +145,7 @@ void test('a tame minion digests its victim without pet nutrition or chewing tim
     const { attacker, defender, level, digest } = await digestionRoom('horse', { minion: true });
     attacker.mtame = 10;
     await digest();
-    assert.equal(level.monsters.includes(defender), false);
+    assert.notEqual(monsterAtPosition(level, defender.mx, defender.my), defender);
     assert.equal(attacker.meating ?? 0, 0);
 });
 void test('a swallowed wraith grants exactly one level and a short meal without nutrition', async () => {
@@ -171,7 +171,7 @@ void test('digesting a nurse restores the eater before ordinary growth', async (
 void test('digesting green slime changes the eater into slime after the victim dies', async () => {
     const { attacker, defender, level, digest } = await digestionRoom('green slime');
     await digest();
-    assert.equal(level.monsters.includes(defender), false);
+    assert.notEqual(monsterAtPosition(level, defender.mx, defender.my), defender);
     assert.equal(attacker.mnum, MONSTER_NAME.indexOf('green slime'));
     assert.ok(attacker.mhp > 0);
 });
@@ -183,7 +183,7 @@ void test('a digested shapechanger reverts at death but its swallowed nurse form
     const oldForm = attacker.mnum;
     attacker.mhp = 2;
     await digest();
-    assert.equal(level.monsters.includes(defender), false);
+    assert.notEqual(monsterAtPosition(level, defender.mx, defender.my), defender);
     assert.equal(defender.mnum, MONSTER_NAME.indexOf('chameleon'));
     assert.equal(attacker.mnum, oldForm);
     assert.ok(attacker.mhp >= 100);

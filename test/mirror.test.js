@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import { ensureQuestStatus } from '../js/quest.js';
 import { floorObjects } from './support/level-state.js';
 import { requireScreenRow } from './support/screen.js';
@@ -216,7 +217,7 @@ void test('Medusa is petrified through the normal hero kill and statue owners', 
     const experience = game.u.uexp || 0;
     const result = await reflect(mirror, 'l');
     assert.equal(result.heroDied, false);
-    assert.equal(level.monsters.includes(medusa), false);
+    assert.notEqual(monsterAtPosition(level, medusa.mx, medusa.my), medusa);
     assert.ok(game.u.uexp > experience);
     assert.equal(game.u.uconduct.killer, 1);
     assert.ok(floorObjects(level).some(object => object.otyp === STATUE

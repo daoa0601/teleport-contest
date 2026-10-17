@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { rhack } from '../js/cmd.js';
@@ -37,7 +38,7 @@ void test('lethal light damage is fully applied before the gremlin death message
     initRng(1n);
     await rhack('z'.charCodeAt(0));
     assert.ok(healthAtInput.some(health => health < 0), `The lethal flash must subtract its full damage before the death pager; HP at input: ${healthAtInput.join(', ')}`);
-    assert.equal(level.monsters.includes(gremlin), false);
+    assert.notEqual(monsterAtPosition(level, gremlin.mx, gremlin.my), gremlin);
     assert.equal(sleeper.msleeping, 0, 'The gremlin cry wakes nearby creatures before the kill');
     assert.equal(game.u.uconduct?.killer, 1);
     assert.equal(wand.spe, 2);
