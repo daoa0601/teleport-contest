@@ -123,6 +123,10 @@ export async function updateHeroEncumbrance(state, publish) {
     const message = baseline == null ? null : encumbranceMessage(baseline, capacity);
     if (message)
         await publish(message);
+    // C pickup.c:encumber_msg() marks the status line after any change; the
+    // next pline()'s flush_screen() then redraws the capacity field.
+    if (baseline != null && baseline !== capacity)
+        state.context.botl = true;
 }
 // C do.c:807-843 dropz(): put an already-free dropped object at its
 // destination, with or without impact side effects.  The object's square is

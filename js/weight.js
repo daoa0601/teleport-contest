@@ -5,6 +5,9 @@ import { MONSTER_BODY_META, MONSTER_FLAGS2, MONSTER_SIZE, MONSTER_SYMBOL, } from
 import { A_CON, Is_airlevel, LARGEST_INT } from './const.js';
 import { currentAttribute, currentStrength } from './attrib.js';
 import { flyingSupportsLoad, levitationSupportsLoad } from './properties.js';
+import { game } from './gstate.js';
+import { heroSpecies } from './hero_species.js';
+import { monsterStagger } from './monster_locomotion.js';
 export const UNENCUMBERED = 0;
 export const SLT_ENCUMBER = 1;
 export const MOD_ENCUMBER = 2;
@@ -171,13 +174,15 @@ export function encumbranceLabel(level) {
     return ['', 'Burdened', 'Stressed', 'Strained', 'Overtaxed', 'Overloaded'][level]
         || '';
 }
-export function encumbranceMessage(previous, current) {
+// C pickup.c:encumber_msg(). The strained verb follows the hero's body.
+export function encumbranceMessage(previous, current, state = game) {
+    const stagger = monsterStagger(heroSpecies(state), 'stagger');
     if (previous < current) {
         return [
             '',
             'Your movements are slowed slightly because of your load.',
             'You rebalance your load.  Movement is difficult.',
-            'You stagger under your heavy load.  Movement is very hard.',
+            `You ${stagger} under your heavy load.  Movement is very hard.`,
             'You can barely move a handspan with this load!',
             "You can't even move a handspan with this load!",
         ][current] || '';
@@ -187,7 +192,7 @@ export function encumbranceMessage(previous, current) {
             'Your movements are now unencumbered.',
             'Your movements are only slowed slightly by your load.',
             'You rebalance your load.  Movement is still difficult.',
-            'You stagger under your load.  Movement is still very hard.',
+            `You ${stagger} under your load.  Movement is still very hard.`,
             '',
             '',
         ][current] || '';
