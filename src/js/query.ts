@@ -4,7 +4,7 @@
 import { COLNO, PARANOID_CONFIRM, QBUFSZ } from './const.js';
 import { clearMessageWindow, flushPendingTopline, flush_screen, pline } from './display.js';
 import { game } from './gstate.js';
-import { nhgetch } from './input.js';
+import { nhgetch, readchar } from './input.js';
 import { NO_COLOR } from './terminal.js';
 import { rememberCommandKey, takeRepeatCommand } from './command_repeat.js';
 
@@ -151,37 +151,90 @@ export async function promptChoice<Choice extends string>(
             ? choices.find(choice => choice === String.fromCharCode(queued.key)) ?? defaultAnswer
             : defaultAnswer;
     }
-    // cmd.c:yn_function() reserves the last three query characters for an
-    // ellipsis when the caller exceeds the native question buffer.
+    const result = await tty_yn_function(query, choices.join(''), defaultAnswer, visibleChoices);
+    const answer = choices.find(choice => choice === result.answer) ?? defaultAnswer;
+    if (addCommandQueue) rememberCommandKey(answer.charCodeAt(0));
+    return answer;
+}
+
+export interface TtyPromptAnswer { answer: string; count: bigint }
+
+// Native tty_yn_function returns the answer and sets yn_number. Keep the
+// number in the result so each suspended question owns its own answer.
+export async function tty_yn_function(
+    query: string, responses: string | null, defaultAnswer = '',
+    visibleChoices = responses?.split('\x1b')[0] ?? '',
+): Promise<TtyPromptAnswer> {
     const question = query.length >= QBUFSZ
         ? `${query.slice(0, QBUFSZ - 4)}...` : query;
-    const message = `${question} [${visibleChoices}] (${defaultAnswer}) `;
-    const preserveCase = choices.some(choice => /[A-Z]/.test(choice));
-    // tty_yn_function() honors WIN_STOP before clearing it for the question.
+    const choices = visibleChoices.split('\x1b')[0] ?? '';
+    const message = responses === null ? `${question} `
+        : `${question} [${choices}]${defaultAnswer ? ` (${defaultAnswer})` : ''} `;
+    const preserveCase = responses === null || /[A-Z]/.test(responses);
+    const readAnswer = async () => {
+        const key = await readchar();
+        return String.fromCharCode(!preserveCase && key >= 65 && key <= 90 ? key + 32 : key);
+    };
     if (!game._suppressMessagesUntilInput) await flushPendingTopline();
     game._suppressMessagesUntilInput = false;
     await pline(message);
     await flush_screen(1);
     renderChoicePrompt(message);
-    const wrapped = (game.nhDisplay?.cursorRow ?? 0) > 0;
+    let displayed = message;
+    const paint = (text: string) => {
+        displayed = text;
+        renderChoicePrompt(text);
+    };
+    const finish = (answer: string, count = 0n): TtyPromptAnswer => {
+        if (game.nhDisplay) game.nhDisplay.toplines = message + (count ? `#${count}` : answer);
+        game._retained_message = displayed;
+        if ((game.nhDisplay?.cursorRow ?? 0) > 0) clearMessageWindow();
+        return { answer, count };
+    };
+    if (responses === null) return finish(await readAnswer());
     for (;;) {
-        const key = await nhgetch();
-        const character = preserveCase ? String.fromCharCode(key) : String.fromCharCode(key).toLowerCase();
-        let answer: Choice | undefined;
-        if (key === 27) {
-            answer = choices.find(choice => choice === 'q')
-                ?? choices.find(choice => choice === 'n') ?? defaultAnswer;
-        } else if ([32, 10, 13].includes(key)) {
-            answer = defaultAnswer;
-        } else answer = choices.find(choice => choice === character);
-        if (answer === undefined) continue;
-        if (addCommandQueue) rememberCommandKey(answer.charCodeAt(0));
-        if (game.nhDisplay) game.nhDisplay.toplines = message + answer;
-        // nhgetch marks the question as seen. tty_yn_function keeps a
-        // one-line question visible and clears only prompts covering the map.
-        if (wrapped) clearMessageWindow();
-        return answer;
+        const character = await readAnswer();
+        if (character === '\x1b') return finish(responses.includes('q') ? 'q'
+            : responses.includes('n') ? 'n' : defaultAnswer);
+        if (' \n\r'.includes(character)) return finish(defaultAnswer);
+        const digit = /^[0-9]$/.test(character);
+        if (!responses.includes(character) && !(digit && responses.includes('#'))) continue;
+        if (character !== '#' && !digit) return finish(character);
+        // Digits are numbers only when '#' is among the allowed responses.
+        if (!responses.includes('#')) return finish(character);
+        const number = await readChoiceNumber(character, message, readAnswer, paint);
+        if (number === null) continue;
+        return number === 0n ? finish('n') : finish('#', number);
     }
+}
+
+async function readChoiceNumber(
+    first: string, prompt: string, readAnswer: () => Promise<string>, paint: (text: string) => void,
+): Promise<bigint | null> {
+    let digits = first === '#' ? '' : first;
+    let value = digits ? BigInt(digits) : 0n;
+    paint(prompt + '#' + digits);
+    for (;;) {
+        const character = await readAnswer();
+        if (/^[0-9]$/.test(character)) {
+            const next = value * 10n + BigInt(character);
+            if (next > 9223372036854775807n) break;
+            value = next;
+            digits += character;
+        } else if (character === 'y' || ' \n\r\x1b'.includes(character)) {
+            if (character !== '\x1b') return value;
+            break;
+        } else if (character === '\x7f' || character === '\b') {
+            if (!digits) break;
+            value /= 10n;
+            digits = digits.slice(0, -1);
+        } else break;
+        paint(prompt + '#' + digits);
+    }
+    // Escape, overflow, erasing the '#', or an invalid character aborts the
+    // number and returns to the same yes/no question without that character.
+    paint(prompt);
+    return null;
 }
 
 export function promptYesNo(message: string, defaultAnswer: 'y' | 'n' = 'n', addCommandQueue = true): Promise<'y' | 'n'> {
