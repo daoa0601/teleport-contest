@@ -437,8 +437,8 @@ batch runs also compare matched screens per session with the previous batch
 | Native eval sample | 300/300 | 50,586/50,586 | 3,616,669/3,616,669 | 0 |
 | Holdout-dev pool | 2,500/2,500 | | | 0 |
 
-Runs: `.cache/generalization/batch40-1a1adc1-{eval,public}` and
-`triage-1a1adc1` (pool) in the verify worktree (baseline `base-06d7e73`:
+Runs: `.cache/generalization/batch43-cd7f764-{eval,public}` and
+`triage-cd7f764` (pool) in the verify worktree (baseline `base-06d7e73`:
 143/300; batch 30: 300/300, pool 2,500/2,500). No verified random call was
 lost; the ledgers now hold 350 eval and 363 public functions. The
 state oracle finds all 300 sessions matching C state throughout.
@@ -448,12 +448,13 @@ state oracle finds all 300 sessions matching C state throughout.
 Every eval-sample and pool session completes and public matches every random
 call; the one public miss (`seed2200-wizard-quaff-zap-read`) prints the
 recorder host's own `.nethackrc` path. New work comes from freshly recorded
-native sessions: fresh86-190 (31,500 sessions) fail only on step-0 moon-phase
-artifacts plus the cases below. In flight: **afternmv-owner** (one owner for
-C's `afternmv` completion slot, which later setters replace and `unmul()` runs)
-and **bypass-context** (one owner for object bypass bits and
-`context.bypasses`, which `destroy_items()`, `askchain()` and other traversals
-set until `clear_bypasses()`). Round-2 recipe sessions are recorded in `.cache/holdout-dev/recipe2`.
+native sessions: fresh86-220 (40,500 sessions) fail only on step-0 moon-phase
+artifacts plus the cases below. The moon-phase misses are a recorder
+artifact: it runs with `TZ=America/New_York`, and
+`time_from_yyyymmddhhmmss()` copies `tm_isdst` from the current clock, so a
+midnight start date in standard time lands on the previous day. In flight:
+**trad-pickup** (the `pickup()` old-style branch and `query_classes()` for
+`menustyle:traditional`; JS always opens the pickup menu). Round-2 recipe sessions are recorded in `.cache/holdout-dev/recipe2`.
 
 `splitObjectStack()` now links the new piece right after the original in
 whichever chain owns it (floor pile, hero or monster inventory, container,
