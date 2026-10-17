@@ -410,9 +410,9 @@ followers arrive and its late `obj_delivery(TRUE)` handles the rest (C's
 
 ## Verification
 
-`npm test` at `75b7487`: **12,229/12,229**. Merges require a fully green suite;
+Merges require a fully green suite (12,294/12,294 on the latest unit branch);
 batch runs also compare matched screens per session with the previous batch
-(no screen regression in batches 35-37, eval, public or pool).
+(no screen regression in batches 35-39, eval, public or pool).
 
 ## Most recent native diagnostics
 
@@ -422,8 +422,8 @@ batch runs also compare matched screens per session with the previous batch
 | Native eval sample | 300/300 | 50,586/50,586 | 3,616,669/3,616,669 | 0 |
 | Holdout-dev pool | 2,500/2,500 | | | 0 |
 
-Runs: `.cache/generalization/batch37-75b7487-{eval,public}` and
-`triage-75b7487` (pool) in the verify worktree (baseline `base-06d7e73`:
+Runs: `.cache/generalization/batch39-f2ded12-{eval,public}` and
+`triage-f2ded12` (pool) in the verify worktree (baseline `base-06d7e73`:
 143/300; batch 30: 300/300, pool 2,500/2,500). No verified random call was
 lost; the ledgers now hold 350 eval and 363 public functions. The
 state oracle finds all 300 sessions matching C state throughout.
@@ -435,14 +435,10 @@ call; the one public miss (`seed2200-wizard-quaff-zap-read`) prints the
 recorder host's own `.nethackrc` path. New work comes from freshly recorded
 native sessions: fresh86-160 (22,500 sessions) fail only on step-0 moon-phase
 artifacts plus the cases below. In flight: **nomul-owner** (one `nomul()` owner
-for involuntary delays), **halluc-display-rng** (display-stream draws while
-hallucinating), **shop-entry-block** (`u_entered_shop()` tail warnings and the
-shopkeeper's extra move), **status-refresh** (which event requests the full
-status redraw one turn after a magic-trap explosion), **expel-turn** (an extra
-monster turn after an engulfer expels and re-touches the hero),
-**displace-followup** (post-swap liquid/trap effects and doorway ordering), and
-**recipe-round3** (coverage-guided recipes for code the round-2 recipes still
-miss). Round-2 recipe sessions are recorded in `.cache/holdout-dev/recipe2`.
+for involuntary delays), **shop-entry-block** (`u_entered_shop()` tail warnings
+and the shopkeeper's extra move), **displace-followup** (post-swap liquid/trap
+effects and doorway ordering), and **fire-slime-order** (the hero's fire-damage
+item and slime order in `mhitm_ad_fire`). Round-2 recipe sessions are recorded in `.cache/holdout-dev/recipe2`.
 
 `splitObjectStack()` now links the new piece right after the original in
 whichever chain owns it (floor pile, hero or monster inventory, container,
