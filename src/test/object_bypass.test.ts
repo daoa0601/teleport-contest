@@ -113,7 +113,7 @@ for (const style of [MENU_FULL, MENU_PARTIAL, MENU_TRADITIONAL] as const) {
             : style === MENU_FULL ? 'Aa\n' : `${dagger.invlet}${club.invlet}\n`);
 
         await rhack('D'.charCodeAt(0));
-        assert.equal(game.context.move, 1);
+        assert.equal(game.context.move, style === MENU_TRADITIONAL ? 0 : 1);
         assert.equal(dagger.where, 'floor');
         assert.equal(club.where, 'floor');
         const wand = await chargedWand(WAN_CANCELLATION);

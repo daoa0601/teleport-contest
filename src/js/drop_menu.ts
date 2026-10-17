@@ -1,5 +1,5 @@
 // C do.c:doddrop(), menu_drop(), menudrop_split(); invent.c:ggetobj()/askchain().
-import { MENU_COMBINATION, MENU_FULL, MENU_TRADITIONAL, PARANOID_AUTOALL, SORTLOOT_INVLET } from './const.js';
+import { ECMD_FAIL, ECMD_OK, ECMD_TIME, MENU_COMBINATION, MENU_FULL, MENU_TRADITIONAL, PARANOID_AUTOALL, SORTLOOT_INVLET } from './const.js';
 import { chooseObjectCategories } from './container.js';
 import { consumeHallucinatedMenuObjectGlyph, plineWithContinuation as pline } from './display.js';
 import { game } from './gstate.js';
@@ -28,10 +28,10 @@ interface TraditionalDropSelection {
     requireUnpaid: boolean;
 }
 
-export async function dropMultipleObjects(): Promise<boolean> {
+export async function dropMultipleObjects(): Promise<number> {
     if (!game.inventory.length) {
         await pline('You have nothing to drop.');
-        return false;
+        return ECMD_OK;
     }
     const inShop = !!game.u.ushops?.[0];
     if (inShop) setSellDisposition(SELL_DELIBERATE);
@@ -40,28 +40,32 @@ export async function dropMultipleObjects(): Promise<boolean> {
         let matches = (_object: GameObject) => true;
         if (style === MENU_TRADITIONAL || style === MENU_COMBINATION) {
             const selected = await traditionalDropCategories(style === MENU_COMBINATION);
-            if (!selected) return false;
+            if (!selected) return ECMD_OK;
             matches = object => matchesCategories(object, selected.categories);
             if (selected.menu) {
                 if (selected.all || !selected.categories.length) matches = () => true;
             } else if (style === MENU_TRADITIONAL || selected.all) {
-                return await dropTraditionally(selected);
+                const result = await dropTraditionally(selected);
+                // doddrop() returns askchain()'s sum directly in traditional
+                // mode; menu_drop() converts that sum into a command flag.
+                if (style === MENU_TRADITIONAL) return result;
+                return result ? ECMD_TIME : ECMD_OK;
             } else if (!selected.categories.length
                 && !((game.flags.paranoia_bits ?? 0) & PARANOID_AUTOALL)) {
                 // C allow_category() rejects an empty combination-menu filter.
-                return false;
+                return ECMD_OK;
             }
         } else if (style === MENU_FULL) {
             const categories = await dropCategories();
             matches = object => categories.matchers.some(match => match(object));
-            if (categories.autoSelect) return await dropAllMatching(matches);
+            if (categories.autoSelect) return await dropAllMatching(matches) ? ECMD_TIME : ECMD_OK;
             const picked = game.inventory.filter(object => object.pickup_prev);
             const single = picked.length === 1 ? picked[0] : null;
             if (categories.justPickedCount !== undefined && single)
-                return await dropCount(single, categories.justPickedCount);
+                return await dropCount(single, categories.justPickedCount) ? ECMD_TIME : ECMD_OK;
         }
         const selected = await chooseDroppedObjects(game.inventory.filter(matches));
-        if (!selected.length) return false;
+        if (!selected.length) return ECMD_OK;
         let dropped = false;
         bypassObjectList(game.inventory, true);
         try {
@@ -74,7 +78,7 @@ export async function dropMultipleObjects(): Promise<boolean> {
         } finally {
             bypassObjectList(game.inventory, false);
         }
-        return dropped;
+        return dropped ? ECMD_TIME : ECMD_OK;
     } finally {
         if (inShop) setSellDisposition(SELL_NORMAL);
     }
@@ -174,7 +178,7 @@ async function traditionalDropCategories(combo: boolean): Promise<TraditionalDro
             (_character, key) => key >= 32 && key < 127);
         if (response === null) return null;
         if (!response.includes('i')) break;
-        if ((await selectInventoryObject({ items: game.inventory })).key === 27) return null;
+        if ((await selectInventoryObject()).key === 27) return null;
     }
     const categories: DropCategory[] = [];
     let requireUnpaid = false;
@@ -193,11 +197,11 @@ async function traditionalDropCategories(combo: boolean): Promise<TraditionalDro
     return { categories, all: response.includes('a'), menu: response.includes('m'), requireUnpaid };
 }
 
-async function dropTraditionally(selection: TraditionalDropSelection): Promise<boolean> {
+async function dropTraditionally(selection: TraditionalDropSelection): Promise<number> {
     const sorted = sortObjects(game.inventory, { mode: SORTLOOT_INVLET });
     const classes = selection.categories.filter((category): category is number => typeof category === 'number');
     const passes = classes.length ? classes : [null];
-    let acceptAll = selection.all, dropped = false, questioned = false;
+    let acceptAll = selection.all, result = ECMD_OK, questioned = false;
     try {
         for (const oclass of passes) {
             bypassObjectList(game.inventory, false);
@@ -220,7 +224,7 @@ async function dropTraditionally(selection: TraditionalDropSelection): Promise<b
                     answer = response.answer;
                     count = Number(response.count);
                 }
-                if (answer === 'q') return dropped;
+                if (answer === 'q') return result;
                 if (answer === 'n' || answer === '#' && !count) continue;
                 if (answer === 'a') acceptAll = true;
                 const original = object;
@@ -232,12 +236,12 @@ async function dropTraditionally(selection: TraditionalDropSelection): Promise<b
                 }
                 const success = await dropHeroObject(object);
                 if (!success && object !== original) await rejoinObjectStack(original, object);
-                dropped ||= success;
-                if (game.program_state.gameover) return dropped;
+                result += success ? ECMD_TIME : ECMD_FAIL;
+                if (game.program_state.gameover) return result;
             }
         }
         await pline(questioned ? 'That was all.' : 'No applicable objects.');
-        return dropped;
+        return result;
     } finally {
         clearBypasses();
     }
