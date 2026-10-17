@@ -6234,15 +6234,19 @@ function postMoveHideUnder(monster, movement, state, random, calls) {
     if (!hidesUnder && !eel)
         return;
     const helpless = !monster.mcanmove || monster.msleeping || (monster.mfrozen ?? 0) > 0;
-    if (!monster.mundetected && (helpless || recordRandom(random, calls, 5) === 0))
-        return;
-    const concealment = beginMonsterHideUnder(monster, state);
-    if (concealment.message) {
-        movement.hideUnder = concealment;
-        movement.deferredAfterHideUnder = true;
+    if (monster.mundetected || (!helpless && recordRandom(random, calls, 5) !== 0)) {
+        const concealment = beginMonsterHideUnder(monster, state);
+        if (concealment.message) {
+            movement.hideUnder = concealment;
+            movement.deferredAfterHideUnder = true;
+            return;
+        }
+        if (concealment.undetected !== concealment.oldUndetected)
+            newsym(monster.mx, monster.my);
     }
-    else if (concealment.undetected !== concealment.oldUndetected)
-        newsym(monster.mx, monster.my);
+    // postmov() redraws even when hideunder() leaves concealment unchanged
+    // or the monster skips the attempt. Hallucinations need that refresh.
+    newsym(monster.mx, monster.my);
 }
 // C mon.c:maybe_unhide_at(), called immediately after place_monster().  A
 // concealer which leaves its object (or an eel which leaves water) is exposed
@@ -7122,6 +7126,7 @@ export async function resumeDeferredMonsterHideUnder(action, state, random = rn2
     if (!movement?.deferredAfterHideUnder)
         return action;
     delete movement.deferredAfterHideUnder;
+    newsym(action.monster.mx, action.monster.my);
     if (action.monster.isshk) {
         if (!hasShopkeeperData(action.monster))
             throw new Error('A shopkeeper must retain its shop state');
