@@ -47,11 +47,17 @@ function coinWeight(count: number): number {
     return Math.trunc((Math.max(0, count) + 50) / 100);
 }
 
+function isCoin(object: GameObject): boolean {
+    return object.otyp === GOLD_PIECE || object.oclass === COIN_CLASS;
+}
+
+// C carry_count() adds the stack's weight() (at least one unit for coins),
+// then subtracts only the GOLD_WT() change from merging with carried gold.
 function topLevelWeight(object: GameObject, count: number, state: GameState): number {
-    if (object.otyp !== GOLD_PIECE && object.oclass !== COIN_CLASS)
-        return objectWeight(withQuantity(object, count));
+    const weight = objectWeight(withQuantity(object, count));
+    if (!isCoin(object)) return weight;
     const purse = heroGoldAmount(state);
-    return coinWeight(purse + count) - coinWeight(purse);
+    return weight - (coinWeight(purse) + coinWeight(count) - coinWeight(purse + count));
 }
 
 function containerWeightAfterRemoval(container: GameObject, object: GameObject, count: number): number {
@@ -80,6 +86,13 @@ function maximumLiftedCount(object: GameObject, requested: number, container: Ga
     const fits = (count: number) => current
         + weightAddedByLift(object, count, container, state) < 0;
     if (fits(requested)) return requested;
+    const carriedContainer = !!container && (state.inventory || []).includes(container);
+    if (isCoin(object) && !carriedContainer) {
+        // C GOLD_CAPACITY() over the capacity left after carried gold.
+        const purse = heroGoldAmount(state);
+        const room = current - coinWeight(purse);
+        return Math.max(0, Math.min(requested, room * -100 - (purse + 50) - 1));
+    }
 
     let low = 0;
     let high = requested;
@@ -92,8 +105,8 @@ function maximumLiftedCount(object: GameObject, requested: number, container: Ga
 }
 
 function itemDescription(object: GameObject, count = objectQuantity(object)): string {
-    if (object.otyp === GOLD_PIECE || object.oclass === COIN_CLASS)
-        return `${count} gold piece${count === 1 ? '' : 's'}`;
+    if (isCoin(object))
+        return count === 1 ? 'a gold piece' : `${count} gold pieces`;
     const view = withQuantity(object, count);
     if (!view.name) {
         const presentation = wishedObjectPresentation(object);
