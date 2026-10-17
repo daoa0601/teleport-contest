@@ -205,7 +205,8 @@ export async function tty_yn_function(
         const character = await readAnswer();
         if (character === '\x1b') return finish(responses.includes('q') ? 'q'
             : responses.includes('n') ? 'n' : defaultAnswer);
-        if (' \n\r'.includes(character)) return finish(defaultAnswer);
+        // strchr(quitchars, q) also matches the string's terminating NUL.
+        if (' \n\r\0'.includes(character)) return finish(defaultAnswer);
         const digit = /^[0-9]$/.test(character);
         if (!responses.includes(character) && !(digit && responses.includes('#'))) continue;
         if (character !== '#' && !digit) return finish(character);
@@ -230,7 +231,7 @@ async function readChoiceNumber(
             if (next > 9223372036854775807n) break;
             value = next;
             digits += character;
-        } else if (character === 'y' || ' \n\r\x1b'.includes(character)) {
+        } else if (character === 'y' || ' \n\r\x1b\0'.includes(character)) {
             if (character !== '\x1b') return value;
             break;
         } else if (character === '\x7f' || character === '\b') {

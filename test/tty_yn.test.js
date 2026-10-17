@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { GameDisplay } from '../js/game_display.js';
-import { nhgetch, resetInputState } from '../js/input.js';
+import { bindInputGate, InputGate, nhgetch, resetInputState } from '../js/input.js';
 import { promptChoice, tty_yn_function } from '../js/query.js';
 import { Terminal } from '../js/terminal.js';
 import { freshPlayableRoom } from './support/playable-room.js';
@@ -31,6 +31,26 @@ void test('a choice prompt without a default omits the default suffix', async ()
         input.feed(' ');
         assert.equal(await answer, '');
     }
+});
+for (const defaultAnswer of ['y', '']) {
+    void test(`fuzzer NUL accepts ${defaultAnswer ? 'the displayed' : 'an absent'} default without reading another key`, async () => {
+        freshPlayableRoom();
+        game.iflags.debug_fuzzer = true;
+        bindInputGate(new QueuedFuzzerInput('\0nX'));
+        const result = await tty_yn_function('Continue?', 'yn', defaultAnswer);
+        assert.equal(result.answer, defaultAnswer);
+        assert.equal(await nhgetch(), 'n'.charCodeAt(0), 'the next answer must remain unread');
+    });
+}
+void test('fuzzer NUL commits a numeric answer without reading another key', async () => {
+    freshPlayableRoom();
+    game.iflags.debug_fuzzer = true;
+    bindInputGate(new QueuedFuzzerInput('12\0nX'));
+    const result = await tty_yn_function('How many?', 'yn#', 'n');
+    assert.equal(result.answer, '#');
+    assert.equal(result.count, 12n);
+    assert.equal(game.nhDisplay?.toplines, 'How many? [yn#] (n) #12');
+    assert.equal(await nhgetch(), 'n'.charCodeAt(0), 'the next answer must remain unread');
 });
 void test('a number choice consumes and edits its digits before committing', async () => {
     freshPlayableRoom();
@@ -94,4 +114,18 @@ void test('aborting a wrapped number clears the rows its prompt covered', async 
     assert.equal((await answer).answer, 'n');
     assert.equal(requireGameDisplay().grid[1]?.map(cell => cell.ch).join('').trim(), '', 'the aborted number must not leave digits on the map');
 });
+// Fuzzer bytes bypass tty_nhgetch()'s keyboard NUL-to-Escape conversion.
+class QueuedFuzzerInput extends InputGate {
+    bytes;
+    constructor(keys) {
+        super();
+        this.bytes = [...keys].map(character => character.charCodeAt(0));
+    }
+    readKey() {
+        const byte = this.bytes.shift();
+        if (byte === undefined)
+            throw new Error('The prompt read past its queued fuzzer input');
+        return Promise.resolve(byte);
+    }
+}
 //# sourceMappingURL=tty_yn.test.js.map
