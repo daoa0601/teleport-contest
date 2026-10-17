@@ -150,7 +150,7 @@ import { dozap, } from './zap.js';
 import { bucAdjectiveForName, checkInventoryGold, consumeInventoryItem, ddoinv, dolook, fullyIdentifyObject, inventoryItemDescription, inventoryPrimaryHandDetail, selectInventoryObject, selectUsedInventoryLetter, } from './invent.js';
 import { mergable, mergeObjectStacks } from './object_merge.js';
 import { unlinkObject } from './object_location.js';
-import { castSpell, docast, dovspell, } from './spell.js';
+import { castSpell, docast, dovspell, dowizcast, } from './spell.js';
 import { vomitHero, } from './hero_illness.js';
 import { heroBreathAttack } from './hero_breath.js';
 import { resolveHeroCombatExplosion } from './hero_combat_explosion.js';
@@ -3309,6 +3309,7 @@ const EXTENDED_COMMAND_HANDLERS = new Map([
     ['levelchange', wizLevelChange],
     ['wizwhere', wizWhere],
     ['wizwish', wizWish],
+    ['wizcast', dowizcast],
     ['wizgenesis', wizGenesis],
     ['wizdetect', wizDetect],
     ['wizsmell', () => wizSmell(farlookLocationDescription)],
