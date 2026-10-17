@@ -6,7 +6,6 @@ import { deleteTrap } from './trap_lifecycle.js';
 import { ARROW_TRAP, DART_TRAP } from './const.js';
 import { placeCreatedObject, stack_object } from './floor_object.js';
 import { game, requireGameLevel } from './gstate.js';
-import { MONSTER_NAME } from './monster_data.js';
 import { findMonsterArmorClass } from './monworn.js';
 import { ARROW, DART } from './object_data.js';
 import { objectDescription } from './object_description.js';
@@ -17,11 +16,7 @@ import { monsterTrapVisibility, seeTrap } from './trap.js';
 import { newsym } from './display.js';
 import { makeTrapMissile } from './trap_missile.js';
 import { rollPhysicalWeaponDamage } from './weapon_damage.js';
-function ordinaryMonsterSubject(monster) {
-    if (monster.name)
-        return monster.name;
-    return `The ${MONSTER_NAME[monster.mnum] || 'monster'}`;
-}
+import { monsterName } from './monster_name.js';
 async function placeMissile(missile, trap, state) {
     if (state === game)
         placeCreatedObject(missile, trap.tx, trap.ty);
@@ -72,7 +67,7 @@ export function projectileTrapNeedsResume(event) {
     return (event?.kind === 'projectile-trap' ||
         (event?.kind === 'spent-projectile-trap' && !event.finished));
 }
-export async function finishMonsterProjectileTrap(monster, event, state = game, { publish = async () => { }, random = rn2, rollOne = rnd, describeMonster = ordinaryMonsterSubject, } = {}) {
+export async function finishMonsterProjectileTrap(monster, event, state = game, { publish = async () => { }, random = rn2, rollOne = rnd, describeMonster = target => monsterName(target, { state, capitalized: true }), } = {}) {
     if (!event || event.finished)
         return event;
     if (event.kind === 'spent-projectile-trap') {

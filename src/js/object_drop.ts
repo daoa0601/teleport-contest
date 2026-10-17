@@ -10,7 +10,6 @@ import { game, requireLiveGame, requireGameLevel, requireInitializedGame } from 
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { MessagePublisher } from './display.js';
-
 import { newsym, plineWithContinuation, map_object } from './display.js';
 import { reportHeroEncumbrance } from './encumbrance.js';
 import { setPrimaryWeapon, setQuiverObject, setSecondaryWeapon } from './weapon_slots.js';
@@ -18,9 +17,9 @@ import { propertyIsActive } from './properties.js';
 import { heroIsBlind } from './senses.js';
 import { surfaceName } from './terrain_name.js';
 import {
-    objectName, observeObjectForNaming,
+    definiteObjectAction,
+    observeObjectForNaming,
 } from './objnam.js';
-import { makePlural } from './object_grammar.js';
 import { inventoryItemDescription } from './invent.js';
 import { applyFloorEffects } from './floor_effects.js';
 import { placeObject, stack_object } from './floor_object.js';
@@ -67,17 +66,6 @@ const PM_NURSE = MONSTER_NAME.indexOf('nurse');
 // monflag.h M2_SHAPESHIFTER; pm_to_cham() (mon.c:533-546) is this test.
 const M2_SHAPESHIFTER = 0x00004000;
 
-// C objnam.c:2290-2299 Tobjnam(): "The " + xname() without a count.  The
-// corpse species follows the repo's MONSTER_NAME composition convention
-// (eat.js:612); xname() pluralizes stacks.
-function theShortObjectName(object: GameObject, state: GameState) {
-    let name = object.otyp === CORPSE
-        ? `${(object.corpsenm === undefined ? undefined : MONSTER_NAME[object.corpsenm]) || 'monster'} corpse`
-        : objectName(object, state);
-    if (object.quan > 1) name = makePlural(name);
-    return `The ${name}`;
-}
-
 // C obj.h:318.  Sometimes eggs and tins carry special corpsenm values that
 // must not index mons[].
 function isFoodObject(object: GameObject) {
@@ -118,10 +106,7 @@ async function engulferDigestsFood(object: GameObject, { state, publish }: { sta
         couldSlime = true;
     }
 
-    // see or feel the effect; C Tobjnam(obj, "are") = The(xname) plus the
-    // quantity-conjugated verb
-    await publish(`${theShortObjectName(object, state)} ${
-        object.quan > 1 ? 'are' : 'is'} instantly digested!`);
+    await publish(`${definiteObjectAction(object, 'are', state)} instantly digested!`);
 
     if (couldPoly || couldSlime) {
         const change = await changeMonsterForm(swallower,

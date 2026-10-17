@@ -19,7 +19,7 @@ import { monstersForgetHeroResistance, seenResistanceForDamage } from './monster
 import { watchDigging } from './digging_watch.js';
 import { heroDetectsMonsters, heroIsBlind, heroIsHallucinating } from './senses.js';
 import { objectDescription } from './object_description.js';
-import { observeObjectForNaming } from './objnam.js';
+import { ownedObjectAction, observeObjectForNaming } from './objnam.js';
 import { senseWithTelepathy } from './display.js';
 import { heroHasHalfSpellDamage } from './spell_damage.js';
 import { useMonsterMindBlast } from './monster_mind_blast.js';
@@ -109,7 +109,7 @@ import { respondToImmediateMagic } from './monster_magic_response.js';
 import { canSeeMonster, canSpotMonster, map_invisible, newsym, plineWithContinuation, } from './display.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SIZE, MONSTER_SYMBOL, monsterIsCovetous, monsterIsNoncorporeal, monsterIsUndead, monsterIsVampireShifter, monsterIsWhirly, monsterIsShade, monsterIsUnsolid, monsterIsThickSkinned, monsterTypeName, } from './monster_data.js';
 import { AD_ACID, AD_BLND, AD_CLRC, AD_COLD, AD_CURS, AD_HEAL, AD_DRIN, AD_CORR, AD_DCAY, AD_DGST, AD_DREN, AD_DETH, AD_CONF, AD_DRLI, AD_ELEC, AD_ENCH, AD_FIRE, AD_LEGS, AD_PHYS, AD_POLY, AD_TLPT, AD_DISE, AD_PEST, AD_FAMN, AD_MAGM, AD_SPC2, AD_SAMU, AD_SEDU, AD_SGLD, AD_SSEX, AD_SITM, AD_SLIM, AD_SLOW, AD_SPEL, AD_STCK, AD_STON, AD_STUN, AD_WRAP, AD_PLYS, AD_WERE, AD_RUST, AT_BOOM, AT_BREA, AT_CLAW, AT_ENGL, AT_GAZE, AT_HUGS, AT_MAGC, AT_NONE, AT_SPIT, AT_TUCH, AT_WEAP, AT_KICK, AT_BITE, AT_STNG, AT_BUTT, AT_TENT, AT_EXPL, } from './monster_attack_types.js';
-import { APPLE, BANANA, BULLWHIP, BOULDER, CARROT, CLOVE_OF_GARLIC, CORPSE, DWARVISH_MATTOCK, EGG, FAKE_AMULET_OF_YENDOR, FLINT, ENORMOUS_MEATBALL, GOLD_PIECE, MEATBALL, MEAT_RING, MEAT_STICK, ARROW, AXE, BATTLE_AXE, DART, IRON_SHOES, OBJECT_BIMANUAL, OBJECT_LARGE_DAMAGE, OBJECT_NAMES, OBJECT_SMALL_DAMAGE, OBJECT_SUBTYPE, PICK_AXE, ROCK, POT_GAIN_LEVEL, POT_HEALING, POT_INVISIBILITY, SLIME_MOLD, TIN, TRIPE_RATION, WAN_SPEED_MONSTER, } from './object_data.js';
+import { APPLE, BANANA, BULLWHIP, BOULDER, CARROT, CLOVE_OF_GARLIC, CORPSE, DWARVISH_MATTOCK, EGG, FAKE_AMULET_OF_YENDOR, FLINT, ENORMOUS_MEATBALL, GOLD_PIECE, MEATBALL, MEAT_RING, MEAT_STICK, ARROW, AXE, BATTLE_AXE, DART, IRON_SHOES, OBJECT_BIMANUAL, OBJECT_LARGE_DAMAGE, OBJECT_SMALL_DAMAGE, OBJECT_SUBTYPE, PICK_AXE, ROCK, POT_GAIN_LEVEL, POT_HEALING, POT_INVISIBILITY, SLIME_MOLD, TIN, TRIPE_RATION, WAN_SPEED_MONSTER, } from './object_data.js';
 import { placeCreatedObject, placeObjectSynchronously, remove_object, stack_object, } from './floor_object.js';
 import { canLetGo } from './hero_inventory.js';
 import { useMonsterBullwhip } from './monster_bullwhip.js';
@@ -1456,10 +1456,10 @@ async function watchOnDuty(monster, state, random, calls) {
             const warned = !!((location.looted ?? 0) & D_WARNED);
             const deaf = !!(state.deaf || hero.deaf || (hero.deafTurns ?? 0) > 0);
             const seen = canSpotMonster(monster);
-            const name = `A ${monsterTypeName(monster.mnum, !!monster.female)}`;
+            const name = seen ? canonicalMonsterName(monster, { state, article: 'a', capitalized: true }) : '';
             if (deaf) {
                 if (seen)
-                    await plineWithContinuation(`${name} angrily waves ${monster.female ? 'her' : 'his'} arms!`);
+                    await plineWithContinuation(`${name} angrily waves ${monsterPossessive(monster, { state })} arms!`);
             }
             else {
                 if (seen)
@@ -5328,12 +5328,7 @@ export async function resumeDeferredHeroEnchantment(action, state, random = rn2)
     }) || !target)
         return;
     attack.drainedObject = target;
-    const quantity = target.quan;
-    const known = target.typeKnown || state._knownObjectTypes?.has(target.otyp);
-    const name = known && target.oclass === RING_CLASS
-        ? `ring of ${OBJECT_NAMES[target.otyp]}`
-        : target.name || OBJECT_NAMES[target.otyp] || 'item';
-    attack.drainMessage = `Your ${name} ${quantity === 1 ? 'seems' : 'seem'} less effective.`;
+    attack.drainMessage = `${ownedObjectAction(target, 'seem', state)} less effective.`;
 }
 // Resume mhitm_ad_drli() after hitmsg().  A selected level loss and its
 // message precede shared knockback and the touch's ordinary HP damage.
@@ -6634,7 +6629,6 @@ export async function resumeDeferredMonsterTrap(action, state, { random = rn2, r
             await finishMonsterVibratingSquare(action.monster, event, {
                 state,
                 publish,
-                ...(describeMonster ? { describeMonster } : {}),
             });
             break;
         case 'polymorph-trap':

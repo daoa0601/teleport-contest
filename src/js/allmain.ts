@@ -55,7 +55,7 @@ import { consumeMonsterItem, presentMonsterQuaff as publishMonsterQuaff, present
 import { heroCanTeleport, moveMonsterNextToHero, randomMonsterRelocation, teleportHero } from './teleport.js';
 import { monsterAtPosition } from './monster_location.js';
 import { placeHeroAtRandomArrival } from './level_change.js';
-import { monsterName, monsterSpellDeathReason, monsterSubjectPronoun, possessiveName, quietMonsterName } from './monster_name.js';
+import { monsterName, monsterSpellDeathReason, monsterSubjectPronoun, possessiveName } from './monster_name.js';
 import { touchHeroWithDeath } from './monster_death_touch.js';
 import { resolveMonsterWeaponContact } from './monster_weapon_contact.js';
 import { finishHeroDeathAfterMonsterMessage, finishMonsterAttackDeath, waitForCurrentMonsterMore } from './monster_attack_death.js';
@@ -2632,7 +2632,7 @@ async function presentMonsterAttackEffects(
                         const breath = heroAttack.breath;
                         if (breath.cough && !heroIsDeaf(game)) {
                             if (canSeeMonster(monster))
-                                await publishSlotMessage(`The ${quietMonsterName(monster)} coughs.`);
+                                await publishSlotMessage(`${monsterName(monster, { capitalized: true })} coughs.`);
                             else await publishHeardMessage('a cough.', publishSlotMessage);
                         }
                         if (breath.launched) {
@@ -3340,9 +3340,7 @@ async function presentRestrictedMonsterTeleport(
     if (movement?.deferredAfterRestrictedTenguTeleport) {
         if (actorWasOpticallySeen) {
             await plineWithContinuation(
-                `A mysterious force prevents the ${quietMonsterName(
-                    monster,
-                )} from teleporting!`,
+                `A mysterious force prevents ${monsterName(monster)} from teleporting!`,
             );
         }
         await resumeDeferredRestrictedTenguTeleport(action, game);

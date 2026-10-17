@@ -33,7 +33,7 @@ import {
 } from './shop_sell.js';
 import { canSeeMonster, canSenseMonster, pline, plineWithContinuation } from './display.js';
 import { currency } from './currency.js';
-import { objectName, objectCombatName, definiteName } from './objnam.js';
+import { simpleObjectName, objectTypeName, objectName, objectCombatName, definiteName } from './objnam.js';
 import { rn2 } from './rng.js';
 import { heroGoldAmount } from './hero_gold.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
@@ -737,7 +737,7 @@ export async function settleGlobAbsorptionBilling(
     const absorbedEntry = billForObject(absorbed, state, keeper)?.entry;
     const shop = keeper.eshk;
     const offer = shopOfferForObject(absorbed, keeper, state);
-    const name = OBJECT_NAMES[absorbed.otyp];
+    const name = objectTypeName(absorbed.otyp, state);
     const money = (amount: number) => `${amount} ${currency(amount, { state })}`;
 
     if (absorbedEntry && (!absorber.no_charge
@@ -807,9 +807,6 @@ export async function chargeAlteredUnpaidObject(
     const quantity = object?.quan ?? object?.quantity ?? 1;
     const pronoun = quantity === 1 ? 'it' : 'them';
     const demonstrative = quantity === 1 ? 'that' : 'those';
-    const name = quantity === 1
-        ? OBJECT_NAMES[object.otyp] || object.name || 'object'
-        : object.plural || `${OBJECT_NAMES[object.otyp] || 'object'}s`;
 
     let ox = 0;
     let oy = 0;
@@ -861,7 +858,7 @@ export async function chargeAlteredUnpaidObject(
         if (learnBknown) object.bknown = true;
         // C verbalizes unconditionally here; only the voice is optional.
         await plineWithContinuation(
-            `"You ${alteration} ${demonstrative} ${name}, you pay for ${pronoun}!"`,
+            `"You ${alteration} ${demonstrative} ${simpleObjectName(object, state)}, you pay for ${pronoun}!"`,
         );
         return billDummyObject(object, state);
     }

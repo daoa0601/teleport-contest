@@ -84,7 +84,7 @@ import { retouchHeroObject } from './hero_retouch.js';
 import { GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, PARANOID_REMOVE, GETOBJ_SUGGEST } from './const.js';
 import { TER_MON } from './const.js';
 import { senseBuriedObjects } from './buried_object.js';
-import { distantMonsterName, monsterInstanceDisplayName, monsterName, monsterPossessive, monsterSubjectPronoun, shopkeeperName } from './monster_name.js';
+import { distantMonsterName, monsterName, monsterPossessive, monsterSubjectPronoun, shopkeeperName } from './monster_name.js';
 import { attackHostileMonster } from './hero_melee.js';
 import { prepareAppliedWeaponAttack } from './hero_attack_preflight.js';
 import { applyCaitiffPenalty } from './hero_attack_conduct.js';
@@ -94,7 +94,7 @@ import { hasDoorAppearance, stumbleOnDoorMimic, stumbleOntoMimic } from './mimic
 import { monsterHasMapPosition, monsterAtPosition } from './monster_location.js';
 import { SHOP_TYPES } from './shop_data.js';
 import { observeBucForNaming } from './object_knowledge.js';
-import { minimalObjectName, objectNameIsPlural, observeDistantObjectForNaming, observeObjectForNaming, ownedObjectName, simpleObjectNameWithArticle, } from './objnam.js';
+import { definiteName, objectCombatName, minimalObjectName, objectNameIsPlural, observeDistantObjectForNaming, observeObjectForNaming, ownedObjectName, simpleObjectNameWithArticle, } from './objnam.js';
 import { woundHeroLegs } from './hero_legs.js';
 import { makeMonsterFlee } from './monster_flee.js';
 import { descendFromLevitation, floatingAbove } from './levitation_commands.js';
@@ -2053,8 +2053,8 @@ async function kickLiveMonster(monster, x, y) {
         revealMonsterAppearance(monster);
         if (canSpotMonster(monster)) {
             newsym(x, y);
-            const name = monsterInstanceDisplayName(monster);
-            await plineWithContinuation(`There is ${withIndefiniteArticle(name)} here.`);
+            const name = monsterName(monster, { article: 'a' });
+            await plineWithContinuation(`There is ${name} here.`);
         }
         else {
             map_invisible(x, y);
@@ -2081,8 +2081,7 @@ async function kickLiveMonster(monster, x, y) {
         clumsy: kick.clumsy,
         martial,
         announce: plineWithContinuation,
-        nameMonster: (actor) => canSpotMonster(actor)
-            ? `The ${monsterInstanceDisplayName(actor)}` : 'It',
+        nameMonster: actor => monsterName(actor, { capitalized: true }),
     });
     if (evaded) {
         await applyKickPassive(monster, false);
@@ -2111,7 +2110,7 @@ async function kickLiveMonster(monster, x, y) {
     const reel = await tryKickReel(monster, x - (game.u?.ux ?? x), y - (game.u?.uy ?? y), {
         martial,
         announce: plineWithContinuation,
-        nameMonster: (actor) => canSpotMonster(actor) ? `The ${monsterInstanceDisplayName(actor)}` : 'It',
+        nameMonster: actor => monsterName(actor, { capitalized: true }),
     });
     if (reel?.heroDied)
         return true;
@@ -3242,8 +3241,8 @@ async function doloot() {
 async function lootLockedContainer(container) {
     if (!container.olocked)
         return;
-    const name = OBJECT_NAMES[container.otyp] || 'container';
-    await pline(container.lknown ? `The ${name} is locked.` : `Hmmm, the ${name} turns out to be locked.`);
+    const name = definiteName(objectCombatName(container, { includeCorpseSpecies: false }));
+    await pline(container.lknown ? `${name.charAt(0).toUpperCase()}${name.slice(1)} is locked.` : `Hmmm, ${name} turns out to be locked.`);
     container.lknown = true;
     const flags = autoUnlockFlags(game);
     const tool = flags & AUTOUNLOCK_APPLY_KEY ? autokey(true) : null;
@@ -6607,9 +6606,10 @@ async function throwCommand(selectedItem = null, capabilityChecked = false, supp
         shotLimit,
     });
     if (volleyCount > 1 || shotLimit > 0) {
-        const name = OBJECT_NAMES[item.otyp] || item.name || 'object';
+        if (volleyCount === 1)
+            observeObjectForNaming(item);
         const noun = volleyCount === 1
-            ? name : item.plural || makePlural(name);
+            ? singularObjectName(item) : objectCombatName(item, { includeCorpseSpecies: false });
         await plineWithContinuation(`You ${launcherMatchesAmmo(item, game.uwep) ? 'shoot' : 'throw'} ${volleyCount} ${noun}.`);
     }
     if (await resolveSwallowedEggPieOrVenomThrow({

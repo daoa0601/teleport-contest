@@ -75,7 +75,6 @@ import { applyHeroLocationEffects, heroCouldMoveOntoBoulder } from './cmd.js';
 import { finishDestinationSpotEffects } from './location_effects.js';
 import { adjustHeroAlignment } from './alignment.js';
 import { resetCommandVariables } from './command_state.js';
-
 import { resumeDeferredMonsterTrap, triggerImmediateMonsterTrap } from './monmove.js';
 import { levelHasCeiling, isAccessibleAt, isLavaAt, isPoolAt, isWaterwallAt } from './terrain_properties.js';
 import { isPolearm } from './weapon_type.js';
@@ -441,8 +440,8 @@ async function mountSteed(steed: Monster | undefined, force: boolean, [dx, dy]: 
         await plineWithContinuation(`You slip while trying to get on ${monsterName(steed)}.`);
         let damage = rn1(5, 10);
         if (hero.halfPhysicalDamage) damage = Math.trunc((damage + 1) / 2);
-        let name = `a saddled ${monsterTypeName(steed.mnum, !!steed.female)}`;
-        if (MGIVENNAME(steed)) name += ` called ${MGIVENNAME(steed)}`;
+        const name = monsterName(steed, { article: 'a', called: true, suppressIt: true,
+            suppressInvisible: true, suppressHallucination: true, suppressSaddle: false });
         await loseHeroHp(damage, `slipped while mounting ${name}`, { killerFormat: NO_KILLER_PREFIX });
         return false;
     }

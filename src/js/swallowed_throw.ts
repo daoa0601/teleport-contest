@@ -6,7 +6,7 @@ import {
     hitMonsterWithThrownEggPieOrVenom, isHeroThrownEggPieOrVenom,
 } from './hero_thrown_egg_pie_venom.js';
 import { flush_screen, plineWithContinuation } from './display.js';
-import { foodObjectName, objectName, observeObjectForNaming } from './objnam.js';
+import { definiteObjectAction, foodObjectName, objectName, observeObjectForNaming } from './objnam.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
@@ -407,16 +407,15 @@ export async function resolveGenericSwallowedThrow({
         rnd(20); // thitmonst() consumes dieroll before selecting this class arm
         const wake = await wakeMonster(engulfer);
         if (wake.heroDied) return true;
-        const monsterName = engulfer.name
-            || `the ${monsterTypeName(engulfer.mnum, !!engulfer.female)}`;
+        const targetName = monsterName(engulfer, { state });
         const whirly = MONSTER_SYMBOL[engulfer.mnum] === 22
             || engulfer.mnum === PM_AIR_ELEMENTAL;
         const trail = monsterDigests(engulfer)
             ? ' entrails' : whirly ? ' currents' : '';
         const destination = trail
-            ? `${possessive(monsterName)}${trail}` : monsterName;
+            ? `${possessive(targetName)}${trail}` : targetName;
         await plineWithContinuation(
-            `The ${objectName(thrown, state)} vanishes into ${destination}.`,
+            `${definiteObjectAction(thrown, 'vanish', state)} into ${destination}.`,
         );
         await addObjectToMonsterInventory(
             engulfer, thrown, state, { atFront: true },

@@ -13,7 +13,6 @@ import { deleteTrap } from './trap_lifecycle.js';
 import { ARROW_TRAP, DART_TRAP } from './const.js';
 import { placeCreatedObject, stack_object } from './floor_object.js';
 import { game, requireGameLevel } from './gstate.js';
-import { MONSTER_NAME } from './monster_data.js';
 import { findMonsterArmorClass } from './monworn.js';
 import { ARROW, DART } from './object_data.js';
 import { objectDescription } from './object_description.js';
@@ -24,6 +23,7 @@ import { monsterTrapVisibility, seeTrap } from './trap.js';
 import { newsym } from './display.js';
 import { makeTrapMissile } from './trap_missile.js';
 import { rollPhysicalWeaponDamage } from './weapon_damage.js';
+import { monsterName } from './monster_name.js';
 
 interface TrapVisibility {
     trap: Trap;
@@ -51,11 +51,6 @@ interface FinishTrapOptions {
     random?: (limit: number) => number;
     rollOne?: (sides: number) => number;
     describeMonster?: (monster: Monster) => string;
-}
-
-function ordinaryMonsterSubject(monster: Monster) {
-    if (monster.name) return monster.name;
-    return `The ${MONSTER_NAME[monster.mnum] || 'monster'}`;
 }
 
 async function placeMissile(missile: GameObject, trap: Trap, state: GameState) {
@@ -126,7 +121,7 @@ export async function finishMonsterProjectileTrap(
         publish = async () => {},
         random = rn2,
         rollOne = rnd,
-        describeMonster = ordinaryMonsterSubject,
+        describeMonster = target => monsterName(target, { state, capitalized: true }),
     }: FinishTrapOptions = {},
 ) {
     if (!event || event.finished) return event;

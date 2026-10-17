@@ -8,20 +8,14 @@ import { game } from './gstate.js';
 import { explodeLandMine } from './landmine_explosion.js';
 import { fillPitWithBoulderAt } from './pit_fill.js';
 import { resolveMonsterLiquid } from './mon.js';
-import { MONSTER_BODY_META, MONSTER_NAME } from './monster_data.js';
+import { MONSTER_BODY_META } from './monster_data.js';
 import { beginMonsterPitTrap, finishMonsterPitTrap } from './monster_pit_trap.js';
 import { monsterWearsIronShoes } from './monworn.js';
-import { monsterName } from './monster_name.js';
 import { rn2, rnd } from './rng.js';
 import { monsterTrapVisibility, seeTrap } from './trap.js';
 import { monsterInAir } from './terrain_properties.js';
 import { monsterLearnsTrap, monstersSeeTrap } from './trap_knowledge.js';
-function ordinaryMonsterName(monster) {
-    return monster.name || MONSTER_NAME[monster.mnum] || 'monster';
-}
-function ordinaryMonsterSubject(monster) {
-    return `The ${ordinaryMonsterName(monster)}`;
-}
+import { monsterName as canonicalMonsterName } from './monster_name.js';
 async function finishMineDeath(monster, event, state, options) {
     const death = await finishMonsterKilled(monster, state, {
         damageType: AD_PHYS,
@@ -113,7 +107,7 @@ export function beginMonsterLandMine(monster, trap, state = game, { random = rn2
 export function landMineNeedsResume(event) {
     return event?.kind === 'land-mine' && !!(event.exploded || event.discoveredTrigger);
 }
-export async function finishMonsterLandMine(monster, event, state = game, { finishDeath, publish = plineWithContinuation, random = rn2, rollOne = rnd, describeMonster = ordinaryMonsterSubject, } = {}) {
+export async function finishMonsterLandMine(monster, event, state = game, { finishDeath, publish = plineWithContinuation, random = rn2, rollOne = rnd, describeMonster = target => canonicalMonsterName(target, { state, capitalized: true }), } = {}) {
     if (event.finished)
         return event;
     if (typeof finishDeath !== 'function')
@@ -126,7 +120,7 @@ export async function finishMonsterLandMine(monster, event, state = game, { fini
         describeMonster,
     };
     if (event.discoveredTrigger) {
-        await publish(`A trigger appears in a pile of soil below ${monsterName(monster, { state })}.`);
+        await publish(`A trigger appears in a pile of soil below ${canonicalMonsterName(monster, { state })}.`);
         seeTrap(event.trap, state);
         event.airCurrentRoll = random(3);
         event.exploded = event.airCurrentRoll === 0;

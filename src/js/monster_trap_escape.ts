@@ -13,6 +13,7 @@ import { monsterTrapVisibility, seeTrap } from './trap.js';
 import type { Monster } from './monster_types.js';
 import type { GameState } from './game_state.js';
 import type { MessagePublisher } from './display.js';
+import { monsterName } from './monster_name.js';
 
 const M1_METALLIVORE = 0x80000000;
 const MZ_HUGE = 4;
@@ -20,7 +21,7 @@ const MZ_HUGE = 4;
 export async function tryMonsterTrapEscape(monster: Monster, state: GameState = game, {
     random = rn2,
     publish = plineWithContinuation,
-    describeMonster = target => `The ${target.name || MONSTER_NAME[target.mnum]}`,
+    describeMonster = target => monsterName(target, { state, capitalized: true }),
 }: { random?: (limit: number) => number; publish?: MessagePublisher;
     describeMonster?: (target: Monster) => string } = {}): Promise<void> {
     const { mx: x, my: y } = monster;

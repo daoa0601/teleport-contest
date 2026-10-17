@@ -17,7 +17,7 @@ import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { heroLiquidEffects } from './hack.js';
 import { resolveMonsterLiquid } from './mon.js';
 import {
-    MONSTER_FLAGS1, MONSTER_MOVE, MONSTER_NAME, MONSTER_SYMBOL,
+    MONSTER_FLAGS1, MONSTER_MOVE, MONSTER_SYMBOL,
 } from './monster_data.js';
 import {
     finishMonsterKilled, finishMonsterLiquidDeath,
@@ -35,6 +35,7 @@ import type { Hero } from './hero_types.js';
 import type { Monster } from './monster_types.js';
 import type { MapLocation, Position } from './map_types.js';
 import type { DrawbridgeOptions, DrawbridgeSquare } from './drawbridge_terrain.js';
+import { monsterName } from './monster_name.js';
 
 type DrawbridgeEntity = Position & (
     { hero: true; actor: Hero } | { hero: false; actor: Monster }
@@ -88,10 +89,9 @@ function entitySymbol(entity: DrawbridgeEntity, state: GameState): number | null
     return MONSTER_SYMBOL[entity.actor.mnum] ?? null;
 }
 
-function entityName(entity: DrawbridgeEntity): string {
-    if (entity.hero) return 'you';
-    return entity.actor.name
-        || `the ${MONSTER_NAME[entity.actor.mnum] || 'monster'}`;
+function entityName(entity: DrawbridgeEntity, state: GameState, capitalized = false): string {
+    if (entity.hero) return capitalized ? 'You' : 'you';
+    return monsterName(entity.actor, { state, capitalized });
 }
 
 function entityIsVisible(entity: DrawbridgeEntity): boolean {
@@ -295,7 +295,7 @@ async function crushEntity(
     if (state.program_state.gameover) return;
     if (died && visible) {
         await plineWithContinuation(
-            `Unfortunately for ${entityName(entity)}, it is still crushed.`,
+            `Unfortunately for ${entityName(entity, state)}, it is still crushed.`,
         );
     }
 }
@@ -346,7 +346,7 @@ async function handleEntity(
         if (entityIsVisible(entity)) {
             await plineWithContinuation(
                 `The ${atPortcullis ? 'portcullis' : 'drawbridge'} passes through ${
-                    entityName(entity)
+                    entityName(entity, state)
                 }!`,
             );
         }
@@ -358,7 +358,7 @@ async function handleEntity(
     if (entityMissed(entity, state)) {
         if (atPortcullis && entityIsVisible(entity)) {
             await plineWithContinuation(
-                `The portcullis misses ${entityName(entity)}!`,
+                `The portcullis misses ${entityName(entity, state)}!`,
             );
         }
         if (entitySurvivesAt(entity, state)) return;
@@ -367,7 +367,7 @@ async function handleEntity(
     } else if (location.typ === DRAWBRIDGE_DOWN) {
         await plineWithContinuation(entity.hero
             ? 'You are crushed underneath the drawbridge.'
-            : `${entityName(entity)} is crushed underneath the drawbridge.`);
+            : `${entityName(entity, state, true)} is crushed underneath the drawbridge.`);
         await crushEntity(
             entity, bridge, state, options,
             'crushed to death underneath a drawbridge',
@@ -386,7 +386,7 @@ async function handleEntity(
                 if (entityIsVisible(entity)) {
                     await plineWithContinuation(entity.hero
                         ? 'You are crushed by the falling portcullis!'
-                        : `${entityName(entity)} is crushed by the falling portcullis!`);
+                        : `${entityName(entity, state, true)} is crushed by the falling portcullis!`);
                 }
                 await crushEntity(
                     entity, bridge, state, options,
@@ -431,7 +431,7 @@ async function handleEntity(
             && !entityIsFloating(entity, state)) {
             await plineWithContinuation(entity.hero
                 ? 'You fall from the bridge.'
-                : `${entityName(entity)} falls from the bridge.`);
+                : `${entityName(entity, state, true)} falls from the bridge.`);
         }
         return;
     }
@@ -480,7 +480,7 @@ async function killCollapseVictim(
             ? `You are ${killer === 'exploding drawbridge'
                 ? 'blown apart by flying debris'
                 : 'hit by a huge chunk of metal'}!`
-            : `${entityName(entity)} is ${killer === 'exploding drawbridge'
+            : `${entityName(entity, state, true)} is ${killer === 'exploding drawbridge'
                 ? 'blown apart by flying debris'
                 : 'hit by a huge chunk of metal'}!`);
     }

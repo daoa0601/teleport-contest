@@ -12,7 +12,7 @@ import { finishInventoryRemoval, useUpInventoryStack } from './hero_inventory.js
 import { setPrimaryWeapon, setSecondaryWeapon, setQuiverObject } from './weapon_slots.js';
 import { inventoryItemDescription, inventoryPrimaryHandDetail } from './invent.js';
 import { compactInventoryLetters, promptInventoryObject } from './inventory_prompt.js';
-import { definiteName, objectCombatName, objectNameIsPlural, observeObjectForNaming, ownedObjectAction, ownedObjectQuestion, ownedSimpleObjectName, simpleObjectName, } from './objnam.js';
+import { definiteObjectAction, definiteName, objectCombatName, objectNameIsPlural, observeObjectForNaming, ownedObjectAction, ownedObjectQuestion, ownedSimpleObjectName, simpleObjectName, } from './objnam.js';
 import { inventoryClassOrder, lootSortMode, objectClassHeading, sortObjects } from './object_sort.js';
 import { OBJECT_CLASS_SYMBOLS, objectClassForType } from './object_knowledge.js';
 import { clearJustPicked } from './just_picked.js';
@@ -26,7 +26,7 @@ import { finishHeroMonsterKill, finishHeroMonsterKillOutcome } from './hero_mons
 import { startCorpseTimeout } from './mklev.js';
 import { MONSTER_NAME, MONSTER_SIZE } from './monster_data.js';
 import { deleteObject } from './object_delete.js';
-import { AMULET_OF_YENDOR, BAG_OF_HOLDING, BELL_OF_OPENING, BOULDER, BAG_OF_TRICKS, BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, CHEST, CORPSE, GOLD_PIECE, ICE_BOX, LARGE_BOX, LEASH, LOADSTONE, OBJECT_BIMANUAL, OBJECT_NAMES, OIL_LAMP, OILSKIN_SACK, POT_OIL, SACK, SPE_BOOK_OF_THE_DEAD, STATUE, TALLOW_CANDLE, WAN_CANCELLATION, WAX_CANDLE, } from './object_data.js';
+import { AMULET_OF_YENDOR, BAG_OF_HOLDING, BELL_OF_OPENING, BOULDER, BAG_OF_TRICKS, BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, CHEST, CORPSE, GOLD_PIECE, ICE_BOX, LARGE_BOX, LEASH, LOADSTONE, OBJECT_BIMANUAL, OIL_LAMP, OILSKIN_SACK, POT_OIL, SACK, SPE_BOOK_OF_THE_DEAD, STATUE, TALLOW_CANDLE, WAN_CANCELLATION, WAX_CANDLE, } from './object_data.js';
 import { unlinkObject } from './object_location.js';
 import { objectQuantity, rejoinObjectStack, splitObjectStack, } from './object_stack.js';
 import { OBJECT_TIMER_KIND, stopObjectTimer, } from './object_timers.js';
@@ -61,11 +61,6 @@ export function isContainer(object) {
     return !!object && CONTAINER_TYPES.has(object.otyp);
 }
 const quantity = objectQuantity;
-function containerNoun(container) {
-    if ([SACK, OILSKIN_SACK, BAG_OF_HOLDING].includes(container.otyp))
-        return 'bag';
-    return OBJECT_NAMES[container.otyp] || container.name || 'container';
-}
 function objectDescription(object, primaryHandDetail = null) {
     if (object.otyp === GOLD_PIECE) {
         const amount = quantity(object);
@@ -736,7 +731,7 @@ async function useContainerActions(container, { held = false, moreContainers = f
     container.contents ||= [];
     container.lknown = true;
     if (container.olocked) {
-        await plineWithContinuation(`The ${containerNoun(container)} is locked.`);
+        await plineWithContinuation(`${definiteObjectAction(container, 'are')} locked.`);
         if (held)
             await pline('You must put it down to unlock.');
         return { spentTime: false, container };

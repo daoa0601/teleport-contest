@@ -13,7 +13,7 @@ import {
 import {
     canSeeMonster, canSenseMonster, canSpotMonster, glyphAt, map_invisible,
     newsym,
-    plineWithContinuation, randomDisplayMonsterName,
+    plineWithContinuation,
 } from './display.js';
 import { floorObjectDescription } from './floor_object_display.js';
 import { game } from './gstate.js';
@@ -25,10 +25,12 @@ import { stumbleOntoMimic } from './mimic.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
 import { wakeAttackedMonster } from './monster_anger.js';
 import {
-    MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL,
+    MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_SYMBOL,
     requireMonsterData,
 } from './monster_data.js';
 import { paranoidQuery } from './query.js';
+import { monsterName, monsterLeashName } from './monster_name.js';
+import { withIndefiniteArticle } from './object_grammar.js';
 
 export interface AppliedWeaponAttackOptions {
     state?: GameState;
@@ -98,23 +100,6 @@ function isAdjacentToHero(monster: Monster, state: GameState) {
     return dx * dx + dy * dy <= 2;
 }
 
-function targetName(monster: Monster) {
-    if (monster.name) return monster.name;
-    const species = MONSTER_NAME[monster.mnum] || 'monster';
-    return monster.mtame || monster.pet ? `your ${species}` : `the ${species}`;
-}
-
-function indefiniteName(name: string) {
-    return `${/^[aeiou]/i.test(name) ? 'an' : 'a'} ${name}`;
-}
-
-function locallyVisibleMonsterName(monster: Monster, state: GameState) {
-    if (!canSeeMonster(monster)) return null;
-    if (heroIsHallucinating(state))
-        return randomDisplayMonsterName();
-    return monster.name || MONSTER_NAME[monster.mnum] || 'monster';
-}
-
 function floorObjectName(x: number, y: number, state: GameState) {
     const object = state.level?.objects?.[x]?.[y]?.[0];
     if (!object) return null;
@@ -125,7 +110,8 @@ function floorObjectName(x: number, y: number, state: GameState) {
 async function publishHiddenMonster(monster: Monster, state: GameState) {
     const blind = heroIsBlind(state);
     const hallucinating = heroIsHallucinating(state);
-    const visibleName = locallyVisibleMonsterName(monster, state);
+    const perceivedName = monsterLeashName(monster, state);
+    const visibleName = perceivedName === 'it' ? null : perceivedName;
     if (!blind && hallucinating) {
         const disposition = monster.mtame ? 'tame' : 'wild';
         const noun = visibleName || 'creature';
@@ -145,7 +131,7 @@ async function publishHiddenMonster(monster: Monster, state: GameState) {
     if (cover) {
         await plineWithContinuation(
             `Wait!  There's ${visibleName
-                ? indefiniteName(visibleName) : 'something'} hiding under ${cover}!`,
+                ? withIndefiniteArticle(visibleName) : 'something'} hiding under ${cover}!`,
         );
     }
 }
@@ -229,7 +215,7 @@ export async function prepareAppliedWeaponAttack(
             const paranoid = !!((state.flags?.paranoia_bits ?? 0)
                 & PARANOID_HIT);
             const accepted = await paranoidQuery(
-                paranoid, `Really attack ${targetName(monster)}?`,
+                paranoid, `Really attack ${monsterName(monster, { state })}?`,
                 state.flags?.paranoia_bits ?? 0,
             );
             if (!accepted) return { proceed: false, spentTime: false };

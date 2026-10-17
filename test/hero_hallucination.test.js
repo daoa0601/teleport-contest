@@ -154,7 +154,7 @@ void test('gold armor stops shining before its removal restores hallucination', 
     await finishArmorRemoval(scales);
     await flushPendingTopline();
     const output = messages.join(' ');
-    const extinguished = output.indexOf('stop shining.');
+    const extinguished = output.indexOf('stops shining.');
     const hallucinating = output.indexOf('Oh wow!');
     assert.ok(extinguished >= 0 && hallucinating > extinguished, output);
     assert.equal(heroIsHallucinating(), true);

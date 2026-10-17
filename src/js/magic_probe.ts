@@ -8,7 +8,7 @@ import { plineWithContinuation as pline, randomDisplayMonsterName } from './disp
 import type { MessagePublisher } from './display.js';
 import { isContainer } from './container.js';
 import { inventoryItemDescription } from './invent.js';
-import { objectName } from './objnam.js';
+import { definiteName, definiteObjectAction, objectName } from './objnam.js';
 import { withIndefiniteArticle } from './object_grammar.js';
 import { monsterName, possessiveName } from './monster_name.js';
 import { monsterStatusLine } from './monster_status.js';
@@ -54,20 +54,19 @@ export async function probeObject(object: GameObject, { state = game }: { state?
     observeObject(object, state);
     if (isContainer(object) || object.otyp === STATUE) {
         object.cknown = object.lknown = true;
-        const name = objectName(object, state);
-        const subject = `The ${name}`;
+        const name = definiteName(objectName(object, state), state);
         if ([CHEST, LARGE_BOX].includes(object.otyp) && !object.tknown) {
-            if (object.otrapped) await pline(`${subject} is trapped!`);
+            if (object.otrapped) await pline(`${definiteObjectAction(object, 'are', state)} trapped!`);
             object.tknown = true;
         }
-        if (!object.contents?.length) await pline(`${subject} is empty.`);
+        if (!object.contents?.length) await pline(`${definiteObjectAction(object, 'are', state)} empty.`);
         else if (schroedingersBox(object)) {
             const cat = heroIsHallucinating(state) ? randomDisplayMonsterName() : 'cat';
-            await pline(`You aren't sure whether the ${name} has ${withIndefiniteArticle(cat)} or its corpse inside.`);
+            await pline(`You aren't sure whether ${name} has ${withIndefiniteArticle(cat)} or its corpse inside.`);
             object.cknown = false;
         } else {
             for (const content of object.contents) observeObject(content, state);
-            await showInventoryWindow([{ heading: '', items: object.contents.map(content => ({ text: inventoryItemDescription(content) })) }], { title: `Contents of the ${name}:` });
+            await showInventoryWindow([{ heading: '', items: object.contents.map(content => ({ text: inventoryItemDescription(content) })) }], { title: `Contents of ${name}:` });
         }
         learned = true;
     } else if (object.otyp === TIN) {
