@@ -1,6 +1,6 @@
 // monster_data.js — mechanically transcribed NetHack 5.0 monster metadata.
 // Source: nethack-c/upstream/include/monsters.h.
-import { AD_DGST, AD_STCK, AD_WRAP, AT_BOOM, AT_ENGL, AT_HUGS, AT_NONE } from './monster_attack_types.js';
+import { AD_DGST, AD_DRST, AD_SPEL, AD_STCK, AD_WRAP, AT_BOOM, AT_ENGL, AT_HUGS, AT_MAGC, AT_NONE, AT_WEAP } from './monster_attack_types.js';
 export const MONSTER_DIFFICULTY = [4, 6, 7, 6, 6, 12, 2, 6, 8, 7, 8, 8, 1, 1, 2, 4, 3, 5, 5, 7, 6, 7, 7, 8, 9, 9, 14, 2, 3, 9, 9, 10, 3, 5, 6, 7, 7, 7, 8, 14, 8, 8, 11, 2, 4, 5, 6, 8, 13, 19, 3, 3, 4, 5, 7, 7, 5, 6, 8, 1, 2, 3, 4, 4, 8, 9, 11, 5, 5, 5, 1, 3, 3, 4, 5, 5, 5, 7, 4, 6, 9, 4, 7, 8, 9, 13, 15, 22, 1, 2, 4, 4, 4, 4, 3, 4, 7, 8, 12, 14, 4, 6, 6, 6, 7, 9, 4, 6, 7, 9, 9, 10, 6, 9, 10, 17, 1, 9, 5, 7, 11, 11, 12, 19, 21, 26, 2, 3, 6, 7, 6, 8, 9, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 9, 10, 10, 10, 10, 1, 2, 2, 2, 2, 2, 5, 3, 4, 5, 6, 8, 8, 10, 11, 13, 13, 19, 20, 17, 18, 3, 4, 5, 6, 14, 18, 21, 29, 4, 5, 6, 6, 7, 7, 8, 10, 4, 4, 4, 4, 8, 10, 13, 17, 7, 9, 11, 4, 6, 8, 12, 9, 14, 8, 14, 3, 6, 7, 8, 9, 10, 9, 12, 12, 13, 16, 12, 12, 14, 32, 8, 8, 17, 11, 4, 6, 7, 7, 8, 9, 1, 2, 3, 3, 4, 5, 7, 5, 9, 14, 4, 4, 6, 6, 7, 8, 10, 12, 15, 18, 22, 2, 3, 3, 6, 1, 6, 7, 8, 11, 11, 11, 15, 14, 14, 13, 15, 30, 8, 10, 13, 12, 14, 8, 12, 25, 34, 22, 12, 14, 11, 8, 9, 10, 11, 11, 11, 12, 13, 15, 15, 16, 15, 20, 26, 31, 36, 36, 40, 45, 53, 57, 34, 34, 34, 26, 8, 5, 7, 9, 7, 10, 22, 1, 2, 3, 4, 6, 7, 7, 12, 1, 12, 12, 12, 12, 12, 11, 12, 12, 12, 12, 12, 12, 12, 24, 24, 24, 26, 24, 30, 30, 24, 24, 24, 22, 24, 25, 23, 22, 23, 23, 22, 31, 23, 17, 20, 19, 19, 20, 7, 7, 7, 7, 7, 8, 8, 7, 7, 7, 7, 8, 7, 8];
 export const MONSTER_GENO = [163, 98, 162, 161, 35, 544, 34, 34, 34, 161, 37, 33, 163, 33, 161, 528, 33, 33, 33, 33, 162, 528, 2210, 162, 2081, 1185, 1057, 49, 37, 2098, 50, 50, 33, 33, 34, 33, 33, 33, 34, 33, 34, 34, 33, 34, 35, 33, 34, 33, 33, 33, 113, 34, 33, 1137, 34, 35, 34, 33, 34, 33, 33, 33, 33, 36, 34, 33, 33, 34, 34, 34, 34, 34, 608, 98, 97, 97, 33, 33, 36, 34, 33, 164, 33, 34, 33, 34, 34, 33, 161, 162, 33, 528, 34, 544, 162, 33, 33, 34, 34, 34, 34, 34, 33, 33, 34, 34, 50, 50, 2097, 49, 1074, 1073, 32, 32, 34, 34, 179, 35, 52, 50, 34, 2193, 2065, 2065, 2065, 2065, 161, 34, 34, 34, 33, 33, 33, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 33, 33, 33, 33, 33, 33, 33, 33, 33, 33, 35, 17, 17, 17, 17, 36, 33, 34, 33, 33, 33, 34, 161, 34, 33, 33, 545, 161, 161, 161, 2209, 33, 161, 1, 544, 33, 608, 672, 544, 544, 49, 49, 1073, 1073, 49, 49, 49, 49, 49, 49, 49, 49, 32, 32, 32, 32, 33, 33, 33, 33, 161, 34, 34, 50, 49, 1073, 49, 35, 33, 34, 1058, 97, 34, 608, 33, 33, 33, 34, 2081, 33, 544, 33, 34, 49, 49, 4624, 49, 34, 49, 33, 33, 162, 35, 34, 33, 33, 49, 49, 177, 177, 177, 177, 49, 49, 49, 528, 17, 17, 17, 17, 17, 17, 1, 17, 17, 17, 17, 512, 1, 1, 1, 512, 162, 162, 162, 162, 33, 33, 512, 512, 512, 4608, 512, 4608, 161, 161, 35, 33, 33, 673, 545, 4608, 4608, 4608, 528, 528, 528, 17, 1042, 1170, 1170, 1041, 1170, 1170, 1170, 1042, 1041, 1042, 1041, 1041, 5648, 5648, 5648, 5648, 5648, 5648, 5648, 5648, 4608, 4608, 4608, 528, 528, 544, 672, 544, 544, 544, 544, 37, 37, 37, 32, 37, 34, 33, 1025, 4624, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 4608, 4608, 4608, 4608, 4608, 4608, 4608, 4608, 4608, 4608, 4608, 4608, 4608, 4624, 4624, 4608, 4608, 4608, 4608, 4624, 4608, 4608, 4624, 4608, 4624, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512];
 export const MONSTER_ALIGNMENT = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -7, 0, 0, 0, 0, 0, -7, 0, -5, -5, 0, -5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -3, -9, -9, -12, 6, 4, -6, 5, 6, -8, -8, -7, -7, -7, -7, -7, 7, 0, 0, 0, -2, -3, -4, -4, 0, 0, 0, 0, 0, 0, 0, -3, -4, -3, -4, -5, -4, -5, -5, 0, 0, 0, 0, -2, 0, 0, 0, 0, 0, 0, 0, 0, -7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 0, -7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 7, 12, 15, 15, 0, 0, 0, 0, 0, -1, -3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 4, 4, -4, -5, 5, -6, -7, 6, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, -2, 2, -3, 0, -3, 9, 0, 0, 9, 10, 11, 12, -9, -12, -15, -15, -2, -3, -4, -4, -5, -5, -6, -7, 0, 0, 0, 0, -4, 4, 5, 7, -3, -5, -7, 0, 0, 0, 0, 0, 0, 0, -3, 0, 0, 0, 0, 0, 0, -3, -3, -3, -3, -7, 0, -8, -9, -10, -3, -6, -17, 0, 0, 0, 0, 0, 0, 2, -2, -2, -3, -3, -3, -3, -4, -2, -4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -7, -7, -7, -3, -5, -6, -7, -9, -10, 0, 0, 10, 0, 0, 0, 0, -2, -3, 0, -4, -5, -2, -4, -15, -128, 15, -5, 0, -7, -9, 11, 10, 8, -12, -9, -10, -9, -12, -11, -13, -5, -14, -15, -15, -20, 15, 15, 20, 20, -20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -3, 0, 0, 0, 0, 0, 0, 0, -9, 0, 3, 0, 1, 0, 3, 0, 0, -3, -3, 3, 0, 1, 0, 20, 0, 20, 0, 20, 0, 0, 0, -20, 20, 0, 0, 0, -14, -14, -14, -15, -14, -20, -127, -15, 18, -13, 12, -10, 3, 0, 1, 0, 3, 0, 0, -7, -3, 3, 3, 0, 1, 0];
@@ -95,6 +95,11 @@ const M2_DEMON = 0x00000100;
 const M2_ALWAYS_HOSTILE = 0x00100000;
 const M2_JEWELS = 0x20000000;
 const M1_FLY = 0x00000001;
+const M1_AMPHIBIOUS = 0x00000200;
+const M1_REGEN = 0x00800000;
+const M1_SEE_INVIS = 0x01000000;
+const M1_TPORT = 0x02000000;
+const M1_TPORT_CNTRL = 0x04000000;
 const M1_AMORPHOUS = 0x00000004;
 const M1_CLING = 0x00000010;
 const M1_HIDE = 0x00000100;
@@ -445,5 +450,57 @@ export function requireMonsterData(table, mnum) {
         throw new RangeError(`Missing native monster data for species ${mnum}`);
     }
     return value;
+}
+// C mon.c:adj_erinys() changes the shared species, including existing
+// peaceful monsters. Keep readers on the same tables for every use of mons[].
+const PM_ERINYS = MONSTER_NAME.indexOf('erinys');
+const initialErinys = {
+    flags1: requireMonsterData(MONSTER_FLAGS1, PM_ERINYS),
+    level: requireMonsterData(MONSTER_LEVEL, PM_ERINYS),
+    difficulty: requireMonsterData(MONSTER_DIFFICULTY, PM_ERINYS),
+    attacks: requireMonsterData(MONSTER_ATTACKS, PM_ERINYS),
+    experience: requireMonsterData(MONSTER_EXPERIENCE_META, PM_ERINYS),
+};
+const erinys = { ...initialErinys };
+// Keep the generated tables intact. Only this mutable species entry reads
+// from live data, so every existing species reader sees its native upgrades.
+Object.defineProperty(MONSTER_FLAGS1, PM_ERINYS, { get: () => erinys.flags1 });
+Object.defineProperty(MONSTER_LEVEL, PM_ERINYS, { get: () => erinys.level });
+Object.defineProperty(MONSTER_DIFFICULTY, PM_ERINYS, { get: () => erinys.difficulty });
+Object.defineProperty(MONSTER_ATTACKS, PM_ERINYS, { get: () => erinys.attacks });
+Object.defineProperty(MONSTER_EXPERIENCE_META, PM_ERINYS, { get: () => erinys.experience });
+export function adjustErinys(abuse) {
+    erinys.flags1 |= (abuse > 5 ? M1_SEE_INVIS : 0)
+        | (abuse > 10 ? M1_AMPHIBIOUS : 0)
+        | (abuse > 15 ? M1_FLY : 0)
+        | (abuse > 25 ? M1_REGEN : 0)
+        | (abuse > 30 ? M1_TPORT_CNTRL : 0)
+        | (abuse > 40 ? M1_TPORT : 0);
+    const [first, second, third, fourth, fifth, sixth] = erinys.attacks;
+    const weaponAttack = abuse > 35 ? [AT_WEAP, AD_DRST, 3, 4] : second;
+    const spellAttack = abuse > 50 ? [AT_MAGC, AD_SPEL, 3, 4] : third;
+    erinys.attacks = [
+        abuse > 20 ? [first[0], first[1], 3, first[3]] : first,
+        weaponAttack, spellAttack, fourth, fifth, sixth,
+    ];
+    erinys.level = Math.min(7 + abuse, 50);
+    erinys.difficulty = Math.min(10 + Math.trunc(abuse / 3), 25);
+    // exper.c:experience() reads mattk too. Its precomputed bonuses must
+    // include the additional poisoned weapon attack and spell attack.
+    const [ac, attackBonus, levelMultiplier, flatBonus, eelWrap] = initialErinys.experience;
+    erinys.experience = [
+        ac, attackBonus + (weaponAttack[0] === AT_WEAP ? 5 : 0)
+            + (spellAttack[0] === AT_MAGC ? 10 : 0),
+        levelMultiplier + (weaponAttack[0] === AT_WEAP ? 2 : 0)
+            + (spellAttack[0] === AT_MAGC ? 1 : 0),
+        flatBonus, eelWrap,
+    ];
+}
+// Native starts new games and restores in a fresh process. Species changes
+// are rebuilt from the saved abuse count rather than saved as monster traits.
+export function resetErinys(abuse = 0) {
+    erinys.flags1 = initialErinys.flags1;
+    erinys.attacks = initialErinys.attacks;
+    adjustErinys(abuse);
 }
 //# sourceMappingURL=monster_data.js.map

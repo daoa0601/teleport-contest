@@ -1,11 +1,13 @@
 // gstate.js — Global game state reference.
 // All game modules import `game` from here.
+import { resetErinys } from './monster_data.js';
 import { CommandBindings } from './command_bindings.js';
 import { createGameState } from './game_state.js';
 import { requireInitializedHero } from './hero_types.js';
 export let game = createGameState();
 export function resetGame(nextState = createGameState()) {
     game = nextState;
+    resetErinys(game.u.ualign?.abuse ?? 0);
     game.warn_obj_cnt = 0;
     game.bhitpos = { x: 0, y: 0 };
     game.notonhead = false;

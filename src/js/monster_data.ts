@@ -1,10 +1,10 @@
-import type { MonsterAttacks, MonsterBody, MonsterExperience } from './data_types.js';
+import type { MonsterAttack, MonsterAttacks, MonsterBody, MonsterExperience } from './data_types.js';
 import type { Monster } from './monster_types.js';
 
 // monster_data.js — mechanically transcribed NetHack 5.0 monster metadata.
 // Source: nethack-c/upstream/include/monsters.h.
 
-import { AD_DGST, AD_STCK, AD_WRAP, AT_BOOM, AT_ENGL, AT_HUGS, AT_NONE } from './monster_attack_types.js';
+import { AD_DGST, AD_DRST, AD_SPEL, AD_STCK, AD_WRAP, AT_BOOM, AT_ENGL, AT_HUGS, AT_MAGC, AT_NONE, AT_WEAP } from './monster_attack_types.js';
 
 type SpeciesReference = Pick<Monster, 'mnum'>;
 type ShifterReference = SpeciesReference & Partial<Pick<Monster, 'cham'>>;
@@ -110,6 +110,11 @@ const M2_DEMON = 0x00000100;
 const M2_ALWAYS_HOSTILE = 0x00100000;
 const M2_JEWELS = 0x20000000;
 const M1_FLY = 0x00000001;
+const M1_AMPHIBIOUS = 0x00000200;
+const M1_REGEN = 0x00800000;
+const M1_SEE_INVIS = 0x01000000;
+const M1_TPORT = 0x02000000;
+const M1_TPORT_CNTRL = 0x04000000;
 const M1_AMORPHOUS = 0x00000004;
 const M1_CLING = 0x00000010;
 const M1_HIDE = 0x00000100;
@@ -523,4 +528,61 @@ export function requireMonsterData<T>(table: readonly T[], mnum: number): T {
         throw new RangeError(`Missing native monster data for species ${mnum}`);
     }
     return value;
+}
+
+// C mon.c:adj_erinys() changes the shared species, including existing
+// peaceful monsters. Keep readers on the same tables for every use of mons[].
+const PM_ERINYS = MONSTER_NAME.indexOf('erinys');
+const initialErinys = {
+    flags1: requireMonsterData(MONSTER_FLAGS1, PM_ERINYS),
+    level: requireMonsterData(MONSTER_LEVEL, PM_ERINYS),
+    difficulty: requireMonsterData(MONSTER_DIFFICULTY, PM_ERINYS),
+    attacks: requireMonsterData(MONSTER_ATTACKS, PM_ERINYS),
+    experience: requireMonsterData(MONSTER_EXPERIENCE_META, PM_ERINYS),
+};
+const erinys = { ...initialErinys };
+
+// Keep the generated tables intact. Only this mutable species entry reads
+// from live data, so every existing species reader sees its native upgrades.
+Object.defineProperty(MONSTER_FLAGS1, PM_ERINYS, { get: () => erinys.flags1 });
+Object.defineProperty(MONSTER_LEVEL, PM_ERINYS, { get: () => erinys.level });
+Object.defineProperty(MONSTER_DIFFICULTY, PM_ERINYS, { get: () => erinys.difficulty });
+Object.defineProperty(MONSTER_ATTACKS, PM_ERINYS, { get: () => erinys.attacks });
+Object.defineProperty(MONSTER_EXPERIENCE_META, PM_ERINYS, { get: () => erinys.experience });
+
+export function adjustErinys(abuse: number): void {
+    erinys.flags1 |= (abuse > 5 ? M1_SEE_INVIS : 0)
+        | (abuse > 10 ? M1_AMPHIBIOUS : 0)
+        | (abuse > 15 ? M1_FLY : 0)
+        | (abuse > 25 ? M1_REGEN : 0)
+        | (abuse > 30 ? M1_TPORT_CNTRL : 0)
+        | (abuse > 40 ? M1_TPORT : 0);
+    const [first, second, third, fourth, fifth, sixth] = erinys.attacks;
+    const weaponAttack: MonsterAttack = abuse > 35 ? [AT_WEAP, AD_DRST, 3, 4] : second;
+    const spellAttack: MonsterAttack = abuse > 50 ? [AT_MAGC, AD_SPEL, 3, 4] : third;
+    erinys.attacks = [
+        abuse > 20 ? [first[0], first[1], 3, first[3]] : first,
+        weaponAttack, spellAttack, fourth, fifth, sixth,
+    ];
+    erinys.level = Math.min(7 + abuse, 50);
+    erinys.difficulty = Math.min(10 + Math.trunc(abuse / 3), 25);
+
+    // exper.c:experience() reads mattk too. Its precomputed bonuses must
+    // include the additional poisoned weapon attack and spell attack.
+    const [ac, attackBonus, levelMultiplier, flatBonus, eelWrap] = initialErinys.experience;
+    erinys.experience = [
+        ac, attackBonus + (weaponAttack[0] === AT_WEAP ? 5 : 0)
+            + (spellAttack[0] === AT_MAGC ? 10 : 0),
+        levelMultiplier + (weaponAttack[0] === AT_WEAP ? 2 : 0)
+            + (spellAttack[0] === AT_MAGC ? 1 : 0),
+        flatBonus, eelWrap,
+    ];
+}
+
+// Native starts new games and restores in a fresh process. Species changes
+// are rebuilt from the saved abuse count rather than saved as monster traits.
+export function resetErinys(abuse = 0): void {
+    erinys.flags1 = initialErinys.flags1;
+    erinys.attacks = initialErinys.attacks;
+    adjustErinys(abuse);
 }

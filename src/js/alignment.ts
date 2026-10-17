@@ -13,7 +13,7 @@ import { recordGameLogEvent } from './gamelog.js';
 import { retouchEquipment } from './hero_retouch.js';
 import { makeConfused } from './hero_mental_status.js';
 import { makemonAt } from './mklev.js';
-import { MONSTER_NAME } from './monster_data.js';
+import { adjustErinys, MONSTER_NAME } from './monster_data.js';
 import { HELM_OF_OPPOSITE_ALIGNMENT } from './object_data.js';
 
 export function deityName(alignment: number, state: GameState = game): string {
@@ -122,6 +122,7 @@ export function adjustHeroAlignment(amount: number, state: GameState = game): vo
     if (amount < 0) {
         alignment.record = (alignment.record || 0) + amount;
         alignment.abuse = (alignment.abuse ?? 0) - amount;
+        adjustErinys(alignment.abuse);
         return;
     }
     const alignmentLimit = 10 + Math.trunc((state.moves || 0) / 200);

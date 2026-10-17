@@ -1,3 +1,4 @@
+import { resetErinys } from '../../js/monster_data.js';
 import type { MonsterVital } from '../../js/monster_types.js';
 import type { GameState, PlayingGameState, Fruit } from '../../js/game_state.js';
 import type { InitializedHero } from '../../js/hero_types.js';
@@ -120,6 +121,7 @@ export function freshGame({
         uz0: hero.uz0 ?? { ...(hero.uz ?? u.uz) },
     };
     state.u = configuredHero;
+    resetErinys(configuredHero.ualign.abuse ?? 0);
     initializeFruitRegistry(undefined, state);
     resetInputState();
     requireFixtureGame(state);
