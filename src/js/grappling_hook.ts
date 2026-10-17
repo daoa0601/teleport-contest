@@ -99,15 +99,13 @@ async function chooseTarget(describeTarget: PositionDescription, state: GameStat
 async function chooseAim(x: number, y: number, state: GameState) {
     const surface = surfaceName(x, y, state);
     const rows = [
-        'Aim for what?',
-        '',
         `a - an object on the ${surface}`,
         'b - a monster',
         `c - the ${surface}`,
     ];
     const choices = new Map([['a', 1], ['b', 2], ['c', 3]]);
     return showPagedPickOneMenu({
-        rows, choices,
+        rows, choices, prompt: 'Aim for what?',
     });
 }
 

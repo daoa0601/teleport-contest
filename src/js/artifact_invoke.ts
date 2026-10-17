@@ -399,7 +399,7 @@ async function invokeCreatePortal(object: GameObject, state: GameState, publish:
     requirePlayingGame(state);
     const tutorial = state.specialLevels?.get('tut-1')?.dnum;
     const choices = new Map<string, number>();
-    const rows = ['Open a portal to which dungeon?', ''];
+    const rows: string[] = [];
     let destinationIndex = 0;
     for (const [index, dungeon] of state.dungeons.entries()) {
         if (!dungeon.dunlev_ureached || index === tutorial) continue;
@@ -409,7 +409,9 @@ async function invokeCreatePortal(object: GameObject, state: GameState, publish:
         destinationIndex = index;
     }
     if (choices.size > 1) {
-        const selected = await showPagedPickOneMenu({ rows, choices });
+        const selected = await showPagedPickOneMenu({
+            rows, choices, prompt: 'Open a portal to which dungeon?',
+        });
         if (selected === null) {
             await nothingSpecial(object, state, publish);
             return;

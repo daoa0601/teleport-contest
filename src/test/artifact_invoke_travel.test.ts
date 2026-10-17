@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { game, requirePlayingGame } from '../js/gstate.js';
+import { ATR_INVERSE } from '../js/windows.js';
+import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
+import { resetInputState } from '../js/input.js';
 import { artifactObject } from './support/game-objects.js';
 import { invokeInventoryObject } from './support/commands.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -51,4 +53,30 @@ void test('cancelling the Eye dungeon menu consumes its invocation and a turn', 
     assert.equal(game._pending_message, 'You feel a surge of power, but nothing seems to happen.');
     assert.ok(eye.age > game.moves);
     assert.equal(game.context.move, 1);
+});
+
+void test('the Eye dungeon menu shows its prompt in the menu heading style', async () => {
+    freshObjectRoom({ role: 'wizard' });
+    requirePlayingGame(game);
+    game.dungeons = [
+        createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 20, dunlev_ureached: 8 }),
+        createDungeon({ dname: 'The Gnomish Mines', num_dunlevs: 8, dunlev_ureached: 4 }),
+    ];
+    const eye = await artifactObject('The Eye of the Aethiopica', { invlet: 'a', where: 'inventory', age: 0 });
+    game.inventory = [eye];
+    let prompt: { text: string; attr: number | undefined } | null = null;
+    resetInputState().display = {
+        async readKey(): Promise<number> {
+            const row = requireGameDisplay(game).grid[0] ?? [];
+            const text = row.map(cell => cell.ch).join('');
+            const start = text.indexOf('Open a portal');
+            prompt = { text: text.trim(), attr: row[start]?.attr };
+            return 27;
+        },
+    };
+
+    await invokeInventoryObject(eye);
+
+    // end_menu(tmpwin, prompt) draws the prompt with iflags.menu_headings.
+    assert.deepEqual(prompt, { text: 'Open a portal to which dungeon?', attr: ATR_INVERSE });
 });

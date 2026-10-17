@@ -64,15 +64,13 @@ async function chooseTarget(describeTarget, state) {
 async function chooseAim(x, y, state) {
     const surface = surfaceName(x, y, state);
     const rows = [
-        'Aim for what?',
-        '',
         `a - an object on the ${surface}`,
         'b - a monster',
         `c - the ${surface}`,
     ];
     const choices = new Map([['a', 1], ['b', 2], ['c', 3]]);
     return showPagedPickOneMenu({
-        rows, choices,
+        rows, choices, prompt: 'Aim for what?',
     });
 }
 async function snagObject(x, y, state) {

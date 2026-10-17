@@ -371,7 +371,7 @@ export async function showTextPages(pages, { validKeys = [27, 32, 10, 13] } = {}
  * letters select visible entries; space advances and `<` goes back.
  * C refs: tty select_menu() and dungeon.c print_dungeon(TRUE).
  */
-export async function showPagedPickOneMenu({ rows, choices }) {
+export async function showPagedPickOneMenu({ rows, choices, prompt = null }) {
     if (!display())
         return null;
     const window = tty_create_nhwindow(NHW_MENU);
@@ -386,7 +386,7 @@ export async function showPagedPickOneMenu({ rows, choices }) {
                 identifier: selectable ? identifier : null,
                 ...(selectable ? { selector } : {}), attr: row.attr ?? ATR_NONE });
         }
-        tty_end_menu(window);
+        tty_end_menu(window, prompt);
         const result = await tty_select_menu(window, PICK_ONE);
         return result.selections[0]?.identifier ?? null;
     }

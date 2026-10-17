@@ -111,6 +111,8 @@ export interface TextPage {
 export interface PagedPickOneMenuOptions<T> {
     rows: readonly TextMenuEntry[];
     choices: ReadonlyMap<string, T>;
+    // end_menu()'s prompt, drawn in the menu_headings style above the rows.
+    prompt?: string | null;
 }
 
 function display(): GameDisplay | null {
@@ -481,7 +483,7 @@ export async function showTextPages(
  * letters select visible entries; space advances and `<` goes back.
  * C refs: tty select_menu() and dungeon.c print_dungeon(TRUE).
  */
-export async function showPagedPickOneMenu<T>({ rows, choices }: PagedPickOneMenuOptions<T>): Promise<T | null> {
+export async function showPagedPickOneMenu<T>({ rows, choices, prompt = null }: PagedPickOneMenuOptions<T>): Promise<T | null> {
     if (!display()) return null;
     const window = tty_create_nhwindow<T>(NHW_MENU);
     try {
@@ -495,7 +497,7 @@ export async function showPagedPickOneMenu<T>({ rows, choices }: PagedPickOneMen
                 identifier: selectable ? identifier : null,
                 ...(selectable ? { selector } : {}), attr: row.attr ?? ATR_NONE });
         }
-        tty_end_menu(window);
+        tty_end_menu(window, prompt);
         const result = await tty_select_menu(window, PICK_ONE);
         return result.selections[0]?.identifier ?? null;
     } finally {

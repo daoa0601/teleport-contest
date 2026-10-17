@@ -3109,10 +3109,7 @@ async function endgamePrerequisite(destination: DungeonLocation) {
 // C ref: dungeon.c print_dungeon(TRUE). Build one source-ordered menu stream;
 // the tty layer alone owns pagination and nested input capture.
 function wizardLevelMenu() {
-    const rows: TextMenuEntry[] = [
-        { text: 'Level teleport to where:', attr: ATR_INVERSE },
-        '',
-    ];
+    const rows: TextMenuEntry[] = [];
     const choices = new Map<string, WizardLevelDestination>();
     let choiceIndex = 0;
 
@@ -3220,7 +3217,9 @@ async function wizWhere() {
 // C dungeon.c:print_dungeon(TRUE), with the endgame entry prerequisite.
 export async function chooseWizardLevelDestination() {
     const { rows, choices } = wizardLevelMenu();
-    const destination = await showPagedPickOneMenu({ rows, choices });
+    const destination = await showPagedPickOneMenu({
+        rows, choices, prompt: 'Level teleport to where:',
+    });
     if (!destination) return null;
     await endgamePrerequisite(destination);
     return { destination };
