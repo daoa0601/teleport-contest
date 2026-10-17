@@ -182,6 +182,7 @@ function monsterFields(value: unknown, context: SavedEntityContext): Fields<Mons
         hasInventory: optional(boolean),
         cham: optional(validSavedSpeciesOrNone),
         dead: optional(boolean),
+        lightRemoved: optional(boolean),
         movement: optional(integer),
         mmove: optional(integer),
         mspeed: optional(integer),
@@ -270,7 +271,7 @@ export function validSavedMonster(value: unknown, context: SavedEntityContext): 
 
 export function validSavedMonsterTraits(value: unknown, context: SavedEntityContext): value is SavedMonsterTraits {
     const {
-        minvent, inventory, mw, wormSegments, wormHead, wormGrowTime,
+        minvent, inventory, mw, wormSegments, wormHead, wormGrowTime, lightRemoved,
         ...fields
     } = monsterFields(value, context);
     return validateSavedEntity(value, 'savedMonster', context, fields);

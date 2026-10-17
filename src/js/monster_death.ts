@@ -442,6 +442,7 @@ export async function detachDeadMonster(
     if (monster.mleashed) releaseMonsterLeash(monster, state);
     // m_detach removes the light of the form which died, before its true
     // species and empty map square are projected by mon_leaving_level.
+    monster.lightRemoved = true;
     if (x > 0 && emittedLight) state.vision_full_recalc = 1;
     await detachMonsterFromLevel(monster, state, { dueToDeath: true });
     if (state.program_state.gameover) return true;
