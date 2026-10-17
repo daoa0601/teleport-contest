@@ -87,7 +87,9 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: recorder
-      - run: mkdir -p nethack-c/recorder && tar -C nethack-c/recorder -xzf recorder.tgz
+      - run: |
+          mkdir -p nethack-c/recorder && tar -C nethack-c/recorder -xzf recorder.tgz
+          find nethack-c/recorder/install -maxdepth 4 | head -30
 
       - name: Record fresh sessions
         run: |
@@ -96,7 +98,7 @@ jobs:
           echo "$K" > kinds.txt
           mkdir -p out
           node scripts/generate-holdout.mjs --out "fresh$N" --count "$SESSIONS" --jobs 4 --kinds "$K" > out/generate.log 2>&1 \
-            || { tail -40 out/generate.log; exit 1; }
+            || { cp -r "fresh$N/rejected" out/ 2>/dev/null; for f in $(ls out/rejected/*.txt 2>/dev/null | head -3); do echo "== $f"; head -c 2000 "$f"; echo; done; exit 1; }
           cp "fresh$N/summary.json" out/summary.json
 
       - name: Score the port against them
