@@ -92,6 +92,8 @@ export async function dopray() {
     nomul(-3);
     game._helplessReason = 'praying';
     game._helplessDoneMessage = 'You finish your prayer.';
+    // C has one afternmv callback; prayer_done replaces pending dressing.
+    game._delayedAction = null;
     game._helplessAfter = 'finish-prayer';
     if (outcome === 'pleased' && !inHell()) {
         if (!heroIsBlind(game))
