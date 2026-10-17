@@ -86,7 +86,8 @@ interface PickAxeOptions extends PickAxeDirectionOptions {
 const M1_WALLWALK = 0x00000008;
 const GRID_BUG = MONSTER_NAME.indexOf('grid bug');
 const LONG_WORM = MONSTER_NAME.indexOf('long worm');
-const DIRECTION_KEYS = ['h', 'y', 'k', 'u', 'l', 'n', 'j', 'b', '<', '>'];
+// hack.h orders DIR_DOWN before DIR_UP after the eight compass directions.
+const DIRECTION_KEYS = ['h', 'y', 'k', 'u', 'l', 'n', 'j', 'b', '>', '<'];
 
 function compassVector(direction: number) {
     const dx = xdir[direction],
@@ -127,7 +128,7 @@ function suggestedDirections(tool: GameObject, state: GameState) {
     const downOK = heroCanReachFloor(state);
     return DIRECTION_KEYS.filter((key, direction) => {
         if (hero.uswallow) return true;
-        if (direction >= 8) return (direction === 9) === downOK;
+        if (direction >= 8) return (direction === 8) === downOK;
         const vector = compassVector(direction);
         if (hero.umonnum === GRID_BUG && vector.dx && vector.dy) return false;
         const x = hero.ux + vector.dx,
