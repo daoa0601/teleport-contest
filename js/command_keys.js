@@ -6,7 +6,7 @@ const DEFAULT_COMMAND_KEYS = new Map([
     ['apply', 'a'], ['attributes', String.fromCharCode(24)],
     ['autopickup', '@'],
     ['cast', 'Z'], ['close', 'c'], ['known', '\\'], ['down', '>'],
-    ['drop', 'd'], ['eat', 'e'], ['fire', 'f'], ['fight', 'F'],
+    ['drop', 'd'], ['droptype', 'D'], ['eat', 'e'], ['fire', 'f'], ['fight', 'F'],
     ['glance', ';'], ['help', '?'], ['inventory', 'i'],
     ['kick', String.fromCharCode(4)], ['look', ':'],
     ['moveeast', 'l'], ['movenorth', 'k'], ['movenortheast', 'u'],

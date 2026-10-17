@@ -621,35 +621,94 @@ export function objectQuestion(object, { prefix, suffix, fallback, format, short
         ? { ...state, _objectCallNames: {
                 ...state._objectCallNames, [object.otyp]: `${callName.slice(0, 8)}...`,
             } } : state;
-    const shortNamedObject = personalName && personalName.length >= 12
-        ? { ...object, oextra: { ...object.oextra, oname: `${personalName.slice(0, 8)}...` } }
-        : object;
+    const shortPersonalName = personalName && personalName.length >= 12
+        ? `${personalName.slice(0, 8)}...` : null;
+    // short_oname() changes the live object while formatting it. Keep its
+    // identity so equipment and dressing annotations still find their owner.
+    function formatName({ nameState = state, shortenName = false, stripAttributes = false } = {}) {
+        const saved = {
+            oextra: object.oextra,
+            bknown: object.bknown, rknown: object.rknown, greased: object.greased,
+            oeroded: object.oeroded, oeroded2: object.oeroded2,
+            orotten: object.orotten, odiluted: object.odiluted, norevive: object.norevive,
+        };
+        if (shortenName && shortPersonalName)
+            object.oextra = { ...object.oextra, oname: shortPersonalName };
+        if (stripAttributes) {
+            object.bknown = object.rknown = object.greased = false;
+            object.oeroded = object.oeroded2 = 0;
+            object.orotten = object.norevive = object.odiluted = false;
+        }
+        try {
+            const formatted = format(object, nameState);
+            return stripAttributes && formatted.length > limit
+                ? shortFormat(object, nameState) : formatted;
+        }
+        finally {
+            if (shortenName) {
+                if (saved.oextra === undefined)
+                    delete object.oextra;
+                else
+                    object.oextra = saved.oextra;
+            }
+            if (stripAttributes) {
+                if (saved.bknown === undefined)
+                    delete object.bknown;
+                else
+                    object.bknown = saved.bknown;
+                if (saved.rknown === undefined)
+                    delete object.rknown;
+                else
+                    object.rknown = saved.rknown;
+                if (saved.greased === undefined)
+                    delete object.greased;
+                else
+                    object.greased = saved.greased;
+                if (saved.oeroded === undefined)
+                    delete object.oeroded;
+                else
+                    object.oeroded = saved.oeroded;
+                if (saved.oeroded2 === undefined)
+                    delete object.oeroded2;
+                else
+                    object.oeroded2 = saved.oeroded2;
+                if (saved.orotten === undefined)
+                    delete object.orotten;
+                else
+                    object.orotten = saved.orotten;
+                if (saved.odiluted === undefined)
+                    delete object.odiluted;
+                else
+                    object.odiluted = saved.odiluted;
+                if (saved.norevive === undefined)
+                    delete object.norevive;
+                else
+                    object.norevive = saved.norevive;
+            }
+        }
+    }
     if (shortCallState !== state) {
-        name = format(object, shortCallState);
+        name = formatName({ nameState: shortCallState });
         if (name.length <= limit)
             return question(name);
     }
-    if (shortNamedObject !== object) {
-        name = format(shortNamedObject, state);
+    if (shortPersonalName) {
+        name = formatName({ shortenName: true });
         if (name.length <= limit)
             return question(name);
     }
-    const shortenBoth = shortCallState !== state && shortNamedObject !== object;
+    const shortenBoth = shortCallState !== state && shortPersonalName !== null;
     if (shortenBoth) {
-        name = format(shortNamedObject, shortCallState);
+        name = formatName({ nameState: shortCallState, shortenName: true });
         if (name.length <= limit)
             return question(name);
     }
     // Native retains shortened names during attribute removal only after
     // the combined attempt. Each separate attempt restores the full names.
-    const nameState = shortenBoth ? shortCallState : state;
-    const plainObject = { ...(shortenBoth ? shortNamedObject : object),
-        bknown: false, rknown: false, greased: false,
-        oeroded: 0, oeroded2: 0, orotten: false, odiluted: false, norevive: false,
-    };
-    name = format(plainObject, nameState);
-    if (name.length > limit)
-        name = shortFormat(plainObject, nameState);
+    name = formatName({
+        nameState: shortenBoth ? shortCallState : state,
+        shortenName: shortenBoth, stripAttributes: true,
+    });
     return question(name.length <= limit ? name : fallback);
 }
 // Native fruit labels imported from bones can already be plural. xname

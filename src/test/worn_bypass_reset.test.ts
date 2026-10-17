@@ -1,7 +1,7 @@
+import { clearBypasses } from '../js/object_bypass.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { game } from '../js/gstate.js';
-import { clearImmediateZapBypasses } from '../js/immediate_zap.js';
 import { punishHero } from '../js/punishment.js';
 import { installSwallowedHero } from './support/hero-state.js';
 import { createMonsterAt } from './support/monsters.js';
@@ -16,7 +16,7 @@ void test('turn cleanup clears bypasses on a swallowed hero’s floating ball an
     ball.bypass = chain.bypass = true;
     game.context.bypasses = true;
 
-    clearImmediateZapBypasses();
+    clearBypasses();
 
     assert.equal(ball.bypass, false);
     assert.equal(chain.bypass, false);

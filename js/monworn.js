@@ -1,6 +1,7 @@
 // Monster armor.
 // C refs: makemon.c:makemon(), mon.c:check_gear_next_turn() and
 // movemon_singlemon(), worn.c:m_dowear()/m_dowear_type().
+import { bypassObject } from './object_bypass.js';
 import { objectMaterial } from './object_material.js';
 import { publishHeardMessage } from './hero_speech.js';
 import { armorBonus, armorSlotFor, dragonFormForArmor } from './armor.js';
@@ -295,8 +296,7 @@ export async function adjustMonsterClothingAfterPolymorph(monster, state = game,
         if (!placed)
             return;
         if (polyspot) {
-            placed.bypass = true;
-            state.context.bypasses = true;
+            bypassObject(placed, state);
         }
         dropped.push(placed);
         newsym(monster.mx, monster.my);

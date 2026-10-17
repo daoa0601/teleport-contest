@@ -9,7 +9,7 @@ import { petRefusesHeroSwap, settlePetHeroDisplacement } from './hero_pet_displa
 import { airTurbulenceStopsHero, waterTurbulenceStopsHero } from './hero_movement_turbulence.js';
 import { maybeAdjustHeroBubble } from './elemental.js';
 import { announceRunLiquid, announceRunTrap, knownRunTrap, runLiquidIsDangerous } from './run_hazards.js';
-import { AUTOUNLOCK_APPLY_KEY, AUTOUNLOCK_UNTRAP } from './const.js';
+import { AUTOUNLOCK_APPLY_KEY, AUTOUNLOCK_UNTRAP, ECMD_CANCEL, ECMD_FAIL, ECMD_TIME } from './const.js';
 import { findDrawbridgeAt } from './dbridge.js';
 import { doorObstructed } from './door_magic.js';
 import { DBWALL, DRAWBRIDGE_DOWN, IS_DRAWBRIDGE, IS_TREE, LADDER, STAIRS, THRONE } from './const.js';
@@ -278,6 +278,7 @@ import { addInventoryItem, assignInventoryLetter, inventoryLetterRank } from './
 import { clearSplitObjects, objectQuantity, rejoinObjectStack, splitObjectStack } from './object_stack.js';
 import { freeInventoryObject } from './hero_inventory.js';
 import { dropHeroObject } from './hero_drop.js';
+import { dropMultipleObjects } from './drop_menu.js';
 import { SELL_DELIBERATE, SELL_NORMAL, setSellDisposition } from './shop_sell.js';
 import { addObjectToMonsterInventory } from './monster_inventory.js';
 import {
@@ -1535,6 +1536,16 @@ async function runCommandHandler(binding: CommandBinding, {
         await dopay();
     } else if (ch === 'd') {
         await dodrop();
+    } else if (ch === 'D') {
+        const result = await dropMultipleObjects();
+        if (result & (ECMD_FAIL | ECMD_CANCEL)) resetCommandVariables(true);
+        game.context.move = Number((result & ECMD_TIME) !== 0);
+        if (result) {
+            resetBulkTakeoff();
+            resetPick();
+            resetTrapSetting();
+            if (game._occupation?.key === 'pick-lock') game._occupation = null;
+        }
     } else if (ch === 'c') {
         await doclose();
     } else if (ch === 'o') {

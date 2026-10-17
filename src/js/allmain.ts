@@ -38,7 +38,7 @@ import type {
     MonsterAction, MonsterMovement, MonsterMovementAction, MonsterCallLog,
     RandomBelow, RollDice, RollOne,
 } from './monster_action_types.js';
-import { clearImmediateZapBypasses } from './immediate_zap.js';
+import { clearBypasses } from './object_bypass.js';
 import { In_endgame, Is_astralevel, MON_FLOOR, PICK_ONE, PLNMSG_MON_TAKES_OFF_ITEM } from './const.js';
 import { mapVicinity } from './magic_mapping.js';
 import { showInventoryWindow } from './windows.js';
@@ -3653,6 +3653,7 @@ async function executeMonsterTurns(): Promise<boolean | undefined> {
         // C mon.c:movemon_singlemon() settles deferred visibility before the
         // actor's liquid checks, equipment changes, and movement decisions.
         if (game.vision_full_recalc) vision_recalc(0);
+        if (game.context.bypasses) clearBypasses(game);
         const actorWasOpticallySeen = canSeeMonster(actor);
         const actorWasSpotted = canSpotMonster(actor);
         const actorWasCouldSee = couldsee(actor.mx, actor.my);
@@ -3721,6 +3722,7 @@ async function moveMonsters() {
         const somebodyCanMove = await executeMonsterTurns();
         // C mon.c:movemon() refreshes moving light sources after the pass.
         if (hasLightSources()) game.vision_full_recalc = 1;
+        if (game.context.bypasses) clearBypasses(game);
         purgeDeadMonsters(level);
         // A monster's action can schedule travel, including removal of
         // levitation gear above a trap. Finish it before world maintenance
@@ -3827,7 +3829,7 @@ export async function moveloop_core() {
 
     await moveloopPreamble();
     if (g.program_state.gameover) return;
-    if (g.context.bypasses) clearImmediateZapBypasses(g);
+    if (g.context.bypasses) clearBypasses(g);
     const movementRationActionPending = !!g._heroTimePending;
 
     // C allmain.c calls encumber_msg() immediately after a time-consuming

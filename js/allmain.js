@@ -23,7 +23,7 @@ import { finishHeroDigestion } from './hero_combat_engulf.js';
 import { advanceCorpseResistanceTimeouts } from './corpse_intrinsics.js';
 import { game, requireGameLevel, requireInitializedGame, requireGameDisplay, requireLiveGame } from './gstate.js';
 import { isRoom } from './map_types.js';
-import { clearImmediateZapBypasses } from './immediate_zap.js';
+import { clearBypasses } from './object_bypass.js';
 import { In_endgame, Is_astralevel, MON_FLOOR, PICK_ONE, PLNMSG_MON_TAKES_OFF_ITEM } from './const.js';
 import { mapVicinity } from './magic_mapping.js';
 import { showInventoryWindow } from './windows.js';
@@ -3367,6 +3367,8 @@ async function executeMonsterTurns() {
         // actor's liquid checks, equipment changes, and movement decisions.
         if (game.vision_full_recalc)
             vision_recalc(0);
+        if (game.context.bypasses)
+            clearBypasses(game);
         const actorWasOpticallySeen = canSeeMonster(actor);
         const actorWasSpotted = canSpotMonster(actor);
         const actorWasCouldSee = couldsee(actor.mx, actor.my);
@@ -3435,6 +3437,8 @@ async function moveMonsters() {
         // C mon.c:movemon() refreshes moving light sources after the pass.
         if (hasLightSources())
             game.vision_full_recalc = 1;
+        if (game.context.bypasses)
+            clearBypasses(game);
         purgeDeadMonsters(level);
         // A monster's action can schedule travel, including removal of
         // levitation gear above a trap. Finish it before world maintenance
@@ -3532,7 +3536,7 @@ export async function moveloop_core() {
     if (g.program_state.gameover)
         return;
     if (g.context.bypasses)
-        clearImmediateZapBypasses(g);
+        clearBypasses(g);
     const movementRationActionPending = !!g._heroTimePending;
     // C allmain.c calls encumber_msg() immediately after a time-consuming
     // command and before monster movement.  If its new message cannot share

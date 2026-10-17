@@ -24,26 +24,34 @@ import { freeInventoryObject } from './hero_inventory.js';
 import { hitFloorWithObject } from './object_drop.js';
 import { definiteName, killerObjectName, objectCombatName, objectNameIsPlural, ownedObjectName } from './objnam.js';
 import { propertyIsActive } from './properties.js';
+import { bypassObject, clearBypasses, nextUnbypassedObject } from './object_bypass.js';
 import { surfaceName } from './terrain_name.js';
 const TOOL_CLASS = 6;
 const SILVER = 14;
 // Losing a form while handling an item can enter this routine again.
 // Nested passes share C's bypass marks until the outer pass finishes.
-const activeChecks = new WeakMap();
+const activeChecks = new WeakSet();
 export async function retouchEquipment(dropFlag = 0, { state = game, publish = plineWithContinuation, die = finishHeroDeath, } = {}) {
     const nested = activeChecks.has(state);
-    const checked = activeChecks.get(state) || new Set();
-    activeChecks.set(state, checked);
-    const context = { state, publish, die, checked };
+    if (!nested)
+        clearBypasses(state);
+    activeChecks.add(state);
+    const context = { state, publish, die };
     const hadGloves = !!slotObject('uarmg', state);
     const oldRingCount = ringCount(state);
     try {
         if (state.u.twoweap) {
-            const result = await checkItem(slotObject('uswapwep', state), dropFlag > 0, context);
+            const secondary = slotObject('uswapwep', state);
+            if (secondary)
+                bypassObject(secondary, state);
+            const result = await checkItem(secondary, dropFlag > 0, context);
             if (result.died)
                 return result;
         }
-        const weapon = await checkItem(slotObject('uwep', state), dropFlag > 0, context);
+        const primary = slotObject('uwep', state);
+        if (primary)
+            bypassObject(primary, state);
+        const weapon = await checkItem(primary, dropFlag > 0, context);
         if (weapon.died)
             return weapon;
         const saddle = await checkItem(monsterSaddle(state.u.usteed), false, context);
@@ -55,7 +63,7 @@ export async function retouchEquipment(dropFlag = 0, { state = game, publish = p
                 return { died: true };
         }
         let object;
-        while ((object = state.inventory?.find(item => !checked.has(item)))) {
+        while ((object = nextUnbypassedObject(state.inventory, state))) {
             const result = await checkItem(object, dropFlag === 1, context);
             if (result.died)
                 return result;
@@ -72,8 +80,10 @@ export async function retouchEquipment(dropFlag = 0, { state = game, publish = p
         return { died: false };
     }
     finally {
-        if (!nested)
+        if (!nested) {
             activeChecks.delete(state);
+            clearBypasses(state);
+        }
     }
 }
 function slotObject(slot, state) {
@@ -94,10 +104,9 @@ function inUse(object, artifact, state) {
         || artifactInvokeIsActive(artifact, state);
 }
 async function checkItem(object, dropRejected, context) {
-    const { state, publish, die, checked } = context;
-    if (!object || checked.has(object))
+    const { state, publish, die } = context;
+    if (!object)
         return { died: false, rejected: false };
-    checked.add(object);
     const artifact = artifactById(object.oartifact, state);
     if (!inUse(object, artifact, state))
         return { died: false, rejected: false };

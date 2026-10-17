@@ -64,6 +64,7 @@ import { objectMaterial } from './object_material.js';
 import { changeBoxLockByMagic } from './box_magic.js';
 import { heroFormHidesUnderObjects } from './polyself.js';
 
+import { bypassObject } from './object_bypass.js';
 const STRANGE_OBJECT = 0;
 const WEAPON_CLASS = 2, ARMOR_CLASS = 3, RING_CLASS = 4, AMULET_CLASS = 5;
 const TOOL_CLASS = 6, POTION_CLASS = 8, SPBOOK_CLASS = 10, WAND_CLASS = 11;
@@ -492,8 +493,7 @@ async function animateStoneObject(
     for (;;) {
         const content = object.contents?.[0];
         if (!content) break;
-        content.bypass = true;
-        state.context.bypasses = true;
+        bypassObject(content, state);
         unlinkObject(content, state);
         await placeObject(content, x, y, state);
     }

@@ -171,7 +171,7 @@ void test('extra healing clears sticky blindness while keeping its maximum HP', 
     assert.equal(game.u.ucreamed, 0);
     assert.ok(!heroIsBlind());
 });
-void test('self stone-to-flesh transforms a stone body and respects item bypasses', async () => {
+void test('self stone-to-flesh retouches a changed body before transforming carried stones', async () => {
     room();
     requireFixtureGame(game);
     installPolymorphedHero('stone golem');
@@ -179,6 +179,17 @@ void test('self stone-to-flesh transforms a stone body and respects item bypasse
     game.context.bypasses = true;
     await zapHeroWithObject(await knownObject(SPE_STONE_TO_FLESH));
     assert.equal(MONSTER_NAME[game.u.umonnum], 'flesh golem');
+    // polymon() calls retouch_equipment(), which clears all bypass marks
+    // before zapyourself() applies the spell to inventory.
+    assert.ok(!game.inventory.includes(diamond));
+    assert.ok(game.inventory.some(object => object.otyp === MEATBALL));
+});
+void test('self stone-to-flesh respects item bypasses when the hero does not change form', async () => {
+    room();
+    requireFixtureGame(game);
+    const diamond = await addInventoryObject(DIAMOND, { bypass: true });
+    game.context.bypasses = true;
+    await zapHeroWithObject(await knownObject(SPE_STONE_TO_FLESH));
     assert.equal(diamond.otyp, DIAMOND);
     assert.ok(game.inventory.includes(diamond));
 });

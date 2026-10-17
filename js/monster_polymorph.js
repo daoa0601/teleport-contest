@@ -1,5 +1,6 @@
 // Monster shape-changing rules.
 // C refs: mon.c:select_newcham_form(), pickvampshape(), and newcham().
+import { bypassObject } from './object_bypass.js';
 import { BOLT_LIM, DOOR, D_CLOSED, D_LOCKED, In_endgame, Is_rogue_level, MGIVENNAME, STRAT_WAITFORU, W_ARM, M_AP_MONSTER, M_AP_NOTHING, M_AP_TYPE, MON_FLOOR, NON_PM, ismnum, } from './const.js';
 import { canSeeMonster, canSpotMonster, newsym, plineWithContinuation, swallowed } from './display.js';
 import { dragonFormForArmor } from './armor.js';
@@ -392,8 +393,7 @@ async function dropBouldersTheNewFormCannotCarry(monster, state, polyspot, publi
         if (monster.dead || monster.mhp <= 0)
             break;
         if (polyspot) {
-            object.bypass = true;
-            state.context.bypasses = true;
+            bypassObject(object, state);
         }
         unlinkMonsterObject(monster, object);
         const placed = await landFloorObject(object, monster.mx, monster.my, { state, publish });

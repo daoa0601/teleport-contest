@@ -1,4 +1,5 @@
 // C refs: bones.c:savebones(), drop_upon_death(), and give_to_nearby_mon().
+import { clearBypasses } from './object_bypass.js';
 import { PARANOID_BONES } from './const.js';
 import { paranoidQuery } from './query.js';
 import { monsterHasMapPosition } from './monster_location.js';
@@ -142,6 +143,7 @@ export async function createBonesFromDeath(deathCause, promptDeathQuestion) {
         if (!save)
             return false;
     }
+    clearBypasses();
     if (bonesLevelExists()) {
         if (!game.flags?.debug)
             return false;

@@ -2,6 +2,7 @@
 // C ref: zap.c dobuzz(), zap_over_floor(), zhitm(), zhitu(), and
 // destroy_items().
 import { objectMaterial } from './object_material.js';
+import { bypassObjectList, nextUnbypassedObject } from './object_bypass.js';
 import { formatFeltMessage, publishHeardMessage } from './hero_speech.js';
 import { monsterHasMapPosition } from './monster_location.js';
 import { chooseInventoryObject } from './inventory_prompt.js';
@@ -742,12 +743,14 @@ export async function destroyInventoryByElement(damageType, sourceDamage, { stat
     requirePlayingGame(state);
     const result = { damage: 0, heroDied: false };
     const limit = destructionLimit(sourceDamage, random);
-    if (damageType !== 'cold' && damageType !== 'fire' && damageType !== 'electric')
-        return result;
     if (!limit)
         return result;
-    const chosen = chooseStacks(state.inventory, damageType, limit, random)
+    const chosen = chooseStacks(state.inventory, damageType, limit, random, state)
         .map(object => ({ object, deferred: deferHeroItemDestruction(object, state) }));
+    if (damageType !== 'cold' && damageType !== 'fire' && damageType !== 'electric') {
+        bypassObjectList(state.inventory, false, state);
+        return result;
+    }
     for (const deferred of [false, true]) {
         for (const entry of chosen) {
             if (entry.deferred !== deferred || !state.inventory.includes(entry.object))
@@ -760,6 +763,7 @@ export async function destroyInventoryByElement(damageType, sourceDamage, { stat
                 return { damage: result.damage, heroDied: true };
         }
     }
+    bypassObjectList(state.inventory, false, state);
     return result;
 }
 function deferHeroItemDestruction(object, state) {
@@ -774,10 +778,13 @@ function destructionLimit(sourceDamage, random) {
         limit++;
     return Math.max(0, Math.min(MAX_ITEMS_DESTROYED, limit));
 }
-function chooseStacks(objects, damageType, limit, random) {
+function chooseStacks(objects, damageType, limit, random, state) {
     const chosen = Array.from({ length: limit }, () => null);
     let eligible = 0;
-    for (const object of objects) {
+    // Even a non-elemental blast traverses inventory and activates bypasses.
+    bypassObjectList(objects, false, state);
+    let object;
+    while ((object = nextUnbypassedObject(objects, state))) {
         if (!destroyable(object, damageType))
             continue;
         const index = eligible < limit ? eligible : random(eligible);
@@ -800,12 +807,14 @@ async function removeMonsterQuantity(monster, object, count, state, publish) {
 }
 export async function destroyMonsterInventoryByElement(monster, damageType, sourceDamage, { state = game, publish = plineWithContinuation, random = rn2, rollOne = rnd, visible = false, } = {}) {
     const limit = destructionLimit(sourceDamage, random);
-    if (damageType !== 'cold' && damageType !== 'fire' && damageType !== 'electric')
-        return 0;
     if (!limit)
         return 0;
     const inventory = monster?.minvent || monster?.inventory || [];
-    const chosen = chooseStacks(inventory, damageType, limit, random);
+    const chosen = chooseStacks(inventory, damageType, limit, random, state);
+    if (damageType !== 'cold' && damageType !== 'fire' && damageType !== 'electric') {
+        bypassObjectList(inventory, false, state);
+        return 0;
+    }
     let damage = 0;
     for (const object of chosen) {
         if (!inventory.includes(object))
@@ -848,6 +857,7 @@ export async function destroyMonsterInventoryByElement(monster, damageType, sour
         if (!resistsItemDamage)
             damage += stackDamage;
     }
+    bypassObjectList(monster.minvent ?? monster.inventory ?? [], false, state);
     return damage;
 }
 export function destroyColdMonsterInventory(monster, sourceDamage, options = {}) {

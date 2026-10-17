@@ -238,7 +238,7 @@ function categoryMatcher(filters: readonly ContainerCategory[]): ObjectMatcher {
     };
 }
 
-async function chooseCategories(title: string, objects: readonly GameObject[]): Promise<CategorySelection> {
+export async function chooseObjectCategories(title: string, objects: readonly GameObject[]): Promise<CategorySelection> {
     if (game.flags.menu_style !== undefined && game.flags.menu_style !== MENU_FULL)
         return { matchers: [() => true], autoSelect: false };
     const groups = objectsByClass(objects);
@@ -637,7 +637,7 @@ export async function takeFromContainer(
 async function takeSelectedObjects(container: GameObject, resetPicked: boolean): Promise<ContainerTransferBatch> {
     game._pickupEncumbrance = 0;
     if (!container.contents?.length) return { results: [], spentTime: false };
-    const categories = await chooseCategories(
+    const categories = await chooseObjectCategories(
         'Take out what type of objects?', container.contents,
     );
     const eligible = matchingObjects(container.contents, categories.matchers);
@@ -689,7 +689,7 @@ async function putSelectedObjects(container: GameObject, stashOne = false): Prom
         const count = unsplittable ? -1 : choice.count ?? -1;
         selected = [{ value: object, count }];
     } else {
-        const categories = await chooseCategories(
+        const categories = await chooseObjectCategories(
             'Put in what type of objects?', candidates,
         );
         const eligible = matchingObjects(candidates, categories.matchers);
