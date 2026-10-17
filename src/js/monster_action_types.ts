@@ -277,6 +277,7 @@ export interface HeroContactAttack extends HeroAttackProgress {
     engulfOldY?: number;
     engulfResolved?: boolean;
     deferredFireNegation?: boolean;
+    deferredFireRehumanize?: boolean;
     deferredColdNegation?: boolean;
     deferredElectricNegation?: boolean;
     deferredFireInventory?: boolean;

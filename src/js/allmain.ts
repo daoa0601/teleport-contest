@@ -3001,6 +3001,16 @@ async function presentMonsterAttackEffects(
                         paging.pagerOwned = true;
                     }
                 }
+                if (heroAttack.deferredFireRehumanize) {
+                    await publishSlotMessage('You go up in flames!');
+                    monstersForgetHeroResistance(M_SEEN_FIRE, game);
+                    const restored = await returnHeroToHumanForm(game, {
+                        publish: publishSlotMessage,
+                        die: finishHeroDeathAfterMonsterMessage,
+                    });
+                    if (restored.died) return { heroDied: true };
+                    heroAttack.deferredFireRehumanize = false;
+                }
                 if (heroAttack.fireResistanceMessage) {
                     const resistanceDismissal = await plineWithContinuation(
                         heroAttack.fireResistanceMessage,
@@ -3010,6 +3020,12 @@ async function presentMonsterAttackEffects(
                         && resistanceDismissal !== undefined) {
                         paging.pagerOwned = true;
                     }
+                }
+                // mhitm_ad_fire() updates witnesses after the fire messages,
+                // before inventory damage. Cancelled contact teaches nothing.
+                if (heroAttack.deferredFireInventory) {
+                    if (game.u.fireResistance) monstersObserveHeroResistance(M_SEEN_FIRE, game);
+                    else monstersForgetHeroResistance(M_SEEN_FIRE, game);
                 }
                 if (heroAttack.slimeBurnedMessage) {
                     const slimeDismissal = await plineWithContinuation(
