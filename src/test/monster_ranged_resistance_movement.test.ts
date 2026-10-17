@@ -6,6 +6,9 @@ import { M_SEEN_FIRE, MM_ANGRY, NO_MINVENT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { beginMonsterMove, takeMonsterTurn } from '../js/monmove.js';
+import { heroIsPolymorphed } from '../js/polyself.js';
+import { grantIntrinsicProperty } from '../js/properties.js';
+import { installPolymorphedHero } from './support/hero-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
@@ -39,6 +42,41 @@ for (const { resistant, cancelled, approaches } of [
         assert.ok(approaches ? distance < 9 : distance > 9,
             `The pyrolisk should ${approaches ? 'close in after fire proves ineffective' : 'back away to use fire'}; squared distance was ${distance}`);
     });
+}
+
+for (const form of ['paper golem', 'straw golem']) {
+    for (const { resistant, unchanging } of [
+        { resistant: false, unchanging: false },
+        { resistant: true, unchanging: false },
+        { resistant: true, unchanging: true },
+    ]) {
+        void test(`a pyrolisk retreats after fire burns a ${unchanging ? 'unchanging ' : ''}${resistant ? 'fire-resistant ' : ''}${form} hero out of its form`, async () => {
+            freshObjectRoom({ right: 18, hero: { uhp: 200, uhpmax: 200 } });
+            requirePlayingGame(game);
+            installPolymorphedHero(form, { unchanging });
+            if (resistant) grantIntrinsicProperty('fireResistance', 'outside');
+            const pyrolisk = await createMonsterAt('pyrolisk', 13, 10, MM_ANGRY | NO_MINVENT);
+            pyrolisk.msleeping = 0;
+            pyrolisk.seen_resistance = M_SEEN_FIRE;
+            const vortex = await createMonsterAt('fire vortex', 11, 10, MM_ANGRY | NO_MINVENT);
+            vortex.mspec_used = 2;
+            vortex.mux = game.u.ux;
+            vortex.muy = game.u.uy;
+            const input = resetInputState();
+            input.beforeRead = () => input.feed(' ');
+
+            await performMonsterHeroAttack(vortex, game, {
+                random: limit => limit - 1, rollOne: () => 1, rollDice: () => 1,
+            });
+            await takeMonsterTurn(pyrolisk, game, limit => limit - 1);
+
+            const distance = (pyrolisk.mx - game.u.ux) ** 2 + (pyrolisk.my - game.u.uy) ** 2;
+            assert.ok(distance > 9,
+                `The pyrolisk should back away to use fire after seeing the golem burn; squared distance was ${distance}`);
+            assert.equal(heroIsPolymorphed(game), false, 'Fire destroys the golem body regardless of resistance');
+            assert.equal(game.u.uhp, 199, 'The original contact damage reaches the restored human body');
+        });
+    }
 }
 
 for (const fireResistanceKnown of [true, false]) {

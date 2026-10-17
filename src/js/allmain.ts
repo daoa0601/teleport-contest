@@ -3001,6 +3001,16 @@ async function presentMonsterAttackEffects(
                         paging.pagerOwned = true;
                     }
                 }
+                if (heroAttack.deferredFireRehumanize) {
+                    await publishSlotMessage('You go up in flames!');
+                    monstersForgetHeroResistance(M_SEEN_FIRE, game);
+                    const restored = await returnHeroToHumanForm(game, {
+                        publish: publishSlotMessage,
+                        die: finishHeroDeathAfterMonsterMessage,
+                    });
+                    if (restored.died) return { heroDied: true };
+                    heroAttack.deferredFireRehumanize = false;
+                }
                 if (heroAttack.fireResistanceMessage) {
                     const resistanceDismissal = await plineWithContinuation(
                         heroAttack.fireResistanceMessage,

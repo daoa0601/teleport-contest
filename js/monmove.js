@@ -4823,6 +4823,7 @@ async function beginHeroAttackSlot(sequence, slot, state, random, rollOne, rollD
             damageType,
             effect: 'fire-natural',
             deferredFireNegation: true,
+            oldFormMnum,
         };
     }
     else if (hit && attackType !== AT_ENGL && damageType === AD_COLD) {
@@ -5268,17 +5269,24 @@ export function resumeDeferredHeroFireSpecial(action, state, random = rn2) {
         attack.fireEffectMessage = 'You avoid harm.';
     }
     else {
-        attack.fireEffectMessage = `You're ${monsterFireDescription({ mnum: heroSpecies(state) }, attack.attackType)}!`;
-        if (state.u.fireResistance) {
+        const species = heroSpecies(state);
+        const form = MONSTER_NAME[species];
+        attack.fireEffectMessage = `You're ${monsterFireDescription({ mnum: species }, attack.attackType)}!`;
+        if (form === 'paper golem' || form === 'straw golem') {
+            // mhitm_ad_fire() burns these bodies before checking resistance.
+            attack.deferredFireRehumanize = true;
+        }
+        else if (state.u.fireResistance) {
             attack.damage = 0;
             attack.fireResistanceMessage = "The fire doesn't feel hot!";
         }
     }
-    if (!attack.negated && clearHeroSliming(state)) {
+    const continuesFireEffects = !attack.negated && !attack.deferredFireRehumanize;
+    if (continuesFireEffects && clearHeroSliming(state)) {
         attack.slimeBurnedMessage = 'The slime that covers you is burned away!';
     }
-    attack.deferredFireInventory = !attack.negated;
-    if (attack.negated)
+    attack.deferredFireInventory = continuesFireEffects;
+    if (!continuesFireEffects)
         delete attack.fireOriginalDamage;
     attack.deferredPostHit = true;
     attack.deferredFireNegation = false;
