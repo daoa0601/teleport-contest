@@ -71,10 +71,9 @@ export async function useBell(object: GameObject, { state = game }: { state?: Ga
                     const fate = rn2(3);
                     if (fate === 1) adjustMonsterSpeed(nymph, 2);
                     else if (fate === 2) {
-                        // The bell suppresses recovery text and leaves
-                        // multi_reason unchanged.
-                        nomul(-rnd(2), state);
                         state._helplessDoneMessage = '';
+                        state._helplessReason = null;
+                        nomul(-rnd(2), state);
                     }
                 }
             }
