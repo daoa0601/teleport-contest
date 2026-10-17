@@ -11,11 +11,11 @@ function downstairs(state) {
     }
     return null;
 }
-export async function returnDeadKop(monster, state = game, rollDie = rnd) {
+export async function returnDeadKop(monster, state = game, rollOne = rnd) {
     if (!monsterIsKop(monster.mnum))
         return null;
     // mondead(): switch (rnd(5)) -- 1 near the down stairs, 2 anywhere.
-    const returnRoll = rollDie(5);
+    const returnRoll = rollOne(5);
     if (returnRoll > 2)
         return null;
     if (returnRoll === 1) {

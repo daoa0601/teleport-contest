@@ -69,6 +69,8 @@ export interface MonsterDeathOptions {
     noRevive?: boolean;
     zombifyCorpse?: boolean;
     random?: (limit: number) => number;
+    // C rnd()-style rolls, kept apart from rn2() so the native call is used.
+    rollOne?: (sides: number) => number;
     rollDice?: (count: number, sides: number) => number;
     publish?: MessagePublisher;
 }
@@ -81,7 +83,7 @@ export interface MonsterDeathResult {
 }
 
 interface MonsterKilledOptions extends Pick<MonsterDeathOptions,
-    'zombifyCorpse' | 'noRevive' | 'random' | 'rollDice' | 'publish'> {
+    'zombifyCorpse' | 'noRevive' | 'random' | 'rollOne' | 'rollDice' | 'publish'> {
     // C uses -AD_RBRE to distinguish disintegration from other breath damage.
     damageType: DamageType | 'disintegration';
     cause?: string | null;
@@ -429,7 +431,7 @@ async function finishMonsterRemains(
 // to the caller; map, inventory, and population cleanup share this owner.
 export async function detachDeadMonster(
     monster: Monster, state: GameState, random: (limit: number) => number,
-    publish: MessagePublisher,
+    publish: MessagePublisher, rollOne: (sides: number) => number = rnd,
 ): Promise<boolean> {
     const x = monster.mx;
     const y = monster.my;
@@ -440,7 +442,7 @@ export async function detachDeadMonster(
     restoreMonsterTrueSpecies(monster);
     recordMonsterDeath(monster, state);
     markQuestLeaderDead(monster, state);
-    await returnDeadKop(monster, state);
+    await returnDeadKop(monster, state, rollOne);
     if (state === game) unmap_invisible(x, y, false);
     if (monster.mleashed) releaseMonsterLeash(monster, state);
     // m_detach removes the light of the form which died, before its true
@@ -495,7 +497,7 @@ export async function finishMonsterLiquidDeath(
     }
     if (sadFeeling)
         await publish('You have a sad feeling for a moment, then it passes.');
-    if (await detachDeadMonster(monster, state, random, publish)) {
+    if (await detachDeadMonster(monster, state, random, publish, rollOne)) {
         return {
             oldx: x, oldy: y, x, y,
             moved: false, dead: true, actionCompleted: true,
@@ -588,6 +590,7 @@ async function resolveMonsterDeath(
         noRevive = false,
         zombifyCorpse = false,
         random = rn2,
+        rollOne = rnd,
         rollDice = d,
         publish = plineWithContinuation,
     }: MonsterDeathOptions,
@@ -610,7 +613,7 @@ async function resolveMonsterDeath(
     if (!recovery.completedDeath) {
         if (sadFeeling)
             await publish('You have a sad feeling for a moment, then it passes.');
-        if (await detachDeadMonster(monster, state, random, publish))
+        if (await detachDeadMonster(monster, state, random, publish, rollOne))
             return { monster, survived: false, corpse: null, heroDied: true };
     }
     // C vamprises returns true even when its door already ran mondied.
