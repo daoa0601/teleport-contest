@@ -6987,7 +6987,8 @@ async function domoveCore(dx, dy, explicitAttempt) {
             if (!polymorphed)
                 await exerciseAttribute(A_CON, false);
         }
-        stopRun(game);
+        // nomul(0) requests a full status update even without an active run.
+        endVoluntaryMultiTurn(game);
         // carrying_too_much() returns from domove_core() without clearing
         // context.move, so the failed step still spends the hero action.
         return true;
