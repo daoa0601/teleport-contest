@@ -254,7 +254,7 @@ import {
     continueWipingFace, donull, dowipe, threateningMonsterNearby,
 } from './do.js';
 import {
-    ATR_INVERSE, ATR_NONE, showChoiceWindow, showMultiSelectWindow,
+    ATR_INVERSE, ATR_NONE, addMenuHeading, showChoiceWindow, showMultiSelectWindow,
     showDisclosureOverlay, showPagedPickOneMenu,
     showTextMenuOverlay, showTextPages,
     restoreMenuUnderlay, snapshotMenuUnderlay,
@@ -394,7 +394,7 @@ import { convertSecretDoor } from './detect.js';
 import { roomForRoomno, roomsAt } from './room.js';
 import {
     learnObjectType, objectClassForType, recordObjectCall, recordObjectEncounter,
-    recordObjectKnowledge,
+    recordObjectKnowledge, OBJECT_CLASS_SYMBOLS,
 } from './object_knowledge.js';
 import {
     exceedsActionCapacity, nearCapacity,
@@ -4231,8 +4231,8 @@ async function doDungeonOverview() {
     const annotate = game.iflags.menu_requested;
     game.iflags.menu_requested = false;
     const window = tty_create_nhwindow<DungeonLocation>(NHW_MENU);
-    const addLine = (text: string, location: DungeonLocation | null = null, attr = 0) =>
-        tty_add_menu(window, { text, identifier: location, attr });
+    const addLine = (text: string, location: DungeonLocation | null = null) =>
+        tty_add_menu(window, { text, identifier: location });
     try {
         await tty_start_menu(window);
         const visited = [...visitedDungeonLevels().entries()]
@@ -4242,7 +4242,7 @@ async function doDungeonOverview() {
             const levels = [...levelSet].sort((a, b) => a - b)
                 .filter(dlevel => annotate || overviewLevelIsInteresting(dnum, dlevel));
             if (!levels.length || !game.dungeons?.[dnum]) continue;
-            addLine(dungeonOverviewHeading(dnum), null, ATR_INVERSE);
+            addMenuHeading(window, dungeonOverviewHeading(dnum));
             for (const dlevel of levels) {
                 const annotation = game._levelAnnotations?.get?.(`${dnum}:${dlevel}`);
                 const record = game._overviewRecords?.get?.(`${dnum}:${dlevel}`);
@@ -4410,9 +4410,12 @@ async function wizIdentify(): Promise<void> {
                 unidentified.length === 1 ? '' : ` (${visibleCommandKey(allKey)} for all)`}`,
         });
         for (const section of sections) {
-            tty_add_menu(window, { identifier: null, text: section.heading, attr: ATR_INVERSE });
+            addMenuHeading(window, section.heading);
             for (const item of section.items)
-                tty_add_menu(window, { identifier: item.value, selector: item.key, text: item.text });
+                tty_add_menu(window, {
+                    identifier: item.value, selector: item.key,
+                    group: OBJECT_CLASS_SYMBOLS[item.value.oclass] ?? '', text: item.text,
+                });
         }
         tty_end_menu(window);
         const result = await tty_select_menu(window, PICK_ANY);

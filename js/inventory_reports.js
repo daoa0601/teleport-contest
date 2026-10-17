@@ -268,8 +268,9 @@ async function typeInventory() {
                         text: inventoryItemDescription(object, { primaryHandDetail: inventoryPrimaryHandDetail(object) }) };
                 }) }];
     });
-    const selected = await showMultiSelectWindow({ title: status ? `Items ${(before || after).trim()}:` : '',
-        titleAttr: 0, blankAfterTitle: false, sections, pageLocalKeys: true, pickOne: true });
+    const selected = await showMultiSelectWindow({ title: '',
+        introLines: status ? [`Items ${(before || after).trim()}:`] : [],
+        sections, pageLocalKeys: true, pickOne: true });
     const object = selected[0];
     return object ? inventoryActionForObject(object) : null;
 }
