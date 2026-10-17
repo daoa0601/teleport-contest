@@ -3,8 +3,11 @@ import test from 'node:test';
 import { rhack } from '../js/cmd.js';
 import { MENU_COMBINATION, MENU_TRADITIONAL, PARANOID_AUTOALL } from '../js/const.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
-import { resetInputState } from '../js/input.js';
+import { nhgetch, resetInputState } from '../js/input.js';
 import { CLUB, DAGGER, LOADSTONE } from '../js/object_data.js';
+import { objectDescription } from '../js/object_description.js';
+import { setHeroGoldAmount } from '../js/hero_gold.js';
+import { setPrimaryWeapon, setSecondaryWeapon, setTwoWeaponCombat } from '../js/weapon_slots.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 
@@ -39,6 +42,78 @@ void test('a refused stack does not change the turn-cost bit of traditional drop
     assert.equal(loadstone.where, 'inventory');
     assert.equal(game.context.move, 0);
 });
+
+for (const dropDagger of [false, true]) {
+    void test(`a refused traditional drop clears recall${dropDagger ? ' while preserving time spent dropping another item' : ''}`, async () => {
+        freshObjectRoom({ flags: { menu_style: MENU_TRADITIONAL, verbose: false } });
+        const dagger = dropDagger ? await addInventoryObject(DAGGER) : null;
+        const stone = await addInventoryObject(LOADSTONE, { cursed: true });
+        const input = resetInputState();
+        input.feed('a\n');
+        await rhack('D'.charCodeAt(0));
+        assert.equal(game.context.move, Number(dropDagger));
+
+        input.feed('\x01\x1b');
+        await rhack(0);
+
+        assert.equal(game._pending_message, 'There is no command available to repeat.');
+        assert.equal(await nhgetch(), 27, 'repeat must leave the next input key untouched');
+        assert.equal(stone.where, 'inventory');
+        if (dagger) assert.equal(dagger.where, 'floor');
+    });
+}
+
+void test('traditional dropping restarts floating letters after gold leaves the inventory', async () => {
+    freshObjectRoom({ flags: { menu_style: MENU_TRADITIONAL, fixinv: false, verbose: false } });
+    setHeroGoldAmount(game, 10);
+    const dagger = await addInventoryObject(DAGGER);
+    const input = resetInputState();
+    input.feed('$)\ny');
+
+    const action = rhack('D'.charCodeAt(0));
+    try {
+        await input.waitUntilBlocked();
+        const prompt = requireGameDisplay().grid[0]?.map(cell => cell.ch).join('') ?? '';
+        assert.match(prompt, /^a - .*dagger\?/);
+    } finally {
+        input.feed('n');
+        await action;
+    }
+    assert.equal(dagger.where, 'inventory');
+    assert.equal(game.inventory.some(object => object.oclass === 12), false);
+});
+
+for (const dualWielding of [false, true]) {
+    void test(`traditional dropping shortens a long item name and keeps its question${dualWielding ? ' while dual-wielding' : ''}`, async () => {
+        freshObjectRoom({ role: 'valkyrie', flags: { menu_style: MENU_TRADITIONAL, verbose: false } });
+        const name = 'Marigold the Bold, companion of the far northern expedition';
+        const dagger = await addInventoryObject(DAGGER, {
+            oname: name, greased: true, oeroded: 3, oeroded2: 3,
+        });
+        await setPrimaryWeapon(dagger, game);
+        if (dualWielding) {
+            await setSecondaryWeapon(await addInventoryObject(CLUB), game);
+            setTwoWeaponCombat(true, game);
+        }
+        const input = resetInputState();
+        input.feed(')\n');
+
+        const action = rhack('D'.charCodeAt(0));
+        try {
+            await input.waitUntilBlocked();
+            const prompt = requireGameDisplay().grid.slice(0, 3)
+                .map(row => row.map(cell => cell.ch).join('').trimEnd()).join(' ');
+            assert.match(prompt, dualWielding
+                ? /dagger named Marigold\.\.\. \(wielded in right hand\)\? \[ynaq\]/
+                : /dagger named Marigold\.\.\. \(weapon in right hand\)\? \[ynaq\]/);
+        } finally {
+            input.feed('q');
+            await action;
+        }
+        assert.ok(objectDescription(dagger).includes(name), 'the full item name returns after the question');
+        assert.equal(dagger.where, 'inventory');
+    });
+}
 
 void test('combination drop-all converts multiple successful drops into a timed command', async () => {
     freshObjectRoom({ flags: { menu_style: MENU_COMBINATION, verbose: false } });

@@ -9,7 +9,7 @@ import { petRefusesHeroSwap, settlePetHeroDisplacement } from './hero_pet_displa
 import { airTurbulenceStopsHero, waterTurbulenceStopsHero } from './hero_movement_turbulence.js';
 import { maybeAdjustHeroBubble } from './elemental.js';
 import { announceRunLiquid, announceRunTrap, knownRunTrap, runLiquidIsDangerous } from './run_hazards.js';
-import { AUTOUNLOCK_APPLY_KEY, AUTOUNLOCK_UNTRAP, ECMD_TIME } from './const.js';
+import { AUTOUNLOCK_APPLY_KEY, AUTOUNLOCK_UNTRAP, ECMD_CANCEL, ECMD_FAIL, ECMD_TIME } from './const.js';
 import { findDrawbridgeAt } from './dbridge.js';
 import { doorObstructed } from './door_magic.js';
 import { DBWALL, DRAWBRIDGE_DOWN, IS_DRAWBRIDGE, IS_TREE, LADDER, STAIRS, THRONE } from './const.js';
@@ -1538,6 +1538,7 @@ async function runCommandHandler(binding: CommandBinding, {
         await dodrop();
     } else if (ch === 'D') {
         const result = await dropMultipleObjects();
+        if (result & (ECMD_FAIL | ECMD_CANCEL)) resetCommandVariables(true);
         game.context.move = Number((result & ECMD_TIME) !== 0);
         if (result) {
             resetBulkTakeoff();

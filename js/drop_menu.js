@@ -4,13 +4,13 @@ import { chooseObjectCategories } from './container.js';
 import { consumeHallucinatedMenuObjectGlyph, plineWithContinuation as pline } from './display.js';
 import { game } from './gstate.js';
 import { dropHeroObject } from './hero_drop.js';
-import { inventoryItemDescription, selectInventoryObject } from './invent.js';
+import { selectInventoryObject } from './invent.js';
 import { bypassObjectList, clearBypasses, nextUnbypassedObject } from './object_bypass.js';
 import { LOADSTONE } from './object_data.js';
 import { objectDescription } from './object_description.js';
 import { OBJECT_CLASS_SYMBOLS } from './object_knowledge.js';
 import { inventoryClassOrder, lootSortMode, objectClassHeading, sortObjects } from './object_sort.js';
-import { observeObjectForNaming } from './objnam.js';
+import { objectQuestion, observeObjectForNaming, simpleObjectNameWithArticle } from './objnam.js';
 import { objectQuantity, rejoinObjectStack, splitObjectStack } from './object_stack.js';
 import { getLine, tty_yn_function } from './query.js';
 import { SELL_DELIBERATE, SELL_NORMAL, setSellDisposition } from './shop_sell.js';
@@ -215,9 +215,16 @@ async function dropTraditionally(selection) {
         for (const oclass of passes) {
             bypassObjectList(game.inventory, false);
             let object;
-            let index = -1;
+            let letterCode = 'a'.charCodeAt(0) - 1;
+            if (game.inventory[0]?.oclass === 12)
+                letterCode--;
             while ((object = nextUnbypassedObject(game.inventory, game, sorted))) {
-                index++;
+                if (letterCode === 'z'.charCodeAt(0))
+                    letterCode = 'A'.charCodeAt(0);
+                else if (letterCode === 'Z'.charCodeAt(0))
+                    letterCode = '#'.charCodeAt(0);
+                else
+                    letterCode++;
                 if ((oclass !== null && object.oclass !== oclass)
                     || (selection.requireUnpaid && !hasUnpaid(object))
                     || !matchesCategories(object, selection.categories))
@@ -226,10 +233,14 @@ async function dropTraditionally(selection) {
                 let answer = 'y', count = 0;
                 if (!acceptAll) {
                     observeObjectForNaming(object);
-                    const position = index - (sorted[0]?.oclass === 12 ? 1 : 0);
-                    const letter = game.flags.fixinv !== false ? object.invlet
-                        : object.oclass === 12 ? '$' : 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'.charAt(position) || '#';
-                    const response = await tty_yn_function(`${letter} - ${inventoryItemDescription(object)}?`, objectQuantity(object) < 2 ? 'ynaq' : 'yn#aq', 'n');
+                    const letter = game.flags.fixinv !== false ? object.invlet ?? '#'
+                        : String.fromCharCode(letterCode);
+                    const question = objectQuestion(object, {
+                        prefix: '', suffix: '?', fallback: 'item',
+                        format: (item, state) => `${letter} - ${objectDescription(item, { state })}`,
+                        shortFormat: (item, state) => `${letter} - ${simpleObjectNameWithArticle(item, state)}`,
+                    });
+                    const response = await tty_yn_function(question, objectQuantity(object) < 2 ? 'ynaq' : 'yn#aq', 'n');
                     answer = response.answer;
                     count = Number(response.count);
                 }
