@@ -1,4 +1,5 @@
 import { formatFeltMessage, formatSeenMessage, publishHeardMessage } from './hero_speech.js';
+import { objectMaterial } from './object_material.js';
 import { heroLocomotion } from './hero_locomotion.js';
 import { isLavaAt } from './terrain_properties.js';
 import { surfaceName } from './terrain_name.js';
@@ -67,7 +68,7 @@ import {
 } from './monster_data.js';
 import {
     ARROW, BOULDER, DART, HEAVY_IRON_BALL, OBJECT_BIMANUAL,
-    OBJECT_MATERIAL, OBJECT_NAMES, ROCK,
+    OBJECT_NAMES, ROCK,
 } from './object_data.js';
 import { deleteObject } from './object_delete.js';
 import { unlinkObject } from './object_location.js';
@@ -188,7 +189,7 @@ function heroObject(slot: TrapEquipmentSlot): GameObject | null {
 
 function heroIronShoes() {
     const boots = heroObject('uarmf');
-    return boots && OBJECT_MATERIAL[boots.otyp] === IRON ? boots : null;
+    return boots && objectMaterial(boots.otyp) === IRON ? boots : null;
 }
 
 function heroWearsIronShoes() {
@@ -264,9 +265,7 @@ async function triggerPit(
             ? `${holdingMonsterSubject(steed).replace(/^The /, 'The poor ')} ${conjoined ? 'steps' : 'lands'} on a set of sharp iron spikes!`
             : `You ${conjoined ? 'step' : 'land'} on a set of sharp iron spikes!`);
     }
-    hero.utrap = rn2(6) + 2;
-    hero.utraptype = TT_PIT;
-    refreshMovementProperties(game);
+    setHeroTrap(rn2(6) + 2, TT_PIT);
     game.context.botl = true;
     if (steed) {
         // C steedintrap(): a ridden steed takes the pit's hit instead of the hero.
@@ -354,9 +353,7 @@ async function triggerWeb(
             })} into` : `${heroLocomotion('stumble')} into`;
         await plineWithContinuation(`You ${verb} ${trap.madeby_u ? 'your' : 'a'} spider web!`);
     }
-    hero.utrap = 1;
-    hero.utraptype = TT_WEB;
-    refreshMovementProperties(game);
+    setHeroTrap(1, TT_WEB);
     game.context.botl = true;
     let strength = currentAttribute(A_STR, game);
     if (steed && !noWebMessage) {
@@ -373,10 +370,7 @@ async function triggerWeb(
         noWebMessage = true;
     }
     const turns = webTrapDuration(strength);
-    hero.utrap = turns;
-    hero.utraptype = turns ? TT_WEB : 0;
-    refreshMovementProperties(game);
-    game.context.botl = true;
+    setHeroTrap(turns, TT_WEB);
     if (!turns) {
         if (!noWebMessage) await plineWithContinuation(`You tear through ${trap.madeby_u ? 'your' : 'a'} web!`);
         deleteTrap(trap);
@@ -442,11 +436,17 @@ async function triggerLandmine(trap: Trap, { failedUntrap = false, forceTrap = f
     await fillPitWithBoulderAt(hero.ux, hero.uy, game);
 }
 
-export function clearHeroTrap(state: GameState = game) {
-    state.u.utrap = 0;
-    state.u.utraptype = 0;
+// C trap.c:set_utrap(): only a change between trapped and free marks the
+// status line, since the trapped conditions follow u.utrap.
+export function setHeroTrap(turns: number, type: number, state: GameState = game): void {
+    if (!state.u.utrap !== !turns) state.context.botl = true;
+    state.u.utrap = turns;
+    state.u.utraptype = turns ? type : 0;
     refreshMovementProperties(state);
-    state.context.botl = true;
+}
+
+export function clearHeroTrap(state: GameState = game) {
+    setHeroTrap(0, 0, state);
 }
 
 function reduceHeroTrapDuration(): number {
@@ -911,8 +911,7 @@ async function triggerFallingRockTrap(trap: Trap) {
             );
             damage = 2;
         } else if (game.flags?.verbose !== false) {
-            const name = helmet.name || OBJECT_NAMES[helmet.otyp] || 'helmet';
-            await plineWithContinuation(`Your ${name} does not protect you.`);
+            await plineWithContinuation(`${ownedObjectName(helmet)} does not protect you.`);
         }
     } else if (heroPassesRocks()) {
         await plineWithContinuation('It passes harmlessly through you.');
@@ -1012,9 +1011,7 @@ async function triggerBearTrap(trap: Trap, {
         await plineWithContinuation(`${subject} bear trap closes harmlessly over you.`);
         return false;
     }
-    hero.utrap = 4 + rn2(4);
-    hero.utraptype = TT_BEARTRAP;
-    refreshMovementProperties(game);
+    setHeroTrap(4 + rn2(4), TT_BEARTRAP);
     game.context.botl = true;
 
     const steed = hero.usteed;

@@ -3,7 +3,7 @@
 // steal.c mpickobj().
 import { hitMonsterWithThrownEggPieOrVenom, isHeroThrownEggPieOrVenom, } from './hero_thrown_egg_pie_venom.js';
 import { flush_screen, plineWithContinuation } from './display.js';
-import { foodObjectName, objectName, observeObjectForNaming } from './objnam.js';
+import { definiteObjectAction, foodObjectName, objectName, observeObjectForNaming } from './objnam.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { hitMonsterWithThrownObject } from './hero_ranged_attack.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
@@ -325,15 +325,14 @@ export async function resolveGenericSwallowedThrow({ state = game, item, objectC
         const wake = await wakeMonster(engulfer);
         if (wake.heroDied)
             return true;
-        const monsterName = engulfer.name
-            || `the ${monsterTypeName(engulfer.mnum, !!engulfer.female)}`;
+        const targetName = monsterName(engulfer, { state });
         const whirly = MONSTER_SYMBOL[engulfer.mnum] === 22
             || engulfer.mnum === PM_AIR_ELEMENTAL;
         const trail = monsterDigests(engulfer)
             ? ' entrails' : whirly ? ' currents' : '';
         const destination = trail
-            ? `${possessive(monsterName)}${trail}` : monsterName;
-        await plineWithContinuation(`The ${objectName(thrown, state)} vanishes into ${destination}.`);
+            ? `${possessive(targetName)}${trail}` : targetName;
+        await plineWithContinuation(`${definiteObjectAction(thrown, 'vanish', state)} into ${destination}.`);
         await addObjectToMonsterInventory(engulfer, thrown, state, { atFront: true });
         state.context.move = 1;
         return true;

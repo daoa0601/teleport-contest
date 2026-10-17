@@ -1,4 +1,5 @@
 import { seeTrap } from './trap.js';
+import { objectMaterial } from './object_material.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { heroLocomotion } from './hero_locomotion.js';
 import { game, requirePlayingGame } from './gstate.js';
@@ -9,7 +10,7 @@ import { observeObjectForNaming, ownedObjectName } from './objnam.js';
 import { heroIsHallucinating } from './senses.js';
 import { heroIsUnchanging, polymorphHero } from './polyself.js';
 import { propertyIsActive } from './properties.js';
-import { IRON_SHOES, KICKING_BOOTS, OBJECT_MATERIAL } from './object_data.js';
+import { IRON_SHOES, KICKING_BOOTS } from './object_data.js';
 import { poly_obj } from './object_polymorph.js';
 import { deleteTrap } from './trap_lifecycle.js';
 import { monsterHasMagicResistance } from './anti_magic_trap.js';
@@ -31,7 +32,7 @@ export async function triggerHeroPolymorphTrap(trap, viaSitting) {
         })} onto` : `${locomotion} onto`;
     await plineWithContinuation(`You ${verb} a polymorph trap!`);
     const shoes = game.uarmf || game.u.uarmf;
-    if (shoes && OBJECT_MATERIAL[shoes.otyp] === IRON) {
+    if (shoes && objectMaterial(shoes.otyp) === IRON) {
         deleteTrap(trap);
         observeObjectForNaming(shoes);
         await plineWithContinuation(`${ownedObjectName(shoes)} warps strangely.`);

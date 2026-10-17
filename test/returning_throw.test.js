@@ -71,7 +71,6 @@ for (const command of ['throw', 'fire']) {
         await addInventoryObject(ROCK, { quan: 24 });
         assert.equal(nearCapacity(game), 1, 'The aklys makes the carried load burdensome');
         game._encumbranceLevel = 1;
-        game.u._encumbrance = 'Burdened';
         const messages = [];
         const pages = [];
         resetInputState().beforeRead = () => {

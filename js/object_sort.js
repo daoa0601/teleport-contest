@@ -1,7 +1,8 @@
 // Inventory and loot ordering. C refs: invent.c:sortloot()/loot_classify().
+import { objectMaterial } from './object_material.js';
 import { game } from './gstate.js';
 import { SORTLOOT_PACK, SORTLOOT_INVLET, SORTLOOT_LOOT, SORTLOOT_INUSE, SORTLOOT_PETRIFY, P_BOW, P_CROSSBOW, P_SPEAR, P_DAGGER, P_KNIFE, W_ACCESSORY, W_ARMOR, W_WEAPONS, W_ARM, W_ARMC, W_ARMH, W_ARMS, W_ARMG, W_ARMF, W_ARMU, W_WEP, W_SWAPWEP, W_QUIVER, W_TOOL, W_RINGL, W_RINGR, W_AMUL, } from './const.js';
-import { BAG_OF_TRICKS, HORN_OF_PLENTY, WOODEN_FLUTE, MAGIC_FLUTE, TOOLED_HORN, FROST_HORN, FIRE_HORN, WOODEN_HARP, MAGIC_HARP, BUGLE, LEATHER_DRUM, DRUM_OF_EARTHQUAKE, SLIME_MOLD, TIN, EGG, CORPSE, ROCK, LEASH, OBJECT_SUBTYPE, OBJECT_MATERIAL, OBJECT_INITIAL_KNOWN, OBJECT_DESCRIPTIONS, OBJECT_USES_KNOWN, } from './object_data.js';
+import { BAG_OF_TRICKS, HORN_OF_PLENTY, WOODEN_FLUTE, MAGIC_FLUTE, TOOLED_HORN, FROST_HORN, FIRE_HORN, WOODEN_HARP, MAGIC_HARP, BUGLE, LEATHER_DRUM, DRUM_OF_EARTHQUAKE, SLIME_MOLD, TIN, EGG, CORPSE, ROCK, LEASH, OBJECT_SUBTYPE, OBJECT_INITIAL_KNOWN, OBJECT_DESCRIPTIONS, OBJECT_USES_KNOWN, } from './object_data.js';
 import { OBJECT_CLASS_SYMBOLS, objectClassForType, observeObject } from './object_knowledge.js';
 import { lootObjectName, observeObjectForNaming } from './objnam.js';
 import { isContainer } from './container.js';
@@ -125,7 +126,7 @@ function lootSubclass(object, oclass, seen, discovered) {
         return object.globby ? 6 : 2;
     }
     if (oclass === 13) {
-        const material = OBJECT_MATERIAL[object.otyp];
+        const material = objectMaterial(object.otyp);
         if (material === 20 || material === 19)
             return !seen ? 1 : !discovered ? 2 : material === 20 ? 3 : 4;
         return !seen ? 5 : object.otyp === ROCK ? 8 : !discovered ? 6 : 7;

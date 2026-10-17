@@ -9,7 +9,7 @@ import { finishHeroDeath } from './end.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { heroLiquidEffects } from './hack.js';
 import { resolveMonsterLiquid } from './mon.js';
-import { MONSTER_FLAGS1, MONSTER_MOVE, MONSTER_NAME, MONSTER_SYMBOL, } from './monster_data.js';
+import { MONSTER_FLAGS1, MONSTER_MOVE, MONSTER_SYMBOL, } from './monster_data.js';
 import { finishMonsterKilled, finishMonsterLiquidDeath, } from './monster_death.js';
 import { AD_DGST, AD_PHYS } from './monster_attack_types.js';
 import { heroIsPolymorphed } from './polyself.js';
@@ -17,6 +17,7 @@ import { rnd } from './rng.js';
 import { updateMonsterRegions } from './regions.js';
 import { moveHeroByTeleport, safeTeleportDestination, } from './teleport.js';
 import { vision_recalc } from './vision.js';
+import { monsterName } from './monster_name.js';
 const M1_FLY = 0x00000001;
 const M1_SWIM = 0x00000002;
 const M1_WALLWALK = 0x00000008;
@@ -55,11 +56,10 @@ function entitySymbol(entity, state) {
     }
     return MONSTER_SYMBOL[entity.actor.mnum] ?? null;
 }
-function entityName(entity) {
+function entityName(entity, state, capitalized = false) {
     if (entity.hero)
-        return 'you';
-    return entity.actor.name
-        || `the ${MONSTER_NAME[entity.actor.mnum] || 'monster'}`;
+        return capitalized ? 'You' : 'you';
+    return monsterName(entity.actor, { state, capitalized });
 }
 function entityIsVisible(entity) {
     return entity.hero || canSeeMonster(entity.actor);
@@ -256,7 +256,7 @@ async function crushEntity(entity, bridge, state, options, killer, death) {
     if (state.program_state.gameover)
         return;
     if (died && visible) {
-        await plineWithContinuation(`Unfortunately for ${entityName(entity)}, it is still crushed.`);
+        await plineWithContinuation(`Unfortunately for ${entityName(entity, state)}, it is still crushed.`);
     }
 }
 async function settleEntityOnBridge(entity, bridge, state, options) {
@@ -295,7 +295,7 @@ async function handleEntity(entity, bridge, wall, state, options, handled) {
     if (entityAutomaticallyMissed(entity, state)
         && entitySurvivesAt(entity, state)) {
         if (entityIsVisible(entity)) {
-            await plineWithContinuation(`The ${atPortcullis ? 'portcullis' : 'drawbridge'} passes through ${entityName(entity)}!`);
+            await plineWithContinuation(`The ${atPortcullis ? 'portcullis' : 'drawbridge'} passes through ${entityName(entity, state)}!`);
         }
         return;
     }
@@ -303,7 +303,7 @@ async function handleEntity(entity, bridge, wall, state, options, handled) {
     let relocates = false;
     if (entityMissed(entity, state)) {
         if (atPortcullis && entityIsVisible(entity)) {
-            await plineWithContinuation(`The portcullis misses ${entityName(entity)}!`);
+            await plineWithContinuation(`The portcullis misses ${entityName(entity, state)}!`);
         }
         if (entitySurvivesAt(entity, state))
             return;
@@ -315,7 +315,7 @@ async function handleEntity(entity, bridge, wall, state, options, handled) {
     else if (location.typ === DRAWBRIDGE_DOWN) {
         await plineWithContinuation(entity.hero
             ? 'You are crushed underneath the drawbridge.'
-            : `${entityName(entity)} is crushed underneath the drawbridge.`);
+            : `${entityName(entity, state, true)} is crushed underneath the drawbridge.`);
         await crushEntity(entity, bridge, state, options, 'crushed to death underneath a drawbridge', { showKillMessage: entityIsVisible(entity), noCorpse: true });
         return;
     }
@@ -331,7 +331,7 @@ async function handleEntity(entity, bridge, wall, state, options, handled) {
                 if (entityIsVisible(entity)) {
                     await plineWithContinuation(entity.hero
                         ? 'You are crushed by the falling portcullis!'
-                        : `${entityName(entity)} is crushed by the falling portcullis!`);
+                        : `${entityName(entity, state, true)} is crushed by the falling portcullis!`);
                 }
                 await crushEntity(entity, bridge, state, options, 'crushed by a falling portcullis', { showKillMessage: entityIsVisible(entity), noCorpse: true });
                 return;
@@ -371,7 +371,7 @@ async function handleEntity(entity, bridge, wall, state, options, handled) {
             && !entityIsFloating(entity, state)) {
             await plineWithContinuation(entity.hero
                 ? 'You fall from the bridge.'
-                : `${entityName(entity)} falls from the bridge.`);
+                : `${entityName(entity, state, true)} falls from the bridge.`);
         }
         return;
     }
@@ -405,7 +405,7 @@ async function killCollapseVictim(entity, bridge, state, options, killer) {
             ? `You are ${killer === 'exploding drawbridge'
                 ? 'blown apart by flying debris'
                 : 'hit by a huge chunk of metal'}!`
-            : `${entityName(entity)} is ${killer === 'exploding drawbridge'
+            : `${entityName(entity, state, true)} is ${killer === 'exploding drawbridge'
                 ? 'blown apart by flying debris'
                 : 'hit by a huge chunk of metal'}!`);
     }

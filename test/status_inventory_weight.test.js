@@ -7,7 +7,8 @@ import { MONSTER_NAME } from '../js/monster_data.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('status redraw measures the current load after a corpse loses weight', async () => {
-    freshObjectRoom({ hero: { _encumbrance: 'Burdened' } });
+    freshObjectRoom();
+    game._encumbranceLevel = 1;
     await addInventoryObject(CORPSE, { corpsenm: MONSTER_NAME.indexOf('jackal'), oeaten: 31 });
     await bot();
     const status = requireGameDisplay(game).grid[23]?.map(cell => cell.ch).join('') ?? '';

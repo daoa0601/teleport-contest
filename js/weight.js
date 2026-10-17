@@ -5,7 +5,6 @@ import { MONSTER_BODY_META, MONSTER_FLAGS2, MONSTER_SIZE, MONSTER_SYMBOL, } from
 import { A_CON, Is_airlevel, LARGEST_INT } from './const.js';
 import { currentAttribute, currentStrength } from './attrib.js';
 import { flyingSupportsLoad, levitationSupportsLoad } from './properties.js';
-import { game } from './gstate.js';
 import { heroSpecies } from './hero_species.js';
 import { monsterStagger } from './monster_locomotion.js';
 export const UNENCUMBERED = 0;
@@ -170,12 +169,8 @@ export function nearCapacity(state) {
 export function exceedsActionCapacity(state) {
     return nearCapacity(state) >= EXT_ENCUMBER;
 }
-export function encumbranceLabel(level) {
-    return ['', 'Burdened', 'Stressed', 'Strained', 'Overtaxed', 'Overloaded'][level]
-        || '';
-}
 // C pickup.c:encumber_msg(). The strained verb follows the hero's body.
-export function encumbranceMessage(previous, current, state = game) {
+export function encumbranceMessage(previous, current, state) {
     const stagger = monsterStagger(heroSpecies(state), 'stagger');
     if (previous < current) {
         return [

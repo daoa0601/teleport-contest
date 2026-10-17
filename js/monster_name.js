@@ -62,22 +62,6 @@ export function monsterSpellDeathReason(monster, reason) {
     }
     return killer;
 }
-function possessiveMonsterName(name) {
-    return /s$/i.test(name) ? `${name}'` : `${name}'s`;
-}
-// C do_name.c:x_monnam()/distant_monnam().  Species identity comes from
-// mnum; `monster.name` is the optional C given-name extension.
-export function monsterInstanceDisplayName(monster) {
-    if (monster?.name && monster.mnum === PM_GHOST)
-        return `${possessiveMonsterName(monster.name)} ghost`;
-    if (monster?.name)
-        return monster.name;
-    return monsterTypeName(monster?.mnum, !!monster?.female);
-}
-export function quietMonsterName(monster) {
-    const name = monsterTypeName(monster?.mnum, !!monster?.female);
-    return monster?.saddled ? `saddled ${name}` : name;
-}
 export function monsterName(monster, { capitalized = false, state = game, article = 'the', adjective = '', called = false, suppressIt = false, suppressSaddle = !!MGIVENNAME(monster)
     || article === 'your' && !suppressIt && monster === state.u.usteed, augmentIt = false, suppressInvisible = false, suppressHallucination = false, exact = false, } = {}) {
     requireLiveGame(state);

@@ -40,7 +40,7 @@ import { consumeMonsterItem, presentMonsterQuaff as publishMonsterQuaff, present
 import { heroCanTeleport, moveMonsterNextToHero, randomMonsterRelocation, teleportHero } from './teleport.js';
 import { monsterAtPosition } from './monster_location.js';
 import { placeHeroAtRandomArrival } from './level_change.js';
-import { monsterName, monsterSpellDeathReason, monsterSubjectPronoun, possessiveName, quietMonsterName } from './monster_name.js';
+import { monsterName, monsterSpellDeathReason, monsterSubjectPronoun, possessiveName } from './monster_name.js';
 import { touchHeroWithDeath } from './monster_death_touch.js';
 import { resolveMonsterWeaponContact } from './monster_weapon_contact.js';
 import { finishHeroDeathAfterMonsterMessage, finishMonsterAttackDeath, waitForCurrentMonsterMore } from './monster_attack_death.js';
@@ -92,7 +92,8 @@ import { amuletTurn, monsterCarriesAmulet, resurrectWizard } from './wizard.js';
 import { finishHeroLiquidMonsterDeath, finishHeroMonsterKill, } from './hero_monster_death.js';
 import { aggravateMonsters, angerMonster } from './monster_anger.js';
 import { grantAmuletWish } from './wish.js';
-import { checkAttributeExercise, reportHeroEncumbrance, currentAttribute, exerciseAttribute, exerciseWisdom, loseHeroStrength } from './attrib.js';
+import { checkAttributeExercise, currentAttribute, exerciseAttribute, exerciseWisdom, loseHeroStrength } from './attrib.js';
+import { reportHeroEncumbrance } from './encumbrance.js';
 import { rndcurse } from './throne.js';
 import { stopRun } from './runmode.js';
 import { resolveMonsterGaze } from './monster_gaze.js';
@@ -2390,7 +2391,7 @@ async function presentMonsterAttackEffects(action, game, { random = rn2, rollDic
                     const breath = heroAttack.breath;
                     if (breath.cough && !heroIsDeaf(game)) {
                         if (canSeeMonster(monster))
-                            await publishSlotMessage(`The ${quietMonsterName(monster)} coughs.`);
+                            await publishSlotMessage(`${monsterName(monster, { capitalized: true })} coughs.`);
                         else
                             await publishHeardMessage('a cough.', publishSlotMessage);
                     }
@@ -2931,6 +2932,19 @@ async function presentMonsterAttackEffects(action, game, { random = rn2, rollDic
     } while (!game.program_state?.gameover);
     if (game.program_state?.gameover)
         return { heroDied: true };
+    if (movement.deferredWormTailAttacks) {
+        delete movement.deferredWormTailAttacks;
+        const offensive = movement.heroAttackSequence?.offensive;
+        if (movement.heroAttackResult !== 1
+            && !(offensive?.status === 'completed' && offensive.result.nativeResult === 1)
+            && !monster.dead && monster.mhp > 0 && monster.wormno) {
+            const result = await performWormTailAttacks(monster, game, {
+                random, rollDice, rollOne, calls: action.calls,
+            });
+            movement.heroAttackResult = result.nativeResult;
+            return { heroDied: result.heroDied };
+        }
+    }
     return { heroDied: false };
 }
 // Trap, door, tunneling, and hiding feedback belongs to postmov(), before
@@ -2957,7 +2971,6 @@ async function presentMonsterPostMove(action, game) {
             throw new Error('Deferred monster trap requires its event.');
         await resumeDeferredMonsterTrap(action, game, {
             publish: plineWithContinuation,
-            monsterName: quietMonsterName,
             describeMonster: visibleMonsterSubject,
         });
         if ('heroDied' in event && event.heroDied)
@@ -3034,7 +3047,7 @@ async function presentRestrictedMonsterTeleport(action, game, actorWasOpticallyS
     // prose force the same tty continuation boundary.
     if (movement?.deferredAfterRestrictedTenguTeleport) {
         if (actorWasOpticallySeen) {
-            await plineWithContinuation(`A mysterious force prevents the ${quietMonsterName(monster)} from teleporting!`);
+            await plineWithContinuation(`A mysterious force prevents ${monsterName(monster)} from teleporting!`);
         }
         await resumeDeferredRestrictedTenguTeleport(action, game);
         movement = action.movement;
@@ -3066,6 +3079,26 @@ export async function performMonsterHeroAttack(monster, state, { random = rn2, r
         nativeResult: returnedDeath || monster.dead || monster.mhp <= 0 ? 1 : 0,
         heroDied: effects.heroDied || !!state.program_state.gameover,
     };
+}
+// C worm.c:wormhitu(). Visible segments are stored head-outward; native
+// wtails walks toward the head and excludes its hidden dummy segment.
+async function performWormTailAttacks(worm, state, options) {
+    const segments = worm.wormSegments;
+    if (!segments)
+        throw new Error(`Worm ${worm.m_id} has no tail list.`);
+    for (let index = segments.length - 1; index >= 0; index--) {
+        const segment = segments[index];
+        if (!segment)
+            throw new Error(`Worm ${worm.m_id} has no tail segment ${index}.`);
+        if (dist2(segment.x, segment.y, state.u.ux, state.u.uy) >= 3)
+            continue;
+        // Keep the real head position: mattacku() still uses its range and
+        // apparent hero position, including after knockback or a passive.
+        const result = await performMonsterHeroAttack(worm, state, options);
+        if (result.nativeResult === 1 || result.heroDied)
+            return result;
+    }
+    return { nativeResult: 0, heroDied: false };
 }
 // C uhitm.c:do_attack() calls m_move(monster, 0) for a leprechaun dodge.
 // Resolve that movement transaction before the hero tests its new position;
@@ -3228,7 +3261,8 @@ async function executeMonsterTurns() {
         // after the complete standard attack set. Item use returns earlier,
         // including items whose effects await their messages below.
         const offensive = movement.heroAttackSequence?.offensive;
-        const attackReturnedDeath = offensive?.status === 'completed' && offensive.result.nativeResult === 1;
+        const attackReturnedDeath = movement.heroAttackResult === 1
+            || (offensive?.status === 'completed' && offensive.result.nativeResult === 1);
         if (action.dochugContext?.reachesFinalActions && !movement.usedMisc
             && !attackReturnedDeath && !monster.dead && monster.mhp > 0
             && monster.mcanmove && !monster.msleeping

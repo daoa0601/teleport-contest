@@ -50,9 +50,7 @@ export async function runObjectTimer(claimed: DueObjectTimer, currentTurn: numbe
     if (kind === OBJECT_TIMER_KIND.SHRINK_GLOB) {
         const event = runClaimedGlobTimer(claimed, game, currentTurn);
         if (event?.message) await plineWithContinuation(event.message);
-        const finished = finishGlobTimer(event, game, currentTurn);
-        if (finished?.followupMessage) await plineWithContinuation(finished.followupMessage);
-        return finished;
+        return finishGlobTimer(event, game, currentTurn);
     }
     if (kind === OBJECT_TIMER_KIND.FIG_TRANSFORM) {
         const event = await runClaimedFigurineTimer(claimed, game, currentTurn);

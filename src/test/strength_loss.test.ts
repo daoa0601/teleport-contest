@@ -1,3 +1,4 @@
+import { nearCapacity } from '../js/weight.js';
 import { requirePlayingGame } from '../js/gstate.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -203,7 +204,7 @@ void test('lost strength immediately reports a newly burdensome load during play
     await addInventoryObject(ROCK, { quan: 62 });
     assert.equal(await answerPrompts(loseHeroStrength(3, null), input, []), false);
 
-    assert.equal(game.u._encumbrance, 'Burdened');
+    assert.equal(nearCapacity(game), 1);
     assert.match(game._pending_message, /Your movements are slowed slightly because of your load/);
 });
 

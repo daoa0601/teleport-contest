@@ -26,7 +26,7 @@ import { surfaceName } from './terrain_name.js';
 import { isLavaAt, isPoolAt } from './terrain_properties.js';
 import { heroCanReachFloor } from './floor_reach.js';
 import { exceedsActionCapacity, objectWeight } from './weight.js';
-import { reportHeroEncumbrance } from './attrib.js';
+import { reportHeroEncumbrance } from './encumbrance.js';
 import { addShopObjectToBill, chargeUnpaidUsage, costlySpot, objectTypeKnown, removeObjectAndContentsFromBill } from './shk.js';
 import { setSellDisposition, SELL_NORMAL } from './shop_sell.js';
 import { showMultiSelectWindow } from './windows.js';

@@ -8,7 +8,7 @@ import { A_CHA, A_CON, A_INT, A_STR, A_WIS } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { DUNCE_CAP, OBJECT_NAMES, ROCK } from '../js/object_data.js';
-import { encumbranceLabel, nearCapacity } from '../js/weight.js';
+import { nearCapacity } from '../js/weight.js';
 import { races } from '../js/roles.js';
 import { initRng } from '../js/rng.js';
 import { freshPlayableRoom } from './support/playable-room.js';
@@ -195,7 +195,6 @@ for (const attribute of [A_STR, A_CON]) {
 
         assert.equal(game.u._exercise[attribute], 50);
         assert.equal(game._encumbranceLevel, capacity);
-        assert.equal(game.u._encumbrance, encumbranceLabel(capacity));
         assert.match(game._pending_message, /load/);
     });
 }

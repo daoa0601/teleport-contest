@@ -27,7 +27,7 @@ import { heroResistsStoning, touchPetrifies } from './stoning.js';
 import { addInventoryItem } from './u_init.js';
 import { nearCapacity } from './weight.js';
 import { pickupBurden } from './lift_object.js';
-import { reportHeroEncumbrance } from './attrib.js';
+import { reportHeroEncumbrance } from './encumbrance.js';
 import { CORPSE, CRYSKNIFE, GOLD_PIECE, LOADSTONE } from './object_data.js';
 
 // The argument must be free. Messages are already formatted by the caller,

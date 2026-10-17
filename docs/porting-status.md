@@ -362,11 +362,23 @@ line, coin weight in `carry_count()`, and the starting pet avoiding scary
 squares through `makemon()`'s placement. The menu-audit and moverock units
 landed alongside.
 
+Batch 34: fixes from fresh56–89 (10,200 sessions; remaining failures are
+long-worm tail attacks, owned by the worm-tail unit, and step-0 moon-phase
+artifacts from the recorder's time zone): boulder-push effort messages and
+the starting pet's identity as unsaved state, shuffled object materials (a
+glass wand shatters "into a thousand pieces"), a seen monster's armor burning
+in a fire ray before the possessions roll, the slime countdown leaving the
+status line alone, `set_utrap()`'s status refresh (InLava at once) and lava
+teaching onlookers fire resistance, `fire_damage()` naming with `Yname2()`,
+the starting pet's hit points through `newmonhp()`, and `mon_nam()` for spent
+rock traps and land-mine triggers. The encumber-owner and halluc-display
+units landed alongside.
+
 ## Verification
 
-`npm test` at `62713ef`: **11,917/11,917**. Merges require a fully green suite;
+`npm test` at `7c81f0a`: **12,150/12,150**. Merges require a fully green suite;
 batch runs also compare matched screens per session with the previous batch
-(no screen regression in batch 31, eval, public or pool).
+(no screen regression in batch 34, eval, public or pool).
 
 ## Most recent native diagnostics
 
@@ -376,8 +388,8 @@ batch runs also compare matched screens per session with the previous batch
 | Native eval sample | 300/300 | 50,586/50,586 | 3,616,669/3,616,669 | 0 |
 | Holdout-dev pool | 2,500/2,500 | | | 0 |
 
-Runs: `.cache/generalization/batch31-62713ef-{eval,public}` and
-`triage-62713ef` (pool) in the verify worktree (baseline `base-06d7e73`:
+Runs: `.cache/generalization/batch34-7c81f0a-{eval,public}` and
+`triage-7c81f0a` (pool) in the verify worktree (baseline `base-06d7e73`:
 143/300; batch 30: 300/300, pool 2,500/2,500). No verified random call was
 lost; the ledgers now hold 350 eval and 363 public functions. The
 state oracle finds all 300 sessions matching C state throughout.

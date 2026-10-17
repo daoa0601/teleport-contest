@@ -4,13 +4,12 @@
 import { ALTAR, HOLE, IS_SOFT, IS_ALTAR, LEFT_SIDE, PIT, RIGHT_SIDE, SPIKED_PIT, TRAPDOOR, } from './const.js';
 import { game, requireLiveGame, requireGameLevel, requireInitializedGame } from './gstate.js';
 import { newsym, plineWithContinuation, map_object } from './display.js';
-import { encumbranceLabel, encumbranceMessage, nearCapacity, } from './weight.js';
+import { reportHeroEncumbrance } from './encumbrance.js';
 import { setPrimaryWeapon, setQuiverObject, setSecondaryWeapon } from './weapon_slots.js';
 import { propertyIsActive } from './properties.js';
 import { heroIsBlind } from './senses.js';
 import { surfaceName } from './terrain_name.js';
-import { objectName, observeObjectForNaming, } from './objnam.js';
-import { makePlural } from './object_grammar.js';
+import { definiteObjectAction, observeObjectForNaming, } from './objnam.js';
 import { inventoryItemDescription } from './invent.js';
 import { applyFloorEffects } from './floor_effects.js';
 import { placeObject, stack_object } from './floor_object.js';
@@ -38,17 +37,6 @@ const PM_WRAITH = MONSTER_NAME.indexOf('wraith');
 const PM_NURSE = MONSTER_NAME.indexOf('nurse');
 // monflag.h M2_SHAPESHIFTER; pm_to_cham() (mon.c:533-546) is this test.
 const M2_SHAPESHIFTER = 0x00004000;
-// C objnam.c:2290-2299 Tobjnam(): "The " + xname() without a count.  The
-// corpse species follows the repo's MONSTER_NAME composition convention
-// (eat.js:612); xname() pluralizes stacks.
-function theShortObjectName(object, state) {
-    let name = object.otyp === CORPSE
-        ? `${(object.corpsenm === undefined ? undefined : MONSTER_NAME[object.corpsenm]) || 'monster'} corpse`
-        : objectName(object, state);
-    if (object.quan > 1)
-        name = makePlural(name);
-    return `The ${name}`;
-}
 // C obj.h:318.  Sometimes eggs and tins carry special corpsenm values that
 // must not index mons[].
 function isFoodObject(object) {
@@ -85,9 +73,7 @@ async function engulferDigestsFood(object, { state, publish }) {
     else if (object.otyp === GLOB_OF_GREEN_SLIME) {
         couldSlime = true;
     }
-    // see or feel the effect; C Tobjnam(obj, "are") = The(xname) plus the
-    // quantity-conjugated verb
-    await publish(`${theShortObjectName(object, state)} ${object.quan > 1 ? 'are' : 'is'} instantly digested!`);
+    await publish(`${definiteObjectAction(object, 'are', state)} instantly digested!`);
     if (couldPoly || couldSlime) {
         const change = await changeMonsterForm(swallower, couldSlime ? PM_GREEN_SLIME : null, state, { publish, showMessage: couldSlime });
         if (change?.heroDied)
@@ -113,20 +99,6 @@ async function engulferDigestsFood(object, { state, publish }) {
     }
     await deleteObject(object, state); // always used up
     return { digested: true, heroDied: false };
-}
-export async function updateHeroEncumbrance(state, publish) {
-    const capacity = nearCapacity(state);
-    const baseline = state._encumbranceLevel;
-    state._encumbranceLevel = capacity;
-    state.u._encumbrance = encumbranceLabel(capacity);
-    state._capacityDirty = false;
-    const message = baseline == null ? null : encumbranceMessage(baseline, capacity);
-    if (message)
-        await publish(message);
-    // C pickup.c:encumber_msg() marks the status line after any change; the
-    // next pline()'s flush_screen() then redraws the capacity field.
-    if (baseline != null && baseline !== capacity)
-        state.context.botl = true;
 }
 // C do.c:807-843 dropz(): put an already-free dropped object at its
 // destination, with or without impact side effects.  The object's square is
@@ -192,7 +164,7 @@ export async function dropObjectAtHero(object, { impact = false, state = game, p
             map_object(stacked ?? object, false);
         newsym(hero.ux, hero.uy); // remap location under self
     }
-    await updateHeroEncumbrance(state, publish);
+    await reportHeroEncumbrance(state, publish);
     return object;
 }
 // C dothrow.c:606-647 hitfloor(): object hits floor at hero's feet.  The

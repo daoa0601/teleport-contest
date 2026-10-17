@@ -1,4 +1,5 @@
 // C pray.c:in_trouble(), worst_cursed_item(), and fix_worst_trouble().
+import { reportHeroEncumbrance } from './encumbrance.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { isPoolOrLavaAt } from './terrain_properties.js';
 import { makeConfused, makeHallucinated, makeStunned } from './hero_mental_status.js';
@@ -34,7 +35,7 @@ import { clearHeroPetrification, heroIsPetrifying } from './stoning.js';
 import { teleportHeroSafely } from './teleport.js';
 import { isWeldedPrimary } from './weapon_slots.js';
 import { heroHasFreeHand } from './weapon_type.js';
-import { encumbranceLabel, encumbranceMessage, nearCapacity } from './weight.js';
+import { nearCapacity } from './weight.js';
 import { purifyHeroLycanthropy } from './were.js';
 const attributeIndices = [0, 1, 2, 3, 4, 5];
 // Positive values are urgent. The order below follows in_trouble().
@@ -253,7 +254,7 @@ export async function fixPrayerTrouble(trouble, state = game) {
         case Trouble.STARVING:
         case Trouble.HUNGRY:
             await pline(`Your ${heroStomachName(state)} feels content.`);
-            await pline(restoreHeroNutrition(state));
+            await restoreHeroNutrition(state, pline);
             state.context.botl = true;
             return;
         case Trouble.SICK:
@@ -333,14 +334,10 @@ export async function fixPrayerTrouble(trouble, state = game) {
             return;
         case Trouble.POISONED: {
             await pline(heroIsHallucinating(state) ? "There's a tiger in your tank." : formatFeltMessage('in good health again.', state));
-            const before = nearCapacity(state);
             for (const index of attributeIndices)
                 hero.acurr.a[index] = Math.max(hero.acurr.a[index], hero.amax.a[index]);
             state.context.botl = true;
-            const after = nearCapacity(state);
-            state._encumbranceLevel = after;
-            hero._encumbrance = encumbranceLabel(after);
-            await pline(encumbranceMessage(before, after));
+            await reportHeroEncumbrance(state, pline);
             return;
         }
         case Trouble.BLIND: {

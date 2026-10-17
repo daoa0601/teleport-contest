@@ -124,7 +124,7 @@ void test('turn maintenance reports relief when a corpse rots inside a carried s
     assert.equal(sack.contents?.length, 0);
     assert.match(messages.join('\n'), /Your movements are now unencumbered\./);
     assert.equal(game._encumbranceLevel, 0);
-    assert.equal(game.u._encumbrance, '');
+    assert.equal(nearCapacity(game), 0);
 });
 
 void test('a slowed hero acknowledges corpse-weight relief before another monster round', async () => {

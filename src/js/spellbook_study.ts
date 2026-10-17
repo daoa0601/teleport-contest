@@ -23,7 +23,7 @@ import { OBJECT_DELAY, OBJECT_DESCRIPTIONS, OBJECT_INITIAL_KNOWN, OBJECT_NAMES, 
     LENSES, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_NOVEL, requireObjectData } from './object_data.js';
 import { makePlural } from './object_grammar.js';
 import { stopHeroOccupation } from './occupation.js';
-import { objectName } from './objnam.js';
+import { definiteObjectAction, objectName } from './objnam.js';
 import { objectQuantity } from './object_stack.js';
 import { poisonHeroStrengthAndHp } from './poison.js';
 import { propertyIsActive } from './properties.js';
@@ -289,7 +289,7 @@ export function bookDisappears(book: GameObject, { state = game }: SpellbookOpti
 export async function bookCursed(book: GameObject, { state = game }: SpellbookOptions = {}) {
     if (!book.cursed || (state._helplessTurns ?? 0) > 0 || (state.multi || 0) < 0
         || state._occupation?.key !== 'study-book' || state.context.spbook?.book !== book) return;
-    await pline(`The ${objectName(book, state)} ${objectQuantity(book) > 1 ? 'slam' : 'slams'} shut!`);
+    await pline(`${definiteObjectAction(book, 'slam', state)} shut!`);
     book.bknown = true;
     await stopHeroOccupation(state);
 }

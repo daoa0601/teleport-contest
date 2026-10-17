@@ -1,5 +1,6 @@
 // objnam.js — Object wish-name parsing, weighted lookup, and visible naming.
 // C refs: objnam.c readobjnam(), rnd_otyp_by_namedesc(), xname().
+import { objectMaterial } from './object_material.js';
 import { game } from './gstate.js';
 import { fruitFromIndex, fruitFromName } from './fruit.js';
 import { objectOwnershipPrefix, objectTypeKnown } from './shk.js';
@@ -17,7 +18,7 @@ import { promptYesNo } from './query.js';
 import { objectWeight } from './weight.js';
 import { heroIsBlind } from './senses.js';
 import { artifactById, artifactByName, artifactExistCount, findArtifact, nameArtifact, uncreateArtifact, } from './artifacts.js';
-import { CRYSKNIFE, FLINT, GOLD_PIECE, LENSES, ROCK, TALLOW_CANDLE, WAX_CANDLE, ACID_VENOM, AMULET_OF_YENDOR, BELL, BELL_OF_OPENING, BLINDING_VENOM, BOULDER, CANDELABRUM_OF_INVOCATION, CHEST, CORPSE, CRYSTAL_BALL, FAKE_AMULET_OF_YENDOR, FIGURINE, HEAVY_IRON_BALL, IRON_CHAIN, LARGE_BOX, MAGIC_LAMP, OIL_LAMP, SKELETON_KEY, SLIME_MOLD, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, STATUE, POT_WATER, TIN, TOWEL, WAN_WISHING, SPE_NOVEL, OBJECT_BASES, requireObjectData, OBJECT_DESCRIPTIONS, OBJECT_NAMES, OBJECT_MERGE, OBJECT_NOWISH, OBJECT_CHARGED, OBJECT_MAGIC, OBJECT_UNIQUE, OBJECT_USES_KNOWN, OBJECT_MATERIAL, OBJECT_SPELL_CATEGORY, OBJECT_SPELL_LEVEL, OBJECT_SUBTYPE, OBJECT_WEIGHT, } from './object_data.js';
+import { CRYSKNIFE, FLINT, GOLD_PIECE, LENSES, ROCK, TALLOW_CANDLE, WAX_CANDLE, ACID_VENOM, AMULET_OF_YENDOR, BELL, BELL_OF_OPENING, BLINDING_VENOM, BOULDER, CANDELABRUM_OF_INVOCATION, CHEST, CORPSE, CRYSTAL_BALL, FAKE_AMULET_OF_YENDOR, FIGURINE, HEAVY_IRON_BALL, IRON_CHAIN, LARGE_BOX, MAGIC_LAMP, OIL_LAMP, SKELETON_KEY, SLIME_MOLD, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, STATUE, POT_WATER, TIN, TOWEL, WAN_WISHING, SPE_NOVEL, OBJECT_BASES, requireObjectData, OBJECT_DESCRIPTIONS, OBJECT_NAMES, OBJECT_MERGE, OBJECT_NOWISH, OBJECT_CHARGED, OBJECT_MAGIC, OBJECT_UNIQUE, OBJECT_USES_KNOWN, OBJECT_SPELL_CATEGORY, OBJECT_SPELL_LEVEL, OBJECT_SUBTYPE, OBJECT_WEIGHT, } from './object_data.js';
 import { armorPresentationName, withIndefiniteArticle, makePlural, makeSingular, verbForSubject } from './object_grammar.js';
 import { armorSimpleName } from './armor.js';
 import { isContainer } from './container.js';
@@ -471,6 +472,25 @@ export function simpleObjectTypeName(otyp, state = game) {
         return gemPresentationName(otyp, actual, known ? null : appearance);
     return name;
 }
+// C obj_typename(): discoveries-style type name, call name, and appearance.
+export function objectTypeName(otyp, state = game) {
+    const oclass = objectClassForType(otyp);
+    let name = simpleObjectTypeName(otyp, state);
+    if (oclass === COIN_CLASS)
+        return name;
+    const callName = state._objectCallNames?.[otyp];
+    if (callName)
+        name += ` called ${callName}`;
+    const ordinaryName = OBJECT_NAMES[otyp];
+    const appearance = state.urole?.key === 'samurai'
+        && ['wooden harp', 'magic harp'].includes(ordinaryName ?? '')
+        ? 'koto' : state.objectDescriptions?.[otyp] ?? OBJECT_DESCRIPTIONS[otyp];
+    const classHasAppearance = [AMULET_CLASS, POTION_CLASS, SCROLL_CLASS,
+        WAND_CLASS, SPBOOK_CLASS, RING_CLASS].includes(oclass);
+    if (appearance && (classHasAppearance || objectTypeKnown({ otyp, oclass }, state)))
+        name += ` (${appearance})`;
+    return name;
+}
 // C minimal_xname() builds a bare object so personal names, call names,
 // quantity, and statue identity cannot reveal more than the known type.
 export function minimalObjectName(object, state = game) {
@@ -495,7 +515,7 @@ function actualObjectTypeName(object, state) {
 // C xname_flags() GEM_CLASS. Inventory adds quantity and individual names;
 // minimal_xname suppresses only the user-supplied type call name here.
 export function gemObjectName(object, state = game, { minimal = false } = {}) {
-    const classNoun = OBJECT_MATERIAL[object.otyp] === 21 ? 'stone' : 'gem';
+    const classNoun = objectMaterial(object.otyp) === 21 ? 'stone' : 'gem';
     const overrideIdentity = !!state.iflags.override_ID;
     if (!object.dknown && !overrideIdentity)
         return classNoun;
@@ -579,14 +599,20 @@ export function ownedObjectName(object, state = game, { capitalized = true, incl
 export function ownedSimpleObjectName(object, state = game, { capitalized = true } = {}) {
     return objectOwnershipPrefix(object, state, { capitalized }) + minimalObjectName(object, state);
 }
-// C safe_qbuf()/short_oname(): reserve the question before shortening names.
 export function ownedObjectQuestion(object, { prefix, suffix, fallback, capitalized }, state = game) {
+    return objectQuestion(object, {
+        prefix, suffix, fallback,
+        format: (item, nameState) => ownedObjectName(item, nameState, { capitalized }),
+        shortFormat: (item, nameState) => ownedSimpleObjectName(item, nameState, { capitalized }),
+    }, state);
+}
+// C safe_qbuf()/short_oname(): reserve the question before shortening names.
+export function objectQuestion(object, { prefix, suffix, fallback, format, shortFormat }, state = game) {
     const limit = QBUFSZ - 1 - prefix.length - suffix.length;
     const question = (name) => `${prefix}${name}${suffix}`;
     if (fallback.length > limit)
         return question(fallback).slice(0, QBUFSZ - 1);
-    const describe = (item, nameState) => ownedObjectName(item, nameState, { capitalized });
-    let name = describe(object, state);
+    let name = format(object, state);
     if (name.length <= limit)
         return question(name);
     const callName = state._objectCallNames?.[object.otyp];
@@ -599,18 +625,18 @@ export function ownedObjectQuestion(object, { prefix, suffix, fallback, capitali
         ? { ...object, oextra: { ...object.oextra, oname: `${personalName.slice(0, 8)}...` } }
         : object;
     if (shortCallState !== state) {
-        name = describe(object, shortCallState);
+        name = format(object, shortCallState);
         if (name.length <= limit)
             return question(name);
     }
     if (shortNamedObject !== object) {
-        name = describe(shortNamedObject, state);
+        name = format(shortNamedObject, state);
         if (name.length <= limit)
             return question(name);
     }
     const shortenBoth = shortCallState !== state && shortNamedObject !== object;
     if (shortenBoth) {
-        name = describe(shortNamedObject, shortCallState);
+        name = format(shortNamedObject, shortCallState);
         if (name.length <= limit)
             return question(name);
     }
@@ -621,9 +647,9 @@ export function ownedObjectQuestion(object, { prefix, suffix, fallback, capitali
         bknown: false, rknown: false, greased: false,
         oeroded: 0, oeroded2: 0, orotten: false, odiluted: false, norevive: false,
     };
-    name = describe(plainObject, nameState);
+    name = format(plainObject, nameState);
     if (name.length > limit)
-        name = ownedSimpleObjectName(plainObject, nameState, { capitalized });
+        name = shortFormat(plainObject, nameState);
     return question(name.length <= limit ? name : fallback);
 }
 // Native fruit labels imported from bones can already be plural. xname
@@ -658,6 +684,24 @@ export function objectNameIsPlural(object, state = game) {
         || (object.oartifact === requiredArtifact('The Eyes of the Overworld', state).id
             && !!state._artifactDiscoveries?.includes(object.oartifact));
 }
+// C aobjnam(): cxname with a stack count and an optional conjugated verb.
+export function objectAction(object, verb, state = game) {
+    const name = objectCombatName(object, { state });
+    const quantity = object.quan ?? object.quantity ?? 1;
+    const subject = quantity === 1 ? name : `${quantity} ${name}`;
+    return objectActionText(object, subject, verb, state);
+}
+// C Tobjnam(): The(xname), without a count or corpse species.
+export function definiteObjectAction(object, verb, state = game) {
+    const name = definiteName(objectCombatName(object, { state, includeCorpseSpecies: false }), state);
+    const subject = name.charAt(0).toUpperCase() + name.slice(1);
+    return objectActionText(object, subject, verb, state);
+}
+function objectActionText(object, subject, verb, state) {
+    if (!verb)
+        return subject;
+    return `${subject} ${objectNameIsPlural(object, state) ? verb : verbForSubject(null, verb)}`;
+}
 export function ownedObjectAction(object, verb, state = game, { capitalized = true } = {}) {
     if (object.otyp !== CORPSE)
         observeObjectForNaming(object, { state });
@@ -679,15 +723,6 @@ export function ownedObjectAction(object, verb, state = game, { capitalized = tr
         return subject;
     const action = objectNameIsPlural(object, state) ? verb : verbForSubject(null, verb);
     return `${subject} ${action}`;
-}
-// C objnam.c:Tobjnam(): The(xname(obj)) with the verb agreeing via otense().
-// xname() calls a corpse just "corpse"; cxname() adds the species.
-export function definiteObjectAction(object, verb, state = game) {
-    const name = definiteName(objectCombatName(object, { state, includeCorpseSpecies: false }), state);
-    const subject = `${name.charAt(0).toUpperCase()}${name.slice(1)}`;
-    if (!verb)
-        return subject;
-    return `${subject} ${objectNameIsPlural(object, state) ? verb : verbForSubject(null, verb)}`;
 }
 const CLASS_PRESENTATION = {
     [WEAPON_CLASS]: 'Weapons',
@@ -732,7 +767,7 @@ export function unseenObjectNoun(object) {
             return OBJECT_NAMES[object?.otyp] === 'novel' ? 'book' : 'spellbook';
         case WAND_CLASS: return 'wand';
         case GEM_CLASS:
-            return OBJECT_MATERIAL[object?.otyp] === 21 ? 'stone' : 'gem';
+            return objectMaterial(object?.otyp) === 21 ? 'stone' : 'gem';
         default:
             return object?.name || OBJECT_NAMES[object?.otyp] || 'object';
     }
@@ -752,7 +787,7 @@ function erosionMatters(object) {
         && (OBJECT_SUBTYPE[object.otyp] ?? 0) !== 0;
 }
 function objectIsDamageable(object) {
-    const material = OBJECT_MATERIAL[object.otyp] ?? 0;
+    const material = objectMaterial(object.otyp);
     const flammable = (material > 1 && material <= 8) || material === 18;
     const rottable = (material > 1 && material <= 8) || material === 10;
     const rustprone = material === 11;
@@ -761,14 +796,14 @@ function objectIsDamageable(object) {
     return flammable || rottable || rustprone || corrodeable || crackable;
 }
 function objectAcceptsPrimaryErosion(object) {
-    const material = OBJECT_MATERIAL[object.otyp] ?? 0;
+    const material = objectMaterial(object.otyp);
     const flammable = (material > 1 && material <= 8) || material === 18;
     const rustprone = material === 11;
     const crackable = material === 19 && object.oclass === ARMOR_CLASS;
     return flammable || rustprone || crackable;
 }
 function objectAcceptsSecondaryErosion(object) {
-    const material = OBJECT_MATERIAL[object.otyp] ?? 0;
+    const material = objectMaterial(object.otyp);
     const rottable = (material > 1 && material <= 8) || material === 10;
     const corrodeable = material === 11 || material === 13;
     return rottable || corrodeable;
@@ -786,14 +821,14 @@ export function objectStatePrefix(object) {
     const secondaryErosion = object.oeroded2 ?? 0;
     let prefix = object?.greased ? 'greased ' : '';
     if (primaryErosion > 0 && object.otyp !== CRYSKNIFE) {
-        const material = OBJECT_MATERIAL[object.otyp] ?? 0;
+        const material = objectMaterial(object.otyp);
         const adjective = material === 11 ? 'rusty '
             : material === 19 && object.oclass === ARMOR_CLASS
                 ? 'cracked ' : 'burnt ';
         prefix += `${erosionDegree(primaryErosion)}${adjective}`;
     }
     if (secondaryErosion > 0 && object.otyp !== CRYSKNIFE) {
-        const material = OBJECT_MATERIAL[object.otyp] ?? 0;
+        const material = objectMaterial(object.otyp);
         const adjective = material === 11 || material === 13
             ? 'corroded ' : 'rotted ';
         prefix += `${erosionDegree(secondaryErosion)}${adjective}`;
@@ -1052,11 +1087,11 @@ const PLAIN_GEMSTONE_NAMES = new Set([
 ]);
 function gemPresentationName(otyp, realName, description) {
     if (description) {
-        const classNoun = OBJECT_MATERIAL[otyp] === 21 ? 'stone' : 'gem';
+        const classNoun = objectMaterial(otyp) === 21 ? 'stone' : 'gem';
         return `${description} ${classNoun}`;
     }
     const needsStone = otyp === FLINT
-        || (OBJECT_MATERIAL[otyp] === 20
+        || (objectMaterial(otyp) === 20
             && !PLAIN_GEMSTONE_NAMES.has(realName));
     return needsStone ? `${realName} stone` : realName;
 }

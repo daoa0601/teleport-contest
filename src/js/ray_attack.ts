@@ -533,7 +533,7 @@ async function damageRayMonster(monster: Monster, nativeType: number, dice: numb
             sourceDamage = hit.damage;
             if (damageType === AD_FIRE) {
                 if (monsterResistanceBits(monster) & MR_COLD) hit.damage += 7;
-                if (await burnArmorByFire(monster, state, publish, [], random)
+                if (await burnArmorByFire(monster, state, publish, [], random, { visible: options.visible })
                     && random(3) === 0) {
                     hit.damage += await destroyMonsterInventoryByElement(monster,
                         INVENTORY_DAMAGE.FIRE, sourceDamage, options);

@@ -5,17 +5,15 @@ import { AD_PHYS } from './monster_attack_types.js';
 import { plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
 import { publishHeardMessage } from './hero_speech.js';
-import { MONSTER_NAME, MONSTER_SIZE, monsterIsAmorphous, monsterIsUnsolid, monsterIsWhirly, monsterTypeName, } from './monster_data.js';
+import { MONSTER_NAME, MONSTER_SIZE, monsterIsAmorphous, monsterIsUnsolid, monsterIsWhirly, } from './monster_data.js';
 import { monsterWearsIronShoes } from './monworn.js';
 import { d, rn2 } from './rng.js';
 import { monsterTrapVisibility, seeTrap } from './trap.js';
 import { monsterInAir } from './terrain_properties.js';
+import { monsterName } from './monster_name.js';
 const MZ_SMALL = 1;
 const PM_OWLBEAR = MONSTER_NAME.indexOf('owlbear');
 const PM_BUGBEAR = MONSTER_NAME.indexOf('bugbear');
-function ordinaryMonsterSubject(monster) {
-    return monster?.name || `The ${monsterTypeName(monster?.mnum, !!monster?.female)}`;
-}
 function bearTrapCanCatch(monster, state) {
     return ((MONSTER_SIZE[monster?.mnum] ?? 0) > MZ_SMALL &&
         !monsterIsAmorphous(monster) &&
@@ -42,7 +40,7 @@ export function beginMonsterBearTrap(monster, trap, state = game, { forced = fal
     event.caught = true;
     return event;
 }
-export async function finishMonsterBearTrap(monster, event, state = game, { publish = plineWithContinuation, random = rn2, rollDice = d, describeMonster = ordinaryMonsterSubject, } = {}) {
+export async function finishMonsterBearTrap(monster, event, state = game, { publish = plineWithContinuation, random = rn2, rollDice = d, describeMonster = target => monsterName(target, { state, capitalized: true }), } = {}) {
     if (!event)
         return event;
     if (event.finished) {

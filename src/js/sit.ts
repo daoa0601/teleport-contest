@@ -1,6 +1,7 @@
 // #sit and the immediate consequences of sitting down.
 // C ref: sit.c dosit() and lay_an_egg().
 
+import { objectMaterial } from './object_material.js';
 import {
     A_STR, A_WIS, ALTAR, DRAWBRIDGE_DOWN, FOUNTAIN, GRAVE,
     Is_waterlevel, is_hole, is_pit, LADDER, SINK, SPIKED_PIT, STAIRS, THRONE,
@@ -29,8 +30,7 @@ import {
     MONSTER_SYMBOL,
 } from './monster_data.js';
 import {
-    CHEST, CORPSE, CREAM_PIE, EGG, LARGE_BOX, OBJECT_MATERIAL,
-    OBJECT_NUTRITION, TOWEL, WATER_WALKING_BOOTS,
+    CHEST, CORPSE, CREAM_PIE, EGG, LARGE_BOX, OBJECT_NUTRITION, TOWEL, WATER_WALKING_BOOTS,
 } from './object_data.js';
 import { observeObject } from './object_knowledge.js';
 import { objectCombatName, definiteName } from './objnam.js';
@@ -159,7 +159,7 @@ async function sitOnObject(object: GameObject): Promise<void> {
         if (!heroIsDeaf()) await pline('Squelch!');
         await useUpFloorObject(object, object.quan);
     } else if (object.otyp !== LARGE_BOX && object.otyp !== CHEST
-        && OBJECT_MATERIAL[object.otyp] !== CLOTH) {
+        && objectMaterial(object.otyp) !== CLOTH) {
         await pline("It's not very comfortable...");
     }
 }

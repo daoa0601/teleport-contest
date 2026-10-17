@@ -20,9 +20,7 @@ import { definiteName } from './objnam.js';
 import { withIndefiniteArticle } from './object_grammar.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { d, rn2, rnd } from './rng.js';
-import {
-    encumbranceLabel, encumbranceMessage, nearCapacity,
-} from './weight.js';
+import { reportHeroEncumbrance } from './encumbrance.js';
 
 export interface PoisonDamageOptions {
     state?: GameState;
@@ -88,20 +86,6 @@ function adjustedDamageAfterMaxHpLoss(
     return Math.max(loss, 1);
 }
 
-async function updateEncumbrance(
-    previous: number, state: GameState, publish: MessagePublisher,
-): Promise<boolean> {
-    const current = nearCapacity(state);
-    const message = encumbranceMessage(previous, current);
-    const dismissal = message ? await publish(message) : undefined;
-    // C encumber_msg() commits both the redraw request and oldcap after
-    // its message returns, including when that message opens a pager.
-    if (previous !== current) state.context.botl = true;
-    state._encumbranceLevel = current;
-    state.u._encumbrance = encumbranceLabel(current);
-    return dismissal !== null && dismissal !== undefined;
-}
-
 // C attrib.c:poison_strdmg(). Both argument rolls precede this call;
 // recovery from frailty completes before the independent poison damage.
 export async function poisonHeroStrengthAndHp(
@@ -156,18 +140,13 @@ export async function poisonHero({
         ? killer : withIndefiniteArticle(killer);
     const hpDeathCause = `killed by ${attributedKiller}`;
 
-    let previousCapacity = state._encumbranceLevel ?? nearCapacity(state);
-    const reportEncumbrance = async (): Promise<void> => {
-        if (await updateEncumbrance(previousCapacity, state, publish)) pagerOwned = true;
-        previousCapacity = state._encumbranceLevel ?? nearCapacity(state);
-    };
     const loseAttribute = async (target: number, amount: number): Promise<void> => {
         const change = adjustAttribute(target, amount, state);
         if (!change.changed) return;
         state.context.botl = true;
         // adjattrib() calls encumber_msg() before poisontell() during play.
         if (state.program_state.in_moveloop && (target === A_STR || target === A_CON))
-            await reportEncumbrance();
+            await reportHeroEncumbrance(state, line);
         await line(poisonAttributeMessage(target, state));
     };
     const outcome = fatal
@@ -216,7 +195,7 @@ export async function poisonHero({
         deathCause: /poison/iu.test(killer) ? hpDeathCause : `poisoned by ${attributedKiller}`,
     })) return { damage, died: true, pagerOwned };
 
-    await reportEncumbrance();
+    await reportHeroEncumbrance(state, line);
     return {
         damage,
         died: false,

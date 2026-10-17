@@ -5,7 +5,7 @@ import { game, requirePlayingGame } from './gstate.js';
 import { artifactById } from './artifacts.js';
 import { plineWithContinuation } from './display.js';
 import { loseHeroHp } from './hero_damage.js';
-import { encumbranceLabel, encumbranceMessage, nearCapacity } from './weight.js';
+import { reportHeroEncumbrance } from './encumbrance.js';
 import { MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
 import { rn2, rnd } from './rng.js';
 import { propertyIsActive } from './properties.js';
@@ -250,20 +250,6 @@ function accumulateAttributeExercise(attribute, improving, state) {
         hero._exercise[attribute] += amount;
     }
     return true;
-}
-// C pickup.c:encumber_msg() commits oldcap after its message returns. A
-// pager therefore retains the prior load status until the hero dismisses it.
-export async function reportHeroEncumbrance(state = game, publish = plineWithContinuation) {
-    const previous = state._encumbranceLevel ?? 0;
-    const capacity = nearCapacity(state);
-    const message = encumbranceMessage(previous, capacity);
-    if (message)
-        await publish(message);
-    if (previous !== capacity)
-        state.context.botl = true;
-    state._encumbranceLevel = capacity;
-    state.u._encumbrance = encumbranceLabel(capacity);
-    state._capacityDirty = false;
 }
 // C attrib.c:exerchk(). Periodic accumulation runs at the caller's earlier
 // boundary; this owner settles it once the hero's multi-action has ended.

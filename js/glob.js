@@ -1,5 +1,6 @@
 // Glob shrink timers.
 // C refs: mkobj.c start_glob_timeout()/shrink_glob().
+import { reportHeroEncumbrance } from './encumbrance.js';
 import { newsym, plineWithContinuation } from './display.js';
 import { isok } from './const.js';
 import { isIceAt } from './terrain_properties.js';
@@ -9,14 +10,15 @@ import { game, requireLiveGame } from './gstate.js';
 import { formatHeardMessage, formatSeenMessage } from './hero_speech.js';
 import { maybeUnhideAt } from './monster_hiding.js';
 import { reconcileObjectDeletionBill } from './shk.js';
-import { GLOB_OF_BLACK_PUDDING, GLOB_OF_GRAY_OOZE, OBJECT_NAMES, } from './object_data.js';
+import { GLOB_OF_BLACK_PUDDING, GLOB_OF_GRAY_OOZE, } from './object_data.js';
 import { makePlural } from './object_grammar.js';
 import { absorbGlob, mergable } from './object_merge.js';
 import { OBJECT_TIMER_KIND, objectsInTimerGraph, scheduleObjectTimer, stopObjectTimer, } from './object_timers.js';
 import { rn2 } from './rng.js';
 import { cansee } from './vision.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
-import { encumbranceMessage, nearCapacity, objectWeight, } from './weight.js';
+import { nearCapacity, objectWeight, } from './weight.js';
+import { ownedObjectName, objectTypeName } from './objnam.js';
 function isGlobType(otyp) {
     return otyp >= GLOB_OF_GRAY_OOZE && otyp <= GLOB_OF_BLACK_PUDDING;
 }
@@ -55,7 +57,7 @@ export async function announceGlobMerge(first, second, state = game, publish = p
         else if (onFloor || inPack) {
             const adjacent = (first.ox !== state.u.ux || first.oy !== state.u.uy)
                 && (second.ox !== state.u.ux || second.oy !== state.u.uy);
-            await publish(`The ${onFloor && adjacent ? 'adjacent ' : ''}${makePlural(OBJECT_NAMES[first.otyp] || 'glob')} coalesce${inPack ? ' inside your pack' : ''}.`);
+            await publish(`The ${onFloor && adjacent ? 'adjacent ' : ''}${makePlural(objectTypeName(first.otyp, state))} coalesce${inPack ? ' inside your pack' : ''}.`);
         }
     }
     else {
@@ -101,12 +103,6 @@ function scheduleNextGlobAttempt(glob, state, currentTurn, delay = 0) {
 }
 export function startGlobTimeout(glob, state = game, currentTurn = state.moves ?? 0, delay = 0) {
     return scheduleNextGlobAttempt(glob, state, currentTurn, delay);
-}
-function floorGlobName(glob) {
-    const partlyEaten = (glob.oeaten ?? 0) > 0 ? 'partly eaten ' : '';
-    const type = OBJECT_NAMES[glob.otyp] || 'glob';
-    const given = glob.oextra?.oname || glob.oname;
-    return `${partlyEaten}${type}${given ? ` named ${given}` : ''}`;
 }
 function parentContainer(object, state) {
     if (object.container)
@@ -164,11 +160,6 @@ function updateContainerWeights(container, state) {
             ? parentContainer(current, state) : null;
     }
 }
-function objectName(object) {
-    const type = OBJECT_NAMES[object.otyp] || 'object';
-    const given = object.oextra?.oname || object.oname;
-    return `${type}${given ? ` named ${given}` : ''}`;
-}
 function clearHeroEquipment(object, state) {
     const slots = [
         'uwep', 'uswapwep', 'uquiver',
@@ -222,6 +213,20 @@ function activelyEatingGlob(glob, state) {
     return state._occupation?.key === 'eat-food'
         && state.context.victual?.piece === glob;
 }
+// shrink_glob() asks xname to include partly eaten food before reducing its mass.
+function shrinkingGlobName(glob, state) {
+    const previous = state.iflags.partly_eaten_hack;
+    state.iflags.partly_eaten_hack = true;
+    try {
+        return ownedObjectName(glob, state);
+    }
+    finally {
+        if (previous === undefined)
+            delete state.iflags.partly_eaten_hack;
+        else
+            state.iflags.partly_eaten_hack = previous;
+    }
+}
 export function runClaimedGlobTimer(claimed, state = game, currentTurn = state.moves ?? 0) {
     if (!claimed || claimed.timer?.kind !== OBJECT_TIMER_KIND.SHRINK_GLOB)
         return null;
@@ -244,7 +249,7 @@ export function runClaimedGlobTimer(claimed, state = game, currentTurn = state.m
     const x = location?.x ?? 0;
     const y = location?.y ?? 0;
     const ice = globIceState(glob, state);
-    const oldCapacity = updatesHeroInventory ? nearCapacity(state) : null;
+    const oldCapacity = state._encumbranceLevel ?? 0;
     const deadline = claimed.timer.deadline;
     if (deadline < currentTurn && ice !== 'buried') {
         const missedShrinks = Math.trunc((currentTurn - deadline + 24) / 25);
@@ -281,7 +286,7 @@ export function runClaimedGlobTimer(claimed, state = game, currentTurn = state.m
             delta: 0, gone: false, message: null,
         };
     }
-    const name = floorGlobName(glob);
+    const name = shrinkingGlobName(glob, state);
     const oldTopWeight = containerInInventory ? objectWeight(outer) : null;
     const shrinkThreshold = glob.owt > 0 && glob.owt % 10 === 0;
     if (glob.owt > 0) {
@@ -294,7 +299,7 @@ export function runClaimedGlobTimer(claimed, state = game, currentTurn = state.m
         updateContainerWeights(container, state);
     let message = null;
     if (inInventory && (shrinkThreshold || gone)) {
-        message = `Your ${name} ${gone ? 'dissolves completely' : 'shrinks'}.`;
+        message = `${name} ${gone ? 'dissolves completely' : 'shrinks'}.`;
     }
     else if (containerInInventory) {
         const newTopWeight = outer.owt;
@@ -304,15 +309,13 @@ export function runClaimedGlobTimer(claimed, state = game, currentTurn = state.m
             || newCapacity !== oldCapacity) {
             const change = newTopWeight !== oldTopWeight
                 ? 'becomes' : 'seems';
-            message = `Your ${objectName(outer)} ${change}${gone ? '' : ' slightly'} lighter.`;
+            message = `${ownedObjectName(outer, state)} ${change}${gone ? '' : ' slightly'} lighter.`;
         }
     }
     if (updatesHeroInventory) {
-        if (oldCapacity === null)
-            throw new Error('A carried glob requires its previous encumbrance');
         return {
             glob, x, y, carrier, overdue: false, delta: 1,
-            shrinkThreshold, gone, message, oldCapacity,
+            shrinkThreshold, gone, message,
             finishPending: true,
         };
     }
@@ -321,9 +324,9 @@ export function runClaimedGlobTimer(claimed, state = game, currentTurn = state.m
         deleteGlob(glob, state);
         if (visible) {
             newsym(x, y);
-            const article = x === state.u?.ux && y === state.u?.uy
-                ? 'The' : 'A';
-            message = `${article} ${name} fades away.`;
+            const subject = x !== state.u.ux || y !== state.u.uy
+                ? name.replace(/^The /u, 'A ') : name;
+            message = `${subject} fades away.`;
         }
     }
     else {
@@ -334,18 +337,16 @@ export function runClaimedGlobTimer(claimed, state = game, currentTurn = state.m
         shrinkThreshold, gone, message,
     };
 }
-export function finishGlobTimer(event, state = game, currentTurn = state.moves ?? 0) {
+export async function finishGlobTimer(event, state = game, currentTurn = state.moves ?? 0, publish = plineWithContinuation) {
     if (!event?.finishPending || !event.glob)
         return event;
     if (event.gone)
         deleteGlob(event.glob, state);
     else
         scheduleNextGlobAttempt(event.glob, state, currentTurn);
-    const newCapacity = nearCapacity(state);
-    event.followupMessage = encumbranceMessage(event.oldCapacity, newCapacity) || null;
-    event.newCapacity = newCapacity;
     event.finishPending = false;
     event.finished = true;
+    await reportHeroEncumbrance(state, publish);
     return event;
 }
 //# sourceMappingURL=glob.js.map

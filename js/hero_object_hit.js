@@ -1,4 +1,5 @@
 // C mthrowu.c:thitu(). Polearms and thrown weapons share this hit rule.
+import { objectMaterial } from './object_material.js';
 import { exerciseAttribute } from './attrib.js';
 import { A_CON, A_STR } from './const.js';
 import { plineWithContinuation } from './display.js';
@@ -7,7 +8,7 @@ import { game, requirePlayingGame } from './gstate.js';
 import { loseHeroHp } from './hero_damage.js';
 import { heroHatesSilver, heroSpecies } from './hero_species.js';
 import { MONSTER_FLAGS1 } from './monster_data.js';
-import { ACID_VENOM, OBJECT_MATERIAL } from './object_data.js';
+import { ACID_VENOM } from './object_data.js';
 import { rnd } from './rng.js';
 import { heroIsBlind } from './senses.js';
 import { verbForSubject, withIndefiniteArticle } from './object_grammar.js';
@@ -57,7 +58,7 @@ export async function hitHeroWithObject(object, damage, accuracy, { state = game
     const punctuation = damage > 4 ? '!' : '.';
     await publish(terse ? `You are hit${punctuation}`
         : `You are hit by ${description}${punctuation}`);
-    const material = OBJECT_MATERIAL[object.otyp];
+    const material = objectMaterial(object.otyp);
     const flags = MONSTER_FLAGS1[heroSpecies(state)] ?? 0;
     const passesRocks = (flags & M1_WALLWALK) && !(flags & M1_UNSOLID);
     if (object.otyp === ACID_VENOM

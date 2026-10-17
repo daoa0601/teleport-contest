@@ -1,6 +1,7 @@
 import { formatFeltMessage } from './hero_speech.js';
 // C potion.c: bodily quaff effects. The drink transaction owns the bottle.
-import { adjustAttribute, exerciseAttribute, reportHeroEncumbrance } from './attrib.js';
+import { adjustAttribute, exerciseAttribute } from './attrib.js';
+import { reportHeroEncumbrance } from './encumbrance.js';
 import { heroFaceName } from './body_parts.js';
 import { A_CON, A_MAX, A_STR, A_WIS, POLY_CONTROLLED, POLY_LOW_CTRL, POLY_NOFLAGS } from './const.js';
 import { displayLiquidName, plineWithContinuation } from './display.js';

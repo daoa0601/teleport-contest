@@ -9,7 +9,7 @@ import { dropObjectAtHero, hitFloorWithObject } from './object_drop.js';
 import { landObjectOnAltar } from './altar_object.js';
 import { ALTAR } from './const.js';
 import { inventoryItemDescription } from './invent.js';
-import { reportHeroEncumbrance } from './attrib.js';
+import { reportHeroEncumbrance } from './encumbrance.js';
 import { surfaceName } from './terrain_name.js';
 import { mkobj, rndClass } from './mklev.js';
 import { consumeObjectCharge } from './object_charge.js';

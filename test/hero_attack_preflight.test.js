@@ -165,14 +165,14 @@ void test('declining a peaceful attack does not spend the action', async () => {
     assert.deepEqual(result, { proceed: false, spentTime: false });
     assert.equal((monster.mstrategy ?? 0) & STRAT_WAITMASK, 0);
 });
-void test('peaceful confirmation names a tame target as yours', async () => {
+void test('peaceful confirmation uses the definite article for a tame target', async () => {
     freshObjectRoom({ flags: { verbose: true, confirm: true } });
     requireFixtureGame(game);
     const monster = await target({ mpeaceful: 1, mtame: 5 });
     pushKeys('n');
     const result = await prepareAppliedWeaponAttack(monster, null);
     assert.deepEqual(result, { proceed: false, spentTime: false });
-    assert.match(game._last_message, /Really attack your giant ant\?/);
+    assert.match(game._last_message, /Really attack the giant ant\?/);
 });
 void test('forcefight bypasses discovery and peaceful confirmation', async () => {
     freshObjectRoom({
