@@ -405,13 +405,8 @@ contained halves that share one chain rejoin. As a result, cancelling a
 royal-jelly rub from a stack loses the freed lump, as it does natively.
 Floor sacrifices now use `useupf()` (`delobj()`'s `obj_resists()` roll).
 Container take-out never splits a loadstone. Eval and public results, both
-ledgers, and the state oracle (`split-after`) are unchanged. Open source gaps
-nearby:
-- Grappling hook and bullwhip snag through a simplified pickup. Native
-  `pickup_object()` runs `lift_object()` on the whole stack before splitting.
-- Kicked objects lack the "Whee!" slide message and the gold-scatter branch.
-- `useupf()` re-hides a hiding hero; the port only unhides.
-- Hero gold has its own split (`detachHeroGold()`), outside this helper.
+ledgers, and the state oracle (`split-after`) are unchanged. Open source gap
+nearby: hero gold has its own split (`detachHeroGold()`), outside this helper.
 
 The remaining HP-clamping hero-damage sites now go through `loseHeroHp()`
 with native killers and formats: sitting on a spike or in/on lava, falling
