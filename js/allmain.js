@@ -2950,7 +2950,6 @@ async function presentMonsterAttackEffects(action, game, { random = rn2, rollDic
 // Trap, door, tunneling, and hiding feedback belongs to postmov(), before
 // returning to either dochug() or the hero's out-of-sequence movement caller.
 async function presentMonsterPostMove(action, game) {
-    const monster = action.monster;
     let movement = action.movement;
     // C postmov() repaints the old square before mintrap(), but delays
     // the destination newsym() until the trap's message has returned.
@@ -2976,8 +2975,6 @@ async function presentMonsterPostMove(action, game) {
         if ('heroDied' in event && event.heroDied)
             return true;
         movement = action.movement;
-        if ('seeSquare' in event && event.seeSquare && event.kind !== 'vibrating-square')
-            newsym(event.trap.tx, event.trap.ty);
     }
     if (deferredTrapDestination && !movement.postMoveDestinationPainted)
         newsym(movement.x, movement.y);
