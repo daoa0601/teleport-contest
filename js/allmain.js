@@ -1433,8 +1433,11 @@ async function advanceWorldTurn() {
         return;
     // Native find_ac() follows the elapsed-turn loop.  setworn() is already
     // live for effects, but the first donning cadence frame still shows the
-    // prior AC; the next automatic core observes the recomputed value.
-    if (game._armorClassDirtyAfterDelayedFrame && !game._delayedAction?.ready) {
+    // prior AC; the next automatic core observes the recomputed value.  A
+    // slowed hero stays inside moveloop_core()'s movement loop, without
+    // reaching find_ac(), until a turn grants a full movement ration.
+    if (game._armorClassDirtyAfterDelayedFrame && !game._delayedAction?.ready
+        && game.u.umovement >= NORMAL_SPEED) {
         findArmorClass(game);
         game._armorClassDirty = false;
         delete game._armorClassDirtyAfterDelayedFrame;
