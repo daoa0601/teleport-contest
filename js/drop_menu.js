@@ -28,7 +28,11 @@ export async function dropMultipleObjects() {
         const style = game.flags.menu_style ?? MENU_FULL;
         let matches = (_object) => true;
         if (style === MENU_TRADITIONAL || style === MENU_COMBINATION) {
-            const selected = await traditionalDropCategories(style === MENU_COMBINATION);
+            // ggetobj() returns 0 for Escape. doddrop() stops there, but
+            // menu_drop() continues to its item menu with no class filter.
+            const selected = await traditionalDropCategories(style === MENU_COMBINATION)
+                ?? (style === MENU_COMBINATION
+                    ? { categories: [], all: false, menu: false, requireUnpaid: false } : null);
             if (!selected)
                 return ECMD_OK;
             matches = object => matchesCategories(object, selected.categories);

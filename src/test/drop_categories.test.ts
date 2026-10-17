@@ -189,3 +189,32 @@ for (const [response, paranoia] of [['', PARANOID_AUTOALL], ['m', 0]] as const) 
         assert.equal(game.context.move, 1);
     });
 }
+
+// do.c:menu_drop() ignores ggetobj()'s Escape result; allow_category() then
+// admits every item when paranoid_confirm:A is set.
+void test('escaping the combination drop categories still offers every item with Autoall enabled', async () => {
+    freshObjectRoom({ flags: { menu_style: MENU_COMBINATION, paranoia_bits: PARANOID_AUTOALL, verbose: false } });
+    const dagger = await addInventoryObject(DAGGER);
+    resetInputState().feed(`\x1b${dagger.invlet}\n`);
+
+    await rhack('D'.charCodeAt(0));
+
+    assert.equal(dagger.where, 'floor');
+    assert.equal(game.context.move, 1);
+});
+
+void test('escaping the combination drop categories drops nothing when Autoall is disabled', async () => {
+    freshObjectRoom({ flags: { menu_style: MENU_COMBINATION, paranoia_bits: 0 } });
+    const dagger = await addInventoryObject(DAGGER);
+    const input = resetInputState();
+    input.feed('\x1b');
+
+    await rhack('D'.charCodeAt(0));
+
+    assert.equal(dagger.where, 'inventory');
+    assert.equal(game.context.move, 0);
+    const startX = game.u.ux;
+    input.feed('l');
+    await rhack(0);
+    assert.equal(game.u.ux, startX + 1, 'the next key remains a movement command');
+});
