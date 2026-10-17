@@ -224,12 +224,16 @@ void test('destroy armor erodes worn armor through grease', async () => {
     requirePlayingGame(game);
     const armor = await wornArmor(RING_MAIL, { greased: true });
     const scroll = await addInventoryObject(SCR_DESTROY_ARMOR);
+    const before = findArmorClass();
     armorEffectInput();
 
     const result = await applyArmorScrollEffect(scroll);
 
     assert.ok(armor.oeroded !== undefined && armor.oeroded !== null, 'Expected armor.oeroded to be initialized');
     assert.ok(armor.oeroded > 0 || armor.where === 'gone');
+    // destroy_arm() leaves u.uac to moveloop_core()'s find_ac().
+    assert.equal(game.u.uac, before);
+    assert.ok(findArmorClass() > before);
     assert.ok(armor.greased);
     assert.ok(result.known);
     assert.equal(result.consumed, false);
