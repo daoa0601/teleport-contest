@@ -436,6 +436,22 @@ void test('a monster drops a corpse when it revives from its pack', async () => 
     assert.equal(carrier.minvent?.includes(corpse), false);
 });
 
+void test('revival in an unseen carrier sack does not reveal the sack appearance', async () => {
+    freshState();
+    const carrier = await createMonsterAt(PM_LEOCROTTA, 12, 10);
+    carrier.minvis = 1;
+    const sack = await knownObject(SACK, { initialize: false, dknown: false });
+    await addObjectToMonsterInventory(carrier, sack, game);
+    const corpse = await trollCorpse();
+    await addCreatedObjectToContainer(sack, corpse, game);
+
+    const event = await reviveCorpseImmediately(corpse, game);
+
+    assert.ok(event?.monster, 'the corpse revives despite its unseen carrier');
+    assert.equal(event.messages.length, 0, 'the hidden sack produces no revival message');
+    assert.equal(sack.dknown, false, 'an unseen sack keeps its appearance unknown');
+});
+
 void test('a buried troll corpse claws out through a new pit', async () => {
     freshState();
     requirePlayingGame(game);

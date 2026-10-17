@@ -149,11 +149,14 @@ function revivalMessage(corpse, monster, location, originalWhere, wasWielded, st
         if (location.monsterCarrier
             && canSeeMonster(location.monsterCarrier))
             return `${revived} writhes out of ${ownedObjectName(container, state, { capitalized: false })}!`;
-        const description = withIndefiniteArticle(objectCombatName(container, { state, includeCorpseSpecies: false }));
-        if (outer.where === 'inventory')
+        if (outer.where === 'inventory') {
+            const description = withIndefiniteArticle(objectCombatName(container, { state, includeCorpseSpecies: false }));
             return `${revived} writhes out of ${description} in your pack!`;
-        if (outer.where === 'floor' && cansee(location.x, location.y))
+        }
+        if (outer.where === 'floor' && cansee(location.x, location.y)) {
+            const description = withIndefiniteArticle(objectCombatName(container, { state, includeCorpseSpecies: false }));
             return `${revived} escapes from ${description}!`;
+        }
     }
     return null;
 }

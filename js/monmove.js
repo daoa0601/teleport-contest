@@ -6623,7 +6623,6 @@ export async function resumeDeferredMonsterTrap(action, state, { random = rn2, r
             await finishMonsterVibratingSquare(action.monster, event, {
                 state,
                 publish,
-                ...(describeMonster ? { describeMonster } : {}),
             });
             break;
         case 'polymorph-trap':

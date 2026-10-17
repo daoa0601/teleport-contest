@@ -8004,7 +8004,6 @@ export async function resumeDeferredMonsterTrap(
             await finishMonsterVibratingSquare(action.monster, event, {
                 state,
                 publish,
-                ...(describeMonster ? { describeMonster } : {}),
             });
             break;
         case 'polymorph-trap':

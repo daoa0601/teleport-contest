@@ -28,7 +28,6 @@ export interface MonsterVibratingSquareEvent {
 interface FinishTrapOptions {
     state?: GameState;
     publish?: MessagePublisher;
-    describeMonster?: (monster: Monster) => string;
 }
 
 function possessive(subject: string) {
@@ -59,7 +58,6 @@ export async function finishMonsterVibratingSquare(
     {
         state = game,
         publish = async () => {},
-        describeMonster = target => monsterName(target, { state }),
     }: FinishTrapOptions = {},
 ) {
     if (!event || event.finished) return event;
@@ -68,7 +66,7 @@ export async function finishMonsterVibratingSquare(
     if (!event.inSight) {
         await publish(formatSeenMessage(`the ground vibrate ${event.nearby ? 'nearby' : 'in the distance'}.`));
     } else {
-        const subject = describeMonster(monster);
+        const subject = monsterName(monster, { state });
         const location = event.wholeBody
             ? subject
             : `${possessive(subject)} ${makePlural(

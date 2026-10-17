@@ -24,7 +24,7 @@ export function beginMonsterVibratingSquare(monster, trap, state = game) {
         ...visibility,
     };
 }
-export async function finishMonsterVibratingSquare(monster, event, { state = game, publish = async () => { }, describeMonster = target => monsterName(target, { state }), } = {}) {
+export async function finishMonsterVibratingSquare(monster, event, { state = game, publish = async () => { }, } = {}) {
     if (!event || event.finished)
         return event;
     seeTrap(event.trap, state);
@@ -32,7 +32,7 @@ export async function finishMonsterVibratingSquare(monster, event, { state = gam
         await publish(formatSeenMessage(`the ground vibrate ${event.nearby ? 'nearby' : 'in the distance'}.`));
     }
     else {
-        const subject = describeMonster(monster);
+        const subject = monsterName(monster, { state });
         const location = event.wholeBody
             ? subject
             : `${possessive(subject)} ${makePlural(monsterFootName(monster.mnum).replace(/^rear /u, ''))}`;
