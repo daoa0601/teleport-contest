@@ -36,10 +36,6 @@ export function currentMulti(state: GameState = game): number {
 export function setMulti(value: number, state: GameState = game): void {
     state.multi = value;
     state._helplessTurns = Math.max(0, -value);
-    const dressing = state._delayedAction;
-    if (dressing && dressing.kind !== 'steal') {
-        dressing.ready = value === 0;
-    }
 }
 
 // C hack.c:nomul(). Caller-owned reasons and recovery messages follow this

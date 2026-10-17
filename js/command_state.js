@@ -31,10 +31,6 @@ export function currentMulti(state = game) {
 export function setMulti(value, state = game) {
     state.multi = value;
     state._helplessTurns = Math.max(0, -value);
-    const dressing = state._delayedAction;
-    if (dressing && dressing.kind !== 'steal') {
-        dressing.ready = value === 0;
-    }
 }
 // C hack.c:nomul(). Caller-owned reasons and recovery messages follow this
 // call even when a longer existing delay makes it return early.

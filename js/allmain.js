@@ -1522,6 +1522,10 @@ export async function finishHeroHelplessness(messageOverride, state = game) {
         ? state._delayedAction : null;
     if (armorTheft)
         state._delayedAction = null;
+    // Dressing finishes through unmul's afternmv, not a direct multi = 0.
+    const dressing = state._delayedAction;
+    if (dressing && dressing.kind !== 'steal')
+        dressing.ready = true;
     // C eat.c:Hear_again() runs after unmul() has delivered nomovemsg.
     // Keep it after the awaited tty continuation: if the rotten-food
     // message fills the topline, the acknowledgement resumes here before
@@ -3538,7 +3542,7 @@ export async function moveloop_core() {
         findArmorClass(g);
         g._armorClassDirty = false;
     }
-    if (g._delayedAction && g._delayedAction.kind !== 'steal') {
+    if (currentMulti(g) < 0 && g._delayedAction && g._delayedAction.kind !== 'steal') {
         // A delayed action spends movement without reading another command.
         g.u.umoved = false;
         g.context.move = 1;

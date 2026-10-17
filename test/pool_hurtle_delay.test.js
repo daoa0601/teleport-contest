@@ -1,13 +1,18 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { moveloop_core } from '../js/allmain.js';
+import { wearHeroArmor } from '../js/armor.js';
 import { heroHasInvoluntaryDelay } from '../js/command_state.js';
 import { POOL, TT_WEB } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { hurtleHero } from '../js/hero_hurtle.js';
 import { putHeroToSleep } from '../js/hero_sleep.js';
 import { resetInputState } from '../js/input.js';
+import { SPEED_BOOTS } from '../js/object_data.js';
+import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
-import { installPagerInput } from './support/pager-input.js';
+import { finishAtCommandInput, installPagerInput } from './support/pager-input.js';
+import { freshTurnRoom } from './support/playable-room.js';
 void test('forced hurtling preserves the voluntary movement state and its starting square', async () => {
     freshObjectRoom({ right: 20 });
     game.u.umoved = false;
@@ -54,5 +59,39 @@ void test('hurtling into water releases a swimming hero from the movement delay'
     assert.equal(game.u.ux, 11);
     assert.equal(game.u.uinwater, 1);
     assert.equal(heroHasInvoluntaryDelay(), false);
+});
+void test('hurtling into water allows input without finishing boots that are still being donned', async () => {
+    const input = freshTurnRoom({ hero: { swimming: true } });
+    const level = game.level;
+    assert.ok(level);
+    level.requireAt(11, 10).typ = POOL;
+    const boots = await addInventoryObject(SPEED_BOOTS, { known: false, typeKnown: false });
+    installPagerInput(input, { expected: /./, limit: 20 });
+    input.feed(`W${boots.invlet}`);
+    await moveloop_core();
+    assert.equal(boots.known, false);
+    await hurtleHero(1, 0, 1);
+    await finishAtCommandInput(input, () => moveloop_core(), /.*/);
+    assert.equal(game.u.uinwater, 1);
+    assert.equal(game.uarmf, boots);
+    assert.equal(boots.known, false, 'Clearing the hurtle delay must not complete Boots_on()');
+    assert.equal(boots.typeKnown, false);
+});
+void test('hurtling into water allows input without finishing removal of boots', async () => {
+    const input = freshTurnRoom({ hero: { swimming: true } });
+    const level = game.level;
+    assert.ok(level);
+    level.requireAt(11, 10).typ = POOL;
+    const boots = await addInventoryObject(SPEED_BOOTS);
+    wearHeroArmor(boots);
+    installPagerInput(input, { expected: /./, limit: 20 });
+    input.feed(`T${boots.invlet}`);
+    await moveloop_core();
+    assert.equal(game.uarmf, boots);
+    await hurtleHero(1, 0, 1);
+    await finishAtCommandInput(input, () => moveloop_core(), /.*/);
+    assert.equal(game.u.uinwater, 1);
+    assert.equal(game.uarmf, boots, 'Clearing the hurtle delay must not complete Boots_off()');
+    assert.equal(boots.worn, true);
 });
 //# sourceMappingURL=pool_hurtle_delay.test.js.map
