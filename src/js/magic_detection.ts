@@ -10,7 +10,7 @@ import { exerciseWisdom } from './attrib.js';
 import { heroFootName, heroNoseName } from './body_parts.js';
 import {
     displaySelf, docrt, flushPendingTopline, glyphAt, map_object, newsym,
-    pline, unmapObject,
+    plineWithContinuation as pline, unmapObject,
 } from './display.js';
 import { game, requireLiveGame } from './gstate.js';
 import {

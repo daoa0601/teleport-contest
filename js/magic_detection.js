@@ -5,7 +5,7 @@ import { currency } from './currency.js';
 import { COLNO, ROWNO, M_AP_OBJECT, M_AP_TYPE, TER_DETECT, TER_MON, TER_OBJ, } from './const.js';
 import { exerciseWisdom } from './attrib.js';
 import { heroFootName, heroNoseName } from './body_parts.js';
-import { displaySelf, docrt, flushPendingTopline, glyphAt, map_object, newsym, pline, unmapObject, } from './display.js';
+import { displaySelf, docrt, flushPendingTopline, glyphAt, map_object, newsym, plineWithContinuation as pline, unmapObject, } from './display.js';
 import { game, requireLiveGame } from './gstate.js';
 import { browseDetectionMap, clearDetectionMap, mapDetectedMonster, redisplayDetectionMap, unconstrainMap, } from './magic_map_display.js';
 import { MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
