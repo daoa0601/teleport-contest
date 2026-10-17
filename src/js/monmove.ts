@@ -8852,6 +8852,20 @@ export async function runMonsterAction(
         if (conflictFight?.heroDied || conflictFight?.consumed)
             return { monster, calls, conflictFight };
     }
+    return beginMonsterDochug(monster, state, random, rollDice, rollOne);
+}
+
+// C monmove.c:dochug(), without movemon_singlemon()'s hiding and Conflict checks.
+// Direct callers such as shop entry do not spend a scheduled movement ration.
+export async function beginMonsterDochug(
+    monster: Monster,
+    state: PlayingGameState,
+    random: RandomBelow = rn2,
+    rollDice: RollDice = d,
+    rollOne: RollOne = rnd,
+): Promise<MonsterMovementAction> {
+    const calls = DISCARDED_CALL_LOG;
+    const nextToHero = distmin(monster.mx, monster.my, state.u.ux, state.u.uy) <= 1;
     // C m_arrival() always clears arrival, even for an inactive monster.
     monster.mstrategy = (monster.mstrategy ?? 0) & ~STRAT_ARRIVE;
     // monmove.c:dochug() checks the strategy wait mask before ordinary
@@ -8903,7 +8917,6 @@ export async function runMonsterAction(
             },
         };
     }
-    // movemon_singlemon() has already debited this actor's movement.
     // dochug() gives a movable sleeper one source-ordered disturbance
     // attempt before returning ahead of set_apparxy()/distfleeck().
     if (monster.msleeping) {
