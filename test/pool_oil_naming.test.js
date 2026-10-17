@@ -1,8 +1,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { game } from '../js/gstate.js';
+import { A_WIS } from '../js/const.js';
+import { game, requirePlayingGame } from '../js/gstate.js';
 import { igniteItems } from '../js/light.js';
 import { POT_OIL } from '../js/object_data.js';
+import { initRng } from '../js/rng.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
 import { objectTypeKnown } from '../js/shk.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
@@ -53,5 +55,18 @@ void test('unseen ignition does not reveal a potion appearance', async () => {
     assert.equal(messages.length, 0);
     assert.equal(potion.dknown, false);
     assert.equal(potion.lamplit, true);
+});
+void test('igniting more oil credits Wisdom only for the first discovery', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    const first = await floorObject(POT_OIL, 11, 10, { typeKnown: false });
+    const second = await floorObject(POT_OIL, 12, 10, { typeKnown: false });
+    game.u.acurr.a[A_WIS] = 3;
+    initRng(1n);
+    await igniteItems([first], { visible: false });
+    assert.equal(game.u._exercise?.[A_WIS], 1, 'the first oil discovery must exercise Wisdom');
+    await igniteItems([second], { visible: false });
+    assert.equal(second.lamplit, true);
+    assert.equal(game.u._exercise?.[A_WIS], 1, 'known oil must not grant another discovery credit');
 });
 //# sourceMappingURL=pool_oil_naming.test.js.map
