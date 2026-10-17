@@ -1871,7 +1871,7 @@ function displayMonsterAtCell(monster, x, y, projection) {
     else {
         const tailGlyph = projection.wormTail ? displayMonsterGlyph(PM_LONG_WORM_TAIL) : null;
         showMonsterOrWarning(x, y, {
-            ch: tailGlyph?.ch || monster.symbol || '?',
+            ch: (tailGlyph ?? displayMonsterGlyph(monster.mnum)).ch,
             color: tailGlyph ? tailGlyph.color
                 : monster.mnum === 102 ? NO_COLOR
                     : monster.mnum === 100 || monster.mnum === 239 ? CLR_BROWN

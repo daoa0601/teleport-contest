@@ -134,6 +134,35 @@ void test('cursed monster detection wakes sleeping and frozen actors without mak
     assert.equal(frozen.mcanmove, 1);
     assert.equal(!!game.u.detectMonsters, false);
 });
+// C detect.c monster_detect(): the wake-up warning is a separate pline, so
+// tty pauses on the first message when both cannot share the top line.
+void test('cursed monster detection pauses before warning that monsters sensed the hero', async () => {
+    detectionRoom({ right: 40 });
+    requirePlayingGame(game);
+    const sleeper = await createMonsterAt('newt', 30, 10);
+    sleeper.msleeping = 1;
+    const gate = new InputGate();
+    bindInputGate(gate);
+    const effect = detectMonsters(await uninitializedObject(POT_MONSTER_DETECTION, { cursed: true }));
+    const toplines = [];
+    try {
+        for (let pages = 0; pages < 4; pages++) {
+            await gate.waitUntilBlocked();
+            toplines.push(requireGameDisplay().grid[0]?.map(cell => cell.ch).join('').trim() ?? '');
+            if (toplines.at(-1)?.includes('For instructions'))
+                break;
+            gate.feed(' ');
+        }
+    }
+    finally {
+        gate.feed('.');
+        await effect;
+    }
+    assert.deepEqual(toplines.slice(0, 2), [
+        'You sense the presence of monsters.--More--',
+        "Monsters sense the presence of you.  (For instructions type a '?')",
+    ]);
+});
 void test('monster detection keeps its map and suspension until browsing has finished', async () => {
     const level = detectionRoom({ right: 40 });
     requirePlayingGame(game);
