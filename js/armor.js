@@ -1,5 +1,6 @@
 // armor.js — Hero armor-class projection.
 // C refs: do_wear.c find_ac() and hack.h ARM_BONUS().
+import { objectMaterial } from './object_material.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { heroDetectsMonsters, heroIsBlind, heroIsHallucinating } from './senses.js';
 import { makeHallucinated } from './hero_mental_status.js';
@@ -28,7 +29,7 @@ import { artifactEmitsLight, heroHasArtifactDefense } from './artifacts.js';
 import { setWornArtifactProperties } from './artifact_properties.js';
 import { heroResistsLifeDrain } from './monster_resistance.js';
 import { beginObjectBurn, endObjectBurn, equipmentLightDescription, equipmentLightMessage } from './light.js';
-import { AMULET_OF_GUARDING, ALCHEMY_SMOCK, CLOAK_OF_DISPLACEMENT, CLOAK_OF_PROTECTION, CORPSE, CORNUTHAUM, DUNCE_CAP, ELVEN_BOOTS, ELVEN_CLOAK, GAUNTLETS_OF_FUMBLING, GAUNTLETS_OF_POWER, HELM_OF_OPPOSITE_ALIGNMENT, MUMMY_WRAPPING, FEDORA, FUMBLE_BOOTS, LEVITATION_BOOTS, RIN_FREE_ACTION, RIN_PROTECTION, GRAY_DRAGON_SCALE_MAIL, GRAY_DRAGON_SCALES, YELLOW_DRAGON_SCALE_MAIL, YELLOW_DRAGON_SCALES, SHIELD_OF_DRAIN_RESISTANCE, SHIELD_OF_REFLECTION, OBJECT_DESCRIPTIONS, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_PROPERTY, WATER_WALKING_BOOTS, } from './object_data.js';
+import { AMULET_OF_GUARDING, ALCHEMY_SMOCK, CLOAK_OF_DISPLACEMENT, CLOAK_OF_PROTECTION, CORPSE, CORNUTHAUM, DUNCE_CAP, ELVEN_BOOTS, ELVEN_CLOAK, GAUNTLETS_OF_FUMBLING, GAUNTLETS_OF_POWER, HELM_OF_OPPOSITE_ALIGNMENT, MUMMY_WRAPPING, FEDORA, FUMBLE_BOOTS, LEVITATION_BOOTS, RIN_FREE_ACTION, RIN_PROTECTION, GRAY_DRAGON_SCALE_MAIL, GRAY_DRAGON_SCALES, YELLOW_DRAGON_SCALE_MAIL, YELLOW_DRAGON_SCALES, SHIELD_OF_DRAIN_RESISTANCE, SHIELD_OF_REFLECTION, OBJECT_DESCRIPTIONS, OBJECT_NAMES, OBJECT_PROPERTY, WATER_WALKING_BOOTS, } from './object_data.js';
 import { rn2, rnd } from './rng.js';
 import { changeHeroAlignmentFromHelmet } from './alignment.js';
 import { currentAttribute } from './attrib.js';
@@ -409,7 +410,7 @@ export async function clearHeroArmor(object, state = game, { cancelledDon = stat
 export function objectIsHardHelmet(object) {
     if (!object || armorSlotFor(object.otyp) !== 'uarmh')
         return false;
-    const material = OBJECT_MATERIAL[object.otyp] ?? 0;
+    const material = objectMaterial(object.otyp);
     return material >= IRON && material <= MITHRIL || material === GLASS;
 }
 export function wornArmorInDestroyOrder(state = game) {
@@ -484,7 +485,7 @@ export async function erodeWornArmor(state = game) {
     return damaged;
 }
 export function objectErosionKind(object) {
-    const material = OBJECT_MATERIAL[object.otyp];
+    const material = objectMaterial(object.otyp);
     if ((material !== undefined && material <= 8 && material !== 1) || material === 18)
         return { field: 'oeroded', action: 'smoulder' };
     if (material === 11)

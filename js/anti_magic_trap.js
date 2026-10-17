@@ -1,5 +1,6 @@
 // Anti-magic trap effects.
 // C ref: trap.c trapeffect_anti_magic().
+import { objectMaterial } from './object_material.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { finishMonsterKilled } from './monster_death.js';
 import { heroHasHalfSpellDamage } from './spell_damage.js';
@@ -9,7 +10,7 @@ import { plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
 import { loseHeroHp } from './hero_damage.js';
 import { drainHeroEnergy } from './hero_energy.js';
-import { CLOAK_OF_MAGIC_RESISTANCE, GRAY_DRAGON_SCALE_MAIL, GRAY_DRAGON_SCALES, OBJECT_MATERIAL, OBJECT_NAMES, } from './object_data.js';
+import { CLOAK_OF_MAGIC_RESISTANCE, GRAY_DRAGON_SCALE_MAIL, GRAY_DRAGON_SCALES, OBJECT_NAMES, } from './object_data.js';
 import { AD_MAGM, AD_RBRE, AT_BREA, AT_MAGC } from './monster_attack_types.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_NAME, monsterTypeName, } from './monster_data.js';
 import { heroFormFlags, heroIsPolymorphed } from './polyself.js';
@@ -157,11 +158,11 @@ export function monsterHasMagicResistance(monster) {
     });
 }
 export function monsterWornIronShoes(monster) {
-    return monsterInventory(monster).find((object) => OBJECT_MATERIAL[object?.otyp] === IRON && !!((object?.owornmask ?? 0) & W_ARMF));
+    return monsterInventory(monster).find((object) => objectMaterial(object?.otyp) === IRON && !!((object?.owornmask ?? 0) & W_ARMF));
 }
 function ironShoes() {
     const shoes = heroObject('uarmf');
-    return shoes && OBJECT_MATERIAL[shoes.otyp] === IRON ? shoes : null;
+    return shoes && objectMaterial(shoes.otyp) === IRON ? shoes : null;
 }
 function objectName(object, fallback) {
     return object?.name || OBJECT_NAMES[object?.otyp] || fallback;

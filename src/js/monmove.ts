@@ -1,4 +1,5 @@
 import { formatFeltMessage, publishHeardMessage } from './hero_speech.js';
+import { objectMaterial } from './object_material.js';
 import { moveMonsterNextToHero } from './teleport.js';
 import { monsterFireDescription } from './monster_fire_description.js';
 import { bot } from './display.js';
@@ -327,7 +328,6 @@ import {
     BATTLE_AXE,
     DART,
     IRON_SHOES,
-    OBJECT_MATERIAL,
     OBJECT_BIMANUAL,
     OBJECT_LARGE_DAMAGE,
     OBJECT_NAMES,
@@ -948,7 +948,7 @@ async function useMonsterMiscItem(
     const naturalForm = (monster.cham ?? -1) < 0;
     if (!stuck && MONSTER_MOVE[monster.mnum] && !monster.mtrapped && naturalForm && weak
         && !inventory.some(object => !!((object.owornmask ?? 0) & W_ARMF)
-            && OBJECT_MATERIAL[object.otyp] === IRON)) {
+            && objectMaterial(object.otyp) === IRON)) {
         for (let x = monster.mx - 1; x <= monster.mx + 1; x++) {
             for (let y = monster.my - 1; y <= monster.my + 1; y++) {
                 if (!isok(x, y) || x === heroX && y === heroY
@@ -7869,7 +7869,6 @@ export async function resumeDeferredMonsterTrap(
         rollDice = d,
         rollOne = rnd,
         publish = plineWithContinuation,
-        monsterName,
         describeMonster,
         finishDeath = (monster: Monster, options?: MonsterDeathOptions) =>
             finishEnvironmentalMonsterDeath(monster, state, options),
@@ -7981,7 +7980,6 @@ export async function resumeDeferredMonsterTrap(
                 publish,
                 random: recordedRandom,
                 rollOne: recordedRollOne,
-                ...(monsterName ? { monsterName } : {}),
                 ...(describeMonster ? { describeMonster } : {}),
             });
             break;
@@ -7999,7 +7997,6 @@ export async function resumeDeferredMonsterTrap(
             await finishMonsterRockTrap(action.monster, event, state, {
                 publish,
                 random,
-                ...(monsterName ? { monsterName } : {}),
                 ...(describeMonster ? { describeMonster } : {}),
             });
             break;

@@ -3242,7 +3242,6 @@ async function presentMonsterPostMove(
         if (!event) throw new Error('Deferred monster trap requires its event.');
         await resumeDeferredMonsterTrap(action, game, {
             publish: plineWithContinuation,
-            monsterName: quietMonsterName,
             describeMonster: visibleMonsterSubject,
         });
         if ('heroDied' in event && event.heroDied) return true;

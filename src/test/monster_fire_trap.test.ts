@@ -11,7 +11,7 @@ import {
 } from '../js/monmove.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { initializeMonsterArmor } from '../js/monworn.js';
-import { monsterName, quietMonsterName } from '../js/monster_name.js';
+import { monsterName } from '../js/monster_name.js';
 import { setMonsterGivenName } from '../js/monster_given_name.js';
 import {
     AMULET_OF_LIFE_SAVING, CORPSE, LEATHER_ARMOR, OBJECT_NAMES, POT_OIL, RED_DRAGON_SCALE_MAIL,
@@ -58,7 +58,6 @@ void test('a visible fire trap names the monster standing in its flames', async 
 
     await resumeDeferredMonsterTrap(action, game, {
         random: quietFireRandom,
-        monsterName: quietMonsterName,
         publish: async message => { messages.push(message); },
     });
 

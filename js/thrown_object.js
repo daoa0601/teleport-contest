@@ -1,6 +1,7 @@
 // Objects thrown by the hero.
 // C refs: dothrow.c throw_obj(), invent.c freeinv(), mkobj.c splitobj(),
 // and zap.c bhit().
+import { objectMaterial } from './object_material.js';
 import { monsterAtPosition, monsterHasMapPosition } from './monster_location.js';
 import { monsterProjectileDisplay } from './monster_projectile_display.js';
 import { A_STR, BOLT_LIM, DOOR, D_CLOSED, D_LOCKED, IRONBARS, IS_SOFT, IS_WATERWALL, Is_airlevel, LAVAWALL, LOST_THROWN, M_AP_OBJECT, M_AP_TYPE, P_CROSSBOW, SINK, WEB, WT_SPLASH_THRESHOLD, ZAP_POS, isok, } from './const.js';
@@ -23,7 +24,7 @@ import { impactDisturbsZombies } from './object_impact.js';
 import { isPick } from './weapon_type.js';
 import { MONSTER_FLAGS1, MONSTER_MOVE, MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
 import { breakObjectAtLocation, objectBreaksOnImpact } from './object_breakage.js';
-import { BOULDER, CANDELABRUM_OF_INVOCATION, HEAVY_IRON_BALL, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_SUBTYPE, ROCK, TALLOW_CANDLE, WAX_CANDLE, } from './object_data.js';
+import { BOULDER, CANDELABRUM_OF_INVOCATION, HEAVY_IRON_BALL, OBJECT_NAMES, OBJECT_SUBTYPE, ROCK, TALLOW_CANDLE, WAX_CANDLE, } from './object_data.js';
 import { objectClassForType } from './object_knowledge.js';
 import { objectIsVulnerableToErosion } from './object_erosion.js';
 import { isLauncherAmmunition, launcherMatchesAmmo, } from './object_properties.js';
@@ -65,7 +66,7 @@ function projectileMonsterAt(state, object, x, y) {
     const monster = liveMonsterAt(state, x, y);
     if (!monster)
         return null;
-    const material = OBJECT_MATERIAL[object?.otyp] ?? 0;
+    const material = objectMaterial(object?.otyp);
     if (MONSTER_NAME[monster.mnum] === 'shade' && material !== 14)
         return null;
     if (M_AP_TYPE(monster) === M_AP_OBJECT) {

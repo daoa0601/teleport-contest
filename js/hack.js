@@ -3,12 +3,14 @@
 import { formatFeltMessage } from './hero_speech.js';
 import { monsterHasMapPosition } from './monster_location.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
-import { BURNING, D_BROKEN, D_CLOSED, D_LOCKED, DISMOUNT_FELL, DISMOUNT_GENERIC, DISSOLVED, DROWNING, DOOR, IS_AIR, IS_OBSTRUCTED, IS_STWALL, IS_WALL, IS_WATERWALL, Is_waterlevel, LAVAPOOL, LAVAWALL, PARANOID_SWIM, POOL, ROOM, STONE, FAINTED, TREE, TT_LAVA, Upolyd, WATER, W_NONDIGGABLE, W_NONPASSWALL, WT_TOOMUCH_DIAGONAL, } from './const.js';
+import { BURNING, D_BROKEN, D_CLOSED, D_LOCKED, DISMOUNT_FELL, DISMOUNT_GENERIC, DISSOLVED, DROWNING, DOOR, IS_AIR, IS_OBSTRUCTED, IS_STWALL, IS_WALL, IS_WATERWALL, Is_waterlevel, LAVAPOOL, LAVAWALL, PARANOID_SWIM, POOL, ROOM, STONE, FAINTED, M_SEEN_FIRE, TREE, TT_LAVA, Upolyd, WATER, W_NONDIGGABLE, W_NONPASSWALL, WT_TOOMUCH_DIAGONAL, } from './const.js';
 import { displayLiquidName, feel_newsym, newsym, plineWithContinuation, under_water, updateLastSeenTerrain } from './display.js';
 import { heroPassesWalls, heroFormSticks, heroSpecies } from './hero_species.js';
 import { heroHasConflict } from './hero_conflict.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
-import { setHeroInWater } from './terrain_movement.js';
+import { resetHeroTrap, setHeroInWater } from './terrain_movement.js';
+import { monstersObserveHeroResistance } from './monster_perception.js';
+import { clearHeroTrap, setHeroTrap } from './hero_traps.js';
 import { monsterName } from './monster_name.js';
 import { beginHeroLifeSaving, completeHeroLifeSaving, finishHeroDeath, identifyLifeSavingAmulet, } from './end.js';
 import { placeObject, stack_object } from './floor_object.js';
@@ -464,9 +466,9 @@ async function finishLavaEffects({ state, location, publish, random, rollDice, r
     let sank = false;
     if (!waterWalking
         && (!hero.utrap || hero.utraptype !== TT_LAVA)) {
-        hero.utrap = random(4) + 4 + ((random(4) + 12) << 8);
-        hero.utraptype = TT_LAVA;
+        setHeroTrap(random(4) + 4 + ((random(4) + 12) << 8), TT_LAVA, state);
         await publish(`You sink into the ${lavaName(location)}, but it only burns slightly!`);
+        monstersObserveHeroResistance(M_SEEN_FIRE, state);
         if (hero.uhp > 1 && await loseHeroHp(1, 'molten lava', {
             state, publish, die: finishDamageDeath, deathCause: 'killed by molten lava',
         }))
@@ -488,8 +490,7 @@ export async function sinkHeroIntoLava({ state = game, publish = plineWithContin
         return null;
     const location = state.level?.at?.(hero.ux, hero.uy);
     if (!location || !isLavaAt(state.u.ux, state.u.uy, state)) {
-        hero.utrap = 0;
-        hero.utraptype = 0;
+        clearHeroTrap(state);
         return { escaped: true };
     }
     if (hero.invulnerable || hero.uinvulnerable)
@@ -511,9 +512,7 @@ export async function sinkHeroIntoLava({ state = game, publish = plineWithContin
         }
         if (state.program_state.gameover)
             return { sank: true, died: true };
-        hero.utrap = 0;
-        hero.utraptype = 0;
-        refreshMovementProperties(state);
+        await resetHeroTrap(true, state);
         const airborne = hero.levitating || hero.levitation
             || hero.flying;
         if (!airborne) {

@@ -3,6 +3,7 @@ import { changeHeroLuck } from './attrib.js';
 // C refs: dokick.c down_gate(), impact_drop(), ship_object(), obj_delivery(),
 // and teleport.c rloco().
 
+import { objectMaterial } from './object_material.js';
 import { publishHeardMessage } from './hero_speech.js';
 import {
     IS_SOFT, MIGR_LADDER_UP, SHOPBASE,
@@ -37,7 +38,7 @@ import { roomsAt } from './room.js';
 import { deleteObject, delobj } from './object_delete.js';
 import { relocateObjectRandomly } from './object_teleport.js';
 import {
-    BOULDER, CORPSE, EGG, EXPENSIVE_CAMERA, MIRROR, OBJECT_MATERIAL, ROCK,
+    BOULDER, CORPSE, EGG, EXPENSIVE_CAMERA, MIRROR, ROCK,
 } from './object_data.js';
 import { onQuestStart, okToQuest } from './quest.js';
 import { rn2, rnd } from './rng.js';
@@ -241,7 +242,7 @@ async function breaksInTransit(object: GameObject, state: PlayingGameState, publ
         && object.corpsenm !== undefined && Number.isInteger(object.corpsenm) && object.corpsenm >= 0) {
         changeHeroLuck(-Math.min(quantity(object), 5), state);
     }
-    const crash = OBJECT_MATERIAL[object.otyp] === GLASS
+    const crash = objectMaterial(object.otyp) === GLASS
         || object.otyp === EXPENSIVE_CAMERA;
     await publishHeardMessage(`a muffled ${crash ? 'crash' : 'splat'}.`, publish, state);
     await deleteObject(object, state);

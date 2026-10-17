@@ -12,7 +12,7 @@ import { deleteEngravingAt } from './engrave.js';
 import { placeObject, stack_object } from './floor_object.js';
 import { isIceAt } from './terrain_properties.js';
 import { game, requireGameLevel } from './gstate.js';
-import { clearHeroTrap } from './hero_traps.js';
+import { clearHeroTrap, setHeroTrap } from './hero_traps.js';
 import { punishHero, unpunishHero } from './punishment.js';
 import { freeInventoryObject } from './hero_inventory.js';
 import { releaseObjectLeash } from './monster_leash.js';
@@ -113,10 +113,7 @@ export async function buryObject(object: GameObject, state: GameState = game, {
     const level = requireGameLevel(state);
     if (object === state.uball) {
         await unpunishHero(state);
-        state.u.utrap = rn1(50, 20);
-        state.u.utraptype = TT_BURIEDBALL;
-        refreshMovementProperties(state);
-        state.context.botl = true;
+        setHeroTrap(rn1(50, 20), TT_BURIEDBALL, state);
         await publish('The iron ball gets buried!');
     }
 

@@ -2,6 +2,7 @@ import { changeHeroLuck } from './attrib.js';
 // Objects which fall through downward passages and arrive on another level.
 // C refs: dokick.c down_gate(), impact_drop(), ship_object(), obj_delivery(),
 // and teleport.c rloco().
+import { objectMaterial } from './object_material.js';
 import { publishHeardMessage } from './hero_speech.js';
 import { IS_SOFT, MIGR_LADDER_UP, SHOPBASE, MIGR_NOBREAK, MIGR_NOSCATTER, MIGR_RANDOM, MIGR_SSTAIRS, MIGR_STAIRS_UP, MIGR_TO_SPECIES, MIGR_WITH_HERO, TRAPDOOR, is_hole, } from './const.js';
 import { newsym } from './display.js';
@@ -23,7 +24,7 @@ import { pickedContainer, stolenValue } from './shop_loss.js';
 import { roomsAt } from './room.js';
 import { deleteObject, delobj } from './object_delete.js';
 import { relocateObjectRandomly } from './object_teleport.js';
-import { BOULDER, CORPSE, EGG, EXPENSIVE_CAMERA, MIRROR, OBJECT_MATERIAL, ROCK, } from './object_data.js';
+import { BOULDER, CORPSE, EGG, EXPENSIVE_CAMERA, MIRROR, ROCK, } from './object_data.js';
 import { onQuestStart, okToQuest } from './quest.js';
 import { rn2, rnd } from './rng.js';
 import { heroIsBlind } from './senses.js';
@@ -175,7 +176,7 @@ async function breaksInTransit(object, state, publish, random) {
         && object.corpsenm !== undefined && Number.isInteger(object.corpsenm) && object.corpsenm >= 0) {
         changeHeroLuck(-Math.min(quantity(object), 5), state);
     }
-    const crash = OBJECT_MATERIAL[object.otyp] === GLASS
+    const crash = objectMaterial(object.otyp) === GLASS
         || object.otyp === EXPENSIVE_CAMERA;
     await publishHeardMessage(`a muffled ${crash ? 'crash' : 'splat'}.`, publish, state);
     await deleteObject(object, state);
