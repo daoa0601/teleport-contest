@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { AIR, DOOR, D_CLOSED, MM_NOGRP, NO_MINVENT, STONE } from '../js/const.js';
@@ -114,7 +115,7 @@ for (const fatal of [false, true]) {
         assert.equal(result.heroDied, false);
         assert.equal(wand.where, 'gone');
         assert.equal(state.u.uhp, hp);
-        assert.equal(state.level.monsters.includes(orc), !fatal);
+        assert.equal(monsterAtPosition(state.level, orc.mx, orc.my) === orc, !fatal);
         if (!fatal)
             assert.equal(orc.mhp, 170);
         assert.equal(!!orc.mwandexp, false);
@@ -223,7 +224,7 @@ void test('a reader killed by its own earth scroll cannot drop the consumed scro
     installPagerInput(input, { expected: /reads|rumbles|boulder|hit|killed/, limit: 12 });
     const result = await useMonsterOffensiveItem(orc, { kind: 'earth-scroll', object: scroll }, { state });
     assert.equal(result.nativeResult, 1);
-    assert.equal(state.level.monsters.includes(orc), false);
+    assert.notEqual(monsterAtPosition(state.level, orc.mx, orc.my), orc);
     assert.equal(scroll.where, 'gone');
     assert.equal(floorObjects(state.level).includes(scroll), false);
     assert.equal(state.u.uexp, experience);

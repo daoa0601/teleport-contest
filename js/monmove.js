@@ -805,7 +805,7 @@ export async function heroEveryturnEffect(state = requireInitializedGame(), rand
 // next source-ordered random decision.
 export async function* monsterDistressEvents(monsters = [], state = requireInitializedGame(), random = rn2, distressTurn = state.moves ?? 1, publish = plineWithContinuation) {
     for (const monster of monstersInFmonOrder(monsters)) {
-        if (!monster)
+        if (!schedulable(monster))
             continue;
         if ((MONSTER_MOVE[monster.mnum] ?? 0) === 0) {
             yield { kind: 'stationary-liquid', monster };

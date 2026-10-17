@@ -32,7 +32,7 @@ import { canSeeMonster, flushPendingTopline, newsym } from '../js/display.js';
 import { vision_recalc } from '../js/vision.js';
 import { makedog } from '../js/u_init.js';
 import { saveGame, restoreGame } from '../js/save.js';
-import { placeMonsterAt } from '../js/monster_location.js';
+import { monsterAtPosition, placeMonsterAt } from '../js/monster_location.js';
 import { beginHeroEngulf } from '../js/hero_engulf.js';
 import { MONSTER_ATTACKS } from '../js/monster_data.js';
 import { AT_ENGL } from '../js/monster_attack_types.js';
@@ -583,7 +583,7 @@ void test('light can destroy a gremlin through the ordinary kill owner', async (
     const result = await flashHitsMonster(target, object);
     assert.equal(result.heroDied, false);
     assert.ok(target.mhp <= 0);
-    assert.equal(requireGameLevel().monsters.includes(target), false);
+    assert.notEqual(monsterAtPosition(requireGameLevel(), target.mx, target.my), target);
     assert.ok(game.u.uexp > 0);
 });
 

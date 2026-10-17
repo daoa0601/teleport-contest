@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { MM_ANGRY, MM_NOGRP, NO_MINVENT, PIT, TT_PIT, W_AMUL } from '../js/const.js';
@@ -122,7 +123,7 @@ for (const moving of [false, true]) {
         const boulder = await floorObject(BOULDER, 11, 10);
         initRng(9n);
         await fillPitWithBoulderAt(11, 10);
-        assert.ok(!requireGameLevel().monsters.includes(monster));
+        assert.notEqual(monsterAtPosition(requireGameLevel(), monster.mx, monster.my), monster);
         assert.equal(game.u.uconduct.killer || 0, moving ? 0 : 1);
         assert.equal(boulder.where, 'gone');
         assert.equal(requireGameLevel().traps.length, 0);

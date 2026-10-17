@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -55,7 +56,7 @@ void test('monster knockback into lava does not leave a burned victim corpse', a
         () => 1,
     );
 
-    assert.equal(level.monsters.includes(orc), false);
+    assert.notEqual(monsterAtPosition(level, orc.mx, orc.my), orc);
     assert.equal(
         floorObjects(level).some(
             (object) => object.otyp === CORPSE && object.corpsenm === orc.mnum,

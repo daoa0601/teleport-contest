@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { G_GENOD, MM_NOGRP, NO_MINVENT, W_AMUL } from '../js/const.js';
@@ -301,7 +302,7 @@ void test('a wraith corpse can grow a baby worm into a genocided adult and end i
     assert.equal(result.died, true);
     assert.equal(wraith.where, 'gone');
     assert.equal(meat.where, 'floor');
-    assert.equal(state.level.monsters.includes(monster), false);
+    assert.notEqual(monsterAtPosition(state.level, monster.mx, monster.my), monster);
 });
 
 void test('eating petrifying tin immediately stones a metal eater without slowing it first', async () => {

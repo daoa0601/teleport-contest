@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
@@ -47,7 +48,7 @@ void test('Conflict makes an elemental sphere explode into its neighbor and the 
     const fight = action.conflictFight;
     assert.ok(fight, 'Conflict should direct the sphere at the neighboring giant');
     assert.equal(fight.consumed, true);
-    assert.equal(game.level.monsters.includes(source), false);
+    assert.notEqual(monsterAtPosition(game.level, source.mx, source.my), source);
     assert.ok(target.mhp > 0 && target.mhp < targetHealth);
     assert.ok(game.u.uhp > 0 && game.u.uhp < heroHealth);
     assert.equal(game.u.uconduct.killer ?? 0, 0);
@@ -94,7 +95,7 @@ for (const species of ['yellow light', 'black light']) {
         assert.equal(fight.consumed, true);
         assert.ok(fight.attack.kind === 'monster-attack');
         assert.ok((fight.attack.nativeResult ?? 0) & M_ATTK_AGR_DIED);
-        assert.equal(game.level.monsters.includes(source), false);
+        assert.notEqual(monsterAtPosition(game.level, source.mx, source.my), source);
         assert.equal(target.mhp, targetHealth);
         assert.equal(game.u.uhp, heroHealth);
         if (species === 'yellow light') {

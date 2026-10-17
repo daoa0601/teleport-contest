@@ -4,6 +4,7 @@ import { maybeResetPick } from './lock_context.js';
 // C do.c:goto_level(): departure, destination creation or restoration, and arrival.
 import { rewindEngravingsForSave, restoreEngravings } from './engrave.js';
 import { monsterHasMapPosition } from './monster_location.js';
+import { purgeDeadMonsters } from './monster_level_departure.js';
 import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
 import { addExperience, checkExperienceLevel } from './exper.js';
 import { autopickupAtHero } from './pickup.js';
@@ -540,6 +541,7 @@ function cloneHeroTrack(track = game._heroTrack) {
     return (track || []).map(point => ({ x: point.x, y: point.y }));
 }
 function cachedLevelState(level, stairs) {
+    purgeDeadMonsters(level);
     return {
         level,
         stairs,

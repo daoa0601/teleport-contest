@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
@@ -255,7 +256,7 @@ for (const lifeSaving of [false, true]) {
             assert.equal(amulet.where, 'gone');
             assert.ok(level.monsters.includes(monster));
             assert.ok(monster.mhp > 0);
-        } else assert.equal(level.monsters.includes(monster), false);
+        } else assert.notEqual(monsterAtPosition(level, monster.mx, monster.my), monster);
     });
 }
 

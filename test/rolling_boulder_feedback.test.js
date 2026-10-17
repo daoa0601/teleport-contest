@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { LANDMINE, MM_ANGRY, MM_NOTAIL, NO_MINVENT } from '../js/const.js';
@@ -90,7 +91,7 @@ for (const monsterTurn of [false, true]) {
                 random: limit => limit === 8 ? 4 : limit === 60 ? 0 : limit - 1,
                 rollOne: sides => sides === 20 ? 1 : sides,
             });
-            assert.equal(level.monsters.includes(wolf), false, 'flying rocks kill the wolf');
+            assert.notEqual(monsterAtPosition(level, wolf.mx, wolf.my), wolf, 'flying rocks kill the wolf');
             assert.equal(messages.includes('The wolf is killed!'), visible);
             assert.equal(game.u.uconduct?.killer ?? 0, monsterTurn ? 0 : 1, 'debris uses the current turn for kill credit, even from an unknown boulder trap');
         });
@@ -115,7 +116,7 @@ void test('killing a worm through its tail leaves random treasure at its head', 
             state: game, known: true, publish: async () => { },
             rollOne: () => 1, rollDice: () => 2,
         });
-        assert.equal(level.monsters.includes(worm), false, `the tail hit kills the worm, seed ${seed}`);
+        assert.notEqual(monsterAtPosition(level, worm.mx, worm.my), worm, `the tail hit kills the worm, seed ${seed}`);
         assert.equal(game.u.uconduct?.killer, 1);
         const isTreasure = (object) => ![BOULDER, CORPSE, WORM_TOOTH].includes(object.otyp);
         assert.equal(floorObjectsAt(level, tail.x, tail.y).some(isTreasure), false, `random treasure belongs at the head, seed ${seed}`);

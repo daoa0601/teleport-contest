@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -315,7 +316,7 @@ void test('hitting with a cockatrice corpse turns a monster to stone', async () 
     initRng(909n);
     pushKeys(' '.repeat(8));
     await rhack('l'.charCodeAt(0));
-    assert.equal(level.monsters.includes(jackal), false);
+    assert.notEqual(monsterAtPosition(level, jackal.mx, jackal.my), jackal);
     assert.ok(floorObjectsAt(level, 11, 10).some(object => object.otyp === STATUE && object.corpsenm === jackal.mnum));
     assert.strictEqual(game.uwep, corpse);
 });

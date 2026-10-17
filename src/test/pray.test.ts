@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import type { ObjectRoomOptions } from './support/object-room.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -306,7 +307,7 @@ void test('divine lightning from #pray names the monster swallowing the hero', a
 
     const strike = messages.find(message => message.includes('It strikes'));
     assert.match(strike ?? '', /Gullet/, 'the divine bolt must name its swallowing victim');
-    assert.equal(game.level.monsters.includes(worm), false);
+    assert.notEqual(monsterAtPosition(game.level, worm.mx, worm.my), worm);
     assert.equal(game.u.uconduct.killer ?? 0, 0);
     assert.ok(!game.program_state.gameover);
 });

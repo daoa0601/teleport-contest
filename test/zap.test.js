@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import { armorBaseBonus } from '../js/armor.js';
 import { findMonsterArmorClass } from '../js/monworn.js';
 import { W_ARM } from '../js/const.js';
@@ -90,7 +91,7 @@ void test('cancellation destroys a clay golem', async (t) => {
     game.u.dz = 0;
     await applyWandEffect(await chargedWand(WAN_CANCELLATION));
     assert.equal(golem.dead, true);
-    assert.equal(game.level.monsters.includes(golem), false);
+    assert.notEqual(monsterAtPosition(game.level, golem.mx, golem.my), golem);
 });
 void test('an empty wand does nothing without asking for a direction', async () => {
     freshGameplayRoom();
@@ -435,7 +436,7 @@ void test('melting ice drowns a land monster but not a swimmer', async () => {
     }
     await meltIce(11, 10, { announce: async () => { } });
     await meltIce(12, 10, { announce: async () => { } });
-    assert.equal(game.level.monsters.includes(ant), false);
+    assert.notEqual(monsterAtPosition(game.level, ant.mx, ant.my), ant);
     assert.equal(ant.dead, true);
     assert.equal(game.level.monsters.includes(shark), true);
     assert.equal(shark.mhp, 20);

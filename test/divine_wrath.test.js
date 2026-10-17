@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import { createDungeon } from './support/topology.js';
 import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
@@ -94,7 +95,7 @@ void test('a divine bolt can kill the swallower without breaking pacifist conduc
     pushKeys(' '.repeat(100));
     await godZapsHero(game.u.ualign.type);
     assert.equal(game.u.uswallow, 0);
-    assert.equal(game.level.monsters.includes(worm), false);
+    assert.notEqual(monsterAtPosition(game.level, worm.mx, worm.my), worm);
     assert.equal(game.u.uconduct.killer || 0, 0);
     assert.ok(game.u.uexp > 0);
     assert.ok(!game.program_state.gameover);

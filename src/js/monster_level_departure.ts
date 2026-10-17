@@ -1,8 +1,9 @@
-// C mon.c:relmon() and mon_leaving_level(). The caller owns migration data
-// and keeps the departure coordinates until that record has been prepared.
+// C mon.c:relmon(), mon_leaving_level(), and dmonsfree(). Departures retain
+// their coordinates; death removes map occupancy before unlinking the chain.
 import type { Monster } from './monster_types.js';
 import type { GameState } from './game_state.js';
-import { isok } from './const.js';
+import type { GameMap } from './game.js';
+import { isok, MON_DETACH, MON_FLOOR } from './const.js';
 import { newsym } from './display.js';
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import { releaseHeroFromMonster } from './hero_expulsion.js';
@@ -13,6 +14,7 @@ import { fillPitWithBoulderAt } from './pit_fill.js';
 
 export async function detachMonsterFromLevel(
     monster: Monster, state: GameState = game,
+    { dueToDeath = false }: { dueToDeath?: boolean } = {},
 ): Promise<void> {
     requireLiveGame(state);
     const level = requireGameLevel(state);
@@ -26,9 +28,11 @@ export async function detachMonsterFromLevel(
     if ((onMap || parkedAtOrigin) && monster.wormno)
         clearMonsterWormFromMap(monster);
 
-    // The port derives occupied map squares from the level list. Remove
-    // occupancy before revealing a light-blocking disguise or filling a pit.
-    level.monsters = level.monsters.filter(candidate => candidate !== monster);
+    // Native m_detach removes map occupancy immediately but leaves the
+    // identity in fmon until movemon's dmonsfree. A death during distress
+    // still participates in this turn's movement allocation.
+    if (dueToDeath) monster.mstate = (monster.mstate ?? MON_FLOOR) | MON_DETACH;
+    else level.monsters = level.monsters.filter(candidate => candidate !== monster);
     if (onMap) {
         monster.mundetected = 0;
         revealMonsterAppearance(monster, { includeMonsterDisguise: false });
@@ -37,4 +41,10 @@ export async function detachMonsterFromLevel(
     }
     if (state.context.polearm?.hitmonId === monster.m_id)
         state.context.polearm.hitmonId = null;
+}
+
+// C mon.c:dmonsfree(), called after movement and before saving a level.
+// A dead guard stays linked while its temporary corridor needs cleanup.
+export function purgeDeadMonsters(level: GameMap): void {
+    level.monsters = level.monsters.filter(monster => monster.mhp > 0 || !!monster.isgd);
 }

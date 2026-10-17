@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { NO_MINVENT } from '../js/const.js';
@@ -27,7 +28,7 @@ void test('a fatal acid cure after hero petrification awards experience without 
     });
 
     assert.equal(result.survived, false);
-    assert.equal(game.level.monsters.includes(giant), false);
+    assert.notEqual(monsterAtPosition(game.level, giant.mx, giant.my), giant);
     assert.equal(game.u.uconduct.killer ?? 0, 0);
     assert.ok((game.u.uexp ?? 0) > experience);
     assert.equal(acid.where, 'gone');
@@ -48,7 +49,7 @@ void test('a fatal acid cure without hero credit leaves the inventory but no cor
     const result = await useMonsterStoningCure(giant, { state: game, rollOne: () => 15, publish: () => {} });
 
     assert.equal(result.died, true);
-    assert.equal(game.level.monsters.includes(giant), false);
+    assert.notEqual(monsterAtPosition(game.level, giant.mx, giant.my), giant);
     assert.equal(game.u.uexp ?? 0, experience);
     assert.equal(floorObjectsAt(game.level, 13, 10).some(object => object.otyp === CORPSE), false);
     assert.ok(floorObjectsAt(game.level, 13, 10).includes(dagger));

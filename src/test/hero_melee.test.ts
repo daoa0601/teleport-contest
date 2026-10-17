@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import { requireFixtureGame } from './support/game-state.js';
 import type { RoleKey } from '../js/roles.js';
 import type { Monster } from '../js/monster_types.js';
@@ -432,7 +433,7 @@ void test('hitting with a cockatrice corpse turns a monster to stone', async () 
     pushKeys(' '.repeat(8));
     await rhack('l'.charCodeAt(0));
 
-    assert.equal(level.monsters.includes(jackal), false);
+    assert.notEqual(monsterAtPosition(level, jackal.mx, jackal.my), jackal);
     assert.ok(floorObjectsAt(level, 11, 10).some(object =>
         object.otyp === STATUE && object.corpsenm === jackal.mnum));
     assert.strictEqual(game.uwep, corpse);

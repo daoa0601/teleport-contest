@@ -5,6 +5,7 @@ import { maybeResetPick } from './lock_context.js';
 
 import { rewindEngravingsForSave, restoreEngravings } from './engrave.js';
 import { monsterHasMapPosition } from './monster_location.js';
+import { purgeDeadMonsters } from './monster_level_departure.js';
 import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
 import { addExperience, checkExperienceLevel } from './exper.js';
 import { autopickupAtHero } from './pickup.js';
@@ -565,6 +566,7 @@ function cloneHeroTrack(track: readonly Position[] | undefined = game._heroTrack
 }
 
 function cachedLevelState(level: GameMap, stairs: Stairway | null): CachedLevelState {
+    purgeDeadMonsters(level);
     return {
         level,
         stairs,

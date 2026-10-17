@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { A_CHA, CORR, DOOR, D_BROKEN, D_CLOSED, D_LOCKED, D_NODOOR, D_TRAPPED, HWALL, NO_MINVENT, ROOM, SCORR, SDOOR, STONE, TREE, W_AMUL, W_NONDIGGABLE, } from '../js/const.js';
@@ -230,7 +231,7 @@ for (const lifeSaving of [false, true]) {
             assert.ok(monster.mhp > 0);
         }
         else
-            assert.equal(level.monsters.includes(monster), false);
+            assert.notEqual(monsterAtPosition(level, monster.mx, monster.my), monster);
     });
 }
 void test('undiggable terrain reports the native impossible condition and remains intact', async () => {

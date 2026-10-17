@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import type { OrdinaryDeathOptions } from '../js/end.js';
 import { floorObjectsAt } from './support/level-state.js';
 import { requireFixtureGame } from './support/game-state.js';
@@ -368,7 +369,7 @@ void test('a neutral rider is blamed when the pony drowns before the rider escap
 
     assert.equal(game.u.usteed, null);
     assert.equal(steed.dead, true);
-    assert.equal(level.monsters.includes(steed), false);
+    assert.notEqual(monsterAtPosition(level, steed.mx, steed.my), steed);
     // C adds the pet penalty, the coaligned peaceful penalty, and the riding penalty.
     assert.equal(game.u.ualign.record, alignmentBefore - 25);
     assert.ok(result !== null && result !== undefined);

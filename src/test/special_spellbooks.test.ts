@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import { createDungeon, createSpecialLevel } from './support/topology.js';
 import type { GameObject } from '../js/object_types.js';
 import { requirePlayingGame, requireGameDisplay } from '../js/gstate.js';
@@ -281,7 +282,7 @@ void test('invocation exposes existing monsters to newly created fire and moat',
     await readDead(book);
     assert.ok(burned.mhp < 500);
     assert.equal(drowned.dead, true);
-    assert.equal(game.level.monsters.includes(drowned), false);
+    assert.notEqual(monsterAtPosition(game.level, drowned.mx, drowned.my), drowned);
 });
 
 void test('blind invocation creates the Sanctum stairs and retains an earlier intervention', async () => {

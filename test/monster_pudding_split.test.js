@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { G_EXTINCT, LANDMINE, MM_NOGRP, MM_NOWAIT, NO_MINVENT, PIT, STONE, W_AMUL, W_ARM, W_WEP, } from '../js/const.js';
@@ -142,7 +143,7 @@ void test('the new pudding immediately falls into a pit and can die without kill
     assert.equal(result.aggressorDied, false);
     assert.equal(result.heroDied, false);
     assert.equal(defender.mhp, 1);
-    assert.equal(level.monsters.filter(monster => monster.mnum === defender.mnum).length, 1);
+    assert.equal(level.monsters.filter(monster => monster.mhp > 0 && monster.mnum === defender.mnum).length, 1);
     assert.equal(requireMonsterVital(defender.mnum).died, 1);
 });
 for (const lifeSaved of [false, true]) {
@@ -170,7 +171,7 @@ for (const lifeSaved of [false, true]) {
         assert.equal(result.split, true);
         assert.equal(result.heroDied, false);
         assert.equal(result.aggressorDied, !lifeSaved);
-        assert.equal(level.monsters.includes(aggressor), lifeSaved);
+        assert.equal(monsterAtPosition(level, aggressor.mx, aggressor.my) === aggressor, lifeSaved);
         assert.equal(defender.mhp, 101);
         if (amulet) {
             assert.equal(amulet.where, 'gone');

@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, DB_NORTH, DB_MOAT, DOOR, DRAWBRIDGE_DOWN, FIRE_TRAP, LANDMINE, PIT, ROCKTRAP, RUST_TRAP, W_ARM, } from '../js/const.js';
@@ -39,7 +40,7 @@ for (const [name, trapType] of [
             rollOne: sides => sides, rollDice: () => 8,
             publish: async (message) => { messages.push(message); },
         });
-        assert.equal(game.level.monsters.includes(monster), false);
+        assert.notEqual(monsterAtPosition(game.level, monster.mx, monster.my), monster);
         assert.ok(messages.includes('You have a sad feeling for a moment, then it passes.'));
         assert.equal(messages.some(message => /is killed!|is destroyed!/.test(message)), false);
     });
@@ -55,7 +56,7 @@ void test('a pet iron golem rusting to pieces has grief and a rust epitaph witho
     await resumeDeferredMonsterTrap(action, game, {
         publish: async (message) => { messages.push(message); },
     });
-    assert.equal(game.level.monsters.includes(monster), false);
+    assert.notEqual(monsterAtPosition(game.level, monster.mx, monster.my), monster);
     assert.ok(messages.some(message => message.endsWith('falls to pieces!')));
     assert.ok(messages.includes('You have a sad feeling for a moment, then it passes.'));
     assert.ok(messages.some(message => message.endsWith('rust in peace.')));
@@ -72,7 +73,7 @@ void test('an invisible pet killed by anti-magic compression gives grief instead
     await resumeDeferredMonsterTrap(action, game, {
         publish: async (message) => { messages.push(message); },
     });
-    assert.equal(game.level.monsters.includes(monster), false);
+    assert.notEqual(monsterAtPosition(game.level, monster.mx, monster.my), monster);
     assert.ok(messages.includes('You have a sad feeling for a moment, then it passes.'));
     assert.equal(messages.some(message => message.includes('compression')), false);
 });
@@ -88,7 +89,7 @@ void test('the initial fire-trap hit does not give a straw pet the inventory-bur
         random: range => range === 5 ? 1 : 0,
         publish: async (message) => { messages.push(message); },
     });
-    assert.equal(game.level.monsters.includes(monster), false);
+    assert.notEqual(monsterAtPosition(game.level, monster.mx, monster.my), monster);
     assert.ok(messages.some(message => message.endsWith('is destroyed!')));
     assert.equal(messages.some(message => message.includes('roast in peace')), false);
 });
@@ -109,7 +110,7 @@ void test('a straw pet killed by an exploding potion in a fire trap receives a r
         publish: async (message) => { messages.push(message); },
     });
     assert.equal(potion.where, 'gone');
-    assert.equal(game.level.monsters.includes(monster), false);
+    assert.notEqual(monsterAtPosition(game.level, monster.mx, monster.my), monster);
     assert.ok(messages.some(message => message.endsWith('is uninjured.')));
     assert.ok(messages.some(message => message.endsWith('roast in peace.')));
     assert.equal(floorObjectsAt(game.level, 11, 10).some(object => object.otyp === CORPSE), false);
@@ -127,7 +128,7 @@ for (const [name, trapType] of [['pit', PIT], ['bear trap', BEAR_TRAP]]) {
             announce: async () => { },
             finishMonsterDeath: victim => finishHeroMonsterKill(victim, victim.mx, victim.my),
         });
-        assert.equal(game.level.monsters.includes(monster), false);
+        assert.notEqual(monsterAtPosition(game.level, monster.mx, monster.my), monster);
         assert.equal(game.u.uexp, experience);
         assert.equal(game.u.uconduct.killer ?? 0, kills);
     });
@@ -150,7 +151,7 @@ void test('an unseen pet crushed by a moving drawbridge gives a sad feeling', as
         { prompt: /crushed underneath the drawbridge\.[\s\S]*--More--/, keys: ' ' },
     ]);
     await flush_screen(1);
-    assert.equal(game.level.monsters.includes(monster), false);
+    assert.notEqual(monsterAtPosition(game.level, monster.mx, monster.my), monster);
     assert.ok(game.nhDisplay);
     const message = game.nhDisplay.grid[0]?.map(cell => cell.ch).join('') ?? '';
     assert.match(message, /You have a sad feeling for a moment, then it passes\./);

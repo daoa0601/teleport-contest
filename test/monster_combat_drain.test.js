@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { M_ATTK_DEF_DIED, M_ATTK_MISS, MM_ANGRY, MM_NOGRP, MM_NOMSG, MM_NOWAIT, NO_MINVENT, STRAT_WAITFORU, W_AMUL, W_ARM, W_ARMC, W_WEP, } from '../js/const.js';
@@ -249,7 +250,7 @@ void test('a gremlin curse destroys a clay golem and awards actual attacker grow
     });
     assert.equal(result.nativeResult, M_ATTK_DEF_DIED);
     assert.equal(defender.mcan, 1);
-    assert.equal(level.monsters.includes(defender), false);
+    assert.notEqual(monsterAtPosition(level, defender.mx, defender.my), defender);
     assert.ok(attacker.mhpmax > 20);
     assert.ok(messages.includes('The clay golem is destroyed!'));
     assert.equal(game.u.uconduct.killer || 0, 0);

@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
@@ -63,7 +64,7 @@ void test('a lethal breath becomes a defender-death result rather than retaining
     assert.equal(attack.nativeResult, M_ATTK_DEF_DIED);
     assert.equal(attack.struck, false);
     assert.equal(attack.defenderDied, true);
-    assert.equal(level.monsters.includes(target), false);
+    assert.notEqual(monsterAtPosition(level, target.mx, target.my), target);
     assert.equal(game.u.uconduct.killer || 0, 0);
 });
 
@@ -151,7 +152,7 @@ void test('a fatal first throw drops HIT and stops the second native weapon atta
     assert.equal(attack.nativeResult, M_ATTK_DEF_DIED);
     assert.equal(attack.struck, false);
     assert.equal(daggers.quan, 3);
-    assert.equal(level.monsters.includes(target), false);
+    assert.notEqual(monsterAtPosition(level, target.mx, target.my), target);
     assert.equal(game.u.uconduct.killer || 0, 0);
 });
 

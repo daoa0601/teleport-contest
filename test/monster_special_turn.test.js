@@ -56,7 +56,7 @@ void test('a purple worm digests a monster and its life-saving amulet during a l
     const action = await runMonsterAction(attacker, state);
     assert.ok(action.conflictFight?.attack.kind === 'monster-attack');
     assert.ok(action.conflictFight.attack.results.some(hit => hit.type === 'engulf'));
-    assert.equal(state.level.monsters.includes(defender), false);
+    assert.notEqual(monsterAtPosition(state.level, defender.mx, defender.my), defender);
     assert.equal(amulet.where, 'gone');
     assert.equal(monsterAtPosition(state.level, 12, 10), attacker);
     assert.equal(monsterAtPosition(state.level, 11, 10), null);

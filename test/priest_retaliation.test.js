@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import { armorBaseBonus } from '../js/armor.js';
 import { findMonsterArmorClass } from '../js/monworn.js';
 import test from 'node:test';
@@ -142,7 +143,7 @@ for (const lifesaving of [false, true]) {
             assert.ok(game.u.uhp > 0);
             assert.ok(amulet);
             assert.equal(game.inventory.includes(amulet), false);
-            assert.equal(requireGameLevel().monsters.includes(target), false);
+            assert.notEqual(monsterAtPosition(requireGameLevel(), target.mx, target.my), target);
             assert.equal(game.u.uconduct.killer || 0, kills);
             assert.equal(game.u.uexp || 0, experience);
         }

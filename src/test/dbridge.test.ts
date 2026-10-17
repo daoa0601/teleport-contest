@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import { createSpecialLevel } from './support/topology.js';
 import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
@@ -98,7 +99,7 @@ void test('a lowering drawbridge crushes a grounded monster on the span',
         await playInstrument(await harp());
 
         assert.equal(bridge.typ, DRAWBRIDGE_DOWN);
-        assert.equal(level.monsters.includes(monster), false);
+        assert.notEqual(monsterAtPosition(level, monster.mx, monster.my), monster);
         assert.equal(game.u.uconduct.killer, kills + 1);
         assert.ok(game.u.uexp > experience, 'a hero-operated bridge credits its kill to the hero');
     });
@@ -180,7 +181,7 @@ void test('a closing portcullis crushes a helpless monster', async () => {
     await playInstrument(await harp());
 
     assert.equal(bridge.typ, DRAWBRIDGE_UP);
-    assert.equal(level.monsters.includes(monster), false);
+    assert.notEqual(monsterAtPosition(level, monster.mx, monster.my), monster);
 });
 
 void test('a ghost passes through a lowering drawbridge', async () => {
@@ -208,7 +209,7 @@ void test('destroying a drawbridge drops its span and portcullis into the moat',
         assert.equal(bridge.typ, MOAT);
         assert.equal(wall.typ, DOOR);
         assert.equal(wall.doormask, D_NODOOR);
-        assert.equal(level.monsters.includes(monster), false);
+        assert.notEqual(monsterAtPosition(level, monster.mx, monster.my), monster);
         assert.equal(game.u.uevent?.uheard_tune, 3);
     });
 

@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { moveMonsterForHeroAttack } from '../js/allmain.js';
@@ -157,7 +158,7 @@ void test('a fatal movement trap completes death before returning the native res
     assert.equal(result.status, MMOVE_DIED);
     assert.equal(result.heroDied, false);
     assert.ok(leprechaun.mhp <= 0);
-    assert.ok(!level.monsters.includes(leprechaun));
+    assert.notEqual(monsterAtPosition(level, leprechaun.mx, leprechaun.my), leprechaun);
 });
 
 void test('an ordinary movement command follows a leprechaun into its vacated square after a dodge', async () => {

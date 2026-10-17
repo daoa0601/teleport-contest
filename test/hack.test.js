@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import { floorObjectsAt } from './support/level-state.js';
 import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
@@ -314,7 +315,7 @@ void test('a neutral rider is blamed when the pony drowns before the rider escap
     const result = await heroLiquidEffects({ ...noDisplay });
     assert.equal(game.u.usteed, null);
     assert.equal(steed.dead, true);
-    assert.equal(level.monsters.includes(steed), false);
+    assert.notEqual(monsterAtPosition(level, steed.mx, steed.my), steed);
     // C adds the pet penalty, the coaligned peaceful penalty, and the riding penalty.
     assert.equal(game.u.ualign.record, alignmentBefore - 25);
     assert.ok(result !== null && result !== undefined);

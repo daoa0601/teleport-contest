@@ -132,7 +132,7 @@ void test('digestion returns the attacker home when its wall-phasing victim occu
     level.requireAt(12, 10).typ = STONE;
     const result = await engulf();
     assert.equal(result.nativeResult, M_ATTK_DEF_DIED);
-    assert.equal(level.monsters.includes(defender), false);
+    assert.notEqual(monsterAtPosition(level, defender.mx, defender.my), defender);
     assert.equal(monsterAtPosition(level, 11, 10), attacker);
     assert.equal(monsterAtPosition(level, 12, 10), null);
 });
@@ -152,8 +152,8 @@ void test('a digester entering its aquatic victim square must survive the liquid
     level.requireAt(12, 10).typ = POOL;
     const result = await engulf();
     assert.ok(result.nativeResult & M_ATTK_DEF_DIED);
-    assert.equal(level.monsters.includes(defender), false);
-    assert.equal(level.monsters.includes(attacker), false);
+    assert.notEqual(monsterAtPosition(level, defender.mx, defender.my), defender);
+    assert.notEqual(monsterAtPosition(level, attacker.mx, attacker.my), attacker);
     assert.equal(monsterAtPosition(level, 12, 10), null);
     requirePlayingGame(game);
     assert.equal(game.u.uconduct.killer ?? 0, 0);

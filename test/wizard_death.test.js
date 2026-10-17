@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { MIGR_RANDOM, NO_MINVENT, W_AMUL } from '../js/const.js';
@@ -38,7 +39,7 @@ void test('an environmental Wizard death starts demigod intervention and removes
     wizard.mhp = 0;
     const death = await finishEnvironmentalMonsterDeath(wizard, game, { noCorpse: true });
     assert.equal(death.survived, false);
-    assert.equal(requireGameLevel().monsters.includes(wizard), false);
+    assert.notEqual(monsterAtPosition(requireGameLevel(), wizard.mx, wizard.my), wizard);
     assert.equal(game.context.no_of_wizards, 0);
     assert.equal(!!game.u.uevent?.udemigod, true);
     const countdown = game.u.udg_cnt;

@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import { floorObjectsAt } from './support/level-state.js';
 import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
@@ -38,7 +39,7 @@ void test('genocide removes the species, drops its inventory, and sterilizes egg
     const flags = antVitals.mvflags;
     const pile = floorObjectsAt(requireGameLevel(game), 12, 10);
     assert.equal(flags & (G_GENOD | G_NOCORPSE), G_GENOD | G_NOCORPSE);
-    assert.equal(game.level.monsters.includes(ant), false);
+    assert.notEqual(monsterAtPosition(game.level, ant.mx, ant.my), ant);
     assert.equal(pile.includes(carried), true);
     assert.ok(egg.objectTimers !== null && egg.objectTimers !== undefined);
     assert.equal(egg.objectTimers.length, 0);
@@ -69,7 +70,7 @@ void test('genocide releases a carried fixed crysknife before its floor landing'
     initRng(5n);
     pushKeys('orc\n        ');
     await doGenocide(1);
-    assert.equal(game.level.monsters.includes(orc), false);
+    assert.notEqual(monsterAtPosition(game.level, orc.mx, orc.my), orc);
     assert.ok(floorObjectsAt(requireGameLevel(game), 12, 10).includes(knife));
     assert.equal(knife.otyp, WORM_TOOTH);
 });

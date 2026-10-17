@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import { requireFixtureGame } from './support/game-state.js';
 import type { DirectionSelection } from '../js/tty_prompts.js';
 import test from 'node:test';
@@ -170,5 +171,5 @@ void test('acid venom which kills an engulfer releases the hero', async () => {
 
     assert.equal(game.u.uswallow, 0);
     assert.equal(game.u.ustuck, null);
-    assert.equal(game.level.monsters.includes(jackal), false);
+    assert.notEqual(monsterAtPosition(game.level, jackal.mx, jackal.my), jackal);
 });

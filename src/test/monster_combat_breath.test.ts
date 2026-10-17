@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
@@ -263,7 +264,7 @@ void test('a breath kill uses monster death ownership without awarding hero expe
     });
 
     assert.equal(result.nativeResult, M_ATTK_HIT, 'breamm leaves death flags to its caller');
-    assert.equal(level.monsters.includes(target), false);
+    assert.notEqual(monsterAtPosition(level, target.mx, target.my), target);
     assert.equal(game.u.uconduct.killer || 0, 0);
     assert.equal(game.u.uexp, 0);
 });

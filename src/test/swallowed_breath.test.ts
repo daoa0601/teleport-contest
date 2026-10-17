@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import { createDungeon } from './support/topology.js';
 import { installPagerInput } from './support/pager-input.js';
 import { armorBaseBonus } from '../js/armor.js';
@@ -57,7 +58,7 @@ for (const lifesaving of [false, true]) {
 
         assert.equal(result.heroDied, !lifesaving);
         assert.equal(!!game.program_state.gameover, !lifesaving);
-        if (lifesaving) assert.equal(game.level.monsters.includes(victim), false);
+        if (lifesaving) assert.notEqual(monsterAtPosition(game.level, victim.mx, victim.my), victim);
         else assert.equal(victim.mhp, 1);
     });
 }

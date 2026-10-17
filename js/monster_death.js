@@ -326,7 +326,7 @@ export async function detachDeadMonster(monster, state, random, publish) {
     // species and empty map square are projected by mon_leaving_level.
     if (x > 0 && emittedLight)
         state.vision_full_recalc = 1;
-    await detachMonsterFromLevel(monster, state);
+    await detachMonsterFromLevel(monster, state, { dueToDeath: true });
     if (state.program_state.gameover)
         return true;
     if (monster.iswiz)

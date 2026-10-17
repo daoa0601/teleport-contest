@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { MM_NOGRP, NO_MINVENT } from '../js/const.js';
-import { game } from '../js/gstate.js';
+import { game, requireGameLevel } from '../js/gstate.js';
+import { monsterAtPosition } from '../js/monster_location.js';
 import { resolveMonsterSelfExplosion } from '../js/monster_self_explosion.js';
 import { AD_BLND, AT_EXPL } from '../js/monster_attack_types.js';
 import { createMonsterAt } from './support/monsters.js';
@@ -17,6 +18,6 @@ void test('a light exploding away from the hero announces a nearby visible sleep
     });
     assert.equal(sleeper.msleeping, 0);
     assert.match(messages.join('\n'), /The goblin wakes up\./);
-    assert.equal(game.level?.monsters.includes(light), false);
+    assert.notEqual(monsterAtPosition(requireGameLevel(), light.mx, light.my), light);
 });
 //# sourceMappingURL=self_explosion_wake.test.js.map

@@ -14,6 +14,7 @@ import { copyPersistentState, restorePersistentState, SAVE_VERSION } from './sta
 import { restoreMonsterWormHeads, validMonsterWormBodies } from './monster_worm.js';
 import { resolveDungeonIdentities } from './dungeon.js';
 import { restoreMonsterInventoryOwnership } from './monster_inventory.js';
+import { purgeDeadMonsters } from './monster_level_departure.js';
 import { FULL_MOON, LUCKMAX, LUCKMIN } from './const.js';
 import { vision_reset_new_level } from './vision.js';
 import { rewindEngravingsForSave, restoreEngravings } from './engrave.js';
@@ -110,10 +111,14 @@ async function prepareGameForSave() {
     game.u.invulnerable = false;
     await doneObjectCleanup();
     const levels = [game.level, ...[...(game._levelCache?.values() ?? [])].map(cached => cached.level)];
-    for (const level of levels)
-        for (const monster of level?.monsters ?? [])
+    for (const level of levels) {
+        if (!level)
+            continue;
+        purgeDeadMonsters(level);
+        for (const monster of level.monsters)
             if (monster.ispriest)
                 forgetTempleEntry(monster);
+    }
     for (const monster of game._migratingMonsters ?? [])
         if (monster.ispriest)
             forgetTempleEntry(monster);

@@ -12,7 +12,7 @@ import { wearHeroAccessory } from '../js/accessory.js';
 import { flushPendingTopline } from '../js/display.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { placeMonsterAt } from '../js/monster_location.js';
+import { monsterAtPosition, placeMonsterAt } from '../js/monster_location.js';
 import { advanceMonsterWormBody } from '../js/monster_worm.js';
 import {
     AMULET_OF_LIFE_SAVING, BOULDER, OBJECT_NAMES, TWO_HANDED_SWORD,
@@ -339,7 +339,7 @@ void test('a broken light wand kills a distant gremlin through the real lighting
     const result = await breakWand(object);
 
     assert.equal(result.heroDied, false);
-    assert.ok(!game.level.monsters.includes(gremlin));
+    assert.notEqual(monsterAtPosition(game.level, gremlin.mx, gremlin.my), gremlin);
     assert.equal(game.u.uconduct.killer, 1);
     assert.equal(game.level.requireAt(14, 10).lit, true);
     assert.equal(object.where, 'gone');

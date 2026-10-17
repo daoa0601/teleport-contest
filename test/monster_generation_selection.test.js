@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { monsterAtPosition } from '../js/monster_location.js';
 import { G_EXTINCT, G_GENOD, G_GONE, MM_NOCOUNTBIRTH, MM_NOGRP, MM_NOMSG, NO_MINVENT, } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { doGenocide } from '../js/genocide.js';
@@ -73,7 +74,7 @@ void test('explicit creation permits extinction while respecting genocide', asyn
     const genocided = await makemonAt(NEWT, 12, 10, CREATION_FLAGS);
     assert.ok(speciesVital(NEWT).mvflags & G_GENOD);
     assert.equal(genocided, null);
-    assert.equal(game.level.monsters.length, 0);
+    assert.equal(monsterAtPosition(game.level, 12, 10), null);
 });
 void test('object species selection still chooses common species after extinction', () => {
     freshGameplayRoom();

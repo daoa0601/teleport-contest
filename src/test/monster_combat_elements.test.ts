@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { M_ATTK_DEF_DIED, MM_NOGRP, MSLOW, NO_MINVENT, STRAT_HEAL, STRAT_WAITFORU, W_ARM, W_ARMC, W_WEP } from '../js/const.js';
@@ -210,7 +211,7 @@ for (const [species, type] of [
         });
 
         assert.ok(result.nativeResult & M_ATTK_DEF_DIED);
-        assert.equal(game.level.monsters.includes(defender), false);
+        assert.notEqual(monsterAtPosition(game.level, defender.mx, defender.my), defender);
         assert.ok(attacker.mhpmax > 1);
         assert.equal(game.u.uexp, heroExperience);
         if (type === AD_FIRE) {

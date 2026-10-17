@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import type { TestContext } from 'node:test';
@@ -301,7 +302,7 @@ void test('a hero-created Lua selection cloud awards kill credit and experience'
     await moveloop_core();
     await moveloop_core();
 
-    assert.equal(requireGameLevel().monsters.includes(victim), false);
+    assert.notEqual(monsterAtPosition(requireGameLevel(), victim.mx, victim.my), victim);
     assert.equal(game.u.uconduct?.killer, 1);
     assert.ok((game.u.uexp ?? 0) > experience);
 });

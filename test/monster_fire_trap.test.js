@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { FIRE_TRAP, MAGIC_TRAP, W_AMUL, W_ARM, } from '../js/const.js';
@@ -144,7 +145,7 @@ void test('a fire trap completely burns a paper golem', async () => {
         publish: async () => { },
     });
     assert.equal(monster.dead, true);
-    assert.deepEqual(game.level.monsters, []);
+    assert.equal(monsterAtPosition(game.level, monster.mx, monster.my), null);
     assert.equal(floorObjects(game.level).some(object => object.otyp === CORPSE), false);
 });
 void test('a life-saving amulet lets a monster survive a fire trap', async () => {

@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import type { TrapMonsterOptions } from './support/monster-traps.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -180,7 +181,7 @@ void test('a fire trap completely burns a paper golem', async () => {
     });
 
     assert.equal(monster.dead, true);
-    assert.deepEqual(game.level.monsters, []);
+    assert.equal(monsterAtPosition(game.level, monster.mx, monster.my), null);
     assert.equal(
         floorObjects(game.level).some(object => object.otyp === CORPSE),
         false,

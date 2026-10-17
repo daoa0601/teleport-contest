@@ -11,7 +11,7 @@ import { beginHeroEngulf } from '../js/hero_engulf.js';
 import { resetInputState } from '../js/input.js';
 import { AT_ENGL, AD_DGST } from '../js/monster_attack_types.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { placeMonsterAt } from '../js/monster_location.js';
+import { monsterAtPosition, placeMonsterAt } from '../js/monster_location.js';
 import { AMULET_OF_LIFE_SAVING, POT_HEALING, SCR_BLANK_PAPER, WAN_DEATH, WAN_FIRE, WAN_LIGHT, WAN_MAGIC_MISSILE, WAN_SLEEP, WAN_STRIKING, } from '../js/object_data.js';
 import { polymonHero } from '../js/polyself.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
@@ -147,7 +147,7 @@ void test('a hero holding a victim takes double blast damage even when the victi
     const victim = await bystander('jackal', 11, 10, 1);
     game.u.ustuck = victim;
     await explode(10, 10, -WAN_MAGIC_MISSILE, 20, WAND_CLASS, EXPL_MAGICAL);
-    assert.ok(!game.level.monsters.includes(victim));
+    assert.notEqual(monsterAtPosition(game.level, victim.mx, victim.my), victim);
     assert.equal(game.u.mh, 460);
 });
 void test('a zero-damage explosion wakes nearby sleepers without altering its floor or inventory', async () => {
@@ -256,8 +256,8 @@ void test('a monster burning itself to cure slime credits the hero without break
     const jackal = await bystander('jackal', 13, 10, 1);
     const experience = game.u.uexp || 0;
     await explode(14, 10, -11, 30, SCROLL_CLASS, -EXPL_FIERY);
-    assert.ok(!game.level.monsters.includes(paper));
-    assert.ok(!game.level.monsters.includes(jackal));
+    assert.notEqual(monsterAtPosition(game.level, paper.mx, paper.my), paper);
+    assert.notEqual(monsterAtPosition(game.level, jackal.mx, jackal.my), jackal);
     assert.ok(game.u.uexp > experience);
     assert.equal(game.u.uconduct.killer || 0, 0);
     assert.ok(!(floorObjectsAt(requireGameLevel(game), 14, 10) || []).some(object => object.otyp === SCR_BLANK_PAPER));

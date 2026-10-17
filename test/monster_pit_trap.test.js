@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { PIT, SPIKED_PIT, W_AMUL, W_WEP } from '../js/const.js';
@@ -85,7 +86,7 @@ void test('falling forces contact with a wielded cockatrice corpse before the mo
     await resumeDeferredMonsterTrap(action, game, {
         publish: async (message) => messages.push(message),
     });
-    assert.equal(level.monsters.includes(monster), false);
+    assert.notEqual(monsterAtPosition(level, monster.mx, monster.my), monster);
     assert.ok(floorObjectsAt(level, 11, 10).some(object => object.otyp === STATUE && object.corpsenm === monster.mnum));
     const fall = messages.findIndex(message => message.includes('falls into a pit'));
     const touch = messages.findIndex(message => message.includes('touches the cockatrice corpse'));

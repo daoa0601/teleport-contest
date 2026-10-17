@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { wearHeroAccessory } from '../js/accessory.js';
@@ -74,7 +75,7 @@ void test('killing a priest does not prevent the shrine from retaliating afterwa
     });
     const angerGuards = shouldAngerGuardsAfterHeroHit(priest);
     await finishHeroMonsterKillOutcome(priest, priest.mx, priest.my, { noCorpse: true });
-    assert.equal(level.monsters.includes(priest), false);
+    assert.notEqual(monsterAtPosition(level, priest.mx, priest.my), priest);
     initRng(1n);
     const result = await finishHeroHitAftermath(priest, { angerGuards, random: () => 0 });
     assert.equal(result.heroDied, false);

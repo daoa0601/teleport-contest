@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { rhack } from '../js/cmd.js';
@@ -229,7 +230,7 @@ void test('a lethal wand backfire resolves ordinary monster death without hero k
     assert.equal(result.nativeResult, 1);
     assert.equal(result.monsterDied, true);
     assert.equal(result.heroDied, false);
-    assert.equal(level.monsters.includes(monster), false);
+    assert.notEqual(monsterAtPosition(level, monster.mx, monster.my), monster);
     assert.equal(item.where, 'gone');
     assert.equal(state.u.uconduct.killer ?? 0, kills);
 });

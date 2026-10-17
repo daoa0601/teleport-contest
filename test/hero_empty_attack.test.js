@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { rhack } from '../js/cmd.js';
@@ -54,7 +55,7 @@ void test('an empty flaming-sphere attack kills a bystander with hero credit and
     const health = state.u.uhp;
     const messages = await command('Fl', /explode|explosion|newt|return to human/);
     assert.match(messages, /You explode at thin air\./);
-    assert.equal(state.level.monsters.includes(bystander), false);
+    assert.notEqual(monsterAtPosition(state.level, bystander.mx, bystander.my), bystander);
     assert.equal(state.u.uconduct.killer, 1);
     assert.equal(Upolyd(state.u), false);
     assert.equal(state.u.uhunger, hunger);

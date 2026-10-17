@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -74,7 +75,7 @@ void test('a knocked monster petrifies when it collides with a cockatrice', asyn
 
     await runMonsterAction(giant, game, () => 0, count => count, () => 1);
 
-    assert.equal(game.level.monsters.includes(orc), false);
+    assert.notEqual(monsterAtPosition(game.level, orc.mx, orc.my), orc);
     assert.ok(floorObjectsAt(game.level, 11, 10)
         .some(object => object.otyp === STATUE && object.corpsenm === orc.mnum));
 });
@@ -197,7 +198,7 @@ void test('a lizard hurled into lava burns without leaving its otherwise guarant
     const outcome = await hurtleMonster(defender, 1, 0, 1);
 
     assert.equal(outcome.dead, true);
-    assert.equal(game.level.monsters.includes(defender), false);
+    assert.notEqual(monsterAtPosition(game.level, defender.mx, defender.my), defender);
     assert.equal(floorObjectsAt(game.level, 12, 10)
         .some(object => object.otyp === CORPSE && object.corpsenm === defender.mnum), false);
 });

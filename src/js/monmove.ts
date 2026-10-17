@@ -1268,7 +1268,7 @@ export async function* monsterDistressEvents(
     publish: PublishMonsterMessage = plineWithContinuation,
 ): AsyncGenerator<MonsterDistressEvent, void, unknown> {
     for (const monster of monstersInFmonOrder(monsters)) {
-        if (!monster) continue;
+        if (!schedulable(monster)) continue;
         if ((MONSTER_MOVE[monster.mnum] ?? 0) === 0) {
             yield { kind: 'stationary-liquid', monster };
             if (monster.dead || (monster.mhp ?? 1) <= 0) continue;

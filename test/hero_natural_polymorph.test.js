@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { monsterAtPosition } from '../js/monster_location.js';
 import { M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, NO_MINVENT, W_AMUL, W_ARMC } from '../js/const.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { applyHeroNaturalPolymorph } from '../js/hero_natural_polymorph.js';
@@ -149,7 +150,7 @@ void test('natural system shock removes half the maximum HP plus the hit and cre
         assert.equal(result.done, true);
         assert.equal(result.damage, 0);
         assert.equal(result.nativeResult, lifeSaving ? M_ATTK_HIT : M_ATTK_HIT | M_ATTK_DEF_DIED);
-        assert.equal(game.level.monsters.includes(orc), lifeSaving);
+        assert.equal(monsterAtPosition(game.level, orc.mx, orc.my) === orc, lifeSaving);
         assert.equal(game.u.uconduct.killer, 1, 'the hero kill attempt owns conduct, including life saving');
         assert.equal(floorObjectsAt(game.level, 11, 10).some(object => object.otyp === CORPSE), false);
         if (amulet) {

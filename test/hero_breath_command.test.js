@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { IRONBARS, ROOM, ROOMOFFSET, W_ARMH, W_ARMS, W_WEP } from '../js/const.js';
@@ -43,7 +44,7 @@ void test('a winter wolf uses #monster to breathe frost at a target', async () =
     await command;
     assert.equal(game.u.uen, 15);
     assert.equal(game.context.move, 1);
-    assert.equal(level.monsters.includes(jackal), false);
+    assert.notEqual(monsterAtPosition(level, jackal.mx, jackal.my), jackal);
 });
 void test('cancelling breath direction spends energy but does not spend a turn', async () => {
     freshMonsterAbilityRoom('red dragon', { energy: 30 });
@@ -81,7 +82,7 @@ void test('fatal disintegration destroys ordinary gear but spares black scales',
         random: range => range - 1,
         rollOne: () => 1,
     });
-    assert.equal(level.monsters.includes(jackal), false);
+    assert.notEqual(monsterAtPosition(level, jackal.mx, jackal.my), jackal);
     assert.equal(sword.where, 'gone');
     assert.ok(floorObjectsAt(level, 11, 10).includes(scales));
 });
@@ -145,6 +146,6 @@ void test('breath fired while swallowed hits the engulfer directly', async () =>
     await attack;
     assert.equal(game.u.uswallow, 0);
     assert.equal(game.u.ustuck, null);
-    assert.equal(level.monsters.includes(worm), false);
+    assert.notEqual(monsterAtPosition(level, worm.mx, worm.my), worm);
 });
 //# sourceMappingURL=hero_breath_command.test.js.map

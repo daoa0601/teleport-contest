@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { NO_MINVENT, POOL } from '../js/const.js';
@@ -27,7 +28,7 @@ void test('a killed acid blob cannot affect whether the rolling boulder fills th
                 random: limit => limit === 3 ? 2 : rn2(limit),
             });
             if (blob)
-                assert.equal(level.monsters.includes(blob), false, `blob must die, seed ${seed}`);
+                assert.notEqual(monsterAtPosition(level, blob.mx, blob.my), blob, `blob must die, seed ${seed}`);
             poolTypes.push(pool.typ);
         }
         assert.equal(poolTypes[1], poolTypes[0], `dead acid must not change pool filling, seed ${seed}`);

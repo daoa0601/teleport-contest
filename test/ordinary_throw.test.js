@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { A_DEX, A_LAWFUL, A_STR, P_BASIC, P_BOW, P_CROSSBOW, P_DART, P_SKILLED, W_ARMG, W_WEP, } from '../js/const.js';
@@ -143,7 +144,7 @@ void test('a cockatrice egg petrifies a monster and costs Luck', async () => {
     jackal.mhp = jackal.mhpmax = 20;
     initRng(1n);
     await throwItem(egg);
-    assert.equal(game.level.monsters.includes(jackal), false);
+    assert.notEqual(monsterAtPosition(game.level, jackal.mx, jackal.my), jackal);
     assert.ok(floorObjectsAt(level, 13, 10).some(object => object.otyp === STATUE && object.corpsenm === jackal.mnum));
     assert.equal(egg.where, 'gone');
     assert.equal(egg.known, true);

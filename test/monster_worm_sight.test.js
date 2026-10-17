@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import { assertWormBody } from './support/worms.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -57,7 +58,7 @@ void test('a blast killing a visible worm tail names the worm even with its head
     await createElementalMonsterExplosion(tail.x + 1, tail.y, AD_FIRE, 20, "flaming sphere's explosion", {
         publish: (message) => messages.push(message),
     });
-    assert.ok(!game.level.monsters.includes(worm));
+    assert.notEqual(monsterAtPosition(game.level, worm.mx, worm.my), worm);
     assert.ok(messages.some(message => message.includes('The long worm is caught')));
     assert.ok(messages.includes('The long worm is killed!'));
 });

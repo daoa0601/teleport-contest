@@ -1,3 +1,4 @@
+import { monsterAtPosition } from '../js/monster_location.js';
 import { ensureQuestStatus } from '../js/quest.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -179,7 +180,7 @@ void test('a fatal self-zap credits the hero without breaking pacifist conduct',
 
     assert.equal(result.done, true);
     assert.equal(result.nativeResult, M_ATTK_DEF_DIED);
-    assert.equal(context.state.level.monsters.includes(monster), false);
+    assert.notEqual(monsterAtPosition(context.state.level, monster.mx, monster.my), monster);
     assert.ok(context.state.u.uexp > experience);
     assert.equal(context.state.u.uconduct.killer ?? 0, kills);
     assert.ok(messages.includes('The orc is killed by the fire!'));
