@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 
 import { MM_ANGRY, MM_EMIN, MM_NOMSG, NO_MINVENT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { makemonAt } from '../js/mklev.js';
+import { makemonAt, makemonNear } from '../js/mklev.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { freshObjectRoom } from './support/object-room.js';
 
@@ -67,3 +67,19 @@ void test('MM_ANGRY makes a roaming Angel hostile only to a co-aligned hero', as
     assert.ok(peaceful > 0, 'some renegade Angels should be peaceful to a differently aligned hero');
     assert.ok(hostile > 0, 'some renegade Angels should be hostile to a co-aligned hero');
 });
+
+for (const inMklev of [false, true]) {
+    void test(`a monster requested at the hero's square ${inMklev ? 'during level creation leaves its idea of the hero unset' : 'locates the hero'}`, async () => {
+        freshObjectRoom({ gameplaySeed: 3 });
+        requirePlayingGame(game);
+        game.in_mklev = inMklev;
+
+        const newt = await makemonNear(MONSTER_NAME.indexOf('newt'), game.u.ux, game.u.uy, MM_NOMSG | NO_MINVENT);
+        game.in_mklev = false;
+
+        assert.ok(newt);
+        // C makemon() calls set_apparxy() for byyou only outside mklev.
+        if (inMklev) assert.deepEqual([newt.mux ?? 0, newt.muy ?? 0], [0, 0]);
+        else assert.deepEqual([newt.mux, newt.muy], [game.u.ux, game.u.uy]);
+    });
+}

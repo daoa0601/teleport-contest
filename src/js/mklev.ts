@@ -2004,18 +2004,18 @@ async function makemon(
     else if (mndx === PM_PESTILENCE) fixedItem = POT_SICKNESS;
     if (allowMonsterInventory && fixedItem) await mongets(fixedItem);
 
-    if (game.in_mklev
-        && (isNeutralDemon || mndx === PM_GIANT_EEL
+    if (game.in_mklev) {
+        if ((isNeutralDemon || mndx === PM_GIANT_EEL
             || mndx === PM_WUMPUS || mndx === PM_LONG_WORM)
-        && !game.u?.uhave?.amulet && rn2(5)) {
-        monsterSleeping = 1;
-        pendingMonster.msleeping = 1;
-    }
-
-    // makemon.c owns this initialization when its original requested
-    // coordinate was the hero's occupied square.  enexto() has already moved
-    // the actor, so preserve that caller fact separately from final x/y.
-    if (requestedByHero) {
+            && !game.u?.uhave?.amulet && rn2(5)) {
+            monsterSleeping = 1;
+            pendingMonster.msleeping = 1;
+        }
+    } else if (requestedByHero) {
+        // makemon.c owns this initialization when its original requested
+        // coordinate was the hero's occupied square, but only outside level
+        // creation.  enexto() has already moved the actor, so preserve that
+        // caller fact separately from final x/y.
         newsym(pendingMonster.mx, pendingMonster.my);
         setMonsterApparentHeroPosition(pendingMonster, game, rn2);
     }
