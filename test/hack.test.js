@@ -424,11 +424,15 @@ void test('a cursed loadstone can keep the hero from crawling out', async () => 
     const loadstone = await addInventoryObject(LOADSTONE, { cursed: true });
     const messages = [];
     const deaths = [];
+    const hpBeforeDrowning = game.u.uhp;
+    let hpAtDeath;
     const result = await heroLiquidEffects({
         ...noDisplay,
         publish: async (message) => messages.push(message),
         random: range => range - 1,
         die: async (details) => {
+            // done() shows the drowning hero's status before zeroing HP.
+            hpAtDeath = game.u.uhp;
             deaths.push(details);
             game.program_state.gameover = true;
         },
@@ -446,6 +450,8 @@ void test('a cursed loadstone can keep the hero from crawling out', async () => 
     assert.ok(death !== undefined);
     assert.equal(death.killer, 'pool of water');
     assert.equal(death.deathCause, 'drowned in a pool of water');
+    assert.ok(hpBeforeDrowning > 0);
+    assert.equal(hpAtDeath, hpBeforeDrowning);
 });
 void test('life saving moves a drowned hero to dry land', async () => {
     const level = poolAtHero();

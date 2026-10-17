@@ -22,7 +22,8 @@ import { recordObjectEncounter, recordObjectKnowledge, } from './object_knowledg
 import { POT_ACID, POT_BLINDNESS, POT_BOOZE, POT_CONFUSION, POT_ENLIGHTENMENT, POT_EXTRA_HEALING, POT_FRUIT_JUICE, POT_FULL_HEALING, POT_GAIN_ABILITY, POT_GAIN_ENERGY, POT_GAIN_LEVEL, POT_HEALING, POT_INVISIBILITY, POT_HALLUCINATION, POT_LEVITATION, POT_MONSTER_DETECTION, POT_OBJECT_DETECTION, POT_POLYMORPH, POT_OIL, POT_RESTORE_ABILITY, POT_PARALYSIS, POT_SEE_INVISIBLE, POT_SICKNESS, POT_SLEEPING, POT_SPEED, POT_WATER, TOWEL, } from './object_data.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MAGIC_RESISTANCE, MONSTER_RESISTS, MONSTER_SOUND, MONSTER_SYMBOL, monsterHatesBlessings, monsterIsHuman, monsterIsPlayerMonster, } from './monster_data.js';
 import { polymorphMonsterFromMagic } from './monster_polymorph_attack.js';
-import { AD_DISE, AD_PEST, } from './monster_attack_types.js';
+import { AD_ACID, AD_DISE, AD_PEST, } from './monster_attack_types.js';
+import { finishMonsterKilled } from './monster_death.js';
 import { monsterHasAcidResistance, monsterHasPoisonResistance, } from './monster_resistance.js';
 import { adjustMonsterSpeed, monsterSpeedMessage, } from './monster_speed.js';
 import { setMonsterPermanentInvisibility, } from './monster_invisibility.js';
@@ -561,13 +562,22 @@ async function applySupportedDirectEffect({ state, monster, potion, targetVisibl
             acidDamage = d(potion.cursed ? 2 : 1, potion.blessed ? 4 : 8);
             monster.mhp -= acidDamage;
             killed = monster.mhp <= 0;
-            if (killed) {
+            if (killed && heroCaused) {
                 if (!finishKill)
                     throw new Error('acid fatality owner unavailable');
                 const death = await finishKill(monster);
                 if (death.heroDied)
                     return { heroDied: true };
                 killed = death.killed;
+            }
+            else if (killed) {
+                // C monkilled(mon, "", AD_ACID) when the hero did not throw it.
+                const death = await finishMonsterKilled(monster, state, {
+                    damageType: AD_ACID, publish,
+                });
+                if (death.heroDied)
+                    return { heroDied: true };
+                killed = !death.survived;
             }
         }
         if (!killed && (await wakeMonster?.(monster))?.heroDied)

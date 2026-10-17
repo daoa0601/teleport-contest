@@ -55,8 +55,9 @@ import {
 } from './monster_data.js';
 import { polymorphMonsterFromMagic } from './monster_polymorph_attack.js';
 import {
-    AD_DISE, AD_PEST,
+    AD_ACID, AD_DISE, AD_PEST,
 } from './monster_attack_types.js';
+import { finishMonsterKilled } from './monster_death.js';
 import {
     monsterHasAcidResistance, monsterHasPoisonResistance,
 } from './monster_resistance.js';
@@ -772,12 +773,19 @@ async function applySupportedDirectEffect({
             acidDamage = d(potion.cursed ? 2 : 1, potion.blessed ? 4 : 8);
             monster.mhp -= acidDamage;
             killed = monster.mhp <= 0;
-            if (killed) {
+            if (killed && heroCaused) {
                 if (!finishKill)
                     throw new Error('acid fatality owner unavailable');
                 const death = await finishKill(monster);
                 if (death.heroDied) return { heroDied: true };
                 killed = death.killed;
+            } else if (killed) {
+                // C monkilled(mon, "", AD_ACID) when the hero did not throw it.
+                const death = await finishMonsterKilled(monster, state, {
+                    damageType: AD_ACID, publish,
+                });
+                if (death.heroDied) return { heroDied: true };
+                killed = !death.survived;
             }
         }
         if (!killed && (await wakeMonster?.(monster))?.heroDied)

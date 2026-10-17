@@ -11,7 +11,7 @@ import {
     FAINTED, M_SEEN_FIRE, TREE, TT_LAVA, Upolyd, WATER, W_NONDIGGABLE, W_NONPASSWALL,
     WT_TOOMUCH_DIAGONAL,
 } from './const.js';
-import { displayLiquidName, feel_newsym, newsym, plineWithContinuation, under_water, updateLastSeenTerrain } from './display.js';
+import { bot, displayLiquidName, feel_newsym, newsym, plineWithContinuation, under_water, updateLastSeenTerrain } from './display.js';
 import { heroPassesWalls, heroFormSticks, heroSpecies } from './hero_species.js';
 import { heroHasConflict } from './hero_conflict.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
@@ -404,7 +404,10 @@ export async function burnAwayHeroSlime(state: GameState, publish: MessagePublis
 }
 
 async function reviveHeroFromLiquid(state: PlayingGameState, publish: MessagePublisher, random: RandomBelow) {
-    const lifeSaving = state === game ? beginHeroLifeSaving() : null;
+    if (state !== game) return false;
+    // C done() forces status with the raw HP before it records the death.
+    await bot();
+    const lifeSaving = beginHeroLifeSaving();
     if (!lifeSaving) return false;
     await publish('But wait...');
     identifyLifeSavingAmulet(random);
@@ -1074,7 +1077,6 @@ export async function heroLiquidEffects(options: HeroLiquidOptions = {}): Promis
         const killer = liquid === 'water' ? 'deep water' : liquid;
         const description = liquid === 'water' || liquid === 'limitless water'
             ? killer : withIndefiniteArticle(killer);
-        u.uhp = 0;
         if (!await reviveHeroFromLiquid(state, publish, random)) {
             await die({
                 killer,
