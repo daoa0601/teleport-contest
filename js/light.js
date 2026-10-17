@@ -24,7 +24,7 @@ import { OBJECT_TIMER_KIND, scheduleObjectTimer, stopObjectTimer, } from './obje
 import { roomForRoomno } from './room.js';
 import { rn2, rnd } from './rng.js';
 import { makePlural } from './object_grammar.js';
-import { recordObjectKnowledge } from './object_knowledge.js';
+import { learnObjectType } from './object_knowledge.js';
 import { cansee, clearAreaCells, vision_recalc } from './vision.js';
 import { objectWeight } from './weight.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
@@ -675,10 +675,9 @@ export async function igniteItems(objects, { carrier = null, state = game, publi
                 ? `${prefix} ${name} ${plural ? 'feel' : 'feels'} warm.`
                 : `${prefix} ${name} ${plural ? 'catch' : 'catches'} light!`);
         }
-        if (object.otyp === POT_OIL
-            && !state._knownObjectTypes?.has(POT_OIL)) {
-            recordObjectKnowledge(POT_OIL, state);
-        }
+        // C apply.c:catch_lit() credits discovery even when the fire is unseen.
+        if (object.otyp === POT_OIL)
+            learnObjectType(POT_OIL, state);
         if (beginObjectBurn(object, state, state.moves ?? 0))
             ignited.push(object);
     }

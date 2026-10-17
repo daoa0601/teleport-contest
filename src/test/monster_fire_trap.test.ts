@@ -4,7 +4,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-    FIRE_TRAP, MAGIC_TRAP, W_AMUL, W_ARM,
+    A_WIS, FIRE_TRAP, MAGIC_TRAP, NO_MINVENT, W_AMUL, W_ARM,
 } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import {
@@ -15,15 +15,17 @@ import { initializeMonsterArmor } from '../js/monworn.js';
 import { monsterName } from '../js/monster_name.js';
 import { setMonsterGivenName } from '../js/monster_given_name.js';
 import {
-    AMULET_OF_LIFE_SAVING, CORPSE, LEATHER_ARMOR, OBJECT_NAMES, POT_OIL, RED_DRAGON_SCALE_MAIL,
+    AMULET_OF_LIFE_SAVING, CORPSE, LEATHER_ARMOR, OBJECT_NAMES, POT_HEALING, POT_OIL, RED_DRAGON_SCALE_MAIL,
     SCR_IDENTIFY, TOWEL,
 } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { makeBlinded } from '../js/sight_change.js';
+import { objectTypeKnown } from '../js/shk.js';
 import { floorObject, knownObject } from './support/game-objects.js';
-import { floorObjects, floorObjectsAt } from './support/level-state.js';
+import { addTrap, floorObjects, floorObjectsAt } from './support/level-state.js';
 import { freshMonsterTrapRoom } from './support/monster-traps.js';
-import { equipMonsterObject } from './support/monsters.js';
+import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
+import { freshObjectRoom } from './support/object-room.js';
 
 async function freshMonsterFireTrap({
     trapType = FIRE_TRAP,
@@ -226,6 +228,36 @@ void test('a fire trap burns scrolls lying under the monster', async () => {
 
     assert.equal(scroll.where, 'gone');
     assert.deepEqual(floorObjectsAt(game.level, 11, 10), []);
+});
+
+void test('an unseen monster fire trap identifies floor oil and credits Wisdom after a carried potion explodes', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    const monster = await createMonsterAt('fire giant', 11, 10, NO_MINVENT);
+    monster.mhp = monster.mhpmax = 20;
+    addTrap(game.level, FIRE_TRAP, 11, 10);
+    await makeBlinded(1, { talk: false });
+    const carriedPotion = await knownObject(POT_HEALING);
+    await addObjectToMonsterInventory(monster, carriedPotion, game);
+    const oil = await floorObject(POT_OIL, 11, 10, { dknown: false, typeKnown: false });
+    game.u.acurr.a[A_WIS] = 3;
+    const messages: string[] = [];
+    const action = await triggerImmediateMonsterTrap(monster, game, { rollDice: () => 4 });
+    initRng(1n);
+
+    await resumeDeferredMonsterTrap(action, game, {
+        random: quietFireRandom,
+        rollOne: () => 3,
+        publish: message => { messages.push(message); },
+    });
+
+    assert.equal(carriedPotion.where, 'gone');
+    assert.equal(monster.mhp, 17);
+    assert.equal(oil.lamplit, true);
+    assert.equal(objectTypeKnown(oil), true);
+    assert.equal(oil.dknown, false);
+    assert.equal(game.u._exercise?.[A_WIS], 1, 'identifying oil by ignition must exercise Wisdom');
+    assert.equal(messages.length, 0);
 });
 
 void test('a magic trap can produce the complete fire-trap effect', async () => {
