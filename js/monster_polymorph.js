@@ -465,6 +465,9 @@ export async function initialShapechangedBirth(monster) {
         return null;
     const changed = initialShapechangedMonster(monster, targetMnum);
     await refreshNewMonsterFormPerception(changed, game, plineWithContinuation);
+    // newcham() ends with mon_break_armor() even for a newborn without
+    // armor; its perceived pronouns still draw while the hero hallucinates.
+    await adjustMonsterClothingAfterPolymorph(changed, game);
     return changed;
 }
 export async function changeMonsterForm(monster, forcedTargetMnum = null, state = game, { showMessage = false, publish = plineWithContinuation, finishDeath = (target, options) => finishEnvironmentalMonsterDeath(target, state, options), creditHero = !state.context?.mon_moving, polyspot = false, } = {}) {
