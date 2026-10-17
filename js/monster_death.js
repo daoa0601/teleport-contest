@@ -309,7 +309,7 @@ async function finishMonsterRemains(remains, monster, state) {
 }
 // Native mondead() after recovery has failed. Kill credit and remains belong
 // to the caller; map, inventory, and population cleanup share this owner.
-export async function detachDeadMonster(monster, state, random, publish) {
+export async function detachDeadMonster(monster, state, random, publish, rollOne = rnd) {
     const x = monster.mx;
     const y = monster.my;
     monster.mhp = 0;
@@ -320,7 +320,7 @@ export async function detachDeadMonster(monster, state, random, publish) {
     restoreMonsterTrueSpecies(monster);
     recordMonsterDeath(monster, state);
     markQuestLeaderDead(monster, state);
-    await returnDeadKop(monster, state);
+    await returnDeadKop(monster, state, rollOne);
     if (state === game)
         unmap_invisible(x, y, false);
     if (monster.mleashed)
@@ -370,7 +370,7 @@ export async function finishMonsterLiquidDeath(monster, { state = game, random =
     }
     if (sadFeeling)
         await publish('You have a sad feeling for a moment, then it passes.');
-    if (await detachDeadMonster(monster, state, random, publish)) {
+    if (await detachDeadMonster(monster, state, random, publish, rollOne)) {
         return {
             oldx: x, oldy: y, x, y,
             moved: false, dead: true, actionCompleted: true,
@@ -444,7 +444,7 @@ export async function finishMonsterKilled(monster, state, { damageType, cause = 
 export function finishEnvironmentalMonsterDeath(monster, state, options = {}) {
     return resolveMonsterDeath(monster, state, options);
 }
-async function resolveMonsterDeath(monster, state, { deathMessage = null, sadFeeling = false, noCorpse = false, noRevive = false, zombifyCorpse = false, random = rn2, rollDice = d, publish = plineWithContinuation, }, { disintegrated = false } = {}) {
+async function resolveMonsterDeath(monster, state, { deathMessage = null, sadFeeling = false, noCorpse = false, noRevive = false, zombifyCorpse = false, random = rn2, rollOne = rnd, rollDice = d, publish = plineWithContinuation, }, { disintegrated = false } = {}) {
     requireLiveGame(state);
     const recovery = await preventMonsterDeath(monster, {
         creditedKill: deathMessage,
@@ -459,7 +459,7 @@ async function resolveMonsterDeath(monster, state, { deathMessage = null, sadFee
     if (!recovery.completedDeath) {
         if (sadFeeling)
             await publish('You have a sad feeling for a moment, then it passes.');
-        if (await detachDeadMonster(monster, state, random, publish))
+        if (await detachDeadMonster(monster, state, random, publish, rollOne))
             return { monster, survived: false, corpse: null, heroDied: true };
     }
     // C vamprises returns true even when its door already ran mondied.
