@@ -6,7 +6,7 @@ import { heroLocomotion } from './hero_locomotion.js';
 // customer, and hero.
 
 import { objectMaterial } from './object_material.js';
-import { game, requireGameLevel, requireLiveGame } from './gstate.js';
+import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import type { GameObject } from './object_types.js';
 import type { GameState } from './game_state.js';
 import type { Monster, ShopBillEntry } from './monster_types.js';
@@ -54,9 +54,9 @@ import {
     DRUM_OF_EARTHQUAKE, EXPENSIVE_CAMERA, HORN_OF_PLENTY, ICE_BOX, LARGE_BOX,
     MAGIC_FLUTE, MAGIC_LAMP, MAGIC_MARKER, OBJECT_CHARGED, OBJECT_COST,
     OBJECT_NAMES, OBJECT_INITIAL_KNOWN, DUNCE_CAP, OIL_LAMP, POT_OIL, TINNING_KIT,
-    WORTHLESS_PIECE_OF_WHITE_GLASS,
+    WORTHLESS_PIECE_OF_WHITE_GLASS, PICK_AXE, DWARVISH_MATTOCK,
 } from './object_data.js';
-import { recordObjectPriceQuote } from './object_knowledge.js';
+import { learnObjectType, recordObjectPriceQuote } from './object_knowledge.js';
 import { ACH_SHOP, ACH_TOWN, recordAchievement } from './achievements.js';
 import { nextIdent, nextObjectId } from './ident.js';
 import {
@@ -66,6 +66,7 @@ import { deallocateObject, stopObjectTimers } from './object_delete.js';
 import { getObjectLocation, unlinkObject } from './object_location.js';
 import { objectsInTimerGraph } from './object_timers.js';
 import { leaveHeroShop } from './shop_departure.js';
+import { performMonsterTurn } from './allmain.js';
 
 const COIN_CLASS = 12;
 const GEM_CLASS = 13;
@@ -1250,7 +1251,40 @@ async function enterShop({ room, roomno }: ShopRoom): Promise<string | null> {
             : `"${shopGreeting(shopkeeper)}, ${playerName}!  Welcome${again} to ${possessive(shopkeeperName(shopkeeper))} ${typeName}!"`;
     }
     await plineWithContinuation(message);
+    await blockShopEntry(shopkeeper);
     return message;
+}
+
+// C shk.c:u_entered_shop() tail. A hero already on the shop floor cannot
+// be stopped at its entrance, including one who teleported past the door.
+async function blockShopEntry(shopkeeper: Shopkeeper): Promise<void> {
+    if (insideShopRoomAt(game, game.u.ux, game.u.uy)) return;
+    const picks = game.inventory.filter(object => object.otyp === PICK_AXE).length;
+    const mattocks = game.inventory.filter(object => object.otyp === DWARVISH_MATTOCK).length;
+    const calm = !shopkeeper.eshk.surcharge;
+    const canSpeak = !heroIsDeaf(game) && !shopkeeperIsMuted(shopkeeper);
+    if (picks || mattocks) {
+        const tool = picks && mattocks ? 'digging tool' : picks ? 'pick-axe' : 'mattock';
+        const count = picks + mattocks;
+        if (!picks && mattocks && !heroIsBlind(game)) learnObjectType(DWARVISH_MATTOCK);
+        const tools = `${tool}${count > 1 ? 's' : ''}`;
+        const request = calm ? `Will you please leave your ${tools} outside?` : `Leave the ${tools} outside.`;
+        await plineWithContinuation(canSpeak
+            ? `"${request}"`
+            : `${shopkeeperName(shopkeeper, { capitalized: true })} ${calm ? 'is hesitant' : 'refuses'} to let you in with your ${tools}.`);
+    } else if (game.u.usteed) {
+        const steed = monsterName(game.u.usteed, { article: 'your' });
+        const request = calm ? `Will you please leave ${steed} outside?` : `Leave ${steed} outside.`;
+        await plineWithContinuation(canSpeak
+            ? `"${request}"`
+            : `${shopkeeperName(shopkeeper, { capitalized: true })} ${calm ? "doesn't want" : 'refuses'} to let you in while you're riding ${steed}.`);
+    } else {
+        const floorTools = game.level?.objects[game.u.ux]?.[game.u.uy];
+        if (!(game.u.fast || game.u.veryFast)
+            || !floorTools?.some(object => object.otyp === PICK_AXE || object.otyp === DWARVISH_MATTOCK)) return;
+    }
+    requirePlayingGame(game);
+    await performMonsterTurn(shopkeeper, game);
 }
 
 // C hack.c:check_special_room(). newLevel is the old-level exit, not arrival.
