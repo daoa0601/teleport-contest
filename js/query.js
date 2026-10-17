@@ -161,7 +161,8 @@ export async function tty_yn_function(query, responses, defaultAnswer = '', visi
         : `${question} [${choices}]${defaultAnswer ? ` (${defaultAnswer})` : ''} `;
     const preserveCase = responses === null || /[A-Z]/.test(responses);
     const readAnswer = async () => {
-        const key = await readchar();
+        // readchar() returns a signed C char; strings represent its byte.
+        const key = (await readchar()) & 255;
         return String.fromCharCode(!preserveCase && key >= 65 && key <= 90 ? key + 32 : key);
     };
     if (!game._suppressMessagesUntilInput)

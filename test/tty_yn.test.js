@@ -73,6 +73,15 @@ void test('an unrestricted tty prompt accepts one character without a choice suf
         assert.equal((await answer).answer, 'Z');
     }
 });
+for (const responses of ['yn\xe9', null]) {
+    void test(`a ${responses === null ? 'free' : 'restricted'} tty prompt accepts an eight-bit response`, async () => {
+        freshPlayableRoom();
+        resetInputState().feed('\xe9nX');
+        const result = await tty_yn_function('Which symbol?', responses, 'n');
+        assert.equal(result.answer, '\xe9');
+        assert.equal(await nhgetch(), 'n'.charCodeAt(0), 'the next key must remain unread');
+    });
+}
 void test('aborting a wrapped number clears the rows its prompt covered', async () => {
     freshPlayableRoom();
     game.nhDisplay = new GameDisplay(new Terminal(null, { cols: 24, rows: 24 }));
