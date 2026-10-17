@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { reportHeroEncumbrance } from '../js/attrib.js';
 import { rhack } from '../js/cmd.js';
+import { flipCoin } from '../js/coin_flip.js';
 import { AIR, DOOR, D_BROKEN, HUNGRY, NOT_HUNGRY, WATER, WEAK } from '../js/const.js';
 import { clearMessageWindow, cmapSymbolAppearance, flush_screen, newsym } from '../js/display.js';
 import { moveElementalBubbles } from '../js/elemental.js';
@@ -14,9 +15,9 @@ import { rndmonstAdj } from '../js/mklev.js';
 import { beginMealMimicry } from '../js/meal_mimic.js';
 import { CmapSymbol } from '../js/glyph_numbers.js';
 import { reportMonsterCombatNoise } from '../js/monster_combat_messages.js';
-import { BOULDER, CLUB, DAGGER, STETHOSCOPE } from '../js/object_data.js';
+import { BOULDER, CLUB, DAGGER, GOLD_PIECE, STETHOSCOPE } from '../js/object_data.js';
 import { autopickupAtHero } from '../js/pickup.js';
-import { initRng, rn2 } from '../js/rng.js';
+import { initRng } from '../js/rng.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { applyInventoryObject } from './support/commands.js';
@@ -170,23 +171,23 @@ void test('restore forgets an alignment cached before a zero-time level change',
     const selected = Array.from({ length: 20 }, () => rndmonstAdj());
     assert.deepEqual(selected, expected);
 });
-void test('extended version initializes its Lua state again in a restored process', async () => {
+void test('the first version query after restore affects a later coin flip as in a new process', async () => {
     freshObjectRoom();
     dismissMessages();
+    await addInventoryObject(GOLD_PIECE, { quan: 50 });
     pushKeys('  ');
     await doextversion();
     const storage = memoryStorage();
     assert.equal(await saveGame(storage), true);
     assert.equal(restoreGame(game.plname, storage), true);
-    // nhl_init() loads nhlib.lua, which shuffles its three alignments.
-    initRng(73n);
-    rn2(3);
-    rn2(2);
-    const expected = rn2(1000000);
-    initRng(73n);
+    const purse = game.inventory.find(object => object.otyp === GOLD_PIECE);
+    assert.ok(purse);
+    // C's first version lookup loads nhlib.lua, whose setup shares the gameplay RNG.
+    initRng(1n);
     pushKeys('  ');
     await doextversion();
-    assert.equal(rn2(1000000), expected);
+    await flipCoin(purse);
+    assert.equal(game._pending_message, 'You flip a gold piece.  It comes up tails.');
 });
 void test('restored map symbols use the current process symbol set', async () => {
     freshObjectRoom();
