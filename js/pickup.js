@@ -42,7 +42,6 @@ export function pickupClassOrder() {
     return [...inventoryClassOrder(), 17, 0].map(objectClassHeading);
 }
 export async function pickupAtHero(count = Math.max(0, game._commandCount || 0)) {
-    game._pickupEncumbrance = 0;
     game.multi = 0;
     const source = pickupSourceAtHero();
     const objects = pickupObjects(source);
@@ -53,6 +52,7 @@ export async function pickupAtHero(count = Math.max(0, game._commandCount || 0))
         game.context.move = problem.spendsTurn ? 1 : 0;
         return;
     }
+    game._pickupEncumbrance = 0;
     if (!source.monster && heroCannotTake(game)) {
         await pline('You are physically incapable of picking anything up.');
         game.context.move = 0;

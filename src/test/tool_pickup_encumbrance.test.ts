@@ -28,6 +28,30 @@ void test('consecutive remote pickups report an unchanged burden only once', asy
     assert.equal(game.inventory.find(object => object.otyp === DART)?.quan, 2);
 });
 
+for (const square of ['empty', 'unreachable']) {
+    void test(`pickup on an ${square} square preserves load feedback for remote pickups`, async () => {
+        freshObjectRoom();
+        await addInventoryObject(ROCK, { quantity: 70 });
+        const darts = await floorObject(DART, 12, 10, { quantity: 2 });
+        if (square === 'unreachable') await floorObject(DART, 10, 10);
+        resetInputState().feed(' '.repeat(12));
+
+        assert.equal(await pickupFloorObject(darts, 1), true);
+        assert.match(game._lastPlineMessage, /^You have a little trouble lifting/);
+        game.u.levitating = square === 'unreachable';
+        await rhack(','.charCodeAt(0));
+        assert.equal(game._lastPlineMessage, square === 'empty'
+            ? 'There is nothing here to pick up.' : 'You cannot reach the floor.');
+        assert.equal(game.context.move, 0);
+        game.u.levitating = false;
+        assert.equal(await pickupFloorObject(darts, 1), true);
+
+        assert.equal(nearCapacity(game), 1, 'the hero remains slightly burdened');
+        assert.doesNotMatch(game._lastPlineMessage, /trouble lifting/);
+        assert.equal(game.inventory.find(object => object.otyp === DART)?.quan, 2);
+    });
+}
+
 void test('an ordinary pickup resets load feedback for the next remote pickup', async () => {
     freshObjectRoom();
     await addInventoryObject(ROCK, { quantity: 70 });
