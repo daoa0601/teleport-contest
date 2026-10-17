@@ -163,7 +163,7 @@ async function hurtleOneSquare(monster: Monster, dx: number, dy: number, {
         if (occupant) {
             if (canSeeMonster(monster)
                 || canSeeMonster(occupant)) {
-                await announce(`${monsterSentenceSubject(monster)} bumps into ${monsterName(occupant, { state, article: 'a' })}.`);
+                await announce(`${monsterName(monster, { state, capitalized: true })} bumps into ${monsterName(occupant, { state, article: 'a' })}.`);
             }
             await awakenMonster(occupant, { attacked: !monsterMoving });
             const contact = { publish: announce, finishDeath: finishMonsterDeath, creditHero: !monsterMoving };
@@ -172,7 +172,8 @@ async function hurtleOneSquare(monster: Monster, dx: number, dy: number, {
             if (touchPetrifies(monster.mnum) && !monsterWearsTorsoArmor(occupant))
                 await petrifyMonsterImmediately(occupant, contact);
         } else if (nextX === state.u.ux && nextY === state.u.uy) {
-            await announce(`${monsterSentenceSubject(monster)} bumps into you.`);
+            // C Some_Monnam(): an unseen hurtler is "Someone" or "Something".
+            await announce(`${monsterName(monster, { state, capitalized: true, augmentIt: true })} bumps into you.`);
             await stopHeroOccupation(state, announce);
             if (touchPetrifies(state.u.umonnum) && !monsterWearsTorsoArmor(monster)) {
                 await petrifyMonsterImmediately(monster, {
@@ -262,7 +263,7 @@ export async function hurtleMonster(monster: Monster, dx: number, dy: number, di
     monster.mstun = 1;
     if ((MONSTER_SIZE[monster.mnum] ?? 0) >= 4 || monster === state.u.ustuck || monster.mtrapped) {
         if (canSeeMonster(monster))
-            await announce(`${monsterSentenceSubject(monster)} doesn't budge!`);
+            await announce(`${monsterName(monster, { state, capitalized: true })} doesn't budge!`);
         return { moved: false, dead: false };
     }
     dx = Math.sign(dx);
