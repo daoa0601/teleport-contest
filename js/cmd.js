@@ -6949,6 +6949,14 @@ async function rootedHeroCannotMove() {
     endVoluntaryMultiTurn(game);
     return true;
 }
+// C display.h:_is_safemon(). Recheck after movement effects, which can
+// change the monster or the hero's ability to recognize it.
+function heroMayDisplaceMonster(monster) {
+    const u = game.u;
+    return (game.flags.safe_dog ?? true) && !!monster.mpeaceful
+        && canSpotMonster(monster) && !(u.confusionTurns ?? 0)
+        && !heroIsHallucinating(game) && !u.stunned && !(u.stunnedTurns ?? 0);
+}
 async function domoveCore(dx, dy, explicitAttempt) {
     requirePlayingGame(game);
     const u = game.u;
@@ -7073,12 +7081,8 @@ async function domoveCore(dx, dy, explicitAttempt) {
     // C display.h:_is_safemon() requires a spotted peaceful monster and
     // an unimpaired hero. Concealed ceiling monsters still cancel running
     // here, before domove_attackmon_at() leaves their reveal to arrival.
-    const safeMonster = !!monster && (game.flags.safe_dog ?? true) && !!monster.mpeaceful
-        && canSpotMonster(monster)
-        && !game.context?.forcefight
-        && !confused
-        && !heroIsHallucinating(game)
-        && !stunned;
+    const safeMonster = !!monster && !game.context.forcefight
+        && heroMayDisplaceMonster(monster);
     if (monster) {
         // hack.c checks context.run even when F makes this a single step.
         // It stops only for a visible or sensed actor. Seeing the
@@ -7160,89 +7164,22 @@ async function domoveCore(dx, dy, explicitAttempt) {
                 stopRun(game);
                 return true;
             }
-            // C domove_core() confirms a yielded step before either actor
-            // changes position or the hero tries to escape a current trap.
-            if (await rootedHeroCannotMove())
-                return true;
-            if (heroTestMove(newx, newy) && !await confirmHeroStep(newx, newy))
-                return false;
-            if (u.utrap
-                && !await heroCanMoveFromTrap(newx, newy))
-                return true;
-            if (!await heroCanEnterIronBars(newx, newy, game))
-                return false;
-            if (heroOozesUnderDoor(loc))
-                await pline('You ooze under the door.');
-            if (await rejectHeroDiagonalDoorway(dx, dy, loc))
-                return false;
-            const ballChainMove = await beginBallAndChainMove(newx, newy);
-            if (ballChainMove?.blocked) {
-                game.context.move = Number(ballChainMove.consumedTurn);
-                return ballChainMove.consumedTurn;
-            }
-            // C trains riding during the tentative move, even if the pet
-            // later refuses to swap and both rider and steed move back.
-            const oldx = u.ux, oldy = u.uy;
-            u.ux0 = oldx;
-            u.uy0 = oldy;
-            updateHeroRegions(game, newx, newy);
-            u.ux = newx;
-            u.uy = newy;
-            await moveSteedWithHero();
-            // C drag_ball() can pull the hero back before the swap check.
-            // A refused swap still completes ball placement and its delay.
-            if (await petRefusesHeroSwap(monster, game)) {
-                u.ux = oldx;
-                u.uy = oldy;
-                if (u.usteed) {
-                    u.usteed.mx = oldx;
-                    u.usteed.my = oldy;
-                }
-                // C domove_core() resets occupations after restoring the
-                // hero's position, even when a peaceful refuses the swap.
-                resetBulkTakeoff();
-                resetPick();
-                resetTrapSetting();
-                await finishBallAndChainMove(ballChainMove);
-                if (ballChainMove?.causeDelay)
-                    await delayAfterDraggingBall();
-                return true;
-            }
-            monster.mx = oldx;
-            monster.my = oldy;
-            // C domove_swap_with_pet() redraws both actors before the swap
-            // announcement can flush the map or pause for acknowledgment.
-            newsym(newx, newy);
-            newsym(oldx, oldy);
-            // C hack.c domove_swap_with_pet(): x_monnam() with "your" for
-            // pets, "the" for unnamed common species, and a "peaceful"
-            // adjective for non-pets.
-            const givenName = !!MGIVENNAME(monster);
-            const swapName = monsterName(monster, {
-                state: game,
-                article: monster.mtame ? 'your'
-                    : !givenName && !((MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_PNAME)
-                        ? 'the' : 'none',
-                adjective: monster.mpeaceful && !monster.mtame ? 'peaceful' : '',
-                suppressSaddle: givenName,
-            });
-            await plineWithContinuation(`You ${monster.mpeaceful ? 'swap places with' : 'frighten'} ${swapName}.`);
-            return finishMovedHero({
-                oldx, oldy, newx, newy, loc, explicitAttempt,
-                ballChainMove,
-            });
+            // C do_attack() returns FALSE here: a yielding monster takes
+            // the same DO_MOVE checks as an unoccupied destination.
         }
-        // attack() runs the whole attack_checks() reveal sequence: the
-        // unseen-monster marker, the disguised-mimic stumble, and the
-        // hidden-under reveal, each able to consume the move on its own.
-        // C gb.bhitpos is the struck square, even for a worm tail.
-        const verdict = await prepareAppliedWeaponAttack(monster, game.uwep ?? null, { state: game, struckAt: { x: newx, y: newy } });
-        if (!verdict.proceed)
-            return verdict.spentTime;
-        if (await attackHostileMonster(monster, newx, newy, {
-            confirmationOverridden: verdict.confirmationOverridden ?? false,
-        }))
-            return true;
+        else {
+            // attack() runs the whole attack_checks() reveal sequence: the
+            // unseen-monster marker, the disguised-mimic stumble, and the
+            // hidden-under reveal, each able to consume the move on its own.
+            // C gb.bhitpos is the struck square, even for a worm tail.
+            const verdict = await prepareAppliedWeaponAttack(monster, game.uwep ?? null, { state: game, struckAt: { x: newx, y: newy } });
+            if (!verdict.proceed)
+                return verdict.spentTime;
+            if (await attackHostileMonster(monster, newx, newy, {
+                confirmationOverridden: verdict.confirmationOverridden ?? false,
+            }))
+                return true;
+        }
     }
     // domove_core() snapshots the origin before test_move().  This includes
     // the terminal blocked step of a Shift-run, which is why later monster
@@ -7418,7 +7355,7 @@ async function domoveCore(dx, dy, explicitAttempt) {
         game.context.move = 0;
         return false;
     }
-    // Move the hero
+    // C domove_core(): drag the ball before tentatively moving and swapping.
     const ballChainMove = await beginBallAndChainMove(newx, newy);
     if (ballChainMove?.blocked) {
         game.context.move = Number(ballChainMove.consumedTurn);
@@ -7428,9 +7365,52 @@ async function domoveCore(dx, dy, explicitAttempt) {
     u.ux0 = oldx;
     u.uy0 = oldy;
     updateHeroRegions(game, newx, newy);
+    const destinationMonster = monsterAtPosition(game.level, newx, newy);
     u.ux = newx;
     u.uy = newy;
     await moveSteedWithHero();
+    if (destinationMonster && heroMayDisplaceMonster(destinationMonster)
+        && !hiddenCeilingMonster) {
+        const monster = destinationMonster;
+        // C drag_ball() can pull the hero back before the swap check.
+        // A refused swap still completes ball placement and its delay.
+        if (await petRefusesHeroSwap(monster, game)) {
+            u.ux = oldx;
+            u.uy = oldy;
+            if (u.usteed) {
+                u.usteed.mx = oldx;
+                u.usteed.my = oldy;
+            }
+            // C domove_core() resets occupations after restoring the
+            // hero's position, even when a peaceful refuses the swap.
+            resetBulkTakeoff();
+            resetPick();
+            resetTrapSetting();
+            await finishBallAndChainMove(ballChainMove);
+            if (ballChainMove?.causeDelay)
+                await delayAfterDraggingBall();
+            return true;
+        }
+        monster.mx = oldx;
+        monster.my = oldy;
+        // C domove_swap_with_pet() redraws both actors before the swap
+        // announcement can flush the map or pause for acknowledgment.
+        newsym(newx, newy);
+        newsym(oldx, oldy);
+        // C hack.c domove_swap_with_pet(): x_monnam() with "your" for
+        // pets, "the" for unnamed common species, and a "peaceful"
+        // adjective for non-pets.
+        const givenName = !!MGIVENNAME(monster);
+        const swapName = monsterName(monster, {
+            state: game,
+            article: monster.mtame ? 'your'
+                : !givenName && !((MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_PNAME)
+                    ? 'the' : 'none',
+            adjective: monster.mpeaceful && !monster.mtame ? 'peaceful' : '',
+            suppressSaddle: givenName,
+        });
+        await plineWithContinuation(`You ${monster.mpeaceful ? 'swap places with' : 'frighten'} ${swapName}.`);
+    }
     return finishMovedHero({
         oldx, oldy, newx, newy, loc, explicitAttempt, ballChainMove,
     });
