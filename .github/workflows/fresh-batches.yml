@@ -1,6 +1,8 @@
 name: Fresh batches
 # Record fresh native sessions with the C recorder and score the checked-out
-# JavaScript port against them, one batch per matrix job.
+# JavaScript port against them, one batch per matrix job.  Recording runs on
+# macOS like the public sessions: the Linux recorder's tty output differs
+# (for example an extra --More-- after "Saving..." from the compress fork).
 on:
   workflow_dispatch:
     inputs:
@@ -43,7 +45,7 @@ jobs:
           echo "sessions=$SESSIONS" >> "$GITHUB_OUTPUT"
 
   recorder:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
@@ -56,10 +58,7 @@ jobs:
           key: recorder-${{ runner.os }}-${{ hashFiles('nethack-c/build-recorder.sh', 'nethack-c/patches/**') }}-16ff59115
       - name: Build the native recorder
         if: steps.cache.outputs.cache-hit != 'true'
-        run: |
-          sudo apt-get update -q
-          sudo apt-get install -yq clang bison flex
-          bash nethack-c/build-recorder.sh
+        run: bash nethack-c/build-recorder.sh
       - run: tar -C nethack-c/recorder -czf recorder.tgz install
       - uses: actions/upload-artifact@v4
         with:
@@ -69,11 +68,11 @@ jobs:
 
   batch:
     needs: [plan, recorder]
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     timeout-minutes: 120
     strategy:
       fail-fast: false
-      max-parallel: 20
+      max-parallel: 5
       matrix:
         n: ${{ fromJSON(needs.plan.outputs.batches) }}
     env:
@@ -95,14 +94,14 @@ jobs:
           K=${KINDS[$((N % 4))]}
           echo "$K" > kinds.txt
           mkdir -p out
-          node scripts/generate-holdout.mjs --out "fresh$N" --count "$SESSIONS" --jobs 4 --kinds "$K" > out/generate.log 2>&1 \
+          node scripts/generate-holdout.mjs --out "fresh$N" --count "$SESSIONS" --jobs 3 --kinds "$K" > out/generate.log 2>&1 \
             || { cp -r "fresh$N/rejected" out/ 2>/dev/null; for f in $(ls out/rejected/*.txt 2>/dev/null | head -3); do echo "== $f"; head -c 2000 "$f"; echo; done; exit 1; }
           cp "fresh$N/summary.json" out/summary.json
 
       - name: Score the port against them
         run: |
           mkdir -p scores
-          ls "fresh$N"/sessions/*.json | xargs -P 4 -I{} sh -c \
+          ls "fresh$N"/sessions/*.json | xargs -P 3 -I{} sh -c \
             'node scripts/lib/score-session.mjs "$1" 2>/dev/null | sed -n "/__RESULT_ONE__/{n;p;}" > "scores/$(basename "$1").json"' _ {}
           python3 - "$N" "$(cat kinds.txt)" <<'EOF'
           import glob, json, os, shutil, sys
