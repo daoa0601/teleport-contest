@@ -3669,6 +3669,8 @@ export async function moveloop_core() {
         await finishScheduledLevelChange();
         if (g.program_state.gameover)
             return;
+        if (g.vision_full_recalc)
+            vision_recalc(0);
         if (moved) {
             g.u.umovement = (g.u.umovement ?? 12) - 12;
             g._heroTimePending = true;
@@ -3693,6 +3695,10 @@ export async function moveloop_core() {
         await performQuestExpulsion(g);
     if (g.program_state.gameover)
         return;
+    // C refreshes command-induced sight changes before monsters act again.
+    // Falling into a pit narrows sight after domove()'s earlier refresh.
+    if (g.vision_full_recalc)
+        vision_recalc(0);
     // Advance turn
     if (g.context?.move) {
         g.u.umovement = (g.u.umovement ?? 12) - 12;
