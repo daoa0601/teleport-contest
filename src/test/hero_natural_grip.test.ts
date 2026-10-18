@@ -1,3 +1,4 @@
+import { objectTypeKnown } from '../js/shk.js';
 import { monsterAtPosition } from '../js/monster_location.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -190,7 +191,7 @@ void test('an unknown oilskin cloak slips without revealing its type or repeatin
     const slipped = await monsterSlipsFromHeroGrip(monster, { ...context, head: false });
 
     assert.equal(slipped, true);
-    assert.equal(cloak.typeKnown, false);
+    assert.equal(objectTypeKnown(cloak), false);
     assert.deepEqual(messages, ["You slip off of the goblin's slippery cloak!"]);
 });
 

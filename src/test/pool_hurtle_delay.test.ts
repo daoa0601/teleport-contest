@@ -1,3 +1,4 @@
+import { objectTypeKnown } from '../js/shk.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { moveloop_core } from '../js/allmain.js';
@@ -94,7 +95,7 @@ void test('hurtling into water allows input without finishing boots that are sti
     assert.equal(game.u.uinwater, 1);
     assert.equal(game.uarmf, boots);
     assert.equal(boots.known, false, 'Clearing the hurtle delay must not complete Boots_on()');
-    assert.equal(boots.typeKnown, false);
+    assert.equal(objectTypeKnown(boots), false);
 });
 
 void test('hurtling into water allows input without finishing removal of boots', async () => {

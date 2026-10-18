@@ -203,7 +203,9 @@ void test('ink exhaustion destroys one blank scroll but leaves an unfinished bla
         const target = book ? SPE_FORCE_BOLT : SCR_IDENTIFY;
         learnObjectType(target);
         const marker = await addInventoryObject(MAGIC_MARKER, { spe: book ? 5 : 7 });
-        const paper = await addInventoryObject(book ? SPE_BLANK_PAPER : SCR_BLANK_PAPER, { quan: book ? 1 : 2 });
+        const paper = await addInventoryObject(book ? SPE_BLANK_PAPER : SCR_BLANK_PAPER, {
+            quan: book ? 1 : 2, typeKnown: false,
+        });
         const output = writingInput(paper, book ? 'force bolt' : 'identify');
 
         await applyInventoryObject(marker);

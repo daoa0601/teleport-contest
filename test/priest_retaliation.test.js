@@ -266,7 +266,9 @@ for (const lifesaving of [false, true]) {
         const potion = await addInventoryObject(POT_CONFUSION);
         await setPrimaryWeapon(potion);
         if (lifesaving)
-            await wearHeroAccessory(await addInventoryObject(AMULET_OF_LIFE_SAVING), 'uamul');
+            await wearHeroAccessory(await addInventoryObject(AMULET_OF_LIFE_SAVING, {
+                typeKnown: false,
+            }), 'uamul');
         resetInputState();
         pushKeys(`l${' '.repeat(100)}`);
         initRng(7n);

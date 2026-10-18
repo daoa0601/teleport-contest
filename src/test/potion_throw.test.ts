@@ -1198,7 +1198,7 @@ void test('unknown inert map potion records a live type call after visible impac
         const monster = await freshMapPotionState(2);
         requirePlayingGame(game);
         const potion = await addInventoryObject(POT_GAIN_LEVEL);
-        potion.typeKnown = potion.known = false;
+        potion.known = false;
         game._knownObjectTypes?.delete(potion.otyp);
         const sibling = await addInventoryObject(POT_GAIN_LEVEL, {
             blessed: true,

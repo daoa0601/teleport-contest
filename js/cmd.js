@@ -32,10 +32,8 @@ import { hurtleMonster } from './monster_hurtle.js';
 import { isRoom } from './map_types.js';
 import { deityName } from './alignment.js';
 import { continueSpellbookStudy } from './spellbook_study.js';
-import { grantMonsterWish } from './potion_occupants.js';
+import { grantMonsterWish, releaseDjinni } from './potion_occupants.js';
 import { quaff } from './quaff.js';
-import { tameMonster } from './monster_taming.js';
-import { setMonsterMalign } from './monster_alignment.js';
 import { jumpHero } from './jumping.js';
 import { clearMessageWindow, feel_location } from './display.js';
 // cmd.js — Command dispatch and movement.
@@ -257,7 +255,7 @@ import { triggerBoobyTrap } from './booby_trap.js';
 import { addShopDamage, payForShopDamage } from './shop_damage.js';
 import { convertSecretDoor } from './detect.js';
 import { roomForRoomno, roomsAt } from './room.js';
-import { learnObjectType, objectClassForType, recordObjectCall, recordObjectEncounter, recordObjectKnowledge, OBJECT_CLASS_SYMBOLS, } from './object_knowledge.js';
+import { learnObjectType, objectClassForType, recordObjectCall, recordObjectEncounter, OBJECT_CLASS_SYMBOLS, } from './object_knowledge.js';
 import { exceedsActionCapacity, nearCapacity, OVERLOADED, SLT_ENCUMBER, } from './weight.js';
 import { makeWish } from './wish.js';
 import { dopray } from './pray.js';
@@ -315,13 +313,11 @@ import { kickDoor } from './kick_door.js';
 import { heroHasMartialKick } from './kick_rules.js';
 import { bringLeashedFollowers, randomMonsterRelocation, } from './teleport.js';
 import { goodPosition, monsterTeleportRestricted } from './teleport_rules.js';
-import { removeWishGrantingMonster } from './monster_departure.js';
 import { RLOC_MSG, A_CON, A_DEX, A_MAX, A_STR, A_WIS, BOLT_LIM, COLNO, ROWNO, STONE, SCORR, SDOOR, DOOR, CORR, ROOM, ICE, POOL, CLOUD, IRONBARS, FOUNTAIN, SINK, ALTAR, WATER, MOAT, LAVAWALL, TREE, D_NODOOR, D_BROKEN, D_ISOPEN, D_CLOSED, D_LOCKED, D_TRAPPED, SHOP_DOOR_COST, IS_WALL, IS_STWALL, IS_OBSTRUCTED, IS_FURNITURE, IS_AIR, IS_ROOM, ZAP_POS, SQKY_BOARD, BEAR_TRAP, LANDMINE, FIRE_TRAP, PIT, SPIKED_PIT, TT_PIT, HOLE, TRAPDOOR, DART_TRAP, MAGIC_TRAP, TELEP_TRAP, LEVEL_TELEP, STATUE_TRAP, WEB, ANTI_MAGIC, G_GONE, ER_NOTHING, ER_DAMAGED, M_AP_NOTHING, M_AP_MONSTER, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, STRAT_WAITMASK, MM_NOEXCLAM, MM_NOMSG, SHOPBASE, ROOMOFFSET, F_LOOTED, In_endgame, Is_airlevel, Is_waterlevel, Is_rogue_level, In_hell, W_ARMOR, W_ACCESSORY, W_SADDLE, P_BOW, P_SLING, PARANOID_HIT, POLY_CONTROLLED, STR19, isok, ACCESSIBLE, AIR, DIGTYP_UNDIGGABLE, DRAWBRIDGE_UP, } from './const.js';
 const DIR_DX = { h: -1, l: 1, j: 0, k: 0, y: -1, u: 1, b: -1, n: 1 };
 const DIR_DY = { h: 0, l: 0, j: 1, k: -1, y: -1, u: -1, b: 1, n: 1 };
 // object.h enum value; object_data currently exposes the two other tools.
 const SKELETON_KEY = 221;
-const PM_DJINNI = 315;
 const PM_WATER_NYMPH = 68;
 const PM_WATER_DEMON = 289;
 const PM_WATER_MOCCASIN = 216;
@@ -3406,56 +3402,6 @@ async function rubRoyalJelly(jelly) {
     game.context.move = used ? 1 : 0;
     return used;
 }
-async function djinniFromLamp(object) {
-    const djinni = await makemonNear(PM_DJINNI, game.u.ux, game.u.uy, MM_NOMSG);
-    if (!djinni) {
-        await plineWithContinuation('It turns out to be empty.');
-        return;
-    }
-    newsym(djinni.mx, djinni.my);
-    if (!game.blind) {
-        await plineWithContinuation('In a cloud of smoke, a djinni emerges!');
-        await plineWithContinuation('The djinni speaks.');
-    }
-    else {
-        await plineWithContinuation('You smell acrid fumes.');
-        await plineWithContinuation('Something speaks.');
-    }
-    let chance = rn2(5);
-    if (object.blessed)
-        chance = chance === 4 ? rnd(4) : 0;
-    else if (object.cursed)
-        chance = chance === 0 ? rn2(4) : 4;
-    switch (chance) {
-        case 0: {
-            await plineWithContinuation('"I am in your debt.  I will grant one wish!"');
-            await grantMonsterWish(djinni);
-            break;
-        }
-        case 1:
-            await plineWithContinuation('"Thank you for freeing me!"');
-            await tameMonster(djinni);
-            break;
-        case 2:
-            await plineWithContinuation('"You freed me!"');
-            djinni.mpeaceful = 1;
-            setMonsterMalign(djinni);
-            break;
-        case 3:
-            await plineWithContinuation('"It is about time!"');
-            if (canSpotMonster(djinni))
-                await plineWithContinuation('The djinni vanishes.');
-            await removeWishGrantingMonster(djinni);
-            break;
-        default:
-            await plineWithContinuation('"You disturbed me, fool!"');
-            djinni.mpeaceful = 0;
-            djinni.mtame = 0;
-            djinni.pet = false;
-            setMonsterMalign(djinni);
-            break;
-    }
-}
 // C refs: apply.c:dorub(), invent.c:getobj(), wield.c:wield_tool(), and
 // cmd.c:CQ_CANNED.  Selecting an unwielded lamp does not rub it immediately:
 // wield_tool() installs it, consumes one action, and queues dorub plus the
@@ -3507,17 +3453,17 @@ async function dorub(cannedInvlet = null) {
             // C performs the bones-safe lamp transformation before the
             // released monster can grant a fatal artifact wish.
             transformMagicLampToOilLamp(object, 1000 + rn2(500), game, game.moves ?? 0);
-            await djinniFromLamp(object);
-            if (!game._knownObjectTypes?.has(MAGIC_LAMP)) {
-                await exerciseAttribute(A_WIS, true);
-                recordObjectKnowledge(MAGIC_LAMP);
-            }
+            requirePlayingGame(game);
+            await releaseDjinni(object, game);
+            learnObjectType(MAGIC_LAMP);
             game.context.move = 1;
             return;
         }
-        await plineWithContinuation(rn2(2)
-            ? 'You see a puff of smoke.'
-            : 'Nothing happens.');
+        if (rn2(2))
+            await plineWithContinuation(heroIsBlind(game)
+                ? 'You smell smoke.' : 'You see a puff of smoke.');
+        else
+            await plineWithContinuation('Nothing happens.');
     }
     else if (object.otyp === BRASS_LANTERN) {
         await plineWithContinuation('Rubbing the electric lamp is not particularly rewarding.');

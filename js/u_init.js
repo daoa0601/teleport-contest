@@ -1,5 +1,6 @@
 // u_init.js — Initial hero, pet, inventory, and attribute setup.
 // C refs: u_init.c, attrib.c, dog.c, teleport.c, makemon.c.
+import { objectTypeKnown } from './shk.js';
 import { game } from './gstate.js';
 import { useStartingItem } from './starting_equipment.js';
 import { isGrayStone, isLauncherAmmunition, isThrowingWeapon } from './object_properties.js';
@@ -852,7 +853,7 @@ export function updateInventoryPresentation(raw, presentation = null) {
 }
 function inventoryPresentation(raw, presentation) {
     let view = presentation || ITEM_PRESENTATION.get(raw.otyp)
-        || (raw._startingInventory || raw.typeKnown
+        || (raw._startingInventory || objectTypeKnown(raw)
             ? sourceKnownPresentation(raw) : null) || wishedObjectPresentation(raw);
     if (game.urole?.key === 'knight'
         && (raw.otyp === LONG_SWORD || raw.otyp === LANCE)) {

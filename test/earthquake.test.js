@@ -1,3 +1,4 @@
+import { objectTypeKnown } from '../js/shk.js';
 import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -104,7 +105,7 @@ void test('a charged earthquake drum shakes the level and spends one charge', as
     pushKeys(' '.repeat(200));
     await playInstrument(drum);
     assert.equal(drum.spe, 1);
-    assert.equal(drum.typeKnown, true);
+    assert.equal(objectTypeKnown(drum), true);
     assert.ok(level.traps.length > 0);
 });
 void test('an empty earthquake drum acts like an ordinary drum', async () => {

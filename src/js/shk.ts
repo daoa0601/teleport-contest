@@ -127,15 +127,13 @@ export function shopkeeperKillerName(monster: Monster): string {
     return `${honorific}${shopkeeperName(monster)}; the shopkeeper`;
 }
 
+// C objects[otyp].oc_name_known belongs to the type, never to an instance.
 export function objectTypeKnown(
-    object: Pick<GameObject, 'otyp'> & Partial<Pick<GameObject, 'oclass' | 'typeKnown'>>,
+    object: Pick<GameObject, 'otyp'> & Partial<Pick<GameObject, 'oclass'>>,
     state: GameState = game,
 ): boolean {
     return !!OBJECT_INITIAL_KNOWN[object.otyp]
-        || !!object?.typeKnown
-        || !!state?._knownObjectTypes?.has(object?.otyp)
-        || (state?.inventory || []).some(item =>
-            item.otyp === object?.otyp && item.typeKnown);
+        || !!state._knownObjectTypes?.has(object.otyp);
 }
 
 function shopkeeperForRoom(roomno: number | undefined, state: GameState = game): Shopkeeper | null {

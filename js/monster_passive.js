@@ -411,7 +411,7 @@ export async function applyMonsterPassiveToObject(defender, object, { carried = 
             return;
         if (carried)
             state._armorClassDirty = true;
-        if (carried && (object.known || object.typeKnown || object.oclass === 3)) {
+        if (carried && (object.known || object.oclass === 3)) {
             observeObjectForNaming(object, { state });
             await publish(`${ownedObjectAction(object, 'seem', state)} less effective.`);
         }

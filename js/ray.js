@@ -120,7 +120,6 @@ export function discoverHeroReflectionSource(source = heroReflectionSource(), st
         return;
     exerciseWisdom(true, state);
     recordObjectKnowledge(object.otyp, state);
-    object.typeKnown = true;
 }
 export function discoverReflectingShield(state = game) {
     const shield = state.uarms;

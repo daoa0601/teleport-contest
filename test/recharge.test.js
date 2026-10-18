@@ -42,7 +42,7 @@ async function readAndChooseCharge(scroll, answer) {
 void test('reading a blessed charging scroll restores a cancelled directional wand', async () => {
     freshObjectRoom({ gameplaySeed: 71 });
     requirePlayingGame(game);
-    const scroll = await addInventoryObject(SCR_CHARGING, { blessed: true });
+    const scroll = await addInventoryObject(SCR_CHARGING, { blessed: true, typeKnown: false });
     const wand = await addInventoryObject(WAN_FIRE, { spe: -1 });
     await readAndChooseCharge(scroll, requiredLetter(wand));
     assert.ok(wand.spe >= 4 && wand.spe <= 8, `wand has ${wand.spe} charges`);

@@ -1,3 +1,4 @@
+import { objectTypeKnown } from '../js/shk.js';
 import { createDungeon } from './support/topology.js';
 import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
@@ -62,7 +63,7 @@ void test('magic resistance bounces a self-zapped wand of striking', async () =>
     await dozap();
 
     assert.equal(game.u.uhp, startingHitPoints);
-    assert.equal(wand.typeKnown, true);
+    assert.equal(objectTypeKnown(wand), true);
     assert.equal(wand.spe, 1);
 });
 

@@ -56,7 +56,6 @@ export async function mixPotions(object: GameObject, potion: GameObject): Promis
     object.cursed = false;
     object.buc = 'uncursed';
     object.bknown = false;
-    object.typeKnown = false;
     if (heroIsBlind() || heroIsHallucinating()) object.dknown = false;
     if (mixture) object.otyp = mixture;
     else {
@@ -106,7 +105,6 @@ export async function neutralizePotion(object: GameObject, potion: GameObject): 
     if (mixture === POT_WATER) single.odiluted = false;
     single.bknown = false;
     single.dknown = false;
-    single.typeKnown = false;
     if (!heroIsBlind()) {
         if (!heroIsHallucinating()) observeObject(single);
         const change = mixture === POT_WATER && single.dknown ? 'clears' : `turns ${potionColor(single)}`;
@@ -114,7 +112,7 @@ export async function neutralizePotion(object: GameObject, potion: GameObject): 
         if (oldKnown) {
             // docall's temporary object describes the old liquid, whose
             // identity must remain available after the real bottle changes.
-            await tryCallObjectType({ ...single, otyp: oldType, dknown: true, typeKnown: false });
+            await tryCallObjectType({ ...single, otyp: oldType, dknown: true });
         }
     }
     await holdPotion(single, 'You juggle and drop');

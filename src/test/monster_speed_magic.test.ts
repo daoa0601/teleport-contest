@@ -1,3 +1,4 @@
+import { objectTypeKnown } from '../js/shk.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -54,7 +55,7 @@ void test('a speed-monster wand hastens a peaceful target without angering it',
         assert.equal(monster.mspeed, 2);
         assert.equal(monster.mpeaceful, 1);
         assert.equal(wand.spe, 1);
-        assert.equal(wand.typeKnown, true);
+        assert.equal(objectTypeKnown(wand), true);
     });
 
 void test('slow monster removes permanent speed and angers a peaceful target',

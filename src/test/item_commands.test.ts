@@ -65,12 +65,12 @@ void test('a cursed scroll of light darkens the visible area', async () => {
     assert.equal(level.requireAt(11, 10).lit, false);
 });
 
-void test('reading a magical scroll exercises Wisdom', async () => {
+void test('reading an unknown magical scroll exercises Wisdom for reading and discovery', async () => {
     freshGameplayRoom();
     requireFixtureGame(game);
     game.u.acurr.a[A_WIS] = 3;
     game.u.acurr.a[A_CON] = 3;
-    await addInventoryObject(SCR_LIGHT, { invlet: 'a' });
+    await addInventoryObject(SCR_LIGHT, { invlet: 'a', typeKnown: false });
     pushKey('a');
     pushKey(' ');
 

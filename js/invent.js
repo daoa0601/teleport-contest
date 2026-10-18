@@ -12,7 +12,7 @@ import { nhgetch } from './input.js';
 import { reassignInventoryLetters } from './inventory_prompt.js';
 import { inventoryClassOrder, inventorySortMode, objectClassHeading, sortObjects } from './object_sort.js';
 import { ALTAR, ICE, Is_airlevel, Is_waterlevel, MENU_TRADITIONAL, MV_KNOWS_EGG, PICK_NONE, PICK_ONE, W_ACCESSORY, W_AMUL, W_ARMOR, W_RING, W_TOOL, is_pit, } from './const.js';
-import { ALCHEMY_SMOCK, ARROW as FIRST_OBJECT, BAG_OF_TRICKS, EGG, CHEST, FORTUNE_COOKIE, GOLD_PIECE, HAWAIIAN_SHIRT, LARGE_BOX, MAGIC_MARKER, HEAVY_IRON_BALL, LOCK_PICK, CREDIT_CARD, SKELETON_KEY, OBJECT_BIMANUAL, OBJECT_INITIAL_KNOWN, OBJECT_NAMES, SCR_BLANK_PAPER, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_NOVEL, STATUE, TIN, TIN_OPENER, TOWEL, AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, BEARTRAP, BELL, BELL_OF_OPENING, BLINDFOLD, BRASS_LANTERN, BULLWHIP, CANDELABRUM_OF_INVOCATION, CAN_OF_GREASE, CORPSE, CREAM_PIE, CRYSTAL_BALL, DRUM_OF_EARTHQUAKE, DWARVISH_MATTOCK, EUCALYPTUS_LEAF, EXPENSIVE_CAMERA, FIGURINE, GRAPPLING_HOOK, HORN_OF_PLENTY, LAND_MINE, LEASH, LENSES, MAGIC_LAMP, MAGIC_WHISTLE, MEAT_RING, MIRROR, OBJECT_DESCRIPTIONS, OBJECT_UNIQUE, OIL_LAMP, PICK_AXE, POT_OIL, SADDLE, STETHOSCOPE, TALLOW_CANDLE, TINNING_KIT, TIN_WHISTLE, UNICORN_HORN, WAX_CANDLE, WOODEN_FLUTE, } from './object_data.js';
+import { ALCHEMY_SMOCK, ARROW as FIRST_OBJECT, BAG_OF_TRICKS, EGG, CHEST, FORTUNE_COOKIE, GOLD_PIECE, HAWAIIAN_SHIRT, LARGE_BOX, MAGIC_MARKER, HEAVY_IRON_BALL, LOCK_PICK, CREDIT_CARD, SKELETON_KEY, OBJECT_BIMANUAL, OBJECT_NAMES, SCR_BLANK_PAPER, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_NOVEL, STATUE, TIN, TIN_OPENER, TOWEL, AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, BEARTRAP, BELL, BELL_OF_OPENING, BLINDFOLD, BRASS_LANTERN, BULLWHIP, CANDELABRUM_OF_INVOCATION, CAN_OF_GREASE, CORPSE, CREAM_PIE, CRYSTAL_BALL, DRUM_OF_EARTHQUAKE, DWARVISH_MATTOCK, EUCALYPTUS_LEAF, EXPENSIVE_CAMERA, FIGURINE, GRAPPLING_HOOK, HORN_OF_PLENTY, LAND_MINE, LEASH, LENSES, MAGIC_LAMP, MAGIC_WHISTLE, MEAT_RING, MIRROR, OBJECT_DESCRIPTIONS, OBJECT_UNIQUE, OIL_LAMP, PICK_AXE, POT_OIL, SADDLE, STETHOSCOPE, TALLOW_CANDLE, TINNING_KIT, TIN_WHISTLE, UNICORN_HORN, WAX_CANDLE, WOODEN_FLUTE, } from './object_data.js';
 import { MONSTER_GROWTH_TARGET } from './monster_data.js';
 import { definiteName, objectCombatName, objectLooksUnique, objectName, observeObjectForNaming, simpleObjectName, singularObjectName } from './objnam.js';
 import { learnObjectType, OBJECT_CLASS_SYMBOLS, recordObjectEncounter, recordObjectKnowledge } from './object_knowledge.js';
@@ -59,8 +59,7 @@ export async function checkInventoryGold(why, state = game) {
 export function objectNeedsFullIdentification(object) {
     if (!object || object.oclass === COIN_CLASS)
         return false;
-    const typeKnown = OBJECT_INITIAL_KNOWN[object.otyp] || object.typeKnown
-        || game._knownObjectTypes?.has(object.otyp);
+    const typeKnown = objectTypeKnown(object);
     if (!object.known || !object.bknown || !object.dknown || !typeKnown)
         return true;
     if ((!object.cknown && (isContainer(object) || object.otyp === STATUE))
@@ -86,8 +85,6 @@ export function fullyIdentifyObject(object, state = game) {
         learnObjectType(object.otyp, state);
     if (object.oartifact)
         discoverArtifact(object.oartifact, state);
-    if (realObjectType)
-        object.typeKnown = true;
     object.known = true;
     object.bknown = true;
     object.rknown = true;
@@ -357,7 +354,6 @@ function rerollItemDescription(item) {
     return inventoryItemDescription({
         ...item,
         known: true,
-        typeKnown: true,
         bknown: true,
         dknown: true,
         rknown: true,
@@ -674,8 +670,7 @@ function accessoryActionText(item, state) {
 // C iactions.c:item_reading_classification(). Reading advice depends on
 // what the hero knows about the type, rather than the object's charges.
 function itemReadingText(item, state) {
-    const known = !!OBJECT_INITIAL_KNOWN[item.otyp] || !!item.typeKnown
-        || !!state._knownObjectTypes?.has(item.otyp);
+    const known = objectTypeKnown(item, state);
     if (item.otyp === FORTUNE_COOKIE)
         return 'Read the message inside this cookie';
     if (item.otyp === OBJECT_NAMES.indexOf('T-shirt'))
@@ -774,7 +769,6 @@ export async function showIdentifiedInventory() {
 export function identifyObjectForDisclosure(item, identifyTinContents = false) {
     recordObjectEncounter(item.otyp);
     recordObjectKnowledge(item.otyp);
-    item.typeKnown = true;
     item.known = true;
     item.bknown = true;
     item.dknown = true;

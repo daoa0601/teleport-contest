@@ -1,3 +1,4 @@
+import { objectTypeKnown } from '../js/shk.js';
 import type { InventoryObjectOverrides } from './support/game-objects.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -209,7 +210,7 @@ void test('invisibility grants temporary invisibility without consuming or ident
     assert.equal(heroIsInvisible(), true);
     assert.ok((game.u.invisibleTurns ?? 0) >= 106 && (game.u.invisibleTurns ?? 0) <= 700);
     assert.equal(game.inventory.includes(spell), true);
-    assert.equal(spell.typeKnown, false);
+    assert.equal(objectTypeKnown(spell), false);
     assert.equal(game._knownObjectTypes?.has(spell.otyp), false);
 });
 

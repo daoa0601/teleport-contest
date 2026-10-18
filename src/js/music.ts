@@ -329,11 +329,6 @@ async function readHornDirection() {
     return selected[0];
 }
 
-function learnInstrumentType(instrument: GameObject) {
-    learnObjectType(instrument.otyp);
-    instrument.typeKnown = true;
-}
-
 async function playElementalHorn(
     instrument: GameObject,
     element: 'fire' | 'cold',
@@ -364,7 +359,7 @@ async function playElementalHorn(
     if (game.program_state.gameover) return { heroDied: true };
     if (result?.heroDied && await finishHeroDeath({ killer: `bolt of ${element}` }))
         return { heroDied: true };
-    learnInstrumentType(instrument);
+    learnObjectType(instrument.otyp);
     return { heroDied: false };
 }
 
@@ -458,7 +453,7 @@ async function playEarthquakeDrum(instrument: GameObject): Promise<InstrumentEff
     if (earthquake.heroDied) return earthquake;
     const flight = await awakenMonsters(ROWNO * COLNO);
     if (flight?.heroDied) return flight;
-    learnInstrumentType(instrument);
+    learnObjectType(instrument.otyp);
 }
 
 async function improvise(instrument: GameObject) {

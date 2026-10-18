@@ -261,7 +261,7 @@ export function killerObjectName(object, state = game) {
         return artifact.name.replace(/^The /, 'the ');
     }
     const view = {
-        ...object, known: true, dknown: true, typeKnown: true,
+        ...object, known: true, dknown: true,
         bknown: object.otyp === POT_WATER, rknown: false, greased: false,
         blessed: object.otyp === POT_WATER && !!object.blessed,
         cursed: object.otyp === POT_WATER && !!object.cursed,
@@ -272,7 +272,9 @@ export function killerObjectName(object, state = game) {
     const quantity = object.quan ?? object.quantity ?? 1;
     const callNames = { ...state._objectCallNames };
     delete callNames[object.otyp];
-    const nameState = { ...state, _objectCallNames: callNames };
+    const knownTypes = new Set(state._knownObjectTypes);
+    knownTypes.add(object.otyp);
+    const nameState = { ...state, _objectCallNames: callNames, _knownObjectTypes: knownTypes };
     let name;
     if (object.otyp === CORPSE) {
         name = corpseName(view);
@@ -498,7 +500,6 @@ export function minimalObjectName(object, state = game) {
         otyp: object.otyp,
         oclass: object.oclass,
         dknown: !!object.dknown,
-        typeKnown: !!object.dknown && objectTypeKnown(object, state),
         known: object.oclass === AMULET_CLASS
             ? !!object.known : !OBJECT_USES_KNOWN[object.otyp],
         quan: 1,

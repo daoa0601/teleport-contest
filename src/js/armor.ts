@@ -192,8 +192,7 @@ export function heroHasWaterWalking(state: GameState = game) {
 export function heroKnowsWaterWalking(state: GameState = game) {
     const hero = state.u;
     const boots = state?.uarmf || hero.uarmf;
-    const typeKnown = boots?.typeKnown
-        || state?._knownObjectTypes?.has(WATER_WALKING_BOOTS);
+    const typeKnown = boots && objectTypeKnown(boots, state);
     return !hero.usteed && boots?.otyp === WATER_WALKING_BOOTS && !!typeKnown;
 }
 
@@ -968,7 +967,7 @@ export function findArmorClass(state: GameState = game) {
 
 
 export function armorSimpleName(
-    object: Pick<GameObject, 'otyp'> & Partial<Pick<GameObject, 'oclass' | 'name' | 'dknown' | 'typeKnown'>>,
+    object: Pick<GameObject, 'otyp'> & Partial<Pick<GameObject, 'oclass' | 'name' | 'dknown'>>,
     state: GameState = game,
 ) {
     const slot = armorSlotFor(object?.otyp);

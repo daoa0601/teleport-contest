@@ -169,7 +169,6 @@ export interface GameObject {
     description?: string;
     color?: number;
     artifactName?: string;
-    typeKnown?: boolean;
     overrideIdentified?: boolean;
     _startingInventory?: boolean;
     bimanual?: boolean;

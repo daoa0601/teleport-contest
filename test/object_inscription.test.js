@@ -60,8 +60,8 @@ void test('dummy and minimal naming views omit end-of-game inscriptions', async 
     game.program_state.gameover = true;
     assert.match(objectName(shirt), / with text /);
     assert.equal(minimalObjectName(shirt), 'T-shirt');
-    assert.equal(objectName({ otyp: T_SHIRT, oclass: 3, typeKnown: true, dknown: true }), 'T-shirt');
-    assert.equal(objectName({ otyp: T_SHIRT, oclass: 3, o_id: 0, typeKnown: true, dknown: true }), 'T-shirt');
+    assert.equal(objectName({ otyp: T_SHIRT, oclass: 3, dknown: true }), 'T-shirt');
+    assert.equal(objectName({ otyp: T_SHIRT, oclass: 3, o_id: 0, dknown: true }), 'T-shirt');
 });
 void test('candy stack disclosure pluralizes the bar before its wrapper and personal name', async () => {
     freshObjectRoom({ flags: { verbose: false } });

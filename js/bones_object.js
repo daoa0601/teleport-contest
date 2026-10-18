@@ -54,7 +54,6 @@ export function prepareBonesObjectForSave(object) {
     if (OBJECT_USES_KNOWN[object.otyp]) {
         object.known = false;
     }
-    object.typeKnown = false;
     for (const key of ['dknown', 'bknown', 'rknown', 'lknown', 'cknown', 'tknown'])
         object[key] = false;
     object.invlet = null;

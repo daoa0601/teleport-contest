@@ -1,3 +1,4 @@
+import { objectTypeKnown } from '../js/shk.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { wearHeroAccessory } from '../js/accessory.js';
@@ -21,7 +22,7 @@ void test('an Amulet reflects clerical lightning before it damages the hero or t
             assert.match(messages, /It bounces off your medallion\./);
             assert.equal(game.u.uhp, 500);
             assert.equal(square.typ, IRONBARS);
-            assert.equal(amulet.typeKnown, true);
+            assert.equal(objectTypeKnown(amulet), true);
             assert.ok((caster.seen_resistance ?? 0) & M_SEEN_REFL);
             assert.doesNotMatch(messages, /blinded by the flash/);
             cast = true;

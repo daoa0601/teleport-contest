@@ -63,7 +63,6 @@ export function prepareBonesObjectForSave<T extends GameObject | null | undefine
     if (OBJECT_USES_KNOWN[object.otyp]) {
         object.known = false;
     }
-    object.typeKnown = false;
     for (const key of ['dknown', 'bknown', 'rknown', 'lknown', 'cknown', 'tknown'] as const)
         object[key] = false;
     object.invlet = null;

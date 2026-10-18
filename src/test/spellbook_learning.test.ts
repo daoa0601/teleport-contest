@@ -314,7 +314,7 @@ void test('successful shop study accrues its real usage fee while retaining the 
     const source = await book();
     await addShopObjectToBill(source, game, { ininv: true, silent: true });
     acknowledge(t, [
-        { prompt: /begin to memorize.*learn the "light" spell/, keys: ' ' },
+        { prompt: /begin to memorize.*learn "light"/, keys: ' ' },
     ]);
     await studyBook(source);
     await finishStudy();
@@ -470,7 +470,7 @@ void test('a resumed already-cursed book applies its curse after successful lear
     acknowledge(t, [
         { prompt: /begin to memorize.*spellbook of light slams shut/, keys: ' ' },
         { prompt: /stop studying.*continue your efforts/, keys: ' ' },
-        { prompt: /learn the "light" spell.*wrenching sensation/, keys: ' ' },
+        { prompt: /learn "light".*wrenching sensation/, keys: ' ' },
     ]);
     await curseObject(source);
     assert.equal(game._occupation, null);

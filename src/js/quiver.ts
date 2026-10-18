@@ -10,6 +10,7 @@ import {
     AKLYS, FLINT, OBJECT_SUBTYPE, ROCK,
 } from './object_data.js';
 import { objectClassForType } from './object_knowledge.js';
+import { objectTypeKnown } from './shk.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import {
@@ -39,10 +40,7 @@ export function autoquiverCandidate(state: GameState): GameObject | null {
             continue;
         }
         const objectClass = quiverObjectClass(item);
-        const knownType = !!item.typeKnown
-            || !!state._knownObjectTypes?.has(item.otyp)
-            || !!state.inventory?.some(candidate =>
-                candidate.otyp === item.otyp && candidate.typeKnown);
+        const knownType = objectTypeKnown(item, state);
         const ordinarySlingStone = item.otyp === ROCK
             || (item.otyp === FLINT && knownType)
             || (objectClass === 13

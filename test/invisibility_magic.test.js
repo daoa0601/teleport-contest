@@ -1,3 +1,4 @@
+import { objectTypeKnown } from '../js/shk.js';
 import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -72,7 +73,7 @@ void test('a make-invisible wand turns a visible monster transparent', async () 
     pushKeys('al');
     await dozap();
     assert.equal(monster.minvis, 1);
-    assert.equal(wand.typeKnown, true);
+    assert.equal(objectTypeKnown(wand), true);
     assert.equal(wand.spe, 1);
 });
 //# sourceMappingURL=invisibility_magic.test.js.map

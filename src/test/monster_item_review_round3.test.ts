@@ -69,7 +69,8 @@ void test('a digger bungles a familiar pit and takes damage after its avoidance 
     const monster = await createMonsterAt('orc', 10, 10, MM_ANGRY | NO_MINVENT);
     monster.mhp = monster.mhpmax = 100;
     monsterLearnsTrap(monster, { ttyp: PIT });
-    const wand = await addObjectToMonsterInventory(monster, await knownObject(WAN_DIGGING, { spe: 3 }), game);
+    const wand = await addObjectToMonsterInventory(monster,
+        await knownObject(WAN_DIGGING, { spe: 3, typeKnown: false }), game);
     assert.ok(wand);
     initRng(1n);
 
