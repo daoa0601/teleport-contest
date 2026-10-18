@@ -325,6 +325,7 @@ export interface GameState {
     _commandKey?: number;
     _repeatCommands?: RepeatCommandEntry[];
     _inDoAgain?: boolean;
+    _ynNumber?: bigint;
     _movementAttempt?: MovementAttempt | null;
     _whatdoesShown?: boolean;
     _alreadyFoundFlag?: number;
