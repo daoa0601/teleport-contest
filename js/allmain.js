@@ -1474,7 +1474,6 @@ async function settleHeroLiquidAfterAction() {
         oldy: from.y,
         newx: to.x,
         newy: to.y,
-        explicitAttempt: false,
     });
     if (game.u?.utrap && game.u.utraptype === TT_LAVA) {
         return sinkHeroIntoLava({

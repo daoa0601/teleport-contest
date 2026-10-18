@@ -5,6 +5,7 @@ import { rhack } from '../js/cmd.js';
 import { HOLE } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
+import { finishScheduledLevelChange } from '../js/level_change.js';
 import { ELVEN_LEATHER_HELM, HELMET } from '../js/object_data.js';
 import { punishHero } from '../js/punishment.js';
 import { initRng } from '../js/rng.js';
@@ -26,6 +27,7 @@ void test('a soft helmet keeps its personal name when it fails to protect agains
     initRng(1n);
 
     await rhack('l'.charCodeAt(0));
+    await finishScheduledLevelChange();
 
     messages.push(game._last_message);
     assert.ok(messages.some(message => /Your .* named Leafcap does not protect you\./.test(message)),
@@ -45,6 +47,7 @@ void test('a hard helmet protects a punished hero walking into a hole', async ()
     initRng(1n);
 
     await rhack('l'.charCodeAt(0));
+    await finishScheduledLevelChange();
 
     assert.ok(game.u.uhp >= 91 && game.u.uhp <= 96,
         'the helmet limits the ball to three damage before the 1–6 damage fall');

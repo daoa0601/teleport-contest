@@ -360,7 +360,6 @@ export async function finishHeroMonsterKillOutcome(monster: Monster, x: number, 
             oldy: game.u.uy0 ?? y,
             newx: x,
             newy: y,
-            explicitAttempt: false,
         });
         if (destination.died) return { killed: true, heroDied: true };
     }

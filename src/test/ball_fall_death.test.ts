@@ -4,6 +4,7 @@ import { rhack } from '../js/cmd.js';
 import { HOLE, PANICLOG, PIT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
+import { finishScheduledLevelChange } from '../js/level_change.js';
 import { unlinkObject } from '../js/object_location.js';
 import { punishHero } from '../js/punishment.js';
 import { initRng } from '../js/rng.js';
@@ -34,6 +35,7 @@ void test('a fatal ball blow after walking into a hole uses its complete death d
     initRng(1n);
 
     await rhack('l'.charCodeAt(0));
+    await finishScheduledLevelChange();
 
     assert.equal(game.program_state.gameover, true);
     assert.equal(loadScoreRecords()[0]?.death, 'crunched in the head by an iron ball');

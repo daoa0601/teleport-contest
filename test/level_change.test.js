@@ -257,6 +257,7 @@ void test('falling through a shaft hurts the hero for each level fallen', async 
     addTrap(source, HOLE, 11, 10, { dst: { dnum: 0, dlevel: 4 }, tseen: true });
     installPagerInput(resetInputState(), { expected: /fall through|plunge down|hole|shaft/, limit: 2 });
     await rhack('l'.charCodeAt(0));
+    await finishScheduledLevelChange();
     assert.ok(game.level === destination, 'the fall did not reach the shaft destination');
     const damage = 100 - game.u.uhp;
     assert.ok(damage >= 3 && damage <= 18, `a three-level fall dealt ${damage} damage`);
@@ -276,6 +277,7 @@ void test('a potion falling with the hero breaks unseen before the remembered-le
         },
     };
     await rhack('l'.charCodeAt(0));
+    await finishScheduledLevelChange();
     // goto_level's obj_delivery(FALSE) lands hero-traveling objects before
     // the new level is in view and before its remembered note.
     const transcript = [...pages, game._last_message ?? ''].join('\n');
@@ -291,6 +293,7 @@ void test('a flying hero can deliberately descend through a known hole without f
     addTrap(source, HOLE, 10, 10, { dst: { dnum: 0, dlevel: 4 }, tseen: true });
     installPagerInput(resetInputState(), { expected: /fly down|hole|shaft/, limit: 2 });
     await rhack('>'.charCodeAt(0));
+    await finishScheduledLevelChange();
     assert.ok(game.level === destination, 'the flying hero could not descend through the hole');
     assert.equal(game.u.mh, health);
 });

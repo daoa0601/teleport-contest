@@ -104,7 +104,6 @@ for (const lifesaving of [false, true] as const) {
         const result = await heroLiquidEffects({
             applyLandingEffects: ({ from, to }) => finishDestinationSpotEffects({
                 oldx: from.x, oldy: from.y, newx: to.x, newy: to.y,
-                explicitAttempt: false,
             }),
         });
 

@@ -257,7 +257,7 @@ export async function jumpHero(magic = 0, { state = game }: { state?: GameState 
     await redrawMap();
     await bot();
     await finishDestinationSpotEffects({ ...movement,
-        newx: movement.x, newy: movement.y, explicitAttempt: false });
+        newx: movement.x, newy: movement.y });
     if (state.program_state.gameover) return jumpResult(true, state);
     await announceInvocationSquare();
     nomul(-1, state);

@@ -10,6 +10,7 @@ import { pushKeys } from '../js/input.js';
 import { createCorpstatAt } from '../js/mklev.js';
 import { BOULDER, CLUB, EGG, MIRROR, POT_WATER, ROCK, SPE_FORCE_BOLT, STATUE, WAN_STRIKING, } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
+import { finishScheduledLevelChange } from '../js/level_change.js';
 import { castSpell } from '../js/spell.js';
 import { learnSpell } from './support/spells.js';
 import { dozap } from '../js/zap.js';
@@ -203,6 +204,7 @@ void test('force bolt shatters a trapdoor and drops the hero to the next level',
             }]]);
     pushKeys('>' + ' '.repeat(20));
     await castSpell(SPE_FORCE_BOLT);
+    await finishScheduledLevelChange();
     assert.equal(trap.ttyp, HOLE);
     assert.equal(game.u.uz.dnum, 0);
     assert.equal(game.u.uz.dlevel, 2);
