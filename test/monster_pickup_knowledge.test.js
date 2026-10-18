@@ -1,3 +1,4 @@
+import { objectTypeKnown } from '../js/shk.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { canSeeMonster, canSenseMonster } from '../js/display.js';
@@ -59,7 +60,7 @@ void test('an unseen hostile pickup hides the saddle details the hero can no lon
         rknown: false,
         tknown: false,
     });
-    assert.equal(saddle.typeKnown, true);
+    assert.equal(objectTypeKnown(saddle), true);
     assert.equal(Object.hasOwn(saddle, 'buc'), false);
     assert.equal(saddle.blessed, true);
     assert.equal(saddle.cursed, false);
@@ -87,7 +88,7 @@ void test('unseen pickup keeps the source description exceptions and type identi
     assert.equal(shield.dknown, false);
     assert.equal(glob.dknown, true);
     assert.equal(wand.known, false);
-    assert.equal(wand.typeKnown, true);
+    assert.equal(objectTypeKnown(wand), true);
     assert.equal(inventoryItemDescription(wand), 'a wand');
 });
 void test('a visible hostile pickup preserves object knowledge', async () => {

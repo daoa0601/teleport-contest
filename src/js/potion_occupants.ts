@@ -58,7 +58,8 @@ async function releaseGhost(state: PlayingGameState) {
     state._helplessDoneMessage = 'You regain your composure.';
 }
 
-async function releaseDjinni(source: GameObject, state: PlayingGameState) {
+// C potion.c:djinni_from_bottle(), shared by smoky potions and rubbed lamps.
+export async function releaseDjinni(source: GameObject, state: PlayingGameState) {
     const monster = await makemonNear(PM_DJINNI, state.u.ux, state.u.uy, MM_NOMSG);
     if (!monster) {
         await pline('It turns out to be empty.');

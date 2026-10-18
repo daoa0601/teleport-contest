@@ -1,3 +1,4 @@
+import { objectTypeKnown } from '../js/shk.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { game, requirePlayingGame } from '../js/gstate.js';
@@ -75,7 +76,7 @@ void test('a fire horn shoots a ray and spends one charge', async () => {
     await playInstrument(horn);
     assert.equal(horn.spe, 1);
     assert.ok(target.mhp < 100);
-    assert.equal(horn.typeKnown, true);
+    assert.equal(objectTypeKnown(horn), true);
 });
 void test('cold resistance protects against a frost horn aimed at yourself', async () => {
     freshGameplayRoom();
@@ -87,7 +88,7 @@ void test('cold resistance protects against a frost horn aimed at yourself', asy
     await playInstrument(horn);
     assert.equal(game.u.uhp, 100);
     assert.equal(horn.spe, 0);
-    assert.equal(horn.typeKnown, true);
+    assert.equal(objectTypeKnown(horn), true);
 });
 void test('an empty fire horn behaves like an ordinary horn', async () => {
     freshGameplayRoom();
@@ -98,7 +99,7 @@ void test('an empty fire horn behaves like an ordinary horn', async () => {
     pushKeys('y          ');
     await playInstrument(horn);
     assert.equal(target.msleeping, 0);
-    assert.equal(horn.typeKnown, undefined);
+    assert.equal(objectTypeKnown(horn), false);
 });
 for (const inOwnShop of [true, false]) {
     void test(`a drum ${inOwnShop ? 'cannot frighten a shopkeeper inside its shop' : 'can frighten a shopkeeper outside its shop'}`, async () => {

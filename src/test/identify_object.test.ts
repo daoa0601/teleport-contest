@@ -1,3 +1,4 @@
+import { objectTypeKnown } from '../js/shk.js';
 import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -42,7 +43,7 @@ void test('full identification reveals an object and its type', async () => {
     assert.equal(ring.bknown, true);
     assert.equal(ring.dknown, true);
     assert.equal(ring.rknown, true);
-    assert.equal(ring.typeKnown, true);
+    assert.equal(objectTypeKnown(ring), true);
     assert.ok(game._knownObjectTypes !== null && game._knownObjectTypes !== undefined);
     assert.ok(game._knownObjectTypes.has(RIN_CONFLICT));
     assert.ok(game._encounteredObjectTypes !== null && game._encounteredObjectTypes !== undefined);
@@ -67,7 +68,7 @@ void test('full identification does not observe an object while hallucinating', 
 
     fullyIdentifyObject(potion);
 
-    assert.equal(potion.typeKnown, true);
+    assert.equal(objectTypeKnown(potion), true);
     assert.equal(potion.known, true);
     assert.equal(potion.bknown, true);
     assert.equal(potion.rknown, true);
@@ -91,7 +92,6 @@ void test('full identification does not observe or discover a generic object', a
 
     fullyIdentifyObject(generic);
 
-    assert.equal(generic.typeKnown, false);
     assert.equal(generic.dknown, false);
     assert.equal(generic.known, true);
     assert.equal(generic.bknown, true);

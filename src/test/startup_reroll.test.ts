@@ -3,13 +3,20 @@ import { requirePlayingGame } from '../js/gstate.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { game } from '../js/gstate.js';
+import { game, requireGameDisplay } from '../js/gstate.js';
 import { currentConductLines } from '../js/insight.js';
+import { resetInputState } from '../js/input.js';
+import { inventoryItemDescription, rerollMenu } from '../js/invent.js';
 import { runSegment } from '../js/jsmain.js';
+import { CLOAK_OF_MAGIC_RESISTANCE, JADE } from '../js/object_data.js';
+import { recordObjectCall } from '../js/object_knowledge.js';
+import { objectTypeKnown } from '../js/shk.js';
 import {
     finishStartingDiscoveries, uInitInventoryAttrs,
 } from '../js/u_init.js';
 import { screenText } from './support/screen.js';
+import { addInventoryObject } from './support/game-objects.js';
+import { freshObjectRoom } from './support/object-room.js';
 import { prepareHeroStartup } from './support/startup.js';
 
 async function wizardCandidate(seed = 8271n) {
@@ -21,6 +28,36 @@ async function wizardCandidate(seed = 8271n) {
     });
     assert.equal(await uInitInventoryAttrs(), true);
     return game;
+}
+
+for (const [type, identifiedName] of [
+    [CLOAK_OF_MAGIC_RESISTANCE, 'an uncursed +1 cloak of magic resistance'],
+    [JADE, 'an uncursed jade stone'],
+] as const) {
+    void test(`reroll previews ${identifiedName} without discovering its type`, async () => {
+        freshObjectRoom();
+        const object = await addInventoryObject(type, {
+            typeKnown: false, known: false, bknown: false,
+            dknown: false, observed: false, spe: 1,
+        });
+        recordObjectCall(type, 'Keepsake');
+        const input = resetInputState();
+        let menu = '';
+        input.beforeRead = () => {
+            menu = requireGameDisplay().grid.map(row => row.map(cell => cell.ch).join('')).join('\n');
+        };
+        input.feed('p');
+
+        assert.equal(await rerollMenu(), false);
+
+        const preview = menu.split('\n').find(row => row.includes('uncursed'))?.trim();
+        assert.equal(preview, identifiedName);
+        assert.equal(objectTypeKnown(object), false);
+        assert.equal(object.known, false);
+        assert.equal(object.dknown, false);
+        assert.equal(object.bknown, false);
+        assert.doesNotMatch(inventoryItemDescription(object), /magic resistance|jade/);
+    });
 }
 
 void test('disposable candidates defer equipment, spells, discoveries, and skills', async () => {

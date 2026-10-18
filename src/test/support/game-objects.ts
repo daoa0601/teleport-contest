@@ -1,4 +1,6 @@
 import type { GameObject } from '../../js/object_types.js';
+import { game } from '../../js/gstate.js';
+import { recordObjectKnowledge } from '../../js/object_knowledge.js';
 import { CORPSE, LARGE_BOX } from '../../js/object_data.js';
 import { MONSTER_NAME } from '../../js/monster_data.js';
 import { addCreatedObjectToContainer } from '../../js/object_container.js';
@@ -11,14 +13,16 @@ import { objectWeight } from '../../js/weight.js';
 
 export interface InventoryObject extends GameObject { invlet: string }
 
-export type KnownObjectOverrides = Partial<GameObject> & { initialize?: boolean };
+export type KnownObjectOverrides = Partial<GameObject> & { initialize?: boolean; typeKnown?: boolean };
 export type InventoryObjectOverrides = KnownObjectOverrides & { observed?: boolean };
 
 
 export async function knownObject(otyp: number, overrides: KnownObjectOverrides = {}): Promise<GameObject> {
-    const { initialize = true, ...properties } = overrides;
+    const { initialize = true, typeKnown = true, ...properties } = overrides;
     const quantity = properties.quan ?? properties.quantity ?? 1;
     const object = await mksobj(otyp, initialize, false);
+    // Knowing a type applies to every instance, even after this one changes.
+    if (typeKnown) recordObjectKnowledge(otyp, game);
     const configured: GameObject = {
         ...object,
         blessed: false,
@@ -26,7 +30,6 @@ export async function knownObject(otyp: number, overrides: KnownObjectOverrides 
         bknown: true,
         dknown: true,
         known: true,
-        typeKnown: true,
         ...properties,
         quan: quantity,
         quantity,

@@ -66,7 +66,7 @@ void test('quaffing an ordinary oil bottle replaces the selector with its native
 void test('an observable potion effect identifies a seen global type even when its inventory view has a name', async () => {
     freshObjectRoom({ hero: { uhp: 1 } });
     requirePlayingGame(game);
-    const healing = await potion(POT_HEALING);
+    const healing = await potion(POT_HEALING, { typeKnown: false });
     assert.ok(game._knownObjectTypes != null);
     assert.equal(game._knownObjectTypes.has(healing.otyp), false);
     await drink(healing);
@@ -104,7 +104,9 @@ void test('unknown fruit juice remains owned until the actual calling prompt res
 void test('an unseen effect grants healing but does not identify or call the potion', async () => {
     freshObjectRoom({ hero: { blindTurns: 5, uhp: 1 } });
     requirePlayingGame(game);
-    const healing = await potion(POT_HEALING, { cursed: true, dknown: false, observed: false });
+    const healing = await potion(POT_HEALING, {
+        cursed: true, dknown: false, observed: false, typeKnown: false,
+    });
     await drink(healing);
     assert.ok(game.u.uhp > 1);
     assert.ok(game._knownObjectTypes != null);

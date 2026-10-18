@@ -49,7 +49,8 @@ async function releaseGhost(state) {
     state._helplessReason = 'being frightened to death';
     state._helplessDoneMessage = 'You regain your composure.';
 }
-async function releaseDjinni(source, state) {
+// C potion.c:djinni_from_bottle(), shared by smoky potions and rubbed lamps.
+export async function releaseDjinni(source, state) {
     const monster = await makemonNear(PM_DJINNI, state.u.ux, state.u.uy, MM_NOMSG);
     if (!monster) {
         await pline('It turns out to be empty.');

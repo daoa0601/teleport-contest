@@ -179,7 +179,6 @@ export function discoverHeroReflectionSource(
         || state._knownObjectTypes?.has(object.otyp)) return;
     exerciseWisdom(true, state);
     recordObjectKnowledge(object.otyp, state);
-    object.typeKnown = true;
 }
 
 export function discoverReflectingShield(state: GameState = game) {

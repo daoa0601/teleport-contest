@@ -86,7 +86,7 @@ for (const cause of ['monster', 'other damage']) {
             requirePlayingGame(game);
             let amulet;
             if (recovery === 'amulet') {
-                amulet = await addInventoryObject(AMULET_OF_LIFE_SAVING);
+                amulet = await addInventoryObject(AMULET_OF_LIFE_SAVING, { typeKnown: false });
                 await wearHeroAccessory(amulet, 'uamul');
             } else game.flags.debug = true;
             game.u.uhp = 1;
@@ -121,7 +121,7 @@ for (const cause of ['monster', 'other damage']) {
         assert.ok(requireGameLevel(game).traps.some(trap => trap.ttyp === LANDMINE
             && trap.tx === game.u.ux && trap.ty === game.u.uy),
         JSON.stringify({ x: game.u.ux, y: game.u.uy, traps: requireGameLevel(game).traps }));
-        const amulet = await addInventoryObject(AMULET_OF_LIFE_SAVING);
+        const amulet = await addInventoryObject(AMULET_OF_LIFE_SAVING, { typeKnown: false });
         await wearHeroAccessory(amulet, 'uamul');
         game.u.uhp = 1;
         game.u.uhpmax = 10;
@@ -157,7 +157,7 @@ for (const recovery of ['amulet', 'refused death']) {
         assert.equal(game.u.ustuck, mimic);
         assert.ok(!game.u.uswallow);
         if (recovery === 'amulet') {
-            const amulet = await addInventoryObject(AMULET_OF_LIFE_SAVING);
+            const amulet = await addInventoryObject(AMULET_OF_LIFE_SAVING, { typeKnown: false });
             await wearHeroAccessory(amulet, 'uamul');
         } else game.flags.debug = true;
         const { mx, my } = mimic;
@@ -182,7 +182,7 @@ for (const { seed, lifeSavedInside, holderHp } of [
         const messages: string[] = [];
         const vortex = await captureHero(messages, LANDMINE);
         requirePlayingGame(game);
-        const amulet = await addInventoryObject(AMULET_OF_LIFE_SAVING);
+        const amulet = await addInventoryObject(AMULET_OF_LIFE_SAVING, { typeKnown: false });
         await wearHeroAccessory(amulet, 'uamul');
         game.u.uhp = 1;
         game.u.uhpmax = 200;
@@ -259,9 +259,9 @@ for (const { seed, lifeSavedInside, holderHp } of [
 void test('a released swallower outside the landing blast keeps its own amulet', async () => {
     const messages: string[] = [];
     const trapper = await captureHero(messages, LANDMINE, { species: 'trapper', hp: 500 });
-    const heroAmulet = await addInventoryObject(AMULET_OF_LIFE_SAVING);
+    const heroAmulet = await addInventoryObject(AMULET_OF_LIFE_SAVING, { typeKnown: false });
     await wearHeroAccessory(heroAmulet, 'uamul');
-    const monsterAmulet = await knownObject(AMULET_OF_LIFE_SAVING);
+    const monsterAmulet = await knownObject(AMULET_OF_LIFE_SAVING, { typeKnown: false });
     await equipMonsterObject(trapper, monsterAmulet, W_AMUL);
     game.u.uhp = 1;
     game.u.uhpmax = 200;

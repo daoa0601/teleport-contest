@@ -91,11 +91,10 @@ export function shopkeeperKillerName(monster) {
     const honorific = personal ? '' : monster?.female ? 'Ms. ' : 'Mr. ';
     return `${honorific}${shopkeeperName(monster)}; the shopkeeper`;
 }
+// C objects[otyp].oc_name_known belongs to the type, never to an instance.
 export function objectTypeKnown(object, state = game) {
     return !!OBJECT_INITIAL_KNOWN[object.otyp]
-        || !!object?.typeKnown
-        || !!state?._knownObjectTypes?.has(object?.otyp)
-        || (state?.inventory || []).some(item => item.otyp === object?.otyp && item.typeKnown);
+        || !!state._knownObjectTypes?.has(object.otyp);
 }
 function shopkeeperForRoom(roomno, state = game) {
     if (!roomno)

@@ -1,3 +1,4 @@
+import { objectTypeKnown } from '../js/shk.js';
 import { monsterAtPosition } from '../js/monster_location.js';
 import { armorBaseBonus } from '../js/armor.js';
 import { findMonsterArmorClass } from '../js/monworn.js';
@@ -64,7 +65,7 @@ void test('sleep resistance prevents self-zap helplessness', async () => {
     pushKey('.');
     await rhack('z'.charCodeAt(0));
     assert.equal(wand.spe, 2);
-    assert.equal(wand.typeKnown, true);
+    assert.equal(objectTypeKnown(wand), true);
     assert.equal(game._helplessTurns, undefined);
     assert.equal(game._pending_message, "You don't feel sleepy!");
     assert.equal(game.context.move, 1);
@@ -153,7 +154,7 @@ void test('secret door detection reveals nearby hidden terrain and traps', async
     assert.equal(hiddenDoor.typ, DOOR);
     assert.equal(hiddenDoor.doormask, D_CLOSED);
     assert.equal(hiddenTrap.tseen, true);
-    assert.equal(wand.typeKnown, true);
+    assert.equal(objectTypeKnown(wand), true);
 });
 void test('light illuminates the visible area and burns a nearby gremlin', async () => {
     const level = freshGameplayRoom();
@@ -250,7 +251,7 @@ void test('a fire ray burns a monster in its path', async (t) => {
     await rhack('z'.charCodeAt(0));
     assert.ok(monster.mhp < 100);
     assert.equal(monster.msleeping, 0);
-    assert.equal(wand.typeKnown, true);
+    assert.equal(objectTypeKnown(wand), true);
     assert.equal(game.context.move, 1);
 });
 void test('a death ray makes Death stronger instead of killing him', async () => {

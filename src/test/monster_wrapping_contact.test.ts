@@ -1,3 +1,4 @@
+import { objectTypeKnown } from '../js/shk.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { performMonsterHeroAttack } from '../js/allmain.js';
@@ -86,7 +87,7 @@ for (const { name, blind, greased, typeKnown, appearanceKnown } of [
         assert.ok(!game.u.ustuck, 'the cloak prevents the wrapping hold');
         assert.match(messages.join('\n'), /slips off of your (?:greased|slippery) .*cloak!/);
         assert.equal(cloak.dknown, appearanceKnown, 'slip feedback must preserve the expected appearance knowledge');
-        assert.equal(cloak.typeKnown, typeKnown, 'slip feedback does not identify the cloak type');
+        assert.equal(objectTypeKnown(cloak), typeKnown, 'slip feedback does not identify the cloak type');
     });
 }
 

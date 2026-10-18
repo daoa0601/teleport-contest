@@ -1158,7 +1158,7 @@ void test('unseen unknown inert potion needs no naming continuation', async () =
         known: false,
         typeKnown: false,
     });
-    potion.bknown = potion.dknown = potion.known = potion.typeKnown = false;
+    potion.bknown = potion.dknown = potion.known = false;
     initRng(2523n);
     await throwInventoryObject(potion, 'l');
     assert.equal(engulfer.mhp, 39);

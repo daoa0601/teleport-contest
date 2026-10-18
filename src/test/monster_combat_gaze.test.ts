@@ -154,7 +154,7 @@ void test('light-resistant eyes prevent both Archon blindness and its stun', asy
 
 void test('a reflecting shield does not turn an Archon gaze back on its owner', async () => {
     const { attacker, defender, gaze } = await gazeRoom('Archon');
-    await equipMonsterObject(defender, await knownObject(SHIELD_OF_REFLECTION), W_ARMS);
+    await equipMonsterObject(defender, await knownObject(SHIELD_OF_REFLECTION, { typeKnown: false }), W_ARMS);
 
     await gaze();
 
@@ -166,7 +166,7 @@ void test('a reflecting shield does not turn an Archon gaze back on its owner', 
 void test('visible reflection petrifies Medusa and identifies the reflecting shield without hero kill credit', async () => {
     const { attacker, defender, gaze, messages } = await gazeRoom('Medusa');
     requirePlayingGame(game);
-    await equipMonsterObject(defender, await knownObject(SHIELD_OF_REFLECTION), W_ARMS);
+    await equipMonsterObject(defender, await knownObject(SHIELD_OF_REFLECTION, { typeKnown: false }), W_ARMS);
     const experience = game.u.uexp;
 
     const result = await gaze();
@@ -184,8 +184,8 @@ void test('visible reflection petrifies Medusa and identifies the reflecting shi
 
 void test('Medusa reflection of an already reflected gaze protects both monsters', async () => {
     const { attacker, defender, gaze, messages } = await gazeRoom('Medusa');
-    await equipMonsterObject(defender, await knownObject(SHIELD_OF_REFLECTION), W_ARMS);
-    await equipMonsterObject(attacker, await knownObject(AMULET_OF_REFLECTION), W_AMUL);
+    await equipMonsterObject(defender, await knownObject(SHIELD_OF_REFLECTION, { typeKnown: false }), W_ARMS);
+    await equipMonsterObject(attacker, await knownObject(AMULET_OF_REFLECTION, { typeKnown: false }), W_AMUL);
 
     const result = await gaze();
 
@@ -199,7 +199,7 @@ void test('Medusa reflection of an already reflected gaze protects both monsters
 void test('a reflection the hero cannot see still petrifies Medusa without identifying the shield', async () => {
     const { attacker, defender, gaze, messages } = await gazeRoom('Medusa');
     requirePlayingGame(game);
-    await equipMonsterObject(defender, await knownObject(SHIELD_OF_REFLECTION), W_ARMS);
+    await equipMonsterObject(defender, await knownObject(SHIELD_OF_REFLECTION, { typeKnown: false }), W_ARMS);
     await makeBlinded(10, { talk: false });
     assert.equal(canSeeMonster(defender), false, 'Blindness must update actual optical visibility.');
     assert.ok(!game._knownObjectTypes?.has(SHIELD_OF_REFLECTION), 'The shield starts unidentified.');
@@ -214,7 +214,7 @@ void test('a reflection the hero cannot see still petrifies Medusa without ident
 
 void test('Medusa cannot notice reflection from an invisible opponent', async () => {
     const { attacker, defender, gaze, messages } = await gazeRoom('Medusa');
-    await equipMonsterObject(defender, await knownObject(AMULET_OF_REFLECTION), W_AMUL);
+    await equipMonsterObject(defender, await knownObject(AMULET_OF_REFLECTION, { typeKnown: false }), W_AMUL);
     defender.minvis = 1;
 
     const result = await gaze();
@@ -228,7 +228,7 @@ void test('Medusa cannot notice reflection from an invisible opponent', async ()
 
 void test('sleep prevents reflection before an unseen amulet can be identified', async () => {
     const { attacker, defender, gaze } = await gazeRoom('Medusa');
-    await equipMonsterObject(defender, await knownObject(AMULET_OF_REFLECTION), W_AMUL);
+    await equipMonsterObject(defender, await knownObject(AMULET_OF_REFLECTION, { typeKnown: false }), W_AMUL);
     defender.msleeping = 1;
 
     const result = await gaze();
@@ -242,7 +242,7 @@ void test('sleep prevents reflection before an unseen amulet can be identified',
 void test('life saving lets Medusa survive her reflected gaze without a statue', async () => {
     const { attacker, defender, gaze } = await gazeRoom('Medusa');
     requirePlayingGame(game);
-    await equipMonsterObject(defender, await knownObject(SHIELD_OF_REFLECTION), W_ARMS);
+    await equipMonsterObject(defender, await knownObject(SHIELD_OF_REFLECTION, { typeKnown: false }), W_ARMS);
     const amulet = await equipMonsterObject(attacker, await knownObject(AMULET_OF_LIFE_SAVING), W_AMUL);
 
     const result = await gaze();

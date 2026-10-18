@@ -276,10 +276,6 @@ async function readHornDirection() {
         throw new RangeError('The horn direction is outside the adjacent squares.');
     return selected[0];
 }
-function learnInstrumentType(instrument) {
-    learnObjectType(instrument.otyp);
-    instrument.typeKnown = true;
-}
 async function playElementalHorn(instrument, element) {
     await consumeObjectCharge(instrument);
     const direction = await readHornDirection();
@@ -308,7 +304,7 @@ async function playElementalHorn(instrument, element) {
         return { heroDied: true };
     if (result?.heroDied && await finishHeroDeath({ killer: `bolt of ${element}` }))
         return { heroDied: true };
-    learnInstrumentType(instrument);
+    learnObjectType(instrument.otyp);
     return { heroDied: false };
 }
 async function playBugle(instrument, familiar) {
@@ -398,7 +394,7 @@ async function playEarthquakeDrum(instrument) {
     const flight = await awakenMonsters(ROWNO * COLNO);
     if (flight?.heroDied)
         return flight;
-    learnInstrumentType(instrument);
+    learnObjectType(instrument.otyp);
 }
 async function improvise(instrument) {
     const canUseSpecial = !heroIsImpaired();

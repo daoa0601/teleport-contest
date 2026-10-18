@@ -24,7 +24,7 @@ import {
 } from './const.js';
 import {
     ALCHEMY_SMOCK, ARROW as FIRST_OBJECT, BAG_OF_TRICKS, EGG, CHEST, FORTUNE_COOKIE, GOLD_PIECE, HAWAIIAN_SHIRT, LARGE_BOX, MAGIC_MARKER,
-    HEAVY_IRON_BALL, LOCK_PICK, CREDIT_CARD, SKELETON_KEY, OBJECT_BIMANUAL, OBJECT_INITIAL_KNOWN, OBJECT_NAMES,
+    HEAVY_IRON_BALL, LOCK_PICK, CREDIT_CARD, SKELETON_KEY, OBJECT_BIMANUAL, OBJECT_NAMES,
     SCR_BLANK_PAPER, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_NOVEL, STATUE, TIN, TIN_OPENER, TOWEL,
     AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, BEARTRAP, BELL, BELL_OF_OPENING,
     BLINDFOLD, BRASS_LANTERN, BULLWHIP, CANDELABRUM_OF_INVOCATION, CAN_OF_GREASE,
@@ -115,8 +115,7 @@ export async function checkInventoryGold(why: string, state: GameState = game): 
 }
 export function objectNeedsFullIdentification(object: GameObject | null | undefined) {
     if (!object || object.oclass === COIN_CLASS) return false;
-    const typeKnown = OBJECT_INITIAL_KNOWN[object.otyp] || object.typeKnown
-        || game._knownObjectTypes?.has(object.otyp);
+    const typeKnown = objectTypeKnown(object);
     if (!object.known || !object.bknown || !object.dknown || !typeKnown) return true;
     if ((!object.cknown && (isContainer(object) || object.otyp === STATUE))
         || (!object.lknown && [CHEST, LARGE_BOX].includes(object.otyp))) return true;
@@ -139,7 +138,6 @@ export function fullyIdentifyObject(object: GameObject, state: GameState = game)
     if (realObjectType) learnObjectType(object.otyp, state);
     if (object.oartifact) discoverArtifact(object.oartifact, state);
 
-    if (realObjectType) object.typeKnown = true;
     object.known = true;
     object.bknown = true;
     object.rknown = true;
@@ -400,7 +398,6 @@ function rerollItemDescription(item: GameObject) {
     return inventoryItemDescription({
         ...item,
         known: true,
-        typeKnown: true,
         bknown: true,
         dknown: true,
         rknown: true,
@@ -694,8 +691,7 @@ function accessoryActionText(item: GameObject, state: GameState): string | null 
 // C iactions.c:item_reading_classification(). Reading advice depends on
 // what the hero knows about the type, rather than the object's charges.
 function itemReadingText(item: GameObject, state: GameState): string | null {
-    const known = !!OBJECT_INITIAL_KNOWN[item.otyp] || !!item.typeKnown
-        || !!state._knownObjectTypes?.has(item.otyp);
+    const known = objectTypeKnown(item, state);
     if (item.otyp === FORTUNE_COOKIE) return 'Read the message inside this cookie';
     if (item.otyp === OBJECT_NAMES.indexOf('T-shirt')) return 'Read the slogan on the shirt';
     if (item.otyp === ALCHEMY_SMOCK) return 'Read the slogan on the apron';
@@ -766,7 +762,6 @@ export async function showIdentifiedInventory() {
 export function identifyObjectForDisclosure(item: GameObject, identifyTinContents = false): void {
     recordObjectEncounter(item.otyp);
     recordObjectKnowledge(item.otyp);
-    item.typeKnown = true;
     item.known = true;
     item.bknown = true;
     item.dknown = true;

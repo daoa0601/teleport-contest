@@ -445,6 +445,7 @@ void test('helplessness advances through live global turns', async () => {
     requirePlayingGame(game);
     await addInventoryObject(POT_PARALYSIS, {
         initialize: false,
+        typeKnown: false,
         invlet: 'a',
         name: 'potion of paralysis',
         plural: 'potions of paralysis',
@@ -499,7 +500,7 @@ void test('a monster-fired magic missile can kill another monster', async () => 
     target.mpeaceful = 1;
     target.mcanmove = 0;
     target.mfrozen = 100;
-    const wand = await knownObject(WAN_MAGIC_MISSILE, { spe: 2 });
+    const wand = await knownObject(WAN_MAGIC_MISSILE, { spe: 2, typeKnown: false });
     const wizard = await createMonsterAt('gnomish wizard', 14, 10, NO_MINVENT);
     wizard.movement = 12;
     wizard.mwandexp = true;
@@ -511,7 +512,7 @@ void test('a monster-fired magic missile can kill another monster', async () => 
         [13, 11], [14, 11], [15, 10], [15, 11],
     ])
         game.level.requireAt(x, y).typ = STONE;
-    installPagerInput(inputGate, { expected: /gnomish wizard zaps.*magic missile|jackal is killed by the magic missile|magic missile hits you/, limit: 12 });
+    installPagerInput(inputGate, { expected: /gnomish wizard zaps.*wand|jackal is killed by the magic missile|magic missile hits you/, limit: 12 });
     inputGate.feed('.');
     await moveloop_core();
     await finishAtCommandInput(inputGate, moveloop_core, /gnomish wizard|magic missile|^$/);

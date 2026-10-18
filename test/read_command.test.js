@@ -76,7 +76,7 @@ void test('a seen scroll can be recited while blind and unable to speak', async 
 void test('reading one scroll in a stack consumes one and discovers its type only once', async () => {
     const { input } = readingRoom();
     requirePlayingGame(game);
-    const scroll = await addInventoryObject(SCR_MAGIC_MAPPING, { quan: 2 });
+    const scroll = await addInventoryObject(SCR_MAGIC_MAPPING, { quan: 2, typeKnown: false });
     await read(scroll, input);
     assert.equal(scroll.quan, 1);
     assert.equal(scroll.in_use, false);

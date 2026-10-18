@@ -139,8 +139,7 @@ export function heroHasWaterWalking(state = game) {
 export function heroKnowsWaterWalking(state = game) {
     const hero = state.u;
     const boots = state?.uarmf || hero.uarmf;
-    const typeKnown = boots?.typeKnown
-        || state?._knownObjectTypes?.has(WATER_WALKING_BOOTS);
+    const typeKnown = boots && objectTypeKnown(boots, state);
     return !hero.usteed && boots?.otyp === WATER_WALKING_BOOTS && !!typeKnown;
 }
 export function heroKnowsLavaWalking(state = game) {

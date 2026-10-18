@@ -105,7 +105,7 @@ void test('an existing potion call name suppresses trycall and remains visible',
     game._objectCallNames = { [POT_FRUIT_JUICE]: 'mystery' };
     const monster = await potionTarget(PM_PURPLE_WORM, { hitPoints: 8 });
     const potion = await potionObject(POT_FRUIT_JUICE);
-    potion.typeKnown = false;
+    game._knownObjectTypes?.delete(potion.otyp);
     const messages = [];
     initRng(2601n);
     const result = await hitMonsterWithSupportedPotion({
@@ -944,7 +944,7 @@ void test('paralysis vapor identifies an unknown type instead of asking to call 
     game._objectDiscoveryOrder = [];
     game._objectCallNames = {};
     const potion = await potionObject(POT_PARALYSIS);
-    potion.typeKnown = false;
+    game._knownObjectTypes?.delete(potion.otyp);
     const messages = [];
     initRng(3011n);
     const result = await applySupportedPotionVapor({

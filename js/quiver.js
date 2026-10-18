@@ -5,6 +5,7 @@ import { objectMaterial } from './object_material.js';
 import { P_BOW, P_CROSSBOW, P_DAGGER, P_SLING, } from './const.js';
 import { AKLYS, FLINT, OBJECT_SUBTYPE, ROCK, } from './object_data.js';
 import { objectClassForType } from './object_knowledge.js';
+import { objectTypeKnown } from './shk.js';
 import { isLauncherAmmunition, isMissileObject, isThrowingWeapon, launcherMatchesAmmo, } from './object_properties.js';
 function quiverObjectClass(item) {
     return item.oclass || objectClassForType(item.otyp);
@@ -27,9 +28,7 @@ export function autoquiverCandidate(state) {
             continue;
         }
         const objectClass = quiverObjectClass(item);
-        const knownType = !!item.typeKnown
-            || !!state._knownObjectTypes?.has(item.otyp)
-            || !!state.inventory?.some(candidate => candidate.otyp === item.otyp && candidate.typeKnown);
+        const knownType = objectTypeKnown(item, state);
         const ordinarySlingStone = item.otyp === ROCK
             || (item.otyp === FLINT && knownType)
             || (objectClass === 13

@@ -1,3 +1,4 @@
+import { objectTypeKnown } from '../js/shk.js';
 import { inventoryLetter } from './support/commands.js';
 import { createDungeon, createSpecialLevel } from './support/topology.js';
 import { addTrap } from './support/level-state.js';
@@ -137,7 +138,7 @@ void test('recognizing touchstones removes other recognized gray stones from app
     game._pending_message = '';
     await rhack('a'.charCodeAt(0));
     assert.match(game._pending_message, /don't have anything/);
-    assert.equal(loadstone.typeKnown, false);
+    assert.equal(objectTypeKnown(loadstone), false);
 });
 void test('force_invmenu begins with suggestions and can reveal all inventory', async () => {
     freshObjectRoom({ flags: { force_invmenu: true, verbose: true } });

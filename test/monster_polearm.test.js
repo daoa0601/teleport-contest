@@ -1,3 +1,4 @@
+import { objectTypeKnown } from '../js/shk.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { findArmorClass } from '../js/armor.js';
@@ -36,7 +37,7 @@ void test('an unfamiliar polearm keeps its visible appearance in the thrust and 
     assert.equal(messages[0], 'The soldier thrusts a forked polearm.');
     assert.match(messages[1] ?? '', /forked polearm/);
     assert.equal(polearm.dknown, true, 'watching the thrust reveals the appearance');
-    assert.equal(polearm.typeKnown, false, 'watching an attack does not identify the weapon type');
+    assert.equal(objectTypeKnown(polearm), false, 'watching an attack does not identify the weapon type');
 });
 void test('a monster can strike at a knight\'s move distance without throwing its lance', async () => {
     freshObjectRoom();

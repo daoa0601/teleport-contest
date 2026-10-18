@@ -1,3 +1,4 @@
+import { objectTypeKnown } from '../js/shk.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { NO_MINVENT } from '../js/const.js';
@@ -19,7 +20,7 @@ void test('a visible shattered monster potion reveals its color without identify
         publish: message => { messages.push(message); },
     });
     assert.equal(messages[0], `The fire giant's ${game.objectDescriptions?.[POT_HEALING]} potion freezes and shatters!`);
-    assert.equal(potion.typeKnown, false);
+    assert.equal(objectTypeKnown(potion), false);
     assert.equal(giant.minvent.includes(potion), false);
 });
 //# sourceMappingURL=pool_potion_destruction.test.js.map

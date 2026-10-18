@@ -1,3 +1,4 @@
+import { objectTypeKnown } from '../js/shk.js';
 import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -79,7 +80,7 @@ void test('identifying the whole pack reveals every part of an object', async ()
 
     await identifyPack(0);
 
-    assert.equal(club.typeKnown, true);
+    assert.equal(objectTypeKnown(club), true);
     assert.equal(club.known, true);
     assert.equal(club.bknown, true);
     assert.equal(club.dknown, true);

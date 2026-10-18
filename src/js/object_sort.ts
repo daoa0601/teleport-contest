@@ -1,5 +1,6 @@
 // Inventory and loot ordering. C refs: invent.c:sortloot()/loot_classify().
 import { objectMaterial } from './object_material.js';
+import { objectTypeKnown } from './shk.js';
 import { game } from './gstate.js';
 import type { GameFlags } from './flags.js';
 import type { GameState } from './game_state.js';
@@ -15,7 +16,7 @@ import {
     BAG_OF_TRICKS, HORN_OF_PLENTY, WOODEN_FLUTE, MAGIC_FLUTE, TOOLED_HORN,
     FROST_HORN, FIRE_HORN, WOODEN_HARP, MAGIC_HARP, BUGLE, LEATHER_DRUM,
     DRUM_OF_EARTHQUAKE, SLIME_MOLD, TIN, EGG, CORPSE, ROCK, LEASH,
-    OBJECT_SUBTYPE, OBJECT_INITIAL_KNOWN, OBJECT_DESCRIPTIONS,
+    OBJECT_SUBTYPE, OBJECT_DESCRIPTIONS,
     OBJECT_USES_KNOWN,
 } from './object_data.js';
 import { OBJECT_CLASS_SYMBOLS, objectClassForType, observeObject } from './object_knowledge.js';
@@ -132,8 +133,7 @@ function classifyLoot(object: GameObject, state: GameState): LootClassification 
     const classOrder = state.flags.sortpack !== false ? inventoryClassOrder(state) : DEFAULT_LOOT_ORDER;
     const position = classOrder.indexOf(oclass);
     const seen = !!object.dknown;
-    const discovered = !!(OBJECT_INITIAL_KNOWN[object.otyp]
-        || object.typeKnown || state._knownObjectTypes?.has(object.otyp));
+    const discovered = objectTypeKnown(object, state);
     const description = state.objectDescriptions?.[object.otyp] ?? OBJECT_DESCRIPTIONS[object.otyp];
     return {
         order: position >= 0 ? position + 1 : classOrder.length + 1 + Number(oclass !== 17),

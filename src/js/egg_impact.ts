@@ -52,7 +52,6 @@ export function turnEggIntoRock(egg: GameObject): GameObject {
     egg.known = false;
     egg.dknown = false;
     egg.bknown = false;
-    egg.typeKnown = false;
     egg.owt = objectWeight(egg);
     return egg;
 }

@@ -1,3 +1,4 @@
+import { objectTypeKnown } from '../js/shk.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -94,7 +95,7 @@ void test('a fire horn shoots a ray and spends one charge', async () => {
 
     assert.equal(horn.spe, 1);
     assert.ok(target.mhp < 100);
-    assert.equal(horn.typeKnown, true);
+    assert.equal(objectTypeKnown(horn), true);
 });
 
 void test('cold resistance protects against a frost horn aimed at yourself',
@@ -110,7 +111,7 @@ void test('cold resistance protects against a frost horn aimed at yourself',
 
         assert.equal(game.u.uhp, 100);
         assert.equal(horn.spe, 0);
-        assert.equal(horn.typeKnown, true);
+        assert.equal(objectTypeKnown(horn), true);
     });
 
 void test('an empty fire horn behaves like an ordinary horn', async () => {
@@ -124,7 +125,7 @@ void test('an empty fire horn behaves like an ordinary horn', async () => {
     await playInstrument(horn);
 
     assert.equal(target.msleeping, 0);
-    assert.equal(horn.typeKnown, undefined);
+    assert.equal(objectTypeKnown(horn), false);
 });
 
 for (const inOwnShop of [true, false]) {

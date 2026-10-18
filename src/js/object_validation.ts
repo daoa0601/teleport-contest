@@ -220,7 +220,6 @@ export function validSavedObject(value: unknown, context: SavedEntityContext): v
         description: optional(string),
         color: optional(integer),
         artifactName: optional(string),
-        typeKnown: optional(boolean),
         overrideIdentified: optional(boolean),
         _startingInventory: optional(boolean),
         bimanual: optional(boolean),
