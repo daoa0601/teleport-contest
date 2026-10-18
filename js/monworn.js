@@ -5,7 +5,8 @@ import { bypassObject } from './object_bypass.js';
 import { objectMaterial } from './object_material.js';
 import { publishHeardMessage } from './hero_speech.js';
 import { armorBonus, armorSlotFor, dragonFormForArmor } from './armor.js';
-import { ownedObjectName, objectNameIsPlural, observeDistantObjectForNaming, } from './objnam.js';
+import { ownedObjectName, objectNameIsPlural, observeDistantObjectForNaming, simpleObjectName, } from './objnam.js';
+import { verbForSubject } from './object_grammar.js';
 import { canSeeMonster, displayColorName, newsym, plineWithContinuation } from './display.js';
 import { inventoryItemDescription } from './invent.js';
 import { updateMonsterEquipment } from './monster_equipment.js';
@@ -218,8 +219,10 @@ async function wearSlot(monster, slot, creation, state, publish) {
             const subject = monsterName(monster, { state, capitalized: true });
             await publish(`${subject}${old ? ` removes ${oldName} and` : ''} puts on ${newName}.`);
             if (autocurse) {
-                const owner = monsterName(monster, { state, capitalized: true });
-                await publish(`${owner}'s ${best.name} glows ${displayColorName('black', state)} for a moment.`);
+                // C worn.c:952: s_suffix(Monnam), simpleonames(), otense("glow").
+                const owner = possessiveName(monsterName(monster, { state, capitalized: true }));
+                const glow = objectNameIsPlural(best, state) ? 'glow' : verbForSubject(null, 'glow');
+                await publish(`${owner} ${simpleObjectName(best, state)} ${glow} ${displayColorName('black', state)} for a moment.`);
             }
         }
         delay += OBJECT_DELAY[best.otyp] ?? 0;

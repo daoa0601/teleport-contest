@@ -372,10 +372,6 @@ function heroResistsFire(state: GameState) {
     return !!(hero.fireResistance);
 }
 
-function lavaName(location: MapLocation | null) {
-    return location?.typ === LAVAWALL ? 'wall of lava' : 'molten lava';
-}
-
 async function burnLavaBoots(
     state: PlayingGameState, publish: MessagePublisher, protectedObject: GameObject | null,
 ) {
@@ -534,7 +530,7 @@ async function finishLavaEffects({
 
     if (!fireResistant) {
         if (waterWalking) {
-            await publish('The lava here burns you!');
+            await publish(`The ${displayLiquidName('lava', state)} here burns you!`);
             if (survives) {
                 if (await loseHeroHp(damage, 'molten lava', {
                     state, publish, die: finishDamageDeath, deathCause: 'killed by molten lava',
@@ -547,7 +543,7 @@ async function finishLavaEffects({
                 return { entered: true, moved: false, died: false };
             }
         } else {
-            await publish(`You fall into the ${lavaName(location)}!`);
+            await publish(`You fall into the ${waterbodyName(hero.ux, hero.uy, state)}!`);
         }
 
         const lifeSaver = state.uamul || hero.uamul;
@@ -579,7 +575,7 @@ async function finishLavaEffects({
         && (!hero.utrap || hero.utraptype !== TT_LAVA)) {
         setHeroTrap(random(4) + 4 + ((random(4) + 12) << 8), TT_LAVA, state);
         await publish(
-            `You sink into the ${lavaName(location)}, but it only burns slightly!`,
+            `You sink into the ${waterbodyName(hero.ux, hero.uy, state)}, but it only burns slightly!`,
         );
         monstersObserveHeroResistance(M_SEEN_FIRE, state);
         if (hero.uhp > 1 && await loseHeroHp(1, 'molten lava', {

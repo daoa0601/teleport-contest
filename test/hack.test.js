@@ -574,4 +574,24 @@ void test('water walking does not protect against a wall of water', async () => 
     assert.equal(game.u.uinwater, 1);
     assert.equal(messages[0], 'You plunge into the wall of water.');
 });
+void test('a hallucinating hero falls into molten lava of an imagined liquid', async () => {
+    const falls = new Set();
+    for (let attempt = 0; attempt < 12; attempt++) {
+        liquidAtHero(LAVAPOOL);
+        game.u.hallucinationTurns = 20;
+        const messages = [];
+        await heroLiquidEffects({
+            ...noDisplay,
+            publish: async (message) => messages.push(message),
+            rollDice: () => 10,
+            die: async () => { game.program_state.gameover = true; },
+        });
+        for (const message of messages)
+            if (message.startsWith('You fall into the '))
+                falls.add(message);
+    }
+    for (const message of falls)
+        assert.match(message, /^You fall into the molten [a-z -]+!$/);
+    assert.ok([...falls].some(message => message !== 'You fall into the molten lava!'));
+});
 //# sourceMappingURL=hack.test.js.map
