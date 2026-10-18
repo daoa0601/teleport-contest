@@ -606,18 +606,14 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
                 message = await movementMessage();
                 continue;
             }
-            if (game.commandBindings.lookup(key)?.command?.handler === 'doredraw') {
-                // redraw_cmd(): getpos_refresh() ends an active marking.
-                refreshHilite();
-                message = movePrompt;
-                continue;
-            }
-            if (key === game.commandBindings.specialKey('getpos.help')) {
-                // getpos_help() runs before getpos_refresh(), which resets
-                // an active symbol overlay to the configured default.
-                await getposHelpUntilDismissed(goal, {
-                    hasValidLocations: !!isValidLocation,
-                });
+            const helpRequested = key === game.commandBindings.specialKey('getpos.help');
+            if (helpRequested || game.commandBindings.lookup(key)?.command?.handler === 'doredraw') {
+                // Help takes priority when its key is also bound to redraw.
+                if (helpRequested) {
+                    await getposHelpUntilDismissed(goal, {
+                        hasValidLocations: !!isValidLocation,
+                    });
+                }
                 refreshHilite();
                 message = movePrompt;
                 continue;

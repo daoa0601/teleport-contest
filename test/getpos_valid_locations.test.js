@@ -192,6 +192,38 @@ void test("marking ends when the help screen redraws the map", async () => {
     assert.ok(viewAfterInput(views, 3).glyphs.slice(0, VISIBLE_VALID.length)
         .every(ch => ch !== '$'));
 });
+for (const key of [12, 18]) {
+    void test(`help rebound to ^${String.fromCharCode(key + 64)} opens before redrawing the map`, async () => {
+        freshObjectRoom({ iflags: { bgcolors: false } });
+        assert.equal(game.commandBindings.bindKey(key, 'redraw').accepted, true);
+        assert.equal(game.commandBindings.bindSpecialKey(key, 'getpos.help'), true);
+        const input = resetInputState();
+        input.feed('ll$');
+        const selection = selectMapPosition({
+            start: { x: 10, y: 10 }, prompt: 'Where do you want to hit?',
+            goal: 'the spot to hit', isValidLocation: isValidPolearmStyleSpot,
+        });
+        try {
+            await input.waitUntilBlocked();
+            assert.equal(glyphAt(12, 10), '$');
+            input.feed(key);
+            await input.waitUntilBlocked();
+            const text = requireGameDisplay(game).grid
+                .map(row => row.map(cell => cell.ch).join('')).join('\n');
+            assert.match(text, /Use 'h', 'j', 'k', 'l' to move the cursor/);
+            input.feed(' ');
+            await input.waitUntilBlocked();
+            assert.equal(glyphAt(12, 10), '.');
+            assert.deepEqual(selectionView([]).cursor, { x: 12, y: 10 });
+            input.feed('.');
+            assert.deepEqual(await selectedCoordinates(selection), { x: 12, y: 10 });
+        }
+        finally {
+            input.feed('\x1b\x1b');
+            await selection;
+        }
+    });
+}
 void test("getpos help lists the valid-location keys while a rule is active", async () => {
     freshObjectRoom();
     requireFixtureGame(game);
