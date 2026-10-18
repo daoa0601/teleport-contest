@@ -420,7 +420,6 @@ export interface GameState {
     _cursorOverride?: [number, number] | null;
     _statusGoldOverride?: number;
     _armorClassDirty?: boolean;
-    _armorClassDirtyAfterDelayedFrame?: boolean;
     _preserveLeadingStyledBlanks?: boolean;
     _suppressMapStatusForFlush?: boolean;
     _suppressMessagesUntilInput?: boolean;
