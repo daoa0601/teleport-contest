@@ -11,7 +11,7 @@
 //   // display.setCell, display.readKey etc. all delegate to terminal
 //   // display.topMessage, display.putstr_message are NetHack-specific
 
-import { Terminal, CLR_GRAY } from './terminal.js';
+import { Terminal, CLR_GRAY, ATR_INVERSE } from './terminal.js';
 import type { StatusLine2Fields } from './status_layout.js';
 import type { KeyMapper, InterruptHandler, TerminalReadKeyOptions, TerminalColor, TerminalFlags } from './terminal.js';
 
@@ -72,6 +72,16 @@ export class GameDisplay {
 
     // Display methods
     setCell(col: number, row: number, ch: string, color: TerminalColor, attr?: number) { return this.terminal.setCell(col, row, ch, color, attr); }
+    // The terminal adapter stores foregrounds and text attributes. Map frame
+    // colors belong to the map window and take precedence over pet/inverse
+    // highlighting, as tty_print_glyph() does.
+    setMapCell(col: number, row: number, ch: string, color: TerminalColor, attr: number, frameColor: number | null) {
+        this.setCell(col, row, ch, color, frameColor === null ? attr : 0);
+        const span = this.spans?.[row]?.[col];
+        if (!span) return;
+        if (frameColor !== null) span.style.backgroundColor = this.colorToCss(frameColor % 8);
+        else span.style.backgroundColor = attr & ATR_INVERSE ? this.colorToCss(color) : '';
+    }
     putstr(col: number, row: number, str: string, color?: TerminalColor, attr?: number) { return this.terminal.putstr(col, row, str, color, attr); }
     setCursor(col: number, row: number) { return this.terminal.setCursor(col, row); }
     clearScreen() { return this.terminal.clearScreen(); }

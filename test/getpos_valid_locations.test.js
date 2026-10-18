@@ -1,13 +1,15 @@
 import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { CORR, HI_ZAP } from '../js/const.js';
+import { CORR, HI_ZAP, MM_NOGRP, NO_MINVENT } from '../js/const.js';
+import { ATR_INVERSE } from '../js/terminal.js';
 import { flush_screen } from '../js/display.js';
 import { getposHelpUntilDismissed, selectMapPosition, } from '../js/getpos.js';
 import { requireGameDisplay, game } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { answerPrompts } from './support/input-boundaries.js';
+import { createMonsterAt } from './support/monsters.js';
 for (const key of ['z', 'Z']) {
     void test(`menu mode offers valid locations for '${key}'`, async () => {
         freshObjectRoom({ flags: { tips: false, verbose: false } });
@@ -72,6 +74,7 @@ function viewAfterInput(views, index) {
     return view;
 }
 async function driveSelection(keys, options = {}) {
+    game.iflags.bgcolors ??= false;
     const input = resetInputState();
     const selection = selectMapPosition({
         start: { x: game.u.ux, y: game.u.uy },
@@ -251,5 +254,52 @@ void test("cycling moves the visible cursor while valid squares remain marked", 
     await selection;
     assert.deepEqual(viewAfterInput(views, 2).cursor, EXPECTED_CYCLE[1]);
     assert.equal(viewAfterInput(views, 2).glyphs[1], '$');
+});
+void test("background highlighting cycles through plain map, symbols, and background again", async () => {
+    freshObjectRoom({ iflags: { bgcolors: true } });
+    const { selection, views } = await driveSelection('$$$$.');
+    await selection;
+    for (const index of [0, 1, 3, 4]) {
+        assert.equal(viewAfterInput(views, index).glyphs[1], '.', `Background or plain-map state after ${index} toggle(s) keeps the floor symbol`);
+    }
+    assert.equal(viewAfterInput(views, 2).glyphs[1], '$');
+});
+for (const keys of ['$$\x12$', '$$\x0c$', '$$? $']) {
+    void test(`redrawing background-enabled targeting resets its highlight cycle (${JSON.stringify(keys)})`, async () => {
+        freshObjectRoom({ iflags: { bgcolors: true } });
+        const { selection, views } = await driveSelection(keys + '.');
+        await selection;
+        assert.equal(viewAfterInput(views, -1).glyphs[1], '.');
+    });
+}
+void test('background highlighting takes precedence over a valid pet glyph until toggled off', async () => {
+    freshObjectRoom({ iflags: { bgcolors: true }, flags: { hilite_pet: true } });
+    const pet = await createMonsterAt('little dog', 12, 10, MM_NOGRP | NO_MINVENT);
+    pet.mtame = 10;
+    pet.mpeaceful = true;
+    const input = resetInputState();
+    const selection = selectMapPosition({
+        start: { x: 10, y: 10 }, prompt: 'Choose a location.', goal: 'a location',
+        isValidLocation: (x, y) => x === 12 && y === 10,
+    });
+    await input.waitUntilBlocked();
+    try {
+        assert.equal(glyphCell(12, 10).ch, 'd');
+        assert.equal(glyphCell(12, 10).attr, 0);
+        input.feed('$');
+        await input.waitUntilBlocked();
+        assert.equal(glyphCell(12, 10).attr, ATR_INVERSE);
+    }
+    finally {
+        input.feed('\x1b');
+        await selection;
+    }
+});
+void test('a rebound valid-location key controls the highlight cycle', async () => {
+    freshObjectRoom({ iflags: { bgcolors: false } });
+    assert.equal(game.commandBindings.bindSpecialKey(113, 'getpos.valid'), true);
+    const { selection, views } = await driveSelection('q.');
+    await selection;
+    assert.equal(viewAfterInput(views, 1).glyphs[1], '$');
 });
 //# sourceMappingURL=getpos_valid_locations.test.js.map

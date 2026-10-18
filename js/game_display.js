@@ -10,7 +10,7 @@
 //   const display = new GameDisplay(terminal);
 //   // display.setCell, display.readKey etc. all delegate to terminal
 //   // display.topMessage, display.putstr_message are NetHack-specific
-import { Terminal, CLR_GRAY } from './terminal.js';
+import { Terminal, CLR_GRAY, ATR_INVERSE } from './terminal.js';
 const TOPLINE_EMPTY = 0;
 const TOPLINE_NEED_MORE = 1;
 export class GameDisplay {
@@ -60,6 +60,19 @@ export class GameDisplay {
     set flags(v) { this.terminal.flags = v; }
     // Display methods
     setCell(col, row, ch, color, attr) { return this.terminal.setCell(col, row, ch, color, attr); }
+    // The terminal adapter stores foregrounds and text attributes. Map frame
+    // colors belong to the map window and take precedence over pet/inverse
+    // highlighting, as tty_print_glyph() does.
+    setMapCell(col, row, ch, color, attr, frameColor) {
+        this.setCell(col, row, ch, color, frameColor === null ? attr : 0);
+        const span = this.spans?.[row]?.[col];
+        if (!span)
+            return;
+        if (frameColor !== null)
+            span.style.backgroundColor = this.colorToCss(frameColor % 8);
+        else
+            span.style.backgroundColor = attr & ATR_INVERSE ? this.colorToCss(color) : '';
+    }
     putstr(col, row, str, color, attr) { return this.terminal.putstr(col, row, str, color, attr); }
     setCursor(col, row) { return this.terminal.setCursor(col, row); }
     clearScreen() { return this.terminal.clearScreen(); }
