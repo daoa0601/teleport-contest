@@ -3431,27 +3431,17 @@ function rubEligibleObject(object: GameObject | null | undefined) {
 }
 
 async function rubRoyalJelly(jelly: GameObject) {
-    const eggs = (game.inventory || []).filter(object => object.otyp === EGG);
     const used = await useRoyalJelly(jelly, async () => {
-        if (!eggs.length) {
-            game._pending_message = '';
-            await pline(
-                "You don't have anything to rub the royal jelly on.",
-            );
-            return null;
-        }
-        const letters = compactInventoryLetters(
-            eggs.map(egg => egg.invlet).join(''),
+        const egg = await chooseInventoryObject(
+            'rub the royal jelly on',
+            object => object.otyp === EGG ? GETOBJ_SUGGEST : GETOBJ_EXCLUDE,
+            { forcePrompt: true },
         );
-        const selection = await promptInventoryObject(
-            `What do you want to rub the royal jelly on? [${letters} or ?*] `,
-            eggs,
-            { verb: 'rub the royal jelly on', allowMenu: true },
-        );
-        if (!selection.cancelled) game._pending_message = '';
-        return selection.object;
+        if (egg) game._pending_message = '';
+        return egg;
     });
     game.context.move = used ? 1 : 0;
+    return used;
 }
 
 async function djinniFromLamp(object: GameObject) {
@@ -6154,8 +6144,8 @@ async function applyTool(
         return null;
     }
     if (isRoyalJelly(item)) {
-        await rubRoyalJelly(item);
-        return game.inventory.includes(item) ? item : null;
+        const used = await rubRoyalJelly(item);
+        return used ? null : item;
     }
     if ([SKELETON_KEY, LOCK_PICK, CREDIT_CARD].includes(item.otyp)) {
         game.context.move = Number(await pickLock(item));
