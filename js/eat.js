@@ -220,7 +220,6 @@ async function takeFoodBite(state) {
     }
     const food = currentMealFood(meal);
     food.owt = objectWeight(food);
-    state._capacityDirty = true;
     return false;
 }
 async function finishFoodMeal(state, showMessage) {

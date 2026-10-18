@@ -206,7 +206,6 @@ async function takeFoodBite(state: PlayingGameState) {
     }
     const food = currentMealFood(meal);
     food.owt = objectWeight(food);
-    state._capacityDirty = true;
     return false;
 }
 

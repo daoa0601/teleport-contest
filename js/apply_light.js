@@ -185,7 +185,6 @@ export async function useCandle(object, { state = game } = {}) {
         state.vision_full_recalc = 1;
     await useUpInventoryStack(object, state);
     candelabrum.owt = objectWeight(candelabrum);
-    state._capacityDirty = true;
     return result(remainder, state);
 }
 export async function lightCocktail(object, { state = game } = {}) {

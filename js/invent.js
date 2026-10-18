@@ -342,7 +342,6 @@ export async function consumeInventoryItem(item, state = game) {
         item.quantity = quantity - 1;
         item.quan = quantity - 1;
         item.owt = objectWeight(item);
-        state._capacityDirty = true;
         return;
     }
     await useUpInventoryStack(item, state);

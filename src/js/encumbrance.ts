@@ -17,5 +17,4 @@ export async function reportHeroEncumbrance(
     // commits oldcap only after that message has returned.
     if (previous !== capacity) state.context.botl = true;
     state._encumbranceLevel = capacity;
-    state._capacityDirty = false;
 }

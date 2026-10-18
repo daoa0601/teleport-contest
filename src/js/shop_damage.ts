@@ -498,7 +498,6 @@ export async function moneyToMonster(monster: Monster, amount: number, state: Ga
     const payment = detachHeroGold(state, amount);
     if (!payment) throw new Error('Shop payment lost its carried gold.');
     await linkObjectToMonsterInventory(monster, payment, { state });
-    state._capacityDirty = true;
     state.context.botl = true;
     return amount;
 }

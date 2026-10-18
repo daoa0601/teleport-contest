@@ -64,7 +64,6 @@ export async function cancelObjectMagic(object, { state = game } = {}) {
     }
     unblessObjectState(object);
     uncurseObjectState(object);
-    state._capacityDirty = true;
 }
 function removeWornBonuses(object, state) {
     if (object.where !== 'inventory')

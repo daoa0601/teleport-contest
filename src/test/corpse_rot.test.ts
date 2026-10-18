@@ -85,7 +85,6 @@ void test('turn maintenance reports relief immediately after a heavy corpse rots
     scheduleObjectTimer(corpse, OBJECT_TIMER_KIND.ROT_CORPSE, game.moves + 1);
     game._encumbranceLevel = nearCapacity(game);
     assert.ok(game._encumbranceLevel > 0);
-    game._capacityDirty = false;
     game._moveloopStarted = true;
     game._heroTimePending = true;
     game.u.umovement = 0;
@@ -109,7 +108,6 @@ void test('turn maintenance reports relief when a corpse rots inside a carried s
     scheduleObjectTimer(corpse, OBJECT_TIMER_KIND.ROT_CORPSE, game.moves + 1);
     game._encumbranceLevel = nearCapacity(game);
     assert.ok(game._encumbranceLevel > 0);
-    game._capacityDirty = false;
     game._moveloopStarted = true;
     game._heroTimePending = true;
     game.u.umovement = 0;
@@ -137,7 +135,6 @@ void test('a slowed hero acknowledges corpse-weight relief before another monste
     scheduleObjectTimer(corpse, OBJECT_TIMER_KIND.ROT_CORPSE, deadline);
     game._encumbranceLevel = nearCapacity(game);
     assert.ok(game._encumbranceLevel >= 2 && game._encumbranceLevel <= 4);
-    game._capacityDirty = false;
     game._moveloopStarted = true;
     game._heroTimePending = true;
     game.u.umovement = 0;

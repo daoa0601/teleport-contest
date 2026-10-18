@@ -552,7 +552,6 @@ export async function detachThrownUnit(
     await finishInventoryRemoval(thrown, state);
     if (state.program_state?.gameover) return thrown;
     thrown.how_lost = LOST_THROWN;
-    state._capacityDirty = true;
     state._thrownObject = thrown;
     return thrown;
 }

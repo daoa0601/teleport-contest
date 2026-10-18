@@ -77,7 +77,6 @@ export async function cancelObjectMagic(
     }
     unblessObjectState(object);
     uncurseObjectState(object);
-    state._capacityDirty = true;
 }
 
 function removeWornBonuses(object: GameObject, state: GameState): void {
