@@ -138,22 +138,27 @@ function renderChoicePrompt(message) {
 // C tty_yn_function(): Escape prefers quit, then no; whitespace chooses
 // the displayed default. Invalid keys leave the same question active.
 export async function promptChoice(query, choices, defaultAnswer, { visibleChoices = choices.join(''), addCommandQueue = true } = {}) {
-    if (addCommandQueue) {
-        const queued = takeRepeatCommand();
-        if (queued)
-            return queued.kind === 'key'
-                ? choices.find(choice => choice === String.fromCharCode(queued.key)) ?? defaultAnswer
-                : defaultAnswer;
+    const result = await yn_function(query, choices.join(''), defaultAnswer, addCommandQueue, visibleChoices);
+    return choices.find(choice => choice === result.answer) ?? defaultAnswer;
+}
+// C cmd.c:yn_function() records the answer key, while yn_number remains
+// the last tty question's value. Replaying '#' does not read another count.
+export async function yn_function(query, responses, defaultAnswer = '', addCommandQueue = true, visibleChoices = responses?.split('\x1b')[0] ?? '') {
+    const queued = addCommandQueue ? takeRepeatCommand() : undefined;
+    if (queued) {
+        const answer = queued.kind === 'key' ? String.fromCharCode(queued.key) : '\x1b';
+        const valid = !responses || answer === '\0' || responses.includes(answer);
+        return { answer: valid ? answer : defaultAnswer || '\x1b', count: game._ynNumber ?? 0n };
     }
-    const result = await tty_yn_function(query, choices.join(''), defaultAnswer, visibleChoices);
-    const answer = choices.find(choice => choice === result.answer) ?? defaultAnswer;
+    const result = await tty_yn_function(query, responses, defaultAnswer, visibleChoices);
     if (addCommandQueue)
-        rememberCommandKey(answer ? answer.charCodeAt(0) : 0);
-    return answer;
+        rememberCommandKey(result.answer ? result.answer.charCodeAt(0) : 0);
+    return result;
 }
 // Native tty_yn_function returns the answer and sets yn_number. Keep the
 // number in the result so each suspended question owns its own answer.
 export async function tty_yn_function(query, responses, defaultAnswer = '', visibleChoices = responses?.split('\x1b')[0] ?? '') {
+    game._ynNumber = 0n;
     const question = query.length >= QBUFSZ
         ? `${query.slice(0, QBUFSZ - 4)}...` : query;
     const choices = visibleChoices.split('\x1b')[0] ?? '';
@@ -183,6 +188,7 @@ export async function tty_yn_function(query, responses, defaultAnswer = '', visi
         coveredRows = Math.max(coveredRows, (game.nhDisplay?.cursorRow ?? 0) + 1);
     };
     const finish = (answer, count = 0n) => {
+        game._ynNumber = count;
         if (game.nhDisplay)
             game.nhDisplay.toplines = message + (count ? `#${count}` : answer);
         // Native cleanup marks the question seen even when fuzzer input

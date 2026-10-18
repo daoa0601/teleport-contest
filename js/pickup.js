@@ -17,7 +17,7 @@ import { remove_object } from './floor_object.js';
 import { carryableObjectCount, liftObject } from './lift_object.js';
 import { objectQuantity, splitObjectStack } from './object_stack.js';
 import { hasBucCategory, matchesObjectCategories, queryObjectClasses } from './object_class_query.js';
-import { tty_yn_function } from './query.js';
+import { yn_function } from './query.js';
 import { useUpFloorObject } from './floor_consumption.js';
 import { remoteBurglary } from './shop_departure.js';
 import { roomsAt } from './room.js';
@@ -156,7 +156,7 @@ async function pickUpTraditionally(source, count) {
                 prefix: 'Pick up ', suffix: '?', fallback: 'something',
                 format: (item, state) => objectDescription(item, { state }), shortFormat: simpleObjectNameWithArticle,
             });
-            const response = await tty_yn_function(question, amount < 2 ? 'ynaq' : 'yn#aq', 'y');
+            const response = await yn_function(question, amount < 2 ? 'ynaq' : 'yn#aq', 'y');
             if (response.answer === 'q')
                 break;
             if (response.answer === 'n' || response.answer === '#' && !response.count)

@@ -99,6 +99,7 @@ const transientFields = {
     _commandKey: true,
     _repeatCommands: true,
     _inDoAgain: true,
+    _ynNumber: true,
     _movementAttempt: true,
     _whatdoesShown: true,
     _kickedLoc: true,
