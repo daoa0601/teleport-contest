@@ -1,14 +1,16 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { rhack } from '../js/cmd.js';
+import { moveloop_core } from '../js/allmain.js';
 import { W_ARM, W_ARMC, W_SWAPWEP, W_WEP } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { pushKey } from '../js/input.js';
 import { inventoryItemDescription } from '../js/invent.js';
-import { DAGGER, LEATHER_CLOAK, LONG_SWORD, RING_MAIL, SMALL_SHIELD } from '../js/object_data.js';
+import { DAGGER, LEATHER_CLOAK, LONG_SWORD, RING_MAIL, SMALL_SHIELD, OBJECT_NAMES } from '../js/object_data.js';
 import { setPrimaryWeapon, setQuiverObject, setSecondaryWeapon } from '../js/weapon_slots.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { freshTurnRoom } from './support/playable-room.js';
 
 void test('putting on named zero-delay armor uses its noun without inventory details', async () => {
     freshObjectRoom();
@@ -93,4 +95,19 @@ void test('wearing readied armor clears only the quiver and keeps an unrelated w
     assert.equal(game.uswapwep, dagger);
     assert.equal(dagger.owornmask, W_SWAPWEP);
     assert.equal(game.context.move, 1);
+});
+
+void test('armor class updates before the next dressing action when movement remains in the current turn', async () => {
+    const input = freshTurnRoom({ flags: { tips: false, verbose: false } });
+    const boots = await addInventoryObject(OBJECT_NAMES.indexOf('jumping boots'), { known: false });
+    game.u.umovement = 24;
+    const turn = game.moves;
+    input.feed(`W${boots.invlet}`);
+
+    await moveloop_core();
+    await moveloop_core();
+
+    assert.equal(game.moves, turn, 'Spending the spare movement ration does not advance the world');
+    assert.equal(game.u.uac, 9, 'The worn boots protect the hero before monsters receive their next action');
+    assert.equal(boots.known, false, 'The dressing completion callback has not run yet');
 });

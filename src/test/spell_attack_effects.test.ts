@@ -81,6 +81,7 @@ void test('cancelling skilled spell targeting leaves nearby actors unharmed', as
 
 void test('skilled targeting leaves the steed unmarked and refreshes its hallucination on exit', async () => {
     spellRoom({ role: 'knight', hero: { ulevel: 30 } });
+    game.iflags.bgcolors = false;
     requirePlayingGame(game);
     const pony = await createSaddledSteed();
     await runExtendedCommand('ride', 'l');

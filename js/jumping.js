@@ -203,6 +203,7 @@ export async function jumpHero(magic = 0, { state = game } = {}) {
             : state.flags.verbose ? "Where do you want to jump?  (For instructions type a '?')"
                 : 'Where do you want to jump?',
         isValidLocation: valid,
+        highlightHero: false,
         describe: async (x, y) => await farlookLocationDescription(x, y)
             + (valid(x, y) ? '' : ' (invalid target)'),
     });

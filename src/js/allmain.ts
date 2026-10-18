@@ -1621,18 +1621,6 @@ async function advanceWorldTurn(): Promise<void> {
         },
     );
     await drainQueuedHelplessRecoveryMessage();
-    if (game.program_state.gameover) return;
-    // Native find_ac() follows the elapsed-turn loop.  setworn() is already
-    // live for effects, but the first donning cadence frame still shows the
-    // prior AC; the next automatic core observes the recomputed value.  A
-    // slowed hero stays inside moveloop_core()'s movement loop, without
-    // reaching find_ac(), until a turn grants a full movement ration.
-    if (game._armorClassDirtyAfterDelayedFrame
-        && game.u.umovement >= NORMAL_SPEED) {
-        findArmorClass(game);
-        game._armorClassDirty = false;
-        delete game._armorClassDirtyAfterDelayedFrame;
-    }
 }
 
 // C allmain.c:moveloop_core() calls unmul() at the end of the world turn
@@ -1669,7 +1657,6 @@ async function finishDelayedArmorAction(delayed: ArmorCompletion, g: GameState):
     }
     if (g.program_state.gameover) return;
     g._armorClassDirty = true;
-    delete g._armorClassDirtyAfterDelayedFrame;
 }
 
 async function settleHeroLiquidAfterAction() {
@@ -3857,11 +3844,9 @@ export async function moveloop_core() {
 
     // C allmain.c:find_ac() is a once-per-player-input operation after all
     // monster/global time caused by the command.  Armor is already present
-    // in the worn slot, but attacks during that just-started donning turn
-    // still observe the previous u.uac; later negative-multi turns see the
-    // recomputed value.
-    if (g._armorClassDirty && !g._heroTimePending
-        && !g._armorClassDirtyAfterDelayedFrame) {
+    // in the worn slot. A spare movement ration reaches this boundary even
+    // before a world turn elapses, so the next dressing action uses the new AC.
+    if (g._armorClassDirty && !g._heroTimePending) {
         findArmorClass(g);
         g._armorClassDirty = false;
     }

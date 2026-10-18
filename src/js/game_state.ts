@@ -414,13 +414,16 @@ export interface GameState {
     _lastPlineKind?: number;
     _screen_output: string;
     _mapFlushPaused?: boolean;
+    _mapPositionHighlight?: {
+        isValidLocation: (x: number, y: number) => boolean;
+        background: boolean;
+    };
     _underwaterView?: { position: Position | null; fullRedrawPending: boolean };
     _undergroundView?: { fullRedrawPending: boolean };
     _statusUpdatesDisabled?: boolean;
     _cursorOverride?: [number, number] | null;
     _statusGoldOverride?: number;
     _armorClassDirty?: boolean;
-    _armorClassDirtyAfterDelayedFrame?: boolean;
     _preserveLeadingStyledBlanks?: boolean;
     _suppressMapStatusForFlush?: boolean;
     _suppressMessagesUntilInput?: boolean;

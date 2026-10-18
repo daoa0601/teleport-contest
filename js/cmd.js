@@ -5262,8 +5262,6 @@ async function putOnArmorObject(object) {
     // extrinsics remain later afternmv effects.
     const delay = OBJECT_DELAY[object.otyp] ?? 0;
     game._armorClassDirty = true;
-    if (delay > 0)
-        game._armorClassDirtyAfterDelayedFrame = true;
     game._afterMove = { kind: 'wear', object };
     if (delay > 0) {
         nomul(-delay);

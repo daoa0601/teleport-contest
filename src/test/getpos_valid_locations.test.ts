@@ -5,7 +5,8 @@ import type { MapPositionOptions } from '../js/getpos.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { CORR, HI_ZAP } from '../js/const.js';
+import { CORR, HI_ZAP, MM_NOGRP, NO_MINVENT } from '../js/const.js';
+import { ATR_INVERSE } from '../js/terminal.js';
 import { flush_screen } from '../js/display.js';
 import {
     getposHelpUntilDismissed, selectMapPosition,
@@ -14,6 +15,7 @@ import { requireGameDisplay, game } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { answerPrompts } from './support/input-boundaries.js';
+import { createMonsterAt } from './support/monsters.js';
 
 for (const key of ['z', 'Z']) {
     void test(`menu mode offers valid locations for '${key}'`, async () => {
@@ -98,6 +100,7 @@ async function driveSelection(keys: string, options: {
     sampleSpots?: readonly Position[];
     selectMapPosition?: Partial<Omit<MapPositionOptions, 'afterPaint'>>;
 } = {}) {
+    game.iflags.bgcolors ??= false;
     const input = resetInputState();
     const selection = selectMapPosition({
         start: { x: game.u.ux, y: game.u.uy },
@@ -246,6 +249,40 @@ void test("marking ends when the help screen redraws the map", async () => {
         .every(ch => ch !== '$'));
 });
 
+for (const key of [12, 18]) {
+    void test(`help rebound to ^${String.fromCharCode(key + 64)} opens before redrawing the map`, async () => {
+        freshObjectRoom({ iflags: { bgcolors: false } });
+        assert.equal(game.commandBindings.bindKey(key, 'redraw').accepted, true);
+        assert.equal(game.commandBindings.bindSpecialKey(key, 'getpos.help'), true);
+        const input = resetInputState();
+        input.feed('ll$');
+        const selection = selectMapPosition({
+            start: { x: 10, y: 10 }, prompt: 'Where do you want to hit?',
+            goal: 'the spot to hit', isValidLocation: isValidPolearmStyleSpot,
+        });
+
+        try {
+            await input.waitUntilBlocked();
+            assert.equal(glyphAt(12, 10), '$');
+            input.feed(key);
+            await input.waitUntilBlocked();
+            const text = requireGameDisplay(game).grid
+                .map(row => row.map(cell => cell.ch).join('')).join('\n');
+            assert.match(text, /Use 'h', 'j', 'k', 'l' to move the cursor/);
+
+            input.feed(' ');
+            await input.waitUntilBlocked();
+            assert.equal(glyphAt(12, 10), '.');
+            assert.deepEqual(selectionView([]).cursor, { x: 12, y: 10 });
+            input.feed('.');
+            assert.deepEqual(await selectedCoordinates(selection), { x: 12, y: 10 });
+        } finally {
+            input.feed('\x1b\x1b');
+            await selection;
+        }
+    });
+}
+
 void test("getpos help lists the valid-location keys while a rule is active",
     async () => {
         freshObjectRoom();
@@ -324,3 +361,60 @@ void test("cycling moves the visible cursor while valid squares remain marked",
         assert.deepEqual(viewAfterInput(views, 2).cursor, EXPECTED_CYCLE[1]);
         assert.equal(viewAfterInput(views, 2).glyphs[1], '$');
     });
+
+void test("background highlighting cycles through plain map, symbols, and background again", async () => {
+    freshObjectRoom({ iflags: { bgcolors: true } });
+
+    const { selection, views } = await driveSelection('$$$$.');
+    await selection;
+
+    for (const index of [0, 1, 3, 4]) {
+        assert.equal(viewAfterInput(views, index).glyphs[1], '.',
+            `Background or plain-map state after ${index} toggle(s) keeps the floor symbol`);
+    }
+    assert.equal(viewAfterInput(views, 2).glyphs[1], '$');
+});
+
+for (const keys of ['$$\x12$', '$$\x0c$', '$$? $']) {
+    void test(`redrawing background-enabled targeting resets its highlight cycle (${JSON.stringify(keys)})`, async () => {
+        freshObjectRoom({ iflags: { bgcolors: true } });
+
+        const { selection, views } = await driveSelection(keys + '.');
+        await selection;
+
+        assert.equal(viewAfterInput(views, -1).glyphs[1], '.');
+    });
+}
+
+void test('background highlighting takes precedence over a valid pet glyph until toggled off', async () => {
+    freshObjectRoom({ iflags: { bgcolors: true }, flags: { hilite_pet: true } });
+    const pet = await createMonsterAt('little dog', 12, 10, MM_NOGRP | NO_MINVENT);
+    pet.mtame = 10;
+    pet.mpeaceful = true;
+    const input = resetInputState();
+    const selection = selectMapPosition({
+        start: { x: 10, y: 10 }, prompt: 'Choose a location.', goal: 'a location',
+        isValidLocation: (x, y) => x === 12 && y === 10,
+    });
+    await input.waitUntilBlocked();
+    try {
+        assert.equal(glyphCell(12, 10).ch, 'd');
+        assert.equal(glyphCell(12, 10).attr, 0);
+        input.feed('$');
+        await input.waitUntilBlocked();
+        assert.equal(glyphCell(12, 10).attr, ATR_INVERSE);
+    } finally {
+        input.feed('\x1b');
+        await selection;
+    }
+});
+
+void test('a rebound valid-location key controls the highlight cycle', async () => {
+    freshObjectRoom({ iflags: { bgcolors: false } });
+    assert.equal(game.commandBindings.bindSpecialKey(113, 'getpos.valid'), true);
+
+    const { selection, views } = await driveSelection('q.');
+    await selection;
+
+    assert.equal(viewAfterInput(views, 1).glyphs[1], '$');
+});

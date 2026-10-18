@@ -21,6 +21,7 @@ import { floorObject } from './support/game-objects.js';
 import { floorObjectsAt, addTrap } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { requireScreenCell } from './support/screen.js';
 
 function readyJump({ knight = false, ...room }: ObjectRoomOptions & { knight?: boolean } = {}) {
     freshObjectRoom({ flags: { tips: false, pickup: false }, ...room });
@@ -307,4 +308,31 @@ void test('jumping in place triggers a trap, while an empty square takes no time
     input.feed('.' + ' '.repeat(8));
     assert.equal((await jumpHero(1)).spentTime, true);
     assert.equal(game.u.utraptype, TT_PIT);
+});
+
+void test('jump marking leaves the hero visible and resets for the next selection', async () => {
+    const input = readyJump({ iflags: { bgcolors: true }, flags: { tips: false, verbose: false } });
+    const jumping = jumpHero();
+    await input.waitUntilBlocked();
+    input.feed('$$');
+    await input.waitUntilBlocked();
+    try {
+        assert.equal(requireScreenCell(9, 11).ch, '@');
+        assert.equal(requireScreenCell(11, 11).ch, '$');
+    } finally {
+        input.feed('\x1b');
+        await jumping;
+    }
+
+    const nextJump = jumpHero();
+    await input.waitUntilBlocked();
+    try {
+        assert.equal(requireScreenCell(11, 11).ch, '.');
+        input.feed('$');
+        await input.waitUntilBlocked();
+        assert.equal(requireScreenCell(11, 11).ch, '.');
+    } finally {
+        input.feed('\x1b');
+        await nextJump;
+    }
 });

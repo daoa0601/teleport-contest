@@ -6,7 +6,7 @@ import { wipeHeroEngraving } from './engrave.js';
 import { pickupFloorObject } from './pickup.js';
 import { game } from './gstate.js';
 import { loseHeroHp } from './hero_damage.js';
-import { shouldShowGetposTip, showGetposTip, selectMapPosition, } from './getpos.js';
+import { prepareMapPositionHighlights, shouldShowGetposTip, showGetposTip, selectMapPosition, } from './getpos.js';
 import { applyCaitiffPenalty } from './hero_attack_conduct.js';
 import { prepareAppliedWeaponAttack } from './hero_attack_preflight.js';
 import { hitMonsterWithAppliedWeapon } from './hero_ranged_attack.js';
@@ -44,11 +44,16 @@ function monsterAt(x, y, state) {
 function monsterObject(monster) {
     return monster.name || `the ${monsterTypeName(monster.mnum, !!monster.female)}`;
 }
-async function chooseTarget(describeTarget, state) {
+async function chooseTarget(hook, describeTarget, state) {
+    await pline('Where do you want to hit?');
+    const range = hookRange(hookSkill(hook, state));
+    const valid = (x, y) => isok(x, y) && cansee(x, y)
+        && squaredDistanceFromHero(x, y, state) <= range;
+    prepareMapPositionHighlights(valid);
     const firstUse = shouldShowGetposTip(state);
     if (firstUse) {
-        await pline('Where do you want to hit?');
         await showGetposTip(state);
+        await pline('Move cursor to the desired position:');
     }
     return selectMapPosition({
         start: { x: state.u.ux, y: state.u.uy },
@@ -59,6 +64,8 @@ async function chooseTarget(describeTarget, state) {
                 : "Where do you want to hit?  (For instructions type a '?')",
         goal: 'the spot to hit',
         describe: describeTarget,
+        isValidLocation: valid,
+        highlightHero: false,
     });
 }
 async function chooseAim(x, y, state) {
@@ -121,7 +128,7 @@ export async function useGrapplingHook(hook, { state = game, ensureWielded, desc
         return { spentTime: false };
     if (wielded.newlyWielded)
         return { spentTime: true, resume: true };
-    const target = await chooseTarget(describeTarget, state);
+    const target = await chooseTarget(hook, describeTarget, state);
     if (!target)
         return { spentTime: false };
     const range = hookRange(hookSkill(hook, state));

@@ -30,7 +30,7 @@ import {
     A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, ACCESSIBLE, BC_BALL, BC_CHAIN,
     COLNO, ROWNO, STONE, ROOM, CORR, SCORR, SDOOR, DOOR, STAIRS, FOUNTAIN, THRONE, SINK, GRAVE, ALTAR, ICE,
     HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER,
-    CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL,
+    CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL, HI_ZAP,
     TREE, IRONBARS, POOL, MOAT, WATER, LAVAPOOL, LAVAWALL, AIR, CLOUD,
     IS_POOL, IS_OBSTRUCTED, IS_ROOM, IS_WALL, LADDER, LA_DOWN, DBWALL, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN,
     D_NODOOR, D_ISOPEN, D_CLOSED, D_LOCKED, D_BROKEN,
@@ -2531,12 +2531,15 @@ function writeMapRow(display: GameDisplay, y: number): void {
         if (!loc?.disp_ch) continue;
         const color = loc.disp_color ?? NO_COLOR;
         const attr = loc.disp_attr ?? 0;
+        const highlight = game._mapPositionHighlight;
+        const frameColor = highlight?.background && game.flags.color !== false
+            && highlight.isValidLocation(x, y) ? HI_ZAP : null;
         // Plane-of-Air AIR is a cyan space. Preserve its foreground color
         // between cloud glyphs; ordinary default/gray blanks stay sparse.
-        if (loc.disp_ch === ' ' && !(attr & 5)
+        if (loc.disp_ch === ' ' && frameColor === null && !(attr & 5)
             && (color === NO_COLOR || color === CLR_GRAY)) continue;
         const ch = loc.disp_decgfx ? (DEC_TO_UNICODE[loc.disp_ch] || loc.disp_ch) : loc.disp_ch;
-        display.setCell(x - 1, y + 1, ch, color, attr);
+        display.setMapCell(x - 1, y + 1, ch, color, attr, frameColor);
     }
 }
 

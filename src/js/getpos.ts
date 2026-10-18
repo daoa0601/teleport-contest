@@ -45,7 +45,7 @@ export interface MapPositionOptions {
     describe?: PositionDescription | null;
     afterPaint?: ((cursor: Position, firstPaint: boolean) => void | Promise<void>) | null;
     isValidLocation?: ValidLocation | null;
-    // Spell and cloud targeting admit the hero but omit its '$' overlay.
+    // Jump, spell, and cloud targeting admit the hero but omit its '$' overlay.
     highlightHero?: boolean;
     force?: boolean;
 }
@@ -54,6 +54,7 @@ interface LocationCycle {
     spots: Position[];
     index: number;
 }
+type MapPositionHilite = 'normal' | 'symbols' | 'background';
 type GetposCycleKind = 'mon' | 'obj' | 'door' | 'unexplored' | 'all' | 'valid';
 
 // defsym.h S_goodpos: the dollar sign doubles as the default getpos key
@@ -289,8 +290,13 @@ export async function getposHelpUntilDismissed(
     if (hasValidLocations) {
         // getpos_help() adds these only while a getvalid rule and a hilite
         // callback are installed (getpos_sethilite() callers).
-        lines.push("Use 'z' or 'Z' to move to valid locations.");
-        lines.push("Use '$' to toggle marking of valid locations.");
+        const keyLabel = (name: string) => {
+            const key = game.commandBindings.specialKey(name);
+            if (key === undefined) throw new Error(`Map selection requires a ${name} binding`);
+            return visibleCommandKey(key);
+        };
+        lines.push(`Use '${keyLabel('getpos.valid.next')}' or '${keyLabel('getpos.valid.prev')}' to move to valid locations.`);
+        lines.push(`Use '${keyLabel('getpos.valid')}' to toggle marking of valid locations.`);
     }
     lines.push(
         "Use '#' to toggle automatic description.",
@@ -441,7 +447,18 @@ function getposArea(state: GameState): ReadonlySet<number> {
 // C getpos.c:getpos_sethilite(). Install after the caller's question and
 // before getpos's tutorial or instructions can flush these forced redraws.
 export function prepareMapPositionHighlights(isValidLocation: ValidLocation): void {
-    for (const { x, y } of validMapSquares(isValidLocation)) newsym_force(x, y);
+    setMapPositionHighlights(isValidLocation, game.iflags.bgcolors !== false);
+}
+
+function setMapPositionHighlights(isValidLocation: ValidLocation | null, background: boolean): void {
+    const previous = game._mapPositionHighlight;
+    if (isValidLocation) game._mapPositionHighlight = { isValidLocation, background };
+    else delete game._mapPositionHighlight;
+    if (previous?.isValidLocation === isValidLocation && previous.background === background) return;
+    // getpos_sethilite() redraws the union of the old and new selections,
+    // once per square, when the rule or background color changes.
+    for (const { x, y } of validMapSquares((x, y) =>
+        !!previous?.isValidLocation(x, y) || !!isValidLocation?.(x, y))) newsym_force(x, y);
 }
 
 function getposCycleKind(key: number): { kind: GetposCycleKind; step: -1 | 1 } | null {
@@ -533,12 +550,22 @@ export async function selectMapPosition({
     // garr[GLOC_VALID]/gidx and the hilite state live inside C getpos();
     // getpos_sethilite(NULL, NULL) resets them at its exit.
     const validity: { cycle: LocationCycle | null } = { cycle: null };
-    let markValid = false;
+    const defaultHilite = game.iflags.bgcolors !== false ? 'background' : 'normal';
+    const hilite: { state: MapPositionHilite } = { state: defaultHilite };
     let marking: TemporaryMapEffect | null = null;
     const clearMarking = () => {
         marking?.clear();
         marking = null;
-        markValid = false;
+    };
+    const setHilite = (next: MapPositionHilite) => {
+        hilite.state = next;
+        setMapPositionHighlights(isValidLocation, hilite.state === 'background');
+    };
+    const refreshHilite = () => {
+        if (hilite.state === 'symbols') {
+            clearMarking();
+            setHilite(defaultHilite);
+        }
     };
     const targetCycles = new Map<GetposCycleKind, LocationCycle>();
     const autoDescription = (): boolean => game.iflags.autodescribe ?? true;
@@ -562,18 +589,18 @@ export async function selectMapPosition({
     };
 
     try {
+        if (isValidLocation) setMapPositionHighlights(isValidLocation, hilite.state === 'background');
         const initialMapCursor = isValidLocation && !game.flags.verbose
             ? lastDirtyMapCursor() : null;
         for (;;) {
-            // bgcolors off (this port's default): '$' alternates between no
-            // marking and the S_goodpos overlay.  The cycle-only hero
-            // injection never paints unless the predicate accepts the hero.
-            // apply.c's hilite callbacks ignore the target gathering filter.
-            const paintedSpots = isValidLocation && markValid
+            // The symbol callback runs only when entering that state. Cursor
+            // movement keeps its temporary glyphs until a toggle or refresh.
+            const paintedSpots = isValidLocation && hilite.state === 'symbols' && !marking
                 ? validMapSquares(isValidLocation).filter(({ x, y }) => cansee(x, y)
                     && (highlightHero || x !== game.u.ux || y !== game.u.uy))
                 : null;
-            marking = await paintGetposCursor(cursor, message, paintedSpots);
+            const painted = await paintGetposCursor(cursor, message, paintedSpots);
+            if (painted) marking = painted;
             if (firstPaint && initialMapCursor) game.nhDisplay?.setCursor(...initialMapCursor);
             if (afterPaint) await afterPaint(cursor, firstPaint);
             firstPaint = false;
@@ -617,19 +644,15 @@ export async function selectMapPosition({
                 continue;
             }
 
-            if (key === 18) {
-                // redraw_cmd(): getpos_refresh() ends an active marking.
-                clearMarking();
-                message = movePrompt;
-                continue;
-            }
-            if (key === game.commandBindings.specialKey('getpos.help')) {
-                // getpos_help() runs before getpos_refresh(), which resets
-                // the hilite state to its default (marking off).
-                await getposHelpUntilDismissed(goal, {
-                    hasValidLocations: !!isValidLocation,
-                });
-                clearMarking();
+            const helpRequested = key === game.commandBindings.specialKey('getpos.help');
+            if (helpRequested || game.commandBindings.lookup(key)?.command?.handler === 'doredraw') {
+                // Help takes priority when its key is also bound to redraw.
+                if (helpRequested) {
+                    await getposHelpUntilDismissed(goal, {
+                        hasValidLocations: !!isValidLocation,
+                    });
+                }
+                refreshHilite();
                 message = movePrompt;
                 continue;
             }
@@ -643,8 +666,20 @@ export async function selectMapPosition({
                 continue;
             }
             if (key === game.commandBindings.specialKey('getpos.valid')) {
-                if (markValid) clearMarking();
-                else if (isValidLocation) markValid = true;
+                if (isValidLocation) {
+                    switch (hilite.state) {
+                    case 'normal':
+                        setHilite('symbols');
+                        break;
+                    case 'symbols':
+                        clearMarking();
+                        setHilite(defaultHilite);
+                        break;
+                    case 'background':
+                        setHilite('normal');
+                        break;
+                    }
+                }
                 message = movePrompt;
                 continue;
             }
@@ -759,8 +794,6 @@ export async function selectMapPosition({
         else hero.dz = savedDirection.dz;
         // exitgetpos() clears the validity callbacks and force-redraws their
         // old selection once, also replacing any active '$' marks.
-        if (isValidLocation) {
-            for (const { x, y } of validMapSquares(isValidLocation)) newsym_force(x, y);
-        }
+        if (isValidLocation) setMapPositionHighlights(null, game.iflags.bgcolors !== false);
     }
 }

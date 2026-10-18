@@ -90,7 +90,7 @@ const transientFields = {
     _currentWand: true,
     _elementalClogMessageMove: true,
     _cannibalCheckMove: true,
-    _armorClassDirtyAfterDelayedFrame: true,
+    _mapPositionHighlight: true,
     _cannedCommands: true,
     _capacityDirty: true,
     _cleaveClockwise: true,

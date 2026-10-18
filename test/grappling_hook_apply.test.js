@@ -28,11 +28,30 @@ async function installHook({ wielded = true, enchantment = 0 } = {}) {
     installHeroWeaponSkills({ [P_FLAIL]: P_BASIC });
     return hook;
 }
+void test('grappling targeting marks reachable squares while leaving the hero visible', async () => {
+    freshObjectRoom({ iflags: { bgcolors: true }, flags: { tips: false, verbose: false } });
+    const hook = await installHook();
+    const input = resetInputState();
+    const action = applyInventoryObject(hook, '$$');
+    await input.waitUntilBlocked();
+    try {
+        assert.equal(requireScreenCell(9, 11).ch, '@');
+        assert.equal(requireScreenCell(11, 11).ch, '$');
+        assert.equal(requireScreenCell(12, 11).ch, '.');
+    }
+    finally {
+        input.feed('\x1b');
+        await action;
+    }
+    assert.equal(game.context.move, 0);
+});
 void test('dismissing the grappling aim corner leaves an uncovered hallucinated monster unchanged', async () => {
     freshObjectRoom({ hero: { hallucinationTurns: 20 } });
     const hook = await installHook();
     installHeroWeaponSkills({ [P_FLAIL]: P_EXPERT });
-    await createMonsterAt('jackal', 8, 10);
+    // Outside the hook's valid range, so ending getpos does not itself
+    // refresh this hallucination before the corner menu opens.
+    await createMonsterAt('jackal', 7, 10);
     game._travelTipShown = true;
     initRng(1n);
     const input = resetInputState();
@@ -41,14 +60,14 @@ void test('dismissing the grappling aim corner leaves an uncovered hallucinated 
         await input.waitUntilBlocked();
         const text = game.nhDisplay?.grid.map(row => row.map(cell => cell.ch).join('')).join('\n') ?? '';
         assert.match(text, /Aim for what\?/);
-        const glyph = requireScreenCell(7, 11).ch;
-        const color = requireScreenCell(7, 11).color;
+        const glyph = requireScreenCell(6, 11).ch;
+        const color = requireScreenCell(6, 11).color;
         assert.notEqual(glyph, ' ', 'the monster is visible outside the menu');
         input.feed('a');
         await action;
         await flush_screen(1);
-        assert.equal(requireScreenCell(7, 11).ch, glyph, 'closing a corner menu must not reroll an uncovered hallucinated monster');
-        assert.equal(requireScreenCell(7, 11).color, color, 'closing a corner menu must also preserve the monster color');
+        assert.equal(requireScreenCell(6, 11).ch, glyph, 'closing a corner menu must not reroll an uncovered hallucinated monster');
+        assert.equal(requireScreenCell(6, 11).color, color, 'closing a corner menu must also preserve the monster color');
     }
     finally {
         input.feed('\x1b');

@@ -39,7 +39,7 @@ void test('entering and moving the targeting cursor preserves unseen monster inf
 const TARGETS = [{ x: 9, y: 8 }, { x: 9, y: 12 }, { x: 11, y: 11 }];
 
 async function highlightedSpecies(heroY: number, phase: 'install' | 'exit', marked = false) {
-    freshObjectRoom({ heroY, hero: { hallucinationTurns: 20 } });
+    freshObjectRoom({ heroY, hero: { hallucinationTurns: 20 }, iflags: { bgcolors: false } });
     for (const { x, y } of TARGETS)
         await createMonsterAt('jackal', x, y, MM_NOGRP | NO_MINVENT);
     const isValidLocation = (x: number, y: number) =>
