@@ -7,7 +7,7 @@ import { objectDescription } from './object_description.js';
 import { inventoryClassOrder, lootSortMode, objectClassHeading, sortObjects } from './object_sort.js';
 import { floorObjectDescription, pricedFloorObjectDescription, lookHere, readFloorEngraving, } from './floor_object_display.js';
 import { tryCallObjectType } from './object_call.js';
-import { newsym, flush_screen, pline, plineWithContinuation, map_object, consumeHallucinatedMenuObjectGlyph, } from './display.js';
+import { newsym, newsym_force, flush_screen, pline, plineWithContinuation, map_object, consumeHallucinatedMenuObjectGlyph, } from './display.js';
 import { dungeonFeatureSentenceAt, forceDescribeDecor } from './dungeon_feature.js';
 import { surfaceName } from './terrain_name.js';
 import { showMultiSelectWindow } from './windows.js';
@@ -120,8 +120,7 @@ async function pickUpTraditionally(source, count) {
     const objects = [...source.objects];
     const onlyObject = objects[0];
     if (objects.length === 1 && count && onlyObject) {
-        clearJustPicked(game);
-        await takeSelectedObjects(source, [{ value: onlyObject, count: Math.min(count, objectQuantity(onlyObject)) }], false, false);
+        await takeSelectedObjects(source, [{ value: onlyObject, count: Math.min(count, objectQuantity(onlyObject)) }]);
         return true;
     }
     let selection = null;
@@ -182,7 +181,7 @@ async function pickUpTraditionally(source, count) {
             break;
     }
     if (picked && !source.monster && !game.program_state.gameover)
-        newsym(source.x, source.y);
+        newsym_force(source.x, source.y);
     return attempted;
 }
 async function choosePickupObjects(source, objects, count, { autoSelect = true, feelCockatrice = !count, groupByClass = game.flags.sortpack !== false } = {}) {
@@ -363,7 +362,7 @@ async function takeSelectedObjects(source, selected, telekinesis = false, batch 
     }
     if (batch && picked && !game.program_state?.gameover) {
         if (!source.monster)
-            newsym(source.x, source.y);
+            newsym_force(source.x, source.y);
     }
     return { picked, attempted, stopped };
 }

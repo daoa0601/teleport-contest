@@ -675,7 +675,7 @@ async function lootTraditionally(container: GameObject, putIn: boolean, resetPic
                     const itemPrefix = putIn ? `${letter} - ` : '';
                     const question = objectQuestion(object, {
                         prefix: first ? `${putIn ? 'Put in' : 'Take out'}: ` : '', suffix: '?', fallback: 'item',
-                        format: (item, state) => `${itemPrefix}${describeObject(item, { state, primaryHandDetail: null })}`,
+                        format: (item, state) => `${itemPrefix}${describeObject(item, { state })}`,
                         shortFormat: (item, state) => `${itemPrefix}${simpleObjectNameWithArticle(item, state)}`,
                     });
                     first = false;

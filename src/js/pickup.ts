@@ -11,7 +11,7 @@ import {
 } from './floor_object_display.js';
 import { tryCallObjectType } from './object_call.js';
 import {
-    newsym, flush_screen, pline, plineWithContinuation,
+    newsym, newsym_force, flush_screen, pline, plineWithContinuation,
     map_object, consumeHallucinatedMenuObjectGlyph,
 } from './display.js';
 import { dungeonFeatureSentenceAt, forceDescribeDecor } from './dungeon_feature.js';
@@ -154,8 +154,7 @@ async function pickUpTraditionally(source: PickupSource, count: number): Promise
     const objects = [...source.objects];
     const onlyObject = objects[0];
     if (objects.length === 1 && count && onlyObject) {
-        clearJustPicked(game);
-        await takeSelectedObjects(source, [{ value: onlyObject, count: Math.min(count, objectQuantity(onlyObject)) }], false, false);
+        await takeSelectedObjects(source, [{ value: onlyObject, count: Math.min(count, objectQuantity(onlyObject)) }]);
         return true;
     }
     let selection: ObjectClassSelection | null = null;
@@ -208,7 +207,7 @@ async function pickUpTraditionally(source: PickupSource, count: number): Promise
         picked += result.picked;
         if (result.stopped) break;
     }
-    if (picked && !source.monster && !game.program_state.gameover) newsym(source.x, source.y);
+    if (picked && !source.monster && !game.program_state.gameover) newsym_force(source.x, source.y);
     return attempted;
 }
 
@@ -373,7 +372,7 @@ async function takeSelectedObjects(source: PickupSource, selected: readonly Pick
         }
     }
     if (batch && picked && !game.program_state?.gameover) {
-        if (!source.monster) newsym(source.x, source.y);
+        if (!source.monster) newsym_force(source.x, source.y);
     }
     return { picked, attempted, stopped };
 }

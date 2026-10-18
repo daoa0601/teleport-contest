@@ -1,13 +1,16 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { MENU_COMBINATION, MENU_PARTIAL, MENU_TRADITIONAL } from '../js/const.js';
+import { glyphAt, pline } from '../js/display.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
+import { syncHeroInvisibility } from '../js/hero_invisibility.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { pickupAtHero } from '../js/pickup.js';
 import { ARROW, CLUB, FOOD_RATION, GOLD_PIECE, POT_HEALING } from '../js/object_data.js';
 import { recordObjectCall } from '../js/object_knowledge.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { freshPlayableRoom } from './support/playable-room.js';
+import { freshObjectRoom } from './support/object-room.js';
 void test('traditional pickup takes a lone stack without prompting', async () => {
     freshPlayableRoom({ flags: { menu_style: MENU_TRADITIONAL } });
     const arrows = await floorObject(ARROW, 10, 10, { quantity: 3 });
@@ -22,6 +25,28 @@ void test('a traditional command count takes at most the lone stack quantity', a
     assert.equal(arrows.where, 'inventory');
     assert.equal(arrows.quan, 3);
     assert.equal(game.context.move, 1);
+});
+void test('counted traditional pickup refreshes the hallucinated stack left under an invisible hero', async () => {
+    freshObjectRoom({
+        flags: { menu_style: MENU_TRADITIONAL },
+        hero: { hallucinationTurns: 20, invisibleTurns: 20 },
+    });
+    syncHeroInvisibility();
+    const arrows = await floorObject(ARROW, 10, 10, { quantity: 5 });
+    await pline('You pause to gather some of the arrows from the floor.');
+    const input = resetInputState();
+    const action = pickupAtHero(2);
+    await input.waitUntilBlocked();
+    const duringPickup = glyphAt(10, 10);
+    input.feed(' ');
+    await action;
+    const afterPickup = glyphAt(10, 10);
+    assert.equal(arrows.quan, 3);
+    assert.equal(arrows.where, 'floor');
+    assert.equal(game.inventory.find(object => object.otyp === ARROW)?.quan, 2);
+    assert.ok(duringPickup?.kind === 'object');
+    assert.ok(afterPickup?.kind === 'object');
+    assert.notEqual(afterPickup.glyph, duringPickup.glyph, 'Completing pickup refreshes the remaining hallucinated object after its inventory message.');
 });
 void test('traditional pickup announces a pile, then Escape cancels the class query without a turn', async () => {
     freshPlayableRoom({ flags: { menu_style: MENU_TRADITIONAL } });

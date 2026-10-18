@@ -1,13 +1,59 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { MENU_COMBINATION, MENU_TRADITIONAL } from '../js/const.js';
+import { MENU_COMBINATION, MENU_TRADITIONAL, MM_NOGRP, MM_NOWAIT, NO_MINVENT } from '../js/const.js';
 import { useContainer } from '../js/container.js';
+import { flushPendingTopline } from '../js/display.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
+import { fullyIdentifyObject } from '../js/invent.js';
 import { ARROW, CLUB, FOOD_RATION, LOADSTONE, POT_HEALING, SACK } from '../js/object_data.js';
 import { recordObjectCall } from '../js/object_knowledge.js';
-import { addInventoryObject, knownObject } from './support/game-objects.js';
+import { beginObjectBurn } from '../js/light.js';
+import { setHeroBlindnessTurns } from '../js/senses.js';
+import { addInventoryItem } from '../js/u_init.js';
+import { setPrimaryWeapon } from '../js/weapon_slots.js';
+import { addInventoryObject, artifactObject, knownObject } from './support/game-objects.js';
+import { createMonsterAt } from './support/monsters.js';
+import { freshObjectRoom } from './support/object-room.js';
+import { installPagerInput } from './support/pager-input.js';
 import { freshPlayableRoom } from './support/playable-room.js';
+
+for (const { artifact, sight, detail } of [
+    { artifact: 'Sunsword', sight: 'normal', detail: ', brightly lit' },
+    { artifact: 'Sunsword', sight: 'blind', detail: '' },
+    { artifact: 'Sting', sight: 'normal', detail: ', flickering light blue' },
+    { artifact: 'Sting', sight: 'blind', detail: '' },
+    { artifact: 'Sting', sight: 'hallucinating', detail: ', flickering [a-z -]+' },
+]) {
+    void test(`traditional put-in names wielded ${artifact} with ${sight} vision`, async () => {
+        freshObjectRoom({ flags: { menu_style: MENU_TRADITIONAL } });
+        const sack = await addInventoryObject(SACK, { invlet: 'a', cknown: true });
+        installPagerInput(resetInputState(), { expected: /Sting flickers light blue!/, limit: 2 });
+        const weapon = await addInventoryItem(await artifactObject(artifact));
+        fullyIdentifyObject(weapon);
+        if (artifact === 'Sting')
+            await createMonsterAt('goblin', 14, 10, MM_NOGRP | MM_NOWAIT | NO_MINVENT);
+        await setPrimaryWeapon(weapon);
+        if (artifact === 'Sunsword') beginObjectBurn(weapon);
+        await flushPendingTopline();
+        if (sight === 'blind') setHeroBlindnessTurns(10);
+        if (sight === 'hallucinating') game.u.hallucinationTurns = 20;
+        const input = resetInputState();
+        input.feed('i)\n');
+        const action = useContainer(sack, { held: true });
+        try {
+            await input.waitUntilBlocked();
+            const expectedName = new RegExp(`^Put in: .*${artifact}.*\\(weapon in right hand${detail}\\)\\?`);
+            assert.match(topline(), expectedName);
+            if (sight === 'hallucinating') assert.doesNotMatch(topline(), /light blue/);
+        } finally {
+            input.feed('q');
+            await action;
+        }
+        assert.equal(weapon.where, 'inventory');
+        assert.equal((await action).spentTime, false);
+    });
+}
 
 void test('traditional take-out asks for classes and counts even for one contained stack', async () => {
     freshPlayableRoom({ flags: { menu_style: MENU_TRADITIONAL } });
