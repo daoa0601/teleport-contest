@@ -535,7 +535,7 @@ export function gemObjectName(
     object: ObjectNameView, state: GameState = game, { minimal = false } = {},
 ): string {
     const classNoun = objectMaterial(object.otyp) === 21 ? 'stone' : 'gem';
-    const overrideIdentity = !!state.iflags.override_ID;
+    const overrideIdentity = !!(state.iflags.override_ID || object.overrideIdentified);
     if (!object.dknown && !overrideIdentity) return classNoun;
     const actualName = actualObjectTypeName(object, state);
     if (overrideIdentity || objectTypeKnown(object, state))
@@ -553,7 +553,7 @@ export function armorObjectName(
 ): string {
     const actualName = actualObjectTypeName(object, state);
     const ordinaryName = OBJECT_NAMES[object.otyp];
-    const overrideIdentity = !!state.iflags?.override_ID;
+    const overrideIdentity = !!(state.iflags.override_ID || object.overrideIdentified);
     const descriptionKnown = object.dknown || overrideIdentity;
     if (/ dragon scales$/.test(actualName))
         return armorPresentationName(actualName, actualName);

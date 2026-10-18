@@ -517,7 +517,7 @@ function actualObjectTypeName(object, state) {
 // minimal_xname suppresses only the user-supplied type call name here.
 export function gemObjectName(object, state = game, { minimal = false } = {}) {
     const classNoun = objectMaterial(object.otyp) === 21 ? 'stone' : 'gem';
-    const overrideIdentity = !!state.iflags.override_ID;
+    const overrideIdentity = !!(state.iflags.override_ID || object.overrideIdentified);
     if (!object.dknown && !overrideIdentity)
         return classNoun;
     const actualName = actualObjectTypeName(object, state);
@@ -534,7 +534,7 @@ export function gemObjectName(object, state = game, { minimal = false } = {}) {
 export function armorObjectName(object, state, { minimal = false } = {}) {
     const actualName = actualObjectTypeName(object, state);
     const ordinaryName = OBJECT_NAMES[object.otyp];
-    const overrideIdentity = !!state.iflags?.override_ID;
+    const overrideIdentity = !!(state.iflags.override_ID || object.overrideIdentified);
     const descriptionKnown = object.dknown || overrideIdentity;
     if (/ dragon scales$/.test(actualName))
         return armorPresentationName(actualName, actualName);
