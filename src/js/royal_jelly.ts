@@ -15,17 +15,17 @@ import type { DeathHandler } from './end.js';
 import { freeInventoryObject } from './hero_inventory.js';
 import { healHeroLegs } from './hero_legs.js';
 import { restartEggHatchTimer } from './mklev.js';
-import { LUMP_OF_ROYAL_JELLY } from './object_data.js';
+import { EGG, LUMP_OF_ROYAL_JELLY } from './object_data.js';
+import { deleteObject } from './object_delete.js';
 import {
     OBJECT_TIMER_KIND, objectTimers, stopObjectTimer,
 } from './object_timers.js';
-import {
-    moveUsedObjectToBill,
-} from './shk.js';
+import { definiteObjectAction, ownedObjectName } from './objnam.js';
 import {
     rejoinObjectStack, splitObjectStack,
 } from './object_stack.js';
 import { releaseWeaponSlots } from './weapon_slots.js';
+import { addInventoryItem } from './u_init.js';
 import {
     heroIsPolymorphed, heroIsUnchanging, polymonHero,
     returnHeroToHumanForm,
@@ -35,7 +35,6 @@ import { rn2, rnd } from './rng.js';
 interface JellyUse {
     jelly: GameObject;
     parent: GameObject | null;
-    inventoryIndex: number;
 }
 
 interface RoyalJellyEffect {
@@ -49,13 +48,12 @@ const PM_QUEEN_BEE = 5;
 // C use_royal_jelly(): split off one lump (splitobj -> splitbill), then
 // freeinv() it so the egg prompt cannot offer it.
 async function takeOneJelly(stack: GameObject): Promise<JellyUse> {
-    const inventoryIndex = game.inventory.indexOf(stack);
-    if (inventoryIndex < 0) throw new Error('Royal jelly must be carried before applying it.');
+    if (!game.inventory.includes(stack)) throw new Error('Royal jelly must be carried before applying it.');
     const parent = stack.quan === 1 ? null : stack;
     const jelly = parent ? splitObjectStack(parent, 1, game) : stack;
     if (!jelly) throw new Error('Could not separate one lump from the royal jelly stack.');
     await freeInventoryObject(jelly, game);
-    return { jelly, parent, inventoryIndex };
+    return { jelly, parent };
 }
 
 async function putJellyBack(use: JellyUse): Promise<void> {
@@ -65,68 +63,61 @@ async function putJellyBack(use: JellyUse): Promise<void> {
         return;
     }
 
-    const index = Math.max(0, Math.min(
-        use.inventoryIndex, game.inventory.length,
-    ));
-    game.inventory.splice(index, 0, use.jelly);
-    use.jelly.where = 'inventory';
+    const savedNoMerge = use.jelly.nomerge;
+    use.jelly.nomerge = true;
+    try {
+        await addInventoryItem(use.jelly, null, false);
+    } finally {
+        if (savedNoMerge === undefined) delete use.jelly.nomerge;
+        else use.jelly.nomerge = savedNoMerge;
+    }
 }
 
 async function consumeJelly(jelly: GameObject): Promise<void> {
     await releaseWeaponSlots(jelly);
     jelly.owornmask = 0;
     jelly.worn = false;
-    if (!moveUsedObjectToBill(jelly)) jelly.where = 'gone';
-    game._capacityDirty = true;
-}
-
-function eggHasHatchTimer(egg: GameObject): boolean {
-    return objectTimers(egg).some(timer =>
-        timer.kind === OBJECT_TIMER_KIND.HATCH_EGG);
-}
-
-function eggName(egg: GameObject): string {
-    return egg.quan === 1 ? 'egg' : `${egg.quan} eggs`;
+    await deleteObject(jelly);
 }
 
 function quiverMessage(egg: GameObject, adverb: 'feebly' | 'briefly'): string {
-    const verb = egg.quan === 1 ? 'quivers' : 'quiver';
-    return `The ${eggName(egg)} ${verb} ${adverb}.`;
+    return `${definiteObjectAction(egg, 'quiver')} ${adverb}.`;
 }
 
 export async function useRoyalJelly(
     stack: GameObject | null | undefined,
-    chooseEgg: () => GameObject | null | Promise<GameObject | null>,
+    chooseTarget: () => GameObject | null | Promise<GameObject | null>,
 ): Promise<boolean> {
     if (stack?.otyp !== LUMP_OF_ROYAL_JELLY) return false;
     const use = await takeOneJelly(stack);
-    const egg = await chooseEgg();
+    const egg = await chooseTarget();
     if (!egg) {
         await putJellyBack(use);
         return false;
     }
 
-    await pline(`You smear royal jelly all over your ${eggName(egg)}.`);
+    await pline(`You smear royal jelly all over ${ownedObjectName(egg, game, { capitalized: false })}.`);
+    if (egg.otyp !== EGG) {
+        await pline('Nothing happens.');
+        await consumeJelly(use.jelly);
+        return true;
+    }
     const oldSpecies = egg.corpsenm ?? -1;
     if (oldSpecies === PM_KILLER_BEE) egg.corpsenm = PM_QUEEN_BEE;
 
-    const hadTimer = eggHasHatchTimer(egg);
-    let quivers = egg.corpsenm !== oldSpecies;
+    const wasTimed = objectTimers(egg).length > 0;
     if (use.jelly.cursed) {
-        stopObjectTimer(egg, OBJECT_TIMER_KIND.HATCH_EGG);
-        await pline(quivers || hadTimer
+        await pline(wasTimed || egg.corpsenm !== oldSpecies
             ? quiverMessage(egg, 'feebly')
             : 'Nothing seems to happen.');
+        stopObjectTimer(egg, OBJECT_TIMER_KIND.HATCH_EGG);
     } else {
-        if ((egg.corpsenm ?? -1) >= 0 && !hadTimer) {
-            restartEggHatchTimer(egg);
-            quivers = eggHasHatchTimer(egg) || quivers;
+        if ((egg.corpsenm ?? -1) !== -1) {
+            if (!wasTimed) restartEggHatchTimer(egg);
+            if (use.jelly.blessed && !egg.spe) egg.spe = 2;
         }
-        if (use.jelly.blessed && !egg.spe) {
-            egg.spe = 2;
-            quivers = true;
-        }
-        if (egg.spe === 2) quivers = true;
+        const quivers = (!!egg.timed && !wasTimed) || egg.spe === 2
+            || egg.corpsenm !== oldSpecies;
         await pline(quivers
             ? quiverMessage(egg, 'briefly')
             : 'Nothing seems to happen.');
