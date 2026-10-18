@@ -237,7 +237,7 @@ async function moveHeroOutOfPit(destination, state) {
     vision_recalc(0);
     const landing = await finishDestinationSpotEffects({
         oldx: movement.oldx, oldy: movement.oldy,
-        newx: movement.x, newy: movement.y, explicitAttempt: false,
+        newx: movement.x, newy: movement.y,
     });
     if (landing.died)
         return;

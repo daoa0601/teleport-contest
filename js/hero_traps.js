@@ -1133,8 +1133,8 @@ export async function triggerHeroTrap(trap, { finishTeleport = null, gotoLevel =
             const fall = await prepareHoleFall(trap, { tookPlunge });
             if (!fall || !gotoLevel)
                 break;
-            await gotoLevel(fall.destination, { arrival: fall.arrival });
-            shortCircuited = true;
+            // C fall_through() leaves domove() on this level until deferred_goto().
+            scheduleLevelChange([fall.destination, { arrival: fall.arrival }], gotoLevel);
             break;
         }
         case TELEP_TRAP:

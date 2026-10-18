@@ -1,6 +1,5 @@
 // C hack.c:spoteffects() and teleport.c:teleds().
 import { bot, plineWithContinuation } from './display.js';
-import { maybeSmudgeEngravings } from './engrave.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { MAX_TYPE, IS_SINK, I_SPECIAL, TIMEOUT, VAULT, is_pit } from './const.js';
 import { applyHeroLiquidEffects } from './cmd.js';
@@ -37,7 +36,7 @@ export async function finishTeleportArrival(movement, { announceTeleport = true 
             await noticeVaultEscape(guard, game);
     }
     const result = await finishDestinationSpotEffects({
-        ...movement, newx: movement.x, newy: movement.y, explicitAttempt: false,
+        ...movement, newx: movement.x, newy: movement.y,
     });
     if (result.died || game.program_state.gameover)
         return { ...result, died: true };
@@ -48,7 +47,7 @@ export async function finishTeleportArrival(movement, { announceTeleport = true 
 // square, terrain, or trap to start another transaction.
 let spotDepth = 0;
 let activeSpot = null;
-export async function finishDestinationSpotEffects({ oldx, oldy, newx, newy, explicitAttempt, trapOptions = {}, publish = plineWithContinuation, pick = true, }) {
+export async function finishDestinationSpotEffects({ oldx, oldy, newx, newy, trapOptions = {}, publish = plineWithContinuation, pick = true, }) {
     // C spoteffects() defers lava-rescue landing until lava_effects ends.
     if (game.iflags?.in_lava_effects)
         return { moved: false, died: false };
@@ -119,8 +118,6 @@ export async function finishDestinationSpotEffects({ oldx, oldy, newx, newy, exp
         await warnAboutMeltingIce(publish);
         if (await finishCeilingMonsterArrival(game, publish))
             return { died: true };
-        if (explicitAttempt)
-            maybeSmudgeEngravings(oldx, oldy, newx, newy);
         return { moved: false, died: !!game.program_state.gameover };
     }
     finally {

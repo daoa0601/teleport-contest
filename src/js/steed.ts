@@ -828,7 +828,7 @@ export async function dismountHero(
                     location = await finishDestinationSpotEffects({
                         oldx: movement.oldx, oldy: movement.oldy,
                         newx: movement.x, newy: movement.y,
-                        explicitAttempt: false, publish: announce,
+                        publish: announce,
                     });
                     if (location?.died || state.program_state?.gameover)
                         return {

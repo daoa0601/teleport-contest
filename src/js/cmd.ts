@@ -3616,7 +3616,7 @@ async function moveIntoFailedUntrap(trap: Trap) {
     trap.tseen = false;
     await finishDestinationSpotEffects({
         oldx, oldy, newx: u.ux, newy: u.uy,
-        explicitAttempt: false, trapOptions: { failedUntrap: true },
+        trapOptions: { failedUntrap: true },
     });
     if (game.program_state.gameover) return { entered: true, died: true };
     const remainingTrap = game.level?.traps?.find(candidate =>
@@ -6889,7 +6889,7 @@ export function applyHeroLiquidEffects(
         applyLandingEffects: ({ from, to, pick = true }) => finishDestinationSpotEffects({
             oldx: from.x, oldy: from.y,
             newx: to.x, newy: to.y,
-            explicitAttempt: false, publish, pick,
+            publish, pick,
         }),
     });
 }
@@ -6902,18 +6902,17 @@ export async function applyHeroLocationEffects(
     const { ux: x, uy: y } = game.u;
     return finishDestinationSpotEffects({
         oldx: x, oldy: y, newx: x, newy: y,
-        explicitAttempt: false, publish, pick,
+        publish, pick,
     });
 }
 
 // C hack.c:domove_core() common tail, including a refused pet swap.
 // Repositioning and concealment finish before vision and arrival effects.
 async function finishHeroMovement({
-    oldx, oldy, loc, explicitAttempt, ballChainMove = null,
+    oldx, oldy, loc, ballChainMove = null,
 }: {
     oldx: number; oldy: number;
     loc: MapLocation | null | undefined;
-    explicitAttempt: boolean;
     ballChainMove?: Awaited<ReturnType<typeof beginBallAndChainMove>>;
 }): Promise<boolean> {
     const u = game.u;
@@ -6952,11 +6951,9 @@ async function finishHeroMovement({
 
     if (u.umoved) {
         const finished = await finishDestinationSpotEffects({
-            oldx, oldy, newx: u.ux, newy: u.uy, explicitAttempt,
+            oldx, oldy, newx: u.ux, newy: u.uy,
         });
         if (finished.died) return true;
-        if (finished.moved && explicitAttempt)
-            maybeSmudgeEngravings(oldx, oldy, u.ux, u.uy);
     }
     // C domove_core(): landing and pickup finish before nomul(-2).
     // A longer trap-induced delay survives, but its completion prose changes.
@@ -6975,12 +6972,17 @@ async function delayAfterDraggingBall(): Promise<void> {
     );
 }
 
-// C hack.c:domove() clears kickedloc after even an unsuccessful attempt.
+// C hack.c:domove() evaluates a successful step after all destination effects.
+// Automatic run steps have no DOMOVE_WALK/RUSH flags after the first command.
 async function domove(dx: number, dy: number, explicitAttempt = true): Promise<boolean> {
+    const oldx = game.u.ux, oldy = game.u.uy;
     game._domoveSucceeded = false;
-    const moved = await domoveCore(dx, dy, explicitAttempt);
+    const moved = await domoveCore(dx, dy);
     if (!game.program_state.gameover) {
-        if (game._domoveSucceeded) maybeAdjustHeroBubble();
+        if (explicitAttempt && game._domoveSucceeded) {
+            maybeSmudgeEngravings(oldx, oldy, game.u.ux, game.u.uy);
+            maybeAdjustHeroBubble();
+        }
         game._kickedLoc = null;
         game._movementAttempt = null;
     }
@@ -7045,7 +7047,7 @@ function heroMayDisplaceMonster(monster: Monster): boolean {
         && !heroIsHallucinating(game) && !u.stunned && !(u.stunnedTurns ?? 0);
 }
 
-async function domoveCore(dx: number, dy: number, explicitAttempt: boolean): Promise<boolean> {
+async function domoveCore(dx: number, dy: number): Promise<boolean> {
     requirePlayingGame(game);
     const u = game.u;
     // C cmd.c:set_move_cmd() persists the requested command vector before
@@ -7202,7 +7204,7 @@ async function domoveCore(dx: number, dy: number, explicitAttempt: boolean): Pro
             u.uy = newy;
             await settleBeastHeroDisplacement(monster, game);
             if (game.program_state.gameover) return true;
-            return finishHeroMovement({ oldx, oldy, loc, explicitAttempt, ballChainMove });
+            return finishHeroMovement({ oldx, oldy, loc, ballChainMove });
         }
         if (safeMonster && artifactById(game.uwep?.oartifact, game)?.name !== 'Stormbringer') {
             // C ref: hack.c do_attack()/domove(): a tame monster normally
@@ -7462,13 +7464,13 @@ async function domoveCore(dx: number, dy: number, explicitAttempt: boolean): Pro
                 u.usteed.my = oldy;
             }
             return finishHeroMovement({
-                oldx, oldy, loc, explicitAttempt, ballChainMove,
+                oldx, oldy, loc, ballChainMove,
             });
         }
         await settlePetHeroDisplacement(monster, game);
         if (game.program_state.gameover) return true;
     }
     return finishHeroMovement({
-        oldx, oldy, loc, explicitAttempt, ballChainMove,
+        oldx, oldy, loc, ballChainMove,
     });
 }
