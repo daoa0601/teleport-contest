@@ -244,6 +244,22 @@ void test('a wounded vampire shape returns to its natural form', async () => {
     assert.equal(monster.mnum, MONSTER_NAME.indexOf('vampire'));
     assert.equal(change?.message, 'The fog cloud turns into a vampire!');
 });
+void test('a vampire at nine tenths of its truncated maximum may take another shape', async () => {
+    for (const [mhp, shifts] of [[27, true], [26, false]]) {
+        freshObjectRoom({ right: 30 });
+        requirePlayingGame(game);
+        const vampire = MONSTER_NAME.indexOf('vampire');
+        // Far beyond BOLT_LIM, so being seen does not hold the vampire's form.
+        const monster = await createMonsterAt('vampire', 28, 10);
+        await changeMonsterForm(monster, vampire, game);
+        assert.equal(monster.mnum, vampire);
+        monster.mhpmax = 31;
+        monster.mhp = mhp;
+        initRng(1n);
+        await decideMonsterShapeChange(monster, game, () => 0);
+        assert.equal(monster.mnum !== vampire, shifts, `mhp ${mhp} of 31`);
+    }
+});
 void test('a killed vampire shape rises in its natural form', async () => {
     const level = freshObjectRoom();
     requirePlayingGame(game);
