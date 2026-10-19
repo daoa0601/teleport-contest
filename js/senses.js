@@ -49,12 +49,17 @@ export function syncBlindness(state = game) {
 }
 export function setHeroBlindnessTurns(turns, state = game) {
     const wasBlind = heroIsBlind(state);
-    const hero = state.u;
-    hero.blindTurns = Math.max(0, Math.min(TIMEOUT, Math.trunc(turns)));
-    const blind = syncBlindness(state);
+    const blind = setHeroBlindnessTimeout(turns, state);
     if (wasBlind !== blind)
         state.vision_full_recalc = 1;
     return { blind, regainedSight: wasBlind && !blind };
+}
+// C set_itimeout(&HBlinded, turns) alone: callers such as polymon() and
+// wipeoff() adjust the timeout before make_blinded() announces the change,
+// so the next message must not yet redraw the map for the new sight.
+export function setHeroBlindnessTimeout(turns, state = game) {
+    state.u.blindTurns = Math.max(0, Math.min(TIMEOUT, Math.trunc(turns)));
+    return syncBlindness(state);
 }
 export function permanentDeaf(state = game) {
     return !!state.u?.uroleplay?.deaf;

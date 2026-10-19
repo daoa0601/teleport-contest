@@ -69,7 +69,7 @@ import {
     W_ACCESSORY, W_ARMOR, W_SADDLE,
 } from './const.js';
 import { exerciseAttribute } from './attrib.js';
-import { heroIsBlind, setHeroBlindnessTurns, syncBlindness } from './senses.js';
+import { heroIsBlind, setHeroBlindnessTimeout, syncBlindness } from './senses.js';
 import { nameToMonster, nameToMonsterClass } from './mondata.js';
 import { counterWereSpecies } from './monster_species.js';
 import { isWereMonster, wereBeastForSpecies } from './were.js';
@@ -414,7 +414,7 @@ async function finishHumanFormChange(
     if (!heroCanUseTwoWeapons(state)) await stopTwoWeaponCombat(state);
     if (hero.utrap && hero.utraptype === TT_PIT) hero.utrap = rn1(6, 2);
     if (restored.regainedSight) {
-        setHeroBlindnessTurns(1, state);
+        setHeroBlindnessTimeout(1, state);
         await makeBlinded(0, { state, publish });
     }
     await restartAmuletStrangulation(state, publish);
@@ -617,7 +617,7 @@ export async function polymonHero(mnum: number, options: PolymonOptions = {}) {
     if (game.u.utrap && game.u.utraptype === TT_PIT)
         game.u.utrap = rn1(6, 2);
     if (wasBlind && !heroIsBlind(game)) {
-        setHeroBlindnessTurns(1, game);
+        setHeroBlindnessTimeout(1, game);
         await makeBlinded(0, { state: game });
     }
     game.vision_full_recalc = 1;
