@@ -65,7 +65,9 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: pool-${{ matrix.shard }}
-          path: out/results.jsonl
+          path: |
+            out/results.jsonl
+            out/summary.json
           retention-days: 3
 
   public:
@@ -84,7 +86,9 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: public
-          path: out/results.jsonl
+          path: |
+            out/results.jsonl
+            out/summary.json
           retention-days: 3
 
   report:
@@ -138,6 +142,10 @@ jobs:
           if len(ev) != len(sample):
               sys.exit(f'eval sample has {len(sample)} sessions but the pool scored {len(ev)} of them')
           open('.cache/generalization/ci-eval/results.jsonl', 'w').writelines(ev)
+          # rng-function-table treats summary.json as the completed-run marker.
+          for name, part in (('ci-pool', rows), ('ci-eval', ev)):
+              json.dump({'mode': name, 'sessions': len(part), 'mergedShards': len(shards)},
+                        open(f'.cache/generalization/{name}/summary.json', 'w'))
           EOF
       - name: Ledger check (eval)
         run: node scripts/rng-function-table.mjs .cache/generalization/ci-eval --baseline base/base-06d7e73-eval/functions.json --check-ledger docs/ledger/eval-rng.tsv | tee eval-ledger.txt
