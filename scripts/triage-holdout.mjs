@@ -79,8 +79,9 @@ const ADAPTERS = join(ROOT, 'scripts/lib/frozen-adapters.mjs');
 const TIMEOUT_MS = Number(process.env.SESSION_REPLAY_TIMEOUT_MS || 45000);
 const HEAP_MB = Number(process.env.SESSION_REPLAY_HEAP_MB || 512);
 // Each session runs in its own heap-limited process, so workers are bounded by
-// JOBS * HEAP_MB rather than by one shared corpus heap.
-const JOBS = Math.max(1, Number(process.env.TRIAGE_JOBS || Math.min(8, availableParallelism() - 2)));
+// JOBS * HEAP_MB rather than by one shared corpus heap. Full corpora run on
+// GitHub Actions, so the local default stays light enough to share the machine.
+const JOBS = Math.max(1, Number(process.env.TRIAGE_JOBS || Math.min(4, availableParallelism() - 2)));
 // TRIAGE_SHARD=i/n scores every n-th corpus entry starting at i, so CI can
 // split one corpus across runners and merge the results.jsonl files.
 function corpusShard() {
