@@ -772,7 +772,7 @@ export async function decideMonsterShapeChange(
     } else if (!((monster.mstrategy ?? 0) & STRAT_WAITFORU)) {
         const inVampireForm = MONSTER_SYMBOL[monster.mnum] === S_VAMPIRE;
         if (!inVampireForm) {
-            if (monster.mhp <= ((monster.mhpmax ?? 0) + 5) / 6
+            if (monster.mhp <= Math.trunc(((monster.mhpmax ?? 0) + 5) / 6)
                 && random(4) !== 0) {
                 targetMnum = baseMnum;
                 shouldChange = true;
@@ -789,7 +789,7 @@ export async function decideMonsterShapeChange(
                 const position = findNearbyMonsterPosition(targetMnum, monster.mx, monster.my, { state, random });
                 if (position) await relocateMonsterTo(monster, position.x, position.y, { state, random });
             }
-        } else if (monster.mhp >= 9 * (monster.mhpmax ?? 0) / 10
+        } else if (monster.mhp >= Math.trunc(9 * (monster.mhpmax ?? 0) / 10)
             && random(6) === 0
             && vampireMayShiftOutOfSight(monster, state)) {
             shouldChange = true;
