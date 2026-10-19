@@ -33,7 +33,8 @@ export function freshSpecialLevel({ prototype, variant, seed, depth = 11, defaul
     state.specialLevels = new Map([[prototype, {
                 dnum: 0,
                 dlevel: depth,
-                flags: { town: false },
+                // dungeon.lua gives only Minetown the "town" flag.
+                flags: { town: prototype === 'minetn' },
                 alignment: monsterAlignment === null ? null
                     : { law: A_LAWFUL, neutral: A_NEUTRAL, chaos: A_CHAOTIC }[monsterAlignment],
             }]]);
