@@ -95,6 +95,17 @@ const HEAP_MB = Number(process.env.SESSION_REPLAY_HEAP_MB || 512);
 // JOBS * HEAP_MB rather than by one shared corpus heap.
 const JOBS = Math.max(1, Number(process.env.TRIAGE_JOBS || Math.min(8, availableParallelism() - 2)));
 
+// TRIAGE_SHARD=i/n scores every n-th corpus entry starting at i, so CI can
+// split one corpus across runners and merge the results.jsonl files.
+function corpusShard(): { index: number; count: number } | null {
+    const value = process.env.TRIAGE_SHARD;
+    if (!value) return null;
+    const match = /^(\d+)\/(\d+)$/.exec(value);
+    const index = Number(match?.[1]), count = Number(match?.[2]);
+    if (!match || count < 1 || index >= count) throw new Error(`TRIAGE_SHARD must be i/n with 0 <= i < n: ${value}`);
+    return { index, count };
+}
+
 function poolEntries(): SampleEntry[] {
     return POOL_STRATA.flatMap(stratum => {
         const data: unknown = JSON.parse(readFileSync(join(POOL, stratum, 'manifest.json'), 'utf8'));
@@ -292,10 +303,12 @@ async function scoreAll(entries: readonly CorpusEntry[], isInterrupted: () => bo
 async function runCorpus(mode: CorpusMode, out: string): Promise<void> {
     // The public corpus is checked in; it must not need the local dev pool.
     const sample = mode === 'public' ? null : readSample();
-    const entries: CorpusEntry[] = mode === 'triage' ? poolEntries()
+    const corpus: CorpusEntry[] = mode === 'triage' ? poolEntries()
         : sample && mode === 'eval' ? sample.sessions
             : readdirSync(join(ROOT, 'sessions')).filter(f => f.endsWith('.session.json'))
                 .sort().map(file => ({ path: `sessions/${file}`, stratum: 'public' }));
+    const shard = corpusShard();
+    const entries = shard ? corpus.filter((_, i) => i % shard.count === shard.index) : corpus;
     if (existsSync(out)) throw new Error(`Output already exists: ${out}. Use a new batch directory.`);
     const release = acquireCorpusLock();
     let interrupted = false;

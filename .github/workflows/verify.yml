@@ -1,0 +1,193 @@
+name: Verify
+# Batch verification of an integration commit: the 2500-session holdout pool
+# (sharded across runners), the 300-session eval sample drawn from it, the
+# checked-in public sessions, both verified-function ledgers, and pool
+# regressions against the previous successful verification.
+on:
+  push:
+    branches: [daoa/recovery-architecture]
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Commit or branch to verify
+        default: daoa/recovery-architecture
+        type: string
+  pull_request:
+    paths:
+      - .github/workflows/verify.yml
+      - src/scripts/triage-holdout.mts
+
+concurrency:
+  group: verify-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  actions: read
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  POOL_RELEASE: verify-pool-v1
+  SHARDS: 10
+  GH_TOKEN: ${{ github.token }}
+
+jobs:
+  pool:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - id: cache
+        uses: actions/cache@v4
+        with:
+          path: pool.tar.zst
+          key: ${{ env.POOL_RELEASE }}
+      - if: steps.cache.outputs.cache-hit != 'true'
+        run: gh release download "$POOL_RELEASE" --repo "$GITHUB_REPOSITORY" --pattern pool.tar.zst
+      - run: tar --zstd -xf pool.tar.zst
+      - name: Score the pool shard
+        env:
+          TRIAGE_SHARD: ${{ matrix.shard }}/${{ env.SHARDS }}
+          TRIAGE_JOBS: 4
+        run: node scripts/triage-holdout.mjs triage out
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pool-${{ matrix.shard }}
+          path: |
+            out/results.jsonl
+            out/summary.json
+          retention-days: 3
+
+  public:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - env:
+          TRIAGE_JOBS: 4
+        run: node scripts/triage-holdout.mjs public out
+      - uses: actions/upload-artifact@v4
+        with:
+          name: public
+          path: |
+            out/results.jsonl
+            out/summary.json
+          retention-days: 3
+
+  report:
+    needs: [pool, public]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: pool-*
+          path: shards
+      - uses: actions/download-artifact@v4
+        with:
+          name: public
+          path: .cache/generalization/ci-public
+      - id: cache
+        uses: actions/cache@v4
+        with:
+          path: pool.tar.zst
+          key: ${{ env.POOL_RELEASE }}
+      - name: Fetch the pool and baselines
+        run: |
+          if [ ! -f pool.tar.zst ]; then
+            gh release download "$POOL_RELEASE" --repo "$GITHUB_REPOSITORY" --pattern pool.tar.zst
+          fi
+          gh release download "$POOL_RELEASE" --repo "$GITHUB_REPOSITORY" --pattern baselines.tar.gz
+          tar -xzf baselines.tar.gz
+          # The ledger table reads each session's native RNG log, not just results.
+          tar --zstd -xf pool.tar.zst
+      - name: Fetch the previous successful pool results
+        run: |
+          mkdir -p prev
+          run=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow verify.yml --branch daoa/recovery-architecture --event push \
+            --status success --limit 1 --json databaseId --jq '.[0].databaseId // empty')
+          if [ -n "$run" ] && gh run download "$run" --repo "$GITHUB_REPOSITORY" --name verify-pool-results --dir prev; then
+            echo "Comparing with verify run $run" | tee prev/source.txt
+          else
+            cp base/pool-23398f2/results.jsonl prev/results.jsonl
+            echo "Comparing with the 23398f2 baseline" | tee prev/source.txt
+          fi
+      - name: Merge pool shards and split out the eval sample
+        run: |
+          python3 - "$SHARDS" <<'EOF'
+          import glob, json, os, sys
+          shards = sorted(glob.glob('shards/pool-*/results.jsonl'))
+          if len(shards) != int(sys.argv[1]):
+              sys.exit(f'expected {sys.argv[1]} pool shards, found {len(shards)}')
+          rows = [line for f in shards for line in open(f) if line.strip()]
+          sample = {e['path'] for e in json.load(open('.cache/holdout-dev/eval-sample.json'))['sessions']}
+          os.makedirs('.cache/generalization/ci-pool', exist_ok=True)
+          os.makedirs('.cache/generalization/ci-eval', exist_ok=True)
+          open('.cache/generalization/ci-pool/results.jsonl', 'w').writelines(rows)
+          ev = [r for r in rows if json.loads(r)['path'] in sample]
+          if len(ev) != len(sample):
+              sys.exit(f'eval sample has {len(sample)} sessions but the pool scored {len(ev)} of them')
+          open('.cache/generalization/ci-eval/results.jsonl', 'w').writelines(ev)
+          # rng-function-table treats summary.json as the completed-run marker.
+          for name, part in (('ci-pool', rows), ('ci-eval', ev)):
+              json.dump({'mode': name, 'sessions': len(part), 'mergedShards': len(shards)},
+                        open(f'.cache/generalization/{name}/summary.json', 'w'))
+          EOF
+      - name: Ledger check (eval)
+        run: node scripts/rng-function-table.mjs .cache/generalization/ci-eval --baseline base/base-06d7e73-eval/functions.json --check-ledger docs/ledger/eval-rng.tsv | tee eval-ledger.txt
+      - name: Ledger check (public)
+        run: node scripts/rng-function-table.mjs .cache/generalization/ci-public --baseline base/base-06d7e73-public/functions.json --check-ledger docs/ledger/public-rng.tsv | tee public-ledger.txt
+      - name: Summary and pool regressions
+        run: |
+          python3 - <<'EOF'
+          import json, os, sys
+          def load(path):
+              return [json.loads(l) for l in open(path) if l.strip()]
+          def line(name, rows):
+              screens = [sum(r['metrics']['screens'][k] for r in rows) for k in ('matched', 'total')]
+              rng = [sum(r['metrics']['rngCalls'][k] for r in rows) for k in ('matched', 'total')]
+              return f"{name} {sum(r['passed'] for r in rows)} / {len(rows)} screens ({screens[0]}, {screens[1]}) rng ({rng[0]}, {rng[1]})"
+          pool = load('.cache/generalization/ci-pool/results.jsonl')
+          prev = {r['path']: r['passed'] for r in load('prev/results.jsonl')}
+          now = {r['path']: r['passed'] for r in pool}
+          lost = sorted(p for p, ok in prev.items() if ok and not now.get(p))
+          gained = sorted(p for p, ok in now.items() if ok and not prev.get(p))
+          ledgers = [l.strip() for f in ('eval-ledger.txt', 'public-ledger.txt') for l in open(f) if l.startswith('Ledger ')]
+          out = [line('eval', load('.cache/generalization/ci-eval/results.jsonl')),
+                 line('public', load('.cache/generalization/ci-public/results.jsonl')),
+                 line('pool', pool), *ledgers, open('prev/source.txt').read().strip(),
+                 f'pool regressions {len(lost)} {lost[:10]}', f'pool newly passing {len(gained)}']
+          print('\n'.join(out))
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as s:
+              s.write('```\n' + '\n'.join(out) + '\n```\n')
+          if lost:
+              sys.exit(1)
+          EOF
+      - uses: actions/upload-artifact@v4
+        with:
+          name: verify-pool-results
+          path: .cache/generalization/ci-pool/results.jsonl
+          retention-days: 90
