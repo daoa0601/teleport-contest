@@ -6,7 +6,7 @@ import { A_WIS, DOOR, D_CLOSED, D_LOCKED, D_NODOOR, D_TRAPPED, G_GENOD, NON_PM, 
 import { exerciseAttribute } from './attrib.js';
 import { canSeeMonster, canSpotMonster, newsym, pline, plineWithContinuation, } from './display.js';
 import { game, requireLiveGame } from './gstate.js';
-import { expelHero } from './hero_expulsion.js';
+import { expelHero, releaseHeroGrip } from './hero_expulsion.js';
 import { checkMonsterGearNextTurn } from './monworn.js';
 import { monsterName, namelessMonsterName, possessiveName } from './monster_name.js';
 import { makePetWary } from './dog.js';
@@ -217,7 +217,8 @@ async function reviveShiftedVampire(monster, { visible, spotted, disintegrated, 
                 };
         }
         else {
-            state.u.ustuck = null;
+            // C mon.c:vamprises() releases the hero's grip with uunstick().
+            await releaseHeroGrip(state, publish);
         }
     }
     const change = await changeMonsterForm(monster, baseMnum, state);

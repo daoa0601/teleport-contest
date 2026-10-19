@@ -1,6 +1,7 @@
 // teleport.js - same-level teleportation.
 // C ref: teleport.c teleok(), safe_teleds(), teleds(), and tele_trap().
 
+import { setHeroGrip } from './hero_grip.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { monsterHasMapPosition, monsterAtPosition, placeMonsterAt } from './monster_location.js';
 import { updateHeroRegions, updateMonsterRegions } from './regions.js';
@@ -986,10 +987,7 @@ export async function moveHeroByTeleport(x: number, y: number, state = game, { a
 
     clearHeroTrap(state);
     const wasSwallowed = u.uswallow;
-    u.ustuck = null;
-    u.uswallow = state.uswallow = 0;
-    u.uswldtim = 0;
-    state.context.botl = true;
+    setHeroGrip(null, state);
     u.ux0 = oldx;
     u.uy0 = oldy;
     // Native hideunder() cannot conceal a mimic: these forms have M1_HIDE,

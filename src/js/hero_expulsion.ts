@@ -1,6 +1,7 @@
 // Expulsion from an engulfing monster, including the hero's landing.
 // C refs: mhitu.c expels(), mon.c unstuck(), mnexto().
 
+import { setHeroGrip } from './hero_grip.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { game, requireLiveGame } from './gstate.js';
 import type { GameState } from './game_state.js';
@@ -78,10 +79,7 @@ export function holdingMonsterSubject(monster: Monster) {
 export async function releaseHeroGrip(state: GameState = game, publish: MessagePublisher = plineWithContinuation): Promise<void> {
     const holder = state.u.ustuck;
     if (!holder) throw new Error('Releasing the hero grip requires a held monster.');
-    state.u.ustuck = null;
-    state.u.uswallow = 0;
-    state.u.uswldtim = 0;
-    state.context.botl = true;
+    setHeroGrip(null, state);
     await publish(`${monsterName(holder, { state, capitalized: true })} is no longer in your clutches.`);
 }
 
@@ -101,7 +99,7 @@ export async function releaseHold(state: GameState = game): Promise<{ died?: boo
         return await expelHero(monster, { state });
     }
     if (heroFormSticks(state)) {
-        state.u.ustuck = null;
+        setHeroGrip(null, state);
         await plineWithContinuation(`You release ${monsterName(monster, { state })}.`);
     } else {
         await releaseHeroFromMonster(monster, { state });
@@ -123,10 +121,7 @@ export async function releaseHeroFromMonster(monster: Monster, {
     requireLiveGame(state);
     if (state.u.ustuck !== monster) return;
     const swallowed = state.u.uswallow;
-    state.u.ustuck = null;
-    state.u.uswallow = state.uswallow = 0;
-    state.u.uswldtim = 0;
-    state.context.botl = true;
+    setHeroGrip(null, state);
     if (swallowed) {
         state._monsterSwallower = null;
         state.u.ux = monster.mx;

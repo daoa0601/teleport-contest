@@ -34,6 +34,7 @@ void test('release from swallowing replaces punishment without expulsion or a la
     engulfer.my = game.u.uy;
     game.u.ustuck = engulfer;
     game.u.uswallow = game.uswallow = 1;
+    game.u.uswldtim = 9;
     game._monsterSwallower = engulfer;
     await unplaceBallAndChain();
     addTrap(game.level, PIT, engulfer.mx, engulfer.my);
@@ -45,6 +46,7 @@ void test('release from swallowing replaces punishment without expulsion or a la
     assert.equal(game.u.ustuck, null);
     assert.equal(!!game.u.uswallow, false);
     assert.equal(!!game.uswallow, false);
+    assert.equal(game.u.uswldtim, 0);
     assert.ok(game.uchain && game.uball);
     assert.equal(game.uchain.where, 'floor');
     assert.equal(game.uball.where, 'floor');

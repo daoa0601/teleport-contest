@@ -1,5 +1,6 @@
 // Revealing a monster disguised as an object or dungeon feature.
 // C refs: uhitm.c stumble_onto_mimic() and lock.c stumble_on_door_mimic().
+import { setHeroGrip } from './hero_grip.js';
 import { M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, } from './const.js';
 import { canSenseMonster, canSpotMonster, glyphAt, map_invisible, plineWithContinuation as pline, } from './display.js';
 import { game } from './gstate.js';
@@ -103,7 +104,7 @@ export async function stumbleOntoMimic(monster, state = game, publish = pline) {
             .some(attack => attack[1] === AD_STCK)
         && Math.abs(monster.mx - state.u.ux) <= 1
         && Math.abs(monster.my - state.u.uy) <= 1) {
-        state.u.ustuck = monster;
+        setHeroGrip(monster, state);
     }
     await wakeMonster(monster, { attacked: false });
     if (!canSpotMonster(monster))

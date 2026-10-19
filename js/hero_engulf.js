@@ -1,5 +1,6 @@
 // Monster-versus-hero engulf admission, capture, and per-slot effects.
 // C mhitm.c:engulf_target() and mhitu.c:gulpmu().
+import { setHeroGrip } from './hero_grip.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { A_CON, A_STR, DISMOUNT_ENGULFED, DOOR, D_CLOSED, D_LOCKED, IRONBARS, IS_OBSTRUCTED, IS_TREE, TT_WEB, is_pit, } from './const.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
@@ -122,7 +123,7 @@ export async function beginHeroEngulf(monster, attack, { state = game, random = 
             return { captured: false, died: true };
         if (state.uball)
             await placeBallAndChain(state, publish);
-        hero.ustuck = null;
+        setHeroGrip(null, state);
         return { captured: false, died: false };
     }
     await flushMessages();

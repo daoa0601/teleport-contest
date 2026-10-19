@@ -1,4 +1,5 @@
 // Hero stick and wrap attacks. C uhitm.c:mhitm_ad_stck(), mhitm_ad_wrap().
+import { setHeroGrip } from './hero_grip.js';
 import { armorSimpleName } from './armor.js';
 import { monsterLegName } from './body_parts.js';
 import { MGIVENNAME, M_ATTK_MISS, W_ARM, W_ARMC, W_ARMH, W_ARMU } from './const.js';
@@ -48,7 +49,7 @@ async function stickToMonster(monster: Monster, {
     const negated = specialAttackNegated(state.u, monster, { state, random });
     const distance = (monster.mx - state.u.ux) ** 2 + (monster.my - state.u.uy) ** 2;
     if (negated || monsterSpeciesSticks(monster.mnum) || distance > 2) return;
-    holdMonster(monster, state);
+    setHeroGrip(monster, state);
     if (heroSpecies(state) === PM_BARBED_DEVIL) {
         const target = monsterName(monster, {
             state, article: monster.mtame ? 'your' : 'the',
@@ -71,7 +72,7 @@ async function wrapMonster(monster: Monster, context: HeroNaturalEffectContext):
         if (await monsterSlipsFromHeroGrip(monster, { head: false, state, publish, random }))
             return 0;
         await publish(`You ${coils ? 'coil' : 'swing'} yourself around ${monsterName(monster, { state })}!`);
-        holdMonster(monster, state);
+        setHeroGrip(monster, state);
         return damage;
     }
     if (state.u.ustuck === monster && !tailMiss) {
@@ -92,11 +93,6 @@ async function wrapMonster(monster: Monster, context: HeroNaturalEffectContext):
         await publish(`You brush against ${targetName}.`);
     }
     return 0;
-}
-
-function holdMonster(monster: Monster, state: PlayingGameState): void {
-    state.context.botl = true;
-    state.u.ustuck = monster;
 }
 
 interface HeroGripSlipContext {

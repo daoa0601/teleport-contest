@@ -1,3 +1,4 @@
+import { setHeroGrip } from './hero_grip.js';
 import { heroLocomotion } from './hero_locomotion.js';
 import { seeTrap } from './trap.js';
 import { deleteTrap } from './trap_lifecycle.js';
@@ -174,11 +175,7 @@ export async function gotoLevel(targetDepth, { arrival = 'random', ladder = fals
     if (heroIsPunished())
         await unplaceBallAndChain(game);
     clearHeroTrap(game);
-    game.u.ustuck = null;
-    // goto_level() calls set_ustuck(NULL), which requests a status update.
-    game.context.botl = true;
-    game.u.uswallow = game.uswallow = 0;
-    game.u.uswldtim = 0;
+    setHeroGrip(null);
     game.u.uinwater = 0;
     game.u.uundetected = false;
     const followers = game.iflags.nofollowers ? [] : await collectLevelFollowers(game);

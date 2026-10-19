@@ -12,7 +12,7 @@ import {
     canSeeMonster, canSpotMonster, newsym, pline, plineWithContinuation,
 } from './display.js';
 import { game, requireLiveGame } from './gstate.js';
-import { expelHero } from './hero_expulsion.js';
+import { expelHero, releaseHeroGrip } from './hero_expulsion.js';
 import { checkMonsterGearNextTurn } from './monworn.js';
 import { monsterName, namelessMonsterName, possessiveName } from './monster_name.js';
 import { makePetWary } from './dog.js';
@@ -310,7 +310,8 @@ async function reviveShiftedVampire(
                 messageShown: false, heroDied: true, completedDeath: null,
             };
         } else {
-            state.u.ustuck = null;
+            // C mon.c:vamprises() releases the hero's grip with uunstick().
+            await releaseHeroGrip(state, publish);
         }
     }
 

@@ -1,5 +1,6 @@
 // Magicbane's probe, stun, scare, and cancellation attacks.
 // C ref: artifact.c Mb_hit().
+import { setHeroGrip } from './hero_grip.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { nomul } from './command_state.js';
 import { Upolyd } from './const.js';
@@ -121,10 +122,7 @@ export async function applyMagicbaneHit(object, defender, damage, bonusApplied, 
             state._helplessReason = 'being scared stiff';
             state._helplessDoneMessage = '';
             if (attacker && state.u.ustuck === attacker && monsterSpeciesSticks(heroSpecies(state))) {
-                state.u.ustuck = null;
-                state.u.uswallow = 0;
-                state.u.uswldtim = 0;
-                state.context.botl = true;
+                setHeroGrip(null, state);
                 await publish(`You release ${monsterName(attacker, { state })}!`);
             }
             stun = false;

@@ -15,11 +15,31 @@ import { finishMonsterKilled } from '../js/monster_death.js';
 import { AMULET_OF_LIFE_SAVING, CORPSE } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { addInventoryObject } from './support/game-objects.js';
+import { installPolymorphedHero } from './support/hero-state.js';
 import { addTrap, floorObjectQuantityAt } from './support/level-state.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { createMonsterAt, requireMonsterVital } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
+
+void test('a held vampire bat leaves the hero clutches before rising in its natural form', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    installPolymorphedHero('large mimic');
+    const monster = await createMonsterAt('vampire bat', 11, 10, NO_MINVENT);
+    monster.cham = MONSTER_NAME.indexOf('vampire');
+    game.u.ustuck = monster;
+    const messages: string[] = [];
+
+    const death = await finishMonsterKilled(monster, game, {
+        damageType: AD_PHYS,
+        publish: async message => { messages.push(message); },
+    });
+
+    assert.equal(death.survived, true);
+    assert.equal(game.u.ustuck, null);
+    assert.match(messages.join('\n'), /The vampire bat is no longer in your clutches\.\n.*rises as a vampire!/);
+});
 
 for (const lifeSaved of [false, true]) {
     void test(`vampire recovery ${lifeSaved ? 'continues after life saving on expulsion' : 'stops when expulsion kills the hero'}`, async () => {

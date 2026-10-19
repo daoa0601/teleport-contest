@@ -431,15 +431,9 @@ void test('magic-resistant sleep target shields and remains awake', async () => 
     assert.equal(result?.directEffect?.slept, false);
 });
 void test('successful sleeping potion releases a non-engulfing monster grip', async () => {
-    freshPotionState({
-        hallucinationTurns: 0,
-        uswallow: 0,
-    });
+    freshObjectRoom();
     requirePlayingGame(game);
-    const monster = await potionTarget(1, {
-        level: 1,
-        mfrozen: 0,
-    });
+    const monster = await createMonsterAt('large mimic', 11, 10);
     game.u.ustuck = monster;
     const messages = [];
     const potion = await potionObject(POT_SLEEPING);
@@ -453,9 +447,10 @@ void test('successful sleeping potion releases a non-engulfing monster grip', as
     });
     assert.equal(result?.directEffect?.slept, true);
     assert.equal(game.u.ustuck, null);
+    assert.ok(monster.mspec_used && monster.mspec_used <= 2, 'A sleeping holder must wait before it can grab the hero again.');
     assert.deepEqual(messages.slice(-2), [
-        'The killer bee falls asleep.',
-        "The killer bee's grip relaxes.",
+        'The large mimic falls asleep.',
+        "The large mimic's grip relaxes.",
     ]);
 });
 void test('speed potion makes an active normal-speed monster permanently fast', async () => {

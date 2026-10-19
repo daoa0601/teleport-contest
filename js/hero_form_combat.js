@@ -1,4 +1,5 @@
 // C uhitm.c:hmonas(). Each slot observes changes made by the preceding hit.
+import { setHeroGrip } from './hero_grip.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, TT_PIT, Upolyd, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMU, W_RINGL, W_RINGR, } from './const.js';
 import { selectAttack } from './attack_selection.js';
@@ -305,8 +306,7 @@ async function performHeroHug(sequence, originalAttack, index) {
             if (state.u.ustuck)
                 await releaseHeroGrip(state);
             await plineWithContinuation(`You grab ${monsterName(monster)}!`);
-            state.u.ustuck = monster;
-            state.context.botl = true;
+            setHeroGrip(monster, state);
             applies = true;
         }
     }
