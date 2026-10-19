@@ -110,11 +110,20 @@ jobs:
         with:
           name: public
           path: .cache/generalization/ci-public
-      - name: Fetch the eval sample and baselines
+      - id: cache
+        uses: actions/cache@v4
+        with:
+          path: pool.tar.zst
+          key: ${{ env.POOL_RELEASE }}
+      - name: Fetch the pool and baselines
         run: |
-          gh release download "$POOL_RELEASE" --repo "$GITHUB_REPOSITORY" --pattern baselines.tar.gz --pattern pool.tar.zst
+          if [ ! -f pool.tar.zst ]; then
+            gh release download "$POOL_RELEASE" --repo "$GITHUB_REPOSITORY" --pattern pool.tar.zst
+          fi
+          gh release download "$POOL_RELEASE" --repo "$GITHUB_REPOSITORY" --pattern baselines.tar.gz
           tar -xzf baselines.tar.gz
-          tar --zstd -xf pool.tar.zst .cache/holdout-dev/eval-sample.json
+          # The ledger table reads each session's native RNG log, not just results.
+          tar --zstd -xf pool.tar.zst
       - name: Fetch the previous successful pool results
         run: |
           mkdir -p prev
