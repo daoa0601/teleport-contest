@@ -729,7 +729,6 @@ export async function ddoinv(): Promise<InventoryAction | null> {
     if (selected) {
         action = await inventoryActionForObject(selected);
     }
-    await bot();
     await flush_screen(1);
     game.context.move = 0;
     return action;
