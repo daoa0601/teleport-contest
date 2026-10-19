@@ -60,7 +60,6 @@ export function unlinkObject(object, state = game) {
     }
     else if (object.where === 'inventory') {
         state.inventory = state.inventory.filter((item) => item !== object);
-        state._capacityDirty = true;
     }
     else if (object.where === 'buried') {
         if (!state.level?.buriedObjects)

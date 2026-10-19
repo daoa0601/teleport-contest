@@ -342,7 +342,6 @@ export async function finishEggHatchTimer(
         if (monster && !await hideMonsterUnder(monster, state) && cansee(event.x, event.y))
             event.redraw = true;
     }
-    if (carried) state._capacityDirty = true;
     if (event.redraw) newsym(event.x, event.y);
     event.finishPending = false;
     event.finished = true;

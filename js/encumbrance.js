@@ -14,6 +14,5 @@ export async function reportHeroEncumbrance(state = game, publish = plineWithCon
     if (previous !== capacity)
         state.context.botl = true;
     state._encumbranceLevel = capacity;
-    state._capacityDirty = false;
 }
 //# sourceMappingURL=encumbrance.js.map

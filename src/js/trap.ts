@@ -489,10 +489,7 @@ export async function waterDamageObject(
         if (object.spestudied) object.spestudied = random(object.spestudied);
         object.otyp = SPE_BLANK_PAPER;
         object.dknown = false;
-        if (novel) {
-            blankNovel(object);
-            state._capacityDirty = true;
-        }
+        if (novel) blankNovel(object);
         return 'damaged';
     }
     if (object.oclass === 8) {

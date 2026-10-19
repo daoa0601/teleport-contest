@@ -110,7 +110,6 @@ async function consumePotion(source: GameObject, state: GameState) {
     if (source.where === 'inventory' || state.inventory.includes(source))
         await consumeInventoryItem(source, state);
     else await useUpFloorObject(source, 1, { state });
-    state._capacityDirty = true;
 }
 
 function outcome(spentTime: boolean, state: GameState, object: GameObject | null = null): QuaffResult {

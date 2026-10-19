@@ -569,7 +569,6 @@ export async function putIntoContainer(
     await addObjectToContainer(container, object, state);
     container.cknown = true;
     updateContainerWeights(container);
-    state._capacityDirty = true;
     await bot();
     return {
         moved: true,
@@ -627,7 +626,6 @@ export async function takeFromContainer(
     const { object: carried, count: addedCount } = await addPickedInventoryObject(object);
     container.cknown = true;
     updateContainerWeights(container);
-    state._capacityDirty = true;
     observeObjectForNaming(carried, { state });
     const added = { ...carried, quan: addedCount, quantity: addedCount };
     const merged = addedCount < quantity(carried);

@@ -118,7 +118,6 @@ async function consumePotion(source, state) {
         await consumeInventoryItem(source, state);
     else
         await useUpFloorObject(source, 1, { state });
-    state._capacityDirty = true;
 }
 function outcome(spentTime, state, object = null) {
     return { spentTime, heroDied: !!state.program_state.gameover, object, cancelled: false };

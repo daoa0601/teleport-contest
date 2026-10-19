@@ -344,7 +344,6 @@ export interface GameState {
     _travelTarget?: Position | null;
     _stethoscopeSeq?: number;
     _lastInvNr?: number;
-    _capacityDirty?: boolean;
     _encumbranceLevel?: number;
     _pickupEncumbrance?: number;
     _pickWarningMove?: number;

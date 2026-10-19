@@ -163,7 +163,6 @@ export async function finishInventoryRemoval(object, state = game) {
     object.pickup_prev = false;
     if (object.oclass === COIN_CLASS) {
         state.context.botl = true;
-        state._capacityDirty = true;
         return;
     }
     updateCarriedFlags(object, false, state);
@@ -196,7 +195,6 @@ function updateCarriedFlags(object, carried, state) {
             throw new Error('Carried quest objects require initialized hero possessions');
         state.u.uhave[flag] = carried;
     }
-    state._capacityDirty = true;
 }
 export function updateCarriedLuck(object, state = game) {
     if (confersLuck(object, state)) {

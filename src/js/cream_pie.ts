@@ -33,7 +33,6 @@ async function deletePie(pie: GameObject) {
     await releaseWeaponSlots(pie);
     unlinkObject(pie, game);
     await delobj(pie, game);
-    game._capacityDirty = true;
 }
 
 export async function useCreamPie(stack: GameObject | null | undefined) {

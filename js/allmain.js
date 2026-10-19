@@ -3509,14 +3509,10 @@ export async function moveloop_core() {
     if (g.context.bypasses)
         clearBypasses(g);
     const movementRationActionPending = !!g._heroTimePending;
-    // C allmain.c calls encumber_msg() immediately after a time-consuming
-    // command and before monster movement.  If its new message cannot share
-    // the pickup top line, tty suspends here; the acknowledgement resumes this
-    // same scheduler slice without consuming another hero action.
-    if (g.context?.move && g._capacityDirty) {
-        await reportHeroEncumbrance(g);
-    }
     if (g._heroTimePending) {
+        // C checks burden before monsters move after every timed action.
+        // Hunger can lower Strength without changing inventory.
+        await reportHeroEncumbrance(g);
         for (;;) {
             const somebodyCanMove = await moveMonsters();
             if (g.program_state?.gameover)

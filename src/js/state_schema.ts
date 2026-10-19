@@ -107,7 +107,6 @@ const transientFields = {
     _cannibalCheckMove: true,
     _mapPositionHighlight: true,
     _cannedCommands: true,
-    _capacityDirty: true,
     _cleaveClockwise: true,
     _cursorOverride: true,
     _commandCount: true,

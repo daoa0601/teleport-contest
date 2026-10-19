@@ -438,7 +438,6 @@ export async function moneyToMonster(monster, amount, state = game) {
     if (!payment)
         throw new Error('Shop payment lost its carried gold.');
     await linkObjectToMonsterInventory(monster, payment, { state });
-    state._capacityDirty = true;
     state.context.botl = true;
     return amount;
 }

@@ -379,10 +379,8 @@ export async function waterDamageObject(object, messages = [], state = game, { f
             object.spestudied = random(object.spestudied);
         object.otyp = SPE_BLANK_PAPER;
         object.dknown = false;
-        if (novel) {
+        if (novel)
             blankNovel(object);
-            state._capacityDirty = true;
-        }
         return 'damaged';
     }
     if (object.oclass === 8) {

@@ -123,7 +123,6 @@ async function restoreTutorialState(state: GameState): Promise<void> {
     state.spells = saved.spells;
     await restoreHeroNutrition(state, plineWithContinuation);
     state._unweapon = !state.uwep;
-    state._capacityDirty = true;
     syncBlindness(state);
     findArmorClass(state);
     delete state._tutorialState;

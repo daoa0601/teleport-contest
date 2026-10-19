@@ -128,7 +128,6 @@ async function restoreTutorialState(state) {
     state.spells = saved.spells;
     await restoreHeroNutrition(state, plineWithContinuation);
     state._unweapon = !state.uwep;
-    state._capacityDirty = true;
     syncBlindness(state);
     findArmorClass(state);
     delete state._tutorialState;

@@ -72,15 +72,17 @@ void test('losing a heavy purse removes its encumbrance on the next command boun
     await moveloop_core();
     assert.ok(nearCapacity(game) > 0);
     initRng(25n);
-    keys = [...'sit\n5\n'];
+    keys = [...'#sit\n5\n'];
+    let reads = 0;
     input.beforeRead = () => {
         messages.push(game._pending_message || '');
         const row = requireGameDisplay(game).grid[0];
         assert.ok(row);
         const top = row.map(cell => cell.ch).join('');
+        assert.ok(++reads < 40, `Unexpected input loop: ${top}`);
         input.feed(top.includes('--More--') ? ' ' : keys.shift() || 'n');
     };
-    await rhack('#'.charCodeAt(0));
+    await moveloop_core();
     assert.equal(heroGoldAmount(game), 0);
     input.beforeRead = finishCommand;
     await moveloop_core();

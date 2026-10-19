@@ -186,7 +186,6 @@ export async function useCandle(object: GameObject, { state = game }: { state?: 
     if (candelabrum.lamplit) state.vision_full_recalc = 1;
     await useUpInventoryStack(object, state);
     candelabrum.owt = objectWeight(candelabrum);
-    state._capacityDirty = true;
     return result(remainder, state);
 }
 
