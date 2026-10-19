@@ -7,7 +7,7 @@ import { cansee } from './vision.js';
 import { heroIsBlind } from './senses.js';
 import { distmin } from './hacklib.js';
 import { shopkeeperName, monsterName, monsterSubjectPronoun, monsterObjectPronoun, monsterPossessive } from './monster_name.js';
-import { selectMapPosition } from './getpos.js';
+import { describeGetposLocation, selectMapPosition, showGetposInstructions, showGetposTip } from './getpos.js';
 import { hasShopkeeperData } from './shop_types.js';
 import { payShopDebt, shopkeeperInOwnShop, shopThankYouMessage } from './shk.js';
 import { rileShopkeeper, makeShopkeeperHappy, setPaidShopkeeper } from './shop_damage.js';
@@ -242,10 +242,19 @@ async function choosePaymentShopkeeper() {
         }
         return { keeper, resident };
     }
+    // C shk.c dopay(): pline("Pay whom?"), then getpos() adds its tip and
+    // instructions to the same message window before reading a position.
+    const goal = 'the creature you want to pay';
+    await plineWithContinuation('Pay whom?');
+    const tip = await showGetposTip();
+    await showGetposInstructions();
+    if (tip)
+        await plineWithContinuation(`Move cursor to ${goal}:`);
     const position = await selectMapPosition({
         start: { x: game.u.ux, y: game.u.uy },
-        prompt: 'Pay whom?', goal: 'the creature you want to pay',
+        prompt: game._pending_message, goal, describe: describeGetposLocation,
     });
+    game._pending_message = '';
     if (!position)
         return null;
     if (position.x === game.u.ux && position.y === game.u.uy) {

@@ -37,9 +37,14 @@ void test('an unseen resident cannot receive payment at a distance', async () =>
 
 void test('payment asks whom to pay when several shopkeepers are visible', async (t) => {
     freshObjectRoom();
+    game._travelTipShown = true;
+    game.flags.verbose = true;
     await createStaffedShop({ keeperX: 13 });
     await createStaffedShop({ left: 14, keeperX: 15 });
-    planInput(resetInputState(), t, [{ prompt: /Pay whom\?/, keys: '.' }]);
+    planInput(resetInputState(), t, [
+        { prompt: /^Pay whom\?  \(For instructions type a '\?'\) *$/m, keys: 'l' },
+        { prompt: /^(?!Move cursor)\S[^\n]*\n/, keys: 'h.' },
+    ]);
 
     await rhack('p'.charCodeAt(0));
 
