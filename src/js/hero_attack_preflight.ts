@@ -1,6 +1,7 @@
 // Attack permission and hidden-monster discovery before a hero weapon strike.
 // C ref: uhitm.c attack_checks().
 
+import { setHeroGrip } from './hero_grip.js';
 import { heroIsHallucinating } from './senses.js';
 import { isPoolAt } from './terrain_properties.js';
 import { observeObjectForNaming } from './objnam.js';
@@ -171,7 +172,7 @@ export async function prepareAppliedWeaponAttack(
         if (hasUnrevealedAppearance(monster, state) && !state.u.ustuck
             && !monster.mflee && hasStickyAttack(monster)
             && isAdjacentToHero(monster, state)) {
-            state.u.ustuck = monster;
+            setHeroGrip(monster, state);
         }
         await wakeAttackedMonster(monster);
         return { proceed: false, spentTime: true };

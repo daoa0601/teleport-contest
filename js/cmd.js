@@ -1,3 +1,4 @@
+import { setHeroGrip } from './hero_grip.js';
 import { heroCouldMoveOntoBoulder, pushBouldersAt } from './boulder_push.js';
 import { useMagicMarker } from './write.js';
 import { formatFeltMessage, formatSeenMessage, publishHeardMessage } from './hero_speech.js';
@@ -1804,10 +1805,7 @@ async function monsterPreventsStairTravel(up) {
         game.context.move = 1;
         return true;
     }
-    game.u.ustuck = null;
-    game.u.uswallow = 0;
-    game.u.uswldtim = 0;
-    game.context.botl = true;
+    setHeroGrip(null);
     await plineWithContinuation(`You release ${monsterName(holder)}.`);
     return false;
 }

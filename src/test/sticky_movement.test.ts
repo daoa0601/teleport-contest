@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { rhack } from '../js/cmd.js';
 import { NO_MINVENT, WATER, WEB } from '../js/const.js';
 import { initializePet } from '../js/dog.js';
-import { flush_screen } from '../js/display.js';
+import { bot, flush_screen } from '../js/display.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { initRng } from '../js/rng.js';
@@ -49,6 +49,23 @@ void test('a tame holder without conflict always lets the hero pull free', async
     assert.equal(game.u.ux, 11);
     assert.equal(game.u.ustuck, null);
     assert.match(await topline(), /You pull free from/);
+});
+
+void test('pulling free from a sea monster removes Grab from the same step status line', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    const holder = await createMonsterAt('giant eel', 9, 10, NO_MINVENT);
+    holder.mtame = 10;
+    game.u.ustuck = holder;
+    await bot();
+    assert.match(requireScreenRow(23).map(cell => cell.ch).join(''), /\bGrab\b/);
+
+    await rhack('l'.charCodeAt(0));
+    await flush_screen();
+
+    assert.equal(game.u.ux, 11);
+    assert.match(await topline(), /You pull free from/);
+    assert.doesNotMatch(requireScreenRow(23).map(cell => cell.ch).join(''), /\bGrab\b/);
 });
 
 void test('pulling free stays visible before refusing a step into a wall of water', async () => {

@@ -1,4 +1,5 @@
 // C apply.c:jump(), is_valid_jump_pos(), and check_jump().
+import { setHeroGrip } from './hero_grip.js';
 import { ACCESSIBLE, A_STR, D_CLOSED, D_ISOPEN, D_LOCKED, DOOR, IS_STWALL, Is_airlevel, Is_waterlevel, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, isok, } from './const.js';
 import { currentAttribute } from './attrib.js';
 import { heroLegName } from './body_parts.js';
@@ -104,7 +105,7 @@ async function jumpAdmission(magic, state) {
     if (hero.ustuck) {
         const holder = hero.ustuck;
         if (holder.mtame && !propertyIsActive('conflict', state) && !holder.mconf) {
-            hero.ustuck = null;
+            setHeroGrip(null, state);
             return { spentTime: true, message: `You pull free from ${monsterName(holder)}.` };
         }
         return { spentTime: !!magic, message: magic

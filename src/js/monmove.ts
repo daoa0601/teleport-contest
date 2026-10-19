@@ -1,3 +1,4 @@
+import { setHeroGrip } from './hero_grip.js';
 import { formatFeltMessage, publishHeardMessage } from './hero_speech.js';
 import { objectMaterial } from './object_material.js';
 import { moveMonsterNextToHero } from './teleport.js';
@@ -2889,11 +2890,8 @@ async function fightNearbyMonster(
         if (distance >= 3 || (distance === 2 && monster.mnum === PM_GRID_BUG)) continue;
         if (!hero.uswallow && hero.ustuck === monster) {
             if (recordRandom(random, calls, 4) !== 0) break;
-            // set_ustuck(NULL), not unstuck(): no re-hold cooldown or redraw.
-            state.context.botl = 1;
-            hero.ustuck = null;
-            hero.uswallow = 0;
-            hero.uswldtim = 0;
+            // C mhitm.c:fightm() releases without unstuck()'s cooldown.
+            setHeroGrip(null, state);
             await plineWithContinuation(
                 `${canonicalMonsterName(monster, {
                     state,
@@ -5571,7 +5569,7 @@ async function beginHeroAttackSlot(
         monster.mtrapped = 0;
         monster.mx = state.u.ux;
         monster.my = state.u.uy;
-        state.u.ustuck = monster;
+        setHeroGrip(monster, state);
         return {
             kind: 'hero-attack',
             roll,
@@ -6634,7 +6632,7 @@ export function resumeDeferredHeroSticking(action: MonsterMovementAction, state:
     const attack = action?.movement?.heroAttackSequence?.current;
     if (attack?.kind !== 'hero-attack' || !attack.deferredStickingAfterHit) return action;
     if (!attack.negated && !state.u?.ustuck && !heroFormSticks(state)) {
-        state.u.ustuck = action.monster;
+        setHeroGrip(action.monster, state);
         attack.stuckHero = true;
         if (action.monster?.mnum === 293) attack.stickingMessage = 'The barbs stick to you!';
     }

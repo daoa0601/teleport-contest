@@ -4,6 +4,7 @@ import { formatFeltMessage } from './hero_speech.js';
 import { requirePlayingGame } from './gstate.js';
 import { heroIsHallucinating } from './senses.js';
 import { heroIsUnaware } from './hero_sleep.js';
+import { releaseHeroFromMonster } from './hero_expulsion.js';
 import { makeConfused } from './hero_mental_status.js';
 import { makeBlinded } from './sight_change.js';
 import { makeDeaf } from './hero_hearing.js';
@@ -763,7 +764,8 @@ async function applySupportedDirectEffect({ state, monster, potion, targetVisibl
             if (monster === state.u?.ustuck && !state.u?.uswallow
                 && !heroFormSticks(state)) {
                 await publish(`${possessive(sentenceSubject(monster))} grip relaxes.`);
-                state.u.ustuck = null;
+                // C potionhit() calls slept_monst(), which uses unstuck().
+                await releaseHeroFromMonster(monster, { state, publish });
             }
         }
         if ((await wakeMonster?.(monster))?.heroDied)

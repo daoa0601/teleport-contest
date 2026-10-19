@@ -1,6 +1,7 @@
 // Hero form changes and equipment.
 // C refs: polyself.c polyself(), polymon(), break_armor(), drop_weapon().
 
+import { setHeroGrip } from './hero_grip.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { monsterEmitsLight } from './vision.js';
 import { weaponDescription } from './weapon_description.js';
@@ -655,7 +656,7 @@ export async function polymonHero(mnum: number, options: PolymonOptions = {}) {
     } else if (holder && !wasHolding && (heroFormSticks() || unsolid)) {
         const subject = canSpotMonster(holder)
             ? monsterName(holder, { capitalized: true }) : body.holderName;
-        hero.ustuck = null;
+        setHeroGrip(null);
         await plineWithContinuation(`${subject} loses its grip on you.`);
     } else if (wasHolding && !heroFormSticks()) {
         await releaseHeroGrip();

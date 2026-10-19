@@ -1,4 +1,5 @@
 // Native uhitm.c:known_hitum(). hmon owns damage; callers own turns/passives.
+import { setHeroGrip } from './hero_grip.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import type { AttackTuple } from './monster_action_types.js';
@@ -56,8 +57,7 @@ export async function resolveHeroWeaponHit(
         const flight = await makeMonsterFlee(monster, { turns: rn2(3) === 0 ? rnd(100) : 0 });
         if (flight.heroDied) return { ...result, hit: true, heroDied: true };
         if (game.u.ustuck === monster && !game.u.uswallow && !monsterSpeciesSticks(game.u.umonnum)) {
-            game.u.ustuck = null;
-            game.context.botl = true;
+            setHeroGrip(null);
         }
     }
     if (monster.mhp === oldHitPoints) {

@@ -1,4 +1,5 @@
 // C uhitm.c:mhitm_ad_wrap() against the hero, and mhitu.c:u_slip_free().
+import { setHeroGrip } from './hero_grip.js';
 import { armorSimpleName } from './armor.js';
 import { heroLegName } from './body_parts.js';
 import { DROWNING, POOL, WATER } from './const.js';
@@ -31,8 +32,7 @@ export async function resolveMonsterWrapping(monster, attack, state, publish, ra
             attack.damage = 0;
             return;
         }
-        hero.ustuck = monster;
-        state.context.botl = true;
+        setHeroGrip(monster, state);
         await publish(`${monsterName(monster, { state, capitalized: true, augmentIt: true })} ${coils ? 'coils' : 'swings'} itself around you!`, { urgent: true });
         return;
     }

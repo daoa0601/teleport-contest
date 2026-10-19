@@ -1,5 +1,6 @@
 // Expulsion from an engulfing monster, including the hero's landing.
 // C refs: mhitu.c expels(), mon.c unstuck(), mnexto().
+import { setHeroGrip } from './hero_grip.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { game, requireLiveGame } from './gstate.js';
 import { impossible } from './diagnostics.js';
@@ -45,10 +46,7 @@ export async function releaseHeroGrip(state = game, publish = plineWithContinuat
     const holder = state.u.ustuck;
     if (!holder)
         throw new Error('Releasing the hero grip requires a held monster.');
-    state.u.ustuck = null;
-    state.u.uswallow = 0;
-    state.u.uswldtim = 0;
-    state.context.botl = true;
+    setHeroGrip(null, state);
     await publish(`${monsterName(holder, { state, capitalized: true })} is no longer in your clutches.`);
 }
 // C zap.c:release_hold(). Magical opening releases either creature's grip,
@@ -68,7 +66,7 @@ export async function releaseHold(state = game) {
         return await expelHero(monster, { state });
     }
     if (heroFormSticks(state)) {
-        state.u.ustuck = null;
+        setHeroGrip(null, state);
         await plineWithContinuation(`You release ${monsterName(monster, { state })}.`);
     }
     else {
@@ -86,10 +84,7 @@ export async function releaseHeroFromMonster(monster, { state = game, publish = 
     if (state.u.ustuck !== monster)
         return;
     const swallowed = state.u.uswallow;
-    state.u.ustuck = null;
-    state.u.uswallow = state.uswallow = 0;
-    state.u.uswldtim = 0;
-    state.context.botl = true;
+    setHeroGrip(null, state);
     if (swallowed) {
         state._monsterSwallower = null;
         state.u.ux = monster.mx;

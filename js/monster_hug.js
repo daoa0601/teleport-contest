@@ -1,5 +1,6 @@
 // Physical hugs against the hero.
 // C refs: uhitm.c:mhitm_ad_phys(), mhitu.c:u_slip_free().
+import { setHeroGrip } from './hero_grip.js';
 import { armorSimpleName } from './armor.js';
 import { exerciseAttribute } from './attrib.js';
 import { A_STR } from './const.js';
@@ -15,8 +16,7 @@ export async function resolvePhysicalHeroHug(monster, damage, state, random, pub
     if (!holder && random(2)) {
         if (await heroSlipsFree(monster, state, random, publish))
             return 0;
-        state.u.ustuck = monster;
-        state.context.botl = true;
+        setHeroGrip(monster, state);
         await publish(`${monsterName(monster, { state, capitalized: true })} grabs you!`);
     }
     else if (holder === monster) {

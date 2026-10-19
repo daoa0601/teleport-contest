@@ -1,3 +1,4 @@
+import { setHeroGrip } from './hero_grip.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { monsterHasMapPosition } from './monster_location.js';
 import { isLavaAt, isPoolAt } from './terrain_properties.js';
@@ -226,7 +227,7 @@ export async function floatHeroDown(
                 await plineWithContinuation(
                     `Startled, ${holdingMonsterSubject(hero.ustuck)} can no longer hold you!`);
             }
-            hero.ustuck = null;
+            setHeroGrip(null, state);
         }
         // C calls drown() and lava_effects() directly, bypassing
         // spoteffects().  Both entries run through the complete production

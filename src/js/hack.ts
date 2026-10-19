@@ -1,6 +1,7 @@
 // Effects of entering the hero's current square.
 // C ref: hack.c pooleffects() and trap.c drown().
 
+import { setHeroGrip } from './hero_grip.js';
 import { finishHeroHelplessness } from './allmain.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { monsterHasMapPosition } from './monster_location.js';
@@ -98,12 +99,12 @@ export async function escapeFromStickyMonster(x: number, y: number): Promise<boo
     const holder = state.u.ustuck;
     if (!holder || x === holder.mx && y === holder.my) return false;
     if (Math.abs(holder.mx - state.u.ux) > 1 || Math.abs(holder.my - state.u.uy) > 1) {
-        state.u.ustuck = null;
+        setHeroGrip(null, state);
         return false;
     }
     const name = () => monsterName(holder, { state, article: 'your' });
     if (heroFormSticks(state)) {
-        state.u.ustuck = null;
+        setHeroGrip(null, state);
         await plineWithContinuation(`You release ${name()}.`);
         return false;
     }
@@ -118,7 +119,7 @@ export async function escapeFromStickyMonster(x: number, y: number): Promise<boo
         endVoluntaryMultiTurn(state);
         return true;
     }
-    state.u.ustuck = null;
+    setHeroGrip(null, state);
     await plineWithContinuation(`You pull free from ${name()}.`);
     return false;
 }
