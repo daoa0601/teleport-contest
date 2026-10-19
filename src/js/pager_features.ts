@@ -13,7 +13,7 @@ import { CmapSymbol, GlyphOffset, cmapToGlyph } from './glyph_numbers.js';
 import { CHEST, LARGE_BOX } from './object_data.js';
 import { monsterAtPosition } from './monster_location.js';
 import { rn2 } from './rng.js';
-import { heroIsHallucinating } from './senses.js';
+import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { waterbodyName } from './terrain_name.js';
 import { trapName } from './trap_name.js';
 
@@ -38,9 +38,15 @@ export function lookGlyphAt(x: number, y: number): GlyphMetadata | null {
     return location ? terrain_glyph(location, x, y) : null;
 }
 
+// pager.c do_screen_description(): a blind hero's remembered-unseen marker
+// uses the clairvoyance wording.
+export function unseenCreatureDescription(): string {
+    return heroIsBlind(game) ? 'unseen creature' : 'remembered, unseen, creature';
+}
+
 export function mapFeatureDescription(x: number, y: number, glyph: GlyphMetadata): string {
     if (glyph.kind === 'trap') return displayedTrapDescription(glyph.trapType, x, y);
-    if (glyph.kind === 'invisible') return 'remembered, unseen, creature';
+    if (glyph.kind === 'invisible') return unseenCreatureDescription();
     if (glyph.kind === 'engraving') return 'engraving';
     if (glyph.kind === 'effect' && glyph.glyph !== undefined) {
         if (glyph.glyph >= GlyphOffset.zap && glyph.glyph < GlyphOffset.cmapC) return '';
