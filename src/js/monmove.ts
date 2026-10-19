@@ -3880,6 +3880,10 @@ async function moveHostile(
     monster.my = niy;
     if (selected) {
         if (monster.wormno) advanceMonsterWormBody(monster, { state, random, rollDice, rollOne });
+        // C m_move() exposes a concealer which left its cover right after
+        // place_monster(), before postmov() decides whether to hide again.
+        // dog_move() has no such call, so a pet stays hidden through its move.
+        maybeUnhideAt(monster.mx, monster.my, state);
         if (!Array.isArray(monster.mtrack)) monster.mtrack = [];
         monster.mtrack.unshift({ x: oldx, y: oldy });
         monster.mtrack.length = Math.min(monster.mtrack.length, 4);
@@ -7479,19 +7483,6 @@ function postMoveHideUnder(
     newsym(monster.mx, monster.my);
 }
 
-// C mon.c:maybe_unhide_at(), called immediately after place_monster().  A
-// concealer which leaves its object (or an eel which leaves water) is exposed
-// before postmov() decides whether to attempt hiding again.  That ordering is
-// RNG-visible because a newly exposed actor reaches postmov's rn2(5).
-function revealMonsterAfterLeavingHidingPlace(
-    monster: Monster,
-    movement: MonsterMovement,
-    state: PlayingGameState,
-) {
-    if (!movement?.moved || !monster?.mundetected) return;
-    maybeUnhideAt(monster.mx, monster.my, state);
-}
-
 async function finishDochugAfterMovement(
     monster: Monster,
     movement: MonsterMovement,
@@ -7661,7 +7652,6 @@ async function completeMovedMonsterAction(
     )
         return movement;
 
-    revealMonsterAfterLeavingHidingPlace(monster, movement, state);
     if (movement.movementStage !== 'postmov') {
         await finishDochugAfterMovement(
             monster,

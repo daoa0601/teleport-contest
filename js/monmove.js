@@ -3053,6 +3053,10 @@ async function moveHostile(monster, state, random, rollDice, rollOne, calls, cap
     if (selected) {
         if (monster.wormno)
             advanceMonsterWormBody(monster, { state, random, rollDice, rollOne });
+        // C m_move() exposes a concealer which left its cover right after
+        // place_monster(), before postmov() decides whether to hide again.
+        // dog_move() has no such call, so a pet stays hidden through its move.
+        maybeUnhideAt(monster.mx, monster.my, state);
         if (!Array.isArray(monster.mtrack))
             monster.mtrack = [];
         monster.mtrack.unshift({ x: oldx, y: oldy });
@@ -6253,15 +6257,6 @@ function postMoveHideUnder(monster, movement, state, random, calls) {
     // or the monster skips the attempt. Hallucinations need that refresh.
     newsym(monster.mx, monster.my);
 }
-// C mon.c:maybe_unhide_at(), called immediately after place_monster().  A
-// concealer which leaves its object (or an eel which leaves water) is exposed
-// before postmov() decides whether to attempt hiding again.  That ordering is
-// RNG-visible because a newly exposed actor reaches postmov's rn2(5).
-function revealMonsterAfterLeavingHidingPlace(monster, movement, state) {
-    if (!movement?.moved || !monster?.mundetected)
-        return;
-    maybeUnhideAt(monster.mx, monster.my, state);
-}
 async function finishDochugAfterMovement(monster, movement, state, random, rollOne, rollDice, calls, dochugContext) {
     // A direct m_move() caller has no dochug() phase to resume.
     if (!dochugContext)
@@ -6365,7 +6360,6 @@ async function completeMovedMonsterAction(monster, movement, state, random, roll
         movement.postMoveStatus === MMOVE_DIED ||
         state.program_state.gameover)
         return movement;
-    revealMonsterAfterLeavingHidingPlace(monster, movement, state);
     if (movement.movementStage !== 'postmov') {
         await finishDochugAfterMovement(monster, movement, state, random, rollOne, rollDice, calls, dochugContext);
         return movement;
