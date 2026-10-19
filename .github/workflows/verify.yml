@@ -127,7 +127,7 @@ jobs:
       - name: Fetch the previous successful pool results
         run: |
           mkdir -p prev
-          run=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow verify.yml --branch daoa/recovery-architecture \
+          run=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow verify.yml --branch daoa/recovery-architecture --event push \
             --status success --limit 1 --json databaseId --jq '.[0].databaseId // empty')
           if [ -n "$run" ] && gh run download "$run" --repo "$GITHUB_REPOSITORY" --name verify-pool-results --dir prev; then
             echo "Comparing with verify run $run" | tee prev/source.txt
