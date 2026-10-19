@@ -5559,7 +5559,6 @@ export async function generateMinetown(active: ActiveSpecialLevel): Promise<void
         throw new RangeError(`unknown Minetown layout ${active?.variant}`);
     }
     active.file = `minetn-${active.variant}.lua`;
-    level.flags.has_town = true;
     await generateSpecialAndFixup(generateLuaSpecialLevel, active);
     for (const room of level.rooms.slice(0, level.nroom))
         if (isRoom(room)) await fillSpecialRoom(room);
@@ -7694,6 +7693,9 @@ export async function fixupSpecial(active: ActiveSpecialLevel): Promise<void> {
     if (active?.baalzFixup) await fixupBaalz(active);
     if (active.file === 'minetn-1.lua' && In_mines(game.u.uz))
         await createOrcRaid();
+    // Minetown becomes a town only now, so the level's own monsters (and any
+    // raiders) were created while in_town() still reported false.
+    if (specialLevelAt()?.flags.town) level.flags.has_town = true;
     // sp_lev.c explicitly places deferred portals, stairs, and branches
     // before premap_detect(); otherwise their remembered glyphs retain the
     // underlying terrain even though the live level cell was updated.
