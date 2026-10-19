@@ -9,7 +9,7 @@ import { monsterIsScaredAt } from './monster_fear.js';
 import { monsterHasMapPosition, monsterOccupiesPosition } from './monster_location.js';
 import { AT_BOOM } from './monster_attack_types.js';
 import { isok, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE } from './const.js';
-import { setHeroBlindnessTurns } from './senses.js';
+import { setHeroBlindnessTimeout } from './senses.js';
 import { makeBlinded } from './sight_change.js';
 import { gulpBlindnessCheck } from './engulf_blindness.js';
 import { heroFaceName } from './body_parts.js';
@@ -131,7 +131,7 @@ export async function continueWipingFace(occupation, state = game) {
         state.u.ucreamed = 0;
         const gulp = await gulpBlindnessCheck({ state, publish: plineWithContinuation });
         if (!gulp.triggered && !gulp.died) {
-            setHeroBlindnessTurns(1, state);
+            setHeroBlindnessTimeout(1, state);
             await makeBlinded(0, { state, publish: plineWithContinuation });
         }
         state._occupation = null;

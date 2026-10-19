@@ -12,7 +12,7 @@ import { makePlural } from './object_grammar.js';
 import { objectName, ownedObjectName } from './objnam.js';
 import { monsterName, possessiveName } from './monster_name.js';
 import { rn2, rn1 } from './rng.js';
-import { heroIsBlinded, setHeroBlindnessTurns } from './senses.js';
+import { heroIsBlinded, setHeroBlindnessTimeout } from './senses.js';
 import { makeBlinded } from './sight_change.js';
 import { heroHasFreeHand, isWetTowel } from './weapon_type.js';
 export async function useTowel(object, { state = game } = {}) {
@@ -68,13 +68,13 @@ export async function useTowel(object, { state = game } = {}) {
         await pline(`You wipe off your ${state.uarmg ? armorSimpleName(state.uarmg, state) : hands}.`);
     }
     else if (state.u.ucreamed) {
-        setHeroBlindnessTurns((state.u.blindTurns || 0) - state.u.ucreamed, state);
+        setHeroBlindnessTimeout((state.u.blindTurns || 0) - state.u.ucreamed, state);
         state.u.ucreamed = 0;
         if (!heroIsBlinded(state)) {
             await pline("You've got the glop off.");
             const gulp = await gulpBlindnessCheck({ state });
             if (!gulp.triggered && !gulp.died) {
-                setHeroBlindnessTurns(1, state);
+                setHeroBlindnessTimeout(1, state);
                 await makeBlinded(0, { state });
             }
         }
