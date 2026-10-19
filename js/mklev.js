@@ -6198,7 +6198,7 @@ async function createLuaObjectPiece(context, options, corpseSpecies, parentConta
         && game._activeSpecialLevel?.prototype === 'medusa'
         && options.montype == null;
     if (randomMedusaStatue) {
-        object = await medusaEmptyStatue(context, point);
+        object = await medusaEmptyStatue(context, point, Object.hasOwn(options, 'contents'));
     }
     else if (objectType != null) {
         object = point
@@ -6310,7 +6310,7 @@ async function createLuaObjectPiece(context, options, corpseSpecies, parentConta
             game.context.achieveo[`${prefix}_prize_otyp`] = object.otyp;
         }
     }
-    if (Object.hasOwn(options, 'contents'))
+    if (Object.hasOwn(options, 'contents') && !randomMedusaStatue)
         object.contents = [];
     if (parentContainer) {
         removeFloorObject(object);
@@ -7145,7 +7145,7 @@ async function putGeneratedMonsterInventoryInStatue(monster, statue) {
     }
     statue.owt = objectWeight(statue);
 }
-async function medusaEmptyStatue(context, fixedPoint = null) {
+async function medusaEmptyStatue(context, fixedPoint, deleteContents) {
     const point = fixedPoint
         ? {
             x: context.xstart + fixedPoint.x,
@@ -7155,9 +7155,11 @@ async function medusaEmptyStatue(context, fixedPoint = null) {
     if (!point)
         return null;
     const statue = await mksobj_at(STATUE, point.x, point.y, true, true);
-    // `contents=0` removes any randomly initialized spellbook before the
-    // Medusa petrified-monster special case creates the temporary actor.
-    statue.contents = [];
+    // sp_lev.c create_object() empties a `contents=` container (removing any
+    // random spellbook) before the Medusa petrified-monster special case
+    // moves the temporary actor's inventory into the statue.
+    if (deleteContents)
+        statue.contents = [];
     let mndx = statue.corpsenm ?? null;
     for (let attempt = 0; attempt < 1000; attempt++, mndx = rndmonnum()) {
         const was = await makemon(mndx, 0, 0, MM_NOCOUNTBIRTH | MM_NOMSG);
