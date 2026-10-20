@@ -495,9 +495,6 @@ async function checkHere(source: PickupSource, pickedSome: boolean): Promise<{ d
     // C check_here() flushes movement before look_here() can page a prior
     // message. The pager itself leaves pending map changes untouched.
     await flush_screen(1);
-    // A blind hero remembers the felt top object (display.c newsym()).
-    const first = source.objects[0];
-    if (heroIsBlind(game) && first) map_object(first, false, false);
     const { died } = await lookHere(count, { pickedSome, skipFeature });
     return { died };
 }
