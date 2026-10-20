@@ -7967,15 +7967,40 @@ export async function resumeDeferredMonsterTrap(
                 ...(describeMonster ? { describeMonster } : {}),
             });
             break;
-        case 'land-mine':
+        case 'land-mine': {
+            // A victim relocated by the blast meets mintrap(FORCETRAP) at
+            // its new square, which may end its stay on this level.
+            const relocated: { action: MonsterMovementAction | null } = { action: null };
             await finishMonsterLandMine(action.monster, event, state, {
                 finishDeath,
                 publish,
                 random: recordedRandom,
                 rollOne: recordedRollOne,
                 ...(describeMonster ? { describeMonster } : {}),
+                forceTrapAtMonster: async victim => {
+                    relocated.action = await finishImmediateMonsterTrap(
+                        await triggerImmediateMonsterTrap(victim, state, {
+                            force: true, random: recordedRandom, rollOne: recordedRollOne,
+                            rollDice, publish,
+                        }),
+                        state,
+                        {
+                            publish, random: recordedRandom, rollOne: recordedRollOne, rollDice,
+                            finishDeath,
+                            ...(describeMonster ? { describeMonster } : {}),
+                        },
+                    );
+                },
             });
+            const nested = relocated.action?.movement;
+            if (nested?.heroDied) movement.heroDied = true;
+            if (nested?.actorLeftLevel && !movement.heroDied) {
+                movement.actorLeftLevel = true;
+                movement.actionCompleted = true;
+                return action;
+            }
             break;
+        }
         case 'pit-trap':
             await finishMonsterPitTrap(action.monster, event, {
                 publish,

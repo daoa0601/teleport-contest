@@ -174,11 +174,14 @@ export async function finishMonsterLandMine(
         random = rn2,
         rollOne = rnd,
         describeMonster = target => canonicalMonsterName(target, { state, capitalized: true }),
-    }: LandMineOptions = {},
+        forceTrapAtMonster,
+    }: LandMineOptions & { forceTrapAtMonster?: (monster: Monster) => Promise<unknown> } = {},
 ) {
     if (event.finished) return event;
     if (typeof finishDeath !== 'function')
         throw new TypeError('land mine requires the monster death handler');
+    if (typeof forceTrapAtMonster !== 'function')
+        throw new TypeError('land mine requires the forced monster trap handler');
     const options = {
         finishDeath,
         publish,
@@ -227,11 +230,8 @@ export async function finishMonsterLandMine(
         event.finished = true;
         return event;
     }
-    if (monster.mx !== event.trap.tx || monster.my !== event.trap.ty) {
-        event.finished = true;
-        return event;
-    }
-
+    // thitm() hurts the victim even when the blast's liquid relocated it;
+    // the recursive mintrap(FORCETRAP) then uses its current square.
     monster.mhp = Math.max(0, (monster.mhp ?? 1) - event.damage);
     if (monster.mhp <= 0) {
         const died = await finishMineDeath(monster, event, state, options);
@@ -242,7 +242,10 @@ export async function finishMonsterLandMine(
             return event;
         }
     }
-    await fallIntoMinePit(monster, pit, event, state, options);
+    if (monster.mx === event.trap.tx && monster.my === event.trap.ty)
+        await fallIntoMinePit(monster, pit, event, state, options);
+    else
+        await forceTrapAtMonster(monster);
     if (event.death?.heroDied || state.program_state.gameover) return event;
     await fillPitWithBoulderAt(event.trap.tx, event.trap.ty, state, { publish });
     event.killed = !!monster.dead || (monster.mhp ?? 0) <= 0;
