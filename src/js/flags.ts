@@ -84,6 +84,7 @@ export interface InterfaceFlags {
     wizweight?: boolean;
     partly_eaten_hack?: boolean;
     prevmsg_window?: string;
+    save_uswallow?: boolean;
     terrain_typ?: number;
     terrainmode?: number;
     toptenwin?: boolean;

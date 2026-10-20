@@ -4,6 +4,7 @@
 import { objectMaterial } from './object_material.js';
 import { monsterAtPosition, monsterHasMapPosition } from './monster_location.js';
 import { monsterProjectileDisplay } from './monster_projectile_display.js';
+import { TemporaryMapEffect } from './temporary_map_effect.js';
 import { A_STR, BOLT_LIM, DOOR, D_CLOSED, D_LOCKED, IRONBARS, IS_SOFT, IS_WATERWALL, Is_airlevel, LAVAWALL, LOST_THROWN, M_AP_OBJECT, M_AP_TYPE, P_CROSSBOW, SINK, WEB, WT_SPLASH_THRESHOLD, ZAP_POS, isok, } from './const.js';
 import { monsterName } from './monster_name.js';
 import { artifactById } from './artifacts.js';
@@ -148,6 +149,15 @@ export async function finishHeroThrownObjectLanding({ state = game, object, x, y
         throw new RangeError(`A thrown object cannot land outside the level at (${x}, ${y}).`);
     const breaksOnImpact = !IS_SOFT(landingSquare.typ) && objectBreaksOnImpact(object, random);
     if (breaksOnImpact || object.oclass === VENOM_CLASS) {
+        const impact = new TemporaryMapEffect('flash', transientObjectGlyph(object));
+        await impact.start();
+        try {
+            await impact.show(x, y);
+            await state.animationFrame?.();
+        }
+        finally {
+            impact.clear();
+        }
         const { destroyed } = await breakObjectAtLocation(object, {
             x, y, fromInventory: true, inView: cansee(x, y),
             state, publish, random,

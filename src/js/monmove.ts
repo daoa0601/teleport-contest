@@ -7706,6 +7706,10 @@ async function completeMovedMonsterAction(
             movement.postMoveStatus = passage.status === 'died' || passage.heroDied
                 ? MMOVE_DIED : MMOVE_DONE;
             movement.actionCompleted = true;
+            // postmov() returns here after dissolving bars or a fatal door
+            // trap. The passage handled display; the presenter must not
+            // add the destination redraw that this return skips in C.
+            movement.postMoveDestinationPainted = true;
             await finishDochugAfterMovement(
                 monster, movement, state, random, rollOne, rollDice, calls, dochugContext,
             );
