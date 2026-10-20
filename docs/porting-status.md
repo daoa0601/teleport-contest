@@ -425,9 +425,14 @@ the known-trap avoidance roll and leaves fliers above floor traps.
 
 ## Verification
 
-Merges require a fully green suite (12,446/12,446 on the latest unit branch);
-batch runs also compare matched screens per session with the previous batch
-(no screen regression in batches 35-40, eval, public or pool).
+Batch verification runs on GitHub Actions (`.github/workflows/verify.yml`) for
+every push to `daoa/recovery-architecture`: ten pool shards, the public
+sessions, both ledger checks, the eval sample drawn from the pool, and a pool
+comparison with the previous green run (any newly failing session fails the
+run). `main` is fast-forwarded only to a SHA with a green run. Fresh native
+corpora are recorded and scored by `.github/workflows/fresh-batches.yml`.
+Do not run pool or fresh corpora locally; an eight-worker local pool run froze
+the development machine. Local triage now defaults to four workers.
 
 ## Most recent native diagnostics
 
@@ -435,26 +440,27 @@ batch runs also compare matched screens per session with the previous batch
 | --- | ---: | ---: | ---: | ---: |
 | Public | 43/44 | 11,396/11,405 | 792,838/792,838 | 0 |
 | Native eval sample | 300/300 | 50,586/50,586 | 3,616,669/3,616,669 | 0 |
-| Holdout-dev pool | 2,500/2,500 | | | 0 |
+| Holdout-dev pool | 2,500/2,500 | 414,063/414,063 | 29,657,399/29,657,399 | 0 |
 
-Runs: `.cache/generalization/batch43-cd7f764-{eval,public}` and
-`triage-cd7f764` (pool) in the verify worktree (baseline `base-06d7e73`:
-143/300; batch 30: 300/300, pool 2,500/2,500). No verified random call was
-lost; the ledgers now hold 350 eval and 363 public functions. The
-state oracle finds all 300 sessions matching C state throughout.
+Verify run on `91120ea9`. No verified random call was lost; the ledgers hold
+350 eval and 363 public functions.
 
 ## Next work
 
 Every eval-sample and pool session completes and public matches every random
 call; the one public miss (`seed2200-wizard-quaff-zap-read`) prints the
 recorder host's own `.nethackrc` path. New work comes from freshly recorded
-native sessions: fresh86-220 (40,500 sessions) fail only on step-0 moon-phase
-artifacts plus the cases below. The moon-phase misses are a recorder
-artifact: it runs with `TZ=America/New_York`, and
-`time_from_yyyymmddhhmmss()` copies `tm_isdst` from the current clock, so a
-midnight start date in standard time lands on the previous day. In flight:
-**trad-pickup** (the `pickup()` old-style branch and `query_classes()` for
-`menustyle:traditional`; JS always opens the pickup menu). Round-2 recipe sessions are recorded in `.cache/holdout-dev/recipe2`.
+native sessions. Fresh 311-410 (30,000 sessions) fail only on step-0
+moon-phase artifacts plus cases fixed since: vampire shapeshift thresholds use
+C integer division; Minetown becomes a town only after its level script; Medusa
+`contents=0` statues keep the petrified monster's gear; `ddoinv` no longer forces
+a status redraw; a blind hero sees "unseen creature"; `wake_nearto()` prints its
+wake messages at every native call site; and newborn shapechangers, iron-bar
+redraws, breaking-object flashes and swallowed lookups draw from the display RNG
+as C does. The moon-phase misses are a recorder artifact: it runs with
+`TZ=America/New_York`, and `time_from_yyyymmddhhmmss()` copies `tm_isdst` from
+the current clock, so a midnight start date in standard time lands on the
+previous day.
 
 `splitObjectStack()` now links the new piece right after the original in
 whichever chain owns it (floor pile, hero or monster inventory, container,
