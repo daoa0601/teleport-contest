@@ -14,7 +14,7 @@ import { fillPitWithBoulderAt } from './pit_fill.js';
 
 export async function detachMonsterFromLevel(
     monster: Monster, state: GameState = game,
-    { dueToDeath = false }: { dueToDeath?: boolean } = {},
+    { dueToDeath = false, stayLinked = false }: { dueToDeath?: boolean; stayLinked?: boolean } = {},
 ): Promise<void> {
     requireLiveGame(state);
     const level = requireGameLevel(state);
@@ -32,10 +32,18 @@ export async function detachMonsterFromLevel(
     // identity in fmon until movemon's dmonsfree. A death during distress
     // still participates in this turn's movement allocation.
     if (dueToDeath) monster.mstate = (monster.mstate ?? MON_FLOOR) | MON_DETACH;
-    else level.monsters = level.monsters.filter(candidate => candidate !== monster);
+    else if (!stayLinked) level.monsters = level.monsters.filter(candidate => candidate !== monster);
     if (onMap) {
         monster.mundetected = 0;
         revealMonsterAppearance(monster, { includeMonsterDisguise: false });
+    }
+    // mnearto() keeps a displaced monster in fmon, zeroing its coordinates
+    // after mon_leaving_level() has unhidden it at the vacated square.
+    if (stayLinked) {
+        monster.mx = 0;
+        monster.my = 0;
+    }
+    if (onMap) {
         await fillPitWithBoulderAt(x, y, state);
         newsym(x, y);
     }

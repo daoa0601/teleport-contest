@@ -6,7 +6,7 @@ import { revealMonsterAppearance } from './monster_appearance.js';
 import { monsterAtPosition } from './monster_location.js';
 import { clearMonsterWormFromMap } from './monster_worm.js';
 import { fillPitWithBoulderAt } from './pit_fill.js';
-export async function detachMonsterFromLevel(monster, state = game, { dueToDeath = false } = {}) {
+export async function detachMonsterFromLevel(monster, state = game, { dueToDeath = false, stayLinked = false } = {}) {
     requireLiveGame(state);
     const level = requireGameLevel(state);
     const { mx: x, my: y } = monster;
@@ -22,11 +22,19 @@ export async function detachMonsterFromLevel(monster, state = game, { dueToDeath
     // still participates in this turn's movement allocation.
     if (dueToDeath)
         monster.mstate = (monster.mstate ?? MON_FLOOR) | MON_DETACH;
-    else
+    else if (!stayLinked)
         level.monsters = level.monsters.filter(candidate => candidate !== monster);
     if (onMap) {
         monster.mundetected = 0;
         revealMonsterAppearance(monster, { includeMonsterDisguise: false });
+    }
+    // mnearto() keeps a displaced monster in fmon, zeroing its coordinates
+    // after mon_leaving_level() has unhidden it at the vacated square.
+    if (stayLinked) {
+        monster.mx = 0;
+        monster.my = 0;
+    }
+    if (onMap) {
         await fillPitWithBoulderAt(x, y, state);
         newsym(x, y);
     }
