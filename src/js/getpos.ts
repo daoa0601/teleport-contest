@@ -569,8 +569,9 @@ export async function selectMapPosition({
     };
     const targetCycles = new Map<GetposCycleKind, LocationCycle>();
     const autoDescription = (): boolean => game.iflags.autodescribe ?? true;
+    // Without autodescribe, nxtc leaves whatever the message window shows.
     const movementMessage = async (): Promise<string> => autoDescription()
-        ? await describeSelectedPosition(describe, cursor, movePrompt) : movePrompt;
+        ? await describeSelectedPosition(describe, cursor, movePrompt) : message;
 
     const validLocations = (): LocationCycle => {
         if (!validity.cycle) {
@@ -690,6 +691,9 @@ export async function selectMapPosition({
                 if (!autoDescription()) {
                     await pline(message);
                     await flush_screen(1);
+                    // show_goal_msg: the next loop pass pline()s the goal,
+                    // which tty pages when it cannot share the notice's line.
+                    await pline(movePrompt);
                     message = movePrompt;
                 }
                 continue;

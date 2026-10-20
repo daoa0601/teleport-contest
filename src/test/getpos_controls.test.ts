@@ -109,6 +109,35 @@ void test('getpos toggles automatic descriptions off and on', async () => {
     assert.equal(selected?.x, 11);
 });
 
+void test('a verbose autodescribe-off notice is paged before the goal prompt returns', async () => {
+    freshObjectRoom({ flags: { tips: false, verbose: true } });
+    const input = resetInputState();
+    const selected = await answerPrompts(selectMapPosition({
+        start: { x: 10, y: 10 }, prompt: 'Pick a location.', goal: 'a location',
+        describe: () => 'floor of a room',
+    }), input, [
+        { prompt: /Pick a location\./, keys: '#' },
+        // The goal pline() cannot join the long notice on one tty line.
+        { prompt: /^Automatic description of features under cursor is off\.--More--/, keys: ' ' },
+        { prompt: /^Move cursor to a location: *\n/, keys: '.' },
+    ]);
+    assert.equal(selected?.x, 10);
+});
+
+void test('without autodescribe, moving the cursor keeps the last getpos message', async () => {
+    freshObjectRoom({ flags: { tips: false, verbose: false } });
+    game.iflags.autodescribe = false;
+    const input = resetInputState();
+    const selected = await answerPrompts(selectMapPosition({
+        start: { x: 10, y: 10 }, prompt: 'Pick a location.', goal: 'a location', force: true,
+    }), input, [
+        { prompt: /Pick a location\./, keys: 'r' },
+        { prompt: /^Unknown direction: 'r'/, keys: 'l' },
+        { prompt: /^Unknown direction: 'r'/, keys: '.' },
+    ]);
+    assert.equal(selected?.x, 11);
+});
+
 void test('getpos can limit target cycling to creatures in sight', async () => {
     freshObjectRoom({ flags: { tips: false, verbose: false }, hero: { detectMonsters: true } });
     const distant = await createMonsterAt('kitten', 30, 10);
@@ -198,6 +227,8 @@ void test('configuring autodescribe takes effect after the cursor toggle', async
     const input = resetInputState();
     input.feed('#');
     await answerPrompts(rhack(';'.charCodeAt(0)), input, [
+        // The goal prompt cannot share the notice's tty line.
+        { prompt: /^Automatic description is off\.--More--/, keys: ' ' },
         { prompt: /Move cursor to a monster, object or location:/, keys: '\x1b' },
     ]);
     applyNethackrc('OPTIONS=autodescribe');

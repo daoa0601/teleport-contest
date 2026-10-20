@@ -22,6 +22,7 @@ void test('quick look restores its goal after disabling descriptions and restore
     const input = resetInputState();
     input.feed('#');
     await answerPrompts(rhack(';'.charCodeAt(0)), input, [
+        { prompt: /^Automatic description is off\.--More--/, keys: ' ' },
         { prompt: /Move cursor to a monster, object or location:/, keys: '\x1b' },
     ]);
     assert.equal(game.flags.verbose, true);
