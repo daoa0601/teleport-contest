@@ -9,7 +9,9 @@ import { pushKeys } from '../js/input.js';
 import { browseDetectionMap, clearDetectionMap, mapDetectedMonster, reconstrainMap, unconstrainMap, } from '../js/magic_map_display.js';
 import { monsterName } from '../js/monster_name.js';
 import { changeMonsterForm, initialShapechangedBirth } from '../js/monster_polymorph.js';
-import { POT_WATER } from '../js/object_data.js';
+import { landFloorObject } from '../js/floor_effects.js';
+import { placeCreatedObject } from '../js/floor_object.js';
+import { CHEST, POT_WATER } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { finishHeroThrownObjectLanding } from '../js/thrown_object.js';
 import { knownObject } from './support/game-objects.js';
@@ -54,6 +56,20 @@ void test('a thrown potion flashes its hallucinated appearance before breaking',
     assert.equal(flashes.length, 1);
     assert.equal(flashes[0], expected.glyph);
     assert.notEqual(glyphAt(13, 10)?.glyph, expected.glyph);
+});
+void test('a potion shattering on hot ground leaves a hallucinated object beside it unchanged', async () => {
+    freshObjectRoom({ hero: { hallucinationTurns: 20 } });
+    requirePlayingGame(game);
+    game.level.flags.temperature = 1;
+    placeCreatedObject(await knownObject(CHEST), 13, 10);
+    initRng(23n);
+    newsym(13, 10);
+    const before = glyphAt(13, 10);
+    const potion = await knownObject(POT_WATER);
+    // breakobj() only deletes the potion; nothing redraws its square.
+    await landFloorObject(potion, 13, 10, { publish: async () => { }, random: () => 99 });
+    assert.equal(potion.where, 'gone');
+    assert.equal(glyphAt(13, 10)?.glyph, before?.glyph);
 });
 for (const hallucinating of [false, true]) {
     void test(`looking at a detected engulfer preserves ${hallucinating ? 'hallucinated descriptions' : 'its identity at the hero square'}`, async () => {
