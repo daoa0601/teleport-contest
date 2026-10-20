@@ -37,3 +37,16 @@ for (const helper of [
         assert.equal(recorderIsLeapDay(game.datetime), true);
     });
 }
+
+void test('a fixed midnight read with summer time falls on the previous winter evening', context => {
+    context.mock.timers.enable({ apis: ['Date'], now: Date.UTC(2026, 6, 15, 12) });
+    // Saturday 2002-12-14 00:00 becomes Friday the 13th, 23:00 EST.
+    assert.equal(fixedCalendar('20021214000000').friday13, true);
+    assert.equal(fixedCalendar('20000122000000').moonphase, fixedCalendar('20000121120000').moonphase);
+});
+
+void test('a fixed midnight read with winter time stays on its own day', context => {
+    context.mock.timers.enable({ apis: ['Date'], now: Date.UTC(2026, 0, 15, 12) });
+    assert.equal(fixedCalendar('20021214000000').friday13, false);
+    assert.equal(fixedCalendar('20000122000000').moonphase, fixedCalendar('20000122120000').moonphase);
+});

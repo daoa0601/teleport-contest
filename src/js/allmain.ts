@@ -1,6 +1,6 @@
 import type { ArmorCompletion } from './command_types.js';
 import { formatFeltMessage, publishHeardMessage } from './hero_speech.js';
-import { recorderLocalEpochSeconds } from './calendar.js';
+import { recorderLocalDate, recorderLocalEpochSeconds } from './calendar.js';
 import type { MessagePublisher } from './display.js';
 import { slipOrTrip } from './fumbling.js';
 import { recoverTimedLuck } from './timeout_luck.js';
@@ -441,26 +441,17 @@ async function showInlineMore(message: string): Promise<void> {
     await flushPendingTopline();
 }
 
-// C ref: calendar.c phase_of_the_moon(), friday_13th().  Session datetimes
-// are deliberately fixed, so calculate from that value rather than the host
-// clock.  UTC arithmetic keeps the result independent of the judge's locale.
+// C ref: calendar.c phase_of_the_moon(), friday_13th(), both from getlt().
 export function fixedCalendar(datetime?: string | null) {
-    if (!datetime || !/^\d{14}$/.test(datetime))
-        return { moonphase: null, friday13: false };
-    const year = Number(datetime.slice(0, 4));
-    const month = Number(datetime.slice(4, 6));
-    const day = Number(datetime.slice(6, 8));
-    const start = Date.UTC(year, 0, 1);
-    const current = Date.UTC(year, month - 1, day);
-    const diy = Math.floor((current - start) / 86400000);
+    const date = recorderLocalDate(datetime);
+    if (!date) return { moonphase: null, friday13: false };
+    const { year, month, day, weekday } = date;
+    const diy = Math.floor((Date.UTC(year, month - 1, day) - Date.UTC(year, 0, 1)) / 86400000);
     const goldn = ((year - 1900) % 19) + 1;
     let epact = (11 * goldn + 18) % 30;
     if ((epact === 25 && goldn > 11) || epact === 24) epact++;
     const moonphase = (Math.floor(((((diy + epact) * 6) + 11) % 177) / 22)) & 7;
-    return {
-        moonphase,
-        friday13: new Date(current).getUTCDay() === 5 && day === 13,
-    };
+    return { moonphase, friday13: weekday === 5 && day === 13 };
 }
 
 async function applyCalendarMessages() {
