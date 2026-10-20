@@ -751,7 +751,8 @@ export function vision_recalc(control = 0) {
     if (!u || !level)
         return;
     game.vision_full_recalc = 0;
-    if (game.in_mklev || game.program_state.in_getlev)
+    // C really_done() renders vision inoperative (iflags.vision_inited).
+    if (game.in_mklev || game.program_state.in_getlev || game.program_state.gameover)
         return;
     const next = game.active_buf === 0 ? cs_buf1 : cs_buf0;
     const next_rmin = game.active_buf === 0 ? cs_rmin1 : cs_rmin0;
