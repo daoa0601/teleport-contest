@@ -354,7 +354,7 @@ async function paintExplosion(cells, state) {
             await effect.show(cell.x, cell.y);
         }
         await flush();
-        if (state.flags.sparkle && cells.some(cell => cell.shield)) {
+        if (state.flags.sparkle !== false && cells.some(cell => cell.shield)) {
             for (const ch of SHIELD_STATIC) {
                 const glyph = shieldGlyph(ch);
                 for (const cell of cells) {

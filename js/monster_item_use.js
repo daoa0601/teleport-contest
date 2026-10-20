@@ -244,7 +244,7 @@ export async function consumeMonsterItem(monster, object, state) {
 }
 async function flashReadingMonster(monster, state) {
     let count = couldsee(monster.mx, monster.my) ? 8 : 4;
-    if (!state.flags.sparkle)
+    if (state.flags.sparkle === false)
         count /= 2;
     const row = state.viz_array?.[monster.my];
     const saved = row?.[monster.mx];

@@ -174,7 +174,7 @@ function canHideCreatedMonster(monster: Monster): boolean {
 
 async function flashCreatedMonster(monster: Monster): Promise<void> {
     let count = couldsee(monster.mx, monster.my) ? 8 : 4;
-    if (!game.flags.sparkle) count /= 2;
+    if (game.flags.sparkle === false) count /= 2;
     const row = game.viz_array?.[monster.my];
     const saved = row?.[monster.mx];
     if (!row || saved === undefined) throw new Error('A created monster needs its visibility cell');
