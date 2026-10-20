@@ -51,7 +51,7 @@ void test('a live session sets the birthday to the current epoch', async context
     assert.equal(birthday, now / 1000);
 });
 
-void test('restoring keeps the original birthday instead of recapturing the clock', async context => {
+void test('restoring reads the birthday back from its saved local-time text', async context => {
     const now = Date.UTC(2025, 6, 15, 18, 30);
     context.mock.timers.enable({ apis: ['Date'], now });
     const birthday = await startNewGame({ datetime: FIXED_DATETIME });
@@ -64,6 +64,7 @@ void test('restoring keeps the original birthday instead of recapturing the cloc
     context.mock.timers.setTime(now + 3600 * 1000);
     assert.equal(restoreGame('Clockwatcher', storage), true);
 
-    // The original captured value is the proof: retention, not recapture.
-    assert.equal(game.ubirthday, birthday);
+    // C saves 11:00 EST text for the winter birthday and reads it back
+    // with the inherited summer EDT offset: an hour earlier.
+    assert.equal(game.ubirthday, birthday - 3600);
 });

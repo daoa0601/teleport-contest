@@ -26,6 +26,7 @@ import { restoreElementalBubbles } from './elemental.js';
 import { restoreLevelRegions } from './regions.js';
 import { oinit } from './mklev.js';
 import { restoreScheduledLevelChange } from './level_change.js';
+import { recorderRestoredTime } from './calendar.js';
 const SAVE_PREFIX = 'teleport-save:';
 const ERROR_SAVE_PREFIX = 'teleport-error-save:';
 function saveKey(name, prefix = SAVE_PREFIX) {
@@ -187,7 +188,12 @@ export function restoreGame(name, storage = game.storage) {
             return false;
         requireInitializedHero(snapshot.state.u);
         restoreSavedMonsters(snapshot.state);
+        // C restgamestate() reads ubirthday back from its local-time text.
+        const birthday = snapshot.state.ubirthday === undefined
+            ? undefined : recorderRestoredTime(snapshot.state.ubirthday);
         restorePersistentState(game, snapshot.state);
+        if (birthday !== undefined)
+            game.ubirthday = birthday;
         resetRestoredInstanceState();
         resetErinys(game.u.ualign?.abuse ?? 0);
         resolveDungeonIdentities(game);
