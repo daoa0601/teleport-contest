@@ -1833,6 +1833,11 @@ async function monsterAttackMessage(
 }
 
 
+// C Some_Monnam(): unseen thieves are "Someone" or "Something".
+function wornItemRemover(monster: Monster, state: GameState): string {
+    return monsterName(monster, { state, capitalized: true, augmentIt: true });
+}
+
 function wornTheftObjectDescription(object: GameObject): string {
     // C steal.c:worn_item_removal() starts from doname(), then massages only
     // the ownership and equipment-location suffix for its pre-removal line.
@@ -1929,7 +1934,8 @@ async function resolveDeferredHeroItemTheft(
     }
     if (!object) {
         if (!animal && game.uchain && draw(4)) {
-            await plineWithContinuation(`${subject} takes off ${wornTheftObjectDescription(game.uchain)}.`);
+            await plineWithContinuation(`${wornItemRemover(monster, game)} takes off ${
+                wornTheftObjectDescription(game.uchain)}.`);
             await removeWornHeroItem(game.uchain, game);
         } else if (!animal && game.u.utrap && game.u.utraptype === TT_BURIEDBALL && !draw(4)) {
             await plineWithContinuation(`${subject} takes off your unseen chain.`);
@@ -2047,7 +2053,8 @@ async function resolveDeferredHeroItemTheft(
         const description = wornTheftObjectDescription(removalItem);
         const verb = removalItem === object && wasWeapon ? 'disarms'
             : wasAccessory ? 'removes' : 'takes off';
-        removalMessage = `${subject} ${verb} ${description}.`;
+        // worn_item_removal() names the thief again with Some_Monnam().
+        removalMessage = `${wornItemRemover(monster, game)} ${verb} ${description}.`;
     }
     if (removalMessage && !charmed) {
         await plineWithContinuation(removalMessage);

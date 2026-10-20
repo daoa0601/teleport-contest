@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { performMonsterHeroAttack } from '../js/allmain.js';
-import { MM_ANGRY, MM_NOGRP, NO_MINVENT } from '../js/const.js';
+import { MM_ANGRY, MM_NOGRP, NO_MINVENT, W_WEP } from '../js/const.js';
 import { flushPendingTopline } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
@@ -80,5 +80,28 @@ void test('theft while blind does not reveal an unseen potion appearance', async
     assert.equal(potion.dknown, false);
     assert.match(messages.join('\n'), /stole an uncursed potion\./);
     assert.doesNotMatch(messages.join('\n'), /magenta/);
+});
+void test('a hallucinated disarm names the thief afresh while the theft keeps its first name', async () => {
+    freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, hallucinationTurns: 50 } });
+    requirePlayingGame(game);
+    const dagger = await addInventoryObject(DAGGER);
+    game.uwep = dagger;
+    dagger.owornmask = W_WEP;
+    const monkey = await createMonsterAt('monkey', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
+    monkey.mux = game.u.ux;
+    monkey.muy = game.u.uy;
+    const input = resetInputState();
+    installPagerInput(input, { expected: /\S/, limit: 12 });
+    const messages = [];
+    input.beforeRead = () => { messages.push(game._pending_message); };
+    await performMonsterHeroAttack(monkey, game, { random: () => 0, rollOne: () => 1 });
+    await flushPendingTopline();
+    // steal() caches Some_Monnam() before worn_item_removal() calls it again.
+    const prose = messages.join('\n');
+    const disarm = /(?:^|\s)(The [^.!]+?) disarms your /.exec(prose);
+    const theft = /(?:^|\s)(The [^.!]+?) stole /.exec(prose);
+    assert.ok(disarm && theft, prose);
+    assert.ok(monkey.minvent.includes(dagger));
+    assert.notEqual(disarm[1], theft[1], prose);
 });
 //# sourceMappingURL=pool_theft_item_name.test.js.map
