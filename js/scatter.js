@@ -19,7 +19,7 @@ import { monsterName, monsterObjectPronoun, possessiveName } from './monster_nam
 import { applyMonsterPassiveToObject } from './monster_passive.js';
 import { monsterHasAcidResistance, monsterHasPoisonResistance, monsterHasStoneResistance } from './monster_resistance.js';
 import { petrifyMonsterFromContact } from './monster_stoning.js';
-import { wakeMonstersNear } from './monster_wake.js';
+import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { heroSpecies } from './hero_species.js';
 import { dist2 } from './hacklib.js';
 import { captureHeroProjectileName } from './hero_physical_messages.js';
@@ -165,7 +165,7 @@ async function hitMonster(monster, node, state, options) {
             distance: dist2(state.u.ux, state.u.uy, monster.mx, monster.my),
             publish: options.publish,
             wakeMonster: wakeAttackedMonster,
-            wakeNearby: (nearX, nearY, distance) => wakeMonstersNear(nearX, nearY, distance, state),
+            wakeNearby: (nearX, nearY, distance) => wakeMonstersNearWithMessages(nearX, nearY, distance, state, options.publish),
             finishKill: (target, deathOptions = {}) => finishScatteredMonsterDeath(target, target.mx, target.my, deathOptions, state, options),
             // ohitmon() passes POTHIT_OTHER_THROW even for a hero-caused blast.
             heroCaused: false,

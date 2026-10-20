@@ -19,7 +19,7 @@ import { Upolyd } from './const.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { igniteItems } from './light.js';
 import { healMonster } from './mon.js';
-import { wakeMonstersNear } from './monster_wake.js';
+import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { applyMagicbaneHit } from './magicbane.js';
 import { monsterHitPointsPerLevel } from './monster_hit_points.js';
 import {
@@ -176,7 +176,7 @@ export async function applyArtifactHit(
         // Native youmonst's coordinates stay (0, 0), separate from u.ux/u.uy.
         const x = defender === 'hero' ? 0 : defender.mx;
         const y = defender === 'hero' ? 0 : defender.my;
-        wakeMonstersNear(x, y, 16, state);
+        await wakeMonstersNearWithMessages(x, y, 16, state, publish);
     }
 
     if (random(inventoryDamageChance(damageType)) === 0) {

@@ -19,7 +19,7 @@ import type { GameObject } from './object_types.js';
 import type { Position } from './map_types.js';
 import type { MessagePublisher } from './display.js';
 import { loseHeroHp } from './hero_damage.js';
-import { wakeMonstersNear } from './monster_wake.js';
+import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import {
     deleteObject, deleteObjectContents,
 } from './object_delete.js';
@@ -126,8 +126,8 @@ async function explodeContainer(
         await deleteObject(object, state);
     }
 
-    wakeMonstersNear(
-        state.u.ux, state.u.uy, (state.u.ulevel ?? 1) * 20, state,
+    await wakeMonstersNearWithMessages(
+        state.u.ux, state.u.uy, (state.u.ulevel ?? 1) * 20, state, publish,
     );
     const damage = halfPhysicalDamage(rollDice(6, 6), state);
     if (await loseHeroHp(damage, killer, { state, publish }))

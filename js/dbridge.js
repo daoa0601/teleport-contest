@@ -10,7 +10,7 @@ import { scatterDrawbridgeDebris } from './drawbridge_debris.js';
 import { game, requireGameLevel } from './gstate.js';
 import { remove_object } from './floor_object.js';
 import { BOULDER } from './object_data.js';
-import { wakeMonstersNear } from './monster_wake.js';
+import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { stopAllObjectTimers } from './object_timers.js';
 import { cansee, vision_note_blocker_change, vision_recalc, } from './vision.js';
 function directionFromBridgeToWall(bridge) {
@@ -225,7 +225,7 @@ export async function destroyDrawbridge(x, y, state = game, options = {}) {
         bridgeLocation.typ = under === DB_ICE ? ICE : ROOM;
         bridgeLocation.icedpool = under === DB_ICE ? ICED_MOAT : 0;
     }
-    wakeMonstersNear(x, y, 500, state);
+    await wakeMonstersNearWithMessages(x, y, 500, state);
     wall.location.typ = DOOR;
     wall.location.doormask = D_NODOOR;
     removeTrapAt(bridge.x, bridge.y, state);

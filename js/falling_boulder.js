@@ -16,7 +16,7 @@ import { MONSTER_FLAGS1, monsterIsAmorphous, monsterIsNoncorporeal, monsterIsUns
 import { finishEnvironmentalMonsterDeath } from './monster_death.js';
 import { monsterAtPosition } from './monster_location.js';
 import { monsterName, monsterObjectPronoun, possessiveName } from './monster_name.js';
-import { wakeMonstersNear } from './monster_wake.js';
+import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { BOULDER, ROCK } from './object_data.js';
 import { deleteObject } from './object_delete.js';
 import { inventoryItemDescription } from './invent.js';
@@ -49,7 +49,7 @@ export async function dropBoulderOnHero({ state = game, confused = false, helmet
             }
         }
     }
-    wakeMonstersNear(state.u.ux, state.u.uy, 16, state);
+    await wakeMonstersNearWithMessages(state.u.ux, state.u.uy, 16, state);
     await landFallingRock(object, state.u.ux, state.u.uy, state);
     if (state.u.halfPhysicalDamage)
         damage = Math.trunc((damage + 1) / 2);
@@ -102,7 +102,7 @@ export async function dropBoulderOnMonster(x, y, { state = game, confused = fals
             await wakeMonster(monster, { attacked: heroCaused });
         if (state.program_state.gameover)
             return { dropped: true, heroDied: true };
-        wakeMonstersNear(x, y, 16, state);
+        await wakeMonstersNearWithMessages(x, y, 16, state);
     }
     else if (swallowsHero) {
         await deleteObject(object, state);

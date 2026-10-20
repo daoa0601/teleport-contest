@@ -12,7 +12,7 @@ import { bot, plineWithContinuation, shieldeff, } from './display.js';
 import { triggerHeroFireTrap } from './fire_trap.js';
 import { game } from './gstate.js';
 import { loseHeroHp } from './hero_damage.js';
-import { wakeMonstersNear } from './monster_wake.js';
+import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { deleteObject, deleteObjectContents, } from './object_delete.js';
 import { definiteName, definiteObjectAction, objectCombatName } from './objnam.js';
 import { objectResistsDestruction } from './object_state.js';
@@ -86,7 +86,7 @@ async function explodeContainer(container, location, state, publish, rollDice) {
             containerDestroyed = true;
         await deleteObject(object, state);
     }
-    wakeMonstersNear(state.u.ux, state.u.uy, (state.u.ulevel ?? 1) * 20, state);
+    await wakeMonstersNearWithMessages(state.u.ux, state.u.uy, (state.u.ulevel ?? 1) * 20, state, publish);
     const damage = halfPhysicalDamage(rollDice(6, 6), state);
     if (await loseHeroHp(damage, killer, { state, publish }))
         return { outcome: 'explosion', damage, destroyed: containerDestroyed, died: true };

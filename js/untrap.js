@@ -29,7 +29,6 @@ import { dismountHero } from './steed.js';
 import { compactInventoryLetters, promptInventoryObject } from './inventory_prompt.js';
 import { isDoorMimic, isObjectOrFurnitureMimic, revealMimic } from './mimic.js';
 import { buryFloorObjectsAt } from './buried_object.js';
-import { wakeMonstersNear } from './monster_wake.js';
 import { finishEnvironmentalMonsterDeath } from './monster_death.js';
 import { setMonsterMalign } from './monster_alignment.js';
 import { MONSTER_BODY_META, MONSTER_FLAGS1, MONSTER_GENO, MONSTER_MOVE, MONSTER_SYMBOL, monsterIsMindless, monsterTypeName, } from './monster_data.js';

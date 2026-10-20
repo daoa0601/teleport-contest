@@ -19,7 +19,7 @@ import {
 } from './monster_data.js';
 import { monsterName } from './monster_name.js';
 import { sessionIsNight } from './monster_sound.js';
-import { wakeMonstersNear } from './monster_wake.js';
+import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { wieldMonsterWeapon } from './monster_weapon.js';
 import { redrawMonsterWorm } from './monster_worm.js';
 import { CORPSE } from './object_data.js';
@@ -48,7 +48,7 @@ export async function tameMonster(monster: Monster, source: GameObject | null = 
     const blessedScroll = !!(magic && source?.blessed);
     const food = magic ? null : source;
     if (monster.mfrozen) monster.mfrozen = Math.trunc((monster.mfrozen + 1) / 2);
-    if (monster.msleeping) wakeMonstersNear(monster.mx, monster.my, 1, state);
+    if (monster.msleeping) await wakeMonstersNearWithMessages(monster.mx, monster.my, 1, state);
 
     const speciesFlags = MONSTER_FLAGS3[monster.mnum] ?? 0;
     if (monster.iswiz || monster.mnum === PM_MEDUSA || (speciesFlags & M3_WANTSARTI))

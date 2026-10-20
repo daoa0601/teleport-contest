@@ -24,7 +24,7 @@ import type { MapLocation, Position } from './map_types.js';
 import type { DrawbridgeOptions, DrawbridgeSquare } from './drawbridge_terrain.js';
 import { remove_object } from './floor_object.js';
 import { BOULDER } from './object_data.js';
-import { wakeMonstersNear } from './monster_wake.js';
+import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { stopAllObjectTimers } from './object_timers.js';
 import {
     cansee, vision_note_blocker_change, vision_recalc,
@@ -246,7 +246,7 @@ export async function destroyDrawbridge(x: number, y: number, state = game, opti
         bridgeLocation.typ = under === DB_ICE ? ICE : ROOM;
         bridgeLocation.icedpool = under === DB_ICE ? ICED_MOAT : 0;
     }
-    wakeMonstersNear(x, y, 500, state);
+    await wakeMonstersNearWithMessages(x, y, 500, state);
     wall.location.typ = DOOR;
     wall.location.doormask = D_NODOOR;
     removeTrapAt(bridge.x, bridge.y, state);

@@ -21,7 +21,7 @@ import { makeMonsterFlee } from './monster_flee.js';
 import { monsterName } from './monster_name.js';
 import { monsterHasAcidResistance, monsterHasStoneResistance } from './monster_resistance.js';
 import { petrifyMonsterFromContact } from './monster_stoning.js';
-import { wakeMonstersNear } from './monster_wake.js';
+import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { objectBreaksOnImpact } from './object_breakage.js';
 import {
     ACID_VENOM, BLINDING_VENOM, BOULDER, CLOVE_OF_GARLIC, CORPSE, CREAM_PIE,
@@ -97,7 +97,8 @@ export async function resolveHeroObjectContact(
         const potion = await detachContactPotion(object, state);
         const impact = await hitMonsterWithSupportedPotion({
             state, monster, potion, target, publish, finishKill: finishMonsterDeath,
-            wakeMonster: wakeAttackedMonster, wakeNearby: wakeMonstersNear,
+            wakeMonster: wakeAttackedMonster,
+            wakeNearby: (x, y, distance) => wakeMonstersNearWithMessages(x, y, distance, state, publish),
             resolveVapor: true,
             distance: dist2(state.u.ux, state.u.uy, monster.mx, monster.my),
         });

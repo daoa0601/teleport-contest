@@ -11,7 +11,7 @@ import { finishHeroDeath } from './end.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { blocksDiagonalDoor, heroBadRock, heroLiquidEffects, heroTightDiagonalReason, } from './hack.js';
 import { triggerHeroTrap, triggerHeroTrapAt } from './hero_traps.js';
-import { wakeMonstersNear } from './monster_wake.js';
+import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { angerMonster, wakeMonster } from './monster_anger.js';
 import { monsterWearsTorsoArmor, petrifyMonsterFromContact, } from './monster_stoning.js';
 import { MONSTER_BODY_META, MONSTER_FLAGS1, monsterTypeName, } from './monster_data.js';
@@ -150,8 +150,9 @@ async function hitObstacle(obstacle, x, y, remaining) {
     await plineWithContinuation(obstacle.message);
     if (obstacle.followup)
         await plineWithContinuation(obstacle.followup);
-    await loseImpactHitPoints(rnd(2 + remaining), obstacle.reason);
-    wakeMonstersNear(x, y, 10);
+    if (await loseImpactHitPoints(rnd(2 + remaining), obstacle.reason))
+        return;
+    await wakeMonstersNearWithMessages(x, y, 10);
 }
 function indefiniteName(name) {
     return `${/^[aeiou]/i.test(name) ? 'an' : 'a'} ${name}`;
@@ -179,10 +180,8 @@ async function collideWithMonster(monster, x, y, options) {
             deathVerb: 'turned to stone',
             deathLineShown: true,
         });
-        if (died) {
-            wakeMonstersNear(x, y, 10);
+        if (died)
             return;
-        }
     }
     const form = heroForm();
     if (form !== null && touchPetrifies(form) && !monsterWearsTorsoArmor(monster)) {
@@ -191,7 +190,7 @@ async function collideWithMonster(monster, x, y, options) {
             finishDeath: options.finishMonsterDeath ?? undefined,
         });
     }
-    wakeMonstersNear(x, y, 10);
+    await wakeMonstersNearWithMessages(x, y, 10);
 }
 function anchoredMessage() {
     const type = game.u?.utraptype;

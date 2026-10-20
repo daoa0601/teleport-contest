@@ -17,7 +17,7 @@ import { monsterName } from './monster_name.js';
 import { changeMonsterForm } from './monster_polymorph.js';
 import type { Monster } from './monster_types.js';
 import { monsterIsSlimeproof } from './monster_unslime.js';
-import { wakeMonstersNear } from './monster_wake.js';
+import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { CORPSE } from './object_data.js';
 import { deallocateObject } from './object_delete.js';
 import { petFoodNutrition } from './pet_eating.js';
@@ -52,7 +52,7 @@ export async function applyMonsterDigestionEffect(
     }
 
     if (state.flags.verbose && !heroIsDeaf(state)) await publish('"Burrrrp!"');
-    wakeMonstersNear(attacker.mx, attacker.my, 4, state);
+    await wakeMonstersNearWithMessages(attacker.mx, attacker.my, 4, state, publish);
     const damage = defender.mhp;
     const amulet = wornMonsterLifeSaver(defender);
     if (amulet)

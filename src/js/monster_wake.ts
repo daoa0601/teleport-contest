@@ -29,14 +29,6 @@ function wakeMonster(monster: Monster): void {
         monster.mstrategy = (monster.mstrategy ?? 0) & ~STRAT_WAITMASK;
 }
 
-export function wakeMonstersNear(
-    x: number, y: number, distance: number, state: GameState = game,
-): void {
-    for (const monster of monstersNear(x, y, distance, state))
-        wakeMonster(monster);
-    disturbBuriedZombies(x, y, state);
-}
-
 export async function publishMonsterWake(
     monster: Monster, interesting = false, state: GameState = game,
     publish: MessagePublisher = plineWithContinuation,

@@ -360,7 +360,7 @@ import {
     findMonsterArmorClass,
 } from './monworn.js';
 import { finishHeroMonsterKill, finishHeroMonsterKillOutcome } from './hero_monster_death.js';
-import { wakeMonstersNear } from './monster_wake.js';
+import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import {
     aggravateMonsters, angerAttackedMonster,
     wakeAttackedMonster,
@@ -2076,7 +2076,7 @@ async function kickOuch(x: number, y: number, objectName = '') {
             x = bridge.x;
             y = bridge.y;
         }
-        wakeMonstersNear(x, y, 25);
+        await wakeMonstersNearWithMessages(x, y, 25);
     }
     if (rn2(3) === 0) {
         await woundHeroLegs('right', 5 + rnd(5));
@@ -2171,7 +2171,7 @@ async function kickLiveMonster(monster: Monster, x: number, y: number) {
         else game.context.forcefight = forcefight;
     }
 
-    wakeMonstersNear(
+    await wakeMonstersNearWithMessages(
         game.u.ux, game.u.uy, (game.u?.ulevel ?? 1) * 20,
     );
     wipeHeroEngraving(2);
@@ -2322,7 +2322,7 @@ async function dokick() {
     // dokick() wakes the broad hero-level neighborhood before it dispatches
     // the concrete terrain owner.  kick_ouch() then performs the smaller
     // impact-centered wake after its attribute exercise draws.
-    wakeMonstersNear(
+    await wakeMonstersNearWithMessages(
         game.u.ux, game.u.uy, (game.u?.ulevel ?? 1) * 20,
     );
     wipeHeroEngraving(2);
@@ -6653,7 +6653,7 @@ async function throwCommand(
         objectClass: thrownObjectClass,
         selectedQuantity,
         wakeMonster: wakeAttackedMonster,
-        wakeNearby: wakeMonstersNear,
+        wakeNearby: wakeMonstersNearWithMessages,
         finishKill: (monster: Monster, death?: HeroMonsterKillOptions) => finishOrdinarySwallowedConsumedKill(
             monster, 'swallowed-potion', death,
         ),
@@ -6691,7 +6691,7 @@ async function throwCommand(
         dy,
         captureFlight: captureThrownObjectFlight,
         wakeMonster: wakeAttackedMonster,
-        wakeNearby: wakeMonstersNear,
+        wakeNearby: wakeMonstersNearWithMessages,
         finishKill: finishOrdinaryMapPotionKill,
     })) return;
     if (!game.u?.uswallow && thrownObjectClass === 8)
@@ -6804,7 +6804,7 @@ async function fightEmptyDestination(x: number, y: number): Promise<boolean> {
     await pline(`You ${manner}${explosion ? 'explode at' : 'attack'} ${target}.`);
     endVoluntaryMultiTurn(game);
     if (explosion) {
-        wakeMonstersNear(game.u.ux, game.u.uy, 49, game);
+        await wakeMonstersNearWithMessages(game.u.ux, game.u.uy, 49, game);
         if ((await resolveHeroCombatExplosion(null, explosion, { state: game })).heroDied)
             return true;
         game.u.mh = -1;

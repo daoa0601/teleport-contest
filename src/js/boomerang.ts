@@ -8,7 +8,7 @@ import { hitHeroWithObject } from './hero_object_hit.js';
 import { hitMonsterWithThrownObject } from './hero_ranged_attack.js';
 import { monsterAtPosition } from './monster_location.js';
 import { respondToImmediateMagic } from './monster_magic_response.js';
-import { wakeMonstersNear } from './monster_wake.js';
+import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { propertyIsActive } from './properties.js';
 import { rn2 } from './rng.js';
 import { heroIsDeaf } from './senses.js';
@@ -115,7 +115,7 @@ export async function flyBoomerang(
             await state.animationFrame?.();
             if (location.typ === SINK) {
                 if (!heroIsDeaf(state)) await plineWithContinuation('Klonk!');
-                wakeMonstersNear(x, y, 20, state);
+                await wakeMonstersNearWithMessages(x, y, 20, state);
                 flight.stoppedBy = 'sink';
                 break;
             }

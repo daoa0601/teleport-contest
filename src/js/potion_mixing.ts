@@ -9,7 +9,7 @@ import { holdAnotherObject } from './hero_hold_object.js';
 import { freeInventoryObject, useUpInventoryStack } from './hero_inventory.js';
 import { consumeInventoryItem, inventoryItemDescription } from './invent.js';
 import { mkobj } from './mklev.js';
-import { wakeMonstersNear } from './monster_wake.js';
+import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { tryCallObjectType } from './object_call.js';
 import { deleteObject } from './object_delete.js';
 import { observeObject } from './object_knowledge.js';
@@ -137,7 +137,7 @@ async function mixtureExplodes(object: GameObject, damage: number): Promise<bool
         || !rn2(game.uarmc?.otyp === ALCHEMY_SMOCK ? 30 : 10))) return false;
     object.in_use = true;
     await pline(`${heroIsDeaf() ? '' : 'BOOM!  '}They explode!`);
-    wakeMonstersNear(game.u.ux, game.u.uy, (BOLT_LIM + 1) * (BOLT_LIM + 1));
+    await wakeMonstersNearWithMessages(game.u.ux, game.u.uy, (BOLT_LIM + 1) * (BOLT_LIM + 1));
     await exerciseAttribute(A_STR, false);
     if (heroPotionVaporProfile(game).canReceive) await applySupportedPotionVapor({ potion: object });
     await useUpInventoryStack(object);

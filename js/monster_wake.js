@@ -22,11 +22,6 @@ function wakeMonster(monster) {
     if (!((MONSTER_GENO[monster.mnum] || 0) & G_UNIQ))
         monster.mstrategy = (monster.mstrategy ?? 0) & ~STRAT_WAITMASK;
 }
-export function wakeMonstersNear(x, y, distance, state = game) {
-    for (const monster of monstersNear(x, y, distance, state))
-        wakeMonster(monster);
-    disturbBuriedZombies(x, y, state);
-}
 export async function publishMonsterWake(monster, interesting = false, state = game, publish = plineWithContinuation) {
     requireLiveGame(state);
     if (!monster.msleeping || !canSeeMonster(monster))
