@@ -276,3 +276,23 @@ void test('a life-saved drowning monster escapes without a teleport announcement
     assert.match(topline, /medallion crumbles to dust/);
     assert.doesNotMatch(topline, /vanishes|reappears|appears/);
 });
+
+for (const lava of [false, true]) {
+    void test(`a teleporter in ${lava ? 'lava' : 'water'} on a no-teleport level is told why it cannot escape`, async () => {
+        const level = freshObjectRoom();
+        requirePlayingGame(game);
+        level.flags.noteleport = true;
+        const mechanic = await createMonsterAt('quantum mechanic', 12, 10);
+        level.requireAt(12, 10).typ = lava ? LAVAPOOL : POOL;
+        const messages: string[] = [];
+
+        await resolveMonsterLiquid(mechanic, game, {
+            finishDeath: finishMonsterLiquidDeath,
+            announce: async message => messages.push(message),
+        });
+
+        assert.equal(messages[0], 'A mysterious force prevents the quantum mechanic from teleporting!');
+        assert.match(messages[1] ?? '', lava ? /burns to a crisp/ : /drowns/);
+        assert.equal(mechanic.dead, true);
+    });
+}

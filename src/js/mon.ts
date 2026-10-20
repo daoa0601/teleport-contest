@@ -31,7 +31,7 @@ import {
 } from './object_timers.js';
 import { d, rn2, rnd } from './rng.js';
 import { dealWithMonsterOvercrowding, randomMonsterRelocation } from './teleport.js';
-import { monsterTeleportRestricted } from './teleport_rules.js';
+import { reportMonsterTeleportRestriction } from './teleport_rules.js';
 import { fireDamageChain } from './fire_damage.js';
 import { waterDamageChain } from './trap.js';
 import { cansee } from './vision.js';
@@ -320,7 +320,8 @@ export async function resolveMonsterLiquid<DeathResult = MonsterLiquidDeathResul
         } else if (reaction.kind === 'drown') {
             const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
             if ((flags & M1_TPORT)
-                && !monsterTeleportRestricted(monster, state)) {
+                // tele_restrict() reports the blocked escape.
+                && !await reportMonsterTeleportRestriction(monster, { state, publish: announce })) {
                 const relocation = await randomMonsterRelocation(monster, {
                     state, calls, random, rollOne, flags: RLOC_MSG,
                 });
@@ -357,7 +358,8 @@ export async function resolveMonsterLiquid<DeathResult = MonsterLiquidDeathResul
         if (lava && lava.kind !== 'safe') {
             const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
             if ((flags & M1_TPORT)
-                && !monsterTeleportRestricted(monster, state)) {
+                // tele_restrict() reports the blocked escape.
+                && !await reportMonsterTeleportRestriction(monster, { state, publish: announce })) {
                 const relocation = await randomMonsterRelocation(monster, {
                     state, calls, random, rollOne, flags: RLOC_MSG,
                 });
