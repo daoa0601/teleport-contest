@@ -147,6 +147,14 @@ export function staggerVerb(mnum: number): string {
     return 'staggers';
 }
 
+// C trap.c:minstapetrify(mon, TRUE) kills through xkilled(XKILL_NOMSG);
+// petrifyMonsterImmediately() has already recorded the kill conduct.
+function silentHeroStoning(finishMonsterDeath: HurtleDeathHandler): HurtleDeathHandler {
+    return (monster, death = {}) => finishMonsterDeath(monster, {
+        ...death, showKillMessage: false, recordConduct: false,
+    });
+}
+
 async function hurtleOneSquare(monster: Monster, dx: number, dy: number, {
     state,
     announce,
@@ -167,19 +175,26 @@ async function hurtleOneSquare(monster: Monster, dx: number, dy: number, {
                 await announce(`${monsterName(monster, { state, capitalized: true })} bumps into ${monsterName(occupant, { state, article: 'a' })}.`);
             }
             await awakenMonster(occupant, { attacked: !monsterMoving });
-            const contact = { publish: announce, finishDeath: finishMonsterDeath, creditHero: !monsterMoving };
-            if (touchPetrifies(occupant.mnum) && !monsterWearsTorsoArmor(monster))
+            const contact = monsterMoving
+                ? { publish: announce, finishDeath: finishMonsterDeath }
+                : { publish: announce, finishDeath: silentHeroStoning(finishMonsterDeath), creditHero: true };
+            if (touchPetrifies(occupant.mnum) && !monsterWearsTorsoArmor(monster)) {
                 await petrifyMonsterImmediately(monster, contact);
-            if (touchPetrifies(monster.mnum) && !monsterWearsTorsoArmor(occupant))
+                newsym(monster.mx, monster.my);
+            }
+            if (touchPetrifies(monster.mnum) && !monsterWearsTorsoArmor(occupant)) {
                 await petrifyMonsterImmediately(occupant, contact);
+                newsym(occupant.mx, occupant.my);
+            }
         } else if (nextX === state.u.ux && nextY === state.u.uy) {
             // C Some_Monnam(): an unseen hurtler is "Someone" or "Something".
             await announce(`${monsterName(monster, { state, capitalized: true, augmentIt: true })} bumps into you.`);
             await stopHeroOccupation(state, announce);
             if (touchPetrifies(state.u.umonnum) && !monsterWearsTorsoArmor(monster)) {
                 await petrifyMonsterImmediately(monster, {
-                    publish: announce, finishDeath: finishMonsterDeath, creditHero: true,
+                    publish: announce, finishDeath: silentHeroStoning(finishMonsterDeath), creditHero: true,
                 });
+                newsym(monster.mx, monster.my);
             }
             const torsoArmor = state.inventory.some(object => (object.owornmask ?? 0) & (W_ARM | W_ARMC | W_ARMU));
             if (touchPetrifies(monster.mnum) && !torsoArmor) {
