@@ -194,13 +194,11 @@ export async function continueVaultGuardArrival(state: GameState = game) {
         if (heroIsBlind(state)) await publishHeardMessage(description, plineWithContinuation, state);
         else await plineWithContinuation(formatSeenMessage(description, state));
     }
-    newsym(entry.x, entry.y);
-    await redrawMap();
-    await bot();
 
     const spotted = canSpotMonster(guard);
     await plineWithContinuation(spotted ? "Suddenly one of the Vault's guards enters!" : 'Someone else has entered the Vault.');
-    if (!spotted) map_invisible(entry.x, entry.y);
+    if (spotted) newsym(guard.mx, guard.my);
+    else map_invisible(entry.x, entry.y);
     const deaf = heroIsDeaf(state), blind = heroIsBlind(state);
     const name = () => monsterName(guard, { state, capitalized: true, suppressIt: true });
     if (state.u.uswallow) {
