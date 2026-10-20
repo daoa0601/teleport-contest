@@ -20,10 +20,11 @@ import {
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import {
-    AMULET_OF_LIFE_SAVING, APPLE, FOOD_RATION, OBJECT_NAMES,
+    AMULET_OF_LIFE_SAVING, APPLE, FOOD_RATION, HEAVY_IRON_BALL, OBJECT_NAMES,
 } from '../js/object_data.js';
 import { polymonHero } from '../js/polyself.js';
 import { initRng } from '../js/rng.js';
+import { inventoryWeight, weightCapacity } from '../js/weight.js';
 import { startRun } from '../js/runmode.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { continueVaultGuardArrival, maintainVaultResidence } from '../js/vault.js';
@@ -199,6 +200,34 @@ void test('an initially full eater can decline more bites when the fullness warn
     assert.ok(food.oeaten != null);
     assert.ok(food.oeaten > 0);
     assert.match(game._lastPlineMessage, /stop eating/);
+});
+
+void test('rotten food keeps its pre-meal weight until the meal records it', async () => {
+    freshObjectRoom({ hero: { uhunger: 1450, uhs: SATIATED } });
+    requireFixtureGame(game);
+    initRng(1n);
+    // Cursed food is rotten; its first bite halves the remaining nutrition.
+    const food = await addInventoryObject(FOOD_RATION, { age: game.moves, cursed: true });
+    // A fixed-weight load leaves the hero two units over capacity.
+    await addInventoryObject(HEAVY_IRON_BALL, { owt: weightCapacity(game) - inventoryWeight(game) + 2 });
+    const input = acknowledgeMessages();
+    assert.ok(food.invlet);
+    input.feed(food.invlet);
+    let statusAtPrompt = '';
+    input.beforeRead = () => {
+        const screen = requireGameDisplay().grid.map(row => row.map(cell => cell.ch).join('')).join('\n');
+        if (screen.includes('--More--')) input.feed(' ');
+        else if ((game._pending_message || '').includes('Continue eating?')) {
+            statusAtPrompt = _statusLine2();
+            input.feed('n');
+        }
+    };
+
+    await rhack('e'.charCodeAt(0));
+    await continueCountedCommand();
+
+    assert.match(statusAtPrompt, /Burdened/);
+    assert.doesNotMatch(_statusLine2(), /Burdened/);
 });
 
 void test('a breathless hero survives choking through the shared vomiting owner', async () => {

@@ -126,6 +126,10 @@ export function inventoryWeight(state: GameState): number {
         if (object.oclass === 12)
             return total + Math.trunc((quantity(object) + 50) / 100);
         if (object.otyp === BOULDER && throwsRocks) return total;
+        // C inv_weight() reads owt.  A partly eaten meal's owt is refreshed
+        // only at eat.c:recalc_wt() checkpoints, not after every bite.
+        if (object.oclass === 7 && (object.oeaten ?? 0) > 0 && object.owt !== undefined)
+            return total + object.owt;
         return total + objectWeight(object);
     }, 0);
     return objectWeightTotal;
