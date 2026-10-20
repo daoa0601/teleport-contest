@@ -13,6 +13,7 @@ import { inventoryItemDescription } from './invent.js';
 import { reassignInventoryLetters } from './inventory_prompt.js';
 import { unlinkObject } from './object_location.js';
 import { observeObject } from './object_knowledge.js';
+import { observeObjectForNaming } from './objnam.js';
 import { objectQuantity, splitObjectStack } from './object_stack.js';
 import { isMissileObject } from './object_properties.js';
 import { ammunitionMatchesLauncher } from './weapon_type.js';
@@ -115,6 +116,9 @@ function heldInventoryMessage(object, count, prefix, state) {
     const total = objectQuantity(object);
     const merged = count > 0 && count < total;
     const savedQuantity = object.quantity;
+    // C prinv() formats with doname(), whose xname() records what the hero
+    // sees (a cleric learns beatitude) before the knowledge fields are read.
+    observeObjectForNaming(object, { state });
     let description;
     object.quan = count || total;
     object.quantity = object.quan;

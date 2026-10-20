@@ -36,6 +36,16 @@ void test('a caught object announces its inventory letter after the catch prefix
     assert.equal(await displayedMessage(), 'You catch the dagger! a - a dagger.');
 });
 
+void test('a priest sees the beatitude of a caught object', async () => {
+    freshObjectRoom({ role: 'priest', gameplaySeed: 97n });
+    installPagerInput(resetInputState(), { expected: /You catch/, limit: 4 });
+    const dagger = await knownObject(DAGGER, { known: false, bknown: false, cursed: true, spe: 0 });
+
+    await holdAnotherObject(dagger, { holdMessage: 'You catch the dagger!' });
+
+    assert.match(await displayedMessage(), /^You catch the dagger! . - a cursed dagger\.$/);
+});
+
 void test('successful acquisition with only a drop message prints an ordinary inventory line', async () => {
     holdingRoom();
     const dagger = await knownObject(DAGGER, { known: false, bknown: false, spe: 0 });
