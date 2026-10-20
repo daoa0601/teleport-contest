@@ -34,7 +34,11 @@ export function wizardTrapRequest(parsed) {
         parsed.directType = bear ? BEARTRAP : LAND_MINE;
         return null;
     }
-    return parsed.trapped === 'trapped' || suffix ? bear ? BEAR_TRAP : LANDMINE : null;
+    if (parsed.trapped !== 'trapped' && !suffix)
+        return null;
+    const type = bear ? BEAR_TRAP : LANDMINE;
+    parsed.name = trapName(type, { ignoreHallucination: true });
+    return type;
 }
 export async function wishForWizardTrap(type) {
     const { ux: x, uy: y } = game.u;

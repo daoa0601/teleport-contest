@@ -1,3 +1,4 @@
+import { trapName } from './trap_name.js';
 import { formatFeltMessage, publishHeardMessage } from './hero_speech.js';
 import { heroIsDeaf } from './senses.js';
 import { propertyIsActive } from './properties.js';
@@ -932,17 +933,6 @@ function removeTrap(trap: Trap, state: ShopGameState): void {
     if (caught?.mtrapped) caught.mtrapped = 0;
 }
 
-function trapName(trap: Trap): string {
-    switch (trap.ttyp) {
-    case LANDMINE: return 'land mine';
-    case BEAR_TRAP: return 'bear trap';
-    case PIT: return 'pit';
-    case SPIKED_PIT: return 'spiked pit';
-    case HOLE: return 'hole';
-    default: return 'trap';
-    }
-}
-
 function closedDoor(state: ShopGameState, x: number, y: number): boolean {
     const location = state.level.at(x, y);
     return location?.typ === DOOR
@@ -1100,7 +1090,7 @@ export async function repairShopDamage(
                         ? 'a land mine' : 'a bear trap';
                     await pline(`${shopkeeperName(keeper, { state, capitalized: true })} untraps ${noun}.`);
                 } else if (trap.tseen && cansee(trap.tx, trap.ty)) {
-                    await pline(`The ${trapName(trap)} vanishes.`);
+                    await pline(`The ${trapName(trap.ttyp, { ignoreHallucination: true, state })} vanishes.`);
                 }
             }
             await linkObjectToMonsterInventory(keeper, object, { state });
@@ -1111,12 +1101,12 @@ export async function repairShopDamage(
         case SPIKED_PIT:
             if (!catchup && trap.tseen
                 && cansee(trap.tx, trap.ty))
-                await pline(`The ${trapName(trap)} is filled in.`);
+                await pline(`The ${trapName(trap.ttyp, { ignoreHallucination: true, state })} is filled in.`);
             break;
         default:
             if (!catchup && trap.tseen
                 && cansee(trap.tx, trap.ty))
-                await pline(`The ${trapName(trap)} vanishes.`);
+                await pline(`The ${trapName(trap.ttyp, { ignoreHallucination: true, state })} vanishes.`);
             break;
         }
         removeTrap(trap, state);

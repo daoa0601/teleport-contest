@@ -1,3 +1,4 @@
+import { trapName } from './trap_name.js';
 import { formatFeltMessage, publishHeardMessage } from './hero_speech.js';
 import { heroIsDeaf } from './senses.js';
 import { propertyIsActive } from './properties.js';
@@ -841,16 +842,6 @@ function removeTrap(trap, state) {
     if (caught?.mtrapped)
         caught.mtrapped = 0;
 }
-function trapName(trap) {
-    switch (trap.ttyp) {
-        case LANDMINE: return 'land mine';
-        case BEAR_TRAP: return 'bear trap';
-        case PIT: return 'pit';
-        case SPIKED_PIT: return 'spiked pit';
-        case HOLE: return 'hole';
-        default: return 'trap';
-    }
-}
 function closedDoor(state, x, y) {
     const location = state.level.at(x, y);
     return location?.typ === DOOR
@@ -994,7 +985,7 @@ export async function repairShopDamage(keeper, record, { catchup = false, state 
                         await pline(`${shopkeeperName(keeper, { state, capitalized: true })} untraps ${noun}.`);
                     }
                     else if (trap.tseen && cansee(trap.tx, trap.ty)) {
-                        await pline(`The ${trapName(trap)} vanishes.`);
+                        await pline(`The ${trapName(trap.ttyp, { ignoreHallucination: true, state })} vanishes.`);
                     }
                 }
                 await linkObjectToMonsterInventory(keeper, object, { state });
@@ -1005,12 +996,12 @@ export async function repairShopDamage(keeper, record, { catchup = false, state 
             case SPIKED_PIT:
                 if (!catchup && trap.tseen
                     && cansee(trap.tx, trap.ty))
-                    await pline(`The ${trapName(trap)} is filled in.`);
+                    await pline(`The ${trapName(trap.ttyp, { ignoreHallucination: true, state })} is filled in.`);
                 break;
             default:
                 if (!catchup && trap.tseen
                     && cansee(trap.tx, trap.ty))
-                    await pline(`The ${trapName(trap)} vanishes.`);
+                    await pline(`The ${trapName(trap.ttyp, { ignoreHallucination: true, state })} vanishes.`);
                 break;
         }
         removeTrap(trap, state);

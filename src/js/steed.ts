@@ -1,3 +1,4 @@
+import { trapName } from './trap_name.js';
 import { reportHeroEncumbrance } from './encumbrance.js';
 import { heroLocomotion } from './hero_locomotion.js';
 // steed.js — Saddling, mounting, riding, and dismounting.
@@ -10,7 +11,7 @@ import {
     DISMOUNT_ENGULFED, DISMOUNT_FELL, DISMOUNT_KNOCKED, DISMOUNT_POLY, DISMOUNT_THROWN,
     DOOR, IRONBARS, IS_OBSTRUCTED, LAVAWALL, MGIVENNAME, M_AP_FURNITURE, M_AP_OBJECT,
     M_AP_TYPMASK, NO_KILLER_PREFIX, P_RIDING, A_CHA, A_DEX, A_WIS, P_BASIC, P_SKILLED, P_EXPERT,
-    TRAP_EXPLANATIONS, TT_BEARTRAP, TT_PIT, TT_WEB, Upolyd, VIBRATING_SQUARE,
+    TT_BEARTRAP, TT_PIT, TT_WEB, Upolyd, VIBRATING_SQUARE,
     W_SADDLE, isok,
 } from './const.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
@@ -388,10 +389,8 @@ async function mountSteed(steed: Monster | undefined, force: boolean, [dx, dy]: 
     if (steed.mtrapped) {
         const trap = game.level.traps.find(trap =>
             trap.tx === steed.mx && trap.ty === steed.my);
-        const trapName = trap ? TRAP_EXPLANATIONS[trap.ttyp] : undefined;
-        if (!trapName) throw new Error('A trapped steed has no trap at its position.');
-        const article = /^[aeiou]/i.test(trapName) ? 'an' : 'a';
-        await pline(`You can't mount ${monsterName(steed)} while ${monsterSubjectPronoun(steed)}'s trapped in ${article} ${trapName}.`);
+        if (!trap) throw new Error('A trapped steed has no trap at its position.');
+        await pline(`You can't mount ${monsterName(steed)} while ${monsterSubjectPronoun(steed)}'s trapped in ${withIndefiniteArticle(trapName(trap.ttyp))}.`);
         return false;
     }
     if (!force && game.urole.key !== 'knight') {

@@ -1,3 +1,4 @@
+import { trapName } from './trap_name.js';
 // Downward digging: viability checks and the terrain a finished dig creates.
 // C refs: dig.c dig_check(), digcheck_fail_message(), dighole(),
 // digactualhole(), liquid_flow(), dig_up_grave(), and the shared furniture
@@ -478,7 +479,7 @@ export async function digActualHole(
     if (cansee(x, y)) seeTrap(trap, state);
     else if (madeByYou) feelTrap(trap, state);
 
-    const trapWord = ttyp === HOLE ? 'hole' : 'pit';
+    const trapWord = trapName(ttyp, { ignoreHallucination: true, state });
     const through = ttyp === HOLE ? 'through' : 'in';
     if (madeByYou) {
         if (!atYou) {

@@ -48,7 +48,6 @@ export async function petRefusesHeroSwap(monster: Monster, state: PlayingGameSta
     const boulder = state.level.objects[x]?.[y]?.some(object => object.otyp === BOULDER);
     if (trap && is_pit(trap.ttyp) && boulder) return true;
 
-    const subject = monsterName(monster, { state, article: 'your', capitalized: true });
     const diagonal = hero.ux0 !== x && hero.uy0 !== y;
     let reason: string | null = null;
     if (diagonal && MONSTER_NAME[monster.mnum] === 'grid bug') {
@@ -65,7 +64,7 @@ export async function petRefusesHeroSwap(monster: Monster, state: PlayingGameSta
         if (!trap.tseen) {
             feelTrap(trap, state);
         }
-        await plineWithContinuation(`You stop.  ${subject} can't move out of ${which}.`);
+        await plineWithContinuation(`You stop.  ${monsterName(monster, { state, article: 'your', capitalized: true })} can't move out of ${which}.`);
         if (state.flags.tips !== false && !((state.context.tips ?? 0) & TIP_UNTRAP_MON)) {
             state.context.tips = (state.context.tips ?? 0) | TIP_UNTRAP_MON;
             await plineWithContinuation('(Tip: perhaps #untrap would help?)');
@@ -80,7 +79,7 @@ export async function petRefusesHeroSwap(monster: Monster, state: PlayingGameSta
         reason = "doesn't want to swap places";
     }
     if (!reason) return false;
-    await plineWithContinuation(`You stop.  ${subject} ${reason}.`);
+    await plineWithContinuation(`You stop.  ${monsterName(monster, { state, article: 'your', capitalized: true })} ${reason}.`);
     return true;
 }
 
