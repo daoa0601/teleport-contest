@@ -60,14 +60,25 @@ export function recorderLocalEpochSeconds(datetime: string | null | undefined): 
 // t; restore.c reads that text back through time_from_yyyymmddhhmmss(), which
 // applies the current offset.  A time saved across a DST boundary shifts.
 export function recorderRestoredTime(epoch: number): number {
-    const parts = new Map<string, string>(new Intl.DateTimeFormat('en-US', {
+    const instant = new Date(epoch * 1000);
+    if (Number.isNaN(instant.getTime())) throw new RangeError(`Unrepresentable time ${epoch}`);
+    const parts = new Map<string, number>(new Intl.DateTimeFormat('en-US', {
         timeZone: 'America/New_York', hourCycle: 'h23',
         year: 'numeric', month: '2-digit', day: '2-digit',
         hour: '2-digit', minute: '2-digit', second: '2-digit',
-    }).formatToParts(new Date(epoch * 1000))
+    }).formatToParts(instant)
         .filter(part => part.type !== 'literal')
-        .map(part => [part.type, part.value]));
-    const text = ['year', 'month', 'day', 'hour', 'minute', 'second']
-        .map(name => parts.get(name) ?? '').join('');
-    return recorderLocalEpochSeconds(text) || epoch;
+        .map(part => [part.type, Number(part.value)]));
+    const field = (name: string): number => {
+        const value = parts.get(name);
+        if (value === undefined) throw new Error(`Local time formatter omitted ${name}`);
+        return value;
+    };
+    // yyyymmddhhmmss() reads a tm_year below 70 as a two-digit year.
+    const tmYear = field('year') - 1900;
+    const year = tmYear < 70 ? tmYear + 2000 : tmYear + 1900;
+    const text = [String(year).padStart(4, '0'),
+        ...['month', 'day', 'hour', 'minute', 'second'].map(name => String(field(name)).padStart(2, '0'))]
+        .join('');
+    return recorderLocalEpochSeconds(text);
 }

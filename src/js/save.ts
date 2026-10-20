@@ -206,10 +206,11 @@ export function restoreGame(
             return false;
         requireInitializedHero(snapshot.state.u);
         restoreSavedMonsters(snapshot.state);
-        restorePersistentState(game, snapshot.state);
         // C restgamestate() reads ubirthday back from its local-time text.
-        if (game.ubirthday !== undefined)
-            game.ubirthday = recorderRestoredTime(game.ubirthday);
+        const birthday = snapshot.state.ubirthday === undefined
+            ? undefined : recorderRestoredTime(snapshot.state.ubirthday);
+        restorePersistentState(game, snapshot.state);
+        if (birthday !== undefined) game.ubirthday = birthday;
         resetRestoredInstanceState();
         resetErinys(game.u.ualign?.abuse ?? 0);
         resolveDungeonIdentities(game);
