@@ -254,6 +254,28 @@ for (const { owner, field, minimumInvalid } of speciesFields) {
         });
     }
 }
+for (const invalid of [1, 16]) {
+    void test(`restore rejects a hero form light radius of ${invalid}`, async () => {
+        freshObjectRoom({ moves: 73 });
+        requirePlayingGame(game);
+        const hero = game.u;
+        game.plname = 'FormLight';
+        const storage = memoryStorage();
+        assert.equal(await saveGame(storage), true);
+        const key = 'teleport-save:formlight';
+        const encoded = storage.getItem(key);
+        assert.ok(encoded);
+        const saved = decodeSavedGraph(encoded);
+        assert.ok(isSavedRecord(saved) && isSavedRecord(saved.state));
+        const record = saved.state.u;
+        assert.ok(isSavedRecord(record));
+        record.formLightRange = invalid;
+        storage.setItem(key, encodeSavedGraph(saved));
+        assert.equal(restoreGame('FormLight', storage), false);
+        assert.equal(game.u, hero);
+        assert.equal(game.moves, 73);
+    });
+}
 for (const species of [0, MONSTER_NAME.length - 1]) {
     void test(`restore accepts hero species endpoint ${species} and absent lycanthropy and shapechanger sentinels`, async () => {
         freshObjectRoom();

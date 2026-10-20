@@ -156,7 +156,7 @@ export function validSavedHero(value, entities) {
         tx: optional(integer),
         ty: optional(integer),
         uinvault: optional(integer),
-        formLightRange: optional(integer),
+        formLightRange: optional(oneOf(2)),
         usleep: optional(integer),
         uinvulnerable: optional(heroFlag),
         ucreamed: optional(integer),

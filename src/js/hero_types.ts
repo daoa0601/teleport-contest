@@ -244,7 +244,7 @@ export interface Hero extends HeroCoordinates, HeroPropertyState,
     ty?: number;
     uinvault?: number;
     // Radius of the LS_MONSTER light source polyself() attaches to the hero.
-    formLightRange?: number;
+    formLightRange?: 2;
     usleep?: number;
     uinvulnerable?: boolean | 0 | 1;
     ucreamed?: number;
