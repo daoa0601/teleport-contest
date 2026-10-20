@@ -6,7 +6,7 @@ import { formatFeltMessage } from './hero_speech.js';
 import { nomul, setMulti } from './command_state.js';
 import { heroHasWaterWalking } from './armor.js';
 import { beginBallAndChainMove, finishBallAndChainMove, heroIsPunished, } from './ball.js';
-import { D_CLOSED, D_ISOPEN, D_LOCKED, DOOR, FIRE_TRAP, IRONBARS, IS_OBSTRUCTED, Is_waterlevel, MAGIC_PORTAL, TREE, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_WEB, Upolyd, VIBRATING_SQUARE, W_NONPASSWALL, is_hole, is_pit, isok, } from './const.js';
+import { D_CLOSED, D_ISOPEN, D_LOCKED, DOOR, FIRE_TRAP, IRONBARS, IS_OBSTRUCTED, Is_waterlevel, KILLED_BY, MAGIC_PORTAL, TREE, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_WEB, Upolyd, VIBRATING_SQUARE, W_NONPASSWALL, is_hole, is_pit, isok, } from './const.js';
 import { canSpotMonster, flush_screen, glyphAt, map_invisible, newsym, plineWithContinuation, } from './display.js';
 import { heroTestMove } from './cmd.js';
 import { finishHeroDeath } from './end.js';
@@ -79,10 +79,11 @@ function obstacleReason(location, openDoorFrame) {
         return 'bumping into a closed door';
     return 'bumping into a wall';
 }
+// C dothrow.c:hurtle_step() losehp(..., why, KILLED_BY): "killed by bumping into a wall".
 async function loseImpactHitPoints(amount, killer) {
     if (game.u.halfPhysicalDamage)
         amount = Math.trunc((amount + 1) / 2);
-    return loseHeroHp(amount, killer);
+    return loseHeroHp(amount, killer, { killerFormat: KILLED_BY });
 }
 function obstacleAt(x, y) {
     const hero = game.u;

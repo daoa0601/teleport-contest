@@ -9,6 +9,7 @@ import { freshConnectedLevels } from './support/connected-levels.js';
 import { rhack } from '../js/cmd.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { hitHeroWithObject } from '../js/hero_object_hit.js';
+import { hurtleHero } from '../js/hero_hurtle.js';
 import { triggerHeroTrap } from '../js/hero_traps.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { ARROW, BAG_OF_HOLDING, BOULDER, CLUB, CORPSE, DART, GRAPPLING_HOOK, SCR_FIRE, WAN_STRIKING } from '../js/object_data.js';
@@ -78,6 +79,13 @@ void test('a fatal grappling mishap keeps its already supplied article', async (
     await applyInventoryObject(hook, 'll.' + ' '.repeat(100));
     assert.equal(game.program_state.gameover, true);
     assert.equal(loadScoreRecords()[0]?.death, 'killed by a grappling hook');
+});
+void test('a hero hurtled into a wall is killed by bumping into it without an article', async () => {
+    lowHitPointRoom();
+    pushKeys(' '.repeat(100));
+    await hurtleHero(-1, 0, 30);
+    assert.equal(game.program_state.gameover, true);
+    assert.match(loadScoreRecords()[0]?.death ?? '', /^killed by bumping into a wall\b/);
 });
 void test('sitting in lava kills a hero who cannot spare the burn', async () => {
     const level = lowHitPointRoom();
