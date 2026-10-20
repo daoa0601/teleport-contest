@@ -11,7 +11,7 @@ import {
 } from './ball.js';
 import {
     D_CLOSED, D_ISOPEN, D_LOCKED, DOOR, FIRE_TRAP, IRONBARS,
-    IS_OBSTRUCTED, Is_waterlevel,
+    IS_OBSTRUCTED, Is_waterlevel, KILLED_BY,
     MAGIC_PORTAL, TREE,
     TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_WEB, Upolyd,
     VIBRATING_SQUARE, W_NONPASSWALL,
@@ -143,10 +143,11 @@ function obstacleReason(location: MapLocation, openDoorFrame: boolean): string {
     return 'bumping into a wall';
 }
 
+// C dothrow.c:hurtle_step() losehp(..., why, KILLED_BY): "killed by bumping into a wall".
 async function loseImpactHitPoints(amount: number, killer: string) {
     if (game.u.halfPhysicalDamage)
         amount = Math.trunc((amount + 1) / 2);
-    return loseHeroHp(amount, killer);
+    return loseHeroHp(amount, killer, { killerFormat: KILLED_BY });
 }
 
 function obstacleAt(x: number, y: number): HurtleObstacle | null {
