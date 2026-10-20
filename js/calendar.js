@@ -15,6 +15,30 @@ export function recorderIsLeapDay(datetime) {
     return parts.some(part => part.type === 'month' && part.value === '02')
         && parts.some(part => part.type === 'day' && part.value === '29');
 }
+// C calendar.c:getlt(): localtime(getnow()).  getnow() inherits the current
+// New York DST offset, while localtime() applies the fixed date's own offset,
+// so a time near midnight can fall on the neighboring calendar day.
+export function recorderLocalDate(datetime) {
+    const epoch = recorderLocalEpochSeconds(datetime);
+    if (!epoch)
+        return null;
+    const parts = new Map(new Intl.DateTimeFormat('en-US', {
+        timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit',
+        weekday: 'short',
+    }).formatToParts(new Date(epoch * 1000))
+        .filter(part => part.type !== 'literal')
+        .map(part => [part.type, part.value]));
+    const field = (name) => {
+        const value = parts.get(name);
+        if (value === undefined)
+            throw new Error(`Local time formatter omitted ${name}`);
+        return value;
+    };
+    return {
+        year: Number(field('year')), month: Number(field('month')), day: Number(field('day')),
+        weekday: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].indexOf(field('weekday')),
+    };
+}
 export function recorderLocalEpochSeconds(datetime) {
     if (!datetime || !/^\d{14}$/.test(datetime))
         return 0;
