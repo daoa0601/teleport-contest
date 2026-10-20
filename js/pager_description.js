@@ -10,7 +10,7 @@ import { MAP_SYMBOLS } from './map_symbols.js';
 import { MONSTER_CLASS_EXPLAIN, MONSTER_CLASS_SYMBOLS } from './monster_data.js';
 import { OBJECT_CLASS_EXPLAIN, OBJECT_CLASS_SYMBOLS } from './object_knowledge.js';
 import { withIndefiniteArticle } from './object_grammar.js';
-import { quotedEngraving, lookGlyphAt } from './pager_features.js';
+import { quotedEngraving, lookGlyphAt, unseenCreatureDescription } from './pager_features.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 // encglyph() occupies ten bytes in the native buffer, followed by eight spaces.
 const ENCODED_LOOK_PREFIX_LENGTH = 10 + 8;
@@ -86,7 +86,7 @@ export function screenDescription(x, y, description) {
         }
     }
     if (sameSymbol({ ch: 'I' })) {
-        const name = heroIsBlind(game) ? 'unseen creature' : 'remembered, unseen, creature';
+        const name = unseenCreatureDescription();
         append(withIndefiniteArticle(name), name);
     }
     if (glyph.kind === 'nothing' || sameSymbol({ ch: ' ' }))
