@@ -144,7 +144,7 @@ import { nameIndividualObject } from './individual_naming.js';
 import { nameChosenMonster } from './monster_naming_command.js';
 import { nameFloorObject } from './floor_naming.js';
 import { chooseNamingCategory } from './naming_categories.js';
-import { displayLiquidName, displayMessageWindow, newsym, feel_newsym, flushPendingTopline, flush_screen, pline, plineWithContinuation, moreUntilDismissed, docrt, bot, terrain_glyph, glyphAt, canSeeMonster, canSpotMonster, canSenseMonster, canSpotHeroSelf, unblindTelepathyRange, monsterHasWarningProjection, show_glyph_cell, swallowed, randomDisplayMonsterName, randomDisplayMonsterSubject, see_monsters, see_objects, see_traps, map_invisible, unmap_invisible, map_object, unmapObject, } from './display.js';
+import { displayLiquidName, displayMessageWindow, newsym, feel_newsym, flushPendingTopline, flush_screen, pline, plineWithContinuation, moreUntilDismissed, docrt, bot, terrain_glyph, glyphAt, canSeeMonster, canSpotMonster, canSenseMonster, canSpotHeroSelf, unblindTelepathyRange, monsterHasWarningProjection, show_glyph_cell, swallowed, transientMonsterGlyph, randomDisplayMonsterName, randomDisplayMonsterSubject, see_monsters, see_objects, see_traps, map_invisible, unmap_invisible, map_object, unmapObject, } from './display.js';
 import { cansee, couldsee, vision_note_blocker_change, vision_recalc, vision_reset } from './vision.js';
 import { transformMagicLampToOilLamp } from './light.js';
 import { dozap, } from './zap.js';
@@ -4632,7 +4632,14 @@ function farlookDescribesHero(x, y) {
         && (!game.iflags.terrainmode || !!(game.iflags.terrainmode & TER_MON));
 }
 export async function farlookLocationDescription(x, y) {
-    if (farlookDescribesHero(x, y))
+    // Detection temporarily removes swallowing. Native lookat() compares
+    // the engulfer's glyph before deciding that this square describes us,
+    // even when the terrain mode will subsequently omit monsters.
+    const engulfer = x === game.u.ux && y === game.u.uy && canSpotHeroSelf()
+        && game.iflags.save_uswallow ? game.u.ustuck : null;
+    const describesEngulfer = engulfer
+        && glyphAt(x, y)?.glyph === transientMonsterGlyph(engulfer).glyph;
+    if (!describesEngulfer && farlookDescribesHero(x, y))
         return wizardPositionDescription(x, y);
     if (game.u.uswallow && game.u.ustuck)
         return `interior of ${monsterName(game.u.ustuck)}`;

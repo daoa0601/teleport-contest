@@ -1,7 +1,7 @@
 // C detect.c:unconstrain_map(), browse_map(), map_monst(), map_redisplay().
 import { COLNO, ROWNO, TER_MAP, TER_MON, TER_OBJ, TER_TRP, TRAP_EXPLANATIONS } from './const.js';
 import { farlookLocationDescription } from './cmd.js';
-import { cls, docrt, flush_screen, glyphAt, plineWithContinuation, show_glyph_cell, transientMonsterGlyph, } from './display.js';
+import { canSpotHeroSelf, cls, docrt, flush_screen, glyphAt, plineWithContinuation, show_glyph_cell, transientMonsterGlyph, } from './display.js';
 import { game } from './gstate.js';
 import { selectMapPosition, showGetposInstructions, showGetposTip } from './getpos.js';
 import { MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
@@ -14,12 +14,14 @@ const LONG_WORM_TAIL = MONSTER_NAME.indexOf('long worm tail');
 export function unconstrainMap(state = game) {
     const saved = { uinwater: state.u.uinwater, uburied: state.u.uburied,
         uswallow: state.u.uswallow, underwater: state.underwater };
+    state.iflags.save_uswallow = !!saved.uswallow;
     state.u.uinwater = state.u.uburied = state.u.uswallow = 0;
     state.underwater = false;
     return { saved, changed: !!(saved.uinwater || saved.underwater
             || saved.uburied || saved.uswallow) };
 }
 export function reconstrainMap({ saved }, state = game) {
+    state.iflags.save_uswallow = false;
     if (saved.uinwater === undefined)
         delete state.u.uinwater;
     else
@@ -64,6 +66,10 @@ export function mapDetectedMonster(monster, showTail, state = game) {
 }
 async function detectionDescription(x, y, terrainMode, objects, state) {
     const glyph = glyphAt(x, y, state);
+    if (state.iflags.save_uswallow && x === state.u.ux && y === state.u.uy
+        && canSpotHeroSelf() && (glyph?.kind === 'monster'
+        || glyph?.kind === 'object' || glyph?.kind === 'trap'))
+        return farlookLocationDescription(x, y);
     if (glyph?.kind === 'invisible')
         return 'unseen creature';
     if (glyph?.kind === 'object' && (terrainMode & TER_OBJ)) {
@@ -73,8 +79,6 @@ async function detectionDescription(x, y, terrainMode, objects, state) {
             oclass: objectClassForType(glyph.otyp), quan: 1, quantity: 1 });
     }
     if (glyph?.kind === 'monster' && (terrainMode & TER_MON)) {
-        if (x === state.u.ux && y === state.u.uy && !state.u.uswallow)
-            return `${state.name || 'you'}`;
         return farlookLocationDescription(x, y);
     }
     if (glyph?.kind === 'trap' && (terrainMode & TER_TRP)) {

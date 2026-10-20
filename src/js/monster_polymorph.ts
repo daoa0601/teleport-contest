@@ -521,6 +521,11 @@ export async function initialShapechangedBirth<T extends Monster>(monster: T): P
     if (!naturalShapechanger(baseMnum) || shapechangerProtectionActive())
         return null;
     monster.cham = baseMnum;
+    // makemon() keeps Vlad in his natural body to carry the Candelabrum.
+    if (baseMnum === PM_VLAD_THE_IMPALER) return null;
+    // newcham() saves this name even with NC_SHOW_MSG disabled, so
+    // hallucination must choose it before selecting the new body.
+    monsterName(monster);
 
     let targetMnum: number | null = null;
     if (baseMnum === PM_DOPPELGANGER) {
@@ -538,10 +543,12 @@ export async function initialShapechangedBirth<T extends Monster>(monster: T): P
         || !acceptsShapechangerForm(baseMnum, targetMnum))
         return null;
     const changed = initialShapechangedMonster(monster, targetMnum);
-    await refreshNewMonsterFormPerception(changed, game, plineWithContinuation);
+    changed.meverseen = 0;
+    newsym(changed.mx, changed.my);
     // newcham() ends with mon_break_armor() even for a newborn without
     // armor; its perceived pronouns still draw while the hero hallucinates.
     await adjustMonsterClothingAfterPolymorph(changed, game);
+    await refreshNewMonsterFormPerception(changed, game, plineWithContinuation);
     return changed;
 }
 

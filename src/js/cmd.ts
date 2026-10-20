@@ -190,7 +190,7 @@ import { displayLiquidName, displayMessageWindow,
     newsym, feel_newsym, flushPendingTopline, flush_screen, pline, plineWithContinuation, moreUntilDismissed, docrt,
     bot, terrain_glyph, glyphAt, canSeeMonster, canSpotMonster, canSenseMonster, canSpotHeroSelf,
     unblindTelepathyRange,
-    monsterHasWarningProjection, show_glyph_cell, swallowed,
+    monsterHasWarningProjection, show_glyph_cell, swallowed, transientMonsterGlyph,
     randomDisplayMonsterName, randomDisplayMonsterSubject, see_monsters, see_objects,
     see_traps, map_invisible, unmap_invisible, map_object, unmapObject,
 } from './display.js';
@@ -4663,7 +4663,15 @@ function farlookDescribesHero(x: number, y: number): boolean {
 }
 
 export async function farlookLocationDescription(x: number, y: number): Promise<string> {
-    if (farlookDescribesHero(x, y)) return wizardPositionDescription(x, y);
+    // Detection temporarily removes swallowing. Native lookat() compares
+    // the engulfer's glyph before deciding that this square describes us,
+    // even when the terrain mode will subsequently omit monsters.
+    const engulfer = x === game.u.ux && y === game.u.uy && canSpotHeroSelf()
+        && game.iflags.save_uswallow ? game.u.ustuck : null;
+    const describesEngulfer = engulfer
+        && glyphAt(x, y)?.glyph === transientMonsterGlyph(engulfer).glyph;
+    if (!describesEngulfer && farlookDescribesHero(x, y))
+        return wizardPositionDescription(x, y);
     if (game.u.uswallow && game.u.ustuck)
         return `interior of ${monsterName(game.u.ustuck)}`;
     const glyph = lookGlyphAt(x, y);
