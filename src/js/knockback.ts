@@ -139,7 +139,11 @@ export async function tryKnockback(attacker: PhysicalActor, defender: PhysicalAc
     } else {
         if (!isok(x + dx, y + dy)) return { knocked: false };
         const doorway = state.level.at(x, y);
-        if (dx && dy && doorway?.typ === DOOR && (doorway.doormask & ~D_BROKEN))
+        // C tests (defx - magr->mx && defy - magr->my); youmonst.mx/my stay
+        // zero, so a hero can never knock a monster out of a real doorway.
+        const fromX = attackerMonster?.mx ?? 0;
+        const fromY = attackerMonster?.my ?? 0;
+        if (x - fromX && y - fromY && doorway?.typ === DOOR && (doorway.doormask & ~D_BROKEN))
             return { knocked: false };
     }
 
