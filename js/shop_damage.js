@@ -39,7 +39,7 @@ import { migrateMonsterOffLevel, sendMonsterToLimbo } from './monster_migration.
 import { dropSpecialMonsterObjects } from './monster_drop.js';
 import { removeMonsterFromGame } from './monster_departure.js';
 import { monsterAtPosition } from './monster_location.js';
-import { clearMonsterWormFromMap } from './monster_worm.js';
+import { detachMonsterFromLevel } from './monster_level_departure.js';
 import { moveMonsterNextToHero, relocateMonsterTo } from './teleport.js';
 import { BEARTRAP, BOULDER, LAND_MINE, LEASH, ROCK, } from './object_data.js';
 import { deallocateObject, deleteObject } from './object_delete.js';
@@ -150,11 +150,9 @@ export async function mnearto(monster, x, y, state, { moveOther = false, flags =
         const candidate = monsterAt(state, x, y);
         if (candidate && candidate !== monster) {
             othermon = candidate;
-            // Keep the body nodes and deadline for the nested relocation.
-            if (othermon.wormno)
-                clearMonsterWormFromMap(othermon);
-            othermon.mx = 0;
-            othermon.my = 0;
+            // C mon_leaving_level() keeps a worm's body nodes for the nested
+            // relocation and redraws the vacated square.
+            await detachMonsterFromLevel(othermon, state, { stayLinked: true });
             othermon.mstate = (othermon.mstate ?? 0) | MON_OFFMAP;
         }
     }
