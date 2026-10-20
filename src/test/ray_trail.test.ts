@@ -5,6 +5,7 @@ import { flush_screen, glyphAt, plineWithContinuation } from '../js/display.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { castNativeRay } from '../js/ray_attack.js';
+import { MONSTER_NAME } from '../js/monster_data.js';
 import { applyRayFloorFeatures } from '../js/zap.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -101,4 +102,18 @@ void test('a bouncing breath redraws its trail across the hero, dissolved bars, 
     assert.equal(requireScreenCell(8, 11).ch, 'D');
     assert.equal(requireScreenCell(9, 11).ch, '@');
     assert.notEqual(requireScreenCell(10, 11).ch, '─');
+});
+
+void test('a lightning ray missing a blind elemental hero tingles in its body part', async () => {
+    freshObjectRoom({ right: 22 });
+    game.u.umonnum = MONSTER_NAME.indexOf('fire elemental');
+    game.u.blindTurns = 20;
+    const messages: string[] = [];
+
+    await castNativeRay(-5, 6, 'l', {
+        originX: game.u.ux - 3, originY: game.u.uy, forceMiss: true,
+        publish: async (message: string) => { messages.push(message); },
+    });
+
+    assert.ok(messages.includes('Your region tingles.'), messages.join(' | '));
 });
