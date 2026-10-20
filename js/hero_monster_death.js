@@ -300,6 +300,13 @@ export async function finishHeroMonsterKillOutcome(monster, x, y, { hallucinatin
     adjustHeroAlignment(monster.malign);
     return { killed: true, heroDied: false };
 }
+// C minliquid_core() asks context.mon_moving who owns a liquid death: a
+// monster's own move dies by mondead()/mondied(), anything else by xkilled().
+export function finishLiquidDeathForCurrentMover(monster, options) {
+    return options.state.context.mon_moving
+        ? finishMonsterLiquidDeath(monster, options)
+        : finishHeroLiquidMonsterDeath(monster, options);
+}
 // Drowning caused by the hero uses xkilled() without a second kill line.
 // Rust and fire-resistant scorching retain mon.c's environmental death owner.
 export async function finishHeroLiquidMonsterDeath(monster, { leaveCorpse = false, hallucinating = heroIsHallucinating(game), cause, sadFeeling = false, publish = plineWithContinuation, } = {}) {

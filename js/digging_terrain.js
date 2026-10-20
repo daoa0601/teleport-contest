@@ -37,8 +37,7 @@ import { monstersForgetHeroResistance, monstersObserveHeroResistance, } from './
 import { revealMonsterAppearance } from './monster_appearance.js';
 import { publishMonsterYelp } from './monster_anger.js';
 import { leashAttachedToMonster, releaseMonsterLeash, } from './monster_leash.js';
-import { finishMonsterLiquidDeath } from './monster_death.js';
-import { finishHeroMonsterKill } from './hero_monster_death.js';
+import { finishHeroMonsterKill, finishLiquidDeathForCurrentMover } from './hero_monster_death.js';
 import { loseHeroHp } from './hero_damage.js';
 import { delobj } from './object_delete.js';
 import { canDigDown, createToptenObject, deleteFloorTrap, maketrap, makemonAt, mkclassAligned, } from './mklev.js';
@@ -620,8 +619,8 @@ export async function liquidFlow(x, y, typ, trap, fillMessage, { state = game } 
         if (monster) {
             await resolveMonsterLiquid(monster, state, {
                 announce: plineWithContinuation,
-                finishDeath: finishMonsterLiquidDeath,
-                monsterMoving: false,
+                finishDeath: finishLiquidDeathForCurrentMover,
+                monsterMoving: !!state.context.mon_moving,
             });
         }
     }

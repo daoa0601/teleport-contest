@@ -457,10 +457,11 @@ C integer division; Minetown becomes a town only after its level script; Medusa
 a status redraw; a blind hero sees "unseen creature"; `wake_nearto()` prints its
 wake messages at every native call site; and newborn shapechangers, iron-bar
 redraws, breaking-object flashes and swallowed lookups draw from the display RNG
-as C does. The moon-phase misses are a recorder artifact: it runs with
+as C does. The step-0 moon-phase misses were real: the recorder runs with
 `TZ=America/New_York`, and `time_from_yyyymmddhhmmss()` copies `tm_isdst` from
 the current clock, so a midnight start date in standard time lands on the
-previous day.
+previous day. The port now derives its calendar, and a restored `ubirthday`,
+from that same local time.
 
 `splitObjectStack()` now links the new piece right after the original in
 whichever chain owns it (floor pile, hero or monster inventory, container,

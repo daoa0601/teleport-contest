@@ -13,14 +13,14 @@ import {
     canSeeMonster, canSpotMonster, newsym, plineWithContinuation,
 } from './display.js';
 import { finishHeroDeath } from './end.js';
-import { finishHeroMonsterKill } from './hero_monster_death.js';
+import { finishHeroMonsterKill, finishLiquidDeathForCurrentMover } from './hero_monster_death.js';
 import { heroLiquidEffects } from './hack.js';
 import { resolveMonsterLiquid } from './mon.js';
 import {
     MONSTER_FLAGS1, MONSTER_MOVE, MONSTER_SYMBOL,
 } from './monster_data.js';
 import {
-    finishMonsterKilled, finishMonsterLiquidDeath,
+    finishMonsterKilled,
 } from './monster_death.js';
 import { AD_DGST, AD_PHYS } from './monster_attack_types.js';
 import { heroIsPolymorphed } from './polyself.js';
@@ -466,8 +466,8 @@ async function settleEntityAfterCollapse(entity: DrawbridgeEntity, state: GameSt
     }
     await resolveMonsterLiquid(entity.actor, state, {
         announce: plineWithContinuation,
-        finishDeath: finishMonsterLiquidDeath,
-        monsterMoving: false,
+        finishDeath: finishLiquidDeathForCurrentMover,
+        monsterMoving: !!state.context.mon_moving,
     });
 }
 

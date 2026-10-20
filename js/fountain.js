@@ -10,7 +10,7 @@ import { countLevelFeatures, deleteFloorTrap, splitHeroMonsterForm } from './mkl
 import { resolveMonsterLiquid } from './mon.js';
 import { angerWatchGuards } from './monster_anger.js';
 import { MONSTER_FLAGS1 } from './monster_data.js';
-import { finishMonsterLiquidDeath } from './monster_death.js';
+import { finishLiquidDeathForCurrentMover } from './hero_monster_death.js';
 import { monsterName, monsterPossessive } from './monster_name.js';
 import { BOULDER } from './object_data.js';
 import { makePlural } from './object_grammar.js';
@@ -117,8 +117,8 @@ export async function gushForthFromFountain({ drinking = false, state = game } =
         if (monster) {
             await resolveMonsterLiquid(monster, state, {
                 announce: plineWithContinuation,
-                finishDeath: finishMonsterLiquidDeath,
-                monsterMoving: false,
+                finishDeath: finishLiquidDeathForCurrentMover,
+                monsterMoving: !!state.context.mon_moving,
             });
         }
         else {
