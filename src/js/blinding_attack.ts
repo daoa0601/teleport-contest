@@ -6,7 +6,7 @@ import { W_ARMH } from './const.js';
 import { heroHasArtifactDefense, monsterHasArtifactDefense } from './artifacts.js';
 import { heroSpecies } from './hero_species.js';
 import { heroIsUnaware } from './hero_sleep.js';
-import { AD_BLND, AT_EXPL, AT_GAZE } from './monster_attack_types.js';
+import { AD_BLND, AT_CLAW, AT_ENGL, AT_EXPL, AT_GAZE, AT_STNG, AT_TUCH } from './monster_attack_types.js';
 import { game } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
@@ -27,6 +27,7 @@ import { monsterName } from './monster_name.js';
 
 const M1_NOEYES = 0x00001000;
 const PM_FLOATING_EYE = MONSTER_NAME.indexOf('floating eye');
+const PM_RAVEN = MONSTER_NAME.indexOf('raven');
 
 export function heroResistsBlindingLight(state: GameState = game): boolean {
     return heroIsBlind(state) || heroIsUnaware(state) || !!state.u.blindResistance
@@ -48,6 +49,24 @@ function wearsVisoredHelmet(objects: readonly GameObject[], state: GameState): b
         ((object?.owornmask ?? 0) & W_ARMH)
         && (state.objectDescriptions?.[object.otyp]
             ?? OBJECT_DESCRIPTIONS[object.otyp]) === 'visored helmet');
+}
+
+// C mondata.c:can_blnd() for a monster's contact attack on the hero.
+export function heroCanBeBlindedByContact(
+    attacker: Monster, attackType: number, state: GameState = game,
+): boolean {
+    if (!heroHasEyes(state)) return false;
+    // "a crow will not pluck out the eye of another crow"
+    if (attacker.mnum === PM_RAVEN && heroSpecies(state) === PM_RAVEN) return false;
+    if (attackType === AT_CLAW) {
+        // All eyewear, including lenses, protects; so does a visor.
+        if (state.ublindf ?? state.u.ublindf) return false;
+        return !wearsVisoredHelmet(state.inventory, state);
+    }
+    if (attackType === AT_TUCH || attackType === AT_STNG) return !attacker.mcan;
+    if (attackType === AT_ENGL)
+        return !blindfolded(state) && !heroIsUnaware(state) && !state.u.ucreamed;
+    return true;
 }
 
 export function monsterCanBeBlindedByObject(

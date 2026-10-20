@@ -5,7 +5,7 @@ import { W_ARMH } from './const.js';
 import { heroHasArtifactDefense, monsterHasArtifactDefense } from './artifacts.js';
 import { heroSpecies } from './hero_species.js';
 import { heroIsUnaware } from './hero_sleep.js';
-import { AD_BLND, AT_EXPL, AT_GAZE } from './monster_attack_types.js';
+import { AD_BLND, AT_CLAW, AT_ENGL, AT_EXPL, AT_GAZE, AT_STNG, AT_TUCH } from './monster_attack_types.js';
 import { game } from './gstate.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_NAME } from './monster_data.js';
 import { BLINDING_VENOM, CREAM_PIE, OBJECT_DESCRIPTIONS, } from './object_data.js';
@@ -19,6 +19,7 @@ import { plineWithContinuation } from './display.js';
 import { monsterName } from './monster_name.js';
 const M1_NOEYES = 0x00001000;
 const PM_FLOATING_EYE = MONSTER_NAME.indexOf('floating eye');
+const PM_RAVEN = MONSTER_NAME.indexOf('raven');
 export function heroResistsBlindingLight(state = game) {
     return heroIsBlind(state) || heroIsUnaware(state) || !!state.u.blindResistance
         || (MONSTER_ATTACKS[heroSpecies(state)] || []).some(([method, damage]) => damage === AD_BLND && (method === AT_EXPL || method === AT_GAZE))
@@ -34,6 +35,25 @@ function wearsVisoredHelmet(objects, state) {
     return objects.some(object => ((object?.owornmask ?? 0) & W_ARMH)
         && (state.objectDescriptions?.[object.otyp]
             ?? OBJECT_DESCRIPTIONS[object.otyp]) === 'visored helmet');
+}
+// C mondata.c:can_blnd() for a monster's contact attack on the hero.
+export function heroCanBeBlindedByContact(attacker, attackType, state = game) {
+    if (!heroHasEyes(state))
+        return false;
+    // "a crow will not pluck out the eye of another crow"
+    if (attacker.mnum === PM_RAVEN && heroSpecies(state) === PM_RAVEN)
+        return false;
+    if (attackType === AT_CLAW) {
+        // All eyewear, including lenses, protects; so does a visor.
+        if (state.ublindf ?? state.u.ublindf)
+            return false;
+        return !wearsVisoredHelmet(state.inventory, state);
+    }
+    if (attackType === AT_TUCH || attackType === AT_STNG)
+        return !attacker.mcan;
+    if (attackType === AT_ENGL)
+        return !blindfolded(state) && !heroIsUnaware(state) && !state.u.ucreamed;
+    return true;
 }
 export function monsterCanBeBlindedByObject(monster, objectType, { heroInsideTarget = false, state = game } = {}) {
     if (!monster || ![CREAM_PIE, BLINDING_VENOM].includes(objectType))
