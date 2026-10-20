@@ -3028,6 +3028,10 @@ async function moveHostile(monster, state, random, rollDice, rollOne, calls, cap
             moved: monster.mx !== oldx || monster.my !== oldy,
             actionCompleted: status !== MMOVE_MOVED,
             heroDied: !!state.program_state.gameover,
+            // m_move() returns without postmov(); mdisplacem() already
+            // redrew both squares.
+            postMoveOldSquarePainted: true,
+            postMoveDestinationPainted: true,
         }, status, 'dochug');
     }
     if (selected)

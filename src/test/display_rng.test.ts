@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { performMonsterTurn } from '../js/allmain.js';
 import { farlookLocationDescription } from '../js/cmd.js';
-import { CORR, IRONBARS, MM_NOGRP, NO_MINVENT, TER_OBJ } from '../js/const.js';
+import { CORR, IRONBARS, MM_ANGRY, MM_NOGRP, NO_MINVENT, TER_OBJ } from '../js/const.js';
 import {
     glyphAt, map_object, newsym, randomDisplayMonsterName,
     transientMonsterGlyph, transientObjectGlyph,
@@ -12,6 +12,7 @@ import { pushKeys } from '../js/input.js';
 import {
     browseDetectionMap, clearDetectionMap, mapDetectedMonster, reconstrainMap, unconstrainMap,
 } from '../js/magic_map_display.js';
+import { displaceMonster } from '../js/monster_displacement.js';
 import { monsterName } from '../js/monster_name.js';
 import { changeMonsterForm, initialShapechangedBirth } from '../js/monster_polymorph.js';
 import { landFloorObject } from '../js/floor_effects.js';
@@ -183,4 +184,34 @@ void test('Vlad keeps his birth form without choosing a discarded hallucinated n
     assert.equal(changed, null);
     assert.equal(vlad.mnum, species);
     assert.equal(monsterName(vlad), expectedName);
+});
+
+async function hallucinatedDisplacementRoom() {
+    freshObjectRoom({ left: 9, right: 16, top: 10, bottom: 10,
+        heroX: 10, heroY: 10, hero: { hallucinationTurns: 20 } });
+    requirePlayingGame(game);
+    const beast = await createMonsterAt('displacer beast', 13, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
+    beast.msleeping = 0;
+    beast.movement = 12;
+    const jackal = await createMonsterAt('jackal', 12, 10, MM_NOGRP | NO_MINVENT);
+    jackal.mpeaceful = true;
+    pushKeys(' '.repeat(20));
+    return { beast, jackal };
+}
+
+void test('a hallucinated displacement keeps the appearances mdisplacem() drew', async () => {
+    const oracle = await hallucinatedDisplacementRoom();
+    initRng(17n);
+    await displaceMonster(oracle.beast, oracle.jackal, game, { random: () => 1 });
+    const expected = [glyphAt(12, 10), glyphAt(13, 10)];
+
+    const { beast } = await hallucinatedDisplacementRoom();
+    requirePlayingGame(game);
+    initRng(17n);
+    // m_move() returns from mdisplacem() without postmov(); dochug() does
+    // not redraw either square, so neither hallucinated form is redrawn.
+    await performMonsterTurn(beast, game);
+
+    assert.deepEqual([beast.mx, beast.my], [12, 10]);
+    assert.deepEqual([glyphAt(12, 10), glyphAt(13, 10)], expected);
 });
