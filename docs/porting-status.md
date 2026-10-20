@@ -426,7 +426,7 @@ the known-trap avoidance roll and leaves fliers above floor traps.
 ## Verification
 
 Batch verification runs on GitHub Actions (`.github/workflows/verify.yml`) for
-every push to `daoa/recovery-architecture`: ten pool shards, the public
+every push to `daoa/recovery-architecture`: the behavior tests (`npm test`), ten pool shards, the public
 sessions, both ledger checks, the eval sample drawn from the pool, and a pool
 comparison with the previous green run (any newly failing session fails the
 run). `main` is fast-forwarded only to a SHA with a green run. Fresh native
