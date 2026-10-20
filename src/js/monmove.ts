@@ -156,6 +156,7 @@ import {
 } from './weapon_type.js';
 import { growMonster } from './monster_growth.js';
 import { monsterLocomotion } from './monster_locomotion.js';
+import { trapName } from './trap_name.js';
 import { makePlural, verbForSubject } from './object_grammar.js';
 import { drainObjectEnchantment } from './object_state.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
@@ -1120,7 +1121,7 @@ export async function finishDeferredMonsterMiscItem(
         if (canSeeMonster(monster) || trapVisible) {
             const subject = canonicalMonsterName(monster, { state, capitalized: true, augmentIt: true });
             const verb = verbForSubject(subject, monsterLocomotion(monster.mnum, 'jump'));
-            await plineWithContinuation(`${subject} deliberately ${verb} onto a ${misc.trap.tseen ? 'polymorph trap' : 'hidden trap'}!`);
+            await plineWithContinuation(`${subject} deliberately ${verb} onto a ${misc.trap.tseen ? trapName(misc.trap.ttyp, { state }) : 'hidden trap'}!`);
         }
         const oldx = monster.mx, oldy = monster.my;
         placeMonsterAt(monster, misc.trap.tx, misc.trap.ty);

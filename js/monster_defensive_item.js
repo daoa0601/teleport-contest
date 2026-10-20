@@ -47,6 +47,7 @@ import { randomMonsterRelocation } from './teleport.js';
 import { findNearbyMonsterPosition, monsterTeleportRestricted, reportMonsterTeleportRestriction } from './teleport_rules.js';
 import { monsterKnowsTrap, monsterLearnsTrap } from './trap_knowledge.js';
 import { seeTrap } from './trap.js';
+import { trapName } from './trap_name.js';
 import { cansee, vision_note_blocker_change } from './vision.js';
 const M1_NOHANDS = 0x00002000;
 const M1_NOEYES = 0x00001000;
@@ -459,8 +460,7 @@ export async function useMonsterDefensiveItem(monster, choice, options) {
             if (visible) {
                 const name = subject();
                 const verb = verbForSubject(name, monsterLocomotion(monster.mnum, 'jump'));
-                const trapName = hole ? trap.ttyp === HOLE ? 'hole' : 'trap door' : 'teleportation trap';
-                await publish(`${name} ${verb} ${hole ? 'into' : 'onto'} a ${trapName}!`);
+                await publish(`${name} ${verb} ${hole ? 'into' : 'onto'} a ${trapName(trap.ttyp, { state })}!`);
             }
             const cell = state.level.requireAt(trap.tx, trap.ty);
             if (cell.typ === SCORR) {

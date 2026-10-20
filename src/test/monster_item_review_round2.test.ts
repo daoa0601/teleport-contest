@@ -148,6 +148,46 @@ for (const species of ['floating eye', 'vampire bat', 'naga hatchling']) {
     });
 }
 
+void test('a hallucinating hero sees random trap names when monsters jump onto escape and polymorph traps', async () => {
+    const names = new Set<string>();
+    for (let seed = 1n; seed <= 6n; seed++) {
+        const level = freshObjectRoom({ heroX: 14, heroY: 10, hero: { hallucinationTurns: 50 } });
+        requirePlayingGame(game);
+        initRng(seed);
+        const fleeing = await createMonsterAt('orc', 10, 10, MM_ANGRY | NO_MINVENT);
+        const trap = addTrap(level, TELEP_TRAP, 9, 10);
+        trap.teledest = { x: 12, y: 10 };
+        const messages: string[] = [];
+        installPagerInput(resetInputState(), { expected: /onto|disoriented/, limit: 8 });
+        await useMonsterDefensiveItem(fleeing, { kind: 'trap', trap }, {
+            state: game, publish: message => { messages.push(message); },
+        });
+        names.add((messages[0] ?? '').replace(/^.* onto a (.*)!$/, '$1'));
+    }
+    for (let seed = 1n; seed <= 6n; seed++) {
+        const level = freshObjectRoom({ heroX: 14, heroY: 10, hero: { hallucinationTurns: 50 } });
+        requirePlayingGame(game);
+        initRng(seed);
+        const seeker = await createMonsterAt('orc', 10, 10, MM_ANGRY | NO_MINVENT);
+        addTrap(level, POLY_TRAP, 9, 10);
+        const turn = await takeMonsterTurn(seeker, game, limit => limit - 1);
+        assert.ok(turn.movement);
+        const messages: string[] = [];
+        const input = resetInputState();
+        input.beforeRead = () => { messages.push(game._pending_message || ''); };
+        installPagerInput(input, { expected: /deliberately|changes|armor|turns/, limit: 8 });
+        await finishDeferredMonsterMiscItem({ monster: seeker, ...turn, movement: turn.movement }, game);
+        messages.push(game._pending_message || '');
+        const jump = messages.join('\n').match(/deliberately \w+ onto a ([^!]*)!/);
+        assert.ok(jump, messages.join('\n'));
+        names.add(jump[1] ?? '');
+    }
+
+    names.delete('teleportation trap');
+    names.delete('polymorph trap');
+    assert.ok(names.size > 0, 'trapname() draws a hallucinated name from the display stream');
+});
+
 void test('a visible priest who cannot see the invisible hero summons insects around the mistaken spot', async () => {
     freshObjectRoom({ right: 25, heroX: 14, heroY: 10 });
     requirePlayingGame(game);
