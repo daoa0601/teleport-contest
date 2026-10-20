@@ -53,7 +53,7 @@ import { objectMaterial } from './object_material.js';
 import { shipObject } from './object_migration.js';
 import { isPoisonableObject } from './object_properties.js';
 import { splitObjectStack } from './object_stack.js';
-import { objectCombatName, objectHasPersonalName, killerObjectName, observeObjectForNaming } from './objnam.js';
+import { objectCombatName, objectHasPersonalName, killerObjectName, observeObjectForNaming, simpleObjectName } from './objnam.js';
 import { stopHeroOccupation } from './occupation.js';
 import { heroHasNoHands } from './polyself.js';
 import { poisonHero } from './poison.js';
@@ -521,7 +521,7 @@ async function catchThrownObject(object: GameObject, { state, random, publish }:
     const chance = 100 - currentAttribute(A_DEX, state)
         - (state.urole.key === 'monk' || state.urole.key === 'rogue' ? 20 : 0);
     if (random(chance) !== 0) return false;
-    const name = objectCombatName(object, { state });
+    const name = simpleObjectName(object, state);
     await holdAnotherObject(object, {
         state, publish, dropMessage: `You catch, but drop, the ${name}.`,
         holdMessage: `You catch the ${name}!`,
