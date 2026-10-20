@@ -136,4 +136,21 @@ void test("the hero turning to stone does not heal a mounted steed's legs", asyn
     assert.equal(currentAttribute(A_DEX), dexterity - 1);
     assert.ok(messages.includes('Your limbs have turned to stone.'));
 });
+void test('a xan names a polymorphed hero\'s leg by that form\'s body', async () => {
+    const input = freshTurnRoom();
+    requireFixtureGame(game);
+    installPolymorphedHero('stalker', { hitPoints: 100 });
+    const xan = await createMonsterAt('xan', 11, 10, NO_MINVENT);
+    xan.mpeaceful = false;
+    xan.movement = 12;
+    const messages = [];
+    input.beforeRead = () => { messages.push(game._pending_message); };
+    pushKeys('m.' + ' '.repeat(100));
+    initRng(1n);
+    await moveloop_core();
+    await moveloop_core();
+    // mhitm_ad_legs() takes body_part(LEG) from the hero's current form.
+    const text = [...messages, game._pending_message].join('\n');
+    assert.match(text, /The xan pricks your (?:left|right) lower current!/);
+});
 //# sourceMappingURL=hero_legs.test.js.map
