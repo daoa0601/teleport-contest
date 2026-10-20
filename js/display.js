@@ -2731,12 +2731,12 @@ function decodeMixedTopline(message) {
     }
     return cells;
 }
-function toplineRows(message, columns) {
+function toplineRows(message, columns, { splitWords = true } = {}) {
     const cells = decodeMixedTopline(message);
     // tty update_topl() replaces a space with a newline. A single oversized
     // word is left intact; topl_putsym() then wraps it at the last column.
     let start = 0;
-    while (cells.length - start >= columns) {
+    while (splitWords && cells.length - start >= columns) {
         let split = start + columns - 1;
         while (split > start && cells[split]?.ch !== ' ')
             split--;
@@ -2764,6 +2764,20 @@ function toplineRows(message, columns) {
         }
     }
     return lines;
+}
+// C tty topl.c:show_topl(), used for SUPPRESS_HISTORY prose such as getpos
+// autodescribe: addtopl() wraps at the last column without update_topl()'s
+// word splitting, and its extra rows never ask for --More--.
+export function showUnrememberedTopline(message) {
+    const display = game.nhDisplay;
+    if (!display?.grid)
+        return;
+    const lines = toplineRows(message, display.cols, { splitWords: false });
+    for (const [row, line] of lines.entries()) {
+        display.clearRow(row);
+        for (const [column, cell] of line.entries())
+            display.setCell(column, row, cell.ch, NO_COLOR, 0);
+    }
 }
 // C update_topl()/topl_putsym(): key queries wrap without a More prompt.
 // Return the rows covered so tty_yn_function's cleanup can restore the map.
