@@ -6,7 +6,11 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import {
     resumeDeferredMonsterTrap, triggerImmediateMonsterTrap,
 } from '../js/monmove.js';
-import { ROCK } from '../js/object_data.js';
+import { ROCK, SADDLE } from '../js/object_data.js';
+import { performMonsterTurn } from '../js/allmain.js';
+import { glyphAt, newsym } from '../js/display.js';
+import { initializePet } from '../js/dog.js';
+import { pushKeys } from '../js/input.js';
 import { pickUpMonsterFloorObject } from '../js/monster_pickup.js';
 import { floorObject } from './support/game-objects.js';
 import { floorObjectsAt } from './support/level-state.js';
@@ -93,4 +97,26 @@ void test('a spent rock trap names the monster beneath it with mon_nam()', async
     });
 
     assert.deepEqual(messages, ['A trap door above the grid bug opens, but nothing falls out!']);
+});
+
+void test('a pet killed by a falling rock where it stood shows the rock on its pile', async () => {
+    const { monster } = await freshMonsterTrapRoom(ROCKTRAP, {
+        gameplaySeed: 23n,
+        room: { left: 10, right: 11, top: 10, bottom: 10, heroX: 10, heroY: 10 },
+        monster: { species: 'kitten', hitPoints: 1, mtrapseen: 0 },
+    });
+    requirePlayingGame(game);
+    initializePet(monster, { state: game });
+    await floorObject(SADDLE, 11, 10);
+    newsym(11, 10);
+    pushKeys(' '.repeat(10));
+
+    // dog_move() returns MMOVE_MOVED without a step; postmov() still runs
+    // mintrap() and redraws the square after the trap kills the pet.
+    await performMonsterTurn(monster, game);
+
+    assert.ok(monster.mhp <= 0);
+    const glyph = glyphAt(11, 10);
+    assert.ok(glyph?.kind === 'object', JSON.stringify(glyph));
+    assert.equal(glyph.otyp, ROCK);
 });
