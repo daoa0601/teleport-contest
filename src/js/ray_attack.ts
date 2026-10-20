@@ -33,7 +33,7 @@ import { finishMonsterKilled } from './monster_death.js';
 import { wakeMonster } from './monster_anger.js';
 import { monsterName, possessiveName } from './monster_name.js';
 import { distantObjectName, objectName } from './objnam.js';
-import { heroEyeCount, heroEyeName } from './body_parts.js';
+import { heroArmName, heroEyeCount, heroEyeName } from './body_parts.js';
 import { makePlural } from './object_grammar.js';
 import { monstersForgetHeroResistance, monstersObserveHeroResistance } from './monster_perception.js';
 import { hitHeroWithRay } from './hero_breath.js';
@@ -463,7 +463,7 @@ async function hitHeroOnRay(x: number, y: number, context: RayContext) {
     } else if (!heroIsBlind(state)) {
         await publish(`${raySubject(context.displayName())} whizzes by you!`);
     } else if (damageType === AD_ELEC) {
-        await publish('Your arm tingles.');
+        await publish(`Your ${heroArmName(state)} tingles.`);
     }
     if (!heroDied) {
         if (damageType === AD_ELEC) await blindHeroWithLightning(context);
