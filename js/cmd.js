@@ -22,7 +22,7 @@ import { waterDamageObject } from './trap.js';
 import { dip, dipInto } from './potion_dip.js';
 import { AKLYS, BOOMERANG, CRYSTAL_BALL } from './object_data.js';
 import { useCrystalBall } from './crystal_ball.js';
-import { updateHeroRegions, visibleRegionAt } from './regions.js';
+import { leaveMovementCloud, updateHeroRegions, visibleRegionAt } from './regions.js';
 import { wizIntrinsic } from './wizard_intrinsics.js';
 import { wizFuzzer, wizPanic } from './wizard_debug_commands.js';
 import { wizSmell } from './wizard_smell.js';
@@ -7072,6 +7072,7 @@ async function domoveCore(dx, dy) {
             updateHeroRegions(game, newx, newy);
             u.ux = newx;
             u.uy = newy;
+            await leaveMovementCloud(game, heroSpecies(game), !!u.mcan, oldx, oldy);
             await settleBeastHeroDisplacement(monster, game);
             if (game.program_state.gameover)
                 return true;
@@ -7319,6 +7320,8 @@ async function domoveCore(dx, dy) {
     const destinationMonster = monsterAtPosition(game.level, newx, newy);
     u.ux = newx;
     u.uy = newy;
+    // C hack.c:domove_core() m_postmove_effect(&youmonst) at u.ux0/u.uy0.
+    await leaveMovementCloud(game, heroSpecies(game), !!u.mcan, oldx, oldy);
     await moveSteedWithHero();
     if (destinationMonster && heroMayDisplaceMonster(destinationMonster)
         && !hiddenCeilingMonster) {

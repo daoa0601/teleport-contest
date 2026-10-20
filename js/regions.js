@@ -30,6 +30,7 @@ const M1_BREATHLESS = 0x00000400;
 const M1_NOEYES = 0x00001000;
 const S_EEL = 57;
 const PM_FOG_CLOUD = 106;
+const PM_STEAM_VORTEX = 110;
 const PM_VROCK = 295;
 const PM_HEZROU = 296;
 function uniqueXMajorCells(cells) {
@@ -145,6 +146,14 @@ function gasCloudTtl(cloudSize, cellCount, random) {
 }
 export async function createSteamCloud(state, x, y, cloudSize, random = rn2) {
     return await createPoisonGasCloud(state, x, y, cloudSize, 0, random);
+}
+// C monmove.c:m_postmove_effect(), shared by monsters and the polymorphed
+// hero: the cloud is left on the square the mover has just departed.
+export async function leaveMovementCloud(state, species, cancelled, x, y, random = rn2) {
+    if (species === PM_HEZROU)
+        await createPoisonGasCloud(state, x, y, 1, 8, random);
+    else if (species === PM_STEAM_VORTEX && !cancelled)
+        await createPoisonGasCloud(state, x, y, 1, 0, random);
 }
 export async function createPoisonGasCloud(state, x, y, cloudSize, damage, random = rn2, publish = plineWithContinuation) {
     if (!state?.level)

@@ -136,7 +136,7 @@ import { shopkeeperIsMuted } from './shop_loss.js';
 import { checkMonsterGearNextTurn, findMonsterArmorClass } from './monworn.js';
 import { inTown, roomsAt } from './room.js';
 import { addShopDamage } from './shop_damage.js';
-import { createPoisonGasCloud, GAS_OK, monsterGasTolerance, visibleRegionAt, updateMonsterRegions, } from './regions.js';
+import { createPoisonGasCloud, leaveMovementCloud, GAS_OK, monsterGasTolerance, visibleRegionAt, updateMonsterRegions, } from './regions.js';
 import { heroIsBlinded, heroIsDeaf } from './senses.js';
 import { makeBlinded } from './sight_change.js';
 import { applyMonsterStoningAttack, startHeroPetrificationFromMonster, touchPetrifies, } from './stoning.js';
@@ -3043,12 +3043,8 @@ async function moveHostile(monster, state, random, rollDice, rollOne, calls, cap
             actionCompleted: true,
         }, MMOVE_DONE, 'dochug');
     }
-    if (selected) {
-        if (MONSTER_NAME[monster.mnum] === 'hezrou')
-            await createPoisonGasCloud(state, oldx, oldy, 1, 8, random);
-        else if (MONSTER_NAME[monster.mnum] === 'steam vortex' && !monster.mcan)
-            await createPoisonGasCloud(state, oldx, oldy, 1, 0, random);
-    }
+    if (selected)
+        await leaveMovementCloud(state, monster.mnum, !!monster.mcan, oldx, oldy, random);
     monster.mx = nix;
     monster.my = niy;
     if (selected) {
