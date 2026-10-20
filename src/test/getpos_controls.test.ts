@@ -109,6 +109,31 @@ void test('getpos toggles automatic descriptions off and on', async () => {
     assert.equal(selected?.x, 11);
 });
 
+void test('a long automatic description wraps at the last column without paging', async () => {
+    freshObjectRoom({ flags: { tips: false, verbose: false } });
+    const description = 'a paperback book named The Amazing Maurice and His Educated Rodents (for sale, 15 zorkmids)';
+    const input = resetInputState();
+    const boundaries: { lastColumn: string; nextRowStart: string }[] = [];
+    input.beforeRead = () => {
+        const grid = requireGameDisplay(game).grid;
+        boundaries.push({
+            lastColumn: grid[0]?.[79]?.ch ?? '',
+            nextRowStart: (grid[1] ?? []).slice(0, 2).map(cell => cell.ch).join(''),
+        });
+    };
+    input.feed('l.');
+
+    await selectMapPosition({
+        start: { x: 10, y: 10 }, prompt: 'Pick a location.', goal: 'a location',
+        describe: () => description,
+    });
+
+    // Only getpos itself reads: the cursor move and the selection.
+    assert.equal(boundaries.length, 2);
+    // Character 80 ("1" of "15") moves to row 1 instead of column 79.
+    assert.deepEqual(boundaries[1], { lastColumn: ' ', nextRowStart: '15' });
+});
+
 void test('a verbose autodescribe-off notice is paged before the goal prompt returns', async () => {
     freshObjectRoom({ flags: { tips: false, verbose: true } });
     const input = resetInputState();

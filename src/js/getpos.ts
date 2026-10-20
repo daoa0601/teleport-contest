@@ -7,7 +7,8 @@ import {
 } from './const.js';
 import {
     bot, clearMessageWindow, flush_screen, glyphAt, lastDirtyMapCursor,
-    newsym_force, pline, plineWithContinuation, show_glyph_cell, terrain_glyph,
+    newsym_force, pline, plineWithContinuation, show_glyph_cell, showUnrememberedTopline,
+    terrain_glyph,
 } from './display.js';
 import { game } from './gstate.js';
 import { nhgetch, readchar } from './input.js';
@@ -262,6 +263,7 @@ export async function paintGetposCursor(cursor: Position, message: string, marke
     }
     await bot();
     await flush_screen(1);
+    if (message) showUnrememberedTopline(message);
     game.nhDisplay?.setCursor(cursor.x - 1, cursor.y + 1);
     return markers;
 }
