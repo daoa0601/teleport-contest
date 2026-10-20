@@ -180,8 +180,8 @@ export async function breakObjectAtLocation(object, { x = object.ox, y = object.
     // Fracture callers replace the stone object after breakobj settles its cost.
     if (object.otyp === BOULDER || object.otyp === STATUE)
         return { destroyed: false, observed: false };
+    // breakobj() leaves any redraw of the square to its caller.
     await delobj(object, state, random);
-    newsym(x, y);
     if (eggExplosion) {
         await explodePyroliskEggAt(x, y, {
             state, heroCaused, publish, random, rollDice,
