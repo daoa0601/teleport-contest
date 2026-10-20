@@ -1,3 +1,5 @@
+import { trapName } from './trap_name.js';
+import { withIndefiniteArticle } from './object_grammar.js';
 // Moving the hero through the air after a forceful action.
 // C ref: dothrow.c hurtle() and hurtle_step().
 
@@ -10,7 +12,7 @@ import {
 import {
     D_CLOSED, D_ISOPEN, D_LOCKED, DOOR, FIRE_TRAP, IRONBARS,
     IS_OBSTRUCTED, Is_waterlevel,
-    MAGIC_PORTAL, TREE, TRAP_EXPLANATIONS,
+    MAGIC_PORTAL, TREE,
     TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_WEB, Upolyd,
     VIBRATING_SQUARE, W_NONPASSWALL,
     is_hole, is_pit, isok,
@@ -301,9 +303,7 @@ async function triggerLandingTrap(trap: Trap | undefined, options: HeroHurtleOpt
             return !options.jumping;
         }
     } else if (trap.tseen) {
-        const name = TRAP_EXPLANATIONS[trap.ttyp] || 'trap';
-        const article = /^[aeiou]/i.test(name) ? 'an' : 'a';
-        await plineWithContinuation(`You pass right over ${article} ${name}.`);
+        await plineWithContinuation(`You pass right over ${withIndefiniteArticle(trapName(trap.ttyp))}.`);
     }
     return game.level !== before.level
         || game.u.ux !== before.x || game.u.uy !== before.y;

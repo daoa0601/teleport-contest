@@ -1,3 +1,4 @@
+import { trapName } from './trap_name.js';
 import type { Hero } from './hero_types.js';
 import type { Trap } from './map_types.js';
 
@@ -54,8 +55,9 @@ export async function openHoldingTrap(target: TrapTarget | null | undefined, { s
     } else {
         if (!trap || ![BEAR_TRAP, WEB].includes(trap.ttyp))
             return result(false, false, state);
-        description = trap.ttyp === WEB ? 'web' : 'bear trap';
-        owner = trap.tseen ? trap.madeby_u ? 'your ' : 'the ' : 'a ';
+        description = trapName(trap.ttyp, { state });
+        owner = trap.tseen ? trap.madeby_u ? 'your ' : 'the '
+            : /^[aeiou]/i.test(description) ? 'an ' : 'a ';
     }
     if (hero) {
         if (!state.u.utrap) return result(false, false, state);

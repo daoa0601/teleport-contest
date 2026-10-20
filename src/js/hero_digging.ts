@@ -12,7 +12,7 @@ import {
     IS_ALTAR, IS_DOOR, IS_OBSTRUCTED, IS_STWALL, IS_TREE, IS_WALL,
     LANDMINE, BEAR_TRAP, HOLE, KILLED_BY, TRAPDOOR, MM_NOMSG, ROOM, SCORR,
     SDOOR, SHOPBASE, SHOP_DOOR_COST, SHOP_PIT_COST, STONE,
-    TRAP_EXPLANATIONS, TT_PIT, Upolyd, W_NONDIGGABLE, Is_earthlevel, is_pit,
+    TT_PIT, Upolyd, W_NONDIGGABLE, Is_earthlevel, is_pit,
 } from './const.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { convertSecretDoor } from './detect.js';
@@ -24,6 +24,7 @@ import {
     feel_location, flush_screen, newsym, pline, plineWithContinuation,
 } from './display.js';
 import { monsterName } from './monster_name.js';
+import { trapName } from './trap_name.js';
 import { game, requireGameLevel } from './gstate.js';
 import type { GameState, DiggingContext } from './game_state.js';
 import type { GameObject } from './object_types.js';
@@ -560,10 +561,10 @@ export async function continueHeroDigging(state = game): Promise<boolean> {
             digging.effort = 0;
             return false;
         } else if (trap && dcresult === DIGCHECK_PASSED_DESTROY_TRAP) {
-            const trapName = TRAP_EXPLANATIONS[trap.ttyp] ?? 'trap';
+            const name = trapName(trap.ttyp, { state });
             if (ispick) {
                 await pline(`You destroy ${
-                    trap.tseen ? `the ${trapName}` : articleFor(trapName)
+                    trap.tseen ? `the ${name}` : articleFor(name)
                 } with ${ownedObjectName(uwep, state, { capitalized: false, includeQuantity: true })}.`);
             }
             deleteTrap(trap, state);

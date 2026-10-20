@@ -3,7 +3,7 @@
 // mkcavepos()/mkcavearea(); hack.c may_dig(); weapon.c abon().
 import { monsterHasMapPosition } from './monster_location.js';
 import { deleteTrap } from './trap_lifecycle.js';
-import { RLOC_NOMSG, A_STR, A_DEX, COULD_SEE, CORR, DBWALL, D_BROKEN, D_CLOSED, D_LOCKED, D_NODOOR, D_TRAPPED, DIGTYP_BOULDER, DIGTYP_DOOR, DIGTYP_ROCK, DIGTYP_STATUE, DIGTYP_TREE, DIGTYP_UNDIGGABLE, DOOR, IN_SIGHT, IS_ALTAR, IS_DOOR, IS_OBSTRUCTED, IS_STWALL, IS_TREE, IS_WALL, LANDMINE, BEAR_TRAP, HOLE, KILLED_BY, TRAPDOOR, MM_NOMSG, ROOM, SCORR, SDOOR, SHOPBASE, SHOP_DOOR_COST, SHOP_PIT_COST, STONE, TRAP_EXPLANATIONS, TT_PIT, Upolyd, W_NONDIGGABLE, Is_earthlevel, is_pit, } from './const.js';
+import { RLOC_NOMSG, A_STR, A_DEX, COULD_SEE, CORR, DBWALL, D_BROKEN, D_CLOSED, D_LOCKED, D_NODOOR, D_TRAPPED, DIGTYP_BOULDER, DIGTYP_DOOR, DIGTYP_ROCK, DIGTYP_STATUE, DIGTYP_TREE, DIGTYP_UNDIGGABLE, DOOR, IN_SIGHT, IS_ALTAR, IS_DOOR, IS_OBSTRUCTED, IS_STWALL, IS_TREE, IS_WALL, LANDMINE, BEAR_TRAP, HOLE, KILLED_BY, TRAPDOOR, MM_NOMSG, ROOM, SCORR, SDOOR, SHOPBASE, SHOP_DOOR_COST, SHOP_PIT_COST, STONE, TT_PIT, Upolyd, W_NONDIGGABLE, Is_earthlevel, is_pit, } from './const.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { convertSecretDoor } from './detect.js';
 import { altarWrath } from './pray.js';
@@ -12,6 +12,7 @@ import { angerTemplePriest } from './priest.js';
 import { heroFootName } from './body_parts.js';
 import { feel_location, flush_screen, newsym, pline, plineWithContinuation, } from './display.js';
 import { monsterName } from './monster_name.js';
+import { trapName } from './trap_name.js';
 import { game, requireGameLevel } from './gstate.js';
 import { pitsAreConjoined } from './pit_connections.js';
 import { dropInventoryObjectAtHero } from './hero_drop.js';
@@ -484,9 +485,9 @@ export async function continueHeroDigging(state = game) {
             return false;
         }
         else if (trap && dcresult === DIGCHECK_PASSED_DESTROY_TRAP) {
-            const trapName = TRAP_EXPLANATIONS[trap.ttyp] ?? 'trap';
+            const name = trapName(trap.ttyp, { state });
             if (ispick) {
-                await pline(`You destroy ${trap.tseen ? `the ${trapName}` : articleFor(trapName)} with ${ownedObjectName(uwep, state, { capitalized: false, includeQuantity: true })}.`);
+                await pline(`You destroy ${trap.tseen ? `the ${name}` : articleFor(name)} with ${ownedObjectName(uwep, state, { capitalized: false, includeQuantity: true })}.`);
             }
             deleteTrap(trap, state);
             digging.effort = 0;

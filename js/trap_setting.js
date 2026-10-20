@@ -20,7 +20,7 @@ import { promptYesNo } from './query.js';
 import { roomsAt } from './room.js';
 import { rnl } from './rng.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
-import { billDummyObject, carriedObjectOwner } from './shk.js';
+import { billDummyObject, objectOwnershipPrefix } from './shk.js';
 import { addShopDamage } from './shop_damage.js';
 import { findObjectOwner, shopkeeperIsMuted } from './shop_loss.js';
 import { isLavaAt, isPoolAt } from './terrain_properties.js';
@@ -38,11 +38,9 @@ export async function useSettableTrap(object) {
         return object;
     }
     const type = object.otyp === LAND_MINE ? LANDMINE : BEAR_TRAP;
-    const owner = carriedObjectOwner(object, game);
-    const ownership = owner === 'Your' || owner === 'The' ? owner.toLowerCase() : owner;
     const old = game._trapSetting;
     if (old && old.object === object && old.level === game.level && old.x === hero.ux && old.y === hero.uy) {
-        await pline(`You resume setting ${ownership} ${trapName(type)}.`);
+        await pline(`You resume setting ${objectOwnershipPrefix(object, game, { capitalized: false })}${trapName(type)}.`);
         game._occupation = { key: 'set-trap', text: 'setting the trap' };
         return null;
     }
@@ -70,7 +68,7 @@ export async function useSettableTrap(object) {
             }
         }
     }
-    await pline(`You begin setting ${ownership} ${trapName(type)}.`);
+    await pline(`You begin setting ${objectOwnershipPrefix(object, game, { capitalized: false })}${trapName(type)}.`);
     if (object.unpaid) {
         const keeper = findObjectOwner(object, hero.ux, hero.uy, game);
         if (!heroIsDeaf(game) && keeper && !shopkeeperIsMuted(keeper))

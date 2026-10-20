@@ -1,10 +1,11 @@
+import { trapName } from './trap_name.js';
 import { setHeroGrip } from './hero_grip.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { monsterHasMapPosition } from './monster_location.js';
 import { isLavaAt, isPoolAt } from './terrain_properties.js';
 import { classifyStatusTerrain } from './status_terrain.js';
 // C hack.c:switch_terrain(), trap.c:float_up()/reset_utrap().
-import { D_CLOSED, D_LOCKED, DISMOUNT_FELL, DISMOUNT_GENERIC, DOOR, HOLE, IS_OBSTRUCTED, IS_ROOM, IS_WATERWALL, Is_airlevel, Is_waterlevel, LAVAWALL, STATUE_TRAP, TRAPDOOR, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, W_SADDLE, is_hole, is_pit, } from './const.js';
+import { D_CLOSED, D_LOCKED, DISMOUNT_FELL, DISMOUNT_GENERIC, DOOR, HOLE, IS_OBSTRUCTED, IS_ROOM, IS_WATERWALL, Is_airlevel, Is_waterlevel, LAVAWALL, PIT, STATUE_TRAP, TRAPDOOR, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, WEB, W_SADDLE, is_hole, is_pit, } from './const.js';
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { newsym, plineWithContinuation } from './display.js';
@@ -46,7 +47,7 @@ export async function floatHeroUp(state = game, previous = null) {
     if (hero.utrap) {
         if (hero.utraptype === TT_PIT) {
             clearHeroTrap(state);
-            await plineWithContinuation('You float up, out of the pit!');
+            await plineWithContinuation(`You float up, out of the ${trapName(PIT, { state })}!`);
             state.vision_full_recalc = 1;
             await fillPitWithBoulderAt(hero.ux, hero.uy, state);
         }
@@ -58,8 +59,9 @@ export async function floatHeroUp(state = game, previous = null) {
             const terrain = requireGameLevel(state).requireAt(ball?.ox ?? hero.ux, ball?.oy ?? hero.uy);
             await plineWithContinuation(`You feel lighter, but your ${heroLegName(state)} is still chained to the ${IS_ROOM(terrain.typ) ? 'floor' : 'ground'}.`);
         }
-        else if (hero.utraptype === TT_WEB) {
-            await plineWithContinuation('You float up slightly, but you are still stuck in the web.');
+        else if (hero.utraptype === WEB) {
+            // C float_up() compares with WEB, not the hero restraint TT_WEB.
+            await plineWithContinuation(`You float up slightly, but you are still stuck in the ${trapName(WEB, { state })}.`);
         }
         else {
             await plineWithContinuation(`You float up slightly, but your ${heroLegName(state)} is still stuck.`);

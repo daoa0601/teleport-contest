@@ -1,5 +1,6 @@
 // C detect.c:unconstrain_map(), browse_map(), map_monst(), map_redisplay().
-import { COLNO, ROWNO, TER_MAP, TER_MON, TER_OBJ, TER_TRP, TRAP_EXPLANATIONS } from './const.js';
+import { COLNO, ROWNO, TER_MAP, TER_MON, TER_OBJ, TER_TRP } from './const.js';
+import { displayedTrapDescription } from './pager_features.js';
 import { farlookLocationDescription } from './cmd.js';
 import { canSpotHeroSelf, cls, docrt, flush_screen, glyphAt, plineWithContinuation, show_glyph_cell, transientMonsterGlyph, } from './display.js';
 import { game } from './gstate.js';
@@ -83,7 +84,7 @@ async function detectionDescription(x, y, terrainMode, objects, state) {
     }
     if (glyph?.kind === 'trap' && (terrainMode & TER_TRP)) {
         const trapType = glyph.trapType || requireGameLevel(state).traps.find(trap => trap.tx === x && trap.ty === y)?.ttyp;
-        return trapType === undefined ? 'trap' : TRAP_EXPLANATIONS[trapType] || 'trap';
+        return trapType === undefined ? 'trap' : displayedTrapDescription(trapType, x, y);
     }
     if (!(terrainMode & TER_MAP) || glyph?.kind === 'unexplored')
         return 'unexplored area';

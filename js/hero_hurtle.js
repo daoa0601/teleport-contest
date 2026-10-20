@@ -1,10 +1,12 @@
+import { trapName } from './trap_name.js';
+import { withIndefiniteArticle } from './object_grammar.js';
 // Moving the hero through the air after a forceful action.
 // C ref: dothrow.c hurtle() and hurtle_step().
 import { formatFeltMessage } from './hero_speech.js';
 import { nomul, setMulti } from './command_state.js';
 import { heroHasWaterWalking } from './armor.js';
 import { beginBallAndChainMove, finishBallAndChainMove, heroIsPunished, } from './ball.js';
-import { D_CLOSED, D_ISOPEN, D_LOCKED, DOOR, FIRE_TRAP, IRONBARS, IS_OBSTRUCTED, Is_waterlevel, MAGIC_PORTAL, TREE, TRAP_EXPLANATIONS, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_WEB, Upolyd, VIBRATING_SQUARE, W_NONPASSWALL, is_hole, is_pit, isok, } from './const.js';
+import { D_CLOSED, D_ISOPEN, D_LOCKED, DOOR, FIRE_TRAP, IRONBARS, IS_OBSTRUCTED, Is_waterlevel, MAGIC_PORTAL, TREE, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_WEB, Upolyd, VIBRATING_SQUARE, W_NONPASSWALL, is_hole, is_pit, isok, } from './const.js';
 import { canSpotMonster, flush_screen, glyphAt, map_invisible, newsym, plineWithContinuation, } from './display.js';
 import { heroTestMove } from './cmd.js';
 import { finishHeroDeath } from './end.js';
@@ -234,9 +236,7 @@ async function triggerLandingTrap(trap, options, remaining) {
         }
     }
     else if (trap.tseen) {
-        const name = TRAP_EXPLANATIONS[trap.ttyp] || 'trap';
-        const article = /^[aeiou]/i.test(name) ? 'an' : 'a';
-        await plineWithContinuation(`You pass right over ${article} ${name}.`);
+        await plineWithContinuation(`You pass right over ${withIndefiniteArticle(trapName(trap.ttyp))}.`);
     }
     return game.level !== before.level
         || game.u.ux !== before.x || game.u.uy !== before.y;

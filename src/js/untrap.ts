@@ -1,3 +1,4 @@
+import { trapName } from './trap_name.js';
 // Finding and removing floor, container, and door traps.
 // C ref: trap.c dountrap(), could_untrap(), and untrap().
 
@@ -17,7 +18,7 @@ import { triggerChestTrap } from './chest_trap.js';
 import {
     A_CON, A_DEX, A_STR, A_WIS, ARROW_TRAP, BEAR_TRAP, DART_TRAP,
     DISMOUNT_FELL, DOOR, D_BROKEN, D_ISOPEN, D_NODOOR, D_TRAPPED, LANDMINE,
-    MAXULEV, PIT, SPIKED_PIT, SQKY_BOARD, TRAP_EXPLANATIONS,
+    MAXULEV, PIT, SPIKED_PIT, SQKY_BOARD,
     WEB, isok,
 } from './const.js';
 import { displayMessageWindow, newsym, pline, plineWithContinuation } from './display.js';
@@ -165,10 +166,6 @@ function boxesAt(state: GameState, x: number, y: number): GameObject[] {
         object.otyp === LARGE_BOX || object.otyp === CHEST);
 }
 
-function trapName(trap: Trap): string {
-    return TRAP_EXPLANATIONS[trap?.ttyp] || 'trap';
-}
-
 function article(noun: string): string {
     return /^[aeiou]/i.test(noun) ? 'an' : 'a';
 }
@@ -245,6 +242,9 @@ export async function untrap({
             await publish('The perils lurking there are beyond your grasp.');
             return false;
         }
+        const trap = trapAt(state, door.x, door.y);
+        // C chooses the floor-trap name even when only the door is discussed.
+        if (trap?.tseen) trapName(trap.ttyp, { state });
         return handleDoor(door.x, door.y, {
             state, force, trapSkipped: false, ask, publish, random, rollOne,
         });
@@ -270,13 +270,15 @@ export async function untrap({
     const here = x === state.u.ux && y === state.u.uy;
     let trap = trapAt(state, x, y);
     if (trap && !trap.tseen) trap = null;
+    // C untrap() chooses once, including attempts which never name the trap.
+    const description = trap ? trapName(trap.ttyp, { state }) : '';
     const boxes = here ? boxesAt(state, x, y) : [];
     const canReachFloor = heroCanReachFloor(state);
     let handleTrap = canReachFloor;
     let trapSkipped = false;
 
     if (!canReachFloor && (trap || boxes.length)) {
-        await publish(unreachableTrapMessage(trap, boxes.length, here, state));
+        await publish(unreachableTrapMessage(description, boxes.length, here, state));
         trapSkipped = !!trap;
     } else if (canReachFloor && trap) {
         if (boxes.length) {
@@ -285,13 +287,13 @@ export async function untrap({
                     ? " that you're stuck in"
                     : ' while standing on the edge of it';
                 await publish(
-                    `You can't do much about the ${trapName(trap)}${position}.`,
+                    `You can't do much about the ${description}${position}.`,
                 );
                 handleTrap = false;
                 trapSkipped = true;
             } else {
                 const choice = await chooseFloorTrapOrBox(
-                    trap, boxes.length, ask,
+                    trap, description, boxes.length, ask,
                 );
                 if (choice === 'q') return false;
                 if (choice === 'n') {
@@ -301,7 +303,7 @@ export async function untrap({
             }
         }
         if (handleTrap) {
-            return handleFloorTrap(trap, {
+            return handleFloorTrap(trap, description, {
                 state,
                 enterTrap,
                 chooseObject,
@@ -338,9 +340,9 @@ export async function untrap({
     });
 }
 
-function unreachableTrapMessage(trap: Trap | null, boxCount: number, here: boolean, state: GameState): string {
+function unreachableTrapMessage(description: string, boxCount: number, here: boolean, state: GameState): string {
     const things = [];
-    if (trap) things.push(`${article(trapName(trap))} ${trapName(trap)}`);
+    if (description) things.push(`${article(description)} ${description}`);
     if (boxCount) things.push(boxCount === 1 ? 'a container' : 'containers');
     const subject = things.join(' and ');
     const plural = things.length > 1 || boxCount > 1;
@@ -351,21 +353,20 @@ function unreachableTrapMessage(trap: Trap | null, boxCount: number, here: boole
         + `but you can't reach ${object}${mounted}.`;
 }
 
-async function chooseFloorTrapOrBox(trap: Trap, boxCount: number, ask: typeof promptYesNoQuit) {
+async function chooseFloorTrapOrBox(trap: Trap, noun: string, boxCount: number, ask: typeof promptYesNoQuit) {
     const containers = boxCount === 1 ? 'a container' : 'containers';
-    const noun = trapName(trap);
     const verb = trap.ttyp === WEB ? 'Remove' : 'Disarm';
     const subject = `There ${boxCount === 1 ? 'is' : 'are'} ${containers} `
         + `and ${article(noun)} ${noun} here.`;
     return ask(`${subject}  ${verb} the ${noun}?`);
 }
 
-async function handleFloorTrap(trap: Trap, options: FloorTrapOptions): Promise<boolean> {
+async function handleFloorTrap(trap: Trap, description: string, options: FloorTrapOptions): Promise<boolean> {
     const { state, publish } = options;
     const here = trap.tx === state.u.ux && trap.ty === state.u.uy;
     if (state.u?.utrap) {
         await publish(
-            `You cannot deal with the ${trapName(trap)} while trapped${here ? ' in it' : ''}!`,
+            `You cannot deal with the ${description} while trapped${here ? ' in it' : ''}!`,
         );
         return true;
     }
@@ -462,11 +463,11 @@ async function tryDisarm(trap: Trap, {
         && heroBadRock(state, trap.tx, state.u.uy)
         && heroTightDiagonalReason(state);
     if (tightDiagonal) {
-        await publish(`You are unable to reach the ${trapName(trap)}!`);
+        await publish(`You are unable to reach the ${trapName(trap.ttyp, { state })}!`);
         return 0;
     }
     if (!heroCanReachFloor(state, { checkPit: here })) {
-        await publish(`You are unable to reach the ${trapName(trap)}!`);
+        await publish(`You are unable to reach the ${trapName(trap.ttyp, { state })}!`);
         return 0;
     }
 
@@ -494,7 +495,7 @@ async function tryDisarm(trap: Trap, {
     } else {
         const owner = trap.madeby_u ? 'Your' : here ? 'This' : 'That';
         const action = trap.ttyp === WEB ? 'remove' : 'disarm';
-        await publish(`${owner} ${trapName(trap)} is difficult to ${action}.`);
+        await publish(`${owner} ${trapName(trap.ttyp, { state })} is difficult to ${action}.`);
     }
     return 1;
 }
