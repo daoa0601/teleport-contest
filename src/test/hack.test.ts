@@ -12,7 +12,7 @@ import {
 import { rhack } from '../js/cmd.js';
 import { initializePet } from '../js/dog.js';
 import { game } from '../js/gstate.js';
-import { bot, plineWithContinuation } from '../js/display.js';
+import { bot, docrt, flush_screen, plineWithContinuation } from '../js/display.js';
 import { heroLiquidEffects, sinkHeroIntoLava } from '../js/hack.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import {
@@ -28,7 +28,7 @@ import { createMonsterAt, createSaddledSteed } from './support/monsters.js';
 import { runExtendedCommand } from './support/commands.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { freshGameplayRoom } from './support/playable-room.js';
-import { requireScreenRow } from './support/screen.js';
+import { requireScreenCell, requireScreenRow } from './support/screen.js';
 import { createSpecialLevel } from './support/topology.js';
 
 function liquidAtHero(terrain: number) {
@@ -68,6 +68,24 @@ void test('leaving a pool clears the underwater state', async () => {
     assert.equal(!!game.u.uinwater, false);
     assert.equal(game.underwater, false);
     assert.equal(messages.at(-1), 'You are back on solid ground.');
+});
+
+void test('leaving a pool from under water redraws the surface view', async () => {
+    freshObjectRoom();
+    requireFixtureGame(game);
+    const { ux, uy } = game.u;
+    await docrt();
+    await flush_screen(1);
+    assert.equal(requireScreenCell(ux + 2, uy + 1).ch, '.');
+    game.u.uinwater = 1;
+    await docrt();
+    await flush_screen(1);
+    assert.equal(requireScreenCell(ux + 2, uy + 1).ch, ' ');
+
+    await heroLiquidEffects({ publish: async () => {} });
+    await flush_screen(0);
+
+    assert.equal(requireScreenCell(ux + 2, uy + 1).ch, '.');
 });
 
 void test('fire resistance leaves the hero stuck in lava', async () => {

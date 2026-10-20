@@ -13,7 +13,7 @@ import {
     FAINTED, M_SEEN_FIRE, TREE, TT_LAVA, Upolyd, WATER, W_NONDIGGABLE, W_NONPASSWALL,
     WT_TOOMUCH_DIAGONAL,
 } from './const.js';
-import { bot, displayLiquidName, feel_newsym, newsym, plineWithContinuation, under_water, updateLastSeenTerrain } from './display.js';
+import { bot, displayLiquidName, docrt, feel_newsym, newsym, plineWithContinuation, under_water, updateLastSeenTerrain } from './display.js';
 import { heroPassesWalls, heroFormSticks, heroSpecies } from './hero_species.js';
 import { heroHasConflict } from './hero_conflict.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
@@ -814,8 +814,8 @@ function backOnGroundMessage(rescued: boolean, state: GameState): string {
 }
 
 async function leaveWater({
-    state, location, publish, resetVision, recalculateVision,
-}: Pick<LavaContext, 'state' | 'location' | 'publish' | 'resetVision' | 'recalculateVision'>) {
+    state, location, publish,
+}: Pick<LavaContext, 'state' | 'location' | 'publish'>) {
     const u = state.u;
     if (!u.uinwater) return false;
 
@@ -843,12 +843,15 @@ async function leaveWater({
 
     if (stillInWater) return false;
     if (message) await publish(message);
-    const wasUnderwater = !!state.underwater && !heroIsOnWaterLevel(state);
+    // C Underwater is u.uinwater, still set until set_uinwater(0) below.
+    const wasUnderwater = !!(u.uinwater || state.underwater) && !heroIsOnWaterLevel(state);
     await setHeroInWater(false, state);
     state.underwater = false;
+    // C restores the surface view by redrawing the screen and deferring the
+    // vision recalculation to the next flush.
     if (wasUnderwater) {
-        resetVision();
-        recalculateVision(0);
+        await docrt();
+        state.vision_full_recalc = 1;
     }
     return true;
 }
@@ -884,9 +887,7 @@ export async function heroLiquidEffects(options: HeroLiquidOptions = {}): Promis
     let location = state.level?.at?.(x, y);
     if (!u || !location) return null;
     if (entry !== 'drown') {
-        const leftWater = fromFloatDown ? false : await leaveWater({
-            state, location, publish, resetVision, recalculateVision,
-        });
+        const leftWater = fromFloatDown ? false : await leaveWater({ state, location, publish });
         const airborne = u.levitating || u.levitation
             || u.flying;
         if ((!isPoolAt(x, y, state) && !isLavaAt(x, y, state))
