@@ -417,7 +417,7 @@ export async function presentWereChange(change: WereChange | null | undefined, {
                 'presentWereChange requires wakeNearby for an unseen howl',
             );
         }
-        wakeNearby(
+        await wakeNearby(
             change.monster.mx,
             change.monster.my,
             change.wakeDistance,

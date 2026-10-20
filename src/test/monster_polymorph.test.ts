@@ -9,7 +9,7 @@ import {
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
 import { finishEnvironmentalMonsterDeath } from '../js/monster_death.js';
-import { wakeMonstersNear } from '../js/monster_wake.js';
+import { wakeMonstersNearWithMessages } from '../js/monster_wake.js';
 import { MONSTER_NAME, monsterClassSymbol } from '../js/monster_data.js';
 import { setMonsterGivenName } from '../js/monster_given_name.js';
 import {
@@ -248,7 +248,7 @@ void test('a visible werewolf announces its natural change', async () => {
     });
     await presentWereChange(change, {
         publish: async (message: string) => messages.push(message),
-        wakeNearby: wakeMonstersNear,
+        wakeNearby: wakeMonstersNearWithMessages,
     });
 
     assert.equal(monster.mnum, 21);
@@ -266,14 +266,15 @@ void test('an unseen werejackal howls and wakes nearby monsters', async () => {
     const sleeper = await createMonsterAt('jackal', 12, 10);
     sleeper.msleeping = 1;
     const messages: string[] = [];
+    const publish = async (message: string) => { messages.push(message); };
 
     const change = await wereChange(werejackal, game, () => 0);
     await presentWereChange(change, {
-        publish: async (message: string) => messages.push(message),
-        wakeNearby: wakeMonstersNear,
+        publish,
+        wakeNearby: (x, y, distance) => wakeMonstersNearWithMessages(x, y, distance, game, publish),
     });
 
-    assert.deepEqual(messages, ['You hear a jackal howling at the moon.']);
+    assert.deepEqual(messages, ['You hear a jackal howling at the moon.', 'The jackal wakes up.']);
     assert.equal(sleeper.msleeping, 0);
 });
 
@@ -288,15 +289,16 @@ for (const [species, humanForm] of [['werejackal', 262], ['werewolf', 263]] as c
         nearby.msleeping = 1;
         distant.msleeping = 1;
         const messages: string[] = [];
+        const publish = async (message: string) => { messages.push(message); };
 
         const change = await wereChange(howler, game, () => 0);
         await presentWereChange(change, {
-            publish: async (message: string) => messages.push(message),
-            wakeNearby: wakeMonstersNear,
+            publish,
+            wakeNearby: (x, y, distance) => wakeMonstersNearWithMessages(x, y, distance, game, publish),
         });
 
         assert.equal(howler.mnum, MONSTER_NAME.indexOf(species));
-        assert.deepEqual(messages, []);
+        assert.deepEqual(messages, ['The goblin wakes up.']);
         assert.equal(nearby.msleeping, 0, 'the howl wakes the nearby goblin');
         assert.equal(distant.msleeping, 1, 'the howl does not reach four squares away');
     });

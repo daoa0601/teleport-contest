@@ -714,6 +714,9 @@ void test('live acid damage wakes the audible source radius before survival',
             strategy: 0x60000000,
         });
         const potion = await addInventoryObject(POT_ACID);
+        const input = resetInputState();
+        const messages: string[] = [];
+        input.beforeRead = () => { messages.push(game._pending_message); };
 
         initRng(2702n);
         await throwEast(potion, Array.from({ length: 20 }, () => ' '));
@@ -722,7 +725,8 @@ void test('live acid damage wakes the audible source radius before survival',
         assert.equal(monster.msleeping, 0);
         assert.equal(neighbor.msleeping, 0);
         assert.equal(neighbor.mstrategy, 0x40000000);
-        assert.match(game._pending_message, /shrieks in pain!/);
+        assert.match([...messages, game._pending_message].join('\n'),
+            /shrieks in pain![\s\S]*The purple worm wakes up\./);
         assert.equal(potion.where, 'gone');
     });
 

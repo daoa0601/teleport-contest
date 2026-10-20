@@ -10,7 +10,7 @@ import { setMonsterMalign } from './monster_alignment.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS2, MONSTER_FLAGS3, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterIsHuman, } from './monster_data.js';
 import { monsterName } from './monster_name.js';
 import { sessionIsNight } from './monster_sound.js';
-import { wakeMonstersNear } from './monster_wake.js';
+import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { wieldMonsterWeapon } from './monster_weapon.js';
 import { redrawMonsterWorm } from './monster_worm.js';
 import { CORPSE } from './object_data.js';
@@ -37,7 +37,7 @@ export async function tameMonster(monster, source = null, { state = game, announ
     if (monster.mfrozen)
         monster.mfrozen = Math.trunc((monster.mfrozen + 1) / 2);
     if (monster.msleeping)
-        wakeMonstersNear(monster.mx, monster.my, 1, state);
+        await wakeMonstersNearWithMessages(monster.mx, monster.my, 1, state);
     const speciesFlags = MONSTER_FLAGS3[monster.mnum] ?? 0;
     if (monster.iswiz || monster.mnum === PM_MEDUSA || (speciesFlags & M3_WANTSARTI))
         return false;

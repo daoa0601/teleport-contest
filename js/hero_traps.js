@@ -63,7 +63,7 @@ import { makeTrapMissile } from './trap_missile.js';
 import { rollPhysicalWeaponDamageAgainstHero } from './weapon_damage.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { stopHeroOccupation } from './occupation.js';
-import { wakeMonstersNear, wakeMonstersNearWithMessages } from './monster_wake.js';
+import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { ceilingName } from './terrain_name.js';
 import { putHeroToSleep } from './hero_sleep.js';
 import { monstersForgetHeroResistance, monstersObserveHeroResistance, } from './monster_perception.js';

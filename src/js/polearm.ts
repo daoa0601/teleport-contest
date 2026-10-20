@@ -27,7 +27,7 @@ import { hitMonsterWithAppliedWeapon } from './hero_ranged_attack.js';
 import { prepareMapPositionHighlights, selectMapPosition, shouldShowGetposTip, showGetposTip } from './getpos.js';
 import { heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { ensureHeroSkills } from './skills.js';
-import { wakeMonstersNear } from './monster_wake.js';
+import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { BOULDER, OBJECT_SUBTYPE, STATUE } from './object_data.js';
 import { activateStatueTrapAt } from './statue_trap.js';
 import { cansee, couldsee } from './vision.js';
@@ -334,7 +334,7 @@ export async function usePolearm(
         const activated = trapAt ? !!(await activateStatueTrapAt(cc.x, cc.y, { state })) : false;
         if (!activated) {
             await pline('Thump!  Your blow bounces harmlessly off the statue.');
-            wakeMonstersNear(cc.x, cc.y, 25, state);
+            await wakeMonstersNearWithMessages(cc.x, cc.y, 25, state);
         }
     } else {
         unmap_invisible(cc.x, cc.y);
@@ -345,7 +345,7 @@ export async function usePolearm(
             floorHasObject(BOULDER, cc.x, cc.y, state)
         ) {
             await pline('Thump!  Your blow bounces harmlessly off the boulder.');
-            wakeMonstersNear(cc.x, cc.y, 25, state);
+            await wakeMonstersNearWithMessages(cc.x, cc.y, 25, state);
         } else {
             const location = state.level?.at(cc.x, cc.y);
             if (!location || !ACCESSIBLE(location.typ) || IS_FURNITURE(location.typ)) {

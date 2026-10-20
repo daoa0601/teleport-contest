@@ -15,7 +15,7 @@ import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { ForceLockOccupation } from './occupation_types.js';
 import { consumeInventoryItem } from './invent.js';
-import { wakeMonstersNear } from './monster_wake.js';
+import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import {
     CHEST, LARGE_BOX, OBJECT_LARGE_DAMAGE,
     OBJECT_SUBTYPE,
@@ -169,7 +169,7 @@ export async function continueForceLock(occupation: ForceLockOccupation, state: 
         }
     } else {
         const wakeDistance = (state.u?.ulevel ?? 1) * 20;
-        wakeMonstersNear(
+        await wakeMonstersNearWithMessages(
             state.u?.ux ?? 0, state.u?.uy ?? 0, wakeDistance, state,
         );
     }

@@ -241,9 +241,7 @@ import {
 import { erodeArmor, erodeAttackingWeapon } from './object_erosion.js';
 import { monsterWieldedWeapon } from './monster_weapon.js';
 import { resolveMonsterLiquid } from './mon.js';
-import {
-    wakeMonstersNear, wakeMonstersNearWithMessages,
-} from './monster_wake.js';
+import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { applyHeroWereChange, presentWereChange } from './were.js';
 import { sessionIsNight } from './monster_sound.js';
 import { burnHeroArmorByFire } from './trap.js';
@@ -1081,7 +1079,7 @@ async function beginInitialTurnMaintenance(): Promise<MaintenancePhase | { kind:
         await presentWereChange(event.change, {
             publish: plineWithContinuation,
             wakeNearby: (x: number, y: number, distance: number) =>
-                wakeMonstersNear(x, y, distance, game),
+                wakeMonstersNearWithMessages(x, y, distance, game),
         });
     }
     return finishInitialTurnMaintenanceAfterMonsterDistress(capacity, true);

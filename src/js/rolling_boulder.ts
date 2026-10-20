@@ -32,7 +32,7 @@ import { monsterAtPosition } from './monster_location.js';
 import { monsterName, monsterObjectPronoun } from './monster_name.js';
 import { applyMonsterPassiveToObject } from './monster_passive.js';
 import type { Monster } from './monster_types.js';
-import { wakeMonstersNear } from './monster_wake.js';
+import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { findMonsterArmorClass } from './monworn.js';
 import { BOULDER } from './object_data.js';
 import { withIndefiniteArticle } from './object_grammar.js';
@@ -219,7 +219,7 @@ export async function launchRollingBoulder(start: Position, endpoint: Position, 
                 boulder.otrapped = false;
                 await placeObject(boulder, position.x, position.y, state);
                 boulder = other;
-                wakeMonstersNear(position.x, position.y, 100, state);
+                await wakeMonstersNearWithMessages(position.x, position.y, 100, state, publish);
             }
             const cell = level.requireAt(position.x, position.y);
             if (cell.typ === DOOR && cell.doormask & (D_CLOSED | D_LOCKED)) {
@@ -238,7 +238,7 @@ export async function launchRollingBoulder(start: Position, endpoint: Position, 
                 } else if (IS_STWALL(ahead.typ) || IS_TREE(ahead.typ)) {
                     resting = position;
                     if (!heroIsDeaf(state)) await publish('Thump!');
-                    wakeMonstersNear(position.x, position.y, 16, state);
+                    await wakeMonstersNearWithMessages(position.x, position.y, 16, state, publish);
                     break;
                 }
             }

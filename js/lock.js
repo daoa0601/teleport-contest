@@ -7,7 +7,7 @@ import { flushPendingTopline, newsym, pline, plineWithContinuation, } from './di
 import { placeObject, stack_object } from './floor_object.js';
 import { game } from './gstate.js';
 import { consumeInventoryItem } from './invent.js';
-import { wakeMonstersNear } from './monster_wake.js';
+import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { CHEST, LARGE_BOX, OBJECT_LARGE_DAMAGE, OBJECT_SUBTYPE, } from './object_data.js';
 import { objectMaterial } from './object_material.js';
 import { withIndefiniteArticle } from './object_grammar.js';
@@ -148,7 +148,7 @@ export async function continueForceLock(occupation, state = game) {
     }
     else {
         const wakeDistance = (state.u?.ulevel ?? 1) * 20;
-        wakeMonstersNear(state.u?.ux ?? 0, state.u?.uy ?? 0, wakeDistance, state);
+        await wakeMonstersNearWithMessages(state.u?.ux ?? 0, state.u?.uy ?? 0, wakeDistance, state);
     }
     if (rn2(100) < occupation.chance) {
         await plineWithContinuation('You succeed in forcing the lock.');

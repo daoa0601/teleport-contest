@@ -327,7 +327,7 @@ export async function presentWereChange(change, { publish = plineWithContinuatio
         if (typeof wakeNearby !== 'function') {
             throw new TypeError('presentWereChange requires wakeNearby for an unseen howl');
         }
-        wakeNearby(change.monster.mx, change.monster.my, change.wakeDistance);
+        await wakeNearby(change.monster.mx, change.monster.my, change.wakeDistance);
     }
     return change;
 }
