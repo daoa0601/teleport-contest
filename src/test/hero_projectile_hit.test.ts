@@ -120,3 +120,17 @@ void test('watching a monster throw one dart reveals the rest of its stack', asy
     assert.equal(kept?.quan, 2);
     assert.equal(kept?.dknown, true);
 });
+
+void test('a caught poisoned dart is announced by its simple name', async () => {
+    freshObjectRoom();
+    requireFixtureGame(game);
+    const { soldier, weapon } = await throwWeaponAtHero(DART, { opoisoned: 1, spe: 0 });
+    const messages: string[] = [];
+
+    await throwMonsterWeaponAtHero(soldier, game, weapon, {
+        random: () => 0,
+        publish: async message => { messages.push(message); },
+    });
+
+    assert.ok(messages.some(message => message.startsWith('You catch the dart!')), messages.join(' | '));
+});
