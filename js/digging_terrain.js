@@ -25,6 +25,7 @@ import { clearHeroTrap, setHeroTrap } from './hero_traps.js';
 import { bringLeashedFollowers } from './teleport.js';
 import { liquidForHole } from './hole.js';
 import { gotoLevel } from './level_change.js';
+import { finishDestinationSpotEffects } from './location_effects.js';
 import { resolveMonsterLiquid } from './mon.js';
 import { angerAttackedMonster } from './monster_anger.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
@@ -513,6 +514,14 @@ export async function digActualHole(x, y, madeBy, ttyp, { state = game } = {}) {
                 }
                 await plineWithContinuation('You fall through...');
                 await gotoLevel({ dnum: state.u.uz.dnum, dlevel: state.u.uz.dlevel + 1 }, { arrival: 'falling' });
+                if (state.program_state.gameover)
+                    return;
+                // digactualhole() follows goto_level() with spoteffects(FALSE),
+                // so a trap at the landing square fires at once.
+                const { ux, uy } = state.u;
+                await finishDestinationSpotEffects({
+                    oldx: ux, oldy: uy, newx: ux, newy: uy, pick: false,
+                });
             }
         }
         else {
