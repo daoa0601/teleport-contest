@@ -259,7 +259,7 @@ export async function consumeMonsterItem(monster: Monster, object: GameObject, s
 
 async function flashReadingMonster(monster: Monster, state: PlayingGameState): Promise<void> {
     let count = couldsee(monster.mx, monster.my) ? 8 : 4;
-    if (!state.flags.sparkle) count /= 2;
+    if (state.flags.sparkle === false) count /= 2;
     const row = state.viz_array?.[monster.my];
     const saved = row?.[monster.mx];
     if (!row || saved === undefined) throw new Error('A sensed reader needs its visibility cell');

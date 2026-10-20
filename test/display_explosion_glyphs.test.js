@@ -1,14 +1,15 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { EXPL_DARK, EXPL_FIERY, MAGIC_TRAP } from '../js/const.js';
+import { EXPL_DARK, EXPL_FIERY, MAGIC_TRAP, NO_MINVENT } from '../js/const.js';
 import { digHole } from '../js/digging_terrain.js';
 import { glyphAt } from '../js/display.js';
 import { explode } from '../js/explosion.js';
 import { GlyphOffset } from '../js/glyph_numbers.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { CLR_MAGENTA, CLR_ORANGE } from '../js/terminal.js';
+import { CLR_BRIGHT_BLUE, CLR_MAGENTA, CLR_ORANGE } from '../js/terminal.js';
 import { addTrap } from './support/level-state.js';
+import { createMonsterAt } from './support/monsters.js';
 import { installPagerInput } from './support/pager-input.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenCell } from './support/screen.js';
@@ -24,6 +25,19 @@ void test('an ASCII explosion keeps its border position and fiery glyph type', a
     };
     await explode(14, 10, 11, 0, 9, EXPL_FIERY);
     assert.ok(frames > 0);
+});
+void test('a default game shows the shield of a monster resisting an explosion', async () => {
+    freshObjectRoom();
+    assert.equal(game.flags.sparkle, undefined);
+    game.symset = 'ASCII';
+    await createMonsterAt('red mold', 15, 10, NO_MINVENT);
+    let shieldFrames = 0;
+    game.animationFrame = async () => {
+        if (requireScreenCell(14, 11).color === CLR_BRIGHT_BLUE)
+            shieldFrames++;
+    };
+    await explode(14, 10, 11, 0, SCROLL_CLASS, EXPL_FIERY);
+    assert.ok(shieldFrames > 0);
 });
 void test('a dark explosion uses the default fiery glyph and orange border', async () => {
     freshObjectRoom();

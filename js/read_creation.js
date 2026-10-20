@@ -163,7 +163,7 @@ function canHideCreatedMonster(monster) {
 }
 async function flashCreatedMonster(monster) {
     let count = couldsee(monster.mx, monster.my) ? 8 : 4;
-    if (!game.flags.sparkle)
+    if (game.flags.sparkle === false)
         count /= 2;
     const row = game.viz_array?.[monster.my];
     const saved = row?.[monster.mx];
