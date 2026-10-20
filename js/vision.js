@@ -750,6 +750,10 @@ export function vision_recalc(control = 0) {
     const u = game.u, level = game.level;
     if (!u || !level)
         return;
+    // C really_done() renders vision inoperative (iflags.vision_inited)
+    // before a pending full recalculation is cleared.
+    if (game.program_state.gameover)
+        return;
     game.vision_full_recalc = 0;
     if (game.in_mklev || game.program_state.in_getlev)
         return;
