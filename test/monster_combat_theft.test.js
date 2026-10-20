@@ -8,7 +8,7 @@ import { AD_SEDU, AD_SGLD, AD_SITM, AD_SSEX, AT_TUCH } from '../js/monster_attac
 import { resolveMonsterCombatDamage } from '../js/monster_combat_damage.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
-import { APPLE, DAGGER, GOLD_PIECE, LEATHER_GLOVES, STATUE } from '../js/object_data.js';
+import { APPLE, DAGGER, GOLD_PIECE, LEATHER_GLOVES, POT_SICKNESS, STATUE } from '../js/object_data.js';
 import { knownObject, untimedCorpse } from './support/game-objects.js';
 import { runExtendedCommand } from './support/commands.js';
 import { floorObjectsAt } from './support/level-state.js';
@@ -52,6 +52,14 @@ for (const type of itemTheftTypes) {
         assert.equal(defender.mstrategy & STRAT_WAITFORU, 0);
     });
 }
+void test('a seen theft names an unidentified potion by its appearance', async () => {
+    const { attacker, defender, options, messages } = await theftFight('wood nymph');
+    const potion = await knownObject(POT_SICKNESS, { typeKnown: false, dknown: false, bknown: false });
+    await addObjectToMonsterInventory(defender, potion);
+    await resolveMonsterCombatDamage(attacker, defender, [AT_TUCH, AD_SEDU, 0, 0], options);
+    assert.match(messages.join('\n'), /steals an? [a-z -]+ potion from the soldier!/);
+    assert.equal(potion.dknown, true);
+});
 void test('a tame thief skips cursed possessions and steals the first acceptable item', async () => {
     const { attacker, defender, options } = await theftFight();
     initializePet(attacker);

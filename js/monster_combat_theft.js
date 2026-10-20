@@ -6,6 +6,7 @@ import { AD_SGLD } from './monster_attack_types.js';
 import { MONSTER_SYMBOL } from './monster_data.js';
 import { linkObjectToMonsterInventory, removeObjectFromMonsterInventory, unlinkMonsterObject } from './monster_inventory.js';
 import { monsterName } from './monster_name.js';
+import { observeObjectForNaming } from './objnam.js';
 import { monsterSelfTouch } from './monster_stoning.js';
 import { updateMonsterWeaponAfterPolymorph } from './monster_weapon.js';
 import { dismountHero } from './steed.js';
@@ -52,6 +53,9 @@ async function stealItem(attacker, defender, context) {
     await removeObjectFromMonsterInventory(defender, object, state, { publish });
     if (state.program_state.gameover)
         return { ...theftResult(0), done: true, heroDied: true };
+    // C doname() records the appearance it names while the hero can see.
+    if (visible)
+        observeObjectForNaming(object, { state });
     const description = visible ? inventoryItemDescription(object) : '';
     // add_to_minv retains ownership without mpickobj's pickup side effects.
     await linkObjectToMonsterInventory(attacker, object, { state });
