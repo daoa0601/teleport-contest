@@ -6989,6 +6989,14 @@ function heroMayDisplaceMonster(monster: Monster): boolean {
         && !heroIsHallucinating(game) && !u.stunned && !(u.stunnedTurns ?? 0);
 }
 
+// C domove_core(): a failed test_move() or swim_move_danger() cancels the
+// move and calls nomul(0), which also requests a full status update.
+function rejectHeroMove(): false {
+    game.context.move = 0;
+    nomul(0, game);
+    return false;
+}
+
 async function domoveCore(dx: number, dy: number): Promise<boolean> {
     requirePlayingGame(game);
     const u = game.u;
@@ -7234,7 +7242,7 @@ async function domoveCore(dx: number, dy: number): Promise<boolean> {
         feel_location(newx, newy);
     }
 
-    if (!await heroCanEnterIronBars(newx, newy, game)) return false;
+    if (!await heroCanEnterIronBars(newx, newy, game)) return rejectHeroMove();
 
     const formFlags = MONSTER_FLAGS1[heroSpecies(game)] ?? 0;
     const tunnels = !!(formFlags & M1_TUNNEL) && !(formFlags & M1_NEEDPICK);
@@ -7243,9 +7251,9 @@ async function domoveCore(dx: number, dy: number): Promise<boolean> {
         && !heroCanPassWallAt(game, newx, newy) && !heroOozesUnderDoor(loc)) {
         if (u.uinwater || game.underwater) {
             await pline('There is an obstacle there.');
-            return false;
+            return rejectHeroMove();
         }
-        if (tunnels && await continueChewingTerrain(newx, newy, game)) return false;
+        if (tunnels && await continueChewingTerrain(newx, newy, game)) return rejectHeroMove();
     }
 
     const oozingUnderDoor = heroOozesUnderDoor(loc);
@@ -7277,13 +7285,13 @@ async function domoveCore(dx: number, dy: number): Promise<boolean> {
                     // test_move(), then nomul(0).  `true` is this port's
                     // scheduler-facing "time elapsed" result; the hero's
                     // coordinates remain unchanged.
-                    stopRun(game);
+                    nomul(0, game);
                     game.context.move = 1;
                     return true;
                 }
                 await pline('That door is closed.');
             }
-            return false;
+            return rejectHeroMove();
         }
         await doopen(newx, newy);
         game.context.move = 0;
@@ -7309,8 +7317,7 @@ async function domoveCore(dx: number, dy: number): Promise<boolean> {
                 payShopkeeper: dopay,
             });
             if (result.died) return false;
-            game.context.move = 0;
-            return false;
+            return rejectHeroMove();
         }
         if (game.flags?.mention_walls) {
             const obstruction = loc?.typ === STONE
@@ -7320,24 +7327,22 @@ async function domoveCore(dx: number, dy: number): Promise<boolean> {
             const message = obstruction ? `It's ${obstruction}.` : '';
             if (message) await pline(message);
         }
-        game.context.move = 0;
-        return false;
+        return rejectHeroMove();
     }
 
-    if (await rejectHeroDiagonalDoorEntry(dx, dy, loc)) return false;
+    if (await rejectHeroDiagonalDoorEntry(dx, dy, loc)) return rejectHeroMove();
 
-    if (await rejectTightHeroDiagonal(dx, dy)) return false;
+    if (await rejectTightHeroDiagonal(dx, dy)) return rejectHeroMove();
 
     if (!(dx && dy && heroBadRock(game, u.ux, newy) && heroBadRock(game, newx, u.uy))
         && wormCrossesBetween(u.ux, u.uy, newx, newy, game)) {
         const worm = monsterAtPosition(game.level, u.ux, newy);
         if (!worm) throw new Error('A crossing worm must occupy the adjacent square.');
         await pline(`${monsterName(worm, { state: game, article: 'your', capitalized: true })} is in your way.`);
-        game.context.move = 0;
-        return false;
+        return rejectHeroMove();
     }
 
-    if (await rejectHeroDiagonalDoorExit(dx, dy)) return false;
+    if (await rejectHeroDiagonalDoorExit(dx, dy)) return rejectHeroMove();
 
     const boulder = heroPassesWalls(game) && !game.level.flags.sokoban_rules ? null
         : (game.level.objects[newx]?.[newy] || []).find(object => object.otyp === BOULDER);
@@ -7347,19 +7352,19 @@ async function domoveCore(dx: number, dy: number): Promise<boolean> {
         && !heroCouldMoveOntoBoulder(newx, newy)) {
         if (game.flags?.mention_walls)
             await pline('A boulder blocks your path.');
-        stopRun(game);
-        game.context.move = 0;
-        return false;
+        return rejectHeroMove();
     }
     if (boulder) {
         if (tunnels && !game.level.flags.sokoban_rules) {
-            if (await continueChewingTerrain(newx, newy, game)) return false;
+            if (await continueChewingTerrain(newx, newy, game)) return rejectHeroMove();
         } else {
             game.context.move = 0;
             const pushed = await pushBouldersAt(newx, newy, dx, dy);
             if (game.program_state.gameover) return true;
             if (!pushed) {
-                return Boolean(game.context.move);
+                // moverock() spends the move only when the hero learned
+                // something; that path sets context.door_opened in C.
+                return game.context.move ? true : rejectHeroMove();
             }
         }
     }
@@ -7377,8 +7382,7 @@ async function domoveCore(dx: number, dy: number): Promise<boolean> {
         } else {
             await plineWithContinuation(warning);
         }
-        game.context.move = 0;
-        return false;
+        return rejectHeroMove();
     }
 
     // C domove_core(): drag the ball before tentatively moving and swapping.
