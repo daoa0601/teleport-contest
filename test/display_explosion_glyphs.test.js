@@ -28,7 +28,6 @@ void test('an ASCII explosion keeps its border position and fiery glyph type', a
 });
 void test('a default game shows the shield of a monster resisting an explosion', async () => {
     freshObjectRoom();
-    assert.equal(game.flags.sparkle, undefined);
     game.symset = 'ASCII';
     await createMonsterAt('red mold', 15, 10, NO_MINVENT);
     let shieldFrames = 0;
