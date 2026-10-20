@@ -1,5 +1,6 @@
 // Expulsion from an engulfing monster, including the hero's landing.
 // C refs: mhitu.c expels(), mon.c unstuck(), mnexto().
+import { updateMonsterRegions } from './regions.js';
 import { setHeroGrip } from './hero_grip.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { game, requireLiveGame } from './gstate.js';
@@ -114,6 +115,8 @@ export async function expelHero(monster, { state = game, message = true, engulfi
         monster.mtrack = [];
         // Native mnexto() keeps the vision from unstuck() until the normal
         // monster light refresh; relocation alone must not reveal terrain.
+        // rloc_to_core() still moves the engulfer between gas clouds.
+        updateMonsterRegions(monster, state);
     }
     refresh(oldx, oldy);
     refresh(monster.mx, monster.my);
