@@ -7,7 +7,7 @@ import { isPoolAt } from './terrain_properties.js';
 import { makemonAt, makemonNear, rndmonstAdj } from './mklev.js';
 import { resolveMonsterLiquid } from './mon.js';
 import { setMonsterMalign } from './monster_alignment.js';
-import { finishMonsterLiquidDeath } from './monster_death.js';
+import { finishLiquidDeathForCurrentMover } from './hero_monster_death.js';
 import { MONSTER_HAS_WEAPON_ATTACK, MONSTER_NAME } from './monster_data.js';
 import { setMonsterGivenName } from './monster_given_name.js';
 import { monsterBirthLimit } from './monster_population.js';
@@ -81,8 +81,8 @@ export async function makeFamiliar(object = null, x = game.u.ux, y = game.u.uy, 
     if (isPoolAt(monster.mx, monster.my, state)) {
         const result = await resolveMonsterLiquid(monster, state, {
             announce,
-            finishDeath: finishMonsterLiquidDeath,
-            monsterMoving: false,
+            finishDeath: finishLiquidDeathForCurrentMover,
+            monsterMoving: !!state.context.mon_moving,
         });
         if (result?.dead)
             return null;

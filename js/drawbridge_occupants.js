@@ -6,11 +6,11 @@ import { isDrawbridgeWallAt, isLavaAt, isPoolAt, isPoolOrLavaAt } from './terrai
 import { DB_FLOOR, DB_ICE, DB_LAVA, DB_MOAT, DB_UNDER, DRAWBRIDGE_DOWN, ICE, LAVAPOOL, MOAT, ROOM, } from './const.js';
 import { canSeeMonster, canSpotMonster, newsym, plineWithContinuation, } from './display.js';
 import { finishHeroDeath } from './end.js';
-import { finishHeroMonsterKill } from './hero_monster_death.js';
+import { finishHeroMonsterKill, finishLiquidDeathForCurrentMover } from './hero_monster_death.js';
 import { heroLiquidEffects } from './hack.js';
 import { resolveMonsterLiquid } from './mon.js';
 import { MONSTER_FLAGS1, MONSTER_MOVE, MONSTER_SYMBOL, } from './monster_data.js';
-import { finishMonsterKilled, finishMonsterLiquidDeath, } from './monster_death.js';
+import { finishMonsterKilled, } from './monster_death.js';
 import { AD_DGST, AD_PHYS } from './monster_attack_types.js';
 import { heroIsPolymorphed } from './polyself.js';
 import { rnd } from './rng.js';
@@ -395,8 +395,8 @@ async function settleEntityAfterCollapse(entity, state) {
     }
     await resolveMonsterLiquid(entity.actor, state, {
         announce: plineWithContinuation,
-        finishDeath: finishMonsterLiquidDeath,
-        monsterMoving: false,
+        finishDeath: finishLiquidDeathForCurrentMover,
+        monsterMoving: !!state.context.mon_moving,
     });
 }
 async function killCollapseVictim(entity, bridge, state, options, killer) {

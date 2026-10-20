@@ -45,6 +45,7 @@ import {
     monsterBodyCrumbles, monsterBodyCrumblesMessage, monsterDeathSquareAllowsObjects,
     monsterLeavesCorpse,
 } from './monster_death.js';
+import type { MonsterLiquidDeathResult } from './monster_death.js';
 import {
     resolveMonsterDeathExplosion, monsterDeathSwallower, rollMonsterDeathExplosion,
 } from './monster_explosion.js';
@@ -400,6 +401,16 @@ export async function finishHeroMonsterKillOutcome(monster: Monster, x: number, 
     }
     adjustHeroAlignment(monster.malign);
     return { killed: true, heroDied: false };
+}
+
+// C minliquid_core() asks context.mon_moving who owns a liquid death: a
+// monster's own move dies by mondead()/mondied(), anything else by xkilled().
+export function finishLiquidDeathForCurrentMover(
+    monster: Monster, options: MonsterLiquidDeathContext,
+): Promise<MonsterLiquidDeathResult | HeroLiquidMonsterDeathOutcome> {
+    return options.state.context.mon_moving
+        ? finishMonsterLiquidDeath(monster, options)
+        : finishHeroLiquidMonsterDeath(monster, options);
 }
 
 // Drowning caused by the hero uses xkilled() without a second kill line.
