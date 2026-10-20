@@ -6602,6 +6602,13 @@ export async function resumeDeferredMonsterTrap(action, state, { random = rn2, r
                 random: recordedRandom,
                 rollOne: recordedRollOne,
                 ...(describeMonster ? { describeMonster } : {}),
+                forceTrapAtMonster: async (victim) => finishImmediateMonsterTrap(await triggerImmediateMonsterTrap(victim, state, {
+                    force: true, random: recordedRandom, rollOne: recordedRollOne, publish,
+                }), state, {
+                    publish, random: recordedRandom, rollOne: recordedRollOne,
+                    finishDeath,
+                    ...(describeMonster ? { describeMonster } : {}),
+                }),
             });
             break;
         case 'pit-trap':
