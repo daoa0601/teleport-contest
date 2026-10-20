@@ -3237,10 +3237,27 @@ async function advanceHeroAttackSequence(sequence, state, random, rollOne, rollD
             return sequence.current;
         }
         sequence.current = null;
+        // A slot that reaches the end of mattacku()'s switch without an
+        // attack still commits pending status; its continue paths do not.
+        if (!attackSlotContinues(sequence, effectiveAttack[0], state)
+            && state === game && state.context.botl)
+            await bot();
     }
     sequence.current = null;
     sequence.done = true;
     return null;
+}
+// C mattacku() loop entries that `continue` before reaching bot().
+function attackSlotContinues(sequence, attackType, state) {
+    const monster = sequence.monster;
+    if (state.u.uswallow && attackType !== AT_ENGL)
+        return true;
+    if (sequence.skipNonMagic && attackType !== AT_MAGC)
+        return true;
+    if (attackType !== AT_KICK || !monster.mtrapped)
+        return false;
+    const trap = trapAt(state, monster.mx, monster.my);
+    return trap?.ttyp === PIT || trap?.ttyp === SPIKED_PIT;
 }
 async function attackHeroWithRangedWeapon(monster, state, random, rollOne, calls, publish) {
     requirePerceivedHero(monster);
