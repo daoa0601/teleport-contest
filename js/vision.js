@@ -2,7 +2,7 @@
 // C ref: vision.c Algorithm C shadow-casting.
 import { monsterHasMapPosition } from './monster_location.js';
 import { game } from './gstate.js';
-import { COLNO, ROWNO, DOOR, SDOOR, POOL, WATER, LAVAWALL, TREE, CLOUD, D_CLOSED, D_LOCKED, D_TRAPPED, M_AP_OBJECT, M_AP_FURNITURE, M_AP_TYPE, Upolyd, SV0, SV1, SV2, SV3, SV4, SV5, SV6, SV7, SVALL, IS_WALL, Is_rogue_level, Is_waterlevel, ROOMOFFSET, TT_PIT, TEMP_LIT, } from './const.js';
+import { COLNO, ROWNO, DOOR, SDOOR, POOL, WATER, LAVAWALL, TREE, CLOUD, D_CLOSED, D_LOCKED, D_TRAPPED, M_AP_OBJECT, M_AP_FURNITURE, M_AP_TYPE, SV0, SV1, SV2, SV3, SV4, SV5, SV6, SV7, SVALL, IS_WALL, Is_rogue_level, Is_waterlevel, ROOMOFFSET, TT_PIT, TEMP_LIT, } from './const.js';
 import { newsym } from './display.js';
 import { BOULDER } from './object_data.js';
 import { MONSTER_SYMBOL } from './monster_data.js';
@@ -42,11 +42,8 @@ function mobileLightSources(level) {
     const sources = monsters.filter(monster => !monster.dead && !monster.lightRemoved && !monster.mburied
         && monster.mx > 0 && monsterEmitsLight(monster.mnum))
         .map(monster => ({ x: monster.mx, y: monster.my, range: 1 }));
-    if (Upolyd(game.u) && monsterEmitsLight(game.u.umonnum)) {
-        // C polyself() increases the hero's radius from one to two so
-        // the new light reaches beyond the adjacent visible squares.
-        sources.push({ x: game.u.ux, y: game.u.uy, range: 2 });
-    }
+    if (game.u.formLightRange)
+        sources.push({ x: game.u.ux, y: game.u.uy, range: game.u.formLightRange });
     const addObjectLight = (object, x, y) => {
         const range = objectLightRadius(object);
         if (range)
@@ -73,7 +70,7 @@ export function hasLightSources() {
     // Sources in containers, underground, or in transit still exist even
     // when get_obj_location()/get_mon_location() cannot expose their light.
     return !!game._transientLights?.length
-        || Upolyd(game.u) && monsterEmitsLight(game.u.umonnum)
+        || !!game.u.formLightRange
         || [...(game.level?.monsters ?? []), ...(game._migratingMonsters ?? [])]
             .some(monster => !monster.dead && !monster.lightRemoved && monsterEmitsLight(monster.mnum))
         || objectsInTimerGraph(game).some(object => objectLightRadius(object) > 0);

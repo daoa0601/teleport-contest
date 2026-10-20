@@ -9,7 +9,7 @@ import { game, requireLiveGame } from './gstate.js';
 import { heroSpecies } from './hero_species.js';
 import { displayColorName, plineWithContinuation, randomDisplayMonsterName } from './display.js';
 import { MONSTER_NAME, MONSTER_SYMBOL, requireMonsterData } from './monster_data.js';
-import { heroHasNoLimbs, heroIsPolymorphed } from './polyself.js';
+import { extinguishHeroFormLight, heroHasNoLimbs, heroIsPolymorphed } from './polyself.js';
 import { removeIntrinsicProperty, setPropertyTimeout } from './properties.js';
 import { stopHeroOccupation } from './occupation.js';
 import { openingTinMaySaveHero } from './tin.js';
@@ -259,6 +259,8 @@ export async function advanceHeroSliming({ state = game, publish = plineWithCont
     // Slime infection completes even after genocide. Life saving then
     // encounters the genocided body, as in C slimed_to_death().
     vitals.mvflags &= ~G_GENOD;
+    // polymon() does not do polyself()'s light bookkeeping.
+    extinguishHeroFormLight(state);
     try {
         await transform(PM_GREEN_SLIME);
     }

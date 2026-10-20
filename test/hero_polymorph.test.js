@@ -21,6 +21,7 @@ import { heroIsSliming, startHeroSliming } from '../js/slime.js';
 import { heroIsPetrifying, startHeroPetrification } from '../js/stoning.js';
 import { setPrimaryWeapon } from '../js/weapon_slots.js';
 import { cansee, vision_recalc } from '../js/vision.js';
+import { glyphAt } from '../js/display.js';
 import { addInventoryObject, artifactObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installHeroChainedToBuriedBall, installPolymorphedHero, installPunishedHero, installSwallowedHero, } from './support/hero-state.js';
@@ -391,6 +392,31 @@ void test('a luminous form lights the dungeon until the hero changes back', asyn
     pushKeys('polyself\ncaveman\n                ');
     await rhack('#'.charCodeAt(0));
     vision_recalc(0);
+    assert.equal(cansee(x, y), false);
+});
+void test('regaining sight in a new body glimpses squares lit by the old luminous form', async () => {
+    const level = freshObjectRoom({ flags: { debug: true }, recalculateVision: false });
+    requireFixtureGame(game);
+    for (let x = 7; x <= 16; x++) {
+        for (let y = 6; y <= 14; y++) {
+            const location = level.requireAt(x, y);
+            location.lit = false;
+            location.waslit = false;
+        }
+    }
+    const x = game.u.ux + 2;
+    const y = game.u.uy;
+    vision_recalc(0);
+    pushKeys('polyself\nfire vortex\n                ');
+    await rhack('#'.charCodeAt(0));
+    vision_recalc(0);
+    assert.equal(glyphAt(x, y)?.kind, 'unexplored');
+    resetInputState();
+    pushKeys('polyself\nplains centaur\n                ');
+    await rhack('#'.charCodeAt(0));
+    vision_recalc(0);
+    // polymon() restores sight while the vortex's light still exists.
+    assert.equal(glyphAt(x, y)?.kind, 'terrain');
     assert.equal(cansee(x, y), false);
 });
 //# sourceMappingURL=hero_polymorph.test.js.map
