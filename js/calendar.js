@@ -47,4 +47,19 @@ export function recorderLocalEpochSeconds(datetime) {
     const inheritedOffset = currentLocalProjection - currentEpoch;
     return Math.trunc((target - inheritedOffset) / 1000);
 }
+// C save.c writes yyyymmddhhmmss(t), using the New York offset in effect at
+// t; restore.c reads that text back through time_from_yyyymmddhhmmss(), which
+// applies the current offset.  A time saved across a DST boundary shifts.
+export function recorderRestoredTime(epoch) {
+    const parts = new Map(new Intl.DateTimeFormat('en-US', {
+        timeZone: 'America/New_York', hourCycle: 'h23',
+        year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit', second: '2-digit',
+    }).formatToParts(new Date(epoch * 1000))
+        .filter(part => part.type !== 'literal')
+        .map(part => [part.type, part.value]));
+    const text = ['year', 'month', 'day', 'hour', 'minute', 'second']
+        .map(name => parts.get(name) ?? '').join('');
+    return recorderLocalEpochSeconds(text) || epoch;
+}
 //# sourceMappingURL=calendar.js.map
