@@ -6,6 +6,7 @@ import { game } from './gstate.js';
 import type { Monster } from './monster_types.js';
 import { KILLED_BY, PARANOID_DIE, MGIVENNAME, M_AP_MONSTER, M_AP_TYPE, STONING, Upolyd, ismnum } from './const.js';
 import { canSpotMonster, flushPendingTopline, flush_screen, plineWithContinuation } from './display.js';
+import { vision_recalc } from './vision.js';
 import {
     beginHeroLifeSaving, completeHeroLifeSaving, finishHeroDeath, finishOrdinaryDeath, formatKillerCause,
     identifyLifeSavingAmulet, restoreHeroAfterDeath,
@@ -94,7 +95,9 @@ export async function finishMonsterAttackDeath(monster: Monster, {
     const projectedFatalLine = !!game._pending_message
         && !game._suppressMessagesUntilInput;
     if (projectedFatalLine && announcesDeath && deathType !== STONING) {
-        // You("die...") flushes the raw injury before tty pages older prose.
+        // You("die...") runs vpline(): pending vision changes and the raw
+        // injury reach the map before tty pages older prose.
+        if (game.vision_full_recalc) vision_recalc(0);
         await flush_screen(1);
         await waitForCurrentMonsterMore();
     }
