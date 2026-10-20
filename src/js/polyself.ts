@@ -381,7 +381,7 @@ export async function returnHeroToHumanForm(state = game, {
 
     // rehumanize() deletes the body's light source before polyman() prints.
     // Its pending vision refresh must reach the announcement's map flush.
-    if (monsterEmitsLight(state.u.umonnum)) state.vision_full_recalc = 1;
+    extinguishHeroFormLight(state);
     const race = state.urace.adj;
     const restored = await becomeHuman(`You return to ${race} form!`, state, publish, die);
     if (restored.died) return restored;
@@ -1194,14 +1194,40 @@ function recordRenewedHumanGender(oldGender: number): void {
 
 // C polyself(): select a form, then use the same body-change operations
 // whether the request came from a wand, a throne, or a monster ability.
+// C light.c:del_light_source(LS_MONSTER, &youmonst), as rehumanize() and
+// the slime timeout call it before changing the body.
+export function extinguishHeroFormLight(state: GameState) {
+    if (state.u.formLightRange === undefined) return;
+    delete state.u.formLightRange;
+    state.vision_full_recalc = 1;
+}
+
+// C polyself.c:polyself() made_change. polymon() leaves the old body's light
+// in place, so vision during the change still sees it; only polyself()
+// replaces it, doubling a radius of one so the light is detectable.
+function updateHeroFormLight(oldLight: boolean, state: PlayingGameState) {
+    const newLight = monsterEmitsLight(state.u.umonnum);
+    if (oldLight === newLight) return;
+    if (oldLight) extinguishHeroFormLight(state);
+    if (newLight) state.u.formLightRange = 2;
+}
+
 export async function polymorphHero(flags = POLY_NOFLAGS) {
     requirePlayingGame(game);
-    const hero = game.u;
     if (heroIsUnchanging(game)) {
         await plineWithContinuation('You fail to transform!');
         return { transformed: false };
     }
+    const state = game;
+    const oldLight = monsterEmitsLight(state.u.umonnum);
+    const result = await changeHeroForm(flags);
+    updateHeroFormLight(oldLight, state);
+    return result;
+}
 
+async function changeHeroForm(flags: number) {
+    requirePlayingGame(game);
+    const hero = game.u;
     const armor = game.uarm || hero.uarm;
     const dragon = dragonFormForArmor(armor);
     const lycanthrope = Number.isInteger(hero.ulycn) && hero.ulycn >= 0;

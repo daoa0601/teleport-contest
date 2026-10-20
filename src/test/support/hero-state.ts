@@ -9,7 +9,7 @@ import { setHeroSpecies } from '../../js/hero_species.js';
 import { addBuriedObject } from '../../js/buried_object.js';
 import { unplaceBallAndChain } from '../../js/ball.js';
 import { swallowed } from '../../js/display.js';
-import { vision_recalc } from '../../js/vision.js';
+import { monsterEmitsLight, vision_recalc } from '../../js/vision.js';
 import { refreshMovementProperties } from '../../js/properties.js';
 import {
     A_INT, A_WIS, P_EXPERT, P_NUM_SKILLS, TT_BURIEDBALL, W_BALL, W_CHAIN,
@@ -82,7 +82,10 @@ export function installPolymorphedHero(formName: string, {
     if (blindTurns !== undefined) game.u.blindTurns = blindTurns;
     if (halfPhysicalDamage !== undefined) game.u.halfPhysicalDamage = halfPhysicalDamage;
     if (unchanging !== undefined) game.u.unchanging = unchanging;
-    setHeroSpecies(MONSTER_NAME.indexOf(formName), game);
+    const form = MONSTER_NAME.indexOf(formName);
+    setHeroSpecies(form, game);
+    // A body reached through polyself() carries its light source.
+    if (monsterEmitsLight(form)) game.u.formLightRange = 2;
     return game.u;
 }
 
