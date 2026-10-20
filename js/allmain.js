@@ -1,6 +1,7 @@
 import { formatFeltMessage, publishHeardMessage } from './hero_speech.js';
 import { recorderLocalDate, recorderLocalEpochSeconds } from './calendar.js';
 import { slipOrTrip } from './fumbling.js';
+import { heroLegName } from './body_parts.js';
 import { recoverTimedLuck } from './timeout_luck.js';
 import { doStorms } from './storms.js';
 import { advanceBodyTimeouts, advanceGallopingTimeout } from './timeout_body.js';
@@ -1591,17 +1592,18 @@ async function monsterAttackMessage(monster, attack, previousAttack = null, rand
         return attack.blindMessage ? `${subject} blinds you!` : null;
     if (attack.effect === 'leg-natural') {
         const side = attack.legSide || 'left';
+        const leg = heroLegName(game);
         const contact = attack.legContact === 'reach'
-            ? `tries to reach your ${side} leg`
+            ? `tries to reach your ${side} ${leg}`
             : attack.legContact === 'nuzzle'
-                ? `nuzzles against your ${side} leg`
+                ? `nuzzles against your ${side} ${leg}`
                 : attack.legContact === 'exposed-prick'
-                    ? `pricks the exposed part of your ${side} leg`
+                    ? `pricks the exposed part of your ${side} ${leg}`
                     : attack.legContact === 'boot-prick'
                         ? `pricks through your ${side} boot`
                         : attack.legContact === 'boot-scratch'
                             ? `scratches your ${side} boot`
-                            : `pricks your ${side} leg`;
+                            : `pricks your ${side} ${leg}`;
         return `${subject} ${contact}!`;
     }
     const verb = attack.attackType === 16 ? 'tentacles suck your brain'
