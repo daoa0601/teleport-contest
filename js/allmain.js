@@ -2934,7 +2934,10 @@ async function presentMonsterPostMove(action, game) {
     // C postmov() repaints the old square before mintrap(), but delays
     // the destination newsym() until the trap's message has returned.
     // A pager on the prior topline must still show the floor object.
-    const deferredTrapDestination = !!(movement?.moved && movement?.trap);
+    // dog_move() can return MMOVE_MOVED without a step; postmov() still
+    // repaints the old square and runs mintrap() there.
+    const deferredTrapDestination = !!((movement?.moved
+        || movement?.postMoveOldSquarePainted) && movement?.trap);
     const deferredHideUnderDestination = !!(movement?.moved
         && movement?.hideUnder?.message);
     if (movement?.moved || movement?.postMoveOldSquarePainted) {
