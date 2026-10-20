@@ -7,7 +7,7 @@ import { newsym, plineWithContinuation } from './display.js';
 import { triggerHeroFireTrap } from './fire_trap.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { makeDeaf } from './hero_hearing.js';
-import { hasInternalInvisibility, syncHeroInvisibility } from './hero_invisibility.js';
+import { hasInternalInvisibility, showInvisibilityMessage, syncHeroInvisibility } from './hero_invisibility.js';
 import { heroSpecies } from './hero_species.js';
 import { formatFeltMessage, formatHeardMessage, formatSeenMessage } from './hero_speech.js';
 import { makemonAt } from './mklev.js';
@@ -134,9 +134,7 @@ async function toggleIntrinsicInvisibility() {
         || hasInvokedProperty('invisible', game);
     if (!intrinsic && !other) {
         if (!heroIsBlind(game))
-            await plineWithContinuation(game.u.seeInvisible
-                ? 'Gee!  All of a sudden, you can see right through yourself.'
-                : "Gee!  All of a sudden, you can't see yourself.");
+            await showInvisibilityMessage(game);
     }
     else if (!other) {
         if (!heroIsBlind(game))
