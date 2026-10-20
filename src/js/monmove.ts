@@ -383,6 +383,7 @@ import { inTown, roomsAt } from './room.js';
 import { addShopDamage } from './shop_damage.js';
 import {
     createPoisonGasCloud,
+    leaveMovementCloud,
     GAS_OK,
     monsterGasTolerance,
     visibleRegionAt,
@@ -3871,12 +3872,7 @@ async function moveHostile(
             'dochug',
         );
     }
-    if (selected) {
-        if (MONSTER_NAME[monster.mnum] === 'hezrou')
-            await createPoisonGasCloud(state, oldx, oldy, 1, 8, random);
-        else if (MONSTER_NAME[monster.mnum] === 'steam vortex' && !monster.mcan)
-            await createPoisonGasCloud(state, oldx, oldy, 1, 0, random);
-    }
+    if (selected) await leaveMovementCloud(state, monster.mnum, !!monster.mcan, oldx, oldy, random);
     monster.mx = nix;
     monster.my = niy;
     if (selected) {
