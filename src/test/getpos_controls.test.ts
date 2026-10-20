@@ -113,10 +113,13 @@ void test('a long automatic description wraps at the last column without paging'
     freshObjectRoom({ flags: { tips: false, verbose: false } });
     const description = 'a paperback book named The Amazing Maurice and His Educated Rodents (for sale, 15 zorkmids)';
     const input = resetInputState();
-    const screens: string[][] = [];
+    const boundaries: { lastColumn: string; nextRowStart: string }[] = [];
     input.beforeRead = () => {
         const grid = requireGameDisplay(game).grid;
-        screens.push([0, 1].map(row => (grid[row] ?? []).map(cell => cell.ch).join('').trimEnd()));
+        boundaries.push({
+            lastColumn: grid[0]?.[79]?.ch ?? '',
+            nextRowStart: (grid[1] ?? []).slice(0, 2).map(cell => cell.ch).join(''),
+        });
     };
     input.feed('l.');
 
@@ -125,7 +128,10 @@ void test('a long automatic description wraps at the last column without paging'
         describe: () => description,
     });
 
-    assert.deepEqual(screens[1], [description.slice(0, 79).trimEnd(), description.slice(79)]);
+    // Only getpos itself reads: the cursor move and the selection.
+    assert.equal(boundaries.length, 2);
+    // Character 80 ("1" of "15") moves to row 1 instead of column 79.
+    assert.deepEqual(boundaries[1], { lastColumn: ' ', nextRowStart: '15' });
 });
 
 void test('a verbose autodescribe-off notice is paged before the goal prompt returns', async () => {
