@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { CORR, ROOMOFFSET, VAULT, VWALL } from '../js/const.js';
+import { CORR, NO_MINVENT, ROOMOFFSET, VAULT, VWALL } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { pline } from '../js/display.js';
+import { glyphAt, pline } from '../js/display.js';
 import { resetInputState } from '../js/input.js';
 import { setHeroGoldAmount } from '../js/hero_gold.js';
 import { addCreatedObjectToContainer } from '../js/object_container.js';
@@ -11,6 +11,8 @@ import { continueVaultGuardArrival, maintainVaultResidence } from '../js/vault.j
 import { answerPrompts } from './support/input-boundaries.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { createMonsterAt } from './support/monsters.js';
+import { grantIntrinsicProperty } from '../js/properties.js';
 import { createRoom } from './support/topology.js';
 void test('the guard accepts and echoes names longer than thirty-one characters', async () => {
     const level = freshObjectRoom({ left: 9, right: 10, top: 9, bottom: 10 });
@@ -76,4 +78,29 @@ for (const goldLocation of ['none', 'purse', 'sack', 'both']) {
         assert.equal(guard?._egd?.dropgoldcnt, goldLocation === 'none' ? 0 : 1);
     });
 }
+void test('guard arrival does not redraw warnings before announcing the guard', async () => {
+    const level = freshObjectRoom({ left: 9, right: 10, top: 9, bottom: 10 });
+    requirePlayingGame(game);
+    level.rooms.push(createRoom({ lx: 9, hx: 10, ly: 9, hy: 10, rtype: VAULT }));
+    level.requireAt(16, 10).typ = CORR;
+    level.requireAt(11, 10).typ = VWALL;
+    for (let x = 9; x <= 10; x++)
+        for (let y = 9; y <= 10; y++)
+            level.requireAt(x, y).roomno = ROOMOFFSET;
+    const troll = await createMonsterAt('troll', 14, 12, NO_MINVENT);
+    troll.mpeaceful = false;
+    // Warning starts now; only see_monsters() or a newsym() would show it.
+    grantIntrinsicProperty('warning', 'outside');
+    const before = glyphAt(14, 12)?.kind;
+    game.u.uinvault = 29;
+    assert.equal(maintainVaultResidence(), true);
+    const input = resetInputState();
+    const arrival = continueVaultGuardArrival();
+    await input.waitUntilBlocked();
+    const atAnnouncement = glyphAt(14, 12)?.kind;
+    input.feed(' \x1b\n' + ' '.repeat(8));
+    await arrival;
+    assert.notEqual(before, 'warning');
+    assert.equal(atAnnouncement, before);
+});
 //# sourceMappingURL=vault_arrival_messages.test.js.map
