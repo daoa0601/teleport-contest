@@ -89,6 +89,7 @@ import { chooseCovetousStrategy, pursueCovetousTarget } from './monster_covetous
 import { retreatCovetousMonster } from './monster_covetous_retreat.js';
 import { monsterName as canonicalMonsterName, monsterPossessive, monsterSpellDeathReason, possessiveName, shopkeeperName, } from './monster_name.js';
 import { heroEyeCount, heroEyeName, heroHasEyes, heroHeadName, monsterHandName } from './body_parts.js';
+import { heroCanBeBlindedByContact } from './blinding_attack.js';
 import { monsterIsHelpless, monsterResistsSleep } from './monster_sleep.js';
 import { applyMonsterAntiMagicTrap, finishMonsterAntiMagicTrap, monsterHasMagicResistance, } from './anti_magic_trap.js';
 import { beginMonsterBearTrap, finishMonsterBearTrap } from './bear_trap.js';
@@ -4967,11 +4968,7 @@ async function beginHeroAttackSlot(sequence, slot, state, random, rollOne, rollD
         // special line before toggling sight, then still enters the shared
         // knockback tail with zero HP damage.
         const blindIncrement = damage;
-        const blindfolded = !!(state?.ublindf || state?.u?.ublindf);
-        const noEyes = !heroHasEyes(state);
-        const helmet = state?.uarmh || state?.u?.uarmh;
-        const visored = /visored helmet/i.test(helmet?.description || helmet?.appearance || helmet?.name || '');
-        const blindApplicable = !blindfolded && !noEyes && !visored;
+        const blindApplicable = heroCanBeBlindedByContact(monster, attackType, state);
         const heroWasBlind = !!state?.blind || (state?.u?.blindTurns ?? 0) > 0;
         return {
             kind: 'hero-attack',
