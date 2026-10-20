@@ -620,7 +620,8 @@ export async function polymonHero(mnum: number, options: PolymonOptions = {}) {
         setHeroBlindnessTimeout(1, game);
         await makeBlinded(0, { state: game });
     }
-    game.vision_full_recalc = 1;
+    // C leaves the sight refresh for the end of polymon(); messages before
+    // see_monsters() still show the old view of neighbors.
     newsym(game.u.ux, game.u.uy);
 
     const hero = game.u;
