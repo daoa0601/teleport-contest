@@ -6,7 +6,7 @@ import { formatFeltMessage } from './hero_speech.js';
 import { monsterHasMapPosition } from './monster_location.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { BURNING, D_BROKEN, D_CLOSED, D_LOCKED, DISMOUNT_FELL, DISMOUNT_GENERIC, DISSOLVED, DROWNING, DOOR, IS_AIR, IS_OBSTRUCTED, IS_STWALL, IS_WALL, IS_WATERWALL, Is_waterlevel, LAVAPOOL, LAVAWALL, PARANOID_SWIM, POOL, ROOM, STONE, FAINTED, M_SEEN_FIRE, TREE, TT_LAVA, Upolyd, WATER, W_NONDIGGABLE, W_NONPASSWALL, WT_TOOMUCH_DIAGONAL, } from './const.js';
-import { bot, displayLiquidName, feel_newsym, newsym, plineWithContinuation, under_water, updateLastSeenTerrain } from './display.js';
+import { bot, displayLiquidName, docrt, feel_newsym, newsym, plineWithContinuation, under_water, updateLastSeenTerrain } from './display.js';
 import { heroPassesWalls, heroFormSticks, heroSpecies } from './hero_species.js';
 import { heroHasConflict } from './hero_conflict.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
@@ -696,7 +696,7 @@ function backOnGroundMessage(rescued, state) {
     const subject = rescued ? 'You find yourself' : state.flags.verbose ? 'You are back' : 'Back';
     return `${subject} ${preposition} ${surface}.`;
 }
-async function leaveWater({ state, location, publish, resetVision, recalculateVision, }) {
+async function leaveWater({ state, location, publish, }) {
     const u = state.u;
     if (!u.uinwater)
         return false;
@@ -732,12 +732,15 @@ async function leaveWater({ state, location, publish, resetVision, recalculateVi
         return false;
     if (message)
         await publish(message);
-    const wasUnderwater = !!state.underwater && !heroIsOnWaterLevel(state);
+    // C Underwater is u.uinwater, still set until set_uinwater(0) below.
+    const wasUnderwater = !!(u.uinwater || state.underwater) && !heroIsOnWaterLevel(state);
     await setHeroInWater(false, state);
     state.underwater = false;
+    // C restores the surface view by redrawing the screen and deferring the
+    // vision recalculation to the next flush.
     if (wasUnderwater) {
-        resetVision();
-        recalculateVision(0);
+        await docrt();
+        state.vision_full_recalc = 1;
     }
     return true;
 }
@@ -761,9 +764,7 @@ export async function heroLiquidEffects(options = {}) {
     if (!u || !location)
         return null;
     if (entry !== 'drown') {
-        const leftWater = fromFloatDown ? false : await leaveWater({
-            state, location, publish, resetVision, recalculateVision,
-        });
+        const leftWater = fromFloatDown ? false : await leaveWater({ state, location, publish });
         const airborne = u.levitating || u.levitation
             || u.flying;
         if ((!isPoolAt(x, y, state) && !isLavaAt(x, y, state))
