@@ -7,7 +7,7 @@ import type { GameState } from './game_state.js';
 import { createHeroState } from './hero_types.js';
 import type { Isaac64Context } from './isaac64.js';
 import type { StorageBackend } from './storage.js';
-import type { Terminal, TerminalColor } from './terminal.js';
+import type { Terminal, TerminalCell, TerminalColor } from './terminal.js';
 import { initRng, enableRngLog, getRngLog, rn2 } from './rng.js';
 import { bindInputGate, InputGate, nhgetch } from './input.js';
 import { bindLuaLifecycle, LuaLifecycle } from './lua/lifecycle.js';
@@ -180,7 +180,7 @@ function hasCharacterCompletion(
 // Serialize semantic terminal cells back into the tty wire form recorded by
 // the C harness. The frozen grid intentionally stores rendered Unicode and
 // literal blank cells; C emits DEC shift sequences and cursor-forward skips.
-function serializeCapture(term: Terminal | null | undefined): string {
+export function serializeCapture(term: Terminal | null | undefined): string {
     if (!term) return '';
 
     const colorToFg = (color: TerminalColor): number => {
@@ -207,31 +207,27 @@ function serializeCapture(term: Terminal | null | undefined): string {
         return codes.length ? `\x1b[${codes.join(';')}m` : '';
     };
 
+    // Inverse-video and underlined blanks occupy terminal cells just like
+    // visible glyphs; the recorder trims only unstyled trailing blanks.
+    const styleMask = game._preserveLeadingStyledBlanks ? 7 : 5;
+    const painted = (cell: TerminalCell): boolean =>
+        cell.ch !== ' ' || !!(cell.attr & styleMask);
     let lastRow = 0;
     for (const [row, cells] of term.grid.entries()) {
-        if (cells.some(cell => cell.ch !== ' ')) lastRow = row;
+        if (cells.some(painted)) lastRow = row;
     }
 
     const lines: string[] = [];
     const decGraphics = /^DECgraphics$/i.test(game.symset || '');
     for (const cells of term.grid.slice(0, lastRow + 1)) {
-        const firstGlyph = cells.findIndex(cell => cell.ch !== ' ');
-        if (firstGlyph < 0) {
+        const firstCol = cells.findIndex(painted);
+        if (firstCol < 0) {
             lines.push('');
             continue;
         }
-
-        let firstCol = firstGlyph;
-        // Inverse-video and underlined blanks occupy terminal cells just like
-        // visible glyphs, so leading styled blanks affect the row bounds.
-        const leadingStyleMask = game._preserveLeadingStyledBlanks ? 7 : 5;
-        const styled = cells.findIndex((cell, col) =>
-            col < firstGlyph && cell.ch === ' '
-            && (cell.attr & leadingStyleMask));
-        if (styled >= 0) firstCol = styled;
-        let lastCol = -1;
+        let lastCol = firstCol;
         for (const [col, cell] of cells.entries()) {
-            if (cell.ch !== ' ') lastCol = col;
+            if (painted(cell)) lastCol = col;
         }
 
         let line = firstCol > 4
