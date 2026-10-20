@@ -35,6 +35,8 @@ for (const form of ['garter snake', 'rust monster', 'ghost']) {
         level.requireAt(11, 10).typ = IRONBARS;
         // Exercise the obstacle itself on a step that water does not divert.
         initRng(2n);
+        // Surfacing redraws the screen, which first pages pending messages.
+        installPagerInput(resetInputState(), { expected: /[Bb]ack (?:on|over) solid ground/, limit: 2 });
 
         await rhack('l'.charCodeAt(0));
 
