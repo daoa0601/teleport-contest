@@ -13,7 +13,7 @@ import { MONSTER_FLAGS1, MONSTER_NAME } from './monster_data.js';
 import { staggerVerb } from './monster_hurtle.js';
 import { monsterName, possessiveName } from './monster_name.js';
 import { monsterIsHelpless, monsterResistsSleep, putMonsterToSleep } from './monster_sleep.js';
-import { adjustMonsterSpeed } from './monster_speed.js';
+import { adjustMonsterSpeed, monsterSpeedMessage } from './monster_speed.js';
 import { OBJECT_DESCRIPTIONS } from './object_data.js';
 import { d } from './rng.js';
 const M1_NOEYES = 0x00001000;
@@ -79,6 +79,12 @@ export async function applyMonsterStatusEffect(attacker, defender, context) {
             const blocked = await monsterCombatAttackNegated(attacker, defender, { state, visible, publish, random, verbose: false });
             if (!monsterCombatDefense(defender, AD_SLOW, state) && !blocked && defender.mspeed !== MSLOW) {
                 const speed = adjustMonsterSpeed(defender, -1);
+                // mon_adjust_speed() announces the change before mhitm_ad_slow() does.
+                const message = canSeeMonster(defender)
+                    ? monsterSpeedMessage(speed, monsterName(defender, { state, capitalized: true }), state)
+                    : null;
+                if (message)
+                    await publish(message);
                 clearWaiting(defender);
                 if (speed.changed && visible && canSpotMonster(defender))
                     await publish(`${monsterName(defender, { state, capitalized: true })} slows down.`);

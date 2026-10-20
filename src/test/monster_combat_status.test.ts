@@ -111,7 +111,8 @@ void test('a slowing contact reduces speed and clears waiting without removing d
     assert.equal(defender.mspeed, 0);
     assert.equal(defender.mhp, 96);
     assert.equal((defender.mstrategy ?? 0) & STRAT_WAITFORU, 0);
-    assert.match(messages.join('\n'), /slows down/);
+    assert.match(messages.join('\n'), /seems to be moving slower\.[\s\S]*slows down/,
+        'mon_adjust_speed() announces the change before mhitm_ad_slow()');
 });
 
 for (const defense of ['dragon body', 'dragon armor', 'speed boots'] as const) {
