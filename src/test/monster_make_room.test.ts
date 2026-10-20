@@ -1,8 +1,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { NO_MINVENT } from '../js/const.js';
+import { M_AP_F_DKNOWN, M_AP_OBJECT, NO_MINVENT } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { monsterAtPosition } from '../js/monster_location.js';
+import { BOULDER } from '../js/object_data.js';
+import { cansee, vision_recalc, vision_reset } from '../js/vision.js';
 import { mnearto } from '../js/shop_damage.js';
 import { requireShopGame } from '../js/shop_types.js';
 import { createMonsterAt } from './support/monsters.js';
@@ -23,4 +25,24 @@ void test('a monster displaced to make room leaves its square as it would leave 
     assert.equal(monsterAtPosition(level, hidden.mx, hidden.my), hidden);
     assert.equal(hidden.mundetected, 0);
     assert.equal(hidden.mtrapped, 0);
+});
+
+void test('displacing a boulder-disguised mimic reopens the view past its square', async () => {
+    freshObjectRoom({ right: 20 });
+    const mimic = await createMonsterAt('small mimic', 12, 10, NO_MINVENT);
+    mimic.m_ap_type = M_AP_OBJECT | M_AP_F_DKNOWN;
+    mimic.mappearance = BOULDER;
+    vision_reset();
+    vision_recalc(0);
+    assert.equal(cansee(14, 10), false);
+    const arrival = await createMonsterAt('jackal', 12, 8, NO_MINVENT);
+    requireShopGame(game);
+
+    game.vision_full_recalc = 0;
+    await mnearto(arrival, 12, 10, game, { moveOther: true });
+    // The move loop refreshes sight only when a change requested it.
+    if (game.vision_full_recalc) vision_recalc(0);
+
+    assert.equal(mimic.m_ap_type, 0);
+    assert.equal(cansee(14, 10), true);
 });

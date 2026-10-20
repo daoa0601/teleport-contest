@@ -20,18 +20,21 @@ export async function detachMonsterFromLevel(monster, state = game, { dueToDeath
     // Native m_detach removes map occupancy immediately but leaves the
     // identity in fmon until movemon's dmonsfree. A death during distress
     // still participates in this turn's movement allocation.
-    // mnearto() keeps a displaced monster in fmon with <0,0> coordinates.
     if (dueToDeath)
         monster.mstate = (monster.mstate ?? MON_FLOOR) | MON_DETACH;
-    else if (stayLinked) {
-        monster.mx = 0;
-        monster.my = 0;
-    }
-    else
+    else if (!stayLinked)
         level.monsters = level.monsters.filter(candidate => candidate !== monster);
     if (onMap) {
         monster.mundetected = 0;
         revealMonsterAppearance(monster, { includeMonsterDisguise: false });
+    }
+    // mnearto() keeps a displaced monster in fmon, zeroing its coordinates
+    // after mon_leaving_level() has unhidden it at the vacated square.
+    if (stayLinked) {
+        monster.mx = 0;
+        monster.my = 0;
+    }
+    if (onMap) {
         await fillPitWithBoulderAt(x, y, state);
         newsym(x, y);
     }
