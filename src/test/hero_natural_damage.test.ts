@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { wearHeroAccessory } from '../js/accessory.js';
 import {
-    M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, MM_NOGRP, MM_NOWAIT,
+    M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, MM_NOGRP, MM_NOWAIT, MSLOW,
     NO_MINVENT, STRAT_WAITFORU, W_ARM,
 } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
@@ -151,6 +151,16 @@ void test('blue dragon scales prevent natural slowing while physical damage rema
 
     assert.equal(monster.mhp, 197);
     assert.equal(monster.mspeed, originalSpeed);
+});
+
+void test('a slowing touch reports the speed change before the slowdown', async () => {
+    const monster = await naturalAttackRoom('skeleton', 'goblin', /goblin/);
+
+    await resolveHeroNaturalDamage(monster, [AT_TUCH, AD_SLOW, 3, 1], 0);
+
+    assert.equal(monster.mspeed, MSLOW);
+    assert.match(game._pending_message ?? '',
+        /The goblin seems to be moving slower\.\s+The goblin slows down\./);
 });
 
 void test('draining a level zero target kills it without healing the hero', async () => {

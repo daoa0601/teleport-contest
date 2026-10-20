@@ -49,7 +49,7 @@ import {
 } from './monster_resistance.js';
 import { monsterResistsSleep, putMonsterToSleep } from './monster_sleep.js';
 import { sessionIsNight } from './monster_sound.js';
-import { adjustMonsterSpeed } from './monster_speed.js';
+import { adjustMonsterSpeed, monsterSpeedMessage } from './monster_speed.js';
 import { petrifyMonsterFromContact } from './monster_stoning.js';
 import { tameMonster } from './monster_taming.js';
 import { OBJECT_DESCRIPTIONS, OBJECT_NAMES } from './object_data.js';
@@ -402,9 +402,12 @@ async function slowNaturalTarget(monster: Monster, context: HeroNaturalEffectCon
     const blocked = await negated(monster, context, false);
     if (blocked || monster.mspeed === MSLOW
         || wearsDragonDefense(monster, 'blue dragon', BLUE_DRAGON_SCALES, BLUE_DRAGON_SCALE_MAIL)) return;
-    const oldSpeed = monster.mspeed;
-    adjustMonsterSpeed(monster, -1);
-    if (monster.mspeed !== oldSpeed && canSeeMonster(monster))
+    const speed = adjustMonsterSpeed(monster, -1);
+    // mon_adjust_speed() announces the change before mhitm_ad_slow() does.
+    const seen = canSeeMonster(monster);
+    const message = seen ? monsterSpeedMessage(speed, subject(monster, context), context.state) : null;
+    if (message) await context.publish(message);
+    if (speed.changed && seen)
         await context.publish(`${subject(monster, context)} slows down.`);
 }
 
