@@ -4,6 +4,7 @@ import { SLP_GAS_TRAP } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { triggerHeroTrap } from '../js/hero_traps.js';
 import { resetInputState } from '../js/input.js';
+import { castNativeRay } from '../js/ray_attack.js';
 import { addTrap } from './support/level-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 
@@ -28,4 +29,22 @@ void test('falling asleep in a gas trap interrupts and reports the current occup
     assert.match(text, /A cloud of gas puts you to sleep!.*You stop wiping your face\./);
     assert.equal(game._occupation, null);
     assert.ok((game.multi ?? 0) < 0);
+});
+
+void test('a sleep ray reports the interrupted occupation through the ray publisher', async () => {
+    freshObjectRoom({ right: 20 });
+    requirePlayingGame(game);
+    game._occupation = { key: 'wipe-face', text: 'wiping your face', remaining: 8 };
+    const messages: string[] = [];
+    const input = resetInputState();
+    input.beforeRead = () => input.feed(' ');
+
+    await castNativeRay(-23, 6, 'h', {
+        originX: game.u.ux + 4, originY: game.u.uy,
+        publish: async text => { messages.push(text); },
+        random: () => 0, rollDice: () => 10, rollOne: () => 1,
+    });
+
+    assert.ok(messages.includes('You stop wiping your face.'), messages.join(' | '));
+    assert.equal(game._occupation, null);
 });

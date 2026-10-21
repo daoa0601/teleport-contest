@@ -138,7 +138,7 @@ async function hitWithSleep(context) {
     }
     else {
         noteRayResistance(context, false);
-        await putHeroToSleep(rollDice(attack[2], 25), { state });
+        await putHeroToSleep(rollDice(attack[2], 25), { state, publish });
     }
     return { resisted, damage: 0, heroDied: false };
 }
