@@ -3,8 +3,10 @@
 import { finishMonsterTrapDeath } from './monster_death.js';
 import { AD_PHYS } from './monster_attack_types.js';
 import { WT_ELF } from './const.js';
+import { setMulti } from './command_state.js';
 import { newsym, plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
+import { heroIsUnconscious } from './hero_sleep.js';
 import { explodeLandMine } from './landmine_explosion.js';
 import { fillPitWithBoulderAt } from './pit_fill.js';
 import { resolveMonsterLiquid } from './mon.js';
@@ -157,30 +159,31 @@ export async function finishMonsterLandMine(monster, event, state = game, { fini
         return event;
     if (monster.dead || (monster.mhp ?? 0) <= 0 || !state.level?.monsters?.includes(monster)) {
         event.killed = !!monster.dead || (monster.mhp ?? 0) <= 0;
-        event.finished = true;
-        return event;
     }
-    // thitm() hurts the victim even when the blast's liquid relocated it;
-    // the recursive mintrap(FORCETRAP) then uses its current square.
-    monster.mhp = Math.max(0, (monster.mhp ?? 1) - event.damage);
-    if (monster.mhp <= 0) {
-        const died = await finishMineDeath(monster, event, state, options);
+    else {
+        // thitm() hurts the victim even when the blast's liquid relocated it;
+        // the recursive mintrap(FORCETRAP) then uses its current square.
+        monster.mhp = Math.max(0, (monster.mhp ?? 1) - event.damage);
+        const died = monster.mhp <= 0 && await finishMineDeath(monster, event, state, options);
         if (event.death?.heroDied)
             return event;
-        if (died) {
-            await fillPitWithBoulderAt(event.trap.tx, event.trap.ty, state, { publish });
-            event.finished = true;
-            return event;
+        if (!died) {
+            if (monster.mx === event.trap.tx && monster.my === event.trap.ty)
+                await fallIntoMinePit(monster, pit, event, state, options);
+            else
+                await forceTrapAtMonster(monster);
+            if (event.death?.heroDied || state.program_state.gameover)
+                return event;
+            event.killed = !!monster.dead || (monster.mhp ?? 0) <= 0;
         }
     }
-    if (monster.mx === event.trap.tx && monster.my === event.trap.ty)
-        await fallIntoMinePit(monster, pit, event, state, options);
-    else
-        await forceTrapAtMonster(monster);
-    if (event.death?.heroDied || state.program_state.gameover)
-        return event;
+    // C fills the new pit whether or not the victim survived, then cuts
+    // short a sleeping or fainted hero's helplessness.
     await fillPitWithBoulderAt(event.trap.tx, event.trap.ty, state, { publish });
-    event.killed = !!monster.dead || (monster.mhp ?? 0) <= 0;
+    if (heroIsUnconscious(state)) {
+        setMulti(-1, state);
+        state._helplessDoneMessage = 'The explosion awakens you!';
+    }
     event.finished = true;
     return event;
 }
