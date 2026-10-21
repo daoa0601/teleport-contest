@@ -10,12 +10,12 @@ import { game } from '../js/gstate.js';
 import { bot, docrt, flush_screen, plineWithContinuation } from '../js/display.js';
 import { heroLiquidEffects, sinkHeroIntoLava } from '../js/hack.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { AMULET_OF_LIFE_SAVING, LEASH, LEATHER_ARMOR, LOADSTONE, POT_ACID, WATER_WALKING_BOOTS, } from '../js/object_data.js';
+import { AMULET_OF_LIFE_SAVING, BOULDER, LEASH, LEATHER_ARMOR, LOADSTONE, POT_ACID, WATER_WALKING_BOOTS, } from '../js/object_data.js';
 import { vision_reset } from '../js/vision.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { initRng } from '../js/rng.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
-import { addInventoryObject } from './support/game-objects.js';
+import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { createMonsterAt, createSaddledSteed } from './support/monsters.js';
 import { runExtendedCommand } from './support/commands.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -467,6 +467,32 @@ void test('a cursed loadstone can keep the hero from crawling out', async () => 
     assert.equal(death.deathCause, 'drowned in a pool of water');
     assert.ok(hpBeforeDrowning > 0);
     assert.equal(hpAtDeath, hpBeforeDrowning);
+});
+void test('a boulder on the only dry square leaves a drowning hero nowhere to crawl', async () => {
+    const level = poolAtHero();
+    requireFixtureGame(game);
+    const { ux, uy } = game.u;
+    for (let dx = -1; dx <= 1; dx++)
+        for (let dy = -1; dy <= 1; dy++)
+            level.requireAt(ux + dx, uy + dy).typ = POOL;
+    level.requireAt(ux + 1, uy - 1).typ = ROOM;
+    await floorObject(BOULDER, ux + 1, uy - 1);
+    const messages = [];
+    let drowned = false;
+    const result = await heroLiquidEffects({
+        ...noDisplay,
+        publish: async (message) => messages.push(message),
+        random: range => range - 1,
+        die: async () => {
+            drowned = true;
+            game.program_state.gameover = true;
+        },
+    });
+    assert.ok(result !== null && result !== undefined);
+    assert.equal(drowned, true);
+    assert.deepEqual([game.u.ux, game.u.uy], [ux, uy]);
+    assert.equal(messages.includes('You try to crawl out of the water.'), false);
+    assert.equal(messages.at(-1), 'You drown.');
 });
 void test('life saving moves a drowned hero to dry land', async () => {
     const level = poolAtHero();

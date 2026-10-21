@@ -179,6 +179,9 @@ for (const hallucinating of [false, true]) {
             for (let y = 6; y <= 14; y++) level.requireAt(x, y).typ = LAVAPOOL;
         }
         level.requireAt(game.u.ux, game.u.uy).typ = POOL;
+        // goodpos() lets a lava-loving form crawl onto lava; a paralyzed
+        // hero cannot crawl at all and drowns into the rescue.
+        game._helplessTurns = 5;
         const messages: string[] = [];
         const refusals = refuseLiquidDeaths();
 
