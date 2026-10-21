@@ -82,6 +82,7 @@ import {
 } from './ball.js';
 import { pitsAreConjoined } from './pit_connections.js';
 import { selfTouchPetrifyingWeapons } from './stoning.js';
+import { hitSteedWithTrapMissile } from './projectile_trap.js';
 import { dismountHero } from './steed.js';
 import { holdingMonsterName, holdingMonsterSubject } from './hero_expulsion.js';
 import { finishMonsterTrapDeath } from './monster_death.js';
@@ -273,12 +274,9 @@ async function triggerPit(
         steed.my = hero.uy;
         if (steed.mhp > 0) steed.mhp -= rnd(trap.ttyp === PIT ? 6 : 10);
         if (steed.mhp <= 0) {
-            const death = await finishMonsterTrapDeath(steed, game, { damageType: AD_PHYS });
-            if (death.heroDied) return;
-            if (!death.survived) {
-                hero.usteed = steed;
-                await dismountHero(DISMOUNT_POLY);
-            }
+            // m_detach() dismounts; steedintrap()'s dismount_steed() then
+            // finds no steed.
+            await finishMonsterTrapDeath(steed, game, { damageType: AD_PHYS });
         }
         return;
     }
@@ -775,6 +773,13 @@ async function triggerProjectileTrap(trap: Trap) {
     const damage = physicalDamage(
         rollPhysicalWeaponDamageAgainstHero(missile, game),
     );
+    const steed = hero.usteed;
+    if (steed && rn2(2) === 0) {
+        // A killed steed's m_detach() already dismounted the hero, so
+        // steedintrap()'s own dismount_steed() finds no steed.
+        await hitSteedWithTrapMissile(steed, trap, missile, game);
+        return;
+    }
     const mortality = hero.umortality || 0;
     const hit = await hitHeroWithObject(missile, damage, attackLevel, {
         name: noun,
