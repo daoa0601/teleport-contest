@@ -7062,9 +7062,10 @@ async function domoveCore(dx, dy) {
         // monster after the visible-run guard and origin snapshot, but before
         // do_attack().  An unseen hostile therefore spends this attempted
         // step in attack_checks() while preventing another automatic run
-        // step after the intervening monster phase.
-        if (!safeMonster && game._runState)
-            stopRun(game);
+        // step after the intervening monster phase; nomul(0) also requests
+        // a full status update.
+        if (!safeMonster)
+            nomul(0, game);
         if (await bumpIntoMonster(monster, newx, newy))
             return true;
     }
