@@ -20,7 +20,7 @@ import { artifactById } from './artifacts.js';
 import { heroIsBlind } from './senses.js';
 import { exerciseWisdom } from './attrib.js';
 import {
-    canSpotMonster, canSenseMonster, monsterHasWarningProjection, flushPendingTopline, feel_location, glyphAt, magic_map_background, map_background, map_engraving,
+    canSpotMonster, canSenseMonster, monsterHasWarningProjection, displayMessageWindow, flushPendingTopline, feel_location, glyphAt, magic_map_background, map_background, map_engraving,
     map_invisible, map_object, map_trap, newsym, pline, show_glyph_cell,
     unmap_invisible, plineWithContinuation, flashGlyphAt, terrain_glyph,
     transientMonsterGlyph, transientTrapGlyph,
@@ -307,7 +307,7 @@ async function findHiddenMonster(monster: Monster, viaWarning: boolean): Promise
             if (viaWarning && found) {
                 await plineWithContinuation(`Your danger sense causes you to take a second ${
                     heroIsBlind(game) ? 'to check nearby' : 'look close by'}.`);
-                await flushPendingTopline();
+                await displayMessageWindow();
             }
             monster.mundetected = 0;
             found = true;

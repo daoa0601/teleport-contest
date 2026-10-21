@@ -1,13 +1,18 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { moveloop_core } from '../js/allmain.js';
-import { canSpotMonster } from '../js/display.js';
+import { canSpotMonster, flush_screen, map_invisible, swallowed } from '../js/display.js';
+import { revealWarnedMonsters } from '../js/detect.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { makeBlinded } from '../js/sight_change.js';
 import { vision_recalc } from '../js/vision.js';
 import { createMonsterAt } from './support/monsters.js';
+
+function topline(): string {
+    return requireGameDisplay().grid[0]?.map(cell => cell.ch).join('').trimEnd() ?? '';
+}
 import { freshObjectRoom } from './support/object-room.js';
 
 for (const blind of [false, true]) {
@@ -45,3 +50,36 @@ for (const blind of [false, true]) {
         assert.match(displayed, blind ? /You feel an unseen monster!/ : /You find an iron piercer\./);
     });
 }
+
+void test('an engulfed hero\'s acknowledged danger sense message leaves the topline', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    grantIntrinsicProperty('warning', 'outside');
+    const lurker = await createMonsterAt('lurker above', game.u.ux, game.u.uy);
+    game.u.uswallow = 1;
+    game.u.ustuck = lurker;
+    swallowed(true);
+    const piercer = await createMonsterAt('iron piercer', game.u.ux + 1, game.u.uy);
+    piercer.mundetected = 1;
+    piercer.mpeaceful = 0;
+    piercer.m_lev = 8;
+    vision_recalc(0);
+    map_invisible(piercer.mx, piercer.my);
+    assert.equal(canSpotMonster(piercer), false);
+    await flush_screen(1);
+    const input = resetInputState();
+    const pages: string[] = [];
+    input.beforeRead = () => {
+        pages.push(topline());
+        input.feed(' ');
+    };
+
+    await revealWarnedMonsters();
+    await flush_screen(1);
+
+    // C mfind0() returns -1 for a square already marked unseen, so no
+    // later message replaces the line display_nhwindow() acknowledged.
+    assert.equal(piercer.mundetected, 0);
+    assert.deepEqual(pages, ['Your danger sense causes you to take a second look close by.--More--']);
+    assert.equal(topline(), '');
+});
