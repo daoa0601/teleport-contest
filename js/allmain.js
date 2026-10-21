@@ -2775,6 +2775,7 @@ async function presentMonsterAttackEffects(action, game, { random = rn2, rollDic
                     const increment = heroAttack.stunIncrement;
                     heroAttack.stunIncrement = null;
                     await makeStunned((game.u.stunnedTurns ?? 0) + increment, {
+                        state: game,
                         publish: async (message) => {
                             const dismissal = await plineWithContinuation(message);
                             if (dismissal !== null && dismissal !== undefined)
