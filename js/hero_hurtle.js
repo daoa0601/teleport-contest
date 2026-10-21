@@ -12,7 +12,8 @@ import { heroTestMove } from './cmd.js';
 import { finishHeroDeath } from './end.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { blocksDiagonalDoor, heroBadRock, heroLiquidEffects, heroTightDiagonalReason, } from './hack.js';
-import { triggerHeroTrap, triggerHeroTrapAt } from './hero_traps.js';
+import { triggerHeroTrap } from './hero_traps.js';
+import { finishDestinationSpotEffects } from './location_effects.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { angerMonster, wakeMonster } from './monster_anger.js';
 import { monsterWearsTorsoArmor, petrifyMonsterFromContact, } from './monster_stoning.js';
@@ -242,9 +243,15 @@ async function triggerLandingTrap(trap, options, remaining) {
     return game.level !== before.level
         || game.u.ux !== before.x || game.u.uy !== before.y;
 }
-async function applyForcedLandingEffects(options) {
-    await checkSpecialRoom();
-    return triggerHeroTrapAt(game.u.ux, game.u.uy, options);
+// drown() relocates a hero who crawls out or is rescued through teleds(),
+// whose spoteffects() covers the room, trap, and look-here at the landing.
+function hurtleTrapOptions(options) {
+    const trapOptions = {};
+    if (options.finishTeleport)
+        trapOptions.finishTeleport = options.finishTeleport;
+    if (options.gotoLevel)
+        trapOptions.gotoLevel = options.gotoLevel;
+    return trapOptions;
 }
 async function settleLiquid(options, remaining) {
     requirePlayingGame(game);
@@ -271,7 +278,10 @@ async function settleLiquid(options, remaining) {
     game._helplessDoneMessage = null;
     return heroLiquidEffects({
         chooseTeleportDestination: options.chooseTeleportDestination ?? null,
-        applyLandingEffects: () => applyForcedLandingEffects(options),
+        applyLandingEffects: ({ from, to, pick = true }) => finishDestinationSpotEffects({
+            oldx: from.x, oldy: from.y, newx: to.x, newy: to.y,
+            pick, trapOptions: hurtleTrapOptions(options),
+        }),
     });
 }
 async function moveOneSquare(x, y, options, remaining) {
