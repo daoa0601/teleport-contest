@@ -143,3 +143,31 @@ void test('magic-trap cleansing uncurses worn gear and preserves the confusion t
     assert.equal(amulet.cursed, false);
     assert.equal(game.u.confusionTurns, 12);
 });
+
+// C trap.c domagictrap() announces new invisibility with potion.c
+// self_invis_message(), whose opening follows hallucination.
+void test('a hallucinating hero hears a low hum and sees a far-out invisibility message', async () => {
+    let heardHum = false;
+    for (let seed = 1n; seed <= 200n && !heardHum; seed++) {
+        const trap = magicTrapRoom();
+        requirePlayingGame(game);
+        game.u.hallucinationTurns = 100;
+        const messages: string[] = [];
+        const input = resetInputState();
+        input.beforeRead = () => {
+            messages.push(game._last_message ?? '');
+            input.feed(' ');
+        };
+        initRng(seed);
+
+        await triggerHeroTrap(trap, { forceTrap: true });
+
+        messages.push(game._last_message ?? '');
+        if (!messages.some(message => message.includes('a low hum'))) continue;
+        heardHum = true;
+        assert.equal(game.u.invisible, true);
+        assert.ok(messages.some(message => message.includes("Far out, man!  You can't see yourself.")),
+            messages.join(' | '));
+    }
+    assert.equal(heardHum, true, 'some seed must reach the invisibility outcome');
+});
