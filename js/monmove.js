@@ -5388,18 +5388,13 @@ export async function resumeDeferredHeroLifeDrain(action, state, random = rn2, p
 }
 // Resume mhitm_ad_stun() after hitmsg().  make_stunned() receives the full
 // pre-halving damage; only the ordinary HP tail is reduced on selection.
-export function resumeDeferredHeroStun(action, state, random = rn2) {
+// The caller applies make_stunned(), whose message precedes the timeout.
+export function resumeDeferredHeroStun(action, random = rn2) {
     const attack = action?.movement?.heroAttackSequence?.current;
     if (attack?.kind !== 'hero-attack' || !attack.deferredStunGate)
         return action;
     if (!action.monster?.mcan && recordRandom(random, action.calls, 4) === 0) {
-        const oldTurns = state.u?.stunnedTurns ?? 0;
-        state.u.stunnedTurns = oldTurns + Math.max(0, attack.damage ?? 0);
-        state.u.stunned = state.u.stunnedTurns > 0;
-        if (!oldTurns && state.u.stunnedTurns)
-            state.context.botl = true;
-        if (oldTurns === 0)
-            attack.stunMessage = 'You stagger...';
+        attack.stunIncrement = Math.max(0, attack.damage ?? 0);
         attack.damage = Math.trunc((attack.damage ?? 0) / 2);
         attack.stunSelected = true;
     }

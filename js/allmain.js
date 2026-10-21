@@ -2770,14 +2770,18 @@ async function presentMonsterAttackEffects(action, game, { random = rn2, rollDic
                         return { heroDied: true };
                 }
                 if (heroAttack.deferredStunGate)
-                    resumeDeferredHeroStun(action, game);
-                if (heroAttack.stunMessage) {
-                    const stunDismissal = await plineWithContinuation(heroAttack.stunMessage);
-                    heroAttack.stunMessage = null;
-                    if (stunDismissal !== null
-                        && stunDismissal !== undefined) {
-                        paging.pagerOwned = true;
-                    }
+                    resumeDeferredHeroStun(action, random);
+                if (heroAttack.stunIncrement != null) {
+                    const increment = heroAttack.stunIncrement;
+                    heroAttack.stunIncrement = null;
+                    await makeStunned((game.u.stunnedTurns ?? 0) + increment, {
+                        state: game,
+                        publish: async (message) => {
+                            const dismissal = await plineWithContinuation(message);
+                            if (dismissal !== null && dismissal !== undefined)
+                                paging.pagerOwned = true;
+                        },
+                    });
                 }
                 if (heroAttack.deferredRustRehumanize) {
                     const rustFormPagerOwned = await resolveErosionFormRehumanization(heroAttack, 'You rust!');
