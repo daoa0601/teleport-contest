@@ -99,7 +99,6 @@ function validPersistentState(value: unknown, entities: SavedEntityContext): val
         _questExpulsionPending: optional(nullable((pending): pending is { seal: boolean; portal?: boolean } =>
             closedFieldsMatch(pending, { seal: boolean, portal: optional(boolean) }))),
         _stethoscopeSeq: optional(integer),
-        _tipSwimShown: optional(boolean),
         _travelTipShown: optional(boolean),
         _tributeBookstock: optional(boolean),
         _tutorialActive: optional(boolean),

@@ -395,7 +395,6 @@ export interface GameState {
     _elementalClogMessageMove?: number;
     _cannibalCheckMove?: number;
     were_changes?: number;
-    _tipSwimShown?: boolean;
     _travelTipShown?: boolean;
     _wishHistory?: string[];
     _monTelecontrol?: boolean;
