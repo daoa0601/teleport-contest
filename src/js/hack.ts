@@ -76,12 +76,14 @@ import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
 import type { MapLocation, Position } from './map_types.js';
 import type { MessagePublisher } from './display.js';
-import type { DeathHandler, OrdinaryDeathHandler, OrdinaryDeathOptions } from './end.js';
+import type { DeathHandler, FinishHeroDeathOptions } from './end.js';
 
 type RandomBelow = (limit: number) => number;
 type RollDice = (count: number, sides: number) => number;
 type Repaint = (x: number, y: number) => void;
 type RecalculateVision = (mode: number) => void;
+/** Liquid deaths may say whether losehp() still owes its "You die..." line. */
+type LiquidDeathHandler = (options: FinishHeroDeathOptions) => unknown;
 type EquipmentSlot = 'uamul' | 'uleft' | 'uright' | 'ublindf' | 'uarm'
     | 'uarmc' | 'uarmg' | 'uarmf' | 'uarmu' | 'uarmh' | 'uarms' | 'uwep';
 
@@ -151,7 +153,7 @@ export interface HeroLiquidOptions {
     rollOne?: RandomBelow;
     chooseTeleportDestination?: (() => Promise<Position | null>) | null;
     applyLandingEffects?: LandingEffect;
-    die?: OrdinaryDeathHandler;
+    die?: LiquidDeathHandler;
     entry?: 'spot-effects' | 'float-down' | 'drown';
 }
 interface LiquidTeleportContext {
@@ -167,7 +169,7 @@ interface LiquidEscapeContext extends LiquidTeleportContext {
 }
 interface LavaSurvivalContext extends LiquidEscapeContext {
     publish: MessagePublisher;
-    die: OrdinaryDeathHandler;
+    die: LiquidDeathHandler;
 }
 interface LavaContext extends LavaSurvivalContext {
     location: MapLocation;
@@ -416,10 +418,10 @@ async function reviveHeroFromLiquid(state: PlayingGameState, publish: MessagePub
     return true;
 }
 
-async function finishLiquidDeath(options: OrdinaryDeathOptions): Promise<boolean> {
-    // The liquid effect has already announced the death. done() still owns
-    // life saving and the wizard/explore recovery question.
-    return await finishHeroDeath({ ...options, deathLineShown: true });
+async function finishLiquidDeath(options: FinishHeroDeathOptions): Promise<boolean> {
+    // The liquid effect has usually announced the death already. done() still
+    // owns life saving and the wizard/explore recovery question.
+    return await finishHeroDeath({ ...options, deathLineShown: options.deathLineShown ?? true });
 }
 
 async function teleportHeroOutOfLiquid({
@@ -509,8 +511,9 @@ async function finishLavaEffects({
     repaint, resetVision, recalculateVision, applyLandingEffects, die,
 }: LavaContext): Promise<EnteredLiquid> {
     // Ordinary death returns no value; damage handling needs the final state.
+    // These deaths come through losehp(), which prints "You die..." itself.
     const finishDamageDeath: DeathHandler = async options => {
-        await die(options);
+        await die({ ...options, deathLineShown: false });
         return !!state.program_state.gameover;
     };
     const hero = state.u;
