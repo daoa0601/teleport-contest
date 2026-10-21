@@ -222,3 +222,22 @@ void test('a short inventory retains the status lines when its item action menu 
     input.feed('\x1b');
     await action;
 });
+
+// C ddoinv() destroys its corner menu after select_menu() has restored
+// bot_disabled; docorner() then repaints the status it reached from the
+// current hero, including energy raised without a status request.
+void test('dismissing a map-height inventory repaints stale status values', async () => {
+    freshObjectRoom();
+    // A heading, twenty items, and "(end)" fill every map row.
+    for (let index = 0; index < 20; index++) await addInventoryObject(DAGGER, { spe: index });
+    await bot();
+    game.u.uen = game.u.uenmax = 50;
+    const input = resetInputState();
+    const action = rhack('i'.charCodeAt(0));
+    await input.waitUntilBlocked();
+    assert.doesNotMatch(requireGameDisplay(game).grid[23]?.map(cell => cell.ch).join('') ?? '', /Pw:50\(50\)/);
+    input.feed('\x1b');
+    await action;
+
+    assert.match(requireGameDisplay(game).grid[23]?.map(cell => cell.ch).join('') ?? '', /Pw:50\(50\)/);
+});
