@@ -5501,6 +5501,7 @@ async function beginHeroAttackSlot(
             MONSTER_SYMBOL[monster.mnum] === S_EEL);
     if (hiddenUnder) {
         if (!canSpotMonster(monster)) map_invisible(monster.mx, monster.my);
+        slot.attackerMapped = true;
         monster.mundetected = 0;
         if (!senseWithTelepathy(monster) && !heroDetectsMonsters(state)) {
             const object = state.level?.objects[monster.mx]?.[monster.my]?.[0];
