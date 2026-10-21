@@ -2,12 +2,16 @@
 // C refs: trap.c minstapetrify(), mon.c mon_to_stone() and monstone().
 
 import {
-    CORPSTAT_FEMALE, CORPSTAT_HISTORIC, CORPSTAT_MALE,
-    G_GENOD, W_ARM, W_ARMC, W_ARMG, W_ARMU,
+    CORPSTAT_FEMALE, CORPSTAT_HISTORIC, CORPSTAT_MALE, D_CLOSED, D_LOCKED, DOOR,
+    G_GENOD, W_ARM, W_ARMC, W_ARMG, W_ARMU, engulfing_u,
 } from './const.js';
 import {
-    canSeeMonster, newsym, plineWithContinuation, unmap_invisible,
+    canSeeMonster, canSpotMonster, displayMessageWindow, newsym, plineWithContinuation, unmap_invisible,
 } from './display.js';
+import { expelHero } from './hero_expulsion.js';
+import { relocateMonsterTo } from './teleport.js';
+import { findNearbyMonsterPosition } from './teleport_rules.js';
+import { surfaceName } from './terrain_name.js';
 import { recordHeroKillConduct } from './end.js';
 import { game } from './gstate.js';
 import { endObjectBurn } from './light.js';
@@ -27,7 +31,8 @@ import {
 } from './monster_weapon.js';
 import { mkcorpstat, mksobj } from './mklev.js';
 import {
-    MONSTER_FLAGS2, MONSTER_GENO, MONSTER_SIZE, MONSTER_SYMBOL, monsterTypeName,
+    MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_SIZE, MONSTER_SYMBOL,
+    monsterIsAmorphous, monsterTypeName,
 } from './monster_data.js';
 import { changeMonsterForm } from './monster_polymorph.js';
 import { BOULDER, CORPSE, ROCK, STATUE } from './object_data.js';
@@ -276,26 +281,61 @@ async function restoreShapechanger(monster: Monster, publish: MessagePublisher) 
         || baseForm === monster.mnum || speciesWasGenocided(baseForm)) {
         return null;
     }
-    const vampire = VAMPIRE_FORMS.has(baseForm);
-    const resistantBase = monsterHasStoneResistance({ mnum: baseForm });
-    if (!vampire && !resistantBase) return null;
+    if (VAMPIRE_FORMS.has(baseForm)) return await reviveStonedVampire(monster, baseForm, publish);
+    if (!monsterHasStoneResistance({ mnum: baseForm })) return null;
 
     const oldName = monsterTypeName(monster.mnum, !!monster.female);
-    monster.mcanmove = 1;
-    monster.mfrozen = 0;
-    monster.mhpmax = Math.max(
-        monster.mhpmax ?? 1, (monster.m_lev ?? 0) + 1, 10,
-    );
-    monster.mhp = monster.mhpmax;
+    restoreRevertedMonsterHealth(monster);
     const change = await changeMonsterForm(monster, baseForm, game, { publish });
     if (!change || change.heroDied) return change;
     monster.cham = -1;
     if (canSeeMonster(monster)) {
-        const subject = vampire
-            ? `The lapidifying ${oldName}` : `The ${oldName}`;
-        await publish(
-            `${subject} turns into ${monsterTypeName(baseForm)}!`,
-        );
+        await publish(`The ${oldName} turns into ${monsterTypeName(baseForm)}!`);
+    }
+    newsym(monster.mx, monster.my);
+    return { changed: true, heroDied: false };
+}
+
+function restoreRevertedMonsterHealth(monster: Monster): void {
+    monster.mcanmove = 1;
+    monster.mfrozen = 0;
+    // C mon.c:set_mon_min_mhpmax(mtmp, 10).
+    monster.mhpmax = Math.max(
+        monster.mhpmax ?? 1, (monster.m_lev ?? 0) + 1, 10,
+    );
+    monster.mhp = monster.mhpmax;
+}
+
+const M1_FLY = 0x00000001;
+
+// C mon.c:vamp_stone(): a shifted vampire falls in its current form, then
+// silently resumes its vampire form and rises instead of petrifying.
+async function reviveStonedVampire(monster: Monster, baseForm: number, publish: MessagePublisher) {
+    const posture = monsterIsAmorphous(monster) ? 'coalesces on the'
+        : (MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_FLY ? 'drops to the'
+            : 'writhes on the';
+    const fall = `The lapidifying ${monsterName(monster, {
+        article: 'none', suppressSaddle: true, suppressHallucination: true,
+        suppressInvisible: true, suppressIt: true,
+    })} ${posture} ${surfaceName(monster.mx, monster.my)}`;
+    restoreRevertedMonsterHealth(monster);
+    if (engulfing_u(monster)) await expelHero(monster, { message: false, publish });
+    const location = game.level?.at(monster.mx, monster.my);
+    if (monsterIsAmorphous(monster) && location?.typ === DOOR
+        && (location.doormask ?? 0) & (D_CLOSED | D_LOCKED)) {
+        const spot = findNearbyMonsterPosition(baseForm, monster.mx, monster.my);
+        if (spot) await relocateMonsterTo(monster, spot.x, spot.y);
+    }
+    if (canSpotMonster(monster)) {
+        await publish(`${fall}!`);
+        await displayMessageWindow();
+    }
+    const change = await changeMonsterForm(monster, baseForm, game, { publish });
+    if (change?.heroDied) return change;
+    monster.cham = monster.mnum === baseForm ? -1 : baseForm;
+    if (canSpotMonster(monster)) {
+        await publish(`${monsterName(monster, { article: 'a', capitalized: true })} rises from the ${
+            surfaceName(monster.mx, monster.my)} with renewed agility!`);
     }
     newsym(monster.mx, monster.my);
     return { changed: true, heroDied: false };
