@@ -22,7 +22,7 @@ import { rnl } from './rng.js';
 import { game } from './gstate.js';
 import { MONSTER_EXPERIENCE_META, MONSTER_FLAGS1, MONSTER_SIZE, MONSTER_NAME, MONSTER_SYMBOL, monsterBreaksArmor, monsterCanBeSaddled, monsterHasNoHands, monsterIsCentaur, monsterIsWhirly, monsterTypeName, monsterHornCount, monsterIsSlithy, monsterIsVerySmall, monsterSlipsArmor, monsterWrappingAllowed, } from './monster_data.js';
 import { destroyObjectFromMonsterInventory, dropMonsterArmor, } from './monster_inventory.js';
-import { AMULET_OF_GUARDING, AMULET_OF_LIFE_SAVING, AMULET_OF_REFLECTION, ALCHEMY_SMOCK, DUNCE_CAP, ELVEN_MITHRIL_COAT, HELM_OF_OPPOSITE_ALIGNMENT, GOLD_DRAGON_SCALES, IRON_SHOES, MUMMY_WRAPPING, ROBE, OBJECT_BIMANUAL, OBJECT_DELAY, } from './object_data.js';
+import { AMULET_OF_GUARDING, AMULET_OF_LIFE_SAVING, AMULET_OF_REFLECTION, ALCHEMY_SMOCK, DUNCE_CAP, ELVEN_MITHRIL_COAT, HELM_OF_OPPOSITE_ALIGNMENT, GOLD_DRAGON_SCALES, MUMMY_WRAPPING, ROBE, OBJECT_BIMANUAL, OBJECT_DELAY, } from './object_data.js';
 import { AC_MAX, DISMOUNT_FELL, I_SPECIAL, W_AMUL, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU, W_SADDLE, } from './const.js';
 const M1_NOHEAD = 0x00008000;
 const M1_MINDLESS = 0x00010000;
@@ -102,8 +102,12 @@ function wornInSlot(monster, mask) {
     return (monster?.minvent || monster?.inventory || [])
         .find(object => ((object.owornmask ?? 0) & mask) !== 0) || null;
 }
+// C trap.c:wearing_iron_shoes() tests the boots' material, so iron kicking
+// boots protect as well as iron shoes do.
+const IRON = 11;
 export function monsterWearsIronShoes(monster) {
-    return wornInSlot(monster, W_ARMF)?.otyp === IRON_SHOES;
+    const boots = wornInSlot(monster, W_ARMF);
+    return !!boots && objectMaterial(boots) === IRON;
 }
 // C ref: worn.c:find_mac().  Species AC is the base; only inventory objects
 // whose worn bit is present in misc_worn_check contribute protection.

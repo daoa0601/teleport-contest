@@ -41,7 +41,7 @@ import {
 import {
     AMULET_OF_GUARDING, AMULET_OF_LIFE_SAVING, AMULET_OF_REFLECTION,
     ALCHEMY_SMOCK, DUNCE_CAP, ELVEN_MITHRIL_COAT, HELM_OF_OPPOSITE_ALIGNMENT,
-    GOLD_DRAGON_SCALES, IRON_SHOES, MUMMY_WRAPPING, ROBE,
+    GOLD_DRAGON_SCALES, MUMMY_WRAPPING, ROBE,
     OBJECT_BIMANUAL, OBJECT_DELAY, 
 } from './object_data.js';
 import {
@@ -144,8 +144,12 @@ function wornInSlot(monster: Monster | null | undefined, mask: number): GameObje
         .find(object => ((object.owornmask ?? 0) & mask) !== 0) || null;
 }
 
+// C trap.c:wearing_iron_shoes() tests the boots' material, so iron kicking
+// boots protect as well as iron shoes do.
+const IRON = 11;
 export function monsterWearsIronShoes(monster: Monster | null | undefined): boolean {
-    return wornInSlot(monster, W_ARMF)?.otyp === IRON_SHOES;
+    const boots = wornInSlot(monster, W_ARMF);
+    return !!boots && objectMaterial(boots) === IRON;
 }
 
 // C ref: worn.c:find_mac().  Species AC is the base; only inventory objects
