@@ -8,7 +8,7 @@ import { MONSTER_NAME } from '../js/monster_data.js';
 import { floatHeroDown } from '../js/terrain_movement.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { wearHeroArmor, findArmorClass } from '../js/armor.js';
-import { LEATHER_ARMOR } from '../js/object_data.js';
+import { LEATHER_ARMOR, POT_WATER } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
 
 void test('lava destroys armor while keeping its cached AC through the death refusal question', async () => {
@@ -197,3 +197,28 @@ for (const hallucinating of [false, true]) {
             assert.equal(rescue, 'You find yourself on the lava.');
     });
 }
+
+// C lava_effects() -> destroy_items(): a boiling potion's damage goes through
+// losehp(), which says "You die..." before done() asks the wizard "Die?".
+void test('a potion boiling in lava kills a fire-resistant hero with the ordinary death line', async () => {
+    const level = freshObjectRoom({ flags: { debug: true, bones: false } });
+    level.requireAt(10, 10).typ = LAVAPOOL;
+    game.u.fireResistance = true;
+    game.u.uhp = 1;
+    await addInventoryObject(POT_WATER, { quan: 20, blessed: true });
+    const screens: string[] = [];
+    const input = resetInputState();
+    input.display = {
+        async readKey() {
+            const text = requireGameDisplay().grid[0]?.map(cell => cell.ch).join('') ?? '';
+            screens.push(text.trim());
+            return (text.includes('Die?') ? 'n' : ' ').charCodeAt(0);
+        },
+    };
+
+    await heroLiquidEffects();
+
+    const dieQuestion = screens.findIndex(text => text.startsWith('Die?'));
+    assert.ok(dieQuestion > 0, screens.join(' | '));
+    assert.match(screens[dieQuestion - 1] ?? '', /You die\.\.\./);
+});
