@@ -4,7 +4,6 @@
 import { setHeroGrip } from './hero_grip.js';
 import { finishHeroHelplessness } from './allmain.js';
 import { formatFeltMessage } from './hero_speech.js';
-import { monsterHasMapPosition } from './monster_location.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import {
     BURNING, D_BROKEN, D_CLOSED, D_LOCKED, DISMOUNT_FELL, DISMOUNT_GENERIC, DISSOLVED, DROWNING,
@@ -55,7 +54,9 @@ import {
     heroCanTeleport, heroControlsTeleport,
     moveHeroByTeleport, safeTeleportDestination, teleportHeroAtWill,
 } from './teleport.js';
-import { heroTeleportRestricted } from './teleport_rules.js';
+import { goodPosition, heroTeleportRestricted } from './teleport_rules.js';
+import { shopkeeperBlockingDoor } from './shop_blocking.js';
+import { shopkeeperName } from './monster_name.js';
 import { vision_recalc, vision_reset } from './vision.js';
 import {
     inventoryWeight, nearCapacity, SLT_ENCUMBER, UNENCUMBERED,
@@ -67,7 +68,7 @@ import {
 
 import { clearHeroSliming, heroIsSliming } from './slime.js';
 import { isLavaAt, isPoolAt, levelHasCeiling, levelIsWaterLevel as heroIsOnWaterLevel } from './terrain_properties.js';
-import { refreshMovementProperties, setPropertyTimeout } from './properties.js';
+import { propertyIsActive, refreshMovementProperties, setPropertyTimeout } from './properties.js';
 import { surfaceName, waterbodyName } from './terrain_name.js';
 import { withIndefiniteArticle } from './object_grammar.js';
 import { iceDescriptionAt } from './dungeon_feature.js';
@@ -254,15 +255,6 @@ export function heroShouldAvoidLiquid(x: number, y: number, state = game) {
         || !!((state.flags?.paranoia_bits ?? 0) & PARANOID_SWIM);
 }
 
-function squareBlocksHero(state: GameState, x: number, y: number) {
-    const location = state.level?.at?.(x, y);
-    if (heroCanPassWallAt(state, x, y)) return false;
-    if (!location || location.typ === STONE
-        || IS_OBSTRUCTED(location.typ)) return true;
-    return location.typ === DOOR
-        && !!(location.doormask & (D_CLOSED | D_LOCKED));
-}
-
 export function heroCanPassWallAt(state: GameState, x: number, y: number) {
     const location = requireGameLevel(state).at(x, y);
     return !!location && heroPassesWalls(state)
@@ -317,24 +309,36 @@ export function heroTightDiagonalReason(state = game) {
     return 0;
 }
 
-function crawlDestinationAllowed(state: PlayingGameState, x: number, y: number) {
+// C hack.c:crawl_destination(): goodpos() first, then diagonal limits.
+async function crawlDestinationAllowed(
+    state: PlayingGameState, x: number, y: number,
+    random: RandomBelow, publish: MessagePublisher,
+) {
     const u = state.u;
-    const location = state.level?.at?.(x, y);
-    if (!u || !location || squareBlocksHero(state, x, y)
-        || isPoolAt(x, y, state) || isLavaAt(x, y, state)) return false;
-    if (state.level?.monsters?.some(monster => monsterHasMapPosition(monster, state) &&
-        !monster.dead && (monster.mhp ?? 1) > 0
-        && monster.mx === x && monster.my === y)) return false;
+    if (!goodPosition(x, y, { kind: 'hero' }, { state, random })) return false;
     if (x === u.ux || y === u.uy) return true;
     if ((u.mtimedone ?? 0) > 0 && u.umonnum === PM_GRID_BUG) return false;
     if (heroPassesWalls(state)) return true;
-    if (location.typ === DOOR && !doorlessDoor(location)) return false;
+    const location = state.level.at(x, y);
+    if (location?.typ === DOOR) {
+        if (!doorlessDoor(location)) return false;
+        const keeper = shopkeeperBlockingDoor(x, y, state);
+        if (keeper) {
+            await publish(`${shopkeeperName(keeper, { state, capitalized: true })}${
+                propertyIsActive('invisible', state) ? ' senses your motion and' : ''
+            } blocks your way!`);
+            return false;
+        }
+    }
     return !(heroBadRock(state, u.ux, y)
         && heroBadRock(state, x, u.uy)
         && heroTightDiagonalReason(state));
 }
 
-function crawlDestination(state: PlayingGameState, x: number, y: number, random: RandomBelow) {
+async function crawlDestination(
+    state: PlayingGameState, x: number, y: number,
+    random: RandomBelow, publish: MessagePublisher,
+) {
     const directions = [0, 1, 2, 3, 4, 5, 6, 7];
     for (let remaining = directions.length; remaining > 0; remaining--) {
         const index = random(remaining);
@@ -352,7 +356,7 @@ function crawlDestination(state: PlayingGameState, x: number, y: number, random:
         if (dx === undefined || dy === undefined)
             throw new RangeError('Unknown crawl direction.');
         const candidate = { x: x + dx, y: y + dy };
-        if (crawlDestinationAllowed(state, candidate.x, candidate.y))
+        if (await crawlDestinationAllowed(state, candidate.x, candidate.y, random, publish))
             return candidate;
     }
     return null;
@@ -1032,7 +1036,7 @@ export async function heroLiquidEffects(options: HeroLiquidOptions = {}): Promis
     const canMove = !((state._helplessTurns ?? 0) > 0)
         && (!((u.mtimedone ?? 0) > 0) || (MONSTER_MOVE[u.umonnum] ?? 0) > 0);
     const destination = canMove
-        ? crawlDestination(state, x, y, random) : null;
+        ? await crawlDestination(state, x, y, random, publish) : null;
     if (destination) {
         const escape = heroIsOnWaterLevel(state)
             ? { escaped: true, dropped: false }
