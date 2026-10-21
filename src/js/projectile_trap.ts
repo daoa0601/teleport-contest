@@ -20,7 +20,7 @@ import { observeObjectForNaming } from './objnam.js';
 import { deleteObject } from './object_delete.js';
 import { rn2, rnd } from './rng.js';
 import { monsterTrapVisibility, seeTrap } from './trap.js';
-import { newsym } from './display.js';
+import { newsym, plineWithContinuation } from './display.js';
 import { makeTrapMissile } from './trap_missile.js';
 import { rollPhysicalWeaponDamage } from './weapon_damage.js';
 import { monsterName } from './monster_name.js';
@@ -164,5 +164,23 @@ export async function finishMonsterProjectileTrap(
         event.missile = await placeMissile(event.missile, event.trap, state);
     }
     event.finished = true;
+    return event;
+}
+
+// C trap.c:steedintrap() for an arrow or dart trap: thitm() aims the
+// missile at the ridden steed on the hero's square.
+export async function hitSteedWithTrapMissile(
+    steed: Monster, trap: Trap, missile: GameObject, state: GameState = game,
+    { publish = plineWithContinuation }: { publish?: MessagePublisher } = {},
+): Promise<FlyingTrapProjectileEvent> {
+    steed.mx = state.u.ux;
+    steed.my = state.u.uy;
+    const visibility = monsterTrapVisibility(steed, state);
+    const hit = findMonsterArmorClass(steed) + (trap.ttyp === ARROW_TRAP ? 8 : 7)
+        + (missile.spe ?? 0) <= rnd(20);
+    const event: FlyingTrapProjectileEvent = {
+        kind: 'projectile-trap', trap, missile, hit, killed: false, finished: false, ...visibility,
+    };
+    await finishMonsterProjectileTrap(steed, event, state, { publish });
     return event;
 }

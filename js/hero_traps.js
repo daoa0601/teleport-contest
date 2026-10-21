@@ -45,6 +45,7 @@ import { artifactById } from './artifacts.js';
 import { fallWithIronBall, heroIsPunished, placeBallAndChain, unplaceBallAndChain, } from './ball.js';
 import { pitsAreConjoined } from './pit_connections.js';
 import { selfTouchPetrifyingWeapons } from './stoning.js';
+import { hitSteedWithTrapMissile } from './projectile_trap.js';
 import { dismountHero } from './steed.js';
 import { holdingMonsterName, holdingMonsterSubject } from './hero_expulsion.js';
 import { finishMonsterTrapDeath } from './monster_death.js';
@@ -684,6 +685,17 @@ async function triggerProjectileTrap(trap) {
     if (!arrowTrap && rn2(6) === 0)
         missile.opoisoned = 1;
     const damage = physicalDamage(rollPhysicalWeaponDamageAgainstHero(missile, game));
+    const steed = hero.usteed;
+    if (steed && rn2(2) === 0) {
+        const event = await hitSteedWithTrapMissile(steed, trap, missile, game);
+        if (event.death?.heroDied)
+            return;
+        if (event.killed) {
+            hero.usteed = steed;
+            await dismountHero(DISMOUNT_POLY);
+        }
+        return;
+    }
     const mortality = hero.umortality || 0;
     const hit = await hitHeroWithObject(missile, damage, attackLevel, {
         name: noun,
