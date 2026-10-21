@@ -4,22 +4,26 @@ import assert from 'node:assert/strict';
 import {
     artifactByName, initializeArtifacts, nameArtifact,
 } from '../js/artifacts.js';
-import { CORR, FOUNTAIN, G_EXTINCT, HOLE, PIT, SHOPBASE, STONE } from '../js/const.js';
+import {
+    CORR, FOUNTAIN, G_EXTINCT, HOLE, MM_NOGRP, MM_NOWAIT, NO_MINVENT, PIT, SHOPBASE, STONE,
+} from '../js/const.js';
+import { initializePet } from '../js/dog.js';
 import { map_location, map_object } from '../js/display.js';
 import { mapLevel } from '../js/detect.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
-import { pushKeys } from '../js/input.js';
+import { pushKeys, resetInputState } from '../js/input.js';
 import { gotoLevel } from '../js/level_change.js';
 import { initRng } from '../js/rng.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
 import { placeCreatedObject } from '../js/floor_object.js';
 import { mklev, saveBonesLevel } from '../js/mklev.js';
+import { beginMonsterMove } from '../js/monmove.js';
 import { createHarmlessGasCloudSelection, runLevelRegions } from '../js/regions.js';
 import { linkObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { finishEnvironmentalMonsterDeath } from '../js/monster_death.js';
 import {
     AMULET_OF_YENDOR, CHEST, CORPSE, DAGGER, FAKE_AMULET_OF_YENDOR,
-    FOOD_RATION, POT_HEALING, ROCK, STATUE,
+    FOOD_RATION, POT_HEALING, ROCK, STATUE, TRIPE_RATION,
 } from '../js/object_data.js';
 import { init_objects } from '../js/o_init.js';
 import { cansee, vision_recalc, vision_reset_new_level } from '../js/vision.js';
@@ -494,4 +498,29 @@ void test("magic mapping bones does not recover the old adventurer's unseen obje
     const remembered = requireGameLevel().requireAt(30, 10).remembered_glyph;
     assert.ok(remembered, 'mapping did not remember the corridor');
     assert.notEqual(remembered.kind, 'object');
+});
+
+void test('a pet prefers food dropped after bones load over equally close bones food', async () => {
+    const storage = memoryStorage();
+    freshBonesRoom(storage);
+    for (let count = 0; count < 20; count++) placeCreatedObject(await knownObject(ROCK), 8, 8);
+    placeCreatedObject(await knownObject(TRIPE_RATION), 12, 12);
+    assert.ok(saveBonesLevel());
+
+    freshBonesRoom(storage);
+    requirePlayingGame(game);
+    pushKeys('yn');
+    await mklev();
+    vision_recalc(0);
+    placeCreatedObject(await knownObject(TRIPE_RATION), 16, 12);
+    const dog = await createMonsterAt('little dog', 14, 12, MM_NOGRP | MM_NOWAIT | NO_MINVENT);
+    initializePet(dog);
+    const input = resetInputState();
+    input.beforeRead = () => input.feed(' ');
+
+    await beginMonsterMove(dog, game, limit => Math.min(1, limit - 1));
+
+    // C dog_goal() keeps the first of equally close foods in fobj, and
+    // objects placed after getbones() precede the restored chain.
+    assert.equal(dog.mx, 15);
 });
