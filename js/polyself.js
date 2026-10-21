@@ -1145,8 +1145,11 @@ function updateHeroFormLight(oldLight, state) {
         return;
     if (oldLight)
         extinguishHeroFormLight(state);
-    if (newLight)
-        state.u.formLightRange = 2;
+    if (!newLight)
+        return;
+    // C light.c:new_light_source() asks for a full recalc so the source shows.
+    state.u.formLightRange = 2;
+    state.vision_full_recalc = 1;
 }
 export async function polymorphHero(flags = POLY_NOFLAGS) {
     requirePlayingGame(game);

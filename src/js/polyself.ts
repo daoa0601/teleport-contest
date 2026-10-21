@@ -1210,7 +1210,10 @@ function updateHeroFormLight(oldLight: boolean, state: PlayingGameState) {
     const newLight = monsterEmitsLight(state.u.umonnum);
     if (oldLight === newLight) return;
     if (oldLight) extinguishHeroFormLight(state);
-    if (newLight) state.u.formLightRange = 2;
+    if (!newLight) return;
+    // C light.c:new_light_source() asks for a full recalc so the source shows.
+    state.u.formLightRange = 2;
+    state.vision_full_recalc = 1;
 }
 
 export async function polymorphHero(flags = POLY_NOFLAGS) {
