@@ -6572,7 +6572,7 @@ export async function resumeDeferredMonsterTrap(action, state, { random = rn2, r
         case 'rust-trap':
             await finishMonsterRustTrap(action.monster, event, state, {
                 publish,
-                random,
+                random: recordedRandom,
             });
             break;
         case 'projectile-trap':

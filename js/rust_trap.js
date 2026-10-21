@@ -3,20 +3,18 @@
 import { finishMonsterKilled } from './monster_death.js';
 import { AD_RUST } from './monster_attack_types.js';
 import { monsterArmName, monsterHeadName } from './body_parts.js';
-import { canSpotMonster, plineWithContinuation } from './display.js';
+import { plineWithContinuation } from './display.js';
+import { splitMonster } from './monster_clone.js';
 import { game } from './gstate.js';
 import { wornMonsterLifeSaver } from './mondeath.js';
 import { monsterName, possessiveName } from './monster_name.js';
 import { OBJECT_NAMES } from './object_data.js';
 import { rn2 } from './rng.js';
+const PM_GREMLIN = 40;
 import { applyMonsterRustTrap, monsterTrapVisibility, seeTrap } from './trap.js';
 async function presentRustTrap(monster, event, state, publish) {
-    if (!event.inSight) {
-        // split_mon() announces a spotted monster even out of sight.
-        if (event.clone && canSpotMonster(monster))
-            await publish(`${monsterName(monster, { state, capitalized: true })} multiplies!`);
+    if (!event.inSight)
         return;
-    }
     const name = monsterName(monster, { state });
     const arm = monsterArmName(monster.mnum);
     const hit = event.target === 'head'
@@ -53,10 +51,6 @@ async function presentRustTrap(monster, event, state, publish) {
         const action = event.startsToFall ? 'starts to fall' : 'falls';
         await publish(`${monsterName(monster, { state, capitalized: true })} ${action} to pieces!`);
     }
-    else if (event.clone && canSpotMonster(monster)) {
-        // trap.c calls split_mon() after the gush and erosion messages.
-        await publish(`${monsterName(monster, { state, capitalized: true })} multiplies!`);
-    }
 }
 export async function beginMonsterRustTrap(monster, trap, state = game, { random = rn2 } = {}) {
     const event = {
@@ -79,6 +73,10 @@ export async function finishMonsterRustTrap(monster, event, state = game, { publ
     if (!event || event.finished)
         return event;
     await presentRustTrap(monster, event, state, publish);
+    // C trapeffect_rust_trap() rolls and splits a gremlin only after the
+    // gush and erosion messages.
+    if (!event.completelyRusted && monster.mnum === PM_GREMLIN && random(3) !== 0)
+        await splitMonster(monster, state, { monsterMoving: true, publish });
     if (event.completelyRusted) {
         const death = await finishMonsterKilled(monster, state, {
             damageType: AD_RUST,

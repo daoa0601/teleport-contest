@@ -19,7 +19,6 @@ import { heroIsFlying } from './polyself.js';
 import { isPoolAt, monsterFliesOrFloats } from './terrain_properties.js';
 import { objectOwnershipPrefix } from './shk.js';
 import { MONSTER_FLAGS1, monsterIsHumanoid } from './monster_data.js';
-import { splitMonster } from './monster_clone.js';
 import { monsterWieldedWeapon } from './monster_weapon.js';
 import { BAG_OF_TRICKS, BRASS_LANTERN, CAN_OF_GREASE, CANDELABRUM_OF_INVOCATION, CHEST, ICE_BOX, FIRE_HORN, LARGE_BOX, OBJECT_BIMANUAL, OBJECT_MATERIAL_NAMES, OBJECT_NAMES, OBJECT_PROPERTY, OILSKIN_SACK, MAGIC_LAMP, OIL_LAMP, POT_ACID, POT_OIL, POT_WATER, RED_DRAGON_SCALE_MAIL, RED_DRAGON_SCALES, RIN_FIRE_RESISTANCE, SCR_BLANK_PAPER, SCR_FIRE, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_FIREBALL, SPE_NOVEL, TALLOW_CANDLE, TOWEL, WAN_FIRE, WAX_CANDLE, } from './object_data.js';
 import { erodeObject } from './object_erosion.js';
@@ -50,7 +49,6 @@ export function feelTrap(trap, state = game) {
         newsym(trap.tx, trap.ty);
     }
 }
-const PM_GREMLIN = 40;
 const PM_IRON_GOLEM = 259;
 const M1_HUMANOID = 0x00020000;
 const POTION_CLASS = 8;
@@ -619,13 +617,9 @@ export async function applyMonsterRustTrap(monster, state, { roll = rn2, luckRol
             || wornObject(monster, W_ARMU);
         addWaterEffect(event, rustObject(torso, torso ? armorSimpleName(torso, state) : 'suit', monster, state, roll, luckRoll));
     }
-    if (monster.mnum === PM_IRON_GOLEM) {
+    // A gremlin's split_mon() follows the gush report (finishMonsterRustTrap).
+    if (monster.mnum === PM_IRON_GOLEM)
         event.completelyRusted = true;
-    }
-    else if (monster.mnum === PM_GREMLIN && roll(3) !== 0) {
-        // The rust-trap report owns split_mon()'s message, after the gush.
-        event.clone = await splitMonster(monster, state, { monsterMoving: true, publish: () => { } });
-    }
     return event;
 }
 //# sourceMappingURL=trap.js.map
