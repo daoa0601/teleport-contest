@@ -4318,10 +4318,20 @@ function specialMonsterHumidity(mndx: number): number {
     return humidity;
 }
 
+// C sp_lev.c:l_create_stairway() removes a trap left by earlier level
+// contents from the chosen stair or ladder square.
+function clearStairwaySquare(x: number, y: number): void {
+    const trap = requireGameLevel().traps.find(candidate => candidate.tx === x && candidate.ty === y);
+    if (trap) deleteTrap(trap);
+}
+
 async function specialStair(context: SpecialLevelContext, up: boolean): Promise<Position | null> {
     const point = await specialRandomLocation(context,
         loc => loc.typ === ROOM || loc.typ === CORR || loc.typ === ICE);
-    if (point) await mkstairs(point.x, point.y, up, null);
+    if (point) {
+        clearStairwaySquare(point.x, point.y);
+        await mkstairs(point.x, point.y, up, null);
+    }
     return point;
 }
 
@@ -4908,6 +4918,7 @@ function loadSpecialAsciiMap(
 }
 
 async function specialStairAt(context: SpecialLevelContext, x: number, y: number, up: boolean): Promise<void> {
+    clearStairwaySquare(context.xstart + x, context.ystart + y);
     await mkstairs(context.xstart + x, context.ystart + y, up, null, true);
 }
 
@@ -4916,6 +4927,7 @@ function specialLadderAt(context: SpecialLevelContext, x: number, y: number, up:
     const ladderY = context.ystart + y;
     const loc = requireGameLevel().at(ladderX, ladderY);
     if (!loc) return;
+    clearStairwaySquare(ladderX, ladderY);
     loc.typ = LADDER;
     loc.ladder = up ? 1 : 2;
     const currentLevel = game.u?.uz?.dlevel ?? 1;
