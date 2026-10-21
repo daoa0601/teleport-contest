@@ -48,6 +48,8 @@ void test('heavy exertion costs one active-form hit point and the attack continu
     assert.equal(game.u.uhp, 4);
 });
 
+// C hack.c overexert_hp(): fall_asleep(-10, FALSE) leaves the ordinary
+// You_can_move_again recovery message rather than "You wake up."
 void test('heavy exertion at one hit point makes the hero pass out', async () => {
     await burdenHero({ uhunger: 900, uhp: 1 });
     requireFixtureGame(game);
@@ -57,7 +59,7 @@ void test('heavy exertion at one hit point makes the hero pass out', async () =>
     assert.equal(stopped, true);
     assert.equal(game.u.uhp, 1);
     assert.equal(game._helplessTurns, 10);
-    assert.equal(game._helplessDoneMessage, '');
+    assert.equal(game._helplessDoneMessage, 'You can move again.');
     assert.match(game._pending_message, /pass out from exertion/);
 });
 
