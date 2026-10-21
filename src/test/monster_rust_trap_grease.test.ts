@@ -3,7 +3,7 @@ import test from 'node:test';
 
 import { RUST_TRAP, W_ARMH } from '../js/const.js';
 import { flush_screen, newsym } from '../js/display.js';
-import { game, requireGameDisplay } from '../js/gstate.js';
+import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { placeMonsterAt } from '../js/monster_location.js';
 import { monsterName } from '../js/monster_name.js';
 import { HELMET } from '../js/object_data.js';
@@ -87,3 +87,31 @@ for (const [species, part] of headCases) {
         assert.equal(messages[0], `A gush of water hits ${monsterName(monster)} on the ${part}!`);
     });
 }
+
+// C trapeffect_rust_trap() prints the gush before it rolls rn2(3) and calls
+// split_mon(), so a gremlin only multiplies once that report is shown.
+void test('a gremlin splits on a rust trap only after the gush is reported', async () => {
+    const { monster, trap } = await freshMonsterTrapRoom(RUST_TRAP, { monster: { species: 'gremlin' } });
+    requirePlayingGame(game);
+    const level = game.level;
+    const living = () => level.monsters.filter(candidate => !candidate.dead).length;
+    const before = living();
+    const messages: string[] = [];
+    const rolls: number[] = [];
+
+    const event = await beginMonsterRustTrap(monster, trap, game, {
+        random: limit => { rolls.push(limit); return 4; },
+    });
+    assert.deepEqual(rolls, [5], 'beginning the trap rolls only its target');
+    await finishMonsterRustTrap(monster, event, game, {
+        random: limit => { rolls.push(limit); return 1; },
+        publish: text => {
+            messages.push(`${text} [${living()}]`);
+        },
+    });
+
+    assert.deepEqual(rolls, [5, 3]);
+    assert.equal(messages[0], `A gush of water hits ${monsterName(monster)}! [${before}]`);
+    assert.match(messages.at(-1) ?? '', /multiplies!/);
+    assert.equal(living(), before + 1);
+});

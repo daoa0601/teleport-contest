@@ -23,7 +23,6 @@ import { heroIsFlying } from './polyself.js';
 import { isPoolAt, monsterFliesOrFloats } from './terrain_properties.js';
 import { objectOwnershipPrefix } from './shk.js';
 import { MONSTER_FLAGS1, monsterIsHumanoid } from './monster_data.js';
-import { splitMonster } from './monster_clone.js';
 import { monsterWieldedWeapon } from './monster_weapon.js';
 import {
     BAG_OF_TRICKS, BRASS_LANTERN, CAN_OF_GREASE, CANDELABRUM_OF_INVOCATION, CHEST, ICE_BOX,
@@ -144,10 +143,7 @@ export interface MonsterRustTrapEvent {
     damage: number;
     killed: boolean;
     completelyRusted?: boolean;
-    clone?: Monster | null;
 }
-
-const PM_GREMLIN = 40;
 const PM_IRON_GOLEM = 259;
 const M1_HUMANOID = 0x00020000;
 const POTION_CLASS = 8;
@@ -769,11 +765,7 @@ export async function applyMonsterRustTrap(
         ));
     }
 
-    if (monster.mnum === PM_IRON_GOLEM) {
-        event.completelyRusted = true;
-    } else if (monster.mnum === PM_GREMLIN && roll(3) !== 0) {
-        // The rust-trap report owns split_mon()'s message, after the gush.
-        event.clone = await splitMonster(monster, state, { monsterMoving: true, publish: () => {} });
-    }
+    // A gremlin's split_mon() follows the gush report (finishMonsterRustTrap).
+    if (monster.mnum === PM_IRON_GOLEM) event.completelyRusted = true;
     return event;
 }
