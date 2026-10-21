@@ -4,17 +4,18 @@ import test from 'node:test';
 import { moveloop_core } from '../js/allmain.js';
 import { wearHeroArmor } from '../js/armor.js';
 import { heroHasInvoluntaryDelay } from '../js/command_state.js';
-import { POOL, TT_WEB } from '../js/const.js';
+import { POOL, ROOM, TT_WEB } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { hurtleHero } from '../js/hero_hurtle.js';
 import { putHeroToSleep } from '../js/hero_sleep.js';
 import { resetInputState } from '../js/input.js';
 import { inventoryItemDescription } from '../js/invent.js';
-import { SPEED_BOOTS } from '../js/object_data.js';
-import { addInventoryObject } from './support/game-objects.js';
+import { GOLD_PIECE, SPEED_BOOTS } from '../js/object_data.js';
+import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { finishAtCommandInput, installPagerInput } from './support/pager-input.js';
 import { freshTurnRoom } from './support/playable-room.js';
+import { requireScreenRow } from './support/screen.js';
 
 void test('forced hurtling preserves the voluntary movement state and its starting square', async () => {
     freshObjectRoom({ right: 20 });
@@ -64,6 +65,27 @@ void test('a web anchoring a sleeping hero prevents knockback without waking the
     assert.equal(game._helplessTurns, 8);
     assert.equal(game._helplessDoneMessage, 'You wake up.');
     assert.ok(game.u.usleep);
+});
+
+void test('crawling out after hurtling into water looks at the landing square', async () => {
+    const level = freshObjectRoom({ right: 20 });
+    game.flags.pickup = false;
+    for (let x = 10; x <= 12; x++)
+        for (let y = 9; y <= 11; y++)
+            if (x !== 10 || y !== 10) level.requireAt(x, y).typ = POOL;
+    level.requireAt(12, 10).typ = ROOM;
+    await floorObject(GOLD_PIECE, 12, 10, { quan: 46 });
+    const lines: string[] = [];
+    resetInputState().display = { async readKey() {
+        lines.push(requireScreenRow(0).map(cell => cell.ch).join('').trimEnd());
+        return 32;
+    } };
+
+    await hurtleHero(1, 0, 1);
+    lines.push(game._pending_message);
+
+    assert.deepEqual([game.u.ux, game.u.uy], [12, 10]);
+    assert.ok(lines.some(line => line.includes('You see here 46 gold pieces.')), lines.join('\n'));
 });
 
 void test('hurtling into water releases a swimming hero from the movement delay', async () => {

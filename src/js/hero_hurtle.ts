@@ -34,7 +34,8 @@ import type { HurtleDeathHandler } from './monster_hurtle.js';
 import {
     blocksDiagonalDoor, heroBadRock, heroLiquidEffects, heroTightDiagonalReason,
 } from './hack.js';
-import { triggerHeroTrap, triggerHeroTrapAt } from './hero_traps.js';
+import { triggerHeroTrap, type HeroTrapOptions } from './hero_traps.js';
+import { finishDestinationSpotEffects } from './location_effects.js';
 import { wakeMonstersNearWithMessages } from './monster_wake.js';
 import { angerMonster, wakeMonster } from './monster_anger.js';
 import {
@@ -310,9 +311,13 @@ async function triggerLandingTrap(trap: Trap | undefined, options: HeroHurtleOpt
         || game.u.ux !== before.x || game.u.uy !== before.y;
 }
 
-async function applyForcedLandingEffects(options: HeroHurtleOptions) {
-    await checkSpecialRoom();
-    return triggerHeroTrapAt(game.u.ux, game.u.uy, options);
+// drown() relocates a hero who crawls out or is rescued through teleds(),
+// whose spoteffects() covers the room, trap, and look-here at the landing.
+function hurtleTrapOptions(options: HeroHurtleOptions): HeroTrapOptions {
+    const trapOptions: HeroTrapOptions = {};
+    if (options.finishTeleport) trapOptions.finishTeleport = options.finishTeleport;
+    if (options.gotoLevel) trapOptions.gotoLevel = options.gotoLevel;
+    return trapOptions;
 }
 
 async function settleLiquid(options: HeroHurtleOptions, remaining: HurtleDistance) {
@@ -344,7 +349,10 @@ async function settleLiquid(options: HeroHurtleOptions, remaining: HurtleDistanc
     game._helplessDoneMessage = null;
     return heroLiquidEffects({
         chooseTeleportDestination: options.chooseTeleportDestination ?? null,
-        applyLandingEffects: () => applyForcedLandingEffects(options),
+        applyLandingEffects: ({ from, to, pick = true }) => finishDestinationSpotEffects({
+            oldx: from.x, oldy: from.y, newx: to.x, newy: to.y,
+            pick, trapOptions: hurtleTrapOptions(options),
+        }),
     });
 }
 
