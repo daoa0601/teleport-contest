@@ -2580,8 +2580,10 @@ async function presentMonsterAttackEffects(action, game, { random = rn2, rollDic
                 // C hitmu()/missmu() records an unseen attacker's square
                 // before projecting its contact line.  Persist that marker
                 // in hero memory so a pager or later blind docrt() cannot
-                // erase the source of the attack.
+                // erase the source of the attack.  A hidden attacker was
+                // already mapped before its reveal redrew the square.
                 if (!heroAttack.deferredEngulf
+                    && !heroAttack.attackerMapped
                     && heroAttack.effect !== 'wild-miss'
                     && heroAttack.effect !== 'engulf-unfound'
                     && heroAttack.effect !== 'engulf-refused'

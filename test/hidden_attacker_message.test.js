@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { performMonsterHeroAttack } from '../js/allmain.js';
 import { NO_MINVENT, POOL } from '../js/const.js';
+import { flush_screen } from '../js/display.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { hideMonsterUnder } from '../js/monster_hiding.js';
@@ -10,6 +11,9 @@ import { floorObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
+import { requireScreenCell } from './support/screen.js';
+import { syncBlindness } from '../js/senses.js';
+import { vision_recalc } from '../js/vision.js';
 void test('a concealed attacker reveals itself and the object covering it', async () => {
     freshObjectRoom();
     requirePlayingGame(game);
@@ -60,4 +64,24 @@ for (const underwater of [false, true]) {
         assert.equal(eel.mundetected, 0);
     });
 }
+void test('a blind warned hero sees the warning, not a remembered unseen marker, where a hidden jellyfish stung', async () => {
+    const level = freshObjectRoom({ hero: { blindTurns: 20, warning: true } });
+    requirePlayingGame(game);
+    level.requireAt(11, 10).typ = POOL;
+    const eel = await createMonsterAt('jellyfish', 11, 10, NO_MINVENT);
+    eel.mundetected = 1;
+    eel.mpeaceful = 0;
+    eel.mux = game.u.ux;
+    eel.muy = game.u.uy;
+    syncBlindness(game);
+    vision_recalc(0);
+    const input = resetInputState();
+    installPagerInput(input, { expected: /It /, limit: 5 });
+    await performMonsterHeroAttack(eel, game, {
+        random: () => 0, rollOne: () => 1, rollDice: () => 0,
+    });
+    await flush_screen(1);
+    assert.equal(eel.mundetected, 0);
+    assert.match(requireScreenCell(10, 11).ch, /^[1-5]$/);
+});
 //# sourceMappingURL=hidden_attacker_message.test.js.map

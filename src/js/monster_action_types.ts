@@ -438,6 +438,8 @@ export interface HeroAttackSlot {
     attackIndex: number;
     effectiveAttack: AttackTuple;
     oldFormMnum: number;
+    /** hitmu() mapped this unseen attacker, then redrew its revealed square. */
+    attackerMapped?: boolean;
 }
 
 export interface HeroAttackSequence {
