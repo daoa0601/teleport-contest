@@ -322,6 +322,8 @@ export async function resolveImmediatePetrification({
     publish?: MessagePublisher;
     die?: DeathHandler;
 }) {
+    // C trap.c:instapetrify() is a no-op for a stoning-resistant hero.
+    if (heroResistsStoning(state)) return { died: false, transformed: false };
     if (formCanBecomeStoneGolem(state.u.umonnum, state)) {
         const result = await polymonHero(PM_STONE_GOLEM);
         if (result.transformed || result.died)
