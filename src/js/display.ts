@@ -357,6 +357,14 @@ function observeNearbyObject(object: ObjectGlyphSource, x: number, y: number) {
 // generic object can remain continuously visible while the hero crosses the
 // close-observation boundary, so visibility transitions alone cannot own its
 // repaint.
+// C display.h:glyph_is_generic_object(). Generic object numbers are the
+// class slots below MAXOCLASSES; zero is the strange object, not a class.
+const MAX_OBJECT_CLASSES = 18;
+function rememberedGenericObject(glyph: DisplayGlyph | null | undefined): boolean {
+    return glyph?.kind === 'object' && !glyph.statueGlyph
+        && glyph.otyp > 0 && glyph.otyp < MAX_OBJECT_CLASSES;
+}
+
 export function see_nearby_objects() {
     const r = Math.max(game.u?.xray_range ?? -1, 2);
     const nearDistance = r * r * 2 - r;
@@ -366,15 +374,16 @@ export function see_nearby_objects() {
             if (!object || object.dknown || !cansee(x, y)) continue;
             const dx = x - game.u.ux, dy = y - game.u.uy;
             if (dx * dx + dy * dy > nearDistance) continue;
-            const wasGeneric = objectUsesGenericGlyph(object);
             // Unlike map_object(), display.c:see_nearby_objects() observes
             // every visible object inside the close-name radius.  Only the
-            // repaint is conditional on its old glyph having been generic.
+            // repaint is conditional, and it tests the remembered glyph: an
+            // object first seen under a monster may not be remembered at all.
             if (heroIsHallucinating(game))
                 continue;
             object.dknown = true;
             recordObjectEncounter(object.otyp);
-            if (wasGeneric && object.dknown) newsym(x, y);
+            if (rememberedGenericObject(game.level?.at(x, y)?.remembered_glyph))
+                newsym_force(x, y);
         }
     }
 }
