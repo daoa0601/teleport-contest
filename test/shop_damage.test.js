@@ -2,9 +2,9 @@ import { isRoom } from '../js/map_types.js';
 import { floorObjectsAt, addTrap } from './support/level-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { D_LOCKED, D_NODOOR, DOOR, HWALL, MON_LIMBO, POOL, ROOM, SHOP_DOOR_COST, SHOP_WALL_COST, W_ARM, W_QUIVER, W_SWAPWEP, } from '../js/const.js';
+import { D_LOCKED, D_NODOOR, DOOR, HWALL, MON_LIMBO, POOL, ROOM, SV0, TRCORNER, WM_C_OUTER, SHOP_DOOR_COST, SHOP_WALL_COST, W_ARM, W_QUIVER, W_SWAPWEP, } from '../js/const.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
-import { canSpotMonster } from '../js/display.js';
+import { canSpotMonster, terrain_glyph } from '../js/display.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { heroGoldAmount, setHeroGoldAmount } from '../js/hero_gold.js';
 import { bindInputGate, InputGate, resetInputState } from '../js/input.js';
@@ -15,6 +15,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { checkSpecialRoom } from '../js/shk.js';
 import { initRng } from '../js/rng.js';
 import { vision_recalc } from '../js/vision.js';
+import { syncBlindness } from '../js/senses.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createStaffedShop } from './support/shop.js';
@@ -215,6 +216,26 @@ void test('the keeper repairs a wall gap after the repair delay', async () => {
     assert.equal(requireGameLevel(game).requireAt(8, 10).typ, HWALL);
     assert.equal((requireGameLevel(game).damagelist ?? []).length, 0);
     assert.equal(game._lastPlineMessage, 'Suddenly, a section of the wall closes up!');
+});
+void test('an unseen corner repair restores the corner\'s wall mode', async () => {
+    const { shopkeeper } = await damageShop();
+    const corner = requireGameLevel(game).requireAt(8, 10);
+    corner.typ = TRCORNER;
+    corner.wall_info = WM_C_OUTER;
+    corner.seenv = SV0;
+    const before = terrain_glyph(corner, 8, 10).ch;
+    game.u.blindTurns = 20;
+    syncBlindness(game);
+    vision_recalc(0);
+    addShopDamage(8, 10, SHOP_WALL_COST);
+    // A monster dug through the corner, leaving an open gap.
+    corner.typ = ROOM;
+    corner.wall_info = 0;
+    game.moves += 5;
+    await shopkeeperRepairsDamage(shopkeeper);
+    assert.equal(corner.typ, TRCORNER);
+    assert.equal(before, ' ', 'an outer corner seen only from inside shows as stone');
+    assert.equal(terrain_glyph(corner, 8, 10).ch, before);
 });
 void test('repair is postponed within the repair delay', async () => {
     const { shopkeeper } = await damageShop();

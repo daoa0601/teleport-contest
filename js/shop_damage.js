@@ -50,7 +50,7 @@ import { roomForRoomno, roomsAt } from './room.js';
 import { findNearbyMonsterPosition, goodPosition } from './teleport_rules.js';
 import { stopHeroOccupation } from './occupation.js';
 import { objectWeight } from './weight.js';
-import { MIGR_APPROX_XY, MON_OFFMAP, RLOC_MSG, RLOC_NOMSG, BOLT_LIM, D_BROKEN, D_CLOSED, D_LOCKED, DOOR, IS_DOOR, IS_ROOM, IS_WALL, LANDMINE, BEAR_TRAP, HOLE, PIT, ROOMOFFSET, ROOM, SHOPBASE, SPIKED_PIT, SVALL, TT_PIT, W_QUIVER, W_SWAPWEP, ZAP_POS, isok, } from './const.js';
+import { MIGR_APPROX_XY, MON_OFFMAP, RLOC_MSG, RLOC_NOMSG, BOLT_LIM, D_BROKEN, D_CLOSED, D_LOCKED, DOOR, IS_DOOR, IS_ROOM, IS_STWALL, IS_TREE, IS_WALL, SDOOR, LANDMINE, BEAR_TRAP, HOLE, PIT, ROOMOFFSET, ROOM, SHOPBASE, SPIKED_PIT, SVALL, TT_PIT, W_QUIVER, W_SWAPWEP, ZAP_POS, isok, } from './const.js';
 import { cansee, vision_note_blocker_change } from './vision.js';
 // C include/monflag.h enum msound: animal noises end at MS_ANIMAL, and any
 // voice at or above MS_HUMANOID can hold a conversation.
@@ -443,6 +443,23 @@ export async function moneyToMonster(monster, amount, state = game) {
 // ------------------------------------------------------------- add_damage()
 // C shk.c add_damage().  Cost is charged later by payForShopDamage(); the
 // record itself schedules the keeper's repair.
+// C rm.flags overlays doormask and wall_info; the port keeps them apart.
+// A damage record saves and restores whichever one the terrain type uses.
+function overlaidTerrainFlags(location) {
+    if (IS_DOOR(location.typ) || location.typ === SDOOR)
+        return location.doormask;
+    if (IS_STWALL(location.typ) || IS_TREE(location.typ))
+        return location.wall_info;
+    return location.flags;
+}
+function restoreOverlaidTerrainFlags(location, flags) {
+    if (IS_DOOR(location.typ) || location.typ === SDOOR)
+        location.doormask = flags;
+    else if (IS_STWALL(location.typ) || IS_TREE(location.typ))
+        location.wall_info = flags;
+    else
+        location.flags = flags;
+}
 export function addShopDamage(x, y, cost, state = game) {
     const location = state.level?.at?.(x, y);
     if (!location)
@@ -474,7 +491,7 @@ export function addShopDamage(x, y, cost, state = game) {
         place: { x, y },
         cost,
         typ: location.typ,
-        flags: location.flags ?? 0,
+        flags: overlaidTerrainFlags(location),
     });
     // If the hero saw the damage, post-repair walls display as walls.
     if (cansee(x, y))
@@ -1023,7 +1040,7 @@ export async function repairShopDamage(keeper, record, { catchup = false, state 
     }
     else {
         // Not a door: restore the old wall flags.
-        location.flags = record.flags;
+        restoreOverlaidTerrainFlags(location, record.flags);
     }
     const { litter, count } = litterGetpos(x, y, keeper, state);
     if (count)
