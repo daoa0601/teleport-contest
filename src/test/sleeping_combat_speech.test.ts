@@ -21,7 +21,7 @@ void test('a hero awakened by combat staggers aloud when the next blow knocks th
     jackal.msleeping = 0;
     jackal.mux = game.u.ux;
     jackal.muy = game.u.uy;
-    putHeroToSleep(8);
+    await putHeroToSleep(8);
     // Sleep was already in progress when this monster turn began.
     game.multi = -8;
     game.u.usleep = game.moves - 1;
@@ -46,7 +46,7 @@ void test('a hero awakened by combat staggers aloud when the next blow knocks th
 void test('a sleeping hero dreams of the cockatrice hiss', async () => {
     freshObjectRoom();
     const cockatrice = await createMonsterAt('cockatrice', 11, 10, NO_MINVENT);
-    putHeroToSleep(5);
+    await putHeroToSleep(5);
     const messages: string[] = [];
 
     await applyMonsterStoningAttack(cockatrice, {
@@ -59,7 +59,7 @@ void test('a sleeping hero dreams of the cockatrice hiss', async () => {
 
 void test('a sleeping hero dreams of poison weakening its muscles', async () => {
     freshObjectRoom();
-    putHeroToSleep(5);
+    await putHeroToSleep(5);
     const strength = game.u.acurr?.a[A_STR];
     assert.ok(strength !== undefined);
     const messages: string[] = [];

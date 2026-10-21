@@ -217,7 +217,7 @@ for (const condition of ['deaf', 'asleep']) {
         requirePlayingGame(game);
         syncDeafness();
         if (condition === 'asleep')
-            putHeroToSleep(10);
+            await putHeroToSleep(10);
         await targetMonster();
         await setPrimaryWeapon(await gainArtifact('Sting'));
         assert.match(await takeMessages(messages), /Sting flickers light blue!/);

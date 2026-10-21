@@ -46,7 +46,7 @@ for (const source of ['spell', 'wand']) {
         freshObjectRoom();
         const wrapping = await addInventoryObject(MUMMY_WRAPPING, { oextra: { oname: 'Linen' } });
         wearHeroArmor(wrapping);
-        putHeroToSleep(5);
+        await putHeroToSleep(5);
         if (source === 'spell')
             await applyPotionLikeInvisibility({ spell: true });
         else

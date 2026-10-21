@@ -44,10 +44,10 @@ export async function overexertHeroHp(state = game) {
     } else {
         await pline('You pass out from exertion!');
         await exerciseAttribute(A_CON, false, state);
-        putHeroToSleep(10, {
+        await putHeroToSleep(10, {
             state,
             reason: 'passed out from exertion',
-            doneMessage: '',
+            doneMessage: 'You can move again.',
         });
     }
 }

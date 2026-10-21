@@ -175,7 +175,7 @@ async function sleepingEffect(source: GameObject, state: PlayingGameState) {
     } else {
         await pline('You suddenly fall asleep!');
         monstersForgetHeroResistance(M_SEEN_SLEEP, state);
-        putHeroToSleep(rn1(10, 25 - 12 * blessing(source)), { state });
+        await putHeroToSleep(rn1(10, 25 - 12 * blessing(source)), { state });
     }
 }
 

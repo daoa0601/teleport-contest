@@ -3,9 +3,13 @@
 import { heroHasInvoluntaryDelay, nomul } from './command_state.js';
 import { game } from './gstate.js';
 import { FAINTED } from './const.js';
-export function putHeroToSleep(turns, { state = game, reason = 'sleeping', doneMessage = 'You wake up.', } = {}) {
+import { plineWithContinuation } from './display.js';
+import { stopHeroOccupation } from './occupation.js';
+export async function putHeroToSleep(turns, { state = game, reason = 'sleeping', doneMessage = 'You wake up.', publish = plineWithContinuation, } = {}) {
     const hero = state.u;
-    state._occupation = null;
+    // fall_asleep() begins with stop_occupation(), which reports the
+    // interrupted activity.
+    await stopHeroOccupation(state, publish);
     const duration = Math.max(0, turns);
     // nomul() refuses to shorten an existing involuntary delay. fall_asleep()
     // still installs its sleep marker and recovery message afterward.

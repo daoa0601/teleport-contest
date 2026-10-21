@@ -148,7 +148,7 @@ void test('unconscious healing suppresses sight, hearing and nausea feedback but
     freshObjectRoom();
     requireFixtureGame(game);
     ailHero();
-    putHeroToSleep(8);
+    await putHeroToSleep(8);
     await healHero(0, 0, { cureBlindness: true, cureSickness: true });
     assert.equal(game.u.blindTurns, 0);
     assert.equal(game.u.deafTurns, 0);

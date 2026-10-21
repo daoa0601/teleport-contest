@@ -275,7 +275,7 @@ void test('a sleeping hero does not pick up objects on level arrival', async () 
     const { destination } = freshConnectedLevels();
     requirePlayingGame(game);
     game.flags.pickup = true;
-    putHeroToSleep(3);
+    await putHeroToSleep(3);
     const ration = placeCreatedObject(await knownObject(FOOD_RATION), 12, 10, {
         ...game, level: destination,
     });

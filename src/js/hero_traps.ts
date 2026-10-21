@@ -943,7 +943,7 @@ async function triggerSleepingGasTrap(trap: Trap) {
         monstersObserveHeroResistance(M_SEEN_SLEEP, game);
     } else {
         await plineWithContinuation('A cloud of gas puts you to sleep!');
-        putHeroToSleep(rnd(25), { state: game });
+        await putHeroToSleep(rnd(25), { state: game });
         monstersForgetHeroResistance(M_SEEN_SLEEP, game);
     }
 

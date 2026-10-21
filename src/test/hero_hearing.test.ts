@@ -73,7 +73,7 @@ void test('silent healing clears timed deafness without a line', async () => {
 void test('an unaware hero gains and loses timed deafness silently', async () => {
     freshObjectRoom();
     requireFixtureGame(game);
-    putHeroToSleep(8);
+    await putHeroToSleep(8);
     await makeDeaf(30);
     assert.equal(heroIsDeaf(), true);
     await makeDeaf(0);

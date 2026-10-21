@@ -138,7 +138,7 @@ void test('removing one resistance source gives Native feedback even if another 
 void test('a sleeping hero receives no message when a masked dose ends', async () => {
     hallucinatingRoom(20);
     await setPrimaryWeapon(await addInventoryItem(await artifactObject('Grayswandir')));
-    putHeroToSleep(3);
+    await putHeroToSleep(3);
     const messages = [];
     await makeHallucinated(0, { publish: async (text) => messages.push(text) });
     assert.equal(messages.join(' '), '');

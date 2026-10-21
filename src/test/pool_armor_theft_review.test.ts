@@ -157,7 +157,7 @@ void test('later sleep keeps delayed armor theft pending until the hero wakes', 
     const started = game.moves;
     const messages: string[] = [];
 
-    putHeroToSleep(8);
+    await putHeroToSleep(8);
     await finishRemoval(messages);
 
     assert.equal(game.moves - started, 8, 'The theft waits for all eight turns of sleep');
@@ -199,7 +199,7 @@ void test('an armor thief dying during sleep replaces wake-up feedback with rest
     installPagerInput(resetInputState(), { expected: /nymph/, limit: 12 });
     await performMonsterHeroAttack(thief, game, { random: () => 0, rollOne: () => 1 });
     const messages: string[] = [];
-    putHeroToSleep(8);
+    await putHeroToSleep(8);
 
     await finishEnvironmentalMonsterDeath(thief, game);
     await finishRemoval(messages);
