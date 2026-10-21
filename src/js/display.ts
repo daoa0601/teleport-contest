@@ -2671,6 +2671,13 @@ function refreshStatusLines(): void {
     game.context.time_botl = false;
 }
 
+// C allmain.c once-per-input bot()/timebot(): the status window updates
+// while map changes stay in the glyph buffer until the next flush_screen().
+export function updateStatusLines(): void {
+    if (game.context.botl || game.nhDisplay?.statusLines === null) refreshStatusLines();
+    else if (game.context.time_botl) timebot();
+}
+
 // C botl.c:stat_update_time() notifies only BL_TIME. Other fields keep the
 // values from the last bot(), even if game state changed during an occupation.
 export function timebot(): void {

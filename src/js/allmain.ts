@@ -137,7 +137,7 @@ import { resolveMonsterSelfExplosion } from './monster_self_explosion.js';
 import {
     canSpotMonster, displayColorName, displayMessageWindow, docrt, redrawMap,
     bot,
-    flush_screen, flushPendingTopline,
+    flush_screen, flushPendingTopline, updateStatusLines,
     pline,
     plineWithContinuation,
     newsym,
@@ -3899,7 +3899,11 @@ export async function moveloop_core() {
         vision_recalc(0);
         g.vision_full_recalc = 0;
     }
-    await flush_screen(1);
+    // C refreshes only the status here.  The map buffer reaches the screen
+    // at rhack()'s input flush, which a helpless hero does not get, so a
+    // --More-- during the next monster phase still shows the older map.
+    if (currentMulti(g) < 0) updateStatusLines();
+    else await flush_screen(1);
     await heroEveryturnEffect(g);
 
     // A negative C `multi` suppresses rhack() but still leaves context.move

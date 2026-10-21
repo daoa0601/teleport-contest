@@ -103,7 +103,7 @@ import { stopRun } from './runmode.js';
 import { resolveMonsterGaze } from './monster_gaze.js';
 import { resolveMonsterMagicRay } from './monster_magic_ray.js';
 import { resolveMonsterSelfExplosion } from './monster_self_explosion.js';
-import { canSpotMonster, displayColorName, displayMessageWindow, docrt, redrawMap, bot, flush_screen, flushPendingTopline, pline, plineWithContinuation, newsym, map_invisible, randomDisplayMonsterName, see_monsters, see_objects, see_traps, show_glyph_cell, swallowed, canSeeMonster, monsterVisible, shieldeff, } from './display.js';
+import { canSpotMonster, displayColorName, displayMessageWindow, docrt, redrawMap, bot, flush_screen, flushPendingTopline, updateStatusLines, pline, plineWithContinuation, newsym, map_invisible, randomDisplayMonsterName, see_monsters, see_objects, see_traps, show_glyph_cell, swallowed, canSeeMonster, monsterVisible, shieldeff, } from './display.js';
 import { cansee, couldsee, vision_note_blocker_change, vision_recalc, vision_reset_new_level, hasLightSources, } from './vision.js';
 import { nhgetch } from './input.js';
 import { NO_COLOR, CLR_BRIGHT_BLUE } from './terminal.js';
@@ -3615,7 +3615,13 @@ export async function moveloop_core() {
         vision_recalc(0);
         g.vision_full_recalc = 0;
     }
-    await flush_screen(1);
+    // C refreshes only the status here.  The map buffer reaches the screen
+    // at rhack()'s input flush, which a helpless hero does not get, so a
+    // --More-- during the next monster phase still shows the older map.
+    if (currentMulti(g) < 0)
+        updateStatusLines();
+    else
+        await flush_screen(1);
     await heroEveryturnEffect(g);
     // A negative C `multi` suppresses rhack() but still leaves context.move
     // set, so the next moveloop invocation spends another hero action.  Once
