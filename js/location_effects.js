@@ -67,10 +67,10 @@ export async function finishDestinationSpotEffects({ oldx, oldy, newx, newy, tra
         game.iflags ||= {};
         if (game.iflags.terrain_typ == null)
             game.iflags.terrain_typ = MAX_TYPE;
+        // Only classify_terrain() for the terrainstatus option updates
+        // terrain_typ; otherwise it stays MAX_TYPE and every call switches.
         if (typ !== game.level.at(oldx, oldy)?.typ
             || game.iflags.terrain_typ === MAX_TYPE) {
-            if (!game.flags.terrainstatus)
-                game.iflags.terrain_typ = typ;
             await switchHeroTerrain(game);
         }
         const liquid = await applyHeroLiquidEffects(publish);
