@@ -47,7 +47,7 @@ export async function overexertHeroHp(state = game) {
         putHeroToSleep(10, {
             state,
             reason: 'passed out from exertion',
-            doneMessage: '',
+            doneMessage: 'You can move again.',
         });
     }
 }
