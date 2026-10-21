@@ -193,19 +193,26 @@ export async function tty_display_nhwindow(window, how = PICK_NONE) {
 }
 export async function tty_select_menu(window, how) {
     const previousStatusDisabled = game._statusUpdatesDisabled;
+    const restoreStatusUpdates = () => {
+        if (previousStatusDisabled === undefined)
+            delete game._statusUpdatesDisabled;
+        else
+            game._statusUpdatesDisabled = previousStatusDisabled;
+    };
     game._statusUpdatesDisabled = true;
     try {
         return await tty_display_nhwindow(window, how);
     }
     finally {
         try {
+            // C select_menu() restores bot_disabled before the window is
+            // destroyed, so a corner menu's docorner() can run bot().
+            if (window.offx !== 0)
+                restoreStatusUpdates();
             await tty_dismiss_nhwindow(window);
         }
         finally {
-            if (previousStatusDisabled === undefined)
-                delete game._statusUpdatesDisabled;
-            else
-                game._statusUpdatesDisabled = previousStatusDisabled;
+            restoreStatusUpdates();
         }
     }
 }
