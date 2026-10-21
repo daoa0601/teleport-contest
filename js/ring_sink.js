@@ -21,7 +21,7 @@ import { cansee } from './vision.js';
 import { rnd, rn2 } from './rng.js';
 import { ownedObjectName } from './objnam.js';
 import { dropInventoryObjectAtHero } from './hero_drop.js';
-import { make_grave } from './mklev.js';
+import { countLevelFeatures, make_grave } from './mklev.js';
 const FRUIT_DEFAULT = 'slime mold';
 // C turn_undead/other precedent: Gehennom by dungeon name.
 function inGehennom(state) {
@@ -42,8 +42,6 @@ export async function polymorphSink(state, publish) {
     // blessedftn, and the altar mask: every per-square state clears, then
     // the chosen outcome re-arms its own.
     const sinkLooted = !!location.looted;
-    const flags = level.flags;
-    flags.nsinks = Math.max(0, (flags.nsinks ?? 0) - 1);
     location.looted = 0;
     location.blessedftn = 0;
     location.flags = 0;
@@ -56,7 +54,6 @@ export async function polymorphSink(state, publish) {
             location.blessedftn = 0;
             if (sinkLooted)
                 location.looted = 1;
-            flags.nfountains = (flags.nfountains ?? 0) + 1;
             break;
         case 1:
             symbolName = 'throne';
@@ -79,6 +76,8 @@ export async function polymorphSink(state, publish) {
             make_grave(ux, uy, null);
             break;
     }
+    // Each set_levltyp() away from SINK recounts fountains and sinks.
+    countLevelFeatures(state);
     // give message even if blind; we know we're not levitating, so we can
     // feel the outcome even if we can't directly see it
     if (location.typ !== ROOM)
@@ -106,14 +105,13 @@ function teleportSink(state) {
         if (cansee(cx, cy) && dx * dx + dy * dy <= 3 * 3)
             continue;
         const alreadyLooted = !!sink.looted;
-        const flags = level.flags;
-        flags.nsinks = Math.max(0, (flags.nsinks ?? 0) - 1);
         sink.typ = ROOM;
         sink.looted = 0;
         newsym(ux, uy);
         location.typ = SINK;
         location.looted = alreadyLooted ? 1 : 0;
-        flags.nsinks = (flags.nsinks ?? 0) + 1;
+        // C's two set_levltyp() calls recount fountains and sinks.
+        countLevelFeatures(state);
         newsym(cx, cy);
         return true;
     }

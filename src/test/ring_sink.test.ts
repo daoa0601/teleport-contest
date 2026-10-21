@@ -163,9 +163,8 @@ void test('a deaf hero hears nothing at all', async () => {
 
 void test('a polymorph ring replaces the sink with other furniture', async () => {
     heroOnSink();
-    const levelFlags = requireGameLevel().flags;
-    levelFlags.nsinks = 2;
-    levelFlags.nfountains = 1;
+    // C mksink() leaves nsinks one too high; set_levltyp() recounts it.
+    requireGameLevel().flags.nsinks = 2;
     requireGameLevel().requireAt(game.u.ux, game.u.uy).looted = 1;
     const ring = await ringNamed('polymorph');
     game.inventory = [ring];
@@ -177,15 +176,15 @@ void test('a polymorph ring replaces the sink with other furniture', async () =>
         /transforms into|sink vanishes/.test(text)));
     const location = requireGameLevel().requireAt(game.u.ux, game.u.uy);
     assert.notEqual(location.typ, SINK);
-    // set_levltyp accounting: exactly one sink left the level, and only
-    // the fountain outcome grows the fountain count.
-    assert.equal(requireGameLevel().flags.nsinks, 1);
+    // set_levltyp() recounts the map: no sink remains, and only the
+    // fountain outcome leaves a fountain.
+    assert.equal(requireGameLevel().flags.nsinks, 0);
     if (location.typ === 28 /* FOUNTAIN */) {
-        assert.equal(requireGameLevel().flags.nfountains, 2);
+        assert.equal(requireGameLevel().flags.nfountains, 1);
         assert.equal(location.looted, 1); // looted state carries over
         assert.equal(location.blessedftn, 0);
     } else {
-        assert.equal(requireGameLevel().flags.nfountains, 1);
+        assert.equal(requireGameLevel().flags.nfountains, 0);
         if (location.typ === 32 /* ALTAR */)
             assert.equal(location.looted, 0); // union clear, no carry
     }
