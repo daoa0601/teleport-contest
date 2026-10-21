@@ -5,7 +5,7 @@ import { heroHasHalfSpellDamage } from './spell_damage.js';
 import { disintegrateWornArmor } from './armor.js';
 import { exerciseAttribute } from './attrib.js';
 import { A_CON, A_DEX, A_STR, M_SEEN_MAGR, NON_PM, } from './const.js';
-import { plineWithContinuation, shieldeff } from './display.js';
+import { displayLiquidName, plineWithContinuation, shieldeff } from './display.js';
 import { finishHeroDeath } from './end.js';
 import { loseHeroHp } from './hero_damage.js';
 import { monsterSpellDeathReason } from './monster_name.js';
@@ -251,11 +251,11 @@ async function hitWithAcid(context) {
     const resisted = heroResistsRay(state, 'acidResistance', 'acid');
     let damage = 0;
     if (resisted) {
-        await publish("The acid doesn't hurt.");
+        await publish(`The ${displayLiquidName('acid', state)} doesn't hurt.`);
         noteRayResistance(context, true);
     }
     else {
-        await publish('The acid burns!');
+        await publish(`The ${displayLiquidName('acid', state)} burns!`);
         damage = rollDice(attack[2], 6);
         await exerciseAttribute(A_STR, false, state);
         noteRayResistance(context, false);

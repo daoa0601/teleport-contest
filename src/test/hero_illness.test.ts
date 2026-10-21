@@ -232,6 +232,32 @@ void test('a vomiting yellow dragon breathes acid on its weapon and armor',
         assert.equal(mail.oeroded2, 1);
     });
 
+void test('a hallucinating dragon breathing acid on itself names a strange liquid',
+    async () => {
+        const liquids = new Set<string>();
+        for (let seed = 1; seed <= 8; seed++) {
+            freshHeroConditionRoom();
+            requireFixtureGame(game);
+            installPolymorphedHero('yellow dragon', { turns: 20 });
+            game.u.hallucinationTurns = 100;
+            initRng(BigInt(seed));
+            const rolls = [0, 0, 1];
+            const messages: string[] = [];
+
+            await vomitHero({
+                state: game,
+                publish: async (message: string) => messages.push(message),
+                random: range => Math.min(rolls.shift() ?? 0, range - 1),
+            });
+
+            const match = messages.join('\n').match(/^The (.+) doesn't hurt\.$/m);
+            assert.ok(match?.[1], messages.join(' | '));
+            liquids.add(match[1]);
+        }
+        assert.ok([...liquids].some(name => name !== 'acid'),
+            'hallucination should rename the acid in the resistance message');
+    });
+
 for (const previousTurns of [0, 36] as const) {
     void test(`${previousTurns ? 'worsening illness' : 'new illness'} waits for the old message before changing symptoms`, async () => {
         freshHeroConditionRoom();
