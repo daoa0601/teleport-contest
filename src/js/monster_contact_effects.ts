@@ -247,7 +247,7 @@ async function sleepHero(
     monstersForgetHeroResistance(M_SEEN_SLEEP, state, seesHero);
     const turns = rollOne(10);
     await stopHeroOccupation(state, publish);
-    putHeroToSleep(turns, { state });
+    await putHeroToSleep(turns, { state, publish });
     await publish(heroIsBlind(state) ? 'You are put to sleep!'
         : `You are put to sleep by ${monsterName(monster, { state })}!`);
 }

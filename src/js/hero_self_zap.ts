@@ -153,7 +153,7 @@ export async function zapHeroWithObject(object: GameObject, { ordinary = true, s
         } else {
             await pline(ordinary ? 'The sleep ray hits you!' : 'You fall asleep!');
             monstersForgetHeroResistance(M_SEEN_SLEEP, state);
-            putHeroToSleep(rnd(50), { state });
+            await putHeroToSleep(rnd(50), { state });
         }
         break;
     case WAN_SLOW_MONSTER:

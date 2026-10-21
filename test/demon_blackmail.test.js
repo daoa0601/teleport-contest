@@ -96,7 +96,7 @@ void test('an unseen demon angered by Excalibur appears as tension in a sleeping
     demon.mux = game.u.ux;
     demon.muy = game.u.uy;
     await setPrimaryWeapon(await artifactObject('Excalibur'));
-    putHeroToSleep(5);
+    await putHeroToSleep(5);
     game._pending_message = '';
     await talkToDemon(demon, game);
     assert.equal(game._lastPlineMessage, 'You dream that you feel tension building.');

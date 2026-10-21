@@ -38,7 +38,7 @@ for (const sleeping of [false, true]) {
         requirePlayingGame(game);
         await makeBlinded(20, { talk: false });
         await makeDeaf(20, { talk: false });
-        if (sleeping) putHeroToSleep(10);
+        if (sleeping) await putHeroToSleep(10);
         const messages: string[] = [];
 
         const action = await triggerImmediateMonsterTrap(monster, game, { force: true });

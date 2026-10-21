@@ -257,7 +257,7 @@ for (const condition of ['deaf', 'asleep']) {
         const messages = warningRoom({ hero: { deafTurns: condition === 'deaf' ? 100 : 0 } });
         requirePlayingGame(game);
         syncDeafness();
-        if (condition === 'asleep') putHeroToSleep(10);
+        if (condition === 'asleep') await putHeroToSleep(10);
         await targetMonster();
         await setPrimaryWeapon(await gainArtifact('Sting'));
         assert.match(await takeMessages(messages), /Sting flickers light blue!/);

@@ -99,7 +99,7 @@ void test('a queued were change waits until the hero wakes up', async () => {
     const beast = MONSTER_NAME.indexOf('werejackal');
     const human = game.u.umonnum;
     setHeroLycanthropy(beast);
-    putHeroToSleep(10);
+    await putHeroToSleep(10);
     game._pendingHeroShapeChange = 'were';
 
     await moveloop_core();

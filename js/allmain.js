@@ -1321,7 +1321,7 @@ async function advanceSleepinessTimeout(state) {
     else if (propertyIsActive('sleepy', state)) {
         await plineWithContinuation('You fall asleep.');
         const duration = rnd(20);
-        putHeroToSleep(duration, { state });
+        await putHeroToSleep(duration, { state });
         setPropertyTimeout('sleepy', duration + rnd(100), state);
     }
 }

@@ -30,7 +30,7 @@ function visibleText(): string {
 void test('a sleeping hero dreams about the draft from an opened secret corridor', async () => {
     const { monster } = await tunnelRoom(SCORR);
     requirePlayingGame(game);
-    putHeroToSleep(3);
+    await putHeroToSleep(3);
 
     await digMonsterTunnel(monster, game);
     await flush_screen(1);

@@ -36,7 +36,7 @@ function freshTrapRoom(options) {
 void test('chest paralysis preserves a longer sleep while replacing its recovery message', async () => {
     freshTrapRoom({ hero: { uluck: 0, uhp: 40, uhpmax: 40 } });
     const chest = await addInventoryObject(CHEST, { otrapped: true });
-    putHeroToSleep(20);
+    await putHeroToSleep(20);
     const output = messageCollector();
     await triggerChestTrap(chest, {
         random: randomValues(0, 1, 3), rollDice: () => 5, publish: output.publish,

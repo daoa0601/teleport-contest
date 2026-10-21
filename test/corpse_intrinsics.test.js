@@ -218,7 +218,7 @@ void test('sleeping through resistance expiry suppresses its warning', async () 
     room({ hero: { acidResistanceTurns: 1 } });
     requirePlayingGame(game);
     refreshProperty('acidResistance');
-    putHeroToSleep(10);
+    await putHeroToSleep(10);
     await advanceCorpseResistanceTimeouts();
     assert.equal(game.u.acidResistance, false);
     assert.equal(game._pending_message || '', '');

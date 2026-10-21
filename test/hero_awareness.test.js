@@ -17,7 +17,7 @@ import { freshObjectRoom } from './support/object-room.js';
 void test('a sleeping hero does not notice blindness from potion vapor', async () => {
     freshObjectRoom();
     requireFixtureGame(game);
-    putHeroToSleep(20);
+    await putHeroToSleep(20);
     await applySupportedPotionVapor({ potion: await knownObject(POT_BLINDNESS) });
     assert.ok((game.u.blindTurns ?? 0) > 0);
     assert.doesNotMatch(game._pending_message || '', /It suddenly gets dark/u);
@@ -35,7 +35,7 @@ void test('a sleeping hero cannot choose a polymorph despite a control ring', as
     freshObjectRoom();
     await wearPolymorphControlRing();
     assert.equal(heroCanControlPolymorph(), true);
-    putHeroToSleep(20);
+    await putHeroToSleep(20);
     assert.equal(heroCanControlPolymorph(), false);
 });
 void test('sleep slows ordinary metabolism but being awake does not', async () => {
@@ -45,7 +45,7 @@ void test('sleep slows ordinary metabolism but being awake does not', async () =
     for (let turn = 0; turn < 20; turn++)
         await getHungry();
     assert.equal(awakeHunger - game.u.uhunger, 20);
-    putHeroToSleep(40);
+    await putHeroToSleep(40);
     const asleepHunger = game.u.uhunger;
     for (let turn = 0; turn < 20; turn++)
         await getHungry();

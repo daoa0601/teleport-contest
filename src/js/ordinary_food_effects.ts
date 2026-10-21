@@ -179,7 +179,7 @@ export async function applyOrdinaryFoodPostEffects(food: GameObject, { state = g
                 await pline('You fall asleep.');
             else
                 await publishHeardMessage('sinister laughter as you fall asleep...', pline, state);
-            putHeroToSleep(rn1(11, 20), { state });
+            await putHeroToSleep(rn1(11, 20), { state });
         }
         break;
     }

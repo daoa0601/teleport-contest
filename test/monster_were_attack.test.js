@@ -64,7 +64,7 @@ for (const condition of ['sleeping', 'fainted', 'paralyzed', 'awake']) {
         setHeroBlindnessTurns(5);
         vision_recalc(0);
         if (condition === 'sleeping')
-            putHeroToSleep(5);
+            await putHeroToSleep(5);
         if (condition === 'fainted') {
             game.u.uhs = FAINTED;
             game._helplessTurns = 5;

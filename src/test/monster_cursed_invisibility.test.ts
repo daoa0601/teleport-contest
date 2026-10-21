@@ -92,7 +92,7 @@ void test('an aggravating potion revelation wakes a sleeping hero after its ackn
     freshObjectRoom();
     requirePlayingGame(game);
     const drinker = await createMonsterAt('goblin', 14, 10, NO_MINVENT);
-    putHeroToSleep(10, { state: game });
+    await putHeroToSleep(10, { state: game });
     await plineWithContinuation('You dream that you hear a chugging sound.');
     const input = resetInputState();
     let acknowledgedRevelation = false;

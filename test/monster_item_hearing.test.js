@@ -29,7 +29,7 @@ for (const { condition, expected } of [
         if (condition === 'underwater')
             game.underwater = true;
         if (condition.includes('asleep'))
-            putHeroToSleep(10, { state: game });
+            await putHeroToSleep(10, { state: game });
         if (condition.includes('deaf'))
             game.u.deafTurns = 10;
         const messages = [];
@@ -91,7 +91,7 @@ for (const { condition, expected } of [
         if (condition === 'underwater')
             game.underwater = true;
         if (condition.includes('asleep'))
-            putHeroToSleep(10, { state: game });
+            await putHeroToSleep(10, { state: game });
         if (condition.includes('deaf'))
             game.u.deafTurns = 10;
         assert.equal(canSeeMonster(bugler), false);

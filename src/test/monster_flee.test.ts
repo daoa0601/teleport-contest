@@ -331,7 +331,7 @@ void test('a blinded gremlin cannot react to the hero light source', async () =>
 void test('a sleeping hero gets a simple frightened message for a gremlin', async () => {
     const { gremlin } = await gremlinAndSunsword();
     requirePlayingGame(game);
-    putHeroToSleep(5);
+    await putHeroToSleep(5);
 
     await makeMonsterFlee(gremlin);
 

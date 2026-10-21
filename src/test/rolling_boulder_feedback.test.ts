@@ -21,7 +21,7 @@ for (const sleeping of [false, true]) {
         freshObjectRoom();
         requirePlayingGame(game);
         const boulder = await floorObject(BOULDER, 12, 10, { dknown: false, oname: 'Moon' });
-        if (sleeping) putHeroToSleep(10);
+        if (sleeping) await putHeroToSleep(10);
         const messages: string[] = [];
 
         await launchRollingBoulder({ x: 12, y: 10 }, { x: 14, y: 10 }, {

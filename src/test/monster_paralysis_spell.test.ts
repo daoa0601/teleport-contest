@@ -10,7 +10,7 @@ for (const freeAction of [false, true]) {
         for (let seed = 1; seed <= 64 && !cast; seed++) {
             await prepareSpellCaster('aligned cleric', 6);
             game.u.freeAction = freeAction;
-            putHeroToSleep(80);
+            await putHeroToSleep(80);
             game.multi = -80;
 
             const messages = await finishSpellTurn(seed);

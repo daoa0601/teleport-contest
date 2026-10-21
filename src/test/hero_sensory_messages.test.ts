@@ -29,7 +29,7 @@ for (const cause of ['sleep', 'blackout'] as const) {
                 if (dx || dy) level.requireAt(game.u.ux + dx, game.u.uy + dy).typ = STONE;
             }
         }
-        if (cause === 'sleep') putHeroToSleep(5);
+        if (cause === 'sleep') await putHeroToSleep(5);
         else {
             game._helplessTurns = 5;
             game._helplessDoneMessage = 'You regain consciousness.';
@@ -51,7 +51,7 @@ for (const condition of ['underwater', 'asleep and deaf', 'acoustics disabled', 
         if (condition !== 'asleep and sighted') setHeroBlindnessTurns(10);
         if (condition === 'underwater') game.u.uinwater = true;
         if (condition === 'asleep and deaf') setPropertyTimeout('deaf', 10);
-        if (condition.startsWith('asleep')) putHeroToSleep(5);
+        if (condition.startsWith('asleep')) await putHeroToSleep(5);
         if (condition === 'acoustics disabled') game.flags.acoustics = false;
         vision_recalc(0);
 
@@ -73,7 +73,7 @@ for (const asleep of [false, true]) {
         assert.ok(trap);
         trap.tseen = true;
         setHeroBlindnessTurns(10);
-        if (asleep) putHeroToSleep(5);
+        if (asleep) await putHeroToSleep(5);
 
         await triggerHeroTrap(trap, { forceTrap: true });
 
@@ -110,7 +110,7 @@ for (const property of ['stunned', 'confusion'] as const) {
     void test(`${property} expiry stays silent while the hero is unaware`, async () => {
         freshTurnRoom();
         setPropertyTimeout(property, 1);
-        putHeroToSleep(5);
+        await putHeroToSleep(5);
 
         await moveloop_core();
         await moveloop_core();
@@ -134,7 +134,7 @@ void test('stun expiry describes a hallucinating hero as less wobbly', async () 
 
 void test('a floating eye corpse gives a sleeping hero a dream of mental acuity', async () => {
     freshPlayableRoom();
-    putHeroToSleep(5);
+    await putHeroToSleep(5);
 
     await grantCorpseIntrinsic(MONSTER_NAME.indexOf('floating eye'));
 
@@ -144,7 +144,7 @@ void test('a floating eye corpse gives a sleeping hero a dream of mental acuity'
 
 void test('a red dragon corpse keeps its native You message during sleep', async () => {
     freshPlayableRoom();
-    putHeroToSleep(5);
+    await putHeroToSleep(5);
 
     await grantCorpseIntrinsic(MONSTER_NAME.indexOf('red dragon'));
 

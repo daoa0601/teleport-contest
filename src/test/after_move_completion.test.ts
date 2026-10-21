@@ -28,7 +28,7 @@ void test('water waking a sleeping hero completes the pending boots dressing', a
     installPagerInput(input, { expected: /./, limit: 20 });
     input.feed(`${boots.invlet}`);
     await rhack('W'.charCodeAt(0));
-    putHeroToSleep(8);
+    await putHeroToSleep(8);
     game.level.requireAt(game.u.ux, game.u.uy).typ = POOL;
 
     const result = await heroLiquidEffects();
@@ -51,7 +51,7 @@ void test('mimic recovery after a water wakeup cannot finish an old boots remova
     input.beforeRead = () => { messages.push(game._pending_message); };
     installPagerInput(input, { expected: /./, limit: 30 });
     await rhack('T'.charCodeAt(0));
-    putHeroToSleep(8);
+    await putHeroToSleep(8);
     game.level.requireAt(game.u.ux, game.u.uy).typ = POOL;
     await heroLiquidEffects();
     await flushPendingTopline();

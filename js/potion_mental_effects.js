@@ -170,7 +170,7 @@ async function sleepingEffect(source, state) {
     else {
         await pline('You suddenly fall asleep!');
         monstersForgetHeroResistance(M_SEEN_SLEEP, state);
-        putHeroToSleep(rn1(10, 25 - 12 * blessing(source)), { state });
+        await putHeroToSleep(rn1(10, 25 - 12 * blessing(source)), { state });
     }
 }
 // msgflg -1 suppresses failed attempts but still reports successful changes.

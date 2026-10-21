@@ -52,7 +52,7 @@ export async function studyBook(book, { state = game } = {}) {
         if (drowsiness > 0) {
             const eyes = heroEyeCount(state) > 1 ? makePlural(heroEyeName(state)) : heroEyeName(state);
             await pline(`This book is so dull that you can't keep your ${eyes} open.`);
-            putHeroToSleep(drowsiness + rnd(2 * level), { state });
+            await putHeroToSleep(drowsiness + rnd(2 * level), { state });
             return outcome(true, state);
         }
     }
