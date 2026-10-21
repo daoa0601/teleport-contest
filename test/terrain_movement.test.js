@@ -75,7 +75,9 @@ void test('releasing a ground trap resumes flight with feedback', async () => {
     assert.equal(game.u.flying, true);
     assert.match(game._pending_message, /You can fly/);
 });
-void test('same-terrain spot effects do not repeat blocked levitation feedback', async () => {
+// C spoteffects(): without the terrainstatus option iflags.terrain_typ stays
+// MAX_TYPE, so every same-square call reruns switch_terrain() and float_up().
+void test('same-terrain spot effects repeat blocked levitation feedback', async () => {
     freshObjectRoom();
     requirePlayingGame(game);
     game.u.utrap = 4;
@@ -85,7 +87,7 @@ void test('same-terrain spot effects do not repeat blocked levitation feedback',
     assert.match(game._pending_message, /float up slightly/);
     game._pending_message = '';
     await applyHeroLocationEffects();
-    assert.equal(game._pending_message, '');
+    assert.match(game._pending_message, /float up slightly/);
     assert.equal(game.u.utrap, 4);
 });
 //# sourceMappingURL=terrain_movement.test.js.map
