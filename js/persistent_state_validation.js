@@ -66,7 +66,6 @@ function validPersistentState(value, entities) {
         _priestPantheonIndex: optional(integer),
         _questExpulsionPending: optional(nullable((pending) => closedFieldsMatch(pending, { seal: boolean, portal: optional(boolean) }))),
         _stethoscopeSeq: optional(integer),
-        _tipSwimShown: optional(boolean),
         _travelTipShown: optional(boolean),
         _tributeBookstock: optional(boolean),
         _tutorialActive: optional(boolean),

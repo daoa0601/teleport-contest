@@ -13,6 +13,7 @@ import {
     FAINTED, M_SEEN_FIRE, TREE, TT_LAVA, Upolyd, WATER, W_NONDIGGABLE, W_NONPASSWALL,
     WT_TOOMUCH_DIAGONAL,
 } from './const.js';
+import { TIP_SWIM } from './const.js';
 import { bot, displayLiquidName, docrt, feel_newsym, newsym, plineWithContinuation, under_water, updateLastSeenTerrain } from './display.js';
 import { heroPassesWalls, heroFormSticks, heroSpecies } from './hero_species.js';
 import { heroHasConflict } from './hero_conflict.js';
@@ -244,7 +245,7 @@ export function heroShouldAvoidLiquid(x: number, y: number, state = game) {
     if (!dangerousPool && !dangerousLava && !liquidWall) return false;
 
     if (state.context?.nopick) {
-        state._tipSwimShown = true;
+        state.context.tips = (state.context.tips ?? 0) | (1 << TIP_SWIM);
         return false;
     }
     return liquidWall

@@ -101,7 +101,7 @@ import { lightCocktail, useCandelabrum, useCandle, useLamp } from './apply_light
 import { useWhistle } from './whistle.js';
 import { retouchHeroObject } from './hero_retouch.js';
 import { GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, PARANOID_REMOVE, GETOBJ_SUGGEST } from './const.js';
-import { TER_MON } from './const.js';
+import { TER_MON, TIP_SWIM } from './const.js';
 import { placeHeroOnLevel } from './hero_location.js';
 import { hideHeroUnder } from './monster_hiding.js';
 import { distantMonsterName, monsterName, monsterPossessive, monsterSubjectPronoun, shopkeeperName } from './monster_name.js';
@@ -7375,12 +7375,12 @@ async function domoveCore(dx: number, dy: number): Promise<boolean> {
     if (heroShouldAvoidLiquid(newx, newy)) {
         const liquid = waterbodyName(newx, newy);
         const warning = `You avoid ${ingSuffix(heroLocomotion('step'))} into the ${liquid}.`;
-        if (game.flags?.tips !== false && !game._tipSwimShown) {
-            await promptKey(`${warning}--More--`);
-            game._tipSwimShown = true;
-            await pline("(Tip: use 'm' prefix to step in if you really want to.)");
-        } else {
-            await plineWithContinuation(warning);
+        await plineWithContinuation(warning);
+        // C handle_tip(TIP_SWIM) is an ordinary pline after the warning.
+        const tip = 1 << TIP_SWIM;
+        if (game.flags?.tips !== false && !((game.context.tips ?? 0) & tip)) {
+            game.context.tips = (game.context.tips ?? 0) | tip;
+            await plineWithContinuation("(Tip: use 'm' prefix to step in if you really want to.)");
         }
         return rejectHeroMove();
     }

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { rhack } from '../js/cmd.js';
-import { NO_MINVENT, WATER, WEB } from '../js/const.js';
+import { MOAT, NO_MINVENT, PARANOID_SWIM, WATER, WEB } from '../js/const.js';
 import { initializePet } from '../js/dog.js';
 import { bot, flush_screen } from '../js/display.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
@@ -86,6 +86,29 @@ void test('pulling free stays visible before refusing a step into a wall of wate
     assert.match(await topline(), /You avoid stepping into the wall of water\./);
     assert.equal(game.u.ux, 10);
     assert.equal(game.u.ustuck, null);
+});
+
+void test('the first swim warning joins the pull-free message before its tip', async () => {
+    const holder = await heldHero();
+    holder.mtame = 10;
+    requirePlayingGame(game);
+    game.flags.tips = true;
+    game.context.tips = 0;
+    game.flags.paranoia_bits = PARANOID_SWIM;
+    const pool = game.level.requireAt(11, 10);
+    pool.typ = MOAT;
+    pool.seenv = 0xff;
+    const messages: string[] = [];
+    resetInputState().display = { async readKey() {
+        messages.push(requireScreenRow(0).map(cell => cell.ch).join('').trimEnd());
+        return 32;
+    } };
+
+    await rhack('l'.charCodeAt(0));
+
+    assert.ok(messages.some(line => /You pull free from.*  You avoid stepping into the moat\.--More--/.test(line)), messages.join('\n'));
+    assert.match(await topline(), /Tip: use 'm' prefix/);
+    assert.equal(game.u.ux, 10);
 });
 
 void test('a holder that has moved away no longer restricts movement', async () => {
