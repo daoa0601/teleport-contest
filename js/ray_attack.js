@@ -15,7 +15,7 @@ import { payForShopDamage } from './shop_damage.js';
 import { endVoluntaryMultiTurn } from './command_state.js';
 import { stopHeroOccupation } from './occupation.js';
 import { monsterHasLineOfSightToHero } from './monster_perception.js';
-import { EXPL_FIERY, G_NOCORPSE, M_AP_MONSTER, M_AP_NOTHING, M_AP_TYPE, M_SEEN_REFL, STRAT_WAITMASK, W_ARM, W_ARMC, W_ARMU, W_ARMS, } from './const.js';
+import { EXPL_FIERY, M_AP_MONSTER, M_AP_NOTHING, M_AP_TYPE, M_SEEN_REFL, STRAT_WAITMASK, W_ARM, W_ARMC, W_ARMU, W_ARMS, } from './const.js';
 import { artifactById } from './artifacts.js';
 import { canSeeMonster, newsym, plineWithContinuation, shieldeff, } from './display.js';
 import { game } from './gstate.js';
@@ -34,7 +34,7 @@ import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { erodeArmor, damageObjectWithAcid } from './object_erosion.js';
 import { wornMonsterLifeSaver } from './mondeath.js';
 import { destroyObjectFromMonsterInventory } from './monster_inventory.js';
-import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_SYMBOL, monsterIsNonliving, monsterIsVampireShifter, } from './monster_data.js';
+import { MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL, monsterIsNonliving, monsterIsVampireShifter, } from './monster_data.js';
 import { monsterWieldedWeapon } from './monster_weapon.js';
 import { monsterHasAcidResistance, monsterHasColdResistance, monsterHasDisintegrationResistance, monsterHasFireResistance, monsterHasPoisonResistance, monsterHasShockResistance, monsterResistanceBits, monsterResistsEffect, } from './monster_resistance.js';
 import { AD_ACID, AD_COLD, AD_DISN, AD_DRST, AD_ELEC, AD_FIRE, AD_MAGM, AD_RBRE, AD_SLEE, } from './monster_attack_types.js';
@@ -538,8 +538,9 @@ async function finishMonsterRayHit(monster, hit, { state, displayName, finishMon
             return { heroDied: !!state.program_state?.gameover };
         }
         await finishMonsterKill(monster, monster.mx, monster.my, {
-            noCorpse: !!hit.noCorpse
-                || !!((MONSTER_GENO[monster.mnum] ?? 0) & G_NOCORPSE),
+            // dobuzz() passes XKILL_NOCORPSE only for burned-up golems;
+            // species without corpses still roll treasure and corpse_chance().
+            noCorpse: !!hit.noCorpse,
             showKillMessage: !hit.disintegrated,
             deathContext,
         });
