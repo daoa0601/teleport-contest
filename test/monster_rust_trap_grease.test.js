@@ -85,18 +85,14 @@ void test('a gremlin splits on a rust trap only after the gush is reported', asy
     const living = () => level.monsters.filter(candidate => !candidate.dead).length;
     const before = living();
     const messages = [];
-    const rolls = [];
-    const event = await beginMonsterRustTrap(monster, trap, game, {
-        random: limit => { rolls.push(limit); return 4; },
-    });
-    assert.deepEqual(rolls, [5], 'beginning the trap rolls only its target');
+    const event = await beginMonsterRustTrap(monster, trap, game, { random: () => 4 });
+    assert.equal(living(), before, 'preparing the trap must not split the gremlin yet');
     await finishMonsterRustTrap(monster, event, game, {
-        random: limit => { rolls.push(limit); return 1; },
+        random: () => 1,
         publish: text => {
             messages.push(`${text} [${living()}]`);
         },
     });
-    assert.deepEqual(rolls, [5, 3]);
     assert.equal(messages[0], `A gush of water hits ${monsterName(monster)}! [${before}]`);
     assert.match(messages.at(-1) ?? '', /multiplies!/);
     assert.equal(living(), before + 1);

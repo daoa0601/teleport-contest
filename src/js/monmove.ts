@@ -7940,7 +7940,7 @@ export async function resumeDeferredMonsterTrap(
         case 'rust-trap':
             await finishMonsterRustTrap(action.monster, event, state, {
                 publish,
-                random,
+                random: recordedRandom,
             });
             break;
         case 'projectile-trap':
