@@ -284,7 +284,7 @@ void test('landing does not wake a sleeping hero early', async () => {
     const gate = freshTurnRoom();
     requirePlayingGame(game);
     game.u.levitationTurns = 5;
-    putHeroToSleep(3);
+    await putHeroToSleep(3);
     await floatHeroDown(TIMEOUT, 0);
     assert.ok(game.u.usleep);
     const turn = game.moves;

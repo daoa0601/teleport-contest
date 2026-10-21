@@ -28,7 +28,7 @@ void test('forced hurtling preserves the voluntary movement state and its starti
 });
 void test('a knockback cannot shorten an existing sleep', async () => {
     freshObjectRoom({ right: 20 });
-    putHeroToSleep(8);
+    await putHeroToSleep(8);
     await hurtleHero(1, 0, 1);
     assert.equal(game.u.ux, 11);
     assert.equal(game._helplessTurns, 8);
@@ -44,7 +44,7 @@ void test('a second knockback cannot shorten time already spent moving through t
 });
 void test('a web anchoring a sleeping hero prevents knockback without waking them', async () => {
     freshObjectRoom();
-    putHeroToSleep(8);
+    await putHeroToSleep(8);
     game.u.utrap = 4;
     game.u.utraptype = TT_WEB;
     await hurtleHero(1, 0, 2);

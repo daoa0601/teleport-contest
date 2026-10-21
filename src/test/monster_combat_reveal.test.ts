@@ -90,7 +90,7 @@ void test('an unaware hero dreams about the species rather than the hidden pet n
     const snake = await hiddenSnake();
     initializePet(snake);
     setMonsterGivenName(snake, 'Ribbon');
-    putHeroToSleep(5);
+    await putHeroToSleep(5);
 
     await revealMonsterCombatDefender(snake);
 

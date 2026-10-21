@@ -20,7 +20,7 @@ for (const sleeping of [false, true]) {
         requirePlayingGame(game);
         const boulder = await floorObject(BOULDER, 12, 10, { dknown: false, oname: 'Moon' });
         if (sleeping)
-            putHeroToSleep(10);
+            await putHeroToSleep(10);
         const messages = [];
         await launchRollingBoulder({ x: 12, y: 10 }, { x: 14, y: 10 }, {
             state: game, unseen: true,

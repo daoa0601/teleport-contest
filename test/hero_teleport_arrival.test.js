@@ -81,7 +81,7 @@ for (const form of ['large mimic', 'cave spider']) {
 void test('relocation does not wake a sleeping hero or shorten the sleep', async () => {
     freshObjectRoom();
     requireFixtureGame(game);
-    putHeroToSleep(8);
+    await putHeroToSleep(8);
     const sleepingSince = game.u.usleep;
     await moveHeroByTeleport(14, 10);
     assert.equal(game._helplessTurns, 8);

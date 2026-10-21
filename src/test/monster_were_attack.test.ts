@@ -69,7 +69,7 @@ for (const condition of ['sleeping', 'fainted', 'paralyzed', 'awake'] as const) 
         const monster = await createMonsterAt('human werewolf', 11, 10, NO_MINVENT);
         setHeroBlindnessTurns(5);
         vision_recalc(0);
-        if (condition === 'sleeping') putHeroToSleep(5);
+        if (condition === 'sleeping') await putHeroToSleep(5);
         if (condition === 'fainted') {
             game.u.uhs = FAINTED;
             game._helplessTurns = 5;

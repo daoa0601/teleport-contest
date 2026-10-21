@@ -244,7 +244,7 @@ void test('underwater sink sounds are barely heard', async () => {
 void test('an unaware deaf hero dreams of sink sounds', async () => {
     sink({ hero: { deafTurns: 20 } });
     requirePlayingGame(game);
-    putHeroToSleep(5);
+    await putHeroToSleep(5);
     await sip(3);
     assert.match(game._pending_message, /You dream that you hear clanking/);
 });

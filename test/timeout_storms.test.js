@@ -36,7 +36,7 @@ for (const sleepTurns of [1, 2, 3, 4]) {
         installPagerInput(input, { expected: /./, limit: 40 });
         input.feed('s'.repeat(100));
         for (let turn = 0; turn < 32 && !(game.u.deafTurns ?? 0); turn++) {
-            putHeroToSleep(sleepTurns);
+            await putHeroToSleep(sleepTurns);
             await moveloop_core();
         }
         assert.ok((game.u.deafTurns ?? 0) > 0, 'No deafening thunderstorm in 32 world turns');

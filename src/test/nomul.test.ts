@@ -32,9 +32,9 @@ void test('an involuntary delay ends running and queued commands', () => {
     assert.equal(game.context.botl, true);
 });
 
-void test('a shorter delay preserves sleep, protection, and pending commands', () => {
+void test('a shorter delay preserves sleep, protection, and pending commands', async () => {
     freshObjectRoom();
-    putHeroToSleep(8);
+    await putHeroToSleep(8);
     game.u.invulnerable = true;
     game._cannedCommands = [{ kind: 'swap-weapon' }];
     game.context.botl = false;
@@ -49,9 +49,9 @@ void test('a shorter delay preserves sleep, protection, and pending commands', (
     assert.equal(game.context.botl, false);
 });
 
-void test('an equal delay clears sleep and protection without requesting a status refresh', () => {
+void test('an equal delay clears sleep and protection without requesting a status refresh', async () => {
     freshObjectRoom();
-    putHeroToSleep(3);
+    await putHeroToSleep(3);
     game.u.invulnerable = true;
     game.context.botl = false;
 
@@ -69,7 +69,7 @@ void test('cancelling dressing wakes a sleeping hero and clears the old recovery
     installPagerInput(input, { expected: /./, limit: 20 });
     input.feed(`W${boots.invlet}`);
     await moveloop_core();
-    putHeroToSleep(1);
+    await putHeroToSleep(1);
     input.feed(' '.repeat(20));
 
     await stopDonning();
@@ -92,7 +92,7 @@ for (const sleepTurns of [1, 8]) {
         input.feed(`W${boots.invlet}`);
         await moveloop_core();
         const remaining = game._helplessTurns ?? 0;
-        putHeroToSleep(sleepTurns);
+        await putHeroToSleep(sleepTurns);
         const deadline = game.moves + Math.max(remaining, sleepTurns);
         input.feed(' '.repeat(100));
 

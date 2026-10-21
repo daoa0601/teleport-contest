@@ -150,7 +150,7 @@ for (const delay of ['sleep', 'paralysis', 'prayer']) {
             expected: /frozen|praying|shimmering/i, limit: 6,
         });
         if (delay === 'sleep')
-            putHeroToSleep(3, { state });
+            await putHeroToSleep(3, { state });
         else if (delay === 'paralysis')
             await applyPotionEffect(await knownObject(POT_PARALYSIS), { state });
         else {

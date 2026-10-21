@@ -190,7 +190,7 @@ for (const delay of ['sleep', 'paralysis', 'prayer']) {
         installPagerInput(resetInputState(), {
             expected: /frozen|praying|shimmering/i, limit: 6,
         });
-        if (delay === 'sleep') putHeroToSleep(3, { state });
+        if (delay === 'sleep') await putHeroToSleep(3, { state });
         else if (delay === 'paralysis') await applyPotionEffect(await knownObject(POT_PARALYSIS), { state });
         else {
             state.flags.paranoia_bits = 0;

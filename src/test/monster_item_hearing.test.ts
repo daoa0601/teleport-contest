@@ -27,7 +27,7 @@ for (const { condition, expected } of [
         const potion = await knownObject(POT_HEALING);
         if (condition === 'acoustics disabled') game.flags.acoustics = false;
         if (condition === 'underwater') game.underwater = true;
-        if (condition.includes('asleep')) putHeroToSleep(10, { state: game });
+        if (condition.includes('asleep')) await putHeroToSleep(10, { state: game });
         if (condition.includes('deaf')) game.u.deafTurns = 10;
         const messages: string[] = [];
 
@@ -90,7 +90,7 @@ for (const { condition, expected } of [
         assert.ok(bugle);
         if (condition === 'acoustics disabled') game.flags.acoustics = false;
         if (condition === 'underwater') game.underwater = true;
-        if (condition.includes('asleep')) putHeroToSleep(10, { state: game });
+        if (condition.includes('asleep')) await putHeroToSleep(10, { state: game });
         if (condition.includes('deaf')) game.u.deafTurns = 10;
         assert.equal(canSeeMonster(bugler), false);
         const messages: string[] = [];
