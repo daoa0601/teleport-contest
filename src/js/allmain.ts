@@ -3034,16 +3034,17 @@ async function presentMonsterAttackEffects(
                     if (died) return { heroDied: true };
                 }
                 if (heroAttack.deferredStunGate)
-                    resumeDeferredHeroStun(action, game);
-                if (heroAttack.stunMessage) {
-                    const stunDismissal = await plineWithContinuation(
-                        heroAttack.stunMessage,
-                    );
-                    heroAttack.stunMessage = null;
-                    if (stunDismissal !== null
-                        && stunDismissal !== undefined) {
-                        paging.pagerOwned = true;
-                    }
+                    resumeDeferredHeroStun(action, random);
+                if (heroAttack.stunIncrement != null) {
+                    const increment = heroAttack.stunIncrement;
+                    heroAttack.stunIncrement = null;
+                    await makeStunned((game.u.stunnedTurns ?? 0) + increment, {
+                        publish: async (message: string) => {
+                            const dismissal = await plineWithContinuation(message);
+                            if (dismissal !== null && dismissal !== undefined)
+                                paging.pagerOwned = true;
+                        },
+                    });
                 }
                 if (heroAttack.deferredRustRehumanize) {
                     const rustFormPagerOwned

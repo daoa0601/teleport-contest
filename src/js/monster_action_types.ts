@@ -303,7 +303,7 @@ export interface HeroContactAttack extends HeroAttackProgress {
     deferredStunGate?: boolean;
     stunSelected?: boolean;
     stunDuration?: number;
-    stunMessage?: string | null;
+    stunIncrement?: number | null;
     stunnedHero?: boolean;
     deferredLegEffect?: boolean;
     legSide?: 'left' | 'right';
