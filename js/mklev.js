@@ -3790,7 +3790,14 @@ async function renewBonesIdentities(level, fruits) {
     }
 }
 function restoreBonesObjects(level) {
-    eachObjectInBonesGraph(level, object => prepareBonesObjectForRestore(object, game));
+    let newestOrder = game._fobjSerial ?? 0;
+    eachObjectInBonesGraph(level, object => {
+        prepareBonesObjectForRestore(object, game);
+        newestOrder = Math.max(newestOrder, object._fobjOrder ?? 0);
+    });
+    // C restore.c:getlev() keeps the bones fobj chain; objects placed
+    // afterwards are pushed in front of it.
+    game._fobjSerial = newestOrder;
 }
 function restoreBonesMonsterAttitudes(level) {
     for (const monster of level?.monsters || []) {
