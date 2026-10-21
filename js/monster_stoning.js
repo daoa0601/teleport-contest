@@ -200,8 +200,11 @@ async function reviveStonedVampire(monster, baseForm, publish) {
         suppressInvisible: true, suppressIt: true,
     })} ${posture} ${surfaceName(monster.mx, monster.my)}`;
     restoreRevertedMonsterHealth(monster);
-    if (engulfing_u(monster))
-        await expelHero(monster, { message: false, publish });
+    if (engulfing_u(monster)) {
+        const expulsion = await expelHero(monster, { message: false, publish });
+        if (expulsion.died)
+            return { changed: true, heroDied: true };
+    }
     const location = game.level?.at(monster.mx, monster.my);
     if (monsterIsAmorphous(monster) && location?.typ === DOOR
         && (location.doormask ?? 0) & (D_CLOSED | D_LOCKED)) {
