@@ -6,6 +6,7 @@ import { STONING, TURNED_SLIME } from '../js/const.js';
 import { applyCorpsePreEffects } from '../js/corpse_eating.js';
 import { finishOrdinaryDeath } from '../js/end.js';
 import { useHeroGaze } from '../js/hero_gaze.js';
+import { hurtleHero } from '../js/hero_hurtle.js';
 import { game, requireGameDisplay, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { finishMonsterAttackDeath } from '../js/monster_attack_death.js';
@@ -294,3 +295,25 @@ for (const { causeLength, expectedSuffix } of [
         assert.equal(loadScoreRecords()[0]?.death, cause.slice(0, 100) + expectedSuffix);
     });
 }
+
+void test('hurtling into a cockatrice petrifies the hero on the tombstone and score entry', async () => {
+    freshObjectRoom({ flags: { bones: false, disclose: '-i -a -v -c -o', tombstone: true } });
+    requirePlayingGame(game);
+    game.storage = memoryStorage();
+    game.u.urexp = 100;
+    game.iflags.toptenwin = false;
+    for (const slot of ['uarm', 'uarmc', 'uarmu'] as const) game[slot] = null;
+    game.inventory = game.inventory.filter(object => !object.owornmask);
+    await createMonsterAt('cockatrice', game.u.ux + 1, game.u.uy);
+    const input = resetInputState();
+    let tombstone = '';
+    input.beforeRead = () => {
+        if (visibleText().includes('REST')) tombstone = visibleText();
+    };
+    installPagerInput(input, { expected: /stone|Goodbye|points|You were|cockatrice/i, limit: 10 });
+
+    await hurtleHero(1, 0, 2);
+
+    assert.equal(loadScoreRecords()[0]?.death, 'petrified by bumping into a cockatrice, while moving through the air');
+    assert.match(tombstone, /petrified by/);
+});

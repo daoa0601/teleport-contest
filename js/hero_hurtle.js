@@ -9,7 +9,6 @@ import { beginBallAndChainMove, finishBallAndChainMove, heroIsPunished, } from '
 import { D_CLOSED, D_ISOPEN, D_LOCKED, DOOR, FIRE_TRAP, IRONBARS, IS_OBSTRUCTED, Is_waterlevel, KILLED_BY, MAGIC_PORTAL, TREE, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_WEB, Upolyd, VIBRATING_SQUARE, W_NONPASSWALL, is_hole, is_pit, isok, } from './const.js';
 import { canSpotMonster, flush_screen, glyphAt, map_invisible, newsym, plineWithContinuation, } from './display.js';
 import { heroTestMove } from './cmd.js';
-import { finishHeroDeath } from './end.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { blocksDiagonalDoor, heroBadRock, heroLiquidEffects, heroTightDiagonalReason, } from './hack.js';
 import { triggerHeroTrap } from './hero_traps.js';
@@ -27,7 +26,7 @@ import { monsterName, monsterObjectPronoun } from './monster_name.js';
 import { objectName } from './objnam.js';
 import { rnd } from './rng.js';
 import { checkSpecialRoom } from './shk.js';
-import { touchPetrifies } from './stoning.js';
+import { resolveImmediatePetrification, touchPetrifies } from './stoning.js';
 import { inventoryWeight } from './weight.js';
 import { vision_recalc } from './vision.js';
 import { switchHeroTerrain } from './terrain_movement.js';
@@ -176,15 +175,12 @@ async function collideWithMonster(monster, x, y, options) {
     if (!canSpotMonster(monster))
         map_invisible(x, y);
     await angerMonster(monster);
-    if (touchPetrifies(monster.mnum) && !heroWearsTorsoArmor()
-        && !(game.u.stoneResistance)) {
-        await plineWithContinuation('You turn to stone...');
-        const died = await finishHeroDeath({
+    // C dothrow.c:hurtle_step() instapetrify()s an unarmored hero.
+    if (touchPetrifies(monster.mnum) && !heroWearsTorsoArmor()) {
+        const result = await resolveImmediatePetrification({
             killer: `bumping into ${indefiniteName(monsterTypeName(monster.mnum, !!monster.female))}`,
-            deathVerb: 'turned to stone',
-            deathLineShown: true,
         });
-        if (died)
+        if (result.died)
             return;
     }
     const form = heroForm();

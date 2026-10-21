@@ -22,7 +22,6 @@ import {
     plineWithContinuation,
 } from './display.js';
 import { heroTestMove } from './cmd.js';
-import { finishHeroDeath } from './end.js';
 import { game, requirePlayingGame } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
@@ -53,7 +52,7 @@ import { monsterName, monsterObjectPronoun } from './monster_name.js';
 import { objectName } from './objnam.js';
 import { rnd } from './rng.js';
 import { checkSpecialRoom } from './shk.js';
-import { touchPetrifies } from './stoning.js';
+import { resolveImmediatePetrification, touchPetrifies } from './stoning.js';
 import { inventoryWeight } from './weight.js';
 import { vision_recalc } from './vision.js';
 import { switchHeroTerrain } from './terrain_movement.js';
@@ -246,17 +245,14 @@ async function collideWithMonster(monster: Monster, x: number, y: number, option
     if (!canSpotMonster(monster)) map_invisible(x, y);
     await angerMonster(monster);
 
-    if (touchPetrifies(monster.mnum) && !heroWearsTorsoArmor()
-        && !(game.u.stoneResistance)) {
-        await plineWithContinuation('You turn to stone...');
-        const died = await finishHeroDeath({
+    // C dothrow.c:hurtle_step() instapetrify()s an unarmored hero.
+    if (touchPetrifies(monster.mnum) && !heroWearsTorsoArmor()) {
+        const result = await resolveImmediatePetrification({
             killer: `bumping into ${indefiniteName(monsterTypeName(
                 monster.mnum, !!monster.female,
             ))}`,
-            deathVerb: 'turned to stone',
-            deathLineShown: true,
         });
-        if (died) return;
+        if (result.died) return;
     }
     const form = heroForm();
     if (form !== null && touchPetrifies(form) && !monsterWearsTorsoArmor(monster)) {
