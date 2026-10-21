@@ -9,7 +9,7 @@ import { endVoluntaryMultiTurn } from './command_state.js';
 import { artifactById } from './artifacts.js';
 import { heroIsBlind } from './senses.js';
 import { exerciseWisdom } from './attrib.js';
-import { canSpotMonster, canSenseMonster, monsterHasWarningProjection, flushPendingTopline, feel_location, glyphAt, magic_map_background, map_background, map_engraving, map_invisible, map_object, map_trap, newsym, pline, show_glyph_cell, unmap_invisible, plineWithContinuation, flashGlyphAt, terrain_glyph, transientMonsterGlyph, transientTrapGlyph, cls, displaySelf, docrt, feel_newsym, } from './display.js';
+import { canSpotMonster, canSenseMonster, monsterHasWarningProjection, displayMessageWindow, flushPendingTopline, feel_location, glyphAt, magic_map_background, map_background, map_engraving, map_invisible, map_object, map_trap, newsym, pline, show_glyph_cell, unmap_invisible, plineWithContinuation, flashGlyphAt, terrain_glyph, transientMonsterGlyph, transientTrapGlyph, cls, displaySelf, docrt, feel_newsym, } from './display.js';
 import { BOLT_LIM, COLNO, ROWNO, ROOMOFFSET, STONE, SDOOR, SCORR, DOOR, CORR, M_AP_TYPE, Is_airlevel, Is_waterlevel, isok, IS_FURNITURE, D_CLOSED, D_LOCKED, D_TRAPPED, STATUE_TRAP, TRAPPED_CHEST, TRAPPED_DOOR, W_NONDIGGABLE, W_NONPASSWALL, WM_MASK, } from './const.js';
 import { BOULDER, CHEST, LARGE_BOX, LENSES, GOLD_PIECE, OBJECT_BASES, OBJECT_MERGE, OBJECT_NAMES } from './object_data.js';
 import { objectClassForType, observeObject } from './object_knowledge.js';
@@ -291,7 +291,7 @@ async function findHiddenMonster(monster, viaWarning) {
         if (monster.mundetected && hides) {
             if (viaWarning && found) {
                 await plineWithContinuation(`Your danger sense causes you to take a second ${heroIsBlind(game) ? 'to check nearby' : 'look close by'}.`);
-                await flushPendingTopline();
+                await displayMessageWindow();
             }
             monster.mundetected = 0;
             found = true;
