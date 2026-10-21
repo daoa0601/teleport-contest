@@ -65,9 +65,11 @@ import { roomForRoomno, roomsAt } from './room.js';
 import { findNearbyMonsterPosition, goodPosition } from './teleport_rules.js';
 import { stopHeroOccupation } from './occupation.js';
 import { objectWeight } from './weight.js';
+import type { MapLocation } from './map_types.js';
 import {
     MIGR_APPROX_XY, MON_OFFMAP, RLOC_MSG, RLOC_NOMSG,
-    BOLT_LIM, D_BROKEN, D_CLOSED, D_LOCKED, DOOR, IS_DOOR, IS_ROOM, IS_WALL,
+    BOLT_LIM, D_BROKEN, D_CLOSED, D_LOCKED, DOOR, IS_DOOR, IS_ROOM, IS_STWALL, IS_TREE, IS_WALL,
+    SDOOR,
     LANDMINE, BEAR_TRAP, HOLE, PIT, ROOMOFFSET, ROOM, SHOPBASE, SPIKED_PIT,
     SVALL, TT_PIT, W_QUIVER, W_SWAPWEP, ZAP_POS,
     isok,
@@ -506,6 +508,20 @@ export async function moneyToMonster(monster: Monster, amount: number, state: Ga
 
 // C shk.c add_damage().  Cost is charged later by payForShopDamage(); the
 // record itself schedules the keeper's repair.
+// C rm.flags overlays doormask and wall_info; the port keeps them apart.
+// A damage record saves and restores whichever one the terrain type uses.
+function overlaidTerrainFlags(location: MapLocation): number {
+    if (IS_DOOR(location.typ) || location.typ === SDOOR) return location.doormask;
+    if (IS_STWALL(location.typ) || IS_TREE(location.typ)) return location.wall_info;
+    return location.flags;
+}
+
+function restoreOverlaidTerrainFlags(location: MapLocation, flags: number): void {
+    if (IS_DOOR(location.typ) || location.typ === SDOOR) location.doormask = flags;
+    else if (IS_STWALL(location.typ) || IS_TREE(location.typ)) location.wall_info = flags;
+    else location.flags = flags;
+}
+
 export function addShopDamage(
     x: number, y: number, cost: number, state: GameState = game,
 ): void {
@@ -540,7 +556,7 @@ export function addShopDamage(
         place: { x, y },
         cost,
         typ: location.typ,
-        flags: location.flags ?? 0,
+        flags: overlaidTerrainFlags(location),
     });
     // If the hero saw the damage, post-repair walls display as walls.
     if (cansee(x, y)) location.seenv = SVALL;
@@ -1129,7 +1145,7 @@ export async function repairShopDamage(
         location.doormask = D_CLOSED;  // arbitrary
     } else {
         // Not a door: restore the old wall flags.
-        location.flags = record.flags;
+        restoreOverlaidTerrainFlags(location, record.flags);
     }
 
     const { litter, count } = litterGetpos(x, y, keeper, state);
