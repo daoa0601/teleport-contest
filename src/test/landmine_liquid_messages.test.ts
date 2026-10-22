@@ -4,6 +4,7 @@ import { LANDMINE, LAVAPOOL, MOAT, NO_MINVENT } from '../js/const.js';
 import { beginMonsterLandMine, finishMonsterLandMine } from '../js/landmine_trap.js';
 import { explodeLandMine } from '../js/landmine_explosion.js';
 import { game } from '../js/gstate.js';
+import { vision_recalc } from '../js/vision.js';
 import { addTrap } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -46,4 +47,17 @@ void test('a land mine still wounds a monster that its lava hole relocates', asy
     assert.notDeepEqual([lich.mx, lich.my], [12, 10]);
     // One point from the lava, then the mine's three.
     assert.equal(lich.mhp, 94);
+});
+
+void test('a land mine flooding a square in view refreshes sight before the next message', async () => {
+    const level = freshObjectRoom();
+    const mine = addTrap(level, LANDMINE, 12, 10);
+    level.requireAt(13, 10).typ = MOAT;
+    vision_recalc(0);
+    game.vision_full_recalc = 0;
+
+    await explodeLandMine(mine, game, { random: limit => limit - 1, publish: () => {} });
+
+    assert.equal(level.requireAt(12, 10).typ, MOAT);
+    assert.equal(game.vision_full_recalc, 1);
 });

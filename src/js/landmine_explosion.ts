@@ -22,6 +22,11 @@ import { scatterFloorObjects } from './scatter.js';
 import { seeTrap, waterDamageChain } from './trap.js';
 import { fireDamageChain } from './fire_damage.js';
 import { vision_note_blocker_change } from './vision.js';
+import { dropBoulderIntoLiquid } from './boulder_pool.js';
+import { spotChecks } from './digging_terrain.js';
+import { BOULDER } from './object_data.js';
+import { unlinkObject } from './object_location.js';
+import { isLavaAt, isPoolAt } from './terrain_properties.js';
 import { unearthFloorObjectsAt } from './buried_object.js';
 import { updateIceObjectTimersAt } from './floor_object.js';
 
@@ -108,6 +113,7 @@ export async function explodeLandMine(
 ): Promise<Trap | null> {
     const x = trap.tx;
     const y = trap.ty;
+    const oldTyp = state.level?.at?.(x, y)?.typ ?? ROOM;
     const options = {
         publish,
         random,
@@ -138,25 +144,36 @@ export async function explodeLandMine(
 
     const survivingTrap = state.level?.traps?.find(candidate =>
         candidate.tx === x && candidate.ty === y) || null;
-    if (!survivingTrap) return null;
-    if (levelHasNoPits(state)) {
-        deleteTrap(survivingTrap, state);
-        return null;
+    if (survivingTrap) {
+        if (levelHasNoPits(state)) {
+            deleteTrap(survivingTrap, state);
+        } else {
+            const liquid = liquidForHole(x, y, state, { random });
+            if (liquid !== ROOM) {
+                await fillMineHoleWithLiquid(
+                    x, y, survivingTrap, liquid, state, options,
+                );
+                if (state.program_state?.gameover) return null;
+            } else {
+                survivingTrap.ttyp = PIT;
+                survivingTrap.madeby_u = false;
+                seeTrap(survivingTrap, state);
+            }
+        }
     }
 
-    const liquid = liquidForHole(x, y, state, { random });
-    if (liquid !== ROOM) {
-        await fillMineHoleWithLiquid(
-            x, y, survivingTrap, liquid, state, options,
-        );
-        return null;
-    }
-
-    survivingTrap.ttyp = PIT;
-    survivingTrap.madeby_u = false;
-    seeTrap(survivingTrap, state);
+    // C blow_up_landmine() settles the square however the trap ended.
     await fillPitWithBoulderAt(x, y, state, { publish });
+    if (state.program_state?.gameover) return null;
+    while (isPoolAt(x, y, state) || isLavaAt(x, y, state)) {
+        const boulder = state.level?.objects?.[x]?.[y]?.find(object => object.otyp === BOULDER);
+        if (!boulder) break;
+        unlinkObject(boulder, state);
+        await dropBoulderIntoLiquid(boulder, x, y, state, { publish, random });
+        if (state.program_state?.gameover) return null;
+    }
     vision_note_blocker_change(x, y);
-    return state.level?.traps?.includes(survivingTrap)
+    spotChecks(x, y, oldTyp, state);
+    return survivingTrap && state.level?.traps?.includes(survivingTrap)
         ? survivingTrap : null;
 }
