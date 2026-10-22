@@ -171,7 +171,8 @@ void test('an iron golem can rust in a pool despite being breathless', async () 
     assert.equal(golem.mhp, 24);
     assert.equal(golem.mhpmax, 24);
     assert.equal(level.monsters.includes(golem), true);
-    assert.deepEqual(messages, ['The iron golem rusts.']);
+    // Wet inventory may report its own erosion after the golem rusts.
+    assert.equal(messages[0], 'The iron golem rusts.');
 });
 void test('an iron golem remains in the pool when it does not rust', async () => {
     const level = freshObjectRoom();
@@ -254,6 +255,28 @@ for (const lava of [false, true]) {
         assert.equal(messages[0], 'A mysterious force prevents the quantum mechanic from teleporting!');
         assert.match(messages[1] ?? '', lava ? /burns to a crisp/ : /drowns/);
         assert.equal(mechanic.dead, true);
+    });
+}
+for (const species of ['gremlin', 'iron golem']) {
+    void test(`${species === 'gremlin' ? 'a' : 'an'} ${species} surviving a pool announces its acid potion exploding`, async () => {
+        const level = freshObjectRoom({ hero: { uluck: -5 } });
+        requirePlayingGame(game);
+        level.requireAt(12, 10).typ = POOL;
+        const monster = await createMonsterAt(species, 12, 10);
+        monster.mhp = monster.mhpmax = 30;
+        const acid = await equipMonsterObject(monster, await knownObject(POT_ACID), 0);
+        const messages = [];
+        // mon.c minliquid_core(): a gremlin split or golem rust then calls
+        // water_damage_chain(), whose acid explosions are always printed.
+        await resolveMonsterLiquid(monster, game, {
+            finishDeath: finishMonsterLiquidDeath,
+            announce: async (message) => { messages.push(message); },
+            random: limit => limit === 3 ? 1 : 0,
+            rollDice: () => 6,
+        });
+        assert.equal(monster.dead ?? false, false);
+        assert.equal(acid.where, 'gone');
+        assert.ok(messages.some(message => / explodes!$/.test(message)), messages.join('\n'));
     });
 }
 //# sourceMappingURL=monster_liquid.test.js.map
