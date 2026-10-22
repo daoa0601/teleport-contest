@@ -1068,7 +1068,7 @@ export async function repairShopDamage(keeper, record, { catchup = false, state 
             await pline(formatFeltMessage('more claustrophobic than before.', state));
         }
         else if (!heroIsDeaf(state) && rn2(10) === 0) {
-            await pline('The dungeon acoustics noticeably change.');
+            await plineWithContinuation('The dungeon acoustics noticeably change.', { noRepeat: true });
         }
     }
     if (stopPicking)
