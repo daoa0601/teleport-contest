@@ -80,6 +80,10 @@ export async function finishTeleportArrival(
 // square, terrain, or trap to start another transaction.
 let spotDepth = 0;
 let activeSpot: ActiveSpot | null = null;
+// C spoteffects() static spottraptyp: while a trap is being triggered, a
+// nested spoteffects() skips any trap of the same type, such as a fire
+// trap reached by crawling out of the water its own flames melted.
+let triggeringTrapType: number | null = null;
 
 export async function finishDestinationSpotEffects({
     oldx, oldy, newx, newy, trapOptions = {},
@@ -130,10 +134,16 @@ export async function finishDestinationSpotEffects({
             const pit = trap && is_pit(trap.ttyp);
             if (pick && !pit) await autopickupAtHero();
             if (game.program_state.gameover) return { died: true };
-            if (trap) {
-                const result = await triggerHeroTrapAt(newx, newy, {
-                    finishTeleport: finishTeleportArrival, gotoLevel, ...trapOptions,
-                });
+            if (trap && triggeringTrapType !== trap.ttyp) {
+                triggeringTrapType = trap.ttyp;
+                let result;
+                try {
+                    result = await triggerHeroTrapAt(newx, newy, {
+                        finishTeleport: finishTeleportArrival, gotoLevel, ...trapOptions,
+                    });
+                } finally {
+                    triggeringTrapType = null;
+                }
                 if (result?.died) return { died: true };
                 if (result?.shortCircuited)
                     return { shortCircuited: true, moved: false, died: false };
