@@ -497,4 +497,19 @@ void test('a fatal missile hit shows zero HP while its hit message waits', async
     assert.match(hitScreens[0] ?? '', /--More--/);
     assert.match(hitScreens[0] ?? '', /HP:0\(12\)/);
 });
+for (const [species, unseen] of [['gnome lord', 'someone'], ['jackal', 'something']]) {
+    void test(`a monster throwing at an unseen ${species} names it ${unseen}`, async () => {
+        projectileRoom();
+        requirePlayingGame(game);
+        const source = await combatant('goblin', { inventory: [await uninitializedObject(DAGGER)] });
+        const target = await combatant(species, { x: 12, hitPoints: 30 });
+        target.minvis = true;
+        const messages = [];
+        await throwMonsterWeaponAtMonster(source, target, game, {
+            random: ordinaryChoices, rollOne: minimumRoll,
+            publish: async (message) => { messages.push(message); },
+        });
+        assert.equal(messages[0], `The goblin throws a dagger at ${unseen}!`);
+    });
+}
 //# sourceMappingURL=monster_throw.test.js.map

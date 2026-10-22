@@ -3,7 +3,7 @@
 // next projectile is detached from the attacker's inventory.
 import {
     A_DEX, A_STR, BOLT_LIM, D_CLOSED, D_LOCKED, IRONBARS, IS_DOOR,
-    IS_OBSTRUCTED, M_AP_MONSTER, M_AP_TYPE, NEED_RANGED_WEAPON, NEED_WEAPON,
+    IS_OBSTRUCTED, M_AP_MONSTER, M_AP_TYPE, MGIVENNAME, NEED_RANGED_WEAPON, NEED_WEAPON,
     P_BOW, P_DAGGER, P_DART, P_SHURIKEN, P_SLING, P_SPEAR, SINK, SLT_ENCUMBER, isok,
 } from './const.js';
 import { currentAttribute } from './attrib.js';
@@ -602,8 +602,12 @@ async function launchVolley(source: Monster, weapon: GameObject, target: Monster
             appearance = objectHasPersonalName(single, state)
                 ? capitalizedDefiniteName(name, state).replace(/^The /u, 'the ') : withIndefiniteArticle(name);
         }
+        // C monshoot() names the target with some_mon_nam() before Monnam(source).
+        const targetName = target ? monsterName(target, {
+            state, augmentIt: true, suppressSaddle: !!MGIVENNAME(target),
+        }) : '';
         await publish(`${monsterName(source, { state, capitalized: true })} ${launched ? 'shoots' : 'throws'} ${appearance}${
-            target ? ` at ${canSpotMonster(target) ? monsterName(target, { state }) : 'something'}` : ''}!`);
+            target ? ` at ${targetName}` : ''}!`);
     }
     const shots: MonsterProjectileShot[] = [];
     for (let index = 1; index <= volley; index++) {
