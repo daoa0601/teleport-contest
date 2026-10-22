@@ -47,6 +47,10 @@ export async function finishTeleportArrival(movement, { announceTeleport = true 
 // square, terrain, or trap to start another transaction.
 let spotDepth = 0;
 let activeSpot = null;
+// C spoteffects() static spottraptyp: while a trap is being triggered, a
+// nested spoteffects() skips any trap of the same type, such as a fire
+// trap reached by crawling out of the water its own flames melted.
+let triggeringTrapType = null;
 export async function finishDestinationSpotEffects({ oldx, oldy, newx, newy, trapOptions = {}, publish = plineWithContinuation, pick = true, }) {
     // C spoteffects() defers lava-rescue landing until lava_effects ends.
     if (game.iflags?.in_lava_effects)
@@ -101,10 +105,17 @@ export async function finishDestinationSpotEffects({ oldx, oldy, newx, newy, tra
                 await autopickupAtHero();
             if (game.program_state.gameover)
                 return { died: true };
-            if (trap) {
-                const result = await triggerHeroTrapAt(newx, newy, {
-                    finishTeleport: finishTeleportArrival, gotoLevel, ...trapOptions,
-                });
+            if (trap && triggeringTrapType !== trap.ttyp) {
+                triggeringTrapType = trap.ttyp;
+                let result;
+                try {
+                    result = await triggerHeroTrapAt(newx, newy, {
+                        finishTeleport: finishTeleportArrival, gotoLevel, ...trapOptions,
+                    });
+                }
+                finally {
+                    triggeringTrapType = null;
+                }
                 if (result?.died)
                     return { died: true };
                 if (result?.shortCircuited)
