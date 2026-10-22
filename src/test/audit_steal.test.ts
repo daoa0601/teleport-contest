@@ -11,6 +11,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { setHeroSpecies } from '../js/hero_species.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { punishHero } from '../js/punishment.js';
+import { initRng } from '../js/rng.js';
 import { unlinkObject } from '../js/object_location.js';
 import { addInventoryItem } from '../js/u_init.js';
 import { AMULET_OF_LIFE_SAVING, BOULDER, DAGGER, GOLD_PIECE, LEASH, LOADSTONE, OBJECT_NAMES, STATUE } from '../js/object_data.js';
@@ -291,3 +292,25 @@ for (const possessions of ['nothing', 'gold', 'blind'] as const) {
         if (purse) assert.ok(game.inventory.includes(purse));
     });
 }
+
+void test('a hallucinating hero names an unseen monkey thief at random', async () => {
+    const names = new Set<string>();
+    for (let seed = 1; seed <= 12; seed++) {
+        freshObjectRoom({ hero: { hallucinationTurns: 50 } });
+        requirePlayingGame(game);
+        await addInventoryObject(BOULDER);
+        const thief = await nearbyThief('monkey');
+        thief.minvis = true;
+        const messages = theftMessages();
+        initRng(BigInt(seed));
+
+        await performMonsterHeroAttack(thief, game, { random: () => 0, rollOne: () => 1 });
+        messages.push(game._pending_message);
+
+        // steal.c Some_Monnam(): "someone" or "something" by rn2(2).
+        const name = /(Someone|Something) tries to steal your boulder/.exec(messages.join('\n'))?.[1];
+        assert.ok(name, messages.join('\n'));
+        names.add(name);
+    }
+    assert.deepEqual([...names].sort(), ['Someone', 'Something']);
+});
