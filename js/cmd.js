@@ -412,6 +412,7 @@ export function heroTestMove(x, y) {
     if (!location)
         return false;
     const oozing = heroOozesUnderDoor(location);
+    let eatsDoor = false;
     if (blocksMove(x, y) && !heroCanPassWallAt(game, x, y) && !oozing) {
         // C test_move(TEST_MOVE): a tunneler that needs no pick may eat
         // the rock or closed door, unless it is underwater.
@@ -419,6 +420,7 @@ export function heroTestMove(x, y) {
         const tunnels = !!(formFlags & M1_TUNNEL) && !(formFlags & M1_NEEDPICK);
         if (!tunnels || hero.uinwater || game.underwater)
             return false;
+        eatsDoor = location.typ === DOOR;
     }
     const passesWalls = heroPassesWalls(game);
     if (location.typ === IRONBARS && !passesWalls
@@ -426,7 +428,9 @@ export function heroTestMove(x, y) {
         return false;
     const dx = x - hero.ux, dy = y - hero.uy;
     if (dx && dy) {
-        if (!passesWalls && blocksDiagonalDoor(game.level?.at(hero.ux, hero.uy), oozing ? null : location))
+        if (!passesWalls && blocksDiagonalDoor(game.level?.at(hero.ux, hero.uy), 
+        // Oozing under or eating a closed door skips the doorway entry test.
+        oozing || eatsDoor ? null : location))
             return false;
         if (heroBadRock(game, hero.ux, y) && heroBadRock(game, x, hero.uy)) {
             if (heroTightDiagonalReason(game))
