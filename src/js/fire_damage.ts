@@ -165,7 +165,6 @@ export async function fireDamageObject(
     };
 
     const ignited = await igniteItems([object], {
-        carrier,
         publish, random, state,
         visible: squareVisible,
     });

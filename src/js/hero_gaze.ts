@@ -147,7 +147,6 @@ async function applyFieryGaze({
             },
         );
         await igniteItems(monster.minvent || monster.inventory, {
-            carrier: monster,
             state,
             publish,
             random,

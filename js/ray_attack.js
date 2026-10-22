@@ -416,7 +416,7 @@ async function damageRayMonster(monster, nativeType, dice, { state, publish, ran
                     && random(3) === 0) {
                     hit.damage += await destroyMonsterInventoryByElement(monster, INVENTORY_DAMAGE.FIRE, sourceDamage, options);
                     await igniteItems(monster.minvent || monster.inventory, {
-                        carrier: monster, ...options,
+                        ...options,
                     });
                 }
             }

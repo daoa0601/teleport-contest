@@ -290,7 +290,7 @@ async function elementalDamage(monster, context) {
     });
     if (fire)
         await igniteItems(monster.minvent, {
-            state, publish, random, carrier: monster, visible: canSeeMonster(monster),
+            state, publish, random, visible: canSeeMonster(monster),
         });
     return damage;
 }

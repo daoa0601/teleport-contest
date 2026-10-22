@@ -233,7 +233,6 @@ export async function finishMonsterFireTrap(
             visible: event.inSight,
         });
         await igniteItems(monster.minvent || monster.inventory, {
-            carrier: monster,
             state,
             publish,
             random,

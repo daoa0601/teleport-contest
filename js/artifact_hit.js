@@ -108,7 +108,7 @@ export async function applyArtifactHit(object, defender, baseDamage, { state = g
             });
             if (damageType === 'fire') {
                 await igniteItems(defender.minvent || defender.inventory, {
-                    state, carrier: defender, publish, random,
+                    state, publish, random,
                     visible: cansee(defender.mx, defender.my),
                 });
             }
