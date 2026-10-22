@@ -1,7 +1,7 @@
 // C muse.c:find_defensive(), m_use_healing(), and use_defensive().
 import {
     BEAR_TRAP, CORR, HOLE, In_endgame, In_sokoban, IS_DRAWBRIDGE, IS_FURNITURE,
-    LADDER, MIGR_LADDER_DOWN, MIGR_LADDER_UP, MIGR_RANDOM, MIGR_SSTAIRS,
+    LADDER, MIGR_LADDER_DOWN, MIGR_LADDER_UP, MIGR_RANDOM, MIGR_SSTAIRS, MON_OFFMAP,
     MIGR_STAIRS_DOWN, MIGR_STAIRS_UP, PIT, RLOC_MSG, SCORR, STAIRS,
     TELEP_TRAP, WEB, W_NONDIGGABLE, PLNMSG_enum, PLNMSG_UNKNOWN, is_hole, is_pit, isok,
 } from './const.js';
@@ -414,9 +414,11 @@ export async function useMonsterDefensiveItem(monster: Monster, choice: MonsterD
         const cell = state.level.requireAt(trap.tx, trap.ty);
         if (cell.typ === SCORR) { cell.typ = CORR; cell.flags = 0; vision_note_blocker_change(trap.tx, trap.ty); }
         if (visible) seeTrap(trap, state);
-        const oldx = monster.mx, oldy = monster.my;
+        // C remove_monster() empties the old square before redrawing it, even
+        // when the monster was already standing on the trap.
+        monster.mstate = (monster.mstate ?? 0) | MON_OFFMAP;
+        newsym(monster.mx, monster.my);
         placeMonsterAt(monster, trap.tx, trap.ty);
-        newsym(oldx, oldy);
         if (monster.wormno) advanceMonsterWormBody(monster, { state, random, rollOne, rollDice });
         maybeUnhideAt(monster.mx, monster.my, state);
         newsym(monster.mx, monster.my);
