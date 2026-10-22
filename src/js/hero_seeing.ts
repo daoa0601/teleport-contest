@@ -13,12 +13,17 @@ export async function refreshHeroSeeing({ state = game } = {}) {
 // see_monsters() includes the hero. Rings add a second hero redraw only
 // when the ring makes the hero visible or invisible to themselves.
 export async function refreshInvisibleMonsters({ state = game } = {}) {
+    setMimicBlocking({ state });
+    await see_monsters();
+}
+
+// C set_mimic_blocking() only updates vision blockers; callers redraw later.
+export function setMimicBlocking({ state = game } = {}) {
     requireLiveGame(state);
     for (const monster of requireGameLevel(state).monsters) {
         if (!monster.dead && monster.minvis && mimicBlocksLight(monster))
             vision_note_blocker_change(monster.mx, monster.my);
     }
-    await see_monsters();
 }
 
 export async function grantHeroSeeInvisible({
