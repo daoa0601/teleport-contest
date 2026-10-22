@@ -3,8 +3,10 @@ import test from 'node:test';
 import { LANDMINE, LAVAPOOL, MOAT, NO_MINVENT } from '../js/const.js';
 import { beginMonsterLandMine, finishMonsterLandMine } from '../js/landmine_trap.js';
 import { explodeLandMine } from '../js/landmine_explosion.js';
-import { game } from '../js/gstate.js';
+import { game, requireGameDisplay } from '../js/gstate.js';
 import { vision_recalc } from '../js/vision.js';
+import { flush_screen, plineWithContinuation } from '../js/display.js';
+import { placeMonsterAt } from '../js/monster_location.js';
 import { addTrap } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -42,14 +44,26 @@ void test('a land mine still wounds a monster that its lava hole relocates', asy
     // One point from the lava, then the mine's three.
     assert.equal(lich.mhp, 94);
 });
-void test('a land mine flooding a square in view refreshes sight before the next message', async () => {
-    const level = freshObjectRoom();
+void test('a land mine flooding a square in view shows a moved light before the next message', async () => {
+    const level = freshObjectRoom({ recalculateVision: false });
+    for (let x = 7; x <= 16; x++)
+        for (let y = 6; y <= 14; y++) {
+            const square = level.requireAt(x, y);
+            square.lit = false;
+            square.waslit = false;
+        }
     const mine = addTrap(level, LANDMINE, 12, 10);
     level.requireAt(13, 10).typ = MOAT;
+    const vortex = await createMonsterAt('fire vortex', 14, 7, NO_MINVENT);
     vision_recalc(0);
-    game.vision_full_recalc = 0;
+    await flush_screen(1);
+    const cell = () => requireGameDisplay(game).grid[13 + 1]?.[15 - 1]?.ch;
+    assert.equal(cell(), ' ');
+    // The vortex has just moved; its new light waits for the next sight refresh.
+    placeMonsterAt(vortex, 14, 12);
     await explodeLandMine(mine, game, { random: limit => limit - 1, publish: () => { } });
+    await plineWithContinuation('You hear a distant explosion.');
     assert.equal(level.requireAt(12, 10).typ, MOAT);
-    assert.equal(game.vision_full_recalc, 1);
+    assert.notEqual(cell(), ' ');
 });
 //# sourceMappingURL=landmine_liquid_messages.test.js.map
