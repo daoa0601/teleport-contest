@@ -82,7 +82,7 @@ import {
     chargeUnpaidObjectAsDebt, objectTypeKnown,
 } from './shk.js';
 import { monsterSaddle } from './steed.js';
-import { monsterName } from './monster_name.js';
+import { monsterName, possessiveName } from './monster_name.js';
 import { deleteObject } from './object_delete.js';
 import { cansee } from './vision.js';
 import {
@@ -306,10 +306,6 @@ function sentenceSubject(monster: Monster) {
     return `${subject.charAt(0).toUpperCase()}${subject.slice(1)}`;
 }
 
-function possessive(name: string) {
-    return /s$/i.test(name) ? `${name}'` : `${name}'s`;
-}
-
 function potionHitsSaddle(monster: Monster, potion: GameObject): GameObject | null {
     const saddle = monsterSaddle(monster);
     if (!saddle) return null;
@@ -323,7 +319,7 @@ function potionHitsSaddle(monster: Monster, potion: GameObject): GameObject | nu
 }
 
 function saddleOwnerPhrase(monster: Monster, state: GameState) {
-    const phrase = possessive(monsterName(monster, { state, suppressIt: true, suppressSaddle: true }));
+    const phrase = possessiveName(monsterName(monster, { state, suppressIt: true, suppressSaddle: true }));
     return `${phrase.charAt(0).toUpperCase()}${phrase.slice(1)}`;
 }
 
@@ -974,7 +970,7 @@ async function applySupportedDirectEffect({
             await publish(`${sentenceSubject(monster)} falls asleep.`);
             if (monster === state.u?.ustuck && !state.u?.uswallow
                 && !heroFormSticks(state)) {
-                await publish(`${possessive(sentenceSubject(monster))} grip relaxes.`);
+                await publish(`${possessiveName(sentenceSubject(monster))} grip relaxes.`);
                 // C potionhit() calls slept_monst(), which uses unstuck().
                 await releaseHeroFromMonster(monster, { state, publish });
             }
@@ -1159,8 +1155,8 @@ export async function hitMonsterWithSupportedPotion({
         const name = monsterName(monster, { state });
         const onHead = target.x === monster.mx && target.y === monster.my;
         const impactTarget = saddle
-            ? `${possessive(monsterName(monster, { state, suppressIt: true, suppressSaddle: true }))} saddle`
-            : hasHead ? `${possessive(name)} ${onHead ? 'head' : 'body'}` : name;
+            ? `${possessiveName(monsterName(monster, { state, suppressIt: true, suppressSaddle: true }))} saddle`
+            : hasHead ? `${possessiveName(name)} ${onHead ? 'head' : 'body'}` : name;
         crashMessage = `The ${bottleName} crashes on ${impactTarget} and breaks into shards.`;
     }
     await publish(crashMessage);
