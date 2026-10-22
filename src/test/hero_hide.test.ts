@@ -3,7 +3,7 @@ import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { STONING } from '../js/const.js';
+import { MENU_TRADITIONAL, STONING } from '../js/const.js';
 import { flush_screen } from '../js/display.js';
 import { requireGameDisplay, game } from '../js/gstate.js';
 import { useHeroHide } from '../js/hero_hide.js';
@@ -145,4 +145,22 @@ void test('a scorpion autopicking up gold stays hidden under the remaining rock'
 
     assert.equal(gold.where, 'inventory');
     assert.equal(game.u.uundetected, 1);
+});
+
+void test('a scorpion that cancels a traditional pickup stays exposed on the pile', async () => {
+    freshRoomWithPolymorphedHero('scorpion');
+    requireFixtureGame(game);
+    game.flags.menu_style = MENU_TRADITIONAL;
+    await floorObject(ROCK, game.u.ux, game.u.uy);
+    await floorObject(DAGGER, game.u.ux, game.u.uy);
+    assert.ok(!game.u.uundetected);
+    const input = resetInputState();
+
+    await answerPrompts(pickupAtHero(), input, [
+        { prompt: /There are several objects here\.--More--/, keys: ' ' },
+        { prompt: /What kinds of thing do you want to pick up\?/, keys: '\x1b' },
+    ]);
+
+    assert.ok(!game.u.uundetected);
+    assert.equal(game.context.move, 0);
 });
