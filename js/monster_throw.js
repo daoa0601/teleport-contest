@@ -1,7 +1,7 @@
 // Native mthrowu.c:monshoot(), m_throw(), ohitmon(), and drop_throw().
 // Each projectile completes its visible flight and world effects before the
 // next projectile is detached from the attacker's inventory.
-import { A_DEX, A_STR, BOLT_LIM, D_CLOSED, D_LOCKED, IRONBARS, IS_DOOR, IS_OBSTRUCTED, M_AP_MONSTER, M_AP_TYPE, NEED_RANGED_WEAPON, NEED_WEAPON, P_BOW, P_DAGGER, P_DART, P_SHURIKEN, P_SLING, P_SPEAR, SINK, SLT_ENCUMBER, isok, } from './const.js';
+import { A_DEX, A_STR, BOLT_LIM, D_CLOSED, D_LOCKED, IRONBARS, IS_DOOR, IS_OBSTRUCTED, M_AP_MONSTER, M_AP_TYPE, MGIVENNAME, NEED_RANGED_WEAPON, NEED_WEAPON, P_BOW, P_DAGGER, P_DART, P_SHURIKEN, P_SLING, P_SPEAR, SINK, SLT_ENCUMBER, isok, } from './const.js';
 import { currentAttribute } from './attrib.js';
 import { artifactToHitBonus } from './artifacts.js';
 import { applyMonsterBlindness, monsterCanBeBlindedByObject, prepareHeroThrownBlindness, finishHeroThrownBlindness } from './blinding_attack.js';
@@ -605,7 +605,11 @@ async function launchVolley(source, weapon, target, state, { random = rn2, rollO
             appearance = objectHasPersonalName(single, state)
                 ? capitalizedDefiniteName(name, state).replace(/^The /u, 'the ') : withIndefiniteArticle(name);
         }
-        await publish(`${monsterName(source, { state, capitalized: true })} ${launched ? 'shoots' : 'throws'} ${appearance}${target ? ` at ${canSpotMonster(target) ? monsterName(target, { state }) : 'something'}` : ''}!`);
+        // C monshoot() names the target with some_mon_nam() before Monnam(source).
+        const targetName = target ? monsterName(target, {
+            state, augmentIt: true, suppressSaddle: !!MGIVENNAME(target),
+        }) : '';
+        await publish(`${monsterName(source, { state, capitalized: true })} ${launched ? 'shoots' : 'throws'} ${appearance}${target ? ` at ${targetName}` : ''}!`);
     }
     const shots = [];
     for (let index = 1; index <= volley; index++) {
