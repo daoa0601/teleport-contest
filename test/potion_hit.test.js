@@ -120,6 +120,23 @@ void test('an existing potion call name suppresses trycall and remains visible',
     assert.equal(game._objectCallNames?.[POT_FRUIT_JUICE], 'mystery');
     assert.equal(potion.where, 'gone');
 });
+void test('an unseen monster on a visible square takes the potion on its head', async () => {
+    freshPotionState();
+    requirePlayingGame(game);
+    const monster = await potionTarget(PM_PURPLE_WORM, { hitPoints: 8 });
+    monster.minvis = true;
+    const potion = await potionObject(POT_FRUIT_JUICE);
+    const messages = [];
+    initRng(2601n);
+    await hitMonsterWithSupportedPotion({
+        state: game,
+        monster,
+        potion,
+        targetVisible: true,
+        publish: async (message) => messages.push(message),
+    });
+    assert.equal(messages[0], 'The jar crashes on its head and breaks into shards.');
+});
 void test('hallucinated inert potion impact names a visible headless monster', async () => {
     freshPotionState({ hallucinationTurns: 4 });
     requirePlayingGame(game);
