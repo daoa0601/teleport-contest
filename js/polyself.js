@@ -11,7 +11,7 @@ import { heroIsUnaware } from './hero_sleep.js';
 import { endVoluntaryMultiTurn, heroHasInvoluntaryDelay, pendingArmorAction } from './command_state.js';
 import { finishHeroHelplessness } from './allmain.js';
 import { genocideDeathOptions, heroHasBeenGenocided, takePolymorphGenocide } from './hero_genocide.js';
-import { refreshHeroSeeing } from './hero_seeing.js';
+import { setMimicBlocking } from './hero_seeing.js';
 import { makeBlinded } from './sight_change.js';
 import { learnObjectType, observeObject } from './object_knowledge.js';
 import { minimalObjectName, ownedObjectName, simpleObjectName } from './objnam.js';
@@ -329,8 +329,9 @@ export async function returnHeroToHumanForm(state = game, { publish = plineWithC
 }
 async function finishHumanFormChange(restored, state, publish) {
     const hero = state.u;
+    // C polyman() only toggles mimic light blocking; its closing see_monsters() redraws.
     if (restored.changedSeeInvisible)
-        await refreshHeroSeeing({ state });
+        setMimicBlocking({ state });
     if (!heroCanUseTwoWeapons(state))
         await stopTwoWeaponCombat(state);
     if (hero.utrap && hero.utraptype === TT_PIT)
