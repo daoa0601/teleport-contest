@@ -168,7 +168,6 @@ export async function finishMonsterFireTrap(monster, event, state = game, { publ
             visible: event.inSight,
         });
         await igniteItems(monster.minvent || monster.inventory, {
-            carrier: monster,
             state,
             publish,
             random,

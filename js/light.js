@@ -28,7 +28,7 @@ import { learnObjectType } from './object_knowledge.js';
 import { cansee, clearAreaCells, vision_recalc } from './vision.js';
 import { objectWeight } from './weight.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
-import { carriedObjectOwner } from './shk.js';
+import { carriedObjectOwner, objectOwnershipPrefix } from './shk.js';
 import { objectName, objectNameIsPlural, ownedObjectName, observeObjectForNaming } from './objnam.js';
 import { withIndefiniteArticle } from './object_grammar.js';
 import { getObjectLocation } from './object_location.js';
@@ -657,7 +657,7 @@ function lightSourceName(object, state) {
     const quantity = object.quan ?? object.quantity ?? 1;
     return quantity > 1 ? makePlural(name) : name;
 }
-export async function igniteItems(objects, { carrier = null, state = game, publish = async () => { }, random = rn2, visible = true, } = {}) {
+export async function igniteItems(objects, { state = game, publish = async () => { }, random = rn2, visible = true, } = {}) {
     const ignited = [];
     for (const object of objects || []) {
         // catch_lit() requires a current location, even during floor effects.
@@ -669,11 +669,11 @@ export async function igniteItems(objects, { carrier = null, state = game, publi
         const blind = heroIsBlind(state);
         if (visible) {
             const name = lightSourceName(object, state);
-            const prefix = object.where === 'floor' ? 'The'
-                : carrier ? possessiveName(monsterName(carrier, { state, capitalized: true })) : 'Your';
+            // C catch_lit() names the source with Yname2(): shop, carrier, or your/the.
+            const prefix = objectOwnershipPrefix(object, state);
             await publish(blind
-                ? `${prefix} ${name} ${plural ? 'feel' : 'feels'} warm.`
-                : `${prefix} ${name} ${plural ? 'catch' : 'catches'} light!`);
+                ? `${prefix}${name} ${plural ? 'feel' : 'feels'} warm.`
+                : `${prefix}${name} ${plural ? 'catch' : 'catches'} light!`);
         }
         // C apply.c:catch_lit() credits discovery even when the fire is unseen.
         if (object.otyp === POT_OIL)

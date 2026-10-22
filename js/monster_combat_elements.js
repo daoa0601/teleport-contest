@@ -60,7 +60,7 @@ async function elementalContact(attacker, defender, type, context) {
     });
     if (fire)
         await igniteItems(defender.minvent, {
-            state, publish, random, carrier: defender, visible: canSeeMonster(defender),
+            state, publish, random, visible: canSeeMonster(defender),
         });
     return damageResult(damage);
 }

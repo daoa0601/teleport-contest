@@ -541,7 +541,7 @@ async function damageRayMonster(monster: Monster, nativeType: number, dice: numb
                     hit.damage += await destroyMonsterInventoryByElement(monster,
                         INVENTORY_DAMAGE.FIRE, sourceDamage, options);
                     await igniteItems(monster.minvent || monster.inventory, {
-                        carrier: monster, ...options,
+                        ...options,
                     });
                 }
             } else if (damageType === AD_COLD) {

@@ -318,7 +318,7 @@ async function elementalDamage(monster: Monster, context: HeroNaturalEffectConte
         state, publish, random, rollOne, visible: canSeeMonster(monster),
     });
     if (fire) await igniteItems(monster.minvent, {
-        state, publish, random, carrier: monster, visible: canSeeMonster(monster),
+        state, publish, random, visible: canSeeMonster(monster),
     });
     return damage;
 }

@@ -192,7 +192,7 @@ export async function applyArtifactHit(
             });
             if (damageType === 'fire') {
                 await igniteItems(defender.minvent || defender.inventory, {
-                    state, carrier: defender, publish, random,
+                    state, publish, random,
                     visible: cansee(defender.mx, defender.my),
                 });
             }

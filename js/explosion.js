@@ -147,7 +147,7 @@ export async function explode(x, y, type, damage, objectClass, style, { state = 
             const itemDamage = await destroyMonsterInventoryByElement(monster, damageKinds.get(damageType)?.items, damage, { state, publish, random, visible: seen });
             if (damageType === AD_FIRE) {
                 await burnArmorByFire(monster, state, publish, [], random, { visible: seen });
-                await igniteItems(monster.minvent || monster.inventory || [], { state, publish, random, visible: seen, carrier: monster });
+                await igniteItems(monster.minvent || monster.inventory || [], { state, publish, random, visible: seen });
             }
             if (cell.shield & 1) {
                 await applyMonsterGolemEffects(monster, damageType, damage, { state, publish });

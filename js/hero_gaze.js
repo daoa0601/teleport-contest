@@ -104,7 +104,6 @@ async function applyFieryGaze({ monster, state, publish, random, rollDice, finis
             visible: canSeeMonster(monster),
         });
         await igniteItems(monster.minvent || monster.inventory, {
-            carrier: monster,
             state,
             publish,
             random,
