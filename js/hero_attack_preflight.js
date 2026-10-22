@@ -140,7 +140,9 @@ export async function prepareAppliedWeaponAttack(monster, weapon, { state = game
         monster.msleeping = 0;
         newsym(monster.mx, monster.my);
         if (glyph.invisible) {
-            revealMonsterAppearance(monster);
+            // C seemimic() redraws the square even without a disguise to drop.
+            if (!revealMonsterAppearance(monster).revealed)
+                newsym(monster.mx, monster.my);
             return { proceed: true, spentTime: false };
         }
         if (!canSenseMonster(monster)) {
