@@ -4,7 +4,7 @@
 import { bypassObject } from './object_bypass.js';
 import { objectMaterial } from './object_material.js';
 import { publishHeardMessage } from './hero_speech.js';
-import { armorBonus, armorSlotFor, dragonFormForArmor } from './armor.js';
+import { armorBonus, armorSimpleName, armorSlotFor, dragonFormForArmor } from './armor.js';
 import { ownedObjectName, objectNameIsPlural, observeDistantObjectForNaming, simpleObjectName, } from './objnam.js';
 import { verbForSubject } from './object_grammar.js';
 import { canSeeMonster, displayColorName, newsym, plineWithContinuation } from './display.js';
@@ -22,7 +22,7 @@ import { rnl } from './rng.js';
 import { game } from './gstate.js';
 import { MONSTER_EXPERIENCE_META, MONSTER_FLAGS1, MONSTER_SIZE, MONSTER_NAME, MONSTER_SYMBOL, monsterBreaksArmor, monsterCanBeSaddled, monsterHasNoHands, monsterIsCentaur, monsterIsWhirly, monsterTypeName, monsterHornCount, monsterIsSlithy, monsterIsVerySmall, monsterSlipsArmor, monsterWrappingAllowed, } from './monster_data.js';
 import { destroyObjectFromMonsterInventory, dropMonsterArmor, } from './monster_inventory.js';
-import { AMULET_OF_GUARDING, AMULET_OF_LIFE_SAVING, AMULET_OF_REFLECTION, ALCHEMY_SMOCK, DUNCE_CAP, ELVEN_MITHRIL_COAT, HELM_OF_OPPOSITE_ALIGNMENT, GOLD_DRAGON_SCALES, MUMMY_WRAPPING, ROBE, OBJECT_BIMANUAL, OBJECT_DELAY, } from './object_data.js';
+import { AMULET_OF_GUARDING, AMULET_OF_LIFE_SAVING, AMULET_OF_REFLECTION, DUNCE_CAP, ELVEN_MITHRIL_COAT, HELM_OF_OPPOSITE_ALIGNMENT, GOLD_DRAGON_SCALES, MUMMY_WRAPPING, OBJECT_BIMANUAL, OBJECT_DELAY, } from './object_data.js';
 import { AC_MAX, DISMOUNT_FELL, I_SPECIAL, W_AMUL, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU, W_SADDLE, } from './const.js';
 const M1_NOHEAD = 0x00008000;
 const M1_MINDLESS = 0x00010000;
@@ -293,9 +293,8 @@ export async function adjustMonsterClothingAfterPolymorph(monster, state = game,
     const visible = cansee(monster.mx, monster.my);
     const name = () => monsterName(monster, { state, capitalized: true });
     const possessive = () => possessiveName(name());
-    const cloakName = (object) => object.otyp === ROBE ? 'robe'
-        : object.otyp === MUMMY_WRAPPING ? 'mummy wrapping'
-            : object.otyp === ALCHEMY_SMOCK ? 'apron' : 'cloak';
+    // C cloak_simple_name(): robe, wrapping, smock/apron, or cloak.
+    const cloakName = (object) => armorSimpleName(object, state);
     const drop = async (object) => {
         if (!object)
             return;
