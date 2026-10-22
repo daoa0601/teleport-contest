@@ -5,7 +5,7 @@
 import { bypassObject } from './object_bypass.js';
 import { objectMaterial } from './object_material.js';
 import { publishHeardMessage } from './hero_speech.js';
-import { armorBonus, armorSlotFor, dragonFormForArmor } from './armor.js';
+import { armorBonus, armorSimpleName, armorSlotFor, dragonFormForArmor } from './armor.js';
 import {
     ownedObjectName, objectNameIsPlural,
     observeDistantObjectForNaming, simpleObjectName,
@@ -40,8 +40,8 @@ import {
 } from './monster_inventory.js';
 import {
     AMULET_OF_GUARDING, AMULET_OF_LIFE_SAVING, AMULET_OF_REFLECTION,
-    ALCHEMY_SMOCK, DUNCE_CAP, ELVEN_MITHRIL_COAT, HELM_OF_OPPOSITE_ALIGNMENT,
-    GOLD_DRAGON_SCALES, MUMMY_WRAPPING, ROBE,
+    DUNCE_CAP, ELVEN_MITHRIL_COAT, HELM_OF_OPPOSITE_ALIGNMENT,
+    GOLD_DRAGON_SCALES, MUMMY_WRAPPING,
     OBJECT_BIMANUAL, OBJECT_DELAY, 
 } from './object_data.js';
 import {
@@ -320,9 +320,8 @@ export async function adjustMonsterClothingAfterPolymorph(
     const visible = cansee(monster.mx, monster.my);
     const name = () => monsterName(monster, { state, capitalized: true });
     const possessive = () => possessiveName(name());
-    const cloakName = (object: GameObject): string => object.otyp === ROBE ? 'robe'
-        : object.otyp === MUMMY_WRAPPING ? 'mummy wrapping'
-            : object.otyp === ALCHEMY_SMOCK ? 'apron' : 'cloak';
+    // C cloak_simple_name(): robe, wrapping, smock/apron, or cloak.
+    const cloakName = (object: GameObject): string => armorSimpleName(object, state);
     const drop = async (object: GameObject | null): Promise<void> => {
         if (!object) return;
         const placed = await dropMonsterArmor(monster, object, state, { publish });
