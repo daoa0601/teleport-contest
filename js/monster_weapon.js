@@ -241,7 +241,9 @@ export async function wieldMonsterWeapon(monster, state = game, { publish = plin
             const welded = `${plural ? 'are' : 'is'} welded to ${pronoun} ${hand}`;
             if (weapon.otyp === PICK_AXE) {
                 await publish(`Since ${monsterPossessive(monster, state)} weapon${plural ? 's' : ''} ${welded},`);
-                await publish(`${monsterName(monster, { state, capitalized: true })} cannot wield that pick-axe.`);
+                // C weapon.c:mon_wield_item() starts this line with mon_nam(), uncapitalized.
+                observeObjectForNaming(weapon, { state });
+                await publish(`${monsterName(monster, { state })} cannot wield that ${objectName(weapon, state)}.`);
             }
             else {
                 observeObjectForNaming(weapon, { state });
