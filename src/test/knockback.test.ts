@@ -3,7 +3,7 @@ import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { D_ISOPEN, DOOR, HOLE, LAVAPOOL, NO_MINVENT, PIT, W_AMUL, W_WEP } from '../js/const.js';
+import { D_CLOSED, D_ISOPEN, DOOR, HOLE, LAVAPOOL, NO_MINVENT, PIT, W_AMUL, W_WEP } from '../js/const.js';
 import { initializePet } from '../js/dog.js';
 import { game } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
@@ -239,3 +239,47 @@ for (const doorway of [false, true]) {
         assert.equal(rat.mx === 11, doorway);
     });
 }
+
+for (const form of ['rock mole', 'kobold'] as const) {
+    void test(`a giant ${form === 'rock mole' ? 'knocks a rock-eating hero toward solid rock' : 'cannot knock a hero into solid rock'}`, async () => {
+        freshObjectRoom({ left: 10 });
+        requireFixtureGame(game);
+        installPolymorphedHero(form);
+        const giant = await createMonsterAt('hill giant', 11, 10, NO_MINVENT);
+        const messages: string[] = [];
+        pushKeys(' '.repeat(8));
+
+        // hack.c test_move(TEST_MOVE) lets a pickless tunneler eat the rock.
+        const result = await tryKnockback(giant, game.u,
+            { attackType: AT_WEAP, damageType: AD_PHYS }, {
+                random: () => 0,
+                publish: message => { messages.push(message); },
+            });
+
+        assert.equal(result.knocked, form === 'rock mole');
+        if (form === 'rock mole') assert.match(messages[0] ?? '', /^The hill giant knocks you back/);
+        else assert.deepEqual(messages, []);
+    });
+}
+
+void test('a giant knocks a rock-eating hero diagonally toward a closed door', async () => {
+    const level = freshObjectRoom();
+    requireFixtureGame(game);
+    installPolymorphedHero('rock mole');
+    const door = level.requireAt(9, 9);
+    door.typ = DOOR;
+    door.doormask = D_CLOSED;
+    const giant = await createMonsterAt('hill giant', 11, 11, NO_MINVENT);
+    const messages: string[] = [];
+    pushKeys(' '.repeat(8));
+
+    // test_move() skips the doorway entry check when the door is eaten.
+    const result = await tryKnockback(giant, game.u,
+        { attackType: AT_WEAP, damageType: AD_PHYS }, {
+            random: () => 0,
+            publish: message => { messages.push(message); },
+        });
+
+    assert.equal(result.knocked, true);
+    assert.match(messages[0] ?? '', /^The hill giant knocks you back/);
+});
