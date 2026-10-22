@@ -202,4 +202,24 @@ for (const doorway of [false, true]) {
         assert.equal(rat.mx === 11, doorway);
     });
 }
+for (const form of ['rock mole', 'kobold']) {
+    void test(`a giant ${form === 'rock mole' ? 'knocks a rock-eating hero toward solid rock' : 'cannot knock a hero into solid rock'}`, async () => {
+        freshObjectRoom({ left: 10 });
+        requireFixtureGame(game);
+        installPolymorphedHero(form);
+        const giant = await createMonsterAt('hill giant', 11, 10, NO_MINVENT);
+        const messages = [];
+        pushKeys(' '.repeat(8));
+        // hack.c test_move(TEST_MOVE) lets a pickless tunneler eat the rock.
+        const result = await tryKnockback(giant, game.u, { attackType: AT_WEAP, damageType: AD_PHYS }, {
+            random: () => 0,
+            publish: message => { messages.push(message); },
+        });
+        assert.equal(result.knocked, form === 'rock mole');
+        if (form === 'rock mole')
+            assert.match(messages[0] ?? '', /^The hill giant knocks you back/);
+        else
+            assert.deepEqual(messages, []);
+    });
+}
 //# sourceMappingURL=knockback.test.js.map

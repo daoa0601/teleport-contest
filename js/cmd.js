@@ -412,8 +412,14 @@ export function heroTestMove(x, y) {
     if (!location)
         return false;
     const oozing = heroOozesUnderDoor(location);
-    if (blocksMove(x, y) && !heroCanPassWallAt(game, x, y) && !oozing)
-        return false;
+    if (blocksMove(x, y) && !heroCanPassWallAt(game, x, y) && !oozing) {
+        // C test_move(TEST_MOVE): a tunneler that needs no pick may eat
+        // the rock or closed door, unless it is underwater.
+        const formFlags = MONSTER_FLAGS1[heroSpecies(game)] ?? 0;
+        const tunnels = !!(formFlags & M1_TUNNEL) && !(formFlags & M1_NEEDPICK);
+        if (!tunnels || hero.uinwater || game.underwater)
+            return false;
+    }
     const passesWalls = heroPassesWalls(game);
     if (location.typ === IRONBARS && !passesWalls
         && !monsterPassesBars({ mnum: heroSpecies(game) }))
