@@ -433,6 +433,29 @@ void test('a burdened hero drops gear before crawling out of a pool', async () =
         'Pheew!  That was close.',
     ]);
 });
+void test('a hallucinating hero crawls out of a hallucinated liquid', async () => {
+    const level = poolAtHero();
+    requireFixtureGame(game);
+    game.u.hallucinationTurns = 200;
+    const liquids = new Set();
+    for (let attempt = 0; attempt < 6; attempt++) {
+        // Each escape lands on dry ground; flood it to fall in again.
+        level.requireAt(game.u.ux, game.u.uy).typ = POOL;
+        game.u.uhp = 20;
+        const messages = [];
+        await heroLiquidEffects({
+            ...noDisplay,
+            publish: async (message) => messages.push(message),
+            random: range => range - 1,
+            die: async () => assert.fail('the hero should escape'),
+        });
+        const crawl = messages.map(message => /^You try to crawl out of the (.+)\.$/.exec(message))
+            .find(match => match !== null);
+        assert.ok(crawl?.[1]);
+        liquids.add(crawl[1]);
+    }
+    assert.ok([...liquids].some(liquid => liquid !== 'water'));
+});
 void test('a cursed loadstone can keep the hero from crawling out', async () => {
     poolAtHero();
     requireFixtureGame(game);

@@ -703,7 +703,7 @@ async function leaveWater({ state, location, publish, }) {
             message = 'You pop into an air bubble.';
         }
         else if (isLavaAt(u.ux, u.uy, state)) {
-            message = 'You leave the water...';
+            message = `You leave the ${displayLiquidName('water', state)}...`;
         }
         else {
             message = backOnGroundMessage(false, state);
@@ -713,10 +713,10 @@ async function leaveWater({ state, location, publish, }) {
         stillInWater = true;
     }
     else if (u.levitating || u.levitation) {
-        message = 'You pop out of the water like a cork!';
+        message = `You pop out of the ${displayLiquidName('water', state)} like a cork!`;
     }
     else if (u.flying) {
-        message = 'You fly out of the water.';
+        message = `You fly out of the ${displayLiquidName('water', state)}.`;
     }
     else if (heroHasWaterWalking(state)) {
         message = 'You slowly rise above the surface.';
@@ -900,7 +900,7 @@ export async function heroLiquidEffects(options = {}) {
             : await emergencyDisrobe(state, random);
         if (escape.died)
             return { entered: true, moved: false, died: true };
-        await publish('You try to crawl out of the water.');
+        await publish(`You try to crawl out of the ${displayLiquidName('water', state)}.`);
         if (escape.dropped)
             await publish('You dump some of your gear to lose weight...');
         if (escape.escaped) {
