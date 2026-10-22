@@ -218,7 +218,7 @@ export async function resolveMonsterLiquid(monster, state = game, { announce = a
             });
         }
         if (inPool) {
-            await waterDamageChain(monster.minvent || monster.inventory || [], [], state);
+            await waterDamageChain(monster.minvent || monster.inventory || [], [], state, { publish: announce });
         }
         return { kind: 'split', survived: true, clone, fountainDried };
     }
@@ -237,7 +237,7 @@ export async function resolveMonsterLiquid(monster, state = game, { announce = a
                 if (state.program_state.gameover || monster.dead || monster.mhp <= 0)
                     return death;
             }
-            await waterDamageChain(monster.minvent || monster.inventory || [], [], state);
+            await waterDamageChain(monster.minvent || monster.inventory || [], [], state, { publish: announce });
         }
         else if (reaction.kind === 'drown') {
             const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
@@ -264,7 +264,7 @@ export async function resolveMonsterLiquid(monster, state = game, { announce = a
                 return death;
             if (monsterInAir(monster, state))
                 return { survived: true };
-            await waterDamageChain(monster.minvent || monster.inventory || [], [], state);
+            await waterDamageChain(monster.minvent || monster.inventory || [], [], state, { publish: announce });
             const relocation = await randomMonsterRelocation(monster, {
                 state, calls, random, rollOne, flags: RLOC_NOMSG,
             });
