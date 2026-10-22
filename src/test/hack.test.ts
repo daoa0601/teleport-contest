@@ -506,11 +506,14 @@ void test('a burdened hero drops gear before crawling out of a pool', async () =
 });
 
 void test('a hallucinating hero crawls out of a hallucinated liquid', async () => {
+    const level = poolAtHero();
+    requireFixtureGame(game);
+    game.u.hallucinationTurns = 200;
     const liquids = new Set<string>();
     for (let attempt = 0; attempt < 6; attempt++) {
-        poolAtHero();
-        requireFixtureGame(game);
-        game.u.hallucinationTurns = 20;
+        // Each escape lands on dry ground; flood it to fall in again.
+        level.requireAt(game.u.ux, game.u.uy).typ = POOL;
+        game.u.uhp = 20;
         const messages: string[] = [];
 
         await heroLiquidEffects({
