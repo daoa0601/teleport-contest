@@ -601,17 +601,12 @@ function glovesBlockRingShock(object, state) {
     const material = objectMaterial(gloves.otyp);
     return material < 11 || material > 17;
 }
-function destructionMessage(object, damageType, count, quantity, carrier = null, state = game) {
+function destructionMessage(object, damageType, count, quantity, state = game) {
     const one = count === 1;
     const prefix = one ? (quantity === 1 ? '' : 'One of ')
         : count < quantity ? 'Some of ' : quantity === 2 ? 'Both of ' : 'All of ';
-    const owner = carrier ? possessiveName(monsterName(carrier, {
-        state, capitalized: !prefix,
-    })) : null;
-    let name = owner ? `${owner} ${objectName(object, state)}`
-        : ownedObjectName(object, state, { capitalized: !prefix });
-    if (owner && (object.quan ?? object.quantity ?? 1) > 1)
-        name = makePlural(name);
+    // C destroy_items() uses yname()/Yname2(), whose mon_owns() names a pet as "your".
+    const name = ownedObjectName(object, state, { capitalized: !prefix });
     if (damageType === INVENTORY_DAMAGE.COLD) {
         return `${prefix}${name} ${one ? 'freezes and shatters' : 'freeze and shatter'}!`;
     }
@@ -693,7 +688,7 @@ async function destroyChosenItem(object, damageType, { state, publish, random, r
         return unharmed;
     if (!heroIsBlind(state))
         observeObject(object, state);
-    await publish(destructionMessage(object, damageType, destroyed, quantity, null, state));
+    await publish(destructionMessage(object, damageType, destroyed, quantity, state));
     if (damageType === INVENTORY_DAMAGE.FIRE
         && object.oclass === POTION_CLASS) {
         await applySupportedPotionVapor({ state, potion: object, publish });
@@ -843,7 +838,7 @@ export async function destroyMonsterInventoryByElement(monster, damageType, sour
             continue;
         if (visible) {
             observeObjectForNaming(object, { state });
-            await publish(destructionMessage(object, damageType, destroyed, quantity, monster, state));
+            await publish(destructionMessage(object, damageType, destroyed, quantity, state));
         }
         await removeMonsterQuantity(monster, object, destroyed, state, publish);
         if (!resistsItemDamage)
