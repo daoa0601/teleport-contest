@@ -1913,9 +1913,9 @@ async function resolveDeferredHeroItemTheft(
     }
     if (dist2(monster.mx, monster.my, game.u.ux, game.u.uy) > 2) return false;
     const seenBeforeRemoval = canSpotMonster(monster);
-    let subject = seenBeforeRemoval
-        ? monsterName(monster, { state: game, capitalized: true })
-        : animal ? 'Something' : 'Someone';
+    // C steal() keeps Some_Monnam() from before any removal; an unseen thief
+    // named by a hallucinating hero takes a random someone/something.
+    let subject = monsterName(monster, { state: game, capitalized: true, augmentIt: true });
     const meal = game.context.victual;
     if (game._occupation?.key === 'eat-food' && meal && meal.usedtime >= meal.reqtime) {
         await stopHeroOccupation(game);
