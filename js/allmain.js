@@ -3615,13 +3615,14 @@ export async function moveloop_core() {
         vision_recalc(0);
         g.vision_full_recalc = 0;
     }
-    // C refreshes only the status here.  The map buffer reaches the screen
-    // at rhack()'s input flush, which a helpless hero does not get, so a
-    // --More-- during the next monster phase still shows the older map.
-    if (currentMulti(g) < 0)
-        updateStatusLines();
-    else
+    // C runs bot() or timebot() here and then curs_on_u(), whose
+    // flush_screen() draws the buffered map, only when the status changed.
+    // A helpless hero gets no rhack() input flush, so without a status
+    // change a --More-- in the next monster phase still shows the older map.
+    if (currentMulti(g) >= 0 || g.context.botl || g.context.time_botl)
         await flush_screen(1);
+    else
+        updateStatusLines();
     await heroEveryturnEffect(g);
     // A negative C `multi` suppresses rhack() but still leaves context.move
     // set, so the next moveloop invocation spends another hero action.  Once
