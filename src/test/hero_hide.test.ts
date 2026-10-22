@@ -3,13 +3,16 @@ import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { STONING } from '../js/const.js';
+import { MENU_TRADITIONAL, STONING } from '../js/const.js';
 import { flush_screen } from '../js/display.js';
 import { requireGameDisplay, game } from '../js/gstate.js';
 import { useHeroHide } from '../js/hero_hide.js';
+import { resetInputState } from '../js/input.js';
+import { autopickupAtHero, pickupAtHero } from '../js/pickup.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { CORPSE, OBJECT_NAMES, ROCK } from '../js/object_data.js';
+import { CORPSE, DAGGER, GOLD_PIECE, OBJECT_NAMES, ROCK } from '../js/object_data.js';
 import { runMonsterAbilityCommand } from './support/commands.js';
+import { answerPrompts } from './support/input-boundaries.js';
 import { floorObject } from './support/game-objects.js';
 import { freshRoomWithPolymorphedHero } from './support/hero-state.js';
 
@@ -113,4 +116,51 @@ void test('hiding under a stack uses its plural name without a count', async () 
 
     assert.ok(game._pending_message.includes('hiding underneath rocks.'));
     assert.equal(game.u.uundetected, 1);
+});
+
+void test('a scorpion that picks up its only cover is no longer hidden', async () => {
+    freshRoomWithPolymorphedHero('scorpion');
+    requireFixtureGame(game);
+    await floorObject(DAGGER, game.u.ux, game.u.uy);
+    await runMonsterAbilityCommand();
+    assert.equal(game.u.uundetected, 1);
+
+    await pickupAtHero();
+
+    assert.equal(game.u.uundetected, 0);
+});
+
+void test('a scorpion autopicking up gold stays hidden under the remaining rock', async () => {
+    freshRoomWithPolymorphedHero('scorpion');
+    requireFixtureGame(game);
+    game.flags.pickup = true;
+    game.flags.pickup_types = '$';
+    await floorObject(ROCK, game.u.ux, game.u.uy);
+    const gold = await floorObject(GOLD_PIECE, game.u.ux, game.u.uy, { quan: 12 });
+    await runMonsterAbilityCommand();
+    assert.equal(game.u.uundetected, 1);
+
+    const input = resetInputState();
+    await answerPrompts(autopickupAtHero(), input, [{ prompt: /\$ - 12 gold pieces\.--More--/, keys: ' ' }]);
+
+    assert.equal(gold.where, 'inventory');
+    assert.equal(game.u.uundetected, 1);
+});
+
+void test('a scorpion that cancels a traditional pickup stays exposed on the pile', async () => {
+    freshRoomWithPolymorphedHero('scorpion');
+    requireFixtureGame(game);
+    game.flags.menu_style = MENU_TRADITIONAL;
+    await floorObject(ROCK, game.u.ux, game.u.uy);
+    await floorObject(DAGGER, game.u.ux, game.u.uy);
+    assert.ok(!game.u.uundetected);
+    const input = resetInputState();
+
+    await answerPrompts(pickupAtHero(), input, [
+        { prompt: /There are several objects here\.--More--/, keys: ' ' },
+        { prompt: /What kinds of thing do you want to pick up\?/, keys: '\x1b' },
+    ]);
+
+    assert.ok(!game.u.uundetected);
+    assert.equal(game.context.move, 0);
 });

@@ -26,6 +26,7 @@ import { hasBucCategory, matchesObjectCategories, queryObjectClasses } from './o
 import type { ObjectClassSelection } from './object_class_query.js';
 import { yn_function } from './query.js';
 import { useUpFloorObject } from './floor_consumption.js';
+import { hideHeroUnder } from './monster_hiding.js';
 import { remoteBurglary } from './shop_departure.js';
 import { roomsAt } from './room.js';
 import { heroCanReachFloor } from './floor_reach.js';
@@ -47,7 +48,7 @@ import {
 import { nearCapacity, pickupLoadPrefix } from './weight.js';
 import { heroIsBlind } from './senses.js';
 import { touchPetrifyingCorpse, willFeelPetrifyingCorpse } from './stoning.js';
-import { heroCannotTake } from './polyself.js';
+import { heroCannotTake, heroFormHidesUnderObjects } from './polyself.js';
 import { heroIsUnaware } from './hero_sleep.js';
 import { lookInsideSwallower } from './swallowed_inventory.js';
 import { dolook } from './invent.js';
@@ -71,6 +72,7 @@ interface PickupSource {
     objects: GameObject[];
 }
 type PickupSelection = GameObject | CountedSelection<GameObject>;
+type TraditionalPickup = 'canceled' | { attempted: boolean };
 type ScrollPickupResult = { decision: 'stop' } | { decision: 'consumed' }
     | { decision: 'lift'; object: GameObject; count: number };
 export interface AddedInventoryObject {
@@ -100,13 +102,28 @@ export async function pickupAtHero(count = Math.max(0, game._commandCount || 0))
     }
     let attempted: boolean;
     if (game.flags.menu_style === MENU_TRADITIONAL && !game.iflags.menu_requested) {
-        attempted = await pickUpTraditionally(source, count);
+        const result = await pickUpTraditionally(source, count);
+        // C pickup(): declining the class prompt jumps past the cover check.
+        if (result === 'canceled') {
+            game.context.move = 0;
+            game._pickupEncumbrance = 0;
+            return;
+        }
+        attempted = result.attempted;
     } else {
         const selected = await choosePickupObjects(source, objects, count);
         attempted = (await takeSelectedObjects(source, selected)).attempted;
     }
+    reassessHeroCover(source);
     game.context.move = attempted ? 1 : 0;
     game._pickupEncumbrance = 0;
+}
+
+// C pickup(): once picking up ends outside an engulfer, a hider re-checks its
+// cover; taking the whole pile leaves nothing to hide under.
+function reassessHeroCover(source: PickupSource): void {
+    if (!source.monster && !game.program_state.gameover && heroFormHidesUnderObjects(game))
+        hideHeroUnder(game);
 }
 
 export async function autopickupAtHero(): Promise<void> {
@@ -146,22 +163,23 @@ export async function autopickupAtHero(): Promise<void> {
         if (objects.length && game._runState?.mode !== 8) stopRun();
     }
     const { picked } = await takeSelectedObjects(source, objects.filter(autopickupAllows));
+    reassessHeroCover(source);
     if (!monster && !game.program_state?.gameover) await checkHere(source, picked > 0);
     game._pickupEncumbrance = 0;
 }
 
-async function pickUpTraditionally(source: PickupSource, count: number): Promise<boolean> {
+async function pickUpTraditionally(source: PickupSource, count: number): Promise<TraditionalPickup> {
     const objects = [...source.objects];
     const onlyObject = objects[0];
     if (objects.length === 1 && count && onlyObject) {
         await takeSelectedObjects(source, [{ value: onlyObject, count: Math.min(count, objectQuantity(onlyObject)) }]);
-        return true;
+        return { attempted: true };
     }
     let selection: ObjectClassSelection | null = null;
     if (objects.length >= 2) {
         await plineWithContinuation(`There are ${objects.length <= 10 ? 'several' : 'many'} objects here.`);
         selection = await queryObjectClasses('pick up', source.objects);
-        if (!selection) return false;
+        if (!selection) return 'canceled';
         if (selection.menu !== 'none') {
             const requested = selection;
             const eligible = requested.menu === 'all' ? objects
@@ -169,7 +187,7 @@ async function pickUpTraditionally(source: PickupSource, count: number): Promise
             const selected = await choosePickupObjects(source, eligible, 0, {
                 autoSelect: false, feelCockatrice: false, groupByClass: selection.oneAtATime,
             });
-            return (await takeSelectedObjects(source, selected)).attempted;
+            return { attempted: (await takeSelectedObjects(source, selected)).attempted };
         }
     }
     let all = selection?.everything ?? true;
@@ -208,7 +226,7 @@ async function pickUpTraditionally(source: PickupSource, count: number): Promise
         if (result.stopped) break;
     }
     if (picked && !source.monster && !game.program_state.gameover) newsym_force(source.x, source.y);
-    return attempted;
+    return { attempted };
 }
 
 async function choosePickupObjects(source: PickupSource, objects: readonly GameObject[], count: number,
