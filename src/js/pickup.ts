@@ -26,6 +26,7 @@ import { hasBucCategory, matchesObjectCategories, queryObjectClasses } from './o
 import type { ObjectClassSelection } from './object_class_query.js';
 import { yn_function } from './query.js';
 import { useUpFloorObject } from './floor_consumption.js';
+import { hideHeroUnder } from './monster_hiding.js';
 import { remoteBurglary } from './shop_departure.js';
 import { roomsAt } from './room.js';
 import { heroCanReachFloor } from './floor_reach.js';
@@ -47,7 +48,7 @@ import {
 import { nearCapacity, pickupLoadPrefix } from './weight.js';
 import { heroIsBlind } from './senses.js';
 import { touchPetrifyingCorpse, willFeelPetrifyingCorpse } from './stoning.js';
-import { heroCannotTake } from './polyself.js';
+import { heroCannotTake, heroFormHidesUnderObjects } from './polyself.js';
 import { heroIsUnaware } from './hero_sleep.js';
 import { lookInsideSwallower } from './swallowed_inventory.js';
 import { dolook } from './invent.js';
@@ -105,8 +106,16 @@ export async function pickupAtHero(count = Math.max(0, game._commandCount || 0))
         const selected = await choosePickupObjects(source, objects, count);
         attempted = (await takeSelectedObjects(source, selected)).attempted;
     }
+    reassessHeroCover(source);
     game.context.move = attempted ? 1 : 0;
     game._pickupEncumbrance = 0;
+}
+
+// C pickup(): once picking up ends outside an engulfer, a hider re-checks its
+// cover; taking the whole pile leaves nothing to hide under.
+function reassessHeroCover(source: PickupSource): void {
+    if (!source.monster && !game.program_state.gameover && heroFormHidesUnderObjects(game))
+        hideHeroUnder(game);
 }
 
 export async function autopickupAtHero(): Promise<void> {
@@ -146,6 +155,7 @@ export async function autopickupAtHero(): Promise<void> {
         if (objects.length && game._runState?.mode !== 8) stopRun();
     }
     const { picked } = await takeSelectedObjects(source, objects.filter(autopickupAllows));
+    reassessHeroCover(source);
     if (!monster && !game.program_state?.gameover) await checkHere(source, picked > 0);
     game._pickupEncumbrance = 0;
 }
