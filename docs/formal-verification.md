@@ -117,6 +117,53 @@ but none is checked yet:
 - Log comparison uses structured entries. C's `@ caller` annotation and
   number prefix are ignored, as in scoring.
 
+## Call-site domains
+
+`verification/callsites/` checks whether every caller stays inside the proved
+domains. `extract.mjs` uses the TypeScript checker to find every call whose
+signature resolves to an `rng.ts` draw function. That includes aliases and
+injected `random: typeof rn2` fields, which account for 430 sites. For each
+call it records the argument terms and the conditions that dominate the call
+in its function. `check.py` asks Z3 whether the lower bound holds (`x >= 1`;
+for `d`, `n >= 0` and `x >= 1` unless `n = 0`) and whether the argument is an
+integer, since a fraction reaches `BigInt()` and throws.
+
+```sh
+node verification/callsites/extract.mjs > .cache/rng-callsites.json   # ~10 s
+cd verification/equivalence && uv run ../callsites/check.py ../../.cache/rng-callsites.json   # ~7 s
+```
+
+| Class | Sites | Meaning |
+|---|---|---|
+| constant | 1,963 | The argument alone is in the domain: literals, folded constants, constant array lengths, draw results |
+| guarded | 115 | In the domain given dominating guards, helper return bounds, or the bounds of every direct caller of a non-escaping function |
+| invariant | 36 | In the domain only given a listed C range: attributes 3..125, `ulevel` 1..30, `level_difficulty() >= 1`, monster level 0..49, attack dice ≥ 0 |
+| unproved | 239 | Depends on state the analysis cannot see |
+
+The unproved sites fall into these groups: map and room geometry (43);
+collections that may be empty (36); counts, totals, and weights (30);
+data-table lookups such as `MONSTER_NAME.indexOf(...)` (30); dice from data
+(22); `spe` charges (13); hit points and energy (8); Lua-supplied values (3);
+other state-derived values (44). Nine sites are in the browser fuzzer harness,
+not the game. One site may receive a fraction: `write.ts`
+`rn1(basecost / 2, basecost / 2)`, where C divides integers. It is safe only
+because every ink cost in `writingCost()` is even.
+
+Triage so far finds no divergence. Each unproved site inspected (`zap.c`
+`rn2(elig_stacks)`, `pray.c` `rn2((Luck + 6) >> 1)`, the `engrave` and
+`hunger` formulas) passes C's own expression under C's own guard. These sites
+therefore inherit C's unstated invariants rather than adding risk. Across the
+15,010 sessions of the native development corpus, the C RNG log contains no
+call with a non-positive argument to `rn2`, `rnd`, `rnl`, or `rne`, and no `d`
+with a negative count or zero sides. A violation would desynchronize the
+stream: C draws, while JavaScript returns 0 without drawing.
+
+Guards are matched by source text, so a "guarded" proof assumes the guarded
+value does not change between the guard and the call. Interprocedural facts go
+three calls deep. Upper bounds (`n*x <= INT_MAX`, `abs(i) <= 1e8` for `rnz`) are
+reported in the summary line only; 349 sites are not proved bounded above,
+nearly all because their inputs have no stated maximum.
+
 ## Staged plan
 
 1. **CI (days).** Build the recorder sources in a GitHub Actions job (as
@@ -129,10 +176,9 @@ but none is checked yet:
 3. **ISAAC64 (1–2 weeks).** Prove `isaac64.ts` (BigInt) ≡ `isaac64.c`
    (`uint64_t`) with bit-vectors and a per-round loop invariant. This removes
    the generator from the trust base.
-4. **Call-site domains (1 week).** Prove or flag every TS call of `rn2`,
-   `rnd`, `rnl`, `d`, and `rnz` whose argument is not provably inside the
-   domain. This is the cheapest way to turn the divergences above into
-   actionable findings.
+4. **Call-site domains (prototype done; see above).** Next: state
+   invariants for room bounds, `nroom`, and data tables (each closes dozens of
+   sites), and a CI check that new call sites land in the proved classes.
 5. **Differential fuzzing of stateful functions (2–3 weeks).** Drive single C
    functions in the probe build and their TS ports from serialized state, with
    coverage guidance, for code where a state model is not worth writing.

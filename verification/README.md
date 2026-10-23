@@ -32,3 +32,16 @@ negative checks. The exit status is nonzero if any claim fails.
 | `specs.py` | function pairs, input domains, probes, mutants, the one loop invariant |
 | `prove.py` | builds the Z3 queries and reports |
 | `harness/rn1.c` | wrapper so clang expands the `rn1()` macro from `hack.h` |
+
+## `callsites/`: do callers stay inside the proved domains?
+
+`extract.mjs` finds every call that resolves to an `rng.ts` draw function
+through the TypeScript checker, including aliases and injected
+`random: typeof rn2` fields. `check.py` classifies each site as constant,
+guarded, invariant, or unproved, and prints each unproved site with a
+counterexample.
+
+```sh
+node verification/callsites/extract.mjs > .cache/rng-callsites.json
+cd verification/equivalence && uv run ../callsites/check.py ../../.cache/rng-callsites.json
+```
