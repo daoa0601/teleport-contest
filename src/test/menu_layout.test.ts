@@ -1,10 +1,14 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { PICK_ONE } from '../js/const.js';
+import { NHW_MENU, PICK_ONE } from '../js/const.js';
 import { GameDisplay } from '../js/game_display.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { NO_COLOR, Terminal } from '../js/terminal.js';
+import {
+    tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu,
+    tty_select_menu, tty_start_menu,
+} from '../js/tty_menu.js';
 import {
     ATR_INVERSE, showChoiceWindow, showInventoryWindow, showMultiSelectWindow,
     showDisclosureOverlay, showPagedPickOneMenu, showTextMenuOverlay,
@@ -98,6 +102,39 @@ void test('disabling menu overlays clears even a short menu from the left edge',
         await menu;
     }
 });
+
+for (const overlay of [true, false]) {
+    void test(`a retained menu uses ${overlay ? 'corner' : 'full-screen'} placement after menu_overlay changes`, async () => {
+        const display = menuDisplay();
+        game.flags.menu_overlay = !overlay;
+        const window = tty_create_nhwindow<string>(NHW_MENU);
+        await tty_start_menu(window);
+        tty_add_menu(window, { identifier: 'dagger', selector: 'a', text: 'a dagger' });
+        tty_end_menu(window);
+        const input = resetInputState();
+        input.feed('\n');
+        await tty_select_menu(window, PICK_ONE);
+
+        game.flags.menu_overlay = overlay;
+        display.setCell(5, 10, '@', NO_COLOR);
+        const selection = tty_select_menu(window, PICK_ONE);
+        try {
+            await input.waitUntilBlocked();
+            const firstColumn = overlay ? 41 : 1;
+            assert.equal(textRow(display, 0).indexOf('a - a dagger'), firstColumn,
+                'redisplay must use the current overlay setting');
+            assert.equal(display.grid[10]?.[5]?.ch, overlay ? '@' : ' ',
+                'full-screen placement clears the map while a corner preserves it');
+            assert.equal(display.cursorCol, firstColumn + '(end) '.length);
+            assert.equal(display.cursorRow, 1);
+        } finally {
+            input.feed('a');
+            const result = await selection;
+            await tty_destroy_nhwindow(window);
+            assert.equal(result.selections[0]?.identifier, 'dagger');
+        }
+    });
+}
 
 void test('an empty inventory menu still displays a dismissible footer', async () => {
     const display = menuDisplay();
