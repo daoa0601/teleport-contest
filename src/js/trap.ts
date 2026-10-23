@@ -320,7 +320,9 @@ function heroLanternIsDunked(state: GameState): boolean {
             || heroIsFlying(state) || heroHasWaterWalking(state));
 }
 
-export function splashLitObject(object: GameObject | null | undefined, messages: string[] = [], state = game): boolean {
+// C splash_lit()/snuff_lit(): each message precedes end_burn(), so the
+// darkened view waits for the next flush instead of preceding the message.
+export async function splashLitObject(object: GameObject | null | undefined, publish: MessagePublisher, state = game): Promise<boolean> {
     if (!object?.lamplit) return false;
     // snuff_lit() handles flames and lanterns, not magical light sources.
     if (![OIL_LAMP, MAGIC_LAMP, BRASS_LANTERN, POT_OIL,
@@ -350,7 +352,7 @@ export function splashLitObject(object: GameObject | null | undefined, messages:
             const action = audible && visible
                 ? 'crackles and flickers'
                 : audible ? 'crackles' : 'flickers';
-            messages.push(`${ownedObjectName(object, state)} ${action}.`);
+            await publish(`${ownedObjectName(object, state)} ${action}.`);
         }
         if (!dunkedLantern && !snuff) return false;
     }
@@ -362,11 +364,11 @@ export function splashLitObject(object: GameObject | null | undefined, messages:
         const candle = object.otyp === TALLOW_CANDLE || object.otyp === WAX_CANDLE;
         if (candle || object.otyp === CANDELABRUM_OF_INVOCATION) {
             const many = candle ? object.quan > 1 : object.spe > 1;
-            messages.push(`${objectOwnershipPrefix(object, state, { capitalized: true })}${
+            await publish(`${objectOwnershipPrefix(object, state, { capitalized: true })}${
                 candle ? '' : "candelabrum's "}candle${many ? "s' flames are" : "'s flame is"} extinguished.`);
         } else {
             const plural = objectNameIsPlural(object, state);
-            messages.push(`${ownedObjectName(object, state)} ${plural ? 'go' : 'goes'} out!`);
+            await publish(`${ownedObjectName(object, state)} ${plural ? 'go' : 'goes'} out!`);
         }
     }
     if (!endObjectBurn(object, state, state.moves ?? 0))
@@ -414,12 +416,7 @@ export async function waterDamageObject(
         if (publish) await publish(message);
         else messages.push(message);
     };
-    const lightMessages: string[] = [];
-    if (splashLitObject(object, lightMessages, state)) {
-        for (const message of lightMessages) await emit(message);
-        return 'damaged';
-    }
-    for (const message of lightMessages) await emit(message);
+    if (await splashLitObject(object, emit, state)) return 'damaged';
     const name = description ?? objectCombatName(object, { state });
     const carried = carriedByHero(object, state);
     const plural = verbForSubject(name, 'are') === 'are';

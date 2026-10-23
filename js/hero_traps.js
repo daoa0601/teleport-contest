@@ -1001,10 +1001,7 @@ async function triggerRustTrap(trap) {
                 continue;
             if (hero.twoweap && object === heroObject('uswapwep'))
                 continue;
-            const messages = [];
-            splashLitObject(object, messages, game);
-            for (const message of messages)
-                await plineWithContinuation(message);
+            await splashLitObject(object, plineWithContinuation, game);
         }
         const cloak = heroObject('uarmc');
         const suit = heroObject('uarm');
