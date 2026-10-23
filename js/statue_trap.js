@@ -13,6 +13,7 @@ import { removeWornHeroItem } from './hero_equipment.js';
 import { costlySpot, objectOwnershipPrefix } from './shk.js';
 import { stolenValue } from './shop_loss.js';
 import { game, requireGameLevel } from './gstate.js';
+import { revealMonsterAppearance } from './monster_appearance.js';
 import { makemonAt, makemonNear } from './mklev.js';
 import { setMonsterMalign } from './monster_alignment.js';
 import { MONSTER_GENO, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL, monsterIsNonliving, monsterIsVampireShifter, } from './monster_data.js';
@@ -160,9 +161,9 @@ export async function animateStatue(statue, x, y, { state = game, shatter = fals
         return { monster: null, unique };
     }
     nameReleasedMonster(monster, statue);
-    monster.m_ap_type = 0;
-    monster.mappearance = 0;
-    monster.mundetected = 0;
+    // C animate_statue(): a mimic shows itself; other hiders stop hiding.
+    if (!revealMonsterAppearance(monster).revealed)
+        monster.mundetected = 0;
     monster.msleeping = 0;
     if (!magic) {
         monster.mtame = 0;
