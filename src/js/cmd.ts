@@ -1941,8 +1941,12 @@ async function monsterPreventsStairTravel(up: boolean): Promise<boolean> {
 export async function travelStairs(up: boolean) {
     const level = requireGameLevel();
     requireInitializedHero(game.u);
+    // C do.c doup()/dodown() start with set_move_cmd(): the menu prefix's
+    // no-pickup request and the cleared travel state outlive a refusal.
     game.u.dx = game.u.dy = 0;
     game.u.dz = up ? -1 : 1;
+    if (game.iflags.menu_requested) game.context.nopick = true;
+    game.context.travel = game.context.travel1 = false;
     if (MONSTER_MOVE[game.u.umonnum] === 0) {
         const where = propertyIsActive('levitation', game) || Is_airlevel(game.u.uz)
             || Is_waterlevel(game.u.uz) ? 'in place' : 'to the ground';
