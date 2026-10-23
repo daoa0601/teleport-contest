@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { rhack } from '../js/cmd.js';
-import { game } from '../js/gstate.js';
+import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { DAGGER, SACK } from '../js/object_data.js';
+import { A_CON, A_STR } from '../js/const.js';
+import { CHEST, DAGGER, SACK } from '../js/object_data.js';
 import { floorObject, knownObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createStaffedShop } from './support/shop.js';
@@ -74,6 +75,24 @@ void test('contents that overflow a full bill are free, each with its own notice
     assert.match(text, /for this sack and its contents\."/);
     assert.equal(shopkeeper.eshk.bill.length, 200);
     assert.deepEqual(daggers.map(dagger => dagger.unpaid ?? false), [true, false, false]);
+});
+
+void test('a chest with a nonzero spe still bills its contents', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    game.u.acurr.a[A_STR] = game.u.amax.a[A_STR] = 118;
+    game.u.acurr.a[A_CON] = game.u.amax.a[A_CON] = 18;
+    const { shopkeeper } = await createStaffedShop();
+    // spe 1 marks Schroedinger's box only on a large box (C obj.h).
+    const chest = await floorObject(CHEST, 10, 10, { initialize: false, cknown: true, spe: 1 });
+    const dagger = await knownObject(DAGGER, { where: 'contained', container: chest });
+    chest.contents = [dagger];
+
+    await withMessagePages(() => rhack(','.charCodeAt(0)), resetInputState(), /chest|For you/, 4);
+
+    assert.equal(chest.where, 'inventory');
+    assert.equal(dagger.unpaid, true);
+    assert.equal(shopkeeper.eshk.bill.length, 2);
 });
 
 type StaffedKeeper = Awaited<ReturnType<typeof createStaffedShop>>['shopkeeper'];

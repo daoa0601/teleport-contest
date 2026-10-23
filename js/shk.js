@@ -928,9 +928,9 @@ async function billBoxContent(container, resident, publish, state) {
         }
     }
 }
+// C obj.h SchroedingersBox(): only a large box can hold the cat.
 function isSchroedingersBox(object) {
-    return (object.otyp === LARGE_BOX || object.otyp === CHEST
-        || object.otyp === ICE_BOX) && object.spe === 1;
+    return object.otyp === LARGE_BOX && object.spe === 1;
 }
 // C shk.c:566 costly_adjacent(): a shop wall spot (edge flag, door
 // included) or the keeper's free-spot home square.  Not a distance test.

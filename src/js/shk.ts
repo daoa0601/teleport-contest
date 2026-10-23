@@ -985,9 +985,9 @@ async function billBoxContent(container: GameObject, resident: BilledShopkeeper,
     }
 }
 
+// C obj.h SchroedingersBox(): only a large box can hold the cat.
 function isSchroedingersBox(object: GameObject): boolean {
-    return (object.otyp === LARGE_BOX || object.otyp === CHEST
-        || object.otyp === ICE_BOX) && object.spe === 1;
+    return object.otyp === LARGE_BOX && object.spe === 1;
 }
 
 // C shk.c:566 costly_adjacent(): a shop wall spot (edge flag, door
