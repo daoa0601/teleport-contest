@@ -63,6 +63,7 @@ import { isAxe } from './weapon_type.js';
 import { updateIceObjectTimersAt } from './floor_object.js';
 import { deleteEngravingAt } from './engrave.js';
 import { isLavaAt, isPoolAt, levelHasCeiling, monsterFliesOrFloats } from './terrain_properties.js';
+import { withIndefiniteArticle } from './object_grammar.js';
 const S_ZOMBIE = 52;
 const S_MUMMY = 39;
 const MZ_HUGE = 4;
@@ -91,9 +92,6 @@ function heroIsAirborne(state) {
 }
 function verbose(state) {
     return state.flags?.verbose !== false;
-}
-function article(word) {
-    return /^[aeiou]/i.test(word) ? `an ${word}` : `a ${word}`;
 }
 function capitalized(text) {
     return text.charAt(0).toUpperCase() + text.slice(1);
@@ -414,20 +412,20 @@ export async function digActualHole(x, y, madeBy, ttyp, { state = game } = {}) {
             await plineWithContinuation(`You dig an adjacent ${trapWord}.`);
         }
         else {
-            await plineWithContinuation(`You dig ${article(trapWord)} ${through} the ${surfaceType}.`);
+            await plineWithContinuation(`You dig ${withIndefiniteArticle(trapWord)} ${through} the ${surfaceType}.`);
         }
     }
     else if (madeBy && typeof madeBy === 'object'
         && canSeeMonster(madeBy)) {
-        await plineWithContinuation(`${monsterSubject(madeBy)} digs ${article(trapWord)} `
+        await plineWithContinuation(`${monsterSubject(madeBy)} digs ${withIndefiniteArticle(trapWord)} `
             + `${through} the ${surfaceType}.`);
     }
     else if (cansee(x, y) && verbose(state)) {
         if (IS_STWALL(oldTyp)) {
-            await plineWithContinuation(`The ${surfaceType} crumbles into ${article(trapWord)}.`);
+            await plineWithContinuation(`The ${surfaceType} crumbles into ${withIndefiniteArticle(trapWord)}.`);
         }
         else {
-            await plineWithContinuation(`${capitalized(article(trapWord))} appears `
+            await plineWithContinuation(`${capitalized(withIndefiniteArticle(trapWord))} appears `
                 + `in the ${surfaceType}.`);
         }
     }

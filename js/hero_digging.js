@@ -41,6 +41,7 @@ import { vision_note_blocker_change } from './vision.js';
 // Peer dig modules; see docs/porting-status.md handoff for the split.
 import { digCheck, digCheckFailMessage, digHole } from './digging_terrain.js';
 import { addShopDamage, payForShopDamage, shopDig, } from './shop_damage.js';
+import { withIndefiniteArticle } from './object_grammar.js';
 const PM_EARTH_ELEMENTAL = MONSTER_NAME.indexOf('earth elemental');
 const PM_XORN = MONSTER_NAME.indexOf('xorn');
 const M1_WALLWALK = 0x00000008; // monflag.h: passes_walls(ptr)
@@ -200,9 +201,6 @@ function feelNewsym(x, y, state) {
         feel_location(x, y);
     else
         newsym(x, y);
-}
-function articleFor(name) {
-    return /^[aeiou]/i.test(name) ? `an ${name}` : `a ${name}`;
 }
 export async function placeTreeFruit(x, y, state = game, random = rn2) {
     // C mkobj.c rnd_treefruit_at(): mksobj_at(ROLL_FROM(treefruits), ...).
@@ -487,7 +485,7 @@ export async function continueHeroDigging(state = game) {
         else if (trap && dcresult === DIGCHECK_PASSED_DESTROY_TRAP) {
             const name = trapName(trap.ttyp, { state });
             if (ispick) {
-                await pline(`You destroy ${trap.tseen ? `the ${name}` : articleFor(name)} with ${ownedObjectName(uwep, state, { capitalized: false, includeQuantity: true })}.`);
+                await pline(`You destroy ${trap.tseen ? `the ${name}` : withIndefiniteArticle(name)} with ${ownedObjectName(uwep, state, { capitalized: false, includeQuantity: true })}.`);
             }
             deleteTrap(trap, state);
             digging.effort = 0;

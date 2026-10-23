@@ -4,6 +4,7 @@ import { newsym, plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
 import { monsterTypeName } from './monster_data.js';
 import { heroCanChangeVampireShape, polymorphHero } from './polyself.js';
+import { withIndefiniteArticle } from './object_grammar.js';
 export async function useHeroVampireShift() {
     const previous = game.u.umonnum;
     if (heroCanChangeVampireShape(game)) {
@@ -15,8 +16,7 @@ export async function useHeroVampireShift() {
             if (currentForm === undefined)
                 throw new Error('vampire shape change did not install a body');
             const name = monsterTypeName(currentForm, !!game.u.mfemale);
-            const article = /^[aeiou]/i.test(name) ? 'an' : 'a';
-            await plineWithContinuation(`You transform into ${article} ${name}.`);
+            await plineWithContinuation(`You transform into ${withIndefiniteArticle(name)}.`);
             newsym(game.u.ux, game.u.uy);
         }
     }

@@ -507,9 +507,8 @@ async function beginMonsterForm(mnum: number, {
             ? game.flags.female ? 'female ' : 'male ' : '';
         const renewed = previousMnum === mnum ? 'new ' : '';
         const name = renewed + sex + monsterTypeName(mnum, game.flags.female);
-        const article = /^[aeiou]/i.test(name) ? 'an' : 'a';
         const verb = previousMnum === mnum ? 'feel like' : 'turn into';
-        await plineWithContinuation(`You ${verb} ${article} ${name}!`);
+        await plineWithContinuation(`You ${verb} ${withIndefiniteArticle(name)}!`);
     }
 
     if (heroIsPetrifying(game) && formCanBecomeStoneGolem(mnum)) {
@@ -1426,7 +1425,7 @@ function formNameWithArticle(mnum: number) {
     if ((MONSTER_FLAGS2[mnum] ?? 0) & M2_PNAME) return name;
     if (((MONSTER_GENO[mnum] ?? 0) & G_UNIQ) && mnum !== SPECIAL_PM
         && mnum !== nameToMonster('high cleric')) return `the ${name}`;
-    return `${/^[aeiou]/i.test(name) ? 'an' : 'a'} ${name}`;
+    return withIndefiniteArticle(name);
 }
 
 function changeWereForm(requested: number) {

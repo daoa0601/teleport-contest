@@ -67,6 +67,7 @@ import { digCheck, digCheckFailMessage, digHole } from './digging_terrain.js';
 import {
     addShopDamage, payForShopDamage, shopDig,
 } from './shop_damage.js';
+import { withIndefiniteArticle } from './object_grammar.js';
 
 const PM_EARTH_ELEMENTAL = MONSTER_NAME.indexOf('earth elemental');
 const PM_XORN = MONSTER_NAME.indexOf('xorn');
@@ -245,10 +246,6 @@ function feelNewsym(x: number, y: number, state: GameState): void {
     // C display.c feel_newsym(): blind heroes feel the changed location.
     if (heroIsBlind(state)) feel_location(x, y);
     else newsym(x, y);
-}
-
-function articleFor(name: string): string {
-    return /^[aeiou]/i.test(name) ? `an ${name}` : `a ${name}`;
 }
 
 export async function placeTreeFruit(
@@ -564,7 +561,7 @@ export async function continueHeroDigging(state = game): Promise<boolean> {
             const name = trapName(trap.ttyp, { state });
             if (ispick) {
                 await pline(`You destroy ${
-                    trap.tseen ? `the ${name}` : articleFor(name)
+                    trap.tseen ? `the ${name}` : withIndefiniteArticle(name)
                 } with ${ownedObjectName(uwep, state, { capitalized: false, includeQuantity: true })}.`);
             }
             deleteTrap(trap, state);

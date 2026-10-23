@@ -13,7 +13,7 @@ import { game } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import { useUpInventoryStack } from './hero_inventory.js';
-import { makePlural } from './object_grammar.js';
+import { makePlural, withIndefiniteArticle } from './object_grammar.js';
 import {
     CRYSKNIFE, ELVEN_ARROW, ELVEN_BOW, ELVEN_BROADSWORD, ELVEN_DAGGER,
     ELVEN_SHORT_SWORD, ELVEN_SPEAR, OBJECT_DESCRIPTIONS,
@@ -227,9 +227,8 @@ async function strangeFeelingOn(scroll: GameObject, amount: number, state: GameS
     if (amount >= 0 && uwep && willWeld(uwep)) { /* cursed tin opener */
         if (!heroIsBlind(state)) {
             const aura = displayColorName('amber', state);
-            const article = /^[aeiou]/iu.test(aura) ? 'an' : 'a';
             text = `${ownedObjectAction(uwep, 'glow', state)} with `
-                + `${article} ${aura} aura.`;
+                + `${withIndefiniteArticle(aura)} aura.`;
             uwep.bknown = !heroIsHallucinating(state);
         } else {
             /* the cursed tin opener is wielded in the right hand */

@@ -35,6 +35,7 @@ import {
 import { rn2, rnz } from './rng.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { attrcurse, rndcurse } from './throne.js';
+import { withIndefiniteArticle } from './object_grammar.js';
 
 const GOD_VOICES = ['booms out', 'thunders', 'rings out', 'booms'];
 const S_HUMAN = 53;
@@ -165,7 +166,8 @@ async function curseHero(alignment: number, state: PlayingGameState): Promise<vo
     await godVoice(alignment, 'Thou hast angered me.', state);
     if (!heroIsBlind(state) && !state.u.antimagic) {
         const color = displayColorName('black', state);
-        await pline(`${/^[aeiou]/i.test(color) ? 'An' : 'A'} ${color} glow surrounds you.`);
+        const glow = withIndefiniteArticle(color);
+        await pline(`${glow.charAt(0).toUpperCase()}${glow.slice(1)} glow surrounds you.`);
     }
     if (rn2(2) || !await attrcurse()) await rndcurse();
 }

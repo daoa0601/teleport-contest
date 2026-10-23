@@ -209,9 +209,8 @@ export async function handleRidingAfterFormChange() {
     if (touchPetrifies(steed.mnum) && !game.u.stoneResistance && rnl(3)) {
         await plineWithContinuation(`No longer petrify-resistant, you touch ${monsterName(steed)}.`);
         const species = monsterTypeName(steed.mnum, !!steed.female);
-        const article = /^[aeiou]/i.test(species) ? 'an' : 'a';
         const result = await resolveImmediatePetrification({
-            killer: `riding ${article} ${species}`,
+            killer: `riding ${withIndefiniteArticle(species)}`,
         });
         if (result.died) return result;
     }
@@ -698,8 +697,7 @@ export async function stuckSteed(checkFeeding = true, state: GameState = game): 
 
 function unnamedSteedMessage(steed: Monster) {
     const name = monsterTypeName(steed.mnum, !!steed.female);
-    const article = /^[aeiou]/i.test(name) ? 'an' : 'a';
-    return `You've been through the dungeon on ${article} ${name} with no name.`;
+    return `You've been through the dungeon on ${withIndefiniteArticle(name)} with no name.`;
 }
 
 export async function dismountHero(

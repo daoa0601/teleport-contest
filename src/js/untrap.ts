@@ -78,6 +78,7 @@ import {
 } from './objnam.js';
 import { objectDescription } from './object_description.js';
 import { monsterName as canonicalMonsterName } from './monster_name.js';
+import { withIndefiniteArticle } from './object_grammar.js';
 
 const POTION_CLASS = 8;
 const M1_WALLWALK = 0x00000008;
@@ -164,10 +165,6 @@ function trapAt(state: GameState, x: number, y: number): Trap | null {
 function boxesAt(state: GameState, x: number, y: number): GameObject[] {
     return (state.level?.objects?.[x]?.[y] || []).filter(object =>
         object.otyp === LARGE_BOX || object.otyp === CHEST);
-}
-
-function article(noun: string): string {
-    return /^[aeiou]/i.test(noun) ? 'an' : 'a';
 }
 
 function possessiveTrap(trap: Trap): string {
@@ -342,7 +339,7 @@ export async function untrap({
 
 function unreachableTrapMessage(description: string, boxCount: number, here: boolean, state: GameState): string {
     const things = [];
-    if (description) things.push(`${article(description)} ${description}`);
+    if (description) things.push(withIndefiniteArticle(description));
     if (boxCount) things.push(boxCount === 1 ? 'a container' : 'containers');
     const subject = things.join(' and ');
     const plural = things.length > 1 || boxCount > 1;
@@ -357,7 +354,7 @@ async function chooseFloorTrapOrBox(trap: Trap, noun: string, boxCount: number, 
     const containers = boxCount === 1 ? 'a container' : 'containers';
     const verb = trap.ttyp === WEB ? 'Remove' : 'Disarm';
     const subject = `There ${boxCount === 1 ? 'is' : 'are'} ${containers} `
-        + `and ${article(noun)} ${noun} here.`;
+        + `and ${withIndefiniteArticle(noun)} here.`;
     return ask(`${subject}  ${verb} the ${noun}?`);
 }
 
@@ -696,7 +693,7 @@ async function helpMonsterOut(monster: Monster, trap: Trap, options: FloorTrapOp
         await publish(`You grab the trapped ${species} using your bare hands.`);
         const contact = await resolveImmediatePetrification({
             state,
-            killer: `trying to help ${article(species)} ${species} out of a pit`,
+            killer: `trying to help ${withIndefiniteArticle(species)} out of a pit`,
             publish: plineWithContinuation,
         });
         if (contact.died || !contact.transformed) return true;

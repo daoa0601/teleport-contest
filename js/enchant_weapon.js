@@ -8,7 +8,7 @@ import { A_DEX, SPE_LIM } from './const.js';
 import { displayColorName, plineWithContinuation as pline, } from './display.js';
 import { game } from './gstate.js';
 import { useUpInventoryStack } from './hero_inventory.js';
-import { makePlural } from './object_grammar.js';
+import { makePlural, withIndefiniteArticle } from './object_grammar.js';
 import { CRYSKNIFE, ELVEN_ARROW, ELVEN_BOW, ELVEN_BROADSWORD, ELVEN_DAGGER, ELVEN_SHORT_SWORD, ELVEN_SPEAR, OBJECT_DESCRIPTIONS, OBJECT_NAMES, WORM_TOOTH, getObjectClassBounds, requireObjectData, } from './object_data.js';
 import { erosionMatters } from './object_erosion.js';
 import { learnObjectType, objectClassForType } from './object_knowledge.js';
@@ -206,9 +206,8 @@ async function strangeFeelingOn(scroll, amount, state) {
     if (amount >= 0 && uwep && willWeld(uwep)) { /* cursed tin opener */
         if (!heroIsBlind(state)) {
             const aura = displayColorName('amber', state);
-            const article = /^[aeiou]/iu.test(aura) ? 'an' : 'a';
             text = `${ownedObjectAction(uwep, 'glow', state)} with `
-                + `${article} ${aura} aura.`;
+                + `${withIndefiniteArticle(aura)} aura.`;
             uwep.bknown = !heroIsHallucinating(state);
         }
         else {

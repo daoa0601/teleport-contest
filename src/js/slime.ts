@@ -20,6 +20,7 @@ import { extinguishHeroFormLight, heroHasNoLimbs, heroIsPolymorphed } from './po
 import { removeIntrinsicProperty, setPropertyTimeout } from './properties.js';
 import { stopHeroOccupation } from './occupation.js';
 import { openingTinMaySaveHero } from './tin.js';
+import { withIndefiniteArticle } from './object_grammar.js';
 
 interface SlimeAdvanceOptions {
     state?: GameState;
@@ -202,10 +203,6 @@ export function finishDeferredHeroSlime(action: MonsterAction, state: GameState)
     return action;
 }
 
-function articleFor(name: string): string {
-    return `${/^[aeiou]/i.test(name) ? 'an' : 'a'} ${name}`;
-}
-
 function slimeMessage(turns: number, state: GameState, randomMonsterName: () => string): string | null {
     if (turns === 9) {
         return heroIsBlind(state)
@@ -221,8 +218,8 @@ function slimeMessage(turns: number, state: GameState, randomMonsterName: () => 
     const hallucinating = heroIsHallucinating(state);
     const form = hallucinating ? randomMonsterName() : 'green slime';
     return turns === 3
-        ? `You are turning into ${articleFor(form)}.`
-        : `You have become ${articleFor(form)}.`;
+        ? `You are turning into ${withIndefiniteArticle(form)}.`
+        : `You have become ${withIndefiniteArticle(form)}.`;
 }
 
 function removeHeroSpeed(state: GameState): void {

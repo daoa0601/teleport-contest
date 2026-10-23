@@ -261,9 +261,8 @@ function forceShatterMessage(object: GameObject, state: GameState): string {
 async function shatterChestContent(object: GameObject, state: GameState): Promise<void> {
     if (object.oclass === POTION_CLASS) {
         const bottle = randomBottleName(state);
-        const article = /^[aeiou]/i.test(bottle) ? 'an' : 'a';
         await plineWithContinuation(
-            `You ${heroIsBlind(state) ? 'hear' : 'see'} ${article} ${bottle} shatter!`,
+            `You ${heroIsBlind(state) ? 'hear' : 'see'} ${withIndefiniteArticle(bottle)} shatter!`,
         );
         await applySupportedPotionVapor({ potion: object, state });
     } else {

@@ -120,6 +120,7 @@ import { isAxe } from './weapon_type.js';
 import { updateIceObjectTimersAt } from './floor_object.js';
 import { deleteEngravingAt } from './engrave.js';
 import { isLavaAt, isPoolAt, levelHasCeiling, monsterFliesOrFloats } from './terrain_properties.js';
+import { withIndefiniteArticle } from './object_grammar.js';
 
 const S_ZOMBIE = 52;
 const S_MUMMY = 39;
@@ -158,10 +159,6 @@ function heroIsAirborne(state: GameState): boolean {
 
 function verbose(state: GameState): boolean {
     return state.flags?.verbose !== false;
-}
-
-function article(word: string): string {
-    return /^[aeiou]/i.test(word) ? `an ${word}` : `a ${word}`;
 }
 
 function capitalized(text: string): string {
@@ -486,20 +483,20 @@ export async function digActualHole(
             await plineWithContinuation(`You dig an adjacent ${trapWord}.`);
         } else {
             await plineWithContinuation(
-                `You dig ${article(trapWord)} ${through} the ${surfaceType}.`);
+                `You dig ${withIndefiniteArticle(trapWord)} ${through} the ${surfaceType}.`);
         }
     } else if (madeBy && typeof madeBy === 'object'
         && canSeeMonster(madeBy)) {
         await plineWithContinuation(
-            `${monsterSubject(madeBy)} digs ${article(trapWord)} `
+            `${monsterSubject(madeBy)} digs ${withIndefiniteArticle(trapWord)} `
             + `${through} the ${surfaceType}.`);
     } else if (cansee(x, y) && verbose(state)) {
         if (IS_STWALL(oldTyp)) {
             await plineWithContinuation(
-                `The ${surfaceType} crumbles into ${article(trapWord)}.`);
+                `The ${surfaceType} crumbles into ${withIndefiniteArticle(trapWord)}.`);
         } else {
             await plineWithContinuation(
-                `${capitalized(article(trapWord))} appears `
+                `${capitalized(withIndefiniteArticle(trapWord))} appears `
                 + `in the ${surfaceType}.`);
         }
     }

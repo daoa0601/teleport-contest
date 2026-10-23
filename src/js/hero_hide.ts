@@ -17,7 +17,7 @@ import {
     MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL, monsterDigests,
 } from './monster_data.js';
 import { CORPSE } from './object_data.js';
-import { makePlural } from './object_grammar.js';
+import { makePlural, withIndefiniteArticle } from './object_grammar.js';
 import { simpleObjectNameWithArticle } from './objnam.js';
 import {
     heroFormClings, heroFormHidesUnderObjects,
@@ -97,7 +97,7 @@ function petrifyingCorpseCover(objects: readonly GameObject[]) {
     const species = MONSTER_NAME[first.corpsenm] || 'monster';
     const corpse = `${species} corpse`;
     if (count === 1)
-        return `${/^[aeiou]/i.test(corpse) ? 'an' : 'a'} ${corpse}`;
+        return withIndefiniteArticle(corpse);
     return `${species} ${makePlural('corpse')}`;
 }
 
