@@ -26,7 +26,7 @@ import { unlinkObject } from './object_location.js';
 import { checkSpecialRoom } from './shk.js';
 import { setPaidShopkeeper } from './shop_damage.js';
 import { hasShopkeeperData } from './shop_types.js';
-import { vision_reset } from './vision.js';
+import { vision_reset_new_level } from './vision.js';
 
 const G_UNIQ = 0x1000;
 
@@ -43,6 +43,9 @@ export async function wizMakeMap(): Promise<void> {
     await discardOldLevel();
     game._specialLevelPrototype = specialPrototypeAt(game.u.uz.dnum, game.u.uz.dlevel);
     await mklev();
+    // C goto_level() keeps bones familiarity local to that arrival;
+    // replacing the current map does not announce familiarity.
+    game._restoredBones = false;
     await returnToReplacementLevel(pets, wasInsideTower);
 }
 
@@ -166,8 +169,7 @@ async function revokeLevelPrize(): Promise<void> {
 
 async function returnToReplacementLevel(pets: readonly Monster[], wasInsideTower: boolean): Promise<void> {
     requirePlayingGame(game);
-    vision_reset();
-    game.vision_full_recalc = 1;
+    vision_reset_new_level();
     await cls();
     const level = requireGameLevel();
     const up = !!game.u.uhave.amulet;
