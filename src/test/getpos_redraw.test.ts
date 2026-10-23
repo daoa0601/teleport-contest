@@ -9,7 +9,7 @@ import { resetInputState } from '../js/input.js';
 import { initRng } from '../js/rng.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
-import { requireScreenCell } from './support/screen.js';
+import { requireScreenCell, requireScreenRow } from './support/screen.js';
 
 void test('entering and moving the targeting cursor preserves unseen monster information', async () => {
     freshObjectRoom({ flags: { tips: false, verbose: false } });
@@ -85,3 +85,22 @@ for (const phase of ['install', 'exit'] as const) {
         }
     });
 }
+
+void test('targeting does not repaint a status change nothing marked for redisplay', async () => {
+    freshObjectRoom({ flags: { tips: false, verbose: false } });
+    game.u.uen = game.u.uenmax = 7;
+    game.context.botl = true;
+    await flush_screen(1);
+    // A magic trap's energy surge raises Pw without marking the status line.
+    game.u.uen = game.u.uenmax = 9;
+    const input = resetInputState();
+    input.feed('\x1b');
+
+    let statusLine = '';
+    await selectMapPosition({
+        start: { x: game.u.ux, y: game.u.uy }, prompt: 'Choose a location.', goal: 'a location',
+        afterPaint: () => { statusLine = requireScreenRow(23).map(cell => cell.ch).join(''); },
+    });
+
+    assert.match(statusLine, /Pw:7\(7\)/);
+});

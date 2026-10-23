@@ -6,7 +6,7 @@ import {
     LOOK_TRADITIONAL, LOOK_VERBOSE, NHW_MENU, PICK_ONE, ROWNO, SCORR, STONE, VIBRATING_SQUARE, WEB, IS_WALL, TREE,
 } from './const.js';
 import {
-    bot, clearMessageWindow, flush_screen, glyphAt, lastDirtyMapCursor,
+    clearMessageWindow, flush_screen, glyphAt, lastDirtyMapCursor,
     newsym_force, pline, plineWithContinuation, show_glyph_cell, showUnrememberedTopline,
     terrain_glyph,
 } from './display.js';
@@ -261,7 +261,8 @@ export async function paintGetposCursor(cursor: Position, message: string, marke
         for (const { x, y } of markedSpots)
             await markers.show(x, y);
     }
-    await bot();
+    // C getpos() only flushes, so a status change nothing marked for
+    // redisplay stays unpainted.
     await flush_screen(1);
     if (message) showUnrememberedTopline(message);
     game.nhDisplay?.setCursor(cursor.x - 1, cursor.y + 1);
