@@ -128,7 +128,7 @@ async function scatterCarriedItems(state) {
             return;
     }
 }
-async function releaseCarriedBall(state, showMessage = false) {
+export async function releaseCarriedBall(state, showMessage = false) {
     const ball = state.uball || state.u.uball;
     if (!ball || !carried(ball, state) || isWeldedPrimary(ball, state))
         return;

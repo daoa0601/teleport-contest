@@ -662,7 +662,7 @@ export async function placeHeroAtRandomArrival(
 // C do.c:u_collide_m(). A level arrival may overlap a resident or follower.
 // Move the hero to an adjacent legal square, or let the monster's own
 // placement rules choose its destination, including flight over liquids.
-async function resolveHeroArrivalCollision(): Promise<void> {
+export async function resolveHeroArrivalCollision(): Promise<void> {
     const level = requireGameLevel();
     const collision = level.monsters.find(monster => monsterHasMapPosition(monster, game) && !monster.dead
         && monster.mx === game.u.ux && monster.my === game.u.uy);

@@ -31,6 +31,7 @@ import { wizFuzzer, wizPanic } from './wizard_debug_commands.js';
 import { wizSmell } from './wizard_smell.js';
 import { wizBury } from './wizard_bury.js';
 import { wizMigrateMonsters } from './wizard_migration.js';
+import { wizMakeMap } from './wizard_makemap.js';
 import { wizardTeleportCommand } from './wizard_teleport.js';
 import { hurtleMonster } from './monster_hurtle.js';
 import type { GameState } from './game_state.js';
@@ -3390,6 +3391,7 @@ const EXTENDED_COMMAND_HANDLERS = new Map<string, () => Promise<unknown>>([
     ['wizidentify', wizIdentify],
     ['wizintrinsic', wizIntrinsic],
     ['wizmap', wizMap],
+    ['wizmakemap', wizMakeMap],
 ]);
 
 // C refs: artifact.c:doinvoke(), invoke_ok(), arti_invoke().  getobj()
