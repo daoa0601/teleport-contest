@@ -16,7 +16,7 @@ import { monsterName, monsterReflexiveAction, monsterSubjectPronoun, possessiveN
 import { monsterIsHelpless } from './monster_sleep.js';
 import { adjustMonsterSpeed } from './monster_speed.js';
 import { advanceMonsterWormBody } from './monster_worm.js';
-import { resumeDeferredMonsterTrap, triggerImmediateMonsterTrap } from './monmove.js';
+import { finishImmediateMonsterTrap, triggerImmediateMonsterTrap } from './monmove.js';
 import { tryCallObjectType } from './object_call.js';
 import { FIRE_HORN, POT_OIL, SCR_FIRE, WAN_FIRE } from './object_data.js';
 import { withIndefiniteArticle } from './object_grammar.js';
@@ -221,7 +221,7 @@ async function triggerCureTrap(monster, trap, visible, context) {
         }
     }
     const action = await triggerImmediateMonsterTrap(monster, state, { force: true, random, rollDice, rollOne });
-    await resumeDeferredMonsterTrap(action, state, { publish, random, rollDice, rollOne });
+    await finishImmediateMonsterTrap(action, state, { publish, random, rollDice, rollOne });
 }
 function monsterLocomotion(monster) {
     const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;

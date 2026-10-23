@@ -76,7 +76,7 @@ import { applyHeroLocationEffects, heroCouldMoveOntoBoulder } from './cmd.js';
 import { finishDestinationSpotEffects } from './location_effects.js';
 import { adjustHeroAlignment } from './alignment.js';
 import { resetCommandVariables } from './command_state.js';
-import { resumeDeferredMonsterTrap, triggerImmediateMonsterTrap } from './monmove.js';
+import { finishImmediateMonsterTrap, triggerImmediateMonsterTrap } from './monmove.js';
 import { levelHasCeiling, isAccessibleAt, isLavaAt, isPoolAt, isWaterwallAt } from './terrain_properties.js';
 import { isPolearm } from './weapon_type.js';
 import { surfaceName } from './terrain_name.js';
@@ -846,7 +846,7 @@ export async function dismountHero(
                 }
                 if (wasTrapped) {
                     const action = await triggerImmediateMonsterTrap(steed, state);
-                    await resumeDeferredMonsterTrap(action, state, {
+                    await finishImmediateMonsterTrap(action, state, {
                         publish: announce, describeMonster: monster => monsterName(monster, { capitalized: true }),
                     });
                 }

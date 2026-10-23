@@ -472,7 +472,7 @@ import {
 } from './getpos.js';
 import { onQuestStart, okToQuest } from './quest.js';
 import {
-    performPetRangedAttack, resumeDeferredMonsterTrap, triggerImmediateMonsterTrap,
+    finishImmediateMonsterTrap, performPetRangedAttack, triggerImmediateMonsterTrap,
 } from './monmove.js';
 import { hurtleHero, kickRecoilRange } from './hero_hurtle.js';
 import type { HeroMonsterKillOptions } from './hero_monster_death.js';
@@ -1707,7 +1707,7 @@ async function triggerFountainTrap(monster: Monster) {
     const state = requireInitializedGame();
     const action = await triggerImmediateMonsterTrap(monster, state);
     if (!state.program_state.gameover) {
-        await resumeDeferredMonsterTrap(action, state, {
+        await finishImmediateMonsterTrap(action, state, {
             describeMonster: fountainActorVisibleSubject,
             publish: plineWithContinuation,
         });

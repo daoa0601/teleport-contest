@@ -41,7 +41,7 @@ import { igniteItems } from './light.js';
 import { buryFloorObjectsAt } from './buried_object.js';
 import { fix_wall_spines, maketrap } from './mklev.js';
 import { monsterResistanceBits } from './monster_resistance.js';
-import { triggerImmediateMonsterTrap } from './monmove.js';
+import { finishImmediateMonsterTrap, triggerImmediateMonsterTrap } from './monmove.js';
 import { makePlural, withIndefiniteArticle } from './object_grammar.js';
 import { MONSTER_FLAGS1 } from './monster_data.js';
 import {
@@ -466,7 +466,8 @@ async function evaporatePoolAt(x: number, y: number, state: GameState, publish: 
             await triggerHeroTrap(pit);
         else if (pit && monster) {
             requirePlayingGame(state);
-            await triggerImmediateMonsterTrap(monster, state);
+            await finishImmediateMonsterTrap(
+                await triggerImmediateMonsterTrap(monster, state), state, { publish });
         }
     }
     return rangeChange;

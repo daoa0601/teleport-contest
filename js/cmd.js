@@ -302,7 +302,7 @@ import { canLetGo, finishInventoryRemoval } from './hero_inventory.js';
 import { removeHeroEquipment } from './hero_equipment.js';
 import { shouldShowGetposTip, showGetposTip, selectMapPosition, } from './getpos.js';
 import { onQuestStart, okToQuest } from './quest.js';
-import { performPetRangedAttack, resumeDeferredMonsterTrap, triggerImmediateMonsterTrap, } from './monmove.js';
+import { finishImmediateMonsterTrap, performPetRangedAttack, triggerImmediateMonsterTrap, } from './monmove.js';
 import { hurtleHero, kickRecoilRange } from './hero_hurtle.js';
 import { announceInvocationSquare } from './invocation.js';
 import { abuseKickedPet, levitatingKickMisses, prepareKick, prepareKickDamage, rollKickDamage, tryKickEvasion, tryKickReel, } from './monster_kick.js';
@@ -1574,7 +1574,7 @@ async function triggerFountainTrap(monster) {
     const state = requireInitializedGame();
     const action = await triggerImmediateMonsterTrap(monster, state);
     if (!state.program_state.gameover) {
-        await resumeDeferredMonsterTrap(action, state, {
+        await finishImmediateMonsterTrap(action, state, {
             describeMonster: fountainActorVisibleSubject,
             publish: plineWithContinuation,
         });
