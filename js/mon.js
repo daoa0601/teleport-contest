@@ -268,14 +268,11 @@ export async function resolveMonsterLiquid(monster, state = game, { announce = a
             const relocation = await randomMonsterRelocation(monster, {
                 state, calls, random, rollOne, flags: RLOC_NOMSG,
             });
+            // C rloc() repaints both squares; minliquid() adds no redraw.
             if (!relocation)
                 await dealWithMonsterOvercrowding(monster, state);
             if (state.program_state.gameover)
                 return { heroDied: true };
-            if (relocation && state === game) {
-                newsym(x, y);
-                newsym(monster.mx, monster.my);
-            }
             return { survived: true, relocation };
         }
     }
@@ -326,14 +323,11 @@ export async function resolveMonsterLiquid(monster, state = game, { announce = a
             const relocation = await randomMonsterRelocation(monster, {
                 state, calls, random, rollOne, flags: RLOC_MSG,
             });
+            // C rloc() repaints both squares; minliquid() adds no redraw.
             if (!relocation)
                 await dealWithMonsterOvercrowding(monster, state);
             if (state.program_state.gameover)
                 return { heroDied: true };
-            if (relocation && state === game) {
-                newsym(x, y);
-                newsym(monster.mx, monster.my);
-            }
             return { survived: true, relocation };
         }
     }
