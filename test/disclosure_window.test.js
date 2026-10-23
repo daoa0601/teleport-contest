@@ -293,7 +293,7 @@ for (const width of [68, 72]) {
         }
     });
 }
-void test('a disclosure wider than the terminal uses the full screen', async () => {
+void test('a disclosure wider than the terminal overlays only its own rows', async () => {
     freshPlayableRoom();
     const display = requireGameDisplay();
     display.setCell(5, 10, '@', NO_COLOR);
@@ -303,7 +303,7 @@ void test('a disclosure wider than the terminal uses the full screen', async () 
         await input.waitUntilBlocked();
         assert.equal(rowText(0).indexOf('x'), 0);
         assert.equal(rowText(1).trim(), '--More--');
-        assert.equal(display.grid[10]?.[5]?.ch, ' ', 'the full window covers the map');
+        assert.equal(display.grid[10]?.[5]?.ch, '@', 'rows below the window keep the map');
     }
     finally {
         input.feed(' ');

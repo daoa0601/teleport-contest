@@ -65,4 +65,23 @@ void test('a floor-pile window follows paged wrapped prose without leaving text 
     assert.match(title, /^ +Things that are here:/);
     assert.doesNotMatch(uncoveredMapRow, /beyond|closed door|animal/);
 });
+void test('a floor-pile window too wide for a corner overlays only its own rows', async () => {
+    freshObjectRoom();
+    const apple = await floorObject(APPLE, 10, 10, {
+        oname: 'an extraordinarily long given name that leaves no room for a corner window',
+    });
+    const ration = await floorObject(FOOD_RATION, 10, 10);
+    const input = resetInputState();
+    const listing = showFloorPile([apple, ration]);
+    await input.waitUntilBlocked();
+    const title = displayedRow(0);
+    const marker = displayedRow(4);
+    const rowBelowWindow = displayedRow(8);
+    input.feed(' ');
+    await listing;
+    assert.match(title, /^Things that are here:/);
+    assert.match(marker, /^ --More--/);
+    // look_here() flushes the lit room before the window; its rows stay.
+    assert.match(rowBelowWindow, /^ {6}\.{10} *$/);
+});
 //# sourceMappingURL=floor_pile_window.test.js.map

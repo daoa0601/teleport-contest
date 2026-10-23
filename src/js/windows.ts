@@ -216,17 +216,19 @@ export async function showDisclosureOverlay(lines: readonly TextMenuEntry[], {
         .map(text => ({ ...line, text })));
 
     // The pinned H2344_BROKEN path permits corners narrower than ten
-    // columns. A zero offset, excess height, or disabled overlay uses
-    // the full-screen renderer instead.
+    // columns. Only excess height or a disabled overlay clears the screen
+    // for the full-screen renderer. A window too wide for a corner keeps
+    // offset zero but still overlays just its own rows.
     const cornerOffset = windowOrigin(d.cols, d.rows, dataWidth + 1, content.length,
         game.flags.menu_overlay !== false);
-    if (content.length >= d.rows || cornerOffset === 0
-        || game.flags.menu_overlay === false) {
+    if (content.length >= d.rows || game.flags.menu_overlay === false) {
         return await pageDisclosureWindow(d, content, marker);
     }
 
+    // process_text_window() pads a corner row with one space; dmore()
+    // starts the marker one column past the window offset.
+    const textLeft = cornerOffset === 0 ? 0 : cornerOffset + 1;
     const left = cornerOffset + 1;
-    const rows: TextMenuLine[] = [...content, { text: marker }];
     // Replace the preceding question across the whole message row.
     d.clearRow(0);
     // A dismissed corner window restores the already-painted map rather
@@ -235,19 +237,20 @@ export async function showDisclosureOverlay(lines: readonly TextMenuEntry[], {
         ? d.grid.map(row => row.map(cell => ({ ...cell }))) : null;
     const underlayCursor = restoreUnderlay
         ? { col: d.cursorCol, row: d.cursorRow, visible: d.cursorVisible } : null;
-    clearRect(left - 1, 0, d.cols, Math.min(d.rows, rows.length));
-    for (const [row, line] of rows.entries()) {
-        if (row >= d.rows) break;
-        putLine(left, row, line.text, line.attr);
-    }
+    clearRect(cornerOffset, 0, d.cols, content.length + 1);
+    for (const [row, line] of content.entries()) putLine(textLeft, row, line.text, line.attr);
+    putLine(left, content.length, marker);
 
-    const markerRow = Math.min(rows.length - 1, d.rows - 1);
     const cursorOffset = marker === '(end)' ? marker.length + 1 : marker.length;
-    d.setCursor(Math.min(d.cols - 1, left + cursorOffset), markerRow);
+    d.setCursor(Math.min(d.cols - 1, left + cursorOffset), content.length);
     let key: number;
     do key = await nhgetch();
     while (![27, 32, 10, 13].includes(key));
-    if (underlay && underlayCursor) {
+    // erase_menu_or_text() redraws the whole screen for a zero offset.
+    if (cornerOffset === 0) {
+        await docrt();
+        await flush_screen(1);
+    } else if (underlay && underlayCursor) {
         for (const [row, cells] of underlay.entries()) {
             for (const [col, cell] of cells.entries()) {
                 d.setCell(col, row, cell.ch, cell.color, cell.attr);
