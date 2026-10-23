@@ -38,7 +38,7 @@ import { AD_DRST, AD_RBRE, AT_BREA } from './monster_attack_types.js';
 import { d, rn2, rnd } from './rng.js';
 import { heroIsBlind } from './senses.js';
 import { makeBlinded } from './sight_change.js';
-import { cansee, vision_note_blocker_change } from './vision.js';
+import { cansee, vision_note_blocker_change, visionCellBlocksLight } from './vision.js';
 
 const GAS_BAD = 0;
 const GAS_MINOR = 1;
@@ -475,8 +475,11 @@ function removeGasCloud(region: GasCloud, state: GameState): void {
     region.ttl = -2;
     if (!region.visible || state.level !== game.level) return;
 
+    // C remove_region() unblocks only spots nothing else still blocks; a
+    // boulder or another cloud keeps the old view without a recalc.
     for (const cell of region.cells)
-        vision_note_blocker_change(cell.x, cell.y);
+        if (!visionCellBlocksLight(level, cell.x, cell.y))
+            vision_note_blocker_change(cell.x, cell.y);
     if (heroIsBlind(state)) return;
     for (const cell of region.cells)
         if (cansee(cell.x, cell.y)) newsym(cell.x, cell.y);
