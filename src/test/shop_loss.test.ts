@@ -11,6 +11,9 @@ import {
 } from '../js/shop_loss.js';
 import { SACK } from '../js/object_data.js';
 import { shopObjectUnitCost } from '../js/shk.js';
+import { flush_screen } from '../js/display.js';
+import { requireGameDisplay } from '../js/gstate.js';
+import { resetInputState } from '../js/input.js';
 import { addInventoryObject, floorObject, knownObject } from './support/game-objects.js';
 import { createStaffedShop, setShopkeeperGold } from './support/shop.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -103,6 +106,30 @@ void test('a non-peaceful silent call still pursues and angers the guards', asyn
     assert.equal(shopkeeper.eshk.robbed, value);
     assert.equal(shopkeeper.eshk.following, 1);
     assert.ok(!log.messages.some(message => /thief/i.test(message)));
+});
+
+void test('a keeper booms about a second theft without another pause', async () => {
+    const { shopkeeper } = await lossShop();
+    requirePlayingGame(game);
+    const input = resetInputState();
+    await stolenValue(await floorObject(DAGGER, 10, 10), 10, 10, false,
+        { silent: false });
+    const second = stolenValue(await floorObject(DAGGER, 11, 10), 11, 10, false,
+        { silent: false });
+    const outcome = await Promise.race([
+        second.then(() => 'finished'),
+        input.waitUntilBlocked().then(() => 'paused'),
+    ]);
+    if (outcome === 'paused') {
+        input.feed('  ');
+        await second;
+    }
+    assert.equal(outcome, 'finished');
+    await flush_screen(1);
+    const screen = requireGameDisplay().grid
+        .map(row => row.map(cell => cell.ch).join('')).join('\n');
+    assert.equal(screen.match(/you are a thief!/g)?.length, 1);
+    assert.equal(shopkeeper.eshk.following, 1);
 });
 
 void test('dropped own contents charge nothing while kicked contents do', async () => {
