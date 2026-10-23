@@ -4,6 +4,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { requireGameLevel, game } from '../js/gstate.js';
 import { landFloorObject } from '../js/floor_effects.js';
+import { putHeroToSleep } from '../js/hero_sleep.js';
 import { addCreatedObjectToContainer } from '../js/object_container.js';
 import { placeCreatedObject } from '../js/floor_object.js';
 import { unlinkObject } from '../js/object_location.js';
@@ -245,4 +246,25 @@ void test('floor glob merging reveals a monster when its cover disappears', asyn
 
     assert.equal(cover.where, 'gone');
     assert.equal(hider.mundetected, 0);
+});
+
+void test('a sleeping hero dreams of hearing a potion shatter on hot ground', async () => {
+    const level = freshObjectRoom({ right: 20 });
+    requireFixtureGame(game);
+    game.level.flags.temperature = 1;
+    level.requireAt(18, 10).lit = false;
+    vision_recalc(0);
+    assert.equal(cansee(18, 10), false);
+    await putHeroToSleep(20);
+    initRng(4n);
+    const messages: string[] = [];
+
+    for (let tries = 0; tries < 20 && !messages.some(message => /shattering/.test(message)); tries++) {
+        const potion = await knownObject(POT_HEALING);
+        await landFloorObject(potion, 18, 10, {
+            publish: message => { messages.push(message); },
+        });
+    }
+
+    assert.ok(messages.includes('You dream that you hear a shattering noise.'));
 });
