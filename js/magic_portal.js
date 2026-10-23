@@ -34,18 +34,18 @@ export async function activateMagicPortal(trap, gotoLevel) {
         await plineWithContinuation(formatFeltMessage('dizzy for a moment, but nothing happens...'));
         return;
     }
-    if (typeof gotoLevel !== 'function')
-        throw new Error('magic portal needs the level-change function');
     if (!trap.dst)
         throw new Error('Magic portal has no destination.');
     const leavingTutorial = isTutorialLevel(game.u?.uz)
         && !isTutorialLevel(trap.dst);
-    // domove() still needs the departure level to wear its engravings.
+    // C schedule_goto(): every entry, including a knockback hurtle, defers
+    // the real level change. domove() still needs the departure level to
+    // wear its engravings.
     // deferred_goto() prints dizziness after that movement tail finishes.
     const preMessage = leavingTutorial ? 'Resuming regular play.' : await addPortalStun();
     scheduleLevelChange([trap.dst, {
             arrival: leavingTutorial ? 'stairs' : 'portal',
-        }], gotoLevel, preMessage);
+        }], gotoLevel ?? undefined, preMessage);
     game.context.move = 1;
 }
 //# sourceMappingURL=magic_portal.js.map
