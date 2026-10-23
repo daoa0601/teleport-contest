@@ -1,0 +1,22 @@
+version: 2
+# Keep the SHA-pinned workflow actions and the exact-pinned development
+# dependencies current. Updates arrive as pull requests against the
+# integration branch; nothing merges without the normal verification.
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    target-branch: daoa/recovery-architecture
+    schedule:
+      interval: monthly
+    groups:
+      actions:
+        patterns: ['*']
+  - package-ecosystem: npm
+    directory: /
+    target-branch: daoa/recovery-architecture
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 3
+    groups:
+      dev-dependencies:
+        patterns: ['*']
