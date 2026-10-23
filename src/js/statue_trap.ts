@@ -23,6 +23,7 @@ import { game, requireGameLevel } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
+import { revealMonsterAppearance } from './monster_appearance.js';
 import { makemonAt, makemonNear } from './mklev.js';
 import { setMonsterMalign } from './monster_alignment.js';
 import {
@@ -194,9 +195,8 @@ export async function animateStatue(statue: GameObject, x: number, y: number, {
     }
 
     nameReleasedMonster(monster, statue);
-    monster.m_ap_type = 0;
-    monster.mappearance = 0;
-    monster.mundetected = 0;
+    // C animate_statue(): a mimic shows itself; other hiders stop hiding.
+    if (!revealMonsterAppearance(monster).revealed) monster.mundetected = 0;
     monster.msleeping = 0;
     if (!magic) {
         monster.mtame = 0;
