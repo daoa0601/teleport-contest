@@ -10,6 +10,7 @@ import { plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
 import { dist2 } from './hacklib.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
+import { monstersInFmonOrder } from './monmove.js';
 import { wakeMonster } from './monster_anger.js';
 import { monsterName, possessiveName } from './monster_name.js';
 import {
@@ -53,7 +54,8 @@ export async function useHeroMindBlast({
     await publish('A wave of psychic energy pours out.');
 
     let hitCount = 0;
-    for (const monster of Array.from(state.level?.monsters || [])) {
+    // C walks fmon, which lists the newest monster first.
+    for (const monster of monstersInFmonOrder(state.level?.monsters || [])) {
         if (!canReachMonsterMind(monster, hero)) continue;
 
         const sense = mindBlastSense(monster, random);
