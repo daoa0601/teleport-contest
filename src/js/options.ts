@@ -25,6 +25,8 @@ import {
     PARANOID_WERECHANGE,
 } from './const.js';
 
+type PetPreference = '' | 'c' | 'd' | 'h' | 'n';
+
 interface ConfigurationSettings {
     flags: GameFlags;
     iflags: InterfaceFlags;
@@ -36,7 +38,7 @@ interface ConfigurationSettings {
     align?: string | null;
     fruit?: string;
     symset?: string;
-    preferred_pet?: 'n' | 'd' | 'c';
+    preferred_pet?: PetPreference;
     monTelecontrol?: boolean;
     tutorial_set?: boolean;
 }
@@ -233,6 +235,7 @@ export function parseNethackrc(rc: string): NethackConfiguration {
 type ConfigurationState = Pick<ConfigurationSettings, 'flags' | 'iflags' | 'commandBindings'> & {
     _monTelecontrol?: boolean;
     fruitName?: string;
+    preferred_pet?: string;
 };
 
 export function applyNethackrc(rc: string, state: ConfigurationState = game): ConfigurationSettings {
@@ -243,6 +246,7 @@ export function applyNethackrc(rc: string, state: ConfigurationState = game): Co
     parseConfiguration(rc, result);
     if (result.monTelecontrol !== undefined) state._monTelecontrol = result.monTelecontrol;
     if (result.fruit !== undefined) state.fruitName = result.fruit;
+    if (result.preferred_pet !== undefined) state.preferred_pet = result.preferred_pet;
     return result;
 }
 
@@ -344,12 +348,25 @@ function parseConfiguration(rc: string, result: ConfigurationSettings): Configur
                 if (!negated && value >= 1 && value <= 7) result.flags.versinfo = value;
                 continue;
             }
-            if (bindingOption === 'dogname' || bindingOption === 'catname' || bindingOption === 'horsename') {
+            // determine_ambiguities() permits three-letter name-option
+            // abbreviations. Pettype needs four letters, or the alias "pet".
+            if (bindingOption === 'pet' || (bindingOption.length >= 4 && 'pettype'.startsWith(bindingOption))) {
+                const preference = configuredPetType(optionValue, negated);
+                if (preference !== null) {
+                    result.preferred_pet = preference;
+                    if (optionValue) result.flags.pettype = optionValue;
+                }
+                continue;
+            }
+            const petNameOption = bindingOption.length >= 3
+                ? (['dogname', 'catname', 'horsename'] as const).find(name => name.startsWith(bindingOption))
+                : undefined;
+            if (petNameOption) {
                 if (negated) continue;
                 if (optionValue === 'none' || optionValue === '(none)')
-                    result.flags[bindingOption] = '';
+                    result.flags[petNameOption] = '';
                 else if (optionValue)
-                    result.flags[bindingOption] = configuredPetName(optionValue, !!result.iflags.wc_eight_bit_input);
+                    result.flags[petNameOption] = configuredPetName(optionValue, !!result.iflags.wc_eight_bit_input);
                 continue;
             }
             if (bindingOption === 'number_pad') {
@@ -414,12 +431,6 @@ function parseConfiguration(rc: string, result: ConfigurationSettings): Configur
                 else if (key === 'align') result.align = val;
                 else if (key === 'playmode' && val === 'debug') result.flags.debug = true;
                 else if (key === 'playmode' && val === 'explore') result.flags.explore = true;
-                else if (key === 'pettype' || key === 'pet') {
-                    result.flags.pettype = val;
-                    if (val === 'none' || val === 'n') result.preferred_pet = 'n';
-                    else if (val === 'dog' || val === 'd') result.preferred_pet = 'd';
-                    else if (val === 'cat' || val === 'c') result.preferred_pet = 'c';
-                }
                 else if (key === 'symset') result.symset = val;
                 else if (key === 'suppress_alert') {
                     const parsed = negated ? null : featureAlertVersion(val);
@@ -499,6 +510,21 @@ function parseConfiguration(rc: string, result: ConfigurationSettings): Configur
     }
     if (paranoiaSeen) result.flags.paranoia_bits = paranoiaBits;
     return result;
+}
+
+// C options.c:optfn_pettype() ignores negation when a value is supplied.
+// Horse is accepted, but dog.c:pet_type() still chooses a dog or cat unless
+// the role supplies its own pet.
+function configuredPetType(value: string | null, negated: boolean): PetPreference | null {
+    if (!value) return negated ? 'n' : null;
+    switch (value.charAt(0).toLowerCase()) {
+    case 'd': return 'd';
+    case 'c': case 'f': return 'c';
+    case 'h': case 'q': return 'h';
+    case 'n': return 'n';
+    case 'r': case '*': return '';
+    default: return null;
+    }
 }
 
 // C options.c:nmcpy() copies bytes; bones.c:sanitize_name() replaces control

@@ -229,6 +229,8 @@ export function applyNethackrc(rc, state = game) {
         state._monTelecontrol = result.monTelecontrol;
     if (result.fruit !== undefined)
         state.fruitName = result.fruit;
+    if (result.preferred_pet !== undefined)
+        state.preferred_pet = result.preferred_pet;
     return result;
 }
 // parse_config_line() always parses OPTIONS in initial/config-file mode,
@@ -334,13 +336,27 @@ function parseConfiguration(rc, result) {
                     result.flags.versinfo = value;
                 continue;
             }
-            if (bindingOption === 'dogname' || bindingOption === 'catname' || bindingOption === 'horsename') {
+            // determine_ambiguities() permits three-letter name-option
+            // abbreviations. Pettype needs four letters, or the alias "pet".
+            if (bindingOption === 'pet' || (bindingOption.length >= 4 && 'pettype'.startsWith(bindingOption))) {
+                const preference = configuredPetType(optionValue, negated);
+                if (preference !== null) {
+                    result.preferred_pet = preference;
+                    if (optionValue)
+                        result.flags.pettype = optionValue;
+                }
+                continue;
+            }
+            const petNameOption = bindingOption.length >= 3
+                ? ['dogname', 'catname', 'horsename'].find(name => name.startsWith(bindingOption))
+                : undefined;
+            if (petNameOption) {
                 if (negated)
                     continue;
                 if (optionValue === 'none' || optionValue === '(none)')
-                    result.flags[bindingOption] = '';
+                    result.flags[petNameOption] = '';
                 else if (optionValue)
-                    result.flags[bindingOption] = configuredPetName(optionValue, !!result.iflags.wc_eight_bit_input);
+                    result.flags[petNameOption] = configuredPetName(optionValue, !!result.iflags.wc_eight_bit_input);
                 continue;
             }
             if (bindingOption === 'number_pad') {
@@ -417,15 +433,6 @@ function parseConfiguration(rc, result) {
                     result.flags.debug = true;
                 else if (key === 'playmode' && val === 'explore')
                     result.flags.explore = true;
-                else if (key === 'pettype' || key === 'pet') {
-                    result.flags.pettype = val;
-                    if (val === 'none' || val === 'n')
-                        result.preferred_pet = 'n';
-                    else if (val === 'dog' || val === 'd')
-                        result.preferred_pet = 'd';
-                    else if (val === 'cat' || val === 'c')
-                        result.preferred_pet = 'c';
-                }
                 else if (key === 'symset')
                     result.symset = val;
                 else if (key === 'suppress_alert') {
@@ -533,6 +540,24 @@ function parseConfiguration(rc, result) {
     if (paranoiaSeen)
         result.flags.paranoia_bits = paranoiaBits;
     return result;
+}
+// C options.c:optfn_pettype() ignores negation when a value is supplied.
+// Horse is accepted, but dog.c:pet_type() still chooses a dog or cat unless
+// the role supplies its own pet.
+function configuredPetType(value, negated) {
+    if (!value)
+        return negated ? 'n' : null;
+    switch (value.charAt(0).toLowerCase()) {
+        case 'd': return 'd';
+        case 'c':
+        case 'f': return 'c';
+        case 'h':
+        case 'q': return 'h';
+        case 'n': return 'n';
+        case 'r':
+        case '*': return '';
+        default: return null;
+    }
 }
 // C options.c:nmcpy() copies bytes; bones.c:sanitize_name() replaces control
 // bytes and strips printable high bytes only when eight-bit input is disabled.

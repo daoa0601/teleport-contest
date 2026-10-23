@@ -230,6 +230,7 @@ export interface GameState {
     // Native initialization and level generation populate these records.
     ubirthday?: number;
     preferred_pet?: string;
+    petname_used?: number;
     symset?: string | null;
     fruitName?: string;
     fruits?: Fruit[];
