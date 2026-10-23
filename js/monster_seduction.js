@@ -8,7 +8,7 @@ import { reportHeroEncumbrance } from './encumbrance.js';
 import { heroHairName, heroHandName } from './body_parts.js';
 import { recorderIsLeapDay } from './calendar.js';
 import { heroHasInvoluntaryDelay } from './command_state.js';
-import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, LARGEST_INT, M_ATTK_AGR_DONE, QBUFSZ, RLOC_MSG, Upolyd } from './const.js';
+import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, KILLED_BY, LARGEST_INT, M_ATTK_AGR_DONE, QBUFSZ, RLOC_MSG, Upolyd } from './const.js';
 import { currency } from './currency.js';
 import { canSeeMonster } from './display.js';
 import { gainExperienceLevel, loseHeroExperience } from './exper.js';
@@ -283,7 +283,7 @@ async function seductionOutcome(context) {
             await publish(formatFeltMessage('exhausted.', state));
             await exerciseAttribute(A_STR, false, state);
             const damage = 6 + random(10);
-            await loseHeroHp(hero.halfPhysicalDamage ? Math.ceil(damage / 2) : damage, 'exhaustion', { state, publish });
+            await loseHeroHp(hero.halfPhysicalDamage ? Math.ceil(damage / 2) : damage, 'exhaustion', { state, publish, killerFormat: KILLED_BY });
         }
         return;
     }
