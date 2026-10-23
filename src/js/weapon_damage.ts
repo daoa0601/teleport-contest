@@ -9,7 +9,7 @@ import {
     A_STR, P_AXE, Upolyd, W_ARMG, WT_IRON_BALL_INCR,
 } from './const.js';
 import { game } from './gstate.js';
-import { heroHatesSilver, heroSpecies } from './hero_species.js';
+import { heroSpecies } from './hero_species.js';
 import {
     CREAM_PIE, GAUNTLETS_OF_POWER, HEAVY_IRON_BALL, OBJECT_LARGE_DAMAGE, OBJECT_NAMES,
     OBJECT_SMALL_DAMAGE, OBJECT_SUBTYPE, OBJECT_WEIGHT,
@@ -17,7 +17,7 @@ import {
 import {
     MONSTER_SIZE, monsterHatesBlessings, monsterHatesLight,
     monsterHatesSilver, monsterIsShade, monsterIsThickSkinned,
-    monsterIsWooden,
+    monsterIsWooden, monsterSpeciesHatesSilver,
 } from './monster_data.js';
 import { objectClassForType } from './object_knowledge.js';
 import { objectMaterial } from './object_material.js';
@@ -208,10 +208,13 @@ export function rollPhysicalWeaponDamage(
 export function rollPhysicalWeaponDamageAgainstHero(
     object: GameObject, state: GameState, options: PhysicalWeaponDamageOptions = {},
 ): number {
+    // C dmgval(obj, &youmonst) asks mon_hates_silver() about the hero's
+    // current form; lycanthropy (Hate_silver) only adds the searing line.
+    const species = heroSpecies(state);
     return rollPhysicalWeaponDamage(
         object,
-        { mnum: heroSpecies(state) },
-        { ...options, state, hero: true, hatesSilver: heroHatesSilver(state) },
+        { mnum: species },
+        { ...options, state, hero: true, hatesSilver: monsterSpeciesHatesSilver(species) },
     );
 }
 
