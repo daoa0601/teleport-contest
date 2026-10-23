@@ -18,6 +18,9 @@ export interface MenuLayout<T extends TextMenuLine> {
     pageSize: number;
     pageCount: number;
     maxRows: number;
+    width: number;
+}
+interface DisplayedMenuLayout<T extends TextMenuLine> extends MenuLayout<T> {
     boundary: number;
 }
 function display(): GameDisplay | null { return game.nhDisplay; }
@@ -36,7 +39,7 @@ function clearRect(left: number, top: number, right: number, bottom: number): vo
 // Native tty_end_menu() measures every assembled row, including later pages,
 // after assigning selectors. Margins and the largest pager also occupy width.
 export function menuLayout<T extends TextMenuLine>(
-    rows: readonly T[], columns: number, terminalRows: number, overlay: boolean,
+    rows: readonly T[], columns: number, terminalRows: number,
 ): MenuLayout<T> {
     if (terminalRows < 2 || columns < 2)
         throw new RangeError('A menu requires a content row, a pager row, and two columns');
@@ -54,8 +57,7 @@ export function menuLayout<T extends TextMenuLine>(
     const width = clippedRows.reduce((widest, row) => Math.max(widest, row.text.length + 2),
         Math.min(columns, pager.length));
     const maxRows = (pageCount > 1 ? pageSize : rows.length) + 1;
-    const boundary = windowOrigin(columns, terminalRows, width, maxRows, overlay);
-    return { rows: clippedRows, pageSize, pageCount, maxRows, boundary };
+    return { rows: clippedRows, pageSize, pageCount, maxRows, width };
 }
 
 // The pinned tty build enables H2344_BROKEN: corner windows occupy at
@@ -74,7 +76,7 @@ export function selectableMenuText(key: string, text: string, marker = '-'): str
 }
 
 export function paintMenuPage<T extends TextMenuLine>(
-    d: GameDisplay, menu: MenuLayout<T>, page: number,
+    d: GameDisplay, menu: DisplayedMenuLayout<T>, page: number,
     rows: readonly PaintedMenuRow[], underlay: MenuUnderlay | null,
     previousPageLines = 0,
 ): void {
@@ -213,7 +215,7 @@ export function tty_end_menu<T>(window: TtyMenuWindow<T>, prompt: string | null 
         // Native stores the clipped text, so search sees only the displayed description.
         row.text = row.text.slice(0, d.cols - 2);
     }
-    window.layout = menuLayout(window.entries, d.cols, d.rows, game.flags.menu_overlay !== false);
+    window.layout = menuLayout(window.entries, d.cols, d.rows);
 }
 
 export async function tty_display_nhwindow<T>(window: TtyMenuWindow<T>, how: MenuPickMode = PICK_NONE): Promise<TtyMenuResult<T>> {
@@ -222,8 +224,12 @@ export async function tty_display_nhwindow<T>(window: TtyMenuWindow<T>, how: Men
     const d = display();
     if (!d) return { cancelled: true, key: 27, selections: [] };
     if (!window.layout) tty_end_menu(window);
-    const layout = window.layout;
-    if (!layout) throw new Error('The menu has no completed layout');
+    const measured = window.layout;
+    if (!measured) throw new Error('The menu has no completed layout');
+    // tty_end_menu() retains dimensions; tty_display_nhwindow() chooses the
+    // origin each time, so redisplay honors the current overlay setting.
+    const layout = { ...measured, boundary: windowOrigin(d.cols, d.rows,
+        measured.width, measured.maxRows, game.flags.menu_overlay !== false) };
     // Native message-window display returns immediately while WIN_STOP is set.
     if (!game._suppressMessagesUntilInput) await flushPendingTopline();
     clearMessageWindow();
@@ -299,7 +305,7 @@ function requireWindow<T>(window: TtyMenuWindow<T>): void {
 }
 
 async function process_menu_window<T>(
-    d: GameDisplay, rows: TtyMenuRow<T>[], layout: MenuLayout<TtyMenuRow<T>>,
+    d: GameDisplay, rows: TtyMenuRow<T>[], layout: DisplayedMenuLayout<TtyMenuRow<T>>,
     how: MenuPickMode, underlay: MenuUnderlay | null,
 ): Promise<TtyMenuResult<T>> {
     const groups = groupAccelerators(rows, how);
