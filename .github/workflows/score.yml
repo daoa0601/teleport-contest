@@ -5,29 +5,37 @@ on:
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   score:
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    env:
-      # Approved hash of the scorer, oracle, frozen, and native patch sources.
-      # Set it as a repository secret after reviewing measurement changes.
-      MEASUREMENT_HASH: ${{ secrets.MEASUREMENT_HASH }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: '22'
+          check-latest: true
 
       - name: Install pinned development dependencies
-        run: npm ci
+        run: npm ci --ignore-scripts
 
       - name: Compile strict TypeScript and run behavior tests
         run: npm test
 
       - name: Check measurement sources against the approved hash
-        if: ${{ env.MEASUREMENT_HASH != '' }}
-        run: node src/scripts/check-measurement-guard.mts hash --expect "$MEASUREMENT_HASH"
+        env:
+          # Approved hash of the scorer, oracle, frozen, and native patch sources.
+          # Set it as a repository secret after reviewing measurement changes.
+          MEASUREMENT_HASH: ${{ secrets.MEASUREMENT_HASH }}
+        run: |
+          if [ -n "$MEASUREMENT_HASH" ]; then
+            node src/scripts/check-measurement-guard.mts hash --expect "$MEASUREMENT_HASH"
+          fi
 
       - name: Check verified-function ledger on public sessions
         run: |
@@ -50,7 +58,7 @@ jobs:
         run: node scripts/summarize-score.mjs
 
       - name: Upload results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: score-results
           path: |
