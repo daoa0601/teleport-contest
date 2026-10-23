@@ -401,10 +401,10 @@ export async function stolenValue(object, x, y, peaceful, { silent = true, publi
         resident.eshk.robbed = (resident.eshk.robbed ?? 0) + value;
         if (!silent) {
             if (canSeeMonster(resident)) {
-                await publish(`${shopkeeperName(resident)} booms: "${state.plname || 'you'}, you are a thief!"`);
+                await publish(`${shopkeeperName(resident)} booms: "${state.plname || 'you'}, you are a thief!"`, { noRepeat: true });
             }
             else if (!heroIsDeaf(state)) {
-                await publish('You hear a scream, "Thief!"');
+                await publish('You hear a scream, "Thief!"', { noRepeat: true });
             }
         }
         // C runs pursuit and guard anger even when silent.
