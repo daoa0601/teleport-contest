@@ -10,10 +10,14 @@ import { monsterName } from '../js/monster_name.js';
 import { GAUNTLETS_OF_POWER, LEATHER_ARMOR, LEATHER_GLOVES, OBJECT_NAMES } from '../js/object_data.js';
 import { setPropertyTimeout } from '../js/properties.js';
 import { initRng } from '../js/rng.js';
+import { loadScoreRecords } from '../js/score_records.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { answerPrompts } from './support/input-boundaries.js';
+import { memoryStorage } from './support/memory-storage.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { installPagerInput } from './support/pager-input.js';
+import { createDungeon } from './support/topology.js';
 const RIN_ADORNMENT = OBJECT_NAMES.indexOf('adornment');
 for (const { description, callName, personalName, expected } of [
     { description: 'short names that fit', callName: 'Keepsake', personalName: 'heirloom',
@@ -246,5 +250,28 @@ void test('a deaf hero loses an adornment ring to a succubus without a confirmat
     assert.equal(succubus.minvent.includes(ring), true);
     assert.equal(ring.ocarry, succubus);
     assert.equal(ring.where, 'minvent');
+});
+void test('a fatally exhausting seduction is recorded without an article', async () => {
+    const level = freshObjectRoom({
+        hero: { uhp: 1, uhpmax: 40, urexp: 100 },
+        flags: { female: true, bones: false, tombstone: false, disclose: '-i -a -v -c -o' },
+    });
+    requirePlayingGame(game);
+    level.flags.noteleport = true;
+    game.storage = memoryStorage();
+    game.plname = 'Victim';
+    game.iflags.toptenwin = false;
+    game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 20 })];
+    const incubus = await createMonsterAt('amorous demon', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
+    incubus.female = false;
+    const attack = { kind: 'hero-attack', attackType: AT_BITE,
+        damageType: AD_SSEX, hit: true, damage: 0 };
+    const input = resetInputState();
+    installPagerInput(input, { expected: /exhausted|die|points|Goodbye/i, limit: 10 });
+    // The demon enjoys it more, and the hero is left exhausted.
+    await resolveMonsterContactEffect(incubus, attack, { state: game, publish: async () => { },
+        random: sides => (sides === 35 ? 34 : sides === 5 ? 4 : 0), rollOne: () => 4 });
+    assert.equal(game.program_state.gameover, true);
+    assert.equal(loadScoreRecords()[0]?.death, 'killed by exhaustion');
 });
 //# sourceMappingURL=monster_seduction_contact.test.js.map
