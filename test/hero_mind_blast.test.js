@@ -70,4 +70,22 @@ void test('trying to mind blast without enough energy takes no time', async () =
         'You concentrate but lack the energy to maintain doing so.',
     ]);
 });
+void test('a mind blast reaches the newest monster first', async () => {
+    freshMonsterAbilityRoom('mind flayer', { energy: 20, right: 24 });
+    requireFixtureGame(game);
+    const older = await createMonsterAt('jackal', 11, 10);
+    older.mhp = older.mhpmax = 20;
+    const newer = await createMonsterAt('jackal', 13, 10);
+    newer.mhp = newer.mhpmax = 20;
+    let chances = 0;
+    await useHeroMindBlast({
+        state: game,
+        publish: async () => { },
+        // Only the first mind examined is found.
+        random: () => (chances++ === 0 ? 0 : 1),
+        rollDamage: () => 4,
+    });
+    assert.equal(newer.mhp, 16);
+    assert.equal(older.mhp, 20);
+});
 //# sourceMappingURL=hero_mind_blast.test.js.map
