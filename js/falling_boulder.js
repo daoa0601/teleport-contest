@@ -65,10 +65,11 @@ export async function dropBoulderOnMonster(x, y, { state = game, confused = fals
     const monster = monsterAtPosition(state.level, x, y);
     const swallowsHero = monster && state.u.uswallow && state.u.ustuck === monster;
     if (monster && canBeHit(monster)) {
-        const spotted = canSpotMonster(monster);
+        // C rechecks canspotmon() after each pline(), whose pending vision
+        // recalculation can hide the target behind boulders that just fell.
         if (cansee(x, y)) {
             await plineWithContinuation(`${monsterName(monster, { state, capitalized: true })} is hit by ${fallingRockName(object, state)}!`);
-            if (monster.minvis && !spotted)
+            if (monster.minvis && !canSpotMonster(monster))
                 map_invisible(x, y);
         }
         else if (swallowsHero) {
@@ -79,13 +80,13 @@ export async function dropBoulderOnMonster(x, y, { state = game, confused = fals
         const helmet = inventory?.find(item => (item.owornmask ?? 0) & W_ARMH);
         if (helmet) {
             if (objectIsHardHelmet(helmet)) {
-                if (spotted)
+                if (canSpotMonster(monster))
                     await plineWithContinuation(`Fortunately, ${monsterName(monster, { state })} is wearing a hard helmet.`);
                 else
                     await hear('a clanging sound.', state);
                 damage = Math.min(damage, 2);
             }
-            else if (spotted) {
+            else if (canSpotMonster(monster)) {
                 await plineWithContinuation(`${possessiveName(monsterName(monster, { state, capitalized: true }))} ${objectName(helmet, state)} does not protect ${monsterObjectPronoun(monster, { state })}.`);
             }
         }
