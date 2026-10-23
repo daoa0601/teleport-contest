@@ -25,6 +25,7 @@ import { shipObject } from './object_migration.js';
 import { objectResistsDestruction } from './object_state.js';
 import { applyBoulderPitEffects } from './pit_fill.js';
 import { rnl, rn2 } from './rng.js';
+import { publishHeardMessage } from './hero_speech.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
 import { destroyLavaFloorObjects, waterDamageObject } from './trap.js';
 import { cansee } from './vision.js';
@@ -86,7 +87,7 @@ async function breakPotionOnHotGround(
             ? 'It shatters from the heat!'
             : 'They shatter from the heat!');
     } else if (!heroIsDeaf(state)) {
-        await publish('You hear a shattering noise.');
+        await publishHeardMessage('a shattering noise.', publish, state);
     }
     await breakObjectAtLocation(object, {
         x, y, state,
