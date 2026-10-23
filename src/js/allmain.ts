@@ -3322,7 +3322,16 @@ async function presentRestrictedMonsterTeleport(
                 `A mysterious force prevents ${monsterName(monster)} from teleporting!`,
             );
         }
-        await resumeDeferredRestrictedTenguTeleport(action, game);
+        // The resumed m_move() can still reach dochug()'s contact attack;
+        // its hit line must page before damage and knockback, as on the
+        // ordinary path.
+        const previousDeferral = game._deferVisibleMonsterContact;
+        game._deferVisibleMonsterContact = true;
+        try {
+            await resumeDeferredRestrictedTenguTeleport(action, game);
+        } finally {
+            game._deferVisibleMonsterContact = previousDeferral;
+        }
         movement = action.movement;
     }
 }
