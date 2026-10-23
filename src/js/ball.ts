@@ -170,7 +170,7 @@ async function scatterCarriedItems(state: GameState): Promise<void> {
     }
 }
 
-async function releaseCarriedBall(state: GameState, showMessage = false): Promise<void> {
+export async function releaseCarriedBall(state: GameState, showMessage = false): Promise<void> {
     const ball = state.uball || state.u.uball;
     if (!ball || !carried(ball, state) || isWeldedPrimary(ball, state)) return;
     if (showMessage) await plineWithContinuation('Startled, you drop the iron ball.');
