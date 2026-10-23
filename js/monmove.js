@@ -4077,9 +4077,9 @@ export async function triggerImmediateMonsterTrap(monster, state = requireInitia
     return { monster, movement, event, calls };
 }
 // Complete mintrap() for a source effect without running a movement tail.
+// C mintrap() gives an already trapped monster its escape roll whatever the
+// caller's flags, so a monster caught mid-hurtle rolls again on landing.
 export async function finishImmediateMonsterTrap(action, state = requireInitializedGame(), { publish = plineWithContinuation, random = rn2, rollOne = rnd, rollDice = d, finishDeath, describeMonster } = {}) {
-    if (action.movement.escapingTrap)
-        return action;
     if (action.event?.kind === 'rolling-boulder')
         return action;
     await resumeDeferredMonsterTrap(action, state, {
