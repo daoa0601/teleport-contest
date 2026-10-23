@@ -527,7 +527,8 @@ function goneSpecies(includeExtinct = true): GoneSpecies[] {
 }
 
 function genocidedLines(
-    gone: GoneSpecies[], genocided: number, extinct: number, ask: boolean,
+    gone: GoneSpecies[], genocided: number, extinct: number,
+    { ask, dumping = false }: { ask: boolean; dumping?: boolean },
 ): TextMenuEntry[] {
     let mode = vanqSortMode();
     // C list_genocided(): with more than one species the shared sort mode
@@ -543,8 +544,8 @@ function genocidedLines(
         && (mode === VANQ_MCLS_LTOH || mode === VANQ_MCLS_HTOL);
     const lines: TextMenuEntry[] = [
         `${genocided ? 'Genocided' : 'Extinct'}${extinct && genocided ? ' or extinct' : ''} species:`,
-        '',
     ];
+    if (!dumping) lines.push('');
     let previousClass = 0;
     for (const species of ordered) {
         const mlet = MONSTER_SYMBOL[species.mnum] ?? 0;
@@ -558,26 +559,37 @@ function genocidedLines(
         const name = makePlural(MONSTER_NAME[species.mnum] || 'monster');
         lines.push(` ${name}${species.extinctOnly ? ' (extinct)' : ''}`);
     }
-    lines.push('');
+    if (!dumping) lines.push('');
     if (genocided > 0) lines.push(`${genocided} species genocided.`);
     if (extinct > 0) lines.push(`${extinct} species extinct.`);
     return lines;
 }
 
 // C insight.c:list_genocided(), shared by live commands and final disclosure.
-export async function listGenocided(defquery: DisclosureDefault | 'g' = 'y', ask = false): Promise<void> {
+// Native dump_redirect() writes putstr() rows without displaying a window.
+// Return the dump rows so file output stays outside this listing.
+export function listGenocided(defquery: 'd', ask?: false): Promise<readonly string[]>;
+export function listGenocided(defquery?: DisclosureDefault | 'g', ask?: boolean): Promise<void>;
+export async function listGenocided(
+    defquery: DisclosureDefault | 'g' | 'd' = 'y', ask = false,
+): Promise<readonly string[] | void> {
+    const dumping = defquery === 'd';
     const genociding = defquery === 'g';
-    const defaultAnswer: DisclosureDefault = defquery === 'g' ? 'y' : defquery;
+    const defaultAnswer: DisclosureDefault = defquery === 'g' || defquery === 'd' ? 'y' : defquery;
     const includeExtinct = !genociding && !!(game.program_state.gameover
         || game.flags.debug || game.flags.explore || game.discover);
     const gone = goneSpecies(includeExtinct);
     if (!gone.length) {
         if (!game.program_state.gameover)
             await pline(`No creatures have been genocided${genociding ? ' yet' : ''}.`);
+        if (dumping) return game.program_state.gameover
+            ? ['No species were genocided or became extinct.'] : [];
         return;
     }
     const genocided = gone.filter(species => species.genocided).length;
     const extinct = gone.filter(species => species.extinctOnly).length;
+    if (dumping) return genocidedLines(gone, genocided, extinct, { ask: false, dumping })
+        .map(line => typeof line === 'string' ? line : line.text);
     const question = `Do you want a list of ${extinct && !genocided ? 'extinct ' : ''}species${
         genocided ? ' genocided' : ''}${extinct && genocided ? ' and extinct' : ''}?`;
     const multiple = gone.length > 1;
@@ -586,7 +598,7 @@ export async function listGenocided(defquery: DisclosureDefault | 'g' = 'y', ask
     if (answer === 'q') { stopDisclosure(); return; }
     if (answer !== 'y' && answer !== 'a') return;
     if (answer === 'a' && multiple && await setVanqOrder(false) < 0) return;
-    await showDisclosureOverlay(genocidedLines(gone, genocided, extinct, ask), {
+    await showDisclosureOverlay(genocidedLines(gone, genocided, extinct, { ask }), {
         restoreUnderlay: true,
     });
 }
