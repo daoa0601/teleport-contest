@@ -4,7 +4,10 @@ import assert from 'node:assert/strict';
 import { rhack } from '../js/cmd.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
+import { advanceLevitationTimeout } from '../js/levitation_timeout.js';
+import { ORCISH_DAGGER, POT_LEVITATION } from '../js/object_data.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
+import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { createSpecialLevel } from './support/topology.js';
 import { installPagerInput } from './support/pager-input.js';
 import { answerPrompts } from './support/input-boundaries.js';
@@ -51,4 +54,37 @@ void test('declining entry to Gehennom keeps its gate closed', async () => {
     assert.ok(game.level === source);
     assert.equal(game.u.uevent?.gehennom_entered ?? 0, 0);
     assert.equal(game.context.move, 0);
+});
+
+void test('a menu-prefixed cursed levitation climb leaves the landing unpicked', async () => {
+    freshConnectedLevels();
+    requirePlayingGame(game);
+    assert.ok(game.stairs);
+    game.stairs.up = true;
+    game.stairs.tolev = { dnum: 0, dlevel: 0 };
+    await floorObject(ORCISH_DAGGER, game.u.ux, game.u.uy);
+    const potion = await addInventoryObject(POT_LEVITATION, { cursed: true });
+    const messages: string[] = [];
+    const input = resetInputState();
+    input.feed(`q${potion.invlet}`);
+
+    await answerPrompts(rhack('m'.charCodeAt(0)), input, [
+        { prompt: /You start to float in the air!/, keys: ' ' },
+        { prompt: /Beware, there will be no return!  Still climb\?/, keys: '\u001b' },
+    ]);
+    game._pending_message = '';
+    input.display = {
+        async readKey(): Promise<number> {
+            messages.push(game._pending_message ?? '');
+            return ' '.charCodeAt(0);
+        },
+    };
+    // The cursed potion's one-turn levitation ends before the next command.
+    await advanceLevitationTimeout(game);
+    messages.push(game._pending_message ?? '');
+
+    const shown = messages.join(' ');
+    assert.match(shown, /You float gently to the stairs\./);
+    // C doup()'s set_move_cmd() kept the menu prefix's no-pickup request.
+    assert.doesNotMatch(shown, /here/);
 });
