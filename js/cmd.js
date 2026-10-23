@@ -2048,6 +2048,7 @@ async function recoilFromKick(range) {
 function applyKickPassive(monster, hit) {
     return applyHeroContactPassive(monster, {
         hit,
+        defenderSurvived: monster.mhp > 0,
         attackType: AT_KICK,
         weapon: game.uarmf || game.u?.uarmf || null,
     });
