@@ -4,9 +4,9 @@ import { artifactDamageBonus, artifactEmitsLight, artifactStrikesShade, } from '
 import { currentAttribute } from './attrib.js';
 import { A_STR, P_AXE, Upolyd, W_ARMG, WT_IRON_BALL_INCR, } from './const.js';
 import { game } from './gstate.js';
-import { heroHatesSilver, heroSpecies } from './hero_species.js';
+import { heroSpecies } from './hero_species.js';
 import { CREAM_PIE, GAUNTLETS_OF_POWER, HEAVY_IRON_BALL, OBJECT_LARGE_DAMAGE, OBJECT_NAMES, OBJECT_SMALL_DAMAGE, OBJECT_SUBTYPE, OBJECT_WEIGHT, } from './object_data.js';
-import { MONSTER_SIZE, monsterHatesBlessings, monsterHatesLight, monsterHatesSilver, monsterIsShade, monsterIsThickSkinned, monsterIsWooden, } from './monster_data.js';
+import { MONSTER_SIZE, monsterHatesBlessings, monsterHatesLight, monsterHatesSilver, monsterIsShade, monsterIsThickSkinned, monsterIsWooden, monsterSpeciesHatesSilver, } from './monster_data.js';
 import { objectClassForType } from './object_knowledge.js';
 import { objectMaterial } from './object_material.js';
 import { d, rn2, rnd } from './rng.js';
@@ -155,7 +155,10 @@ export function rollPhysicalWeaponDamage(object, monster, { state = game, hero =
     return applyErosion(object, damage);
 }
 export function rollPhysicalWeaponDamageAgainstHero(object, state, options = {}) {
-    return rollPhysicalWeaponDamage(object, { mnum: heroSpecies(state) }, { ...options, state, hero: true, hatesSilver: heroHatesSilver(state) });
+    // C dmgval(obj, &youmonst) asks mon_hates_silver() about the hero's
+    // current form; lycanthropy (Hate_silver) only adds the searing line.
+    const species = heroSpecies(state);
+    return rollPhysicalWeaponDamage(object, { mnum: species }, { ...options, state, hero: true, hatesSilver: monsterSpeciesHatesSilver(species) });
 }
 // Strength values above 18 retain NetHack's internal encoding (19 == 18/01,
 // 93 == 18/75, 118 == 18/**), matching display.js:formatStrength().
