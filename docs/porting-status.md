@@ -498,7 +498,7 @@ Continue from the earliest shared native/JavaScript difference and read the
 whole owning C/Lua mechanic. Shared implementations and passing behavior tests
 do not establish completeness.
 
-Fresh native batches 3711-4150 (132,000 sessions, recorded and scored on
+Fresh native batches 3711-4110 (120,000 sessions, recorded and scored on
 Actions) fail only in single sessions, each fixed at its owner: gas clouds over
 boulders, lycanthrope `dmgval()`, mind-blast `fmon` order, exhaustion killer
 format, liquid relocation redraws, `doup()`/`dodown()` move-command state,
