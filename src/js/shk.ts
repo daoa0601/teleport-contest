@@ -947,12 +947,14 @@ export function carriedObjectOwner(object: GameObject, state: GameState = game):
     return object.where === 'inventory' ? 'Your' : 'The';
 }
 
-// C shk.c:3309 add_one_tobill(): one billed entry; unbilled freebies
-// (unclaimed or full bill) print and stop here.
-function addOneToBill(object: GameObject, resident: BilledShopkeeper, state: GameState): ShopBillEntry | null {
+// C shk.c:3309 add_one_tobill(): one billed entry. An unclaimed object
+// stays unbilled quietly; a full bill gives it away, even for silent callers.
+async function addOneToBill(object: GameObject, resident: BilledShopkeeper,
+    publish: MessagePublisher, state: GameState): Promise<ShopBillEntry | null> {
     const eshk = resident.eshk;
-    if (!shopClaimsObject(object, resident, true, state)
-        || eshk.bill.length === BILLSZ) {
+    if (!shopClaimsObject(object, resident, true, state)) return null;
+    if (eshk.bill.length === BILLSZ) {
+        await publish('You got that for free!');
         return null;
     }
     const entry = {
@@ -971,13 +973,14 @@ function addOneToBill(object: GameObject, resident: BilledShopkeeper, state: Gam
 
 // C shk.c:3387 bill_box_content(): recursive content billing; a sealed
 // Schroedinger box keeps its mystery and its contents unbilled.
-function billBoxContent(container: GameObject, resident: BilledShopkeeper, state: GameState): void {
+async function billBoxContent(container: GameObject, resident: BilledShopkeeper,
+    publish: MessagePublisher, state: GameState): Promise<void> {
     if (isSchroedingersBox(container)) return;
     for (const content of container.contents || []) {
         if (content.oclass === COIN_CLASS) continue;
-        if (!content.no_charge) addOneToBill(content, resident, state);
+        if (!content.no_charge) await addOneToBill(content, resident, publish, state);
         if (content.contents?.length) {
-            billBoxContent(content, resident, state);
+            await billBoxContent(content, resident, publish, state);
         }
     }
 }
@@ -1041,8 +1044,8 @@ export async function addShopObjectToBill(object: GameObject, state: GameState =
         const cltmp = containedBuyCost(object, keeper,
             { unpaidOnly: false, state });
         const gltmp = containedGold(object, true);
-        if (ltmp) entry = addOneToBill(object, keeper, state);
-        if (cltmp) billBoxContent(object, keeper, state);
+        if (ltmp) entry = await addOneToBill(object, keeper, publish, state);
+        if (cltmp) await billBoxContent(object, keeper, publish, state);
         pickedContainer(object); /* reset contained no_charge */
         ltmp += cltmp;
         if (gltmp) {
@@ -1053,11 +1056,8 @@ export async function addShopObjectToBill(object: GameObject, state: GameState =
         if (object.no_charge) object.no_charge = false;
         contentscount = countUnpaidContents(object);
     } else {
-        entry = addOneToBill(object, keeper, state);
-        if (!entry) {
-            if (!silent) await publish('You got that for free!');
-            return null;
-        }
+        entry = await addOneToBill(object, keeper, publish, state);
+        if (!entry) return null;
     }
 
     if (!heroIsDeaf(state) && !shopkeeperIsMuted(keeper) && !silent) {
