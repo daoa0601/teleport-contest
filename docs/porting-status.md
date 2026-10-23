@@ -498,32 +498,31 @@ Continue from the earliest shared native/JavaScript difference and read the
 whole owning C/Lua mechanic. Shared implementations and passing behavior tests
 do not establish completeness.
 
-A concrete next source review is inventory-menu placement. Development case
-`c069e440-4d93-44de-8339-cb4287ebf85b.session.json` now matches all **3,030**
-random calls and **11/12** screens. Its old near-miss difference is gone; the
-first remaining difference is input 10. Native places the Weapons heading and
-katana inventory line at column 25; TypeScript places them at column 35. Review
-the whole shared menu width/origin owner and its caller's item descriptions.
-Do not add padding or case-specific positioning to match this recording.
-Source review finds that both placement formulas agree at these widths and
-that Samurai startup sets the real primary, alternate, and quiver masks.
-The next observable check is all six menu rows and each side's longest row,
-then that object's knowledge, quantity, mask, and slot identity. The native
-position implies a 53-character longest row versus 43 in TypeScript.
+Fresh native batches 3711-4150 (132,000 sessions, recorded and scored on
+Actions) fail only in single sessions, each fixed at its owner: gas clouds over
+boulders, lycanthrope `dmgval()`, mind-blast `fmon` order, exhaustion killer
+format, liquid relocation redraws, `doup()`/`dodown()` move-command state,
+returning-weapon redraws, `getpos()` status flushing, `mintrap()` escape rolls
+for trapped monsters (and every immediate-trap caller, including boiled pools),
+and too-wide `putstr` windows that overlay only their own rows.
 
-Separately, the shared `windows.ts` layout still hardcodes terminal dimensions,
-omits `menu_overlay`, and inconsistently handles native half-screen limits,
-multiselect page origins, truncation, and pager widths. Review the whole native
-`wintty.c` menu owner after identifying the differing row above; these source
-gaps alone do not explain that particular offset.
+Source reviews closed several listed gaps: the inventory-menu case
+`c069e440` matches all 12 screens, menus choose their origin at display time
+from `menu_overlay`, bulk take-off (`A`) and its `reset_occupations()` on
+engulfing are native, shopkeeper pickup quotes (including the deaf list price
+and bill overflow) match `addtobill()`, Astral `gain_guardian_angel()` runs
+from `final_level()`, the genocide listing and its dump rows follow
+`list_genocided()`, and the starting-pet options follow `optfn_pettype()` and
+`makedog()`.
+
+The shared `windows.ts` layout still hardcodes terminal dimensions and needs
+review of native half-screen limits, multiselect page origins, truncation,
+pager widths, and retained-menu clipping on resize.
 
 Continue the naming caller/dependency review. Invalid leash references and
 missing bills still need native `impossible()` output at an awaited boundary;
-the synchronous formatter currently cannot publish those diagnostics. Native
-bulk takeoff state is also absent, so dressing annotations cover the implemented
-single-object delayed action. Several other callers retain local vowel-only
-article checks and need source review. Broader shopkeeper pickup speech and the
-deaf list-price path remain incomplete.
+the synchronous formatter currently cannot publish those diagnostics. Several
+other callers retain local vowel-only article checks and need source review.
 
 The tourist disaster cursor mismatch remains open. Its random stream and
 screen cells match, but three cursor positions differ; review the shared prompt
@@ -534,12 +533,11 @@ The inventory display boundary is implemented; continue reviewing remaining
 whole native functions. Ranged slot dispatch, shared pet combat, forced steed
 attacks, monster movement permissions, and door/bar actions likewise need
 continued caller/dependency review. Passing behavior tests do not establish
-completeness. Astral `gain_guardian_angel()` still needs its arrival caller.
+completeness.
 
-The genocide `?` listing still needs the shared native insight/menu owner;
-its one-line list is incomplete. Other known gaps include host-system mail,
-hardcoded final attribute descriptions, custom starting-pet names, and a caller
-review of `keepdogs(TRUE)` for end-game handling and `#wizmakemap`.
+Other known gaps include host-system mail, hardcoded final attribute
+descriptions, dumplog file writing, native configuration-error messages for
+pet options, and starting-pony saddle identification.
 
 Run one full suite or corpus at a time. Keep ownership of yielded sessions until
 exit, and terminate owned children if a check is abandoned. Prefer focused
