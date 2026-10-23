@@ -13,6 +13,7 @@ import { japaneseItemName, wishedObjectPresentation } from './objnam.js';
 import { setHeroSpecies } from './hero_species.js';
 import { seeMonsterCloseup } from './monster_observation.js';
 import { setMonsterGivenName } from './monster_given_name.js';
+import { impossible } from './diagnostics.js';
 import { setMonsterMalign } from './monster_alignment.js';
 import { nextIdent } from './ident.js';
 import { rn2, rnd, d, rne } from './rng.js';
@@ -652,19 +653,27 @@ export async function makedog() {
             killed_by_u: 0,
         },
     };
-    if (role === 'knight' && !g.u?.uroleplay?.pauper) {
-        await putSaddleOnMonster(await mksobj(SADDLE, true, false), pet);
-    }
     if (!g.level.monsters)
         g.level.monsters = [];
     g.level.monsters.push(pet);
-    g.context.startingpet_mid = pet.m_id;
-    await seeMonsterCloseup(pet, { photo: g.inventory.some(object => object.otyp === EXPENSIVE_CAMERA) });
+    if (!g.context.startingpet_mid) {
+        g.context.startingpet_mid = pet.m_id;
+        if (pettype === MONSTER_NAME.indexOf('pony') && !g.u.uroleplay?.pauper)
+            await putSaddleOnMonster(await mksobj(SADDLE, true, false), pet);
+        g.bhitpos = { x: pet.mx, y: pet.my };
+        g.notonhead = false;
+        await seeMonsterCloseup(pet, { photo: g.inventory.some(object => object.otyp === EXPENSIVE_CAMERA) });
+    }
+    else {
+        await impossible('makedog() when startingpet_mid is already non-zero?');
+    }
     const name = pettype === MONSTER_NAME.indexOf('little dog')
         ? g.flags.dogname || DEFAULT_DOG_NAMES[role]
         : pettype === MONSTER_NAME.indexOf('kitten') ? g.flags.catname
             : pettype === MONSTER_NAME.indexOf('pony') ? g.flags.horsename : null;
-    if (name)
+    const petnameUsed = g.petname_used ?? 0;
+    g.petname_used = petnameUsed + 1;
+    if (!petnameUsed && name)
         setMonsterGivenName(pet, name);
     // dog.c:initedog() assigns kill credit after making the pet peaceful.
     setMonsterMalign(pet, g);

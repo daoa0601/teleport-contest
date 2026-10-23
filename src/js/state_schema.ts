@@ -82,6 +82,7 @@ const transientFields = {
     made_branch: true,
     nethackrc: true,
     preferred_pet: true,
+    petname_used: true,
     smeq: true,
     splev_align: true,
     symset: true,

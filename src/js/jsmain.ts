@@ -430,7 +430,7 @@ export class Engine {
         g._monTelecontrol = !!opts.monTelecontrol;
         g.commandBindings = opts.commandBindings;
         g.symset = opts.symset || null;
-        if (opts.preferred_pet) g.preferred_pet = opts.preferred_pet;
+        if (opts.preferred_pet !== undefined) g.preferred_pet = opts.preferred_pet;
         if (opts.tutorial_set) g.tutorial_set_in_config = true;
 
         // Initialize hero struct
