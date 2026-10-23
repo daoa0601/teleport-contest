@@ -5,7 +5,7 @@ import { formatFeltMessage, formatSeenMessage, publishHeardMessage } from './her
 import { ingSuffix } from './hacklib.js';
 import { heroLocomotion } from './hero_locomotion.js';
 import { autokey, autoUnlockFlags, continuePicking, pickLock } from './lock_pick.js';
-import { resetPick } from './lock_context.js';
+import { resetOccupations } from './occupation_reset.js';
 import { petRefusesHeroSwap, settlePetHeroDisplacement } from './hero_pet_displacement.js';
 import { airTurbulenceStopsHero, waterTurbulenceStopsHero } from './hero_movement_turbulence.js';
 import { maybeAdjustHeroBubble } from './elemental.js';
@@ -438,7 +438,7 @@ import { useStethoscope } from './stethoscope.js';
 import { useBagOfTricks } from './bag_of_tricks.js';
 import { useHornOfPlenty } from './horn_of_plenty.js';
 import { useTinningKit } from './tinning_kit.js';
-import { continueTrapSetting, resetTrapSetting, useSettableTrap } from './trap_setting.js';
+import { continueTrapSetting, useSettableTrap } from './trap_setting.js';
 import { useSaddle } from './steed.js';
 import {
     isRoyalJelly, useRoyalJelly,
@@ -1548,9 +1548,7 @@ async function runCommandHandler(binding: CommandBinding, {
         if (result & (ECMD_FAIL | ECMD_CANCEL)) resetCommandVariables(true);
         game.context.move = Number((result & ECMD_TIME) !== 0);
         if (result) {
-            resetBulkTakeoff();
-            resetPick();
-            resetTrapSetting();
+            resetOccupations();
             if (game._occupation?.key === 'pick-lock') game._occupation = null;
         }
     } else if (ch === 'c') {
@@ -5583,9 +5581,7 @@ async function dodrop(): Promise<void> {
             return;
         }
         game.context.move = 1;
-        resetBulkTakeoff();
-        resetPick();
-        resetTrapSetting();
+        resetOccupations();
         if (game._occupation?.key === 'pick-lock')
             game._occupation = null;
     } finally {
@@ -6873,9 +6869,7 @@ async function finishHeroMovement({
 }): Promise<boolean> {
     const u = game.u;
     await placeHeroOnLevel(u.ux, u.uy);
-    resetBulkTakeoff();
-    resetPick();
-    resetTrapSetting();
+    resetOccupations();
     // An active non-travel run ends upon entering a doorway, obstruction, or
     // furniture square even when actor displacement, rather than the plain
     // terrain branch, performed the coordinate move.

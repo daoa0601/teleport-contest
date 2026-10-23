@@ -32,6 +32,8 @@ import { createMonsterAt } from './support/monsters.js';
 import { createPoisonGasCloud } from '../js/regions.js';
 import { addTrap } from './support/level-state.js';
 import { createDungeon } from './support/topology.js';
+import { beginHeroEngulf } from '../js/hero_engulf.js';
+import { AD_DGST, AT_ENGL } from '../js/monster_attack_types.js';
 
 const LOW_BOOTS = OBJECT_NAMES.indexOf('low boots');
 const T_SHIRT = OBJECT_NAMES.indexOf('T-shirt');
@@ -1155,4 +1157,80 @@ void test('the turn scheduler spends exactly the suit removal delay after the fr
     assert.equal(game.uarm, null);
     await moveloop_core();
     assert.equal(game.moves - started, 5);
+});
+
+void test('a hostile monster arriving next to the hero stops disrobing and A resumes the remaining work', async () => {
+    const input = freshTurnRoom({ flags: { menu_style: MENU_PARTIAL, verbose: false } });
+    const suit = await addInventoryObject(RING_MAIL);
+    const boots = await addInventoryObject(LOW_BOOTS);
+    wearHeroArmor(suit);
+    wearHeroArmor(boots);
+    input.feed(`A${boots.invlet}${suit.invlet}\n`);
+    await moveloop_core();
+    await moveloop_core();
+    assert.equal(game._occupation?.key, 'takeoff');
+    const { ux, uy } = game.u;
+    const monster = await createMonsterAt('jackal', ux + 1, uy, NO_MINVENT);
+    monster.mpeaceful = false;
+    monster.msleeping = 1;
+    newsym(ux + 1, uy);
+    const messages: string[] = [];
+    input.display = {
+        async readKey() {
+            messages.push(game._pending_message);
+            return 27;
+        },
+    };
+    await moveloop_core();
+    assert.equal(game._occupation, null);
+    assert.ok(messages.some(message => /You stop disrobing\./.test(message)), messages.join(' | '));
+    assert.equal(game.uarm, suit);
+    assert.equal(game.uarmf, boots);
+    assert.match(inventoryItemDescription(suit), /\(being doffed\)$/);
+    assert.match(inventoryItemDescription(boots), /\(being worn\)$/);
+
+    monster.mpeaceful = true;
+    resetInputState();
+    await takeOff('');
+    assert.equal(game._pending_message, 'You continue disrobing.');
+    let turns = 0;
+    while (game.uarm && turns < 10) {
+        await work(1);
+        turns++;
+    }
+    assert.equal(game.uarm, null, 'the suit comes off first despite being selected second');
+    assert.equal(game.uarmf, boots);
+    assert.match(inventoryItemDescription(boots), /\(being doffed\)$/);
+    while (game.uarmf && turns < 15) {
+        await work(1);
+        turns++;
+    }
+    assert.equal(game.uarmf, null);
+    assert.equal(game.context.takeoff, undefined);
+});
+
+void test('being engulfed discards interrupted bulk removal', async () => {
+    freshObjectRoom({ flags: { menu_style: MENU_PARTIAL, verbose: false } });
+    const suit = await addInventoryObject(RING_MAIL);
+    wearHeroArmor(suit);
+    const { ux, uy } = game.u;
+    const monster = await createMonsterAt('purple worm', ux - 1, uy, NO_MINVENT);
+    await takeOff(`${suit.invlet}\n`);
+    await work(1);
+    await stopHeroOccupation(game, async () => {});
+    assert.match(inventoryItemDescription(suit), /\(being doffed\)$/);
+    initRng(1n);
+    pushKeys(' '.repeat(10));
+    game.u.ustuck = monster;
+    const capture = await beginHeroEngulf(monster, {
+        kind: 'hero-attack', attackType: AT_ENGL, hit: true,
+        damageType: AD_DGST, engulfOldX: ux - 1, engulfOldY: uy,
+    });
+    assert.equal(capture.captured, true);
+    assert.doesNotMatch(inventoryItemDescription(suit), /being doffed/);
+    resetInputState();
+    await takeOff('\x1b');
+    assert.notEqual(game._pending_message, 'You continue disrobing.');
+    await work(6);
+    assert.equal(game.uarm, suit, 'cancelling a fresh selection keeps the suit worn');
 });
