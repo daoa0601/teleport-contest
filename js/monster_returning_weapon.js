@@ -47,6 +47,9 @@ export async function returnMonsterWeapon(monster, weapon, impactX, impactY, { s
             monster.misc_worn_check = (monster.misc_worn_check ?? 0) | W_WEP;
             if (cansee(x, y))
                 newsym(x, y);
+            // C return_from_mtoss() then falls through to its closing redraw.
+            if (cansee(x, y))
+                newsym(x, y);
             return;
         }
         let damage = random(2);
