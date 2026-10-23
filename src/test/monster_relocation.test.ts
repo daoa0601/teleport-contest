@@ -400,3 +400,49 @@ void test('a Tengu reaches its landing fire only after its teleport message is a
     assert.deepEqual([tengu.mx, tengu.my], [11, 10]);
     assert.ok(tengu.mhp < 100, 'the ordinary movement tail still triggers the landing fire');
 });
+
+void test('a Tengu refused a teleport bites only after the refusal is acknowledged', async () => {
+    freshObjectRoom({ left: 4, right: 20, top: 10, bottom: 10, hero: { uhp: 500, uhpmax: 500 } });
+    requirePlayingGame(game);
+    game.level.flags.noteleport = true;
+    game._moveloopStarted = true;
+    game.u.umovement = 12;
+    const tengu = await createMonsterAt('tengu', game.u.ux + 1, game.u.uy, NO_MINVENT);
+    tengu.mpeaceful = 0;
+    tengu.mcan = 0;
+    tengu.msleeping = 0;
+    tengu.mhp = tengu.mhpmax = 500;
+    const input = resetInputState();
+    const reads: { line: string; hp: number; stayed: boolean }[] = [];
+    let start = { x: 0, y: 0 };
+    const commands = ['m', 's'];
+    let commandIndex = 0;
+    input.beforeRead = () => {
+        const line = requireScreenRow(0).map(cell => cell.ch).join('');
+        const more = line.includes('--More--');
+        reads.push({ line, hp: game.u.uhp ?? 0, stayed: tengu.mx === start.x && tengu.my === start.y });
+        input.feed(more ? ' ' : commands[commandIndex++ % commands.length] ?? 's');
+    };
+    initRng(3n);
+
+    // A confused tengu beside the hero still runs m_move(), and its
+    // teleport probe; when it stays put, dochug() continues to its bite.
+    const refusalThenBite = () => reads.findIndex((read, index) =>
+        read.stayed && /prevents the tengu from teleporting/.test(read.line)
+        && /The tengu bites!/.test(reads[index + 1]?.line ?? ''));
+    for (let turn = 0; turn < 400 && refusalThenBite() < 0; turn++) {
+        const side = game.u.ux > 12 ? -1 : 1;
+        await relocateMonsterTo(tengu, game.u.ux + side, game.u.uy);
+        start = { x: tengu.mx, y: tengu.my };
+        tengu.mconf = 1;
+        tengu.mhp = tengu.mhpmax;
+        game.u.uhp = game.u.uhpmax;
+        await moveloop_core();
+    }
+
+    const refusal = refusalThenBite();
+    assert.ok(refusal > 0, 'a refused teleport is followed by a bite');
+    // Each turn starts at full health.
+    assert.equal(reads[refusal]?.hp, 500, 'no bite damage before the refusal is acknowledged');
+    assert.ok((reads[refusal + 1]?.hp ?? 500) < 500);
+});
