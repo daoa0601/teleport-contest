@@ -43,7 +43,7 @@ import {
 import { relocateMonsterTo } from './teleport.js';
 import { invWeight, weightCapacity } from './weight.js';
 import {
-    resumeDeferredMonsterTrap,
+    finishImmediateMonsterTrap,
     triggerImmediateMonsterTrap,
 } from './monmove.js';
 
@@ -259,7 +259,7 @@ export async function tryKickReel(monster: Monster, dx: number, dy: number, {
     newsym(x, y);
     setMonsterApparentHeroPosition(monster, state, rn2);
     const trap = await triggerImmediateMonsterTrap(monster, state);
-    await resumeDeferredMonsterTrap(trap, state, {
+    await finishImmediateMonsterTrap(trap, state, {
         publish: announce, describeMonster: nameMonster,
     });
     return {

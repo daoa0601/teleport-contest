@@ -4067,12 +4067,13 @@ export async function triggerImmediateMonsterTrap(monster, state = requireInitia
     const sokobanFall = state.level.flags.sokoban_rules &&
         !trap.madeby_u &&
         [PIT, SPIKED_PIT, HOLE, TRAPDOOR].includes(trap.ttyp);
-    if (inAir && floorTriggered && !sokobanFall)
-        return { monster, movement, event: null, calls };
+    // C mintrap() takes its already-trapped branch before any check_in_air().
     if (monster.mtrapped) {
         movement.escapingTrap = true;
         return { monster, movement, event: null, calls };
     }
+    if (inAir && floorTriggered && !sokobanFall)
+        return { monster, movement, event: null, calls };
     const event = await triggerMonsterTrap(monster, state, movement, random, rollDice, rollOne, calls, publish);
     return { monster, movement, event, calls };
 }
