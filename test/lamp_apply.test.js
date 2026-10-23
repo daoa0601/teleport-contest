@@ -2,8 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { ROOM, SHOPBASE } from '../js/const.js';
 import { game, requirePlayingGame, requireGameLevel } from '../js/gstate.js';
-import { transformMagicLampToOilLamp } from '../js/light.js';
-import { BRASS_LANTERN, MAGIC_LAMP, OIL_LAMP, } from '../js/object_data.js';
+import { igniteItems, transformMagicLampToOilLamp } from '../js/light.js';
+import { BRASS_LANTERN, MAGIC_LAMP, OIL_LAMP, WAX_CANDLE, } from '../js/object_data.js';
 import { OBJECT_TIMER_KIND, objectTimers } from '../js/object_timers.js';
 import { initRng } from '../js/rng.js';
 import { cansee, vision_recalc, vision_reset_new_level, } from '../js/vision.js';
@@ -195,5 +195,17 @@ void test('unpaid timed and magic lamps charge source-order usage fees', async (
     assert.equal(game._pending_message, "Izchak's lamp is now on.");
     assert.equal(deafShopkeeper.eshk.debit, 10);
     assert.equal(deafMagic.lamplit, true);
+});
+void test('an unpaid candle catching fire in the hero\'s pack is billed for its use', async () => {
+    const candle = await freshLampState(WAX_CANDLE, { unpaid: true, age: 400, spe: 0 });
+    const shopkeeper = await installLightingShop(candle);
+    const messages = [];
+    await igniteItems(game.inventory, { state: game, publish: text => { messages.push(text); } });
+    assert.deepEqual(messages, [
+        'Izchak\'s wax candle catches light!',
+        '"That\'s in addition to the cost of Izchak\'s wax candle itself, of course."',
+    ]);
+    assert.ok((shopkeeper.eshk.debit ?? 0) > 0);
+    assert.equal(candle.lamplit, true);
 });
 //# sourceMappingURL=lamp_apply.test.js.map

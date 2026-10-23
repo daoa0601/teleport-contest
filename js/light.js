@@ -28,7 +28,7 @@ import { learnObjectType } from './object_knowledge.js';
 import { cansee, clearAreaCells, vision_recalc } from './vision.js';
 import { objectWeight } from './weight.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
-import { carriedObjectOwner, objectOwnershipPrefix } from './shk.js';
+import { billDummyObject, carriedObjectOwner, chargeUnpaidUsage, costlySpot, objectOwnershipPrefix } from './shk.js';
 import { objectName, objectNameIsPlural, ownedObjectName, observeObjectForNaming } from './objnam.js';
 import { withIndefiniteArticle } from './object_grammar.js';
 import { getObjectLocation } from './object_location.js';
@@ -678,6 +678,14 @@ export async function igniteItems(objects, { state = game, publish = async () =>
         // C apply.c:catch_lit() credits discovery even when the fire is unseen.
         if (object.otyp === POT_OIL)
             learnObjectType(POT_OIL, state);
+        // C catch_lit(): an unpaid source that catches while carried is billed
+        // for its use on top of its price.
+        if (object.where === 'inventory' && object.unpaid
+            && costlySpot(state.u.ux, state.u.uy, state)) {
+            await chargeUnpaidUsage(object, { state });
+            await publish(`"That's in addition to the cost of ${ownedObjectName(object, state, { capitalized: false })} ${plural ? 'themselves' : 'itself'}, of course."`);
+            await billDummyObject(object, state);
+        }
         if (beginObjectBurn(object, state, state.moves ?? 0))
             ignited.push(object);
     }
