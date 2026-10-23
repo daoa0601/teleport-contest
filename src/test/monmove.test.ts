@@ -157,7 +157,9 @@ void test('a silver weapon sears a lycanthropic hero in melee', async () => {
         range => range,
     );
 
-    assert.equal(game.u.uhp, 68);
+    // C dmgval() asks the hero's human form about silver, so lycanthropy
+    // adds no d20: d8 weapon attack plus d4 dagger at their maximum.
+    assert.equal(game.u.uhp, 88);
 });
 
 void test('a monster fire blast makes a shifted vampire rise', async () => {
