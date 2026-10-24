@@ -68,9 +68,9 @@ import type { GameState } from './game_state.js';
 import type { InventoryMenuItem, InventorySection, InventorySelection, MultiSelectSection } from './windows.js';
 
 export interface InventoryObjectMenuOptions {
-    // An explicit nonempty subset corresponds to display_pickinv's lets.
-    // Omitting it (or passing an empty filter) requests full inventory.
-    items?: readonly GameObject[];
+    // display_pickinv's lets: '-' is a filter letter even without an object.
+    // Omitting the filter or passing an empty string requests full inventory.
+    letters?: string;
     includeGold?: boolean;
     title?: string | null;
     extraChoice?: string | null;
@@ -778,11 +778,12 @@ export function identifyObjectForDisclosure(item: GameObject, identifyTinContent
 }
 
 export async function selectInventoryObject({
-    items, includeGold = true, title = null, extraChoice = null,
+    letters, includeGold = true, title = null, extraChoice = null,
     pickMode = PICK_ONE, headingAttr, menuOptions = [],
 }: InventoryObjectMenuOptions = {}): Promise<InventorySelection> {
-    const filtered = !!items?.length;
-    const candidates = filtered && items ? items : game.inventory;
+    const filtered = !!letters;
+    const candidates = letters ? game.inventory.filter(item => item.invlet && letters.includes(item.invlet))
+        : game.inventory;
     const visible = includeGold ? candidates : candidates.filter(item => item.oclass !== COIN_CLASS);
     if (!visible.length && !extraChoice) {
         await pline('Not carrying anything.');
@@ -790,10 +791,12 @@ export async function selectInventoryObject({
     }
     if (game.flags.fixinv === false) reassignInventoryLetters();
     const wizardIdentification = game.flags.debug && game.iflags.override_ID;
+    // Native counts '-' as a filter letter as well as an extra hands entry,
+    // so a hands-only filter stays in a menu window.
     const singleton = !menuOptions.length && !game.flags.force_invmenu
         && !game.iflags.menu_requested && !wizardIdentification
-        && (filtered && visible.length === 1 && !extraChoice
-            || visible.length === 0 && !!extraChoice);
+        && (letters?.length === 1 && !extraChoice
+            || !filtered && visible.length === 0 && !!extraChoice);
     if (singleton) {
         const item = visible[0];
         if (item) observeObjectForNaming(item);
