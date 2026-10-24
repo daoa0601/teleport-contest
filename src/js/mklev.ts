@@ -7141,8 +7141,9 @@ function createLuaLevelSession() {
                 const timerIndex = -2;
                 if (args.length === 1) {
                     // With one argument, stack index -2 holds the called
-                    // function itself; Lua 5.4 negative indices do not
-                    // check stack bounds.
+                    // function itself. With none, C reads its caller's
+                    // frame; this interpreter cannot reproduce that
+                    // invalid access without Lua's VM stack.
                     throw new LuaArgumentError(timerIndex,
                         'string expected, got function');
                 }

@@ -73,8 +73,6 @@ void test('nh.start_timer_at ignores object timer types like nhlua.c', async t =
     // With one argument, Lua stack index -2 is the called function itself.
     await assert.rejects(lua.executeAsync('nh.start_timer_at(5)'),
         /bad argument #-2 to 'start_timer_at' \(string expected, got function\)/);
-    await assert.rejects(lua.executeAsync('nh.start_timer_at()'),
-        /bad argument #-2 to 'start_timer_at' \(string expected, got no value\)/);
     await assert.rejects(lua.executeAsync('nh.start_timer_at(0, 0, 8, 10)'),
         /bad argument #-2 to 'start_timer_at' \(invalid option '8'\)/);
 });
