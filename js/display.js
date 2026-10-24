@@ -797,15 +797,16 @@ function terrainGlyphAppearance(loc, x, y) {
     // C selects wall glyphs by branch, independently of puzzle completion.
     // Branch wall colors come from dat/symbols G_ glyph customizations, which
     // only a symset such as DECgraphics loads; wallcolors[] stays gray under
-    // the default set. The rogue set changes characters, not colors.
+    // the default set.
     const inMines = game.dungeons?.[game.u?.uz?.dnum ?? -1]?.dname
         === 'The Gnomish Mines';
     const inHell = !!game.dungeons?.[game.u?.uz?.dnum ?? -1]?.flags?.hellish;
-    const wallColor = In_sokoban(game.u?.uz)
-        ? (dec ? CLR_BLUE : NO_COLOR)
-        : dec && inMines ? CLR_BROWN
-            : dec && inHell ? CLR_RED
-                : dec && Is_knox_level(game.u.uz) ? CLR_YELLOW : NO_COLOR;
+    const wallColor = rogue ? NO_COLOR
+        : In_sokoban(game.u?.uz)
+            ? (dec ? CLR_BLUE : NO_COLOR)
+            : dec && inMines ? CLR_BROWN
+                : dec && inHell ? CLR_RED
+                    : dec && Is_knox_level(game.u.uz) ? CLR_YELLOW : NO_COLOR;
     switch (typ) {
         case STONE: return { ch: ' ', color: NO_COLOR, dec: false };
         case SCORR: return { ch: ' ', color: NO_COLOR, dec: false };
@@ -838,11 +839,8 @@ function terrainGlyphAppearance(loc, x, y) {
                 ? { ch: 'q', color: wallColor, dec: true }
                 : { ch: 'x', color: wallColor, dec: true };
         case DOOR:
-            // The rogue set draws every doorway as '+'; cmap_color still gives
-            // doorways gray and open or closed doors brown.
             if (rogue)
-                return { ch: '+', color: !loc.doormask || loc.doormask & D_BROKEN
-                        ? NO_COLOR : CLR_BROWN, dec: false };
+                return { ch: '+', color: NO_COLOR, dec: false };
             if (!loc.doormask || loc.doormask & D_BROKEN)
                 return dec
                     ? { ch: '~', color: NO_COLOR, dec: true }
@@ -856,7 +854,7 @@ function terrainGlyphAppearance(loc, x, y) {
         case LADDER: {
             const symbol = stairSymbol(loc, x, y);
             return { ...cmapSymbolAppearance(stairGlyphIndex(loc, x, y)),
-                color: symbol.color };
+                color: rogue ? NO_COLOR : symbol.color };
         }
         case FOUNTAIN: return { ch: '{', color: CLR_BRIGHT_BLUE, dec: false };
         case THRONE: return { ch: '\\', color: CLR_YELLOW, dec: false };
@@ -1548,11 +1546,11 @@ export function show_glyph_cell(x, y, ch, color = NO_COLOR, decgfx = false, attr
     const loc = game.level?.at(x, y);
     if (!loc)
         return;
-    // symbols.c:assign_graphics(ROGUESET) selects the classic character set.
-    // Its default H_UNK handling leaves display.c's has_rogue_color path off,
-    // so colors pass through; only the DEC alternates belong to the primary
-    // set and must not reach a rogue-level cell.
+    // symbols.c:assign_graphics(ROGUESET) selects the classic character set
+    // and marks it nocolor.  Keep that policy at the final map-cell boundary
+    // so hero, monster, object, trap, and remembered overlays agree.
     if (Is_rogue_level(game.u?.uz)) {
+        color = NO_COLOR;
         decgfx = false;
     }
     const nextGlyph = glyph || { kind: 'effect' };
