@@ -51,8 +51,9 @@ function statusEnlightenmentLines(magic = false, final = 0, killer = '') {
     const have = (what) => message('You ', 'have ', 'had ', what);
     // A hero who died while dismounting still has u.usteed set.
     const steed = u.usteed && !(final === ENL_GAMEOVERDEAD && killer === 'riding accident') ? u.usteed : null;
-    const steedName = u.usteed ? monsterName(u.usteed, {
-        article: u.usteed.mtame ? 'your' : 'the', suppressSaddle: true, suppressHallucination: true,
+    // C leaves steedname null then, which also hides the steed's wounded legs.
+    const steedName = steed ? monsterName(steed, {
+        article: steed.mtame ? 'your' : 'the', suppressSaddle: true, suppressHallucination: true,
     }) : '';
     let youToo = 'You ';
     if (Upolyd(u))

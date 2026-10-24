@@ -14,10 +14,11 @@ import { addInventoryObject } from './support/game-objects.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { freshGameplayRoom } from './support/playable-room.js';
 import { freshRoomWithPolymorphedHero } from './support/hero-state.js';
+import { createMonsterAt } from './support/monsters.js';
 // Page through end-of-game attribute disclosure for a hero who has died.
-async function deadHeroAttributes() {
+async function deadHeroAttributes(killer = '') {
     const input = resetInputState();
-    const report = showFinalAttributes({ final: ENL_GAMEOVERDEAD });
+    const report = showFinalAttributes({ final: ENL_GAMEOVERDEAD, killer });
     const lines = [];
     try {
         for (let pages = 0;; pages++) {
@@ -125,5 +126,16 @@ void test('a dead handless hero was not wielding anything, contracted', async ()
     game.uwep = null;
     const lines = await deadHeroAttributes();
     assert.ok(lines.includes("You weren't wielding anything."));
+});
+void test('a wizard thrown from a lame steed no longer reports its legs', async () => {
+    freshGameplayRoom({ flags: { debug: true } });
+    game.u.usteed = await createMonsterAt('pony', game.u.ux, game.u.uy);
+    game.u._woundedLegSide = 'left';
+    game.u._woundedLegTurns = 20;
+    const mounted = await deadHeroAttributes();
+    assert.ok(mounted.includes('The pony had a wounded left rear leg.'));
+    const thrown = await deadHeroAttributes('riding accident');
+    assert.ok(!thrown.some(line => line.includes('wounded')));
+    assert.ok(!thrown.some(line => line.includes('pony')));
 });
 //# sourceMappingURL=final_attributes.test.js.map
