@@ -220,4 +220,20 @@ void test('selection matches strip numeric labels and a final newline from map f
     assert.throws(() => state.execute('selection.match(".?.")'), /center must be valid terrain/);
     assert.throws(() => state.execute('selection.area(12, 6, 12, 6):filter_mapchar("[")'), /unknown map character/);
 });
+void test('random lines narrow roughness to the native signed-byte range before subdividing', t => {
+    freshGame();
+    initRng(17);
+    const state = new LuaState({
+        selection: createSelectionBindings({ xstart: 0, ystart: 0, width: 80, height: 21 }),
+    });
+    t.after(() => state.destroy());
+    state.execute(`
+        local line = selection.randline(10, 5, 20, 5, 128)
+        local box = line:bounds()
+        top, bottom, count = box.ly, box.hy, line:numpoints()
+    `);
+    assert.equal(state.getGlobal('top'), 5);
+    assert.equal(state.getGlobal('bottom'), 5);
+    assert.equal(state.getGlobal('count'), 11);
+});
 //# sourceMappingURL=lua_selection.test.js.map

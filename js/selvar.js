@@ -439,6 +439,8 @@ export function selection_do_line(x1, y1, x2, y2, selection) {
     }
 }
 export function selection_do_randline(x1, y1, x2, y2, roughness, recursion, selection) {
+    roughness = (roughness << 24) >> 24;
+    recursion = (recursion << 24) >> 24;
     if (recursion < 1 || (x1 === x2 && y1 === y2))
         return;
     roughness = Math.min(roughness, Math.max(Math.abs(x2 - x1), Math.abs(y2 - y1)));
