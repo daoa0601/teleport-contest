@@ -17,6 +17,22 @@ void test('MSGTYPE hide suppresses matching prose without replacing unread prose
     await flush_screen(1);
     assert.equal(topline(), 'The door opens.');
 });
+void test('an optional grouped word boundary keeps doorbell messages visible', async () => {
+    freshPlayableRoom();
+    applyNethackrc('MSGTYPE=hide "([[:<:]])?bell"');
+    await plineWithContinuation('A doorbell rings.');
+    await plineWithContinuation('A bell rings.');
+    await flush_screen(1);
+    assert.equal(topline(), 'A doorbell rings.');
+});
+void test('an unbounded counted MSGTYPE keeps the trailing empty word-boundary constraint', async () => {
+    freshPlayableRoom();
+    applyNethackrc('MSGTYPE=hide "^(.|[[:>:]]){2,}$"');
+    await plineWithContinuation('!!');
+    await plineWithContinuation('!!!');
+    await flush_screen(1);
+    assert.equal(topline(), '!!');
+});
 void test('MSGTYPE norep compares the previous individual message', async () => {
     freshPlayableRoom();
     applyNethackrc('MSGTYPE=norep "bell"');
@@ -245,8 +261,8 @@ for (const [pattern, diagnostic] of [
     ['bell{2,x}', 'invalid repetition count(s)'],
     ['bell{256}', 'maximum repetition exceeds 255'],
     ['bell{1,256}', 'maximum repetition exceeds 255'],
-    ['{2', 'repetition-operator operand invalid'],
-    ['{256}', 'repetition-operator operand invalid'],
+    ['{2', 'braces not balanced'],
+    ['{256}', 'maximum repetition exceeds 255'],
     ['(bell|{2})', 'repetition-operator operand invalid'],
     ['bell{2}{3}', 'repetition-operator operand invalid'],
 ]) {
