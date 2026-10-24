@@ -40,7 +40,7 @@ import {
     CLOAK_OF_DISPLACEMENT, CLOAK_OF_MAGIC_RESISTANCE,
     LARGE_BOX, BAG_OF_TRICKS, SACK, CORPSE,
     STATUE,
-    LOCK_PICK, CREDIT_CARD, EXPENSIVE_CAMERA, TOWEL, SADDLE, LEASH,
+    LOCK_PICK, CREDIT_CARD, EXPENSIVE_CAMERA, TOWEL, LEASH,
     STETHOSCOPE, TIN_OPENER,
     MAGIC_MARKER, BLINDFOLD, OIL_LAMP, PICK_AXE, TINNING_KIT,
     WOODEN_FLUTE, TOOLED_HORN, WOODEN_HARP, BELL, BUGLE, LEATHER_DRUM,
@@ -721,7 +721,7 @@ export async function makedog(): Promise<Monster | null> {
         mhpmax: hp,
         m_lev: level,
         female,
-        mtame: 10,
+        mtame: 0,
         mpeaceful: 1,
         malign: 0,
         mcanmove: 1,
@@ -755,7 +755,7 @@ export async function makedog(): Promise<Monster | null> {
     if (!g.context.startingpet_mid) {
         g.context.startingpet_mid = pet.m_id;
         if (pettype === MONSTER_NAME.indexOf('pony') && !g.u.uroleplay?.pauper)
-            await putSaddleOnMonster(await mksobj(SADDLE, true, false), pet);
+            await putSaddleOnMonster(null, pet);
         g.bhitpos = { x: pet.mx, y: pet.my };
         g.notonhead = false;
         await seeMonsterCloseup(pet, { photo: g.inventory.some(object => object.otyp === EXPENSIVE_CAMERA) });
@@ -769,7 +769,8 @@ export async function makedog(): Promise<Monster | null> {
     const petnameUsed = g.petname_used ?? 0;
     g.petname_used = petnameUsed + 1;
     if (!petnameUsed && name) setMonsterGivenName(pet, name);
-    // dog.c:initedog() assigns kill credit after making the pet peaceful.
+    // C initedog() tames the pet after mpickobj() can forget an unseen saddle.
+    pet.mtame = 10;
     setMonsterMalign(pet, g);
     if (!g.u.uconduct) g.u.uconduct = {};
     g.u.uconduct.pets = (g.u.uconduct.pets || 0) + 1;
