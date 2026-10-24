@@ -7,6 +7,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { monsterWieldedWeapon } from '../js/monster_weapon.js';
 import { returnMonsterWeapon } from '../js/monster_returning_weapon.js';
 import { resetInputState } from '../js/input.js';
+import { findMonsterArmorClass } from '../js/monworn.js';
 import { addObjectToMonsterInventory } from '../js/monster_inventory.js';
 import { setMonsterApparentHeroPosition } from '../js/monster_perception.js';
 import { readyRangedMonsterWeapon, throwMonsterWeaponAtHero } from '../js/monster_throw.js';
@@ -107,6 +108,30 @@ void test('a monster catches its returning aklys and can use it again', async ()
     assert.ok(soldier.minvent.includes(aklys));
     assert.equal((aklys.owornmask ?? 0) & W_WEP, W_WEP);
     assert.equal(floorObjectsAt(game.level, game.u.ux, game.u.uy).includes(aklys), false);
+});
+
+void test('a caught aklys stays wielded without counting as worn armor', async () => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    const soldier = await createMonsterAt('soldier', 13, 10, NO_MINVENT);
+    setMonsterApparentHeroPosition(soldier, game, rn2);
+    const aklys = await addObjectToMonsterInventory(soldier, await knownObject(AKLYS, { spe: -3 }));
+    assert.ok(aklys);
+    soldier.weaponCheck = NEED_WEAPON;
+    const input = resetInputState();
+    const wielding = readyRangedMonsterWeapon(soldier);
+    await input.waitUntilBlocked();
+    input.feed(' ');
+    await wielding;
+    const armorClass = findMonsterArmorClass(soldier);
+
+    await throwMonsterWeaponAtHero(soldier, game, aklys, {
+        random: () => 1,
+        publish: async () => {},
+    });
+
+    assert.equal(monsterWieldedWeapon(soldier)?.o_id, aklys.o_id);
+    assert.equal(findMonsterArmorClass(soldier), armorClass);
 });
 
 void test('a snapped tether leaves the aklys where its outward flight ended', async () => {
