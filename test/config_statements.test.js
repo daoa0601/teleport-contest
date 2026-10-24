@@ -185,6 +185,17 @@ void test('MENUCOLOR statements report malformed patterns, colors, and attribute
     assert.match(regexError[0]?.message ?? '', /^Menucolor regex error: /);
     assert.notEqual(regexError[0]?.raw, true);
 });
+void test('a valid MENUCOLOR enables menu colors and respects later option changes', () => {
+    const coloring = 'MENUCOLOR="blessed" = green&bold';
+    const enabled = parseNethackrc(`OPTIONS=!menucolors\n${coloring}`);
+    assert.equal(enabled.flags.menucolors, true);
+    const disabled = parseNethackrc(`${coloring}\nOPTIONS=!menucolors`);
+    assert.equal(disabled.flags.menucolors, false);
+    for (const invalid of ['missing-equals', '"blessed"=nosuchcolor', '"bless(ed"=green']) {
+        const rejected = parseNethackrc(`OPTIONS=!menucolors\nMENUCOLOR=${invalid}`);
+        assert.equal(rejected.flags.menucolors, false, invalid);
+    }
+});
 void test('AUTOPICKUP_EXCEPTION statements report syntax and regex errors', () => {
     assert.equal(fileErrors('AUTOPICKUP_EXCEPTION="<arrow"').length, 0);
     assert.equal(fileErrors('AUTOPICKUP_EXCEPTION=">food" # avoid food').length, 0);

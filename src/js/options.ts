@@ -573,7 +573,7 @@ function handleConfigStatement(
         parseAutopickupException(parsed.valueText, addError);
         break;
     case 'MENUCOLOR':
-        parseMenuColoring(parsed.valueText, addError);
+        if (parseMenuColoring(parsed.valueText, addError)) result.flags.menucolors = true;
         break;
     case 'BINDINGS':
         for (const field of bindingFields(parsed.valueText)) {
