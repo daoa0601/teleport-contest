@@ -248,7 +248,8 @@ export async function tty_display_nhwindow<T>(window: TtyMenuWindow<T>, how: Men
     return result;
 }
 
-export async function tty_select_menu<T>(window: TtyMenuWindow<T>, how: MenuPickMode): Promise<TtyMenuResult<T>> {
+export async function tty_select_menu<T>(window: TtyMenuWindow<T>, how: MenuPickMode,
+    roleSelection = false): Promise<TtyMenuResult<T>> {
     const previousStatusDisabled = game._statusUpdatesDisabled;
     const restoreStatusUpdates = () => {
         if (previousStatusDisabled === undefined) delete game._statusUpdatesDisabled;
@@ -262,7 +263,13 @@ export async function tty_select_menu<T>(window: TtyMenuWindow<T>, how: MenuPick
             // C select_menu() restores bot_disabled before the window is
             // destroyed, so a corner menu's docorner() can run bot().
             if (window.offx !== 0) restoreStatusUpdates();
-            await tty_dismiss_nhwindow(window);
+            // Character selection covers the base window before a map exists.
+            // Native erase_menu_or_text() clears a full-screen menu here.
+            if (roleSelection && window.offx === 0) {
+                display()?.clearScreen();
+                window.active = false;
+                window.underlay = null;
+            } else await tty_dismiss_nhwindow(window);
         } finally {
             restoreStatusUpdates();
         }
