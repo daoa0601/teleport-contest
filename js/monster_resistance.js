@@ -96,7 +96,8 @@ export function monsterHasAcidResistance(monster) {
     return !!(monsterResistanceBits(monster) & MR_ACID);
 }
 export function monsterHasPoisonResistance(monster) {
-    return !!(monsterResistanceBits(monster) & MR_POISON);
+    return !!(monsterResistanceBits(monster) & MR_POISON)
+        || monsterArtifactDefends(monster, 'poison');
 }
 export function monsterHasStoneResistance(monster) {
     return !!(monsterResistanceBits(monster) & MR_STONE);

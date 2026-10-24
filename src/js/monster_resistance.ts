@@ -65,7 +65,7 @@ export function monsterResistanceBits(monster: ResistantMonster | null | undefin
         | (monster?.mextrinsics ?? 0) | (monster?.mintrinsics ?? 0);
 }
 
-function monsterArtifactDefends(monster: ResistantMonster | null | undefined, element: 'fire' | 'cold' | 'shock'): boolean {
+function monsterArtifactDefends(monster: ResistantMonster | null | undefined, element: 'fire' | 'cold' | 'shock' | 'poison'): boolean {
     return artifactForObject(monsterWeapon(monster))?.defense === element
         || monsterInventory(monster).some(object =>
             artifactForObject(object)?.carriedDefense === element);
@@ -128,7 +128,8 @@ export function monsterHasAcidResistance(monster: ResistantMonster | null | unde
 }
 
 export function monsterHasPoisonResistance(monster: ResistantMonster | null | undefined): boolean {
-    return !!(monsterResistanceBits(monster) & MR_POISON);
+    return !!(monsterResistanceBits(monster) & MR_POISON)
+        || monsterArtifactDefends(monster, 'poison');
 }
 
 export function monsterHasStoneResistance(monster: ResistantMonster | null | undefined): boolean {
