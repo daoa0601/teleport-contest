@@ -40,6 +40,7 @@ import type {
     RandomBelow, RollDice, RollOne,
 } from './monster_action_types.js';
 import { clearBypasses } from './object_bypass.js';
+import { clearSplitObjects } from './object_stack.js';
 import { A_CURRENT, A_ORIGINAL, ESCAPED, In_endgame, In_hell, Is_astralevel, MON_FLOOR, PICK_ONE, PLNMSG_MON_TAKES_OFF_ITEM } from './const.js';
 import { mapVicinity } from './magic_mapping.js';
 import { showInventoryWindow } from './windows.js';
@@ -3879,6 +3880,8 @@ export async function moveloop_core() {
         else if (g.u.uburied) await under_ground(0);
         await seeNearbyMonsters(g);
     }
+
+    clearSplitObjects(g);
 
     // allmain.c's once-per-player-input Amulet check follows all elapsed
     // monster/global work and precedes find_ac()/vision/input.  A level
