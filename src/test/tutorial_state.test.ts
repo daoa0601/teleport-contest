@@ -8,8 +8,9 @@ import assert from 'node:assert/strict';
 
 import { wearHeroAccessory } from '../js/accessory.js';
 import { wearHeroArmor } from '../js/armor.js';
-import { A_STR, CORR, MAGIC_PORTAL, P_BASIC, P_EXPERT, P_SHORT_SWORD, ROOM } from '../js/const.js';
+import { A_STR, CORR, MAGIC_PORTAL, P_BASIC, P_EXPERT, P_SHORT_SWORD, PANICLOG, ROOM } from '../js/const.js';
 import { game } from '../js/gstate.js';
+import { resetInputState } from '../js/input.js';
 import { runSegment } from '../js/jsmain.js';
 import { currentLuaLifecycle } from '../js/lua/lifecycle.js';
 import { GOLD_PIECE, LEATHER_ARMOR, OIL_LAMP, RIN_PROTECTION, SHORT_SWORD, SPE_FORCE_BOLT } from '../js/object_data.js';
@@ -276,4 +277,23 @@ void test('tutorial entry stores starting gear and its exit portal restores norm
     assert.match(engine.state._pending_message, /Really save/);
     engine.inputGate.feed('n');
     await engine.runUntilInputNeeded();
+});
+
+void test('inconsistent tutorial gamestate requests report impossible like nhlua.c', async t => {
+    freshObjectRoom();
+    requirePlayingGame(game);
+    game.storage = memoryStorage();
+    const input = resetInputState();
+    input.beforeRead = () => input.feed(' ');
+    const core = await startLuaCore(t);
+
+    await core.executeAsync('nh.gamestate(true)');
+    await core.executeAsync('nh.gamestate()');
+    await core.executeAsync('nh.gamestate()');
+
+    const log = game.storage.getItem(PANICLOG) ?? '';
+    assert.match(log, /"reason":"nhl_gamestate: inconsistent state \(restore vs not stored\)"/);
+    assert.match(log, /"reason":"nhl_gamestate: inconsistent state \(save vs already stored\)"/);
+    // The second store request is refused; the first stored state survives.
+    assert.ok(game._tutorialState);
 });

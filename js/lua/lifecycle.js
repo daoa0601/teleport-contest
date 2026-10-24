@@ -6,10 +6,11 @@ import { applyNethackrc } from '../options.js';
 import { rn2 } from '../rng.js';
 import { changeTutorialState } from '../tutorial_state.js';
 import { luaPline, luaText } from './messages.js';
+import { NethackLuaError } from './errors.js';
 import { luaInteger } from './arguments.js';
 import { LuaHeroTable } from './hero.js';
 import { createObjectApi } from './objects.js';
-import { LuaState, LuaTable, luaType, luaTableToArray, luaVariablesFromTable, luaValueToJs, objectToLuaTable, } from './runtime.js';
+import { LuaState, LuaTable, luaCheckString, luaType, luaTableToArray, luaVariablesFromTable, luaValueToJs, objectToLuaTable, } from './runtime.js';
 export class LuaGameState extends LuaState {
     objects;
     sid;
@@ -30,14 +31,16 @@ function alignmentName(value) {
 }
 function bindingsFor(gameState, lifecycle, objects, additionalBindings = {}) {
     const { nh: additionalNh = {}, ...remainingBindings } = additionalBindings;
-    const parseConfig = (line) => {
-        applyNethackrc(String(line), gameState);
+    const parseConfig = (...args) => {
+        if (args.length !== 1)
+            throw new NethackLuaError('Wrong args');
+        applyNethackrc(luaCheckString(1, args[0]), gameState);
     };
     return {
         nh: {
             rn2: (...args) => {
                 if (args.length !== 1)
-                    throw new TypeError('nh.rn2 expects one integer');
+                    throw new NethackLuaError('Wrong args');
                 return rn2(luaInteger(args[0]));
             },
             random: (...args) => {
@@ -45,14 +48,24 @@ function bindingsFor(gameState, lifecycle, objects, additionalBindings = {}) {
                     return rn2(luaInteger(args[0]));
                 if (args.length === 2)
                     return luaInteger(args[0]) + rn2(luaInteger(args[1]));
-                throw new TypeError('nh.random expects one or two integers');
+                throw new NethackLuaError('Wrong args');
             },
-            callback: (...args) => lifecycle.registerCallback(...args),
+            callback: (...args) => {
+                if (lifecycle.registerCallback(args))
+                    return impossible('nh.callback counts are wrong', { state: gameState });
+                return undefined;
+            },
             gamestate: (...args) => changeTutorialState(gameState, args.at(-1) != null && args.at(-1) !== false),
             pline: luaPline,
             text: luaText,
-            impossible: async (message) => { await impossible(String(message), { state: gameState }); },
-            eckey: command => commandKeyDescription(String(command), gameState.commandBindings),
+            impossible: async (...args) => {
+                if (args.length !== 1)
+                    throw new NethackLuaError('Wrong args');
+                await impossible(luaCheckString(1, args[0]), { state: gameState });
+            },
+            eckey: (...args) => args.length === 1
+                ? commandKeyDescription(luaCheckString(1, args[0]), gameState.commandBindings)
+                : undefined,
             parse_config: parseConfig,
             ...additionalNh,
         },
@@ -130,21 +143,28 @@ export class LuaLifecycle {
     }
     // C nhl_callback() stores names in the persistent core, even when the
     // registration comes from a temporary level-generation Lua state.
-    registerCallback(...args) {
+    registerCallback(args) {
         if (!this.core)
             throw new Error('Lua callbacks require an initialized core');
         if (args.length !== 2 && args.length !== 3)
-            return;
+            return false;
         let [name, fn, remove] = args;
         if (![name, fn].every(value => ['string', 'number'].includes(typeof value)))
             throw new TypeError('nh.callback expects an event name and function name');
         name = String(name);
         fn = String(fn);
         if (!isCallbackName(name))
-            return;
+            return false;
         const removing = remove != null && remove !== false;
-        this.callbackCounts.set(name, (this.callbackCounts.get(name) || 0) + (removing ? -1 : 1));
+        const count = (this.callbackCounts.get(name) || 0) + (removing ? -1 : 1);
+        this.callbackCounts.set(name, count);
+        // nhl_callback() reports a removal that drives a count negative
+        // with impossible(). The removal itself must run in every
+        // execution mode: synchronous Lua cannot await the paged report,
+        // and nh_callback_rm is silent, so running it before the report
+        // leaves the observable output identical to the C order.
         this.core.call(removing ? 'nh_callback_rm' : 'nh_callback_set', name, fn);
+        return removing && count < 0;
     }
     async runCallbacks(gameState, name, ...args) {
         if (!this.core || !this.callbackCounts.get(name))
