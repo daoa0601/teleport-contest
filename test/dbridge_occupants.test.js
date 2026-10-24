@@ -5,6 +5,8 @@ import { closeDrawbridge, openDrawbridge } from '../js/dbridge.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { monsterAtPosition } from '../js/monster_location.js';
+import { setPropertyTimeout } from '../js/properties.js';
+import { switchHeroTerrain } from '../js/terrain_movement.js';
 import { addTrap } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshGameplayRoom } from './support/playable-room.js';
@@ -45,5 +47,19 @@ void test('breathlessness alone cannot save a monster under a rising drawbridge'
     await closeDrawbridge(12, 10);
     assert.notEqual(monsterAtPosition(level, 12, 10), golem);
     assert.ok(golem.mhp <= 0);
+});
+void test('opening a portcullis restores blocked levitation with terrain status enabled', async () => {
+    bridgeRoom();
+    game.u.ux = 12;
+    game.u.uy = 9;
+    game.u.ux0 = 12;
+    game.u.uy0 = 10;
+    game.u.passesWalls = true;
+    game.flags.terrainstatus = true;
+    setPropertyTimeout('levitation', 10);
+    await switchHeroTerrain();
+    assert.equal(game.u.levitating, false, 'The closed portcullis blocks levitation');
+    await openDrawbridge(12, 10);
+    assert.equal(game.u.levitating, true);
 });
 //# sourceMappingURL=dbridge_occupants.test.js.map

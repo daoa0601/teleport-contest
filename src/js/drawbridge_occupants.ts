@@ -277,7 +277,7 @@ function entityPhrase(entity: DrawbridgeEntity, verb: string, state: GameState):
 
 async function heroSpotEffects(state: GameState): Promise<void> {
     await finishDestinationSpotEffects({
-        oldx: state.u.ux, oldy: state.u.uy, newx: state.u.ux, newy: state.u.uy, pick: false,
+        oldx: state.u.ux0, oldy: state.u.uy0, newx: state.u.ux, newy: state.u.uy, pick: false,
     });
 }
 

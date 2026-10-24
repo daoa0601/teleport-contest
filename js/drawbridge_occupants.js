@@ -233,7 +233,7 @@ function entityPhrase(entity, verb, state) {
 }
 async function heroSpotEffects(state) {
     await finishDestinationSpotEffects({
-        oldx: state.u.ux, oldy: state.u.uy, newx: state.u.ux, newy: state.u.uy, pick: false,
+        oldx: state.u.ux0, oldy: state.u.uy0, newx: state.u.ux, newy: state.u.uy, pick: false,
     });
 }
 async function dieMovingEntity(entity, bridge, state, options, occupants, killer, death) {
