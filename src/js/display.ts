@@ -1,4 +1,5 @@
 import { warningSymbols } from './warning_symbols.js';
+import { truncatePlineMessage } from './pline_text.js';
 // display.js — Map rendering and terminal output.
 // C ref: display.c — newsym, show_glyph, docrt, cls, flush_screen.
 
@@ -28,7 +29,7 @@ import { criticallyLowHp } from './prayer_trouble.js';
 import { cansee, couldsee, set_seenv, vision_recalc } from './vision.js';
 import {
     A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, ACCESSIBLE, BC_BALL, BC_CHAIN,
-    COLNO, ROWNO, STONE, ROOM, CORR, SCORR, SDOOR, DOOR, STAIRS, FOUNTAIN, THRONE, SINK, GRAVE, ALTAR, ICE,
+    BUFSZ, COLNO, ROWNO, STONE, ROOM, CORR, SCORR, SDOOR, DOOR, STAIRS, FOUNTAIN, THRONE, SINK, GRAVE, ALTAR, ICE,
     HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER,
     CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL, HI_ZAP,
     TREE, IRONBARS, POOL, MOAT, WATER, LAVAPOOL, LAVAWALL, AIR, CLOUD,
@@ -2956,7 +2957,14 @@ export async function pline(msg: string): Promise<void> {
 }
 
 export async function plineWithContinuation(msg: string, { noRepeat = false, urgent = false }: ToplineOptions = {}): Promise<number | null | undefined> {
+    msg = msg.split('\0', 1)[0] ?? '';
     if (!msg) return;
+    const length = new TextEncoder().encode(msg).length;
+    if (length > 5 * BUFSZ - 1) {
+        const { panic } = await import('./diagnostics.js');
+        await panic(`pline attempting to print ${length} characters!`);
+    }
+    msg = truncatePlineMessage(msg);
     if (game.program_state?.windows_exited) {
         rawPrint(msg);
         game._lastPlineKind = PLNMSG_UNKNOWN;

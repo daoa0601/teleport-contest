@@ -1,6 +1,6 @@
 // C cfgfiles.c:config_error_init(), config_erradd(), config_error_done().
 import { rawPrint } from './display.js';
-import { BUFSZ } from './const.js';
+import { truncatePlineMessage } from './pline_text.js';
 import { game } from './gstate.js';
 import { nhgetch } from './input.js';
 import { NO_COLOR } from './terminal.js';
@@ -42,10 +42,6 @@ export async function displayConfigurationErrors(reports) {
 function rawConfigurationMessage(message) {
     // C pline.c:vpline() shortens even early raw_print() output to BUFSZ-1
     // bytes, preserving its last three bytes after an ellipsis.
-    const bytes = new TextEncoder().encode(message);
-    const decoder = new TextDecoder();
-    rawPrint(bytes.length > BUFSZ - 1
-        ? `${decoder.decode(bytes.subarray(0, BUFSZ - 7))}...${decoder.decode(bytes.subarray(-3))}`
-        : message);
+    rawPrint(truncatePlineMessage(message));
 }
 //# sourceMappingURL=config_errors.js.map
