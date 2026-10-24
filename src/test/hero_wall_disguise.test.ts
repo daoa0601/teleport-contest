@@ -60,12 +60,16 @@ for (const symset of ['DECgraphics', 'curses', 'IBMgraphics', 'IBMGraphics_1', '
     for (const { branch, color } of [
         { branch: 'The Gnomish Mines', color: CLR_BROWN },
         { branch: 'Gehennom', color: CLR_RED },
+        { branch: 'Sokoban', color: CLR_BLUE },
+        { branch: 'Fort Ludios', color: CLR_YELLOW },
     ]) {
         void test(`${symset} colors real ${branch} walls`, async () => {
             const level = freshObjectRoom();
             requirePlayingGame(game);
             game.symset = symset;
             game.dungeons = [createDungeon({ dname: branch, flags: { hellish: branch === 'Gehennom' } })];
+            if (branch === 'Sokoban') game.sokoban_dnum = game.u.uz.dnum;
+            if (branch === 'Fort Ludios') game.knox_level = createSpecialLevel(game.u.uz);
             level.requireAt(10, 9).typ = HWALL;
 
             newsym(10, 9);

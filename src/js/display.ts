@@ -850,10 +850,10 @@ function terrainGlyphAppearance(loc: MapLocation, x: number, y: number): GlyphAp
     const inHell = !!game.dungeons?.[game.u?.uz?.dnum ?? -1]?.flags?.hellish;
     const wallColor = rogue ? NO_COLOR
         : In_sokoban(game.u?.uz)
-        ? (dec ? CLR_BLUE : NO_COLOR)
+        ? (hasBranchWallColors ? CLR_BLUE : NO_COLOR)
         : hasBranchWallColors && inMines ? CLR_BROWN
             : hasBranchWallColors && inHell ? CLR_RED
-                : dec && Is_knox_level(game.u.uz) ? CLR_YELLOW : NO_COLOR;
+                : hasBranchWallColors && Is_knox_level(game.u.uz) ? CLR_YELLOW : NO_COLOR;
     switch (typ) {
     case STONE:     return { ch: ' ', color: NO_COLOR, dec: false };
     case SCORR:     return { ch: ' ', color: NO_COLOR, dec: false };
