@@ -1125,9 +1125,9 @@ function objectGlyphNumber(object, piletop) {
         + (objectUsesGenericGlyph(object) ? object.oclass : object.otyp);
 }
 // C display.h:mon_to_glyph(). Ignore disguises for a revelation flash.
-export function transientMonsterGlyph(monster) {
+export function transientMonsterGlyph(monster, monsterState = 'normal') {
     return displayMonsterGlyph(heroIsHallucinating()
-        ? rn2Display(MONSTER_COLOR.length) : monster.mnum, !!monster.female);
+        ? rn2Display(MONSTER_COLOR.length) : monster.mnum, !!monster.female, monsterState);
 }
 // Native zapdir_to_glyph() and reset_glyphmap(): direction selects one of
 // four symbols; the beam type retains a separate glyph even for equal colors.

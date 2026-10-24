@@ -1179,9 +1179,12 @@ function objectGlyphNumber(object: ObjectGlyphSource, piletop: boolean) {
 }
 
 // C display.h:mon_to_glyph(). Ignore disguises for a revelation flash.
-export function transientMonsterGlyph(monster: Pick<Monster, 'mnum'> & Partial<Pick<Monster, 'female'>>) {
+export function transientMonsterGlyph(
+    monster: Pick<Monster, 'mnum'> & Partial<Pick<Monster, 'female'>>,
+    monsterState: 'normal' | 'pet' | 'detected' = 'normal',
+) {
     return displayMonsterGlyph(heroIsHallucinating()
-        ? rn2Display(MONSTER_COLOR.length) : monster.mnum, !!monster.female);
+        ? rn2Display(MONSTER_COLOR.length) : monster.mnum, !!monster.female, monsterState);
 }
 
 // Native zapdir_to_glyph() and reset_glyphmap(): direction selects one of
