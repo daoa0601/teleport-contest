@@ -2933,7 +2933,7 @@ export async function pline(msg) {
 }
 export async function plineWithContinuation(msg, { noRepeat = false, urgent = false } = {}) {
     msg = msg.split('\0', 1)[0] ?? '';
-    if (!msg)
+    if (!msg || game.program_state.wizkit_wishing)
         return;
     const length = new TextEncoder().encode(msg).length;
     if (length > 5 * BUFSZ - 1) {

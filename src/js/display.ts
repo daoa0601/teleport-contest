@@ -2954,7 +2954,7 @@ export async function pline(msg: string): Promise<void> {
 
 export async function plineWithContinuation(msg: string, { noRepeat = false, urgent = false }: ToplineOptions = {}): Promise<number | null | undefined> {
     msg = msg.split('\0', 1)[0] ?? '';
-    if (!msg) return;
+    if (!msg || game.program_state.wizkit_wishing) return;
     const length = new TextEncoder().encode(msg).length;
     if (length > 5 * BUFSZ - 1) {
         const { panic } = await import('./diagnostics.js');

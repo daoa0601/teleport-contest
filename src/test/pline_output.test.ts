@@ -48,3 +48,19 @@ void test('an empty pline leaves the unread message available', async () => {
     assert.match(visibleText(), /A bell rings\./);
 });
 
+
+void test('messages are silent while the wizard starting kit is being wished', async () => {
+    freshPlayableRoom();
+    game.program_state.wizkit_wishing = true;
+
+    await plineWithContinuation('A wand appears.');
+    await flush_screen(1);
+    assert.doesNotMatch(visibleText(), /A wand appears/);
+    game.program_state.wizkit_wishing = false;
+    await plineWithContinuation('A wand appears.', { noRepeat: true });
+    await flush_screen(1);
+
+    assert.match(visibleText(), /A wand appears\./);
+    assert.doesNotMatch(visibleText(), /A wand appears\.  A wand appears\./);
+});
+
