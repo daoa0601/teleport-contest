@@ -617,10 +617,12 @@ function parseConfiguration(rc, result, report, fromFile) {
                         result.flags.bones = value;
                     else if (lname === 'reroll')
                         result.flags.reroll = value;
-                    else if (lname === 'female')
-                        result.flags.female = value;
-                    else if (lname === 'male')
-                        result.flags.female = !value;
+                    else if (lname === 'female' || lname === 'male') {
+                        const female = lname === 'female' ? value : !value;
+                        result.flags.female = female;
+                        result.flags.initgend = Number(female);
+                        result.gender = female ? 'female' : 'male';
+                    }
                     else if (lname === 'autounlock')
                         result.flags.autounlock = value;
                 }
