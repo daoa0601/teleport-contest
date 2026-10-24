@@ -3847,7 +3847,8 @@ async function doadjust(selected: GameObject | null = null, splitting: GameObjec
             if (!key) continue;
         }
         destination = String.fromCharCode(key);
-        if ([27, 32, 10, 13].includes(key) || splitting && destination === source) {
+        // C strchr(quitchars, let) also matches a literal fuzzer NUL.
+        if ([0, 27, 32, 10, 13].includes(key) || splitting && destination === source) {
             if (splitting) await rejoinObjectStack(splitting, object, game);
             clearMessageWindow();
             await pline('Never mind.');
