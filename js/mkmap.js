@@ -14,7 +14,6 @@ export async function mkmap({ lit, foreground = ROOM, background = STONE, smooth
             const loc = level.requireAt(x, y);
             loc.typ = background;
             loc.roomno = 0;
-            loc.edge = false;
             loc.lit = false;
         }
     }

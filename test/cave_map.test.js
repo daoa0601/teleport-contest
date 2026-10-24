@@ -1,0 +1,30 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+import { CORR, STONE } from '../js/const.js';
+import { mkmap } from '../js/mkmap.js';
+import { initRng } from '../js/rng.js';
+import { freshGame } from './support/game-state.js';
+void test('cave initialization resets terrain, room membership and light while preserving other cell fields', async () => {
+    const { level } = freshGame();
+    initRng(1);
+    const boundary = level.requireAt(79, 5);
+    boundary.typ = CORR;
+    boundary.roomno = 5;
+    boundary.lit = true;
+    boundary.edge = true;
+    boundary.horizontal = true;
+    boundary.flags = 3;
+    const unusedColumn = level.requireAt(0, 5);
+    unusedColumn.typ = CORR;
+    unusedColumn.lit = true;
+    await mkmap({ lit: false, joined: false, walled: false });
+    assert.equal(boundary.typ, STONE);
+    assert.equal(boundary.roomno, 0);
+    assert.equal(boundary.lit, false);
+    assert.equal(boundary.edge, true, 'init_map does not clear an existing room edge');
+    assert.equal(boundary.horizontal, true);
+    assert.equal(boundary.flags, 3);
+    assert.equal(unusedColumn.typ, CORR, 'column zero is outside the cave');
+    assert.equal(unusedColumn.lit, true);
+});
+//# sourceMappingURL=cave_map.test.js.map
