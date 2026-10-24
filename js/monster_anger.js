@@ -16,7 +16,8 @@ import { stopRun } from './runmode.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { revealMonsterAppearance } from './monster_appearance.js';
 import { finishMonsterEating } from './monster_eating.js';
-import { MONSTER_FLAGS1, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL, monsterGrowthFamilyMatch, monsterTypeName, } from './monster_data.js';
+import { questMonsterSound } from './role_monsters.js';
+import { MONSTER_FLAGS1, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SYMBOL, monsterGrowthFamilyMatch, monsterTypeName, } from './monster_data.js';
 import { makePlural } from './object_grammar.js';
 import { ghodHitsu, priestIsCoaligned, templeRoomAt } from './priest.js';
 import { rn2, rnd } from './rng.js';
@@ -115,7 +116,7 @@ function thirdPersonSoundVerb(verb) {
     return /(?:s|sh|ch|x|z)$/.test(verb) ? `${verb}es` : `${verb}s`;
 }
 export async function publishMonsterYelp(monster) {
-    const sound = MONSTER_SOUND[monster.mnum];
+    const sound = questMonsterSound(monster.mnum);
     if (monster.msleeping || !monster.mcanmove || !sound)
         return;
     const deaf = heroIsDeaf();
@@ -139,7 +140,7 @@ export async function publishMonsterYelp(monster) {
     await wakeMonstersNearWithMessages(monster.mx, monster.my, (MONSTER_LEVEL[monster.mnum] ?? 0) * 12);
 }
 export async function publishMonsterWhimper(monster) {
-    const sound = MONSTER_SOUND[monster.mnum];
+    const sound = questMonsterSound(monster.mnum);
     if (monster.msleeping || !monster.mcanmove || !sound)
         return;
     const verb = heroIsHallucinating()
@@ -154,7 +155,7 @@ export async function publishMonsterWhimper(monster) {
     await wakeMonstersNearWithMessages(monster.mx, monster.my, (MONSTER_LEVEL[monster.mnum] ?? 0) * 6);
 }
 export async function publishMonsterGrowl(monster) {
-    const sound = MONSTER_SOUND[monster.mnum];
+    const sound = questMonsterSound(monster.mnum);
     if (monster.msleeping || !monster.mcanmove || !sound)
         return game._lastPlineKind === PLNMSG_GROWL;
     const verb = heroIsHallucinating()
@@ -174,7 +175,7 @@ export async function publishMonsterGrowl(monster) {
 }
 function maybeHumanoidGasp(observer) {
     requirePlayingGame(game);
-    let sound = MONSTER_SOUND[observer.mnum] ?? 0;
+    let sound = questMonsterSound(observer.mnum);
     if ((sound === MS_GUARDIAN && observer.mnum !== game.urole.guardnum)
         || (sound === MS_PRIEST && !priestIsCoaligned(observer)))
         return null;

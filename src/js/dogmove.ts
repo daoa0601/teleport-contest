@@ -1,3 +1,4 @@
+import { questMonsterSound } from './role_monsters.js';
 import type { Monster } from './monster_types.js';
 import type { Hero } from './hero_types.js';
 import type { PlayingGameState } from './game_state.js';
@@ -11,7 +12,6 @@ import {
     MONSTER_ATTACKS,
     MONSTER_FLAGS1,
     MONSTER_LEVEL,
-    MONSTER_SOUND,
     MONSTER_SYMBOL,
     monsterIsVampireShifter,
 } from './monster_data.js';
@@ -128,7 +128,7 @@ function targetHasFriendBehind(pet: Monster, target: PetRangedTarget, state: Pla
             if (!friend.minvis || petSeesInvisible(pet)) return true;
             continue;
         }
-        const sound = MONSTER_SOUND[friend.mnum] ?? 0;
+        const sound = questMonsterSound(friend.mnum, state);
         if (sound === MS_LEADER || sound === MS_GUARDIAN) return true;
     }
     return false;
@@ -167,7 +167,7 @@ function scoreTarget(
     if (!pet.mconf || random(3) === 0 || onQuestStartLevel(state)) {
         const petFaith = holyAlignment(pet);
         const targetFaith = holyAlignment(target);
-        const sound = isHeroTarget(target, state) ? 0 : (MONSTER_SOUND[target.mnum] ?? 0);
+        const sound = isHeroTarget(target, state) ? 0 : questMonsterSound(target.mnum, state);
         if (sound === MS_LEADER || sound === MS_GUARDIAN) return -5000;
         if (
             petFaith.faithful &&

@@ -178,7 +178,7 @@ import {
 import {
     MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_DIFFICULTY, MONSTER_GENO,
     MONSTER_ALIGNMENT, MONSTER_LEVEL,
-    MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_FLAGS3,
+    MONSTER_FLAGS1, MONSTER_FLAGS2,
     MONSTER_SYMBOL, MONSTER_SIZE, MONSTER_MOVE, MONSTER_SOUND,
     MONSTER_HAS_WEAPON_ATTACK, MONSTER_COLOR, MONSTER_NAME, MONSTER_RESISTS,
     SPECIAL_PM, monsterClassSymbol, monsterIsPlayerMonster, requireMonsterData,
@@ -212,6 +212,7 @@ import {
     sanitizeEngravings, wipeEngravingAt, wipeoutText,
 } from './engrave.js';
 import { registerQuestLeader } from './quest.js';
+import { questMonsterAlignment, questMonsterFlags2, questMonsterFlags3, questMonsterSound } from './role_monsters.js';
 import { armorBonus } from './armor.js';
 import { initializeMonsterArmor } from './monworn.js';
 import { giveMonsterStartingObject } from './monster_starting_inventory.js';
@@ -1609,9 +1610,12 @@ const G_SGROUP = 0x0080;
 // attitude before inventory creation; the live hero alignment record is an
 // input, so prayer and other alignment mutations remain observable here.
 export function peaceMinded(mndx: number): boolean {
-    const flags = MONSTER_FLAGS2[mndx] || 0;
+    const flags = questMonsterFlags2(mndx);
     if (flags & M2_PEACEFUL) return true;
     if (flags & M2_HOSTILE) return false;
+    const sound = questMonsterSound(mndx);
+    if (sound === 36 || sound === 38) return true;
+    if (sound === 37) return false;
     // Erinyes are the one species whose attitude is controlled directly by
     // alignment abuse instead of the ordinary co-aligned random chance.
     if (mndx === PM_ERINYS) return !(game.u?.ualign?.abuse ?? 0);
@@ -1621,7 +1625,7 @@ export function peaceMinded(mndx: number): boolean {
     if (flags & race.lovemask) return true;
     if (flags & race.hatemask) return false;
 
-    const monsterAlignment = MONSTER_ALIGNMENT[mndx] || 0;
+    const monsterAlignment = questMonsterAlignment(mndx);
     const heroAlignment = game.u?.ualign?.type || 0;
     if (Math.sign(monsterAlignment) !== Math.sign(heroAlignment)) return false;
     if (monsterAlignment < 0 && game.u?.uhave?.amulet) return false;
@@ -1914,7 +1918,7 @@ async function makemon(
     const monsterId = nextIdent();
     const { level: baseLevel, hp } = newMonsterHitPoints(mndx);
 
-    const genderFlags = MONSTER_FLAGS2[mndx] || 0;
+    const genderFlags = questMonsterFlags2(mndx);
     const isNeutralDemon = !!(genderFlags & M2_DEMON)
         && !(genderFlags & (M2_LORD | M2_PRINCE));
     const isQuestLeaderType = mndx === game.urole?.ldrnum;
@@ -2029,7 +2033,7 @@ async function makemon(
         if (game.context.no_of_wizards === 1 && Is_earthlevel(game.u.uz))
             fixedItem = SPE_DIG;
     } else if (mndx === PM_CROESUS) fixedItem = TWO_HANDED_SWORD;
-    else if (MONSTER_SOUND[mndx] === 37) fixedItem = BELL_OF_OPENING; // MS_NEMESIS
+    else if (questMonsterSound(mndx) === 37) fixedItem = BELL_OF_OPENING; // MS_NEMESIS
     else if (mndx === PM_PESTILENCE) fixedItem = POT_SICKNESS;
     if (allowMonsterInventory && fixedItem) await mongets(fixedItem);
 
@@ -2734,7 +2738,7 @@ async function makemon(
     // covetous species unless the caller explicitly supplies MM_NOWAIT.
     // STRAT_APPEARMSG is consumed by the first visible relocation message;
     // it cannot be reconstructed later from the monster's current species.
-    const flags3 = MONSTER_FLAGS3[mndx] || 0;
+    const flags3 = questMonsterFlags3(mndx);
     let monsterStrategy = 0;
     if (!(mmflags & MM_NOWAIT)) {
         if (flags3 & 0x0040) monsterStrategy |= STRAT_WAITFORU;

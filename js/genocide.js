@@ -11,7 +11,8 @@ import { heroSpecies } from './hero_species.js';
 import { killGenocidedMonsters } from './mon.js';
 import { MONSTER_CLASS_SYMBOLS, nameToMonster, nameToMonsterClass } from './mondata.js';
 import { makemonNear, rndmonstAdj } from './mklev.js';
-import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL, monsterIsHuman, monsterIsVampire, monsterTypeName, requireMonsterData, } from './monster_data.js';
+import { questMonsterSound } from './role_monsters.js';
+import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_SYMBOL, monsterIsHuman, monsterIsVampire, monsterTypeName, requireMonsterData, } from './monster_data.js';
 import { removeMonsterFromGame } from './monster_departure.js';
 import { makePlural, withIndefiniteArticle } from './object_grammar.js';
 import { heroIsUnchanging, polymorphHero, returnHeroToHumanForm } from './polyself.js';
@@ -338,7 +339,7 @@ function declinedGenocide(response) {
 }
 function canAnnounceImmuneSpecies(species) {
     const role = requireInitializedGame().urole;
-    const sound = MONSTER_SOUND[species];
+    const sound = questMonsterSound(species);
     return (sound !== MS_LEADER || species === role.ldrnum)
         && (sound !== MS_NEMESIS || species === role.neminum)
         && (sound !== MS_GUARDIAN || species === role.guardnum)

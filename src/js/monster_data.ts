@@ -1,5 +1,6 @@
 import type { MonsterAttack, MonsterAttacks, MonsterBody, MonsterExperience } from './data_types.js';
 import type { Monster } from './monster_types.js';
+import { questMonsterFlags2, questMonsterFlags3, questMonsterSound } from './role_monsters.js';
 
 // monster_data.js — mechanically transcribed NetHack 5.0 monster metadata.
 // Source: nethack-c/upstream/include/monsters.h.
@@ -220,7 +221,7 @@ export function monsterIsHuman(mnum: number) {
 }
 
 export function monsterIsAlwaysHostile(mnum: number) {
-    return !!((MONSTER_FLAGS2[mnum] ?? 0) & M2_ALWAYS_HOSTILE);
+    return !!(questMonsterFlags2(mnum) & M2_ALWAYS_HOSTILE);
 }
 
 export function monsterIsPlayerMonster(mnum: number) {
@@ -228,7 +229,7 @@ export function monsterIsPlayerMonster(mnum: number) {
 }
 
 export function monsterIsCovetous(monster: SpeciesReference) {
-    return !!((MONSTER_FLAGS3[monster.mnum] ?? 0) & 0x001f);
+    return !!(questMonsterFlags3(monster.mnum) & 0x001f);
 }
 
 export function monsterIsPlainHuman(mnum: number) {
@@ -236,7 +237,7 @@ export function monsterIsPlainHuman(mnum: number) {
 }
 
 export function monsterIsQuestNemesis(mnum: number) {
-    return MONSTER_SOUND[mnum] === MS_NEMESIS;
+    return questMonsterSound(mnum) === MS_NEMESIS;
 }
 
 export function monsterIsQuestGuardian(mnum: number) {

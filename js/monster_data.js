@@ -1,3 +1,4 @@
+import { questMonsterFlags2, questMonsterFlags3, questMonsterSound } from './role_monsters.js';
 // monster_data.js — mechanically transcribed NetHack 5.0 monster metadata.
 // Source: nethack-c/upstream/include/monsters.h.
 import { AD_DGST, AD_DRST, AD_SPEL, AD_STCK, AD_WRAP, AT_BOOM, AT_ENGL, AT_HUGS, AT_MAGC, AT_NONE, AT_WEAP } from './monster_attack_types.js';
@@ -200,19 +201,19 @@ export function monsterIsHuman(mnum) {
     return !!((MONSTER_FLAGS2[mnum] ?? 0) & M2_HUMAN);
 }
 export function monsterIsAlwaysHostile(mnum) {
-    return !!((MONSTER_FLAGS2[mnum] ?? 0) & M2_ALWAYS_HOSTILE);
+    return !!(questMonsterFlags2(mnum) & M2_ALWAYS_HOSTILE);
 }
 export function monsterIsPlayerMonster(mnum) {
     return mnum >= PM_ARCHEOLOGIST && mnum <= PM_WIZARD;
 }
 export function monsterIsCovetous(monster) {
-    return !!((MONSTER_FLAGS3[monster.mnum] ?? 0) & 0x001f);
+    return !!(questMonsterFlags3(monster.mnum) & 0x001f);
 }
 export function monsterIsPlainHuman(mnum) {
     return mnum === PM_HUMAN;
 }
 export function monsterIsQuestNemesis(mnum) {
-    return MONSTER_SOUND[mnum] === MS_NEMESIS;
+    return questMonsterSound(mnum) === MS_NEMESIS;
 }
 export function monsterIsQuestGuardian(mnum) {
     return MONSTER_SOUND[mnum] === MS_GUARDIAN;

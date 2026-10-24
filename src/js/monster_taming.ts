@@ -14,7 +14,7 @@ import { heroFormSticks, heroSpecies } from './hero_species.js';
 import { AT_WEAP } from './monster_attack_types.js';
 import { setMonsterMalign } from './monster_alignment.js';
 import {
-    MONSTER_ATTACKS, MONSTER_FLAGS2, MONSTER_FLAGS3, MONSTER_NAME,
+    MONSTER_ATTACKS, MONSTER_FLAGS2, MONSTER_NAME,
     MONSTER_SIZE, MONSTER_SYMBOL, monsterIsHuman,
 } from './monster_data.js';
 import { monsterName } from './monster_name.js';
@@ -31,6 +31,7 @@ import { heroIsHallucinating } from './senses.js';
 import { makeShopkeeperHappy } from './shop_damage.js';
 import { hasShopkeeperData } from './shop_types.js';
 import { cansee } from './vision.js';
+import { questMonsterFlags3 } from './role_monsters.js';
 
 const M2_DEMON = 0x00000100;
 const M3_WANTSARTI = 0x0010;
@@ -50,7 +51,7 @@ export async function tameMonster(monster: Monster, source: GameObject | null = 
     if (monster.mfrozen) monster.mfrozen = Math.trunc((monster.mfrozen + 1) / 2);
     if (monster.msleeping) await wakeMonstersNearWithMessages(monster.mx, monster.my, 1, state);
 
-    const speciesFlags = MONSTER_FLAGS3[monster.mnum] ?? 0;
+    const speciesFlags = questMonsterFlags3(monster.mnum, state);
     if (monster.iswiz || monster.mnum === PM_MEDUSA || (speciesFlags & M3_WANTSARTI))
         return false;
     if (announce && !monster.mpeaceful && canSpotMonster(monster)) {

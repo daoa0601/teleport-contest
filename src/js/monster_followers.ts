@@ -4,7 +4,8 @@ import type { GameState } from './game_state.js';
 import { MIGR_EXACT_XY, STRAT_WAITFORU } from './const.js';
 import { canSeeMonster, plineWithContinuation } from './display.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
-import { MONSTER_FLAGS2, MONSTER_NAME, monsterIsHumanoid } from './monster_data.js';
+import { MONSTER_NAME, monsterIsHumanoid } from './monster_data.js';
+import { questMonsterFlags2 } from './role_monsters.js';
 import { dropSpecialMonsterObjects } from './monster_drop.js';
 import { releaseMonsterLeash } from './monster_leash.js';
 import { detachMonsterFromLevel } from './monster_level_departure.js';
@@ -82,7 +83,7 @@ function levelFollower(monster: Monster, state: GameState): boolean {
     if (monster.iswiz && carriesAmulet(monster)) return false;
     if (monster.mtame || monster.iswiz || monster.isshk && monster.eshk?.following)
         return true;
-    return !!((MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_STALK)
+    return !!(questMonsterFlags2(monster.mnum, state) & M2_STALK)
         && (!monster.mflee || !!state.u.uhave?.amulet);
 }
 
