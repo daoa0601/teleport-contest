@@ -379,8 +379,8 @@ export async function attrcurse({ publish = plineWithContinuation } = {}) {
         if (!hasPermanentIntrinsicProperty(property, game))
             continue;
         removePermanentIntrinsicProperty(property, game);
-        if (property === 'telepathy' && game.blind
-            && !hero.blindTelepathy)
+        if (property === 'telepathy' && heroIsBlind(game)
+            && !hero.telepathy)
             await see_monsters();
         if (property === 'invisible')
             syncHeroInvisibility(game);
