@@ -10,8 +10,9 @@ import { isIceAt, isLavaAt, isPoolAt } from './terrain_properties.js';
 import type { GameObject } from './object_types.js';
 import { nhgetch } from './input.js';
 import {
-    clearMessageWindow, flushPendingTopline, flush_screen, pline, plineWithContinuation,
+    clearMessageWindow, displayMessageWindow, flushPendingTopline, flush_screen, pline, plineWithContinuation,
 } from './display.js';
+import { publishDeferredImpossibles } from './diagnostics.js';
 import { readEngravingAt } from './engrave.js';
 import { stopRun } from './runmode.js';
 import { showDisclosureOverlay, snapshotMenuUnderlay, restoreMenuUnderlay } from './windows.js';
@@ -148,7 +149,6 @@ export async function showFloorPile(
     if (unreadMessage) clearMessageWindow();
     await flush_screen(1);
     const display = requireGameDisplay();
-    const underlay = snapshotMenuUnderlay();
     const pileLocation = heroIsBlind() ? 'you feel here' : 'are here';
     const descriptions: string[] = [];
     let touchedCorpse: GameObject | null = null;
@@ -161,6 +161,11 @@ export async function showFloorPile(
         }
         descriptions.push(pricedFloorObjectDescription(object));
     }
+    // Native formats into a hidden window. Finish naming reports before
+    // painting the pile or retaining the map that its dismissal restores.
+    await publishDeferredImpossibles();
+    if (game._pending_message) await displayMessageWindow();
+    const underlay = snapshotMenuUnderlay();
     const content = [
         ...(featureDescription ? [featureDescription, ''] : []),
         `${pickedSome ? 'Other things' : 'Things'} that ${pileLocation}:`,

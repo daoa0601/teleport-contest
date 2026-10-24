@@ -62,6 +62,32 @@ void test('a leash attached to a missing monster reports impossible() before the
     assert.equal(leash.leashmon, 0);
     assert.deepEqual(loggedReasons(), ['leashed monster #4242 not found']);
 });
+void test('a missing leash stays attached while its impossible() report awaits acknowledgment', async () => {
+    freshPlayableRoom();
+    game.program_state.something_worth_saving = true;
+    const leash = await addInventoryObject(LEASH, { leashmon: 4242 });
+    const input = resetInputState();
+    let diagnosticPages = 0;
+    let sawMenu = false;
+    input.display = {
+        readKey() {
+            const screen = visibleText();
+            if (/leashed monster #4242 not found|Program in disorder!/.test(screen)) {
+                diagnosticPages++;
+                assert.equal(leash.leashmon, 4242, 'doname detaches the leash only after impossible() finishes');
+            }
+            if (screen.includes('an uncursed leash')) {
+                sawMenu = true;
+                assert.equal(leash.leashmon, 0, 'the inventory follows the completed repair');
+            }
+            return Promise.resolve(screen.includes('--More--') ? 32 : 27);
+        },
+    };
+    await rhack('i'.charCodeAt(0));
+    assert.ok(diagnosticPages > 0, 'the impossible() report must request acknowledgment');
+    assert.equal(sawMenu, true);
+    assert.equal(leash.leashmon, 0);
+});
 void test('an unpaid object missing from the bill reports unpaid_cost impossible() before the menu', async () => {
     freshPlayableRoom();
     game.storage = memoryStorage();
@@ -132,11 +158,13 @@ void test('a leash attached to a dead monster reports that monster as not found'
     game.storage = memoryStorage();
     const pet = await createMonsterAt('little dog', 11, 10, NO_MINVENT);
     pet.mhp = 0;
+    pet.mleashed = 1;
     const leash = await addInventoryObject(LEASH, { leashmon: pet.m_id });
     recordScreens();
     await rhack('i'.charCodeAt(0));
     assert.deepEqual(loggedReasons(), [`leashed monster #${pet.m_id} not found`]);
     assert.equal(leash.leashmon, 0);
+    assert.equal(pet.mleashed, 1, 'naming repairs the leash without changing the dead monster');
 });
 void test('a pending formatter report and a later impossible() both complete', async () => {
     freshPlayableRoom();

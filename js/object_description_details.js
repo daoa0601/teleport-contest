@@ -59,8 +59,10 @@ function describeTool(item, details, known, state) {
         }
         else {
             // find_mid() skips DEADMONSTER, so a dead target is not found.
-            deferImpossible(`leashed monster #${item.leashmon} not found`, state);
-            item.leashmon = 0;
+            // Native keeps the stale link through impossible()'s pagers.
+            deferImpossible(`leashed monster #${item.leashmon} not found`, state, () => {
+                item.leashmon = 0;
+            });
         }
         return;
     }

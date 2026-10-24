@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 
 import {
     CORPSTAT_FEMALE, CORPSTAT_MALE, CORPSTAT_NEUTER, CORPSTAT_RANDOM,
-    MV_KNOWS_EGG, NON_PM, NO_MINVENT, PANICLOG,
+    MV_KNOWS_EGG, NON_PM, NO_MINVENT,
 } from '../js/const.js';
 import { initializePet } from '../js/dog.js';
 import { game } from '../js/gstate.js';
@@ -17,7 +17,6 @@ import {
 } from '../js/object_data.js';
 import { knownObject } from './support/game-objects.js';
 import { createMonsterAt, requireMonsterVital } from './support/monsters.js';
-import { memoryStorage } from './support/memory-storage.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('a leash names its attached pet even when that pet is invisible', async () => {
@@ -31,29 +30,6 @@ void test('a leash names its attached pet even when that pet is invisible', asyn
     assert.equal(inventoryItemDescription(leash),
         'a leash (attached to your invisible little dog)');
     assert.equal(leash.leashmon, pet.m_id);
-});
-
-void test('naming a leash clears a link to a missing monster', async () => {
-    freshObjectRoom();
-    const leash = await knownObject(LEASH, { bknown: false, leashmon: 1234 });
-
-    assert.equal(inventoryItemDescription(leash), 'a leash');
-    assert.equal(leash.leashmon, 0);
-});
-
-void test('naming a leash of a dead monster reports it missing and detaches only the leash', async () => {
-    freshObjectRoom();
-    game.storage = memoryStorage();
-    const pet = await createMonsterAt('little dog', 11, 10, NO_MINVENT);
-    pet.mhp = 0;
-    pet.mleashed = 1;
-    const leash = await knownObject(LEASH, { bknown: false, leashmon: pet.m_id });
-
-    assert.equal(inventoryItemDescription(leash), 'a leash');
-    assert.equal(leash.leashmon, 0);
-    assert.equal(pet.mleashed, 1);
-    assert.match(game.storage.getItem(PANICLOG) ?? '',
-        new RegExp(`"reason":"leashed monster #${pet.m_id} not found"`));
 });
 
 for (const { count, lit, suffix } of [
