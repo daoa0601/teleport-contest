@@ -59,6 +59,38 @@ void test('getpos can use a menu to choose a shown monster', async () => {
     assert.equal(selected?.x, 11);
     assert.equal(selected?.y, 10);
 });
+for (const force of [true, false]) {
+    void test(`Enter rebound to the menu toggle works during ${force ? 'forced' : 'voluntary'} targeting`, async () => {
+        freshObjectRoom({
+            flags: { tips: false, verbose: false }, iflags: { getloc_usemenu: false },
+        });
+        assert.equal(game.commandBindings.bindKey(10, 'nothing').accepted, true);
+        assert.equal(game.commandBindings.bindSpecialKey(10, 'getpos.menu'), true);
+        const input = resetInputState();
+        const selected = await answerPrompts(selectMapPosition({
+            start: { x: 10, y: 10 }, prompt: 'Pick a location.', goal: 'a location', force,
+        }), input, [
+            { prompt: /Pick a location\./, keys: '\r' },
+            { prompt: /Using a menu to show possible targets/, keys: '.' },
+        ]);
+        assert.equal(game.iflags.getloc_usemenu, true);
+        assert.equal(selected?.x, 10);
+        assert.equal(selected?.y, 10);
+    });
+}
+void test('target menus identify their travel-destination purpose', async () => {
+    freshObjectRoom({ iflags: { getloc_travelmode: true, getloc_usemenu: true } });
+    await createMonsterAt('kitten', 11, 10);
+    newsym(11, 10);
+    const input = resetInputState();
+    input.feed('m');
+    const selected = await answerPrompts(selectMapPosition({
+        start: { x: 10, y: 10 }, prompt: 'Pick a location.', goal: 'a location',
+    }), input, [
+        { prompt: /Pick a monster for travel destination/, keys: 'a.' },
+    ]);
+    assert.equal(selected?.x, 11);
+});
 void test('quick-look menus gather the new area after reversing direction in a doorway', async () => {
     const level = freshObjectRoom({ flags: { tips: false, verbose: false }, hero: { detectMonsters: true } });
     for (let y = 6; y <= 14; y++) {
@@ -254,9 +286,9 @@ void test('target menus describe displayed glyphs without a caller callback', as
         start: { x: 10, y: 10 }, prompt: 'Pick a target.', goal: 'a target',
     }), input, [
         { prompt: /Pick a monster[\s\S]*a - kitten/, keys: 'a' },
-        { prompt: /Move cursor to a target:/, keys: 'a' },
+        { prompt: /kitten/, keys: 'a' },
         { prompt: /Pick an interesting thing[\s\S]*a - kitten[\s\S]*b - fountain/, keys: 'b' },
-        { prompt: /Move cursor to a target:/, keys: '.' },
+        { prompt: /fountain/, keys: '.' },
     ]);
     assert.equal(selected?.x, 12);
     assert.equal(selected?.y, 10);

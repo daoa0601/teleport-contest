@@ -792,7 +792,7 @@ async function searchTravelPath(
 
 // C is_valid_travelpt() searches forward; live travel searches backward so
 // its predecessor gives the next step. Guessing is only for live movement.
-async function isValidTravelTarget(targetX: number, targetY: number, g: GameState = game): Promise<boolean> {
+export async function isValidTravelTarget(targetX: number, targetY: number, g: GameState = game): Promise<boolean> {
     if (g.u.ux === targetX && g.u.uy === targetY) return true;
     if (glyphAt(targetX, targetY, g)?.glyph === cmapToGlyph(CmapSymbol.stone)
         && !g.level?.at(targetX, targetY)?.seenv) return false;
@@ -4730,13 +4730,6 @@ function travelLocationDescription(x: number, y: number): string {
     return '';
 }
 
-async function travelPositionDescription(x: number, y: number): Promise<string> {
-    const description = await wizardPositionDescription(x, y);
-    if (x === game.u?.ux && y === game.u?.uy) return description;
-    const valid = await isValidTravelTarget(x, y);
-    return valid ? description : `${description} (no travel path)`;
-}
-
 // C pager.c:lookat() gives the sensed hero priority over the map glyph.
 // Terrain-only inspection deliberately omits that self description.
 function farlookDescribesHero(x: number, y: number): boolean {
@@ -4816,7 +4809,7 @@ async function dotravel(): Promise<void> {
                 ? "Where do you want to travel to?  (For instructions type a '?')"
                 : 'Where do you want to travel to?',
         goal: 'the desired destination',
-        describe: travelPositionDescription,
+        describe: wizardPositionDescription,
     });
     if (!cursor) {
         game.iflags.getloc_travelmode = false;

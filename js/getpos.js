@@ -1,24 +1,24 @@
 // C refs: getpos.c:getpos(), drawing.c:defsyms[], symbols.c:gs.showsyms[],
 // display.c:tmp_at() for the valid-location marking overlay.
-import { COLNO, D_ISOPEN, DOOR, GFILTER_NONE, GFILTER_VIEW, HI_ZAP, LOOK_ONCE, LOOK_QUICK, LOOK_TRADITIONAL, LOOK_VERBOSE, NHW_MENU, PICK_ONE, ROWNO, SCORR, STONE, VIBRATING_SQUARE, WEB, IS_WALL, TREE, } from './const.js';
-import { clearMessageWindow, flush_screen, glyphAt, lastDirtyMapCursor, newsym_force, pline, plineWithContinuation, show_glyph_cell, showUnrememberedTopline, terrain_glyph, } from './display.js';
+import { COLNO, DOOR, GFILTER_NONE, GFILTER_VIEW, HI_ZAP, Invocation_lev, LOOK_ONCE, LOOK_QUICK, LOOK_TRADITIONAL, LOOK_VERBOSE, NHW_MENU, PICK_ONE, ROWNO, VIBRATING_SQUARE, WEB, TER_DETECT, TER_MAP, TER_MON, TER_OBJ, } from './const.js';
+import { clearMessageWindow, flush_screen, glyphAt, lastDirtyMapCursor, newsym_force, pline, plineWithContinuation, showUnrememberedTopline, terrain_glyph, } from './display.js';
 import { game } from './gstate.js';
-import { nhgetch, readchar } from './input.js';
+import { readchar } from './input.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { BOULDER, ROCK } from './object_data.js';
 import { CmapSymbol, GlyphOffset, cmapToGlyph } from './glyph_numbers.js';
 import { TemporaryMapEffect } from './temporary_map_effect.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
-import { NO_COLOR } from './terminal.js';
 import { cansee } from './vision.js';
 import { coordinateDescription } from './pager_lists.js';
 import { screenDescription } from './pager_description.js';
-import { farlookLocationDescription } from './cmd.js';
+import { farlookLocationDescription, isValidTravelTarget } from './cmd.js';
 import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu, } from './tty_menu.js';
 import { rememberCommandKey, takeRepeatCommand } from './command_repeat.js';
 import { visibleCommandKey } from './command_keys.js';
 import { withIndefiniteArticle } from './object_grammar.js';
+import { showDisclosureOverlay } from './windows.js';
 // defsym.h S_goodpos: the dollar sign doubles as the default getpos key
 // which toggles valid-position marking, so the mark glyph shares it.
 const GOODPOS_CH = '$';
@@ -130,6 +130,10 @@ function matchingGetposSymbols(key, state) {
 function getposGlyphSymbol(glyph) {
     if (glyph === undefined)
         return null;
+    if (glyph === GlyphOffset.cmapStone)
+        return CmapSymbol.stone;
+    if (glyph >= GlyphOffset.cmapMain && glyph < GlyphOffset.cmapA)
+        return (glyph - GlyphOffset.cmapMain) % (CmapSymbol.trwall - CmapSymbol.vwall + 1) + CmapSymbol.vwall;
     if (glyph >= GlyphOffset.cmapA && glyph < GlyphOffset.altar)
         return glyph - GlyphOffset.cmapA + CmapSymbol.ndoor;
     if (glyph >= GlyphOffset.altar && glyph < GlyphOffset.cmapB)
@@ -141,6 +145,12 @@ function getposGlyphSymbol(glyph) {
     if (glyph >= GlyphOffset.cmapC && glyph < GlyphOffset.swallow)
         return glyph - GlyphOffset.cmapC + CmapSymbol.digbeam;
     return null;
+}
+function knownVibratingSquareAt(x, y, state) {
+    const invocation = state.level?.invocationPosition;
+    return Invocation_lev(state.u.uz, state) && invocation?.x === x && invocation.y === y
+        && !!state.level?.traps.some(trap => trap.tx === x && trap.ty === y
+            && trap.ttyp === VIBRATING_SQUARE && trap.tseen);
 }
 function getposFeatureMatches(x, y, key, matching, state) {
     const loc = state.level?.at?.(x, y);
@@ -154,7 +164,7 @@ function getposFeatureMatches(x, y, key, matching, state) {
         if (remembered !== null && matching.has(remembered))
             return true;
     }
-    if (key === '~' && state.level?.traps.some(trap => trap.tx === x && trap.ty === y && trap.ttyp === VIBRATING_SQUARE && trap.tseen))
+    if (key === '~' && knownVibratingSquareAt(x, y, state))
         return true;
     if (loc.seenv) {
         const background = getposGlyphSymbol(terrain_glyph(loc, x, y).glyph);
@@ -183,12 +193,12 @@ export function nextGetposFeature(cursor, symbol, state = game) {
 }
 export function getposFeatureMissMessage(ch, state = game) {
     const code = ch.codePointAt(0);
-    const visible = code !== undefined && code < 32
-        ? `^${String.fromCharCode(code + 64)}`
-        : code === 127 ? '^?' : ch;
-    return isGetposFeatureSymbol(ch, state.symset)
-        ? `Can't find dungeon feature '${visible}'.`
-        : `Unknown direction: '${visible}' (use 'h', 'j', 'k', 'l' or '.').`;
+    const visible = code === undefined ? '' : visibleCommandKey(code);
+    if (isGetposFeatureSymbol(ch, state.symset))
+        return `Can't find dungeon feature '${ch}'.`;
+    const directions = [0, 6, 2, 4].map(direction => `'${visibleCommandKey(state.commandBindings.keyForDirection(direction))}'`).join(', ');
+    const pick = visibleCommandKey(state.commandBindings.specialKey('getpos.pick') ?? 0);
+    return `Unknown direction: '${visible}' (use ${directions} or '${pick}').`;
 }
 function mapPositionPickType(code) {
     const choices = [
@@ -203,7 +213,8 @@ export function isGetposPickCharacter(ch) {
 // getpos() flushes the existing glyph buffer. Recalculating sight here would
 // discover warnings or erase unseen-monster memory in the middle of a turn.
 export async function paintGetposCursor(cursor, message, markedSpots = null) {
-    game._pending_message = message;
+    if (message !== null)
+        game._pending_message = message;
     // display.c:tmp_at() with DISP_BEAM shows the glyph only on squares the
     // hero can see, so a validity rule that admits unseen squares (polearm
     // couldsee+glyph policy) still cannot reveal them.
@@ -224,60 +235,81 @@ export async function paintGetposCursor(cursor, message, markedSpots = null) {
     game.nhDisplay?.setCursor(cursor.x - 1, cursor.y + 1);
     return markers;
 }
-// C getpos.c:getpos_help() draws this menu over the right side of the map.
-export async function getposHelpUntilDismissed(goal, { hasValidLocations = false } = {}) {
-    const display = game.nhDisplay;
-    const left = 10;
+// C getpos.c:getpos_help(): advertise only controls relevant to this view.
+export async function getposHelpUntilDismissed(goal, { hasValidLocations = false, force = true } = {}) {
+    const bindings = game.commandBindings;
+    const key = (name) => {
+        const code = bindings.specialKey(`getpos.${name}`);
+        if (code === undefined)
+            throw new Error(`Map selection requires a getpos.${name} binding`);
+        return visibleCommandKey(code);
+    };
+    const directions = (mode) => [0, 6, 2, 4]
+        .map(direction => `'${visibleCommandKey(bindings.keyForDirection(direction, mode))}'`).join(', ');
+    const moveskip = !!game.iflags.getloc_moveskip;
+    const fastModes = ['8 units at a time', 'skipping same glyphs'];
+    const terrain = game.iflags.terrainmode ?? 0;
+    const menu = !!game.iflags.getloc_usemenu;
+    const filter = game.iflags.getloc_filter === 1 ? ' in view'
+        : game.iflags.getloc_filter === 2 ? ' in this area' : '';
     const lines = [
-        `Use 'h', 'j', 'k', 'l' to move the cursor to ${goal}.`,
-        "Use 'H', 'J', 'K', 'L' to fast-move the cursor, 8 units at a time.",
-        "(or prefix normal move with 'G' or 'g' to fast-move)",
+        `Use ${directions(0)} to move the cursor to ${goal}.`,
+        `Use ${directions(1)} to fast-move the cursor, ${fastModes[Number(moveskip)]}.`,
+        `(or prefix normal move with '${visibleCommandKey(bindings.keyForCommand('run'))}' or '${visibleCommandKey(bindings.keyForCommand('rush'))}' to fast-move)`,
         "Or enter a background symbol (ex. '<').",
-        "Use '@' to move the cursor on yourself.",
-        "Use 'm'/'M' to move the cursor to next/previous monster.",
-        "Use 'o'/'O' to move the cursor to next/previous object.",
-        "Use 'd'/'D' to move the cursor to next/previous door or doorway.",
-        "Use 'x'/'X' to move the cursor next to an unexplored location.",
-        "Use 'a'/'A' to move the cursor to anything interesting.",
-        "Use '*' to change fast-move mode to skipping same glyphs.",
-        "Use '!' to toggle menu listing for possible targets.",
-        `Use '"' to change the mode of limiting possible targets.`,
+        `Use '${key('self')}' to move the cursor on yourself.`,
     ];
-    if (hasValidLocations) {
-        // getpos_help() adds these only while a getvalid rule and a hilite
-        // callback are installed (getpos_sethilite() callers).
-        const keyLabel = (name) => {
-            const key = game.commandBindings.specialKey(name);
-            if (key === undefined)
-                throw new Error(`Map selection requires a ${name} binding`);
-            return visibleCommandKey(key);
-        };
-        lines.push(`Use '${keyLabel('getpos.valid.next')}' or '${keyLabel('getpos.valid.prev')}' to move to valid locations.`);
-        lines.push(`Use '${keyLabel('getpos.valid')}' to toggle marking of valid locations.`);
+    const targets = (kind, movement, listing) => {
+        const unexplored = kind === 'unexplored';
+        const action = menu ? 'get a menu of ' : unexplored
+            ? 'move the cursor next to an ' : 'move the cursor to ';
+        const suffix = menu && unexplored ? filter.replace('this area', 'area') : filter;
+        lines.push(`Use '${key(`${kind}.next`)}'/'${key(`${kind}.prev`)}' to ${action}${menu ? listing : movement}${suffix}.`);
+    };
+    if (!terrain || terrain & TER_MON)
+        targets('mon', 'next/previous monster', 'monsters');
+    if (goal !== 'a monster') {
+        if (!terrain || terrain & TER_OBJ)
+            targets('obj', 'next/previous object', 'objects');
+        if (!terrain || terrain & TER_MAP) {
+            targets('door', 'next/previous door or doorway', 'doors or doorways');
+            targets('unexplored', 'unexplored location', 'locations next to unexplored locations');
+            targets('all', 'anything interesting', 'anything interesting');
+        }
+        lines.push(`Use '${key('moveskip')}' to change fast-move mode to ${fastModes[Number(!moveskip)]}.`);
+        if (!terrain || !(terrain & TER_DETECT)) {
+            lines.push(`Use '${key('menu')}' to toggle menu listing for possible targets.`, `Use '${key('filter')}' to change the mode of limiting possible targets.`);
+        }
+        if (!terrain) {
+            if (hasValidLocations) {
+                lines.push(`Use '${key('valid.next')}' or '${key('valid.prev')}' to move to valid locations.`, `Use '${key('valid')}' to toggle marking of valid locations.`);
+            }
+            lines.push(`Use '${key('autodescribe')}' to toggle automatic description.`);
+        }
     }
-    lines.push("Use '#' to toggle automatic description.", "Type a '.' when you are at the right place.", '');
+    if (!terrain || goal === 'a monster') {
+        const looking = goal === 'a monster, object or location';
+        const picks = looking ? ['pick', 'pick.quick', 'pick.once', 'pick.verbose'] : ['pick'];
+        lines.push(`Type a ${picks.map(name => `'${key(name)}'`).join(' or ')} when you are at the right place.`);
+        if (looking) {
+            lines.push(`  '${key('pick.verbose')}' describe current spot, show 'more info', move to another spot.`, `  '${key('pick')}' describe current spot,${game.flags.help !== false && !force ? " prompt if 'more info'," : ''} move to another spot;`, `  '${key('pick.quick')}' describe current spot, move to another spot;`, `  '${key('pick.once')}' describe current spot, stop looking at things;`);
+        }
+    }
+    if (!force)
+        lines.push("Type Space or Escape when you're done.");
+    lines.push('');
     game._pending_message = '';
-    display?.clearRow(0);
-    for (let row = 1; row <= lines.length; row++) {
-        for (let col = left - 1; col < (display?.cols ?? 80); col++)
-            display?.setCell(col, row, ' ', NO_COLOR, 0);
-    }
-    for (const [row, line] of lines.entries()) {
-        for (let col = 0; col < line.length; col++)
-            display?.setCell(left + col, row, line.charAt(col), NO_COLOR, 0);
-    }
-    const more = '--More--';
-    for (let col = 0; col < more.length; col++)
-        display?.setCell(left + col, lines.length, more.charAt(col), NO_COLOR, 0);
-    display?.setCursor(left + more.length, lines.length);
-    let key;
-    do
-        key = await nhgetch();
-    while (![27, 32, 10, 13].includes(key));
-    return key;
+    return await showDisclosureOverlay(lines, { restoreUnderlay: true });
 }
-async function describeSelectedPosition(describe, cursor, fallback) {
-    return await describe?.(cursor.x, cursor.y) || fallback;
+async function describeSelectedPosition(describe, cursor, isValidLocation) {
+    const description = describe ? await describe(cursor.x, cursor.y)
+        : await describeGetposLocation(cursor.x, cursor.y);
+    if (!description)
+        return null;
+    const coordinates = coordinateDescription(cursor.x, cursor.y, game.iflags.getpos_coords ?? 'n');
+    return description + (coordinates ? ` ${coordinates}` : '')
+        + (isValidLocation && !isValidLocation(cursor.x, cursor.y) ? ' (invalid target)' : '')
+        + (game.iflags.getloc_travelmode && !await isValidTravelTarget(cursor.x, cursor.y) ? ' (no travel path)' : '');
 }
 async function selectGetposMenu(spots, kind) {
     const names = { mon: 'monster', obj: 'item', door: 'door', unexplored: 'unexplored area', all: 'interesting thing', valid: 'valid location' };
@@ -287,7 +319,7 @@ async function selectGetposMenu(spots, kind) {
     try {
         await tty_start_menu(window);
         for (const spot of spots) {
-            const text = await describeMenuPosition(spot);
+            const text = await describeGetposLocation(spot.x, spot.y);
             if (text === null)
                 continue;
             const coordinates = coordinateDescription(spot.x, spot.y, game.iflags.getpos_coords ?? 'n');
@@ -296,7 +328,7 @@ async function selectGetposMenu(spots, kind) {
         }
         // getpos_menu() supplies an end_menu prompt, so the tty owner applies
         // the configured prompt attributes and color while items stay plain.
-        tty_end_menu(window, `Pick ${withIndefiniteArticle(name)}${filter}`);
+        tty_end_menu(window, `Pick ${withIndefiniteArticle(name)}${filter}${game.iflags.getloc_travelmode ? ' for travel destination' : ''}`);
         const result = await tty_select_menu(window, PICK_ONE);
         if (result.cancelled)
             return null;
@@ -308,19 +340,12 @@ async function selectGetposMenu(spots, kind) {
 }
 // getpos_menu() describes the displayed glyph even when the caller only
 // supplied a validity rule, such as spell or polearm targeting.
-async function describeMenuPosition({ x, y }) {
+export async function describeGetposLocation(x, y) {
     const screen = screenDescription(x, y, '');
     if (!screen.count)
         return null;
     return screen.needsDetail
         ? await farlookLocationDescription(x, y) || screen.firstMatch : screen.firstMatch;
-}
-export async function describeGetposLocation(x, y) {
-    const description = await describeMenuPosition({ x, y });
-    if (!description)
-        return null;
-    const coordinates = coordinateDescription(x, y, game.iflags.getpos_coords ?? 'n');
-    return description + (coordinates ? ` ${coordinates}` : '');
 }
 // selection_force_newsyms() redraws by column, then row. Hallucinated glyphs
 // consume display randomness in that order, independently of target cycling.
@@ -371,17 +396,15 @@ function getposArea(state) {
     }
     const classify = (tx, ty) => {
         const location = state.level?.at(tx, ty);
-        if (!location?.seenv || tx < 1 || tx >= COLNO || ty < 0 || ty >= ROWNO)
+        if (!location || tx < 1 || tx >= COLNO || ty < 0 || ty >= ROWNO)
             return null;
-        if (location.typ === STONE || location.typ === SCORR || IS_WALL(location.typ) || location.typ === TREE)
-            return 2;
         const symbol = getposGlyphSymbol(terrain_glyph(location, tx, ty).glyph);
         if (symbol === null)
             return 0;
         if (symbol >= CmapSymbol.room && symbol <= CmapSymbol.darkroom
             || symbol >= CmapSymbol.upstair && symbol <= CmapSymbol.fountain)
             return 1;
-        if (symbol >= CmapSymbol.vwall && symbol <= CmapSymbol.trwall || symbol === CmapSymbol.tree)
+        if (symbol <= CmapSymbol.trwall || symbol === CmapSymbol.tree)
             return 2;
         if (symbol === CmapSymbol.corr || symbol === CmapSymbol.litcorr)
             return 3;
@@ -397,7 +420,8 @@ function getposArea(state) {
     const pending = [{ x, y }];
     for (let index = 0; index < pending.length; index++) {
         const spot = pending[index];
-        if (!spot || classify(spot.x, spot.y) !== category)
+        if (!spot || classify(spot.x, spot.y) !== category
+            || index > 0 && !state.level?.at(spot.x, spot.y)?.seenv)
             continue;
         const key = spot.y * COLNO + spot.x;
         if (area.has(key))
@@ -456,7 +480,7 @@ function matchesGetposCycle(kind, x, y) {
                 || adjacent.remembered_glyph.kind === 'unexplored');
         });
     }
-    if (door)
+    if (door || knownVibratingSquareAt(x, y, game))
         return true;
     if (!glyph || ['nothing', 'unexplored'].includes(glyph.kind))
         return false;
@@ -501,8 +525,8 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
     const cursor = { ...start };
     const savedDirection = { dx: game.u.dx, dy: game.u.dy, dz: game.u.dz };
     const movePrompt = `Move cursor to ${goal}:`;
-    let message = prompt;
     let firstPaint = true;
+    let showGoal = false;
     // Native msg_given clears prompts at exit, but leaves automatic
     // descriptions visible after the player has read them.
     let clearMessageOnExit = true;
@@ -525,12 +549,12 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
             clearMarking();
             setHilite(defaultHilite);
         }
+        // docrt_flags(docrtRefresh) resends the current glyphs and requests
+        // a status redraw; it does not recalculate sight or hallucinations.
+        game.context.botl = true;
     };
     const targetCycles = new Map();
     const autoDescription = () => game.iflags.autodescribe ?? true;
-    // Without autodescribe, nxtc leaves whatever the message window shows.
-    const movementMessage = async () => autoDescription()
-        ? await describeSelectedPosition(describe, cursor, movePrompt) : message;
     const validLocations = () => {
         if (!validity.cycle) {
             if (!isValidLocation)
@@ -553,6 +577,16 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
         const initialMapCursor = isValidLocation && !game.flags.verbose
             ? lastDirtyMapCursor() : null;
         for (;;) {
+            // pline() owns notices and goals, including their pager cleanup.
+            // Cursor redraws only supply new text for the initial prompt or autodescribe.
+            let message = firstPaint ? prompt : null;
+            if (showGoal) {
+                await pline(movePrompt);
+                showGoal = false;
+            }
+            else if (!firstPaint && autoDescription() && !clearMessageOnExit) {
+                message = await describeSelectedPosition(describe, cursor, isValidLocation);
+            }
             // The symbol callback runs only when entering that state. Cursor
             // movement keeps its temporary glyphs until a toggle or refresh.
             const paintedSpots = isValidLocation && hilite.state === 'symbols' && !marking
@@ -575,6 +609,10 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
                 rememberCommandKey(key);
             if (autoDescription())
                 clearMessageOnExit = false;
+            if (key === 27) {
+                clearMessageOnExit = true;
+                return null;
+            }
             let fast = false;
             if (key === game.commandBindings.keyForCommand('run')
                 || key === game.commandBindings.keyForCommand('rush')) {
@@ -582,17 +620,19 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
                 fast = true;
             }
             const ch = String.fromCharCode(key);
-            if (key === 27) {
-                clearMessageOnExit = true;
-                return null;
-            }
             const pickType = mapPositionPickType(key);
             if (pickType !== null)
                 return { ...cursor, pickType };
             const movement = game.commandBindings.movementForKey(key);
-            if (movement && movement.direction < 8) {
+            // movecmd() updates the horizontal direction even for '<' and
+            // '>', then rejects those as cursor movement. Subsequent mode
+            // checks clear dz before the key is used as a feature symbol.
+            if (movement) {
                 game.u.dx = movement.dx;
                 game.u.dy = movement.dy;
+            }
+            game.u.dz = 0;
+            if (movement && movement.direction < 8) {
                 const fastMove = fast || movement.mode !== 0;
                 let distance = fastMove ? 8 : 1;
                 if (fastMove && game.iflags.getloc_moveskip) {
@@ -607,7 +647,6 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
                         distance++;
                 }
                 moveGetposCursor(cursor, movement.dx * distance, movement.dy * distance);
-                message = await movementMessage();
                 continue;
             }
             const helpRequested = key === game.commandBindings.specialKey('getpos.help');
@@ -615,20 +654,11 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
                 // Help takes priority when its key is also bound to redraw.
                 if (helpRequested) {
                     await getposHelpUntilDismissed(goal, {
-                        hasValidLocations: !!isValidLocation,
+                        hasValidLocations: !!isValidLocation, force,
                     });
                 }
                 refreshHilite();
-                message = movePrompt;
-                continue;
-            }
-            if (!force && [' ', '\n', '\r'].includes(ch)) {
-                await pline('Done.');
-                clearMessageOnExit = false;
-                return null;
-            }
-            if (ch === ' ') {
-                message = await movementMessage();
+                showGoal = true;
                 continue;
             }
             if (key === game.commandBindings.specialKey('getpos.valid')) {
@@ -646,20 +676,19 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
                             break;
                     }
                 }
-                message = movePrompt;
+                showGoal = true;
                 continue;
             }
             if (key === game.commandBindings.specialKey('getpos.autodescribe')) {
                 game.iflags.autodescribe = !autoDescription();
                 clearMessageOnExit = true;
                 message = `Automatic description ${game.flags.verbose ? 'of features under cursor ' : ''}is ${autoDescription() ? 'on' : 'off'}.`;
+                await pline(message);
                 if (!autoDescription()) {
-                    await pline(message);
                     await flush_screen(1);
                     // show_goal_msg: the next loop pass pline()s the goal,
                     // which tty pages when it cannot share the notice's line.
                     await pline(movePrompt);
-                    message = movePrompt;
                 }
                 continue;
             }
@@ -671,18 +700,21 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
                 validity.cycle = null;
                 message = ['Not limiting targets.', 'Limiting targets to those in sight.',
                     'Limiting targets to those in same area.'][game.iflags.getloc_filter] ?? movePrompt;
+                await pline(message);
                 continue;
             }
             if (key === game.commandBindings.specialKey('getpos.menu')) {
                 clearMessageOnExit = true;
                 game.iflags.getloc_usemenu = !game.iflags.getloc_usemenu;
                 message = `${game.iflags.getloc_usemenu ? 'Using' : 'Not using'} a menu to show possible targets${game.iflags.getloc_usemenu ? " for 'm|M', 'o|O', 'd|D', and 'x|X'" : ''}.`;
+                await pline(message);
                 continue;
             }
             if (key === game.commandBindings.specialKey('getpos.moveskip')) {
                 clearMessageOnExit = true;
                 game.iflags.getloc_moveskip = !game.iflags.getloc_moveskip;
                 message = `${game.iflags.getloc_moveskip ? 'S' : 'Not s'}kipping over similar terrain when fastmoving the cursor.`;
+                await pline(message);
                 continue;
             }
             if (key === game.commandBindings.specialKey('getpos.self')) {
@@ -693,7 +725,6 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
                     validity.cycle.index = 0;
                 for (const cycle of targetCycles.values())
                     cycle.index = 0;
-                message = await movementMessage();
                 continue;
             }
             const target = getposCycleKind(key);
@@ -709,6 +740,7 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
                     if (!spots.length) {
                         const things = { mon: 'any monsters', obj: 'any items', door: 'any doors', unexplored: 'any unexplored areas', all: 'anything interesting', valid: 'any valid locations' };
                         message = `You cannot ${game.iflags.getloc_filter === 1 ? 'see' : 'detect'} ${things[target.kind]}.`;
+                        await pline(message);
                         continue;
                     }
                     const spot = await selectGetposMenu(spots, kind);
@@ -716,7 +748,6 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
                         cursor.x = spot.x;
                         cursor.y = spot.y;
                     }
-                    message = await movementMessage();
                     continue;
                 }
                 let cycle = kind === 'valid' && isValidLocation ? validLocations() : targetCycles.get(kind);
@@ -733,8 +764,14 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
                     throw new Error('The selected target location is missing');
                 cursor.x = spot.x;
                 cursor.y = spot.y;
-                message = await movementMessage();
                 continue;
+            }
+            if ([' ', '\n', '\r', '\x1b'].includes(ch)) {
+                if (force)
+                    continue;
+                await pline('Done.');
+                clearMessageOnExit = false;
+                return null;
             }
             const feature = nextGetposFeature(cursor, ch);
             if (feature) {
@@ -742,11 +779,8 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
                 cursor.y = feature.y;
                 if (clearMessageOnExit) {
                     clearMessageWindow();
-                    message = '';
                 }
                 clearMessageOnExit = false;
-                if (autoDescription())
-                    message = await movementMessage();
                 continue;
             }
             message = getposFeatureMissMessage(ch);
@@ -757,6 +791,7 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
                 clearMessageOnExit = false;
                 return null;
             }
+            await pline(message);
         }
     }
     finally {

@@ -214,8 +214,7 @@ export async function jumpHero(magic = 0, { state = game }: { state?: GameState 
                 : 'Where do you want to jump?',
         isValidLocation: valid,
         highlightHero: false,
-        describe: async (x, y) => await farlookLocationDescription(x, y)
-            + (valid(x, y) ? '' : ' (invalid target)'),
+        describe: farlookLocationDescription,
     });
     if (!target) return jumpResult(false, state);
     const refusal = jumpRestriction(target.x, target.y, magic, state);

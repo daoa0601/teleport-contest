@@ -89,4 +89,25 @@ void test('targeting does not repaint a status change nothing marked for redispl
     });
     assert.match(statusLine, /Pw:7\(7\)/);
 });
+void test('requesting a targeting refresh redraws the current status values', async () => {
+    freshObjectRoom({ flags: { tips: false, verbose: false } });
+    game.u.uen = game.u.uenmax = 7;
+    game.context.botl = true;
+    await flush_screen(1);
+    game.u.uen = game.u.uenmax = 9;
+    const input = resetInputState();
+    input.feed('\x12');
+    const selection = selectMapPosition({
+        start: { x: game.u.ux, y: game.u.uy }, prompt: 'Choose a location.', goal: 'a location',
+    });
+    await input.waitUntilBlocked();
+    try {
+        const statusLine = requireScreenRow(23).map(cell => cell.ch).join('');
+        assert.match(statusLine, /Pw:9\(9\)/);
+    }
+    finally {
+        input.feed('\x1b');
+        await selection;
+    }
+});
 //# sourceMappingURL=getpos_redraw.test.js.map
