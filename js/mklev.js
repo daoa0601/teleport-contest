@@ -41,9 +41,9 @@ import { LUA_SOURCES } from './generated/lua_sources.js';
 import { createDesBindings, mapOrigin, objectTypeForName, tablePoint, } from './lua/des.js';
 import { luaInteger, luaString, luaToInteger } from './lua/arguments.js';
 import { createSelectionApi } from './lua/selection.js';
-import { NethackLuaError } from './lua/errors.js';
+import { LuaArgumentError, NethackLuaError } from './lua/errors.js';
 import { nameToMonster } from './mondata.js';
-import { luaTableToArray, objectToLuaTable, LuaTable, } from './lua/runtime.js';
+import { luaTableToArray, objectToLuaTable, LuaTable, luaCheckString, } from './lua/runtime.js';
 import { nextIdent } from './ident.js';
 import { erosionMatters, objectIsVulnerableToErosion } from './object_erosion.js';
 import { deallocateObject, deleteObject } from './object_delete.js';
@@ -7038,12 +7038,15 @@ function createLuaLevelSession() {
                 return level_difficulty();
             },
             start_timer_at: (...args) => {
-                // nhl_get_timertype() accepts every timeout_funcs entry;
-                // only melt-ice is a position timer (timer_is_pos()).
-                const timerName = luaString(args[args.length - 2]);
+                // nhl_get_timertype() takes luaL_checkoption over every
+                // timeout_funcs entry at stack index -2, so a bad name is
+                // lauxlib's argument error carrying that index; only
+                // melt-ice is a position timer (timer_is_pos()).
+                const timerIndex = -2;
+                const timerName = luaCheckString(timerIndex, args[args.length - 2]);
                 const timerType = LEVEL_TIMER_TYPE_NAMES.indexOf(timerName);
                 if (timerType < 0)
-                    throw new NethackLuaError('Unknown timer type');
+                    throw new LuaArgumentError(timerIndex, `invalid option '${timerName}'`);
                 const when = luaToInteger(args[args.length - 1]);
                 const point = luaTimerCoordinates(args);
                 if (timerType !== LEVEL_TIMER_TYPE_NAMES.indexOf('melt-ice'))

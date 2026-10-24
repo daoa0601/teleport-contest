@@ -1,6 +1,7 @@
 import { parseLua } from './parser.js';
 import { LuaTraceback } from './traceback.js';
 import { luaChunkId } from './syntax_error.js';
+import { LuaArgumentError } from './errors.js';
 import { luaInteger } from './arguments.js';
 export class LuaValues {
     values;
@@ -190,6 +191,15 @@ export function luaType(value) {
     if (typeof value === 'boolean')
         return 'boolean';
     return 'userdata';
+}
+// luaL_checkstring() converts numbers and raises lauxlib's bad-argument
+// error, carrying the caller's stack index, for every other value.
+export function luaCheckString(argument, value) {
+    if (typeof value === 'string')
+        return value;
+    if (typeof value === 'number')
+        return String(value);
+    throw new LuaArgumentError(argument, `string expected, got ${value === undefined ? 'no value' : luaType(value)}`);
 }
 function luaString(value) {
     value = first(value);

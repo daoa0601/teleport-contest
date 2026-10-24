@@ -1,6 +1,7 @@
 import { parseLua } from './parser.js';
 import { LuaTraceback } from './traceback.js';
 import { luaChunkId } from './syntax_error.js';
+import { LuaArgumentError } from './errors.js';
 import { luaInteger } from './arguments.js';
 import type {
     AssignmentTarget, BinaryExpression, BinaryOperator, Expression,
@@ -203,6 +204,15 @@ export function luaType(value: LuaResult): string {
     if (typeof value === 'string') return 'string';
     if (typeof value === 'boolean') return 'boolean';
     return 'userdata';
+}
+
+// luaL_checkstring() converts numbers and raises lauxlib's bad-argument
+// error, carrying the caller's stack index, for every other value.
+export function luaCheckString(argument: number, value: LuaValue | undefined): string {
+    if (typeof value === 'string') return value;
+    if (typeof value === 'number') return String(value);
+    throw new LuaArgumentError(argument,
+        `string expected, got ${value === undefined ? 'no value' : luaType(value)}`);
 }
 
 function luaString(value: LuaResult): string {
