@@ -1,6 +1,5 @@
 // A monster strikes the hero with a weapon it keeps in its hands.
 // C refs: mthrowu.c thrwmu() polearm branch and thitu().
-import { artifactById } from './artifacts.js';
 import { canSeeMonster, plineWithContinuation } from './display.js';
 import { game } from './gstate.js';
 import { hitHeroWithObject } from './hero_object_hit.js';
@@ -8,7 +7,7 @@ import { heroSpecies } from './hero_species.js';
 import { MONSTER_SIZE } from './monster_data.js';
 import { monsterSentenceSubject } from './monster_sound.js';
 import { monsterWieldedWeapon } from './monster_weapon.js';
-import { objectCombatName } from './objnam.js';
+import { definiteName, objectCombatName, objectHasPersonalName } from './objnam.js';
 import { withIndefiniteArticle } from './object_grammar.js';
 import { stopHeroOccupation } from './occupation.js';
 import { rn2, rnd } from './rng.js';
@@ -23,12 +22,10 @@ export async function attackHeroWithPolearm(monster, weapon, state = game, { pub
     const distance = (monster.mx - monster.mux) ** 2 + (monster.my - monster.muy) ** 2;
     if (distance > 5 || !couldsee(monster.mx, monster.my))
         return;
-    const artifact = artifactById(weapon.oartifact, state);
-    const name = artifact?.name || objectCombatName(weapon, { state });
-    if (!name)
-        throw new Error(`Unknown polearm object type ${weapon.otyp}`);
-    const description = artifact ? name : withIndefiniteArticle(name);
     if (canSeeMonster(monster)) {
+        const name = objectCombatName(weapon, { state });
+        const description = objectHasPersonalName(weapon, state)
+            ? definiteName(name, state) : withIndefiniteArticle(name);
         const verb = monsterWeaponSwingVerb(weapon, distance <= 2, random);
         await publish(`${monsterSentenceSubject(monster)} ${verb} ${description}.`);
     }
