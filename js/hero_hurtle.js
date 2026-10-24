@@ -157,9 +157,6 @@ async function hitObstacle(obstacle, x, y, remaining) {
         return;
     await wakeMonstersNearWithMessages(x, y, 10);
 }
-function indefiniteName(name) {
-    return `${/^[aeiou]/i.test(name) ? 'an' : 'a'} ${name}`;
-}
 function heroWearsTorsoArmor() {
     return !!(game.uarmu || game.uarm || game.uarmc
         || game.u?.uarmu || game.u?.uarm || game.u?.uarmc);
@@ -178,7 +175,7 @@ async function collideWithMonster(monster, x, y, options) {
     // C dothrow.c:hurtle_step() instapetrify()s an unarmored hero.
     if (touchPetrifies(monster.mnum) && !heroWearsTorsoArmor()) {
         const result = await resolveImmediatePetrification({
-            killer: `bumping into ${indefiniteName(monsterTypeName(monster.mnum, !!monster.female))}`,
+            killer: `bumping into ${withIndefiniteArticle(monsterTypeName(monster.mnum, !!monster.female))}`,
         });
         if (result.died)
             return;

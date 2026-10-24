@@ -26,7 +26,7 @@ import { makemonNear } from './mklev.js';
 import { MONSTER_ALIGNMENT, MONSTER_BODY_META, MONSTER_DIFFICULTY, MONSTER_FLAGS2, MONSTER_NAME, monsterIsUnicorn, } from './monster_data.js';
 import { monsterName } from './monster_name.js';
 import { AMULET_OF_YENDOR, CORPSE, FAKE_AMULET_OF_YENDOR, OBJECT_SUBTYPE, } from './object_data.js';
-import { makePlural } from './object_grammar.js';
+import { makePlural, withIndefiniteArticle } from './object_grammar.js';
 import { simpleObjectNameWithArticle } from './objnam.js';
 import { learnObjectType, recordObjectEncounter } from './object_knowledge.js';
 import { useUpFloorObject } from './floor_consumption.js';
@@ -345,7 +345,7 @@ async function offerOwnRace(corpse, highAltar, alignment) {
         let failure;
         if (alignment === -1 && hero.ualign.type !== -1) {
             const color = displayColorName('black');
-            await pline(`The blood floods the altar, which vanishes in ${/^[aeiou]/i.test(color) ? 'an' : 'a'} ${color} cloud!`);
+            await pline(`The blood floods the altar, which vanishes in ${withIndefiniteArticle(color)} cloud!`);
             altar.typ = ROOM;
             altar.flags = 0;
             newsym(hero.ux, hero.uy);

@@ -11,7 +11,7 @@ import { runClaimedObjectBurnTimer } from './light.js';
 import {
     finishBuriedZombieTimer, runClaimedObjectRotTimer,
 } from './mklev.js';
-import { monsterTypeName } from './monster_data.js';
+import { monsterName } from './monster_name.js';
 import { claimNextDueObjectTimer, OBJECT_TIMER_KIND } from './object_timers.js';
 import type { DueObjectTimer } from './object_timers.js';
 import type { CorpseRevivalTimerEvent } from './corpse_revival.js';
@@ -75,11 +75,8 @@ async function announceBuriedRevival(event: CorpseRevivalTimerEvent): Promise<vo
     const { monster, trap } = event;
     if (cansee(monster.mx, monster.my)) {
         let subject = 'Something';
-        if (canSpotMonster(monster)) {
-            const name = `${monster.saddled ? 'saddled ' : ''}`
-                + monsterTypeName(monster.mnum, !!monster.female);
-            subject = `${/^[aeiou]/i.test(name) ? 'An' : 'A'} ${name}`;
-        }
+        if (canSpotMonster(monster))
+            subject = monsterName(monster, { article: 'a', capitalized: true });
         if (trap) trap.tseen = true;
         await plineWithContinuation(`${subject} claws itself out of the ground!`);
         newsym(monster.mx, monster.my);

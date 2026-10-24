@@ -351,7 +351,7 @@ function corpseWithArticle(object: Pick<GameObject, 'corpsenm' | 'oextra' | 'ona
     const species = corpseSpeciesName(object);
     const name = object.oextra?.oname || object.oname;
     const noun = `${species} corpse${name ? ` named ${name}` : ''}`;
-    return `${/^[aeiou]/i.test(noun) ? 'an' : 'a'} ${noun}`;
+    return withIndefiniteArticle(noun);
 }
 
 export async function selfTouchPetrifyingWeapons({

@@ -290,7 +290,7 @@ function corpseWithArticle(object) {
     const species = corpseSpeciesName(object);
     const name = object.oextra?.oname || object.oname;
     const noun = `${species} corpse${name ? ` named ${name}` : ''}`;
-    return `${/^[aeiou]/i.test(noun) ? 'an' : 'a'} ${noun}`;
+    return withIndefiniteArticle(noun);
 }
 export async function selfTouchPetrifyingWeapons({ messageStart = 'No longer petrify-resistant, you', state = game, publish = pline, die = finishHeroDeath, } = {}) {
     if (heroResistsStoning(state))

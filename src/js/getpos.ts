@@ -31,6 +31,7 @@ import type { GameState } from './game_state.js';
 import type { Position } from './map_types.js';
 import { rememberCommandKey, takeRepeatCommand } from './command_repeat.js';
 import { visibleCommandKey } from './command_keys.js';
+import { withIndefiniteArticle } from './object_grammar.js';
 
 export type MapPositionPickType = typeof LOOK_TRADITIONAL | typeof LOOK_QUICK
     | typeof LOOK_ONCE | typeof LOOK_VERBOSE;
@@ -335,7 +336,6 @@ async function describeSelectedPosition(describe: PositionDescription | null | u
 async function selectGetposMenu(spots: readonly Position[], kind: GetposCycleKind): Promise<Position | null> {
     const names = { mon: 'monster', obj: 'item', door: 'door', unexplored: 'unexplored area', all: 'interesting thing', valid: 'valid location' };
     const name = names[kind];
-    const article = ['item', 'unexplored area', 'interesting thing'].includes(name) ? 'an' : 'a';
     const filter = game.iflags.getloc_filter === 1 ? ' in view' : game.iflags.getloc_filter === 2 ? ' in this area' : '';
     const window = tty_create_nhwindow<Position>(NHW_MENU);
     try {
@@ -349,7 +349,7 @@ async function selectGetposMenu(spots: readonly Position[], kind: GetposCycleKin
         }
         // getpos_menu() supplies an end_menu prompt, so the tty owner applies
         // the configured prompt attributes and color while items stay plain.
-        tty_end_menu(window, `Pick ${article} ${name}${filter}`);
+        tty_end_menu(window, `Pick ${withIndefiniteArticle(name)}${filter}`);
         const result = await tty_select_menu(window, PICK_ONE);
         if (result.cancelled) return null;
         return result.selections[0]?.identifier ?? null;

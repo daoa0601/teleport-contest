@@ -153,8 +153,7 @@ export async function applyHeroWereChange({ state = game, publish = plineWithCon
         return { kind: 'blocked', changed: false };
     if (heroCanControlPolymorph(state)) {
         const name = beastFormName(beast);
-        const article = /^[aeiou]/iu.test(name) ? 'an' : 'a';
-        if (!await queryControlledWereChange(state, `Do you want to change into ${article} ${name}?`))
+        if (!await queryControlledWereChange(state, `Do you want to change into ${withIndefiniteArticle(name)}?`))
             return { kind: 'declined', changed: false };
     }
     else if (threateningMonsterNearby(state))
