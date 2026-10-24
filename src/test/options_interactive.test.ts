@@ -360,7 +360,7 @@ for (const configuration of ['OPTIONS=menu_next_page:^F,menu_previous_page:^B', 
 }
 
 for (const symbols of ['0!~', '0\\x21\\o176']) {
-    void test(`configured warning symbols retain their threat description (${symbols})`, async () => {
+    void test(`configured warning symbols keep the default map symbol and its threat description (${symbols})`, async () => {
         freshObjectRoom({ hero: { warning: true } });
         applyNethackrc(`OPTIONS=warnings:${symbols}`);
         const xorn = await createMonsterAt('xorn', 11, 10, NO_MINVENT);
@@ -373,7 +373,10 @@ for (const symbols of ['0!~', '0\\x21\\o176']) {
         newsym(11, 10);
         await flush_screen(1);
 
-        assert.equal(requireScreenCell(10, 11).ch, '~');
+        // assign_warnings() only retargets gw.warnsyms for the pager; the map
+        // draws showsyms[SYM_OFF_W+n], which symset loading fills from
+        // def_warnsyms (symbols.c:106), so a level-8 threat still shows 2.
+        assert.equal(requireScreenCell(10, 11).ch, '2');
         assert.equal(await farlookLocationDescription(11, 10), 'unknown creature causing you anxiety');
     });
 }

@@ -15,7 +15,6 @@ import { displayHelpFile, displayPagerText } from './pager_help.js';
 import { setConditionOption } from './status_conditions.js';
 import { classifyStatusTerrain } from './status_terrain.js';
 import { assignWarningSymbols, setWarningSymbols } from './warning_symbols.js';
-import { findRole } from './roles.js';
 import { PosixRegex } from './posix_regex.js';
 import { rn2 } from './rng.js';
 import { isTextOption, setTextOption, textOptionValue, cInteger, parsePickupTypes, optionError, featureAlertVersion } from './option_values.js';
