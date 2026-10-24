@@ -1436,18 +1436,8 @@ async function watchOnDuty(monster, state, random, calls) {
     const hero = state?.u || {};
     const requestedX = (hero.ux ?? 0) + (hero.dx ?? 0);
     const requestedY = (hero.uy ?? 0) + (hero.dy ?? 0);
-    if (!inTown(state?.level, requestedX, requestedY) || monster.mcansee === 0)
-        return false;
-    const flags1 = MONSTER_FLAGS1[monster.mnum] ?? 0;
-    const heroInvisible = !!(state?.invisible ||
-        hero.invisible ||
-        hero.invis ||
-        (hero.invisibleTurns ?? 0) > 0);
-    if ((heroInvisible && !(flags1 & M1_SEE_INVIS)) ||
-        state?.underwater ||
-        hero.underwater ||
-        hero.uinwater ||
-        !couldSeeFromHero(state, monster.mx, monster.my))
+    if (!inTown(state.level, requestedX, requestedY) || !monster.mcansee
+        || !monsterHasLineOfSightToHero(monster, state))
         return false;
     if (recordRandom(random, calls, 3) !== 0)
         return false;
