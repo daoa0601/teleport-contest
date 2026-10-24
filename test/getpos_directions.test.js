@@ -22,4 +22,14 @@ void test('a vertical feature key clears the direction used to choose a doorway 
     assert.equal(selected?.x, 10);
     assert.equal(game.u.dx, 1, 'Targeting restores the hero movement direction on exit');
 });
+for (const prefix of ['g', 'G']) {
+    void test(`Escape after the ${prefix} movement prefix leaves forced targeting active`, async () => {
+        freshObjectRoom();
+        resetInputState().feed(`${prefix}\x1bl.`);
+        const selected = await selectMapPosition({
+            start: { x: 10, y: 10 }, prompt: 'Pick a location.', goal: 'a location',
+        });
+        assert.equal(selected?.x, 11);
+    });
+}
 //# sourceMappingURL=getpos_directions.test.js.map

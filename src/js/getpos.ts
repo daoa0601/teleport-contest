@@ -645,6 +645,10 @@ export async function selectMapPosition({
             let key = queued ? queued.key : (await readchar('position')) & 255;
             if (!queued && game.iflags.remember_getpos) rememberCommandKey(key);
             if (autoDescription()) clearMessageOnExit = false;
+            if (key === 27) {
+                clearMessageOnExit = true;
+                return null;
+            }
             let fast = false;
             if (key === game.commandBindings.keyForCommand('run')
                 || key === game.commandBindings.keyForCommand('rush')) {
@@ -652,10 +656,6 @@ export async function selectMapPosition({
                 fast = true;
             }
             const ch = String.fromCharCode(key);
-            if (key === 27) {
-                clearMessageOnExit = true;
-                return null;
-            }
             const pickType = mapPositionPickType(key);
             if (pickType !== null) return { ...cursor, pickType };
             const movement = game.commandBindings.movementForKey(key);
@@ -696,12 +696,12 @@ export async function selectMapPosition({
                 showGoal = true;
                 continue;
             }
-            if (!force && [' ', '\n', '\r'].includes(ch)) {
+            if (!force && [' ', '\n', '\r', '\x1b'].includes(ch)) {
                 await pline('Done.');
                 clearMessageOnExit = false;
                 return null;
             }
-            if ([' ', '\n', '\r'].includes(ch)) {
+            if ([' ', '\n', '\r', '\x1b'].includes(ch)) {
                 continue;
             }
             if (key === game.commandBindings.specialKey('getpos.valid')) {

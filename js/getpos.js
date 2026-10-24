@@ -606,6 +606,10 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
                 rememberCommandKey(key);
             if (autoDescription())
                 clearMessageOnExit = false;
+            if (key === 27) {
+                clearMessageOnExit = true;
+                return null;
+            }
             let fast = false;
             if (key === game.commandBindings.keyForCommand('run')
                 || key === game.commandBindings.keyForCommand('rush')) {
@@ -613,10 +617,6 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
                 fast = true;
             }
             const ch = String.fromCharCode(key);
-            if (key === 27) {
-                clearMessageOnExit = true;
-                return null;
-            }
             const pickType = mapPositionPickType(key);
             if (pickType !== null)
                 return { ...cursor, pickType };
@@ -658,12 +658,12 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
                 showGoal = true;
                 continue;
             }
-            if (!force && [' ', '\n', '\r'].includes(ch)) {
+            if (!force && [' ', '\n', '\r', '\x1b'].includes(ch)) {
                 await pline('Done.');
                 clearMessageOnExit = false;
                 return null;
             }
-            if ([' ', '\n', '\r'].includes(ch)) {
+            if ([' ', '\n', '\r', '\x1b'].includes(ch)) {
                 continue;
             }
             if (key === game.commandBindings.specialKey('getpos.valid')) {
