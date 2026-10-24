@@ -83,8 +83,6 @@ export async function resolveMonsterGaze(monster: Monster, attack: MonsterAttack
             if (heroIsUnaware(state)) { reaction = medusa ? 4 : 2; break; }
             if (medusa && heroIsHallucinating(state) && random(3) === 0)
                 await publish('Someone seems overdue for a serpent cut.');
-            else if (medusa && monster.mcan && reaction < 0)
-                await publish(`${name()} doesn't look all that ugly.`);
             else await publish(`${name()} gazes ineffectually.`);
             break;
         }

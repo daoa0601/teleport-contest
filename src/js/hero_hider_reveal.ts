@@ -89,6 +89,11 @@ export async function revealConcealedHeroToAttacker(
             await publish(`You fall from the ${ceilingName(hero.ux, hero.uy, state)}!`);
             const oldx = monster.mx;
             const oldy = monster.my;
+            // C remove_monster() takes the attacker off the map before the
+            // search so that its own square — usually the closest free one —
+            // is eligible for the hero; the monster remembers its old spot.
+            monster.mx = 0;
+            monster.my = 0;
             const spot = findNearbyMonsterPosition(species, hero.ux, hero.uy, {
                 state, random,
             });
@@ -97,12 +102,13 @@ export async function revealConcealedHeroToAttacker(
             const eelStays = MONSTER_SYMBOL[monster.mnum] === S_EEL
                 && isPoolAt(oldx, oldy, state) && !isPoolAt(hero.ux, hero.uy, state);
             if (!spot || eelStays) {
+                placeMonsterAt(monster, oldx, oldy); /* put back */
                 newsym(hero.ux, hero.uy);
                 await publish(`${monsterName(monster, { state, capitalized: true })} draws back as you drop!`);
                 return true;
             }
 
-            newsym(oldx, oldy); /* finish removal */
+            newsym(oldx, oldy); /* finish removal; the square is empty now */
             placeMonsterAt(monster, hero.ux, hero.uy);
             let landing = spot;
             if (monster.wormno) {
@@ -163,6 +169,7 @@ export async function revealConcealedHeroToAttacker(
                     if (cover) cover.spe = savedSpe;
                 }
             }
+            newsym(hero.ux, hero.uy);
         }
         return true;
     }

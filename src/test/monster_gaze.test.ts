@@ -84,8 +84,8 @@ void test('a cancelled Medusa gazes once before her ordinary attacks', async () 
     initRng(1n);
     await runTurn();
     await flushPendingTopline();
-    assert.ok(messages.some(message => message.includes("Medusa doesn't look all that ugly.")));
-    const gazePages = messages.filter(message => message.includes("Medusa doesn't look all that ugly."));
+    assert.ok(messages.some(message => message.includes('Medusa gazes ineffectually.')));
+    const gazePages = messages.filter(message => message.includes('Medusa gazes ineffectually.'));
     assert.equal(gazePages.length, 1);
     assert.ok(game.u.uhp > 0 && game.u.uhp < 500);
 });

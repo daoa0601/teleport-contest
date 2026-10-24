@@ -1,13 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { performMonsterHeroAttack } from '../js/allmain.js';
-import { MM_ANGRY, MM_NOGRP, NO_MINVENT } from '../js/const.js';
-import { game, requirePlayingGame } from '../js/gstate.js';
+import { COLNO, MM_ANGRY, MM_NOGRP, NO_MINVENT, ROOM, ROWNO, STONE } from '../js/const.js';
+import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { useHeroHide } from '../js/hero_hide.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { polymonHero } from '../js/polyself.js';
 import { resetInputState } from '../js/input.js';
+import { flush_screen } from '../js/display.js';
 import { TOWEL } from '../js/object_data.js';
+import { requireScreenCell } from './support/screen.js';
 import { floorObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -62,6 +64,30 @@ void test('a hiding piercer hero drops onto its attacker and swaps squares', asy
     assert.equal(ogre.mx, heroX, 'the attacker takes the hero\'s old square');
     assert.notEqual(`${game.u.ux},${game.u.uy}`, `${heroX},${heroY}`, 'the hero lands on a different square');
 });
+void test('a falling piercer lands on the attacker\'s vacated square', async () => {
+    const { messages } = revealRoom();
+    assert.equal((await polymonHero(MONSTER_NAME.indexOf('rock piercer'))).transformed, true);
+    assert.equal((await useHeroHide({ publish: async () => { } })).spentTime, true);
+    const level = requireGameLevel(game);
+    const heroX = game.u.ux;
+    const heroY = game.u.uy;
+    const ogre = await attackingOgre();
+    // Only the attacker's own square is standable: C takes the attacker off
+    // the map before the search, so that square must win for the hero.
+    for (let x = 1; x < COLNO; x++)
+        for (let y = 0; y < ROWNO; y++)
+            level.requireAt(x, y).typ = STONE;
+    level.requireAt(heroX, heroY).typ = ROOM;
+    level.requireAt(ogre.mx, ogre.my).typ = ROOM;
+    await runAttack(ogre);
+    const prose = finalProse(messages);
+    assert.doesNotMatch(prose, /draws back/, `the swap must happen: ${prose}`);
+    assert.match(prose, /It is hit by a falling piercer \(you\)!/);
+    assert.equal(ogre.mx, heroX, 'the attacker takes the hero\'s old square');
+    assert.equal(ogre.my, heroY, 'the attacker takes the hero\'s old square');
+    assert.equal(game.u.ux, 11, 'the hero lands on the attacker\'s old square');
+    assert.equal(game.u.uy, 10, 'the hero lands on the attacker\'s old square');
+});
 void test('a hiding snake hero is pointed out to its attacker', async () => {
     const { messages } = revealRoom();
     await floorObject(TOWEL, game.u.ux, game.u.uy, { dknown: true });
@@ -74,6 +100,8 @@ void test('a hiding snake hero is pointed out to its attacker', async () => {
     assert.ok(prose.includes('Wait, ogre!  There\'s a snake named Mope hiding under an uncursed towel!'), `unexpected prose: ${prose}`);
     assert.equal(game.u.uundetected, 0);
     assert.equal(ogre.mhp, ogre.mhpmax, 'the attacker never strikes the revealed hero');
+    await flush_screen(1);
+    assert.equal(requireScreenCell(game.u.ux - 1, game.u.uy + 1).ch, 'S', 'the revealed hero is drawn on its square again');
 });
 void test('a mimicking hero is unmasked instead of attacked', async () => {
     const { messages } = revealRoom();
