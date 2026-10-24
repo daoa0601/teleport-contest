@@ -9,6 +9,7 @@ import {
     selection_do_gradient,
     selection_getpoint,
     selection_setpoint,
+    selection_not,
     selection_size_description,
     SEL_GRADIENT_RADIAL,
     SEL_GRADIENT_SQUARE,
@@ -55,6 +56,15 @@ function selectionValue(value: LuaValue | undefined): SpecialSelection {
         || !(value.value instanceof SpecialSelection))
         throw new TypeError('selection operation requires a selection');
     return value.value;
+}
+
+function copySelectionInto(target: SpecialSelection, source: SpecialSelection): void {
+    const copy = source.clone().selection;
+    target.selection.wid = copy.wid;
+    target.selection.hei = copy.hei;
+    target.selection.bounds_dirty = copy.bounds_dirty;
+    target.selection.bounds = copy.bounds;
+    target.selection.map = copy.map;
 }
 
 function pointTable(point: Coordinate | null): LuaTable | null {
@@ -118,15 +128,20 @@ export function createSelectionApi(context: ContextSource, invoke: InvokeSelecti
         const point = await getLocationCoord(currentContext(), coordinate, ANY_LOC);
         return selection_getpoint(point.x, point.y, selectionValue(self).selection);
     };
-    const clone = (self: LuaValue, ...extra: LuaValue[]) => {
-        if (extra.length) throw new TypeError('wrong parameters');
-        return wrap(selectionValue(self).clone());
+    const clone = (...args: LuaValue[]) => {
+        const source = selectionValue(args[0]);
+        if (args.length === 1) return wrap(source.clone());
+        // Native copies into stack slot two and returns the new empty selection on top.
+        copySelectionInto(selectionValue(args[1]), source);
+        return wrap(new SpecialSelection());
     };
     const numpoints = (self: LuaValue) => selectionValue(self).numPoints();
     const negate = (...args: LuaValue[]) => {
         if (args.length === 0) return wrap(new SpecialSelection().negate());
-        if (args.length !== 1) throw new TypeError('wrong parameters');
-        return wrap(selectionValue(args[0]).negate());
+        const result = clone(...args);
+        const target = args.length === 1 ? result.value : selectionValue(args[1]);
+        selection_not(target.selection);
+        return result;
     };
     const percentage = (self: LuaValue, percent: LuaValue) => wrap(
         selectionValue(self).percentage(luaInt(percent)),

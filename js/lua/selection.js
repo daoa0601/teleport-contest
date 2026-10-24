@@ -1,4 +1,4 @@
-import { SpecialSelection, specialSelectionFloodFill, specialSelectionMatch, specialSelectionRandLine, selection_from_mkroom, selection_do_ellipse, selection_do_line, selection_do_gradient, selection_getpoint, selection_setpoint, selection_size_description, SEL_GRADIENT_RADIAL, SEL_GRADIENT_SQUARE, } from '../selvar.js';
+import { SpecialSelection, specialSelectionFloodFill, specialSelectionMatch, specialSelectionRandLine, selection_from_mkroom, selection_do_ellipse, selection_do_line, selection_do_gradient, selection_getpoint, selection_setpoint, selection_not, selection_size_description, SEL_GRADIENT_RADIAL, SEL_GRADIENT_SQUARE, } from '../selvar.js';
 import { LuaTable, LuaUserdata, luaType } from './runtime.js';
 import { luaInteger, luaString, luaTruthy } from './arguments.js';
 import { ANY_LOC, getLocationCoord } from '../special_location.js';
@@ -23,6 +23,14 @@ function selectionValue(value) {
         || !(value.value instanceof SpecialSelection))
         throw new TypeError('selection operation requires a selection');
     return value.value;
+}
+function copySelectionInto(target, source) {
+    const copy = source.clone().selection;
+    target.selection.wid = copy.wid;
+    target.selection.hei = copy.hei;
+    target.selection.bounds_dirty = copy.bounds_dirty;
+    target.selection.bounds = copy.bounds;
+    target.selection.map = copy.map;
 }
 function pointTable(point) {
     if (!point)
@@ -91,18 +99,22 @@ export function createSelectionApi(context, invoke = null) {
         const point = await getLocationCoord(currentContext(), coordinate, ANY_LOC);
         return selection_getpoint(point.x, point.y, selectionValue(self).selection);
     };
-    const clone = (self, ...extra) => {
-        if (extra.length)
-            throw new TypeError('wrong parameters');
-        return wrap(selectionValue(self).clone());
+    const clone = (...args) => {
+        const source = selectionValue(args[0]);
+        if (args.length === 1)
+            return wrap(source.clone());
+        // Native copies into stack slot two and returns the new empty selection on top.
+        copySelectionInto(selectionValue(args[1]), source);
+        return wrap(new SpecialSelection());
     };
     const numpoints = (self) => selectionValue(self).numPoints();
     const negate = (...args) => {
         if (args.length === 0)
             return wrap(new SpecialSelection().negate());
-        if (args.length !== 1)
-            throw new TypeError('wrong parameters');
-        return wrap(selectionValue(args[0]).negate());
+        const result = clone(...args);
+        const target = args.length === 1 ? result.value : selectionValue(args[1]);
+        selection_not(target.selection);
+        return result;
     };
     const percentage = (self, percent) => wrap(selectionValue(self).percentage(luaInt(percent)));
     const filterMapchar = (self, character, lit = -2) => wrap(selectionValue(self).filterMapCharacter(luaString(character), luaInt(lit ?? -2)));

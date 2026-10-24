@@ -398,3 +398,29 @@ void test('selection geometry and iteration reject unsupported argument counts',
         await assert.rejects(state.executeAsync(source), { name: 'TypeError' }, source);
     }
 });
+
+void test('clone and negate retain native second-selection copy targets', async t => {
+    freshGame();
+    const state = new LuaState({
+        selection: createSelectionBindings({ xstart: 0, ystart: 0, width: 80, height: 21 }),
+    });
+    t.after(() => state.destroy());
+
+    await state.executeAsync(`
+        local source = selection.set(12, 6)
+        local target = selection.new()
+        clone_result = selection.clone(source, target):numpoints()
+        copied = target:get(12, 6)
+        negate_result = selection.negate(source, target):numpoints()
+        cleared = target:get(12, 6)
+        inverted = target:get(13, 6)
+        original = source:get(12, 6)
+    `);
+
+    assert.equal(state.getGlobal('clone_result'), 0);
+    assert.equal(state.getGlobal('copied'), 1);
+    assert.equal(state.getGlobal('negate_result'), 0);
+    assert.equal(state.getGlobal('cleared'), 0);
+    assert.equal(state.getGlobal('inverted'), 1);
+    assert.equal(state.getGlobal('original'), 1);
+});
