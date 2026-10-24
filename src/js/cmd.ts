@@ -420,6 +420,7 @@ import {
 } from './senses.js';
 import { beginBallAndChainMove, finishBallAndChainMove, heroIsPunished } from './ball.js';
 import {
+    doborn,
     doquit,
     finishHeroDeath,
     listGenocided, listVanquished,
@@ -3455,6 +3456,7 @@ const EXTENDED_COMMAND_HANDLERS = new Map<string, () => Promise<unknown>>([
     ['wizintrinsic', wizIntrinsic],
     ['wizmap', wizMap],
     ['wizmakemap', wizMakeMap],
+    ['wizborn', doborn],
 ]);
 
 // C refs: artifact.c:doinvoke(), invoke_ok(), arti_invoke().  getobj()

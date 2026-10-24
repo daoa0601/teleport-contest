@@ -50,7 +50,7 @@ import { doneObjectCleanup } from './object_cleanup.js';
 import { restoreHeroNutrition } from './hunger.js';
 import {
     A_CON, A_WIS, ACH_BLND, ACH_NUDE, ACH_UWIN, ASCENDED, BURNING, CHOKING, DIED, ENL_GAMEOVERALIVE, ENL_GAMEOVERDEAD,
-    ESCAPED, G_EXTINCT, G_GENOD, GENOCIDED,
+    ESCAPED, G_EXTINCT, G_GENOD, G_GONE, GENOCIDED,
     PANICKED, QUIT, STARVING, STONING, TRICKED,
     In_endgame, In_quest, Is_astralevel, Is_knox_level, KILLED_BY, KILLED_BY_AN, NO_KILLER_PREFIX, PICK_ONE, TT_LAVA, Upolyd,
 } from './const.js';
@@ -523,6 +523,30 @@ export async function listVanquished(defquery: 'y' | 'A' = 'y'): Promise<void> {
     });
 }
 
+// C insight.c:doborn() (#wizborn): per-species born/died counters plus the
+// genocided (G), extinct (E), or otherwise-gone (X) flag, totaled last.
+export async function doborn(): Promise<void> {
+    const lines: string[] = ['died born'];
+    let bornTotal = 0, diedTotal = 0;
+    for (const [mnum, vital] of (game.mvitals || []).entries()) {
+        const born = vital?.born ?? 0;
+        const died = vital?.died ?? 0;
+        const gone = vital?.mvflags ?? 0;
+        if (!born && !died && (gone & G_GONE) === 0) continue;
+        const flag = (gone & G_GONE) === G_EXTINCT ? 'E'
+            : (gone & G_GONE) === G_GENOD ? 'G'
+                : (gone & G_GONE) !== 0 ? 'X' : ' ';
+        lines.push(`${String(died).padStart(4)} ${String(born).padStart(4)} ${flag} ${
+            (MONSTER_NAME[mnum] ?? '').padEnd(30)}`);
+        bornTotal += born;
+        diedTotal += died;
+    }
+    lines.push('');
+    lines.push(`${String(diedTotal).padStart(4)} ${String(bornTotal).padStart(4)}   ${''.padEnd(30)}`);
+    await showTextWindow(lines);
+    game._pending_message = '';
+    game.context.move = 0;
+}
 
 interface GoneSpecies {
     mnum: number;
