@@ -242,6 +242,28 @@ for (const [pattern, hidden] of [
     });
 }
 
+for (const [pattern, hidden, visible] of [
+    ['[0-9]+)', '12)', '12'],
+    [')bell', ')bell', 'bell'],
+    ['(bell))', 'bell)', 'bell'],
+    ['(bell|gong))', 'gong)', 'gong'],
+    ['\\(bell)', '(bell)', '(bell'],
+    ['[(]bell)', '(bell)', '(bell'],
+    ['bell){2}', 'bell))', 'bell)'],
+] as const) {
+    void test(`MSGTYPE treats the unmatched closing parenthesis in ${pattern} literally`, async () => {
+        freshPlayableRoom();
+        const config = applyNethackrc(`MSGTYPE=hide "^${pattern}$"`);
+
+        await plineWithContinuation(hidden);
+        await plineWithContinuation(visible);
+        await flush_screen(1);
+
+        assert.equal(config.configErrors.flatMap(report => report.errors).length, 0);
+        assert.equal(topline(), visible);
+    });
+}
+
 for (const [pattern, diagnostic] of [
     ['bell{2', 'braces not balanced'],
     ['bell{2,', 'braces not balanced'],

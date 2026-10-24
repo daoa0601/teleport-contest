@@ -112,12 +112,16 @@ function posixPattern(pattern) {
             branchStart = index + 1;
             result += ch;
         }
-        else if (!inSet && ch === ')' && groupDepth > 0) {
-            // An empty group is valid, but either side of '|' needs an expression.
-            if (index === branchStart && pattern.charAt(index - 1) === '|')
-                throw new SyntaxError('empty (sub)expression');
-            groupDepth--;
-            result += ch;
+        else if (!inSet && ch === ')') {
+            if (groupDepth === 0)
+                result += '\\)';
+            else {
+                // An empty group is valid, but either side of '|' needs an expression.
+                if (index === branchStart && pattern.charAt(index - 1) === '|')
+                    throw new SyntaxError('empty (sub)expression');
+                groupDepth--;
+                result += ch;
+            }
         }
         else if (!inSet && ch === '{') {
             const repetition = posixRepetition(pattern.slice(index), repeatable);
