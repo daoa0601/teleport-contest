@@ -211,11 +211,13 @@ export async function createBonesFromDeath(deathCause: string, promptDeathQuesti
     await dropHeroInventoryForBones(x, y);
 
     const ghost = await makeBonesMonster(PM_GHOST, x, y, MM_NONAME);
-    if (ghost) {
-        completeBonesMonster(ghost, game);
-        if (corpse) {
-            corpse.oextra = { ...(corpse.oextra || {}), omid: ghost.m_id };
-        }
+    if (!ghost) {
+        game._bonesSaved = false;
+        return false;
+    }
+    completeBonesMonster(ghost, game);
+    if (corpse) {
+        corpse.oextra = { ...(corpse.oextra || {}), omid: ghost.m_id };
     }
     game._bonesSaved = saveBonesLevel();
     return game._bonesSaved;

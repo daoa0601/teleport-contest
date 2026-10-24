@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { createBonesFromDeath } from '../js/bones_death.js';
-import { LEAVESTATUE, NO_MINVENT } from '../js/const.js';
+import { G_GENOD, LEAVESTATUE, NO_MINVENT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { placeMonsterAt } from '../js/monster_location.js';
+import { MONSTER_NAME } from '../js/monster_data.js';
 import { LEASH } from '../js/object_data.js';
 import { punishHero } from '../js/punishment.js';
 import { init_objects } from '../js/o_init.js';
@@ -61,5 +62,14 @@ void test('gear embedded in the dead hero statue remains ghostly', async () => {
     assert.equal(await createBonesFromDeath('petrified by a cockatrice', async () => 'y'), true);
     assert.equal(leash.where, 'contained');
     assert.equal(leash.ghostly, true);
+});
+void test('bones are not saved when the dead hero ghost cannot be created', async () => {
+    dyingHero();
+    const storage = game.storage;
+    assert.ok(storage);
+    assert.ok(game.mvitals);
+    game.mvitals[MONSTER_NAME.indexOf('ghost')] = { born: 0, died: 0, mvflags: G_GENOD };
+    assert.equal(await createBonesFromDeath('killed by a kobold', async () => 'y'), false);
+    assert.equal(storage.length, 0);
 });
 //# sourceMappingURL=bones_preparation.test.js.map
