@@ -435,7 +435,7 @@ function explosionDeathCause(type, objectClass, description, killer, state) {
 export function createElementalMonsterExplosion(x, y, damageType, damage, killer, options = {}) {
     const style = damageType === AD_COLD ? EXPL_FROSTY : damageType === AD_ELEC ? EXPL_MAGICAL : EXPL_FIERY;
     return explode(x, y, -(damageType - 1 + 20), damage, MON_EXPLODE, style, {
-        ...options, killer, heroCaused: false,
+        ...options, killer,
     });
 }
 //# sourceMappingURL=explosion.js.map

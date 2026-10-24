@@ -490,6 +490,6 @@ function explosionDeathCause(type: number, objectClass: number, description: str
 export function createElementalMonsterExplosion(x: number, y: number, damageType: DamageType, damage: number, killer: string, options: ExplosionOptions = {}) {
     const style = damageType === AD_COLD ? EXPL_FROSTY : damageType === AD_ELEC ? EXPL_MAGICAL : EXPL_FIERY;
     return explode(x, y, -(damageType - 1 + 20), damage, MON_EXPLODE, style, {
-        ...options, killer, heroCaused: false,
+        ...options, killer,
     });
 }

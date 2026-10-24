@@ -46,7 +46,7 @@ export function rollMonsterDeathExplosion(monster, { state = game, rollDice = d,
     return { swallower, damage: swallower
             ? damage : rollAttackDamage(monster, attack, rollDice) };
 }
-export async function resolveMonsterDeathExplosion(monster, x, y, explosion, { state = game, publish = plineWithContinuation, random = rn2, rollDice = d, heroCaused = false, } = {}) {
+export async function resolveMonsterDeathExplosion(monster, x, y, explosion, { state = game, publish = plineWithContinuation, random = rn2, rollDice = d, heroCaused = !state.context.mon_moving, } = {}) {
     const { swallower, damage } = explosion;
     if (!swallower) {
         return createPhysicalMonsterExplosion(monster, x, y, damage, {
