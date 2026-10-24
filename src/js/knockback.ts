@@ -5,10 +5,11 @@ import { releaseHeroFromMonster } from './hero_expulsion.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { artifactById } from './artifacts.js';
 import {
-    D_BROKEN, DISMOUNT_KNOCKED, DOOR, Is_airlevel, Is_waterlevel,
+    DOOR, DISMOUNT_KNOCKED, Is_airlevel, Is_waterlevel,
     MGIVENNAME, MM_IGNORELAVA, MM_IGNOREWATER,
     W_SADDLE, isok,
 } from './const.js';
+import { doorlessDoor } from './hack.js';
 import { canSeeMonster, plineWithContinuation } from './display.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { requireInitializedHero } from './hero_types.js';
@@ -143,7 +144,9 @@ export async function tryKnockback(attacker: PhysicalActor, defender: PhysicalAc
         // zero, so a hero can never knock a monster out of a real doorway.
         const fromX = attackerMonster?.mx ?? 0;
         const fromY = attackerMonster?.my ?? 0;
-        if (x - fromX && y - fromY && doorway?.typ === DOOR && (doorway.doormask & ~D_BROKEN))
+        // C hack.c:doorless_door(): a Rogue-level doorway has no door but
+        // still blocks diagonal knockback.
+        if (x - fromX && y - fromY && doorway?.typ === DOOR && !doorlessDoor(doorway))
             return { knocked: false };
     }
 
