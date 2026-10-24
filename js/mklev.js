@@ -8046,9 +8046,27 @@ async function makelevel() {
         const branchp = is_branchlev();
         if (branchp)
             await place_branch(branchp);
-        for (const croom of level.rooms.slice(0, level.nroom))
-            if (isRoom(croom))
-                await fill_ordinary_room(croom, false);
+        // C ref: mklev.c makelevel() skip0 tail (lines 1389-1412).  The
+        // bonus-room selection runs on the Rogue level as well: a room is
+        // fillable only when its rooms[] slot carried FILL_NORMAL into this
+        // level (the slot array is game-global in C), and the randomly
+        // chosen room receives the level's bonus-item draw before filling.
+        const fillableRogueRooms = level.rooms
+            .slice(0, level.nroom)
+            .filter((room) => isRoom(room)
+            && (room.rtype === OROOM || room.rtype === THEMEROOM)
+            && room.needfill === FILL_NORMAL);
+        let rogueBonusRoomCountdown = fillableRogueRooms.length
+            ? rn2(fillableRogueRooms.length) : -1;
+        for (const croom of level.rooms.slice(0, level.nroom)) {
+            if (!isRoom(croom))
+                continue;
+            const fillable = (croom.rtype === OROOM || croom.rtype === THEMEROOM)
+                && croom.needfill === FILL_NORMAL;
+            await fill_ordinary_room(croom, fillable && rogueBonusRoomCountdown === 0);
+            if (fillable)
+                rogueBonusRoomCountdown--;
+        }
         for (const croom of level.rooms.slice(0, level.nroom))
             if (isRoom(croom))
                 await fillSpecialRoom(croom);
