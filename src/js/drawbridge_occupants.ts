@@ -5,7 +5,7 @@ import { monsterAtPosition, placeMonsterAt } from './monster_location.js';
 import { heroIsUnaware } from './hero_sleep.js';
 import { isDrawbridgeWallAt, isLavaAt, isPoolAt, isPoolOrLavaAt } from './terrain_properties.js';
 import {
-    DRAWBRIDGE_DOWN, IS_DRAWBRIDGE,
+    CRUSHING, DRAWBRIDGE_DOWN, IS_DRAWBRIDGE, KILLED_BY_AN, NO_KILLER_PREFIX,
 } from './const.js';
 import {
     canSeeMonster, canSpotMonster, plineWithContinuation,
@@ -23,15 +23,14 @@ import {
 import { AD_DGST, AD_PHYS } from './monster_attack_types.js';
 import { heroIsAmphibious, heroIsBreathless, heroSpecies } from './hero_species.js';
 import { heroHasWaterWalking } from './armor.js';
-import { finishDestinationSpotEffects } from './location_effects.js';
+import { finishDestinationSpotEffects, finishTeleportArrival } from './location_effects.js';
 import { publishHeardMessage } from './hero_speech.js';
 import { heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { verbForSubject } from './object_grammar.js';
 import { rnd } from './rng.js';
 import { updateMonsterRegions } from './regions.js';
-import {
-    moveHeroByTeleport, safeTeleportDestination,
-} from './teleport.js';
+import { moveHeroByTeleport } from './teleport.js';
+import { findNearbyMonsterPosition } from './teleport_rules.js';
 import type { GameState } from './game_state.js';
 import type { Hero } from './hero_types.js';
 import type { Monster } from './monster_types.js';
@@ -204,10 +203,11 @@ function moveEntity(entity: DrawbridgeEntity, destination: Position, state: Game
 
 async function moveSurvivingHeroAway(entity: DrawbridgeEntity, state: GameState): Promise<void> {
     if (entitySurvivesAt(entity, state)) return;
-    const destination = safeTeleportDestination(state);
+    const destination = findNearbyMonsterPosition(entity.species, entity.x, entity.y, { state });
     if (!destination) return;
-    await plineWithContinuation('A strange force teleports you away...');
-    await moveHeroByTeleport(destination.x, destination.y, state);
+    await plineWithContinuation(`A ${heroIsHallucinating(state) ? 'normal' : 'strange'} force teleports you away...`);
+    const movement = await moveHeroByTeleport(destination.x, destination.y, state);
+    await finishTeleportArrival(movement, { announceTeleport: false });
     entity.x = state.u.ux;
     entity.y = state.u.uy;
 }
@@ -238,9 +238,14 @@ async function crushEntity(
     options: DrawbridgeOptions, killer: string, death: DrawbridgeDeath,
 ): Promise<void> {
     if (entity.hero) {
-        state.u.uhp = 0;
-        const died = await finishHeroDeath({ killer });
+        const killerFormat = killer === 'crushed to death underneath a drawbridge'
+            || killer === 'fell from a drawbridge' ? NO_KILLER_PREFIX : KILLED_BY_AN;
+        const died = await finishHeroDeath({
+            killer, killerFormat, deathType: CRUSHING, deathLineShown: true,
+        });
         if (!died) await moveSurvivingHeroAway(entity, state);
+        entity.x = state.u.ux;
+        entity.y = state.u.uy;
         return;
     }
     const monster = entity.actor;

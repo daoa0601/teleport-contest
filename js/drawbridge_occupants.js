@@ -3,7 +3,7 @@
 import { monsterAtPosition, placeMonsterAt } from './monster_location.js';
 import { heroIsUnaware } from './hero_sleep.js';
 import { isDrawbridgeWallAt, isLavaAt, isPoolAt, isPoolOrLavaAt } from './terrain_properties.js';
-import { DRAWBRIDGE_DOWN, IS_DRAWBRIDGE, } from './const.js';
+import { CRUSHING, DRAWBRIDGE_DOWN, IS_DRAWBRIDGE, KILLED_BY_AN, NO_KILLER_PREFIX, } from './const.js';
 import { canSeeMonster, canSpotMonster, plineWithContinuation, } from './display.js';
 import { finishHeroDeath } from './end.js';
 import { finishHeroMonsterKill, finishLiquidDeathForCurrentMover } from './hero_monster_death.js';
@@ -14,13 +14,14 @@ import { finishMonsterKilled, } from './monster_death.js';
 import { AD_DGST, AD_PHYS } from './monster_attack_types.js';
 import { heroIsAmphibious, heroIsBreathless, heroSpecies } from './hero_species.js';
 import { heroHasWaterWalking } from './armor.js';
-import { finishDestinationSpotEffects } from './location_effects.js';
+import { finishDestinationSpotEffects, finishTeleportArrival } from './location_effects.js';
 import { publishHeardMessage } from './hero_speech.js';
 import { heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { verbForSubject } from './object_grammar.js';
 import { rnd } from './rng.js';
 import { updateMonsterRegions } from './regions.js';
-import { moveHeroByTeleport, safeTeleportDestination, } from './teleport.js';
+import { moveHeroByTeleport } from './teleport.js';
+import { findNearbyMonsterPosition } from './teleport_rules.js';
 import { monsterName } from './monster_name.js';
 const M1_FLY = 0x00000001;
 const M1_SWIM = 0x00000002;
@@ -172,11 +173,12 @@ function moveEntity(entity, destination, state) {
 async function moveSurvivingHeroAway(entity, state) {
     if (entitySurvivesAt(entity, state))
         return;
-    const destination = safeTeleportDestination(state);
+    const destination = findNearbyMonsterPosition(entity.species, entity.x, entity.y, { state });
     if (!destination)
         return;
-    await plineWithContinuation('A strange force teleports you away...');
-    await moveHeroByTeleport(destination.x, destination.y, state);
+    await plineWithContinuation(`A ${heroIsHallucinating(state) ? 'normal' : 'strange'} force teleports you away...`);
+    const movement = await moveHeroByTeleport(destination.x, destination.y, state);
+    await finishTeleportArrival(movement, { announceTeleport: false });
     entity.x = state.u.ux;
     entity.y = state.u.uy;
 }
@@ -199,10 +201,15 @@ async function finishCrushedMonster(monster, entity, state, options, death, reco
 }
 async function crushEntity(entity, bridge, state, options, killer, death) {
     if (entity.hero) {
-        state.u.uhp = 0;
-        const died = await finishHeroDeath({ killer });
+        const killerFormat = killer === 'crushed to death underneath a drawbridge'
+            || killer === 'fell from a drawbridge' ? NO_KILLER_PREFIX : KILLED_BY_AN;
+        const died = await finishHeroDeath({
+            killer, killerFormat, deathType: CRUSHING, deathLineShown: true,
+        });
         if (!died)
             await moveSurvivingHeroAway(entity, state);
+        entity.x = state.u.ux;
+        entity.y = state.u.uy;
         return;
     }
     const monster = entity.actor;

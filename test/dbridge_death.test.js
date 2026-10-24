@@ -1,0 +1,51 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { DBWALL, DB_FLOOR, DB_NORTH, DOOR, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP } from '../js/const.js';
+import { closeDrawbridge, openDrawbridge } from '../js/dbridge.js';
+import { game, requirePlayingGame } from '../js/gstate.js';
+import { pushKeys } from '../js/input.js';
+import { loadScoreRecords } from '../js/score_records.js';
+import { memoryStorage } from './support/memory-storage.js';
+import { freshGameplayRoom } from './support/playable-room.js';
+import { createDungeon } from './support/topology.js';
+import { wearHeroAccessory } from '../js/accessory.js';
+import { AMULET_OF_LIFE_SAVING } from '../js/object_data.js';
+import { addInventoryObject } from './support/game-objects.js';
+function bridgeDeathRoom(open, onSpan) {
+    const level = freshGameplayRoom({ right: 60, top: 2, bottom: 18,
+        heroX: 12, heroY: onSpan ? 10 : 9, hero: { urexp: 100 },
+        flags: { bones: false, disclose: '-i -a -v -c -o', tombstone: false } });
+    requirePlayingGame(game);
+    const span = level.requireAt(12, 10);
+    span.typ = open ? DRAWBRIDGE_DOWN : DRAWBRIDGE_UP;
+    span.drawbridgemask = DB_NORTH | DB_FLOOR;
+    level.requireAt(12, 9).typ = open ? DOOR : DBWALL;
+    game.u.fumbling = true;
+    game.plname = 'Victim';
+    game.storage = memoryStorage();
+    game.iflags.toptenwin = false;
+    game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 20 })];
+    pushKeys(' '.repeat(100));
+}
+void test('a hero crushed underneath a lowering bridge has the native death reason', async () => {
+    bridgeDeathRoom(false, true);
+    await openDrawbridge(12, 10);
+    assert.equal(game.program_state.gameover, true);
+    assert.equal(loadScoreRecords()[0]?.death, 'crushed to death underneath a drawbridge');
+});
+void test('a falling portcullis records crushing by a falling drawbridge', async () => {
+    bridgeDeathRoom(true, false);
+    await closeDrawbridge(12, 10);
+    assert.equal(game.program_state.gameover, true);
+    assert.equal(loadScoreRecords()[0]?.death, 'crushed to death by a falling drawbridge');
+});
+void test('life saving from a portcullis moves the hero to a nearby safe square', async () => {
+    bridgeDeathRoom(true, false);
+    const amulet = await addInventoryObject(AMULET_OF_LIFE_SAVING);
+    await wearHeroAccessory(amulet, 'uamul');
+    await closeDrawbridge(12, 10);
+    assert.equal(!!game.program_state.gameover, false);
+    assert.equal(amulet.where, 'gone');
+    assert.equal(Math.max(Math.abs(game.u.ux - 12), Math.abs(game.u.uy - 9)), 1);
+});
+//# sourceMappingURL=dbridge_death.test.js.map
