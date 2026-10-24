@@ -3,6 +3,7 @@ import test from 'node:test';
 
 import { NO_MINVENT, W_AMUL } from '../js/const.js';
 import { game } from '../js/gstate.js';
+import { pushKeys } from '../js/input.js';
 import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
 import { finishEnvironmentalMonsterDeath } from '../js/monster_death.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
@@ -64,5 +65,25 @@ for (const scenario of ['non-digestive', 'shapeshifter', 'life-saved'] as const)
 
         assert.equal(game.u.uswallow, scenario === 'life-saved' ? 1 : 0);
         assert.equal(messages.some(message => message.includes('opening in the new')), false);
+    });
+}
+
+for (const visible of [false, true]) {
+    void test(`${visible ? 'visible hero-caused' : 'unseen dungeon-caused'} petrification omits unseen kill-credit feedback after life saving`, async () => {
+        freshObjectRoom();
+        const worm = await createMonsterAt('purple worm', 11, 10, NO_MINVENT);
+        await equipMonsterObject(worm, await knownObject(AMULET_OF_LIFE_SAVING), W_AMUL);
+        if (!visible) await installSwallowedHero(worm);
+        const messages: string[] = [];
+        pushKeys(' '.repeat(20));
+
+        const result = await petrifyMonsterImmediately(worm, {
+            creditHero: visible,
+            publish: async (message: string) => { messages.push(message); },
+            finishDeath: (monster, options) => finishEnvironmentalMonsterDeath(monster, game, options),
+        });
+
+        assert.equal(result.survived, true);
+        assert.equal(messages.includes('Maybe not...'), false);
     });
 }

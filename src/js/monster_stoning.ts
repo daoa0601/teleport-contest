@@ -440,7 +440,13 @@ export async function petrifyMonsterImmediately(monster: Monster, {
     }
     if (creditHero) recordHeroKillConduct();
 
-    return finishMonsterPetrification(monster, { finishDeath, publish });
+    const x = monster.mx, y = monster.my;
+    const result = await finishMonsterPetrification(monster, { finishDeath, publish });
+    // xkilled() reports unseen recovery even though monstone() has already
+    // returned without handing a surviving monster to the death handler.
+    if (creditHero && result.survived && !cansee(x, y))
+        await publish('Maybe not...');
+    return result;
 }
 
 // C mon.c:monstone(). Reversion and life saving precede statue creation.
