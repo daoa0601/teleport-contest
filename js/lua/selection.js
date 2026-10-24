@@ -1,5 +1,5 @@
 import { SpecialSelection, specialSelectionFloodFill, specialSelectionMatch, specialSelectionRandLine, selection_from_mkroom, selection_do_ellipse, selection_do_line, selection_do_gradient, selection_getpoint, selection_setpoint, selection_size_description, SEL_GRADIENT_RADIAL, SEL_GRADIENT_SQUARE, } from '../selvar.js';
-import { LuaTable, LuaUserdata } from './runtime.js';
+import { LuaTable, LuaUserdata, luaType } from './runtime.js';
 import { luaInteger, luaString, luaTruthy } from './arguments.js';
 import { ANY_LOC, getLocationCoord } from '../special_location.js';
 import { game } from '../gstate.js';
@@ -164,6 +164,8 @@ export function createSelectionApi(context, invoke = null) {
         return wrap(specialSelectionRandLine(start.x, start.y, end.x, end.y, luaInt(args[4] ?? 7), 12, result));
     };
     const iterate = async (self, callback) => {
+        if (luaType(callback) !== 'function')
+            throw new TypeError('wrong parameters');
         if (!invoke)
             throw new Error('selection.iterate needs a Lua state');
         const selection = selectionValue(self);
@@ -173,7 +175,8 @@ export function createSelectionApi(context, invoke = null) {
                 if (!selection.has(x, y))
                     continue;
                 const start = origin();
-                await invoke(callback, [x - start.x, y - start.y]);
+                if (!await invoke(callback, [x - start.x, y - start.y]))
+                    return;
             }
         }
     };

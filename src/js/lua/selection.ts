@@ -13,7 +13,7 @@ import {
     SEL_GRADIENT_RADIAL,
     SEL_GRADIENT_SQUARE,
 } from '../selvar.js';
-import { LuaTable, LuaUserdata } from './runtime.js';
+import { LuaTable, LuaUserdata, luaType } from './runtime.js';
 import { luaInteger, luaString, luaTruthy } from './arguments.js';
 import { ANY_LOC, getLocationCoord } from '../special_location.js';
 import { game } from '../gstate.js';
@@ -30,7 +30,7 @@ export interface SelectionContext {
 }
 
 type ContextSource = SelectionContext | (() => SelectionContext | null);
-type InvokeSelection = ((callback: LuaValue, arguments_: LuaValue[]) => Promise<unknown>) | null;
+type InvokeSelection = ((callback: LuaValue, arguments_: LuaValue[]) => Promise<boolean>) | null;
 
 function coordxy(value: number): number {
     return (value << 16) >> 16;
@@ -205,6 +205,7 @@ export function createSelectionApi(context: ContextSource, invoke: InvokeSelecti
         ));
     };
     const iterate = async (self: LuaValue, callback: LuaValue) => {
+        if (luaType(callback) !== 'function') throw new TypeError('wrong parameters');
         if (!invoke)
             throw new Error('selection.iterate needs a Lua state');
         const selection = selectionValue(self);
@@ -213,7 +214,7 @@ export function createSelectionApi(context: ContextSource, invoke: InvokeSelecti
             for (let x = Math.max(1, bounds.lx); x <= bounds.hx; x++) {
                 if (!selection.has(x, y)) continue;
                 const start = origin();
-                await invoke(callback, [x - start.x, y - start.y]);
+                if (!await invoke(callback, [x - start.x, y - start.y])) return;
             }
         }
     };

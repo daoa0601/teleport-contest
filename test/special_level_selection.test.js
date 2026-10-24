@@ -18,6 +18,7 @@ import { novelTitle } from '../js/novel_titles.js';
 import { resetInputState } from '../js/input.js';
 import { moveloop_core } from '../js/allmain.js';
 import { freshTurnRoom } from './support/playable-room.js';
+import { GameDisplay } from '../js/game_display.js';
 async function levelLua(t) {
     freshGame({ flags: { bones: false } });
     initRng(731n);
@@ -31,6 +32,31 @@ async function levelLua(t) {
     game.in_mklev = true;
     return lua;
 }
+void test('selection callback errors stop iteration and let the level script continue', async (t) => {
+    const lua = await levelLua(t);
+    const display = new GameDisplay(null);
+    game.nhDisplay = display;
+    let reportedError = false;
+    const input = resetInputState();
+    input.beforeRead = () => {
+        const top = display.grid[0]?.map(cell => cell.ch).join('') ?? '';
+        if (top.includes('l_selection_iterate') && top.includes('selection callback failed'))
+            reportedError = true;
+        input.feed(' ');
+    };
+    await lua.executeAsync(`
+        visited = 0
+        selection.area(1, 0, 3, 0):iterate(function(x, y)
+            visited = visited + 1
+            error("selection callback failed")
+        end)
+        continued = true
+    `);
+    assert.equal(lua.getGlobal('visited'), 1);
+    assert.equal(lua.getGlobal('continued'), true);
+    assert.equal(reportedError, true, 'report the failed callback before continuing');
+    await assert.rejects(lua.executeAsync('selection.new():iterate(3)'), /wrong parameters/);
+});
 void test('Lua circles and ellipses carve outlines or filled areas relative to their map', async (t) => {
     const lua = await levelLua(t);
     await lua.executeAsync(`

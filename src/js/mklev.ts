@@ -7041,7 +7041,17 @@ function createLuaLevelSession() {
     };
     const selectionApi = createSelectionApi(
         () => context,
-        (callable, args) => currentState().callValueAsync(callable, args),
+        async (callable, args) => {
+            const state = currentState();
+            try {
+                await state.callValueAsync(callable, args);
+                return true;
+            } catch (error) {
+                if (error instanceof PanicTermination) throw error;
+                await impossible(`Lua error: ${state.sid}:l_selection_iterate ${error instanceof Error ? error.message : String(error)}`);
+                return false;
+            }
+        },
     );
     const bindings: LuaBindings = {
         nh: {

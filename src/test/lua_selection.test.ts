@@ -108,7 +108,10 @@ void test('selection drawing and returned coordinates use the enclosing room ori
         selection: createSelectionBindings({
             xstart: 2, ystart: 3, width: 40, height: 15,
             _room: selectionRoom(20, 8, 30, 18),
-        }, (callback, args) => state.callValueAsync(callback, args)),
+        }, async (callback, args) => {
+            await state.callValueAsync(callback, args);
+            return true;
+        }),
     });
     t.after(() => state.destroy());
 
@@ -139,7 +142,10 @@ void test('selection iteration observes points added and removed by its callback
     const state: LuaState = new LuaState({
         selection: createSelectionBindings(
             { xstart: 0, ystart: 0, width: 80, height: 21 },
-            (callback, args) => state.callValueAsync(callback, args),
+            async (callback, args) => {
+                await state.callValueAsync(callback, args);
+                return true;
+            },
         ),
     });
     t.after(() => state.destroy());
