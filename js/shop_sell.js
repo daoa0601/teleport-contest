@@ -60,13 +60,13 @@ export const SELL_NORMAL = 0;
 export const SELL_DELIBERATE = 1;
 export const SELL_DONTSELL = 2;
 // C gs.sell_response / gs.sell_how / ga.auto_credit are command-batch
-// globals bracketed by dodrop()/doddrop() through sellobj_state().  The
-// module-local mirror keeps that scope: a fresh session (no disposition
-// call yet) holds no recorded response under SELL_NORMAL handling, so the
-// first accidental drop still asks.  setSellDisposition(SELL_NORMAL)
-// restores the automatic 'a' response; the parent's drop owner brackets
-// deliberate drops and restores SELL_NORMAL in a finally.
-let sellResponse = '';
+// globals bracketed by dodrop()/doddrop() through sellobj_state().  decl.c
+// starts them at 'a' / SELL_NORMAL, so an accidental drop before any
+// deliberate one sells without a query, like every later one.
+// setSellDisposition(SELL_NORMAL) restores that automatic 'a' response; the
+// parent's drop owner brackets deliberate drops and restores SELL_NORMAL in
+// a finally.
+let sellResponse = 'a';
 let sellHow = SELL_NORMAL;
 let autoCredit = false;
 export function setSellDisposition(disposition) {
