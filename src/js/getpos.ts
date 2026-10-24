@@ -236,12 +236,12 @@ export function nextGetposFeature(cursor: Position, symbol: string, state: GameS
 
 export function getposFeatureMissMessage(ch: string, state: GameState = game): string {
     const code = ch.codePointAt(0);
-    const visible = code !== undefined && code < 32
-        ? `^${String.fromCharCode(code + 64)}`
-        : code === 127 ? '^?' : ch;
-    return isGetposFeatureSymbol(ch, state.symset)
-        ? `Can't find dungeon feature '${visible}'.`
-        : `Unknown direction: '${visible}' (use 'h', 'j', 'k', 'l' or '.').`;
+    const visible = code === undefined ? '' : visibleCommandKey(code);
+    if (isGetposFeatureSymbol(ch, state.symset)) return `Can't find dungeon feature '${ch}'.`;
+    const directions = [0, 6, 2, 4].map(direction =>
+        `'${visibleCommandKey(state.commandBindings.keyForDirection(direction))}'`).join(', ');
+    const pick = visibleCommandKey(state.commandBindings.specialKey('getpos.pick') ?? 0);
+    return `Unknown direction: '${visible}' (use ${directions} or '${pick}').`;
 }
 
 function mapPositionPickType(code: number): MapPositionPickType | null {
