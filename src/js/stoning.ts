@@ -14,7 +14,7 @@ import {
     NO_KILLER_PREFIX, STONING, TIMEOUT, W_ARMC, W_ARMF, W_ARMG, W_ARMH,
 } from './const.js';
 import {
-    canSpotMonster, pline, plineWithContinuation, randomDisplayMonsterSubject,
+    canSpotMonster, displayMessageWindow, pline, plineWithContinuation, randomDisplayMonsterSubject,
 } from './display.js';
 import { finishHeroDeath } from './end.js';
 import type { DeathHandler } from './end.js';
@@ -418,10 +418,12 @@ export async function feelPetrifyingCorpse(object: GameObject, {
 // the death reason from killer_xname() describing the whole stack.
 export async function touchPetrifyingCorpse(object: GameObject | null | undefined): Promise<{ died: boolean } | null> {
     if (!handlesPetrifyingCorpseBareHanded(object)) return null;
-    return await petrifyFromCorpseContact(
+    const result = await petrifyFromCorpseContact(
         `Touching ${corpseName(object, { singular: true, includeArticle: true })} is a fatal mistake.`,
         killerObjectName(object),
     );
+    if (!result) await displayMessageWindow();
+    return result;
 }
 
 // C apply.c:use_whip(): a snatched corpse is named by cxname() before it
@@ -443,13 +445,20 @@ function handlesPetrifyingCorpseBareHanded(object: GameObject | null | undefined
 async function petrifyFromCorpseContact(
     message: string, killer: string, beforeDeath: (() => unknown) | null = null,
 ): Promise<{ died: boolean } | null> {
+    // Pickup and snatching try the golem conversion before warning or
+    // placing a snatched corpse on the floor for death cleanup.
+    if (formCanBecomeStoneGolem(game.u.umonnum)) {
+        const result = await polymonHero(PM_STONE_GOLEM);
+        if (result.died) return { died: true };
+        if (result.transformed) return null;
+    }
     await plineWithContinuation(message);
     await beforeDeath?.();
     const result = await resolveImmediatePetrification({
         killer,
         publish: plineWithContinuation,
     });
-    return result.transformed && !result.died ? null : { died: result.died };
+    return { died: result.died };
 }
 
 export async function eatPetrifyingEgg(object: GameObject | null | undefined): Promise<{ started: boolean; transformed?: boolean }> {

@@ -9,7 +9,7 @@ import { heroHandName } from './body_parts.js';
 import { makePlural, withIndefiniteArticle } from './object_grammar.js';
 import { objectQuantity } from './object_stack.js';
 import { A_CHA, A_DEX, G_GENOD, KILLED_BY, KILLED_BY_AN, NEW_MOON, NO_KILLER_PREFIX, STONING, TIMEOUT, W_ARMC, W_ARMF, W_ARMG, W_ARMH, } from './const.js';
-import { canSpotMonster, pline, plineWithContinuation, randomDisplayMonsterSubject, } from './display.js';
+import { canSpotMonster, displayMessageWindow, pline, plineWithContinuation, randomDisplayMonsterSubject, } from './display.js';
 import { finishHeroDeath } from './end.js';
 import { game, requireLiveGame } from './gstate.js';
 import { cureHeroVomiting } from './hero_illness.js';
@@ -340,7 +340,10 @@ export async function feelPetrifyingCorpse(object, { forceTouch = false, state =
 export async function touchPetrifyingCorpse(object) {
     if (!handlesPetrifyingCorpseBareHanded(object))
         return null;
-    return await petrifyFromCorpseContact(`Touching ${corpseName(object, { singular: true, includeArticle: true })} is a fatal mistake.`, killerObjectName(object));
+    const result = await petrifyFromCorpseContact(`Touching ${corpseName(object, { singular: true, includeArticle: true })} is a fatal mistake.`, killerObjectName(object));
+    if (!result)
+        await displayMessageWindow();
+    return result;
 }
 // C apply.c:use_whip(): a snatched corpse is named by cxname() before it
 // moves, and that name is also the death reason.
@@ -356,13 +359,22 @@ function handlesPetrifyingCorpseBareHanded(object) {
         && !(game.uarmg || game.u?.uarmg) && !heroResistsStoning();
 }
 async function petrifyFromCorpseContact(message, killer, beforeDeath = null) {
+    // Pickup and snatching try the golem conversion before warning or
+    // placing a snatched corpse on the floor for death cleanup.
+    if (formCanBecomeStoneGolem(game.u.umonnum)) {
+        const result = await polymonHero(PM_STONE_GOLEM);
+        if (result.died)
+            return { died: true };
+        if (result.transformed)
+            return null;
+    }
     await plineWithContinuation(message);
     await beforeDeath?.();
     const result = await resolveImmediatePetrification({
         killer,
         publish: plineWithContinuation,
     });
-    return result.transformed && !result.died ? null : { died: result.died };
+    return { died: result.died };
 }
 export async function eatPetrifyingEgg(object) {
     if (object?.otyp !== EGG || !fleshPetrifies(object.corpsenm)
