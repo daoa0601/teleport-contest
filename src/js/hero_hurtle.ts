@@ -30,6 +30,8 @@ import type { MapLocation, Position, Trap } from './map_types.js';
 import type { DungeonLocation } from './dungeon_types.js';
 import type { LevelChangeOptions } from './level_change.js';
 import type { HurtleDeathHandler } from './monster_hurtle.js';
+import type { HeroProjectileVolley } from './hero_physical_types.js';
+import { endHeroVolley } from './hero_multishot.js';
 import {
     blocksDiagonalDoor, heroBadRock, heroLiquidEffects, heroTightDiagonalReason,
 } from './hack.js';
@@ -75,6 +77,7 @@ export interface HeroHurtleOptions {
     gotoLevel?: ((destination: Partial<DungeonLocation>, options?: LevelChangeOptions) => Promise<boolean>) | null;
     chooseTeleportDestination?: ((options?: { onPrompt?: () => Promise<void> }) => Promise<Position | null>) | null;
     finishMonsterDeath?: HurtleDeathHandler | null;
+    volley?: HeroProjectileVolley;
 }
 
 interface HurtleObstacle {
@@ -434,6 +437,7 @@ export async function hurtleHero(dx: number, dy: number, range: number, {
     gotoLevel = null,
     chooseTeleportDestination = null,
     finishMonsterDeath = null,
+    volley,
 }: HeroHurtleOptions = {}): Promise<boolean> {
     requirePlayingGame(game);
     const ball = game.uball || game.u.uball;
@@ -462,6 +466,8 @@ export async function hurtleHero(dx: number, dy: number, range: number, {
             `You ${range > 1 ? 'hurtle' : 'float'} in the opposite direction.`,
         );
     }
+
+    if (volley) await endHeroVolley(volley);
 
     const remaining = { value: range };
     const options = {

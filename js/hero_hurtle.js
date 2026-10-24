@@ -10,6 +10,7 @@ import { D_CLOSED, D_ISOPEN, D_LOCKED, DOOR, FIRE_TRAP, IRONBARS, IS_OBSTRUCTED,
 import { canSpotMonster, flush_screen, glyphAt, map_invisible, newsym, plineWithContinuation, } from './display.js';
 import { heroTestMove } from './cmd.js';
 import { game, requirePlayingGame } from './gstate.js';
+import { endHeroVolley } from './hero_multishot.js';
 import { blocksDiagonalDoor, heroBadRock, heroLiquidEffects, heroTightDiagonalReason, } from './hack.js';
 import { triggerHeroTrap } from './hero_traps.js';
 import { finishDestinationSpotEffects } from './location_effects.js';
@@ -351,7 +352,7 @@ export async function hurtleJumpTo(x, y, options = {}) {
     // square on failure, even if a portal or liquid moved the actor.
     return reached;
 }
-export async function hurtleHero(dx, dy, range, { verbose = false, finishTeleport = null, gotoLevel = null, chooseTeleportDestination = null, finishMonsterDeath = null, } = {}) {
+export async function hurtleHero(dx, dy, range, { verbose = false, finishTeleport = null, gotoLevel = null, chooseTeleportDestination = null, finishMonsterDeath = null, volley, } = {}) {
     requirePlayingGame(game);
     const ball = game.uball || game.u.uball;
     if (heroIsPunished()
@@ -376,6 +377,8 @@ export async function hurtleHero(dx, dy, range, { verbose = false, finishTelepor
     if (verbose) {
         await plineWithContinuation(`You ${range > 1 ? 'hurtle' : 'float'} in the opposite direction.`);
     }
+    if (volley)
+        await endHeroVolley(volley);
     const remaining = { value: range };
     const options = {
         finishTeleport, gotoLevel, chooseTeleportDestination,

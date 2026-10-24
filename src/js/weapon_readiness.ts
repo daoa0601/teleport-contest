@@ -28,26 +28,29 @@ export function emptyHandedDescription(state: GameState = game): string {
     return humanoid ? 'bare handed' : 'not wielding anything';
 }
 
+// A refusal must abort queued fire assistance; an untimed success keeps it.
+export type WeaponReadinessResult = 'time' | 'ok' | 'failed';
+
 // The caller has already checked whether the old weapon is welded. A failed
 // touch spends a turn; a shield refusal does not. Neither installs the item.
 export async function readyHeroWeapon(
     weapon: GameObject | null, state: GameState = game,
-): Promise<boolean> {
+): Promise<WeaponReadinessResult> {
     const hadWeapon = !!(state.uwep || state.u.uwep);
-    const spentTime = await readySelectedWeapon(weapon, state);
+    const result = await readySelectedWeapon(weapon, state);
     if (hadWeapon !== !!(state.uwep || state.u.uwep)
         && statusConditionEnabled('barehanded', state)) state.context.botl = true;
-    return spentTime;
+    return result;
 }
 
-async function readySelectedWeapon(weapon: GameObject | null, state: GameState): Promise<boolean> {
+async function readySelectedWeapon(weapon: GameObject | null, state: GameState): Promise<WeaponReadinessResult> {
     requirePlayingGame(state);
     const previous = state.uwep || state.u.uwep;
     const wasTwoWeapon = state.u.twoweap;
     if (!weapon) {
         await pline(`You are ${previous ? '' : 'already '}${emptyHandedDescription(state)}.`);
         if (previous) await setPrimaryWeapon(null, state);
-        return !!previous;
+        return previous ? 'time' : 'ok';
     }
     if (weapon.otyp === CORPSE && touchPetrifies(weapon.corpsenm)
         && !(state.uarmg || state.u.uarmg) && !heroResistsStoning(state)) {
@@ -55,17 +58,17 @@ async function readySelectedWeapon(weapon: GameObject | null, state: GameState):
         await resolveImmediatePetrification({
             state, killer: `wielding ${killerObjectName(weapon, state)} bare-handed`,
         });
-        return true;
+        return 'time';
     }
     if ((state.uarms || state.u.uarms) && OBJECT_BIMANUAL[weapon.otyp]) {
         const skill = OBJECT_SUBTYPE[weapon.otyp] ?? 0;
         const kind = weapon.oclass === 2 && skill >= P_SHORT_SWORD && skill <= P_SABER
             ? 'sword' : weapon.otyp === BATTLE_AXE ? 'axe' : 'weapon';
         await pline(`You cannot wield a two-handed ${kind} while wearing a shield.`);
-        return false;
+        return 'failed';
     }
     const touch = await retouchHeroObject(weapon, { state });
-    if (touch.rejected || touch.died) return true;
+    if (touch.rejected || touch.died) return 'time';
 
     observeObjectForNaming(weapon, { state });
     if (willWeld(weapon)) {
@@ -86,5 +89,5 @@ async function readySelectedWeapon(weapon: GameObject | null, state: GameState):
             await pline(`${shopkeeperName(keeper, { state })} says "You be careful with my ${name}!"`);
         }
     }
-    return true;
+    return 'time';
 }

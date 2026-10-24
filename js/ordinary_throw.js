@@ -3,6 +3,7 @@
 import { game, requirePlayingGame } from './gstate.js';
 import { A_DEX, AKLYS_LIM, Is_airlevel, W_QUIVER, W_SWAPWEP, W_WEP } from './const.js';
 import { exerciseAttribute } from './attrib.js';
+import { heroHandName } from './body_parts.js';
 import { reportHeroEncumbrance } from './encumbrance.js';
 import { flyBoomerang } from './boomerang.js';
 import { flush_screen, plineWithContinuation } from './display.js';
@@ -12,15 +13,18 @@ import { hurtleHero } from './hero_hurtle.js';
 import { monsterProjectileDisplay } from './monster_projectile_display.js';
 import { tossObjectUp } from './toss_up.js';
 import { hitFloorWithObject } from './object_drop.js';
-import { AKLYS, BOOMERANG } from './object_data.js';
+import { AKLYS, BOOMERANG, OBJECT_SUBTYPE } from './object_data.js';
+import { withIndefiniteArticle } from './object_grammar.js';
 import { rejoinObjectStack } from './object_stack.js';
 import { definiteName, objectName, observeObjectForNaming } from './objnam.js';
 import { propertyIsActive } from './properties.js';
+import { skillName } from './skills.js';
+import { weaponDescription } from './weapon_description.js';
 import { finishReturningThrow, isAutoReturningThrow, throwerIsImpaired } from './returning_throw.js';
 import { ceilingName } from './terrain_name.js';
 import { addInventoryItemBefore } from './u_init.js';
 import { setPrimaryWeapon, setQuiverObject, setSecondaryWeapon, setTwoWeaponCombat, } from './weapon_slots.js';
-import { isThrowingWeapon, launcherMatchesAmmo, } from './object_properties.js';
+import { isLauncherAmmunition, isThrowingWeapon, launcherMatchesAmmo, } from './object_properties.js';
 import { applyLowStaminaThrow, applyThrowSlip } from './throw_state.js';
 import { captureThrownObjectFlight, detachThrownUnit, finishHeroThrownObjectLanding, flyHeroThrownObject, heroThrowTrajectory, snuffThrownCandle, } from './thrown_object.js';
 export async function throwOrdinaryObject({ state = game, item, quantity, splitObjectId = null, dx, dy, volley, }) {
@@ -63,10 +67,17 @@ export async function throwOrdinaryObject({ state = game, item, quantity, splitO
         const boomerang = thrown.otyp === BOOMERANG
             && !state.underwater && !state.u.uinwater;
         if (boomerang && (Is_airlevel(state.u.uz) || propertyIsActive('levitation', state)))
-            await hurtleHero(-actualDx, -actualDy, 1, { verbose: true });
+            await hurtleHero(-actualDx, -actualDy, 1, {
+                verbose: true, ...(volley ? { volley } : {}),
+            });
         if (state.program_state.gameover)
             return { heroDied: true };
         const trajectory = heroThrowTrajectory(thrown, state, state.uwep);
+        if (isLauncherAmmunition(thrown) && thrown.oclass !== 13
+            && !launcherMatchesAmmo(thrown, state.uwep)) {
+            const skill = Math.abs(OBJECT_SUBTYPE[thrown.otyp] ?? 0);
+            await plineWithContinuation(`You aren't wielding ${withIndefiniteArticle(skillName(skill, state))}, so you throw your ${weaponDescription(thrown)} by ${heroHandName(state)}.`);
+        }
         const range = state.underwater || state.u.uinwater ? 1
             : tethered ? Math.min(trajectory.range, AKLYS_LIM) : trajectory.range;
         if (tethered) {
@@ -99,7 +110,9 @@ export async function throwOrdinaryObject({ state = game, item, quantity, splitO
         if (flight.stoppedBy === 'web')
             tetherDisplay?.clear();
         if (!boomerang && trajectory.recoil) {
-            await hurtleHero(-actualDx, -actualDy, trajectory.recoil, { verbose: true });
+            await hurtleHero(-actualDx, -actualDy, trajectory.recoil, {
+                verbose: true, ...(volley ? { volley } : {}),
+            });
             if (state.program_state.gameover)
                 return { heroDied: true };
         }

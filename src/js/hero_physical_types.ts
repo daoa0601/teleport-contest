@@ -7,10 +7,12 @@ import type { MessagePublisher } from './display.js';
 // weapon, Strength, training, and contact rules.
 export type HeroPhysicalAttackMode = 'melee' | 'thrown' | 'kicked' | 'applied' | 'dragged';
 
+// The active command shares this record with recoil, which can reduce count.
 export interface HeroProjectileVolley {
     count: number;
     index: number;
     objectType: number;
+    shooting?: boolean;
 }
 
 export interface HeroPhysicalHitOptions {
