@@ -1,4 +1,3 @@
-import { formatFeltMessage } from './hero_speech.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Trap, Engraving } from './map_types.js';
@@ -14,6 +13,7 @@ import { revealSecretDoor, showMapSpot } from './detect.js';
 import { closeDrawbridge, destroyDrawbridge, findDrawbridgeAt, openDrawbridge } from './dbridge.js';
 import { drawbridgeUnderlyingType } from './drawbridge_terrain.js';
 import { glyphAt, newsym, plineWithContinuation as pline, shieldeff } from './display.js';
+import { formatDraftMessage } from './draft_message.js';
 import { forceDescribeDecor } from './dungeon_feature.js';
 import { deleteEngravingAt, engravingAt, makeEngravingAt, wipeEngravingAt } from './engrave.js';
 import { explode } from './explosion.js';
@@ -174,7 +174,7 @@ async function probeTerrain(x: number, y: number, trap: Trap | undefined, learne
         if (cansee(x, y)) {
             await pline('Probing reveals a secret door.');
             learned = true;
-        } else if (Is_rogue_level(state.u.uz)) await pline(formatFeltMessage('a draft.', state));
+        } else if (Is_rogue_level(state.u.uz)) await pline(formatDraftMessage(false, state));
     } else if (surface === SCORR) {
         location.typ = CORR;
         vision_note_blocker_change(x, y);

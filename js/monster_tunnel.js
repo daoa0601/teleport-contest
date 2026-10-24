@@ -1,21 +1,20 @@
-// C dig.c:mdig_tunnel()/draft_message(). The movement owner admits a
+// C dig.c:mdig_tunnel(). The movement owner admits a
 // tunneling species with may_dig() before entering this action.
-import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, CORR, DOOR, D_BROKEN, D_CLOSED, D_LOCKED, D_NODOOR, D_TRAPPED, IS_OBSTRUCTED, IS_TREE, IS_WALL, ROOM, SCORR, SDOOR, SHOPBASE, W_NONDIGGABLE, } from './const.js';
-import { currentAttribute } from './attrib.js';
+import { CORR, DOOR, D_BROKEN, D_CLOSED, D_LOCKED, D_NODOOR, D_TRAPPED, IS_OBSTRUCTED, IS_TREE, IS_WALL, ROOM, SCORR, SDOOR, SHOPBASE, W_NONDIGGABLE, } from './const.js';
 import { convertSecretDoor } from './detect.js';
 import { impossible } from './diagnostics.js';
 import { canSeeMonster, newsym, plineWithContinuation } from './display.js';
+import { formatDraftMessage } from './draft_message.js';
 import { placeCreatedObject } from './floor_object.js';
 import { requireLiveGame } from './gstate.js';
 import { placeTreeFruit } from './hero_digging.js';
 import { heroIsUnaware } from './hero_sleep.js';
-import { formatFeltMessage, formatHeardMessage } from './hero_speech.js';
+import { formatHeardMessage } from './hero_speech.js';
 import { mksobj } from './mklev.js';
 import { triggerMonsterDoorTrap } from './monster_door_trap.js';
 import { BOULDER, ROCK } from './object_data.js';
 import { inTown, roomsAt } from './room.js';
 import { rn2, rnd } from './rng.js';
-import { heroIsHallucinating } from './senses.js';
 import { addShopDamage } from './shop_damage.js';
 import { vision_note_blocker_change } from './vision.js';
 export async function digMonsterTunnel(monster, state, { random = rn2, rollOne = rnd, publish = plineWithContinuation, } = {}) {
@@ -43,7 +42,7 @@ export async function digMonsterTunnel(monster, state, { random = rn2, rollOne =
             return { died: trap.killed, heroDied: trap.heroDied };
         }
         if (state.flags.verbose && !heroIsUnaware(state) && random(3) === 0)
-            await publish(draftMessage(true, state, random));
+            await publish(formatDraftMessage(true, state, random));
         return { died: false, heroDied: false };
     }
     if (location.typ === SCORR) {
@@ -51,7 +50,7 @@ export async function digMonsterTunnel(monster, state, { random = rn2, rollOne =
         location.flags = location.wall_info = 0;
         vision_note_blocker_change(x, y);
         newsym(x, y);
-        await publish(draftMessage(false, state, random));
+        await publish(formatDraftMessage(false, state, random));
         return { died: false, heroDied: false };
     }
     if (!IS_OBSTRUCTED(location.typ) && !IS_TREE(location.typ))
@@ -88,22 +87,5 @@ export async function digMonsterTunnel(monster, state, { random = rn2, rollOne =
     if (!level.objects[x]?.[y]?.some(object => object.otyp === BOULDER))
         vision_note_blocker_change(x, y);
     return { died: false, heroDied: false };
-}
-function draftMessage(unexpected, state, random) {
-    if (!heroIsHallucinating(state))
-        return formatFeltMessage(unexpected ? 'an unexpected draft.' : 'a draft.', state);
-    if (unexpected) {
-        const unfit = [A_STR, A_DEX, A_CON, A_CHA, A_INT, A_WIS]
-            .some(attribute => currentAttribute(attribute, state) < 6);
-        return formatFeltMessage(`like you are ${unfit ? '4-F' : '1-A'}.`, state);
-    }
-    const alignment = Math.sign(state.u.ualign.type);
-    let reaction = random(2) + 1 - alignment;
-    if (state.u.ualign.record < 4)
-        reaction += random(3) + alignment - 1;
-    const description = ['enlisting', 'marching', 'protesting', 'fleeing'][reaction];
-    if (!description)
-        throw new RangeError(`Invalid hallucinated draft reaction ${reaction}`);
-    return formatFeltMessage(`like ${description}.`, state);
 }
 //# sourceMappingURL=monster_tunnel.js.map

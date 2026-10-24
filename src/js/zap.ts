@@ -3,6 +3,7 @@
 // destroy_items().
 
 import { objectMaterial } from './object_material.js';
+import { convertSecretDoor } from './detect.js';
 import { bypassObjectList, nextUnbypassedObject } from './object_bypass.js';
 import { formatFeltMessage, publishHeardMessage } from './hero_speech.js';
 import { monsterHasMapPosition } from './monster_location.js';
@@ -17,8 +18,9 @@ import { updateIceObjectTimersAt } from './floor_object.js';
 import { isIceAt, isLavaAt, isMoatAt, isPoolAt } from './terrain_properties.js';
 import { heroHasArtifactDefense } from './artifacts.js';
 import { exerciseAttribute } from './attrib.js';
-import { A_STR, COLNO, DB_FLOOR, DB_ICE, DB_UNDER, DOOR, DRAWBRIDGE_UP, FOUNTAIN, SHOP_BARS_COST, SHOP_DOOR_COST, ZAP_POS, D_BROKEN, D_CLOSED, D_LOCKED, D_NODOOR, HWALL, ICE, ICED_MOAT, ICED_POOL, IRONBARS, IS_WALL, IS_WATERWALL, Is_rogue_level, Is_waterlevel, ismnum, LAVAWALL, PIT, POOL, ROOM, ROWNO, SDOOR, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, Upolyd, VWALL, WEB, WM_MASK, W_NONDIGGABLE, W_RING } from './const.js';
+import { A_STR, COLNO, DB_FLOOR, DB_ICE, DB_UNDER, DRAWBRIDGE_UP, FOUNTAIN, SHOP_BARS_COST, SHOP_DOOR_COST, ZAP_POS, D_BROKEN, D_NODOOR, HWALL, ICE, ICED_MOAT, ICED_POOL, IRONBARS, IS_WALL, IS_WATERWALL, Is_rogue_level, Is_waterlevel, ismnum, LAVAWALL, PIT, POOL, ROOM, ROWNO, SDOOR, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, Upolyd, VWALL, WEB, W_NONDIGGABLE, W_RING } from './const.js';
 import { displayColorName, displayLiquidName, docrt, newsym, plineWithContinuation } from './display.js';
+import { formatDraftMessage } from './draft_message.js';
 import { waterbodyName } from './terrain_name.js';
 import { resetPick } from './lock_context.js';
 import { game, requireLiveGame } from './gstate.js';
@@ -79,7 +81,6 @@ import { useUpFloorObject } from './floor_consumption.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
-import type { MapLocation } from './map_types.js';
 import type { MessagePublisher } from './display.js';
 import type { DeathHandler } from './end.js';
 import type { PropertyName } from './property_types.js';
@@ -215,19 +216,6 @@ function removeWebAt(x: number, y: number, state: GameState = game) {
     }
     deleteTrap(trap, state);
     return true;
-}
-
-function revealSecretDoor(location: MapLocation, state: GameState = game) {
-    const oldMask = location.doormask ?? 0;
-    location.typ = DOOR;
-    if (Is_rogue_level(state.u?.uz)) {
-        location.doormask = D_NODOOR;
-    } else {
-        location.doormask = oldMask & ~WM_MASK;
-        if (!(location.doormask & D_LOCKED))
-            location.doormask |= D_CLOSED;
-    }
-    location.arboreal_sdoor = 0;
 }
 
 function floorObjectBurns(object: GameObject) {
@@ -539,13 +527,15 @@ export async function applyRayFloorFeatures(
     }
 
     if (location.typ === SDOOR) {
-        revealSecretDoor(location, state);
+        convertSecretDoor(location, state);
         vision_note_blocker_change(x, y);
         newsym(x, y);
         if (visible) {
             await publish(
                 `${yourRay ? 'Your' : 'The'} ${rayNoun} reveals a secret door.`,
             );
+        } else if (Is_rogue_level(state.u.uz)) {
+            await publish(formatDraftMessage(false, state, random));
         }
     }
 
