@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { def_warnsyms } from '../js/const.js';
-import { flush_screen, glyphAt, newsym } from '../js/display.js';
+import { def_warnsyms, MM_NOGRP, NO_MINVENT } from '../js/const.js';
+import { flush_screen, glyphAt, map_object, newsym } from '../js/display.js';
 import { completeExtendedCommand } from '../js/extended_commands.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
@@ -13,6 +13,7 @@ import { autopickupAtHero } from '../js/pickup.js';
 import { enableRngLog, getRngLog, initRng } from '../js/rng.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { floorObject } from './support/game-objects.js';
+import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenCell } from './support/screen.js';
 const PLAY = 'OPTIONS=!legacy,!tutorial,!autopickup,name:Traveler';
@@ -294,6 +295,11 @@ void test('BOULDER= replaces the boulder map glyph', async () => {
     // get_othersym() reads zero as "no override", never as a NUL glyph.
     assert.equal(parseNethackrc('BOULDER=256').boulderSym, '');
     assert.equal(parseNethackrc('BOULDER=125\nBOULDER=256').boulderSym, '');
+    // get_uchars() accumulates into an unsigned int: a multiple of 2^32
+    // wraps to zero and leaves the previous override in place, and values
+    // above 2^53 still wrap exactly rather than drifting in a double.
+    assert.equal(parseNethackrc('BOULDER=125\nBOULDER=4294967296').boulderSym, '}');
+    assert.equal(parseNethackrc('BOULDER=9007199254740993').boulderSym, '\u0001');
     freshObjectRoom();
     requirePlayingGame(game);
     applyNethackrc('BOULDER=256');
@@ -301,6 +307,38 @@ void test('BOULDER= replaces the boulder map glyph', async () => {
     newsym(11, 10);
     await flush_screen(1);
     assert.equal(requireScreenCell(10, 11).ch, '`');
+});
+void test('WARNINGS= does not change the map warning glyphs', async () => {
+    freshObjectRoom({ flags: { tips: false, verbose: false } });
+    const xorn = await createMonsterAt('xorn', 11, 10, MM_NOGRP | NO_MINVENT);
+    xorn.minvis = 1;
+    xorn.mpeaceful = false;
+    xorn.m_lev = 8;
+    game.u.warning = true;
+    // Level-8 monster projects warning level 2 ('2'); the statement only
+    // retargets the pager lookup, never showsyms.
+    applyNethackrc('WARNINGS=49 50 51');
+    newsym(11, 10);
+    await flush_screen(1);
+    assert.equal(requireScreenCell(10, 11).ch, '2');
+});
+void test('a hallucinating hero sees the boulder override on any boulder glyph', async () => {
+    freshObjectRoom({ hero: { hallucinationTurns: 20 } });
+    requirePlayingGame(game);
+    // '#' is no object-class symbol, so only the override can draw it.
+    applyNethackrc('BOULDER=35');
+    const arrow = await floorObject(ARROW, 11, 10, { dknown: true });
+    // Hallucination picks a random object number per draw; display.c maps
+    // any BOULDER number through showsyms[SYM_BOULDER], so some seed's
+    // random boulder must also show the override instead of the class '`'.
+    let found = false;
+    for (let seed = 0n; seed < 8000n && !found; seed++) {
+        initRng(seed);
+        map_object(arrow, true, false);
+        const glyph = glyphAt(11, 10);
+        found = !!glyph && 'ch' in glyph && glyph.ch === '#';
+    }
+    assert.ok(found, 'no seed drew a hallucinated boulder with the override');
 });
 void test('an ordinary object keeps its native glyph number', async () => {
     freshObjectRoom();

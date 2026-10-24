@@ -364,7 +364,8 @@ function parseUcharList(bytes, size, modifyInPlace) {
         }
         else if (byte >= 48 && byte <= 57) {
             haveNumber = true;
-            number = number * 10 + (byte - 48);
+            // C accumulates into an unsigned int and wraps at 2^32.
+            number = (number * 10 + (byte - 48)) >>> 0;
             index++;
         }
         else {

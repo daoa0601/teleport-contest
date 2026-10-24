@@ -1,4 +1,3 @@
-import { warningSymbols } from './warning_symbols.js';
 import { truncatePlineMessage, truncateRawMessage } from './pline_text.js';
 import { messageTypeFor } from './message_types.js';
 import { coordinateDescription } from './pager_lists.js';
@@ -335,7 +334,9 @@ function warningProjection(monster: Monster | null | undefined) {
         ? rn2Display(def_warnsyms.length - 1) + 1
         : Math.min(def_warnsyms.length - 1,
             Math.trunc((monster.m_lev ?? 0) / 4));
-    const warning = warningSymbols()[level];
+    // The map reads showsyms[SYM_OFF_W+n], which symset loading initializes
+    // from def_warnsyms; WARNINGS=/warnings: only retarget the pager lookup.
+    const warning = def_warnsyms[level];
     return warning ? { ...warning, glyph: GlyphOffset.warning + level } : null;
 }
 
@@ -1129,7 +1130,11 @@ function randomHallucinatedObjectGlyph(): ObjectGlyph {
     }
     const oclass = objectClassForType(otyp);
     return {
-        ch: activeObjectSymbols()[oclass] || '?',
+        // display.c routes any boulder object number, including one a
+        // hallucinating hero invents, through showsyms[SYM_BOULDER].
+        ch: otyp === BOULDER && !Is_rogue_level(game.u?.uz) && game.boulderSym
+            ? game.boulderSym
+            : activeObjectSymbols()[oclass] || '?',
         // glyphs.c resolves the randomly selected object number through the
         // runtime objects[] table.  o_init() shuffles oc_color together with
         // unidentified descriptions, so Hallucination must not use the
