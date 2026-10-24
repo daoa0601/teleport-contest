@@ -60,10 +60,16 @@ void test('a blast killing a visible worm tail names the worm even with its head
     requirePlayingGame(game);
     const messages: string[] = [];
     worm.mhp = 1;
-
-    await createElementalMonsterExplosion(tail.x + 1, tail.y, AD_FIRE, 20, "flaming sphere's explosion", {
-        publish: (message: string) => messages.push(message),
-    });
+    // A sphere explodes during monster movement; C explode() credits the
+    // hero with the kill whenever context.mon_moving is clear.
+    game.context.mon_moving = true;
+    try {
+        await createElementalMonsterExplosion(tail.x + 1, tail.y, AD_FIRE, 20, "flaming sphere's explosion", {
+            publish: (message: string) => messages.push(message),
+        });
+    } finally {
+        game.context.mon_moving = false;
+    }
 
     assert.notEqual(monsterAtPosition(game.level, worm.mx, worm.my), worm);
     assert.ok(messages.some(message => message.includes('The long worm is caught')));
