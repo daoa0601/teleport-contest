@@ -31,7 +31,7 @@ for (const observer of [false, true]) {
         const walker = bystander ?? monster;
         walker.mux = game.u.ux;
         walker.muy = game.u.uy;
-        const candidates = mfndpos(walker, game);
+        const candidates = await mfndpos(walker, game);
         assert.equal(candidates.some(position => position.x === trap.tx && position.y === trap.ty), false, 'the monster should remember and avoid the pit created by the explosion');
     });
 }

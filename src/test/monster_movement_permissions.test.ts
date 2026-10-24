@@ -19,9 +19,9 @@ import { installPolymorphedHero } from './support/hero-state.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 
-function admits(monster: Monster, x = 11, y = 10): boolean {
+async function admits(monster: Monster, x = 11, y = 10): Promise<boolean> {
     requirePlayingGame(game);
-    return mfndpos(monster, game).some(square => square.x === x && square.y === y);
+    return (await mfndpos(monster, game)).some(square => square.x === x && square.y === y);
 }
 
 for (const [type, toolName] of [
@@ -33,11 +33,11 @@ for (const [type, toolName] of [
         const door = level.requireAt(11, 10);
         door.typ = DOOR;
         door.doormask = D_LOCKED;
-        assert.equal(admits(goblin), false);
+        assert.equal(await admits(goblin), false);
 
         await addObjectToMonsterInventory(goblin, await knownObject(type));
 
-        assert.equal(admits(goblin), true);
+        assert.equal(await admits(goblin), true);
         assert.equal(monsterHasKey(goblin, false), type !== CREDIT_CARD);
     });
 }
@@ -49,10 +49,10 @@ void test('a dog cannot operate a door even when carrying a real key', async () 
     const door = level.requireAt(11, 10);
     door.typ = DOOR;
     door.doormask = D_CLOSED;
-    assert.equal(admits(dog), false);
+    assert.equal(await admits(dog), false);
 
     door.doormask = D_LOCKED;
-    assert.equal(admits(dog), false);
+    assert.equal(await admits(dog), false);
 });
 
 for (const species of ['hill giant', 'Death', 'Wizard of Yendor']) {
@@ -63,7 +63,7 @@ for (const species of ['hill giant', 'Death', 'Wizard of Yendor']) {
         door.typ = DOOR;
         door.doormask = D_LOCKED;
 
-        assert.equal(admits(monster), true);
+        assert.equal(await admits(monster), true);
     });
 }
 
@@ -74,17 +74,17 @@ void test('a digging dwarf uses its remembered target distance and gives up digg
     level.requireAt(11, 10).typ = STONE;
     dwarf.mux = 15;
     dwarf.muy = 12;
-    assert.equal(admits(dwarf), true);
+    assert.equal(await admits(dwarf), true);
 
     dwarf.mux = 12;
     dwarf.muy = 10;
-    assert.equal(admits(dwarf), false);
+    assert.equal(await admits(dwarf), false);
 
     dwarf.mpeaceful = 1;
-    assert.equal(admits(dwarf), true);
+    assert.equal(await admits(dwarf), true);
 
     grantIntrinsicProperty('conflict', 'outside');
-    assert.equal(admits(dwarf), false);
+    assert.equal(await admits(dwarf), false);
 });
 
 void test('the Rogue level prevents a rock mole from selecting diggable rock', async () => {
@@ -92,10 +92,10 @@ void test('the Rogue level prevents a rock mole from selecting diggable rock', a
     requirePlayingGame(game);
     const mole = await createMonsterAt('rock mole', 10, 10, MM_ANGRY | NO_MINVENT);
     level.requireAt(11, 10).typ = STONE;
-    assert.equal(admits(mole), true);
+    assert.equal(await admits(mole), true);
 
     game.rogue_level = { ...game.u.uz };
-    assert.equal(admits(mole), false);
+    assert.equal(await admits(mole), false);
 });
 
 void test('phasing admits ordinary stone while respecting a wall that forbids passage', async () => {
@@ -103,29 +103,29 @@ void test('phasing admits ordinary stone while respecting a wall that forbids pa
     const ghost = await createMonsterAt('ghost', 10, 10, MM_ANGRY | NO_MINVENT);
     const rock = level.requireAt(11, 10);
     rock.typ = STONE;
-    assert.equal(admits(ghost), true);
+    assert.equal(await admits(ghost), true);
 
     rock.wall_info = W_NONPASSWALL;
-    assert.equal(admits(ghost), false);
+    assert.equal(await admits(ghost), false);
 });
 
 void test('a carrier passes iron bars only when the held hero fits through them', async () => {
     const level = freshObjectRoom({ heroX: 15, heroY: 12 });
     const vortex = await createMonsterAt('fog cloud', 10, 10, MM_ANGRY | NO_MINVENT);
     level.requireAt(11, 10).typ = IRONBARS;
-    assert.equal(admits(vortex), true);
+    assert.equal(await admits(vortex), true);
 
     game.u.ustuck = vortex;
-    assert.equal(admits(vortex), false);
+    assert.equal(await admits(vortex), false);
 
     installPolymorphedHero('fog cloud');
-    assert.equal(admits(vortex), true);
+    assert.equal(await admits(vortex), true);
 
     installPolymorphedHero('kitten');
-    assert.equal(admits(vortex), false);
+    assert.equal(await admits(vortex), false);
 
     installPolymorphedHero('grid bug');
-    assert.equal(admits(vortex), true);
+    assert.equal(await admits(vortex), true);
 });
 
 void test('rusting bars cannot admit a corrosive monster when the level forbids destroying them', async () => {
@@ -133,10 +133,10 @@ void test('rusting bars cannot admit a corrosive monster when the level forbids 
     const rustMonster = await createMonsterAt('rust monster', 10, 10, MM_ANGRY | NO_MINVENT);
     const bars = level.requireAt(11, 10);
     bars.typ = IRONBARS;
-    assert.equal(admits(rustMonster), true);
+    assert.equal(await admits(rustMonster), true);
 
     bars.wall_info = W_NONDIGGABLE;
-    assert.equal(admits(rustMonster), false);
+    assert.equal(await admits(rustMonster), false);
 });
 
 // C dothrow.c:will_hurtle() asks goodpos(), which admits iron bars only to
@@ -162,7 +162,7 @@ for (const species of ['human zombie', 'ghost', 'vampire bat']) {
         if (species === 'vampire bat') monster.cham = MONSTER_NAME.indexOf('vampire');
         await floorObject(CLOVE_OF_GARLIC, 11, 10);
 
-        assert.equal(admits(monster), species === 'ghost');
+        assert.equal(await admits(monster), species === 'ghost');
     });
 }
 
@@ -171,10 +171,10 @@ void test('a unicorn may use a square aligned with the hero when teleportation i
     const unicorn = await createMonsterAt('white unicorn', 10, 10, MM_ANGRY | NO_MINVENT);
     unicorn.mux = 14;
     unicorn.muy = 10;
-    assert.equal(admits(unicorn), false);
+    assert.equal(await admits(unicorn), false);
 
     level.flags.noteleport = true;
-    assert.equal(admits(unicorn), true);
+    assert.equal(await admits(unicorn), true);
 });
 
 void test('a tame dog may cross scare-monster protection that a hostile goblin avoids', async () => {
@@ -184,6 +184,6 @@ void test('a tame dog may cross scare-monster protection that a hostile goblin a
     const goblin = await createMonsterAt('goblin', 12, 10, MM_ANGRY | NO_MINVENT);
     await floorObject(SCR_SCARE_MONSTER, 11, 10);
 
-    assert.equal(admits(dog), true);
-    assert.equal(admits(goblin), false);
+    assert.equal(await admits(dog), true);
+    assert.equal(await admits(goblin), false);
 });

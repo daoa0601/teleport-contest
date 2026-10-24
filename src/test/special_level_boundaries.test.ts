@@ -40,7 +40,7 @@ void test('a Valley invisible room boundary becomes traversable floor', async t 
     game.u.uy = 0;
     const goblin = await createMonsterAt('goblin', floor.x, floor.y, MM_ANGRY | NO_MINVENT);
 
-    assert.ok(mfndpos(goblin, game).some(square =>
+    assert.ok((await mfndpos(goblin, game)).some(square =>
         square.x === boundary.x && square.y === boundary.y),
     'invisible room boundaries must not obstruct monster movement');
 });

@@ -13,7 +13,7 @@ void test('a thinking monster born in the Castle avoids unfamiliar-looking trapd
     game.stronghold_level = { ...game.u.uz, flags: { town: false }, alignment: null };
     const xorn = await createMonsterAt('xorn', 10, 10, MM_NOGRP | NO_MINVENT);
     const trap = addTrap(level, TRAPDOOR, 11, 10);
-    const destinations = mfndpos(xorn, game);
+    const destinations = await mfndpos(xorn, game);
     assert.equal(monsterKnowsTrap(xorn, trap), true);
     assert.equal(destinations.some(square => square.x === 11 && square.y === 10), false);
 });
