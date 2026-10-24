@@ -41,7 +41,6 @@ import { moveHeroByTeleport, randomMonsterRelocation, relocateMonsterTo } from '
 import { findNearbyMonsterPosition } from './teleport_rules.js';
 import { promptDirection } from './tty_prompts.js';
 import { promptYesNo } from './query.js';
-import { vision_recalc } from './vision.js';
 import { heroLegName } from './body_parts.js';
 import { healHeroLegs, woundHeroLegs } from './hero_legs.js';
 import { loseHeroHp } from './hero_damage.js';
@@ -396,9 +395,7 @@ async function mountSteed(steed, force, [dx, dy]) {
     refreshMovementProperties(game);
     if (wasStealthy && !hero.stealth)
         await plineWithContinuation("You aren't stealthy anymore.");
-    const movement = await moveHeroByTeleport(steed.mx, steed.my, game);
-    newsym(movement.oldx, movement.oldy);
-    vision_recalc(1);
+    await moveHeroByTeleport(steed.mx, steed.my, game);
     await applyHeroLocationEffects();
     // Mounting uses teleds(), whose invocation message follows spot effects.
     if (!game.program_state.gameover)
@@ -542,17 +539,16 @@ const DISMOUNT_DIRECTIONS = [
     [-1, 0], [-1, -1], [0, -1], [1, -1],
     [1, 0], [1, 1], [0, 1], [-1, 1],
 ];
-async function openLandingSquare(state, x, y, steed, publish) {
+async function openLandingSquare(state, x, y, publish) {
     if (!isok(x, y))
         return false;
     if (!isAccessibleAt(x, y, state))
         return false;
-    const occupant = monsterAtPosition(state.level, x, y);
-    if (occupant && occupant !== steed)
+    if (monsterAtPosition(state.level, x, y))
         return false;
     return ridingStepIsClear(state, x, y, publish);
 }
-async function landingSpot(state, steed, reason, random, force = false, publish = plineWithContinuation) {
+async function landingSpot(state, reason, random, force = false, publish = plineWithContinuation) {
     const avoidHazards = reason === DISMOUNT_BYCHOICE
         && !(state.u.stunned || (state.u.stunnedTurns ?? 0) > 0
             || (state.u.confusionTurns ?? 0) > 0 || state.u.fumbling || (state.u.fumblingTurns ?? 0) > 0);
@@ -583,7 +579,7 @@ async function landingSpot(state, steed, reason, random, force = false, publish 
         for (const [index, [dx, dy]] of directions.entries()) {
             const x = state.u.ux + dx;
             const y = state.u.uy + dy;
-            if (!await openLandingSquare(state, x, y, steed, publish))
+            if (!await openLandingSquare(state, x, y, publish))
                 continue;
             viable++;
             const distance = dx * dx + dy * dy;
@@ -613,7 +609,6 @@ async function moveSteedOffHero(state, steed, random) {
     if (!point)
         return false;
     await relocateMonsterTo(steed, point.x, point.y, { state, random });
-    newsym(point.x, point.y);
     return true;
 }
 // C steed.c:875-895 stucksteed().  Decides whether the hero's steed is able
@@ -646,14 +641,15 @@ export async function dismountHero(reason, { state = game, random = rn2, announc
     // Dismounting mutates the world (hero move, spot effects, the descent
     // itself); it only runs on the live singleton.
     requireLiveGame(state);
-    const steed = state.u.usteed;
-    if (!steed)
-        return { dismounted: false };
     requirePlayingGame(state);
     const hero = state.u;
     const wasTrapped = !!hero.utrap;
     let repairLegs = (hero._woundedLegTurns ?? 0) > 0;
-    let landing = await landingSpot(state, steed, reason, random, false, announce);
+    // Native selects a landing square before checking for a missing steed.
+    let landing = await landingSpot(state, reason, random, false, announce);
+    const steed = hero.usteed;
+    if (!steed)
+        return { dismounted: false };
     hero.usteed = null;
     refreshMovementProperties(state);
     const inAir = hero.levitation || hero.flying;
@@ -663,7 +659,7 @@ export async function dismountHero(reason, { state = game, random = rn2, announc
     if ([DISMOUNT_THROWN, DISMOUNT_KNOCKED, DISMOUNT_FELL].includes(reason)) {
         const verb = reason === DISMOUNT_THROWN ? 'are thrown' : fallingVerb;
         await announce(`You ${verb} off of ${monsterName(steed)}!`);
-        landing ||= await landingSpot(state, steed, reason, random, true, announce);
+        landing ||= await landingSpot(state, reason, random, true, announce);
         if (!inAir) {
             let damage = rn1(10, 10);
             if (hero.halfPhysicalDamage)
@@ -676,7 +672,7 @@ export async function dismountHero(reason, { state = game, random = rn2, announc
     }
     else if (reason === DISMOUNT_POLY) {
         await announce(`You can no longer ride ${monsterName(steed)}.`);
-        landing ||= await landingSpot(state, steed, reason, random, true, announce);
+        landing ||= await landingSpot(state, reason, random, true, announce);
     }
     if (reason === DISMOUNT_BYCHOICE) {
         const saddle = monsterSaddle(steed);
@@ -749,8 +745,6 @@ export async function dismountHero(reason, { state = game, random = rn2, announc
                 state._steedDismounting = true;
                 try {
                     movement = await moveHeroByTeleport(landing.x, landing.y, state, { allowDrag: true });
-                    newsym(oldx, oldy);
-                    vision_recalc(0);
                     // C teleport.c:536-568: the moved hero renders, then
                     // spoteffects runs with the move's real old/new
                     // coordinates (liquids/terrain/rooms/sink live,
