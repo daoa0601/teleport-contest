@@ -54,6 +54,8 @@ function paniclog(type: 'panic' | 'impossible', reason: string, state: GameState
 
 export async function impossible(reason: string, { state = game }: { state?: GameState } = {}): Promise<void> {
     requireLiveGame(state);
+    // Earlier formatter reports finished before this call began in C.
+    await publishDeferredImpossibles(state);
     await reportImpossible(diagnosticReason(reason), state, { logged: false });
 }
 
@@ -68,6 +70,8 @@ export function deferImpossible(reason: string, state: GameState = game): void {
 }
 
 export async function publishDeferredImpossibles(state: GameState = game): Promise<void> {
+    // A report's own messages must not start a nested report.
+    if (state.program_state.in_impossible) return;
     const pending = state.program_state.deferred_impossibles;
     if (!pending?.length) return;
     state.program_state.deferred_impossibles = [];

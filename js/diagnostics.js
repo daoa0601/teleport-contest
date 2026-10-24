@@ -51,6 +51,8 @@ function paniclog(type, reason, state) {
 }
 export async function impossible(reason, { state = game } = {}) {
     requireLiveGame(state);
+    // Earlier formatter reports finished before this call began in C.
+    await publishDeferredImpossibles(state);
     await reportImpossible(diagnosticReason(reason), state, { logged: false });
 }
 // C impossible() called while a synchronous formatter (doname(),
@@ -63,6 +65,9 @@ export function deferImpossible(reason, state = game) {
     (state.program_state.deferred_impossibles ??= []).push(reason);
 }
 export async function publishDeferredImpossibles(state = game) {
+    // A report's own messages must not start a nested report.
+    if (state.program_state.in_impossible)
+        return;
     const pending = state.program_state.deferred_impossibles;
     if (!pending?.length)
         return;

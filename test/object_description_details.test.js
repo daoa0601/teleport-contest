@@ -27,7 +27,7 @@ void test('naming a leash clears a link to a missing monster', async () => {
     assert.equal(inventoryItemDescription(leash), 'a leash');
     assert.equal(leash.leashmon, 0);
 });
-void test('naming a leash of a dead monster reports it and detaches only the leash', async () => {
+void test('naming a leash of a dead monster reports it missing and detaches only the leash', async () => {
     freshObjectRoom();
     game.storage = memoryStorage();
     const pet = await createMonsterAt('little dog', 11, 10, NO_MINVENT);
@@ -37,7 +37,7 @@ void test('naming a leash of a dead monster reports it and detaches only the lea
     assert.equal(inventoryItemDescription(leash), 'a leash');
     assert.equal(leash.leashmon, 0);
     assert.equal(pet.mleashed, 1);
-    assert.match(game.storage.getItem(PANICLOG) ?? '', new RegExp(`"reason":"leashed little dog #${pet.m_id} is dead"`));
+    assert.match(game.storage.getItem(PANICLOG) ?? '', new RegExp(`"reason":"leashed monster #${pet.m_id} not found"`));
 });
 for (const { count, lit, suffix } of [
     { count: 0, lit: false, suffix: '(0 of 7 candles attached)' },

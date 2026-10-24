@@ -4,7 +4,6 @@ import { CORPSTAT_FEMALE, CORPSTAT_GENDER, CORPSTAT_MALE, CORPSTAT_RANDOM, MV_KN
 import { eggHasMonsterSpecies } from './egg_impact.js';
 import { game } from './gstate.js';
 import { deferImpossible } from './diagnostics.js';
-import { monsterTypeName } from './monster_data.js';
 import { monsterName } from './monster_name.js';
 import { BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, CORPSE, EGG, FIGURINE, LEASH, MAGIC_LAMP, OBJECT_CHARGED, OBJECT_COST, OIL_LAMP, POT_OIL, STATUE, TALLOW_CANDLE, WAX_CANDLE, requireObjectData, } from './object_data.js';
 import { isWeaponTool } from './object_properties.js';
@@ -52,16 +51,15 @@ function describeTool(item, details, known, state) {
     if ((item.owornmask ?? 0) & (W_TOOL | W_SADDLE))
         return;
     if (item.otyp === LEASH && item.leashmon) {
-        const monster = state.level?.monsters.find(actor => actor.m_id === item.leashmon);
-        if (monster && monster.mhp > 0) {
+        const monster = state.level?.monsters.find(actor => actor.m_id === item.leashmon && actor.mhp > 0);
+        if (monster) {
             details.suffix = ` (attached to ${monsterName(monster, {
                 state, article: 'your', suppressIt: true,
             })})`;
         }
         else {
-            deferImpossible(monster
-                ? `leashed ${monsterTypeName(monster.mnum, monster.female)} #${item.leashmon} is dead`
-                : `leashed monster #${item.leashmon} not found`, state);
+            // find_mid() skips DEADMONSTER, so a dead target is not found.
+            deferImpossible(`leashed monster #${item.leashmon} not found`, state);
             item.leashmon = 0;
         }
         return;

@@ -2,6 +2,7 @@
 // C refs: cmd.c paranoid_query()/paranoid_ynq(), tty getlin/yn_function.
 
 import { COLNO, PARANOID_CONFIRM, QBUFSZ } from './const.js';
+import { publishDeferredImpossibles } from './diagnostics.js';
 import { clearMessageWindow, flushPendingTopline, flush_screen, setTopline } from './display.js';
 import { game } from './gstate.js';
 import { nhgetch, readchar } from './input.js';
@@ -77,6 +78,8 @@ async function editLine(
     };
     // tty_getlin() acknowledges unread prose before replacing it with its
     // special prompt; the first key must still belong to that prose's pager.
+    // A formatter's impossible() report is urgent and precedes the prompt.
+    await publishDeferredImpossibles();
     if (!game._suppressMessagesUntilInput) await flushPendingTopline();
     game._suppressMessagesUntilInput = false;
     if (inMenu) {
@@ -186,6 +189,8 @@ export async function tty_yn_function(
         const key = (await readchar()) & 255;
         return String.fromCharCode(!preserveCase && key >= 65 && key <= 90 ? key + 32 : key);
     };
+    // A formatter's impossible() report is urgent and precedes the prompt.
+    await publishDeferredImpossibles();
     if (!game._suppressMessagesUntilInput) await flushPendingTopline();
     game._suppressMessagesUntilInput = false;
     await setTopline(message);
