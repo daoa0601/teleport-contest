@@ -139,6 +139,78 @@ void test('an empty inventory menu still displays a dismissible footer', async (
         assert.equal((await menu).key, 27);
     }
 });
+void test('a retained menu leaves the final column blank after the terminal narrows', async () => {
+    menuDisplay();
+    const window = tty_create_nhwindow(NHW_MENU);
+    await tty_start_menu(window);
+    const description = 'a robe embroidered with silver stars and golden moons';
+    tty_add_menu(window, { identifier: 'robe', selector: 'a', text: description });
+    tty_end_menu(window);
+    const display = new GameDisplay(new Terminal(null, { cols: 40, rows: 24 }));
+    game.nhDisplay = display;
+    const input = resetInputState();
+    const selection = tty_select_menu(window, PICK_ONE);
+    try {
+        await input.waitUntilBlocked();
+        assert.match(textRow(display, 0), /^ a - a robe embroidered/);
+        assert.equal(textRow(display, 0).charAt(39), ' ', 'menu text must leave the last column blank');
+    }
+    finally {
+        input.feed('a');
+        assert.equal((await selection).selections[0]?.identifier, 'robe');
+    }
+    const wider = new GameDisplay(new Terminal(null, { cols: 80, rows: 24 }));
+    game.nhDisplay = wider;
+    const redisplay = tty_select_menu(window, PICK_ONE);
+    try {
+        await input.waitUntilBlocked();
+        assert.match(textRow(wider, 0), /silver stars and golden moons/, 'painting on a narrow terminal retains the stored description');
+    }
+    finally {
+        input.feed('\n');
+        await redisplay;
+        await tty_destroy_nhwindow(window);
+    }
+});
+void test('a retained menu keeps its truncated end marker after the terminal widens', async () => {
+    menuDisplay(4);
+    const window = tty_create_nhwindow(NHW_MENU);
+    await tty_start_menu(window);
+    tty_add_menu(window, { identifier: null, text: 'Map' });
+    tty_end_menu(window);
+    const display = new GameDisplay(new Terminal(null, { cols: 40, rows: 24 }));
+    game.nhDisplay = display;
+    const input = resetInputState();
+    const selection = tty_select_menu(window, PICK_ONE);
+    try {
+        await input.waitUntilBlocked();
+        assert.equal(textRow(display, 1).trim(), '(end', 'enlarging the terminal does not recreate the stored pager');
+        assert.equal(display.cursorCol, 25, 'the cursor follows the retained pager text');
+    }
+    finally {
+        input.feed('\n');
+        await selection;
+        await tty_destroy_nhwindow(window);
+    }
+});
+for (const { kind, cursorCol } of [{ kind: 'menu', cursorCol: 12 }, { kind: 'prose', cursorCol: 15 }]) {
+    void test(`a narrow ${kind} window leaves its cursor after the complete pager`, async () => {
+        const display = menuDisplay(12);
+        const input = resetInputState();
+        const window = kind === 'menu' ? showTextMenuOverlay(['Map']) : showDisclosureOverlay(['Map']);
+        try {
+            await input.waitUntilBlocked();
+            assert.equal(display.cursorCol, cursorCol, 'dmore counts the complete prompt even past the screen edge');
+            input.feed('x');
+            await input.waitUntilBlocked();
+            assert.equal(display.cursorCol, cursorCol, 'an ignored key keeps the same pager cursor');
+        }
+        finally {
+            input.feed(' ');
+            await window;
+        }
+    });
+}
 void test('menu rows leave the right margin blank when descriptions exceed terminal width', async () => {
     const display = menuDisplay(40);
     const input = resetInputState();

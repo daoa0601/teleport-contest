@@ -19,6 +19,7 @@ export interface MenuLayout<T extends TextMenuLine> {
     pageCount: number;
     maxRows: number;
     width: number;
+    endMarker: string;
 }
 interface DisplayedMenuLayout<T extends TextMenuLine> extends MenuLayout<T> {
     boundary: number;
@@ -53,11 +54,13 @@ export function menuLayout<T extends TextMenuLine>(
         attributeStart: 'key' in row && typeof row.key === 'string' && row.key.length > 0
             || /^. [-+#] /.test(row.text) ? 4 : 0,
     }));
-    const pager = pageCount > 1 ? `(${pageCount} of ${pageCount}) ` : '(end) ';
+    // Native retains this bounded prompt; multi-page counters are rebuilt on display.
+    const endMarker = '(end) '.slice(0, columns);
+    const pager = pageCount > 1 ? `(${pageCount} of ${pageCount}) ` : endMarker;
     const width = clippedRows.reduce((widest, row) => Math.max(widest, row.text.length + 2),
         Math.min(columns, pager.length));
     const maxRows = (pageCount > 1 ? pageSize : rows.length) + 1;
-    return { rows: clippedRows, pageSize, pageCount, maxRows, width };
+    return { rows: clippedRows, pageSize, pageCount, maxRows, width, endMarker };
 }
 
 // The pinned tty build enables H2344_BROKEN: corner windows occupy at
@@ -98,15 +101,17 @@ export function paintMenuPage<T extends TextMenuLine>(
     }
     const left = boundary + 1;
     for (const [row, line] of rows.entries()) {
-        for (let col = 0; col < line.text.length; col++) {
+        // tty_end_menu retains the row; process_menu_window also clips it to
+        // the current terminal width when a retained menu is redisplayed.
+        for (let col = 0; col < line.text.length && left + col < d.cols - 1; col++) {
             const attr = col < line.attributeStart ? ATR_NONE : line.attr ?? ATR_NONE;
             const color = col < line.attributeStart ? NO_COLOR : line.color ?? NO_COLOR;
             d.setCell(left + col, row, line.text.charAt(col), color, attr);
         }
     }
-    const marker = pageCount > 1 ? `(${page + 1} of ${pageCount})` : '(end) ';
+    const marker = pageCount > 1 ? `(${page + 1} of ${pageCount})` : menu.endMarker;
     putLine(left, rows.length, marker);
-    d.setCursor(Math.min(d.cols - 1, left + marker.length), rows.length);
+    d.setCursor(left + marker.length, rows.length);
 }
 
 export function snapshotMenuUnderlay(): MenuUnderlay | null {
@@ -330,7 +335,7 @@ async function process_menu_window<T>(
             }), underlay, previousPageLines);
             repaint = false;
         } else {
-            const footer = layout.pageCount > 1 ? `(${page + 1} of ${layout.pageCount})` : '(end) ';
+            const footer = layout.pageCount > 1 ? `(${page + 1} of ${layout.pageCount})` : layout.endMarker;
             d.setCursor(layout.boundary + 1 + footer.length, pageRows.length);
         }
         let key = await nhgetch();
