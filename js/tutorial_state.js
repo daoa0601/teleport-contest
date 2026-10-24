@@ -1,5 +1,6 @@
 // C nhlua.c:nhl_gamestate() and free_tutorial().
 import { I_SPECIAL, W_AMUL, W_ARM, W_ARMOR, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU, W_BALL, W_CHAIN, W_QUIVER, W_RINGL, W_RINGR, W_SWAPWEP, W_TOOL, W_WEP, } from './const.js';
+import { impossible } from './diagnostics.js';
 import { plineWithContinuation } from './display.js';
 import { attachCursedFigurineTimer } from './figurine_timer.js';
 import { game } from './gstate.js';
@@ -20,13 +21,13 @@ const WORN_SLOTS = [
 export async function changeTutorialState(state = game, restoring = false) {
     if (restoring) {
         if (!state._tutorialState) {
-            console.error('Cannot restore tutorial state: no state was stored');
+            await impossible('nhl_gamestate: inconsistent state (restore vs not stored)', { state });
             return;
         }
         return restoreTutorialState(state);
     }
     if (state._tutorialState) {
-        console.error('Cannot store tutorial state twice');
+        await impossible('nhl_gamestate: inconsistent state (save vs already stored)', { state });
         return;
     }
     return storeTutorialState(state);
