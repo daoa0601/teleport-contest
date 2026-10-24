@@ -128,6 +128,21 @@ function nextWormNumber(state: GameState) {
     return wormno < MAX_NUM_WORMS ? wormno : 0;
 }
 
+// C worm.c:wseg_at(). Segment numbers run from the hidden head toward the
+// tail. A displaced live head need not coincide with any stored segment.
+export function wormSegmentIndexAt(
+    monster: Monster | null, x: number, y: number, state: GameState = game,
+): number {
+    if (!monster?.wormno || monsterAtPosition(requireGameLevel(state), x, y) !== monster)
+        return 0;
+    requireWormBody(monster);
+    for (let index = monster.wormSegments.length - 1; index >= 0; index--) {
+        const segment = monster.wormSegments[index];
+        if (segment?.x === x && segment.y === y) return index + 2;
+    }
+    return monster.wormHead.x === x && monster.wormHead.y === y ? 1 : 0;
+}
+
 // C worm.c:worm_cross(). The head and each body segment are consecutive.
 export function wormCrossesBetween(x1: number, y1: number, x2: number, y2: number, state: GameState = game) {
     if (Math.abs(x1 - x2) !== 1 || Math.abs(y1 - y2) !== 1) return false;
