@@ -29,7 +29,7 @@ import { changeInventoryOrder, inventoryOrderSymbols } from './object_sort.js';
 import { chooseDiscoverySort, discoverySortDescription } from './o_init.js';
 import { ATR_INVERSE, restoreMenuUnderlay, showInventoryWindow, showMultiSelectWindow, snapshotMenuUnderlay } from './windows.js';
 import {
-    BUFSZ, CLR_MAX, COLNO, MENU_FULL, MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPINVERT, PICK_ONE, PL_NSIZ, PL_PSIZ, WARNCOUNT,
+    BUFSZ, CLR_MAX, COLNO, Is_rogue_level, MENU_FULL, MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPINVERT, PICK_ONE, PL_NSIZ, PL_PSIZ, WARNCOUNT,
     PARANOID_AUTOALL, PARANOID_BONES, PARANOID_BREAKWAND, PARANOID_CONFIRM,
     PARANOID_DIE, PARANOID_EATING, PARANOID_HIT, PARANOID_PRAY,
     PARANOID_QUIT, PARANOID_REMOVE, PARANOID_SWIM, PARANOID_TRAP,
@@ -59,7 +59,7 @@ interface ConfigurationSettings {
     align?: string | null;
     characterFilters?: CharacterFilters;
     fruit?: string;
-    symset?: string;
+    symset?: string | undefined;
     // gs.showsyms[SYM_BOULDER + SYM_OFF_X] override from BOULDER=.
     boulderSym?: string;
     preferred_pet?: PetPreference;
@@ -938,7 +938,19 @@ function parseConfiguration(
                 if (key === 'name') result.name = val;
                 else if (key === 'playmode' && val === 'debug') result.flags.debug = true;
                 else if (key === 'playmode' && val === 'explore') result.flags.explore = true;
-                else if (key === 'symset') result.symset = val;
+                else if (key === 'symset') {
+                    // options.c:optfn_symset() loads the set from the
+                    // symbols file.  A name no `start:` line carries fails,
+                    // clears the choice, and reports the error; "default"
+                    // itself clears the choice without loading (files.c
+                    // read_sym_file()).
+                    if (isDefaultSymsetName(val)) result.symset = undefined;
+                    else if (SYMSET_NAMES[val.toLowerCase()] === true) result.symset = val;
+                    else {
+                        result.symset = undefined;
+                        addError(`Unable to load symbol set "${val}" from "symbols"`);
+                    }
+                }
                 else if (key === 'suppress_alert') {
                     const parsed = negated ? null : featureAlertVersion(val);
                     if (parsed && !parsed.future) result.flags.suppress_alert = parsed.version;
@@ -1557,6 +1569,42 @@ function preferredPetDescription(): string {
     }
 }
 
+// dat/symbols: the symsets a `start:` line defines, and the handling each
+// declares with `Handling:`.  The port renders only DECgraphics symbols,
+// but options.c:optfn_symset() get_val still reports any loadable set's
+// declared handler.
+const SYMSET_NAMES: Record<string, true> = {
+    plain: true, blank: true, ibmgraphics: true, ibmgraphics_1: true,
+    ibmgraphics_2: true, rogueibm: true, rogueepyx: true, roguewindows: true,
+    curses: true, decgraphics: true, macgraphics: true, enhanced1: true,
+    enhanced2: true, amigafont: true,
+};
+const SYMSET_HANDLINGS: Record<string, string> = {
+    ibmgraphics: 'IBM', ibmgraphics_1: 'IBM', ibmgraphics_2: 'IBM',
+    rogueibm: 'IBM', rogueepyx: 'IBM', roguewindows: 'IBM',
+    curses: 'DEC', decgraphics: 'DEC',
+    macgraphics: 'MAC',
+    enhanced1: 'UTF8', enhanced2: 'UTF8',
+};
+
+// files.c:read_sym_file() accepts a name that matches no `start:` line only
+// when it fuzzymatches "Default symbols" (ignoring spaces, '-' and '_') or
+// is exactly "default"; that choice clears the set instead of loading one.
+function isDefaultSymsetName(name: string): boolean {
+    return name.toLowerCase() === 'default'
+        || name.toLowerCase().replace(/[ \-_]/g, '') === 'defaultsymbols';
+}
+
+// options.c:optfn_symset() get_val: the loaded set's name, ", active" while
+// the primary set is current, and the handling the set declared.
+function symsetMenuValue(): string {
+    const name = game.symset;
+    if (!name) return 'default';
+    const active = !Is_rogue_level(game.u?.uz) ? ', active' : '';
+    const handling = SYMSET_HANDLINGS[name.toLowerCase()] ?? null;
+    return `${name}${active}${handling ? `, handler=${handling}` : ''}`;
+}
+
 function requestMenuSections(): PageLocalMultiSelectSection<string>[] {
     const { role, race, gender, alignment } = requestMenuIdentity();
     const choice = (name: string, text: string): PageLocalMenuItem<string> => ({
@@ -1703,7 +1751,7 @@ function requestMenuSections(): PageLocalMultiSelectSection<string>[] {
             choice('statushilites', "statushilites           [0 (off: don't highlight status fields)]"),
             choice('statuslines', 'statuslines             [2]'),
             choice('suppress_alert', 'suppress_alert          [(none)]'),
-            choice('symset', `symset                  [${game.symset || 'default'}, active, handler=DEC]`),
+            choice('symset', `symset                  [${symsetMenuValue()}]`),
             choice('versinfo', `versinfo                [${compoundMenuValue('versinfo')}]`),
             choice('whatis_coord', `whatis_coord            [${compoundMenuValue('whatis_coord')}]`),
             choice('whatis_filter', `whatis_filter           [${compoundMenuValue('whatis_filter')}]`),

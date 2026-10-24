@@ -177,6 +177,13 @@ function activeObjectSymbols() {
         ? ROGUE_OBJECT_SYMBOLS : OBJECT_CLASS_SYMBOLS;
 }
 
+// symbols.c:get_othersym(SYM_BOULDER, which_set): the active set's override,
+// else the default rock-class symbol.
+export function currentBoulderSymbol(state: GameState = game): string {
+    return !Is_rogue_level(state.u?.uz) && state.boulderSym
+        ? state.boulderSym : '`';
+}
+
 const M3_INFRAVISIBLE = 0x0200;
 const M1_MINDLESS = 0x00010000;
 const TELEPATHY_RANGE = 8 * 8; // BOLT_LIM squared
@@ -835,18 +842,18 @@ function terrainGlyphAppearance(loc: MapLocation, x: number, y: number): GlyphAp
     const typ = projectedTerrainType(loc);
     const rogue = Is_rogue_level(game.u?.uz);
     const dec = !rogue && /^DECgraphics$/i.test(game.symset || '');
-    // C selects wall glyphs by branch, independently of puzzle completion.
-    // dat/symbols overrides gray with blue for DEC Sokoban walls and yellow
-    // for DEC Fort Ludios walls.
+    // symbols.c:load_symset() applies these sets' G_ wall colors independently
+    // of character handling; the default set leaves wallcolors[] gray.
+    const hasBranchWallColors = /^(?:DECgraphics|curses|IBMgraphics(?:_[12])?)$/i.test(game.symset ?? '');
     const inMines = game.dungeons?.[game.u?.uz?.dnum ?? -1]?.dname
         === 'The Gnomish Mines';
     const inHell = !!game.dungeons?.[game.u?.uz?.dnum ?? -1]?.flags?.hellish;
     const wallColor = rogue ? NO_COLOR
         : In_sokoban(game.u?.uz)
-        ? (dec ? CLR_BLUE : NO_COLOR)
-        : inMines ? CLR_BROWN
-            : inHell ? CLR_RED
-                : dec && Is_knox_level(game.u.uz) ? CLR_YELLOW : NO_COLOR;
+        ? (hasBranchWallColors ? CLR_BLUE : NO_COLOR)
+        : hasBranchWallColors && inMines ? CLR_BROWN
+            : hasBranchWallColors && inHell ? CLR_RED
+                : hasBranchWallColors && Is_knox_level(game.u.uz) ? CLR_YELLOW : NO_COLOR;
     switch (typ) {
     case STONE:     return { ch: ' ', color: NO_COLOR, dec: false };
     case SCORR:     return { ch: ' ', color: NO_COLOR, dec: false };
@@ -1597,6 +1604,17 @@ export function glyphAt(x: number, y: number, state: GameState = game) {
     return loc.disp_glyph || { ch: ' ', color: NO_COLOR, decgfx: false,
         kind: 'unexplored', glyph: GlyphOffset.unexplored } satisfies DisplayGlyph;
 }
+// display.c:map_glyphinfo() re-applies the showrace highlight to the hero's
+// own glyph after reset_glyphmap() cleared the Rogue level's colors.  The
+// hero glyph is the race monster whenever showrace is set (display.h
+// hero_glyph).
+function isRogueShowraceHeroGlyph(glyph: GlyphMetadata | null, x: number, y: number): boolean {
+    if (!game.flags.showrace || Upolyd(game.u) || game.urace === null) return false;
+    if (glyph?.kind !== 'monster' || x !== game.u.ux || y !== game.u.uy) return false;
+    const heroGlyphNumber = GlyphOffset.monMale + game.urace.mnum
+        + (game.flags.female ? MONSTER_COLOR.length : 0);
+    return glyph.glyph === heroGlyphNumber;
+}
 
 export function show_glyph_cell(
     x: number, y: number, ch: string, color: number = NO_COLOR, decgfx = false,
@@ -1605,11 +1623,11 @@ export function show_glyph_cell(
     if (suppressMapOutput() || x === 0) return;
     const loc = game.level?.at(x, y);
     if (!loc) return;
-    // symbols.c:assign_graphics(ROGUESET) selects the classic character set
-    // and marks it nocolor.  Keep that policy at the final map-cell boundary
-    // so hero, monster, object, trap, and remembered overlays agree.
+    // display.c:reset_glyphmap() clears every color on the Rogue level
+    // (GMAP_ROGUELEVEL without rogue IBM color); only the hero's own
+    // showrace glyph is re-highlighted afterwards by map_glyphinfo().
     if (Is_rogue_level(game.u?.uz)) {
-        color = NO_COLOR;
+        if (!isRogueShowraceHeroGlyph(glyph, x, y)) color = NO_COLOR;
         decgfx = false;
     }
     const nextGlyph: GlyphMetadata = glyph || { kind: 'effect' };

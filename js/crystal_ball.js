@@ -5,7 +5,7 @@ import { currentAttribute } from './attrib.js';
 import { artifactByName } from './artifacts.js';
 import { heroResistsBlindingLight } from './blinding_attack.js';
 import { nomul } from './command_state.js';
-import { canSpotMonster, displayColorName, flushPendingTopline, glyphAt, magic_map_background, map_invisible, plineWithContinuation as pline, } from './display.js';
+import { canSpotMonster, currentBoulderSymbol, displayColorName, flushPendingTopline, glyphAt, magic_map_background, map_invisible, plineWithContinuation as pline, } from './display.js';
 import { game, requireGameLevel } from './gstate.js';
 import { cmapToGlyph, CmapSymbol } from './glyph_numbers.js';
 import { depth } from './hacklib.js';
@@ -28,6 +28,7 @@ import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { makeBlinded } from './sight_change.js';
 import { detectTraps } from './trap_detection.js';
 import { promptKey } from './tty_prompts.js';
+const ROCK_CLASS = 14;
 export async function useCrystalBall(object) {
     if (heroIsBlind()) {
         await pline(`Too bad you can't see ${definiteName(objectCombatName(object))}.`);
@@ -81,6 +82,10 @@ export async function useCrystalBall(object) {
         missing = (await detectObjects(null, { objectClass })).result !== 0;
     else if (monsterClass > 0)
         missing = (await detectMonsters(null, { monsterClass })).result !== 0;
+    // detect.c also matches the search character against
+    // showsyms[SYM_BOULDER + SYM_OFF_X], sending it to rock-class detection.
+    else if (symbol === currentBoulderSymbol())
+        missing = (await detectObjects(null, { objectClass: ROCK_CLASS })).result !== 0;
     else if (symbol === '^')
         missing = (await detectTraps(null)).result !== 0;
     else
