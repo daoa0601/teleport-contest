@@ -45,6 +45,34 @@ for (const overlay of [true, false]) {
     });
 }
 
+void test('Escape during a stale leash report clears the message before the corner pile', async () => {
+    freshObjectRoom();
+    game.program_state.something_worth_saving = true;
+    const apple = await floorObject(APPLE, 10, 10);
+    const leash = await floorObject(LEASH, 10, 10, { leashmon: 4242 });
+    const input = resetInputState();
+    const screens: string[] = [];
+    input.display = {
+        readKey(): Promise<number> {
+            const screen = requireGameDisplay(game).grid
+                .map(row => row.map(cell => cell.ch).join('')).join('\n');
+            screens.push(screen);
+            assert.ok(screens.length < 8, `Too many pile acknowledgments:\n${screen}`);
+            return Promise.resolve(screen.includes('leashed monster #4242 not found') ? 27 : 32);
+        },
+    };
+
+    await showFloorPile([apple, leash]);
+
+    assert.ok(screens.some(screen => screen.includes('leashed monster #4242 not found')));
+    const pile = screens.at(-1) ?? '';
+    assert.match(pile, /Things that are here:/);
+    assert.match(pile, /an uncursed leash/);
+    assert.doesNotMatch(pile, /leashed monster|Program in disorder|Please report/,
+        'the corner window clears the message even after message display was stopped');
+    assert.equal(leash.leashmon, 0);
+});
+
 void test('a floor-pile corner window preserves seen prose to its left', async () => {
     freshObjectRoom();
     const apple = await floorObject(APPLE, 10, 10);

@@ -2707,13 +2707,16 @@ export async function setTopline(msg) {
         vision_recalc(0);
     if (game.u.ux)
         await flush_screen(1);
+    replaceTopline(msg);
+    game._lastPlineMessage = msg;
+    game._lastPlineKind = PLNMSG_UNKNOWN;
+}
+function replaceTopline(msg) {
     if (game.nhDisplay)
         game.nhDisplay.stoppedTopline = game._suppressMessagesUntilInput ? msg : null;
     game._pending_message = msg;
     game._retained_message = '';
     game._last_message = msg;
-    game._lastPlineMessage = msg;
-    game._lastPlineKind = PLNMSG_UNKNOWN;
 }
 function decodeMixedTopline(message) {
     const cells = [];
@@ -2824,30 +2827,24 @@ export async function showMessageMenu(letter, pickMode, message) {
     }
     // The choice's own formatting reported before tty drew it.
     await publishDeferredImpossibles();
-    // tty_putstr() reaches update_topl(), which joins or pages older prose.
-    const pending = game._suppressMessagesUntilInput ? '' : game._pending_message || '';
-    const columns = game.nhDisplay?.cols ?? 80;
     // dismiss_more is set first, so the letter also acknowledges older prose.
     const menuLetter = letter.charCodeAt(0);
-    let dismissKey = menuLetter;
-    if (pending && message.length + pending.length + 3 < columns - 8)
-        message = `${pending}  ${message}`;
-    else if (pending) {
-        // update_topl() still draws the incoming choice after Escape at older prose.
-        const key = await pageTopline(pending, { dismissKey });
-        // xwaitforspace() replaces dismiss_more with 1 on Escape. The
-        // choice still appears, but its letter no longer dismisses More.
-        if (key === 27)
-            dismissKey = 1;
+    let key = await updateTopline(message, { dismissKey: menuLetter });
+    // Wrapped text has already paged. A stopped window may have kept older
+    // visible prose, but update_topl() never draws the suppressed choice.
+    if (game._pending_message) {
+        key = await pageTopline(game._pending_message, {
+            dismissKey: key === 27 ? 1 : menuLetter,
+        });
+        clearMessageWindow();
     }
-    game._pending_message = message;
-    game._retained_message = '';
-    const key = await pageTopline(message, { menuLetter, dismissKey });
+    // tty_message_menu() treats Escape as cancelling this selection only.
+    game._suppressMessagesUntilInput = false;
     return key === menuLetter || key === 27 ? key : 0;
 }
 // tty more() acknowledges existing output. A window-only display does not
 // call bot(), so it must retain status even if game state changed meanwhile.
-async function pageTopline(message, { urgent = false, menuLetter, dismissKey = menuLetter } = {}) {
+async function pageTopline(message, { urgent = false, dismissKey } = {}) {
     const display = game.nhDisplay;
     const columns = display?.cols ?? 80;
     const lines = toplineRows(message, columns);
@@ -2875,18 +2872,6 @@ async function pageTopline(message, { urgent = false, menuLetter, dismissKey = m
         key = await nhgetch();
     while (key !== dismissKey && ![27, 32, 10, 13].includes(key));
     game._pending_message = '';
-    if (menuLetter !== undefined) {
-        // Escape cancels this selection only. Both wrapped text and a More
-        // marker pushed onto a map row need native more()'s docorner cleanup.
-        game._suppressMessagesUntilInput = false;
-        game._retained_message = '';
-        if (lines.length > 1)
-            _buildScreenOutput();
-        else
-            display?.clearRow(0);
-        display?.setCursor(0, 0);
-        return key;
-    }
     // more() repairs covered map rows after any dismissal. Escape also
     // erases a one-line message; WIN_NOSTOP only prevents output suppression.
     game._retained_message = '';
@@ -2962,6 +2947,18 @@ export async function plineWithContinuation(msg, { noRepeat = false, urgent = fa
         vision_recalc(0);
     if (game.u.ux)
         await flush_screen(1);
+    const dismissal = await updateTopline(msg, { urgent });
+    // C pline.c tracks the last individual message, not the joined tty line.
+    game._lastPlineMessage = msg;
+    game._lastPlineKind = PLNMSG_UNKNOWN;
+    return dismissal;
+}
+// C update_topl() also owns bare tty_putstr() output from singleton menus.
+// Sample WIN_STOP on entry: Escape at an older line suppresses subsequent
+// calls, while the incoming line from this call still gets drawn.
+async function updateTopline(msg, options = {}) {
+    const paging = { ...options };
+    const urgent = paging.urgent ?? false;
     const pending = game._pending_message || '';
     const visibleLength = (message) => /[\x0e\x0f]|\x1b\[[0-9;]*C/.test(message)
         ? decodeMixedTopline(message).length : message.length;
@@ -2979,32 +2976,33 @@ export async function plineWithContinuation(msg, { noRepeat = false, urgent = fa
         // keeps WIN_STOP set through the following survival question.
         if (game.nhDisplay)
             game.nhDisplay.stoppedTopline = fits && !restarts ? `${stopped}  ${msg}` : msg;
-        game._lastPlineMessage = msg;
         if (!restarts)
-            return;
+            return null;
         game._suppressMessagesUntilInput = false;
-        await setTopline(msg);
-        return wraps ? await pageTopline(msg) : null;
+        replaceTopline(msg);
+        return wraps ? await pageTopline(msg, paging) : null;
     }
     let dismissal;
     if (!pending) {
-        await setTopline(msg);
+        replaceTopline(msg);
         dismissal = wraps
-            ? await pageTopline(msg, { urgent }) : null;
+            ? await pageTopline(msg, paging) : null;
     }
     else if (!msg.startsWith('You die')
         && visibleLength(msg) + visibleLength(pending) + 3 < columns - 8) {
-        await setTopline(`${pending}  ${msg}`);
+        replaceTopline(`${pending}  ${msg}`);
+        dismissal = null;
     }
     else {
-        dismissal = await pageTopline(pending, { urgent });
+        dismissal = await pageTopline(pending, paging);
+        // xwaitforspace() replaces dismiss_more with 1 on Escape.
+        if (dismissal === 27)
+            paging.dismissKey = 1;
         // Escape suppresses later lines, not the line which forced this pager.
-        await setTopline(msg);
+        replaceTopline(msg);
         if (wraps)
-            dismissal = await pageTopline(msg, { urgent });
+            dismissal = await pageTopline(msg, paging);
     }
-    // C pline.c tracks the last individual message, not the joined tty line.
-    game._lastPlineMessage = msg;
     return dismissal;
 }
 function writeRawText(text) {

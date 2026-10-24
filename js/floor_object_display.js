@@ -156,8 +156,12 @@ export async function showFloorPile(objects, pickedSome = false, featureDescript
     // Native formats into a hidden window. Finish naming reports before
     // painting the pile or retaining the map that its dismissal restores.
     await publishDeferredImpossibles();
-    if (game._pending_message)
+    if (game._pending_message) {
         await displayMessageWindow();
+        // tty_display_nhwindow() clears WIN_MESSAGE before a corner window,
+        // even when WIN_STOP prevented acknowledging its remaining text.
+        clearMessageWindow();
+    }
     const underlay = snapshotMenuUnderlay();
     const content = [
         ...(featureDescription ? [featureDescription, ''] : []),

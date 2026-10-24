@@ -5,7 +5,7 @@ import { FOUNTAIN, NO_MINVENT, PANICLOG } from '../js/const.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { FUZZER_IMPOSSIBLE_PANIC, impossible } from '../js/diagnostics.js';
-import { bot, moreUntilDismissed } from '../js/display.js';
+import { bot, flush_screen, moreUntilDismissed, plineWithContinuation } from '../js/display.js';
 import { containerContents } from '../js/container_contents.js';
 import { loseHeroHp } from '../js/hero_damage.js';
 import { PanicTermination } from '../js/panic_termination.js';
@@ -14,11 +14,12 @@ import { LEASH, POT_HEALING, SACK, TIN, TIN_OPENER } from '../js/object_data.js'
 import { addCreatedObjectToContainer } from '../js/object_container.js';
 import { useTinOpener } from '../js/tin.js';
 import { quoteShopGoods } from '../js/shop_price_quote.js';
+import { SELL_DELIBERATE, SELL_NORMAL, sellHeroDroppedObject, setSellDisposition } from '../js/shop_sell.js';
 import { addInventoryObject, floorObject, knownObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { freshPlayableRoom } from './support/playable-room.js';
-import { createStaffedShop } from './support/shop.js';
+import { createStaffedShop, setShopkeeperGold } from './support/shop.js';
 
 function visibleText() {
     return requireGameDisplay(game).grid.map(row => row.map(cell => cell.ch).join('')).join('\n');
@@ -72,34 +73,41 @@ void test('a leash attached to a missing monster reports impossible() before the
     assert.deepEqual(loggedReasons(), ['leashed monster #4242 not found']);
 });
 
-void test('a missing leash stays attached while its impossible() report awaits acknowledgment', async () => {
-    freshPlayableRoom();
-    game.program_state.something_worth_saving = true;
-    const leash = await addInventoryObject(LEASH, { leashmon: 4242 });
+void test('a credit offer reports a missing leash once while shortening its long name', async () => {
+    freshPlayableRoom({ flags: { verbose: false } });
+    game.storage = memoryStorage();
+    const name = 'a keepsake from the long journey through the mountains and sea';
+    const leash = await floorObject(LEASH, game.u.ux, game.u.uy, {
+        leashmon: 4242, oextra: { oname: name },
+    });
+    const { shopkeeper } = await createStaffedShop();
+    await setShopkeeperGold(shopkeeper, 0);
     const input = resetInputState();
-    let diagnosticPages = 0;
-    let sawMenu = false;
+    const screens: string[] = [];
     input.display = {
         readKey(): Promise<number> {
             const screen = visibleText();
-            if (/leashed monster #4242 not found|Program in disorder!/.test(screen)) {
-                diagnosticPages++;
-                assert.equal(leash.leashmon, 4242,
-                    'doname detaches the leash only after impossible() finishes');
-            }
-            if (screen.includes('an uncursed leash')) {
-                sawMenu = true;
-                assert.equal(leash.leashmon, 0, 'the inventory follows the completed repair');
-            }
-            return Promise.resolve(screen.includes('--More--') ? 32 : 27);
+            screens.push(screen);
+            assert.ok(screens.length <= 16, 'too many credit-offer key requests');
+            return Promise.resolve(screen.includes('--More--') ? 32 : 'n'.charCodeAt(0));
         },
     };
+    setSellDisposition(SELL_DELIBERATE);
+    try {
+        await sellHeroDroppedObject(leash, game.u.ux, game.u.uy);
+    } finally {
+        setSellDisposition(SELL_NORMAL);
+    }
 
-    await rhack('i'.charCodeAt(0));
-
-    assert.ok(diagnosticPages > 0, 'the impossible() report must request acknowledgment');
-    assert.equal(sawMenu, true);
+    const diagnostic = firstScreenIndex(screens, /leashed monster #4242 not found/);
+    const question = firstScreenIndex(screens, /Will you accept .*leash named a keepsa\.\.\.\?/s);
+    assert.ok(diagnostic < question, 'the diagnostic precedes the shortened credit offer');
+    assert.deepEqual(loggedReasons(), ['leashed monster #4242 not found']);
     assert.equal(leash.leashmon, 0);
+    assert.equal(leash.oextra?.oname, name);
+    assert.equal(leash.where, 'floor');
+    assert.equal(leash.no_charge, true);
+    assert.equal(shopkeeper.eshk.credit ?? 0, 0);
 });
 
 void test('dip reports a missing leash once before shortening its long name', async () => {
@@ -271,6 +279,39 @@ void test('a singleton leash choice is read after its impossible() report, not o
     assert.match(screens.at(-1) ?? '', new RegExp(`${letter} - an uncursed leash\\.`),
         'the selection key is read with the choice still shown');
 });
+
+for (const problem of ['missing leash', 'missing bill']) {
+    void test(`Escape during a ${problem} report suppresses the singleton choice`, async () => {
+        freshPlayableRoom();
+        game.program_state.something_worth_saving = true;
+        const item = problem === 'missing leash'
+            ? await addInventoryObject(LEASH, { leashmon: 4242 })
+            : await addInventoryObject(POT_HEALING, { unpaid: true });
+        const input = resetInputState();
+        const screens: string[] = [];
+        input.display = {
+            readKey(): Promise<number> {
+                const screen = visibleText();
+                screens.push(screen);
+                assert.ok(screens.length <= 8, 'too many singleton key requests');
+                return Promise.resolve(screen.includes('Program in disorder!') ? 27 : 32);
+            },
+        };
+
+        const selected = await selectInventoryObject({ letters: item.invlet });
+
+        firstScreenIndex(screens, problem === 'missing leash'
+            ? /leashed monster #4242 not found/ : /unpaid_cost: object wasn't on any bill\./);
+        firstScreenIndex(screens, /Program in disorder!/);
+        assert.equal(selected.key, 0);
+        assert.doesNotMatch(screens.join('\n'), /[a-z] - an uncursed/,
+            'the stopped message window does not draw or ask about the choice');
+        await plineWithContinuation('You keep your belongings.');
+        await flush_screen(1);
+        assert.match(visibleText(), /You keep your belongings\./,
+            'finishing the singleton restores ordinary output');
+    });
+}
 
 void test('container contents report a missing leash before displaying the window after Escape', async () => {
     freshPlayableRoom();

@@ -12,7 +12,6 @@ import {
 import { heroHandName } from './body_parts.js';
 import { makePlural } from './object_grammar.js';
 import { plineWithContinuation as pline } from './display.js';
-import { publishDeferredImpossibles } from './diagnostics.js';
 import { heroCanReachFloor } from './floor_reach.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { chooseInventoryObject, getobj } from './inventory_prompt.js';
@@ -39,7 +38,7 @@ export async function dip({
     if (object !== 'hands' && await reportCoveredEquipment(object)) { game.context.move = 0; return; }
     const location = game.level.requireAt(game.u.ux, game.u.uy);
     let declinedSource = false;
-    const description = object === 'hands' ? `your ${makePlural(heroHandName())}` : await dipTargetDescription(object);
+    const description = object === 'hands' ? `your ${makePlural(heroHandName())}` : dipTargetDescription(object);
     const target = game.flags.verbose ? description : dipTargetPronoun(object);
     if (!game.iflags.menu_requested && heroCanReachFloor(game) && location.typ === FOUNTAIN) {
         if (await promptYesNo(`Dip ${target} into the fountain?`, 'n') === 'y') {
@@ -152,12 +151,9 @@ function dipTargetPronoun(object: DipTarget): string {
         || slot === 'uarmg' || slot === 'uarmf' ? 'them' : 'it';
 }
 
-async function dipTargetDescription(object: GameObject): Promise<string> {
+function dipTargetDescription(object: GameObject): string {
     observeObjectForNaming(object);
     const full = inventoryItemDescription(object);
-    // Native doname() finishes its diagnostic and leash repair before
-    // short_oname() retries with fewer attributes.
-    await publishDeferredImpossibles();
     if (full.length <= 49) return full;
     const shortened = { ...object, bknown: false, rknown: false,
         greased: false, oeroded: 0, oeroded2: 0 };

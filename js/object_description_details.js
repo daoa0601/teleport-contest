@@ -58,11 +58,10 @@ function describeTool(item, details, known, state) {
             })})`;
         }
         else {
-            // find_mid() skips DEADMONSTER, so a dead target is not found.
-            // Native keeps the stale link through impossible()'s pagers.
-            deferImpossible(`leashed monster #${item.leashmon} not found`, state, () => {
-                item.leashmon = 0;
-            });
+            // Repair before a name-shortening retry can report the same link.
+            // deferImpossible() still throws before repair in panic mode.
+            deferImpossible(`leashed monster #${item.leashmon} not found`, state);
+            item.leashmon = 0;
         }
         return;
     }

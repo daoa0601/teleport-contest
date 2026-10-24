@@ -32,15 +32,10 @@ export interface MonsterHelplessnessReason {
     text: string;
 }
 
-export interface DeferredImpossible {
-    reason: string;
-    afterReport: (() => void) | null;
-}
-
 export interface ProgramState {
     beyond_savefile_load?: boolean | number;
-    // Formatter reports and state changes that follow their acknowledgment.
-    deferred_impossibles?: DeferredImpossible[];
+    // Text awaiting publication from synchronous name formatters.
+    deferred_impossibles?: string[];
     gameover?: boolean;
     in_docrt?: boolean | number;
     in_moveloop?: boolean;

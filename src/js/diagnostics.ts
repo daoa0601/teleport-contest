@@ -63,9 +63,7 @@ export async function impossible(reason: string, { state = game }: { state?: Gam
 // unpaid_cost()) builds text. Native logs and prints before the formatter
 // returns, so its caller's message or window always follows the diagnostic.
 // Log now and print before the next message, window, or keystroke.
-export function deferImpossible(
-    reason: string, state: GameState = game, afterReport: (() => void) | null = null,
-): void {
+export function deferImpossible(reason: string, state: GameState = game): void {
     reason = diagnosticReason(reason);
     paniclog('impossible', reason, state);
     // Native panics here, before the formatter's next statement.
@@ -73,7 +71,7 @@ export function deferImpossible(
         state.program_state.in_impossible = true;
         throw new FormatterPanic(reason);
     }
-    (state.program_state.deferred_impossibles ??= []).push({ reason, afterReport });
+    (state.program_state.deferred_impossibles ??= []).push(reason);
 }
 
 export async function publishDeferredImpossibles(state: GameState = game): Promise<void> {
@@ -82,9 +80,8 @@ export async function publishDeferredImpossibles(state: GameState = game): Promi
     const pending = state.program_state.deferred_impossibles;
     if (!pending?.length) return;
     state.program_state.deferred_impossibles = [];
-    for (const { reason, afterReport } of pending) {
+    for (const reason of pending) {
         await reportImpossible(reason, state, { logged: true });
-        afterReport?.();
     }
 }
 
