@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { newsym, terrain_glyph } from '../js/display.js';
 import { selectMapPosition } from '../js/getpos.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
@@ -35,5 +36,17 @@ void test('automatic description resumes after the target-menu toggle notice is 
         { prompt: /floor of a room/, keys: '.' },
     ]);
     assert.equal(game.iflags.getloc_usemenu, true);
+});
+void test('travel descriptions reject unseen stone even when the hero passes through walls', async () => {
+    const level = freshObjectRoom({ hero: { passesWalls: true }, iflags: { getloc_travelmode: true } });
+    const stone = level.requireAt(17, 10);
+    stone.seenv = 0;
+    stone.remembered_glyph = terrain_glyph(stone, 17, 10);
+    newsym(17, 10);
+    const input = resetInputState();
+    input.feed('l');
+    await answerPrompts(selectMapPosition({
+        start: { x: 16, y: 10 }, prompt: 'Pick a location.', goal: 'a location',
+    }), input, [{ prompt: /\(no travel path\)/, keys: '.' }]);
 });
 //# sourceMappingURL=getpos_autodescribe.test.js.map
