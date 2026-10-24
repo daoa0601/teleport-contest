@@ -120,6 +120,4 @@ export function rnz(i) {
         _rngLog.push(`rnz(${i})=${x}`);
     return x;
 }
-export const c_d = d;
-export const lua_d = d;
 //# sourceMappingURL=rng.js.map
