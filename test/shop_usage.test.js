@@ -4,7 +4,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { rhack } from '../js/cmd.js';
 import { A_CHA } from '../js/const.js';
-import { pline } from '../js/display.js';
+import { clearMessageWindow, pline } from '../js/display.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { BAG_OF_TRICKS, MAGIC_LAMP, OIL_LAMP, SPE_FORCE_BOLT, WAN_LIGHT, } from '../js/object_data.js';
@@ -26,7 +26,7 @@ async function pickUpMerchandise(type, properties = {}, charisma = 12) {
     input.beforeRead = () => input.feed(' ');
     await rhack(','.charCodeAt(0));
     assert.equal(object.unpaid, true);
-    await pline('');
+    clearMessageWindow();
     return { object, shopkeeper, input };
 }
 void test('studying charges the rounded partial price and leaves the book on its bill', async () => {
@@ -41,7 +41,7 @@ void test('studying charges the rounded partial price and leaves the book on its
     assert.equal(game.inventory.includes(book), true);
     assert.equal(bill.useup, false);
     assert.match(game._pending_message, /You owe 54 zorkmids\./u);
-    await pline('');
+    clearMessageWindow();
     await chargeUnpaidUsage(book);
     assert.equal(shopkeeper.eshk.debit, 108);
     assert.match(game._pending_message, /You owe an additional 54 zorkmids\./u);
@@ -141,7 +141,7 @@ for (const [species, insult] of [['quasit', 'beast'], ['vrock', 'fiend']]) {
         const { object: book, shopkeeper } = await pickUpMerchandise(SPE_FORCE_BOLT);
         requirePlayingGame(game);
         await polymonHero(MONSTER_NAME.indexOf(species));
-        await pline('');
+        clearMessageWindow();
         initRng(8n);
         await chargeUnpaidUsage(book);
         assert.equal(shopkeeper.eshk.debit, 80);

@@ -2,7 +2,7 @@ import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { rhack } from '../js/cmd.js';
-import { pline } from '../js/display.js';
+import { clearMessageWindow } from '../js/display.js';
 import { game } from '../js/gstate.js';
 import { getHungry } from '../js/hunger.js';
 import { putHeroToSleep } from '../js/hero_sleep.js';
@@ -26,7 +26,7 @@ void test('paralysis does not prevent the hero from noticing blindness', async (
     freshObjectRoom();
     requireFixtureGame(game);
     await applySupportedPotionVapor({ potion: await knownObject(POT_PARALYSIS) });
-    await pline('');
+    clearMessageWindow();
     await applySupportedPotionVapor({ potion: await knownObject(POT_BLINDNESS) });
     assert.ok((game.u.blindTurns ?? 0) > 0);
     assert.match(game._pending_message, /It suddenly gets dark/u);

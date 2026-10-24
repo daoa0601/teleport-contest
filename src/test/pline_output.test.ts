@@ -37,3 +37,14 @@ void test('a NUL ends a native message before paging or remembering it', async (
     assert.match(visibleText(), /A bell rings\./);
     assert.doesNotMatch(visibleText(), /hidden suffix|A bell rings\.  A bell rings\./);
 });
+
+void test('an empty pline leaves the unread message available', async () => {
+    freshPlayableRoom();
+    await pline('A bell rings.');
+
+    await pline('');
+    await flush_screen(1);
+
+    assert.match(visibleText(), /A bell rings\./);
+});
+

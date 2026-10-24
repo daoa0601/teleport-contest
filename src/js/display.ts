@@ -2949,10 +2949,6 @@ export async function displayMessageWindow(): Promise<number | null> {
 // pline() producers.
 // C pline.c:vpline() always reaches tty through update_topl().
 export async function pline(msg: string): Promise<void> {
-    if (!msg) {
-        await setTopline(msg);
-        return;
-    }
     await plineWithContinuation(msg);
 }
 
