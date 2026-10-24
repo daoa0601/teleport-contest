@@ -242,7 +242,7 @@ export async function showDisclosureOverlay(lines: readonly TextMenuEntry[], {
     putLine(left, content.length, marker);
 
     const cursorOffset = marker === '(end)' ? marker.length + 1 : marker.length;
-    d.setCursor(Math.min(d.cols - 1, left + cursorOffset), content.length);
+    d.setCursor(left + cursorOffset, content.length);
     let key: number;
     do key = await nhgetch();
     while (![27, 32, 10, 13].includes(key));

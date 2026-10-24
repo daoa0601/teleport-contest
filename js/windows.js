@@ -134,7 +134,7 @@ export async function showDisclosureOverlay(lines, { marker = '--More--', restor
         putLine(textLeft, row, line.text, line.attr);
     putLine(left, content.length, marker);
     const cursorOffset = marker === '(end)' ? marker.length + 1 : marker.length;
-    d.setCursor(Math.min(d.cols - 1, left + cursorOffset), content.length);
+    d.setCursor(left + cursorOffset, content.length);
     let key;
     do
         key = await nhgetch();
