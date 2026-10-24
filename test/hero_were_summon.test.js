@@ -24,6 +24,19 @@ void test('a werewolf uses #monster to call tame wolves', async () => {
     assert.equal(game.u.uen, 20);
     assert.equal(game.context.move, 1);
 });
+void test('summoned werewolf allies respect monster-generation exclusion zones', async () => {
+    const level = freshWerewolfAbilityRoom(30);
+    requireFixtureGame(game);
+    level.exclusionZones.push({
+        type: 'monster-generation', lx: 9, ly: 9, hx: 11, hy: 11,
+    });
+    await runMonsterAbilityCommand(' '.repeat(12));
+    const helpers = level.monsters.filter(monster => (monster.mtame ?? 0) > 0);
+    assert.ok(helpers.length > 0, 'the pack can arrive beyond the excluded area');
+    for (const helper of helpers) {
+        assert.ok(helper.mx < 9 || helper.mx > 11 || helper.my < 9 || helper.my > 11, `summoned ally entered the excluded area at ${helper.mx},${helper.my}`);
+    }
+});
 void test('a were-creature without enough energy cannot call help', async () => {
     const level = freshWerewolfAbilityRoom(9);
     requireFixtureGame(game);

@@ -143,6 +143,20 @@ void test('losexp preserves the source maximum-HP floor', async () => {
     ], [1, 1, 10, 0, 0]);
 });
 
+void test('level drain applies the HP floor before subtracting the lost level health', async () => {
+    freshObjectRoom({ hero: {
+        ulevel: 2, uhp: 20, uhpmax: 20,
+        uhpinc: [0, 11],
+    } });
+    requireFixtureGame(game);
+
+    await loseHeroExperience(null, { publish: async () => undefined });
+
+    assert.equal(game.u.ulevel, 1);
+    assert.equal(game.u.uhpmax, 10);
+    assert.equal(game.u.uhp, 1);
+});
+
 for (const lifesaving of [false, true] as const) {
     void test(`named level-one drain ${lifesaving ? 'resumes HP and power loss after life saving' : 'is fatal before HP and power loss'}`, async () => {
         freshObjectRoom({ hero: {
