@@ -124,7 +124,7 @@ async function reportSubset(items, inuse = true, accessoryLabel = 'Accessories')
         const forceMenu = game.flags.force_invmenu;
         game.flags.force_invmenu = false;
         try {
-            key = (await selectInventoryObject({ items: candidates })).key;
+            key = (await selectInventoryObject({ letters: candidates.map(object => object.invlet).join('') })).key;
         }
         finally {
             if (forceMenu === undefined)

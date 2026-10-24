@@ -99,7 +99,7 @@ for (const mode of ['forced inventory', 'menu prefix', 'wizard identification'] 
         }
         const input = resetInputState();
 
-        const selected = await answerPrompts(selectInventoryObject({ items: [dagger] }), input, [
+        const selected = await answerPrompts(selectInventoryObject({ letters: dagger.invlet }), input, [
             { prompt: /\(end\)/, keys: '\x1b' },
         ]);
 
@@ -129,7 +129,7 @@ void test('a nonselectable filtered item prints its description without asking f
     const food = await addInventoryObject(FOOD_RATION, { bknown: false });
     const input = resetInputState();
 
-    const selected = await answerPrompts(selectInventoryObject({ items: [food], pickMode: PICK_NONE }), input, []);
+    const selected = await answerPrompts(selectInventoryObject({ letters: food.invlet, pickMode: PICK_NONE }), input, []);
     await flush_screen(1);
 
     assert.equal(selected.key, 0);

@@ -154,7 +154,7 @@ async function traditionalCategories(combo, selectOff) {
         if (!response.includes('i'))
             break;
         const underlay = snapshotMenuUnderlay();
-        const inventory = await selectInventoryObject({ items: worn });
+        const inventory = await selectInventoryObject({ letters: worn.map(object => object.invlet).join('') });
         restoreMap(underlay);
         if (inventory.key === 27)
             return null;

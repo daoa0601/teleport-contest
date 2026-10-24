@@ -186,14 +186,17 @@ async function chooseGetobjLetter(word, prompt, classify, { allowCount, allowNon
             // (headed by '-') when nothing is suggested; '*' lists all.
             const useAlternates = key === QUESTION && !suggested.length
                 && (downplayed.length > 0 || handsDownplayed);
-            const items = key === ASTERISK ? undefined : useAlternates ? downplayed : suggested;
+            const items = useAlternates ? downplayed : suggested;
+            const letters = key === QUESTION
+                ? `${useAlternates && handsDownplayed ? '-' : ''}${items.map(object => object.invlet).join('')}`
+                : undefined;
             const extraChoice = allowNone && (key === ASTERISK
                 || useAlternates && handsDownplayed || handsSuggested) ? handsText : null;
-            const letterCount = (items?.length ?? 0) + (useAlternates && handsDownplayed ? 1 : 0);
-            const listed = items !== undefined && letterCount > 0;
+            const letterCount = letters?.length ?? 0;
+            const listed = letterCount > 0;
             answered = true;
             const selection = await selectInventoryObject({
-                ...(items?.length ? { items } : {}),
+                ...(letters === undefined ? {} : { letters }),
                 ...(extraChoice ? { extraChoice } : {}),
                 ...(forcedMenu ? {
                     title: `What do you want to ${word}?`,
