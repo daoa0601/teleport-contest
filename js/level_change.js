@@ -270,8 +270,11 @@ export async function gotoLevel(targetDepth, { arrival = 'random', ladder = fals
     const questArrival = await prepareQuestArrival({
         fromDepth: oldDepth,
     });
+    // do.c suppresses the summons when arriving through the portal back
+    // from the quest (In_quest(&u.uz0)); every other arrival delivers it,
+    // cached level or not.
     const questPortalCall = arrival === 'portal' ? null
-        : await prepareMainQuestPortalCall({ firstVisit: !cached });
+        : await prepareMainQuestPortalCall();
     const oldDungeon = game.dungeons?.[oldDepth.dnum ?? 0];
     const newDungeon = game.dungeons?.[newDepth.dnum ?? 0];
     recordDungeonEntryAchievements(game, oldDepth, newDepth);

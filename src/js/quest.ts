@@ -265,13 +265,12 @@ export async function prepareQuestArrival({ fromDepth }: {
     return null;
 }
 
-// C do.c main-dungeon arrival branch: reaching the Quest entrance for the
-// first time invokes com_pager("quest_portal").  Loading quest.lua consumes
-// nhlib's alignment shuffle before its four plines collide with any pending
-// level-teleport message.
-export async function prepareMainQuestPortalCall({ firstVisit = true } = {},
-    g: GameState = game) {
-    if (!firstVisit) return null;
+// C do.c main-dungeon arrival branch: every arrival at the Quest entrance
+// level from outside the Quest branch delivers the leader's summons
+// (quest_portal first, then quest_portal_again, or _demand for Rogues).
+// Loading quest.lua consumes nhlib's alignment shuffle before its plines
+// collide with any pending level-teleport message.
+export async function prepareMainQuestPortalCall(g: GameState = game) {
     const event = g.u?.uevent || (g.u.uevent = {});
     const status = ensureQuestStatus(g);
     if (event.qcompleted || event.qexpelled || status.leader_is_dead)
