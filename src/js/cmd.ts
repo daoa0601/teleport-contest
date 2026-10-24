@@ -136,6 +136,7 @@ import { confirmHeroStep } from './hero_step_confirmation.js';
 import { monsterPassesBars } from './monster_movement_traits.js';
 import { continueChewingTerrain, heroCanEnterIronBars } from './iron_bars_meal.js';
 import { strikeIronBarsWithWeapon } from './projectile_bars.js';
+import { fightSeenWebWithForce } from './hero_web_fight.js';
 import { wormCrossesBetween } from './monster_worm.js';
 import {
     floorObjectDescription,
@@ -7242,6 +7243,8 @@ async function domoveCore(dx: number, dy: number): Promise<boolean> {
         await strikeIronBarsWithWeapon(weapon, newx, newy, game);
         return true;
     }
+
+    if (await fightSeenWebWithForce(newx, newy, game)) return true;
 
     if (await fightEmptyDestination(newx, newy))
         return true;
