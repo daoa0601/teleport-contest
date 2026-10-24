@@ -273,9 +273,23 @@ export async function gotoLevel(targetDepth, { arrival = 'random', ladder = fals
         && game.valley_level
         && newDepth.dnum === game.valley_level.dnum
         && newDepth.dlevel === game.valley_level.dlevel;
-    if (game._restoredBones) {
+    // A bones level runs the same arrival block as any other level:
+    // do.c:goto_level() delivers the deferred message and the Valley
+    // lines (do.c:1854-1872) before familiar_level_msg() (do.c:1875) and
+    // the remaining branch messages.  The special-level message never
+    // repeats here: gl.lev_message is transient, so C has none on a
+    // level reloaded from bones.
+    const bonesArrival = game._restoredBones;
+    if (bonesArrival) {
         if (postMessage) {
             await plineWithContinuation(postMessage);
+            postMessage = '';
+            await flushPendingTopline();
+        }
+        if (enteredValley) {
+            await plineWithContinuation('You arrive at the Valley of the Dead...');
+            await plineWithContinuation('The odor of burnt flesh and decay pervades the air.');
+            await plineWithContinuation('You hear groans and moans everywhere.');
         }
         let familiarMessage = '';
         // bones_include_name() matches through the hero name's trailing hyphen.
@@ -294,8 +308,6 @@ export async function gotoLevel(targetDepth, { arrival = 'random', ladder = fals
             ];
             familiarMessage = familiarMessages[rn2(4)] ?? '';
         }
-        if (postMessage)
-            await flushPendingTopline();
         if (familiarMessage)
             await pline(familiarMessage);
         game._restoredBones = false;
@@ -337,12 +349,14 @@ export async function gotoLevel(targetDepth, { arrival = 'random', ladder = fals
         if (!cached && Is_rogue_level(newDepth)) {
             await plineWithContinuation('You enter what seems to be an older, more primitive world.');
         }
-        const specialMessages = game._activeSpecialLevel?.specialMessages || [];
+        const specialMessages = bonesArrival
+            ? []
+            : game._activeSpecialLevel?.specialMessages || [];
         if (specialMessages.length) {
             for (const line of specialMessages)
                 await plineWithContinuation(line);
         }
-        if (enteredValley) {
+        if (!bonesArrival && enteredValley) {
             // do.c:goto_level() announces the first crossing into Gehennom
             // after the destination redraw.  Ordinary topline continuation
             // owns the two acknowledgement boundaries between these lines.
