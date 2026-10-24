@@ -575,6 +575,19 @@ void test('the full options menu displays the disabled bones preference', async 
     const row = await fullOptionRow('bones');
     assert.ok(row.includes('[false]'), row);
 });
+for (const { symset, expected } of [
+    { symset: null, expected: '[default]' },
+    { symset: 'DECgraphics', expected: '[DECgraphics, active, handler=DEC]' },
+    { symset: 'plain', expected: '[plain, active]' },
+]) {
+    void test(`the full options menu displays the ${symset ?? 'default'} symbol set state`, async () => {
+        freshObjectRoom();
+        requirePlayingGame(game);
+        game.symset = symset;
+        const row = await fullOptionRow('symset');
+        assert.ok(row.includes(expected), row);
+    });
+}
 for (const { preference, description } of [
     { preference: 'c', description: 'cat' },
     { preference: 'd', description: 'dog' },

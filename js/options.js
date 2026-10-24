@@ -22,7 +22,7 @@ import { getLine } from './query.js';
 import { changeInventoryOrder, inventoryOrderSymbols } from './object_sort.js';
 import { chooseDiscoverySort, discoverySortDescription } from './o_init.js';
 import { ATR_INVERSE, restoreMenuUnderlay, showInventoryWindow, showMultiSelectWindow, snapshotMenuUnderlay } from './windows.js';
-import { BUFSZ, CLR_MAX, COLNO, MENU_FULL, MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPINVERT, PICK_ONE, PL_NSIZ, PL_PSIZ, WARNCOUNT, PARANOID_AUTOALL, PARANOID_BONES, PARANOID_BREAKWAND, PARANOID_CONFIRM, PARANOID_DIE, PARANOID_EATING, PARANOID_HIT, PARANOID_PRAY, PARANOID_QUIT, PARANOID_REMOVE, PARANOID_SWIM, PARANOID_TRAP, PARANOID_WERECHANGE, } from './const.js';
+import { BUFSZ, CLR_MAX, COLNO, Is_rogue_level, MENU_FULL, MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPINVERT, PICK_ONE, PL_NSIZ, PL_PSIZ, WARNCOUNT, PARANOID_AUTOALL, PARANOID_BONES, PARANOID_BREAKWAND, PARANOID_CONFIRM, PARANOID_DIE, PARANOID_EATING, PARANOID_HIT, PARANOID_PRAY, PARANOID_QUIT, PARANOID_REMOVE, PARANOID_SWIM, PARANOID_TRAP, PARANOID_WERECHANGE, } from './const.js';
 // optlist.h aliases that reach parseoptions()'s alias pass. "customsymbols"
 // already matches its canonical name first.
 const CONFIGURATION_ALIASES = new Set([
@@ -1590,6 +1590,17 @@ function preferredPetDescription() {
         default: return 'random';
     }
 }
+// options.c:optfn_symset() get_val: the loaded set's name, ", active" while
+// the primary set is current, and the handling the set declared. Only the
+// DECgraphics set is modeled, so only it reports a handler.
+function symsetMenuValue() {
+    const name = game.symset;
+    if (!name)
+        return 'default';
+    const active = !Is_rogue_level(game.u?.uz) ? ', active' : '';
+    const handling = /^DECgraphics$/i.test(name) ? ', handler=DEC' : '';
+    return `${name}${active}${handling}`;
+}
 function requestMenuSections() {
     const { role, race, gender, alignment } = requestMenuIdentity();
     const choice = (name, text) => ({
@@ -1735,7 +1746,7 @@ function requestMenuSections() {
                 choice('statushilites', "statushilites           [0 (off: don't highlight status fields)]"),
                 choice('statuslines', 'statuslines             [2]'),
                 choice('suppress_alert', 'suppress_alert          [(none)]'),
-                choice('symset', `symset                  [${game.symset || 'default'}, active, handler=DEC]`),
+                choice('symset', `symset                  [${symsetMenuValue()}]`),
                 choice('versinfo', `versinfo                [${compoundMenuValue('versinfo')}]`),
                 choice('whatis_coord', `whatis_coord            [${compoundMenuValue('whatis_coord')}]`),
                 choice('whatis_filter', `whatis_filter           [${compoundMenuValue('whatis_filter')}]`),
