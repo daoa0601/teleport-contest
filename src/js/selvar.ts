@@ -22,7 +22,7 @@ export interface Selection {
     hei: number;
     bounds_dirty: boolean;
     bounds: SelectionBounds;
-    map: Uint8Array;
+    map: Int8Array;
 }
 export interface SelectionArea {
     xstart: number;
@@ -44,7 +44,7 @@ export function selection_new(): Selection {
         hei: ROWNO,
         bounds_dirty: false,
         bounds: { lx: COLNO, ly: ROWNO, hx: 0, hy: 0 },
-        map: new Uint8Array(COLNO * ROWNO).fill(1),
+        map: new Int8Array(COLNO * ROWNO).fill(1),
     };
 }
 

@@ -277,3 +277,34 @@ void test('random lines narrow roughness to the native signed-byte range before 
     assert.equal(state.getGlobal('bottom'), 5);
     assert.equal(state.getGlobal('count'), 11);
 });
+
+void test('selection point values retain native signed character storage and bitwise operations', async t => {
+    freshGame();
+    const state = new LuaState({
+        selection: createSelectionBindings({ xstart: 0, ystart: 0, width: 80, height: 21 }),
+    });
+    t.after(() => state.destroy());
+
+    await state.executeAsync(`
+        local point = selection.new()
+        point:set(10, 4, 127)
+        value = point:get(10, 4)
+        cloned = point:clone():get(10, 4)
+        negated = (-point):get(10, 4)
+        local left, right = selection.new(), selection.new()
+        left:set(10, 4, 3)
+        right:set(10, 4, 5)
+        union = (left | right):get(10, 4)
+        intersection = (left & right):get(10, 4)
+        difference = (left - right):get(10, 4)
+        exclusive = (left ~ right):get(10, 4)
+    `);
+
+    assert.equal(state.getGlobal('value'), -129);
+    assert.equal(state.getGlobal('cloned'), -129);
+    assert.equal(state.getGlobal('negated'), 0);
+    assert.equal(state.getGlobal('union'), 7);
+    assert.equal(state.getGlobal('intersection'), 1);
+    assert.equal(state.getGlobal('difference'), 2);
+    assert.equal(state.getGlobal('exclusive'), 6);
+});

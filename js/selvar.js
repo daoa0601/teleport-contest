@@ -12,7 +12,7 @@ export function selection_new() {
         hei: ROWNO,
         bounds_dirty: false,
         bounds: { lx: COLNO, ly: ROWNO, hx: 0, hy: 0 },
-        map: new Uint8Array(COLNO * ROWNO).fill(1),
+        map: new Int8Array(COLNO * ROWNO).fill(1),
     };
 }
 export function selection_clear(selection, value) {
