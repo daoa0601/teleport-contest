@@ -3517,18 +3517,21 @@ async function bonesPrompt(message, displayLevel = null) {
     return String.fromCharCode(await nhgetch()).toLowerCase();
 }
 function eachTopLevelBonesObject(level, visit) {
-    for (const monster of level?.monsters || []) {
+    for (const monster of [...level.monsters].reverse()) {
         for (const object of monster.minvent || monster.inventory || [])
             visit(object);
     }
-    for (const column of level?.objects || []) {
-        for (const pile of column || []) {
-            for (const object of pile || [])
-                visit(object);
-        }
-    }
+    for (const object of bonesFloorObjects(level))
+        visit(object);
     for (const object of level?.buriedObjects || [])
         visit(object);
+}
+function bonesFloorObjects(level) {
+    const objects = [];
+    for (const column of level.objects)
+        for (const pile of column ?? [])
+            objects.push(...(pile ?? []));
+    return objects.sort((left, right) => (right._fobjOrder ?? 0) - (left._fobjOrder ?? 0));
 }
 function eachObjectInBonesGraph(level, visit) {
     const walk = (object) => {
@@ -3556,17 +3559,17 @@ function resetBonesObjectList(objects, mode, ghostly = mode === 'save') {
     return kept;
 }
 function resetBonesObjects(level, mode) {
-    for (const monster of level?.monsters || []) {
+    for (const monster of [...level.monsters].reverse()) {
         const inventory = resetBonesObjectList(monster.minvent || monster.inventory, mode);
         monster.minvent = monster.inventory = inventory;
         monster.hasInventory = inventory.length > 0;
     }
-    for (let x = 0; x < (level?.objects?.length || 0); x++) {
-        const column = level.objects[x];
+    const retained = new Set(resetBonesObjectList(bonesFloorObjects(level), mode));
+    for (const column of level.objects) {
         if (!column)
             continue;
         for (let y = 0; y < column.length; y++)
-            column[y] = resetBonesObjectList(column[y], mode);
+            column[y] = (column[y] ?? []).filter(object => retained.has(object));
     }
     level.buriedObjects = resetBonesObjectList(level?.buriedObjects, mode);
 }
@@ -3747,7 +3750,7 @@ async function renewBonesIdentities(level, fruits) {
         for (const content of object.contents || [])
             await renewObject(content);
     };
-    for (const monster of level?.monsters || []) {
+    for (const monster of [...level.monsters].reverse()) {
         const oldId = monster.m_id;
         monster.m_id = nextIdent();
         if (Number.isInteger(oldId) && oldId > 0)
@@ -3755,10 +3758,8 @@ async function renewBonesIdentities(level, fruits) {
         for (const object of monster.minvent || monster.inventory || [])
             await renewObject(object);
     }
-    for (const column of level?.objects || [])
-        for (const pile of column || [])
-            for (const object of pile || [])
-                await renewObject(object);
+    for (const object of bonesFloorObjects(level))
+        await renewObject(object);
     for (const object of level?.buriedObjects || [])
         await renewObject(object);
     for (const monster of level?.monsters || []) {

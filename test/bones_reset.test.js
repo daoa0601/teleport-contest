@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { CORPSTAT_INIT, NO_MINVENT } from '../js/const.js';
 import { decodeBonesPayload } from '../js/bones_validation.js';
+import { artifactByName, initializeArtifacts, nameArtifact } from '../js/artifacts.js';
 import { game, requireGameLevel } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { createCorpstatAt, mklev, saveBonesLevel } from '../js/mklev.js';
@@ -23,6 +24,7 @@ function bonesRoom(storage) {
     game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 10, bonetag: 'D' })];
     game.storage = storage;
     init_objects();
+    initializeArtifacts(game);
 }
 void test('a unique corpse in bones loses its revival and becomes a rotting doppelganger', async () => {
     const storage = memoryStorage();
@@ -77,5 +79,24 @@ void test('restoring bones discards in-use food on the floor and inside containe
     const objects = floorObjects(requireGameLevel());
     assert.equal(objects.some(object => object.otyp === FOOD_RATION), false);
     assert.equal(objects.find(object => object.otyp === CHEST)?.contents?.length, 0);
+});
+void test('the newest duplicate artifact on the bones floor retains its identity', async () => {
+    const storage = memoryStorage();
+    bonesRoom(storage);
+    const artifact = artifactByName('Grayswandir');
+    assert.ok(artifact);
+    const older = await floorObject(artifact.baseType, 12, 10);
+    assert.equal(nameArtifact(older, artifact), true);
+    await floorObject(artifact.baseType, 14, 10, {
+        oartifact: artifact.id, artifact: true, oname: artifact.name,
+        oextra: { oname: artifact.name },
+    });
+    assert.equal(saveBonesLevel(), true);
+    bonesRoom(storage);
+    pushKeys('yn');
+    await mklev();
+    const objects = floorObjects(requireGameLevel());
+    assert.equal(objects.find(object => object.ox === 14)?.oartifact, artifact.id);
+    assert.equal(objects.find(object => object.ox === 12)?.oartifact, 0);
 });
 //# sourceMappingURL=bones_reset.test.js.map
