@@ -45,7 +45,7 @@ function enclosingFunction(n) {
 // after its declaration. Only stable identifiers may be inlined or unified.
 const stableCache = new Map();
 function stableDeclaration(id) {
-    const symbol = checker.getSymbolAtLocation(id);
+    const symbol = resolve(id);
     const decl = symbol?.valueDeclaration;
     if (!decl || !(ts.isVariableDeclaration(decl) || ts.isParameter(decl))) return null;
     if (stableCache.has(decl)) return stableCache.get(decl);
@@ -83,41 +83,77 @@ function literalRange(n) {
     return null;
 }
 
-// `xs.length` is a constant when xs is a const array literal without spreads
-// whose every reference only indexes it or reads its length.
-const lengthCache = new Map();
-function fixedLength(n) {
-    if (!ts.isPropertyAccessExpression(n) || n.name.text !== 'length' || !ts.isIdentifier(strip(n.expression))) return null;
-    const symbol = checker.getSymbolAtLocation(strip(n.expression));
+function resolve(id) {
+    let symbol = checker.getSymbolAtLocation(id);
+    if (symbol && symbol.flags & ts.SymbolFlags.Alias) symbol = checker.getAliasedSymbol(symbol);
+    return symbol;
+}
+
+// A table is a const array literal without spreads that cannot change: its
+// declared type is readonly (lint rejects the casts that could bypass that),
+// or every reference only indexes it or reads its length.
+const tableCache = new Map();
+function tableOf(n) {
+    n = strip(n);
+    if (!ts.isIdentifier(n)) return null;
+    const symbol = resolve(n);
     const decl = symbol?.valueDeclaration;
     if (!decl || !ts.isVariableDeclaration(decl) || !decl.initializer || !(decl.parent.flags & ts.NodeFlags.Const)) return null;
     const init = strip(decl.initializer);
     if (!ts.isArrayLiteralExpression(init) || init.elements.some((e) => ts.isSpreadElement(e))) return null;
-    if (lengthCache.has(decl)) return lengthCache.get(decl);
-    let readOnly = true;
-    const visit = (m) => {
-        if (!readOnly) return;
-        if (ts.isIdentifier(m) && m !== decl.name && checker.getSymbolAtLocation(m) === symbol) {
-            const p = m.parent;
-            const indexed = ts.isElementAccessExpression(p) && p.expression === m
-                && !(ts.isBinaryExpression(p.parent) && p.parent.left === p
-                    && p.parent.operatorToken.kind >= ts.SyntaxKind.FirstAssignment
-                    && p.parent.operatorToken.kind <= ts.SyntaxKind.LastAssignment);
-            const length = ts.isPropertyAccessExpression(p) && p.expression === m && p.name.text === 'length';
-            if (!indexed && !length) readOnly = false;
+    if (tableCache.has(decl)) return tableCache.get(decl);
+    const declared = checker.getTypeAtLocation(decl.name);
+    let readOnly = !checker.isArrayType(declared) && !checker.isTupleType(declared) ? false
+        : checker.typeToString(declared).startsWith('readonly ');
+    if (!readOnly) {
+        readOnly = true;
+        const visit = (m) => {
+            if (!readOnly) return;
+            if (ts.isIdentifier(m) && m !== decl.name && resolve(m) === symbol) {
+                const p = m.parent;
+                const indexed = ts.isElementAccessExpression(p) && p.expression === m
+                    && !(ts.isBinaryExpression(p.parent) && p.parent.left === p
+                        && p.parent.operatorToken.kind >= ts.SyntaxKind.FirstAssignment
+                        && p.parent.operatorToken.kind <= ts.SyntaxKind.LastAssignment);
+                const length = ts.isPropertyAccessExpression(p) && p.expression === m && p.name.text === 'length';
+                const importing = ts.isImportSpecifier(p) || ts.isExportSpecifier(p);
+                if (!indexed && !length && !importing) readOnly = false;
+            }
+            ts.forEachChild(m, visit);
+        };
+        const exported = (ts.getCombinedModifierFlags(decl) & ts.ModifierFlags.Export) !== 0;
+        if (exported) {
+            for (const file of program.getSourceFiles()) if (path.relative(repo, file.fileName).startsWith('src/')) visit(file);
+        } else {
+            visit(enclosingFunction(decl) ?? decl.getSourceFile());
         }
-        ts.forEachChild(m, visit);
-    };
-    const statement = decl.parent.parent;
-    const exported = ts.isVariableStatement(statement)
-        && (ts.getCombinedModifierFlags(decl) & ts.ModifierFlags.Export) !== 0;
-    if (exported) {
-        for (const file of program.getSourceFiles()) if (path.relative(repo, file.fileName).startsWith('src/')) visit(file);
-    } else {
-        visit(enclosingFunction(decl) ?? decl.getSourceFile());
     }
-    lengthCache.set(decl, readOnly ? init.elements.length : null);
-    return lengthCache.get(decl);
+    const table = readOnly ? init.elements : null;
+    tableCache.set(decl, table);
+    return table;
+}
+
+// table[index], with the index known or not. Out-of-range reads are undefined
+// in JavaScript; the range fact assumes the index is in bounds.
+function tableRead(tableNode, indexNode, n, depth) {
+    const table = tableOf(tableNode);
+    if (!table) return null;
+    const index = term(indexNode, depth);
+    if ('num' in index && Number.isInteger(index.num) && index.num >= 0 && index.num < table.length) {
+        return term(table[index.num], depth);
+    }
+    const values = table.map((e) => term(e, depth));
+    if (!values.length || !values.every((v) => 'num' in v)) return null;
+    const nums = values.map((v) => v.num);
+    return { leaf: true, text: text(n), facts: [['range', Math.min(...nums), Math.max(...nums)]], data: true };
+}
+
+// requireMonsterData(table, i)-style accessors: <T>(table: readonly T[], i): T
+// that return table[i] or throw.
+function isTableAccessor(decl) {
+    if (!decl || !ts.isFunctionDeclaration(decl) || decl.typeParameters?.length !== 1 || decl.parameters.length !== 2) return false;
+    const t = decl.typeParameters[0].name.text;
+    return decl.type?.getText() === t && decl.parameters[0].type?.getText() === `readonly ${t}[]`;
 }
 
 const BITWISE = {
@@ -185,12 +221,26 @@ function term(n, depth = 0) {
             return term(decl.initializer, depth + 1);
         }
     }
-    const fixed = fixedLength(n);
-    if (fixed !== null) return { num: fixed };
+    if (ts.isPropertyAccessExpression(n) && n.name.text === 'length') {
+        const table = tableOf(n.expression);
+        if (table) return { num: table.length };
+    }
+    if (ts.isElementAccessExpression(n)) {
+        const read = tableRead(n.expression, n.argumentExpression, n, depth);
+        if (read) return read;
+    }
+    if (ts.isCallExpression(n) && n.arguments.length === 2
+        && isTableAccessor(checker.getResolvedSignature(n)?.getDeclaration())) {
+        const read = tableRead(n.arguments[0], n.arguments[1], n, depth);
+        if (read) return read;
+    }
     const facts = [];
     if (literal) facts.push(['range', literal.min, literal.max]);
     if (ts.isPropertyAccessExpression(n) && ['length', 'size'].includes(n.name.text)) facts.push(['nonneg']);
     const leaf = { leaf: true, text: text(n), facts };
+    if (ts.isPropertyAccessExpression(n) && ['lx', 'hx', 'ly', 'hy'].includes(n.name.text)) {
+        leaf.owner = ownerType(n.expression, depth);
+    }
     if (depth < SUMMARY_DEPTH) {
         if (ts.isCallExpression(n)) {
             const decl = checker.getResolvedSignature(n)?.getDeclaration();
@@ -271,6 +321,21 @@ function summarize(decl, depth) {
     }));
     summaries[key] = { name: decl.name ? decl.name.getText() : '(anonymous)', returns, callers };
     return key;
+}
+
+// The type of a record whose fields are read. A parameter of a non-escaping
+// function takes the type every direct caller passes, so a helper declared
+// over Rectangle still counts as a room helper when only rooms reach it.
+function ownerType(n, depth) {
+    n = strip(n);
+    const type = checker.typeToString(checker.getNonNullableType(checker.getTypeAtLocation(n)));
+    if (!ts.isIdentifier(n) || depth >= SUMMARY_DEPTH) return type;
+    const decl = stableDeclaration(n);
+    if (!decl || !ts.isParameter(decl) || enclosingFunction(n) !== decl.parent || escaped.has(decl.parent)) return type;
+    const index = decl.parent.parameters.indexOf(decl);
+    const owners = new Set((callsOf.get(decl.parent) ?? []).map((call) =>
+        call.arguments[index] ? ownerType(call.arguments[index], depth + 1) : 'undefined'));
+    return owners.size === 1 ? [...owners][0] : type;
 }
 
 function indexCalls() {

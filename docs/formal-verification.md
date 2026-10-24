@@ -129,23 +129,46 @@ for `d`, `n >= 0` and `x >= 1` unless `n = 0`) and whether the argument is an
 integer, since a fraction reaches `BigInt()` and throws.
 
 ```sh
-node verification/callsites/extract.mjs > .cache/rng-callsites.json   # ~10 s
+node verification/callsites/extract.mjs > .cache/rng-callsites.json   # ~12 s
 cd verification/equivalence && uv run ../callsites/check.py ../../.cache/rng-callsites.json   # ~7 s
 ```
 
 | Class | Sites | Meaning |
 |---|---|---|
-| constant | 1,963 | The argument alone is in the domain: literals, folded constants, constant array lengths, draw results |
+| constant | 1,985 | The argument alone is in the domain: literals, folded constants (including imported ones), lengths of readonly tables, draw results |
 | guarded | 115 | In the domain given dominating guards, helper return bounds, or the bounds of every direct caller of a non-escaping function |
-| invariant | 36 | In the domain only given a listed C range: attributes 3..125, `ulevel` 1..30, `level_difficulty() >= 1`, monster level 0..49, attack dice ≥ 0 |
-| unproved | 239 | Depends on state the analysis cannot see |
+| invariant | 51 | In the domain only given a listed C invariant (below) or an in-bounds read of a readonly data table |
+| unproved | 202 | Depends on state the analysis cannot see |
 
-The unproved sites fall into these groups: map and room geometry (43);
-collections that may be empty (36); counts, totals, and weights (30);
-data-table lookups such as `MONSTER_NAME.indexOf(...)` (30); dice from data
-(22); `spe` charges (13); hit points and energy (8); Lua-supplied values (3);
-other state-derived values (44). Nine sites are in the browser fuzzer harness,
-not the game. One site may receive a fraction: `write.ts`
+The invariants are C facts the checker assumes, not ones it proves:
+
+| Invariant | C source |
+|---|---|
+| attributes 3..125 | `attrib.h` ATTRMIN..ATTRMAX (STR encodes 18/xx up to 125) |
+| `ulevel` 1..30 | `global.h` MAXULEV |
+| `level_difficulty() >= 1` | `dungeon.c` |
+| monster level 0..49 | `monst.c`; `grow_up()` caps at 49 |
+| attack dice 0..255 | `monst.c` dice are `uchar` |
+| `nroom` 0..40 | `mkroom.h` MAXNROFROOMS |
+| live room: `0 <= lx <= hx <= 79`, `0 <= ly <= hy <= 20` | `struct mkroom`, built by `create_room()` from `lowx <= hix` |
+| table element in [min, max] of its entries | literal arrays typed readonly (lint forbids the casts that could write them) or never written, such as `MONSTER_LEVEL` |
+
+Room facts apply only to fields whose owner has the TypeScript type `Room`, or
+a parameter that every direct caller passes a `Room` (`somex()` is declared
+over `Rectangle`). The sentinel after the last room is typed `RoomSentinel`,
+so it gets none. Lua exclusion areas and level regions share the field names
+but not the invariant. Moving from the first run (239 unproved) to this one
+closed 37 sites: 22 became constant once imported constants and readonly table
+lengths resolved (`A_MAX`, `MONSTER_COLOR.length`), and 15 rest on the new
+invariants. The twelve unproved sites still touching rooms or `nroom`
+(`mkswamp`, `makeniche`, the chest check, `create_subroom`, `rnd_rect`
+placement, vault gold, the endgame portal region, `get_location`) all use the
+same expression as their C counterparts (`mkroom.c:538`, `mklev.c:749`,
+`mklev.c:1137`, `sp_lev.c:1560`, `:1690`, `:1213`, `:2763`, `dog.c:548`).
+They rely on C's own unstated preconditions, such as `nroom >= 1` once
+rooms exist. Of the rest, the largest groups are collections that may be
+empty, counts and weights, dice from data, `spe` charges, and hit points. Nine
+sites are in the browser fuzzer harness, not the game. One site may receive a fraction: `write.ts`
 `rn1(basecost / 2, basecost / 2)`, where C divides integers. It is safe only
 because every ink cost in `writingCost()` is even.
 
@@ -161,7 +184,7 @@ stream: C draws, while JavaScript returns 0 without drawing.
 Guards are matched by source text, so a "guarded" proof assumes the guarded
 value does not change between the guard and the call. Interprocedural facts go
 three calls deep. Upper bounds (`n*x <= INT_MAX`, `abs(i) <= 1e8` for `rnz`) are
-reported in the summary line only; 349 sites are not proved bounded above,
+reported in the summary line only; 300 sites are not proved bounded above,
 nearly all because their inputs have no stated maximum.
 
 ## Staged plan
@@ -176,9 +199,10 @@ nearly all because their inputs have no stated maximum.
 3. **ISAAC64 (1–2 weeks).** Prove `isaac64.ts` (BigInt) ≡ `isaac64.c`
    (`uint64_t`) with bit-vectors and a per-round loop invariant. This removes
    the generator from the trust base.
-4. **Call-site domains (prototype done; see above).** Next: state
-   invariants for room bounds, `nroom`, and data tables (each closes dozens of
-   sites), and a CI check that new call sites land in the proved classes.
+4. **Call-site domains (prototype done; see above).** Room, `nroom`, and
+   data-table invariants are in. Next: a CI check that new call sites land in
+   the proved classes, and the residual "may be empty" collections, which need
+   a non-emptiness fact from the caller.
 5. **Differential fuzzing of stateful functions (2–3 weeks).** Drive single C
    functions in the probe build and their TS ports from serialized state, with
    coverage guidance, for code where a state model is not worth writing.

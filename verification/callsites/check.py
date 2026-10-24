@@ -10,8 +10,9 @@ Each site is classified:
              every direct caller of a non-escaping function (sound unless a
              guarded value changes between the guard and the call; leaves are
              matched by source text);
-  invariant  inside the domain only given one of the game invariants in
-             INVARIANTS (C ranges such as MAXULEV, never established here);
+  invariant  inside the domain only given the game invariants in INVARIANTS
+             and ROOM_FIELDS (C ranges such as MAXULEV, never established
+             here) or in-bounds reads of readonly data tables;
   unproved   a counterexample exists; the leaves it assigns are printed.
 
 Leaves are integers. A bare division that is not under Math.floor, trunc, ceil,
@@ -37,7 +38,16 @@ INVARIANTS = [
     (r'^level_difficulty\(\)$', 1, None, 'dungeon.c level_difficulty(): a depth >= 1, or more'),
     (r'(^|\.|\?\.)m_lev$', 0, 49, 'monst.c levels; grow_up() caps at 49'),
     (r'(^|\.)(attack|gaze|mattk)\[[23]\]$|(^|\.)dam[nd]$', 0, 255, 'monst.c attack dice are uchar'),
+    (r'(^|\.|\?\.)nroom$', 0, 40, 'mkroom.h MAXNROFROOMS; nroom counts live rooms'),
 ]
+
+# struct mkroom bounds of a live room: lx <= hx and ly <= hy inside the map
+# (rooms are built by create_room()/add_room() from lowx <= hix; COLNO 80,
+# ROWNO 21). The sentinel room after the last live one has hx == -1, so these
+# facts cover only rooms reached through an index below nroom. They apply to
+# fields whose owner has the TypeScript type Room (the sentinel is typed
+# RoomSentinel); other Rectangles, such as Lua exclusion areas, get none.
+ROOM_FIELDS = {'lx': ('x', 0, 79), 'hx': ('x', 0, 79), 'ly': ('y', 0, 20), 'hy': ('y', 0, 20)}
 
 
 class Fraction(Exception):
@@ -61,6 +71,20 @@ class Translator:
         self.invariants = invariants
         self.leaves = {}
         self.facts = []
+        self.rooms = {}
+
+    def room_fact(self, t, v):
+        match = re.match(r'^(.*)\.(lx|hx|ly|hy)$', t['text'])
+        if not match or t.get('owner') != 'Room':
+            return
+        prefix, field = match.groups()
+        _, low, high = ROOM_FIELDS[field]
+        self.facts.append(z3.And(v >= low, v <= high))
+        fields = self.rooms.setdefault(prefix, {})
+        fields[field] = v
+        for lo, hi in (('lx', 'hx'), ('ly', 'hy')):
+            if field in (lo, hi) and lo in fields and hi in fields:
+                self.facts.append(fields[lo] <= fields[hi])
 
     def leaf(self, t):
         key = t['text']
@@ -69,12 +93,13 @@ class Translator:
         v = z3.Int(key)
         self.leaves[key] = v
         if self.invariants:
+            self.room_fact(t, v)
             for pattern, low, high, _ in INVARIANTS:
                 if re.search(pattern, key):
                     self.facts.append(v >= low)
                     if high is not None:
                         self.facts.append(v <= high)
-        for fact in t.get('facts', []):
+        for fact in t.get('facts', []) if self.invariants or not t.get('data') else []:
             if fact[0] == 'nonneg':
                 self.facts.append(v >= 0)
             elif fact[0] == 'range':
