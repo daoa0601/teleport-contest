@@ -69,18 +69,21 @@ const TIMER_KINDS = new Map([
     ['fig-transform', OBJECT_TIMER_KIND.FIG_TRANSFORM], ['shrink-glob', OBJECT_TIMER_KIND.SHRINK_GLOB],
     ['melt-ice', null],
 ]);
+type ArgumentSpec = { min: number; max?: number } | { oneOf: readonly number[] };
+
 // C nhlobj.c checks lua_gettop() only for new, at, class, placeobj, the
 // timer methods, and bury.  The other methods never look at argc, so extra
 // arguments are ignored, and next() consults its flag only at exactly two
-// arguments.
-const ARGUMENT_COUNTS: Record<string, { min: number; max?: number }> = {
+// arguments.  l_obj_bury accepts exactly one or three arguments; a range
+// would wrongly admit the two-argument form.
+const ARGUMENT_COUNTS: Record<string, ArgumentSpec> = {
     new: { min: 1, max: 1 }, isnull: { min: 1 }, at: { min: 2, max: 2 },
     next: { min: 0 }, totable: { min: 1 }, class: { min: 1, max: 1 },
     contents: { min: 1 }, container: { min: 1 }, addcontent: { min: 2 },
     placeobj: { min: 3, max: 3 },
     has_timer: { min: 2, max: 2 }, peek_timer: { min: 2, max: 2 },
     stop_timer: { min: 1, max: 2 }, start_timer: { min: 3, max: 3 },
-    bury: { min: 1, max: 3 },
+    bury: { oneOf: [1, 3] },
 };
 
 function handle(value: LuaValue | undefined): ObjectHandle {
@@ -261,13 +264,17 @@ export function createObjectApi(state: GameState = game): ObjectApi {
             return result.outcome === 'absorbed';
         },
     };
-    for (const [name, { min, max }] of Object.entries(ARGUMENT_COUNTS)) {
+    for (const [name, spec] of Object.entries(ARGUMENT_COUNTS)) {
         const operation = methods[name];
         if (!operation) throw new Error(`Missing Lua object operation: ${name}`);
         methods[name] = (...args) => {
-            if (args.length < min || (max !== undefined && args.length > max)) {
-                throw new TypeError(`obj.${name} expects ${max === undefined
-                    ? `at least ${min}` : min === max ? `${min}` : `${min} to ${max}`} arguments, got ${args.length}`);
+            if ('oneOf' in spec) {
+                if (!spec.oneOf.includes(args.length))
+                    throw new TypeError(`obj.${name} expects ${spec.oneOf.join(' or ')} arguments, got ${args.length}`);
+            } else if (args.length < spec.min
+                || (spec.max !== undefined && args.length > spec.max)) {
+                throw new TypeError(`obj.${name} expects ${spec.max === undefined
+                    ? `at least ${spec.min}` : spec.min === spec.max ? `${spec.min}` : `${spec.min} to ${spec.max}`} arguments, got ${args.length}`);
             }
             return operation(...args);
         };

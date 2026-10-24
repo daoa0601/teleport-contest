@@ -238,4 +238,12 @@ void test('Lua object methods ignore extra arguments except where native code ch
     await assert.rejects(core.executeAsync('obj.new("rock", 1)'));
     await assert.rejects(core.executeAsync('obj.at(1)'));
 });
+void test('bury raises an error for two arguments before it inspects the object', async (t) => {
+    freshObjectRoom();
+    const core = await startLuaCore(t);
+    // l_obj_bury accepts only one or three arguments and rejects anything
+    // else before checking whether the handle refers to a real object.
+    await assert.rejects(core.executeAsync('obj.at(1, 1):bury(5)'));
+    await assert.rejects(core.executeAsync('obj.new("rock"):bury(5)'));
+});
 //# sourceMappingURL=lua_objects.test.js.map
