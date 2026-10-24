@@ -5,6 +5,8 @@ import { PL_PSIZ } from '../js/const.js';
 import { GameDisplay } from '../js/game_display.js';
 import { Engine, runSegment } from '../js/jsmain.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
+import { parseNethackrc } from '../js/options.js';
+import { ATR_INVERSE } from '../js/terminal.js';
 import { memoryStorage } from './support/memory-storage.js';
 
 const CHARACTER = 'OPTIONS=name:Traveler,role:ranger,race:human,gender:male,align:neutral';
@@ -20,6 +22,14 @@ async function start(options: string) {
 function screen(engine: Engine): string {
     assert.ok(engine.display);
     return engine.display.grid.map(row => row.map(cell => cell.ch).join('').trimEnd()).join('\n');
+}
+
+function acknowledgmentIsHighlighted(engine: Engine): boolean {
+    assert.ok(engine.display);
+    const row = engine.display.grid[engine.display.cursorRow];
+    assert.ok(row);
+    assert.match(row.map(cell => cell.ch).join(''), /^Hit space to continue: /);
+    return row.slice(0, 'Hit space to continue: '.length).every(cell => (cell.attr & ATR_INVERSE) !== 0);
 }
 
 void test('an unknown pet type is reported before game creation and waits for acknowledgment', async () => {
@@ -211,11 +221,112 @@ void test('a continued option line reports its final physical line and echoes it
     assert.doesNotMatch(text, /OPTIONS=!dogname/);
 });
 
+void test('spaces before a continuation remain part of a pet name', async () => {
+    const engine = await start('OPTIONS=dogname:Sir  \\\nWags');
+
+    assert.equal(engine.state.flags.dogname, 'Sir   Wags');
+});
+
+void test('spaces before a continuation count toward the option length limit', async () => {
+    const engine = await start(`OPTIONS=dogname:${'a'.repeat(120)} \\\n# finish`);
+
+    assert.match(screen(engine), /Option too long, max length is 128 characters\./);
+    engine.inputGate.feed(' ');
+    await engine.runUntilInputNeeded();
+    assert.equal(engine.state.flags.dogname, undefined);
+});
+
 void test('a pet type value keeps the space after its delimiter for native rejection', async () => {
     const engine = await start('OPTIONS=pettype:   dog');
 
-    assert.match(screen(engine), /Unrecognized pet type ' dog'\./);
+    assert.match(screen(engine), /Unrecognized pet type '   dog'\./);
 });
+
+for (const option of ['dogname', 'catname', 'horsename'] as const) {
+    void test(`${option} keeps repeated spaces and sanitizes tabs in file values`, async () => {
+        const engine = await start(`OPTIONS=${option}:Sir  \tWags`);
+
+        assert.equal(engine.state.flags[option], 'Sir  .Wags');
+        assert.equal(engine.state.moves, 1);
+    });
+}
+
+for (const [description, value] of [
+    ['leading whitespace', ` ${'a'.repeat(120)}`],
+    ['repeated internal whitespace', `A${' '.repeat(120)}B`],
+]) {
+    void test(`file option length includes ${description} in the value`, async () => {
+        const engine = await start(`OPTIONS=dogname:${value}`);
+
+        assert.match(screen(engine), /Option too long, max length is 128 characters\./);
+        engine.inputGate.feed(' ');
+        await engine.runUntilInputNeeded();
+        assert.equal(engine.state.flags.dogname, undefined);
+    });
+}
+
+void test('file option length includes the space immediately after OPTIONS=', async () => {
+    const engine = await start(`OPTIONS= dogname:${'a'.repeat(120)}`);
+
+    assert.match(screen(engine), /Option too long, max length is 128 characters\./);
+    engine.inputGate.feed(' ');
+    await engine.runUntilInputNeeded();
+    assert.equal(engine.state.flags.dogname, undefined);
+});
+
+for (const [description, padding] of [['ASCII', 'a'.repeat(1000)], ['UTF-8', 'é'.repeat(500)]]) {
+    void test(`a continued ${description} statement discards options past the file buffer limit`, () => {
+        const settings = parseNethackrc(`OPTIONS=dogname:${padding}\\\n,pettype:none`);
+
+        assert.equal(settings.preferred_pet, undefined);
+        assert.equal(settings.flags.dogname, undefined);
+        assert.ok(settings.configErrors.some(report => report.errors.some(error => /Option too long/.test(error.message))));
+    });
+}
+
+void test('a name cut off inside a UTF-8 character sanitizes only the retained byte', () => {
+    const settings = parseNethackrc(`OPTIONS=${'x'.repeat(1004)},\\\ndogname:é`);
+
+    assert.equal(settings.flags.dogname, '_');
+});
+
+for (const [description, ending] of [['without a final newline', '\\'], ['with a final newline', '\\\n']]) {
+    void test(`an unfinished continuation ${description} is discarded at EOF`, async () => {
+        const engine = await start(`OPTIONS=pettype:cat,${ending}`);
+
+        assert.equal(engine.state.moves, 1);
+        assert.equal(MONSTER_NAME[engine.state.context.startingpet_typ ?? -1], 'little dog');
+        assert.doesNotMatch(screen(engine), /Empty statement|error in|Hit space to continue/);
+    });
+}
+
+void test('a long source echo is shortened with an ellipsis and keeps its final three characters', async () => {
+    const engine = await start(`OPTIONS=dogname:${'a'.repeat(400)}END`);
+
+    assert.match(screen(engine), /aaa\.\.\.END\n/);
+    assert.match(screen(engine), /Option too long, max length is 128 characters\./);
+    assert.ok(engine.display);
+    assert.equal(engine.display.cursorRow, 10);
+    assert.equal(engine.display.cursorCol, 'Hit space to continue: '.length);
+});
+
+for (const standout of [false, true]) {
+    void test(`the error acknowledgment uses standout=${standout} at the end of each source`, async () => {
+        const engine = await startEnvironment(
+            `${standout ? '!' : ''}standout,pettype:lizard`,
+            `OPTIONS=${standout ? '' : '!'}standout,pettype:lizard`,
+        );
+
+        assert.match(screen(engine), /1 error in \.nethackrc\./);
+        assert.equal(acknowledgmentIsHighlighted(engine), standout);
+
+        engine.inputGate.feed(' ');
+        await engine.runUntilInputNeeded();
+
+        assert.match(screen(engine), /1 error in NETHACKOPTIONS\./);
+        assert.equal(acknowledgmentIsHighlighted(engine), !standout);
+    });
+}
 
 void test('the option length limit counts UTF-8 bytes before name sanitization', async () => {
     const engine = await start(`OPTIONS=dogname:${'é'.repeat(61)}`);

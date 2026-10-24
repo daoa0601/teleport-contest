@@ -216,11 +216,11 @@ export function parseNethackrc(rc, sources = {}) {
         configErrors: [],
         flags: { paranoia_bits: DEFAULT_PARANOIA_BITS }, iflags: {}, commandBindings: new CommandBindings(),
     };
-    const fileReport = { source: sources.fileName || '.nethackrc', errors: [] };
+    const fileReport = { source: sources.fileName || '.nethackrc', errors: [], standout: false };
     parseConfiguration(rc, result, fileReport, true);
     result.configErrors.push(fileReport);
     if (sources.nethackOptions != null) {
-        const environmentReport = { source: 'NETHACKOPTIONS', errors: [] };
+        const environmentReport = { source: 'NETHACKOPTIONS', errors: [], standout: !!result.flags.standout };
         parseConfiguration(sources.nethackOptions, result, environmentReport, false);
         result.configErrors.push(environmentReport);
     }
@@ -233,7 +233,7 @@ export function applyNethackrc(rc, state = game) {
         flags: state.flags, iflags: state.iflags,
         commandBindings: state.commandBindings,
     };
-    const report = { source: 'parse_conf_str', errors: [] };
+    const report = { source: 'parse_conf_str', errors: [], standout: !!result.flags.standout };
     parseConfiguration(rc, result, report, true);
     result.configErrors.push(report);
     if (result.monTelecontrol !== undefined)
@@ -253,8 +253,8 @@ function parseConfiguration(rc, result, report, fromFile) {
         return result;
     const petOptionsSeen = new Set();
     const lines = fromFile ? configurationLines(rc, report)
-        : [{ text: rc.split('\0')[0] ?? '', sourceLine: '', lineNumber: 0 }];
-    for (const { text: line, sourceLine, lineNumber } of lines) {
+        : [{ bytes: new TextEncoder().encode(rc.split('\0')[0] ?? ''), sourceLine: '', lineNumber: 0 }];
+    for (const { bytes, sourceLine, lineNumber } of lines) {
         const addError = (message) => {
             report.errors.push({ sourceLine, lineNumber, message: message.slice(0, BUFSZ - 1) });
         };
@@ -265,6 +265,10 @@ function parseConfiguration(rc, result, report, fromFile) {
                 addError(`compound option specified multiple times: ${name}${alias ? ' (via alias: pet)' : ''}`);
             petOptionsSeen.add(name);
         };
+        // parse_config_line() condenses whitespace for BINDINGS, but passes
+        // the original OPTIONS statement to cnf_line_OPTIONS().
+        const text = new TextDecoder().decode(bytes);
+        const line = text.replace(/[ \t]+/g, ' ').trim();
         const bindMatch = fromFile ? line.match(/^(?:BIND|BINDINGS)=(.+)$/i) : null;
         if (bindMatch?.[1]) {
             for (const field of bindingFields(bindMatch[1])) {
@@ -279,15 +283,17 @@ function parseConfiguration(rc, result, report, fromFile) {
             }
             continue;
         }
-        const optionList = fromFile ? line.match(/^OPTIONS\s*[:=] ?(.*)$/i)?.[1] : line;
-        if (optionList === undefined)
+        const prefix = fromFile ? text.match(/^OPTIONS\s*[:=]/i)?.[0] : '';
+        if (prefix === undefined)
             continue;
-        for (const opt of optionList.split(',').reverse()) {
-            if (new TextEncoder().encode(opt).length > BUFSZ / 2) {
+        const optionList = bytes.subarray(new TextEncoder().encode(prefix).length);
+        for (const optionBytes of configurationOptions(optionList)) {
+            if (optionBytes.length > BUFSZ / 2) {
                 addError(`Option too long, max length is ${BUFSZ / 2} characters`);
                 continue;
             }
-            const trimmed = opt.trim();
+            const trimmedBytes = trimConfigurationOption(optionBytes);
+            const trimmed = new TextDecoder().decode(trimmedBytes);
             if (!trimmed) {
                 addError('Empty statement');
                 continue;
@@ -392,8 +398,10 @@ function parseConfiguration(rc, result, report, fromFile) {
                 const value = colonIdx < 0 ? null : stripped.slice(colonIdx + 1);
                 if (value === 'none' || value === '(none)')
                     result.flags[petNameOption] = '';
-                else if (value)
-                    result.flags[petNameOption] = configuredPetName(value, !!result.iflags.wc_eight_bit_input);
+                else if (value) {
+                    const delimiter = trimmedBytes.findIndex(byte => byte === 58 || byte === 61);
+                    result.flags[petNameOption] = configuredPetName(trimmedBytes.subarray(delimiter + 1), !!result.iflags.wc_eight_bit_input);
+                }
                 continue;
             }
             if (bindingOption === 'number_pad') {
@@ -574,21 +582,27 @@ function parseConfiguration(rc, result, report, fromFile) {
             }
         }
     }
+    // config_error_done() waits before the next source can change standout.
+    report.standout = !!result.flags.standout;
     if (paranoiaSeen)
         result.flags.paranoia_bits = paranoiaBits;
     return result;
 }
 // C cfgfiles.c:parse_conf_buf() counts physical lines, including comments,
 // and attributes a continued statement to its final physical line. The
-// diagnostic echoes that line before parse_config_line() condenses spaces.
+// diagnostic echoes that line; OPTIONS values retain internal whitespace.
 function* configurationLines(rc, report) {
-    let pending = '';
+    let pending = new Uint8Array(0);
     let lineNumber = 0;
     let sourceLine = '';
     const physicalLines = rc.split('\n');
     for (const [index, raw] of physicalLines.entries()) {
         const length = new TextEncoder().encode(raw).length;
         const hasNewline = index < physicalLines.length - 1;
+        // split() leaves an empty element after the final newline. fgets()
+        // never reads that element, so an unfinished continuation stays unused.
+        if (!hasNewline && !raw)
+            break;
         if (length > 4 * BUFSZ - 2 || (!hasNewline && length === 4 * BUFSZ - 2)) {
             // parse_conf_buf() rejects a full fgets buffer before advancing
             // the error frame, so this diagnostic still names the prior line.
@@ -598,15 +612,50 @@ function* configurationLines(rc, report) {
         lineNumber++;
         const original = raw.split('\0')[0] ?? '';
         const continued = original.endsWith('\\');
-        sourceLine = (continued ? original.slice(0, -1) : original).replace(/[ \t\r]+$/, '');
-        const content = sourceLine.trimStart();
-        if (content && !content.startsWith('#'))
-            pending += `${pending ? ' ' : ''}${content}`;
-        if (continued || !pending)
+        // C leaves ep at the removed backslash's NUL, so its whitespace
+        // trimming loop does not visit the spaces before a continuation.
+        sourceLine = continued ? original.slice(0, -1) : original.replace(/[ \t\r]+$/, '');
+        const content = sourceLine.replace(/^[ \t]+/, '');
+        if (content && !content.startsWith('#')) {
+            // Keep native bytes through option parsing: truncation can split
+            // a UTF-8 character, and sanitize_name() must see the retained byte.
+            const bytes = new TextEncoder().encode(content);
+            const separator = pending.length ? 1 : 0;
+            const joined = new Uint8Array(pending.length + separator + bytes.length);
+            joined.set(pending);
+            if (separator)
+                joined[pending.length] = 32;
+            joined.set(bytes, pending.length + separator);
+            pending = joined.subarray(0, 4 * BUFSZ - 1);
+        }
+        if (continued || !pending.length)
             continue;
-        yield { text: pending.replace(/[ \t]+/g, ' ').trim(), sourceLine, lineNumber };
-        pending = '';
+        yield { bytes: pending, sourceLine, lineNumber };
+        pending = new Uint8Array(0);
     }
+}
+function configurationOptions(bytes) {
+    const options = [];
+    let start = 0;
+    for (let index = 0; index <= bytes.length; index++) {
+        if (index < bytes.length && bytes[index] !== 44)
+            continue;
+        options.push(bytes.subarray(start, index));
+        start = index + 1;
+    }
+    return options.reverse();
+}
+function trimConfigurationOption(bytes) {
+    // C parseoptions() uses isspace() on individual bytes before parsing.
+    const whitespace = (byte) => byte === 32
+        || (byte !== undefined && byte >= 9 && byte <= 13);
+    let start = 0;
+    let end = bytes.length;
+    while (start < end && whitespace(bytes[start]))
+        start++;
+    while (end > start && whitespace(bytes[end - 1]))
+        end--;
+    return bytes.subarray(start, end);
 }
 // C options.c:optfn_pettype() ignores negation when a value is supplied.
 // Horse is accepted, but dog.c:pet_type() still chooses a dog or cat unless
@@ -629,7 +678,7 @@ function configuredPetType(value, negated) {
 // C options.c:nmcpy() copies bytes; bones.c:sanitize_name() replaces control
 // bytes and strips printable high bytes only when eight-bit input is disabled.
 function configuredPetName(value, eightBitInput) {
-    const bytes = new TextEncoder().encode(value).subarray(0, PL_PSIZ - 1);
+    const bytes = value.subarray(0, PL_PSIZ - 1);
     const nameBytes = [];
     for (const byte of bytes) {
         if (byte === 0 || byte === 44)
