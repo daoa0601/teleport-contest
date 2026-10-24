@@ -2,13 +2,13 @@
 // C ref: options.c — handles OPTIONS=, BIND=, etc.
 import { game } from './gstate.js';
 import { NATIVE_COMMANDS } from './command_data.js';
-import { setCommandAutocomplete } from './extended_commands.js';
+import { resetCommandAutocomplete, setCommandAutocomplete } from './extended_commands.js';
 import { addMessageTypeRule } from './message_types.js';
 import { displayHelpFile, displayPagerText } from './pager_help.js';
 import { setConditionOption } from './status_conditions.js';
 import { classifyStatusTerrain } from './status_terrain.js';
 import { assignWarningSymbols, setWarningSymbols } from './warning_symbols.js';
-import { findRole, randomCharacterOption } from './roles.js';
+import { findRole } from './roles.js';
 import { rn2 } from './rng.js';
 import { isTextOption, setTextOption, textOptionValue, cInteger, parsePickupTypes, optionError, featureAlertVersion } from './option_values.js';
 import { compoundMenuValue, editCompoundMenu } from './option_editors.js';
@@ -224,6 +224,9 @@ function parseScoreOption(value, negated) {
     return choices;
 }
 export function parseNethackrc(rc, sources = {}) {
+    // Each engine start is one native process: AUTOCOMPLETE= adjustments
+    // from a previous game must not carry over.
+    resetCommandAutocomplete();
     const result = {
         name: '', role: null, race: null, gender: null, align: null,
         configErrors: [],
@@ -435,10 +438,11 @@ function handleConfigStatement(statement, parsed, result, addError, addRawError)
             break;
         case 'ROLE':
         case 'CHARACTER':
-            // cnf_line_ROLE() silently keeps the previous role when str2role()
-            // does not recognize the value; findRole() returns null for an empty
-            // value, which likewise leaves the role unset.
-            if (findRole(parsed.valueText) || randomCharacterOption(parsed.valueText))
+            // cnf_line_ROLE() assigns only when str2role() >= 0; ROLE_RANDOM
+            // (-2) for 'random'/'*'/'@' and ROLE_NONE (-1) for anything
+            // unrecognized both leave the previous role in place. findRole()
+            // returns null for an empty value, which likewise leaves it unset.
+            if (findRole(parsed.valueText))
                 result.role = parsed.valueText;
             break;
         case 'dogname':
@@ -449,11 +453,12 @@ function handleConfigStatement(statement, parsed, result, addError, addRawError)
             result.flags[statement] = String.fromCharCode(...parsed.valueBytes.subarray(0, PL_PSIZ - 1));
             break;
         case 'WARNINGS': {
+            // cnf_line_WARNINGS() calls assign_warnings() unconditionally:
+            // values parsed before a syntax error are still applied.
             const { values, syntaxError } = parseUcharList(parsed.valueBytes, WARNCOUNT, false);
+            assignWarningSymbols(values, result.iflags);
             if (syntaxError)
                 addRawError('Syntax error in WARNINGS');
-            else
-                assignWarningSymbols(values, result.iflags);
             break;
         }
         case 'BOULDER': {
@@ -935,6 +940,10 @@ function* configurationLines(rc, report) {
         // drops statements that belong to another section.
         const section = configSectionName(statement);
         if (section !== undefined) {
+            // C frees config_section_current before checking whether a
+            // choice exists, so every header leaves the current section
+            // unset until a named one is entered.
+            sectionCurrent = null;
             if (sectionChosen === null) {
                 report.errors.push({ sourceLine, lineNumber,
                     message: `Section "[${section}]" without CHOOSE` });
@@ -944,7 +953,6 @@ function* configurationLines(rc, report) {
             }
             else {
                 sectionChosen = null;
-                sectionCurrent = null;
             }
             pending = new Uint8Array(0);
             continue;
@@ -968,10 +976,10 @@ function* configurationLines(rc, report) {
                     message: 'Format is CHOOSE=section1,section2,...' });
             }
             else {
-                const chosen = chooseRandomPart(statement.slice(delimiter + 1));
-                if (chosen !== null)
-                    sectionChosen = chosen;
-                else
+                // C frees the previous choice before drawing, so a failed
+                // CHOOSE leaves no section chosen.
+                sectionChosen = chooseRandomPart(statement.slice(delimiter + 1));
+                if (sectionChosen === null)
                     report.errors.push({ sourceLine, lineNumber,
                         message: 'No config section to choose' });
             }

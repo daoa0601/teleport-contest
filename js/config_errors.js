@@ -12,11 +12,25 @@ export async function displayConfigurationErrors(reports) {
     const display = game.nhDisplay;
     if (!display)
         return;
+    // C wintty.c:getret(): one more newline, then the prompt (cbreak is off
+    // before init_nhwindows(), so it asks for "return"), then xwaitforspace().
+    const awaitStartupReturn = async () => {
+        rawPrint('');
+        const prompt = 'Hit return to continue: ';
+        display.putstr(0, display.cursorRow, prompt, NO_COLOR, 0);
+        display.setCursor(prompt.length, display.cursorRow);
+        display.flush();
+        let key;
+        do
+            key = await nhgetch();
+        while (key !== 10 && key !== 13);
+    };
     for (const report of reports) {
         let previousLine = null;
         for (const error of report.errors) {
             if (error.raw) {
                 rawConfigurationMessage(error.message);
+                await awaitStartupReturn();
                 continue;
             }
             if (error.lineNumber !== previousLine)
@@ -32,17 +46,7 @@ export async function displayConfigurationErrors(reports) {
         if (!count)
             continue;
         rawConfigurationMessage(`\n${count} error${count === 1 ? '' : 's'} in ${report.source}.\n`);
-        // C wintty.c:getret() prints one more newline, then xwaitforspace().
-        rawPrint('');
-        // Before init_nhwindows(), cbreak is off and standout capabilities are unset.
-        const prompt = 'Hit return to continue: ';
-        display.putstr(0, display.cursorRow, prompt, NO_COLOR, 0);
-        display.setCursor(prompt.length, display.cursorRow);
-        display.flush();
-        let key;
-        do
-            key = await nhgetch();
-        while (key !== 10 && key !== 13);
+        await awaitStartupReturn();
     }
 }
 function rawConfigurationMessage(message) {

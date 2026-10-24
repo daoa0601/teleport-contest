@@ -14,6 +14,11 @@ const autocompleteOverrides = new Map();
 export function setCommandAutocomplete(name, enabled) {
     autocompleteOverrides.set(name, enabled);
 }
+// One native process parses one rc file; the overrides must not outlive an
+// engine start in this port.
+export function resetCommandAutocomplete() {
+    autocompleteOverrides.clear();
+}
 export function commandAutocompletes(command) {
     const override = command.name !== null ? autocompleteOverrides.get(command.name) : undefined;
     return override !== undefined ? override : !!(command.flags & flags.AUTOCOMPLETE);

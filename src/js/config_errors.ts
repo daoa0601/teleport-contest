@@ -13,7 +13,9 @@ export interface ConfigurationError {
     // cmd.c parseautocomplete()) with raw_printf() + wait_synch() instead of
     // config_error_add(). They print immediately, are not prefixed with the
     // source line or ' * ', and do not count toward the error total, so
-    // config_error_done() prints no summary and waits for no return key.
+    // config_error_done() prints no summary for them. Their wait_synch()
+    // still pauses for a key: before init_nhwindows() WIN_MAP is WIN_ERR and
+    // tty_wait_synch() falls back to getret().
     raw?: boolean;
 }
 
@@ -29,11 +31,24 @@ export interface ConfigurationErrorReport {
 export async function displayConfigurationErrors(reports: readonly ConfigurationErrorReport[]): Promise<void> {
     const display = game.nhDisplay;
     if (!display) return;
+    // C wintty.c:getret(): one more newline, then the prompt (cbreak is off
+    // before init_nhwindows(), so it asks for "return"), then xwaitforspace().
+    const awaitStartupReturn = async (): Promise<void> => {
+        rawPrint('');
+        const prompt = 'Hit return to continue: ';
+        display.putstr(0, display.cursorRow, prompt, NO_COLOR, 0);
+        display.setCursor(prompt.length, display.cursorRow);
+        display.flush();
+        let key;
+        do key = await nhgetch();
+        while (key !== 10 && key !== 13);
+    };
     for (const report of reports) {
         let previousLine: number | null = null;
         for (const error of report.errors) {
             if (error.raw) {
                 rawConfigurationMessage(error.message);
+                await awaitStartupReturn();
                 continue;
             }
             if (error.lineNumber !== previousLine) rawConfigurationMessage(`\n${error.sourceLine}`);
@@ -47,16 +62,7 @@ export async function displayConfigurationErrors(reports: readonly Configuration
         // least one config_error_add() fired; raw diagnostics never count.
         if (!count) continue;
         rawConfigurationMessage(`\n${count} error${count === 1 ? '' : 's'} in ${report.source}.\n`);
-        // C wintty.c:getret() prints one more newline, then xwaitforspace().
-        rawPrint('');
-        // Before init_nhwindows(), cbreak is off and standout capabilities are unset.
-        const prompt = 'Hit return to continue: ';
-        display.putstr(0, display.cursorRow, prompt, NO_COLOR, 0);
-        display.setCursor(prompt.length, display.cursorRow);
-        display.flush();
-        let key;
-        do key = await nhgetch();
-        while (key !== 10 && key !== 13);
+        await awaitStartupReturn();
     }
 }
 

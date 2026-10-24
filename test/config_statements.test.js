@@ -66,9 +66,19 @@ void test('CHOOSE without a value or delimiter reports its own errors', () => {
     initRng(11);
     enableRngLog();
     const empty = parseNethackrc('CHOOSE=');
+    // A failed choice clears any previous section: nothing is chosen.
     assert.deepEqual(empty.configErrors[0]?.errors.map(error => error.message), ['No config section to choose']);
     // Even an empty choice list consumes one draw.
     assert.equal(getRngLog()[0], 'rn2(1)=0');
+});
+void test('a failed CHOOSE leaves no section chosen', () => {
+    initRng(9);
+    const config = parseNethackrc('CHOOSE=a\n[a]\nNAME=InA\nCHOOSE=\nNAME=After\n[b]\nNAME=Nope');
+    // 'NAME=After' is skipped (a section is current but none is chosen),
+    // '[b]' reports "without CHOOSE" and ends the section, so 'NAME=Nope'
+    // is processed as an ordinary statement.
+    assert.equal(config.name, 'Nope');
+    assert.deepEqual(config.configErrors[0]?.errors.map(error => error.message), ['No config section to choose', 'Section "[b]" without CHOOSE']);
 });
 void test('NAME, ROLE, CHARACTER, and pet-name statements configure the identity', () => {
     const identity = parseNethackrc('NAME=Traveler\nROLE=Val\nDOG=Rex\nCAT=Whiskers');
@@ -77,10 +87,15 @@ void test('NAME, ROLE, CHARACTER, and pet-name statements configure the identity
     assert.equal(identity.flags.dogname, 'Rex');
     assert.equal(identity.flags.catname, 'Whiskers');
     assert.equal(parseNethackrc('CHARACTER=tour').role, 'tour');
-    // cnf_line_ROLE() ignores values str2role() cannot resolve, including
-    // an empty one.
+    // cnf_line_ROLE() ignores values str2role() cannot resolve: unknown
+    // names, an empty value, and ROLE_RANDOM ('random', '*', '@') all leave
+    // the role unset because the assignment requires str2role() >= 0.
     assert.equal(parseNethackrc('ROLE=paladin').role, null);
     assert.equal(parseNethackrc('ROLE=').role, null);
+    for (const random of ['random', '*', '@']) {
+        const kept = parseNethackrc(`OPTIONS=role:Val\nROLE=${random}`);
+        assert.equal(kept.role, 'Val', `ROLE=${random} must not override`);
+    }
 });
 void test('OPTIONS accepts its four-character abbreviation', () => {
     assert.equal(parseNethackrc('OPTIO=name:Abbr').name, 'Abbr');
@@ -92,29 +107,50 @@ void test('a numeric WARNINGS statement assigns the warning glyphs', () => {
     // An explicit zero leaves that level's symbol unchanged.
     const zeroed = parseNethackrc('WARNINGS=8 0 2');
     assert.equal(zeroed.iflags.warningSymbols, '\x08' + defaults.charAt(1) + '\x02' + defaults.slice(3));
+    // get_uchars() returns the values parsed before a syntax error, and
+    // cnf_line_WARNINGS() applies them despite the diagnostic.
+    const partial = parseNethackrc('WARNINGS=8 5 x');
+    assert.equal(partial.iflags.warningSymbols, '\x08\x05' + defaults.slice(2));
+    assert.deepEqual(partial.configErrors[0]?.errors.map(error => error.message), ['Syntax error in WARNINGS']);
 });
-void test('WARNINGS syntax errors print without the counted error treatment', async () => {
+void test('WARNINGS syntax errors wait for a return without a counted summary', async () => {
     const raw = fileErrors([PLAY, 'WARNINGS=x'].join('\n'));
     assert.equal(raw.length, 1);
     assert.equal(raw[0]?.message, 'Syntax error in WARNINGS');
     assert.equal(raw[0]?.raw, true);
     assert.equal(raw[0]?.lineNumber, 2);
-    // With no counted errors there is no summary and no acknowledgment, so
-    // startup proceeds into character selection.
+    // raw_printf() + wait_synch() pauses at getret() before
+    // init_nhwindows(); with no counted errors there is no summary line.
     const engine = await start([PLAY, 'WARNINGS=x'].join('\n'));
+    assert.match(screen(engine), /^Syntax error in WARNINGS$/m);
+    assert.match(screen(engine), /Hit return to continue:/);
     assert.doesNotMatch(screen(engine), /error in \.nethackrc\./);
+    assert.equal(engine.state.moves, 0);
+    engine.inputGate.feed('\n');
+    await engine.runUntilInputNeeded();
     assert.doesNotMatch(screen(engine), /Hit return to continue:/);
     assert.equal(engine.state.moves, 0);
 });
 void test('raw diagnostics keep their position among counted errors', async () => {
     const engine = await start(['WARNINGS=x', 'FOO=bar', PLAY].join('\n'));
-    const text = screen(engine);
+    // Parsing stops at the raw diagnostic's getret() before the later
+    // counted error is reported.
+    let text = screen(engine);
+    assert.match(text, /^Syntax error in WARNINGS$/m);
+    assert.match(text, /Hit return to continue:/);
+    assert.doesNotMatch(text, /Unknown config statement/);
+    engine.inputGate.feed('\n');
+    await engine.runUntilInputNeeded();
+    text = screen(engine);
     assert.match(text, /^Syntax error in WARNINGS$/m);
     assert.match(text, / \* Line 2: Unknown config statement\./);
     assert.match(text, /1 error in \.nethackrc\./);
     assert.ok(text.indexOf('Syntax error in WARNINGS')
         < text.indexOf('Unknown config statement'));
     assert.match(text, /Hit return to continue:/);
+    engine.inputGate.feed('\n');
+    await engine.runUntilInputNeeded();
+    assert.doesNotMatch(screen(engine), /Hit return to continue:/);
 });
 void test('a numeric BOULDER statement is accepted silently', () => {
     assert.equal(fileErrors('BOULDER=125').length, 0);
@@ -130,6 +166,14 @@ void test('AUTOCOMPLETE statements flip extended-command autocompletion', () => 
     parseNethackrc('AUTOCOMPLETE=!adjust');
     assert.equal(completeExtendedCommand('adj'), null);
     parseNethackrc('AUTOCOMPLETE=adjust');
+    assert.equal(completeExtendedCommand('adj'), 'adjust');
+});
+void test('AUTOCOMPLETE adjustments do not leak into the next game', () => {
+    parseNethackrc('AUTOCOMPLETE=!adjust');
+    assert.equal(completeExtendedCommand('adj'), null);
+    // A new engine start is a new native process: its rc file resets the
+    // extended-command flags to the compiled defaults.
+    parseNethackrc('OPTIONS=!legacy');
     assert.equal(completeExtendedCommand('adj'), 'adjust');
 });
 void test('an invalid AUTOCOMPLETE command prints a raw diagnostic', () => {
