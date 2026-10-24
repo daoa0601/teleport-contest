@@ -107,6 +107,7 @@ import { swallowed } from './display.js';
 import { Is_rogue_level } from './const.js';
 import { hasShopkeeperData } from './shop_types.js';
 import { disturbMealMimicry } from './meal_mimic.js';
+import { revealConcealedHeroToAttacker } from './hero_hider_reveal.js';
 import { monsterKnowsTrap, monsterLearnsTrap, monstersSeeTrap } from './trap_knowledge.js';
 import { woundHeroLegs } from './hero_legs.js';
 import { isAccessibleAt } from './terrain_properties.js';
@@ -3971,6 +3972,11 @@ export async function beginMonsterHeroAttack(
             return { heroAttackResult: attackerDied ? 1 : 0 };
         }
     }
+    // C mattacku(): a concealed hero (hiding or mimicking) is revealed
+    // instead of attacked, before the armor-class differential.
+    if (await revealConcealedHeroToAttacker(monster, {
+        state, random, rollOne, rollDice, calls,
+    })) return {};
     if (await disturbMealMimicry(monster, { state })) return {};
     const threshold = monsterAttackThreshold(monster, state, rollOne, calls);
     // C mhitu.c:721-724 — make eels visible the moment they hit or miss us.
