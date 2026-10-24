@@ -184,3 +184,23 @@ void test('POSIX groups and bracketed group punctuation still filter messages', 
     assert.equal(topline(), 'The door opens.');
     assert.equal(config.configErrors.flatMap(report => report.errors).length, 0);
 });
+
+for (const [pattern, diagnostic] of [
+    ['[', 'brackets ([ ]) not balanced'],
+    ['[[:unknown:]]', 'invalid character class'],
+    ['[[.word.]]', 'invalid collating element'],
+    ['\\', 'trailing backslash (\\)'],
+    ['(bell', 'parentheses not balanced'],
+    ['[z-a]', 'invalid character range'],
+    ['bell{3,2}', 'invalid repetition count(s)'],
+    ['*bell', 'repetition-operator operand invalid'],
+    ['A bell(?= rings)', 'repetition-operator operand invalid'],
+] as const) {
+    void test(`the malformed MSGTYPE pattern ${pattern} reports its POSIX diagnostic`, () => {
+        const config = parseNethackrc(`MSGTYPE=hide "${pattern}"`);
+
+        const errors = config.configErrors.flatMap(report => report.errors);
+        assert.equal(errors.length, 1);
+        assert.equal(errors[0]?.message, `MSGTYPE regex error: ${diagnostic}`);
+    });
+}

@@ -27,7 +27,7 @@ export function addMessageTypeRule(value: string, rules: MessageTypeRule[]): str
         rules.unshift({ type: entry[1], pattern: new RegExp(posixPattern(match[2]), 's'), disabled: false });
     } catch (error) {
         if (!(error instanceof SyntaxError)) throw error;
-        return 'MSGTYPE regex error: Invalid regular expression';
+        return `MSGTYPE regex error: ${posixRegexDiagnostic(error)}`;
     }
     return null;
 }
@@ -69,7 +69,7 @@ function posixPattern(pattern: string): string {
         if (inSet && pattern.startsWith('[:', index)) {
             const end = pattern.indexOf(':]', index + 2);
             const range = end >= 0 ? POSIX_CLASSES.get(pattern.slice(index + 2, end)) : undefined;
-            if (range === undefined) throw new SyntaxError('Invalid character class');
+            if (range === undefined) throw new SyntaxError('invalid character class');
             result += range;
             index = end + 1;
         } else if (inSet && (pattern.startsWith('[.', index) || pattern.startsWith('[=', index))) {
@@ -78,14 +78,14 @@ function posixPattern(pattern: string): string {
             // The native process retains the C locale: collating symbols and
             // equivalence classes each contain one character.
             if (end < 0 || character.length !== 1)
-                throw new SyntaxError('Invalid collating element');
+                throw new SyntaxError('invalid collating element');
             result += '[]\\^-'.includes(character) ? `\\${character}` : character;
             index = end + 1;
         } else if (ch === '\\') {
             if (inSet) result += '\\\\';
             else {
                 const escaped = pattern.charAt(++index);
-                if (!escaped) throw new SyntaxError('Trailing backslash');
+                if (!escaped) throw new SyntaxError('trailing backslash (\\)');
                 result += posixEscape(escaped);
             }
         } else if (!inSet && ch === '[') {
@@ -101,8 +101,19 @@ function posixPattern(pattern: string): string {
         } else if (!inSet && ch === '$') result += '(?![\\s\\S])';
         else result += ch;
     }
-    if (inSet) throw new SyntaxError('Unclosed character class');
+    if (inSet) throw new SyntaxError('brackets ([ ]) not balanced');
     return result;
+}
+
+function posixRegexDiagnostic(error: SyntaxError): string {
+    // Translation errors already use the macOS recorder's regerror() text.
+    // The JavaScript compiler detects these remaining ERE syntax errors.
+    const message = error.message;
+    if (message.endsWith(': Unterminated group')) return 'parentheses not balanced';
+    if (message.endsWith(': Range out of order in character class')) return 'invalid character range';
+    if (message.endsWith(': numbers out of order in {} quantifier')) return 'invalid repetition count(s)';
+    if (message.endsWith(': Nothing to repeat')) return 'repetition-operator operand invalid';
+    return message;
 }
 
 function posixEscape(character: string): string {
