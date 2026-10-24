@@ -200,7 +200,7 @@ function validAlignmentBases(value) {
 function validHeroRoleplay(value) {
     return closedFieldsMatch(value, {
         pauper: boolean, nudist: boolean, reroll: boolean,
-        numrerolls: integer, blind: boolean, deaf: boolean,
+        numrerolls: integer, numbones: integer, blind: boolean, deaf: boolean,
     });
 }
 function validHeroSkill(value) {

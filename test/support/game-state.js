@@ -43,7 +43,7 @@ export function freshGame({ datetime = DEFAULT_TEST_DATETIME, level = new GameMa
         ualign: { type: 1, record: 10 }, ualignbase: [1, 1],
         uroleplay: {
             pauper: false, nudist: false, reroll: false,
-            numrerolls: 0, blind: false, deaf: false,
+            numrerolls: 0, numbones: 0, blind: false, deaf: false,
         },
         rightHanded: true, umovement: 12,
         umonster: roleData.mnum, umonnum: roleData.mnum, ulycn: -1,

@@ -49,6 +49,7 @@ for (const wizard of [false, true]) {
         await mklev();
         assert.equal(storage.length, 0, 'unusable bones must not be offered again');
         assert.equal(!!game._restoredBones, false);
+        assert.equal(game.u.uroleplay?.numbones, 1);
         if (wizard) {
             assert.equal(prompts.length, 1);
             assert.match(prompts[0] ?? '', /Unlink bones\?/);
@@ -78,5 +79,16 @@ void test('loading bones repairs an old shop wall breach before play resumes', a
     await mklev();
     assert.equal(requireGameLevel().requireAt(8, 10).typ, HWALL);
     assert.equal(requireGameLevel().damagelist?.length, 0);
+});
+void test('accepting bones counts the encounter while declining them leaves the count unchanged', async () => {
+    const storage = memoryStorage();
+    bonesRoom(storage);
+    assert.equal(saveBonesLevel(), true);
+    for (const accept of [false, true]) {
+        bonesRoom(storage);
+        resetInputState().feed(accept ? 'yn' : 'n');
+        await mklev();
+        assert.equal(game.u.uroleplay?.numbones, accept ? 1 : 0);
+    }
 });
 //# sourceMappingURL=bones_restore_lifecycle.test.js.map

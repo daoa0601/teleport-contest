@@ -492,6 +492,7 @@ export function uInitMisc(handednessRoll) {
             ? !!g.flags.nudist : !!g.flags?.pauper,
         reroll: !!g.flags?.reroll,
         numrerolls: 0,
+        numbones: 0,
         blind: !!g.flags?.blind,
         deaf: !!g.flags?.deaf,
     };

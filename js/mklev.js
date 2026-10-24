@@ -3843,7 +3843,7 @@ async function getbones() {
     if (!payload) {
         if (!game.flags.debug)
             await pline('Discarding unusable bones; no need to panic...');
-        await unlinkBonesAfterRestore();
+        await finishBonesRestore();
         return false;
     }
     if (game.flags.debug
@@ -3865,10 +3865,14 @@ async function getbones() {
     await fixShopDamage(game);
     sanitizeEngravings(game.level);
     game.fmon = game.level.monsters?.[0] || null;
-    game._restoredBones = await unlinkBonesAfterRestore(sourceDisplayLevel);
+    game._restoredBones = await finishBonesRestore(sourceDisplayLevel);
     return game._restoredBones;
 }
-async function unlinkBonesAfterRestore(displayLevel = null) {
+async function finishBonesRestore(displayLevel = null) {
+    const roleplay = game.u.uroleplay;
+    if (!roleplay)
+        throw new Error('Bones restoration requires initialized roleplay counters');
+    roleplay.numbones++;
     if (game.flags.debug) {
         const unlink = await bonesPrompt('Unlink bones? [yn] (n) ', displayLevel);
         if (unlink !== 'y')

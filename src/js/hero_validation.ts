@@ -222,7 +222,7 @@ function validAlignmentBases(value: unknown): value is [AlignmentValue, Alignmen
 function validHeroRoleplay(value: unknown): value is HeroRoleplay {
     return closedFieldsMatch<HeroRoleplay>(value, {
         pauper: boolean, nudist: boolean, reroll: boolean,
-        numrerolls: integer, blind: boolean, deaf: boolean,
+        numrerolls: integer, numbones: integer, blind: boolean, deaf: boolean,
     });
 }
 
