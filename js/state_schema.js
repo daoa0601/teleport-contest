@@ -113,7 +113,6 @@ const transientFields = {
     _armorTheft: true,
     _heroMeleeThisCommand: true,
     _heroTimePending: true,
-    _interruptedMultiActionDebt: true,
     _lastPlineKind: true,
     _lastPlineMessage: true,
     earlyRawMessages: true,

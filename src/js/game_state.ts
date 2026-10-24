@@ -338,7 +338,6 @@ export interface GameState {
     _heroTimePending?: boolean;
     _heroMeleeThisCommand?: boolean;
     _cleaveClockwise?: boolean;
-    _interruptedMultiActionDebt?: boolean;
     _lastPushedBoulder?: GameObject;
     _lastBoulderPushMove?: number;
     _currentWand?: GameObject | null;
