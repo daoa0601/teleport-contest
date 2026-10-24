@@ -13,10 +13,11 @@ import { UNENCUMBERED, nearCapacity, objectWeight } from '../js/weight.js';
 import { initRng } from '../js/rng.js';
 import { vision_recalc } from '../js/vision.js';
 import { applyInventoryObject } from './support/commands.js';
-import { addInventoryObject, floorObject, knownObject } from './support/game-objects.js';
+import { addInventoryObject, artifactObject, floorObject, knownObject } from './support/game-objects.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 import { floorObjectsAt } from './support/level-state.js';
+import { memoryStorage } from './support/memory-storage.js';
 void test('applying an unwielded bullwhip wields it before asking for direction', async () => {
     freshPlayableRoom({ role: 'archeologist' });
     requirePlayingGame(game);
@@ -145,7 +146,7 @@ void test('a whip revives a Rider corpse with remote acquisition feedback', asyn
 });
 // C apply.c:3230 hands a snatched weapon to invent.c:hold_another_object(),
 // whose fumbling, slot, and burden refusals drop it at the hero's feet.
-async function snatchClubFromBugbear(prepare) {
+async function snatchClubFromBugbear(prepare, makeWeapon = async () => await knownObject(CLUB, {}), peaceful = false) {
     for (let seed = 1n; seed <= 200n; seed++) {
         const level = freshPlayableRoom({
             role: 'archeologist',
@@ -157,8 +158,9 @@ async function snatchClubFromBugbear(prepare) {
         });
         game.uwep = game.u.uwep = whip;
         await prepare();
-        const club = await knownObject(CLUB, {});
+        const club = await makeWeapon();
         const bugbear = await createMonsterAt('bugbear', 11, 10);
+        bugbear.mpeaceful = peaceful ? 1 : 0;
         await equipMonsterObject(bugbear, club, W_WEP);
         const messages = [];
         const input = resetInputState();
@@ -169,7 +171,7 @@ async function snatchClubFromBugbear(prepare) {
         messages.push(game._pending_message);
         const text = messages.join('\n');
         if (/You snatch/u.test(text))
-            return { club, level, text };
+            return { bugbear, club, level, text };
     }
     throw new Error('No seed reached the bullwhip snatch.');
 }
@@ -211,5 +213,20 @@ void test('slippery fingers do not stop a snatched weapon from being held', asyn
     const result = await snatchClubFromBugbear(() => { game.u.glibTurns = 20; });
     assert.ok(game.inventory.includes(result.club));
     assert.match(result.text, /[a-zA-Z] - [^\n]*club/u);
+});
+// C artifact.c:958 losehp() ends the game inside hold_another_object(), so
+// use_whip() never reaches its trailing wakeup() (apply.c:3261).
+void test('a fatal artifact snatch does not go on to anger the disarmed monster', async () => {
+    const result = await snatchClubFromBugbear(() => {
+        game.u.ualign = { type: 1, record: 10 };
+        game.u.uhp = 1;
+        game.flags.bones = false;
+        game.flags.disclose = '-i -a -v -c -o';
+        game.flags.tombstone = false;
+        game.storage = memoryStorage();
+    }, async () => await artifactObject('Stormbringer', {}), true);
+    assert.match(result.text, /blasted by/u);
+    assert.equal(game.program_state.gameover, true);
+    assert.equal(result.bugbear.mpeaceful, 1);
 });
 //# sourceMappingURL=bullwhip_apply.test.js.map

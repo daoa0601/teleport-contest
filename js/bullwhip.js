@@ -154,6 +154,7 @@ async function snatchPetrifyingCorpse(weapon, state) {
         remove_object(weapon);
     return petrification.died;
 }
+/** Returns true when the hero died during the disarm (snatch death ends the game). */
 async function disarmMonster(monster, weapon, proficiency, state) {
     let gotWeapon = proficiency > 0
         && (!heroIsFumbling(state) || rn2(10) !== 0);
@@ -170,7 +171,7 @@ async function disarmMonster(monster, weapon, proficiency, state) {
     }
     if (!gotWeapon) {
         await pline('The bullwhip slips free.');
-        return;
+        return false;
     }
     // C apply.c:3175-3177: obj_extract_self() + possibly_unwield() +
     // setmnotwielded() — a raw unlink plus wield-slot clearing, NOT the
@@ -191,12 +192,15 @@ async function disarmMonster(monster, weapon, proficiency, state) {
             observeObjectForNaming(weapon, { state });
             await plineWithContinuation(`You snatch ${objectWithArticle(weapon)}!`);
             if (await snatchPetrifyingCorpse(weapon, state))
-                break;
+                return true;
             // C apply.c:3230: hold_another_object() owns fumbling, slot, and
-            // capacity refusal, dropping the weapon at the hero's feet.
-            await holdAnotherObject(weapon, {
+            // capacity refusal, dropping the weapon at the hero's feet.  A fatal
+            // artifact blast ends the game there (artifact.c:958), before
+            // use_whip()'s trailing wakeup().
+            if ((await holdAnotherObject(weapon, {
                 state, dropMessage: `You drop ${inventoryItemDescription(weapon)}!`,
-            });
+            })).heroDied)
+                return true;
             break;
         default:
             observeObjectForNaming(weapon, { state });
@@ -211,6 +215,7 @@ async function disarmMonster(monster, weapon, proficiency, state) {
             await stack_object(weapon, state);
             break;
     }
+    return false;
 }
 function pitAnchor(targetX, targetY, monster, state) {
     const pile = state.level?.objects?.[targetX]?.[targetY] || [];
@@ -289,7 +294,8 @@ async function attackMonsterWithWhip(monster, x, y, proficiency, attackMonster, 
     }
     const weapon = spottedBefore ? monsterWieldedWeapon(monster) : null;
     if (weapon) {
-        await disarmMonster(monster, weapon, proficiency, state);
+        if (await disarmMonster(monster, weapon, proficiency, state))
+            return;
         await wakeAttackedMonster(monster);
         return;
     }
