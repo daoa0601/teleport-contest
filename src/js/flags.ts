@@ -1,4 +1,5 @@
 import type { MessageTypeRule } from './message_types.js';
+import type { PosixRegex } from './posix_regex.js';
 import type { Position } from './map_types.js';
 
 // Options may be absent until their owning startup step supplies a default.
@@ -57,7 +58,16 @@ export interface GameFlags extends Partial<Record<GameBooleanFlag, boolean>> {
     vanqSortmode?: number;
 }
 
+// C pickup.c:struct autopickup_exception, kept newest first the way
+// ga.apelist is prepended.
+export interface AutopickupExceptionRule {
+    pattern: string;
+    grab: boolean;
+    regex: PosixRegex;
+}
+
 export interface InterfaceFlags {
+    autopickupExceptions?: AutopickupExceptionRule[];
     messageTypes?: MessageTypeRule[];
     messageLocation?: Position;
     bgcolors?: boolean;

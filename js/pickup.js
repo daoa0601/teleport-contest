@@ -3,6 +3,7 @@ import { setMulti } from './command_state.js';
 import { game, requireGameLevel } from './gstate.js';
 import { isIceAt, isLavaAt, isPoolAt } from './terrain_properties.js';
 import { objectName, objectQuestion, observeObjectForNaming, simpleObjectNameWithArticle } from './objnam.js';
+import { makeSingular } from './object_grammar.js';
 import { objectDescription } from './object_description.js';
 import { inventoryClassOrder, lootSortMode, objectClassHeading, sortObjects } from './object_sort.js';
 import { floorObjectDescription, pricedFloorObjectDescription, lookHere, readFloorEngraving, } from './floor_object_display.js';
@@ -126,7 +127,12 @@ export async function autopickupAtHero() {
         if (objects.length && game._runState?.mode !== 8)
             stopRun();
     }
-    const { picked } = await takeSelectedObjects(source, objects.filter(autopickupAllows));
+    const eligible = [];
+    for (const object of objects) {
+        if (await autopickupAllows(object))
+            eligible.push(object);
+    }
+    const { picked } = await takeSelectedObjects(source, eligible);
     reassessHeroCover(source);
     if (!monster && !game.program_state?.gameover)
         await checkHere(source, picked > 0);
@@ -427,7 +433,7 @@ function pickupSourceAtHero() {
 function pickupObjects(source) {
     return source.objects.filter(object => object !== game.uchain && object !== game.u?.uchain);
 }
-export function autopickupAllows(object) {
+export async function autopickupAllows(object) {
     if (object.where === 'floor' && !object.no_charge
         && costlySpot(object.ox, object.oy))
         return false;
@@ -439,10 +445,19 @@ export function autopickupAllows(object) {
     if (object.how_lost === LOST_EXPLODING)
         return false;
     const configured = game.flags?.pickup_types || '';
-    if (!configured)
-        return true;
     const symbol = OBJECT_CLASS_SYMBOLS[object.oclass];
-    return !!symbol && configured.includes(symbol);
+    let pickit = !configured || !!symbol && configured.includes(symbol);
+    // check_autopickup_exceptions() matches makesingular(doname(obj)), and
+    // xname() observes the object for a sighted hero while naming it.
+    const exceptions = game.iflags.autopickupExceptions;
+    if (exceptions?.length) {
+        observeObjectForNaming(object);
+        const description = makeSingular(await objectDescription(object));
+        const match = exceptions.find(rule => rule.regex.test(description));
+        if (match)
+            pickit = match.grab;
+    }
+    return pickit;
 }
 function observePickupObject(object) {
     if (!heroIsBlind(game))

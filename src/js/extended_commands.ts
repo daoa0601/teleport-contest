@@ -12,6 +12,26 @@ import {
     tty_end_menu, tty_select_menu, tty_start_menu,
 } from './tty_menu.js';
 
+// C cmd.c:parseautocomplete() flips the AUTOCOMPLETE flag on individual
+// extcmdlist entries at runtime. The generated command table is immutable,
+// so configuration adjustments live in this overlay.
+const autocompleteOverrides = new Map<string, boolean>();
+
+export function setCommandAutocomplete(name: string, enabled: boolean): void {
+    autocompleteOverrides.set(name, enabled);
+}
+
+// One native process parses one rc file; the overrides must not outlive an
+// engine start in this port.
+export function resetCommandAutocomplete(): void {
+    autocompleteOverrides.clear();
+}
+
+export function commandAutocompletes(command: NativeCommand): boolean {
+    const override = command.name !== null ? autocompleteOverrides.get(command.name) : undefined;
+    return override !== undefined ? override : !!(command.flags & flags.AUTOCOMPLETE);
+}
+
 export function availableExtendedCommands(): NativeCommand[] {
     return NATIVE_COMMANDS.filter(command => command.name !== null
         && !(command.flags & (flags.CMD_NOT_AVAILABLE | flags.INTERNALCMD))
@@ -20,7 +40,7 @@ export function availableExtendedCommands(): NativeCommand[] {
 
 export function completeExtendedCommand(prefix: string): string | null {
     const matches = availableExtendedCommands().filter(command =>
-        !!(command.flags & flags.AUTOCOMPLETE)
+        commandAutocompletes(command)
         && command.name?.toLowerCase().startsWith(prefix.toLowerCase()));
     return matches.length === 1 ? matches[0]?.name ?? null : null;
 }
@@ -37,7 +57,7 @@ export async function extendedCommandMenu(): Promise<NativeCommand | null> {
     let biggest = 0;
     for (;;) {
         const choices = availableExtendedCommands().filter(command =>
-            !!(command.flags & flags.AUTOCOMPLETE) && command.name?.startsWith(prefix));
+            commandAutocompletes(command) && command.name?.startsWith(prefix));
         if (choices.length <= 1) return choices[0] ?? null;
         biggest = Math.max(biggest, ...choices.map(command => commandDescription(command).length));
         const window = tty_create_nhwindow<string>(NHW_MENU);
@@ -103,13 +123,13 @@ export async function showExtendedCommandList(): Promise<void> {
                 command, description: listedCommandDescription(command),
             })).filter(({ command, description }) =>
                 (oneList || !!(command.flags & flags.WIZMODECMD) === wizardSection)
-                && (!autocompleteOnly || !!(command.flags & flags.AUTOCOMPLETE))
+                && (!autocompleteOnly || commandAutocompletes(command))
                 && (!search || matchesSearch(command.name ?? '', search)
                     || matchesSearch(description, search)));
             if (!entries.length) continue;
             addMenuHeading(window, wizardSection ? 'Debugging Extended Commands' : 'Extended commands');
             for (const { command, description } of entries) {
-                const markers = `${command.flags & flags.CMD_M_PREFIX ? 'm' : ''}${command.flags & flags.AUTOCOMPLETE ? 'A' : ''}`;
+                const markers = `${command.flags & flags.CMD_M_PREFIX ? 'm' : ''}${commandAutocompletes(command) ? 'A' : ''}`;
                 label(` ${(command.name ?? '').padEnd(14)} ${(markers ? `[${markers}]` : '').padStart(4)} ${description}`);
                 found++;
             }

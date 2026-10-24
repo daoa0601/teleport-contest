@@ -184,6 +184,7 @@ const transientFields = {
     mockStorage: true,
     n_rects: true,
     nhDisplay: true,
+    boulderSym: true,
     nhrect: true,
     program_state: true,
     _autoAllHintShown: true,

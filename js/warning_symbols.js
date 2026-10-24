@@ -8,6 +8,14 @@ export function setWarningSymbols(value, flags) {
     flags.warningSymbols = def_warnsyms.map((warning, index) => decoded.charAt(index)
         || previous?.charAt(index) || warning.ch).join('');
 }
+// C cfgfiles.c:cnf_line_WARNINGS() → get_uchars() + assign_warnings().
+// Numeric statements set each level whose parsed value is nonzero; explicit
+// zeros and unparsed trailing entries leave the previous symbol in place.
+export function assignWarningSymbols(values, flags) {
+    const previous = flags.warningSymbols;
+    flags.warningSymbols = def_warnsyms.map((warning, index) => values[index] ? String.fromCharCode(values[index] & 0xFF)
+        : previous?.charAt(index) || warning.ch).join('');
+}
 export function warningSymbols() {
     return def_warnsyms.map((warning, index) => ({ ...warning,
         ch: game.iflags.warningSymbols?.charAt(index) || warning.ch,

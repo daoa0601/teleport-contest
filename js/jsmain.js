@@ -245,6 +245,13 @@ export class Engine {
         g.storage = this.storage;
         // Gameplay code paints a transient frame, then yields here.
         g.animationFrame = () => this.animationFrame();
+        // C seeds both RNG streams inside initoptions_init() before
+        // initoptions_finish() runs rcfile(); a CHOOSE= statement consumes
+        // the first core draws during config parsing.
+        initRng(this._seed);
+        this.coreRng = g.coreCtx;
+        this.displayRng = g.displayCtx;
+        enableRngLog();
         // Parse nethackrc
         const opts = parseNethackrc(this._nethackrc, {
             fileName: this._nethackrcFileName,
@@ -252,10 +259,6 @@ export class Engine {
         // Install the terminal before character creation because an unset
         // OPTIONS=name opens the editable "Who are you?" prompt.
         g.nhDisplay = this.display;
-        initRng(this._seed);
-        this.coreRng = g.coreCtx;
-        this.displayRng = g.displayCtx;
-        enableRngLog();
         this.applyStartupConfiguration(opts);
         await displayConfigurationErrors(opts.configErrors);
         if (this._nethackOptions !== null) {
@@ -343,6 +346,8 @@ export class Engine {
         g._monTelecontrol = !!opts.monTelecontrol;
         g.commandBindings = opts.commandBindings;
         g.symset = opts.symset || null;
+        if (opts.boulderSym !== undefined)
+            g.boulderSym = opts.boulderSym;
         if (opts.preferred_pet !== undefined)
             g.preferred_pet = opts.preferred_pet;
         if (opts.tutorial_set)
