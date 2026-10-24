@@ -177,6 +177,13 @@ function activeObjectSymbols() {
         ? ROGUE_OBJECT_SYMBOLS : OBJECT_CLASS_SYMBOLS;
 }
 
+// symbols.c:get_othersym(SYM_BOULDER, which_set): the active set's override,
+// else the default rock-class symbol.
+export function currentBoulderSymbol(state: GameState = game): string {
+    return !Is_rogue_level(state.u?.uz) && state.boulderSym
+        ? state.boulderSym : '`';
+}
+
 const M3_INFRAVISIBLE = 0x0200;
 const M1_MINDLESS = 0x00010000;
 const TELEPATHY_RANGE = 8 * 8; // BOLT_LIM squared

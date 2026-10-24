@@ -9,8 +9,8 @@ import {
 import { exerciseWisdom } from './attrib.js';
 import { heroFootName, heroNoseName } from './body_parts.js';
 import {
-    displaySelf, docrt, flushPendingTopline, glyphAt, map_object, newsym,
-    plineWithContinuation as pline, unmapObject,
+    currentBoulderSymbol, displaySelf, docrt, flushPendingTopline, glyphAt,
+    map_object, newsym, plineWithContinuation as pline, unmapObject,
 } from './display.js';
 import { game, requireLiveGame } from './gstate.js';
 import {
@@ -21,7 +21,7 @@ import { MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
 import { monsterName } from './monster_name.js';
 import { GOLD_PIECE } from './object_data.js';
 import { makePlural } from './object_grammar.js';
-import { objectClassForType, observeObject } from './object_knowledge.js';
+import { objectClassForType, observeObject, OBJECT_CLASS_SYMBOLS } from './object_knowledge.js';
 import { objectMaterial } from './object_material.js';
 import { isQuantumBox } from './quantum_cat.js';
 import { rnd } from './rng.js';
@@ -49,6 +49,7 @@ export interface DetectionObject {
 type DetectionMap = Map<string, DetectionObject>;
 
 const FOOD_CLASS = 7, POTION_CLASS = 8, SPBOOK_CLASS = 10, COIN_CLASS = 12;
+const ROCK_CLASS = 14;
 const GOLD = 15;
 const GOLD_GOLEM = MONSTER_NAME.indexOf('gold golem');
 const LONG_WORM = MONSTER_NAME.indexOf('long worm');
@@ -223,6 +224,14 @@ export async function detectObjects(source: GameObject | null, { state = game, o
     requirePlayingGame(state);
     if (!Number.isInteger(objectClass) || objectClass < 0 || objectClass > 17)
         throw new RangeError(`Invalid object detection class: ${objectClass}`);
+    // detect.c:object_detect() cannot tell a class symbol from the
+    // user-defined boulder symbol when they match, so it detects both: the
+    // buried-object chain stays class-only.
+    const boulderClass = objectClass
+        && OBJECT_CLASS_SYMBOLS[objectClass] === currentBoulderSymbol(state)
+        ? ROCK_CLASS : 0;
+    const matches = (object: GameObject): GameObject | null =>
+        objectOfClass(object, objectClass) || objectOfClass(object, boulderClass);
     const observe = source?.blessed
         && [POTION_CLASS, SPBOOK_CLASS].includes(source.oclass ?? objectClassForType(source.otyp));
     const floors = floorObjects(state);
@@ -231,7 +240,14 @@ export async function detectObjects(source: GameObject | null, { state = game, o
     const monsters = liveMonsters(state);
     let elsewhere = 0, here = 0;
     if (observe) for (const object of state.inventory) observeRecursively(object, state);
-    for (const object of [...floors, ...buried]) {
+    for (const object of floors) {
+        if (!objectClass && !boulderClass || matches(object)) {
+            if (atHero(object.ox, object.oy, state)) here++;
+            else elsewhere++;
+        }
+        if (observe) observeRecursively(object, state);
+    }
+    for (const object of buried) {
         if (!objectClass || objectOfClass(object, objectClass)) {
             if (atHero(object.ox, object.oy, state)) here++;
             else elsewhere++;
@@ -240,15 +256,16 @@ export async function detectObjects(source: GameObject | null, { state = game, o
     }
     for (const monster of monsters) {
         for (const object of monsterObjects(monster)) {
-            if (!objectClass || objectOfClass(object, objectClass)) elsewhere++;
+            if (!objectClass && !boulderClass || matches(object)) elsewhere++;
             if (observe) observeRecursively(object, state);
         }
         if (misleadingMimic(monster, source, objectClass)
             || monsterGold(monster, objectClass)) { elsewhere++; break; }
     }
     const stale = clearStaleObjects(objectClass, 0, state);
-    const what = heroIsHallucinating(state) || ((state.u.confusionTurns ?? 0) > 0 && objectClass === 9)
+    let what = heroIsHallucinating(state) || ((state.u.confusionTurns ?? 0) > 0 && objectClass === 9)
         ? 'something' : objectClass ? objectClassDescription(objectClass) : 'objects';
+    if (boulderClass && objectClass !== ROCK_CLASS) what += ' and/or large stones';
     if (!stale && !elsewhere) {
         if (!here) {
             if (source) await strangeFeeling('You feel a lack of something.', state);
@@ -268,13 +285,13 @@ export async function detectObjects(source: GameObject | null, { state = game, o
         for (let x = 1; x < COLNO; x++) {
             for (let y = 0; y < ROWNO; y++) {
                 const found = (state.level.objects[x]?.[y] || [])
-                    .map(object => objectClass ? objectOfClass(object, objectClass) : object).find(Boolean);
+                    .map(object => objectClass || boulderClass ? matches(object) : object).find(Boolean);
                 if (found) showObjectAt(found, x, y, shown);
             }
         }
         for (const monster of monsters) {
             const found = monsterObjects(monster)
-                .map(object => objectClass ? objectOfClass(object, objectClass) : object).find(Boolean);
+                .map(object => objectClass || boulderClass ? matches(object) : object).find(Boolean);
             if (found) showObjectAt(found, monster.mx, monster.my, shown);
             if (misleadingMimic(monster, source, objectClass)) {
                 const appearance = monster.mappearance;
